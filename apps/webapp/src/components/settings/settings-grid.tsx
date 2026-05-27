@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useTranslate } from "@tolgee/react";
 import { SettingsCard } from "@/components/settings/settings-card";
 import {
 	type FeatureFlag,
@@ -9,7 +9,6 @@ import {
 	type SettingsGroupConfig,
 } from "@/components/settings/settings-config";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
-import { useTranslate } from "@tolgee/react";
 
 interface SettingsGridProps {
 	visibleSettings: SettingsEntry[];
@@ -22,13 +21,10 @@ export function SettingsGrid({ visibleSettings, visibleGroups }: SettingsGridPro
 	const isHydrated = orgSettings.isHydrated;
 
 	// Memoize to prevent recreation on every render
-	const isFeatureEnabled = useCallback(
-		(feature: FeatureFlag | undefined): boolean => {
-			if (!feature) return true;
-			return orgSettings[feature] ?? false;
-		},
-		[orgSettings],
-	);
+	const isFeatureEnabled = (feature: FeatureFlag | undefined): boolean => {
+		if (!feature) return true;
+		return orgSettings[feature] ?? false;
+	};
 
 	return (
 		<div className="space-y-8">

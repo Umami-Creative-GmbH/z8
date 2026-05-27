@@ -2,7 +2,7 @@
 
 import { IconCheck, IconClock, IconClockPause, IconLoader2, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useReducer, useState } from "react";
+import { useReducer, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -87,14 +87,10 @@ function timeClockPopoverReducer(
 export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeFormat }) {
 	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
-	const [uiState, dispatch] = useReducer(
-		timeClockPopoverReducer,
+	const [uiState, dispatch] = useReducer(timeClockPopoverReducer, undefined, createInitialState);
+	const timeFormatter = new Intl.DateTimeFormat(
 		undefined,
-		createInitialState,
-	);
-	const timeFormatter = useMemo(
-		() => new Intl.DateTimeFormat(undefined, getTimeFormatDateTimeOptions(timeFormat)),
-		[timeFormat],
+		getTimeFormatDateTimeOptions(timeFormat),
 	);
 
 	const {
@@ -272,9 +268,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 									autoComplete="off"
 									placeholder={t("timeTracking.notesPlaceholder", "What did you work on?")}
 									value={uiState.notesText}
-									onChange={(e) =>
-										dispatch({ type: "setNotesText", value: e.target.value })
-									}
+									onChange={(e) => dispatch({ type: "setNotesText", value: e.target.value })}
 									rows={3}
 									className="resize-none"
 								/>
@@ -327,9 +321,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 								{isClockedIn && (
 									<ProjectSelector
 										value={uiState.selectedProjectId}
-										onValueChange={(value) =>
-											dispatch({ type: "setSelectedProjectId", value })
-										}
+										onValueChange={(value) => dispatch({ type: "setSelectedProjectId", value })}
 										disabled={isMutating}
 									/>
 								)}

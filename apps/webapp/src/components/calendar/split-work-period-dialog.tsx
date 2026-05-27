@@ -2,7 +2,7 @@
 
 import { IconLoader2, IconScissors, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { splitWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions";
 import {
@@ -55,7 +55,7 @@ export function SplitWorkPeriodDialog({
 	const endTimeHHMM = event.endDate ? formatTimeToHHMM(event.endDate) : "";
 
 	// Calculate preview durations
-	const previewDurations = useMemo(() => {
+	const previewDurations = (() => {
 		if (!splitTime || !event.endDate) return null;
 
 		const [splitHours, splitMinutes] = splitTime.split(":").map(Number);
@@ -82,13 +82,13 @@ export function SplitWorkPeriodDialog({
 			first: firstDurationMinutes,
 			second: secondDurationMinutes,
 		};
-	}, [splitTime, event.date, event.endDate]);
+	})();
 
 	// Check if split time is valid
 	const isValidSplitTime =
 		previewDurations !== null && previewDurations.first > 0 && previewDurations.second > 0;
 
-	const handleSplit = useCallback(async () => {
+	const handleSplit = async () => {
 		if (!isValidSplitTime) return;
 
 		setIsSaving(true);
@@ -110,23 +110,14 @@ export function SplitWorkPeriodDialog({
 		}
 
 		setIsSaving(false);
-	}, [
-		event.id,
-		splitTime,
-		beforeNotes,
-		afterNotes,
-		isValidSplitTime,
-		onSplitComplete,
-		onOpenChange,
-		t,
-	]);
+	};
 
-	const handleClose = useCallback(() => {
+	const handleClose = () => {
 		setSplitTime("");
 		setBeforeNotes(metadata.notes || "");
 		setAfterNotes("");
 		onOpenChange(false);
-	}, [metadata.notes, onOpenChange]);
+	};
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>

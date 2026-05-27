@@ -4,7 +4,7 @@ import { IconPencil, IconPlus } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
 	getTravelExpensePolicies,
 	type TravelExpensePolicyData,
@@ -67,13 +67,15 @@ function formatRate(value: string | null, currency: string): string {
 	}).format(amount);
 }
 
-export function TravelExpensePolicyManagement({ organizationId }: TravelExpensePolicyManagementProps) {
+export function TravelExpensePolicyManagement({
+	organizationId,
+}: TravelExpensePolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingPolicy, setEditingPolicy] = useState<TravelExpensePolicyData | null>(null);
 
-	const policyQueryKey = useMemo(() => travelExpensePolicyQueryKey(organizationId), [organizationId]);
+	const policyQueryKey = travelExpensePolicyQueryKey(organizationId);
 
 	const { data, isLoading } = useQuery({
 		queryKey: policyQueryKey,
@@ -152,11 +154,15 @@ export function TravelExpensePolicyManagement({ organizationId }: TravelExpenseP
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>{t("settings.travelExpenses.effectiveFrom", "Effective From")}</TableHead>
+									<TableHead>
+										{t("settings.travelExpenses.effectiveFrom", "Effective From")}
+									</TableHead>
 									<TableHead>{t("settings.travelExpenses.effectiveTo", "Effective To")}</TableHead>
 									<TableHead>{t("settings.travelExpenses.currency", "Currency")}</TableHead>
 									<TableHead>{t("settings.travelExpenses.mileageRate", "Mileage / km")}</TableHead>
-									<TableHead>{t("settings.travelExpenses.perDiemRate", "Per diem / day")}</TableHead>
+									<TableHead>
+										{t("settings.travelExpenses.perDiemRate", "Per diem / day")}
+									</TableHead>
 									<TableHead>{t("common.status", "Status")}</TableHead>
 									<TableHead className="w-[80px]" />
 								</TableRow>

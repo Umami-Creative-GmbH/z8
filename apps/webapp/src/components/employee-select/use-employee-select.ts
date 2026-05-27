@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import {
 	type EmployeeSelectParams,
@@ -104,18 +104,15 @@ export function useEmployeeSelect(options: UseEmployeeSelectOptions = {}): UseEm
 	const hasEmployee = !!currentEmployeeQuery.data;
 
 	// Build query params
-	const queryParams: EmployeeSelectParams = useMemo(
-		() => ({
-			search: debouncedSearch || undefined,
-			role: roleFilter === "all" ? undefined : (roleFilter as EmployeeSelectParams["role"]),
-			status: statusFilter === "all" ? undefined : (statusFilter as EmployeeSelectParams["status"]),
-			teamId: teamFilter || undefined,
-			excludeIds: excludeIds.length > 0 ? excludeIds : undefined,
-			limit: pageSize,
-			offset: page * pageSize,
-		}),
-		[debouncedSearch, roleFilter, statusFilter, teamFilter, excludeIds, pageSize, page],
-	);
+	const queryParams: EmployeeSelectParams = {
+		search: debouncedSearch || undefined,
+		role: roleFilter === "all" ? undefined : (roleFilter as EmployeeSelectParams["role"]),
+		status: statusFilter === "all" ? undefined : (statusFilter as EmployeeSelectParams["status"]),
+		teamId: teamFilter || undefined,
+		excludeIds: excludeIds.length > 0 ? excludeIds : undefined,
+		limit: pageSize,
+		offset: page * pageSize,
+	};
 
 	// Main employees query
 	const employeesQuery = useQuery({
@@ -142,31 +139,31 @@ export function useEmployeeSelect(options: UseEmployeeSelectOptions = {}): UseEm
 	}));
 
 	// Setters with page reset
-	const setSearch = useCallback((value: string) => {
+	const setSearch = (value: string) => {
 		setSearchState(value);
-	}, []);
+	};
 
-	const setRoleFilterWithReset = useCallback((value: string) => {
+	const setRoleFilterWithReset = (value: string) => {
 		setRoleFilter(value);
-	}, []);
+	};
 
-	const setStatusFilterWithReset = useCallback((value: string) => {
+	const setStatusFilterWithReset = (value: string) => {
 		setStatusFilter(value);
-	}, []);
+	};
 
-	const setTeamFilterWithReset = useCallback((value: string) => {
+	const setTeamFilterWithReset = (value: string) => {
 		setTeamFilter(value);
-	}, []);
+	};
 
-	const loadMore = useCallback(() => {
+	const loadMore = () => {
 		if (employeesQuery.data?.hasMore) {
 			setPage((prev) => prev + 1);
 		}
-	}, [employeesQuery.data?.hasMore]);
+	};
 
-	const refresh = useCallback(() => {
+	const refresh = () => {
 		employeesQuery.refetch();
-	}, [employeesQuery]);
+	};
 
 	return {
 		// Data
@@ -219,7 +216,7 @@ export function useSelectedEmployees(employeeIds: string[]) {
 	const hasEmployee = !!currentEmployeeQuery.data;
 
 	// Stable key for the query
-	const sortedIds = useMemo(() => [...employeeIds].sort(), [employeeIds]);
+	const sortedIds = [...employeeIds].sort();
 
 	const query = useQuery({
 		queryKey: queryKeys.employeeSelect.byIds(sortedIds),

@@ -1,11 +1,10 @@
 "use client";
 
-import { IconX } from "@tabler/icons-react";
+import { IconSearch, IconX } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { Command as CommandPrimitive } from "cmdk";
-import { IconSearch } from "@tabler/icons-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import {
 	ActionPanel,
@@ -78,7 +77,7 @@ export function EmployeeSelectModal({
 	const setSearch = usePreFiltered ? setLocalSearch : serverData.setSearch;
 
 	// Filter pre-filtered employees by search (client-side)
-	const filteredPreFilteredEmployees = useMemo(() => {
+	const filteredPreFilteredEmployees = (() => {
 		if (!usePreFiltered || !preFilteredEmployees) return [];
 		if (!localSearch) return preFilteredEmployees;
 
@@ -92,7 +91,7 @@ export function EmployeeSelectModal({
 				emp.position?.toLowerCase().includes(searchLower)
 			);
 		});
-	}, [usePreFiltered, preFilteredEmployees, localSearch]);
+	})();
 
 	// Select the appropriate data source
 	const employees = usePreFiltered ? filteredPreFilteredEmployees : serverData.employees;

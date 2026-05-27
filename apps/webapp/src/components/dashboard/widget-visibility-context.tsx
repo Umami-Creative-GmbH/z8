@@ -5,7 +5,6 @@ import {
 	type ReactNode,
 	useContext,
 	useEffect,
-	useMemo,
 	useRef,
 	useSyncExternalStore,
 } from "react";
@@ -81,7 +80,7 @@ interface WidgetVisibilityProviderProps {
 }
 
 export function WidgetVisibilityProvider({ children }: WidgetVisibilityProviderProps) {
-	const store = useMemo(() => createVisibilityStore(), []);
+	const store = createVisibilityStore();
 
 	return (
 		<WidgetVisibilityContext.Provider value={store}>{children}</WidgetVisibilityContext.Provider>

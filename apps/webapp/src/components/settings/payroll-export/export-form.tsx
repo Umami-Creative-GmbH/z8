@@ -3,14 +3,7 @@
 import { IconDownload, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import {
-	startTransition as startReactTransition,
-	useCallback,
-	useEffect,
-	useMemo,
-	useState,
-	useTransition,
-} from "react";
+import { startTransition as startReactTransition, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	type DatevConfigResult,
@@ -72,51 +65,44 @@ export function ExportForm({
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
 	const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
-	const exportFormatOptions = useMemo(
-		() => [
-			{
-				id: "datev_lohn",
-				label: t("settings.payrollExport.export.format.datev", "DATEV"),
-			},
-			{
-				id: "lexware_lohn",
-				label: t("settings.payrollExport.export.format.lexware", "Lexware"),
-			},
-			{
-				id: "sage_lohn",
-				label: t("settings.payrollExport.export.format.sage", "Sage"),
-			},
-			{
-				id: "personio",
-				label: t("settings.payrollExport.export.format.personio", "Personio"),
-			},
-			{
-				id: "successfactors_api",
-				label: t(
-					"settings.payrollExport.export.format.successfactorsApi",
-					"SAP SuccessFactors (API)",
-				),
-			},
-			{
-				id: "successfactors_csv",
-				label: t(
-					"settings.payrollExport.export.format.successfactorsCsv",
-					"SAP SuccessFactors (CSV)",
-				),
-			},
-			{
-				id: "workday_api",
-				label: t("settings.payrollExport.export.format.workday", "Workday"),
-			},
-		],
-		[t],
-	);
-	const firstConfiguredFormatId = useMemo(
-		() =>
-			EXPORT_FORMAT_IDS.find((formatId) => exportAvailability[formatId]?.configured) ??
-			"datev_lohn",
-		[exportAvailability],
-	);
+	const exportFormatOptions = [
+		{
+			id: "datev_lohn",
+			label: t("settings.payrollExport.export.format.datev", "DATEV"),
+		},
+		{
+			id: "lexware_lohn",
+			label: t("settings.payrollExport.export.format.lexware", "Lexware"),
+		},
+		{
+			id: "sage_lohn",
+			label: t("settings.payrollExport.export.format.sage", "Sage"),
+		},
+		{
+			id: "personio",
+			label: t("settings.payrollExport.export.format.personio", "Personio"),
+		},
+		{
+			id: "successfactors_api",
+			label: t(
+				"settings.payrollExport.export.format.successfactorsApi",
+				"SAP SuccessFactors (API)",
+			),
+		},
+		{
+			id: "successfactors_csv",
+			label: t(
+				"settings.payrollExport.export.format.successfactorsCsv",
+				"SAP SuccessFactors (CSV)",
+			),
+		},
+		{
+			id: "workday_api",
+			label: t("settings.payrollExport.export.format.workday", "Workday"),
+		},
+	];
+	const firstConfiguredFormatId =
+		EXPORT_FORMAT_IDS.find((formatId) => exportAvailability[formatId]?.configured) ?? "datev_lohn";
 	const [selectedFormatId, setSelectedFormatId] = useState<string>(
 		config?.formatId && exportAvailability[config.formatId]?.configured
 			? config.formatId
@@ -148,14 +134,14 @@ export function ExportForm({
 	} | null>(null);
 
 	// Memoize loader to avoid dependency warning
-	const loadFilterOptions = useCallback(async () => {
+	const loadFilterOptions = async () => {
 		startTransition(async () => {
 			const result = await getFilterOptionsAction(organizationId);
 			if (result.success) {
 				setFilterOptions(result.data);
 			}
 		});
-	}, [organizationId]);
+	};
 
 	// Load filter options on mount
 	useEffect(() => {
@@ -229,7 +215,7 @@ export function ExportForm({
 		});
 	};
 
-	const exportButtonLabel = useMemo(() => {
+	const exportButtonLabel = (() => {
 		switch (selectedFormatId) {
 			case "lexware_lohn":
 				return t("settings.payrollExport.export.exportButtonLexware", "Export to Lexware");
@@ -253,63 +239,55 @@ export function ExportForm({
 			default:
 				return t("settings.payrollExport.export.exportButtonDatev", "Export to DATEV");
 		}
-	}, [selectedFormatId, t]);
+	})();
 
-	const unavailableExportHints = useMemo(
-		() =>
-			exportFormatOptions
-				.filter((option) => !exportAvailability[option.id]?.configured)
-				.map((option) => {
-					const reason = exportAvailability[option.id]?.reason;
-					return {
-						id: option.id,
-						label: option.label,
-						isMissingCredentials: reason === "missingCredentials",
-						reason:
-							reason === "missingCredentials"
-								? t("settings.payrollExport.export.unavailable.missingCredentials", "credentials")
-								: t("settings.payrollExport.export.unavailable.missingConfiguration", "config"),
-					};
-				})
-				.sort((left, right) => {
-					if (left.isMissingCredentials === right.isMissingCredentials) {
-						return left.label.localeCompare(right.label);
-					}
+	const unavailableExportHints = exportFormatOptions
+		.filter((option) => !exportAvailability[option.id]?.configured)
+		.map((option) => {
+			const reason = exportAvailability[option.id]?.reason;
+			return {
+				id: option.id,
+				label: option.label,
+				isMissingCredentials: reason === "missingCredentials",
+				reason:
+					reason === "missingCredentials"
+						? t("settings.payrollExport.export.unavailable.missingCredentials", "credentials")
+						: t("settings.payrollExport.export.unavailable.missingConfiguration", "config"),
+			};
+		})
+		.sort((left, right) => {
+			if (left.isMissingCredentials === right.isMissingCredentials) {
+				return left.label.localeCompare(right.label);
+			}
 
-					return left.isMissingCredentials ? -1 : 1;
-				}),
-		[exportAvailability, exportFormatOptions, t],
-	);
+			return left.isMissingCredentials ? -1 : 1;
+		});
 
 	// Memoize static arrays to prevent recreation on each render (rerender-hoist-jsx)
-	const years = useMemo(() => Array.from({ length: 5 }, (_, i) => DateTime.now().year - i), []);
-	const months = useMemo(
-		() =>
-			Array.from({ length: 12 }, (_, i) => ({
-				value: i + 1,
-				label: DateTime.fromObject({ month: i + 1 }).toFormat("LLLL"),
-			})),
-		[],
-	);
+	const years = Array.from({ length: 5 }, (_, i) => DateTime.now().year - i);
+	const months = Array.from({ length: 12 }, (_, i) => ({
+		value: i + 1,
+		label: DateTime.fromObject({ month: i + 1 }).toFormat("LLLL"),
+	}));
 
 	// Use functional setState for stable callbacks (rerender-functional-setstate)
-	const toggleEmployee = useCallback((id: string) => {
+	const toggleEmployee = (id: string) => {
 		setSelectedEmployeeIds((prev) =>
 			prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
 		);
-	}, []);
+	};
 
-	const toggleTeam = useCallback((id: string) => {
+	const toggleTeam = (id: string) => {
 		setSelectedTeamIds((prev) =>
 			prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
 		);
-	}, []);
+	};
 
-	const toggleProject = useCallback((id: string) => {
+	const toggleProject = (id: string) => {
 		setSelectedProjectIds((prev) =>
 			prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
 		);
-	}, []);
+	};
 
 	return (
 		<Card>

@@ -1,10 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
 import {
-	getEmployeeClockStatuses,
 	type EmployeeClockStatusMap,
+	getEmployeeClockStatuses,
 } from "@/app/[locale]/(app)/settings/employees/employee-clock-status.actions";
 import type { EmployeeClockStatus } from "@/components/user-avatar";
 import { queryKeys } from "./keys";
@@ -27,7 +26,7 @@ export function useEmployeeClockStatuses(
 	options: UseEmployeeClockStatusesOptions = {},
 ) {
 	const { organizationId, polling = false, pollingIntervalMs, enabled = true } = options;
-	const normalizedEmployeeIds = useMemo(() => normalizeEmployeeIds(employeeIds), [employeeIds]);
+	const normalizedEmployeeIds = normalizeEmployeeIds(employeeIds);
 	const query = useQuery({
 		queryKey: queryKeys.employeeClockStatuses.list(
 			organizationId ?? "active",
@@ -44,13 +43,9 @@ export function useEmployeeClockStatuses(
 		refetchInterval: polling ? (pollingIntervalMs ?? 30 * 1000) : false,
 	});
 	const statuses = query.data ?? EMPTY_STATUSES;
-	const getStatus = useMemo(
-		() =>
-			(employeeId: string): EmployeeClockStatus => {
-				return statuses[employeeId.trim()] ?? "unknown";
-			},
-		[statuses],
-	);
+	const getStatus = (employeeId: string): EmployeeClockStatus => {
+		return statuses[employeeId.trim()] ?? "unknown";
+	};
 
 	return {
 		...query,

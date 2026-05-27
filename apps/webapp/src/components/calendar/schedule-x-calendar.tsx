@@ -22,7 +22,7 @@ import { IconChevronLeft, IconChevronRight, IconReload } from "@tabler/icons-rea
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
@@ -101,31 +101,28 @@ export function ScheduleXCalendarWrapper({
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
 
 	// Convert events to Schedule-X format
-	const baseScheduleXEvents = useMemo(
-		() => calendarEventsToScheduleX(events, timeZone),
-		[events, timeZone],
-	);
+	const baseScheduleXEvents = calendarEventsToScheduleX(events, timeZone);
 
 	// Generate break events only for day/week view
-	const scheduleXEvents = useMemo(() => {
+	const scheduleXEvents = (() => {
 		if (viewMode === "day" || viewMode === "week") {
 			const breakEvents = generateBreakEvents(baseScheduleXEvents, timeZone);
 			return [...baseScheduleXEvents, ...breakEvents];
 		}
 		return baseScheduleXEvents;
-	}, [baseScheduleXEvents, viewMode, timeZone]);
+	})();
 
 	// Helper to convert Luxon DateTime to Temporal.PlainDate
-	const luxonToPlainDate = useCallback((dt: DateTime): Temporal.PlainDate => {
+	const luxonToPlainDate = (dt: DateTime): Temporal.PlainDate => {
 		return Temporal.PlainDate.from({
 			year: dt.year,
 			month: dt.month,
 			day: dt.day,
 		});
-	}, []);
+	};
 
 	// Navigation functions
-	const navigatePrevious = useCallback(() => {
+	const navigatePrevious = () => {
 		let newDate: DateTime;
 		switch (viewMode) {
 			case "day":
@@ -142,9 +139,9 @@ export function ScheduleXCalendarWrapper({
 		}
 		setCurrentDate(newDate);
 		calendarControls.setDate(luxonToPlainDate(newDate));
-	}, [viewMode, currentDate, calendarControls, luxonToPlainDate]);
+	};
 
-	const navigateNext = useCallback(() => {
+	const navigateNext = () => {
 		let newDate: DateTime;
 		switch (viewMode) {
 			case "day":
@@ -161,16 +158,16 @@ export function ScheduleXCalendarWrapper({
 		}
 		setCurrentDate(newDate);
 		calendarControls.setDate(luxonToPlainDate(newDate));
-	}, [viewMode, currentDate, calendarControls, luxonToPlainDate]);
+	};
 
-	const navigateToday = useCallback(() => {
+	const navigateToday = () => {
 		const today = DateTime.now();
 		setCurrentDate(today);
 		calendarControls.setDate(luxonToPlainDate(today));
-	}, [calendarControls, luxonToPlainDate]);
+	};
 
 	// Format the date range display based on view mode
-	const dateRangeDisplay = useMemo(() => {
+	const dateRangeDisplay = (() => {
 		const localizedCurrentDate = currentDate.setLocale(locale);
 
 		switch (viewMode) {
@@ -191,56 +188,50 @@ export function ScheduleXCalendarWrapper({
 			default:
 				return localizedCurrentDate.toFormat("MMMM d, yyyy");
 		}
-	}, [viewMode, currentDate, weekStartDay, locale]);
+	})();
 
-	const visibleRequirementDates = useMemo(() => {
+	const visibleRequirementDates = (() => {
 		if (viewMode === "day") return [currentDate.startOf("day")];
 		if (viewMode === "week") {
 			const { start } = getWeekBounds(currentDate, weekStartDay);
 			return Array.from({ length: 7 }, (_, index) => start.plus({ days: index }));
 		}
 		return [];
-	}, [currentDate, viewMode, weekStartDay]);
+	})();
 
 	// Handle event click - Schedule-X passes the event object
-	const handleEventClick = useCallback(
-		(event: { id: string }) => {
-			if (!onEventClick) return;
+	const handleEventClick = (event: { id: string }) => {
+		if (!onEventClick) return;
 
-			const scheduleXEvent = scheduleXEvents.find((e) => e.id === event.id);
-			if (scheduleXEvent?._eventData) {
-				onEventClick(scheduleXEvent._eventData);
-			}
-		},
-		[scheduleXEvents, onEventClick],
-	);
+		const scheduleXEvent = scheduleXEvents.find((e) => e.id === event.id);
+		if (scheduleXEvent?._eventData) {
+			onEventClick(scheduleXEvent._eventData);
+		}
+	};
 
 	// Handle date range change from Schedule-X
 	// Schedule-X returns Temporal objects or strings depending on context
-	const handleRangeChange = useCallback(
-		(range: { start: unknown; end: unknown }) => {
-			if (!onRangeChange) return;
+	const handleRangeChange = (range: { start: unknown; end: unknown }) => {
+		if (!onRangeChange) return;
 
-			// Convert to Date using Luxon for robust parsing
-			const toDate = (value: unknown): Date => {
-				if (value instanceof Date) return value;
-				// Use Luxon to parse any string/Temporal format
-				const str = String(value);
-				const dt = DateTime.fromISO(str).isValid
-					? DateTime.fromISO(str)
-					: DateTime.fromSQL(str).isValid
-						? DateTime.fromSQL(str)
-						: DateTime.fromJSDate(new Date(str));
-				return dt.toJSDate();
-			};
+		// Convert to Date using Luxon for robust parsing
+		const toDate = (value: unknown): Date => {
+			if (value instanceof Date) return value;
+			// Use Luxon to parse any string/Temporal format
+			const str = String(value);
+			const dt = DateTime.fromISO(str).isValid
+				? DateTime.fromISO(str)
+				: DateTime.fromSQL(str).isValid
+					? DateTime.fromSQL(str)
+					: DateTime.fromJSDate(new Date(str));
+			return dt.toJSDate();
+		};
 
-			onRangeChange({
-				start: toDate(range.start),
-				end: toDate(range.end),
-			});
-		},
-		[onRangeChange],
-	);
+		onRangeChange({
+			start: toDate(range.start),
+			end: toDate(range.end),
+		});
+	};
 
 	// Create calendar instance with controls plugin
 	const calendar = useCalendarApp({

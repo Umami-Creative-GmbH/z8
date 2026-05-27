@@ -15,7 +15,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useTranslate } from "@tolgee/react";
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/user-avatar";
 import { normalizePronouns } from "@/lib/employee-identity";
@@ -92,7 +92,7 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 			void expandTeam(teamId);
 		},
 	});
-	const flowEdges = useMemo(() => buildFlowEdges(graph.edges), [graph.edges]);
+	const flowEdges = buildFlowEdges(graph.edges);
 
 	useEffect(() => {
 		if (flowNodes.length === 0) {

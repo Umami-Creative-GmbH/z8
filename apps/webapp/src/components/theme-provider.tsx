@@ -3,7 +3,7 @@
 // Note: Temporal polyfill is loaded dynamically in schedule-x-wrapper.tsx
 // before Schedule-X is rendered (required for Schedule-X v3+).
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import * as SunCalc from "suncalc";
 
 type Theme = "light" | "dark" | "system" | "time";
@@ -114,7 +114,11 @@ function isValidDate(value: Date | undefined) {
 	return value instanceof Date && Number.isFinite(value.getTime());
 }
 
-function resolveTimeTheme(location: ThemeLocation, systemTheme: ResolvedTheme, now = new Date()): ResolvedTheme {
+function resolveTimeTheme(
+	location: ThemeLocation,
+	systemTheme: ResolvedTheme,
+	now = new Date(),
+): ResolvedTheme {
 	const times = SunCalc.getTimes(now, location.latitude, location.longitude);
 	if (!isValidDate(times.sunrise) || !isValidDate(times.sunset)) {
 		return systemTheme;
@@ -288,7 +292,9 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 			return initialTheme;
 		}
 	});
-	const [location, setLocation] = useState<ThemeLocation | undefined>(() => readStoredLocation(storageKey));
+	const [location, setLocation] = useState<ThemeLocation | undefined>(() =>
+		readStoredLocation(storageKey),
+	);
 	const [themeError, setThemeError] = useState<ThemeError | undefined>();
 	const [timeTick, setTimeTick] = useState(0);
 	const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(() => getSystemTheme());
@@ -296,14 +302,9 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 	const isMountedRef = useRef(true);
 	const locationRef = useRef(location);
 	const themeRef = useRef(theme);
-	const resolvedTheme = useMemo(
-		() => resolveTheme(theme, enableSystem, systemTheme, location),
-		[enableSystem, location, systemTheme, theme, timeTick],
-	);
-	const timeThemeInfo = useMemo(
-		() => (theme === TIME_THEME && location ? getTimeThemeInfo(location, systemTheme) : undefined),
-		[location, systemTheme, theme, timeTick],
-	);
+	const resolvedTheme = resolveTheme(theme, enableSystem, systemTheme, location);
+	const timeThemeInfo =
+		theme === TIME_THEME && location ? getTimeThemeInfo(location, systemTheme) : undefined;
 
 	useEffect(() => {
 		isMountedRef.current = true;
@@ -353,79 +354,73 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 		return () => window.clearTimeout(timeout);
 	}, [location, theme, timeTick]);
 
-	const clearThemeError = useCallback(() => setThemeError(undefined), []);
+	const clearThemeError = () => setThemeError(undefined);
 
-	const setTheme = useCallback<React.Dispatch<React.SetStateAction<string>>>(
-		(nextTheme) => {
-			const currentTheme = themeRef.current;
-			const value = typeof nextTheme === "function" ? nextTheme(currentTheme) : nextTheme;
+	const setTheme = (nextTheme) => {
+		const currentTheme = themeRef.current;
+		const value = typeof nextTheme === "function" ? nextTheme(currentTheme) : nextTheme;
 
-			if (value === TIME_THEME) {
-				const storedLocation = locationRef.current;
-				if (storedLocation) {
+		if (value === TIME_THEME) {
+			const storedLocation = locationRef.current;
+			if (storedLocation) {
+				if (disableTransitionOnChange) {
+					disableTransitionsTemporarily();
+				}
+				setThemeError(undefined);
+				writeStoredTheme(storageKey, value);
+				themeRef.current = value;
+				setThemeState(value);
+				return;
+			}
+
+			const requestId = locationRequestIdRef.current + 1;
+			locationRequestIdRef.current = requestId;
+			void requestThemeLocation()
+				.then((nextLocation) => {
+					if (!isMountedRef.current || locationRequestIdRef.current !== requestId) {
+						return;
+					}
+
 					if (disableTransitionOnChange) {
 						disableTransitionsTemporarily();
 					}
 					setThemeError(undefined);
+					setLocation(nextLocation);
+					writeStoredLocation(storageKey, nextLocation);
 					writeStoredTheme(storageKey, value);
 					themeRef.current = value;
 					setThemeState(value);
-					return;
-				}
+				})
+				.catch(() => {
+					if (!isMountedRef.current || locationRequestIdRef.current !== requestId) {
+						return;
+					}
 
-				const requestId = locationRequestIdRef.current + 1;
-				locationRequestIdRef.current = requestId;
-				void requestThemeLocation()
-					.then((nextLocation) => {
-						if (!isMountedRef.current || locationRequestIdRef.current !== requestId) {
-							return;
-						}
+					setThemeError("location-required");
+				});
+			return;
+		}
 
-						if (disableTransitionOnChange) {
-							disableTransitionsTemporarily();
-						}
-						setThemeError(undefined);
-						setLocation(nextLocation);
-						writeStoredLocation(storageKey, nextLocation);
-						writeStoredTheme(storageKey, value);
-						themeRef.current = value;
-						setThemeState(value);
-					})
-					.catch(() => {
-						if (!isMountedRef.current || locationRequestIdRef.current !== requestId) {
-							return;
-						}
+		locationRequestIdRef.current += 1;
+		themeRef.current = value;
+		if (disableTransitionOnChange) {
+			disableTransitionsTemporarily();
+		}
+		setThemeError(undefined);
+		writeStoredTheme(storageKey, value);
+		setThemeState(value);
+	};
 
-						setThemeError("location-required");
-					});
-				return;
-			}
-
-			locationRequestIdRef.current += 1;
-			themeRef.current = value;
-			if (disableTransitionOnChange) {
-				disableTransitionsTemporarily();
-			}
-			setThemeError(undefined);
-			writeStoredTheme(storageKey, value);
-			setThemeState(value);
-		},
-		[disableTransitionOnChange, storageKey],
-	);
-
-	const context = useMemo<ThemeContextValue>(
-		() => ({
-			clearThemeError,
-			resolvedTheme,
-			setTheme,
-			systemTheme,
-			theme,
-			themeError,
-			timeThemeInfo,
-			themes: enableSystem ? [...themes, TIME_THEME, "system"] : [...themes, TIME_THEME],
-		}),
-		[clearThemeError, enableSystem, resolvedTheme, setTheme, systemTheme, theme, themeError, themes, timeThemeInfo],
-	);
+	const context = {
+		clearThemeError,
+		resolvedTheme,
+		setTheme,
+		systemTheme,
+		theme,
+		themeError,
+		timeThemeInfo,
+		themes: enableSystem ? [...themes, TIME_THEME, "system"] : [...themes, TIME_THEME],
+	};
 
 	return <ThemeContext.Provider value={context}>{children}</ThemeContext.Provider>;
 }

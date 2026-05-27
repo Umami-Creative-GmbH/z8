@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useOrganization } from "@/hooks/use-organization";
 
@@ -31,37 +31,34 @@ export function useWidgetData<T>(
 	const prevOrgIdRef = useRef<string | null>(null);
 	const mountedRef = useRef(false);
 
-	const loadData = useCallback(
-		async (isRefresh = false) => {
-			if (isRefresh) {
-				setRefreshing(true);
+	const loadData = async (isRefresh = false) => {
+		if (isRefresh) {
+			setRefreshing(true);
+		}
+		let shouldFinish = true;
+		try {
+			const result = await fetcher();
+			if (!mountedRef.current) {
+				shouldFinish = false;
+				return;
 			}
-			let shouldFinish = true;
-			try {
-				const result = await fetcher();
-				if (!mountedRef.current) {
-					shouldFinish = false;
-					return;
-				}
-				if (result.success && result.data) {
-					setData(result.data);
-				}
-			} catch (error) {
-				if (!mountedRef.current) {
-					shouldFinish = false;
-					return;
-				}
-				if (!isAbortError(error)) {
-					toast.error(options?.errorMessage ?? "Failed to load data");
-				}
+			if (result.success && result.data) {
+				setData(result.data);
 			}
-			if (shouldFinish && mountedRef.current) {
-				setLoading(false);
-				setRefreshing(false);
+		} catch (error) {
+			if (!mountedRef.current) {
+				shouldFinish = false;
+				return;
 			}
-		},
-		[fetcher, options?.errorMessage],
-	);
+			if (!isAbortError(error)) {
+				toast.error(options?.errorMessage ?? "Failed to load data");
+			}
+		}
+		if (shouldFinish && mountedRef.current) {
+			setLoading(false);
+			setRefreshing(false);
+		}
+	};
 
 	useEffect(() => {
 		mountedRef.current = true;
@@ -87,9 +84,9 @@ export function useWidgetData<T>(
 		prevOrgIdRef.current = organizationId;
 	}, [organizationId, loadData]);
 
-	const refetch = useCallback(() => {
+	const refetch = () => {
 		loadData(true);
-	}, [loadData]);
+	};
 
 	return { data, loading, refreshing, refetch };
 }

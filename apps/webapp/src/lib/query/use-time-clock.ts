@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	addBreakToActiveSession,
 	clockIn,
@@ -241,9 +241,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 	});
 
 	// Refetch status manually
-	const refetchStatus = useCallback(() => {
+	const refetchStatus = () => {
 		return queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
-	}, [queryClient]);
+	};
 
 	return {
 		// Status

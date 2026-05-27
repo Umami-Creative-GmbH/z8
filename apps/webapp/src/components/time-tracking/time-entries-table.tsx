@@ -3,7 +3,7 @@
 import { IconCalendarEvent, IconCheck, IconDotsVertical } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
-import { startTransition, useCallback, useMemo, useState } from "react";
+import { startTransition, useState } from "react";
 import { toast } from "sonner";
 import { approveWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions/mutations";
 import { DataTable } from "@/components/data-table-server";
@@ -53,59 +53,42 @@ export function TimeEntriesTable({
 	const { refresh } = useRouter();
 	const [approvingWorkPeriodId, setApprovingWorkPeriodId] = useState<string | null>(null);
 
-	const handleApproveWorkPeriod = useCallback(
-		async (period: WorkPeriodData) => {
-			setApprovingWorkPeriodId(period.id);
-			const result = await approveWorkPeriod(period.id);
-			setApprovingWorkPeriodId(null);
+	const handleApproveWorkPeriod = async (period: WorkPeriodData) => {
+		setApprovingWorkPeriodId(period.id);
+		const result = await approveWorkPeriod(period.id);
+		setApprovingWorkPeriodId(null);
 
-			if (!result.success) {
-				toast.error(
-					result.error || t("timeTracking.table.approveFailed", "Failed to approve entry"),
-				);
-				return;
-			}
+		if (!result.success) {
+			toast.error(result.error || t("timeTracking.table.approveFailed", "Failed to approve entry"));
+			return;
+		}
 
-			toast.success(t("timeTracking.table.approved", "Time entry approved"));
-			startTransition(() => refresh());
-		},
-		[refresh, t],
-	);
+		toast.success(t("timeTracking.table.approved", "Time entry approved"));
+		startTransition(() => refresh());
+	};
 
-	const columns = useMemo(
-		() =>
-			getTimeEntriesColumns({
-				t,
-				employeeTimezone,
-				timeFormat,
-				hasManager,
-				renderAdminAction: canApproveTimeEntries
-					? (period) => (
-							<TimeEntryAdminMenu
-								period={period}
-								isApproving={approvingWorkPeriodId === period.id}
-								onApprove={() => handleApproveWorkPeriod(period)}
-							/>
-						)
-					: undefined,
-				renderEditAction: (period, isSameDay) => (
-					<TimeCorrectionDialog
-						workPeriod={period}
-						isSameDay={isSameDay}
-						employeeTimezone={employeeTimezone}
+	const columns = getTimeEntriesColumns({
+		t,
+		employeeTimezone,
+		timeFormat,
+		hasManager,
+		renderAdminAction: canApproveTimeEntries
+			? (period) => (
+					<TimeEntryAdminMenu
+						period={period}
+						isApproving={approvingWorkPeriodId === period.id}
+						onApprove={() => handleApproveWorkPeriod(period)}
 					/>
-				),
-			}),
-		[
-			t,
-			employeeTimezone,
-			timeFormat,
-			hasManager,
-			canApproveTimeEntries,
-			approvingWorkPeriodId,
-			handleApproveWorkPeriod,
-		],
-	);
+				)
+			: undefined,
+		renderEditAction: (period, isSameDay) => (
+			<TimeCorrectionDialog
+				workPeriod={period}
+				isSameDay={isSameDay}
+				employeeTimezone={employeeTimezone}
+			/>
+		),
+	});
 
 	return (
 		<Card>

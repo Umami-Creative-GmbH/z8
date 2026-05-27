@@ -2,7 +2,6 @@
 
 import { IconClock, IconGripVertical } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useMemo } from "react";
 import type { ShiftTemplate } from "@/app/[locale]/(app)/scheduling/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -48,10 +47,7 @@ function calculateDuration(startTime: string, endTime: string): string {
 }
 
 function TemplateCard({ template, onDragStart }: TemplateCardProps) {
-	const duration = useMemo(
-		() => calculateDuration(template.startTime, template.endTime),
-		[template.startTime, template.endTime],
-	);
+	const duration = calculateDuration(template.startTime, template.endTime);
 
 	const backgroundColor = template.color || "#3b82f6";
 
@@ -87,7 +83,7 @@ export function TemplateSidebar({
 	onTemplateDrop: _onTemplateDrop,
 }: TemplateSidebarProps) {
 	const { t } = useTranslate();
-	const activeTemplates = useMemo(() => templates.filter((t) => t.isActive), [templates]);
+	const activeTemplates = templates.filter((t) => t.isActive);
 
 	const handleDragStart = (e: React.DragEvent, template: ShiftTemplate) => {
 		e.dataTransfer.setData("application/json", JSON.stringify(template));

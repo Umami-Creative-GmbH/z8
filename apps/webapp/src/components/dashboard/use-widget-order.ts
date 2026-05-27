@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/query/keys";
 import { getUserSettings, updateWidgetOrder } from "./actions";
@@ -54,11 +53,11 @@ export function useWidgetOrder() {
 		staleTime: 1000 * 60 * 5, // 5 minutes
 	});
 
-	const layout = useMemo<WidgetLayout>(() => {
+	const layout = (() => {
 		return normalizeWidgetLayout(settings?.dashboardWidgetOrder ?? null);
-	}, [settings?.dashboardWidgetOrder]);
+	})();
 
-	const getLatestLayout = useCallback(() => {
+	const getLatestLayout = () => {
 		const cachedSettings = queryClient.getQueryData<WidgetOrderSettings>(
 			queryKeys.dashboard.widgetOrder(),
 		);
@@ -68,7 +67,7 @@ export function useWidgetOrder() {
 		}
 
 		return normalizeWidgetLayout(cachedSettings.dashboardWidgetOrder ?? null);
-	}, [layout, queryClient]);
+	};
 
 	// Mutation for saving widget layout
 	const { mutate: saveLayout, isPending: isSaving } = useMutation({
@@ -124,49 +123,42 @@ export function useWidgetOrder() {
 		// Only refetch on error (handled in onError with rollback)
 	});
 
-	const hiddenSet = useMemo(() => new Set(layout.hidden), [layout.hidden]);
+	const hiddenSet = new Set(layout.hidden);
 
-	const visibleWidgetOrder = useMemo<WidgetId[]>(() => {
+	const visibleWidgetOrder = (() => {
 		return layout.order.filter((widgetId) => !hiddenSet.has(widgetId));
-	}, [hiddenSet, layout.order]);
+	})();
 
 	// Handler for when widgets are reordered
-	const onReorder = useCallback(
-		(newVisibleOrder: WidgetId[]) => {
-			const latestLayout = getLatestLayout();
+	const onReorder = (newVisibleOrder: WidgetId[]) => {
+		const latestLayout = getLatestLayout();
 
-			saveLayout({
-				order: mergeVisibleWidgetOrder(latestLayout.order, newVisibleOrder, latestLayout.hidden),
-				hidden: latestLayout.hidden,
-				version: 1,
-			});
-		},
-		[getLatestLayout, saveLayout],
-	);
+		saveLayout({
+			order: mergeVisibleWidgetOrder(latestLayout.order, newVisibleOrder, latestLayout.hidden),
+			hidden: latestLayout.hidden,
+			version: 1,
+		});
+	};
 
-	const onVisibilityChange = useCallback(
-		(widgetId: WidgetId, visible: boolean) => {
-			const latestLayout = getLatestLayout();
-			const nextHidden = visible
-				? latestLayout.hidden.filter((hiddenWidgetId) => hiddenWidgetId !== widgetId)
-				: [...latestLayout.hidden, widgetId].filter(
-						(hiddenWidgetId, index, hiddenWidgets) =>
-							hiddenWidgets.indexOf(hiddenWidgetId) === index,
-					);
+	const onVisibilityChange = (widgetId: WidgetId, visible: boolean) => {
+		const latestLayout = getLatestLayout();
+		const nextHidden = visible
+			? latestLayout.hidden.filter((hiddenWidgetId) => hiddenWidgetId !== widgetId)
+			: [...latestLayout.hidden, widgetId].filter(
+					(hiddenWidgetId, index, hiddenWidgets) => hiddenWidgets.indexOf(hiddenWidgetId) === index,
+				);
 
-			saveLayout({
-				order: latestLayout.order,
-				hidden: nextHidden,
-				version: 1,
-			});
-		},
-		[getLatestLayout, saveLayout],
-	);
+		saveLayout({
+			order: latestLayout.order,
+			hidden: nextHidden,
+			version: 1,
+		});
+	};
 
 	// Reset to default order
-	const resetOrder = useCallback(() => {
+	const resetOrder = () => {
 		saveLayout({ order: DEFAULT_WIDGET_ORDER, hidden: [], version: 1 });
-	}, [saveLayout]);
+	};
 
 	return {
 		/** Current widget order */

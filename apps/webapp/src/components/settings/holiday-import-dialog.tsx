@@ -10,16 +10,13 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { startTransition, useCallback, useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
 	bulkAddHolidaysToPreset,
 	createHolidayPreset,
 	createPresetAssignment,
 } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -29,6 +26,9 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -146,7 +146,7 @@ export function HolidayImportDialog({
 	const currentYear = new Date().getFullYear();
 	const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
-	const loadCountries = useCallback(async () => {
+	const loadCountries = async () => {
 		setCountriesLoading(true);
 		const response = await fetch("/api/location/countries").catch((error) => {
 			console.error("Failed to load countries:", error);
@@ -167,9 +167,9 @@ export function HolidayImportDialog({
 		}
 
 		setCountriesLoading(false);
-	}, []);
+	};
 
-	const resetDialogState = useCallback(() => {
+	const resetDialogState = () => {
 		setStep(1);
 		setSelectedCountry("");
 		setSelectedState("");
@@ -183,7 +183,7 @@ export function HolidayImportDialog({
 		setPresetName("");
 		setPresetColor("#4F46E5");
 		setSetAsOrgDefault(false);
-	}, []);
+	};
 
 	useEffect(() => {
 		if (!open) {
@@ -203,12 +203,12 @@ export function HolidayImportDialog({
 
 	async function loadStates(country: string) {
 		setStatesLoading(true);
-		const response = await fetch(`/api/location/states?country=${encodeURIComponent(country)}`).catch(
-			(error) => {
-				console.error("Failed to load states:", error);
-				return null;
-			},
-		);
+		const response = await fetch(
+			`/api/location/states?country=${encodeURIComponent(country)}`,
+		).catch((error) => {
+			console.error("Failed to load states:", error);
+			return null;
+		});
 
 		if (!response) {
 			setStatesLoading(false);
@@ -503,329 +503,332 @@ export function HolidayImportDialog({
 				</ActionPanelHeader>
 
 				<ActionPanelBody className="space-y-4">
-				{/* Step indicator */}
-				<div className="flex items-center justify-center gap-2">
-					<div
-						className={cn(
-							"flex size-8 items-center justify-center rounded-full text-sm font-medium",
-							step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
-						)}
-					>
-						1
-					</div>
-					<div className={cn("h-0.5 w-12", step >= 2 ? "bg-primary" : "bg-muted")} />
-					<div
-						className={cn(
-							"flex size-8 items-center justify-center rounded-full text-sm font-medium",
-							step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
-						)}
-					>
-						2
-					</div>
-					<div className={cn("h-0.5 w-12", step >= 3 ? "bg-primary" : "bg-muted")} />
-					<div
-						className={cn(
-							"flex size-8 items-center justify-center rounded-full text-sm font-medium",
-							step >= 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
-						)}
-					>
-						3
-					</div>
-				</div>
-
-				{/* Step content */}
-				<div>
-					{step === 1 && (
-						<div className="space-y-4">
-							<h3 className="font-medium">
-								{t("settings.holidays.import.step1.title", "Select Location")}
-							</h3>
-
-							{/* Country */}
-							<div className="space-y-2">
-								<Label>{t("settings.holidays.import.country", "Country")}</Label>
-								<SearchableSelect
-									options={countries}
-									value={selectedCountry}
-									onValueChange={handleCountryChange}
-									placeholder={t("settings.holidays.import.selectCountry", "Select a country")}
-									searchPlaceholder={t(
-										"settings.holidays.import.searchCountry",
-										"Search countries...",
-									)}
-									emptyText={t("settings.holidays.import.noCountryFound", "No country found")}
-									disabled={countriesLoading}
-								/>
-							</div>
-
-							{/* State - show skeleton when loading, content when loaded */}
-							{selectedCountry && (statesLoading || states.length > 0) && (
-								<div className="space-y-2">
-									<Label>{t("settings.holidays.import.state", "State / Region")}</Label>
-									{statesLoading ? (
-										<div className="space-y-2">
-											<Skeleton className="h-10 w-full" />
-											<p className="text-xs text-muted-foreground">
-												{t("settings.holidays.import.loadingStates", "Loading states...")}
-											</p>
-										</div>
-									) : (
-										<SearchableSelect
-											options={states}
-											value={selectedState}
-											onValueChange={handleStateChange}
-											placeholder={t(
-												"settings.holidays.import.selectState",
-												"Select a state (optional)",
-											)}
-											searchPlaceholder={t(
-												"settings.holidays.import.searchState",
-												"Search states...",
-											)}
-											emptyText={t("settings.holidays.import.noStateFound", "No state found")}
-											disabled={statesLoading}
-											allowEmpty
-											emptyLabel={t(
-												"settings.holidays.import.allStates",
-												"All (country-wide only)",
-											)}
-										/>
-									)}
-								</div>
+					{/* Step indicator */}
+					<div className="flex items-center justify-center gap-2">
+						<div
+							className={cn(
+								"flex size-8 items-center justify-center rounded-full text-sm font-medium",
+								step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
 							)}
-
-							{/* Region - show skeleton when loading, content when loaded */}
-							{selectedState && (regionsLoading || regions.length > 0) && (
-								<div className="space-y-2">
-									<Label>{t("settings.holidays.import.region", "Region")}</Label>
-									{regionsLoading ? (
-										<div className="space-y-2">
-											<Skeleton className="h-10 w-full" />
-											<p className="text-xs text-muted-foreground">
-												{t("settings.holidays.import.loadingRegions", "Loading regions...")}
-											</p>
-										</div>
-									) : (
-										<SearchableSelect
-											options={regions}
-											value={selectedRegion}
-											onValueChange={setSelectedRegion}
-											placeholder={t(
-												"settings.holidays.import.selectRegion",
-												"Select a region (optional)",
-											)}
-											searchPlaceholder={t(
-												"settings.holidays.import.searchRegion",
-												"Search regions...",
-											)}
-											emptyText={t("settings.holidays.import.noRegionFound", "No region found")}
-											disabled={regionsLoading}
-											allowEmpty
-											emptyLabel={t("settings.holidays.import.allRegions", "All (state-wide only)")}
-										/>
-									)}
-								</div>
-							)}
-
-							{/* Year */}
-							<div className="space-y-2">
-								<Label>{t("settings.holidays.import.year", "Year")}</Label>
-								<Select
-									value={selectedYear.toString()}
-									onValueChange={(v) => setSelectedYear(parseInt(v, 10))}
-								>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										{yearOptions.map((year) => (
-											<SelectItem key={year} value={year.toString()}>
-												{year}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-
-							{/* Holiday Types */}
-							<div className="space-y-2">
-								<Label>{t("settings.holidays.import.types", "Holiday Types")}</Label>
-								<div className="flex flex-wrap gap-2">
-									{HOLIDAY_TYPES.map((type) => (
-										<label key={type.value} className="flex items-center gap-2 cursor-pointer">
-											<Checkbox
-												checked={selectedTypes.includes(type.value)}
-												onCheckedChange={() => toggleType(type.value)}
-											/>
-											<span className="text-sm">{type.label}</span>
-										</label>
-									))}
-								</div>
-							</div>
+						>
+							1
 						</div>
-					)}
+						<div className={cn("h-0.5 w-12", step >= 2 ? "bg-primary" : "bg-muted")} />
+						<div
+							className={cn(
+								"flex size-8 items-center justify-center rounded-full text-sm font-medium",
+								step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+							)}
+						>
+							2
+						</div>
+						<div className={cn("h-0.5 w-12", step >= 3 ? "bg-primary" : "bg-muted")} />
+						<div
+							className={cn(
+								"flex size-8 items-center justify-center rounded-full text-sm font-medium",
+								step >= 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+							)}
+						>
+							3
+						</div>
+					</div>
 
-					{step === 2 && (
-						<div className="space-y-4">
-							<div className="flex items-center justify-between">
+					{/* Step content */}
+					<div>
+						{step === 1 && (
+							<div className="space-y-4">
 								<h3 className="font-medium">
-									{t("settings.holidays.import.step2.title", "Select Holidays")}
+									{t("settings.holidays.import.step1.title", "Select Location")}
 								</h3>
-								<div className="flex gap-2">
-									<Button variant="outline" size="sm" onClick={selectAll}>
-										{t("common.selectAll", "Select All")}
-									</Button>
-									<Button variant="outline" size="sm" onClick={deselectAll}>
-										{t("common.deselectAll", "Deselect All")}
-									</Button>
+
+								{/* Country */}
+								<div className="space-y-2">
+									<Label>{t("settings.holidays.import.country", "Country")}</Label>
+									<SearchableSelect
+										options={countries}
+										value={selectedCountry}
+										onValueChange={handleCountryChange}
+										placeholder={t("settings.holidays.import.selectCountry", "Select a country")}
+										searchPlaceholder={t(
+											"settings.holidays.import.searchCountry",
+											"Search countries...",
+										)}
+										emptyText={t("settings.holidays.import.noCountryFound", "No country found")}
+										disabled={countriesLoading}
+									/>
+								</div>
+
+								{/* State - show skeleton when loading, content when loaded */}
+								{selectedCountry && (statesLoading || states.length > 0) && (
+									<div className="space-y-2">
+										<Label>{t("settings.holidays.import.state", "State / Region")}</Label>
+										{statesLoading ? (
+											<div className="space-y-2">
+												<Skeleton className="h-10 w-full" />
+												<p className="text-xs text-muted-foreground">
+													{t("settings.holidays.import.loadingStates", "Loading states...")}
+												</p>
+											</div>
+										) : (
+											<SearchableSelect
+												options={states}
+												value={selectedState}
+												onValueChange={handleStateChange}
+												placeholder={t(
+													"settings.holidays.import.selectState",
+													"Select a state (optional)",
+												)}
+												searchPlaceholder={t(
+													"settings.holidays.import.searchState",
+													"Search states...",
+												)}
+												emptyText={t("settings.holidays.import.noStateFound", "No state found")}
+												disabled={statesLoading}
+												allowEmpty
+												emptyLabel={t(
+													"settings.holidays.import.allStates",
+													"All (country-wide only)",
+												)}
+											/>
+										)}
+									</div>
+								)}
+
+								{/* Region - show skeleton when loading, content when loaded */}
+								{selectedState && (regionsLoading || regions.length > 0) && (
+									<div className="space-y-2">
+										<Label>{t("settings.holidays.import.region", "Region")}</Label>
+										{regionsLoading ? (
+											<div className="space-y-2">
+												<Skeleton className="h-10 w-full" />
+												<p className="text-xs text-muted-foreground">
+													{t("settings.holidays.import.loadingRegions", "Loading regions...")}
+												</p>
+											</div>
+										) : (
+											<SearchableSelect
+												options={regions}
+												value={selectedRegion}
+												onValueChange={setSelectedRegion}
+												placeholder={t(
+													"settings.holidays.import.selectRegion",
+													"Select a region (optional)",
+												)}
+												searchPlaceholder={t(
+													"settings.holidays.import.searchRegion",
+													"Search regions...",
+												)}
+												emptyText={t("settings.holidays.import.noRegionFound", "No region found")}
+												disabled={regionsLoading}
+												allowEmpty
+												emptyLabel={t(
+													"settings.holidays.import.allRegions",
+													"All (state-wide only)",
+												)}
+											/>
+										)}
+									</div>
+								)}
+
+								{/* Year */}
+								<div className="space-y-2">
+									<Label>{t("settings.holidays.import.year", "Year")}</Label>
+									<Select
+										value={selectedYear.toString()}
+										onValueChange={(v) => setSelectedYear(parseInt(v, 10))}
+									>
+										<SelectTrigger>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{yearOptions.map((year) => (
+												<SelectItem key={year} value={year.toString()}>
+													{year}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+
+								{/* Holiday Types */}
+								<div className="space-y-2">
+									<Label>{t("settings.holidays.import.types", "Holiday Types")}</Label>
+									<div className="flex flex-wrap gap-2">
+										{HOLIDAY_TYPES.map((type) => (
+											<label key={type.value} className="flex items-center gap-2 cursor-pointer">
+												<Checkbox
+													checked={selectedTypes.includes(type.value)}
+													onCheckedChange={() => toggleType(type.value)}
+												/>
+												<span className="text-sm">{type.label}</span>
+											</label>
+										))}
+									</div>
 								</div>
 							</div>
+						)}
 
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"settings.holidays.import.step2.description",
-									"Found {count} holidays for {country}{state}. {duplicates} already exist.",
-									{
-										count: holidays.length,
-										country: selectedCountryName,
-										state: selectedStateName ? ` / ${selectedStateName}` : "",
-										duplicates: holidays.filter((h) => h.isDuplicate).length,
-									},
-								)}
-							</p>
+						{step === 2 && (
+							<div className="space-y-4">
+								<div className="flex items-center justify-between">
+									<h3 className="font-medium">
+										{t("settings.holidays.import.step2.title", "Select Holidays")}
+									</h3>
+									<div className="flex gap-2">
+										<Button variant="outline" size="sm" onClick={selectAll}>
+											{t("common.selectAll", "Select All")}
+										</Button>
+										<Button variant="outline" size="sm" onClick={deselectAll}>
+											{t("common.deselectAll", "Deselect All")}
+										</Button>
+									</div>
+								</div>
 
-							<div className="border rounded-lg max-h-[300px] overflow-y-auto">
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead className="w-12" />
-											<TableHead>{t("settings.holidays.import.name", "Name")}</TableHead>
-											<TableHead>{t("settings.holidays.import.date", "Date")}</TableHead>
-											<TableHead>{t("settings.holidays.import.type", "Type")}</TableHead>
-											<TableHead>{t("settings.holidays.import.status", "Status")}</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{holidays.map((holiday) => (
-											<TableRow
-												key={holiday.name}
-												className={cn(holiday.isDuplicate && "opacity-60")}
-											>
-												<TableCell>
-													<Checkbox
-														checked={selectedHolidays.has(holiday.name)}
-														onCheckedChange={() => toggleHoliday(holiday.name)}
-													/>
-												</TableCell>
-												<TableCell className="font-medium">{holiday.name}</TableCell>
-												<TableCell>{formatHolidayPreviewDate(holiday.startDate)}</TableCell>
-												<TableCell>
-													<Badge variant="outline" className="capitalize">
-														{holiday.type}
-													</Badge>
-												</TableCell>
-												<TableCell>
-													{holiday.isDuplicate ? (
-														<span className="flex items-center gap-1 text-amber-600">
-															<IconAlertTriangle className="size-4" />
-															{t("settings.holidays.import.duplicate", "Exists")}
-														</span>
-													) : (
-														<span className="flex items-center gap-1 text-green-600">
-															<IconCheck className="size-4" />
-															{t("settings.holidays.import.new", "New")}
-														</span>
-													)}
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							</div>
-						</div>
-					)}
-
-					{step === 3 && (
-						<div className="space-y-4">
-							<h3 className="font-medium">
-								{t("settings.holidays.import.step3.title", "Create Holiday Preset")}
-							</h3>
-
-							{/* Preset Name */}
-							<div className="space-y-2">
-								<Label>{t("settings.holidays.import.presetName", "Preset Name")}</Label>
-								<Input
-									value={presetName}
-									onChange={(e) => setPresetName(e.target.value)}
-									placeholder={t(
-										"settings.holidays.import.presetNamePlaceholder",
-										"e.g., Germany - Bavaria",
-									)}
-								/>
 								<p className="text-sm text-muted-foreground">
 									{t(
-										"settings.holidays.import.presetNameHint",
-										"This name will be used to identify the preset when assigning to teams or employees",
+										"settings.holidays.import.step2.description",
+										"Found {count} holidays for {country}{state}. {duplicates} already exist.",
+										{
+											count: holidays.length,
+											country: selectedCountryName,
+											state: selectedStateName ? ` / ${selectedStateName}` : "",
+											duplicates: holidays.filter((h) => h.isDuplicate).length,
+										},
 									)}
 								</p>
-							</div>
 
-							{/* Preset Color */}
-							<div className="space-y-2">
-								<Label>{t("settings.holidays.import.presetColor", "Color")}</Label>
-								<div className="flex gap-2">
+								<div className="border rounded-lg max-h-[300px] overflow-y-auto">
+									<Table>
+										<TableHeader>
+											<TableRow>
+												<TableHead className="w-12" />
+												<TableHead>{t("settings.holidays.import.name", "Name")}</TableHead>
+												<TableHead>{t("settings.holidays.import.date", "Date")}</TableHead>
+												<TableHead>{t("settings.holidays.import.type", "Type")}</TableHead>
+												<TableHead>{t("settings.holidays.import.status", "Status")}</TableHead>
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{holidays.map((holiday) => (
+												<TableRow
+													key={holiday.name}
+													className={cn(holiday.isDuplicate && "opacity-60")}
+												>
+													<TableCell>
+														<Checkbox
+															checked={selectedHolidays.has(holiday.name)}
+															onCheckedChange={() => toggleHoliday(holiday.name)}
+														/>
+													</TableCell>
+													<TableCell className="font-medium">{holiday.name}</TableCell>
+													<TableCell>{formatHolidayPreviewDate(holiday.startDate)}</TableCell>
+													<TableCell>
+														<Badge variant="outline" className="capitalize">
+															{holiday.type}
+														</Badge>
+													</TableCell>
+													<TableCell>
+														{holiday.isDuplicate ? (
+															<span className="flex items-center gap-1 text-amber-600">
+																<IconAlertTriangle className="size-4" />
+																{t("settings.holidays.import.duplicate", "Exists")}
+															</span>
+														) : (
+															<span className="flex items-center gap-1 text-green-600">
+																<IconCheck className="size-4" />
+																{t("settings.holidays.import.new", "New")}
+															</span>
+														)}
+													</TableCell>
+												</TableRow>
+											))}
+										</TableBody>
+									</Table>
+								</div>
+							</div>
+						)}
+
+						{step === 3 && (
+							<div className="space-y-4">
+								<h3 className="font-medium">
+									{t("settings.holidays.import.step3.title", "Create Holiday Preset")}
+								</h3>
+
+								{/* Preset Name */}
+								<div className="space-y-2">
+									<Label>{t("settings.holidays.import.presetName", "Preset Name")}</Label>
 									<Input
-										type="color"
-										value={presetColor}
-										onChange={(e) => setPresetColor(e.target.value)}
-										className="w-12 h-10 p-1 cursor-pointer"
+										value={presetName}
+										onChange={(e) => setPresetName(e.target.value)}
+										placeholder={t(
+											"settings.holidays.import.presetNamePlaceholder",
+											"e.g., Germany - Bavaria",
+										)}
 									/>
-									<Input
-										value={presetColor}
-										onChange={(e) => setPresetColor(e.target.value)}
-										placeholder="#4F46E5"
-										className="flex-1"
-									/>
-								</div>
-							</div>
-
-							{/* Summary */}
-							<div className="rounded-lg border p-4 space-y-3 bg-muted/50">
-								<div className="flex justify-between">
-									<span className="text-muted-foreground">
-										{t("settings.holidays.import.location", "Location")}
-									</span>
-									<span className="font-medium">
-										{selectedCountryName}
-										{selectedStateName && ` / ${selectedStateName}`}
-									</span>
-								</div>
-								<div className="flex justify-between">
-									<span className="text-muted-foreground">
-										{t("settings.holidays.import.holidaysSelected", "Holidays to import")}
-									</span>
-									<span className="font-medium">{selectedHolidays.size}</span>
-								</div>
-							</div>
-
-							{/* Set as org default option */}
-							<div className="flex items-center justify-between rounded-lg border p-3">
-								<div className="space-y-0.5">
-									<Label>
-										{t("settings.holidays.import.setAsDefault", "Set as organization default")}
-									</Label>
 									<p className="text-sm text-muted-foreground">
 										{t(
-											"settings.holidays.import.setAsDefaultDesc",
-											"This preset will be applied to all employees unless overridden",
+											"settings.holidays.import.presetNameHint",
+											"This name will be used to identify the preset when assigning to teams or employees",
 										)}
 									</p>
 								</div>
-								<Switch checked={setAsOrgDefault} onCheckedChange={setSetAsOrgDefault} />
+
+								{/* Preset Color */}
+								<div className="space-y-2">
+									<Label>{t("settings.holidays.import.presetColor", "Color")}</Label>
+									<div className="flex gap-2">
+										<Input
+											type="color"
+											value={presetColor}
+											onChange={(e) => setPresetColor(e.target.value)}
+											className="w-12 h-10 p-1 cursor-pointer"
+										/>
+										<Input
+											value={presetColor}
+											onChange={(e) => setPresetColor(e.target.value)}
+											placeholder="#4F46E5"
+											className="flex-1"
+										/>
+									</div>
+								</div>
+
+								{/* Summary */}
+								<div className="rounded-lg border p-4 space-y-3 bg-muted/50">
+									<div className="flex justify-between">
+										<span className="text-muted-foreground">
+											{t("settings.holidays.import.location", "Location")}
+										</span>
+										<span className="font-medium">
+											{selectedCountryName}
+											{selectedStateName && ` / ${selectedStateName}`}
+										</span>
+									</div>
+									<div className="flex justify-between">
+										<span className="text-muted-foreground">
+											{t("settings.holidays.import.holidaysSelected", "Holidays to import")}
+										</span>
+										<span className="font-medium">{selectedHolidays.size}</span>
+									</div>
+								</div>
+
+								{/* Set as org default option */}
+								<div className="flex items-center justify-between rounded-lg border p-3">
+									<div className="space-y-0.5">
+										<Label>
+											{t("settings.holidays.import.setAsDefault", "Set as organization default")}
+										</Label>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"settings.holidays.import.setAsDefaultDesc",
+												"This preset will be applied to all employees unless overridden",
+											)}
+										</p>
+									</div>
+									<Switch checked={setAsOrgDefault} onCheckedChange={setSetAsOrgDefault} />
+								</div>
 							</div>
-						</div>
-					)}
-				</div>
+						)}
+					</div>
 				</ActionPanelBody>
 
 				<ActionPanelFooter className="flex-shrink-0">

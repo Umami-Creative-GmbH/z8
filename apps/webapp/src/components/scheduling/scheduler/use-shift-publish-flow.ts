@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { publishShifts } from "@/app/[locale]/(app)/scheduling/actions";
 import type { DateRange, PublishAcknowledgmentInput } from "@/app/[locale]/(app)/scheduling/types";
@@ -58,11 +58,11 @@ export function useShiftPublishFlow({ organizationId, dateRange }: UseShiftPubli
 		},
 	});
 
-	const publish = useCallback(() => {
+	const publish = () => {
 		publishMutation.mutate(null);
-	}, [publishMutation]);
+	};
 
-	const confirmPublish = useCallback(() => {
+	const confirmPublish = () => {
 		if (!pendingAcknowledgment) {
 			return;
 		}
@@ -70,7 +70,7 @@ export function useShiftPublishFlow({ organizationId, dateRange }: UseShiftPubli
 		publishMutation.mutate({
 			evaluationFingerprint: pendingAcknowledgment.evaluationFingerprint,
 		});
-	}, [pendingAcknowledgment, publishMutation]);
+	};
 
 	return {
 		pendingAcknowledgment,

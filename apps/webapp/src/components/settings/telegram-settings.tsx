@@ -13,7 +13,7 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	disconnectTelegramBot,
@@ -589,12 +589,12 @@ function AccountLinkingCard({
 		},
 	});
 
-	const handleCopy = useCallback(async () => {
+	const handleCopy = async () => {
 		if (!linkCode) return;
 		await navigator.clipboard.writeText(linkCode.code);
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
-	}, [linkCode]);
+	};
 
 	return (
 		<Card>

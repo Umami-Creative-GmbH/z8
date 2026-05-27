@@ -16,7 +16,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteWorkPolicy,
@@ -158,7 +158,7 @@ export function WorkPolicyTable({
 	};
 
 	// Filter policies by search
-	const filteredPolicies = useMemo(() => {
+	const filteredPolicies = (() => {
 		if (!policies) return [];
 		if (!search) return policies;
 
@@ -168,202 +168,203 @@ export function WorkPolicyTable({
 				policy.name.toLowerCase().includes(searchLower) ||
 				policy.description?.toLowerCase().includes(searchLower),
 		);
-	}, [policies, search]);
+	})();
 
 	// Column definitions
-	const columns = useMemo<ColumnDef<WorkPolicyWithDetails>[]>(
-		() => [
-			{
-				accessorKey: "name",
-				header: t("settings.workPolicies.name", "Name"),
-				cell: ({ row }) => (
-					<div className="max-w-[300px]">
-						<div className="flex items-center gap-2">
-							<span className="font-medium truncate">{row.original.name}</span>
-							{row.original.isDefault && (
-								<TooltipProvider>
-									<Tooltip>
-										<TooltipTrigger>
-											<IconStar className="size-4 text-yellow-500 fill-yellow-500 shrink-0" />
-										</TooltipTrigger>
-										<TooltipContent>
-											{t("settings.workPolicies.defaultPolicy", "Default policy")}
-										</TooltipContent>
-									</Tooltip>
-								</TooltipProvider>
-							)}
-						</div>
-						{row.original.description && (
+	const columns = [
+		{
+			accessorKey: "name",
+			header: t("settings.workPolicies.name", "Name"),
+			cell: ({ row }) => (
+				<div className="max-w-[300px]">
+					<div className="flex items-center gap-2">
+						<span className="font-medium truncate">{row.original.name}</span>
+						{row.original.isDefault && (
 							<TooltipProvider>
 								<Tooltip>
-									<TooltipTrigger asChild>
-										<p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-											{row.original.description}
-										</p>
+									<TooltipTrigger>
+										<IconStar className="size-4 text-yellow-500 fill-yellow-500 shrink-0" />
 									</TooltipTrigger>
-									<TooltipContent className="max-w-sm">
-										<p>{row.original.description}</p>
+									<TooltipContent>
+										{t("settings.workPolicies.defaultPolicy", "Default policy")}
 									</TooltipContent>
 								</Tooltip>
 							</TooltipProvider>
 						)}
 					</div>
-				),
-			},
-			{
-				accessorKey: "features",
-				header: () => (
-					<div className="text-center">{t("settings.workPolicies.features", "Features")}</div>
-				),
-				cell: ({ row }) => (
-					<div className="flex justify-center gap-1">
-						{row.original.scheduleEnabled && (
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger>
-										<Badge variant="outline" className="gap-1">
-											<IconCalendar className="size-3" />
-											{t("settings.workPolicies.schedule", "Schedule")}
-										</Badge>
-									</TooltipTrigger>
-									<TooltipContent>
-										{t("settings.workPolicies.scheduleEnabled", "Work schedule enabled")}
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						)}
-						{row.original.regulationEnabled && (
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger>
-										<Badge variant="outline" className="gap-1">
-											<IconGavel className="size-3" />
-											{t("settings.workPolicies.regulation", "Regulation")}
-										</Badge>
-									</TooltipTrigger>
-									<TooltipContent>
-										{t("settings.workPolicies.regulationEnabled", "Time regulation enabled")}
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						)}
-						{row.original.presenceEnabled && (
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger>
-										<Badge variant="outline" className="gap-1">
-											<IconMapPin className="size-3" />
-											{t("settings.workPolicies.presenceEnabled", "Presence")}
-										</Badge>
-									</TooltipTrigger>
-									<TooltipContent>
-										{row.original.presence
-											? row.original.presence.presenceMode === "minimum_count"
-												? t("settings.workPolicies.presenceSummaryDaysPerWeek", "{count} days/{period} on-site", {
-													count: row.original.presence.requiredOnsiteDays,
-													period: row.original.presence.evaluationPeriod,
-												})
-												: t("settings.workPolicies.presenceSummaryFixedDays", "Fixed days on-site")
-											: t("settings.workPolicies.presenceEnabledTooltip", "On-site presence required")
-										}
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						)}
-					</div>
-				),
-			},
-			{
-				accessorKey: "scheduleHours",
-				header: () => (
-					<div className="text-center">
-						{t("settings.workPolicies.weeklyHours", "Weekly Hours")}
-					</div>
-				),
-				cell: ({ row }) => {
-					if (!row.original.scheduleEnabled || !row.original.schedule) {
-						return <div className="text-center text-muted-foreground">—</div>;
-					}
-					const schedule = row.original.schedule;
-					if (schedule.scheduleType === "simple" && schedule.hoursPerCycle) {
-						return <div className="text-center tabular-nums">{schedule.hoursPerCycle}h</div>;
-					}
-					if (schedule.scheduleType === "detailed" && schedule.days) {
-						const totalHours = schedule.days
-							.filter((d) => d.isWorkDay)
-							.reduce((sum, d) => sum + parseFloat(d.hoursPerDay || "0"), 0);
-						return <div className="text-center tabular-nums">{totalHours.toFixed(1)}h</div>;
-					}
+					{row.original.description && (
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+										{row.original.description}
+									</p>
+								</TooltipTrigger>
+								<TooltipContent className="max-w-sm">
+									<p>{row.original.description}</p>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					)}
+				</div>
+			),
+		},
+		{
+			accessorKey: "features",
+			header: () => (
+				<div className="text-center">{t("settings.workPolicies.features", "Features")}</div>
+			),
+			cell: ({ row }) => (
+				<div className="flex justify-center gap-1">
+					{row.original.scheduleEnabled && (
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger>
+									<Badge variant="outline" className="gap-1">
+										<IconCalendar className="size-3" />
+										{t("settings.workPolicies.schedule", "Schedule")}
+									</Badge>
+								</TooltipTrigger>
+								<TooltipContent>
+									{t("settings.workPolicies.scheduleEnabled", "Work schedule enabled")}
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					)}
+					{row.original.regulationEnabled && (
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger>
+									<Badge variant="outline" className="gap-1">
+										<IconGavel className="size-3" />
+										{t("settings.workPolicies.regulation", "Regulation")}
+									</Badge>
+								</TooltipTrigger>
+								<TooltipContent>
+									{t("settings.workPolicies.regulationEnabled", "Time regulation enabled")}
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					)}
+					{row.original.presenceEnabled && (
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger>
+									<Badge variant="outline" className="gap-1">
+										<IconMapPin className="size-3" />
+										{t("settings.workPolicies.presenceEnabled", "Presence")}
+									</Badge>
+								</TooltipTrigger>
+								<TooltipContent>
+									{row.original.presence
+										? row.original.presence.presenceMode === "minimum_count"
+											? t(
+													"settings.workPolicies.presenceSummaryDaysPerWeek",
+													"{count} days/{period} on-site",
+													{
+														count: row.original.presence.requiredOnsiteDays,
+														period: row.original.presence.evaluationPeriod,
+													},
+												)
+											: t("settings.workPolicies.presenceSummaryFixedDays", "Fixed days on-site")
+										: t(
+												"settings.workPolicies.presenceEnabledTooltip",
+												"On-site presence required",
+											)}
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					)}
+				</div>
+			),
+		},
+		{
+			accessorKey: "scheduleHours",
+			header: () => (
+				<div className="text-center">{t("settings.workPolicies.weeklyHours", "Weekly Hours")}</div>
+			),
+			cell: ({ row }) => {
+				if (!row.original.scheduleEnabled || !row.original.schedule) {
 					return <div className="text-center text-muted-foreground">—</div>;
-				},
+				}
+				const schedule = row.original.schedule;
+				if (schedule.scheduleType === "simple" && schedule.hoursPerCycle) {
+					return <div className="text-center tabular-nums">{schedule.hoursPerCycle}h</div>;
+				}
+				if (schedule.scheduleType === "detailed" && schedule.days) {
+					const totalHours = schedule.days
+						.filter((d) => d.isWorkDay)
+						.reduce((sum, d) => sum + parseFloat(d.hoursPerDay || "0"), 0);
+					return <div className="text-center tabular-nums">{totalHours.toFixed(1)}h</div>;
+				}
+				return <div className="text-center text-muted-foreground">—</div>;
 			},
-			{
-				accessorKey: "breakRules",
-				header: () => (
-					<div className="text-center">{t("settings.workPolicies.breakRules", "Break Rules")}</div>
-				),
-				cell: ({ row }) => {
-					if (!row.original.regulationEnabled || !row.original.regulation) {
-						return <div className="text-center text-muted-foreground">—</div>;
-					}
-					return (
-						<div className="text-center">
-							<Badge variant="outline">{row.original.regulation.breakRules?.length || 0}</Badge>
-						</div>
-					);
-				},
+		},
+		{
+			accessorKey: "breakRules",
+			header: () => (
+				<div className="text-center">{t("settings.workPolicies.breakRules", "Break Rules")}</div>
+			),
+			cell: ({ row }) => {
+				if (!row.original.regulationEnabled || !row.original.regulation) {
+					return <div className="text-center text-muted-foreground">—</div>;
+				}
+				return (
+					<div className="text-center">
+						<Badge variant="outline">{row.original.regulation.breakRules?.length || 0}</Badge>
+					</div>
+				);
 			},
-			...(canManagePolicies
-				? [
+		},
+		...(canManagePolicies
+			? [
 					{
 						id: "actions",
 						cell: ({ row }: { row: { original: WorkPolicyWithDetails } }) => (
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="ghost" size="icon" className="size-8">
-								<IconDots className="size-4" />
-								<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => onEditClick(row.original)}>
-								<IconPencil className="mr-2 size-4" />
-								{t("common.edit", "Edit")}
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={() => duplicateMutation.mutate(row.original.id)}
-								disabled={duplicateMutation.isPending}
-							>
-								<IconCopy className="mr-2 size-4" />
-								{t("common.duplicate", "Duplicate")}
-							</DropdownMenuItem>
-							{!row.original.isDefault && (
-								<DropdownMenuItem
-									onClick={() => setDefaultMutation.mutate(row.original.id)}
-									disabled={setDefaultMutation.isPending}
-								>
-									<IconStar className="mr-2 size-4" />
-									{t("settings.workPolicies.setAsDefault", "Set as Default")}
-								</DropdownMenuItem>
-							)}
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								className="text-destructive"
-								onClick={() => handleDeleteClick(row.original)}
-								disabled={row.original.isDefault}
-							>
-								<IconTrash className="mr-2 size-4" />
-								{t("common.delete", "Delete")}
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="ghost" size="icon" className="size-8">
+										<IconDots className="size-4" />
+										<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem onClick={() => onEditClick(row.original)}>
+										<IconPencil className="mr-2 size-4" />
+										{t("common.edit", "Edit")}
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => duplicateMutation.mutate(row.original.id)}
+										disabled={duplicateMutation.isPending}
+									>
+										<IconCopy className="mr-2 size-4" />
+										{t("common.duplicate", "Duplicate")}
+									</DropdownMenuItem>
+									{!row.original.isDefault && (
+										<DropdownMenuItem
+											onClick={() => setDefaultMutation.mutate(row.original.id)}
+											disabled={setDefaultMutation.isPending}
+										>
+											<IconStar className="mr-2 size-4" />
+											{t("settings.workPolicies.setAsDefault", "Set as Default")}
+										</DropdownMenuItem>
+									)}
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										className="text-destructive"
+										onClick={() => handleDeleteClick(row.original)}
+										disabled={row.original.isDefault}
+									>
+										<IconTrash className="mr-2 size-4" />
+										{t("common.delete", "Delete")}
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						),
 					},
 				]
-				: []),
-		],
-		[t, onEditClick, duplicateMutation, setDefaultMutation, canManagePolicies],
-	);
+			: []),
+	];
 
 	if (isLoading) {
 		return (

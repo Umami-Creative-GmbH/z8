@@ -2,7 +2,7 @@
 
 import { IconAlertTriangle, IconLoader2, IconTrash, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { deleteWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions";
 import {
@@ -37,7 +37,7 @@ export function DeleteWorkPeriodDialog({
 	// Get metadata with defaults
 	const metadata = getWorkPeriodDialogMetadata(event);
 
-	const handleDelete = useCallback(async () => {
+	const handleDelete = async () => {
 		setIsDeleting(true);
 		const result = await deleteWorkPeriod(event.id).catch(() => null);
 
@@ -52,7 +52,7 @@ export function DeleteWorkPeriodDialog({
 		}
 
 		setIsDeleting(false);
-	}, [event.id, onDeleteComplete, onOpenChange, t]);
+	};
 
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>

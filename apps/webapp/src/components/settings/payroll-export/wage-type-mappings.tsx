@@ -2,7 +2,7 @@
 
 import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	type DatevConfigResult,
@@ -98,7 +98,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 	const [sageWageTypeName, setSageWageTypeName] = useState<string>("");
 
 	// Memoize loader to avoid dependency warning (async-parallel already applied)
-	const loadData = useCallback(async () => {
+	const loadData = async () => {
 		startTransition(async () => {
 			const [mappingsResult, workCategoriesResult, absenceCategoriesResult] = await Promise.all([
 				getMappingsAction(organizationId),
@@ -116,7 +116,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 				setAbsenceCategories(absenceCategoriesResult.data);
 			}
 		});
-	}, [organizationId]);
+	};
 
 	// Load data on mount
 	useEffect(() => {
@@ -214,23 +214,17 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 
 	// Memoize to prevent array recreation (rerender-hoist-jsx)
 	// Note: Can't fully hoist due to `t()` dependency
-	const specialCategories = useMemo(
-		() => [
-			{ id: "overtime", name: t("settings.payrollExport.specialCategory.overtime", "Overtime") },
-			{
-				id: "holiday_compensation",
-				name: t(
-					"settings.payrollExport.specialCategory.holidayCompensation",
-					"Holiday Compensation",
-				),
-			},
-			{
-				id: "overtime_reduction",
-				name: t("settings.payrollExport.specialCategory.overtimeReduction", "Overtime Reduction"),
-			},
-		],
-		[t],
-	);
+	const specialCategories = [
+		{ id: "overtime", name: t("settings.payrollExport.specialCategory.overtime", "Overtime") },
+		{
+			id: "holiday_compensation",
+			name: t("settings.payrollExport.specialCategory.holidayCompensation", "Holiday Compensation"),
+		},
+		{
+			id: "overtime_reduction",
+			name: t("settings.payrollExport.specialCategory.overtimeReduction", "Overtime Reduction"),
+		},
+	];
 
 	if (!config) {
 		return (

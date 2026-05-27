@@ -11,12 +11,12 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
+	type ChangePolicyRecord,
 	deleteChangePolicy,
 	getChangePolicies,
-	type ChangePolicyRecord,
 } from "@/app/[locale]/(app)/settings/change-policies/actions";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import {
@@ -113,7 +113,7 @@ export function ChangePolicyTable({
 	};
 
 	// Filter policies by search (client-side since typically small list)
-	const filteredPolicies = useMemo(() => {
+	const filteredPolicies = (() => {
 		if (!policies) return [];
 		if (!search) return policies;
 
@@ -123,7 +123,7 @@ export function ChangePolicyTable({
 				policy.name.toLowerCase().includes(searchLower) ||
 				policy.description?.toLowerCase().includes(searchLower),
 		);
-	}, [policies, search]);
+	})();
 
 	// Format days for display
 	const formatDays = (days: number): string => {
@@ -134,88 +134,87 @@ export function ChangePolicyTable({
 	};
 
 	// Column definitions
-	const columns = useMemo<ColumnDef<ChangePolicyRecord>[]>(
-		() => [
-			{
-				accessorKey: "name",
-				header: t("settings.changePolicies.name", "Name"),
-				cell: ({ row }) => (
-					<div>
-						<div className="flex items-center gap-2">
-							<span className="font-medium">{row.original.name}</span>
-							{row.original.noApprovalRequired && (
-								<Badge variant="outline" className="text-xs">
-									{t("settings.changePolicies.trustMode", "Trust Mode")}
-								</Badge>
-							)}
-						</div>
-						{row.original.description && (
-							<p className="text-xs text-muted-foreground mt-0.5">{row.original.description}</p>
-						)}
-					</div>
-				),
-			},
-			{
-				accessorKey: "selfServiceDays",
-				header: () => (
-					<div className="text-center">
-						{t("settings.changePolicies.selfService", "Self-Service")}
-					</div>
-				),
-				cell: ({ row }) => (
-					<div className="text-center">
-						{row.original.noApprovalRequired ? (
-							<span className="text-muted-foreground">—</span>
-						) : (
-							<Badge variant="secondary">{formatDays(row.original.selfServiceDays)}</Badge>
-						)}
-					</div>
-				),
-			},
-			{
-				accessorKey: "approvalDays",
-				header: () => (
-					<div className="text-center">
-						{t("settings.changePolicies.approvalWindow", "Approval Window")}
-					</div>
-				),
-				cell: ({ row }) => (
-					<div className="text-center">
-						{row.original.noApprovalRequired ? (
-							<span className="text-muted-foreground">—</span>
-						) : row.original.selfServiceDays === 0 && row.original.approvalDays === 0 ? (
-							<Badge variant="destructive">
-								{t("settings.changePolicies.allClockOuts", "All clock-outs")}
+	const columns = [
+		{
+			accessorKey: "name",
+			header: t("settings.changePolicies.name", "Name"),
+			cell: ({ row }) => (
+				<div>
+					<div className="flex items-center gap-2">
+						<span className="font-medium">{row.original.name}</span>
+						{row.original.noApprovalRequired && (
+							<Badge variant="outline" className="text-xs">
+								{t("settings.changePolicies.trustMode", "Trust Mode")}
 							</Badge>
-						) : (
-							<Badge variant="outline">{formatDays(row.original.approvalDays)}</Badge>
 						)}
 					</div>
-				),
-			},
-			{
-				accessorKey: "notifyAllManagers",
-				header: () => (
-					<div className="text-center">
-						{t("settings.changePolicies.notification", "Notification")}
-					</div>
-				),
-				cell: ({ row }) => (
-					<div className="text-center text-sm text-muted-foreground">
-						{row.original.noApprovalRequired ? (
-							<span>—</span>
-						) : row.original.notifyAllManagers ? (
-							t("settings.changePolicies.allManagers", "All managers")
-						) : (
-							t("settings.changePolicies.primaryOnly", "Primary only")
-						)}
-					</div>
-				),
-			},
-			{
-				id: "actions",
-				cell: ({ row }) =>
-					canManage ? (
+					{row.original.description && (
+						<p className="text-xs text-muted-foreground mt-0.5">{row.original.description}</p>
+					)}
+				</div>
+			),
+		},
+		{
+			accessorKey: "selfServiceDays",
+			header: () => (
+				<div className="text-center">
+					{t("settings.changePolicies.selfService", "Self-Service")}
+				</div>
+			),
+			cell: ({ row }) => (
+				<div className="text-center">
+					{row.original.noApprovalRequired ? (
+						<span className="text-muted-foreground">—</span>
+					) : (
+						<Badge variant="secondary">{formatDays(row.original.selfServiceDays)}</Badge>
+					)}
+				</div>
+			),
+		},
+		{
+			accessorKey: "approvalDays",
+			header: () => (
+				<div className="text-center">
+					{t("settings.changePolicies.approvalWindow", "Approval Window")}
+				</div>
+			),
+			cell: ({ row }) => (
+				<div className="text-center">
+					{row.original.noApprovalRequired ? (
+						<span className="text-muted-foreground">—</span>
+					) : row.original.selfServiceDays === 0 && row.original.approvalDays === 0 ? (
+						<Badge variant="destructive">
+							{t("settings.changePolicies.allClockOuts", "All clock-outs")}
+						</Badge>
+					) : (
+						<Badge variant="outline">{formatDays(row.original.approvalDays)}</Badge>
+					)}
+				</div>
+			),
+		},
+		{
+			accessorKey: "notifyAllManagers",
+			header: () => (
+				<div className="text-center">
+					{t("settings.changePolicies.notification", "Notification")}
+				</div>
+			),
+			cell: ({ row }) => (
+				<div className="text-center text-sm text-muted-foreground">
+					{row.original.noApprovalRequired ? (
+						<span>—</span>
+					) : row.original.notifyAllManagers ? (
+						t("settings.changePolicies.allManagers", "All managers")
+					) : (
+						t("settings.changePolicies.primaryOnly", "Primary only")
+					)}
+				</div>
+			),
+		},
+		{
+			id: "actions",
+			cell: ({ row }) =>
+				canManage ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button variant="ghost" size="icon" className="size-8">
@@ -238,11 +237,9 @@ export function ChangePolicyTable({
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
-					) : null,
-			},
-		],
-		[t, canManage, formatDays, onEditClick],
-	);
+				) : null,
+		},
+	];
 
 	if (isLoading) {
 		return <DataTableSkeleton columnCount={5} rowCount={5} />;

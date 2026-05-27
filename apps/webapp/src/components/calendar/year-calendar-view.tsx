@@ -2,7 +2,6 @@
 
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { memo, useMemo } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -54,17 +53,13 @@ function getShortWeekdayFormatter(locale: string) {
 
 function getMonthNames(locale: string): string[] {
 	const formatter = getMonthFormatter(locale);
-	return MONTH_INDICES.map((month) =>
-		formatter.format(new Date(2000, month, 1)),
-	);
+	return MONTH_INDICES.map((month) => formatter.format(new Date(2000, month, 1)));
 }
 
 function getWeekdayNames(locale: string): string[] {
 	const formatter = getShortWeekdayFormatter(locale);
 	// Sunday=0 based reference week: Jan 2–8 2000 (Sun–Sat)
-	return Array.from({ length: 7 }, (_, i) =>
-		formatter.format(new Date(2000, 0, 2 + i)),
-	);
+	return Array.from({ length: 7 }, (_, i) => formatter.format(new Date(2000, 0, 2 + i)));
 }
 
 function getDaysInMonth(year: number, month: number): Date[] {
@@ -110,7 +105,7 @@ interface MiniMonthProps {
 	onDayClick?: (date: Date) => void;
 }
 
-const MiniMonth = memo(function MiniMonth({
+const MiniMonth = function MiniMonth({
 	year,
 	month,
 	monthName,
@@ -124,10 +119,11 @@ const MiniMonth = memo(function MiniMonth({
 }: MiniMonthProps) {
 	const days = getDaysInMonth(year, month);
 	const firstDay = getFirstDayOfMonth(year, month, weekStartDay);
-	const dayLabelFormatter = useMemo(
-		() => new Intl.DateTimeFormat(locale, { month: "long", day: "numeric", year: "numeric" }),
-		[locale],
-	);
+	const dayLabelFormatter = new Intl.DateTimeFormat(locale, {
+		month: "long",
+		day: "numeric",
+		year: "numeric",
+	});
 	const today = new Date();
 	const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
@@ -213,7 +209,7 @@ const MiniMonth = memo(function MiniMonth({
 			</div>
 		</div>
 	);
-});
+};
 
 export function YearCalendarView({
 	events,
@@ -231,14 +227,14 @@ export function YearCalendarView({
 	function handleCurrentYearClick() {
 		onYearChange(new Date().getFullYear());
 	}
-	const monthNames = useMemo(() => getMonthNames(locale), [locale]);
-	const weekdays = useMemo(() => {
+	const monthNames = getMonthNames(locale);
+	const weekdays = (() => {
 		const names = getWeekdayNames(locale);
 		return weekStartDay === "monday" ? [...names.slice(1), names[0]] : names;
-	}, [locale, weekStartDay]);
+	})();
 
 	// Group events by date
-	const eventsByDate = useMemo(() => {
+	const eventsByDate = (() => {
 		const map = new Map<string, CalendarEvent[]>();
 		for (const event of events) {
 			const dateKey = format(event.date, "yyyy-MM-dd");
@@ -248,7 +244,7 @@ export function YearCalendarView({
 			map.get(dateKey)?.push(event);
 		}
 		return map;
-	}, [events]);
+	})();
 
 	return (
 		<div className="flex flex-col h-full">
@@ -271,11 +267,7 @@ export function YearCalendarView({
 					>
 						<IconChevronRight className="size-4" />
 					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={handleCurrentYearClick}
-					>
+					<Button variant="outline" size="sm" onClick={handleCurrentYearClick}>
 						{t("calendar.view.today", "Today")}
 					</Button>
 				</div>

@@ -2,7 +2,7 @@
 
 import { IconCheck, IconLoader2, IconMail, IconUserPlus, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,18 +67,14 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 	const [state, setState] = useState<InvitationState>("ready");
 	const [error, setError] = useState<string | null>(null);
 
-	const callbackUrl = useMemo(() => getInvitationCallbackUrl(invitationId), [invitationId]);
-	const signUpUrl = useMemo(
-		() =>
-			getInvitationSignUpUrl(
-				callbackUrl,
-				invitation?.email,
-				invitationId,
-				invitation?.organizationName,
-			),
-		[callbackUrl, invitation?.email, invitation?.organizationName, invitationId],
+	const callbackUrl = getInvitationCallbackUrl(invitationId);
+	const signUpUrl = getInvitationSignUpUrl(
+		callbackUrl,
+		invitation?.email,
+		invitationId,
+		invitation?.organizationName,
 	);
-	const invitationError = useMemo(() => {
+	const invitationError = (() => {
 		if (!invitation) {
 			return t(
 				"auth.invitation-invalid",
@@ -94,16 +90,12 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 		}
 
 		return null;
-	}, [invitation, t]);
+	})();
 	const normalizedInvitedEmail = invitation?.email.trim().toLowerCase() ?? null;
 	const normalizedSessionEmail = session?.user.email?.trim().toLowerCase() ?? null;
-	const emailMismatchMessage = useMemo(
-		() =>
-			t(
-				"auth.invitation-email-mismatch",
-				"This invitation was sent to a different email address. Sign in with the invited email to continue.",
-			),
-		[t],
+	const emailMismatchMessage = t(
+		"auth.invitation-email-mismatch",
+		"This invitation was sent to a different email address. Sign in with the invited email to continue.",
 	);
 	const isEmailMismatch =
 		Boolean(normalizedInvitedEmail) &&
@@ -112,7 +104,7 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 	const fatalError = error ?? invitationError;
 	const displayedError = fatalError ?? (isEmailMismatch ? emailMismatchMessage : null);
 
-	const handleAcceptInvitation = useCallback(async () => {
+	const handleAcceptInvitation = async () => {
 		if (!invitation || invitationError) {
 			setError(
 				invitationError ||
@@ -163,17 +155,7 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 					: t("auth.invitation-accept-failed", "Failed to accept invitation."),
 			);
 		}
-	}, [
-		callbackUrl,
-		emailMismatchMessage,
-		invitation,
-		invitationError,
-		invitationId,
-		isEmailMismatch,
-		router,
-		session,
-		t,
-	]);
+	};
 
 	const handleSignOut = async () => {
 		await authClient.signOut({
@@ -204,10 +186,7 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 				<Card className="border-none shadow-none">
 					<CardHeader className="px-0 text-center">
 						<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-							<IconCheck
-								className="size-8 text-green-600 dark:text-green-400"
-								aria-hidden="true"
-							/>
+							<IconCheck className="size-8 text-green-600 dark:text-green-400" aria-hidden="true" />
 						</div>
 						<CardTitle>{t("auth.invitation-accepted", "Invitation accepted")}</CardTitle>
 						<CardDescription>

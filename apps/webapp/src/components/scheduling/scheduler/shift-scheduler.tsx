@@ -9,7 +9,7 @@ import { createEventModalPlugin } from "@schedule-x/event-modal";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type {
 	DateRange,
 	ShiftTemplate,
@@ -83,62 +83,56 @@ export function ShiftScheduler({
 
 	// Handle event click - Schedule-X passes (event, uiEvent)
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const handleEventClick = useCallback(
-		(event: any, _e: UIEvent) => {
-			const eventId = event?.id as string | undefined;
-			if (!eventId) return;
-			const shift = shifts.find((s) => s.id === eventId);
-			if (shift) {
-				setSelectedShift(shift);
-				setIsShiftDialogOpen(true);
-			}
-		},
-		[shifts],
-	);
+	const handleEventClick = (event: any, _e: UIEvent) => {
+		const eventId = event?.id as string | undefined;
+		if (!eventId) return;
+		const shift = shifts.find((s) => s.id === eventId);
+		if (shift) {
+			setSelectedShift(shift);
+			setIsShiftDialogOpen(true);
+		}
+	};
 
 	// Handle drag end - Schedule-X passes the updated event with Temporal types
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const handleEventUpdate = useCallback(
-		(updatedEvent: any) => {
-			if (!isManager) return;
+	const handleEventUpdate = (updatedEvent: any) => {
+		if (!isManager) return;
 
-			const eventId = updatedEvent?.id as string | undefined;
-			const eventStart = updatedEvent?.start as Temporal.PlainDateTime | undefined;
-			const eventEnd = updatedEvent?.end as Temporal.PlainDateTime | undefined;
-			if (!eventId || !eventStart || !eventEnd) return;
+		const eventId = updatedEvent?.id as string | undefined;
+		const eventStart = updatedEvent?.start as Temporal.PlainDateTime | undefined;
+		const eventEnd = updatedEvent?.end as Temporal.PlainDateTime | undefined;
+		if (!eventId || !eventStart || !eventEnd) return;
 
-			const shift = shifts.find((s) => s.id === eventId);
-			if (!shift) return;
+		const shift = shifts.find((s) => s.id === eventId);
+		if (!shift) return;
 
-			updateShift({
-				id: shift.id,
-				employeeId: shift.employeeId,
-				subareaId: shift.subareaId,
-				date: plainDateTimeToDate(eventStart),
-				startTime: plainDateTimeToTimeString(eventStart),
-				endTime: plainDateTimeToTimeString(eventEnd),
-			});
-		},
-		[isManager, shifts, updateShift],
-	);
+		updateShift({
+			id: shift.id,
+			employeeId: shift.employeeId,
+			subareaId: shift.subareaId,
+			date: plainDateTimeToDate(eventStart),
+			startTime: plainDateTimeToTimeString(eventStart),
+			endTime: plainDateTimeToTimeString(eventEnd),
+		});
+	};
 
 	// Handle date range change from calendar
-	const handleRangeChange = useCallback(
-		(range: { start: Temporal.ZonedDateTime; end: Temporal.ZonedDateTime }) => {
-			setDateRange({
-				start: new Date(range.start.epochMilliseconds),
-				end: new Date(range.end.epochMilliseconds),
-			});
-		},
-		[],
-	);
+	const handleRangeChange = (range: {
+		start: Temporal.ZonedDateTime;
+		end: Temporal.ZonedDateTime;
+	}) => {
+		setDateRange({
+			start: new Date(range.start.epochMilliseconds),
+			end: new Date(range.end.epochMilliseconds),
+		});
+	};
 
 	// Handle template drop (create new shift)
-	const handleTemplateDrop = useCallback((_template: ShiftTemplate, date: Date) => {
+	const handleTemplateDrop = (_template: ShiftTemplate, date: Date) => {
 		setNewShiftDate(date);
 		setSelectedShift(null);
 		setIsShiftDialogOpen(true);
-	}, []);
+	};
 
 	// Create calendar
 	const calendar = useCalendarApp({

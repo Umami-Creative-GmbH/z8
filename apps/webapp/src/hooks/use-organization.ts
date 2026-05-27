@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { ApiError, fetchApi } from "@/lib/fetch";
 import { useRouter } from "@/navigation";
@@ -53,7 +53,7 @@ export function useOrganization(): OrganizationContext {
 	// Track active organization to detect changes
 	const activeOrganizationId = session?.session?.activeOrganizationId;
 
-	const fetchEmployeeContext = useCallback(async () => {
+	const fetchEmployeeContext = async () => {
 		if (!session?.user?.id) {
 			setIsLoading(false);
 			return;
@@ -91,7 +91,7 @@ export function useOrganization(): OrganizationContext {
 		if (shouldFinish) {
 			setIsLoading(false);
 		}
-	}, [session?.user?.id, router, hydrateSettings, resetSettings]);
+	};
 
 	// Re-fetch when session loads or active organization changes
 	useEffect(() => {

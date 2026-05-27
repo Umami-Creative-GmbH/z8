@@ -10,12 +10,10 @@ import {
 } from "@tabler/icons-react";
 import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useMemo } from "react";
 import { DataTable } from "@/components/data-table-server";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
-import { useEmployeeClockStatuses } from "@/lib/query";
 import type {
 	ApprovalPriority,
 	ApprovalType,
@@ -23,6 +21,7 @@ import type {
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
 import { formatRelative } from "@/lib/datetime/luxon-utils";
+import { useEmployeeClockStatuses } from "@/lib/query";
 import { cn } from "@/lib/utils";
 
 interface ApprovalInboxTableProps {
@@ -101,137 +100,131 @@ export function ApprovalInboxTable({
 		{ polling: false },
 	);
 
-	const columns = useMemo<ColumnDef<UnifiedApprovalItem>[]>(
-		() => [
-			// Selection column - uses refs to avoid recreation
-			{
-				id: "select",
-				header: () => null,
-				cell: ({ row }) => (
-					<SelectionCell
-						row={row}
-						selectedIds={selectedIds}
-						onSelectItem={onSelectItem}
-						ariaLabel={ariaLabel}
-					/>
-				),
-				enableSorting: false,
-				enableHiding: false,
-				size: 40,
-			},
-			// Type column
-			{
-				accessorKey: "approvalType",
-				header: t("approvals:approvals.type", "Type"),
-				cell: ({ row }) => {
-					const TypeIcon = TYPE_ICONS[row.original.approvalType] || IconClockEdit;
-					return (
-						<div className="flex items-center gap-2">
-							<TypeIcon className="size-4 text-muted-foreground" aria-hidden="true" />
-							<span className="text-sm">{row.original.typeName}</span>
-						</div>
-					);
-				},
-				size: 150,
-			},
-			// Requester column
-			{
-				accessorKey: "requester",
-				header: t("approvals:approvals.requester", "Requester"),
-				cell: ({ row }) => (
-					<div className="flex items-center gap-3">
-						<UserAvatar
-							image={row.original.requester.image}
-							seed={row.original.requester.userId}
-							name={row.original.requester.name}
-							size="sm"
-							clockStatus={presence.getStatus(row.original.requester.id)}
-						/>
-						<div className="min-w-0">
-							<div className="font-medium truncate">{row.original.requester.name}</div>
-							<div className="text-xs text-muted-foreground truncate">
-								{row.original.requester.email}
-							</div>
-						</div>
-					</div>
-				),
-				size: 200,
-			},
-			// Summary column
-			{
-				accessorKey: "display.summary",
-				header: t("approvals:approvals.details", "Details"),
-				cell: ({ row }) => (
-					<div className="min-w-0">
-						<div className="font-medium truncate">{row.original.display.title}</div>
-						<div className="text-sm text-muted-foreground truncate">
-							{row.original.display.subtitle}
-						</div>
-					</div>
-				),
-			},
-			// Priority column
-			{
-				accessorKey: "priority",
-				header: t("approvals:approvals.priority", "Priority"),
-				cell: ({ row }) => (
-					<Badge variant={PRIORITY_VARIANTS[row.original.priority]}>
-						{t(`approvals:approvals.priorities.${row.original.priority}`, row.original.priority)}
-					</Badge>
-				),
-				size: 100,
-			},
-			// SLA column
-			{
-				accessorKey: "sla",
-				header: t("approvals:approvals.sla", "SLA"),
-				cell: ({ row }) => {
-					const { sla } = row.original;
-					if (!sla.deadline) {
-						return <span className="text-muted-foreground">-</span>;
-					}
-
-					return (
-						<div className={cn("flex items-center gap-1", getSLAStatusColor(sla.status))}>
-							{sla.status === "overdue" && (
-								<IconAlertTriangle className="size-4" aria-hidden="true" />
-							)}
-							{sla.status === "approaching" && <IconClock className="size-4" aria-hidden="true" />}
-							<span className="text-sm">
-								{sla.hoursRemaining !== null
-									? sla.hoursRemaining < 0
-										? `${Math.abs(sla.hoursRemaining)}h overdue`
-										: `${sla.hoursRemaining}h left`
-									: "-"}
-							</span>
-						</div>
-					);
-				},
-				size: 120,
-			},
-			// Age column
-			{
-				accessorKey: "createdAt",
-				header: t("approvals:approvals.requested", "Requested"),
-				cell: ({ row }) => (
-					<span className="text-sm text-muted-foreground">
-						{formatRelative(row.original.createdAt)}
-					</span>
-				),
-				size: 120,
-			},
-		],
-		[t, ariaLabel, presence, selectedIds, onSelectItem],
-	);
-
-	const getRowClassName = useCallback(
-		(row: UnifiedApprovalItem) =>
-			cn(
-				"cursor-pointer hover:bg-muted/50 transition-colors",
-				selectedIds.has(row.id) && "bg-muted/30",
+	const columns = [
+		// Selection column - uses refs to avoid recreation
+		{
+			id: "select",
+			header: () => null,
+			cell: ({ row }) => (
+				<SelectionCell
+					row={row}
+					selectedIds={selectedIds}
+					onSelectItem={onSelectItem}
+					ariaLabel={ariaLabel}
+				/>
 			),
-		[selectedIds],
-	);
+			enableSorting: false,
+			enableHiding: false,
+			size: 40,
+		},
+		// Type column
+		{
+			accessorKey: "approvalType",
+			header: t("approvals:approvals.type", "Type"),
+			cell: ({ row }) => {
+				const TypeIcon = TYPE_ICONS[row.original.approvalType] || IconClockEdit;
+				return (
+					<div className="flex items-center gap-2">
+						<TypeIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+						<span className="text-sm">{row.original.typeName}</span>
+					</div>
+				);
+			},
+			size: 150,
+		},
+		// Requester column
+		{
+			accessorKey: "requester",
+			header: t("approvals:approvals.requester", "Requester"),
+			cell: ({ row }) => (
+				<div className="flex items-center gap-3">
+					<UserAvatar
+						image={row.original.requester.image}
+						seed={row.original.requester.userId}
+						name={row.original.requester.name}
+						size="sm"
+						clockStatus={presence.getStatus(row.original.requester.id)}
+					/>
+					<div className="min-w-0">
+						<div className="font-medium truncate">{row.original.requester.name}</div>
+						<div className="text-xs text-muted-foreground truncate">
+							{row.original.requester.email}
+						</div>
+					</div>
+				</div>
+			),
+			size: 200,
+		},
+		// Summary column
+		{
+			accessorKey: "display.summary",
+			header: t("approvals:approvals.details", "Details"),
+			cell: ({ row }) => (
+				<div className="min-w-0">
+					<div className="font-medium truncate">{row.original.display.title}</div>
+					<div className="text-sm text-muted-foreground truncate">
+						{row.original.display.subtitle}
+					</div>
+				</div>
+			),
+		},
+		// Priority column
+		{
+			accessorKey: "priority",
+			header: t("approvals:approvals.priority", "Priority"),
+			cell: ({ row }) => (
+				<Badge variant={PRIORITY_VARIANTS[row.original.priority]}>
+					{t(`approvals:approvals.priorities.${row.original.priority}`, row.original.priority)}
+				</Badge>
+			),
+			size: 100,
+		},
+		// SLA column
+		{
+			accessorKey: "sla",
+			header: t("approvals:approvals.sla", "SLA"),
+			cell: ({ row }) => {
+				const { sla } = row.original;
+				if (!sla.deadline) {
+					return <span className="text-muted-foreground">-</span>;
+				}
+
+				return (
+					<div className={cn("flex items-center gap-1", getSLAStatusColor(sla.status))}>
+						{sla.status === "overdue" && (
+							<IconAlertTriangle className="size-4" aria-hidden="true" />
+						)}
+						{sla.status === "approaching" && <IconClock className="size-4" aria-hidden="true" />}
+						<span className="text-sm">
+							{sla.hoursRemaining !== null
+								? sla.hoursRemaining < 0
+									? `${Math.abs(sla.hoursRemaining)}h overdue`
+									: `${sla.hoursRemaining}h left`
+								: "-"}
+						</span>
+					</div>
+				);
+			},
+			size: 120,
+		},
+		// Age column
+		{
+			accessorKey: "createdAt",
+			header: t("approvals:approvals.requested", "Requested"),
+			cell: ({ row }) => (
+				<span className="text-sm text-muted-foreground">
+					{formatRelative(row.original.createdAt)}
+				</span>
+			),
+			size: 120,
+		},
+	];
+
+	const getRowClassName = (row: UnifiedApprovalItem) =>
+		cn(
+			"cursor-pointer hover:bg-muted/50 transition-colors",
+			selectedIds.has(row.id) && "bg-muted/30",
+		);
 
 	return (
 		<div className="rounded-md border">

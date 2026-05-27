@@ -2,7 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,25 +36,25 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 	const turnstileRef = useRef<TurnstileRef>(null);
 
-	const handleTurnstileVerify = useCallback((token: string) => {
+	const handleTurnstileVerify = (token: string) => {
 		setTurnstileToken(token);
-	}, []);
+	};
 
-	const handleTurnstileError = useCallback(() => {
+	const handleTurnstileError = () => {
 		setTurnstileToken(null);
 		setError(t("auth.turnstile-error", "Verification failed. Please try again."));
 		turnstileRef.current?.reset();
-	}, [t]);
+	};
 
-	const handleTurnstileExpire = useCallback(() => {
+	const handleTurnstileExpire = () => {
 		setTurnstileToken(null);
 		turnstileRef.current?.reset();
-	}, []);
+	};
 
-	const handleTurnstileTimeout = useCallback(() => {
+	const handleTurnstileTimeout = () => {
 		setTurnstileToken(null);
 		turnstileRef.current?.reset();
-	}, []);
+	};
 
 	const handleChange = (field: string, value: string) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));

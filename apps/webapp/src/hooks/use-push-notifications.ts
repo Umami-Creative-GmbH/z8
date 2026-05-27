@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 
 type PushPermission = "default" | "granted" | "denied" | "unsupported";
 
@@ -129,7 +129,7 @@ export function usePushNotifications(
 	}, []);
 
 	// Request notification permission
-	const requestPermission = useCallback(async (): Promise<NotificationPermission> => {
+	const requestPermission = async (): Promise<NotificationPermission> => {
 		if (!isSupported) {
 			return "denied";
 		}
@@ -143,67 +143,64 @@ export function usePushNotifications(
 			onError?.(error as Error);
 			return "denied";
 		}
-	}, [isSupported, onError]);
+	};
 
 	// Subscribe to push notifications
-	const subscribe = useCallback(
-		async (deviceName?: string): Promise<boolean> => {
-			if (!isSupported || !registration || !vapidPublicKey) {
-				return false;
+	const subscribe = async (deviceName?: string): Promise<boolean> => {
+		if (!isSupported || !registration || !vapidPublicKey) {
+			return false;
+		}
+
+		setIsLoading(true);
+
+		try {
+			// Request permission if not granted
+			let currentPermission = Notification.permission;
+			if (currentPermission === "default") {
+				currentPermission = await requestPermission();
 			}
 
-			setIsLoading(true);
-
-			try {
-				// Request permission if not granted
-				let currentPermission = Notification.permission;
-				if (currentPermission === "default") {
-					currentPermission = await requestPermission();
-				}
-
-				if (currentPermission !== "granted") {
-					setIsLoading(false);
-					return false;
-				}
-
-				// Subscribe to push manager
-				const subscription = await registration.pushManager.subscribe({
-					userVisibleOnly: true,
-					applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-				});
-
-				// Send subscription to server
-				const subscribeResponse = await fetch("/api/notifications/push/subscribe", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						subscription: subscription.toJSON(),
-						deviceName,
-					}),
-				});
-
-				if (!subscribeResponse.ok) {
-					onError?.(new Error("Failed to save subscription on server"));
-					setIsLoading(false);
-					return false;
-				}
-
-				setIsSubscribed(true);
-				onSubscribe?.();
-				setIsLoading(false);
-				return true;
-			} catch (error) {
-				console.error("Failed to subscribe to push notifications:", error);
-				onError?.(error as Error);
+			if (currentPermission !== "granted") {
 				setIsLoading(false);
 				return false;
 			}
-		},
-		[isSupported, registration, requestPermission, vapidPublicKey, onSubscribe, onError],
-	);
+
+			// Subscribe to push manager
+			const subscription = await registration.pushManager.subscribe({
+				userVisibleOnly: true,
+				applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+			});
+
+			// Send subscription to server
+			const subscribeResponse = await fetch("/api/notifications/push/subscribe", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					subscription: subscription.toJSON(),
+					deviceName,
+				}),
+			});
+
+			if (!subscribeResponse.ok) {
+				onError?.(new Error("Failed to save subscription on server"));
+				setIsLoading(false);
+				return false;
+			}
+
+			setIsSubscribed(true);
+			onSubscribe?.();
+			setIsLoading(false);
+			return true;
+		} catch (error) {
+			console.error("Failed to subscribe to push notifications:", error);
+			onError?.(error as Error);
+			setIsLoading(false);
+			return false;
+		}
+	};
 
 	// Unsubscribe from push notifications
-	const unsubscribe = useCallback(async (): Promise<boolean> => {
+	const unsubscribe = async (): Promise<boolean> => {
 		if (!registration) {
 			return false;
 		}
@@ -237,7 +234,7 @@ export function usePushNotifications(
 			setIsLoading(false);
 			return false;
 		}
-	}, [registration, onUnsubscribe, onError]);
+	};
 
 	return {
 		isSupported,

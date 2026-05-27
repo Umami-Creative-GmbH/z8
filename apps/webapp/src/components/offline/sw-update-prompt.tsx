@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 /**
@@ -22,7 +22,7 @@ export function SWUpdatePrompt() {
 	}, [t]);
 
 	// Handle update action - defined before use in effect
-	const handleUpdate = useCallback(() => {
+	const handleUpdate = () => {
 		if (!registration?.waiting) {
 			// No waiting worker, just reload
 			window.location.reload();
@@ -31,7 +31,7 @@ export function SWUpdatePrompt() {
 
 		// Tell waiting SW to skip waiting and take over
 		registration.waiting.postMessage({ type: "SKIP_WAITING" });
-	}, [registration]);
+	};
 
 	// Listen for SW updates
 	useEffect(() => {

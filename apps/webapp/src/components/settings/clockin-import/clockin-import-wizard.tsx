@@ -9,7 +9,7 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	type ClockinEmployeeInfo,
@@ -63,10 +63,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 		},
 	});
 
-	const mappedCount = useMemo(
-		() => mappings.filter((entry) => entry.employeeId != null).length,
-		[mappings],
-	);
+	const mappedCount = mappings.filter((entry) => entry.employeeId != null).length;
 
 	const handleConnect = async () => {
 		setBusyAction("connect");
@@ -171,7 +168,12 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 			}
 
 			setReviewBatchId(scanResult.data.batchId);
-			toast.success(t("settings.clockinImport.review.startSuccess", "Import review scan started. Review is required before records are committed."));
+			toast.success(
+				t(
+					"settings.clockinImport.review.startSuccess",
+					"Import review scan started. Review is required before records are committed.",
+				),
+			);
 			setStep("review");
 		} catch (error) {
 			setBusyAction(null);
@@ -255,9 +257,18 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 					</CardHeader>
 					<CardContent className="space-y-4">
 						<div className="grid gap-3 sm:grid-cols-3">
-							<PreviewStat label={t("settings.clockinImport.preview.employees", "Employees")} value={preview.employees} />
-							<PreviewStat label={t("settings.clockinImport.preview.workdays", "Workdays")} value={preview.workdays} />
-							<PreviewStat label={t("settings.clockinImport.preview.absences", "Absences")} value={preview.absences} />
+							<PreviewStat
+								label={t("settings.clockinImport.preview.employees", "Employees")}
+								value={preview.employees}
+							/>
+							<PreviewStat
+								label={t("settings.clockinImport.preview.workdays", "Workdays")}
+								value={preview.workdays}
+							/>
+							<PreviewStat
+								label={t("settings.clockinImport.preview.absences", "Absences")}
+								value={preview.absences}
+							/>
 						</div>
 						<div className="flex justify-between">
 							<Button variant="outline" onClick={() => setStep("connect")}>
@@ -302,16 +313,19 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 									<div>
 										<p className="font-medium">{entry.clockinEmployeeName}</p>
 										<p className="text-sm text-muted-foreground">
-										{entry.clockinEmployeeEmail ?? t("settings.clockinImport.mapping.noEmail", "No email in Clockin")}
+											{entry.clockinEmployeeEmail ??
+												t("settings.clockinImport.mapping.noEmail", "No email in Clockin")}
 										</p>
 									</div>
 									<select
 										value={entry.employeeId ?? ""}
-						aria-label={`${t("settings.clockinImport.mapping.mapEmployee", "Map")} ${entry.clockinEmployeeName}`}
+										aria-label={`${t("settings.clockinImport.mapping.mapEmployee", "Map")} ${entry.clockinEmployeeName}`}
 										onChange={(event) => updateMapping(entry.clockinEmployeeId, event.target.value)}
 										className="h-10 rounded-md border border-input bg-background px-3 text-sm"
 									>
-						<option value="">{t("settings.clockinImport.mapping.skipEmployee", "Skip this employee")}</option>
+										<option value="">
+											{t("settings.clockinImport.mapping.skipEmployee", "Skip this employee")}
+										</option>
 										{z8Employees.map((employee) => (
 											<option key={employee.id} value={employee.id}>
 												{employee.name} ({employee.email})
@@ -350,13 +364,18 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 						<label className="flex items-center gap-3 text-sm">
 							<input
 								type="checkbox"
-								aria-label={t("settings.clockinImport.selection.workdays", "Workdays / Work periods")}
+								aria-label={t(
+									"settings.clockinImport.selection.workdays",
+									"Workdays / Work periods",
+								)}
 								checked={selections.workdays}
 								onChange={(event) =>
 									setSelections((current) => ({ ...current, workdays: event.target.checked }))
 								}
 							/>
-							<span>{t("settings.clockinImport.selection.workdays", "Workdays / Work periods")}</span>
+							<span>
+								{t("settings.clockinImport.selection.workdays", "Workdays / Work periods")}
+							</span>
 						</label>
 						<label className="flex items-center gap-3 text-sm">
 							<input
@@ -371,7 +390,9 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 						</label>
 						<div className="grid gap-4 md:grid-cols-2">
 							<div className="space-y-2">
-								<Label htmlFor="clockin-start-date">{t("settings.clockinImport.selection.startDate", "Start date")}</Label>
+								<Label htmlFor="clockin-start-date">
+									{t("settings.clockinImport.selection.startDate", "Start date")}
+								</Label>
 								<DatePicker
 									id="clockin-start-date"
 									value={selections.dateRange.startDate}
@@ -384,7 +405,9 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label htmlFor="clockin-end-date">{t("settings.clockinImport.selection.endDate", "End date")}</Label>
+								<Label htmlFor="clockin-end-date">
+									{t("settings.clockinImport.selection.endDate", "End date")}
+								</Label>
 								<DatePicker
 									id="clockin-end-date"
 									value={selections.dateRange.endDate}
@@ -423,7 +446,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 				<Card>
 					<CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
 						<IconLoader2 className="size-4 animate-spin" />
-					{t("settings.clockinImport.review.starting", "Starting Clockin import review scan…")}
+						{t("settings.clockinImport.review.starting", "Starting Clockin import review scan…")}
 					</CardContent>
 				</Card>
 			)}
@@ -436,15 +459,24 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 							{t("settings.clockinImport.review.startedTitle", "Import review scan started")}
 						</CardTitle>
 						<CardDescription>
-						{t("settings.clockinImport.review.scanningDescription", "Review batch {reviewBatchId} is scanning. Review and approve records before commit.", { reviewBatchId })}
+							{t(
+								"settings.clockinImport.review.scanningDescription",
+								"Review batch {reviewBatchId} is scanning. Review and approve records before commit.",
+								{ reviewBatchId },
+							)}
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 						<p className="text-sm text-muted-foreground">
-						{t("settings.clockinImport.review.noProductionRecords", "No production records have been imported yet.")}
+							{t(
+								"settings.clockinImport.review.noProductionRecords",
+								"No production records have been imported yet.",
+							)}
 						</p>
 						<Button asChild>
-					<Link href={`/settings/import/${reviewBatchId}`}>{t("settings.clockinImport.review.openReview", "Open review")}</Link>
+							<Link href={`/settings/import/${reviewBatchId}`}>
+								{t("settings.clockinImport.review.openReview", "Open review")}
+							</Link>
 						</Button>
 					</CardContent>
 				</Card>

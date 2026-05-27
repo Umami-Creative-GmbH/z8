@@ -3,7 +3,7 @@
 import { IconLoader2, IconUpload, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import Image from "next/image";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { updateBrandingAction } from "@/app/[locale]/(app)/settings/enterprise/actions";
 import { Button } from "@/components/ui/button";
@@ -58,25 +58,19 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 		},
 	});
 
-	const handleLogoChange = useCallback(
-		(e: React.ChangeEvent<HTMLInputElement>) => {
-			const file = e.target.files?.[0];
-			if (file) {
-				logoUpload.addFile(file);
-			}
-		},
-		[logoUpload],
-	);
+	const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (file) {
+			logoUpload.addFile(file);
+		}
+	};
 
-	const handleBackgroundChange = useCallback(
-		(e: React.ChangeEvent<HTMLInputElement>) => {
-			const file = e.target.files?.[0];
-			if (file) {
-				backgroundUpload.addFile(file);
-			}
-		},
-		[backgroundUpload],
-	);
+	const handleBackgroundChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (file) {
+			backgroundUpload.addFile(file);
+		}
+	};
 
 	const handleSave = async () => {
 		setIsSaving(true);

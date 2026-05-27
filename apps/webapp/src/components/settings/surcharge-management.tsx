@@ -3,7 +3,7 @@
 import { IconPencil, IconPercentage, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteSurchargeModel,
@@ -53,7 +53,7 @@ export function SurchargeManagement({ organizationId, canManage }: SurchargeMana
 	// Delete confirmation states
 	const [deleteModelId, setDeleteModelId] = useState<string | null>(null);
 
-	const loadData = useCallback(async () => {
+	const loadData = async () => {
 		setIsLoading(true);
 
 		const modelsResult = await getSurchargeModels(organizationId).catch((error: unknown) => {
@@ -66,7 +66,7 @@ export function SurchargeManagement({ organizationId, canManage }: SurchargeMana
 		}
 
 		setIsLoading(false);
-	}, [organizationId]);
+	};
 
 	useEffect(() => {
 		const timeout = setTimeout(() => loadData(), 0);

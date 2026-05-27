@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { getWaterReminderStatus } from "@/app/[locale]/(app)/wellness/actions";
 import { queryKeys } from "@/lib/query/keys";
 import { useHydrationStats } from "./use-hydration-stats";
@@ -70,13 +70,13 @@ export function useWaterReminder(options: UseWaterReminderOptions = {}) {
 	const lastIntakeTime = status?.lastIntakeTime ?? null;
 
 	// Check if currently snoozed
-	const isSnoozed = useMemo(() => {
+	const isSnoozed = (() => {
 		if (!snoozedUntil) return false;
 		return new Date(snoozedUntil) > new Date();
-	}, [snoozedUntil]);
+	})();
 
 	// Calculate minutes until next reminder
-	const calculateMinutesUntilReminder = useCallback(() => {
+	const calculateMinutesUntilReminder = () => {
 		if (!reminderEnabled || isSnoozed || dismissed) {
 			return null;
 		}
@@ -104,18 +104,10 @@ export function useWaterReminder(options: UseWaterReminderOptions = {}) {
 		const minutesUntil = intervalMinutes - elapsedMinutes;
 
 		return minutesUntil;
-	}, [
-		reminderEnabled,
-		isSnoozed,
-		dismissed,
-		lastIntakeTime,
-		workSessionStart,
-		intervalMinutes,
-		lastReminderTime,
-	]);
+	};
 
 	// Trigger push notification
-	const triggerPushNotification = useCallback(async () => {
+	const triggerPushNotification = async () => {
 		try {
 			// Check if push is supported and the page is not visible
 			if (typeof document !== "undefined" && document.visibilityState === "hidden") {
@@ -128,7 +120,7 @@ export function useWaterReminder(options: UseWaterReminderOptions = {}) {
 			// Silently fail if push notification fails
 			console.debug("Water reminder push notification failed");
 		}
-	}, []);
+	};
 
 	// Timer effect
 	useEffect(() => {
@@ -174,22 +166,22 @@ export function useWaterReminder(options: UseWaterReminderOptions = {}) {
 	}, [todayIntake]);
 
 	// Dismiss reminder
-	const dismiss = useCallback(() => {
+	const dismiss = () => {
 		setDismissed(true);
 		setShowReminder(false);
-	}, []);
+	};
 
 	// Reset dismissed state (e.g., on new clock-in)
-	const resetDismissed = useCallback(() => {
+	const resetDismissed = () => {
 		setDismissed(false);
 		setLastReminderTime(0);
-	}, []);
+	};
 
 	// Mark reminder as handled (after logging water)
-	const handleReminderAction = useCallback(() => {
+	const handleReminderAction = () => {
 		setShowReminder(false);
 		setLastReminderTime(Date.now());
-	}, []);
+	};
 
 	return {
 		// Status

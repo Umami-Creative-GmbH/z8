@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useMemo, useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import { toast } from "sonner";
 import { listEmployeesForSelect } from "../employees/actions";
 import { listTeams } from "../teams/actions";
@@ -92,10 +92,7 @@ export function PermissionsPageClient(props: { organizationId: string; isOrgAdmi
 		dispatch({ type: "setLoading", value: false });
 	};
 
-	const filteredEmployees = useMemo(
-		() => filterEmployeesByQuery(state.employees, state.searchQuery),
-		[state.employees, state.searchQuery],
-	);
+	const filteredEmployees = filterEmployeesByQuery(state.employees, state.searchQuery);
 
 	if (state.noEmployee || !state.isAdmin) {
 		return <PermissionsEmptyState noEmployee={state.noEmployee} />;

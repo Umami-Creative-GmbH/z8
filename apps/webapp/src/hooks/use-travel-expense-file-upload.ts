@@ -2,13 +2,13 @@
 
 import Uppy from "@uppy/core";
 import Tus from "@uppy/tus";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ALLOWED_TRAVEL_EXPENSE_MIME_TYPES } from "@/lib/travel-expenses/attachment-validation";
-import { getTusFileKeyFromUploadUrl } from "@/lib/upload/tus-url";
+import { useEffect, useState } from "react";
 import {
 	type ProcessTravelExpenseFileResponse,
 	useTravelExpenseFileProcessMutation,
 } from "@/lib/query/use-travel-expense-file-process";
+import { ALLOWED_TRAVEL_EXPENSE_MIME_TYPES } from "@/lib/travel-expenses/attachment-validation";
+import { getTusFileKeyFromUploadUrl } from "@/lib/upload/tus-url";
 
 const DEFAULT_MAX_TRAVEL_EXPENSE_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -37,7 +37,7 @@ export function useTravelExpenseFileUpload({
 	const [isUploading, setIsUploading] = useState(false);
 	const processMutation = useTravelExpenseFileProcessMutation();
 
-	const uppy = useMemo(() => {
+	const uppy = (() => {
 		return new Uppy({
 			restrictions: {
 				maxFileSize,
@@ -50,7 +50,7 @@ export function useTravelExpenseFileUpload({
 			retryDelays: [0, 1000, 3000, 5000],
 			chunkSize: 5 * 1024 * 1024,
 		});
-	}, [maxFileSize]); // eslint-disable-line react-hooks/exhaustive-deps
+	})(); // eslint-disable-line react-hooks/exhaustive-deps
 
 	useEffect(() => {
 		const handleUploadStart = () => {
@@ -63,7 +63,9 @@ export function useTravelExpenseFileUpload({
 			progressState: { bytesUploaded: number; bytesTotal: number | null },
 		) => {
 			if (progressState.bytesTotal && progressState.bytesTotal > 0) {
-				const uploadPercent = Math.round((progressState.bytesUploaded / progressState.bytesTotal) * 85);
+				const uploadPercent = Math.round(
+					(progressState.bytesUploaded / progressState.bytesTotal) * 85,
+				);
 				setProgress(Math.max(1, uploadPercent));
 			}
 		};
@@ -91,9 +93,7 @@ export function useTravelExpenseFileUpload({
 						onSuccess?.(response.attachment);
 					} catch (error) {
 						onError?.(
-							error instanceof Error
-								? error
-								: new Error("Travel expense file processing failed"),
+							error instanceof Error ? error : new Error("Travel expense file processing failed"),
 						);
 					}
 				} else {
@@ -134,27 +134,24 @@ export function useTravelExpenseFileUpload({
 		};
 	}, [uppy]);
 
-	const addFile = useCallback(
-		(file: File) => {
-			try {
-				uppy.cancelAll();
-				uppy.addFile({
-					name: file.name,
-					type: file.type,
-					data: file,
-				});
-			} catch (error) {
-				onError?.(error instanceof Error ? error : new Error("Failed to add file"));
-			}
-		},
-		[uppy, onError],
-	);
+	const addFile = (file: File) => {
+		try {
+			uppy.cancelAll();
+			uppy.addFile({
+				name: file.name,
+				type: file.type,
+				data: file,
+			});
+		} catch (error) {
+			onError?.(error instanceof Error ? error : new Error("Failed to add file"));
+		}
+	};
 
-	const reset = useCallback(() => {
+	const reset = () => {
 		setProgress(0);
 		setIsUploading(false);
 		uppy.cancelAll();
-	}, [uppy]);
+	};
 
 	return {
 		addFile,

@@ -1,8 +1,8 @@
 "use client";
 
 import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
 import { IconLayoutSidebar } from "@tabler/icons-react";
+import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,24 +98,19 @@ function SidebarProvider({
 	// We use openProp and setOpenProp for control from outside the component.
 	const open = openProp ?? storedOpen;
 
-	const setOpen = React.useCallback(
-		(value: boolean | ((value: boolean) => boolean)) => {
-			const openState = typeof value === "function" ? value(open) : value;
-			if (setOpenProp) {
-				setOpenProp(openState);
-			}
+	const setOpen = (value: boolean | ((value: boolean) => boolean)) => {
+		const openState = typeof value === "function" ? value(open) : value;
+		if (setOpenProp) {
+			setOpenProp(openState);
+		}
 
-			// Persist to localStorage
-			writeStoredSidebarOpen(openState);
-		},
-		[setOpenProp, open],
-	);
+		// Persist to localStorage
+		writeStoredSidebarOpen(openState);
+	};
 
 	// Helper to toggle the sidebar.
-	const toggleSidebar = React.useCallback(
-		() => (isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)),
-		[isMobile, setOpen],
-	);
+	const toggleSidebar = () =>
+		isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
 
 	// Adds a keyboard shortcut to toggle the sidebar.
 	React.useEffect(() => {
@@ -134,18 +129,15 @@ function SidebarProvider({
 	// This makes it easier to style the sidebar with Tailwind classes.
 	const state = open ? "expanded" : "collapsed";
 
-	const contextValue = React.useMemo<SidebarContextProps>(
-		() => ({
-			state,
-			open,
-			setOpen,
-			isMobile,
-			openMobile,
-			setOpenMobile,
-			toggleSidebar,
-		}),
-		[state, open, setOpen, isMobile, openMobile, toggleSidebar],
-	);
+	const contextValue = {
+		state,
+		open,
+		setOpen,
+		isMobile,
+		openMobile,
+		setOpenMobile,
+		toggleSidebar,
+	};
 
 	return (
 		<SidebarContext.Provider value={contextValue}>

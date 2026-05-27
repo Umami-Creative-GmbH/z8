@@ -4,7 +4,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { ExportButton } from "@/components/analytics/export-button";
@@ -26,7 +26,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import type { OvertimeBurnDownData, OvertimeBurnDownGroupedRow, TrendDirection } from "@/lib/analytics/types";
+import type {
+	OvertimeBurnDownData,
+	OvertimeBurnDownGroupedRow,
+	TrendDirection,
+} from "@/lib/analytics/types";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
@@ -41,7 +45,10 @@ const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.Cartesi
 const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
 const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
 
-function formatTrendDirection(trendDirection: TrendDirection, t: ReturnType<typeof useTranslate>["t"]): string {
+function formatTrendDirection(
+	trendDirection: TrendDirection,
+	t: ReturnType<typeof useTranslate>["t"],
+): string {
 	if (trendDirection === "up") return t("analytics.overtimeBurnDown.trend.up", "Up");
 	if (trendDirection === "down") return t("analytics.overtimeBurnDown.trend.down", "Down");
 	return t("analytics.overtimeBurnDown.trend.flat", "Flat");
@@ -49,8 +56,7 @@ function formatTrendDirection(trendDirection: TrendDirection, t: ReturnType<type
 
 function areDateRangesEqual(left: DateRange, right: DateRange) {
 	return (
-		left.start.getTime() === right.start.getTime() &&
-		left.end.getTime() === right.end.getTime()
+		left.start.getTime() === right.start.getTime() && left.end.getTime() === right.end.getTime()
 	);
 }
 
@@ -97,10 +103,7 @@ export default function OvertimeBurnDownPage() {
 		}
 
 		const expectedDefaultDateRange = getDateRangeForPreset("current_month", { timezone });
-		if (
-			!hasUserChangedRange.current &&
-			!areDateRangesEqual(dateRange, expectedDefaultDateRange)
-		) {
+		if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
 			return;
 		}
 
@@ -144,12 +147,19 @@ export default function OvertimeBurnDownPage() {
 				}
 
 				setData(null);
-				toast.error(t("analytics.overtimeBurnDown.errors.loadData", "Failed to load overtime burn-down data"));
+				toast.error(
+					t("analytics.overtimeBurnDown.errors.loadData", "Failed to load overtime burn-down data"),
+				);
 			} catch (error) {
 				console.error("Failed to load overtime burn-down data:", error);
 				if (isMounted) {
 					setData(null);
-					toast.error(t("analytics.overtimeBurnDown.errors.loadData", "Failed to load overtime burn-down data"));
+					toast.error(
+						t(
+							"analytics.overtimeBurnDown.errors.loadData",
+							"Failed to load overtime burn-down data",
+						),
+					);
 				}
 			}
 
@@ -172,7 +182,7 @@ export default function OvertimeBurnDownPage() {
 		trendDirection: "flat" as const,
 	};
 
-	const selectedBreakdownRows = useMemo<OvertimeBurnDownGroupedRow[]>(() => {
+	const selectedBreakdownRows = (() => {
 		if (!data) {
 			return [];
 		}
@@ -186,7 +196,7 @@ export default function OvertimeBurnDownPage() {
 		}
 
 		return data.byTeam;
-	}, [breakdownDimension, data]);
+	})();
 
 	const breakdownLabel =
 		breakdownDimension === "team"
@@ -195,7 +205,7 @@ export default function OvertimeBurnDownPage() {
 				? t("analytics.overtimeBurnDown.costCenter", "Cost Center")
 				: t("analytics.overtimeBurnDown.manager", "Manager");
 
-	const exportData = useMemo(() => {
+	const exportData = (() => {
 		const rows = selectedBreakdownRows.map((row) => ({
 			dimension: row.label,
 			currentOvertime: row.currentOvertimeHours,
@@ -208,10 +218,22 @@ export default function OvertimeBurnDownPage() {
 			data: rows,
 			headers: [
 				{ key: "dimension" as const, label: breakdownLabel },
-				{ key: "currentOvertime" as const, label: t("analytics.overtimeBurnDown.currentOvertime", "Current Overtime") },
-				{ key: "previousOvertime" as const, label: t("analytics.overtimeBurnDown.previousOvertime", "Previous Overtime") },
-				{ key: "weekOverWeek" as const, label: t("analytics.overtimeBurnDown.weekOverWeek", "Week-over-Week") },
-				{ key: "trendDirection" as const, label: t("analytics.overtimeBurnDown.trendDirection", "Trend Direction") },
+				{
+					key: "currentOvertime" as const,
+					label: t("analytics.overtimeBurnDown.currentOvertime", "Current Overtime"),
+				},
+				{
+					key: "previousOvertime" as const,
+					label: t("analytics.overtimeBurnDown.previousOvertime", "Previous Overtime"),
+				},
+				{
+					key: "weekOverWeek" as const,
+					label: t("analytics.overtimeBurnDown.weekOverWeek", "Week-over-Week"),
+				},
+				{
+					key: "trendDirection" as const,
+					label: t("analytics.overtimeBurnDown.trendDirection", "Trend Direction"),
+				},
 			],
 			filename:
 				"overtime-burndown-" +
@@ -219,14 +241,19 @@ export default function OvertimeBurnDownPage() {
 				"-" +
 				(dateRange ? DateTime.fromJSDate(dateRange.start).toFormat("yyyy-MM-dd") : "pending"),
 		};
-	}, [selectedBreakdownRows, breakdownLabel, breakdownDimension, dateRange, t]);
+	})();
 
 	return (
 		<div className="space-y-6 px-4 lg:px-6">
 			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold tracking-tight">{t("analytics.overtimeBurnDown.title", "Overtime Burn-Down")}</h1>
+				<h1 className="text-2xl font-semibold tracking-tight">
+					{t("analytics.overtimeBurnDown.title", "Overtime Burn-Down")}
+				</h1>
 				<p className="text-sm text-muted-foreground">
-					{t("analytics.overtimeBurnDown.description", "Track weekly overtime reduction across teams.")}
+					{t(
+						"analytics.overtimeBurnDown.description",
+						"Track weekly overtime reduction across teams.",
+					)}
 				</p>
 			</div>
 
@@ -246,11 +273,18 @@ export default function OvertimeBurnDownPage() {
 						<div className="space-y-1">
 							<p className="text-xs text-muted-foreground">{t("analytics.common.team", "Team")}</p>
 							<Select value={teamId} onValueChange={setTeamId}>
-								<SelectTrigger className="w-full sm:w-[160px]" aria-label={t("analytics.overtimeBurnDown.filters.teamLabel", "Team filter")}>
-									<SelectValue placeholder={t("analytics.overtimeBurnDown.filters.allTeams", "All teams")} />
+								<SelectTrigger
+									className="w-full sm:w-[160px]"
+									aria-label={t("analytics.overtimeBurnDown.filters.teamLabel", "Team filter")}
+								>
+									<SelectValue
+										placeholder={t("analytics.overtimeBurnDown.filters.allTeams", "All teams")}
+									/>
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value={ALL_FILTER_VALUE}>{t("analytics.overtimeBurnDown.filters.allTeams", "All teams")}</SelectItem>
+									<SelectItem value={ALL_FILTER_VALUE}>
+										{t("analytics.overtimeBurnDown.filters.allTeams", "All teams")}
+									</SelectItem>
 									{(data?.byTeam ?? []).map((row) => (
 										<SelectItem key={row.id} value={row.id}>
 											{row.label}
@@ -260,13 +294,28 @@ export default function OvertimeBurnDownPage() {
 							</Select>
 						</div>
 						<div className="space-y-1">
-							<p className="text-xs text-muted-foreground">{t("analytics.overtimeBurnDown.costCenter", "Cost Center")}</p>
+							<p className="text-xs text-muted-foreground">
+								{t("analytics.overtimeBurnDown.costCenter", "Cost Center")}
+							</p>
 							<Select value={costCenterId} onValueChange={setCostCenterId}>
-								<SelectTrigger className="w-full sm:w-[160px]" aria-label={t("analytics.overtimeBurnDown.filters.costCenterLabel", "Cost center filter")}>
-									<SelectValue placeholder={t("analytics.overtimeBurnDown.filters.allCostCenters", "All cost centers")} />
+								<SelectTrigger
+									className="w-full sm:w-[160px]"
+									aria-label={t(
+										"analytics.overtimeBurnDown.filters.costCenterLabel",
+										"Cost center filter",
+									)}
+								>
+									<SelectValue
+										placeholder={t(
+											"analytics.overtimeBurnDown.filters.allCostCenters",
+											"All cost centers",
+										)}
+									/>
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value={ALL_FILTER_VALUE}>{t("analytics.overtimeBurnDown.filters.allCostCenters", "All cost centers")}</SelectItem>
+									<SelectItem value={ALL_FILTER_VALUE}>
+										{t("analytics.overtimeBurnDown.filters.allCostCenters", "All cost centers")}
+									</SelectItem>
 									{(data?.byCostCenter ?? []).map((row) => (
 										<SelectItem key={row.id} value={row.id}>
 											{row.label}
@@ -276,13 +325,28 @@ export default function OvertimeBurnDownPage() {
 							</Select>
 						</div>
 						<div className="space-y-1">
-							<p className="text-xs text-muted-foreground">{t("analytics.overtimeBurnDown.manager", "Manager")}</p>
+							<p className="text-xs text-muted-foreground">
+								{t("analytics.overtimeBurnDown.manager", "Manager")}
+							</p>
 							<Select value={managerId} onValueChange={setManagerId}>
-								<SelectTrigger className="w-full sm:w-[160px]" aria-label={t("analytics.overtimeBurnDown.filters.managerLabel", "Manager filter")}>
-									<SelectValue placeholder={t("analytics.overtimeBurnDown.filters.allManagers", "All managers")} />
+								<SelectTrigger
+									className="w-full sm:w-[160px]"
+									aria-label={t(
+										"analytics.overtimeBurnDown.filters.managerLabel",
+										"Manager filter",
+									)}
+								>
+									<SelectValue
+										placeholder={t(
+											"analytics.overtimeBurnDown.filters.allManagers",
+											"All managers",
+										)}
+									/>
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value={ALL_FILTER_VALUE}>{t("analytics.overtimeBurnDown.filters.allManagers", "All managers")}</SelectItem>
+									<SelectItem value={ALL_FILTER_VALUE}>
+										{t("analytics.overtimeBurnDown.filters.allManagers", "All managers")}
+									</SelectItem>
 									{(data?.byManager ?? []).map((row) => (
 										<SelectItem key={row.id} value={row.id}>
 											{row.label}
@@ -292,20 +356,34 @@ export default function OvertimeBurnDownPage() {
 							</Select>
 						</div>
 						<div className="space-y-1">
-							<p className="text-xs text-muted-foreground">{t("analytics.overtimeBurnDown.breakdown", "Breakdown")}</p>
+							<p className="text-xs text-muted-foreground">
+								{t("analytics.overtimeBurnDown.breakdown", "Breakdown")}
+							</p>
 							<Select
 								value={breakdownDimension}
 								onValueChange={(value) =>
 									setBreakdownDimension(value as "team" | "costCenter" | "manager")
 								}
 							>
-								<SelectTrigger className="w-full sm:w-[160px]" aria-label={t("analytics.overtimeBurnDown.filters.breakdownLabel", "Breakdown dimension")}>
+								<SelectTrigger
+									className="w-full sm:w-[160px]"
+									aria-label={t(
+										"analytics.overtimeBurnDown.filters.breakdownLabel",
+										"Breakdown dimension",
+									)}
+								>
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="team">{t("analytics.overtimeBurnDown.byTeam", "By Team")}</SelectItem>
-									<SelectItem value="costCenter">{t("analytics.overtimeBurnDown.byCostCenter", "By Cost Center")}</SelectItem>
-									<SelectItem value="manager">{t("analytics.overtimeBurnDown.byManager", "By Manager")}</SelectItem>
+									<SelectItem value="team">
+										{t("analytics.overtimeBurnDown.byTeam", "By Team")}
+									</SelectItem>
+									<SelectItem value="costCenter">
+										{t("analytics.overtimeBurnDown.byCostCenter", "By Cost Center")}
+									</SelectItem>
+									<SelectItem value="manager">
+										{t("analytics.overtimeBurnDown.byManager", "By Manager")}
+									</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
@@ -328,60 +406,95 @@ export default function OvertimeBurnDownPage() {
 					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 						<Card>
 							<CardHeader className="space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">{t("analytics.overtimeBurnDown.currentOvertime", "Current Overtime")}</CardTitle>
+								<CardTitle className="text-sm font-medium">
+									{t("analytics.overtimeBurnDown.currentOvertime", "Current Overtime")}
+								</CardTitle>
 							</CardHeader>
 							<CardContent>
 								<div className="text-2xl font-semibold">
 									{summary.currentOvertimeHours.toFixed(1)}h
 								</div>
-							<p className="text-xs text-muted-foreground">{t("analytics.overtimeBurnDown.selectedRangeDescription", "For selected date range and filters")}</p>
+								<p className="text-xs text-muted-foreground">
+									{t(
+										"analytics.overtimeBurnDown.selectedRangeDescription",
+										"For selected date range and filters",
+									)}
+								</p>
 							</CardContent>
 						</Card>
 						<Card>
 							<CardHeader className="space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">{t("analytics.overtimeBurnDown.weekOverWeek", "Week-over-Week")}</CardTitle>
+								<CardTitle className="text-sm font-medium">
+									{t("analytics.overtimeBurnDown.weekOverWeek", "Week-over-Week")}
+								</CardTitle>
 							</CardHeader>
 							<CardContent>
 								<div className="text-2xl font-semibold">
 									{summary.wowDeltaHours > 0 ? "+" : ""}
 									{summary.wowDeltaHours.toFixed(1)}h
 								</div>
-							<p className="text-xs text-muted-foreground">{t("analytics.overtimeBurnDown.previousPeriodDescription", "Compared with previous period")}</p>
+								<p className="text-xs text-muted-foreground">
+									{t(
+										"analytics.overtimeBurnDown.previousPeriodDescription",
+										"Compared with previous period",
+									)}
+								</p>
 							</CardContent>
 						</Card>
 						<Card>
 							<CardHeader className="space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">{t("analytics.overtimeBurnDown.improvingGroups", "Improving Groups")}</CardTitle>
+								<CardTitle className="text-sm font-medium">
+									{t("analytics.overtimeBurnDown.improvingGroups", "Improving Groups")}
+								</CardTitle>
 							</CardHeader>
 							<CardContent>
 								<div className="text-2xl font-semibold">{summary.improvingGroups}</div>
-							<p className="text-xs text-muted-foreground">{t("analytics.overtimeBurnDown.improvingGroupsDescription", "Groups with decreasing overtime")}</p>
+								<p className="text-xs text-muted-foreground">
+									{t(
+										"analytics.overtimeBurnDown.improvingGroupsDescription",
+										"Groups with decreasing overtime",
+									)}
+								</p>
 							</CardContent>
 						</Card>
 						<Card>
 							<CardHeader className="space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">{t("analytics.overtimeBurnDown.trendDirection", "Trend Direction")}</CardTitle>
+								<CardTitle className="text-sm font-medium">
+									{t("analytics.overtimeBurnDown.trendDirection", "Trend Direction")}
+								</CardTitle>
 							</CardHeader>
 							<CardContent>
 								<div className="text-2xl font-semibold">
-								{formatTrendDirection(summary.trendDirection, t)}
+									{formatTrendDirection(summary.trendDirection, t)}
 								</div>
-							<p className="text-xs text-muted-foreground">{t("analytics.overtimeBurnDown.trendDirectionDescription", "Overall overtime trajectory")}</p>
+								<p className="text-xs text-muted-foreground">
+									{t(
+										"analytics.overtimeBurnDown.trendDirectionDescription",
+										"Overall overtime trajectory",
+									)}
+								</p>
 							</CardContent>
 						</Card>
 					</div>
 
 					<Card>
 						<CardHeader>
-						<CardTitle>{t("analytics.overtimeBurnDown.weeklyTrend.title", "Weekly Burn-Down Trend")}</CardTitle>
-						<CardDescription>{t("analytics.overtimeBurnDown.weeklyTrend.description", "Weekly overtime reduction trend")}</CardDescription>
+							<CardTitle>
+								{t("analytics.overtimeBurnDown.weeklyTrend.title", "Weekly Burn-Down Trend")}
+							</CardTitle>
+							<CardDescription>
+								{t(
+									"analytics.overtimeBurnDown.weeklyTrend.description",
+									"Weekly overtime reduction trend",
+								)}
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{(data?.weeklySeries.length ?? 0) > 0 ? (
 								<ChartContainer
 									config={{
 										overtimeHours: {
-									label: t("analytics.common.overtimeHours", "Overtime Hours"),
+											label: t("analytics.common.overtimeHours", "Overtime Hours"),
 											color: "hsl(var(--chart-1))",
 										},
 									}}
@@ -394,9 +507,7 @@ export default function OvertimeBurnDownPage() {
 											tickLine={false}
 											tickMargin={10}
 											axisLine={false}
-											tickFormatter={(value: string) =>
-												DateTime.fromISO(value).toFormat("LLL dd")
-											}
+											tickFormatter={(value: string) => DateTime.fromISO(value).toFormat("LLL dd")}
 										/>
 										<YAxis tickLine={false} axisLine={false} />
 										<ChartTooltip
@@ -408,7 +519,7 @@ export default function OvertimeBurnDownPage() {
 								</ChartContainer>
 							) : (
 								<div className="flex h-[320px] items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
-								{t("analytics.overtimeBurnDown.weeklyTrend.empty", "No trend data available yet")}
+									{t("analytics.overtimeBurnDown.weeklyTrend.empty", "No trend data available yet")}
 								</div>
 							)}
 						</CardContent>
@@ -416,8 +527,14 @@ export default function OvertimeBurnDownPage() {
 
 					<Card>
 						<CardHeader>
-						<CardTitle>{t("analytics.overtimeBurnDown.breakdown", "Breakdown")}</CardTitle>
-						<CardDescription>{t("analytics.overtimeBurnDown.breakdownDescription", "{label} level overtime burn-down details", { label: breakdownLabel })}</CardDescription>
+							<CardTitle>{t("analytics.overtimeBurnDown.breakdown", "Breakdown")}</CardTitle>
+							<CardDescription>
+								{t(
+									"analytics.overtimeBurnDown.breakdownDescription",
+									"{label} level overtime burn-down details",
+									{ label: breakdownLabel },
+								)}
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{selectedBreakdownRows.length > 0 ? (
@@ -425,10 +542,18 @@ export default function OvertimeBurnDownPage() {
 									<TableHeader>
 										<TableRow>
 											<TableHead>{breakdownLabel}</TableHead>
-									<TableHead className="text-right">{t("analytics.overtimeBurnDown.currentOvertime", "Current Overtime")}</TableHead>
-									<TableHead className="text-right">{t("analytics.overtimeBurnDown.previousOvertime", "Previous Overtime")}</TableHead>
-									<TableHead className="text-right">{t("analytics.overtimeBurnDown.weekOverWeek", "Week-over-Week")}</TableHead>
-									<TableHead>{t("analytics.overtimeBurnDown.trendDirection", "Trend Direction")}</TableHead>
+											<TableHead className="text-right">
+												{t("analytics.overtimeBurnDown.currentOvertime", "Current Overtime")}
+											</TableHead>
+											<TableHead className="text-right">
+												{t("analytics.overtimeBurnDown.previousOvertime", "Previous Overtime")}
+											</TableHead>
+											<TableHead className="text-right">
+												{t("analytics.overtimeBurnDown.weekOverWeek", "Week-over-Week")}
+											</TableHead>
+											<TableHead>
+												{t("analytics.overtimeBurnDown.trendDirection", "Trend Direction")}
+											</TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>
@@ -445,14 +570,17 @@ export default function OvertimeBurnDownPage() {
 													{row.wowDeltaHours > 0 ? "+" : ""}
 													{row.wowDeltaHours.toFixed(1)}h
 												</TableCell>
-									<TableCell>{formatTrendDirection(row.trendDirection, t)}</TableCell>
+												<TableCell>{formatTrendDirection(row.trendDirection, t)}</TableCell>
 											</TableRow>
 										))}
 									</TableBody>
 								</Table>
 							) : (
 								<div className="flex h-[240px] items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
-								{t("analytics.overtimeBurnDown.breakdownEmpty", "No breakdown data available yet")}
+									{t(
+										"analytics.overtimeBurnDown.breakdownEmpty",
+										"No breakdown data available yet",
+									)}
 								</div>
 							)}
 						</CardContent>

@@ -3,7 +3,7 @@
 import { IconBuilding, IconCheck, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { getLastOrganization, saveLastOrganization } from "@/lib/org-persistence";
@@ -35,39 +35,36 @@ function InitPageContent() {
 	const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
 	const [isActivating, setIsActivating] = useState(false);
 
-	const activateOrganization = useCallback(
-		async (orgId: string) => {
-			setStatus("activating");
-			setIsActivating(true);
+	const activateOrganization = async (orgId: string) => {
+		setStatus("activating");
+		setIsActivating(true);
 
-			const switchResponse = await fetch("/api/organizations/switch", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ organizationId: orgId }),
-			}).catch((error) => {
-				console.error("Failed to activate organization:", error);
-				setIsActivating(false);
-				// On error, still try to go to dashboard
-				window.location.assign(redirectUrl);
-				return null;
-			});
-
-			if (!switchResponse) {
-				return;
-			}
-
-			if (switchResponse.ok) {
-				saveLastOrganization(orgId);
-			}
-
-			// Hard redirect to dashboard to get fresh server state
-			setStatus("redirecting");
+		const switchResponse = await fetch("/api/organizations/switch", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ organizationId: orgId }),
+		}).catch((error) => {
+			console.error("Failed to activate organization:", error);
+			setIsActivating(false);
+			// On error, still try to go to dashboard
 			window.location.assign(redirectUrl);
-		},
-		[redirectUrl],
-	);
+			return null;
+		});
 
-	const initializeSession = useCallback(async () => {
+		if (!switchResponse) {
+			return;
+		}
+
+		if (switchResponse.ok) {
+			saveLastOrganization(orgId);
+		}
+
+		// Hard redirect to dashboard to get fresh server state
+		setStatus("redirecting");
+		window.location.assign(redirectUrl);
+	};
+
+	const initializeSession = async () => {
 		// Check current session state
 		const response = await fetch("/api/session/organization-status").catch((error) => {
 			console.error("Failed to initialize session:", error);
@@ -140,15 +137,12 @@ function InitPageContent() {
 		// Multiple orgs and no saved preference - show selection UI
 		setOrganizations(orgs);
 		setStatus("selecting");
-	}, [activateOrganization, redirectUrl]);
+	};
 
-	const handleSelectOrganization = useCallback(
-		async (orgId: string) => {
-			setSelectedOrg(orgId);
-			await activateOrganization(orgId);
-		},
-		[activateOrganization],
-	);
+	const handleSelectOrganization = async (orgId: string) => {
+		setSelectedOrg(orgId);
+		await activateOrganization(orgId);
+	};
 
 	useEffect(() => {
 		void Promise.resolve().then(initializeSession);

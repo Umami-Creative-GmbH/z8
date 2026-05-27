@@ -2,7 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	createCustomRole,
@@ -112,7 +112,7 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 	});
 	const [isSaving, setIsSaving] = useState(false);
 
-	const inherited = useMemo(() => getInheritedPermissions(baseTier), [baseTier]);
+	const inherited = getInheritedPermissions(baseTier);
 	const categories = getPermissionCategories();
 	const permsByCategory = getPermissionsByCategory();
 
@@ -291,9 +291,7 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 
 					return (
 						<div key={cat.id} className="space-y-2">
-							<h4 className="text-sm font-semibold">
-								{t(cat.labelKey, cat.label)}
-							</h4>
+							<h4 className="text-sm font-semibold">{t(cat.labelKey, cat.label)}</h4>
 							<div className="grid gap-2">
 								{perms.map((perm) => {
 									const key = getPermissionKey(perm.action, perm.subject);

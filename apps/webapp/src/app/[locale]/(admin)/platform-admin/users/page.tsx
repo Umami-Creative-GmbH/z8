@@ -4,7 +4,7 @@ import { IconBan, IconCheck, IconDevices, IconSearch, IconUser, IconX } from "@t
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	ActionPanel,
@@ -85,7 +85,12 @@ function getInitialFilters(): { search: string; status: UserStatusFilter; organi
 }
 
 function getRedactedUserLabel(userId: string): string {
-	return `User ${userId.replace(/^usr_/, "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 6) || "redacted"}`;
+	return `User ${
+		userId
+			.replace(/^usr_/, "")
+			.replace(/[^a-zA-Z0-9]/g, "")
+			.slice(0, 6) || "redacted"
+	}`;
 }
 
 export default function UsersPage() {
@@ -129,39 +134,36 @@ export default function UsersPage() {
 	const total = data?.total ?? 0;
 
 	// Debounced search with immediate status change
-	const handleFilterChange = useCallback(
-		(newSearch: string, newStatus: UserStatusFilter) => {
-			// Clear any pending search timeout
-			if (searchTimeoutRef.current) {
-				clearTimeout(searchTimeoutRef.current);
-			}
+	const handleFilterChange = (newSearch: string, newStatus: UserStatusFilter) => {
+		// Clear any pending search timeout
+		if (searchTimeoutRef.current) {
+			clearTimeout(searchTimeoutRef.current);
+		}
 
-			setSearch(newSearch);
+		setSearch(newSearch);
 
-			// If only status changed, fetch immediately
-			if (newStatus !== status) {
-				setStatus(newStatus);
-				setPage(1);
-				const params = new URLSearchParams();
-				if (newSearch) params.set("search", newSearch);
-				if (newStatus !== "all") params.set("status", newStatus);
-				if (organizationId) params.set("organizationId", organizationId);
-				router.push(`/platform-admin/users?${params.toString()}`);
-				return;
-			}
+		// If only status changed, fetch immediately
+		if (newStatus !== status) {
+			setStatus(newStatus);
+			setPage(1);
+			const params = new URLSearchParams();
+			if (newSearch) params.set("search", newSearch);
+			if (newStatus !== "all") params.set("status", newStatus);
+			if (organizationId) params.set("organizationId", organizationId);
+			router.push(`/platform-admin/users?${params.toString()}`);
+			return;
+		}
 
-			// Debounce search input (300ms)
-			searchTimeoutRef.current = setTimeout(() => {
-				setPage(1);
-				const params = new URLSearchParams();
-				if (newSearch) params.set("search", newSearch);
-				if (newStatus !== "all") params.set("status", newStatus);
-				if (organizationId) params.set("organizationId", organizationId);
-				router.push(`/platform-admin/users?${params.toString()}`);
-			}, 300);
-		},
-		[organizationId, router, status],
-	);
+		// Debounce search input (300ms)
+		searchTimeoutRef.current = setTimeout(() => {
+			setPage(1);
+			const params = new URLSearchParams();
+			if (newSearch) params.set("search", newSearch);
+			if (newStatus !== "all") params.set("status", newStatus);
+			if (organizationId) params.set("organizationId", organizationId);
+			router.push(`/platform-admin/users?${params.toString()}`);
+		}, 300);
+	};
 
 	// Cleanup timeout on unmount
 	useEffect(() => {

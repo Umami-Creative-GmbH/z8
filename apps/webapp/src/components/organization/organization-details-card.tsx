@@ -2,7 +2,7 @@
 
 import { IconCamera, IconEdit, IconLoader2, IconTrash, IconUsers } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { removeOrganizationLogo } from "@/app/[locale]/(app)/settings/organizations/actions";
 import { Button } from "@/components/ui/button";
@@ -32,9 +32,7 @@ export function OrganizationDetailsCard({
 	const canEdit = currentMemberRole === "owner";
 	const metadata = organization.metadata as Record<string, unknown> | null;
 	const metadataDescription =
-		typeof metadata === "object" &&
-		metadata !== null &&
-		typeof metadata.description === "string"
+		typeof metadata === "object" && metadata !== null && typeof metadata.description === "string"
 			? metadata.description
 			: null;
 
@@ -58,18 +56,15 @@ export function OrganizationDetailsCard({
 	});
 
 	// Handle file input change
-	const handleFileInputChange = useCallback(
-		(e: React.ChangeEvent<HTMLInputElement>) => {
-			const files = e.target.files;
-			if (files && files.length > 0) {
-				addFile(files[0]);
-				e.target.value = "";
-			}
-		},
-		[addFile],
-	);
+	const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = e.target.files;
+		if (files && files.length > 0) {
+			addFile(files[0]);
+			e.target.value = "";
+		}
+	};
 
-	const handleRemoveLogo = useCallback(async () => {
+	const handleRemoveLogo = async () => {
 		setIsRemovingLogo(true);
 		const result = await removeOrganizationLogo(organization.id);
 		setIsRemovingLogo(false);
@@ -81,7 +76,7 @@ export function OrganizationDetailsCard({
 
 		setLogoUrl(null);
 		toast.success(t("organization.logo-removed", "Organization logo removed"));
-	}, [organization.id, t]);
+	};
 
 	return (
 		<>
@@ -163,15 +158,17 @@ export function OrganizationDetailsCard({
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">
 						<IconUsers className="size-4" />
 						<span>
-							{t("organization.members.count", "{count, plural, one {# member} other {# members}}", {
-								count: memberCount,
-							})}
+							{t(
+								"organization.members.count",
+								"{count, plural, one {# member} other {# members}}",
+								{
+									count: memberCount,
+								},
+							)}
 						</span>
 					</div>
 					{metadataDescription && (
-						<p className="mt-4 text-sm text-muted-foreground">
-							{metadataDescription}
-						</p>
+						<p className="mt-4 text-sm text-muted-foreground">{metadataDescription}</p>
 					)}
 				</CardContent>
 			</Card>

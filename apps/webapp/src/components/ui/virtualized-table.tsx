@@ -54,7 +54,7 @@ export interface VirtualizedTableProps<T> {
 /**
  * Memoized table row component for better performance
  */
-const MemoizedTableRow = React.memo(function MemoizedTableRow<T>({
+const MemoizedTableRow = function MemoizedTableRow<T>({
 	row,
 	index,
 	columns,
@@ -99,7 +99,7 @@ const MemoizedTableRow = React.memo(function MemoizedTableRow<T>({
 			))}
 		</TableRow>
 	);
-}) as <T>(props: {
+} as <T>(props: {
 	row: T;
 	index: number;
 	columns: VirtualizedTableColumn<T>[];
@@ -167,9 +167,9 @@ export function VirtualizedTable<T>({
 	const virtualRows = virtualizer.getVirtualItems();
 
 	// Stable callback creator using ref
-	const handleRowClick = React.useCallback((row: T, index: number) => {
+	const handleRowClick = (row: T, index: number) => {
 		onRowClickRef.current?.(row, index);
-	}, []);
+	};
 
 	if (data.length === 0) {
 		return (
@@ -247,8 +247,10 @@ export function useRowMemoization<T>(
 	getRowId: (row: T) => string,
 	getRowVersion: (row: T) => string | number,
 ) {
-	const [rowVersions, setRowVersions] = React.useState<Map<string, string | number>>(() => new Map());
-	const memoizedRows = React.useMemo(() => {
+	const [rowVersions, setRowVersions] = React.useState<Map<string, string | number>>(
+		() => new Map(),
+	);
+	const memoizedRows = (() => {
 		const newVersions = new Map<string, string | number>();
 
 		data.forEach((row) => {
@@ -266,7 +268,7 @@ export function useRowMemoization<T>(
 		});
 
 		return { data, changedRows, newVersions };
-	}, [data, getRowId, getRowVersion, rowVersions]);
+	})();
 
 	React.useEffect(() => {
 		if (areRowVersionsEqual(rowVersions, memoizedRows.newVersions)) {

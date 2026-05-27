@@ -9,7 +9,7 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { getSurchargeCalculationsForPeriod } from "@/app/[locale]/(app)/settings/surcharges/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -113,71 +113,73 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 	const loadedRowsOrganizationIdRef = useRef<string | null>(null);
 	const latestRequestId = useRef(0);
 
-	const loadCalculations = useCallback(
-		async (filters: FilterValues) => {
-			const requestId = latestRequestId.current + 1;
-			latestRequestId.current = requestId;
-			const startDate = parseFilterDate(filters.startDate, "start");
-			const endDate = parseFilterDate(filters.endDate, "end");
+	const loadCalculations = async (filters: FilterValues) => {
+		const requestId = latestRequestId.current + 1;
+		latestRequestId.current = requestId;
+		const startDate = parseFilterDate(filters.startDate, "start");
+		const endDate = parseFilterDate(filters.endDate, "end");
 
-			if (!startDate.isValid || !endDate.isValid || startDate > endDate) {
-				setRows([]);
-				setExpandedId(null);
-				loadedRowsOrganizationIdRef.current = null;
-				setLoadedRowsOrganizationId(null);
-				setError(null);
-				setIsShowingPreviousResults(false);
-				setDateError(
-					t("settings.surcharges.reports.errors.invalidDateRange", "Start date must be on or before end date."),
-				);
-				setIsLoading(false);
-				return;
-			}
-
-			setDateError(null);
+		if (!startDate.isValid || !endDate.isValid || startDate > endDate) {
+			setRows([]);
+			setExpandedId(null);
+			loadedRowsOrganizationIdRef.current = null;
+			setLoadedRowsOrganizationId(null);
 			setError(null);
 			setIsShowingPreviousResults(false);
-			if (loadedRowsOrganizationIdRef.current !== organizationId) {
+			setDateError(
+				t(
+					"settings.surcharges.reports.errors.invalidDateRange",
+					"Start date must be on or before end date.",
+				),
+			);
+			setIsLoading(false);
+			return;
+		}
+
+		setDateError(null);
+		setError(null);
+		setIsShowingPreviousResults(false);
+		if (loadedRowsOrganizationIdRef.current !== organizationId) {
+			setRows([]);
+			setExpandedId(null);
+		}
+		setIsLoading(true);
+
+		const employeeId = filters.employeeId.trim() || undefined;
+		const result = await getSurchargeCalculationsForPeriod(
+			organizationId,
+			startDate.toJSDate(),
+			endDate.toJSDate(),
+			employeeId,
+		).catch(() => ({ success: false as const, error: "Failed to load surcharge calculations." }));
+
+		if (requestId !== latestRequestId.current) {
+			return;
+		}
+
+		if (result.success) {
+			setRows(result.data);
+			loadedRowsOrganizationIdRef.current = organizationId;
+			setLoadedRowsOrganizationId(organizationId);
+			setExpandedId((current) => (result.data.some((row) => row.id === current) ? current : null));
+		} else {
+			if (loadedRowsOrganizationIdRef.current === organizationId) {
+				setIsShowingPreviousResults(true);
+			} else {
 				setRows([]);
 				setExpandedId(null);
 			}
-			setIsLoading(true);
+			setError(
+				result.error ||
+					t(
+						"settings.surcharges.reports.errors.loadFailed",
+						"Failed to load surcharge calculations.",
+					),
+			);
+		}
 
-			const employeeId = filters.employeeId.trim() || undefined;
-			const result = await getSurchargeCalculationsForPeriod(
-				organizationId,
-				startDate.toJSDate(),
-				endDate.toJSDate(),
-				employeeId,
-			).catch(() => ({ success: false as const, error: "Failed to load surcharge calculations." }));
-
-			if (requestId !== latestRequestId.current) {
-				return;
-			}
-
-			if (result.success) {
-				setRows(result.data);
-				loadedRowsOrganizationIdRef.current = organizationId;
-				setLoadedRowsOrganizationId(organizationId);
-				setExpandedId((current) =>
-					result.data.some((row) => row.id === current) ? current : null,
-				);
-			} else {
-				if (loadedRowsOrganizationIdRef.current === organizationId) {
-					setIsShowingPreviousResults(true);
-				} else {
-					setRows([]);
-					setExpandedId(null);
-				}
-				setError(
-					result.error || t("settings.surcharges.reports.errors.loadFailed", "Failed to load surcharge calculations."),
-				);
-			}
-
-			setIsLoading(false);
-		},
-		[organizationId, t],
-	);
+		setIsLoading(false);
+	};
 
 	const form = useForm({
 		defaultValues: defaultFilters,
@@ -336,7 +338,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 					value={formatMinutes(totals.baseMinutes)}
 				/>
 				<SummaryCard
-					label={t("settings.surcharges.reports.summary.qualifyingHours", "Qualifying surcharge hours")}
+					label={t(
+						"settings.surcharges.reports.summary.qualifyingHours",
+						"Qualifying surcharge hours",
+					)}
 					value={formatMinutes(totals.qualifyingMinutes)}
 				/>
 				<SummaryCard
@@ -382,11 +387,17 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 										</span>
 									</TableHead>
 									<TableHead>{t("settings.surcharges.reports.table.date", "Date")}</TableHead>
-									<TableHead>{t("settings.surcharges.reports.table.employee", "Employee")}</TableHead>
+									<TableHead>
+										{t("settings.surcharges.reports.table.employee", "Employee")}
+									</TableHead>
 									<TableHead>{t("settings.surcharges.reports.table.base", "Base")}</TableHead>
-									<TableHead>{t("settings.surcharges.reports.table.qualifying", "Qualifying")}</TableHead>
+									<TableHead>
+										{t("settings.surcharges.reports.table.qualifying", "Qualifying")}
+									</TableHead>
 									<TableHead>{t("settings.surcharges.reports.table.credit", "Credit")}</TableHead>
-									<TableHead>{t("settings.surcharges.reports.table.percentage", "Percentage")}</TableHead>
+									<TableHead>
+										{t("settings.surcharges.reports.table.percentage", "Percentage")}
+									</TableHead>
 									<TableHead>{t("settings.surcharges.reports.table.created", "Created")}</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -528,7 +539,10 @@ function CalculationDetails({
 							</div>
 						) : (
 							<div className="text-muted-foreground">
-								{t("settings.surcharges.reports.details.noAppliedRules", "No applied rules recorded.")}
+								{t(
+									"settings.surcharges.reports.details.noAppliedRules",
+									"No applied rules recorded.",
+								)}
 							</div>
 						)}
 					</div>

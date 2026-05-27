@@ -10,7 +10,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	acknowledgeWorkPolicyViolation,
@@ -98,31 +98,25 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 	const [acknowledgeNote, setAcknowledgeNote] = useState("");
 
 	// Helper function to get translated violation type labels
-	const getViolationTypeLabel = useCallback(
-		(type: string): string => {
-			switch (type) {
-				case "max_daily":
-					return t("settings.workPolicies.violationType.maxDaily", "Max Daily Exceeded");
-				case "max_weekly":
-					return t("settings.workPolicies.violationType.maxWeekly", "Max Weekly Exceeded");
-				case "max_uninterrupted":
-					return t(
-						"settings.workPolicies.violationType.maxUninterrupted",
-						"Max Continuous Exceeded",
-					);
-				case "break_required":
-					return t("settings.workPolicies.violationType.breakRequired", "Required Break Missing");
-				case "schedule_deviation":
-					return t("settings.workPolicies.violationType.scheduleDeviation", "Schedule Deviation");
-				default:
-					return type;
-			}
-		},
-		[t],
-	);
+	const getViolationTypeLabel = (type: string): string => {
+		switch (type) {
+			case "max_daily":
+				return t("settings.workPolicies.violationType.maxDaily", "Max Daily Exceeded");
+			case "max_weekly":
+				return t("settings.workPolicies.violationType.maxWeekly", "Max Weekly Exceeded");
+			case "max_uninterrupted":
+				return t("settings.workPolicies.violationType.maxUninterrupted", "Max Continuous Exceeded");
+			case "break_required":
+				return t("settings.workPolicies.violationType.breakRequired", "Required Break Missing");
+			case "schedule_deviation":
+				return t("settings.workPolicies.violationType.scheduleDeviation", "Schedule Deviation");
+			default:
+				return type;
+		}
+	};
 
 	// Calculate date range
-	const range = useMemo(() => {
+	const range = (() => {
 		const endDt = DateTime.now();
 		let days: number;
 		switch (dateRange) {
@@ -140,13 +134,10 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 		}
 		const startDt = endDt.minus({ days });
 		return { start: startDt.toJSDate(), end: endDt.toJSDate() };
-	}, [dateRange]);
+	})();
 
 	// Create stable query key
-	const queryKey = useMemo(
-		() => queryKeys.workPolicies.violations.list(organizationId, range),
-		[organizationId, range],
-	);
+	const queryKey = queryKeys.workPolicies.violations.list(organizationId, range);
 
 	// Fetch violations
 	const {
@@ -206,7 +197,7 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 	};
 
 	// CSV Export function
-	const handleExportCSV = useCallback(() => {
+	const handleExportCSV = () => {
 		if (!violations || violations.length === 0) {
 			toast.error(t("settings.workPolicies.noDataToExport", "No data to export"));
 			return;
@@ -268,7 +259,7 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 		URL.revokeObjectURL(url);
 
 		toast.success(t("settings.workPolicies.exportSuccess", "Violations exported successfully"));
-	}, [violations, dateRange, t, getViolationTypeLabel]);
+	};
 
 	// Calculate summary stats
 	const stats = {

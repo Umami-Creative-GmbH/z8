@@ -3,7 +3,6 @@
 import { IconChevronLeft, IconChevronRight, IconReload } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useMemo } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -60,9 +59,7 @@ function formatSignedMinutesWithoutSuffix(minutes: number): string {
 
 function getWeekdayNames(locale: string, weekStartDay: WeekStartDay): string[] {
 	const formatter = getShortWeekdayFormatter(locale);
-	const names = WEEKDAY_REFERENCE_DATES.map((day) =>
-		formatter.format(new Date(2000, 0, day)),
-	);
+	const names = WEEKDAY_REFERENCE_DATES.map((day) => formatter.format(new Date(2000, 0, day)));
 
 	return weekStartDay === "monday" ? [...names.slice(1), names[0]!] : names;
 }
@@ -313,18 +310,14 @@ export function MonthWorkSummaryView({
 	const weekStartDay = useWeekStartDay();
 	const activeMonth = DateTime.fromJSDate(monthDate).startOf("month");
 	const monthTitle = activeMonth.setLocale(locale).toFormat("LLLL yyyy");
-	const weekdays = useMemo(() => getWeekdayNames(locale, weekStartDay), [locale, weekStartDay]);
-	const monthSummary = useMemo(
-		() =>
-			buildMonthWorkSummary({
-				year: activeMonth.year,
-				monthIndex: activeMonth.month - 1,
-				weekStartDay,
-				workHoursData,
-				events,
-			}),
-		[activeMonth.month, activeMonth.year, events, weekStartDay, workHoursData],
-	);
+	const weekdays = getWeekdayNames(locale, weekStartDay);
+	const monthSummary = buildMonthWorkSummary({
+		year: activeMonth.year,
+		monthIndex: activeMonth.month - 1,
+		weekStartDay,
+		workHoursData,
+		events,
+	});
 
 	return (
 		<div className="flex h-full flex-col gap-4">

@@ -4,7 +4,7 @@ import { IconCheck, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	type ApprovalWithAbsence,
@@ -141,7 +141,7 @@ export function AbsenceApprovalsTable() {
 	};
 
 	// Filter approvals by search (client-side since typically small list)
-	const filteredApprovals = useMemo(() => {
+	const filteredApprovals = (() => {
 		if (!approvals) return [];
 		if (!search) return approvals;
 
@@ -152,113 +152,108 @@ export function AbsenceApprovalsTable() {
 				approval.requester.user.email.toLowerCase().includes(searchLower) ||
 				approval.absence.category.name.toLowerCase().includes(searchLower),
 		);
-	}, [approvals, search]);
+	})();
 
 	// Column definitions
-	const columns = useMemo<ColumnDef<ApprovalWithAbsence>[]>(
-		() => [
-			{
-				accessorKey: "requester",
-				header: t("approvals:approvals.employee", "Employee"),
-				cell: ({ row }) => (
-					<div className="flex items-center gap-3">
-						<UserAvatar
-							image={row.original.requester.user.image}
-							seed={row.original.requester.user.id}
-							name={row.original.requester.user.name}
-							size="sm"
-							clockStatus="unknown"
-						/>
-						<div>
-							<div className="font-medium">{row.original.requester.user.name}</div>
-							<div className="text-xs text-muted-foreground">
-								{row.original.requester.user.email}
-							</div>
-						</div>
+	const columns = [
+		{
+			accessorKey: "requester",
+			header: t("approvals:approvals.employee", "Employee"),
+			cell: ({ row }) => (
+				<div className="flex items-center gap-3">
+					<UserAvatar
+						image={row.original.requester.user.image}
+						seed={row.original.requester.user.id}
+						name={row.original.requester.user.name}
+						size="sm"
+						clockStatus="unknown"
+					/>
+					<div>
+						<div className="font-medium">{row.original.requester.user.name}</div>
+						<div className="text-xs text-muted-foreground">{row.original.requester.user.email}</div>
 					</div>
-				),
+				</div>
+			),
+		},
+		{
+			accessorKey: "dates",
+			header: t("approvals:approvals.dates", "Dates"),
+			cell: ({ row }) => (
+				<span className="font-medium">
+					{formatDateRange(row.original.absence.startDate, row.original.absence.endDate)}
+				</span>
+			),
+		},
+		{
+			accessorKey: "type",
+			header: t("approvals:approvals.type", "Type"),
+			cell: ({ row }) => (
+				<div className="flex flex-col items-start gap-1">
+					<CategoryBadge
+						name={row.original.absence.category.name}
+						type={row.original.absence.category.type}
+						color={row.original.absence.category.color}
+					/>
+					{row.original.absence.category.type === "sick" && row.original.absence.sickDetail && (
+						<span className="text-muted-foreground text-xs">
+							{t(
+								getSickDetailLabelKey(row.original.absence.sickDetail),
+								getSickDetailLabel(row.original.absence.sickDetail),
+							)}
+						</span>
+					)}
+				</div>
+			),
+		},
+		{
+			accessorKey: "days",
+			header: () => <div className="text-right">{t("approvals:approvals.days", "Days")}</div>,
+			cell: ({ row }) => {
+				const days = calculateBusinessDaysWithHalfDays(
+					row.original.absence.startDate,
+					row.original.absence.startPeriod,
+					row.original.absence.endDate,
+					row.original.absence.endPeriod,
+					[],
+				);
+				return <div className="text-right tabular-nums">{formatDays(days)}</div>;
 			},
-			{
-				accessorKey: "dates",
-				header: t("approvals:approvals.dates", "Dates"),
-				cell: ({ row }) => (
-					<span className="font-medium">
-						{formatDateRange(row.original.absence.startDate, row.original.absence.endDate)}
-					</span>
-				),
-			},
-			{
-				accessorKey: "type",
-				header: t("approvals:approvals.type", "Type"),
-				cell: ({ row }) => (
-					<div className="flex flex-col items-start gap-1">
-						<CategoryBadge
-							name={row.original.absence.category.name}
-							type={row.original.absence.category.type}
-							color={row.original.absence.category.color}
-						/>
-						{row.original.absence.category.type === "sick" && row.original.absence.sickDetail && (
-							<span className="text-muted-foreground text-xs">
-								{t(
-									getSickDetailLabelKey(row.original.absence.sickDetail),
-									getSickDetailLabel(row.original.absence.sickDetail),
-								)}
-							</span>
-						)}
-					</div>
-				),
-			},
-			{
-				accessorKey: "days",
-				header: () => <div className="text-right">{t("approvals:approvals.days", "Days")}</div>,
-				cell: ({ row }) => {
-					const days = calculateBusinessDaysWithHalfDays(
-						row.original.absence.startDate,
-						row.original.absence.startPeriod,
-						row.original.absence.endDate,
-						row.original.absence.endPeriod,
-						[],
-					);
-					return <div className="text-right tabular-nums">{formatDays(days)}</div>;
-				},
-			},
-			{
-				accessorKey: "notes",
-				header: t("approvals:approvals.notes", "Notes"),
-				cell: ({ row }) => (
-					<span className="max-w-[200px] truncate text-muted-foreground block">
-						{row.original.absence.notes || "—"}
-					</span>
-				),
-			},
-			{
-				id: "actions",
-				cell: ({ row }) => (
-					<div className="flex justify-end gap-2">
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => handleApprove(row.original)}
-							disabled={approveMutation.isPending || rejectMutation.isPending}
-						>
-							<IconCheck className="mr-1 size-4" />
-							{t("approvals:approvals.approve", "Approve")}
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => handleReject(row.original)}
-							disabled={approveMutation.isPending || rejectMutation.isPending}
-						>
-							<IconX className="mr-1 size-4" />
-							{t("approvals:approvals.reject", "Reject")}
-						</Button>
-					</div>
-				),
-			},
-		],
-		[t, approveMutation.isPending, rejectMutation.isPending],
-	);
+		},
+		{
+			accessorKey: "notes",
+			header: t("approvals:approvals.notes", "Notes"),
+			cell: ({ row }) => (
+				<span className="max-w-[200px] truncate text-muted-foreground block">
+					{row.original.absence.notes || "—"}
+				</span>
+			),
+		},
+		{
+			id: "actions",
+			cell: ({ row }) => (
+				<div className="flex justify-end gap-2">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => handleApprove(row.original)}
+						disabled={approveMutation.isPending || rejectMutation.isPending}
+					>
+						<IconCheck className="mr-1 size-4" />
+						{t("approvals:approvals.approve", "Approve")}
+					</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => handleReject(row.original)}
+						disabled={approveMutation.isPending || rejectMutation.isPending}
+					>
+						<IconX className="mr-1 size-4" />
+						{t("approvals:approvals.reject", "Reject")}
+					</Button>
+				</div>
+			),
+		},
+	];
 
 	if (isLoading) {
 		return <DataTableSkeleton columnCount={6} rowCount={5} />;

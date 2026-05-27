@@ -11,7 +11,7 @@ import {
 	type SortingState,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,81 +53,78 @@ function normalizeRepoUrl(
 
 export function LicenseTable({ licenses }: LicenseTableProps) {
 	const { t } = useTranslate();
-	const columns = useMemo<ColumnDef<LicenseInfo>[]>(
-		() => [
-			{
-				accessorKey: "name",
-				header: ({ column }) => (
-					<Button
-						className="-ml-3"
-						onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-						variant="ghost"
-					>
-						{t("settings.licenses.package", "Package")}
-						<IconArrowsUpDown aria-hidden="true" className="ml-2 size-4" />
-					</Button>
-				),
-				cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
+	const columns = [
+		{
+			accessorKey: "name",
+			header: ({ column }) => (
+				<Button
+					className="-ml-3"
+					onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+					variant="ghost"
+				>
+					{t("settings.licenses.package", "Package")}
+					<IconArrowsUpDown aria-hidden="true" className="ml-2 size-4" />
+				</Button>
+			),
+			cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
+		},
+		{
+			accessorKey: "license",
+			header: ({ column }) => (
+				<Button
+					className="-ml-3"
+					onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+					variant="ghost"
+				>
+					{t("settings.licenses.license", "License")}
+					<IconArrowsUpDown aria-hidden="true" className="ml-2 size-4" />
+				</Button>
+			),
+			cell: ({ row }) => {
+				const license = row.getValue("license") as string;
+				return (
+					<Badge variant={getLicenseBadgeVariant(license)}>
+						{license || t("settings.licenses.unknown", "Unknown")}
+					</Badge>
+				);
 			},
-			{
-				accessorKey: "license",
-				header: ({ column }) => (
-					<Button
-						className="-ml-3"
-						onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-						variant="ghost"
-					>
-						{t("settings.licenses.license", "License")}
-						<IconArrowsUpDown aria-hidden="true" className="ml-2 size-4" />
-					</Button>
-				),
-				cell: ({ row }) => {
-					const license = row.getValue("license") as string;
-					return (
-						<Badge variant={getLicenseBadgeVariant(license)}>
-							{license || t("settings.licenses.unknown", "Unknown")}
-						</Badge>
-					);
-				},
-			},
-			{
-				id: "links",
-				header: t("settings.licenses.links", "Links"),
-				cell: ({ row }) => {
-					const { repository, homepage } = row.original;
-					const repoUrl = normalizeRepoUrl(repository);
+		},
+		{
+			id: "links",
+			header: t("settings.licenses.links", "Links"),
+			cell: ({ row }) => {
+				const { repository, homepage } = row.original;
+				const repoUrl = normalizeRepoUrl(repository);
 
-					return (
-						<div className="flex gap-2">
-							{repoUrl && (
-								<a
-									className="text-muted-foreground hover:text-foreground"
-									href={repoUrl}
-									rel="noopener noreferrer"
-									target="_blank"
-								>
-									<IconExternalLink aria-hidden="true" className="size-4" />
-									<span className="sr-only">{t("settings.licenses.repository", "Repository")}</span>
-								</a>
-							)}
-							{homepage && homepage !== repoUrl && (
-								<a
-									className="text-muted-foreground hover:text-foreground"
-									href={homepage}
-									rel="noopener noreferrer"
-									target="_blank"
-								>
-									<IconExternalLink aria-hidden="true" className="size-4" />
-									<span className="sr-only">{t("settings.licenses.homepage", "Homepage")}</span>
-								</a>
-							)}
-						</div>
-					);
-				},
+				return (
+					<div className="flex gap-2">
+						{repoUrl && (
+							<a
+								className="text-muted-foreground hover:text-foreground"
+								href={repoUrl}
+								rel="noopener noreferrer"
+								target="_blank"
+							>
+								<IconExternalLink aria-hidden="true" className="size-4" />
+								<span className="sr-only">{t("settings.licenses.repository", "Repository")}</span>
+							</a>
+						)}
+						{homepage && homepage !== repoUrl && (
+							<a
+								className="text-muted-foreground hover:text-foreground"
+								href={homepage}
+								rel="noopener noreferrer"
+								target="_blank"
+							>
+								<IconExternalLink aria-hidden="true" className="size-4" />
+								<span className="sr-only">{t("settings.licenses.homepage", "Homepage")}</span>
+							</a>
+						)}
+					</div>
+				);
 			},
-		],
-		[t],
-	);
+		},
+	];
 	const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [globalFilter, setGlobalFilter] = useState("");
@@ -148,7 +145,7 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 		getFilteredRowModel: getFilteredRowModel(),
 	});
 
-	const stats = useMemo(() => {
+	const stats = (() => {
 		const licenseTypes = new Map<string, number>();
 		for (const pkg of licenses) {
 			const license = pkg.license || "Unknown";
@@ -158,7 +155,7 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 			total: licenses.length,
 			uniqueLicenses: licenseTypes.size,
 		};
-	}, [licenses]);
+	})();
 
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-4">
