@@ -1,0 +1,43 @@
+{
+  "today": {
+    "approvals": {
+      "approve": "Aprobar",
+      "approveLabel": "Aprobar {title}",
+      "description": "Solicitudes a la espera de una decisión del gerente.",
+      "empty": "No hay aprobaciones pendientes.",
+      "openInbox": "Abrir bandeja de entrada",
+      "pendingAriaLabel": "Aprobaciones pendientes",
+      "reject": "Rechazar",
+      "rejectLabel": "Rechazar {title}",
+      "title": "Aprobaciones",
+      "toast": {
+        "approved": "Solicitud aprobada",
+        "approveError": "No se pudo aprobar la solicitud",
+        "rejected": "Solicitud rechazada",
+        "rejectError": "No se pudo rechazar la solicitud"
+      }
+    },
+    "briefing": {
+      "badge": "Hoy",
+      "description": "Revise los elementos que requieren acción hoy y luego diríjase directamente al flujo de trabajo correcto.",
+      "needsAction": {
+        "description": "Comience aquí para el seguimiento operativo más urgente.",
+        "empty": "Todo despejado. No se requiere ninguna acción del gerente en este momento.",
+        "title": "Requiere acción"
+      },
+      "sections": {
+        "empty": "No se detectaron problemas."
+      },
+      "severity": {
+        "critical": "Crítico",
+        "high": "Alto",
+        "info": "Información",
+        "warning": "Advertencia"
+      },
+      "summaryAriaLabel": "Resumen de hoy",
+      "supportingSectionsAriaLabel": "Secciones de apoyo",
+      "title": "Informe diario del gerente",
+      "updatedAt": "{date} - Actualizado {time}"
+    }
+  }
+}

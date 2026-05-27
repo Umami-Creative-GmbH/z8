@@ -1,0 +1,182 @@
+{
+  "dashboard": {
+    "birthday": {
+      "birthday": "γενέθλια",
+      "birthdays": "γενέθλια",
+      "celebration": "εορτασμός",
+      "celebrations": "εορτασμοί",
+      "count-today": "{count} {birthday} σήμερα!",
+      "description": "Εορτασμοί τις επόμενες 30 ημέρες",
+      "description-count": "{count} {celebration} τις επόμενες 30 ημέρες",
+      "error": "Αποτυχία φόρτωσης επερχόμενων γενεθλίων",
+      "in-days": "Σε {days} ημέρες",
+      "more-celebrations": "+{count} ακόμη εορτασμοί",
+      "title": "Επερχόμενα γενέθλια",
+      "today": "Σήμερα!",
+      "tomorrow": "Αύριο"
+    },
+    "customize": {
+      "empty-description": "Χρησιμοποιήστε το εικονίδιο προσαρμογής του πίνακα ελέγχου για να ενεργοποιήσετε ξανά μεμονωμένα widget ή επαναφέρετε τη διάταξη για να εμφανιστούν ξανά όλα τα widget.",
+      "empty-title": "Όλα τα widget του πίνακα ελέγχου είναι κρυμμένα",
+      "move-down": "Μετακίνηση του {widget} προς τα κάτω",
+      "move-up": "Μετακίνηση του {widget} προς τα πάνω",
+      "reset": "Επαναφορά διάταξης",
+      "title": "Widget πίνακα ελέγχου",
+      "trigger": "Προσαρμογή πίνακα ελέγχου"
+    },
+    "hydration": {
+      "add-glass": "Προσθήκη {count} ποτηριού",
+      "add-glasses": "Προσθήκη {count} ποτηριών",
+      "description": "Παρακολουθήστε την καθημερινή σας κατανάλωση νερού",
+      "error": "Αποτυχία φόρτωσης στατιστικών ενυδάτωσης",
+      "log-error": "Αποτυχία καταγραφής κατανάλωσης νερού",
+      "of-goal": "από {goal}",
+      "title": "Ενυδάτωση"
+    },
+    "layout": {
+      "saved": "Η διάταξη του πίνακα ελέγχου αποθηκεύτηκε",
+      "saveFailed": "Αποτυχία αποθήκευσης της διάταξης του πίνακα ελέγχου",
+      "saveFailedDescription": "Οι αλλαγές σας δεν ήταν δυνατό να αποθηκευτούν. Παρακαλώ προσπαθήστε ξανά."
+    },
+    "managed-employees": {
+      "direct-reports": "{count} άμεσοι υφιστάμενοι",
+      "error": "Αποτυχία φόρτωσης διαχειριζόμενων υπαλλήλων",
+      "no-reports": "Δεν υπάρχουν ακόμη άμεσα αναφερόμενοι",
+      "no-reports-description": "Θα δείτε τα μέλη της ομάδας σας εδώ μόλις ανατεθούν",
+      "people-you-manage": "Άτομα που διαχειρίζεστε",
+      "title": "Η ομάδα σας",
+      "view-all": "Προβολή όλων",
+      "view-all-members": "Προβολή και των {count} μελών της ομάδας"
+    },
+    "manager-today": {
+      "all-clear": "Δεν υπάρχει καμία ενέργεια διαχειριστή σε εκκρεμότητα αυτή τη στιγμή.",
+      "description": "Ελέγξτε σήμερα πριν μικρά ζητήματα επηρεάσουν τη μισθοδοσία ή την κάλυψη.",
+      "error": "Αποτυχία φόρτωσης των μετρήσεων ενημέρωσης διαχειριστή.",
+      "metric-approvals": "Εγκρίσεις",
+      "metric-clock-ins": "Καταγραφές προσέλευσης",
+      "metric-critical": "Κρίσιμο",
+      "metric-risks": "Κίνδυνοι",
+      "open": "Ανοιχτή ενημέρωση",
+      "title": "Manager Today"
+    },
+    "pending-approvals": {
+      "absence-requests": "Αιτήματα απουσίας",
+      "awaiting-approval": "Αναμένουν την έγκρισή σας",
+      "correction": "Διόρθωση",
+      "description": "Αιτήματα που αναμένουν την απόφασή σας",
+      "error": "Αποτυχία φόρτωσης εκκρεμών εγκρίσεων",
+      "more-requests": "+{count} ακόμη αιτήματα",
+      "pending-requests": "{count} εκκρεμές {request}",
+      "request": "αίτημα",
+      "requests": "αιτήματα",
+      "requires-attention": "Απαιτεί άμεση προσοχή",
+      "review-all": "Εξέταση όλων των εγκρίσεων",
+      "time-corrections": "Διορθώσεις χρόνου",
+      "title": "Εκκρεμείς εγκρίσεις"
+    },
+    "presence": {
+      "fixedOfficeDays": "Καθορισμένες ημέρες γραφείου: {days}",
+      "flexibleOfficePolicy": "Ευέλικτη πολιτική γραφείου για αυτήν την περίοδο",
+      "homeOfficeLeft": "Υπόλοιπο εργασίας από το σπίτι",
+      "officeDaysWarning": "Η απαίτηση παρουσίας στο γραφείο υπερβαίνει τις υπόλοιπες εργάσιμες ημέρες",
+      "officeStillRequired": "Απαιτείται ακόμα παρουσία στο γραφείο",
+      "periodDescription": "Αυτή η περίοδος",
+      "unavailable": "Η πολιτική παρουσίας δεν είναι διαθέσιμη.",
+      "workLocation": "Τοποθεσία εργασίας"
+    },
+    "quick-stats": {
+      "behind": "Καθυστέρηση",
+      "description": "Η εβδομαδιαία και μηνιαία πρόοδός σας",
+      "error": "Αποτυχία φόρτωσης γρήγορων στατιστικών",
+      "good-pace": "Καλός ρυθμός",
+      "hours": "ώρες",
+      "on-track": "Εντός στόχου",
+      "progress": "{actual} ώρ. από {expected} ώρ. ({percent}%)",
+      "this-month": "Αυτόν τον μήνα",
+      "this-week": "Αυτήν την εβδομάδα",
+      "title": "Παρακολούθηση χρόνου"
+    },
+    "recently-approved": {
+      "absence": "Απουσία",
+      "all-caught-up": "Όλα είναι ενημερωμένα!",
+      "approved-recently": "{count} {request} εγκρίθηκαν πρόσφατα",
+      "by": "από {name}",
+      "description": "Τελευταία εγκεκριμένα αιτήματα",
+      "description-count": "Τελευταία {count} εγκεκριμένα {request}",
+      "error": "Αποτυχία φόρτωσης πρόσφατα εγκεκριμένων αιτημάτων",
+      "more-approved": "+{count} ακόμη εγκεκριμένα",
+      "request": "αίτημα",
+      "requests": "αιτήματα",
+      "time": "Χρόνος",
+      "title": "Πρόσφατα εγκεκριμένα",
+      "view-all": "Προβολή όλων των εγκρίσεων"
+    },
+    "team-overview": {
+      "active-count": "{active} από {total} υπαλλήλους ({percent}%)",
+      "active-employees": "Ενεργοί υπάλληλοι",
+      "avg-hours": "Μέσος όρος ωρών",
+      "description": "Στατιστικά στοιχεία ομάδας με μια ματιά",
+      "employees-button": "Υπάλληλοι",
+      "error": "Αποτυχία φόρτωσης στατιστικών ομάδας",
+      "per-week": "/εβδομάδα",
+      "teams": "Ομάδες",
+      "teams-button": "Ομάδες",
+      "title": "Οργανισμός"
+    },
+    "upcoming-time-off": {
+      "absence": "απουσία",
+      "absences": "απουσίες",
+      "day": "ημέρα",
+      "days": "ημέρες",
+      "description": "Προγραμματισμένες απουσίες ομάδας",
+      "description-count": "Επόμενη {count} προγραμματισμένη {absence}",
+      "error": "Αποτυχία φόρτωσης επερχόμενων αδειών",
+      "title": "Επερχόμενες Άδειες",
+      "today": "Σήμερα",
+      "tomorrow": "Αύριο",
+      "view-calendar": "Προβολή Πλήρους Ημερολογίου"
+    },
+    "vacation": {
+      "available": "{days} διαθέσιμες",
+      "carryover": "Μεταφορά υπολοίπου",
+      "carryover-days": "{days} ημέρες",
+      "days-remaining": "ημέρες που απομένουν",
+      "description": "{year} ημέρες άδειας",
+      "error": "Αποτυχία φόρτωσης υπολοίπου άδειας",
+      "expires-in": "Λήγει σε {days} ημέρες",
+      "label-available": "Διαθέσιμες",
+      "label-pending": "Σε εκκρεμότητα",
+      "label-used": "Χρησιμοποιημένες",
+      "no-policy": "Δεν έχει ρυθμιστεί πολιτική άδειας για αυτό το έτος",
+      "pending": "{days} σε εκκρεμότητα",
+      "percent-used": "{percent}% χρησιμοποιημένο",
+      "title": "Υπόλοιπο Άδειας",
+      "total": "{days} σύνολο",
+      "used": "{days} χρησιμοποιημένες"
+    },
+    "whos-out": {
+      "error": "Αποτυχία φόρτωσης των σημερινών απουσιών",
+      "everyone-in": "Όλοι είναι στο γραφείο σήμερα",
+      "everyones-in": "Είναι όλοι εδώ!",
+      "full-team": "Όλη η ομάδα είναι διαθέσιμη!",
+      "member": "μέλος",
+      "members": "μέλη",
+      "members-out": "{count} {member} της ομάδας απουσιάζει",
+      "more-members": "+{count} ακόμα μέλη της ομάδας",
+      "more-returning": "+{count} ακόμα",
+      "out-count": "{count} απουσίες",
+      "out-today": "Απόντες Σήμερα",
+      "returning-tomorrow": "Επιστρέφει Αύριο",
+      "returns-tomorrow": "Επιστρέφει αύριο",
+      "team-availability": "Διαθεσιμότητα ομάδας",
+      "title": "Ποιοι Απουσιάζουν Σήμερα",
+      "until-date": "Έως {date}",
+      "view-calendar": "Προβολή Πλήρους Ημερολογίου"
+    },
+    "widgets": {
+      "dragToReorder": "Σύρετε για να αναδιατάξετε το γραφικό στοιχείο",
+      "moving": "Μετακίνηση γραφικού στοιχείου…",
+      "refresh": "Ανανέωση"
+    }
+  }
+}

@@ -12,7 +12,7 @@ module.exports = {
 	defaultNamespace: "common",
 	push: {
 		filesTemplate: "./messages/{namespace}/{languageTag}.json",
-		language: ["en", "de", "fr", "es", "it", "pt"],
+		language: ["en", "de", "fr", "es", "it", "pt", "el", "pl", "tr", "gsw"],
 	},
 	pull: {
 		path: "./messages",

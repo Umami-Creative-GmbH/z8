@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
 import { fetchApi } from "@/lib/fetch";
 import type { NotificationsListResponse, UnreadCountResponse } from "@/lib/notifications/types";
 import { queryKeys } from "@/lib/query/keys";
@@ -113,9 +112,9 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 	});
 
 	// Refresh all notification data
-	const refresh = useCallback(() => {
+	const refresh = () => {
 		queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
-	}, [queryClient]);
+	};
 
 	return {
 		// List data

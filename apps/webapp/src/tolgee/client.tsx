@@ -2,7 +2,7 @@
 
 import { TolgeeProvider, type TolgeeStaticData, useTolgee } from "@tolgee/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type Namespace, TolgeeBase } from "./shared";
 
 type Props = {
@@ -38,19 +38,29 @@ function getOrCreateTolgee(language: string, staticData: TolgeeStaticData) {
 			staticData,
 		});
 		tolgeeCache.set(language, instance);
+		addStaticDataOnce(instance, staticData);
 	}
-	addStaticDataOnce(instance, staticData);
 	return instance;
 }
 
 export const TolgeeNextProvider = ({ language, staticData, children }: Props) => {
 	const { refresh } = useRouter();
+	const isAddingStaticData = useRef(false);
 
-	const tolgee = useMemo(() => getOrCreateTolgee(language, staticData), [language, staticData]);
+	const tolgee = getOrCreateTolgee(language, staticData);
+
+	useEffect(() => {
+		isAddingStaticData.current = true;
+		addStaticDataOnce(tolgee, staticData);
+		isAddingStaticData.current = false;
+	}, [staticData, tolgee]);
 
 	useEffect(() => {
 		// this ensures server components refresh, after translation change
 		const { unsubscribe } = tolgee.on("permanentChange", () => {
+			if (isAddingStaticData.current) {
+				return;
+			}
 			refresh();
 		});
 		return () => unsubscribe();

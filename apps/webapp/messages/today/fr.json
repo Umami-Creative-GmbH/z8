@@ -1,0 +1,43 @@
+{
+  "today": {
+    "approvals": {
+      "approve": "Approuver",
+      "approveLabel": "Approuver {title}",
+      "description": "Requêtes en attente d'une décision du responsable.",
+      "empty": "Aucune approbation en attente.",
+      "openInbox": "Ouvrir la boîte de réception",
+      "pendingAriaLabel": "Approbations en attente",
+      "reject": "Rejeter",
+      "rejectLabel": "Rejeter {title}",
+      "title": "Approbations",
+      "toast": {
+        "approved": "Requête approuvée",
+        "approveError": "Impossible d'approuver la requête",
+        "rejected": "Requête rejetée",
+        "rejectError": "Impossible de rejeter la requête"
+      }
+    },
+    "briefing": {
+      "badge": "Aujourd'hui",
+      "description": "Examinez les éléments nécessitant une action aujourd'hui, puis passez directement au flux de travail approprié.",
+      "needsAction": {
+        "description": "Commencez ici pour le suivi opérationnel le plus urgent.",
+        "empty": "Tout est en ordre. Aucune action du responsable n'est requise pour le moment.",
+        "title": "Nécessite une action"
+      },
+      "sections": {
+        "empty": "Aucun problème détecté."
+      },
+      "severity": {
+        "critical": "Critique",
+        "high": "Élevé",
+        "info": "Info",
+        "warning": "Avertissement"
+      },
+      "summaryAriaLabel": "Résumé du jour",
+      "supportingSectionsAriaLabel": "Sections de support",
+      "title": "Briefing quotidien du responsable",
+      "updatedAt": "{date} - Mis à jour à {time}"
+    }
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "dashboard": {
+    "birthday": {
+      "birthday": "Geburtstag",
+      "birthdays": "Geburtstag",
+      "celebration": "Fyr",
+      "celebrations": "Fyre",
+      "count-today": "{count} {birthday} hüt!",
+      "description": "Fiire i de nächste 30 Taag",
+      "description-count": "{count} {celebration} i de nächste 30 Taag",
+      "error": "Chonnte die kommende Geburtstag nöd lade",
+      "in-days": "I {days} Taag",
+      "more-celebrations": "+{count} wiiteri Fiire",
+      "title": "Kommendi Geburtstag",
+      "today": "Hüt!",
+      "tomorrow": "Morn"
+    },
+    "customize": {
+      "empty-description": "Nutze s Dashboard-Aapassigs-Icon zum einzelni Widgets wieder z'aktiviere oder s Layout z'ruckzsetze, zum alli Widgets wieder aazzeige.",
+      "empty-title": "Alli Dashboard-Widgets sind versteckt",
+      "move-down": "{widget} abe schiebe",
+      "move-up": "{widget} ufe schiebe",
+      "reset": "Layout z'rucksetze",
+      "title": "Dashboard-Widgets",
+      "trigger": "Dashboard aaspasse"
+    },
+    "hydration": {
+      "add-glass": "{count} Glas dezuefüege",
+      "add-glasses": "{count} Gläser dezuefüege",
+      "description": "Tracke Sie Ihre tägliche Wasserkonsum",
+      "error": "Chonnte d'Hydrations-Statistik nöd lade",
+      "log-error": "Chonnte de Wasserkonsum nöd speichere",
+      "of-goal": "vo {goal}",
+      "title": "Hydration"
+    },
+    "layout": {
+      "saved": "Dashboard-Layout gspeicheret",
+      "saveFailed": "Dashboard-Layout hät nöd chönne gspeicheret werde",
+      "saveFailedDescription": "Ihri Änderige händ nöd chönne gspeicheret werde. Bitte versueched Sie es nomal."
+    },
+    "managed-employees": {
+      "direct-reports": "{count} direkti Mitarbeiter",
+      "error": "Verwalteti Mitarbeiter chönd nöd glade werde",
+      "no-reports": "Noch keini diräkte Unterstellte",
+      "no-reports-description": "Sobald öpper zuegwise isch, gsehsch d'Teammitglieder do",
+      "people-you-manage": "Lüt, wo du füersch",
+      "title": "Dis Team",
+      "view-all": "Alli aazeige",
+      "view-all-members": "Alli {count} Teammitglieder aazeige"
+    },
+    "manager-today": {
+      "all-clear": "Es git momentan kei offeni Manager-Aktion.",
+      "description": "Prüeffed hüt alles, bevor chliini Problem d'Lohnabrächnig oder d'Besetzig beiiflusset.",
+      "error": "D'Aazaal vo de Manager-Briefings hät nöd chönne glade wärde.",
+      "metric-approvals": "Freigabe",
+      "metric-clock-ins": "Stempel-Iiträg",
+      "metric-critical": "Kritisch",
+      "metric-risks": "Risike",
+      "open": "Offes Briefing",
+      "title": "Manager hüt"
+    },
+    "pending-approvals": {
+      "absence-requests": "Abweseheitsaastellige",
+      "awaiting-approval": "Wartet uf dini Freigab",
+      "correction": "Korrektur",
+      "description": "Aastellige, wo uf dini Entscheidig warted",
+      "error": "Fehler bim Lade vo de offene Freigabe",
+      "more-requests": "+{count} witeri Aastellige",
+      "pending-requests": "{count} offeni {request}",
+      "request": "Aafrog",
+      "requests": "Aafroge",
+      "requires-attention": "Brucht soforti Ufmerksamkeit",
+      "review-all": "Alli Freigabe aaluege",
+      "time-corrections": "Zitkorrekture",
+      "title": "Offeni Freigabe"
+    },
+    "presence": {
+      "fixedOfficeDays": "Festi Bürotäg: {days}",
+      "flexibleOfficePolicy": "Flexibles Büro-Reglement für die Periode",
+      "homeOfficeLeft": "Home-Office no übrig",
+      "officeDaysWarning": "Büro-Aaforderig überstiigt die verblibende Arbetstäg",
+      "officeStillRequired": "Büro isch no erforderlich",
+      "periodDescription": "Die Periode",
+      "unavailable": "Präsenz-Reglement isch nöd verfüegbar.",
+      "workLocation": "Arbetsort"
+    },
+    "quick-stats": {
+      "behind": "Im Rückstand",
+      "description": "Dine wöchentliche und monatliche Fortschritt",
+      "error": "Fehler bim Lade vo de Schnellstatistik",
+      "good-pace": "Guets Tempo",
+      "hours": "Stunde",
+      "on-track": "Im Plan",
+      "progress": "{actual}h vo {expected}h ({percent}%)",
+      "this-month": "Dä Monet",
+      "this-week": "Die Wuche",
+      "title": "Ziterfassig"
+    },
+    "recently-approved": {
+      "absence": "Abweseheit",
+      "all-caught-up": "Alles erledigt!",
+      "approved-recently": "{count} {request} chürzlich freigäh",
+      "by": "vo {name}",
+      "description": "Die letschte freigäbene Aastellige",
+      "description-count": "Die letschte {count} freigäbene {request}",
+      "error": "Fehler bim Lade vo de chürzlich freigäbene Aastellige",
+      "more-approved": "+{count} meh freigäh",
+      "request": "Aafrog",
+      "requests": "Aafroge",
+      "time": "Zit",
+      "title": "Chürzlich freigäh",
+      "view-all": "Alli Freigabe aazeige"
+    },
+    "team-overview": {
+      "active-count": "{active} vo {total} Aagstellte ({percent}%)",
+      "active-employees": "Aktivi Aagstellti",
+      "avg-hours": "Durchschn. Stunde",
+      "description": "Teamstatistik uf e Blick",
+      "employees-button": "Aagstellti",
+      "error": "Team-Statistike chönd nöd glade werde",
+      "per-week": "/Wuche",
+      "teams": "Team",
+      "teams-button": "Team",
+      "title": "Organisation"
+    },
+    "upcoming-time-off": {
+      "absence": "Absänz",
+      "absences": "Absänze",
+      "day": "Tag",
+      "days": "Täg",
+      "description": "Geplanti Team-Abweseheite",
+      "description-count": "Die nächste {count} geplante {absence}",
+      "error": "Lade vo de bevorstehende Abweseheite isch fählgschlage",
+      "title": "Bevorstehendi Abweseheite",
+      "today": "Hüt",
+      "tomorrow": "Morn",
+      "view-calendar": "Ganze Kaländer aaluege"
+    },
+    "vacation": {
+      "available": "{days} verfügbar",
+      "carryover": "Übertrag",
+      "carryover-days": "{days} Täg",
+      "days-remaining": "verbleibendi Täg",
+      "description": "{year} Ferietäg",
+      "error": "Lade vom Feriesaldo isch fählgschlage",
+      "expires-in": "Läuft in {days} Täg ab",
+      "label-available": "Verfügbar",
+      "label-pending": "Pängdig",
+      "label-used": "Brucht",
+      "no-policy": "Kei Ferierichtlinie für das Jahr konfiguriert",
+      "pending": "{days} pängdig",
+      "percent-used": "{percent}% brucht",
+      "title": "Feriesaldo",
+      "total": "{days} total",
+      "used": "{days} brucht"
+    },
+    "whos-out": {
+      "error": "Lade vo de hütige Abweseheite isch fählgschlage",
+      "everyone-in": "All sind hüt im Büro",
+      "everyones-in": "All sind da!",
+      "full-team": "S'ganze Team isch verfügbar!",
+      "member": "Mitglied",
+      "members": "Mitglieder",
+      "members-out": "{count} Team-{member} abwesend",
+      "more-members": "+{count} witeri Teammitglieder",
+      "more-returning": "+{count} meh",
+      "out-count": "{count} abwesend",
+      "out-today": "Hüt abwesend",
+      "returning-tomorrow": "Chunt morn zrugg",
+      "returns-tomorrow": "Chunt morn zrugg",
+      "team-availability": "Team-Verfügbarkeit",
+      "title": "Wer isch hüt abwesend",
+      "until-date": "Bis {date}",
+      "view-calendar": "Ganze Kaländer aaluege"
+    },
+    "widgets": {
+      "dragToReorder": "Ziehe zum Widget neu aordne",
+      "moving": "Widget wird verschobe…",
+      "refresh": "Aktualisiere"
+    }
+  }
+}

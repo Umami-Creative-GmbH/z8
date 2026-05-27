@@ -1,7 +1,7 @@
 "use client";
 
-import useEmblaCarousel, { type UseEmblaCarouselType } from "embla-carousel-react";
 import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
+import useEmblaCarousel, { type UseEmblaCarouselType } from "embla-carousel-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -58,32 +58,29 @@ function Carousel({
 	const [canScrollPrev, setCanScrollPrev] = React.useState(false);
 	const [canScrollNext, setCanScrollNext] = React.useState(false);
 
-	const onSelect = React.useCallback((api: CarouselApi) => {
+	const onSelect = (api: CarouselApi) => {
 		if (!api) return;
 		setCanScrollPrev(api.canScrollPrev());
 		setCanScrollNext(api.canScrollNext());
-	}, []);
+	};
 
-	const scrollPrev = React.useCallback(() => {
+	const scrollPrev = () => {
 		api?.scrollPrev();
-	}, [api]);
+	};
 
-	const scrollNext = React.useCallback(() => {
+	const scrollNext = () => {
 		api?.scrollNext();
-	}, [api]);
+	};
 
-	const handleKeyDown = React.useCallback(
-		(event: React.KeyboardEvent<HTMLDivElement>) => {
-			if (event.key === "IconArrowLeft") {
-				event.preventDefault();
-				scrollPrev();
-			} else if (event.key === "IconArrowRight") {
-				event.preventDefault();
-				scrollNext();
-			}
-		},
-		[scrollPrev, scrollNext],
-	);
+	const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+		if (event.key === "IconArrowLeft") {
+			event.preventDefault();
+			scrollPrev();
+		} else if (event.key === "IconArrowRight") {
+			event.preventDefault();
+			scrollNext();
+		}
+	};
 
 	React.useEffect(() => {
 		if (!api || !setApi) return;
@@ -220,10 +217,10 @@ function CarouselNext({
 }
 
 export {
-	type CarouselApi,
 	Carousel,
+	type CarouselApi,
 	CarouselContent,
 	CarouselItem,
-	CarouselPrevious,
 	CarouselNext,
+	CarouselPrevious,
 };

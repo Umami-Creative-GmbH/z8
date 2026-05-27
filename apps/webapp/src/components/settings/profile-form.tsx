@@ -13,7 +13,7 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import {
@@ -36,12 +36,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import {
-	TFormControl,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { UserAvatar } from "@/components/user-avatar";
 import { useImageUpload } from "@/hooks/use-image-upload";
@@ -99,7 +94,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
 	const queryClient = useQueryClient();
 	const [isInitialLoading, setIsInitialLoading] = useState(true);
 	const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
-	const today = useSyncExternalStore(subscribeTodaySnapshot, getTodaySnapshot, getServerTodaySnapshot);
+	const today = useSyncExternalStore(
+		subscribeTodaySnapshot,
+		getTodaySnapshot,
+		getServerTodaySnapshot,
+	);
 	const presence = useEmployeeClockStatuses(currentEmployeeId ? [currentEmployeeId] : [], {
 		polling: false,
 	});
@@ -154,27 +153,19 @@ export function ProfileForm({ user }: ProfileFormProps) {
 		},
 	});
 
-	const validateFirstName = useCallback(
-		(value: string) =>
-			validateStructuredProfileNameField("firstName", {
-				firstName: value,
-				lastName: form.store.state.values.lastName,
-			}),
-		[form.store],
-	);
+	const validateFirstName = (value: string) =>
+		validateStructuredProfileNameField("firstName", {
+			firstName: value,
+			lastName: form.store.state.values.lastName,
+		});
 
-	const validateLastName = useCallback(
-		(value: string) =>
-			validateStructuredProfileNameField("lastName", {
-				firstName: form.store.state.values.firstName,
-				lastName: value,
-			}),
-		[form.store],
-	);
-	const validatePronouns = useCallback(
-		(value: string) => (value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined),
-		[],
-	);
+	const validateLastName = (value: string) =>
+		validateStructuredProfileNameField("lastName", {
+			firstName: form.store.state.values.firstName,
+			lastName: value,
+		});
+	const validatePronouns = (value: string) =>
+		value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined;
 
 	const avatarImage = useStore(form.store, (state) => state.values.image);
 	const selectedGender = useStore(form.store, (state) => state.values.gender);
@@ -261,17 +252,14 @@ export function ProfileForm({ user }: ProfileFormProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	// Handle file input change
-	const handleFileInputChange = useCallback(
-		(e: React.ChangeEvent<HTMLInputElement>) => {
-			const files = e.target.files;
-			if (files && files.length > 0) {
-				addFile(files[0]);
-				// Reset input so the same file can be selected again
-				e.target.value = "";
-			}
-		},
-		[addFile],
-	);
+	const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = e.target.files;
+		if (files && files.length > 0) {
+			addFile(files[0]);
+			// Reset input so the same file can be selected again
+			e.target.value = "";
+		}
+	};
 
 	// Avatar removal mutation
 	const removeAvatarMutation = useMutation({
@@ -708,17 +696,17 @@ export function ProfileForm({ user }: ProfileFormProps) {
 											</Button>
 										</PopoverTrigger>
 										<PopoverContent className="w-auto p-0" align="start">
-										<Calendar
-											mode="single"
-											selected={selectedBirthday || undefined}
-											onSelect={(date) => form.setFieldValue("birthday", date || null)}
-											disabled={(date) => (today ? date > today : false)}
-											autoFocus
-											captionLayout="dropdown"
-											startMonth={BIRTHDAY_START_MONTH}
-											endMonth={today ?? undefined}
-											defaultMonth={selectedBirthday || BIRTHDAY_DEFAULT_MONTH}
-										/>
+											<Calendar
+												mode="single"
+												selected={selectedBirthday || undefined}
+												onSelect={(date) => form.setFieldValue("birthday", date || null)}
+												disabled={(date) => (today ? date > today : false)}
+												autoFocus
+												captionLayout="dropdown"
+												startMonth={BIRTHDAY_START_MONTH}
+												endMonth={today ?? undefined}
+												defaultMonth={selectedBirthday || BIRTHDAY_DEFAULT_MONTH}
+											/>
 										</PopoverContent>
 									</Popover>
 									<p className="text-muted-foreground text-sm">

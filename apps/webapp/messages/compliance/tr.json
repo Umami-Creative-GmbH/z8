@@ -1,0 +1,140 @@
+{
+  "compliance": {
+    "commandCenter": {
+      "coverage": {
+        "accessControls": "Erişim kontrolleri, yalnızca halihazırda yakalanan hassas denetim günlüğü olaylarını özetler.",
+        "auditEvidence": "Denetim kanıtı; canlı denetim dışa aktarma yapılandırmasını, denetim paketi isteklerini ve son doğrulama sonuçlarını kullanır.",
+        "workforceCompliance": "İş gücü uyumluluğu; son 7 gündeki çalışma politikası ihlallerini ve bekleyen istisna taleplerini kullanır."
+      },
+      "events": {
+        "auditEvidenceFailures": {
+          "description": "Son başarısız işler: {failedRequests}; son geçersiz doğrulamalar: {invalidVerifications}",
+          "title": "Denetim kanıtı hataları tespit edildi"
+        },
+        "auditPackFailure": {
+          "description": "Son başarısız işler: {failedRequests}",
+          "title": "Denetim paketi oluşturma başarısız oldu"
+        },
+        "auditVerificationFailure": {
+          "description": "Son geçersiz doğrulamalar: {invalidVerifications}",
+          "title": "Denetim doğrulaması başarısız oldu"
+        },
+        "sensitiveAction": {
+          "description": "{entityType} üzerinde {action}",
+          "title": "Hassas eylem: {action}"
+        },
+        "workforceFindings": {
+          "description": "Dinlenme: {restPeriodViolations}, Diğer politika: {generalPolicyViolations}, Fazla mesai: {overtimeViolations}",
+          "title": "Son iş gücü politikası bulguları"
+        }
+      },
+      "facts": {
+        "access": {
+          "latestSensitiveAction": "En son hassas eylem: {action}",
+          "latestSensitiveActionNone": "En son hassas eylem: yok",
+          "noSensitiveEvents": "Son 24 saat içinde hiçbir hassas kontrol değişikliği kaydedilmedi.",
+          "recentSensitiveEvents": "Son hassas olaylar: {count}"
+        },
+        "audit": {
+          "activeSigningKey": "Etkin imzalama anahtarı: {fingerprint}",
+          "lastSuccessfulAuditPack": "Son başarılı denetim paketi: {timestamp}",
+          "missingSigningKey": "İmzalama anahtarları henüz yapılandırılmadı.",
+          "noSuccessfulAuditPack": "Henüz başarılı bir denetim paketi kaydedilmedi.",
+          "recentFailedJobs": "Son başarısız denetim paketi işleri: {count}",
+          "recentInvalidVerifications": "Son geçersiz doğrulama denemeleri: {count}"
+        },
+        "unavailable": {
+          "accessControls": "Erişim kontrolü olayları yüklenemedi.",
+          "auditEvidence": "Denetim kanıtı verileri yüklenemedi.",
+          "workforceCompliance": "İş gücü uyumluluk verileri yüklenemedi."
+        },
+        "workforce": {
+          "generalPolicyViolations": "Diğer politika ihlalleri: {count}",
+          "overtimeViolations": "Fazla mesai ihlalleri: {count}",
+          "pendingExceptions": "Bekleyen istisnalar: {count}",
+          "restPeriodViolations": "Dinlenme süresi ihlalleri: {count}"
+        }
+      },
+      "links": {
+        "inspectCompliance": "Uyumluluğu incele",
+        "inspectInAuditLog": "Denetim Günlüğünde incele",
+        "openAuditExport": "Denetim Dışa Aktarımını Aç",
+        "openAuditLog": "Denetim Günlüğünü Aç",
+        "openComplianceSettings": "Uyumluluk Ayarlarını Aç",
+        "reviewAuditExport": "Denetim dışa aktarımını incele"
+      },
+      "sections": {
+        "accessControls": {
+          "headline": {
+            "critical": "Hassas kontrol değişikliklerinin incelenmesi gerekiyor",
+            "healthy": "Yakın zamanda hiçbir hassas kontrol değişikliği kaydedilmedi",
+            "warning": "Yakın zamanda kontrol değişiklikleri algılandı"
+          }
+        },
+        "auditEvidence": {
+          "headline": {
+            "critical": "Denetim kanıtlarının dikkat gerektirdiği durumlar var",
+            "healthy": "Denetim kanıtı sinyalleri sağlıklı görünüyor",
+            "warning": "Denetim kanıtı yalnızca kısmen hazır"
+          }
+        },
+        "unavailable": {
+          "headline": "Sinyal geçici olarak kullanılamıyor"
+        },
+        "workforceCompliance": {
+          "headline": {
+            "critical": "İş gücü politikası ihlallerinin incelenmesi gerekiyor",
+            "healthy": "Yakın zamanda hiçbir iş gücü politikası sorunu algılanmadı",
+            "warning": "İş gücü uyumluluğu sapma gösteriyor"
+          }
+        }
+      },
+      "status": {
+        "critical": "kritik",
+        "healthy": "sağlıklı",
+        "unavailable": "kullanılamıyor",
+        "warning": "uyarı"
+      },
+      "summary": {
+        "critical": "Kritik uyumluluk risklerinin dikkat gerektirdiği durumlar var",
+        "healthy": "İzlenen sinyallerde aktif bir sorun algılanmadı",
+        "unavailable": "Bazı uyumluluk sinyalleri kullanılamıyor",
+        "warning": "Uyumluluk sinyallerinin incelenmesi gerekiyor"
+      }
+    },
+    "exception": {
+      "approved": "İstisna Onaylandı",
+      "approvedDescription": "Uyumluluk istisnası onaylandı.",
+      "approveFailed": "Onaylanamadı",
+      "plannedDuration": "Planlanmış",
+      "plannedDurationHelp": "Sınırın ötesinde ihtiyaç duyacağınız ek süreyi tahmin edin.",
+      "reason": "İstisna Nedeni",
+      "reasonPlaceholder": "Bu istisnaya neden ihtiyaç duyduğunuzu açıklayın (örneğin; acil proje teslim tarihi, kritik müşteri toplantısı)...",
+      "reasonRequired": "Neden Gerekli",
+      "reasonRequiredDescription": "Lütfen istisna talebiniz için bir neden belirtin.",
+      "rejectDescription": "Bu istisna talebini reddetmek için bir neden belirtin (isteğe bağlı)",
+      "rejected": "İstisna Reddedildi",
+      "rejectedDescription": "Uyumluluk istisnası reddedildi.",
+      "rejectFailed": "Reddedilemedi",
+      "rejectionPlaceholder": "Bu istisnayı reddetme nedenini girin...",
+      "rejectionReason": "Reddetme nedeni",
+      "rejectTitle": "İstisna Talebini Reddet",
+      "requestDescription": "Uyumluluk kısıtlamalarına rağmen devam etmek için yöneticinizden ön onay isteyin. Onaylanan istisnalar 24 saat boyunca geçerlidir.",
+      "requestedAt": "Talep Edildi",
+      "requestFailed": "Talep Başarısız Oldu",
+      "requestSubmitted": "İstisna Talebi Gönderildi",
+      "requestSubmittedDescription": "Yöneticiniz bilgilendirilecek ve talebinizi onaylayabilecek veya reddedebilecektir.",
+      "requestTitle": "Uyumluluk İstisnası Talep Et",
+      "submit": "Talebi Gönder",
+      "type": "İstisna Türü"
+    },
+    "hasApprovedException": "Onaylanmış bir istisnanız var. Devam edebilirsiniz.",
+    "moreAlerts": "daha fazla",
+    "noExceptions": "Bekleyen istisna talebi yok",
+    "pendingExceptions": "Bekleyen İstisna Talepleri",
+    "pendingExceptionsDescription": "Onayınızı gerektiren istisna taleplerini inceleyin",
+    "requestException": "İstisna Talep Et",
+    "restPeriodMessage": "Giriş yapabilmeniz için {{time}} daha dinlenmeniz gerekiyor. Bir sonraki izin verilen giriş zamanı: {{nextTime}}",
+    "restPeriodRequired": "Dinlenme Süresi Gerekli"
+  }
+}

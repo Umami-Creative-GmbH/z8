@@ -396,6 +396,56 @@
       "percentageDescription": "Additional time credit",
       "rangeEnd": "Range End",
       "rangeStart": "Range Start",
+      "reports": {
+        "details": {
+          "appliedRules": "Applied rules",
+          "calculatedAt": "Calculated at",
+          "noAppliedRules": "No applied rules recorded.",
+          "overlapPolicy": "Overlap policy",
+          "percentage": "Percentage",
+          "qualifying": "Qualifying",
+          "surcharge": "Surcharge",
+          "workPeriod": "Work period"
+        },
+        "empty": {
+          "description": "No surcharge calculations matched the selected filters.",
+          "title": "No surcharge calculations found"
+        },
+        "errors": {
+          "invalidDateRange": "Start date must be on or before end date.",
+          "loadFailed": "Failed to load surcharge calculations.",
+          "loadTitle": "Unable to load calculations"
+        },
+        "filters": {
+          "apply": "Apply filters",
+          "employeeId": "Employee ID",
+          "endDate": "End date",
+          "startDate": "Start date"
+        },
+        "loading": "Loading calculations…",
+        "previousResults": {
+          "description": "The latest request failed, so the previous successful results remain visible.",
+          "title": "Showing previous results."
+        },
+        "rowLimitNotice": "Showing the first 500 matching calculations. Narrow the date or employee filters to refine totals.",
+        "summary": {
+          "baseHours": "Base hours",
+          "calculations": "Calculations",
+          "creditedHours": "Credited surcharge hours",
+          "qualifyingHours": "Qualifying surcharge hours"
+        },
+        "table": {
+          "base": "Base",
+          "created": "Created",
+          "credit": "Credit",
+          "date": "Date",
+          "details": "Details",
+          "employee": "Employee",
+          "percentage": "Percentage",
+          "qualifying": "Qualifying"
+        },
+        "title": "Surcharge reports"
+      },
       "rule": "Rule",
       "ruleCountLabel": "{count, plural, one {# rule} other {# rules}}",
       "ruleName": "Rule Name",

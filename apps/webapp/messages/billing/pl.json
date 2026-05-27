@@ -1,0 +1,87 @@
+{
+  "billing": {
+    "access": {
+      "canceled": "Twoja subskrypcja została anulowana. Zasubskrybuj ponownie, aby odzyskać dostęp.",
+      "paymentFailed": "Ostatnia płatność nie powiodła się. Prosimy o aktualizację metody płatności.",
+      "required": "Do korzystania z tej aplikacji wymagana jest subskrypcja.",
+      "trialExpired": "Twój okres próbny wygasł. Zasubskrybuj, aby kontynuować korzystanie z aplikacji."
+    },
+    "activeSeats": "Aktywne stanowiska",
+    "alerts": {
+      "canceledDescription": "Proces płatności został anulowany. Możesz spróbować ponownie, kiedy będziesz gotowy.",
+      "subscriptionRequired": "Wymagana subskrypcja",
+      "successDescription": "Twoja subskrypcja została aktywowana. Dziękujemy za subskrypcję!",
+      "successTitle": "Sukces!"
+    },
+    "bestValue": "Najlepsza oferta",
+    "billedMonthly": "płatne miesięcznie",
+    "cancelsOn": "Wygasa {date}",
+    "checkoutCreateFailed": "Nie udało się utworzyć sesji płatności",
+    "checkoutStartFailed": "Nie udało się rozpocząć płatności",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout zbiera teraz dane płatności. Płatna subskrypcja rozpocznie się dopiero po wygaśnięciu okresu próbnego.",
+      "trialContinuesTitle": "Twój okres próbny trwa nadal po uaktualnieniu"
+    },
+    "choosePlan": "Wybierz swój plan",
+    "choosePlanDescription": "Rozpocznij 14-dniowy bezpłatny okres próbny. Nie wymagamy karty kredytowej na start.",
+    "currentPlan": "Obecny plan",
+    "days": "{count} dni",
+    "description": "Zarządzaj subskrypcją i danymi rozliczeniowymi",
+    "faq": {
+      "afterTrial": {
+        "answer": "Po zakończeniu 14-dniowego okresu próbnego zostanie naliczona opłata za wybrany plan subskrypcji. Możesz zrezygnować w dowolnym momencie przed końcem okresu próbnego, aby uniknąć opłat.",
+        "question": "Co się dzieje po zakończeniu okresu próbnego?"
+      },
+      "perSeat": {
+        "answer": "Opłaty naliczane są na podstawie liczby aktywnych członków w Twojej organizacji. Gdy dodajesz lub usuwasz członków, subskrypcja jest automatycznie dostosowywana.",
+        "question": "Jak działają rozliczenia za użytkownika?"
+      },
+      "switch": {
+        "answer": "Tak! Możesz zmienić plan w dowolnym momencie za pośrednictwem portalu rozliczeniowego. Zmiany wejdą w życie w kolejnym cyklu rozliczeniowym.",
+        "question": "Czy mogę przełączać się między rozliczeniem miesięcznym a rocznym?"
+      },
+      "title": "Najczęściej zadawane pytania"
+    },
+    "features": {
+      "allFeatures": "Wszystkie funkcje w cenie",
+      "cancelAnytime": "Anuluj w dowolnym momencie",
+      "trial": "14-dniowy bezpłatny okres próbny",
+      "yearlyDiscount": "25% zniżki w porównaniu z płatnością miesięczną"
+    },
+    "interval": {
+      "monthlyBilling": "Rozliczenie miesięczne",
+      "yearlyBilling": "Rozliczenie roczne"
+    },
+    "manageBilling": "Zarządzaj rozliczeniami",
+    "monthlyCost": "Koszt miesięczny",
+    "nextBilling": "Następne rozliczenie",
+    "opening": "Otwieranie...",
+    "perSeatMonth": "/użytkownika/miesiąc",
+    "plans": {
+      "monthly": {
+        "description": "Elastyczne rozliczenia miesięczne",
+        "title": "Miesięcznie"
+      },
+      "yearly": {
+        "description": "Oszczędź 25% przy rozliczeniu rocznym",
+        "title": "Rocznie"
+      }
+    },
+    "portalOpenFailed": "Nie udało się otworzyć portalu rozliczeniowego",
+    "priceSeatMonth": "{price} €/użytkownika/mies.",
+    "priceSeatMonthYearly": "{price} €/użytkownika/mies. (płatne rocznie)",
+    "seatBilledAnnually": "{price} €/użytkownika płatne rocznie",
+    "starting": "Uruchamianie...",
+    "startTrial": "Rozpocznij bezpłatny okres próbny",
+    "status": {
+      "canceled": "Anulowano",
+      "noSubscription": "Brak subskrypcji",
+      "pastDue": "Zaległa płatność",
+      "trial": "Okres próbny"
+    },
+    "title": "Rozliczenia i subskrypcja",
+    "trialEnds": "Koniec okresu próbnego",
+    "vatNotice": "Podane ceny są cenami netto bez VAT. VAT zostanie doliczony, jeśli ma zastosowanie.",
+    "yearTotal": "{amount} €/rok łącznie"
+  }
+}

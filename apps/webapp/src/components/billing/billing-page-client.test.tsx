@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
@@ -67,11 +67,9 @@ describe("BillingPageClient", () => {
 			const billingMessages = JSON.parse(
 				readFileSync(join(process.cwd(), `messages/billing/${locale}.json`), "utf8"),
 			);
-			const rootMessages = JSON.parse(readFileSync(join(process.cwd(), `messages/${locale}.json`), "utf8"));
-
 			expect(billingMessages.billing.checkout.trialContinuesTitle).toBeTruthy();
 			expect(billingMessages.billing.checkout.trialContinuesDescription).toBeTruthy();
-			expect(rootMessages.billing?.checkout).toBeUndefined();
+			expect(existsSync(join(process.cwd(), `messages/${locale}.json`))).toBe(false);
 		}
 	});
 });

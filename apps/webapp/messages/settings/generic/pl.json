@@ -1,0 +1,961 @@
+{
+  "settings": {
+    "avv": {
+      "contractDetails": {
+        "controller": "Klient (Administrator)",
+        "descriptionPrefix": "Niniejsza umowa reguluje przetwarzanie danych osobowych w imieniu Twojej organizacji oraz ",
+        "processor": "Wykonawca (Podmiot przetwarzający)",
+        "title": "Szczegóły umowy"
+      },
+      "description": "Pobierz umowę powierzenia przetwarzania danych zgodnie z art. 28 RODO.",
+      "hosting": {
+        "descriptionPrefix": "Wszystkie dane są hostowane na serwerach ",
+        "descriptionSuffix": ". Nie korzystamy z dalszych podwykonawców.",
+        "title": "Hosting i podwykonawcy"
+      },
+      "title": "Umowa powierzenia przetwarzania danych (DPA)"
+    },
+    "billing": {
+      "description": "Zarządzaj subskrypcją, metodami płatności i fakturami",
+      "title": "Rozliczenia i subskrypcja"
+    },
+    "compliance": {
+      "description": "Przeglądaj i zarządzaj wnioskami o wyjątki od zgodności od członków zespołu",
+      "title": "Zgodność z ArbZG"
+    },
+    "customDomains": {
+      "description": "Skonfiguruj własną domenę, branding i SSO dla swojej organizacji",
+      "title": "Domena i branding"
+    },
+    "customers": {
+      "column": {
+        "contactPerson": "Osoba kontaktowa",
+        "email": "E-mail",
+        "name": "Nazwa firmy",
+        "phone": "Telefon"
+      },
+      "create": "Dodaj klienta",
+      "created": "Klient utworzony",
+      "createFailed": "Nie udało się utworzyć klienta",
+      "deleted": "Klient usunięty",
+      "delete": {
+        "description": "Czy na pewno chcesz usunąć \"{name}\"? Projekty przypisane do tego klienta będą nadal działać, ale odniesienie do klienta zostanie usunięte.",
+        "title": "Usuń klienta"
+      },
+      "deleteFailed": "Nie udało się usunąć klienta",
+      "description": "Zarządzaj kontaktami klientów w celu przypisywania projektów",
+      "dialog": {
+        "create": "Dodaj klienta",
+        "createDescription": "Dodaj nowego klienta do przypisywania projektów",
+        "createTitle": "Dodaj klienta",
+        "editDescription": "Zaktualizuj dane klienta",
+        "editTitle": "Edytuj klienta",
+        "save": "Zapisz zmiany"
+      },
+      "empty": {
+        "description": "Dodaj swojego pierwszego klienta, aby przypisać go do projektów.",
+        "title": "Brak klientów"
+      },
+      "field": {
+        "address": "Adres",
+        "addressPlaceholder": "Ulica, miasto, kod pocztowy",
+        "contactPerson": "Osoba kontaktowa",
+        "contactPersonPlaceholder": "np. Jan Kowalski",
+        "email": "E-mail",
+        "name": "Nazwa firmy",
+        "namePlaceholder": "Wpisz nazwę firmy",
+        "phone": "Telefon",
+        "project": "Projekt",
+        "projectPlaceholder": "Wybierz projekt",
+        "vatId": "NIP",
+        "website": "Strona internetowa"
+      },
+      "list": {
+        "description": "Łącznie {count} klientów",
+        "title": "Wszyscy klienci"
+      },
+      "managerNoProjects": "Brak dostępnych zarządzanych projektów. Utwórz lub zarządzaj projektem przed dodaniem klientów.",
+      "projectRequired": "Najpierw wybierz projekt",
+      "title": "Klienci",
+      "updated": "Klient zaktualizowany",
+      "updateFailed": "Nie udało się zaktualizować klienta"
+    },
+    "dataExport": {
+      "description": "Eksportuj dane swojej organizacji",
+      "form": {
+        "aboutAsync": "Eksporty są przetwarzane asynchronicznie",
+        "aboutEmail": "Otrzymasz wiadomość e-mail, gdy będą gotowe",
+        "aboutLinkValidity": "Linki do pobrania są ważne przez 24 godziny",
+        "aboutOrgDataOnly": "Uwzględnione są tylko dane Twojej organizacji",
+        "aboutStorageDuration": "Pliki eksportu są przechowywane przez 7 dni",
+        "aboutTitle": "O eksporcie danych",
+        "description": "Wybierz kategorie danych, które chcesz wyeksportować",
+        "selectAll": "Zaznacz wszystko",
+        "selectAtLeastOne": "Wybierz co najmniej jedną kategorię",
+        "startExport": "Rozpocznij eksport (${selectedCategories.size})",
+        "startingExport": "Rozpoczynanie eksportu...",
+        "submitError": "Nie udało się rozpocząć eksportu",
+        "submitSuccess": "Eksport rozpoczęty pomyślnie",
+        "title": "Eksportuj dane",
+        "unexpectedError": "Wystąpił nieoczekiwany błąd"
+      },
+      "history": {
+        "columnActions": "Akcje",
+        "columnCategories": "Kategorie",
+        "columnDate": "Data",
+        "columnSize": "Rozmiar",
+        "columnStatus": "Status",
+        "deleteDialogDescription": "Czy na pewno chcesz usunąć ten eksport? Tej czynności nie można cofnąć.",
+        "deleteDialogTitle": "Usuń eksport",
+        "deleteError": "Nie udało się usunąć eksportu",
+        "deleteSuccess": "Eksport usunięty",
+        "description": "Twoje poprzednie eksporty danych",
+        "download": "Pobierz",
+        "downloadError": "Nie udało się pobrać",
+        "downloadSuccess": "Pobieranie rozpoczęte",
+        "emptyDescription": "Brak eksportów",
+        "emptyHint": "Utwórz swój pierwszy eksport, korzystając z powyższego formularza",
+        "moreCategories": "+${exp.categories.length - 3} więcej",
+        "statusCompleted": "Ukończono",
+        "statusFailed": "Niepowodzenie",
+        "statusPending": "Oczekujące",
+        "statusProcessing": "Przetwarzanie",
+        "title": "Historia eksportu",
+        "unexpectedError": "Wystąpił nieoczekiwany błąd"
+      },
+      "storage": {
+        "accessKeyDescription": "Twój identyfikator klucza dostępu AWS",
+        "accessKeyId": "Identyfikator klucza dostępu",
+        "bucketDescription": "Nazwa Twojego zasobnika S3",
+        "bucketName": "Nazwa zasobnika",
+        "bucketPlaceholder": "my-export-bucket",
+        "connectionFailed": "Połączenie nieudane",
+        "connectionSuccess": "Połączenie udane",
+        "deleteDialogDescription": "Czy na pewno chcesz usunąć tę konfigurację pamięci masowej?",
+        "deleteDialogTitle": "Usuń konfigurację",
+        "deleteError": "Nie udało się usunąć konfiguracji",
+        "deleteSuccess": "Konfiguracja usunięta",
+        "description": "Skonfiguruj własną pamięć masową zgodną z S3 do eksportu",
+        "endpoint": "Niestandardowy punkt końcowy (opcjonalnie)",
+        "endpointDescription": "Dla usług zgodnych z S3, takich jak MinIO",
+        "endpointPlaceholder": "https://s3.example.com",
+        "keepExistingCredentials": "Pozostaw puste, aby zachować istniejące dane uwierzytelniające",
+        "lastVerified": "Ostatnia weryfikacja: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "region": "Region",
+        "regionDescription": "Region AWS, w którym znajduje się Twój zasobnik (bucket)",
+        "regionPlaceholder": "us-east-1",
+        "saveConfiguration": "Zapisz konfigurację",
+        "saveError": "Nie udało się zapisać konfiguracji",
+        "saveSuccess": "Konfiguracja zapisana",
+        "saveSuccessDescription": "Twoje ustawienia pamięci masowej S3 zostały zapisane",
+        "saving": "Zapisywanie...",
+        "secretAccessKey": "Klucz tajny (Secret Access Key)",
+        "secretKeyDescription": "Twój klucz tajny AWS",
+        "testConnection": "Testuj połączenie",
+        "testFailed": "Test połączenia nie powiódł się",
+        "testing": "Testowanie...",
+        "title": "Konfiguracja pamięci masowej S3",
+        "unexpectedError": "Wystąpił nieoczekiwany błąd",
+        "verified": "Zweryfikowano"
+      },
+      "storageNotConfigured": {
+        "description": "Skonfiguruj pamięć masową S3 przed utworzeniem eksportów",
+        "title": "Pamięć masowa nieskonfigurowana"
+      },
+      "tabs": {
+        "exportHistory": "Historia eksportu",
+        "newExport": "Nowy eksport",
+        "storageSettings": "Ustawienia pamięci masowej"
+      },
+      "title": "Eksport danych"
+    },
+    "emailConfig": {
+      "description": "Skonfiguruj niestandardowego dostawcę poczty e-mail dla wiadomości organizacji",
+      "title": "Konfiguracja poczty e-mail"
+    },
+    "emailTemplates": {
+      "actions": {
+        "reset": "Przywróć szablon systemowy",
+        "save": "Zapisz",
+        "sendTest": "Wyślij test"
+      },
+      "defaultFallback": "Domyślny mechanizm zastępczy",
+      "defaultFallbackDescription": "Jeśli ten szablon korzysta z ustawień domyślnych systemu, Z8 wyśle kopię systemową oraz temat:",
+      "description": "Dostosuj wiadomości e-mail wysyłane przez Twoją organizację",
+      "editBodyBeforeSaving": "Edytuj treść wiadomości e-mail przed zapisaniem pierwszego niestandardowego szablonu.",
+      "empty": "Dla tej organizacji nie są dostępne żadne szablony wiadomości e-mail.",
+      "eyebrow": "Komunikacja operacyjna",
+      "reset": "Szablon wiadomości e-mail przywrócony do szablonu systemowego",
+      "resetFailed": "Nie udało się przywrócić szablonu wiadomości e-mail",
+      "saved": "Szablon wiadomości e-mail zapisany",
+      "saveFailed": "Nie udało się zapisać szablonu wiadomości e-mail",
+      "status": {
+        "customized": "Dostosowane",
+        "default": "Domyślne"
+      },
+      "systemTemplates": "Szablony systemowe",
+      "testFailed": "Nie udało się wysłać wiadomości testowej",
+      "testSent": "Wiadomość testowa została wysłana na Twoje konto",
+      "title": "Szablony wiadomości e-mail"
+    },
+    "error": {
+      "actions": {
+        "backToSettings": "Powrót do ustawień",
+        "tryAgain": "Spróbuj ponownie"
+      },
+      "description": "Wystąpił błąd podczas ładowania strony ustawień. Może to być tymczasowy problem.",
+      "errorId": "Identyfikator błędu: {{digest}}",
+      "title": "Coś poszło nie tak"
+    },
+    "export": {
+      "description": "Eksportuj dane organizacji w celu wykonania kopii zapasowej lub migracji",
+      "title": "Eksport danych"
+    },
+    "exportOperations": {
+      "activity": {
+        "audit": {
+          "description": "Zarejestrowano żądanie eksportu audytu.",
+          "title": "Eksport audytu"
+        },
+        "payroll": {
+          "description": "Zarejestrowano zadanie eksportu płac.",
+          "title": "Eksport płac"
+        },
+        "scheduled": {
+          "description": "Zarejestrowano wykonanie zaplanowanego eksportu.",
+          "title": "Zaplanowany eksport"
+        }
+      },
+      "alerts": {
+        "auditFailed": {
+          "description": "Ostatnie żądanie eksportu audytu nie zostało ukończone.",
+          "title": "Eksport audytu nie powiódł się"
+        },
+        "blockedSchedule": {
+          "description": "{name} wymaga konfiguracji eksportu płac, zanim będzie można go uruchomić.",
+          "title": "Zaplanowany eksport płac jest zablokowany"
+        },
+        "payrollFailed": {
+          "description": "Ostatni eksport płac nie został ukończony.",
+          "title": "Eksport płac nie powiódł się"
+        },
+        "scheduledFailed": {
+          "description": "{name} nie zakończył się pomyślnie.",
+          "title": "Zaplanowany eksport nie powiódł się"
+        }
+      },
+      "description": "Monitoruj aktywność płac, audytów i zaplanowanych eksportów dla swojej organizacji.",
+      "errors": {
+        "alerts": "Niektóre alerty mogą być niekompletne, gdy dane eksportu są niedostępne.",
+        "recentActivity": "Niektóre dane aktywności są tymczasowo niedostępne.",
+        "summary": "Liczby opierają się na danych eksportu, które udało się załadować.",
+        "upcomingRuns": "Dane zaplanowanego eksportu są tymczasowo niedostępne."
+      },
+      "title": "Operacje eksportu"
+    },
+    "group": {
+      "account": "Konto",
+      "administration": "Administracja",
+      "data": "Dane",
+      "enterprise": "Przedsiębiorstwo",
+      "notifications": "Powiadomienia",
+      "organization": "Organizacja"
+    },
+    "implementationChecklist": {
+      "actions": {
+        "markComplete": "Oznacz jako ukończone",
+        "markIncomplete": "Oznacz jako nieukończone"
+      },
+      "description": "Zakończ kroki konfiguracji przed zaproszeniem całego zespołu, aby śledzenie czasu, zatwierdzenia i przepływy pracy płacowej były gotowe do codziennego użytku.",
+      "errors": {
+        "updateItem": "Nie udało się zaktualizować elementu listy kontrolnej."
+      },
+      "eyebrow": "Wdrożenie klienta",
+      "progress": {
+        "ariaLabel": "Postęp listy kontrolnej wdrożenia",
+        "completedCount": "{{completed}} z {{total}} ukończonych",
+        "label": "Postęp konfiguracji",
+        "percentComplete": "{{percent}}% ukończono"
+      },
+      "status": {
+        "complete": "Ukończono",
+        "manuallyComplete": "Ukończ ręcznie",
+        "needsReview": "Wymaga sprawdzenia",
+        "notStarted": "Nie rozpoczęto"
+      },
+      "title": "Lista kontrolna wdrożenia"
+    },
+    "import": {
+      "description": "Importuj dane z obsługiwanych dostawców, takich jak Clockodo i Clockin.",
+      "review": {
+        "commitAccepted": "Zatwierdź zaakceptowane wiersze",
+        "commitFailed": "Nie udało się rozpocząć zatwierdzania importu",
+        "commitQueued": "Dodano {count} zaakceptowanych wierszy do kolejki zatwierdzania",
+        "committing": "Zatwierdzanie...",
+        "description": "Przejrzyj przygotowane wiersze importu, rozwiąż blokujące problemy i zatwierdź zaakceptowane rekordy, gdy partia będzie gotowa.",
+        "issueGroups": {
+          "currentMarkers": "Bieżące wiersze zawierają {blockingRows} blokujących i {warningRows} ostrzegawczych znaczników problemów.",
+          "description": "Pogrupowane obszary przeglądu pomagają zachować widoczność kontroli jakości przed zatwierdzeniem wierszy.",
+          "title": "Grupy problemów"
+        },
+        "rows": {
+          "empty": "Brak przygotowanych wierszy dla tej partii importu.",
+          "entity": "Obiekt",
+          "rowId": "ID wiersza",
+          "sourceId": "ID źródła",
+          "status": "Status",
+          "title": "Wiersze"
+        },
+        "title": "Przegląd importu"
+      },
+      "title": "Importuj dane"
+    },
+    "licenses": {
+      "footer": "Ta aplikacja korzysta z oprogramowania open source. Dziękujemy wszystkim opiekunom i współtwórcom tych pakietów.",
+      "homepage": "Strona główna",
+      "license": "Licencja",
+      "licenseTypesCount": "{count} typów licencji",
+      "links": "Linki",
+      "noPackages": "Nie znaleziono pakietów.",
+      "package": "Pakiet",
+      "packagesCount": "{count} pakietów",
+      "repository": "Repozytorium",
+      "searchPlaceholder": "Szukaj pakietów lub licencji...",
+      "unknown": "Nieznany"
+    },
+    "locations": {
+      "address": "Adres",
+      "assignEmployee": "Przypisz pracownika",
+      "assignEmployeeDescription": "Przypisz pracownika jako przełożonego dla tej lokalizacji",
+      "assignEmployeeToSubarea": "Przypisz pracownika do podobszaru",
+      "assignEmployeeToSubareaDescription": "Przypisz pracownika jako przełożonego dla {subareaName}",
+      "backToList": "Powrót do lokalizacji",
+      "create": "Utwórz lokalizację",
+      "created": "Lokalizacja utworzona",
+      "createFailed": "Nie udało się utworzyć lokalizacji",
+      "deleted": "Lokalizacja usunięta",
+      "deleteDescription": "Czy na pewno chcesz usunąć tę lokalizację? Spowoduje to również usunięcie wszystkich podobszarów i przypisań pracowników.",
+      "deleteFailed": "Nie udało się usunąć lokalizacji",
+      "deleteSubareaDescription": "Czy na pewno chcesz usunąć ten podobszar? Spowoduje to również usunięcie wszystkich przypisań pracowników.",
+      "deleteSubareaTitle": "Usuń podobszar",
+      "deleteTitle": "Usuń lokalizację",
+      "description": "Zarządzaj lokalizacjami i podobszarami organizacji",
+      "details": "Szczegóły lokalizacji",
+      "dialog": {
+        "create": "Utwórz lokalizację",
+        "createDescription": "Utwórz nową lokalizację dla swojej organizacji",
+        "createTitle": "Utwórz lokalizację",
+        "editDescription": "Aktualizuj szczegóły lokalizacji",
+        "editTitle": "Edytuj lokalizację",
+        "save": "Zapisz zmiany"
+      },
+      "employee": "Pracownik",
+      "employeeAssigned": "Pracownik przypisany",
+      "employeeAssignFailed": "Nie udało się przypisać pracownika",
+      "employeeRemoved": "Pracownik usunięty",
+      "employeeRemoveFailed": "Nie udało się usunąć pracownika",
+      "field": {
+        "active": "Aktywna",
+        "activeHelp": "Nieaktywne lokalizacje nie będą pojawiać się na listach wyboru",
+        "city": "Miasto",
+        "cityPlaceholder": "np. Warszawa",
+        "cityPostal": "Miasto / Kod pocztowy",
+        "country": "Kod kraju",
+        "countryHelp": "Kod ISO 3166-1 alpha-2",
+        "countryPlaceholder": "np. PL, DE",
+        "name": "Nazwa",
+        "namePlaceholder": "np. Biuro główne",
+        "postalCode": "Kod pocztowy",
+        "postalCodePlaceholder": "np. 00-001",
+        "street": "Ulica",
+        "streetPlaceholder": "np. ul. Główna 123",
+        "subareaActiveHelp": "Nieaktywne podobszary nie będą pojawiać się na listach wyboru",
+        "subareaName": "Nazwa",
+        "subareaNamePlaceholder": "np. Kasa, Magazyn, Bistro"
+      },
+      "name": "Nazwa",
+      "noAvailableEmployees": "Wszyscy pracownicy są już przypisani do tej lokalizacji",
+      "noAvailableEmployeesSubarea": "Wszyscy pracownicy są już przypisani do tego podobszaru",
+      "noLocations": "Brak lokalizacji",
+      "noLocationsDescription": "Utwórz swoją pierwszą lokalizację, aby zorganizować przestrzeń roboczą.",
+      "noSubareas": "Brak podobszarów",
+      "noSupervisors": "Brak przypisanych przełożonych",
+      "notFound": "Nie znaleziono lokalizacji",
+      "primary": "Główny",
+      "primarySupervisor": "Główny przełożony",
+      "primarySupervisorHelp": "Oznacz jako głównego przełożonego dla tej lokalizacji",
+      "primarySupervisorSubareaHelp": "Oznacz jako głównego przełożonego dla tego podobszaru",
+      "selectEmployee": "Wybierz pracownika",
+      "selectEmployeePlaceholder": "Wybierz pracownika",
+      "subareaCreated": "Podobszar utworzony",
+      "subareaCreateFailed": "Nie udało się utworzyć podobszaru",
+      "subareaDeleted": "Podobszar usunięty",
+      "subareaDeleteFailed": "Nie udało się usunąć podobszaru",
+      "subareaDialog": {
+        "create": "Dodaj podobszar",
+        "createDescription": "Dodaj nowy podobszar do tej lokalizacji",
+        "createTitle": "Dodaj podobszar",
+        "editDescription": "Aktualizuj szczegóły podobszaru",
+        "editTitle": "Edytuj podobszar",
+        "save": "Zapisz zmiany"
+      },
+      "subareas": "Podobszary",
+      "subareasDescription": "Obszary w tej lokalizacji",
+      "subareaUpdated": "Podobszar zaktualizowany",
+      "subareaUpdateFailed": "Nie udało się zaktualizować podobszaru",
+      "supervisors": "Przełożeni",
+      "supervisorsDescription": "Pracownicy przypisani do tej lokalizacji",
+      "title": "Lokalizacje",
+      "updated": "Lokalizacja zaktualizowana",
+      "updateFailed": "Nie udało się zaktualizować lokalizacji"
+    },
+    "notifications": {
+      "approvals": "Powiadomienia o zatwierdzeniach",
+      "approvalsDescription": "Wysyłaj prośby o zatwierdzenie oraz aktualizacje statusu zatwierdzeń.",
+      "commands": "Polecenia",
+      "commandsDescription": "Zezwalaj na obsługiwane polecenia w miejscu pracy z tego kanału.",
+      "connectBeforeChanging": "Połącz lub skonfiguruj tę integrację przed zmianą ustawień powiadomień.",
+      "dailyDigest": "Codzienne podsumowanie",
+      "dailyDigestDescription": "Wysyłaj codzienne podsumowanie nieobecności, harmonogramów i oczekujących zadań.",
+      "description": "Wybierz, jak i kiedy chcesz otrzymywać powiadomienia",
+      "digestTime": "Godzina podsumowania",
+      "discord": {
+        "description": "Skonfiguruj powiadomienia Discord dla swojej organizacji."
+      },
+      "escalations": "Eskalacje",
+      "escalationsDescription": "Eskaluj nieodebrane prośby o zatwierdzenie po upływie skonfigurowanego czasu oczekiwania.",
+      "featureSettings": "Ustawienia funkcji",
+      "featureSettingsDescription": "Wybierz, które powiadomienia i polecenia organizacji są dostępne przez ten kanał.",
+      "hours": "godziny",
+      "manageEnabledFeatures": "Zarządzaj funkcjami powiadomień włączonymi dla tej integracji.",
+      "notConnected": "{channelName} nie jest połączony",
+      "saved": "Zapisano ustawienia powiadomień dla {channelName}",
+      "saveFailed": "Nie udało się zapisać ustawień powiadomień dla {channelName}",
+      "saveSettings": "Zapisz ustawienia",
+      "slack": {
+        "description": "Skonfiguruj powiadomienia Slack dla swojej organizacji."
+      },
+      "status": {
+        "active": "Aktywny",
+        "configured": "Skonfigurowano",
+        "disabled": "Wyłączony",
+        "disconnected": "Rozłączony",
+        "error": "Błąd",
+        "notConfigured": "Nieskonfigurowany",
+        "pending": "Oczekujący",
+        "unknown": "Nieznany status"
+      },
+      "teams": {
+        "description": "Skonfiguruj powiadomienia Microsoft Teams dla swojej organizacji."
+      },
+      "timeout": "Limit czasu",
+      "timezone": "Strefa czasowa",
+      "timezonePlaceholder": "Europa/Berlin…",
+      "title": "Ustawienia powiadomień"
+    },
+    "organizations": {
+      "description": "Zarządzaj członkami organizacji, zaproszeniami i szczegółami",
+      "notFound": {
+        "description": "Nie znaleziono organizacji lub nie masz do niej dostępu.",
+        "title": "Nie znaleziono organizacji"
+      },
+      "title": "Organizacja"
+    },
+    "organization": {
+      "teams": {
+        "createDialog": {
+          "createSuccess": "Zespół utworzony pomyślnie",
+          "description": "Utwórz nowy zespół, aby zorganizować swoich pracowników",
+          "descriptionLabel": "Opis (opcjonalnie)",
+          "descriptionPlaceholder": "Krótki opis tego zespołu",
+          "fallbackManagerHelp": "Używane do zatwierdzeń, gdy członek zespołu nie ma bezpośredniego przełożonego.",
+          "fallbackManagerLabel": "Zapasowy przełożony",
+          "fallbackManagerPlaceholder": "Wybierz zapasowego przełożonego",
+          "nameLabel": "Nazwa zespołu",
+          "namePlaceholder": "Inżynieria, Sprzedaż, Marketing...",
+          "noFallbackManager": "Brak menedżera zapasowego",
+          "submit": "Utwórz zespół",
+          "title": "Utwórz zespół"
+        }
+      }
+    },
+    "passkeys": {
+      "add": "Dodaj klucz dostępu",
+      "addedOn": "Dodano {date}",
+      "addError": "Nie udało się dodać klucza dostępu",
+      "addSuccess": "Klucz dostępu dodany pomyślnie",
+      "defaultName": "Klucz dostępu {date}",
+      "deleteDialogDescription": "Ten klucz dostępu nie będzie już mógł uzyskać dostępu do Twojego konta. Tej czynności nie można cofnąć.",
+      "deleteDialogTitle": "Usunąć klucz dostępu?",
+      "deleteError": "Nie udało się usunąć klucza dostępu",
+      "deleteSuccess": "Klucz dostępu usunięty pomyślnie",
+      "description": "Zarządzaj kluczami dostępu do uwierzytelniania bez hasła",
+      "empty": "Brak skonfigurowanych kluczy dostępu",
+      "emptyDescription": "Dodaj klucz dostępu, aby włączyć uwierzytelnianie bez hasła",
+      "loadError": "Nie udało się załadować kluczy dostępu",
+      "title": "Klucze dostępu",
+      "unnamed": "Nienazwany klucz dostępu"
+    },
+    "profile": {
+      "avatarRemoved": "Awatar usunięty pomyślnie",
+      "avatarRemoveFailed": "Nie udało się usunąć awatara",
+      "avatarSaveFailed": "Nie udało się zapisać awatara",
+      "avatarUploaded": "Awatar przesłany pomyślnie",
+      "avatarUploadFailed": "Nie udało się przesłać awatara",
+      "birthday": {
+        "hint": "Twoja data urodzenia pomaga nam świętować razem z Tobą",
+        "label": "Data urodzenia",
+        "placeholder": "Wybierz datę urodzenia"
+      },
+      "changePicture": "Zmień zdjęcie",
+      "description": "Zarządzaj swoimi danymi osobowymi i preferencjami",
+      "email": "E-mail",
+      "emailReadonly": "Adresu e-mail nie można zmienić",
+      "firstName": "Imię",
+      "firstNamePlaceholder": "Ada…",
+      "gender": {
+        "female": "Kobieta",
+        "label": "Płeć",
+        "male": "Mężczyzna",
+        "other": "Inna"
+      },
+      "helpImproveProduct": "Pomóż nam ulepszyć tę aplikację",
+      "helpImproveProductDescription": "Udostępnij statystyki użytkowania, abyśmy mogli uczynić Z8 bardziej niezawodnym i użytecznym.",
+      "information": "Informacje o profilu",
+      "informationDescription": "Zaktualizuj swoje dane osobowe i zdjęcie profilowe",
+      "lastName": "Nazwisko",
+      "lastNamePlaceholder": "Lovelace…",
+      "personalInformation": "Dane osobowe",
+      "pronouns": "Zaimki",
+      "pronouns.custom": "Własne zaimki",
+      "pronouns.customPlaceholder": "np. xe/xem…",
+      "pronouns.placeholder": "Wybierz zaimki",
+      "removePicture": "Usuń zdjęcie",
+      "saving": "Zapisywanie…",
+      "title": "Ustawienia profilu",
+      "updateFailed": "Nie udało się zaktualizować profilu",
+      "updateProfile": "Aktualizuj profil",
+      "updateSuccess": "Profil został pomyślnie zaktualizowany",
+      "uploading": "Przesyłanie",
+      "uploadProfilePicture": "Prześlij zdjęcie profilowe"
+    },
+    "projects": {
+      "column": {
+        "budget": "Budżet",
+        "customer": "Klient",
+        "deadline": "Termin",
+        "name": "Nazwa",
+        "status": "Status",
+        "team": "Zespół"
+      },
+      "create": "Utwórz projekt",
+      "created": "Projekt utworzony",
+      "createFailed": "Nie udało się utworzyć projektu",
+      "description": "Zarządzaj projektami, budżetami, terminami i przypisaniami czasu",
+      "dialog": {
+        "create": "Utwórz projekt",
+        "createDescription": "Utwórz nowy projekt do śledzenia czasu",
+        "createTitle": "Utwórz projekt",
+        "editDescription": "Aktualizuj szczegóły projektu",
+        "editTitle": "Edytuj projekt",
+        "save": "Zapisz zmiany"
+      },
+      "empty": {
+        "description": "Utwórz swój pierwszy projekt, aby zacząć śledzić czas pracy.",
+        "title": "Brak projektów"
+      },
+      "field": {
+        "budget": "Budżet (godziny)",
+        "budgetHelp": "Pozostaw puste, aby uzyskać nieograniczony budżet",
+        "budgetPlaceholder": "np. 100",
+        "clearColor": "Wyczyść kolor",
+        "color": "Kolor",
+        "colorOption": "Wybierz kolor {color}",
+        "customer": "Klient",
+        "customerPlaceholder": "Wybierz klienta",
+        "deadline": "Termin",
+        "description": "Opis",
+        "descriptionPlaceholder": "Opcjonalny opis projektu",
+        "name": "Nazwa",
+        "namePlaceholder": "Wprowadź nazwę projektu",
+        "noCustomer": "Brak klienta",
+        "status": "Status"
+      },
+      "list": {
+        "description": "{count, plural, one {# projekt łącznie} few {# projekty łącznie} other {# projektów łącznie}}",
+        "title": "Wszystkie projekty"
+      },
+      "title": "Projekty",
+      "updated": "Projekt zaktualizowany",
+      "updateFailed": "Nie udało się zaktualizować projektu"
+    },
+    "security": {
+      "description": "Zarządzaj hasłem, uwierzytelnianiem dwuskładnikowym, kluczami dostępu i aktywnymi sesjami",
+      "title": "Ustawienia bezpieczeństwa",
+      "twoFactor": {
+        "backupCodesCopied": "Kody zapasowe skopiowane do schowka",
+        "backupCodesRegenerated": "Kody zapasowe wygenerowane ponownie",
+        "cancel": "Anuluj",
+        "confirmPasswordToEnable": "Potwierdź swoje hasło, aby włączyć uwierzytelnianie dwuskładnikowe",
+        "confirmPasswordToRegenerate": "Potwierdź swoje hasło, aby wygenerować kody zapasowe",
+        "continue": "Kontynuuj",
+        "copyCodes": "Kopiuj kody",
+        "description": "Dodaj dodatkową warstwę zabezpieczeń do swojego konta",
+        "disable": "Wyłącz",
+        "disable2fa": "Wyłącz 2FA",
+        "disableDescription": "Spowoduje to usunięcie dodatkowej warstwy zabezpieczeń z Twojego konta. Wprowadź hasło, aby potwierdzić.",
+        "disabledToast": "Uwierzytelnianie dwuskładnikowe wyłączone",
+        "disableFailed": "Nie udało się wyłączyć 2FA",
+        "disableTitle": "Wyłączyć uwierzytelnianie dwuskładnikowe?",
+        "enable": "Włącz uwierzytelnianie dwuskładnikowe",
+        "enabledToast": "Uwierzytelnianie dwuskładnikowe włączone",
+        "enablePasswordRequiredDescription": "Wprowadź hasło, aby włączyć 2FA",
+        "enterAuthenticatorCode": "Wprowadź 6-cyfrowy kod z aplikacji uwierzytelniającej",
+        "enterPasswordTitle": "Wprowadź swoje hasło",
+        "enterSixDigitCode": "Wprowadź 6-cyfrowy kod",
+        "invalidCode": "Nieprawidłowy kod",
+        "passwordLabel": "Hasło",
+        "passwordPlaceholder": "Wprowadź swoje hasło…",
+        "passwordRequired": "Wymagane hasło",
+        "regenerateBackupCodes": "Wygeneruj ponownie kody zapasowe",
+        "regenerateCodes": "Wygeneruj ponownie kody",
+        "regenerateFailed": "Nie udało się wygenerować kodów zapasowych",
+        "saveBackupCodesDescription": "Przechowuj te kody w bezpiecznym miejscu. Możesz ich użyć, aby uzyskać dostęp do konta, jeśli stracisz dostęp do aplikacji uwierzytelniającej. Każdy kod może zostać użyty tylko raz.",
+        "saveBackupCodesTitle": "Zapisz swoje kody zapasowe",
+        "savedCodes": "Zapisałem te kody",
+        "scanQrCode": "Zeskanuj kod QR za pomocą aplikacji uwierzytelniającej",
+        "setupFailed": "Nie udało się skonfigurować 2FA",
+        "setupTitle": "Skonfiguruj uwierzytelnianie dwuskładnikowe",
+        "status": {
+          "disabled": "Wyłączone",
+          "enabled": "Włączone"
+        },
+        "title": "Uwierzytelnianie dwuskładnikowe",
+        "unexpectedError": "Wystąpił nieoczekiwany błąd",
+        "verificationFailed": "Weryfikacja nie powiodła się",
+        "verifyAndEnable": "Zweryfikuj i włącz"
+      }
+    },
+    "sessions": {
+      "browserOnOs": "{browser} na {os}",
+      "current": "Bieżąca sesja",
+      "description": "Zarządzaj aktywnymi sesjami na różnych urządzeniach",
+      "devices": {
+        "desktop": "Komputer",
+        "mobile": "Urządzenie mobilne",
+        "tablet": "Tablet"
+      },
+      "none": "Brak aktywnych sesji",
+      "othersRevoked": "Wszystkie pozostałe sesje zostały pomyślnie unieważnione",
+      "revoke": "Unieważnij",
+      "revokeAllFailed": "Nie udało się unieważnić pozostałych sesji",
+      "revokeAllOthers": "Unieważnij wszystkie pozostałe sesje",
+      "revoked": "Sesja została pomyślnie unieważniona",
+      "revokeFailed": "Nie udało się unieważnić sesji",
+      "revoking": "Unieważnianie…",
+      "securityTip": "Jeśli widzisz sesję, której nie rozpoznajesz, natychmiast ją unieważnij i zmień hasło.",
+      "signedIn": "Zalogowano",
+      "title": "Aktywne sesje",
+      "unknownBrowser": "Nieznana przeglądarka",
+      "unknownOs": "Nieznany system operacyjny"
+    },
+    "socialAccounts": {
+      "connect": "Połącz",
+      "connected": "Połączono",
+      "connectedAs": "Połączono jako {accountId}",
+      "connectFailed": "Nie udało się połączyć konta",
+      "connecting": "Łączenie…",
+      "connectProvider": "Połącz swoje konto {provider}",
+      "description": "Połącz swoje konta społecznościowe, aby ułatwić logowanie",
+      "disconnect": "Rozłącz",
+      "disconnectDescription": "Spowoduje to usunięcie powiązania z Twoim kontem społecznościowym. Możesz je ponownie połączyć w dowolnym momencie.",
+      "disconnectFailed": "Nie udało się rozłączyć konta",
+      "disconnectSuccess": "Konto zostało pomyślnie rozłączone",
+      "disconnectTitle": "Rozłączyć konto?",
+      "loadFailed": "Nie udało się załadować połączonych kont",
+      "title": "Konta społecznościowe",
+      "unexpectedError": "Wystąpił nieoczekiwany błąd"
+    },
+    "statistics": {
+      "cards": {
+        "activeSessions": "Aktywne sesje",
+        "activeSessionsDescription": "Bieżące sesje bazy danych",
+        "approvalRequests": "Wnioski o zatwierdzenie",
+        "approvedAbsences": "Zatwierdzone nieobecności",
+        "employees": "Pracownicy",
+        "employeesDescription": "{active} aktywnych, {inactive} nieaktywnych",
+        "pendingAbsences": "Oczekujące nieobecności",
+        "pendingCount": "{count} oczekujących",
+        "rejectedAbsences": "Odrzucone nieobecności",
+        "teams": "Zespoły",
+        "thisMonth": "W tym miesiącu",
+        "timeEntries": "Wpisy czasu",
+        "totalAbsences": "Łączna liczba nieobecności",
+        "totalTimeEntries": "Łączna liczba wpisów czasu",
+        "vsLastMonth": "w porównaniu z poprzednim miesiącem"
+      },
+      "description": "Wyświetl statystyki i metryki dotyczące Twojej instancji",
+      "lastUpdated": "Ostatnia aktualizacja",
+      "loadError": "Nie udało się załadować statystyk",
+      "managerDescription": "Przeglądaj analitykę w trybie tylko do odczytu dla zarządzanych przez Ciebie zespołów.",
+      "sections": {
+        "absenceBreakdown": "Podział nieobecności",
+        "activityMetrics": "Metryki aktywności",
+        "coreCounts": "Podstawowe liczby",
+        "managedScope": "Zakres zarządzanego zespołu",
+        "systemHealth": "Stan systemu"
+      },
+      "title": "Statystyki"
+    },
+    "timeFormat": {
+      "description": "Wybierz sposób wyświetlania czasu w aplikacji.",
+      "label": "Format czasu",
+      "options": {
+        "12h": "12-godzinny (8:00 AM)",
+        "24h": "24-godzinny (08:00)"
+      },
+      "save": "Zapisz format czasu",
+      "title": "Format czasu",
+      "updateError": "Wystąpił błąd podczas aktualizacji formatu czasu",
+      "updateFailed": "Nie udało się zaktualizować formatu czasu",
+      "updateSuccess": "Format czasu został pomyślnie zaktualizowany"
+    },
+    "timezone": {
+      "currentTimePrefix": "Aktualny czas w {timezone}:",
+      "description": "Ustaw swoją strefę czasową, aby zapewnić dokładne wyświetlanie daty i godziny w całej aplikacji",
+      "picker": {
+        "empty": "Nie znaleziono strefy czasowej.",
+        "groups": {
+          "africa": "Afryka",
+          "americas": "Ameryka",
+          "asia": "Azja",
+          "australiaPacific": "Australia i Pacyfik",
+          "europe": "Europa",
+          "utcOther": "UTC/Inne"
+        },
+        "labels": {
+          "africaCairo": "Czas wschodnioeuropejski (Kair)",
+          "africaJohannesburg": "Czas południowoafrykański (Johannesburg)",
+          "africaLagos": "Czas zachodnioafrykański (Lagos)",
+          "africaNairobi": "Czas wschodnioafrykański (Nairobi)",
+          "americaAnchorage": "Czas alaski (Anchorage)",
+          "americaBuenosAires": "Czas argentyński (Buenos Aires)",
+          "americaChicago": "Czas środkowoamerykański (Chicago)",
+          "americaDenver": "Czas górski (Denver)",
+          "americaLosAngeles": "Czas pacyficzny (Los Angeles)",
+          "americaMexicoCity": "Czas środkowoamerykański (Meksyk)",
+          "americaNewYork": "Czas wschodni (Nowy Jork)",
+          "americaSaoPaulo": "Czas brazylijski (São Paulo)",
+          "americaToronto": "Czas wschodni (Toronto)",
+          "americaVancouver": "Czas pacyficzny (Vancouver)",
+          "asiaBangkok": "Czas indochiński (Bangkok)",
+          "asiaDubai": "Czas zatoki perskiej (Dubaj)",
+          "asiaHongKong": "Czas hongkoński (Hongkong)",
+          "asiaKolkata": "Czas indyjski (Kolkata)",
+          "asiaSeoul": "Czas koreański (Seul)",
+          "asiaShanghai": "Czas chiński (Szanghaj)",
+          "asiaSingapore": "Czas singapurski (Singapur)",
+          "asiaTokyo": "Czas japoński (Tokio)",
+          "australiaBrisbane": "Czas wschodnioaustralijski (Brisbane)",
+          "australiaMelbourne": "Czas wschodnioaustralijski (Melbourne)",
+          "australiaPerth": "Czas zachodnioaustralijski (Perth)",
+          "australiaSydney": "Czas wschodnioaustralijski (Sydney)",
+          "europeAmsterdam": "Czas środkowoeuropejski (Amsterdam)",
+          "europeAthens": "Czas wschodnioeuropejski (Ateny)",
+          "europeBerlin": "Czas środkowoeuropejski (Berlin)",
+          "europeBrussels": "Czas środkowoeuropejski (Bruksela)",
+          "europeHelsinki": "Czas wschodnioeuropejski (Helsinki)",
+          "europeIstanbul": "Czas turecki (Stambuł)",
+          "europeLondon": "Czas GMT/BST (Londyn)",
+          "europeMadrid": "Czas środkowoeuropejski (Madryt)",
+          "europeMoscow": "Czas moskiewski (Moskwa)",
+          "europeParis": "Czas środkowoeuropejski (Paryż)",
+          "europeRome": "Czas środkowoeuropejski (Rzym)",
+          "europeStockholm": "Czas środkowoeuropejski (Sztokholm)",
+          "europeVienna": "Czas środkowoeuropejski (Wiedeń)",
+          "europeWarsaw": "Czas środkowoeuropejski (Warszawa)",
+          "pacificAuckland": "Czas nowozelandzki (Auckland)",
+          "pacificHonolulu": "Czas hawajski (Honolulu)",
+          "utc": "Uniwersalny czas koordynowany (UTC)"
+        },
+        "search": "Wyszukaj strefę czasową…"
+      },
+      "save": "Zapisz strefę czasową",
+      "title": "Strefa czasowa",
+      "updateError": "Wystąpił błąd podczas aktualizacji strefy czasowej",
+      "updateFailed": "Nie udało się zaktualizować strefy czasowej",
+      "updateSuccess": "Strefa czasowa została pomyślnie zaktualizowana"
+    },
+    "title": "Ustawienia",
+    "travelExpenses": {
+      "activeDescription": "Po włączeniu ta polityka stanie się aktywnym domyślnym ustawieniem dla nowych wniosków.",
+      "activeLabel": "Aktywna polityka",
+      "addPolicy": "Dodaj politykę",
+      "created": "Polityka wydatków podróżnych została utworzona",
+      "createPolicy": "Utwórz politykę wydatków podróżnych",
+      "currency": "Waluta",
+      "description": "Skonfiguruj stawki zwrotu kosztów i okresy obowiązywania dla przebiegu oraz diet.",
+      "dialogDescription": "Ustaw daty obowiązywania i domyślne stawki zwrotu kosztów dla przebiegu oraz diet.",
+      "editPolicy": "Edytuj politykę wydatków podróżnych",
+      "effectiveFrom": "Obowiązuje od",
+      "effectiveFromRequired": "Data rozpoczęcia obowiązywania jest wymagana",
+      "effectiveTo": "Obowiązuje do",
+      "empty": "Brak skonfigurowanych polityk. Utwórz swoją pierwszą politykę wydatków podróżnych.",
+      "loading": "Ładowanie polityk…",
+      "mileageRate": "Przebieg / km",
+      "perDiemRate": "Dieta / dzień",
+      "policies": "Polityki",
+      "policiesDescription": "W danym momencie może być aktywna tylko jedna polityka. Aktywna polityka jest używana dla nowych wniosków.",
+      "saveFailed": "Nie udało się zapisać polityki wydatków podróżnych",
+      "title": "Polityki wydatków podróżnych",
+      "updated": "Polityka wydatków podróżnych została zaktualizowana"
+    },
+    "webhooks": {
+      "description": "Skonfiguruj punkty końcowe webhook, aby otrzymywać powiadomienia o zdarzeniach w czasie rzeczywistym",
+      "title": "Webhooki"
+    },
+    "weekStart": {
+      "description": "Wybierz, czy kalendarze i cotygodniowe podsumowania mają zaczynać się w niedzielę czy w poniedziałek.",
+      "label": "Pierwszy dzień tygodnia",
+      "save": "Zapisz początek tygodnia",
+      "title": "Tydzień zaczyna się w",
+      "updateError": "Wystąpił błąd podczas aktualizacji dnia rozpoczęcia tygodnia",
+      "updateFailed": "Nie udało się zaktualizować dnia rozpoczęcia tygodnia",
+      "updateSuccess": "Dzień rozpoczęcia tygodnia został pomyślnie zaktualizowany"
+    },
+    "wellness": {
+      "cardDescShort": "Dbaj o nawodnienie podczas pracy",
+      "cardTitle": "Przypomnienia o piciu wody",
+      "dailyGoal": "Dzienny cel",
+      "description": "Skonfiguruj przypomnienia o piciu wody i śledzenie nawodnienia podczas sesji pracy",
+      "glasses": "szklanki",
+      "reminderFrequency": "Częstotliwość przypomnień",
+      "saved": "Ustawienia zdrowotne zostały zapisane",
+      "saveError": "Nie udało się zapisać ustawień zdrowotnych",
+      "title": "Ustawienia kondycji"
+    },
+    "workBalanceRecalculation": {
+      "requestError": "Nie udało się dodać do kolejki przeliczenia bilansu pracy",
+      "requestSuccess": "Przeliczenie bilansu pracy dodane do kolejki"
+    },
+    "workerQueue": {
+      "cards": {
+        "active": "Aktywne",
+        "activeDescription": "Obecnie przetwarzane",
+        "completed": "Ukończone",
+        "completedDescription": "Ostatnio ukończone",
+        "delayed": "Opóźnione",
+        "delayedDescription": "Zaplanowane na później",
+        "failed": "Nieudane",
+        "failedDescription": "Ostatnio nieudane",
+        "paused": "Wstrzymane",
+        "pausedDescription": "Wstrzymane zadania",
+        "waiting": "Oczekujące",
+        "waitingDescription": "Zadania oczekujące na przetworzenie"
+      },
+      "common": {
+        "unknown": "Nieznane"
+      },
+      "connected": "Połączono",
+      "description": "Monitoruj przetwarzanie zadań w tle i wykonywanie zadań cron",
+      "disconnected": "Rozłączono",
+      "lastUpdated": "Ostatnia aktualizacja",
+      "loadError": "Nie udało się załadować statusu kolejki",
+      "noExecutions": "Nie znaleziono ostatnich wykonań",
+      "noScheduledJobs": "Nie znaleziono zaplanowanych zadań",
+      "recentExecutions": {
+        "allJobs": "Wszystkie zadania",
+        "error": "Nie udało się załadować wykonań",
+        "filterLabel": "Filtruj według zadania",
+        "loading": "Ładowanie wykonań…"
+      },
+      "recentExecutionsDescription": "Ostatnie 50 wykonań zadań śledzonych w bazie danych.",
+      "reliability": {
+        "averageDuration": "Średni czas trwania",
+        "avgDuration": "Śr. czas trwania",
+        "avgDurationDescription": "Wykonania z danymi o czasie trwania",
+        "completed": "Ukończone",
+        "durationTrend": "Trend czasu trwania",
+        "durationTrendDescription": "Średni czas wykonywania dla zadań, które dostarczyły dane o czasie trwania.",
+        "failed": "Nieudane",
+        "failedRuns": "Nieudane uruchomienia",
+        "failedRunsDescription": "Ostatnie 30 dni",
+        "failing": "Występują błędy",
+        "healthy": "Zdrowe",
+        "jobHealth": "Kondycja zadań",
+        "jobHealthDescription": "Niezawodność poszczególnych zadań na podstawie ostatnich wykonań i powtarzalnych harmonogramów.",
+        "noDurationData": "Brak danych o czasie trwania dla tego okresu.",
+        "noExecutionHistory": "Brak historii wykonań cron dla tego okresu.",
+        "noJobs": "Nie znaleziono danych o niezawodności",
+        "runOutcomes": "Wyniki uruchomień",
+        "runOutcomesDescription": "Ukończone i nieudane wykonania cron w ciągu ostatnich {days} dni.",
+        "stale": "Nieaktualne",
+        "staleJobs": "Nieaktualne zadania",
+        "staleJobsDescription": "Poza oczekiwanym harmonogramem",
+        "successRate": "Wskaźnik sukcesu",
+        "successRateDescription": "Zakończone wykonania cron",
+        "title": "Niezawodność",
+        "unknown": "Nieznane",
+        "warning": "Ostrzeżenie"
+      },
+      "scheduledJobsDescription": "Powtarzalne zadania skonfigurowane w procesie roboczym (worker). Uruchamiają się automatycznie zgodnie z harmonogramem.",
+      "sections": {
+        "jobMetrics": "Metryki zadań (ostatnie 30 dni)",
+        "queueCounts": "Status kolejki",
+        "recentExecutions": "Ostatnie wykonania",
+        "scheduledJobs": "Zaplanowane zadania cron"
+      },
+      "status": {
+        "completed": "Ukończone",
+        "failed": "Nieudane",
+        "pending": "Oczekujące",
+        "running": "Uruchomione"
+      },
+      "table": {
+        "avgDuration": "Śr. czas trwania",
+        "duration": "Czas trwania",
+        "error": "Błąd",
+        "failed": "Nieudane",
+        "health": "Stan",
+        "jobName": "Nazwa zadania",
+        "lastRun": "Ostatnie uruchomienie",
+        "nextRun": "Następne uruchomienie",
+        "schedule": "Harmonogram",
+        "startedAt": "Rozpoczęto o",
+        "status": "Status",
+        "successful": "Udane",
+        "successRate": "Wskaźnik sukcesu",
+        "totalRuns": "Łączna liczba uruchomień"
+      },
+      "title": "Kolejka procesów"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Nazwy kategorii",
+        "grouped": "Grupowane",
+        "hidden": "Ukryte"
+      },
+      "absenceVisibility": "Widoczność nieobecności",
+      "description": "Skonfiguruj bezpieczny dla prywatności dostęp rady pracowniczej i eksporty przeglądów",
+      "exportEnabled": "Włącz eksporty przeglądów",
+      "exportEnabledDescription": "Zezwól upoważnionym użytkownikom rady pracowniczej na generowanie pakietów przeglądów z filtrowaniem prywatności.",
+      "formDescription": "Skonfiguruj bezpieczny dla prywatności dostęp rady pracowniczej i eksporty przeglądów dla tej organizacji.",
+      "identity": {
+        "aggregated": "Zagregowane",
+        "named": "Nazwane",
+        "pseudonymized": "Pseudonimizowane"
+      },
+      "identityVisibility": "Widoczność tożsamości",
+      "minimumThreshold": "Minimalny próg agregacji",
+      "minimumThresholdDescription": "Grupy poniżej tego rozmiaru są pomijane, aby zmniejszyć ryzyko ponownej identyfikacji.",
+      "save": "Zapisz ustawienia",
+      "saved": "Ustawienia rady pracowniczej zostały zapisane",
+      "saveError": "Nie udało się zapisać ustawień rady pracowniczej",
+      "title": "Tryb rady pracowniczej",
+      "visibleLocationIds": "Widoczne identyfikatory lokalizacji",
+      "visibleLocationIdsDescription": "Opcjonalne identyfikatory lokalizacji oddzielone przecinkami. Pozostaw puste, aby uwzględnić wszystkie lokalizacje.",
+      "visibleTeamIds": "Widoczne identyfikatory zespołów",
+      "visibleTeamIdsDescription": "Opcjonalne identyfikatory zespołów oddzielone przecinkami. Pozostaw puste, aby uwzględnić wszystkie zespoły."
+    }
+  }
+}

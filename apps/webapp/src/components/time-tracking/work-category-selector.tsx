@@ -3,7 +3,7 @@
 import { IconLoader2, IconTag } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { getAvailableCategoriesForEmployee } from "@/app/[locale]/(app)/settings/work-categories/actions";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -91,24 +91,23 @@ export function WorkCategorySelector({
 	const categories = categoriesResult || [];
 
 	// Build a Map for O(1) category lookups
-	const categoriesMap = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
+	const categoriesMap = new Map(categories.map((c) => [c.id, c]));
 
 	// Auto-select last used category on initial load
 	useEffect(() => {
-		if (autoSelectLast && !hasAutoSelectedRef.current && categories.length > 0 && value === undefined) {
+		if (
+			autoSelectLast &&
+			!hasAutoSelectedRef.current &&
+			categories.length > 0 &&
+			value === undefined
+		) {
 			const lastCategoryId = lastCategoryIdRef.current;
 			if (lastCategoryId && categoriesMap.has(lastCategoryId)) {
 				onValueChange(lastCategoryId);
 			}
 			hasAutoSelectedRef.current = true;
 		}
-	}, [
-		autoSelectLast,
-		categories.length,
-		categoriesMap,
-		value,
-		onValueChange,
-	]);
+	}, [autoSelectLast, categories.length, categoriesMap, value, onValueChange]);
 
 	// Save selected category to localStorage and update cache
 	const handleValueChange = (newValue: string) => {

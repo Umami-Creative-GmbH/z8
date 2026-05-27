@@ -396,6 +396,56 @@
       "percentageDescription": "Crédit de temps supplémentaire",
       "rangeEnd": "Fin de la plage",
       "rangeStart": "Début de la plage",
+      "reports": {
+        "details": {
+          "appliedRules": "Règles appliquées",
+          "calculatedAt": "Calculé le",
+          "noAppliedRules": "Aucune règle appliquée enregistrée.",
+          "overlapPolicy": "Politique de chevauchement",
+          "percentage": "Pourcentage",
+          "qualifying": "Qualifiant",
+          "surcharge": "Surtaxe",
+          "workPeriod": "Période de travail"
+        },
+        "empty": {
+          "description": "Aucun calcul de surtaxe ne correspond aux filtres sélectionnés.",
+          "title": "Aucun calcul de surtaxe trouvé"
+        },
+        "errors": {
+          "invalidDateRange": "La date de début doit être antérieure ou égale à la date de fin.",
+          "loadFailed": "Échec du chargement des calculs de surtaxe.",
+          "loadTitle": "Impossible de charger les calculs"
+        },
+        "filters": {
+          "apply": "Appliquer les filtres",
+          "employeeId": "ID employé",
+          "endDate": "Date de fin",
+          "startDate": "Date de début"
+        },
+        "loading": "Chargement des calculs…",
+        "previousResults": {
+          "description": "La dernière requête a échoué, les résultats réussis précédents restent donc visibles.",
+          "title": "Affichage des résultats précédents."
+        },
+        "rowLimitNotice": "Affichage des 500 premiers calculs correspondants. Affinez les filtres de date ou d'employé pour préciser les totaux.",
+        "summary": {
+          "baseHours": "Heures de base",
+          "calculations": "Calculs",
+          "creditedHours": "Heures de majoration créditées",
+          "qualifyingHours": "Heures de majoration admissibles"
+        },
+        "table": {
+          "base": "Base",
+          "created": "Créé",
+          "credit": "Crédit",
+          "date": "Date",
+          "details": "Détails",
+          "employee": "Employé",
+          "percentage": "Pourcentage",
+          "qualifying": "Admissible"
+        },
+        "title": "Rapports de majoration"
+      },
       "rule": "Règle",
       "ruleCountLabel": "{count, plural, one {# règle} other {# règles}}",
       "ruleName": "Nom de la règle",

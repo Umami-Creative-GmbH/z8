@@ -1,0 +1,226 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Abweseheite (Ferie, Chrankheit)",
+        "changePolicies": "Richtlinie ändere",
+        "description": "Arte vo Demo-Date, wo du generiere chasch",
+        "locations": "Standort und Teilberiich",
+        "shifts": "Schichtvorlage und Schichte",
+        "supported": "Aktuell unterstützt:",
+        "teamsProjects": "Teams und Projekt",
+        "timeEntries": "Ziiterfassige und Arbeitsperiode",
+        "title": "Verfügbari Datetüpe",
+        "workCategories": "Arbetskategori-Sets"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "{count} Abweseheite glöscht",
+          "button": "Alli Date lösche",
+          "changePoliciesDeleted": "{count} Änderigsrichtlinie glöscht",
+          "dialog": {
+            "confirm": "Alli Date lösche",
+            "description": "Die Aktion cha nöd rückgängig gmacht werde. Alli Ziitibuechige, Abweseheite, Teams, Projekt und zueghörigi Date werded permanent glöscht.",
+            "title": "Alli Ziitdate lösche?"
+          },
+          "items": {
+            "absences": "Alli Abweseheitsiträg",
+            "changePolicies": "Alli Änderigsrichtlinie",
+            "locations": "Alli Standört und Teilberiich",
+            "shifts": "Alli Schichtvorlage und Schichte",
+            "teamsProjects": "Alli Teams und Projekt",
+            "timeEntries": "Alli Ziitibuechige und Arbetsperiode",
+            "vacationAllowances": "Alli Ferieaspruch",
+            "workCategories": "Alli Arbetskategorie"
+          },
+          "locationsDeleted": "{count} Standört glöscht",
+          "managerAssignmentsDeleted": "{count} Manager-Zueordnige glöscht",
+          "projectsDeleted": "{count} Projekt glöscht",
+          "shiftRequestsDeleted": "{count} Schichtafrage glöscht",
+          "shiftsDeleted": "{count} Schichte glöscht",
+          "shiftTemplatesDeleted": "{count} Schichtvorlage glöscht",
+          "subareasDeleted": "{count} Teilberiich glöscht",
+          "successTitle": "Date erfolgriich glöscht!",
+          "teamsDeleted": "{count} Teams glöscht",
+          "timeEntriesDeleted": "{count} Ziitibuechige glöscht",
+          "title": "Ziitdate lösche",
+          "vacationAllowancesReset": "{count} Ferieaspruch zrugggsetzt",
+          "willDelete": "Das wird permanent lösche:",
+          "workCategoriesDeleted": "{count} Arbetskategorie glöscht",
+          "workCategorySetsDeleted": "{count} Arbetskategori-Sets glöscht",
+          "workPeriodsDeleted": "{count} Arbetsperiode glöscht"
+        },
+        "clearing": "Am lösche...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "{count} Abweseheite glöscht",
+          "adminPreserved": "Admin-Kontene werded bhalte",
+          "button": "Nöd-Admin-Mitarbeiter lösche",
+          "dialog": {
+            "confirm": "Nöd-Admin-Mitarbeiter lösche",
+            "description": "Die Aktion cha nöd rückgängig gmacht werde. Alli Nöd-Admin-Mitarbeiter und ihri zueghörige Date werded permanent glöscht.",
+            "title": "Nöd-Admin-Mitarbeiter lösche?"
+          },
+          "employeesDeleted": "{count} Mitarbeiter glöscht",
+          "items": {
+            "demoUsers": "Alli Demo-Benutzerkontene",
+            "employees": "Alli Nöd-Admin-Mitarbeiter",
+            "managerAssignments": "Alli Manager-Zueordnige",
+            "timeEntries": "Ihri Ziitibuechige und Arbetsperiode"
+          },
+          "membersDeleted": "{count} Mitglider glöscht",
+          "successTitle": "Nöd-Admin-Mitarbeiter erfolgriich glöscht!",
+          "timeEntriesDeleted": "{count} Ziitibuechige glöscht",
+          "title": "Nöd-Admin-Mitarbeiter lösche",
+          "usersDeleted": "{count} Benutzer glöscht",
+          "willDelete": "Das wird permanent lösche:"
+        },
+        "deleting": "Wird glöscht...",
+        "description": "Destruktivi Aktione, wo nöd rückgängig gmacht wärde chönd",
+        "title": "Gfahre-Zone",
+        "typeDelete": "Gib DELETE ii zum Bestätige",
+        "typeDeletePlaceholder": "DELETE"
+      },
+      "description": "Beispieldate für Tests generiere oder vorhandeni ziitbezogeni Date lösche",
+      "errors": {
+        "generationFailed": "Generierig isch fehlgschlage. Bitte versuech es nomal.",
+        "noOrganization": "Kei Organisation usgwählt"
+      },
+      "form": {
+        "dataTypes": {
+          "absences": {
+            "description": "Ferie, Chrankheit und anderi Absänze",
+            "title": "Absänze"
+          },
+          "changePolicies": {
+            "description": "Richtlinie für d'Änderig vo Ziit-Iiträg",
+            "title": "Änderigs-Richtlinie"
+          },
+          "label": "Datetüpe",
+          "locations": {
+            "countLabel": "Aazahl Standört:",
+            "description": "Arbeitsort und Unterberiich",
+            "title": "Standört"
+          },
+          "projects": {
+            "countLabel": "Aazahl Projekt:",
+            "description": "Beispielprojekt für d'Ziiterfassig",
+            "title": "Projekt"
+          },
+          "shiftScheduling": {
+            "description": "Schichtvorlage und gplante Schichte",
+            "requiresLocations": "Erfordert, dass Standört aktiviert sind",
+            "title": "Schichtplanig"
+          },
+          "teams": {
+            "countLabel": "Aazahl Teams:",
+            "description": "Teams erstelle und Mitarbeiter zueordne",
+            "title": "Teams"
+          },
+          "timeEntries": {
+            "description": "I- und Usstempel-Datensätz und Arbeitsperiode",
+            "title": "Ziit-Iiträg"
+          },
+          "workCategories": {
+            "assignLabel": "Au zu Arbeitsperiode zueordne",
+            "description": "Kategorie-Sets für Arbeitsperiode",
+            "title": "Arbeitskategorie"
+          }
+        },
+        "dateRange": {
+          "hint": "Ziitruum für generierti Date",
+          "label": "Datumsberiich",
+          "last30": "Letschti 30 Täg",
+          "last60": "Letschti 60 Täg",
+          "last90": "Letschti 90 Täg",
+          "thisYear": "Das Jahr"
+        },
+        "employees": {
+          "all": "Alli Mitarbeiter ({count})",
+          "label": "Mitarbeiter",
+          "selectSpecific": "Bestimmti Mitarbeiter uswähle"
+        }
+      },
+      "generateData": {
+        "button": "Date generiere",
+        "description": "Realistischi Beispieldate für dini Organisation erstelle",
+        "title": "Demo-Date generiere"
+      },
+      "generateEmployees": {
+        "button": "{count} Mitarbeiter generiere",
+        "countHint": "Maximal 50 Mitarbeiter uf einisch",
+        "countLabel": "Aazahl Mitarbeiter",
+        "description": "Demo-Mitarbeiter-Kontene für Tests erstelle",
+        "employeesCreated": "{count} Mitarbeiter erstellt",
+        "generating": "Wird generiert...",
+        "includeManagers": "Manager-Zueordnige iischliesse",
+        "managersCreated": "{count} Manager-Zueordnige",
+        "managersHint": "Manager zuefällig neue Mitarbeiter zueordne",
+        "options": "Optionen",
+        "successTitle": "Mitarbeiter erfolgriich generiert!",
+        "title": "Mitarbeiter generiere",
+        "usersCreated": "{count} Benutzer erstellt"
+      },
+      "results": {
+        "success": "Demodate erfolgriich generiert!"
+      },
+      "steps": {
+        "absences": {
+          "description": "Abweseheitsiiträg erstelle",
+          "label": "Abweseheite"
+        },
+        "assignCategories": {
+          "description": "Arbeitskategoriee de Periode zueordne",
+          "label": "Kategoriee zueordne"
+        },
+        "changePolicies": {
+          "description": "Änderigsrichtlinie erstelle",
+          "label": "Änderigsrichtlinie"
+        },
+        "locations": {
+          "description": "Standört und Teilberiich erstelle",
+          "label": "Standört"
+        },
+        "managers": {
+          "description": "Manager de Mitarbeiter zueordne",
+          "label": "Manager-Zueordnige"
+        },
+        "projects": {
+          "description": "Bispiilprojekt erstelle",
+          "label": "Projekt"
+        },
+        "shifts": {
+          "description": "Schichte und Aafrooge erstelle",
+          "label": "Schichte"
+        },
+        "shiftTemplates": {
+          "description": "Schichtvorlage erstelle",
+          "label": "Schichtvorlage"
+        },
+        "teams": {
+          "description": "Team erstelle und Mitarbeiter zueordne",
+          "label": "Team"
+        },
+        "timeEntries": {
+          "description": "Ziitiiträg und Arbeitsperiode erstelle",
+          "label": "Ziitiiträg"
+        },
+        "workCategories": {
+          "description": "Arbeitskategorie-Set und Kategoriee erstelle",
+          "label": "Arbeitskategoriee"
+        }
+      },
+      "title": "Demodate",
+      "wizard": {
+        "backToConfig": "Zrugg zur Konfiguration",
+        "complete": "Abgschlosse",
+        "configure": "Konfiguriere",
+        "generate": "Generiere",
+        "generateMore": "Meh Date generiere"
+      }
+    },
+    "demoData": {
+      "description": "Bispiildate zum Teste generiere oder alli ziitbezogene Date lösche",
+      "title": "Demodate"
+    }
+  }
+}

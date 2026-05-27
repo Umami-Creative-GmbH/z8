@@ -2,9 +2,9 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useState } from "react";
-import { processPendingInviteCode } from "@/app/[locale]/(auth)/invite-code-actions";
+import { Suspense, useEffect, useState } from "react";
 import { getPendingInvitation } from "@/app/[locale]/(auth)/invitation-actions";
+import { processPendingInviteCode } from "@/app/[locale]/(auth)/invite-code-actions";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
@@ -21,7 +21,7 @@ function VerifyEmailContent() {
 	const { push } = useRouter();
 	const searchParams = useSearchParams();
 	const { get } = searchParams;
-	const getSearchParam = useCallback((key: string) => get.call(searchParams, key), [get, searchParams]);
+	const getSearchParam = (key: string) => get.call(searchParams, key);
 	const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 	const [errorMessage, setErrorMessage] = useState<string>("");
 	const [joinResult, setJoinResult] = useState<JoinResult>(null);
@@ -150,9 +150,9 @@ function VerifyEmailContent() {
 							? t("auth.redirecting-to-onboarding", "Redirecting to complete setup...")
 							: pendingInvitationId
 								? t(
-									"auth.redirecting-to-invitation",
-									"Redirecting to finish your organization invitation...",
-								)
+										"auth.redirecting-to-invitation",
+										"Redirecting to finish your organization invitation...",
+									)
 								: t("auth.redirecting-to-signin", "Redirecting to sign in page in 3 seconds...")}
 					</p>
 					<Button

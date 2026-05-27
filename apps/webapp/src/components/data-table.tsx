@@ -353,7 +353,7 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 		useSensor(KeyboardSensor, {}),
 	);
 
-	const dataIds = React.useMemo<UniqueIdentifier[]>(() => data?.map(({ id }) => id) || [], [data]);
+	const dataIds: UniqueIdentifier[] = data?.map(({ id }) => id) || [];
 
 	const table = useCompilerSafeReactTable({
 		data,
@@ -602,8 +602,7 @@ const chartConfig = {
 	},
 } satisfies ChartConfig;
 
-// Memoized chart section - only renders on desktop, extracted for performance
-const ChartSection = React.memo(function ChartSection({
+function ChartSection({
 	trendingText,
 	descriptionText,
 }: {
@@ -659,55 +658,46 @@ const ChartSection = React.memo(function ChartSection({
 			<Separator />
 		</>
 	);
-});
+}
 
-// Memoized TableCellViewer to prevent unnecessary re-renders
-const TableCellViewer = React.memo(function TableCellViewer({
-	item,
-}: {
-	item: z.infer<typeof schema>;
-}) {
+function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 	const isMobile = useIsMobile();
 	const { t } = useTranslate();
 
-	// Pre-compute translations to avoid recalculating in render
-	const translations = React.useMemo(
-		() => ({
-			showingVisitors: t("table.showing-visitors", "Showing total visitors for the last 6 months"),
-			trendingUp: t("table.trending-up", "Trending up by 5.2% this month"),
-			description: t(
-				"table.description",
-				"Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.",
-			),
-			header: t("table.header", "Header"),
-			type: t("table.type", "Type"),
-			selectType: t("table.select-type", "Select a type"),
-			status: t("table.status", "Status"),
-			selectStatus: t("table.select-status", "Select a status"),
-			target: t("table.target", "Target"),
-			limit: t("table.limit", "Limit"),
-			reviewer: t("table.reviewer", "Reviewer"),
-			selectReviewer: t("table.select-reviewer", "Select a reviewer"),
-			submit: t("generic.submit", "Submit"),
-			done: t("generic.done", "Done"),
-			typeOptions: {
-				tableOfContents: t("table.type-options.table-of-contents", "Table of Contents"),
-				executiveSummary: t("table.type-options.executive-summary", "Executive Summary"),
-				technicalApproach: t("table.type-options.technical-approach", "Technical Approach"),
-				design: t("table.type-options.design", "Design"),
-				capabilities: t("table.type-options.capabilities", "Capabilities"),
-				focusDocuments: t("table.type-options.focus-documents", "Focus Documents"),
-				narrative: t("table.type-options.narrative", "Narrative"),
-				coverPage: t("table.type-options.cover-page", "Cover Page"),
-			},
-			statusOptions: {
-				done: t("table.status-options.done", "Done"),
-				inProgress: t("table.status-options.in-progress", "In Progress"),
-				notStarted: t("table.status-options.not-started", "Not Started"),
-			},
-		}),
-		[t],
-	);
+	const translations = {
+		showingVisitors: t("table.showing-visitors", "Showing total visitors for the last 6 months"),
+		trendingUp: t("table.trending-up", "Trending up by 5.2% this month"),
+		description: t(
+			"table.description",
+			"Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.",
+		),
+		header: t("table.header", "Header"),
+		type: t("table.type", "Type"),
+		selectType: t("table.select-type", "Select a type"),
+		status: t("table.status", "Status"),
+		selectStatus: t("table.select-status", "Select a status"),
+		target: t("table.target", "Target"),
+		limit: t("table.limit", "Limit"),
+		reviewer: t("table.reviewer", "Reviewer"),
+		selectReviewer: t("table.select-reviewer", "Select a reviewer"),
+		submit: t("generic.submit", "Submit"),
+		done: t("generic.done", "Done"),
+		typeOptions: {
+			tableOfContents: t("table.type-options.table-of-contents", "Table of Contents"),
+			executiveSummary: t("table.type-options.executive-summary", "Executive Summary"),
+			technicalApproach: t("table.type-options.technical-approach", "Technical Approach"),
+			design: t("table.type-options.design", "Design"),
+			capabilities: t("table.type-options.capabilities", "Capabilities"),
+			focusDocuments: t("table.type-options.focus-documents", "Focus Documents"),
+			narrative: t("table.type-options.narrative", "Narrative"),
+			coverPage: t("table.type-options.cover-page", "Cover Page"),
+		},
+		statusOptions: {
+			done: t("table.status-options.done", "Done"),
+			inProgress: t("table.status-options.in-progress", "In Progress"),
+			notStarted: t("table.status-options.not-started", "Not Started"),
+		},
+	};
 
 	return (
 		<Drawer direction={isMobile ? "bottom" : "right"}>
@@ -814,4 +804,4 @@ const TableCellViewer = React.memo(function TableCellViewer({
 			</DrawerContent>
 		</Drawer>
 	);
-});
+}

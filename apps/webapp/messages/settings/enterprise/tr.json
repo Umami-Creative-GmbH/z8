@@ -1,0 +1,552 @@
+{
+  "settings": {
+    "apiKeys": {
+      "active": "Etkin",
+      "copyKey": "API anahtarını kopyala",
+      "copyPrefix": "Öneki kopyala",
+      "create": "Anahtar Oluştur",
+      "created": "API anahtarı başarıyla oluşturuldu",
+      "createDescription": "Programatik erişim için yeni bir API anahtarı oluşturun. Anahtar yalnızca bir kez gösterilecektir.",
+      "createdOn": "Oluşturulma tarihi: {date}",
+      "createTitle": "API Anahtarı Oluştur",
+      "deleted": "API anahtarı silindi",
+      "deleteDescription": "\"{name}\" API anahtarını silmek istediğinizden emin misiniz? Bu anahtarı kullanan tüm uygulamalar erişimini anında kaybedecektir. Bu işlem geri alınamaz.",
+      "deleteTitle": "API Anahtarını Sil",
+      "description": "Kuruluş verilerinize programatik erişim için API anahtarlarını yönetin",
+      "disabled": "Devre Dışı",
+      "editCreated": "Oluşturulma tarihi: {date}",
+      "editDescription": "Bu API anahtarı için ayarları güncelleyin. Not: Anahtarın kendisini görüntüleyemez veya değiştiremezsiniz.",
+      "editTitle": "API Anahtarını Düzenle",
+      "empty": {
+        "description": "Kuruluşunuza programatik erişimi etkinleştirmek için ilk API anahtarınızı oluşturun.",
+        "title": "API Anahtarı Yok"
+      },
+      "expires": "Sona Erme Tarihi",
+      "form": {
+        "create": "Anahtar Oluştur",
+        "enabled": "Anahtar Etkin",
+        "enabledHelp": "Devre dışı bırakılan anahtarlar tüm API isteklerini reddedecektir",
+        "expiration": "Sona Erme",
+        "name": "Ad",
+        "nameHelp": "Bu anahtarı tanımlamak için açıklayıcı bir ad",
+        "namePlaceholder": "ör. Üretim API'si",
+        "rateLimit": "Hız sınırlandırmayı etkinleştir",
+        "rateLimitMax": "Dakikadaki maksimum istek sayısı",
+        "scopes": "İzinler",
+        "scopesRequired": "En az bir izin seçin"
+      },
+      "keyCopied": "API anahtarı panoya kopyalandı",
+      "lastUsed": "Son Kullanım",
+      "name": "Ad",
+      "prefix": "Anahtar Öneki",
+      "prefixCopied": "Anahtar öneki kopyalandı",
+      "scopes": "İzinler",
+      "security": {
+        "description": "API anahtarları, izin kapsamları dahilinde kuruluş verilerinize tam erişim sağlar. Bunları güvende tutun ve asla herkese açık depolarda veya istemci tarafı kodlarında paylaşmayın.",
+        "title": "Güvenlik Bildirimi"
+      },
+      "showClose": "Kapat",
+      "showCloseAnyway": "Yine de Kapat",
+      "showConfirmWarning": "Emin misiniz? Anahtarı henüz kopyalamadınız.",
+      "showCopied": "Anahtar panoya kopyalandı",
+      "showDescription": "Yeni API anahtarınız \"{name}\" oluşturuldu. Şimdi kopyalayın - bir daha göremeyeceksiniz!",
+      "showDone": "Bitti",
+      "showExpires": "Sona Erme Tarihi:",
+      "showLabel": "API Anahtarınız",
+      "showName": "Ad:",
+      "showNever": "Asla",
+      "showTitle": "API Anahtarı Oluşturuldu",
+      "showWarning": "Bu anahtarı sadece bu sefer görebileceksiniz. Kopyaladığınızdan ve güvenli bir şekilde sakladığınızdan emin olun.",
+      "showWarningTitle": "Önemli:",
+      "status": "Durum",
+      "title": "API Anahtarları",
+      "updated": "API anahtarı güncellendi",
+      "usage": "{max} anahtardan {count} tanesi kullanıldı"
+    },
+    "branding": {
+      "appName": {
+        "description": "Giriş sayfasında gösterilen varsayılan uygulama adını geçersiz kılın.",
+        "title": "Uygulama Adı"
+      },
+      "background": {
+        "description": "Giriş sayfası için özel bir arka plan resmi yükleyin.",
+        "hint": "Önerilen: 1920x1080px veya daha büyük, yüksek kaliteli JPEG veya PNG",
+        "preview": "Arka plan önizlemesi",
+        "remove": "Arka planı kaldır",
+        "title": "Arka Plan Resmi",
+        "upload": "Arka plan resmi yükle"
+      },
+      "backgroundUploadFailed": "Arka plan resmi yüklenemedi",
+      "backgroundUploadSuccess": "Arka plan resmi başarıyla yüklendi",
+      "colors": {
+        "accent": "Vurgu Rengi (İsteğe bağlı)",
+        "accentHex": "Vurgu rengi onaltılık (hex) değeri",
+        "accentHint": "Öne çıkanlar için ikincil renk",
+        "description": "Giriş sayfanız için birincil ve vurgu renklerini özelleştirin.",
+        "primary": "Birincil Renk",
+        "primaryHex": "Birincil renk onaltılık (hex) değeri",
+        "primaryHint": "Düğmeler, bağlantılar ve odak durumları için kullanılır",
+        "title": "Tema Renkleri"
+      },
+      "logo": {
+        "description": "Giriş sayfasında görüntülenecek kurum logonuzu yükleyin.",
+        "hint": "Önerilen: 200x200px, şeffaf arka planlı PNG veya SVG",
+        "preview": "Logo önizlemesi",
+        "remove": "Logoyu kaldır",
+        "title": "Logo",
+        "upload": "Logo resmi yükle"
+      },
+      "logoUploadFailed": "Logo yüklenemedi",
+      "logoUploadSuccess": "Logo başarıyla yüklendi",
+      "save": "Marka Ayarlarını Kaydet",
+      "saveFailed": "Marka ayarları kaydedilemedi",
+      "saveSuccess": "Marka ayarları kaydedildi"
+    },
+    "enterprise": {
+      "addProvider": "Sağlayıcı Ekle",
+      "clientId": "İstemci Kimliği (Client ID)",
+      "clientIdRequired": "İstemci Kimliği gereklidir",
+      "clientSecret": "İstemci Gizli Anahtarı (Client Secret)",
+      "clientSecretRequired": "İstemci Gizli Anahtarı gereklidir",
+      "configureCallbackUrl": "Geri çağırma (callback) URL'sini yapılandırın:",
+      "domain": "Alan Adı",
+      "domains": {
+        "add": "Özel Alan Adı Ekle",
+        "addDescription": "Kuruma özel giriş sayfalarını etkinleştirmek için bir özel alan adı ekleyin. Sahipliği DNS kayıtları aracılığıyla doğrulamanız gerekecektir.",
+        "addDomain": "Alan Adı Ekle",
+        "added": "Alan adı başarıyla eklendi",
+        "addFailed": "Alan adı eklenemedi",
+        "adding": "Ekleniyor…",
+        "authConfigDescription": "{domain} üzerinden giriş yapan kullanıcılar için hangi kimlik doğrulama yöntemlerinin kullanılacağını yapılandırın",
+        "authConfigTitle": "Kimlik Doğrulama Yapılandırması",
+        "authConfigUpdated": "Kimlik doğrulama yapılandırması güncellendi",
+        "authConfigUpdateFailed": "Kimlik doğrulama yapılandırması güncellenemedi",
+        "authMethod": {
+          "emailPassword": "E-posta/Şifre",
+          "passkey": "Parola anahtarı (Passkey)",
+          "social": "Sosyal ({providers})",
+          "sso": "SSO"
+        },
+        "configured": "yapılandırıldı",
+        "cookieConsentScript": "Çerez İzni Komut Dosyası",
+        "cookieConsentScriptHelp": "Yalnızca bu özel alan adı için kimlik doğrulama sayfalarına eklenir. Devre dışı bırakmak için boş bırakın.",
+        "cookieConsentStatus": "Çerez izni {status}",
+        "copiedToClipboard": "Panoya kopyalandı",
+        "customDomain": "Özel Alan Adı",
+        "customDomainDescription": "Markanızla kuruma özel bir giriş sayfası etkinleştirmek için özel bir alan adı yapılandırın.",
+        "deleteAria": "{domain} özel alan adını sil",
+        "deleted": "Etki alanı silindi",
+        "deleteDescription": "\"{domain}\" alan adını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz. Kullanıcılar artık bu özel alan adı üzerinden giriş yapamayacaklar.",
+        "deleteFailed": "Etki alanı silinemedi",
+        "deleteTitle": "Etki Alanını Sil",
+        "description": "Kuruluşunuzun özel giriş etki alanını, markasını ve SSO sağlayıcılarını yapılandırın.",
+        "dnsPropagation": "DNS Yayılımı",
+        "dnsPropagationDescription": "DNS değişikliklerinin yayılması 48 saati bulabilir, ancak genellikle birkaç dakika içinde tamamlanır. TXT kaydını ekledikten sonra \"Doğrula\" düğmesine tıklayabilirsiniz.",
+        "domain": "Etki Alanı",
+        "domainHelp": "Kullanıcıların giriş sayfasına erişeceği etki alanını girin.",
+        "domainInvalid": "Lütfen geçerli bir etki alanı girin (ör. login.example.com)",
+        "domainPageSettings": "Etki Alanı Sayfası Ayarları",
+        "domainRequired": "Etki alanı gereklidir",
+        "editAuthSettingsAria": "{domain} için kimlik doğrulama ayarlarını düzenle",
+        "emailPassword": "E-posta ve Şifre",
+        "emailPasswordHelp": "Kullanıcıların e-posta ve şifre ile giriş yapmasına izin ver",
+        "empty": "Henüz yapılandırılmış özel bir etki alanı yok.",
+        "enabledAuthMethods": "Etkin Kimlik Doğrulama Yöntemleri",
+        "guidedSetup": {
+          "action": "Rehberli kurulum",
+          "description": "SSO, SCIM, erişim politikası ve aktivasyon kontrollerini tek bir rehberli akışta yapılandırın.",
+          "title": "Rehberli kurulum"
+        },
+        "keepExistingSecretKey": "Mevcut gizli anahtarı korumak için boş bırakın",
+        "nameHost": "Ad / Ana Bilgisayar",
+        "notConfigured": "yapılandırılmadı",
+        "passkey": "Geçiş Anahtarı (Passkey)",
+        "passkeyHelp": "Geçiş anahtarları ile şifresiz girişe izin ver",
+        "regenerateToken": "Belirteci Yeniden Oluştur",
+        "regenerateTokenFailed": "Belirteç yeniden oluşturulamadı",
+        "regenerateTokenSuccess": "Yeni doğrulama belirteci oluşturuldu",
+        "regenerating": "Yeniden oluşturuluyor…",
+        "saveConfiguration": "Yapılandırmayı Kaydet",
+        "secretKey": "Gizli Anahtar",
+        "secretKeyPlaceholder": "Gizli anahtarı girin",
+        "secretKeyRequired": "Site anahtarı ayarlanırken gereklidir",
+        "siteKey": "Site Anahtarı",
+        "socialProviders": "Sosyal Sağlayıcılar",
+        "socialProvidersHelp": "Bu etki alanı için sosyal giriş seçeneklerini etkinleştir",
+        "sso": "Tek Oturum Açma (SSO)",
+        "ssoHelp": "OIDC tabanlı kurumsal girişe izin ver",
+        "status": {
+          "pending": "Doğrulama Bekleniyor",
+          "verified": "Doğrulandı"
+        },
+        "title": "Özel Etki Alanı ve Marka",
+        "tokenExpired": "Belirteç Süresi Doldu",
+        "tokenExpiredDescription": "Doğrulama belirtecinin süresi doldu. Lütfen yeni bir belirteç oluşturun.",
+        "tokenExpires": "Belirteç son kullanma tarihi: {date}",
+        "turnstile": "Cloudflare Turnstile",
+        "turnstileHelp": "Giriş formları için bot koruması. Kurumsal etki alanları için gereklidir.",
+        "turnstileSiteKeyStatus": "Turnstile site anahtarı {status}",
+        "txtRecordInstruction": "DNS'inize aşağıdaki TXT kaydını ekleyin:",
+        "value": "Değer",
+        "verifiedSuccess": "Etki alanı başarıyla doğrulandı",
+        "verify": "Doğrula",
+        "verifyDomain": "Alanı Doğrula",
+        "verifyFailed": "Alan doğrulanamadı",
+        "verifying": "Doğrulanıyor…",
+        "verifyOwnership": "Alan Sahipliğini Doğrula",
+        "verifyOwnershipDescription": "{domain} sahipliğini doğrulamak için bir DNS TXT kaydı ekleyin"
+      },
+      "email": {
+        "apiKey": "API Anahtarı",
+        "apiKeyHint": "Mevcut anahtarı korumak için boş bırakın. API anahtarınızı resend.com adresinden alın",
+        "create": "Yapılandırma Oluştur",
+        "delete": "Yapılandırmayı Sil",
+        "deleteConfirm": "Bu e-posta yapılandırmasını silmek istediğinizden emin misiniz?",
+        "deleted": "E-posta yapılandırması silindi",
+        "deleteFailed": "Silme başarısız oldu",
+        "description": "Kuruluşunuz için özel bir e-posta sağlayıcısı yapılandırın. Tüm kuruluş e-postaları sistem varsayılanı yerine bu yapılandırmayı kullanacaktır.",
+        "fromEmail": "Gönderen E-postası",
+        "fromName": "Gönderen Adı",
+        "isActive": "Bu e-posta yapılandırmasını etkinleştir",
+        "lastTest": "Son Test",
+        "passwordHint": "Mevcut parolayı korumak için boş bırakın",
+        "recommended": "Önerilen",
+        "resendConfig": "Resend Yapılandırması",
+        "save": "Değişiklikleri Kaydet",
+        "saved": "E-posta yapılandırması kaydedildi",
+        "saveFailed": "Kaydetme başarısız oldu",
+        "scalewayConnected": "Scaleway Gizli Deposu Hazır",
+        "scalewayConnectedDesc": "Bu organizasyon, şifrelenmiş gizli depolama için doğrulanmış bir Scaleway Anahtar Yöneticisi anahtarına sahiptir.",
+        "scalewayKeyPending": "Scaleway Anahtarı Henüz Oluşturulmadı",
+        "scalewayKeyPendingDesc": "Resend API anahtarı veya SMTP şifresi gibi bir gizli bilgiyi kaydettiğinizde bir Scaleway organizasyon anahtarı oluşturulacaktır.",
+        "scalewayUnavailable": "Scaleway Gizli Deposu Kullanılamıyor",
+        "scalewayUnavailableDesc": "Yapılandırılmış Scaleway organizasyon anahtarı doğrulanamadı. Bu sorun giderilene kadar gizli bilgiler güvenli bir şekilde saklanamaz.",
+        "secretSet": "Ayarla",
+        "sendTest": "Test Gönder",
+        "smtpConfig": "SMTP Yapılandırması",
+        "smtpHost": "SMTP Sunucusu",
+        "smtpPassword": "Parola",
+        "smtpPort": "Port",
+        "smtpRequireTls": "STARTTLS yükseltmesi gerektir",
+        "smtpSecure": "TLS kullan (port 465)",
+        "smtpServer": "SMTP Sunucusu",
+        "smtpUsername": "Kullanıcı Adı",
+        "testEmailRequired": "Lütfen bir test e-posta adresi girin",
+        "testFailed": "Test e-postası gönderilemedi",
+        "testFailure": "Başarısız",
+        "testSection": "Test E-postası Gönder",
+        "testSent": "Test e-postası başarıyla gönderildi",
+        "testSuccess": "Başarılı",
+        "title": "E-posta Yapılandırması",
+        "transportType": "E-posta Sağlayıcısı",
+        "vaultConnected": "Vault Bağlandı",
+        "vaultConnectedDesc": "Sırlar, HashiCorp Vault içinde güvenli bir şekilde saklanır.",
+        "vaultSealed": "Vault Mühürlü",
+        "vaultSealedDesc": "HashiCorp Vault mühürlü. Sırları saklamak için lütfen mührü kaldırın.",
+        "vaultUnavailable": "Vault Kullanılamıyor",
+        "vaultUnavailableDesc": "HashiCorp Vault kullanılamıyor. Sırlar güvenli bir şekilde saklanamaz."
+      },
+      "enableProviderHelp": "Bu sağlayıcıyı etkinleştir veya devre dışı bırak",
+      "identity": {
+        "accessPolicy": {
+          "action": {
+            "save": "Erişim politikasını kaydet"
+          },
+          "defaultRoleTemplate": "Varsayılan rol şablonu",
+          "description": "Pilot test başarıyla tamamlandıktan sonra alan adını, davetiyeyi ve SSO zorunluluğunu ayarlayın.",
+          "noDefaultTemplate": "Varsayılan şablon yok",
+          "placeholder": {
+            "roleTemplate": "Rol şablonu seçin"
+          },
+          "requireSso": "SSO zorunlu tut",
+          "requireSsoHelp": "Çalışanlar kurumsal IdP kullanmalıdır.",
+          "restrictDomain": "Doğrulanmış alan adıyla kısıtla",
+          "restrictDomainHelp": "Seçilen alan adı dışındaki hesapları engelleyin.",
+          "restrictInvites": "Davetiyeleri kısıtla",
+          "restrictInvitesHelp": "Yalnızca erişim politikasıyla uyumlu davetiyelere izin ver.",
+          "title": "Erişim Politikası"
+        },
+        "badge": {
+          "now": "Şimdi",
+          "queued": "Sırada",
+          "ready": "Hazır"
+        },
+        "domain": {
+          "action": {
+            "checkStatus": "Alan adı durumunu kontrol et"
+          },
+          "description": "Çalışanlar için SSO zorunlu tutulmadan önce kiracı sınırını doğrulayın.",
+          "help": "DNS doğrulaması, mevcut SSO alan adı doğrulama işlemlerini kullanır. Zorunluluğu etkinleştirmeden önce bu doğrulamayı tamamlayın.",
+          "notSelected": "Seçilmedi",
+          "selected": "Seçilen alan adı",
+          "status": {
+            "pending": "Beklemede",
+            "verified": "Doğrulandı"
+          },
+          "title": "Alan adı"
+        },
+        "hero": {
+          "description": "Korumalı etkinleştirme ile {organizationId} organizasyonu için SSO, SCIM ve zorunluluk ayarlarını yapılandırın.",
+          "eyebrow": "Kurumsal kimlik",
+          "title": "Operasyonel komut kontrol listesi"
+        },
+        "provider": {
+          "action": {
+            "save": "Sağlayıcıyı kaydet"
+          },
+          "description": "Kimlik sağlayıcı ön ayarını, protokolü, sağlayıcı kimliğini ve e-posta alan adını seçin.",
+          "error": {
+            "domainRequired": "Alan adı gereklidir",
+            "providerIdRequired": "Sağlayıcı kimliği gereklidir"
+          },
+          "label": {
+            "domain": "E-posta alan adı",
+            "preset": "Sağlayıcı ön ayarı",
+            "protocol": "Protokol",
+            "providerId": "Sağlayıcı kimliği"
+          },
+          "placeholder": {
+            "domain": "ör. example.com…",
+            "protocol": "Protokol seçin",
+            "provider": "Sağlayıcı seçin",
+            "providerId": "ör. acme-okta…"
+          },
+          "preset": {
+            "generic": {
+              "description": "Standartlara uygun herhangi bir OIDC veya SAML 2.0 kimlik sağlayıcısı kullanın."
+            },
+            "googleWorkspace": {
+              "description": "SSO ve isteğe bağlı dizin eşitlemesi için Google Workspace OIDC kullanın."
+            },
+            "microsoftEntra": {
+              "description": "Kurumsal SSO ve isteğe bağlı provizyon için Microsoft Entra ID kullanın."
+            },
+            "okta": {
+              "description": "SAML veya OIDC tek oturum açma için Okta Workforce Identity kullanın."
+            }
+          },
+          "title": "Sağlayıcı"
+        },
+        "rail": {
+          "title": "Hazırlık durumu"
+        },
+        "review": {
+          "action": {
+            "activate": "Kurumsal kimliği etkinleştir"
+          },
+          "activationSummary": "Etkinleştirme özeti",
+          "description": "Kurumsal kimlik kontrollerini etkinleştirmeden önce korumalı etkinleştirme kontrollerini gözden geçirin.",
+          "lockoutWarning": "Mevcut yönetici kilitlenme uyarısı",
+          "lockoutWarningHelp": "Etkinleştirmeden önce mevcut yönetici hesabınızın yapılandırılmış sağlayıcı aracılığıyla oturum açabildiğini doğrulayın. Zorunluluk, seçilen alan adı için parola ile girişi engelleyebilir.",
+          "missingRequirement": "Etkinleştirme öncesinde {item} gereklidir",
+          "prerequisitesComplete": "Sağlayıcı, doğrulanmış alan adı ve SSO test ön koşulları tamamlandı.",
+          "requirement": {
+            "domain": "Doğrulanmış alan adı",
+            "provider": "Sağlayıcı",
+            "ssoTest": "SSO testi"
+          },
+          "title": "Gözden Geçir ve Etkinleştir"
+        },
+        "scim": {
+          "action": {
+            "copyToken": "Belirteci kopyala",
+            "generateToken": "Belirteç oluştur",
+            "refreshStatus": "Durumu yenile"
+          },
+          "baseUrl": "Temel URL",
+          "cardDescription": "Sağlama belirtecini oluşturun ve bağlantı sağlığını izleyin.",
+          "description": "SCIM doğrulama güncellemeleri, kimlik sağlayıcınız bir test kullanıcısı veya grup değişikliği gönderdikten sonra gerçekleşir.",
+          "error": {
+            "saveProviderFirst": "SCIM belirteci oluşturmadan önce sağlayıcıyı kaydedin"
+          },
+          "status": {
+            "none": "Henüz sağlama etkinliği yok",
+            "observed": "Sağlama etkinliği gözlemlendi"
+          },
+          "title": "SCIM Sağlama",
+          "tokenShownOnce": "Bu belirteç yalnızca bir kez gösterilir"
+        },
+        "sso": {
+          "action": {
+            "register": "SSO sağlayıcısını kaydet"
+          },
+          "description": "OIDC istemci kimlik bilgileri veya SAML meta verilerini kullanarak harici IdP'yi kaydedin.",
+          "error": {
+            "saveProviderFirst": "SSO'yu kaydetmeden önce sağlayıcıyı ve etki alanını kaydedin"
+          },
+          "label": {
+            "clientId": "İstemci Kimliği",
+            "clientSecret": "İstemci gizli anahtarı",
+            "issuer": "Veren",
+            "metadata": "SAML meta verileri"
+          },
+          "placeholder": {
+            "issuer": {
+              "generic": "https://idp.example.com…",
+              "googleWorkspace": "https://accounts.google.com…",
+              "microsoftEntra": "https://login.microsoftonline.com/{tenant-id}/v2.0…",
+              "okta": "https://acme.okta.com…"
+            },
+            "metadata": "IdP meta veri XML'ini yapıştırın…"
+          },
+          "title": "SSO Yapılandırması"
+        },
+        "ssoTest": {
+          "action": {
+            "recordFail": "Kayıt başarısız",
+            "recordPass": "Kayıt başarılı"
+          },
+          "defaultFailure": "Canlı SSO testi başarısız oldu",
+          "description": "Uygulamadan önce canlı bir harici SSO testinin sonucunu kaydedin.",
+          "error": {
+            "saveProviderFirst": "Testi kaydetmeden önce sağlayıcıyı kaydedin"
+          },
+          "help": "Bu, canlı bir harici SSO test sonucunu kaydeder. Önce IdP'de oturum açma işlemini çalıştırın, ardından etkinleştirme koruması için buradan başarılı veya başarısız sonucunu yakalayın.",
+          "label": {
+            "email": "Test kullanıcısı e-postası",
+            "failureNote": "Hata notu"
+          },
+          "status": {
+            "failed": "Başarısız",
+            "notRun": "Çalıştırılmadı",
+            "passed": "Başarılı"
+          },
+          "title": "Test Kullanıcısı"
+        },
+        "status": {
+          "activated": "Etkinleştirildi",
+          "draft": "Taslak"
+        },
+        "step": {
+          "accessPolicy": "Erişim İlkesi",
+          "accessPolicy.description": "Uygulama kurallarını ayarla",
+          "domain": "Etki alanı",
+          "domain.description": "Kiracı sınırını onayla",
+          "provider": "Sağlayıcı",
+          "provider.description": "Kimlik kaynağını seçin",
+          "review": "Gözden Geçir ve Etkinleştir",
+          "review.description": "Korumayı etkinleştir",
+          "scim": "SCIM Sağlama",
+          "scim.description": "Sorun sağlama belirteci",
+          "sso": "SSO Yapılandırması",
+          "sso.description": "OIDC veya SAML Kaydet",
+          "ssoTest": "Test Kullanıcısı",
+          "ssoTest.description": "Canlı oturum açma sonucunu kaydet"
+        },
+        "toast": {
+          "accessPolicyFailed": "Erişim ilkesi kaydedilemedi",
+          "accessPolicySaved": "Erişim ilkesi kaydedildi",
+          "activated": "Kurumsal kimlik kurulumu etkinleştirildi",
+          "activateFailed": "Kurulum etkinleştirilemedi",
+          "domainStatusFailed": "Etki alanı durumu yenilenemedi",
+          "domainStatusRefreshed": "Etki alanı durumu yenilendi",
+          "providerSaved": "Kimlik sağlayıcı kaydedildi",
+          "providerSaveFailed": "Sağlayıcı kaydedilemedi",
+          "scimStatusFailed": "SCIM durumu yenilenemedi",
+          "scimStatusRefreshed": "SCIM durumu yenilendi",
+          "scimTokenFailed": "SCIM belirteci oluşturulamadı",
+          "scimTokenGenerated": "SCIM belirteci oluşturuldu",
+          "ssoRegistered": "SSO sağlayıcısı kaydedildi",
+          "ssoRegisterFailed": "SSO sağlayıcısı kaydedilemedi",
+          "ssoTestFailed": "SSO testi başarısız olarak işaretlendi",
+          "ssoTestPassed": "SSO testi başarılı olarak işaretlendi",
+          "ssoTestRecordFailed": "SSO testi kaydedilemedi"
+        }
+      },
+      "keepExistingSecretHelp": "Mevcut gizli anahtarı korumak için boş bırakın",
+      "leaveBlankKeepExisting": "Mevcut olanı korumak için boş bırakın",
+      "provider": "Sağlayıcı",
+      "socialOAuth": {
+        "addDescription": "Sosyal giriş için kendi OAuth uygulamanızı yapılandırın.",
+        "addProviderError": "Sağlayıcı eklenemedi",
+        "addTitle": "Sosyal OAuth Sağlayıcısı Ekle",
+        "appleKeyIdHelp": "Özel anahtarınızla ilişkili Anahtar Kimliği",
+        "appleKeyIdRequired": "Apple için Anahtar Kimliği gereklidir",
+        "appleTeamIdHelp": "Apple Geliştirici hesabınızda bulunur",
+        "appleTeamIdRequired": "Apple için Takım Kimliği gereklidir",
+        "clientIdPlaceholder": "OAuth istemci kimliğiniz",
+        "clientSecretPlaceholder": "OAuth istemci gizli anahtarınız",
+        "configured": "{provider} OAuth başarıyla yapılandırıldı",
+        "createAppAt": "Şurada bir OAuth uygulaması oluşturun:",
+        "deleteError": "OAuth yapılandırması silinemedi",
+        "description": "Sosyal giriş için kendi OAuth kimlik bilgilerinizi yapılandırın. Bu, kullanıcılarınızın paylaşılan kimlik bilgileri yerine kuruluşunuzun OAuth uygulamalarını kullanarak oturum açmasını sağlar.",
+        "developerConsole": "{provider} Geliştirici Konsolu",
+        "editDescription": "OAuth kimlik bilgilerinizi güncelleyin.",
+        "editTitle": "{provider} OAuth Düzenle",
+        "empty": "Yapılandırılmış özel sosyal OAuth sağlayıcısı yok.",
+        "emptyDescription": "Paylaşılan kimlik bilgilerini değiştirmek için kendi OAuth kimlik bilgilerinizi ekleyin.",
+        "howItWorks": "Nasıl Çalışır",
+        "instructions": {
+          "addProvider": "Sağlayıcıyı kimlik bilgilerinizle buradan ekleyin",
+          "copyCredentials": "İstemci Kimliğini ve İstemci Gizli Anahtarını kopyalayın",
+          "createApp": "Sağlayıcının geliştirici konsolunda bir OAuth uygulaması oluşturun",
+          "customDomain": "Özel etki alanınız üzerinden oturum açan kullanıcılar OAuth uygulamanızı kullanacaktır"
+        },
+        "keyId": "Anahtar Kimliği",
+        "lastTested": "Son Test Edilme",
+        "notTested": "Test Edilmedi",
+        "privateKey": "Özel Anahtar (.p8)",
+        "removed": "{provider} OAuth kaldırıldı",
+        "removeDialogDescription": "Bu OAuth yapılandırmasını kaldırmak istediğinizden emin misiniz? Kullanıcılar (varsa) paylaşılan OAuth kimlik bilgilerine geri dönecektir.",
+        "removeDialogTitle": "Sosyal OAuth Sağlayıcısını Kaldır",
+        "teamId": "Ekip Kimliği",
+        "title": "Sosyal Giriş Sağlayıcıları",
+        "updateConfigError": "Yapılandırma güncellenemedi",
+        "updated": "{provider} OAuth başarıyla güncellendi",
+        "working": "Çalışıyor"
+      },
+      "sso": {
+        "addDescription": "Kurumsal çoklu oturum açma (SSO) için bir OIDC kimlik sağlayıcısı yapılandırın.",
+        "addError": "SSO sağlayıcısı eklenemedi",
+        "addSuccess": "SSO sağlayıcısı başarıyla eklendi",
+        "addTitle": "SSO Sağlayıcısı Ekle",
+        "clientIdPlaceholder": "OIDC istemci kimliğiniz",
+        "clientSecretPlaceholder": "OIDC istemci sırrınız",
+        "deleteDialogDescription": "Bu SSO sağlayıcısını silmek istediğinizden emin misiniz? Kullanıcılar artık bu kimlik sağlayıcısını kullanarak giriş yapamayacak.",
+        "deleteDialogTitle": "SSO Sağlayıcısını Sil",
+        "deleteError": "SSO sağlayıcısı silinemedi",
+        "deleteSuccess": "SSO sağlayıcısı silindi",
+        "description": "Kuruluşunuz için SSO'yu etkinleştirmek üzere OIDC kimlik sağlayıcıları ekleyin.",
+        "domainInvalid": "Lütfen geçerli bir alan adı girin (ör. example.com)",
+        "domainRequired": "Alan adı gereklidir",
+        "domainVerified": "Alan adı doğrulandı",
+        "emailDomain": "E-posta Alan Adı",
+        "emailDomainHelp": "Bu e-posta alan adına sahip kullanıcılar SSO kullanabilecektir",
+        "empty": "Henüz yapılandırılmış SSO sağlayıcısı yok.",
+        "emptyDescription": "Kurumsal çoklu oturum açmayı etkinleştirmek için bir OIDC sağlayıcısı ekleyin.",
+        "instructions": {
+          "copyCredentials": "Sağlayıcınızdan (IdP) Veren URL'sini, İstemci Kimliğini ve İstemci Sırrını kopyalayın",
+          "createApp": "Kimlik sağlayıcınızda (Okta, Azure AD vb.) bir OIDC uygulaması oluşturun",
+          "verifyDomain": "Sağlayıcıyı buraya ekleyin ve DNS TXT kaydı aracılığıyla e-posta alan adını doğrulayın"
+        },
+        "issuerUrl": "Veren (Issuer) URL'si",
+        "issuerUrlHelp": "Kimlik sağlayıcınızdan alınan OIDC veren URL'si",
+        "issuerUrlRequired": "Veren URL'si gereklidir",
+        "providerId": "Sağlayıcı Kimliği",
+        "providerIdHelp": "Bu sağlayıcı için benzersiz bir tanımlayıcı (küçük harf, boşluksuz)",
+        "providerIdInvalid": "Sağlayıcı Kimliği yalnızca küçük harfler, rakamlar ve kısa çizgiler içermelidir",
+        "providerIdRequired": "Sağlayıcı Kimliği gereklidir",
+        "setupInstructions": "Kurulum Talimatları",
+        "title": "Kimlik Sağlayıcıları",
+        "token": "Belirteç",
+        "tokenError": "Alan adı doğrulama belirteci oluşturulamadı",
+        "tokenGenerated": "Doğrulama belirteci oluşturuldu",
+        "txtToken": "TXT belirteci:",
+        "validUrlRequired": "Lütfen geçerli bir URL girin",
+        "verified": "Doğrulandı",
+        "verify": "Doğrula",
+        "verifyError": "Alan adı doğrulaması başarısız oldu. DNS TXT kaydınızı kontrol edin ve tekrar deneyin."
+      },
+      "tab": {
+        "branding": "Marka Kimliği",
+        "domains": "Özel Alan Adı",
+        "social-oauth": "Sosyal Giriş",
+        "sso": "SSO Sağlayıcıları"
+      }
+    },
+    "enterpriseIdentitySetup": {
+      "description": "Bu kuruluş için SSO, SCIM sağlama, alan adı kısıtlamaları, davet politikası ve varsayılan rolleri yönetin.",
+      "title": "Kurumsal Kimlik Kurulumu"
+    }
+  }
+}

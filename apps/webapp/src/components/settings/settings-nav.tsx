@@ -2,7 +2,6 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useCallback } from "react";
 import {
 	SidebarGroup,
 	SidebarGroupContent,
@@ -11,13 +10,13 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import type { SettingsAccessTier } from "@/lib/settings-access";
 import { Link, usePathname } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
-import type { SettingsAccessTier } from "@/lib/settings-access";
 import {
 	type FeatureFlag,
-	getResolvedSettingsVisibility,
 	getEntriesByGroup,
+	getResolvedSettingsVisibility,
 } from "./settings-config";
 import { SETTINGS_ICON_MAP } from "./settings-icons";
 import { isSettingsNavItemActive } from "./settings-nav-utils";
@@ -40,13 +39,10 @@ export function SettingsNav({ accessTier, billingEnabled }: SettingsNavProps) {
 	});
 
 	// Memoize to prevent recreation on every render
-	const isFeatureEnabled = useCallback(
-		(feature: FeatureFlag | undefined): boolean => {
-			if (!feature) return true;
-			return orgSettings[feature] ?? false;
-		},
-		[orgSettings],
-	);
+	const isFeatureEnabled = (feature: FeatureFlag | undefined): boolean => {
+		if (!feature) return true;
+		return orgSettings[feature] ?? false;
+	};
 
 	return (
 		<>

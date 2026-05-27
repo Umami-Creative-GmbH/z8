@@ -12,7 +12,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteVacationPolicy,
@@ -168,137 +168,132 @@ export function VacationPoliciesTable({
 	};
 
 	// Filter policies by search (client-side since typically small list)
-	const filteredPolicies = useMemo(() => {
+	const filteredPolicies = (() => {
 		if (!policies) return [];
 		if (!search) return policies;
 
 		const searchLower = search.toLowerCase();
 		return policies.filter((pol) => pol.name.toLowerCase().includes(searchLower));
-	}, [policies, search]);
+	})();
 
 	// Column definitions
-	const columns = useMemo<ColumnDef<VacationPolicy>[]>(
-		() => [
-			{
-				accessorKey: "name",
-				header: t("vacation.policies.header.name", "Name"),
-				cell: ({ row }) => {
-					const isSuperseded = isPolicySuperseded(row.original);
+	const columns = [
+		{
+			accessorKey: "name",
+			header: t("vacation.policies.header.name", "Name"),
+			cell: ({ row }) => {
+				const isSuperseded = isPolicySuperseded(row.original);
+				return (
+					<span className={`font-medium ${isSuperseded ? "opacity-60" : ""}`}>
+						{row.original.name}
+					</span>
+				);
+			},
+		},
+		{
+			accessorKey: "startDate",
+			header: t("vacation.policies.header.start-date", "Start Date"),
+			cell: ({ row }) => formatDate(row.original.startDate),
+		},
+		{
+			accessorKey: "validUntil",
+			header: t("vacation.policies.header.valid-until", "Valid Until"),
+			cell: ({ row }) =>
+				row.original.validUntil ? (
+					formatDate(row.original.validUntil)
+				) : (
+					<span className="text-muted-foreground">—</span>
+				),
+		},
+		{
+			accessorKey: "defaultAnnualDays",
+			header: () => (
+				<div className="text-right">{t("vacation.policies.header.annual-days", "Annual Days")}</div>
+			),
+			cell: ({ row }) => (
+				<div className="text-right tabular-nums">{row.original.defaultAnnualDays}</div>
+			),
+		},
+		{
+			accessorKey: "accrualType",
+			header: t("vacation.policies.header.accrual", "Accrual"),
+			cell: ({ row }) => (
+				<Badge variant="secondary">{getAccrualTypeLabel(t, row.original.accrualType)}</Badge>
+			),
+		},
+		{
+			accessorKey: "allowCarryover",
+			header: t("vacation.policies.header.carryover", "Carryover"),
+			cell: ({ row }) =>
+				row.original.allowCarryover ? (
+					<Badge variant="outline">
+						{row.original.maxCarryoverDays
+							? t("vacation.policies.max-days", "Max {days} days", {
+									days: row.original.maxCarryoverDays,
+								})
+							: t("vacation.policies.unlimited", "Unlimited")}
+					</Badge>
+				) : (
+					<span className="text-muted-foreground text-sm">
+						{t("vacation.policies.none", "None")}
+					</span>
+				),
+		},
+		{
+			accessorKey: "status",
+			header: t("vacation.policies.header.status", "Status"),
+			cell: ({ row }) => {
+				const isSuperseded = isPolicySuperseded(row.original);
+				if (row.original.isCompanyDefault) {
 					return (
-						<span className={`font-medium ${isSuperseded ? "opacity-60" : ""}`}>
-							{row.original.name}
-						</span>
-					);
-				},
-			},
-			{
-				accessorKey: "startDate",
-				header: t("vacation.policies.header.start-date", "Start Date"),
-				cell: ({ row }) => formatDate(row.original.startDate),
-			},
-			{
-				accessorKey: "validUntil",
-				header: t("vacation.policies.header.valid-until", "Valid Until"),
-				cell: ({ row }) =>
-					row.original.validUntil ? (
-						formatDate(row.original.validUntil)
-					) : (
-						<span className="text-muted-foreground">—</span>
-					),
-			},
-			{
-				accessorKey: "defaultAnnualDays",
-				header: () => (
-					<div className="text-right">
-						{t("vacation.policies.header.annual-days", "Annual Days")}
-					</div>
-				),
-				cell: ({ row }) => (
-					<div className="text-right tabular-nums">{row.original.defaultAnnualDays}</div>
-				),
-			},
-			{
-				accessorKey: "accrualType",
-				header: t("vacation.policies.header.accrual", "Accrual"),
-				cell: ({ row }) => (
-					<Badge variant="secondary">{getAccrualTypeLabel(t, row.original.accrualType)}</Badge>
-				),
-			},
-			{
-				accessorKey: "allowCarryover",
-				header: t("vacation.policies.header.carryover", "Carryover"),
-				cell: ({ row }) =>
-					row.original.allowCarryover ? (
-						<Badge variant="outline">
-							{row.original.maxCarryoverDays
-								? t("vacation.policies.max-days", "Max {days} days", {
-										days: row.original.maxCarryoverDays,
-									})
-								: t("vacation.policies.unlimited", "Unlimited")}
+						<Badge className="bg-primary">
+							<IconStar className="mr-1 size-3" />
+							{t("vacation.policies.company-default", "Company Default")}
 						</Badge>
-					) : (
-						<span className="text-muted-foreground text-sm">
-							{t("vacation.policies.none", "None")}
-						</span>
-					),
+					);
+				}
+				if (isSuperseded) {
+					return (
+						<Badge variant="secondary" className="text-muted-foreground">
+							{t("vacation.policies.superseded", "Superseded")}
+						</Badge>
+					);
+				}
+				return <Badge variant="outline">{t("vacation.policies.active", "Active")}</Badge>;
 			},
-			{
-				accessorKey: "status",
-				header: t("vacation.policies.header.status", "Status"),
-				cell: ({ row }) => {
-					const isSuperseded = isPolicySuperseded(row.original);
-					if (row.original.isCompanyDefault) {
-						return (
-							<Badge className="bg-primary">
-								<IconStar className="mr-1 size-3" />
-								{t("vacation.policies.company-default", "Company Default")}
-							</Badge>
-						);
-					}
-					if (isSuperseded) {
-						return (
-							<Badge variant="secondary" className="text-muted-foreground">
-								{t("vacation.policies.superseded", "Superseded")}
-							</Badge>
-						);
-					}
-					return <Badge variant="outline">{t("vacation.policies.active", "Active")}</Badge>;
-				},
-			},
-			...(canManagePolicies
-				? [
+		},
+		...(canManagePolicies
+			? [
 					{
 						id: "actions",
 						cell: ({ row }: { row: { original: VacationPolicy } }) => (
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="ghost" size="icon" className="size-8">
-								<IconDots className="size-4" />
-								<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => handleEditClick(row.original)}>
-								<IconPencil className="mr-2 size-4" />
-								{t("common.edit", "Edit")}
-							</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								className="text-destructive"
-								onClick={() => handleDeleteClick(row.original)}
-							>
-								<IconTrash className="mr-2 size-4" />
-								{t("common.delete", "Delete")}
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="ghost" size="icon" className="size-8">
+										<IconDots className="size-4" />
+										<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem onClick={() => handleEditClick(row.original)}>
+										<IconPencil className="mr-2 size-4" />
+										{t("common.edit", "Edit")}
+									</DropdownMenuItem>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										className="text-destructive"
+										onClick={() => handleDeleteClick(row.original)}
+									>
+										<IconTrash className="mr-2 size-4" />
+										{t("common.delete", "Delete")}
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						),
 					},
 				]
-				: []),
-		],
-		[t, canManagePolicies],
-	);
+			: []),
+	];
 
 	if (isLoading) {
 		return (

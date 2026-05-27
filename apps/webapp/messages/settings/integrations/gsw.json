@@ -1,0 +1,260 @@
+{
+  "settings": {
+    "calendar": {
+      "customization": {
+        "description": "Pass a, wie Abweseheitsereignisse in externe Kalender übertreit werde.",
+        "descriptionPlaceholder": "Abweseheit in Z8 erfasst",
+        "descriptionTemplate": "Ereignisbeschriibig (optional)",
+        "title": "Ereignis-Aapassige",
+        "titleHelp": "Verfügbari Variable: {categoryName}, {employeeName}, {status}",
+        "titleTemplate": "Vorlage für Ereignistitel"
+      },
+      "description": "Konfiguriere Kalender-Aabieter, ICS-Feeds und Sync-Iistellige für dini Organisation",
+      "icsFeeds": {
+        "description": "Erlaub Benutzere, Abweseheitskalender über s ICS/iCal-Format z abonniere.",
+        "personal": "Persönlichi ICS-Feeds",
+        "personalDesc": "Mitarbeiter chönd schreibgschützi Kalender-Abonnemänt für ihri Abweseheite erstelle",
+        "team": "Team-ICS-Feeds",
+        "teamDesc": "Teamleiter chönd gmeinsami Feeds erstelle, wo alli Team-Abweseheite zeiged",
+        "title": "ICS-Feeds"
+      },
+      "integrations": {
+        "description": "Verbundeni Mitarbeiter-Kalender, wo in dine aktuelle Iistellige ligged.",
+        "empty": "Es sind no kei Kalender-Integratione in dim aktuelle Bereich verfügbar.",
+        "needsAttention": "Brucht Ufmerksamkeit",
+        "pushOff": "Uusschalte",
+        "pushOn": "Iischalte",
+        "title": "Relevanti Integratione"
+      },
+      "managerDescription": "Überprüef Kalender-Integratione, wo dini Teams, Bereich und verwalteti Projekt beträffed.",
+      "noProvidersConfigured": "Es sind kei Kalender-Aabieter konfiguriert. Kontaktier dine Systemadministrator, zum OAuth-Zugangsdate iizrichte.",
+      "notConfigured": "Nöd konfiguriert",
+      "providers": {
+        "description": "Aktivier oder deaktivier d Kalender-Synchronisation für bstimmti Aabieter. Mitarbeiter chönd ihri Kontene verbinde, wenn s aktiviert isch.",
+        "google": "Google Kalender",
+        "googleDesc": "Abweseheite mit Google Kalender synchronisiere",
+        "microsoft": "Microsoft 365",
+        "microsoftDesc": "Abweseheite mit Outlook Kalender synchronisiere",
+        "title": "Kalender-Aabieter"
+      },
+      "readOnlyManagerNotice": "Manager chönd d Abdeckig vo de Kalender-Synchronisation für ihri Teams, Bereich und Projekt überprüefe, aber nur Organisations-Admins chönd die Iistellige ändere.",
+      "saved": "Kalender-Iistellige gspeicheret",
+      "saveError": "Kalender-Iistellige chönd nöd gspeicheret werde",
+      "syncBehavior": {
+        "autoSync": "Auto-Sync bi Freigab",
+        "autoSyncDesc": "Abweseheite automatisch mit verbundene Kalender synchronisiere, sobald si freigäh sind",
+        "conflictRequired": "Konfliktprüefig erfordere",
+        "conflictRequiredDesc": "Mitarbeiter verpflichte, vor em Iireiche vo Abweseheite uf Kalender-Konflikt z prüfe",
+        "description": "Konfiguriere, wie d Kalender-Synchronisation für dini Organisation funktioniert.",
+        "title": "Sync-Verhalte"
+      },
+      "title": "Kalender-Sync"
+    },
+    "clockinImport": {
+      "credentials": {
+        "connect": "Verbinde & Vorschau",
+        "description": "Gib en Clockin-Kunde-API-Bearer-Token ii. De Token wird nur für die Import-Sitzig verwendet.",
+        "title": "Clockin API-Token",
+        "token": "Bearer-Token"
+      },
+      "mapping": {
+        "description": "Clockin-Mitarbeiter mit bestehende Z8-Mitarbeiter verknüpfe. Automatischi E-Mail-Matches sind vorusgwählt.",
+        "mapEmployee": "Verknüpfe",
+        "noEmail": "Kei E-Mail in Clockin",
+        "skipEmployee": "De Mitarbeiter überspringe",
+        "summary": "Verknüpfti Mitarbeiter",
+        "title": "Mitarbeiter verknüpfe"
+      },
+      "preview": {
+        "absences": "Abweseheite",
+        "description": "Prüfe, welche Clockin-Daten verfügbar sind, bevor du Mitarbeitende zuordnest und Datensätze scannst.",
+        "employees": "Mitarbeitende",
+        "next": "Mitarbeitende zuordnen",
+        "title": "Clockin-Vorschau",
+        "workdays": "Arbeitstage"
+      },
+      "review": {
+        "noProductionRecords": "Es wurden noch keine Produktionsdatensätze importiert.",
+        "openReview": "Prüfung öffnen",
+        "scanningDescription": "Prüfungsstapel {reviewBatchId} wird gescannt. Überprüfe und genehmige die Datensätze vor dem Übertragen.",
+        "startedTitle": "Import-Prüfscan gestartet",
+        "starting": "Starte Clockin-Import-Prüfscan…",
+        "startSuccess": "Import-Prüfscan gestartet. Eine Überprüfung ist erforderlich, bevor die Datensätze übertragen werden."
+      },
+      "selection": {
+        "absences": "Abwesenheiten",
+        "description": "Wähle aus, welche Clockin-Datensätze für die Prüfung gescannt werden sollen. Datensätze müssen vor der Übertragung geprüft werden.",
+        "endDate": "Enddatum",
+        "startDate": "Startdatum",
+        "startReviewScan": "Prüfscan starten",
+        "title": "Import-Umfang",
+        "workdays": "Arbeitstage / Arbeitsperioden"
+      }
+    },
+    "clockodoImport": {
+      "complete": {
+        "batch": "Prüfungsstapel {batchId} wird gescannt.",
+        "description": "Eine Überprüfung ist erforderlich, bevor Clockodo-Datensätze in die Produktion übertragen werden.",
+        "openReview": "Prüfung öffnen",
+        "successTitle": "Import-Prüfscan gestartet"
+      },
+      "credentials": {
+        "apiKey": "API-Schlüssel",
+        "apiKeyHint": "Du findest deinen API-Schlüssel in deinem Clockodo-Profil:",
+        "connect": "Verbinden & Vorschau",
+        "description": "Gib deine Clockodo-E-Mail und deinen API-Schlüssel ein. Du findest deinen API-Schlüssel in Clockodo unter Mein Profil > API-Schlüssel. Die Zugangsdaten werden nicht gespeichert.",
+        "email": "Clockodo-E-Mail",
+        "title": "Clockodo-Zugangsdaten"
+      },
+      "entity": {
+        "absences": "Abwesenheiten",
+        "entries": "Zeiteinträge",
+        "holidayQuotas": "Urlaubskontingente",
+        "nonBusinessDays": "Feiertage / arbeitsfreie Tage",
+        "services": "Dienstleistungen / Arbeitskategorien",
+        "surcharges": "Zuschläge",
+        "targetHours": "Sollstunden / Arbeitszeitmodelle",
+        "teams": "Teams",
+        "users": "Benutzer / Mitarbeitende"
+      },
+      "errors": {
+        "connectionFailed": "Verbindung zu Clockodo fehlgeschlagen",
+        "fetchUsersFailed": "Abrufen der Benutzerdaten fehlgeschlagen",
+        "importFailed": "Import-Prüfscan fehlgeschlagen",
+        "saveMappingsFailed": "Speichern der Benutzerzuordnungen fehlgeschlagen"
+      },
+      "importing": {
+        "description": "Bitte schliesse diese Seite nicht. Der Prüfscan wird in die Warteschlange eingereiht und kann bei grossen Datensätzen einige Zeit in Anspruch nehmen.",
+        "patience": "Clockodo-Daten für die Prüfung werden abgerufen…",
+        "title": "Starte Prüfscan…"
+      },
+      "mapping": {
+        "autoMatched": "Automatisch zugeordnet",
+        "createNew": "Neu erstellen",
+        "skip": "Überspringen"
+      },
+      "mappingStatus": {
+        "auto": "Automatisch",
+        "manual": "Manuell",
+        "new": "Neu",
+        "skip": "Überspringe"
+      },
+      "preview": {
+        "dataType": "Datetyp",
+        "description": "Hier isch e Zämmefassig vo de Date, wo in dim Clockodo-Account gfunde worde sind. Vorhandeni Z8-Date wärded zum Vergliich aazeigt.",
+        "inClockodo": "Im Clockodo",
+        "inZ8": "Schon im Z8",
+        "next": "Benutzer zueordne",
+        "title": "Date-Vorschau"
+      },
+      "review": {
+        "startedToast": "De Import-Prüfscan isch gstartet. E Überprüfig isch nötig, bevor d Datensätz übertreit wärded."
+      },
+      "selection": {
+        "dateRange": "Datumsbereich für Ziiterfassige & Abweseheite",
+        "dateRangeDescription": "Das betrifft nur Ziiterfassige und Abweseheite. Anderi Date (Benutzer, Teams, etc.) wärded immer vollständig gscannt.",
+        "dependencyWarning": "Abhängigkeite wärded automatisch gscannt",
+        "description": "Wähl us, weli Datetype gscannt wärde sölled. E Überprüfig isch nötig, bevor d Datensätz übertreit wärded.",
+        "emptyUserScope": "Wähl mindestens eine Clockodo-Benutzer us, bevor de Scan startisch.",
+        "incompleteCustomDateRange": "Wähl es Start- und es Enddatum us, bevor de Scan startisch.",
+        "selectDateRange": "Datumsbereich wähle",
+        "startImport": "Prüfscan starte",
+        "title": "Date für d Überprüfig wähle"
+      },
+      "step": {
+        "complete": "Überprüfig gstartet",
+        "credentials": "Zuegangsdate",
+        "import": "Überprüfig",
+        "preview": "Vorschau",
+        "selection": "Uswahl",
+        "userMapping": "Benutzer-Zueordnig"
+      },
+      "userMapping": {
+        "action": "Aktion",
+        "autoMatched": "{count} automatisch zuegordnet",
+        "clockodoUser": "Clockodo-Benutzer",
+        "continue": "Wiiter",
+        "description": "Ordne Clockodo-Benutzer vorhandene Z8-Mitarbeiter zue oder erstell neui Accounts. Benutzer, wo über d E-Mail gfunde wärded, wärded automatisch zuegordnet.",
+        "email": "E-Mail",
+        "mappedTo": "Zuegordnet zu",
+        "newEmployees": "{count} neu",
+        "onlyMapped": "Nur zuegordneti Benutzer scanne (keini neue Accounts für nid zuegordneti Benutzer erstelle)",
+        "skippedCount": "{count} übersprunge",
+        "status": "Status",
+        "title": "Benutzer zueordne"
+      }
+    },
+    "discord": {
+      "description": "Konfiguriere Discord-Benachrichtigunge für dini Organisation",
+      "title": "Discord"
+    },
+    "slack": {
+      "description": "Konfiguriere Slack-Benachrichtigunge für dini Organisation",
+      "title": "Slack"
+    },
+    "teamsNotifications": {
+      "description": "Konfiguriere Microsoft Teams-Benachrichtigunge für dini Organisation",
+      "title": "Microsoft Teams"
+    },
+    "telegram": {
+      "bot": {
+        "description": "Verbinde en Telegram-Bot, zum Benachrichtigunge und Befehl für dini Organisation z aktiviere.",
+        "title": "Telegram-Bot"
+      },
+      "botToken": "Bot-Token",
+      "botTokenHelp": "Erstell en Bot mit em @BotFather uf Telegram und füeg de Token do ii.",
+      "connect": "Bot verbinde",
+      "connected": "Telegram-Bot erfolgriich verbunde",
+      "connectError": "Telegram-Bot konnte nid verbunde wärde",
+      "description": "Konfiguriere d Telegram-Bot-Integration für Benachrichtigunge und Befehl",
+      "disconnect": "Trenne",
+      "disconnectConfirm": {
+        "description": "Das wird alli Telegram-Benachrichtigunge und -Befehl für dini Organisation deaktiviere. D Verchnüpfige vo de Mitarbeiter-Kontene blibe erhalte.",
+        "title": "Telegram-Bot trenne?"
+      },
+      "disconnected": "Telegram-Bot isch trennt",
+      "disconnectError": "Telegram-Bot konnte nöd trennt werde",
+      "features": {
+        "approvals": "Freigabe-Benachrichtigunge",
+        "approvalsDesc": "Freigabe-Aafroge sende und Freigabe/Ablehnig über Telegram ermögliche",
+        "commands": "Bot-Befehl",
+        "commandsDesc": "Aktiviere /clockedin, /whosout, /pending und anderi Befehl",
+        "description": "Konfiguriere, weli Funktione für de Telegram-Bot aktiviert sind.",
+        "digest": "Tägliche Überblick",
+        "digestDesc": "Sende en tägliche Überblick über Abweseheite und Dienstplän",
+        "digestTime": "Ziit",
+        "digestTimezone": "Ziitzone",
+        "escalations": "Eskalatione",
+        "escalationsDesc": "Eskalier unbeantworteti Freigabe a de nächst Vorgesetzt",
+        "escalationTimeout": "Timeout",
+        "hours": "Stunde",
+        "title": "Funktione"
+      },
+      "linked": "Verchnüpft",
+      "linkError": "Link-Code konnte nöd generiert werde",
+      "linking": {
+        "botLink": "Bot: @{botUsername}",
+        "description": "Verchnüpfe dis Telegram-Konto, zum persönlechi Benachrichtigunge z becho.",
+        "generateCode": "Link-Code generiere",
+        "instructions": "Sende de Befehl a de Bot uf Telegram:",
+        "linkedStatus": "Dis Telegram-Konto isch verchnüpft",
+        "title": "Telegram-Konto"
+      },
+      "notConfigured": "Telegram isch für die Organisation nöd konfiguriert. Kontaktier dini Administratore.",
+      "saved": "Telegram-Iistellige gspeicheret",
+      "status": {
+        "active": "Aktiv"
+      },
+      "title": "Telegram",
+      "unlink": "Verchnüpfig uflöse",
+      "unlinkConfirm": {
+        "description": "Du wirsch kei Telegram-Benachrichtigunge meh becho. Du chasch dich spöter wieder verchnüpfe.",
+        "title": "Telegram-Konto-Verchnüpfig uflöse?"
+      },
+      "unlinked": "Telegram-Konto-Verchnüpfig glöst",
+      "unlinkError": "Telegram-Konto-Verchnüpfig konnte nöd glöst werde",
+      "webhookActive": "Webhook registriert",
+      "webhookPending": "Webhook usstehend"
+    }
+  }
+}

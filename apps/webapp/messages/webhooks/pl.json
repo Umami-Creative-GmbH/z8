@@ -1,0 +1,92 @@
+{
+  "webhooks": {
+    "copy-failed": "Nie udało się skopiować do schowka",
+    "create": "Dodaj webhook",
+    "create-failed": "Nie udało się utworzyć webhooka",
+    "delete-confirm": {
+      "description": "To działanie trwale usunie punkt końcowy webhooka oraz całą historię dostarczania. Tej czynności nie można cofnąć.",
+      "title": "Usunąć webhook?"
+    },
+    "deleted": "Webhook usunięty",
+    "delete-failed": "Nie udało się usunąć webhooka",
+    "deliveries": "Dostarczenia",
+    "description": "Skonfiguruj punkty końcowe webhooków, aby otrzymywać powiadomienia w czasie rzeczywistym o zdarzeniach w Twojej organizacji.",
+    "disabled": "Webhook wyłączony",
+    "empty": {
+      "description": "Utwórz swój pierwszy webhook, aby zacząć otrzymywać powiadomienia o zdarzeniach.",
+      "title": "Brak skonfigurowanych webhooków"
+    },
+    "enabled": "Webhook włączony",
+    "events": "Zdarzenia",
+    "form": {
+      "create": "Utwórz webhook",
+      "create-description": "Skonfiguruj nowy punkt końcowy webhooka, aby otrzymywać powiadomienia o zdarzeniach.",
+      "create-title": "Utwórz webhook",
+      "description": "Opis",
+      "description-placeholder": "Do czego służy ten webhook?",
+      "deselect-all": "Odznacz wszystko",
+      "edit-description": "Zaktualizuj konfigurację punktu końcowego webhooka.",
+      "edit-title": "Edytuj webhook",
+      "events": "Zdarzenia do otrzymania",
+      "events-hint": "Wybrane zdarzenia: {{count}}",
+      "events-required": "Należy wybrać przynajmniej jedno zdarzenie",
+      "name": "Nazwa",
+      "name-placeholder": "Mój webhook",
+      "name-required": "Nazwa jest wymagana",
+      "select-all": "Zaznacz wszystko",
+      "url": "URL punktu końcowego",
+      "url-hint": "HTTPS jest wymagane w środowisku produkcyjnym. Zdarzenia będą wysyłane jako żądania POST.",
+      "url-required": "URL jest wymagany"
+    },
+    "last-delivery": "Ostatnia",
+    "logs": {
+      "attempt": "Próba",
+      "description": "Ostatnie próby dostarczenia webhooka i ich wyniki.",
+      "duration": "Czas trwania",
+      "empty": "Brak logów dostarczania",
+      "error": "Błąd",
+      "event": "Zdarzenie",
+      "failed": "Niepowodzenie",
+      "http": "HTTP",
+      "payload": "Ładunek (Payload)",
+      "pending": "Oczekujące",
+      "response": "Odpowiedź",
+      "retrying": "Ponawianie",
+      "showing": "Wyświetlanie {{start}}-{{end}} z {{total}}",
+      "status": "Status",
+      "success": "Sukces",
+      "time": "Czas",
+      "title": "Dzienniki dostarczania"
+    },
+    "regenerate-failed": "Nie udało się wygenerować ponownie klucza",
+    "regenerate-secret": "Wygeneruj ponownie klucz",
+    "secret-copied": "Klucz skopiowany do schowka",
+    "secret-dialog": {
+      "copy-secret": "Skopiuj klucz do schowka",
+      "description": "Ten klucz służy do weryfikacji podpisów webhooków. Przechowuj go w bezpiecznym miejscu.",
+      "done": "Zapisałem klucz",
+      "secret": "Klucz podpisywania",
+      "title": "Klucz webhooka",
+      "verification": "Weryfikacja podpisu",
+      "verification-hint": "Weryfikuj podpisy webhooków za pomocą HMAC-SHA256. Podpis jest wysyłany w nagłówku X-Z8-Signature.",
+      "warning": "Ten klucz zostanie wyświetlony tylko raz. Upewnij się, że zapiszesz go teraz.",
+      "warning-title": "Ważne"
+    },
+    "secret-regenerated": "Klucz wygenerowany ponownie",
+    "status": {
+      "degraded": "Obniżona wydajność",
+      "failing": "Niepowodzenie",
+      "healthy": "Prawidłowy",
+      "inactive": "Nieaktywny"
+    },
+    "success-rate": "Sukces",
+    "test": "Wyślij test",
+    "test-failed": "Nie udało się wysłać testowego webhooka",
+    "test-sent": "Testowy webhook wysłany",
+    "title": "Webhooki",
+    "toggle-active": "Przełącz aktywność webhooka",
+    "updated": "Webhook zaktualizowany",
+    "update-failed": "Nie udało się zaktualizować webhooka",
+    "view-logs": "Wyświetl dzienniki"
+  }
+}

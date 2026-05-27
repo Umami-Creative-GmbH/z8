@@ -1,0 +1,100 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Odpowiednia obsada",
+      "byLocation": "Według lokalizacji:",
+      "gapCount": "{{count}} brak personelu",
+      "gaps": "luki",
+      "hideOverlay": "Ukryj nakładkę pokrycia",
+      "metSlots": "{{count}} wystarczająca obsada",
+      "overSlots": "{{count}} nadmiar personelu",
+      "overstaffed": "Nadmiar personelu",
+      "showOverlay": "Pokaż nakładkę celów pokrycia",
+      "summary": "Podsumowanie pokrycia:",
+      "toggleLabel": "Pokrycie",
+      "underSlots": "{{count}} niedobór personelu",
+      "understaffed": "Niedobór personelu",
+      "utilization": "Wykorzystanie: {{percent}}%"
+    },
+    "page": {
+      "employeeDescription": "Zobacz swoje zmiany i wybierz dostępne",
+      "managerDescription": "Zarządzaj i planuj zmiany pracowników",
+      "title": "Harmonogram zmian"
+    },
+    "scheduler": {
+      "complianceBanner": {
+        "findingsDetected": "Wykryto {count} problem(ów) przed publikacją.",
+        "maxHours": "Maks. liczba godzin: {count}",
+        "overtime": "Nadgodziny: {count}",
+        "restTime": "Czas odpoczynku: {count}",
+        "title": "Ostrzeżenia o zgodności w tym zakresie dat"
+      },
+      "loading": "Ładowanie harmonogramu...",
+      "publish": {
+        "failed": "Nie udało się opublikować zmian",
+        "published": "Opublikowano {count} zmian(y)"
+      },
+      "shiftUpdate": {
+        "failed": "Nie udało się zaktualizować zmiany",
+        "overlapDescription": "Ta zmiana nakłada się na {count} inną zmianę(-y)",
+        "overlapWarning": "Zmiana zapisana z ostrzeżeniem o nakładaniu się",
+        "updated": "Zmiana zaktualizowana"
+      }
+    },
+    "shiftDialog": {
+      "anyoneCanPickUp": "Każdy może przejąć",
+      "assignTo": "Przypisz do",
+      "confirmDelete": "Potwierdź usunięcie",
+      "created": "Zmiana utworzona",
+      "createDescription": "Wypełnij szczegóły nowej zmiany",
+      "createShift": "Utwórz zmianę",
+      "createTitle": "Utwórz zmianę",
+      "date": "Data",
+      "deleted": "Zmiana usunięta",
+      "deleteFailed": "Nie udało się usunąć zmiany",
+      "draft": "Wersja robocza",
+      "editDescription": "Zaktualizuj szczegóły zmiany poniżej",
+      "editTitle": "Edytuj zmianę",
+      "endTime": "Czas zakończenia",
+      "noTemplate": "Brak szablonu",
+      "notes": "Notatki (opcjonalnie)",
+      "notesPlaceholder": "Wszelkie specjalne instrukcje lub notatki...",
+      "openShift": "Otwarta zmiana",
+      "openShiftHelp": "Pozostaw jako „Otwarta zmiana”, aby umożliwić pracownikom jej przejęcie",
+      "pickDate": "Wybierz datę",
+      "published": "Opublikowano",
+      "savedWithWarnings": "Zmiana zapisana z ostrzeżeniami",
+      "saveFailed": "Nie udało się zapisać zmiany",
+      "selectEmployee": "Wybierz pracownika",
+      "selectSubarea": "Wybierz podobszar…",
+      "selectTemplate": "Wybierz szablon",
+      "startTime": "Czas rozpoczęcia",
+      "status": "Status:",
+      "subarea": "Podobszar",
+      "subareaHelp": "Miejsce, w którym odbędzie się ta zmiana",
+      "template": "Szablon (opcjonalnie)",
+      "templateHelp": "Wybranie szablonu automatycznie wypełni godziny",
+      "updated": "Zmiana zaktualizowana",
+      "updateShift": "Aktualizuj zmianę"
+    },
+    "skills": {
+      "expiredCertifications": "Wygasłe certyfikaty:",
+      "expiredOn": "(Wygasło {{date}})",
+      "missingPreferred": "Brakujące preferowane umiejętności:",
+      "missingPreferredCount": "brak {{count}} preferowanych",
+      "missingRequired": "Brakujące wymagane umiejętności:",
+      "preferred": "Preferowane",
+      "preferredSkillsMissing": "Brak preferowanych umiejętności",
+      "requirementsNotMet": "Wymagania dotyczące umiejętności nie zostały spełnione",
+      "unqualified": "Brak kwalifikacji",
+      "validating": "Weryfikacja umiejętności…",
+      "validatingDescription": "Sprawdzanie kwalifikacji pracownika",
+      "warningMessage": "Nadal możesz przypisać tę zmianę, ale zostanie ona zarejestrowana jako nadpisanie."
+    },
+    "templates": {
+      "dragHint": "Przeciągnij szablon do kalendarza, aby utworzyć zmianę",
+      "empty": "Brak dostępnych szablonów. Utwórz szablony w Ustawieniach, aby szybko dodawać zmiany.",
+      "title": "Szablony zmian"
+    }
+  }
+}

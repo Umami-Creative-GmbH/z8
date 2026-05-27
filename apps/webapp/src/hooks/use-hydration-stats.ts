@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
 import {
 	getHydrationStats,
 	logWaterIntake,
@@ -97,9 +96,9 @@ export function useHydrationStats(options: UseHydrationStatsOptions = {}) {
 	});
 
 	// Refetch stats manually
-	const refetchStats = useCallback(() => {
+	const refetchStats = () => {
 		return queryClient.invalidateQueries({ queryKey: queryKeys.hydration.stats() });
-	}, [queryClient]);
+	};
 
 	const stats = statsQuery.data;
 

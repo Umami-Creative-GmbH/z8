@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PaginationState, SortingState } from "@tanstack/react-table";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import {
 	getHolidays,
 	type HolidayListParams,
@@ -56,20 +56,20 @@ export function useHolidays({ organizationId, initialPageSize = 20 }: UseHoliday
 	});
 
 	// Filter setters (reset to page 0)
-	const setSearch = useCallback((value: string) => {
+	const setSearch = (value: string) => {
 		setSearchState(value);
 		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-	}, []);
+	};
 
-	const setCategoryId = useCallback((value: string) => {
+	const setCategoryId = (value: string) => {
 		setCategoryIdState(value);
 		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-	}, []);
+	};
 
 	// Refresh
-	const refresh = useCallback(() => {
+	const refresh = () => {
 		queryClient.invalidateQueries({ queryKey: queryKeys.holidays.all });
-	}, [queryClient]);
+	};
 
 	return {
 		// Data

@@ -1,0 +1,202 @@
+{
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "visualizza analisi",
+      "restrictedDescription": "L'analisi è disponibile solo per amministratori e manager.",
+      "restrictedTitle": "Accesso limitato"
+    },
+    "common": {
+      "days": "Giorni",
+      "employee": "Dipendente",
+      "employees": "Dipendenti",
+      "hours": "Ore",
+      "loadingOrganizationSettings": "Caricamento impostazioni organizzazione prima di abilitare i preset.",
+      "noDataAvailable": "Nessun dato disponibile",
+      "noDataForPeriod": "Nessun dato disponibile per il periodo selezionato",
+      "overtime": "Straordinari",
+      "overtimeHours": "Ore di straordinario",
+      "team": "Team",
+      "totalHours": "Ore totali",
+      "unavailable": "Non disponibile",
+      "undertime": "Ore mancanti",
+      "undertimeHours": "Ore di sottotempo"
+    },
+    "layout": {
+      "description": "Approfondimenti completi sulle prestazioni del team, sulle ore di lavoro e sui modelli di assenza",
+      "tabs": {
+        "overtimeBurnDown": "Riduzione straordinari",
+        "overview": "Panoramica",
+        "teamPerformance": "Prestazioni del team",
+        "vacationTrends": "Tendenze ferie",
+        "workHours": "Ore di lavoro"
+      },
+      "title": "Analisi"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Suddivisione",
+      "breakdownDescription": "Dettagli sulla riduzione degli straordinari a livello di {label}",
+      "breakdownEmpty": "Nessun dato di suddivisione ancora disponibile",
+      "byCostCenter": "Per centro di costo",
+      "byManager": "Per manager",
+      "byTeam": "Per team",
+      "costCenter": "Centro di costo",
+      "currentOvertime": "Straordinario attuale",
+      "description": "Traccia la riduzione settimanale degli straordinari tra i team.",
+      "errors": {
+        "loadData": "Impossibile caricare i dati sulla riduzione degli straordinari"
+      },
+      "filters": {
+        "allCostCenters": "Tutti i centri di costo",
+        "allManagers": "Tutti i manager",
+        "allTeams": "Tutti i team",
+        "breakdownLabel": "Dimensione di suddivisione",
+        "costCenterLabel": "Filtro centro di costo",
+        "managerLabel": "Filtro manager",
+        "teamLabel": "Filtro team"
+      },
+      "improvingGroups": "Gruppi in miglioramento",
+      "improvingGroupsDescription": "Gruppi con straordinari in diminuzione",
+      "manager": "Manager",
+      "previousOvertime": "Straordinario precedente",
+      "previousPeriodDescription": "Rispetto al periodo precedente",
+      "selectedRangeDescription": "Per l'intervallo di date e i filtri selezionati",
+      "title": "Riduzione straordinari",
+      "trendDirection": "Direzione del trend",
+      "trendDirectionDescription": "Traiettoria complessiva degli straordinari",
+      "trend": {
+        "down": "In calo",
+        "flat": "Stabile",
+        "up": "In aumento"
+      },
+      "weeklyTrend": {
+        "description": "Trend settimanale di riduzione degli straordinari",
+        "empty": "Dati sul trend non ancora disponibili",
+        "title": "Trend settimanale di smaltimento"
+      },
+      "weekOverWeek": "Settimana su settimana"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Distribuzione delle assenze per categoria",
+        "title": "Modelli di assenza"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% approvato",
+        "avgDecision": "{hours}h media decisionale",
+        "byManager": "Per manager",
+        "byTeam": "Per team",
+        "byType": "Per tipo",
+        "description": "Team e tipi di richiesta con lavoro in sospeso o avvisi SLA",
+        "empty": "Nessun collo di bottiglia nelle approvazioni rilevato",
+        "pendingSummary": "{pendingCount} in sospeso - {slaWarnings} avvisi SLA",
+        "title": "Colli di bottiglia nelle approvazioni",
+        "unavailable": "Impossibile caricare i colli di bottiglia nelle approvazioni"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Delle richieste decise approvate",
+          "title": "Tasso di approvazione",
+          "unavailableDescription": "Impossibile caricare le analisi delle approvazioni"
+        },
+        "avgWorkHours": {
+          "description": "Per dipendente nel periodo selezionato",
+          "title": "Ore lavorative medie"
+        },
+        "totalAbsenceDays": {
+          "description": "Giorni totali nel periodo selezionato",
+          "title": "Giorni totali di assenza"
+        },
+        "totalEmployees": {
+          "description": "Dipendenti attivi nell'organizzazione",
+          "title": "Dipendenti totali"
+        }
+      },
+      "loadingLabel": "Caricamento dati analitici",
+      "workHoursByTeam": {
+        "description": "Ore lavorative totali registrate per team",
+        "title": "Ore lavorative per team"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Media per dipendente",
+      "comparison": {
+        "description": "Ore lavorative totali per team nel periodo selezionato",
+        "title": "Confronto tra team"
+      },
+      "details": {
+        "description": "Ripartizione delle ore lavorative per team e dipendente",
+        "title": "Dettagli sulle prestazioni del team"
+      },
+      "employeeCount": "Numero di dipendenti",
+      "errors": {
+        "loadData": "Impossibile caricare i dati sulle prestazioni del team"
+      },
+      "onTrack": "In linea",
+      "variance": {
+        "description": "Variazione delle ore rispetto alle ore lavorative previste",
+        "empty": "Dati sulla variazione non disponibili",
+        "title": "Straordinari e ore non lavorate"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Assegnati",
+      "balance": {
+        "description": "Giorni assegnati, fruiti e rimanenti per dipendente",
+        "title": "Saldo ferie"
+      },
+      "daysRemaining": "{count} giorni rimanenti",
+      "daysTaken": "{count} giorni fruiti",
+      "errors": {
+        "loadData": "Impossibile caricare i dati sui trend delle ferie"
+      },
+      "monthlyUsage": {
+        "description": "Giorni di ferie fruiti al mese",
+        "empty": "Dati sull'utilizzo mensile non disponibili",
+        "title": "Utilizzo ferie mensile"
+      },
+      "peakMonths": {
+        "description": "Mesi con la maggiore attività di ferie",
+        "empty": "Nessun dato disponibile sui mesi di picco",
+        "title": "Mesi di picco delle ferie"
+      },
+      "remaining": "Rimanenti",
+      "taken": "Usufruiti",
+      "utilization": {
+        "description": "Utilizzo complessivo dei giorni di ferie nell'organizzazione",
+        "overall": "Utilizzo complessivo",
+        "title": "Utilizzo ferie"
+      },
+      "utilizationLabel": "Utilizzo",
+      "utilizationPercent": "% di utilizzo",
+      "vacationDays": "Giorni di ferie"
+    },
+    "workHours": {
+      "actualHours": "Ore effettive",
+      "avgHoursPerWeek": "Media ore/settimana",
+      "daily": {
+        "description": "Ore di lavoro effettive rispetto a quelle previste al giorno",
+        "empty": "Nessun dato disponibile sulle ore giornaliere",
+        "title": "Ore di lavoro giornaliere"
+      },
+      "distribution": {
+        "description": "Confronto ore di lavoro dei dipendenti (grafico a barre orizzontali)",
+        "empty": "Nessun dato di distribuzione disponibile",
+        "title": "Distribuzione ore di lavoro"
+      },
+      "employeeComparison": {
+        "description": "Ore totali e varianza rispetto al previsto per dipendente",
+        "title": "Ore di lavoro dei dipendenti"
+      },
+      "errors": {
+        "loadData": "Impossibile caricare i dati analitici sulle ore di lavoro"
+      },
+      "expectedHours": "Ore previste",
+      "variance": "Varianza",
+      "varianceTrend": {
+        "description": "Varianza delle ore rispetto alle ore di lavoro previste nel tempo",
+        "empty": "Nessun dato di tendenza disponibile",
+        "title": "Tendenza straordinari e ore lavorate in meno"
+      }
+    }
+  }
+}

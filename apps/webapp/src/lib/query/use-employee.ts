@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import {
 	type EmployeeWithRelations,
@@ -234,11 +233,11 @@ export function useEmployee(options: UseEmployeeOptions) {
 	});
 
 	// Refetch employee data manually
-	const refetch = useCallback(() => {
+	const refetch = () => {
 		return queryClient.invalidateQueries({
 			queryKey: queryKeys.employees.detail(employeeId),
 		});
-	}, [queryClient, employeeId]);
+	};
 
 	return {
 		// Employee data

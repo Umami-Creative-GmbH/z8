@@ -4,7 +4,7 @@ import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { storePendingInvitation } from "@/app/[locale]/(auth)/invitation-actions";
 import {
@@ -60,7 +60,7 @@ type SignupSocialAuthProps = {
 	onSocialSignup: (provider: SocialProviderId) => void;
 };
 
-const SignupSocialAuth = memo(function SignupSocialAuth({
+const SignupSocialAuth = function SignupSocialAuth({
 	showEmailPassword,
 	filteredProviders,
 	providersLoading,
@@ -114,7 +114,7 @@ const SignupSocialAuth = memo(function SignupSocialAuth({
 			</div>
 		</>
 	);
-});
+};
 
 export function SignupForm({
 	callbackUrl,
@@ -136,25 +136,25 @@ export function SignupForm({
 	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 	const turnstileRef = useRef<TurnstileRef>(null);
 
-	const handleTurnstileVerify = useCallback((token: string) => {
+	const handleTurnstileVerify = (token: string) => {
 		setTurnstileToken(token);
-	}, []);
+	};
 
-	const handleTurnstileError = useCallback(() => {
+	const handleTurnstileError = () => {
 		setTurnstileToken(null);
 		setError(t("auth.turnstile-error", "Verification failed. Please try again."));
 		turnstileRef.current?.reset();
-	}, [t]);
+	};
 
-	const handleTurnstileExpire = useCallback(() => {
+	const handleTurnstileExpire = () => {
 		setTurnstileToken(null);
 		turnstileRef.current?.reset();
-	}, []);
+	};
 
-	const handleTurnstileTimeout = useCallback(() => {
+	const handleTurnstileTimeout = () => {
 		setTurnstileToken(null);
 		turnstileRef.current?.reset();
-	}, []);
+	};
 
 	// Invite code state
 	const [organizationName, setOrganizationName] = useState<string | null>(
@@ -176,7 +176,13 @@ export function SignupForm({
 			confirmPassword: "",
 		},
 		onSubmitInvalid: ({ formApi }) => {
-			for (const fieldName of ["firstName", "lastName", "email", "password", "confirmPassword"] as const) {
+			for (const fieldName of [
+				"firstName",
+				"lastName",
+				"email",
+				"password",
+				"confirmPassword",
+			] as const) {
 				if (formApi.getFieldMeta(fieldName)?.errors.length) {
 					document.getElementById(fieldName)?.focus();
 					break;
@@ -289,13 +295,13 @@ export function SignupForm({
 	const allowedSocialProviders = authConfig?.socialProvidersEnabled ?? [];
 
 	// Filter social providers based on auth config
-	const filteredProviders = useMemo(() => {
+	const filteredProviders = (() => {
 		if (allowedSocialProviders.length === 0) {
 			return enabledProviders;
 		}
 
 		return enabledProviders.filter((provider) => allowedSocialProviders.includes(provider.id));
-	}, [enabledProviders, allowedSocialProviders]);
+	})();
 	const getFieldErrorId = (field: string) => `${field}-error`;
 
 	const getDescribedBy = (...ids: Array<string | false | null | undefined>) => {
@@ -310,7 +316,8 @@ export function SignupForm({
 
 	const validatePassword = (value: string) => validateStrongPassword(value, t);
 
-	const validateConfirmPassword = (value: string) => validatePasswordConfirmation(value, formData.password, t);
+	const validateConfirmPassword = (value: string) =>
+		validatePasswordConfirmation(value, formData.password, t);
 
 	const validateEmail = (value: string) => {
 		const result = z.string().email().safeParse(value);
@@ -352,32 +359,29 @@ export function SignupForm({
 		await form.handleSubmit();
 	};
 
-	const handleSocialSignup = useCallback(
-		async (provider: SocialProviderId) => {
-			setIsLoading(true);
-			setError(null);
+	const handleSocialSignup = async (provider: SocialProviderId) => {
+		setIsLoading(true);
+		setError(null);
 
-			try {
-				// For social signup with invite code, redirect to join page after auth
-				// The join page will process the code for the new user
-				const callbackURL =
-					sanitizedCallbackUrl || (inviteCode && inviteCodeValid ? `/join/${inviteCode}` : "/");
+		try {
+			// For social signup with invite code, redirect to join page after auth
+			// The join page will process the code for the new user
+			const callbackURL =
+				sanitizedCallbackUrl || (inviteCode && inviteCodeValid ? `/join/${inviteCode}` : "/");
 
-				await authClient.signIn.social({
-					provider,
-					callbackURL,
-				});
-			} catch (err) {
-				setIsLoading(false);
-				setError(
-					err instanceof Error
-						? err.message
-						: t("auth.social-signup-error", "An error occurred during social sign-up"),
-				);
-			}
-		},
-		[inviteCode, inviteCodeValid, sanitizedCallbackUrl, t],
-	);
+			await authClient.signIn.social({
+				provider,
+				callbackURL,
+			});
+		} catch (err) {
+			setIsLoading(false);
+			setError(
+				err instanceof Error
+					? err.message
+					: t("auth.social-signup-error", "An error occurred during social sign-up"),
+			);
+		}
+	};
 
 	return (
 		<AuthFormWrapper
@@ -435,17 +439,19 @@ export function SignupForm({
 									<div className="grid gap-3">
 										<Label htmlFor="firstName">{t("auth.first-name", "First Name")}</Label>
 										<Input
-											aria-describedby={getDescribedBy(errorMessage && getFieldErrorId("firstName"))}
+											aria-describedby={getDescribedBy(
+												errorMessage && getFieldErrorId("firstName"),
+											)}
 											aria-invalid={errorMessage ? "true" : "false"}
-										id="firstName"
-										name={field.name}
-										autoComplete="given-name"
-										onBlur={field.handleBlur}
-										onChange={(e) => field.handleChange(e.target.value)}
-										placeholder={t("auth.first-name-placeholder", "John…")}
-										required
-										type="text"
-										value={field.state.value}
+											id="firstName"
+											name={field.name}
+											autoComplete="given-name"
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											placeholder={t("auth.first-name-placeholder", "John…")}
+											required
+											type="text"
+											value={field.state.value}
 										/>
 										{errorMessage ? (
 											<p className="text-destructive text-sm" id={getFieldErrorId("firstName")}>
@@ -472,15 +478,15 @@ export function SignupForm({
 										<Input
 											aria-describedby={getDescribedBy(errorMessage && getFieldErrorId("lastName"))}
 											aria-invalid={errorMessage ? "true" : "false"}
-										id="lastName"
-										name={field.name}
-										autoComplete="family-name"
-										onBlur={field.handleBlur}
-										onChange={(e) => field.handleChange(e.target.value)}
-										placeholder={t("auth.last-name-placeholder", "Doe…")}
-										required
-										type="text"
-										value={field.state.value}
+											id="lastName"
+											name={field.name}
+											autoComplete="family-name"
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											placeholder={t("auth.last-name-placeholder", "Doe…")}
+											required
+											type="text"
+											value={field.state.value}
 										/>
 										{errorMessage ? (
 											<p className="text-destructive text-sm" id={getFieldErrorId("lastName")}>
@@ -577,11 +583,17 @@ export function SignupForm({
 											autoComplete="new-password"
 											onBlur={field.handleBlur}
 											onChange={(e) => field.handleChange(e.target.value)}
-											placeholder={t("setup:setup.field.password_placeholder", "Create a strong password")}
+											placeholder={t(
+												"setup:setup.field.password_placeholder",
+												"Create a strong password",
+											)}
 											required
 											value={field.state.value}
 										/>
-										<PasswordStrengthIndicator id="password-guidance" password={formData.password} />
+										<PasswordStrengthIndicator
+											id="password-guidance"
+											password={formData.password}
+										/>
 										{errorMessage ? (
 											<p className="text-destructive text-sm" id={getFieldErrorId("password")}>
 												{errorMessage}
@@ -617,12 +629,18 @@ export function SignupForm({
 											autoComplete="new-password"
 											onBlur={field.handleBlur}
 											onChange={(e) => field.handleChange(e.target.value)}
-											placeholder={t("setup:setup.field.confirm_password_placeholder", "Confirm your password")}
+											placeholder={t(
+												"setup:setup.field.confirm_password_placeholder",
+												"Confirm your password",
+											)}
 											required
 											value={field.state.value}
 										/>
 										{errorMessage ? (
-											<p className="text-destructive text-sm" id={getFieldErrorId("confirmPassword")}>
+											<p
+												className="text-destructive text-sm"
+												id={getFieldErrorId("confirmPassword")}
+											>
 												{errorMessage}
 											</p>
 										) : null}

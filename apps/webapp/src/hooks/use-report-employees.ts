@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
 import { getAccessibleEmployeesAction } from "@/app/[locale]/(app)/reports/actions";
 import type { SelectableEmployee } from "@/components/employee-select/types";
 import { queryKeys } from "@/lib/query/keys";
@@ -77,10 +76,10 @@ export function useReportEmployees(currentEmployeeId?: string): UseReportEmploye
 	});
 
 	// Transform AccessibleEmployee[] to SelectableEmployee[]
-	const employees = useMemo(() => {
+	const employees = (() => {
 		if (!data) return [];
 		return data.map(transformAccessibleEmployee);
-	}, [data]);
+	})();
 
 	// First employee is always the current user
 	const currentEmployee = employees.length > 0 ? employees[0] : null;

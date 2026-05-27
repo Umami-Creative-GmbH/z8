@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
 const THEMES = { light: "", dark: ".dark" } as const;
 const SAFE_CSS_IDENTIFIER_REPLACEMENT = "-";
 const SAFE_CSS_IDENTIFIER_PATTERN = /^[a-zA-Z0-9_-]+$/;
-const SAFE_CSS_COLOR_PATTERN = /^(#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla)\((?:[0-9%.,\s/+-]+|var\(--[a-zA-Z0-9_-]+\)(?:\s*[/,]\s*[0-9.]+%?)?)\)|(?:var\(--[a-zA-Z0-9_-]+\))|[a-zA-Z]+)$/;
+const SAFE_CSS_COLOR_PATTERN =
+	/^(#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla)\((?:[0-9%.,\s/+-]+|var\(--[a-zA-Z0-9_-]+\)(?:\s*[/,]\s*[0-9.]+%?)?)\)|(?:var\(--[a-zA-Z0-9_-]+\))|[a-zA-Z]+)$/;
 
 function toSafeCssIdentifier(value: string, fallbackSuffix: number): string {
 	if (SAFE_CSS_IDENTIFIER_PATTERN.test(value)) {
@@ -148,7 +149,7 @@ function ChartTooltipContent({
 	}) {
 	const { config } = useChart();
 
-	const tooltipLabel = React.useMemo(() => {
+	const tooltipLabel = (() => {
 		if (hideLabel || !payload?.length) {
 			return null;
 		}
@@ -172,7 +173,7 @@ function ChartTooltipContent({
 		}
 
 		return <div className={cn("font-medium", labelClassName)}>{value}</div>;
-	}, [label, labelFormatter, payload, hideLabel, labelClassName, config, labelKey]);
+	})();
 
 	if (!(active && payload?.length)) {
 		return null;
@@ -298,9 +299,7 @@ function ChartLegendContent({
 
 				return (
 					<div
-						className={cn(
-							"flex items-center gap-1.5 [&>svg]:size-3 [&>svg]:text-muted-foreground",
-						)}
+						className={cn("flex items-center gap-1.5 [&>svg]:size-3 [&>svg]:text-muted-foreground")}
 						key={item.value}
 					>
 						{itemConfig?.icon && !hideIcon ? (
@@ -349,9 +348,9 @@ function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key:
 
 export {
 	ChartContainer,
-	ChartTooltip,
-	ChartTooltipContent,
 	ChartLegend,
 	ChartLegendContent,
 	ChartStyle,
+	ChartTooltip,
+	ChartTooltipContent,
 };

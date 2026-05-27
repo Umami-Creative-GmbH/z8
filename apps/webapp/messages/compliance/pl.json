@@ -1,0 +1,140 @@
+{
+  "compliance": {
+    "commandCenter": {
+      "coverage": {
+        "accessControls": "Kontrola dostępu podsumowuje jedynie wrażliwe zdarzenia z dziennika audytu, które są już rejestrowane.",
+        "auditEvidence": "Dowody audytu wykorzystują bieżącą konfigurację eksportu audytu, żądania pakietów audytu oraz ostatnie wyniki weryfikacji.",
+        "workforceCompliance": "Zgodność pracowników wykorzystuje dane z ostatnich 7 dni dotyczące naruszeń polityki pracy oraz oczekujących wniosków o wyjątki."
+      },
+      "events": {
+        "auditEvidenceFailures": {
+          "description": "Ostatnie nieudane zadania: {failedRequests}; ostatnie nieprawidłowe weryfikacje: {invalidVerifications}",
+          "title": "Wykryto błędy w dowodach audytu"
+        },
+        "auditPackFailure": {
+          "description": "Ostatnie nieudane zadania: {failedRequests}",
+          "title": "Generowanie pakietu audytu nie powiodło się"
+        },
+        "auditVerificationFailure": {
+          "description": "Ostatnie nieprawidłowe weryfikacje: {invalidVerifications}",
+          "title": "Weryfikacja audytu nie powiodła się"
+        },
+        "sensitiveAction": {
+          "description": "{action} dla {entityType}",
+          "title": "Wrażliwe działanie: {action}"
+        },
+        "workforceFindings": {
+          "description": "Odpoczynek: {restPeriodViolations}, Inne polityki: {generalPolicyViolations}, Nadgodziny: {overtimeViolations}",
+          "title": "Ostatnie ustalenia dotyczące polityki pracy"
+        }
+      },
+      "facts": {
+        "access": {
+          "latestSensitiveAction": "Ostatnie wrażliwe działanie: {action}",
+          "latestSensitiveActionNone": "Ostatnie wrażliwe działanie: brak",
+          "noSensitiveEvents": "W ciągu ostatnich 24 godzin nie zarejestrowano żadnych zmian w kontroli wrażliwych danych.",
+          "recentSensitiveEvents": "Ostatnie wrażliwe zdarzenia: {count}"
+        },
+        "audit": {
+          "activeSigningKey": "Aktywny klucz podpisywania: {fingerprint}",
+          "lastSuccessfulAuditPack": "Ostatni udany pakiet audytu: {timestamp}",
+          "missingSigningKey": "Klucze podpisywania nie zostały jeszcze skonfigurowane.",
+          "noSuccessfulAuditPack": "Nie zarejestrowano jeszcze żadnego udanego pakietu audytu.",
+          "recentFailedJobs": "Ostatnie nieudane zadania pakietu audytu: {count}",
+          "recentInvalidVerifications": "Ostatnie nieudane próby weryfikacji: {count}"
+        },
+        "unavailable": {
+          "accessControls": "Nie udało się załadować zdarzeń kontroli dostępu.",
+          "auditEvidence": "Nie udało się załadować danych dowodów audytu.",
+          "workforceCompliance": "Nie udało się załadować danych o zgodności pracowników."
+        },
+        "workforce": {
+          "generalPolicyViolations": "Inne naruszenia polityki: {count}",
+          "overtimeViolations": "Naruszenia nadgodzin: {count}",
+          "pendingExceptions": "Oczekujące wyjątki: {count}",
+          "restPeriodViolations": "Naruszenia okresów odpoczynku: {count}"
+        }
+      },
+      "links": {
+        "inspectCompliance": "Sprawdź zgodność",
+        "inspectInAuditLog": "Sprawdź w dzienniku audytu",
+        "openAuditExport": "Otwórz eksport audytu",
+        "openAuditLog": "Otwórz dziennik audytu",
+        "openComplianceSettings": "Otwórz ustawienia zgodności",
+        "reviewAuditExport": "Przejrzyj eksport audytu"
+      },
+      "sections": {
+        "accessControls": {
+          "headline": {
+            "critical": "Zmiany w kontrolach wrażliwych wymagają przeglądu",
+            "healthy": "Ostatnio nie zarejestrowano żadnych zmian w kontrolach wrażliwych",
+            "warning": "Wykryto niedawne zmiany w kontrolach"
+          }
+        },
+        "auditEvidence": {
+          "headline": {
+            "critical": "Dowody audytu wymagają uwagi",
+            "healthy": "Sygnały dowodów audytu są prawidłowe",
+            "warning": "Dowody audytu są gotowe tylko częściowo"
+          }
+        },
+        "unavailable": {
+          "headline": "Sygnał chwilowo niedostępny"
+        },
+        "workforceCompliance": {
+          "headline": {
+            "critical": "Naruszenia polityki pracowniczej wymagają przeglądu",
+            "healthy": "Nie wykryto żadnych niedawnych problemów z polityką pracowniczą",
+            "warning": "Zgodność pracownicza odbiega od normy"
+          }
+        }
+      },
+      "status": {
+        "critical": "krytyczny",
+        "healthy": "prawidłowy",
+        "unavailable": "niedostępny",
+        "warning": "ostrzeżenie"
+      },
+      "summary": {
+        "critical": "Krytyczne ryzyka zgodności wymagają uwagi",
+        "healthy": "Nie wykryto aktywnych problemów w monitorowanych sygnałach",
+        "unavailable": "Niektóre sygnały zgodności są niedostępne",
+        "warning": "Sygnały zgodności wymagają przeglądu"
+      }
+    },
+    "exception": {
+      "approved": "Wyjątek zatwierdzony",
+      "approvedDescription": "Wyjątek zgodności został zatwierdzony.",
+      "approveFailed": "Nie udało się zatwierdzić",
+      "plannedDuration": "Zaplanowane",
+      "plannedDurationHelp": "Oszacuj, ile dodatkowego czasu będziesz potrzebować powyżej limitu.",
+      "reason": "Powód wyjątku",
+      "reasonPlaceholder": "Wyjaśnij, dlaczego potrzebujesz tego wyjątku (np. pilny termin projektu, ważne spotkanie z klientem)...",
+      "reasonRequired": "Wymagany powód",
+      "reasonRequiredDescription": "Podaj powód wniosku o wyjątek.",
+      "rejectDescription": "Podaj powód odrzucenia tego wniosku o wyjątek (opcjonalnie)",
+      "rejected": "Wyjątek odrzucony",
+      "rejectedDescription": "Wyjątek zgodności został odrzucony.",
+      "rejectFailed": "Nie udało się odrzucić",
+      "rejectionPlaceholder": "Wpisz powód odrzucenia tego wyjątku...",
+      "rejectionReason": "Powód odrzucenia",
+      "rejectTitle": "Odrzuć wniosek o wyjątek",
+      "requestDescription": "Poproś menedżera o wstępną zgodę, aby kontynuować mimo ograniczeń zgodności. Zatwierdzone wyjątki są ważne przez 24 godziny.",
+      "requestedAt": "Zawnioskowano",
+      "requestFailed": "Wniosek nie powiódł się",
+      "requestSubmitted": "Wniosek o wyjątek przesłany",
+      "requestSubmittedDescription": "Twój menedżer otrzyma powiadomienie i będzie mógł zatwierdzić lub odrzucić Twój wniosek.",
+      "requestTitle": "Zawnioskuj o wyjątek zgodności",
+      "submit": "Wyślij wniosek",
+      "type": "Typ wyjątku"
+    },
+    "hasApprovedException": "Masz zatwierdzony wyjątek. Możesz kontynuować.",
+    "moreAlerts": "więcej",
+    "noExceptions": "Brak oczekujących wniosków o wyjątek",
+    "pendingExceptions": "Oczekujące wnioski o wyjątek",
+    "pendingExceptionsDescription": "Przejrzyj wnioski o wyjątek wymagające Twojego zatwierdzenia",
+    "requestException": "Zawnioskuj o wyjątek",
+    "restPeriodMessage": "Potrzebujesz jeszcze {{time}} odpoczynku, zanim będziesz mógł się odbić. Następne dozwolone odbicie: {{nextTime}}",
+    "restPeriodRequired": "Wymagany okres odpoczynku"
+  }
+}

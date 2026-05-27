@@ -150,9 +150,10 @@ test("generated non-web manifests exclude obvious web-only type overrides", asyn
     await fs.writeFile(manifestUrl, originalManifest);
   }
 
-  assert.equal(packageJson.pnpm, undefined);
+	assert.equal(packageJson.pnpm, undefined);
 
 	const targetWorkspaceConfig = await fs.readFile(new URL("../targets/migration/pnpm-workspace.yaml", import.meta.url), "utf8");
+	assert.match(targetWorkspaceConfig, /^minimumReleaseAgeExclude:/m);
 	assert.doesNotMatch(targetWorkspaceConfig, /@types\/react:/);
 	assert.doesNotMatch(targetWorkspaceConfig, /@types\/react-dom:/);
 });
@@ -204,6 +205,7 @@ test("copied migration runtime includes pnpm workspace config for frozen install
 		});
 
 		const workspaceConfig = await fs.readFile(new URL("pnpm-workspace.yaml", outputUrl), "utf8");
+		assert.match(workspaceConfig, /^minimumReleaseAgeExclude:/m);
 		assert.match(workspaceConfig, /^overrides:/m);
 		assert.match(workspaceConfig, /"postcss":/);
 	} finally {

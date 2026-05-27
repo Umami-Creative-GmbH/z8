@@ -1,0 +1,43 @@
+{
+  "today": {
+    "approvals": {
+      "approve": "Onayla",
+      "approveLabel": "{title} öğesini onayla",
+      "description": "Yönetici kararı bekleyen talepler.",
+      "empty": "Bekleyen onay bulunmuyor.",
+      "openInbox": "Gelen kutusunu aç",
+      "pendingAriaLabel": "Bekleyen onaylar",
+      "reject": "Reddet",
+      "rejectLabel": "{title} öğesini reddet",
+      "title": "Onaylar",
+      "toast": {
+        "approved": "Talep onaylandı",
+        "approveError": "Talep onaylanamadı",
+        "rejected": "Talep reddedildi",
+        "rejectError": "Talep reddedilemedi"
+      }
+    },
+    "briefing": {
+      "badge": "Bugün",
+      "description": "Bugün işlem gerektiren öğeleri gözden geçirin, ardından doğrudan doğru iş akışına geçin.",
+      "needsAction": {
+        "description": "En acil operasyonel takipler için buradan başlayın.",
+        "empty": "Her şey yolunda. Şu an için yönetici müdahalesi gerekmiyor.",
+        "title": "İşlem Gerekiyor"
+      },
+      "sections": {
+        "empty": "Sorun algılanmadı."
+      },
+      "severity": {
+        "critical": "Kritik",
+        "high": "Yüksek",
+        "info": "Bilgi",
+        "warning": "Uyarı"
+      },
+      "summaryAriaLabel": "Bugünün özeti",
+      "supportingSectionsAriaLabel": "Destekleyici bölümler",
+      "title": "Yönetici Günlük Bilgilendirmesi",
+      "updatedAt": "{date} - Güncellenme {time}"
+    }
+  }
+}

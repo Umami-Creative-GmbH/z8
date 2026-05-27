@@ -9,7 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import confetti from "canvas-confetti";
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { logWaterIntake } from "@/app/[locale]/(app)/wellness/actions";
 import { Button } from "@/components/ui/button";
@@ -151,7 +151,7 @@ export function HydrationWidget() {
 		errorMessage: t("dashboard.hydration.error", "Failed to load hydration stats"),
 	});
 
-	const fireConfetti = useCallback(async () => {
+	const fireConfetti = async () => {
 		if (!widgetRef.current) return;
 
 		const rect = widgetRef.current.getBoundingClientRect();
@@ -168,30 +168,27 @@ export function HydrationWidget() {
 			scalar: 0.9,
 			drift: 0,
 		});
-	}, []);
+	};
 
-	const handleLogWater = useCallback(
-		async (amount: number) => {
-			setIsLogging(true);
-			try {
-				const result = await logWaterIntake({ amount, source: "widget" });
-				if (result.success) {
-					if (result.data?.goalJustMet) {
-						fireConfetti();
-					}
-					refetch();
-				} else {
-					toast.error(
-						result.error ?? t("dashboard.hydration.log-error", "Failed to log water intake"),
-					);
+	const handleLogWater = async (amount: number) => {
+		setIsLogging(true);
+		try {
+			const result = await logWaterIntake({ amount, source: "widget" });
+			if (result.success) {
+				if (result.data?.goalJustMet) {
+					fireConfetti();
 				}
-			} catch {
-				toast.error(t("dashboard.hydration.log-error", "Failed to log water intake"));
+				refetch();
+			} else {
+				toast.error(
+					result.error ?? t("dashboard.hydration.log-error", "Failed to log water intake"),
+				);
 			}
-			setIsLogging(false);
-		},
-		[refetch, fireConfetti, t],
-	);
+		} catch {
+			toast.error(t("dashboard.hydration.log-error", "Failed to log water intake"));
+		}
+		setIsLogging(false);
+	};
 
 	if (!stats?.enabled && !loading) return null;
 	if (!stats && !loading) return null;

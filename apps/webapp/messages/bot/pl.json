@@ -1,0 +1,94 @@
+{
+  "bot": {
+    "approval": {
+      "alreadyProcessed": "To zatwierdzenie zostało już przetworzone."
+    },
+    "cmd": {
+      "billingRequired": "Aby kontynuować korzystanie z rejestracji czasu pracy, wymagane jest opłacenie subskrypcji. Poproś administratora organizacji o aktualizację danych rozliczeniowych.",
+      "clockedin": {
+        "header": "{active} z {total} członków zespołu jest obecnie w pracy:",
+        "noneActive": "Żaden z Twoich {total} członków zespołu nie jest obecnie w pracy.",
+        "noTeam": "Nie masz przypisanych żadnych członków zespołu."
+      },
+      "clockin": {
+        "alreadyIn": "Jesteś w pracy od {time} ({hours} godz. {minutes} min).",
+        "cannotNow": "Nie można teraz rozpocząć pracy.",
+        "noProfile": "Nie znaleziono profilu pracownika.",
+        "success": "Rozpoczęto pracę o {time}."
+      },
+      "clockout": {
+        "cannotNow": "Nie można teraz zakończyć pracy.",
+        "noProfile": "Nie znaleziono profilu pracownika.",
+        "notClockedIn": "Obecnie nie jesteś w pracy.",
+        "policyCheckFailed": "Nie można zweryfikować polityki zatwierdzania czasu. Spróbuj ponownie.",
+        "success": "Zakończono pracę o {time}. Czas trwania: {hours} godz. {minutes} min.",
+        "unsupportedApproval": "Zmiany czasu wymagające zatwierdzenia nie są jeszcze obsługiwane dla tej akcji"
+      },
+      "compliance": {
+        "error": "Nie udało się pobrać danych o zgodności. Spróbuj ponownie później.",
+        "noIssues": "W ciągu ostatnich {days} dni nie wykryto żadnych problemów ze zgodnością. Twój zespół jest w dobrej kondycji!"
+      },
+      "coverage": {
+        "error": "Nie udało się pobrać danych o obsadzie. Spróbuj ponownie później.",
+        "noData": "Nie znaleziono danych o zaplanowanej obsadzie dla {date}."
+      },
+      "help": {
+        "footer": "Możesz również otrzymywać prośby o zatwierdzenie i codzienne podsumowania bezpośrednio w {platform}.",
+        "title": "Polecenia bota Z8"
+      },
+      "openshifts": {
+        "error": "Nie udało się pobrać otwartych zmian. Spróbuj ponownie później.",
+        "noShifts": "Nie znaleziono otwartych zmian dla {period}. Wszystkie zmiany są obecnie przypisane."
+      },
+      "pending": {
+        "footer": "Przeglądaj i zatwierdzaj w Z8 lub poczekaj na indywidualne karty zatwierdzeń.",
+        "header": "{count, plural, one {Masz {count} oczekujące zatwierdzenie:} other {Masz {count} oczekujących zatwierdzeń:}}",
+        "none": "Nie masz żadnych oczekujących próśb o zatwierdzenie. Dobra robota!"
+      },
+      "status": {
+        "clockedIn": "Jesteś w pracy od {time} ({hours} godz. {minutes} min).",
+        "noProfile": "Nie znaleziono profilu pracownika.",
+        "notClockedIn": "Obecnie nie jesteś w pracy."
+      },
+      "whosout": {
+        "header": "{outCount} z {total} członków zespołu jest dzisiaj nieobecnych:",
+        "noneOut": "Wszyscy Twoi {total} członkowie zespołu są dzisiaj dostępni.",
+        "noTeam": "Nie masz przypisanych żadnych członków zespołu."
+      }
+    },
+    "language": {
+      "changed": "Język zmieniono na {language}.",
+      "prompt": "Wybierz język:"
+    },
+    "static": {
+      "errorApprovalNotFound": "Ta prośba o zatwierdzenie już nie istnieje lub została już przetworzona.",
+      "errorApprovalResolved": "To zatwierdzenie zostało już zaakceptowane lub odrzucone.",
+      "errorDefault": "Coś poszło nie tak. Spróbuj ponownie.",
+      "errorEmployeeNotFound": "Nie masz rekordu pracownika w Z8. Skontaktuj się z administratorem.",
+      "errorNotAuthorized": "Nie masz uprawnień do wykonania tej akcji.",
+      "errorTenantNotConfigured": "Twoja organizacja nie ukończyła jeszcze konfiguracji Z8. Poproś administratora o skonfigurowanie integracji.",
+      "errorUserNotLinked": "Twoje konto Teams nie jest połączone z Z8. Upewnij się, że Twój adres e-mail w Teams jest zgodny z kontem w Z8.",
+      "genericError": "Przepraszamy, coś poszło nie tak. Spróbuj ponownie lub skontaktuj się z pomocą techniczną.",
+      "linkAlreadyLinked": "To konto Telegram jest już powiązane z kontem Z8 w tej organizacji.",
+      "linkExpired": "Ten kod łączenia wygasł. Wygeneruj nowy w ustawieniach Z8.",
+      "linkInvalid": "Nieprawidłowy kod łączenia. Sprawdź kod i spróbuj ponownie.",
+      "linkSuccess": "Twoje konto Telegram zostało powiązane z Z8! Wpisz /help, aby zobaczyć dostępne polecenia.",
+      "linkUsage": "Podaj swój kod łączenia: /link TWÓJ_KOD",
+      "mentionHelp": "Cześć! Jestem botem Z8. Wpisz „help”, aby zobaczyć dostępne polecenia.",
+      "noEmployee": "Twoje konto istnieje, ale nie masz rekordu pracownika w Z8.",
+      "noOrg": "Nie można zidentyfikować Twojej organizacji. Skontaktuj się z pomocą techniczną.",
+      "notLinked": "Twoje konto Telegram nie jest powiązane z Z8. Przejdź do Ustawienia > Integracje > Telegram w panelu Z8, aby wygenerować kod łączenia, a następnie wyślij: /link TWÓJ_KOD",
+      "notLinkedTeams": "Nie udało się znaleźć Twojego konta Z8. Upewnij się, że Twój adres e-mail w Teams jest zgodny z adresem e-mail Twojego konta Z8.",
+      "noUser": "Nie można zidentyfikować Twojego konta użytkownika.",
+      "setupBody": "Twoja organizacja musi zostać połączona z Z8. Kliknij poniżej, aby rozpocząć proces konfiguracji.",
+      "setupButton": "Zakończ konfigurację",
+      "setupNote": "Tylko administratorzy organizacji mogą ukończyć tę konfigurację.",
+      "setupRequired": "Witamy w Z8! Aby połączyć tę organizację Microsoft 365 z Twoim kontem Z8, administrator musi ukończyć konfigurację.",
+      "setupTitle": "Wymagana konfiguracja Z8",
+      "typeHelp": "Wpisz /help, aby zobaczyć dostępne polecenia.",
+      "unconfigured": "Integracja Z8 Twojej organizacji jest w trakcie konfiguracji. Poczekaj, aż administrator zakończy proces.",
+      "welcome": "Witamy w Z8! Aby połączyć swoje konto, przejdź do Ustawienia > Integracje > Telegram w panelu Z8 i wygeneruj kod łączenia. Następnie wyślij: /link TWÓJ_KOD",
+      "welcomeTeams": "Witamy w Z8! Wpisz „help”, aby zobaczyć dostępne polecenia."
+    }
+  }
+}

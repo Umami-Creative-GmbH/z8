@@ -1,8 +1,8 @@
 "use client";
 
+import { IconCalendar, IconPlus, IconTable } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { IconCalendar, IconPlus, IconTable } from '@tabler/icons-react';
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { getAbsenceCalendarYearData } from "@/app/[locale]/(app)/absences/actions";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -65,27 +65,27 @@ export function AbsencesViewContainer({
 	const calendarHolidays = calendarData.holidays;
 
 	// Handle day click in year calendar - open request dialog with date prefilled
-	const handleDayClick = useCallback((date: Date) => {
+	const handleDayClick = (date: Date) => {
 		// Use local date string to avoid timezone issues with toISOString()
 		const dateStr = toLocalDateString(date);
 		setPrefilledDate(dateStr);
 		setRequestDialogOpen(true);
-	}, []);
+	};
 
 	// Reset prefilled date when dialog closes
-	const handleDialogOpenChange = useCallback((open: boolean) => {
+	const handleDialogOpenChange = (open: boolean) => {
 		setRequestDialogOpen(open);
 		if (!open) {
 			setPrefilledDate(undefined);
 		}
-	}, []);
+	};
 
-	const handleAddAbsence = useCallback(() => {
+	const handleAddAbsence = () => {
 		setPrefilledDate(undefined);
 		setRequestDialogOpen(true);
-	}, []);
+	};
 
-	const reloadYearData = useCallback(async (year: number) => {
+	const reloadYearData = async (year: number) => {
 		latestRequestedYearRef.current = year;
 		try {
 			const data = await getAbsenceCalendarYearData(year);
@@ -100,15 +100,15 @@ export function AbsencesViewContainer({
 		} catch (error) {
 			console.error("Failed to load absence calendar year data", error);
 		}
-	}, []);
+	};
 
-	const handleYearChange = useCallback((year: number) => {
+	const handleYearChange = (year: number) => {
 		void reloadYearData(year);
-	}, [reloadYearData]);
+	};
 
-	const handleAbsencesUpdated = useCallback(() => {
+	const handleAbsencesUpdated = () => {
 		void reloadYearData(latestRequestedYearRef.current);
-	}, [reloadYearData]);
+	};
 
 	return (
 		<div className="space-y-4">

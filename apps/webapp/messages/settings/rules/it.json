@@ -396,6 +396,56 @@
       "percentageDescription": "Credito orario aggiuntivo",
       "rangeEnd": "Fine intervallo",
       "rangeStart": "Inizio intervallo",
+      "reports": {
+        "details": {
+          "appliedRules": "Regole applicate",
+          "calculatedAt": "Calcolato il",
+          "noAppliedRules": "Nessuna regola applicata registrata.",
+          "overlapPolicy": "Politica di sovrapposizione",
+          "percentage": "Percentuale",
+          "qualifying": "Qualificante",
+          "surcharge": "Supplemento",
+          "workPeriod": "Periodo di lavoro"
+        },
+        "empty": {
+          "description": "Nessun calcolo di supplemento corrisponde ai filtri selezionati.",
+          "title": "Nessun calcolo di supplemento trovato"
+        },
+        "errors": {
+          "invalidDateRange": "La data di inizio deve essere uguale o precedente alla data di fine.",
+          "loadFailed": "Impossibile caricare i calcoli dei supplementi.",
+          "loadTitle": "Impossibile caricare i calcoli"
+        },
+        "filters": {
+          "apply": "Applica filtri",
+          "employeeId": "ID dipendente",
+          "endDate": "Data di fine",
+          "startDate": "Data di inizio"
+        },
+        "loading": "Caricamento calcoli in corso…",
+        "previousResults": {
+          "description": "L'ultima richiesta non è riuscita, pertanto i precedenti risultati corretti rimangono visibili.",
+          "title": "Mostra i risultati precedenti."
+        },
+        "rowLimitNotice": "Mostra i primi 500 calcoli corrispondenti. Restringi i filtri per data o dipendente per affinare i totali.",
+        "summary": {
+          "baseHours": "Ore base",
+          "calculations": "Calcoli",
+          "creditedHours": "Ore di maggiorazione accreditate",
+          "qualifyingHours": "Ore di maggiorazione qualificanti"
+        },
+        "table": {
+          "base": "Base",
+          "created": "Creato",
+          "credit": "Credito",
+          "date": "Data",
+          "details": "Dettagli",
+          "employee": "Dipendente",
+          "percentage": "Percentuale",
+          "qualifying": "Qualificante"
+        },
+        "title": "Report maggiorazioni"
+      },
       "rule": "Regola",
       "ruleCountLabel": "{count, plural, one {# regola} other {# regole}}",
       "ruleName": "Nome regola",

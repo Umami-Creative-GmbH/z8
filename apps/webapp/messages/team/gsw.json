@@ -1,0 +1,133 @@
+{
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Absenz für {name} erfasse"
+      },
+      "description": "Überprüef d'Kontingänt und erfass genehmigti Absenze für dis Team.",
+      "empty": {
+        "description": "Versuech d'Filter oder d'Suech aazpasse, zum Teammitglieder z'finde.",
+        "label": "Kei Aagstellti gfunde",
+        "title": "Kei Aagstellti gfunde"
+      },
+      "error": {
+        "description": "Bitte versuech es gli nomal.",
+        "title": "Absenze chönd nöd glade werde"
+      },
+      "feature": "Teamabsenze verwalte",
+      "filters": {
+        "allTeams": "Alli Teams",
+        "searchLabel": "Aagstellti sueche",
+        "searchPlaceholder": "Aagstellti sueche…",
+        "searchSubmit": "Sueche",
+        "teamLabel": "Nach Team filtere",
+        "teamPlaceholder": "Team",
+        "yearLabel": "Nach Jahr filtere",
+        "yearPlaceholder": "Jahr"
+      },
+      "pagination": {
+        "next": "Witer",
+        "nextLabel": "Nächschti Siite",
+        "page": "Siite {page} vo {pageCount}",
+        "previous": "Zrugg",
+        "previousLabel": "Vorherigi Siite",
+        "showing": "Zeige {firstItem} bis {lastItem} vo {total}"
+      },
+      "recordDialog": {
+        "category": "Kategorie",
+        "categoryPlaceholder": "Wähl e Absenzkategorie us…",
+        "description": "Erfass e genehmigti Absenz direkt für de gwählti Aagstellti.",
+        "endDate": "Enddatum",
+        "endDateHelper": "Leer lah für e Absenz am gliiche Tag.",
+        "failure": "Absenz het nöd chönne erfasst werde",
+        "noCategories": "Kei Kategorie verfüegbar",
+        "noEmployee": "Wähl en Aagstellte us, bevor du e Absenz erfassisch",
+        "notes": "Notize",
+        "notesPlaceholder": "Füeg en interne Kontext für de Iitrag hinzu…",
+        "pickEndDate": "Enddatum wähle…",
+        "pickStartDate": "Startdatum wähle…",
+        "recording": "Am erfasse…",
+        "required": "{label} isch erforderlich",
+        "sickDetail": "Chrankheitsdetail",
+        "sickDetailPlaceholder": "Chrankheitsdetail wähle…",
+        "startDate": "Startdatum",
+        "submit": "Absenz erfasse",
+        "success": "Absenz erfasst",
+        "title": "Absenz erfasse",
+        "titleForEmployee": "Abweseheit für {name} erfasse"
+      },
+      "sort": {
+        "ascending": "ufstigend",
+        "by": "Sortiere nach {label}",
+        "byWithDirection": "Sortiere nach {label} ({direction})",
+        "descending": "abstigend"
+      },
+      "table": {
+        "actions": "Aktionä",
+        "allowance": "Guthabe",
+        "employee": "Mitarbeiter",
+        "left": "Übrig",
+        "pending": "Pängig",
+        "sick": "Chrank",
+        "teamOrPosition": "Team oder Position",
+        "used": "Brucht"
+      },
+      "title": "Team-Abweseheite"
+    },
+    "balance": {
+      "noBalance": "Keis Guthabe"
+    },
+    "description": "Mitarbeiter, wo du direkt füersch, aaluege und verwalte",
+    "empty": {
+      "action": "Zu de Mitarbeiter-Iistellige",
+      "description": "Mitarbeiter, wo dir als Manager zuegwise sind, erschined do. Du chasch d'Team-Zueordnige i de Mitarbeiter-Iistellige verwalte.",
+      "title": "No kei Teammitglieder"
+    },
+    "error": {
+      "description": "Teammitglieder chönd nöd glade werde.",
+      "title": "Es isch öpis schief gange"
+    },
+    "feature": "dis Team aaluege",
+    "member": "Mitglied",
+    "members": "Mitglieder",
+    "member.you": "Du",
+    "noResults": {
+      "action": "Suechi leere",
+      "description": "Kei Teammitglieder passet zu \"{query}\"",
+      "title": "Kei Ergebnis gfunde"
+    },
+    "pagination": {
+      "next": "Witer",
+      "previous": "Zrugg",
+      "showing": "Zeige {from} bis {to} vo {total}"
+    },
+    "primaryManager": "Du bisch de Haupt-Manager",
+    "search": {
+      "ariaLabel": "Teammitglieder sueche",
+      "placeholder": "Sueche nach Name, E-Mail, Position oder Team..."
+    },
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv"
+    },
+    "table": {
+      "employee": "Mitarbeiter",
+      "position": "Position",
+      "role": "Rollä",
+      "sort": {
+        "ascending": "ufstigend",
+        "descending": "abstigend"
+      },
+      "sortByTimeBalance": "Sortiere nach Jahresguthabe",
+      "sortByTimeBalanceWithDirection": "Sortiere nach Jahresguthabe ({direction})",
+      "status": "Status",
+      "team": "Team",
+      "timeBalance": "Jahresguthabe"
+    },
+    "title": "Dis Team",
+    "view": {
+      "cards": "Charte-Aasicht",
+      "table": "Tabälle-Aasicht"
+    }
+  }
+}

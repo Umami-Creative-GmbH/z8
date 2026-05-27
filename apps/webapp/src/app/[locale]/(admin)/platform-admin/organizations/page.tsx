@@ -13,7 +13,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -132,37 +132,34 @@ export default function OrganizationsPage() {
 	);
 
 	// Debounced search with immediate status change
-	const handleFilterChange = useCallback(
-		(newSearch: string, newStatus: OrganizationStatusFilter) => {
-			// Clear any pending search timeout
-			if (searchTimeoutRef.current) {
-				clearTimeout(searchTimeoutRef.current);
-			}
+	const handleFilterChange = (newSearch: string, newStatus: OrganizationStatusFilter) => {
+		// Clear any pending search timeout
+		if (searchTimeoutRef.current) {
+			clearTimeout(searchTimeoutRef.current);
+		}
 
-			setSearch(newSearch);
+		setSearch(newSearch);
 
-			// If only status changed, fetch immediately
-			if (newStatus !== status) {
-				setStatus(newStatus);
-				setPage(1);
-				const params = new URLSearchParams();
-				if (newSearch) params.set("search", newSearch);
-				if (newStatus !== "all") params.set("status", newStatus);
-				router.push(`/platform-admin/organizations?${params.toString()}`);
-				return;
-			}
+		// If only status changed, fetch immediately
+		if (newStatus !== status) {
+			setStatus(newStatus);
+			setPage(1);
+			const params = new URLSearchParams();
+			if (newSearch) params.set("search", newSearch);
+			if (newStatus !== "all") params.set("status", newStatus);
+			router.push(`/platform-admin/organizations?${params.toString()}`);
+			return;
+		}
 
-			// Debounce search input (300ms)
-			searchTimeoutRef.current = setTimeout(() => {
-				setPage(1);
-				const params = new URLSearchParams();
-				if (newSearch) params.set("search", newSearch);
-				if (newStatus !== "all") params.set("status", newStatus);
-				router.push(`/platform-admin/organizations?${params.toString()}`);
-			}, 300);
-		},
-		[router, status],
-	);
+		// Debounce search input (300ms)
+		searchTimeoutRef.current = setTimeout(() => {
+			setPage(1);
+			const params = new URLSearchParams();
+			if (newSearch) params.set("search", newSearch);
+			if (newStatus !== "all") params.set("status", newStatus);
+			router.push(`/platform-admin/organizations?${params.toString()}`);
+		}, 300);
+	};
 
 	// Cleanup timeout on unmount
 	useEffect(() => {

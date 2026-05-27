@@ -5,7 +5,7 @@ import German from "@uppy/locales/lib/de_DE";
 import English from "@uppy/locales/lib/en_US";
 import Tus from "@uppy/tus";
 import { useLocale } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useImageProcessMutation } from "@/lib/query/use-image-process";
 import { getTusFileKeyFromUploadUrl } from "@/lib/upload/tus-url";
 
@@ -44,7 +44,7 @@ export function useImageUpload({
 
 	const uppyLocale = locale === "de" ? German : English;
 
-	const uppy = useMemo(() => {
+	const uppy = (() => {
 		return new Uppy({
 			restrictions: {
 				maxFileSize,
@@ -59,7 +59,7 @@ export function useImageUpload({
 			chunkSize: 5 * 1024 * 1024, // 5MB chunks
 			// Credentials included automatically via cookies
 		});
-	}, [maxFileSize, uppyLocale]); // eslint-disable-line react-hooks/exhaustive-deps
+	})(); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Update locale when it changes
 	useEffect(() => {
@@ -156,39 +156,36 @@ export function useImageUpload({
 		};
 	}, [uppy]);
 
-	const addFile = useCallback(
-		(file: File) => {
-			// Create local preview
-			const reader = new FileReader();
-			reader.onloadend = () => {
-				setPreviewUrl(reader.result as string);
-			};
-			reader.readAsDataURL(file);
+	const addFile = (file: File) => {
+		// Create local preview
+		const reader = new FileReader();
+		reader.onloadend = () => {
+			setPreviewUrl(reader.result as string);
+		};
+		reader.readAsDataURL(file);
 
-			// Add to Uppy
-			try {
-				// Clear any existing files first
-				uppy.cancelAll();
+		// Add to Uppy
+		try {
+			// Clear any existing files first
+			uppy.cancelAll();
 
-				uppy.addFile({
-					name: file.name,
-					type: file.type,
-					data: file,
-				});
-			} catch (err) {
-				console.error("Error adding file to Uppy:", err);
-				onError?.(err instanceof Error ? err : new Error("Failed to add file"));
-			}
-		},
-		[uppy, onError],
-	);
+			uppy.addFile({
+				name: file.name,
+				type: file.type,
+				data: file,
+			});
+		} catch (err) {
+			console.error("Error adding file to Uppy:", err);
+			onError?.(err instanceof Error ? err : new Error("Failed to add file"));
+		}
+	};
 
-	const reset = useCallback(() => {
+	const reset = () => {
 		setProgress(0);
 		setIsUploading(false);
 		setPreviewUrl(null);
 		uppy.cancelAll();
-	}, [uppy]);
+	};
 
 	return {
 		addFile,

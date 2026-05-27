@@ -3,7 +3,6 @@
 import { IconAlertTriangle, IconCheck, IconTarget, IconTrendingUp } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useMemo } from "react";
 import { getTargetHeatmapData } from "@/app/[locale]/(app)/settings/coverage-rules/actions";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -196,7 +195,7 @@ export function useCoverageHeatmap(
 	});
 
 	// Group data points by date
-	const dataByDate = useMemo(() => {
+	const dataByDate = (() => {
 		if (!data) return new Map<string, HeatmapDataPoint[]>();
 
 		const map = new Map<string, HeatmapDataPoint[]>();
@@ -207,12 +206,12 @@ export function useCoverageHeatmap(
 			map.set(key, existing);
 		}
 		return map;
-	}, [data]);
+	})();
 
 	// Check if there are any gaps
-	const hasGaps = useMemo(() => {
+	const hasGaps = (() => {
 		return data?.some((dp) => dp.status === "under") ?? false;
-	}, [data]);
+	})();
 
 	return {
 		data: data || [],

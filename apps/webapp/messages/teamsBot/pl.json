@@ -1,0 +1,107 @@
+{
+  "approval": {
+    "absenceRequest": "Wniosek o nieobecność",
+    "actions": {
+      "approve": "Zatwierdź",
+      "approving": "Zatwierdzanie...",
+      "reject": "Odrzuć",
+      "rejecting": "Odrzucanie...",
+      "viewInZ8": "Zobacz w Z8"
+    },
+    "durationDays": "{count, plural, one {# dzień} other {# dni} }",
+    "facts": {
+      "approvedBy": "Zatwierdzone przez",
+      "corrected": "Skorygowano",
+      "dates": "Daty",
+      "duration": "Czas trwania",
+      "email": "E-mail",
+      "from": "Od",
+      "original": "Oryginał",
+      "reason": "Powód",
+      "rejectedBy": "Odrzucone przez",
+      "resolved": "Rozwiązano",
+      "status": "Status",
+      "submitted": "Przesłano",
+      "type": "Typ"
+    },
+    "status": {
+      "approved": "ZATWIERDZONO",
+      "rejected": "ODRZUCONO"
+    },
+    "timeCorrectionRequest": "Wniosek o korektę czasu"
+  },
+  "commands": {
+    "compliance": {
+      "critical": "Krytyczne",
+      "exceptionSummary": "{type} - {reason}",
+      "exceptionUsedDetails": "{details} (użyto wyjątku)",
+      "lastDays": "Ostatnie {days} dni",
+      "legend": "\uD83D\uDD34 Naruszenie  \uD83D\uDFE0 Krytyczne  \uD83D\uDFE1 Ostrzeżenie  \uD83D\uDCDD Oczekujący wniosek",
+      "moreRequestsMarkdown": "_+{count} więcej wniosków_",
+      "moreViolationsMarkdown": "_+{count} więcej naruszeń_",
+      "pending": "Oczekujące",
+      "pendingExceptions": "Oczekujące wnioski o wyjątki",
+      "recentViolations": "Ostatnie naruszenia",
+      "reviewExceptions": "Przejrzyj wyjątki",
+      "textCriticalAlerts": "**Alerty krytyczne:** {count}",
+      "textMore": "  +{count} więcej",
+      "textPendingExceptions": "**Oczekujące wyjątki:** {count}",
+      "textPendingRequestItem": "\uD83D\uDCDD {employeeName} - {type}",
+      "textPendingRequests": "**Oczekujące wnioski:**",
+      "textRecentViolations": "**Ostatnie naruszenia:**",
+      "textTitle": "**⚠️ Podsumowanie zgodności - ostatnie {days} dni**",
+      "textViolationItem": "{icon} {employeeName} - {details}",
+      "textViolations": "**Naruszenia:** {count}",
+      "titleWithIcon": "⚠️ Podsumowanie zgodności",
+      "viewDashboard": "Zobacz pulpit nawigacyjny zgodności",
+      "violations": "Naruszenia"
+    },
+    "coverage": {
+      "clockedIn": "Zarejestrowano wejście",
+      "moreLocationsMarkdown": "_+{count} więcej lokalizacji..._",
+      "scheduled": "Zaplanowano",
+      "titleWithIcon": "\uD83D\uDCCA Raport pokrycia",
+      "variance": "Odchylenie",
+      "viewFullSchedule": "Wyświetl pełny harmonogram"
+    },
+    "help": {
+      "availableCommands": "Pomoc"
+    }
+  },
+  "common": {
+    "more": "+{count} więcej",
+    "moreBullet": "• +{count} więcej"
+  },
+  "digest": {
+    "currentlyClockedIn": "Aktualnie zalogowani",
+    "everyoneAvailable": "Wszyscy są dziś dostępni",
+    "noOneClockedIn": "Nikt jeszcze nie rozpoczął pracy",
+    "noPendingApprovals": "Brak oczekujących zatwierdzeń",
+    "openDashboard": "Otwórz pulpit nawigacyjny Z8",
+    "openShifts": "Otwarte zmiany",
+    "pendingApprovals": "Oczekujące zatwierdzenia",
+    "pendingExceptionRequests": "{count, plural, one {# oczekujący wniosek o wyjątek oczekuje na sprawdzenie} few {# oczekujące wnioski o wyjątek oczekują na sprawdzenie} other {# oczekujących wniosków o wyjątek oczekuje na sprawdzenie}}",
+    "returns": "Powrót {date}",
+    "since": "Od {time}",
+    "textClockedInEmployee": "• {name} - od {clockedInAt} ({duration})",
+    "textCompliance": "**⚠️ Zgodność:**",
+    "textCoverageGaps": "**\uD83D\uDD34 Luki w obsadzie:**",
+    "textCurrentlyClockedIn": "**Aktualnie zalogowani:**",
+    "textEmployeeOut": "• {name} - {category} (powrót {returnDate})",
+    "textOpenShifts": "**\uD83D\uDCCB Otwarte zmiany:**",
+    "textPendingApprovalsCount": "**Oczekujące zatwierdzenia:** {count}",
+    "textPendingApprovalsNone": "**Oczekujące zatwierdzenia:** Brak",
+    "textTitle": "**Podsumowanie dnia - {date}**",
+    "textWhosOut": "**Nieobecni:**",
+    "title": "Podsumowanie dnia",
+    "todayTomorrow": "Dziś: {today} | Jutro: {tomorrow}",
+    "viewApprovals": "Wyświetl zatwierdzenia",
+    "whosOutToday": "Kto jest dziś nieobecny"
+  },
+  "exceptionTypes": {
+    "overtime_daily": "Nadgodziny dzienne",
+    "overtime_monthly": "Nadgodziny miesięczne",
+    "overtime_weekly": "Nadgodziny tygodniowe",
+    "rest_period": "Okres odpoczynku"
+  }
+}

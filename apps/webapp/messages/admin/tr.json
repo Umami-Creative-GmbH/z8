@@ -1,0 +1,397 @@
+{
+  "admin": {
+    "analytics": {
+      "billing": {
+        "estimatedNotice": "Geçmiş koltuk ve MRR verileri tahminidir. Kesin bir yeniden yapılandırma için gelecekteki anlık görüntüler veya faturalandırma defteri gerekir."
+      },
+      "charts": {
+        "commercial": {
+          "description": "Faturalandırma sağlığı için koltuk ve yinelenen gelir sinyalleri.",
+          "summary": "Ticari özet: {seats} koltuk ve {mrr} tahmini MRR.",
+          "title": "Ticari"
+        },
+        "engagement": {
+          "description": "Aktif kullanıcılar ve oturumlar aracılığıyla platform kullanımı.",
+          "summary": "Etkileşim özeti: {activeUsers} aktif kullanıcı ve {sessions} oturum.",
+          "title": "Etkileşim"
+        },
+        "growth": {
+          "description": "Platforma yeni katılan kullanıcılar ve organizasyonlar.",
+          "summary": "Büyüme özeti: {signups} kayıt ve {organizations} organizasyon.",
+          "title": "Büyüme"
+        },
+        "operations": {
+          "description": "Kiracı etkinliği tarafından oluşturulan zaman takibi hacmi.",
+          "summary": "Operasyon özeti: {timeRecords} zaman kaydı.",
+          "title": "Operasyonlar"
+        }
+      },
+      "controls": {
+        "bucket": {
+          "ariaLabel": "Analitik grubu",
+          "label": "Grup"
+        },
+        "range": {
+          "ariaLabel": "Analitik aralığı",
+          "label": "Aralık"
+        }
+      },
+      "description": "Platform büyümesini, etkileşimi, operasyonel faaliyetleri ve faturalandırma trendlerini izleyin.",
+      "emptyState": {
+        "noData": "Bu aralık için veri yok"
+      },
+      "kpis": {
+        "activeUsers": {
+          "description": "Seçilen aralıkta aktif olan kullanıcılar",
+          "title": "Aktif kullanıcılar"
+        },
+        "mrr": {
+          "description": "Tahmini aylık yinelenen gelir",
+          "title": "Tahmini MRR"
+        },
+        "organizations": {
+          "description": "Platformdaki aktif çalışma alanları",
+          "title": "Organizasyonlar"
+        },
+        "seats": {
+          "description": "Mevcut ücretli veya deneme koltukları",
+          "title": "Lisanslı koltuklar"
+        },
+        "sessions": {
+          "description": "Kimliği doğrulanmış oturumlar",
+          "title": "Oturumlar"
+        },
+        "signups": {
+          "description": "Yeni platform hesapları",
+          "title": "Kayıtlar"
+        },
+        "timeRecords": {
+          "description": "Gönderilen operasyonel kayıtlar",
+          "title": "Zaman kayıtları"
+        }
+      },
+      "preview": {
+        "description": "Seçilen aralık genelinde platform büyümesi ve etkileşimi.",
+        "title": "Analitik trendleri",
+        "viewFull": "Tüm analitiği görüntüle"
+      },
+      "sectionDescription": "Seçilen aralık ve grup için güncel platform verilerinden güncellenmiştir.",
+      "sectionTitle": "Analitik Trendleri",
+      "title": "Platform Analitiği",
+      "values": {
+        "notAvailable": "Mevcut değil"
+      }
+    },
+    "billing": {
+      "description": "Abonelikleri, geliri ve ödeme durumunu izleyin",
+      "intervals": {
+        "month": "Aylık",
+        "year": "Yıllık"
+      },
+      "metrics": {
+        "activeSubscriptions": "Aktif Abonelikler",
+        "activeSubscriptionsDescription": "{trialingCount} deneme aşamasında, {activeCount} ücretli",
+        "conversionRate": "Dönüşüm Oranı",
+        "conversionRateDescription": "Denemeden ücretliye",
+        "licensedSeats": "Lisanslı Koltuklar",
+        "licensedSeatsDescription": "Tüm abonelikler genelinde",
+        "mrr": "MRR",
+        "mrrDescription": "Aylık yinelenen gelir",
+        "pastDue": "Vadesi Geçmiş",
+        "pastDueDescription": "Ödeme sorunları",
+        "trialing": "Deneme sürecinde",
+        "trialingDescription": "Deneme süresi içinde"
+      },
+      "sections": {
+        "recentSubscriptions": "Son Abonelikler",
+        "revenueMetrics": "Gelir Metrikleri"
+      },
+      "status": {
+        "active": "Aktif",
+        "canceled": "İptal Edildi",
+        "pastDue": "Ödeme Gecikti",
+        "trialing": "Deneme"
+      },
+      "table": {
+        "billing": "Faturalandırma",
+        "created": "Oluşturulma",
+        "noSubscriptions": "Henüz abonelik yok",
+        "organization": "Organizasyon",
+        "periodEnd": "Dönem Sonu",
+        "seats": "Koltuklar",
+        "status": "Durum"
+      },
+      "title": "Faturalandırma Paneli"
+    },
+    "diagnostics": {
+      "actions": {
+        "refresh": "Tanılamaları yenile"
+      },
+      "clientDescription": "Güvenli platform yapılandırması ve uygulama düzeyi hizmet sağlığı. Son yenilenme: {date}.",
+      "description": "Güvenli platform yapılandırması ve yalnızca uygulama dağıtım sağlık kontrolleri.",
+      "keyManager": {
+        "actions": {
+          "test": "Şifrelemeyi test et"
+        },
+        "ciphertextPreview": "Şifreli metin önizlemesi",
+        "description": "Uçtan uca platform anahtarı şifreleme/şifre çözme testi çalıştırın.",
+        "input": "Girdi",
+        "keyStatus": "Anahtar durumu",
+        "keyStatus.created": "Yeni platform anahtarı oluşturuldu",
+        "keyStatus.reused": "Mevcut platform anahtarı yeniden kullanıldı",
+        "output": "Çıktı",
+        "platformKeyId": "Platform anahtar kimliği",
+        "result": {
+          "match": "Girdi ve çıktı eşleşiyor",
+          "mismatch": "Girdi ve çıktı farklı"
+        },
+        "status": {
+          "pending": "Şifreleme testi çalışıyor."
+        },
+        "title": "Scaleway Anahtar Yöneticisi Şifrelemesi"
+      },
+      "recommendedActions": {
+        "description": "Tanılamaları sağlıklı bir duruma getirmek için bu öğeleri çözümleyin.",
+        "title": "Önerilen Eylemler"
+      },
+      "sections": {
+        "configuration": {
+          "description": "Güvenli dağıtım yapılandırma durumları. Gizli değerler asla gösterilmez.",
+          "title": "Platform Yapılandırması"
+        },
+        "health": {
+          "description": "Web uygulaması tarafından kullanılan altyapı bağımlılıkları için yalnızca uygulama kontrolleri.",
+          "title": "Hizmet Sağlığı"
+        }
+      },
+      "statusAnnouncement": "Tanılama durumu {status}. Son yenilenme: {date}.",
+      "status": {
+        "disabled": "Devre Dışı",
+        "error": "Hata",
+        "healthy": "Sağlıklı",
+        "warning": "Uyarı"
+      },
+      "title": "Dağıtım Tanıları"
+    },
+    "layout": {
+      "exitAdmin": "Yönetici Panelinden Çık",
+      "nav": {
+        "analytics": "Analitik",
+        "billing": "Faturalandırma",
+        "diagnostics": "Dağıtım Tanıları",
+        "organizations": "Organizasyonlar",
+        "overview": "Genel Bakış",
+        "settings": "Ayarlar",
+        "systemEmailTemplates": "Sistem E-posta Şablonları",
+        "users": "Kullanıcılar",
+        "workerQueue": "Çalışan Kuyruğu"
+      },
+      "subtitle": "Platform Yönetimi",
+      "title": "Yönetici Konsolu"
+    },
+    "organizations": {
+      "actions": {
+        "delete": "Organizasyonu sil",
+        "reactivate": "Organizasyonu yeniden etkinleştir",
+        "suspend": "Organizasyonu askıya al"
+      },
+      "badges": {
+        "deleted": "Silindi",
+        "suspended": "Askıya Alındı"
+      },
+      "deleteDialog": {
+        "confirmButton": "Organizasyonu Sil",
+        "confirmLabel": "Onaylamak için \"{name}\" yazın",
+        "confirmPlaceholder": "Organizasyon adı",
+        "description": "Bu işlem \"{name}\" organizasyonunu ve ilişkili tüm verileri silecektir. Bu işlem geri alınamaz.",
+        "immediateDelete": "Hemen sil (5 günlük bekleme süresini atla)",
+        "skipNotification": "Organizasyon üyelerine gönderilen silme bildirimini atla",
+        "title": "Organizasyonu Sil"
+      },
+      "description": "Platformdaki tüm organizasyonları görüntüleyin ve yönetin",
+      "filters": {
+        "all": "Tümü",
+        "deleted": "Silindi",
+        "suspended": "Askıya Alındı"
+      },
+      "pagination": {
+        "showing": "{total} organizasyondan {from} - {to} arası gösteriliyor"
+      },
+      "searchPlaceholder": "İsim veya kısa ad ile arayın…",
+      "suspendDialog": {
+        "confirmButton": "Organizasyonu Askıya Al",
+        "description": "\"{name}\" organizasyonunu askıya alın ve salt okunur moda getirin. Üyeler verileri görüntüleyebilir ancak hiçbir şey oluşturamaz veya düzenleyemez.",
+        "reason": "Neden",
+        "reasonPlaceholder": "Bu organizasyonu askıya alma nedenini girin…",
+        "title": "Organizasyonu Askıya Al"
+      },
+      "table": {
+        "created": "Oluşturulma",
+        "employees": "Çalışanlar",
+        "loadErrorTitle": "Kuruluşlar yüklenemedi",
+        "members": "Üyeler",
+        "noOrganizationsFound": "Organizasyon bulunamadı",
+        "organization": "Organizasyon"
+      },
+      "title": "Organizasyon Yönetimi",
+      "toasts": {
+        "deletedGracePeriod": "\"{name}\" organizasyonu 5 gün içinde silinmek üzere planlandı",
+        "deletedImmediate": "\"{name}\" organizasyonu hemen silinmek üzere planlandı",
+        "suspended": "\"{name}\" organizasyonu askıya alındı",
+        "unsuspended": "\"{name}\" organizasyonunun askıya alınma durumu kaldırıldı"
+      }
+    },
+    "overview": {
+      "analytics": {
+        "title": "Analitik Trendleri"
+      },
+      "description": "Platform metrikleri ve hızlı işlemler",
+      "metrics": {
+        "bannedUsers": "Yasaklı Kullanıcılar",
+        "bannedUsersDescription": "Erişimi kısıtlandı",
+        "licensedSeats": "Lisanslı Koltuklar",
+        "licensedSeatsDescription": "Tüm abonelikler genelinde",
+        "mrr": "AYGR",
+        "mrrDescription": "Aylık gelen gelir (€)",
+        "organizations": "Organizasyonlar",
+        "organizationsDescription": "Aktif çalışma alanları",
+        "suspended": "Askıya alındı",
+        "suspendedDescription": "Salt okunur organizasyonlar",
+        "title": "Platform Metrikleri",
+        "totalUsers": "Toplam Kullanıcı",
+        "totalUsersDescription": "Kayıtlı platform hesapları"
+      },
+      "quickActions": {
+        "billing": {
+          "description": "Gelir metrikleri ve abonelik durumu",
+          "title": "Faturalandırma ve Abonelikler"
+        },
+        "diagnostics": {
+          "description": "Güvenli yapılandırmayı ve uygulama sağlık kontrollerini inceleyin",
+          "title": "Dağıtım Tanıları"
+        },
+        "organizations": {
+          "description": "Organizasyonları askıya alın, silin veya inceleyin",
+          "title": "Organizasyon Yönetimi"
+        },
+        "systemEmailTemplates": {
+          "description": "Platforma ait faturalandırma ve sistem e-posta metinlerini düzenle",
+          "title": "Sistem E-posta Şablonları"
+        },
+        "title": "Hızlı İşlemler",
+        "users": {
+          "description": "Kullanıcıları yasaklayın/yasağını kaldırın, oturumları yönetin, etkinliği görüntüleyin",
+          "title": "Kullanıcı Yönetimi"
+        }
+      },
+      "title": "Genel Bakış"
+    },
+    "settings": {
+      "actions": {
+        "saveChanges": "Değişiklikleri Kaydet"
+      },
+      "cookieConsent": {
+        "description": "GDPR uyumluluğu için kimlik doğrulama sayfalarına enjekte edilir",
+        "helperPrefix": "Devre dışı bırakmak için boş bırakın. Yükleme stratejisi:",
+        "helperSuffix": "stratejisi.",
+        "scriptContent": "Komut Dosyası İçeriği",
+        "scriptPlaceholder": "<!-- Örnek: CookieBot -->\n<script id=\"Cookiebot\" src=\"https://consent.cookiebot.com/uc.js\" data-cbid=\"YOUR-ID\" type=\"text/javascript\" async></script>\n\n<!-- Veya özel komut dosyası -->\n<script>\n  // Çerez onay mantığınız burada\n</script>",
+        "title": "Çerez Onay Komut Dosyası"
+      },
+      "description": "Tüm organizasyonlar için genel platform yapılandırması",
+      "title": "Platform Ayarları",
+      "toasts": {
+        "cookieConsentSaved": "Çerez onay komut dosyası başarıyla kaydedildi",
+        "saveFailed": "Kaydedilemedi"
+      },
+      "turnstile": {
+        "deploymentNote": "Dağıtım sırasında ortam değişkenleri aracılığıyla yapılandırılır. Kurumsal organizasyonlar Etki Alanı Ayarları'ndan geçersiz kılabilir.",
+        "description": "Kimlik doğrulama formları için bot koruması",
+        "secretKey": "Gizli Anahtar",
+        "siteKey": "Site Anahtarı",
+        "title": "Cloudflare Turnstile"
+      }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Sistem şablonuna sıfırla",
+        "save": "Kaydet",
+        "sendTest": "Test gönder"
+      },
+      "defaultFallback": "Varsayılan yedek",
+      "defaultFallbackDescription": "Bu şablon sistem varsayılanını kullanıyorsa, Z8 platform kopyasını ve konusunu gönderir:",
+      "description": "Platforma ait faturalandırma ve sistem e-postalarını yönetin. Bu şablonlar yalnızca sistem e-posta aktarımı ile gönderilir ve bir organizasyonla sınırlandırılmaz.",
+      "editBodyBeforeSaving": "İlk özel şablonu kaydetmeden önce e-posta gövdesini düzenleyin.",
+      "empty": "Kullanılabilir platform sistem e-posta şablonu yok.",
+      "eyebrow": "Sistem aktarımı",
+      "reset": "Sistem e-posta şablonu varsayılana sıfırlandı",
+      "resetDialog": {
+        "confirm": "Platform sistem şablonunu sıfırla",
+        "description": "Bu, bu sistem e-posta şablonu için genel platform geçersiz kılmasını siler ve yerleşik konu ve gövdeyi geri yükler. Canlı faturalandırma ve sistem e-postaları, sıfırlamadan sonra varsayılan platform kopyasını kullanacaktır.",
+        "title": "Platform Sistem Şablonu Sıfırlansın mı?"
+      },
+      "resetFailed": "Sistem e-posta şablonu sıfırlanamadı",
+      "saved": "Sistem e-posta şablonu kaydedildi",
+      "saveFailed": "Sistem e-posta şablonu kaydedilemedi",
+      "status": {
+        "customized": "Özelleştirilmiş",
+        "default": "Varsayılan"
+      },
+      "systemTemplates": "Sistem şablonları",
+      "testFailed": "Test e-postası gönderilemedi",
+      "testSent": "Test e-postası hesabınıza gönderildi",
+      "title": "Sistem E-posta Şablonları",
+      "transportNotice": "Bu alanı genel faturalandırma ve sistem e-posta kopyası için kullanın. Organizasyon e-posta aktarım ayarları bu iletiler için yoksayılır; testler ve canlı gönderimler platform sistem aktarımını kullanır."
+    },
+    "users": {
+      "badges": {
+        "admin": "Yönetici",
+        "banExpiresUntil": "{date} tarihine kadar",
+        "banned": "Yasaklandı",
+        "user": "Kullanıcı"
+      },
+      "banDialog": {
+        "confirmButton": "Kullanıcıyı Yasakla",
+        "description": "{email} adresinin platforma erişimini yasakla.",
+        "expiry": "Bitiş Tarihi (isteğe bağlı)",
+        "permanentBanHint": "Kalıcı yasak için boş bırakın",
+        "reason": "Neden",
+        "reasonPlaceholder": "Bu kullanıcıyı yasaklama nedenini girin…",
+        "title": "Kullanıcıyı Yasakla"
+      },
+      "description": "Platformdaki tüm kullanıcıları görüntüleyin ve yönetin",
+      "filters": {
+        "allUsers": "Tüm Kullanıcılar",
+        "banned": "Yasaklandı"
+      },
+      "pagination": {
+        "showing": "{total} kullanıcıdan {from} ile {to} arası gösteriliyor"
+      },
+      "searchLabel": "Kullanıcıları e-posta ile ara",
+      "searchPlaceholder": "İsim veya e-posta ile arayın…",
+      "sessionsDialog": {
+        "description": "{email} için aktif oturumlar",
+        "noSessions": "Aktif oturum yok",
+        "revokeAll": "Tüm Oturumları İptal Et",
+        "title": "Kullanıcı Oturumları",
+        "unknownDevice": "Bilinmeyen cihaz",
+        "unknownIp": "Bilinmeyen IP"
+      },
+      "table": {
+        "created": "Oluşturulma",
+        "noOrganizations": "Organizasyon yok",
+        "noUsersFound": "Kullanıcı bulunamadı",
+        "organizations": "Organizasyonlar",
+        "role": "Rol",
+        "user": "Kullanıcı"
+      },
+      "title": "Kullanıcı Yönetimi",
+      "toasts": {
+        "banned": "{email} kullanıcısı yasaklandı",
+        "sessionRevoked": "Oturum iptal edildi",
+        "sessionsRevoked": "{count} oturum iptal edildi",
+        "unbanned": "{email} kullanıcısının yasağı kaldırıldı"
+      }
+    }
+  }
+}

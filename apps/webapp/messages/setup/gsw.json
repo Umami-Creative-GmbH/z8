@@ -1,0 +1,46 @@
+{
+  "init": {
+    "activating": "Arbetsbereich wird iigrichtet...",
+    "checking": "Sitzig wird prüeft...",
+    "clickToSelect": "Zum Uswähle aachlicke",
+    "redirecting": "Wird wiitergleitet...",
+    "selectOrganization": "Organisation uswähle",
+    "selectOrganizationDescription": "Wähl us, mit welere Organisation du schaffe wotsch"
+  },
+  "setup": {
+    "button": {
+      "create": "Admin-Account erstelle",
+      "creating": "Account wird erstellt..."
+    },
+    "complete_message": "Diin Plattform-Admin-Account isch erstellt worde.",
+    "complete_title": "Iirichtig abgschlosse!",
+    "continue_to_sign_in": "Wiiter zum Aamälde",
+    "creating_account": "Diin Admin-Account wird erstellt...",
+    "description": "Richt de erschti Administrator-Account für diini Plattform ii. Dieser Account hät volle Systemzuegriff und isch vo de Organisations-Accounts trännt.",
+    "field": {
+      "confirm_password": "Passwort bestätige",
+      "confirm_password_placeholder": "Passwort bestätige",
+      "email": "E-Mail-Adress",
+      "email_placeholder": "admin@yourcompany.com",
+      "name": "Vollständige Name",
+      "name_placeholder": "Gib diin vollständige Name ii",
+      "password": "Passwort",
+      "password_placeholder": "Erstell es sichers Passwort"
+    },
+    "hide_password": "Passwort usblände",
+    "layout": {
+      "subtitle": "Konfiguriere diini Plattform zum Aafange",
+      "title": "Ersti Iirichtig"
+    },
+    "password": {
+      "lowercase": "Chliibuechstabe",
+      "min_length": "12+ Zeiche",
+      "number": "Zahl",
+      "uppercase": "Grossbuechstabe"
+    },
+    "please_wait": "Bitte warte, während mir alles iirichte",
+    "show_password": "Passwort aazeige",
+    "sign_in_with": "Du chasch di jetzt aamälde mit",
+    "title": "Plattform-Admin erstelle"
+  }
+}

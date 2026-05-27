@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
 import { z } from "zod";
 import type {
 	CalendarEvent,
@@ -159,7 +158,7 @@ export function useCalendarData({
 	});
 
 	// Group events by date for easy lookup (memoized)
-	const eventsByDate = useMemo(() => {
+	const eventsByDate = (() => {
 		return calendarData.events.reduce((acc, event) => {
 			const dateKey = format(event.date, "yyyy-MM-dd");
 			if (!acc.has(dateKey)) {
@@ -168,7 +167,7 @@ export function useCalendarData({
 			acc.get(dateKey)?.push(event);
 			return acc;
 		}, new Map<string, CalendarEvent[]>());
-	}, [calendarData.events]);
+	})();
 
 	// Refetch function that invalidates the query cache
 	const refetch = () => {

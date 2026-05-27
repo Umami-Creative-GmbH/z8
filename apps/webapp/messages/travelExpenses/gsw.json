@@ -1,0 +1,80 @@
+{
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "Neui Speseabrechnig"
+    },
+    "approvals": {
+      "description": "Öffne de gmeinsami Genehmigungs-Inbox, filteret uf Reisechöschte.",
+      "openInbox": "Inbox öffne",
+      "title": "Pendi Genehmigunge für Reisechöschte prüefe"
+    },
+    "claimTypes": {
+      "mileage": "Kilometerentschädigung",
+      "per_diem": "Tagespauschale",
+      "receipt": "Beleg"
+    },
+    "decision": {
+      "approve": "Genehmige",
+      "approved": "Aaspruch erfolgriich genehmigt",
+      "approveDescription": "Füeg e optionali Notiz für de Aastellende vor em Genehmige dezue.",
+      "approveTitle": "Aaspruch genehmige",
+      "errors": {
+        "approve": "Aaspruch het nöd chönne genehmigt werde",
+        "missingClaim": "Reisechöschte-Aaspruch fehlt",
+        "reject": "Aaspruch het nöd chönne abglehnt werde",
+        "rejectionReason": "Bitte gib en Grund für d'Ablehnig aa"
+      },
+      "noteOptional": "Notiz (optional)",
+      "notePlaceholder": "Sieht guet us. Danke für d'Details.",
+      "reasonPlaceholder": "Belegdetails für de iigreichti Betrag fehle",
+      "reasonRequired": "Grund (erforderlich)",
+      "reject": "Ablehne",
+      "rejectDescription": "Gib en klare Grund aa, damit de Aastellendi d'Aagabe aktualisiere und neu iireiche cha.",
+      "rejected": "Aaspruch erfolgriich abglehnt",
+      "rejectTitle": "Aaspruch ablehne"
+    },
+    "description": "Erstell und verwalte dini Reisechöschte-Aasprüch",
+    "errors": {
+      "loadClaims": "Reisechöschte-Aasprüch händ nöd chönne glade werde"
+    },
+    "feature": "Reisechöschte verwalte",
+    "form": {
+      "amount": "Betrag",
+      "claimType": "Aaspruchstyp",
+      "created": "Reisechöschte-Entwurf erstellt",
+      "createDraft": "Entwurf erstelle",
+      "currency": "Währig",
+      "currencyDescription": "ISO 4217 Code, z.B. EUR oder USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Erstell en neue Entwurf für dini aktuelle Reisechöschte.",
+      "destinationCity": "Ziilort",
+      "destinationCityPlaceholder": "Berlin",
+      "destinationCountry": "Ziilland",
+      "destinationCountryPlaceholder": "Dütschland",
+      "errors": {
+        "createDraft": "Reisechöschte-Entwurf het nöd chönne erstellt werde",
+        "positiveAmount": "Betrag muess e positivi Zahl sii",
+        "tripEndBeforeStart": "Reiseenddatum cha nöd vor em Reisestartdatum sii",
+        "validTripDates": "Bitte gib es gültigs Reisestart- und Enddatum aa",
+        "validTripEnd": "Bitte gib es gültigs Reiseenddatum aa",
+        "validTripStart": "Bitte gib es gültigs Reisestartdatum aa"
+      },
+      "notes": "Notize",
+      "notesPlaceholder": "Füeg en optionale Kontext für dini Genehmigungsinstanz dezue",
+      "receiptAttachmentHint": "Beleg-Aasprüch bruched mindestens en Aahang. De Aahang-Upload isch nach de Entwurfserstellig verfügbar.",
+      "selectClaimType": "Aaspruchstyp uswähle",
+      "title": "Reisechöschte-Aaspruch erstelle",
+      "tripEnd": "Reiseend",
+      "tripStart": "Reisestart"
+    },
+    "list": {
+      "amount": "Betrag",
+      "dateRange": "Datumsbereich",
+      "emptyDescription": "Erstelle deine erste Abrechnung, um den Genehmigungsprozess zu starten.",
+      "emptyTitle": "Noch keine Reisekostenabrechnungen vorhanden",
+      "status": "Status",
+      "type": "Typ"
+    },
+    "title": "Reisekosten"
+  }
+}

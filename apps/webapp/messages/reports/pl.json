@@ -1,0 +1,245 @@
+{
+  "reports": {
+    "container": {
+      "error": "Błąd",
+      "generating": "Generowanie raportu...",
+      "noReportYet": "Nie wygenerowano jeszcze żadnego raportu",
+      "pleaseWait": "Proszę czekać, trwa kompilacja danych",
+      "selectPeriod": "Wybierz okres i kliknij „Generuj raport”, aby rozpocząć"
+    },
+    "description": "Generuj kompleksowe raporty dotyczące godzin pracy i nieobecności wraz z danymi o pracy zdalnej istotnymi dla celów podatkowych",
+    "employeeSelector": {
+      "error": "Nie można załadować członków zespołu",
+      "label": "Pracownik",
+      "placeholder": "Wybierz pracownika..."
+    },
+    "export": {
+      "csv": "Eksportuj do CSV",
+      "description": "Pobierz ten raport w wybranym formacie",
+      "downloaded": "Pobrano {filename}",
+      "errorDescription": "Wystąpił błąd podczas eksportowania raportu",
+      "excel": "Eksportuj do Excela",
+      "failed": "Eksport nie powiódł się",
+      "generating": "Generowanie...",
+      "pdf": "Eksportuj do PDF",
+      "success": "Eksport zakończony sukcesem",
+      "title": "Eksportuj raport"
+    },
+    "feature": "generuj raporty",
+    "filter": {
+      "loadingSettings": "Ładowanie ustawień organizacji przed włączeniem ustawień wstępnych.",
+      "period": "Okres",
+      "selectPeriod": "Wybierz okres"
+    },
+    "generate": "Generuj raport",
+    "generating": "Generowanie raportu…",
+    "period": {
+      "currentMonth": "Bieżący miesiąc",
+      "currentYear": "Bieżący rok",
+      "customRange": "Niestandardowy zakres",
+      "lastMonth": "Poprzedni miesiąc",
+      "lastYear": "Poprzedni rok",
+      "pickDateRange": "Wybierz zakres dat",
+      "yearToDate": "Od początku roku"
+    },
+    "preview": {
+      "absencesByCategory": "Nieobecności według kategorii",
+      "attendancePercentage": "Procent obecności",
+      "category": "Kategoria",
+      "complianceMetrics": "Wskaźniki zgodności",
+      "date": "Data",
+      "dateBreakdown": "Szczegółowe zestawienie według dat",
+      "days": "Dni",
+      "homeOfficeDescription": "Ważne dla niemieckich celów podatkowych – pokazuje dni pracy zdalnej i przepracowane godziny",
+      "homeOfficeSummary": "Podsumowanie pracy zdalnej (istotne podatkowo)",
+      "hours": "Godziny",
+      "hoursWorked": "Przepracowane godziny",
+      "month": "Miesiąc",
+      "noHomeOfficeDays": "W tym okresie nie odnotowano dni pracy zdalnej.",
+      "overtime": "Nadgodziny",
+      "total": "Suma",
+      "totalHomeOfficeDays": "Łączna liczba dni pracy zdalnej",
+      "totalHomeOfficeHours": "Łączna liczba godzin przepracowanych zdalnie",
+      "undertime": "Niedoczas",
+      "workHoursByMonth": "Godziny pracy według miesięcy"
+    },
+    "projects": {
+      "budget": {
+        "exceededBy": "Przekroczono budżet o {hours} godzin",
+        "hoursBudget": "Budżet {hours} godz.",
+        "hoursLogged": "Zarejestrowane godziny",
+        "hoursRemaining": "{hours} godzin pozostało w budżecie",
+        "hoursUsed": "{hours} godz. wykorzystano",
+        "nearLimit": "Blisko limitu budżetu",
+        "onlyRemaining": "Pozostało tylko {hours} godzin",
+        "onTrack": "Zgodnie z planem",
+        "over": "Ponad",
+        "overBudget": "Przekroczono budżet",
+        "remaining": "Pozostało",
+        "title": "Wykorzystanie budżetu",
+        "used": "Wykorzystano"
+      },
+      "cards": {
+        "acrossAllProjects": "Dla wszystkich projektów",
+        "activeContributors": "Aktywni współpracownicy",
+        "activeCount": "{count} aktywnych",
+        "activeProjects": "Aktywne projekty",
+        "budgetUsed": "Wykorzystany budżet",
+        "currentlyInProgress": "Obecnie w toku",
+        "dailyAverage": "Średnia dzienna",
+        "exceededBudget": "Przekroczono budżet",
+        "hoursOfBudget": "{used} godz. z {total} godz.",
+        "hoursPerDay": "Godziny dziennie",
+        "na": "N/D",
+        "noBudgetSet": "Nie ustawiono budżetu",
+        "overBudget": "Przekroczono budżet",
+        "overdue": "Zaległe",
+        "pastDeadline": "Po terminie",
+        "teamMembers": "Członkowie zespołu",
+        "totalHours": "Suma godzin",
+        "totalProjects": "Łączna liczba projektów",
+        "workPeriods": "{count} okresów pracy"
+      },
+      "chart": {
+        "cumulativeDescription": "Łączna liczba godzin zgromadzonych w czasie",
+        "cumulativeHours": "Skumulowane godziny",
+        "cumulativeLabel": "Skumulowane",
+        "dailyDescription": "Godziny przepracowane dziennie w wybranym okresie",
+        "dailyHours": "Godziny dzienne",
+        "hoursLabel": "Godziny",
+        "hoursOverTime": "Godziny w czasie",
+        "noDataAvailable": "Brak danych dotyczących śledzenia czasu dla tego okresu",
+        "noWorkPeriods": "Brak zarejestrowanych okresów pracy w wybranym zakresie dat"
+      },
+      "container": {
+        "error": "Błąd",
+        "generating": "Generowanie raportu...",
+        "noReportYet": "Nie wygenerowano jeszcze żadnego raportu",
+        "pleaseWait": "Proszę czekać, trwa kompilacja danych projektu",
+        "portfolioOverview": "Przegląd portfela",
+        "projectDetails": "Szczegóły projektu",
+        "selectPeriod": "Wybierz okres i kliknij „Generuj raport”, aby rozpocząć"
+      },
+      "filter": {
+        "activeOnly": "Tylko aktywne",
+        "activePlanned": "Aktywne i planowane",
+        "allStatuses": "Wszystkie statusy",
+        "archived": "Zarchiwizowane",
+        "completed": "Zakończone",
+        "period": "Okres",
+        "selectStatus": "Wybierz filtr statusu",
+        "status": "Status"
+      },
+      "generate": "Generuj raport",
+      "generating": "Generowanie raportu...",
+      "healthAlerts": {
+        "budgetUsed": "Wykorzystano {percent}% budżetu",
+        "critical": "Krytyczne",
+        "daysLeft": "Pozostało {days} dni",
+        "daysOverdue": "{days} dni po terminie",
+        "description": "Ryzyka związane z budżetem i terminami wymagające uwagi w tym okresie raportowania.",
+        "dueToday": "Termin upływa dzisiaj",
+        "empty": "Brak ryzyk związanych z budżetem lub terminami w tym okresie raportowania.",
+        "reason": {
+          "budget70": "Projekt wykorzystał co najmniej 70% swojego budżetu.",
+          "budget90": "Projekt wykorzystał co najmniej 90% swojego budżetu.",
+          "deadline": "Termin zakończenia projektu zbliża się.",
+          "default": "Projekt wymaga uwagi.",
+          "dueToday": "Termin projektu upływa dzisiaj.",
+          "overBudget": "Projekt przekroczył budżet.",
+          "overdue": "Termin projektu minął."
+        },
+        "title": "Alerty dotyczące kondycji projektu",
+        "viewDetails": "Wyświetl szczegóły",
+        "viewDetailsForProject": "Wyświetl szczegóły dla {projectName}",
+        "warning": "Ostrzeżenie"
+      },
+      "healthSummary": {
+        "atOrAbove70": "Na poziomie 70% lub powyżej",
+        "atOrAbove70Description": "Podwyższone wykorzystanie budżetu",
+        "atOrAbove90": "Na poziomie 90% lub powyżej",
+        "atOrAbove90Description": "Blisko limitu budżetu",
+        "forecastAtRisk": "Prognoza zagrożona",
+        "forecastAtRiskDescription": "Przewidywane przekroczenie planu",
+        "overBudget": "Ponad budżet",
+        "overBudgetDescription": "Budżet przekroczony"
+      },
+      "page": {
+        "accessDenied": "Odmowa dostępu",
+        "description": "Analizuj godziny projektu, wykorzystanie budżetu i wkład zespołu",
+        "feature": "wyświetl raporty projektu",
+        "noPermission": "Nie masz uprawnień do przeglądania raportów projektu.",
+        "title": "Raporty projektu"
+      },
+      "status": {
+        "active": "Aktywne",
+        "archived": "Zarchiwizowane",
+        "completed": "Zakończone",
+        "paused": "Wstrzymane",
+        "planned": "Planowane"
+      },
+      "table": {
+        "budget": "Budżet",
+        "daysLeft": "pozostało {days} dni",
+        "daysOverdue": "{days} dni po terminie",
+        "deadline": "Termin",
+        "dueToday": "Termin upływa dzisiaj",
+        "forecastRisk": "Ryzyko prognozy",
+        "hours": "Godziny",
+        "noProjectsFound": "Nie znaleziono projektów",
+        "noProjectsMatch": "Brak projektów pasujących do wybranych filtrów",
+        "portfolioDescription": "Przegląd wszystkich projektów z metrykami budżetu i śledzenia czasu",
+        "portfolioTitle": "Portfel projektów",
+        "project": "Projekt",
+        "searchPlaceholder": "Szukaj według nazwy, opisu lub statusu...",
+        "status": "Status",
+        "team": "Zespół",
+        "viewProject": "Wyświetl szczegóły projektu"
+      },
+      "team": {
+        "byEmployee": "Według pracownika",
+        "byTeam": "Według zespołu",
+        "description": "Rozkład godzin między członków zespołu i zespoły",
+        "employee": "Pracownik",
+        "hours": "Godziny",
+        "hoursLabel": "Godziny",
+        "noMembers": "Żaden członek zespołu nie zarejestrował czasu w tym projekcie",
+        "sessions": "Sesje",
+        "title": "Podział zespołu"
+      },
+      "toast": {
+        "failedGenerate": "Nie udało się wygenerować raportu",
+        "failedPortfolio": "Nie udało się wygenerować raportu portfela",
+        "failedProject": "Nie udało się wygenerować raportu projektu",
+        "failedProjectReport": "Nie udało się wygenerować raportu projektu",
+        "portfolioGenerated": "Raport portfela został wygenerowany",
+        "projectGenerated": "Wygenerowano raport dla {name}",
+        "unexpectedError": "Wystąpił nieoczekiwany błąd"
+      }
+    },
+    "summary": {
+      "averagePerDay": "Śr.: {hours} godz./dzień",
+      "homeOfficeDays": "Dni pracy zdalnej",
+      "hourlyAverage": "{hours} godz. przy średniej {rate}/godz.",
+      "otherDays": "Inne: {count} dni",
+      "pending": "{count} oczekujących",
+      "ratePeriods": "{count} okresów stawek",
+      "sickDays": "Chorobowe: {count} dni",
+      "taxRelevant": "Podlegające opodatkowaniu",
+      "totalAbsences": "Suma nieobecności",
+      "totalEarnings": "Suma zarobków",
+      "totalWorkHours": "Suma godzin pracy",
+      "vacationDays": "Dni urlopu",
+      "workDays": "{count} dni roboczych",
+      "workedFromHome": "{hours} godz. pracy zdalnej"
+    },
+    "title": "Raporty pracowników",
+    "toast": {
+      "failedGenerate": "Nie udało się wygenerować raportu",
+      "generatedFor": "Wygenerowano raport dla {name}",
+      "reportGenerated": "Raport wygenerowano pomyślnie",
+      "unexpectedError": "Wystąpił nieoczekiwany błąd",
+      "unknownError": "Wystąpił nieznany błąd"
+    }
+  }
+}

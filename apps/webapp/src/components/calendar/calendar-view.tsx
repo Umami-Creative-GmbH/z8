@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
@@ -57,17 +57,14 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 	});
 
 	// Handle employee selection change
-	const handleEmployeeChange = useCallback(
-		(employeeId: string | null) => {
-			setSelectedEmployeeId(employeeId);
-			setFilters((prev) => ({
-				...prev,
-				// Always use explicit employeeId, fallback to current user (never undefined)
-				employeeId: employeeId ?? currentEmployeeId,
-			}));
-		},
-		[currentEmployeeId],
-	);
+	const handleEmployeeChange = (employeeId: string | null) => {
+		setSelectedEmployeeId(employeeId);
+		setFilters((prev) => ({
+			...prev,
+			// Always use explicit employeeId, fallback to current user (never undefined)
+			employeeId: employeeId ?? currentEmployeeId,
+		}));
+	};
 
 	// Fetch calendar events
 	// When in year view, fetch all 12 months at once
@@ -80,59 +77,60 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 			fullYear: viewMode === "year",
 		});
 
-	const workHoursData = useMemo(
-		() => buildDailyWorkHoursSummaries({ events, dailyRequirements, dailyActualMinutes }),
-		[events, dailyRequirements, dailyActualMinutes],
-	);
+	const workHoursData = buildDailyWorkHoursSummaries({
+		events,
+		dailyRequirements,
+		dailyActualMinutes,
+	});
 
 	// Handle event click
-	const handleEventClick = useCallback((event: CalendarEvent) => {
+	const handleEventClick = (event: CalendarEvent) => {
 		setSelectedEvent(event);
-	}, []);
+	};
 
 	// Handle date range change from schedule-x
-	const handleRangeChange = useCallback((range: { start: Date; end: Date }) => {
+	const handleRangeChange = (range: { start: Date; end: Date }) => {
 		// Update current month based on range midpoint
 		const midpoint = new Date((range.start.getTime() + range.end.getTime()) / 2);
 		setCurrentMonth(midpoint);
-	}, []);
+	};
 
 	// Handle day click from year view
-	const handleDayClick = useCallback((date: Date) => {
+	const handleDayClick = (date: Date) => {
 		setCurrentMonth(date);
 		setViewMode("day");
-	}, []);
+	};
 
 	// Close event details panel
-	const handleCloseDetails = useCallback(() => {
+	const handleCloseDetails = () => {
 		setSelectedEvent(null);
 		setShowSplitDialog(false);
 		setShowDeleteDialog(false);
-	}, []);
+	};
 
 	// Handle split click from edit dialog
-	const handleSplitClick = useCallback(() => {
+	const handleSplitClick = () => {
 		setShowSplitDialog(true);
-	}, []);
+	};
 
 	// Handle split complete
-	const handleSplitComplete = useCallback(() => {
+	const handleSplitComplete = () => {
 		setShowSplitDialog(false);
 		setSelectedEvent(null);
 		refetch();
-	}, [refetch]);
+	};
 
 	// Handle delete click from edit dialog
-	const handleDeleteClick = useCallback(() => {
+	const handleDeleteClick = () => {
 		setShowDeleteDialog(true);
-	}, []);
+	};
 
 	// Handle delete complete
-	const handleDeleteComplete = useCallback(() => {
+	const handleDeleteComplete = () => {
 		setShowDeleteDialog(false);
 		setSelectedEvent(null);
 		refetch();
-	}, [refetch]);
+	};
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4 overflow-hidden min-h-0">

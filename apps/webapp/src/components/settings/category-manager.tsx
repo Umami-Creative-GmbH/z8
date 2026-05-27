@@ -4,7 +4,7 @@ import { IconLoader2, IconPencil, IconPlus, IconRefresh, IconTrash } from "@tabl
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteCategory,
@@ -116,7 +116,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 	};
 
 	// Filter categories by search (client-side since typically small list)
-	const filteredCategories = useMemo(() => {
+	const filteredCategories = (() => {
 		if (!categories) return [];
 		if (!search) return categories;
 
@@ -126,94 +126,91 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 				cat.name.toLowerCase().includes(searchLower) ||
 				cat.description?.toLowerCase().includes(searchLower),
 		);
-	}, [categories, search]);
+	})();
 
 	// Column definitions
-	const columns = useMemo<ColumnDef<HolidayCategory>[]>(
-		() => [
-			{
-				accessorKey: "name",
-				header: t("settings.holidays.categories.name", "Name"),
-				cell: ({ row }) => (
-					<div>
-						<div className="font-medium">{row.original.name}</div>
-						{row.original.description && (
-							<div className="text-sm text-muted-foreground">{row.original.description}</div>
-						)}
+	const columns = [
+		{
+			accessorKey: "name",
+			header: t("settings.holidays.categories.name", "Name"),
+			cell: ({ row }) => (
+				<div>
+					<div className="font-medium">{row.original.name}</div>
+					{row.original.description && (
+						<div className="text-sm text-muted-foreground">{row.original.description}</div>
+					)}
+				</div>
+			),
+		},
+		{
+			accessorKey: "type",
+			header: t("settings.holidays.categories.type", "Type"),
+			cell: ({ row }) => <Badge variant="outline">{formatCategoryType(row.original.type)}</Badge>,
+		},
+		{
+			accessorKey: "color",
+			header: t("settings.holidays.categories.color", "Color"),
+			cell: ({ row }) =>
+				row.original.color ? (
+					<div className="flex items-center gap-2">
+						<div
+							className="size-4 rounded-full border"
+							style={{ backgroundColor: row.original.color }}
+						/>
+						<span className="text-sm text-muted-foreground">{row.original.color}</span>
 					</div>
+				) : (
+					<span className="text-sm text-muted-foreground">
+						{t("settings.holidays.categories.noColor", "No color")}
+					</span>
 				),
-			},
-			{
-				accessorKey: "type",
-				header: t("settings.holidays.categories.type", "Type"),
-				cell: ({ row }) => <Badge variant="outline">{formatCategoryType(row.original.type)}</Badge>,
-			},
-			{
-				accessorKey: "color",
-				header: t("settings.holidays.categories.color", "Color"),
-				cell: ({ row }) =>
-					row.original.color ? (
-						<div className="flex items-center gap-2">
-							<div
-								className="size-4 rounded-full border"
-								style={{ backgroundColor: row.original.color }}
-							/>
-							<span className="text-sm text-muted-foreground">{row.original.color}</span>
-						</div>
-					) : (
-						<span className="text-sm text-muted-foreground">
-							{t("settings.holidays.categories.noColor", "No color")}
-						</span>
-					),
-			},
-			{
-				accessorKey: "settings",
-				header: t("settings.holidays.categories.settings", "Settings"),
-				cell: ({ row }) => (
-					<div className="flex gap-2">
-						{row.original.blocksTimeEntry && (
-							<Badge variant="secondary" className="text-xs">
-								{t("settings.holidays.categories.blocks", "Blocks Time Entry")}
-							</Badge>
+		},
+		{
+			accessorKey: "settings",
+			header: t("settings.holidays.categories.settings", "Settings"),
+			cell: ({ row }) => (
+				<div className="flex gap-2">
+					{row.original.blocksTimeEntry && (
+						<Badge variant="secondary" className="text-xs">
+							{t("settings.holidays.categories.blocks", "Blocks Time Entry")}
+						</Badge>
+					)}
+					{row.original.excludeFromCalculations && (
+						<Badge variant="secondary" className="text-xs">
+							{t("settings.holidays.categories.excludes", "Excludes from Calc")}
+						</Badge>
+					)}
+				</div>
+			),
+		},
+		{
+			id: "actions",
+			cell: ({ row }) => (
+				<div className="flex justify-end gap-2">
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={() => onEditClick(row.original)}
+						disabled={deleteMutation.isPending}
+					>
+						<IconPencil className="size-4" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={() => handleDeleteClick(row.original)}
+						disabled={deleteMutation.isPending}
+					>
+						{deleteMutation.isPending && categoryToDelete?.id === row.original.id ? (
+							<IconLoader2 className="size-4 animate-spin" />
+						) : (
+							<IconTrash className="size-4" />
 						)}
-						{row.original.excludeFromCalculations && (
-							<Badge variant="secondary" className="text-xs">
-								{t("settings.holidays.categories.excludes", "Excludes from Calc")}
-							</Badge>
-						)}
-					</div>
-				),
-			},
-			{
-				id: "actions",
-				cell: ({ row }) => (
-					<div className="flex justify-end gap-2">
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => onEditClick(row.original)}
-							disabled={deleteMutation.isPending}
-						>
-							<IconPencil className="size-4" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => handleDeleteClick(row.original)}
-							disabled={deleteMutation.isPending}
-						>
-							{deleteMutation.isPending && categoryToDelete?.id === row.original.id ? (
-								<IconLoader2 className="size-4 animate-spin" />
-							) : (
-								<IconTrash className="size-4" />
-							)}
-						</Button>
-					</div>
-				),
-			},
-		],
-		[t, onEditClick, deleteMutation.isPending, categoryToDelete?.id, formatCategoryType],
-	);
+					</Button>
+				</div>
+			),
+		},
+	];
 
 	if (isLoading) {
 		return (

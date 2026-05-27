@@ -1,0 +1,43 @@
+{
+  "today": {
+    "approvals": {
+      "approve": "Genehmige",
+      "approveLabel": "{title} genehmige",
+      "description": "Aaträg, wo uf en Entscheid vom Vorgesetzte warte.",
+      "empty": "Es sind keini Genehmigige offe.",
+      "openInbox": "Postig öffne",
+      "pendingAriaLabel": "Offeni Genehmigige",
+      "reject": "Ablehne",
+      "rejectLabel": "{title} ablehne",
+      "title": "Genehmigige",
+      "toast": {
+        "approved": "Aatrag genehmigt",
+        "approveError": "Aatrag cha nöd genehmigt werde",
+        "rejected": "Aatrag abglehnt",
+        "rejectError": "Aatrag cha nöd abglehnt werde"
+      }
+    },
+    "briefing": {
+      "badge": "Hüt",
+      "description": "Prüef d'Pünkt, wo hüt en Iigriff bruched, und gang denn direkt in richtige Workflow.",
+      "needsAction": {
+        "description": "Fang do aa für die dringendschte operative Nachbearbeitige.",
+        "empty": "Alles im grüene Bereich. Es isch im Moment kei Handlig vom Vorgesetzte nötig.",
+        "title": "Brucht Handlig"
+      },
+      "sections": {
+        "empty": "Keini Problem gfunde."
+      },
+      "severity": {
+        "critical": "Kritisch",
+        "high": "Hoch",
+        "info": "Info",
+        "warning": "Warnig"
+      },
+      "summaryAriaLabel": "Zämefassig vo hüt",
+      "supportingSectionsAriaLabel": "Unterstützendi Abschnitt",
+      "title": "Täglichs Briefing für Vorgesetzti",
+      "updatedAt": "{date} - Aktualisiert am {time}"
+    }
+  }
+}

@@ -1,0 +1,552 @@
+{
+  "settings": {
+    "apiKeys": {
+      "active": "Aktywny",
+      "copyKey": "Kopiuj klucz API",
+      "copyPrefix": "Kopiuj prefiks",
+      "create": "Utwórz klucz",
+      "created": "Klucz API został pomyślnie utworzony",
+      "createDescription": "Utwórz nowy klucz API dla dostępu programistycznego. Klucz zostanie wyświetlony tylko raz.",
+      "createdOn": "Utworzono {date}",
+      "createTitle": "Utwórz klucz API",
+      "deleted": "Klucz API usunięty",
+      "deleteDescription": "Czy na pewno chcesz usunąć klucz API „{name}”? Wszystkie aplikacje korzystające z tego klucza natychmiast utracą dostęp. Tej akcji nie można cofnąć.",
+      "deleteTitle": "Usuń klucz API",
+      "description": "Zarządzaj kluczami API dla dostępu programistycznego do danych Twojej organizacji",
+      "disabled": "Wyłączony",
+      "editCreated": "Utworzono {date}",
+      "editDescription": "Zaktualizuj ustawienia tego klucza API. Uwaga: Nie możesz wyświetlić ani zmienić samego klucza.",
+      "editTitle": "Edytuj klucz API",
+      "empty": {
+        "description": "Utwórz swój pierwszy klucz API, aby umożliwić programowy dostęp do swojej organizacji.",
+        "title": "Brak kluczy API"
+      },
+      "expires": "Wygasa",
+      "form": {
+        "create": "Utwórz klucz",
+        "enabled": "Klucz włączony",
+        "enabledHelp": "Wyłączone klucze będą odrzucać wszystkie żądania API",
+        "expiration": "Data wygaśnięcia",
+        "name": "Nazwa",
+        "nameHelp": "Opisowa nazwa identyfikująca ten klucz",
+        "namePlaceholder": "np. Produkcyjne API",
+        "rateLimit": "Włącz limitowanie zapytań",
+        "rateLimitMax": "Maksymalna liczba zapytań na minutę",
+        "scopes": "Uprawnienia",
+        "scopesRequired": "Wybierz co najmniej jedno uprawnienie"
+      },
+      "keyCopied": "Klucz API skopiowany do schowka",
+      "lastUsed": "Ostatnio używany",
+      "name": "Nazwa",
+      "prefix": "Prefiks klucza",
+      "prefixCopied": "Prefiks klucza skopiowany",
+      "scopes": "Uprawnienia",
+      "security": {
+        "description": "Klucze API zapewniają pełny dostęp do danych organizacji w zakresie swoich uprawnień. Dbaj o ich bezpieczeństwo i nigdy nie udostępniaj ich w publicznych repozytoriach ani w kodzie po stronie klienta.",
+        "title": "Uwaga dotycząca bezpieczeństwa"
+      },
+      "showClose": "Zamknij",
+      "showCloseAnyway": "Zamknij mimo to",
+      "showConfirmWarning": "Czy na pewno? Jeszcze nie skopiowałeś klucza.",
+      "showCopied": "Klucz skopiowany do schowka",
+      "showDescription": "Twój nowy klucz API „{name}” został utworzony. Skopiuj go teraz – nie będziesz mógł go ponownie wyświetlić!",
+      "showDone": "Gotowe",
+      "showExpires": "Wygasa:",
+      "showLabel": "Twój klucz API",
+      "showName": "Nazwa:",
+      "showNever": "Nigdy",
+      "showTitle": "Utworzono klucz API",
+      "showWarning": "To jedyny moment, w którym zobaczysz ten klucz. Pamiętaj, aby go skopiować i bezpiecznie przechowywać.",
+      "showWarningTitle": "Ważne:",
+      "status": "Status",
+      "title": "Klucze API",
+      "updated": "Klucz API zaktualizowany",
+      "usage": "Wykorzystano {count} z {max} kluczy"
+    },
+    "branding": {
+      "appName": {
+        "description": "Zastąp domyślną nazwę aplikacji wyświetlaną na stronie logowania.",
+        "title": "Nazwa aplikacji"
+      },
+      "background": {
+        "description": "Prześlij niestandardowy obraz tła dla strony logowania.",
+        "hint": "Zalecane: 1920x1080px lub większy, wysokiej jakości JPEG lub PNG",
+        "preview": "Podgląd tła",
+        "remove": "Usuń tło",
+        "title": "Obraz tła",
+        "upload": "Prześlij obraz tła"
+      },
+      "backgroundUploadFailed": "Nie udało się przesłać obrazu tła",
+      "backgroundUploadSuccess": "Obraz tła został pomyślnie przesłany",
+      "colors": {
+        "accent": "Kolor akcentujący (opcjonalnie)",
+        "accentHex": "Wartość szesnastkowa koloru akcentującego",
+        "accentHint": "Dodatkowy kolor dla wyróżnień",
+        "description": "Dostosuj kolory podstawowy i akcentujący dla swojej strony logowania.",
+        "primary": "Kolor podstawowy",
+        "primaryHex": "Wartość szesnastkowa koloru podstawowego",
+        "primaryHint": "Używany dla przycisków, linków i stanów fokusu",
+        "title": "Kolory motywu"
+      },
+      "logo": {
+        "description": "Prześlij logo swojej organizacji, aby wyświetlić je na stronie logowania.",
+        "hint": "Zalecane: 200x200px, PNG lub SVG z przezroczystym tłem",
+        "preview": "Podgląd logo",
+        "remove": "Usuń logo",
+        "title": "Logo",
+        "upload": "Prześlij obraz logo"
+      },
+      "logoUploadFailed": "Nie udało się przesłać logo",
+      "logoUploadSuccess": "Logo zostało pomyślnie przesłane",
+      "save": "Zapisz ustawienia marki",
+      "saveFailed": "Nie udało się zapisać ustawień marki",
+      "saveSuccess": "Ustawienia marki zostały zapisane"
+    },
+    "enterprise": {
+      "addProvider": "Dodaj dostawcę",
+      "clientId": "Identyfikator klienta (Client ID)",
+      "clientIdRequired": "Identyfikator klienta jest wymagany",
+      "clientSecret": "Klucz tajny klienta (Client Secret)",
+      "clientSecretRequired": "Klucz tajny klienta jest wymagany",
+      "configureCallbackUrl": "Skonfiguruj adres URL wywołania zwrotnego (callback URL):",
+      "domain": "Domena",
+      "domains": {
+        "add": "Dodaj domenę niestandardową",
+        "addDescription": "Dodaj domenę niestandardową, aby włączyć strony logowania specyficzne dla organizacji. Będziesz musiał zweryfikować własność za pomocą rekordów DNS.",
+        "addDomain": "Dodaj domenę",
+        "added": "Domena została pomyślnie dodana",
+        "addFailed": "Nie udało się dodać domeny",
+        "adding": "Dodawanie…",
+        "authConfigDescription": "Skonfiguruj metody uwierzytelniania dostępne dla użytkowników logujących się przez {domain}",
+        "authConfigTitle": "Konfiguracja uwierzytelniania",
+        "authConfigUpdated": "Konfiguracja uwierzytelniania została zaktualizowana",
+        "authConfigUpdateFailed": "Nie udało się zaktualizować konfiguracji uwierzytelniania",
+        "authMethod": {
+          "emailPassword": "E-mail/Hasło",
+          "passkey": "Klucz dostępu (Passkey)",
+          "social": "Społecznościowe ({providers})",
+          "sso": "SSO"
+        },
+        "configured": "skonfigurowano",
+        "cookieConsentScript": "Skrypt zgody na pliki cookie",
+        "cookieConsentScriptHelp": "Wstrzykiwany na stronach uwierzytelniania tylko dla tej domeny niestandardowej. Pozostaw puste, aby wyłączyć.",
+        "cookieConsentStatus": "Zgoda na pliki cookie {status}",
+        "copiedToClipboard": "Skopiowano do schowka",
+        "customDomain": "Domena niestandardowa",
+        "customDomainDescription": "Skonfiguruj domenę niestandardową, aby włączyć stronę logowania specyficzną dla organizacji z własnym brandingiem.",
+        "deleteAria": "Usuń domenę niestandardową {domain}",
+        "deleted": "Domenę usunięto",
+        "deleteDescription": "Czy na pewno chcesz usunąć „{domain}”? Tej akcji nie można cofnąć. Użytkownicy nie będą już mogli logować się za pośrednictwem tej domeny niestandardowej.",
+        "deleteFailed": "Nie udało się usunąć domeny",
+        "deleteTitle": "Usuń domenę",
+        "description": "Skonfiguruj niestandardową domenę logowania, branding i dostawców SSO dla swojej organizacji.",
+        "dnsPropagation": "Propagacja DNS",
+        "dnsPropagationDescription": "Zmiany DNS mogą trwać do 48 godzin, choć zazwyczaj kończą się w ciągu kilku minut. Możesz kliknąć „Weryfikuj” po dodaniu rekordu TXT.",
+        "domain": "Domena",
+        "domainHelp": "Wprowadź domenę, pod którą użytkownicy będą uzyskiwać dostęp do strony logowania.",
+        "domainInvalid": "Wprowadź poprawną domenę (np. login.example.com)",
+        "domainPageSettings": "Ustawienia strony domeny",
+        "domainRequired": "Domena jest wymagana",
+        "editAuthSettingsAria": "Edytuj ustawienia uwierzytelniania dla {domain}",
+        "emailPassword": "E-mail i hasło",
+        "emailPasswordHelp": "Zezwalaj użytkownikom na logowanie za pomocą adresu e-mail i hasła",
+        "empty": "Brak skonfigurowanej niestandardowej domeny.",
+        "enabledAuthMethods": "Włączone metody uwierzytelniania",
+        "guidedSetup": {
+          "action": "Konfiguracja z przewodnikiem",
+          "description": "Skonfiguruj SSO, SCIM, politykę dostępu i kontrole aktywacji w jednym bezpiecznym procesie.",
+          "title": "Konfiguracja z przewodnikiem"
+        },
+        "keepExistingSecretKey": "Pozostaw puste, aby zachować istniejący klucz tajny",
+        "nameHost": "Nazwa / Host",
+        "notConfigured": "nieskonfigurowano",
+        "passkey": "Klucz dostępu (Passkey)",
+        "passkeyHelp": "Zezwalaj na logowanie bez hasła za pomocą kluczy dostępu",
+        "regenerateToken": "Wygeneruj ponownie token",
+        "regenerateTokenFailed": "Nie udało się wygenerować ponownie tokena",
+        "regenerateTokenSuccess": "Wygenerowano nowy token weryfikacyjny",
+        "regenerating": "Generowanie…",
+        "saveConfiguration": "Zapisz konfigurację",
+        "secretKey": "Klucz tajny",
+        "secretKeyPlaceholder": "Wprowadź klucz tajny",
+        "secretKeyRequired": "Wymagane podczas ustawiania klucza witryny",
+        "siteKey": "Klucz witryny",
+        "socialProviders": "Dostawcy społecznościowi",
+        "socialProvidersHelp": "Włącz opcje logowania społecznościowego dla tej domeny",
+        "sso": "Logowanie jednokrotne (SSO)",
+        "ssoHelp": "Zezwalaj na logowanie korporacyjne oparte na OIDC",
+        "status": {
+          "pending": "Oczekuje na weryfikację",
+          "verified": "Zweryfikowano"
+        },
+        "title": "Niestandardowa domena i branding",
+        "tokenExpired": "Token wygasł",
+        "tokenExpiredDescription": "Token weryfikacyjny wygasł. Proszę wygenerować nowy token.",
+        "tokenExpires": "Token wygasa: {date}",
+        "turnstile": "Cloudflare Turnstile",
+        "turnstileHelp": "Ochrona przed botami dla formularzy uwierzytelniania. Wymagane dla domen korporacyjnych.",
+        "turnstileSiteKeyStatus": "Klucz witryny Turnstile {status}",
+        "txtRecordInstruction": "Dodaj następujący rekord TXT do swojego DNS:",
+        "value": "Wartość",
+        "verifiedSuccess": "Domena została pomyślnie zweryfikowana",
+        "verify": "Weryfikuj",
+        "verifyDomain": "Zweryfikuj domenę",
+        "verifyFailed": "Weryfikacja domeny nie powiodła się",
+        "verifying": "Weryfikowanie…",
+        "verifyOwnership": "Zweryfikuj własność domeny",
+        "verifyOwnershipDescription": "Dodaj rekord DNS TXT, aby zweryfikować własność {domain}"
+      },
+      "email": {
+        "apiKey": "Klucz API",
+        "apiKeyHint": "Pozostaw puste, aby zachować istniejący klucz. Pobierz swój klucz API z resend.com",
+        "create": "Utwórz konfigurację",
+        "delete": "Usuń konfigurację",
+        "deleteConfirm": "Czy na pewno chcesz usunąć tę konfigurację poczty e-mail?",
+        "deleted": "Konfiguracja poczty e-mail została usunięta",
+        "deleteFailed": "Usuwanie nie powiodło się",
+        "description": "Skonfiguruj niestandardowego dostawcę poczty e-mail dla swojej organizacji. Wszystkie wiadomości e-mail organizacji będą korzystać z tej konfiguracji zamiast domyślnej systemowej.",
+        "fromEmail": "Adres e-mail nadawcy",
+        "fromName": "Nazwa nadawcy",
+        "isActive": "Włącz tę konfigurację poczty e-mail",
+        "lastTest": "Ostatni test",
+        "passwordHint": "Pozostaw puste, aby zachować istniejące hasło",
+        "recommended": "Zalecane",
+        "resendConfig": "Konfiguracja Resend",
+        "save": "Zapisz zmiany",
+        "saved": "Konfiguracja poczty e-mail została zapisana",
+        "saveFailed": "Zapisywanie nie powiodło się",
+        "scalewayConnected": "Magazyn sekretów Scaleway gotowy",
+        "scalewayConnectedDesc": "Ta organizacja posiada zweryfikowany klucz Scaleway Key Manager do szyfrowanego przechowywania sekretów.",
+        "scalewayKeyPending": "Klucz Scaleway nie został jeszcze wygenerowany",
+        "scalewayKeyPendingDesc": "Klucz organizacji Scaleway zostanie wygenerowany po zapisaniu sekretu, takiego jak klucz API Resend lub hasło SMTP.",
+        "scalewayUnavailable": "Magazyn sekretów Scaleway niedostępny",
+        "scalewayUnavailableDesc": "Skonfigurowanego klucza organizacji Scaleway nie udało się zweryfikować. Sekrety nie mogą być bezpiecznie przechowywane, dopóki problem nie zostanie rozwiązany.",
+        "secretSet": "Ustaw",
+        "sendTest": "Wyślij test",
+        "smtpConfig": "Konfiguracja SMTP",
+        "smtpHost": "Host SMTP",
+        "smtpPassword": "Hasło",
+        "smtpPort": "Port",
+        "smtpRequireTls": "Wymagaj uaktualnienia STARTTLS",
+        "smtpSecure": "Użyj TLS (port 465)",
+        "smtpServer": "Serwer SMTP",
+        "smtpUsername": "Nazwa użytkownika",
+        "testEmailRequired": "Proszę wprowadzić testowy adres e-mail",
+        "testFailed": "Wysłanie testowej wiadomości e-mail nie powiodło się",
+        "testFailure": "Niepowodzenie",
+        "testSection": "Wyślij testową wiadomość e-mail",
+        "testSent": "Testowa wiadomość e-mail została wysłana pomyślnie",
+        "testSuccess": "Sukces",
+        "title": "Konfiguracja poczty e-mail",
+        "transportType": "Dostawca poczty e-mail",
+        "vaultConnected": "Połączono z Vault",
+        "vaultConnectedDesc": "Sekrety są bezpiecznie przechowywane w HashiCorp Vault.",
+        "vaultSealed": "Vault zablokowany",
+        "vaultSealedDesc": "HashiCorp Vault jest zablokowany. Proszę go odblokować, aby przechowywać sekrety.",
+        "vaultUnavailable": "Vault niedostępny",
+        "vaultUnavailableDesc": "HashiCorp Vault jest niedostępny. Sekrety nie mogą być bezpiecznie przechowywane."
+      },
+      "enableProviderHelp": "Włącz lub wyłącz tego dostawcę",
+      "identity": {
+        "accessPolicy": {
+          "action": {
+            "save": "Zapisz politykę dostępu"
+          },
+          "defaultRoleTemplate": "Domyślny szablon roli",
+          "description": "Ustaw domenę, zaproszenia i wymuszanie SSO po pomyślnym zakończeniu testów pilotażowych.",
+          "noDefaultTemplate": "Brak domyślnego szablonu",
+          "placeholder": {
+            "roleTemplate": "Wybierz szablon roli"
+          },
+          "requireSso": "Wymagaj SSO",
+          "requireSsoHelp": "Pracownicy muszą korzystać z firmowego dostawcy tożsamości (IdP).",
+          "restrictDomain": "Ogranicz do zweryfikowanej domeny",
+          "restrictDomainHelp": "Blokuj konta spoza wybranej domeny.",
+          "restrictInvites": "Ogranicz zaproszenia",
+          "restrictInvitesHelp": "Zezwalaj tylko na zaproszenia zgodne z polityką dostępu.",
+          "title": "Polityka dostępu"
+        },
+        "badge": {
+          "now": "Teraz",
+          "queued": "W kolejce",
+          "ready": "Gotowe"
+        },
+        "domain": {
+          "action": {
+            "checkStatus": "Sprawdź status domeny"
+          },
+          "description": "Zweryfikuj granice dzierżawy przed wymuszeniem SSO dla pracowników.",
+          "help": "Weryfikacja DNS wykorzystuje istniejące działania weryfikacji domeny SSO. Zakończ tę weryfikację przed aktywacją wymuszania.",
+          "notSelected": "Nie wybrano",
+          "selected": "Wybrana domena",
+          "status": {
+            "pending": "Oczekujące",
+            "verified": "Zweryfikowano"
+          },
+          "title": "Domena"
+        },
+        "hero": {
+          "description": "Skonfiguruj SSO, SCIM i wymuszanie dla organizacji {organizationId} z zabezpieczoną aktywacją.",
+          "eyebrow": "Tożsamość korporacyjna",
+          "title": "Lista kontrolna operacji"
+        },
+        "provider": {
+          "action": {
+            "save": "Zapisz dostawcę"
+          },
+          "description": "Wybierz ustawienia wstępne dostawcy tożsamości, protokół, identyfikator dostawcy i domenę e-mail.",
+          "error": {
+            "domainRequired": "Domena jest wymagana",
+            "providerIdRequired": "Identyfikator dostawcy jest wymagany"
+          },
+          "label": {
+            "domain": "Domena e-mail",
+            "preset": "Ustawienia wstępne dostawcy",
+            "protocol": "Protokół",
+            "providerId": "Identyfikator dostawcy"
+          },
+          "placeholder": {
+            "domain": "np. example.com…",
+            "protocol": "Wybierz protokół",
+            "provider": "Wybierz dostawcę",
+            "providerId": "np. acme-okta…"
+          },
+          "preset": {
+            "generic": {
+              "description": "Użyj dowolnego dostawcy tożsamości zgodnego ze standardami OIDC lub SAML 2.0."
+            },
+            "googleWorkspace": {
+              "description": "Użyj Google Workspace OIDC do SSO i opcjonalnej synchronizacji katalogów."
+            },
+            "microsoftEntra": {
+              "description": "Użyj Microsoft Entra ID do firmowego SSO i opcjonalnego udostępniania kont."
+            },
+            "okta": {
+              "description": "Użyj Okta Workforce Identity do logowania jednokrotnego SAML lub OIDC."
+            }
+          },
+          "title": "Dostawca"
+        },
+        "rail": {
+          "title": "Pasek gotowości"
+        },
+        "review": {
+          "action": {
+            "activate": "Aktywuj tożsamość korporacyjną"
+          },
+          "activationSummary": "Podsumowanie aktywacji",
+          "description": "Przejrzyj zabezpieczone kontrole aktywacji przed włączeniem mechanizmów kontroli tożsamości korporacyjnej.",
+          "lockoutWarning": "Ostrzeżenie o blokadzie bieżącego administratora",
+          "lockoutWarningHelp": "Przed aktywacją upewnij się, że Twoje bieżące konto administratora może zalogować się przez skonfigurowanego dostawcę. Wymuszanie może zablokować logowanie hasłem dla wybranej domeny.",
+          "missingRequirement": "{item} jest wymagany przed aktywacją",
+          "prerequisitesComplete": "Dostawca, zweryfikowana domena i wymagania wstępne testu SSO zostały spełnione.",
+          "requirement": {
+            "domain": "Zweryfikowana domena",
+            "provider": "Dostawca",
+            "ssoTest": "Test SSO"
+          },
+          "title": "Przejrzyj i aktywuj"
+        },
+        "scim": {
+          "action": {
+            "copyToken": "Kopiuj token",
+            "generateToken": "Generuj token",
+            "refreshStatus": "Odśwież status"
+          },
+          "baseUrl": "Podstawowy adres URL",
+          "cardDescription": "Wygeneruj token aprowizacji i monitoruj stan połączenia.",
+          "description": "Weryfikacja SCIM aktualizuje się po wysłaniu przez dostawcę tożsamości zmiany użytkownika testowego lub grupy.",
+          "error": {
+            "saveProviderFirst": "Zapisz dostawcę przed wygenerowaniem tokena SCIM"
+          },
+          "status": {
+            "none": "Brak aktywności aprowizacji",
+            "observed": "Zaobserwowano aktywność aprowizacji"
+          },
+          "title": "Aprowizacja SCIM",
+          "tokenShownOnce": "Ten token jest wyświetlany tylko raz"
+        },
+        "sso": {
+          "action": {
+            "register": "Zarejestruj dostawcę SSO"
+          },
+          "description": "Zarejestruj zewnętrznego dostawcę tożsamości (IdP) przy użyciu danych uwierzytelniających klienta OIDC lub metadanych SAML.",
+          "error": {
+            "saveProviderFirst": "Zapisz dostawcę i domenę przed rejestracją SSO"
+          },
+          "label": {
+            "clientId": "Identyfikator klienta (Client ID)",
+            "clientSecret": "Klucz tajny klienta (Client secret)",
+            "issuer": "Wystawca",
+            "metadata": "Metadane SAML"
+          },
+          "placeholder": {
+            "issuer": {
+              "generic": "https://idp.example.com…",
+              "googleWorkspace": "https://accounts.google.com…",
+              "microsoftEntra": "https://login.microsoftonline.com/{tenant-id}/v2.0…",
+              "okta": "https://acme.okta.com…"
+            },
+            "metadata": "Wklej XML metadanych IdP…"
+          },
+          "title": "Konfiguracja SSO"
+        },
+        "ssoTest": {
+          "action": {
+            "recordFail": "Zapisz niepowodzenie",
+            "recordPass": "Zapisz powodzenie"
+          },
+          "defaultFailure": "Test SSO na żywo nie powiódł się",
+          "description": "Zapisz wynik testu SSO na żywo przed wymuszeniem.",
+          "error": {
+            "saveProviderFirst": "Zapisz dostawcę przed zapisaniem testu"
+          },
+          "help": "To rejestruje wynik testu SSO na żywo. Najpierw przeprowadź logowanie w IdP, a następnie zarejestruj powodzenie lub niepowodzenie tutaj dla zabezpieczenia aktywacji.",
+          "label": {
+            "email": "Adres e-mail użytkownika testowego",
+            "failureNote": "Uwaga dotycząca niepowodzenia"
+          },
+          "status": {
+            "failed": "Niepowodzenie",
+            "notRun": "Nieuruchomiony",
+            "passed": "Powodzenie"
+          },
+          "title": "Użytkownik testowy"
+        },
+        "status": {
+          "activated": "Aktywowano",
+          "draft": "Wersja robocza"
+        },
+        "step": {
+          "accessPolicy": "Zasady dostępu",
+          "accessPolicy.description": "Ustaw zasady wymuszania",
+          "domain": "Domena",
+          "domain.description": "Potwierdź granicę dzierżawy",
+          "provider": "Dostawca",
+          "provider.description": "Wybierz źródło tożsamości",
+          "review": "Przejrzyj i aktywuj",
+          "review.description": "Aktywacja zabezpieczenia",
+          "scim": "Aprowizacja SCIM",
+          "scim.description": "Wydaj token aprowizacyjny",
+          "sso": "Konfiguracja SSO",
+          "sso.description": "Zarejestruj OIDC lub SAML",
+          "ssoTest": "Użytkownik testowy",
+          "ssoTest.description": "Zapisz wynik logowania na żywo"
+        },
+        "toast": {
+          "accessPolicyFailed": "Nie udało się zapisać polityki dostępu",
+          "accessPolicySaved": "Polityka dostępu zapisana",
+          "activated": "Konfiguracja tożsamości korporacyjnej aktywowana",
+          "activateFailed": "Nie udało się aktywować konfiguracji",
+          "domainStatusFailed": "Nie udało się odświeżyć statusu domeny",
+          "domainStatusRefreshed": "Status domeny odświeżony",
+          "providerSaved": "Dostawca tożsamości zapisany",
+          "providerSaveFailed": "Nie udało się zapisać dostawcy",
+          "scimStatusFailed": "Nie udało się odświeżyć statusu SCIM",
+          "scimStatusRefreshed": "Status SCIM odświeżony",
+          "scimTokenFailed": "Nie udało się wygenerować tokena SCIM",
+          "scimTokenGenerated": "Token SCIM wygenerowany",
+          "ssoRegistered": "Dostawca SSO zarejestrowany",
+          "ssoRegisterFailed": "Nie udało się zarejestrować dostawcy SSO",
+          "ssoTestFailed": "Test SSO oznaczony jako nieudany",
+          "ssoTestPassed": "Test SSO oznaczony jako udany",
+          "ssoTestRecordFailed": "Nie udało się zapisać testu SSO"
+        }
+      },
+      "keepExistingSecretHelp": "Pozostaw puste, aby zachować istniejący klucz tajny",
+      "leaveBlankKeepExisting": "Pozostaw puste, aby zachować istniejące",
+      "provider": "Dostawca",
+      "socialOAuth": {
+        "addDescription": "Skonfiguruj własną aplikację OAuth do logowania społecznościowego.",
+        "addProviderError": "Nie udało się dodać dostawcy",
+        "addTitle": "Dodaj dostawcę OAuth społecznościowego",
+        "appleKeyIdHelp": "Identyfikator klucza (Key ID) powiązany z Twoim kluczem prywatnym",
+        "appleKeyIdRequired": "Identyfikator klucza jest wymagany dla Apple",
+        "appleTeamIdHelp": "Znaleziono na Twoim koncie Apple Developer",
+        "appleTeamIdRequired": "Identyfikator zespołu (Team ID) jest wymagany dla Apple",
+        "clientIdPlaceholder": "Twój identyfikator klienta OAuth",
+        "clientSecretPlaceholder": "Twój klucz tajny klienta OAuth",
+        "configured": "OAuth dla {provider} skonfigurowane pomyślnie",
+        "createAppAt": "Utwórz aplikację OAuth w",
+        "deleteError": "Nie udało się usunąć konfiguracji OAuth",
+        "description": "Skonfiguruj własne dane uwierzytelniające OAuth do logowania społecznościowego. Pozwala to użytkownikom logować się za pomocą aplikacji OAuth Twojej organizacji zamiast współdzielonych danych uwierzytelniających.",
+        "developerConsole": "Konsola programisty {provider}",
+        "editDescription": "Zaktualizuj swoje dane uwierzytelniające OAuth.",
+        "editTitle": "Edytuj OAuth {provider}",
+        "empty": "Nie skonfigurowano niestandardowych dostawców OAuth społecznościowych.",
+        "emptyDescription": "Dodaj własne dane uwierzytelniające OAuth, aby zastąpić współdzielone dane.",
+        "howItWorks": "Jak to działa",
+        "instructions": {
+          "addProvider": "Dodaj tutaj dostawcę wraz ze swoimi danymi uwierzytelniającymi",
+          "copyCredentials": "Skopiuj identyfikator klienta (Client ID) i klucz tajny klienta (Client Secret)",
+          "createApp": "Utwórz aplikację OAuth w konsoli programisty dostawcy",
+          "customDomain": "Użytkownicy logujący się przez Twoją domenę niestandardową będą używać Twojej aplikacji OAuth"
+        },
+        "keyId": "Identyfikator klucza",
+        "lastTested": "Ostatnio testowano",
+        "notTested": "Nietestowane",
+        "privateKey": "Klucz prywatny (.p8)",
+        "removed": "Usunięto OAuth dla {provider}",
+        "removeDialogDescription": "Czy na pewno chcesz usunąć tę konfigurację OAuth? Użytkownicy powrócą do współdzielonych danych uwierzytelniających OAuth (jeśli są dostępne).",
+        "removeDialogTitle": "Usuń dostawcę OAuth",
+        "teamId": "Identyfikator zespołu (Team ID)",
+        "title": "Dostawcy logowania społecznościowego",
+        "updateConfigError": "Nie udało się zaktualizować konfiguracji",
+        "updated": "Pomyślnie zaktualizowano OAuth dla {provider}",
+        "working": "Pracuję"
+      },
+      "sso": {
+        "addDescription": "Skonfiguruj dostawcę tożsamości OIDC dla logowania jednokrotnego (SSO) w przedsiębiorstwie.",
+        "addError": "Nie udało się dodać dostawcy SSO",
+        "addSuccess": "Pomyślnie dodano dostawcę SSO",
+        "addTitle": "Dodaj dostawcę SSO",
+        "clientIdPlaceholder": "Twój identyfikator klienta OIDC",
+        "clientSecretPlaceholder": "Twój sekret klienta OIDC",
+        "deleteDialogDescription": "Czy na pewno chcesz usunąć tego dostawcę SSO? Użytkownicy nie będą już mogli logować się za pomocą tego dostawcy tożsamości.",
+        "deleteDialogTitle": "Usuń dostawcę SSO",
+        "deleteError": "Nie udało się usunąć dostawcy SSO",
+        "deleteSuccess": "Dostawca SSO usunięty",
+        "description": "Dodaj dostawców tożsamości OIDC, aby włączyć SSO dla swojej organizacji.",
+        "domainInvalid": "Wprowadź poprawną domenę (np. example.com)",
+        "domainRequired": "Domena jest wymagana",
+        "domainVerified": "Domena zweryfikowana",
+        "emailDomain": "Domena e-mail",
+        "emailDomainHelp": "Użytkownicy z tą domeną e-mail będą mogli korzystać z SSO",
+        "empty": "Nie skonfigurowano jeszcze żadnych dostawców SSO.",
+        "emptyDescription": "Dodaj dostawcę OIDC, aby włączyć logowanie jednokrotne (SSO) w przedsiębiorstwie.",
+        "instructions": {
+          "copyCredentials": "Skopiuj adres URL wystawcy (Issuer URL), identyfikator klienta i sekret klienta ze swojego dostawcy tożsamości (IdP)",
+          "createApp": "Utwórz aplikację OIDC u swojego dostawcy tożsamości (Okta, Azure AD itp.)",
+          "verifyDomain": "Dodaj tutaj dostawcę i zweryfikuj domenę e-mail za pomocą rekordu DNS TXT"
+        },
+        "issuerUrl": "Adres URL wystawcy (Issuer URL)",
+        "issuerUrlHelp": "Adres URL wystawcy OIDC od Twojego dostawcy tożsamości",
+        "issuerUrlRequired": "Adres URL wystawcy jest wymagany",
+        "providerId": "Identyfikator dostawcy",
+        "providerIdHelp": "Unikalny identyfikator dla tego dostawcy (małe litery, bez spacji)",
+        "providerIdInvalid": "Identyfikator dostawcy może zawierać tylko małe litery, cyfry i myślniki",
+        "providerIdRequired": "Identyfikator dostawcy jest wymagany",
+        "setupInstructions": "Instrukcje konfiguracji",
+        "title": "Dostawcy tożsamości",
+        "token": "Token",
+        "tokenError": "Nie udało się wygenerować tokena weryfikacji domeny",
+        "tokenGenerated": "Wygenerowano token weryfikacyjny",
+        "txtToken": "Token TXT:",
+        "validUrlRequired": "Wprowadź poprawny adres URL",
+        "verified": "Zweryfikowano",
+        "verify": "Weryfikuj",
+        "verifyError": "Weryfikacja domeny nie powiodła się. Sprawdź swój rekord DNS TXT i spróbuj ponownie."
+      },
+      "tab": {
+        "branding": "Branding",
+        "domains": "Własna domena",
+        "social-oauth": "Logowanie społecznościowe",
+        "sso": "Dostawcy SSO"
+      }
+    },
+    "enterpriseIdentitySetup": {
+      "description": "Skonfiguruj SSO, udostępnianie SCIM, ograniczenia domen, zasady zapraszania oraz domyślne role dla tej organizacji.",
+      "title": "Konfiguracja tożsamości korporacyjnej"
+    }
+  }
+}

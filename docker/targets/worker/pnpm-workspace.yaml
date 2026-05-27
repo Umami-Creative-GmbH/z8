@@ -9,6 +9,16 @@ allowBuilds:
   "protobufjs": true
   "sharp": true
 
+minimumReleaseAgeExclude:
+  - "@turbo/darwin-64@2.9.15"
+  - "@turbo/darwin-arm64@2.9.15"
+  - "@turbo/linux-64@2.9.15"
+  - "@turbo/linux-arm64@2.9.15"
+  - "@turbo/windows-64@2.9.15"
+  - "@turbo/windows-arm64@2.9.15"
+  - "turbo@2.9.15"
+  - "tmp@0.2.6"
+
 overrides:
   "@hono/node-server": "1.19.13"
   "@xmldom/xmldom": "0.8.13"
@@ -34,8 +44,11 @@ overrides:
   "pako": "1.0.11"
   "postcss": "8.5.15"
   "mermaid": "11.15.0"
-  "protobufjs": "8.0.2"
+  "protobufjs": "8.2.0"
+  "samlify": "2.13.0"
   "srvx": "0.11.13"
   "tinyglobby": "0.2.16"
+  "tmp": "0.2.6"
   "undici": "7.24.0"
   "uuid": "14.0.0"
+  "ws@8.18.3": "8.21.0"

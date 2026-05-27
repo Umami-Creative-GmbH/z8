@@ -1,16 +1,15 @@
 "use client";
 
+import { IconArrowLeft, IconArrowRight, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { IconArrowLeft, IconArrowRight, IconLoader2 } from "@tabler/icons-react";
-import { useCallback, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	createScheduledExportAction,
 	updateScheduledExportAction,
 } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -20,23 +19,24 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { StepSchedule } from "./steps/step-schedule";
-import { StepReport } from "./steps/step-report";
-import { StepFilters, type FilterOptions } from "./steps/step-filters";
-import { StepDelivery } from "./steps/step-delivery";
-import { StepReview } from "./steps/step-review";
 import type {
-	ScheduleType,
-	ReportType,
-	DeliveryMethod,
-	DateRangeStrategy,
-} from "@/lib/scheduled-exports/domain/types";
-import type {
-	ScheduledExportReportConfig,
-	ScheduledExportFilters,
 	ScheduledExportCustomOffset,
+	ScheduledExportFilters,
+	ScheduledExportReportConfig,
 } from "@/db/schema/scheduled-export";
+import type {
+	DateRangeStrategy,
+	DeliveryMethod,
+	ReportType,
+	ScheduleType,
+} from "@/lib/scheduled-exports/domain/types";
+import { StepDelivery } from "./steps/step-delivery";
+import { type FilterOptions, StepFilters } from "./steps/step-filters";
+import { StepReport } from "./steps/step-report";
+import { StepReview } from "./steps/step-review";
+import { StepSchedule } from "./steps/step-schedule";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ScheduledExportForm = any;
@@ -148,7 +148,10 @@ export function ScheduledExportDialog({
 							organizationId,
 							...value,
 						})
-				).then((response) => response, () => null);
+				).then(
+					(response) => response,
+					() => null,
+				);
 
 				if (!result) {
 					toast.error(
@@ -164,8 +167,14 @@ export function ScheduledExportDialog({
 							: t("settings.scheduledExports.toast.createSuccess", "Schedule created"),
 						{
 							description: isEditing
-								? t("settings.scheduledExports.toast.updateSuccessDesc", "Your scheduled export has been updated.")
-								: t("settings.scheduledExports.toast.createSuccessDesc", "Your scheduled export has been created and will run according to the schedule."),
+								? t(
+										"settings.scheduledExports.toast.updateSuccessDesc",
+										"Your scheduled export has been updated.",
+									)
+								: t(
+										"settings.scheduledExports.toast.createSuccessDesc",
+										"Your scheduled export has been created and will run according to the schedule.",
+									),
 						},
 					);
 					onOpenChange(false);
@@ -196,7 +205,7 @@ export function ScheduledExportDialog({
 	const formValues = useStore(form.store, (state) => state.values);
 
 	// Step validation
-	const canProceed = useCallback(() => {
+	const canProceed = () => {
 		switch (currentStep) {
 			case 0: // Schedule
 				if (!formValues.name.trim()) return false;
@@ -224,7 +233,7 @@ export function ScheduledExportDialog({
 			default:
 				return false;
 		}
-	}, [currentStep, formValues]);
+	};
 
 	const handleNext = () => {
 		if (currentStep < STEPS.length - 1 && canProceed()) {
@@ -246,10 +255,7 @@ export function ScheduledExportDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
-			<ActionPanelContent
-				aria-describedby="wizard-description"
-				size="wide"
-			>
+			<ActionPanelContent aria-describedby="wizard-description" size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
 						{isEditing
@@ -288,21 +294,17 @@ export function ScheduledExportDialog({
 
 					{/* Step content */}
 					<div className="min-h-[300px]">
-					{currentStep === 0 && <StepSchedule form={form} />}
-					{currentStep === 1 && (
-						<StepReport form={form} payrollConfigs={payrollConfigs} />
-					)}
-					{currentStep === 2 && (
-						<StepFilters form={form} filterOptions={filterOptions} />
-					)}
-					{currentStep === 3 && <StepDelivery form={form} />}
-					{currentStep === 4 && (
-						<StepReview
-							form={form}
-							filterOptions={filterOptions}
-							payrollConfigs={payrollConfigs}
-						/>
-					)}
+						{currentStep === 0 && <StepSchedule form={form} />}
+						{currentStep === 1 && <StepReport form={form} payrollConfigs={payrollConfigs} />}
+						{currentStep === 2 && <StepFilters form={form} filterOptions={filterOptions} />}
+						{currentStep === 3 && <StepDelivery form={form} />}
+						{currentStep === 4 && (
+							<StepReview
+								form={form}
+								filterOptions={filterOptions}
+								payrollConfigs={payrollConfigs}
+							/>
+						)}
 					</div>
 				</ActionPanelBody>
 
@@ -339,11 +341,7 @@ export function ScheduledExportDialog({
 								<IconArrowRight className="ml-2 size-4" aria-hidden="true" />
 							</Button>
 						) : (
-							<Button
-								type="button"
-								onClick={handleSubmit}
-								disabled={isPending}
-							>
+							<Button type="button" onClick={handleSubmit} disabled={isPending}>
 								{isPending ? (
 									<>
 										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />

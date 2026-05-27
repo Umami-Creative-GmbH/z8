@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { getBreakReminderStatus } from "@/app/[locale]/(app)/time-tracking/actions";
 import { Button } from "@/components/ui/button";
@@ -67,7 +67,7 @@ export function SessionReminderPanel({
 		gcTime: 5 * 60 * 1000,
 	});
 
-	const breakStatus = useMemo(() => {
+	const breakStatus = (() => {
 		if (!breakServerData) return null;
 
 		const maxUninterrupted = breakServerData.maxUninterrupted;
@@ -83,7 +83,7 @@ export function SessionReminderPanel({
 			breakRequirement: breakServerData.breakRequirement,
 			show: shouldShowForLimit || shouldShowForRequirement,
 		};
-	}, [breakServerData, elapsedMinutes]);
+	})();
 
 	const {
 		enabled: waterEnabled,

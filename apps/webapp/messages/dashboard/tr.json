@@ -1,0 +1,182 @@
+{
+  "dashboard": {
+    "birthday": {
+      "birthday": "doğum günü",
+      "birthdays": "doğum günleri",
+      "celebration": "kutlama",
+      "celebrations": "kutlamalar",
+      "count-today": "Bugün {count} {birthday}!",
+      "description": "Önümüzdeki 30 gün içindeki kutlamalar",
+      "description-count": "Önümüzdeki 30 gün içinde {count} {celebration}",
+      "error": "Yaklaşan doğum günleri yüklenemedi",
+      "in-days": "{days} gün içinde",
+      "more-celebrations": "+{count} kutlama daha",
+      "title": "Yaklaşan Doğum Günleri",
+      "today": "Bugün!",
+      "tomorrow": "Yarın"
+    },
+    "customize": {
+      "empty-description": "Bireysel araçları yeniden etkinleştirmek için kontrol paneli özelleştirme simgesini kullanın veya her aracı tekrar göstermek için düzeni sıfırlayın.",
+      "empty-title": "Tüm kontrol paneli araçları gizli",
+      "move-down": "{widget} öğesini aşağı taşı",
+      "move-up": "{widget} öğesini yukarı taşı",
+      "reset": "Düzeni sıfırla",
+      "title": "Kontrol paneli araçları",
+      "trigger": "Paneli özelleştir"
+    },
+    "hydration": {
+      "add-glass": "{count} bardak ekle",
+      "add-glasses": "{count} bardak ekle",
+      "description": "Günlük su tüketiminizi takip edin",
+      "error": "Hidrasyon istatistikleri yüklenemedi",
+      "log-error": "Su tüketimi kaydedilemedi",
+      "of-goal": "/ {goal}",
+      "title": "Hidrasyon"
+    },
+    "layout": {
+      "saved": "Pano düzeni kaydedildi",
+      "saveFailed": "Pano düzeni kaydedilemedi",
+      "saveFailedDescription": "Değişiklikleriniz kaydedilemedi. Lütfen tekrar deneyin."
+    },
+    "managed-employees": {
+      "direct-reports": "{count} doğrudan rapor",
+      "error": "Yönetilen çalışanlar yüklenemedi",
+      "no-reports": "Henüz doğrudan raporlanan kimse yok",
+      "no-reports-description": "Atandıklarında ekip üyelerinizi burada göreceksiniz",
+      "people-you-manage": "Yönettikleriniz",
+      "title": "Ekibiniz",
+      "view-all": "Tümünü Görüntüle",
+      "view-all-members": "{count} ekip üyesinin tümünü görüntüle"
+    },
+    "manager-today": {
+      "all-clear": "Şu anda işaretlenmiş bir yönetici eylemi yok.",
+      "description": "Küçük sorunlar bordroyu veya kapsamı etkilemeden önce bugünü gözden geçirin.",
+      "error": "Yönetici bilgilendirme sayıları yüklenemedi.",
+      "metric-approvals": "Onaylar",
+      "metric-clock-ins": "Girişler",
+      "metric-critical": "Kritik",
+      "metric-risks": "Riskler",
+      "open": "Özeti Aç",
+      "title": "Yönetici Bugün"
+    },
+    "pending-approvals": {
+      "absence-requests": "İzin Talepleri",
+      "awaiting-approval": "Onayınızı bekliyor",
+      "correction": "Düzeltme",
+      "description": "Kararınızı bekleyen talepler",
+      "error": "Bekleyen onaylar yüklenemedi",
+      "more-requests": "+{count} talep daha",
+      "pending-requests": "{count} bekleyen {request}",
+      "request": "talep",
+      "requests": "talepler",
+      "requires-attention": "Acil dikkat gerektirir",
+      "review-all": "Tüm Onayları İncele",
+      "time-corrections": "Zaman Düzeltmeleri",
+      "title": "Bekleyen Onaylar"
+    },
+    "presence": {
+      "fixedOfficeDays": "Sabit ofis günleri: {days}",
+      "flexibleOfficePolicy": "Bu dönem için esnek ofis politikası",
+      "homeOfficeLeft": "Kalan evden çalışma hakkı",
+      "officeDaysWarning": "Ofis gereksinimi kalan iş günlerini aşıyor",
+      "officeStillRequired": "Ofis hala gerekli",
+      "periodDescription": "Bu dönem",
+      "unavailable": "Varlık politikası kullanılamıyor.",
+      "workLocation": "İş yeri"
+    },
+    "quick-stats": {
+      "behind": "Geride",
+      "description": "Haftalık ve aylık ilerlemeniz",
+      "error": "Hızlı istatistikler yüklenemedi",
+      "good-pace": "İyi tempo",
+      "hours": "saat",
+      "on-track": "Yolunda",
+      "progress": "{expected} saat üzerinden {actual} saat ({percent}%)",
+      "this-month": "Bu Ay",
+      "this-week": "Bu Hafta",
+      "title": "Zaman Takibi"
+    },
+    "recently-approved": {
+      "absence": "İzin",
+      "all-caught-up": "Her şey güncel!",
+      "approved-recently": "Son zamanlarda {count} {request} onaylandı",
+      "by": "{name} tarafından",
+      "description": "Son onaylanan talepler",
+      "description-count": "Son {count} onaylanan {request}",
+      "error": "Son onaylanan talepler yüklenemedi",
+      "more-approved": "+{count} onay daha",
+      "request": "talep",
+      "requests": "talepler",
+      "time": "Zaman",
+      "title": "Son Onaylananlar",
+      "view-all": "Tüm Onayları Görüntüle"
+    },
+    "team-overview": {
+      "active-count": "Toplam {total} çalışandan {active} tanesi aktif ({percent}%)",
+      "active-employees": "Aktif Çalışanlar",
+      "avg-hours": "Ort. Saat",
+      "description": "Ekip istatistiklerine bir bakış",
+      "employees-button": "Çalışanlar",
+      "error": "Ekip istatistikleri yüklenemedi",
+      "per-week": "/hafta",
+      "teams": "Ekipler",
+      "teams-button": "Ekipler",
+      "title": "Organizasyon"
+    },
+    "upcoming-time-off": {
+      "absence": "devamsızlık",
+      "absences": "devamsızlıklar",
+      "day": "gün",
+      "days": "gün",
+      "description": "Planlanmış ekip izinleri",
+      "description-count": "Sıradaki {count} planlanmış {absence}",
+      "error": "Yaklaşan izinler yüklenemedi",
+      "title": "Yaklaşan İzinler",
+      "today": "Bugün",
+      "tomorrow": "Yarın",
+      "view-calendar": "Takvimin Tamamını Görüntüle"
+    },
+    "vacation": {
+      "available": "{days} kullanılabilir",
+      "carryover": "Devreden",
+      "carryover-days": "{days} gün",
+      "days-remaining": "kalan gün",
+      "description": "{year} tatil günü",
+      "error": "Tatil bakiyesi yüklenemedi",
+      "expires-in": "{days} gün içinde sona eriyor",
+      "label-available": "Kullanılabilir",
+      "label-pending": "Beklemede",
+      "label-used": "Kullanılan",
+      "no-policy": "Bu yıl için yapılandırılmış bir tatil politikası yok",
+      "pending": "{days} beklemede",
+      "percent-used": "%{percent} kullanıldı",
+      "title": "Tatil Bakiyesi",
+      "total": "Toplam {days}",
+      "used": "{days} kullanıldı"
+    },
+    "whos-out": {
+      "error": "Bugünkü devamsızlıklar yüklenemedi",
+      "everyone-in": "Bugün herkes ofiste",
+      "everyones-in": "Herkes burada!",
+      "full-team": "Tüm ekip müsait!",
+      "member": "üye",
+      "members": "üyeler",
+      "members-out": "{count} ekip {member} izinli",
+      "more-members": "+{count} ekip üyesi daha",
+      "more-returning": "+{count} daha",
+      "out-count": "{count} kişi izinli",
+      "out-today": "Bugün İzinli",
+      "returning-tomorrow": "Yarın Dönüyor",
+      "returns-tomorrow": "Yarın dönüyor",
+      "team-availability": "Ekip müsaitliği",
+      "title": "Bugün Kimler İzinli",
+      "until-date": "{date} tarihine kadar",
+      "view-calendar": "Takvimin Tamamını Görüntüle"
+    },
+    "widgets": {
+      "dragToReorder": "Widget'ı yeniden sıralamak için sürükleyin",
+      "moving": "Widget taşınıyor…",
+      "refresh": "Yenile"
+    }
+  }
+}

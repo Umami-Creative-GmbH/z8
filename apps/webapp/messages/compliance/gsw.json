@@ -1,0 +1,140 @@
+{
+  "compliance": {
+    "commandCenter": {
+      "coverage": {
+        "accessControls": "Zuegangskontrolle fasse nur sensibli Audit-Log-Ereignis zäme, wo scho hüt erfasst werded.",
+        "auditEvidence": "Audit-Beleg nutzed d'Live-Audit-Export-Konfiguration, Audit-Pack-Aafroge und aktuelli Prüefigsergebnis.",
+        "workforceCompliance": "D'Compliance vo de Belegschaft basiert uf de Verletzige vo de Arbetsrichtlinie i de letschte 7 Täg und de offene Uusnahme-Aafroge."
+      },
+      "events": {
+        "auditEvidenceFailures": {
+          "description": "Kürzlich fehlgschlagni Jobs: {failedRequests}; kürzlich ungültigi Prüefige: {invalidVerifications}",
+          "title": "Fehler bi Audit-Beleg gfunde"
+        },
+        "auditPackFailure": {
+          "description": "Kürzlich fehlgschlagni Jobs: {failedRequests}",
+          "title": "Generierig vom Audit-Pack isch fehlgschlage"
+        },
+        "auditVerificationFailure": {
+          "description": "Kürzlich ungültigi Prüefige: {invalidVerifications}",
+          "title": "Audit-Prüefig fehlgschlage"
+        },
+        "sensitiveAction": {
+          "description": "{action} uf {entityType}",
+          "title": "Sensibli Aktion: {action}"
+        },
+        "workforceFindings": {
+          "description": "Ruehziit: {restPeriodViolations}, Anderi Richtlinie: {generalPolicyViolations}, Überziit: {overtimeViolations}",
+          "title": "Aktuelli Erkenntnis zur Compliance vo de Belegschaft"
+        }
+      },
+      "facts": {
+        "access": {
+          "latestSensitiveAction": "Neuscht sensibli Aktion: {action}",
+          "latestSensitiveActionNone": "Neuscht sensibli Aktion: kei",
+          "noSensitiveEvents": "I de letschte 24 Stunde sind kei sensibli Kontrolländerige protokolliert worde.",
+          "recentSensitiveEvents": "Kürzlich sensibli Ereignis: {count}"
+        },
+        "audit": {
+          "activeSigningKey": "Aktive Signierschlüssel: {fingerprint}",
+          "lastSuccessfulAuditPack": "Letschts erfolgriichs Audit-Pack: {timestamp}",
+          "missingSigningKey": "Signierschlüssel sind no nöd konfiguriert.",
+          "noSuccessfulAuditPack": "Es isch no kei erfolgriichs Audit-Pack ufgzeichnet worde.",
+          "recentFailedJobs": "Kürzlich fehlgschlagni Audit-Pack-Jobs: {count}",
+          "recentInvalidVerifications": "Kürzlich ungültigi Prüefigsversuech: {count}"
+        },
+        "unavailable": {
+          "accessControls": "Zuegangskontroll-Ereignis händ nöd chönne glade werde.",
+          "auditEvidence": "Audit-Belegdate händ nöd chönne glade werde.",
+          "workforceCompliance": "Compliance-Date vo de Belegschaft händ nöd chönne glade werde."
+        },
+        "workforce": {
+          "generalPolicyViolations": "Anderi Richtlinienverstöss: {count}",
+          "overtimeViolations": "Überziitverstöss: {count}",
+          "pendingExceptions": "Offeni Uusnahme: {count}",
+          "restPeriodViolations": "Ruehziitverstöss: {count}"
+        }
+      },
+      "links": {
+        "inspectCompliance": "Compliance prüefe",
+        "inspectInAuditLog": "Im Audit-Log prüefe",
+        "openAuditExport": "Audit-Export öffne",
+        "openAuditLog": "Audit-Protokoll öffne",
+        "openComplianceSettings": "Compliance-Iistellige öffne",
+        "reviewAuditExport": "Audit-Export überprüefe"
+      },
+      "sections": {
+        "accessControls": {
+          "headline": {
+            "critical": "Sensibli Änderige a de Kontrollene bruched e Überprüefig",
+            "healthy": "Es sind chürzlich kei sensible Änderige a de Kontrollene protokolliert worde",
+            "warning": "Es sind chürzlich Änderige a de Kontrollene gmäldet worde"
+          }
+        },
+        "auditEvidence": {
+          "headline": {
+            "critical": "Audit-Nachwiis bruched Ufmerksamkeit",
+            "healthy": "Audit-Nachwiis-Signal gsehnd guet us",
+            "warning": "Audit-Nachwiis sind nur zum Teil bereit"
+          }
+        },
+        "unavailable": {
+          "headline": "Signal vorübergehend nöd verfügbar"
+        },
+        "workforceCompliance": {
+          "headline": {
+            "critical": "Verstöss gäge d'Personalrichtlinie bruched e Überprüefig",
+            "healthy": "Es sind chürzlich kei Problem mit de Personalrichtlinie gmäldet worde",
+            "warning": "D'Personal-Compliance driftet ab"
+          }
+        }
+      },
+      "status": {
+        "critical": "kritisch",
+        "healthy": "gsund",
+        "unavailable": "nöd verfügbar",
+        "warning": "Warnig"
+      },
+      "summary": {
+        "critical": "Kritischi Compliance-Risike bruched Ufmerksamkeit",
+        "healthy": "Kei aktivi Problem i de überwachte Signal gfunde",
+        "unavailable": "Einigi Compliance-Signal sind nöd verfügbar",
+        "warning": "Compliance-Signal bruched e Überprüefig"
+      }
+    },
+    "exception": {
+      "approved": "Ausnahme genehmigt",
+      "approvedDescription": "Die Compliance-Ausnahme wurde genehmigt.",
+      "approveFailed": "Genehmigung fehlgeschlagen",
+      "plannedDuration": "Geplant",
+      "plannedDurationHelp": "Schätzen Sie, wie viel zusätzliche Zeit Sie über das Limit hinaus benötigen.",
+      "reason": "Grund für die Ausnahme",
+      "reasonPlaceholder": "Erklären Sie, warum Sie diese Ausnahme benötigen (z. B. dringende Projektfrist, wichtiges Kundentreffen)...",
+      "reasonRequired": "Grund erforderlich",
+      "reasonRequiredDescription": "Bitte geben Sie einen Grund für Ihren Ausnahmeantrag an.",
+      "rejectDescription": "Geben Sie einen Grund für die Ablehnung dieses Ausnahmeantrags an (optional)",
+      "rejected": "Ausnahme abgelehnt",
+      "rejectedDescription": "Die Compliance-Ausnahme wurde abgelehnt.",
+      "rejectFailed": "Ablehnung fehlgeschlagen",
+      "rejectionPlaceholder": "Grund für die Ablehnung dieser Ausnahme eingeben...",
+      "rejectionReason": "Grund für die Ablehnung",
+      "rejectTitle": "Ausnahmeantrag ablehnen",
+      "requestDescription": "Beantragen Sie eine Vorabgenehmigung bei Ihrem Vorgesetzten, um trotz Compliance-Beschränkungen fortzufahren. Genehmigte Ausnahmen sind 24 Stunden lang gültig.",
+      "requestedAt": "Beantragt",
+      "requestFailed": "Anfrage fehlgeschlagen",
+      "requestSubmitted": "Ausnahmeantrag eingereicht",
+      "requestSubmittedDescription": "Ihr Vorgesetzter wird benachrichtigt und kann Ihren Antrag genehmigen oder ablehnen.",
+      "requestTitle": "Compliance-Ausnahme beantragen",
+      "submit": "Antrag einreichen",
+      "type": "Ausnahmetyp"
+    },
+    "hasApprovedException": "Sie haben eine genehmigte Ausnahme. Sie können fortfahren.",
+    "moreAlerts": "mehr",
+    "noExceptions": "Keine ausstehenden Ausnahmeanträge",
+    "pendingExceptions": "Ausstehende Ausnahmeanträge",
+    "pendingExceptionsDescription": "Überprüfen Sie Ausnahmeanträge, die Ihre Genehmigung erfordern",
+    "requestException": "Ausnahme beantragen",
+    "restPeriodMessage": "Sie benötigen noch {{time}} Ruhezeit, bevor Sie sich einstempeln können. Nächste erlaubte Einstempelzeit: {{nextTime}}",
+    "restPeriodRequired": "Ruhezeit erforderlich"
+  }
+}

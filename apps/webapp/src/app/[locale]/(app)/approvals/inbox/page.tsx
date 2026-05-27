@@ -3,7 +3,7 @@
 import { IconCheck, IconInbox, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useMemo, useState } from "react";
+import { Suspense, useState } from "react";
 import { toast } from "sonner";
 import {
 	ActionPanel,
@@ -115,26 +115,23 @@ function ApprovalInboxContent() {
 	const bulkRejectMutation = useBulkReject();
 
 	// Flatten pages into single array
-	const items = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data?.pages]);
+	const items = data?.pages.flatMap((page) => page.items) ?? [];
 	const totalCount = data?.pages[0]?.total ?? 0;
-	const pendingItems = useMemo(() => items.filter((item) => item.status === "pending"), [items]);
-	const fastLaneGroups = useMemo(() => groupApprovalFastLanes(pendingItems), [pendingItems]);
-	const sprintItems = useMemo(() => sortSprintApprovals(pendingItems), [pendingItems]);
+	const pendingItems = items.filter((item) => item.status === "pending");
+	const fastLaneGroups = groupApprovalFastLanes(pendingItems);
+	const sprintItems = sortSprintApprovals(pendingItems);
 
 	// Selection handlers - use functional setState for stable callbacks
-	const handleSelectAll = useCallback(
-		(checked: boolean) => {
-			if (checked) {
-				// Need items for select all - this is acceptable
-				setSelectedIds(new Set(items.map((item) => item.id)));
-			} else {
-				setSelectedIds(new Set());
-			}
-		},
-		[items],
-	);
+	const handleSelectAll = (checked: boolean) => {
+		if (checked) {
+			// Need items for select all - this is acceptable
+			setSelectedIds(new Set(items.map((item) => item.id)));
+		} else {
+			setSelectedIds(new Set());
+		}
+	};
 
-	const handleSelectItem = useCallback((id: string, checked: boolean) => {
+	const handleSelectItem = (id: string, checked: boolean) => {
 		setSelectedIds((prev) => {
 			const newSelection = new Set(prev);
 			if (checked) {
@@ -144,9 +141,9 @@ function ApprovalInboxContent() {
 			}
 			return newSelection;
 		});
-	}, []);
+	};
 
-	const handleBulkApprove = useCallback(async () => {
+	const handleBulkApprove = async () => {
 		if (selectedIds.size === 0) return;
 
 		try {
@@ -169,9 +166,9 @@ function ApprovalInboxContent() {
 				),
 			);
 		}
-	}, [selectedIds, bulkApproveMutation, t, refetch]);
+	};
 
-	const handleBulkReject = useCallback(async () => {
+	const handleBulkReject = async () => {
 		const reason = bulkRejectReason.trim();
 		if (selectedIds.size === 0 || !reason) return;
 
@@ -200,80 +197,74 @@ function ApprovalInboxContent() {
 				),
 			);
 		}
-	}, [bulkRejectReason, bulkRejectMutation, refetch, selectedIds, t]);
+	};
 
-	const handleFastLaneApprove = useCallback(
-		async (approvalIds: string[]) => {
-			if (approvalIds.length === 0) return;
+	const handleFastLaneApprove = async (approvalIds: string[]) => {
+		if (approvalIds.length === 0) return;
 
-			try {
-				const result = await bulkApproveMutation.mutateAsync(approvalIds);
-				handleBulkDecisionToasts(
-					t,
-					result,
-					"approvals:approvals.bulkApproveSuccess",
-					"approved",
-					"approvals:approvals.bulkApproveFailed",
-				);
+		try {
+			const result = await bulkApproveMutation.mutateAsync(approvalIds);
+			handleBulkDecisionToasts(
+				t,
+				result,
+				"approvals:approvals.bulkApproveSuccess",
+				"approved",
+				"approvals:approvals.bulkApproveFailed",
+			);
 
-				setSelectedIds(new Set());
-				refetch();
-			} catch (error) {
-				toast.error(
-					getErrorMessage(
-						error,
-						t("approvals:approvals.bulkApproveRequestFailed", "Bulk approve failed"),
-					),
-				);
-			}
-		},
-		[bulkApproveMutation, refetch, t],
-	);
+			setSelectedIds(new Set());
+			refetch();
+		} catch (error) {
+			toast.error(
+				getErrorMessage(
+					error,
+					t("approvals:approvals.bulkApproveRequestFailed", "Bulk approve failed"),
+				),
+			);
+		}
+	};
 
-	const handleFastLaneReject = useCallback(
-		async (approvalIds: string[], reason: string) => {
-			const trimmedReason = reason.trim();
-			if (approvalIds.length === 0 || !trimmedReason) return;
+	const handleFastLaneReject = async (approvalIds: string[], reason: string) => {
+		const trimmedReason = reason.trim();
+		if (approvalIds.length === 0 || !trimmedReason) return;
 
-			try {
-				const result = await bulkRejectMutation.mutateAsync({
-					approvalIds,
-					reason: trimmedReason,
-				});
-				handleBulkDecisionToasts(
-					t,
-					result,
-					"approvals:approvals.bulkRejectSuccess",
-					"rejected",
-					"approvals:approvals.bulkRejectFailed",
-				);
+		try {
+			const result = await bulkRejectMutation.mutateAsync({
+				approvalIds,
+				reason: trimmedReason,
+			});
+			handleBulkDecisionToasts(
+				t,
+				result,
+				"approvals:approvals.bulkRejectSuccess",
+				"rejected",
+				"approvals:approvals.bulkRejectFailed",
+			);
 
-				setSelectedIds(new Set());
-				refetch();
-			} catch (error) {
-				toast.error(
-					getErrorMessage(
-						error,
-						t("approvals:approvals.bulkRejectRequestFailed", "Bulk reject failed"),
-					),
-				);
-			}
-		},
-		[bulkRejectMutation, refetch, t],
-	);
+			setSelectedIds(new Set());
+			refetch();
+		} catch (error) {
+			toast.error(
+				getErrorMessage(
+					error,
+					t("approvals:approvals.bulkRejectRequestFailed", "Bulk reject failed"),
+				),
+			);
+		}
+	};
 
-	const handleOpenDetail = useCallback((approval: UnifiedApprovalItem) => {
+	const handleOpenDetail = (approval: UnifiedApprovalItem) => {
 		setDetailApproval(approval);
-	}, []);
+	};
 
-	const handleCloseDetail = useCallback(() => {
+	const handleCloseDetail = () => {
 		setDetailApproval(null);
-	}, []);
+	};
 
-	const handleApprovalActioned = useCallback(() => {
+	const handleApprovalActioned = () => {
 		refetch();
 		setSelectedIds(new Set());
-	}, [refetch]);
+	};
 
 	const isBulkActionPending = bulkApproveMutation.isPending || bulkRejectMutation.isPending;
 

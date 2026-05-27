@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
-import { useOrganization } from "./use-organization";
 import type { Action, Subject } from "@/lib/authorization/types";
+import { useOrganization } from "./use-organization";
 
 /**
  * Permission flags that can be sent from the server.
@@ -168,72 +167,63 @@ export function useAbility(permissions: PermissionFlags = EMPTY_PERMISSIONS): Ab
 	const { role, isAdmin, isManager, isManagerOrAbove, isLoading } = useOrganization();
 
 	// Build a simple can() function based on role
-	const can = useCallback(
-		(action: Action, subject: Subject): boolean => {
-			// If no role, user has no permissions
-			if (!role) return false;
+	const can = (action: Action, subject: Subject): boolean => {
+		// If no role, user has no permissions
+		if (!role) return false;
 
-			// Admins can do everything at org level
-			if (isAdmin) {
-				// Special case: platform-level subjects require platform admin
-				if (subject === "Platform" || subject === "User") {
-					return false; // Can't check platform admin from client
-				}
+		// Admins can do everything at org level
+		if (isAdmin) {
+			// Special case: platform-level subjects require platform admin
+			if (subject === "Platform" || subject === "User") {
+				return false; // Can't check platform admin from client
+			}
+			return true;
+		}
+
+		// Managers can manage their teams and workforce
+		if (isManager || isManagerOrAbove) {
+			// Check manager subjects
+			if (MANAGER_SUBJECTS.includes(subject)) {
+				return ["read", "create", "update", "approve"].includes(action);
+			}
+
+			// Managers can read most things
+			if (action === "read") {
+				return !["OrgBilling", "OrgWebhooks", "Platform", "User"].includes(subject);
+			}
+		}
+
+		// All authenticated employees can manage their own stuff
+		if (SELF_SERVICE_SUBJECTS.includes(subject)) {
+			// For self-service, we only allow certain actions
+			if (["read", "create", "update"].includes(action)) {
 				return true;
 			}
+		}
 
-			// Managers can manage their teams and workforce
-			if (isManager || isManagerOrAbove) {
-				// Check manager subjects
-				if (MANAGER_SUBJECTS.includes(subject)) {
-					return ["read", "create", "update", "approve"].includes(action);
-				}
+		// Check specific permission flags if provided
+		const flag = PERMISSION_FLAG_MAP[subject];
+		if (flag && permissions[flag] === true) {
+			return true;
+		}
 
-				// Managers can read most things
-				if (action === "read") {
-					return !["OrgBilling", "OrgWebhooks", "Platform", "User"].includes(subject);
-				}
-			}
+		return false;
+	};
 
-			// All authenticated employees can manage their own stuff
-			if (SELF_SERVICE_SUBJECTS.includes(subject)) {
-				// For self-service, we only allow certain actions
-				if (["read", "create", "update"].includes(action)) {
-					return true;
-				}
-			}
+	const cannot = (action: Action, subject: Subject): boolean => {
+		return !can(action, subject);
+	};
 
-			// Check specific permission flags if provided
-			const flag = PERMISSION_FLAG_MAP[subject];
-			if (flag && permissions[flag] === true) {
-				return true;
-			}
-
-			return false;
-		},
-		[role, isAdmin, isManager, isManagerOrAbove, permissions],
-	);
-
-	const cannot = useCallback(
-		(action: Action, subject: Subject): boolean => {
-			return !can(action, subject);
-		},
-		[can],
-	);
-
-	return useMemo(
-		() => ({
-			can,
-			cannot,
-			role,
-			isAdmin,
-			isManager,
-			isManagerOrAbove,
-			permissions,
-			isLoading,
-		}),
-		[can, cannot, role, isAdmin, isManager, isManagerOrAbove, permissions, isLoading],
-	);
+	return {
+		can,
+		cannot,
+		role,
+		isAdmin,
+		isManager,
+		isManagerOrAbove,
+		permissions,
+		isLoading,
+	};
 }
 
 /**

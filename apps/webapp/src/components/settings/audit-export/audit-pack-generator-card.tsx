@@ -12,7 +12,7 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
 	type AuditPackRequestInfo,
@@ -81,33 +81,27 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 	const [activeJobId, setActiveJobId] = useState<string | null>(null);
 	const [downloadingRequestId, setDownloadingRequestId] = useState<string | null>(null);
 
-	const loadRequests = useCallback(
-		async (showLoading = true) => {
-			if (showLoading) {
-				setIsLoadingRequests(true);
+	const loadRequests = async (showLoading = true) => {
+		if (showLoading) {
+			setIsLoadingRequests(true);
+		}
+		try {
+			const result = await getAuditPackRequestsAction(organizationId, 10);
+			if (result.success) {
+				setRequests(result.data);
+			} else {
+				toast.error(
+					result.error ||
+						t("settings.auditExport.auditPack.requestsError", "Failed to load audit pack requests"),
+				);
 			}
-			try {
-				const result = await getAuditPackRequestsAction(organizationId, 10);
-				if (result.success) {
-					setRequests(result.data);
-				} else {
-					toast.error(
-						result.error ||
-							t(
-								"settings.auditExport.auditPack.requestsError",
-								"Failed to load audit pack requests",
-							),
-					);
-				}
-			} catch (error) {
-				toast.error(t("common.unexpectedError", "An unexpected error occurred"));
-				console.error("Load audit pack requests error:", error);
-			}
+		} catch (error) {
+			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
+			console.error("Load audit pack requests error:", error);
+		}
 
-			setIsLoadingRequests(false);
-		},
-		[organizationId, t],
-	);
+		setIsLoadingRequests(false);
+	};
 
 	useEffect(() => {
 		void Promise.resolve().then(() => loadRequests(false));

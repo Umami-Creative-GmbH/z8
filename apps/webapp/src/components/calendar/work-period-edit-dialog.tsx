@@ -2,7 +2,7 @@
 
 import { IconScissors, IconTrash } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useReducer } from "react";
+import { useReducer } from "react";
 import { toast } from "sonner";
 import {
 	updateWorkPeriodNotes,
@@ -115,7 +115,7 @@ export function WorkPeriodEditDialog({
 	const approvalStatus = metadata.approvalStatus ?? "approved";
 	const [state, dispatch] = useReducer(workPeriodEditReducer, metadata, createInitialState);
 
-	const handleSaveNotes = useCallback(async () => {
+	const handleSaveNotes = async () => {
 		dispatch({ type: "setSavingNotes", value: true });
 		const result = await updateWorkPeriodNotes(event.id, state.notes.trim()).catch(() => null);
 
@@ -130,9 +130,9 @@ export function WorkPeriodEditDialog({
 		}
 
 		dispatch({ type: "setSavingNotes", value: false });
-	}, [event.id, onNotesUpdated, state.notes, t]);
+	};
 
-	const handleSaveProject = useCallback(async () => {
+	const handleSaveProject = async () => {
 		dispatch({ type: "setSavingProject", value: true });
 		const result = await updateWorkPeriodProject(event.id, state.selectedProjectId ?? null).catch(
 			() => null,
@@ -149,7 +149,7 @@ export function WorkPeriodEditDialog({
 		}
 
 		dispatch({ type: "setSavingProject", value: false });
-	}, [event.id, onNotesUpdated, state.selectedProjectId, t]);
+	};
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>

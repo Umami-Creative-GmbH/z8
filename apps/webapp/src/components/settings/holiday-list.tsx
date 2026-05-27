@@ -4,7 +4,7 @@ import { IconLoader2, IconPencil, IconPlus, IconTrash } from "@tabler/icons-reac
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	bulkDeleteHolidays,
@@ -43,7 +43,12 @@ interface HolidayListProps {
 	onEditClick: (holiday: HolidayWithCategory) => void;
 }
 
-export function HolidayList({ organizationId, canManage, onAddClick, onEditClick }: HolidayListProps) {
+export function HolidayList({
+	organizationId,
+	canManage,
+	onAddClick,
+	onEditClick,
+}: HolidayListProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -175,7 +180,7 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 	};
 
 	// Build filter config from categories
-	const filterConfig: FilterConfig[] = useMemo(() => {
+	const filterConfig: FilterConfig[] = (() => {
 		const categoryOptions = [
 			{ label: t("common.all", "All"), value: "all" },
 			...categories.map((cat) => ({ label: cat.name, value: cat.id })),
@@ -189,62 +194,61 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 				defaultValue: "all",
 			},
 		];
-	}, [categories, t]);
+	})();
 
 	// Column definitions
-	const columns = useMemo<ColumnDef<HolidayWithCategory>[]>(
-		() => [
-			...(canManage ? [createSelectionColumn<HolidayWithCategory>()] : []),
-			{
-				accessorKey: "name",
-				header: ({ column }) => (
-					<DataTableColumnHeader column={column} title={t("settings.holidays.list.name", "Name")} />
+	const columns = [
+		...(canManage ? [createSelectionColumn<HolidayWithCategory>()] : []),
+		{
+			accessorKey: "name",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title={t("settings.holidays.list.name", "Name")} />
+			),
+			cell: ({ row }) => (
+				<div>
+					<div className="font-medium">{row.original.name}</div>
+					{row.original.description && (
+						<div className="text-sm text-muted-foreground">{row.original.description}</div>
+					)}
+				</div>
+			),
+		},
+		{
+			accessorKey: "category",
+			header: t("settings.holidays.list.category", "Category"),
+			cell: ({ row }) => (
+				<div className="flex items-center gap-2">
+					{row.original.category.color && (
+						<div
+							className="size-3 rounded-full border"
+							style={{ backgroundColor: row.original.category.color }}
+						/>
+					)}
+					<span className="text-sm">{row.original.category.name}</span>
+				</div>
+			),
+		},
+		{
+			accessorKey: "startDate",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title={t("settings.holidays.list.date", "Date")} />
+			),
+			cell: ({ row }) => formatDateRange(row.original.startDate, row.original.endDate),
+		},
+		{
+			accessorKey: "recurrenceType",
+			header: t("settings.holidays.list.recurrence", "Recurrence"),
+			cell: ({ row }) =>
+				row.original.recurrenceType === "none" ? (
+					<span className="text-sm text-muted-foreground">
+						{t("settings.holidays.recurrence.none", "One-time")}
+					</span>
+				) : (
+					<Badge variant="secondary">{t("settings.holidays.recurrence.yearly", "Yearly")}</Badge>
 				),
-				cell: ({ row }) => (
-					<div>
-						<div className="font-medium">{row.original.name}</div>
-						{row.original.description && (
-							<div className="text-sm text-muted-foreground">{row.original.description}</div>
-						)}
-					</div>
-				),
-			},
-			{
-				accessorKey: "category",
-				header: t("settings.holidays.list.category", "Category"),
-				cell: ({ row }) => (
-					<div className="flex items-center gap-2">
-						{row.original.category.color && (
-							<div
-								className="size-3 rounded-full border"
-								style={{ backgroundColor: row.original.category.color }}
-							/>
-						)}
-						<span className="text-sm">{row.original.category.name}</span>
-					</div>
-				),
-			},
-			{
-				accessorKey: "startDate",
-				header: ({ column }) => (
-					<DataTableColumnHeader column={column} title={t("settings.holidays.list.date", "Date")} />
-				),
-				cell: ({ row }) => formatDateRange(row.original.startDate, row.original.endDate),
-			},
-			{
-				accessorKey: "recurrenceType",
-				header: t("settings.holidays.list.recurrence", "Recurrence"),
-				cell: ({ row }) =>
-					row.original.recurrenceType === "none" ? (
-						<span className="text-sm text-muted-foreground">
-							{t("settings.holidays.recurrence.none", "One-time")}
-						</span>
-					) : (
-						<Badge variant="secondary">{t("settings.holidays.recurrence.yearly", "Yearly")}</Badge>
-					),
-			},
-			...(canManage
-				? [
+		},
+		...(canManage
+			? [
 					{
 						id: "actions",
 						header: () => (
@@ -276,10 +280,8 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 						),
 					},
 				]
-				: []),
-		],
-		[t, canManage, onEditClick, deleteMutation.isPending, holidayToDelete?.id],
-	);
+			: []),
+	];
 
 	const selectedCount = Object.keys(rowSelection).length;
 
@@ -296,7 +298,11 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 						</Button>
 					) : null}
 				</div>
-				<DataTableSkeleton columnCount={canManage ? 5 : 4} rowCount={10} showSelection={canManage} />
+				<DataTableSkeleton
+					columnCount={canManage ? 5 : 4}
+					rowCount={10}
+					showSelection={canManage}
+				/>
 			</div>
 		);
 	}
@@ -414,69 +420,73 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 				/>
 			</div>
 
-			{canManage ? <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.holidays.delete.title", "Delete Holiday")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.holidays.delete.description",
-								'Are you sure you want to delete "{name}"? This action cannot be undone.',
-								{ name: holidayToDelete?.name || "" },
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleteMutation.isPending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDeleteConfirm}
-							disabled={deleteMutation.isPending}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog> : null}
+			{canManage ? (
+				<AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>
+								{t("settings.holidays.delete.title", "Delete Holiday")}
+							</AlertDialogTitle>
+							<AlertDialogDescription>
+								{t(
+									"settings.holidays.delete.description",
+									'Are you sure you want to delete "{name}"? This action cannot be undone.',
+									{ name: holidayToDelete?.name || "" },
+								)}
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel disabled={deleteMutation.isPending}>
+								{t("common.cancel", "Cancel")}
+							</AlertDialogCancel>
+							<AlertDialogAction
+								onClick={handleDeleteConfirm}
+								disabled={deleteMutation.isPending}
+								className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							>
+								{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+								{t("common.delete", "Delete")}
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
+			) : null}
 
-			{canManage ? <AlertDialog open={bulkDeleteConfirmOpen} onOpenChange={setBulkDeleteConfirmOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.holidays.bulkDelete.title", "Delete Multiple Holidays")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.holidays.bulkDelete.description",
-								"Are you sure you want to delete {count} holidays? This action cannot be undone.",
-								{ count: selectedCount },
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={bulkDeleteMutation.isPending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleBulkDeleteConfirm}
-							disabled={bulkDeleteMutation.isPending}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{bulkDeleteMutation.isPending && (
-								<IconLoader2 className="mr-2 size-4 animate-spin" />
-							)}
-							{t("settings.holidays.bulkDelete.confirm", "Delete {count} Holidays", {
-								count: selectedCount,
-							})}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog> : null}
+			{canManage ? (
+				<AlertDialog open={bulkDeleteConfirmOpen} onOpenChange={setBulkDeleteConfirmOpen}>
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>
+								{t("settings.holidays.bulkDelete.title", "Delete Multiple Holidays")}
+							</AlertDialogTitle>
+							<AlertDialogDescription>
+								{t(
+									"settings.holidays.bulkDelete.description",
+									"Are you sure you want to delete {count} holidays? This action cannot be undone.",
+									{ count: selectedCount },
+								)}
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel disabled={bulkDeleteMutation.isPending}>
+								{t("common.cancel", "Cancel")}
+							</AlertDialogCancel>
+							<AlertDialogAction
+								onClick={handleBulkDeleteConfirm}
+								disabled={bulkDeleteMutation.isPending}
+								className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							>
+								{bulkDeleteMutation.isPending && (
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
+								)}
+								{t("settings.holidays.bulkDelete.confirm", "Delete {count} Holidays", {
+									count: selectedCount,
+								})}
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
+			) : null}
 		</>
 	);
 }

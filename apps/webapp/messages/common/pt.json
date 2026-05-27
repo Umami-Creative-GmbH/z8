@@ -20,6 +20,61 @@
       "failedAsFormat": "Falha ao exportar como {format}"
     }
   },
+  "appSearch": {
+    "commandDescription": "Pesquisar páginas, pessoas, equipes, configurações ou ações",
+    "commandPlaceholder": "Pesquisar páginas, pessoas, equipes, configurações ou ações…",
+    "commands": {
+      "addManualTimeEntry": {
+        "subtitle": "Registrar horas de um turno anterior ou correção",
+        "title": "Adicionar registro de horas manual"
+      },
+      "createProject": {
+        "subtitle": "Abrir configurações de projeto para definir um novo projeto",
+        "title": "Criar projeto"
+      },
+      "inviteTeammate": {
+        "subtitle": "Abrir gerenciamento da organização para adicionar um colega",
+        "title": "Convidar colega de equipe"
+      },
+      "openApprovalsInbox": {
+        "subtitle": "Analisar solicitações pendentes de funcionários",
+        "title": "Abrir caixa de entrada de aprovações"
+      },
+      "openMyRequests": {
+        "subtitle": "Analisar suas ausências e despesas enviadas",
+        "title": "Abrir minhas solicitações"
+      },
+      "openPayrollReadiness": {
+        "subtitle": "Verificar se os dados de horas estão prontos para a folha de pagamento",
+        "title": "Abrir prontidão da folha de pagamento"
+      },
+      "openSettings": {
+        "subtitle": "Gerenciar seu perfil, segurança e configurações da organização",
+        "title": "Abrir configurações"
+      },
+      "requestAbsence": {
+        "subtitle": "Iniciar uma solicitação de férias, licença médica ou folga",
+        "title": "Solicitar ausência"
+      },
+      "submitTravelExpense": {
+        "subtitle": "Criar uma solicitação de reembolso para custos de viagem",
+        "title": "Enviar despesa de viagem"
+      }
+    },
+    "empty": "Nenhum resultado encontrado.",
+    "groups": {
+      "actions": "Ações",
+      "pages": "Páginas",
+      "people": "Pessoas",
+      "settings": "Configurações",
+      "teams": "Equipes"
+    },
+    "search": "Pesquisar",
+    "searchOrRunCommand": "Pesquisar ou executar comando",
+    "teamAbsences": {
+      "description": "Analisar métricas de ausência dos funcionários e registrar ausências"
+    }
+  },
   "billing": {
     "suspended": {
       "adminDescription": "Seu teste terminou ou a assinatura não é mais válida. Atualize o faturamento para continuar usando o Z8.",
@@ -29,7 +84,7 @@
     },
     "trialBanner": {
       "description": "{days} dias restantes. Adicione os detalhes de pagamento agora; sua assinatura paga começa após o teste.",
-      "dismiss": "Dispensar banner de teste",
+      "dismiss": "Dispensar banner de avaliação",
       "title": "Teste de 14 dias ativo",
       "upgrade": "Atualizar"
     }
@@ -415,13 +470,17 @@
     "language": "Idioma",
     "logging-out": "Saindo...",
     "log-out": "Sair",
+    "log-out-failed": "Não foi possível sair. Tente novamente.",
     "profile": "Perfil",
+    "security": "Segurança",
     "theme": "Tema",
     "theme-dark": "Escuro",
     "theme-light": "Claro",
+    "theme-location-required": "A permissão de localização é necessária para o tema baseado no horário.",
     "theme-system": "Sistema",
-    "theme-toggle": "Alternar tema",
-    "time-settings": "Configurações de Tempo"
+    "theme-time": "Baseado no horário",
+    "theme-time-info": "O modo baseado no horário está usando {currentMode}. Alternará para {nextMode} às {time}.",
+    "theme-toggle": "Alternar tema"
   },
   "validation": {
     "first-name-required": "O nome é obrigatório",
@@ -430,59 +489,10 @@
     "last-name-required": "O sobrenome é obrigatório",
     "password-required": "A senha é obrigatória"
   },
-  "appSearch": {
-    "commandDescription": "Pesquisar páginas, pessoas, equipes, configurações ou ações",
-    "commandPlaceholder": "Pesquisar páginas, pessoas, equipes, configurações ou ações…",
-    "commands": {
-      "addManualTimeEntry": {
-        "subtitle": "Registrar horas de um turno anterior ou correção",
-        "title": "Adicionar registro de horas manual"
-      },
-      "createProject": {
-        "subtitle": "Abrir configurações de projeto para definir um novo projeto",
-        "title": "Criar projeto"
-      },
-      "inviteTeammate": {
-        "subtitle": "Abrir gerenciamento da organização para adicionar um colega",
-        "title": "Convidar colega de equipe"
-      },
-      "openApprovalsInbox": {
-        "subtitle": "Analisar solicitações pendentes de funcionários",
-        "title": "Abrir caixa de entrada de aprovações"
-      },
-      "openMyRequests": {
-        "subtitle": "Analisar suas ausências e despesas enviadas",
-        "title": "Abrir minhas solicitações"
-      },
-      "openPayrollReadiness": {
-        "subtitle": "Verificar se os dados de horas estão prontos para a folha de pagamento",
-        "title": "Abrir prontidão da folha de pagamento"
-      },
-      "openSettings": {
-        "subtitle": "Gerenciar seu perfil, segurança e configurações da organização",
-        "title": "Abrir configurações"
-      },
-      "requestAbsence": {
-        "subtitle": "Iniciar uma solicitação de férias, licença médica ou folga",
-        "title": "Solicitar ausência"
-      },
-      "submitTravelExpense": {
-        "subtitle": "Criar uma solicitação de reembolso para custos de viagem",
-        "title": "Enviar despesa de viagem"
-      }
-    },
-    "empty": "Nenhum resultado encontrado.",
-    "groups": {
-      "actions": "Ações",
-      "pages": "Páginas",
-      "people": "Pessoas",
-      "settings": "Configurações",
-      "teams": "Equipes"
-    },
-    "search": "Pesquisar",
-    "searchOrRunCommand": "Pesquisar ou executar comando",
-    "teamAbsences": {
-      "description": "Revisar métricas de ausência de funcionários e registrar ausências"
-    }
+  "workBalance": {
+    "label": "Saldo total",
+    "notCalculated": "Ainda não calculado",
+    "pendingDescription": "O trabalhador calculará este saldo em breve.",
+    "updatedEveryThreeHours": "Atualizado a cada 3 horas"
   }
 }

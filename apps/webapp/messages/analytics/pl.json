@@ -1,0 +1,202 @@
+{
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "zobacz analitykę",
+      "restrictedDescription": "Analityka jest dostępna tylko dla administratorów i menedżerów.",
+      "restrictedTitle": "Dostęp ograniczony"
+    },
+    "common": {
+      "days": "Dni",
+      "employee": "Pracownik",
+      "employees": "Pracownicy",
+      "hours": "Godziny",
+      "loadingOrganizationSettings": "Ładowanie ustawień organizacji przed włączeniem ustawień wstępnych.",
+      "noDataAvailable": "Brak dostępnych danych",
+      "noDataForPeriod": "Brak danych dostępnych dla wybranego okresu",
+      "overtime": "Nadgodziny",
+      "overtimeHours": "Godziny nadliczbowe",
+      "team": "Zespół",
+      "totalHours": "Suma godzin",
+      "unavailable": "Niedostępne",
+      "undertime": "Niedoczas",
+      "undertimeHours": "Godziny niedoczasu"
+    },
+    "layout": {
+      "description": "Kompleksowy wgląd w wydajność zespołu, godziny pracy i wzorce absencji",
+      "tabs": {
+        "overtimeBurnDown": "Redukcja nadgodzin",
+        "overview": "Przegląd",
+        "teamPerformance": "Wydajność zespołu",
+        "vacationTrends": "Trendy urlopowe",
+        "workHours": "Godziny pracy"
+      },
+      "title": "Analityka"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Szczegółowy podział",
+      "breakdownDescription": "Szczegóły redukcji nadgodzin na poziomie {label}",
+      "breakdownEmpty": "Brak dostępnych danych do podziału",
+      "byCostCenter": "Według centrum kosztów",
+      "byManager": "Według menedżera",
+      "byTeam": "Według zespołu",
+      "costCenter": "Centrum kosztów",
+      "currentOvertime": "Aktualne nadgodziny",
+      "description": "Śledź cotygodniową redukcję nadgodzin w zespołach.",
+      "errors": {
+        "loadData": "Nie udało się załadować danych o redukcji nadgodzin"
+      },
+      "filters": {
+        "allCostCenters": "Wszystkie centra kosztów",
+        "allManagers": "Wszyscy menedżerowie",
+        "allTeams": "Wszystkie zespoły",
+        "breakdownLabel": "Wymiar podziału",
+        "costCenterLabel": "Filtr centrum kosztów",
+        "managerLabel": "Filtr menedżera",
+        "teamLabel": "Filtr zespołu"
+      },
+      "improvingGroups": "Poprawiające się grupy",
+      "improvingGroupsDescription": "Grupy z malejącą liczbą nadgodzin",
+      "manager": "Menedżer",
+      "previousOvertime": "Poprzednie nadgodziny",
+      "previousPeriodDescription": "W porównaniu z poprzednim okresem",
+      "selectedRangeDescription": "Dla wybranego zakresu dat i filtrów",
+      "title": "Redukcja nadgodzin",
+      "trendDirection": "Kierunek trendu",
+      "trendDirectionDescription": "Ogólna trajektoria nadgodzin",
+      "trend": {
+        "down": "Spadek",
+        "flat": "Bez zmian",
+        "up": "Wzrost"
+      },
+      "weeklyTrend": {
+        "description": "Trend cotygodniowej redukcji nadgodzin",
+        "empty": "Brak dostępnych danych o trendach",
+        "title": "Cotygodniowy trend redukcji"
+      },
+      "weekOverWeek": "Tydzień do tygodnia"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Rozkład absencji według kategorii",
+        "title": "Wzorce nieobecności"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% zatwierdzonych",
+        "avgDecision": "Śr. czas decyzji: {hours} godz.",
+        "byManager": "Według menedżera",
+        "byTeam": "Według zespołu",
+        "byType": "Według typu",
+        "description": "Zespoły i typy wniosków z oczekującymi zadaniami lub ostrzeżeniami SLA",
+        "empty": "Nie znaleziono wąskich gardeł w procesie zatwierdzania",
+        "pendingSummary": "{pendingCount} oczekujących - {slaWarnings} ostrzeżeń SLA",
+        "title": "Wąskie gardła zatwierdzania",
+        "unavailable": "Nie udało się załadować wąskich gardeł zatwierdzania"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Z rozpatrzonych wniosków zatwierdzone",
+          "title": "Wskaźnik zatwierdzeń",
+          "unavailableDescription": "Nie udało się załadować analityki zatwierdzeń"
+        },
+        "avgWorkHours": {
+          "description": "Na pracownika w wybranym okresie",
+          "title": "Śr. godziny pracy"
+        },
+        "totalAbsenceDays": {
+          "description": "Łączna liczba dni w wybranym okresie",
+          "title": "Łączna liczba dni nieobecności"
+        },
+        "totalEmployees": {
+          "description": "Aktywni pracownicy w organizacji",
+          "title": "Łączna liczba pracowników"
+        }
+      },
+      "loadingLabel": "Ładowanie danych analitycznych",
+      "workHoursByTeam": {
+        "description": "Łączna liczba godzin pracy zarejestrowanych na zespół",
+        "title": "Godziny pracy według zespołu"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Średnia na pracownika",
+      "comparison": {
+        "description": "Łączna liczba godzin pracy według zespołu w wybranym okresie",
+        "title": "Porównanie zespołów"
+      },
+      "details": {
+        "description": "Podział godzin pracy według zespołu i pracownika",
+        "title": "Szczegóły wydajności zespołu"
+      },
+      "employeeCount": "Liczba pracowników",
+      "errors": {
+        "loadData": "Nie udało się załadować danych wydajności zespołu"
+      },
+      "onTrack": "Zgodnie z planem",
+      "variance": {
+        "description": "Odchylenie godzin od oczekiwanego czasu pracy",
+        "empty": "Brak dostępnych danych o odchyleniach",
+        "title": "Nadgodziny i niedoczas"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Przydzielone",
+      "balance": {
+        "description": "Dni przydzielone, wykorzystane i pozostałe według pracownika",
+        "title": "Bilans urlopowy"
+      },
+      "daysRemaining": "Pozostało {count} dni",
+      "daysTaken": "Wykorzystano {count} dni",
+      "errors": {
+        "loadData": "Nie udało się załadować danych o trendach urlopowych"
+      },
+      "monthlyUsage": {
+        "description": "Dni urlopowe wykorzystane w miesiącu",
+        "empty": "Brak dostępnych danych o miesięcznym wykorzystaniu",
+        "title": "Miesięczne wykorzystanie urlopów"
+      },
+      "peakMonths": {
+        "description": "Miesiące z największą aktywnością urlopową",
+        "empty": "Brak dostępnych danych o miesiącach szczytowych",
+        "title": "Szczytowe miesiące urlopowe"
+      },
+      "remaining": "Pozostało",
+      "taken": "Wykorzystano",
+      "utilization": {
+        "description": "Ogólne wykorzystanie dni urlopowych w organizacji",
+        "overall": "Ogólne wykorzystanie",
+        "title": "Wykorzystanie urlopu"
+      },
+      "utilizationLabel": "Wykorzystanie",
+      "utilizationPercent": "Wykorzystanie %",
+      "vacationDays": "Dni urlopu"
+    },
+    "workHours": {
+      "actualHours": "Rzeczywiste godziny",
+      "avgHoursPerWeek": "Śr. godz./tydzień",
+      "daily": {
+        "description": "Rzeczywiste a oczekiwane godziny pracy dziennie",
+        "empty": "Brak dostępnych danych o godzinach dziennych",
+        "title": "Dzienne godziny pracy"
+      },
+      "distribution": {
+        "description": "Porównanie godzin pracy pracowników (wykres słupkowy poziomy)",
+        "empty": "Brak dostępnych danych o dystrybucji",
+        "title": "Rozkład godzin pracy"
+      },
+      "employeeComparison": {
+        "description": "Suma godzin i odchylenie od oczekiwanych według pracownika",
+        "title": "Godziny pracy pracowników"
+      },
+      "errors": {
+        "loadData": "Nie udało się załadować analityki godzin pracy"
+      },
+      "expectedHours": "Oczekiwane godziny",
+      "variance": "Odchylenie",
+      "varianceTrend": {
+        "description": "Odchylenie godzin od oczekiwanego czasu pracy w czasie",
+        "empty": "Brak dostępnych danych trendu",
+        "title": "Trend nadgodzin i niedoczasu"
+      }
+    }
+  }
+}

@@ -32,7 +32,7 @@ async function pathExists(filePath) {
 }
 
 function parseWorkspacePnpmConfig(configText) {
-  const config = { allowBuilds: {}, overrides: {} };
+  const config = { allowBuilds: {}, minimumReleaseAgeExclude: [], overrides: {} };
   let section = null;
 
   for (const line of configText.split("\n")) {
@@ -46,12 +46,25 @@ function parseWorkspacePnpmConfig(configText) {
       continue;
     }
 
+    if (/^minimumReleaseAgeExclude:\s*$/.test(line)) {
+      section = "minimumReleaseAgeExclude";
+      continue;
+    }
+
     if (/^\S/.test(line)) {
       section = null;
       continue;
     }
 
     if (!section) continue;
+
+    if (section === "minimumReleaseAgeExclude") {
+      const match = line.match(/^\s{2}-\s*(.+?)\s*$/);
+      if (match) {
+        config.minimumReleaseAgeExclude.push(match[1].replace(/^['\"]|['\"]$/g, ""));
+      }
+      continue;
+    }
 
     const match = line.match(/^\s{2}(.+?):\s*(.+?)\s*$/);
     if (!match) continue;
@@ -70,6 +83,13 @@ function stringifyTargetPnpmWorkspaceConfig(config) {
 
   for (const [packageName, allowed] of Object.entries(config.allowBuilds ?? {})) {
     lines.push(`  ${JSON.stringify(packageName)}: ${allowed ? "true" : "false"}`);
+  }
+
+  if (config.minimumReleaseAgeExclude?.length) {
+    lines.push("", "minimumReleaseAgeExclude:");
+    for (const packageName of config.minimumReleaseAgeExclude) {
+      lines.push(`  - ${JSON.stringify(packageName)}`);
+    }
   }
 
   lines.push("", "overrides:");

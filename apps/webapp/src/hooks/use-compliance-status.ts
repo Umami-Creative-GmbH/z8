@@ -1,17 +1,21 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
 import {
 	checkRestPeriod,
 	getComplianceStatus,
-	getProactiveAlerts,
-	getOvertimeStats,
-	requestComplianceException,
 	getMyExceptions,
+	getOvertimeStats,
+	getProactiveAlerts,
 	hasValidException,
+	requestComplianceException,
 } from "@/app/[locale]/(app)/settings/compliance/actions";
-import type { ComplianceAlert, ComplianceStatus, OvertimeStats, RestPeriodCheckResult } from "@/db/schema";
+import type {
+	ComplianceAlert,
+	ComplianceStatus,
+	OvertimeStats,
+	RestPeriodCheckResult,
+} from "@/db/schema";
 import type { ExceptionWithDetails } from "@/lib/effect/services/compliance-guardrail.service";
 import { queryKeys } from "@/lib/query/keys";
 
@@ -156,25 +160,22 @@ export function useComplianceStatus(options: UseComplianceStatusOptions = {}) {
 	});
 
 	// Check for valid exception (for clock-in flow)
-	const checkException = useCallback(
-		async (exceptionType: string) => {
-			const result = await hasValidException(exceptionType);
-			if (!result.success) {
-				return { hasException: false };
-			}
-			return result.data;
-		},
-		[],
-	);
+	const checkException = async (exceptionType: string) => {
+		const result = await hasValidException(exceptionType);
+		if (!result.success) {
+			return { hasException: false };
+		}
+		return result.data;
+	};
 
 	// Refresh all compliance data
-	const refreshAll = useCallback(() => {
+	const refreshAll = () => {
 		return Promise.all([
 			queryClient.invalidateQueries({ queryKey: queryKeys.compliance.restPeriod(employeeId) }),
 			queryClient.invalidateQueries({ queryKey: queryKeys.compliance.status(employeeId) }),
 			queryClient.invalidateQueries({ queryKey: queryKeys.compliance.overtime(employeeId) }),
 		]);
-	}, [queryClient, employeeId]);
+	};
 
 	// Derived state
 	const restPeriodCheck = restPeriodQuery.data;
@@ -184,7 +185,9 @@ export function useComplianceStatus(options: UseComplianceStatusOptions = {}) {
 	const myExceptions = myExceptionsQuery.data ?? [];
 
 	// Count alerts by severity
-	const criticalAlerts = alerts.filter((a) => a.severity === "critical" || a.severity === "violation");
+	const criticalAlerts = alerts.filter(
+		(a) => a.severity === "critical" || a.severity === "violation",
+	);
 	const warningAlerts = alerts.filter((a) => a.severity === "warning");
 	const hasViolations = alerts.some((a) => a.severity === "violation");
 	const hasCriticalAlerts = criticalAlerts.length > 0;
@@ -221,14 +224,8 @@ export function useComplianceStatus(options: UseComplianceStatusOptions = {}) {
 		approvedExceptions: myExceptions.filter((e) => e.status === "approved"),
 
 		// Loading states
-		isLoading:
-			restPeriodQuery.isLoading ||
-			statusQuery.isLoading ||
-			overtimeQuery.isLoading,
-		isFetching:
-			restPeriodQuery.isFetching ||
-			alertsQuery.isFetching ||
-			statusQuery.isFetching,
+		isLoading: restPeriodQuery.isLoading || statusQuery.isLoading || overtimeQuery.isLoading,
+		isFetching: restPeriodQuery.isFetching || alertsQuery.isFetching || statusQuery.isFetching,
 		isError: restPeriodQuery.isError || statusQuery.isError,
 
 		// Mutations

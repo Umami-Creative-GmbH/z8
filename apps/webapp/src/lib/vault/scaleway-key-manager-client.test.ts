@@ -123,7 +123,7 @@ describe("ScalewayKeyManagerClient", () => {
 		);
 	});
 
-	test("encrypts and decrypts with the raw Scaleway Key Manager payload format", async () => {
+	test("encrypts and decrypts with base64 plaintext without associated data", async () => {
 		const fetchMock = vi
 			.fn()
 			.mockResolvedValueOnce(
@@ -135,7 +135,7 @@ describe("ScalewayKeyManagerClient", () => {
 			.mockResolvedValueOnce(
 				new Response(
 					JSON.stringify({
-						plaintext: "secret value",
+						plaintext: Buffer.from("secret value", "utf8").toString("base64"),
 					}),
 					{
 						status: 200,
@@ -157,7 +157,7 @@ describe("ScalewayKeyManagerClient", () => {
 			"https://key-manager.test/key-manager/v1alpha1/regions/fr-par/keys/key-1/encrypt",
 		);
 		expect(await getJsonBody(encryptRequest)).toEqual({
-			plaintext: "secret value",
+			plaintext: Buffer.from("secret value", "utf8").toString("base64"),
 		});
 
 		const [decryptUrl, decryptRequest] = fetchMock.mock.calls[1] as [string, RequestInit];

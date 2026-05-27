@@ -1,0 +1,152 @@
+{
+  "timeTracking": {
+    "addNotePrompt": "Notiz zu dinere Arbet dezuefüege (optional)",
+    "autoAdjusted": {
+      "toast": {
+        "description": "Es isch e Pause vo {breakMinutes} Minute dezuegfüegt worde, zum d'Arbetsziit-Regle z'erfülle.",
+        "title": "Pause automatisch dezuegfüegt für d'Compliance"
+      }
+    },
+    "budget": "Budget",
+    "clockedOutSuccess": "Du häsch usgstämplet!",
+    "clockIn": "Iistämple",
+    "clockingIn": "Am Iistämple…",
+    "clockingOut": "Am Usstämple…",
+    "clockInQueued": "Iistemplig für Synchronisierig vorgemerkt",
+    "clockInSuccess": "Erfolgriich iigstämplet",
+    "clockOut": "Usstämple",
+    "clockOutQueued": "Uusstemplig für Synchronisierig vorgemerkt",
+    "clockOutSuccess": "Erfolgriich usgstämplet",
+    "compliance": {
+      "violation": "Compliance-Verstoss",
+      "warning": "Compliance-Hiwiis"
+    },
+    "correction": {
+      "clockIn": "Iistämple",
+      "clockOut": "Usstämple",
+      "editDescription": "Änderige a dim Ziiteintrag für hüt vorneh.",
+      "editEntry": "Ziiteintrag bearbeite",
+      "editTitle": "Ziiteintrag bearbeite",
+      "errors": {
+        "invalidTimeRange": "D'Usstämplizit muess nach de Iistämplizit sii",
+        "submitFailed": "Korrektur het nöd chönne übermittle wärde",
+        "updateFailed": "Ziiteintrag het nöd chönne aktualisiert wärde"
+      },
+      "noteLabel": "Notiz (optional)",
+      "notePlaceholder": "E Notiz zu dere Änderig dezuefüege…",
+      "reasonLabel": "Grund für d'Korrektur",
+      "reasonPlaceholder": "Erklär, warum die Korrektur nötig isch…",
+      "requestCorrection": "Ziitkorrektur aafordere",
+      "requestDescription": "Reich en Korrektur-Aatrag für de Ziiteintrag ii. Diin Manager muess das genehmige.",
+      "requestTitle": "Ziitkorrektur aafordere",
+      "saveChanges": "Änderige spychere",
+      "saving": "Am Spychere…",
+      "submitRequest": "Aatrag iireiche",
+      "submitting": "Am Iireiche…",
+      "success": {
+        "submitted": "Korrektur-Aatrag zur Genehmigung dur de Manager iigreicht",
+        "updated": "Ziiteintrag erfolgriich aktualisiert"
+      },
+      "timezoneNote": "D'Ziite sind in dinere lokale Ziitzone ({timezone})"
+    },
+    "currentlyClockedIn": "Du bisch momentan iigstämplet",
+    "deadline": "Frist",
+    "errors": {
+      "clockInFailed": "Iistämple nöd möglich",
+      "clockOutFailed": "Usstämple nöd möglich",
+      "holidayBlocked": "Am {holidayName} chasch nöd usstämple",
+      "holidayBlockedDesc": "De Tag isch als Fiirtig markiert und Ziiteiträg sind nöd erlaubt",
+      "notesSaveFailed": "Notize händ nöd chönne gspycheret wärde",
+      "restPeriodBlocked": "Ruehziit nöd abgschlosse",
+      "restPeriodBlockedDesc": "Du muesch die erforderlechi Ruehziit iihalte, bevor du dich iistemplisch. Frag en Uusnahm aa, falls nötig."
+    },
+    "manualEntry": {
+      "addButton": "Manuelle Iitrag erfasse",
+      "clockInLabel": "Iistemple",
+      "clockOutLabel": "Uusstemple",
+      "dateLabel": "Datum",
+      "description": "Erfass en Ziitiitrag für es vergangnigs Datum. Je nach Richtlinie vo dinere Organisation isch e Gnehmigung nötig.",
+      "errors": {
+        "createFailed": "Ziitiitrag hät nöd chönne erstellt werde",
+        "futureDate": "Iiträg für Zuekunftsdatum chönd nöd erstellt werde",
+        "invalidTimeRange": "Uusstempliziit mues nach de Iistempliziit sii",
+        "tooLong": "Arbeitsziit darf nöd meh als 24 Stunde sii"
+      },
+      "reasonLabel": "Grund",
+      "reasonPlaceholder": "Beschriib, was du gmacht häsch…",
+      "submit": "Iitrag erfasse",
+      "submitting": "Wird erstellt…",
+      "success": {
+        "adjusted": "Ziite uf {clockIn} - {clockOut} aapasst, zum Überschniidige z vermiide",
+        "created": "Ziitiitrag erfolgriich erstellt",
+        "pendingApproval": "Ziitiitrag zur Gnehmigung dur de Vorgesetzte iigreicht"
+      },
+      "title": "Manuelle Ziitiitrag erfasse"
+    },
+    "noCategory": "Kei Kategorie (100%)",
+    "noProject": "Kei Projekt",
+    "notesPlaceholder": "A was häsch gschaffet?",
+    "notesSaved": "Notize gspicheret",
+    "project": "Projekt",
+    "readyToClockIn": "Bereit zum Schaffe?",
+    "selectCategory": "Kategorie uswähle",
+    "selectProject": "Wähl es Projekt us",
+    "sessionReminders": {
+      "breakOpen": "{remaining} Min. Pause verblibe",
+      "breakRequired": "Pause isch jetzt nötig",
+      "breakRequiredMessage": "Mach e Pause, bevor du mit de Sitzig witerfahrsch.",
+      "breakSoon": "Bald Pause",
+      "dismissBreak": "Pause-Erinnerig usblände",
+      "dismissHydration": "Trink-Erinnerig usblände",
+      "hydration": "Trinke",
+      "hydrationProgress": "{intake}/{goal} Gläser hüt",
+      "logOneGlass": "+1 Glas",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "{minutes} Min. bis zur Pause",
+      "snoozeToday": "Für hüt schlummere",
+      "subtitle": "Während dere Schicht",
+      "title": "Sitzigs-Erinnerige"
+    },
+    "startedAt": "Gstartet am",
+    "summary": {
+      "baseWorked": "Basisarbeitszyt",
+      "surcharge": "Zueschlag",
+      "thisMonth": "Dä Monet",
+      "thisWeek": "Die Wuche",
+      "today": "Hüt"
+    },
+    "table": {
+      "approved": "Ziitiitrag isch freigää",
+      "approveEntry": "Iitrag freigä",
+      "approveFailed": "Iitrag hät nöd chönne freigää wärde",
+      "approving": "Am freigää...",
+      "emptyState": "Kei Ziit-Iiträg für die Wuche gfunde.",
+      "rowActions": "Aktione für Ziitiiträg",
+      "title": "Ziit-Iiträg",
+      "viewCalendar": "Kaländer aaluege"
+    },
+    "timeline": {
+      "dayPicker": "Zytstrahl-Tagesuuswahl",
+      "emptyDescription": "Es git no keini Schichte, Abweseheite oder Ziit-Iiträg für de gwählti Tag.",
+      "emptyTitle": "Kei Aktivität für de Tag ufgzeichnet.",
+      "nextDay": "Nächschte Tag",
+      "previousDay": "Vorherige Tag",
+      "title": "Arbeitstag-Timeline",
+      "today": "Hüt",
+      "unavailableDescription": "D'Ziiterfassig funktioniert no. Versuech spöter, die Aasicht z'aktualisiere.",
+      "unavailableTitle": "Timeline nöd verfügbar"
+    },
+    "unknownCategory": "Unbekannti Kategorie",
+    "unknownProject": "Unbekannts Projekt",
+    "workCategory": "Arbetskategorie"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Tagesziil erreicht! Mach witer so!",
+      "logError": "Wassertrinke isch nöd protokolliert worde",
+      "logged": "Wasser protokolliert! {progress}% vom Tagesziil",
+      "snoozed": "Wasser-Erinnerige für hüt pausiert",
+      "snoozeError": "Erinnerige chönd nöd pausiert werde"
+    }
+  }
+}

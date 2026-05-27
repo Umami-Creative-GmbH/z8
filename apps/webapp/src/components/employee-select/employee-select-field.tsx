@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useMemo, useState } from "react";
+import { useId, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { EmployeeSelectModal } from "./employee-select-modal";
@@ -68,12 +68,12 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 	>(new Map());
 
 	// Determine selected IDs based on mode
-	const selectedIds = useMemo(() => {
+	const selectedIds = (() => {
 		if (props.mode === "single") {
 			return props.value ? [props.value] : [];
 		}
 		return props.value || [];
-	}, [props.mode, props.value]);
+	})();
 
 	// Fetch selected employees for display (skip if pre-filtered list provided)
 	const { employees: fetchedEmployees } = useSelectedEmployees(
@@ -81,7 +81,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 	);
 
 	// Merge fetched employees with locally tracked ones
-	const selectedEmployees = useMemo(() => {
+	const selectedEmployees = (() => {
 		const employeeMap = new Map<string, SelectableEmployee>();
 
 		// If pre-filtered list provided, use it as the source
@@ -107,44 +107,38 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 
 		// Return in order of selectedIds
 		return selectedIds.map((id) => employeeMap.get(id)).filter(Boolean) as SelectableEmployee[];
-	}, [fetchedEmployees, localSelectedEmployees, selectedIds, preFilteredEmployees]);
+	})();
 
 	// Handle selection
-	const handleSelect = useCallback(
-		(employee: SelectableEmployee) => {
-			// Track locally for immediate UI
-			setLocalSelectedEmployees((prev) => new Map(prev).set(employee.id, employee));
+	const handleSelect = (employee: SelectableEmployee) => {
+		// Track locally for immediate UI
+		setLocalSelectedEmployees((prev) => new Map(prev).set(employee.id, employee));
 
-			if (props.mode === "single") {
-				props.onChange(employee.id);
-			} else {
-				const currentIds = props.value || [];
-				if (!currentIds.includes(employee.id)) {
-					props.onChange([...currentIds, employee.id]);
-				}
+		if (props.mode === "single") {
+			props.onChange(employee.id);
+		} else {
+			const currentIds = props.value || [];
+			if (!currentIds.includes(employee.id)) {
+				props.onChange([...currentIds, employee.id]);
 			}
-		},
-		[props],
-	);
+		}
+	};
 
 	// Handle deselection
-	const handleDeselect = useCallback(
-		(employeeId: string) => {
-			if (props.mode === "single") {
-				props.onChange(null);
-			} else {
-				const currentIds = props.value || [];
-				props.onChange(currentIds.filter((id) => id !== employeeId));
-			}
-		},
-		[props],
-	);
+	const handleDeselect = (employeeId: string) => {
+		if (props.mode === "single") {
+			props.onChange(null);
+		} else {
+			const currentIds = props.value || [];
+			props.onChange(currentIds.filter((id) => id !== employeeId));
+		}
+	};
 
 	// Handle confirm (for multi-select)
-	const handleConfirm = useCallback(() => {
+	const handleConfirm = () => {
 		// Selection changes are already applied via handleSelect/handleDeselect
 		setModalOpen(false);
-	}, []);
+	};
 
 	// Get maxSelections for multi-select
 	const maxSelections = props.mode === "multiple" ? props.maxSelections : undefined;

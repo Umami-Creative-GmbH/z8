@@ -1,0 +1,133 @@
+{
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Zarejestruj nieobecność dla {name}"
+      },
+      "description": "Przeglądaj limity i rejestruj zatwierdzone nieobecności dla swojego zespołu.",
+      "empty": {
+        "description": "Spróbuj dostosować filtry lub wyszukiwanie, aby znaleźć członków zespołu.",
+        "label": "Nie znaleziono pracowników",
+        "title": "Nie znaleziono pracowników"
+      },
+      "error": {
+        "description": "Spróbuj ponownie za chwilę.",
+        "title": "Nie można wczytać nieobecności"
+      },
+      "feature": "zarządzaj nieobecnościami zespołu",
+      "filters": {
+        "allTeams": "Wszystkie zespoły",
+        "searchLabel": "Szukaj pracowników",
+        "searchPlaceholder": "Szukaj pracowników…",
+        "searchSubmit": "Szukaj",
+        "teamLabel": "Filtruj według zespołu",
+        "teamPlaceholder": "Zespół",
+        "yearLabel": "Filtruj według roku",
+        "yearPlaceholder": "Rok"
+      },
+      "pagination": {
+        "next": "Dalej",
+        "nextLabel": "Następna strona",
+        "page": "Strona {page} z {pageCount}",
+        "previous": "Wstecz",
+        "previousLabel": "Poprzednia strona",
+        "showing": "Wyświetlanie od {firstItem} do {lastItem} z {total}"
+      },
+      "recordDialog": {
+        "category": "Kategoria",
+        "categoryPlaceholder": "Wybierz kategorię nieobecności…",
+        "description": "Zarejestruj zatwierdzoną nieobecność bezpośrednio dla wybranego pracownika.",
+        "endDate": "Data zakończenia",
+        "endDateHelper": "Pozostaw puste w przypadku nieobecności jednodniowej.",
+        "failure": "Nie udało się zarejestrować nieobecności",
+        "noCategories": "Brak dostępnych kategorii",
+        "noEmployee": "Wybierz pracownika przed zarejestrowaniem nieobecności",
+        "notes": "Notatki",
+        "notesPlaceholder": "Dodaj wewnętrzny kontekst dla tego wpisu…",
+        "pickEndDate": "Wybierz datę zakończenia…",
+        "pickStartDate": "Wybierz datę rozpoczęcia…",
+        "recording": "Zapisywanie…",
+        "required": "{label} jest wymagane",
+        "sickDetail": "Szczegóły zwolnienia lekarskiego",
+        "sickDetailPlaceholder": "Wybierz szczegóły zwolnienia…",
+        "startDate": "Data rozpoczęcia",
+        "submit": "Zarejestruj nieobecność",
+        "success": "Nieobecność zarejestrowana",
+        "title": "Zarejestruj nieobecność",
+        "titleForEmployee": "Zarejestruj nieobecność dla {name}"
+      },
+      "sort": {
+        "ascending": "rosnąco",
+        "by": "Sortuj według {label}",
+        "byWithDirection": "Sortuj według {label} ({direction})",
+        "descending": "malejąco"
+      },
+      "table": {
+        "actions": "Akcje",
+        "allowance": "Przydział",
+        "employee": "Pracownik",
+        "left": "Pozostało",
+        "pending": "Oczekujące",
+        "sick": "Chorobowe",
+        "teamOrPosition": "Zespół lub stanowisko",
+        "used": "Wykorzystano"
+      },
+      "title": "Nieobecności w zespole"
+    },
+    "balance": {
+      "noBalance": "Brak salda"
+    },
+    "description": "Przeglądaj i zarządzaj pracownikami, których bezpośrednio nadzorujesz",
+    "empty": {
+      "action": "Przejdź do ustawień pracownika",
+      "description": "Tutaj pojawią się pracownicy przypisani do Ciebie jako menedżera. Możesz zarządzać przypisaniami do zespołu w ustawieniach pracownika.",
+      "title": "Brak członków zespołu"
+    },
+    "error": {
+      "description": "Nie można załadować członków Twojego zespołu.",
+      "title": "Coś poszło nie tak"
+    },
+    "feature": "zobacz swój zespół",
+    "member": "członek",
+    "members": "członkowie",
+    "member.you": "Ty",
+    "noResults": {
+      "action": "Wyczyść wyszukiwanie",
+      "description": "Brak członków zespołu pasujących do „{query}”",
+      "title": "Nie znaleziono wyników"
+    },
+    "pagination": {
+      "next": "Dalej",
+      "previous": "Wstecz",
+      "showing": "Wyświetlanie od {from} do {to} z {total}"
+    },
+    "primaryManager": "Jesteś głównym menedżerem",
+    "search": {
+      "ariaLabel": "Szukaj członków zespołu",
+      "placeholder": "Szukaj według imienia i nazwiska, adresu e-mail, stanowiska lub zespołu..."
+    },
+    "status": {
+      "active": "Aktywny",
+      "inactive": "Nieaktywny"
+    },
+    "table": {
+      "employee": "Pracownik",
+      "position": "Stanowisko",
+      "role": "Rola",
+      "sort": {
+        "ascending": "rosnąco",
+        "descending": "malejąco"
+      },
+      "sortByTimeBalance": "Sortuj według salda rocznego",
+      "sortByTimeBalanceWithDirection": "Sortuj według salda rocznego ({direction})",
+      "status": "Status",
+      "team": "Zespół",
+      "timeBalance": "Saldo roczne"
+    },
+    "title": "Twój zespół",
+    "view": {
+      "cards": "Widok kart",
+      "table": "Widok tabeli"
+    }
+  }
+}

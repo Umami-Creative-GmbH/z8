@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PaginationState } from "@tanstack/react-table";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import {
 	type EmployeeListParams,
@@ -66,25 +66,25 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 	});
 
 	// Filter setters (reset to page 0)
-	const setSearch = useCallback((value: string) => {
+	const setSearch = (value: string) => {
 		setSearchState(value);
 		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-	}, []);
+	};
 
-	const setRole = useCallback((value: string) => {
+	const setRole = (value: string) => {
 		setRoleState(value);
 		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-	}, []);
+	};
 
-	const setStatus = useCallback((value: string) => {
+	const setStatus = (value: string) => {
 		setStatusState(value);
 		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-	}, []);
+	};
 
 	// Refresh
-	const refresh = useCallback(() => {
+	const refresh = () => {
 		queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
-	}, [queryClient]);
+	};
 
 	return {
 		// Data

@@ -2,7 +2,7 @@
 
 import { IconClock } from "@tabler/icons-react";
 import type * as React from "react";
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { TimepickerUI } from "timepicker-ui";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
@@ -174,14 +174,14 @@ function TimeInput({
 		onChangeRef.current = onChange;
 	}, [onChange]);
 
-	const emitChange = useCallback((value: string) => {
+	const emitChange = (value: string) => {
 		if (lastEmittedValueRef.current === value) {
 			return;
 		}
 
 		lastEmittedValueRef.current = value;
 		onChangeRef.current?.(createChangeEvent(value));
-	}, []);
+	};
 
 	useEffect(() => {
 		if (value === undefined) {

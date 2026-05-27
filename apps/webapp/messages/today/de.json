@@ -1,0 +1,43 @@
+{
+  "today": {
+    "approvals": {
+      "approve": "Genehmigen",
+      "approveLabel": "{title} genehmigen",
+      "description": "Anfragen, die auf eine Entscheidung des Managers warten.",
+      "empty": "Es warten keine Genehmigungen.",
+      "openInbox": "Posteingang öffnen",
+      "pendingAriaLabel": "Ausstehende Genehmigungen",
+      "reject": "Ablehnen",
+      "rejectLabel": "{title} ablehnen",
+      "title": "Genehmigungen",
+      "toast": {
+        "approved": "Anfrage genehmigt",
+        "approveError": "Anfrage kann nicht genehmigt werden",
+        "rejected": "Anfrage abgelehnt",
+        "rejectError": "Anfrage kann nicht abgelehnt werden"
+      }
+    },
+    "briefing": {
+      "badge": "Heute",
+      "description": "Überprüfen Sie die Elemente, die heute Aufmerksamkeit erfordern, und wechseln Sie dann direkt in den richtigen Workflow.",
+      "needsAction": {
+        "description": "Starten Sie hier für die dringendsten operativen Nachverfolgungen.",
+        "empty": "Alles in Ordnung. Derzeit ist kein Eingreifen des Managers erforderlich.",
+        "title": "Erfordert Handeln"
+      },
+      "sections": {
+        "empty": "Keine Probleme erkannt."
+      },
+      "severity": {
+        "critical": "Kritisch",
+        "high": "Hoch",
+        "info": "Info",
+        "warning": "Warnung"
+      },
+      "summaryAriaLabel": "Zusammenfassung für heute",
+      "supportingSectionsAriaLabel": "Unterstützende Abschnitte",
+      "title": "Tägliches Briefing für Manager",
+      "updatedAt": "{date} - Aktualisiert um {time}"
+    }
+  }
+}

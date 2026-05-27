@@ -1,0 +1,260 @@
+{
+  "settings": {
+    "calendar": {
+      "customization": {
+        "description": "Devamsızlık etkinliklerinin harici takvimlerde nasıl görüneceğini özelleştirin.",
+        "descriptionPlaceholder": "Z8'de kaydedilen devamsızlık",
+        "descriptionTemplate": "Etkinlik Açıklaması (isteğe bağlı)",
+        "title": "Etkinlik Özelleştirme",
+        "titleHelp": "Kullanılabilir değişkenler: {categoryName}, {employeeName}, {status}",
+        "titleTemplate": "Etkinlik Başlığı Şablonu"
+      },
+      "description": "Kuruluşunuz için takvim sağlayıcılarını, ICS beslemelerini ve senkronizasyon ayarlarını yapılandırın",
+      "icsFeeds": {
+        "description": "Kullanıcıların ICS/iCal formatı aracılığıyla devamsızlık takvimlerine abone olmalarına izin verin.",
+        "personal": "Kişisel ICS Beslemeleri",
+        "personalDesc": "Çalışanlar, devamsızlıkları için salt okunur takvim abonelikleri oluşturabilir",
+        "team": "Ekip ICS Beslemeleri",
+        "teamDesc": "Ekip liderleri, tüm ekip devamsızlıklarını gösteren paylaşılan beslemeler oluşturabilir",
+        "title": "ICS Beslemeleri"
+      },
+      "integrations": {
+        "description": "Mevcut ayarlarınızın kapsamına giren bağlı çalışan takvimleri.",
+        "empty": "Mevcut kapsamınızda henüz hiçbir takvim entegrasyonu bulunmuyor.",
+        "needsAttention": "Dikkat gerekiyor",
+        "pushOff": "Kapat",
+        "pushOn": "Aç",
+        "title": "İlgili Entegrasyonlar"
+      },
+      "managerDescription": "Ekiplerinizi, alanlarınızı ve yönetilen projelerinizi etkileyen takvim entegrasyonlarını inceleyin.",
+      "noProvidersConfigured": "Hiçbir takvim sağlayıcısı yapılandırılmamış. OAuth kimlik bilgilerini ayarlamak için sistem yöneticinizle iletişime geçin.",
+      "notConfigured": "Yapılandırılmadı",
+      "providers": {
+        "description": "Belirli sağlayıcılar için takvim senkronizasyonunu etkinleştirin veya devre dışı bırakın. Etkinleştirildiğinde çalışanlar hesaplarını bağlayabilir.",
+        "google": "Google Takvim",
+        "googleDesc": "Devamsızlıkları Google Takvim ile senkronize et",
+        "microsoft": "Microsoft 365",
+        "microsoftDesc": "Devamsızlıkları Outlook Takvim ile senkronize et",
+        "title": "Takvim Sağlayıcıları"
+      },
+      "readOnlyManagerNotice": "Yöneticiler ekipleri, alanları ve projeleri için takvim senkronizasyon kapsamını inceleyebilir, ancak bu ayarları yalnızca kuruluş yöneticileri değiştirebilir.",
+      "saved": "Takvim ayarları kaydedildi",
+      "saveError": "Takvim ayarları kaydedilemedi",
+      "syncBehavior": {
+        "autoSync": "Onaylandığında otomatik senkronize et",
+        "autoSyncDesc": "Devamsızlıklar onaylandığında bağlı takvimlerle otomatik olarak senkronize et",
+        "conflictRequired": "Çakışma kontrolü gerektir",
+        "conflictRequiredDesc": "Çalışanların devamsızlık talebinde bulunmadan önce takvim çakışmalarını kontrol etmelerini zorunlu tut",
+        "description": "Kuruluşunuz için takvim senkronizasyonunun nasıl çalışacağını yapılandırın.",
+        "title": "Senkronizasyon Davranışı"
+      },
+      "title": "Takvim Senkronizasyonu"
+    },
+    "clockinImport": {
+      "credentials": {
+        "connect": "Bağlan ve Önizle",
+        "description": "Bir Clockin müşteri API taşıyıcı (bearer) belirteci girin. Belirteç yalnızca bu içe aktarma oturumu için kullanılır.",
+        "title": "Clockin API Belirteci",
+        "token": "Taşıyıcı (Bearer) Belirteci"
+      },
+      "mapping": {
+        "description": "Clockin çalışanlarını mevcut Z8 çalışanlarıyla eşleştirin. Otomatik e-posta eşleşmeleri önceden seçilmiştir.",
+        "mapEmployee": "Eşleştir",
+        "noEmail": "Clockin'de e-posta yok",
+        "skipEmployee": "Bu çalışanı atla",
+        "summary": "Eşleştirilmiş çalışanlar",
+        "title": "Çalışanları Eşleştir"
+      },
+      "preview": {
+        "absences": "Devamsızlıklar",
+        "description": "Çalışanları eşleştirmeden ve kayıtları taramadan önce hangi Clockin verilerinin mevcut olduğunu gözden geçirin.",
+        "employees": "Çalışanlar",
+        "next": "Çalışanları Eşleştir",
+        "title": "Clockin Önizlemesi",
+        "workdays": "İş Günleri"
+      },
+      "review": {
+        "noProductionRecords": "Henüz hiçbir üretim kaydı içe aktarılmadı.",
+        "openReview": "İncelemeyi aç",
+        "scanningDescription": "{reviewBatchId} inceleme grubu taranıyor. Kayıtları onaylamadan ve işleme almadan önce gözden geçirin.",
+        "startedTitle": "İçe aktarma inceleme taraması başlatıldı",
+        "starting": "Clockin içe aktarma inceleme taraması başlatılıyor…",
+        "startSuccess": "İçe aktarma inceleme taraması başlatıldı. Kayıtlar işleme alınmadan önce inceleme gereklidir."
+      },
+      "selection": {
+        "absences": "İzinler",
+        "description": "İnceleme için hangi Clockin kayıtlarının taranacağını seçin. Kayıtlar işleme alınmadan önce gözden geçirilmelidir.",
+        "endDate": "Bitiş tarihi",
+        "startDate": "Başlangıç tarihi",
+        "startReviewScan": "İnceleme Taramasını Başlat",
+        "title": "İçe Aktarma Kapsamı",
+        "workdays": "İş Günleri / Çalışma Dönemleri"
+      }
+    },
+    "clockodoImport": {
+      "complete": {
+        "batch": "{batchId} inceleme grubu taranıyor.",
+        "description": "Clockodo kayıtları üretime aktarılmadan önce inceleme gereklidir.",
+        "openReview": "İncelemeyi aç",
+        "successTitle": "İçe aktarma inceleme taraması başlatıldı"
+      },
+      "credentials": {
+        "apiKey": "API Anahtarı",
+        "apiKeyHint": "API anahtarınızı Clockodo profilinizde bulabilirsiniz:",
+        "connect": "Bağlan ve Önizle",
+        "description": "Clockodo e-postanızı ve API anahtarınızı girin. API anahtarınızı Clockodo'da Profilim > API Anahtarı altında bulabilirsiniz. Kimlik bilgileri saklanmaz.",
+        "email": "Clockodo E-postası",
+        "title": "Clockodo Kimlik Bilgileri"
+      },
+      "entity": {
+        "absences": "İzinler",
+        "entries": "Zaman Kayıtları",
+        "holidayQuotas": "İzin Kotaları",
+        "nonBusinessDays": "İş Dışı Günler",
+        "services": "Hizmetler / Çalışma Kategorileri",
+        "surcharges": "Ek Ücretler",
+        "targetHours": "Hedef Saatler / Çalışma Politikaları",
+        "teams": "Ekipler",
+        "users": "Kullanıcılar / Çalışanlar"
+      },
+      "errors": {
+        "connectionFailed": "Clockodo'ya bağlanılamadı",
+        "fetchUsersFailed": "Kullanıcı verileri alınamadı",
+        "importFailed": "İçe aktarma inceleme taraması başarısız oldu",
+        "saveMappingsFailed": "Kullanıcı eşleştirmeleri kaydedilemedi"
+      },
+      "importing": {
+        "description": "Lütfen bu sayfayı kapatmayın. İnceleme taraması sıraya alındı ve büyük veri kümeleri için biraz zaman alabilir.",
+        "patience": "İnceleme için Clockodo verileri alınıyor…",
+        "title": "İnceleme Taraması Başlatılıyor…"
+      },
+      "mapping": {
+        "autoMatched": "Otomatik eşleştirildi",
+        "createNew": "Yeni oluştur",
+        "skip": "Atla"
+      },
+      "mappingStatus": {
+        "auto": "Otomatik",
+        "manual": "Manuel",
+        "new": "Yeni",
+        "skip": "Atla"
+      },
+      "preview": {
+        "dataType": "Veri Türü",
+        "description": "Clockodo hesabınızda bulunan verilerin özeti aşağıdadır. Mevcut Z8 verileri karşılaştırma için gösterilmektedir.",
+        "inClockodo": "Clockodo'da",
+        "inZ8": "Z8'de Mevcut",
+        "next": "Kullanıcıları Eşleştir",
+        "title": "Veri Önizlemesi"
+      },
+      "review": {
+        "startedToast": "İnceleme taraması başlatıldı. Kayıtlar işlenmeden önce inceleme gereklidir."
+      },
+      "selection": {
+        "dateRange": "Zaman girişleri ve devamsızlıklar için tarih aralığı",
+        "dateRangeDescription": "Bu sadece zaman girişlerini ve devamsızlıkları etkiler. Diğer veriler (kullanıcılar, ekipler vb.) her zaman tamamen taranır.",
+        "dependencyWarning": "Bağımlılıklar otomatik olarak taranacaktır",
+        "description": "Hangi veri türlerinin taranacağını seçin. Kayıtlar işlenmeden önce inceleme gereklidir.",
+        "emptyUserScope": "Taramayı başlatmadan önce en az bir Clockodo kullanıcısı seçin.",
+        "incompleteCustomDateRange": "Taramayı başlatmadan önce hem başlangıç hem de bitiş tarihi seçin.",
+        "selectDateRange": "Tarih aralığı seçin",
+        "startImport": "İnceleme Taramasını Başlat",
+        "title": "İnceleme İçin Veri Seçin"
+      },
+      "step": {
+        "complete": "İnceleme Başlatıldı",
+        "credentials": "Kimlik Bilgileri",
+        "import": "İnceleme",
+        "preview": "Önizleme",
+        "selection": "Seçim",
+        "userMapping": "Kullanıcı Eşleştirme"
+      },
+      "userMapping": {
+        "action": "Eylem",
+        "autoMatched": "{count} otomatik eşleşti",
+        "clockodoUser": "Clockodo Kullanıcısı",
+        "continue": "Devam Et",
+        "description": "Clockodo kullanıcılarını mevcut Z8 çalışanlarıyla eşleştirin veya yeni hesaplar oluşturmayı seçin. E-posta ile eşleşen kullanıcılar otomatik olarak eşleştirilir.",
+        "email": "E-posta",
+        "mappedTo": "Eşleştirilen",
+        "newEmployees": "{count} yeni",
+        "onlyMapped": "Sadece eşleştirilmiş kullanıcıları tara (eşleştirilmemiş kullanıcılar için yeni hesap oluşturma)",
+        "skippedCount": "{count} atlandı",
+        "status": "Durum",
+        "title": "Kullanıcıları Eşleştir"
+      }
+    },
+    "discord": {
+      "description": "Kuruluşunuz için Discord bildirimlerini yapılandırın",
+      "title": "Discord"
+    },
+    "slack": {
+      "description": "Kuruluşunuz için Slack bildirimlerini yapılandırın",
+      "title": "Slack"
+    },
+    "teamsNotifications": {
+      "description": "Kuruluşunuz için Microsoft Teams bildirimlerini yapılandırın",
+      "title": "Microsoft Teams"
+    },
+    "telegram": {
+      "bot": {
+        "description": "Kuruluşunuz için bildirimleri ve komutları etkinleştirmek üzere bir Telegram botu bağlayın.",
+        "title": "Telegram Botu"
+      },
+      "botToken": "Bot Jetonu",
+      "botTokenHelp": "Telegram'da @BotFather ile bir bot oluşturun ve jetonu buraya yapıştırın.",
+      "connect": "Botu Bağla",
+      "connected": "Telegram botu başarıyla bağlandı",
+      "connectError": "Telegram botu bağlanamadı",
+      "description": "Bildirimler ve komutlar için Telegram bot entegrasyonunu yapılandırın",
+      "disconnect": "Bağlantıyı Kes",
+      "disconnectConfirm": {
+        "description": "Bu işlem, kuruluşunuz için tüm Telegram bildirimlerini ve komutlarını devre dışı bırakacaktır. Çalışan hesap bağlantıları korunacaktır.",
+        "title": "Telegram Botunun bağlantısı kesilsin mi?"
+      },
+      "disconnected": "Telegram botunun bağlantısı kesildi",
+      "disconnectError": "Telegram botunun bağlantısı kesilemedi",
+      "features": {
+        "approvals": "Onay Bildirimleri",
+        "approvalsDesc": "Onay taleplerini gönderin ve Telegram üzerinden onaylama/reddetme işlemlerine izin verin",
+        "commands": "Bot Komutları",
+        "commandsDesc": "/clockedin, /whosout, /pending ve diğer komutları etkinleştirin",
+        "description": "Telegram botu için hangi özelliklerin etkinleştirileceğini yapılandırın.",
+        "digest": "Günlük Özet",
+        "digestDesc": "Devamsızlıkların ve programların günlük özetini gönder",
+        "digestTime": "Zaman",
+        "digestTimezone": "Zaman Dilimi",
+        "escalations": "Yükseltmeler",
+        "escalationsDesc": "Yanıtlanmayan onayları bir üst yöneticiye yükselt",
+        "escalationTimeout": "Zaman Aşımı",
+        "hours": "saat",
+        "title": "Özellikler"
+      },
+      "linked": "Bağlandı",
+      "linkError": "Bağlantı kodu oluşturulamadı",
+      "linking": {
+        "botLink": "Bot: @{botUsername}",
+        "description": "Kişisel bildirimleri almak için Telegram hesabınızı bağlayın.",
+        "generateCode": "Bağlantı Kodu Oluştur",
+        "instructions": "Bu komutu Telegram'daki bota gönderin:",
+        "linkedStatus": "Telegram hesabınız bağlandı",
+        "title": "Telegram Hesabı"
+      },
+      "notConfigured": "Telegram bu kuruluş için yapılandırılmamış. Yöneticinizle iletişime geçin.",
+      "saved": "Telegram ayarları kaydedildi",
+      "status": {
+        "active": "Aktif"
+      },
+      "title": "Telegram",
+      "unlink": "Bağlantıyı Kes",
+      "unlinkConfirm": {
+        "description": "Telegram bildirimlerini almayı durduracaksınız. Daha sonra tekrar bağlayabilirsiniz.",
+        "title": "Telegram Hesabının Bağlantısı Kesilsin mi?"
+      },
+      "unlinked": "Telegram hesabının bağlantısı kesildi",
+      "unlinkError": "Telegram hesabının bağlantısı kesilemedi",
+      "webhookActive": "Webhook kaydedildi",
+      "webhookPending": "Webhook bekleniyor"
+    }
+  }
+}

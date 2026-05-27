@@ -154,28 +154,31 @@ describe("SurchargeReports", () => {
 		expect(screen.getByText("time_window")).toBeTruthy();
 		expect(screen.getByText("Overlap policy: max_wins")).toBeTruthy();
 		expect(translateMock).toHaveBeenCalledWith(
-			"surcharges.reports.details.workPeriod",
+			"settings.surcharges.reports.details.workPeriod",
 			"Work period",
 		);
 		expect(translateMock).toHaveBeenCalledWith(
-			"surcharges.reports.details.calculatedAt",
+			"settings.surcharges.reports.details.calculatedAt",
 			"Calculated at",
 		);
 		expect(translateMock).toHaveBeenCalledWith(
-			"surcharges.reports.details.overlapPolicy",
+			"settings.surcharges.reports.details.overlapPolicy",
 			"Overlap policy",
 		);
 		expect(translateMock).toHaveBeenCalledWith(
-			"surcharges.reports.details.appliedRules",
+			"settings.surcharges.reports.details.appliedRules",
 			"Applied rules",
 		);
 		expect(translateMock).toHaveBeenCalledWith(
-			"surcharges.reports.details.qualifying",
+			"settings.surcharges.reports.details.qualifying",
 			"Qualifying",
 		);
-		expect(translateMock).toHaveBeenCalledWith("surcharges.reports.details.surcharge", "Surcharge");
 		expect(translateMock).toHaveBeenCalledWith(
-			"surcharges.reports.details.percentage",
+			"settings.surcharges.reports.details.surcharge",
+			"Surcharge",
+		);
+		expect(translateMock).toHaveBeenCalledWith(
+			"settings.surcharges.reports.details.percentage",
 			"Percentage",
 		);
 	});
@@ -200,7 +203,7 @@ describe("SurchargeReports", () => {
 
 		expect(screen.getByText("No applied rules recorded.")).toBeTruthy();
 		expect(translateMock).toHaveBeenCalledWith(
-			"surcharges.reports.details.noAppliedRules",
+			"settings.surcharges.reports.details.noAppliedRules",
 			"No applied rules recorded.",
 		);
 	});

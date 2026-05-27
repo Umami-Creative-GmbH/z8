@@ -396,6 +396,56 @@
       "percentageDescription": "Crédito de tiempo adicional",
       "rangeEnd": "Fin del rango",
       "rangeStart": "Inicio del rango",
+      "reports": {
+        "details": {
+          "appliedRules": "Reglas aplicadas",
+          "calculatedAt": "Calculado el",
+          "noAppliedRules": "No hay reglas aplicadas registradas.",
+          "overlapPolicy": "Política de superposición",
+          "percentage": "Porcentaje",
+          "qualifying": "Calificación",
+          "surcharge": "Recargo",
+          "workPeriod": "Periodo de trabajo"
+        },
+        "empty": {
+          "description": "Ningún cálculo de recargo coincidió con los filtros seleccionados.",
+          "title": "No se encontraron cálculos de recargo"
+        },
+        "errors": {
+          "invalidDateRange": "La fecha de inicio debe ser anterior o igual a la fecha de finalización.",
+          "loadFailed": "Error al cargar los cálculos de recargo.",
+          "loadTitle": "No se pueden cargar los cálculos"
+        },
+        "filters": {
+          "apply": "Aplicar filtros",
+          "employeeId": "ID de empleado",
+          "endDate": "Fecha de finalización",
+          "startDate": "Fecha de inicio"
+        },
+        "loading": "Cargando cálculos…",
+        "previousResults": {
+          "description": "La última solicitud falló, por lo que los resultados exitosos anteriores permanecen visibles.",
+          "title": "Mostrando resultados anteriores."
+        },
+        "rowLimitNotice": "Mostrando los primeros 500 cálculos coincidentes. Ajuste los filtros de fecha o empleado para refinar los totales.",
+        "summary": {
+          "baseHours": "Horas base",
+          "calculations": "Cálculos",
+          "creditedHours": "Horas de recargo acreditadas",
+          "qualifyingHours": "Horas de recargo calificadas"
+        },
+        "table": {
+          "base": "Base",
+          "created": "Creado",
+          "credit": "Crédito",
+          "date": "Fecha",
+          "details": "Detalles",
+          "employee": "Empleado",
+          "percentage": "Porcentaje",
+          "qualifying": "Calificación"
+        },
+        "title": "Informes de recargos"
+      },
       "rule": "Regla",
       "ruleCountLabel": "{count, plural, one {# regla} other {# reglas}}",
       "ruleName": "Nombre de la regla",

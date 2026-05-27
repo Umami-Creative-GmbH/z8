@@ -20,6 +20,61 @@
       "failedAsFormat": "Esportazione come {format} non riuscita"
     }
   },
+  "appSearch": {
+    "commandDescription": "Cerca pagine, persone, team, impostazioni o azioni",
+    "commandPlaceholder": "Cerca pagine, persone, team, impostazioni o azioni…",
+    "commands": {
+      "addManualTimeEntry": {
+        "subtitle": "Registra le ore per un turno passato o una correzione",
+        "title": "Aggiungi inserimento manuale del tempo"
+      },
+      "createProject": {
+        "subtitle": "Apri le impostazioni del progetto per definire un nuovo progetto",
+        "title": "Crea progetto"
+      },
+      "inviteTeammate": {
+        "subtitle": "Apri la gestione dell'organizzazione per aggiungere un collega",
+        "title": "Invita un membro del team"
+      },
+      "openApprovalsInbox": {
+        "subtitle": "Esamina le richieste in sospeso dei dipendenti",
+        "title": "Apri la posta in arrivo delle approvazioni"
+      },
+      "openMyRequests": {
+        "subtitle": "Esamina le tue assenze e spese inviate",
+        "title": "Apri le mie richieste"
+      },
+      "openPayrollReadiness": {
+        "subtitle": "Verifica se i dati temporali sono pronti per le buste paga",
+        "title": "Apri la preparazione buste paga"
+      },
+      "openSettings": {
+        "subtitle": "Gestisci il tuo profilo, la sicurezza e le impostazioni dell'organizzazione",
+        "title": "Apri impostazioni"
+      },
+      "requestAbsence": {
+        "subtitle": "Avvia una richiesta di ferie, malattia o permesso",
+        "title": "Richiedi assenza"
+      },
+      "submitTravelExpense": {
+        "subtitle": "Crea una richiesta di rimborso per spese di viaggio",
+        "title": "Invia nota spese di viaggio"
+      }
+    },
+    "empty": "Nessun risultato trovato.",
+    "groups": {
+      "actions": "Azioni",
+      "pages": "Pagine",
+      "people": "Persone",
+      "settings": "Impostazioni",
+      "teams": "Team"
+    },
+    "search": "Cerca",
+    "searchOrRunCommand": "Cerca o esegui comando",
+    "teamAbsences": {
+      "description": "Esamina le metriche di assenza dei dipendenti e registra le assenze"
+    }
+  },
   "billing": {
     "suspended": {
       "adminDescription": "La prova è terminata o l'abbonamento non è più valido. Aggiorna la fatturazione per continuare a usare Z8.",
@@ -29,7 +84,7 @@
     },
     "trialBanner": {
       "description": "{days} giorni rimanenti. Aggiungi ora i dettagli di pagamento; l'abbonamento a pagamento inizierà dopo la prova.",
-      "dismiss": "Nascondi banner della prova",
+      "dismiss": "Ignora banner di prova",
       "title": "Prova di 14 giorni attiva",
       "upgrade": "Aggiorna"
     }
@@ -415,13 +470,17 @@
     "language": "Lingua",
     "logging-out": "Disconnessione...",
     "log-out": "Disconnetti",
+    "log-out-failed": "Impossibile effettuare il logout. Riprova.",
     "profile": "Profilo",
+    "security": "Sicurezza",
     "theme": "Tema",
     "theme-dark": "Scuro",
     "theme-light": "Chiaro",
+    "theme-location-required": "L'autorizzazione alla posizione è richiesta per il tema basato sull'orario.",
     "theme-system": "Sistema",
-    "theme-toggle": "Cambia tema",
-    "time-settings": "Impostazioni orario"
+    "theme-time": "Basato sull'orario",
+    "theme-time-info": "La modalità basata sull'orario sta utilizzando {currentMode}. Passerà a {nextMode} alle {time}.",
+    "theme-toggle": "Cambia tema"
   },
   "validation": {
     "first-name-required": "Il nome è obbligatorio",
@@ -430,59 +489,10 @@
     "last-name-required": "Il cognome è obbligatorio",
     "password-required": "La password è obbligatoria"
   },
-  "appSearch": {
-    "commandDescription": "Cerca pagine, persone, team, impostazioni o azioni",
-    "commandPlaceholder": "Cerca pagine, persone, team, impostazioni o azioni…",
-    "commands": {
-      "addManualTimeEntry": {
-        "subtitle": "Registra le ore per un turno passato o una correzione",
-        "title": "Aggiungi inserimento manuale del tempo"
-      },
-      "createProject": {
-        "subtitle": "Apri le impostazioni del progetto per definire un nuovo progetto",
-        "title": "Crea progetto"
-      },
-      "inviteTeammate": {
-        "subtitle": "Apri la gestione dell'organizzazione per aggiungere un collega",
-        "title": "Invita un membro del team"
-      },
-      "openApprovalsInbox": {
-        "subtitle": "Esamina le richieste in sospeso dei dipendenti",
-        "title": "Apri la posta in arrivo delle approvazioni"
-      },
-      "openMyRequests": {
-        "subtitle": "Esamina le tue assenze e spese inviate",
-        "title": "Apri le mie richieste"
-      },
-      "openPayrollReadiness": {
-        "subtitle": "Verifica se i dati temporali sono pronti per le buste paga",
-        "title": "Apri preparazione buste paga"
-      },
-      "openSettings": {
-        "subtitle": "Gestisci il tuo profilo, la sicurezza e le impostazioni dell'organizzazione",
-        "title": "Apri impostazioni"
-      },
-      "requestAbsence": {
-        "subtitle": "Avvia una richiesta di ferie, malattia o permesso",
-        "title": "Richiedi assenza"
-      },
-      "submitTravelExpense": {
-        "subtitle": "Crea una richiesta di rimborso per spese di viaggio",
-        "title": "Invia spesa di viaggio"
-      }
-    },
-    "empty": "Nessun risultato trovato.",
-    "groups": {
-      "actions": "Azioni",
-      "pages": "Pagine",
-      "people": "Persone",
-      "settings": "Impostazioni",
-      "teams": "Team"
-    },
-    "search": "Cerca",
-    "searchOrRunCommand": "Cerca o esegui comando",
-    "teamAbsences": {
-      "description": "Esamina le metriche di assenza dei dipendenti e registra le assenze"
-    }
+  "workBalance": {
+    "label": "Saldo totale",
+    "notCalculated": "Non ancora calcolato",
+    "pendingDescription": "Il worker calcolerà presto questo saldo.",
+    "updatedEveryThreeHours": "Aggiornato ogni 3 ore"
   }
 }

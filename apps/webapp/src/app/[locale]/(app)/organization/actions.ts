@@ -1,6 +1,7 @@
 "use server";
 
 import { and, asc, count, eq, ilike, inArray, or } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { user } from "@/db/auth-schema";
@@ -352,6 +353,12 @@ function loadTeamNeighborhood(
 		if (targetTeam.primaryManagerId) {
 			employeeIds.add(targetTeam.primaryManagerId);
 		}
+		const directManagerLinks = yield* _(
+			loadDirectManagerLinksForEmployees(dbService, organizationId, [...employeeIds]),
+		);
+		for (const managerId of directManagerLinks.map((link) => link.managerId)) {
+			employeeIds.add(managerId);
+		}
 		const employees = yield* _(
 			loadActiveEmployeesByIds(dbService, organizationId, [...employeeIds]),
 		);
@@ -366,7 +373,7 @@ function loadTeamNeighborhood(
 				partial: employeeCount >= SMALL_ORG_EMPLOYEE_LIMIT,
 				employees,
 				teams: [targetTeam],
-				managerLinks,
+				managerLinks: dedupeManagerLinks([...directManagerLinks, ...managerLinks]),
 				teamMemberships: memberships,
 			},
 			organizationId,
@@ -636,6 +643,39 @@ function loadDirectManagerLinks(
 	});
 }
 
+function loadDirectManagerLinksForEmployees(
+	dbService: DatabaseServiceInstance,
+	organizationId: string,
+	employeeIds: string[],
+) {
+	if (employeeIds.length === 0) {
+		return Effect.succeed([] satisfies ManagerLinkRow[]);
+	}
+
+	return dbService.query("loadOrgChartDirectManagerLinksForEmployees", async () => {
+		const reportEmployee = alias(employee, "report_employee");
+		const managerEmployee = alias(employee, "manager_employee");
+
+		return await dbService.db
+			.select({
+				managerId: employeeManagers.managerId,
+				employeeId: employeeManagers.employeeId,
+			})
+			.from(employeeManagers)
+			.innerJoin(reportEmployee, eq(employeeManagers.employeeId, reportEmployee.id))
+			.innerJoin(managerEmployee, eq(employeeManagers.managerId, managerEmployee.id))
+			.where(
+				and(
+					inArray(employeeManagers.employeeId, employeeIds),
+					eq(reportEmployee.organizationId, organizationId),
+					eq(reportEmployee.isActive, true),
+					eq(managerEmployee.organizationId, organizationId),
+					eq(managerEmployee.isActive, true),
+				),
+			);
+	});
+}
+
 function loadDirectReportLinks(
 	dbService: DatabaseServiceInstance,
 	organizationId: string,
@@ -749,5 +789,11 @@ function dedupeMemberships(memberships: TeamMembershipRow[]) {
 				membership,
 			]),
 		).values(),
+	);
+}
+
+function dedupeManagerLinks(links: ManagerLinkRow[]) {
+	return Array.from(
+		new Map(links.map((link) => [`${link.managerId}:${link.employeeId}`, link])).values(),
 	);
 }

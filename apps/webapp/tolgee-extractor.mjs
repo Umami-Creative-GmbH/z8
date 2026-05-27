@@ -15,6 +15,8 @@
 const NAMESPACE_PREFIXES = {
 	// common namespace
 	accessDenied: "common",
+	appSearch: "common",
+	workBalance: "common",
 	colors: "common",
 	common: "common",
 	employeeSelect: "common",
@@ -38,6 +40,7 @@ const NAMESPACE_PREFIXES = {
 	sessions: "auth",
 	// admin namespace
 	admin: "admin",
+	analytics: "analytics",
 	// approvals namespace
 	approvals: "approvals",
 	// compliance namespace
@@ -65,6 +68,7 @@ const NAMESPACE_PREFIXES = {
 	travelExpenses: "travelExpenses",
 	vacation: "settings/generic",
 	team: "team",
+	today: "today",
 	webhooks: "webhooks",
 	// onboarding namespace
 	onboarding: "onboarding",
@@ -209,8 +213,9 @@ export default function extractor(code, _fileName) {
 		/import\s+\{[^}]*\bT\b[^}]*\}\s+from\s+["'](@\/tolgee\/server|@tolgee\/(react|next|web)(\/server)?)["']/.test(
 			code,
 		);
+	const hasNamespacedInjectedTranslator = /\bt\s*\(\s*["'`]teamsBot:/.test(code);
 
-	if (!hasValidTSource && !hasTComponent) {
+	if (!hasValidTSource && !hasTComponent && !hasNamespacedInjectedTranslator) {
 		// No valid translation imports, skip this file
 		return { keys, warnings };
 	}

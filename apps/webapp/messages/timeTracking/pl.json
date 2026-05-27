@@ -1,0 +1,152 @@
+{
+  "timeTracking": {
+    "addNotePrompt": "Dodaj notatkę o swojej pracy (opcjonalnie)",
+    "autoAdjusted": {
+      "toast": {
+        "description": "Dodano {breakMinutes}-minutową przerwę w celu zachowania zgodności z przepisami dotyczącymi czasu pracy.",
+        "title": "Przerwa dodana automatycznie w celu zachowania zgodności"
+      }
+    },
+    "budget": "Budżet",
+    "clockedOutSuccess": "Wylogowano z systemu!",
+    "clockIn": "Rozpocznij pracę",
+    "clockingIn": "Rozpoczynanie pracy…",
+    "clockingOut": "Kończenie pracy…",
+    "clockInQueued": "Rozpoczęcie pracy w kolejce do synchronizacji",
+    "clockInSuccess": "Pomyślnie rozpoczęto pracę",
+    "clockOut": "Zakończ pracę",
+    "clockOutQueued": "Zakończenie pracy w kolejce do synchronizacji",
+    "clockOutSuccess": "Pomyślnie zakończono pracę",
+    "compliance": {
+      "violation": "Naruszenie przepisów",
+      "warning": "Powiadomienie o zgodności"
+    },
+    "correction": {
+      "clockIn": "Rozpocznij pracę",
+      "clockOut": "Zakończ pracę",
+      "editDescription": "Wprowadź zmiany w dzisiejszym wpisie czasu.",
+      "editEntry": "Edytuj wpis czasu",
+      "editTitle": "Edytuj wpis czasu",
+      "errors": {
+        "invalidTimeRange": "Godzina zakończenia pracy musi być późniejsza niż godzina rozpoczęcia",
+        "submitFailed": "Nie udało się przesłać korekty",
+        "updateFailed": "Nie udało się zaktualizować wpisu czasu"
+      },
+      "noteLabel": "Notatka (opcjonalnie)",
+      "notePlaceholder": "Dodaj notatkę o tej zmianie…",
+      "reasonLabel": "Powód korekty",
+      "reasonPlaceholder": "Wyjaśnij, dlaczego ta korekta jest potrzebna…",
+      "requestCorrection": "Poproś o korektę czasu",
+      "requestDescription": "Prześlij prośbę o korektę tego wpisu czasu. Twój przełożony będzie musiał ją zatwierdzić.",
+      "requestTitle": "Poproś o korektę czasu",
+      "saveChanges": "Zapisz zmiany",
+      "saving": "Zapisywanie…",
+      "submitRequest": "Prześlij prośbę",
+      "submitting": "Przesyłanie…",
+      "success": {
+        "submitted": "Prośba o korektę została przesłana do zatwierdzenia przez przełożonego",
+        "updated": "Wpis czasu został pomyślnie zaktualizowany"
+      },
+      "timezoneNote": "Czasy są podane w Twojej lokalnej strefie czasowej ({timezone})"
+    },
+    "currentlyClockedIn": "Aktualnie pracujesz",
+    "deadline": "Termin",
+    "errors": {
+      "clockInFailed": "Nie udało się rozpocząć pracy",
+      "clockOutFailed": "Nie udało się zakończyć pracy",
+      "holidayBlocked": "Nie można zakończyć pracy w dniu {holidayName}",
+      "holidayBlockedDesc": "Ten dzień jest oznaczony jako święto i wpisywanie czasu pracy jest niedozwolone",
+      "notesSaveFailed": "Nie udało się zapisać notatek",
+      "restPeriodBlocked": "Okres odpoczynku nie został zakończony",
+      "restPeriodBlockedDesc": "Musisz zakończyć wymagany okres odpoczynku przed rozpoczęciem pracy. W razie potrzeby poproś o wyjątek."
+    },
+    "manualEntry": {
+      "addButton": "Dodaj wpis ręczny",
+      "clockInLabel": "Rozpocznij pracę",
+      "clockOutLabel": "Zakończ pracę",
+      "dateLabel": "Data",
+      "description": "Utwórz wpis czasu dla daty z przeszłości. W zależności od polityki zmian w Twojej organizacji może być wymagane zatwierdzenie.",
+      "errors": {
+        "createFailed": "Nie udało się utworzyć wpisu czasu",
+        "futureDate": "Nie można tworzyć wpisów dla przyszłych dat",
+        "invalidTimeRange": "Czas zakończenia pracy musi być późniejszy niż czas rozpoczęcia",
+        "tooLong": "Okres pracy nie może przekraczać 24 godzin"
+      },
+      "reasonLabel": "Powód",
+      "reasonPlaceholder": "Opisz, nad czym pracowałeś…",
+      "submit": "Utwórz wpis",
+      "submitting": "Tworzenie…",
+      "success": {
+        "adjusted": "Czasy dostosowano do {clockIn} - {clockOut}, aby uniknąć nakładania się",
+        "created": "Wpis czasu został pomyślnie utworzony",
+        "pendingApproval": "Wpis czasu przesłany do zatwierdzenia przez menedżera"
+      },
+      "title": "Dodaj ręczny wpis czasu"
+    },
+    "noCategory": "Brak kategorii (100%)",
+    "noProject": "Brak projektu",
+    "notesPlaceholder": "Nad czym pracowałeś?",
+    "notesSaved": "Notatki zapisane",
+    "project": "Projekt",
+    "readyToClockIn": "Gotowy do rozpoczęcia pracy?",
+    "selectCategory": "Wybierz kategorię",
+    "selectProject": "Wybierz projekt",
+    "sessionReminders": {
+      "breakOpen": "Pozostało {remaining} min przerwy",
+      "breakRequired": "Przerwa wymagana teraz",
+      "breakRequiredMessage": "Zrób przerwę przed kontynuowaniem sesji.",
+      "breakSoon": "Wkrótce przerwa",
+      "dismissBreak": "Odrzuć przypomnienie o przerwie",
+      "dismissHydration": "Odrzuć przypomnienie o nawodnieniu",
+      "hydration": "Nawodnienie",
+      "hydrationProgress": "{intake}/{goal} szklanek dzisiaj",
+      "logOneGlass": "+1 szklanka",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "{minutes} min do przerwy",
+      "snoozeToday": "Przypomnij później",
+      "subtitle": "Podczas tej zmiany",
+      "title": "Przypomnienia o sesji"
+    },
+    "startedAt": "Rozpoczęto o",
+    "summary": {
+      "baseWorked": "Praca podstawowa",
+      "surcharge": "Dodatek",
+      "thisMonth": "W tym miesiącu",
+      "thisWeek": "W tym tygodniu",
+      "today": "Dzisiaj"
+    },
+    "table": {
+      "approved": "Wpis czasu został zatwierdzony",
+      "approveEntry": "Zatwierdź wpis",
+      "approveFailed": "Nie udało się zatwierdzić wpisu",
+      "approving": "Zatwierdzanie...",
+      "emptyState": "Brak wpisów czasu dla tego tygodnia.",
+      "rowActions": "Akcje wpisu czasu",
+      "title": "Wpisy czasu",
+      "viewCalendar": "Zobacz kalendarz"
+    },
+    "timeline": {
+      "dayPicker": "Wybór dnia na osi czasu",
+      "emptyDescription": "Dla wybranego dnia nie ma jeszcze żadnych zmian, nieobecności ani wpisów czasu pracy.",
+      "emptyTitle": "Brak zarejestrowanej aktywności dla tego dnia.",
+      "nextDay": "Następny dzień",
+      "previousDay": "Poprzedni dzień",
+      "title": "Oś czasu dnia pracy",
+      "today": "Dzisiaj",
+      "unavailableDescription": "Rejestrowanie czasu nadal działa. Spróbuj odświeżyć ten widok później.",
+      "unavailableTitle": "Oś czasu niedostępna"
+    },
+    "unknownCategory": "Nieznana kategoria",
+    "unknownProject": "Nieznany projekt",
+    "workCategory": "Kategoria pracy"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Dzienny cel osiągnięty! Tak trzymaj!",
+      "logError": "Nie udało się zapisać spożycia wody",
+      "logged": "Woda zapisana! {progress}% dziennego celu",
+      "snoozed": "Przypomnienia o wodzie zostały wyciszone na dziś",
+      "snoozeError": "Nie udało się wyciszyć przypomnień"
+    }
+  }
+}

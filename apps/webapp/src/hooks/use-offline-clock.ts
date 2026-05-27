@@ -1,14 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useOnlineStatus } from "./use-online-status";
 import type {
 	ClientToSWMessage,
 	OfflineQueueStatus,
 	QueuedClockEvent,
 	SWToClientMessage,
 } from "@/lib/offline/types";
+import { useOnlineStatus } from "./use-online-status";
 
 /**
  * Send a message to the service worker and wait for response
@@ -157,7 +157,9 @@ export function useOfflineClock() {
 	useEffect(() => {
 		if (isOnline && pendingCount > 0 && !shownBackOnlineToast.current) {
 			shownBackOnlineToast.current = true;
-			toast.info(`You're back online. Syncing ${pendingCount} pending event${pendingCount > 1 ? "s" : ""}...`);
+			toast.info(
+				`You're back online. Syncing ${pendingCount} pending event${pendingCount > 1 ? "s" : ""}...`,
+			);
 		}
 
 		if (!isOnline) {
@@ -168,37 +170,34 @@ export function useOfflineClock() {
 	/**
 	 * Queue a clock event for offline sync
 	 */
-	const queueClockEvent = useCallback(
-		async (
-			event: Omit<QueuedClockEvent, "id" | "retryCount" | "createdAt">,
-		): Promise<{ success: boolean; eventId?: string; error?: string }> => {
-			if (!swReady) {
-				return { success: false, error: "Service worker not ready" };
-			}
+	const queueClockEvent = async (
+		event: Omit<QueuedClockEvent, "id" | "retryCount" | "createdAt">,
+	): Promise<{ success: boolean; eventId?: string; error?: string }> => {
+		if (!swReady) {
+			return { success: false, error: "Service worker not ready" };
+		}
 
-			try {
-				const response = await sendMessageToSW<{ success: boolean; eventId?: string }>({
-					type: "QUEUE_CLOCK_EVENT",
-					payload: event,
-				});
+		try {
+			const response = await sendMessageToSW<{ success: boolean; eventId?: string }>({
+				type: "QUEUE_CLOCK_EVENT",
+				payload: event,
+			});
 
-				// Note: Caller (useTimeClock) shows the appropriate toast
-				return response;
-			} catch (error) {
-				console.error("[OfflineClock] Failed to queue event:", error);
-				return {
-					success: false,
-					error: error instanceof Error ? error.message : "Unknown error",
-				};
-			}
-		},
-		[swReady],
-	);
+			// Note: Caller (useTimeClock) shows the appropriate toast
+			return response;
+		} catch (error) {
+			console.error("[OfflineClock] Failed to queue event:", error);
+			return {
+				success: false,
+				error: error instanceof Error ? error.message : "Unknown error",
+			};
+		}
+	};
 
 	/**
 	 * Trigger manual sync
 	 */
-	const triggerSync = useCallback(async (): Promise<void> => {
+	const triggerSync = async (): Promise<void> => {
 		if (!swReady || !isOnline) {
 			return;
 		}
@@ -209,12 +208,12 @@ export function useOfflineClock() {
 			console.error("[OfflineClock] Failed to trigger sync:", error);
 			setLastError(error instanceof Error ? error.message : "Sync failed");
 		}
-	}, [swReady, isOnline]);
+	};
 
 	/**
 	 * Clear old queue entries (> 7 days)
 	 */
-	const clearOldQueue = useCallback(async (): Promise<number> => {
+	const clearOldQueue = async (): Promise<number> => {
 		if (!swReady) {
 			return 0;
 		}
@@ -228,7 +227,7 @@ export function useOfflineClock() {
 			console.error("[OfflineClock] Failed to clear old queue:", error);
 			return 0;
 		}
-	}, [swReady]);
+	};
 
 	const status: OfflineQueueStatus = {
 		pendingCount,

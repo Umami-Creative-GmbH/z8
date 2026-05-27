@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback } from "react";
 import { useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -16,15 +15,12 @@ interface CalendarFiltersProps {
 export function CalendarFiltersComponent({ filters, onFiltersChange }: CalendarFiltersProps) {
 	const { t } = useTranslate();
 
-	const handleToggle = useCallback(
-		(key: keyof CalendarFilters) => {
-			onFiltersChange({
-				...filters,
-				[key]: !filters[key],
-			});
-		},
-		[filters, onFiltersChange],
-	);
+	const handleToggle = (key: keyof CalendarFilters) => {
+		onFiltersChange({
+			...filters,
+			[key]: !filters[key],
+		});
+	};
 
 	return (
 		<Card>

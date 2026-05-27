@@ -3,7 +3,7 @@
 import { IconBriefcase, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -59,24 +59,23 @@ export function ProjectSelector({
 	);
 
 	// Build a Map for O(1) project lookups (js-index-maps)
-	const projectsMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects]);
+	const projectsMap = new Map(projects.map((p) => [p.id, p]));
 
 	// Auto-select last used project on initial load
 	useEffect(() => {
-		if (autoSelectLast && !hasAutoSelectedRef.current && projects.length > 0 && value === undefined) {
+		if (
+			autoSelectLast &&
+			!hasAutoSelectedRef.current &&
+			projects.length > 0 &&
+			value === undefined
+		) {
 			const lastProjectId = lastProjectIdRef.current;
 			if (lastProjectId && projectsMap.has(lastProjectId)) {
 				onValueChange(lastProjectId);
 			}
 			hasAutoSelectedRef.current = true;
 		}
-	}, [
-		autoSelectLast,
-		projects.length,
-		projectsMap,
-		value,
-		onValueChange,
-	]);
+	}, [autoSelectLast, projects.length, projectsMap, value, onValueChange]);
 
 	// Save selected project to localStorage and update cache
 	const handleValueChange = (newValue: string) => {
@@ -186,10 +185,7 @@ function ProjectOption({
 	return (
 		<div className="flex items-center gap-2 w-full">
 			{project.color ? (
-				<div
-					className="size-3 shrink-0 rounded-full"
-					style={{ backgroundColor: project.color }}
-				/>
+				<div className="size-3 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
 			) : (
 				<IconBriefcase className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
 			)}
@@ -197,17 +193,11 @@ function ProjectOption({
 			{hasBadges && !compact && (
 				<div className="flex items-center gap-1.5 shrink-0 text-[11px] leading-none">
 					{budgetBadge && (
-						<span className={cn("tabular-nums", budgetBadge.color)}>
-							{budgetBadge.text}
-						</span>
+						<span className={cn("tabular-nums", budgetBadge.color)}>{budgetBadge.text}</span>
 					)}
-					{budgetBadge && deadlineBadge && (
-						<span className="text-muted-foreground/50">|</span>
-					)}
+					{budgetBadge && deadlineBadge && <span className="text-muted-foreground/50">|</span>}
 					{deadlineBadge && (
-						<span className={cn("tabular-nums", deadlineBadge.color)}>
-							{deadlineBadge.text}
-						</span>
+						<span className={cn("tabular-nums", deadlineBadge.color)}>{deadlineBadge.text}</span>
 					)}
 				</div>
 			)}
@@ -226,9 +216,7 @@ function ProjectDetails({ project }: { project: AssignedProject }) {
 		<div className="rounded-lg border bg-muted/50 px-3 py-2 space-y-1.5 text-sm">
 			{budgetBadge && (
 				<div className="flex items-center justify-between">
-					<span className="text-muted-foreground">
-						{t("timeTracking.budget", "Budget")}
-					</span>
+					<span className="text-muted-foreground">{t("timeTracking.budget", "Budget")}</span>
 					<span className={cn("font-medium tabular-nums", budgetBadge.color)}>
 						{budgetBadge.text}
 					</span>
@@ -236,9 +224,7 @@ function ProjectDetails({ project }: { project: AssignedProject }) {
 			)}
 			{deadlineBadge && (
 				<div className="flex items-center justify-between">
-					<span className="text-muted-foreground">
-						{t("timeTracking.deadline", "Deadline")}
-					</span>
+					<span className="text-muted-foreground">{t("timeTracking.deadline", "Deadline")}</span>
 					<span className={cn("font-medium tabular-nums", deadlineBadge.color)}>
 						{deadlineBadge.text}
 					</span>

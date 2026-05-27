@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useMemo } from "react";
 import { toast } from "sonner";
 import {
 	getScheduleComplianceSummary,
@@ -117,11 +116,7 @@ export function useShiftSchedulerData({
 	const complianceFindingsCount = complianceSummary?.totalFindings ?? 0;
 	const hasComplianceWarnings = complianceFindingsCount > 0;
 
-	const events = useMemo(
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		() => shifts.map(shiftToEvent) as any[],
-		[shifts],
-	);
+	const events = shifts.map(shiftToEvent) as any[];
 
 	return {
 		shifts,

@@ -1,7 +1,7 @@
 {
   "name": "@z8-target/migration",
   "private": true,
-  "packageManager": "pnpm@11.3.0",
+  "packageManager": "pnpm@11.4.0",
   "dependencies": {
     "@t3-oss/env-nextjs": "^0.13.11",
     "drizzle-kit": "^0.31.10",

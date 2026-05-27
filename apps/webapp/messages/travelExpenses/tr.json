@@ -1,0 +1,80 @@
+{
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "Yeni Talep"
+    },
+    "approvals": {
+      "description": "Seyahat masraflarına göre filtrelenmiş birleşik onay gelen kutusunu açın.",
+      "openInbox": "Gelen Kutusunu Aç",
+      "title": "Bekleyen Seyahat Masrafı Onaylarını İncele"
+    },
+    "claimTypes": {
+      "mileage": "Kilometre",
+      "per_diem": "Günlük Harcırah",
+      "receipt": "Makbuz"
+    },
+    "decision": {
+      "approve": "Onayla",
+      "approved": "Talep başarıyla onaylandı",
+      "approveDescription": "Onaylamadan önce talep sahibi için isteğe bağlı bir not ekleyin.",
+      "approveTitle": "Talebi Onayla",
+      "errors": {
+        "approve": "Talep onaylanamadı",
+        "missingClaim": "Seyahat masrafı talebi eksik",
+        "reject": "Talep reddedilemedi",
+        "rejectionReason": "Lütfen bir reddetme nedeni belirtin"
+      },
+      "noteOptional": "Not (isteğe bağlı)",
+      "notePlaceholder": "Her şey yolunda görünüyor. Detaylar için teşekkürler.",
+      "reasonPlaceholder": "Gönderilen tutar için makbuz detayları eksik",
+      "reasonRequired": "Neden (gerekli)",
+      "reject": "Reddet",
+      "rejectDescription": "Talep sahibinin güncelleyip yeniden göndermesine yardımcı olmak için net bir neden belirtin.",
+      "rejected": "Talep başarıyla reddedildi",
+      "rejectTitle": "Talebi Reddet"
+    },
+    "description": "Seyahat masrafı taleplerinizi oluşturun ve takip edin",
+    "errors": {
+      "loadClaims": "Seyahat masrafı talepleri yüklenemedi"
+    },
+    "feature": "seyahat masraflarını yönet",
+    "form": {
+      "amount": "Tutar",
+      "claimType": "Talep Türü",
+      "created": "Seyahat masrafı taslağı oluşturuldu",
+      "createDraft": "Taslak Oluştur",
+      "currency": "Para Birimi",
+      "currencyDescription": "ISO 4217 kodu, örn. EUR veya USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Son seyahat masraflarınız için yeni bir taslak talep oluşturun.",
+      "destinationCity": "Varış Şehri",
+      "destinationCityPlaceholder": "Berlin",
+      "destinationCountry": "Varış Ülkesi",
+      "destinationCountryPlaceholder": "Almanya",
+      "errors": {
+        "createDraft": "Seyahat masrafı taslağı oluşturulamadı",
+        "positiveAmount": "Tutar pozitif bir sayı olmalıdır",
+        "tripEndBeforeStart": "Seyahat bitiş tarihi, seyahat başlangıç tarihinden önce olamaz",
+        "validTripDates": "Lütfen geçerli bir seyahat başlangıç ve bitiş tarihi girin",
+        "validTripEnd": "Lütfen geçerli bir seyahat bitiş tarihi girin",
+        "validTripStart": "Lütfen geçerli bir seyahat başlangıç tarihi girin"
+      },
+      "notes": "Notlar",
+      "notesPlaceholder": "Onaylayıcınız için isteğe bağlı bağlam ekleyin",
+      "receiptAttachmentHint": "Makbuz talepleri en az bir ek gerektirir. Ek yükleme özelliği taslak oluşturulduktan sonra kullanılabilir olacaktır.",
+      "selectClaimType": "Talep türünü seçin",
+      "title": "Seyahat Masrafı Talebi Oluştur",
+      "tripEnd": "Seyahat Bitişi",
+      "tripStart": "Seyahat Başlangıcı"
+    },
+    "list": {
+      "amount": "Tutar",
+      "dateRange": "Tarih Aralığı",
+      "emptyDescription": "Onay sürecini başlatmak için ilk masraf talebinizi oluşturun.",
+      "emptyTitle": "Henüz seyahat masraf talebi yok",
+      "status": "Durum",
+      "type": "Tür"
+    },
+    "title": "Seyahat Masrafları"
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "{name} için izin kaydı oluştur"
+      },
+      "description": "Ekibiniz için izin haklarını inceleyin ve onaylanmış izinleri kaydedin.",
+      "empty": {
+        "description": "Ekip üyelerini bulmak için filtreleri veya aramayı değiştirmeyi deneyin.",
+        "label": "Çalışan bulunamadı",
+        "title": "Çalışan bulunamadı"
+      },
+      "error": {
+        "description": "Lütfen biraz sonra tekrar deneyin.",
+        "title": "İzinler yüklenemedi"
+      },
+      "feature": "ekip izinlerini yönet",
+      "filters": {
+        "allTeams": "Tüm ekipler",
+        "searchLabel": "Çalışanları ara",
+        "searchPlaceholder": "Çalışanları ara…",
+        "searchSubmit": "Ara",
+        "teamLabel": "Ekibe göre filtrele",
+        "teamPlaceholder": "Ekip",
+        "yearLabel": "Yıla göre filtrele",
+        "yearPlaceholder": "Yıl"
+      },
+      "pagination": {
+        "next": "İleri",
+        "nextLabel": "Sonraki sayfa",
+        "page": "{pageCount} sayfasından {page}. sayfa",
+        "previous": "Geri",
+        "previousLabel": "Önceki sayfa",
+        "showing": "{total} öğeden {firstItem} ile {lastItem} arası gösteriliyor"
+      },
+      "recordDialog": {
+        "category": "Kategori",
+        "categoryPlaceholder": "Bir izin kategorisi seçin…",
+        "description": "Seçilen çalışan için doğrudan onaylanmış bir izin kaydedin.",
+        "endDate": "Bitiş tarihi",
+        "endDateHelper": "Aynı gün süren izinler için boş bırakın.",
+        "failure": "İzin kaydedilemedi",
+        "noCategories": "Kullanılabilir kategori yok",
+        "noEmployee": "İzin kaydetmeden önce bir çalışan seçin",
+        "notes": "Notlar",
+        "notesPlaceholder": "Bu kayıt için dahili bir bağlam ekleyin…",
+        "pickEndDate": "Bitiş tarihi seçin…",
+        "pickStartDate": "Başlangıç tarihi seçin…",
+        "recording": "Kaydediliyor…",
+        "required": "{label} gerekli",
+        "sickDetail": "Hastalık detayı",
+        "sickDetailPlaceholder": "Hastalık detayı seçin…",
+        "startDate": "Başlangıç tarihi",
+        "submit": "İzin kaydet",
+        "success": "İzin kaydedildi",
+        "title": "İzin kaydet",
+        "titleForEmployee": "{name} için devamsızlık kaydet"
+      },
+      "sort": {
+        "ascending": "artan",
+        "by": "{label} ile sırala",
+        "byWithDirection": "{label} ile sırala ({direction})",
+        "descending": "azalan"
+      },
+      "table": {
+        "actions": "İşlemler",
+        "allowance": "İzin Hakkı",
+        "employee": "Çalışan",
+        "left": "Kalan",
+        "pending": "Beklemede",
+        "sick": "Hastalık",
+        "teamOrPosition": "Ekip veya Pozisyon",
+        "used": "Kullanılan"
+      },
+      "title": "Ekip devamsızlıkları"
+    },
+    "balance": {
+      "noBalance": "Bakiye yok"
+    },
+    "description": "Doğrudan yönettiğiniz çalışanları görüntüleyin ve yönetin",
+    "empty": {
+      "action": "Çalışan Ayarlarına Git",
+      "description": "Yöneticisi olduğunuz çalışanlar burada görünecektir. Ekip atamalarını çalışan ayarlarından yönetebilirsiniz.",
+      "title": "Henüz ekip üyesi yok"
+    },
+    "error": {
+      "description": "Ekip üyeleriniz yüklenemedi.",
+      "title": "Bir şeyler yanlış gitti"
+    },
+    "feature": "ekibinizi görüntüleyin",
+    "member": "üye",
+    "members": "üye",
+    "member.you": "Siz",
+    "noResults": {
+      "action": "Aramayı temizle",
+      "description": "\"{query}\" ile eşleşen ekip üyesi bulunamadı",
+      "title": "Sonuç bulunamadı"
+    },
+    "pagination": {
+      "next": "İleri",
+      "previous": "Geri",
+      "showing": "{total} sonuçtan {from} - {to} arası gösteriliyor"
+    },
+    "primaryManager": "Birincil yöneticisiniz",
+    "search": {
+      "ariaLabel": "Ekip üyelerini ara",
+      "placeholder": "İsim, e-posta, pozisyon veya ekibe göre ara..."
+    },
+    "status": {
+      "active": "Aktif",
+      "inactive": "Aktif Değil"
+    },
+    "table": {
+      "employee": "Çalışan",
+      "position": "Pozisyon",
+      "role": "Rol",
+      "sort": {
+        "ascending": "artan",
+        "descending": "azalan"
+      },
+      "sortByTimeBalance": "Yıl bakiyesine göre sırala",
+      "sortByTimeBalanceWithDirection": "Yıl bakiyesine göre sırala ({direction})",
+      "status": "Durum",
+      "team": "Ekip",
+      "timeBalance": "Yıl bakiyesi"
+    },
+    "title": "Ekibiniz",
+    "view": {
+      "cards": "Kart görünümü",
+      "table": "Tablo görünümü"
+    }
+  }
+}

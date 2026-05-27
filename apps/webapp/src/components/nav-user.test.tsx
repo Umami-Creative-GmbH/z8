@@ -2,7 +2,8 @@
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockFontSizeState = vi.hoisted(() => ({
 	fontSize: "default",
@@ -19,8 +20,26 @@ const mockLanguageActions = vi.hoisted(() => ({
 	persistLocaleToDb: vi.fn(async () => undefined),
 }));
 
+const mockThemeState = vi.hoisted(() => ({
+	clearThemeError: vi.fn(),
+	setTheme: vi.fn(),
+	theme: "system",
+	themeError: undefined as "location-required" | undefined,
+	timeThemeInfo: undefined as
+		| { currentTheme: "light" | "dark"; nextSwitchAt: Date; nextTheme: "light" | "dark" }
+		| undefined,
+}));
+
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, defaultValue?: string) => defaultValue ?? _key }),
+	useTranslate: () => ({
+		t: (_key: string, defaultValue?: string, params?: Record<string, string | number>) => {
+			let value = defaultValue ?? _key;
+			for (const [paramKey, paramValue] of Object.entries(params ?? {})) {
+				value = value.replaceAll(`{${paramKey}}`, String(paramValue));
+			}
+			return value;
+		},
+	}),
 }));
 
 vi.mock("@/components/font-size-preference", async () => {
@@ -37,8 +56,8 @@ vi.mock("next-intl", () => ({
 	useLocale: () => "en",
 }));
 
-vi.mock("next-themes", () => ({
-	useTheme: () => ({ theme: "system", setTheme: vi.fn() }),
+vi.mock("@/components/theme-provider", () => ({
+	useTheme: () => mockThemeState,
 }));
 
 vi.mock("@/navigation", () => ({
@@ -128,9 +147,26 @@ vi.mock("@/components/ui/dropdown-menu", () => ({
 	DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+vi.mock("sonner", () => ({
+	toast: {
+		error: vi.fn(),
+	},
+}));
+
+const toastErrorMock = vi.mocked(toast.error);
+
 import { NavUser } from "./nav-user";
 
 describe("NavUser", () => {
+	beforeEach(() => {
+		mockThemeState.clearThemeError.mockClear();
+		mockThemeState.setTheme.mockClear();
+		toastErrorMock.mockClear();
+		mockThemeState.theme = "system";
+		mockThemeState.themeError = undefined;
+		mockThemeState.timeThemeInfo = undefined;
+	});
+
 	it("persists language changes before navigating to the localized route", async () => {
 		render(<NavUser user={{ id: "user-1", name: "Kai", email: "kai@example.com" }} />);
 
@@ -166,6 +202,51 @@ describe("NavUser", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: /theme/i }));
 		expect(screen.getByText("Light")).toBeTruthy();
+		expect(screen.getByText("Time based")).toBeTruthy();
+	});
+
+	it("shows the location-required message for time-based theme errors", () => {
+		mockThemeState.themeError = "location-required";
+
+		render(<NavUser user={{ id: "user-1", name: "Kai", email: "kai@example.com" }} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /theme/i }));
+
+		expect(screen.getByRole("alert").textContent).toBe(
+			"Location permission is required for time-based theme.",
+		);
+	});
+
+	it("shows a toast for location-required theme errors", () => {
+		mockThemeState.themeError = "location-required";
+
+		render(<NavUser user={{ id: "user-1", name: "Kai", email: "kai@example.com" }} />);
+
+		expect(toastErrorMock).toHaveBeenCalledWith(
+			"Location permission is required for time-based theme.",
+			expect.objectContaining({
+				description: "System theme will be used instead.",
+				id: "theme-location-required",
+				duration: 6000,
+			}),
+		);
+	});
+
+	it("shows when the active time-based theme will switch modes", () => {
+		mockThemeState.theme = "time";
+		mockThemeState.timeThemeInfo = {
+			currentTheme: "light",
+			nextSwitchAt: new Date("2026-05-27T18:00:00.000Z"),
+			nextTheme: "dark",
+		};
+
+		render(<NavUser user={{ id: "user-1", name: "Kai", email: "kai@example.com" }} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /theme/i }));
+
+		expect(screen.getByText(/Time based is using Light mode\./).textContent).toContain(
+			"Switches to Dark at",
+		);
 	});
 
 	it("uses selected row styling instead of radio dots for mobile options", () => {

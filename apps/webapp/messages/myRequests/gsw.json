@@ -1,0 +1,99 @@
+{
+  "myRequests": {
+    "actions": {
+      "cancel": "Abbrechen",
+      "cancelConfirmation": "Diesen Abwesenheitsantrag abbrechen?",
+      "cancelError": "Abwesenheitsantrag konnte nicht abgebrochen werden.",
+      "cancelling": "Wird abgebrochen…",
+      "fix": "Korrigieren",
+      "notAvailable": "Nicht verfügbar",
+      "view": "Ansehen"
+    },
+    "all": {
+      "description": "Überprüfen Sie Anträge für Abwesenheiten, Zeitkorrekturen und Auslagen.",
+      "title": "Alle Anträge"
+    },
+    "card": {
+      "decision": "Entscheidung",
+      "submitted": "Eingereicht"
+    },
+    "empty": {
+      "filtered": {
+        "description": "Aaträg erschined do, sobald si igreichd oder glade worde sind.",
+        "title": "Kei Aaträg für die Filter gfunde"
+      },
+      "none": {
+        "description": "Aaträg erschined do, sobald si igreichd oder glade worde sind.",
+        "title": "No kei Aaträg"
+      }
+    },
+    "featureName": "Dini Aaträg aaluege",
+    "filters": {
+      "allStatuses": "Alli Status",
+      "allTypes": "Alli Arte",
+      "approvedRequests": "Gnehmigti Aaträg",
+      "cancelledRequests": "Stornierti Aaträg",
+      "description": "Filtere jede Aatrag-Abschnitt noch Text, Status oder Aatragsart.",
+      "pendingRequests": "Hängigi Aaträg",
+      "rejectedRequests": "Abglehnti Aaträg",
+      "search": "Sueche",
+      "searchPlaceholder": "Nach Titel sueche…",
+      "status": "Status",
+      "title": "Aaträg finde",
+      "type": "Art"
+    },
+    "inReview": {
+      "description": "Aaträg, wo uf Gnehmigung oder Bearbeitig warted.",
+      "title": "In Überprüfig"
+    },
+    "needsAttention": {
+      "description": "Abglehnti Aaträg, wo vor em erneute Ireiche eventuell korrigiert werde müend.",
+      "title": "Brucht Ufmerksamkeit"
+    },
+    "reasonLabel": "Grund",
+    "recentlyDecided": {
+      "description": "Gnehmigti und abglehnti Entscheidige vo de letschte 30 Täg.",
+      "title": "Chürzlich entschiede"
+    },
+    "requests": {
+      "absence": {
+        "title": "Abweseheitsaatrag"
+      },
+      "timeCorrection": {
+        "subtitle": "Korrektur für en Ziit-Iitrag",
+        "title": "Ziitkorrektur-Aatrag"
+      },
+      "travelExpense": {
+        "title": "Speseaatrag"
+      }
+    },
+    "sourceError": {
+      "absence": "Abweseheitsaaträg händ nöd chöne glade werde.",
+      "timeCorrection": "Ziitkorrektur-Aaträg händ nöd chöne glade werde.",
+      "title": "Einigi Aaträg händ nöd chöne glade werde.",
+      "travelExpense": "Speseaaträg händ nöd chöne glade werde."
+    },
+    "sourceTypes": {
+      "absence": "Abweseheit",
+      "timeCorrection": "Ziit",
+      "travelExpense": "Spese"
+    },
+    "status": {
+      "approved": "Gnehmigt",
+      "cancelled": "Storniert",
+      "inReview": "In Überprüfig",
+      "pending": "Hängig",
+      "rejected": "Abglehnt"
+    },
+    "subtitle": "Verfolg hängigi Aaträg, notwendigi Korrekture und chürzlichi Entscheidige a eim Ort.",
+    "summary": {
+      "ariaLabel": "Aatragsübersicht",
+      "pending": "Hängig",
+      "recentDecisions": "Chürzlichi Entscheidige",
+      "requiredFixes": "Notwendigi Korrekture",
+      "totalLoaded": "Total glade"
+    },
+    "title": "Mini Aaträg",
+    "unavailableTitle": "Aaträg nöd verfügbar"
+  }
+}

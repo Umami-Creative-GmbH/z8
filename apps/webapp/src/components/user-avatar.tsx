@@ -2,7 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { generateAvatarDataUri, getInitials, type UserAvatarGender } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
@@ -89,12 +89,9 @@ export function UserAvatar({
 
 	// Generate DiceBear fallback - memoized for performance
 	// Using 2x pixels for retina displays
-	const dicebearAvatar = useMemo(
-		() => generateAvatarDataUri({ seed, size: pixels * 2, gender }),
-		[seed, pixels, gender],
-	);
+	const dicebearAvatar = generateAvatarDataUri({ seed, size: pixels * 2, gender });
 
-	const initials = useMemo(() => getInitials(name), [name]);
+	const initials = getInitials(name);
 	const alt = name || t("common:userAvatar.alt", "User avatar");
 
 	// Use uploaded image if available, otherwise DiceBear

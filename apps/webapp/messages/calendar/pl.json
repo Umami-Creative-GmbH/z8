@@ -1,0 +1,264 @@
+{
+  "absences": {
+    "addAbsence": "Dodaj nieobecność",
+    "balance": {
+      "carryoverDays": "Masz {count} dni przeniesionych z poprzedniego okresu",
+      "carryoverExpiry": "które wygasną w dniu",
+      "carryoverFrom": "Przeniesienie z {year}",
+      "daysRemaining": "Pozostałe dni",
+      "description": "Twoje dni urlopowe na bieżący rok",
+      "outOfTotalDays": "z {totalDays} dostępnych dni",
+      "pending": "Oczekujące",
+      "title": "Bilans urlopowy {year}",
+      "used": "Wykorzystane"
+    },
+    "calendar": {
+      "legend": {
+        "approved": "Zatwierdzone",
+        "halfDayAm": "Pół dnia (rano)",
+        "halfDayPm": "Pół dnia (po południu)",
+        "holiday": "Święto",
+        "pending": "Oczekujące",
+        "rejected": "Odrzucone"
+      },
+      "nextYear": "Następny rok",
+      "previousYear": "Poprzedni rok"
+    },
+    "dialog": {
+      "cancelDescription": "Czy na pewno chcesz anulować ten wniosek o nieobecność? Tej czynności nie można cofnąć.",
+      "cancelTitle": "Anuluj wniosek o nieobecność",
+      "confirmCancel": "Tak, anuluj wniosek"
+    },
+    "errors": {
+      "allowanceNotConfigured": "Wymiar urlopu nie został skonfigurowany",
+      "allowanceNotConfiguredMessage": "Twoja organizacja nie skonfigurowała jeszcze wymiaru urlopu na {currentYear} rok.",
+      "contactAdmin": "Skontaktuj się z administratorem w celu skonfigurowania polityki urlopowej."
+    },
+    "featureName": "zarządzaj nieobecnościami",
+    "form": {
+      "absenceType": "Typ nieobecności *",
+      "autoApproved": "(Automatycznie zatwierdzane)",
+      "balanceAfterRequest": "Bilans po wniosku:",
+      "businessDays": "Dni robocze:",
+      "daysRemaining": "Pozostałe dni:",
+      "description": "Złóż wniosek o czas wolny. Twój przełożony otrzyma powiadomienie w celu zatwierdzenia.",
+      "duration": "Czas trwania nieobecności",
+      "duration.fullDay": "Cały dzień",
+      "duration.partialDay": "Część dnia",
+      "endDate": "Data zakończenia *",
+      "endDateHelper": "Pozostaw puste w przypadku nieobecności jednodniowej.",
+      "endTime": "Czas zakończenia",
+      "errors": {
+        "fillRequiredFields": "Proszę wypełnić wszystkie wymagane pola",
+        "insufficientBalance": "Niewystarczający bilans urlopowy",
+        "insufficientBalanceForRequest": "Niewystarczający bilans urlopowy dla tego wniosku",
+        "invalidSelection": "Sprawdź swój wybór i spróbuj ponownie"
+      },
+      "notesOptional": "Uwagi (opcjonalnie)",
+      "notesPlaceholder": "Dodaj dodatkowe informacje...",
+      "selectAbsenceType": "Wybierz typ nieobecności",
+      "sickDetail": "Szczegóły zwolnienia lekarskiego *",
+      "sickDetailPlaceholder": "Wybierz szczegóły zwolnienia lekarskiego",
+      "startDate": "Data rozpoczęcia *",
+      "startTime": "Czas rozpoczęcia",
+      "submitRequest": "Wyślij wniosek",
+      "title": "Złóż wniosek o nieobecność"
+    },
+    "period": {
+      "am": "rano",
+      "pm": "po południu"
+    },
+    "planPreview": {
+      "affectedShift": "dotknięta zmiana",
+      "approval": "Zatwierdzenie",
+      "balance": "Bilans",
+      "balanceUnavailable": "Bilans niedostępny",
+      "countsAgainstVacationBalance": "Wlicza się do bilansu urlopowego",
+      "coverage": "Obsada",
+      "coverageStaffAfterRequest": "{after}/{minimum} osób po wniosku",
+      "description": "Niewymuszona kontrola bilansu, świąt, obsady i sygnałów zatwierdzenia przed wysłaniem.",
+      "doesNotReduceVacationBalance": "Nie pomniejsza bilansu urlopowego",
+      "holidays": "Święta",
+      "loading": "Sprawdzanie bilansu, świąt i obsady…",
+      "noApprovalWarnings": "Brak ostrzeżeń dotyczących zatwierdzenia",
+      "noCoverageRisk": "Brak ryzyka w opublikowanej obsadzie",
+      "noCoverageRulesConfigured": "Brak skonfigurowanych zasad obsady dla dotkniętych zmian",
+      "noHolidays": "Brak przypisanych świąt w tym zakresie",
+      "remainingAfter": "Pozostało po wniosku",
+      "requested": "Zawnioskowano",
+      "title": "Inteligentny planista",
+      "unavailable": "Podgląd planowania niedostępny. Nadal możesz wysłać swój wniosek."
+    },
+    "requestAbsence": "Zawnioskuj o nieobecność",
+    "status": {
+      "approved": "Zatwierdzone",
+      "pending": "Oczekujące",
+      "rejected": "Odrzucone"
+    },
+    "subtitle": "Zarządzaj swoim czasem wolnym i dniami urlopowymi",
+    "table": {
+      "cancelAbsence": "Anuluj nieobecność",
+      "cancelAbsenceTooltip": "Anuluj nieobecność",
+      "end": "Koniec",
+      "headers": {
+        "actions": "Akcje",
+        "dateRange": "Zakres dat",
+        "days": "Dni",
+        "notes": "Notatki",
+        "status": "Status",
+        "type": "Typ"
+      },
+      "noRequests": "Nie znaleziono wniosków o nieobecność.",
+      "noSearchResults": "Brak nieobecności pasujących do wyszukiwania.",
+      "searchPlaceholder": "Szukaj według typu, statusu lub notatek...",
+      "start": "Start",
+      "subtitle": "Ostatnie i nadchodzące wnioski o nieobecność",
+      "title": "Twoje wnioski o nieobecność"
+    },
+    "title": "Nieobecności",
+    "toast": {
+      "cancelFailed": "Nie udało się anulować wniosku o nieobecność",
+      "requestCancelled": "Wniosek o nieobecność anulowany",
+      "requestFailed": "Nie udało się przesłać wniosku o nieobecność",
+      "requestSubmitted": "Wniosek o nieobecność został pomyślnie przesłany"
+    },
+    "view": {
+      "calendar": "Kalendarz",
+      "table": "Tabela"
+    }
+  },
+  "calendar": {
+    "dayDetails": {
+      "blocksTimeEntry": "Wpisy czasu zablokowane",
+      "category": "Kategoria",
+      "duration": "Czas trwania",
+      "employee": "Pracownik",
+      "noEvents": "Brak wydarzeń na ten dzień",
+      "recurring": "Święto cykliczne",
+      "selectDate": "Wybierz datę, aby zobaczyć szczegóły",
+      "status": "Status",
+      "title": "Szczegóły dnia"
+    },
+    "delete": {
+      "auditNote": "Wpisy czasu zostaną oznaczone jako usunięte do celów audytu.",
+      "confirm": "Konwertuj na przerwę",
+      "description": "To działanie trwale usunie ten okres pracy. Luka pojawi się w kalendarzu jako przerwa.",
+      "failed": "Nie udało się usunąć okresu pracy",
+      "success": "Okres pracy przekonwertowany na przerwę",
+      "title": "Konwertować na przerwę?"
+    },
+    "details": {
+      "baseWorked": "Podstawa przepracowana",
+      "blocksTimeEntry": "Blokuje śledzenie czasu",
+      "category": "Kategoria",
+      "credited": "Zaliczone",
+      "dateRange": "Zakres dat",
+      "duration": "Czas trwania",
+      "employee": "Pracownik",
+      "notes": "Notatki",
+      "periods": "Okresy pracy",
+      "project": "Projekt",
+      "recurring": "Cykliczne corocznie",
+      "status": "Status",
+      "surcharge": "Dopłata",
+      "surchargeBreakdown": "Szczegóły dopłaty",
+      "time": "Czas",
+      "type": "Typ"
+    },
+    "edit": {
+      "convertToBreak": "Konwertuj na przerwę",
+      "notesSaved": "Notatki zapisano",
+      "notesSaveFailed": "Nie udało się zapisać notatek",
+      "projectSaved": "Projekt zaktualizowany",
+      "projectSaveFailed": "Nie udało się zaktualizować projektu",
+      "split": "Podziel"
+    },
+    "employeeSelector": {
+      "error": "Nie można załadować członków zespołu",
+      "label": "Zobacz kalendarz",
+      "myCalendar": "Mój kalendarz",
+      "placeholder": "Wybierz członka zespołu..."
+    },
+    "entryType": {
+      "clockIn": "Rozpocznij pracę",
+      "clockOut": "Zakończ pracę",
+      "correction": "Korekta"
+    },
+    "eventType": {
+      "absence": "Nieobecność",
+      "holiday": "Święto",
+      "timeEntry": "Wpis czasu",
+      "workPeriod": "Okres pracy"
+    },
+    "filter": {
+      "absences": "Nieobecności",
+      "holidays": "Święta",
+      "timeEntries": "Wpisy czasu",
+      "workPeriods": "Okresy pracy"
+    },
+    "filters": {
+      "title": "Filtry"
+    },
+    "legend": {
+      "absence": "Nieobecność",
+      "holiday": "Święto",
+      "missingRequiredWork": "Brak wymaganego czasu pracy",
+      "requirementMetOrOver": "Wymóg spełniony/przekroczony",
+      "timeEntry": "Wpis czasu",
+      "title": "Legenda",
+      "underRequirement": "Poniżej wymogu",
+      "workPeriod": "Okres pracy",
+      "workPeriodPending": "Oczekuje na zatwierdzenie"
+    },
+    "monthSummary": {
+      "calendarWeek": "KT",
+      "description": "Dzienne, tygodniowe i miesięczne godziny polityki",
+      "emptyMonth": "Brak godzin polityki w tym miesiącu",
+      "monthTotal": "Suma miesięczna",
+      "nextMonth": "Następny miesiąc",
+      "previousMonth": "Poprzedni miesiąc",
+      "totalDescription": "Zarejestrowany czas w porównaniu z godzinami polityki",
+      "weekSum": "Suma"
+    },
+    "split": {
+      "confirm": "Podziel okres pracy",
+      "currentPeriod": "Bieżący okres pracy",
+      "description": "Podziel ten okres pracy na dwie oddzielne sesje.",
+      "failed": "Nie udało się podzielić okresu pracy",
+      "firstNotes": "Notatki dla pierwszego okresu (opcjonalnie)",
+      "firstPeriod": "Pierwszy okres",
+      "invalidTime": "Czas podziału musi mieścić się między czasem rozpoczęcia a zakończenia",
+      "preview": "Podgląd",
+      "secondNotes": "Notatki dla drugiego okresu (opcjonalnie)",
+      "secondPeriod": "Drugi okres",
+      "splitAt": "Podziel w",
+      "success": "Okres pracy został pomyślnie podzielony",
+      "title": "Podziel okres pracy"
+    },
+    "status": {
+      "approved": "Zatwierdzone",
+      "pending": "Oczekujące",
+      "rejected": "Odrzucone"
+    },
+    "view": {
+      "day": "Dzień",
+      "loading": "Ładowanie kalendarza…",
+      "month": "Miesiąc",
+      "next": "Następny",
+      "previous": "Poprzedni",
+      "refresh": "Odśwież",
+      "today": "Dzisiaj",
+      "week": "Tydzień",
+      "year": "Rok"
+    },
+    "workStatus": {
+      "overRequirement": "powyżej wymogu",
+      "requiredHoursMissing": "brak wymaganych godzin",
+      "requirementMet": "wymóg spełniony",
+      "underRequirement": "poniżej wymogu"
+    },
+    "year": {
+      "dayWithWorkStatus": "{date}, {status}"
+    }
+  }
+}

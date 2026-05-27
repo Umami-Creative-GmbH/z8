@@ -1,0 +1,202 @@
+{
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "Analysen anzeigen",
+      "restrictedDescription": "Analysen sind nur für Administratoren und Manager verfügbar.",
+      "restrictedTitle": "Zugriff eingeschränkt"
+    },
+    "common": {
+      "days": "Tage",
+      "employee": "Mitarbeiter",
+      "employees": "Mitarbeiter",
+      "hours": "Stunden",
+      "loadingOrganizationSettings": "Organisationseinstellungen werden geladen, bevor Voreinstellungen aktiviert werden.",
+      "noDataAvailable": "Keine Daten verfügbar",
+      "noDataForPeriod": "Für den ausgewählten Zeitraum sind keine Daten verfügbar",
+      "overtime": "Überstunden",
+      "overtimeHours": "Überstunden",
+      "team": "Team",
+      "totalHours": "Gesamtstunden",
+      "unavailable": "Nicht verfügbar",
+      "undertime": "Unterstunden",
+      "undertimeHours": "Unterstunden"
+    },
+    "layout": {
+      "description": "Umfassende Einblicke in Teamleistung, Arbeitsstunden und Abwesenheitsmuster",
+      "tabs": {
+        "overtimeBurnDown": "Überstundenabbau",
+        "overview": "Übersicht",
+        "teamPerformance": "Teamleistung",
+        "vacationTrends": "Urlaubstrends",
+        "workHours": "Arbeitsstunden"
+      },
+      "title": "Analysen"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Aufschlüsselung",
+      "breakdownDescription": "Details zum Überstundenabbau auf {label}-Ebene",
+      "breakdownEmpty": "Noch keine Aufschlüsselungsdaten verfügbar",
+      "byCostCenter": "Nach Kostenstelle",
+      "byManager": "Nach Manager",
+      "byTeam": "Nach Team",
+      "costCenter": "Kostenstelle",
+      "currentOvertime": "Aktuelle Überstunden",
+      "description": "Verfolgen Sie den wöchentlichen Überstundenabbau in den Teams.",
+      "errors": {
+        "loadData": "Daten zum Überstundenabbau konnten nicht geladen werden"
+      },
+      "filters": {
+        "allCostCenters": "Alle Kostenstellen",
+        "allManagers": "Alle Manager",
+        "allTeams": "Alle Teams",
+        "breakdownLabel": "Aufschlüsselungsdimension",
+        "costCenterLabel": "Kostenstellenfilter",
+        "managerLabel": "Managerfilter",
+        "teamLabel": "Teamfilter"
+      },
+      "improvingGroups": "Verbesserung der Gruppen",
+      "improvingGroupsDescription": "Gruppen mit sinkenden Überstunden",
+      "manager": "Manager",
+      "previousOvertime": "Vorherige Überstunden",
+      "previousPeriodDescription": "Im Vergleich zum vorherigen Zeitraum",
+      "selectedRangeDescription": "Für den ausgewählten Datumsbereich und die Filter",
+      "title": "Überstundenabbau",
+      "trendDirection": "Trendrichtung",
+      "trendDirectionDescription": "Gesamter Überstundenverlauf",
+      "trend": {
+        "down": "Rückgang",
+        "flat": "Gleichbleibend",
+        "up": "Aufwärts"
+      },
+      "weeklyTrend": {
+        "description": "Trend der wöchentlichen Überstundenreduzierung",
+        "empty": "Noch keine Trenddaten verfügbar",
+        "title": "Wöchentlicher Burn-Down-Trend"
+      },
+      "weekOverWeek": "Woche-zu-Woche"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Abwesenheitsverteilung nach Kategorie",
+        "title": "Abwesenheitsmuster"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% genehmigt",
+        "avgDecision": "{hours}h durchschnittliche Entscheidungszeit",
+        "byManager": "Nach Manager",
+        "byTeam": "Nach Team",
+        "byType": "Nach Typ",
+        "description": "Teams und Anfragetypen mit ausstehender Arbeit oder SLA-Warnungen",
+        "empty": "Keine Genehmigungsengpässe gefunden",
+        "pendingSummary": "{pendingCount} ausstehend - {slaWarnings} SLA-Warnungen",
+        "title": "Genehmigungsengpässe",
+        "unavailable": "Genehmigungsengpässe konnten nicht geladen werden"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Von entschiedenen Anfragen genehmigt",
+          "title": "Genehmigungsrate",
+          "unavailableDescription": "Genehmigungsanalysen konnten nicht geladen werden"
+        },
+        "avgWorkHours": {
+          "description": "Pro Mitarbeiter im ausgewählten Zeitraum",
+          "title": "Durchschnittliche Arbeitsstunden"
+        },
+        "totalAbsenceDays": {
+          "description": "Gesamttage im ausgewählten Zeitraum",
+          "title": "Gesamte Abwesenheitstage"
+        },
+        "totalEmployees": {
+          "description": "Aktive Mitarbeiter in der Organisation",
+          "title": "Gesamtanzahl Mitarbeiter"
+        }
+      },
+      "loadingLabel": "Analysedaten werden geladen",
+      "workHoursByTeam": {
+        "description": "Gesamte protokollierte Arbeitsstunden pro Team",
+        "title": "Arbeitsstunden nach Team"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Durchschnitt pro Mitarbeiter",
+      "comparison": {
+        "description": "Gesamte Arbeitsstunden nach Team für den ausgewählten Zeitraum",
+        "title": "Teamvergleich"
+      },
+      "details": {
+        "description": "Aufschlüsselung der Arbeitsstunden nach Team und Mitarbeiter",
+        "title": "Details zur Teamleistung"
+      },
+      "employeeCount": "Mitarbeiteranzahl",
+      "errors": {
+        "loadData": "Fehler beim Laden der Teamleistungsdaten"
+      },
+      "onTrack": "Im Plan",
+      "variance": {
+        "description": "Abweichung der Stunden von den erwarteten Arbeitsstunden",
+        "empty": "Keine Abweichungsdaten verfügbar",
+        "title": "Überstunden & Unterstunden"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Zugewiesen",
+      "balance": {
+        "description": "Zugewiesene, genommene und verbleibende Tage pro Mitarbeiter",
+        "title": "Urlaubssaldo"
+      },
+      "daysRemaining": "{count} Tage verbleibend",
+      "daysTaken": "{count} Tage genommen",
+      "errors": {
+        "loadData": "Fehler beim Laden der Urlaubstrenddaten"
+      },
+      "monthlyUsage": {
+        "description": "Genommene Urlaubstage pro Monat",
+        "empty": "Keine monatlichen Nutzungsdaten verfügbar",
+        "title": "Monatliche Urlaubsnutzung"
+      },
+      "peakMonths": {
+        "description": "Monate mit der höchsten Urlaubsaktivität",
+        "empty": "Keine Daten zu Spitzenmonaten verfügbar",
+        "title": "Urlaubs-Spitzenmonate"
+      },
+      "remaining": "Verbleibend",
+      "taken": "Genommen",
+      "utilization": {
+        "description": "Gesamte Urlaubsnutzung im Unternehmen",
+        "overall": "Gesamtauslastung",
+        "title": "Urlaubsauslastung"
+      },
+      "utilizationLabel": "Auslastung",
+      "utilizationPercent": "Auslastung in %",
+      "vacationDays": "Urlaubstage"
+    },
+    "workHours": {
+      "actualHours": "Tatsächliche Stunden",
+      "avgHoursPerWeek": "Ø Stunden/Woche",
+      "daily": {
+        "description": "Tatsächliche vs. erwartete Arbeitsstunden pro Tag",
+        "empty": "Keine Daten zu täglichen Stunden verfügbar",
+        "title": "Tägliche Arbeitsstunden"
+      },
+      "distribution": {
+        "description": "Vergleich der Arbeitsstunden von Mitarbeitern (horizontales Balkendiagramm)",
+        "empty": "Keine Verteilungsdaten verfügbar",
+        "title": "Verteilung der Arbeitsstunden"
+      },
+      "employeeComparison": {
+        "description": "Gesamtstunden und Abweichung von der Erwartung pro Mitarbeiter",
+        "title": "Arbeitsstunden der Mitarbeiter"
+      },
+      "errors": {
+        "loadData": "Laden der Arbeitsstunden-Analysedaten fehlgeschlagen"
+      },
+      "expectedHours": "Erwartete Stunden",
+      "variance": "Abweichung",
+      "varianceTrend": {
+        "description": "Abweichung der Arbeitsstunden von den erwarteten Stunden im Zeitverlauf",
+        "empty": "Keine Trenddaten verfügbar",
+        "title": "Trend bei Über- und Unterstunden"
+      }
+    }
+  }
+}

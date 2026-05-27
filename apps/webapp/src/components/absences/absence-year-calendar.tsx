@@ -1,8 +1,8 @@
 "use client";
 
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
-import { memo, useMemo, useState } from "react";
+import { useState } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -42,7 +42,7 @@ function formatDateKey(date: Date): string {
 	return `${year}-${month}-${day}`;
 }
 
-const MiniMonth = memo(function MiniMonth({
+const MiniMonth = function MiniMonth({
 	year,
 	month,
 	monthName,
@@ -157,7 +157,7 @@ const MiniMonth = memo(function MiniMonth({
 			</div>
 		</div>
 	);
-});
+};
 
 export function AbsenceYearCalendar({
 	absences,
@@ -171,26 +171,23 @@ export function AbsenceYearCalendar({
 	const [year, setYear] = useState(() => initialYear ?? new Date().getFullYear());
 
 	// Memoize translated month names to avoid recreating on every render
-	const MONTHS = useMemo(
-		() => [
-			t("common.months.january", "January"),
-			t("common.months.february", "February"),
-			t("common.months.march", "March"),
-			t("common.months.april", "April"),
-			t("common.months.may", "May"),
-			t("common.months.june", "June"),
-			t("common.months.july", "July"),
-			t("common.months.august", "August"),
-			t("common.months.september", "September"),
-			t("common.months.october", "October"),
-			t("common.months.november", "November"),
-			t("common.months.december", "December"),
-		],
-		[t],
-	);
+	const MONTHS = [
+		t("common.months.january", "January"),
+		t("common.months.february", "February"),
+		t("common.months.march", "March"),
+		t("common.months.april", "April"),
+		t("common.months.may", "May"),
+		t("common.months.june", "June"),
+		t("common.months.july", "July"),
+		t("common.months.august", "August"),
+		t("common.months.september", "September"),
+		t("common.months.october", "October"),
+		t("common.months.november", "November"),
+		t("common.months.december", "December"),
+	];
 
 	// Memoize translated weekday names to avoid recreating on every render
-	const WEEKDAYS = useMemo(() => {
+	const WEEKDAYS = (() => {
 		const sundayFirst = [
 			t("common.weekdays.su", "Su"),
 			t("common.weekdays.mo", "Mo"),
@@ -201,15 +198,15 @@ export function AbsenceYearCalendar({
 			t("common.weekdays.sa", "Sa"),
 		];
 		return weekStartDay === "monday" ? [...sundayFirst.slice(1), sundayFirst[0]] : sundayFirst;
-	}, [t, weekStartDay]);
+	})();
 
 	// Transform data to CalendarEvent format
-	const events = useMemo(() => {
+	const events = (() => {
 		return toCalendarEvents(absences, holidays);
-	}, [absences, holidays]);
+	})();
 
 	// Group events by date
-	const eventsByDate = useMemo(() => {
+	const eventsByDate = (() => {
 		const map = new Map<string, CalendarEvent[]>();
 		for (const event of events) {
 			const dateKey = formatDateKey(event.date);
@@ -219,7 +216,7 @@ export function AbsenceYearCalendar({
 			map.get(dateKey)?.push(event);
 		}
 		return map;
-	}, [events]);
+	})();
 
 	const handleYearChange = (newYear: number) => {
 		setYear(newYear);

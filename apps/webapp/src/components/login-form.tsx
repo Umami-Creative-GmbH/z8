@@ -3,7 +3,7 @@
 import { IconFingerprint, IconKey, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { memo, Suspense, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { Suspense, useEffect, useReducer, useRef } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,7 +133,7 @@ type LoginCredentialsFieldsProps = {
 	onPasswordChange: (value: string) => void;
 };
 
-const LoginCredentialsFields = memo(function LoginCredentialsFields({
+const LoginCredentialsFields = function LoginCredentialsFields({
 	email,
 	password,
 	fieldErrors,
@@ -182,7 +182,7 @@ const LoginCredentialsFields = memo(function LoginCredentialsFields({
 			</div>
 		</>
 	);
-});
+};
 
 type LoginAlternativeAuthProps = {
 	requires2FA: boolean;
@@ -194,7 +194,7 @@ type LoginAlternativeAuthProps = {
 	onSocialLogin: (provider: SocialProviderId) => void;
 };
 
-const LoginAlternativeAuth = memo(function LoginAlternativeAuth({
+const LoginAlternativeAuth = function LoginAlternativeAuth({
 	requires2FA,
 	showPasskey,
 	filteredProviders,
@@ -264,7 +264,7 @@ const LoginAlternativeAuth = memo(function LoginAlternativeAuth({
 			</div>
 		</>
 	);
-});
+};
 
 function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
@@ -306,24 +306,24 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 	const turnstileRef = useRef<TurnstileRef>(null);
 
 	// Turnstile handlers
-	const handleTurnstileVerify = useCallback((token: string) => {
+	const handleTurnstileVerify = (token: string) => {
 		dispatch({ type: "SET_TURNSTILE_TOKEN", token });
-	}, []);
+	};
 
-	const handleTurnstileError = useCallback(() => {
+	const handleTurnstileError = () => {
 		dispatch({ type: "SET_TURNSTILE_TOKEN", token: null });
 		turnstileRef.current?.reset();
-	}, []);
+	};
 
-	const handleTurnstileExpire = useCallback(() => {
+	const handleTurnstileExpire = () => {
 		dispatch({ type: "SET_TURNSTILE_TOKEN", token: null });
 		turnstileRef.current?.reset();
-	}, []);
+	};
 
-	const handleTurnstileTimeout = useCallback(() => {
+	const handleTurnstileTimeout = () => {
 		dispatch({ type: "SET_TURNSTILE_TOKEN", token: null });
 		turnstileRef.current?.reset();
-	}, []);
+	};
 
 	// Determine which auth methods are enabled
 	const showEmailPassword = authConfig?.emailPasswordEnabled ?? true;
@@ -332,13 +332,13 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 	const allowedSocialProviders = authConfig?.socialProvidersEnabled ?? [];
 
 	// Filter social providers based on auth config
-	const filteredProviders = useMemo(() => {
+	const filteredProviders = (() => {
 		if (allowedSocialProviders.length === 0) {
 			return enabledProviders;
 		}
 
 		return enabledProviders.filter((provider) => allowedSocialProviders.includes(provider.id));
-	}, [enabledProviders, allowedSocialProviders]);
+	})();
 
 	// Reset loading state when component mounts (e.g., after logout redirect)
 	useEffect(() => {
@@ -346,58 +346,49 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 	}, []);
 
 	// Memoized handlers to prevent unnecessary re-renders
-	const handleChange = useCallback((field: "email" | "password", value: string) => {
+	const handleChange = (field: "email" | "password", value: string) => {
 		dispatch({ type: "SET_FIELD", field, value });
-	}, []);
+	};
 
-	const validateEmail = useCallback(
-		(value: string) => {
-			const result = z.string().email().safeParse(value);
-			if (result.success) {
-				dispatch({ type: "CLEAR_FIELD_ERROR", field: "email" });
-			} else {
-				dispatch({
-					type: "SET_FIELD_ERROR",
-					field: "email",
-					error: t("validation.invalid-email", "Invalid email address"),
-				});
-			}
-		},
-		[t],
-	);
+	const validateEmail = (value: string) => {
+		const result = z.string().email().safeParse(value);
+		if (result.success) {
+			dispatch({ type: "CLEAR_FIELD_ERROR", field: "email" });
+		} else {
+			dispatch({
+				type: "SET_FIELD_ERROR",
+				field: "email",
+				error: t("validation.invalid-email", "Invalid email address"),
+			});
+		}
+	};
 
-	const validatePassword = useCallback(
-		(value: string) => {
-			if (value.length === 0) {
-				dispatch({
-					type: "SET_FIELD_ERROR",
-					field: "password",
-					error: t("validation.password-required", "Password is required"),
-				});
-			} else {
-				dispatch({ type: "CLEAR_FIELD_ERROR", field: "password" });
-			}
-		},
-		[t],
-	);
+	const validatePassword = (value: string) => {
+		if (value.length === 0) {
+			dispatch({
+				type: "SET_FIELD_ERROR",
+				field: "password",
+				error: t("validation.password-required", "Password is required"),
+			});
+		} else {
+			dispatch({ type: "CLEAR_FIELD_ERROR", field: "password" });
+		}
+	};
 
-	const validateField = useCallback(
-		(field: string, value: string) => {
-			switch (field) {
-				case "email":
-					validateEmail(value);
-					break;
-				case "password":
-					validatePassword(value);
-					break;
-				default:
-					break;
-			}
-		},
-		[validateEmail, validatePassword],
-	);
+	const validateField = (field: string, value: string) => {
+		switch (field) {
+			case "email":
+				validateEmail(value);
+				break;
+			case "password":
+				validatePassword(value);
+				break;
+			default:
+				break;
+		}
+	};
 
-	const handleValidationErrors = useCallback((errors: z.ZodError) => {
+	const handleValidationErrors = (errors: z.ZodError) => {
 		const errorMap: Record<string, string> = {};
 		for (const err of errors.issues) {
 			if (err.path[0]) {
@@ -405,35 +396,23 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 			}
 		}
 		dispatch({ type: "SET_FIELD_ERRORS", errors: errorMap });
-	}, []);
+	};
 
-	const handleEmailChange = useCallback(
-		(value: string) => {
-			handleChange("email", value);
-		},
-		[handleChange],
-	);
+	const handleEmailChange = (value: string) => {
+		handleChange("email", value);
+	};
 
-	const handlePasswordChange = useCallback(
-		(value: string) => {
-			handleChange("password", value);
-		},
-		[handleChange],
-	);
+	const handlePasswordChange = (value: string) => {
+		handleChange("password", value);
+	};
 
-	const handleEmailBlur = useCallback(
-		(value: string) => {
-			validateField("email", value);
-		},
-		[validateField],
-	);
+	const handleEmailBlur = (value: string) => {
+		validateField("email", value);
+	};
 
-	const handlePasswordBlur = useCallback(
-		(value: string) => {
-			validateField("password", value);
-		},
-		[validateField],
-	);
+	const handlePasswordBlur = (value: string) => {
+		validateField("password", value);
+	};
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();

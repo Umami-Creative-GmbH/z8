@@ -1,0 +1,100 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Adequati Personalbesetzig",
+      "byLocation": "Nach Standort:",
+      "gapCount": "{{count}} Personalmangel",
+      "gaps": "Lücke",
+      "hideOverlay": "Abdeckungs-Overlay usblände",
+      "metSlots": "{{count}} gnueg Personal",
+      "overSlots": "{{count}} überbesetzt",
+      "overstaffed": "Überbesetzt",
+      "showOverlay": "Abdeckigsziel-Overlay iiblände",
+      "summary": "Zämefassig vo de Abdeckig:",
+      "toggleLabel": "Abdeckig",
+      "underSlots": "{{count}} unterbesetzt",
+      "understaffed": "Unterbesetzt",
+      "utilization": "{{percent}}% Usglaschtig"
+    },
+    "page": {
+      "employeeDescription": "Lueg dini Schichte a und nimm verfüegbari Schichte aa",
+      "managerDescription": "Mitarbeiterschichte verwalte und plane",
+      "title": "Schichtplan"
+    },
+    "scheduler": {
+      "complianceBanner": {
+        "findingsDetected": "{count} Problem vor em Veröffentliche gfunde.",
+        "maxHours": "Maximali Stunde: {count}",
+        "overtime": "Überziit: {count}",
+        "restTime": "Ruehziit: {count}",
+        "title": "Compliance-Warnige in däm Ziitruum"
+      },
+      "loading": "Schichtplan wird glade...",
+      "publish": {
+        "failed": "Schichte händ nöd chöne veröffentlicht werde",
+        "published": "{count} Schicht(e) veröffentlicht"
+      },
+      "shiftUpdate": {
+        "failed": "Schicht hät nöd chöne aktualisiert werde",
+        "overlapDescription": "Die Schicht überschniidet sich mit {count} andere Schicht(e)",
+        "overlapWarning": "Schicht mit Überschniidigswarnig gspeicheret",
+        "updated": "Schicht aktualisiert"
+      }
+    },
+    "shiftDialog": {
+      "anyoneCanPickUp": "Cha vo jede überno werde",
+      "assignTo": "Zuegwise a",
+      "confirmDelete": "Lösche bestätige",
+      "created": "Schicht erstellt",
+      "createDescription": "Gib d Details für die neui Schicht ii",
+      "createShift": "Schicht erstelle",
+      "createTitle": "Schicht erstelle",
+      "date": "Datum",
+      "deleted": "Schicht glöscht",
+      "deleteFailed": "Schicht hät nöd chöne glöscht werde",
+      "draft": "Entwurf",
+      "editDescription": "Aktualisier d Schichtdetails une",
+      "editTitle": "Schicht bearbeite",
+      "endTime": "Endziit",
+      "noTemplate": "Kei Vorlag",
+      "notes": "Notize (optional)",
+      "notesPlaceholder": "Besonderi Awiisige oder Notize...",
+      "openShift": "Offeni Schicht",
+      "openShiftHelp": "Als \"Offeni Schicht\" lah, demit sich Mitarbeiter chönd druf melde",
+      "pickDate": "Datum wähle",
+      "published": "Veröffentlicht",
+      "savedWithWarnings": "Schicht mit Warnige gspeicheret",
+      "saveFailed": "Schicht hät nöd chöne gspeicheret werde",
+      "selectEmployee": "Mitarbeiter wähle",
+      "selectSubarea": "Unterbereich wähle…",
+      "selectTemplate": "Vorlage wähle",
+      "startTime": "Startziit",
+      "status": "Status:",
+      "subarea": "Unterbereich",
+      "subareaHelp": "Wo die Schicht stattfindet",
+      "template": "Vorlage (optional)",
+      "templateHelp": "Wenn du e Vorlag wählsch, wärded d'Ziite automatisch uusgfüllt",
+      "updated": "Schicht aktualisiert",
+      "updateShift": "Schicht aktualisiere"
+    },
+    "skills": {
+      "expiredCertifications": "Abglaufeni Zertifizierige:",
+      "expiredOn": "(Abglaufe am {{date}})",
+      "missingPreferred": "Fehlendi bevorzugti Fähigkeite:",
+      "missingPreferredCount": "{{count}} bevorzugti Fähigkeite fehle",
+      "missingRequired": "Fehlendi erforderlechi Fähigkeite:",
+      "preferred": "Bevorzugt",
+      "preferredSkillsMissing": "Bevorzugti Fähigkeite fehle",
+      "requirementsNotMet": "Fähigkeitsaaforderige nöd erfüllt",
+      "unqualified": "Nöd qualifiziert",
+      "validating": "Fähigkeite wärded prüeft…",
+      "validatingDescription": "Mitarbeiterqualifikations-Prüefig",
+      "warningMessage": "Du chasch die Schicht immer no zueordne, aber es wird als Überschriibig protokolliert."
+    },
+    "templates": {
+      "dragHint": "Zieh e Vorlag uf de Kaländer, zum e Schicht z'erstelle",
+      "empty": "Kei Vorlage verfüegbar. Erstell Vorlage i de Iistellige, zum Schichte schnäller z'erfasse.",
+      "title": "Schichtvorlage"
+    }
+  }
+}

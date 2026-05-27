@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
 import {
 	type CurrentTeamEmployee,
 	getCurrentEmployee,
@@ -133,7 +132,7 @@ export function useCalendarEmployees(currentEmployeeId?: string): UseCalendarEmp
 
 	// Combine current employee + managed employees into single list
 	// Current employee is always first
-	const employees = useMemo(() => {
+	const employees = (() => {
 		if (!data) return [];
 
 		const list: SelectableEmployee[] = [];
@@ -153,7 +152,7 @@ export function useCalendarEmployees(currentEmployeeId?: string): UseCalendarEmp
 		list.push(...sortedManaged);
 
 		return list;
-	}, [data]);
+	})();
 
 	return {
 		employees,

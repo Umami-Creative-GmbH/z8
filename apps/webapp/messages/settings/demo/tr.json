@@ -1,0 +1,226 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Devamsızlıklar (tatil, hastalık izni)",
+        "changePolicies": "Politikaları değiştir",
+        "description": "Oluşturabileceğiniz demo verisi türleri",
+        "locations": "Konumlar ve alt alanlar",
+        "shifts": "Vardiya şablonları ve vardiyalar",
+        "supported": "Şu anda desteklenenler:",
+        "teamsProjects": "Ekipler ve projeler",
+        "timeEntries": "Zaman girişleri ve çalışma dönemleri",
+        "title": "Kullanılabilir Veri Türleri",
+        "workCategories": "Çalışma kategorisi setleri"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "{count} devamsızlık silindi",
+          "button": "Tüm Verileri Temizle",
+          "changePoliciesDeleted": "{count} değişiklik politikası silindi",
+          "dialog": {
+            "confirm": "Tüm Verileri Temizle",
+            "description": "Bu işlem geri alınamaz. Tüm zaman kayıtları, devamsızlıklar, ekipler, projeler ve ilgili veriler kalıcı olarak silinecektir.",
+            "title": "Tüm Zaman Verileri Temizlensin mi?"
+          },
+          "items": {
+            "absences": "Tüm devamsızlık kayıtları",
+            "changePolicies": "Tüm değişiklik politikaları",
+            "locations": "Tüm konumlar ve alt alanlar",
+            "shifts": "Tüm vardiya şablonları ve vardiyalar",
+            "teamsProjects": "Tüm ekipler ve projeler",
+            "timeEntries": "Tüm zaman kayıtları ve çalışma dönemleri",
+            "vacationAllowances": "Tüm izin ödenekleri",
+            "workCategories": "Tüm çalışma kategorileri"
+          },
+          "locationsDeleted": "{count} konum silindi",
+          "managerAssignmentsDeleted": "{count} yönetici ataması silindi",
+          "projectsDeleted": "{count} proje silindi",
+          "shiftRequestsDeleted": "{count} vardiya talebi silindi",
+          "shiftsDeleted": "{count} vardiya silindi",
+          "shiftTemplatesDeleted": "{count} vardiya şablonu silindi",
+          "subareasDeleted": "{count} alt alan silindi",
+          "successTitle": "Veriler başarıyla temizlendi!",
+          "teamsDeleted": "{count} ekip silindi",
+          "timeEntriesDeleted": "{count} zaman kaydı silindi",
+          "title": "Zaman Verilerini Temizle",
+          "vacationAllowancesReset": "{count} izin ödeneği sıfırlandı",
+          "willDelete": "Bu işlem şunları kalıcı olarak silecektir:",
+          "workCategoriesDeleted": "{count} çalışma kategorisi silindi",
+          "workCategorySetsDeleted": "{count} çalışma kategorisi seti silindi",
+          "workPeriodsDeleted": "{count} çalışma dönemi silindi"
+        },
+        "clearing": "Temizleniyor...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "{count} devamsızlık silindi",
+          "adminPreserved": "Yönetici hesapları korunacaktır",
+          "button": "Yönetici Olmayan Çalışanları Sil",
+          "dialog": {
+            "confirm": "Yönetici Olmayan Çalışanları Sil",
+            "description": "Bu işlem geri alınamaz. Yönetici olmayan tüm çalışanlar ve ilişkili verileri kalıcı olarak silinecektir.",
+            "title": "Yönetici Olmayan Çalışanlar Silinsin mi?"
+          },
+          "employeesDeleted": "{count} çalışan silindi",
+          "items": {
+            "demoUsers": "Tüm demo kullanıcı hesapları",
+            "employees": "Tüm yönetici olmayan çalışanlar",
+            "managerAssignments": "Tüm yönetici atamaları",
+            "timeEntries": "Onların zaman kayıtları ve çalışma dönemleri"
+          },
+          "membersDeleted": "{count} üye silindi",
+          "successTitle": "Yönetici olmayan çalışanlar başarıyla silindi!",
+          "timeEntriesDeleted": "{count} zaman kaydı silindi",
+          "title": "Yönetici Olmayan Çalışanları Sil",
+          "usersDeleted": "{count} kullanıcı silindi",
+          "willDelete": "Bu işlem şunları kalıcı olarak silecektir:"
+        },
+        "deleting": "Siliniyor...",
+        "description": "Geri alınamayan yıkıcı işlemler",
+        "title": "Tehlike Bölgesi",
+        "typeDelete": "Onaylamak için DELETE yazın",
+        "typeDeletePlaceholder": "DELETE"
+      },
+      "description": "Test için örnek veriler oluşturun veya mevcut zamanla ilgili verileri temizleyin",
+      "errors": {
+        "generationFailed": "Oluşturma başarısız oldu. Lütfen tekrar deneyin.",
+        "noOrganization": "Kuruluş seçilmedi"
+      },
+      "form": {
+        "dataTypes": {
+          "absences": {
+            "description": "İzin, hastalık izni ve diğer devamsızlıklar",
+            "title": "Devamsızlıklar"
+          },
+          "changePolicies": {
+            "description": "Zaman girişi değişiklik politikaları",
+            "title": "Değişiklik Politikaları"
+          },
+          "label": "Veri Türleri",
+          "locations": {
+            "countLabel": "Konum sayısı:",
+            "description": "İş konumları ve alt alanlar",
+            "title": "Konumlar"
+          },
+          "projects": {
+            "countLabel": "Proje sayısı:",
+            "description": "Zaman takibi için örnek projeler",
+            "title": "Projeler"
+          },
+          "shiftScheduling": {
+            "description": "Vardiya şablonları ve planlanmış vardiyalar",
+            "requiresLocations": "Konumların etkinleştirilmesini gerektirir",
+            "title": "Vardiya Planlama"
+          },
+          "teams": {
+            "countLabel": "Ekip sayısı:",
+            "description": "Ekipler oluşturun ve çalışanları atayın",
+            "title": "Ekipler"
+          },
+          "timeEntries": {
+            "description": "Giriş/çıkış kayıtları ve çalışma dönemleri",
+            "title": "Zaman Girişleri"
+          },
+          "workCategories": {
+            "assignLabel": "Ayrıca çalışma dönemlerine ata",
+            "description": "Çalışma dönemleri için kategori setleri",
+            "title": "Çalışma Kategorileri"
+          }
+        },
+        "dateRange": {
+          "hint": "Oluşturulan veriler için zaman aralığı",
+          "label": "Tarih Aralığı",
+          "last30": "Son 30 gün",
+          "last60": "Son 60 gün",
+          "last90": "Son 90 gün",
+          "thisYear": "Bu yıl"
+        },
+        "employees": {
+          "all": "Tüm çalışanlar ({count})",
+          "label": "Çalışanlar",
+          "selectSpecific": "Belirli çalışanları seçin"
+        }
+      },
+      "generateData": {
+        "button": "Veri Oluştur",
+        "description": "Kuruluşunuz için gerçekçi örnek veriler oluşturun",
+        "title": "Demo Verisi Oluştur"
+      },
+      "generateEmployees": {
+        "button": "{count} Çalışan Oluştur",
+        "countHint": "Tek seferde en fazla 50 çalışan",
+        "countLabel": "Çalışan Sayısı",
+        "description": "Test için demo çalışan hesapları oluşturun",
+        "employeesCreated": "{count} çalışan oluşturuldu",
+        "generating": "Oluşturuluyor...",
+        "includeManagers": "Yönetici Atamalarını Dahil Et",
+        "managersCreated": "{count} yönetici ataması",
+        "managersHint": "Yöneticileri yeni çalışanlara rastgele ata",
+        "options": "Seçenekler",
+        "successTitle": "Çalışanlar başarıyla oluşturuldu!",
+        "title": "Çalışan Oluştur",
+        "usersCreated": "{count} kullanıcı oluşturuldu"
+      },
+      "results": {
+        "success": "Demo verileri başarıyla oluşturuldu!"
+      },
+      "steps": {
+        "absences": {
+          "description": "Devamsızlık kayıtları oluşturuluyor",
+          "label": "Devamsızlıklar"
+        },
+        "assignCategories": {
+          "description": "Çalışma kategorileri dönemlere atanıyor",
+          "label": "Kategorileri Ata"
+        },
+        "changePolicies": {
+          "description": "Değişiklik politikaları oluşturuluyor",
+          "label": "Değişiklik Politikaları"
+        },
+        "locations": {
+          "description": "Konumlar ve alt alanlar oluşturuluyor",
+          "label": "Konumlar"
+        },
+        "managers": {
+          "description": "Yöneticiler çalışanlara atanıyor",
+          "label": "Yönetici Atamaları"
+        },
+        "projects": {
+          "description": "Örnek projeler oluşturuluyor",
+          "label": "Projeler"
+        },
+        "shifts": {
+          "description": "Vardiyalar ve talepler oluşturuluyor",
+          "label": "Vardiyalar"
+        },
+        "shiftTemplates": {
+          "description": "Vardiya şablonları oluşturuluyor",
+          "label": "Vardiya Şablonları"
+        },
+        "teams": {
+          "description": "Ekipler oluşturuluyor ve çalışanlar atanıyor",
+          "label": "Ekipler"
+        },
+        "timeEntries": {
+          "description": "Zaman kayıtları ve çalışma dönemleri oluşturuluyor",
+          "label": "Zaman Kayıtları"
+        },
+        "workCategories": {
+          "description": "Çalışma kategorisi setleri ve kategoriler oluşturuluyor",
+          "label": "Çalışma Kategorileri"
+        }
+      },
+      "title": "Demo Verileri",
+      "wizard": {
+        "backToConfig": "Yapılandırmaya Geri Dön",
+        "complete": "Tamamlandı",
+        "configure": "Yapılandır",
+        "generate": "Oluştur",
+        "generateMore": "Daha Fazla Veri Oluştur"
+      }
+    },
+    "demoData": {
+      "description": "Test için örnek veriler oluşturun veya zamanla ilgili tüm verileri temizleyin",
+      "title": "Demo Verileri"
+    }
+  }
+}

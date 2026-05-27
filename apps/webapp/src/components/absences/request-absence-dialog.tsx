@@ -5,7 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getAbsencePlanPreview, requestAbsence } from "@/app/[locale]/(app)/absences/actions";
 import {
@@ -97,13 +97,10 @@ export function RequestAbsenceDialog({
 	const { refresh } = useRouter();
 	const [internalOpen, setInternalOpen] = useState(false);
 
-	const durationOptions = useMemo<Array<{ value: AbsenceDurationKind; label: string }>>(
-		() => [
-			{ value: "full_day", label: t("absences.form.duration.fullDay", "Full day") },
-			{ value: "partial_day", label: t("absences.form.duration.partialDay", "Partial day") },
-		],
-		[t],
-	);
+	const durationOptions = [
+		{ value: "full_day", label: t("absences.form.duration.fullDay", "Full day") },
+		{ value: "partial_day", label: t("absences.form.duration.partialDay", "Partial day") },
+	];
 
 	const isControlled = controlledOpen !== undefined;
 	const open = isControlled ? controlledOpen : internalOpen;
@@ -320,7 +317,9 @@ export function RequestAbsenceDialog({
 										</TFormLabel>
 										<Select
 											value={field.state.value}
-											onValueChange={(value) => field.handleChange(value as typeof field.state.value)}
+											onValueChange={(value) =>
+												field.handleChange(value as typeof field.state.value)
+											}
 										>
 											<TFormControl hasError={field.state.meta.errors.length > 0}>
 												<SelectTrigger aria-label={t("absences.form.sickDetail", "Sick detail *")}>
@@ -335,7 +334,7 @@ export function RequestAbsenceDialog({
 											<SelectContent>
 												{sickDetailOptions.map((option) => (
 													<SelectItem key={option.value} value={option.value}>
-												{t(option.labelKey, option.label)}
+														{t(option.labelKey, option.label)}
 													</SelectItem>
 												))}
 											</SelectContent>
@@ -391,10 +390,7 @@ export function RequestAbsenceDialog({
 								)}
 							</form.Subscribe>
 							<p className="-mt-2 text-xs text-muted-foreground sm:col-start-2">
-								{t(
-									"absences.form.endDateHelper",
-									"Leave empty for a same-day absence.",
-								)}
+								{t("absences.form.endDateHelper", "Leave empty for a same-day absence.")}
 							</p>
 						</div>
 
@@ -506,7 +502,9 @@ export function RequestAbsenceDialog({
 										? calculateAbsenceDurationDays(normalizedValues, holidays)
 										: 0;
 
-								const selectedCategory = categories.find((c) => c.id === normalizedValues.categoryId);
+								const selectedCategory = categories.find(
+									(c) => c.id === normalizedValues.categoryId,
+								);
 								const balanceAfterRequest = selectedCategory?.countsAgainstVacation
 									? remainingDays - requestedDays
 									: remainingDays;
@@ -609,7 +607,7 @@ export function RequestAbsenceDialog({
 								: remainingDays;
 							const insufficientBalance =
 								selectedCategory?.countsAgainstVacation && balanceAfterRequest < 0;
-			return (
+							return (
 								<ActionPanelFooter>
 									<Button
 										type="button"
@@ -619,10 +617,10 @@ export function RequestAbsenceDialog({
 									>
 										{t("common.cancel", "Cancel")}
 									</Button>
-					<Button
-						type="submit"
-						disabled={isSubmitting || insufficientBalance || Boolean(validationError)}
-					>
+									<Button
+										type="submit"
+										disabled={isSubmitting || insufficientBalance || Boolean(validationError)}
+									>
 										{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 										{t("absences.form.submitRequest", "Submit Request")}
 									</Button>

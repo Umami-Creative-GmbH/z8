@@ -39,9 +39,9 @@
 	},
 	"devDependencies": {
 		"@esbuild/win32-x64": "^0.28.0",
-		"puppeteer-core": "^25.0.4",
+		"puppeteer-core": "^25.1.0",
 		"shadcn": "^4.8.0",
-		"turbo": "^2.9.14"
+		"turbo": "^2.9.15"
 	},
-	"packageManager": "pnpm@11.3.0"
+	"packageManager": "pnpm@11.4.0"
 }

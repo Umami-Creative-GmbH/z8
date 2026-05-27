@@ -4,7 +4,7 @@ import { IconArrowRight, IconCheck, IconLoader2, IconRefresh, IconX } from "@tab
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	type ApprovalWithTimeCorrection,
@@ -150,7 +150,7 @@ export function TimeCorrectionApprovalsTable() {
 	};
 
 	// Filter approvals by search (client-side since typically small list)
-	const filteredApprovals = useMemo(() => {
+	const filteredApprovals = (() => {
 		if (!approvals) return [];
 		if (!search) return approvals;
 
@@ -160,128 +160,123 @@ export function TimeCorrectionApprovalsTable() {
 				approval.requester.user.name.toLowerCase().includes(searchLower) ||
 				approval.requester.user.email.toLowerCase().includes(searchLower),
 		);
-	}, [approvals, search]);
+	})();
 
 	// Column definitions
-	const columns = useMemo<ColumnDef<ApprovalWithTimeCorrection>[]>(
-		() => [
-			{
-				accessorKey: "requester",
-				header: t("approvals:approvals.employee", "Employee"),
-				cell: ({ row }) => (
-					<div className="flex items-center gap-3">
-						<UserAvatar
-							image={row.original.requester.user.image}
-							seed={row.original.requester.user.id}
-							name={row.original.requester.user.name}
-							size="sm"
-							clockStatus="unknown"
-						/>
-						<div>
-							<div className="font-medium">{row.original.requester.user.name}</div>
-							<div className="text-xs text-muted-foreground">
-								{row.original.requester.user.email}
-							</div>
-						</div>
+	const columns = [
+		{
+			accessorKey: "requester",
+			header: t("approvals:approvals.employee", "Employee"),
+			cell: ({ row }) => (
+				<div className="flex items-center gap-3">
+					<UserAvatar
+						image={row.original.requester.user.image}
+						seed={row.original.requester.user.id}
+						name={row.original.requester.user.name}
+						size="sm"
+						clockStatus="unknown"
+					/>
+					<div>
+						<div className="font-medium">{row.original.requester.user.name}</div>
+						<div className="text-xs text-muted-foreground">{row.original.requester.user.email}</div>
 					</div>
-				),
+				</div>
+			),
+		},
+		{
+			accessorKey: "date",
+			header: t("approvals:approvals.date", "Date"),
+			cell: ({ row }) => (
+				<span className="font-medium">{formatDate(row.original.workPeriod.startTime)}</span>
+			),
+		},
+		{
+			accessorKey: "originalTimes",
+			header: t("approvals:approvals.originalTimes", "Original Times"),
+			cell: ({ row }) => {
+				const originalClockIn = formatTime(row.original.workPeriod.clockInEntry.timestamp);
+				const originalClockOut = row.original.workPeriod.clockOutEntry
+					? formatTime(row.original.workPeriod.clockOutEntry.timestamp)
+					: "—";
+				return (
+					<div className="flex items-center gap-2 font-mono text-sm">
+						<span>{originalClockIn}</span>
+						<IconArrowRight className="size-3 text-muted-foreground" />
+						<span>{originalClockOut}</span>
+					</div>
+				);
 			},
-			{
-				accessorKey: "date",
-				header: t("approvals:approvals.date", "Date"),
-				cell: ({ row }) => (
-					<span className="font-medium">{formatDate(row.original.workPeriod.startTime)}</span>
-				),
-			},
-			{
-				accessorKey: "originalTimes",
-				header: t("approvals:approvals.originalTimes", "Original Times"),
-				cell: ({ row }) => {
-					const originalClockIn = formatTime(row.original.workPeriod.clockInEntry.timestamp);
-					const originalClockOut = row.original.workPeriod.clockOutEntry
-						? formatTime(row.original.workPeriod.clockOutEntry.timestamp)
-						: "—";
-					return (
-						<div className="flex items-center gap-2 font-mono text-sm">
-							<span>{originalClockIn}</span>
-							<IconArrowRight className="size-3 text-muted-foreground" />
-							<span>{originalClockOut}</span>
-						</div>
-					);
-				},
-			},
-			{
-				accessorKey: "correctedTimes",
-				header: t("approvals:approvals.correctedTimes", "Corrected Times"),
-				cell: ({ row }) => {
-					const originalClockIn = formatTime(row.original.workPeriod.clockInEntry.timestamp);
-					const originalClockOut = row.original.workPeriod.clockOutEntry
-						? formatTime(row.original.workPeriod.clockOutEntry.timestamp)
-						: "—";
-					const correctedClockIn = formatTime(row.original.workPeriod.startTime);
-					const correctedClockOut = row.original.workPeriod.endTime
-						? formatTime(row.original.workPeriod.endTime)
-						: "—";
-					const hasChanges =
-						originalClockIn !== correctedClockIn || originalClockOut !== correctedClockOut;
+		},
+		{
+			accessorKey: "correctedTimes",
+			header: t("approvals:approvals.correctedTimes", "Corrected Times"),
+			cell: ({ row }) => {
+				const originalClockIn = formatTime(row.original.workPeriod.clockInEntry.timestamp);
+				const originalClockOut = row.original.workPeriod.clockOutEntry
+					? formatTime(row.original.workPeriod.clockOutEntry.timestamp)
+					: "—";
+				const correctedClockIn = formatTime(row.original.workPeriod.startTime);
+				const correctedClockOut = row.original.workPeriod.endTime
+					? formatTime(row.original.workPeriod.endTime)
+					: "—";
+				const hasChanges =
+					originalClockIn !== correctedClockIn || originalClockOut !== correctedClockOut;
 
-					return (
-						<div className="flex items-center gap-2">
-							<div className="flex items-center gap-2 font-mono text-sm">
-								<span className={hasChanges ? "text-orange-600 font-medium" : ""}>
-									{correctedClockIn}
-								</span>
-								<IconArrowRight className="size-3 text-muted-foreground" />
-								<span className={hasChanges ? "text-orange-600 font-medium" : ""}>
-									{correctedClockOut}
-								</span>
-							</div>
-							{hasChanges && (
-								<Badge variant="outline" className="text-xs">
-									{t("approvals:approvals.changed", "Changed")}
-								</Badge>
-							)}
+				return (
+					<div className="flex items-center gap-2">
+						<div className="flex items-center gap-2 font-mono text-sm">
+							<span className={hasChanges ? "text-orange-600 font-medium" : ""}>
+								{correctedClockIn}
+							</span>
+							<IconArrowRight className="size-3 text-muted-foreground" />
+							<span className={hasChanges ? "text-orange-600 font-medium" : ""}>
+								{correctedClockOut}
+							</span>
 						</div>
-					);
-				},
-			},
-			{
-				accessorKey: "reason",
-				header: t("approvals:approvals.reason", "Reason"),
-				cell: ({ row }) => (
-					<span className="max-w-[200px] truncate text-muted-foreground block">
-						{(row.original as any).reason || "—"}
-					</span>
-				),
-			},
-			{
-				id: "actions",
-				cell: ({ row }) => (
-					<div className="flex justify-end gap-2">
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => handleApprove(row.original)}
-							disabled={approveMutation.isPending || rejectMutation.isPending}
-						>
-							<IconCheck className="mr-1 size-4" />
-							{t("approvals:approvals.approve", "Approve")}
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => handleReject(row.original)}
-							disabled={approveMutation.isPending || rejectMutation.isPending}
-						>
-							<IconX className="mr-1 size-4" />
-							{t("approvals:approvals.reject", "Reject")}
-						</Button>
+						{hasChanges && (
+							<Badge variant="outline" className="text-xs">
+								{t("approvals:approvals.changed", "Changed")}
+							</Badge>
+						)}
 					</div>
-				),
+				);
 			},
-		],
-		[t, approveMutation.isPending, rejectMutation.isPending],
-	);
+		},
+		{
+			accessorKey: "reason",
+			header: t("approvals:approvals.reason", "Reason"),
+			cell: ({ row }) => (
+				<span className="max-w-[200px] truncate text-muted-foreground block">
+					{(row.original as any).reason || "—"}
+				</span>
+			),
+		},
+		{
+			id: "actions",
+			cell: ({ row }) => (
+				<div className="flex justify-end gap-2">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => handleApprove(row.original)}
+						disabled={approveMutation.isPending || rejectMutation.isPending}
+					>
+						<IconCheck className="mr-1 size-4" />
+						{t("approvals:approvals.approve", "Approve")}
+					</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => handleReject(row.original)}
+						disabled={approveMutation.isPending || rejectMutation.isPending}
+					>
+						<IconX className="mr-1 size-4" />
+						{t("approvals:approvals.reject", "Reject")}
+					</Button>
+				</div>
+			),
+		},
+	];
 
 	if (isLoading) {
 		return <DataTableSkeleton columnCount={6} rowCount={5} />;

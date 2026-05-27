@@ -3,7 +3,7 @@
 import { IconCheck, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getWebhookDeliveryLogs } from "@/app/[locale]/(app)/settings/webhooks/actions";
 import {
 	ActionPanel,
@@ -52,28 +52,25 @@ export function WebhookDeliveryLogsDialog({
 	const shouldShowInitialLoading =
 		open && deliveries.length === 0 && loadedRequestKey !== requestKey;
 
-	const loadDeliveries = useCallback(
-		async (showLoading = true) => {
-			if (showLoading) {
-				setIsLoading(true);
+	const loadDeliveries = async (showLoading = true) => {
+		if (showLoading) {
+			setIsLoading(true);
+		}
+		try {
+			const result = await getWebhookDeliveryLogs(webhookId, { limit, offset });
+			if (result.success && result.data) {
+				setDeliveries(result.data.deliveries);
+				setTotal(result.data.total);
 			}
-			try {
-				const result = await getWebhookDeliveryLogs(webhookId, { limit, offset });
-				if (result.success && result.data) {
-					setDeliveries(result.data.deliveries);
-					setTotal(result.data.total);
-				}
-			} catch (error) {
-				setLoadedRequestKey(requestKey);
-				setIsLoading(false);
-				throw error;
-			}
-
+		} catch (error) {
 			setLoadedRequestKey(requestKey);
 			setIsLoading(false);
-		},
-		[webhookId, offset, requestKey],
-	);
+			throw error;
+		}
+
+		setLoadedRequestKey(requestKey);
+		setIsLoading(false);
+	};
 
 	useEffect(() => {
 		if (open) {

@@ -11,7 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -121,7 +121,7 @@ export function NotificationsInbox() {
 		}
 	};
 
-	const filteredNotifications = useMemo(() => {
+	const filteredNotifications = (() => {
 		const normalizedSearch = deferredSearch.trim().toLowerCase();
 
 		return notifications.filter((notification) => {
@@ -141,9 +141,9 @@ export function NotificationsInbox() {
 
 			return `${localized.title} ${localized.message}`.toLowerCase().includes(normalizedSearch);
 		});
-	}, [deferredSearch, notifications, readFilter, t, locale]);
+	})();
 
-	const groupedNotifications = useMemo(() => {
+	const groupedNotifications = (() => {
 		const groups: Record<TimelineGroup, NotificationWithMeta[]> = {
 			Today: [],
 			Yesterday: [],
@@ -155,12 +155,9 @@ export function NotificationsInbox() {
 		}
 
 		return groups;
-	}, [filteredNotifications]);
+	})();
 
-	const visibleIds = useMemo(
-		() => filteredNotifications.map((notification) => notification.id),
-		[filteredNotifications],
-	);
+	const visibleIds = filteredNotifications.map((notification) => notification.id);
 	const hasSearch = deferredSearch.trim().length > 0;
 	const selectedVisibleIds = visibleIds.filter((id) => selectedIds.has(id));
 	const selectedUnreadVisibleIds = filteredNotifications

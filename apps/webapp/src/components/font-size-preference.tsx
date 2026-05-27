@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import {
 	applyFontSizePreference,
 	type FontSizePreference,
@@ -32,13 +32,16 @@ export function FontSizeProvider({ children }: { children: React.ReactNode }) {
 		applyFontSizePreference(fontSize);
 	}, [fontSize]);
 
-	const setFontSize = useCallback((value: FontSizePreference) => {
+	const setFontSize = (value: FontSizePreference) => {
 		setFontSizeState(value);
 		writeStoredFontSize(getLocalStorage(), value);
 		applyFontSizePreference(value);
-	}, []);
+	};
 
-	const value = useMemo(() => ({ fontSize, setFontSize }), [fontSize, setFontSize]);
+	const value = {
+		fontSize,
+		setFontSize,
+	};
 
 	return <FontSizeContext.Provider value={value}>{children}</FontSizeContext.Provider>;
 }

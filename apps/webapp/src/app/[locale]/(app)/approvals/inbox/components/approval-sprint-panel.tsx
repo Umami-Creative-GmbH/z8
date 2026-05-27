@@ -2,7 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,7 +51,8 @@ export function ApprovalSprintPanel({
 	});
 	const visibleItems = items.filter((item) => !dismissedApprovalIds.includes(item.id));
 	const visibleItemCount = visibleItems.length;
-	const boundedCurrentIndex = visibleItemCount === 0 ? 0 : Math.min(currentIndex, visibleItemCount - 1);
+	const boundedCurrentIndex =
+		visibleItemCount === 0 ? 0 : Math.min(currentIndex, visibleItemCount - 1);
 	const currentItem = visibleItems[boundedCurrentIndex];
 	const currentItemId = currentItem?.id;
 	const isBusy = isSubmitting || approveMutation.isPending || rejectMutation.isPending;
@@ -67,11 +68,11 @@ export function ApprovalSprintPanel({
 		}
 	}
 
-	const advance = useCallback(() => {
+	const advance = () => {
 		setIsRejecting(false);
 		setRejectReason("");
 		setCurrentIndex((index) => index + 1);
-	}, []);
+	};
 
 	const handleApprove = async () => {
 		if (!currentItemId || isBusy) return;
@@ -183,10 +184,14 @@ export function ApprovalSprintPanel({
 				{currentItem ? (
 					<div className="space-y-4">
 						<div className="text-muted-foreground text-sm">
-							{t("approvals:sprint.progress", boundedCurrentIndex + 1 + " of " + visibleItems.length, {
-								current: boundedCurrentIndex + 1,
-								total: visibleItems.length,
-							})}
+							{t(
+								"approvals:sprint.progress",
+								boundedCurrentIndex + 1 + " of " + visibleItems.length,
+								{
+									current: boundedCurrentIndex + 1,
+									total: visibleItems.length,
+								},
+							)}
 						</div>
 						<ApprovalSprintCard
 							item={currentItem}

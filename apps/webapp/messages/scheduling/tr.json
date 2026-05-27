@@ -1,0 +1,100 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Yeterli personel",
+      "byLocation": "Konuma göre:",
+      "gapCount": "{{count}} personel eksikliği",
+      "gaps": "boşluklar",
+      "hideOverlay": "Kapsam katmanını gizle",
+      "metSlots": "{{count}} yeterli",
+      "overSlots": "{{count}} fazla personel",
+      "overstaffed": "Fazla personel",
+      "showOverlay": "Kapsam hedefleri katmanını göster",
+      "summary": "Kapsam Özeti:",
+      "toggleLabel": "Kapsam",
+      "underSlots": "{{count}} eksik personel",
+      "understaffed": "Eksik personel",
+      "utilization": "%{{percent}} kullanım"
+    },
+    "page": {
+      "employeeDescription": "Vardiyalarınızı görüntüleyin ve uygun vardiyaları alın",
+      "managerDescription": "Çalışan vardiyalarını yönetin ve planlayın",
+      "title": "Vardiya Çizelgesi"
+    },
+    "scheduler": {
+      "complianceBanner": {
+        "findingsDetected": "Yayınlamadan önce {count} bulgu tespit edildi.",
+        "maxHours": "Maksimum saat: {count}",
+        "overtime": "Fazla mesai: {count}",
+        "restTime": "Dinlenme süresi: {count}",
+        "title": "Bu Tarih Aralığındaki Uyumluluk Uyarıları"
+      },
+      "loading": "Çizelge yükleniyor...",
+      "publish": {
+        "failed": "Vardiyalar yayınlanamadı",
+        "published": "{count} vardiya yayınlandı"
+      },
+      "shiftUpdate": {
+        "failed": "Vardiya güncellenemedi",
+        "overlapDescription": "Bu vardiya diğer {count} vardiya ile çakışıyor",
+        "overlapWarning": "Vardiya, çakışma uyarısıyla kaydedildi",
+        "updated": "Vardiya güncellendi"
+      }
+    },
+    "shiftDialog": {
+      "anyoneCanPickUp": "Herkes alabilir",
+      "assignTo": "Atanacak Kişi",
+      "confirmDelete": "Silmeyi Onayla",
+      "created": "Vardiya oluşturuldu",
+      "createDescription": "Yeni vardiya için detayları doldurun",
+      "createShift": "Vardiya Oluştur",
+      "createTitle": "Vardiya Oluştur",
+      "date": "Tarih",
+      "deleted": "Vardiya silindi",
+      "deleteFailed": "Vardiya silinemedi",
+      "draft": "Taslak",
+      "editDescription": "Aşağıdaki vardiya detaylarını güncelleyin",
+      "editTitle": "Vardiyayı Düzenle",
+      "endTime": "Bitiş Saati",
+      "noTemplate": "Şablon yok",
+      "notes": "Notlar (İsteğe Bağlı)",
+      "notesPlaceholder": "Herhangi bir özel talimat veya not...",
+      "openShift": "Açık Vardiya",
+      "openShiftHelp": "Çalışanların alabilmesi için \"Açık Vardiya\" olarak bırakın",
+      "pickDate": "Bir tarih seçin",
+      "published": "Yayınlandı",
+      "savedWithWarnings": "Vardiya uyarılarla kaydedildi",
+      "saveFailed": "Vardiya kaydedilemedi",
+      "selectEmployee": "Bir çalışan seçin",
+      "selectSubarea": "Bir alt alan seçin…",
+      "selectTemplate": "Bir şablon seçin",
+      "startTime": "Başlangıç Saati",
+      "status": "Durum:",
+      "subarea": "Alt alan",
+      "subareaHelp": "Bu vardiyanın gerçekleşeceği yer",
+      "template": "Şablon (İsteğe bağlı)",
+      "templateHelp": "Bir şablon seçmek saatleri otomatik olarak dolduracaktır",
+      "updated": "Vardiya güncellendi",
+      "updateShift": "Vardiyayı Güncelle"
+    },
+    "skills": {
+      "expiredCertifications": "Süresi Dolan Sertifikalar:",
+      "expiredOn": "(Süresi dolma tarihi: {{date}})",
+      "missingPreferred": "Eksik Tercih Edilen Beceriler:",
+      "missingPreferredCount": "{{count}} tercih edilen beceri eksik",
+      "missingRequired": "Eksik Zorunlu Beceriler:",
+      "preferred": "Tercih edilen",
+      "preferredSkillsMissing": "Tercih Edilen Beceriler Eksik",
+      "requirementsNotMet": "Beceri Gereksinimleri Karşılanmadı",
+      "unqualified": "Niteliksiz",
+      "validating": "Beceriler doğrulanıyor…",
+      "validatingDescription": "Çalışan nitelikleri kontrol ediliyor",
+      "warningMessage": "Bu vardiyayı yine de atayabilirsiniz, ancak geçersiz kılma olarak kaydedilecektir."
+    },
+    "templates": {
+      "dragHint": "Vardiya oluşturmak için bir şablonu takvime sürükleyin",
+      "empty": "Kullanılabilir şablon yok. Vardiyaları hızlıca eklemek için Ayarlar'dan şablon oluşturun.",
+      "title": "Vardiya Şablonları"
+    }
+  }
+}

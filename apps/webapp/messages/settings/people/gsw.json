@@ -1,0 +1,518 @@
+{
+  "settings": {
+    "employeeGroups": {
+      "description": "Wiederverwendbari Mitarbeiter-Gruppe für Richtlinie, wo gruppespezifischi Freigabekette bruched.",
+      "empty": "Es sind no kei Mitarbeiter-Gruppe konfiguriert. Gruppe chönd als Richtlinien-Bedingige verwändet wärde, sobald si erstellt sind.",
+      "loadFailed": "Mitarbeiter-Gruppe händ nöd chönne glade wärde.",
+      "loading": "Mitarbeiter-Gruppe wärded glade...",
+      "members": "Mitglieder",
+      "status": "Status",
+      "status.active": "Aktiv",
+      "status.inactive": "Inaktiv",
+      "title": "Mitarbeiter-Gruppe"
+    },
+    "employees": {
+      "description": "Mitarbeiterprofile, Teams und Berechtigungen verwalten",
+      "details": "Mitarbeiterdetails",
+      "detailView": {
+        "loadingEmployeeData": "Mitarbeiterdaten wärde glade",
+        "manageEmployees": "Mitarbeiter verwalte",
+        "unexpectedError": "Es isch en unerwartete Fehler ufträtte",
+        "updateFailed": "Mitarbeiter-Aktualisierig isch fehlgschlage",
+        "updateSuccess": "Mitarbeiter isch erfolgriich aktualisiert worde"
+      },
+      "directory": {
+        "actions": {
+          "viewDetails": "Details aaluege"
+        },
+        "contract": {
+          "fixed": "Fix",
+          "hourly": "Stundelohn"
+        },
+        "countFound": "{count} Mitarbeiter gfunde",
+        "emptyState": "Kei Mitarbeiter gfunde",
+        "inviteEmployee": "Mitarbeiter iilade",
+        "loading": "Mitarbeiter wärde glade...",
+        "noEmployeeFeature": "Mitarbeiter verwalte",
+        "pagination": {
+          "next": "Witer",
+          "pageOf": "Siite {page} vo {total}",
+          "previous": "Zrugg"
+        },
+        "refresh": "Aktualisiere",
+        "roleFilter": "Nach Rolle filtere",
+        "roles": {
+          "admin": "Admin",
+          "all": "Alli Rolle",
+          "employee": "Mitarbeiter",
+          "manager": "Manager"
+        },
+        "searchLabel": "Mitarbeiter sueche",
+        "searchPlaceholder": "Suech nach Name, E-Mail oder Position...",
+        "statuses": {
+          "active": "Aktiv",
+          "all": "Alli Status",
+          "inactive": "Inaktiv"
+        },
+        "statusFilter": "Nach Status filtere",
+        "table": {
+          "actions": "Aktionä",
+          "contract": "Vertrag",
+          "employee": "Mitarbeiter",
+          "employeeNumber": "Personalnummer",
+          "position": "Position",
+          "role": "Rolle",
+          "status": "Status",
+          "team": "Team"
+        },
+        "title": "Mitarbeiterverzeichnis"
+      },
+      "title": "Mitarbeiter"
+    },
+    "employmentHistory": {
+      "addChange": "Änderig hinzufüege",
+      "addError": "Änderig vo de Aastelligshistorie isch fehlgschlage",
+      "addSuccess": "Änderig vo de Aastelligshistorie isch hinzugefüegt worde",
+      "cancelConfirm": "Die Aastelligsänderig abbreche? Das entfernt die planti oder entworfeni Aastelligsänderig.",
+      "cancelError": "Abbruch vo de Aastelligshistorie-Änderig isch fehlgschlage",
+      "cancelSuccess": "Aastelligshistorie-Änderig isch abbroche worde",
+      "confirmError": "Bestätigung vo de Aastelligshistorie-Änderig isch fehlgschlage",
+      "confirmSuccess": "Aastelligshistorie-Änderig isch bestätigt worde",
+      "contractType": "Vertragsart",
+      "contractTypes": {
+        "fixed": "fix",
+        "hourly": "stundewiis"
+      },
+      "currentConfirmed": "Aktuell bestätigt",
+      "description": "Bestätigter Kontext und geplante Anstellungsänderungen",
+      "effectiveDate": "Gültigkeitsdatum",
+      "effectiveDateHelp": "Wann dieser Vertragskontext in Kraft tritt",
+      "effectiveDateRequired": "Gültigkeitsdatum ist erforderlich",
+      "effectiveDateValue": "Gültig ab {date}",
+      "emptyTimeline": "Noch keine Vertrags- oder Arbeitsmodellhistorie vorhanden.",
+      "hourlyRate": "Stundenlohn",
+      "hourlyRateValue": "{rate} / Stunde",
+      "nextScheduledConfirmed": "Nächste geplante Bestätigung",
+      "noCurrentContext": "Kein bestätigter Vertragskontext",
+      "noScheduledChange": "Keine bestätigte Änderung geplant",
+      "probationEnd": "Ende der Probezeit",
+      "probationRange": "Probezeit {startDate} - {endDate}",
+      "probationStart": "Beginn der Probezeit",
+      "reasonNote": "Grund / Notiz",
+      "reasonPlaceholder": "Jahresgespräch, Rollenwechsel oder Anpassung des Arbeitsmodells…",
+      "reviewState": "Status der Überprüfung",
+      "saveChange": "Änderung speichern",
+      "selectContractType": "Vertragstyp auswählen",
+      "selectReviewState": "Überprüfungsstatus auswählen",
+      "selectWorkModel": "Arbeitsmodell auswählen",
+      "states": {
+        "confirmed": "bestätigt",
+        "draft": "Entwurf",
+        "pending": "ausstehend"
+      },
+      "timeline": "Zeitstrahl",
+      "title": "Vertrag & Arbeitsmodell",
+      "weeklyHours": "Wöchentliche Arbeitszeit",
+      "weeklyHoursValue": "{hours} / Woche",
+      "workModel": "Arbeitsmodell",
+      "workModels": {
+        "flexible": "flexibel",
+        "hybrid": "hybrid",
+        "onsite": "vor Ort",
+        "remote": "remote"
+      }
+    },
+    "inviteCodes": {
+      "alreadyHaveAccount": "Haben Sie bereits ein Konto?",
+      "alreadyMember": "Bereits Mitglied",
+      "alreadyMemberMessage": "Sie sind bereits Mitglied dieser Organisation.",
+      "approval": "Genehmigung",
+      "auto": "Auto",
+      "code": "Code",
+      "codeCopied": "Einladungscode kopiert",
+      "codeHelp": "4-20 Zeichen, nur Buchstaben, Zahlen und Bindestriche",
+      "codePlaceholder": "TEAM-ABC123",
+      "copyCode": "Code kopieren",
+      "copyUrl": "Einladungs-URL kopieren",
+      "create": "Erstellen",
+      "createCode": "Code erstellen",
+      "created": "Einladungscode erstellt",
+      "createDescription": "Erstellen Sie einen neuen Einladungscode, damit Benutzer Ihrer Organisation beitreten können",
+      "defaultTeam": "Standard-Team",
+      "defaultTeamHelp": "Neui Mitgliider wärded für das Team während de Freigab vorgschlage",
+      "deleted": "Iiladigscode glöscht",
+      "deleteDescription": "Sind Sie sicher, dass Sie de Iiladigscode \"{code}\" lösche wönd? Die Aktion chan nöd rückgängig gmacht werde.",
+      "deleteTitle": "Iiladigscode lösche",
+      "description": "Erstelle Sie teilbari Codes, demit Benutzer Ihrer Organisation biiträte chönd",
+      "descriptionPlaceholder": "Optionali Beschriibig...",
+      "downloadFormat": "{format} abelade",
+      "editCode": "Iiladigscode bearbeite",
+      "editDescription": "Aktualisiere Sie d'Iistellige für de Iiladigscode",
+      "enterCodeDescription": "Gänd Sie en Iiladigscode ii, zum ere Organisation biizträte",
+      "expires": "Läuft ab",
+      "expiresAt": "Ablaufdatum",
+      "expiresAtHelp": "Leer lah für kei Ablaufdatum",
+      "formatPng": "PNG",
+      "formatSvg": "SVG",
+      "generateCode": "Neue Code generiere",
+      "generatingQR": "QR-Code wird generiert...",
+      "invalidCode": "Ungültige Iiladigscode",
+      "inviteCode": "Iiladigscode",
+      "joinedMessage": "Sie sind {organization} erfolgriich biiträte.",
+      "joinedSuccessfully": "Erfolgriich biiträte",
+      "joining": "Biitritt lauft...",
+      "joiningOrganization": "Sie wönd {organization} biiträte",
+      "joinOrganization": "Organisation biiträte",
+      "joinRequestSent": "Biitrittsaafraag gsändet",
+      "label": "Bezeichnig",
+      "labelPlaceholder": "z.B. Öffentlechi Rekrutierig 2024",
+      "maxUses": "Maximali Nutzig",
+      "maxUsesHelp": "Leer lah für unbeschränkti Nutzig",
+      "needAccount": "Händ Sie no kei Konto?",
+      "noCodes": "No kei Iiladigscodes vorhande. Erstelle Sie eine, zum afange.",
+      "noDefaultTeam": "Kei Standard-Team",
+      "pendingApproval": "Wartet uf Freigab",
+      "pendingApprovalDescription": "Sie wärded benachrichtigt, sobald Ihr Biitritt freigäh worde isch.",
+      "pendingApprovalMessage": "Ihr Aafraag zum Biitritt zu {organization} isch übermittlet worde. En Administrator wird Ihren Aafraag prüefe.",
+      "qrAlt": "QR-Code für {code}",
+      "qrCode": "QR-Code",
+      "qrDescription": "Scanne Sie de QR-Code, zum de Organisation biizträte",
+      "qrDownloaded": "QR-Code abelade",
+      "required": "Erforderlich",
+      "requiresApproval": "Admin-Freigab erforderlich",
+      "requiresApprovalHelp": "Wenn aktiviert, wärded neui Mitgliider zruggghalte, bis en Admin sie freigitt",
+      "signInToJoin": "Zum Biitritt aamälde",
+      "status": "Status",
+      "status.active": "Aktiv",
+      "status.paused": "Pausiert",
+      "title": "Iiladigscodes",
+      "unlimited": "Unbeschränkt",
+      "updated": "Iiladigscode aktualisiert",
+      "urlCopied": "Iiladig-URL in Zwüscheablage kopiert",
+      "usage": "Nutzig",
+      "validatingCode": "Code wird validiert...",
+      "validCodeDescription": "Dä Iiladigscode isch gültig. Klick uf de Chnopf unde, zum biiträte."
+    },
+    "managerAssignment": {
+      "assignFailed": "Manager chönd nöd zuegwise wärde",
+      "assignSuccess": "Manager erfolgriich zuegwise",
+      "availableManagers": "Verfüegbari Manager",
+      "description": "Wähl eine oder meh Manager für de Aagstellti us. Bestimm eine als Hauptmanager.",
+      "empty": "Kei Manager verfüegbar",
+      "primaryDescription": "De Hauptmanager isch de Standard für Freigabe und Benachrichtigunge",
+      "primaryManager": "Hauptmanager",
+      "save": "Manager spychere",
+      "title": "Manager-Zuewiisig",
+      "unexpectedError": "Es isch en unerwartete Fehler ufträtte",
+      "validation": {
+        "primary": "Bitte bestimm en Hauptmanager",
+        "selectOne": "Bitte wähl mindestens eine Manager us"
+      }
+    },
+    "pendingMembers": {
+      "approve": "Freigäh",
+      "approved": "Mitgliid freigäh",
+      "approveMember": "{name} freigäh",
+      "approveSelected": "Uusgwählti freigäh",
+      "assignTeam": "Team zuewiise",
+      "bulkApproved": "{count} Mitgliider freigäh",
+      "bulkRejectDescription": "Bisch sicher, dass du {count} uusgwählti Mitgliider ablehne wotsch? Si wärded us de Warteschlange entfernt.",
+      "bulkRejected": "{count} Mitgliider abglehnt",
+      "bulkRejectTitle": "Uusgwählti Mitgliider ablehne",
+      "description": "Prüef und gib Mitgliider frei, wo uf de Biitritt zu dinere Organisation warted",
+      "email": "E-Mail",
+      "joinedVia": "Biiträte über",
+      "noTeam": "Kei Team",
+      "reject": "Ablehne",
+      "rejectDescription": "Bisch sicher, dass du {name} ablehne wotsch? D Person wird us de Warteschlange entfernt und mues de Zuegang neu aafordere.",
+      "rejected": "Mitgliid abglehnt",
+      "rejectMember": "{name} ablehne",
+      "rejectSelected": "Uusgwählti ablehne",
+      "rejectTitle": "Mitgliid ablehne",
+      "requestedAt": "Aagforderet",
+      "selectAll": "Alli wartende Mitgliider uswähle",
+      "selectMember": "{name} uswähle",
+      "sso": "SSO",
+      "title": "Wartendi Mitgliider",
+      "user": "Benutzer"
+    },
+    "permissions": {
+      "actions": {
+        "edit": "Bearbeite"
+      },
+      "adminRequired": "Admin-Zuegriff erforderlich",
+      "allTeams": "Alli Teams (organisationswiit)",
+      "allTeamsHelp": "Berechtigunge gälted für alli Teams i de Organisation",
+      "badge": {
+        "allPermissions": "Alli Berechtigunge",
+        "permissionCount": "{count} Berechtigung(e)"
+      },
+      "description": "Verwalt d Mitarbeiter-Berechtigunge für Team-Abläuf",
+      "editor": {
+        "title": "Berechtigunge bearbeite - {name}"
+      },
+      "employeePermissions": {
+        "description": "Klick uf en Mitarbeiter, zum d Berechtigunge z bearbeite",
+        "title": "Mitarbeiter-Berechtigunge"
+      },
+      "emptyState": "Keini Aagstellte gfunde",
+      "noEmployeeFeature": "Berechtigunge verwalte",
+      "noPermissions": "Keini Berechtigunge",
+      "permissions": "Berechtigunge",
+      "refresh": "Aktualisiere",
+      "revokeAll": "Alli widerruefe",
+      "revokeError": "Berechtigunge chönne nid widerruefe werde",
+      "revokeSuccess": "Berechtigunge erfolgrych widerruefe",
+      "save": "Berechtigunge spychere",
+      "scope": "Berechtigungsumfang",
+      "searchLabel": "Aagstellti sueche",
+      "searchPlaceholder": "Sueche nach Name, E-Mail oder Position...",
+      "selectedTeamHelp": "Berechtigunge gälte nume für s gwählte Team",
+      "table": {
+        "actions": "Aaktione",
+        "employee": "Aagstellte",
+        "permissions": "Berechtigunge",
+        "position": "Position",
+        "role": "Roll"
+      },
+      "title": "Teamberechtigunge",
+      "toast": {
+        "adminRequired": "Du muesch Admin sy, zum Berechtigunge z verwalte",
+        "loadEmployeesFailed": "Aagstellti chönne nid glade werde"
+      },
+      "updateError": "Berechtigunge chönne nid aktualisiert werde",
+      "updateSuccess": "Berechtigunge erfolgrych aktualisiert"
+    },
+    "rateHistory": {
+      "changeRate": "Aasatz ändere",
+      "currentRate": "Aktuelle Aasatz: {rate}",
+      "description": "Stundelohn ändret sich mit dr Zyt",
+      "effectiveFrom": "Gültig ab",
+      "effectiveFromHelp": "Wenn dr neu Aasatz in Chraft tryt",
+      "empty": "Kei Aasatz-Historie verfüegbar",
+      "newHourlyRate": "Neue Stundelohn",
+      "reasonOptional": "Grund (optional)",
+      "reasonPlaceholder": "z. B. Jahresgspröch, Beförderig, etc.",
+      "title": "Aasatz-Historie",
+      "updateDescription": "En neue Aasatz-Ytrag erstelle. Dr aktuell Aasatz wird automatisch abgschlosse.",
+      "updateError": "Aasatz chann nid aktualisiert werde",
+      "updateRate": "Aasatz aktualisiere",
+      "updateSuccess": "Aasatz erfolgrych aktualisiert",
+      "updateTitle": "Stundelohn aktualisiere"
+    },
+    "roles": {
+      "actions": {
+        "assign": "Roll zueordne",
+        "create": "Roll erstelle",
+        "deleteNamed": "{name} lösche",
+        "editNamed": "{name} bearbeite",
+        "removeNamed": "{name} entferne",
+        "saveChanges": "Änderige spychere"
+      },
+      "assignPanel": {
+        "description": "Wähl e Roll us, wo däm Aagstellte zuegwise wird.",
+        "empty": "Keini verfüegbare Rolle zum Zueordne. Alli Rolle sy scho zuegwise oder es sy keini erstellt worde.",
+        "permissionCount": "{count} Berechtigunge",
+        "title": "Benutzerdefinierti Roll zueordne"
+      },
+      "baseTiers": {
+        "admin": "Admin",
+        "employee": "Aagstellte",
+        "manager": "Manager"
+      },
+      "createPanel": {
+        "description": "Definiere e neui Rolle mit spezifische Berechtigunge für dini Organisation.",
+        "title": "Eigeni Rolle erstelle"
+      },
+      "deleteDialog": {
+        "assignedWarning": {
+          "one": "Die Rolle isch aktuell {count} Mitarbeiter zuegwise. Si verlüre d'Berechtigunge, wo mit dere Rolle verbunde sind.",
+          "other": "Die Rolle isch aktuell {count} Mitarbeiter zuegwise. Si verlüre d'Berechtigunge, wo mit dere Rolle verbunde sind."
+        },
+        "confirm": "Bisch sicher, dass du \"{name}\" lösche wotsch?",
+        "title": "Rolle lösche"
+      },
+      "description": "Erstelle eigeni Berechtigungsrolle für dini Organisation",
+      "editor": {
+        "baseTier": "Basis-Stufe",
+        "color": "Farb",
+        "description": "Beschriibig",
+        "descriptionPlaceholder": "Wofür isch die Rolle...",
+        "errors": {
+          "createFailed": "Rolle het nid chönne erstellt werde",
+          "nameRequired": "Rollename isch erforderlich",
+          "permissionsFailed": "Rolleberechtigunge händ nid chönne gspeicheret werde",
+          "updateFailed": "Rolle het nid chönne aktualisiert werde"
+        },
+        "inherited": "Vererbt",
+        "name": "Name",
+        "namePlaceholder": "z.B. Teamleiter, HR-Manager...",
+        "permissions": "Berechtigunge",
+        "permissionsHelp": "Wähl zuesätzliche Berechtigunge für die Rolle. Berechtigunge, wo vo de Basis-Stufe vererbt werde, sind als gsperrt markiert.",
+        "selectColor": "Farb {color} wähle"
+      },
+      "editPanel": {
+        "description": "Aktualisier d'Rottedails und Berechtigunge.",
+        "title": "Eigeni Rolle bearbeite"
+      },
+      "employeeCard": {
+        "description": "Zuesätzliche Berechtigungsrolle, wo däm Mitarbeiter zuegwise sind",
+        "empty": "Kei eigeni Rolle zuegwise.",
+        "permissionCount": {
+          "one": "({count} Berechtigung)",
+          "other": "({count} Berechtigunge)"
+        }
+      },
+      "empty": {
+        "description": "Erstell eini zum aafange.",
+        "title": "No kei eigeni Rolle"
+      },
+      "introduction": "Erstelle eigeni Berechtigungsrolle, wo Mitarbeiter chönd zuegwise werde. Eigeni Rolle ergänzed d'Berechtigunge vo de Basis-Stufe.",
+      "table": {
+        "actions": "Aaktione",
+        "assigned": "Zuegwise",
+        "assignedCount": {
+          "one": "{count} Mitarbeiter",
+          "other": "{count} Mitarbeiter"
+        },
+        "baseTier": "Basis-Stufe",
+        "name": "Name",
+        "permissionCount": {
+          "one": "{count} Berechtigung",
+          "other": "{count} Berechtigunge"
+        },
+        "permissions": "Berechtigunge"
+      },
+      "title": "Eigeni Rolle",
+      "toast": {
+        "assigned": "Rolle zuegwise",
+        "created": "Rolle erstellt",
+        "deleted": "Rolle glöscht",
+        "removed": "Rolle entfernt",
+        "updated": "Rolle aktualisiert"
+      }
+    },
+    "skills": {
+      "addSkill": "Fähigkeit hinzufüge",
+      "assign": "Zuewiise",
+      "assignError": "Fähigkeit het nid chönne zuegwise werde",
+      "assignSkill": "Fähigkeit zuewiise",
+      "assignSkillDescription": "Füeg däm Aagstellte e Fähigkeit oder es Zertifikat zue",
+      "assignSkillHint": "Klick uf 'Fähigkeit zueordne', zum Qualifikazione zuezfüege",
+      "catalog": "Fähigkeitskatalog",
+      "catalogDescription": "Definier Fähigkeite, wo für Teilberiich und Schichtvorlage verlangt wärde chönd",
+      "category": "Kategorie",
+      "confirmDelete": "Bisch sicher, dass die Fähigkeit lösche wotsch?",
+      "confirmRemove": "Wotsch \"${skillName}\" vo däm Aagstellte entferne?",
+      "createError": "Fähigkeit hät nöd chöne erstellt wärde",
+      "createSkill": "Fähigkeit erstelle",
+      "createSkillDescription": "Erstell e neui Fähigkeit, wo Aagstellte zuegwise wärde chan",
+      "customCategoryName": "Eigene Kategoriename",
+      "customCategoryPlaceholder": "z.B. Compliance",
+      "deleteError": "Fähigkeit hät nöd chöne glöscht wärde",
+      "description": "Beschriibig",
+      "descriptionPlaceholder": "Optionali Beschriibig vo de Fähigkeit oder em Zertifikat",
+      "editSkill": "Fähigkeit bearbeite",
+      "editSkillDescription": "Aktualisier d'Details vo de Fähigkeit",
+      "employeeSkills": "Fähigkeite & Qualifikazione",
+      "employeeSkillsDescription": "Zertifikat und Fähigkeite, wo däm Aagstellte zuegwise sind",
+      "expired": "Abglaufe",
+      "expiredOn": "Abglaufe am {{date}}",
+      "expiresOn": "Läuft ab am {{date}}",
+      "expiringSoon": "Läuft bald ab",
+      "expiry": "Ablaufverfolgig",
+      "expiryDate": "Ablaufdatum",
+      "expiryRequired": "Erforderlich",
+      "expiryRequiredHint": "Für das Zertifikat isch es Ablaufdatum erforderlich",
+      "name": "Name",
+      "namePlaceholder": "z.B. Staplerschiin",
+      "noAvailableSkills": "Alli Fähigkeite sind zuegwise oder es sind kei Fähigkeite definiert",
+      "noExpiry": "Nei",
+      "noSkills": "No kei Fähigkeite definiert",
+      "noSkillsAssigned": "Kei Fähigkeite zuegwise",
+      "noSkillsHint": "Erstell dini erschti Fähigkeit zum aafange",
+      "notes": "Notize",
+      "notesPlaceholder": "z.B. Zertifikatsnummer, Trainingsdatum…",
+      "removeError": "Fähigkeit hät nöd chöne entfernt wärde",
+      "requiresExpiry": "Erfordert Ablaufdatum",
+      "requiresExpiryHint": "Aktivier das, wenn das Zertifikat erneuert wärde muess (z.B. Erschthilf)",
+      "selectCategory": "Kategorie wähle",
+      "selectSkill": "E Fähigkeit wähle",
+      "skill": "Fähigkeit",
+      "skillAssigned": "Fähigkeit zuegwise",
+      "skillCreated": "Fähigkeit erstellt",
+      "skillDeleted": "Fähigkeit glöscht",
+      "skillName": "Name",
+      "skillRemoved": "Fähigkeit entfernt",
+      "skillUpdated": "Fähigkeit aktualisiert",
+      "title": "Fähigkeite & Qualifikazione",
+      "updateError": "Fähigkeit hät nöd chöne aktualisiert wärde"
+    },
+    "teams": {
+      "description": "Mitarbeitende in Teams organisieren und Teamzuteilungen verwalten",
+      "detail": {
+        "actions": {
+          "cancel": "Abbrechen",
+          "edit": "Bearbeite",
+          "save": "Spichere"
+        },
+        "addMember": {
+          "description": "Wähle en Mitarbeitende für das Team us",
+          "selectEmployee": "Mitarbeitende uswähle",
+          "title": "Teammitgliid hiezuetue"
+        },
+        "back": "Zrugg zu de Teams",
+        "delete": {
+          "description": "Bisch sicher, dass das Team lösche wotsch? Die Aktion cha nöd rückgängig gmacht werde. Teammitgliider werded nöd glöscht.",
+          "title": "Team lösche"
+        },
+        "description": "Teaminformatione und Mitgliider verwalte",
+        "errors": {
+          "addTeamMember": "Teammitgliid konnte nöd hiezuetue werde",
+          "deleteTeam": "Team konnte nöd glöscht werde",
+          "loadTeam": "Team konnte nöd glade werde",
+          "removeTeamMember": "Teammitgliid konnte nöd entfernt werde",
+          "updateTeam": "Team konnte nöd aktualisiert werde"
+        },
+        "info": {
+          "description": "Beschriibig",
+          "descriptionPlaceholder": "Teambeschriibig iigäh",
+          "members": "Mitgliider",
+          "noPrimaryManager": "Kein Hauptverantwortliche zuegwise",
+          "primaryManager": "Hauptverantwortliche",
+          "teamName": "Teamname",
+          "teamNamePlaceholder": "Teamname iigäh",
+          "title": "Teaminformatione"
+        },
+        "members": {
+          "add": "Mitgliid hiezuetue",
+          "description": "Mitarbeitende, wo däm Team zuegwise sind",
+          "empty": "Kei Mitgliider i däm Team",
+          "remove": "Teammitgliid entferne",
+          "title": "Teammitgliider"
+        },
+        "removeMember": {
+          "confirm": "Entferne",
+          "description": "Bisch sicher, dass de Mitarbeitende us däm Team entferne wotsch? Er/Sie hät weiterhin Zuegriff uf d Organisation.",
+          "title": "Teammitgliid entferne"
+        },
+        "selectEmployee": "Mitarbeitende uswähle",
+        "title": "Teamdetails",
+        "toasts": {
+          "teamDeleted": "Team erfolgriich glöscht",
+          "teamMemberAdded": "Teammitgliid erfolgriich hiezuetue",
+          "teamMemberRemoved": "Teammitgliid erfolgriich entfernt",
+          "teamUpdated": "Team erfolgriich aktualisiert"
+        },
+        "validation": {
+          "invalidInput": "Ungültigi Iigab",
+          "selectEmployee": "Bitte wähl en Mitarbeitende us",
+          "teamNameRequired": "Teamname isch erforderlich",
+          "teamNameTooLong": "Teamname isch z lang"
+        }
+      },
+      "details": "Teamdetails",
+      "title": "Teams"
+    }
+  }
+}

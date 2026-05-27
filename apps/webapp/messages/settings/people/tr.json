@@ -1,0 +1,518 @@
+{
+  "settings": {
+    "employeeGroups": {
+      "description": "Gruba özel onay zincirleri gerektiren politikalar için yeniden kullanılabilir çalışan kohortları.",
+      "empty": "Henüz yapılandırılmış çalışan grubu yok. Gruplar oluşturulduktan sonra politika koşulları olarak kullanılabilir.",
+      "loadFailed": "Çalışan grupları yüklenemedi.",
+      "loading": "Çalışan grupları yükleniyor…",
+      "members": "Üyeler",
+      "status": "Durum",
+      "status.active": "Aktif",
+      "status.inactive": "Pasif",
+      "title": "Çalışan Grupları"
+    },
+    "employees": {
+      "description": "Çalışan profillerini, ekipleri ve izinleri yönetin",
+      "details": "Çalışan Detayları",
+      "detailView": {
+        "loadingEmployeeData": "Çalışan verileri yükleniyor",
+        "manageEmployees": "çalışanları yönet",
+        "unexpectedError": "Beklenmedik bir hata oluştu",
+        "updateFailed": "Çalışan güncellenemedi",
+        "updateSuccess": "Çalışan başarıyla güncellendi"
+      },
+      "directory": {
+        "actions": {
+          "viewDetails": "Detayları Görüntüle"
+        },
+        "contract": {
+          "fixed": "Sabit",
+          "hourly": "Saatlik"
+        },
+        "countFound": "{count} çalışan bulundu",
+        "emptyState": "Çalışan bulunamadı",
+        "inviteEmployee": "Çalışan Davet Et",
+        "loading": "Çalışanlar yükleniyor...",
+        "noEmployeeFeature": "çalışanları yönet",
+        "pagination": {
+          "next": "İleri",
+          "pageOf": "Sayfa {page} / {total}",
+          "previous": "Geri"
+        },
+        "refresh": "Yenile",
+        "roleFilter": "Role göre filtrele",
+        "roles": {
+          "admin": "Yönetici",
+          "all": "Tüm Roller",
+          "employee": "Çalışan",
+          "manager": "Müdür"
+        },
+        "searchLabel": "Çalışanları ara",
+        "searchPlaceholder": "İsim, e-posta veya pozisyona göre ara...",
+        "statuses": {
+          "active": "Aktif",
+          "all": "Tüm Durumlar",
+          "inactive": "Pasif"
+        },
+        "statusFilter": "Duruma göre filtrele",
+        "table": {
+          "actions": "İşlemler",
+          "contract": "Sözleşme",
+          "employee": "Çalışan",
+          "employeeNumber": "Çalışan Numarası",
+          "position": "Pozisyon",
+          "role": "Rol",
+          "status": "Durum",
+          "team": "Ekip"
+        },
+        "title": "Çalışan Dizini"
+      },
+      "title": "Çalışanlar"
+    },
+    "employmentHistory": {
+      "addChange": "Değişiklik Ekle",
+      "addError": "İstihdam geçmişi değişikliği eklenemedi",
+      "addSuccess": "İstihdam geçmişi değişikliği eklendi",
+      "cancelConfirm": "Bu istihdam değişikliğini iptal etmek istiyor musunuz? Bu işlem, planlanmış veya taslak halindeki istihdam değişikliğini kaldırır.",
+      "cancelError": "İstihdam geçmişi değişikliği iptal edilemedi",
+      "cancelSuccess": "İstihdam geçmişi değişikliği iptal edildi",
+      "confirmError": "İstihdam geçmişi değişikliği onaylanamadı",
+      "confirmSuccess": "İstihdam geçmişi değişikliği onaylandı",
+      "contractType": "Sözleşme Türü",
+      "contractTypes": {
+        "fixed": "sabit",
+        "hourly": "saatlik"
+      },
+      "currentConfirmed": "Mevcut onaylı",
+      "description": "Onaylı bağlam ve planlanmış istihdam değişiklikleri",
+      "effectiveDate": "Yürürlük Tarihi",
+      "effectiveDateHelp": "Bu sözleşme bağlamının yürürlüğe girdiği tarih",
+      "effectiveDateRequired": "Yürürlük Tarihi gereklidir",
+      "effectiveDateValue": "Yürürlük Tarihi {date}",
+      "emptyTimeline": "Henüz sözleşme veya çalışma modeli geçmişi yok.",
+      "hourlyRate": "Saatlik Ücret",
+      "hourlyRateValue": "{rate} / saat",
+      "nextScheduledConfirmed": "Bir sonraki planlanmış onaylı",
+      "noCurrentContext": "Onaylı sözleşme bağlamı yok",
+      "noScheduledChange": "Planlanmış onaylı değişiklik yok",
+      "probationEnd": "Deneme Süresi Bitişi",
+      "probationRange": "Deneme Süresi {startDate} - {endDate}",
+      "probationStart": "Deneme Süresi Başlangıcı",
+      "reasonNote": "Neden / Not",
+      "reasonPlaceholder": "Yıllık değerlendirme, rol değişikliği veya çalışma modeli güncellemesi…",
+      "reviewState": "Değerlendirme Durumu",
+      "saveChange": "Değişikliği Kaydet",
+      "selectContractType": "Sözleşme türünü seçin",
+      "selectReviewState": "Değerlendirme durumunu seçin",
+      "selectWorkModel": "Çalışma modelini seçin",
+      "states": {
+        "confirmed": "onaylı",
+        "draft": "taslak",
+        "pending": "beklemede"
+      },
+      "timeline": "Zaman Çizelgesi",
+      "title": "Sözleşme ve Çalışma Modeli",
+      "weeklyHours": "Haftalık Çalışma Saati",
+      "weeklyHoursValue": "{hours} / hafta",
+      "workModel": "Çalışma Modeli",
+      "workModels": {
+        "flexible": "esnek",
+        "hybrid": "hibrit",
+        "onsite": "yerinde",
+        "remote": "uzaktan"
+      }
+    },
+    "inviteCodes": {
+      "alreadyHaveAccount": "Zaten bir hesabınız var mı?",
+      "alreadyMember": "Zaten Üye",
+      "alreadyMemberMessage": "Bu organizasyonun zaten bir üyesisiniz.",
+      "approval": "Onay",
+      "auto": "Otomatik",
+      "code": "Kod",
+      "codeCopied": "Davet kodu kopyalandı",
+      "codeHelp": "4-20 karakter, sadece harfler, rakamlar ve kısa çizgiler",
+      "codePlaceholder": "TEAM-ABC123",
+      "copyCode": "Kodu kopyala",
+      "copyUrl": "Davet URL'sini kopyala",
+      "create": "Oluştur",
+      "createCode": "Kod Oluştur",
+      "created": "Davet kodu oluşturuldu",
+      "createDescription": "Kullanıcıların organizasyonunuza katılması için yeni bir davet kodu oluşturun",
+      "defaultTeam": "Varsayılan Ekip",
+      "defaultTeamHelp": "Yeni üyeler onay sürecinde bu ekip için önerilecektir",
+      "deleted": "Davet kodu silindi",
+      "deleteDescription": "\"{code}\" davet kodunu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+      "deleteTitle": "Davet Kodunu Sil",
+      "description": "Kullanıcıların organizasyonunuza katılması için paylaşılabilir kodlar oluşturun",
+      "descriptionPlaceholder": "İsteğe bağlı açıklama...",
+      "downloadFormat": "{format} indir",
+      "editCode": "Davet Kodunu Düzenle",
+      "editDescription": "Bu davet kodunun ayarlarını güncelleyin",
+      "enterCodeDescription": "Bir organizasyona katılmak için davet kodu girin",
+      "expires": "Sona Erme Tarihi",
+      "expiresAt": "Son Kullanma Tarihi",
+      "expiresAtHelp": "Sona erme tarihi olmaması için boş bırakın",
+      "formatPng": "PNG",
+      "formatSvg": "SVG",
+      "generateCode": "Yeni kod oluştur",
+      "generatingQR": "QR kod oluşturuluyor...",
+      "invalidCode": "Geçersiz davet kodu",
+      "inviteCode": "Davet Kodu",
+      "joinedMessage": "{organization} organizasyonuna başarıyla katıldınız.",
+      "joinedSuccessfully": "Başarıyla Katılındı",
+      "joining": "Katılıyor...",
+      "joiningOrganization": "{organization} organizasyonuna katılmak üzeresiniz",
+      "joinOrganization": "Organizasyona Katıl",
+      "joinRequestSent": "Katılma İsteği Gönderildi",
+      "label": "Etiket",
+      "labelPlaceholder": "ör. 2024 Genel Alımı",
+      "maxUses": "Maksimum Kullanım",
+      "maxUsesHelp": "Sınırsız kullanım için boş bırakın",
+      "needAccount": "Hesabınız yok mu?",
+      "noCodes": "Henüz davet kodu yok. Başlamak için bir tane oluşturun.",
+      "noDefaultTeam": "Varsayılan ekip yok",
+      "pendingApproval": "Onay Bekliyor",
+      "pendingApprovalDescription": "Üyeliğiniz onaylandığında bilgilendirileceksiniz.",
+      "pendingApprovalMessage": "{organization} organizasyonuna katılma isteğiniz gönderildi. Bir yönetici isteğinizi inceleyecektir.",
+      "qrAlt": "{code} için QR kod",
+      "qrCode": "QR Kod",
+      "qrDescription": "Organizasyona katılmak için bu QR kodu tarayın",
+      "qrDownloaded": "QR kod indirildi",
+      "required": "Gerekli",
+      "requiresApproval": "Yönetici onayı gerektir",
+      "requiresApprovalHelp": "Etkinleştirildiğinde, yeni üyeler bir yönetici tarafından onaylanana kadar beklemede kalacaktır",
+      "signInToJoin": "Katılmak için Giriş Yapın",
+      "status": "Durum",
+      "status.active": "Etkin",
+      "status.paused": "Duraklatıldı",
+      "title": "Davet Kodları",
+      "unlimited": "Sınırsız",
+      "updated": "Davet kodu güncellendi",
+      "urlCopied": "Davet URL'si panoya kopyalandı",
+      "usage": "Kullanım",
+      "validatingCode": "Kod doğrulanıyor...",
+      "validCodeDescription": "Bu davet kodu geçerli. Katılmak için aşağıdaki düğmeye tıklayın."
+    },
+    "managerAssignment": {
+      "assignFailed": "Yöneticiler atanamadı",
+      "assignSuccess": "Yöneticiler başarıyla atandı",
+      "availableManagers": "Mevcut Yöneticiler",
+      "description": "Bu çalışan için bir veya daha fazla yönetici seçin. Birini birincil olarak belirleyin.",
+      "empty": "Mevcut yönetici yok",
+      "primaryDescription": "Birincil yönetici, onaylar ve bildirimler için varsayılan olacaktır",
+      "primaryManager": "Birincil Yönetici",
+      "save": "Yöneticileri Kaydet",
+      "title": "Yönetici Ataması",
+      "unexpectedError": "Beklenmedik bir hata oluştu",
+      "validation": {
+        "primary": "Lütfen bir birincil yönetici belirleyin",
+        "selectOne": "Lütfen en az bir yönetici seçin"
+      }
+    },
+    "pendingMembers": {
+      "approve": "Onayla",
+      "approved": "Üye onaylandı",
+      "approveMember": "{name} kişisini onayla",
+      "approveSelected": "Seçilenleri Onayla",
+      "assignTeam": "Ekip Ata",
+      "bulkApproved": "{count} üye onaylandı",
+      "bulkRejectDescription": "Seçilen {count} üyeyi reddetmek istediğinizden emin misiniz? Bekleyenler listesinden kaldırılacaklar.",
+      "bulkRejected": "{count} üye reddedildi",
+      "bulkRejectTitle": "Seçilen Üyeleri Reddet",
+      "description": "Kuruluşunuza katılmayı bekleyen üyeleri inceleyin ve onaylayın",
+      "email": "E-posta",
+      "joinedVia": "Katılım Yolu",
+      "noTeam": "Ekip yok",
+      "reject": "Reddet",
+      "rejectDescription": "{name} kişisini reddetmek istediğinizden emin misiniz? Bekleyenler listesinden kaldırılacak ve tekrar erişim talebinde bulunması gerekecek.",
+      "rejected": "Üye reddedildi",
+      "rejectMember": "{name} kişisini reddet",
+      "rejectSelected": "Seçilenleri Reddet",
+      "rejectTitle": "Üyeyi Reddet",
+      "requestedAt": "Talep edildi",
+      "selectAll": "Bekleyen tüm üyeleri seç",
+      "selectMember": "{name} kişisini seç",
+      "sso": "SSO",
+      "title": "Bekleyen Üyeler",
+      "user": "Kullanıcı"
+    },
+    "permissions": {
+      "actions": {
+        "edit": "Düzenle"
+      },
+      "adminRequired": "Yönetici erişimi gerekli",
+      "allTeams": "Tüm Ekipler (Kuruluş genelinde)",
+      "allTeamsHelp": "İzinler kuruluştaki tüm ekipler için geçerlidir",
+      "badge": {
+        "allPermissions": "Tüm İzinler",
+        "permissionCount": "{count} izin"
+      },
+      "description": "Ekip işlemleri için çalışan izinlerini yönetin",
+      "editor": {
+        "title": "İzinleri Düzenle - {name}"
+      },
+      "employeePermissions": {
+        "description": "İzinlerini düzenlemek için bir çalışana tıklayın",
+        "title": "Çalışan İzinleri"
+      },
+      "emptyState": "Çalışan bulunamadı",
+      "noEmployeeFeature": "izinleri yönet",
+      "noPermissions": "İzin yok",
+      "permissions": "İzinler",
+      "refresh": "Yenile",
+      "revokeAll": "Tümünü İptal Et",
+      "revokeError": "İzinler iptal edilemedi",
+      "revokeSuccess": "İzinler başarıyla iptal edildi",
+      "save": "İzinleri Kaydet",
+      "scope": "İzin Kapsamı",
+      "searchLabel": "Çalışanları ara",
+      "searchPlaceholder": "İsim, e-posta veya pozisyona göre ara...",
+      "selectedTeamHelp": "İzinler yalnızca seçili ekip için geçerlidir",
+      "table": {
+        "actions": "Eylemler",
+        "employee": "Çalışan",
+        "permissions": "İzinler",
+        "position": "Pozisyon",
+        "role": "Rol"
+      },
+      "title": "Ekip İzinleri",
+      "toast": {
+        "adminRequired": "İzinleri yönetmek için yönetici olmalısınız",
+        "loadEmployeesFailed": "Çalışanlar yüklenemedi"
+      },
+      "updateError": "İzinler güncellenemedi",
+      "updateSuccess": "İzinler başarıyla güncellendi"
+    },
+    "rateHistory": {
+      "changeRate": "Ücreti Değiştir",
+      "currentRate": "Mevcut ücret: {rate}",
+      "description": "Saatlik ücret zamanla değişir",
+      "effectiveFrom": "Geçerlilik Başlangıcı",
+      "effectiveFromHelp": "Yeni ücretin ne zaman geçerli olacağı",
+      "empty": "Ücret geçmişi bulunamadı",
+      "newHourlyRate": "Yeni Saatlik Ücret",
+      "reasonOptional": "Neden (İsteğe bağlı)",
+      "reasonPlaceholder": "ör. Yıllık değerlendirme, Terfi vb.",
+      "title": "Ücret Geçmişi",
+      "updateDescription": "Yeni bir ücret girişi oluşturun. Mevcut ücret otomatik olarak kapatılacaktır.",
+      "updateError": "Ücret güncellenemedi",
+      "updateRate": "Ücreti Güncelle",
+      "updateSuccess": "Ücret başarıyla güncellendi",
+      "updateTitle": "Saatlik Ücreti Güncelle"
+    },
+    "roles": {
+      "actions": {
+        "assign": "Rol Ata",
+        "create": "Rol Oluştur",
+        "deleteNamed": "{name} öğesini sil",
+        "editNamed": "{name} öğesini düzenle",
+        "removeNamed": "{name} öğesini kaldır",
+        "saveChanges": "Değişiklikleri Kaydet"
+      },
+      "assignPanel": {
+        "description": "Bu çalışana atamak için bir rol seçin.",
+        "empty": "Atanacak uygun rol yok. Tüm roller zaten atanmış veya hiç rol oluşturulmamış.",
+        "permissionCount": "{count} izin",
+        "title": "Özel Rol Ata"
+      },
+      "baseTiers": {
+        "admin": "Yönetici",
+        "employee": "Çalışan",
+        "manager": "Yönetici"
+      },
+      "createPanel": {
+        "description": "Kuruluşunuz için belirli izinlere sahip yeni bir rol tanımlayın.",
+        "title": "Özel Rol Oluştur"
+      },
+      "deleteDialog": {
+        "assignedWarning": {
+          "one": "Bu rol şu anda {count} çalışana atanmış durumda. Bu rol tarafından verilen izinleri kaybedecekler.",
+          "other": "Bu rol şu anda {count} çalışana atanmış durumda. Bu rol tarafından verilen izinleri kaybedecekler."
+        },
+        "confirm": "\"{name}\" öğesini silmek istediğinizden emin misiniz?",
+        "title": "Rolü Sil"
+      },
+      "description": "Kuruluşunuz için özel izin rolleri oluşturun",
+      "editor": {
+        "baseTier": "Temel Seviye",
+        "color": "Renk",
+        "description": "Açıklama",
+        "descriptionPlaceholder": "Bu rol ne için...",
+        "errors": {
+          "createFailed": "Rol oluşturulamadı",
+          "nameRequired": "Rol adı gerekli",
+          "permissionsFailed": "Rol izinleri kaydedilemedi",
+          "updateFailed": "Rol güncellenemedi"
+        },
+        "inherited": "Devralınan",
+        "name": "Ad",
+        "namePlaceholder": "ör. Takım Lideri, İK Yöneticisi...",
+        "permissions": "İzinler",
+        "permissionsHelp": "Bu rol için ek izinler seçin. Temel seviyeden devralınan izinler kilitli olarak gösterilir.",
+        "selectColor": "{color} rengini seç"
+      },
+      "editPanel": {
+        "description": "Rol detaylarını ve izinlerini güncelleyin.",
+        "title": "Özel Rolü Düzenle"
+      },
+      "employeeCard": {
+        "description": "Bu çalışana atanan ek izin rolleri",
+        "empty": "Atanmış özel rol yok.",
+        "permissionCount": {
+          "one": "({count} izin)",
+          "other": "({count} izin)"
+        }
+      },
+      "empty": {
+        "description": "Başlamak için bir tane oluşturun.",
+        "title": "Henüz özel rol yok"
+      },
+      "introduction": "Çalışanlara atanabilecek özel izin rolleri oluşturun. Özel roller, temel seviyenin üzerine ek izinler ekler.",
+      "table": {
+        "actions": "Eylemler",
+        "assigned": "Atanmış",
+        "assignedCount": {
+          "one": "{count} çalışan",
+          "other": "{count} çalışan"
+        },
+        "baseTier": "Temel Seviye",
+        "name": "Ad",
+        "permissionCount": {
+          "one": "{count} izin",
+          "other": "{count} izin"
+        },
+        "permissions": "İzinler"
+      },
+      "title": "Özel Roller",
+      "toast": {
+        "assigned": "Rol atandı",
+        "created": "Rol oluşturuldu",
+        "deleted": "Rol silindi",
+        "removed": "Rol kaldırıldı",
+        "updated": "Rol güncellendi"
+      }
+    },
+    "skills": {
+      "addSkill": "Beceri Ekle",
+      "assign": "Ata",
+      "assignError": "Beceri atanamadı",
+      "assignSkill": "Beceri Ata",
+      "assignSkillDescription": "Bu çalışana bir yetenek veya sertifika ekleyin",
+      "assignSkillHint": "Nitelik eklemek için 'Yetenek Ata'ya tıklayın",
+      "catalog": "Yetenek Kataloğu",
+      "catalogDescription": "Alt alanlar ve vardiya şablonları için gerekli olabilecek yetenekleri tanımlayın",
+      "category": "Kategori",
+      "confirmDelete": "Bu yeteneği silmek istediğinizden emin misiniz?",
+      "confirmRemove": "\"${skillName}\" bu çalışandan kaldırılsın mı?",
+      "createError": "Yetenek oluşturulamadı",
+      "createSkill": "Yetenek Oluştur",
+      "createSkillDescription": "Çalışanlara atanabilecek yeni bir yetenek oluşturun",
+      "customCategoryName": "Özel Kategori Adı",
+      "customCategoryPlaceholder": "ör. Uyumluluk",
+      "deleteError": "Yetenek silinemedi",
+      "description": "Açıklama",
+      "descriptionPlaceholder": "Yetenek veya sertifikanın isteğe bağlı açıklaması",
+      "editSkill": "Yeteneği Düzenle",
+      "editSkillDescription": "Yetenek detaylarını güncelleyin",
+      "employeeSkills": "Yetenekler ve Nitelikler",
+      "employeeSkillsDescription": "Bu çalışana atanan sertifikalar ve yetenekler",
+      "expired": "Süresi dolmuş",
+      "expiredOn": "{{date}} tarihinde süresi doldu",
+      "expiresOn": "Son kullanma tarihi: {{date}}",
+      "expiringSoon": "Süresi Yakında Dolacak",
+      "expiry": "Son Kullanma Tarihi Takibi",
+      "expiryDate": "Son Kullanma Tarihi",
+      "expiryRequired": "Gerekli",
+      "expiryRequiredHint": "Bu sertifika bir son kullanma tarihi gerektirir",
+      "name": "Ad",
+      "namePlaceholder": "ör. Forklift Ehliyeti",
+      "noAvailableSkills": "Tüm yetenekler atandı veya tanımlı yetenek bulunmuyor",
+      "noExpiry": "Hayır",
+      "noSkills": "Henüz tanımlanmış yetenek yok",
+      "noSkillsAssigned": "Atanmış yetenek yok",
+      "noSkillsHint": "Başlamak için ilk yeteneğinizi oluşturun",
+      "notes": "Notlar",
+      "notesPlaceholder": "ör. Sertifika numarası, eğitim tarihi…",
+      "removeError": "Yetenek kaldırılamadı",
+      "requiresExpiry": "Son Kullanma Tarihi Gerektirir",
+      "requiresExpiryHint": "Bu sertifikanın yenilenmesi gerekiyorsa etkinleştirin (ör. İlk Yardım)",
+      "selectCategory": "Kategori seçin",
+      "selectSkill": "Bir yetenek seçin",
+      "skill": "Yetenek",
+      "skillAssigned": "Yetenek atandı",
+      "skillCreated": "Yetenek oluşturuldu",
+      "skillDeleted": "Yetenek silindi",
+      "skillName": "Ad",
+      "skillRemoved": "Yetenek kaldırıldı",
+      "skillUpdated": "Yetenek güncellendi",
+      "title": "Yetenekler ve Nitelikler",
+      "updateError": "Yetenek güncellenemedi"
+    },
+    "teams": {
+      "description": "Çalışanları ekipler halinde düzenleyin ve ekip atamalarını yönetin",
+      "detail": {
+        "actions": {
+          "cancel": "İptal",
+          "edit": "Düzenle",
+          "save": "Kaydet"
+        },
+        "addMember": {
+          "description": "Bu ekibe eklenecek bir çalışan seçin",
+          "selectEmployee": "Çalışan seçin",
+          "title": "Ekip Üyesi Ekle"
+        },
+        "back": "Ekiplere geri dön",
+        "delete": {
+          "description": "Bu ekibi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz. Ekip üyeleri silinmeyecektir.",
+          "title": "Ekibi Sil"
+        },
+        "description": "Ekip bilgilerini ve üyelerini yönetin",
+        "errors": {
+          "addTeamMember": "Ekip üyesi eklenemedi",
+          "deleteTeam": "Ekip silinemedi",
+          "loadTeam": "Ekip yüklenemedi",
+          "removeTeamMember": "Ekip üyesi kaldırılamadı",
+          "updateTeam": "Ekip güncellenemedi"
+        },
+        "info": {
+          "description": "Açıklama",
+          "descriptionPlaceholder": "Ekip açıklaması girin",
+          "members": "Üyeler",
+          "noPrimaryManager": "Atanmış birincil yönetici yok",
+          "primaryManager": "Birincil Yönetici",
+          "teamName": "Ekip Adı",
+          "teamNamePlaceholder": "Ekip adı girin",
+          "title": "Ekip Bilgileri"
+        },
+        "members": {
+          "add": "Üye Ekle",
+          "description": "Bu ekibe atanan çalışanlar",
+          "empty": "Bu ekipte üye bulunmuyor",
+          "remove": "Ekip üyesini kaldır",
+          "title": "Ekip Üyeleri"
+        },
+        "removeMember": {
+          "confirm": "Kaldır",
+          "description": "Bu çalışanı ekipten kaldırmak istediğinizden emin misiniz? Kuruluşa erişimleri devam edecektir.",
+          "title": "Ekip Üyesini Kaldır"
+        },
+        "selectEmployee": "Çalışan seçin",
+        "title": "Ekip Detayları",
+        "toasts": {
+          "teamDeleted": "Ekip başarıyla silindi",
+          "teamMemberAdded": "Ekip üyesi başarıyla eklendi",
+          "teamMemberRemoved": "Ekip üyesi başarıyla kaldırıldı",
+          "teamUpdated": "Ekip başarıyla güncellendi"
+        },
+        "validation": {
+          "invalidInput": "Geçersiz giriş",
+          "selectEmployee": "Lütfen bir çalışan seçin",
+          "teamNameRequired": "Ekip adı gerekli",
+          "teamNameTooLong": "Ekip adı çok uzun"
+        }
+      },
+      "details": "Ekip Detayları",
+      "title": "Ekipler"
+    }
+  }
+}
