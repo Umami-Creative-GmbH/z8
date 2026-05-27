@@ -349,10 +349,23 @@ describe("org chart server action source", () => {
 	it("loads team-neighborhood manager links for loaded employees", () => {
 		const source = readFileSync(fileURLToPath(new URL("./actions.ts", import.meta.url)), "utf8");
 
+		expect(source).toContain("const directManagerLinks = yield* _(");
+		expect(source).toContain(
+			"loadDirectManagerLinksForEmployees(dbService, organizationId, [...employeeIds]),",
+		);
+		expect(source).toContain("directManagerLinks.map((link) => link.managerId)");
+		expect(source).toContain('const reportEmployee = alias(employee, "report_employee");');
+		expect(source).toContain('const managerEmployee = alias(employee, "manager_employee");');
+		expect(source).toContain("eq(reportEmployee.organizationId, organizationId)");
+		expect(source).toContain("eq(reportEmployee.isActive, true)");
+		expect(source).toContain("eq(managerEmployee.organizationId, organizationId)");
+		expect(source).toContain("eq(managerEmployee.isActive, true)");
 		expect(source).toContain(
 			"const managerLinks = yield* _(loadManagerLinks(dbService, activeEmployeeIds));",
 		);
-		expect(source).toContain("managerLinks,");
+		expect(source).toContain(
+			"managerLinks: dedupeManagerLinks([...directManagerLinks, ...managerLinks]),",
+		);
 		expect(source).not.toContain("managerLinks: [],");
 	});
 });
