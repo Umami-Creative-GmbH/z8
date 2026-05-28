@@ -23,11 +23,11 @@ export function CalendarFiltersComponent({ filters, onFiltersChange }: CalendarF
 	};
 
 	return (
-		<Card>
-			<CardHeader>
+		<Card className="gap-0 overflow-hidden py-0">
+			<CardHeader className="bg-muted/45 px-4 py-3 dark:bg-muted/25">
 				<CardTitle className="text-sm">{t("calendar.filters.title", "Filters")}</CardTitle>
 			</CardHeader>
-			<CardContent className="space-y-4">
+			<CardContent className="space-y-3 px-4 py-3">
 				<div className="flex items-center justify-between">
 					<Label htmlFor="show-holidays" className="text-sm">
 						{t("calendar.filter.holidays", "Holidays")}

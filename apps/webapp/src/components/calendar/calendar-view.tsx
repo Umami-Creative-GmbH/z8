@@ -152,7 +152,6 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 				{/* Filters sidebar - hidden for year view */}
 				{viewMode !== "year" && (
 					<div className="space-y-4 order-2 md:order-1">
-						<WorkBalanceCard balance={workBalance} compact />
 						{/* Employee selector - replaces team toggle for better performance */}
 						<CalendarEmployeeSelector
 							currentEmployeeId={currentEmployeeId}
@@ -160,6 +159,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 							onEmployeeChange={handleEmployeeChange}
 							isManagerOrAbove={isManagerOrAbove}
 						/>
+						<WorkBalanceCard balance={workBalance} compact />
 						<CalendarFiltersComponent
 							filters={filters}
 							onFiltersChange={setFilters}
