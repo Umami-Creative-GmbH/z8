@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, type ReactNode, useContext } from "react";
+import { createContext, type ReactNode, use } from "react";
 import type {
 	AuthConfig,
 	DomainAuthContext as DomainAuthContextType,
@@ -15,32 +15,25 @@ interface DomainAuthProviderProps {
 
 const DomainAuthContext = createContext<DomainAuthContextType | null>(null);
 
-export function DomainAuthProvider({
-	children,
-	domainContext,
-}: DomainAuthProviderProps) {
-	return (
-		<DomainAuthContext.Provider value={domainContext}>
-			{children}
-		</DomainAuthContext.Provider>
-	);
+export function DomainAuthProvider({ children, domainContext }: DomainAuthProviderProps) {
+	return <DomainAuthContext.Provider value={domainContext}>{children}</DomainAuthContext.Provider>;
 }
 
 export function useDomainAuth(): DomainAuthContextType | null {
-	return useContext(DomainAuthContext);
+	return use(DomainAuthContext);
 }
 
 export function useBranding(): OrganizationBranding | null {
-	const context = useContext(DomainAuthContext);
+	const context = use(DomainAuthContext);
 	return context?.branding ?? null;
 }
 
 export function useAuthConfig(): AuthConfig | null {
-	const context = useContext(DomainAuthContext);
+	const context = use(DomainAuthContext);
 	return context?.authConfig ?? null;
 }
 
 export function useTurnstile(): TurnstileConfig | null {
-	const context = useContext(DomainAuthContext);
+	const context = use(DomainAuthContext);
 	return context?.turnstile ?? null;
 }

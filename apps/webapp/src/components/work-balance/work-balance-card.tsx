@@ -16,12 +16,13 @@ export function WorkBalanceCard({ balance, compact = false }: WorkBalanceCardPro
 	const status = balance ? getWorkBalanceStatus(balance.balanceMinutes) : "neutral";
 
 	return (
-		<Card className={compact ? "min-w-52" : undefined}>
-			<CardHeader className={compact ? "p-3" : undefined}>
+		<Card className={compact ? "min-w-52 gap-0 overflow-hidden py-0" : undefined}>
+			<CardHeader className={compact ? "bg-muted/45 px-4 py-3 dark:bg-muted/25" : undefined}>
 				<CardDescription>{t("workBalance.label", "All-time balance")}</CardDescription>
 				<CardTitle
 					className={cn(
 						"tabular-nums text-2xl",
+						compact && "text-xl",
 						status === "positive" && "text-emerald-600 dark:text-emerald-400",
 						status === "negative" && "text-destructive",
 					)}

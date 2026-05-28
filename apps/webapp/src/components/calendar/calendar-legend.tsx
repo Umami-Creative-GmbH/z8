@@ -31,11 +31,11 @@ export function CalendarLegend() {
 	];
 
 	return (
-		<Card>
-			<CardHeader>
+		<Card className="gap-0 overflow-hidden py-0">
+			<CardHeader className="bg-muted/45 px-4 py-3 dark:bg-muted/25">
 				<CardTitle className="text-sm">{t("calendar.legend.title", "Legend")}</CardTitle>
 			</CardHeader>
-			<CardContent className="space-y-2">
+			<CardContent className="space-y-2 px-4 py-3">
 				{legendItems.map((item) => (
 					<div key={item.label} className="flex items-center gap-2">
 						<div

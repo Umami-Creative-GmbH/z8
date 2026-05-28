@@ -264,7 +264,7 @@ function buildJobRows(input: BuildReliabilityDataInput): ReliabilityJobRow[] {
 				.filter(isTerminalExecution)
 				.map((execution) => execution.durationMs)
 				.filter((duration): duration is number => duration !== null);
-			const sortedExecutions = [...jobExecutions].sort((a, b) =>
+			const sortedExecutions = jobExecutions.toSorted((a, b) =>
 				sortIsoDesc(a.startedAt, b.startedAt),
 			);
 			const latestExecution = sortedExecutions[0];

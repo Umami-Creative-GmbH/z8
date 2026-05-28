@@ -3,7 +3,7 @@
 // Note: Temporal polyfill is loaded dynamically in schedule-x-wrapper.tsx
 // before Schedule-X is rendered (required for Schedule-X v3+).
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, use, useEffect, useRef, useState } from "react";
 import * as SunCalc from "suncalc";
 
 type Theme = "light" | "dark" | "system" | "time";
@@ -426,5 +426,5 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 }
 
 export function useTheme() {
-	return useContext(ThemeContext);
+	return use(ThemeContext);
 }

@@ -585,52 +585,45 @@ export async function deleteHolidayPreset(presetId: string): Promise<ServerActio
 			),
 		);
 
-		// Check for active assignments
-		const assignmentCount = yield* _(
-			actor.dbService.query("checkAssignments", async () => {
-				const [result] = await actor.dbService.db
-					.select({ count: sql<number>`count(*)::int` })
-					.from(holidayPresetAssignment)
+		const deletedRows = yield* _(
+			actor.dbService.query("deletePreset", async () => {
+				return await actor.dbService.db
+					.delete(holidayPreset)
 					.where(
 						and(
-							eq(holidayPresetAssignment.presetId, presetId),
-							eq(holidayPresetAssignment.isActive, true),
+							eq(holidayPreset.id, presetId),
+							eq(holidayPreset.organizationId, actor.organizationId),
+							sql`not exists (
+								select 1 from ${holidayPresetAssignment}
+								where ${holidayPresetAssignment.presetId} = ${presetId}
+								and ${holidayPresetAssignment.isActive} = true
+							)`,
 						),
-					);
-				return result?.count ?? 0;
-			}),
-		);
-
-		if (assignmentCount > 0) {
-			yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: "Cannot delete preset with active assignments",
-						conflictType: "preset_has_assignments",
-						details: { assignmentCount },
-					}),
-				),
-			);
-		}
-
-		// Soft delete
-		yield* _(
-			actor.dbService.query("deletePreset", async () => {
-				await actor.dbService.db
-					.update(holidayPreset)
-					.set({ isActive: false, updatedBy: actor.session.user.id })
-					.where(eq(holidayPreset.id, presetId));
+					)
+					.returning({ id: holidayPreset.id });
 			}),
 			Effect.mapError(
 				(error) =>
 					new DatabaseError({
 						message: "Failed to delete holiday preset",
-						operation: "update",
+						operation: "delete",
 						table: "holiday_preset",
 						cause: error,
-					}),
+				}),
 			),
 		);
+
+		if (deletedRows.length === 0) {
+			yield* _(
+				Effect.fail(
+					new ConflictError({
+						message: "Cannot delete preset with active assignments",
+						conflictType: "preset_has_assignments",
+						details: { presetId },
+					}),
+				),
+			);
+		}
 	}).pipe(Effect.provide(AppLayer));
 
 	return runPresetServerAction(effect);

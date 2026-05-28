@@ -2,9 +2,10 @@
 
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { Turnstile } from "@marsidev/react-turnstile";
-import { forwardRef, useImperativeHandle, useRef } from "react";
+import { type Ref, useImperativeHandle, useRef } from "react";
 
 export interface TurnstileWidgetProps {
+	ref?: Ref<TurnstileRef>;
 	siteKey: string;
 	onVerify: (token: string) => void;
 	onError?: (errorCode?: string) => void;
@@ -43,62 +44,58 @@ export interface TurnstileRef {
  * turnstileRef.current?.reset();
  * ```
  */
-export const TurnstileWidget = forwardRef<TurnstileRef, TurnstileWidgetProps>(
-	function TurnstileWidget(
-		{
-			siteKey,
-			onVerify,
-			onError,
-			onExpire,
-			onTimeout,
-			onWidgetLoad,
-			theme = "auto",
-			size,
-			className,
-		},
+export function TurnstileWidget({
+	ref,
+	siteKey,
+	onVerify,
+	onError,
+	onExpire,
+	onTimeout,
+	onWidgetLoad,
+	theme = "auto",
+	size,
+	className,
+}: TurnstileWidgetProps) {
+	const turnstileRef = useRef<TurnstileInstance>(null);
+
+	// Expose ref methods to parent component
+	useImperativeHandle(
 		ref,
-	) {
-		const turnstileRef = useRef<TurnstileInstance>(null);
+		() => ({
+			reset: () => {
+				turnstileRef.current?.reset();
+			},
+			getResponse: () => {
+				return turnstileRef.current?.getResponse();
+			},
+			getResponsePromise: () => {
+				return (
+					turnstileRef.current?.getResponsePromise() ??
+					Promise.reject(new Error("Widget not ready"))
+				);
+			},
+			isExpired: () => {
+				return turnstileRef.current?.isExpired() ?? false;
+			},
+		}),
+		[],
+	);
 
-		// Expose ref methods to parent component
-		useImperativeHandle(
-			ref,
-			() => ({
-				reset: () => {
-					turnstileRef.current?.reset();
-				},
-				getResponse: () => {
-					return turnstileRef.current?.getResponse();
-				},
-				getResponsePromise: () => {
-					return (
-						turnstileRef.current?.getResponsePromise() ??
-						Promise.reject(new Error("Widget not ready"))
-					);
-				},
-				isExpired: () => {
-					return turnstileRef.current?.isExpired() ?? false;
-				},
-			}),
-			[],
-		);
-
-		return (
-			<Turnstile
-				ref={turnstileRef}
-				siteKey={siteKey}
-				onSuccess={onVerify}
-				onError={onError}
-				onExpire={onExpire}
-				onTimeout={onTimeout}
-				onWidgetLoad={onWidgetLoad}
-				className={className}
-				options={{
-					theme,
-					size: size ?? "normal",
-					appearance: "interaction-only", // Invisible mode - only shows if interaction required
-				}}
-			/>
-		);
-	},
-);
+	return (
+		<Turnstile
+			ref={turnstileRef}
+			siteKey={siteKey}
+			onSuccess={onVerify}
+			onError={onError}
+			onExpire={onExpire}
+			onTimeout={onTimeout}
+			onWidgetLoad={onWidgetLoad}
+			className={className}
+			options={{
+				theme,
+				size: size ?? "normal",
+				appearance: "interaction-only", // Invisible mode - only shows if interaction required
+			}}
+		/>
+	);
+}

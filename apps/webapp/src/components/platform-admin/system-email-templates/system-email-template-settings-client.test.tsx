@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { forwardRef, useImperativeHandle } from "react";
+import { type Ref, useImperativeHandle } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PLATFORM_SYSTEM_EMAIL_TEMPLATE_REGISTRY } from "@/lib/email/system-template-registry";
 
@@ -24,36 +24,39 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("@/components/settings/email-templates/email-template-editor", () => ({
-	EmailTemplateEditor: forwardRef(
-		(
-			props: {
-				definition: { label: string };
-				subject: string;
-				html: string;
-				onSubjectChange: (value: string) => void;
-			},
-			ref,
-		) => {
-			useImperativeHandle(ref, () => ({
-				insertIntoSubject: vi.fn(),
-				insertIntoBody: vi.fn(),
-				focusSubject: vi.fn(),
-			}));
+	EmailTemplateEditor: ({
+		ref,
+		...props
+	}: {
+		ref?: Ref<{
+			insertIntoSubject: () => void;
+			insertIntoBody: () => void;
+			focusSubject: () => void;
+		}>;
+		definition: { label: string };
+		subject: string;
+		html: string;
+		onSubjectChange: (value: string) => void;
+	}) => {
+		useImperativeHandle(ref, () => ({
+			insertIntoSubject: vi.fn(),
+			insertIntoBody: vi.fn(),
+			focusSubject: vi.fn(),
+		}));
 
-			return (
-				<div>
-					<div>Email editor</div>
-					<div data-testid="editor-html">{props.html}</div>
-					<label htmlFor="mock-subject">Subject</label>
-					<input
-						id="mock-subject"
-						value={props.subject}
-						onChange={(event) => props.onSubjectChange(event.target.value)}
-					/>
-				</div>
-			);
-		},
-	),
+		return (
+			<div>
+				<div>Email editor</div>
+				<div data-testid="editor-html">{props.html}</div>
+				<label htmlFor="mock-subject">Subject</label>
+				<input
+					id="mock-subject"
+					value={props.subject}
+					onChange={(event) => props.onSubjectChange(event.target.value)}
+				/>
+			</div>
+		);
+	},
 }));
 
 vi.mock("@/app/[locale]/(admin)/platform-admin/system-email-templates/actions", () => ({

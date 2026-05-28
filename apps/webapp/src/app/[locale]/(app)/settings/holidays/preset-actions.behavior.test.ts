@@ -151,6 +151,11 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 						},
 						select: vi.fn((selection?: unknown) => {
 							mockState.selectCalls.push(selection);
+							if ((selection as { count?: unknown } | undefined)?.count) {
+								return {
+									from: vi.fn(() => ({ where: vi.fn(async () => [{ count: 0 }]) })),
+								};
+							}
 							return {
 							from: vi.fn((table: any) => ({
 								where: vi.fn((condition: any) => ({
@@ -223,6 +228,7 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 						delete: vi.fn(() => ({
 							where: vi.fn((condition: unknown) => {
 								mockState.deleteConditions.push(condition);
+								return { returning: vi.fn(async () => [{ id: "preset-existing" }]) };
 							}),
 						})),
 					},
@@ -270,6 +276,11 @@ vi.mock("@/lib/effect/runtime", async () => {
 		},
 		select: vi.fn((selection?: unknown) => {
 			mockState.selectCalls.push(selection);
+			if ((selection as { count?: unknown } | undefined)?.count) {
+				return {
+					from: vi.fn(() => ({ where: vi.fn(async () => [{ count: 0 }]) })),
+				};
+			}
 			return {
 			from: vi.fn((table: any) => ({
 				where: vi.fn((condition: any) => ({
@@ -335,6 +346,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 		delete: vi.fn(() => ({
 			where: vi.fn((condition: unknown) => {
 				mockState.deleteConditions.push(condition);
+				return { returning: vi.fn(async () => [{ id: "preset-existing" }]) };
 			}),
 		})),
 	};
@@ -384,6 +396,7 @@ const {
 	createPresetAssignment,
 	addHolidayToPreset,
 	bulkAddHolidaysToPreset,
+	deleteHolidayPreset,
 	deleteHolidayFromPreset,
 	deletePresetAssignment,
 	getEmployeesForAssignment,
@@ -531,6 +544,16 @@ describe("holiday preset settings scope behavior", () => {
 
 		expect(mockState.deleteConditions).toHaveLength(1);
 		expect(mockState.selectCalls.length).toBeGreaterThan(0);
+	});
+
+	it("hard deletes holiday presets instead of only marking them inactive", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+
+		const result = await deleteHolidayPreset("preset-existing");
+
+		expect(result.success).toBe(true);
+		expect(mockState.deleteConditions).toHaveLength(1);
+		expect(mockState.updateCalls).toHaveLength(0);
 	});
 
 	it("rejects adding preset holidays with a category from another organization", async () => {

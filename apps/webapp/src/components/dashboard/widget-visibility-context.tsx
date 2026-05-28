@@ -1,13 +1,6 @@
 "use client";
 
-import {
-	createContext,
-	type ReactNode,
-	useContext,
-	useEffect,
-	useRef,
-	useSyncExternalStore,
-} from "react";
+import { createContext, type ReactNode, use, useEffect, useRef, useSyncExternalStore } from "react";
 import type { WidgetId } from "./widget-registry";
 
 /**
@@ -92,7 +85,7 @@ export function WidgetVisibilityProvider({ children }: WidgetVisibilityProviderP
  * Automatically unregisters when unmounted.
  */
 export function useRegisterVisibleWidget(id: WidgetId) {
-	const store = useContext(WidgetVisibilityContext);
+	const store = use(WidgetVisibilityContext);
 	const registered = useRef(false);
 
 	useEffect(() => {
@@ -113,7 +106,7 @@ export function useRegisterVisibleWidget(id: WidgetId) {
  * Hook to get the list of currently visible widget IDs.
  */
 export function useVisibleWidgets(): WidgetId[] {
-	const store = useContext(WidgetVisibilityContext);
+	const store = use(WidgetVisibilityContext);
 	const activeStore = store ?? EMPTY_VISIBILITY_STORE;
 
 	return useSyncExternalStore(

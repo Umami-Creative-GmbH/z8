@@ -14,3 +14,15 @@ export function parseHolidayDatePickerValue(value: string) {
 export function createYearlyHolidayRecurrenceRule(value: Date) {
 	return JSON.stringify({ month: value.getUTCMonth() + 1, day: value.getUTCDate() });
 }
+
+export function getEndDateAfterStartDateChange({
+	isEditing,
+	nextStartDate,
+	currentEndDate,
+}: {
+	isEditing: boolean;
+	nextStartDate: Date;
+	currentEndDate: Date;
+}) {
+	return isEditing ? currentEndDate : nextStartDate;
+}

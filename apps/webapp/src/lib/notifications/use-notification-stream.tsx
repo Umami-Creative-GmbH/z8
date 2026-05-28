@@ -86,7 +86,7 @@ export function useNotificationStream(
 			eventSource.addEventListener("new_notification", (event) => {
 				try {
 					const data = JSON.parse(event.data);
-				onNewNotificationRef.current?.(data);
+					onNewNotificationRef.current?.(data);
 					// Also increment count optimistically
 					setState((prev) => ({
 						...prev,
@@ -154,7 +154,7 @@ export function NotificationStreamProvider({
  * Must be used within NotificationStreamProvider
  */
 export function useNotificationStreamContext(): NotificationStreamState {
-	const context = React.useContext(NotificationStreamContext);
+	const context = React.use(NotificationStreamContext);
 	if (!context) {
 		throw new Error("useNotificationStreamContext must be used within NotificationStreamProvider");
 	}

@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { forwardRef, useImperativeHandle, useRef } from "react";
+import { type Ref, useImperativeHandle, useRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EMAIL_TEMPLATE_REGISTRY } from "@/lib/email/template-registry";
 
@@ -28,54 +28,57 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("./email-template-editor", () => ({
-	EmailTemplateEditor: forwardRef(
-		(
-			props: {
-				definition: { label: string };
-				variables?: Array<{ name: string; label: string; example: string }>;
-				subject: string;
-				html: string;
-				onSubjectChange: (value: string) => void;
-				onInsertVariable?: (name: string) => void;
-			},
-			ref,
-		) => {
-			const initialLabel = useRef(props.definition.label);
-			useImperativeHandle(ref, () => ({
-				insertIntoSubject: (value: string) => props.onSubjectChange(`${props.subject}${value}`),
-				insertIntoBody: insertIntoBodyMock,
-				focusSubject: vi.fn(),
-			}));
+	EmailTemplateEditor: ({
+		ref,
+		...props
+	}: {
+		ref?: Ref<{
+			insertIntoSubject: (value: string) => void;
+			insertIntoBody: typeof insertIntoBodyMock;
+			focusSubject: () => void;
+		}>;
+		definition: { label: string };
+		variables?: Array<{ name: string; label: string; example: string }>;
+		subject: string;
+		html: string;
+		onSubjectChange: (value: string) => void;
+		onInsertVariable?: (name: string) => void;
+	}) => {
+		const initialLabel = useRef(props.definition.label);
+		useImperativeHandle(ref, () => ({
+			insertIntoSubject: (value: string) => props.onSubjectChange(`${props.subject}${value}`),
+			insertIntoBody: insertIntoBodyMock,
+			focusSubject: vi.fn(),
+		}));
 
-			return (
-				<div>
-					<div>Email editor</div>
-					<div data-testid="editor-layout" className="body-editor-with-variables">
-						<div>Email body editor</div>
-						<div>
-							{props.variables?.map((variable) => (
-								<button
-									key={variable.name}
-									type="button"
-									onClick={() => props.onInsertVariable?.(variable.name)}
-								>
-									Insert {variable.label}
-								</button>
-							))}
-						</div>
+		return (
+			<div>
+				<div>Email editor</div>
+				<div data-testid="editor-layout" className="body-editor-with-variables">
+					<div>Email body editor</div>
+					<div>
+						{props.variables?.map((variable) => (
+							<button
+								key={variable.name}
+								type="button"
+								onClick={() => props.onInsertVariable?.(variable.name)}
+							>
+								Insert {variable.label}
+							</button>
+						))}
 					</div>
-					<div data-testid="editor-template">{initialLabel.current}</div>
-					<div data-testid="editor-html">{props.html}</div>
-					<label htmlFor="mock-subject">Subject</label>
-					<input
-						id="mock-subject"
-						value={props.subject}
-						onChange={(event) => props.onSubjectChange(event.target.value)}
-					/>
 				</div>
-			);
-		},
-	),
+				<div data-testid="editor-template">{initialLabel.current}</div>
+				<div data-testid="editor-html">{props.html}</div>
+				<label htmlFor="mock-subject">Subject</label>
+				<input
+					id="mock-subject"
+					value={props.subject}
+					onChange={(event) => props.onSubjectChange(event.target.value)}
+				/>
+			</div>
+		);
+	},
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/email-templates/actions", () => ({
