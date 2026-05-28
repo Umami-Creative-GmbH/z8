@@ -50,6 +50,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { buildPresetHolidayImportValue } from "./holiday-import-utils";
 
 interface HolidayImportDialogProps {
 	open: boolean;
@@ -332,23 +333,7 @@ export function HolidayImportDialog({
 		// Prepare holidays data for import
 		const holidaysToImport = holidays
 			.filter((h) => selectedHolidays.has(h.name))
-			.map((h) => {
-				const startDate = new Date(h.startDate);
-				const endDate = new Date(h.endDate);
-				const durationMs = endDate.getTime() - startDate.getTime();
-				const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24)) + 1;
-
-				return {
-					name: h.name,
-					description: "",
-					month: startDate.getMonth() + 1,
-					day: startDate.getDate(),
-					durationDays,
-					holidayType: h.type as "optional" | "public" | "bank" | "school" | "observance",
-					isFloating: false,
-					isActive: true,
-				};
-			});
+			.map(buildPresetHolidayImportValue);
 
 		const assignmentRange = getYearAssignmentRange(selectedYear);
 

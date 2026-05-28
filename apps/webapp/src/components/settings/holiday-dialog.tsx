@@ -3,7 +3,6 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getHolidayCategories } from "@/app/[locale]/(app)/settings/holidays/actions";
@@ -32,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
 	createYearlyHolidayRecurrenceRule,
 	formatHolidayDatePickerValue,
+	getEndDateAfterStartDateChange,
 	parseHolidayDatePickerValue,
 } from "./holiday-dialog-utils";
 
@@ -300,7 +300,17 @@ export function HolidayDialog({
 											value={formatHolidayDatePickerValue(field.state.value)}
 											onChange={(value) => {
 												const date = parseHolidayDatePickerValue(value);
-												if (date) field.handleChange(date);
+												if (date) {
+													field.handleChange(date);
+													form.setFieldValue(
+														"endDate",
+														getEndDateAfterStartDateChange({
+															isEditing,
+															nextStartDate: date,
+															currentEndDate: form.getFieldValue("endDate"),
+														}),
+													);
+												}
 											}}
 										/>
 										{field.state.meta.errors.length > 0 && (
