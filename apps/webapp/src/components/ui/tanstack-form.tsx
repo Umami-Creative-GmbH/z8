@@ -68,7 +68,7 @@ function TFormItem({ className, ...props }: React.ComponentProps<"div">) {
  * Hook to access form item context
  */
 function useTFormItem() {
-	const context = React.useContext(TFormItemContext);
+	const context = React.use(TFormItemContext);
 	const fallbackId = React.useId();
 
 	if (!context.id) {
@@ -183,11 +183,4 @@ function TFormMessage({
 	);
 }
 
-export {
-	TFormItem,
-	TFormLabel,
-	TFormControl,
-	TFormDescription,
-	TFormMessage,
-	useTFormItem,
-};
+export { TFormControl, TFormDescription, TFormItem, TFormLabel, TFormMessage, useTFormItem };

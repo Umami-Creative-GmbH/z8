@@ -2,6 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import {
 	Select,
 	SelectContent,
@@ -38,8 +39,22 @@ export function PlatformAnalyticsControls({
 	range: PlatformAnalyticsRange;
 	bucket: PlatformAnalyticsBucket;
 }) {
+	return (
+		<Suspense fallback={null}>
+			<PlatformAnalyticsControlsContent range={range} bucket={bucket} />
+		</Suspense>
+	);
+}
+
+function PlatformAnalyticsControlsContent({
+	range,
+	bucket,
+}: {
+	range: PlatformAnalyticsRange;
+	bucket: PlatformAnalyticsBucket;
+}) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const searchParams = useSearchParams();
 	const bucketOptions = getPlatformAnalyticsBucketOptions(range);
 
@@ -47,7 +62,7 @@ export function PlatformAnalyticsControls({
 		const params = new URLSearchParams(searchParams.toString());
 		params.set("range", nextRange);
 		params.set("bucket", nextBucket);
-		router.push(`/platform-admin/analytics?${params.toString()}`);
+		push(`/platform-admin/analytics?${params.toString()}`);
 	}
 
 	function handleRangeChange(value: string) {

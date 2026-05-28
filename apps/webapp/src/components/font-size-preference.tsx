@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, use, useEffect, useState } from "react";
 import {
 	applyFontSizePreference,
 	type FontSizePreference,
@@ -47,7 +47,7 @@ export function FontSizeProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useFontSizePreference() {
-	const context = useContext(FontSizeContext);
+	const context = use(FontSizeContext);
 
 	if (!context) {
 		throw new Error("useFontSizePreference must be used within FontSizeProvider");

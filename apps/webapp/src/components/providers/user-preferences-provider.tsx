@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, type ReactNode, useContext } from "react";
+import { createContext, type ReactNode, use } from "react";
 import {
 	DEFAULT_TIME_FORMAT,
 	normalizeTimeFormat,
@@ -42,9 +42,9 @@ export function UserPreferencesProvider({
 }
 
 export function useWeekStartDay() {
-	return useContext(UserPreferencesContext).weekStartDay;
+	return use(UserPreferencesContext).weekStartDay;
 }
 
 export function useTimeFormat() {
-	return useContext(UserPreferencesContext).timeFormat;
+	return use(UserPreferencesContext).timeFormat;
 }

@@ -31,7 +31,7 @@ export function useWidgetData<T>(
 	const prevOrgIdRef = useRef<string | null>(null);
 	const mountedRef = useRef(false);
 
-	const loadData = useEffectEvent(async (isRefresh = false) => {
+	async function runLoadData(isRefresh = false) {
 		if (isRefresh) {
 			setRefreshing(true);
 		}
@@ -58,7 +58,9 @@ export function useWidgetData<T>(
 			setLoading(false);
 			setRefreshing(false);
 		}
-	});
+	}
+
+	const loadData = useEffectEvent(runLoadData);
 
 	useEffect(() => {
 		mountedRef.current = true;
@@ -85,7 +87,7 @@ export function useWidgetData<T>(
 	}, [organizationId]);
 
 	const refetch = () => {
-		loadData(true);
+		void runLoadData(true);
 	};
 
 	return { data, loading, refreshing, refetch };
