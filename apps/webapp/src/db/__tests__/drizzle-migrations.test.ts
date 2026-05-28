@@ -24,7 +24,7 @@ const migration0026SnapshotUrl = new URL("../../../drizzle/meta/0026_snapshot.js
 const migration0030SnapshotUrl = new URL("../../../drizzle/meta/0030_snapshot.json", import.meta.url);
 const migrationJournal = JSON.parse(
 	readFileSync(new URL("../../../drizzle/meta/_journal.json", import.meta.url), "utf8"),
-) as { entries: Array<{ tag: string }> };
+) as { entries: Array<{ tag: string; when: number }> };
 const migration0008Snapshot = JSON.parse(
 	readFileSync(new URL("../../../drizzle/meta/0008_snapshot.json", import.meta.url), "utf8"),
 ) as { tables: { "public.organization": { columns: Record<string, { default?: boolean }> } } };
@@ -35,6 +35,10 @@ const migration0032 = readFileSync(
 const migration0032Snapshot = JSON.parse(
 	readFileSync(new URL("../../../drizzle/meta/0032_snapshot.json", import.meta.url), "utf8"),
 ) as { tables: { "public.organization": { columns: Record<string, { default?: boolean }> } } };
+const migration0035Url = new URL(
+	"../../../drizzle/0035_approval_request_metadata_recovery.sql",
+	import.meta.url,
+);
 
 const migration0004Statements = migration0004
 	.split("--> statement-breakpoint")
@@ -187,5 +191,24 @@ describe("drizzle follow-up migrations", () => {
 				editor_document: expect.objectContaining({ type: "jsonb", notNull: true }),
 			}),
 		);
+	});
+
+	it("registers a later idempotent approval request metadata recovery migration", () => {
+		const recoveryEntry = migrationJournal.entries.find(
+			(entry) => entry.tag === "0035_approval_request_metadata_recovery",
+		);
+		const latestPriorWhen = Math.max(
+			...migrationJournal.entries
+				.filter((entry) => entry.tag !== "0035_approval_request_metadata_recovery")
+				.map((entry) => entry.when),
+		);
+
+		expect(recoveryEntry?.when).toBeGreaterThan(latestPriorWhen);
+		expect(existsSync(migration0035Url)).toBe(true);
+
+		const migration0035 = readFileSync(migration0035Url, "utf8");
+
+		expect(migration0035).toContain('ADD COLUMN IF NOT EXISTS "metadata" jsonb');
+		expect(migration0035).toContain('CREATE UNIQUE INDEX IF NOT EXISTS "approvalRequest_pending_entity_unique_idx"');
 	});
 });
