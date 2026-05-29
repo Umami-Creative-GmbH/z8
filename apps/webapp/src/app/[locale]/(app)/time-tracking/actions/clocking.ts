@@ -4,8 +4,9 @@ import { and, eq, gte, isNull, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime, IANAZone } from "luxon";
 import { db } from "@/db";
-import { employee, workPeriod } from "@/db/schema";
+import { employee, employeeManagers, workPeriod } from "@/db/schema";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
@@ -60,6 +61,79 @@ type ManualEntryOverlapResult =
 type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
 
 const APPROVAL_POLICY_CHECK_ERROR = "Could not verify time approval policy. Please try again.";
+const MANUAL_ENTRY_TARGET_AUTH_ERROR = "Not authorized to create time entries for this employee";
+
+async function resolveManualTimeEntryTarget(params: {
+	currentEmployee: typeof employee.$inferSelect;
+	requestedEmployeeId?: string;
+	sessionUser: { id: string; role?: string | null };
+}): Promise<
+	| { success: true; targetEmployee: typeof employee.$inferSelect; isOwnEntry: boolean }
+	| { success: false; error: string }
+> {
+	const { currentEmployee, requestedEmployeeId, sessionUser } = params;
+	if (!requestedEmployeeId || requestedEmployeeId === currentEmployee.id) {
+		return { success: true, targetEmployee: currentEmployee, isOwnEntry: true };
+	}
+
+	const requesterRole = currentEmployee.role;
+	const canTargetOtherEmployees =
+		requesterRole === "admin" ||
+		requesterRole === "manager" ||
+		requesterRole === "team_lead" ||
+		sessionUser.role === "admin";
+	if (!canTargetOtherEmployees) {
+		return { success: false, error: MANUAL_ENTRY_TARGET_AUTH_ERROR };
+	}
+
+	const organizationEmployees = await db.query.employee.findMany({
+		where: eq(employee.organizationId, currentEmployee.organizationId),
+	});
+	const targetEmployee = organizationEmployees.find(
+		(employeeRecord) =>
+			employeeRecord.id === requestedEmployeeId &&
+			employeeRecord.organizationId === currentEmployee.organizationId &&
+			employeeRecord.isActive === true,
+	);
+	if (!targetEmployee) {
+		return { success: false, error: MANUAL_ENTRY_TARGET_AUTH_ERROR };
+	}
+
+	const managedRecords = await db.query.employeeManagers.findMany({
+		where: eq(employeeManagers.managerId, currentEmployee.id),
+		columns: { employeeId: true },
+	});
+	const principal: PrincipalContext = {
+		userId: sessionUser.id,
+		isPlatformAdmin: sessionUser.role === "admin",
+		activeOrganizationId: currentEmployee.organizationId,
+		orgMembership: null,
+		employee: {
+			id: currentEmployee.id,
+			organizationId: currentEmployee.organizationId,
+			role: currentEmployee.role,
+			teamId: currentEmployee.teamId,
+		},
+		permissions: { orgWide: null, byTeamId: new Map() },
+		managedEmployeeIds: managedRecords.map((record) => record.employeeId),
+		customRoles: [],
+	};
+
+	const ability = defineAbilityFor(principal);
+	const canCreateForTarget = ability.can(
+		"read",
+		asAppSubject("Employee", {
+			id: targetEmployee.id,
+			employeeId: targetEmployee.id,
+			organizationId: targetEmployee.organizationId,
+			teamId: targetEmployee.teamId,
+		}),
+	);
+
+	return canCreateForTarget
+		? { success: true, targetEmployee, isOwnEntry: false }
+		: { success: false, error: MANUAL_ENTRY_TARGET_AUTH_ERROR };
+}
 
 async function markWorkBalanceDirtyAfterClockOutBestEffort(
 	input: WorkBalanceDirtyInput,
@@ -658,23 +732,18 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	if (!currentEmployee) {
 		return { success: false, error: "Employee profile not found" };
 	}
-	const targetEmployeeId = data.employeeId ?? currentEmployee.id;
-	let targetEmployee = currentEmployee;
-	if (targetEmployeeId !== currentEmployee.id) {
-		const organizationEmployees = await db.query.employee.findMany({
-			where: eq(employee.organizationId, currentEmployee.organizationId),
-		});
-		const resolvedTarget = organizationEmployees.find(
-			(employeeRecord) =>
-				employeeRecord.id === targetEmployeeId &&
-				employeeRecord.organizationId === currentEmployee.organizationId,
-		);
-		if (!resolvedTarget) {
-			return { success: false, error: "Not authorized to create time entries for this employee" };
-		}
-		targetEmployee = resolvedTarget;
+	const targetResolution = await resolveManualTimeEntryTarget({
+		currentEmployee,
+		requestedEmployeeId: data.employeeId,
+		sessionUser: {
+			id: session.user.id,
+			role: (session.user as { role?: string | null }).role,
+		},
+	});
+	if (!targetResolution.success) {
+		return targetResolution;
 	}
-	const isOwnEntry = targetEmployee.id === currentEmployee.id;
+	const { targetEmployee, isOwnEntry } = targetResolution;
 
 	const savedTimezone = isOwnEntry
 		? await getUserTimezone(session.user.id)

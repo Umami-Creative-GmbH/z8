@@ -67,10 +67,13 @@ vi.mock("@/db/schema", () => ({
 		startTime: "workPeriod.startTime",
 	},
 	employee: {
+		id: "employee.id",
 		organizationId: "employee.organizationId",
+		isActive: "employee.isActive",
 	},
 	employeeManagers: {
 		employeeId: "employeeManagers.employeeId",
+		managerId: "employeeManagers.managerId",
 	},
 	teamMembership: {
 		employeeId: "teamMembership.employeeId",
@@ -660,6 +663,7 @@ describe("createManualTimeEntry", () => {
 			organizationId: "org-1",
 			teamId: "team-1",
 			managerId: null,
+			role: "manager",
 		});
 		mockState.findEmployees.mockResolvedValue([
 			{
@@ -679,6 +683,7 @@ describe("createManualTimeEntry", () => {
 				role: "employee",
 			},
 		]);
+		mockState.findManagerLinks.mockResolvedValue([{ employeeId: "staff-1" }]);
 		mockState.getUserTimezone.mockImplementation(async (userId: string) =>
 			userId === "staff-user" ? "Europe/Berlin" : "UTC",
 		);
@@ -733,6 +738,47 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith(
 			expect.objectContaining({ employeeId: "staff-1", organizationId: "org-1" }),
 		);
+	});
+
+	it("rejects same-organization manual entries for unauthorized target employees before writing", async () => {
+		mockState.getCurrentSession.mockResolvedValue({ user: { id: "employee-user" } });
+		mockState.getCurrentEmployee.mockResolvedValue({
+			id: "employee-1",
+			userId: "employee-user",
+			organizationId: "org-1",
+			teamId: "team-1",
+			managerId: null,
+			role: "employee",
+		});
+		mockState.findEmployees.mockResolvedValue([
+			{
+				id: "employee-2",
+				userId: "other-user",
+				organizationId: "org-1",
+				teamId: "team-1",
+				isActive: true,
+				role: "employee",
+			},
+		]);
+		mockState.findManagerLinks.mockResolvedValue([]);
+
+		const result = await createManualTimeEntry({
+			employeeId: "employee-2",
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "09:00",
+			timezone: "UTC",
+			reason: "Trying to edit another employee",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Not authorized to create time entries for this employee",
+		});
+		expect(mockState.validateTimeEntryRange).not.toHaveBeenCalled();
+		expect(mockState.getEditCapabilityForPeriod).not.toHaveBeenCalled();
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.insertValues).not.toHaveBeenCalled();
 	});
 
 	it("keeps manual entry creation successful when dirty marking fails", async () => {
