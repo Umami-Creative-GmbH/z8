@@ -7,6 +7,7 @@ import { db } from "@/db";
 import {
 	absenceCategory,
 	absenceEntry,
+	approvalRequest,
 	changePolicy,
 	changePolicyAssignment,
 	employee,
@@ -15,6 +16,7 @@ import {
 	location,
 	locationEmployee,
 	locationSubarea,
+	notification,
 	project,
 	shift,
 	shiftRecurrence,
@@ -122,6 +124,8 @@ export interface DemoDataOptions {
 	includeShifts?: boolean;
 	shiftTemplateCount?: number;
 	generateShiftInstances?: boolean;
+	includePendingAbsenceApprovals?: boolean;
+	includePendingTimeCorrectionApprovals?: boolean;
 }
 
 export interface DemoDataResult {
@@ -149,6 +153,8 @@ export interface DemoDataResult {
 	shiftRecurrencesCreated: number;
 	shiftsCreated: number;
 	shiftRequestsCreated: number;
+	pendingAbsenceApprovalsCreated: number;
+	pendingTimeCorrectionApprovalsCreated: number;
 }
 
 export interface ClearDataResult {
@@ -681,6 +687,252 @@ export async function generateDemoAbsences(
 	}
 
 	return { absencesCreated };
+}
+
+export async function generateDemoPendingAbsenceApprovals(
+	options: DemoDataOptions,
+): Promise<{ pendingAbsenceApprovalsCreated: number }> {
+	const employees = await db.query.employee.findMany({
+		where: options.employeeIds?.length
+			? and(
+					eq(employee.organizationId, options.organizationId),
+					inArray(employee.id, options.employeeIds),
+				)
+			: eq(employee.organizationId, options.organizationId),
+	});
+
+	if (employees.length < 2) {
+		return { pendingAbsenceApprovalsCreated: 0 };
+	}
+
+	await ensureDefaultAbsenceCategories(options.organizationId);
+
+	const categories = await db.query.absenceCategory.findMany({
+		where: and(
+			eq(absenceCategory.organizationId, options.organizationId),
+			eq(absenceCategory.isActive, true),
+		),
+	});
+
+	const category = categories.find((c) => c.type === "vacation") ?? categories[0];
+
+	if (!category) {
+		return { pendingAbsenceApprovalsCreated: 0 };
+	}
+
+	const employeeIds = employees.map((emp) => emp.id);
+	const employeeIdSet = new Set(employeeIds);
+	const managerAssignments = await db.query.employeeManagers.findMany({
+		where: inArray(employeeManagers.employeeId, employeeIds),
+	});
+
+	let pendingAbsenceApprovalsCreated = 0;
+
+	for (const [index, requester] of employees.slice(0, 5).entries()) {
+		const assignedManager = managerAssignments.find(
+			(assignment) =>
+				assignment.employeeId === requester.id &&
+				assignment.managerId !== requester.id &&
+				employeeIdSet.has(assignment.managerId),
+		);
+		const approverId =
+			assignedManager?.managerId ?? employees.find((emp) => emp.id !== requester.id)?.id;
+		const approver = employees.find((emp) => emp.id === approverId);
+
+		if (!approverId || !approver) {
+			continue;
+		}
+
+		const startDate = DateTime.utc().plus({ days: 14 + index * 3 });
+		const endDate = startDate.plus({ days: index % 2 });
+		const [insertedAbsence] = await db
+			.insert(absenceEntry)
+			.values({
+				organizationId: options.organizationId,
+				employeeId: requester.id,
+				categoryId: category.id,
+				startDate: startDate.toISODate()!,
+				endDate: endDate.toISODate()!,
+				status: "pending",
+				notes: "Demo data - Pending approval request",
+			})
+			.returning({ id: absenceEntry.id });
+
+		if (!insertedAbsence) {
+			continue;
+		}
+
+		await db.insert(approvalRequest).values({
+			organizationId: options.organizationId,
+			entityType: "absence_entry",
+			entityId: insertedAbsence.id,
+			requestedBy: requester.id,
+			approverId,
+			status: "pending",
+			reason: "Demo data - Pending absence approval",
+		});
+
+		await db.insert(notification).values({
+			userId: approver.userId,
+			organizationId: options.organizationId,
+			type: "approval_request_submitted",
+			title: "New absence request",
+			message: "Demo data - Pending absence request needs approval.",
+			entityType: "absence_entry",
+			entityId: insertedAbsence.id,
+			actionUrl: "/approvals/inbox",
+		});
+
+		pendingAbsenceApprovalsCreated++;
+	}
+
+	return { pendingAbsenceApprovalsCreated };
+}
+
+export async function generateDemoPendingTimeCorrectionApprovals(
+	options: DemoDataOptions,
+): Promise<{ pendingTimeCorrectionApprovalsCreated: number }> {
+	const employees = await db.query.employee.findMany({
+		where: options.employeeIds?.length
+			? and(
+					eq(employee.organizationId, options.organizationId),
+					inArray(employee.id, options.employeeIds),
+				)
+			: eq(employee.organizationId, options.organizationId),
+	});
+
+	if (employees.length < 2) {
+		return { pendingTimeCorrectionApprovalsCreated: 0 };
+	}
+
+	const employeeIds = employees.map((emp) => emp.id);
+	const periods = await db.query.workPeriod.findMany({
+		where: and(
+			eq(workPeriod.organizationId, options.organizationId),
+			eq(workPeriod.isActive, false),
+			inArray(workPeriod.employeeId, employeeIds),
+		),
+		limit: 20,
+	});
+
+	if (periods.length === 0) {
+		return { pendingTimeCorrectionApprovalsCreated: 0 };
+	}
+
+	const periodIds = periods.map((period) => period.id);
+	const existingApprovals = await db.query.approvalRequest.findMany({
+		where: and(
+			eq(approvalRequest.organizationId, options.organizationId),
+			eq(approvalRequest.entityType, "time_entry"),
+			eq(approvalRequest.status, "pending"),
+			inArray(approvalRequest.entityId, periodIds),
+		),
+	});
+	const existingApprovalPeriodIds = new Set(
+		existingApprovals.map((approval) => approval.entityId),
+	);
+	const employeeIdSet = new Set(employeeIds);
+	const employeesById = new Map(employees.map((emp) => [emp.id, emp]));
+	const managerAssignments = await db.query.employeeManagers.findMany({
+		where: inArray(employeeManagers.employeeId, employeeIds),
+	});
+
+	let pendingTimeCorrectionApprovalsCreated = 0;
+
+	for (const period of periods) {
+		if (pendingTimeCorrectionApprovalsCreated >= 5) {
+			break;
+		}
+
+		if (existingApprovalPeriodIds.has(period.id)) {
+			continue;
+		}
+
+		const requester = employeesById.get(period.employeeId);
+		if (!requester) {
+			continue;
+		}
+
+		const assignedManager = managerAssignments.find(
+			(assignment) =>
+				assignment.employeeId === requester.id &&
+				assignment.managerId !== requester.id &&
+				employeeIdSet.has(assignment.managerId),
+		);
+		const approverId =
+			assignedManager?.managerId ?? employees.find((emp) => emp.id !== requester.id)?.id;
+		const approver = employees.find((emp) => emp.id === approverId);
+
+		if (!approverId || !approver) {
+			continue;
+		}
+
+		const correctionTimestampDT = DateTime.fromJSDate(period.startTime, { zone: "utc" }).plus({
+			minutes: 15,
+		});
+		const correctionTimestamp = dateToDB(correctionTimestampDT)!;
+		const latestEntry = await db.query.timeEntry.findFirst({
+			where: and(
+				eq(timeEntry.employeeId, requester.id),
+				eq(timeEntry.organizationId, options.organizationId),
+			),
+			orderBy: (entry, { desc }) => desc(entry.createdAt),
+		});
+		const previousHash = latestEntry?.hash ?? null;
+		const previousEntryId = latestEntry?.id ?? null;
+		const correctionHash = calculateHash({
+			employeeId: requester.id,
+			type: "correction",
+			timestamp: correctionTimestampDT.toISO()!,
+			previousHash,
+		});
+
+		const [correctionEntry] = await db
+			.insert(timeEntry)
+			.values({
+				employeeId: requester.id,
+				organizationId: options.organizationId,
+				type: "correction",
+				timestamp: correctionTimestamp,
+				hash: correctionHash,
+				previousHash,
+				previousEntryId,
+				replacesEntryId: period.clockInId,
+				notes: "Demo data - Pending time correction",
+				createdBy: options.createdBy,
+			})
+			.returning({ id: timeEntry.id });
+
+		if (!correctionEntry) {
+			continue;
+		}
+
+		await db.insert(approvalRequest).values({
+			organizationId: options.organizationId,
+			entityType: "time_entry",
+			entityId: period.id,
+			requestedBy: requester.id,
+			approverId,
+			status: "pending",
+			reason: "Demo data - Pending time correction approval",
+			metadata: { timeCorrection: { clockInCorrectionId: correctionEntry.id } },
+		});
+
+		await db.insert(notification).values({
+			userId: approver.userId,
+			organizationId: options.organizationId,
+			type: "approval_request_submitted",
+			title: "New time correction request",
+			message: "Demo data - Pending time correction request needs approval.",
+			entityType: "work_period",
+			entityId: period.id,
+			actionUrl: "/approvals/inbox",
+		});
+
+		pendingTimeCorrectionApprovalsCreated++;
+	}
+
+	return { pendingTimeCorrectionApprovalsCreated };
 }
 
 /**
@@ -1791,6 +2043,12 @@ export async function generateDemoData(options: DemoDataOptions): Promise<DemoDa
 	// Phase 5: Time data
 	const timeResult = await generateDemoTimeEntries(options);
 	const absenceResult = await generateDemoAbsences(options);
+	const pendingAbsenceApprovalResult = options.includePendingAbsenceApprovals
+		? await generateDemoPendingAbsenceApprovals(options)
+		: { pendingAbsenceApprovalsCreated: 0 };
+	const pendingTimeCorrectionApprovalResult = options.includePendingTimeCorrectionApprovals
+		? await generateDemoPendingTimeCorrectionApprovals(options)
+		: { pendingTimeCorrectionApprovalsCreated: 0 };
 
 	// Phase 6: Shift instances (depends on templates + employees)
 	const shiftResult = await generateDemoShifts(options);
@@ -1823,6 +2081,10 @@ export async function generateDemoData(options: DemoDataOptions): Promise<DemoDa
 		shiftRecurrencesCreated: shiftResult.recurrencesCreated,
 		shiftsCreated: shiftResult.shiftsCreated,
 		shiftRequestsCreated: shiftResult.requestsCreated,
+		pendingAbsenceApprovalsCreated:
+			pendingAbsenceApprovalResult.pendingAbsenceApprovalsCreated,
+		pendingTimeCorrectionApprovalsCreated:
+			pendingTimeCorrectionApprovalResult.pendingTimeCorrectionApprovalsCreated,
 	};
 }
 

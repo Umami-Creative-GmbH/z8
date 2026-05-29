@@ -21,6 +21,8 @@ import {
 	generateDemoData,
 	generateDemoLocations,
 	generateDemoManagerAssignments,
+	generateDemoPendingAbsenceApprovals,
+	generateDemoPendingTimeCorrectionApprovals,
 	generateDemoProjects,
 	generateDemoShifts,
 	generateDemoShiftTemplates,
@@ -191,6 +193,8 @@ export interface StepGenerationInput {
 	changePolicyCount?: number;
 	// NEW: Shift scheduling options
 	shiftTemplateCount?: number;
+	includePendingAbsenceApprovals?: boolean;
+	includePendingTimeCorrectionApprovals?: boolean;
 }
 
 /**
@@ -454,6 +458,96 @@ export async function generateAbsencesStepAction(
 		};
 
 		const result = yield* _(Effect.promise(() => generateDemoAbsences(options)));
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function generatePendingAbsenceApprovalsStepAction(
+	input: StepGenerationInput,
+): Promise<ServerActionResult<{ pendingAbsenceApprovalsCreated: number }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => canUseDemoData(input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			includePendingAbsenceApprovals: true,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(Effect.promise(() => generateDemoPendingAbsenceApprovals(options)));
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function generatePendingTimeCorrectionApprovalsStepAction(
+	input: StepGenerationInput,
+): Promise<ServerActionResult<{ pendingTimeCorrectionApprovalsCreated: number }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => canUseDemoData(input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			includePendingTimeCorrectionApprovals: true,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(
+			Effect.promise(() => generateDemoPendingTimeCorrectionApprovals(options)),
+		);
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
