@@ -36,10 +36,7 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { UserAvatar } from "@/components/user-avatar";
-import type {
-	AppSearchResult,
-	LiveAppSearchResults,
-} from "@/lib/app-search/types";
+import type { AppSearchResult, LiveAppSearchResults } from "@/lib/app-search/types";
 import { useRouter } from "@/navigation";
 
 const EMPTY_LIVE_RESULTS: LiveAppSearchResults = {
@@ -82,10 +79,7 @@ function getResultIcon(result: AppSearchResult): SearchIcon {
 	);
 }
 
-function getGroupLabel(
-	type: AppSearchResult["type"],
-	t: ReturnType<typeof useTranslate>["t"],
-) {
+function getGroupLabel(type: AppSearchResult["type"], t: ReturnType<typeof useTranslate>["t"]) {
 	switch (type) {
 		case "action":
 			return t("appSearch.groups.actions", "Actions");
@@ -156,9 +150,7 @@ function ResultGroup({
 						<div className="flex min-w-0 flex-col gap-0.5">
 							<span className="truncate font-medium">{result.title}</span>
 							{result.subtitle ? (
-								<span className="truncate text-muted-foreground text-xs">
-									{result.subtitle}
-								</span>
+								<span className="truncate text-muted-foreground text-xs">{result.subtitle}</span>
 							) : null}
 						</div>
 					</CommandItem>
@@ -179,14 +171,11 @@ export function AppSearch({
 	const { push } = useRouter();
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
-	const [liveResults, setLiveResults] =
-		useState<LiveAppSearchResults>(EMPTY_LIVE_RESULTS);
+	const [liveResults, setLiveResults] = useState<LiveAppSearchResults>(EMPTY_LIVE_RESULTS);
 	const [liveError, setLiveError] = useState<string | null>(null);
 	const trimmedQuery = query.trim();
 	const shouldSearchLiveRecords = open && trimmedQuery.length >= 2;
-	const visibleLiveResults = shouldSearchLiveRecords
-		? liveResults
-		: EMPTY_LIVE_RESULTS;
+	const visibleLiveResults = shouldSearchLiveRecords ? liveResults : EMPTY_LIVE_RESULTS;
 	const visibleLiveError = shouldSearchLiveRecords ? liveError : null;
 
 	const searchShortcutLabel = formatForDisplay(SEARCH_HOTKEY);
@@ -224,18 +213,11 @@ export function AppSearch({
 		};
 	}, [shouldSearchLiveRecords, trimmedQuery]);
 
-	const actionResults = staticCommands.filter(
-		(result) => result.type === "action",
-	);
+	const actionResults = staticCommands.filter((result) => result.type === "action");
 	const pageResults = staticResults.filter((result) => result.type === "page");
-	const settingResults = staticResults.filter(
-		(result) => result.type === "setting",
-	);
+	const settingResults = staticResults.filter((result) => result.type === "setting");
 	const searchLabel = t("appSearch.search", "Search");
-	const searchOrRunCommandLabel = t(
-		"appSearch.searchOrRunCommand",
-		"Search or run command",
-	);
+	const searchOrRunCommandLabel = t("appSearch.searchOrRunCommand", "Search or run command");
 
 	function handleSelect(result: AppSearchResult) {
 		setOpen(false);
@@ -258,15 +240,12 @@ export function AppSearch({
 					<SidebarMenu>
 						<SidebarMenuItem>
 							<SidebarMenuButton
-								className="h-9 justify-start rounded-lg border border-input bg-white px-3 text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/50 dark:bg-input/30 dark:hover:bg-input/50"
+								className="h-9 justify-start rounded-lg border border-input bg-card px-3 text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/50 dark:bg-input/30 dark:hover:bg-input/50"
 								onClick={() => setOpen(true)}
 								tooltip={searchOrRunCommandLabel}
 								type="button"
 							>
-								<IconSearch
-									aria-hidden="true"
-									className="text-muted-foreground"
-								/>
+								<IconSearch aria-hidden="true" className="text-muted-foreground" />
 								<span className="font-normal text-sm">{searchLabel}</span>
 								<Kbd
 									aria-hidden="true"
@@ -301,9 +280,7 @@ export function AppSearch({
 					value={query}
 				/>
 				<CommandList>
-					<CommandEmpty>
-						{t("appSearch.empty", "No results found.")}
-					</CommandEmpty>
+					<CommandEmpty>{t("appSearch.empty", "No results found.")}</CommandEmpty>
 					<ResultGroup
 						label={getGroupLabel("action", t)}
 						onSelect={handleSelect}
@@ -330,10 +307,7 @@ export function AppSearch({
 						results={settingResults}
 					/>
 					{visibleLiveError ? (
-						<p
-							aria-live="polite"
-							className="px-3 py-2 text-destructive text-sm"
-						>
+						<p aria-live="polite" className="px-3 py-2 text-destructive text-sm">
 							{visibleLiveError}
 						</p>
 					) : null}
