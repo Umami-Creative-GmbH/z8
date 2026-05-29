@@ -701,4 +701,29 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 			}),
 		);
 	});
+
+	it("auto-approves own approval-required manual entries when no manager resolves", async () => {
+		mockState.findTargetEmployee.mockResolvedValue(null);
+		mockState.getPrimaryEligibleManagerIdForRequester.mockResolvedValue(null);
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "10:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toMatchObject({
+			success: true,
+			data: { workPeriodId: "period-1", requiresApproval: false },
+		});
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeId: "manager-1",
+				approvalStatus: "approved",
+				pendingChanges: null,
+			}),
+		);
+		expect(mockState.createManualEntryApprovalRequest).not.toHaveBeenCalled();
+	});
 });

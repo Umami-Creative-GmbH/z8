@@ -3064,15 +3064,12 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 
 	let managerId: string | null = null;
-	try {
-		managerId = await resolveTimeApprovalManagerId({
+	if (requiresApproval) {
+		managerId = await getPrimaryEligibleManagerIdForRequester({
 			db,
-			requiresApproval,
 			requesterEmployeeId: targetEmployee.id,
 			organizationId: targetEmployee.organizationId,
 		});
-	} catch {
-		return { success: false, error: "No manager assigned to approve time changes" };
 	}
 	const requiresManagerApproval = requiresApproval && Boolean(managerId);
 
