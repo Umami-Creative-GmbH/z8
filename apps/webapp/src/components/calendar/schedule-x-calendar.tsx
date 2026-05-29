@@ -78,6 +78,10 @@ function roundToQuarterHour(minutes: number) {
 	return Math.max(0, Math.min(23 * 60 + 45, Math.round(minutes / 15) * 15));
 }
 
+export function isScheduleXEventElement(target: HTMLElement) {
+	return Boolean(target.closest(".sx__event, .sx__time-grid-event, .sx__date-grid-event"));
+}
+
 function getPointerDateTime(
 	container: HTMLDivElement,
 	event: PointerEvent,
@@ -416,7 +420,7 @@ export function ScheduleXCalendarWrapper({
 
 		const handlePointerDown = (event: PointerEvent) => {
 			const target = event.target instanceof Element ? event.target : null;
-			if (!target || target.closest(".sx__event")) return;
+			if (!(target instanceof HTMLElement) || isScheduleXEventElement(target)) return;
 
 			selectionStartRef.current = getPointerDateTime(container, event, visibleRequirementDates);
 		};
@@ -427,7 +431,7 @@ export function ScheduleXCalendarWrapper({
 			if (!start) return;
 
 			const target = event.target instanceof Element ? event.target : null;
-			if (target?.closest(".sx__event")) return;
+			if (target instanceof HTMLElement && isScheduleXEventElement(target)) return;
 
 			const end = getPointerDateTime(container, event, visibleRequirementDates);
 			if (!end || start.getTime() === end.getTime()) return;
