@@ -1,3 +1,12 @@
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_constraint WHERE conname = 'holidayCategory_id_organizationId_idx'
+	) THEN
+		ALTER TABLE "holiday_category" ADD CONSTRAINT "holidayCategory_id_organizationId_idx" UNIQUE ("id", "organization_id");
+	END IF;
+END $$;
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "holiday_category_assignment" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"category_id" uuid NOT NULL,
@@ -9,12 +18,49 @@ CREATE TABLE IF NOT EXISTS "holiday_category_assignment" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" text NOT NULL,
 	"updated_at" timestamp NOT NULL,
-	CONSTRAINT "holiday_category_assignment_category_id_holiday_category_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."holiday_category"("id") ON DELETE cascade ON UPDATE no action,
 	CONSTRAINT "holiday_category_assignment_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action,
-	CONSTRAINT "holiday_category_assignment_team_id_team_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."team"("id") ON DELETE cascade ON UPDATE no action,
-	CONSTRAINT "holiday_category_assignment_employee_id_employee_id_fk" FOREIGN KEY ("employee_id") REFERENCES "public"."employee"("id") ON DELETE cascade ON UPDATE no action,
-	CONSTRAINT "holiday_category_assignment_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action
+	CONSTRAINT "holiday_category_assignment_category_id_organization_id_holiday_category_id_organization_id_fk" FOREIGN KEY ("category_id", "organization_id") REFERENCES "public"."holiday_category"("id", "organization_id") ON DELETE cascade ON UPDATE no action,
+	CONSTRAINT "holiday_category_assignment_team_id_organization_id_team_id_organization_id_fk" FOREIGN KEY ("team_id", "organization_id") REFERENCES "public"."team"("id", "organization_id") ON DELETE cascade ON UPDATE no action,
+	CONSTRAINT "holiday_category_assignment_employee_id_organization_id_employee_id_organization_id_fk" FOREIGN KEY ("employee_id", "organization_id") REFERENCES "public"."employee"("id", "organization_id") ON DELETE cascade ON UPDATE no action,
+	CONSTRAINT "holiday_category_assignment_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action,
+	CONSTRAINT "holidayCategoryAssignment_target_shape_chk" CHECK (("assignment_type" = 'organization' AND "team_id" IS NULL AND "employee_id" IS NULL) OR ("assignment_type" = 'team' AND "team_id" IS NOT NULL AND "employee_id" IS NULL) OR ("assignment_type" = 'employee' AND "employee_id" IS NOT NULL AND "team_id" IS NULL))
 );
+--> statement-breakpoint
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_constraint WHERE conname = 'holiday_category_assignment_category_id_organization_id_holiday_category_id_organization_id_fk'
+	) THEN
+		ALTER TABLE "holiday_category_assignment" ADD CONSTRAINT "holiday_category_assignment_category_id_organization_id_holiday_category_id_organization_id_fk" FOREIGN KEY ("category_id", "organization_id") REFERENCES "public"."holiday_category"("id", "organization_id") ON DELETE cascade ON UPDATE no action;
+	END IF;
+END $$;
+--> statement-breakpoint
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_constraint WHERE conname = 'holiday_category_assignment_team_id_organization_id_team_id_organization_id_fk'
+	) THEN
+		ALTER TABLE "holiday_category_assignment" ADD CONSTRAINT "holiday_category_assignment_team_id_organization_id_team_id_organization_id_fk" FOREIGN KEY ("team_id", "organization_id") REFERENCES "public"."team"("id", "organization_id") ON DELETE cascade ON UPDATE no action;
+	END IF;
+END $$;
+--> statement-breakpoint
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_constraint WHERE conname = 'holiday_category_assignment_employee_id_organization_id_employee_id_organization_id_fk'
+	) THEN
+		ALTER TABLE "holiday_category_assignment" ADD CONSTRAINT "holiday_category_assignment_employee_id_organization_id_employee_id_organization_id_fk" FOREIGN KEY ("employee_id", "organization_id") REFERENCES "public"."employee"("id", "organization_id") ON DELETE cascade ON UPDATE no action;
+	END IF;
+END $$;
+--> statement-breakpoint
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_constraint WHERE conname = 'holidayCategoryAssignment_target_shape_chk'
+	) THEN
+		ALTER TABLE "holiday_category_assignment" ADD CONSTRAINT "holidayCategoryAssignment_target_shape_chk" CHECK (("assignment_type" = 'organization' AND "team_id" IS NULL AND "employee_id" IS NULL) OR ("assignment_type" = 'team' AND "team_id" IS NOT NULL AND "employee_id" IS NULL) OR ("assignment_type" = 'employee' AND "employee_id" IS NOT NULL AND "team_id" IS NULL));
+	END IF;
+END $$;
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "holidayCategoryAssignment_categoryId_idx" ON "holiday_category_assignment" USING btree ("category_id");
 --> statement-breakpoint
