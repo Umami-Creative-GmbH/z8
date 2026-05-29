@@ -8,7 +8,6 @@ import {
 	pgTable,
 	text,
 	timestamp,
-	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -43,10 +42,7 @@ export const holidayCategory = pgTable(
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
-	(table) => [
-		index("holidayCategory_organizationId_idx").on(table.organizationId),
-		unique("holidayCategory_id_organizationId_idx").on(table.id, table.organizationId),
-	],
+	(table) => [index("holidayCategory_organizationId_idx").on(table.organizationId)],
 );
 
 // Assignment of custom holiday categories to organizations, teams, or employees
@@ -54,7 +50,9 @@ export const holidayCategoryAssignment = pgTable(
 	"holiday_category_assignment",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
-		categoryId: uuid("category_id").notNull(),
+		categoryId: uuid("category_id")
+			.notNull()
+			.references(() => holidayCategory.id, { onDelete: "cascade" }),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
@@ -75,10 +73,6 @@ export const holidayCategoryAssignment = pgTable(
 		index("holidayCategoryAssignment_organizationId_idx").on(table.organizationId),
 		index("holidayCategoryAssignment_teamId_idx").on(table.teamId),
 		index("holidayCategoryAssignment_employeeId_idx").on(table.employeeId),
-		foreignKey({
-			columns: [table.categoryId, table.organizationId],
-			foreignColumns: [holidayCategory.id, holidayCategory.organizationId],
-		}).onDelete("cascade"),
 		foreignKey({
 			columns: [table.teamId, table.organizationId],
 			foreignColumns: [team.id, team.organizationId],
