@@ -716,7 +716,9 @@ export async function createHolidayCategoryAssignment(data: {
 						return await actor.dbService.db
 							.select()
 							.from(team)
-							.where(and(eq(team.id, assignmentTeamId), eq(team.organizationId, actor.organizationId)))
+							.where(
+								and(eq(team.id, assignmentTeamId), eq(team.organizationId, actor.organizationId)),
+							)
 							.limit(1);
 					}),
 				);
@@ -754,7 +756,10 @@ export async function createHolidayCategoryAssignment(data: {
 							.select()
 							.from(employee)
 							.where(
-								and(eq(employee.id, assignmentEmployeeId), eq(employee.organizationId, actor.organizationId)),
+								and(
+									eq(employee.id, assignmentEmployeeId),
+									eq(employee.organizationId, actor.organizationId),
+								),
 							)
 							.limit(1);
 					}),

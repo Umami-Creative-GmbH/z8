@@ -153,7 +153,12 @@ const mockState = vi.hoisted(() => ({
 			employeeId: null,
 			isActive: true,
 			createdAt: new Date("2026-01-04T00:00:00.000Z"),
-			category: { id: "category-other-team", name: "Other Team Category", type: "custom", color: null },
+			category: {
+				id: "category-other-team",
+				name: "Other Team Category",
+				type: "custom",
+				color: null,
+			},
 			team: { id: "team-other", name: "Other Team" },
 			employee: null,
 		},
@@ -166,7 +171,12 @@ const mockState = vi.hoisted(() => ({
 			employeeId: null,
 			isActive: true,
 			createdAt: new Date("2026-01-05T00:00:00.000Z"),
-			category: { id: "category-other-org", name: "Other Org Category", type: "custom", color: null },
+			category: {
+				id: "category-other-org",
+				name: "Other Org Category",
+				type: "custom",
+				color: null,
+			},
 			team: null,
 			employee: null,
 		},
@@ -196,7 +206,16 @@ vi.mock("drizzle-orm", () => ({
 
 vi.mock("@/db/schema", () => ({
 	employee: { __name: "employee", id: "id", organizationId: "organizationId" },
-	holiday: { __name: "holiday", id: "id", organizationId: "organizationId", isActive: "isActive", categoryId: "categoryId", name: "name", description: "description", startDate: "startDate" },
+	holiday: {
+		__name: "holiday",
+		id: "id",
+		organizationId: "organizationId",
+		isActive: "isActive",
+		categoryId: "categoryId",
+		name: "name",
+		description: "description",
+		startDate: "startDate",
+	},
 	holidayAssignment: {
 		id: "id",
 		holidayId: "holidayId",
@@ -207,7 +226,13 @@ vi.mock("@/db/schema", () => ({
 		isActive: "isActive",
 		createdAt: "createdAt",
 	},
-	holidayCategory: { __name: "holidayCategory", id: "id", organizationId: "organizationId", isActive: "isActive", name: "name" },
+	holidayCategory: {
+		__name: "holidayCategory",
+		id: "id",
+		organizationId: "organizationId",
+		isActive: "isActive",
+		name: "name",
+	},
 	holidayCategoryAssignment: {
 		__name: "holidayCategoryAssignment",
 		id: "id",
@@ -269,7 +294,9 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 							values: vi.fn((value: unknown) => {
 								mockState.insertCalls.push({ table: table.__name, value });
 								return {
-									returning: vi.fn(async () => [{ id: "new-category-assignment", ...(value as object) }]),
+									returning: vi.fn(async () => [
+										{ id: "new-category-assignment", ...(value as object) },
+									]),
 								};
 							}),
 						})),
@@ -296,7 +323,9 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 				},
 			}),
 		),
-		getManagedEmployeeIdsForSettingsActor: vi.fn(() => Effect.succeed(mockState.managedEmployeeIds)),
+		getManagedEmployeeIdsForSettingsActor: vi.fn(() =>
+			Effect.succeed(mockState.managedEmployeeIds),
+		),
 		requireOrgAdminEmployeeSettingsAccess: vi.fn((actor: typeof mockState.actor, options: any) =>
 			actor.accessTier === "orgAdmin"
 				? Effect.void
@@ -307,7 +336,7 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 							resource: options.resource,
 							action: options.action,
 						}),
-				  ),
+					),
 		),
 	};
 });
@@ -326,22 +355,23 @@ vi.mock("./holiday-scope", async () => {
 								teamPermissions: {
 									findMany: vi.fn(async () => mockState.teamPermissionsRows),
 								},
-							holidayAssignment: {
-								findMany: vi.fn(async () => mockState.holidayAssignments),
-							},
-							holidayCategoryAssignment: {
-								findMany: vi.fn(async () =>
-									mockState.holidayCategoryAssignments.filter(
-										(assignment) => assignment.organizationId === mockState.actor.organizationId,
+								holidayAssignment: {
+									findMany: vi.fn(async () => mockState.holidayAssignments),
+								},
+								holidayCategoryAssignment: {
+									findMany: vi.fn(async () =>
+										mockState.holidayCategoryAssignments.filter(
+											(assignment) => assignment.organizationId === mockState.actor.organizationId,
+										),
 									),
-								),
+								},
 							},
-						},
 						},
 						query: (_key: string, fn: () => Promise<unknown>) => Effect.promise(fn),
 					},
 				},
-				managedEmployeeIds: mockState.actor.accessTier === "orgAdmin" ? null : mockState.managedEmployeeIds,
+				managedEmployeeIds:
+					mockState.actor.accessTier === "orgAdmin" ? null : mockState.managedEmployeeIds,
 				manageableTeamIds:
 					mockState.actor.accessTier === "orgAdmin"
 						? null
@@ -349,11 +379,15 @@ vi.mock("./holiday-scope", async () => {
 								mockState.teamPermissionsRows
 									.filter((row) => row.canManageTeamSettings && row.teamId)
 									.map((row) => row.teamId as string),
-						  ),
+							),
 			}),
 		),
 		filterAssignmentsForManagerHolidayScope: vi.fn(
-			(assignments, manageableTeamIds: Set<string> | null, managedEmployeeIds: Set<string> | null) => {
+			(
+				assignments,
+				manageableTeamIds: Set<string> | null,
+				managedEmployeeIds: Set<string> | null,
+			) => {
 				if (!manageableTeamIds || !managedEmployeeIds) {
 					return assignments;
 				}
@@ -494,7 +528,9 @@ describe("holiday settings scope behavior", () => {
 		mockState.managedEmployeeIds = new Set(["employee-managed"]);
 		mockState.teamPermissionsRows = [{ teamId: "team-managed", canManageTeamSettings: true }];
 		mockState.holidayRows = [{ id: "holiday-org", organizationId: "org-1" }];
-		mockState.holidayCategoryRows = [{ id: "category-org", organizationId: "org-1", isActive: true }];
+		mockState.holidayCategoryRows = [
+			{ id: "category-org", organizationId: "org-1", isActive: true },
+		];
 		mockState.teamRows = [{ id: "team-managed", organizationId: "org-1" }];
 		mockState.employeeRows = [{ id: "employee-managed", organizationId: "org-1" }];
 		mockState.deleteCalls = [];

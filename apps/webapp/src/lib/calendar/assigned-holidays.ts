@@ -135,7 +135,10 @@ export function assignedHolidayToCalendarEvent(holiday: AssignedHolidayRange): H
 }
 
 function getAssignmentScope(
-	table: typeof holidayAssignment | typeof holidayPresetAssignment | typeof holidayCategoryAssignment,
+	table:
+		| typeof holidayAssignment
+		| typeof holidayPresetAssignment
+		| typeof holidayCategoryAssignment,
 	employeeId: string,
 	teamId: string | null,
 ) {
@@ -387,7 +390,9 @@ export async function getAssignedHolidaysForEmployee(params: {
 		where: and(
 			eq(holidayCategoryAssignment.organizationId, params.organizationId),
 			eq(holidayCategoryAssignment.isActive, true),
-			or(...getAssignmentScope(holidayCategoryAssignment, params.employeeId, scopedEmployee.teamId)),
+			or(
+				...getAssignmentScope(holidayCategoryAssignment, params.employeeId, scopedEmployee.teamId),
+			),
 		),
 		with: {
 			category: {
@@ -419,7 +424,10 @@ export async function getAssignedHolidaysForEmployee(params: {
 								and(
 									eq(holiday.recurrenceType, "yearly"),
 									lte(holiday.startDate, params.endDate),
-									or(isNull(holiday.recurrenceEndDate), gte(holiday.recurrenceEndDate, params.startDate)),
+									or(
+										isNull(holiday.recurrenceEndDate),
+										gte(holiday.recurrenceEndDate, params.startDate),
+									),
 								),
 							),
 						),
