@@ -91,20 +91,20 @@ function ChartContainer({
 
 	return (
 		<ChartContext.Provider value={{ config }}>
-			<React.Suspense fallback={null}>
-				<div
-					className={cn(
-						"flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-hidden [&_.recharts-surface]:outline-hidden",
-						className,
-					)}
-					data-chart={chartId}
-					data-slot="chart"
-					{...props}
-				>
-					<ChartStyle config={config} id={chartId} />
+			<div
+				className={cn(
+					"flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-hidden [&_.recharts-surface]:outline-hidden",
+					className,
+				)}
+				data-chart={chartId}
+				data-slot="chart"
+				{...props}
+			>
+				<ChartStyle config={config} id={chartId} />
+				<React.Suspense fallback={null}>
 					<ResponsiveContainer>{children}</ResponsiveContainer>
-				</div>
-			</React.Suspense>
+				</React.Suspense>
+			</div>
 		</ChartContext.Provider>
 	);
 }
