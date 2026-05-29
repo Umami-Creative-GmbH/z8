@@ -10,6 +10,7 @@ import {
 	updateTimeEntryNotes,
 } from "@/app/[locale]/(app)/time-tracking/actions";
 import { useOfflineClock } from "@/hooks/use-offline-clock";
+import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { queryKeys } from "./keys";
 
@@ -106,7 +107,10 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	// Clock in mutation with offline support
 	const clockInMutation = useMutation({
-		mutationFn: async (params: { workLocationType?: WorkLocationType }) => {
+		mutationFn: async (params?: {
+			workLocationType?: WorkLocationType;
+			browserTimezone?: string | null;
+		}) => {
 			// When offline, queue the event for later sync
 			if (isOffline) {
 				const result = await queueClockEvent({
@@ -144,7 +148,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			}
 
 			// Online - use normal server action
-			return clockIn(params?.workLocationType);
+			return clockIn(params?.workLocationType, {
+				browserTimezone: params?.browserTimezone ?? getBrowserTimezone(),
+			});
 		},
 		onSuccess: (result) => {
 			if (result.success && !("queued" in result)) {
@@ -162,7 +168,11 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	// Clock out mutation with offline support
 	const clockOutMutation = useMutation({
-		mutationFn: async (params?: { projectId?: string; workCategoryId?: string }) => {
+		mutationFn: async (params?: {
+			projectId?: string;
+			workCategoryId?: string;
+			browserTimezone?: string | null;
+		}) => {
 			// When offline, queue the event for later sync
 			if (isOffline) {
 				const result = await queueClockEvent({
@@ -197,7 +207,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			}
 
 			// Online - use normal server action
-			return clockOut(params?.projectId, params?.workCategoryId);
+			return clockOut(params?.projectId, params?.workCategoryId, {
+				browserTimezone: params?.browserTimezone ?? getBrowserTimezone(),
+			});
 		},
 		onSuccess: (result) => {
 			if (result.success && !("queued" in result)) {

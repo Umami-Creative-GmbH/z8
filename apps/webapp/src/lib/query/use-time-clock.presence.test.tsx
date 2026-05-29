@@ -60,7 +60,11 @@ describe("useTimeClock presence invalidation", () => {
 
 		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
 		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
-		await result.current.clockIn({});
+		await result.current.clockIn({ browserTimezone: "America/New_York" });
+
+		expect(mocks.clockIn).toHaveBeenCalledWith(undefined, {
+			browserTimezone: "America/New_York",
+		});
 
 		await waitFor(() => {
 			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.employeeClockStatuses.all });
@@ -77,7 +81,11 @@ describe("useTimeClock presence invalidation", () => {
 
 		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
 		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
-		await result.current.clockOut({});
+		await result.current.clockOut({ browserTimezone: "America/New_York" });
+
+		expect(mocks.clockOut).toHaveBeenCalledWith(undefined, undefined, {
+			browserTimezone: "America/New_York",
+		});
 
 		await waitFor(() => {
 			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.employeeClockStatuses.all });
