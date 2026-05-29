@@ -324,4 +324,49 @@ describe("GET /api/calendar/events", () => {
 			"2026-05-04": 480,
 		});
 	});
+
+	it("returns running work periods as events but excludes them from daily actual minutes", async () => {
+		const completedWorkPeriod = {
+			id: "work-period-completed",
+			type: "work_period",
+			date: new Date("2026-05-04T08:00:00.000Z"),
+			title: "Work period",
+			color: "#10b981",
+			metadata: { durationMinutes: 360, employeeName: "Ada" },
+		};
+		const runningWorkPeriod = {
+			id: "work-period-running",
+			type: "work_period",
+			date: new Date("2026-05-04T14:00:00.000Z"),
+			title: "Work period",
+			color: "#10b981",
+			metadata: { durationMinutes: 120, employeeName: "Ada", isRunning: true },
+		};
+		mockState.getWorkPeriodsForMonth.mockResolvedValueOnce([
+			completedWorkPeriod,
+			runningWorkPeriod,
+		]);
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&month=4&showWorkPeriods=true",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(body.events).toEqual([
+			{
+				...completedWorkPeriod,
+				date: "2026-05-04T08:00:00.000Z",
+			},
+			{
+				...runningWorkPeriod,
+				date: "2026-05-04T14:00:00.000Z",
+			},
+		]);
+		expect(body.dailyActualMinutes).toEqual({
+			"2026-05-04": 360,
+		});
+	});
 });

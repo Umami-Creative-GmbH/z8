@@ -31,6 +31,7 @@ import {
 	calendarEventsToScheduleX,
 	generateBreakEvents,
 	getScheduleXCalendars,
+	type ScheduleXEvent,
 } from "@/lib/calendar/schedule-x-adapter";
 import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
 import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
@@ -58,6 +59,29 @@ const viewModeToScheduleX: Record<ViewMode, string> = {
 	month: "month-grid",
 	year: "month-grid", // Year view is handled separately, fallback to month-grid
 };
+
+export function filterEventsForScheduleXView(
+	events: CalendarEvent[],
+	viewMode: ViewMode,
+): CalendarEvent[] {
+	if (viewMode === "day" || viewMode === "week") return events;
+
+	return events.filter((event) => !(event.type === "work_period" && event.metadata.isRunning));
+}
+
+export function resolveClickableCalendarEvent(
+	events: Pick<ScheduleXEvent, "id" | "_eventData">[],
+	clickedEvent: { id: string },
+): CalendarEvent | null {
+	const scheduleXEvent = events.find((event) => event.id === clickedEvent.id);
+	const eventData = scheduleXEvent?._eventData;
+
+	if (eventData?.type === "work_period" && eventData.metadata.isRunning) {
+		return null;
+	}
+
+	return eventData ?? null;
+}
 
 function getHeaderCells(container: HTMLDivElement): HTMLElement[] {
 	return Array.from(
@@ -101,7 +125,10 @@ export function ScheduleXCalendarWrapper({
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
 
 	// Convert events to Schedule-X format
-	const baseScheduleXEvents = calendarEventsToScheduleX(events, timeZone);
+	const baseScheduleXEvents = calendarEventsToScheduleX(
+		filterEventsForScheduleXView(events, viewMode),
+		timeZone,
+	);
 
 	// Generate break events only for day/week view
 	const scheduleXEvents = (() => {
@@ -203,9 +230,9 @@ export function ScheduleXCalendarWrapper({
 	const handleEventClick = (event: { id: string }) => {
 		if (!onEventClick) return;
 
-		const scheduleXEvent = scheduleXEvents.find((e) => e.id === event.id);
-		if (scheduleXEvent?._eventData) {
-			onEventClick(scheduleXEvent._eventData);
+		const calendarEvent = resolveClickableCalendarEvent(scheduleXEvents, event);
+		if (calendarEvent) {
+			onEventClick(calendarEvent);
 		}
 	};
 

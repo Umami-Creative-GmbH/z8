@@ -24,6 +24,10 @@ interface CalendarViewProps {
 	currentEmployeeId?: string;
 }
 
+function isRunningWorkPeriod(event: CalendarEvent): boolean {
+	return event.type === "work_period" && event.metadata.isRunning === true;
+}
+
 export function CalendarView({ organizationId, currentEmployeeId }: CalendarViewProps) {
 	const { isManagerOrAbove } = useOrganization();
 
@@ -76,9 +80,10 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 			filters,
 			fullYear: viewMode === "year",
 		});
+	const completedEvents = events.filter((event) => !isRunningWorkPeriod(event));
 
 	const workHoursData = buildDailyWorkHoursSummaries({
-		events,
+		events: completedEvents,
 		dailyRequirements,
 		dailyActualMinutes,
 	});
@@ -179,7 +184,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 				>
 					{viewMode === "year" ? (
 						<YearCalendarView
-							events={events}
+							events={completedEvents}
 							year={currentYear}
 							viewMode={viewMode}
 							onYearChange={setCurrentYear}
@@ -190,7 +195,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 					) : viewMode === "month" ? (
 						<MonthWorkSummaryView
 							monthDate={currentMonth}
-							events={events}
+							events={completedEvents}
 							workHoursData={workHoursData}
 							viewMode={viewMode}
 							onViewModeChange={setViewMode}
