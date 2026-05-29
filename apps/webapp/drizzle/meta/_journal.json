@@ -253,6 +253,13 @@
       "when": 1780000000000,
       "tag": "0035_approval_request_metadata_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1780185600000,
+      "tag": "0036_time_entry_timezone_capture",
+      "breakpoints": true
     }
   ]
 }

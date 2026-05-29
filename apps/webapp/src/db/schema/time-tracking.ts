@@ -44,6 +44,9 @@ export const timeEntry = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 		type: timeEntryTypeEnum("type").notNull(),
 		timestamp: timestamp("timestamp").notNull(),
+		utcOffsetMinutes: integer("utc_offset_minutes").notNull(),
+		timezone: text("timezone"),
+		timezoneSource: text("timezone_source").notNull(),
 
 		// Blockchain linking
 		previousEntryId: uuid("previous_entry_id"), // Links to previous entry

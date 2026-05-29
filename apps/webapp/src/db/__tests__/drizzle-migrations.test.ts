@@ -199,7 +199,11 @@ describe("drizzle follow-up migrations", () => {
 		);
 		const latestPriorWhen = Math.max(
 			...migrationJournal.entries
-				.filter((entry) => entry.tag !== "0035_approval_request_metadata_recovery")
+				.filter(
+					(entry) =>
+						entry.tag !== "0035_approval_request_metadata_recovery" &&
+						entry.tag !== "0036_time_entry_timezone_capture",
+				)
 				.map((entry) => entry.when),
 		);
 
@@ -210,5 +214,17 @@ describe("drizzle follow-up migrations", () => {
 
 		expect(migration0035).toContain('ADD COLUMN IF NOT EXISTS "metadata" jsonb');
 		expect(migration0035).toContain('CREATE UNIQUE INDEX IF NOT EXISTS "approvalRequest_pending_entity_unique_idx"');
+	});
+
+	it("registers the time entry timezone capture migration after approval metadata recovery", () => {
+		const recoveryIndex = migrationJournal.entries.findIndex(
+			(entry) => entry.tag === "0035_approval_request_metadata_recovery",
+		);
+		const timezoneCaptureIndex = migrationJournal.entries.findIndex(
+			(entry) => entry.tag === "0036_time_entry_timezone_capture",
+		);
+
+		expect(recoveryIndex).toBeGreaterThanOrEqual(0);
+		expect(timezoneCaptureIndex).toBeGreaterThan(recoveryIndex);
 	});
 });
