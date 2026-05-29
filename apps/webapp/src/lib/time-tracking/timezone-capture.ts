@@ -35,9 +35,19 @@ export function formatUtcOffset(offsetMinutes: number): string {
 	return `UTC${sign}${hours}:${minutes}`;
 }
 
-export function getBrowserTimezone(intlApi: typeof Intl = Intl): string | null {
+export function getBrowserTimezone(intlApi?: Pick<typeof Intl, "DateTimeFormat"> | null): string | null {
 	try {
-		const timezone = intlApi.DateTimeFormat().resolvedOptions().timeZone;
+		if (intlApi === null) {
+			return null;
+		}
+
+		const activeIntl = intlApi ?? globalThis.Intl;
+
+		if (!activeIntl) {
+			return null;
+		}
+
+		const timezone = activeIntl.DateTimeFormat().resolvedOptions().timeZone;
 		return isValidIanaTimezone(timezone) ? timezone : null;
 	} catch {
 		return null;

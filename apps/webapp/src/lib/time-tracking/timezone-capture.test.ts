@@ -4,6 +4,7 @@ import {
 	getBrowserTimezone,
 	getUtcOffsetMinutesForZone,
 	isValidIanaTimezone,
+	resolveFallbackTimezoneCapture,
 	resolveTimeEntryTimezoneCapture,
 } from "./timezone-capture";
 
@@ -57,5 +58,66 @@ describe("timezone capture utilities", () => {
 	it("reads browser timezone defensively", () => {
 		expect(getBrowserTimezone({ DateTimeFormat: () => ({ resolvedOptions: () => ({ timeZone: "Europe/Berlin" }) }) } as unknown as typeof Intl)).toBe("Europe/Berlin");
 		expect(getBrowserTimezone({ DateTimeFormat: () => ({ resolvedOptions: () => ({}) }) } as unknown as typeof Intl)).toBeNull();
+	});
+
+	it("returns null when Intl is missing or unavailable", () => {
+		expect(getBrowserTimezone(null)).toBeNull();
+
+		const intlDescriptor = Object.getOwnPropertyDescriptor(globalThis, "Intl");
+
+		try {
+			Object.defineProperty(globalThis, "Intl", {
+				configurable: true,
+				get: () => {
+					throw new ReferenceError("Intl is unavailable");
+				},
+			});
+
+			expect(getBrowserTimezone()).toBeNull();
+		} finally {
+			if (intlDescriptor) {
+				Object.defineProperty(globalThis, "Intl", intlDescriptor);
+			}
+		}
+	});
+
+	it("returns null when Intl timezone lookup throws", () => {
+		expect(
+			getBrowserTimezone({
+				DateTimeFormat: () => {
+					throw new Error("DateTimeFormat failed");
+				},
+			} as unknown as typeof Intl),
+		).toBeNull();
+
+		expect(
+			getBrowserTimezone({
+				DateTimeFormat: () => ({
+					resolvedOptions: () => {
+						throw new Error("resolvedOptions failed");
+					},
+				}),
+			} as unknown as typeof Intl),
+		).toBeNull();
+	});
+
+	it("resolves fallback timezone capture with valid timezone", () => {
+		expect(
+			resolveFallbackTimezoneCapture({
+				timestamp: new Date("2026-05-29T08:00:00.000Z"),
+				timezone: "Europe/Berlin",
+				timezoneSource: "user_setting",
+			}),
+		).toEqual({ timezone: "Europe/Berlin", timezoneSource: "user_setting", utcOffsetMinutes: 120 });
+	});
+
+	it("resolves fallback timezone capture to UTC when timezone is invalid", () => {
+		expect(
+			resolveFallbackTimezoneCapture({
+				timestamp: new Date("2026-05-29T08:00:00.000Z"),
+				timezone: "Not/AZone",
+				timezoneSource: "backfill",
+			}),
+		).toEqual({ timezone: "UTC", timezoneSource: "backfill", utcOffsetMinutes: 0 });
 	});
 });
