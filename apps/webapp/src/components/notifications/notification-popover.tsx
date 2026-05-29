@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCheck, IconSettings, IconTrash } from "@tabler/icons-react";
+import { IconChecks, IconSettings, IconTrash } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -79,37 +79,45 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 						<h3 className="font-semibold">{t("common:notifications.title", "Notifications")}</h3>
 						{unreadCount > 0 && (
 							<span className="rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
-								{unreadCount > 99 ? "99+" : unreadCount}
+								{unreadCount > 99
+									? t("common:notifications.unreadCountOverflow", "99+")
+									: unreadCount}
 							</span>
 						)}
 					</div>
 					<div className="flex items-center gap-1">
 						{unreadCount > 0 && (
 							<Button
-								size="sm"
+								size="icon"
 								variant="ghost"
-								className="h-8 text-xs"
+								className="size-8"
 								onClick={handleMarkAllAsRead}
 								disabled={isMarkingAllRead}
+								aria-label={t("common:notifications.actions.markAllRead", "Mark all read")}
+								title={t("common:notifications.actions.markAllRead", "Mark all read")}
 							>
-								<IconCheck className="mr-1 size-3.5" />
-								{t("common:notifications.actions.markAllRead", "Mark all read")}
+								<IconChecks className="size-4" />
 							</Button>
 						)}
 						{notifications.length > 0 && (
 							<Button
-								size="sm"
+								size="icon"
 								variant="ghost"
-								className="h-8 text-xs text-muted-foreground hover:text-destructive"
+								className="size-8 text-muted-foreground hover:text-destructive"
 								onClick={handleDeleteAll}
 								disabled={isDeletingAll}
+								aria-label={t("common:notifications.actions.deleteAll", "Delete all")}
+								title={t("common:notifications.actions.deleteAll", "Delete all")}
 							>
-								<IconTrash className="mr-1 size-3.5" />
-								{t("common:notifications.actions.deleteAll", "Delete all")}
+								<IconTrash className="size-4" />
 							</Button>
 						)}
 						<Button size="icon" variant="ghost" className="size-8" asChild onClick={handleClose}>
-							<Link href="/settings/notifications">
+							<Link
+								href="/settings/notifications"
+								aria-label={t("common:notifications.actions.settings", "Notification settings")}
+								title={t("common:notifications.actions.settings", "Notification settings")}
+							>
 								<IconSettings className="size-4" />
 								<span className="sr-only">
 									{t("common:notifications.actions.settings", "Notification settings")}

@@ -31,7 +31,7 @@ export function NotificationBell() {
 						className={cn(
 							"absolute -right-0.5 -top-0.5 flex items-center justify-center",
 							"min-w-[18px] h-[18px] rounded-full",
-							"bg-destructive text-destructive-foreground",
+							"bg-destructive text-white",
 							"text-[10px] font-medium leading-none",
 							"px-1",
 						)}
