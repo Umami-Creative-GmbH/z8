@@ -272,8 +272,9 @@ export function expandCustomAssignedHoliday(
 		? toUtcDay(holiday.recurrenceEndDate).endOf("day")
 		: null;
 	const expanded: AssignedHolidayRange[] = [];
+	const firstExpansionYear = Math.max(requestedStart.year - 1, originalStart.year);
 
-	for (let year = requestedStart.year - 1; year <= requestedEnd.year; year++) {
+	for (let year = firstExpansionYear; year <= requestedEnd.year; year++) {
 		const start = DateTime.utc(year, rule.month, rule.day).startOf("day");
 		if (!start.isValid) continue;
 		if (recurrenceEnd && start > recurrenceEnd) continue;
@@ -406,7 +407,22 @@ export async function getAssignedHolidaysForEmployee(params: {
 							recurrenceRule: true,
 							recurrenceEndDate: true,
 						},
-						where: and(eq(holiday.organizationId, params.organizationId), eq(holiday.isActive, true)),
+						where: and(
+							eq(holiday.organizationId, params.organizationId),
+							eq(holiday.isActive, true),
+							or(
+								and(
+									eq(holiday.recurrenceType, "none"),
+									lte(holiday.startDate, params.endDate),
+									gte(holiday.endDate, params.startDate),
+								),
+								and(
+									eq(holiday.recurrenceType, "yearly"),
+									lte(holiday.startDate, params.endDate),
+									or(isNull(holiday.recurrenceEndDate), gte(holiday.recurrenceEndDate, params.startDate)),
+								),
+							),
+						),
 					},
 				},
 			},

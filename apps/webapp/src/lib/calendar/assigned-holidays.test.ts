@@ -232,6 +232,26 @@ describe("assigned holiday requirement adjustments", () => {
 		expect(holidays[0]?.metadata?.isRecurring).toBe(true);
 	});
 
+	it("does not expand yearly category holidays before the original start year", () => {
+		const holidays = mergeAssignedCustomHolidays({
+			directAssignments: [],
+			categoryAssignments: [
+				{
+					category: {
+						organizationId: "org-1",
+						isActive: true,
+						holidays: [christmasHoliday],
+					},
+				},
+			],
+			organizationId: "org-1",
+			startDate: new Date("2023-12-01T00:00:00.000Z"),
+			endDate: new Date("2023-12-31T23:59:59.999Z"),
+		});
+
+		expect(holidays).toEqual([]);
+	});
+
 	it("keeps an occurrence that overlaps an assignment effective window", () => {
 		expect(
 			overlapsEffectiveWindow(
