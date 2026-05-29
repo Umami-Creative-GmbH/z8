@@ -6,7 +6,7 @@
  * table and can be imported by organizations.
  */
 
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "..";
 import { workPolicyPreset } from "../schema";
 import type { TimeRegulationBreakRulesPreset } from "../schema/types";
@@ -184,40 +184,43 @@ export const workPolicyPresetsData = [
 
 /**
  * Seeds the work policy presets into the database
- * Clears existing presets and re-inserts to ensure data is correct
+ * Upserts system presets while preserving organization-owned custom presets
  */
 export async function seedWorkPolicyPresets() {
 	console.log("  Seeding work policy presets...");
 
-	// Clear existing presets first to ensure clean data
-	const existingPresets = await db.query.workPolicyPreset.findMany();
-	if (existingPresets.length > 0) {
-		console.log(`    Clearing ${existingPresets.length} existing presets...`);
-		for (const preset of existingPresets) {
-			await db.delete(workPolicyPreset).where(eq(workPolicyPreset.id, preset.id));
-		}
-	}
-
-	let created = 0;
+	let upserted = 0;
 
 	for (const preset of workPolicyPresetsData) {
-		await db.insert(workPolicyPreset).values({
+		const values = {
+			organizationId: null,
 			name: preset.name,
 			description: preset.description,
 			countryCode: preset.countryCode,
 			maxDailyMinutes: preset.maxDailyMinutes,
 			maxWeeklyMinutes: preset.maxWeeklyMinutes,
 			maxUninterruptedMinutes: preset.maxUninterruptedMinutes,
-			// text column requires explicit JSON stringification
-			breakRulesJson: JSON.stringify(
-				preset.breakRulesJson,
-			) as unknown as typeof preset.breakRulesJson,
+			breakRulesJson: JSON.stringify(preset.breakRulesJson) as unknown as typeof preset.breakRulesJson,
 			isActive: true,
+		};
+
+		const existingSystemPreset = await db.query.workPolicyPreset.findFirst({
+			where: and(isNull(workPolicyPreset.organizationId), eq(workPolicyPreset.name, preset.name)),
 		});
 
-		console.log(`    + Created preset: ${preset.name}`);
-		created++;
+		if (existingSystemPreset) {
+			await db
+				.update(workPolicyPreset)
+				.set(values)
+				.where(eq(workPolicyPreset.id, existingSystemPreset.id));
+			console.log(`    ~ Updated preset: ${preset.name}`);
+		} else {
+			await db.insert(workPolicyPreset).values(values);
+			console.log(`    + Created preset: ${preset.name}`);
+		}
+
+		upserted++;
 	}
 
-	console.log(`  Done: ${created} presets created`);
+	console.log(`  Done: ${upserted} system presets upserted`);
 }
