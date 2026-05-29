@@ -1,25 +1,37 @@
 /** @vitest-environment jsdom */
 
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CalendarView } from "./calendar-view";
 
-const refetch = vi.fn();
+const { capturedCalendarFilters, push, refetch } = vi.hoisted(() => ({
+	capturedCalendarFilters: [] as unknown[],
+	push: vi.fn(),
+	refetch: vi.fn(),
+}));
+
+vi.mock("@/navigation", () => ({
+	useRouter: () => ({ push }),
+}));
 
 vi.mock("@/hooks/use-organization", () => ({
-	useOrganization: () => ({ isManagerOrAbove: false }),
+	useOrganization: () => ({ isManagerOrAbove: true }),
 }));
 
 vi.mock("@/hooks/use-calendar-data", () => ({
-	useCalendarData: () => ({
-		events: [],
-		dailyRequirements: new Map(),
-		dailyActualMinutes: new Map(),
-		workBalance: null,
-		isLoading: false,
-		error: null,
-		refetch,
-	}),
+	useCalendarData: ({ filters }: { filters: unknown }) => {
+		capturedCalendarFilters.push(filters);
+
+		return {
+			events: [],
+			dailyRequirements: new Map(),
+			dailyActualMinutes: new Map(),
+			workBalance: null,
+			isLoading: false,
+			error: null,
+			refetch,
+		};
+	},
 }));
 
 vi.mock("@/components/work-balance/work-balance-card", () => ({
@@ -27,7 +39,20 @@ vi.mock("@/components/work-balance/work-balance-card", () => ({
 }));
 
 vi.mock("./calendar-employee-selector", () => ({
-	CalendarEmployeeSelector: () => <div data-testid="employee-selector" />,
+	CalendarEmployeeSelector: ({
+		onEmployeeChange,
+	}: {
+		onEmployeeChange: (employeeId: string | null) => void;
+	}) => (
+		<div data-testid="employee-selector">
+			<button type="button" onClick={() => onEmployeeChange("employee-2")}>
+				Select employee 2
+			</button>
+			<button type="button" onClick={() => onEmployeeChange("employee-1")}>
+				Select employee 1
+			</button>
+		</div>
+	),
 }));
 
 vi.mock("./calendar-filters", () => ({
@@ -85,6 +110,48 @@ vi.mock("./month-work-summary-view", () => ({
 }));
 
 describe("CalendarView", () => {
+	beforeEach(() => {
+		capturedCalendarFilters.length = 0;
+		push.mockClear();
+		refetch.mockClear();
+	});
+
+	it("initializes filters from initialSelectedEmployeeId", () => {
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId="employee-2"
+			/>,
+		);
+
+		expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-2" });
+	});
+
+	it("selecting staff routes to their calendar and updates filters", () => {
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select employee 2" }));
+
+		expect(push).toHaveBeenCalledWith("/calendar/employee-2");
+		expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-2" });
+	});
+
+	it("selecting current employee routes to own calendar and updates filters", () => {
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId="employee-2"
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select employee 1" }));
+
+		expect(push).toHaveBeenCalledWith("/calendar");
+		expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-1" });
+	});
+
 	it("renders the work summary month view outside Schedule-X when month mode is selected", () => {
 		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
 

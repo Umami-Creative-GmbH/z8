@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import type { SelectableEmployee } from "@/components/employee-select";
 import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useOrganization } from "@/hooks/use-organization";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
+import { useRouter } from "@/navigation";
 import { CalendarEmployeeSelector } from "./calendar-employee-selector";
 import { CalendarFiltersComponent } from "./calendar-filters";
 import { CalendarLegend } from "./calendar-legend";
@@ -22,18 +25,24 @@ import { YearCalendarView } from "./year-calendar-view";
 interface CalendarViewProps {
 	organizationId: string;
 	currentEmployeeId?: string;
+	initialSelectedEmployeeId?: string;
 }
 
-export function CalendarView({ organizationId, currentEmployeeId }: CalendarViewProps) {
+export function CalendarView({
+	organizationId,
+	currentEmployeeId,
+	initialSelectedEmployeeId,
+}: CalendarViewProps) {
+	const router = useRouter();
 	const { isManagerOrAbove } = useOrganization();
+	const initialEmployeeId = initialSelectedEmployeeId ?? currentEmployeeId ?? null;
 
 	// View mode state
 	const [viewMode, setViewMode] = useState<ViewMode>("week");
 
 	// Selected employee for calendar view (defaults to current user)
-	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(
-		currentEmployeeId ?? null,
-	);
+	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(initialEmployeeId);
+	const [, setSelectedEmployeeName] = useState<string | null>(null);
 
 	// Current date range for data fetching
 	const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -52,18 +61,28 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 		showAbsences: true,
 		showTimeEntries: false,
 		showWorkPeriods: true,
-		// Always filter to selected employee (never undefined - avoids fetching all)
-		employeeId: currentEmployeeId,
+		// Calendar pages pass the authenticated employee, keeping this scoped by default.
+		employeeId: initialEmployeeId ?? undefined,
 	});
 
 	// Handle employee selection change
-	const handleEmployeeChange = (employeeId: string | null) => {
-		setSelectedEmployeeId(employeeId);
+	const handleEmployeeChange = (employeeId: string | null, employee?: SelectableEmployee) => {
+		const nextEmployeeId = employeeId ?? currentEmployeeId ?? null;
+
+		setSelectedEmployeeId(nextEmployeeId);
+		setSelectedEmployeeName(employee ? buildAuthUserDisplayName(employee.user) || null : null);
 		setFilters((prev) => ({
 			...prev,
-			// Always use explicit employeeId, fallback to current user (never undefined)
-			employeeId: employeeId ?? currentEmployeeId,
+			// Always prefer the explicit selection, falling back to the current user.
+			employeeId: nextEmployeeId ?? undefined,
 		}));
+
+		if (!employeeId || employeeId === currentEmployeeId) {
+			router.push("/calendar");
+			return;
+		}
+
+		router.push(`/calendar/${employeeId}`);
 	};
 
 	// Fetch calendar events
