@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, eq, gte, isNotNull } from "drizzle-orm";
 import { employee, employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "./format";
 
@@ -1007,7 +1007,7 @@ describe("work balance helpers", () => {
 		mockState.db.select.mockReturnValueOnce({ from: mockState.selectFrom });
 		mockState.selectFrom.mockReturnValueOnce({ where: mockState.selectWhere });
 		mockState.selectWhere.mockResolvedValueOnce([
-			{ actualMinutes: 100, requiredMinutes: 80, firstPeriodStart: "2026-02-01" },
+			{ actualMinutes: 100, requiredMinutes: 80, firstPeriodStart: "2026-01-01" },
 		]);
 
 		await refreshEmployeeWorkBalanceFromPeriods({
@@ -1040,6 +1040,18 @@ describe("work balance helpers", () => {
 			now,
 		});
 		expect(mockState.computeEmployeePeriodBalance).toHaveBeenCalledTimes(2);
+		expect(gte).toHaveBeenCalledWith(employeeWorkBalancePeriod.periodEnd, "2026-02-10");
+		expect(mockState.txInsertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				actualMinutes: 400,
+				requiredMinutes: 320,
+				balanceMinutes: 80,
+				computedFromDate: "2026-02-10",
+				computedThroughDate: "2026-05-22",
+			}),
+		);
 	});
 
 	it("keeps null dirty date stale refreshes scoped to the hot window", async () => {

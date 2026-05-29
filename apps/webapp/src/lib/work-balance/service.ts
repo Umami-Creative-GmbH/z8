@@ -277,6 +277,7 @@ async function sumClosedMonthlyPeriodTotalsBefore(
 		employeeId: string;
 		organizationId: string;
 		beforeDate: string;
+		fromDate?: string | null;
 	},
 	dbClient: WorkBalanceDbClient = db,
 ) {
@@ -294,6 +295,7 @@ async function sumClosedMonthlyPeriodTotalsBefore(
 				eq(employeeWorkBalancePeriod.periodType, "month"),
 				eq(employeeWorkBalancePeriod.isClosed, true),
 				lt(employeeWorkBalancePeriod.periodStart, input.beforeDate),
+				...(input.fromDate ? [gte(employeeWorkBalancePeriod.periodEnd, input.fromDate)] : []),
 			),
 		);
 
@@ -403,6 +405,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 			employeeId: input.employeeId,
 			organizationId: input.organizationId,
 			beforeDate: hotWindow.startDate,
+			fromDate: calculationStartDate,
 		},
 		dbClient,
 	);
@@ -413,7 +416,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 			organizationId: input.organizationId,
 			actualMinutes: closedTotals.actualMinutes + hotWindowValues.actualMinutes,
 			requiredMinutes: closedTotals.requiredMinutes + hotWindowValues.requiredMinutes,
-			computedFromDate: closedTotals.firstPeriodStart ?? hotWindow.startDate,
+			computedFromDate: calculationStartDate ?? closedTotals.firstPeriodStart ?? hotWindow.startDate,
 			computedThroughDate: hotWindow.endDate,
 			computedAt: now,
 		}),
