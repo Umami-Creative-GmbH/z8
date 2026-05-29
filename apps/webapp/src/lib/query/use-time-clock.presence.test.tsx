@@ -101,6 +101,34 @@ describe("useTimeClock presence invalidation", () => {
 		});
 	});
 
+	it("preserves explicit null browser timezone for clock in", async () => {
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		mocks.clockIn.mockResolvedValue({ success: true });
+
+		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+		await result.current.clockIn({ browserTimezone: null });
+
+		expect(mocks.clockIn).toHaveBeenCalledWith(undefined, {
+			browserTimezone: null,
+		});
+		expect(mocks.getBrowserTimezone).not.toHaveBeenCalled();
+	});
+
+	it("preserves explicit null browser timezone for clock out", async () => {
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		mocks.clockOut.mockResolvedValue({ success: true });
+
+		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+		await result.current.clockOut({ browserTimezone: null });
+
+		expect(mocks.clockOut).toHaveBeenCalledWith(undefined, undefined, {
+			browserTimezone: null,
+		});
+		expect(mocks.getBrowserTimezone).not.toHaveBeenCalled();
+	});
+
 	it("invalidates time clock status, employee clock statuses, and break status after adding a break", async () => {
 		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 		const invalidateSpy = vi.spyOn(client, "invalidateQueries");

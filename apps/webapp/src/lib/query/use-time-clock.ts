@@ -21,6 +21,10 @@ export interface TimeClockState {
 	activeWorkPeriod: { id: string; startTime: Date } | null;
 }
 
+function resolveBrowserTimezone(params?: { browserTimezone?: string | null }) {
+	return params && "browserTimezone" in params ? params.browserTimezone : getBrowserTimezone();
+}
+
 /**
  * Separate hook for elapsed time counter (rerender-derived-state)
  * Only components that need the real-time counter should use this hook.
@@ -113,7 +117,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		}) => {
 			// When offline, queue the event for later sync
 			if (isOffline) {
-				const browserTimezone = params?.browserTimezone ?? getBrowserTimezone();
+				const browserTimezone = resolveBrowserTimezone(params);
 				const result = await queueClockEvent({
 					type: "clock_in",
 					timestamp: Date.now(),
@@ -151,7 +155,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 			// Online - use normal server action
 			return clockIn(params?.workLocationType, {
-				browserTimezone: params?.browserTimezone ?? getBrowserTimezone(),
+				browserTimezone: resolveBrowserTimezone(params),
 			});
 		},
 		onSuccess: (result) => {
@@ -177,7 +181,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		}) => {
 			// When offline, queue the event for later sync
 			if (isOffline) {
-				const browserTimezone = params?.browserTimezone ?? getBrowserTimezone();
+				const browserTimezone = resolveBrowserTimezone(params);
 				const result = await queueClockEvent({
 					type: "clock_out",
 					timestamp: Date.now(),
@@ -212,7 +216,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 			// Online - use normal server action
 			return clockOut(params?.projectId, params?.workCategoryId, {
-				browserTimezone: params?.browserTimezone ?? getBrowserTimezone(),
+				browserTimezone: resolveBrowserTimezone(params),
 			});
 		},
 		onSuccess: (result) => {

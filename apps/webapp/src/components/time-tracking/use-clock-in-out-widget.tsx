@@ -2,10 +2,13 @@
 
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { toast } from "sonner";
+import { updateTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
+import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { useComplianceStatus } from "@/hooks/use-compliance-status";
 import { type TimeClockState, useElapsedTimer, useTimeClock } from "@/lib/query";
+import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import {
 	normalizeWorkLocationType,
 	type WorkLocationType,
@@ -26,6 +29,12 @@ interface ClockInOutWidgetState {
 	exceptionDialogOpen: boolean;
 	exceptionType: string;
 }
+
+type PendingTimezoneMismatch = {
+	browserTimezone: string;
+	savedTimezone: string;
+	action: "clock_in" | "clock_out";
+} | null;
 
 type ClockInOutWidgetAction =
 	| { type: "setWorkLocationType"; value: WorkLocationType }
@@ -90,11 +99,14 @@ function clockInOutWidgetReducer(
 
 export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | null) {
 	const { t } = useTranslate();
+	const savedTimezone = useUserTimezone();
 	const [uiState, dispatch] = useReducer(
 		clockInOutWidgetReducer,
 		undefined,
 		createInitialWidgetState,
 	);
+	const [timezoneMismatch, setTimezoneMismatch] = useState<PendingTimezoneMismatch>(null);
+	const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false);
 
 	const initialData: TimeClockState = {
 		hasEmployee: true,
@@ -124,21 +136,11 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		dispatch({ type: "openExceptionDialog", exceptionType });
 	};
 
-	const handleClockIn = async () => {
-		if (compliance.restPeriodEnforcement === "block" && !compliance.canClockIn) {
-			const exceptionResult = await compliance.checkException("rest_period");
-			if (!exceptionResult.hasException) {
-				toast.error(t("timeTracking.errors.restPeriodBlocked", "Rest period not complete"), {
-					description: t(
-						"timeTracking.errors.restPeriodBlockedDesc",
-						"You must complete the required rest period before clocking in. Request an exception if needed.",
-					),
-				});
-				return;
-			}
-		}
-
-		const result = await timeClock.clockIn({ workLocationType: uiState.workLocationType });
+	async function submitClockIn(browserTimezone: string | null) {
+		const result = await timeClock.clockIn({
+			workLocationType: uiState.workLocationType,
+			browserTimezone,
+		});
 		if (result.success) {
 			if ("queued" in result && result.queued) {
 				toast.info(t("timeTracking.clockInQueued", "Clock-in queued for sync"));
@@ -164,10 +166,10 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 					)
 				: undefined,
 		});
-	};
+	}
 
-	const handleClockOut = async () => {
-		const result = await timeClock.clockOut(undefined);
+	async function submitClockOut(browserTimezone: string | null) {
+		const result = await timeClock.clockOut({ browserTimezone });
 		if (result.success) {
 			if ("queued" in result && result.queued) {
 				toast.info(t("timeTracking.clockOutQueued", "Clock-out queued for sync"));
@@ -228,7 +230,72 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 					)
 				: undefined,
 		});
+	}
+
+	const handleClockIn = async () => {
+		if (compliance.restPeriodEnforcement === "block" && !compliance.canClockIn) {
+			const exceptionResult = await compliance.checkException("rest_period");
+			if (!exceptionResult.hasException) {
+				toast.error(t("timeTracking.errors.restPeriodBlocked", "Rest period not complete"), {
+					description: t(
+						"timeTracking.errors.restPeriodBlockedDesc",
+						"You must complete the required rest period before clocking in. Request an exception if needed.",
+					),
+				});
+				return;
+			}
+		}
+
+		const browserTimezone = getBrowserTimezone();
+		if (browserTimezone && browserTimezone !== savedTimezone) {
+			setTimezoneMismatch({ browserTimezone, savedTimezone, action: "clock_in" });
+			return;
+		}
+
+		await submitClockIn(browserTimezone);
 	};
+
+	const handleClockOut = async () => {
+		const browserTimezone = getBrowserTimezone();
+		if (browserTimezone && browserTimezone !== savedTimezone) {
+			setTimezoneMismatch({ browserTimezone, savedTimezone, action: "clock_out" });
+			return;
+		}
+
+		await submitClockOut(browserTimezone);
+	};
+
+	async function continueTimezoneMismatch() {
+		if (!timezoneMismatch) return;
+		const { action, browserTimezone } = timezoneMismatch;
+		setTimezoneMismatch(null);
+
+		if (action === "clock_in") {
+			await submitClockIn(browserTimezone);
+			return;
+		}
+
+		await submitClockOut(browserTimezone);
+	}
+
+	async function handleTimezoneMismatchUpdateAndContinue() {
+		if (!timezoneMismatch) return;
+		setIsUpdatingTimezone(true);
+
+		try {
+			const result = await updateTimezone(timezoneMismatch.browserTimezone);
+			if (!result?.success) {
+				toast.error(result?.error || "Failed to update timezone");
+				return;
+			}
+
+			await continueTimezoneMismatch();
+		} catch {
+			toast.error("An error occurred while updating timezone");
+		} finally {
+			setIsUpdatingTimezone(false);
+		}
+	}
 
 	const handleSaveNotes = async () => {
 		const trimmedNotes = uiState.notesText.trim();
@@ -257,8 +324,13 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		elapsedSeconds,
 		...timeClock,
 		...compliance,
+		timezoneMismatch,
+		isUpdatingTimezone,
 		handleClockIn,
 		handleClockOut,
+		handleTimezoneMismatchUpdateAndContinue,
+		handleTimezoneMismatchContinueOnce: continueTimezoneMismatch,
+		handleTimezoneMismatchCancel: () => setTimezoneMismatch(null),
 		handleAddBreak,
 		handleSaveNotes,
 		handleDismissNotes: () => dispatch({ type: "closeNotesInput" }),

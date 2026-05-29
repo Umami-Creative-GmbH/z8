@@ -1,14 +1,15 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ManualTimeEntryDialog } from "./manual-time-entry-dialog";
 
-const { createManualTimeEntry, refresh } = vi.hoisted(() => ({
+const { createManualTimeEntry, refresh, updateTimezone } = vi.hoisted(() => ({
 	createManualTimeEntry: vi.fn(),
 	refresh: vi.fn(),
+	updateTimezone: vi.fn(),
 }));
 
 const { getBrowserTimezone } = vi.hoisted(() => ({
@@ -123,6 +124,10 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
 	createManualTimeEntry,
 }));
 
+vi.mock("@/app/[locale]/(app)/settings/profile/actions", () => ({
+	updateTimezone,
+}));
+
 function renderDialog(props: Partial<Parameters<typeof ManualTimeEntryDialog>[0]> = {}) {
 	return render(
 		<ManualTimeEntryDialog
@@ -138,6 +143,8 @@ describe("ManualTimeEntryDialog layout", () => {
 	beforeEach(() => {
 		createManualTimeEntry.mockReset();
 		createManualTimeEntry.mockResolvedValue({ success: true, data: {} });
+		updateTimezone.mockReset();
+		updateTimezone.mockResolvedValue({ success: true });
 		getBrowserTimezone.mockReset();
 		getBrowserTimezone.mockReturnValue("America/New_York");
 		refresh.mockReset();
@@ -237,7 +244,7 @@ describe("ManualTimeEntryDialog layout", () => {
 		});
 	});
 
-	it("omits a differing browser timezone for self manual entries", async () => {
+	it("shows timezone mismatch before submitting self manual entries and updates before continuing", async () => {
 		renderDialog({
 			open: true,
 			hideTrigger: true,
@@ -250,12 +257,99 @@ describe("ManualTimeEntryDialog layout", () => {
 		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
 		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
 
+		expect(
+			await screen.findByText(
+				"Your device timezone is America/New_York, but your saved timezone is Europe/Berlin.",
+			),
+		).toBeTruthy();
+		expect(createManualTimeEntry).not.toHaveBeenCalled();
+
+		fireEvent.click(screen.getByRole("button", { name: "Update timezone and continue" }));
+
 		await waitFor(() => {
+			expect(updateTimezone).toHaveBeenCalledWith("America/New_York");
 			expect(createManualTimeEntry).toHaveBeenCalledWith(
 				expect.objectContaining({
 					date: "2026-05-12",
 					clockInTime: "10:15",
 					clockOutTime: "15:45",
+					timezone: "America/New_York",
+					browserTimezone: "America/New_York",
+				}),
+			);
+		});
+	});
+
+	it("continues once for self manual timezone mismatch without updating saved timezone", async () => {
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			employeeTimezone: "Europe/Berlin",
+			defaultDate: "2026-05-12",
+			defaultClockInTime: "10:15",
+			defaultClockOutTime: "15:45",
+		});
+
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+
+		fireEvent.click(await screen.findByRole("button", { name: "Continue once" }));
+
+		await waitFor(() => {
+			expect(updateTimezone).not.toHaveBeenCalled();
+			expect(createManualTimeEntry).toHaveBeenCalledWith(
+				expect.objectContaining({
+					timezone: "America/New_York",
+					browserTimezone: "America/New_York",
+				}),
+			);
+		});
+	});
+
+	it("cancels self manual timezone mismatch without submitting", async () => {
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			employeeTimezone: "Europe/Berlin",
+			defaultDate: "2026-05-12",
+			defaultClockInTime: "10:15",
+			defaultClockOutTime: "15:45",
+		});
+
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+
+		const mismatchDialog = await screen.findByRole("dialog", {
+			name: "Confirm Timezone for This Entry",
+		});
+		fireEvent.click(within(mismatchDialog).getByRole("button", { name: "Cancel" }));
+
+		await waitFor(() => {
+			expect(screen.queryByText(/Your device timezone is/)).toBeNull();
+		});
+		expect(updateTimezone).not.toHaveBeenCalled();
+		expect(createManualTimeEntry).not.toHaveBeenCalled();
+	});
+
+	it("does not show timezone mismatch or pass browser timezone for manager manual entries", async () => {
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			employeeTimezone: "Europe/Berlin",
+			targetEmployeeId: "employee-2",
+			defaultDate: "2026-05-12",
+			defaultClockInTime: "10:15",
+			defaultClockOutTime: "15:45",
+		});
+
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+
+		await waitFor(() => {
+			expect(screen.queryByText(/Your device timezone is/)).toBeNull();
+			expect(createManualTimeEntry).toHaveBeenCalledWith(
+				expect.objectContaining({
+					employeeId: "employee-2",
 					timezone: "Europe/Berlin",
 					browserTimezone: null,
 				}),
