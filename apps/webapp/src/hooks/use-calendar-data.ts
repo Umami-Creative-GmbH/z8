@@ -49,6 +49,7 @@ export interface UseCalendarDataResult {
 	dailyRequirements: DailyWorkRequirements;
 	dailyActualMinutes: DailyWorkActualMinutes;
 	workBalance: EmployeeWorkBalancePayload | null;
+	calendarTimezone: string | null;
 	eventsByDate: Map<string, CalendarEvent[]>;
 	isLoading: boolean;
 	error: Error | null;
@@ -69,6 +70,7 @@ async function fetchCalendarEvents(
 	dailyRequirements: DailyWorkRequirements;
 	dailyActualMinutes: DailyWorkActualMinutes;
 	workBalance: EmployeeWorkBalancePayload | null;
+	calendarTimezone: string | null;
 }> {
 	const params = new URLSearchParams({
 		organizationId,
@@ -102,6 +104,7 @@ async function fetchCalendarEvents(
 		dailyRequirements?: unknown;
 		dailyActualMinutes?: unknown;
 		workBalance?: unknown;
+		calendarTimezone?: unknown;
 	}>(response);
 
 	// Validate events with Zod schema
@@ -111,6 +114,10 @@ async function fetchCalendarEvents(
 		dailyRequirements: dailyWorkRequirementsSchema.parse(data.dailyRequirements ?? {}),
 		dailyActualMinutes: dailyWorkActualMinutesSchema.parse(data.dailyActualMinutes ?? {}),
 		workBalance: employeeWorkBalanceSchema.nullable().parse(data.workBalance ?? null),
+		calendarTimezone: z
+			.string()
+			.nullable()
+			.parse(data.calendarTimezone ?? null),
 	};
 }
 
@@ -146,6 +153,7 @@ export function useCalendarData({
 			dailyRequirements: {},
 			dailyActualMinutes: {},
 			workBalance: null,
+			calendarTimezone: null,
 		},
 		isLoading,
 		error,
@@ -181,6 +189,7 @@ export function useCalendarData({
 		dailyRequirements: calendarData.dailyRequirements,
 		dailyActualMinutes: calendarData.dailyActualMinutes,
 		workBalance: calendarData.workBalance,
+		calendarTimezone: calendarData.calendarTimezone,
 		eventsByDate,
 		isLoading,
 		error: error instanceof Error ? error : null,

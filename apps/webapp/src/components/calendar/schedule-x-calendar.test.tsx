@@ -79,29 +79,31 @@ describe("resolveClickableCalendarEvent", () => {
 });
 
 describe("calendar timezone source", () => {
-	it("uses the user's timezone preference for timed work periods", () => {
+	it("supports an explicit calendar timezone for timed work periods", () => {
 		const source = readFileSync(
 			join(process.cwd(), "src/components/calendar/schedule-x-calendar.tsx"),
 			"utf8",
 		);
 
-		expect(source).toContain("useUserTimezone");
+		expect(source).toContain("timeZone: explicitTimeZone");
+		expect(source).toContain("explicitTimeZone ?? viewerTimeZone");
 		expect(source).not.toContain("useOrganizationTimezone");
 	});
 });
 
 describe("isScheduleXEventElement", () => {
-	it.each(["sx__event", "sx__time-grid-event", "sx__date-grid-event"])(
-		"identifies %s elements as Schedule-X events",
-		(className) => {
-			const eventElement = document.createElement("div");
-			eventElement.className = className;
-			const child = document.createElement("span");
-			eventElement.append(child);
+	it.each([
+		"sx__event",
+		"sx__time-grid-event",
+		"sx__date-grid-event",
+	])("identifies %s elements as Schedule-X events", (className) => {
+		const eventElement = document.createElement("div");
+		eventElement.className = className;
+		const child = document.createElement("span");
+		eventElement.append(child);
 
-			expect(isScheduleXEventElement(child)).toBe(true);
-		},
-	);
+		expect(isScheduleXEventElement(child)).toBe(true);
+	});
 
 	it("does not identify empty grid cells as Schedule-X events", () => {
 		const gridCell = document.createElement("div");

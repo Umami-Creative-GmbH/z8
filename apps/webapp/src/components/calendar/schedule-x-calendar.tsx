@@ -48,6 +48,7 @@ interface RangeSelectionStart {
 
 interface ScheduleXCalendarWrapperProps {
 	events: CalendarEvent[];
+	timeZone?: string;
 	isLoading?: boolean;
 	viewMode: ViewMode;
 	onViewModeChange: (mode: ViewMode) => void;
@@ -163,7 +164,8 @@ function getPointerDateTime(
 			event.clientY <= rect.bottom
 		);
 	});
-	const timeGrid = matchingDayCell ?? container.querySelector<HTMLElement>(".sx__time-grid-wrapper");
+	const timeGrid =
+		matchingDayCell ?? container.querySelector<HTMLElement>(".sx__time-grid-wrapper");
 	if (!timeGrid) return null;
 
 	const timeGridRect = timeGrid.getBoundingClientRect();
@@ -182,6 +184,7 @@ function getPointerDateTime(
 
 export function ScheduleXCalendarWrapper({
 	events,
+	timeZone: explicitTimeZone,
 	isLoading = false,
 	viewMode,
 	onViewModeChange,
@@ -197,7 +200,8 @@ export function ScheduleXCalendarWrapper({
 	const locale = tolgee.getLanguage() ?? "en";
 	const scheduleXLocale = toScheduleXLocale(locale);
 	const weekStartDay = useWeekStartDay();
-	const timeZone = useUserTimezone();
+	const viewerTimeZone = useUserTimezone();
+	const timeZone = explicitTimeZone ?? viewerTimeZone;
 	const isDark = resolvedTheme === "dark";
 
 	// Track current date for display

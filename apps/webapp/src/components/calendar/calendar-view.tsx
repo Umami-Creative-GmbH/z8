@@ -48,7 +48,7 @@ export function CalendarView({
 }: CalendarViewProps) {
 	const router = useRouter();
 	const { isManagerOrAbove } = useOrganization();
-	const calendarTimeZone = useUserTimezone();
+	const viewerTimeZone = useUserTimezone();
 	const initialEmployeeId = initialSelectedEmployeeId ?? currentEmployeeId ?? null;
 
 	// View mode state
@@ -125,14 +125,23 @@ export function CalendarView({
 
 	// Fetch calendar events
 	// When in year view, fetch all 12 months at once
-	const { events, dailyRequirements, dailyActualMinutes, workBalance, isLoading, error, refetch } =
-		useCalendarData({
-			organizationId,
-			month: currentMonth.getMonth(),
-			year: viewMode === "year" ? currentYear : currentMonth.getFullYear(),
-			filters,
-			fullYear: viewMode === "year",
-		});
+	const {
+		events,
+		dailyRequirements,
+		dailyActualMinutes,
+		workBalance,
+		calendarTimezone,
+		isLoading,
+		error,
+		refetch,
+	} = useCalendarData({
+		organizationId,
+		month: currentMonth.getMonth(),
+		year: viewMode === "year" ? currentYear : currentMonth.getFullYear(),
+		filters,
+		fullYear: viewMode === "year",
+	});
+	const calendarTimeZone = calendarTimezone ?? viewerTimeZone;
 	const completedEvents = events.filter((event) => !isRunningWorkPeriod(event));
 
 	const workHoursData = buildDailyWorkHoursSummaries({
@@ -290,6 +299,7 @@ export function CalendarView({
 					) : (
 						<ScheduleXWrapper
 							events={events}
+							timeZone={calendarTimeZone}
 							isLoading={isLoading}
 							viewMode={viewMode}
 							onViewModeChange={setViewMode}

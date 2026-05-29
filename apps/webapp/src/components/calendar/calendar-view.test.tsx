@@ -14,6 +14,7 @@ const { capturedCalendarFilters, mockCalendarData, push, refetch } = vi.hoisted(
 		dailyRequirements: new Map(),
 		dailyActualMinutes: new Map(),
 		workBalance: null,
+		calendarTimezone: null as string | null,
 		isLoading: false,
 		error: null,
 	},
@@ -100,13 +101,15 @@ vi.mock("./schedule-x-wrapper", () => ({
 	ScheduleXWrapper: ({
 		onTimeRangeSelect,
 		onViewModeChange,
+		timeZone,
 		viewMode,
 	}: {
 		onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 		onViewModeChange: (mode: "month" | "year") => void;
+		timeZone?: string;
 		viewMode: string;
 	}) => (
-		<div data-testid="schedule-x-wrapper" data-view-mode={viewMode}>
+		<div data-testid="schedule-x-wrapper" data-view-mode={viewMode} data-time-zone={timeZone}>
 			<button
 				type="button"
 				onClick={() =>
@@ -207,6 +210,7 @@ describe("CalendarView", () => {
 	beforeEach(() => {
 		capturedCalendarFilters.length = 0;
 		mockCalendarData.events = [];
+		mockCalendarData.calendarTimezone = null;
 		push.mockClear();
 		refetch.mockClear();
 	});
@@ -310,6 +314,8 @@ describe("CalendarView", () => {
 	});
 
 	it("opens manual entry dialog with normalized range for the selected employee", () => {
+		mockCalendarData.calendarTimezone = "America/New_York";
+
 		render(
 			<CalendarView
 				organizationId="org-1"
@@ -323,9 +329,25 @@ describe("CalendarView", () => {
 		const dialog = screen.getByTestId("manual-entry-dialog");
 		expect(dialog.getAttribute("data-open")).toBe("true");
 		expect(dialog.getAttribute("data-default-date")).toBe("2026-05-29");
-		expect(dialog.getAttribute("data-clock-in")).toBe("10:15");
-		expect(dialog.getAttribute("data-clock-out")).toBe("12:45");
-		expect(dialog.getAttribute("data-employee-timezone")).toBe("Europe/Berlin");
+		expect(dialog.getAttribute("data-clock-in")).toBe("04:15");
+		expect(dialog.getAttribute("data-clock-out")).toBe("06:45");
+		expect(dialog.getAttribute("data-employee-timezone")).toBe("America/New_York");
 		expect(dialog.getAttribute("data-target-employee-id")).toBe("employee-2");
+	});
+
+	it("passes the selected employee calendar timezone to Schedule-X", () => {
+		mockCalendarData.calendarTimezone = "America/New_York";
+
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId="employee-2"
+			/>,
+		);
+
+		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-time-zone")).toBe(
+			"America/New_York",
+		);
 	});
 });

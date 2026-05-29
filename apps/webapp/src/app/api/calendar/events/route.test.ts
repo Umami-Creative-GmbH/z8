@@ -14,6 +14,7 @@ const mockState = vi.hoisted(() => ({
 	getEmployeeWorkBalance: vi.fn(async () => null),
 	findEmployee: vi.fn(),
 	findManagerLinks: vi.fn(),
+	findUserSettings: vi.fn(),
 }));
 
 vi.mock("next/server", async () => {
@@ -36,6 +37,9 @@ vi.mock("@/db", () => ({
 			},
 			employeeManagers: {
 				findMany: mockState.findManagerLinks,
+			},
+			userSettings: {
+				findFirst: mockState.findUserSettings,
 			},
 		},
 	},
@@ -96,12 +100,14 @@ describe("GET /api/calendar/events", () => {
 		});
 		mockState.findEmployee.mockResolvedValue({
 			id: "employee-1",
+			userId: "user-1",
 			organizationId: "org-1",
 			isActive: true,
 			role: "employee",
 			teamId: null,
 		});
 		mockState.findManagerLinks.mockResolvedValue([]);
+		mockState.findUserSettings.mockResolvedValue({ timezone: "Europe/Berlin" });
 	});
 
 	it("scopes employee calendar event requests to the caller's employee record", async () => {
@@ -203,6 +209,46 @@ describe("GET /api/calendar/events", () => {
 			actualMinutes: 2520,
 			requiredMinutes: 2400,
 		});
+	});
+
+	it("returns the selected employee calendar timezone", async () => {
+		mockState.getVerifiedOrgContext.mockResolvedValueOnce({
+			isValid: true,
+			user: { id: "manager-user", role: "user" },
+			userId: "manager-user",
+			organizationId: "org-1",
+			employeeId: "manager-1",
+			role: "manager",
+		});
+		mockState.findEmployee
+			.mockResolvedValueOnce({
+				id: "manager-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "manager",
+				teamId: null,
+				userId: "manager-user",
+			})
+			.mockResolvedValueOnce({
+				id: "employee-2",
+				organizationId: "org-1",
+				isActive: true,
+				role: "employee",
+				teamId: null,
+				userId: "employee-user-2",
+			});
+		mockState.findManagerLinks.mockResolvedValueOnce([{ employeeId: "employee-2" }]);
+		mockState.findUserSettings.mockResolvedValueOnce({ timezone: "America/New_York" });
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&employeeId=employee-2&year=2026&month=4&showWorkPeriods=true",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(body.calendarTimezone).toBe("America/New_York");
 	});
 
 	it("returns employee-assigned holidays for a scoped employee calendar", async () => {

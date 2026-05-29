@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { employee, employeeManagers } from "@/db/schema";
+import { employee, employeeManagers, userSettings } from "@/db/schema";
 import { getVerifiedOrgContext } from "@/lib/auth-helpers";
 import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 import { getAbsencesForMonth } from "@/lib/calendar/absence-service";
@@ -29,7 +29,7 @@ type VerifiedCalendarContext = NonNullable<Awaited<ReturnType<typeof getVerified
 async function resolveAuthorizedCalendarEmployeeId(
 	orgContext: VerifiedCalendarContext,
 	requestedEmployeeId: string | undefined,
-): Promise<string | undefined> {
+): Promise<{ id: string; userId: string } | undefined> {
 	if (!orgContext.employeeId || !orgContext.role) {
 		return undefined;
 	}
@@ -87,8 +87,21 @@ async function resolveAuthorizedCalendarEmployeeId(
 			teamId: targetEmployee.teamId,
 		}),
 	)
-		? targetEmployee.id
+		? { id: targetEmployee.id, userId: targetEmployee.userId }
 		: undefined;
+}
+
+async function fetchCalendarTimezoneForEmployee(
+	employeeContext: { userId: string } | undefined,
+): Promise<string | null> {
+	if (!employeeContext) return null;
+
+	const settings = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, employeeContext.userId),
+		columns: { timezone: true },
+	});
+
+	return settings?.timezone ?? "UTC";
 }
 
 async function fetchHolidayEvents(params: {
@@ -241,7 +254,8 @@ export async function GET(request: NextRequest) {
 		const showsEmployeeScopedEvents = showAbsences || showTimeEntries || showWorkPeriods;
 		const holidaysRequestedForEmployee =
 			showHolidays && Boolean(employeeId || showsEmployeeScopedEvents);
-		const scopedEmployeeId = await resolveAuthorizedCalendarEmployeeId(orgContext, employeeId);
+		const scopedEmployee = await resolveAuthorizedCalendarEmployeeId(orgContext, employeeId);
+		const scopedEmployeeId = scopedEmployee?.id;
 
 		if ((showsEmployeeScopedEvents || holidaysRequestedForEmployee) && !scopedEmployeeId) {
 			return NextResponse.json({ error: "Forbidden: Employee profile required" }, { status: 403 });
@@ -307,7 +321,7 @@ export async function GET(request: NextRequest) {
 			dailyActualMinutes = monthResult.dailyActualMinutes;
 		}
 
-		[dailyRequirements, workBalance] = await Promise.all([
+		const [resolvedDailyRequirements, resolvedWorkBalance, calendarTimezone] = await Promise.all([
 			fetchDailyRequirements({
 				organizationId,
 				employeeId: scopedEmployeeId,
@@ -315,7 +329,10 @@ export async function GET(request: NextRequest) {
 				endDate,
 			}),
 			fetchWorkBalance({ organizationId, employeeId: scopedEmployeeId }),
+			fetchCalendarTimezoneForEmployee(scopedEmployee),
 		]);
+		dailyRequirements = resolvedDailyRequirements;
+		workBalance = resolvedWorkBalance;
 
 		// Use SuperJSON to preserve Date objects in the response
 		return superJsonResponse({
@@ -324,6 +341,7 @@ export async function GET(request: NextRequest) {
 			dailyRequirements,
 			dailyActualMinutes,
 			workBalance,
+			calendarTimezone,
 		});
 	} catch (error) {
 		console.error("Error fetching calendar events:", error);

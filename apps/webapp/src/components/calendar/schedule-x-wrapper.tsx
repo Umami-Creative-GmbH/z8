@@ -29,6 +29,7 @@ const ScheduleXCalendarWrapper = dynamic(
 
 interface ScheduleXWrapperProps {
 	events: CalendarEvent[];
+	timeZone?: string;
 	isLoading?: boolean;
 	viewMode: ViewMode;
 	onViewModeChange: (mode: ViewMode) => void;
