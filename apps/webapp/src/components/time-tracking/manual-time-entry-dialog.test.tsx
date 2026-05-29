@@ -193,6 +193,7 @@ describe("ManualTimeEntryDialog layout", () => {
 		renderDialog({
 			open: true,
 			hideTrigger: true,
+			employeeTimezone: "Europe/Berlin",
 			targetEmployeeId: "employee-2",
 			defaultDate: "2026-05-12",
 			defaultClockInTime: "10:15",
@@ -218,6 +219,7 @@ describe("ManualTimeEntryDialog layout", () => {
 				clockInTime: "11:00",
 				clockOutTime: "16:30",
 				reason: "Calendar adjustment",
+				timezone: "Europe/Berlin",
 				projectId: "project-1",
 				workCategoryId: "category-1",
 			});

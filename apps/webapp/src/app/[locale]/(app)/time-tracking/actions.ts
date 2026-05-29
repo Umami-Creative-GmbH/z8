@@ -2,7 +2,7 @@
 
 import { and, desc, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
+import { DateTime, IANAZone } from "luxon";
 import { headers } from "next/headers";
 import * as z from "zod";
 import { db } from "@/db";
@@ -2664,6 +2664,7 @@ interface ManualTimeEntryInput {
 	clockInTime: string; // HH:mm format
 	clockOutTime: string; // HH:mm format
 	reason: string;
+	timezone?: string;
 	projectId?: string;
 	workCategoryId?: string;
 }
@@ -2772,7 +2773,11 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		where: eq(userSettings.userId, session.user.id),
 		columns: { timezone: true },
 	});
-	const timezone = settingsData?.timezone || "UTC";
+	const savedTimezone = settingsData?.timezone || "UTC";
+	if (data.timezone !== undefined && !IANAZone.isValidZone(data.timezone)) {
+		return { success: false, error: "Invalid timezone" };
+	}
+	const timezone = data.timezone ?? savedTimezone;
 
 	// Parse the date and times in the user's timezone
 	const dateDT = DateTime.fromISO(data.date, { zone: timezone });

@@ -45,6 +45,7 @@ export interface ManualTimeEntryInput {
 	clockInTime: string;
 	clockOutTime: string;
 	reason: string;
+	timezone?: string;
 	projectId?: string;
 	workCategoryId?: string;
 }

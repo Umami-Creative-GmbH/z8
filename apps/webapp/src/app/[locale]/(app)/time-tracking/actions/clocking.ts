@@ -2,7 +2,7 @@
 
 import { and, eq, gte, isNull, lte } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
+import { DateTime, IANAZone } from "luxon";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
@@ -623,7 +623,11 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	const timezone = await getUserTimezone(session.user.id);
+	const savedTimezone = await getUserTimezone(session.user.id);
+	if (data.timezone !== undefined && !IANAZone.isValidZone(data.timezone)) {
+		return { success: false, error: "Invalid timezone" };
+	}
+	const timezone = data.timezone ?? savedTimezone;
 	const clockInDate = createUtcDateTime(data.date, data.clockInTime, timezone);
 	const clockOutDate = createUtcDateTime(data.date, data.clockOutTime, timezone);
 

@@ -326,6 +326,56 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 		});
 	});
 
+	it("parses submitted manual entry times in a valid submitted timezone", async () => {
+		vi.setSystemTime(new Date("2026-06-01T12:00:00.000Z"));
+
+		const result = await createManualTimeEntry({
+			employeeId: "staff-1",
+			date: "2026-05-29",
+			clockInTime: "10:15",
+			clockOutTime: "12:45",
+			timezone: "Europe/Berlin",
+			reason: "Calendar adjustment",
+		});
+
+		expect(result.success).toBe(true);
+		expect(mockState.createCanonicalTimeEntry).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "clock_in",
+				timestamp: new Date("2026-05-29T08:15:00.000Z"),
+			}),
+		);
+		expect(mockState.createCanonicalTimeEntry).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "clock_out",
+				timestamp: new Date("2026-05-29T10:45:00.000Z"),
+			}),
+		);
+		expect(mockState.createCanonicalWorkRecord).toHaveBeenCalledWith(
+			expect.objectContaining({
+				startAt: new Date("2026-05-29T08:15:00.000Z"),
+				endAt: new Date("2026-05-29T10:45:00.000Z"),
+			}),
+		);
+	});
+
+	it("rejects invalid submitted timezones before writes", async () => {
+		const result = await createManualTimeEntry({
+			employeeId: "staff-1",
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "10:00",
+			timezone: "Not/AZone",
+			reason: "Calendar adjustment",
+		});
+
+		expect(result).toEqual({ success: false, error: "Invalid timezone" });
+		expect(mockState.validateTimeEntryRange).not.toHaveBeenCalled();
+		expect(mockState.findWorkPeriods).not.toHaveBeenCalled();
+		expect(mockState.createCanonicalTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.insertValues).not.toHaveBeenCalled();
+	});
+
 	it("rejects unauthorized target employees before writes and target-scoped checks", async () => {
 		mockState.findManagedRecords.mockResolvedValue([]);
 

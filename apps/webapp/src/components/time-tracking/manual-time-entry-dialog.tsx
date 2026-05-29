@@ -133,6 +133,7 @@ export function ManualTimeEntryDialog({
 				clockInTime: value.clockInTime,
 				clockOutTime: value.clockOutTime,
 				reason: value.reason,
+				timezone: employeeTimezone,
 				projectId: value.projectId,
 				workCategoryId: value.workCategoryId,
 			});
