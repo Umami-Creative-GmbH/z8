@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as RechartsPrimitive from "recharts";
+import type * as RechartsPrimitive from "recharts";
 import type {
 	NameType,
 	Payload,
@@ -9,6 +9,18 @@ import type {
 } from "recharts/types/component/DefaultTooltipContent";
 
 import { cn } from "@/lib/utils";
+
+const ResponsiveContainer = React.lazy(() =>
+	import("recharts").then((mod) => ({ default: mod.ResponsiveContainer })),
+) as React.ComponentType<React.ComponentProps<typeof RechartsPrimitive.ResponsiveContainer>>;
+
+const ChartTooltip = React.lazy(() =>
+	import("recharts").then((mod) => ({ default: mod.Tooltip })),
+) as React.ComponentType<React.ComponentProps<typeof RechartsPrimitive.Tooltip>>;
+
+const ChartLegend = React.lazy(() =>
+	import("recharts").then((mod) => ({ default: mod.Legend })),
+) as React.ComponentType<React.ComponentProps<typeof RechartsPrimitive.Legend>>;
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const;
@@ -79,20 +91,20 @@ function ChartContainer({
 
 	return (
 		<ChartContext.Provider value={{ config }}>
-			<div
-				className={cn(
-					"flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-hidden [&_.recharts-surface]:outline-hidden",
-					className,
-				)}
-				data-chart={chartId}
-				data-slot="chart"
-				{...props}
-			>
-				<ChartStyle config={config} id={chartId} />
-				<RechartsPrimitive.ResponsiveContainer>
-					{children}
-				</RechartsPrimitive.ResponsiveContainer>
-			</div>
+			<React.Suspense fallback={null}>
+				<div
+					className={cn(
+						"flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-hidden [&_.recharts-surface]:outline-hidden",
+						className,
+					)}
+					data-chart={chartId}
+					data-slot="chart"
+					{...props}
+				>
+					<ChartStyle config={config} id={chartId} />
+					<ResponsiveContainer>{children}</ResponsiveContainer>
+				</div>
+			</React.Suspense>
 		</ChartContext.Provider>
 	);
 }
@@ -128,8 +140,6 @@ ${colorConfig
 
 	return <style>{cssText}</style>;
 };
-
-const ChartTooltip = RechartsPrimitive.Tooltip;
 
 function ChartTooltipContent({
 	active,
@@ -270,8 +280,6 @@ function ChartTooltipContent({
 		</div>
 	);
 }
-
-const ChartLegend = RechartsPrimitive.Legend;
 
 function ChartLegendContent({
 	className,
