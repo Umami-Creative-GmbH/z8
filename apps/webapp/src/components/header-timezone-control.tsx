@@ -1,6 +1,6 @@
 "use client";
 
-import { IconWorld } from "@tabler/icons-react";
+import { IconClock } from "@tabler/icons-react";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -130,7 +130,7 @@ export function HeaderTimezoneControl() {
 					type="button"
 					variant="ghost"
 				>
-					<IconWorld className="size-4" aria-hidden="true" />
+					<IconClock className="size-4" aria-hidden="true" />
 					<span className="font-medium tabular-nums" suppressHydrationWarning>
 						{timeLabel}
 					</span>
