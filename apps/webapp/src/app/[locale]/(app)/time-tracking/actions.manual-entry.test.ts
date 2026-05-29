@@ -8,6 +8,9 @@ const mockState = vi.hoisted(() => ({
 	findUserSettings: vi.fn(),
 	findManagedRecords: vi.fn(),
 	findWorkPeriods: vi.fn(),
+	findProject: vi.fn(),
+	findProjectAssignment: vi.fn(),
+	findWorkCategory: vi.fn(),
 	createCanonicalTimeEntry: vi.fn(),
 	createCanonicalWorkRecord: vi.fn(),
 	insertValues: vi.fn(),
@@ -65,6 +68,9 @@ vi.mock("@/db", () => ({
 			},
 			employeeManagers: { findMany: mockState.findManagedRecords },
 			userSettings: { findFirst: mockState.findUserSettings },
+			project: { findFirst: mockState.findProject },
+			projectAssignment: { findFirst: mockState.findProjectAssignment },
+			workCategory: { findFirst: mockState.findWorkCategory },
 			workPeriod: { findMany: mockState.findWorkPeriods },
 		},
 		insert: vi.fn(() => ({
@@ -86,8 +92,16 @@ vi.mock("@/db/schema", () => ({
 	employeeManagers: {
 		managerId: "employeeManagers.managerId",
 	},
-	project: {},
-	projectAssignment: {},
+	project: {
+		id: "project.id",
+		organizationId: "project.organizationId",
+	},
+	projectAssignment: {
+		projectId: "projectAssignment.projectId",
+		organizationId: "projectAssignment.organizationId",
+		employeeId: "projectAssignment.employeeId",
+		teamId: "projectAssignment.teamId",
+	},
 	surchargeCalculation: {},
 	timeEntry: {},
 	userSettings: { userId: "userSettings.userId" },
@@ -98,6 +112,11 @@ vi.mock("@/db/schema", () => ({
 	},
 	workPolicy: {},
 	workPolicyPresence: {},
+	workCategory: {
+		id: "workCategory.id",
+		organizationId: "workCategory.organizationId",
+		isActive: "workCategory.isActive",
+	},
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -226,6 +245,26 @@ vi.mock("./actions/presence-status", () => ({
 
 const { createManualTimeEntry } = await import("./actions");
 
+function containsEq(condition: unknown, column: string, value: unknown): boolean {
+	if (!condition || typeof condition !== "object") {
+		return false;
+	}
+	if (
+		"type" in condition &&
+		condition.type === "eq" &&
+		"column" in condition &&
+		condition.column === column &&
+		"value" in condition &&
+		condition.value === value
+	) {
+		return true;
+	}
+	if ("conditions" in condition && Array.isArray(condition.conditions)) {
+		return condition.conditions.some((child) => containsEq(child, column, value));
+	}
+	return false;
+}
+
 describe("createManualTimeEntry manager-on-behalf", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -256,6 +295,9 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 		mockState.findUserSettings.mockResolvedValue({ timezone: "UTC" });
 		mockState.findManagedRecords.mockResolvedValue([{ employeeId: "staff-1" }]);
 		mockState.findWorkPeriods.mockResolvedValue([]);
+		mockState.findProject.mockResolvedValue({ id: "project-1", status: "active" });
+		mockState.findProjectAssignment.mockResolvedValue({ id: "assignment-1" });
+		mockState.findWorkCategory.mockResolvedValue({ id: "category-1", isActive: true });
 		mockState.validateTimeEntryRange.mockResolvedValue({ isValid: true });
 		mockState.validateProjectAssignment.mockResolvedValue({ isValid: true });
 		mockState.runPromise.mockResolvedValue({ type: "approval_required", daysBack: 7 });
@@ -271,6 +313,73 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.createManualEntryApprovalRequest.mockResolvedValue(undefined);
 		mockState.getPrimaryEligibleManagerIdForRequester.mockResolvedValue("approval-manager-1");
+	});
+
+	it("rejects work categories outside the target organization before writes", async () => {
+		mockState.findWorkCategory.mockResolvedValue(null);
+
+		const result = await createManualTimeEntry({
+			employeeId: "staff-1",
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "10:00",
+			workCategoryId: "foreign-category-1",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toEqual({ success: false, error: "Work category not found" });
+		expect(mockState.findWorkCategory).toHaveBeenCalledWith({
+			where: expect.objectContaining({ type: "and" }),
+		});
+		expect(
+			containsEq(
+				mockState.findWorkCategory.mock.calls[0][0].where,
+				"workCategory.id",
+				"foreign-category-1",
+			),
+		).toBe(true);
+		expect(
+			containsEq(
+				mockState.findWorkCategory.mock.calls[0][0].where,
+				"workCategory.organizationId",
+				"org-1",
+			),
+		).toBe(true);
+		expect(mockState.findWorkPeriods).not.toHaveBeenCalled();
+		expect(mockState.createCanonicalTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.insertValues).not.toHaveBeenCalled();
+	});
+
+	it("validates provided projects and assignments in the target organization", async () => {
+		const result = await createManualTimeEntry({
+			employeeId: "staff-1",
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "10:00",
+			projectId: "project-1",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result.success).toBe(true);
+		expect(containsEq(mockState.findProject.mock.calls[0][0].where, "project.id", "project-1"))
+			.toBe(true);
+		expect(
+			containsEq(mockState.findProject.mock.calls[0][0].where, "project.organizationId", "org-1"),
+		).toBe(true);
+		expect(
+			containsEq(
+				mockState.findProjectAssignment.mock.calls[0][0].where,
+				"projectAssignment.projectId",
+				"project-1",
+			),
+		).toBe(true);
+		expect(
+			containsEq(
+				mockState.findProjectAssignment.mock.calls[0][0].where,
+				"projectAssignment.organizationId",
+				"org-1",
+			),
+		).toBe(true);
 	});
 
 	it("creates an approved staff entry for an authorized direct report without approval request", async () => {

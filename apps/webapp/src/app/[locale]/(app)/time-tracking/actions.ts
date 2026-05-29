@@ -17,6 +17,7 @@ import {
 	surchargeCalculation,
 	timeEntry,
 	userSettings,
+	workCategory,
 	workPeriod,
 	workPolicy,
 	workPolicyPresence,
@@ -1295,7 +1296,12 @@ export async function clockOut(
 
 	// Validate project if provided
 	if (projectId) {
-		const projectValidation = await validateProjectAssignment(projectId, emp.id, emp.teamId);
+		const projectValidation = await validateProjectAssignment(
+			projectId,
+			emp.id,
+			emp.teamId,
+			emp.organizationId,
+		);
 		if (!projectValidation.isValid) {
 			return {
 				success: false,
@@ -1468,10 +1474,11 @@ async function validateProjectAssignment(
 	projectId: string,
 	employeeId: string,
 	teamId: string | null,
+	organizationId: string,
 ): Promise<{ isValid: boolean; error?: string }> {
 	// Get the project
 	const proj = await db.query.project.findFirst({
-		where: eq(project.id, projectId),
+		where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
 	});
 
 	if (!proj) {
@@ -1494,11 +1501,20 @@ async function validateProjectAssignment(
 		? or(
 				and(
 					eq(projectAssignment.projectId, projectId),
+					eq(projectAssignment.organizationId, organizationId),
 					eq(projectAssignment.employeeId, employeeId),
 				),
-				and(eq(projectAssignment.projectId, projectId), eq(projectAssignment.teamId, teamId)),
+				and(
+					eq(projectAssignment.projectId, projectId),
+					eq(projectAssignment.organizationId, organizationId),
+					eq(projectAssignment.teamId, teamId),
+				),
 			)
-		: and(eq(projectAssignment.projectId, projectId), eq(projectAssignment.employeeId, employeeId));
+		: and(
+				eq(projectAssignment.projectId, projectId),
+				eq(projectAssignment.organizationId, organizationId),
+				eq(projectAssignment.employeeId, employeeId),
+			);
 
 	const assignment = await db.query.projectAssignment.findFirst({
 		where: assignmentQuery,
@@ -1509,6 +1525,25 @@ async function validateProjectAssignment(
 			isValid: false,
 			error: "You are not assigned to this project. Contact your administrator.",
 		};
+	}
+
+	return { isValid: true };
+}
+
+async function validateWorkCategoryAssignment(
+	workCategoryId: string,
+	organizationId: string,
+): Promise<{ isValid: boolean; error?: string }> {
+	const category = await db.query.workCategory.findFirst({
+		where: and(
+			eq(workCategory.id, workCategoryId),
+			eq(workCategory.organizationId, organizationId),
+			eq(workCategory.isActive, true),
+		),
+	});
+
+	if (!category) {
+		return { isValid: false, error: "Work category not found" };
 	}
 
 	return { isValid: true };
@@ -2485,7 +2520,12 @@ export async function updateWorkPeriodProject(
 
 		// Validate project if provided
 		if (projectId) {
-			const projectValidation = await validateProjectAssignment(projectId, emp.id, emp.teamId);
+			const projectValidation = await validateProjectAssignment(
+				projectId,
+				emp.id,
+				emp.teamId,
+				emp.organizationId,
+			);
 			if (!projectValidation.isValid) {
 				return {
 					success: false,
@@ -2873,11 +2913,25 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			data.projectId,
 			targetEmployee.id,
 			targetEmployee.teamId,
+			targetEmployee.organizationId,
 		);
 		if (!projectValidation.isValid) {
 			return {
 				success: false,
 				error: projectValidation.error || "Cannot assign to this project",
+			};
+		}
+	}
+
+	if (data.workCategoryId) {
+		const categoryValidation = await validateWorkCategoryAssignment(
+			data.workCategoryId,
+			targetEmployee.organizationId,
+		);
+		if (!categoryValidation.isValid) {
+			return {
+				success: false,
+				error: categoryValidation.error || "Cannot assign to this work category",
 			};
 		}
 	}
