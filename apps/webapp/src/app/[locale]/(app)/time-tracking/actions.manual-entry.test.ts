@@ -429,6 +429,8 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 	});
 
 	it("creates an approved staff entry for an authorized direct report without approval request", async () => {
+		mockState.findUserSettings.mockResolvedValue({ timezone: "Europe/Berlin" });
+
 		const result = await createManualTimeEntry({
 			employeeId: "staff-1",
 			date: "2026-05-04",
@@ -444,6 +446,9 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 				organizationId: "org-1",
 				createdBy: "manager-user",
 				type: "clock_in",
+				timezone: "Europe/Berlin",
+				timezoneSource: "manager_target_user_setting",
+				utcOffsetMinutes: 120,
 			}),
 		);
 		expect(mockState.createCanonicalTimeEntry).toHaveBeenCalledWith(
@@ -452,6 +457,9 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 				organizationId: "org-1",
 				createdBy: "manager-user",
 				type: "clock_out",
+				timezone: "Europe/Berlin",
+				timezoneSource: "manager_target_user_setting",
+				utcOffsetMinutes: 120,
 			}),
 		);
 		expect(mockState.createCanonicalWorkRecord).toHaveBeenCalledWith(

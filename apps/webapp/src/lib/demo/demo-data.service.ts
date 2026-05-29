@@ -34,6 +34,15 @@ import {
 import { ensureDefaultAbsenceCategoriesForOrganization } from "@/lib/absences/default-absence-categories";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
+
+function demoTimeEntryTimezoneCapture(timestamp: Date) {
+	return resolveFallbackTimezoneCapture({
+		timestamp,
+		timezone: "UTC",
+		timezoneSource: "backfill",
+	});
+}
 
 /**
  * Generate realistic work descriptions using faker
@@ -309,6 +318,7 @@ export async function generateDemoTimeEntries(
 					previousEntryId,
 					notes: "Demo data",
 					createdBy: options.createdBy,
+					...demoTimeEntryTimezoneCapture(morningClockIn),
 				})
 				.returning();
 
@@ -336,6 +346,7 @@ export async function generateDemoTimeEntries(
 					previousEntryId,
 					notes: generateMorningWorkDescription(),
 					createdBy: options.createdBy,
+					...demoTimeEntryTimezoneCapture(morningClockOut),
 				})
 				.returning();
 
@@ -384,6 +395,7 @@ export async function generateDemoTimeEntries(
 					previousEntryId,
 					notes: "Demo data - Back from lunch",
 					createdBy: options.createdBy,
+					...demoTimeEntryTimezoneCapture(afternoonClockIn),
 				})
 				.returning();
 
@@ -422,6 +434,7 @@ export async function generateDemoTimeEntries(
 						previousEntryId,
 						notes: generateAfternoonWorkDescription(),
 						createdBy: options.createdBy,
+						...demoTimeEntryTimezoneCapture(breakStart),
 					})
 					.returning();
 
@@ -470,6 +483,7 @@ export async function generateDemoTimeEntries(
 						previousEntryId,
 						notes: "Demo data - Back from break",
 						createdBy: options.createdBy,
+						...demoTimeEntryTimezoneCapture(breakEnd),
 					})
 					.returning();
 
@@ -503,6 +517,7 @@ export async function generateDemoTimeEntries(
 						previousEntryId,
 						notes: generateEndOfDayDescription(),
 						createdBy: options.createdBy,
+						...demoTimeEntryTimezoneCapture(finalClockOut),
 					})
 					.returning();
 
@@ -548,6 +563,7 @@ export async function generateDemoTimeEntries(
 						previousEntryId,
 						notes: generateEndOfDayDescription(),
 						createdBy: options.createdBy,
+						...demoTimeEntryTimezoneCapture(finalClockOut),
 					})
 					.returning();
 
@@ -900,6 +916,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 				replacesEntryId: period.clockInId,
 				notes: "Demo data - Pending time correction",
 				createdBy: options.createdBy,
+				...demoTimeEntryTimezoneCapture(correctionTimestamp),
 			})
 			.returning({ id: timeEntry.id });
 

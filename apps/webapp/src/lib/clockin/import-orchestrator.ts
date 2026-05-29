@@ -3,6 +3,10 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { absenceCategory, absenceEntry, timeEntry, workPeriod } from "@/db/schema";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import {
+	resolveFallbackTimezoneCapture,
+	type TimeEntryTimezoneSource,
+} from "@/lib/time-tracking/timezone-capture";
 import type { ClockinClient } from "./client";
 import {
 	isClockinAbsenceDuplicate,
@@ -72,6 +76,9 @@ export interface ClockinImportDependencies {
 		previousEntryId: string | null;
 		createdBy: string;
 		notes?: string | null;
+		utcOffsetMinutes: number;
+		timezone: string;
+		timezoneSource: TimeEntryTimezoneSource;
 	}): Promise<{ id: string; hash: string }>;
 	insertWorkPeriod(input: {
 		employeeId: string;
@@ -243,6 +250,11 @@ export async function orchestrateClockinImport(
 
 					const startAt = DateTime.fromISO(workday.starts_at).toUTC();
 					const endAt = workday.ends_at ? DateTime.fromISO(workday.ends_at).toUTC() : null;
+					const clockInTimezoneCapture = resolveFallbackTimezoneCapture({
+						timestamp: startAt.toJSDate(),
+						timezone: "UTC",
+						timezoneSource: "backfill",
+					});
 					const clockInHash = calculateHash({
 						employeeId,
 						type: "clock_in",
@@ -260,6 +272,7 @@ export async function orchestrateClockinImport(
 						previousEntryId: currentState.previousEntryId,
 						createdBy,
 						notes: null,
+						...clockInTimezoneCapture,
 					});
 
 					let latestState: TimeEntryChainState = {
@@ -269,6 +282,11 @@ export async function orchestrateClockinImport(
 
 					let clockOutId: string | null = null;
 					if (endAt) {
+						const clockOutTimezoneCapture = resolveFallbackTimezoneCapture({
+							timestamp: endAt.toJSDate(),
+							timezone: "UTC",
+							timezoneSource: "backfill",
+						});
 						const clockOutHash = calculateHash({
 							employeeId,
 							type: "clock_out",
@@ -286,6 +304,7 @@ export async function orchestrateClockinImport(
 							previousEntryId: latestState.previousEntryId,
 							createdBy,
 							notes: null,
+							...clockOutTimezoneCapture,
 						});
 
 						clockOutId = insertedClockOut.id;

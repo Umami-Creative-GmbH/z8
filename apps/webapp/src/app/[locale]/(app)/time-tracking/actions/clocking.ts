@@ -14,6 +14,10 @@ import {
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
 import {
+	resolveFallbackTimezoneCapture,
+	resolveTimeEntryTimezoneCapture,
+} from "@/lib/time-tracking/timezone-capture";
+import {
 	isWorkLocationType,
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
@@ -41,7 +45,7 @@ import {
 	ONE_MINUTE_MS,
 } from "./shared";
 import { calculateDurationMinutes, createUtcDateTime } from "./time-utils";
-import type { ClockOutResult, ManualTimeEntryInput } from "./types";
+import type { BrowserTimezoneContext, ClockOutResult, ManualTimeEntryInput } from "./types";
 
 type ManualEntryOverlapResult =
 	| {
@@ -81,6 +85,7 @@ async function markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
 
 export async function clockIn(
 	workLocationType?: WorkLocationType,
+	timezoneContext: BrowserTimezoneContext = {},
 ): Promise<ServerActionResult<Awaited<ReturnType<typeof createTimeEntry>>>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -124,12 +129,20 @@ export async function clockIn(
 	}
 
 	try {
+		const timezoneCapture = resolveTimeEntryTimezoneCapture({
+			timestamp: now,
+			browserTimezone: timezoneContext.browserTimezone,
+			fallbackTimezone: timezone,
+			browserSource: "browser",
+			fallbackSource: "user_setting",
+		});
 		const entry = await createTimeEntry({
 			employeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
 			type: "clock_in",
 			timestamp: now,
 			createdBy: session.user.id,
+			...timezoneCapture,
 		});
 
 		await db.insert(workPeriod).values({
@@ -150,6 +163,7 @@ export async function clockIn(
 export async function clockOut(
 	projectId?: string,
 	workCategoryId?: string,
+	timezoneContext: BrowserTimezoneContext = {},
 ): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -210,6 +224,13 @@ export async function clockOut(
 	}
 
 	try {
+		const timezoneCapture = resolveTimeEntryTimezoneCapture({
+			timestamp: now,
+			browserTimezone: timezoneContext.browserTimezone,
+			fallbackTimezone: timezone,
+			browserSource: "browser",
+			fallbackSource: "user_setting",
+		});
 		const managerId = needsClockOutApproval
 			? await getPrimaryEligibleManagerIdForRequester({
 					db,
@@ -229,6 +250,7 @@ export async function clockOut(
 					type: "clock_out",
 					timestamp: now,
 					createdBy: session.user.id,
+					...timezoneCapture,
 				},
 				tx,
 			);
@@ -372,6 +394,8 @@ export async function addBreakToActiveSession(
 		return { success: false, error: "You are not allowed to edit this time entry" };
 	}
 
+	const timezone = await getUserTimezone(session.user.id);
+
 	const now = new Date();
 	const breakStart = new Date(now.getTime() - breakMinutes * ONE_MINUTE_MS);
 	if (breakStart <= activeWorkPeriod.startTime) {
@@ -379,6 +403,16 @@ export async function addBreakToActiveSession(
 	}
 
 	try {
+		const breakStartTimezoneCapture = resolveFallbackTimezoneCapture({
+			timestamp: breakStart,
+			timezone,
+			timezoneSource: "user_setting",
+		});
+		const nowTimezoneCapture = resolveFallbackTimezoneCapture({
+			timestamp: now,
+			timezone,
+			timezoneSource: "user_setting",
+		});
 		const newWorkPeriod = await db.transaction(async (tx) => {
 			const clockOutEntry = await createTimeEntry(
 				{
@@ -387,6 +421,7 @@ export async function addBreakToActiveSession(
 					type: "clock_out",
 					timestamp: breakStart,
 					createdBy: session.user.id,
+					...breakStartTimezoneCapture,
 				},
 				tx,
 			);
@@ -425,6 +460,7 @@ export async function addBreakToActiveSession(
 					type: "clock_in",
 					timestamp: now,
 					createdBy: session.user.id,
+					...nowTimezoneCapture,
 				},
 				tx,
 			);
@@ -725,6 +761,20 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		}
 
 		const { adjustedClockIn, adjustedClockOut, wasAdjusted } = overlapResult;
+		const clockInTimezoneCapture = resolveTimeEntryTimezoneCapture({
+			timestamp: adjustedClockIn,
+			browserTimezone: data.browserTimezone,
+			fallbackTimezone: timezone,
+			browserSource: "browser",
+			fallbackSource: "user_setting",
+		});
+		const clockOutTimezoneCapture = resolveTimeEntryTimezoneCapture({
+			timestamp: adjustedClockOut,
+			browserTimezone: data.browserTimezone,
+			fallbackTimezone: timezone,
+			browserSource: "browser",
+			fallbackSource: "user_setting",
+		});
 		const managerId = requiresApproval
 			? await getPrimaryEligibleManagerIdForRequester({
 					db,
@@ -743,6 +793,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 					timestamp: adjustedClockIn,
 					createdBy: session.user.id,
 					notes: `Manual entry: ${data.reason}`,
+					...clockInTimezoneCapture,
 				},
 				tx,
 			);
@@ -754,6 +805,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 					timestamp: adjustedClockOut,
 					createdBy: session.user.id,
 					notes: data.reason,
+					...clockOutTimezoneCapture,
 				},
 				tx,
 			);

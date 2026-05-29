@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import type {
 	ClockodoAbsence,
 	ClockodoEntry,
@@ -192,6 +193,11 @@ export function mapEntryToWorkPeriod(
 	const startTime = new Date(entry.time_since);
 	const endTime = entry.time_until ? new Date(entry.time_until) : null;
 	const durationMinutes = endTime ? Math.round(entry.duration / 60) : null;
+	const clockInTimezoneCapture = resolveFallbackTimezoneCapture({
+		timestamp: startTime,
+		timezone: "UTC",
+		timezoneSource: "backfill",
+	});
 
 	const clockInHash = createTimeEntryHash({
 		employeeId,
@@ -209,6 +215,7 @@ export function mapEntryToWorkPeriod(
 		notes: entry.text || null,
 		createdBy,
 		createdAt: new Date(entry.time_insert),
+		...clockInTimezoneCapture,
 	};
 
 	const clockOut = endTime
@@ -226,6 +233,11 @@ export function mapEntryToWorkPeriod(
 				previousHash: clockInHash,
 				createdBy,
 				createdAt: new Date(entry.time_insert),
+				...resolveFallbackTimezoneCapture({
+					timestamp: endTime,
+					timezone: "UTC",
+					timezoneSource: "backfill",
+				}),
 			}
 		: null;
 

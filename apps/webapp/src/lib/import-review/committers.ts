@@ -15,6 +15,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import type { ImportCommitJobData } from "./types";
 
 type CommitRowError = { rowId: string; message: string };
@@ -165,6 +166,11 @@ async function commitWorkPeriod(
 
 	const startAt = parseUtcDateTime(payload.startsAt, "startsAt");
 	const endAt = payload.endsAt ? parseUtcDateTime(payload.endsAt, "endsAt") : null;
+	const clockInTimezoneCapture = resolveFallbackTimezoneCapture({
+		timestamp: startAt.toJSDate(),
+		timezone: "UTC",
+		timezoneSource: "backfill",
+	});
 	const previous = await getChainHead(database, payload.employeeId, job.organizationId, chainHeads);
 	const clockInHash = calculateHash({
 		employeeId: payload.employeeId,
@@ -183,12 +189,18 @@ async function commitWorkPeriod(
 			previousHash: previous?.hash ?? null,
 			hash: clockInHash,
 			createdBy: job.committedBy,
+			...clockInTimezoneCapture,
 		})
 		.returning({ id: timeEntry.id, hash: timeEntry.hash });
 
 	let clockOutId: string | null = null;
 	let latestEntry = { id: clockIn.id, hash: clockIn.hash };
 	if (endAt) {
+		const clockOutTimezoneCapture = resolveFallbackTimezoneCapture({
+			timestamp: endAt.toJSDate(),
+			timezone: "UTC",
+			timezoneSource: "backfill",
+		});
 		const clockOutHash = calculateHash({
 			employeeId: payload.employeeId,
 			type: "clock_out",
@@ -206,6 +218,7 @@ async function commitWorkPeriod(
 				previousHash: latestEntry.hash,
 				hash: clockOutHash,
 				createdBy: job.committedBy,
+				...clockOutTimezoneCapture,
 			})
 			.returning({ id: timeEntry.id, hash: timeEntry.hash });
 		clockOutId = clockOut.id;

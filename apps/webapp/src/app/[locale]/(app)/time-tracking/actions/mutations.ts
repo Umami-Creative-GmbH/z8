@@ -6,9 +6,10 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import { getCurrentEmployee, getCurrentSession } from "./auth";
+import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import { createTimeEntry, validateProjectAssignment } from "./entry-helpers";
 import { logger } from "./shared";
 import { calculateDurationMinutes, setTimeOnStoredDate } from "./time-utils";
@@ -38,7 +39,6 @@ export async function approveWorkPeriod(
 	if (!currentEmployee) {
 		return { success: false, error: "Employee profile not found" };
 	}
-
 	try {
 		const [selectedWorkPeriod] = await db
 			.select({
@@ -231,6 +231,7 @@ export async function splitWorkPeriod(
 	if (!currentEmployee) {
 		return { success: false, error: "Employee profile not found" };
 	}
+	const timezone = await getUserTimezone(session.user.id);
 
 	try {
 		const [selectedWorkPeriod] = await db
@@ -275,6 +276,11 @@ export async function splitWorkPeriod(
 				holidayName: validation.holidayName,
 			};
 		}
+		const splitTimezoneCapture = resolveFallbackTimezoneCapture({
+			timestamp: splitDate,
+			timezone,
+			timezoneSource: "user_setting",
+		});
 
 		const firstClockOut = await createTimeEntry({
 			employeeId: currentEmployee.id,
@@ -282,6 +288,7 @@ export async function splitWorkPeriod(
 			type: "clock_out",
 			timestamp: splitDate,
 			createdBy: session.user.id,
+			...splitTimezoneCapture,
 			notes: beforeNotes,
 		});
 		const secondClockIn = await createTimeEntry({
@@ -290,6 +297,7 @@ export async function splitWorkPeriod(
 			type: "clock_in",
 			timestamp: splitDate,
 			createdBy: session.user.id,
+			...splitTimezoneCapture,
 			notes: afterNotes,
 		});
 

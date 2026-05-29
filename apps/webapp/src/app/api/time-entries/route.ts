@@ -20,6 +20,7 @@ import {
 } from "@/lib/billing/guard";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
+import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { isWorkLocationType } from "@/lib/time-tracking/work-location";
 
 /**
@@ -223,6 +224,12 @@ export async function POST(request: NextRequest) {
 		const ipAddress =
 			resolvedHeaders.get("x-forwarded-for") || resolvedHeaders.get("x-real-ip") || "unknown";
 		const deviceInfo = resolvedHeaders.get("user-agent") || "unknown";
+		const entryTime = timestamp ? new Date(timestamp) : new Date();
+		const timezoneCapture = resolveFallbackTimezoneCapture({
+			timestamp: entryTime,
+			timezone: "UTC",
+			timezoneSource: "user_setting",
+		});
 
 		const effect = Effect.gen(function* (_) {
 			const timeEntryService = yield* _(TimeEntryService);
@@ -231,12 +238,13 @@ export async function POST(request: NextRequest) {
 					employeeId: currentEmployee.id,
 					organizationId: activeOrgId,
 					type,
-					timestamp: timestamp ? new Date(timestamp) : new Date(),
+					timestamp: entryTime,
 					createdBy: session.user.id,
 					notes,
 					location,
 					ipAddress,
 					deviceInfo,
+					...timezoneCapture,
 				}),
 			);
 		});
@@ -244,8 +252,6 @@ export async function POST(request: NextRequest) {
 		const entry = await runtime.runPromise(effect);
 
 		// Manage work periods based on entry type
-		const entryTime = timestamp ? new Date(timestamp) : new Date();
-
 		if (type === "clock_in") {
 			// Create a new work period with organizationId
 			await db.insert(workPeriod).values({

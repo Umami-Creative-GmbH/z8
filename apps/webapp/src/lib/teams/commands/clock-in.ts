@@ -15,6 +15,7 @@ import { fmtTime, getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntry } from "@/lib/time-tracking/validation";
 
 const logger = createLogger("BotCommand:ClockIn");
@@ -102,6 +103,11 @@ export const clockInCommand: BotCommand = {
 				timestamp: now.toISOString(),
 				previousHash: previousEntry?.hash || null,
 			});
+			const timezoneCapture = resolveFallbackTimezoneCapture({
+				timestamp: now,
+				timezone,
+				timezoneSource: "user_setting",
+			});
 
 			// Create clock-in time entry
 			const [entry] = await db
@@ -116,6 +122,7 @@ export const clockInCommand: BotCommand = {
 					ipAddress: "bot",
 					deviceInfo: `${ctx.platform}-bot`,
 					createdBy: ctx.userId,
+					...timezoneCapture,
 				})
 				.returning();
 

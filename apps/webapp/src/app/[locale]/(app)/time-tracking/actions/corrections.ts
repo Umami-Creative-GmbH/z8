@@ -15,6 +15,7 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
+import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
@@ -217,12 +218,18 @@ export async function editSameDayTimeEntry(
 
 	try {
 		const notes = data.reason || "Same-day edit";
+		const clockInTimezoneCapture = resolveFallbackTimezoneCapture({
+			timestamp: correctedClockInDate,
+			timezone,
+			timezoneSource: "user_setting",
+		});
 		const clockInCorrection = await createTimeEntry({
 			employeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
 			type: "correction",
 			timestamp: correctedClockInDate,
 			createdBy: session.user.id,
+			...clockInTimezoneCapture,
 			replacesEntryId: selectedWorkPeriod.clockInId,
 			notes,
 		});
@@ -231,12 +238,18 @@ export async function editSameDayTimeEntry(
 
 		let clockOutCorrectionId: string | undefined;
 		if (data.newClockOutTime && selectedWorkPeriod.clockOutId && correctedClockOutDate) {
+			const clockOutTimezoneCapture = resolveFallbackTimezoneCapture({
+				timestamp: correctedClockOutDate,
+				timezone,
+				timezoneSource: "user_setting",
+			});
 			const clockOutCorrection = await createTimeEntry({
 				employeeId: currentEmployee.id,
 				organizationId: currentEmployee.organizationId,
 				type: "correction",
 				timestamp: correctedClockOutDate,
 				createdBy: session.user.id,
+				...clockOutTimezoneCapture,
 				replacesEntryId: selectedWorkPeriod.clockOutId,
 				notes,
 			});
@@ -514,6 +527,11 @@ export async function requestTimeCorrectionEffect(
 			dbService.query("createTimeCorrectionRequest", async () => {
 				return await dbService.db.transaction(async (tx) => {
 					const transactionalDbService = { db: tx, query: dbService.query };
+					const clockInTimezoneCapture = resolveFallbackTimezoneCapture({
+						timestamp: correctedClockInDate,
+						timezone,
+						timezoneSource: "user_setting",
+					});
 					const clockInCorrection = await createTimeEntry(
 						{
 							employeeId: currentEmployee.id,
@@ -521,6 +539,7 @@ export async function requestTimeCorrectionEffect(
 							type: "correction",
 							timestamp: correctedClockInDate,
 							createdBy: session.user.id,
+							...clockInTimezoneCapture,
 							replacesEntryId: selectedWorkPeriod.clockInId,
 							notes: data.reason,
 							isSuperseded: true,
@@ -530,6 +549,11 @@ export async function requestTimeCorrectionEffect(
 
 					let clockOutCorrectionId: string | undefined;
 					if (data.newClockOutTime && selectedWorkPeriod.clockOutId && correctedClockOutDate) {
+						const clockOutTimezoneCapture = resolveFallbackTimezoneCapture({
+							timestamp: correctedClockOutDate,
+							timezone,
+							timezoneSource: "user_setting",
+						});
 						const clockOutCorrection = await createTimeEntry(
 							{
 								employeeId: currentEmployee.id,
@@ -537,6 +561,7 @@ export async function requestTimeCorrectionEffect(
 								type: "correction",
 								timestamp: correctedClockOutDate,
 								createdBy: session.user.id,
+								...clockOutTimezoneCapture,
 								replacesEntryId: selectedWorkPeriod.clockOutId ?? undefined,
 								notes: data.reason,
 								isSuperseded: true,

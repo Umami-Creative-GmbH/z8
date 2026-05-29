@@ -63,6 +63,11 @@ import {
 } from "@/lib/notifications/project-notification-triggers";
 import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
 import {
+	resolveFallbackTimezoneCapture,
+	resolveTimeEntryTimezoneCapture,
+	type TimeEntryTimezoneSource,
+} from "@/lib/time-tracking/timezone-capture";
+import {
 	getMonthRangeInTimezone,
 	getTodayRangeInTimezone,
 	getWeekRangeInTimezone,
@@ -369,6 +374,11 @@ export async function editSameDayTimeEntry(
 	}
 
 	try {
+		const clockInTimezoneCapture = resolveFallbackTimezoneCapture({
+			timestamp: correctedClockInDate,
+			timezone,
+			timezoneSource: "user_setting",
+		});
 		// Create correction entry for clock in
 		const clockInCorrection = await createTimeEntry({
 			employeeId: emp.id,
@@ -376,6 +386,7 @@ export async function editSameDayTimeEntry(
 			type: "correction",
 			timestamp: correctedClockInDate,
 			createdBy: session.user.id,
+			...clockInTimezoneCapture,
 			replacesEntryId: period.clockInId,
 			notes: data.reason || "Same-day edit",
 		});
@@ -392,12 +403,18 @@ export async function editSameDayTimeEntry(
 		// Handle clock out correction if provided
 		let clockOutCorrectionId: string | undefined;
 		if (data.newClockOutTime && period.clockOutId && correctedClockOutDate) {
+			const clockOutTimezoneCapture = resolveFallbackTimezoneCapture({
+				timestamp: correctedClockOutDate,
+				timezone,
+				timezoneSource: "user_setting",
+			});
 			const clockOutCorrection = await createTimeEntry({
 				employeeId: emp.id,
 				organizationId: emp.organizationId,
 				type: "correction",
 				timestamp: correctedClockOutDate,
 				createdBy: session.user.id,
+				...clockOutTimezoneCapture,
 				replacesEntryId: period.clockOutId,
 				notes: data.reason || "Same-day edit",
 			});
@@ -748,6 +765,11 @@ export async function requestTimeCorrectionEffect(
 					}) =>
 						Effect.runPromise(
 							Effect.gen(function* (resume) {
+								const timezoneCapture = resolveFallbackTimezoneCapture({
+									timestamp: input.timestamp,
+									timezone,
+									timezoneSource: "user_setting",
+								});
 								const timeEntryService = yield* resume(TimeEntryService);
 								return yield* resume(
 									timeEntryService.createCorrectionEntry({
@@ -758,6 +780,7 @@ export async function requestTimeCorrectionEffect(
 										createdBy: session.user.id,
 										notes: data.reason,
 										isSuperseded: true,
+										...timezoneCapture,
 									}),
 								);
 							}).pipe(
@@ -1206,12 +1229,18 @@ export async function clockIn(
 	}
 
 	try {
+		const timezoneCapture = resolveFallbackTimezoneCapture({
+			timestamp: now,
+			timezone,
+			timezoneSource: "user_setting",
+		});
 		const entry = await createTimeEntry({
 			employeeId: emp.id,
 			organizationId: emp.organizationId,
 			type: "clock_in",
 			timestamp: now,
 			createdBy: session.user.id,
+			...timezoneCapture,
 		});
 
 		// Create work period with organizationId
@@ -1346,12 +1375,18 @@ export async function clockOut(
 	}
 
 	try {
+		const timezoneCapture = resolveFallbackTimezoneCapture({
+			timestamp: now,
+			timezone,
+			timezoneSource: "user_setting",
+		});
 		const entry = await createTimeEntry({
 			employeeId: emp.id,
 			organizationId: emp.organizationId,
 			type: "clock_out",
 			timestamp: now,
 			createdBy: session.user.id,
+			...timezoneCapture,
 		});
 
 		// Update work period
@@ -1744,10 +1779,24 @@ export async function createTimeEntry(params: {
 	type: "clock_in" | "clock_out" | "correction";
 	timestamp: Date;
 	createdBy: string;
+	utcOffsetMinutes: number;
+	timezone: string;
+	timezoneSource: TimeEntryTimezoneSource;
 	replacesEntryId?: string;
 	notes?: string;
 }): Promise<typeof timeEntry.$inferSelect> {
-	const { employeeId, organizationId, type, timestamp, createdBy, replacesEntryId, notes } = params;
+	const {
+		employeeId,
+		organizationId,
+		type,
+		timestamp,
+		createdBy,
+		utcOffsetMinutes,
+		timezone,
+		timezoneSource,
+		replacesEntryId,
+		notes,
+	} = params;
 
 	// Get request metadata
 	const headersList = await headers();
@@ -1764,6 +1813,9 @@ export async function createTimeEntry(params: {
 			notes: notes ?? "",
 			ipAddress,
 			deviceInfo: userAgent,
+			utcOffsetMinutes,
+			timezone,
+			timezoneSource,
 		});
 	}
 
@@ -1776,6 +1828,9 @@ export async function createTimeEntry(params: {
 		notes,
 		ipAddress,
 		deviceInfo: userAgent,
+		utcOffsetMinutes,
+		timezone,
+		timezoneSource,
 	});
 }
 
@@ -1952,7 +2007,6 @@ export async function updateWorkPeriodNotes(
 	if (!emp) {
 		return { success: false, error: "Employee profile not found" };
 	}
-
 	try {
 		// Get the work period
 		const [period] = await db
@@ -2020,7 +2074,6 @@ export async function deleteWorkPeriod(
 	if (!emp) {
 		return { success: false, error: "Employee profile not found" };
 	}
-
 	try {
 		// Get the work period
 		const [period] = await db
@@ -2126,6 +2179,11 @@ export async function splitWorkPeriod(
 	if (!emp) {
 		return { success: false, error: "Employee profile not found" };
 	}
+	const settingsData = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
+		columns: { timezone: true },
+	});
+	const timezone = settingsData?.timezone || "UTC";
 
 	try {
 		// Get the work period with related entries
@@ -2171,6 +2229,11 @@ export async function splitWorkPeriod(
 		if (!splitDate) {
 			return { success: false, error: "Invalid split time" };
 		}
+		const splitTimezoneCapture = resolveFallbackTimezoneCapture({
+			timestamp: splitDate,
+			timezone,
+			timezoneSource: "user_setting",
+		});
 
 		// Validate split time is between start and end
 		if (splitDate <= period.startTime || splitDate >= period.endTime) {
@@ -2211,6 +2274,7 @@ export async function splitWorkPeriod(
 			type: "clock_out",
 			timestamp: splitDate,
 			createdBy: session.user.id,
+			...splitTimezoneCapture,
 			notes: beforeNotes,
 		});
 
@@ -2221,6 +2285,7 @@ export async function splitWorkPeriod(
 			type: "clock_in",
 			timestamp: splitDate,
 			createdBy: session.user.id,
+			...splitTimezoneCapture,
 			notes: afterNotes,
 		});
 
@@ -2712,6 +2777,7 @@ interface ManualTimeEntryInput {
 	clockOutTime: string; // HH:mm format
 	reason: string;
 	timezone?: string;
+	browserTimezone?: string | null;
 	projectId?: string;
 	workCategoryId?: string;
 }
@@ -2815,9 +2881,9 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 	const { targetEmployee, isOwnEntry } = targetResolution;
 
-	// Get user's timezone from userSettings
+	// Use the employee's saved timezone as the authoritative fallback for entry capture.
 	const settingsData = await db.query.userSettings.findFirst({
-		where: eq(userSettings.userId, session.user.id),
+		where: eq(userSettings.userId, targetEmployee.userId),
 		columns: { timezone: true },
 	});
 	const savedTimezone = settingsData?.timezone || "UTC";
@@ -3075,6 +3141,32 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		// Use adjusted times for entry creation
 		const finalClockIn = adjustedClockIn;
 		const finalClockOut = adjustedClockOut;
+		const clockInTimezoneCapture = isOwnEntry
+			? resolveTimeEntryTimezoneCapture({
+					timestamp: finalClockIn,
+					browserTimezone: data.browserTimezone,
+					fallbackTimezone: savedTimezone,
+					browserSource: "browser",
+					fallbackSource: "user_setting",
+				})
+			: resolveFallbackTimezoneCapture({
+					timestamp: finalClockIn,
+					timezone: savedTimezone,
+					timezoneSource: "manager_target_user_setting",
+				});
+		const clockOutTimezoneCapture = isOwnEntry
+			? resolveTimeEntryTimezoneCapture({
+					timestamp: finalClockOut,
+					browserTimezone: data.browserTimezone,
+					fallbackTimezone: savedTimezone,
+					browserSource: "browser",
+					fallbackSource: "user_setting",
+				})
+			: resolveFallbackTimezoneCapture({
+					timestamp: finalClockOut,
+					timezone: savedTimezone,
+					timezoneSource: "manager_target_user_setting",
+				});
 
 		// Create clock-in entry with blockchain hash
 		const clockInEntry = await createTimeEntry({
@@ -3084,6 +3176,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			timestamp: finalClockIn,
 			createdBy: session.user.id,
 			notes: `Manual entry: ${data.reason}`,
+			...clockInTimezoneCapture,
 		});
 
 		// Create clock-out entry with blockchain hash
@@ -3094,6 +3187,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			timestamp: finalClockOut,
 			createdBy: session.user.id,
 			notes: data.reason,
+			...clockOutTimezoneCapture,
 		});
 
 		// Calculate duration with adjusted times

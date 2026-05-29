@@ -196,6 +196,34 @@ describe("clockIn", () => {
 		);
 	});
 
+	it("stores browser-derived timezone capture when clocking in with a valid browser timezone", async () => {
+		const result = await clockIn("office", { browserTimezone: "America/New_York" });
+
+		expect(result.success).toBe(true);
+		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
+			expect.objectContaining({
+				timezone: "America/New_York",
+				timezoneSource: "browser",
+				utcOffsetMinutes: -240,
+			}),
+		);
+	});
+
+	it("falls back to saved timezone capture when clocking in with an invalid browser timezone", async () => {
+		mockState.getUserTimezone.mockResolvedValue("Europe/Berlin");
+
+		const result = await clockIn("office", { browserTimezone: "Not/AZone" });
+
+		expect(result.success).toBe(true);
+		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
+			expect.objectContaining({
+				timezone: "Europe/Berlin",
+				timezoneSource: "user_setting",
+				utcOffsetMinutes: 120,
+			}),
+		);
+	});
+
 	it("defaults to office work location when clocking in without a location", async () => {
 		const result = await clockIn();
 
@@ -412,13 +440,28 @@ describe("clockOut", () => {
 		expect(result.success).toBe(true);
 		expect(mockState.transaction).toHaveBeenCalledTimes(1);
 		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
-			{
+			expect.objectContaining({
 				employeeId: "employee-1",
 				organizationId: "org-1",
 				type: "clock_out",
 				timestamp: new Date("2026-05-04T10:00:00.000Z"),
 				createdBy: "user-1",
-			},
+			}),
+			expect.anything(),
+		);
+	});
+
+	it("stores browser-derived timezone capture when clocking out with a valid browser timezone", async () => {
+		const result = await clockOut(undefined, undefined, { browserTimezone: "America/New_York" });
+
+		expect(result.success).toBe(true);
+		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "clock_out",
+				timezone: "America/New_York",
+				timezoneSource: "browser",
+				utcOffsetMinutes: -240,
+			}),
 			expect.anything(),
 		);
 	});
@@ -564,6 +607,48 @@ describe("createManualTimeEntry", () => {
 		});
 		expect(mockState.insertReturning.mock.invocationCallOrder[0]).toBeLessThan(
 			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
+		);
+	});
+
+	it("passes browser-derived timezone capture for self manual entries", async () => {
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "direct", reason: "within_window" });
+		mockState.createTimeEntry
+			.mockResolvedValueOnce({ id: "clock-in-1" })
+			.mockResolvedValueOnce({ id: "clock-out-1" });
+		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
+		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "09:00",
+			browserTimezone: "America/New_York",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result.success).toBe(true);
+		expect(mockState.createTimeEntry).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({
+				type: "clock_in",
+				timestamp: new Date("2026-05-04T08:00:00.000Z"),
+				timezone: "America/New_York",
+				timezoneSource: "browser",
+				utcOffsetMinutes: -240,
+			}),
+			expect.anything(),
+		);
+		expect(mockState.createTimeEntry).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({
+				type: "clock_out",
+				timestamp: new Date("2026-05-04T09:00:00.000Z"),
+				timezone: "America/New_York",
+				timezoneSource: "browser",
+				utcOffsetMinutes: -240,
+			}),
+			expect.anything(),
 		);
 	});
 
@@ -760,13 +845,13 @@ describe("createManualTimeEntry", () => {
 		});
 		expect(mockState.createTimeEntry).toHaveBeenNthCalledWith(
 			1,
-			{
+			expect.objectContaining({
 				employeeId: "employee-1",
 				organizationId: "org-1",
 				type: "clock_out",
 				timestamp: new Date("2026-05-04T09:45:00.000Z"),
 				createdBy: "user-1",
-			},
+			}),
 			expect.anything(),
 		);
 		expect(mockState.updateSet).toHaveBeenCalledWith(
@@ -781,13 +866,13 @@ describe("createManualTimeEntry", () => {
 		);
 		expect(mockState.createTimeEntry).toHaveBeenNthCalledWith(
 			2,
-			{
+			expect.objectContaining({
 				employeeId: "employee-1",
 				organizationId: "org-1",
 				type: "clock_in",
 				timestamp: new Date("2026-05-04T10:00:00.000Z"),
 				createdBy: "user-1",
-			},
+			}),
 			expect.anything(),
 		);
 		expect(mockState.insertValues).toHaveBeenCalledWith(

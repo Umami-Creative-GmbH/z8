@@ -4,6 +4,7 @@ import { DateTime } from "luxon";
 import { timeEntry, workPeriod, type WorkPeriodAutoAdjustmentReason } from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { type DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
@@ -156,6 +157,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 			type: "clock_in" | "clock_out";
 			timestamp: Date;
 			createdBy: string;
+			timezone: string;
 			notes?: string;
 		}): Effect.Effect<typeof timeEntry.$inferSelect, DatabaseError> =>
 			Effect.gen(function* (_) {
@@ -186,6 +188,11 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				});
 
 				// Create time entry
+				const timezoneCapture = resolveFallbackTimezoneCapture({
+					timestamp: params.timestamp,
+					timezone: params.timezone,
+					timezoneSource: "user_setting",
+				});
 				const entry = yield* _(
 					dbService.query("createBreakTimeEntry", async () => {
 						const [newEntry] = await dbService.db
@@ -201,6 +208,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 								deviceInfo: "break-enforcement",
 								createdBy: params.createdBy,
 								notes: params.notes,
+								...timezoneCapture,
 							})
 							.returning();
 						return newEntry;
@@ -369,6 +377,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 						type: "clock_out",
 						timestamp: breakStartDate,
 						createdBy: input.createdBy,
+						timezone: input.timezone,
 						notes: "Auto-adjusted: break enforcement",
 					}),
 				);
@@ -381,6 +390,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 						type: "clock_in",
 						timestamp: breakEndDate,
 						createdBy: input.createdBy,
+						timezone: input.timezone,
 						notes: "Auto-adjusted: break enforcement",
 					}),
 				);

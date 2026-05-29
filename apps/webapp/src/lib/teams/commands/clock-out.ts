@@ -21,6 +21,7 @@ import {
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntry } from "@/lib/time-tracking/validation";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
@@ -135,6 +136,11 @@ export const clockOutCommand: BotCommand = {
 				timestamp: now.toISOString(),
 				previousHash: previousEntry?.hash || null,
 			});
+			const timezoneCapture = resolveFallbackTimezoneCapture({
+				timestamp: now,
+				timezone,
+				timezoneSource: "user_setting",
+			});
 
 			// Update work period
 			const durationMs = now.getTime() - activePeriod.startTime.getTime();
@@ -153,6 +159,7 @@ export const clockOutCommand: BotCommand = {
 						ipAddress: "bot",
 						deviceInfo: `${ctx.platform}-bot`,
 						createdBy: ctx.userId,
+						...timezoneCapture,
 					})
 					.returning();
 
