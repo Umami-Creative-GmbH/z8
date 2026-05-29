@@ -1065,6 +1065,40 @@ describe("work balance helpers", () => {
 		);
 	});
 
+	it("upserts a zero balance when employee start date is after the refresh window", async () => {
+		const now = new Date("2026-05-22T12:00:00.000Z");
+		mockState.db.query.employee.findFirst.mockResolvedValueOnce({
+			id: "employee-1",
+			startDate: new Date("2026-06-01T00:00:00.000Z"),
+		});
+
+		await expect(
+			refreshEmployeeWorkBalanceFromPeriods({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				dirtyFromDate: "2026-05-01",
+				now,
+			}),
+		).resolves.toEqual({ updated: true });
+
+		expect(mockState.computeEmployeePeriodBalance).not.toHaveBeenCalled();
+		expect(mockState.upsertEmployeeWorkBalancePeriod).not.toHaveBeenCalled();
+		expect(mockState.rebuildEmployeeYearBalanceFromMonths).not.toHaveBeenCalled();
+		expect(mockState.txSelect).not.toHaveBeenCalled();
+		expect(mockState.txInsertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				actualMinutes: 0,
+				requiredMinutes: 0,
+				balanceMinutes: 0,
+				computedFromDate: "2026-05-22",
+				computedThroughDate: "2026-05-22",
+				computedAt: now,
+			}),
+		);
+	});
+
 	it("keeps null dirty date stale refreshes scoped to the hot window", async () => {
 		const now = new Date("2026-05-22T12:00:00.000Z");
 		mockState.computeEmployeePeriodBalance.mockResolvedValueOnce({

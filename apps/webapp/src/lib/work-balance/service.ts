@@ -351,6 +351,21 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 		? null
 		: await getEmployeeStartDate(input, dbClient);
 	const calculationStartDate = employeeStartDate ?? fullRebuildStartDate;
+	if (calculationStartDate && calculationStartDate > hotWindow.endDate) {
+		await upsertEmployeeWorkBalance(
+			buildWorkBalanceValues({
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+				actualMinutes: 0,
+				requiredMinutes: 0,
+				computedFromDate: hotWindow.endDate,
+				computedThroughDate: hotWindow.endDate,
+				computedAt: now,
+			}),
+			{ dbClient, refreshStartedAt: now },
+		);
+		return { updated: true };
+	}
 	const requestedStartDate = fullRebuildStartDate ?? input.dirtyFromDate ?? hotWindow.startDate;
 	const affectedStartDate = calculationStartDate
 		? maxIsoDate(requestedStartDate, calculationStartDate)
