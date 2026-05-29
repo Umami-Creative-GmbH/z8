@@ -86,6 +86,17 @@
         "noOrganization": "Nessuna organizzazione selezionata"
       },
       "form": {
+        "approvalsTesting": {
+          "label": "Test approvazioni",
+          "pendingAbsences": {
+            "description": "Crea richieste di assenza in attesa di approvazione del responsabile",
+            "title": "Approvazioni assenze in sospeso"
+          },
+          "pendingTimeCorrections": {
+            "description": "Crea correzioni orarie in attesa di approvazione del responsabile",
+            "title": "Approvazioni correzioni orarie in sospeso"
+          }
+        },
         "dataTypes": {
           "absences": {
             "description": "Ferie, permessi per malattia e altre assenze",
@@ -183,6 +194,14 @@
         "managers": {
           "description": "Assegnazione manager ai dipendenti",
           "label": "Assegnazioni manager"
+        },
+        "pendingAbsenceApprovals": {
+          "description": "Creazione richieste di approvazione assenza in sospeso",
+          "label": "Approvazioni assenze in sospeso"
+        },
+        "pendingTimeCorrectionApprovals": {
+          "description": "Creazione richieste di approvazione correzione oraria in sospeso",
+          "label": "Approvazioni correzioni orarie in sospeso"
         },
         "projects": {
           "description": "Creazione progetti di esempio",

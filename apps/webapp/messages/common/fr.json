@@ -389,7 +389,8 @@
       "markedRead": "{count} notifications marquées comme lues",
       "markReadFailed": "Échec du marquage des notifications comme lues"
     },
-    "unreadBadge": "{count} non lu"
+    "unreadBadge": "{count} non lu",
+    "unreadCountOverflow": "99+"
   },
   "offline": {
     "banner": {

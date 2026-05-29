@@ -81,7 +81,8 @@
         "created": "Time entry created successfully",
         "pendingApproval": "Time entry submitted for manager approval"
       },
-      "title": "Add Manual Time Entry"
+      "title": "Add Manual Time Entry",
+      "titleForEmployee": "Add Manual Time Entry for {employee}"
     },
     "noCategory": "No category (100%)",
     "noProject": "No project",

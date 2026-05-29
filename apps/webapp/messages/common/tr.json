@@ -389,7 +389,8 @@
       "markedRead": "{count} bildirim okundu olarak işaretlendi",
       "markReadFailed": "Bildirimler okundu olarak işaretlenemedi"
     },
-    "unreadBadge": "{count} okunmamış"
+    "unreadBadge": "{count} okunmamış",
+    "unreadCountOverflow": "99+"
   },
   "offline": {
     "banner": {

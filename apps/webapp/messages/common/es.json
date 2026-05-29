@@ -389,7 +389,8 @@
       "markedRead": "{count} notificaciones marcadas como leídas",
       "markReadFailed": "Error al marcar las notificaciones como leídas"
     },
-    "unreadBadge": "{count} sin leer"
+    "unreadBadge": "{count} sin leer",
+    "unreadCountOverflow": "99+"
   },
   "offline": {
     "banner": {

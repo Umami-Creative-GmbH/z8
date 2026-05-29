@@ -81,7 +81,8 @@
         "created": "Ziitiitrag erfolgriich erstellt",
         "pendingApproval": "Ziitiitrag zur Gnehmigung dur de Vorgesetzte iigreicht"
       },
-      "title": "Manuelle Ziitiitrag erfasse"
+      "title": "Manuelle Ziitiitrag erfasse",
+      "titleForEmployee": "Manuelle Ziit-Iitrag für {employee} hie zuefüege"
     },
     "noCategory": "Kei Kategorie (100%)",
     "noProject": "Kei Projekt",

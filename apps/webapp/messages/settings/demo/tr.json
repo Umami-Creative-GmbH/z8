@@ -86,6 +86,17 @@
         "noOrganization": "Kuruluş seçilmedi"
       },
       "form": {
+        "approvalsTesting": {
+          "label": "Onay Testi",
+          "pendingAbsences": {
+            "description": "Yönetici onayı bekleyen izin talepleri oluştur",
+            "title": "Bekleyen izin onayları"
+          },
+          "pendingTimeCorrections": {
+            "description": "Yönetici onayı bekleyen zaman düzeltmeleri oluştur",
+            "title": "Bekleyen zaman düzeltme onayları"
+          }
+        },
         "dataTypes": {
           "absences": {
             "description": "İzin, hastalık izni ve diğer devamsızlıklar",
@@ -183,6 +194,14 @@
         "managers": {
           "description": "Yöneticiler çalışanlara atanıyor",
           "label": "Yönetici Atamaları"
+        },
+        "pendingAbsenceApprovals": {
+          "description": "Bekleyen izin onay talepleri oluşturuluyor",
+          "label": "Bekleyen İzin Onayları"
+        },
+        "pendingTimeCorrectionApprovals": {
+          "description": "Bekleyen zaman düzeltme onay talepleri oluşturuluyor",
+          "label": "Bekleyen Zaman Düzeltme Onayları"
         },
         "projects": {
           "description": "Örnek projeler oluşturuluyor",

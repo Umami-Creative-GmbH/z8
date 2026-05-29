@@ -389,7 +389,8 @@
       "markedRead": "{count} Benachrichtigungen als gelesen markiert",
       "markReadFailed": "Markieren der Benachrichtigungen als gelesen fehlgeschlagen"
     },
-    "unreadBadge": "{count} ungelesen"
+    "unreadBadge": "{count} ungelesen",
+    "unreadCountOverflow": "99+"
   },
   "offline": {
     "banner": {

@@ -86,6 +86,17 @@
         "noOrganization": "Nie wybrano organizacji"
       },
       "form": {
+        "approvalsTesting": {
+          "label": "Testowanie zatwierdzeń",
+          "pendingAbsences": {
+            "description": "Twórz wnioski o nieobecność oczekujące na zatwierdzenie przez menedżera",
+            "title": "Oczekujące zatwierdzenia nieobecności"
+          },
+          "pendingTimeCorrections": {
+            "description": "Twórz korekty czasu pracy oczekujące na zatwierdzenie przez menedżera",
+            "title": "Oczekujące zatwierdzenia korekt czasu pracy"
+          }
+        },
         "dataTypes": {
           "absences": {
             "description": "Urlopy, zwolnienia lekarskie i inne nieobecności",
@@ -183,6 +194,14 @@
         "managers": {
           "description": "Przypisywanie menedżerów do pracowników",
           "label": "Przypisania menedżerów"
+        },
+        "pendingAbsenceApprovals": {
+          "description": "Tworzenie wniosków o zatwierdzenie nieobecności",
+          "label": "Oczekujące zatwierdzenia nieobecności"
+        },
+        "pendingTimeCorrectionApprovals": {
+          "description": "Tworzenie wniosków o zatwierdzenie korekty czasu pracy",
+          "label": "Oczekujące zatwierdzenia korekt czasu pracy"
         },
         "projects": {
           "description": "Tworzenie przykładowych projektów",

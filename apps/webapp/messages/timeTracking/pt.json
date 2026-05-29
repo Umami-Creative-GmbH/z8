@@ -81,7 +81,8 @@
         "created": "Entrada de tempo criada com sucesso",
         "pendingApproval": "Entrada de tempo enviada para aprovação do gerente"
       },
-      "title": "Adicionar Entrada de Tempo Manual"
+      "title": "Adicionar Entrada de Tempo Manual",
+      "titleForEmployee": "Adicionar registro de tempo manual para {employee}"
     },
     "noCategory": "Sem categoria (100%)",
     "noProject": "Sem projeto",
