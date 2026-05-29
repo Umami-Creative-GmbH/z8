@@ -260,7 +260,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 	];
 
 	return (
-		<div className="space-y-4 [&_input]:bg-background">
+		<div className="space-y-4">
 			<DataTableToolbar
 				search={search}
 				onSearchChange={setSearch}

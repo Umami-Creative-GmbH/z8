@@ -132,7 +132,7 @@ export function WorkCategorySelector({
 		return (
 			<div className="grid gap-2">
 				{showLabel && (
-					<Label className="text-sm text-muted-foreground">
+					<Label className="text-sm text-foreground">
 						{t("timeTracking.workCategory", "Work Category")}
 					</Label>
 				)}
@@ -152,7 +152,7 @@ export function WorkCategorySelector({
 	return (
 		<div className="grid gap-2">
 			{showLabel && (
-				<Label className="text-sm text-muted-foreground">
+				<Label className="text-sm text-foreground">
 					{t("timeTracking.workCategory", "Work Category")}
 				</Label>
 			)}

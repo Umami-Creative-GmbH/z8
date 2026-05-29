@@ -103,7 +103,7 @@ export function WorksCouncilDashboard({ model }: { model: WorksCouncilPortalMode
 							aria-label="From"
 							autoComplete="off"
 							defaultValue={fromValue}
-							className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+							className="flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm text-foreground"
 						/>
 					</div>
 					<div className="space-y-2">
@@ -117,7 +117,7 @@ export function WorksCouncilDashboard({ model }: { model: WorksCouncilPortalMode
 							aria-label="To"
 							autoComplete="off"
 							defaultValue={toValue}
-							className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+							className="flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm text-foreground"
 						/>
 					</div>
 					<button

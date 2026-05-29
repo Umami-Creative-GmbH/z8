@@ -21,11 +21,11 @@ import { Switch } from "@/components/ui/switch";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import {
+	type ApprovalPolicyApproverType,
+	type ApprovalPolicyFormValues,
 	approvalTypeOptions,
 	buildApprovalPolicyPayload,
 	defaultApprovalPolicyFormValues,
-	type ApprovalPolicyApproverType,
-	type ApprovalPolicyFormValues,
 } from "./approval-policy-dialog-utils";
 
 interface ApprovalPolicyDialogProps {
@@ -233,10 +233,10 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 									<div className="grid gap-2 sm:grid-cols-3">
 										{approvalTypeOptions.map((option) => (
 											<label key={option.value} className="flex items-center gap-2 text-sm">
-										<input
-											type="checkbox"
-											aria-label={approvalTypeLabel(option.value)}
-											checked={field.state.value.includes(option.value)}
+												<input
+													type="checkbox"
+													aria-label={approvalTypeLabel(option.value)}
+													checked={field.state.value.includes(option.value)}
 													onChange={(event) => {
 														field.handleChange(
 															event.target.checked
@@ -348,7 +348,7 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 															<select
 																id={`approval-stage-approver-${stage.localId}`}
 																name={`approval-stage-approver-${index + 1}`}
-																className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+																className="h-9 rounded-md border border-input px-3 py-1 text-sm text-foreground shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
 																value={stage.approverType}
 																onChange={(event) => {
 																	const stages = field.state.value.map((item) =>

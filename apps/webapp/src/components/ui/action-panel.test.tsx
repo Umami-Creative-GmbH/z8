@@ -1,8 +1,8 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import {
 	ActionPanel,
@@ -16,10 +16,7 @@ import {
 
 describe("ActionPanel", () => {
 	it("composes the Sheet primitive instead of Radix dialog internals", () => {
-		const source = readFileSync(
-			join(process.cwd(), "src/components/ui/action-panel.tsx"),
-			"utf8",
-		);
+		const source = readFileSync(join(process.cwd(), "src/components/ui/action-panel.tsx"), "utf8");
 
 		expect(source).toContain("SheetContent");
 		expect(source).not.toContain("DialogPrimitive");
@@ -73,7 +70,9 @@ describe("ActionPanel", () => {
 			</ActionPanel>,
 		);
 
-		expect(screen.getByRole("dialog", { name: "Compact panel" }).className).toContain("sm:max-w-md");
+		expect(screen.getByRole("dialog", { name: "Compact panel" }).className).toContain(
+			"sm:max-w-md",
+		);
 
 		rerender(
 			<ActionPanel open>
@@ -104,7 +103,7 @@ describe("ActionPanel", () => {
 		expect(screen.getByText("Footer actions").className).toContain("sm:*:w-auto");
 	});
 
-	it("gives nested form controls an opaque sheet surface", () => {
+	it("uses the muted sheet surface", () => {
 		render(
 			<ActionPanel open>
 				<ActionPanelContent>
@@ -115,9 +114,7 @@ describe("ActionPanel", () => {
 		);
 
 		const dialogClassName = screen.getByRole("dialog", { name: "Form panel" }).className;
-		expect(dialogClassName).toContain("[&_input]:bg-background");
-		expect(dialogClassName).toContain("[&_textarea]:bg-background");
-		expect(dialogClassName).toContain("[&_[data-slot=select-trigger]]:bg-background");
+		expect(dialogClassName).toContain("bg-muted");
 	});
 
 	it("uses animated sheet transitions", () => {
