@@ -21,10 +21,19 @@ export async function getTimeEntriesForMonth(
 	month: number,
 	year: number,
 	filters: TimeEntryFilters,
+	timezone?: string | null,
 ): Promise<TimeEntryEvent[]> {
 	// Calculate date range for the month (month is 0-indexed in JavaScript, 1-indexed in Luxon)
-	const startDT = DateTime.utc(year, month + 1, 1).startOf("day");
-	const endDT = startDT.endOf("month");
+	const zonedStart = DateTime.fromObject(
+		{ year, month: month + 1, day: 1 },
+		{ zone: timezone || "UTC" },
+	);
+	const startDT = (zonedStart.isValid ? zonedStart : DateTime.utc(year, month + 1, 1))
+		.startOf("month")
+		.toUTC();
+	const endDT = (zonedStart.isValid ? zonedStart : DateTime.utc(year, month + 1, 1))
+		.endOf("month")
+		.toUTC();
 
 	// Convert to Date objects for Drizzle query
 	const startDate = dateToDB(startDT)!;

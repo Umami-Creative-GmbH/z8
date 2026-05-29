@@ -122,14 +122,24 @@ describe("GET /api/calendar/events", () => {
 			organizationId: "org-1",
 			employeeId: "employee-1",
 		});
-		expect(mockState.getTimeEntriesForMonth).toHaveBeenCalledWith(4, 2026, {
-			organizationId: "org-1",
-			employeeId: "employee-1",
-		});
-		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(4, 2026, {
-			organizationId: "org-1",
-			employeeId: "employee-1",
-		});
+		expect(mockState.getTimeEntriesForMonth).toHaveBeenCalledWith(
+			4,
+			2026,
+			{
+				organizationId: "org-1",
+				employeeId: "employee-1",
+			},
+			"Europe/Berlin",
+		);
+		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(
+			4,
+			2026,
+			{
+				organizationId: "org-1",
+				employeeId: "employee-1",
+			},
+			"Europe/Berlin",
+		);
 	});
 
 	it("returns daily requirements for the scoped employee", async () => {
@@ -152,8 +162,8 @@ describe("GET /api/calendar/events", () => {
 		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			employeeId: "employee-1",
-			startDate: new Date("2026-05-01T00:00:00.000Z"),
-			endDate: new Date("2026-05-31T23:59:59.999Z"),
+			startDate: new Date("2026-04-30T22:00:00.000Z"),
+			endDate: new Date("2026-05-31T21:59:59.999Z"),
 		});
 		expect(body.dailyRequirements).toEqual({
 			"2026-05-04": {
@@ -249,6 +259,15 @@ describe("GET /api/calendar/events", () => {
 
 		expect(response.status).toBe(200);
 		expect(body.calendarTimezone).toBe("America/New_York");
+		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(
+			4,
+			2026,
+			{
+				organizationId: "org-1",
+				employeeId: "employee-2",
+			},
+			"America/New_York",
+		);
 	});
 
 	it("returns employee-assigned holidays for a scoped employee calendar", async () => {

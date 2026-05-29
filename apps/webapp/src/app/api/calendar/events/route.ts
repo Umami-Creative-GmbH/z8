@@ -148,6 +148,7 @@ async function fetchMonthEvents(
 	showTimeEntries: boolean,
 	showWorkPeriods: boolean,
 	includeWorkPeriodActuals: boolean,
+	calendarTimezone: string | null,
 ): Promise<{ events: CalendarEvent[]; dailyActualMinutes: DailyWorkActualMinutes }> {
 	// Fetch all event types in parallel - conditional fetches return empty arrays
 	const [holidays, absences, timeEntries, workPeriods] = await Promise.all([
@@ -159,9 +160,11 @@ async function fetchMonthEvents(
 			showHolidays,
 		}),
 		showAbsences ? getAbsencesForMonth(month, year, { organizationId, employeeId }) : [],
-		showTimeEntries ? getTimeEntriesForMonth(month, year, { organizationId, employeeId }) : [],
+		showTimeEntries
+			? getTimeEntriesForMonth(month, year, { organizationId, employeeId }, calendarTimezone)
+			: [],
 		showWorkPeriods || includeWorkPeriodActuals
-			? getWorkPeriodsForMonth(month, year, { organizationId, employeeId })
+			? getWorkPeriodsForMonth(month, year, { organizationId, employeeId }, calendarTimezone)
 			: [],
 	]);
 	const completedWorkPeriods = workPeriods.filter((event) => !event.metadata.isRunning);
@@ -174,15 +177,25 @@ async function fetchMonthEvents(
 	};
 }
 
-function getRequestDateRange(year: number, month: number | null, fullYear: boolean) {
-	const start = fullYear
-		? DateTime.utc(year, 1, 1).startOf("day")
-		: DateTime.utc(year, (month ?? 0) + 1, 1).startOf("day");
+function getRequestDateRange(
+	year: number,
+	month: number | null,
+	fullYear: boolean,
+	timezone: string | null,
+) {
+	const zonedStart = DateTime.fromObject(
+		{ year, month: fullYear ? 1 : (month ?? 0) + 1, day: 1 },
+		{ zone: timezone || "UTC" },
+	);
+	const validStart = zonedStart.isValid
+		? zonedStart
+		: DateTime.utc(year, fullYear ? 1 : (month ?? 0) + 1, 1);
+	const start = fullYear ? validStart.startOf("year") : validStart.startOf("month");
 	const end = fullYear ? start.endOf("year") : start.endOf("month");
 
 	return {
-		startDate: start.toJSDate(),
-		endDate: end.toJSDate(),
+		startDate: start.toUTC().toJSDate(),
+		endDate: end.toUTC().toJSDate(),
 	};
 }
 
@@ -272,7 +285,13 @@ export async function GET(request: NextRequest) {
 
 		const yearNum = parseInt(year, 10);
 		const monthNum = month === null ? null : parseInt(month, 10);
-		const { startDate, endDate } = getRequestDateRange(yearNum, monthNum, fullYear);
+		const calendarTimezone = await fetchCalendarTimezoneForEmployee(scopedEmployee);
+		const { startDate, endDate } = getRequestDateRange(
+			yearNum,
+			monthNum,
+			fullYear,
+			calendarTimezone,
+		);
 		let dailyRequirements: DailyWorkRequirements = {};
 		let dailyActualMinutes: DailyWorkActualMinutes = {};
 		let events: CalendarEvent[] = [];
@@ -294,6 +313,7 @@ export async function GET(request: NextRequest) {
 					showTimeEntries,
 					showWorkPeriods,
 					includeWorkPeriodActuals,
+					calendarTimezone,
 				),
 			);
 
@@ -316,12 +336,13 @@ export async function GET(request: NextRequest) {
 				showTimeEntries,
 				showWorkPeriods,
 				includeWorkPeriodActuals,
+				calendarTimezone,
 			);
 			events = monthResult.events;
 			dailyActualMinutes = monthResult.dailyActualMinutes;
 		}
 
-		const [resolvedDailyRequirements, resolvedWorkBalance, calendarTimezone] = await Promise.all([
+		const [resolvedDailyRequirements, resolvedWorkBalance] = await Promise.all([
 			fetchDailyRequirements({
 				organizationId,
 				employeeId: scopedEmployeeId,
@@ -329,7 +350,6 @@ export async function GET(request: NextRequest) {
 				endDate,
 			}),
 			fetchWorkBalance({ organizationId, employeeId: scopedEmployeeId }),
-			fetchCalendarTimezoneForEmployee(scopedEmployee),
 		]);
 		dailyRequirements = resolvedDailyRequirements;
 		workBalance = resolvedWorkBalance;

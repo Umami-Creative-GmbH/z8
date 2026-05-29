@@ -1,12 +1,33 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getWorkPeriodsForMonth, workPeriodOverlapsCalendarMonth } from "./work-period-service";
 
+const mockOperators = vi.hoisted(() => ({
+	and: vi.fn((...conditions: unknown[]) => ({ conditions, type: "and" })),
+	eq: vi.fn((column: unknown, value: unknown) => ({ column, type: "eq", value })),
+	gte: vi.fn((column: unknown, value: unknown) => ({ column, type: "gte", value })),
+	isNull: vi.fn((column: unknown) => ({ column, type: "isNull" })),
+	lte: vi.fn((column: unknown, value: unknown) => ({ column, type: "lte", value })),
+	not: vi.fn((condition: unknown) => ({ condition, type: "not" })),
+	or: vi.fn((...conditions: unknown[]) => ({ conditions, type: "or" })),
+}));
+
 const mockDb = vi.hoisted(() => ({
 	select: vi.fn(),
 	from: vi.fn(),
 	innerJoin: vi.fn(),
 	leftJoin: vi.fn(),
 	where: vi.fn(),
+}));
+
+vi.mock("drizzle-orm", async (importOriginal) => ({
+	...(await importOriginal<typeof import("drizzle-orm")>()),
+	and: mockOperators.and,
+	eq: mockOperators.eq,
+	gte: mockOperators.gte,
+	isNull: mockOperators.isNull,
+	lte: mockOperators.lte,
+	not: mockOperators.not,
+	or: mockOperators.or,
 }));
 
 vi.mock("@/db", () => ({
@@ -32,6 +53,26 @@ describe("getWorkPeriodsForMonth", () => {
 	afterEach(() => {
 		vi.useRealTimers();
 		vi.clearAllMocks();
+	});
+
+	it("uses employee calendar timezone boundaries when querying month work periods", async () => {
+		mockDb.where.mockResolvedValue([]);
+
+		await getWorkPeriodsForMonth(
+			4,
+			2026,
+			{ organizationId: "org-1", employeeId: "employee-1" },
+			"America/New_York",
+		);
+
+		expect(mockOperators.gte).toHaveBeenCalledWith(
+			expect.anything(),
+			new Date("2026-05-01T04:00:00.000Z"),
+		);
+		expect(mockOperators.lte).toHaveBeenCalledWith(
+			expect.anything(),
+			new Date("2026-06-01T03:59:59.999Z"),
+		);
 	});
 
 	it("returns an active work period as a running calendar event ending now", async () => {
