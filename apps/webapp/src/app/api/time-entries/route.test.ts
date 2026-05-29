@@ -18,8 +18,9 @@ const mockState = vi.hoisted(() => {
 	const updateWhere = vi.fn(async () => undefined);
 	const updateSet = vi.fn(() => ({ where: updateWhere }));
 	const update = vi.fn(() => ({ set: updateSet }));
+	const txClient = { insert, select, update };
 	const transaction = vi.fn(async (callback: (tx: unknown) => Promise<unknown>) =>
-		callback({ insert, update }),
+		callback(txClient),
 	);
 
 	return {
@@ -28,6 +29,7 @@ const mockState = vi.hoisted(() => {
 		asAppSubject: vi.fn((subject, data) => ({ ...data, __caslSubjectType__: subject })),
 		connection: vi.fn(),
 		createBillingForbiddenResponse: vi.fn(),
+		createTimeEntry: vi.fn(),
 		getAbility: vi.fn(),
 		getSession: vi.fn(),
 		headers: vi.fn(),
@@ -38,10 +40,12 @@ const mockState = vi.hoisted(() => {
 		runPromise: vi.fn(),
 		select,
 		transaction,
+		txClient,
 		update,
 		updateSet,
 		updateWhere,
 		values,
+		validateProjectAssignment: vi.fn(),
 	};
 });
 
@@ -135,6 +139,11 @@ vi.mock("@/lib/effect/services/time-entry.service", () => ({
 	TimeEntryService: Symbol("TimeEntryService"),
 }));
 
+vi.mock("@/app/[locale]/(app)/time-tracking/actions/entry-helpers", () => ({
+	createTimeEntry: mockState.createTimeEntry,
+	validateProjectAssignment: mockState.validateProjectAssignment,
+}));
+
 vi.mock("drizzle-orm", () => ({
 	and: (...conditions: unknown[]) => ({ conditions, type: "and" }),
 	eq: (column: unknown, value: unknown) => ({ column, type: "eq", value }),
@@ -167,6 +176,7 @@ describe("GET /api/time-entries", () => {
 		vi.clearAllMocks();
 		mockState.accessibleByDrizzle.mockReset();
 		mockState.asAppSubject.mockReset();
+		mockState.createTimeEntry.mockReset();
 		mockState.getAbility.mockReset();
 		mockState.getSession.mockReset();
 		mockState.headers.mockReset();
@@ -302,6 +312,7 @@ describe("POST /api/time-entries", () => {
 		mockState.updateSet.mockClear();
 		mockState.updateWhere.mockClear();
 		mockState.values.mockReset();
+		mockState.validateProjectAssignment.mockReset();
 		mockState.requireBillingForMutation.mockReset();
 		mockState.isBillingMutationAllowed.mockReset();
 		mockState.createBillingForbiddenResponse.mockReset();
@@ -319,8 +330,10 @@ describe("POST /api/time-entries", () => {
 				},
 			])
 			.mockResolvedValue([]);
+		mockState.createTimeEntry.mockResolvedValue({ id: "entry-1" });
 		mockState.runPromise.mockResolvedValue({ id: "entry-1" });
 		mockState.values.mockResolvedValue(undefined);
+		mockState.validateProjectAssignment.mockResolvedValue({ isValid: true });
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
 		mockState.createBillingForbiddenResponse.mockImplementation((access) =>
@@ -397,6 +410,67 @@ describe("POST /api/time-entries", () => {
 		);
 	});
 
+	it("inserts the time entry with the transaction client before creating the work period", async () => {
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					type: "clock_in",
+					timestamp: "2026-05-04T09:00:00.000Z",
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(201);
+		expect(mockState.transaction).toHaveBeenCalledTimes(1);
+		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
+			expect.objectContaining({ type: "clock_in" }),
+			mockState.txClient,
+		);
+		expect(mockState.createTimeEntry.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.values.mock.invocationCallOrder[0],
+		);
+	});
+
+	it("returns an error when the transactional work period insert fails", async () => {
+		mockState.values.mockRejectedValueOnce(new Error("insert failed"));
+
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					type: "clock_in",
+					timestamp: "2026-05-04T09:00:00.000Z",
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(500);
+		expect(mockState.createTimeEntry).toHaveBeenCalledWith(expect.anything(), mockState.txClient);
+	});
+
+	it("ignores generic timezone for capture fallback and uses saved user timezone", async () => {
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					type: "clock_in",
+					timestamp: "2026-05-04T09:00:00.000Z",
+					timezone: "America/New_York",
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(201);
+		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
+			expect.objectContaining({
+				timezone: "Europe/Berlin",
+				timezoneSource: "user_setting",
+			}),
+			expect.anything(),
+		);
+	});
+
 	it("rejects clock-out without an active work period before inserting a time entry", async () => {
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
@@ -458,5 +532,67 @@ describe("POST /api/time-entries", () => {
 		expect(await response.json()).toEqual({ error: "Project not found" });
 		expect(mockState.runPromise).not.toHaveBeenCalled();
 		expect(mockState.values).not.toHaveBeenCalled();
+	});
+
+	it("rejects assigned-project validation failures before inserting a clock-out entry", async () => {
+		mockState.limit.mockReset();
+		mockState.limit
+			.mockResolvedValueOnce([{ id: "employee-1", organizationId: "org-1", teamId: "team-1" }])
+			.mockResolvedValueOnce([{ id: "period-1", startTime: new Date("2026-05-04T08:00:00.000Z") }])
+			.mockResolvedValueOnce([{ id: "project-1", organizationId: "org-1", status: "active" }]);
+		mockState.validateProjectAssignment.mockResolvedValueOnce({
+			isValid: false,
+			error: "You are not assigned to this project. Contact your administrator.",
+		});
+
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					type: "clock_out",
+					timestamp: "2026-05-04T09:00:00.000Z",
+					projectId: "project-1",
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({
+			error: "You are not assigned to this project. Contact your administrator.",
+		});
+		expect(mockState.validateProjectAssignment).toHaveBeenCalledWith(
+			"project-1",
+			"employee-1",
+			"team-1",
+		);
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+	});
+
+	it("persists project and work category when closing an active work period", async () => {
+		mockState.limit.mockReset();
+		mockState.limit
+			.mockResolvedValueOnce([{ id: "employee-1", organizationId: "org-1", teamId: "team-1" }])
+			.mockResolvedValueOnce([{ id: "period-1", startTime: new Date("2026-05-04T08:00:00.000Z") }])
+			.mockResolvedValueOnce([{ id: "project-1", organizationId: "org-1", status: "active" }]);
+
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					type: "clock_out",
+					timestamp: "2026-05-04T09:00:00.000Z",
+					projectId: "project-1",
+					workCategoryId: "category-1",
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(201);
+		expect(mockState.updateSet).toHaveBeenCalledWith(
+			expect.objectContaining({
+				projectId: "project-1",
+				workCategoryId: "category-1",
+			}),
+		);
 	});
 });

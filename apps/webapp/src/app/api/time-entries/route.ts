@@ -2,6 +2,10 @@ import { and, eq, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
+import {
+	createTimeEntry,
+	validateProjectAssignment,
+} from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
 import { db } from "@/db";
 import { employee, project, timeEntry, userSettings, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -187,7 +191,7 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const { type, timestamp, notes, location, projectId, workLocationType, browserTimezone, timezone } =
+		const { type, timestamp, notes, projectId, workCategoryId, workLocationType, browserTimezone } =
 			body;
 
 		// Validate required fields
@@ -236,18 +240,13 @@ export async function POST(request: NextRequest) {
 			return createBillingForbiddenResponse(billingAccess);
 		}
 
-		// Extract request metadata from already-resolved headers
-		const ipAddress =
-			resolvedHeaders.get("x-forwarded-for") || resolvedHeaders.get("x-real-ip") || "unknown";
-		const deviceInfo = resolvedHeaders.get("user-agent") || "unknown";
 		const entryTime = timestamp ? new Date(timestamp) : new Date();
 		const savedTimezone = (await getSavedUserTimezone(session.user.id)) ?? "UTC";
-		const effectiveTimezone = isValidIanaTimezone(timezone) ? timezone : savedTimezone;
 		const requestBrowserTimezone = isValidIanaTimezone(browserTimezone) ? browserTimezone : null;
 		const timezoneCapture = resolveTimeEntryTimezoneCapture({
 			timestamp: entryTime,
 			browserTimezone: requestBrowserTimezone,
-			fallbackTimezone: effectiveTimezone,
+			fallbackTimezone: savedTimezone,
 			browserSource: "browser",
 			fallbackSource: "user_setting",
 		});
@@ -282,28 +281,33 @@ export async function POST(request: NextRequest) {
 			if (!assignedProject) {
 				return NextResponse.json({ error: "Project not found" }, { status: 400 });
 			}
+
+			const projectValidation = await validateProjectAssignment(
+				projectId,
+				currentEmployee.id,
+				currentEmployee.teamId,
+			);
+			if (!projectValidation.isValid) {
+				return NextResponse.json(
+					{ error: projectValidation.error || "Cannot assign to this project" },
+					{ status: 400 },
+				);
+			}
 		}
 
 		const entry = await db.transaction(async (tx) => {
-			const effect = Effect.gen(function* (_) {
-				const timeEntryService = yield* _(TimeEntryService);
-				return yield* _(
-					timeEntryService.createTimeEntry({
-						employeeId: currentEmployee.id,
-						organizationId: activeOrgId,
-						type,
-						timestamp: entryTime,
-						createdBy: session.user.id,
-						notes,
-						location,
-						ipAddress,
-						deviceInfo,
-						...timezoneCapture,
-					}),
-				);
-			});
-
-			const createdEntry = await runtime.runPromise(effect);
+			const createdEntry = await createTimeEntry(
+				{
+					employeeId: currentEmployee.id,
+					organizationId: activeOrgId,
+					type,
+					timestamp: entryTime,
+					createdBy: session.user.id,
+					notes,
+					...timezoneCapture,
+				},
+				tx,
+			);
 
 			if (type === "clock_in") {
 				await tx.insert(workPeriod).values({
@@ -326,6 +330,7 @@ export async function POST(request: NextRequest) {
 						durationMinutes,
 						isActive: false,
 						...(projectId && { projectId }),
+						...(workCategoryId && { workCategoryId }),
 					})
 					.where(eq(workPeriod.id, activePeriod.id));
 			}
