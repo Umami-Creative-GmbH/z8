@@ -1,5 +1,6 @@
 {
   "editor.defaultFormatter": "biomejs.biome",
+  "biome.lsp.bin": "apps/webapp/node_modules/.bin/biome",
   "[javascript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
