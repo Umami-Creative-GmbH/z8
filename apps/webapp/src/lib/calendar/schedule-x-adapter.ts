@@ -10,7 +10,10 @@ export interface ScheduleXEvent {
 	title: string;
 	start: Temporal.PlainDate | Temporal.ZonedDateTime;
 	end: Temporal.PlainDate | Temporal.ZonedDateTime;
-	calendarId: CalendarEventType;
+	calendarId: CalendarEventType | "work_period_running";
+	_customContent?: {
+		timeGrid?: string;
+	};
 	_eventData: CalendarEvent; // Store original for details panel
 }
 
@@ -49,6 +52,19 @@ export const calendarColors = {
 		colorName: "work_period",
 		lightColors: {
 			main: "#10b981", // Green (emerald)
+			container: "#d1fae5",
+			onContainer: "#065f46",
+		},
+		darkColors: {
+			main: "#34d399",
+			container: "#064e3b",
+			onContainer: "#a7f3d0",
+		},
+	},
+	work_period_running: {
+		colorName: "work_period_running",
+		lightColors: {
+			main: "#10b981",
 			container: "#d1fae5",
 			onContainer: "#065f46",
 		},
@@ -279,10 +295,12 @@ export function calendarEventToScheduleX(
 				| "pending"
 				| "rejected"
 				| undefined;
-			let calendarId: string = "work_period";
-			if (approvalStatus === "pending") {
+			let calendarId: ScheduleXEvent["calendarId"] = event.metadata.isRunning
+				? "work_period_running"
+				: "work_period";
+			if (!event.metadata.isRunning && approvalStatus === "pending") {
 				calendarId = "work_period_pending";
-			} else if (approvalStatus === "rejected") {
+			} else if (!event.metadata.isRunning && approvalStatus === "rejected") {
 				calendarId = "work_period_rejected";
 			}
 
@@ -291,7 +309,12 @@ export function calendarEventToScheduleX(
 				title: event.title,
 				start,
 				end,
-				calendarId: calendarId as CalendarEventType,
+				calendarId,
+				...(event.metadata.isRunning && {
+					_customContent: {
+						timeGrid: `<span class="inline-flex items-center gap-1.5"><span class="size-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true"></span><span>${escapeHtml(event.title)}</span></span>`,
+					},
+				}),
 				_eventData: event,
 			};
 		}
@@ -370,6 +393,7 @@ export function getScheduleXCalendars() {
 		holiday: calendarColors.holiday,
 		absence: calendarColors.absence,
 		work_period: calendarColors.work_period,
+		work_period_running: calendarColors.work_period_running,
 		work_period_pending: calendarColors.work_period_pending,
 		work_period_rejected: calendarColors.work_period_rejected,
 		time_entry: calendarColors.time_entry,
@@ -399,6 +423,15 @@ function formatBreakDuration(minutes: number): string {
 function toScheduleXSafeIdPart(value: string): string {
 	const safeValue = value.replace(/[^A-Za-z0-9_-]/g, "-").replace(/-+/g, "-");
 	return safeValue || "event";
+}
+
+function escapeHtml(value: string): string {
+	return value
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
 }
 
 /**

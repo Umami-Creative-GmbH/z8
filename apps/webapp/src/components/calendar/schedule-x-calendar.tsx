@@ -118,15 +118,28 @@ export function ScheduleXCalendarWrapper({
 
 	// Track current date for display
 	const [currentDate, setCurrentDate] = useState<DateTime>(() => DateTime.now());
+	const [runningPeriodNow, setRunningPeriodNow] = useState<Date>(() => new Date());
 
 	// Create calendar plugins (must be stable references)
 	const [calendarControls] = useState(() => createCalendarControlsPlugin());
 	const [currentTimePlugin] = useState(() => createCurrentTimePlugin());
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
 
+	const hasVisibleRunningPeriod =
+		(viewMode === "day" || viewMode === "week") &&
+		events.some((event) => event.type === "work_period" && event.metadata.isRunning);
+
+	const liveEvents = hasVisibleRunningPeriod
+		? events.map((event) =>
+				event.type === "work_period" && event.metadata.isRunning
+					? { ...event, endDate: runningPeriodNow }
+					: event,
+			)
+		: events;
+
 	// Convert events to Schedule-X format
 	const baseScheduleXEvents = calendarEventsToScheduleX(
-		filterEventsForScheduleXView(events, viewMode),
+		filterEventsForScheduleXView(liveEvents, viewMode),
 		timeZone,
 	);
 
@@ -285,6 +298,17 @@ export function ScheduleXCalendarWrapper({
 			calendarControls.setView(scheduleXView);
 		}
 	}, [calendar, viewMode, calendarControls]);
+
+	useEffect(() => {
+		if (!hasVisibleRunningPeriod) return;
+
+		const interval = window.setInterval(() => {
+			setRunningPeriodNow(new Date());
+		}, 60_000);
+
+		setRunningPeriodNow(new Date());
+		return () => window.clearInterval(interval);
+	}, [hasVisibleRunningPeriod]);
 
 	// Update events when they change
 	useEffect(() => {
