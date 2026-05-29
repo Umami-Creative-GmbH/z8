@@ -522,6 +522,41 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 		);
 	});
 
+	it("uses the submitted timezone for own manual-entry fallback capture", async () => {
+		vi.setSystemTime(new Date("2026-06-01T12:00:00.000Z"));
+		mockState.findTargetEmployee.mockResolvedValue(null);
+		mockState.findUserSettings.mockResolvedValue({ timezone: "UTC" });
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-29",
+			clockInTime: "10:15",
+			clockOutTime: "12:45",
+			timezone: "Europe/Berlin",
+			browserTimezone: "Not/AZone",
+			reason: "Calendar adjustment",
+		});
+
+		expect(result.success).toBe(true);
+		expect(mockState.createCanonicalTimeEntry).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "clock_in",
+				timestamp: new Date("2026-05-29T08:15:00.000Z"),
+				timezone: "Europe/Berlin",
+				timezoneSource: "user_setting",
+				utcOffsetMinutes: 120,
+			}),
+		);
+		expect(mockState.createCanonicalTimeEntry).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "clock_out",
+				timestamp: new Date("2026-05-29T10:45:00.000Z"),
+				timezone: "Europe/Berlin",
+				timezoneSource: "user_setting",
+				utcOffsetMinutes: 120,
+			}),
+		);
+	});
+
 	it("rejects invalid submitted timezones before writes", async () => {
 		const result = await createManualTimeEntry({
 			employeeId: "staff-1",

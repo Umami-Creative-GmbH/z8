@@ -80,6 +80,7 @@ import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { createClockOutApprovalRequest, createManualEntryApprovalRequest } from "./actions/approvals";
 import { addBreakToActiveSession as addBreakToActiveSessionAction } from "./actions/clocking";
+import type { BrowserTimezoneContext } from "./actions/types";
 import {
 	calculatePresenceStatusSummary,
 	expandApprovedHomeOfficeDates,
@@ -1177,6 +1178,7 @@ export async function getTimeSummary(
  */
 export async function clockIn(
 	workLocationType?: WorkLocationType,
+	timezoneContext: BrowserTimezoneContext = {},
 ): Promise<ServerActionResult<typeof timeEntry.$inferSelect>> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
@@ -1229,10 +1231,12 @@ export async function clockIn(
 	}
 
 	try {
-		const timezoneCapture = resolveFallbackTimezoneCapture({
+		const timezoneCapture = resolveTimeEntryTimezoneCapture({
 			timestamp: now,
-			timezone,
-			timezoneSource: "user_setting",
+			browserTimezone: timezoneContext.browserTimezone,
+			fallbackTimezone: timezone,
+			browserSource: "browser",
+			fallbackSource: "user_setting",
 		});
 		const entry = await createTimeEntry({
 			employeeId: emp.id,
@@ -1288,6 +1292,7 @@ export type ClockOutResult = typeof timeEntry.$inferSelect & {
 export async function clockOut(
 	projectId?: string,
 	workCategoryId?: string,
+	timezoneContext: BrowserTimezoneContext = {},
 ): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
@@ -1375,10 +1380,12 @@ export async function clockOut(
 	}
 
 	try {
-		const timezoneCapture = resolveFallbackTimezoneCapture({
+		const timezoneCapture = resolveTimeEntryTimezoneCapture({
 			timestamp: now,
-			timezone,
-			timezoneSource: "user_setting",
+			browserTimezone: timezoneContext.browserTimezone,
+			fallbackTimezone: timezone,
+			browserSource: "browser",
+			fallbackSource: "user_setting",
 		});
 		const entry = await createTimeEntry({
 			employeeId: emp.id,
@@ -3145,7 +3152,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			? resolveTimeEntryTimezoneCapture({
 					timestamp: finalClockIn,
 					browserTimezone: data.browserTimezone,
-					fallbackTimezone: savedTimezone,
+					fallbackTimezone: timezone,
 					browserSource: "browser",
 					fallbackSource: "user_setting",
 				})
@@ -3158,7 +3165,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			? resolveTimeEntryTimezoneCapture({
 					timestamp: finalClockOut,
 					browserTimezone: data.browserTimezone,
-					fallbackTimezone: savedTimezone,
+					fallbackTimezone: timezone,
 					browserSource: "browser",
 					fallbackSource: "user_setting",
 				})

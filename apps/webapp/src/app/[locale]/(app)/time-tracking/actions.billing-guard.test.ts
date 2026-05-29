@@ -72,8 +72,28 @@ describe("legacy time-tracking action billing guards", () => {
 		expectBillingGuardBeforeWrite("clockIn", "createTimeEntry({");
 	});
 
+	it("captures browser timezone context in live clock-in entries", () => {
+		const body = functionBody("clockIn");
+
+		expect(body).toContain("timezoneContext: BrowserTimezoneContext = {}");
+		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
+		expect(body).toContain("browserTimezone: timezoneContext.browserTimezone");
+		expect(body).toContain('browserSource: "browser"');
+		expect(body).toContain('fallbackSource: "user_setting"');
+	});
+
 	it("guards clock-out before creating time entries", () => {
 		expectBillingGuardBeforeWrite("clockOut", "createTimeEntry({");
+	});
+
+	it("captures browser timezone context in live clock-out entries", () => {
+		const body = functionBody("clockOut");
+
+		expect(body).toContain("timezoneContext: BrowserTimezoneContext = {}");
+		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
+		expect(body).toContain("browserTimezone: timezoneContext.browserTimezone");
+		expect(body).toContain('browserSource: "browser"');
+		expect(body).toContain('fallbackSource: "user_setting"');
 	});
 
 	it("guards break insertion before delegating to the clocking mutation", () => {
