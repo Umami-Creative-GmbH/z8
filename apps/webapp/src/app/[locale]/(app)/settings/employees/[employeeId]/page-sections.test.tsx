@@ -57,6 +57,11 @@ const translations = new Map([
 		"settings.employees.detailView.employeeNumberDescription",
 		"Externe ID im Lohnabrechnungssystem",
 	],
+	["settings.employees.detailView.startDate", "Startdatum"],
+	[
+		"settings.employees.detailView.startDateDescription",
+		"Arbeitszeitsaldo wird ab diesem Datum verfolgt",
+	],
 	["settings.employees.detailView.systemRole", "Systemrolle"],
 	["settings.employees.detailView.systemRoleDescription", "Legt die Zugriffsebene im System fest"],
 	["settings.employees.detailView.roleAdmin", "Admin"],
@@ -129,6 +134,7 @@ const formValues = {
 	pronouns: "he/him",
 	position: "",
 	employeeNumber: "EMP-001",
+	startDate: "2024-05-01",
 	role: "employee",
 	contractType: "fixed",
 	hourlyRate: "",
@@ -312,6 +318,27 @@ describe("employee detail page sections", () => {
 		expect(screen.queryByText("Edit Employee")).toBeNull();
 		expect(screen.queryByText("System Role")).toBeNull();
 		expect(screen.queryByText("Contract Type")).toBeNull();
+	});
+
+	it("renders the start date field in the edit form", () => {
+		render(
+			<EmployeeEditFormCard
+				form={createForm() as never}
+				canEditManagerFields={true}
+				canEditOrgAdminFields={true}
+				isUpdating={false}
+				onCancel={vi.fn()}
+				t={t}
+			/>,
+		);
+
+		const startDateInput = screen.getByLabelText("Startdatum");
+
+		expect(startDateInput.getAttribute("type")).toBe("date");
+		expect(startDateInput.getAttribute("name")).toBe("startDate");
+		expect(startDateInput.getAttribute("autocomplete")).toBe("off");
+		expect((startDateInput as HTMLInputElement).value).toBe("2024-05-01");
+		expect(screen.getByText("Arbeitszeitsaldo wird ab diesem Datum verfolgt")).toBeTruthy();
 	});
 
 	it("shows an inline error when employee pronouns are longer than 50 characters", () => {
