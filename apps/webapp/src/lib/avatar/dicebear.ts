@@ -1,5 +1,5 @@
-import { lorelei } from "@dicebear/collection";
-import { createAvatar } from "@dicebear/core";
+import { Avatar } from "@dicebear/core";
+import lorelei from "@dicebear/styles/lorelei.json" with { type: "json" };
 
 export type UserAvatarGender = "male" | "female" | "other";
 
@@ -21,12 +21,12 @@ function getDiceBearSex(gender: UserAvatarGender | null | undefined): ["male"] |
  */
 export function generateAvatarDataUri({ seed, size = 128, gender }: DiceBearAvatarOptions): string {
 	const sex = getDiceBearSex(gender);
-	const avatar = createAvatar(lorelei, {
+	const avatar = new Avatar(lorelei, {
 		seed,
 		size,
 		backgroundColor: ["b6e3f4", "c0aede", "d1d4f9", "ffd5dc", "ffdfbf"],
-		backgroundType: ["solid"],
-		radius: 50, // Circular avatar
+		backgroundColorFill: "solid",
+		borderRadius: 50, // Circular avatar
 		...(sex ? { sex } : {}),
 	});
 
