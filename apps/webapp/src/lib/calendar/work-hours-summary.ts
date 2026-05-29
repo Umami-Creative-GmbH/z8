@@ -1,4 +1,4 @@
-import { format } from "@/lib/datetime/luxon-utils";
+import { DateTime } from "luxon";
 import type {
 	CalendarEvent,
 	DailyWorkActualMinutes,
@@ -43,12 +43,22 @@ export function buildDailyWorkHoursSummaries({
 	return summaries;
 }
 
-export function buildDailyActualMinutes(events: CalendarEvent[]): DailyWorkActualMinutes {
+function getDateKey(date: Date, timezone: string | null | undefined): string {
+	const dateTime = DateTime.fromJSDate(date, { zone: timezone || "utc" });
+	return (dateTime.isValid ? dateTime : DateTime.fromJSDate(date, { zone: "utc" })).toFormat(
+		"yyyy-MM-dd",
+	);
+}
+
+export function buildDailyActualMinutes(
+	events: CalendarEvent[],
+	timezone?: string | null,
+): DailyWorkActualMinutes {
 	const actualByDate: DailyWorkActualMinutes = {};
 
 	for (const event of events) {
 		if (event.type !== "work_period") continue;
-		const dateKey = format(event.date, "yyyy-MM-dd");
+		const dateKey = getDateKey(event.date, timezone);
 		const durationMinutes = Number(event.metadata.durationMinutes ?? 0);
 		if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) continue;
 		actualByDate[dateKey] = (actualByDate[dateKey] ?? 0) + durationMinutes;

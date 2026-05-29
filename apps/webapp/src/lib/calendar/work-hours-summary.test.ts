@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { CalendarEvent, DailyWorkRequirements } from "./types";
-import { buildDailyWorkHoursSummaries, formatSignedMinutes, formatTimeHours } from "./work-hours-summary";
+import {
+	buildDailyActualMinutes,
+	buildDailyWorkHoursSummaries,
+	formatSignedMinutes,
+	formatTimeHours,
+} from "./work-hours-summary";
 
 function workPeriod(date: string, durationMinutes: number): CalendarEvent {
 	return {
@@ -13,6 +18,30 @@ function workPeriod(date: string, durationMinutes: number): CalendarEvent {
 		metadata: { durationMinutes, employeeName: "Ada" },
 	};
 }
+
+function workPeriodAt(date: Date, durationMinutes: number): CalendarEvent {
+	return {
+		id: `${date.toISOString()}-${durationMinutes}`,
+		type: "work_period",
+		date,
+		title: "Work",
+		color: "#10b981",
+		metadata: { durationMinutes, employeeName: "Ada" },
+	};
+}
+
+describe("buildDailyActualMinutes", () => {
+	it("groups work period dates by the selected calendar timezone", () => {
+		expect(
+			buildDailyActualMinutes(
+				[workPeriodAt(new Date("2026-06-01T02:00:00.000Z"), 120)],
+				"America/New_York",
+			),
+		).toEqual({
+			"2026-05-31": 120,
+		});
+	});
+});
 
 describe("buildDailyWorkHoursSummaries", () => {
 	it("sums work periods and marks over when actual is above required", () => {

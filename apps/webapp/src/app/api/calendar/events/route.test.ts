@@ -164,6 +164,7 @@ describe("GET /api/calendar/events", () => {
 			employeeId: "employee-1",
 			startDate: new Date("2026-04-30T22:00:00.000Z"),
 			endDate: new Date("2026-05-31T21:59:59.999Z"),
+			timezone: "Europe/Berlin",
 		});
 		expect(body.dailyRequirements).toEqual({
 			"2026-05-04": {
@@ -268,6 +269,39 @@ describe("GET /api/calendar/events", () => {
 			},
 			"America/New_York",
 		);
+	});
+
+	it("passes selected timezone into daily requirements and actual minute grouping", async () => {
+		mockState.findUserSettings.mockResolvedValueOnce({ timezone: "America/New_York" });
+		mockState.getWorkPeriodsForMonth.mockResolvedValueOnce([
+			{
+				id: "work-period-late-utc",
+				type: "work_period",
+				date: new Date("2026-06-01T02:00:00.000Z"),
+				title: "Work period",
+				color: "#10b981",
+				metadata: { durationMinutes: 120, employeeName: "Ada" },
+			},
+		]);
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&month=4&showWorkPeriods=false",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			startDate: new Date("2026-05-01T04:00:00.000Z"),
+			endDate: new Date("2026-06-01T03:59:59.999Z"),
+			timezone: "America/New_York",
+		});
+		expect(body.dailyActualMinutes).toEqual({
+			"2026-05-31": 120,
+		});
 	});
 
 	it("returns employee-assigned holidays for a scoped employee calendar", async () => {

@@ -117,6 +117,27 @@ describe("buildDailyWorkRequirements", () => {
 		expect(requirements).toEqual({});
 	});
 
+	it("iterates local calendar days in the selected timezone at a month boundary", () => {
+		const requirements = buildDailyWorkRequirements({
+			policy: basePolicy({
+				scheduleCycle: "weekly",
+				scheduleType: "simple",
+				workingDaysPreset: "all_days",
+				hoursPerCycle: "49",
+				homeOfficeDaysPerCycle: 0,
+				days: [],
+			}),
+			startDate: new Date("2026-06-01T04:00:00.000Z"),
+			endDate: new Date("2026-07-01T03:59:59.999Z"),
+			timezone: "America/New_York",
+		});
+
+		expect(Object.keys(requirements).at(0)).toBe("2026-06-01");
+		expect(Object.keys(requirements).at(-1)).toBe("2026-06-30");
+		expect(requirements["2026-07-01"]).toBeUndefined();
+		expect(Object.keys(requirements)).toHaveLength(30);
+	});
+
 	it("applies approved full-day absence reductions to daily requirements", () => {
 		const requirements = buildDailyWorkRequirements({
 			policy: basePolicy({

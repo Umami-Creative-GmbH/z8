@@ -172,7 +172,7 @@ async function fetchMonthEvents(
 	return {
 		events: [...holidays, ...absences, ...timeEntries, ...(showWorkPeriods ? workPeriods : [])],
 		dailyActualMinutes: includeWorkPeriodActuals
-			? buildDailyActualMinutes(completedWorkPeriods)
+			? buildDailyActualMinutes(completedWorkPeriods, calendarTimezone)
 			: {},
 	};
 }
@@ -204,6 +204,7 @@ async function fetchDailyRequirements(params: {
 	employeeId: string | undefined;
 	startDate: Date;
 	endDate: Date;
+	timezone: string | null;
 }): Promise<DailyWorkRequirements> {
 	if (!params.employeeId) return {};
 	const employeeId = params.employeeId;
@@ -214,6 +215,7 @@ async function fetchDailyRequirements(params: {
 			employeeId,
 			startDate: params.startDate,
 			endDate: params.endDate,
+			timezone: params.timezone,
 		});
 	} catch (error) {
 		console.error("Error fetching calendar work policy requirements:", error);
@@ -348,6 +350,7 @@ export async function GET(request: NextRequest) {
 				employeeId: scopedEmployeeId,
 				startDate,
 				endDate,
+				timezone: calendarTimezone,
 			}),
 			fetchWorkBalance({ organizationId, employeeId: scopedEmployeeId }),
 		]);
