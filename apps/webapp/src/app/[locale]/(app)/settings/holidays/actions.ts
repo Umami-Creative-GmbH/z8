@@ -2,7 +2,14 @@
 
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
-import { holiday, holidayAssignment, holidayCategory } from "@/db/schema";
+import {
+	employee,
+	holiday,
+	holidayAssignment,
+	holidayCategory,
+	holidayCategoryAssignment,
+	team,
+} from "@/db/schema";
 import type { PaginatedParams, PaginatedResponse } from "@/lib/data-table/types";
 import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -57,6 +64,30 @@ type HolidayAssignmentRecord = {
 		startDate: Date;
 		endDate: Date;
 		recurrenceType: string;
+	};
+	team: { id: string; name: string } | null;
+	employee: {
+		id: string;
+		firstName: string | null;
+		lastName: string | null;
+		user?: { firstName: string | null; lastName: string | null } | null;
+	} | null;
+};
+
+export type HolidayCategoryAssignmentRecord = {
+	id: string;
+	categoryId: string;
+	organizationId: string;
+	assignmentType: "organization" | "team" | "employee";
+	teamId: string | null;
+	employeeId: string | null;
+	isActive: boolean;
+	createdAt: Date;
+	category: {
+		id: string;
+		name: string;
+		type: string;
+		color: string | null;
 	};
 	team: { id: string; name: string } | null;
 	employee: {
@@ -562,6 +593,283 @@ export async function getHolidayAssignments(
 			manageableTeamIds,
 			managedEmployeeIds,
 		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runHolidayServerAction(effect);
+}
+
+/**
+ * Get all holiday category assignments for an organization
+ */
+export async function getHolidayCategoryAssignments(
+	organizationId: string,
+): Promise<ServerActionResult<HolidayCategoryAssignmentRecord[]>> {
+	const effect = Effect.gen(function* (_) {
+		const { actor, managedEmployeeIds, manageableTeamIds } = yield* _(
+			getScopedHolidayAccessContext(organizationId, "getHolidayCategoryAssignments:actor"),
+		);
+
+		const assignments = yield* _(
+			actor.dbService.query("getHolidayCategoryAssignments", async () => {
+				return await actor.dbService.db.query.holidayCategoryAssignment.findMany({
+					where: and(
+						eq(holidayCategoryAssignment.organizationId, organizationId),
+						eq(holidayCategoryAssignment.isActive, true),
+					),
+					with: {
+						category: { columns: { id: true, name: true, type: true, color: true } },
+						team: { columns: { id: true, name: true } },
+						employee: {
+							columns: { id: true },
+							with: { user: { columns: { firstName: true, lastName: true } } },
+						},
+					},
+				});
+			}),
+			Effect.mapError(
+				(error) =>
+					new DatabaseError({
+						message: "Failed to fetch holiday category assignments",
+						operation: "select",
+						table: "holiday_category_assignment",
+						cause: error,
+					}),
+			),
+		);
+
+		const assignmentsWithAuthNames = assignments.map((assignment) => ({
+			...assignment,
+			employee: assignment.employee
+				? {
+						id: assignment.employee.id,
+						firstName: assignment.employee.user?.firstName ?? null,
+						lastName: assignment.employee.user?.lastName ?? null,
+						user: assignment.employee.user,
+					}
+				: null,
+		})) satisfies HolidayCategoryAssignmentRecord[];
+
+		return filterAssignmentsForManagerHolidayScope(
+			assignmentsWithAuthNames,
+			manageableTeamIds,
+			managedEmployeeIds,
+		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runHolidayServerAction(effect);
+}
+
+/**
+ * Create a holiday category assignment
+ */
+export async function createHolidayCategoryAssignment(data: {
+	categoryId: string;
+	assignmentType: "organization" | "team" | "employee";
+	teamId?: string;
+	employeeId?: string;
+}): Promise<ServerActionResult<typeof holidayCategoryAssignment.$inferSelect>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "createHolidayCategoryAssignment:actor" }),
+		);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Only org admins can create holiday category assignments",
+				resource: "holiday_category_assignment",
+				action: "create",
+			}),
+		);
+
+		const [existingCategory] = yield* _(
+			actor.dbService.query("verifyHolidayCategory", async () => {
+				return await actor.dbService.db
+					.select()
+					.from(holidayCategory)
+					.where(
+						and(
+							eq(holidayCategory.id, data.categoryId),
+							eq(holidayCategory.organizationId, actor.organizationId),
+							eq(holidayCategory.isActive, true),
+						),
+					)
+					.limit(1);
+			}),
+		);
+
+		if (!existingCategory) {
+			yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Holiday category not found",
+						entityType: "holiday_category",
+						entityId: data.categoryId,
+					}),
+				),
+			);
+		}
+
+		if (data.assignmentType === "team") {
+			const assignmentTeamId = data.teamId;
+			if (assignmentTeamId) {
+				const [existingTeam] = yield* _(
+					actor.dbService.query("verifyHolidayCategoryAssignmentTeam", async () => {
+						return await actor.dbService.db
+							.select()
+							.from(team)
+							.where(and(eq(team.id, assignmentTeamId), eq(team.organizationId, actor.organizationId)))
+							.limit(1);
+					}),
+				);
+
+				if (!existingTeam) {
+					yield* _(
+						Effect.fail(
+							new NotFoundError({
+								message: "Team not found",
+								entityType: "team",
+								entityId: assignmentTeamId,
+							}),
+						),
+					);
+				}
+			} else {
+				yield* _(
+					Effect.fail(
+						new NotFoundError({
+							message: "Team not found",
+							entityType: "team",
+							entityId: "",
+						}),
+					),
+				);
+			}
+		}
+
+		if (data.assignmentType === "employee") {
+			const assignmentEmployeeId = data.employeeId;
+			if (assignmentEmployeeId) {
+				const [existingEmployee] = yield* _(
+					actor.dbService.query("verifyHolidayCategoryAssignmentEmployee", async () => {
+						return await actor.dbService.db
+							.select()
+							.from(employee)
+							.where(
+								and(eq(employee.id, assignmentEmployeeId), eq(employee.organizationId, actor.organizationId)),
+							)
+							.limit(1);
+					}),
+				);
+
+				if (!existingEmployee) {
+					yield* _(
+						Effect.fail(
+							new NotFoundError({
+								message: "Employee not found",
+								entityType: "employee",
+								entityId: assignmentEmployeeId,
+							}),
+						),
+					);
+				}
+			} else {
+				yield* _(
+					Effect.fail(
+						new NotFoundError({
+							message: "Employee not found",
+							entityType: "employee",
+							entityId: "",
+						}),
+					),
+				);
+			}
+		}
+
+		const newAssignment = yield* _(
+			actor.dbService.query("createHolidayCategoryAssignment", async () => {
+				const [assignment] = await actor.dbService.db
+					.insert(holidayCategoryAssignment)
+					.values({
+						categoryId: data.categoryId,
+						organizationId: actor.organizationId,
+						assignmentType: data.assignmentType,
+						teamId: data.assignmentType === "team" ? (data.teamId ?? null) : null,
+						employeeId: data.assignmentType === "employee" ? (data.employeeId ?? null) : null,
+						createdBy: actor.session.user.id,
+					})
+					.returning();
+
+				return assignment;
+			}),
+			Effect.mapError(
+				(error) =>
+					new DatabaseError({
+						message: "Failed to create holiday category assignment",
+						operation: "insert",
+						table: "holiday_category_assignment",
+						cause: error,
+					}),
+			),
+		);
+
+		return newAssignment;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runHolidayServerAction(effect);
+}
+
+/**
+ * Delete a holiday category assignment (soft delete)
+ */
+export async function deleteHolidayCategoryAssignment(
+	assignmentId: string,
+): Promise<ServerActionResult<void>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "deleteHolidayCategoryAssignment:actor" }),
+		);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Only org admins can delete holiday category assignments",
+				resource: "holiday_category_assignment",
+				action: "delete",
+			}),
+		);
+
+		const updatedAssignments = yield* _(
+			actor.dbService.query("deleteHolidayCategoryAssignment", async () => {
+				return await actor.dbService.db
+					.update(holidayCategoryAssignment)
+					.set({ isActive: false })
+					.where(
+						and(
+							eq(holidayCategoryAssignment.id, assignmentId),
+							eq(holidayCategoryAssignment.organizationId, actor.organizationId),
+						),
+					)
+					.returning({ id: holidayCategoryAssignment.id });
+			}),
+			Effect.mapError(
+				(error) =>
+					new DatabaseError({
+						message: "Failed to delete holiday category assignment",
+						operation: "update",
+						table: "holiday_category_assignment",
+						cause: error,
+					}),
+			),
+		);
+
+		if (updatedAssignments.length === 0) {
+			yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Holiday category assignment not found",
+						entityType: "holiday_category_assignment",
+						entityId: assignmentId,
+					}),
+				),
+			);
+		}
 	}).pipe(Effect.provide(AppLayer));
 
 	return runHolidayServerAction(effect);
