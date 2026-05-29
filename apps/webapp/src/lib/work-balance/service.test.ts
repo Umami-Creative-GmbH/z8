@@ -1085,6 +1085,15 @@ describe("work balance helpers", () => {
 		expect(mockState.upsertEmployeeWorkBalancePeriod).not.toHaveBeenCalled();
 		expect(mockState.rebuildEmployeeYearBalanceFromMonths).not.toHaveBeenCalled();
 		expect(mockState.txSelect).not.toHaveBeenCalled();
+		expect(mockState.txDelete).toHaveBeenCalledTimes(1);
+		expect(mockState.txDelete).toHaveBeenCalledWith(employeeWorkBalancePeriod);
+		expect(mockState.deleteWhere).toHaveBeenCalledTimes(1);
+		expect(mockState.deleteWhere).toHaveBeenCalledWith({
+			and: [
+				{ eq: [employeeWorkBalancePeriod.employeeId, "employee-1"] },
+				{ eq: [employeeWorkBalancePeriod.organizationId, "org-1"] },
+			],
+		});
 		expect(mockState.txInsertValues).toHaveBeenCalledWith(
 			expect.objectContaining({
 				employeeId: "employee-1",

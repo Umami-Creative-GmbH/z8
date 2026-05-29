@@ -352,6 +352,12 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 		: await getEmployeeStartDate(input, dbClient);
 	const calculationStartDate = employeeStartDate ?? fullRebuildStartDate;
 	if (calculationStartDate && calculationStartDate > hotWindow.endDate) {
+		await dbClient.delete(employeeWorkBalancePeriod).where(
+			and(
+				eq(employeeWorkBalancePeriod.employeeId, input.employeeId),
+				eq(employeeWorkBalancePeriod.organizationId, input.organizationId),
+			),
+		);
 		await upsertEmployeeWorkBalance(
 			buildWorkBalanceValues({
 				employeeId: input.employeeId,
