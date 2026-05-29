@@ -83,4 +83,24 @@ describe("work policy preset utilities", () => {
 		expect(parsePresetBreakRules(null)).toEqual([]);
 		expect(parsePresetBreakRules("not-json")).toEqual([]);
 	});
+
+	it("rejects break rules with malformed options", () => {
+		expect(
+			parsePresetBreakRules({
+				rules: [
+					{
+						workingMinutesThreshold: 360,
+						requiredBreakMinutes: 30,
+						options: [
+							{
+								splitCount: "2",
+								minimumSplitMinutes: 15,
+								minimumLongestSplitMinutes: null,
+							},
+						],
+					},
+				],
+			}),
+		).toEqual([]);
+	});
 });

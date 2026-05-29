@@ -35,6 +35,10 @@ interface PresetFilters {
 	countryCode?: string | null;
 }
 
+function isNumberOrNull(value: unknown): value is number | null {
+	return typeof value === "number" || value === null;
+}
+
 export function getPresetSource(preset: PresetSourceInput): PresetSource {
 	return preset.organizationId ? "custom" : "system";
 }
@@ -50,6 +54,17 @@ export function summarizeMinutes(minutes: number | null | undefined): string {
 	return `${hours}h ${remainingMinutes}m`;
 }
 
+function isBreakOption(value: unknown): value is BreakRuleInput["options"][number] {
+	if (!value || typeof value !== "object") return false;
+
+	const option = value as Partial<BreakRuleInput["options"][number]>;
+	return (
+		isNumberOrNull(option.splitCount) &&
+		isNumberOrNull(option.minimumSplitMinutes) &&
+		isNumberOrNull(option.minimumLongestSplitMinutes)
+	);
+}
+
 function isBreakRule(value: unknown): value is BreakRuleInput {
 	if (!value || typeof value !== "object") return false;
 
@@ -57,7 +72,8 @@ function isBreakRule(value: unknown): value is BreakRuleInput {
 	return (
 		typeof rule.workingMinutesThreshold === "number" &&
 		typeof rule.requiredBreakMinutes === "number" &&
-		Array.isArray(rule.options)
+		Array.isArray(rule.options) &&
+		rule.options.every(isBreakOption)
 	);
 }
 
