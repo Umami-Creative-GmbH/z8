@@ -43,6 +43,48 @@ export const holidayCategory = pgTable(
 	(table) => [index("holidayCategory_organizationId_idx").on(table.organizationId)],
 );
 
+// Assignment of custom holiday categories to organizations, teams, or employees
+export const holidayCategoryAssignment = pgTable(
+	"holiday_category_assignment",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		categoryId: uuid("category_id")
+			.notNull()
+			.references(() => holidayCategory.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
+		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").references(() => employee.id, {
+			onDelete: "cascade",
+		}),
+		isActive: boolean("is_active").default(true).notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		index("holidayCategoryAssignment_categoryId_idx").on(table.categoryId),
+		index("holidayCategoryAssignment_organizationId_idx").on(table.organizationId),
+		index("holidayCategoryAssignment_teamId_idx").on(table.teamId),
+		index("holidayCategoryAssignment_employeeId_idx").on(table.employeeId),
+		uniqueIndex("holidayCategoryAssignment_category_org_idx")
+			.on(table.categoryId, table.organizationId, table.assignmentType)
+			.where(sql`assignment_type = 'organization' AND is_active = true`),
+		uniqueIndex("holidayCategoryAssignment_category_team_idx")
+			.on(table.categoryId, table.teamId)
+			.where(sql`team_id IS NOT NULL AND is_active = true`),
+		uniqueIndex("holidayCategoryAssignment_category_employee_idx")
+			.on(table.categoryId, table.employeeId)
+			.where(sql`employee_id IS NOT NULL AND is_active = true`),
+	],
+);
+
 // Holidays and closing days with recurrence support
 export const holiday = pgTable(
 	"holiday",

@@ -41,6 +41,7 @@ import {
 	holiday,
 	holidayAssignment,
 	holidayCategory,
+	holidayCategoryAssignment,
 	holidayPreset,
 	holidayPresetAssignment,
 	holidayPresetHoliday,
@@ -166,6 +167,7 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	holidays: many(holiday),
 	holidayPresets: many(holidayPreset),
 	holidayPresetAssignments: many(holidayPresetAssignment),
+	holidayCategoryAssignments: many(holidayCategoryAssignment),
 	holidayAssignments: many(holidayAssignment),
 	vacationAllowances: many(vacationAllowance),
 	vacationPolicyAssignments: many(vacationPolicyAssignment),
@@ -877,8 +879,35 @@ export const holidayCategoryRelations = relations(holidayCategory, ({ one, many 
 		references: [organization.id],
 	}),
 	holidays: many(holiday),
+	assignments: many(holidayCategoryAssignment),
 	presetHolidays: many(holidayPresetHoliday),
 }));
+
+export const holidayCategoryAssignmentRelations = relations(
+	holidayCategoryAssignment,
+	({ one }) => ({
+		category: one(holidayCategory, {
+			fields: [holidayCategoryAssignment.categoryId],
+			references: [holidayCategory.id],
+		}),
+		organization: one(organization, {
+			fields: [holidayCategoryAssignment.organizationId],
+			references: [organization.id],
+		}),
+		team: one(team, {
+			fields: [holidayCategoryAssignment.teamId],
+			references: [team.id],
+		}),
+		employee: one(employee, {
+			fields: [holidayCategoryAssignment.employeeId],
+			references: [employee.id],
+		}),
+		creator: one(user, {
+			fields: [holidayCategoryAssignment.createdBy],
+			references: [user.id],
+		}),
+	}),
+);
 
 export const holidayRelations = relations(holiday, ({ one, many }) => ({
 	organization: one(organization, {
