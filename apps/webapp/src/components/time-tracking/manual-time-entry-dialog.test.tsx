@@ -139,6 +139,15 @@ function renderDialog(props: Partial<Parameters<typeof ManualTimeEntryDialog>[0]
 	);
 }
 
+function deferredResult<T>() {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>((promiseResolve) => {
+		resolve = promiseResolve;
+	});
+
+	return { promise, resolve };
+}
+
 describe("ManualTimeEntryDialog layout", () => {
 	beforeEach(() => {
 		createManualTimeEntry.mockReset();
@@ -304,6 +313,35 @@ describe("ManualTimeEntryDialog layout", () => {
 				}),
 			);
 		});
+	});
+
+	it("keeps mismatch actions disabled while continue-once manual entry submit is pending", async () => {
+		const createResult = deferredResult<{ success: true; data: Record<string, never> }>();
+		createManualTimeEntry.mockReturnValue(createResult.promise);
+
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			employeeTimezone: "Europe/Berlin",
+			defaultDate: "2026-05-12",
+			defaultClockInTime: "10:15",
+			defaultClockOutTime: "15:45",
+		});
+
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+
+		const continueButton = await screen.findByRole("button", { name: "Continue once" });
+		fireEvent.click(continueButton);
+
+		await waitFor(() => {
+			expect(continueButton.hasAttribute("disabled")).toBe(true);
+		});
+		fireEvent.click(continueButton);
+		expect(createManualTimeEntry).toHaveBeenCalledTimes(1);
+
+		createResult.resolve({ success: true, data: {} });
+		await waitFor(() => expect(refresh).toHaveBeenCalled());
 	});
 
 	it("cancels self manual timezone mismatch without submitting", async () => {

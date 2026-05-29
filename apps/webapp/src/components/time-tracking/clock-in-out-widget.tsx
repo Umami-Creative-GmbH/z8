@@ -140,7 +140,7 @@ export function ClockInOutWidget({ activeWorkPeriod, employeeName, timeFormat }:
 					open
 					savedTimezone={widget.timezoneMismatch.savedTimezone}
 					browserTimezone={widget.timezoneMismatch.browserTimezone}
-					isUpdating={widget.isUpdatingTimezone}
+					isPending={widget.isTimezoneContinuationPending}
 					onUpdateAndContinue={widget.handleTimezoneMismatchUpdateAndContinue}
 					onContinueOnce={widget.handleTimezoneMismatchContinueOnce}
 					onCancel={widget.handleTimezoneMismatchCancel}

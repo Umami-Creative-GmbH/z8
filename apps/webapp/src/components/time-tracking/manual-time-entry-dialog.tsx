@@ -77,7 +77,8 @@ export function ManualTimeEntryDialog({
 		value: FormValues;
 		browserTimezone: string;
 	} | null>(null);
-	const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false);
+	const [isTimezoneContinuationPending, setIsTimezoneContinuationPending] = useState(false);
+	const isTimezoneContinuationPendingRef = useRef(false);
 	const wasOpenRef = useRef(false);
 	const router = useRouter();
 	const timeFormat = useTimeFormat();
@@ -165,6 +166,10 @@ export function ManualTimeEntryDialog({
 	const form = useForm({
 		defaultValues: getDefaultValues(),
 		onSubmit: async ({ value }) => {
+			if (isTimezoneContinuationPendingRef.current) {
+				return;
+			}
+
 			// Validate time span - clock out must be after clock in
 			const [inHours, inMinutes] = value.clockInTime.split(":").map(Number);
 			const [outHours, outMinutes] = value.clockOutTime.split(":").map(Number);
@@ -215,8 +220,9 @@ export function ManualTimeEntryDialog({
 	});
 
 	async function handleUpdateTimezoneAndSubmit() {
-		if (!pendingMismatch) return;
-		setIsUpdatingTimezone(true);
+		if (!pendingMismatch || isTimezoneContinuationPendingRef.current) return;
+		isTimezoneContinuationPendingRef.current = true;
+		setIsTimezoneContinuationPending(true);
 
 		try {
 			const result = await updateTimezone(pendingMismatch.browserTimezone);
@@ -226,20 +232,29 @@ export function ManualTimeEntryDialog({
 			}
 
 			const { value, browserTimezone } = pendingMismatch;
-			setPendingMismatch(null);
 			await submitManualEntry(value, browserTimezone, browserTimezone);
+			setPendingMismatch(null);
 		} catch {
 			toast.error("An error occurred while updating timezone");
 		} finally {
-			setIsUpdatingTimezone(false);
+			isTimezoneContinuationPendingRef.current = false;
+			setIsTimezoneContinuationPending(false);
 		}
 	}
 
 	async function handleContinueOnce() {
-		if (!pendingMismatch) return;
+		if (!pendingMismatch || isTimezoneContinuationPendingRef.current) return;
+		isTimezoneContinuationPendingRef.current = true;
+		setIsTimezoneContinuationPending(true);
+
 		const { value, browserTimezone } = pendingMismatch;
-		setPendingMismatch(null);
-		await submitManualEntry(value, browserTimezone, browserTimezone);
+		try {
+			await submitManualEntry(value, browserTimezone, browserTimezone);
+			setPendingMismatch(null);
+		} finally {
+			isTimezoneContinuationPendingRef.current = false;
+			setIsTimezoneContinuationPending(false);
+		}
 	}
 
 	const handleOpenChange = (isOpen: boolean) => {
@@ -427,13 +442,13 @@ export function ManualTimeEntryDialog({
 
 						<ActionPanelFooter className="gap-2">
 							<ActionPanelClose asChild>
-								<Button type="button" variant="outline">
+								<Button type="button" variant="outline" disabled={isTimezoneContinuationPending}>
 									{t("common.cancel", "Cancel")}
 								</Button>
 							</ActionPanelClose>
 							<form.Subscribe selector={(state) => state.isSubmitting}>
 								{(isSubmitting) => (
-									<Button type="submit" disabled={isSubmitting}>
+									<Button type="submit" disabled={isSubmitting || isTimezoneContinuationPending}>
 										{isSubmitting ? (
 											<>
 												<IconLoader2 className="size-4 animate-spin" />
@@ -454,7 +469,7 @@ export function ManualTimeEntryDialog({
 					open
 					savedTimezone={employeeTimezone}
 					browserTimezone={pendingMismatch.browserTimezone}
-					isUpdating={isUpdatingTimezone}
+					isPending={isTimezoneContinuationPending}
 					onUpdateAndContinue={handleUpdateTimezoneAndSubmit}
 					onContinueOnce={handleContinueOnce}
 					onCancel={() => setPendingMismatch(null)}

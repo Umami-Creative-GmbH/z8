@@ -68,6 +68,15 @@ vi.mock("@/lib/query", () => ({
 	}),
 }));
 
+function deferredResult<T>() {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>((promiseResolve) => {
+		resolve = promiseResolve;
+	});
+
+	return { promise, resolve };
+}
+
 describe("useClockInOutWidget", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -110,6 +119,33 @@ describe("useClockInOutWidget", () => {
 
 		expect(mocks.updateTimezone).not.toHaveBeenCalled();
 		expect(mocks.clockOut).toHaveBeenCalledWith({ browserTimezone: "America/New_York" });
+	});
+
+	it("ignores duplicate timezone mismatch continuation while clock submit is pending", async () => {
+		const clockOutResult = deferredResult<{ success: true; data: Record<string, never> }>();
+		mocks.clockOut.mockReturnValue(clockOutResult.promise);
+
+		const { result } = renderHook(() =>
+			useClockInOutWidget({
+				id: "period-1",
+				startTime: new Date("2026-05-18T08:00:00Z"),
+				endTime: null,
+			}),
+		);
+
+		await act(async () => {
+			await result.current.handleClockOut();
+		});
+
+		await waitFor(() => expect(result.current.timezoneMismatch).not.toBeNull());
+
+		await act(async () => {
+			const firstSubmit = result.current.handleTimezoneMismatchContinueOnce();
+			const secondSubmit = result.current.handleTimezoneMismatchContinueOnce();
+			expect(mocks.clockOut).toHaveBeenCalledTimes(1);
+			clockOutResult.resolve({ success: true, data: {} });
+			await Promise.all([firstSubmit, secondSubmit]);
+		});
 	});
 
 	it("updates timezone before continuing a mismatched clock-in", async () => {

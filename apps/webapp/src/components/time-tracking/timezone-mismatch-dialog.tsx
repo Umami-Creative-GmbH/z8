@@ -14,7 +14,7 @@ interface TimezoneMismatchDialogProps {
 	open: boolean;
 	savedTimezone: string;
 	browserTimezone: string;
-	isUpdating?: boolean;
+	isPending?: boolean;
 	onUpdateAndContinue: () => void;
 	onContinueOnce: () => void;
 	onCancel: () => void;
@@ -24,7 +24,7 @@ export function TimezoneMismatchDialog({
 	open,
 	savedTimezone,
 	browserTimezone,
-	isUpdating = false,
+	isPending = false,
 	onUpdateAndContinue,
 	onContinueOnce,
 	onCancel,
@@ -43,13 +43,13 @@ export function TimezoneMismatchDialog({
 					timezone before continuing.
 				</p>
 				<DialogFooter>
-					<Button type="button" variant="outline" onClick={onCancel} disabled={isUpdating}>
+					<Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
 						Cancel
 					</Button>
-					<Button type="button" variant="secondary" onClick={onContinueOnce} disabled={isUpdating}>
+					<Button type="button" variant="secondary" onClick={onContinueOnce} disabled={isPending}>
 						Continue once
 					</Button>
-					<Button type="button" onClick={onUpdateAndContinue} disabled={isUpdating}>
+					<Button type="button" onClick={onUpdateAndContinue} disabled={isPending}>
 						Update timezone and continue
 					</Button>
 				</DialogFooter>
