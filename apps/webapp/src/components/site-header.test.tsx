@@ -42,19 +42,19 @@ vi.mock("@/components/dashboard/dashboard-header-customize", () => ({
 }));
 
 describe("SiteHeader", () => {
-	it("shows the dashboard customize trigger before notifications on the dashboard route", () => {
+	it("shows header actions in the requested order on the dashboard route", () => {
 		pathname = "/en";
 
 		render(<SiteHeader />);
 
 		const buttons = screen.getAllByRole("button").map((button) => button.textContent);
-		expect(buttons).toEqual([
-			"Toggle sidebar",
-			"Customize dashboard",
-			"Timezone",
-			"Notifications",
-			"Clock In",
-		]);
+			expect(buttons).toEqual([
+				"Toggle sidebar",
+				"Customize dashboard",
+				"Timezone",
+				"Clock In",
+				"Notifications",
+			]);
 	});
 
 	it("does not show the dashboard customize trigger outside the dashboard route", () => {

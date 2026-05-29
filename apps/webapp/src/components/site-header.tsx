@@ -69,8 +69,8 @@ export function SiteHeader() {
 				<div className="ml-auto flex items-center gap-2">
 					{isDashboardRoute ? <DashboardHeaderCustomize /> : null}
 					<HeaderTimezoneControl />
-					<NotificationBell />
 					<TimeClockPopover timeFormat={timeFormat} />
+					<NotificationBell />
 				</div>
 			</div>
 		</header>
