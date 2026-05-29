@@ -1,8 +1,64 @@
 /* @vitest-environment jsdom */
 
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { DateTime } from "luxon";
-import { describe, expect, it } from "vitest";
-import { formatHeaderTimezone } from "./header-timezone-control";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { HeaderTimezoneControl, formatHeaderTimezone } from "./header-timezone-control";
+
+const mocks = vi.hoisted(() => ({
+	refresh: vi.fn(),
+	updateTimezone: vi.fn(),
+	toastSuccess: vi.fn(),
+	toastError: vi.fn(),
+	timezone: "Europe/Berlin",
+	timeFormat: "24h" as "24h" | "12h",
+}));
+
+vi.mock("@/components/providers/user-preferences-provider", () => ({
+	useTimeFormat: () => mocks.timeFormat,
+	useUserTimezone: () => mocks.timezone,
+}));
+
+vi.mock("@/app/[locale]/(app)/settings/profile/actions", () => ({
+	updateTimezone: (timezone: string) => mocks.updateTimezone(timezone),
+}));
+
+vi.mock("@/navigation", () => ({
+	useRouter: () => ({ refresh: mocks.refresh }),
+}));
+
+vi.mock("sonner", () => ({
+	toast: {
+		success: (message: string) => mocks.toastSuccess(message),
+		error: (message: string) => mocks.toastError(message),
+	},
+}));
+
+vi.mock("@/components/settings/timezone-picker", () => ({
+	TimezonePicker: ({
+		value,
+		onChange,
+		disabled,
+	}: {
+		value: string;
+		onChange: (timezone: string) => void;
+		disabled?: boolean;
+	}) => (
+		<label>
+			Timezone picker
+			<select
+				aria-label="Timezone picker"
+				disabled={disabled}
+				value={value}
+				onChange={(event) => onChange(event.target.value)}
+			>
+				<option value="Europe/Berlin">Europe/Berlin</option>
+				<option value="America/New_York">America/New_York</option>
+			</select>
+		</label>
+	),
+}));
 
 describe("formatHeaderTimezone", () => {
 	it("formats 24-hour local time without seconds and includes the current UTC offset", () => {
@@ -33,5 +89,82 @@ describe("formatHeaderTimezone", () => {
 			offsetLabel: "UTC+00:00",
 			timeLabel: "12:34",
 		});
+	});
+});
+
+describe("HeaderTimezoneControl", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-05-29T12:34:56.000Z"));
+		mocks.timezone = "Europe/Berlin";
+		mocks.timeFormat = "24h";
+		mocks.refresh.mockReset();
+		mocks.updateTimezone.mockReset();
+		mocks.toastSuccess.mockReset();
+		mocks.toastError.mockReset();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("shows the current configured time and UTC offset in the trigger", () => {
+		render(<HeaderTimezoneControl />);
+
+		expect(screen.getByRole("button", { name: /Current timezone Europe\/Berlin/i })).toBeTruthy();
+		expect(screen.getByText("14:34")).toBeTruthy();
+		expect(screen.getByText("UTC+02:00")).toBeTruthy();
+		expect(screen.queryByText(/14:34:56/)).toBeNull();
+	});
+
+	it("opens a popover with a disabled save button until the draft timezone changes", async () => {
+		render(<HeaderTimezoneControl />);
+		vi.useRealTimers();
+		const user = userEvent.setup();
+
+		await user.click(screen.getByRole("button", { name: /Current timezone Europe\/Berlin/i }));
+
+		expect(screen.getByText("Saved timezone")).toBeTruthy();
+		expect(screen.getAllByText("Europe/Berlin").length).toBeGreaterThan(0);
+		expect(
+			(screen.getByRole("button", { name: "Save timezone" }) as HTMLButtonElement).disabled,
+		).toBe(true);
+
+		await user.selectOptions(screen.getByLabelText("Timezone picker"), "America/New_York");
+
+		expect(
+			(screen.getByRole("button", { name: "Save timezone" }) as HTMLButtonElement).disabled,
+		).toBe(false);
+	});
+
+	it("saves the selected timezone, refreshes the route, and shows success feedback", async () => {
+		mocks.updateTimezone.mockResolvedValue({ success: true });
+		render(<HeaderTimezoneControl />);
+		vi.useRealTimers();
+		const user = userEvent.setup();
+
+		await user.click(screen.getByRole("button", { name: /Current timezone Europe\/Berlin/i }));
+		await user.selectOptions(screen.getByLabelText("Timezone picker"), "America/New_York");
+		await user.click(screen.getByRole("button", { name: "Save timezone" }));
+
+		await waitFor(() => expect(mocks.updateTimezone).toHaveBeenCalledWith("America/New_York"));
+		expect(mocks.refresh).toHaveBeenCalledTimes(1);
+		expect(mocks.toastSuccess).toHaveBeenCalledWith("Timezone updated successfully");
+	});
+
+	it("keeps the popover open and preserves the draft timezone when save fails", async () => {
+		mocks.updateTimezone.mockResolvedValue({ success: false, error: "Failed to update timezone" });
+		render(<HeaderTimezoneControl />);
+		vi.useRealTimers();
+		const user = userEvent.setup();
+
+		await user.click(screen.getByRole("button", { name: /Current timezone Europe\/Berlin/i }));
+		await user.selectOptions(screen.getByLabelText("Timezone picker"), "America/New_York");
+		await user.click(screen.getByRole("button", { name: "Save timezone" }));
+
+		await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith("Failed to update timezone"));
+		expect(mocks.refresh).not.toHaveBeenCalled();
+		expect((screen.getByLabelText("Timezone picker") as HTMLSelectElement).value).toBe("America/New_York");
+		expect(screen.getByText("Saved timezone")).toBeTruthy();
 	});
 });
