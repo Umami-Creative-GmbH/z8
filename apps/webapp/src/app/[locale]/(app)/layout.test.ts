@@ -17,3 +17,12 @@ describe("app layout locale preference", () => {
 		expect(source).not.toContain("@/tolgee/language");
 	});
 });
+
+describe("app layout user preferences", () => {
+	it("passes the saved user timezone to the client preference provider", () => {
+		const source = stripComments(readFileSync(join(APP_ROUTE_ROOT, "layout.tsx"), "utf8"));
+
+		expect(source).toContain("getUserTimezone(session.user.id)");
+		expect(source).toContain("timezone={timezone}");
+	});
+});

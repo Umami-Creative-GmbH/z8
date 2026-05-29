@@ -1,7 +1,12 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import type { WorkPeriodEvent } from "@/lib/calendar/types";
 import { filterEventsForScheduleXView, resolveClickableCalendarEvent } from "./schedule-x-calendar";
+
+const COMPONENT_DIR = fileURLToPath(new URL(".", import.meta.url));
 
 const completedWorkPeriod: WorkPeriodEvent = {
 	id: "work-completed",
@@ -64,5 +69,14 @@ describe("resolveClickableCalendarEvent", () => {
 		expect(resolveClickableCalendarEvent(events, { id: completedWorkPeriod.id })).toBe(
 			completedWorkPeriod,
 		);
+	});
+});
+
+describe("calendar timezone source", () => {
+	it("uses the user's timezone preference for timed work periods", () => {
+		const source = readFileSync(join(COMPONENT_DIR, "schedule-x-calendar.tsx"), "utf8");
+
+		expect(source).toContain("useUserTimezone");
+		expect(source).not.toContain("useOrganizationTimezone");
 	});
 });

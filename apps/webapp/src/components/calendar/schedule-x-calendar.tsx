@@ -23,7 +23,7 @@ import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 
 import { useEffect, useRef, useState } from "react";
-import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import { useUserTimezone, useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,7 +36,6 @@ import {
 import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
 import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
-import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 import { buildRequirementHeaderContent } from "./daily-requirement-strip";
 
 export type ViewMode = "day" | "week" | "month" | "year";
@@ -113,7 +112,7 @@ export function ScheduleXCalendarWrapper({
 	const locale = tolgee.getLanguage() ?? "en";
 	const scheduleXLocale = toScheduleXLocale(locale);
 	const weekStartDay = useWeekStartDay();
-	const timeZone = useOrganizationTimezone();
+	const timeZone = useUserTimezone();
 	const isDark = resolvedTheme === "dark";
 
 	// Track current date for display
