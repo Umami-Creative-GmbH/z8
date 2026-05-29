@@ -103,10 +103,18 @@ export function hasExceededPointerDragThreshold(
 	return Math.hypot(end.clientX - start.clientX, end.clientY - start.clientY) > threshold;
 }
 
+export function buildCalendarTimeZoneDate(dateValue: string, minutes: number, timeZone: string) {
+	return DateTime.fromISO(dateValue, { zone: timeZone })
+		.startOf("day")
+		.plus({ minutes })
+		.toJSDate();
+}
+
 function getPointerDateTime(
 	container: HTMLDivElement,
 	event: PointerEvent,
 	visibleDates: DateTime[],
+	timeZone: string,
 ) {
 	if (visibleDates.length === 0) return null;
 
@@ -118,7 +126,9 @@ function getPointerDateTime(
 		dateAttributeElement?.dataset.timeGridDate ??
 		dateAttributeElement?.dataset.date ??
 		dateAttributeElement?.dataset.dateTime;
-	const attributeDate = dateAttribute ? DateTime.fromISO(dateAttribute.slice(0, 10)) : null;
+	const attributeDate = dateAttribute
+		? DateTime.fromISO(dateAttribute.slice(0, 10), { zone: timeZone })
+		: null;
 
 	const dayCells = Array.from(container.querySelectorAll<HTMLElement>(".sx__time-grid-day"));
 	const matchingDayCell = dayCells.find((cell) => {
@@ -144,7 +154,7 @@ function getPointerDateTime(
 		((event.clientY - timeGridRect.top) / timeGridRect.height) * 24 * 60,
 	);
 
-	return date.startOf("day").plus({ minutes }).toJSDate();
+	return buildCalendarTimeZoneDate(date.toISODate() ?? "", minutes, timeZone);
 }
 
 export function ScheduleXCalendarWrapper({
@@ -449,7 +459,7 @@ export function ScheduleXCalendarWrapper({
 				return;
 			}
 
-			const date = getPointerDateTime(container, event, visibleRequirementDates);
+			const date = getPointerDateTime(container, event, visibleRequirementDates, timeZone);
 			selectionStartRef.current = date
 				? { date, clientX: event.clientX, clientY: event.clientY }
 				: null;
@@ -464,7 +474,7 @@ export function ScheduleXCalendarWrapper({
 			const target = event.target instanceof Element ? event.target : null;
 			if (target instanceof HTMLElement && isScheduleXEventElement(target)) return;
 
-			const end = getPointerDateTime(container, event, visibleRequirementDates);
+			const end = getPointerDateTime(container, event, visibleRequirementDates, timeZone);
 			if (!end || start.date.getTime() === end.getTime()) return;
 
 			onTimeRangeSelect({ start: start.date, end });

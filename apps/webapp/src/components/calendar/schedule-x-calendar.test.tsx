@@ -1,7 +1,9 @@
 /** @vitest-environment jsdom */
 
 import { describe, expect, it } from "vitest";
+import { DateTime } from "luxon";
 import {
+	buildCalendarTimeZoneDate,
 	hasExceededPointerDragThreshold,
 	isIntentionalRangePointerDown,
 	isScheduleXEventElement,
@@ -49,5 +51,16 @@ describe("hasExceededPointerDragThreshold", () => {
 		expect(
 			hasExceededPointerDragThreshold({ clientX: 10, clientY: 20 }, { clientX: 15, clientY: 20 }),
 		).toBe(true);
+	});
+});
+
+describe("buildCalendarTimeZoneDate", () => {
+	it("builds range selection instants in the calendar timezone", () => {
+		const selectedDate = buildCalendarTimeZoneDate("2026-05-29", 10 * 60 + 15, "Europe/Berlin");
+
+		expect(DateTime.fromJSDate(selectedDate, { zone: "Europe/Berlin" }).toFormat("HH:mm")).toBe(
+			"10:15",
+		);
+		expect(selectedDate.toISOString()).toBe("2026-05-29T08:15:00.000Z");
 	});
 });
