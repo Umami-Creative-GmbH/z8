@@ -128,6 +128,7 @@ export function ManualTimeEntryDialog({
 				return;
 			}
 
+			const browserTimezone = getBrowserTimezone();
 			const result = await createManualTimeEntry({
 				...(targetEmployeeId ? { employeeId: targetEmployeeId } : {}),
 				date: value.date,
@@ -135,7 +136,7 @@ export function ManualTimeEntryDialog({
 				clockOutTime: value.clockOutTime,
 				reason: value.reason,
 				timezone: employeeTimezone,
-				browserTimezone: targetEmployeeId ? null : getBrowserTimezone(),
+				browserTimezone: !targetEmployeeId && browserTimezone === employeeTimezone ? browserTimezone : null,
 				projectId: value.projectId,
 				workCategoryId: value.workCategoryId,
 			});

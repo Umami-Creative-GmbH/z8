@@ -3,7 +3,7 @@ import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { employee, timeEntry, workPeriod } from "@/db/schema";
+import { employee, timeEntry, userSettings, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
@@ -20,8 +20,23 @@ import {
 } from "@/lib/billing/guard";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
-import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
+import {
+	isValidIanaTimezone,
+	resolveTimeEntryTimezoneCapture,
+} from "@/lib/time-tracking/timezone-capture";
 import { isWorkLocationType } from "@/lib/time-tracking/work-location";
+
+async function getSavedUserTimezone(userId: string): Promise<string | null> {
+	try {
+		const settings = await db.query.userSettings.findFirst({
+			where: eq(userSettings.userId, userId),
+			columns: { timezone: true },
+		});
+		return isValidIanaTimezone(settings?.timezone) ? settings.timezone : null;
+	} catch {
+		return null;
+	}
+}
 
 /**
  * GET /api/time-entries
@@ -172,7 +187,8 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const { type, timestamp, notes, location, projectId, workLocationType } = body;
+		const { type, timestamp, notes, location, projectId, workLocationType, browserTimezone, timezone } =
+			body;
 
 		// Validate required fields
 		if (!type || !["clock_in", "clock_out"].includes(type)) {
@@ -225,10 +241,18 @@ export async function POST(request: NextRequest) {
 			resolvedHeaders.get("x-forwarded-for") || resolvedHeaders.get("x-real-ip") || "unknown";
 		const deviceInfo = resolvedHeaders.get("user-agent") || "unknown";
 		const entryTime = timestamp ? new Date(timestamp) : new Date();
-		const timezoneCapture = resolveFallbackTimezoneCapture({
+		const savedTimezone = (await getSavedUserTimezone(session.user.id)) ?? "UTC";
+		const requestTimezone = isValidIanaTimezone(browserTimezone)
+			? browserTimezone
+			: isValidIanaTimezone(timezone)
+				? timezone
+				: null;
+		const timezoneCapture = resolveTimeEntryTimezoneCapture({
 			timestamp: entryTime,
-			timezone: "UTC",
-			timezoneSource: "user_setting",
+			browserTimezone: requestTimezone,
+			fallbackTimezone: savedTimezone,
+			browserSource: "browser",
+			fallbackSource: "user_setting",
 		});
 
 		const effect = Effect.gen(function* (_) {

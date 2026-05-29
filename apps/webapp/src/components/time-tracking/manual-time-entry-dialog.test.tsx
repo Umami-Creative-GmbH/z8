@@ -237,7 +237,7 @@ describe("ManualTimeEntryDialog layout", () => {
 		});
 	});
 
-	it("submits the browser timezone for self manual entries", async () => {
+	it("omits a differing browser timezone for self manual entries", async () => {
 		renderDialog({
 			open: true,
 			hideTrigger: true,
@@ -257,7 +257,32 @@ describe("ManualTimeEntryDialog layout", () => {
 					clockInTime: "10:15",
 					clockOutTime: "15:45",
 					timezone: "Europe/Berlin",
-					browserTimezone: "America/New_York",
+					browserTimezone: null,
+				}),
+			);
+		});
+	});
+
+	it("submits browser timezone for self manual entries when it matches the employee timezone", async () => {
+		getBrowserTimezone.mockReturnValue("Europe/Berlin");
+
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			employeeTimezone: "Europe/Berlin",
+			defaultDate: "2026-05-12",
+			defaultClockInTime: "10:15",
+			defaultClockOutTime: "15:45",
+		});
+
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+
+		await waitFor(() => {
+			expect(createManualTimeEntry).toHaveBeenCalledWith(
+				expect.objectContaining({
+					timezone: "Europe/Berlin",
+					browserTimezone: "Europe/Berlin",
 				}),
 			);
 		});

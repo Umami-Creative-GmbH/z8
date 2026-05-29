@@ -6,7 +6,13 @@ import {
 	requireMobileSessionContext,
 } from "@/app/api/mobile/shared";
 import { clockIn, clockOut } from "@/app/[locale]/(app)/time-tracking/actions/clocking";
+import { isValidIanaTimezone } from "@/lib/time-tracking/timezone-capture";
 import { WORK_LOCATION_TYPES } from "@/lib/time-tracking/work-location";
+
+const timezoneFields = {
+	browserTimezone: z.string().optional(),
+	timezone: z.string().optional(),
+};
 
 const mobileTimeClockSchema = z.discriminatedUnion("action", [
 	z.object({
@@ -14,9 +20,11 @@ const mobileTimeClockSchema = z.discriminatedUnion("action", [
 		workLocationType: z.enum(WORK_LOCATION_TYPES, {
 			error: "workLocationType is required for clock_in",
 		}),
+		...timezoneFields,
 	}),
 	z.object({
 		action: z.literal("clock_out"),
+		...timezoneFields,
 	}),
 ]);
 
@@ -44,11 +52,20 @@ export async function POST(request: Request) {
 		}
 
 		await requireMobileEmployee(session.user.id, activeOrganizationId);
+		const browserTimezone = isValidIanaTimezone(parsedBody.data.browserTimezone)
+			? parsedBody.data.browserTimezone
+			: isValidIanaTimezone(parsedBody.data.timezone)
+				? parsedBody.data.timezone
+				: undefined;
 
 		const result =
 			parsedBody.data.action === "clock_in"
-				? await clockIn(parsedBody.data.workLocationType)
-				: await clockOut();
+				? browserTimezone
+					? await clockIn(parsedBody.data.workLocationType, { browserTimezone })
+					: await clockIn(parsedBody.data.workLocationType)
+				: browserTimezone
+					? await clockOut(undefined, undefined, { browserTimezone })
+					: await clockOut();
 
 		if (!result.success) {
 			return NextResponse.json({ error: result.error ?? "Time clock action failed" }, { status: 400 });
