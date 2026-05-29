@@ -14,10 +14,10 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-	deleteHolidayCategoryAssignment,
 	deleteHolidayAssignment,
-	getHolidayCategoryAssignments,
+	deleteHolidayCategoryAssignment,
 	getHolidayAssignments,
+	getHolidayCategoryAssignments,
 } from "@/app/[locale]/(app)/settings/holidays/actions";
 import {
 	deletePresetAssignment,
