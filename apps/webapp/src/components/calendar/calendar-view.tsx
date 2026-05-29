@@ -8,6 +8,7 @@ import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useOrganization } from "@/hooks/use-organization";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
 import { useRouter } from "@/navigation";
@@ -93,13 +94,7 @@ export function CalendarView({
 
 	const getEmployeeDisplayName = (employee?: SelectableEmployee) => {
 		if (!employee) return null;
-		const fullName = [
-			employee.firstName ?? employee.user.firstName,
-			employee.lastName ?? employee.user.lastName,
-		]
-			.filter(Boolean)
-			.join(" ");
-		return employee.user.name ?? (fullName || employee.user.email);
+		return buildAuthUserDisplayName(employee.user);
 	};
 
 	// Handle employee selection change
