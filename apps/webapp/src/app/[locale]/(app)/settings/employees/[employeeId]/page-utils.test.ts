@@ -60,7 +60,7 @@ describe("syncEmployeeForm", () => {
 			gender: "male",
 			position: "Developer",
 			employeeNumber: "EMP-001",
-			startDate: null,
+			startDate: new Date("2026-05-01T22:30:00.000Z"),
 			role: "employee",
 			contractType: "fixed",
 			currentHourlyRate: null,
@@ -78,5 +78,6 @@ describe("syncEmployeeForm", () => {
 		expect(form.reset).toHaveBeenCalledOnce();
 		expect(form.setFieldValue).toHaveBeenCalledWith("firstName", "Ada");
 		expect(form.setFieldValue).toHaveBeenCalledWith("lastName", "Lovelace");
+		expect(form.setFieldValue).toHaveBeenCalledWith("startDate", "2026-05-01");
 	});
 });

@@ -18,6 +18,7 @@ import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useRouter } from "@/navigation";
 import { EmployeeDetailHeader, EmployeeEditFormCard, EmployeeOverviewCard } from "./page-sections";
 import {
+	buildEmployeeUpdatePayload,
 	defaultFormValues,
 	focusFirstInvalidEmployeeDetailField,
 	syncEmployeeForm,
@@ -69,7 +70,8 @@ export function EmployeeDetailPageClient({
 		defaultValues: defaultFormValues,
 		onSubmitInvalid: ({ formApi }) => focusFirstInvalidEmployeeDetailField(formApi),
 		onSubmit: async ({ value }) => {
-			const result = await updateEmployee(value).catch(() => null);
+			const payload = buildEmployeeUpdatePayload(value);
+			const result = await updateEmployee(payload).catch(() => null);
 
 			if (!result) {
 				toast.error(
