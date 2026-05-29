@@ -224,6 +224,48 @@ describe("ApprovalQueryService", () => {
 		expect(result.total).toBe(1);
 	});
 
+	it("keeps filtered inbox results available when one requested approval handler dies", async () => {
+		approvalQueryTestState.handlers = [
+			{
+				type: "absence_entry",
+				getApprovals: vi.fn(() =>
+					Effect.succeed([
+						createUnifiedApprovalItem({
+							id: "absence-1",
+							approvalType: "absence_entry",
+							createdAt: "2026-04-10T09:00:00.000Z",
+							priority: "normal",
+						}),
+					]),
+				),
+				getCount: vi.fn(() => Effect.succeed(1)),
+			},
+			{
+				type: "travel_expense_claim",
+				getApprovals: vi.fn(() => Effect.die(new TypeError("Malformed approval row"))),
+				getCount: vi.fn(() => Effect.succeed(0)),
+			},
+		];
+
+		const result = await runApprovalQuery(
+			Effect.gen(function* (_) {
+				const service = yield* _(ApprovalQueryService);
+				return yield* _(
+					service.getApprovals({
+						approverId: "manager-1",
+						organizationId: "org-1",
+						status: "pending",
+						types: ["absence_entry", "travel_expense_claim"],
+						limit: 10,
+					}),
+				);
+			}),
+		);
+
+		expect(result.items.map((item) => item.approvalType)).toEqual(["absence_entry"]);
+		expect(result.total).toBe(1);
+	});
+
 	it("returns zero-defaulted counts including travel expense claims", async () => {
 		approvalQueryTestState.handlers = [
 			{
