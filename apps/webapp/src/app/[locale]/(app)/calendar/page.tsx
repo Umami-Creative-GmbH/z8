@@ -5,7 +5,9 @@ import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthContext } from "@/lib/auth-helpers";
 
-async function CalendarPageContent() {
+export async function CalendarPageContent({
+	selectedEmployeeId,
+}: { selectedEmployeeId?: string } = {}) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	const authContext = await getAuthContext();
@@ -22,6 +24,7 @@ async function CalendarPageContent() {
 		<CalendarView
 			organizationId={authContext.employee.organizationId}
 			currentEmployeeId={authContext.employee.id}
+			initialSelectedEmployeeId={selectedEmployeeId}
 		/>
 	);
 }

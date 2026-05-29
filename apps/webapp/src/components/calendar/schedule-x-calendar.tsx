@@ -40,6 +40,12 @@ import { buildRequirementHeaderContent } from "./daily-requirement-strip";
 
 export type ViewMode = "day" | "week" | "month" | "year";
 
+interface RangeSelectionStart {
+	date: Date;
+	clientX: number;
+	clientY: number;
+}
+
 interface ScheduleXCalendarWrapperProps {
 	events: CalendarEvent[];
 	isLoading?: boolean;
@@ -47,6 +53,7 @@ interface ScheduleXCalendarWrapperProps {
 	onViewModeChange: (mode: ViewMode) => void;
 	onEventClick?: (event: CalendarEvent) => void;
 	onRangeChange?: (range: { start: Date; end: Date }) => void;
+	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
 	workHoursData?: DailyWorkHoursSummaries;
 }
@@ -96,6 +103,83 @@ function clearRequirementHeaderContent(container: HTMLDivElement) {
 	}
 }
 
+function roundToQuarterHour(minutes: number) {
+	return Math.max(0, Math.min(23 * 60 + 45, Math.round(minutes / 15) * 15));
+}
+
+export function isScheduleXEventElement(target: HTMLElement) {
+	return Boolean(target.closest(".sx__event, .sx__time-grid-event, .sx__date-grid-event"));
+}
+
+export function isIntentionalRangePointerDown({
+	button,
+	pointerType,
+}: Pick<PointerEvent, "button" | "pointerType">) {
+	return button === 0 && (pointerType === "mouse" || pointerType === "pen");
+}
+
+export function hasExceededPointerDragThreshold(
+	start: Pick<PointerEvent, "clientX" | "clientY">,
+	end: Pick<PointerEvent, "clientX" | "clientY">,
+	threshold = 4,
+) {
+	return Math.hypot(end.clientX - start.clientX, end.clientY - start.clientY) > threshold;
+}
+
+export function buildCalendarTimeZoneDate(dateValue: string, minutes: number, timeZone: string) {
+	return DateTime.fromISO(dateValue, { zone: timeZone })
+		.startOf("day")
+		.plus({ minutes })
+		.toJSDate();
+}
+
+function getPointerDateTime(
+	container: HTMLDivElement,
+	event: PointerEvent,
+	visibleDates: DateTime[],
+	timeZone: string,
+) {
+	if (visibleDates.length === 0) return null;
+
+	const target = event.target instanceof Element ? event.target : null;
+	const dateAttributeElement = target?.closest<HTMLElement>(
+		"[data-time-grid-date], [data-date], [data-date-time]",
+	);
+	const dateAttribute =
+		dateAttributeElement?.dataset.timeGridDate ??
+		dateAttributeElement?.dataset.date ??
+		dateAttributeElement?.dataset.dateTime;
+	const attributeDate = dateAttribute
+		? DateTime.fromISO(dateAttribute.slice(0, 10), { zone: timeZone })
+		: null;
+
+	const dayCells = Array.from(container.querySelectorAll<HTMLElement>(".sx__time-grid-day"));
+	const matchingDayCell = dayCells.find((cell) => {
+		const rect = cell.getBoundingClientRect();
+		return (
+			event.clientX >= rect.left &&
+			event.clientX <= rect.right &&
+			event.clientY >= rect.top &&
+			event.clientY <= rect.bottom
+		);
+	});
+	const timeGrid = matchingDayCell ?? container.querySelector<HTMLElement>(".sx__time-grid-wrapper");
+	if (!timeGrid) return null;
+
+	const timeGridRect = timeGrid.getBoundingClientRect();
+	if (timeGridRect.height <= 0) return null;
+
+	const dayIndex = matchingDayCell ? Math.max(0, dayCells.indexOf(matchingDayCell)) : 0;
+	const date = attributeDate?.isValid
+		? attributeDate
+		: visibleDates[Math.min(dayIndex, visibleDates.length - 1)];
+	const minutes = roundToQuarterHour(
+		((event.clientY - timeGridRect.top) / timeGridRect.height) * 24 * 60,
+	);
+
+	return buildCalendarTimeZoneDate(date.toISODate() ?? "", minutes, timeZone);
+}
+
 export function ScheduleXCalendarWrapper({
 	events,
 	isLoading = false,
@@ -103,6 +187,7 @@ export function ScheduleXCalendarWrapper({
 	onViewModeChange,
 	onEventClick,
 	onRangeChange,
+	onTimeRangeSelect,
 	onRefresh,
 	workHoursData = new Map(),
 }: ScheduleXCalendarWrapperProps) {
@@ -123,6 +208,7 @@ export function ScheduleXCalendarWrapper({
 	const [calendarControls] = useState(() => createCalendarControlsPlugin());
 	const [currentTimePlugin] = useState(() => createCurrentTimePlugin());
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
+	const selectionStartRef = useRef<RangeSelectionStart | null>(null);
 
 	const hasVisibleRunningPeriod =
 		(viewMode === "day" || viewMode === "week") &&
@@ -408,6 +494,51 @@ export function ScheduleXCalendarWrapper({
 			clearRequirementHeaderContent(container);
 		};
 	}, [t, viewMode, visibleRequirementDates, workHoursData]);
+
+	useEffect(() => {
+		const container = calendarContainerRef.current;
+		if (!container || !onTimeRangeSelect || (viewMode !== "day" && viewMode !== "week")) return;
+
+		const handlePointerDown = (event: PointerEvent) => {
+			const target = event.target instanceof Element ? event.target : null;
+			if (
+				!(target instanceof HTMLElement) ||
+				isScheduleXEventElement(target) ||
+				!isIntentionalRangePointerDown(event)
+			) {
+				return;
+			}
+
+			const date = getPointerDateTime(container, event, visibleRequirementDates, timeZone);
+			selectionStartRef.current = date
+				? { date, clientX: event.clientX, clientY: event.clientY }
+				: null;
+		};
+
+		const handlePointerUp = (event: PointerEvent) => {
+			const start = selectionStartRef.current;
+			selectionStartRef.current = null;
+			if (!start) return;
+			if (!hasExceededPointerDragThreshold(start, event)) return;
+
+			const target = event.target instanceof Element ? event.target : null;
+			if (target instanceof HTMLElement && isScheduleXEventElement(target)) return;
+
+			const end = getPointerDateTime(container, event, visibleRequirementDates, timeZone);
+			if (!end || start.date.getTime() === end.getTime()) return;
+
+			onTimeRangeSelect({ start: start.date, end });
+		};
+
+		container.addEventListener("pointerdown", handlePointerDown);
+		window.addEventListener("pointerup", handlePointerUp);
+
+		return () => {
+			selectionStartRef.current = null;
+			container.removeEventListener("pointerdown", handlePointerDown);
+			window.removeEventListener("pointerup", handlePointerUp);
+		};
+	}, [onTimeRangeSelect, timeZone, viewMode, visibleRequirementDates]);
 
 	if (isLoading) {
 		return (

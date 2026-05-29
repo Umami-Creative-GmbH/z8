@@ -40,10 +40,12 @@ export interface AssignedProject {
 }
 
 export interface ManualTimeEntryInput {
+	employeeId?: string;
 	date: string;
 	clockInTime: string;
 	clockOutTime: string;
 	reason: string;
+	timezone?: string;
 	projectId?: string;
 	workCategoryId?: string;
 }

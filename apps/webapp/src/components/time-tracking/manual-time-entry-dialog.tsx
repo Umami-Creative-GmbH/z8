@@ -4,7 +4,7 @@ import { IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createManualTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
@@ -23,12 +23,7 @@ import {
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
-import {
-	TFormControl,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
@@ -40,6 +35,14 @@ interface Props {
 	employeeTimezone: string;
 	hasManager: boolean;
 	onSuccess?: () => void;
+	targetEmployeeId?: string;
+	targetEmployeeName?: string;
+	defaultDate?: string;
+	defaultClockInTime?: string;
+	defaultClockOutTime?: string;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
+	hideTrigger?: boolean;
 }
 
 interface FormValues {
@@ -56,20 +59,30 @@ export function ManualTimeEntryDialog({
 	employeeTimezone,
 	hasManager: _hasManager,
 	onSuccess,
+	targetEmployeeId,
+	targetEmployeeName,
+	defaultDate,
+	defaultClockInTime,
+	defaultClockOutTime,
+	open: controlledOpen,
+	onOpenChange,
+	hideTrigger = false,
 }: Props) {
 	const { t } = useTranslate();
-	const [open, setOpen] = useState(false);
+	const [internalOpen, setInternalOpen] = useState(false);
+	const wasOpenRef = useRef(false);
 	const router = useRouter();
 	const timeFormat = useTimeFormat();
 	const timezoneAbbr = getTimezoneAbbreviation(employeeTimezone);
+	const open = controlledOpen ?? internalOpen;
 
 	// Default to today's date
 	const getDefaultValues = (): FormValues => {
 		const today = DateTime.now().setZone(employeeTimezone).toISODate() || "";
 		return {
-			date: today,
-			clockInTime: "09:00",
-			clockOutTime: "17:00",
+			date: defaultDate ?? today,
+			clockInTime: defaultClockInTime ?? "09:00",
+			clockOutTime: defaultClockOutTime ?? "17:00",
 			reason: "",
 			projectId: undefined,
 			workCategoryId: undefined,
@@ -115,10 +128,12 @@ export function ManualTimeEntryDialog({
 			}
 
 			const result = await createManualTimeEntry({
+				...(targetEmployeeId ? { employeeId: targetEmployeeId } : {}),
 				date: value.date,
 				clockInTime: value.clockInTime,
 				clockOutTime: value.clockOutTime,
 				reason: value.reason,
+				timezone: employeeTimezone,
 				projectId: value.projectId,
 				workCategoryId: value.workCategoryId,
 			});
@@ -160,7 +175,7 @@ export function ManualTimeEntryDialog({
 						t("timeTracking.manualEntry.success.created", "Time entry created successfully"),
 					);
 				}
-				setOpen(false);
+				handleOpenChange(false);
 				router.refresh();
 				onSuccess?.();
 			} else {
@@ -176,25 +191,43 @@ export function ManualTimeEntryDialog({
 		if (isOpen) {
 			form.reset(getDefaultValues());
 		}
-		setOpen(isOpen);
+		if (controlledOpen === undefined) {
+			setInternalOpen(isOpen);
+		}
+		onOpenChange?.(isOpen);
 	};
+
+	useEffect(() => {
+		if (open && !wasOpenRef.current) {
+			form.reset(getDefaultValues());
+		}
+		wasOpenRef.current = open;
+	});
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
-			<ActionPanelTrigger asChild>
-				<Button
-					aria-label={t("timeTracking.manualEntry.addButton", "Add Manual Entry")}
-					className="size-8"
-					variant="outline"
-					size="icon"
-				>
-					<IconPlus aria-hidden="true" className="size-4" />
-				</Button>
-			</ActionPanelTrigger>
+			{hideTrigger ? null : (
+				<ActionPanelTrigger asChild>
+					<Button
+						aria-label={t("timeTracking.manualEntry.addButton", "Add Manual Entry")}
+						className="size-8"
+						variant="outline"
+						size="icon"
+					>
+						<IconPlus aria-hidden="true" className="size-4" />
+					</Button>
+				</ActionPanelTrigger>
+			)}
 			<ActionPanelContent size="compact">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
-						{t("timeTracking.manualEntry.title", "Add Manual Time Entry")}
+						{targetEmployeeName
+							? t(
+									"timeTracking.manualEntry.titleForEmployee",
+									"Add Manual Time Entry for {employee}",
+									{ employee: targetEmployeeName },
+								)
+							: t("timeTracking.manualEntry.title", "Add Manual Time Entry")}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{t(
@@ -327,7 +360,7 @@ export function ManualTimeEntryDialog({
 						<form.Field name="workCategoryId">
 							{(field) => (
 								<WorkCategorySelector
-									employeeId={employeeId}
+									employeeId={targetEmployeeId ?? employeeId}
 									value={field.state.value}
 									onValueChange={(value) => field.handleChange(value)}
 									autoSelectLast={false}
