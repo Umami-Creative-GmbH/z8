@@ -228,6 +228,8 @@ export function ManualTimeEntryDialog({
 			const result = await updateTimezone(pendingMismatch.browserTimezone);
 			if (!result?.success) {
 				toast.error(result?.error || "Failed to update timezone");
+				isTimezoneContinuationPendingRef.current = false;
+				setIsTimezoneContinuationPending(false);
 				return;
 			}
 
@@ -236,10 +238,13 @@ export function ManualTimeEntryDialog({
 			setPendingMismatch(null);
 		} catch {
 			toast.error("An error occurred while updating timezone");
-		} finally {
 			isTimezoneContinuationPendingRef.current = false;
 			setIsTimezoneContinuationPending(false);
+			return;
 		}
+
+		isTimezoneContinuationPendingRef.current = false;
+		setIsTimezoneContinuationPending(false);
 	}
 
 	async function handleContinueOnce() {
@@ -247,14 +252,18 @@ export function ManualTimeEntryDialog({
 		isTimezoneContinuationPendingRef.current = true;
 		setIsTimezoneContinuationPending(true);
 
-		const { value, browserTimezone } = pendingMismatch;
 		try {
+			const { value, browserTimezone } = pendingMismatch;
 			await submitManualEntry(value, browserTimezone, browserTimezone);
 			setPendingMismatch(null);
-		} finally {
+		} catch (error) {
 			isTimezoneContinuationPendingRef.current = false;
 			setIsTimezoneContinuationPending(false);
+			throw error;
 		}
+
+		isTimezoneContinuationPendingRef.current = false;
+		setIsTimezoneContinuationPending(false);
 	}
 
 	const handleOpenChange = (isOpen: boolean) => {
