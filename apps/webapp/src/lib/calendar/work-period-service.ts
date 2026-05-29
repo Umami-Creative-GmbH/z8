@@ -1,4 +1,4 @@
-import { and, eq, gte, isNull, lte, not } from "drizzle-orm";
+import { and, eq, gte, isNull, lte, not, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -13,10 +13,23 @@ interface WorkPeriodFilters {
 	employeeId?: string;
 }
 
+export function workPeriodOverlapsCalendarMonth(
+	period: { startTime: Date; endTime: Date | null; isActive: boolean },
+	monthStart: Date,
+	monthEnd: Date,
+	now: Date,
+): boolean {
+	if (period.endTime) {
+		return period.startTime >= monthStart && period.startTime <= monthEnd;
+	}
+
+	return period.isActive && period.startTime <= monthEnd && now >= monthStart;
+}
+
 /**
  * Get work periods for a specific month to display on the calendar
  * Returns individual work periods with start/end times for timed display
- * Only includes completed work periods (isActive = false)
+ * Includes completed work periods and active running periods.
  */
 export async function getWorkPeriodsForMonth(
 	month: number,
@@ -30,18 +43,30 @@ export async function getWorkPeriodsForMonth(
 	// Convert to Date objects for Drizzle query
 	const startDate = dateToDB(startDT)!;
 	const endDate = dateToDB(endDT)!;
+	const nowDT = DateTime.utc();
+	const now = nowDT.toJSDate();
 
 	try {
+		const completedPeriodDateCondition = and(
+			not(isNull(workPeriod.endTime)),
+			gte(workPeriod.startTime, startDate),
+			lte(workPeriod.startTime, endDate),
+		);
+		const runningPeriodDateCondition = and(
+			eq(workPeriod.isActive, true),
+			isNull(workPeriod.endTime),
+			lte(workPeriod.startTime, endDate),
+		);
+		const periodDateCondition =
+			now >= startDate
+				? or(completedPeriodDateCondition, runningPeriodDateCondition)
+				: completedPeriodDateCondition;
+
 		// Prepare conditions
 		const conditions = [
 			// Direct organization filter (no join needed for org filtering)
 			eq(workPeriod.organizationId, filters.organizationId),
-			// Date range filter
-			gte(workPeriod.startTime, startDate),
-			lte(workPeriod.startTime, endDate),
-			// Only completed work periods (those with an end time)
-			// Note: We check endTime instead of isActive because older entries may not have isActive set correctly
-			not(isNull(workPeriod.endTime)),
+			periodDateCondition,
 		];
 
 		// Add employee filter if provided
@@ -71,6 +96,50 @@ export async function getWorkPeriodsForMonth(
 		// Breaks appear as gaps between the green work blocks
 		return periods.map(({ period, user, clockOutEntry, surcharge, project: proj }) => {
 			const notes = clockOutEntry?.notes?.trim();
+			const projectPrefix = proj?.name ? `[${proj.name}] ` : "";
+
+			// Use project color if available, otherwise default green
+			const eventColor = proj?.color || "#10b981"; // Green (emerald)
+
+			// Format start and end times for display
+			const startDT = dateFromDB(period.startTime);
+			const endDT = period.endTime ? dateFromDB(period.endTime) : null;
+			const startTimeFormatted = startDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
+			const endTimeFormatted = endDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
+			const isRunning = period.isActive && !period.endTime;
+
+			if (isRunning) {
+				const durationMinutes = Math.max(
+					0,
+					Math.floor(nowDT.diff(startDT ?? nowDT, "minutes").minutes),
+				);
+
+				return {
+					id: period.id,
+					type: "work_period" as const,
+					date: period.startTime,
+					endDate: now,
+					title: `${projectPrefix}${user.name} - ${formatDuration(durationMinutes)} (running)`,
+					description: "Running work period",
+					descriptionKey: "calendar.calendar.workPeriod.runningDescription",
+					color: eventColor,
+					metadata: {
+						durationMinutes,
+						employeeName: user.name,
+						startTime: startTimeFormatted,
+						// Project fields (only included if assigned to a project)
+						...(proj && {
+							projectId: proj.id,
+							projectName: proj.name,
+							projectColor: proj.color || undefined,
+						}),
+						// Approval status for change policy enforcement
+						approvalStatus: period.approvalStatus ?? "approved",
+						isRunning: true,
+					},
+				};
+			}
+
 			const durationMinutes = period.durationMinutes ?? 0;
 			const surchargeMinutes = surcharge?.surchargeMinutes ?? 0;
 			const totalCreditedMinutes = durationMinutes + surchargeMinutes;
@@ -82,8 +151,6 @@ export async function getWorkPeriodsForMonth(
 					? `${baseDuration} (+${formatDuration(surchargeMinutes)})`
 					: baseDuration;
 
-			// Build title parts
-			const projectPrefix = proj?.name ? `[${proj.name}] ` : "";
 			// Format: "[Project] Name - 4h 30m (+1h)" or "Name - 4h 30m: Working on report"
 			const title = notes
 				? `${projectPrefix}${user.name} - ${duration}: ${notes}`
@@ -103,15 +170,6 @@ export async function getWorkPeriodsForMonth(
 					}));
 				}
 			}
-
-			// Use project color if available, otherwise default green
-			const eventColor = proj?.color || "#10b981"; // Green (emerald)
-
-			// Format start and end times for display
-			const startDT = dateFromDB(period.startTime);
-			const endDT = period.endTime ? dateFromDB(period.endTime) : null;
-			const startTimeFormatted = startDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
-			const endTimeFormatted = endDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
 
 			return {
 				id: period.id,
