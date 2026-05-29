@@ -74,24 +74,24 @@ export async function GET(request: Request) {
 		// Build full org list with employee status
 		const organizationsWithDetails = await Promise.all(
 			memberships.map(async (m) => {
-				const org = await db.query.organization.findFirst({
-					where: eq(organization.id, m.organizationId),
-					columns: {
-						id: true,
-						name: true,
-						slug: true,
-						logo: true,
-					},
-				});
-
-				// Check if user has an employee record in this org
-				const emp = await db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, m.organizationId),
-						eq(employee.isActive, true),
-					),
-				});
+				const [org, emp] = await Promise.all([
+					db.query.organization.findFirst({
+						where: eq(organization.id, m.organizationId),
+						columns: {
+							id: true,
+							name: true,
+							slug: true,
+							logo: true,
+						},
+					}),
+					db.query.employee.findFirst({
+						where: and(
+							eq(employee.userId, session.user.id),
+							eq(employee.organizationId, m.organizationId),
+							eq(employee.isActive, true),
+						),
+					}),
+				]);
 
 				return {
 					id: org?.id ?? m.organizationId,

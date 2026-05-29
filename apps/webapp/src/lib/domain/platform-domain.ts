@@ -106,15 +106,16 @@ export function getPlatformOrganizationLabel(host: string | null): string | null
 export async function resolvePlatformOrganization(
 	label: string,
 ): Promise<PlatformOrganizationRecord | null> {
-	const bySlug = await db.query.organization.findFirst({
-		where: eq(organization.slug, label),
-		columns: { id: true, slug: true, name: true },
-	});
-
-	const byId = await db.query.organization.findFirst({
-		where: eq(organization.id, label),
-		columns: { id: true, slug: true, name: true },
-	});
+	const [bySlug, byId] = await Promise.all([
+		db.query.organization.findFirst({
+			where: eq(organization.slug, label),
+			columns: { id: true, slug: true, name: true },
+		}),
+		db.query.organization.findFirst({
+			where: eq(organization.id, label),
+			columns: { id: true, slug: true, name: true },
+		}),
+	]);
 
 	return byId ?? bySlug ?? null;
 }

@@ -43,8 +43,10 @@ export async function getCalendarTokens(
 	dbAccessToken: string,
 	dbRefreshToken: string | null,
 ): Promise<{ accessToken: string; refreshToken: string | null }> {
-	let accessToken = await getOrgSecret(organizationId, vaultKey(connectionId, "access_token"));
-	let refreshToken = await getOrgSecret(organizationId, vaultKey(connectionId, "refresh_token"));
+	let [accessToken, refreshToken] = await Promise.all([
+		getOrgSecret(organizationId, vaultKey(connectionId, "access_token")),
+		getOrgSecret(organizationId, vaultKey(connectionId, "refresh_token")),
+	]);
 
 	// Fallback: read from DB columns for pre-migration connections
 	if (!accessToken && dbAccessToken && dbAccessToken !== "vault:managed") {

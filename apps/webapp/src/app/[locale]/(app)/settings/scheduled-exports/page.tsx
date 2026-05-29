@@ -21,7 +21,8 @@ async function ScheduledExportsContent() {
 		requireOrgAdminSettingsAccess(),
 	]);
 
-	// Fetch initial data in parallel
+	// Fetch initial data in parallel after the org access guard supplies organizationId.
+	// eslint-disable-next-line react-doctor/server-sequential-independent-await
 	const [schedulesResult, filterOptionsResult, payrollConfigsResult] = await Promise.all([
 		getScheduledExportsAction(organizationId),
 		getFilterOptionsAction(organizationId),

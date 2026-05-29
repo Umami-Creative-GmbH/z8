@@ -411,26 +411,28 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 		}
 	}
 
-	const hotWindowValues = await computeEmployeePeriodBalance({
-		employeeId: input.employeeId,
-		organizationId: input.organizationId,
-		dbClient,
-		periodType: "month",
-		periodStart: hotWindow.startDate,
-		periodEnd: hotWindow.endDate,
-		calculationStartDate,
-		isClosed: false,
-		now,
-	});
-	const closedTotals = await sumClosedMonthlyPeriodTotalsBefore(
-		{
+	const [hotWindowValues, closedTotals] = await Promise.all([
+		computeEmployeePeriodBalance({
 			employeeId: input.employeeId,
 			organizationId: input.organizationId,
-			beforeDate: hotWindow.startDate,
-			fromDate: calculationStartDate,
-		},
-		dbClient,
-	);
+			dbClient,
+			periodType: "month",
+			periodStart: hotWindow.startDate,
+			periodEnd: hotWindow.endDate,
+			calculationStartDate,
+			isClosed: false,
+			now,
+		}),
+		sumClosedMonthlyPeriodTotalsBefore(
+			{
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+				beforeDate: hotWindow.startDate,
+				fromDate: calculationStartDate,
+			},
+			dbClient,
+		),
+	]);
 
 	await upsertEmployeeWorkBalance(
 		buildWorkBalanceValues({

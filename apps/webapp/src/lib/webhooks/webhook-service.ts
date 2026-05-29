@@ -248,17 +248,18 @@ export async function getDeliveryLogs(
 ): Promise<{ deliveries: (typeof webhookDelivery.$inferSelect)[]; total: number }> {
 	const { limit = 50, offset = 0 } = options;
 
-	const deliveries = await db.query.webhookDelivery.findMany({
-		where: eq(webhookDelivery.webhookEndpointId, webhookId),
-		orderBy: (delivery, { desc }) => [desc(delivery.createdAt)],
-		limit,
-		offset,
-	});
-
-	const [{ count }] = await db
-		.select({ count: sql<number>`count(*)::int` })
-		.from(webhookDelivery)
-		.where(eq(webhookDelivery.webhookEndpointId, webhookId));
+	const [deliveries, [{ count }]] = await Promise.all([
+		db.query.webhookDelivery.findMany({
+			where: eq(webhookDelivery.webhookEndpointId, webhookId),
+			orderBy: (delivery, { desc }) => [desc(delivery.createdAt)],
+			limit,
+			offset,
+		}),
+		db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(webhookDelivery)
+			.where(eq(webhookDelivery.webhookEndpointId, webhookId)),
+	]);
 
 	return { deliveries, total: count };
 }
