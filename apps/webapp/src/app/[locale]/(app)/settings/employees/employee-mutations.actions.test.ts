@@ -442,6 +442,59 @@ describe("updateEmployeeAction", () => {
 			mocks.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
 		);
 	});
+
+	it("requests a full work balance rebuild when clearing the start date", async () => {
+		const where = vi.fn().mockResolvedValue(undefined);
+		const set = vi.fn(() => ({ where }));
+		const update = vi.fn(() => ({ set }));
+		const dbService = {
+			db: { update },
+			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+		};
+
+		mocks.runTracedEmployeeAction.mockImplementation((options) =>
+			Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
+		);
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "orgAdmin",
+				organizationId: "org-1",
+				session: { user: { id: "user-admin-1", email: "admin@example.com" } },
+				dbService,
+			}),
+		);
+		mocks.getTargetEmployee.mockReturnValue(
+			Effect.succeed({
+				id: "employee-1",
+				userId: validUserId,
+				organizationId: "org-1",
+				currentHourlyRate: null,
+				contractType: "fixed",
+				startDate: new Date("2026-05-10T00:00:00.000Z"),
+			}),
+		);
+		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(Effect.void);
+		mocks.hasAppAccessChanges.mockReturnValue(false);
+		mocks.requestEmployeeWorkBalanceFullRebuild.mockResolvedValue(undefined);
+		mocks.validateInput.mockReturnValue(
+			Effect.succeed({
+				startDate: null,
+			}),
+		);
+
+		await updateEmployeeAction("employee-1", {
+			startDate: null,
+		} as Parameters<typeof updateEmployeeAction>[1]);
+
+		expect(mocks.requestEmployeeWorkBalanceFullRebuild).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+		});
+		expect(mocks.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(where.mock.invocationCallOrder[0]).toBeLessThan(
+			mocks.requestEmployeeWorkBalanceFullRebuild.mock.invocationCallOrder[0],
+		);
+	});
 });
 
 describe("assignManagersAction", () => {

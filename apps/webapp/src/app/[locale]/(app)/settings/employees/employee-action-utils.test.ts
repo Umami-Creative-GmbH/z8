@@ -44,11 +44,14 @@ describe("employee settings scope helpers", () => {
 	});
 
 	it("strips org-admin-only employee fields from scoped manager edits", () => {
+		const startDate = new Date("2026-05-01T00:00:00.000Z");
+
 		expect(
 			filterEmployeeUpdateForScopedManager({
 				firstName: "Alex",
 				lastName: "Stone",
 				position: "Supervisor",
+				startDate,
 				role: "admin",
 				employeeNumber: "EMP-1",
 				contractType: "hourly",
@@ -57,6 +60,7 @@ describe("employee settings scope helpers", () => {
 			}),
 		).toEqual({
 			position: "Supervisor",
+			startDate,
 		});
 	});
 

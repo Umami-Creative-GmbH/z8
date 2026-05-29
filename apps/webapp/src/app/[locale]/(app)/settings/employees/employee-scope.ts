@@ -1,6 +1,6 @@
 export type EmployeeSettingsActorRole = "admin" | "manager" | "employee";
 
-const SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS = ["gender", "pronouns", "position"] as const;
+const SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS = ["gender", "pronouns", "position", "startDate"] as const;
 
 type ScopedManagerEditableEmployeeField = (typeof SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS)[number];
 
