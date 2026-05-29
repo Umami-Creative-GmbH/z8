@@ -9,7 +9,7 @@ import { Effect } from "effect";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { approvalRequest, employee } from "@/db/schema";
+import { employee } from "@/db/schema";
 import {
 	ApprovalQueryService,
 	ApprovalQueryServiceLive,
@@ -24,12 +24,7 @@ import type {
 import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import {
-	accessibleByDrizzle,
-	ForbiddenError,
-	toHttpError,
-	UnsupportedAuthorizationConditionError,
-} from "@/lib/authorization";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import type { AnyAppError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 
@@ -83,32 +78,6 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
-		let approvalAccess: ReturnType<typeof accessibleByDrizzle> | null = null;
-		try {
-			approvalAccess = accessibleByDrizzle(ability, "read", "Approval", {
-				organizationId: approvalRequest.organizationId,
-				requestedBy: approvalRequest.requestedBy,
-				approverId: approvalRequest.approverId,
-				status: approvalRequest.status,
-			});
-		} catch (error) {
-			if (!(error instanceof UnsupportedAuthorizationConditionError)) {
-				throw error;
-			}
-
-			if (!canManageApprovals) {
-				const forbidden = new ForbiddenError("read", "Approval");
-				const httpError = toHttpError(forbidden);
-				return NextResponse.json(httpError.body, { status: httpError.status });
-			}
-		}
-
-		if (!canManageApprovals && !approvalAccess) {
-			const error = new ForbiddenError("read", "Approval");
-			const httpError = toHttpError(error);
-			return NextResponse.json(httpError.body, { status: httpError.status });
-		}
-
 		const eligibleApprovalScopes = canManageApprovals
 			? []
 			: await getEligibleApprovalScopesForManager({
@@ -116,11 +85,6 @@ export async function GET(request: NextRequest) {
 					managerEmployeeId: currentEmployee.id,
 					organizationId: currentEmployee.organizationId,
 				});
-		const authorizationPredicate =
-			!canManageApprovals && eligibleApprovalScopes.length > 0
-				? undefined
-				: (approvalAccess ?? undefined);
-
 		// Parse query parameters
 		const { searchParams } = new URL(request.url);
 
@@ -150,7 +114,7 @@ export async function GET(request: NextRequest) {
 		// Build query params
 		const params: ApprovalQueryParams = {
 			approverId: currentEmployee.id,
-			authorizationPredicate,
+			authorizationPredicate: undefined,
 			includeAllApprovers: canManageApprovals || undefined,
 			organizationId: currentEmployee.organizationId,
 			status,

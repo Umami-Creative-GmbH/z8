@@ -54,12 +54,22 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 // Dynamically import heavy chart components - only loaded when drawer opens
-const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
-const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
-const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), {
+const Area = dynamic(() => import("recharts").then((mod) => mod.Area), {
 	ssr: false,
 });
-const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
+const AreaChart = dynamic(
+	() => import("recharts").then((mod) => mod.AreaChart),
+	{ ssr: false },
+);
+const CartesianGrid = dynamic(
+	() => import("recharts").then((mod) => mod.CartesianGrid),
+	{
+		ssr: false,
+	},
+);
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), {
+	ssr: false,
+});
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -278,7 +288,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 						</SelectTrigger>
 						<SelectContent align="end">
 							<SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-							<SelectItem value="Jamik Tashpulatov">Jamik Tashpulatov</SelectItem>
+							<SelectItem value="Jamik Tashpulatov">
+								Jamik Tashpulatov
+							</SelectItem>
 						</SelectContent>
 					</Select>
 				</>
@@ -336,11 +348,18 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
 	);
 }
 
-export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[] }) {
+export function DataTable({
+	data: initialData,
+}: {
+	data: z.infer<typeof schema>[];
+}) {
 	const [data, setData] = React.useState(() => initialData);
 	const [rowSelection, setRowSelection] = React.useState({});
-	const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+	const [columnVisibility, setColumnVisibility] =
+		React.useState<VisibilityState>({});
+	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+		[],
+	);
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const [pagination, setPagination] = React.useState({
 		pageIndex: 0,
@@ -392,13 +411,20 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 	}
 
 	return (
-		<Tabs className="w-full flex-col justify-start gap-6" defaultValue="outline">
+		<Tabs
+			className="w-full flex-col justify-start gap-6"
+			defaultValue="outline"
+		>
 			<div className="flex items-center justify-between px-4 lg:px-6">
 				<Label className="sr-only" htmlFor="view-selector">
 					View
 				</Label>
 				<Select defaultValue="outline">
-					<SelectTrigger className="flex @4xl/main:hidden w-fit" id="view-selector" size="sm">
+					<SelectTrigger
+						className="flex @4xl/main:hidden w-fit"
+						id="view-selector"
+						size="sm"
+					>
 						<SelectValue placeholder="Select a view" />
 					</SelectTrigger>
 					<SelectContent>
@@ -431,13 +457,19 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 						<DropdownMenuContent align="end" className="w-56">
 							{table
 								.getAllColumns()
-								.filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())
+								.filter(
+									(column) =>
+										typeof column.accessorFn !== "undefined" &&
+										column.getCanHide(),
+								)
 								.map((column) => (
 									<DropdownMenuCheckboxItem
 										checked={column.getIsVisible()}
 										className="capitalize"
 										key={column.id}
-										onCheckedChange={(value) => column.toggleVisibility(!!value)}
+										onCheckedChange={(value) =>
+											column.toggleVisibility(!!value)
+										}
 									>
 										{column.id}
 									</DropdownMenuCheckboxItem>
@@ -470,7 +502,10 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 											<TableHead colSpan={header.colSpan} key={header.id}>
 												{header.isPlaceholder
 													? null
-													: flexRender(header.column.columnDef.header, header.getContext())}
+													: flexRender(
+															header.column.columnDef.header,
+															header.getContext(),
+														)}
 											</TableHead>
 										))}
 									</TableRow>
@@ -478,14 +513,20 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 							</TableHeader>
 							<TableBody className="**:data-[slot=table-cell]:first:w-8">
 								{table.getRowModel().rows?.length ? (
-									<SortableContext items={dataIds} strategy={verticalListSortingStrategy}>
+									<SortableContext
+										items={dataIds}
+										strategy={verticalListSortingStrategy}
+									>
 										{table.getRowModel().rows.map((row) => (
 											<DraggableRow key={row.id} row={row} />
 										))}
 									</SortableContext>
 								) : (
 									<TableRow>
-										<TableCell className="h-24 text-center" colSpan={columns.length}>
+										<TableCell
+											className="h-24 text-center"
+											colSpan={columns.length}
+										>
 											No results.
 										</TableCell>
 									</TableRow>
@@ -511,7 +552,9 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 								value={`${table.getState().pagination.pageSize}`}
 							>
 								<SelectTrigger className="w-20" id="rows-per-page" size="sm">
-									<SelectValue placeholder={table.getState().pagination.pageSize} />
+									<SelectValue
+										placeholder={table.getState().pagination.pageSize}
+									/>
 								</SelectTrigger>
 								<SelectContent side="top">
 									{[10, 20, 30, 40, 50].map((pageSize) => (
@@ -523,7 +566,8 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 							</Select>
 						</div>
 						<div className="flex w-fit items-center justify-center font-medium text-sm">
-							Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+							Page {table.getState().pagination.pageIndex + 1} of{" "}
+							{table.getPageCount()}
 						</div>
 						<div className="ml-auto flex items-center gap-2 lg:ml-0">
 							<Button
@@ -569,13 +613,19 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 					</div>
 				</div>
 			</TabsContent>
-			<TabsContent className="flex flex-col px-4 lg:px-6" value="past-performance">
+			<TabsContent
+				className="flex flex-col px-4 lg:px-6"
+				value="past-performance"
+			>
 				<div className="aspect-video w-full flex-1 rounded-lg border border-dashed" />
 			</TabsContent>
 			<TabsContent className="flex flex-col px-4 lg:px-6" value="key-personnel">
 				<div className="aspect-video w-full flex-1 rounded-lg border border-dashed" />
 			</TabsContent>
-			<TabsContent className="flex flex-col px-4 lg:px-6" value="focus-documents">
+			<TabsContent
+				className="flex flex-col px-4 lg:px-6"
+				value="focus-documents"
+			>
 				<div className="aspect-video w-full flex-1 rounded-lg border border-dashed" />
 			</TabsContent>
 		</Tabs>
@@ -629,7 +679,10 @@ function ChartSection({
 						tickLine={false}
 						tickMargin={8}
 					/>
-					<ChartTooltip content={<ChartTooltipContent indicator="dot" />} cursor={false} />
+					<ChartTooltip
+						content={<ChartTooltipContent indicator="dot" />}
+						cursor={false}
+					/>
 					<Area
 						dataKey="mobile"
 						fill="var(--color-mobile)"
@@ -665,7 +718,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 	const { t } = useTranslate();
 
 	const translations = {
-		showingVisitors: t("table.showing-visitors", "Showing total visitors for the last 6 months"),
+		showingVisitors: t(
+			"table.showing-visitors",
+			"Showing total visitors for the last 6 months",
+		),
 		trendingUp: t("table.trending-up", "Trending up by 5.2% this month"),
 		description: t(
 			"table.description",
@@ -683,12 +739,24 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 		submit: t("generic.submit", "Submit"),
 		done: t("generic.done", "Done"),
 		typeOptions: {
-			tableOfContents: t("table.type-options.table-of-contents", "Table of Contents"),
-			executiveSummary: t("table.type-options.executive-summary", "Executive Summary"),
-			technicalApproach: t("table.type-options.technical-approach", "Technical Approach"),
+			tableOfContents: t(
+				"table.type-options.table-of-contents",
+				"Table of Contents",
+			),
+			executiveSummary: t(
+				"table.type-options.executive-summary",
+				"Executive Summary",
+			),
+			technicalApproach: t(
+				"table.type-options.technical-approach",
+				"Technical Approach",
+			),
 			design: t("table.type-options.design", "Design"),
 			capabilities: t("table.type-options.capabilities", "Capabilities"),
-			focusDocuments: t("table.type-options.focus-documents", "Focus Documents"),
+			focusDocuments: t(
+				"table.type-options.focus-documents",
+				"Focus Documents",
+			),
 			narrative: t("table.type-options.narrative", "Narrative"),
 			coverPage: t("table.type-options.cover-page", "Cover Page"),
 		},
@@ -740,15 +808,21 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 										<SelectItem value="Technical Approach">
 											{translations.typeOptions.technicalApproach}
 										</SelectItem>
-										<SelectItem value="Design">{translations.typeOptions.design}</SelectItem>
+										<SelectItem value="Design">
+											{translations.typeOptions.design}
+										</SelectItem>
 										<SelectItem value="Capabilities">
 											{translations.typeOptions.capabilities}
 										</SelectItem>
 										<SelectItem value="Focus Documents">
 											{translations.typeOptions.focusDocuments}
 										</SelectItem>
-										<SelectItem value="Narrative">{translations.typeOptions.narrative}</SelectItem>
-										<SelectItem value="Cover Page">{translations.typeOptions.coverPage}</SelectItem>
+										<SelectItem value="Narrative">
+											{translations.typeOptions.narrative}
+										</SelectItem>
+										<SelectItem value="Cover Page">
+											{translations.typeOptions.coverPage}
+										</SelectItem>
 									</SelectContent>
 								</Select>
 							</div>
@@ -759,7 +833,9 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 										<SelectValue placeholder={translations.selectStatus} />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="Done">{translations.statusOptions.done}</SelectItem>
+										<SelectItem value="Done">
+											{translations.statusOptions.done}
+										</SelectItem>
 										<SelectItem value="In Progress">
 											{translations.statusOptions.inProgress}
 										</SelectItem>
@@ -788,7 +864,9 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-									<SelectItem value="Jamik Tashpulatov">Jamik Tashpulatov</SelectItem>
+									<SelectItem value="Jamik Tashpulatov">
+										Jamik Tashpulatov
+									</SelectItem>
 									<SelectItem value="Emily Whalen">Emily Whalen</SelectItem>
 								</SelectContent>
 							</Select>

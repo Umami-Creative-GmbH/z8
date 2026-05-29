@@ -1,13 +1,15 @@
 "use client";
 
-import Image from "next/image";
 import type { StaticImageData } from "next/image";
+import Image from "next/image";
 
 type AuthBackgroundImageProps = {
 	initialImage: StaticImageData;
 };
 
-export function AuthBackgroundImage({ initialImage }: AuthBackgroundImageProps) {
+export function AuthBackgroundImage({
+	initialImage,
+}: AuthBackgroundImageProps) {
 	return (
 		<Image
 			alt=""

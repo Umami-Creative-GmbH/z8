@@ -11,12 +11,11 @@ import {
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
+import { useFontSizePreference } from "./font-size-preference";
 import {
 	FONT_SIZE_OPTIONS,
 	isFontSizePreference,
 } from "./font-size-preference-utils";
-import { useFontSizePreference } from "./font-size-preference";
 
 export function FontSizeToggle() {
 	const { t } = useTranslate();
@@ -32,11 +31,16 @@ export function FontSizeToggle() {
 			<DropdownMenuTrigger asChild>
 				<Button variant="outline" size="icon">
 					<IconTextSize aria-hidden="true" className="size-4" />
-					<span className="sr-only">{t("common:user.font-size", "Font size")}</span>
+					<span className="sr-only">
+						{t("common:user.font-size", "Font size")}
+					</span>
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
-				<DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
+				<DropdownMenuRadioGroup
+					value={fontSize}
+					onValueChange={handleFontSizeChange}
+				>
 					{FONT_SIZE_OPTIONS.map((option) => (
 						<DropdownMenuRadioItem key={option.value} value={option.value}>
 							{t(`common:${option.labelKey}`, option.label)}

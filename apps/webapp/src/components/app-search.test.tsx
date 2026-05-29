@@ -5,8 +5,12 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppSearchResult } from "@/lib/app-search/types";
 
-const { hotkeyRegistrations, pushMock, searchAppRecordsActionMock, translateMock } = vi.hoisted(
-	() => ({
+const {
+	hotkeyRegistrations,
+	pushMock,
+	searchAppRecordsActionMock,
+	translateMock,
+} = vi.hoisted(() => ({
 	hotkeyRegistrations: [] as Array<{
 		keys: string;
 		callback: () => void;
@@ -14,13 +18,18 @@ const { hotkeyRegistrations, pushMock, searchAppRecordsActionMock, translateMock
 	}>,
 	pushMock: vi.fn(),
 	searchAppRecordsActionMock: vi.fn(),
-	translateMock: vi.fn((_key: string, defaultValue?: string) => defaultValue ?? _key),
-}),
-);
+	translateMock: vi.fn(
+		(_key: string, defaultValue?: string) => defaultValue ?? _key,
+	),
+}));
 
 vi.mock("@tanstack/react-hotkeys", () => ({
 	formatForDisplay: vi.fn(() => "⌘ K"),
-	useHotkey: (keys: string, callback: () => void, options?: { preventDefault?: boolean }) => {
+	useHotkey: (
+		keys: string,
+		callback: () => void,
+		options?: { preventDefault?: boolean },
+	) => {
 		hotkeyRegistrations.push({ keys, callback, options });
 	},
 }));
@@ -32,8 +41,21 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("@/components/user-avatar", () => ({
-	UserAvatar: ({ image, name, seed }: { image?: string | null; name?: string | null; seed: string }) => (
-		<span aria-label={name ?? undefined} data-image={image ?? ""} data-seed={seed} data-testid="employee-avatar" />
+	UserAvatar: ({
+		image,
+		name,
+		seed,
+	}: {
+		image?: string | null;
+		name?: string | null;
+		seed: string;
+	}) => (
+		<span
+			aria-label={name ?? undefined}
+			data-image={image ?? ""}
+			data-seed={seed}
+			data-testid="employee-avatar"
+		/>
 	),
 }));
 
@@ -48,9 +70,15 @@ vi.mock("@/app/[locale]/(app)/search/actions", () => ({
 vi.mock("@/components/ui/dialog", () => ({
 	Dialog: ({ children, open }: { children: ReactNode; open?: boolean }) =>
 		open ? <div>{children}</div> : null,
-	DialogContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-	DialogDescription: ({ children }: { children: ReactNode }) => <p>{children}</p>,
-	DialogHeader: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	DialogContent: ({ children }: { children: ReactNode }) => (
+		<div>{children}</div>
+	),
+	DialogDescription: ({ children }: { children: ReactNode }) => (
+		<p>{children}</p>
+	),
+	DialogHeader: ({ children }: { children: ReactNode }) => (
+		<div>{children}</div>
+	),
 	DialogTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
 }));
 
@@ -124,7 +152,9 @@ describe("AppSearch", () => {
 		hotkeyRegistrations.length = 0;
 		pushMock.mockReset();
 		translateMock.mockReset();
-		translateMock.mockImplementation((_key, defaultValue) => defaultValue ?? _key);
+		translateMock.mockImplementation(
+			(_key, defaultValue) => defaultValue ?? _key,
+		);
 		searchAppRecordsActionMock.mockReset();
 		searchAppRecordsActionMock.mockResolvedValue({
 			success: true,
@@ -163,7 +193,8 @@ describe("AppSearch", () => {
 		const trigger = screen.getByRole("button", { name: /^search$/i });
 
 		expect(trigger.className).toContain("border");
-		expect(trigger.className).toContain("bg-background");
+		expect(trigger.className).toContain("bg-white");
+		expect(trigger.className).toContain("dark:bg-input/30");
 	});
 
 	it("registers Mod+K with preventDefault", () => {
@@ -291,7 +322,9 @@ describe("AppSearch", () => {
 		});
 
 		const avatar = screen.getByTestId("employee-avatar");
-		expect(avatar.getAttribute("data-image")).toBe("https://example.com/alex.png");
+		expect(avatar.getAttribute("data-image")).toBe(
+			"https://example.com/alex.png",
+		);
 		expect(avatar.getAttribute("data-seed")).toBe("employee-1");
 	});
 
@@ -339,7 +372,13 @@ describe("AppSearch", () => {
 			.getAllByText(/^(Actions|People|Teams|Pages|Settings)$/)
 			.map((heading) => heading.textContent);
 
-		expect(groupHeadings).toEqual(["Actions", "People", "Teams", "Pages", "Settings"]);
+		expect(groupHeadings).toEqual([
+			"Actions",
+			"People",
+			"Teams",
+			"Pages",
+			"Settings",
+		]);
 	});
 
 	it("navigates to a selected action and closes the palette", () => {

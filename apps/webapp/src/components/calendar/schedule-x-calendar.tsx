@@ -23,7 +23,7 @@ import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 
 import { useEffect, useRef, useState } from "react";
-import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import { useUserTimezone, useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,11 +31,11 @@ import {
 	calendarEventsToScheduleX,
 	generateBreakEvents,
 	getScheduleXCalendars,
+	type ScheduleXEvent,
 } from "@/lib/calendar/schedule-x-adapter";
 import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
 import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
-import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 import { buildRequirementHeaderContent } from "./daily-requirement-strip";
 
 export type ViewMode = "day" | "week" | "month" | "year";
@@ -58,6 +58,29 @@ const viewModeToScheduleX: Record<ViewMode, string> = {
 	month: "month-grid",
 	year: "month-grid", // Year view is handled separately, fallback to month-grid
 };
+
+export function filterEventsForScheduleXView(
+	events: CalendarEvent[],
+	viewMode: ViewMode,
+): CalendarEvent[] {
+	if (viewMode === "day" || viewMode === "week") return events;
+
+	return events.filter((event) => !(event.type === "work_period" && event.metadata.isRunning));
+}
+
+export function resolveClickableCalendarEvent(
+	events: Pick<ScheduleXEvent, "id" | "_eventData">[],
+	clickedEvent: { id: string },
+): CalendarEvent | null {
+	const scheduleXEvent = events.find((event) => event.id === clickedEvent.id);
+	const eventData = scheduleXEvent?._eventData;
+
+	if (eventData?.type === "work_period" && eventData.metadata.isRunning) {
+		return null;
+	}
+
+	return eventData ?? null;
+}
 
 function getHeaderCells(container: HTMLDivElement): HTMLElement[] {
 	return Array.from(
@@ -89,19 +112,35 @@ export function ScheduleXCalendarWrapper({
 	const locale = tolgee.getLanguage() ?? "en";
 	const scheduleXLocale = toScheduleXLocale(locale);
 	const weekStartDay = useWeekStartDay();
-	const timeZone = useOrganizationTimezone();
+	const timeZone = useUserTimezone();
 	const isDark = resolvedTheme === "dark";
 
 	// Track current date for display
 	const [currentDate, setCurrentDate] = useState<DateTime>(() => DateTime.now());
+	const [runningPeriodNow, setRunningPeriodNow] = useState<Date>(() => new Date());
 
 	// Create calendar plugins (must be stable references)
 	const [calendarControls] = useState(() => createCalendarControlsPlugin());
 	const [currentTimePlugin] = useState(() => createCurrentTimePlugin());
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
 
+	const hasVisibleRunningPeriod =
+		(viewMode === "day" || viewMode === "week") &&
+		events.some((event) => event.type === "work_period" && event.metadata.isRunning);
+
+	const liveEvents = hasVisibleRunningPeriod
+		? events.map((event) =>
+				event.type === "work_period" && event.metadata.isRunning
+					? { ...event, endDate: runningPeriodNow }
+					: event,
+			)
+		: events;
+
 	// Convert events to Schedule-X format
-	const baseScheduleXEvents = calendarEventsToScheduleX(events, timeZone);
+	const baseScheduleXEvents = calendarEventsToScheduleX(
+		filterEventsForScheduleXView(liveEvents, viewMode),
+		timeZone,
+	);
 
 	// Generate break events only for day/week view
 	const scheduleXEvents = (() => {
@@ -203,9 +242,9 @@ export function ScheduleXCalendarWrapper({
 	const handleEventClick = (event: { id: string }) => {
 		if (!onEventClick) return;
 
-		const scheduleXEvent = scheduleXEvents.find((e) => e.id === event.id);
-		if (scheduleXEvent?._eventData) {
-			onEventClick(scheduleXEvent._eventData);
+		const calendarEvent = resolveClickableCalendarEvent(scheduleXEvents, event);
+		if (calendarEvent) {
+			onEventClick(calendarEvent);
 		}
 	};
 
@@ -258,6 +297,17 @@ export function ScheduleXCalendarWrapper({
 			calendarControls.setView(scheduleXView);
 		}
 	}, [calendar, viewMode, calendarControls]);
+
+	useEffect(() => {
+		if (!hasVisibleRunningPeriod) return;
+
+		const interval = window.setInterval(() => {
+			setRunningPeriodNow(new Date());
+		}, 60_000);
+
+		setRunningPeriodNow(new Date());
+		return () => window.clearInterval(interval);
+	}, [hasVisibleRunningPeriod]);
 
 	// Update events when they change
 	useEffect(() => {

@@ -96,6 +96,7 @@ export interface WorkPeriodEvent extends CalendarEvent {
 		// "pending" = awaiting manager approval
 		// "rejected" = manager rejected the change
 		approvalStatus?: "approved" | "pending" | "rejected";
+		isRunning?: true;
 	};
 }
 

@@ -5,9 +5,19 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import {
+	InputOTP,
+	InputOTPGroup,
+	InputOTPSlot,
+} from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
@@ -27,7 +37,10 @@ export function TwoFactorVerificationForm() {
 		if (useBackupCode) {
 			if (backupCode.length < 6) {
 				toast.error(t("auth.2fa.invalid-backup-code", "Invalid backup code"), {
-					description: t("auth.2fa.enter-valid-backup-code", "Please enter a valid backup code"),
+					description: t(
+						"auth.2fa.enter-valid-backup-code",
+						"Please enter a valid backup code",
+					),
 				});
 				setIsLoading(false);
 				return;
@@ -38,12 +51,18 @@ export function TwoFactorVerificationForm() {
 					code: backupCode,
 				})
 				.catch((error: unknown) => {
-					toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
-						description:
-							error instanceof Error
-								? error.message
-								: t("auth.2fa.unexpected-error", "An unexpected error occurred"),
-					});
+					toast.error(
+						t("auth.2fa.verification-failed", "Verification failed"),
+						{
+							description:
+								error instanceof Error
+									? error.message
+									: t(
+											"auth.2fa.unexpected-error",
+											"An unexpected error occurred",
+										),
+						},
+					);
 					return null;
 				});
 
@@ -63,7 +82,9 @@ export function TwoFactorVerificationForm() {
 				return;
 			}
 
-			toast.success(t("auth.2fa.verification-successful", "Verification successful"));
+			toast.success(
+				t("auth.2fa.verification-successful", "Verification successful"),
+			);
 			router.push("/");
 			setIsLoading(false);
 			return;
@@ -71,7 +92,10 @@ export function TwoFactorVerificationForm() {
 
 		if (otpValue.length !== 6) {
 			toast.error(t("auth.2fa.invalid-code", "Invalid code"), {
-				description: t("auth.2fa.enter-6-digit-code", "Please enter a 6-digit code"),
+				description: t(
+					"auth.2fa.enter-6-digit-code",
+					"Please enter a 6-digit code",
+				),
 			});
 			setIsLoading(false);
 			return;
@@ -107,7 +131,9 @@ export function TwoFactorVerificationForm() {
 			return;
 		}
 
-		toast.success(t("auth.2fa.verification-successful", "Verification successful"));
+		toast.success(
+			t("auth.2fa.verification-successful", "Verification successful"),
+		);
 		router.push("/");
 		setIsLoading(false);
 	};
@@ -115,22 +141,32 @@ export function TwoFactorVerificationForm() {
 	return (
 		<Card className="mx-auto w-full max-w-md">
 			<CardHeader>
-				<CardTitle>{t("auth.2fa.title", "Two-Factor Authentication")}</CardTitle>
+				<CardTitle>
+					{t("auth.2fa.title", "Two-Factor Authentication")}
+				</CardTitle>
 				<CardDescription>
 					{useBackupCode
 						? t("auth.2fa.backup-code-prompt", "Enter one of your backup codes")
-						: t("auth.2fa.authenticator-prompt", "Enter the code from your authenticator app")}
+						: t(
+								"auth.2fa.authenticator-prompt",
+								"Enter the code from your authenticator app",
+							)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
 				{useBackupCode ? (
 					<div className="space-y-2">
-						<Label htmlFor="backup-code">{t("auth.2fa.backup-code-label", "Backup Code")}</Label>
+						<Label htmlFor="backup-code">
+							{t("auth.2fa.backup-code-label", "Backup Code")}
+						</Label>
 						<Input
 							id="backup-code"
 							type="text"
 							autoComplete="one-time-code"
-							placeholder={t("auth.2fa.backup-code-placeholder", "Enter backup code")}
+							placeholder={t(
+								"auth.2fa.backup-code-placeholder",
+								"Enter backup code",
+							)}
 							value={backupCode}
 							onChange={(e) => setBackupCode(e.target.value)}
 							disabled={isLoading}

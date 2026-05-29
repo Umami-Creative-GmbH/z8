@@ -1,10 +1,10 @@
+import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { connection, type NextRequest, NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
-import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 import { getVerifiedOrgContext } from "@/lib/auth-helpers";
+import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 import { getAbsencesForMonth } from "@/lib/calendar/absence-service";
 import {
 	assignedHolidayToCalendarEvent,
@@ -138,17 +138,26 @@ async function fetchMonthEvents(
 ): Promise<{ events: CalendarEvent[]; dailyActualMinutes: DailyWorkActualMinutes }> {
 	// Fetch all event types in parallel - conditional fetches return empty arrays
 	const [holidays, absences, timeEntries, workPeriods] = await Promise.all([
-		fetchHolidayEvents({ organizationId, employeeId: holidayEmployeeId, month, year, showHolidays }),
+		fetchHolidayEvents({
+			organizationId,
+			employeeId: holidayEmployeeId,
+			month,
+			year,
+			showHolidays,
+		}),
 		showAbsences ? getAbsencesForMonth(month, year, { organizationId, employeeId }) : [],
 		showTimeEntries ? getTimeEntriesForMonth(month, year, { organizationId, employeeId }) : [],
 		showWorkPeriods || includeWorkPeriodActuals
 			? getWorkPeriodsForMonth(month, year, { organizationId, employeeId })
 			: [],
 	]);
+	const completedWorkPeriods = workPeriods.filter((event) => !event.metadata.isRunning);
 
 	return {
 		events: [...holidays, ...absences, ...timeEntries, ...(showWorkPeriods ? workPeriods : [])],
-		dailyActualMinutes: includeWorkPeriodActuals ? buildDailyActualMinutes(workPeriods) : {},
+		dailyActualMinutes: includeWorkPeriodActuals
+			? buildDailyActualMinutes(completedWorkPeriods)
+			: {},
 	};
 }
 
@@ -230,7 +239,8 @@ export async function GET(request: NextRequest) {
 
 		const organizationId = orgContext.organizationId;
 		const showsEmployeeScopedEvents = showAbsences || showTimeEntries || showWorkPeriods;
-		const holidaysRequestedForEmployee = showHolidays && Boolean(employeeId || showsEmployeeScopedEvents);
+		const holidaysRequestedForEmployee =
+			showHolidays && Boolean(employeeId || showsEmployeeScopedEvents);
 		const scopedEmployeeId = await resolveAuthorizedCalendarEmployeeId(orgContext, employeeId);
 
 		if ((showsEmployeeScopedEvents || holidaysRequestedForEmployee) && !scopedEmployeeId) {

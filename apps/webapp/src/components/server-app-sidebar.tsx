@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import {
 	getAuthContext,
 	getCurrentSettingsAccessTier,
@@ -6,22 +7,25 @@ import {
 } from "@/lib/auth-helpers";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
-import { env } from "@/env";
 import { AppSidebar } from "./app-sidebar";
 
-export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSidebar>) {
+export async function ServerAppSidebar(
+	props: React.ComponentProps<typeof AppSidebar>,
+) {
 	const [organizations, authContext, settingsAccessTier] = await Promise.all([
 		getUserOrganizations(),
 		getAuthContext(),
 		getCurrentSettingsAccessTier(),
 	]);
 
-	const activeOrganizationId = authContext?.session.activeOrganizationId ?? null;
+	const activeOrganizationId =
+		authContext?.session.activeOrganizationId ?? null;
 	const currentOrganization = activeOrganizationId
 		? organizations.find((org) => org.id === activeOrganizationId) || null
 		: null;
 	const canCreateOrganizations = canCreateOrganizationsForDeployment(
-		authContext?.user.canCreateOrganizations || authContext?.user.role === "admin",
+		authContext?.user.canCreateOrganizations ||
+			authContext?.user.role === "admin",
 	);
 	const featureFlags = {
 		shiftsEnabled: currentOrganization?.shiftsEnabled ?? false,
@@ -31,7 +35,11 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 		worksCouncilEnabled: currentOrganization?.worksCouncilEnabled ?? false,
 	};
 	let showWorksCouncilNav = false;
-	if (props.showWorksCouncilNav && currentOrganization?.worksCouncilEnabled && activeOrganizationId) {
+	if (
+		props.showWorksCouncilNav &&
+		currentOrganization?.worksCouncilEnabled &&
+		activeOrganizationId
+	) {
 		const ability = await requireAbility();
 		showWorksCouncilNav = canViewWorksCouncilPortal(
 			ability,

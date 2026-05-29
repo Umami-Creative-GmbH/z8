@@ -2833,16 +2833,19 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 
 	let managerId: string | null = null;
-	try {
-		managerId = await resolveTimeApprovalManagerId({
-			db,
-			requiresApproval,
-			requesterEmployeeId: emp.id,
-			organizationId: emp.organizationId,
-		});
-	} catch {
-		return { success: false, error: "No manager assigned to approve time changes" };
+	if (requiresApproval) {
+		try {
+			managerId = await getPrimaryEligibleManagerIdForRequester({
+				db,
+				requesterEmployeeId: emp.id,
+				organizationId: emp.organizationId,
+			});
+		} catch (error) {
+			logger.error({ error }, "Failed to resolve approval manager for manual time entry");
+			return { success: false, error: "Could not verify time approval policy. Please try again." };
+		}
 	}
+	const requiresManagerApproval = requiresApproval && Boolean(managerId);
 
 	try {
 		// Check for overlapping work periods on the same day
@@ -2945,9 +2948,9 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		const durationMinutes = Math.floor(durationMs / 60000);
 
 		// Determine approval status based on policy
-		const approvalStatus = requiresApproval ? "pending" : "approved";
+		const approvalStatus = requiresManagerApproval ? "pending" : "approved";
 		// Prepare pending changes data if approval is needed
-		const pendingChangesData = requiresApproval
+		const pendingChangesData = requiresManagerApproval
 			? {
 					originalStartTime: finalClockIn.toISOString(),
 					originalEndTime: finalClockOut.toISOString(),
@@ -2993,7 +2996,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			.returning();
 
 		// If approval required, create approval request and notify manager
-		if (requiresApproval && managerId) {
+		if (requiresManagerApproval && managerId) {
 			await createManualEntryApprovalRequest({
 				workPeriodId: period.id,
 				employeeId: emp.id,
@@ -3016,7 +3019,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		);
 
 		// Calculate and persist surcharge credits if feature is enabled
-		if (!requiresApproval) {
+		if (!requiresManagerApproval) {
 			await calculateAndPersistSurcharges(period.id, emp.organizationId);
 		}
 
@@ -3030,7 +3033,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				wasAdjusted,
 				adjustedClockIn: wasAdjusted ? finalClockIn.toISOString() : undefined,
 				adjustedClockOut: wasAdjusted ? finalClockOut.toISOString() : undefined,
-				requiresApproval,
+				requiresApproval: requiresManagerApproval,
 			},
 			"Manual time entry created successfully",
 		);
@@ -3039,7 +3042,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			success: true,
 			data: {
 				workPeriodId: period.id,
-				requiresApproval,
+				requiresApproval: requiresManagerApproval,
 				wasAdjusted,
 				adjustedTimes: wasAdjusted
 					? {

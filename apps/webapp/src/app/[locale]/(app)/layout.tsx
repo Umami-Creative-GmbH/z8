@@ -24,11 +24,15 @@ import {
 } from "@/lib/effect/services/billing/billing-enforcement.service";
 import { createLogger } from "@/lib/logger";
 import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
+import { getUserTimezone } from "@/lib/user-preferences/timezone-server";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { DOMAIN_HEADERS } from "@/proxy";
 
 const logger = createLogger("app-layout");
-const billingDisabledAccess: BillingAccessResult = { canAccess: true, state: "disabled" };
+const billingDisabledAccess: BillingAccessResult = {
+	canAccess: true,
+	state: "disabled",
+};
 const billingCheckFailedAccess: BillingAccessResult = {
 	canAccess: false,
 	state: "suspended",
@@ -61,10 +65,11 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 	}
 
 	// Sync DB locale preference on load (null = user hasn't set preference, respect browser/cookie)
-	const [dbLocale, weekStartDay, timeFormat] = await Promise.all([
+	const [dbLocale, weekStartDay, timeFormat, timezone] = await Promise.all([
 		getUserLocaleRaw(session.user.id),
 		getUserWeekStartDay(session.user.id),
 		getUserTimeFormat(session.user.id),
+		getUserTimezone(session.user.id),
 	]);
 	if (dbLocale && dbLocale !== locale) {
 		// User has a saved locale preference that differs from current URL — redirect
@@ -116,13 +121,16 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 	}
 
 	const trialDaysRemaining =
-		typeof billingAccess.daysRemaining === "number" && billingAccess.daysRemaining > 0
+		typeof billingAccess.daysRemaining === "number" &&
+		billingAccess.daysRemaining > 0
 			? billingAccess.daysRemaining
 			: null;
 	const membershipRole = membershipRecord?.role;
-	const canManageBilling = membershipRole === "owner" || membershipRole === "admin";
+	const canManageBilling =
+		membershipRole === "owner" || membershipRole === "admin";
 	const hasPreparedTrialSubscription =
-		subscriptionRow?.status === "trialing" && Boolean(subscriptionRow?.stripeSubscriptionId);
+		subscriptionRow?.status === "trialing" &&
+		Boolean(subscriptionRow?.stripeSubscriptionId);
 	const showTrialBanner =
 		billingAccess.state === "trialing" &&
 		trialDaysRemaining !== null &&
@@ -130,7 +138,11 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 
 	return (
 		<PushPermissionProvider>
-			<UserPreferencesProvider weekStartDay={weekStartDay} timeFormat={timeFormat}>
+			<UserPreferencesProvider
+				weekStartDay={weekStartDay}
+				timeFormat={timeFormat}
+				timezone={timezone}
+			>
 				<OrganizationSettingsProvider>
 					<SidebarProvider
 						style={
@@ -154,7 +166,9 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 								/>
 							) : null}
 							<OrganizationDeletionBanner />
-							<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">{children}</div>
+							<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">
+								{children}
+							</div>
 						</SidebarInset>
 					</SidebarProvider>
 				</OrganizationSettingsProvider>
