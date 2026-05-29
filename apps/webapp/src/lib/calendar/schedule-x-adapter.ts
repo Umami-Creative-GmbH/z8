@@ -1,5 +1,10 @@
 import type { CalendarEvent, CalendarEventType } from "./types";
 
+type WorkPeriodCalendarId =
+	| "work_period_running"
+	| "work_period_pending"
+	| "work_period_rejected";
+
 /**
  * Schedule-X event format for v3
  * Uses Temporal API types directly
@@ -10,7 +15,7 @@ export interface ScheduleXEvent {
 	title: string;
 	start: Temporal.PlainDate | Temporal.ZonedDateTime;
 	end: Temporal.PlainDate | Temporal.ZonedDateTime;
-	calendarId: CalendarEventType | "work_period_running";
+	calendarId: CalendarEventType | WorkPeriodCalendarId;
 	_customContent?: {
 		timeGrid?: string;
 	};
