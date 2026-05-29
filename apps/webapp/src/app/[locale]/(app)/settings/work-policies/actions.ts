@@ -16,6 +16,7 @@ import {
 	workPolicyScheduleDay,
 	workPolicyViolation,
 } from "@/db/schema";
+import type { TimeRegulationBreakRulesPreset } from "@/db/schema/types";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -165,6 +166,30 @@ export interface CreateWorkPolicyInput {
 }
 
 export type UpdateWorkPolicyInput = Partial<CreateWorkPolicyInput>;
+
+export interface WorkPolicyPresetInput {
+	name: string;
+	description?: string;
+	countryCode?: string | null;
+	scheduleEnabled: boolean;
+	regulationEnabled: boolean;
+	schedule?: {
+		scheduleCycle?: "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
+		workingDaysPreset?: "weekdays" | "weekends" | "all_days" | "custom";
+		hoursPerCycle?: string;
+	};
+	regulation?: {
+		maxDailyMinutes?: number;
+		maxWeeklyMinutes?: number;
+		maxUninterruptedMinutes?: number;
+		breakRules?: BreakRuleInput[];
+	};
+}
+
+export type WorkPolicyPresetWithSource = typeof workPolicyPreset.$inferSelect & {
+	source: "system" | "custom";
+	sourceLabel: "System" | "Custom";
+};
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
@@ -491,6 +516,8 @@ export async function createWorkPolicy(
 			);
 		}
 
+		yield* _(Effect.promise(() => markOrganizationWorkBalancesDirty({ organizationId })));
+
 		return completePolicy as WorkPolicyWithDetails;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -581,7 +608,8 @@ export async function updateWorkPolicy(
 		}
 
 		// Update main policy
-		const shouldDirtyWorkBalances = data.scheduleEnabled !== undefined || data.schedule !== undefined;
+		const shouldDirtyWorkBalances =
+			data.scheduleEnabled !== undefined || data.schedule !== undefined;
 
 		yield* _(
 			dbService.query("updatePolicy", async () => {
@@ -1046,7 +1074,9 @@ export async function createWorkPolicyAssignment(
 		);
 
 		yield* _(
-			Effect.promise(() => markOrganizationWorkBalancesDirty({ organizationId: actor.organizationId })),
+			Effect.promise(() =>
+				markOrganizationWorkBalancesDirty({ organizationId: actor.organizationId }),
+			),
 		);
 
 		return { id: assignment.id };
@@ -1132,24 +1162,224 @@ export async function deleteWorkPolicyAssignment(
 // PRESETS
 // ============================================
 
-export async function getWorkPolicyPresets(): Promise<
-	ServerActionResult<(typeof workPolicyPreset.$inferSelect)[]>
-> {
+function normalizePresetName(name: string) {
+	return name.trim();
+}
+
+function isNumberOrNull(value: unknown): value is number | null {
+	return typeof value === "number" || value === null;
+}
+
+function isBreakOptionInput(value: unknown): value is BreakOptionInput {
+	if (!value || typeof value !== "object") return false;
+
+	const option = value as Partial<BreakOptionInput>;
+	return (
+		isNumberOrNull(option.splitCount) &&
+		isNumberOrNull(option.minimumSplitMinutes) &&
+		isNumberOrNull(option.minimumLongestSplitMinutes)
+	);
+}
+
+function isBreakRuleInput(value: unknown): value is BreakRuleInput {
+	if (!value || typeof value !== "object") return false;
+
+	const rule = value as Partial<BreakRuleInput>;
+	return (
+		typeof rule.workingMinutesThreshold === "number" &&
+		typeof rule.requiredBreakMinutes === "number" &&
+		Array.isArray(rule.options) &&
+		rule.options.every(isBreakOptionInput)
+	);
+}
+
+function validationError(message: string, field: string) {
+	return new ValidationError({ message, field });
+}
+
+function parsePresetBreakRulesStrict(value: unknown): BreakRuleInput[] {
+	if (!value) return [];
+
+	let parsed: unknown;
+	try {
+		parsed = typeof value === "string" ? JSON.parse(value) : value;
+	} catch {
+		throw validationError("Preset break rules are malformed", "breakRulesJson");
+	}
+
+	if (!parsed || typeof parsed !== "object") {
+		throw validationError("Preset break rules are malformed", "breakRulesJson");
+	}
+
+	const rules = (parsed as { rules?: unknown }).rules;
+	if (!Array.isArray(rules) || !rules.every(isBreakRuleInput)) {
+		throw validationError("Preset break rules are malformed", "breakRulesJson");
+	}
+
+	return rules;
+}
+
+function validatePresetBreakRules(input: WorkPolicyPresetInput) {
+	const rules = input.regulation?.breakRules;
+	if (rules === undefined && !input.regulationEnabled) return Effect.void;
+
+	if (rules !== undefined && (!Array.isArray(rules) || !rules.every(isBreakRuleInput))) {
+		return Effect.fail(
+			validationError("Preset break rules are malformed", "regulation.breakRules"),
+		);
+	}
+
+	return Effect.void;
+}
+
+function validatePersistedPresetBreakRules(value: unknown) {
+	try {
+		parsePresetBreakRulesStrict(value);
+		return Effect.void;
+	} catch (error) {
+		if (error instanceof ValidationError) return Effect.fail(error);
+		return Effect.fail(validationError("Preset break rules are malformed", "breakRulesJson"));
+	}
+}
+
+function stringifyPresetBreakRules(input: WorkPolicyPresetInput) {
+	const rules = input.regulationEnabled ? (input.regulation?.breakRules ?? []) : [];
+	return JSON.stringify({ rules }) as unknown as TimeRegulationBreakRulesPreset;
+}
+
+function presetInputToPolicyInput(input: WorkPolicyPresetInput): CreateWorkPolicyInput {
+	return {
+		name: normalizePresetName(input.name),
+		description: input.description?.trim() || undefined,
+		scheduleEnabled: input.scheduleEnabled,
+		regulationEnabled: input.regulationEnabled,
+		presenceEnabled: false,
+		schedule: input.scheduleEnabled
+			? {
+					scheduleCycle: input.schedule?.scheduleCycle ?? "weekly",
+					scheduleType: "simple",
+					workingDaysPreset: input.schedule?.workingDaysPreset ?? "weekdays",
+					hoursPerCycle: input.schedule?.hoursPerCycle ?? "40",
+					homeOfficeDaysPerCycle: 0,
+				}
+			: undefined,
+		regulation: input.regulationEnabled
+			? {
+					maxDailyMinutes: input.regulation?.maxDailyMinutes,
+					maxWeeklyMinutes: input.regulation?.maxWeeklyMinutes,
+					maxUninterruptedMinutes: input.regulation?.maxUninterruptedMinutes,
+					breakRules: input.regulation?.breakRules ?? [],
+				}
+			: undefined,
+	};
+}
+
+function presetToInput(preset: typeof workPolicyPreset.$inferSelect): WorkPolicyPresetInput {
+	const breakRules = parsePresetBreakRulesStrict(preset.breakRulesJson);
+
+	return {
+		name: preset.name,
+		description: preset.description ?? undefined,
+		countryCode: preset.countryCode,
+		scheduleEnabled: Boolean(
+			preset.scheduleCycle || preset.workingDaysPreset || preset.hoursPerCycle,
+		),
+		regulationEnabled: Boolean(
+			preset.maxDailyMinutes ||
+				preset.maxWeeklyMinutes ||
+				preset.maxUninterruptedMinutes ||
+				breakRules.length,
+		),
+		schedule: {
+			scheduleCycle: preset.scheduleCycle ?? "weekly",
+			workingDaysPreset: preset.workingDaysPreset ?? "weekdays",
+			hoursPerCycle: preset.hoursPerCycle ?? "40",
+		},
+		regulation: {
+			maxDailyMinutes: preset.maxDailyMinutes ?? undefined,
+			maxWeeklyMinutes: preset.maxWeeklyMinutes ?? undefined,
+			maxUninterruptedMinutes: preset.maxUninterruptedMinutes ?? undefined,
+			breakRules,
+		},
+	};
+}
+
+function presetInputToBaseValues(input: WorkPolicyPresetInput) {
+	return {
+		name: normalizePresetName(input.name),
+		description: input.description?.trim() || null,
+		countryCode: input.countryCode ?? null,
+		scheduleCycle: input.scheduleEnabled ? (input.schedule?.scheduleCycle ?? "weekly") : null,
+		workingDaysPreset: input.scheduleEnabled
+			? (input.schedule?.workingDaysPreset ?? "weekdays")
+			: null,
+		hoursPerCycle: input.scheduleEnabled ? (input.schedule?.hoursPerCycle ?? "40") : null,
+		maxDailyMinutes: input.regulationEnabled ? input.regulation?.maxDailyMinutes : null,
+		maxWeeklyMinutes: input.regulationEnabled ? input.regulation?.maxWeeklyMinutes : null,
+		maxUninterruptedMinutes: input.regulationEnabled
+			? input.regulation?.maxUninterruptedMinutes
+			: null,
+		breakRulesJson: stringifyPresetBreakRules(input),
+	};
+}
+
+function presetInputToInsertValues(organizationId: string, input: WorkPolicyPresetInput) {
+	return {
+		organizationId,
+		...presetInputToBaseValues(input),
+		isActive: true,
+	};
+}
+
+function presetInputToUpdateValues(input: WorkPolicyPresetInput) {
+	return presetInputToBaseValues(input);
+}
+
+function validatePresetName(input: WorkPolicyPresetInput) {
+	if (!normalizePresetName(input.name)) {
+		return Effect.fail(
+			new ValidationError({
+				message: "Preset name is required",
+				field: "name",
+			}),
+		);
+	}
+	return validatePresetBreakRules(input);
+}
+
+export async function getWorkPolicyPresets(
+	organizationId?: string,
+): Promise<ServerActionResult<WorkPolicyPresetWithSource[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const _session = yield* _(authService.getSession());
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getWorkPolicyPresets:actor",
+			}),
+		);
+		const activeOrganizationId = organizationId ?? actor.organizationId;
 
 		const dbService = yield* _(DatabaseService);
 		const presets = yield* _(
 			dbService.query("getWorkPolicyPresets", async () => {
 				return await dbService.db.query.workPolicyPreset.findMany({
-					where: eq(workPolicyPreset.isActive, true),
+					where: and(
+						eq(workPolicyPreset.isActive, true),
+						or(
+							isNull(workPolicyPreset.organizationId),
+							eq(workPolicyPreset.organizationId, activeOrganizationId),
+						),
+					),
 					orderBy: [workPolicyPreset.name],
 				});
 			}),
 		);
 
-		return presets;
+		return presets.map((preset) => ({
+			...preset,
+			source: preset.organizationId ? "custom" : "system",
+			sourceLabel: preset.organizationId ? "Custom" : "System",
+		})) satisfies WorkPolicyPresetWithSource[];
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -1359,7 +1589,9 @@ export async function setDefaultWorkPolicy(policyId: string): Promise<ServerActi
 		);
 
 		yield* _(
-			Effect.promise(() => markOrganizationWorkBalancesDirty({ organizationId: policy!.organizationId })),
+			Effect.promise(() =>
+				markOrganizationWorkBalancesDirty({ organizationId: policy!.organizationId }),
+			),
 		);
 
 		return undefined;
@@ -1368,47 +1600,102 @@ export async function setDefaultWorkPolicy(policyId: string): Promise<ServerActi
 	return runServerActionSafe(effect);
 }
 
-// ============================================
-// IMPORT PRESET
-// ============================================
-
-export async function importWorkPolicyPreset(
+export async function createWorkPolicyPreset(
 	organizationId: string,
-	presetId: string,
-	setAsDefault: boolean = false,
-): Promise<ServerActionResult<WorkPolicyWithDetails>> {
+	input: WorkPolicyPresetInput,
+): Promise<ServerActionResult<typeof workPolicyPreset.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "createWorkPolicyPreset:actor",
+			}),
+		);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Insufficient permissions",
+				resource: "work_policy_preset",
+				action: "create",
+			}),
+		);
+		yield* _(validatePresetName(input));
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const dbService = yield* _(DatabaseService);
+		const name = normalizePresetName(input.name);
+		const duplicate = yield* _(
+			dbService.query("checkDuplicatePreset", async () => {
+				return await dbService.db.query.workPolicyPreset.findFirst({
+					where: and(
+						eq(workPolicyPreset.organizationId, organizationId),
+						eq(workPolicyPreset.name, name),
+					),
+				});
+			}),
+		);
 
-		if (!hasPermission) {
-			yield* _(
+		if (duplicate) {
+			return yield* _(
 				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "work_policy",
-						action: "create",
+					new ConflictError({
+						message: "A preset with this name already exists",
+						conflictType: "duplicate_name",
+						details: { entityType: "work_policy_preset", field: "name" },
 					}),
 				),
 			);
 		}
 
-		const dbService = yield* _(DatabaseService);
+		const [createdPreset] = yield* _(
+			dbService.query("createWorkPolicyPreset", async () => {
+				return await dbService.db
+					.insert(workPolicyPreset)
+					.values(presetInputToInsertValues(organizationId, input))
+					.returning();
+			}),
+		);
 
-		// Fetch preset
+		return createdPreset;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function updateWorkPolicyPreset(
+	organizationId: string,
+	presetId: string,
+	input: WorkPolicyPresetInput,
+): Promise<ServerActionResult<void>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "updateWorkPolicyPreset:actor",
+			}),
+		);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Insufficient permissions",
+				resource: "work_policy_preset",
+				action: "update",
+			}),
+		);
+		yield* _(validatePresetName(input));
+
+		const dbService = yield* _(DatabaseService);
 		const preset = yield* _(
-			dbService.query("getPreset", async () => {
+			dbService.query("getWorkPolicyPreset", async () => {
 				return await dbService.db.query.workPolicyPreset.findFirst({
-					where: eq(workPolicyPreset.id, presetId),
+					where: and(
+						eq(workPolicyPreset.id, presetId),
+						eq(workPolicyPreset.organizationId, organizationId),
+						eq(workPolicyPreset.isActive, true),
+					),
 				});
 			}),
 		);
 
-		if (!preset) {
-			yield* _(
+		if (!preset || preset.organizationId !== organizationId) {
+			return yield* _(
 				Effect.fail(
 					new NotFoundError({
 						message: "Preset not found",
@@ -1419,84 +1706,276 @@ export async function importWorkPolicyPreset(
 			);
 		}
 
-		if (!preset!.isActive) {
-			yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Preset is not active",
-						field: "isActive",
-					}),
-				),
-			);
-		}
-
-		// Parse breakRulesJson - it's stored as a text column so may be a string
-		let parsedBreakRules: {
-			rules?: Array<{
-				workingMinutesThreshold: number;
-				requiredBreakMinutes: number;
-				options?: Array<{
-					splitCount: number | null;
-					minimumSplitMinutes: number | null;
-					minimumLongestSplitMinutes: number | null;
-				}>;
-			}>;
-		} | null = null;
-		if (preset!.breakRulesJson) {
-			try {
-				parsedBreakRules =
-					typeof preset!.breakRulesJson === "string"
-						? JSON.parse(preset!.breakRulesJson)
-						: preset!.breakRulesJson;
-			} catch {
-				parsedBreakRules = null;
-			}
-		}
-
-		// Transform preset break rules to input format (handle null/undefined safely)
-		const breakRules: BreakRuleInput[] =
-			parsedBreakRules?.rules?.map((rule) => ({
-				workingMinutesThreshold: rule.workingMinutesThreshold,
-				requiredBreakMinutes: rule.requiredBreakMinutes,
-				options:
-					rule.options?.map((opt) => ({
-						splitCount: opt.splitCount,
-						minimumSplitMinutes: opt.minimumSplitMinutes,
-						minimumLongestSplitMinutes: opt.minimumLongestSplitMinutes,
-					})) ?? [],
-			})) ?? [];
-
-		// Validate that regulation presets have at least one break rule
-		if (breakRules.length === 0) {
-			yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Preset must have at least one break rule",
-						field: "breakRules",
-					}),
-				),
-			);
-		}
-
-		const policyInput: CreateWorkPolicyInput = {
-			name: preset!.name,
-			description: preset!.description ?? undefined,
-			scheduleEnabled: false,
-			regulationEnabled: true,
-			presenceEnabled: false,
-			regulation: {
-				maxDailyMinutes: preset!.maxDailyMinutes ?? undefined,
-				maxWeeklyMinutes: preset!.maxWeeklyMinutes ?? undefined,
-				maxUninterruptedMinutes: preset!.maxUninterruptedMinutes ?? undefined,
-				breakRules,
-			},
-		};
-
-		// Create policy using existing function
-		const createResult = yield* _(
-			Effect.promise(() => createWorkPolicy(organizationId, policyInput)),
+		const name = normalizePresetName(input.name);
+		const duplicate = yield* _(
+			dbService.query("checkDuplicatePreset", async () => {
+				return await dbService.db.query.workPolicyPreset.findFirst({
+					where: and(
+						eq(workPolicyPreset.organizationId, organizationId),
+						eq(workPolicyPreset.name, name),
+					),
+				});
+			}),
 		);
 
+		if (duplicate && duplicate.id !== presetId) {
+			return yield* _(
+				Effect.fail(
+					new ConflictError({
+						message: "A preset with this name already exists",
+						conflictType: "duplicate_name",
+						details: { entityType: "work_policy_preset", field: "name" },
+					}),
+				),
+			);
+		}
+
+		yield* _(
+			dbService.query("updateWorkPolicyPreset", async () => {
+				await dbService.db
+					.update(workPolicyPreset)
+					.set(presetInputToUpdateValues(input))
+					.where(
+						and(
+							eq(workPolicyPreset.id, presetId),
+							eq(workPolicyPreset.organizationId, organizationId),
+							eq(workPolicyPreset.isActive, true),
+						),
+					);
+			}),
+		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function archiveWorkPolicyPreset(
+	organizationId: string,
+	presetId: string,
+): Promise<ServerActionResult<void>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "archiveWorkPolicyPreset:actor",
+			}),
+		);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Insufficient permissions",
+				resource: "work_policy_preset",
+				action: "delete",
+			}),
+		);
+
+		const dbService = yield* _(DatabaseService);
+		const preset = yield* _(
+			dbService.query("getWorkPolicyPreset", async () => {
+				return await dbService.db.query.workPolicyPreset.findFirst({
+					where: and(
+						eq(workPolicyPreset.id, presetId),
+						eq(workPolicyPreset.organizationId, organizationId),
+					),
+				});
+			}),
+		);
+
+		if (!preset) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Preset not found",
+						entityType: "work_policy_preset",
+						entityId: presetId,
+					}),
+				),
+			);
+		}
+
+		if (preset.organizationId === null) {
+			return yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "System presets cannot be archived",
+						field: "presetId",
+					}),
+				),
+			);
+		}
+
+		if (preset.organizationId !== organizationId) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Preset not found",
+						entityType: "work_policy_preset",
+						entityId: presetId,
+					}),
+				),
+			);
+		}
+
+		yield* _(
+			dbService.query("archiveWorkPolicyPreset", async () => {
+				await dbService.db
+					.update(workPolicyPreset)
+					.set({ isActive: false })
+					.where(
+						and(
+							eq(workPolicyPreset.id, presetId),
+							eq(workPolicyPreset.organizationId, organizationId),
+						),
+					);
+			}),
+		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function copySystemWorkPolicyPreset(
+	organizationId: string,
+	presetId: string,
+	input: WorkPolicyPresetInput,
+): Promise<ServerActionResult<typeof workPolicyPreset.$inferSelect>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "copySystemWorkPolicyPreset:actor",
+			}),
+		);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Insufficient permissions",
+				resource: "work_policy_preset",
+				action: "create",
+			}),
+		);
+		yield* _(validatePresetName(input));
+
+		const dbService = yield* _(DatabaseService);
+		const sourcePreset = yield* _(
+			dbService.query("getSystemWorkPolicyPreset", async () => {
+				return await dbService.db.query.workPolicyPreset.findFirst({
+					where: and(
+						eq(workPolicyPreset.id, presetId),
+						isNull(workPolicyPreset.organizationId),
+						eq(workPolicyPreset.isActive, true),
+					),
+				});
+			}),
+		);
+
+		if (!sourcePreset || sourcePreset.organizationId !== null || !sourcePreset.isActive) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Preset not found",
+						entityType: "work_policy_preset",
+						entityId: presetId,
+					}),
+				),
+			);
+		}
+
+		const name = normalizePresetName(input.name);
+		const duplicate = yield* _(
+			dbService.query("checkDuplicatePreset", async () => {
+				return await dbService.db.query.workPolicyPreset.findFirst({
+					where: and(
+						eq(workPolicyPreset.organizationId, organizationId),
+						eq(workPolicyPreset.name, name),
+					),
+				});
+			}),
+		);
+
+		if (duplicate) {
+			return yield* _(
+				Effect.fail(
+					new ConflictError({
+						message: "A preset with this name already exists",
+						conflictType: "duplicate_name",
+						details: { entityType: "work_policy_preset", field: "name" },
+					}),
+				),
+			);
+		}
+
+		const [createdPreset] = yield* _(
+			dbService.query("copySystemWorkPolicyPreset", async () => {
+				return await dbService.db
+					.insert(workPolicyPreset)
+					.values(presetInputToInsertValues(organizationId, input))
+					.returning();
+			}),
+		);
+
+		return createdPreset;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function createWorkPolicyFromPreset(
+	organizationId: string,
+	presetId: string,
+	input: WorkPolicyPresetInput,
+	setAsDefault: boolean = false,
+): Promise<ServerActionResult<WorkPolicyWithDetails>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "createWorkPolicyFromPreset:actor",
+			}),
+		);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Insufficient permissions",
+				resource: "work_policy",
+				action: "create",
+			}),
+		);
+
+		const dbService = yield* _(DatabaseService);
+		const preset = yield* _(
+			dbService.query("getVisibleWorkPolicyPreset", async () => {
+				return await dbService.db.query.workPolicyPreset.findFirst({
+					where: and(
+						eq(workPolicyPreset.id, presetId),
+						eq(workPolicyPreset.isActive, true),
+						or(
+							isNull(workPolicyPreset.organizationId),
+							eq(workPolicyPreset.organizationId, organizationId),
+						),
+					),
+				});
+			}),
+		);
+
+		if (
+			!preset ||
+			!preset.isActive ||
+			(preset.organizationId && preset.organizationId !== organizationId)
+		) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Preset not found",
+						entityType: "work_policy_preset",
+						entityId: presetId,
+					}),
+				),
+			);
+		}
+		yield* _(validatePersistedPresetBreakRules(preset.breakRulesJson));
+		yield* _(validatePresetName(input));
+
+		const createResult = yield* _(
+			Effect.promise(() => createWorkPolicy(organizationId, presetInputToPolicyInput(input))),
+		);
 		if (!createResult.success) {
 			return yield* _(
 				Effect.fail(
@@ -1508,21 +1987,107 @@ export async function importWorkPolicyPreset(
 			);
 		}
 
-		const createdPolicy = createResult.data;
-
-		// Set as default if requested
 		if (setAsDefault) {
 			const setDefaultResult = yield* _(
-				Effect.promise(() => setDefaultWorkPolicy(createdPolicy.id)),
+				Effect.promise(() => setDefaultWorkPolicy(createResult.data.id)),
 			);
-
 			if (!setDefaultResult.success) {
-				// Log but don't fail - policy was created successfully
-				console.error("Failed to set as default:", setDefaultResult.error);
+				return yield* _(
+					Effect.fail(
+						new ValidationError({
+							message: setDefaultResult.error ?? "Failed to set policy as default",
+							field: "setAsDefault",
+						}),
+					),
+				);
 			}
 		}
 
-		return createdPolicy;
+		return createResult.data;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+// Temporary compatibility wrapper for the existing preset import UI.
+export async function importWorkPolicyPreset(
+	organizationId: string,
+	presetId: string,
+	setAsDefault: boolean = false,
+): Promise<ServerActionResult<WorkPolicyWithDetails>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "importWorkPolicyPreset:actor",
+			}),
+		);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Insufficient permissions",
+				resource: "work_policy",
+				action: "create",
+			}),
+		);
+
+		const dbService = yield* _(DatabaseService);
+		const preset = yield* _(
+			dbService.query("getPreset", async () => {
+				return await dbService.db.query.workPolicyPreset.findFirst({
+					where: and(
+						eq(workPolicyPreset.id, presetId),
+						eq(workPolicyPreset.isActive, true),
+						or(
+							isNull(workPolicyPreset.organizationId),
+							eq(workPolicyPreset.organizationId, organizationId),
+						),
+					),
+				});
+			}),
+		);
+
+		if (!preset) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Preset not found",
+						entityType: "work_policy_preset",
+						entityId: presetId,
+					}),
+				),
+			);
+		}
+
+		let presetInput: WorkPolicyPresetInput;
+		try {
+			presetInput = presetToInput(preset);
+		} catch (error) {
+			return yield* _(
+				Effect.fail(
+					error instanceof ValidationError
+						? error
+						: validationError("Preset break rules are malformed", "breakRulesJson"),
+				),
+			);
+		}
+
+		const result = yield* _(
+			Effect.promise(() =>
+				createWorkPolicyFromPreset(organizationId, presetId, presetInput, setAsDefault),
+			),
+		);
+		if (!result.success) {
+			return yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: result.error ?? "Failed to import preset",
+						field: "preset",
+					}),
+				),
+			);
+		}
+
+		return result.data;
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

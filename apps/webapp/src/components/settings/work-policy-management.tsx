@@ -23,9 +23,8 @@ export function WorkPolicyManagement({ organizationId, accessTier }: WorkPolicyM
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const canManagePolicies = accessTier === "orgAdmin";
-	const allowedAssignmentTypes: ReadonlyArray<"organization" | "team" | "employee"> = canManagePolicies
-		? (["organization", "team", "employee"] as const)
-		: (["employee"] as const);
+	const allowedAssignmentTypes: ReadonlyArray<"organization" | "team" | "employee"> =
+		canManagePolicies ? (["organization", "team", "employee"] as const) : (["employee"] as const);
 
 	// Policy dialog state
 	const [policyDialogOpen, setPolicyDialogOpen] = useState(false);
@@ -82,6 +81,9 @@ export function WorkPolicyManagement({ organizationId, accessTier }: WorkPolicyM
 
 	const handlePresetImportSuccess = () => {
 		queryClient.invalidateQueries({
+			queryKey: queryKeys.workPolicies.presets(organizationId),
+		});
+		queryClient.invalidateQueries({
 			queryKey: queryKeys.workPolicies.list(organizationId),
 		});
 	};
@@ -110,7 +112,7 @@ export function WorkPolicyManagement({ organizationId, accessTier }: WorkPolicyM
 					</TabsTrigger>
 					{canManagePolicies ? (
 						<TabsTrigger value="presets">
-							{t("settings.workPolicies.tab.presets", "Import Presets")}
+							{t("settings.workPolicies.tab.presets", "Preset Library")}
 						</TabsTrigger>
 					) : null}
 					{canManagePolicies ? (

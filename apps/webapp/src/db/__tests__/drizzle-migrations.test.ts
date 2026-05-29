@@ -66,6 +66,10 @@ const migration0037Url = new URL(
 	"../../../drizzle/0037_holiday_category_assignment.sql",
 	import.meta.url,
 );
+const migration0038SnapshotUrl = new URL(
+	"../../../drizzle/meta/0038_snapshot.json",
+	import.meta.url,
+);
 
 const migration0004Statements = migration0004
 	.split("--> statement-breakpoint")
@@ -225,20 +229,15 @@ describe("drizzle follow-up migrations", () => {
 	});
 
 	it("registers a later idempotent approval request metadata recovery migration", () => {
-		const recoveryEntry = migrationJournal.entries.find(
+		const recoveryIndex = migrationJournal.entries.findIndex(
 			(entry) => entry.tag === "0035_approval_request_metadata_recovery",
 		);
+		const recoveryEntry = migrationJournal.entries[recoveryIndex];
 		const latestPriorWhen = Math.max(
-			...migrationJournal.entries
-				.filter(
-					(entry) =>
-						entry.tag !== "0035_approval_request_metadata_recovery" &&
-						entry.tag !== "0036_time_entry_timezone_capture" &&
-						entry.tag !== "0037_holiday_category_assignment",
-				)
-				.map((entry) => entry.when),
+			...migrationJournal.entries.slice(0, recoveryIndex).map((entry) => entry.when),
 		);
 
+		expect(recoveryIndex).toBeGreaterThanOrEqual(0);
 		expect(recoveryEntry?.when).toBeGreaterThan(latestPriorWhen);
 		expect(existsSync(migration0035Url)).toBe(true);
 
@@ -295,7 +294,6 @@ describe("drizzle follow-up migrations", () => {
 			}),
 		);
 	});
-
 	it("uses the holiday category primary key for category assignment foreign keys", () => {
 		expect(existsSync(migration0037Url)).toBe(true);
 
@@ -306,6 +304,36 @@ describe("drizzle follow-up migrations", () => {
 		);
 		expect(migration0037).not.toContain(
 			'FOREIGN KEY ("category_id", "organization_id") REFERENCES "public"."holiday_category"("id", "organization_id")',
+		);
+	});
+
+	it("snapshots work policy preset ownership and partial unique indexes", () => {
+		expect(
+			migrationJournal.entries.some((entry) => entry.tag === "0038_work_policy_preset_ownership"),
+		).toBe(true);
+		expect(existsSync(migration0038SnapshotUrl)).toBe(true);
+
+		const snapshot = JSON.parse(readFileSync(migration0038SnapshotUrl, "utf8")) as {
+			tables: Record<
+				string,
+				{
+					columns: Record<string, unknown>;
+					indexes: Record<string, { isUnique?: boolean; where?: string }>;
+				}
+			>;
+		};
+		const presetTable = snapshot.tables["public.work_policy_preset"];
+
+		expect(presetTable?.columns).toEqual(
+			expect.objectContaining({
+				organization_id: expect.objectContaining({ type: "text", notNull: false }),
+			}),
+		);
+		expect(presetTable?.indexes.workPolicyPreset_system_name_idx).toEqual(
+			expect.objectContaining({ isUnique: true, where: '"organization_id" IS NULL' }),
+		);
+		expect(presetTable?.indexes.workPolicyPreset_org_name_idx).toEqual(
+			expect.objectContaining({ isUnique: true, where: '"organization_id" IS NOT NULL' }),
 		);
 	});
 });
