@@ -27,6 +27,7 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
+import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import { formatTimeInZone, getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 import { useRouter } from "@/navigation";
 
@@ -134,6 +135,7 @@ export function ManualTimeEntryDialog({
 				clockOutTime: value.clockOutTime,
 				reason: value.reason,
 				timezone: employeeTimezone,
+				browserTimezone: targetEmployeeId ? null : getBrowserTimezone(),
 				projectId: value.projectId,
 				workCategoryId: value.workCategoryId,
 			});

@@ -11,6 +11,10 @@ const { createManualTimeEntry, refresh } = vi.hoisted(() => ({
 	refresh: vi.fn(),
 }));
 
+const { getBrowserTimezone } = vi.hoisted(() => ({
+	getBrowserTimezone: vi.fn(),
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string>) =>
@@ -29,6 +33,10 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 vi.mock("@/lib/time-tracking/timezone-utils", () => ({
 	formatTimeInZone: () => "09:00",
 	getTimezoneAbbreviation: () => "UTC",
+}));
+
+vi.mock("@/lib/time-tracking/timezone-capture", () => ({
+	getBrowserTimezone,
 }));
 
 vi.mock("@/components/ui/date-picker", () => ({
@@ -130,6 +138,8 @@ describe("ManualTimeEntryDialog layout", () => {
 	beforeEach(() => {
 		createManualTimeEntry.mockReset();
 		createManualTimeEntry.mockResolvedValue({ success: true, data: {} });
+		getBrowserTimezone.mockReset();
+		getBrowserTimezone.mockReturnValue("America/New_York");
 		refresh.mockReset();
 	});
 
@@ -220,9 +230,36 @@ describe("ManualTimeEntryDialog layout", () => {
 				clockOutTime: "16:30",
 				reason: "Calendar adjustment",
 				timezone: "Europe/Berlin",
+				browserTimezone: null,
 				projectId: "project-1",
 				workCategoryId: "category-1",
 			});
+		});
+	});
+
+	it("submits the browser timezone for self manual entries", async () => {
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			employeeTimezone: "Europe/Berlin",
+			defaultDate: "2026-05-12",
+			defaultClockInTime: "10:15",
+			defaultClockOutTime: "15:45",
+		});
+
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+
+		await waitFor(() => {
+			expect(createManualTimeEntry).toHaveBeenCalledWith(
+				expect.objectContaining({
+					date: "2026-05-12",
+					clockInTime: "10:15",
+					clockOutTime: "15:45",
+					timezone: "Europe/Berlin",
+					browserTimezone: "America/New_York",
+				}),
+			);
 		});
 	});
 });

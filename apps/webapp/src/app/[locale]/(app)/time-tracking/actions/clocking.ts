@@ -4,7 +4,7 @@ import { and, eq, gte, isNull, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime, IANAZone } from "luxon";
 import { db } from "@/db";
-import { workPeriod } from "@/db/schema";
+import { employee, workPeriod } from "@/db/schema";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import type { ServerActionResult } from "@/lib/effect/result";
@@ -658,8 +658,27 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	if (!currentEmployee) {
 		return { success: false, error: "Employee profile not found" };
 	}
+	const targetEmployeeId = data.employeeId ?? currentEmployee.id;
+	let targetEmployee = currentEmployee;
+	if (targetEmployeeId !== currentEmployee.id) {
+		const organizationEmployees = await db.query.employee.findMany({
+			where: eq(employee.organizationId, currentEmployee.organizationId),
+		});
+		const resolvedTarget = organizationEmployees.find(
+			(employeeRecord) =>
+				employeeRecord.id === targetEmployeeId &&
+				employeeRecord.organizationId === currentEmployee.organizationId,
+		);
+		if (!resolvedTarget) {
+			return { success: false, error: "Not authorized to create time entries for this employee" };
+		}
+		targetEmployee = resolvedTarget;
+	}
+	const isOwnEntry = targetEmployee.id === currentEmployee.id;
 
-	const savedTimezone = await getUserTimezone(session.user.id);
+	const savedTimezone = isOwnEntry
+		? await getUserTimezone(session.user.id)
+		: await getUserTimezone(targetEmployee.userId ?? session.user.id);
 	if (data.timezone !== undefined && !IANAZone.isValidZone(data.timezone)) {
 		return { success: false, error: "Invalid timezone" };
 	}
@@ -681,7 +700,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 
 	const validation = await validateTimeEntryRange(
-		currentEmployee.organizationId,
+		targetEmployee.organizationId,
 		clockInDate,
 		clockOutDate,
 	);
@@ -696,8 +715,8 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	if (data.projectId) {
 		const projectValidation = await validateProjectAssignment(
 			data.projectId,
-			currentEmployee.id,
-			currentEmployee.teamId,
+			targetEmployee.id,
+			targetEmployee.teamId,
 		);
 
 		if (!projectValidation.isValid) {
@@ -708,26 +727,29 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		}
 	}
 
-	let editCapability;
-	try {
-		editCapability = await getEditCapabilityForPeriod({
-			employeeId: currentEmployee.id,
-			workPeriodEndTime: clockOutDate,
-			timezone,
-		});
-	} catch (error) {
-		logger.error({ error }, "Failed to check edit capability for manual entry");
-		return { success: false, error: APPROVAL_POLICY_CHECK_ERROR };
-	}
+	let requiresApproval = false;
+	if (isOwnEntry) {
+		let editCapability;
+		try {
+			editCapability = await getEditCapabilityForPeriod({
+				employeeId: targetEmployee.id,
+				workPeriodEndTime: clockOutDate,
+				timezone,
+			});
+		} catch (error) {
+			logger.error({ error }, "Failed to check edit capability for manual entry");
+			return { success: false, error: APPROVAL_POLICY_CHECK_ERROR };
+		}
 
-	if (editCapability.type === "forbidden") {
-		return {
-			success: false,
-			error: `Entries older than ${editCapability.daysBack} days can only be created by admins or team leads.`,
-		};
-	}
+		if (editCapability.type === "forbidden") {
+			return {
+				success: false,
+				error: `Entries older than ${editCapability.daysBack} days can only be created by admins or team leads.`,
+			};
+		}
 
-	const requiresApproval = editCapability.type === "approval_required";
+		requiresApproval = editCapability.type === "approval_required";
+	}
 
 	try {
 		const localDate = DateTime.fromISO(data.date, { zone: timezone });
@@ -737,7 +759,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 
 		const existingWorkPeriods = await db.query.workPeriod.findMany({
 			where: and(
-				eq(workPeriod.employeeId, currentEmployee.id),
+				eq(workPeriod.employeeId, targetEmployee.id),
 				gte(workPeriod.startTime, localDate.startOf("day").toUTC().toJSDate()),
 				lte(workPeriod.startTime, localDate.endOf("day").toUTC().toJSDate()),
 			),
@@ -761,25 +783,37 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		}
 
 		const { adjustedClockIn, adjustedClockOut, wasAdjusted } = overlapResult;
-		const clockInTimezoneCapture = resolveTimeEntryTimezoneCapture({
-			timestamp: adjustedClockIn,
-			browserTimezone: data.browserTimezone,
-			fallbackTimezone: timezone,
-			browserSource: "browser",
-			fallbackSource: "user_setting",
-		});
-		const clockOutTimezoneCapture = resolveTimeEntryTimezoneCapture({
-			timestamp: adjustedClockOut,
-			browserTimezone: data.browserTimezone,
-			fallbackTimezone: timezone,
-			browserSource: "browser",
-			fallbackSource: "user_setting",
-		});
+		const clockInTimezoneCapture = isOwnEntry
+			? resolveTimeEntryTimezoneCapture({
+					timestamp: adjustedClockIn,
+					browserTimezone: data.browserTimezone,
+					fallbackTimezone: timezone,
+					browserSource: "browser",
+					fallbackSource: "user_setting",
+				})
+			: resolveFallbackTimezoneCapture({
+					timestamp: adjustedClockIn,
+					timezone,
+					timezoneSource: "manager_target_user_setting",
+				});
+		const clockOutTimezoneCapture = isOwnEntry
+			? resolveTimeEntryTimezoneCapture({
+					timestamp: adjustedClockOut,
+					browserTimezone: data.browserTimezone,
+					fallbackTimezone: timezone,
+					browserSource: "browser",
+					fallbackSource: "user_setting",
+				})
+			: resolveFallbackTimezoneCapture({
+					timestamp: adjustedClockOut,
+					timezone,
+					timezoneSource: "manager_target_user_setting",
+				});
 		const managerId = requiresApproval
 			? await getPrimaryEligibleManagerIdForRequester({
 					db,
-					requesterEmployeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
+					requesterEmployeeId: targetEmployee.id,
+					organizationId: targetEmployee.organizationId,
 				})
 			: null;
 		const requiresManagerApproval = requiresApproval && Boolean(managerId);
@@ -787,8 +821,8 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		const createdWorkPeriod = await db.transaction(async (tx) => {
 			const clockInEntry = await createTimeEntry(
 				{
-					employeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
+					employeeId: targetEmployee.id,
+					organizationId: targetEmployee.organizationId,
 					type: "clock_in",
 					timestamp: adjustedClockIn,
 					createdBy: session.user.id,
@@ -799,8 +833,8 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			);
 			const clockOutEntry = await createTimeEntry(
 				{
-					employeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
+					employeeId: targetEmployee.id,
+					organizationId: targetEmployee.organizationId,
 					type: "clock_out",
 					timestamp: adjustedClockOut,
 					createdBy: session.user.id,
@@ -813,8 +847,8 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			const [period] = await tx
 				.insert(workPeriod)
 				.values({
-					employeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
+					employeeId: targetEmployee.id,
+					organizationId: targetEmployee.organizationId,
 					clockInId: clockInEntry.id,
 					clockOutId: clockOutEntry.id,
 					startTime: adjustedClockIn,
@@ -843,9 +877,9 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		if (requiresManagerApproval && managerId) {
 			await createManualEntryApprovalRequest({
 				workPeriodId: createdWorkPeriod.id,
-				employeeId: currentEmployee.id,
+				employeeId: targetEmployee.id,
 				managerId,
-				organizationId: currentEmployee.organizationId,
+				organizationId: targetEmployee.organizationId,
 				startTime: adjustedClockIn,
 				endTime: adjustedClockOut,
 				durationMinutes,
@@ -854,19 +888,19 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		}
 
 		if (!requiresManagerApproval) {
-			await calculateAndPersistSurcharges(createdWorkPeriod.id, currentEmployee.organizationId);
+			await calculateAndPersistSurcharges(createdWorkPeriod.id, targetEmployee.organizationId);
 		}
 
 		await markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
 			{
-				employeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
+				employeeId: targetEmployee.id,
+				organizationId: targetEmployee.organizationId,
 				dirtyFromDate:
 					DateTime.fromJSDate(adjustedClockIn, { zone: "utc" }).toISODate() ?? undefined,
 			},
 			{
-				employeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
+				employeeId: targetEmployee.id,
+				organizationId: targetEmployee.organizationId,
 				workPeriodId: createdWorkPeriod.id,
 			},
 		);
@@ -874,7 +908,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		logger.info(
 			{
 				workPeriodId: createdWorkPeriod.id,
-				employeeId: currentEmployee.id,
+				employeeId: targetEmployee.id,
 				date: data.date,
 				clockInTime: data.clockInTime,
 				clockOutTime: data.clockOutTime,
