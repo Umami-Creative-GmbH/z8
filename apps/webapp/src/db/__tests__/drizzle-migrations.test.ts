@@ -199,19 +199,15 @@ describe("drizzle follow-up migrations", () => {
 	});
 
 	it("registers a later idempotent approval request metadata recovery migration", () => {
-		const recoveryEntry = migrationJournal.entries.find(
+		const recoveryIndex = migrationJournal.entries.findIndex(
 			(entry) => entry.tag === "0035_approval_request_metadata_recovery",
 		);
+		const recoveryEntry = migrationJournal.entries[recoveryIndex];
 		const latestPriorWhen = Math.max(
-			...migrationJournal.entries
-				.filter(
-					(entry) =>
-						entry.tag !== "0035_approval_request_metadata_recovery" &&
-						entry.tag !== "0036_time_entry_timezone_capture",
-				)
-				.map((entry) => entry.when),
+			...migrationJournal.entries.slice(0, recoveryIndex).map((entry) => entry.when),
 		);
 
+		expect(recoveryIndex).toBeGreaterThanOrEqual(0);
 		expect(recoveryEntry?.when).toBeGreaterThan(latestPriorWhen);
 		expect(existsSync(migration0035Url)).toBe(true);
 
