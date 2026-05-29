@@ -747,6 +747,7 @@ describe("work balance helpers", () => {
 			organizationId: "org-1",
 			dbClient: expect.objectContaining({ select: mockState.txSelect }),
 			dateInYear: "2026-01-01",
+			calculationStartDate: null,
 			now,
 		});
 		expect(mockState.txSelect).toHaveBeenCalledWith({
@@ -870,6 +871,7 @@ describe("work balance helpers", () => {
 			organizationId: "org-1",
 			dbClient: expect.objectContaining({ select: mockState.txSelect }),
 			dateInYear: "2026-01-01",
+			calculationStartDate: "2026-01-15",
 			now,
 		});
 	});
@@ -969,6 +971,7 @@ describe("work balance helpers", () => {
 			organizationId: "org-1",
 			dbClient: expect.objectContaining({ select: mockState.txSelect }),
 			dateInYear: "2026-01-01",
+			calculationStartDate: "2026-01-15",
 			now,
 		});
 	});
@@ -1040,6 +1043,14 @@ describe("work balance helpers", () => {
 			now,
 		});
 		expect(mockState.computeEmployeePeriodBalance).toHaveBeenCalledTimes(2);
+		expect(mockState.rebuildEmployeeYearBalanceFromMonths).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dbClient: expect.objectContaining({ select: mockState.txSelect }),
+			dateInYear: "2026-01-01",
+			calculationStartDate: "2026-02-10",
+			now,
+		});
 		expect(gte).toHaveBeenCalledWith(employeeWorkBalancePeriod.periodEnd, "2026-02-10");
 		expect(mockState.txInsertValues).toHaveBeenCalledWith(
 			expect.objectContaining({

@@ -290,6 +290,24 @@ describe("work balance period aggregation", () => {
 		expect(lte).toHaveBeenCalledWith(employeeWorkBalancePeriod.periodEnd, "2026-12-31");
 	});
 
+	it("clips closed year rebuild source months to the employee calculation start date", async () => {
+		mockState.selectWhere.mockResolvedValueOnce([{ actualMinutes: 18_600, requiredMinutes: 19_200 }]);
+
+		await rebuildEmployeeYearBalanceFromMonths({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dateInYear: "2026-05-18",
+			calculationStartDate: "2026-02-10",
+			now: new Date("2027-01-02T10:00:00.000Z"),
+		});
+
+		expect(eq).toHaveBeenCalledWith(employeeWorkBalancePeriod.employeeId, "employee-1");
+		expect(eq).toHaveBeenCalledWith(employeeWorkBalancePeriod.organizationId, "org-1");
+		expect(gte).toHaveBeenCalledWith(employeeWorkBalancePeriod.periodStart, "2026-01-01");
+		expect(lte).toHaveBeenCalledWith(employeeWorkBalancePeriod.periodEnd, "2026-12-31");
+		expect(gte).toHaveBeenCalledWith(employeeWorkBalancePeriod.periodEnd, "2026-02-10");
+	});
+
 	it("marks period buckets and employee read model dirty for an org-scoped full rebuild", async () => {
 		const requestedAt = new Date("2026-06-01T08:00:00.000Z");
 

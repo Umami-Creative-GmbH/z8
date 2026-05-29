@@ -384,6 +384,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 				organizationId: input.organizationId,
 				dbClient,
 				dateInYear: `${year}-01-01`,
+				calculationStartDate,
 				now,
 			});
 		}

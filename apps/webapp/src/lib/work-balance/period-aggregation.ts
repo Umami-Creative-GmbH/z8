@@ -153,6 +153,7 @@ export async function rebuildEmployeeYearBalanceFromMonths(input: {
 	organizationId: string;
 	dbClient?: PeriodAggregationDbClient;
 	dateInYear: string;
+	calculationStartDate?: string | null;
 	now?: Date;
 }) {
 	const dbClient = input.dbClient ?? db;
@@ -171,6 +172,9 @@ export async function rebuildEmployeeYearBalanceFromMonths(input: {
 				eq(employeeWorkBalancePeriod.isClosed, true),
 				gte(employeeWorkBalancePeriod.periodStart, yearPeriod.periodStart),
 				lte(employeeWorkBalancePeriod.periodEnd, yearPeriod.periodEnd),
+				...(input.calculationStartDate
+					? [gte(employeeWorkBalancePeriod.periodEnd, input.calculationStartDate)]
+					: []),
 			),
 		);
 
