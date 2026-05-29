@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DateTime } from "luxon";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -115,6 +115,20 @@ describe("HeaderTimezoneControl", () => {
 		expect(screen.getByText("14:34")).toBeTruthy();
 		expect(screen.getByText("UTC+02:00")).toBeTruthy();
 		expect(screen.queryByText(/14:34:56/)).toBeNull();
+	});
+
+	it("updates the displayed time at the next minute boundary", async () => {
+		render(<HeaderTimezoneControl />);
+
+		expect(screen.getByText("14:34")).toBeTruthy();
+
+		vi.setSystemTime(new Date("2026-05-29T12:35:00.000Z"));
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(4_000);
+		});
+
+		expect(screen.getByText("14:35")).toBeTruthy();
+		expect(screen.queryByText("14:34")).toBeNull();
 	});
 
 	it("opens a popover with a disabled save button until the draft timezone changes", async () => {

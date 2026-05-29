@@ -54,11 +54,22 @@ export function HeaderTimezoneControl() {
 	const [pending, setPending] = useState(false);
 
 	useEffect(() => {
-		const interval = window.setInterval(() => {
+		let interval: ReturnType<typeof window.setInterval> | undefined;
+		const now = DateTime.now();
+		const millisecondsUntilNextMinute = 60_000 - (now.second * 1_000 + now.millisecond);
+		const timeout = window.setTimeout(() => {
 			setNow(DateTime.now());
-		}, 60_000);
+			interval = window.setInterval(() => {
+				setNow(DateTime.now());
+			}, 60_000);
+		}, millisecondsUntilNextMinute);
 
-		return () => window.clearInterval(interval);
+		return () => {
+			window.clearTimeout(timeout);
+			if (interval) {
+				window.clearInterval(interval);
+			}
+		};
 	}, []);
 
 	useEffect(() => {
@@ -114,11 +125,14 @@ export function HeaderTimezoneControl() {
 				<Button
 					aria-label={`Current timezone ${displayTimezone}, ${timeLabel}, ${offsetLabel}`}
 					className="h-9 gap-2 px-3"
+					suppressHydrationWarning
 					type="button"
 					variant="ghost"
 				>
 					<IconWorld className="size-4" aria-hidden="true" />
-					<span className="font-medium tabular-nums">{timeLabel}</span>
+					<span className="font-medium tabular-nums" suppressHydrationWarning>
+						{timeLabel}
+					</span>
 					<Badge variant="secondary" className="font-mono text-[11px]">
 						{offsetLabel}
 					</Badge>
