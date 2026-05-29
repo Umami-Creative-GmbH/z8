@@ -10,6 +10,7 @@
     "@better-auth/passkey": "1.6.11",
     "@better-auth/scim": "^1.6.11",
     "@better-auth/sso": "1.6.11",
+    "@casl/ability": "^7.0.0",
     "@opentelemetry/api": "^1.9.1",
     "@slack/web-api": "^7.16.0",
     "@t3-oss/env-nextjs": "^0.13.11",
