@@ -14,7 +14,9 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
+	deleteHolidayCategoryAssignment,
 	deleteHolidayAssignment,
+	getHolidayCategoryAssignments,
 	getHolidayAssignments,
 } from "@/app/[locale]/(app)/settings/holidays/actions";
 import {
@@ -109,6 +111,31 @@ interface HolidayAssignmentData {
 	} | null;
 }
 
+interface HolidayCategoryAssignmentData {
+	id: string;
+	categoryId: string;
+	assignmentType: "organization" | "team" | "employee";
+	teamId: string | null;
+	employeeId: string | null;
+	isActive: boolean;
+	createdAt: Date;
+	category: {
+		id: string;
+		name: string;
+		type: string;
+		color: string | null;
+	};
+	team: {
+		id: string;
+		name: string;
+	} | null;
+	employee: {
+		id: string;
+		firstName: string | null;
+		lastName: string | null;
+	} | null;
+}
+
 export function AssignmentManager({
 	organizationId,
 	canManage,
@@ -122,6 +149,8 @@ export function AssignmentManager({
 		useState<PresetAssignmentData | null>(null);
 	const [selectedHolidayAssignment, setSelectedHolidayAssignment] =
 		useState<HolidayAssignmentData | null>(null);
+	const [selectedHolidayCategoryAssignment, setSelectedHolidayCategoryAssignment] =
+		useState<HolidayCategoryAssignmentData | null>(null);
 
 	// Fetch preset assignments
 	const {
@@ -152,6 +181,22 @@ export function AssignmentManager({
 				throw new Error(result.error || "Failed to fetch holiday assignments");
 			}
 			return result.data as HolidayAssignmentData[];
+		},
+	});
+
+	// Fetch holiday category assignments
+	const {
+		data: holidayCategoryAssignments,
+		isLoading: holidayCategoryLoading,
+		error: holidayCategoryError,
+	} = useQuery({
+		queryKey: queryKeys.holidayCategoryAssignments.list(organizationId),
+		queryFn: async () => {
+			const result = await getHolidayCategoryAssignments(organizationId);
+			if (!result.success) {
+				throw new Error(result.error || "Failed to fetch holiday category assignments");
+			}
+			return result.data as HolidayCategoryAssignmentData[];
 		},
 	});
 
@@ -211,14 +256,56 @@ export function AssignmentManager({
 		},
 	});
 
+	// Delete holiday category assignment mutation
+	const deleteHolidayCategoryMutation = useMutation({
+		mutationFn: (assignmentId: string) => deleteHolidayCategoryAssignment(assignmentId),
+		onSuccess: (result) => {
+			if (result.success) {
+				toast.success(
+					t("settings.holidays.assignments.categoryDeleted", "Holiday category assignment removed"),
+				);
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.holidayCategoryAssignments.list(organizationId),
+				});
+				setDeleteDialogOpen(false);
+				setSelectedHolidayCategoryAssignment(null);
+			} else {
+				toast.error(
+					result.error ||
+						t(
+							"settings.holidays.assignments.categoryDeleteFailed",
+							"Failed to remove holiday category assignment",
+						),
+				);
+			}
+		},
+		onError: () => {
+			toast.error(
+				t(
+					"settings.holidays.assignments.categoryDeleteFailed",
+					"Failed to remove holiday category assignment",
+				),
+			);
+		},
+	});
+
 	const handleDeletePresetClick = (assignment: PresetAssignmentData) => {
 		setSelectedPresetAssignment(assignment);
 		setSelectedHolidayAssignment(null);
+		setSelectedHolidayCategoryAssignment(null);
 		setDeleteDialogOpen(true);
 	};
 
 	const handleDeleteHolidayClick = (assignment: HolidayAssignmentData) => {
 		setSelectedHolidayAssignment(assignment);
+		setSelectedPresetAssignment(null);
+		setSelectedHolidayCategoryAssignment(null);
+		setDeleteDialogOpen(true);
+	};
+
+	const handleDeleteHolidayCategoryClick = (assignment: HolidayCategoryAssignmentData) => {
+		setSelectedHolidayCategoryAssignment(assignment);
+		setSelectedHolidayAssignment(null);
 		setSelectedPresetAssignment(null);
 		setDeleteDialogOpen(true);
 	};
@@ -228,10 +315,15 @@ export function AssignmentManager({
 			deletePresetMutation.mutate(selectedPresetAssignment.id);
 		} else if (selectedHolidayAssignment) {
 			deleteHolidayMutation.mutate(selectedHolidayAssignment.id);
+		} else if (selectedHolidayCategoryAssignment) {
+			deleteHolidayCategoryMutation.mutate(selectedHolidayCategoryAssignment.id);
 		}
 	};
 
-	const isDeleting = deletePresetMutation.isPending || deleteHolidayMutation.isPending;
+	const isDeleting =
+		deletePresetMutation.isPending ||
+		deleteHolidayMutation.isPending ||
+		deleteHolidayCategoryMutation.isPending;
 
 	// Group preset assignments by type
 	const presets = presetAssignments || [];
@@ -260,9 +352,25 @@ export function AssignmentManager({
 	const orgHolidayAssignments = holidays.filter((a) => a.assignmentType === "organization");
 	const teamHolidayAssignments = holidays.filter((a) => a.assignmentType === "team");
 	const employeeHolidayAssignments = holidays.filter((a) => a.assignmentType === "employee");
+	const holidayCategories = holidayCategoryAssignments || [];
+	const orgHolidayCategoryAssignments = holidayCategories.filter(
+		(a) => a.assignmentType === "organization",
+	);
+	const teamHolidayCategoryAssignments = holidayCategories.filter(
+		(a) => a.assignmentType === "team",
+	);
+	const employeeHolidayCategoryAssignments = holidayCategories.filter(
+		(a) => a.assignmentType === "employee",
+	);
+	const orgCustomHolidayAssignmentCount =
+		orgHolidayCategoryAssignments.length + orgHolidayAssignments.length;
+	const teamCustomHolidayAssignmentCount =
+		teamHolidayCategoryAssignments.length + teamHolidayAssignments.length;
+	const employeeCustomHolidayAssignmentCount =
+		employeeHolidayCategoryAssignments.length + employeeHolidayAssignments.length;
 
-	const isLoading = presetLoading || holidayLoading;
-	const hasError = presetError || holidayError;
+	const isLoading = presetLoading || holidayLoading || holidayCategoryLoading;
+	const hasError = presetError || holidayError || holidayCategoryError;
 
 	if (isLoading) {
 		return (
@@ -368,7 +476,10 @@ export function AssignmentManager({
 														</span>
 													)}
 													<p className="text-sm text-muted-foreground">
-														{formatAssignmentRange(assignment.effectiveFrom, assignment.effectiveUntil)}
+														{formatAssignmentRange(
+															assignment.effectiveFrom,
+															assignment.effectiveUntil,
+														)}
 													</p>
 												</div>
 											</div>
@@ -404,34 +515,81 @@ export function AssignmentManager({
 							<div className="flex items-center justify-between mb-2">
 								<h4 className="text-sm font-medium text-muted-foreground">
 									{t("settings.holidays.assignments.customHolidays", "Custom Holidays")}
-									{orgHolidayAssignments.length > 0 && (
+									{orgCustomHolidayAssignmentCount > 0 && (
 										<Badge variant="secondary" className="ml-2">
-											{orgHolidayAssignments.length}
+											{orgCustomHolidayAssignmentCount}
 										</Badge>
 									)}
 								</h4>
 								{canManage ? (
 									<Button
 										onClick={() => onHolidayAssignClick("organization")}
-									size="sm"
-									variant="outline"
-								>
-									<IconPlus className="mr-2 size-4" />
-									{t("settings.holidays.assignments.addHoliday", "Add Holiday")}
+										size="sm"
+										variant="outline"
+									>
+										<IconPlus className="mr-2 size-4" />
+										{t("settings.holidays.assignments.addHolidayCategory", "Add Category")}
 									</Button>
 								) : null}
 							</div>
-							{orgHolidayAssignments.length > 0 ? (
+							{orgCustomHolidayAssignmentCount > 0 ? (
 								<div className="space-y-2">
+									{orgHolidayCategoryAssignments.map((assignment) => (
+										<div
+											key={`category-${assignment.id}`}
+											className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
+										>
+											<div className="flex items-center gap-3">
+												{assignment.category.color ? (
+													<span
+														className="size-3 rounded-full flex-shrink-0"
+														style={{ backgroundColor: assignment.category.color }}
+													/>
+												) : (
+													<IconCalendarEvent className="size-4 text-muted-foreground" />
+												)}
+												<div>
+													<span className="font-medium">{assignment.category.name}</span>
+													<Badge variant="outline" className="ml-2">
+														{t("settings.holidays.assignments.categoryBadge", "Category")}
+													</Badge>
+													<Badge variant="secondary" className="ml-2 capitalize">
+														{assignment.category.type}
+													</Badge>
+												</div>
+											</div>
+											{canManage ? (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-8 text-muted-foreground hover:text-destructive"
+													onClick={() => handleDeleteHolidayCategoryClick(assignment)}
+													aria-label={t(
+														"settings.holidays.assignments.removeHolidayCategoryAssignment",
+														'Remove holiday category assignment for "{category}"',
+														{ category: assignment.category.name },
+													)}
+												>
+													<IconTrash className="size-4" />
+												</Button>
+											) : null}
+										</div>
+									))}
 									{orgHolidayAssignments.map((assignment) => (
 										<div
-											key={assignment.id}
+											key={`holiday-${assignment.id}`}
 											className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
 										>
 											<div className="flex items-center gap-3">
 												<IconCalendarEvent className="size-4 text-muted-foreground" />
 												<div>
 													<span className="font-medium">{assignment.holiday.name}</span>
+													<Badge variant="outline" className="ml-2">
+														{t(
+															"settings.holidays.assignments.singleHolidayBadge",
+															"Single holiday",
+														)}
+													</Badge>
 													<span className="text-sm text-muted-foreground ml-2">
 														(
 														{formatDateRange(
@@ -442,22 +600,22 @@ export function AssignmentManager({
 													</span>
 												</div>
 											</div>
-									{canManage ? (
-										<Button
-											variant="ghost"
-												size="icon"
-											className="size-8 text-muted-foreground hover:text-destructive"
-											onClick={() => handleDeleteHolidayClick(assignment)}
-											aria-label={t(
-												"settings.holidays.assignments.removeHolidayAssignment",
-												'Remove holiday assignment for "{holiday}"',
-												{ holiday: assignment.holiday.name },
-											)}
-										>
-												<IconTrash className="size-4" />
-										</Button>
-									) : null}
-									</div>
+											{canManage ? (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-8 text-muted-foreground hover:text-destructive"
+													onClick={() => handleDeleteHolidayClick(assignment)}
+													aria-label={t(
+														"settings.holidays.assignments.removeHolidayAssignment",
+														'Remove holiday assignment for "{holiday}"',
+														{ holiday: assignment.holiday.name },
+													)}
+												>
+													<IconTrash className="size-4" />
+												</Button>
+											) : null}
+										</div>
 									))}
 								</div>
 							) : (
@@ -480,9 +638,9 @@ export function AssignmentManager({
 							<div>
 								<CardTitle className="text-base">
 									{t("settings.holidays.assignments.teamLevel", "Team Level")}
-									{(teamPresetAssignments.length > 0 || teamHolidayAssignments.length > 0) && (
+									{(teamPresetAssignments.length > 0 || teamCustomHolidayAssignmentCount > 0) && (
 										<Badge variant="secondary" className="ml-2">
-											{teamPresetAssignments.length + teamHolidayAssignments.length}
+											{teamPresetAssignments.length + teamCustomHolidayAssignmentCount}
 										</Badge>
 									)}
 								</CardTitle>
@@ -508,20 +666,22 @@ export function AssignmentManager({
 								</TabsTrigger>
 								<TabsTrigger value="holidays">
 									{t("settings.holidays.assignments.holidays", "Custom Holidays")}
-									{teamHolidayAssignments.length > 0 && (
+									{teamCustomHolidayAssignmentCount > 0 && (
 										<Badge variant="secondary" className="ml-2">
-											{teamHolidayAssignments.length}
+											{teamCustomHolidayAssignmentCount}
 										</Badge>
 									)}
 								</TabsTrigger>
 							</TabsList>
 							<TabsContent value="presets" className="mt-4">
-								{canManage ? <div className="flex justify-end mb-2">
-									<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-										<IconPlus className="mr-2 size-4" />
-										{t("settings.holidays.assignments.assignTeam", "Assign Preset")}
-									</Button>
-								</div> : null}
+								{canManage ? (
+									<div className="flex justify-end mb-2">
+										<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
+											<IconPlus className="mr-2 size-4" />
+											{t("settings.holidays.assignments.assignTeam", "Assign Preset")}
+										</Button>
+									</div>
+								) : null}
 								{teamPresetAssignments.length > 0 ? (
 									<div className="space-y-2">
 										{teamPresetAssignments.map((assignment) => (
@@ -549,26 +709,29 @@ export function AssignmentManager({
 															)}
 														</span>
 														<p className="text-sm text-muted-foreground">
-															{formatAssignmentRange(assignment.effectiveFrom, assignment.effectiveUntil)}
+															{formatAssignmentRange(
+																assignment.effectiveFrom,
+																assignment.effectiveUntil,
+															)}
 														</p>
 													</div>
 												</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-													size="icon"
-												className="size-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeletePresetClick(assignment)}
-												aria-label={t(
-													"settings.holidays.assignments.removeTeamPresetAssignment",
-													'Remove preset assignment for team "{team}"',
-													{ team: assignment.team?.name ?? "" },
-												)}
-											>
-													<IconTrash className="size-4" />
-											</Button>
-										) : null}
-									</div>
+												{canManage ? (
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-8 text-muted-foreground hover:text-destructive"
+														onClick={() => handleDeletePresetClick(assignment)}
+														aria-label={t(
+															"settings.holidays.assignments.removeTeamPresetAssignment",
+															'Remove preset assignment for team "{team}"',
+															{ team: assignment.team?.name ?? "" },
+														)}
+													>
+														<IconTrash className="size-4" />
+													</Button>
+												) : null}
+											</div>
 										))}
 									</div>
 								) : (
@@ -578,17 +741,67 @@ export function AssignmentManager({
 								)}
 							</TabsContent>
 							<TabsContent value="holidays" className="mt-4">
-								{canManage ? <div className="flex justify-end mb-2">
-									<Button onClick={() => onHolidayAssignClick("team")} size="sm" variant="outline">
-										<IconPlus className="mr-2 size-4" />
-										{t("settings.holidays.assignments.assignHoliday", "Assign Holiday")}
-									</Button>
-								</div> : null}
-								{teamHolidayAssignments.length > 0 ? (
+								{canManage ? (
+									<div className="flex justify-end mb-2">
+										<Button
+											onClick={() => onHolidayAssignClick("team")}
+											size="sm"
+											variant="outline"
+										>
+											<IconPlus className="mr-2 size-4" />
+											{t("settings.holidays.assignments.assignCategory", "Assign Category")}
+										</Button>
+									</div>
+								) : null}
+								{teamCustomHolidayAssignmentCount > 0 ? (
 									<div className="space-y-2">
+										{teamHolidayCategoryAssignments.map((assignment) => (
+											<div
+												key={`category-${assignment.id}`}
+												className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
+											>
+												<div className="flex items-center gap-3">
+													<IconUsers className="size-4 text-muted-foreground" />
+													<div>
+														<span className="font-medium">{assignment.team?.name}</span>
+														<span className="text-muted-foreground mx-2">→</span>
+														<span className="text-sm">
+															{assignment.category.color && (
+																<span
+																	className="inline-block size-2 rounded-full mr-2"
+																	style={{ backgroundColor: assignment.category.color }}
+																/>
+															)}
+															{assignment.category.name}
+															<Badge variant="outline" className="ml-2">
+																{t("settings.holidays.assignments.categoryBadge", "Category")}
+															</Badge>
+															<Badge variant="secondary" className="ml-2 capitalize">
+																{assignment.category.type}
+															</Badge>
+														</span>
+													</div>
+												</div>
+												{canManage ? (
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-8 text-muted-foreground hover:text-destructive"
+														onClick={() => handleDeleteHolidayCategoryClick(assignment)}
+														aria-label={t(
+															"settings.holidays.assignments.removeTeamHolidayCategoryAssignment",
+															'Remove holiday category assignment for team "{team}"',
+															{ team: assignment.team?.name ?? "" },
+														)}
+													>
+														<IconTrash className="size-4" />
+													</Button>
+												) : null}
+											</div>
+										))}
 										{teamHolidayAssignments.map((assignment) => (
 											<div
-												key={assignment.id}
+												key={`holiday-${assignment.id}`}
 												className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
 											>
 												<div className="flex items-center gap-3">
@@ -598,6 +811,12 @@ export function AssignmentManager({
 														<span className="text-muted-foreground mx-2">→</span>
 														<span className="text-sm">
 															{assignment.holiday.name}
+															<Badge variant="outline" className="ml-2">
+																{t(
+																	"settings.holidays.assignments.singleHolidayBadge",
+																	"Single holiday",
+																)}
+															</Badge>
 															<span className="text-muted-foreground ml-1">
 																(
 																{formatDateRange(
@@ -609,22 +828,22 @@ export function AssignmentManager({
 														</span>
 													</div>
 												</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-													size="icon"
-												className="size-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeleteHolidayClick(assignment)}
-												aria-label={t(
-													"settings.holidays.assignments.removeTeamHolidayAssignment",
-													'Remove holiday assignment for team "{team}"',
-													{ team: assignment.team?.name ?? "" },
-												)}
-											>
-													<IconTrash className="size-4" />
-											</Button>
-										) : null}
-									</div>
+												{canManage ? (
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-8 text-muted-foreground hover:text-destructive"
+														onClick={() => handleDeleteHolidayClick(assignment)}
+														aria-label={t(
+															"settings.holidays.assignments.removeTeamHolidayAssignment",
+															'Remove holiday assignment for team "{team}"',
+															{ team: assignment.team?.name ?? "" },
+														)}
+													>
+														<IconTrash className="size-4" />
+													</Button>
+												) : null}
+											</div>
 										))}
 									</div>
 								) : (
@@ -649,9 +868,9 @@ export function AssignmentManager({
 								<CardTitle className="text-base">
 									{t("settings.holidays.assignments.employeeLevel", "Employee Overrides")}
 									{(employeePresetAssignments.length > 0 ||
-										employeeHolidayAssignments.length > 0) && (
+										employeeCustomHolidayAssignmentCount > 0) && (
 										<Badge variant="secondary" className="ml-2">
-											{employeePresetAssignments.length + employeeHolidayAssignments.length}
+											{employeePresetAssignments.length + employeeCustomHolidayAssignmentCount}
 										</Badge>
 									)}
 								</CardTitle>
@@ -677,20 +896,22 @@ export function AssignmentManager({
 								</TabsTrigger>
 								<TabsTrigger value="holidays">
 									{t("settings.holidays.assignments.holidays", "Custom Holidays")}
-									{employeeHolidayAssignments.length > 0 && (
+									{employeeCustomHolidayAssignmentCount > 0 && (
 										<Badge variant="secondary" className="ml-2">
-											{employeeHolidayAssignments.length}
+											{employeeCustomHolidayAssignmentCount}
 										</Badge>
 									)}
 								</TabsTrigger>
 							</TabsList>
 							<TabsContent value="presets" className="mt-4">
-								{canManage ? <div className="flex justify-end mb-2">
-									<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-										<IconPlus className="mr-2 size-4" />
-										{t("settings.holidays.assignments.assignEmployee", "Assign Preset")}
-									</Button>
-								</div> : null}
+								{canManage ? (
+									<div className="flex justify-end mb-2">
+										<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
+											<IconPlus className="mr-2 size-4" />
+											{t("settings.holidays.assignments.assignEmployee", "Assign Preset")}
+										</Button>
+									</div>
+								) : null}
 								{employeePresetAssignments.length > 0 ? (
 									<div className="space-y-2">
 										{employeePresetAssignments.map((assignment) => (
@@ -720,28 +941,32 @@ export function AssignmentManager({
 															)}
 														</span>
 														<p className="text-sm text-muted-foreground">
-															{formatAssignmentRange(assignment.effectiveFrom, assignment.effectiveUntil)}
+															{formatAssignmentRange(
+																assignment.effectiveFrom,
+																assignment.effectiveUntil,
+															)}
 														</p>
 													</div>
 												</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-													size="icon"
-												className="size-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeletePresetClick(assignment)}
-												aria-label={t(
-													"settings.holidays.assignments.removeEmployeePresetAssignment",
-													'Remove preset assignment for employee "{employee}"',
-													{
-														employee: `${assignment.employee?.firstName ?? ""} ${assignment.employee?.lastName ?? ""}`.trim(),
-													},
-												)}
-											>
-													<IconTrash className="size-4" />
-											</Button>
-										) : null}
-									</div>
+												{canManage ? (
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-8 text-muted-foreground hover:text-destructive"
+														onClick={() => handleDeletePresetClick(assignment)}
+														aria-label={t(
+															"settings.holidays.assignments.removeEmployeePresetAssignment",
+															'Remove preset assignment for employee "{employee}"',
+															{
+																employee:
+																	`${assignment.employee?.firstName ?? ""} ${assignment.employee?.lastName ?? ""}`.trim(),
+															},
+														)}
+													>
+														<IconTrash className="size-4" />
+													</Button>
+												) : null}
+											</div>
 										))}
 									</div>
 								) : (
@@ -754,21 +979,72 @@ export function AssignmentManager({
 								)}
 							</TabsContent>
 							<TabsContent value="holidays" className="mt-4">
-								{canManage ? <div className="flex justify-end mb-2">
-									<Button
-										onClick={() => onHolidayAssignClick("employee")}
-										size="sm"
-										variant="outline"
-									>
-										<IconPlus className="mr-2 size-4" />
-										{t("settings.holidays.assignments.assignHoliday", "Assign Holiday")}
-									</Button>
-								</div> : null}
-								{employeeHolidayAssignments.length > 0 ? (
+								{canManage ? (
+									<div className="flex justify-end mb-2">
+										<Button
+											onClick={() => onHolidayAssignClick("employee")}
+											size="sm"
+											variant="outline"
+										>
+											<IconPlus className="mr-2 size-4" />
+											{t("settings.holidays.assignments.assignCategory", "Assign Category")}
+										</Button>
+									</div>
+								) : null}
+								{employeeCustomHolidayAssignmentCount > 0 ? (
 									<div className="space-y-2">
+										{employeeHolidayCategoryAssignments.map((assignment) => (
+											<div
+												key={`category-${assignment.id}`}
+												className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
+											>
+												<div className="flex items-center gap-3">
+													<IconUser className="size-4 text-muted-foreground" />
+													<div>
+														<span className="font-medium">
+															{assignment.employee?.firstName} {assignment.employee?.lastName}
+														</span>
+														<span className="text-muted-foreground mx-2">→</span>
+														<span className="text-sm">
+															{assignment.category.color && (
+																<span
+																	className="inline-block size-2 rounded-full mr-2"
+																	style={{ backgroundColor: assignment.category.color }}
+																/>
+															)}
+															{assignment.category.name}
+															<Badge variant="outline" className="ml-2">
+																{t("settings.holidays.assignments.categoryBadge", "Category")}
+															</Badge>
+															<Badge variant="secondary" className="ml-2 capitalize">
+																{assignment.category.type}
+															</Badge>
+														</span>
+													</div>
+												</div>
+												{canManage ? (
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-8 text-muted-foreground hover:text-destructive"
+														onClick={() => handleDeleteHolidayCategoryClick(assignment)}
+														aria-label={t(
+															"settings.holidays.assignments.removeEmployeeHolidayCategoryAssignment",
+															'Remove holiday category assignment for employee "{employee}"',
+															{
+																employee:
+																	`${assignment.employee?.firstName ?? ""} ${assignment.employee?.lastName ?? ""}`.trim(),
+															},
+														)}
+													>
+														<IconTrash className="size-4" />
+													</Button>
+												) : null}
+											</div>
+										))}
 										{employeeHolidayAssignments.map((assignment) => (
 											<div
-												key={assignment.id}
+												key={`holiday-${assignment.id}`}
 												className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
 											>
 												<div className="flex items-center gap-3">
@@ -780,6 +1056,12 @@ export function AssignmentManager({
 														<span className="text-muted-foreground mx-2">→</span>
 														<span className="text-sm">
 															{assignment.holiday.name}
+															<Badge variant="outline" className="ml-2">
+																{t(
+																	"settings.holidays.assignments.singleHolidayBadge",
+																	"Single holiday",
+																)}
+															</Badge>
 															<span className="text-muted-foreground ml-1">
 																(
 																{formatDateRange(
@@ -791,24 +1073,25 @@ export function AssignmentManager({
 														</span>
 													</div>
 												</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-													size="icon"
-												className="size-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeleteHolidayClick(assignment)}
-												aria-label={t(
-													"settings.holidays.assignments.removeEmployeeHolidayAssignment",
-													'Remove holiday assignment for employee "{employee}"',
-													{
-														employee: `${assignment.employee?.firstName ?? ""} ${assignment.employee?.lastName ?? ""}`.trim(),
-													},
-												)}
-											>
-													<IconTrash className="size-4" />
-											</Button>
-										) : null}
-									</div>
+												{canManage ? (
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-8 text-muted-foreground hover:text-destructive"
+														onClick={() => handleDeleteHolidayClick(assignment)}
+														aria-label={t(
+															"settings.holidays.assignments.removeEmployeeHolidayAssignment",
+															'Remove holiday assignment for employee "{employee}"',
+															{
+																employee:
+																	`${assignment.employee?.firstName ?? ""} ${assignment.employee?.lastName ?? ""}`.trim(),
+															},
+														)}
+													>
+														<IconTrash className="size-4" />
+													</Button>
+												) : null}
+											</div>
 										))}
 									</div>
 								) : (
@@ -861,6 +1144,12 @@ export function AssignmentManager({
 									"settings.holidays.assignments.deleteHolidayDescription",
 									'This will remove the custom holiday "{holiday}" from this assignment.',
 									{ holiday: selectedHolidayAssignment.holiday.name },
+								)}
+							{selectedHolidayCategoryAssignment &&
+								t(
+									"settings.holidays.assignments.deleteHolidayCategoryDescription",
+									'This will remove the custom holiday category "{category}" from this assignment.',
+									{ category: selectedHolidayCategoryAssignment.category.name },
 								)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>

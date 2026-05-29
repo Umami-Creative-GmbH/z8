@@ -161,16 +161,13 @@ export function HolidayAssignmentDialog({
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(
-					t(
-						"settings.holidays.assignments.categoryCreated",
-						"Holiday category assignment created",
-					),
+					t("settings.holidays.assignments.categoryCreated", "Holiday category assignment created"),
 				);
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.holidayCategoryAssignments.list(organizationId),
 				});
 				onSuccess();
-				onOpenChange(false);
+				handleOpenChange(false);
 			} else {
 				toast.error(
 					result.error ||
@@ -394,7 +391,7 @@ export function HolidayAssignmentDialog({
 							<Button
 								type="button"
 								variant="outline"
-								onClick={() => onOpenChange(false)}
+								onClick={() => handleOpenChange(false)}
 								disabled={createMutation.isPending}
 							>
 								{t("common.cancel", "Cancel")}

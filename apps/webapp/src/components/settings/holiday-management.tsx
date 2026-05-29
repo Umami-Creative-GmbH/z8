@@ -155,6 +155,9 @@ export function HolidayManagement({ organizationId, canManage }: HolidayManageme
 
 	const handleHolidayAssignmentSuccess = () => {
 		queryClient.invalidateQueries({
+			queryKey: queryKeys.holidayCategoryAssignments.list(organizationId),
+		});
+		queryClient.invalidateQueries({
 			queryKey: queryKeys.holidayAssignments.list(organizationId),
 		});
 	};
