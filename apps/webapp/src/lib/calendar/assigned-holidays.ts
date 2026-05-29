@@ -3,8 +3,10 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import {
 	employee,
-	type holiday,
+	holiday,
 	holidayAssignment,
+	type holidayCategory,
+	holidayCategoryAssignment,
 	type holidayPreset,
 	holidayPresetAssignment,
 	type holidayPresetHoliday,
@@ -22,8 +24,16 @@ export interface AssignedHolidayRange {
 	metadata?: Partial<HolidayEvent["metadata"]>;
 }
 
-type HolidayAssignmentWithHoliday = {
+export type DirectCustomHolidayAssignment = {
 	holiday: CustomAssignedHoliday | null;
+};
+
+export type CategoryCustomHolidayAssignment = {
+	category:
+		| (Pick<typeof holidayCategory.$inferSelect, "organizationId" | "isActive"> & {
+				holidays: CustomAssignedHoliday[];
+		  })
+		| null;
 };
 
 export type CustomAssignedHoliday = Pick<
@@ -125,7 +135,10 @@ export function assignedHolidayToCalendarEvent(holiday: AssignedHolidayRange): H
 }
 
 function getAssignmentScope(
-	table: typeof holidayAssignment | typeof holidayPresetAssignment,
+	table:
+		| typeof holidayAssignment
+		| typeof holidayPresetAssignment
+		| typeof holidayCategoryAssignment,
 	employeeId: string,
 	teamId: string | null,
 ) {
@@ -262,8 +275,9 @@ export function expandCustomAssignedHoliday(
 		? toUtcDay(holiday.recurrenceEndDate).endOf("day")
 		: null;
 	const expanded: AssignedHolidayRange[] = [];
+	const firstExpansionYear = Math.max(requestedStart.year - 1, originalStart.year);
 
-	for (let year = requestedStart.year - 1; year <= requestedEnd.year; year++) {
+	for (let year = firstExpansionYear; year <= requestedEnd.year; year++) {
 		const start = DateTime.utc(year, rule.month, rule.day).startOf("day");
 		if (!start.isValid) continue;
 		if (recurrenceEnd && start > recurrenceEnd) continue;
@@ -289,6 +303,46 @@ export function overlapsEffectiveWindow(
 		(!window.effectiveFrom || holiday.endDate >= window.effectiveFrom) &&
 		(!window.effectiveUntil || holiday.startDate <= window.effectiveUntil)
 	);
+}
+
+export function mergeAssignedCustomHolidays(params: {
+	directAssignments: DirectCustomHolidayAssignment[];
+	categoryAssignments: CategoryCustomHolidayAssignment[];
+	organizationId: string;
+	startDate: Date;
+	endDate: Date;
+}): AssignedHolidayRange[] {
+	const holidaysById = new Map<string, AssignedHolidayRange>();
+
+	for (const assignment of params.directAssignments) {
+		const assignedHoliday = assignment.holiday;
+		if (!assignedHoliday || assignedHoliday.organizationId !== params.organizationId) {
+			continue;
+		}
+
+		for (const expandedHoliday of expandCustomAssignedHoliday(assignedHoliday, params)) {
+			holidaysById.set(`custom-${expandedHoliday.id}`, expandedHoliday);
+		}
+	}
+
+	for (const assignment of params.categoryAssignments) {
+		const category = assignment.category;
+		if (!category?.isActive || category.organizationId !== params.organizationId) {
+			continue;
+		}
+
+		for (const assignedHoliday of category.holidays) {
+			if (assignedHoliday.organizationId !== params.organizationId) {
+				continue;
+			}
+
+			for (const expandedHoliday of expandCustomAssignedHoliday(assignedHoliday, params)) {
+				holidaysById.set(`custom-${expandedHoliday.id}`, expandedHoliday);
+			}
+		}
+	}
+
+	return [...holidaysById.values()];
 }
 
 export async function getAssignedHolidaysForEmployee(params: {
@@ -330,7 +384,58 @@ export async function getAssignedHolidaysForEmployee(params: {
 				},
 			},
 		},
-	})) as unknown as HolidayAssignmentWithHoliday[];
+	})) as unknown as DirectCustomHolidayAssignment[];
+
+	const categoryAssignments = (await db.query.holidayCategoryAssignment.findMany({
+		where: and(
+			eq(holidayCategoryAssignment.organizationId, params.organizationId),
+			eq(holidayCategoryAssignment.isActive, true),
+			or(
+				...getAssignmentScope(holidayCategoryAssignment, params.employeeId, scopedEmployee.teamId),
+			),
+		),
+		with: {
+			category: {
+				columns: { organizationId: true, isActive: true },
+				with: {
+					holidays: {
+						columns: {
+							id: true,
+							name: true,
+							organizationId: true,
+							startDate: true,
+							endDate: true,
+							categoryId: true,
+							description: true,
+							isActive: true,
+							recurrenceType: true,
+							recurrenceRule: true,
+							recurrenceEndDate: true,
+						},
+						where: and(
+							eq(holiday.organizationId, params.organizationId),
+							eq(holiday.isActive, true),
+							or(
+								and(
+									eq(holiday.recurrenceType, "none"),
+									lte(holiday.startDate, params.endDate),
+									gte(holiday.endDate, params.startDate),
+								),
+								and(
+									eq(holiday.recurrenceType, "yearly"),
+									lte(holiday.startDate, params.endDate),
+									or(
+										isNull(holiday.recurrenceEndDate),
+										gte(holiday.recurrenceEndDate, params.startDate),
+									),
+								),
+							),
+						),
+					},
+				},
+			},
+		},
+	})) as unknown as CategoryCustomHolidayAssignment[];
 
 	const presetAssignments = (await db.query.holidayPresetAssignment.findMany({
 		columns: { effectiveFrom: true, effectiveUntil: true },
@@ -370,15 +475,14 @@ export async function getAssignedHolidaysForEmployee(params: {
 
 	const holidaysById = new Map<string, AssignedHolidayRange>();
 
-	for (const assignment of customAssignments) {
-		const assignedHoliday = assignment.holiday;
-		if (!assignedHoliday || assignedHoliday.organizationId !== params.organizationId) {
-			continue;
-		}
-
-		for (const expandedHoliday of expandCustomAssignedHoliday(assignedHoliday, params)) {
-			holidaysById.set(`custom-${expandedHoliday.id}`, expandedHoliday);
-		}
+	for (const expandedHoliday of mergeAssignedCustomHolidays({
+		directAssignments: customAssignments,
+		categoryAssignments,
+		organizationId: params.organizationId,
+		startDate: params.startDate,
+		endDate: params.endDate,
+	})) {
+		holidaysById.set(`custom-${expandedHoliday.id}`, expandedHoliday);
 	}
 
 	const expansionYears = getPresetHolidayExpansionYears(params.startDate, params.endDate);

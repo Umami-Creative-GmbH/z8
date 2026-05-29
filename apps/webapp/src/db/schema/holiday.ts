@@ -1,11 +1,14 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
+	foreignKey,
 	index,
 	integer,
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -40,7 +43,76 @@ export const holidayCategory = pgTable(
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
-	(table) => [index("holidayCategory_organizationId_idx").on(table.organizationId)],
+	(table) => [
+		index("holidayCategory_organizationId_idx").on(table.organizationId),
+		unique("holidayCategory_id_organizationId_idx").on(table.id, table.organizationId),
+	],
+);
+
+// Assignment of custom holiday categories to organizations, teams, or employees
+export const holidayCategoryAssignment = pgTable(
+	"holiday_category_assignment",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		categoryId: uuid("category_id").notNull(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
+		teamId: uuid("team_id"),
+		employeeId: uuid("employee_id"),
+		isActive: boolean("is_active").default(true).notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		index("holidayCategoryAssignment_categoryId_idx").on(table.categoryId),
+		index("holidayCategoryAssignment_organizationId_idx").on(table.organizationId),
+		index("holidayCategoryAssignment_teamId_idx").on(table.teamId),
+		index("holidayCategoryAssignment_employeeId_idx").on(table.employeeId),
+		foreignKey({
+			columns: [table.categoryId, table.organizationId],
+			foreignColumns: [holidayCategory.id, holidayCategory.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			columns: [table.teamId, table.organizationId],
+			foreignColumns: [team.id, team.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		check(
+			"holidayCategoryAssignment_target_shape_chk",
+			sql`(
+				${table.assignmentType} = 'organization'
+				AND ${table.teamId} IS NULL
+				AND ${table.employeeId} IS NULL
+			) OR (
+				${table.assignmentType} = 'team'
+				AND ${table.teamId} IS NOT NULL
+				AND ${table.employeeId} IS NULL
+			) OR (
+				${table.assignmentType} = 'employee'
+				AND ${table.employeeId} IS NOT NULL
+				AND ${table.teamId} IS NULL
+			)`,
+		),
+		uniqueIndex("holidayCategoryAssignment_category_org_idx")
+			.on(table.categoryId, table.organizationId, table.assignmentType)
+			.where(sql`assignment_type = 'organization' AND is_active = true`),
+		uniqueIndex("holidayCategoryAssignment_category_team_idx")
+			.on(table.categoryId, table.teamId)
+			.where(sql`team_id IS NOT NULL AND is_active = true`),
+		uniqueIndex("holidayCategoryAssignment_category_employee_idx")
+			.on(table.categoryId, table.employeeId)
+			.where(sql`employee_id IS NOT NULL AND is_active = true`),
+	],
 );
 
 // Holidays and closing days with recurrence support

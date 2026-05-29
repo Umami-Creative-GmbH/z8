@@ -7,8 +7,8 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-	createHolidayAssignment,
-	getHolidays,
+	createHolidayCategoryAssignment,
+	getHolidayCategories,
 } from "@/app/[locale]/(app)/settings/holidays/actions";
 import {
 	getEmployeesForAssignment,
@@ -43,12 +43,11 @@ interface HolidayAssignmentDialogProps {
 	onSuccess: () => void;
 }
 
-interface HolidayOption {
+interface CategoryOption {
 	id: string;
 	name: string;
-	startDate: Date;
-	endDate: Date;
-	recurrenceType: string;
+	type: string;
+	color: string | null;
 }
 
 interface TeamOption {
@@ -76,15 +75,15 @@ export function HolidayAssignmentDialog({
 
 	const form = useForm({
 		defaultValues: {
-			holidayId: "",
+			categoryId: "",
 			teamId: "",
 			employeeId: "",
 		},
 		onSubmit: async ({ value }) => {
 			// Validate target based on assignment type
 			const errors: Record<string, string> = {};
-			if (!value.holidayId) {
-				errors.holidayId = "Please select a holiday";
+			if (!value.categoryId) {
+				errors.categoryId = "Please select a holiday category";
 			}
 			if (assignmentType === "team" && !value.teamId) {
 				errors.teamId = "Please select a team";
@@ -111,15 +110,15 @@ export function HolidayAssignmentDialog({
 		onOpenChange(nextOpen);
 	};
 
-	// Fetch holidays (get all without pagination for dropdown)
-	const { data: holidays, isLoading: holidaysLoading } = useQuery({
-		queryKey: queryKeys.holidays.list(organizationId, { limit: 500 }),
+	// Fetch categories (get all without pagination for dropdown)
+	const { data: categories, isLoading: categoriesLoading } = useQuery({
+		queryKey: queryKeys.holidayCategories.list(organizationId, { limit: 500 }),
 		queryFn: async () => {
-			const result = await getHolidays(organizationId, { limit: 500 });
+			const result = await getHolidayCategories(organizationId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch holidays");
+				throw new Error(result.error || "Failed to fetch holiday categories");
 			}
-			return result.data.data as HolidayOption[];
+			return result.data as CategoryOption[];
 		},
 		enabled: open,
 	});
@@ -152,9 +151,9 @@ export function HolidayAssignmentDialog({
 
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: (values: { holidayId: string; teamId: string; employeeId: string }) =>
-			createHolidayAssignment({
-				holidayId: values.holidayId,
+		mutationFn: (values: { categoryId: string; teamId: string; employeeId: string }) =>
+			createHolidayCategoryAssignment({
+				categoryId: values.categoryId,
 				assignmentType,
 				teamId: assignmentType === "team" ? values.teamId : undefined,
 				employeeId: assignmentType === "employee" ? values.employeeId : undefined,
@@ -162,19 +161,19 @@ export function HolidayAssignmentDialog({
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(
-					t("settings.holidays.assignments.holidayCreated", "Holiday assignment created"),
+					t("settings.holidays.assignments.categoryCreated", "Holiday category assignment created"),
 				);
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.holidayAssignments.list(organizationId),
+					queryKey: queryKeys.holidayCategoryAssignments.list(organizationId),
 				});
 				onSuccess();
-				onOpenChange(false);
+				handleOpenChange(false);
 			} else {
 				toast.error(
 					result.error ||
 						t(
-							"settings.holidays.assignments.holidayCreateFailed",
-							"Failed to create holiday assignment",
+							"settings.holidays.assignments.categoryCreateFailed",
+							"Failed to create holiday category assignment",
 						),
 				);
 			}
@@ -182,8 +181,8 @@ export function HolidayAssignmentDialog({
 		onError: () => {
 			toast.error(
 				t(
-					"settings.holidays.assignments.holidayCreateFailed",
-					"Failed to create holiday assignment",
+					"settings.holidays.assignments.categoryCreateFailed",
+					"Failed to create holiday category assignment",
 				),
 			);
 		},
@@ -192,11 +191,17 @@ export function HolidayAssignmentDialog({
 	const getDialogTitle = () => {
 		switch (assignmentType) {
 			case "organization":
-				return t("settings.holidays.assignments.addOrgHoliday", "Add Organization-Wide Holiday");
+				return t(
+					"settings.holidays.assignments.addOrgCategory",
+					"Add Organization-Wide Holiday Category",
+				);
 			case "team":
-				return t("settings.holidays.assignments.addTeamHoliday", "Add Team Holiday");
+				return t("settings.holidays.assignments.addTeamCategory", "Add Team Holiday Category");
 			case "employee":
-				return t("settings.holidays.assignments.addEmployeeHoliday", "Add Employee Holiday");
+				return t(
+					"settings.holidays.assignments.addEmployeeCategory",
+					"Add Employee Holiday Category",
+				);
 		}
 	};
 
@@ -204,35 +209,23 @@ export function HolidayAssignmentDialog({
 		switch (assignmentType) {
 			case "organization":
 				return t(
-					"settings.holidays.assignments.orgHolidayDescription",
-					"Select a custom holiday to apply to all employees in the organization",
+					"settings.holidays.assignments.orgCategoryDescription",
+					"Select a custom holiday category to apply to all employees in the organization",
 				);
 			case "team":
 				return t(
-					"settings.holidays.assignments.teamHolidayDescription",
-					"Select a custom holiday and team to apply the holiday only to that team",
+					"settings.holidays.assignments.teamCategoryDescription",
+					"Select a custom holiday category and team to apply the category only to that team",
 				);
 			case "employee":
 				return t(
-					"settings.holidays.assignments.employeeHolidayDescription",
-					"Select a custom holiday and employee to apply the holiday only to that employee",
+					"settings.holidays.assignments.employeeCategoryDescription",
+					"Select a custom holiday category and employee to apply the category only to that employee",
 				);
 		}
 	};
 
-	const formatDateRange = (startDate: Date | string, endDate: Date | string) => {
-		const start = new Date(startDate).toLocaleDateString("default", {
-			month: "short",
-			day: "numeric",
-		});
-		const end = new Date(endDate).toLocaleDateString("default", {
-			month: "short",
-			day: "numeric",
-		});
-		return start === end ? start : `${start} - ${end}`;
-	};
-
-	const isLoading = holidaysLoading || teamsLoading || employeesLoading;
+	const isLoading = categoriesLoading || teamsLoading || employeesLoading;
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
@@ -256,41 +249,41 @@ export function HolidayAssignmentDialog({
 						className="flex min-h-0 flex-1 flex-col"
 					>
 						<ActionPanelBody className="space-y-4">
-							{/* Holiday Selection */}
-							<form.Field name="holidayId">
+							{/* Category Selection */}
+							<form.Field name="categoryId">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>{t("settings.holidays.assignments.holiday", "Custom Holiday")}</Label>
+										<Label>
+											{t("settings.holidays.assignments.category", "Custom Holiday Category")}
+										</Label>
 										<Select value={field.state.value} onValueChange={field.handleChange}>
 											<SelectTrigger>
 												<SelectValue
 													placeholder={t(
-														"settings.holidays.assignments.selectHoliday",
-														"Select a holiday",
+														"settings.holidays.assignments.selectCategory",
+														"Select a category",
 													)}
 												/>
 											</SelectTrigger>
 											<SelectContent>
-												{holidays?.length === 0 ? (
+												{categories?.length === 0 ? (
 													<div className="p-2 text-sm text-muted-foreground text-center">
 														{t(
-															"settings.holidays.assignments.noHolidays",
-															"No custom holidays available. Create one first.",
+															"settings.holidays.assignments.noCategories",
+															"No custom holiday categories are available. Create one first.",
 														)}
 													</div>
 												) : (
-													holidays?.map((holiday) => (
-														<SelectItem key={holiday.id} value={holiday.id}>
+													categories?.map((category) => (
+														<SelectItem key={category.id} value={category.id}>
 															<div className="flex items-center gap-2">
-																<span>{holiday.name}</span>
-																<span className="text-muted-foreground text-xs">
-																	({formatDateRange(holiday.startDate, holiday.endDate)})
-																</span>
-																{holiday.recurrenceType === "yearly" && (
-																	<span className="text-xs bg-secondary px-1 rounded">
-																		{t("settings.holidays.recurrence.yearly", "Yearly")}
-																	</span>
+																{category.color && (
+																	<span
+																		className="h-2.5 w-2.5 rounded-full"
+																		style={{ backgroundColor: category.color }}
+																	/>
 																)}
+																<span>{category.name}</span>
 															</div>
 														</SelectItem>
 													))
@@ -299,12 +292,12 @@ export function HolidayAssignmentDialog({
 										</Select>
 										<p className="text-sm text-muted-foreground">
 											{t(
-												"settings.holidays.assignments.holidayDescription",
-												"The custom holiday to assign",
+												"settings.holidays.assignments.categoryDescription",
+												"The custom holiday category to assign",
 											)}
 										</p>
-										{validationErrors.holidayId && (
-											<p className="text-sm text-destructive">{validationErrors.holidayId}</p>
+										{validationErrors.categoryId && (
+											<p className="text-sm text-destructive">{validationErrors.categoryId}</p>
 										)}
 									</div>
 								)}
@@ -335,8 +328,8 @@ export function HolidayAssignmentDialog({
 											</Select>
 											<p className="text-sm text-muted-foreground">
 												{t(
-													"settings.holidays.assignments.teamHolidayNote",
-													"This holiday will apply only to employees in this team",
+													"settings.holidays.assignments.teamCategoryNote",
+													"This holiday category will apply only to employees in this team",
 												)}
 											</p>
 											{validationErrors.teamId && (
@@ -381,8 +374,8 @@ export function HolidayAssignmentDialog({
 											</Select>
 											<p className="text-sm text-muted-foreground">
 												{t(
-													"settings.holidays.assignments.employeeHolidayNote",
-													"This holiday will apply only to this employee",
+													"settings.holidays.assignments.employeeCategoryNote",
+													"This holiday category will apply only to this employee",
 												)}
 											</p>
 											{validationErrors.employeeId && (
@@ -398,12 +391,12 @@ export function HolidayAssignmentDialog({
 							<Button
 								type="button"
 								variant="outline"
-								onClick={() => onOpenChange(false)}
+								onClick={() => handleOpenChange(false)}
 								disabled={createMutation.isPending}
 							>
 								{t("common.cancel", "Cancel")}
 							</Button>
-							<Button type="submit" disabled={createMutation.isPending || holidays?.length === 0}>
+							<Button type="submit" disabled={createMutation.isPending || categories?.length === 0}>
 								{createMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 								{t("common.assign", "Assign")}
 							</Button>

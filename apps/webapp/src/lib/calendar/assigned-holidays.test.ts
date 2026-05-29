@@ -5,6 +5,7 @@ import {
 	expandCustomAssignedHoliday,
 	getAssignedHolidayDateKeys,
 	getPresetHolidayExpansionYears,
+	mergeAssignedCustomHolidays,
 	overlapsEffectiveWindow,
 } from "./assigned-holidays";
 
@@ -13,6 +14,20 @@ const singleDayHoliday: AssignedHolidayRange = {
 	name: "Labor Day",
 	startDate: new Date("2026-05-01T00:00:00.000Z"),
 	endDate: new Date("2026-05-01T23:59:59.999Z"),
+};
+
+const christmasHoliday = {
+	id: "holiday-christmas",
+	name: "Christmas Day",
+	organizationId: "org-1",
+	startDate: new Date("2024-12-25T00:00:00.000Z"),
+	endDate: new Date("2024-12-25T23:59:59.999Z"),
+	categoryId: "category-1",
+	description: "Annual Christmas holiday",
+	isActive: true,
+	recurrenceType: "yearly" as const,
+	recurrenceRule: JSON.stringify({ month: 12, day: 25 }),
+	recurrenceEndDate: null,
 };
 
 describe("assigned holiday requirement adjustments", () => {
@@ -127,6 +142,114 @@ describe("assigned holiday requirement adjustments", () => {
 				new Date("2027-01-31T23:59:59.999Z"),
 			),
 		).toEqual([2026, 2027]);
+	});
+
+	it("expands active custom holidays from assigned categories", () => {
+		const holidays = mergeAssignedCustomHolidays({
+			directAssignments: [],
+			categoryAssignments: [
+				{
+					category: {
+						organizationId: "org-1",
+						isActive: true,
+						holidays: [
+							{
+								id: "holiday-category-only",
+								name: "Company Day",
+								organizationId: "org-1",
+								startDate: new Date("2026-06-01T00:00:00.000Z"),
+								endDate: new Date("2026-06-01T23:59:59.999Z"),
+								categoryId: "category-1",
+								description: "Category assigned holiday",
+								isActive: true,
+								recurrenceType: "none" as const,
+								recurrenceRule: null,
+								recurrenceEndDate: null,
+							},
+						],
+					},
+				},
+			],
+			organizationId: "org-1",
+			startDate: new Date("2026-06-01T00:00:00.000Z"),
+			endDate: new Date("2026-06-30T23:59:59.999Z"),
+		});
+
+		expect(holidays).toHaveLength(1);
+		expect(holidays[0]).toMatchObject({
+			id: "holiday-category-only",
+			name: "Company Day",
+			categoryId: "category-1",
+			description: "Category assigned holiday",
+		});
+	});
+
+	it("dedupes a custom holiday assigned directly and through a category", () => {
+		const holidays = mergeAssignedCustomHolidays({
+			directAssignments: [{ holiday: christmasHoliday }],
+			categoryAssignments: [
+				{
+					category: {
+						organizationId: "org-1",
+						isActive: true,
+						holidays: [christmasHoliday],
+					},
+				},
+			],
+			organizationId: "org-1",
+			startDate: new Date("2026-12-01T00:00:00.000Z"),
+			endDate: new Date("2026-12-31T23:59:59.999Z"),
+		});
+
+		expect(holidays).toHaveLength(1);
+		expect(holidays[0]).toMatchObject({
+			id: "holiday-christmas-2026",
+			name: "Christmas Day",
+		});
+	});
+
+	it("preserves yearly recurrence for category-expanded custom holidays", () => {
+		const holidays = mergeAssignedCustomHolidays({
+			directAssignments: [],
+			categoryAssignments: [
+				{
+					category: {
+						organizationId: "org-1",
+						isActive: true,
+						holidays: [christmasHoliday],
+					},
+				},
+			],
+			organizationId: "org-1",
+			startDate: new Date("2026-12-01T00:00:00.000Z"),
+			endDate: new Date("2026-12-31T23:59:59.999Z"),
+		});
+
+		expect(holidays).toHaveLength(1);
+		expect(holidays[0]?.id).toBe("holiday-christmas-2026");
+		expect(holidays[0]?.startDate.toISOString()).toBe("2026-12-25T00:00:00.000Z");
+		expect(holidays[0]?.endDate.toISOString()).toBe("2026-12-25T23:59:59.999Z");
+		expect(holidays[0]?.metadata?.isRecurring).toBe(true);
+	});
+
+	it("does not expand yearly category holidays before the original start year", () => {
+		const holidays = mergeAssignedCustomHolidays({
+			directAssignments: [],
+			categoryAssignments: [
+				{
+					category: {
+						organizationId: "org-1",
+						isActive: true,
+						holidays: [christmasHoliday],
+					},
+				},
+			],
+			organizationId: "org-1",
+			startDate: new Date("2023-12-01T00:00:00.000Z"),
+			endDate: new Date("2023-12-31T23:59:59.999Z"),
+		});
+
+		expect(holidays).toEqual([]);
 	});
 
 	it("keeps an occurrence that overlaps an assignment effective window", () => {
