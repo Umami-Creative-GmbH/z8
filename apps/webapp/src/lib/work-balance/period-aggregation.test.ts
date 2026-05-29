@@ -134,6 +134,65 @@ describe("work balance period aggregation", () => {
 		expect(lte).toHaveBeenCalledWith(workPeriod.startTime, new Date("2026-05-31T23:59:59.999Z"));
 	});
 
+	it("clips period source queries to the employee calculation start date", async () => {
+		mockState.selectWhere.mockResolvedValueOnce([{ totalMinutes: 480 }]);
+		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValueOnce({
+			"2026-05-10": { requiredMinutes: 480 },
+		});
+
+		const result = await computeEmployeePeriodBalance({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			periodType: "month",
+			periodStart: "2026-05-01",
+			periodEnd: "2026-05-31",
+			calculationStartDate: "2026-05-10",
+			isClosed: true,
+			now: new Date("2026-06-01T08:00:00.000Z"),
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				periodStart: "2026-05-01",
+				periodEnd: "2026-05-31",
+				actualMinutes: 480,
+				requiredMinutes: 480,
+			}),
+		);
+		expect(gte).toHaveBeenCalledWith(workPeriod.startTime, new Date("2026-05-10T00:00:00.000Z"));
+		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			startDate: new Date("2026-05-10T00:00:00.000Z"),
+			endDate: new Date("2026-05-31T23:59:59.999Z"),
+		});
+	});
+
+	it("returns a zero period when the calculation start date is after the period end", async () => {
+		const result = await computeEmployeePeriodBalance({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			periodType: "month",
+			periodStart: "2026-05-01",
+			periodEnd: "2026-05-31",
+			calculationStartDate: "2026-06-10",
+			isClosed: false,
+			now: new Date("2026-05-22T08:00:00.000Z"),
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				periodStart: "2026-05-01",
+				periodEnd: "2026-05-31",
+				actualMinutes: 0,
+				requiredMinutes: 0,
+				balanceMinutes: 0,
+			}),
+		);
+		expect(mockState.db.select).not.toHaveBeenCalled();
+		expect(mockState.getDailyWorkRequirementsForEmployee).not.toHaveBeenCalled();
+	});
+
 	it("upserts employee period balances on the organization employee type and start conflict target", async () => {
 		const values = buildPeriodBalanceValues({
 			employeeId: "employee-1",
