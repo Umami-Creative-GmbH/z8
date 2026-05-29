@@ -11,6 +11,7 @@ const mockState = vi.hoisted(() => ({
 	findProject: vi.fn(),
 	findProjectAssignment: vi.fn(),
 	findWorkCategory: vi.fn(),
+	employeeHasAccessToCategory: vi.fn(),
 	createCanonicalTimeEntry: vi.fn(),
 	createCanonicalWorkRecord: vi.fn(),
 	insertValues: vi.fn(),
@@ -145,6 +146,10 @@ vi.mock("@/lib/logger", () => ({
 vi.mock("@/lib/time-tracking/validation", () => ({
 	validateTimeEntry: vi.fn(),
 	validateTimeEntryRange: mockState.validateTimeEntryRange,
+}));
+
+vi.mock("@/lib/query/work-category.queries", () => ({
+	employeeHasAccessToCategory: mockState.employeeHasAccessToCategory,
 }));
 
 vi.mock("@/lib/work-balance/service", () => ({
@@ -298,6 +303,7 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 		mockState.findProject.mockResolvedValue({ id: "project-1", status: "active" });
 		mockState.findProjectAssignment.mockResolvedValue({ id: "assignment-1" });
 		mockState.findWorkCategory.mockResolvedValue({ id: "category-1", isActive: true });
+		mockState.employeeHasAccessToCategory.mockResolvedValue(true);
 		mockState.validateTimeEntryRange.mockResolvedValue({ isValid: true });
 		mockState.validateProjectAssignment.mockResolvedValue({ isValid: true });
 		mockState.runPromise.mockResolvedValue({ type: "approval_required", daysBack: 7 });
@@ -348,6 +354,46 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 		expect(mockState.findWorkPeriods).not.toHaveBeenCalled();
 		expect(mockState.createCanonicalTimeEntry).not.toHaveBeenCalled();
 		expect(mockState.insertValues).not.toHaveBeenCalled();
+		expect(mockState.employeeHasAccessToCategory).not.toHaveBeenCalled();
+	});
+
+	it("rejects work categories outside the target employee effective set before writes", async () => {
+		mockState.employeeHasAccessToCategory.mockResolvedValue(false);
+
+		const result = await createManualTimeEntry({
+			employeeId: "staff-1",
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "10:00",
+			workCategoryId: "category-1",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toEqual({ success: false, error: "Cannot assign to this work category" });
+		expect(mockState.employeeHasAccessToCategory).toHaveBeenCalledWith("staff-1", "category-1");
+		expect(mockState.findWorkPeriods).not.toHaveBeenCalled();
+		expect(mockState.createCanonicalTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.insertValues).not.toHaveBeenCalled();
+	});
+
+	it("accepts work categories in the target employee effective set", async () => {
+		const result = await createManualTimeEntry({
+			employeeId: "staff-1",
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "10:00",
+			workCategoryId: "category-1",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result.success).toBe(true);
+		expect(mockState.employeeHasAccessToCategory).toHaveBeenCalledWith("staff-1", "category-1");
+		expect(mockState.createCanonicalWorkRecord).toHaveBeenCalledWith(
+			expect.objectContaining({ workCategoryId: "category-1" }),
+		);
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({ workCategoryId: "category-1" }),
+		);
 	});
 
 	it("validates provided projects and assignments in the target organization", async () => {

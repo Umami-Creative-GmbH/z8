@@ -61,6 +61,7 @@ import {
 	checkProjectBudgetWarnings,
 	getProjectTotalHours,
 } from "@/lib/notifications/project-notification-triggers";
+import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
 import {
 	getMonthRangeInTimezone,
 	getTodayRangeInTimezone,
@@ -1531,6 +1532,7 @@ async function validateProjectAssignment(
 }
 
 async function validateWorkCategoryAssignment(
+	employeeId: string,
 	workCategoryId: string,
 	organizationId: string,
 ): Promise<{ isValid: boolean; error?: string }> {
@@ -1544,6 +1546,11 @@ async function validateWorkCategoryAssignment(
 
 	if (!category) {
 		return { isValid: false, error: "Work category not found" };
+	}
+
+	const hasCategoryAccess = await employeeHasAccessToCategory(employeeId, workCategoryId);
+	if (!hasCategoryAccess) {
+		return { isValid: false, error: "Cannot assign to this work category" };
 	}
 
 	return { isValid: true };
@@ -2925,6 +2932,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 
 	if (data.workCategoryId) {
 		const categoryValidation = await validateWorkCategoryAssignment(
+			targetEmployee.id,
 			data.workCategoryId,
 			targetEmployee.organizationId,
 		);
