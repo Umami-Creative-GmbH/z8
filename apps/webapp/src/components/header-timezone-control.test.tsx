@@ -131,6 +131,21 @@ describe("HeaderTimezoneControl", () => {
 		expect(screen.queryByText("14:34")).toBeNull();
 	});
 
+	it("syncs the displayed time when the minute rolls over before effects schedule", async () => {
+		const nowSpy = vi
+			.spyOn(DateTime, "now")
+			.mockReturnValueOnce(DateTime.fromISO("2026-05-29T12:34:59.999Z", { zone: "utc" }))
+			.mockReturnValueOnce(DateTime.fromISO("2026-05-29T12:35:00.000Z", { zone: "utc" }));
+
+		render(<HeaderTimezoneControl />);
+
+		await act(async () => {});
+
+		expect(screen.getByText("14:35")).toBeTruthy();
+		expect(screen.queryByText("14:34")).toBeNull();
+		nowSpy.mockRestore();
+	});
+
 	it("opens a popover with a disabled save button until the draft timezone changes", async () => {
 		render(<HeaderTimezoneControl />);
 		vi.useRealTimers();
@@ -164,6 +179,30 @@ describe("HeaderTimezoneControl", () => {
 		await waitFor(() => expect(mocks.updateTimezone).toHaveBeenCalledWith("America/New_York"));
 		expect(mocks.refresh).toHaveBeenCalledTimes(1);
 		expect(mocks.toastSuccess).toHaveBeenCalledWith("Timezone updated successfully");
+	});
+
+	it("shows a busy saving state while the timezone update is pending", async () => {
+		let resolveUpdate: (value: { success: true }) => void = () => {};
+		mocks.updateTimezone.mockReturnValue(
+			new Promise((resolve) => {
+				resolveUpdate = resolve;
+			}),
+		);
+		render(<HeaderTimezoneControl />);
+		vi.useRealTimers();
+		const user = userEvent.setup();
+
+		await user.click(screen.getByRole("button", { name: /Current timezone Europe\/Berlin/i }));
+		await user.selectOptions(screen.getByLabelText("Timezone picker"), "America/New_York");
+		await user.click(screen.getByRole("button", { name: "Save timezone" }));
+
+		const saveButton = screen.getByRole("button", { name: "Saving..." });
+		expect(saveButton.getAttribute("aria-busy")).toBe("true");
+		expect((saveButton as HTMLButtonElement).disabled).toBe(true);
+		expect((screen.getByLabelText("Timezone picker") as HTMLSelectElement).disabled).toBe(true);
+
+		resolveUpdate({ success: true });
+		await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
 	});
 
 	it("keeps the popover open and preserves the draft timezone when save fails", async () => {

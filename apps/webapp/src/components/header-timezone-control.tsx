@@ -55,8 +55,9 @@ export function HeaderTimezoneControl() {
 
 	useEffect(() => {
 		let interval: number | undefined;
-		const now = DateTime.now();
-		const millisecondsUntilNextMinute = 60_000 - (now.second * 1_000 + now.millisecond);
+		const current = DateTime.now();
+		setNow(current);
+		const millisecondsUntilNextMinute = 60_000 - (current.second * 1_000 + current.millisecond);
 		const timeout = window.setTimeout(() => {
 			setNow(DateTime.now());
 			interval = window.setInterval(() => {
@@ -147,12 +148,13 @@ export function HeaderTimezoneControl() {
 				<TimezonePicker value={draftTimezone} onChange={setDraftTimezone} disabled={pending} />
 
 				<Button
+					aria-busy={pending}
 					className="w-full"
 					disabled={!hasChanges || pending}
 					onClick={handleSave}
 					type="button"
 				>
-					Save timezone
+					{pending ? "Saving..." : "Save timezone"}
 				</Button>
 			</PopoverContent>
 		</Popover>
