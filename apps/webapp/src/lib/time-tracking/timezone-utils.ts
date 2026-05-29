@@ -134,11 +134,10 @@ export function formatDateInZone(date: string | Date | DateTime, timezone: strin
 }
 
 /**
- * Get the timezone abbreviation for display (e.g., "EST", "PST", "CET")
+ * Get a locale-independent timezone label for display.
  */
 export function getTimezoneAbbreviation(timezone: string): string {
-	const dt = DateTime.now().setZone(timezone);
-	return dt.offsetNameShort || timezone;
+	return formatTimezoneOffset(timezone);
 }
 
 /**

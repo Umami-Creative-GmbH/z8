@@ -62,6 +62,8 @@ export interface TimeEntryEvent extends CalendarEvent {
 		entryType: "clock_in" | "clock_out" | "correction";
 		employeeName: string;
 		time?: string; // Formatted time string (e.g., "2:30 PM")
+		utcOffsetMinutes?: number;
+		timezone?: string;
 	};
 }
 

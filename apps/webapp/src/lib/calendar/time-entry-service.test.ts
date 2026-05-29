@@ -60,4 +60,35 @@ describe("getTimeEntriesForMonth", () => {
 			new Date("2026-06-01T03:59:59.999Z"),
 		);
 	});
+
+	it("returns offset metadata for time-entry calendar markers", async () => {
+		const timestamp = new Date("2026-05-26T05:00:00.000Z");
+		mockDb.where.mockResolvedValue([
+			{
+				entry: {
+					id: "entry-1",
+					type: "clock_in",
+					timestamp,
+					notes: null,
+					utcOffsetMinutes: 120,
+					timezone: "Europe/Berlin",
+				},
+				user: { id: "user-1", name: "Kai Hentschel" },
+			},
+		]);
+
+		const events = await getTimeEntriesForMonth(4, 2026, { organizationId: "org-1" });
+
+		expect(events[0]).toMatchObject({
+			id: "entry-1",
+			type: "time_entry",
+			date: timestamp,
+			metadata: {
+				entryType: "clock_in",
+				employeeName: "Kai Hentschel",
+				utcOffsetMinutes: 120,
+				timezone: "Europe/Berlin",
+			},
+		});
+	});
 });

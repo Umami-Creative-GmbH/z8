@@ -84,6 +84,8 @@ export async function getTimeEntriesForMonth(
 					entryType: entry.type,
 					employeeName: user.name,
 					time: timeFormatted,
+					utcOffsetMinutes: entry.utcOffsetMinutes,
+					timezone: entry.timezone || undefined,
 				},
 			};
 		});
