@@ -488,7 +488,7 @@ export function ScheduleXCalendarWrapper({
 			container.removeEventListener("pointerdown", handlePointerDown);
 			window.removeEventListener("pointerup", handlePointerUp);
 		};
-	}, [onTimeRangeSelect, viewMode, visibleRequirementDates]);
+	}, [onTimeRangeSelect, timeZone, viewMode, visibleRequirementDates]);
 
 	if (isLoading) {
 		return (
