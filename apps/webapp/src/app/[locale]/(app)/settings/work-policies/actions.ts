@@ -608,7 +608,8 @@ export async function updateWorkPolicy(
 		}
 
 		// Update main policy
-		const shouldDirtyWorkBalances = data.scheduleEnabled !== undefined || data.schedule !== undefined;
+		const shouldDirtyWorkBalances =
+			data.scheduleEnabled !== undefined || data.schedule !== undefined;
 
 		yield* _(
 			dbService.query("updatePolicy", async () => {
@@ -1073,7 +1074,9 @@ export async function createWorkPolicyAssignment(
 		);
 
 		yield* _(
-			Effect.promise(() => markOrganizationWorkBalancesDirty({ organizationId: actor.organizationId })),
+			Effect.promise(() =>
+				markOrganizationWorkBalancesDirty({ organizationId: actor.organizationId }),
+			),
 		);
 
 		return { id: assignment.id };
@@ -1163,6 +1166,82 @@ function normalizePresetName(name: string) {
 	return name.trim();
 }
 
+function isNumberOrNull(value: unknown): value is number | null {
+	return typeof value === "number" || value === null;
+}
+
+function isBreakOptionInput(value: unknown): value is BreakOptionInput {
+	if (!value || typeof value !== "object") return false;
+
+	const option = value as Partial<BreakOptionInput>;
+	return (
+		isNumberOrNull(option.splitCount) &&
+		isNumberOrNull(option.minimumSplitMinutes) &&
+		isNumberOrNull(option.minimumLongestSplitMinutes)
+	);
+}
+
+function isBreakRuleInput(value: unknown): value is BreakRuleInput {
+	if (!value || typeof value !== "object") return false;
+
+	const rule = value as Partial<BreakRuleInput>;
+	return (
+		typeof rule.workingMinutesThreshold === "number" &&
+		typeof rule.requiredBreakMinutes === "number" &&
+		Array.isArray(rule.options) &&
+		rule.options.every(isBreakOptionInput)
+	);
+}
+
+function validationError(message: string, field: string) {
+	return new ValidationError({ message, field });
+}
+
+function parsePresetBreakRulesStrict(value: unknown): BreakRuleInput[] {
+	if (!value) return [];
+
+	let parsed: unknown;
+	try {
+		parsed = typeof value === "string" ? JSON.parse(value) : value;
+	} catch {
+		throw validationError("Preset break rules are malformed", "breakRulesJson");
+	}
+
+	if (!parsed || typeof parsed !== "object") {
+		throw validationError("Preset break rules are malformed", "breakRulesJson");
+	}
+
+	const rules = (parsed as { rules?: unknown }).rules;
+	if (!Array.isArray(rules) || !rules.every(isBreakRuleInput)) {
+		throw validationError("Preset break rules are malformed", "breakRulesJson");
+	}
+
+	return rules;
+}
+
+function validatePresetBreakRules(input: WorkPolicyPresetInput) {
+	const rules = input.regulation?.breakRules;
+	if (rules === undefined && !input.regulationEnabled) return Effect.void;
+
+	if (rules !== undefined && (!Array.isArray(rules) || !rules.every(isBreakRuleInput))) {
+		return Effect.fail(
+			validationError("Preset break rules are malformed", "regulation.breakRules"),
+		);
+	}
+
+	return Effect.void;
+}
+
+function validatePersistedPresetBreakRules(value: unknown) {
+	try {
+		parsePresetBreakRulesStrict(value);
+		return Effect.void;
+	} catch (error) {
+		if (error instanceof ValidationError) return Effect.fail(error);
+		return Effect.fail(validationError("Preset break rules are malformed", "breakRulesJson"));
+	}
+}
+
 function stringifyPresetBreakRules(input: WorkPolicyPresetInput) {
 	const rules = input.regulationEnabled ? (input.regulation?.breakRules ?? []) : [];
 	return JSON.stringify({ rules }) as unknown as TimeRegulationBreakRulesPreset;
@@ -1196,28 +1275,20 @@ function presetInputToPolicyInput(input: WorkPolicyPresetInput): CreateWorkPolic
 }
 
 function presetToInput(preset: typeof workPolicyPreset.$inferSelect): WorkPolicyPresetInput {
-	let parsedBreakRules: TimeRegulationBreakRulesPreset | null = null;
-	if (preset.breakRulesJson) {
-		try {
-			parsedBreakRules =
-				typeof preset.breakRulesJson === "string"
-					? JSON.parse(preset.breakRulesJson)
-					: preset.breakRulesJson;
-		} catch {
-			parsedBreakRules = null;
-		}
-	}
+	const breakRules = parsePresetBreakRulesStrict(preset.breakRulesJson);
 
 	return {
 		name: preset.name,
 		description: preset.description ?? undefined,
 		countryCode: preset.countryCode,
-		scheduleEnabled: Boolean(preset.scheduleCycle || preset.workingDaysPreset || preset.hoursPerCycle),
+		scheduleEnabled: Boolean(
+			preset.scheduleCycle || preset.workingDaysPreset || preset.hoursPerCycle,
+		),
 		regulationEnabled: Boolean(
 			preset.maxDailyMinutes ||
 				preset.maxWeeklyMinutes ||
 				preset.maxUninterruptedMinutes ||
-				parsedBreakRules?.rules?.length,
+				breakRules.length,
 		),
 		schedule: {
 			scheduleCycle: preset.scheduleCycle ?? "weekly",
@@ -1228,19 +1299,20 @@ function presetToInput(preset: typeof workPolicyPreset.$inferSelect): WorkPolicy
 			maxDailyMinutes: preset.maxDailyMinutes ?? undefined,
 			maxWeeklyMinutes: preset.maxWeeklyMinutes ?? undefined,
 			maxUninterruptedMinutes: preset.maxUninterruptedMinutes ?? undefined,
-			breakRules: parsedBreakRules?.rules ?? [],
+			breakRules,
 		},
 	};
 }
 
-function presetInputToInsertValues(organizationId: string, input: WorkPolicyPresetInput) {
+function presetInputToBaseValues(input: WorkPolicyPresetInput) {
 	return {
-		organizationId,
 		name: normalizePresetName(input.name),
 		description: input.description?.trim() || null,
 		countryCode: input.countryCode ?? null,
 		scheduleCycle: input.scheduleEnabled ? (input.schedule?.scheduleCycle ?? "weekly") : null,
-		workingDaysPreset: input.scheduleEnabled ? (input.schedule?.workingDaysPreset ?? "weekdays") : null,
+		workingDaysPreset: input.scheduleEnabled
+			? (input.schedule?.workingDaysPreset ?? "weekdays")
+			: null,
 		hoursPerCycle: input.scheduleEnabled ? (input.schedule?.hoursPerCycle ?? "40") : null,
 		maxDailyMinutes: input.regulationEnabled ? input.regulation?.maxDailyMinutes : null,
 		maxWeeklyMinutes: input.regulationEnabled ? input.regulation?.maxWeeklyMinutes : null,
@@ -1248,8 +1320,19 @@ function presetInputToInsertValues(organizationId: string, input: WorkPolicyPres
 			? input.regulation?.maxUninterruptedMinutes
 			: null,
 		breakRulesJson: stringifyPresetBreakRules(input),
+	};
+}
+
+function presetInputToInsertValues(organizationId: string, input: WorkPolicyPresetInput) {
+	return {
+		organizationId,
+		...presetInputToBaseValues(input),
 		isActive: true,
 	};
+}
+
+function presetInputToUpdateValues(input: WorkPolicyPresetInput) {
+	return presetInputToBaseValues(input);
 }
 
 function validatePresetName(input: WorkPolicyPresetInput) {
@@ -1261,7 +1344,7 @@ function validatePresetName(input: WorkPolicyPresetInput) {
 			}),
 		);
 	}
-	return Effect.void;
+	return validatePresetBreakRules(input);
 }
 
 export async function getWorkPolicyPresets(
@@ -1506,7 +1589,9 @@ export async function setDefaultWorkPolicy(policyId: string): Promise<ServerActi
 		);
 
 		yield* _(
-			Effect.promise(() => markOrganizationWorkBalancesDirty({ organizationId: policy!.organizationId })),
+			Effect.promise(() =>
+				markOrganizationWorkBalancesDirty({ organizationId: policy!.organizationId }),
+			),
 		);
 
 		return undefined;
@@ -1603,6 +1688,7 @@ export async function updateWorkPolicyPreset(
 					where: and(
 						eq(workPolicyPreset.id, presetId),
 						eq(workPolicyPreset.organizationId, organizationId),
+						eq(workPolicyPreset.isActive, true),
 					),
 				});
 			}),
@@ -1648,11 +1734,12 @@ export async function updateWorkPolicyPreset(
 			dbService.query("updateWorkPolicyPreset", async () => {
 				await dbService.db
 					.update(workPolicyPreset)
-					.set(presetInputToInsertValues(organizationId, input))
+					.set(presetInputToUpdateValues(input))
 					.where(
 						and(
 							eq(workPolicyPreset.id, presetId),
 							eq(workPolicyPreset.organizationId, organizationId),
+							eq(workPolicyPreset.isActive, true),
 						),
 					);
 			}),
@@ -1868,7 +1955,11 @@ export async function createWorkPolicyFromPreset(
 			}),
 		);
 
-		if (!preset || !preset.isActive || (preset.organizationId && preset.organizationId !== organizationId)) {
+		if (
+			!preset ||
+			!preset.isActive ||
+			(preset.organizationId && preset.organizationId !== organizationId)
+		) {
 			return yield* _(
 				Effect.fail(
 					new NotFoundError({
@@ -1879,6 +1970,8 @@ export async function createWorkPolicyFromPreset(
 				),
 			);
 		}
+		yield* _(validatePersistedPresetBreakRules(preset.breakRulesJson));
+		yield* _(validatePresetName(input));
 
 		const createResult = yield* _(
 			Effect.promise(() => createWorkPolicy(organizationId, presetInputToPolicyInput(input))),
@@ -1965,9 +2058,22 @@ export async function importWorkPolicyPreset(
 			);
 		}
 
+		let presetInput: WorkPolicyPresetInput;
+		try {
+			presetInput = presetToInput(preset);
+		} catch (error) {
+			return yield* _(
+				Effect.fail(
+					error instanceof ValidationError
+						? error
+						: validationError("Preset break rules are malformed", "breakRulesJson"),
+				),
+			);
+		}
+
 		const result = yield* _(
 			Effect.promise(() =>
-				createWorkPolicyFromPreset(organizationId, presetId, presetToInput(preset), setAsDefault),
+				createWorkPolicyFromPreset(organizationId, presetId, presetInput, setAsDefault),
 			),
 		);
 		if (!result.success) {

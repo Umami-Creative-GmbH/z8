@@ -230,6 +230,76 @@ describe("WorkPolicyPresetReviewDialog", () => {
 		);
 	});
 
+	it("submits edited regulation limits from the review dialog", async () => {
+		const user = userEvent.setup();
+
+		renderWithQueryClient(
+			<WorkPolicyPresetReviewDialog
+				open
+				onOpenChange={vi.fn()}
+				organizationId="org-1"
+				mode="useAsPolicy"
+				preset={systemPreset}
+				onSuccess={vi.fn()}
+			/>,
+		);
+
+		await user.clear(screen.getByLabelText("Max daily hours"));
+		await user.type(screen.getByLabelText("Max daily hours"), "9");
+		await user.clear(screen.getByLabelText("Max weekly hours"));
+		await user.type(screen.getByLabelText("Max weekly hours"), "44");
+		await user.click(screen.getByRole("button", { name: "Create policy" }));
+
+		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith(
+			"org-1",
+			"system-1",
+			expect.objectContaining({
+				regulation: expect.objectContaining({
+					maxDailyMinutes: 540,
+					maxWeeklyMinutes: 2640,
+				}),
+			}),
+			false,
+		);
+	});
+
+	it("submits edited break rule values from the review dialog", async () => {
+		const user = userEvent.setup();
+
+		renderWithQueryClient(
+			<WorkPolicyPresetReviewDialog
+				open
+				onOpenChange={vi.fn()}
+				organizationId="org-1"
+				mode="useAsPolicy"
+				preset={systemPreset}
+				onSuccess={vi.fn()}
+			/>,
+		);
+
+		await user.clear(screen.getByLabelText("After working hours"));
+		await user.type(screen.getByLabelText("After working hours"), "7");
+		await user.clear(screen.getByLabelText("Break required minutes"));
+		await user.type(screen.getByLabelText("Break required minutes"), "45");
+		await user.click(screen.getByRole("button", { name: "Create policy" }));
+
+		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith(
+			"org-1",
+			"system-1",
+			expect.objectContaining({
+				regulation: expect.objectContaining({
+					breakRules: [
+						expect.objectContaining({
+							workingMinutesThreshold: 420,
+							requiredBreakMinutes: 45,
+						}),
+					],
+				}),
+			}),
+			false,
+		);
+	});
+
 	it("shows duplicate-name server errors inline", async () => {
 		const user = userEvent.setup();
 		vi.mocked(createWorkPolicyPreset).mockResolvedValue({

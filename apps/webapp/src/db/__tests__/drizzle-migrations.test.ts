@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const migration0004 = readFileSync(
 	new URL("../../../drizzle/0004_hard_bill_hollister.sql", import.meta.url),
-	"utf8"
+	"utf8",
 );
 const migration0008 = readFileSync(
 	new URL("../../../drizzle/0008_demo_data_feature_flag.sql", import.meta.url),
@@ -17,11 +17,26 @@ const migration0019 = readFileSync(
 	new URL("../../../drizzle/0019_regular_sandman.sql", import.meta.url),
 	"utf8",
 );
-const migration0003SnapshotUrl = new URL("../../../drizzle/meta/0003_snapshot.json", import.meta.url);
-const migration0020Url = new URL("../../../drizzle/0020_drop_organization_fiscal_year.sql", import.meta.url);
-const migration0026Url = new URL("../../../drizzle/0026_remove_employee_manager_id.sql", import.meta.url);
-const migration0026SnapshotUrl = new URL("../../../drizzle/meta/0026_snapshot.json", import.meta.url);
-const migration0030SnapshotUrl = new URL("../../../drizzle/meta/0030_snapshot.json", import.meta.url);
+const migration0003SnapshotUrl = new URL(
+	"../../../drizzle/meta/0003_snapshot.json",
+	import.meta.url,
+);
+const migration0020Url = new URL(
+	"../../../drizzle/0020_drop_organization_fiscal_year.sql",
+	import.meta.url,
+);
+const migration0026Url = new URL(
+	"../../../drizzle/0026_remove_employee_manager_id.sql",
+	import.meta.url,
+);
+const migration0026SnapshotUrl = new URL(
+	"../../../drizzle/meta/0026_snapshot.json",
+	import.meta.url,
+);
+const migration0030SnapshotUrl = new URL(
+	"../../../drizzle/meta/0030_snapshot.json",
+	import.meta.url,
+);
 const migrationJournal = JSON.parse(
 	readFileSync(new URL("../../../drizzle/meta/_journal.json", import.meta.url), "utf8"),
 ) as { entries: Array<{ tag: string; when: number }> };
@@ -43,7 +58,14 @@ const migration0036Url = new URL(
 	"../../../drizzle/0036_time_entry_timezone_capture.sql",
 	import.meta.url,
 );
-const migration0036SnapshotUrl = new URL("../../../drizzle/meta/0036_snapshot.json", import.meta.url);
+const migration0036SnapshotUrl = new URL(
+	"../../../drizzle/meta/0036_snapshot.json",
+	import.meta.url,
+);
+const migration0037SnapshotUrl = new URL(
+	"../../../drizzle/meta/0037_snapshot.json",
+	import.meta.url,
+);
 
 const migration0004Statements = migration0004
 	.split("--> statement-breakpoint")
@@ -59,7 +81,9 @@ describe("drizzle follow-up migrations", () => {
 	});
 
 	it("registers the demo data feature flag migration", () => {
-		expect(migrationJournal.entries.some((entry) => entry.tag === "0008_demo_data_feature_flag")).toBe(true);
+		expect(
+			migrationJournal.entries.some((entry) => entry.tag === "0008_demo_data_feature_flag"),
+		).toBe(true);
 		expect(migration0008).toContain('ADD COLUMN "demo_data_enabled" boolean DEFAULT true');
 		expect(
 			migration0008Snapshot.tables["public.organization"].columns.demo_data_enabled?.default,
@@ -97,16 +121,18 @@ describe("drizzle follow-up migrations", () => {
 	});
 
 	it("registers the organization fiscal year start migration", () => {
-		expect(migrationJournal.entries.some((entry) => entry.tag === "0019_regular_sandman")).toBe(true);
+		expect(migrationJournal.entries.some((entry) => entry.tag === "0019_regular_sandman")).toBe(
+			true,
+		);
 		expect(migration0019.trim()).toBe(
 			'ALTER TABLE "organization" ADD COLUMN "fiscal_year_start_month" integer DEFAULT 1;',
 		);
 	});
 
 	it("registers the fiscal year start column drop migration", () => {
-		expect(migrationJournal.entries.some((entry) => entry.tag === "0020_drop_organization_fiscal_year")).toBe(
-			true,
-		);
+		expect(
+			migrationJournal.entries.some((entry) => entry.tag === "0020_drop_organization_fiscal_year"),
+		).toBe(true);
 		expect(existsSync(migration0020Url)).toBe(true);
 
 		const migration0020 = readFileSync(migration0020Url, "utf8");
@@ -117,9 +143,9 @@ describe("drizzle follow-up migrations", () => {
 	});
 
 	it("registers the employee manager_id removal migration", () => {
-		expect(migrationJournal.entries.some((entry) => entry.tag === "0026_remove_employee_manager_id")).toBe(
-			true,
-		);
+		expect(
+			migrationJournal.entries.some((entry) => entry.tag === "0026_remove_employee_manager_id"),
+		).toBe(true);
 		expect(existsSync(migration0026Url)).toBe(true);
 
 		const migration0026 = readFileSync(migration0026Url, "utf8");
@@ -167,7 +193,7 @@ describe("drizzle follow-up migrations", () => {
 		expect(migration0026).toContain('INSERT INTO "employee_managers"');
 		expect(migration0026).toContain('FROM "employee" AS "e"');
 		expect(migration0026).toContain('"e"."manager_id" IS NOT NULL');
-		expect(migration0026).toContain('NOT EXISTS (');
+		expect(migration0026).toContain("NOT EXISTS (");
 		expect(migration0026).toContain('"existing_primary"."is_primary" = true');
 		expect(migration0026).toContain('"e"."user_id"');
 		expect(migration0026).toContain('DROP INDEX IF EXISTS "employee_managerId_idx";');
@@ -181,9 +207,9 @@ describe("drizzle follow-up migrations", () => {
 	});
 
 	it("includes snapshot metadata for the platform system email template migration", () => {
-		expect(migrationJournal.entries.some((entry) => entry.tag === "0030_platform_system_email_template")).toBe(
-			true,
-		);
+		expect(
+			migrationJournal.entries.some((entry) => entry.tag === "0030_platform_system_email_template"),
+		).toBe(true);
 		expect(existsSync(migration0030SnapshotUrl)).toBe(true);
 
 		const snapshot = JSON.parse(readFileSync(migration0030SnapshotUrl, "utf8")) as {
@@ -214,7 +240,9 @@ describe("drizzle follow-up migrations", () => {
 		const migration0035 = readFileSync(migration0035Url, "utf8");
 
 		expect(migration0035).toContain('ADD COLUMN IF NOT EXISTS "metadata" jsonb');
-		expect(migration0035).toContain('CREATE UNIQUE INDEX IF NOT EXISTS "approvalRequest_pending_entity_unique_idx"');
+		expect(migration0035).toContain(
+			'CREATE UNIQUE INDEX IF NOT EXISTS "approvalRequest_pending_entity_unique_idx"',
+		);
 	});
 
 	it("registers the time entry timezone capture migration after approval metadata recovery", () => {
@@ -239,7 +267,9 @@ describe("drizzle follow-up migrations", () => {
 		expect(migration0036).toContain('ADD COLUMN IF NOT EXISTS "timezone_source" text');
 		expect(migration0036).toContain('"utc_offset_minutes" = COALESCE("utc_offset_minutes", 120)');
 		expect(migration0036).toContain('"timezone" = COALESCE("timezone", \'Europe/Berlin\')');
-		expect(migration0036).toContain('"timezone_source" = COALESCE("timezone_source", \'backfill\')');
+		expect(migration0036).toContain(
+			'"timezone_source" = COALESCE("timezone_source", \'backfill\')',
+		);
 		expect(migration0036).toContain(
 			'WHERE "utc_offset_minutes" IS NULL OR "timezone" IS NULL OR "timezone_source" IS NULL;',
 		);
@@ -258,6 +288,36 @@ describe("drizzle follow-up migrations", () => {
 				timezone: expect.objectContaining({ type: "text", notNull: false }),
 				timezone_source: expect.objectContaining({ type: "text", notNull: true }),
 			}),
+		);
+	});
+
+	it("snapshots work policy preset ownership and partial unique indexes", () => {
+		expect(
+			migrationJournal.entries.some((entry) => entry.tag === "0037_work_policy_preset_ownership"),
+		).toBe(true);
+		expect(existsSync(migration0037SnapshotUrl)).toBe(true);
+
+		const snapshot = JSON.parse(readFileSync(migration0037SnapshotUrl, "utf8")) as {
+			tables: Record<
+				string,
+				{
+					columns: Record<string, unknown>;
+					indexes: Record<string, { isUnique?: boolean; where?: string }>;
+				}
+			>;
+		};
+		const presetTable = snapshot.tables["public.work_policy_preset"];
+
+		expect(presetTable?.columns).toEqual(
+			expect.objectContaining({
+				organization_id: expect.objectContaining({ type: "text", notNull: false }),
+			}),
+		);
+		expect(presetTable?.indexes.workPolicyPreset_system_name_idx).toEqual(
+			expect.objectContaining({ isUnique: true, where: '"organization_id" IS NULL' }),
+		);
+		expect(presetTable?.indexes.workPolicyPreset_org_name_idx).toEqual(
+			expect.objectContaining({ isUnique: true, where: '"organization_id" IS NOT NULL' }),
 		);
 	});
 });

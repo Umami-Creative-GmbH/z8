@@ -594,9 +594,7 @@ describe("work policy settings scope actions", () => {
 
 		expect(result).toMatchObject({ success: false, code: "ConflictError" });
 		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("isActive");
-		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain(
-			"isNull",
-		);
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("isNull");
 		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[1].where)).not.toContain(
 			"isActive",
 		);
@@ -657,6 +655,27 @@ describe("work policy settings scope actions", () => {
 		);
 	});
 
+	it("rejects archived custom preset updates without reactivating them", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+		mockState.workPolicyPresetQueue = [null];
+
+		const result = await updateWorkPolicyPreset("org-1", "archived-preset", {
+			name: "Reactivated Warehouse",
+			description: "Should not reactivate archived presets",
+			scheduleEnabled: true,
+			regulationEnabled: false,
+			schedule: {
+				scheduleCycle: "weekly",
+				workingDaysPreset: "weekdays",
+				hoursPerCycle: "40",
+			},
+		});
+
+		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("isActive");
+		expect(mockState.updateSets).toHaveLength(0);
+	});
+
 	it("scopes compatibility import preset lookup to active visible presets", async () => {
 		mockState.actor.accessTier = "orgAdmin";
 		mockState.workPolicyPresetQueue = [null];
@@ -695,27 +714,23 @@ describe("work policy settings scope actions", () => {
 			[{ id: "break-rule-1" }],
 		];
 
-		const result = await createWorkPolicyFromPreset(
-			"org-1",
-			"system-preset",
-			{
-				name: " Reviewed Policy ",
-				description: " Reviewed description ",
-				scheduleEnabled: false,
-				regulationEnabled: true,
-				regulation: {
-					maxDailyMinutes: 480,
-					maxWeeklyMinutes: 2400,
-					breakRules: [
-						{
-							workingMinutesThreshold: 360,
-							requiredBreakMinutes: 30,
-							options: [],
-						},
-					],
-				},
+		const result = await createWorkPolicyFromPreset("org-1", "system-preset", {
+			name: " Reviewed Policy ",
+			description: " Reviewed description ",
+			scheduleEnabled: false,
+			regulationEnabled: true,
+			regulation: {
+				maxDailyMinutes: 480,
+				maxWeeklyMinutes: 2400,
+				breakRules: [
+					{
+						workingMinutesThreshold: 360,
+						requiredBreakMinutes: 30,
+						options: [],
+					},
+				],
 			},
-		);
+		});
 
 		expect(result).toEqual({
 			success: true,
@@ -738,13 +753,91 @@ describe("work policy settings scope actions", () => {
 		});
 	});
 
+	it("rejects malformed reviewed preset break option data", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+		mockState.isOrgAdmin = true;
+		mockState.workPolicyPresetQueue = [
+			{ id: "system-preset", organizationId: null, name: "Source", isActive: true },
+		];
+
+		const result = await createWorkPolicyFromPreset("org-1", "system-preset", {
+			name: "Reviewed Policy",
+			scheduleEnabled: false,
+			regulationEnabled: true,
+			regulation: {
+				breakRules: [
+					{
+						workingMinutesThreshold: 360,
+						requiredBreakMinutes: 30,
+						options: [
+							{
+								splitCount: "one" as never,
+								minimumSplitMinutes: null,
+								minimumLongestSplitMinutes: null,
+							},
+						],
+					},
+				],
+			},
+		});
+
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mockState.insertValues).toHaveLength(0);
+	});
+
+	it("rejects malformed persisted preset break rules during compatibility import", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+		mockState.workPolicyPresetQueue = [
+			{
+				id: "system-preset",
+				organizationId: null,
+				name: "System Source",
+				isActive: true,
+				breakRulesJson: "not-json",
+			},
+		];
+
+		const result = await importWorkPolicyPreset("org-1", "system-preset");
+
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mockState.insertValues).toHaveLength(0);
+	});
+
+	it("rejects malformed persisted preset break option data when using a preset", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+		mockState.workPolicyPresetQueue = [
+			{
+				id: "system-preset",
+				organizationId: null,
+				name: "System Source",
+				isActive: true,
+				breakRulesJson: {
+					rules: [
+						{
+							workingMinutesThreshold: 360,
+							requiredBreakMinutes: 30,
+							options: [{ splitCount: "one" }],
+						},
+					],
+				},
+			},
+		];
+
+		const result = await importWorkPolicyPreset("org-1", "system-preset");
+
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mockState.insertValues).toHaveLength(0);
+	});
+
 	it("copies system presets using reviewed input into organization-owned presets", async () => {
 		mockState.actor.accessTier = "orgAdmin";
 		mockState.workPolicyPresetQueue = [
 			{ id: "system-preset", organizationId: null, name: "System Source", isActive: true },
 			null,
 		];
-		mockState.insertQueue = [[{ id: "custom-preset", organizationId: "org-1", name: "Reviewed Copy" }]];
+		mockState.insertQueue = [
+			[{ id: "custom-preset", organizationId: "org-1", name: "Reviewed Copy" }],
+		];
 
 		const result = await copySystemWorkPolicyPreset("org-1", "system-preset", {
 			name: " Reviewed Copy ",
