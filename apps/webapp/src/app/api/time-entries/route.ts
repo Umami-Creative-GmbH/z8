@@ -7,7 +7,14 @@ import {
 	validateProjectAssignment,
 } from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
 import { db } from "@/db";
-import { employee, project, timeEntry, userSettings, workPeriod } from "@/db/schema";
+import {
+	employee,
+	project,
+	timeEntry,
+	userSettings,
+	workCategory,
+	workPeriod,
+} from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
@@ -24,11 +31,19 @@ import {
 } from "@/lib/billing/guard";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
+import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
 import {
 	isValidIanaTimezone,
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import { isWorkLocationType } from "@/lib/time-tracking/work-location";
+
+class TimeEntryConflictError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "TimeEntryConflictError";
+	}
+}
 
 async function getSavedUserTimezone(userId: string): Promise<string | null> {
 	try {
@@ -191,8 +206,16 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const { type, timestamp, notes, projectId, workCategoryId, workLocationType, browserTimezone } =
-			body;
+		const {
+			type,
+			timestamp,
+			notes,
+			location,
+			projectId,
+			workCategoryId,
+			workLocationType,
+			browserTimezone,
+		} = body;
 
 		// Validate required fields
 		if (!type || !["clock_in", "clock_out"].includes(type)) {
@@ -251,26 +274,6 @@ export async function POST(request: NextRequest) {
 			fallbackSource: "user_setting",
 		});
 
-		const [activePeriod] = await db
-			.select()
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.employeeId, currentEmployee.id),
-					eq(workPeriod.organizationId, activeOrgId),
-					isNull(workPeriod.endTime),
-				),
-			)
-			.limit(1);
-
-		if (type === "clock_in" && activePeriod) {
-			return NextResponse.json({ error: "Active work period already exists" }, { status: 400 });
-		}
-
-		if (type === "clock_out" && !activePeriod) {
-			return NextResponse.json({ error: "No active work period found" }, { status: 400 });
-		}
-
 		if (projectId) {
 			const [assignedProject] = await db
 				.select()
@@ -295,7 +298,57 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
+		if (workCategoryId) {
+			const [category] = await db
+				.select()
+				.from(workCategory)
+				.where(
+					and(
+						eq(workCategory.id, workCategoryId),
+						eq(workCategory.organizationId, activeOrgId),
+						eq(workCategory.isActive, true),
+					),
+				)
+				.limit(1);
+
+			if (!category) {
+				return NextResponse.json({ error: "Work category not found" }, { status: 400 });
+			}
+
+			const hasCategoryAccess = await employeeHasAccessToCategory(
+				currentEmployee.id,
+				workCategoryId,
+			);
+			if (!hasCategoryAccess) {
+				return NextResponse.json(
+					{ error: "Cannot assign to this work category" },
+					{ status: 400 },
+				);
+			}
+		}
+
 		const entry = await db.transaction(async (tx) => {
+			const [activePeriod] = await tx
+				.select()
+				.from(workPeriod)
+				.where(
+					and(
+						eq(workPeriod.employeeId, currentEmployee.id),
+						eq(workPeriod.organizationId, activeOrgId),
+						eq(workPeriod.isActive, true),
+						isNull(workPeriod.endTime),
+					),
+				)
+				.limit(1);
+
+			if (type === "clock_in" && activePeriod) {
+				throw new TimeEntryConflictError("Active work period already exists");
+			}
+
+			if (type === "clock_out" && !activePeriod) {
+				throw new Error("No active work period found");
+			}
+
 			const createdEntry = await createTimeEntry(
 				{
 					employeeId: currentEmployee.id,
@@ -304,6 +357,7 @@ export async function POST(request: NextRequest) {
 					timestamp: entryTime,
 					createdBy: session.user.id,
 					notes,
+					location,
 					...timezoneCapture,
 				},
 				tx,
@@ -318,11 +372,11 @@ export async function POST(request: NextRequest) {
 					isActive: true,
 					workLocationType: resolvedWorkLocationType,
 				});
-			} else {
+			} else if (activePeriod) {
 				const durationMs = entryTime.getTime() - activePeriod.startTime.getTime();
 				const durationMinutes = Math.round(durationMs / 60000);
 
-				await tx
+				const updatedPeriods = await tx
 					.update(workPeriod)
 					.set({
 						clockOutId: createdEntry.id,
@@ -332,7 +386,20 @@ export async function POST(request: NextRequest) {
 						...(projectId && { projectId }),
 						...(workCategoryId && { workCategoryId }),
 					})
-					.where(eq(workPeriod.id, activePeriod.id));
+					.where(
+						and(
+							eq(workPeriod.id, activePeriod.id),
+							eq(workPeriod.employeeId, currentEmployee.id),
+							eq(workPeriod.organizationId, activeOrgId),
+							eq(workPeriod.isActive, true),
+							isNull(workPeriod.endTime),
+						),
+					)
+					.returning({ id: workPeriod.id });
+
+				if (updatedPeriods.length === 0) {
+					throw new TimeEntryConflictError("Active work period changed");
+				}
 			}
 
 			return createdEntry;
@@ -340,6 +407,14 @@ export async function POST(request: NextRequest) {
 
 		return NextResponse.json({ entry }, { status: 201 });
 	} catch (error) {
+		if (error instanceof TimeEntryConflictError) {
+			return NextResponse.json({ error: error.message }, { status: 409 });
+		}
+
+		if (error instanceof Error && error.message === "No active work period found") {
+			return NextResponse.json({ error: "No active work period found" }, { status: 400 });
+		}
+
 		// Handle Effect errors
 		if (error instanceof Error && error.message.includes("NotFoundError")) {
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });

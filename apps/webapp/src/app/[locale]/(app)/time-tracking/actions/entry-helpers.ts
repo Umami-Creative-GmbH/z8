@@ -33,6 +33,7 @@ export async function createTimeEntry(params: {
 	timezoneSource: TimeEntryTimezoneSource;
 	replacesEntryId?: string;
 	notes?: string;
+	location?: string;
 	isSuperseded?: boolean;
 }, client: TimeEntryDbClient = db): Promise<typeof timeEntry.$inferSelect> {
 	const {
@@ -46,6 +47,7 @@ export async function createTimeEntry(params: {
 		timezoneSource,
 		replacesEntryId,
 		notes,
+		location,
 		isSuperseded,
 	} = params;
 
@@ -82,6 +84,7 @@ export async function createTimeEntry(params: {
 			timezoneSource,
 			replacesEntryId,
 			notes,
+			location,
 			...(isSuperseded === undefined ? {} : { isSuperseded }),
 		})
 		.returning();
