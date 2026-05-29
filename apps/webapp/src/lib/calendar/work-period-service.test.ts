@@ -54,6 +54,10 @@ describe("getWorkPeriodsForMonth", () => {
 				},
 				employee: { id: "employee-1", userId: "user-1" },
 				user: { id: "user-1", name: "Ada Lovelace" },
+				clockInEntry: {
+					utcOffsetMinutes: 120,
+					timezone: "Europe/Berlin",
+				},
 				clockOutEntry: null,
 				surcharge: {
 					surchargeMinutes: 45,
@@ -94,12 +98,75 @@ describe("getWorkPeriodsForMonth", () => {
 				projectName: "Payroll",
 				projectColor: "#2563eb",
 				approvalStatus: "pending",
+				clockInUtcOffsetMinutes: 120,
+				clockInTimezone: "Europe/Berlin",
 			},
 		});
 		expect(events[0]?.metadata).not.toHaveProperty("endTime");
+		expect(events[0]?.metadata).not.toHaveProperty("clockOutUtcOffsetMinutes");
+		expect(events[0]?.metadata).not.toHaveProperty("clockOutTimezone");
 		expect(events[0]?.metadata).not.toHaveProperty("surchargeMinutes");
 		expect(events[0]?.metadata).not.toHaveProperty("totalCreditedMinutes");
 		expect(events[0]?.metadata).not.toHaveProperty("surchargeBreakdown");
+	});
+
+	it("returns completed work period offset metadata from distinct clock entries", async () => {
+		const startTime = new Date("2026-05-04T07:00:00.000Z");
+		const endTime = new Date("2026-05-04T15:30:00.000Z");
+
+		mockDb.where.mockResolvedValue([
+			{
+				period: {
+					id: "period-2",
+					organizationId: "org-1",
+					employeeId: "employee-1",
+					startTime,
+					endTime,
+					durationMinutes: 510,
+					isActive: false,
+					approvalStatus: "approved",
+					projectId: null,
+					clockInId: "clock-in-1",
+					clockOutId: "clock-out-1",
+				},
+				employee: { id: "employee-1", userId: "user-1" },
+				user: { id: "user-1", name: "Ada Lovelace" },
+				clockInEntry: {
+					id: "clock-in-1",
+					utcOffsetMinutes: 60,
+					timezone: "Europe/Berlin",
+				},
+				clockOutEntry: {
+					id: "clock-out-1",
+					utcOffsetMinutes: -300,
+					timezone: "America/New_York",
+					notes: " Wrapped up handoff ",
+				},
+				surcharge: null,
+				project: null,
+			},
+		]);
+
+		const events = await getWorkPeriodsForMonth(4, 2026, { organizationId: "org-1" });
+
+		expect(events).toHaveLength(1);
+		expect(events[0]).toMatchObject({
+			id: "period-2",
+			type: "work_period",
+			date: startTime,
+			endDate: endTime,
+			title: "Ada Lovelace - 8h 30m: Wrapped up handoff",
+			description: "Wrapped up handoff",
+			metadata: {
+				durationMinutes: 510,
+				employeeName: "Ada Lovelace",
+				notes: "Wrapped up handoff",
+				clockInUtcOffsetMinutes: 60,
+				clockInTimezone: "Europe/Berlin",
+				clockOutUtcOffsetMinutes: -300,
+				clockOutTimezone: "America/New_York",
+			},
+		});
 	});
 });
 

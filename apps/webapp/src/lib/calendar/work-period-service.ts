@@ -1,4 +1,5 @@
 import { and, eq, gte, isNull, lte, not, or } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -7,6 +8,9 @@ import { employee, project, surchargeCalculation, timeEntry, workPeriod } from "
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { toDateKey } from "@/lib/datetime/luxon-utils";
 import type { SurchargeBreakdown, WorkPeriodEvent } from "./types";
+
+const clockInEntry = alias(timeEntry, "clock_in_entry");
+const clockOutEntry = alias(timeEntry, "clock_out_entry");
 
 interface WorkPeriodFilters {
 	organizationId: string;
@@ -79,14 +83,16 @@ export async function getWorkPeriodsForMonth(
 				period: workPeriod,
 				employee: employee,
 				user: user,
-				clockOutEntry: timeEntry,
+				clockInEntry,
+				clockOutEntry,
 				surcharge: surchargeCalculation,
 				project: project,
 			})
 			.from(workPeriod)
 			.innerJoin(employee, eq(workPeriod.employeeId, employee.id))
 			.innerJoin(user, eq(employee.userId, user.id))
-			.leftJoin(timeEntry, eq(workPeriod.clockOutId, timeEntry.id))
+			.leftJoin(clockInEntry, eq(workPeriod.clockInId, clockInEntry.id))
+			.leftJoin(clockOutEntry, eq(workPeriod.clockOutId, clockOutEntry.id))
 			.leftJoin(surchargeCalculation, eq(surchargeCalculation.workPeriodId, workPeriod.id))
 			.leftJoin(project, eq(workPeriod.projectId, project.id))
 			.where(and(...conditions));
@@ -94,7 +100,7 @@ export async function getWorkPeriodsForMonth(
 		// Return individual work periods as timed events (not aggregated)
 		// This allows the calendar to show work blocks at specific times
 		// Breaks appear as gaps between the green work blocks
-		return periods.map(({ period, user, clockOutEntry, surcharge, project: proj }) => {
+		return periods.map(({ period, user, clockInEntry, clockOutEntry, surcharge, project: proj }) => {
 			const notes = clockOutEntry?.notes?.trim();
 			const projectPrefix = proj?.name ? `[${proj.name}] ` : "";
 
@@ -135,6 +141,10 @@ export async function getWorkPeriodsForMonth(
 						}),
 						// Approval status for change policy enforcement
 						approvalStatus: period.approvalStatus ?? "approved",
+						...(clockInEntry && {
+							clockInUtcOffsetMinutes: clockInEntry.utcOffsetMinutes,
+							clockInTimezone: clockInEntry.timezone || undefined,
+						}),
 						isRunning: true,
 					},
 				};
@@ -200,6 +210,14 @@ export async function getWorkPeriodsForMonth(
 					}),
 					// Approval status for change policy enforcement
 					approvalStatus: period.approvalStatus ?? "approved",
+					...(clockInEntry && {
+						clockInUtcOffsetMinutes: clockInEntry.utcOffsetMinutes,
+						clockInTimezone: clockInEntry.timezone || undefined,
+					}),
+					...(clockOutEntry && {
+						clockOutUtcOffsetMinutes: clockOutEntry.utcOffsetMinutes,
+						clockOutTimezone: clockOutEntry.timezone || undefined,
+					}),
 				},
 			};
 		});

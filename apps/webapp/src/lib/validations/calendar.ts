@@ -74,6 +74,10 @@ export const workPeriodEventSchema = calendarEventSchema.extend({
 	metadata: z.object({
 		durationMinutes: z.number().int(),
 		employeeName: z.string(),
+		clockInUtcOffsetMinutes: z.number().int().optional(),
+		clockInTimezone: z.string().optional(),
+		clockOutUtcOffsetMinutes: z.number().int().optional(),
+		clockOutTimezone: z.string().optional(),
 	}),
 });
 
