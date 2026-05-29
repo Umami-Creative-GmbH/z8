@@ -1543,7 +1543,6 @@ export async function createWorkPolicyPreset(
 					where: and(
 						eq(workPolicyPreset.organizationId, organizationId),
 						eq(workPolicyPreset.name, name),
-						eq(workPolicyPreset.isActive, true),
 					),
 				});
 			}),
@@ -1601,7 +1600,10 @@ export async function updateWorkPolicyPreset(
 		const preset = yield* _(
 			dbService.query("getWorkPolicyPreset", async () => {
 				return await dbService.db.query.workPolicyPreset.findFirst({
-					where: eq(workPolicyPreset.id, presetId),
+					where: and(
+						eq(workPolicyPreset.id, presetId),
+						eq(workPolicyPreset.organizationId, organizationId),
+					),
 				});
 			}),
 		);
@@ -1625,7 +1627,6 @@ export async function updateWorkPolicyPreset(
 					where: and(
 						eq(workPolicyPreset.organizationId, organizationId),
 						eq(workPolicyPreset.name, name),
-						eq(workPolicyPreset.isActive, true),
 					),
 				});
 			}),
@@ -1684,7 +1685,10 @@ export async function archiveWorkPolicyPreset(
 		const preset = yield* _(
 			dbService.query("getWorkPolicyPreset", async () => {
 				return await dbService.db.query.workPolicyPreset.findFirst({
-					where: eq(workPolicyPreset.id, presetId),
+					where: and(
+						eq(workPolicyPreset.id, presetId),
+						eq(workPolicyPreset.organizationId, organizationId),
+					),
 				});
 			}),
 		);
@@ -1795,7 +1799,6 @@ export async function copySystemWorkPolicyPreset(
 					where: and(
 						eq(workPolicyPreset.organizationId, organizationId),
 						eq(workPolicyPreset.name, name),
-						eq(workPolicyPreset.isActive, true),
 					),
 				});
 			}),
@@ -1938,7 +1941,14 @@ export async function importWorkPolicyPreset(
 		const preset = yield* _(
 			dbService.query("getPreset", async () => {
 				return await dbService.db.query.workPolicyPreset.findFirst({
-					where: eq(workPolicyPreset.id, presetId),
+					where: and(
+						eq(workPolicyPreset.id, presetId),
+						eq(workPolicyPreset.isActive, true),
+						or(
+							isNull(workPolicyPreset.organizationId),
+							eq(workPolicyPreset.organizationId, organizationId),
+						),
+					),
 				});
 			}),
 		);

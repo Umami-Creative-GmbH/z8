@@ -36,6 +36,7 @@ const mockState = vi.hoisted(() => ({
 	workPolicyQueue: [] as Array<any>,
 	workPolicyPresets: [] as Array<any>,
 	workPolicyPresetQueue: [] as Array<any>,
+	workPolicyPresetFindFirstArgs: [] as Array<any>,
 	assignmentQueue: [] as Array<any>,
 	employeeQueue: [] as Array<any>,
 	teamQueue: [] as Array<any>,
@@ -286,7 +287,10 @@ vi.mock("@/lib/effect/runtime", async () => {
 				findMany: vi.fn(async () => mockState.violationRows),
 			},
 			workPolicyPreset: {
-				findFirst: vi.fn(async () => mockState.workPolicyPresetQueue.shift() ?? null),
+				findFirst: vi.fn(async (input) => {
+					mockState.workPolicyPresetFindFirstArgs.push(input);
+					return mockState.workPolicyPresetQueue.shift() ?? null;
+				}),
 				findMany: vi.fn(async () => mockState.workPolicyPresets),
 			},
 			team: {
@@ -415,6 +419,7 @@ describe("work policy settings scope actions", () => {
 		mockState.workPolicyQueue = [];
 		mockState.workPolicyPresets = [];
 		mockState.workPolicyPresetQueue = [];
+		mockState.workPolicyPresetFindFirstArgs = [];
 		mockState.assignmentQueue = [];
 		mockState.employeeQueue = [];
 		mockState.teamQueue = [];
@@ -541,6 +546,130 @@ describe("work policy settings scope actions", () => {
 
 		expect(result).toMatchObject({ success: false, code: "ConflictError" });
 		expect(mockState.insertValues).toHaveLength(0);
+	});
+
+	it("checks duplicate organization preset names against inactive archived presets when creating", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+		mockState.workPolicyPresetQueue = [
+			{ id: "archived-preset", organizationId: "org-1", name: "Warehouse", isActive: false },
+		];
+
+		const result = await createWorkPolicyPreset("org-1", {
+			name: "Warehouse",
+			description: "Duplicate archived name",
+			scheduleEnabled: true,
+			regulationEnabled: false,
+			schedule: {
+				scheduleCycle: "weekly",
+				workingDaysPreset: "weekdays",
+				hoursPerCycle: "40",
+			},
+		});
+
+		expect(result).toMatchObject({ success: false, code: "ConflictError" });
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).not.toContain(
+			"isActive",
+		);
+		expect(mockState.insertValues).toHaveLength(0);
+	});
+
+	it("checks duplicate organization preset names against inactive archived presets when copying system presets", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+		mockState.workPolicyPresetQueue = [
+			{ id: "system-preset", organizationId: null, name: "System Source", isActive: true },
+			{ id: "archived-preset", organizationId: "org-1", name: "Warehouse", isActive: false },
+		];
+
+		const result = await copySystemWorkPolicyPreset("org-1", "system-preset", {
+			name: "Warehouse",
+			description: "Duplicate archived name",
+			scheduleEnabled: true,
+			regulationEnabled: false,
+			schedule: {
+				scheduleCycle: "weekly",
+				workingDaysPreset: "weekdays",
+				hoursPerCycle: "40",
+			},
+		});
+
+		expect(result).toMatchObject({ success: false, code: "ConflictError" });
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("isActive");
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain(
+			"isNull",
+		);
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[1].where)).not.toContain(
+			"isActive",
+		);
+		expect(mockState.insertValues).toHaveLength(0);
+	});
+
+	it("checks duplicate organization preset names against inactive archived presets when updating", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+		mockState.workPolicyPresetQueue = [
+			{ id: "custom-preset", organizationId: "org-1", name: "Current", isActive: true },
+			{ id: "archived-preset", organizationId: "org-1", name: "Warehouse", isActive: false },
+		];
+
+		const result = await updateWorkPolicyPreset("org-1", "custom-preset", {
+			name: "Warehouse",
+			description: "Duplicate archived name",
+			scheduleEnabled: true,
+			regulationEnabled: false,
+			schedule: {
+				scheduleCycle: "weekly",
+				workingDaysPreset: "weekdays",
+				hoursPerCycle: "40",
+			},
+		});
+
+		expect(result).toMatchObject({ success: false, code: "ConflictError" });
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("org-1");
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[1].where)).not.toContain(
+			"isActive",
+		);
+		expect(mockState.updateSets).toHaveLength(0);
+	});
+
+	it("scopes custom preset update and archive lookups to the current organization", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+		mockState.workPolicyPresetQueue = [null, null];
+
+		await updateWorkPolicyPreset("org-1", "missing-preset", {
+			name: "Warehouse",
+			description: "Missing",
+			scheduleEnabled: true,
+			regulationEnabled: false,
+			schedule: {
+				scheduleCycle: "weekly",
+				workingDaysPreset: "weekdays",
+				hoursPerCycle: "40",
+			},
+		});
+		await archiveWorkPolicyPreset("org-1", "missing-preset");
+
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("org-1");
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain(
+			"missing-preset",
+		);
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[1].where)).toContain("org-1");
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[1].where)).toContain(
+			"missing-preset",
+		);
+	});
+
+	it("scopes compatibility import preset lookup to active visible presets", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+		mockState.workPolicyPresetQueue = [null];
+
+		const result = await importWorkPolicyPreset("org-1", "missing-preset");
+
+		expect(result).toMatchObject({ success: false, code: "NotFoundError" });
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain(
+			"missing-preset",
+		);
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("isActive");
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("isNull");
+		expect(JSON.stringify(mockState.workPolicyPresetFindFirstArgs[0].where)).toContain("org-1");
 	});
 
 	it("creates a real work policy from reviewed preset input and marks balances dirty", async () => {
