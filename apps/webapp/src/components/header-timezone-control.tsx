@@ -54,7 +54,7 @@ export function HeaderTimezoneControl() {
 	const [pending, setPending] = useState(false);
 
 	useEffect(() => {
-		let interval: ReturnType<typeof window.setInterval> | undefined;
+		let interval: number | undefined;
 		const now = DateTime.now();
 		const millisecondsUntilNextMinute = 60_000 - (now.second * 1_000 + now.millisecond);
 		const timeout = window.setTimeout(() => {
