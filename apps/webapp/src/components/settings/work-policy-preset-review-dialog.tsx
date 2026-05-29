@@ -3,7 +3,7 @@
 import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	copySystemWorkPolicyPreset,
@@ -124,6 +124,7 @@ export function WorkPolicyPresetReviewDialog({
 	const [serverError, setServerError] = useState<string | null>(null);
 	const [setAsDefault, setSetAsDefault] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [resetKey, setResetKey] = useState("");
 	const copy = getDialogCopy(mode);
 
 	const form = useForm({
@@ -162,6 +163,7 @@ export function WorkPolicyPresetReviewDialog({
 
 				if (result.success) {
 					toast.success(t("settings.workPolicies.presetReviewSuccess", copy.success));
+					setIsSubmitting(false);
 					onSuccess();
 					onOpenChange(false);
 					return;
@@ -172,20 +174,22 @@ export function WorkPolicyPresetReviewDialog({
 				);
 			} catch {
 				setServerError(t("settings.workPolicies.presetReviewError", "Failed to save preset"));
-			} finally {
-				setIsSubmitting(false);
 			}
+
+			setIsSubmitting(false);
 		},
 	});
 
-	useEffect(() => {
-		if (!open) return;
-
+	const nextResetKey = open ? `${mode}:${preset?.id ?? "new"}` : "";
+	if (open && resetKey !== nextResetKey) {
+		setResetKey(nextResetKey);
 		const values = getInitialValues(mode, preset);
 		form.reset(values);
 		setSetAsDefault(false);
 		setServerError(null);
-	}, [open, mode, preset, form]);
+	} else if (!open && resetKey !== "") {
+		setResetKey("");
+	}
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
