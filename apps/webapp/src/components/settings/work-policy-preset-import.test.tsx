@@ -7,9 +7,12 @@ import type { ReactNode } from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkPolicyPresetWithSource } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import {
+	archiveWorkPolicyPreset,
 	createWorkPolicyFromPreset,
 	createWorkPolicyPreset,
+	getWorkPolicyPresets,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import { WorkPolicyPresetImport } from "./work-policy-preset-import";
 import { WorkPolicyPresetReviewDialog } from "./work-policy-preset-review-dialog";
 
 vi.mock("@tolgee/react", () => ({
@@ -24,10 +27,12 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/work-policies/actions", () => ({
+	archiveWorkPolicyPreset: vi.fn(),
 	createWorkPolicyPreset: vi.fn(),
 	updateWorkPolicyPreset: vi.fn(),
 	copySystemWorkPolicyPreset: vi.fn(),
 	createWorkPolicyFromPreset: vi.fn(),
+	getWorkPolicyPresets: vi.fn(),
 }));
 
 beforeAll(() => {
@@ -51,7 +56,7 @@ function renderWithQueryClient(children: ReactNode) {
 
 const systemPreset = {
 	id: "system-1",
-	name: "System Preset",
+	name: "German Labor Law",
 	description: "Default labor law template",
 	countryCode: "DE",
 	organizationId: null,
@@ -79,6 +84,59 @@ const systemPreset = {
 	source: "system",
 	sourceLabel: "System",
 } as unknown as WorkPolicyPresetWithSource;
+
+const customPreset = {
+	...systemPreset,
+	id: "custom-1",
+	name: "Retail 38h",
+	description: "Retail operations preset",
+	organizationId: "org-1",
+	hoursPerCycle: "38",
+	maxWeeklyMinutes: 2280,
+	source: "custom",
+	sourceLabel: "Custom",
+} as unknown as WorkPolicyPresetWithSource;
+
+describe("WorkPolicyPresetImport", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.mocked(getWorkPolicyPresets).mockResolvedValue({
+			success: true,
+			data: [systemPreset, customPreset],
+		} as Awaited<ReturnType<typeof getWorkPolicyPresets>>);
+		vi.mocked(archiveWorkPolicyPreset).mockResolvedValue({
+			success: true,
+			data: {},
+		} as Awaited<ReturnType<typeof archiveWorkPolicyPreset>>);
+	});
+
+	it("shows system and custom presets with source-specific actions", async () => {
+		renderWithQueryClient(
+			<WorkPolicyPresetImport organizationId="org-1" onImportSuccess={vi.fn()} />,
+		);
+
+		expect(await screen.findByText("German Labor Law")).toBeTruthy();
+		expect(screen.getByText("Retail 38h")).toBeTruthy();
+		expect(screen.getAllByRole("button", { name: "Use as policy" })).toHaveLength(2);
+		expect(screen.getByRole("button", { name: "Copy to custom preset" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Edit preset" })).toBeTruthy();
+	});
+
+	it("filters presets by search text", async () => {
+		const user = userEvent.setup();
+
+		renderWithQueryClient(
+			<WorkPolicyPresetImport organizationId="org-1" onImportSuccess={vi.fn()} />,
+		);
+
+		expect(await screen.findByText("German Labor Law")).toBeTruthy();
+
+		await user.type(screen.getByPlaceholderText("Search presets..."), "retail");
+
+		expect(screen.queryByText("German Labor Law")).toBeNull();
+		expect(screen.getByText("Retail 38h")).toBeTruthy();
+	});
+});
 
 describe("WorkPolicyPresetReviewDialog", () => {
 	beforeEach(() => {
