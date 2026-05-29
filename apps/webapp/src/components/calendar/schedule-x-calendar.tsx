@@ -40,6 +40,12 @@ import { buildRequirementHeaderContent } from "./daily-requirement-strip";
 
 export type ViewMode = "day" | "week" | "month" | "year";
 
+interface RangeSelectionStart {
+	date: Date;
+	clientX: number;
+	clientY: number;
+}
+
 interface ScheduleXCalendarWrapperProps {
 	events: CalendarEvent[];
 	isLoading?: boolean;
@@ -80,6 +86,21 @@ function roundToQuarterHour(minutes: number) {
 
 export function isScheduleXEventElement(target: HTMLElement) {
 	return Boolean(target.closest(".sx__event, .sx__time-grid-event, .sx__date-grid-event"));
+}
+
+export function isIntentionalRangePointerDown({
+	button,
+	pointerType,
+}: Pick<PointerEvent, "button" | "pointerType">) {
+	return button === 0 && (pointerType === "mouse" || pointerType === "pen");
+}
+
+export function hasExceededPointerDragThreshold(
+	start: Pick<PointerEvent, "clientX" | "clientY">,
+	end: Pick<PointerEvent, "clientX" | "clientY">,
+	threshold = 4,
+) {
+	return Math.hypot(end.clientX - start.clientX, end.clientY - start.clientY) > threshold;
 }
 
 function getPointerDateTime(
@@ -153,7 +174,7 @@ export function ScheduleXCalendarWrapper({
 	const [calendarControls] = useState(() => createCalendarControlsPlugin());
 	const [currentTimePlugin] = useState(() => createCurrentTimePlugin());
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
-	const selectionStartRef = useRef<Date | null>(null);
+	const selectionStartRef = useRef<RangeSelectionStart | null>(null);
 
 	// Convert events to Schedule-X format
 	const baseScheduleXEvents = calendarEventsToScheduleX(events, timeZone);
@@ -420,23 +441,33 @@ export function ScheduleXCalendarWrapper({
 
 		const handlePointerDown = (event: PointerEvent) => {
 			const target = event.target instanceof Element ? event.target : null;
-			if (!(target instanceof HTMLElement) || isScheduleXEventElement(target)) return;
+			if (
+				!(target instanceof HTMLElement) ||
+				isScheduleXEventElement(target) ||
+				!isIntentionalRangePointerDown(event)
+			) {
+				return;
+			}
 
-			selectionStartRef.current = getPointerDateTime(container, event, visibleRequirementDates);
+			const date = getPointerDateTime(container, event, visibleRequirementDates);
+			selectionStartRef.current = date
+				? { date, clientX: event.clientX, clientY: event.clientY }
+				: null;
 		};
 
 		const handlePointerUp = (event: PointerEvent) => {
 			const start = selectionStartRef.current;
 			selectionStartRef.current = null;
 			if (!start) return;
+			if (!hasExceededPointerDragThreshold(start, event)) return;
 
 			const target = event.target instanceof Element ? event.target : null;
 			if (target instanceof HTMLElement && isScheduleXEventElement(target)) return;
 
 			const end = getPointerDateTime(container, event, visibleRequirementDates);
-			if (!end || start.getTime() === end.getTime()) return;
+			if (!end || start.date.getTime() === end.getTime()) return;
 
-			onTimeRangeSelect({ start, end });
+			onTimeRangeSelect({ start: start.date, end });
 		};
 
 		container.addEventListener("pointerdown", handlePointerDown);

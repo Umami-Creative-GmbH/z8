@@ -12,6 +12,7 @@ import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
 import { useRouter } from "@/navigation";
+import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 import { CalendarEmployeeSelector } from "./calendar-employee-selector";
 import { CalendarFiltersComponent } from "./calendar-filters";
 import { CalendarLegend } from "./calendar-legend";
@@ -43,6 +44,7 @@ export function CalendarView({
 }: CalendarViewProps) {
 	const router = useRouter();
 	const { isManagerOrAbove } = useOrganization();
+	const calendarTimeZone = useOrganizationTimezone();
 	const initialEmployeeId = initialSelectedEmployeeId ?? currentEmployeeId ?? null;
 
 	// View mode state
@@ -151,8 +153,8 @@ export function CalendarView({
 			range.start.getTime() <= range.end.getTime()
 				? [range.start, range.end]
 				: [range.end, range.start];
-		const clockIn = DateTime.fromJSDate(clockInDate, { zone: "utc" });
-		const clockOut = DateTime.fromJSDate(clockOutDate, { zone: "utc" });
+		const clockIn = DateTime.fromJSDate(clockInDate, { zone: calendarTimeZone });
+		const clockOut = DateTime.fromJSDate(clockOutDate, { zone: calendarTimeZone });
 
 		setManualEntryDefaults({
 			date: clockIn.toISODate() ?? "",
@@ -210,7 +212,7 @@ export function CalendarView({
 
 			<ManualTimeEntryDialog
 				employeeId={selectedEmployeeId ?? currentEmployeeId ?? ""}
-				employeeTimezone="UTC"
+				employeeTimezone={calendarTimeZone}
 				hasManager={false}
 				targetEmployeeId={selectedEmployeeId ?? undefined}
 				targetEmployeeName={selectedEmployeeName ?? undefined}

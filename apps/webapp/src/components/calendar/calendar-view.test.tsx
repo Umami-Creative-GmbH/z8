@@ -34,6 +34,10 @@ vi.mock("@/hooks/use-calendar-data", () => ({
 	},
 }));
 
+vi.mock("@/stores/organization-settings-store", () => ({
+	useOrganizationTimezone: () => "Europe/Berlin",
+}));
+
 vi.mock("@/components/work-balance/work-balance-card", () => ({
 	WorkBalanceCard: () => <div data-testid="work-balance-card" />,
 }));
@@ -98,8 +102,8 @@ vi.mock("./schedule-x-wrapper", () => ({
 				type="button"
 				onClick={() =>
 					onTimeRangeSelect?.({
-						start: new Date("2026-05-29T12:45:00.000Z"),
-						end: new Date("2026-05-29T10:15:00.000Z"),
+						start: new Date("2026-05-29T10:45:00.000Z"),
+						end: new Date("2026-05-29T08:15:00.000Z"),
 					})
 				}
 			>
@@ -117,12 +121,14 @@ vi.mock("@/components/time-tracking/manual-time-entry-dialog", () => ({
 		defaultClockInTime,
 		defaultClockOutTime,
 		defaultDate,
+		employeeTimezone,
 		open,
 		targetEmployeeId,
 	}: {
 		defaultClockInTime?: string;
 		defaultClockOutTime?: string;
 		defaultDate?: string;
+		employeeTimezone?: string;
 		open?: boolean;
 		targetEmployeeId?: string;
 	}) => (
@@ -132,6 +138,7 @@ vi.mock("@/components/time-tracking/manual-time-entry-dialog", () => ({
 			data-default-date={defaultDate}
 			data-clock-in={defaultClockInTime}
 			data-clock-out={defaultClockOutTime}
+			data-employee-timezone={employeeTimezone}
 			data-target-employee-id={targetEmployeeId}
 		/>
 	),
@@ -244,6 +251,7 @@ describe("CalendarView", () => {
 		expect(dialog.getAttribute("data-default-date")).toBe("2026-05-29");
 		expect(dialog.getAttribute("data-clock-in")).toBe("10:15");
 		expect(dialog.getAttribute("data-clock-out")).toBe("12:45");
+		expect(dialog.getAttribute("data-employee-timezone")).toBe("Europe/Berlin");
 		expect(dialog.getAttribute("data-target-employee-id")).toBe("employee-2");
 	});
 });
