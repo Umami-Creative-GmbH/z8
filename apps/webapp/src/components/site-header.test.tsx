@@ -18,6 +18,11 @@ vi.mock("@/navigation", () => ({
 
 vi.mock("@/components/providers/user-preferences-provider", () => ({
 	useTimeFormat: () => "24h",
+	useUserTimezone: () => "Europe/Berlin",
+}));
+
+vi.mock("@/components/header-timezone-control", () => ({
+	HeaderTimezoneControl: () => <button type="button">Timezone</button>,
 }));
 
 vi.mock("@/components/notifications", () => ({
@@ -46,6 +51,7 @@ describe("SiteHeader", () => {
 		expect(buttons).toEqual([
 			"Toggle sidebar",
 			"Customize dashboard",
+			"Timezone",
 			"Notifications",
 			"Clock In",
 		]);
@@ -58,5 +64,6 @@ describe("SiteHeader", () => {
 
 		expect(screen.queryByRole("button", { name: "Customize dashboard" })).toBeNull();
 		expect(screen.getByRole("button", { name: "Notifications" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Timezone" })).toBeTruthy();
 	});
 });
