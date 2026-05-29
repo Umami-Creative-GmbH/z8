@@ -19,7 +19,7 @@ import {
 } from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
 import { buildOpenShiftsCard } from "../cards/open-shifts-card";
-import { withRateLimit } from "./middleware";
+import { withRateLimit } from "./middleware/rate-limit.middleware";
 import { env } from "@/env";
 
 const logger = createLogger("TeamsCommand:OpenShifts");

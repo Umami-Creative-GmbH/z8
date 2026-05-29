@@ -1,4 +1,4 @@
-import { successFactorsExporter } from "../exporters/successfactors";
+import { successFactorsExporter } from "../exporters/successfactors/successfactors-exporter";
 import type {
 	AbsenceData,
 	ApiExportResult,

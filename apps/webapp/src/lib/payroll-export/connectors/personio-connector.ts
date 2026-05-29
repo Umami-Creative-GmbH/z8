@@ -1,4 +1,4 @@
-import { personioExporter } from "../exporters/personio";
+import { personioExporter } from "../exporters/personio/personio-exporter";
 import type {
 	AbsenceData,
 	ApiExportResult,

@@ -30,7 +30,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import { sendAdaptiveCard } from "../bot-adapter";
-import { buildDailyDigestCard } from "../cards";
+import { buildDailyDigestCard } from "../cards/daily-digest-card";
 import { getOrganizationPersonalConversations } from "../conversation-manager";
 import { getAllActiveTenants } from "../tenant-resolver";
 import type { DailyDigestData } from "../types";

@@ -18,9 +18,7 @@ import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
 import { SageLohnFormatter } from "./formatters/sage-lohn-formatter";
 import { personioConnector } from "./connectors/personio-connector";
-import {
-	successFactorsFormatter,
-} from "./exporters/successfactors";
+import { successFactorsFormatter } from "./exporters/successfactors/successfactors-formatter";
 import { workdayConnector } from "./exporters/workday/workday-connector";
 import { successFactorsConnector } from "./connectors/successfactors-connector";
 import { PayrollConnectorRegistry } from "./connectors/registry";

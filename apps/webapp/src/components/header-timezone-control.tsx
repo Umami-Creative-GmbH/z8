@@ -10,45 +10,20 @@ import { TimezonePicker } from "@/components/settings/timezone-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import { useRouter } from "@/navigation";
+import { formatHeaderTimezone } from "./header-timezone-control-utils";
 
-export interface HeaderTimezoneDisplay {
-	timeLabel: string;
-	offsetLabel: string;
-	displayTimezone: string;
-}
-
-export function formatHeaderTimezone({
-	now,
-	timezone,
-	timeFormat,
-}: {
-	now: DateTime;
-	timezone: string;
-	timeFormat: TimeFormat;
-}): HeaderTimezoneDisplay {
-	const zonedNow = now.setZone(timezone);
-	const displayDateTime = zonedNow.isValid ? zonedNow : now.setZone("UTC");
-	const displayTimezone = zonedNow.isValid ? timezone : "UTC";
-	const offsetMinutes = displayDateTime.offset;
-	const sign = offsetMinutes >= 0 ? "+" : "-";
-	const absoluteOffset = Math.abs(offsetMinutes);
-	const offsetHours = String(Math.floor(absoluteOffset / 60)).padStart(2, "0");
-	const offsetRemainderMinutes = String(absoluteOffset % 60).padStart(2, "0");
-
-	return {
-		displayTimezone,
-		offsetLabel: `UTC${sign}${offsetHours}:${offsetRemainderMinutes}`,
-		timeLabel: displayDateTime.toFormat(timeFormat === "12h" ? "h:mm a" : "HH:mm"),
-	};
+function getInitialCurrentTime() {
+	const initialNow = DateTime.now();
+	const latestNow = DateTime.now();
+	return latestNow.hasSame(initialNow, "minute") ? initialNow : latestNow;
 }
 
 export function HeaderTimezoneControl() {
 	const router = useRouter();
 	const savedTimezone = useUserTimezone();
 	const timeFormat = useTimeFormat();
-	const [now, setNow] = useState(() => DateTime.now());
+	const [now, setNow] = useState(getInitialCurrentTime);
 	const [open, setOpen] = useState(false);
 	const [draftTimezone, setDraftTimezone] = useState(savedTimezone);
 	const [pending, setPending] = useState(false);
@@ -56,7 +31,6 @@ export function HeaderTimezoneControl() {
 	useEffect(() => {
 		let interval: number | undefined;
 		const current = DateTime.now();
-		setNow(current);
 		const millisecondsUntilNextMinute = 60_000 - (current.second * 1_000 + current.millisecond);
 		const timeout = window.setTimeout(() => {
 			setNow(DateTime.now());
@@ -73,41 +47,38 @@ export function HeaderTimezoneControl() {
 		};
 	}, []);
 
-	useEffect(() => {
-		if (!open) {
-			setDraftTimezone(savedTimezone);
-		}
-	}, [open, savedTimezone]);
-
 	const { displayTimezone, offsetLabel, timeLabel } = formatHeaderTimezone({
 		now,
 		timezone: savedTimezone,
 		timeFormat,
 	});
-	const hasChanges = draftTimezone !== savedTimezone;
+	const selectedTimezone = open ? draftTimezone : savedTimezone;
+	const hasChanges = selectedTimezone !== savedTimezone;
 
 	async function handleSave() {
 		setPending(true);
 
 		try {
-			const result = await updateTimezone(draftTimezone);
+			const result = await updateTimezone(selectedTimezone);
 
 			if (!result) {
 				toast.error("An error occurred while updating timezone");
+				setPending(false);
 				return;
 			}
 
 			if (!result.success) {
 				toast.error(result.error || "Failed to update timezone");
+				setPending(false);
 				return;
 			}
 
 			toast.success("Timezone updated successfully");
+			setPending(false);
 			setOpen(false);
 			router.refresh();
 		} catch {
 			toast.error("An error occurred while updating timezone");
-		} finally {
 			setPending(false);
 		}
 	}
@@ -145,7 +116,7 @@ export function HeaderTimezoneControl() {
 					<p className="break-all text-muted-foreground text-sm">{savedTimezone}</p>
 				</div>
 
-				<TimezonePicker value={draftTimezone} onChange={setDraftTimezone} disabled={pending} />
+				<TimezonePicker value={selectedTimezone} onChange={setDraftTimezone} disabled={pending} />
 
 				<Button
 					aria-busy={pending}

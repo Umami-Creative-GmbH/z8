@@ -14,7 +14,7 @@ import {
 	isScheduleXEventElement,
 	resolveClickableCalendarEvent,
 	shouldRetryRequirementHeaderInjection,
-} from "./schedule-x-calendar";
+} from "./schedule-x-calendar-utils";
 
 const completedWorkPeriod: WorkPeriodEvent = {
 	id: "work-completed",

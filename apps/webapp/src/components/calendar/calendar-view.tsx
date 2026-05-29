@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DateTime } from "luxon";
 import type { SelectableEmployee } from "@/components/employee-select/types";
 import { useUserTimezone } from "@/components/providers/user-preferences-provider";
@@ -50,11 +50,13 @@ export function CalendarView({
 	const { isManagerOrAbove } = useOrganization();
 	const viewerTimeZone = useUserTimezone();
 	const initialEmployeeId = initialSelectedEmployeeId ?? currentEmployeeId ?? null;
+	const initialFilterEmployeeId = initialEmployeeId ?? undefined;
 
 	// View mode state
 	const [viewMode, setViewMode] = useState<ViewMode>("week");
 
 	// Selected employee for calendar view (defaults to current user)
+	const [previousInitialEmployeeId, setPreviousInitialEmployeeId] = useState(initialEmployeeId);
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(initialEmployeeId);
 	const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
 
@@ -78,25 +80,24 @@ export function CalendarView({
 		showTimeEntries: false,
 		showWorkPeriods: true,
 		// Calendar pages pass the authenticated employee, keeping this scoped by default.
-		employeeId: initialEmployeeId ?? undefined,
+		employeeId: initialFilterEmployeeId,
 	});
 
-	useEffect(() => {
+	if (previousInitialEmployeeId !== initialEmployeeId) {
+		setPreviousInitialEmployeeId(initialEmployeeId);
 		setSelectedEmployeeId(initialEmployeeId);
 		setSelectedEmployeeName(null);
 		setFilters((prev) => {
-			const employeeId = initialEmployeeId ?? undefined;
-
-			if (prev.employeeId === employeeId) {
+			if (prev.employeeId === initialFilterEmployeeId) {
 				return prev;
 			}
 
 			return {
 				...prev,
-				employeeId,
+				employeeId: initialFilterEmployeeId,
 			};
 		});
-	}, [initialEmployeeId]);
+	}
 
 	const getEmployeeDisplayName = (employee?: SelectableEmployee) => {
 		if (!employee) return null;

@@ -19,7 +19,8 @@ import {
 } from "@/lib/effect/services/teams-compliance.service";
 import { createLogger } from "@/lib/logger";
 import { buildComplianceCard } from "../cards/compliance-card";
-import { compose, withPermission, withRateLimit } from "./middleware";
+import { compose, withPermission } from "./middleware/permissions.middleware";
+import { withRateLimit } from "./middleware/rate-limit.middleware";
 import { env } from "@/env";
 
 const logger = createLogger("TeamsCommand:Compliance");

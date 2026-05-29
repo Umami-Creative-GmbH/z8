@@ -13,17 +13,11 @@ import { db } from "@/db";
 import { organizationEmailConfig } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault";
-import {
-	ConsoleTransport,
-	createSystemResendTransport,
-	createSystemSmtpTransport,
-	ResendTransport,
-	SmtpTransport,
-	type EmailMessage,
-	type EmailTransport,
-	type EmailTransportResult,
-} from "./transports";
 import { env } from "@/env";
+import type { EmailMessage, EmailTransport, EmailTransportResult } from "./transports/base";
+import { ConsoleTransport } from "./transports/console-transport";
+import { createSystemResendTransport, ResendTransport } from "./transports/resend-transport";
+import { createSystemSmtpTransport, SmtpTransport } from "./transports/smtp-transport";
 
 const logger = createLogger("EmailService");
 

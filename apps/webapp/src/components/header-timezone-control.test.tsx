@@ -4,7 +4,8 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DateTime } from "luxon";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { HeaderTimezoneControl, formatHeaderTimezone } from "./header-timezone-control";
+import { HeaderTimezoneControl } from "./header-timezone-control";
+import { formatHeaderTimezone } from "./header-timezone-control-utils";
 
 const mocks = vi.hoisted(() => ({
 	refresh: vi.fn(),

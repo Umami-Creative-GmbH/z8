@@ -18,8 +18,8 @@ import { user } from "@/db/auth-schema";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { updateMessage } from "./bot-adapter";
+import { buildResolvedApprovalCard } from "./cards/approval-card";
 import { getStoredConversation } from "./conversation-manager";
-import { buildResolvedApprovalCard } from "./cards";
 import { TeamsError } from "./types";
 import type { ResolvedTeamsUser, ResolvedTenant, ApprovalCardData } from "./types";
 

@@ -12,7 +12,7 @@ import { user } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry, calendarConnection, employee, syncedAbsence } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import type { CalendarSyncJobData, JobResult } from "@/lib/queue";
-import { mapAbsenceToCalendarEvent } from "../domain";
+import { mapAbsenceToCalendarEvent } from "../domain/event-mapper";
 import { getCalendarProvider, isTokenExpired } from "../providers";
 import { getCalendarTokens, storeCalendarTokens } from "../token-store";
 
