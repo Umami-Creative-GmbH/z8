@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CalendarView } from "./calendar-view";
 
@@ -126,6 +126,28 @@ describe("CalendarView", () => {
 		);
 
 		expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-2" });
+	});
+
+	it("updates filters when the route selected employee changes", async () => {
+		const { rerender } = render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId="employee-2"
+			/>,
+		);
+
+		rerender(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId="employee-3"
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-3" });
+		});
 	});
 
 	it("selecting staff routes to their calendar and updates filters", () => {

@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import type { SelectableEmployee } from "@/components/employee-select";
+import { useEffect, useState } from "react";
 import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useOrganization } from "@/hooks/use-organization";
-import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
 import { useRouter } from "@/navigation";
@@ -42,7 +40,6 @@ export function CalendarView({
 
 	// Selected employee for calendar view (defaults to current user)
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(initialEmployeeId);
-	const [, setSelectedEmployeeName] = useState<string | null>(null);
 
 	// Current date range for data fetching
 	const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -65,12 +62,27 @@ export function CalendarView({
 		employeeId: initialEmployeeId ?? undefined,
 	});
 
+	useEffect(() => {
+		setSelectedEmployeeId(initialEmployeeId);
+		setFilters((prev) => {
+			const employeeId = initialEmployeeId ?? undefined;
+
+			if (prev.employeeId === employeeId) {
+				return prev;
+			}
+
+			return {
+				...prev,
+				employeeId,
+			};
+		});
+	}, [initialEmployeeId]);
+
 	// Handle employee selection change
-	const handleEmployeeChange = (employeeId: string | null, employee?: SelectableEmployee) => {
+	const handleEmployeeChange = (employeeId: string | null) => {
 		const nextEmployeeId = employeeId ?? currentEmployeeId ?? null;
 
 		setSelectedEmployeeId(nextEmployeeId);
-		setSelectedEmployeeName(employee ? buildAuthUserDisplayName(employee.user) || null : null);
 		setFilters((prev) => ({
 			...prev,
 			// Always prefer the explicit selection, falling back to the current user.
