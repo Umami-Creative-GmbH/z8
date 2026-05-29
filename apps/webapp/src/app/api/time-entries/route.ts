@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
@@ -328,6 +328,9 @@ export async function POST(request: NextRequest) {
 		}
 
 		const entry = await db.transaction(async (tx) => {
+			const lockKey = `${activeOrgId}:${currentEmployee.id}`;
+			await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+
 			const [activePeriod] = await tx
 				.select()
 				.from(workPeriod)

@@ -23,7 +23,8 @@ const mockState = vi.hoisted(() => {
 	const txWhere = vi.fn(() => ({ limit: txLimit }));
 	const txFrom = vi.fn(() => ({ where: txWhere }));
 	const txSelect = vi.fn(() => ({ from: txFrom }));
-	const txClient = { insert, select, update };
+	const txExecute = vi.fn(async () => undefined);
+	const txClient = { execute: txExecute, insert, select, update };
 	const transaction = vi.fn(async (callback: (tx: unknown) => Promise<unknown>) =>
 		callback(txClient),
 	);
@@ -51,6 +52,7 @@ const mockState = vi.hoisted(() => {
 		txSelect,
 		txWhere,
 		txClient,
+		txExecute,
 		update,
 		updateReturning,
 		updateSet,
@@ -169,6 +171,7 @@ vi.mock("drizzle-orm", () => ({
 	and: (...conditions: unknown[]) => ({ conditions, type: "and" }),
 	eq: (column: unknown, value: unknown) => ({ column, type: "eq", value }),
 	isNull: (column: unknown) => ({ column, type: "isNull" }),
+	sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, type: "sql", values }),
 }));
 
 const { GET, POST } = await import("./route");
@@ -330,6 +333,7 @@ describe("POST /api/time-entries", () => {
 		mockState.runPromise.mockReset();
 		mockState.transaction.mockClear();
 		mockState.txLimit.mockReset();
+		mockState.txExecute.mockReset();
 		mockState.txSelect.mockClear();
 		mockState.txFrom.mockClear();
 		mockState.txWhere.mockClear();
@@ -358,7 +362,9 @@ describe("POST /api/time-entries", () => {
 			])
 			.mockResolvedValue([]);
 		mockState.txClient.select = mockState.txSelect;
+		mockState.txClient.execute = mockState.txExecute;
 		mockState.txLimit.mockResolvedValue([]);
+		mockState.txExecute.mockResolvedValue(undefined);
 		mockState.createTimeEntry.mockResolvedValue({ id: "entry-1" });
 		mockState.runPromise.mockResolvedValue({ id: "entry-1" });
 		mockState.values.mockResolvedValue(undefined);
@@ -417,6 +423,32 @@ describe("POST /api/time-entries", () => {
 		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
 			expect.objectContaining({ location: "48.137,11.575" }),
 			expect.anything(),
+		);
+	});
+
+	it("acquires a per-employee transaction lock before active period lookup", async () => {
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					type: "clock_in",
+					timestamp: "2026-05-04T09:00:00.000Z",
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(201);
+		expect(mockState.txExecute).toHaveBeenCalledWith(
+			expect.objectContaining({
+				strings: expect.arrayContaining([
+					"select pg_advisory_xact_lock(hashtextextended(",
+					", 0))",
+				]),
+				values: ["org-1:employee-1"],
+			}),
+		);
+		expect(mockState.txExecute.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.txSelect.mock.invocationCallOrder[0],
 		);
 	});
 
