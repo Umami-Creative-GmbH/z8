@@ -15,6 +15,12 @@ const mockState = vi.hoisted(() => {
 	const select = vi.fn(() => ({ from }));
 	const values = vi.fn(async () => undefined);
 	const insert = vi.fn(() => ({ values }));
+	const updateWhere = vi.fn(async () => undefined);
+	const updateSet = vi.fn(() => ({ where: updateWhere }));
+	const update = vi.fn(() => ({ set: updateSet }));
+	const transaction = vi.fn(async (callback: (tx: unknown) => Promise<unknown>) =>
+		callback({ insert, update }),
+	);
 
 	return {
 		UnsupportedAuthorizationConditionError,
@@ -31,6 +37,10 @@ const mockState = vi.hoisted(() => {
 		requireBillingForMutation: vi.fn(),
 		runPromise: vi.fn(),
 		select,
+		transaction,
+		update,
+		updateSet,
+		updateWhere,
 		values,
 	};
 });
@@ -50,7 +60,12 @@ vi.mock("next/server", async () => {
 vi.mock("@/db", () => ({
 	db: {
 		insert: mockState.insert,
+		query: {
+			userSettings: { findFirst: vi.fn(async () => ({ timezone: "Europe/Berlin" })) },
+		},
 		select: mockState.select,
+		transaction: mockState.transaction,
+		update: mockState.update,
 	},
 }));
 
@@ -61,15 +76,27 @@ vi.mock("@/db/schema", () => ({
 		organizationId: "employee.organizationId",
 		userId: "employee.userId",
 	},
+	project: {
+		id: "project.id",
+		organizationId: "project.organizationId",
+	},
+	projectAssignment: {
+		projectId: "projectAssignment.projectId",
+		organizationId: "projectAssignment.organizationId",
+		employeeId: "projectAssignment.employeeId",
+		teamId: "projectAssignment.teamId",
+	},
 	timeEntry: {
 		employeeId: "timeEntry.employeeId",
 		organizationId: "timeEntry.organizationId",
 	},
 	workPeriod: {
+		endTime: "workPeriod.endTime",
 		employeeId: "workPeriod.employeeId",
 		id: "workPeriod.id",
 		organizationId: "workPeriod.organizationId",
 	},
+	userSettings: { userId: "userSettings.userId" },
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -270,6 +297,10 @@ describe("POST /api/time-entries", () => {
 		mockState.headers.mockReset();
 		mockState.limit.mockReset();
 		mockState.runPromise.mockReset();
+		mockState.transaction.mockClear();
+		mockState.update.mockClear();
+		mockState.updateSet.mockClear();
+		mockState.updateWhere.mockClear();
 		mockState.values.mockReset();
 		mockState.requireBillingForMutation.mockReset();
 		mockState.isBillingMutationAllowed.mockReset();
@@ -279,12 +310,15 @@ describe("POST /api/time-entries", () => {
 			session: { activeOrganizationId: "org-1" },
 			user: { id: "user-1" },
 		});
-		mockState.limit.mockResolvedValue([
-			{
-				id: "employee-1",
-				organizationId: "org-1",
-			},
-		]);
+		mockState.limit
+			.mockResolvedValueOnce([
+				{
+					id: "employee-1",
+					organizationId: "org-1",
+					teamId: "team-1",
+				},
+			])
+			.mockResolvedValue([]);
 		mockState.runPromise.mockResolvedValue({ id: "entry-1" });
 		mockState.values.mockResolvedValue(undefined);
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
@@ -361,5 +395,68 @@ describe("POST /api/time-entries", () => {
 				workLocationType: "office",
 			}),
 		);
+	});
+
+	it("rejects clock-out without an active work period before inserting a time entry", async () => {
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					type: "clock_out",
+					timestamp: "2026-05-04T09:00:00.000Z",
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({ error: "No active work period found" });
+		expect(mockState.runPromise).not.toHaveBeenCalled();
+		expect(mockState.values).not.toHaveBeenCalled();
+	});
+
+	it("rejects duplicate clock-in when an active work period already exists", async () => {
+		mockState.limit.mockReset();
+		mockState.limit
+			.mockResolvedValueOnce([{ id: "employee-1", organizationId: "org-1", teamId: "team-1" }])
+			.mockResolvedValueOnce([{ id: "period-1", startTime: new Date("2026-05-04T08:00:00.000Z") }]);
+
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					type: "clock_in",
+					timestamp: "2026-05-04T09:00:00.000Z",
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({ error: "Active work period already exists" });
+		expect(mockState.runPromise).not.toHaveBeenCalled();
+		expect(mockState.values).not.toHaveBeenCalled();
+	});
+
+	it("rejects cross-organization project ids on clock-out before inserting a time entry", async () => {
+		mockState.limit.mockReset();
+		mockState.limit
+			.mockResolvedValueOnce([{ id: "employee-1", organizationId: "org-1", teamId: "team-1" }])
+			.mockResolvedValueOnce([{ id: "period-1", startTime: new Date("2026-05-04T08:00:00.000Z") }])
+			.mockResolvedValueOnce([]);
+
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					type: "clock_out",
+					timestamp: "2026-05-04T09:00:00.000Z",
+					projectId: "foreign-project-1",
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({ error: "Project not found" });
+		expect(mockState.runPromise).not.toHaveBeenCalled();
+		expect(mockState.values).not.toHaveBeenCalled();
 	});
 });

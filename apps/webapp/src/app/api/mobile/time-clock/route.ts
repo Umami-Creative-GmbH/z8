@@ -54,9 +54,7 @@ export async function POST(request: Request) {
 		await requireMobileEmployee(session.user.id, activeOrganizationId);
 		const browserTimezone = isValidIanaTimezone(parsedBody.data.browserTimezone)
 			? parsedBody.data.browserTimezone
-			: isValidIanaTimezone(parsedBody.data.timezone)
-				? parsedBody.data.timezone
-				: undefined;
+			: undefined;
 
 		const result =
 			parsedBody.data.action === "clock_in"

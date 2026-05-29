@@ -35,6 +35,8 @@ export interface QueuedClockEvent {
 	workCategoryId?: string;
 	/** Optional work location type for clock-in */
 	workLocationType?: WorkLocationType;
+	/** Browser timezone captured when the user clicked clock in/out */
+	browserTimezone?: string | null;
 }
 
 /**

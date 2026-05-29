@@ -16,15 +16,6 @@ function normalizeWorkLocationType(value) {
 	return undefined;
 }
 
-function getBrowserTimezone() {
-	try {
-		const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-		return typeof timezone === "string" && timezone.length > 0 ? timezone : undefined;
-	} catch {
-		return undefined;
-	}
-}
-
 /**
  * Sync a single clock event to the server
  * @param {Object} event - The queued clock event
@@ -46,7 +37,7 @@ async function syncEvent(event) {
 		if (event.location) body.location = event.location;
 		if (event.projectId) body.projectId = event.projectId;
 		if (event.workCategoryId) body.workCategoryId = event.workCategoryId;
-		const browserTimezone = event.browserTimezone || getBrowserTimezone();
+		const browserTimezone = event.browserTimezone ?? null;
 		if (browserTimezone) body.browserTimezone = browserTimezone;
 		const workLocationType = normalizeWorkLocationType(event.workLocationType);
 		if (workLocationType) body.workLocationType = workLocationType;

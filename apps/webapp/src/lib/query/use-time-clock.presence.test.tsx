@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 	getTimeClockStatus: vi.fn(),
 	updateTimeEntryNotes: vi.fn(),
 	useOfflineClock: vi.fn(),
+	getBrowserTimezone: vi.fn(),
 }));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
@@ -24,6 +25,10 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
 
 vi.mock("@/hooks/use-offline-clock", () => ({
 	useOfflineClock: mocks.useOfflineClock,
+}));
+
+vi.mock("@/lib/time-tracking/timezone-capture", () => ({
+	getBrowserTimezone: mocks.getBrowserTimezone,
 }));
 
 import { queryKeys } from "./keys";
@@ -51,6 +56,7 @@ describe("useTimeClock presence invalidation", () => {
 			isClockedIn: false,
 			activeWorkPeriod: null,
 		});
+		mocks.getBrowserTimezone.mockReturnValue("Europe/Berlin");
 	});
 
 	it("invalidates employee clock statuses after clock in", async () => {
@@ -108,5 +114,50 @@ describe("useTimeClock presence invalidation", () => {
 			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.employeeClockStatuses.all });
 			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.timeClock.breakStatus() });
 		});
+	});
+
+	it("stores browser timezone at click time when queuing offline clock-in", async () => {
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const queueClockEvent = vi.fn(async () => ({ success: true, eventId: "queued-1" }));
+		mocks.useOfflineClock.mockReturnValue({
+			isOnline: false,
+			isOffline: true,
+			pendingCount: 0,
+			isSyncing: false,
+			queueClockEvent,
+		});
+
+		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		await result.current.clockIn({ workLocationType: "remote" });
+
+		expect(queueClockEvent).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "clock_in",
+				workLocationType: "remote",
+				browserTimezone: "Europe/Berlin",
+			}),
+		);
+	});
+
+	it("uses explicit browser timezone when queuing offline clock-out", async () => {
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const queueClockEvent = vi.fn(async () => ({ success: true, eventId: "queued-1" }));
+		mocks.useOfflineClock.mockReturnValue({
+			isOnline: false,
+			isOffline: true,
+			pendingCount: 0,
+			isSyncing: false,
+			queueClockEvent,
+		});
+
+		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		await result.current.clockOut({ browserTimezone: "America/New_York" });
+
+		expect(queueClockEvent).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "clock_out",
+				browserTimezone: "America/New_York",
+			}),
+		);
 	});
 });

@@ -3,7 +3,7 @@ import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { employee, timeEntry, userSettings, workPeriod } from "@/db/schema";
+import { employee, project, timeEntry, userSettings, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
@@ -242,72 +242,86 @@ export async function POST(request: NextRequest) {
 		const deviceInfo = resolvedHeaders.get("user-agent") || "unknown";
 		const entryTime = timestamp ? new Date(timestamp) : new Date();
 		const savedTimezone = (await getSavedUserTimezone(session.user.id)) ?? "UTC";
-		const requestTimezone = isValidIanaTimezone(browserTimezone)
-			? browserTimezone
-			: isValidIanaTimezone(timezone)
-				? timezone
-				: null;
+		const effectiveTimezone = isValidIanaTimezone(timezone) ? timezone : savedTimezone;
+		const requestBrowserTimezone = isValidIanaTimezone(browserTimezone) ? browserTimezone : null;
 		const timezoneCapture = resolveTimeEntryTimezoneCapture({
 			timestamp: entryTime,
-			browserTimezone: requestTimezone,
-			fallbackTimezone: savedTimezone,
+			browserTimezone: requestBrowserTimezone,
+			fallbackTimezone: effectiveTimezone,
 			browserSource: "browser",
 			fallbackSource: "user_setting",
 		});
 
-		const effect = Effect.gen(function* (_) {
-			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(
-				timeEntryService.createTimeEntry({
-					employeeId: currentEmployee.id,
-					organizationId: activeOrgId,
-					type,
-					timestamp: entryTime,
-					createdBy: session.user.id,
-					notes,
-					location,
-					ipAddress,
-					deviceInfo,
-					...timezoneCapture,
-				}),
-			);
-		});
+		const [activePeriod] = await db
+			.select()
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.employeeId, currentEmployee.id),
+					eq(workPeriod.organizationId, activeOrgId),
+					isNull(workPeriod.endTime),
+				),
+			)
+			.limit(1);
 
-		const entry = await runtime.runPromise(effect);
+		if (type === "clock_in" && activePeriod) {
+			return NextResponse.json({ error: "Active work period already exists" }, { status: 400 });
+		}
 
-		// Manage work periods based on entry type
-		if (type === "clock_in") {
-			// Create a new work period with organizationId
-			await db.insert(workPeriod).values({
-				employeeId: currentEmployee.id,
-				organizationId: activeOrgId,
-				clockInId: entry.id,
-				startTime: entryTime,
-				isActive: true,
-				workLocationType: resolvedWorkLocationType,
-			});
-		} else if (type === "clock_out") {
-			// Find and close the active work period for this employee in this org
-			const [activePeriod] = await db
+		if (type === "clock_out" && !activePeriod) {
+			return NextResponse.json({ error: "No active work period found" }, { status: 400 });
+		}
+
+		if (projectId) {
+			const [assignedProject] = await db
 				.select()
-				.from(workPeriod)
-				.where(
-					and(
-						eq(workPeriod.employeeId, currentEmployee.id),
-						eq(workPeriod.organizationId, activeOrgId),
-						isNull(workPeriod.endTime),
-					),
-				)
+				.from(project)
+				.where(and(eq(project.id, projectId), eq(project.organizationId, activeOrgId)))
 				.limit(1);
 
-			if (activePeriod) {
+			if (!assignedProject) {
+				return NextResponse.json({ error: "Project not found" }, { status: 400 });
+			}
+		}
+
+		const entry = await db.transaction(async (tx) => {
+			const effect = Effect.gen(function* (_) {
+				const timeEntryService = yield* _(TimeEntryService);
+				return yield* _(
+					timeEntryService.createTimeEntry({
+						employeeId: currentEmployee.id,
+						organizationId: activeOrgId,
+						type,
+						timestamp: entryTime,
+						createdBy: session.user.id,
+						notes,
+						location,
+						ipAddress,
+						deviceInfo,
+						...timezoneCapture,
+					}),
+				);
+			});
+
+			const createdEntry = await runtime.runPromise(effect);
+
+			if (type === "clock_in") {
+				await tx.insert(workPeriod).values({
+					employeeId: currentEmployee.id,
+					organizationId: activeOrgId,
+					clockInId: createdEntry.id,
+					startTime: entryTime,
+					isActive: true,
+					workLocationType: resolvedWorkLocationType,
+				});
+			} else {
 				const durationMs = entryTime.getTime() - activePeriod.startTime.getTime();
 				const durationMinutes = Math.round(durationMs / 60000);
 
-				await db
+				await tx
 					.update(workPeriod)
 					.set({
-						clockOutId: entry.id,
+						clockOutId: createdEntry.id,
 						endTime: entryTime,
 						durationMinutes,
 						isActive: false,
@@ -315,7 +329,9 @@ export async function POST(request: NextRequest) {
 					})
 					.where(eq(workPeriod.id, activePeriod.id));
 			}
-		}
+
+			return createdEntry;
+		});
 
 		return NextResponse.json({ entry }, { status: 201 });
 	} catch (error) {

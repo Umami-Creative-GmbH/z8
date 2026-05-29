@@ -113,11 +113,13 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		}) => {
 			// When offline, queue the event for later sync
 			if (isOffline) {
+				const browserTimezone = params?.browserTimezone ?? getBrowserTimezone();
 				const result = await queueClockEvent({
 					type: "clock_in",
 					timestamp: Date.now(),
 					organizationId: "pending", // Will be resolved on sync
 					workLocationType: params?.workLocationType,
+					browserTimezone,
 				});
 
 				if (result.success) {
@@ -175,12 +177,14 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		}) => {
 			// When offline, queue the event for later sync
 			if (isOffline) {
+				const browserTimezone = params?.browserTimezone ?? getBrowserTimezone();
 				const result = await queueClockEvent({
 					type: "clock_out",
 					timestamp: Date.now(),
 					organizationId: "pending", // Will be resolved on sync
 					projectId: params?.projectId,
 					workCategoryId: params?.workCategoryId,
+					browserTimezone,
 				});
 
 				if (result.success) {
@@ -277,7 +281,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		isSyncing,
 
 		// Mutations
-		clockIn: (params?: { workLocationType?: WorkLocationType }) =>
+		clockIn: (params?: { workLocationType?: WorkLocationType; browserTimezone?: string | null }) =>
 			clockInMutation.mutateAsync(params ?? {}),
 		clockOut: clockOutMutation.mutateAsync,
 		addBreak: addBreakMutation.mutateAsync,
