@@ -91,6 +91,19 @@ export function getWorkBalanceBatchCutoffDate(now = new Date()): string {
 	return DateTime.fromJSDate(now, { zone: "utc" }).toISODate()!;
 }
 
+function toUtcIsoDate(value: Date | string | null | undefined) {
+	if (!value) return null;
+	const date =
+		value instanceof Date
+			? DateTime.fromJSDate(value, { zone: "utc" })
+			: DateTime.fromISO(value, { zone: "utc" });
+	return date.isValid ? date.toISODate() : null;
+}
+
+function maxIsoDate(left: string, right: string) {
+	return left > right ? left : right;
+}
+
 export function shouldIncludeWorkBalanceInBatch(
 	balance: { isDirty: boolean; computedThroughDate: string } | null,
 	todayDate: string,
@@ -143,9 +156,12 @@ async function getFirstRelevantDate(
 ): Promise<string | null> {
 	const scopedEmployee = await dbClient.query.employee.findFirst({
 		where: and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
-		columns: { id: true },
+		columns: { id: true, startDate: true },
 	});
 	if (!scopedEmployee) return null;
+
+	const employeeStartDate = toUtcIsoDate(scopedEmployee.startDate);
+	if (employeeStartDate) return employeeStartDate;
 
 	const [firstWorkPeriod] = await dbClient
 		.select({ value: min(workPeriod.startTime) })
@@ -164,6 +180,22 @@ async function getFirstRelevantDate(
 		: null;
 
 	return workDate;
+}
+
+async function getEmployeeStartDate(
+	input: {
+		employeeId: string;
+		organizationId: string;
+	},
+	dbClient: WorkBalanceDbClient = db,
+): Promise<string | null> {
+	const scopedEmployee = await dbClient.query.employee.findFirst({
+		where: and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
+		columns: { id: true, startDate: true },
+	});
+	if (!scopedEmployee) return null;
+
+	return toUtcIsoDate(scopedEmployee.startDate);
 }
 
 async function getActualMinutes(input: {
@@ -199,6 +231,18 @@ export async function computeEmployeeWorkBalance(input: {
 
 	const through = DateTime.fromJSDate(input.now ?? new Date(), { zone: "utc" }).startOf("day");
 	const start = DateTime.fromISO(firstDate, { zone: "utc" }).startOf("day");
+	if (start > through) {
+		const throughDate = through.toISODate()!;
+		return buildWorkBalanceValues({
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			actualMinutes: 0,
+			requiredMinutes: 0,
+			computedFromDate: throughDate,
+			computedThroughDate: throughDate,
+			computedAt: input.now ?? new Date(),
+		});
+	}
 	const startDate = start.toJSDate();
 	const endDate = through.endOf("day").toJSDate();
 
@@ -233,6 +277,7 @@ async function sumClosedMonthlyPeriodTotalsBefore(
 		employeeId: string;
 		organizationId: string;
 		beforeDate: string;
+		fromDate?: string | null;
 	},
 	dbClient: WorkBalanceDbClient = db,
 ) {
@@ -250,6 +295,7 @@ async function sumClosedMonthlyPeriodTotalsBefore(
 				eq(employeeWorkBalancePeriod.periodType, "month"),
 				eq(employeeWorkBalancePeriod.isClosed, true),
 				lt(employeeWorkBalancePeriod.periodStart, input.beforeDate),
+				...(input.fromDate ? [gte(employeeWorkBalancePeriod.periodEnd, input.fromDate)] : []),
 			),
 		);
 
@@ -301,7 +347,35 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 		});
 	const hotWindow = getHotWindowRange(now);
 	const fullRebuildStartDate = forceFullRebuild ? await getFirstRelevantDate(input, dbClient) : null;
-	const affectedStartDate = fullRebuildStartDate ?? input.dirtyFromDate ?? hotWindow.startDate;
+	const employeeStartDate = forceFullRebuild
+		? null
+		: await getEmployeeStartDate(input, dbClient);
+	const calculationStartDate = employeeStartDate ?? fullRebuildStartDate;
+	if (calculationStartDate && calculationStartDate > hotWindow.endDate) {
+		await dbClient.delete(employeeWorkBalancePeriod).where(
+			and(
+				eq(employeeWorkBalancePeriod.employeeId, input.employeeId),
+				eq(employeeWorkBalancePeriod.organizationId, input.organizationId),
+			),
+		);
+		await upsertEmployeeWorkBalance(
+			buildWorkBalanceValues({
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+				actualMinutes: 0,
+				requiredMinutes: 0,
+				computedFromDate: hotWindow.endDate,
+				computedThroughDate: hotWindow.endDate,
+				computedAt: now,
+			}),
+			{ dbClient, refreshStartedAt: now },
+		);
+		return { updated: true };
+	}
+	const requestedStartDate = fullRebuildStartDate ?? input.dirtyFromDate ?? hotWindow.startDate;
+	const affectedStartDate = calculationStartDate
+		? maxIsoDate(requestedStartDate, calculationStartDate)
+		: requestedStartDate;
 	const closedMonthEnd = DateTime.fromISO(hotWindow.startDate, { zone: "utc" })
 		.minus({ days: 1 })
 		.toISODate()!;
@@ -317,6 +391,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 				periodType: "month",
 				periodStart: month.periodStart,
 				periodEnd: month.periodEnd,
+				calculationStartDate,
 				isClosed: true,
 				now,
 			});
@@ -330,6 +405,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 				organizationId: input.organizationId,
 				dbClient,
 				dateInYear: `${year}-01-01`,
+				calculationStartDate,
 				now,
 			});
 		}
@@ -342,6 +418,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 		periodType: "month",
 		periodStart: hotWindow.startDate,
 		periodEnd: hotWindow.endDate,
+		calculationStartDate,
 		isClosed: false,
 		now,
 	});
@@ -350,6 +427,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 			employeeId: input.employeeId,
 			organizationId: input.organizationId,
 			beforeDate: hotWindow.startDate,
+			fromDate: calculationStartDate,
 		},
 		dbClient,
 	);
@@ -360,7 +438,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 			organizationId: input.organizationId,
 			actualMinutes: closedTotals.actualMinutes + hotWindowValues.actualMinutes,
 			requiredMinutes: closedTotals.requiredMinutes + hotWindowValues.requiredMinutes,
-			computedFromDate: closedTotals.firstPeriodStart ?? hotWindow.startDate,
+			computedFromDate: calculationStartDate ?? closedTotals.firstPeriodStart ?? hotWindow.startDate,
 			computedThroughDate: hotWindow.endDate,
 			computedAt: now,
 		}),
