@@ -132,6 +132,7 @@ export function CalendarView({
 		workBalance,
 		calendarTimezone,
 		isLoading,
+		isFetching,
 		error,
 		refetch,
 	} = useCalendarData({
@@ -295,6 +296,7 @@ export function CalendarView({
 							onMonthChange={setCurrentMonth}
 							onDayClick={handleDayClick}
 							onRefresh={refetch}
+							isSummaryLoading={isFetching}
 						/>
 					) : (
 						<ScheduleXWrapper
@@ -308,6 +310,7 @@ export function CalendarView({
 							onTimeRangeSelect={handleTimeRangeSelect}
 							onRefresh={refetch}
 							workHoursData={workHoursData}
+							isSummaryLoading={isFetching}
 						/>
 					)}
 				</div>

@@ -7,11 +7,13 @@ import { describe, expect, it } from "vitest";
 import type { WorkPeriodEvent } from "@/lib/calendar/types";
 import {
 	buildCalendarTimeZoneDate,
+	buildCurrentTimeIndicatorPosition,
 	filterEventsForScheduleXView,
 	hasExceededPointerDragThreshold,
 	isIntentionalRangePointerDown,
 	isScheduleXEventElement,
 	resolveClickableCalendarEvent,
+	shouldRetryRequirementHeaderInjection,
 } from "./schedule-x-calendar";
 
 const completedWorkPeriod: WorkPeriodEvent = {
@@ -87,7 +89,53 @@ describe("calendar timezone source", () => {
 
 		expect(source).toContain("timeZone: explicitTimeZone");
 		expect(source).toContain("explicitTimeZone ?? viewerTimeZone");
+		expect(source).not.toContain("timezone: timeZone");
 		expect(source).not.toContain("useOrganizationTimezone");
+	});
+});
+
+describe("calendar current-time indicator styles", () => {
+	it("styles the custom current-time indicator", () => {
+		const source = readFileSync(
+			join(process.cwd(), "src/components/calendar/schedule-x-calendar.css"),
+			"utf8",
+		);
+
+		expect(source).toContain(".z8-current-time-indicator");
+		expect(source).toContain("background: rgb(239 68 68)");
+	});
+});
+
+describe("calendar summary skeleton styles", () => {
+	it("uses reduced-motion-safe skeleton styling", () => {
+		const source = readFileSync(
+			join(process.cwd(), "src/components/calendar/schedule-x-calendar.css"),
+			"utf8",
+		);
+
+		expect(source).toContain(".z8-requirement-header-summary--skeleton");
+		expect(source).toContain("@media (prefers-reduced-motion: reduce)");
+		expect(source).toContain("animation: none");
+	});
+});
+
+describe("shouldRetryRequirementHeaderInjection", () => {
+	it("retries while Schedule-X has not rendered every visible header cell", () => {
+		expect(shouldRetryRequirementHeaderInjection({ headerCellCount: 0, visibleDateCount: 7 })).toBe(
+			true,
+		);
+		expect(shouldRetryRequirementHeaderInjection({ headerCellCount: 4, visibleDateCount: 7 })).toBe(
+			true,
+		);
+	});
+
+	it("stops when all visible header cells are available", () => {
+		expect(shouldRetryRequirementHeaderInjection({ headerCellCount: 7, visibleDateCount: 7 })).toBe(
+			false,
+		);
+		expect(shouldRetryRequirementHeaderInjection({ headerCellCount: 1, visibleDateCount: 1 })).toBe(
+			false,
+		);
 	});
 });
 
@@ -145,5 +193,16 @@ describe("buildCalendarTimeZoneDate", () => {
 			"10:15",
 		);
 		expect(selectedDate.toISOString()).toBe("2026-05-29T08:15:00.000Z");
+	});
+});
+
+describe("buildCurrentTimeIndicatorPosition", () => {
+	it("positions now in the selected timezone on the neutral calendar grid", () => {
+		const position = buildCurrentTimeIndicatorPosition(
+			new Date("2026-05-26T05:00:00.000Z"),
+			"Europe/Berlin",
+		);
+
+		expect(position).toEqual({ dateKey: "2026-05-26", topPercent: (7 * 60 * 100) / 1440 });
 	});
 });

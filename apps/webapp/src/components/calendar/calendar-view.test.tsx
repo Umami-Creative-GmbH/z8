@@ -16,6 +16,7 @@ const { capturedCalendarFilters, mockCalendarData, push, refetch } = vi.hoisted(
 		workBalance: null,
 		calendarTimezone: null as string | null,
 		isLoading: false,
+		isFetching: false,
 		error: null,
 	},
 }));
@@ -99,17 +100,24 @@ vi.mock("./year-calendar-view", () => ({
 
 vi.mock("./schedule-x-wrapper", () => ({
 	ScheduleXWrapper: ({
+		isSummaryLoading,
 		onTimeRangeSelect,
 		onViewModeChange,
 		timeZone,
 		viewMode,
 	}: {
+		isSummaryLoading?: boolean;
 		onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 		onViewModeChange: (mode: "month" | "year") => void;
 		timeZone?: string;
 		viewMode: string;
 	}) => (
-		<div data-testid="schedule-x-wrapper" data-view-mode={viewMode} data-time-zone={timeZone}>
+		<div
+			data-testid="schedule-x-wrapper"
+			data-view-mode={viewMode}
+			data-time-zone={timeZone}
+			data-summary-loading={String(isSummaryLoading)}
+		>
 			<button
 				type="button"
 				onClick={() =>
@@ -162,10 +170,12 @@ vi.mock("@/components/time-tracking/manual-time-entry-dialog", () => ({
 vi.mock("./month-work-summary-view", () => ({
 	MonthWorkSummaryView: ({
 		events,
+		isSummaryLoading,
 		onRefresh,
 		viewMode,
 	}: {
 		events: CalendarEvent[];
+		isSummaryLoading?: boolean;
 		onRefresh: () => void;
 		viewMode: string;
 	}) => (
@@ -173,6 +183,7 @@ vi.mock("./month-work-summary-view", () => ({
 			data-testid="month-work-summary-view"
 			data-view-mode={viewMode}
 			data-event-ids={events.map((event) => event.id).join(",")}
+			data-summary-loading={String(isSummaryLoading)}
 		>
 			<button type="button" onClick={onRefresh}>
 				Refresh month
@@ -211,6 +222,7 @@ describe("CalendarView", () => {
 		capturedCalendarFilters.length = 0;
 		mockCalendarData.events = [];
 		mockCalendarData.calendarTimezone = null;
+		mockCalendarData.isFetching = false;
 		push.mockClear();
 		refetch.mockClear();
 	});
@@ -348,6 +360,27 @@ describe("CalendarView", () => {
 
 		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-time-zone")).toBe(
 			"America/New_York",
+		);
+	});
+
+	it("passes background fetch state to Schedule-X summaries", () => {
+		mockCalendarData.isFetching = true;
+
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-summary-loading")).toBe(
+			"true",
+		);
+	});
+
+	it("passes background fetch state to month summaries", () => {
+		mockCalendarData.isFetching = true;
+
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		fireEvent.click(screen.getByRole("button", { name: "Month" }));
+
+		expect(screen.getByTestId("month-work-summary-view").getAttribute("data-summary-loading")).toBe(
+			"true",
 		);
 	});
 });

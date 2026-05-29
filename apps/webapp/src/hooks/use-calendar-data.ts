@@ -52,6 +52,7 @@ export interface UseCalendarDataResult {
 	calendarTimezone: string | null;
 	eventsByDate: Map<string, CalendarEvent[]>;
 	isLoading: boolean;
+	isFetching: boolean;
 	error: Error | null;
 	refetch: () => void;
 }
@@ -156,6 +157,7 @@ export function useCalendarData({
 			calendarTimezone: null,
 		},
 		isLoading,
+		isFetching,
 		error,
 	} = useQuery({
 		queryKey: queryKeys.calendar.events(organizationId, queryParams),
@@ -192,6 +194,7 @@ export function useCalendarData({
 		calendarTimezone: calendarData.calendarTimezone,
 		eventsByDate,
 		isLoading,
+		isFetching,
 		error: error instanceof Error ? error : null,
 		refetch,
 	};

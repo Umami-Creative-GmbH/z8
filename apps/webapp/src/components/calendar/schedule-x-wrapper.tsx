@@ -38,6 +38,7 @@ interface ScheduleXWrapperProps {
 	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
 	workHoursData?: DailyWorkHoursSummaries;
+	isSummaryLoading?: boolean;
 }
 
 /**

@@ -11,7 +11,6 @@ import {
 } from "@schedule-x/calendar";
 import { createCalendarControlsPlugin } from "@schedule-x/calendar-controls";
 
-import { createCurrentTimePlugin } from "@schedule-x/current-time";
 import { createEventModalPlugin } from "@schedule-x/event-modal";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
@@ -57,6 +56,7 @@ interface ScheduleXCalendarWrapperProps {
 	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
 	workHoursData?: DailyWorkHoursSummaries;
+	isSummaryLoading?: boolean;
 }
 
 // Map view mode to Schedule-X view names
@@ -104,6 +104,16 @@ function clearRequirementHeaderContent(container: HTMLDivElement) {
 	}
 }
 
+export function shouldRetryRequirementHeaderInjection({
+	headerCellCount,
+	visibleDateCount,
+}: {
+	headerCellCount: number;
+	visibleDateCount: number;
+}) {
+	return visibleDateCount > 0 && headerCellCount < visibleDateCount;
+}
+
 function roundToQuarterHour(minutes: number) {
 	return Math.max(0, Math.min(23 * 60 + 45, Math.round(minutes / 15) * 15));
 }
@@ -132,6 +142,17 @@ export function buildCalendarTimeZoneDate(dateValue: string, minutes: number, ti
 		.startOf("day")
 		.plus({ minutes })
 		.toJSDate();
+}
+
+export function buildCurrentTimeIndicatorPosition(now: Date, timeZone: string) {
+	const zonedNow = DateTime.fromJSDate(now, { zone: timeZone });
+	if (!zonedNow.isValid) return null;
+
+	const minutes = zonedNow.hour * 60 + zonedNow.minute + zonedNow.second / 60;
+	return {
+		dateKey: zonedNow.toFormat("yyyy-MM-dd"),
+		topPercent: (minutes * 100) / (24 * 60),
+	};
 }
 
 function getPointerDateTime(
@@ -193,6 +214,7 @@ export function ScheduleXCalendarWrapper({
 	onTimeRangeSelect,
 	onRefresh,
 	workHoursData = new Map(),
+	isSummaryLoading = false,
 }: ScheduleXCalendarWrapperProps) {
 	const { resolvedTheme } = useTheme();
 	const { t } = useTranslate();
@@ -210,7 +232,6 @@ export function ScheduleXCalendarWrapper({
 
 	// Create calendar plugins (must be stable references)
 	const [calendarControls] = useState(() => createCalendarControlsPlugin());
-	const [currentTimePlugin] = useState(() => createCurrentTimePlugin());
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
 	const selectionStartRef = useRef<RangeSelectionStart | null>(null);
 
@@ -371,7 +392,7 @@ export function ScheduleXCalendarWrapper({
 		isDark,
 		locale: scheduleXLocale,
 		calendars: getScheduleXCalendars(),
-		plugins: [createEventModalPlugin(), calendarControls, currentTimePlugin],
+		plugins: [createEventModalPlugin(), calendarControls],
 		callbacks: {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			onEventClick: handleEventClick as any,
@@ -425,6 +446,54 @@ export function ScheduleXCalendarWrapper({
 		}
 	}, [calendar, isDark]);
 
+	useEffect(() => {
+		const container = calendarContainerRef.current;
+		if (!container || isLoading || (viewMode !== "day" && viewMode !== "week")) return;
+
+		let frame = 0;
+		let timeout: number | null = null;
+		const clearIndicators = () => {
+			for (const indicator of container.querySelectorAll(".z8-current-time-indicator")) {
+				indicator.remove();
+			}
+		};
+		const renderIndicator = () => {
+			clearIndicators();
+			const position = buildCurrentTimeIndicatorPosition(new Date(), timeZone);
+			if (!position) return;
+
+			const todayElement = container.querySelector<HTMLElement>(
+				`[data-time-grid-date="${position.dateKey}"]`,
+			);
+			if (!todayElement) return;
+
+			const indicator = document.createElement("div");
+			indicator.className = "sx__current-time-indicator z8-current-time-indicator";
+			indicator.style.top = `${position.topPercent}%`;
+			indicator.setAttribute("aria-hidden", "true");
+			todayElement.append(indicator);
+		};
+		const scheduleIndicator = () => {
+			frame = window.requestAnimationFrame(renderIndicator);
+			timeout = window.setTimeout(scheduleIndicator, 60_000 - (Date.now() % 60_000));
+		};
+
+		scheduleIndicator();
+		const observer = new MutationObserver(() => {
+			if (container.querySelector(".z8-current-time-indicator")) return;
+			window.cancelAnimationFrame(frame);
+			frame = window.requestAnimationFrame(renderIndicator);
+		});
+		observer.observe(container, { childList: true, subtree: true });
+
+		return () => {
+			observer.disconnect();
+			window.cancelAnimationFrame(frame);
+			if (timeout !== null) window.clearTimeout(timeout);
+			clearIndicators();
+		};
+	}, [timeZone, viewMode, isLoading, calendar, currentDate]);
+
 	// Scroll to current time on mount and when switching to day/week view
 	useEffect(() => {
 		if (isLoading) return;
@@ -456,13 +525,33 @@ export function ScheduleXCalendarWrapper({
 		const container = calendarContainerRef.current;
 		if (!container || (viewMode !== "day" && viewMode !== "week")) return;
 
-		const frame = window.requestAnimationFrame(() => {
+		let frame = 0;
+		let retryTimeout: number | null = null;
+		let disposed = false;
+		const maxAttempts = 40;
+		const retryDelayMs = 50;
+
+		const renderHeaderContent = (attempt = 0) => {
+			if (disposed) return;
+
 			clearRequirementHeaderContent(container);
 			const headerCells = getHeaderCells(container);
+			const shouldRetry = shouldRetryRequirementHeaderInjection({
+				headerCellCount: headerCells.length,
+				visibleDateCount: visibleRequirementDates.length,
+			});
 
 			for (const [index, date] of visibleRequirementDates.entries()) {
 				const headerCell = headerCells[index];
 				if (!headerCell) continue;
+
+				if (isSummaryLoading) {
+					const skeleton = document.createElement("div");
+					skeleton.className = "z8-requirement-header-summary z8-requirement-header-summary--skeleton";
+					skeleton.setAttribute("aria-hidden", "true");
+					headerCell.append(skeleton);
+					continue;
+				}
 
 				const summary = workHoursData.get(date.toFormat("yyyy-MM-dd"));
 				if (!summary) continue;
@@ -491,13 +580,23 @@ export function ScheduleXCalendarWrapper({
 
 				headerCell.append(wrapper);
 			}
-		});
+
+			if (shouldRetry && attempt < maxAttempts) {
+				retryTimeout = window.setTimeout(() => {
+					frame = window.requestAnimationFrame(() => renderHeaderContent(attempt + 1));
+				}, retryDelayMs);
+			}
+		};
+
+		frame = window.requestAnimationFrame(() => renderHeaderContent());
 
 		return () => {
+			disposed = true;
 			window.cancelAnimationFrame(frame);
+			if (retryTimeout !== null) window.clearTimeout(retryTimeout);
 			clearRequirementHeaderContent(container);
 		};
-	}, [t, viewMode, visibleRequirementDates, workHoursData]);
+	}, [t, viewMode, visibleRequirementDates, workHoursData, isSummaryLoading]);
 
 	useEffect(() => {
 		const container = calendarContainerRef.current;

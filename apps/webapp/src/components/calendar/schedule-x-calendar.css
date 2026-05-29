@@ -50,6 +50,28 @@
 	background-color: var(--sx-color-background);
 }
 
+.schedule-x-container .z8-current-time-indicator {
+	position: absolute;
+	left: 0;
+	right: 0;
+	z-index: 7;
+	height: 2px;
+	background: rgb(239 68 68);
+	pointer-events: none;
+}
+
+.schedule-x-container .z8-current-time-indicator::before {
+	position: absolute;
+	top: 50%;
+	left: -4px;
+	width: 8px;
+	height: 8px;
+	border-radius: 999px;
+	background: rgb(239 68 68);
+	content: "";
+	transform: translateY(-50%);
+}
+
 /* Pending work period styling - faded/semi-transparent with dashed border */
 .schedule-x-container [data-calendar-id="work_period_pending"] {
 	opacity: 0.6;
@@ -90,6 +112,31 @@
 
 .schedule-x-container .z8-requirement-header-summary__delta {
 	color: color-mix(in srgb, currentColor 72%, transparent);
+}
+
+.schedule-x-container .z8-requirement-header-summary--skeleton {
+	width: 4.75rem;
+	height: 1.25rem;
+	border-color: transparent;
+	background: color-mix(in srgb, currentColor 12%, transparent);
+	animation: z8-requirement-summary-skeleton 1.2s ease-in-out infinite;
+}
+
+@keyframes z8-requirement-summary-skeleton {
+	0%,
+	100% {
+		opacity: 0.45;
+	}
+
+	50% {
+		opacity: 1;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.schedule-x-container .z8-requirement-header-summary--skeleton {
+		animation: none;
+	}
 }
 
 .schedule-x-container .z8-requirement-header-summary--over,
