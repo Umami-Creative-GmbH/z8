@@ -493,7 +493,14 @@ describe("createManualTimeEntry", () => {
 		);
 	});
 
-	it("rejects approval-required manual entries when no manager is assigned", async () => {
+	it("auto-approves approval-required manual entries when no manager is assigned", async () => {
+		mockState.createTimeEntry
+			.mockResolvedValueOnce({ id: "clock-in-1", type: "clock_in" })
+			.mockResolvedValueOnce({ id: "clock-out-1", type: "clock_out" });
+		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
+		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
+
 		const result = await createManualTimeEntry({
 			date: "2026-05-04",
 			clockInTime: "08:00",
@@ -501,12 +508,16 @@ describe("createManualTimeEntry", () => {
 			reason: "Forgot to clock in",
 		});
 
-		expect(result).toEqual({
-			success: false,
-			error: "No manager assigned to approve time changes",
+		expect(result).toMatchObject({
+			success: true,
+			data: { workPeriodId: "period-1", requiresApproval: false },
 		});
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
-		expect(mockState.insertValues).not.toHaveBeenCalled();
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approvalStatus: "approved",
+				pendingChanges: null,
+			}),
+		);
 		expect(mockState.createManualEntryApprovalRequest).not.toHaveBeenCalled();
 	});
 
@@ -655,7 +666,7 @@ describe("createManualTimeEntry", () => {
 		);
 	});
 
-	it("rejects approval-required manual entries when no manager link resolves", async () => {
+	it("auto-approves approval-required manual entries when no manager link resolves", async () => {
 		mockState.findManagerLinks.mockResolvedValue([]);
 
 		const result = await createManualTimeEntry({
@@ -665,12 +676,16 @@ describe("createManualTimeEntry", () => {
 			reason: "Forgot to clock in",
 		});
 
-		expect(result).toEqual({
-			success: false,
-			error: "No manager assigned to approve time changes",
+		expect(result).toMatchObject({
+			success: true,
+			data: { workPeriodId: "period-1", requiresApproval: false },
 		});
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
-		expect(mockState.insertValues).not.toHaveBeenCalled();
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approvalStatus: "approved",
+				pendingChanges: null,
+			}),
+		);
 		expect(mockState.createManualEntryApprovalRequest).not.toHaveBeenCalled();
 	});
 });

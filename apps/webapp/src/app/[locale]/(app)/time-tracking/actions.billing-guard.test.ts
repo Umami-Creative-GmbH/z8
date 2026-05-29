@@ -112,11 +112,20 @@ describe("legacy time-tracking action billing guards", () => {
 		},
 	);
 
-	it.each([
-		["clockOut", "createTimeEntry({"],
-		["createManualTimeEntry", "createTimeEntry({"],
-	])("rejects approval-required %s without a manager before writing", (name, writeMarker) => {
-		expectNoManagerApprovalGuardBeforeWrite(name, writeMarker);
+	it.each([["clockOut", "createTimeEntry({"]])(
+		"rejects approval-required %s without a manager before writing",
+		(name, writeMarker) => {
+			expectNoManagerApprovalGuardBeforeWrite(name, writeMarker);
+		},
+	);
+
+	it("auto-approves approval-required manual entries when no manager resolves", () => {
+		const body = functionBody("createManualTimeEntry");
+
+		expect(body).toContain("const requiresManagerApproval = requiresApproval && Boolean(managerId)");
+		expect(body).toContain('const approvalStatus = requiresManagerApproval ? "pending" : "approved"');
+		expect(body).toContain("const pendingChangesData = requiresManagerApproval");
+		expect(body).toContain("if (requiresManagerApproval && managerId)");
 	});
 
 	it.each([

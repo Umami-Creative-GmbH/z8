@@ -728,9 +728,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 					organizationId: currentEmployee.organizationId,
 				})
 			: null;
-		if (requiresApproval && !managerId) {
-			return { success: false, error: "No manager assigned to approve time changes" };
-		}
+		const requiresManagerApproval = requiresApproval && Boolean(managerId);
 		const durationMinutes = calculateDurationMinutes(adjustedClockIn, adjustedClockOut);
 		const createdWorkPeriod = await db.transaction(async (tx) => {
 			const clockInEntry = await createTimeEntry(
@@ -769,8 +767,8 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 					projectId: data.projectId || null,
 					workCategoryId: data.workCategoryId || null,
 					isActive: false,
-					approvalStatus: requiresApproval ? "pending" : "approved",
-					pendingChanges: requiresApproval
+					approvalStatus: requiresManagerApproval ? "pending" : "approved",
+					pendingChanges: requiresManagerApproval
 						? {
 								originalStartTime: adjustedClockIn.toISOString(),
 								originalEndTime: adjustedClockOut.toISOString(),
@@ -786,7 +784,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			return period;
 		});
 
-		if (requiresApproval && managerId) {
+		if (requiresManagerApproval && managerId) {
 			await createManualEntryApprovalRequest({
 				workPeriodId: createdWorkPeriod.id,
 				employeeId: currentEmployee.id,
@@ -799,7 +797,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			});
 		}
 
-		if (!requiresApproval) {
+		if (!requiresManagerApproval) {
 			await calculateAndPersistSurcharges(createdWorkPeriod.id, currentEmployee.organizationId);
 		}
 
@@ -827,7 +825,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				wasAdjusted,
 				adjustedClockIn: wasAdjusted ? adjustedClockIn.toISOString() : undefined,
 				adjustedClockOut: wasAdjusted ? adjustedClockOut.toISOString() : undefined,
-				requiresApproval,
+				requiresApproval: requiresManagerApproval,
 			},
 			"Manual time entry created successfully",
 		);
@@ -836,7 +834,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			success: true,
 			data: {
 				workPeriodId: createdWorkPeriod.id,
-				requiresApproval,
+				requiresApproval: requiresManagerApproval,
 				wasAdjusted,
 				adjustedTimes: wasAdjusted
 					? {
