@@ -47,6 +47,7 @@ interface ScheduleXCalendarWrapperProps {
 	onViewModeChange: (mode: ViewMode) => void;
 	onEventClick?: (event: CalendarEvent) => void;
 	onRangeChange?: (range: { start: Date; end: Date }) => void;
+	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
 	workHoursData?: DailyWorkHoursSummaries;
 }
@@ -73,6 +74,54 @@ function clearRequirementHeaderContent(container: HTMLDivElement) {
 	}
 }
 
+function roundToQuarterHour(minutes: number) {
+	return Math.max(0, Math.min(23 * 60 + 45, Math.round(minutes / 15) * 15));
+}
+
+function getPointerDateTime(
+	container: HTMLDivElement,
+	event: PointerEvent,
+	visibleDates: DateTime[],
+) {
+	if (visibleDates.length === 0) return null;
+
+	const target = event.target instanceof Element ? event.target : null;
+	const dateAttributeElement = target?.closest<HTMLElement>(
+		"[data-time-grid-date], [data-date], [data-date-time]",
+	);
+	const dateAttribute =
+		dateAttributeElement?.dataset.timeGridDate ??
+		dateAttributeElement?.dataset.date ??
+		dateAttributeElement?.dataset.dateTime;
+	const attributeDate = dateAttribute ? DateTime.fromISO(dateAttribute.slice(0, 10)) : null;
+
+	const dayCells = Array.from(container.querySelectorAll<HTMLElement>(".sx__time-grid-day"));
+	const matchingDayCell = dayCells.find((cell) => {
+		const rect = cell.getBoundingClientRect();
+		return (
+			event.clientX >= rect.left &&
+			event.clientX <= rect.right &&
+			event.clientY >= rect.top &&
+			event.clientY <= rect.bottom
+		);
+	});
+	const timeGrid = matchingDayCell ?? container.querySelector<HTMLElement>(".sx__time-grid-wrapper");
+	if (!timeGrid) return null;
+
+	const timeGridRect = timeGrid.getBoundingClientRect();
+	if (timeGridRect.height <= 0) return null;
+
+	const dayIndex = matchingDayCell ? Math.max(0, dayCells.indexOf(matchingDayCell)) : 0;
+	const date = attributeDate?.isValid
+		? attributeDate
+		: visibleDates[Math.min(dayIndex, visibleDates.length - 1)];
+	const minutes = roundToQuarterHour(
+		((event.clientY - timeGridRect.top) / timeGridRect.height) * 24 * 60,
+	);
+
+	return date.startOf("day").plus({ minutes }).toJSDate();
+}
+
 export function ScheduleXCalendarWrapper({
 	events,
 	isLoading = false,
@@ -80,6 +129,7 @@ export function ScheduleXCalendarWrapper({
 	onViewModeChange,
 	onEventClick,
 	onRangeChange,
+	onTimeRangeSelect,
 	onRefresh,
 	workHoursData = new Map(),
 }: ScheduleXCalendarWrapperProps) {
@@ -99,6 +149,7 @@ export function ScheduleXCalendarWrapper({
 	const [calendarControls] = useState(() => createCalendarControlsPlugin());
 	const [currentTimePlugin] = useState(() => createCurrentTimePlugin());
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
+	const selectionStartRef = useRef<Date | null>(null);
 
 	// Convert events to Schedule-X format
 	const baseScheduleXEvents = calendarEventsToScheduleX(events, timeZone);
@@ -358,6 +409,41 @@ export function ScheduleXCalendarWrapper({
 			clearRequirementHeaderContent(container);
 		};
 	}, [t, viewMode, visibleRequirementDates, workHoursData]);
+
+	useEffect(() => {
+		const container = calendarContainerRef.current;
+		if (!container || !onTimeRangeSelect || (viewMode !== "day" && viewMode !== "week")) return;
+
+		const handlePointerDown = (event: PointerEvent) => {
+			const target = event.target instanceof Element ? event.target : null;
+			if (!target || target.closest(".sx__event")) return;
+
+			selectionStartRef.current = getPointerDateTime(container, event, visibleRequirementDates);
+		};
+
+		const handlePointerUp = (event: PointerEvent) => {
+			const start = selectionStartRef.current;
+			selectionStartRef.current = null;
+			if (!start) return;
+
+			const target = event.target instanceof Element ? event.target : null;
+			if (target?.closest(".sx__event")) return;
+
+			const end = getPointerDateTime(container, event, visibleRequirementDates);
+			if (!end || start.getTime() === end.getTime()) return;
+
+			onTimeRangeSelect({ start, end });
+		};
+
+		container.addEventListener("pointerdown", handlePointerDown);
+		window.addEventListener("pointerup", handlePointerUp);
+
+		return () => {
+			selectionStartRef.current = null;
+			container.removeEventListener("pointerdown", handlePointerDown);
+			window.removeEventListener("pointerup", handlePointerUp);
+		};
+	}, [onTimeRangeSelect, viewMode, visibleRequirementDates]);
 
 	if (isLoading) {
 		return (

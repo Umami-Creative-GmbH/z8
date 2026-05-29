@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DateTime } from "luxon";
+import type { SelectableEmployee } from "@/components/employee-select/types";
+import { ManualTimeEntryDialog } from "@/components/time-tracking/manual-time-entry-dialog";
 import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
@@ -26,6 +29,12 @@ interface CalendarViewProps {
 	initialSelectedEmployeeId?: string;
 }
 
+interface ManualEntryDefaults {
+	date: string;
+	clockInTime: string;
+	clockOutTime: string;
+}
+
 export function CalendarView({
 	organizationId,
 	currentEmployeeId,
@@ -40,6 +49,7 @@ export function CalendarView({
 
 	// Selected employee for calendar view (defaults to current user)
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(initialEmployeeId);
+	const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
 
 	// Current date range for data fetching
 	const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -51,6 +61,8 @@ export function CalendarView({
 	// Dialog states for work period actions
 	const [showSplitDialog, setShowSplitDialog] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [manualEntryOpen, setManualEntryOpen] = useState(false);
+	const [manualEntryDefaults, setManualEntryDefaults] = useState<ManualEntryDefaults | null>(null);
 
 	// Event type filters
 	const [filters, setFilters] = useState<CalendarFilters>({
@@ -64,6 +76,7 @@ export function CalendarView({
 
 	useEffect(() => {
 		setSelectedEmployeeId(initialEmployeeId);
+		setSelectedEmployeeName(null);
 		setFilters((prev) => {
 			const employeeId = initialEmployeeId ?? undefined;
 
@@ -78,11 +91,23 @@ export function CalendarView({
 		});
 	}, [initialEmployeeId]);
 
+	const getEmployeeDisplayName = (employee?: SelectableEmployee) => {
+		if (!employee) return null;
+		const fullName = [
+			employee.firstName ?? employee.user.firstName,
+			employee.lastName ?? employee.user.lastName,
+		]
+			.filter(Boolean)
+			.join(" ");
+		return employee.user.name ?? (fullName || employee.user.email);
+	};
+
 	// Handle employee selection change
-	const handleEmployeeChange = (employeeId: string | null) => {
+	const handleEmployeeChange = (employeeId: string | null, employee?: SelectableEmployee) => {
 		const nextEmployeeId = employeeId ?? currentEmployeeId ?? null;
 
 		setSelectedEmployeeId(nextEmployeeId);
+		setSelectedEmployeeName(getEmployeeDisplayName(employee));
 		setFilters((prev) => ({
 			...prev,
 			// Always prefer the explicit selection, falling back to the current user.
@@ -124,6 +149,22 @@ export function CalendarView({
 		// Update current month based on range midpoint
 		const midpoint = new Date((range.start.getTime() + range.end.getTime()) / 2);
 		setCurrentMonth(midpoint);
+	};
+
+	const handleTimeRangeSelect = (range: { start: Date; end: Date }) => {
+		const [clockInDate, clockOutDate] =
+			range.start.getTime() <= range.end.getTime()
+				? [range.start, range.end]
+				: [range.end, range.start];
+		const clockIn = DateTime.fromJSDate(clockInDate, { zone: "utc" });
+		const clockOut = DateTime.fromJSDate(clockOutDate, { zone: "utc" });
+
+		setManualEntryDefaults({
+			date: clockIn.toISODate() ?? "",
+			clockInTime: clockIn.toFormat("HH:mm"),
+			clockOutTime: clockOut.toFormat("HH:mm"),
+		});
+		setManualEntryOpen(true);
 	};
 
 	// Handle day click from year view
@@ -171,6 +212,21 @@ export function CalendarView({
 					Failed to load calendar events: {error.message}
 				</div>
 			)}
+
+			<ManualTimeEntryDialog
+				employeeId={selectedEmployeeId ?? currentEmployeeId ?? ""}
+				employeeTimezone="UTC"
+				hasManager={false}
+				targetEmployeeId={selectedEmployeeId ?? undefined}
+				targetEmployeeName={selectedEmployeeName ?? undefined}
+				defaultDate={manualEntryDefaults?.date}
+				defaultClockInTime={manualEntryDefaults?.clockInTime}
+				defaultClockOutTime={manualEntryDefaults?.clockOutTime}
+				open={manualEntryOpen}
+				onOpenChange={setManualEntryOpen}
+				hideTrigger
+				onSuccess={refetch}
+			/>
 
 			{/* Main content grid */}
 			<div
@@ -237,6 +293,7 @@ export function CalendarView({
 							onViewModeChange={setViewMode}
 							onEventClick={handleEventClick}
 							onRangeChange={handleRangeChange}
+							onTimeRangeSelect={handleTimeRangeSelect}
 							onRefresh={refetch}
 							workHoursData={workHoursData}
 						/>

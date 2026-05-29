@@ -85,17 +85,55 @@ vi.mock("./year-calendar-view", () => ({
 
 vi.mock("./schedule-x-wrapper", () => ({
 	ScheduleXWrapper: ({
+		onTimeRangeSelect,
 		onViewModeChange,
 		viewMode,
 	}: {
+		onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 		onViewModeChange: (mode: "month") => void;
 		viewMode: string;
 	}) => (
 		<div data-testid="schedule-x-wrapper" data-view-mode={viewMode}>
+			<button
+				type="button"
+				onClick={() =>
+					onTimeRangeSelect?.({
+						start: new Date("2026-05-29T12:45:00.000Z"),
+						end: new Date("2026-05-29T10:15:00.000Z"),
+					})
+				}
+			>
+				Select time range
+			</button>
 			<button type="button" onClick={() => onViewModeChange("month")}>
 				Month
 			</button>
 		</div>
+	),
+}));
+
+vi.mock("@/components/time-tracking/manual-time-entry-dialog", () => ({
+	ManualTimeEntryDialog: ({
+		defaultClockInTime,
+		defaultClockOutTime,
+		defaultDate,
+		open,
+		targetEmployeeId,
+	}: {
+		defaultClockInTime?: string;
+		defaultClockOutTime?: string;
+		defaultDate?: string;
+		open?: boolean;
+		targetEmployeeId?: string;
+	}) => (
+		<div
+			data-testid="manual-entry-dialog"
+			data-open={String(open)}
+			data-default-date={defaultDate}
+			data-clock-in={defaultClockInTime}
+			data-clock-out={defaultClockOutTime}
+			data-target-employee-id={targetEmployeeId}
+		/>
 	),
 }));
 
@@ -188,5 +226,24 @@ describe("CalendarView", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Refresh month" }));
 
 		expect(refetch).toHaveBeenCalledTimes(1);
+	});
+
+	it("opens manual entry dialog with normalized range for the selected employee", () => {
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId="employee-2"
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select time range" }));
+
+		const dialog = screen.getByTestId("manual-entry-dialog");
+		expect(dialog.getAttribute("data-open")).toBe("true");
+		expect(dialog.getAttribute("data-default-date")).toBe("2026-05-29");
+		expect(dialog.getAttribute("data-clock-in")).toBe("10:15");
+		expect(dialog.getAttribute("data-clock-out")).toBe("12:45");
+		expect(dialog.getAttribute("data-target-employee-id")).toBe("employee-2");
 	});
 });
