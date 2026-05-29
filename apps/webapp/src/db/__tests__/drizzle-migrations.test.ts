@@ -39,6 +39,11 @@ const migration0035Url = new URL(
 	"../../../drizzle/0035_approval_request_metadata_recovery.sql",
 	import.meta.url,
 );
+const migration0036Url = new URL(
+	"../../../drizzle/0036_time_entry_timezone_capture.sql",
+	import.meta.url,
+);
+const migration0036SnapshotUrl = new URL("../../../drizzle/meta/0036_snapshot.json", import.meta.url);
 
 const migration0004Statements = migration0004
 	.split("--> statement-breakpoint")
@@ -226,5 +231,37 @@ describe("drizzle follow-up migrations", () => {
 
 		expect(recoveryIndex).toBeGreaterThanOrEqual(0);
 		expect(timezoneCaptureIndex).toBeGreaterThan(recoveryIndex);
+	});
+
+	it("backfills time entry timezone capture columns without overwriting existing values", () => {
+		expect(existsSync(migration0036Url)).toBe(true);
+
+		const migration0036 = readFileSync(migration0036Url, "utf8");
+
+		expect(migration0036).toContain('ADD COLUMN IF NOT EXISTS "utc_offset_minutes" integer');
+		expect(migration0036).toContain('ADD COLUMN IF NOT EXISTS "timezone" text');
+		expect(migration0036).toContain('ADD COLUMN IF NOT EXISTS "timezone_source" text');
+		expect(migration0036).toContain('"utc_offset_minutes" = COALESCE("utc_offset_minutes", 120)');
+		expect(migration0036).toContain('"timezone" = COALESCE("timezone", \'Europe/Berlin\')');
+		expect(migration0036).toContain('"timezone_source" = COALESCE("timezone_source", \'backfill\')');
+		expect(migration0036).toContain(
+			'WHERE "utc_offset_minutes" IS NULL OR "timezone" IS NULL OR "timezone_source" IS NULL;',
+		);
+	});
+
+	it("snapshots the time entry timezone capture columns", () => {
+		expect(existsSync(migration0036SnapshotUrl)).toBe(true);
+
+		const snapshot = JSON.parse(readFileSync(migration0036SnapshotUrl, "utf8")) as {
+			tables: Record<string, { columns: Record<string, unknown> }>;
+		};
+
+		expect(snapshot.tables["public.time_entry"]?.columns).toEqual(
+			expect.objectContaining({
+				utc_offset_minutes: expect.objectContaining({ type: "integer", notNull: true }),
+				timezone: expect.objectContaining({ type: "text", notNull: false }),
+				timezone_source: expect.objectContaining({ type: "text", notNull: true }),
+			}),
+		);
 	});
 });
