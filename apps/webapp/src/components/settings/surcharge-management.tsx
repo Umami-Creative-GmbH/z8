@@ -78,6 +78,9 @@ export function SurchargeManagement({ organizationId, canManage }: SurchargeMana
 		mutationFn: (modelId: string) => deleteSurchargeModel(modelId),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.surcharges.models.list(organizationId),
+				});
 				toast.success(t("settings.surcharges.modelDeleted", "Surcharge model deleted"));
 				loadData();
 			} else {

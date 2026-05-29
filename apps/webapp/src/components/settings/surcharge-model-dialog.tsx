@@ -2,7 +2,7 @@
 
 import { IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -63,6 +63,7 @@ export function SurchargeModelDialog({
 	onSuccess,
 }: SurchargeModelDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const isEditing = !!editingModel;
 
 	const form = useForm({
@@ -142,6 +143,7 @@ export function SurchargeModelDialog({
 			createSurchargeModel(organizationId, data as Parameters<typeof createSurchargeModel>[1]),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries();
 				toast.success(t("settings.surcharges.modelCreated", "Surcharge model created"));
 				onSuccess();
 			} else {
@@ -161,6 +163,7 @@ export function SurchargeModelDialog({
 			updateSurchargeModel(editingModel!.id, data),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries();
 				toast.success(t("settings.surcharges.modelUpdated", "Surcharge model updated"));
 				onSuccess();
 			} else {

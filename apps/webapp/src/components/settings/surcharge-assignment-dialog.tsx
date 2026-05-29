@@ -2,7 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import {
@@ -34,6 +34,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { queryKeys } from "@/lib/query";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 
 interface SurchargeAssignmentDialogProps {
@@ -52,6 +53,7 @@ export function SurchargeAssignmentDialog({
 	onSuccess,
 }: SurchargeAssignmentDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 
 	// Fetch models
 	const modelsQuery = useQuery({
@@ -113,6 +115,9 @@ export function SurchargeAssignmentDialog({
 		}) => createSurchargeAssignment(organizationId, data),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.surcharges.assignments.list(organizationId),
+				});
 				toast.success(t("settings.surcharges.assignmentCreated", "Assignment created"));
 				onSuccess();
 			} else {

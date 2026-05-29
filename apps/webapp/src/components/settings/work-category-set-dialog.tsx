@@ -143,6 +143,7 @@ export function WorkCategorySetDialog({
 			}),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries({ queryKey: queryKeys.workCategorySets.list(organizationId) });
 				toast.success(t("settings.workCategories.setCreated", "Category set created"));
 				onSuccess();
 			} else {

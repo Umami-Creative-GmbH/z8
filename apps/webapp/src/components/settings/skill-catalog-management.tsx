@@ -351,13 +351,14 @@ interface SkillFormValues {
 }
 
 function SkillDialog({
-	organizationId: _organizationId,
+	organizationId,
 	skill,
 	open,
 	onOpenChange,
 	onSuccess,
 }: SkillDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const isEditing = !!skill;
 
 	const defaultValues: SkillFormValues = {
@@ -392,6 +393,7 @@ function SkillDialog({
 			return result.data;
 		},
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId) });
 			toast.success(t("settings.skills.skillCreated", "Skill created"));
 			onSuccess();
 		},
@@ -413,6 +415,7 @@ function SkillDialog({
 			return result.data;
 		},
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId) });
 			toast.success(t("settings.skills.skillUpdated", "Skill updated"));
 			onSuccess();
 		},

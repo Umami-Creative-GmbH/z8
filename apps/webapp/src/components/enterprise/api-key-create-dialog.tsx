@@ -1,7 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -48,6 +48,7 @@ export function ApiKeyCreateDialog({
 	onKeyCreated,
 }: ApiKeyCreateDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 
 	// Form state
 	const [name, setName] = useState("");
@@ -89,6 +90,7 @@ export function ApiKeyCreateDialog({
 			return result.data;
 		},
 		onSuccess: (data) => {
+			queryClient.invalidateQueries({ queryKey: ["apiKeys", organizationId] });
 			toast.success(t("settings.apiKeys.created", "API key created successfully"));
 			onKeyCreated(data);
 		},

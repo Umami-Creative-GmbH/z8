@@ -294,6 +294,7 @@ function AssignSkillDialog({
 	onSuccess,
 }: AssignSkillDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 
 	// Fetch available skills
 	const { data: allSkills, isLoading: isLoadingSkills } = useOrganizationSkills({
@@ -330,6 +331,7 @@ function AssignSkillDialog({
 			return result.data;
 		},
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.employee(employeeId) });
 			toast.success(t("settings.skills.skillAssigned", "Skill assigned"));
 			form.reset();
 			onSuccess();

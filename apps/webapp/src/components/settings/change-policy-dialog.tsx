@@ -2,7 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import {
@@ -32,6 +32,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
+import { queryKeys } from "@/lib/query";
 
 interface ChangePolicyDialogProps {
 	open: boolean;
@@ -58,6 +59,7 @@ export function ChangePolicyDialog({
 	onSuccess,
 }: ChangePolicyDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const isEditing = !!editingPolicy;
 
 	const form = useForm({
@@ -84,6 +86,7 @@ export function ChangePolicyDialog({
 		mutationFn: (data: CreateChangePolicyInput) => createChangePolicy(organizationId, data),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries({ queryKey: queryKeys.changePolicies.list(organizationId) });
 				toast.success(t("settings.changePolicies.created", "Policy created successfully"));
 				form.reset();
 				onSuccess();
@@ -103,6 +106,7 @@ export function ChangePolicyDialog({
 			updateChangePolicy(id, data),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries({ queryKey: queryKeys.changePolicies.list(organizationId) });
 				toast.success(t("settings.changePolicies.updated", "Policy updated successfully"));
 				onSuccess();
 			} else {

@@ -165,7 +165,12 @@ export function useEmployee(options: UseEmployeeOptions) {
 			createEmployeeEmploymentHistoryAction(employeeId, data),
 		onSuccess: (result) => {
 			if (result.success) {
-				invalidateEmploymentHistoryQueries();
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employees.employmentHistory(employeeId),
+				});
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employees.detail(employeeId),
+				});
 			}
 		},
 	});
@@ -175,7 +180,12 @@ export function useEmployee(options: UseEmployeeOptions) {
 			confirmEmployeeEmploymentHistoryAction(employeeId, historyId),
 		onSuccess: (result) => {
 			if (result.success) {
-				invalidateEmploymentHistoryQueries();
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employees.employmentHistory(employeeId),
+				});
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employees.detail(employeeId),
+				});
 			}
 		},
 	});
@@ -184,7 +194,12 @@ export function useEmployee(options: UseEmployeeOptions) {
 		mutationFn: (historyId: string) => cancelEmployeeEmploymentHistoryAction(employeeId, historyId),
 		onSuccess: (result) => {
 			if (result.success) {
-				invalidateEmploymentHistoryQueries();
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employees.employmentHistory(employeeId),
+				});
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employees.detail(employeeId),
+				});
 			}
 		},
 	});

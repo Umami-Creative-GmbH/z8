@@ -15,7 +15,7 @@ import {
 	IconUsers,
 	IconUserX,
 } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
@@ -172,6 +172,7 @@ function hasSelectedUserScopedEntity(selections: ImportSelections): boolean {
 
 export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const router = useRouter();
 
 	const entityLabel = (key: string, fallback: string) =>
@@ -224,6 +225,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 		},
 		onSuccess: ({ credResult, countsResult }) => {
 			if (credResult.success) {
+				queryClient.invalidateQueries();
 				setPreview(credResult.data);
 				if (countsResult.success) {
 					setExistingCounts(countsResult.data);
@@ -250,6 +252,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 		},
 		onSuccess: ({ usersResult, employeesResult }) => {
 			if (usersResult.success && employeesResult.success) {
+				queryClient.invalidateQueries();
 				setZ8Employees(employeesResult.data);
 
 				// Auto-match by email (case-insensitive)
@@ -303,6 +306,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 		mutationFn: () => saveUserMappings(organizationId, userMappings),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries();
 				setStep("selection");
 			} else {
 				toast.error(result.error);
@@ -350,6 +354,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 		},
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries();
 				setReviewBatchId(result.data.batchId);
 				toast.success(
 					t(

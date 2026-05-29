@@ -2,7 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import {
@@ -54,6 +54,7 @@ export function ChangePolicyAssignmentDialog({
 	onSuccess,
 }: ChangePolicyAssignmentDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 
 	// Fetch policies for dropdown
 	const { data: policies, isLoading: policiesLoading } = useQuery({
@@ -116,6 +117,9 @@ export function ChangePolicyAssignmentDialog({
 			createChangePolicyAssignment(organizationId, input),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.changePolicies.assignments(organizationId),
+				});
 				toast.success(
 					t("settings.changePolicies.assignmentCreated", "Policy assigned successfully"),
 				);

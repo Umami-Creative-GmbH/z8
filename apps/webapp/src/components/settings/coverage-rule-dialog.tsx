@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -68,6 +68,7 @@ export function CoverageRuleDialog({
 	onSuccess,
 }: CoverageRuleDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const isEditing = !!editingRule;
 
 	// Build flat list of subareas with location names
@@ -130,6 +131,7 @@ export function CoverageRuleDialog({
 			return result.data;
 		},
 		onSuccess: () => {
+			queryClient.invalidateQueries();
 			toast.success(t("settings.coverageRules.ruleCreated", "Coverage rule created"));
 			onSuccess();
 		},
@@ -161,6 +163,7 @@ export function CoverageRuleDialog({
 			return result.data;
 		},
 		onSuccess: () => {
+			queryClient.invalidateQueries();
 			toast.success(t("settings.coverageRules.ruleUpdated", "Coverage rule updated"));
 			onSuccess();
 		},

@@ -2,7 +2,7 @@
 
 import { IconLoader2, IconPalette } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { queryKeys } from "@/lib/query";
 
 interface WorkCategoryDialogProps {
 	open: boolean;
@@ -67,6 +68,7 @@ export function WorkCategoryDialog({
 	onSuccess,
 }: WorkCategoryDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const isEditing = !!category;
 
 	// Form
@@ -120,6 +122,7 @@ export function WorkCategoryDialog({
 		}) => createOrganizationCategory(data),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries({ queryKey: queryKeys.workCategories.orgList(organizationId) });
 				toast.success(t("settings.workCategories.categoryCreated", "Category created"));
 				onSuccess();
 			} else {
@@ -145,6 +148,7 @@ export function WorkCategoryDialog({
 		}) => updateOrganizationCategory(data),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries({ queryKey: queryKeys.workCategories.orgList(organizationId) });
 				toast.success(t("settings.workCategories.categoryUpdated", "Category updated"));
 				onSuccess();
 			} else {

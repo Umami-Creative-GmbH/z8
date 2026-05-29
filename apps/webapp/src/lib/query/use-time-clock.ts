@@ -237,6 +237,11 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 	const updateNotesMutation = useMutation({
 		mutationFn: ({ entryId, notes }: { entryId: string; notes: string }) =>
 			updateTimeEntryNotes(entryId, notes),
+		onSuccess: (result) => {
+			if (result.success) {
+				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
+			}
+		},
 	});
 
 	// Add break mutation (online only - break changes must be confirmed immediately)

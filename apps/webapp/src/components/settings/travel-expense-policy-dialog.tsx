@@ -1,7 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
@@ -46,6 +46,7 @@ export function TravelExpensePolicyDialog({
 	onSuccess,
 }: TravelExpensePolicyDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const isEditing = !!editingPolicy;
 
 	const form = useForm({
@@ -74,7 +75,7 @@ export function TravelExpensePolicyDialog({
 
 	const mutation = useMutation({
 		mutationFn: upsertTravelExpensePolicy,
-		onSuccess: async (result) => {
+			onSuccess: async (result) => {
 			if (!result.success) {
 				toast.error(
 					result.error ||
@@ -83,6 +84,7 @@ export function TravelExpensePolicyDialog({
 				return;
 			}
 
+			queryClient.invalidateQueries();
 			toast.success(
 				isEditing
 					? t("settings.travelExpenses.updated", "Travel expense policy updated")
