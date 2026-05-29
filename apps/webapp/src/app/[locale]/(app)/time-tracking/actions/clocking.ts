@@ -80,7 +80,6 @@ async function resolveManualTimeEntryTarget(params: {
 	const canTargetOtherEmployees =
 		requesterRole === "admin" ||
 		requesterRole === "manager" ||
-		requesterRole === "team_lead" ||
 		sessionUser.role === "admin";
 	if (!canTargetOtherEmployees) {
 		return { success: false, error: MANUAL_ENTRY_TARGET_AUTH_ERROR };
@@ -748,10 +747,10 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	const savedTimezone = isOwnEntry
 		? await getUserTimezone(session.user.id)
 		: await getUserTimezone(targetEmployee.userId ?? session.user.id);
-	if (data.timezone !== undefined && !IANAZone.isValidZone(data.timezone)) {
+	if (isOwnEntry && data.timezone !== undefined && !IANAZone.isValidZone(data.timezone)) {
 		return { success: false, error: "Invalid timezone" };
 	}
-	const timezone = data.timezone ?? savedTimezone;
+	const timezone = isOwnEntry ? (data.timezone ?? savedTimezone) : savedTimezone;
 	const clockInDate = createUtcDateTime(data.date, data.clockInTime, timezone);
 	const clockOutDate = createUtcDateTime(data.date, data.clockOutTime, timezone);
 

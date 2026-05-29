@@ -489,15 +489,16 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 		});
 	});
 
-	it("parses submitted manual entry times in a valid submitted timezone", async () => {
+	it("ignores a conflicting submitted timezone for manager entries and uses the target saved timezone", async () => {
 		vi.setSystemTime(new Date("2026-06-01T12:00:00.000Z"));
+		mockState.findUserSettings.mockResolvedValue({ timezone: "Europe/Berlin" });
 
 		const result = await createManualTimeEntry({
 			employeeId: "staff-1",
 			date: "2026-05-29",
 			clockInTime: "10:15",
 			clockOutTime: "12:45",
-			timezone: "Europe/Berlin",
+			timezone: "America/New_York",
 			reason: "Calendar adjustment",
 		});
 
@@ -506,12 +507,18 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 			expect.objectContaining({
 				type: "clock_in",
 				timestamp: new Date("2026-05-29T08:15:00.000Z"),
+				timezone: "Europe/Berlin",
+				timezoneSource: "manager_target_user_setting",
+				utcOffsetMinutes: 120,
 			}),
 		);
 		expect(mockState.createCanonicalTimeEntry).toHaveBeenCalledWith(
 			expect.objectContaining({
 				type: "clock_out",
 				timestamp: new Date("2026-05-29T10:45:00.000Z"),
+				timezone: "Europe/Berlin",
+				timezoneSource: "manager_target_user_setting",
+				utcOffsetMinutes: 120,
 			}),
 		);
 		expect(mockState.createCanonicalWorkRecord).toHaveBeenCalledWith(
@@ -557,9 +564,10 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 		);
 	});
 
-	it("rejects invalid submitted timezones before writes", async () => {
+	it("rejects invalid submitted timezones for own entries before writes", async () => {
+		mockState.findTargetEmployee.mockResolvedValue(null);
+
 		const result = await createManualTimeEntry({
-			employeeId: "staff-1",
 			date: "2026-05-04",
 			clockInTime: "08:00",
 			clockOutTime: "10:00",

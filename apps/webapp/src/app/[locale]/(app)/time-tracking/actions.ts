@@ -2894,10 +2894,10 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		columns: { timezone: true },
 	});
 	const savedTimezone = settingsData?.timezone || "UTC";
-	if (data.timezone !== undefined && !IANAZone.isValidZone(data.timezone)) {
+	if (isOwnEntry && data.timezone !== undefined && !IANAZone.isValidZone(data.timezone)) {
 		return { success: false, error: "Invalid timezone" };
 	}
-	const timezone = data.timezone ?? savedTimezone;
+	const timezone = isOwnEntry ? (data.timezone ?? savedTimezone) : savedTimezone;
 
 	// Parse the date and times in the user's timezone
 	const dateDT = DateTime.fromISO(data.date, { zone: timezone });

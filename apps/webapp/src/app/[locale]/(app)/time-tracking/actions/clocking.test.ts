@@ -655,7 +655,7 @@ describe("createManualTimeEntry", () => {
 		);
 	});
 
-	it("uses target employee identity and timezone capture for manager manual entries", async () => {
+	it("uses target employee identity and saved timezone for manager manual entries", async () => {
 		mockState.getCurrentSession.mockResolvedValue({ user: { id: "manager-user" } });
 		mockState.getCurrentEmployee.mockResolvedValue({
 			id: "manager-1",
@@ -699,7 +699,7 @@ describe("createManualTimeEntry", () => {
 			date: "2026-05-04",
 			clockInTime: "08:00",
 			clockOutTime: "09:00",
-			timezone: "Europe/Berlin",
+			timezone: "America/New_York",
 			browserTimezone: "America/New_York",
 			reason: "Forgot to clock in",
 		});
@@ -715,6 +715,7 @@ describe("createManualTimeEntry", () => {
 			expect.objectContaining({
 				employeeId: "staff-1",
 				organizationId: "org-1",
+				timestamp: new Date("2026-05-04T06:00:00.000Z"),
 				timezone: "Europe/Berlin",
 				timezoneSource: "manager_target_user_setting",
 				utcOffsetMinutes: 120,
@@ -726,6 +727,7 @@ describe("createManualTimeEntry", () => {
 			expect.objectContaining({
 				employeeId: "staff-1",
 				organizationId: "org-1",
+				timestamp: new Date("2026-05-04T07:00:00.000Z"),
 				timezone: "Europe/Berlin",
 				timezoneSource: "manager_target_user_setting",
 				utcOffsetMinutes: 120,
