@@ -614,6 +614,7 @@ describe("createManualTimeEntry", () => {
 	});
 
 	it("passes browser-derived timezone capture for self manual entries", async () => {
+		vi.setSystemTime(new Date("2026-05-04T14:00:00.000Z"));
 		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "direct", reason: "within_window" });
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1" })
@@ -635,7 +636,7 @@ describe("createManualTimeEntry", () => {
 			1,
 			expect.objectContaining({
 				type: "clock_in",
-				timestamp: new Date("2026-05-04T08:00:00.000Z"),
+				timestamp: new Date("2026-05-04T12:00:00.000Z"),
 				timezone: "America/New_York",
 				timezoneSource: "browser",
 				utcOffsetMinutes: -240,
@@ -646,12 +647,18 @@ describe("createManualTimeEntry", () => {
 			2,
 			expect.objectContaining({
 				type: "clock_out",
-				timestamp: new Date("2026-05-04T09:00:00.000Z"),
+				timestamp: new Date("2026-05-04T13:00:00.000Z"),
 				timezone: "America/New_York",
 				timezoneSource: "browser",
 				utcOffsetMinutes: -240,
 			}),
 			expect.anything(),
+		);
+		expect(mockState.getEditCapabilityForPeriod).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workPeriodEndTime: new Date("2026-05-04T13:00:00.000Z"),
+				timezone: "America/New_York",
+			}),
 		);
 	});
 

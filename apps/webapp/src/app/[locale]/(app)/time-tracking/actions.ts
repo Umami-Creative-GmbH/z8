@@ -2894,10 +2894,19 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		columns: { timezone: true },
 	});
 	const savedTimezone = settingsData?.timezone || "UTC";
-	if (isOwnEntry && data.timezone !== undefined && !IANAZone.isValidZone(data.timezone)) {
+	const validBrowserTimezone =
+		isOwnEntry && data.browserTimezone && IANAZone.isValidZone(data.browserTimezone)
+			? data.browserTimezone
+			: null;
+	if (
+		isOwnEntry &&
+		!validBrowserTimezone &&
+		data.timezone !== undefined &&
+		!IANAZone.isValidZone(data.timezone)
+	) {
 		return { success: false, error: "Invalid timezone" };
 	}
-	const timezone = isOwnEntry ? (data.timezone ?? savedTimezone) : savedTimezone;
+	const timezone = isOwnEntry ? (validBrowserTimezone ?? data.timezone ?? savedTimezone) : savedTimezone;
 
 	// Parse the date and times in the user's timezone
 	const dateDT = DateTime.fromISO(data.date, { zone: timezone });
@@ -3151,7 +3160,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		const clockInTimezoneCapture = isOwnEntry
 			? resolveTimeEntryTimezoneCapture({
 					timestamp: finalClockIn,
-					browserTimezone: data.browserTimezone,
+					browserTimezone: validBrowserTimezone,
 					fallbackTimezone: timezone,
 					browserSource: "browser",
 					fallbackSource: "user_setting",
@@ -3164,7 +3173,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		const clockOutTimezoneCapture = isOwnEntry
 			? resolveTimeEntryTimezoneCapture({
 					timestamp: finalClockOut,
-					browserTimezone: data.browserTimezone,
+					browserTimezone: validBrowserTimezone,
 					fallbackTimezone: timezone,
 					browserSource: "browser",
 					fallbackSource: "user_setting",

@@ -564,6 +564,47 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 		);
 	});
 
+	it("uses a valid browser timezone for own manual-entry parsing and capture", async () => {
+		vi.setSystemTime(new Date("2026-06-01T12:00:00.000Z"));
+		mockState.findTargetEmployee.mockResolvedValue(null);
+		mockState.findUserSettings.mockResolvedValue({ timezone: "UTC" });
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-29",
+			clockInTime: "10:15",
+			clockOutTime: "12:45",
+			timezone: "Europe/Berlin",
+			browserTimezone: "America/New_York",
+			reason: "Calendar adjustment",
+		});
+
+		expect(result.success).toBe(true);
+		expect(mockState.createCanonicalTimeEntry).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "clock_in",
+				timestamp: new Date("2026-05-29T14:15:00.000Z"),
+				timezone: "America/New_York",
+				timezoneSource: "browser",
+				utcOffsetMinutes: -240,
+			}),
+		);
+		expect(mockState.createCanonicalTimeEntry).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "clock_out",
+				timestamp: new Date("2026-05-29T16:45:00.000Z"),
+				timezone: "America/New_York",
+				timezoneSource: "browser",
+				utcOffsetMinutes: -240,
+			}),
+		);
+		expect(mockState.createCanonicalWorkRecord).toHaveBeenCalledWith(
+			expect.objectContaining({
+				startAt: new Date("2026-05-29T14:15:00.000Z"),
+				endAt: new Date("2026-05-29T16:45:00.000Z"),
+			}),
+		);
+	});
+
 	it("rejects invalid submitted timezones for own entries before writes", async () => {
 		mockState.findTargetEmployee.mockResolvedValue(null);
 
