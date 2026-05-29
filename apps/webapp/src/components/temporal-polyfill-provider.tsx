@@ -18,6 +18,8 @@ interface TemporalPolyfillProviderProps {
  * This must be rendered as early as possible in the component tree,
  * before any components that use Temporal API (like Schedule-X calendar).
  */
-export function TemporalPolyfillProvider({ children }: TemporalPolyfillProviderProps) {
+export function TemporalPolyfillProvider({
+	children,
+}: TemporalPolyfillProviderProps) {
 	return <>{children}</>;
 }

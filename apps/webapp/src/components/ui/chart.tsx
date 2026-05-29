@@ -2,7 +2,11 @@
 
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
-import type { NameType, Payload, ValueType } from "recharts/types/component/DefaultTooltipContent";
+import type {
+	NameType,
+	Payload,
+	ValueType,
+} from "recharts/types/component/DefaultTooltipContent";
 
 import { cn } from "@/lib/utils";
 
@@ -66,7 +70,9 @@ function ChartContainer({
 	...props
 }: React.ComponentProps<"div"> & {
 	config: ChartConfig;
-	children: React.ComponentProps<typeof RechartsPrimitive.ResponsiveContainer>["children"];
+	children: React.ComponentProps<
+		typeof RechartsPrimitive.ResponsiveContainer
+	>["children"];
 }) {
 	const uniqueId = React.useId();
 	const chartId = `chart-${toSafeCssIdentifier(id || uniqueId.replace(/:/g, ""), 0)}`;
@@ -83,40 +89,44 @@ function ChartContainer({
 				{...props}
 			>
 				<ChartStyle config={config} id={chartId} />
-				<RechartsPrimitive.ResponsiveContainer>{children}</RechartsPrimitive.ResponsiveContainer>
+				<RechartsPrimitive.ResponsiveContainer>
+					{children}
+				</RechartsPrimitive.ResponsiveContainer>
 			</div>
 		</ChartContext.Provider>
 	);
 }
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
-	const colorConfig = Object.entries(config).filter(([, config]) => config.theme || config.color);
+	const colorConfig = Object.entries(config).filter(
+		([, config]) => config.theme || config.color,
+	);
 
 	if (!colorConfig.length) {
 		return null;
 	}
 
-	return (
-		<style
-			dangerouslySetInnerHTML={{
-				__html: Object.entries(THEMES)
-					.map(
-						([theme, prefix]) => `
+	const cssText = Object.entries(THEMES)
+		.map(
+			([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
 	.map(([key, itemConfig], index) => {
-		const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
+		const color =
+			itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
+			itemConfig.color;
 		const safeColor = color ? toSafeCssColor(color) : null;
-		return safeColor ? `  --color-${toSafeCssIdentifier(key, index)}: ${safeColor};` : null;
+		return safeColor
+			? `  --color-${toSafeCssIdentifier(key, index)}: ${safeColor};`
+			: null;
 	})
 	.join("\n")}
 }
 `,
-					)
-					.join("\n"),
-			}}
-		/>
-	);
+		)
+		.join("\n");
+
+	return <style>{cssText}</style>;
 };
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
@@ -164,7 +174,9 @@ function ChartTooltipContent({
 
 		if (labelFormatter) {
 			return (
-				<div className={cn("font-medium", labelClassName)}>{labelFormatter(value, payload)}</div>
+				<div className={cn("font-medium", labelClassName)}>
+					{labelFormatter(value, payload)}
+				</div>
 			);
 		}
 
@@ -299,7 +311,9 @@ function ChartLegendContent({
 
 				return (
 					<div
-						className={cn("flex items-center gap-1.5 [&>svg]:size-3 [&>svg]:text-muted-foreground")}
+						className={cn(
+							"flex items-center gap-1.5 [&>svg]:size-3 [&>svg]:text-muted-foreground",
+						)}
 						key={item.value}
 					>
 						{itemConfig?.icon && !hideIcon ? (
@@ -321,29 +335,42 @@ function ChartLegendContent({
 }
 
 // Helper to extract item config from a payload.
-function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key: string) {
+function getPayloadConfigFromPayload(
+	config: ChartConfig,
+	payload: unknown,
+	key: string,
+) {
 	if (typeof payload !== "object" || payload === null) {
 		return;
 	}
 
 	const payloadPayload =
-		"payload" in payload && typeof payload.payload === "object" && payload.payload !== null
+		"payload" in payload &&
+		typeof payload.payload === "object" &&
+		payload.payload !== null
 			? payload.payload
 			: undefined;
 
 	let configLabelKey: string = key;
 
-	if (key in payload && typeof payload[key as keyof typeof payload] === "string") {
+	if (
+		key in payload &&
+		typeof payload[key as keyof typeof payload] === "string"
+	) {
 		configLabelKey = payload[key as keyof typeof payload] as string;
 	} else if (
 		payloadPayload &&
 		key in payloadPayload &&
 		typeof payloadPayload[key as keyof typeof payloadPayload] === "string"
 	) {
-		configLabelKey = payloadPayload[key as keyof typeof payloadPayload] as string;
+		configLabelKey = payloadPayload[
+			key as keyof typeof payloadPayload
+		] as string;
 	}
 
-	return configLabelKey in config ? config[configLabelKey] : config[key as keyof typeof config];
+	return configLabelKey in config
+		? config[configLabelKey]
+		: config[key as keyof typeof config];
 }
 
 export {

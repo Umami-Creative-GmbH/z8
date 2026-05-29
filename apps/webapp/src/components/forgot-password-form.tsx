@@ -19,7 +19,10 @@ const forgotPasswordSchema = z.object({
 	email: z.string().email("Invalid email address"),
 });
 
-export function ForgotPasswordForm({ className, ...props }: React.ComponentProps<"div">) {
+export function ForgotPasswordForm({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage();
@@ -42,7 +45,9 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 
 	const handleTurnstileError = () => {
 		setTurnstileToken(null);
-		setError(t("auth.turnstile-error", "Verification failed. Please try again."));
+		setError(
+			t("auth.turnstile-error", "Verification failed. Please try again."),
+		);
 		turnstileRef.current?.reset();
 	};
 
@@ -92,7 +97,10 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 		if (result.success) {
 			clearFieldError("email");
 		} else {
-			setFieldError("email", t("validation.invalid-email", "Invalid email address"));
+			setFieldError(
+				"email",
+				t("validation.invalid-email", "Invalid email address"),
+			);
 		}
 	};
 
@@ -132,16 +140,23 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 
 		// Verify Turnstile if enabled
 		if (turnstileConfig?.enabled && !turnstileToken) {
-			setError(t("auth.turnstile-required", "Please complete the verification."));
+			setError(
+				t("auth.turnstile-required", "Please complete the verification."),
+			);
 			setIsLoading(false);
 			return;
 		}
 
 		// Verify Turnstile token server-side if enabled
 		if (turnstileConfig?.enabled && turnstileToken) {
-			const verifyResult = await verifyTurnstileWithServer(turnstileToken).catch(() => null);
+			const verifyResult = await verifyTurnstileWithServer(
+				turnstileToken,
+			).catch(() => null);
 			if (!verifyResult || !verifyResult.success) {
-				setError(verifyResult?.error || t("auth.turnstile-failed", "Verification failed."));
+				setError(
+					verifyResult?.error ||
+						t("auth.turnstile-failed", "Verification failed."),
+				);
 				setTurnstileToken(null);
 				turnstileRef.current?.reset();
 				setIsLoading(false);
@@ -160,7 +175,10 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 					message:
 						err instanceof Error
 							? err.message
-							: t("auth.forgot-password-error", "An error occurred. Please try again."),
+							: t(
+									"auth.forgot-password-error",
+									"An error occurred. Please try again.",
+								),
 				},
 			}));
 
@@ -168,7 +186,10 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 			setError(
 				getAuthErrorMessage(
 					response.error,
-					t("auth.forgot-password-error", "Failed to send reset email. Please try again."),
+					t(
+						"auth.forgot-password-error",
+						"Failed to send reset email. Please try again.",
+					),
 				),
 			);
 			// Reset Turnstile for retry (tokens are single-use)
@@ -220,7 +241,9 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 				)}
 			</p>
 			{error ? (
-				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">{error}</div>
+				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">
+					{error}
+				</div>
 			) : null}
 			<div className="grid gap-3">
 				<Label htmlFor="email">{t("auth.email", "Email")}</Label>
@@ -235,7 +258,9 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 					type="email"
 					value={formData.email}
 				/>
-				{fieldErrors.email ? <p className="text-destructive text-sm">{fieldErrors.email}</p> : null}
+				{fieldErrors.email ? (
+					<p className="text-destructive text-sm">{fieldErrors.email}</p>
+				) : null}
 			</div>
 
 			{/* Turnstile widget */}

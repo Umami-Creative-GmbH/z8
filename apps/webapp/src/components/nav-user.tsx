@@ -22,9 +22,16 @@ import { useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useFontSizePreference } from "@/components/font-size-preference";
-import { FONT_SIZE_OPTIONS, isFontSizePreference } from "@/components/font-size-preference-utils";
+import {
+	FONT_SIZE_OPTIONS,
+	isFontSizePreference,
+} from "@/components/font-size-preference-utils";
 import { useTheme } from "@/components/theme-provider";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -70,14 +77,24 @@ export function NavUser({
 	const { push, replace } = useRouter();
 	const locale = useLocale();
 	const pathname = usePathname();
-	const { clearThemeError, setTheme, theme, themeError, timeThemeInfo } = useTheme();
+	const { clearThemeError, setTheme, theme, themeError, timeThemeInfo } =
+		useTheme();
 	useEffect(() => {
 		if (themeError === "location-required") {
-			toast.error(t("user.theme-location-required", "Location permission is required for time-based theme."), {
-				description: t("user.theme-system", "System theme will be used instead."),
-				duration: 6000,
-				id: "theme-location-required",
-			});
+			toast.error(
+				t(
+					"user.theme-location-required",
+					"Location permission is required for time-based theme.",
+				),
+				{
+					description: t(
+						"user.theme-system",
+						"System theme will be used instead.",
+					),
+					duration: 6000,
+					id: "theme-location-required",
+				},
+			);
 		}
 	}, [themeError, t]);
 	const { fontSize, setFontSize } = useFontSizePreference();
@@ -94,9 +111,12 @@ export function NavUser({
 		setDropdownOpen(false);
 		setIsLoggingOut(true);
 		const showLogoutError = () => {
-			toast.error(t("user.log-out-failed", "Could not log out. Please try again."), {
-				id: "logout-failed",
-			});
+			toast.error(
+				t("user.log-out-failed", "Could not log out. Please try again."),
+				{
+					id: "logout-failed",
+				},
+			);
 		};
 		try {
 			await authClient.signOut({
@@ -152,12 +172,17 @@ export function NavUser({
 						timeThemeInfo.nextTheme === "dark"
 							? t("user.theme-dark", "Dark")
 							: t("user.theme-light", "Light"),
-					time: DateTime.fromJSDate(timeThemeInfo.nextSwitchAt).setLocale(locale).toLocaleString(DateTime.TIME_SIMPLE),
+					time: DateTime.fromJSDate(timeThemeInfo.nextSwitchAt)
+						.setLocale(locale)
+						.toLocaleString(DateTime.TIME_SIMPLE),
 				},
 			)
 		: undefined;
 
-	const setMobileSectionOpen = (section: "language" | "fontSize" | "theme", open: boolean) => {
+	const setMobileSectionOpen = (
+		section: "language" | "fontSize" | "theme",
+		open: boolean,
+	) => {
 		setMobileOpenSection(open ? section : null);
 	};
 
@@ -198,7 +223,9 @@ export function NavUser({
 								/>
 								<div className="grid flex-1 text-left text-sm leading-tight">
 									<span className="truncate font-medium">{user.name}</span>
-									<span className="truncate text-muted-foreground text-xs">{user.email}</span>
+									<span className="truncate text-muted-foreground text-xs">
+										{user.email}
+									</span>
 								</div>
 								<IconDotsVertical className="ml-auto size-4" />
 							</SidebarMenuButton>
@@ -221,7 +248,9 @@ export function NavUser({
 									/>
 									<div className="grid flex-1 text-left text-sm leading-tight">
 										<span className="truncate font-medium">{user.name}</span>
-										<span className="truncate text-muted-foreground text-xs">{user.email}</span>
+										<span className="truncate text-muted-foreground text-xs">
+											{user.email}
+										</span>
 									</div>
 								</div>
 							</DropdownMenuLabel>
@@ -241,7 +270,9 @@ export function NavUser({
 								<>
 									<Collapsible
 										open={mobileOpenSection === "language"}
-										onOpenChange={(open) => setMobileSectionOpen("language", open)}
+										onOpenChange={(open) =>
+											setMobileSectionOpen("language", open)
+										}
 									>
 										<CollapsibleTrigger asChild>
 											<DropdownMenuItem
@@ -255,7 +286,10 @@ export function NavUser({
 											</DropdownMenuItem>
 										</CollapsibleTrigger>
 										<CollapsibleContent className="overflow-hidden pl-2 motion-safe:data-[state=closed]:animate-accordion-up motion-safe:data-[state=open]:animate-accordion-down">
-											<DropdownMenuRadioGroup value={locale} onValueChange={handleLanguageChange}>
+											<DropdownMenuRadioGroup
+												value={locale}
+												onValueChange={handleLanguageChange}
+											>
 												{ALL_LANGUAGES.map((lang) => {
 													const config = LANGUAGE_CONFIG[lang];
 													const FlagIcon = config?.Flag;
@@ -268,7 +302,12 @@ export function NavUser({
 															disabled={isPending}
 														>
 															<span className="flex items-center gap-2">
-																{FlagIcon && <FlagIcon className="h-4 w-auto" title={name} />}
+																{FlagIcon && (
+																	<FlagIcon
+																		className="h-4 w-auto"
+																		title={name}
+																	/>
+																)}
 																{name}
 															</span>
 														</DropdownMenuRadioItem>
@@ -280,20 +319,29 @@ export function NavUser({
 									<DropdownMenuSeparator />
 									<Collapsible
 										open={mobileOpenSection === "fontSize"}
-										onOpenChange={(open) => setMobileSectionOpen("fontSize", open)}
+										onOpenChange={(open) =>
+											setMobileSectionOpen("fontSize", open)
+										}
 									>
 										<CollapsibleTrigger asChild>
 											<DropdownMenuItem
 												className="w-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&[data-state=open]>svg:last-child]:rotate-180"
 												onSelect={(event) => event.preventDefault()}
 											>
-												<IconTextSize aria-hidden="true" className="mr-2 size-4" stroke={1.5} />
+												<IconTextSize
+													aria-hidden="true"
+													className="mr-2 size-4"
+													stroke={1.5}
+												/>
 												{t("user.font-size", "Font size")}
 												<IconChevronDown className="ml-auto size-4 transition-transform duration-200" />
 											</DropdownMenuItem>
 										</CollapsibleTrigger>
 										<CollapsibleContent className="overflow-hidden pl-2 motion-safe:data-[state=closed]:animate-accordion-up motion-safe:data-[state=open]:animate-accordion-down">
-											<DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
+											<DropdownMenuRadioGroup
+												value={fontSize}
+												onValueChange={handleFontSizeChange}
+											>
 												{FONT_SIZE_OPTIONS.map((option) => (
 													<DropdownMenuRadioItem
 														key={option.value}
@@ -322,26 +370,47 @@ export function NavUser({
 											</DropdownMenuItem>
 										</CollapsibleTrigger>
 										<CollapsibleContent className="overflow-hidden pl-2 motion-safe:data-[state=closed]:animate-accordion-up motion-safe:data-[state=open]:animate-accordion-down">
-											<DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
-												<DropdownMenuRadioItem className={mobileRadioItemClassName} value="light">
+											<DropdownMenuRadioGroup
+												value={theme}
+												onValueChange={handleThemeChange}
+											>
+												<DropdownMenuRadioItem
+													className={mobileRadioItemClassName}
+													value="light"
+												>
 													<IconSun className="mr-2 size-4" />
 													{t("user.theme-light", "Light")}
 												</DropdownMenuRadioItem>
-												<DropdownMenuRadioItem className={mobileRadioItemClassName} value="dark">
+												<DropdownMenuRadioItem
+													className={mobileRadioItemClassName}
+													value="dark"
+												>
 													<IconMoon className="mr-2 size-4" />
 													{t("user.theme-dark", "Dark")}
 												</DropdownMenuRadioItem>
-												<DropdownMenuRadioItem className={mobileRadioItemClassName} value="time">
-													<IconClock aria-hidden="true" className="mr-2 size-4" />
+												<DropdownMenuRadioItem
+													className={mobileRadioItemClassName}
+													value="time"
+												>
+													<IconClock
+														aria-hidden="true"
+														className="mr-2 size-4"
+													/>
 													{t("user.theme-time", "Time based")}
 												</DropdownMenuRadioItem>
-												<DropdownMenuRadioItem className={mobileRadioItemClassName} value="system">
+												<DropdownMenuRadioItem
+													className={mobileRadioItemClassName}
+													value="system"
+												>
 													<IconDeviceDesktop className="mr-2 size-4" />
 													{t("user.theme-system", "System")}
 												</DropdownMenuRadioItem>
 											</DropdownMenuRadioGroup>
 											{themeError === "location-required" && (
-												<p className="px-2 py-1 text-muted-foreground text-xs" role="alert">
+												<p
+													className="px-2 py-1 text-muted-foreground text-xs"
+													role="alert"
+												>
 													{t(
 														"user.theme-location-required",
 														"Location permission is required for time-based theme.",
@@ -349,7 +418,9 @@ export function NavUser({
 												</p>
 											)}
 											{theme === "time" && timeThemeDescription && (
-												<p className="px-2 py-1 text-muted-foreground text-xs">{timeThemeDescription}</p>
+												<p className="px-2 py-1 text-muted-foreground text-xs">
+													{timeThemeDescription}
+												</p>
 											)}
 										</CollapsibleContent>
 									</Collapsible>
@@ -362,7 +433,10 @@ export function NavUser({
 											{t("user.language", "Language")}
 										</DropdownMenuSubTrigger>
 										<DropdownMenuSubContent>
-											<DropdownMenuRadioGroup value={locale} onValueChange={handleLanguageChange}>
+											<DropdownMenuRadioGroup
+												value={locale}
+												onValueChange={handleLanguageChange}
+											>
 												{ALL_LANGUAGES.map((lang) => {
 													const config = LANGUAGE_CONFIG[lang];
 													const FlagIcon = config?.Flag;
@@ -370,7 +444,12 @@ export function NavUser({
 													return (
 														<DropdownMenuRadioItem key={lang} value={lang}>
 															<span className="flex items-center gap-2">
-																{FlagIcon && <FlagIcon className="h-4 w-auto" title={name} />}
+																{FlagIcon && (
+																	<FlagIcon
+																		className="h-4 w-auto"
+																		title={name}
+																	/>
+																)}
 																{name}
 															</span>
 														</DropdownMenuRadioItem>
@@ -381,13 +460,23 @@ export function NavUser({
 									</DropdownMenuSub>
 									<DropdownMenuSub>
 										<DropdownMenuSubTrigger>
-											<IconTextSize aria-hidden="true" className="mr-2 size-4" stroke={1.5} />
+											<IconTextSize
+												aria-hidden="true"
+												className="mr-2 size-4"
+												stroke={1.5}
+											/>
 											{t("user.font-size", "Font size")}
 										</DropdownMenuSubTrigger>
 										<DropdownMenuSubContent>
-											<DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
+											<DropdownMenuRadioGroup
+												value={fontSize}
+												onValueChange={handleFontSizeChange}
+											>
 												{FONT_SIZE_OPTIONS.map((option) => (
-													<DropdownMenuRadioItem key={option.value} value={option.value}>
+													<DropdownMenuRadioItem
+														key={option.value}
+														value={option.value}
+													>
 														{t(option.labelKey, option.label)}
 													</DropdownMenuRadioItem>
 												))}
@@ -400,7 +489,10 @@ export function NavUser({
 											{t("user.theme", "Theme")}
 										</DropdownMenuSubTrigger>
 										<DropdownMenuSubContent>
-											<DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
+											<DropdownMenuRadioGroup
+												value={theme}
+												onValueChange={handleThemeChange}
+											>
 												<DropdownMenuRadioItem value="light">
 													<IconSun className="mr-2 size-4" />
 													{t("user.theme-light", "Light")}
@@ -410,7 +502,10 @@ export function NavUser({
 													{t("user.theme-dark", "Dark")}
 												</DropdownMenuRadioItem>
 												<DropdownMenuRadioItem value="time">
-													<IconClock aria-hidden="true" className="mr-2 size-4" />
+													<IconClock
+														aria-hidden="true"
+														className="mr-2 size-4"
+													/>
 													{t("user.theme-time", "Time based")}
 												</DropdownMenuRadioItem>
 												<DropdownMenuRadioItem value="system">
@@ -419,7 +514,10 @@ export function NavUser({
 												</DropdownMenuRadioItem>
 											</DropdownMenuRadioGroup>
 											{themeError === "location-required" && (
-												<p className="max-w-52 px-2 py-1 text-muted-foreground text-xs" role="alert">
+												<p
+													className="max-w-52 px-2 py-1 text-muted-foreground text-xs"
+													role="alert"
+												>
 													{t(
 														"user.theme-location-required",
 														"Location permission is required for time-based theme.",

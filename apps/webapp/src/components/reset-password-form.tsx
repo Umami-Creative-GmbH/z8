@@ -27,7 +27,10 @@ const resetPasswordSchema = z
 		path: ["confirmPassword"],
 	});
 
-function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<"div">) {
+function ResetPasswordFormContent({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
 	const { get } = searchParams;
@@ -81,14 +84,18 @@ function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<
 		} else {
 			setFieldError(
 				"password",
-				result.error?.issues?.[0]?.message || t("validation.invalid-password", "Invalid password"),
+				result.error?.issues?.[0]?.message ||
+					t("validation.invalid-password", "Invalid password"),
 			);
 		}
 	};
 
 	const validateConfirmPassword = (value: string) => {
 		if (value !== formData.password) {
-			setFieldError("confirmPassword", t("auth.passwords-no-match", "Passwords do not match"));
+			setFieldError(
+				"confirmPassword",
+				t("auth.passwords-no-match", "Passwords do not match"),
+			);
 		} else {
 			clearFieldError("confirmPassword");
 		}
@@ -131,7 +138,12 @@ function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<
 		}
 
 		if (!token) {
-			setError(t("auth.reset-password-no-token", "Invalid reset link. Please request a new one."));
+			setError(
+				t(
+					"auth.reset-password-no-token",
+					"Invalid reset link. Please request a new one.",
+				),
+			);
 			setIsLoading(false);
 			return;
 		}
@@ -146,7 +158,10 @@ function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<
 					message:
 						err instanceof Error
 							? err.message
-							: t("auth.reset-password-error", "An error occurred. Please try again."),
+							: t(
+									"auth.reset-password-error",
+									"An error occurred. Please try again.",
+								),
 				},
 			}));
 
@@ -154,7 +169,10 @@ function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<
 			setError(
 				getAuthErrorMessage(
 					response.error,
-					t("auth.reset-password-failed", "Failed to reset password. Please try again."),
+					t(
+						"auth.reset-password-failed",
+						"Failed to reset password. Please try again.",
+					),
 				),
 			);
 			setIsLoading(false);
@@ -180,7 +198,10 @@ function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<
 					)}
 				</div>
 				<div className="text-center text-sm">
-					<Link className="underline underline-offset-4" href="/forgot-password">
+					<Link
+						className="underline underline-offset-4"
+						href="/forgot-password"
+					>
 						{t("auth.request-new-reset", "Request a new reset link")}
 					</Link>
 				</div>
@@ -224,7 +245,10 @@ function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<
 					)}
 				</div>
 				<div className="text-center text-sm">
-					<Link className="underline underline-offset-4" href="/forgot-password">
+					<Link
+						className="underline underline-offset-4"
+						href="/forgot-password"
+					>
 						{t("auth.request-new-reset", "Request a new reset link")}
 					</Link>
 				</div>
@@ -244,10 +268,14 @@ function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<
 				{t("auth.enter-new-password", "Enter your new password below.")}
 			</p>
 			{error ? (
-				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">{error}</div>
+				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">
+					{error}
+				</div>
 			) : null}
 			<div className="grid gap-3">
-				<Label htmlFor="password">{t("auth.new-password", "New Password")}</Label>
+				<Label htmlFor="password">
+					{t("auth.new-password", "New Password")}
+				</Label>
 				<PasswordVisibilityInput
 					id="password"
 					name="password"
@@ -276,14 +304,16 @@ function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<
 					value={formData.confirmPassword}
 				/>
 				{fieldErrors.confirmPassword ? (
-					<p className="text-destructive text-sm">{fieldErrors.confirmPassword}</p>
+					<p className="text-destructive text-sm">
+						{fieldErrors.confirmPassword}
+					</p>
 				) : null}
 			</div>
 			<Button className="w-full" disabled={isLoading} type="submit">
 				{isLoading ? (
 					<>
 						<IconLoader2 className="mr-2 size-4 animate-spin" />
-					{t("common.loading", "Loading…")}
+						{t("common.loading", "Loading…")}
 					</>
 				) : (
 					t("auth.reset-password-button", "Reset Password")

@@ -13,7 +13,6 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { CreateOrganizationDialog } from "@/components/organization/create-organization-dialog";
 import { OrganizationLogo } from "@/components/organization/organization-logo";
-import { saveLastOrganization } from "@/lib/org-persistence";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -29,6 +28,7 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import type { UserOrganization } from "@/lib/auth-helpers";
+import { saveLastOrganization } from "@/lib/org-persistence";
 import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
@@ -64,21 +64,28 @@ export function OrganizationSwitcher({
 		}).catch(() => null);
 
 		if (!response) {
-			toast.error(t("organization.switchFailed", "Failed to switch organization"));
+			toast.error(
+				t("organization.switchFailed", "Failed to switch organization"),
+			);
 			setSwitching(false);
 			return;
 		}
 
 		if (!response.ok) {
 			const error = await response.json().catch(() => null);
-			toast.error(error?.error || t("organization.switchFailed", "Failed to switch organization"));
+			toast.error(
+				error?.error ||
+					t("organization.switchFailed", "Failed to switch organization"),
+			);
 			setSwitching(false);
 			return;
 		}
 
 		const result = await response.json().catch(() => null);
 		if (!result) {
-			toast.error(t("organization.switchFailed", "Failed to switch organization"));
+			toast.error(
+				t("organization.switchFailed", "Failed to switch organization"),
+			);
 			setSwitching(false);
 			return;
 		}
@@ -143,7 +150,9 @@ export function OrganizationSwitcher({
 									/>
 								</div>
 								<div className="grid flex-1 text-left text-sm leading-tight">
-									<span className="truncate font-semibold">{activeOrg.name}</span>
+									<span className="truncate font-semibold">
+										{activeOrg.name}
+									</span>
 									<span className="truncate text-xs">
 										{activeOrg.memberRole === "owner"
 											? t("organization.role.owner", "Owner")
@@ -186,7 +195,9 @@ export function OrganizationSwitcher({
 									</div>
 									<div className="flex-1">
 										<div className="font-medium">{org.name}</div>
-										<div className="text-xs text-muted-foreground">{org.memberRole}</div>
+										<div className="text-xs text-muted-foreground">
+											{org.memberRole}
+										</div>
 									</div>
 									{org.id === activeOrg.id && <IconCheck className="size-4" />}
 								</DropdownMenuItem>
@@ -194,7 +205,10 @@ export function OrganizationSwitcher({
 							{canCreateOrganizations && (
 								<>
 									<DropdownMenuSeparator />
-									<DropdownMenuItem className="gap-2 p-2" onClick={() => setCreateDialogOpen(true)}>
+									<DropdownMenuItem
+										className="gap-2 p-2"
+										onClick={() => setCreateDialogOpen(true)}
+									>
 										<div className="flex size-6 items-center justify-center rounded-md border border-dashed">
 											<IconPlus className="size-4" />
 										</div>
@@ -217,7 +231,7 @@ export function OrganizationSwitcher({
 
 			{switching && typeof document !== "undefined"
 				? createPortal(
-						<div className="fixed inset-0 z-[9999] flex items-center justify-center">
+						<div className="fixed inset-0 z-9999 flex items-center justify-center">
 							<div className="absolute inset-0 bg-black/20 backdrop-blur-md" />
 							<div className="relative flex flex-col items-center justify-center gap-4 rounded-lg border bg-card/95 px-12 py-8 shadow-2xl backdrop-blur-sm">
 								<IconLoader2 className="size-8 animate-spin text-primary" />

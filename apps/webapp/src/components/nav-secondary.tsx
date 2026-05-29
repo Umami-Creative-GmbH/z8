@@ -1,6 +1,6 @@
 "use client";
 
-import { IconExternalLink, type Icon } from "@tabler/icons-react";
+import { type Icon, IconExternalLink } from "@tabler/icons-react";
 import type * as React from "react";
 
 import {
