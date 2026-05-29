@@ -93,6 +93,7 @@ vi.mock("@/db/schema", () => ({
 	userSettings: { userId: "userSettings.userId" },
 	workPeriod: {
 		employeeId: "workPeriod.employeeId",
+		organizationId: "workPeriod.organizationId",
 		startTime: "workPeriod.startTime",
 	},
 	workPolicy: {},
@@ -316,6 +317,7 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 		);
 		expect(mockState.findWorkPeriods).toHaveBeenCalled();
 		expect(mockState.eq).toHaveBeenCalledWith("workPeriod.employeeId", "staff-1");
+		expect(mockState.eq).toHaveBeenCalledWith("workPeriod.organizationId", "org-1");
 		expect(mockState.createManualEntryApprovalRequest).not.toHaveBeenCalled();
 		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
 			employeeId: "staff-1",

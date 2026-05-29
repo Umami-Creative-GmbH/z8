@@ -2936,6 +2936,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		const existingPeriods = await db.query.workPeriod.findMany({
 			where: and(
 				eq(workPeriod.employeeId, targetEmployee.id),
+				eq(workPeriod.organizationId, targetEmployee.organizationId),
 				gte(workPeriod.startTime, dateToDB(dateDT.startOf("day").toUTC())!),
 				lte(workPeriod.startTime, dateToDB(dateDT.endOf("day").toUTC())!),
 			),
