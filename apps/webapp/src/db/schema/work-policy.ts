@@ -424,8 +424,11 @@ export const workPolicyPreset = pgTable(
 	"work_policy_preset",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id").references(() => organization.id, {
+			onDelete: "cascade",
+		}),
 
-		name: text("name").notNull().unique(), // "German Labor Law", "EU Working Time Directive"
+		name: text("name").notNull(), // "German Labor Law", "EU Working Time Directive"
 		description: text("description"),
 		countryCode: text("country_code"), // ISO 3166-1 alpha-2 (null = international)
 
@@ -446,7 +449,14 @@ export const workPolicyPreset = pgTable(
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(table) => [
+		index("workPolicyPreset_organizationId_idx").on(table.organizationId),
 		index("workPolicyPreset_countryCode_idx").on(table.countryCode),
 		index("workPolicyPreset_isActive_idx").on(table.isActive),
+		uniqueIndex("workPolicyPreset_system_name_idx")
+			.on(table.name)
+			.where(sql`${table.organizationId} IS NULL`),
+		uniqueIndex("workPolicyPreset_org_name_idx")
+			.on(table.organizationId, table.name)
+			.where(sql`${table.organizationId} IS NOT NULL`),
 	],
 );

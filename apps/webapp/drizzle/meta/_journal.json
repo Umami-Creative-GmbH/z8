@@ -260,6 +260,13 @@
       "when": 1780185600000,
       "tag": "0036_time_entry_timezone_capture",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1780185600001,
+      "tag": "0037_work_policy_preset_ownership",
+      "breakpoints": true
     }
   ]
 }
