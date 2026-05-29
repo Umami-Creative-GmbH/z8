@@ -41,6 +41,10 @@ beforeAll(() => {
 		unobserve() {}
 		disconnect() {}
 	};
+	Element.prototype.hasPointerCapture = vi.fn(() => false);
+	Element.prototype.setPointerCapture = vi.fn();
+	Element.prototype.releasePointerCapture = vi.fn();
+	Element.prototype.scrollIntoView = vi.fn();
 });
 
 function renderWithQueryClient(children: ReactNode) {
@@ -248,6 +252,8 @@ describe("WorkPolicyPresetReviewDialog", () => {
 		await user.type(screen.getByLabelText("Max daily hours"), "9");
 		await user.clear(screen.getByLabelText("Max weekly hours"));
 		await user.type(screen.getByLabelText("Max weekly hours"), "44");
+		await user.clear(screen.getByLabelText("Max uninterrupted hours"));
+		await user.type(screen.getByLabelText("Max uninterrupted hours"), "5.5");
 		await user.click(screen.getByRole("button", { name: "Create policy" }));
 
 		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith(
@@ -257,6 +263,7 @@ describe("WorkPolicyPresetReviewDialog", () => {
 				regulation: expect.objectContaining({
 					maxDailyMinutes: 540,
 					maxWeeklyMinutes: 2640,
+					maxUninterruptedMinutes: 330,
 				}),
 			}),
 			false,
@@ -292,6 +299,83 @@ describe("WorkPolicyPresetReviewDialog", () => {
 						expect.objectContaining({
 							workingMinutesThreshold: 420,
 							requiredBreakMinutes: 45,
+						}),
+					],
+				}),
+			}),
+			false,
+		);
+	});
+
+	it("submits edited schedule defaults from the review dialog", async () => {
+		const user = userEvent.setup();
+
+		renderWithQueryClient(
+			<WorkPolicyPresetReviewDialog
+				open
+				onOpenChange={vi.fn()}
+				organizationId="org-1"
+				mode="useAsPolicy"
+				preset={systemPreset}
+				onSuccess={vi.fn()}
+			/>,
+		);
+
+		await user.click(screen.getByRole("combobox", { name: "Schedule cycle" }));
+		await user.click(screen.getByRole("option", { name: "Monthly" }));
+		await user.click(screen.getByRole("combobox", { name: "Working days" }));
+		await user.click(screen.getByRole("option", { name: "All days" }));
+		await user.click(screen.getByRole("button", { name: "Create policy" }));
+
+		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith(
+			"org-1",
+			"system-1",
+			expect.objectContaining({
+				schedule: expect.objectContaining({
+					scheduleCycle: "monthly",
+					workingDaysPreset: "all_days",
+				}),
+			}),
+			false,
+		);
+	});
+
+	it("submits edited break option values from the review dialog", async () => {
+		const user = userEvent.setup();
+
+		renderWithQueryClient(
+			<WorkPolicyPresetReviewDialog
+				open
+				onOpenChange={vi.fn()}
+				organizationId="org-1"
+				mode="useAsPolicy"
+				preset={systemPreset}
+				onSuccess={vi.fn()}
+			/>,
+		);
+
+		await user.clear(screen.getByLabelText("Split count"));
+		await user.type(screen.getByLabelText("Split count"), "2");
+		await user.clear(screen.getByLabelText("Min split minutes"));
+		await user.type(screen.getByLabelText("Min split minutes"), "15");
+		await user.clear(screen.getByLabelText("Longest split minutes"));
+		await user.type(screen.getByLabelText("Longest split minutes"), "20");
+		await user.click(screen.getByRole("button", { name: "Create policy" }));
+
+		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith(
+			"org-1",
+			"system-1",
+			expect.objectContaining({
+				regulation: expect.objectContaining({
+					breakRules: [
+						expect.objectContaining({
+							options: [
+								expect.objectContaining({
+									splitCount: 2,
+									minimumSplitMinutes: 15,
+									minimumLongestSplitMinutes: 20,
+								}),
+							],
 						}),
 					],
 				}),
