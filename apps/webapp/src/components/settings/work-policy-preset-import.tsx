@@ -17,6 +17,16 @@ import {
 	getWorkPolicyPresets,
 	type WorkPolicyPresetWithSource,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,6 +96,7 @@ export function WorkPolicyPresetImport({
 	const [reviewOpen, setReviewOpen] = useState(false);
 	const [reviewMode, setReviewMode] = useState<ReviewMode>("createCustom");
 	const [reviewPreset, setReviewPreset] = useState<WorkPolicyPresetWithSource | null>(null);
+	const [archivePreset, setArchivePreset] = useState<WorkPolicyPresetWithSource | null>(null);
 
 	const presetsQueryKey = queryKeys.workPolicies.presets(organizationId);
 
@@ -118,6 +129,7 @@ export function WorkPolicyPresetImport({
 
 			toast.success(t("settings.workPolicies.archivePresetSuccess", "Preset archived"));
 			queryClient.invalidateQueries({ queryKey: presetsQueryKey });
+			setArchivePreset(null);
 			onImportSuccess();
 		},
 		onError: () => {
@@ -134,6 +146,9 @@ export function WorkPolicyPresetImport({
 	const handleReviewSuccess = () => {
 		queryClient.invalidateQueries({ queryKey: presetsQueryKey });
 		queryClient.invalidateQueries({ queryKey: queryKeys.workPolicies.list(organizationId) });
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.workPolicies.assignments(organizationId),
+		});
 		onImportSuccess();
 	};
 
@@ -202,6 +217,9 @@ export function WorkPolicyPresetImport({
 
 			<div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
 				<Input
+					aria-label={t("settings.workPolicies.searchPresets", "Search presets")}
+					autoComplete="off"
+					name="preset-search"
 					value={search}
 					onChange={(event) => setSearch(event.target.value)}
 					placeholder="Search presets..."
@@ -336,7 +354,7 @@ export function WorkPolicyPresetImport({
 													variant="outline"
 													size="sm"
 													disabled={archiveMutation.isPending}
-													onClick={() => archiveMutation.mutate(preset.id)}
+													onClick={() => setArchivePreset(preset)}
 												>
 													{isArchiving ? (
 														<IconLoader2 className="mr-2 size-4 animate-spin" />
@@ -363,6 +381,44 @@ export function WorkPolicyPresetImport({
 				preset={reviewPreset}
 				onSuccess={handleReviewSuccess}
 			/>
+
+			<AlertDialog
+				open={archivePreset !== null}
+				onOpenChange={(open) => {
+					if (!open) setArchivePreset(null);
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							{t("settings.workPolicies.archivePresetTitle", "Archive custom preset?")}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{t(
+								"settings.workPolicies.archivePresetDescription",
+								"This removes the preset from the library. Existing policies created from it are not changed.",
+							)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={archiveMutation.isPending}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
+						<AlertDialogAction
+							disabled={!archivePreset || archiveMutation.isPending}
+							onClick={(event) => {
+								event.preventDefault();
+								if (archivePreset) archiveMutation.mutate(archivePreset.id);
+							}}
+						>
+							{archiveMutation.isPending ? (
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
+							) : null}
+							{t("settings.workPolicies.confirmArchivePreset", "Archive preset")}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

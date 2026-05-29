@@ -136,6 +136,35 @@ describe("WorkPolicyPresetImport", () => {
 		expect(screen.queryByText("German Labor Law")).toBeNull();
 		expect(screen.getByText("Retail 38h")).toBeTruthy();
 	});
+
+	it("exposes an accessible search input", async () => {
+		renderWithQueryClient(
+			<WorkPolicyPresetImport organizationId="org-1" onImportSuccess={vi.fn()} />,
+		);
+
+		const searchInput = await screen.findByRole("textbox", { name: "Search presets" });
+
+		expect(searchInput.getAttribute("name")).toBe("preset-search");
+		expect(searchInput.getAttribute("autocomplete")).toBe("off");
+	});
+
+	it("confirms archive before archiving a custom preset", async () => {
+		const user = userEvent.setup();
+
+		renderWithQueryClient(
+			<WorkPolicyPresetImport organizationId="org-1" onImportSuccess={vi.fn()} />,
+		);
+
+		await screen.findByText("Retail 38h");
+		await user.click(screen.getByRole("button", { name: "Archive" }));
+
+		expect(archiveWorkPolicyPreset).not.toHaveBeenCalled();
+		expect(screen.getByRole("alertdialog", { name: "Archive custom preset?" })).toBeTruthy();
+
+		await user.click(screen.getByRole("button", { name: "Archive preset" }));
+
+		expect(archiveWorkPolicyPreset).toHaveBeenCalledWith("org-1", "custom-1");
+	});
 });
 
 describe("WorkPolicyPresetReviewDialog", () => {
