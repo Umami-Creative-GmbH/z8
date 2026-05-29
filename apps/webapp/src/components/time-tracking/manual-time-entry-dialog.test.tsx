@@ -90,20 +90,24 @@ vi.mock("@/components/time-tracking/project-selector", () => ({
 
 vi.mock("@/components/time-tracking/work-category-selector", () => ({
 	WorkCategorySelector: ({
+		employeeId,
 		onValueChange,
 		value,
 	}: {
+		employeeId: string;
 		onValueChange: (value: string) => void;
 		value?: string;
 	}) => (
-		<select
-			aria-label="Work category"
-			onChange={(event) => onValueChange(event.target.value)}
-			value={value ?? ""}
-		>
-			<option value="">No category</option>
-			<option value="category-1">Category 1</option>
-		</select>
+		<div data-employee-id={employeeId} data-testid="work-category-selector">
+			<select
+				aria-label="Work category"
+				onChange={(event) => onValueChange(event.target.value)}
+				value={value ?? ""}
+			>
+				<option value="">No category</option>
+				<option value="category-1">Category 1</option>
+			</select>
+		</div>
 	),
 }));
 
@@ -189,11 +193,15 @@ describe("ManualTimeEntryDialog layout", () => {
 		renderDialog({
 			open: true,
 			hideTrigger: true,
-			targetEmployeeId: "employee-jane",
+			targetEmployeeId: "employee-2",
 			defaultDate: "2026-05-12",
 			defaultClockInTime: "10:15",
 			defaultClockOutTime: "15:45",
 		});
+
+		expect(screen.getByTestId("work-category-selector").getAttribute("data-employee-id")).toBe(
+			"employee-2",
+		);
 
 		fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-05-13" } });
 		fireEvent.change(screen.getByLabelText("Clock In"), { target: { value: "11:00" } });
@@ -205,7 +213,7 @@ describe("ManualTimeEntryDialog layout", () => {
 
 		await waitFor(() => {
 			expect(createManualTimeEntry).toHaveBeenCalledWith({
-				employeeId: "employee-jane",
+				employeeId: "employee-2",
 				date: "2026-05-13",
 				clockInTime: "11:00",
 				clockOutTime: "16:30",

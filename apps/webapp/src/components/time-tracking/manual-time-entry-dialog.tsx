@@ -359,7 +359,7 @@ export function ManualTimeEntryDialog({
 						<form.Field name="workCategoryId">
 							{(field) => (
 								<WorkCategorySelector
-									employeeId={employeeId}
+									employeeId={targetEmployeeId ?? employeeId}
 									value={field.state.value}
 									onValueChange={(value) => field.handleChange(value)}
 									autoSelectLast={false}
