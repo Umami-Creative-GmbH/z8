@@ -4,7 +4,6 @@ import { IconLoader2, IconPalette } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect } from "react";
 import { toast } from "sonner";
 import {
 	createOrganizationCategory,
@@ -22,7 +21,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query";
 
@@ -38,6 +41,13 @@ interface WorkCategoryDialogProps {
 		color: string | null;
 	} | null;
 	onSuccess: () => void;
+}
+
+interface WorkCategoryFormValues {
+	name: string;
+	description: string;
+	factor: string;
+	color: string | null;
 }
 
 // Predefined color palette
@@ -67,6 +77,27 @@ export function WorkCategoryDialog({
 	category,
 	onSuccess,
 }: WorkCategoryDialogProps) {
+	const formScopeKey = `${open}:${category?.id ?? "new"}`;
+
+	return (
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<WorkCategoryDialogContent
+				key={formScopeKey}
+				onOpenChange={onOpenChange}
+				organizationId={organizationId}
+				category={category}
+				onSuccess={onSuccess}
+			/>
+		</ActionPanel>
+	);
+}
+
+function WorkCategoryDialogContent({
+	onOpenChange,
+	organizationId,
+	category,
+	onSuccess,
+}: Omit<WorkCategoryDialogProps, "open">) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const isEditing = !!category;
@@ -78,7 +109,7 @@ export function WorkCategoryDialog({
 			description: category?.description || "",
 			factor: category?.factor || "1.00",
 			color: category?.color || (null as string | null),
-		},
+		} satisfies WorkCategoryFormValues,
 		onSubmit: async ({ value }) => {
 			if (isEditing && category) {
 				updateMutation.mutate({
@@ -100,17 +131,6 @@ export function WorkCategoryDialog({
 		},
 	});
 
-	// Reset form when category changes or dialog opens
-	useEffect(() => {
-		if (open) {
-			form.reset();
-			form.setFieldValue("name", category?.name || "");
-			form.setFieldValue("description", category?.description || "");
-			form.setFieldValue("factor", category?.factor || "1.00");
-			form.setFieldValue("color", category?.color || null);
-		}
-	}, [open, category, form]);
-
 	// Create mutation
 	const createMutation = useMutation({
 		mutationFn: (data: {
@@ -125,17 +145,27 @@ export function WorkCategoryDialog({
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.workCategories.orgList(organizationId),
 				});
-				toast.success(t("settings.workCategories.categoryCreated", "Category created"));
+				toast.success(
+					t("settings.workCategories.categoryCreated", "Category created"),
+				);
 				onSuccess();
 			} else {
 				toast.error(
 					result.error ||
-						t("settings.workCategories.categoryCreateFailed", "Failed to create category"),
+						t(
+							"settings.workCategories.categoryCreateFailed",
+							"Failed to create category",
+						),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.workCategories.categoryCreateFailed", "Failed to create category"));
+			toast.error(
+				t(
+					"settings.workCategories.categoryCreateFailed",
+					"Failed to create category",
+				),
+			);
 		},
 	});
 
@@ -153,150 +183,175 @@ export function WorkCategoryDialog({
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.workCategories.orgList(organizationId),
 				});
-				toast.success(t("settings.workCategories.categoryUpdated", "Category updated"));
+				toast.success(
+					t("settings.workCategories.categoryUpdated", "Category updated"),
+				);
 				onSuccess();
 			} else {
 				toast.error(
 					result.error ||
-						t("settings.workCategories.categoryUpdateFailed", "Failed to update category"),
+						t(
+							"settings.workCategories.categoryUpdateFailed",
+							"Failed to update category",
+						),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.workCategories.categoryUpdateFailed", "Failed to update category"));
+			toast.error(
+				t(
+					"settings.workCategories.categoryUpdateFailed",
+					"Failed to update category",
+				),
+			);
 		},
 	});
 
 	const isMutating = createMutation.isPending || updateMutation.isPending;
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent>
-				<ActionPanelHeader>
-					<ActionPanelTitle>
-						{isEditing
-							? t("settings.workCategories.editCategory", "Edit Category")
-							: t("settings.workCategories.createCategory", "Create Category")}
-					</ActionPanelTitle>
-					<ActionPanelDescription>
-						{isEditing
-							? t("settings.workCategories.editCategoryDescription", "Update the category details")
-							: t(
-									"settings.workCategories.createCategoryDescription",
-									"Create a new work category that can be assigned to multiple sets",
-								)}
-					</ActionPanelDescription>
-				</ActionPanelHeader>
+		<ActionPanelContent>
+			<ActionPanelHeader>
+				<ActionPanelTitle>
+					{isEditing
+						? t("settings.workCategories.editCategory", "Edit Category")
+						: t("settings.workCategories.createCategory", "Create Category")}
+				</ActionPanelTitle>
+				<ActionPanelDescription>
+					{isEditing
+						? t(
+								"settings.workCategories.editCategoryDescription",
+								"Update the category details",
+							)
+						: t(
+								"settings.workCategories.createCategoryDescription",
+								"Create a new work category that can be assigned to multiple sets",
+							)}
+				</ActionPanelDescription>
+			</ActionPanelHeader>
 
-				<form
-					onSubmit={(e) => {
-						e.preventDefault();
-						form.handleSubmit();
-					}}
-					className="flex min-h-0 flex-1 flex-col"
-				>
-					<ActionPanelBody className="space-y-4">
-						{/* Name and Color */}
-						<div className="flex gap-2">
-							<form.Field name="color">
-								{(field) => (
-									<ColorPicker
-										value={field.state.value}
-										onChange={(color) => field.handleChange(color)}
-										label={t("settings.workCategories.chooseColor", "Choose color")}
-										colorOptionsLabel={t("settings.workCategories.colorOptions", "Color options")}
-										noColorLabel={t("settings.workCategories.noColor", "No color")}
-									/>
-								)}
-							</form.Field>
-							<div className="flex-1 space-y-2">
-								<Label htmlFor="category-name">
-									{t("settings.workCategories.categoryName", "Name")}
-								</Label>
-								<form.Field name="name">
-									{(field) => (
-										<Input
-											id="category-name"
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											placeholder={t(
-												"settings.workCategories.categoryNamePlaceholder",
-												"e.g., Passive Travel",
-											)}
-										/>
+			<div className="flex min-h-0 flex-1 flex-col">
+				<ActionPanelBody className="space-y-4">
+					{/* Name and Color */}
+					<div className="flex gap-2">
+						<form.Field name="color">
+							{(field) => (
+								<ColorPicker
+									value={field.state.value}
+									onChange={(color) => field.handleChange(color)}
+									label={t(
+										"settings.workCategories.chooseColor",
+										"Choose color",
 									)}
-								</form.Field>
-							</div>
-						</div>
-
-						{/* Description */}
-						<div className="space-y-2">
-							<Label htmlFor="category-description">
-								{t("settings.workCategories.description", "Description")}
+									colorOptionsLabel={t(
+										"settings.workCategories.colorOptions",
+										"Color options",
+									)}
+									noColorLabel={t(
+										"settings.workCategories.noColor",
+										"No color",
+									)}
+								/>
+							)}
+						</form.Field>
+						<div className="flex-1 space-y-2">
+							<Label htmlFor="category-name">
+								{t("settings.workCategories.categoryName", "Name")}
 							</Label>
-							<form.Field name="description">
+							<form.Field name="name">
 								{(field) => (
-									<Textarea
-										id="category-description"
+									<Input
+										id="category-name"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										placeholder={t(
-											"settings.workCategories.descriptionPlaceholder",
-											"Optional description",
+											"settings.workCategories.categoryNamePlaceholder",
+											"e.g., Passive Travel",
 										)}
-										rows={2}
 									/>
 								)}
 							</form.Field>
 						</div>
+					</div>
 
-						{/* Factor */}
-						<div className="space-y-2">
-							<Label htmlFor="category-factor">
-								{t("settings.workCategories.factor", "Factor")}
-							</Label>
-							<form.Field name="factor">
-								{(field) => (
-									<Input
-										id="category-factor"
-										type="number"
-										step="0.01"
-										min="0"
-										max="2"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-									/>
-								)}
-							</form.Field>
-							<p className="text-xs text-muted-foreground">
-								{t(
-									"settings.workCategories.factorExplanation",
-									"Factor determines effective time: 0.5 = 50% (e.g., passive travel), 1.0 = 100% (normal work), 1.5 = 150% (overtime)",
-								)}
-							</p>
-						</div>
-					</ActionPanelBody>
-
-					<ActionPanelFooter>
-						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button type="submit" disabled={isMutating}>
-							{isMutating ? (
-								<>
-									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-									{t("common.saving", "Saving...")}
-								</>
-							) : isEditing ? (
-								t("common.save", "Save")
-							) : (
-								t("common.create", "Create")
+					{/* Description */}
+					<div className="space-y-2">
+						<Label htmlFor="category-description">
+							{t("settings.workCategories.description", "Description")}
+						</Label>
+						<form.Field name="description">
+							{(field) => (
+								<Textarea
+									id="category-description"
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									placeholder={t(
+										"settings.workCategories.descriptionPlaceholder",
+										"Optional description",
+									)}
+									rows={2}
+								/>
 							)}
-						</Button>
-					</ActionPanelFooter>
-				</form>
-			</ActionPanelContent>
-		</ActionPanel>
+						</form.Field>
+					</div>
+
+					{/* Factor */}
+					<div className="space-y-2">
+						<Label htmlFor="category-factor">
+							{t("settings.workCategories.factor", "Factor")}
+						</Label>
+						<form.Field name="factor">
+							{(field) => (
+								<Input
+									id="category-factor"
+									type="number"
+									step="0.01"
+									min="0"
+									max="2"
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+								/>
+							)}
+						</form.Field>
+						<p className="text-xs text-muted-foreground">
+							{t(
+								"settings.workCategories.factorExplanation",
+								"Factor determines effective time: 0.5 = 50% (e.g., passive travel), 1.0 = 100% (normal work), 1.5 = 150% (overtime)",
+							)}
+						</p>
+					</div>
+				</ActionPanelBody>
+
+				<ActionPanelFooter>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => onOpenChange(false)}
+					>
+						{t("common.cancel", "Cancel")}
+					</Button>
+					<Button
+						type="button"
+						disabled={isMutating}
+						onClick={() => form.handleSubmit()}
+					>
+						{isMutating ? (
+							<>
+								<IconLoader2
+									className="mr-2 size-4 animate-spin"
+									aria-hidden="true"
+								/>
+								{t("common.saving", "Saving...")}
+							</>
+						) : isEditing ? (
+							t("common.save", "Save")
+						) : (
+							t("common.create", "Create")
+						)}
+					</Button>
+				</ActionPanelFooter>
+			</div>
+		</ActionPanelContent>
 	);
 }
 
@@ -341,7 +396,7 @@ function ColorPicker({
 					type="button"
 					variant="outline"
 					size="icon"
-					className="mt-8 size-9 flex-shrink-0"
+					className="mt-8 size-9 shrink-0"
 					aria-label={label}
 				>
 					{value ? (
@@ -356,13 +411,13 @@ function ColorPicker({
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-auto p-3">
-				<div className="grid grid-cols-4 gap-2" role="listbox" aria-label={colorOptionsLabel}>
+				<p className="sr-only">{colorOptionsLabel}</p>
+				<div className="grid grid-cols-4 gap-2">
 					{COLOR_PALETTE.map((color) => (
 						<button
 							key={color}
 							type="button"
-							role="option"
-							aria-selected={value === color}
+							aria-pressed={value === color}
 							aria-label={COLOR_NAMES[color] || color}
 							className="size-6 rounded-full hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
 							style={{ backgroundColor: color }}
@@ -371,8 +426,7 @@ function ColorPicker({
 					))}
 					<button
 						type="button"
-						role="option"
-						aria-selected={value === null}
+						aria-pressed={value === null}
 						aria-label={noColorLabel}
 						className="size-6 rounded-full border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground transition-colors flex items-center justify-center"
 						onClick={() => onChange(null)}

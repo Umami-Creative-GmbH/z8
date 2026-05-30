@@ -2,7 +2,10 @@
 
 import { act, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { FontSizeProvider, useFontSizePreference } from "./font-size-preference";
+import {
+	FontSizeProvider,
+	useFontSizePreference,
+} from "./font-size-preference";
 import {
 	applyFontSizePreference,
 	FONT_SIZE_STORAGE_KEY,
@@ -23,7 +26,37 @@ function Consumer() {
 	);
 }
 
+function createStorageMock(): Storage {
+	const store = new Map<string, string>();
+
+	return {
+		length: 0,
+		clear() {
+			store.clear();
+			this.length = 0;
+		},
+		getItem(key: string) {
+			return store.get(key) ?? null;
+		},
+		key(index: number) {
+			return Array.from(store.keys())[index] ?? null;
+		},
+		removeItem(key: string) {
+			store.delete(key);
+			this.length = store.size;
+		},
+		setItem(key: string, value: string) {
+			store.set(key, value);
+			this.length = store.size;
+		},
+	};
+}
+
 beforeEach(() => {
+	Object.defineProperty(window, "localStorage", {
+		configurable: true,
+		value: createStorageMock(),
+	});
 	localStorage.clear();
 	document.documentElement.removeAttribute("data-font-size");
 });
@@ -115,7 +148,10 @@ describe("FontSizeProvider", () => {
 	});
 
 	it("keeps working when localStorage access throws", async () => {
-		const localStorageDescriptor = Object.getOwnPropertyDescriptor(window, "localStorage");
+		const localStorageDescriptor = Object.getOwnPropertyDescriptor(
+			window,
+			"localStorage",
+		);
 
 		Object.defineProperty(window, "localStorage", {
 			configurable: true,
