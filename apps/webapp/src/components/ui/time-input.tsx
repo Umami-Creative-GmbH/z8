@@ -200,6 +200,15 @@ function TimeInput({
 	}, [pickerFormat, value]);
 
 	useEffect(() => {
+		const emitPickerChange = (value: string) => {
+			if (lastEmittedValueRef.current === value) {
+				return;
+			}
+
+			lastEmittedValueRef.current = value;
+			onChangeRef.current?.(createChangeEvent(value));
+		};
+
 		if (!pickerAnchorRef.current) {
 			return;
 		}
@@ -223,7 +232,7 @@ function TimeInput({
 						setDisplayValue(formatTimeForMaskedInput(nextValue, pickerFormat));
 						setPeriod(getPeriodFromTime(nextValue));
 					});
-					emitChange(nextValue);
+					emitPickerChange(nextValue);
 				},
 			},
 		});
@@ -231,7 +240,7 @@ function TimeInput({
 		picker.create();
 
 		return () => picker.destroy({ keepInputValue: true });
-	}, [emitChange, modalRootId, pickerFormat]);
+	}, [modalRootId, pickerFormat]);
 
 	function handleMaskedValueChange(nextRawDisplayValue: string) {
 		const nextDisplayValue = formatTypedTimeInput(nextRawDisplayValue);

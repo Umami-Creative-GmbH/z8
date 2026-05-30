@@ -3,7 +3,7 @@
 import { IconBuilding, IconCheck, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useEffectEvent, useState } from "react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { getLastOrganization, saveLastOrganization } from "@/lib/org-persistence";
@@ -64,7 +64,7 @@ function InitPageContent() {
 		window.location.assign(redirectUrl);
 	};
 
-	const initializeSession = async () => {
+	const initializeSession = useEffectEvent(async () => {
 		// Check current session state
 		const response = await fetch("/api/session/organization-status").catch((error) => {
 			console.error("Failed to initialize session:", error);
@@ -137,7 +137,7 @@ function InitPageContent() {
 		// Multiple orgs and no saved preference - show selection UI
 		setOrganizations(orgs);
 		setStatus("selecting");
-	};
+	});
 
 	const handleSelectOrganization = async (orgId: string) => {
 		setSelectedOrg(orgId);
@@ -146,7 +146,7 @@ function InitPageContent() {
 
 	useEffect(() => {
 		void Promise.resolve().then(initializeSession);
-	}, [initializeSession]);
+	}, []);
 
 	// Show organization selection UI
 	if (status === "selecting") {

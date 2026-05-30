@@ -336,7 +336,6 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 
 		const media = window.matchMedia("(prefers-color-scheme: dark)");
 		const updateSystemTheme = () => setSystemTheme(media.matches ? "dark" : "light");
-		updateSystemTheme();
 		media.addEventListener("change", updateSystemTheme);
 
 		return () => media.removeEventListener("change", updateSystemTheme);

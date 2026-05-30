@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { ApiError, fetchApi } from "@/lib/fetch";
 import { useRouter } from "@/navigation";
@@ -93,13 +93,17 @@ export function useOrganization(): OrganizationContext {
 		}
 	};
 
+	const fetchEmployeeContextForEffect = useEffectEvent(async () => {
+		await fetchEmployeeContext();
+	});
+
 	// Re-fetch when session loads or active organization changes
 	useEffect(() => {
 		if (!sessionLoading) {
-			const timeout = setTimeout(() => void fetchEmployeeContext(), 0);
+			const timeout = setTimeout(() => void fetchEmployeeContextForEffect(), 0);
 			return () => clearTimeout(timeout);
 		}
-	}, [sessionLoading, activeOrganizationId, fetchEmployeeContext]);
+	}, [sessionLoading, activeOrganizationId]);
 
 	const organizationId = employeeContext?.organizationId ?? null;
 	const role = employeeContext?.role ?? null;

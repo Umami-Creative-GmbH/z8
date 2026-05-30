@@ -3,7 +3,7 @@
 import { IconCheck, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { getWebhookDeliveryLogs } from "@/app/[locale]/(app)/settings/webhooks/actions";
 import {
 	ActionPanel,
@@ -72,11 +72,15 @@ export function WebhookDeliveryLogsDialog({
 		setIsLoading(false);
 	};
 
+	const loadDeliveriesForEffect = useEffectEvent(async () => {
+		await loadDeliveries();
+	});
+
 	useEffect(() => {
 		if (open) {
-			void Promise.resolve().then(() => loadDeliveries());
+			void Promise.resolve().then(loadDeliveriesForEffect);
 		}
-	}, [open, loadDeliveries]);
+	}, [open]);
 
 	const toggleRow = (id: string) => {
 		setExpandedRows((prev) => {
