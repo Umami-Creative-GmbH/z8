@@ -8,7 +8,7 @@ Add a GitHub Actions workflow that checks pull requests against the repo's docum
 
 - Create `.github/workflows/tests.yml`.
 - Trigger on `pull_request` events targeting `main`.
-- Limit runs to changes that can affect tests: application code, packages, Docker scripts tested by the root command, package and lock files, Turbo config, and the workflow file itself.
+- Limit runs to changes that can affect tests: application code, packages, Docker scripts tested by the root command, Dockerfiles, Docker target files, infra app manifests, package and lock files, Turbo config, and the workflow file itself.
 - Use `contents: read` permissions only.
 - Use a per-PR concurrency group and cancel superseded runs.
 

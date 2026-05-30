@@ -37,6 +37,9 @@ on:
       - "apps/**"
       - "packages/**"
       - "docker/scripts/**"
+      - "docker/Dockerfile.*"
+      - "docker/targets/**"
+      - "infra/hetzner-k8s/k8s/app/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
@@ -128,6 +131,6 @@ Expected: Git creates a commit containing the workflow and planning documents.
 
 ## Self-Review
 
-- Spec coverage: The plan creates `.github/workflows/tests.yml`, runs on PRs to `main`, uses Node 24 and pnpm, installs with `--frozen-lockfile`, runs `pnpm test`, and writes pass/fail output to `$GITHUB_STEP_SUMMARY`.
+- Spec coverage: The plan creates `.github/workflows/tests.yml`, runs on PRs to `main`, filters test-relevant paths including Docker scripts, Dockerfiles, Docker target files, and infra app manifests, uses Node 24 and pnpm, installs with `--frozen-lockfile`, runs `pnpm test`, and writes pass/fail output to `$GITHUB_STEP_SUMMARY`.
 - Placeholder scan: No placeholders remain. The workflow content, commands, paths, and expected outcomes are explicit.
 - Type and name consistency: The workflow name, job name, file path, command, and concurrency group are consistent across tasks.
