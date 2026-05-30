@@ -9,7 +9,7 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { getSurchargeCalculationsForPeriod } from "@/app/[locale]/(app)/settings/surcharges/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -122,88 +122,88 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 	const appliedFilters = useRef(defaultFilters);
 	const loadedRowsOrganizationIdRef = useRef<string | null>(null);
 	const latestRequestId = useRef(0);
+	const loadCalculationsRef = useRef<(filters: FilterValues) => Promise<void>>(
+		async () => {},
+	);
 
-	const loadCalculations = useCallback(
-		async (filters: FilterValues) => {
-			const requestId = latestRequestId.current + 1;
-			latestRequestId.current = requestId;
-			const startDate = parseFilterDate(filters.startDate, "start");
-			const endDate = parseFilterDate(filters.endDate, "end");
+	loadCalculationsRef.current = async (filters: FilterValues) => {
+		const requestId = latestRequestId.current + 1;
+		latestRequestId.current = requestId;
+		const startDate = parseFilterDate(filters.startDate, "start");
+		const endDate = parseFilterDate(filters.endDate, "end");
 
-			if (!startDate.isValid || !endDate.isValid || startDate > endDate) {
-				setRows([]);
-				setExpandedId(null);
-				loadedRowsOrganizationIdRef.current = null;
-				setLoadedRowsOrganizationId(null);
-				setError(null);
-				setIsShowingPreviousResults(false);
-				setDateError(
-					t(
-						"settings.surcharges.reports.errors.invalidDateRange",
-						"Start date must be on or before end date.",
-					),
-				);
-				setIsLoading(false);
-				return;
-			}
-
-			setDateError(null);
+		if (!startDate.isValid || !endDate.isValid || startDate > endDate) {
+			setRows([]);
+			setExpandedId(null);
+			loadedRowsOrganizationIdRef.current = null;
+			setLoadedRowsOrganizationId(null);
 			setError(null);
 			setIsShowingPreviousResults(false);
-			if (loadedRowsOrganizationIdRef.current !== organizationId) {
+			setDateError(
+				t(
+					"settings.surcharges.reports.errors.invalidDateRange",
+					"Start date must be on or before end date.",
+				),
+			);
+			setIsLoading(false);
+			return;
+		}
+
+		setDateError(null);
+		setError(null);
+		setIsShowingPreviousResults(false);
+		if (loadedRowsOrganizationIdRef.current !== organizationId) {
+			setRows([]);
+			setExpandedId(null);
+		}
+		setIsLoading(true);
+
+		const employeeId = filters.employeeId.trim() || undefined;
+		const result = await getSurchargeCalculationsForPeriod(
+			organizationId,
+			startDate.toJSDate(),
+			endDate.toJSDate(),
+			employeeId,
+		).catch(() => ({
+			success: false as const,
+			error: "Failed to load surcharge calculations.",
+		}));
+
+		if (requestId !== latestRequestId.current) {
+			return;
+		}
+
+		if (result.success) {
+			setRows(result.data);
+			loadedRowsOrganizationIdRef.current = organizationId;
+			setLoadedRowsOrganizationId(organizationId);
+			setExpandedId((current) =>
+				result.data.some((row) => row.id === current) ? current : null,
+			);
+		} else {
+			if (loadedRowsOrganizationIdRef.current === organizationId) {
+				setIsShowingPreviousResults(true);
+			} else {
 				setRows([]);
 				setExpandedId(null);
 			}
-			setIsLoading(true);
+			setError(
+				result.error ||
+					t(
+						"settings.surcharges.reports.errors.loadFailed",
+						"Failed to load surcharge calculations.",
+					),
+			);
+		}
 
-			const employeeId = filters.employeeId.trim() || undefined;
-			const result = await getSurchargeCalculationsForPeriod(
-				organizationId,
-				startDate.toJSDate(),
-				endDate.toJSDate(),
-				employeeId,
-			).catch(() => ({
-				success: false as const,
-				error: "Failed to load surcharge calculations.",
-			}));
-
-			if (requestId !== latestRequestId.current) {
-				return;
-			}
-
-			if (result.success) {
-				setRows(result.data);
-				loadedRowsOrganizationIdRef.current = organizationId;
-				setLoadedRowsOrganizationId(organizationId);
-				setExpandedId((current) =>
-					result.data.some((row) => row.id === current) ? current : null,
-				);
-			} else {
-				if (loadedRowsOrganizationIdRef.current === organizationId) {
-					setIsShowingPreviousResults(true);
-				} else {
-					setRows([]);
-					setExpandedId(null);
-				}
-				setError(
-					result.error ||
-						t(
-							"settings.surcharges.reports.errors.loadFailed",
-							"Failed to load surcharge calculations.",
-						),
-				);
-			}
-
-			setIsLoading(false);
-		},
-		[organizationId, t],
-	);
+		setIsLoading(false);
+	};
 
 	const form = useForm({
 		defaultValues: defaultFilters,
 		onSubmit: async ({ value }) => {
 			appliedFilters.current = value;
-			await loadCalculations(value);
+			await loadCalculationsRef.current(value);
 		},
 	});
 
@@ -212,8 +212,8 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			return;
 		}
 
-		void loadCalculations(appliedFilters.current);
-	}, [organizationId, loadCalculations]);
+		void loadCalculationsRef.current(appliedFilters.current);
+	}, [organizationId]);
 
 	const displayRows = loadedRowsOrganizationId === organizationId ? rows : [];
 	const totals = displayRows.reduce(
