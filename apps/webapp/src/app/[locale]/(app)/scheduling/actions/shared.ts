@@ -9,6 +9,7 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import { findCurrentEmployeeByUserId } from "./current-employee-scope";
 
 export const logger = createLogger("SchedulingActions");
 export type CurrentEmployee = typeof employee.$inferSelect;
@@ -42,9 +43,11 @@ export function requireCurrentEmployee(queryName = "getCurrentEmployee") {
 
 		const currentEmployee = yield* _(
 			dbService.query(queryName, async () => {
-				return await db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
+				return await findCurrentEmployeeByUserId(
+					db,
+					session.user.id,
+					session.session.activeOrganizationId,
+				);
 			}),
 		);
 
