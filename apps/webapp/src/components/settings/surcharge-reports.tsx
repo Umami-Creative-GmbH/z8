@@ -9,7 +9,7 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { Fragment, useEffect, useEffectEvent, useReducer, useRef, useState } from "react";
+import { Fragment, useEffect, useEffectEvent, useRef, useState } from "react";
 import { getSurchargeCalculationsForPeriod } from "@/app/[locale]/(app)/settings/surcharges/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -80,9 +80,14 @@ function formatDate(value: Date) {
 }
 
 function formatTimestamp(value: Date | string) {
-	const dateTime = typeof value === "string" ? DateTime.fromISO(value) : DateTime.fromJSDate(value);
+	const dateTime =
+		typeof value === "string"
+			? DateTime.fromISO(value)
+			: DateTime.fromJSDate(value);
 
-	return dateTime.isValid ? dateTime.toLocaleString(DateTime.DATETIME_MED) : "-";
+	return dateTime.isValid
+		? dateTime.toLocaleString(DateTime.DATETIME_MED)
+		: "-";
 }
 
 function formatPercentage(value: number | string) {
@@ -96,7 +101,9 @@ function formatPercentage(value: number | string) {
 }
 
 function getEmployeeName(calculation: SurchargeCalculationWithDetails) {
-	return buildAuthUserDisplayName(calculation.employee) || calculation.employee.id;
+	return (
+		buildAuthUserDisplayName(calculation.employee) || calculation.employee.id
+	);
 }
 
 export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
@@ -106,10 +113,12 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [dateError, setDateError] = useState<string | null>(null);
-	const [isShowingPreviousResults, setIsShowingPreviousResults] = useState(false);
+	const [isShowingPreviousResults, setIsShowingPreviousResults] =
+		useState(false);
 	const [expandedId, setExpandedId] = useState<string | null>(null);
-	const [loadedRowsOrganizationId, setLoadedRowsOrganizationId] = useState<string | null>(null);
-	const [_loadRequestVersion, requestLoad] = useReducer((version: number) => version + 1, 0);
+	const [loadedRowsOrganizationId, setLoadedRowsOrganizationId] = useState<
+		string | null
+	>(null);
 	const appliedFilters = useRef(defaultFilters);
 	const loadedRowsOrganizationIdRef = useRef<string | null>(null);
 	const latestRequestId = useRef(0);
@@ -152,7 +161,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			startDate.toJSDate(),
 			endDate.toJSDate(),
 			employeeId,
-		).catch(() => ({ success: false as const, error: "Failed to load surcharge calculations." }));
+		).catch(() => ({
+			success: false as const,
+			error: "Failed to load surcharge calculations.",
+		}));
 
 		if (requestId !== latestRequestId.current) {
 			return;
@@ -162,7 +174,9 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			setRows(result.data);
 			loadedRowsOrganizationIdRef.current = organizationId;
 			setLoadedRowsOrganizationId(organizationId);
-			setExpandedId((current) => (result.data.some((row) => row.id === current) ? current : null));
+			setExpandedId((current) =>
+				result.data.some((row) => row.id === current) ? current : null,
+			);
 		} else {
 			if (loadedRowsOrganizationIdRef.current === organizationId) {
 				setIsShowingPreviousResults(true);
@@ -186,13 +200,17 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 		defaultValues: defaultFilters,
 		onSubmit: async ({ value }) => {
 			appliedFilters.current = value;
-			requestLoad();
+			await loadCalculations(value);
 		},
 	});
 
 	useEffect(() => {
+		if (!organizationId) {
+			return;
+		}
+
 		loadCalculations(appliedFilters.current);
-	}, []);
+	}, [organizationId]);
 
 	const displayRows = loadedRowsOrganizationId === organizationId ? rows : [];
 	const totals = displayRows.reduce(
@@ -208,7 +226,9 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 		<div className="space-y-4">
 			<Card>
 				<CardHeader>
-					<CardTitle>{t("settings.surcharges.reports.title", "Surcharge reports")}</CardTitle>
+					<CardTitle>
+						{t("settings.surcharges.reports.title", "Surcharge reports")}
+					</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<form
@@ -224,7 +244,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor={field.name}>
-										{t("settings.surcharges.reports.filters.startDate", "Start date")}
+										{t(
+											"settings.surcharges.reports.filters.startDate",
+											"Start date",
+										)}
 									</Label>
 									<Input
 										id={field.name}
@@ -243,7 +266,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor={field.name}>
-										{t("settings.surcharges.reports.filters.endDate", "End date")}
+										{t(
+											"settings.surcharges.reports.filters.endDate",
+											"End date",
+										)}
 									</Label>
 									<Input
 										id={field.name}
@@ -262,7 +288,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor={field.name}>
-										{t("settings.surcharges.reports.filters.employeeId", "Employee ID")}
+										{t(
+											"settings.surcharges.reports.filters.employeeId",
+											"Employee ID",
+										)}
 									</Label>
 									<Input
 										id={field.name}
@@ -279,11 +308,17 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 
 						<div className="flex items-end">
 							<Button type="submit" disabled={isLoading}>
-								{t("settings.surcharges.reports.filters.apply", "Apply filters")}
+								{t(
+									"settings.surcharges.reports.filters.apply",
+									"Apply filters",
+								)}
 							</Button>
 						</div>
 						{dateError ? (
-							<p role="alert" className="text-destructive text-sm md:col-span-4">
+							<p
+								role="alert"
+								className="text-destructive text-sm md:col-span-4"
+							>
 								{dateError}
 							</p>
 						) : null}
@@ -295,7 +330,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 				<Alert variant="destructive">
 					<IconAlertCircle aria-hidden="true" />
 					<AlertTitle>
-						{t("settings.surcharges.reports.errors.loadTitle", "Unable to load calculations")}
+						{t(
+							"settings.surcharges.reports.errors.loadTitle",
+							"Unable to load calculations",
+						)}
 					</AlertTitle>
 					<AlertDescription>{error}</AlertDescription>
 				</Alert>
@@ -303,7 +341,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			{isShowingPreviousResults ? (
 				<Alert role="status" aria-live="polite">
 					<AlertTitle>
-						{t("settings.surcharges.reports.previousResults.title", "Showing previous results.")}
+						{t(
+							"settings.surcharges.reports.previousResults.title",
+							"Showing previous results.",
+						)}
 					</AlertTitle>
 					<AlertDescription>
 						{t(
@@ -331,11 +372,17 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 
 			<div className="grid gap-4 md:grid-cols-4">
 				<SummaryCard
-					label={t("settings.surcharges.reports.summary.calculations", "Calculations")}
+					label={t(
+						"settings.surcharges.reports.summary.calculations",
+						"Calculations",
+					)}
 					value={`${displayRows.length} calculation${displayRows.length === 1 ? "" : "s"}`}
 				/>
 				<SummaryCard
-					label={t("settings.surcharges.reports.summary.baseHours", "Base hours")}
+					label={t(
+						"settings.surcharges.reports.summary.baseHours",
+						"Base hours",
+					)}
 					value={formatMinutes(totals.baseMinutes)}
 				/>
 				<SummaryCard
@@ -346,7 +393,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 					value={formatMinutes(totals.qualifyingMinutes)}
 				/>
 				<SummaryCard
-					label={t("settings.surcharges.reports.summary.creditedHours", "Credited surcharge hours")}
+					label={t(
+						"settings.surcharges.reports.summary.creditedHours",
+						"Credited surcharge hours",
+					)}
 					value={formatMinutes(totals.surchargeMinutes)}
 				/>
 			</div>
@@ -359,7 +409,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 							aria-live="polite"
 							className="py-8 text-center text-muted-foreground text-sm"
 						>
-							{t("settings.surcharges.reports.loading", "Loading calculations…")}
+							{t(
+								"settings.surcharges.reports.loading",
+								"Loading calculations…",
+							)}
 						</div>
 					) : displayRows.length === 0 ? (
 						<Empty>
@@ -368,7 +421,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 									<IconFileAnalytics aria-hidden="true" />
 								</EmptyMedia>
 								<EmptyTitle>
-									{t("settings.surcharges.reports.empty.title", "No surcharge calculations found")}
+									{t(
+										"settings.surcharges.reports.empty.title",
+										"No surcharge calculations found",
+									)}
 								</EmptyTitle>
 								<EmptyDescription>
 									{t(
@@ -384,22 +440,42 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 								<TableRow>
 									<TableHead className="w-10">
 										<span className="sr-only">
-											{t("settings.surcharges.reports.table.details", "Details")}
+											{t(
+												"settings.surcharges.reports.table.details",
+												"Details",
+											)}
 										</span>
 									</TableHead>
-									<TableHead>{t("settings.surcharges.reports.table.date", "Date")}</TableHead>
 									<TableHead>
-										{t("settings.surcharges.reports.table.employee", "Employee")}
+										{t("settings.surcharges.reports.table.date", "Date")}
 									</TableHead>
-									<TableHead>{t("settings.surcharges.reports.table.base", "Base")}</TableHead>
 									<TableHead>
-										{t("settings.surcharges.reports.table.qualifying", "Qualifying")}
+										{t(
+											"settings.surcharges.reports.table.employee",
+											"Employee",
+										)}
 									</TableHead>
-									<TableHead>{t("settings.surcharges.reports.table.credit", "Credit")}</TableHead>
 									<TableHead>
-										{t("settings.surcharges.reports.table.percentage", "Percentage")}
+										{t("settings.surcharges.reports.table.base", "Base")}
 									</TableHead>
-									<TableHead>{t("settings.surcharges.reports.table.created", "Created")}</TableHead>
+									<TableHead>
+										{t(
+											"settings.surcharges.reports.table.qualifying",
+											"Qualifying",
+										)}
+									</TableHead>
+									<TableHead>
+										{t("settings.surcharges.reports.table.credit", "Credit")}
+									</TableHead>
+									<TableHead>
+										{t(
+											"settings.surcharges.reports.table.percentage",
+											"Percentage",
+										)}
+									</TableHead>
+									<TableHead>
+										{t("settings.surcharges.reports.table.created", "Created")}
+									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -424,7 +500,9 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 																: "settings.surcharges.reports.details.showForEmployee",
 															`${isExpanded ? "Hide" : "Show"} details for ${employeeName}`,
 														)}
-														onClick={() => setExpandedId(isExpanded ? null : calculation.id)}
+														onClick={() =>
+															setExpandedId(isExpanded ? null : calculation.id)
+														}
 													>
 														{isExpanded ? (
 															<IconChevronDown aria-hidden="true" />
@@ -433,16 +511,31 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 														)}
 													</Button>
 												</TableCell>
-												<TableCell>{formatDate(calculation.calculationDate)}</TableCell>
+												<TableCell>
+													{formatDate(calculation.calculationDate)}
+												</TableCell>
 												<TableCell>{employeeName}</TableCell>
-												<TableCell>{formatMinutesCell(calculation.baseMinutes)}</TableCell>
-												<TableCell>{formatMinutesCell(calculation.qualifyingMinutes)}</TableCell>
-												<TableCell>{formatMinutesCell(calculation.surchargeMinutes)}</TableCell>
-												<TableCell>{formatPercentage(calculation.appliedPercentage)}</TableCell>
-												<TableCell>{formatTimestamp(calculation.createdAt)}</TableCell>
+												<TableCell>
+													{formatMinutesCell(calculation.baseMinutes)}
+												</TableCell>
+												<TableCell>
+													{formatMinutesCell(calculation.qualifyingMinutes)}
+												</TableCell>
+												<TableCell>
+													{formatMinutesCell(calculation.surchargeMinutes)}
+												</TableCell>
+												<TableCell>
+													{formatPercentage(calculation.appliedPercentage)}
+												</TableCell>
+												<TableCell>
+													{formatTimestamp(calculation.createdAt)}
+												</TableCell>
 											</TableRow>
 											{isExpanded ? (
-												<CalculationDetails calculation={calculation} detailsId={detailsId} />
+												<CalculationDetails
+													calculation={calculation}
+													detailsId={detailsId}
+												/>
 											) : null}
 										</Fragment>
 									);
@@ -485,7 +578,10 @@ function CalculationDetails({
 					<div className="grid gap-2 md:grid-cols-3">
 						<div>
 							<div className="font-medium">
-								{t("settings.surcharges.reports.details.workPeriod", "Work period")}
+								{t(
+									"settings.surcharges.reports.details.workPeriod",
+									"Work period",
+								)}
 							</div>
 							<div className="text-muted-foreground">
 								{details
@@ -495,7 +591,10 @@ function CalculationDetails({
 						</div>
 						<div>
 							<div className="font-medium">
-								{t("settings.surcharges.reports.details.calculatedAt", "Calculated at")}
+								{t(
+									"settings.surcharges.reports.details.calculatedAt",
+									"Calculated at",
+								)}
 							</div>
 							<div className="text-muted-foreground">
 								{details ? formatTimestamp(details.calculatedAt) : "-"}
@@ -503,15 +602,21 @@ function CalculationDetails({
 						</div>
 						<div>
 							<div className="font-medium">
-								{t("settings.surcharges.reports.details.overlapPolicy", "Overlap policy")}:{" "}
-								{details?.overlapPolicy ?? "-"}
+								{t(
+									"settings.surcharges.reports.details.overlapPolicy",
+									"Overlap policy",
+								)}
+								: {details?.overlapPolicy ?? "-"}
 							</div>
 						</div>
 					</div>
 
 					<div className="space-y-2">
 						<div className="font-medium">
-							{t("settings.surcharges.reports.details.appliedRules", "Applied rules")}
+							{t(
+								"settings.surcharges.reports.details.appliedRules",
+								"Applied rules",
+							)}
 						</div>
 						{details?.rulesApplied.length ? (
 							<div className="grid gap-2">
@@ -523,16 +628,25 @@ function CalculationDetails({
 										</div>
 										<div className="mt-2 grid gap-2 text-muted-foreground text-sm md:grid-cols-3">
 											<div>
-												{t("settings.surcharges.reports.details.qualifying", "Qualifying")}:{" "}
-												{formatMinutes(rule.qualifyingMinutes)}
+												{t(
+													"settings.surcharges.reports.details.qualifying",
+													"Qualifying",
+												)}
+												: {formatMinutes(rule.qualifyingMinutes)}
 											</div>
 											<div>
-												{t("settings.surcharges.reports.details.surcharge", "Surcharge")}:{" "}
-												{formatMinutes(rule.surchargeMinutes)}
+												{t(
+													"settings.surcharges.reports.details.surcharge",
+													"Surcharge",
+												)}
+												: {formatMinutes(rule.surchargeMinutes)}
 											</div>
 											<div>
-												{t("settings.surcharges.reports.details.percentage", "Percentage")}:{" "}
-												{formatPercentage(rule.percentage)}
+												{t(
+													"settings.surcharges.reports.details.percentage",
+													"Percentage",
+												)}
+												: {formatPercentage(rule.percentage)}
 											</div>
 										</div>
 									</div>

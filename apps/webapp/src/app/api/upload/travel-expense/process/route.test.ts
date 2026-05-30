@@ -31,7 +31,9 @@ vi.mock("@/lib/upload/tus-ownership", () => ({
 }));
 
 vi.mock("file-type", () => ({
-	fileTypeFromBuffer: vi.fn(() => Promise.resolve({ ext: "pdf", mime: "application/pdf" })),
+	fileTypeFromBuffer: vi.fn(() =>
+		Promise.resolve({ ext: "pdf", mime: "application/pdf" }),
+	),
 }));
 
 vi.mock("@/lib/travel-expenses/attachment-validation", () => ({
@@ -39,15 +41,23 @@ vi.mock("@/lib/travel-expenses/attachment-validation", () => ({
 }));
 
 vi.mock("@aws-sdk/client-s3", () => ({
-	GetObjectCommand: vi.fn().mockImplementation((input) => {
-		mockState.getCommand(input);
-		return { input, type: "get" };
-	}),
-	DeleteObjectCommand: vi.fn().mockImplementation((input) => {
-		mockState.deleteCommand(input);
-		return { input, type: "delete" };
-	}),
-	PutObjectCommand: vi.fn().mockImplementation((input) => ({ input, type: "put" })),
+	GetObjectCommand: vi
+		.fn()
+		.mockImplementation(function GetObjectCommand(input) {
+			mockState.getCommand(input);
+			return { input, type: "get" };
+		}),
+	DeleteObjectCommand: vi
+		.fn()
+		.mockImplementation(function DeleteObjectCommand(input) {
+			mockState.deleteCommand(input);
+			return { input, type: "delete" };
+		}),
+	PutObjectCommand: vi
+		.fn()
+		.mockImplementation(function PutObjectCommand(input) {
+			return { input, type: "put" };
+		}),
 }));
 
 vi.mock("@/lib/storage/s3-client", () => ({
@@ -88,18 +98,26 @@ const { POST } = await import("./route");
 describe("travel expense upload processing", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.claimFindFirst.mockResolvedValue({ id: "claim_1", organizationId: "org_1" });
+		mockState.claimFindFirst.mockResolvedValue({
+			id: "claim_1",
+			organizationId: "org_1",
+		});
 		mockState.publicSend.mockImplementation((command) => {
 			if (command.type === "get") {
 				return Promise.resolve({
 					ContentLength: 8,
-					Body: { transformToByteArray: () => Promise.resolve(new Uint8Array([1, 2, 3, 4])) },
+					Body: {
+						transformToByteArray: () =>
+							Promise.resolve(new Uint8Array([1, 2, 3, 4])),
+					},
 				});
 			}
 
 			return Promise.resolve({});
 		});
-		mockState.uploadPrivateObject.mockResolvedValue({ bucket: "private-bucket" });
+		mockState.uploadPrivateObject.mockResolvedValue({
+			bucket: "private-bucket",
+		});
 		mockState.returning.mockResolvedValue([
 			{
 				id: "attachment_1",
@@ -130,7 +148,9 @@ describe("travel expense upload processing", () => {
 		});
 		expect(mockState.uploadPrivateObject).toHaveBeenCalledWith(
 			"org_1",
-			expect.stringMatching(/^travel-expenses\/org_1\/claim_1\/\d+-receipt\.pdf$/),
+			expect.stringMatching(
+				/^travel-expenses\/org_1\/claim_1\/\d+-receipt\.pdf$/,
+			),
 			expect.any(Buffer),
 			"application/pdf",
 			expect.objectContaining({

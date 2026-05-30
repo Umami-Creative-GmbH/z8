@@ -48,18 +48,22 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 vi.mock("@aws-sdk/client-s3", () => ({
-	S3Client: vi.fn().mockImplementation((config) => {
+	S3Client: vi.fn().mockImplementation(function S3Client(config) {
 		mockState.lastS3Config = config;
 		return { send: mockState.send };
 	}),
-	GetObjectCommand: vi.fn().mockImplementation((input) => {
-		mockState.lastGetObjectCommand = input;
-		return { input };
-	}),
-	PutObjectCommand: vi.fn().mockImplementation((input) => {
-		mockState.lastPutObjectCommand = input;
-		return { input };
-	}),
+	GetObjectCommand: vi
+		.fn()
+		.mockImplementation(function GetObjectCommand(input) {
+			mockState.lastGetObjectCommand = input;
+			return { input };
+		}),
+	PutObjectCommand: vi
+		.fn()
+		.mockImplementation(function PutObjectCommand(input) {
+			mockState.lastPutObjectCommand = input;
+			return { input };
+		}),
 	DeleteObjectCommand: vi.fn(),
 	HeadObjectCommand: vi.fn(),
 	ListBucketsCommand: vi.fn(),
@@ -69,16 +73,21 @@ vi.mock("@aws-sdk/s3-request-presigner", () => ({
 	getSignedUrl: mockState.getSignedUrl,
 }));
 
-const { getPresignedUrl, getStorageConfig, isExportS3Configured, uploadExport } = await import(
-	"./export-s3-client"
-);
+const {
+	getPresignedUrl,
+	getStorageConfig,
+	isExportS3Configured,
+	uploadExport,
+} = await import("./export-s3-client");
 
 describe("export S3 client", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.findFirst.mockResolvedValue(null);
 		mockState.getOrgSecret.mockReset();
-		mockState.getSignedUrl.mockResolvedValue("https://signed.example.com/export.zip");
+		mockState.getSignedUrl.mockResolvedValue(
+			"https://signed.example.com/export.zip",
+		);
 		mockState.send.mockResolvedValue({});
 		mockState.lastS3Config = undefined;
 		mockState.lastGetObjectCommand = undefined;
@@ -120,9 +129,9 @@ describe("export S3 client", () => {
 	});
 
 	it("uses short-lived private presigned URLs by default", async () => {
-		await expect(getPresignedUrl("org_1", "audit-exports/org_1/export.zip")).resolves.toBe(
-			"https://signed.example.com/export.zip",
-		);
+		await expect(
+			getPresignedUrl("org_1", "audit-exports/org_1/export.zip"),
+		).resolves.toBe("https://signed.example.com/export.zip");
 
 		expect(mockState.lastS3Config).toMatchObject({
 			endpoint: "https://private-s3.example.com",
@@ -133,13 +142,22 @@ describe("export S3 client", () => {
 			Bucket: "private-export-bucket",
 			Key: "audit-exports/org_1/export.zip",
 		});
-		expect(mockState.getSignedUrl).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), {
-			expiresIn: 600,
-		});
+		expect(mockState.getSignedUrl).toHaveBeenCalledWith(
+			expect.any(Object),
+			expect.any(Object),
+			{
+				expiresIn: 600,
+			},
+		);
 	});
 
 	it("uploads exports to the private fallback bucket", async () => {
-		await uploadExport("org_1", "audit-exports/org_1/export.zip", "zip-data", "application/zip");
+		await uploadExport(
+			"org_1",
+			"audit-exports/org_1/export.zip",
+			"zip-data",
+			"application/zip",
+		);
 
 		expect(mockState.lastPutObjectCommand).toMatchObject({
 			Bucket: "private-export-bucket",
