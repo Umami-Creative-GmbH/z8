@@ -72,7 +72,9 @@ export function HolidayAssignmentDialog({
 }: HolidayAssignmentDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+	const [validationErrors, setValidationErrors] = useState<
+		Record<string, string>
+	>({});
 
 	const form = useForm({
 		defaultValues: {
@@ -152,17 +154,25 @@ export function HolidayAssignmentDialog({
 
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: (values: { categoryId: string; teamId: string; employeeId: string }) =>
+		mutationFn: (values: {
+			categoryId: string;
+			teamId: string;
+			employeeId: string;
+		}) =>
 			createHolidayCategoryAssignment({
 				categoryId: values.categoryId,
 				assignmentType,
 				teamId: assignmentType === "team" ? values.teamId : undefined,
-				employeeId: assignmentType === "employee" ? values.employeeId : undefined,
+				employeeId:
+					assignmentType === "employee" ? values.employeeId : undefined,
 			}),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(
-					t("settings.holidays.assignments.categoryCreated", "Holiday category assignment created"),
+					t(
+						"settings.holidays.assignments.categoryCreated",
+						"Holiday category assignment created",
+					),
 				);
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.holidayCategoryAssignments.list(organizationId),
@@ -197,7 +207,10 @@ export function HolidayAssignmentDialog({
 					"Add Organization-Wide Holiday Category",
 				);
 			case "team":
-				return t("settings.holidays.assignments.addTeamCategory", "Add Team Holiday Category");
+				return t(
+					"settings.holidays.assignments.addTeamCategory",
+					"Add Team Holiday Category",
+				);
 			case "employee":
 				return t(
 					"settings.holidays.assignments.addEmployeeCategory",
@@ -233,13 +246,17 @@ export function HolidayAssignmentDialog({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{getDialogTitle()}</ActionPanelTitle>
-					<ActionPanelDescription>{getDialogDescription()}</ActionPanelDescription>
+					<ActionPanelDescription>
+						{getDialogDescription()}
+					</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				{isLoading ? (
 					<ActionPanelBody className="space-y-4">
 						<Skeleton className="h-10 w-full" />
-						{assignmentType !== "organization" && <Skeleton className="h-10 w-full" />}
+						{assignmentType !== "organization" && (
+							<Skeleton className="h-10 w-full" />
+						)}
 					</ActionPanelBody>
 				) : (
 					<form
@@ -254,9 +271,15 @@ export function HolidayAssignmentDialog({
 								{(field) => (
 									<div className="space-y-2">
 										<Label>
-											{t("settings.holidays.assignments.category", "Custom Holiday Category")}
+											{t(
+												"settings.holidays.assignments.category",
+												"Custom Holiday Category",
+											)}
 										</Label>
-										<Select value={field.state.value} onValueChange={field.handleChange}>
+										<Select
+											value={field.state.value}
+											onValueChange={field.handleChange}
+										>
 											<SelectTrigger>
 												<SelectValue
 													placeholder={t(
@@ -297,7 +320,9 @@ export function HolidayAssignmentDialog({
 											)}
 										</p>
 										{validationErrors.categoryId && (
-											<p className="text-sm text-destructive">{validationErrors.categoryId}</p>
+											<p className="text-sm text-destructive">
+												{validationErrors.categoryId}
+											</p>
 										)}
 									</div>
 								)}
@@ -308,8 +333,13 @@ export function HolidayAssignmentDialog({
 								<form.Field name="teamId">
 									{(field) => (
 										<div className="space-y-2">
-											<Label>{t("settings.holidays.assignments.team", "Team")}</Label>
-											<Select value={field.state.value} onValueChange={field.handleChange}>
+											<Label>
+												{t("settings.holidays.assignments.team", "Team")}
+											</Label>
+											<Select
+												value={field.state.value}
+												onValueChange={field.handleChange}
+											>
 												<SelectTrigger>
 													<SelectValue
 														placeholder={t(
@@ -333,7 +363,9 @@ export function HolidayAssignmentDialog({
 												)}
 											</p>
 											{validationErrors.teamId && (
-												<p className="text-sm text-destructive">{validationErrors.teamId}</p>
+												<p className="text-sm text-destructive">
+													{validationErrors.teamId}
+												</p>
 											)}
 										</div>
 									)}
@@ -345,8 +377,16 @@ export function HolidayAssignmentDialog({
 								<form.Field name="employeeId">
 									{(field) => (
 										<div className="space-y-2">
-											<Label>{t("settings.holidays.assignments.employee", "Employee")}</Label>
-											<Select value={field.state.value} onValueChange={field.handleChange}>
+											<Label>
+												{t(
+													"settings.holidays.assignments.employee",
+													"Employee",
+												)}
+											</Label>
+											<Select
+												value={field.state.value}
+												onValueChange={field.handleChange}
+											>
 												<SelectTrigger>
 													<SelectValue
 														placeholder={t(
@@ -379,7 +419,9 @@ export function HolidayAssignmentDialog({
 												)}
 											</p>
 											{validationErrors.employeeId && (
-												<p className="text-sm text-destructive">{validationErrors.employeeId}</p>
+												<p className="text-sm text-destructive">
+													{validationErrors.employeeId}
+												</p>
 											)}
 										</div>
 									)}
@@ -396,8 +438,13 @@ export function HolidayAssignmentDialog({
 							>
 								{t("common.cancel", "Cancel")}
 							</Button>
-							<Button type="submit" disabled={createMutation.isPending || categories?.length === 0}>
-								{createMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+							<Button
+								type="submit"
+								disabled={createMutation.isPending || categories?.length === 0}
+							>
+								{createMutation.isPending && (
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
+								)}
 								{t("common.assign", "Assign")}
 							</Button>
 						</ActionPanelFooter>

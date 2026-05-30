@@ -6,16 +6,16 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryKeys } from "@/lib/query";
-import { AssignmentDialog } from "./assignment/assignment-dialog";
-import { AssignmentManager } from "./assignment/assignment-manager";
 import { CategoryDialog } from "../category-dialog";
 import { CategoryManager } from "../category-manager";
+import { PresetDialog } from "../preset-dialog";
+import { PresetManager } from "../preset-manager";
+import { AssignmentDialog } from "./assignment/assignment-dialog";
+import { AssignmentManager } from "./assignment/assignment-manager";
 import { HolidayAssignmentDialog } from "./holiday-assignment-dialog";
 import { HolidayDialog } from "./holiday-dialog";
 import { HolidayImportDialog } from "./holiday-import-dialog";
 import { HolidayList } from "./holiday-list";
-import { PresetDialog } from "../preset-dialog";
-import { PresetManager } from "../preset-manager";
 
 interface HolidayManagementProps {
 	organizationId: string;
@@ -64,17 +64,24 @@ interface Preset {
 
 type AssignmentType = "organization" | "team" | "employee";
 
-export function HolidayManagement({ organizationId, canManage }: HolidayManagementProps) {
+export function HolidayManagement({
+	organizationId,
+	canManage,
+}: HolidayManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
 	// Holiday dialog state
 	const [holidayDialogOpen, setHolidayDialogOpen] = useState(false);
-	const [editingHoliday, setEditingHoliday] = useState<Holiday | undefined>(undefined);
+	const [editingHoliday, setEditingHoliday] = useState<Holiday | undefined>(
+		undefined,
+	);
 
 	// Category dialog state
 	const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
-	const [editingCategory, setEditingCategory] = useState<HolidayCategory | undefined>(undefined);
+	const [editingCategory, setEditingCategory] = useState<
+		HolidayCategory | undefined
+	>(undefined);
 
 	// Import dialog state
 	const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -85,10 +92,12 @@ export function HolidayManagement({ organizationId, canManage }: HolidayManageme
 
 	// Preset assignment dialog state
 	const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
-	const [assignmentType, setAssignmentType] = useState<AssignmentType>("organization");
+	const [assignmentType, setAssignmentType] =
+		useState<AssignmentType>("organization");
 
 	// Holiday assignment dialog state
-	const [holidayAssignmentDialogOpen, setHolidayAssignmentDialogOpen] = useState(false);
+	const [holidayAssignmentDialogOpen, setHolidayAssignmentDialogOpen] =
+		useState(false);
 	const [holidayAssignmentType, setHolidayAssignmentType] =
 		useState<AssignmentType>("organization");
 
@@ -119,7 +128,9 @@ export function HolidayManagement({ organizationId, canManage }: HolidayManageme
 	};
 
 	const handleCategorySuccess = () => {
-		queryClient.invalidateQueries({ queryKey: queryKeys.holidayCategories.list(organizationId) });
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.holidayCategories.list(organizationId),
+		});
 	};
 
 	// Preset handlers - memoized
@@ -133,7 +144,9 @@ export function HolidayManagement({ organizationId, canManage }: HolidayManageme
 	};
 
 	const handlePresetSuccess = () => {
-		queryClient.invalidateQueries({ queryKey: queryKeys.holidayPresets.list(organizationId) });
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.holidayPresets.list(organizationId),
+		});
 	};
 
 	// Preset assignment handlers - memoized
@@ -166,7 +179,9 @@ export function HolidayManagement({ organizationId, canManage }: HolidayManageme
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-bold">{t("settings.holidays.title", "Holiday Management")}</h1>
+				<h1 className="text-2xl font-bold">
+					{t("settings.holidays.title", "Holiday Management")}
+				</h1>
 				<p className="text-muted-foreground">
 					{t(
 						"settings.holidays.description",
@@ -175,7 +190,10 @@ export function HolidayManagement({ organizationId, canManage }: HolidayManageme
 				</p>
 			</div>
 
-			<Tabs defaultValue={canManage ? "presets" : "assignments"} className="space-y-4">
+			<Tabs
+				defaultValue={canManage ? "presets" : "assignments"}
+				className="space-y-4"
+			>
 				<TabsList>
 					{canManage ? (
 						<TabsTrigger value="presets">

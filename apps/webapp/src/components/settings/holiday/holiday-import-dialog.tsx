@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable react-doctor/no-giant-component, react-doctor/prefer-useReducer */
 
 import {
 	IconAlertTriangle,
@@ -92,12 +91,16 @@ const holidayPreviewDateFormatter = new Intl.DateTimeFormat(undefined, {
 });
 
 function formatHolidayPreviewDate(date: string) {
-	return holidayPreviewDateFormatter.format(DateTime.fromISO(date, { zone: "utc" }).toJSDate());
+	return holidayPreviewDateFormatter.format(
+		DateTime.fromISO(date, { zone: "utc" }).toJSDate(),
+	);
 }
 
 function getPresetNameWithYear(baseName: string, year: number) {
 	const trimmedName = baseName.trim();
-	return trimmedName.endsWith(year.toString()) ? trimmedName : `${trimmedName} ${year}`;
+	return trimmedName.endsWith(year.toString())
+		? trimmedName
+		: `${trimmedName} ${year}`;
 }
 
 function getYearAssignmentRange(year: number) {
@@ -125,12 +128,16 @@ export function HolidayImportDialog({
 	const [selectedCountry, setSelectedCountry] = useState<string>("");
 	const [selectedState, setSelectedState] = useState<string>("");
 	const [selectedRegion, setSelectedRegion] = useState<string>("");
-	const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
+	const [selectedYear, setSelectedYear] = useState<number>(() =>
+		new Date().getFullYear(),
+	);
 	const [selectedTypes, setSelectedTypes] = useState<HolidayType[]>(["public"]);
 
 	// Preview state
 	const [holidays, setHolidays] = useState<HolidayPreview[]>([]);
-	const [selectedHolidays, setSelectedHolidays] = useState<Set<string>>(new Set());
+	const [selectedHolidays, setSelectedHolidays] = useState<Set<string>>(
+		new Set(),
+	);
 
 	// Preset options
 	const [presetName, setPresetName] = useState("");
@@ -261,7 +268,9 @@ export function HolidayImportDialog({
 		if (selectedState) params.set("state", selectedState);
 		if (selectedRegion) params.set("region", selectedRegion);
 
-		const response = await fetch(`/api/org-admin/holidays/preview?${params}`).catch((error) => {
+		const response = await fetch(
+			`/api/org-admin/holidays/preview?${params}`,
+		).catch((error) => {
 			console.error("Failed to load preview:", error);
 			return null;
 		});
@@ -297,7 +306,9 @@ export function HolidayImportDialog({
 		setSelectedHolidays(new Set(nonDuplicates));
 
 		// Generate preset name from location
-		const countryName = countries.find((c) => c.code === selectedCountry)?.name || selectedCountry;
+		const countryName =
+			countries.find((c) => c.code === selectedCountry)?.name ||
+			selectedCountry;
 		const stateName = states.find((s) => s.code === selectedState)?.name;
 		const regionName = regions.find((r) => r.code === selectedRegion)?.name;
 		const nameParts = [countryName];
@@ -335,7 +346,9 @@ export function HolidayImportDialog({
 		const presetId = presetResult.data.id;
 
 		// Prepare holidays data for import
-		const holidaysToImport = [] as ReturnType<typeof buildPresetHolidayImportValue>[];
+		const holidaysToImport = [] as ReturnType<
+			typeof buildPresetHolidayImportValue
+		>[];
 		for (const holiday of holidays) {
 			if (selectedHolidays.has(holiday.name)) {
 				holidaysToImport.push(buildPresetHolidayImportValue(holiday));
@@ -345,11 +358,14 @@ export function HolidayImportDialog({
 		const assignmentRange = getYearAssignmentRange(selectedYear);
 
 		// Step 2 & 3: Run in parallel - adding holidays and creating assignment are independent
-		const parallelOperations: Promise<{ success: boolean; error?: string }>[] = [];
+		const parallelOperations: Promise<{ success: boolean; error?: string }>[] =
+			[];
 
 		// Add holidays to preset (if any selected)
 		if (holidaysToImport.length > 0) {
-			parallelOperations.push(bulkAddHolidaysToPreset(presetId, holidaysToImport));
+			parallelOperations.push(
+				bulkAddHolidaysToPreset(presetId, holidaysToImport),
+			);
 		}
 
 		// Create org default assignment (if requested)
@@ -471,8 +487,10 @@ export function HolidayImportDialog({
 		});
 	}
 
-	const selectedCountryName = countries.find((c) => c.code === selectedCountry)?.name || "";
-	const selectedStateName = states.find((s) => s.code === selectedState)?.name || "";
+	const selectedCountryName =
+		countries.find((c) => c.code === selectedCountry)?.name || "";
+	const selectedStateName =
+		states.find((s) => s.code === selectedState)?.name || "";
 	const _nonDuplicateCount = holidays.filter((h) => !h.isDuplicate).length;
 	const _selectedNonDuplicateCount = holidays.filter(
 		(h) => !h.isDuplicate && selectedHolidays.has(h.name),
@@ -500,25 +518,41 @@ export function HolidayImportDialog({
 						<div
 							className={cn(
 								"flex size-8 items-center justify-center rounded-full text-sm font-medium",
-								step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+								step >= 1
+									? "bg-primary text-primary-foreground"
+									: "bg-muted text-muted-foreground",
 							)}
 						>
 							1
 						</div>
-						<div className={cn("h-0.5 w-12", step >= 2 ? "bg-primary" : "bg-muted")} />
+						<div
+							className={cn(
+								"h-0.5 w-12",
+								step >= 2 ? "bg-primary" : "bg-muted",
+							)}
+						/>
 						<div
 							className={cn(
 								"flex size-8 items-center justify-center rounded-full text-sm font-medium",
-								step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+								step >= 2
+									? "bg-primary text-primary-foreground"
+									: "bg-muted text-muted-foreground",
 							)}
 						>
 							2
 						</div>
-						<div className={cn("h-0.5 w-12", step >= 3 ? "bg-primary" : "bg-muted")} />
+						<div
+							className={cn(
+								"h-0.5 w-12",
+								step >= 3 ? "bg-primary" : "bg-muted",
+							)}
+						/>
 						<div
 							className={cn(
 								"flex size-8 items-center justify-center rounded-full text-sm font-medium",
-								step >= 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+								step >= 3
+									? "bg-primary text-primary-foreground"
+									: "bg-muted text-muted-foreground",
 							)}
 						>
 							3
@@ -535,17 +569,25 @@ export function HolidayImportDialog({
 
 								{/* Country */}
 								<div className="space-y-2">
-									<Label>{t("settings.holidays.import.country", "Country")}</Label>
+									<Label>
+										{t("settings.holidays.import.country", "Country")}
+									</Label>
 									<SearchableSelect
 										options={countries}
 										value={selectedCountry}
 										onValueChange={handleCountryChange}
-										placeholder={t("settings.holidays.import.selectCountry", "Select a country")}
+										placeholder={t(
+											"settings.holidays.import.selectCountry",
+											"Select a country",
+										)}
 										searchPlaceholder={t(
 											"settings.holidays.import.searchCountry",
 											"Search countries...",
 										)}
-										emptyText={t("settings.holidays.import.noCountryFound", "No country found")}
+										emptyText={t(
+											"settings.holidays.import.noCountryFound",
+											"No country found",
+										)}
 										disabled={countriesLoading}
 									/>
 								</div>
@@ -553,12 +595,17 @@ export function HolidayImportDialog({
 								{/* State - show skeleton when loading, content when loaded */}
 								{selectedCountry && (statesLoading || states.length > 0) && (
 									<div className="space-y-2">
-										<Label>{t("settings.holidays.import.state", "State / Region")}</Label>
+										<Label>
+											{t("settings.holidays.import.state", "State / Region")}
+										</Label>
 										{statesLoading ? (
 											<div className="space-y-2">
 												<Skeleton className="h-10 w-full" />
 												<p className="text-xs text-muted-foreground">
-													{t("settings.holidays.import.loadingStates", "Loading states...")}
+													{t(
+														"settings.holidays.import.loadingStates",
+														"Loading states...",
+													)}
 												</p>
 											</div>
 										) : (
@@ -574,7 +621,10 @@ export function HolidayImportDialog({
 													"settings.holidays.import.searchState",
 													"Search states...",
 												)}
-												emptyText={t("settings.holidays.import.noStateFound", "No state found")}
+												emptyText={t(
+													"settings.holidays.import.noStateFound",
+													"No state found",
+												)}
 												disabled={statesLoading}
 												allowEmpty
 												emptyLabel={t(
@@ -589,12 +639,17 @@ export function HolidayImportDialog({
 								{/* Region - show skeleton when loading, content when loaded */}
 								{selectedState && (regionsLoading || regions.length > 0) && (
 									<div className="space-y-2">
-										<Label>{t("settings.holidays.import.region", "Region")}</Label>
+										<Label>
+											{t("settings.holidays.import.region", "Region")}
+										</Label>
 										{regionsLoading ? (
 											<div className="space-y-2">
 												<Skeleton className="h-10 w-full" />
 												<p className="text-xs text-muted-foreground">
-													{t("settings.holidays.import.loadingRegions", "Loading regions...")}
+													{t(
+														"settings.holidays.import.loadingRegions",
+														"Loading regions...",
+													)}
 												</p>
 											</div>
 										) : (
@@ -610,7 +665,10 @@ export function HolidayImportDialog({
 													"settings.holidays.import.searchRegion",
 													"Search regions...",
 												)}
-												emptyText={t("settings.holidays.import.noRegionFound", "No region found")}
+												emptyText={t(
+													"settings.holidays.import.noRegionFound",
+													"No region found",
+												)}
 												disabled={regionsLoading}
 												allowEmpty
 												emptyLabel={t(
@@ -644,10 +702,15 @@ export function HolidayImportDialog({
 
 								{/* Holiday Types */}
 								<div className="space-y-2">
-									<Label>{t("settings.holidays.import.types", "Holiday Types")}</Label>
+									<Label>
+										{t("settings.holidays.import.types", "Holiday Types")}
+									</Label>
 									<div className="flex flex-wrap gap-2">
 										{HOLIDAY_TYPES.map((type) => (
-											<label key={type.value} className="flex items-center gap-2 cursor-pointer">
+											<label
+												key={type.value}
+												className="flex items-center gap-2 cursor-pointer"
+											>
 												<Checkbox
 													checked={selectedTypes.includes(type.value)}
 													onCheckedChange={() => toggleType(type.value)}
@@ -664,7 +727,10 @@ export function HolidayImportDialog({
 							<div className="space-y-4">
 								<div className="flex items-center justify-between">
 									<h3 className="font-medium">
-										{t("settings.holidays.import.step2.title", "Select Holidays")}
+										{t(
+											"settings.holidays.import.step2.title",
+											"Select Holidays",
+										)}
 									</h3>
 									<div className="flex gap-2">
 										<Button variant="outline" size="sm" onClick={selectAll}>
@@ -694,10 +760,18 @@ export function HolidayImportDialog({
 										<TableHeader>
 											<TableRow>
 												<TableHead className="w-12" />
-												<TableHead>{t("settings.holidays.import.name", "Name")}</TableHead>
-												<TableHead>{t("settings.holidays.import.date", "Date")}</TableHead>
-												<TableHead>{t("settings.holidays.import.type", "Type")}</TableHead>
-												<TableHead>{t("settings.holidays.import.status", "Status")}</TableHead>
+												<TableHead>
+													{t("settings.holidays.import.name", "Name")}
+												</TableHead>
+												<TableHead>
+													{t("settings.holidays.import.date", "Date")}
+												</TableHead>
+												<TableHead>
+													{t("settings.holidays.import.type", "Type")}
+												</TableHead>
+												<TableHead>
+													{t("settings.holidays.import.status", "Status")}
+												</TableHead>
 											</TableRow>
 										</TableHeader>
 										<TableBody>
@@ -709,11 +783,17 @@ export function HolidayImportDialog({
 													<TableCell>
 														<Checkbox
 															checked={selectedHolidays.has(holiday.name)}
-															onCheckedChange={() => toggleHoliday(holiday.name)}
+															onCheckedChange={() =>
+																toggleHoliday(holiday.name)
+															}
 														/>
 													</TableCell>
-													<TableCell className="font-medium">{holiday.name}</TableCell>
-													<TableCell>{formatHolidayPreviewDate(holiday.startDate)}</TableCell>
+													<TableCell className="font-medium">
+														{holiday.name}
+													</TableCell>
+													<TableCell>
+														{formatHolidayPreviewDate(holiday.startDate)}
+													</TableCell>
 													<TableCell>
 														<Badge variant="outline" className="capitalize">
 															{holiday.type}
@@ -723,7 +803,10 @@ export function HolidayImportDialog({
 														{holiday.isDuplicate ? (
 															<span className="flex items-center gap-1 text-amber-600">
 																<IconAlertTriangle className="size-4" />
-																{t("settings.holidays.import.duplicate", "Exists")}
+																{t(
+																	"settings.holidays.import.duplicate",
+																	"Exists",
+																)}
 															</span>
 														) : (
 															<span className="flex items-center gap-1 text-green-600">
@@ -743,12 +826,17 @@ export function HolidayImportDialog({
 						{step === 3 && (
 							<div className="space-y-4">
 								<h3 className="font-medium">
-									{t("settings.holidays.import.step3.title", "Create Holiday Preset")}
+									{t(
+										"settings.holidays.import.step3.title",
+										"Create Holiday Preset",
+									)}
 								</h3>
 
 								{/* Preset Name */}
 								<div className="space-y-2">
-									<Label>{t("settings.holidays.import.presetName", "Preset Name")}</Label>
+									<Label>
+										{t("settings.holidays.import.presetName", "Preset Name")}
+									</Label>
 									<Input
 										value={presetName}
 										onChange={(e) => setPresetName(e.target.value)}
@@ -767,7 +855,9 @@ export function HolidayImportDialog({
 
 								{/* Preset Color */}
 								<div className="space-y-2">
-									<Label>{t("settings.holidays.import.presetColor", "Color")}</Label>
+									<Label>
+										{t("settings.holidays.import.presetColor", "Color")}
+									</Label>
 									<div className="flex gap-2">
 										<Input
 											type="color"
@@ -797,7 +887,10 @@ export function HolidayImportDialog({
 									</div>
 									<div className="flex justify-between">
 										<span className="text-muted-foreground">
-											{t("settings.holidays.import.holidaysSelected", "Holidays to import")}
+											{t(
+												"settings.holidays.import.holidaysSelected",
+												"Holidays to import",
+											)}
 										</span>
 										<span className="font-medium">{selectedHolidays.size}</span>
 									</div>
@@ -807,7 +900,10 @@ export function HolidayImportDialog({
 								<div className="flex items-center justify-between rounded-lg border p-3">
 									<div className="space-y-0.5">
 										<Label>
-											{t("settings.holidays.import.setAsDefault", "Set as organization default")}
+											{t(
+												"settings.holidays.import.setAsDefault",
+												"Set as organization default",
+											)}
 										</Label>
 										<p className="text-sm text-muted-foreground">
 											{t(
@@ -816,7 +912,10 @@ export function HolidayImportDialog({
 											)}
 										</p>
 									</div>
-									<Switch checked={setAsOrgDefault} onCheckedChange={setSetAsOrgDefault} />
+									<Switch
+										checked={setAsOrgDefault}
+										onCheckedChange={setSetAsOrgDefault}
+									/>
 								</div>
 							</div>
 						)}
@@ -854,23 +953,36 @@ export function HolidayImportDialog({
 								regionsLoading
 							}
 						>
-							{previewLoading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+							{previewLoading && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
+							)}
 							{t("common.next", "Next")}
 							<IconChevronRight className="ml-1 size-4" />
 						</Button>
 					)}
 
 					{step === 2 && (
-						<Button onClick={() => setStep(3)} disabled={selectedHolidays.size === 0}>
+						<Button
+							onClick={() => setStep(3)}
+							disabled={selectedHolidays.size === 0}
+						>
 							{t("common.next", "Next")}
 							<IconChevronRight className="ml-1 size-4" />
 						</Button>
 					)}
 
 					{step === 3 && (
-						<Button onClick={handleImport} disabled={importLoading || !presetName.trim()}>
-							{importLoading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{t("settings.holidays.import.createPresetButton", "Create Preset")}
+						<Button
+							onClick={handleImport}
+							disabled={importLoading || !presetName.trim()}
+						>
+							{importLoading && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
+							)}
+							{t(
+								"settings.holidays.import.createPresetButton",
+								"Create Preset",
+							)}
 						</Button>
 					)}
 				</ActionPanelFooter>
