@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useEffectEvent, useState } from "react";
 import { toast } from "sonner";
 import {
 	bulkAddHolidaysToPreset,
@@ -147,7 +147,7 @@ export function HolidayImportDialog({
 	const currentYear = new Date().getFullYear();
 	const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
-	const loadCountries = async () => {
+	const loadCountries = useEffectEvent(async () => {
 		setCountriesLoading(true);
 		const response = await fetch("/api/location/countries").catch((error) => {
 			console.error("Failed to load countries:", error);
@@ -168,9 +168,9 @@ export function HolidayImportDialog({
 		}
 
 		setCountriesLoading(false);
-	};
+	});
 
-	const resetDialogState = () => {
+	const resetDialogState = useEffectEvent(() => {
 		setStep(1);
 		setSelectedCountry("");
 		setSelectedState("");
@@ -184,7 +184,7 @@ export function HolidayImportDialog({
 		setPresetName("");
 		setPresetColor("#4F46E5");
 		setSetAsOrgDefault(false);
-	};
+	});
 
 	useEffect(() => {
 		if (!open) {
@@ -196,7 +196,7 @@ export function HolidayImportDialog({
 			const timeout = setTimeout(() => void loadCountries(), 0);
 			return () => clearTimeout(timeout);
 		}
-	}, [open, countries.length, loadCountries, resetDialogState]);
+	}, [open, countries.length]);
 
 	function handleDialogOpenChange(nextOpen: boolean) {
 		onOpenChange(nextOpen);

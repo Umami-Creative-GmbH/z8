@@ -2,7 +2,7 @@
 
 import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useEffectEvent, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	type DatevConfigResult,
@@ -97,8 +97,8 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 	const [sageWageTypeCode, setSageWageTypeCode] = useState<string>("");
 	const [sageWageTypeName, setSageWageTypeName] = useState<string>("");
 
-	// Memoize loader to avoid dependency warning (async-parallel already applied)
-	const loadData = async () => {
+	// Shared refresh path for initial load and mapping mutations.
+	const refreshData = async () => {
 		startTransition(async () => {
 			const [mappingsResult, workCategoriesResult, absenceCategoriesResult] = await Promise.all([
 				getMappingsAction(organizationId),
@@ -118,12 +118,16 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 		});
 	};
 
+	const loadData = useEffectEvent(async () => {
+		await refreshData();
+	});
+
 	// Load data on mount
 	useEffect(() => {
 		if (config) {
 			loadData();
 		}
-	}, [config, loadData]);
+	}, [config]);
 
 	const handleSaveMapping = async () => {
 		if (!config) return;
@@ -148,7 +152,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 				toast.success(t("settings.payrollExport.mappings.saveSuccess", "Mapping saved"));
 				setIsDialogOpen(false);
 				resetForm();
-				loadData();
+				refreshData();
 			} else {
 				toast.error(t("settings.payrollExport.mappings.saveError", "Failed to save mapping"), {
 					description: result.error,
@@ -166,7 +170,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 
 			if (result.success) {
 				toast.success(t("settings.payrollExport.mappings.deleteSuccess", "Mapping deleted"));
-				loadData();
+				refreshData();
 			} else {
 				toast.error(t("settings.payrollExport.mappings.deleteError", "Failed to delete mapping"), {
 					description: result.error,
