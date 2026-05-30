@@ -1,12 +1,12 @@
+import { and, desc, eq, gte, isNull, or, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { and, eq, desc, isNull, or, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
 import {
 	accessPolicy,
-	trustedDevice,
-	sessionExtension,
 	accessViolationLog,
+	sessionExtension,
+	trustedDevice,
 } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { getActiveAccessPolicies } from "./cached-queries";
@@ -49,7 +49,9 @@ export interface ConditionalAccessService {
 	/**
 	 * Evaluate access policies for a request
 	 */
-	readonly evaluateAccess: (context: AccessContext) => Effect.Effect<AccessDecision, Error>;
+	readonly evaluateAccess: (
+		context: AccessContext,
+	) => Effect.Effect<AccessDecision, Error>;
 
 	/**
 	 * Check if a device is trusted for a user in an organization
@@ -98,7 +100,9 @@ export interface ConditionalAccessService {
 	/**
 	 * Update session activity (for idle timeout tracking)
 	 */
-	readonly updateSessionActivity: (sessionId: string) => Effect.Effect<void, Error>;
+	readonly updateSessionActivity: (
+		sessionId: string,
+	) => Effect.Effect<void, Error>;
 
 	/**
 	 * Log an access violation
@@ -140,9 +144,8 @@ export interface ConditionalAccessService {
 	}) => Effect.Effect<number, Error>;
 }
 
-export const ConditionalAccessService = Context.GenericTag<ConditionalAccessService>(
-	"@z8/ConditionalAccessService",
-);
+export const ConditionalAccessService =
+	Context.GenericTag<ConditionalAccessService>("@z8/ConditionalAccessService");
 
 // ============================================
 // Helper functions
@@ -161,8 +164,9 @@ const IP_CACHE_MAX_SIZE = 1000;
  */
 function ipToNumber(ip: string): number | null {
 	// Check cache first
-	if (ipToNumberCache.has(ip)) {
-		return ipToNumberCache.get(ip)!;
+	const cached = ipToNumberCache.get(ip);
+	if (cached !== undefined) {
+		return cached;
 	}
 
 	// Parse IP
@@ -175,7 +179,7 @@ function ipToNumber(ip: string): number | null {
 	let num = 0;
 	for (let i = 0; i < 4; i++) {
 		const part = parseInt(parts[i], 10);
-		if (isNaN(part) || part < 0 || part > 255) {
+		if (Number.isNaN(part) || part < 0 || part > 255) {
 			ipToNumberCache.set(ip, null);
 			return null;
 		}
@@ -202,8 +206,9 @@ const bitmaskCache = new Map<number, number>();
  * Get bitmask for CIDR notation (cached)
  */
 function getBitmask(bits: number): number {
-	if (bitmaskCache.has(bits)) {
-		return bitmaskCache.get(bits)!;
+	const cached = bitmaskCache.get(bits);
+	if (cached !== undefined) {
+		return cached;
 	}
 	const mask = ~(2 ** (32 - bits) - 1);
 	bitmaskCache.set(bits, mask);
@@ -295,7 +300,10 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 
 					// Check blocked countries
 					if (policy.blockedCountries && policy.blockedCountries.length > 0) {
-						if (context.country && policy.blockedCountries.includes(context.country)) {
+						if (
+							context.country &&
+							policy.blockedCountries.includes(context.country)
+						) {
 							return {
 								allowed: false,
 								reason: "Access from your country is not allowed",
@@ -307,7 +315,10 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 
 					// Check allowed countries (if set, country MUST be in list)
 					if (policy.allowedCountries && policy.allowedCountries.length > 0) {
-						if (!context.country || !policy.allowedCountries.includes(context.country)) {
+						if (
+							!context.country ||
+							!policy.allowedCountries.includes(context.country)
+						) {
 							return {
 								allowed: false,
 								reason: "Access is only allowed from specific countries",
@@ -322,7 +333,8 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 						if (!context.deviceFingerprint) {
 							return {
 								allowed: false,
-								reason: "Device fingerprint is required for trusted device verification",
+								reason:
+									"Device fingerprint is required for trusted device verification",
 								violationType: "untrusted_device",
 								requiresAction: "device_trust",
 								policyId: policy.id,
@@ -337,7 +349,10 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 									eq(trustedDevice.organizationId, context.organizationId),
 									eq(trustedDevice.deviceFingerprint, fingerprint),
 									eq(trustedDevice.isActive, true),
-									or(isNull(trustedDevice.expiresAt), gte(trustedDevice.expiresAt, new Date())),
+									or(
+										isNull(trustedDevice.expiresAt),
+										gte(trustedDevice.expiresAt, new Date()),
+									),
 								),
 							}),
 						);
@@ -345,7 +360,8 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 						if (!trusted) {
 							return {
 								allowed: false,
-								reason: "This device is not trusted. Please register your device.",
+								reason:
+									"This device is not trusted. Please register your device.",
 								violationType: "untrusted_device",
 								requiresAction: "device_trust",
 								policyId: policy.id,
@@ -377,7 +393,8 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 
 					// Check hardware MFA requirement (passkey or security key, not TOTP)
 					if (policy.requireHardwareMfa) {
-						const isHardwareMfa = context.passkeyUsed || context.mfaMethod === "security_key";
+						const isHardwareMfa =
+							context.passkeyUsed || context.mfaMethod === "security_key";
 						if (!isHardwareMfa) {
 							return {
 								allowed: false,
@@ -400,7 +417,10 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 
 						const sessionCheck = yield* Effect.tryPromise(async () => {
 							const extensions = await db.query.sessionExtension.findMany({
-								where: eq(sessionExtension.organizationId, context.organizationId),
+								where: eq(
+									sessionExtension.organizationId,
+									context.organizationId,
+								),
 								with: {
 									session: true,
 								},
@@ -535,7 +555,12 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 				logger.info({ deviceId, revokedBy }, "Trusted device revoked");
 			}),
 
-		createSessionExtension: ({ sessionId, organizationId, accessContext, policyId }) =>
+		createSessionExtension: ({
+			sessionId,
+			organizationId,
+			accessContext,
+			policyId,
+		}) =>
 			Effect.gen(function* () {
 				// Check if extension exists
 				const existing = yield* Effect.tryPromise(() =>
@@ -552,7 +577,9 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 							.set({
 								lastActivityAt: new Date(),
 								requestCount: existing.requestCount + 1,
-								mfaVerifiedAt: accessContext.mfaVerified ? new Date() : existing.mfaVerifiedAt,
+								mfaVerifiedAt: accessContext.mfaVerified
+									? new Date()
+									: existing.mfaVerifiedAt,
 								mfaMethod: accessContext.mfaMethod ?? existing.mfaMethod,
 							})
 							.where(eq(sessionExtension.id, existing.id))
@@ -563,13 +590,14 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 
 				// Find trusted device if fingerprint provided
 				let trustedDeviceId: string | undefined;
-				if (accessContext.deviceFingerprint) {
+				const deviceFingerprint = accessContext.deviceFingerprint;
+				if (deviceFingerprint) {
 					const device = yield* Effect.tryPromise(() =>
 						db.query.trustedDevice.findFirst({
 							where: and(
 								eq(trustedDevice.userId, accessContext.userId),
 								eq(trustedDevice.organizationId, organizationId),
-								eq(trustedDevice.deviceFingerprint, accessContext.deviceFingerprint!),
+								eq(trustedDevice.deviceFingerprint, deviceFingerprint),
 								eq(trustedDevice.isActive, true),
 							),
 						}),
@@ -621,7 +649,8 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 						organizationId: params.organizationId,
 						userId: params.userId,
 						sessionId: params.sessionId,
-						violationType: params.violationType as typeof accessViolationLog.$inferInsert.violationType,
+						violationType:
+							params.violationType as typeof accessViolationLog.$inferInsert.violationType,
 						policyId: params.policyId,
 						ipAddress: params.context.ipAddress,
 						country: params.context.country,
@@ -647,7 +676,10 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 		getActivePolicies: (organizationId: string) =>
 			Effect.tryPromise(() =>
 				db.query.accessPolicy.findMany({
-					where: and(eq(accessPolicy.organizationId, organizationId), eq(accessPolicy.enabled, true)),
+					where: and(
+						eq(accessPolicy.organizationId, organizationId),
+						eq(accessPolicy.enabled, true),
+					),
 					orderBy: [desc(accessPolicy.priority)],
 				}),
 			),
@@ -665,7 +697,9 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 
 				// Filter to valid sessions for this user
 				const validSessions = extensions.filter(
-					(ext) => ext.session?.userId === userId && ext.session?.expiresAt > new Date(),
+					(ext) =>
+						ext.session?.userId === userId &&
+						ext.session?.expiresAt > new Date(),
 				);
 
 				return {
@@ -674,7 +708,12 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 				};
 			}),
 
-		terminateExcessSessions: ({ userId, organizationId, maxSessions, keepSessionId }) =>
+		terminateExcessSessions: ({
+			userId,
+			organizationId,
+			maxSessions,
+			keepSessionId,
+		}) =>
 			Effect.gen(function* () {
 				const extensions = yield* Effect.tryPromise(() =>
 					db.query.sessionExtension.findMany({
@@ -707,7 +746,11 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 				}
 
 				logger.info(
-					{ userId, organizationId, terminatedCount: sessionsToTerminate.length },
+					{
+						userId,
+						organizationId,
+						terminatedCount: sessionsToTerminate.length,
+					},
 					"Excess sessions terminated",
 				);
 

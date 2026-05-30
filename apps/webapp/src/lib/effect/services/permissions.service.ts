@@ -240,7 +240,8 @@ export const PermissionsServiceLive = Layer.effect(
 						);
 
 						canGrant =
-							granterMembership?.role === "owner" || granterMembership?.role === "admin";
+							granterMembership?.role === "owner" ||
+							granterMembership?.role === "admin";
 					}
 
 					if (!canGrant) {

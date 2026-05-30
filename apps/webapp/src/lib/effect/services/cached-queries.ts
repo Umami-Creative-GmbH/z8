@@ -1,11 +1,11 @@
+import { and, desc, eq } from "drizzle-orm";
 import { cache } from "react";
-import { and, eq, desc } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	accessPolicy,
-	scimProviderConfig,
 	roleTemplate,
 	roleTemplateMapping,
+	scimProviderConfig,
 } from "@/db/schema";
 
 /**
@@ -62,7 +62,11 @@ export const getRoleTemplateMappings = cache(async (organizationId: string) => {
  * Find role template mapping for a specific IdP group (cached per request)
  */
 export const findRoleTemplateMappingForGroup = cache(
-	async (organizationId: string, idpType: "sso" | "scim", idpGroupId: string) => {
+	async (
+		organizationId: string,
+		idpType: "sso" | "scim",
+		idpGroupId: string,
+	) => {
 		return db.query.roleTemplateMapping.findFirst({
 			where: and(
 				eq(roleTemplateMapping.organizationId, organizationId),

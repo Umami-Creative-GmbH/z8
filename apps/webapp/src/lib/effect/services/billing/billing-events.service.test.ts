@@ -1,12 +1,17 @@
 import { Effect, Layer } from "effect";
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import { BillingEventsService, BillingEventsServiceLive } from "./billing-events.service";
-import { sendBillingSystemEmail } from "@/lib/billing/billing-system-email";
+import { sendBillingSystemEmail } from "../../../billing/billing-system-email";
+import {
+	BillingEventsService,
+	BillingEventsServiceLive,
+} from "./billing-events.service";
 import { SeatSyncService } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";
-import { SubscriptionService, type UpdateSubscriptionFromStripeParams } from "./subscription.service";
+import {
+	SubscriptionService,
+	type UpdateSubscriptionFromStripeParams,
+} from "./subscription.service";
 
 const {
 	stripeEventFindFirst,
@@ -56,7 +61,9 @@ const sendBillingSystemEmailMock = vi.mocked(sendBillingSystemEmail);
 
 describe("BillingEventsService", () => {
 	const getCustomer = vi.fn();
-	const updateFromStripe = vi.fn((_: UpdateSubscriptionFromStripeParams) => Effect.void);
+	const updateFromStripe = vi.fn(
+		(_: UpdateSubscriptionFromStripeParams) => Effect.void,
+	);
 	const appLayer = Layer.mergeAll(
 		Layer.succeed(
 			StripeService,
@@ -197,15 +204,23 @@ describe("BillingEventsService", () => {
 		{
 			type: "customer.subscription.paused" as const,
 			object: createStripeSubscription({
-				customer: { id: "cus_test_123", object: "customer", email: "paused@example.com" } as Stripe.Customer,
-				pause_collection: { behavior: "void" },
+				customer: {
+					id: "cus_test_123",
+					object: "customer",
+					email: "paused@example.com",
+				} as Stripe.Customer,
+				pause_collection: { behavior: "void", resumes_at: null },
 			}),
 			templateKey: "billing-subscription-paused",
 		},
 		{
 			type: "customer.subscription.resumed" as const,
 			object: createStripeSubscription({
-				customer: { id: "cus_test_123", object: "customer", email: "resumed@example.com" } as Stripe.Customer,
+				customer: {
+					id: "cus_test_123",
+					object: "customer",
+					email: "resumed@example.com",
+				} as Stripe.Customer,
 			}),
 			templateKey: "billing-subscription-resumed",
 		},
@@ -216,10 +231,16 @@ describe("BillingEventsService", () => {
 		},
 		{
 			type: "payment_intent.payment_failed" as const,
-			object: createStripePaymentIntent({ receipt_email: "payment@example.com" }),
+			object: createStripePaymentIntent({
+				receipt_email: "payment@example.com",
+			}),
 			templateKey: "billing-payment-failed",
 		},
-	])("selects $templateKey for $type", async ({ type, object, templateKey }) => {
+	])("selects $templateKey for $type", async ({
+		type,
+		object,
+		templateKey,
+	}) => {
 		await processEvent({ type, object });
 
 		expect(sendBillingSystemEmailMock).toHaveBeenCalledWith(
@@ -228,7 +249,9 @@ describe("BillingEventsService", () => {
 	});
 
 	it("continues processing when billing email sending fails", async () => {
-		sendBillingSystemEmailMock.mockRejectedValueOnce(new Error("email unavailable"));
+		sendBillingSystemEmailMock.mockRejectedValueOnce(
+			new Error("email unavailable"),
+		);
 
 		await expect(
 			processEvent({
@@ -240,7 +263,9 @@ describe("BillingEventsService", () => {
 		expect(sendBillingSystemEmailMock).toHaveBeenCalledWith(
 			expect.objectContaining({ templateKey: "billing-subscription-paused" }),
 		);
-		expect(setValues).toHaveBeenCalledWith(expect.objectContaining({ processed: true }));
+		expect(setValues).toHaveBeenCalledWith(
+			expect.objectContaining({ processed: true }),
+		);
 	});
 
 	async function processEvent({
@@ -268,7 +293,10 @@ describe("BillingEventsService", () => {
 					type,
 					data: { object },
 				} as Stripe.Event);
-			}).pipe(Effect.provide(BillingEventsServiceLive), Effect.provide(appLayer)),
+			}).pipe(
+				Effect.provide(BillingEventsServiceLive),
+				Effect.provide(appLayer),
+			),
 		);
 	}
 });
@@ -306,7 +334,9 @@ function createStripeSubscription(
 	} as Stripe.Subscription;
 }
 
-function createStripeInvoice(overrides: Partial<Stripe.Invoice> = {}): Stripe.Invoice {
+function createStripeInvoice(
+	overrides: Partial<Stripe.Invoice> = {},
+): Stripe.Invoice {
 	return {
 		id: "in_test_123",
 		object: "invoice",

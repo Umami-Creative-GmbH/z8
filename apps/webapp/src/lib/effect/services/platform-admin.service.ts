@@ -1,9 +1,19 @@
+import {
+	and,
+	count,
+	desc,
+	eq,
+	ilike,
+	inArray,
+	isNull,
+	or,
+	sql,
+} from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { and, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { user, session, organization, member } from "@/db/auth-schema";
-import { platformAdminAuditLog, organizationSuspension } from "@/db/schema";
+import { member, organization, session, user } from "@/db/auth-schema";
+import { organizationSuspension, platformAdminAuditLog } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import {
 	AuthorizationError,
@@ -229,9 +239,7 @@ export const PlatformAdminServiceLive = Layer.effect(
 						}
 
 						if (status === "active") {
-							conditions.push(
-								or(eq(user.banned, false), isNull(user.banned)),
-							);
+							conditions.push(or(eq(user.banned, false), isNull(user.banned)));
 						} else if (status === "banned") {
 							conditions.push(eq(user.banned, true));
 						}
@@ -285,7 +293,10 @@ export const PlatformAdminServiceLive = Layer.effect(
 											status: member.status,
 										})
 										.from(member)
-										.innerJoin(organization, eq(member.organizationId, organization.id))
+										.innerJoin(
+											organization,
+											eq(member.organizationId, organization.id),
+										)
 										.where(
 											organizationId
 												? and(
@@ -302,7 +313,8 @@ export const PlatformAdminServiceLive = Layer.effect(
 						>();
 
 						for (const membership of memberships) {
-							const userMemberships = membershipsByUserId.get(membership.userId) ?? [];
+							const userMemberships =
+								membershipsByUserId.get(membership.userId) ?? [];
 							userMemberships.push({
 								id: membership.id,
 								name: membership.name,
@@ -713,11 +725,7 @@ export const PlatformAdminServiceLive = Layer.effect(
 						});
 					},
 					catch: (error) => {
-						if (
-							error &&
-							typeof error === "object" &&
-							"type" in error
-						) {
+						if (error && typeof error === "object" && "type" in error) {
 							if (error.type === "not_found") {
 								return new NotFoundError({
 									message: "Organization not found",

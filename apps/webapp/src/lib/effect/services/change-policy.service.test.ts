@@ -1,7 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
 import { Effect, Layer } from "effect";
+import { describe, expect, it, vi } from "vitest";
+import {
+	ChangePolicyService,
+	ChangePolicyServiceLive,
+} from "./change-policy.service";
 import { DatabaseService } from "./database.service";
-import { ChangePolicyService, ChangePolicyServiceLive } from "./change-policy.service";
 
 describe("ChangePolicyService", () => {
 	it("does not require approval for a normal live clock-out", async () => {

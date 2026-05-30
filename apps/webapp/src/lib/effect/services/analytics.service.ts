@@ -6,7 +6,17 @@
  * absence patterns, and manager effectiveness metrics.
  */
 
-import { and, eq, gte, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
+import {
+	and,
+	eq,
+	gte,
+	inArray,
+	isNotNull,
+	isNull,
+	lte,
+	or,
+	sql,
+} from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import {
@@ -19,9 +29,10 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import {
-	buildApprovalPerformanceData,
 	type ApprovalAnalyticsRow,
+	buildApprovalPerformanceData,
 } from "@/lib/analytics/approval-performance";
+import { clampOvertime } from "@/lib/analytics/overtime-burndown";
 import type {
 	AbsencePatternsData,
 	AbsencePatternsParams,
@@ -42,15 +53,17 @@ import {
 	calculateSLADeadline,
 	calculateSLAStatus,
 } from "@/lib/approvals/domain/sla-calculator";
-import type { ApprovalPriority, ApprovalType } from "@/lib/approvals/domain/types";
-import { clampOvertime } from "@/lib/analytics/overtime-burndown";
+import type {
+	ApprovalPriority,
+	ApprovalType,
+} from "@/lib/approvals/domain/types";
 import { differenceInDays, format } from "@/lib/datetime/luxon-utils";
+import { computeOvertimeDelta } from "@/lib/time-record/overtime";
 import {
 	calculateExpectedWorkHours,
 	calculateExpectedWorkHoursForEmployee,
 	calculateWorkHours,
 } from "@/lib/time-tracking/calculations";
-import { computeOvertimeDelta } from "@/lib/time-record/overtime";
 import type { DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
@@ -58,7 +71,9 @@ import { DatabaseService } from "./database.service";
  * Calculate clustering score for vacation absences (0-100)
  * Higher scores indicate more clustered (overlapping) vacation periods
  */
-function calculateClusteringScore(absences: Array<{ startDate: Date; endDate: Date }>): number {
+function calculateClusteringScore(
+	absences: Array<{ startDate: Date; endDate: Date }>,
+): number {
 	if (absences.length < 2) return 0;
 
 	// Build a map of dates to absence counts
@@ -70,14 +85,20 @@ function calculateClusteringScore(absences: Array<{ startDate: Date; endDate: Da
 		let currentDT = startDT;
 
 		while (currentDT <= endDT) {
-			const dateKey = currentDT.toISODate()!;
+			const dateKey = currentDT.toISODate();
+			if (!dateKey) {
+				currentDT = currentDT.plus({ days: 1 });
+				continue;
+			}
 			dateCountMap.set(dateKey, (dateCountMap.get(dateKey) || 0) + 1);
 			currentDT = currentDT.plus({ days: 1 });
 		}
 	}
 
 	// Calculate overlap percentage
-	const overlappingDays = Array.from(dateCountMap.values()).filter((count) => count > 1).length;
+	const overlappingDays = Array.from(dateCountMap.values()).filter(
+		(count) => count > 1,
+	).length;
 	const totalDays = dateCountMap.size;
 
 	if (totalDays === 0) return 0;
@@ -133,7 +154,12 @@ function toTrendDirection(delta: number): TrendDirection {
 }
 
 function isApprovalType(type: string): type is ApprovalType {
-	return ["absence_entry", "time_entry", "shift_request", "travel_expense_claim"].includes(type);
+	return [
+		"absence_entry",
+		"time_entry",
+		"shift_request",
+		"travel_expense_claim",
+	].includes(type);
 }
 
 function getSlaStatusForAnalytics(
@@ -152,7 +178,10 @@ function getSlaStatusForAnalytics(
 function buildGroupedOvertimeRows(
 	records: OvertimeBurnDownWeeklyRecord[],
 	weekStarts: string[],
-	groupSelector: (record: OvertimeBurnDownWeeklyRecord) => { id: string; label: string },
+	groupSelector: (record: OvertimeBurnDownWeeklyRecord) => {
+		id: string;
+		label: string;
+	},
 ): OvertimeBurnDownGroupedRow[] {
 	const grouped = new Map<
 		string,
@@ -170,7 +199,8 @@ function buildGroupedOvertimeRows(
 			existing.weeklyMap.set(
 				record.weekStart,
 				roundToTwoDecimals(
-					(existing.weeklyMap.get(record.weekStart) || 0) + clampOvertime(record.overtimeHours),
+					(existing.weeklyMap.get(record.weekStart) || 0) +
+						clampOvertime(record.overtimeHours),
 				),
 			);
 			continue;
@@ -179,7 +209,12 @@ function buildGroupedOvertimeRows(
 		grouped.set(group.id, {
 			id: group.id,
 			label: group.label,
-			weeklyMap: new Map([[record.weekStart, roundToTwoDecimals(clampOvertime(record.overtimeHours))]]),
+			weeklyMap: new Map([
+				[
+					record.weekStart,
+					roundToTwoDecimals(clampOvertime(record.overtimeHours)),
+				],
+			]),
 		});
 	}
 
@@ -189,9 +224,13 @@ function buildGroupedOvertimeRows(
 				weekStart,
 				overtimeHours: roundToTwoDecimals(group.weeklyMap.get(weekStart) || 0),
 			}));
-			const previousOvertimeHours = weekly.length >= 2 ? weekly[weekly.length - 2].overtimeHours : 0;
-			const currentOvertimeHours = weekly.length > 0 ? weekly[weekly.length - 1].overtimeHours : 0;
-			const wowDeltaHours = roundToTwoDecimals(currentOvertimeHours - previousOvertimeHours);
+			const previousOvertimeHours =
+				weekly.length >= 2 ? weekly[weekly.length - 2].overtimeHours : 0;
+			const currentOvertimeHours =
+				weekly.length > 0 ? weekly[weekly.length - 1].overtimeHours : 0;
+			const wowDeltaHours = roundToTwoDecimals(
+				currentOvertimeHours - previousOvertimeHours,
+			);
 
 			return {
 				id: group.id,
@@ -210,12 +249,12 @@ export function buildOvertimeBurnDownDataForTesting(
 	records: OvertimeBurnDownWeeklyRecord[],
 	allWeekStarts: string[] = [],
 ): OvertimeBurnDownData {
-	const inferredWeekStarts = Array.from(new Set(records.map((record) => record.weekStart))).sort((a, b) =>
-		a.localeCompare(b),
-	);
-	const weekStarts = Array.from(new Set([...allWeekStarts, ...inferredWeekStarts])).sort((a, b) =>
-		a.localeCompare(b),
-	);
+	const inferredWeekStarts = Array.from(
+		new Set(records.map((record) => record.weekStart)),
+	).sort((a, b) => a.localeCompare(b));
+	const weekStarts = Array.from(
+		new Set([...allWeekStarts, ...inferredWeekStarts]),
+	).sort((a, b) => a.localeCompare(b));
 
 	const weekTotalsMap = new Map<string, number>();
 	for (const weekStart of weekStarts) {
@@ -225,7 +264,10 @@ export function buildOvertimeBurnDownDataForTesting(
 	for (const record of records) {
 		weekTotalsMap.set(
 			record.weekStart,
-			roundToTwoDecimals((weekTotalsMap.get(record.weekStart) || 0) + clampOvertime(record.overtimeHours)),
+			roundToTwoDecimals(
+				(weekTotalsMap.get(record.weekStart) || 0) +
+					clampOvertime(record.overtimeHours),
+			),
 		);
 	}
 
@@ -235,18 +277,29 @@ export function buildOvertimeBurnDownDataForTesting(
 	}));
 
 	const previousOvertimeHours =
-		weeklySeries.length >= 2 ? weeklySeries[weeklySeries.length - 2].overtimeHours : 0;
-	const currentOvertimeHours = weeklySeries.length > 0 ? weeklySeries[weeklySeries.length - 1].overtimeHours : 0;
-	const wowDeltaHours = roundToTwoDecimals(currentOvertimeHours - previousOvertimeHours);
+		weeklySeries.length >= 2
+			? weeklySeries[weeklySeries.length - 2].overtimeHours
+			: 0;
+	const currentOvertimeHours =
+		weeklySeries.length > 0
+			? weeklySeries[weeklySeries.length - 1].overtimeHours
+			: 0;
+	const wowDeltaHours = roundToTwoDecimals(
+		currentOvertimeHours - previousOvertimeHours,
+	);
 
 	const byTeam = buildGroupedOvertimeRows(records, weekStarts, (record) => ({
 		id: record.teamId,
 		label: record.teamLabel,
 	}));
-	const byCostCenter = buildGroupedOvertimeRows(records, weekStarts, (record) => ({
-		id: record.costCenterId,
-		label: record.costCenterLabel,
-	}));
+	const byCostCenter = buildGroupedOvertimeRows(
+		records,
+		weekStarts,
+		(record) => ({
+			id: record.costCenterId,
+			label: record.costCenterLabel,
+		}),
+	);
 	const byManager = buildGroupedOvertimeRows(records, weekStarts, (record) => ({
 		id: record.managerId,
 		label: record.managerLabel,
@@ -256,7 +309,8 @@ export function buildOvertimeBurnDownDataForTesting(
 		summary: {
 			currentOvertimeHours,
 			wowDeltaHours,
-			improvingGroups: byTeam.filter((row) => row.trendDirection === "down").length,
+			improvingGroups: byTeam.filter((row) => row.trendDirection === "down")
+				.length,
 			trendDirection: toTrendDirection(wowDeltaHours),
 		},
 		weeklySeries,
@@ -271,22 +325,40 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 	{
 		readonly getTeamPerformance: (
 			params: TeamPerformanceParams,
-		) => Effect.Effect<TeamPerformanceData, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			TeamPerformanceData,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 		readonly getVacationTrends: (
 			params: VacationTrendsParams,
-		) => Effect.Effect<VacationTrendsData, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			VacationTrendsData,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 		readonly getWorkHoursAnalytics: (
 			params: WorkHoursParams,
-		) => Effect.Effect<WorkHoursAnalyticsData, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			WorkHoursAnalyticsData,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 		readonly getAbsencePatterns: (
 			params: AbsencePatternsParams,
-		) => Effect.Effect<AbsencePatternsData, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			AbsencePatternsData,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 		readonly getManagerEffectiveness: (
 			params: ManagerEffectivenessParams,
-		) => Effect.Effect<ManagerEffectivenessData, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			ManagerEffectivenessData,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 		readonly getOvertimeBurnDown: (
 			params: OvertimeBurnDownParams,
-		) => Effect.Effect<OvertimeBurnDownData, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			OvertimeBurnDownData,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 	}
 >() {
 	static readonly Live = Layer.effect(
@@ -309,7 +381,10 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 												eq(employee.teamId, teamId),
 												eq(employee.isActive, true),
 											)
-										: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+										: and(
+												eq(employee.organizationId, organizationId),
+												eq(employee.isActive, true),
+											),
 									with: {
 										user: true,
 										team: true,
@@ -343,7 +418,9 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								expectedHours: expected.totalHours,
 								variance: summary.totalHours - expected.totalHours,
 								percentageOfExpected:
-									expected.totalHours > 0 ? (summary.totalHours / expected.totalHours) * 100 : 0,
+									expected.totalHours > 0
+										? (summary.totalHours / expected.totalHours) * 100
+										: 0,
 							};
 						});
 
@@ -387,7 +464,8 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							teamId: t.teamId,
 							teamName: t.teamName,
 							totalHours: Math.round(t.totalHours * 100) / 100,
-							avgHoursPerEmployee: Math.round((t.totalHours / t.employeeCount) * 100) / 100,
+							avgHoursPerEmployee:
+								Math.round((t.totalHours / t.employeeCount) * 100) / 100,
 							employeeCount: t.employeeCount,
 							employees: t.employees.map((e) => ({
 								employeeId: e.employeeId,
@@ -395,11 +473,15 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								totalHours: Math.round(e.totalHours * 100) / 100,
 								expectedHours: Math.round(e.expectedHours * 100) / 100,
 								variance: Math.round(e.variance * 100) / 100,
-								percentageOfExpected: Math.round(e.percentageOfExpected * 100) / 100,
+								percentageOfExpected:
+									Math.round(e.percentageOfExpected * 100) / 100,
 							})),
 						}));
 
-						const organizationTotal = teams.reduce((sum, t) => sum + t.totalHours, 0);
+						const organizationTotal = teams.reduce(
+							(sum, t) => sum + t.totalHours,
+							0,
+						);
 
 						return {
 							teams,
@@ -434,8 +516,14 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								return await dbService.db.query.absenceEntry.findMany({
 									where: and(
 										eq(absenceEntry.status, "approved"),
-										gte(absenceEntry.startDate, dateRange.start.toISOString().split("T")[0]),
-										lte(absenceEntry.endDate, dateRange.end.toISOString().split("T")[0]),
+										gte(
+											absenceEntry.startDate,
+											dateRange.start.toISOString().split("T")[0],
+										),
+										lte(
+											absenceEntry.endDate,
+											dateRange.end.toISOString().split("T")[0],
+										),
 									),
 									with: {
 										employee: true, // Filter by organization in memory
@@ -458,29 +546,45 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						}, 0);
 
 						const totalDaysTaken = absences.reduce((sum, absence) => {
-							const days = differenceInDays(new Date(absence.endDate), new Date(absence.startDate));
+							const days = differenceInDays(
+								new Date(absence.endDate),
+								new Date(absence.startDate),
+							);
 							return sum + Math.max(1, days);
 						}, 0);
 
 						const totalDaysRemaining = totalDaysAllocated - totalDaysTaken;
 						const utilizationRate =
-							totalDaysAllocated > 0 ? (totalDaysTaken / totalDaysAllocated) * 100 : 0;
+							totalDaysAllocated > 0
+								? (totalDaysTaken / totalDaysAllocated) * 100
+								: 0;
 
 						// Group by month
-						const monthlyMap = new Map<string, { taken: number; remaining: number }>();
+						const monthlyMap = new Map<
+							string,
+							{ taken: number; remaining: number }
+						>();
 						for (const absence of absences) {
 							const month = format(new Date(absence.startDate), "yyyy-MM");
-							const days = differenceInDays(new Date(absence.endDate), new Date(absence.startDate));
-							const existing = monthlyMap.get(month) || { taken: 0, remaining: 0 };
+							const days = differenceInDays(
+								new Date(absence.endDate),
+								new Date(absence.startDate),
+							);
+							const existing = monthlyMap.get(month) || {
+								taken: 0,
+								remaining: 0,
+							};
 							existing.taken += Math.max(1, days);
 							monthlyMap.set(month, existing);
 						}
 
-						const byMonth = Array.from(monthlyMap.entries()).map(([month, data]) => ({
-							month,
-							daysTaken: data.taken,
-							daysRemaining: totalDaysAllocated - data.taken,
-						}));
+						const byMonth = Array.from(monthlyMap.entries()).map(
+							([month, data]) => ({
+								month,
+								daysTaken: data.taken,
+								daysRemaining: totalDaysAllocated - data.taken,
+							}),
+						);
 
 						// By employee
 						const byEmployee = employees.map((emp) => {
@@ -493,7 +597,10 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							const taken = absences
 								.filter((a) => a.employeeId === emp.id)
 								.reduce((sum, a) => {
-									const days = differenceInDays(new Date(a.endDate), new Date(a.startDate));
+									const days = differenceInDays(
+										new Date(a.endDate),
+										new Date(a.startDate),
+									);
 									return sum + Math.max(1, days);
 								}, 0);
 
@@ -567,8 +674,14 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							dbService.query("getEmployeesForWorkAnalytics", async () => {
 								return await dbService.db.query.employee.findMany({
 									where: employeeId
-										? and(eq(employee.organizationId, organizationId), eq(employee.id, employeeId))
-										: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+										? and(
+												eq(employee.organizationId, organizationId),
+												eq(employee.id, employeeId),
+											)
+										: and(
+												eq(employee.organizationId, organizationId),
+												eq(employee.isActive, true),
+											),
 									with: {
 										user: true,
 									},
@@ -595,7 +708,10 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								actualMinutes: actual.totalMinutes,
 								expectedMinutes: expected.totalMinutes,
 							});
-							const undertimeHours = Math.max(0, expected.totalHours - actual.totalHours);
+							const undertimeHours = Math.max(
+								0,
+								expected.totalHours - actual.totalHours,
+							);
 
 							return {
 								employeeId: emp.id,
@@ -607,17 +723,33 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								overtimeMinutes,
 								undertimeHours,
 								avgHoursPerWeek:
-									expected.workDays > 0 ? (actual.totalHours / expected.workDays) * 5 : 0,
+									expected.workDays > 0
+										? (actual.totalHours / expected.workDays) * 5
+										: 0,
 							};
 						});
 
-						const employeeData = yield* _(Effect.promise(() => Promise.all(employeeDataPromises)));
+						const employeeData = yield* _(
+							Effect.promise(() => Promise.all(employeeDataPromises)),
+						);
 
 						// Calculate summary
-						const totalHours = employeeData.reduce((sum, e) => sum + e.totalHours, 0);
-						const totalMinutes = employeeData.reduce((sum, e) => sum + e.totalMinutes, 0);
-						const totalExpected = employeeData.reduce((sum, e) => sum + e.expectedHours, 0);
-						const totalExpectedMinutes = employeeData.reduce((sum, e) => sum + e.expectedMinutes, 0);
+						const totalHours = employeeData.reduce(
+							(sum, e) => sum + e.totalHours,
+							0,
+						);
+						const totalMinutes = employeeData.reduce(
+							(sum, e) => sum + e.totalMinutes,
+							0,
+						);
+						const totalExpected = employeeData.reduce(
+							(sum, e) => sum + e.expectedHours,
+							0,
+						);
+						const totalExpectedMinutes = employeeData.reduce(
+							(sum, e) => sum + e.expectedMinutes,
+							0,
+						);
 						const overtimeMinutes = computeOvertimeDelta({
 							actualMinutes: totalMinutes,
 							expectedMinutes: totalExpectedMinutes,
@@ -625,7 +757,9 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						const undertimeHours = Math.max(0, totalExpected - totalHours);
 
 						const avgHoursPerWeek =
-							employeeData.length > 0 ? totalHours / employeeData.length / 4 : 0;
+							employeeData.length > 0
+								? totalHours / employeeData.length / 4
+								: 0;
 
 						// Get daily distribution by aggregating work periods per day
 						const workPeriods = yield* _(
@@ -645,12 +779,20 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						// Group work periods by date
 						const dailyHoursMap = new Map<string, number>();
 						for (const wp of workPeriods) {
-							if (!wp.endTime) continue;
-							const dateKey = DateTime.fromJSDate(new Date(wp.startTime)).toISODate()!;
+							const startTime = wp.startTime;
+							const endTime = wp.endTime;
+							if (startTime == null || endTime == null) continue;
+							const dateKey = DateTime.fromJSDate(
+								new Date(startTime),
+							).toISODate();
+							if (!dateKey) continue;
 							const hours =
-								(new Date(wp.endTime).getTime() - new Date(wp.startTime).getTime()) /
+								(new Date(endTime).getTime() - new Date(startTime).getTime()) /
 								(1000 * 60 * 60);
-							dailyHoursMap.set(dateKey, (dailyHoursMap.get(dateKey) || 0) + hours);
+							dailyHoursMap.set(
+								dateKey,
+								(dailyHoursMap.get(dateKey) || 0) + hours,
+							);
 						}
 
 						// Calculate expected hours per work day (assuming 8 hours standard)
@@ -694,8 +836,14 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							dbService.query("getAbsencesForPatterns", async () => {
 								return await dbService.db.query.absenceEntry.findMany({
 									where: and(
-										gte(absenceEntry.startDate, dateRange.start.toISOString().split("T")[0]),
-										lte(absenceEntry.endDate, dateRange.end.toISOString().split("T")[0]),
+										gte(
+											absenceEntry.startDate,
+											dateRange.start.toISOString().split("T")[0],
+										),
+										lte(
+											absenceEntry.endDate,
+											dateRange.end.toISOString().split("T")[0],
+										),
 									),
 									with: {
 										employee: {
@@ -718,13 +866,20 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						// Calculate summary stats
 						const totalAbsences = orgAbsences.length;
 						const totalDays = orgAbsences.reduce((sum, a) => {
-							const days = differenceInDays(new Date(a.endDate), new Date(a.startDate));
+							const days = differenceInDays(
+								new Date(a.endDate),
+								new Date(a.startDate),
+							);
 							return sum + Math.max(1, days);
 						}, 0);
-						const avgDaysPerAbsence = totalAbsences > 0 ? totalDays / totalAbsences : 0;
+						const avgDaysPerAbsence =
+							totalAbsences > 0 ? totalDays / totalAbsences : 0;
 
 						// Calculate absence rate based on expected work days
-						const expectedWorkDays = calculateExpectedWorkDays(dateRange.start, dateRange.end);
+						const expectedWorkDays = calculateExpectedWorkDays(
+							dateRange.start,
+							dateRange.end,
+						);
 						const absenceRate =
 							expectedWorkDays > 0
 								? Math.round((totalDays / expectedWorkDays) * 100 * 100) / 100
@@ -734,32 +889,50 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						const typeMap = new Map<string, { count: number; days: number }>();
 						for (const absence of orgAbsences) {
 							const categoryName = absence.category.name;
-							const days = differenceInDays(new Date(absence.endDate), new Date(absence.startDate));
-							const existing = typeMap.get(categoryName) || { count: 0, days: 0 };
+							const days = differenceInDays(
+								new Date(absence.endDate),
+								new Date(absence.startDate),
+							);
+							const existing = typeMap.get(categoryName) || {
+								count: 0,
+								days: 0,
+							};
 							existing.count++;
 							existing.days += Math.max(1, days);
 							typeMap.set(categoryName, existing);
 						}
 
-						const byType = Array.from(typeMap.entries()).map(([categoryName, data]) => ({
-							categoryName,
-							count: data.count,
-							totalDays: data.days,
-							percentage:
-								totalAbsences > 0 ? Math.round((data.count / totalAbsences) * 100 * 100) / 100 : 0,
-						}));
+						const byType = Array.from(typeMap.entries()).map(
+							([categoryName, data]) => ({
+								categoryName,
+								count: data.count,
+								totalDays: data.days,
+								percentage:
+									totalAbsences > 0
+										? Math.round((data.count / totalAbsences) * 100 * 100) / 100
+										: 0,
+							}),
+						);
 
 						// Group by team
 						const teamMap = new Map<
 							string,
-							{ count: number; days: number; name: string; employeeCount: number }
+							{
+								count: number;
+								days: number;
+								name: string;
+								employeeCount: number;
+							}
 						>();
 						const teamEmployeeCounts = new Map<string, Set<string>>();
 
 						for (const absence of orgAbsences) {
 							const teamId = absence.employee.teamId || "no-team";
 							const teamName = absence.employee.team?.name || "No Team";
-							const days = differenceInDays(new Date(absence.endDate), new Date(absence.startDate));
+							const days = differenceInDays(
+								new Date(absence.endDate),
+								new Date(absence.startDate),
+							);
 
 							// Track unique employees per team
 							if (!teamEmployeeCounts.has(teamId)) {
@@ -778,20 +951,26 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							teamMap.set(teamId, existing);
 						}
 
-						const byTeam = Array.from(teamMap.entries()).map(([teamId, data]) => {
-							const teamEmployees = teamEmployeeCounts.get(teamId)?.size || 1;
-							const teamAbsenceRate =
-								expectedWorkDays > 0
-									? Math.round((data.days / (expectedWorkDays * teamEmployees)) * 100 * 100) / 100
-									: 0;
-							return {
-								teamId,
-								teamName: data.name,
-								absenceCount: data.count,
-								totalDays: data.days,
-								absenceRate: teamAbsenceRate,
-							};
-						});
+						const byTeam = Array.from(teamMap.entries()).map(
+							([teamId, data]) => {
+								const teamEmployees = teamEmployeeCounts.get(teamId)?.size || 1;
+								const teamAbsenceRate =
+									expectedWorkDays > 0
+										? Math.round(
+												(data.days / (expectedWorkDays * teamEmployees)) *
+													100 *
+													100,
+											) / 100
+										: 0;
+								return {
+									teamId,
+									teamName: data.name,
+									absenceCount: data.count,
+									totalDays: data.days,
+									absenceRate: teamAbsenceRate,
+								};
+							},
+						);
 
 						// Calculate sick leave patterns
 						const sickLeaveAbsences = orgAbsences.filter(
@@ -800,12 +979,17 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								a.category.name.toLowerCase().includes("krank"),
 						);
 						const sickLeaveDays = sickLeaveAbsences.map((a) =>
-							Math.max(1, differenceInDays(new Date(a.endDate), new Date(a.startDate))),
+							Math.max(
+								1,
+								differenceInDays(new Date(a.endDate), new Date(a.startDate)),
+							),
 						);
 						const avgSickDuration =
 							sickLeaveDays.length > 0
 								? Math.round(
-										(sickLeaveDays.reduce((a, b) => a + b, 0) / sickLeaveDays.length) * 100,
+										(sickLeaveDays.reduce((a, b) => a + b, 0) /
+											sickLeaveDays.length) *
+											100,
 									) / 100
 								: 0;
 
@@ -850,12 +1034,22 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						// Find vacation hotspots (dates with multiple people off)
 						const vacationDateMap = new Map<string, number>();
 						for (const absence of vacationAbsences) {
-							const startDT = DateTime.fromJSDate(new Date(absence.startDate));
-							const endDT = DateTime.fromJSDate(new Date(absence.endDate));
+							const startDate = absence.startDate;
+							const endDate = absence.endDate;
+							if (startDate == null || endDate == null) continue;
+							const startDT = DateTime.fromJSDate(new Date(startDate));
+							const endDT = DateTime.fromJSDate(new Date(endDate));
 							let currentDT = startDT;
 							while (currentDT <= endDT) {
-								const dateKey = currentDT.toISODate()!;
-								vacationDateMap.set(dateKey, (vacationDateMap.get(dateKey) || 0) + 1);
+								const dateKey = currentDT.toISODate();
+								if (!dateKey) {
+									currentDT = currentDT.plus({ days: 1 });
+									continue;
+								}
+								vacationDateMap.set(
+									dateKey,
+									(vacationDateMap.get(dateKey) || 0) + 1,
+								);
 								currentDT = currentDT.plus({ days: 1 });
 							}
 						}
@@ -871,20 +1065,28 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							{ absence: number; sick: number; vacation: number }
 						>();
 						for (const absence of orgAbsences) {
-							const startDT = DateTime.fromJSDate(new Date(absence.startDate));
-							const endDT = DateTime.fromJSDate(new Date(absence.endDate));
+							const startDate = absence.startDate;
+							const endDate = absence.endDate;
+							if (startDate == null || endDate == null) continue;
+							const startDT = DateTime.fromJSDate(new Date(startDate));
+							const endDT = DateTime.fromJSDate(new Date(endDate));
 							let currentDT = startDT;
+							const categoryName = absence.category.name ?? "";
 
 							const isSick =
-								absence.category.name.toLowerCase().includes("sick") ||
-								absence.category.name.toLowerCase().includes("krank");
+								categoryName.toLowerCase().includes("sick") ||
+								categoryName.toLowerCase().includes("krank");
 							const isVacation =
-								absence.category.name.toLowerCase().includes("vacation") ||
-								absence.category.name.toLowerCase().includes("urlaub") ||
-								absence.category.name.toLowerCase().includes("holiday");
+								categoryName.toLowerCase().includes("vacation") ||
+								categoryName.toLowerCase().includes("urlaub") ||
+								categoryName.toLowerCase().includes("holiday");
 
 							while (currentDT <= endDT) {
-								const dateKey = currentDT.toISODate()!;
+								const dateKey = currentDT.toISODate();
+								if (!dateKey) {
+									currentDT = currentDT.plus({ days: 1 });
+									continue;
+								}
 								const existing = timelineDateMap.get(dateKey) || {
 									absence: 0,
 									sick: 0,
@@ -947,7 +1149,9 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 										eq(approvalRequest.organizationId, organizationId),
 										gte(approvalRequest.createdAt, dateRange.start),
 										lte(approvalRequest.createdAt, dateRange.end),
-										managerId ? eq(approvalRequest.approverId, managerId) : undefined,
+										managerId
+											? eq(approvalRequest.approverId, managerId)
+											: undefined,
 									),
 									with: {
 										approver: {
@@ -967,64 +1171,89 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						);
 
 						const travelClaims = yield* _(
-							dbService.query("getTravelExpenseClaimsForEffectiveness", async () => {
-								return await dbService.db.query.travelExpenseClaim.findMany({
-									where: and(
-										eq(travelExpenseClaim.organizationId, organizationId),
-										gte(travelExpenseClaim.submittedAt, dateRange.start),
-										lte(travelExpenseClaim.submittedAt, dateRange.end),
-										inArray(travelExpenseClaim.status, ["submitted", "approved", "rejected"]),
-										isNotNull(travelExpenseClaim.submittedAt),
-										managerId ? eq(travelExpenseClaim.approverId, managerId) : undefined,
-									),
-									with: {
-										employee: {
-											with: {
-												user: true,
-												team: true,
+							dbService.query(
+								"getTravelExpenseClaimsForEffectiveness",
+								async () => {
+									return await dbService.db.query.travelExpenseClaim.findMany({
+										where: and(
+											eq(travelExpenseClaim.organizationId, organizationId),
+											gte(travelExpenseClaim.submittedAt, dateRange.start),
+											lte(travelExpenseClaim.submittedAt, dateRange.end),
+											inArray(travelExpenseClaim.status, [
+												"submitted",
+												"approved",
+												"rejected",
+											]),
+											isNotNull(travelExpenseClaim.submittedAt),
+											managerId
+												? eq(travelExpenseClaim.approverId, managerId)
+												: undefined,
+										),
+										with: {
+											employee: {
+												with: {
+													user: true,
+													team: true,
+												},
+											},
+											approver: {
+												with: {
+													user: true,
+												},
 											},
 										},
-										approver: {
-											with: {
-												user: true,
-											},
-										},
-									},
-								});
+									});
+								},
+							),
+						);
+
+						const approvalRows: ApprovalAnalyticsRow[] = approvals.map(
+							(approval) => ({
+								source: "approval_request",
+								type: approval.entityType,
+								organizationId: approval.organizationId,
+								requesterEmployeeId: approval.requestedBy,
+								requesterTeamId: approval.requester?.teamId ?? null,
+								requesterTeamName: approval.requester?.team?.name ?? null,
+								approverEmployeeId: approval.approverId,
+								approverName: approval.approver?.user.name ?? null,
+								status: approval.status,
+								submittedAt: approval.createdAt,
+								decidedAt: approval.approvedAt,
+								slaStatus: getSlaStatusForAnalytics(
+									approval.entityType,
+									"normal",
+									approval.createdAt,
+								),
 							}),
 						);
 
-						const approvalRows: ApprovalAnalyticsRow[] = approvals.map((approval) => ({
-							source: "approval_request",
-							type: approval.entityType,
-							organizationId: approval.organizationId,
-							requesterEmployeeId: approval.requestedBy,
-							requesterTeamId: approval.requester?.teamId ?? null,
-							requesterTeamName: approval.requester?.team?.name ?? null,
-							approverEmployeeId: approval.approverId,
-							approverName: approval.approver?.user.name ?? null,
-							status: approval.status,
-							submittedAt: approval.createdAt,
-							decidedAt: approval.approvedAt,
-							slaStatus: getSlaStatusForAnalytics(approval.entityType, "normal", approval.createdAt),
-						}));
-
 						const travelRows: ApprovalAnalyticsRow[] = travelClaims
-							.filter((claim) => claim.submittedAt)
-							.map((claim) => ({
-								source: "travel_expense_claim",
-								type: "travel_expense_claim",
-								organizationId: claim.organizationId,
-								requesterEmployeeId: claim.employeeId,
-								requesterTeamId: claim.employee?.teamId ?? null,
-								requesterTeamName: claim.employee?.team?.name ?? null,
-								approverEmployeeId: claim.approverId,
-								approverName: claim.approver?.user.name ?? null,
-								status: claim.status === "submitted" ? "pending" : claim.status,
-								submittedAt: claim.submittedAt!,
-								decidedAt: claim.decidedAt,
-								slaStatus: getSlaStatusForAnalytics("travel_expense_claim", "normal", claim.submittedAt!),
-							}));
+							.map((claim): ApprovalAnalyticsRow | null => {
+								const submittedAt = claim.submittedAt;
+								if (submittedAt == null) return null;
+
+								return {
+									source: "travel_expense_claim",
+									type: "travel_expense_claim" as const,
+									organizationId: claim.organizationId,
+									requesterEmployeeId: claim.employeeId,
+									requesterTeamId: claim.employee?.teamId ?? null,
+									requesterTeamName: claim.employee?.team?.name ?? null,
+									approverEmployeeId: claim.approverId,
+									approverName: claim.approver?.user.name ?? null,
+									status:
+										claim.status === "submitted" ? "pending" : claim.status,
+									submittedAt,
+									decidedAt: claim.decidedAt,
+									slaStatus: getSlaStatusForAnalytics(
+										"travel_expense_claim",
+										"normal",
+										submittedAt,
+									),
+								} satisfies ApprovalAnalyticsRow;
+							})
+							.filter((row): row is ApprovalAnalyticsRow => row !== null);
 
 						const managerEffectiveness = buildApprovalPerformanceData([
 							...approvalRows,
@@ -1042,7 +1271,10 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 										count: sql<number>`count(*)::int`,
 									})
 									.from(employeeManagers)
-									.innerJoin(employee, eq(employeeManagers.employeeId, employee.id))
+									.innerJoin(
+										employee,
+										eq(employeeManagers.employeeId, employee.id),
+									)
 									.where(
 										and(
 											inArray(employeeManagers.managerId, managerIds),
@@ -1070,10 +1302,16 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 				getOvertimeBurnDown: (params: OvertimeBurnDownParams) =>
 					Effect.gen(function* (_) {
 						const { organizationId, dateRange, filters, scope } = params;
-						const rangeStart = DateTime.fromJSDate(dateRange.start).startOf("day");
+						const rangeStart = DateTime.fromJSDate(dateRange.start).startOf(
+							"day",
+						);
 						const rangeEnd = DateTime.fromJSDate(dateRange.end).endOf("day");
 
-						const weekBuckets: Array<{ weekStart: DateTime; weekStartIso: string; weekEnd: DateTime }> = [];
+						const weekBuckets: Array<{
+							weekStart: DateTime;
+							weekStartIso: string;
+							weekEnd: DateTime;
+						}> = [];
 						let currentWeek = rangeStart.startOf("week");
 						const finalWeek = rangeEnd.startOf("week");
 
@@ -1095,7 +1333,9 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 									where: and(
 										eq(employee.organizationId, organizationId),
 										eq(employee.isActive, true),
-										filters?.teamId ? eq(employee.teamId, filters.teamId) : undefined,
+										filters?.teamId
+											? eq(employee.teamId, filters.teamId)
+											: undefined,
 									),
 									with: {
 										team: true,
@@ -1117,14 +1357,19 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							if (
 								scope?.role === "manager" &&
 								scope.managerEmployeeId &&
-								!emp.managers.some((managerRow) => managerRow.managerId === scope.managerEmployeeId)
+								!emp.managers.some(
+									(managerRow) =>
+										managerRow.managerId === scope.managerEmployeeId,
+								)
 							) {
 								return false;
 							}
 
 							if (
 								filters?.managerId &&
-								!emp.managers.some((managerRow) => managerRow.managerId === filters.managerId)
+								!emp.managers.some(
+									(managerRow) => managerRow.managerId === filters.managerId,
+								)
 							) {
 								return false;
 							}
@@ -1141,27 +1386,42 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						}
 
 						const assignments = yield* _(
-							dbService.query("getEmployeeCostCenterAssignmentsForOvertimeBurnDown", async () => {
-								return await dbService.db.query.employeeCostCenterAssignment.findMany({
-									where: and(
-										eq(employeeCostCenterAssignment.organizationId, organizationId),
-										sql`${employeeCostCenterAssignment.employeeId} = ANY(${employeeIds})`,
-										lte(employeeCostCenterAssignment.effectiveFrom, rangeEnd.toJSDate()),
-										or(
-											isNull(employeeCostCenterAssignment.effectiveTo),
-											gte(employeeCostCenterAssignment.effectiveTo, rangeStart.toJSDate()),
-										),
-									),
-									with: {
-										costCenter: true,
-									},
-								});
-							}),
+							dbService.query(
+								"getEmployeeCostCenterAssignmentsForOvertimeBurnDown",
+								async () => {
+									return await dbService.db.query.employeeCostCenterAssignment.findMany(
+										{
+											where: and(
+												eq(
+													employeeCostCenterAssignment.organizationId,
+													organizationId,
+												),
+												sql`${employeeCostCenterAssignment.employeeId} = ANY(${employeeIds})`,
+												lte(
+													employeeCostCenterAssignment.effectiveFrom,
+													rangeEnd.toJSDate(),
+												),
+												or(
+													isNull(employeeCostCenterAssignment.effectiveTo),
+													gte(
+														employeeCostCenterAssignment.effectiveTo,
+														rangeStart.toJSDate(),
+													),
+												),
+											),
+											with: {
+												costCenter: true,
+											},
+										},
+									);
+								},
+							),
 						);
 
 						const assignmentByEmployee = new Map<string, typeof assignments>();
 						for (const assignment of assignments) {
-							const existing = assignmentByEmployee.get(assignment.employeeId) || [];
+							const existing =
+								assignmentByEmployee.get(assignment.employeeId) || [];
 							existing.push(assignment);
 							assignmentByEmployee.set(assignment.employeeId, existing);
 						}
@@ -1169,7 +1429,8 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						for (const employeeAssignments of assignmentByEmployee.values()) {
 							employeeAssignments.sort(
 								(a, b) =>
-									new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime(),
+									new Date(b.effectiveFrom).getTime() -
+									new Date(a.effectiveFrom).getTime(),
 							);
 						}
 
@@ -1178,63 +1439,87 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								return await Promise.all(
 									scopedEmployees.map(async (emp) => {
 										const primaryManager =
-											emp.managers.find((managerRow) => managerRow.isPrimary) || emp.managers[0];
-										const managerId = primaryManager?.managerId || UNASSIGNED_GROUP.id;
+											emp.managers.find((managerRow) => managerRow.isPrimary) ||
+											emp.managers[0];
+										const managerId =
+											primaryManager?.managerId || UNASSIGNED_GROUP.id;
 										const managerLabel =
-											primaryManager?.manager?.user?.name || UNASSIGNED_GROUP.label;
+											primaryManager?.manager?.user?.name ||
+											UNASSIGNED_GROUP.label;
 
-										const employeeAssignments = assignmentByEmployee.get(emp.id) || [];
+										const employeeAssignments =
+											assignmentByEmployee.get(emp.id) || [];
 
 										const weeklyRecords = await Promise.all(
-											weekBuckets.map(async ({ weekStart, weekStartIso, weekEnd }) => {
-												const [actual, expected] = await Promise.all([
-													calculateWorkHours(
-														emp.id,
-														organizationId,
-														weekStart.toJSDate(),
-														weekEnd.toJSDate(),
-													),
-													calculateExpectedWorkHoursForEmployee(
-														emp.id,
-														organizationId,
-														weekStart.toJSDate(),
-														weekEnd.toJSDate(),
-													),
-												]);
+											weekBuckets.map(
+												async ({ weekStart, weekStartIso, weekEnd }) => {
+													const [actual, expected] = await Promise.all([
+														calculateWorkHours(
+															emp.id,
+															organizationId,
+															weekStart.toJSDate(),
+															weekEnd.toJSDate(),
+														),
+														calculateExpectedWorkHoursForEmployee(
+															emp.id,
+															organizationId,
+															weekStart.toJSDate(),
+															weekEnd.toJSDate(),
+														),
+													]);
 
-												const weekStartDate = weekStart.toJSDate();
-												const activeAssignment = employeeAssignments.find((assignment) => {
-													const effectiveFrom = new Date(assignment.effectiveFrom);
-													const effectiveTo = assignment.effectiveTo ? new Date(assignment.effectiveTo) : null;
-													return (
-														effectiveFrom.getTime() <= weekStartDate.getTime() &&
-														(!effectiveTo || effectiveTo.getTime() >= weekStartDate.getTime())
+													const weekStartDate = weekStart.toJSDate();
+													const activeAssignment = employeeAssignments.find(
+														(assignment) => {
+															const effectiveFrom = new Date(
+																assignment.effectiveFrom,
+															);
+															const effectiveTo = assignment.effectiveTo
+																? new Date(assignment.effectiveTo)
+																: null;
+															return (
+																effectiveFrom.getTime() <=
+																	weekStartDate.getTime() &&
+																(!effectiveTo ||
+																	effectiveTo.getTime() >=
+																		weekStartDate.getTime())
+															);
+														},
 													);
-												});
 
-												const costCenterId = activeAssignment?.costCenterId || UNASSIGNED_GROUP.id;
-												const costCenterLabel =
-													activeAssignment?.costCenter?.name || UNASSIGNED_GROUP.label;
+													const costCenterId =
+														activeAssignment?.costCenterId ||
+														UNASSIGNED_GROUP.id;
+													const costCenterLabel =
+														activeAssignment?.costCenter?.name ||
+														UNASSIGNED_GROUP.label;
 
-												if (filters?.costCenterId && costCenterId !== filters.costCenterId) {
-													return null;
-												}
+													if (
+														filters?.costCenterId &&
+														costCenterId !== filters.costCenterId
+													) {
+														return null;
+													}
 
-												return {
-													weekStart: weekStartIso,
-													overtimeHours: clampOvertime(actual.totalHours - expected.totalHours),
-													teamId: emp.teamId || UNASSIGNED_GROUP.id,
-													teamLabel: emp.team?.name || UNASSIGNED_GROUP.label,
-													costCenterId,
-													costCenterLabel,
-													managerId,
-													managerLabel,
-												} satisfies OvertimeBurnDownWeeklyRecord;
-											}),
+													return {
+														weekStart: weekStartIso,
+														overtimeHours: clampOvertime(
+															actual.totalHours - expected.totalHours,
+														),
+														teamId: emp.teamId || UNASSIGNED_GROUP.id,
+														teamLabel: emp.team?.name || UNASSIGNED_GROUP.label,
+														costCenterId,
+														costCenterLabel,
+														managerId,
+														managerLabel,
+													} satisfies OvertimeBurnDownWeeklyRecord;
+												},
+											),
 										);
 
-										return weeklyRecords.filter((record): record is OvertimeBurnDownWeeklyRecord =>
-											Boolean(record),
+										return weeklyRecords.filter(
+											(record): record is OvertimeBurnDownWeeklyRecord =>
+												Boolean(record),
 										);
 									}),
 								);

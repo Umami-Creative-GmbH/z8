@@ -2,7 +2,9 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const SERVICE_SOURCE = fileURLToPath(new URL("./platform-admin.service.ts", import.meta.url));
+const SERVICE_SOURCE = fileURLToPath(
+	new URL("./platform-admin.service.ts", import.meta.url),
+);
 
 function getListUsersSource(): string {
 	const source = readFileSync(SERVICE_SOURCE, "utf8");
@@ -58,8 +60,10 @@ describe("PlatformAdminService listUsers privacy guardrails", () => {
 
 		expect(listUsersSource).toContain("organizationId");
 		expect(listUsersSource).toContain("EXISTS");
+		// biome-ignore lint/suspicious/noTemplateCurlyInString: its ok
 		expect(listUsersSource).toContain('"member"."user_id" = ${user.id}');
 		expect(listUsersSource).toContain(
+			// biome-ignore lint/suspicious/noTemplateCurlyInString: its ok
 			'"member"."organization_id" = ${organizationId}',
 		);
 		expect(listUsersSource).not.toContain("inArray(user.id");

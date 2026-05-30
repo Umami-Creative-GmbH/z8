@@ -1,8 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
-
-import { subscription } from "@/db/schema";
 import { member } from "@/db/auth-schema";
+import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import {
 	type BillingAccessResult,
@@ -10,7 +9,15 @@ import {
 	BillingEnforcementServiceLive,
 } from "./billing-enforcement.service";
 
-const { findFirst, insertValues, onConflictDoNothing, returning, select, selectFrom, selectWhere } = vi.hoisted(() => ({
+const {
+	findFirst,
+	insertValues,
+	onConflictDoNothing,
+	returning,
+	select,
+	selectFrom,
+	selectWhere,
+} = vi.hoisted(() => ({
 	findFirst: vi.fn(),
 	insertValues: vi.fn(),
 	onConflictDoNothing: vi.fn(),
@@ -163,7 +170,9 @@ describe("BillingEnforcementService", () => {
 			Effect.gen(function* () {
 				const enforcementService = yield* BillingEnforcementService;
 
-				return yield* enforcementService.requireActiveSubscription("org_123").pipe(Effect.flip);
+				return yield* enforcementService
+					.requireActiveSubscription("org_123")
+					.pipe(Effect.flip);
 			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
 		);
 
@@ -185,7 +194,9 @@ describe("BillingEnforcementService", () => {
 			Effect.gen(function* () {
 				const enforcementService = yield* BillingEnforcementService;
 
-				return yield* enforcementService.requireActiveSubscription("org_123").pipe(Effect.flip);
+				return yield* enforcementService
+					.requireActiveSubscription("org_123")
+					.pipe(Effect.flip);
 			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
 		);
 

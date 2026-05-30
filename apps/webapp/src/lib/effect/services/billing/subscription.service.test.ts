@@ -1,11 +1,13 @@
 import { Effect } from "effect";
 import { Settings } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import { subscription } from "@/db/schema";
 import { member } from "@/db/auth-schema";
+import { subscription } from "@/db/schema";
 import { env } from "@/env";
-import { SubscriptionService, SubscriptionServiceLive } from "./subscription.service";
+import {
+	SubscriptionService,
+	SubscriptionServiceLive,
+} from "./subscription.service";
 
 const {
 	findFirst,
@@ -233,7 +235,9 @@ describe("SubscriptionService", () => {
 
 			const insertedTrialEnd = insertValues.mock.calls[0]?.[0]?.trialEnd;
 			expect(insertedTrialEnd).toBeInstanceOf(Date);
-			expect(insertedTrialEnd.getTime() - now.getTime()).toBe(14 * 24 * 60 * 60 * 1000);
+			expect(insertedTrialEnd.getTime() - now.getTime()).toBe(
+				14 * 24 * 60 * 60 * 1000,
+			);
 			expect(insertedTrialEnd.toISOString()).toBe("2026-03-15T10:00:00.000Z");
 		} finally {
 			Settings.defaultZone = previousZone;
@@ -370,26 +374,27 @@ describe("SubscriptionService", () => {
 		}
 	});
 
-	it.each(["incomplete", "paused", "unknown_status"])(
-		"returns false for %s status when checking mutation access",
-		async (status) => {
-			(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "true";
-			findFirst.mockResolvedValueOnce({
-				...existingSubscriptionRow,
-				status,
-			});
+	it.each([
+		"incomplete",
+		"paused",
+		"unknown_status",
+	])("returns false for %s status when checking mutation access", async (status) => {
+		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "true";
+		findFirst.mockResolvedValueOnce({
+			...existingSubscriptionRow,
+			status,
+		});
 
-			const result = await Effect.runPromise(
-				Effect.gen(function* () {
-					const subscriptionService = yield* SubscriptionService;
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const subscriptionService = yield* SubscriptionService;
 
-					return yield* subscriptionService.canMutateData("org_123");
-				}).pipe(Effect.provide(SubscriptionServiceLive)),
-			);
+				return yield* subscriptionService.canMutateData("org_123");
+			}).pipe(Effect.provide(SubscriptionServiceLive)),
+		);
 
-			expect(result).toBe(false);
-		},
-	);
+		expect(result).toBe(false);
+	});
 
 	it("sets Stripe customer ID with conflict-safe insert update", async () => {
 		insertValues.mockReturnValueOnce({ onConflictDoUpdate });
@@ -398,7 +403,10 @@ describe("SubscriptionService", () => {
 			Effect.gen(function* () {
 				const subscriptionService = yield* SubscriptionService;
 
-				yield* subscriptionService.setStripeCustomerId("org_123", "cus_test_123");
+				yield* subscriptionService.setStripeCustomerId(
+					"org_123",
+					"cus_test_123",
+				);
 			}).pipe(Effect.provide(SubscriptionServiceLive)),
 		);
 

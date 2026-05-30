@@ -33,7 +33,10 @@ export class TimeRecordService extends Context.Tag("TimeRecordService")<
 	{
 		readonly create: (
 			input: CreateTimeRecordInput,
-		) => Effect.Effect<TimeRecord, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			TimeRecord,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 		readonly listByOrganization: (
 			organizationId: string,
 			filters?: ListTimeRecordFilters,
@@ -128,7 +131,9 @@ export const TimeRecordServiceLive = Layer.effect(
 
 					return yield* _(
 						dbService.query("listTimeRecordsByOrganization", async () => {
-							const conditions = [eq(timeRecord.organizationId, organizationId)];
+							const conditions = [
+								eq(timeRecord.organizationId, organizationId),
+							];
 
 							if (filters.employeeId) {
 								conditions.push(eq(timeRecord.employeeId, filters.employeeId));

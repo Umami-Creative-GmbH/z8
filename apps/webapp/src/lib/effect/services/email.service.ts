@@ -52,7 +52,10 @@ export const EmailServiceLive = Layer.succeed(
 										}
 
 										span.setStatus({ code: 1 });
-										span.setAttribute("email.message_id", result.messageId || "");
+										span.setAttribute(
+											"email.message_id",
+											result.messageId || "",
+										);
 
 										return { messageId: result.messageId || "" };
 									} catch (error) {
@@ -73,7 +76,12 @@ export const EmailServiceLive = Layer.succeed(
 					}),
 					Effect.retry(retryPolicy),
 					Effect.tapError((error) =>
-						Effect.sync(() => logger.error({ error, to: params.to }, "Email failed after retries")),
+						Effect.sync(() =>
+							logger.error(
+								{ error, to: params.to },
+								"Email failed after retries",
+							),
+						),
 					),
 				);
 			}),

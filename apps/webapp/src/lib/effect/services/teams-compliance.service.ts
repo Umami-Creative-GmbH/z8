@@ -4,19 +4,17 @@
  * Provides compliance data formatted for Teams bot display.
  * Aggregates violations, alerts, and pending exception requests.
  */
+/** biome-ignore-all lint/suspicious/noExplicitAny: it is what it is */
 
-import { and, eq, gte, lte, inArray, desc, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import {
 	complianceException,
-	workPolicyViolation,
-	employee,
 	employeeManagers,
-	workPeriod,
+	workPolicyViolation,
 } from "@/db/schema";
-import { user } from "@/db/auth-schema";
-import { DatabaseError } from "../errors";
+import type { DatabaseError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
 
 // ============================================
@@ -25,7 +23,12 @@ import { DatabaseService, DatabaseServiceLive } from "./database.service";
 
 export interface ComplianceAlert {
 	id: string;
-	type: "rest_period" | "overtime_daily" | "overtime_weekly" | "overtime_monthly" | "max_daily_hours";
+	type:
+		| "rest_period"
+		| "overtime_daily"
+		| "overtime_weekly"
+		| "overtime_monthly"
+		| "max_daily_hours";
 	severity: "warning" | "critical" | "violation";
 	employeeId: string;
 	employeeName: string;
@@ -39,7 +42,11 @@ export interface ComplianceExceptionSummary {
 	id: string;
 	employeeId: string;
 	employeeName: string;
-	exceptionType: "rest_period" | "overtime_daily" | "overtime_weekly" | "overtime_monthly";
+	exceptionType:
+		| "rest_period"
+		| "overtime_daily"
+		| "overtime_weekly"
+		| "overtime_monthly";
 	status: "pending" | "approved" | "rejected" | "expired" | "used";
 	requestedAt: Date;
 	validFrom: Date;
@@ -58,7 +65,9 @@ export interface ComplianceSummary {
 // SERVICE INTERFACE
 // ============================================
 
-export class TeamsComplianceService extends Context.Tag("TeamsComplianceService")<
+export class TeamsComplianceService extends Context.Tag(
+	"TeamsComplianceService",
+)<
 	TeamsComplianceService,
 	{
 		/**
@@ -82,7 +91,6 @@ export class TeamsComplianceService extends Context.Tag("TeamsComplianceService"
 		/**
 		 * Get full compliance summary for Teams display
 		 */
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		readonly getComplianceSummary: (params: {
 			managerId: string;
 			organizationId: string;
@@ -186,14 +194,19 @@ export const TeamsComplianceServiceLive = Layer.effect(
 					const { managerId, organizationId, daysBack = 7, timezone } = params;
 
 					// Get managed employees
-					const managedEmployees = yield* _(getManagedEmployeesWithNames(managerId, organizationId));
+					const managedEmployees = yield* _(
+						getManagedEmployeesWithNames(managerId, organizationId),
+					);
 					if (managedEmployees.size === 0) {
 						return [];
 					}
 
 					const managedEmployeeIds = [...managedEmployees.keys()];
 					const now = DateTime.now().setZone(timezone);
-					const startDate = now.minus({ days: daysBack }).startOf("day").toJSDate();
+					const startDate = now
+						.minus({ days: daysBack })
+						.startOf("day")
+						.toJSDate();
 
 					// Get violations for managed employees
 					const violations = yield* _(
@@ -233,18 +246,25 @@ export const TeamsComplianceServiceLive = Layer.effect(
 
 					// Map violations to alerts
 					const alerts: ComplianceAlert[] = violations.map((v) => {
-						const employeeExceptions = exceptionsByEmployee.get(v.employeeId) || [];
+						const employeeExceptions =
+							exceptionsByEmployee.get(v.employeeId) || [];
 						const matchingException = employeeExceptions.find(
 							(ex) =>
 								ex.exceptionType === v.violationType &&
 								ex.usedAt &&
-								DateTime.fromJSDate(ex.usedAt).hasSame(DateTime.fromJSDate(v.violationDate), "day"),
+								DateTime.fromJSDate(ex.usedAt).hasSame(
+									DateTime.fromJSDate(v.violationDate),
+									"day",
+								),
 						);
 
 						return {
 							id: v.id,
 							type: v.violationType as ComplianceAlert["type"],
-							severity: calculateSeverity(v.violationType, v.details as Record<string, unknown> | null),
+							severity: calculateSeverity(
+								v.violationType,
+								v.details as Record<string, unknown> | null,
+							),
 							employeeId: v.employeeId,
 							employeeName: managedEmployees.get(v.employeeId) || "Unknown",
 							date: v.violationDate,
@@ -257,7 +277,8 @@ export const TeamsComplianceServiceLive = Layer.effect(
 					// Sort by severity (violation > critical > warning) then by date
 					const severityOrder = { violation: 0, critical: 1, warning: 2 };
 					alerts.sort((a, b) => {
-						const severityDiff = severityOrder[a.severity] - severityOrder[b.severity];
+						const severityDiff =
+							severityOrder[a.severity] - severityOrder[b.severity];
 						if (severityDiff !== 0) return severityDiff;
 						return b.date.getTime() - a.date.getTime();
 					});
@@ -270,7 +291,9 @@ export const TeamsComplianceServiceLive = Layer.effect(
 					const { managerId, organizationId } = params;
 
 					// Get managed employees
-					const managedEmployees = yield* _(getManagedEmployeesWithNames(managerId, organizationId));
+					const managedEmployees = yield* _(
+						getManagedEmployeesWithNames(managerId, organizationId),
+					);
 					if (managedEmployees.size === 0) {
 						return [];
 					}
@@ -350,7 +373,9 @@ export const TeamsComplianceServiceLive = Layer.effect(
 					const { managerId, organizationId } = params;
 
 					// Get managed employees
-					const managedEmployees = yield* _(getManagedEmployeesWithNames(managerId, organizationId));
+					const managedEmployees = yield* _(
+						getManagedEmployeesWithNames(managerId, organizationId),
+					);
 					if (managedEmployees.size === 0) {
 						return 0;
 					}

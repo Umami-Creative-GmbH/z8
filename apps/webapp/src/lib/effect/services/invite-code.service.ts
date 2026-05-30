@@ -1,24 +1,27 @@
-import { and, desc, eq, gte, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, type SQL, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { nanoid } from "nanoid";
+import { member, user } from "@/db/auth-schema";
 import {
+	type inviteCode as InviteCodeTable,
+	type inviteCodeUsage as InviteCodeUsageTable,
 	inviteCode,
 	inviteCodeUsage,
 	memberApproval,
-	type inviteCode as InviteCodeTable,
-	type inviteCodeUsage as InviteCodeUsageTable,
-	type memberApproval as MemberApprovalTable,
+	team,
 } from "@/db/schema";
-import { member, organization, user } from "@/db/auth-schema";
-import { team } from "@/db/schema";
 import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
-import { type DatabaseError, NotFoundError, ValidationError, AuthorizationError } from "../errors";
+import {
+	type AuthorizationError,
+	type DatabaseError,
+	NotFoundError,
+	ValidationError,
+} from "../errors";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
 type InviteCode = typeof InviteCodeTable.$inferSelect;
 type InviteCodeUsage = typeof InviteCodeUsageTable.$inferSelect;
-type MemberApproval = typeof MemberApprovalTable.$inferSelect;
 type InviteCodeStatus = "active" | "paused" | "expired" | "archived";
 
 export interface CreateInviteCodeInput {
@@ -75,8 +78,8 @@ export interface ValidateInviteCodeResult {
 export interface UseInviteCodeInput {
 	code: string;
 	userId: string;
-	ipAddress?: string;
-	userAgent?: string;
+	ipAddress?: string | null;
+	userAgent?: string | null;
 }
 
 export interface UseInviteCodeResult {
@@ -99,14 +102,22 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 		readonly update: (
 			id: string,
 			input: UpdateInviteCodeInput,
-		) => Effect.Effect<InviteCode, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			InviteCode,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 
 		readonly delete: (
 			id: string,
 			userId: string,
-		) => Effect.Effect<void, NotFoundError | AuthorizationError | DatabaseError>;
+		) => Effect.Effect<
+			void,
+			NotFoundError | AuthorizationError | DatabaseError
+		>;
 
-		readonly getById: (id: string) => Effect.Effect<InviteCodeWithRelations | null, DatabaseError>;
+		readonly getById: (
+			id: string,
+		) => Effect.Effect<InviteCodeWithRelations | null, DatabaseError>;
 
 		readonly getByCode: (
 			organizationId: string,
@@ -118,11 +129,16 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 		) => Effect.Effect<InviteCodeWithRelations[], DatabaseError>;
 
 		// Validation and usage
-		readonly validateCode: (code: string) => Effect.Effect<ValidateInviteCodeResult, DatabaseError>;
+		readonly validateCode: (
+			code: string,
+		) => Effect.Effect<ValidateInviteCodeResult, DatabaseError>;
 
 		readonly useCode: (
 			input: UseInviteCodeInput,
-		) => Effect.Effect<UseInviteCodeResult, ValidationError | NotFoundError | DatabaseError>;
+		) => Effect.Effect<
+			UseInviteCodeResult,
+			ValidationError | NotFoundError | DatabaseError
+		>;
 
 		// Stats
 		readonly getUsageStats: (
@@ -143,11 +159,18 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 
 		readonly processPendingInviteCode: (
 			userId: string,
-		) => Effect.Effect<UseInviteCodeResult | null, ValidationError | NotFoundError | DatabaseError>;
+		) => Effect.Effect<
+			UseInviteCodeResult | null,
+			ValidationError | NotFoundError | DatabaseError
+		>;
 
-		readonly clearPendingInviteCode: (userId: string) => Effect.Effect<void, DatabaseError>;
+		readonly clearPendingInviteCode: (
+			userId: string,
+		) => Effect.Effect<void, DatabaseError>;
 
-		readonly getPendingInviteCode: (userId: string) => Effect.Effect<string | null, DatabaseError>;
+		readonly getPendingInviteCode: (
+			userId: string,
+		) => Effect.Effect<string | null, DatabaseError>;
 	}
 >() {}
 
@@ -175,11 +198,16 @@ export const InviteCodeServiceLive = Layer.effect(
 		};
 
 		// Helper to check if code is expired or exhausted
-		const isCodeUsable = (inviteCodeRecord: InviteCode): { usable: boolean; reason?: string } => {
+		const isCodeUsable = (
+			inviteCodeRecord: InviteCode,
+		): { usable: boolean; reason?: string } => {
 			if (inviteCodeRecord.status !== "active") {
 				return { usable: false, reason: `Code is ${inviteCodeRecord.status}` };
 			}
-			if (inviteCodeRecord.expiresAt && inviteCodeRecord.expiresAt < new Date()) {
+			if (
+				inviteCodeRecord.expiresAt &&
+				inviteCodeRecord.expiresAt < new Date()
+			) {
 				return { usable: false, reason: "Code has expired" };
 			}
 			if (
@@ -225,7 +253,8 @@ export const InviteCodeServiceLive = Layer.effect(
 						yield* _(
 							Effect.fail(
 								new ValidationError({
-									message: "A code with this name already exists for this organization.",
+									message:
+										"A code with this name already exists for this organization.",
 									field: "code",
 								}),
 							),
@@ -234,11 +263,12 @@ export const InviteCodeServiceLive = Layer.effect(
 
 					// Validate team exists if provided
 					if (input.defaultTeamId) {
+						const defaultTeamId = input.defaultTeamId;
 						const teamRecord = yield* _(
 							dbService.query("validateTeam", async () => {
 								return await dbService.db.query.team.findFirst({
 									where: and(
-										eq(team.id, input.defaultTeamId!),
+										eq(team.id, defaultTeamId),
 										eq(team.organizationId, input.organizationId),
 									),
 								});
@@ -249,7 +279,8 @@ export const InviteCodeServiceLive = Layer.effect(
 							yield* _(
 								Effect.fail(
 									new ValidationError({
-										message: "Invalid default team. Team not found in this organization.",
+										message:
+											"Invalid default team. Team not found in this organization.",
 										field: "defaultTeamId",
 									}),
 								),
@@ -293,7 +324,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					);
 
 					if (!existing) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "Invite code not found",
@@ -304,14 +335,20 @@ export const InviteCodeServiceLive = Layer.effect(
 						);
 					}
 
+					const existingInviteCode = existing;
+
 					// Validate team if changing
-					if (input.defaultTeamId !== undefined && input.defaultTeamId !== null) {
+					if (
+						input.defaultTeamId !== undefined &&
+						input.defaultTeamId !== null
+					) {
+						const defaultTeamId = input.defaultTeamId;
 						const teamRecord = yield* _(
 							dbService.query("validateTeam", async () => {
 								return await dbService.db.query.team.findFirst({
 									where: and(
-										eq(team.id, input.defaultTeamId!),
-										eq(team.organizationId, existing!.organizationId),
+										eq(team.id, defaultTeamId),
+										eq(team.organizationId, existingInviteCode.organizationId),
 									),
 								});
 							}),
@@ -321,7 +358,8 @@ export const InviteCodeServiceLive = Layer.effect(
 							yield* _(
 								Effect.fail(
 									new ValidationError({
-										message: "Invalid default team. Team not found in this organization.",
+										message:
+											"Invalid default team. Team not found in this organization.",
 										field: "defaultTeamId",
 									}),
 								),
@@ -335,10 +373,18 @@ export const InviteCodeServiceLive = Layer.effect(
 								.update(inviteCode)
 								.set({
 									...(input.label !== undefined && { label: input.label }),
-									...(input.description !== undefined && { description: input.description }),
-									...(input.maxUses !== undefined && { maxUses: input.maxUses }),
-									...(input.expiresAt !== undefined && { expiresAt: input.expiresAt }),
-									...(input.defaultTeamId !== undefined && { defaultTeamId: input.defaultTeamId }),
+									...(input.description !== undefined && {
+										description: input.description,
+									}),
+									...(input.maxUses !== undefined && {
+										maxUses: input.maxUses,
+									}),
+									...(input.expiresAt !== undefined && {
+										expiresAt: input.expiresAt,
+									}),
+									...(input.defaultTeamId !== undefined && {
+										defaultTeamId: input.defaultTeamId,
+									}),
 									...(input.requiresApproval !== undefined && {
 										requiresApproval: input.requiresApproval,
 									}),
@@ -365,7 +411,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					);
 
 					if (!existing) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "Invite code not found",
@@ -453,22 +499,26 @@ export const InviteCodeServiceLive = Layer.effect(
 				Effect.gen(function* (_) {
 					const results = yield* _(
 						dbService.query("listInviteCodes", async () => {
-							const conditions = [eq(inviteCode.organizationId, query.organizationId)];
-
-							if (query.status) {
-								conditions.push(eq(inviteCode.status, query.status));
-							} else if (!query.includeArchived) {
-								conditions.push(
-									or(
-										eq(inviteCode.status, "active"),
-										eq(inviteCode.status, "paused"),
-										eq(inviteCode.status, "expired"),
-									)!,
-								);
-							}
+							const baseCondition = eq(
+								inviteCode.organizationId,
+								query.organizationId,
+							);
+							const whereCondition: SQL = query.status
+								? ((and(baseCondition, eq(inviteCode.status, query.status)) ??
+										baseCondition) as SQL)
+								: !query.includeArchived
+									? ((and(
+											baseCondition,
+											inArray(inviteCode.status, [
+												"active",
+												"paused",
+												"expired",
+											]),
+										) ?? baseCondition) as SQL)
+									: baseCondition;
 
 							return await dbService.db.query.inviteCode.findMany({
-								where: and(...conditions),
+								where: whereCondition,
 								with: {
 									organization: {
 										columns: {
@@ -524,7 +574,11 @@ export const InviteCodeServiceLive = Layer.effect(
 
 					const { usable, reason } = isCodeUsable(result);
 					if (!usable) {
-						return { valid: false, inviteCode: result as InviteCodeWithRelations, error: reason };
+						return {
+							valid: false,
+							inviteCode: result as InviteCodeWithRelations,
+							error: reason,
+						};
 					}
 
 					return { valid: true, inviteCode: result as InviteCodeWithRelations };
@@ -551,7 +605,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					);
 
 					if (!validationResult) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "Invalid invite code",
@@ -562,7 +616,7 @@ export const InviteCodeServiceLive = Layer.effect(
 						);
 					}
 
-					const inviteCodeRecord = validationResult!;
+					const inviteCodeRecord = validationResult;
 					const { usable, reason } = isCodeUsable(inviteCodeRecord);
 
 					if (!usable) {
@@ -586,7 +640,10 @@ export const InviteCodeServiceLive = Layer.effect(
 							},
 							catch: (error) =>
 								new ValidationError({
-									message: error instanceof Error ? error.message : "Invite code redemption is not allowed",
+									message:
+										error instanceof Error
+											? error.message
+											: "Invite code redemption is not allowed",
 									field: "domainRestrictionEnabled",
 								}),
 						}),
@@ -616,7 +673,9 @@ export const InviteCodeServiceLive = Layer.effect(
 					}
 
 					// Create member with appropriate status
-					const memberStatus = inviteCodeRecord.requiresApproval ? "pending" : "approved";
+					const memberStatus = inviteCodeRecord.requiresApproval
+						? "pending"
+						: "approved";
 
 					const newMember = yield* _(
 						dbService.query("createMember", async () => {
@@ -669,8 +728,8 @@ export const InviteCodeServiceLive = Layer.effect(
 						status: memberStatus as "pending" | "approved",
 						organizationId: inviteCodeRecord.organizationId,
 						organizationName:
-							(inviteCodeRecord as InviteCodeWithRelations).organization?.name ||
-							"Unknown Organization",
+							(inviteCodeRecord as InviteCodeWithRelations).organization
+								?.name || "Unknown Organization",
 					};
 				}),
 
@@ -686,7 +745,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					);
 
 					if (!existing) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "Invite code not found",
@@ -710,11 +769,14 @@ export const InviteCodeServiceLive = Layer.effect(
 								return { total: 0, pending: 0, approved: 0, rejected: 0 };
 							}
 
-							const approvals = await dbService.db.query.memberApproval.findMany({
-								where: sql`${memberApproval.memberId} = ANY(${memberIds})`,
-							});
+							const approvals =
+								await dbService.db.query.memberApproval.findMany({
+									where: sql`${memberApproval.memberId} = ANY(${memberIds})`,
+								});
 
-							const approvalMap = new Map(approvals.map((a) => [a.memberId, a.status]));
+							const approvalMap = new Map(
+								approvals.map((a) => [a.memberId, a.status]),
+							);
 
 							let pending = 0;
 							let approved = 0;
@@ -752,7 +814,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					);
 
 					if (!validationResult) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new ValidationError({
 									message: "Invalid invite code",
@@ -762,7 +824,7 @@ export const InviteCodeServiceLive = Layer.effect(
 						);
 					}
 
-					const { usable, reason } = isCodeUsable(validationResult!);
+					const { usable, reason } = isCodeUsable(validationResult);
 					if (!usable) {
 						yield* _(
 							Effect.fail(
@@ -797,7 +859,7 @@ export const InviteCodeServiceLive = Layer.effect(
 						}),
 					);
 
-					if (!userRecord || !userRecord.pendingInviteCode) {
+					if (!userRecord?.pendingInviteCode) {
 						return null;
 					}
 
@@ -864,13 +926,15 @@ export const InviteCodeServiceLive = Layer.effect(
 							status: "approved" as const,
 							organizationId: inviteCodeRecord.organizationId,
 							organizationName:
-								(inviteCodeRecord as InviteCodeWithRelations).organization?.name ||
-								"Unknown Organization",
+								(inviteCodeRecord as InviteCodeWithRelations).organization
+									?.name || "Unknown Organization",
 						};
 					}
 
 					// Create member with appropriate status
-					const memberStatus = inviteCodeRecord.requiresApproval ? "pending" : "approved";
+					const memberStatus = inviteCodeRecord.requiresApproval
+						? "pending"
+						: "approved";
 
 					const newMember = yield* _(
 						dbService.query("createMember", async () => {
@@ -922,8 +986,8 @@ export const InviteCodeServiceLive = Layer.effect(
 						status: memberStatus as "pending" | "approved",
 						organizationId: inviteCodeRecord.organizationId,
 						organizationName:
-							(inviteCodeRecord as InviteCodeWithRelations).organization?.name ||
-							"Unknown Organization",
+							(inviteCodeRecord as InviteCodeWithRelations).organization
+								?.name || "Unknown Organization",
 					};
 				}),
 

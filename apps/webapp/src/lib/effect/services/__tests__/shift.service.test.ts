@@ -64,7 +64,12 @@ describe("ShiftService.deleteShift", () => {
 	it("rejects draft shift deletion for non-manager employees", async () => {
 		const { deleteWhere, runDeleteShift } = createDeleteShiftTestContext({
 			shiftRecord: { id: "shift-1", organizationId: "org-1", status: "draft" },
-			actorEmployee: { id: "emp-1", userId: "user-1", organizationId: "org-1", role: "employee" },
+			actorEmployee: {
+				id: "emp-1",
+				userId: "user-1",
+				organizationId: "org-1",
+				role: "employee",
+			},
 		});
 
 		expect(await runDeleteShift("shift-1", "user-1")).toMatchObject({
@@ -77,7 +82,12 @@ describe("ShiftService.deleteShift", () => {
 	it("treats cross-organization shifts as not found", async () => {
 		const { deleteWhere, runDeleteShift } = createDeleteShiftTestContext({
 			shiftRecord: null,
-			actorEmployee: { id: "emp-2", userId: "user-2", organizationId: "org-2", role: "manager" },
+			actorEmployee: {
+				id: "emp-2",
+				userId: "user-2",
+				organizationId: "org-2",
+				role: "manager",
+			},
 		});
 
 		expect(await runDeleteShift("shift-1", "user-2")).toMatchObject({
@@ -90,7 +100,12 @@ describe("ShiftService.deleteShift", () => {
 	it("allows draft shift deletion for in-org managers", async () => {
 		const { deleteWhere, runDeleteShift } = createDeleteShiftTestContext({
 			shiftRecord: { id: "shift-1", organizationId: "org-1", status: "draft" },
-			actorEmployee: { id: "emp-3", userId: "user-3", organizationId: "org-1", role: "manager" },
+			actorEmployee: {
+				id: "emp-3",
+				userId: "user-3",
+				organizationId: "org-1",
+				role: "manager",
+			},
 		});
 
 		expect(await runDeleteShift("shift-1", "user-3")).toMatchObject({
@@ -102,8 +117,17 @@ describe("ShiftService.deleteShift", () => {
 
 	it("rejects published shift deletion for managers", async () => {
 		const { deleteWhere, runDeleteShift } = createDeleteShiftTestContext({
-			shiftRecord: { id: "shift-1", organizationId: "org-1", status: "published" },
-			actorEmployee: { id: "emp-4", userId: "user-4", organizationId: "org-1", role: "manager" },
+			shiftRecord: {
+				id: "shift-1",
+				organizationId: "org-1",
+				status: "published",
+			},
+			actorEmployee: {
+				id: "emp-4",
+				userId: "user-4",
+				organizationId: "org-1",
+				role: "manager",
+			},
 		});
 
 		expect(await runDeleteShift("shift-1", "user-4")).toMatchObject({
@@ -114,10 +138,20 @@ describe("ShiftService.deleteShift", () => {
 	});
 
 	it("resolves the acting employee from userId before authorizing deletion", async () => {
-		const { deleteWhere, mockDb, runDeleteShift } = createDeleteShiftTestContext({
-			shiftRecord: { id: "shift-1", organizationId: "org-1", status: "draft" },
-			actorEmployee: { id: "emp-5", userId: "user-5", organizationId: "org-1", role: "employee" },
-		});
+		const { deleteWhere, mockDb, runDeleteShift } =
+			createDeleteShiftTestContext({
+				shiftRecord: {
+					id: "shift-1",
+					organizationId: "org-1",
+					status: "draft",
+				},
+				actorEmployee: {
+					id: "emp-5",
+					userId: "user-5",
+					organizationId: "org-1",
+					role: "employee",
+				},
+			});
 
 		expect(await runDeleteShift("shift-1", "user-5")).toMatchObject({
 			_tag: "Left",

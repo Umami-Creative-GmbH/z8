@@ -1,10 +1,10 @@
-import { Context, Effect, Layer } from "effect";
 import { eq, sql } from "drizzle-orm";
+import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
-import { user, account } from "@/db/auth-schema";
+import { account, user } from "@/db/auth-schema";
 import { platformAdminAuditLog } from "@/db/schema";
-import { ConflictError, DatabaseError, ValidationError } from "../errors";
 import { setConfiguredStatus } from "@/lib/setup/config-cache";
+import { ConflictError, DatabaseError, ValidationError } from "../errors";
 
 // Types
 export interface CreatePlatformAdminInput {
@@ -149,7 +149,9 @@ export const SetupServiceLive = Layer.effect(
 							// Acquire advisory lock (prevents concurrent setup operations)
 							// Using a fixed lock key for "platform_setup" operation
 							const SETUP_LOCK_KEY = 1234567890; // Fixed key for setup operation
-							await tx.execute(sql`SELECT pg_advisory_xact_lock(${SETUP_LOCK_KEY})`);
+							await tx.execute(
+								sql`SELECT pg_advisory_xact_lock(${SETUP_LOCK_KEY})`,
+							);
 
 							// Check if any platform admin already exists (within transaction)
 							const [existingAdmin] = await tx

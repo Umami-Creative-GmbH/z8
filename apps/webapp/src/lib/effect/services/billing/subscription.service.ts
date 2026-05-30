@@ -1,11 +1,11 @@
-import { Context, Effect, Layer } from "effect";
 import { count, eq } from "drizzle-orm";
+import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
-import { DatabaseError, NotFoundError } from "../../errors";
 import { env } from "@/env";
+import { DatabaseError, NotFoundError } from "../../errors";
 
 export interface SubscriptionInfo {
 	id: string;
@@ -76,7 +76,9 @@ export class SubscriptionService extends Context.Tag("SubscriptionService")<
 			now?: Date;
 		}) => Effect.Effect<SubscriptionInfo, DatabaseError>;
 
-		readonly create: (params: CreateSubscriptionParams) => Effect.Effect<void, DatabaseError>;
+		readonly create: (
+			params: CreateSubscriptionParams,
+		) => Effect.Effect<void, DatabaseError>;
 
 		readonly updateFromStripe: (
 			params: UpdateSubscriptionFromStripeParams,
@@ -92,11 +94,15 @@ export class SubscriptionService extends Context.Tag("SubscriptionService")<
 			stripeCustomerId: string,
 		) => Effect.Effect<void, DatabaseError>;
 
-		readonly canMutateData: (organizationId: string) => Effect.Effect<boolean, DatabaseError>;
+		readonly canMutateData: (
+			organizationId: string,
+		) => Effect.Effect<boolean, DatabaseError>;
 	}
 >() {}
 
-function mapToSubscriptionInfo(sub: typeof subscription.$inferSelect): SubscriptionInfo {
+function mapToSubscriptionInfo(
+	sub: typeof subscription.$inferSelect,
+): SubscriptionInfo {
 	const activeStatuses = ["trialing", "active"];
 	return {
 		id: sub.id,
@@ -116,7 +122,9 @@ function mapToSubscriptionInfo(sub: typeof subscription.$inferSelect): Subscript
 	};
 }
 
-async function countOrganizationMembers(organizationId: string): Promise<number> {
+async function countOrganizationMembers(
+	organizationId: string,
+): Promise<number> {
 	const [memberCountResult] = await db
 		.select({ count: count() })
 		.from(member)
@@ -225,7 +233,9 @@ export const SubscriptionServiceLive = Layer.succeed(
 
 					if (existing) return mapToSubscriptionInfo(existing);
 
-					const trialEnd = DateTime.fromJSDate(now, { zone: "utc" }).plus({ days: 14 }).toJSDate();
+					const trialEnd = DateTime.fromJSDate(now, { zone: "utc" })
+						.plus({ days: 14 })
+						.toJSDate();
 					const currentSeats = await countOrganizationMembers(organizationId);
 					const inserted = await db
 						.insert(subscription)
@@ -327,7 +337,12 @@ export const SubscriptionServiceLive = Layer.succeed(
 							billingInterval: params.billingInterval,
 							updatedAt: new Date(),
 						})
-						.where(eq(subscription.stripeSubscriptionId, params.stripeSubscriptionId));
+						.where(
+							eq(
+								subscription.stripeSubscriptionId,
+								params.stripeSubscriptionId,
+							),
+						);
 				},
 				catch: (error) =>
 					new DatabaseError({

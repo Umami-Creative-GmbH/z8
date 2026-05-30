@@ -9,25 +9,25 @@ import { and, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { member } from "@/db/auth-schema";
 import {
+	customRole,
+	customRolePermission,
 	employee,
 	employeeCustomRole,
 	employeeManagers,
-	customRole,
-	customRolePermission,
 	teamPermissions,
 } from "@/db/schema";
 import {
-	defineAbilityFor,
-	type AppAbility,
-	type PrincipalContext,
 	type Action,
+	type AppAbility,
+	type CustomRoleInfo,
+	defineAbilityFor,
+	type PrincipalContext,
 	type Subject,
 	type TeamPermissions,
-	type CustomRoleInfo,
 } from "@/lib/authorization";
-import type { PermissionFlags } from "./permissions.service";
 import { AuthorizationError, type DatabaseError } from "../errors";
 import { DatabaseService } from "./database.service";
+import type { PermissionFlags } from "./permissions.service";
 
 // ============================================
 // SERVICE INTERFACE
@@ -148,7 +148,7 @@ export const AuthorizationServiceLive = Layer.effect(
 					);
 
 					// Load permissions if employee exists
-					let permissions: TeamPermissions = {
+					const permissions: TeamPermissions = {
 						orgWide: null,
 						byTeamId: new Map(),
 					};
@@ -183,7 +183,11 @@ export const AuthorizationServiceLive = Layer.effect(
 					// Load managed employee IDs
 					let managedEmployeeIds: string[] = [];
 
-					if (employeeRecord && (employeeRecord.role === "manager" || employeeRecord.role === "admin")) {
+					if (
+						employeeRecord &&
+						(employeeRecord.role === "manager" ||
+							employeeRecord.role === "admin")
+					) {
 						const managedRecords = yield* _(
 							dbService.query("getManagedEmployeesForAuth", async () => {
 								return await dbService.db.query.employeeManagers.findMany({
@@ -211,12 +215,21 @@ export const AuthorizationServiceLive = Layer.effect(
 										permSubject: customRolePermission.subject,
 									})
 									.from(employeeCustomRole)
-									.innerJoin(customRole, and(
-										eq(employeeCustomRole.customRoleId, customRole.id),
-										eq(customRole.isActive, true),
-										eq(customRole.organizationId, employeeRecord.organizationId),
-									))
-									.leftJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id))
+									.innerJoin(
+										customRole,
+										and(
+											eq(employeeCustomRole.customRoleId, customRole.id),
+											eq(customRole.isActive, true),
+											eq(
+												customRole.organizationId,
+												employeeRecord.organizationId,
+											),
+										),
+									)
+									.leftJoin(
+										customRolePermission,
+										eq(customRolePermission.customRoleId, customRole.id),
+									)
 									.where(eq(employeeCustomRole.employeeId, employeeRecord.id));
 							}),
 						);
@@ -233,10 +246,13 @@ export const AuthorizationServiceLive = Layer.effect(
 								});
 							}
 							if (row.permAction && row.permSubject) {
-								roleMap.get(row.roleId)!.permissions.push({
-									action: row.permAction as Action,
-									subject: row.permSubject as Subject,
-								});
+								const roleInfo = roleMap.get(row.roleId);
+								if (roleInfo) {
+									roleInfo.permissions.push({
+										action: row.permAction as Action,
+										subject: row.permSubject as Subject,
+									});
+								}
 							}
 						}
 						customRolesInfo = Array.from(roleMap.values());
@@ -360,7 +376,11 @@ export const AuthorizationServiceLive = Layer.effect(
 					// Load managed employee IDs
 					let managedEmployeeIds: string[] = [];
 
-					if (employeeRecord && (employeeRecord.role === "manager" || employeeRecord.role === "admin")) {
+					if (
+						employeeRecord &&
+						(employeeRecord.role === "manager" ||
+							employeeRecord.role === "admin")
+					) {
 						const managedRecords = yield* _(
 							dbService.query("getManagedEmployeesForAuth", async () => {
 								return await dbService.db.query.employeeManagers.findMany({
@@ -388,12 +408,21 @@ export const AuthorizationServiceLive = Layer.effect(
 										permSubject: customRolePermission.subject,
 									})
 									.from(employeeCustomRole)
-									.innerJoin(customRole, and(
-										eq(employeeCustomRole.customRoleId, customRole.id),
-										eq(customRole.isActive, true),
-										eq(customRole.organizationId, employeeRecord.organizationId),
-									))
-									.leftJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id))
+									.innerJoin(
+										customRole,
+										and(
+											eq(employeeCustomRole.customRoleId, customRole.id),
+											eq(customRole.isActive, true),
+											eq(
+												customRole.organizationId,
+												employeeRecord.organizationId,
+											),
+										),
+									)
+									.leftJoin(
+										customRolePermission,
+										eq(customRolePermission.customRoleId, customRole.id),
+									)
 									.where(eq(employeeCustomRole.employeeId, employeeRecord.id));
 							}),
 						);
@@ -409,10 +438,13 @@ export const AuthorizationServiceLive = Layer.effect(
 								});
 							}
 							if (row.permAction && row.permSubject) {
-								roleMap.get(row.roleId)!.permissions.push({
-									action: row.permAction as Action,
-									subject: row.permSubject as Subject,
-								});
+								const roleInfo = roleMap.get(row.roleId);
+								if (roleInfo) {
+									roleInfo.permissions.push({
+										action: row.permAction as Action,
+										subject: row.permSubject as Subject,
+									});
+								}
 							}
 						}
 						customRolesInfo = Array.from(roleMap.values());
@@ -475,8 +507,12 @@ export const AuthorizationServiceLive = Layer.effect(
  */
 export const AuthorizationServiceWithDeps = Layer.provide(
 	AuthorizationServiceLive,
-	Layer.succeed(DatabaseService, DatabaseService.of({
-		db: null as any, // Will be provided at runtime
-		query: () => Effect.die("DatabaseService not provided"),
-	})),
+	Layer.succeed(
+		DatabaseService,
+		DatabaseService.of({
+			// biome-ignore lint/suspicious/noExplicitAny: Will be provided at runtime
+			db: null as any,
+			query: () => Effect.die("DatabaseService not provided"),
+		}),
+	),
 );

@@ -5,11 +5,17 @@
  * and shift pickup requests.
  */
 
-import { and, eq, gte, lte, isNull, sql, desc, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
-import { shift, shiftRequest, shiftTemplate, locationSubarea, location, employee } from "@/db/schema";
-import { DatabaseError, NotFoundError, ValidationError } from "../errors";
+import {
+	employee,
+	location,
+	locationSubarea,
+	shift,
+	shiftRequest,
+} from "@/db/schema";
+import { type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
 
 // ============================================
@@ -78,7 +84,10 @@ export class OpenShiftsService extends Context.Tag("OpenShiftsService")<
 			requesterId: string;
 			organizationId: string;
 			reason?: string;
-		}) => Effect.Effect<ShiftPickupRequestResult, ValidationError | NotFoundError | DatabaseError>;
+		}) => Effect.Effect<
+			ShiftPickupRequestResult,
+			ValidationError | NotFoundError | DatabaseError
+		>;
 
 		/**
 		 * Check if a shift is still available for pickup
@@ -102,7 +111,13 @@ export const OpenShiftsServiceLive = Layer.effect(
 		return OpenShiftsService.of({
 			getOpenShifts: (params) =>
 				dbService.query("getOpenShifts", async () => {
-					const { organizationId, startDate, endDate, subareaId, limit = 20 } = params;
+					const {
+						organizationId,
+						startDate,
+						endDate,
+						subareaId,
+						limit = 20,
+					} = params;
 
 					const conditions = [
 						eq(shift.organizationId, organizationId),
@@ -169,7 +184,9 @@ export const OpenShiftsServiceLive = Layer.effect(
 									.groupBy(shiftRequest.shiftId)
 							: [];
 
-					const requestCountMap = new Map(requestCounts.map((r) => [r.shiftId, Number(r.count)]));
+					const requestCountMap = new Map(
+						requestCounts.map((r) => [r.shiftId, Number(r.count)]),
+					);
 
 					return openShifts.map((s) => {
 						const loc = locationMap.get(s.subareaId);
@@ -216,11 +233,18 @@ export const OpenShiftsServiceLive = Layer.effect(
 						dbService.db
 							.select({ count: sql<number>`count(*)` })
 							.from(shift)
-							.where(and(...baseConditions, sql`DATE(${shift.date}) = ${todayStr}`)),
+							.where(
+								and(...baseConditions, sql`DATE(${shift.date}) = ${todayStr}`),
+							),
 						dbService.db
 							.select({ count: sql<number>`count(*)` })
 							.from(shift)
-							.where(and(...baseConditions, sql`DATE(${shift.date}) = ${tomorrowStr}`)),
+							.where(
+								and(
+									...baseConditions,
+									sql`DATE(${shift.date}) = ${tomorrowStr}`,
+								),
+							),
 					]);
 
 					return {
@@ -275,7 +299,8 @@ export const OpenShiftsServiceLive = Layer.effect(
 						return yield* _(
 							Effect.fail(
 								new ValidationError({
-									message: "You are not authorized to request shifts in this organization",
+									message:
+										"You are not authorized to request shifts in this organization",
 									field: "requesterId",
 									value: requesterId,
 								}),

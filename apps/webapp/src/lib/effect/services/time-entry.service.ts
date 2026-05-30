@@ -59,11 +59,17 @@ export class TimeEntryService extends Context.Tag("TimeEntryService")<
 	{
 		readonly createTimeEntry: (
 			input: CreateTimeEntryInput,
-		) => Effect.Effect<TimeEntry, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			TimeEntry,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 
 		readonly createCorrectionEntry: (
 			input: CreateCorrectionInput,
-		) => Effect.Effect<TimeEntry, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			TimeEntry,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 
 		readonly getTimeEntries: (
 			input: GetTimeEntriesInput,

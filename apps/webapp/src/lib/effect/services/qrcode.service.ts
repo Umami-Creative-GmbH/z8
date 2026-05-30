@@ -1,5 +1,5 @@
-import QRCode from "qrcode";
 import { Context, Effect, Layer } from "effect";
+import QRCode from "qrcode";
 
 export type QRCodeFormat = "png" | "svg";
 
@@ -29,7 +29,9 @@ export class QRCodeService extends Context.Tag("QRCodeService")<
 	QRCodeService,
 	{
 		// Generate QR code in specified format
-		readonly generate: (input: GenerateQRCodeInput) => Effect.Effect<QRCodeResult, Error>;
+		readonly generate: (
+			input: GenerateQRCodeInput,
+		) => Effect.Effect<QRCodeResult, Error>;
 
 		// Generate QR code as data URL (for embedding in HTML)
 		readonly generateDataUrl: (
@@ -114,7 +116,8 @@ export const QRCodeServiceLive = Layer.succeed(
 
 					return await QRCode.toDataURL(data, qrOptions);
 				},
-				catch: (error) => new Error(`Failed to generate QR code data URL: ${error}`),
+				catch: (error) =>
+					new Error(`Failed to generate QR code data URL: ${error}`),
 			}),
 
 		generateInviteQR: (code, baseUrl, format, options) =>
@@ -157,7 +160,8 @@ export const QRCodeServiceLive = Layer.succeed(
 						mimeType: "image/png",
 					};
 				},
-				catch: (error) => new Error(`Failed to generate invite QR code: ${error}`),
+				catch: (error) =>
+					new Error(`Failed to generate invite QR code: ${error}`),
 			}),
 
 		generateBuffer: (data, format, options) =>
@@ -187,7 +191,8 @@ export const QRCodeServiceLive = Layer.succeed(
 						type: "png",
 					});
 				},
-				catch: (error) => new Error(`Failed to generate QR code buffer: ${error}`),
+				catch: (error) =>
+					new Error(`Failed to generate QR code buffer: ${error}`),
 			}),
 	}),
 );

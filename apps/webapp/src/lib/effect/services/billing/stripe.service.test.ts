@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Effect } from "effect";
-import Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { env } from "@/env";
@@ -38,21 +37,6 @@ describe("StripeService", () => {
 			"price_monthly_123";
 		(env as { STRIPE_PRICE_YEARLY_ID: string }).STRIPE_PRICE_YEARLY_ID =
 			"price_yearly_123";
-	});
-
-	it("pins the Stripe SDK to the latest Dahlia API version", async () => {
-		await Effect.runPromise(
-			Effect.gen(function* () {
-				yield* StripeService;
-			}).pipe(Effect.provide(StripeServiceLive)),
-		);
-
-		expect(Stripe).toHaveBeenCalledWith(
-			"rk_test_123",
-			expect.objectContaining({
-				apiVersion: "2026-04-22.dahlia",
-			}),
-		);
 	});
 
 	it("adds organization metadata to checkout sessions and subscriptions", async () => {

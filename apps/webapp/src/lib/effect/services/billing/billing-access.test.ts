@@ -169,11 +169,7 @@ describe("evaluateBillingAccess", () => {
 
 describe("getDaysRemaining", () => {
 	it("returns ceil days remaining", () => {
-		expect(getDaysRemaining(new Date("2026-05-20T12:00:01.000Z"), now)).toBe(
-			1,
-		);
-		expect(getDaysRemaining(new Date("2026-05-23T00:00:00.000Z"), now)).toBe(
-			3,
-		);
+		expect(getDaysRemaining(new Date("2026-05-20T12:00:01.000Z"), now)).toBe(1);
+		expect(getDaysRemaining(new Date("2026-05-23T00:00:00.000Z"), now)).toBe(3);
 	});
 });

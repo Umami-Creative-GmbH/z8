@@ -2,7 +2,6 @@ import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
 	employee,
-	team,
 	workPolicy,
 	workPolicyAssignment,
 	type workPolicyBreakOption,
@@ -12,7 +11,6 @@ import {
 	type workPolicySchedule,
 	type workPolicyScheduleDay,
 	workPolicyViolation,
-	workPeriod,
 } from "@/db/schema";
 import { type DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService } from "./database.service";
@@ -22,7 +20,14 @@ import { DatabaseService } from "./database.service";
 // ============================================
 
 export interface WorkPolicyScheduleDay {
-	dayOfWeek: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+	dayOfWeek:
+		| "monday"
+		| "tuesday"
+		| "wednesday"
+		| "thursday"
+		| "friday"
+		| "saturday"
+		| "sunday";
 	hoursPerDay: string;
 	isWorkDay: boolean;
 }
@@ -150,7 +155,11 @@ export interface GetViolationsInput {
 	startDate: Date;
 	endDate: Date;
 	employeeId?: string;
-	violationType?: "max_daily" | "max_weekly" | "max_uninterrupted" | "break_required";
+	violationType?:
+		| "max_daily"
+		| "max_weekly"
+		| "max_uninterrupted"
+		| "break_required";
 }
 
 export type ViolationWithDetails = typeof workPolicyViolation.$inferSelect & {
@@ -214,7 +223,10 @@ function calculateBreakRequirementsInternal(params: {
 		};
 	}
 
-	const remaining = Math.max(0, applicableRule.requiredBreakMinutes - breaksTakenMinutes);
+	const remaining = Math.max(
+		0,
+		applicableRule.requiredBreakMinutes - breaksTakenMinutes,
+	);
 
 	return {
 		isRequired: true,
@@ -242,7 +254,10 @@ export class WorkPolicyService extends Context.Tag("WorkPolicyService")<
 		 */
 		readonly getEffectivePolicy: (
 			employeeId: string,
-		) => Effect.Effect<EffectiveWorkPolicy | null, NotFoundError | DatabaseError>;
+		) => Effect.Effect<
+			EffectiveWorkPolicy | null,
+			NotFoundError | DatabaseError
+		>;
 
 		/**
 		 * Check compliance for a working session against the effective policy.
@@ -270,7 +285,9 @@ export class WorkPolicyService extends Context.Tag("WorkPolicyService")<
 		/**
 		 * Log a compliance violation to the database.
 		 */
-		readonly logViolation: (input: LogViolationInput) => Effect.Effect<void, DatabaseError>;
+		readonly logViolation: (
+			input: LogViolationInput,
+		) => Effect.Effect<void, DatabaseError>;
 
 		/**
 		 * Get violations for reporting with optional filters.
@@ -354,7 +371,8 @@ export const WorkPolicyServiceLive = Layer.effect(
 							scheduleType: policy.schedule.scheduleType,
 							workingDaysPreset: policy.schedule.workingDaysPreset,
 							hoursPerCycle: policy.schedule.hoursPerCycle,
-							homeOfficeDaysPerCycle: policy.schedule.homeOfficeDaysPerCycle ?? 0,
+							homeOfficeDaysPerCycle:
+								policy.schedule.homeOfficeDaysPerCycle ?? 0,
 							days: policy.schedule.days.map((d) => ({
 								dayOfWeek: d.dayOfWeek,
 								hoursPerDay: d.hoursPerDay,
@@ -367,15 +385,22 @@ export const WorkPolicyServiceLive = Layer.effect(
 					? {
 							maxDailyMinutes: policy.regulation.maxDailyMinutes,
 							maxWeeklyMinutes: policy.regulation.maxWeeklyMinutes,
-							maxUninterruptedMinutes: policy.regulation.maxUninterruptedMinutes,
+							maxUninterruptedMinutes:
+								policy.regulation.maxUninterruptedMinutes,
 							// ArbZG compliance fields
 							minRestPeriodMinutes: policy.regulation.minRestPeriodMinutes,
-							restPeriodEnforcement: policy.regulation.restPeriodEnforcement ?? "warn",
-							overtimeDailyThresholdMinutes: policy.regulation.overtimeDailyThresholdMinutes,
-							overtimeWeeklyThresholdMinutes: policy.regulation.overtimeWeeklyThresholdMinutes,
-							overtimeMonthlyThresholdMinutes: policy.regulation.overtimeMonthlyThresholdMinutes,
-							alertBeforeLimitMinutes: policy.regulation.alertBeforeLimitMinutes ?? 30,
-							alertThresholdPercent: policy.regulation.alertThresholdPercent ?? 80,
+							restPeriodEnforcement:
+								policy.regulation.restPeriodEnforcement ?? "warn",
+							overtimeDailyThresholdMinutes:
+								policy.regulation.overtimeDailyThresholdMinutes,
+							overtimeWeeklyThresholdMinutes:
+								policy.regulation.overtimeWeeklyThresholdMinutes,
+							overtimeMonthlyThresholdMinutes:
+								policy.regulation.overtimeMonthlyThresholdMinutes,
+							alertBeforeLimitMinutes:
+								policy.regulation.alertBeforeLimitMinutes ?? 30,
+							alertThresholdPercent:
+								policy.regulation.alertThresholdPercent ?? 80,
 							breakRules: policy.regulation.breakRules
 								.sort((a, b) => a.sortOrder - b.sortOrder)
 								.map((rule) => ({
@@ -386,7 +411,8 @@ export const WorkPolicyServiceLive = Layer.effect(
 										.map((opt) => ({
 											splitCount: opt.splitCount,
 											minimumSplitMinutes: opt.minimumSplitMinutes,
-											minimumLongestSplitMinutes: opt.minimumLongestSplitMinutes,
+											minimumLongestSplitMinutes:
+												opt.minimumLongestSplitMinutes,
 										})),
 								})),
 						}
@@ -475,11 +501,12 @@ export const WorkPolicyServiceLive = Layer.effect(
 
 					// 3. Check team-level assignment (priority 1)
 					if (emp.teamId) {
+						const teamId = emp.teamId;
 						const teamAssignment = yield* _(
 							dbService.query("getTeamPolicyAssignment", async () => {
 								return await dbService.db.query.workPolicyAssignment.findFirst({
 									where: and(
-										eq(workPolicyAssignment.teamId, emp.teamId!),
+										eq(workPolicyAssignment.teamId, teamId),
 										eq(workPolicyAssignment.assignmentType, "team"),
 										eq(workPolicyAssignment.isActive, true),
 										or(
@@ -587,106 +614,110 @@ export const WorkPolicyServiceLive = Layer.effect(
 					} as const;
 
 					// Find effective policy (same logic as getEffectivePolicy)
-					const findEffectivePolicy = async (): Promise<EffectiveWorkPolicy | null> => {
-						// Check employee-level assignment (priority 2 - highest)
-						const employeeAssignment = await dbService.db.query.workPolicyAssignment.findFirst({
-							where: and(
-								eq(workPolicyAssignment.employeeId, input.employeeId),
-								eq(workPolicyAssignment.assignmentType, "employee"),
-								eq(workPolicyAssignment.isActive, true),
-								or(
-									isNull(workPolicyAssignment.effectiveFrom),
-									lte(workPolicyAssignment.effectiveFrom, now),
-								),
-								or(
-									isNull(workPolicyAssignment.effectiveUntil),
-									gte(workPolicyAssignment.effectiveUntil, now),
-								),
-							),
-							with: {
-								policy: {
-									with: policyWith,
-								},
-							},
-						});
-
-						if (employeeAssignment?.policy?.isActive) {
-							return mapToEffective(
-								employeeAssignment.policy as PolicyWithDetails,
-								"employee",
-								"Individual",
-							);
-						}
-
-						// Check team-level assignment (priority 1)
-						if (emp.teamId) {
-							const teamAssignment = await dbService.db.query.workPolicyAssignment.findFirst({
-								where: and(
-									eq(workPolicyAssignment.teamId, emp.teamId),
-									eq(workPolicyAssignment.assignmentType, "team"),
-									eq(workPolicyAssignment.isActive, true),
-									or(
-										isNull(workPolicyAssignment.effectiveFrom),
-										lte(workPolicyAssignment.effectiveFrom, now),
+					const findEffectivePolicy =
+						async (): Promise<EffectiveWorkPolicy | null> => {
+							// Check employee-level assignment (priority 2 - highest)
+							const employeeAssignment =
+								await dbService.db.query.workPolicyAssignment.findFirst({
+									where: and(
+										eq(workPolicyAssignment.employeeId, input.employeeId),
+										eq(workPolicyAssignment.assignmentType, "employee"),
+										eq(workPolicyAssignment.isActive, true),
+										or(
+											isNull(workPolicyAssignment.effectiveFrom),
+											lte(workPolicyAssignment.effectiveFrom, now),
+										),
+										or(
+											isNull(workPolicyAssignment.effectiveUntil),
+											gte(workPolicyAssignment.effectiveUntil, now),
+										),
 									),
-									or(
-										isNull(workPolicyAssignment.effectiveUntil),
-										gte(workPolicyAssignment.effectiveUntil, now),
-									),
-								),
-								with: {
-									policy: {
-										with: policyWith,
+									with: {
+										policy: {
+											with: policyWith,
+										},
 									},
-									team: true,
-								},
-							});
+								});
 
-							if (teamAssignment?.policy?.isActive) {
+							if (employeeAssignment?.policy?.isActive) {
 								return mapToEffective(
-									teamAssignment.policy as PolicyWithDetails,
-									"team",
-									teamAssignment.team?.name ?? "Team",
+									employeeAssignment.policy as PolicyWithDetails,
+									"employee",
+									"Individual",
 								);
 							}
-						}
 
-						// Check organization-level assignment (priority 0 - lowest)
-						const orgAssignment = await dbService.db.query.workPolicyAssignment.findFirst({
-							where: and(
-								eq(workPolicyAssignment.organizationId, emp.organizationId),
-								eq(workPolicyAssignment.assignmentType, "organization"),
-								eq(workPolicyAssignment.isActive, true),
-								or(
-									isNull(workPolicyAssignment.effectiveFrom),
-									lte(workPolicyAssignment.effectiveFrom, now),
-								),
-								or(
-									isNull(workPolicyAssignment.effectiveUntil),
-									gte(workPolicyAssignment.effectiveUntil, now),
-								),
-							),
-							with: {
-								policy: {
-									with: policyWith,
-								},
-							},
-						});
+							// Check team-level assignment (priority 1)
+							if (emp.teamId) {
+								const teamAssignment =
+									await dbService.db.query.workPolicyAssignment.findFirst({
+										where: and(
+											eq(workPolicyAssignment.teamId, emp.teamId),
+											eq(workPolicyAssignment.assignmentType, "team"),
+											eq(workPolicyAssignment.isActive, true),
+											or(
+												isNull(workPolicyAssignment.effectiveFrom),
+												lte(workPolicyAssignment.effectiveFrom, now),
+											),
+											or(
+												isNull(workPolicyAssignment.effectiveUntil),
+												gte(workPolicyAssignment.effectiveUntil, now),
+											),
+										),
+										with: {
+											policy: {
+												with: policyWith,
+											},
+											team: true,
+										},
+									});
 
-						if (orgAssignment?.policy?.isActive) {
-							return mapToEffective(
-								orgAssignment.policy as PolicyWithDetails,
-								"organization",
-								"Organization Default",
-							);
-						}
+								if (teamAssignment?.policy?.isActive) {
+									return mapToEffective(
+										teamAssignment.policy as PolicyWithDetails,
+										"team",
+										teamAssignment.team?.name ?? "Team",
+									);
+								}
+							}
 
-						return null;
-					};
+							// Check organization-level assignment (priority 0 - lowest)
+							const orgAssignment =
+								await dbService.db.query.workPolicyAssignment.findFirst({
+									where: and(
+										eq(workPolicyAssignment.organizationId, emp.organizationId),
+										eq(workPolicyAssignment.assignmentType, "organization"),
+										eq(workPolicyAssignment.isActive, true),
+										or(
+											isNull(workPolicyAssignment.effectiveFrom),
+											lte(workPolicyAssignment.effectiveFrom, now),
+										),
+										or(
+											isNull(workPolicyAssignment.effectiveUntil),
+											gte(workPolicyAssignment.effectiveUntil, now),
+										),
+									),
+									with: {
+										policy: {
+											with: policyWith,
+										},
+									},
+								});
+
+							if (orgAssignment?.policy?.isActive) {
+								return mapToEffective(
+									orgAssignment.policy as PolicyWithDetails,
+									"organization",
+									"Organization Default",
+								);
+							}
+
+							return null;
+						};
 
 					const policy = yield* _(Effect.promise(findEffectivePolicy));
 
-					if (!policy || !policy.regulation) {
+					if (!policy?.regulation) {
 						return {
 							isCompliant: true,
 							warnings: [],
@@ -698,7 +729,10 @@ export const WorkPolicyServiceLive = Layer.effect(
 					const warnings: ComplianceWarning[] = [];
 
 					// Check max daily
-					if (regulation.maxDailyMinutes && input.totalDailyMinutes > regulation.maxDailyMinutes) {
+					if (
+						regulation.maxDailyMinutes &&
+						input.totalDailyMinutes > regulation.maxDailyMinutes
+					) {
 						warnings.push({
 							type: "max_daily",
 							message: `Daily working time (${formatMinutes(input.totalDailyMinutes)}) exceeds limit (${formatMinutes(regulation.maxDailyMinutes)})`,
@@ -754,13 +788,15 @@ export const WorkPolicyServiceLive = Layer.effect(
 					}
 
 					return {
-						isCompliant: warnings.filter((w) => w.severity === "violation").length === 0,
+						isCompliant:
+							warnings.filter((w) => w.severity === "violation").length === 0,
 						warnings,
 						breakRequirement: breakReq,
 					} as ComplianceCheckResult;
 				}),
 
-			calculateBreakRequirements: (params) => calculateBreakRequirementsInternal(params),
+			calculateBreakRequirements: (params) =>
+				calculateBreakRequirementsInternal(params),
 
 			calculateWeeklyHours: (schedule) => {
 				// For simple schedules, use hoursPerCycle divided by cycle length
@@ -809,7 +845,8 @@ export const WorkPolicyServiceLive = Layer.effect(
 								workPeriodId: input.workPeriodId,
 								violationDate: new Date(),
 								violationType: input.violationType,
-								details: input.details as typeof input.details & Record<string, unknown>,
+								details: input.details as typeof input.details &
+									Record<string, unknown>,
 							});
 						}),
 					);
@@ -826,11 +863,15 @@ export const WorkPolicyServiceLive = Layer.effect(
 							];
 
 							if (input.employeeId) {
-								conditions.push(eq(workPolicyViolation.employeeId, input.employeeId));
+								conditions.push(
+									eq(workPolicyViolation.employeeId, input.employeeId),
+								);
 							}
 
 							if (input.violationType) {
-								conditions.push(eq(workPolicyViolation.violationType, input.violationType));
+								conditions.push(
+									eq(workPolicyViolation.violationType, input.violationType),
+								);
 							}
 
 							return await dbService.db.query.workPolicyViolation.findMany({

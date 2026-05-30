@@ -81,10 +81,7 @@ export const StripeServiceLive = Layer.effect(
 
 		const stripe =
 			config.enabled && config.secretKey
-				? new Stripe(config.secretKey, {
-						apiVersion: "2026-04-22.dahlia",
-						typescript: true,
-					})
+				? new Stripe(config.secretKey, { typescript: true })
 				: null;
 
 		return StripeService.of({

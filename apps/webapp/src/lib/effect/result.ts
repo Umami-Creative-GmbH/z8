@@ -1,13 +1,15 @@
 import { Cause, type Effect, Exit, Option } from "effect";
+import { env } from "@/env";
 import type { AnyAppError } from "./errors";
 import { runtime } from "./runtime";
-import { env } from "@/env";
 
 export type ServerActionResult<T> =
 	| { success: true; data: T }
 	| { success: false; error: string; code?: string; holidayName?: string };
 
-export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): ServerActionResult<T> {
+export function toServerActionResult<T>(
+	exit: Exit.Exit<T, AnyAppError>,
+): ServerActionResult<T> {
 	return Exit.match(exit, {
 		onFailure: (cause) => {
 			// Extract defect or failure from cause
@@ -70,7 +72,7 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 }
 
 export async function runServerActionSafe<T>(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// biome-ignore lint/suspicious/noExplicitAny: it is what it is
 	effect: Effect.Effect<T, AnyAppError, any>,
 ): Promise<ServerActionResult<T>> {
 	// Use the runtime which provides all required layers

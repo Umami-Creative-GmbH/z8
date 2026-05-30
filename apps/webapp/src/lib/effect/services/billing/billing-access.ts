@@ -4,7 +4,11 @@ export type BillingSuspensionReason =
 	| "payment_failed"
 	| "canceled";
 
-export type BillingAccessState = "disabled" | "trialing" | "active" | "suspended";
+export type BillingAccessState =
+	| "disabled"
+	| "trialing"
+	| "active"
+	| "suspended";
 
 export interface BillingAccessSubscriptionInput {
 	status: string;

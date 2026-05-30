@@ -462,11 +462,13 @@ export const CoverageServiceLive = Layer.effect(
 
 						// Find time range for this subarea
 						const earliestStart = subareaShifts.reduce(
-							(earliest, shift) => (shift.startTime < earliest ? shift.startTime : earliest),
+							(earliest, shift) =>
+								shift.startTime < earliest ? shift.startTime : earliest,
 							subareaShifts[0].startTime,
 						);
 						const latestEnd = subareaShifts.reduce(
-							(latest, shift) => (shift.endTime > latest ? shift.endTime : latest),
+							(latest, shift) =>
+								shift.endTime > latest ? shift.endTime : latest,
 							subareaShifts[0].endTime,
 						);
 
@@ -514,12 +516,16 @@ export const CoverageServiceLive = Layer.effect(
 
 							// Add scheduled employees
 							for (const s of scheduledInSlot) {
+								const employeeId = s.employeeId;
+								if (!employeeId) {
+									continue;
+								}
 								const isClockedIn = clockedInSlot.some(
-									(wp) => wp.employeeId === s.employeeId,
+									(wp) => wp.employeeId === employeeId,
 								);
-								employeeIds.add(s.employeeId!);
+								employeeIds.add(employeeId);
 								employees.push({
-									id: s.employeeId!,
+									id: employeeId,
 									name: s.employee?.user?.name || "Unknown",
 									status: isClockedIn ? "clocked_in" : "absent",
 								});
@@ -649,9 +655,12 @@ export const CoverageServiceLive = Layer.effect(
 						const dateKey = DateTime.fromJSDate(wp.startTime)
 							.setZone(timezone)
 							.toISODate();
-						const existing = workPeriodsByDate.get(dateKey!) || [];
+						if (!dateKey) {
+							continue;
+						}
+						const existing = workPeriodsByDate.get(dateKey) || [];
 						existing.push(wp);
-						workPeriodsByDate.set(dateKey!, existing);
+						workPeriodsByDate.set(dateKey, existing);
 					}
 
 					// Calculate gaps

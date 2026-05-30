@@ -6,7 +6,9 @@ export class ValidationError extends Data.TaggedError("ValidationError")<{
 	value?: unknown;
 }> {}
 
-export class AuthenticationError extends Data.TaggedError("AuthenticationError")<{
+export class AuthenticationError extends Data.TaggedError(
+	"AuthenticationError",
+)<{
 	message: string;
 	userId?: string;
 }> {}
@@ -43,7 +45,9 @@ export class ConflictError extends Data.TaggedError("ConflictError")<{
 	details?: Record<string, unknown>;
 }> {}
 
-export class AppAccessDeniedError extends Data.TaggedError("AppAccessDeniedError")<{
+export class AppAccessDeniedError extends Data.TaggedError(
+	"AppAccessDeniedError",
+)<{
 	message: string;
 	appType: "webapp" | "desktop" | "mobile";
 	userId: string;
@@ -58,7 +62,12 @@ export class StripeError extends Data.TaggedError("StripeError")<{
 
 export class BillingError extends Data.TaggedError("BillingError")<{
 	message: string;
-	reason: "subscription_required" | "trial_expired" | "payment_failed" | "canceled" | "billing_disabled";
+	reason:
+		| "subscription_required"
+		| "trial_expired"
+		| "payment_failed"
+		| "canceled"
+		| "billing_disabled";
 	organizationId?: string;
 }> {}
 

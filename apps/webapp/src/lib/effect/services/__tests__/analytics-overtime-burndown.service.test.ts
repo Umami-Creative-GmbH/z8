@@ -26,7 +26,9 @@ describe("buildOvertimeBurnDownDataForTesting", () => {
 			["2026-02-02"],
 		);
 
-		expect(data.weeklySeries).toEqual([{ weekStart: "2026-02-02", overtimeHours: 0 }]);
+		expect(data.weeklySeries).toEqual([
+			{ weekStart: "2026-02-02", overtimeHours: 0 },
+		]);
 		expect(data.byTeam[0]?.currentOvertimeHours).toBe(0);
 	});
 
@@ -57,9 +59,18 @@ describe("buildOvertimeBurnDownDataForTesting", () => {
 			["2026-02-02"],
 		);
 
-		expect(data.byTeam.map((row) => row.id).sort()).toEqual(["team-a", "team-b"]);
-		expect(data.byCostCenter.map((row) => row.id).sort()).toEqual(["cc-a", "cc-b"]);
-		expect(data.byManager.map((row) => row.id).sort()).toEqual(["mgr-a", "mgr-b"]);
+		expect(data.byTeam.map((row) => row.id).sort()).toEqual([
+			"team-a",
+			"team-b",
+		]);
+		expect(data.byCostCenter.map((row) => row.id).sort()).toEqual([
+			"cc-a",
+			"cc-b",
+		]);
+		expect(data.byManager.map((row) => row.id).sort()).toEqual([
+			"mgr-a",
+			"mgr-b",
+		]);
 	});
 
 	it("computes week-over-week delta and trend direction", () => {

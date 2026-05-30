@@ -1,7 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { employee, employeeManagers } from "@/db/schema";
-import { type ConflictError, type DatabaseError, NotFoundError, ValidationError } from "../errors";
+import {
+	type ConflictError,
+	type DatabaseError,
+	NotFoundError,
+	ValidationError,
+} from "../errors";
 import { DatabaseService } from "./database.service";
 
 export interface ManagerAssignment {
@@ -32,7 +37,10 @@ export class ManagerService extends Context.Tag("ManagerService")<
 			managerId: string,
 			isPrimary: boolean,
 			assignedBy: string,
-		) => Effect.Effect<void, NotFoundError | ValidationError | ConflictError | DatabaseError>;
+		) => Effect.Effect<
+			void,
+			NotFoundError | ValidationError | ConflictError | DatabaseError
+		>;
 		readonly removeManager: (
 			employeeId: string,
 			managerId: string,
@@ -47,7 +55,10 @@ export class ManagerService extends Context.Tag("ManagerService")<
 			managerId: string,
 			employeeId: string,
 		) => Effect.Effect<boolean, DatabaseError>;
-		readonly getManagedEmployees: (managerId: string) => Effect.Effect<any[], DatabaseError>;
+		readonly getManagedEmployees: (
+			managerId: string,
+			// biome-ignore lint/suspicious/noExplicitAny: Will be provided at runtime
+		) => Effect.Effect<any[], DatabaseError>;
 	}
 >() {}
 
@@ -119,7 +130,8 @@ export const ManagerServiceLive = Layer.effect(
 						yield* _(
 							Effect.fail(
 								new ValidationError({
-									message: "Manager must belong to the same organization as the employee",
+									message:
+										"Manager must belong to the same organization as the employee",
 									field: "managerId",
 									value: managerId,
 								}),
@@ -189,7 +201,6 @@ export const ManagerServiceLive = Layer.effect(
 									);
 							}),
 						);
-
 					}
 				}),
 
@@ -232,9 +243,13 @@ export const ManagerServiceLive = Layer.effect(
 					);
 
 					// If removed manager was primary, assign primary to another manager
-					const wasPrimary = managers.find((m) => m.managerId === managerId && m.isPrimary);
+					const wasPrimary = managers.find(
+						(m) => m.managerId === managerId && m.isPrimary,
+					);
 					if (wasPrimary && managers.length > 1) {
-						const newPrimaryId = managers.find((m) => m.managerId !== managerId)?.id;
+						const newPrimaryId = managers.find(
+							(m) => m.managerId !== managerId,
+						)?.id;
 						if (newPrimaryId) {
 							yield* _(
 								dbService.query("assignNewPrimaryManager", async () => {
@@ -242,7 +257,6 @@ export const ManagerServiceLive = Layer.effect(
 										.update(employeeManagers)
 										.set({ isPrimary: true })
 										.where(eq(employeeManagers.id, newPrimaryId));
-
 								}),
 							);
 						}

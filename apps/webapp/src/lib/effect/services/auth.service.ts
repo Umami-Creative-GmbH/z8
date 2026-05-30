@@ -39,14 +39,15 @@ export const AuthServiceLive = Layer.effect(
 							throw new Error("No session found");
 						}
 
-					return {
-						...session,
-						session: {
-							...session.session,
-							activeOrganizationId: session.session.activeOrganizationId ?? null,
-						},
-					} as Session;
-				},
+						return {
+							...session,
+							session: {
+								...session.session,
+								activeOrganizationId:
+									session.session.activeOrganizationId ?? null,
+							},
+						} as Session;
+					},
 					catch: () =>
 						new AuthenticationError({
 							message: "Not authenticated",
