@@ -93,10 +93,7 @@ function ChangePolicyDialogFields({
 								value={field.state.value}
 								onChange={(e) => field.handleChange(e.target.value)}
 								onBlur={field.handleBlur}
-								placeholder={t(
-									"settings.changePolicies.namePlaceholder",
-									"e.g., Standard Policy",
-								)}
+								placeholder={t("settings.changePolicies.namePlaceholder", "e.g., Standard Policy")}
 							/>
 						</TFormControl>
 						<TFormMessage field={field} />
@@ -107,9 +104,7 @@ function ChangePolicyDialogFields({
 			<form.Field name="description">
 				{(field) => (
 					<TFormItem>
-						<TFormLabel>
-							{t("settings.changePolicies.descriptionLabel", "Description")}
-						</TFormLabel>
+						<TFormLabel>{t("settings.changePolicies.descriptionLabel", "Description")}</TFormLabel>
 						<TFormControl>
 							<Textarea
 								value={field.state.value}
@@ -168,9 +163,7 @@ function ChangePolicyDialogFields({
 												type="number"
 												min={0}
 												value={field.state.value}
-												onChange={(e) =>
-													field.handleChange(Number(e.target.value))
-												}
+												onChange={(e) => field.handleChange(Number(e.target.value))}
 												onBlur={field.handleBlur}
 											/>
 										</TFormControl>
@@ -189,19 +182,14 @@ function ChangePolicyDialogFields({
 								{(field) => (
 									<TFormItem>
 										<TFormLabel>
-											{t(
-												"settings.changePolicies.approvalDaysLabel",
-												"Approval Window (days)",
-											)}
+											{t("settings.changePolicies.approvalDaysLabel", "Approval Window (days)")}
 										</TFormLabel>
 										<TFormControl>
 											<Input
 												type="number"
 												min={0}
 												value={field.state.value}
-												onChange={(e) =>
-													field.handleChange(Number(e.target.value))
-												}
+												onChange={(e) => field.handleChange(Number(e.target.value))}
 												onBlur={field.handleBlur}
 											/>
 										</TFormControl>
@@ -217,18 +205,12 @@ function ChangePolicyDialogFields({
 							</form.Field>
 
 							<form.Subscribe
-								selector={(state) => [
-									state.values.selfServiceDays,
-									state.values.approvalDays,
-								]}
+								selector={(state) => [state.values.selfServiceDays, state.values.approvalDays]}
 							>
 								{([selfServiceDays, approvalDays]) => (
 									<div className="rounded-lg bg-muted p-3 text-sm">
 										<p className="font-medium mb-1">
-											{t(
-												"settings.changePolicies.policySummary",
-												"Policy Summary:",
-											)}
+											{t("settings.changePolicies.policySummary", "Policy Summary:")}
 										</p>
 										{selfServiceDays === 0 && approvalDays === 0 ? (
 											<p className="text-muted-foreground">
@@ -242,10 +224,7 @@ function ChangePolicyDialogFields({
 												<li>
 													•{" "}
 													{selfServiceDays === 0
-														? t(
-																"settings.changePolicies.sameDayFree",
-																"Same-day edits are free",
-															)
+														? t("settings.changePolicies.sameDayFree", "Same-day edits are free")
 														: t(
 																"settings.changePolicies.daysFree",
 																"Edits within {days} days are free",
@@ -286,10 +265,7 @@ function ChangePolicyDialogFields({
 									<div className="flex items-center justify-between rounded-lg border p-4">
 										<div className="space-y-0.5">
 											<Label htmlFor="notify-all" className="text-base">
-												{t(
-													"settings.changePolicies.notifyAllLabel",
-													"Notify All Managers",
-												)}
+												{t("settings.changePolicies.notifyAllLabel", "Notify All Managers")}
 											</Label>
 											<p className="text-sm text-muted-foreground">
 												{t(
@@ -347,32 +323,23 @@ export function ChangePolicyDialog({
 	});
 
 	const createMutation = useMutation({
-		mutationFn: (data: CreateChangePolicyInput) =>
-			createChangePolicy(organizationId, data),
+		mutationFn: (data: CreateChangePolicyInput) => createChangePolicy(organizationId, data),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.changePolicies.list(organizationId),
 				});
-				toast.success(
-					t("settings.changePolicies.created", "Policy created successfully"),
-				);
+				toast.success(t("settings.changePolicies.created", "Policy created successfully"));
 				form.reset();
 				onSuccess();
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.changePolicies.createFailed",
-							"Failed to create policy",
-						),
+					result.error || t("settings.changePolicies.createFailed", "Failed to create policy"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(
-				t("settings.changePolicies.createFailed", "Failed to create policy"),
-			);
+			toast.error(t("settings.changePolicies.createFailed", "Failed to create policy"));
 		},
 	});
 
@@ -384,24 +351,16 @@ export function ChangePolicyDialog({
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.changePolicies.list(organizationId),
 				});
-				toast.success(
-					t("settings.changePolicies.updated", "Policy updated successfully"),
-				);
+				toast.success(t("settings.changePolicies.updated", "Policy updated successfully"));
 				onSuccess();
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.changePolicies.updateFailed",
-							"Failed to update policy",
-						),
+					result.error || t("settings.changePolicies.updateFailed", "Failed to update policy"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(
-				t("settings.changePolicies.updateFailed", "Failed to update policy"),
-			);
+			toast.error(t("settings.changePolicies.updateFailed", "Failed to update policy"));
 		},
 	});
 
@@ -421,10 +380,7 @@ export function ChangePolicyDialog({
 					<ActionPanelTitle>
 						{isEditing
 							? t("settings.changePolicies.editTitle", "Edit Change Policy")
-							: t(
-									"settings.changePolicies.createTitle",
-									"Create Change Policy",
-								)}
+							: t("settings.changePolicies.createTitle", "Create Change Policy")}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{t(
@@ -434,10 +390,7 @@ export function ChangePolicyDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<form
-					onSubmit={form.handleSubmit}
-					className="flex min-h-0 flex-1 flex-col"
-				>
+				<form onSubmit={form.handleSubmit} className="flex min-h-0 flex-1 flex-col">
 					<ChangePolicyDialogFields form={form} t={t} />
 
 					<ActionPanelFooter>
@@ -449,17 +402,10 @@ export function ChangePolicyDialog({
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<form.Subscribe
-							selector={(state) => [state.isDirty, state.isSubmitting]}
-						>
+						<form.Subscribe selector={(state) => [state.isDirty, state.isSubmitting]}>
 							{([isDirty, _isSubmitting]) => (
-								<Button
-									type="submit"
-									disabled={(!isDirty && isEditing) || isPending}
-								>
-									{isPending && (
-										<IconLoader2 className="size-4 mr-2 animate-spin" />
-									)}
+								<Button type="submit" disabled={(!isDirty && isEditing) || isPending}>
+									{isPending && <IconLoader2 className="size-4 mr-2 animate-spin" />}
 									{isEditing
 										? t("common.saveChanges", "Save Changes")
 										: t("common.create", "Create")}

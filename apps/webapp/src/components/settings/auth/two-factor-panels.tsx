@@ -19,11 +19,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-	InputOTP,
-	InputOTPGroup,
-	InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 const TEXT_INPUT_CLASSNAME =
 	"flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
@@ -81,10 +77,7 @@ export function PasswordPromptPanel({
 							id={inputId}
 							name="password"
 							type="password"
-							aria-label={t(
-								"settings.security.twoFactor.passwordLabel",
-								"Password",
-							)}
+							aria-label={t("settings.security.twoFactor.passwordLabel", "Password")}
 							autoComplete="current-password"
 							value={password}
 							onChange={(event) => onPasswordChange(event.target.value)}
@@ -139,10 +132,7 @@ export function SetupActionPanel({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>
-						{t(
-							"settings.security.twoFactor.setupTitle",
-							"Setup Two-Factor Authentication",
-						)}
+						{t("settings.security.twoFactor.setupTitle", "Setup Two-Factor Authentication")}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{t(
@@ -167,11 +157,7 @@ export function SetupActionPanel({
 							)}
 						</div>
 						<div className="flex justify-center">
-							<InputOTP
-								maxLength={6}
-								value={otpValue}
-								onChange={onOtpValueChange}
-							>
+							<InputOTP maxLength={6} value={otpValue} onChange={onOtpValueChange}>
 								<InputOTPGroup>
 									<InputOTPSlot index={0} />
 									<InputOTPSlot index={1} />
@@ -188,14 +174,8 @@ export function SetupActionPanel({
 					<Button variant="outline" onClick={onCancel} disabled={isPending}>
 						{t("settings.security.twoFactor.cancel", "Cancel")}
 					</Button>
-					<Button
-						onClick={onVerify}
-						disabled={isPending || otpValue.length !== 6}
-					>
-						{t(
-							"settings.security.twoFactor.verifyAndEnable",
-							"Verify and Enable",
-						)}
+					<Button onClick={onVerify} disabled={isPending || otpValue.length !== 6}>
+						{t("settings.security.twoFactor.verifyAndEnable", "Verify and Enable")}
 					</Button>
 				</ActionPanelFooter>
 			</ActionPanelContent>
@@ -225,10 +205,7 @@ export function BackupCodesActionPanel({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>
-						{t(
-							"settings.security.twoFactor.saveBackupCodesTitle",
-							"Save Your Backup Codes",
-						)}
+						{t("settings.security.twoFactor.saveBackupCodesTitle", "Save Your Backup Codes")}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{t(
@@ -251,10 +228,7 @@ export function BackupCodesActionPanel({
 				</ActionPanelBody>
 				<ActionPanelFooter>
 					<Button onClick={onConfirmSaved}>
-						{t(
-							"settings.security.twoFactor.savedCodes",
-							"I've Saved These Codes",
-						)}
+						{t("settings.security.twoFactor.savedCodes", "I've Saved These Codes")}
 					</Button>
 				</ActionPanelFooter>
 			</ActionPanelContent>
@@ -288,10 +262,7 @@ export function DisableTwoFactorDialog({
 			<AlertDialogContent>
 				<AlertDialogHeader>
 					<AlertDialogTitle>
-						{t(
-							"settings.security.twoFactor.disableTitle",
-							"Disable Two-Factor Authentication?",
-						)}
+						{t("settings.security.twoFactor.disableTitle", "Disable Two-Factor Authentication?")}
 					</AlertDialogTitle>
 					<AlertDialogDescription>
 						{t(
@@ -302,20 +273,14 @@ export function DisableTwoFactorDialog({
 				</AlertDialogHeader>
 				<div className="space-y-4">
 					<div className="space-y-2">
-						<label
-							className="text-sm font-medium"
-							htmlFor="disable-2fa-password"
-						>
+						<label className="text-sm font-medium" htmlFor="disable-2fa-password">
 							{t("settings.security.twoFactor.passwordLabel", "Password")}
 						</label>
 						<input
 							id="disable-2fa-password"
 							name="password"
 							type="password"
-							aria-label={t(
-								"settings.security.twoFactor.passwordLabel",
-								"Password",
-							)}
+							aria-label={t("settings.security.twoFactor.passwordLabel", "Password")}
 							autoComplete="current-password"
 							value={disablePassword}
 							onChange={(event) => onDisablePasswordChange(event.target.value)}
