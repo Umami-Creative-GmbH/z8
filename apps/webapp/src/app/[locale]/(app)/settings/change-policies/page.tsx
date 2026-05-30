@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { ChangePolicyManagement } from "@/components/settings/change-policy-management";
+import { ChangePolicyManagement } from "@/components/settings/change-policy/change-policy-management";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
@@ -24,6 +24,9 @@ export default async function ChangePoliciesSettingsPage() {
 	}
 
 	return (
-		<ChangePolicyManagement organizationId={organizationId} canManage={accessTier === "orgAdmin"} />
+		<ChangePolicyManagement
+			organizationId={organizationId}
+			canManage={accessTier === "orgAdmin"}
+		/>
 	);
 }

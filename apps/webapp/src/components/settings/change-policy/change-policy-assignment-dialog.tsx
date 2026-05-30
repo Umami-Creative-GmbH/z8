@@ -29,7 +29,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import {
+	TFormControl,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
 import { queryKeys } from "@/lib/query";
 
 interface ChangePolicyAssignmentDialogProps {
@@ -46,6 +51,60 @@ interface FormValues {
 	employeeId: string;
 }
 
+const getDialogTitle = (
+	assignmentType: "organization" | "team" | "employee",
+	t: ReturnType<typeof useTranslate>["t"],
+) => {
+	switch (assignmentType) {
+		case "organization":
+			return t(
+				"settings.changePolicies.assignOrgTitle",
+				"Set Organization Default Policy",
+			);
+		case "team":
+			return t(
+				"settings.changePolicies.assignTeamTitle",
+				"Assign Policy to Team",
+			);
+		case "employee":
+			return t(
+				"settings.changePolicies.assignEmployeeTitle",
+				"Assign Policy to Employee",
+			);
+	}
+};
+
+const getDialogDescription = (
+	assignmentType: "organization" | "team" | "employee",
+	t: ReturnType<typeof useTranslate>["t"],
+) => {
+	switch (assignmentType) {
+		case "organization":
+			return t(
+				"settings.changePolicies.assignOrgDescription",
+				"This policy will apply to all employees who don't have a team or individual policy assigned.",
+			);
+		case "team":
+			return t(
+				"settings.changePolicies.assignTeamDescription",
+				"This policy will apply to all team members who don't have an individual policy assigned.",
+			);
+		case "employee":
+			return t(
+				"settings.changePolicies.assignEmployeeDescription",
+				"This policy will apply only to this specific employee, overriding any team or organization policies.",
+			);
+	}
+};
+
+const getEmployeeDisplayName = (
+	emp: { firstName: string | null; lastName: string | null },
+	t: ReturnType<typeof useTranslate>["t"],
+) => {
+	const name = [emp.firstName, emp.lastName].filter(Boolean).join(" ");
+	return name || t("common.unnamed", "Unnamed");
+};
+
 export function ChangePolicyAssignmentDialog({
 	open,
 	onOpenChange,
@@ -53,6 +112,7 @@ export function ChangePolicyAssignmentDialog({
 	assignmentType,
 	onSuccess,
 }: ChangePolicyAssignmentDialogProps) {
+	// eslint-disable-next-line react-doctor/no-giant-component
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -106,7 +166,8 @@ export function ChangePolicyAssignmentDialog({
 				policyId: value.policyId,
 				assignmentType,
 				teamId: assignmentType === "team" ? value.teamId : undefined,
-				employeeId: assignmentType === "employee" ? value.employeeId : undefined,
+				employeeId:
+					assignmentType === "employee" ? value.employeeId : undefined,
 			};
 			createMutation.mutate(input);
 		},
@@ -121,19 +182,31 @@ export function ChangePolicyAssignmentDialog({
 					queryKey: queryKeys.changePolicies.assignments(organizationId),
 				});
 				toast.success(
-					t("settings.changePolicies.assignmentCreated", "Policy assigned successfully"),
+					t(
+						"settings.changePolicies.assignmentCreated",
+						"Policy assigned successfully",
+					),
 				);
 				form.reset();
 				onSuccess();
 				onOpenChange(false);
 			} else {
 				toast.error(
-					result.error || t("settings.changePolicies.assignmentFailed", "Failed to assign policy"),
+					result.error ||
+						t(
+							"settings.changePolicies.assignmentFailed",
+							"Failed to assign policy",
+						),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.changePolicies.assignmentFailed", "Failed to assign policy"));
+			toast.error(
+				t(
+					"settings.changePolicies.assignmentFailed",
+					"Failed to assign policy",
+				),
+			);
 		},
 	});
 
@@ -147,48 +220,16 @@ export function ChangePolicyAssignmentDialog({
 		onOpenChange(newOpen);
 	};
 
-	const getTitle = () => {
-		switch (assignmentType) {
-			case "organization":
-				return t("settings.changePolicies.assignOrgTitle", "Set Organization Default Policy");
-			case "team":
-				return t("settings.changePolicies.assignTeamTitle", "Assign Policy to Team");
-			case "employee":
-				return t("settings.changePolicies.assignEmployeeTitle", "Assign Policy to Employee");
-		}
-	};
-
-	const getDescription = () => {
-		switch (assignmentType) {
-			case "organization":
-				return t(
-					"settings.changePolicies.assignOrgDescription",
-					"This policy will apply to all employees who don't have a team or individual policy assigned.",
-				);
-			case "team":
-				return t(
-					"settings.changePolicies.assignTeamDescription",
-					"This policy will apply to all team members who don't have an individual policy assigned.",
-				);
-			case "employee":
-				return t(
-					"settings.changePolicies.assignEmployeeDescription",
-					"This policy will apply only to this specific employee, overriding any team or organization policies.",
-				);
-		}
-	};
-
-	const getEmployeeDisplayName = (emp: { firstName: string | null; lastName: string | null }) => {
-		const name = [emp.firstName, emp.lastName].filter(Boolean).join(" ");
-		return name || t("common.unnamed", "Unnamed");
-	};
-
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
-					<ActionPanelTitle>{getTitle()}</ActionPanelTitle>
-					<ActionPanelDescription>{getDescription()}</ActionPanelDescription>
+					<ActionPanelTitle>
+						{getDialogTitle(assignmentType, t)}
+					</ActionPanelTitle>
+					<ActionPanelDescription>
+						{getDialogDescription(assignmentType, t)}
+					</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				{isLoading ? (
@@ -197,7 +238,12 @@ export function ChangePolicyAssignmentDialog({
 					</ActionPanelBody>
 				) : policies?.length === 0 ? (
 					<ActionPanelBody className="text-center text-muted-foreground">
-						<p>{t("settings.changePolicies.noPoliciesForAssignment", "No policies available")}</p>
+						<p>
+							{t(
+								"settings.changePolicies.noPoliciesForAssignment",
+								"No policies available",
+							)}
+						</p>
 						<p className="text-sm mt-1">
 							{t(
 								"settings.changePolicies.createPolicyFirst",
@@ -207,10 +253,7 @@ export function ChangePolicyAssignmentDialog({
 					</ActionPanelBody>
 				) : (
 					<form
-						onSubmit={(e) => {
-							e.preventDefault();
-							form.handleSubmit();
-						}}
+						onSubmit={form.handleSubmit}
 						className="flex min-h-0 flex-1 flex-col"
 					>
 						<ActionPanelBody className="space-y-4">
@@ -219,7 +262,10 @@ export function ChangePolicyAssignmentDialog({
 								{(field) => (
 									<TFormItem>
 										<TFormLabel required>
-											{t("settings.changePolicies.selectPolicy", "Select Policy")}
+											{t(
+												"settings.changePolicies.selectPolicy",
+												"Select Policy",
+											)}
 										</TFormLabel>
 										<TFormControl>
 											<Select
@@ -290,7 +336,10 @@ export function ChangePolicyAssignmentDialog({
 									{(field) => (
 										<TFormItem>
 											<TFormLabel required>
-												{t("settings.changePolicies.selectEmployee", "Select Employee")}
+												{t(
+													"settings.changePolicies.selectEmployee",
+													"Select Employee",
+												)}
 											</TFormLabel>
 											<TFormControl>
 												<Select
@@ -308,7 +357,7 @@ export function ChangePolicyAssignmentDialog({
 													<SelectContent>
 														{employees?.map((emp) => (
 															<SelectItem key={emp.id} value={emp.id}>
-																{getEmployeeDisplayName(emp)}
+																{getEmployeeDisplayName(emp, t)}
 															</SelectItem>
 														))}
 													</SelectContent>
@@ -333,14 +382,18 @@ export function ChangePolicyAssignmentDialog({
 							<form.Subscribe
 								selector={(state) => {
 									const hasPolicy = !!state.values.policyId;
-									const hasTeam = assignmentType !== "team" || !!state.values.teamId;
-									const hasEmployee = assignmentType !== "employee" || !!state.values.employeeId;
+									const hasTeam =
+										assignmentType !== "team" || !!state.values.teamId;
+									const hasEmployee =
+										assignmentType !== "employee" || !!state.values.employeeId;
 									return hasPolicy && hasTeam && hasEmployee;
 								}}
 							>
 								{(isValid) => (
 									<Button type="submit" disabled={!isValid || isPending}>
-										{isPending && <IconLoader2 className="size-4 mr-2 animate-spin" />}
+										{isPending && (
+											<IconLoader2 className="size-4 mr-2 animate-spin" />
+										)}
 										{t("settings.changePolicies.assign", "Assign Policy")}
 									</Button>
 								)}

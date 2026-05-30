@@ -11,14 +11,18 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	type ChangePolicyRecord,
 	deleteChangePolicy,
 	getChangePolicies,
 } from "@/app/[locale]/(app)/settings/change-policies/actions";
-import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
+import {
+	DataTable,
+	DataTableSkeleton,
+	DataTableToolbar,
+} from "@/components/data-table-server";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -56,7 +60,7 @@ export function ChangePolicyTable({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [policyToDelete, setPolicyToDelete] = useState<ChangePolicyRecord | null>(null);
+	const policyToDeleteRef = useRef<ChangePolicyRecord | null>(null);
 	const [search, setSearch] = useState("");
 
 	// Fetch policies
@@ -91,24 +95,29 @@ export function ChangePolicyTable({
 					queryKey: queryKeys.changePolicies.assignments(organizationId),
 				});
 				setDeleteDialogOpen(false);
-				setPolicyToDelete(null);
+				policyToDeleteRef.current = null;
 			} else {
-				toast.error(result.error || t("settings.changePolicies.deleteFailed", "Failed to delete"));
+				toast.error(
+					result.error ||
+						t("settings.changePolicies.deleteFailed", "Failed to delete"),
+				);
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.changePolicies.deleteFailed", "Failed to delete policy"));
+			toast.error(
+				t("settings.changePolicies.deleteFailed", "Failed to delete policy"),
+			);
 		},
 	});
 
 	const handleDeleteClick = (policy: ChangePolicyRecord) => {
-		setPolicyToDelete(policy);
+		policyToDeleteRef.current = policy;
 		setDeleteDialogOpen(true);
 	};
 
 	const handleDeleteConfirm = () => {
-		if (policyToDelete) {
-			deleteMutation.mutate(policyToDelete.id);
+		if (policyToDeleteRef.current) {
+			deleteMutation.mutate(policyToDeleteRef.current.id);
 		}
 	};
 
@@ -149,7 +158,9 @@ export function ChangePolicyTable({
 						)}
 					</div>
 					{row.original.description && (
-						<p className="text-xs text-muted-foreground mt-0.5">{row.original.description}</p>
+						<p className="text-xs text-muted-foreground mt-0.5">
+							{row.original.description}
+						</p>
 					)}
 				</div>
 			),
@@ -164,9 +175,11 @@ export function ChangePolicyTable({
 			cell: ({ row }) => (
 				<div className="text-center">
 					{row.original.noApprovalRequired ? (
-						<span className="text-muted-foreground">—</span>
+						<span className="text-muted-foreground">N/A</span>
 					) : (
-						<Badge variant="secondary">{formatDays(row.original.selfServiceDays)}</Badge>
+						<Badge variant="secondary">
+							{formatDays(row.original.selfServiceDays)}
+						</Badge>
 					)}
 				</div>
 			),
@@ -181,13 +194,16 @@ export function ChangePolicyTable({
 			cell: ({ row }) => (
 				<div className="text-center">
 					{row.original.noApprovalRequired ? (
-						<span className="text-muted-foreground">—</span>
-					) : row.original.selfServiceDays === 0 && row.original.approvalDays === 0 ? (
+						<span className="text-muted-foreground">N/A</span>
+					) : row.original.selfServiceDays === 0 &&
+						row.original.approvalDays === 0 ? (
 						<Badge variant="destructive">
 							{t("settings.changePolicies.allClockOuts", "All clock-outs")}
 						</Badge>
 					) : (
-						<Badge variant="outline">{formatDays(row.original.approvalDays)}</Badge>
+						<Badge variant="outline">
+							{formatDays(row.original.approvalDays)}
+						</Badge>
 					)}
 				</div>
 			),
@@ -202,7 +218,7 @@ export function ChangePolicyTable({
 			cell: ({ row }) => (
 				<div className="text-center text-sm text-muted-foreground">
 					{row.original.noApprovalRequired ? (
-						<span>—</span>
+						<span>N/A</span>
 					) : row.original.notifyAllManagers ? (
 						t("settings.changePolicies.allManagers", "All managers")
 					) : (
@@ -219,7 +235,9 @@ export function ChangePolicyTable({
 						<DropdownMenuTrigger asChild>
 							<Button variant="ghost" size="icon" className="size-8">
 								<IconDots className="size-4" />
-								<span className="sr-only">{t("common.actions", "Actions")}</span>
+								<span className="sr-only">
+									{t("common.actions", "Actions")}
+								</span>
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
@@ -249,7 +267,10 @@ export function ChangePolicyTable({
 		return (
 			<div className="flex flex-col items-center justify-center py-12 gap-4">
 				<p className="text-muted-foreground">
-					{t("settings.changePolicies.loadError", "Failed to load change policies")}
+					{t(
+						"settings.changePolicies.loadError",
+						"Failed to load change policies",
+					)}
 				</p>
 				<Button variant="outline" onClick={() => refetch()}>
 					<IconRefresh className="size-4 mr-2" />
@@ -264,10 +285,15 @@ export function ChangePolicyTable({
 			<DataTableToolbar
 				search={search}
 				onSearchChange={setSearch}
-				searchPlaceholder={t("settings.changePolicies.searchPlaceholder", "Search policies...")}
+				searchPlaceholder={t(
+					"settings.changePolicies.searchPlaceholder",
+					"Search policies...",
+				)}
 				actions={
 					<div className="flex items-center gap-2">
-						{isFetching && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+						{isFetching && (
+							<IconLoader2 className="size-4 animate-spin text-muted-foreground" />
+						)}
 						{canManage ? (
 							<Button onClick={onCreateClick}>
 								<IconPlus className="size-4 mr-2" />
@@ -282,8 +308,14 @@ export function ChangePolicyTable({
 				<div className="flex flex-col items-center justify-center py-12 gap-4 border rounded-lg">
 					<p className="text-muted-foreground">
 						{search
-							? t("settings.changePolicies.noSearchResults", "No policies match your search")
-							: t("settings.changePolicies.noPolicies", "No change policies configured yet")}
+							? t(
+									"settings.changePolicies.noSearchResults",
+									"No policies match your search",
+								)
+							: t(
+									"settings.changePolicies.noPolicies",
+									"No change policies configured yet",
+								)}
 					</p>
 					{!search && canManage ? (
 						<>
@@ -295,7 +327,10 @@ export function ChangePolicyTable({
 							</p>
 							<Button onClick={onCreateClick}>
 								<IconPlus className="size-4 mr-2" />
-								{t("settings.changePolicies.createFirst", "Create Your First Policy")}
+								{t(
+									"settings.changePolicies.createFirst",
+									"Create Your First Policy",
+								)}
 							</Button>
 						</>
 					) : null}
@@ -304,7 +339,10 @@ export function ChangePolicyTable({
 				<DataTable columns={columns} data={filteredPolicies} />
 			)}
 
-			<AlertDialog open={canManage && deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+			<AlertDialog
+				open={canManage && deleteDialogOpen}
+				onOpenChange={setDeleteDialogOpen}
+			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>

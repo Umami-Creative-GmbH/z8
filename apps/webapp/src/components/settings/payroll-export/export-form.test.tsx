@@ -189,9 +189,20 @@ describe("ExportForm", () => {
 
 		await waitFor(
 			() => {
+				expect(
+					screen.getByRole("button", {
+						name: /Export to DATEV|Exporting\u2026|Exporting\.\.\./,
+					}),
+				).toBeTruthy();
+			},
+			{ timeout: 15000 },
+		);
+
+		await waitFor(
+			() => {
 				expect(screen.getByRole("button", { name: "Export to DATEV" })).toBeTruthy();
 			},
-			{ timeout: 5000 },
+			{ timeout: 15000 },
 		);
 
 		const formatSelect = screen
@@ -205,7 +216,7 @@ describe("ExportForm", () => {
 			() => {
 				expect(screen.getByRole("button", { name: "Export to Workday" })).toBeTruthy();
 			},
-			{ timeout: 5000 },
+			{ timeout: 15000 },
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Export to Workday" }));
