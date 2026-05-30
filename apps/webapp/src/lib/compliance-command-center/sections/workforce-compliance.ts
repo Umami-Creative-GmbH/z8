@@ -115,6 +115,16 @@ export async function getWorkforceComplianceSection(
 				),
 			),
 	]);
+	let latestViolationAtMs: number | null = null;
+	for (const row of violationRows) {
+		if (!(row.latestViolationAt instanceof Date)) {
+			continue;
+		}
+
+		const timestamp = row.latestViolationAt.getTime();
+		latestViolationAtMs =
+			latestViolationAtMs === null ? timestamp : Math.max(latestViolationAtMs, timestamp);
+	}
 
 	const snapshot: WorkforceComplianceSnapshot = {
 		restPeriodViolations:
@@ -130,11 +140,7 @@ export async function getWorkforceComplianceSection(
 			.reduce((total, row) => total + row.count, 0),
 		pendingExceptions: pendingExceptionRows[0]?.count ?? 0,
 		latestViolationAt:
-			violationRows
-				.map((row) => row.latestViolationAt)
-				.filter((value): value is Date => value instanceof Date)
-				.sort((left, right) => right.getTime() - left.getTime())[0]
-				?.toISOString() ?? null,
+			latestViolationAtMs === null ? null : new Date(latestViolationAtMs).toISOString(),
 	};
 
 	return deriveWorkforceComplianceSection(snapshot);

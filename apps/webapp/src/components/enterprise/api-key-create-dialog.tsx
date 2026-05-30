@@ -156,7 +156,7 @@ export function ApiKeyCreateDialog({
 						<Label>{t("settings.apiKeys.form.scopes", "Permissions")} *</Label>
 						<div className="grid grid-cols-2 gap-2 p-3 border rounded-md bg-muted/30">
 							{API_KEY_SCOPES.map((scope) => (
-								<div key={scope} className="flex items-center space-x-2">
+								<div key={scope} className="flex items-center gap-x-2">
 									<Checkbox
 										id={scope}
 										checked={selectedScopes.includes(scope)}
@@ -177,7 +177,7 @@ export function ApiKeyCreateDialog({
 
 					{/* Rate Limiting */}
 					<div className="space-y-3">
-						<div className="flex items-center space-x-2">
+						<div className="flex items-center gap-x-2">
 							<Checkbox
 								id="rateLimitEnabled"
 								checked={rateLimitEnabled}
