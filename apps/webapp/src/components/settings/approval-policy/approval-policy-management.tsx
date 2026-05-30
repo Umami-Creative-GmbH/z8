@@ -23,7 +23,7 @@ import {
 import { ApprovalPolicyDialog } from "./approval-policy-dialog";
 import type { buildApprovalPolicyPayload } from "./approval-policy-dialog-utils";
 import { ApprovalPolicyPreview } from "./approval-policy-preview";
-import { EmployeeGroupManagement } from "./employee-group-management";
+import { EmployeeGroupManagement } from "../employee-group-management";
 
 const approvalPolicyQueryKey = (organizationId: string) =>
 	["approval-policies", organizationId] as const;
