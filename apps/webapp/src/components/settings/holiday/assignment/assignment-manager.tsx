@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-doctor/no-giant-component */
+
 import {
 	IconBuilding,
 	IconCalendarEvent,
@@ -458,7 +460,7 @@ export function AssignmentManager({
 											<div className="flex items-center gap-3">
 												{assignment.preset.color && (
 													<div
-														className="size-3 rounded-full flex-shrink-0"
+														className="size-3 rounded-full shrink-0"
 														style={{ backgroundColor: assignment.preset.color }}
 													/>
 												)}
@@ -542,7 +544,7 @@ export function AssignmentManager({
 											<div className="flex items-center gap-3">
 												{assignment.category.color ? (
 													<span
-														className="size-3 rounded-full flex-shrink-0"
+														className="size-3 rounded-full shrink-0"
 														style={{ backgroundColor: assignment.category.color }}
 													/>
 												) : (

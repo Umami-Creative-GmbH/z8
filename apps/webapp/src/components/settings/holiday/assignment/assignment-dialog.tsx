@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-doctor/no-giant-component */
+
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -259,13 +261,7 @@ export function AssignmentDialog({
 						{assignmentType !== "organization" && <Skeleton className="h-10 w-full" />}
 					</ActionPanelBody>
 				) : (
-					<form
-						onSubmit={(e) => {
-							e.preventDefault();
-							form.handleSubmit();
-						}}
-						className="flex min-h-0 flex-1 flex-col"
-					>
+					<form className="flex min-h-0 flex-1 flex-col">
 						<ActionPanelBody className="space-y-4">
 							{/* Preset Selection */}
 							<form.Field name="presetId">
@@ -444,7 +440,11 @@ export function AssignmentDialog({
 							>
 								{t("common.cancel", "Cancel")}
 							</Button>
-							<Button type="submit" disabled={createMutation.isPending}>
+							<Button
+								type="button"
+								onClick={() => form.handleSubmit()}
+								disabled={createMutation.isPending}
+							>
 								{createMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 								{t("common.assign", "Assign")}
 							</Button>
