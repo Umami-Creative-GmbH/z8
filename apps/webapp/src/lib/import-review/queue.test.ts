@@ -12,14 +12,14 @@ vi.mock("@/lib/queue", async (importOriginal) => ({
 }));
 
 vi.mock("@/db", () => ({
-		db: {
-			insert: insertMock,
-			selectDistinct: selectDistinctMock,
-			query: {
-				importBatch: {
-					findFirst: findImportBatchMock,
-				},
-				importBatchJob: {
+	db: {
+		insert: insertMock,
+		selectDistinct: selectDistinctMock,
+		query: {
+			importBatch: {
+				findFirst: findImportBatchMock,
+			},
+			importBatchJob: {
 				findFirst: findImportBatchJobMock,
 			},
 		},
@@ -27,15 +27,25 @@ vi.mock("@/db", () => ({
 }));
 
 vi.mock("./worker", () => ({
-	processImportReviewJob: vi.fn().mockResolvedValue({ success: true, message: "Import review job completed" }),
-	processImportReviewScanJob: vi.fn().mockResolvedValue({ success: true, message: "Import review scan queued" }),
-	processImportReviewCommitJob: vi.fn().mockResolvedValue({ success: true, message: "Import review commit queued" }),
+	processImportReviewJob: vi
+		.fn()
+		.mockResolvedValue({ success: true, message: "Import review job completed" }),
+	processImportReviewScanJob: vi
+		.fn()
+		.mockResolvedValue({ success: true, message: "Import review scan queued" }),
+	processImportReviewCommitJob: vi
+		.fn()
+		.mockResolvedValue({ success: true, message: "Import review commit queued" }),
 }));
 
 const { addJob } = await import("@/lib/queue");
 const { enqueueImportScanJob, enqueueImportCommitJob } = await import("./queue");
-const { createCommitJobsForAcceptedRows, createImportBatchJob, insertImportIssues, insertStagedRows } =
-	await import("./repository");
+const {
+	createCommitJobsForAcceptedRows,
+	createImportBatchJob,
+	insertImportIssues,
+	insertStagedRows,
+} = await import("./repository");
 const { processOneOffJob } = await import("@/worker");
 const { processImportReviewJob } = await import("./worker");
 
@@ -143,9 +153,7 @@ describe("import review repository", () => {
 			],
 		});
 
-		const expectedHash = createHash("sha256")
-			.update('{"a":{"x":1,"y":2},"z":1}')
-			.digest("hex");
+		const expectedHash = createHash("sha256").update('{"a":{"x":1,"y":2},"z":1}').digest("hex");
 
 		expect(insertedRows[0]?.sourcePayloadHash).toBe(expectedHash);
 		expect(insertedRows[1]?.sourcePayloadHash).toBe(expectedHash);
@@ -180,12 +188,14 @@ describe("import review repository", () => {
 	});
 
 	it("orders commit jobs by dependency group instead of alphabetically", async () => {
-		const orderBy = vi.fn().mockResolvedValue([
-			{ entityType: "absence" },
-			{ entityType: "employee" },
-			{ entityType: "work_category" },
-			{ entityType: "work_period" },
-		]);
+		const orderBy = vi
+			.fn()
+			.mockResolvedValue([
+				{ entityType: "absence" },
+				{ entityType: "employee" },
+				{ entityType: "work_category" },
+				{ entityType: "work_period" },
+			]);
 		const where = vi.fn().mockReturnValue({ orderBy });
 		const from = vi.fn().mockReturnValue({ where });
 		selectDistinctMock.mockReturnValue({ from });
@@ -196,7 +206,10 @@ describe("import review repository", () => {
 				}),
 			})),
 		}));
-		const jobs = await createCommitJobsForAcceptedRows({ batchId: "batch_1", organizationId: "org_1" });
+		const jobs = await createCommitJobsForAcceptedRows({
+			batchId: "batch_1",
+			organizationId: "org_1",
+		});
 
 		expect(jobs.map((job) => job?.entityType)).toEqual([
 			"employee",

@@ -10,7 +10,7 @@ describe("overtime burn-down page source", () => {
 		expect(source).toContain("useEffect(() => {");
 		expect(source).toContain("await getOvertimeBurnDownData(");
 		expect(source).toContain(
-			"[dateRange, teamId, costCenterId, managerId, isHydrated, timezone]",
+			"[dateRange, teamId, costCenterId, managerId, isHydrated, timezone, t]",
 		);
 	});
 

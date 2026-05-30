@@ -6,6 +6,7 @@
  */
 
 import { Resend } from "resend";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import type {
 	EmailMessage,
@@ -13,7 +14,6 @@ import type {
 	EmailTransportResult,
 	ResendTransportConfig,
 } from "./base";
-import { env } from "@/env";
 
 const logger = createLogger("ResendTransport");
 

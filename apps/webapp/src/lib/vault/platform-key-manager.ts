@@ -1,10 +1,10 @@
 import "server-only";
 
+import { eq, sql } from "drizzle-orm";
+import { nanoid } from "nanoid";
 import { db } from "@/db";
 import { systemConfig } from "@/db/schema";
 import { env } from "@/env";
-import { eq, sql } from "drizzle-orm";
-import { nanoid } from "nanoid";
 import { ScalewayKeyManagerClient } from "./scaleway-key-manager-client";
 import { isCompatibleScalewayPlatformKey } from "./scaleway-key-utils";
 
@@ -54,7 +54,10 @@ async function verifyStoredPlatformKey(platformKeyId: string) {
 	return platformKeyId;
 }
 
-async function persistPlatformKeyId(platformKeyId: string, database: Pick<SystemConfigDb, "insert"> = db) {
+async function persistPlatformKeyId(
+	platformKeyId: string,
+	database: Pick<SystemConfigDb, "insert"> = db,
+) {
 	await database
 		.insert(systemConfig)
 		.values({
@@ -74,12 +77,17 @@ async function persistPlatformKeyId(platformKeyId: string, database: Pick<System
 async function ensurePlatformKey() {
 	const storedPlatformKeyId = await findStoredPlatformKeyId();
 	if (storedPlatformKeyId) {
-		return { platformKeyId: await verifyStoredPlatformKey(storedPlatformKeyId), keyStatus: "reused" as const };
+		return {
+			platformKeyId: await verifyStoredPlatformKey(storedPlatformKeyId),
+			keyStatus: "reused" as const,
+		};
 	}
 
 	return db.transaction(async (tx) => {
 		const database = tx as SystemConfigDb;
-		await database.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${PLATFORM_KEY_CONFIG_KEY}, 0))`);
+		await database.execute(
+			sql`SELECT pg_advisory_xact_lock(hashtextextended(${PLATFORM_KEY_CONFIG_KEY}, 0))`,
+		);
 
 		const lockedPlatformKeyId = await findStoredPlatformKeyId(database);
 		if (lockedPlatformKeyId) {

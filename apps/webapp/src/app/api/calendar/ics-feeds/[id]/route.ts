@@ -97,7 +97,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 		}
 
 		const access = await verifyFeedAccess(id, session.user.id, activeOrgId);
-		if (!access || !access.canAccess) {
+		if (!access?.canAccess) {
 			return NextResponse.json({ error: "Feed not found" }, { status: 404 });
 		}
 
@@ -140,7 +140,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 		}
 
 		const access = await verifyFeedAccess(id, session.user.id, activeOrgId);
-		if (!access || !access.canAccess) {
+		if (!access?.canAccess) {
 			return NextResponse.json({ error: "Feed not found" }, { status: 404 });
 		}
 
@@ -207,7 +207,7 @@ export async function DELETE(
 		}
 
 		const access = await verifyFeedAccess(id, session.user.id, activeOrgId);
-		if (!access || !access.canAccess) {
+		if (!access?.canAccess) {
 			return NextResponse.json({ error: "Feed not found" }, { status: 404 });
 		}
 

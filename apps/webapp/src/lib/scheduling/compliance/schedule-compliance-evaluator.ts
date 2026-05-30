@@ -81,8 +81,11 @@ function collectMaxHoursFindings(input: ScheduleComplianceInput): ComplianceFind
 
 function collectOvertimeFindings(input: ScheduleComplianceInput): ComplianceFinding[] {
 	const findings: ComplianceFinding[] = [];
-	const { overtimeDailyThresholdMinutes, overtimeWeeklyThresholdMinutes, overtimeMonthlyThresholdMinutes } =
-		input.regulation;
+	const {
+		overtimeDailyThresholdMinutes,
+		overtimeWeeklyThresholdMinutes,
+		overtimeMonthlyThresholdMinutes,
+	} = input.regulation;
 
 	if (
 		overtimeDailyThresholdMinutes == null &&
@@ -179,7 +182,9 @@ function summarizeFindings(findings: ComplianceFinding[]): ScheduleComplianceRes
 	};
 }
 
-export function evaluateScheduleCompliance(input: ScheduleComplianceInput): ScheduleComplianceResult {
+export function evaluateScheduleCompliance(
+	input: ScheduleComplianceInput,
+): ScheduleComplianceResult {
 	if (input.employees.length === 0) {
 		return summarizeFindings([]);
 	}

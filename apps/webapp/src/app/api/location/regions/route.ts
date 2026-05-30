@@ -1,5 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { getRegions } from "@/lib/holidays/date-holidays-service";
 
 export async function GET(request: NextRequest) {

@@ -131,12 +131,7 @@ describe("evaluateBillingAccess", () => {
 			reason: "canceled",
 			status: "unpaid",
 		});
-		for (const status of [
-			"incomplete",
-			"incomplete_expired",
-			"paused",
-			"unknown_status",
-		]) {
+		for (const status of ["incomplete", "incomplete_expired", "paused", "unknown_status"]) {
 			expect(
 				evaluateBillingAccess({
 					billingEnabled: true,
@@ -169,11 +164,7 @@ describe("evaluateBillingAccess", () => {
 
 describe("getDaysRemaining", () => {
 	it("returns ceil days remaining", () => {
-		expect(getDaysRemaining(new Date("2026-05-20T12:00:01.000Z"), now)).toBe(
-			1,
-		);
-		expect(getDaysRemaining(new Date("2026-05-23T00:00:00.000Z"), now)).toBe(
-			3,
-		);
+		expect(getDaysRemaining(new Date("2026-05-20T12:00:01.000Z"), now)).toBe(1);
+		expect(getDaysRemaining(new Date("2026-05-23T00:00:00.000Z"), now)).toBe(3);
 	});
 });

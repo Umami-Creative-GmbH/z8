@@ -79,7 +79,7 @@ export function useOfflineClock() {
 		let mounted = true;
 
 		// Wait for SW to be ready
-		navigator.serviceWorker.ready.then(async (registration) => {
+		navigator.serviceWorker.ready.then(async (_registration) => {
 			if (!mounted) return;
 
 			setSwReady(true);

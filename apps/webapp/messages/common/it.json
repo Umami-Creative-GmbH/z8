@@ -389,7 +389,8 @@
       "markedRead": "{count} notifiche contrassegnate come lette",
       "markReadFailed": "Impossibile contrassegnare le notifiche come lette"
     },
-    "unreadBadge": "{count} non lette"
+    "unreadBadge": "{count} non lette",
+    "unreadCountOverflow": "99+"
   },
   "offline": {
     "banner": {

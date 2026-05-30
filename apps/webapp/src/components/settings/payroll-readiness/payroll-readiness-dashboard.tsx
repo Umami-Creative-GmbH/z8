@@ -1,7 +1,14 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import type {
 	PayrollReadinessCheck,
 	PayrollReadinessResult,
@@ -32,22 +39,34 @@ export function PayrollReadinessDashboard({ t, data }: PayrollReadinessDashboard
 							{getReadinessStatusLabel(data.status, t)}
 						</Badge>
 					}
-					description={t("settings.payrollReadiness.summary.statusDescription", "Overall payroll export readiness.")}
+					description={t(
+						"settings.payrollReadiness.summary.statusDescription",
+						"Overall payroll export readiness.",
+					)}
 				/>
 				<SummaryCard
 					title={t("settings.payrollReadiness.summary.period", "Period")}
 					value={data.period.label}
-					description={t("settings.payrollReadiness.summary.periodDescription", "Payroll period being verified.")}
+					description={t(
+						"settings.payrollReadiness.summary.periodDescription",
+						"Payroll period being verified.",
+					)}
 				/>
 				<SummaryCard
 					title={t("settings.payrollReadiness.summary.blockers", "Blockers")}
 					value={String(data.summary.blockerCount)}
-					description={t("settings.payrollReadiness.summary.blockersDescription", "Required checks currently blocking export.")}
+					description={t(
+						"settings.payrollReadiness.summary.blockersDescription",
+						"Required checks currently blocking export.",
+					)}
 				/>
 				<SummaryCard
 					title={t("settings.payrollReadiness.summary.warnings", "Warnings")}
 					value={String(data.summary.warningCount)}
-					description={t("settings.payrollReadiness.summary.warningsDescription", "Non-blocking issues to review before export.")}
+					description={t(
+						"settings.payrollReadiness.summary.warningsDescription",
+						"Non-blocking issues to review before export.",
+					)}
 				/>
 			</div>
 
@@ -55,12 +74,18 @@ export function PayrollReadinessDashboard({ t, data }: PayrollReadinessDashboard
 				<SummaryCard
 					title={t("settings.payrollReadiness.summary.exportTargets", "Configured export targets")}
 					value={String(data.summary.configuredExportTargetCount)}
-					description={t("settings.payrollReadiness.summary.exportTargetsDescription", "Active payroll export destinations.")}
+					description={t(
+						"settings.payrollReadiness.summary.exportTargetsDescription",
+						"Active payroll export destinations.",
+					)}
 				/>
 				<SummaryCard
 					title={t("settings.payrollReadiness.summary.affectedEmployees", "Affected employees")}
 					value={String(data.summary.affectedEmployeeCount)}
-					description={t("settings.payrollReadiness.summary.affectedEmployeesDescription", "Employees linked to open readiness items.")}
+					description={t(
+						"settings.payrollReadiness.summary.affectedEmployeesDescription",
+						"Employees linked to open readiness items.",
+					)}
 				/>
 			</div>
 
@@ -121,7 +146,9 @@ function ChecklistCard({ t, check }: { t: TranslateFn; check: PayrollReadinessCh
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<div className="flex flex-wrap items-center gap-3 text-sm">
-					<span className="text-muted-foreground">{t("settings.payrollReadiness.checks.count", "Count")}</span>
+					<span className="text-muted-foreground">
+						{t("settings.payrollReadiness.checks.count", "Count")}
+					</span>
 					<span className="font-medium">{check.count}</span>
 					{check.actionHref && actionLabel ? (
 						<Link className={actionLinkClassName} href={check.actionHref}>
@@ -131,10 +158,7 @@ function ChecklistCard({ t, check }: { t: TranslateFn; check: PayrollReadinessCh
 				</div>
 
 				{check.affectedEmployees?.length ? (
-					<AffectedEmployeesTable
-						t={t}
-						employees={check.affectedEmployees}
-					/>
+					<AffectedEmployeesTable t={t} employees={check.affectedEmployees} />
 				) : null}
 			</CardContent>
 		</Card>
@@ -153,7 +177,9 @@ function AffectedEmployeesTable({
 			<TableHeader>
 				<TableRow>
 					<TableHead>{t("settings.payrollReadiness.affectedEmployees.name", "Employee")}</TableHead>
-					<TableHead>{t("settings.payrollReadiness.affectedEmployees.number", "Employee number")}</TableHead>
+					<TableHead>
+						{t("settings.payrollReadiness.affectedEmployees.number", "Employee number")}
+					</TableHead>
 				</TableRow>
 			</TableHeader>
 			<TableBody>
@@ -161,14 +187,17 @@ function AffectedEmployeesTable({
 					<TableRow key={employee.id}>
 						<TableCell>
 							<div className="min-w-0 space-y-1">
-								<p className="break-words font-medium">{employee.name ?? employee.email ?? employee.id}</p>
+								<p className="break-words font-medium">
+									{employee.name ?? employee.email ?? employee.id}
+								</p>
 								{employee.email ? (
 									<p className="text-muted-foreground text-sm break-words">{employee.email}</p>
 								) : null}
 							</div>
 						</TableCell>
 						<TableCell className="break-words">
-							{employee.employeeNumber ?? t("settings.payrollReadiness.affectedEmployees.noNumber", "Not set")}
+							{employee.employeeNumber ??
+								t("settings.payrollReadiness.affectedEmployees.noNumber", "Not set")}
 						</TableCell>
 					</TableRow>
 				))}

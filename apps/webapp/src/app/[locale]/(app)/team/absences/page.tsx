@@ -78,7 +78,9 @@ export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPage
 				</div>
 				<div className="px-4 lg:px-6">
 					<div className="rounded-lg border bg-card p-6 text-center">
-						<h2 className="font-semibold">{t("team.absences.error.title", "Unable to load absences")}</h2>
+						<h2 className="font-semibold">
+							{t("team.absences.error.title", "Unable to load absences")}
+						</h2>
 						<p className="mt-1 text-muted-foreground text-sm">
 							{listResult.error ??
 								t("team.absences.error.description", "Please try again in a moment.")}

@@ -35,7 +35,7 @@ const targetedForbiddenPatterns: Record<string, RegExp[]> = {
 		/getEmployeesForFilter[\s\S]*orderBy:\s*\([^)]*\)\s*=>\s*\[asc\([^)]*\.lastName\),\s*asc\([^)]*\.firstName\)\]/,
 	],
 	"src/app/[locale]/(app)/settings/locations/actions.ts": [/\be\.firstName\b/, /\be\.lastName\b/],
-	"src/components/settings/work-policy-compliance-view.tsx": [
+	"src/components/settings/work-policy/work-policy-compliance-view.tsx": [
 		/\bemployeeRecord\.firstName\b/,
 		/\bemployeeRecord\.lastName\b/,
 	],

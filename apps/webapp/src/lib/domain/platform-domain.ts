@@ -5,8 +5,8 @@ import { organizationBranding } from "@/db/schema";
 import { env } from "@/env";
 import { getConfiguredProviders } from "@/lib/social-oauth";
 import {
-	DEFAULT_AUTH_CONFIG,
 	type AuthConfig,
+	DEFAULT_AUTH_CONFIG,
 	type OrganizationBranding,
 	type SocialOAuthConfigured,
 	type TurnstileConfig,
@@ -61,7 +61,10 @@ export function normalizeDomainHost(host: string | null): string | null {
 }
 
 export function getPlatformRootDomain(): string {
-	return normalizeDomainHost(env.PLATFORM_DOMAIN ?? env.MAIN_DOMAIN ?? "ui.z8-time.app") ?? "ui.z8-time.app";
+	return (
+		normalizeDomainHost(env.PLATFORM_DOMAIN ?? env.MAIN_DOMAIN ?? "ui.z8-time.app") ??
+		"ui.z8-time.app"
+	);
 }
 
 export function classifyDomainHost(host: string | null): DomainHostClassification | null {
@@ -73,11 +76,7 @@ export function classifyDomainHost(host: string | null): DomainHostClassificatio
 	const mainDomain = normalizeDomainHost(env.MAIN_DOMAIN ?? "localhost:3000");
 	const platformRootDomain = getPlatformRootDomain();
 
-	if (
-		hostname === mainDomain ||
-		hostname === platformRootDomain ||
-		hostname === "localhost"
-	) {
+	if (hostname === mainDomain || hostname === platformRootDomain || hostname === "localhost") {
 		return { type: "main", hostname };
 	}
 
@@ -106,15 +105,16 @@ export function getPlatformOrganizationLabel(host: string | null): string | null
 export async function resolvePlatformOrganization(
 	label: string,
 ): Promise<PlatformOrganizationRecord | null> {
-	const bySlug = await db.query.organization.findFirst({
-		where: eq(organization.slug, label),
-		columns: { id: true, slug: true, name: true },
-	});
-
-	const byId = await db.query.organization.findFirst({
-		where: eq(organization.id, label),
-		columns: { id: true, slug: true, name: true },
-	});
+	const [bySlug, byId] = await Promise.all([
+		db.query.organization.findFirst({
+			where: eq(organization.slug, label),
+			columns: { id: true, slug: true, name: true },
+		}),
+		db.query.organization.findFirst({
+			where: eq(organization.id, label),
+			columns: { id: true, slug: true, name: true },
+		}),
+	]);
 
 	return byId ?? bySlug ?? null;
 }

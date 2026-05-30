@@ -21,6 +21,8 @@ import {
 	generateDemoData,
 	generateDemoLocations,
 	generateDemoManagerAssignments,
+	generateDemoPendingAbsenceApprovals,
+	generateDemoPendingTimeCorrectionApprovals,
 	generateDemoProjects,
 	generateDemoShifts,
 	generateDemoShiftTemplates,
@@ -47,7 +49,7 @@ export async function canUseDemoData(organizationId: string): Promise<boolean> {
 		where: eq(authOrganization.id, organizationId),
 	});
 
-	return organization ? organization.demoDataEnabled ?? true : false;
+	return organization ? (organization.demoDataEnabled ?? true) : false;
 }
 
 export async function assertDemoDataEnabledForOrganization(
@@ -103,9 +105,7 @@ export async function generateDemoDataAction(
 		);
 
 		// Step 3: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -191,6 +191,8 @@ export interface StepGenerationInput {
 	changePolicyCount?: number;
 	// NEW: Shift scheduling options
 	shiftTemplateCount?: number;
+	includePendingAbsenceApprovals?: boolean;
+	includePendingTimeCorrectionApprovals?: boolean;
 }
 
 /**
@@ -238,9 +240,7 @@ export async function generateTeamsStepAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -285,9 +285,7 @@ export async function generateProjectsStepAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -332,9 +330,7 @@ export async function generateManagersStepAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -378,9 +374,7 @@ export async function generateTimeEntriesStepAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -424,9 +418,7 @@ export async function generateAbsencesStepAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -460,6 +452,92 @@ export async function generateAbsencesStepAction(
 	return runServerActionSafe(effect);
 }
 
+export async function generatePendingAbsenceApprovalsStepAction(
+	input: StepGenerationInput,
+): Promise<ServerActionResult<{ pendingAbsenceApprovalsCreated: number }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			includePendingAbsenceApprovals: true,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(Effect.promise(() => generateDemoPendingAbsenceApprovals(options)));
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function generatePendingTimeCorrectionApprovalsStepAction(
+	input: StepGenerationInput,
+): Promise<ServerActionResult<{ pendingTimeCorrectionApprovalsCreated: number }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			includePendingTimeCorrectionApprovals: true,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(
+			Effect.promise(() => generateDemoPendingTimeCorrectionApprovals(options)),
+		);
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
 /**
  * Generate demo locations (step 6)
  */
@@ -474,9 +552,7 @@ export async function generateLocationsStepAction(input: StepGenerationInput): P
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -527,9 +603,7 @@ export async function generateWorkCategoriesStepAction(input: StepGenerationInpu
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -579,9 +653,7 @@ export async function generateChangePoliciesStepAction(input: StepGenerationInpu
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -627,9 +699,7 @@ export async function generateShiftTemplatesStepAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -679,9 +749,7 @@ export async function generateShiftsStepAction(input: StepGenerationInput): Prom
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -727,9 +795,7 @@ export async function assignWorkCategoriesToPeriodsStepAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -799,9 +865,7 @@ export async function clearTimeDataAction(
 		);
 
 		// Step 3: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -837,9 +901,7 @@ export async function getOrganizationEmployees(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -894,9 +956,7 @@ export async function generateDemoEmployeesAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -940,9 +1000,7 @@ export async function deleteNonAdminDataAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => canUseDemoData(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(

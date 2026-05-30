@@ -1,16 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
 import { Effect, Layer } from "effect";
-import { createLogger } from "@/lib/logger";
+import { connection, type NextRequest, NextResponse } from "next/server";
+import { env } from "@/env";
 import {
-	StripeService,
-	StripeServiceLive,
 	BillingEventsService,
 	BillingEventsServiceLive,
-	SubscriptionServiceLive,
 	SeatSyncServiceLive,
+	StripeService,
+	StripeServiceLive,
+	SubscriptionServiceLive,
 } from "@/lib/effect/services/billing";
-import { env } from "@/env";
+import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("StripeWebhook");
 

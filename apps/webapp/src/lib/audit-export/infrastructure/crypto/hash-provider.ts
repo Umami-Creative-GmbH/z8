@@ -130,7 +130,7 @@ export class SHA256HashProvider implements IHashProvider {
 		}
 
 		let currentLevel = hashes.map((h) => h.toString());
-		let levelSize = currentLevel.length;
+		let _levelSize = currentLevel.length;
 		let leafIndices = Array.from({ length: leafCount }, (_, i) => i);
 
 		while (currentLevel.length > 1) {
@@ -169,7 +169,7 @@ export class SHA256HashProvider implements IHashProvider {
 
 			currentLevel = nextLevel;
 			leafIndices = nextLeafIndices;
-			levelSize = currentLevel.length;
+			_levelSize = currentLevel.length;
 		}
 
 		return {
@@ -181,11 +181,7 @@ export class SHA256HashProvider implements IHashProvider {
 	/**
 	 * Verify a Merkle proof for a specific leaf
 	 */
-	verifyMerkleProof(
-		leafHash: SHA256Hash,
-		proof: MerkleProof,
-		expectedRoot: SHA256Hash,
-	): boolean {
+	verifyMerkleProof(leafHash: SHA256Hash, proof: MerkleProof, expectedRoot: SHA256Hash): boolean {
 		let currentHash = leafHash.toString();
 
 		for (let i = 0; i < proof.path.length; i++) {

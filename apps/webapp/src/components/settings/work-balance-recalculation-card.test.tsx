@@ -56,9 +56,7 @@ describe("WorkBalanceRecalculationCard", () => {
 
 		expect(document.activeElement).toBe(confirmButton);
 		expect(
-			screen
-				.getByText("Confirm before queueing this recalculation.")
-				.getAttribute("aria-live"),
+			screen.getByText("Confirm before queueing this recalculation.").getAttribute("aria-live"),
 		).toBe("polite");
 	});
 

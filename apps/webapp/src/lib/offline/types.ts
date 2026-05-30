@@ -35,6 +35,8 @@ export interface QueuedClockEvent {
 	workCategoryId?: string;
 	/** Optional work location type for clock-in */
 	workLocationType?: WorkLocationType;
+	/** Browser timezone captured when the user clicked clock in/out */
+	browserTimezone?: string | null;
 }
 
 /**
@@ -60,7 +62,10 @@ export type SWToClientMessage =
  * Messages sent from clients to the service worker
  */
 export type ClientToSWMessage =
-	| { type: "QUEUE_CLOCK_EVENT"; payload: Omit<QueuedClockEvent, "id" | "retryCount" | "createdAt"> }
+	| {
+			type: "QUEUE_CLOCK_EVENT";
+			payload: Omit<QueuedClockEvent, "id" | "retryCount" | "createdAt">;
+	  }
 	| { type: "GET_QUEUE_COUNT" }
 	| { type: "TRIGGER_SYNC" }
 	| { type: "CLEAR_OLD_QUEUE" }

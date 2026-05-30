@@ -5,21 +5,18 @@
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault/secrets";
-import { SuccessFactorsApiClient } from "./api-client";
-import { validateSuccessFactorsConfig, validateApiConfig } from "./shared/config-validator";
-import { transformWorkPeriods } from "./shared/time-transformer";
-import { transformAbsences } from "./shared/absence-transformer";
 import type {
-	IPayrollExporter,
-	WorkPeriodData,
 	AbsenceData,
-	WageTypeMapping,
 	ApiExportResult,
+	IPayrollExporter,
+	WageTypeMapping,
+	WorkPeriodData,
 } from "../../types";
-import type {
-	SuccessFactorsConfig,
-	SuccessFactorsCredentials,
-} from "./types";
+import { SuccessFactorsApiClient } from "./api-client";
+import { transformAbsences } from "./shared/absence-transformer";
+import { validateApiConfig, validateSuccessFactorsConfig } from "./shared/config-validator";
+import { transformWorkPeriods } from "./shared/time-transformer";
+import type { SuccessFactorsConfig, SuccessFactorsCredentials } from "./types";
 import { DEFAULT_SUCCESSFACTORS_CONFIG, SF_VAULT_KEYS } from "./types";
 
 const logger = createLogger("SuccessFactorsExporter");
@@ -160,9 +157,7 @@ export class SuccessFactorsExporter implements IPayrollExporter {
 
 		for (let i = 0; i < timeRecordRequests.length; i += sfConfig.batchSize) {
 			const batch = timeRecordRequests.slice(i, i + sfConfig.batchSize);
-			const batchSourceIds = timeRecords
-				.slice(i, i + sfConfig.batchSize)
-				.map((t) => t.sourceId);
+			const batchSourceIds = timeRecords.slice(i, i + sfConfig.batchSize).map((t) => t.sourceId);
 
 			const batchResults = await client.createTimeRecords(batch);
 			apiCallCount += batch.length;
@@ -185,9 +180,7 @@ export class SuccessFactorsExporter implements IPayrollExporter {
 		}
 
 		// Export absences in batches
-		const validAbsenceData = absenceData.filter(
-			(a): a is NonNullable<typeof a> => a !== null,
-		);
+		const validAbsenceData = absenceData.filter((a): a is NonNullable<typeof a> => a !== null);
 		const absenceRequests = validAbsenceData.map((a) => a.request);
 		let syncedAbsences = 0;
 
@@ -270,19 +263,14 @@ export class SuccessFactorsExporter implements IPayrollExporter {
 	/**
 	 * Get credentials from Vault
 	 */
-	private async getCredentials(
-		organizationId: string,
-	): Promise<SuccessFactorsCredentials | null> {
+	private async getCredentials(organizationId: string): Promise<SuccessFactorsCredentials | null> {
 		const [clientId, clientSecret] = await Promise.all([
 			getOrgSecret(organizationId, SF_VAULT_KEYS.clientId),
 			getOrgSecret(organizationId, SF_VAULT_KEYS.clientSecret),
 		]);
 
 		if (!clientId || !clientSecret) {
-			logger.debug(
-				{ organizationId },
-				"SAP SuccessFactors credentials not found in Vault",
-			);
+			logger.debug({ organizationId }, "SAP SuccessFactors credentials not found in Vault");
 			return null;
 		}
 

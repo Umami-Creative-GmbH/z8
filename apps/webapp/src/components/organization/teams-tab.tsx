@@ -248,7 +248,10 @@ export function TeamsTab({
 						<div>
 							<CardTitle>{t("organization.teams.title", "Teams")}</CardTitle>
 							<CardDescription>
-								{t("organization.teams.description", "Organize your employees into teams for better collaboration")}
+								{t(
+									"organization.teams.description",
+									"Organize your employees into teams for better collaboration",
+								)}
 							</CardDescription>
 						</div>
 						<div className="flex flex-wrap items-center gap-2">
@@ -260,7 +263,9 @@ export function TeamsTab({
 								className="w-full sm:w-auto"
 							>
 								<IconRefresh className="mr-2 size-4" />
-								{isRefreshing ? t("common.refreshing", "Refreshing...") : t("common.refresh", "Refresh")}
+								{isRefreshing
+									? t("common.refreshing", "Refreshing...")
+									: t("common.refresh", "Refresh")}
 							</Button>
 							{canCreateTeams && (
 								<Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
@@ -276,9 +281,14 @@ export function TeamsTab({
 						// Empty state
 						<div className="text-center py-12 text-muted-foreground">
 							<IconUsers className="size-16 mx-auto mb-4 opacity-50" />
-							<h3 className="text-lg font-medium mb-2">{t("organization.teams.empty", "No teams yet")}</h3>
+							<h3 className="text-lg font-medium mb-2">
+								{t("organization.teams.empty", "No teams yet")}
+							</h3>
 							<p className="text-sm mb-4">
-								{t("organization.teams.emptyDescription", "Create your first team to start organizing your employees")}
+								{t(
+									"organization.teams.emptyDescription",
+									"Create your first team to start organizing your employees",
+								)}
 							</p>
 							{canCreateTeams && (
 								<Button onClick={() => setCreateDialogOpen(true)} variant="outline">
@@ -339,24 +349,38 @@ export function TeamsTab({
 			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>{t("organization.teams.deleteDialogTitle", "Are you sure?")}</AlertDialogTitle>
+						<AlertDialogTitle>
+							{t("organization.teams.deleteDialogTitle", "Are you sure?")}
+						</AlertDialogTitle>
 						<AlertDialogDescription>
-							{t("organization.teams.deleteDialogDescription", "This will permanently delete the team \"{teamName}\".", { teamName: selectedTeam?.name ?? "" })}
+							{t(
+								"organization.teams.deleteDialogDescription",
+								'This will permanently delete the team "{teamName}".',
+								{ teamName: selectedTeam?.name ?? "" },
+							)}
 							{selectedTeam && getTeamEmployees(selectedTeam.id).length > 0 && (
 								<span className="block mt-2 text-destructive font-medium">
-									{t("organization.teams.deleteDialogMembersWarning", "Warning: This team has {count} member(s). They will be removed from the team.", { count: getTeamEmployees(selectedTeam.id).length })}
+									{t(
+										"organization.teams.deleteDialogMembersWarning",
+										"Warning: This team has {count} member(s). They will be removed from the team.",
+										{ count: getTeamEmployees(selectedTeam.id).length },
+									)}
 								</span>
 							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleteMutation.isPending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+						<AlertDialogCancel disabled={deleteMutation.isPending}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeleteConfirm}
 							disabled={deleteMutation.isPending}
 							className="bg-destructive hover:bg-destructive/90"
 						>
-							{deleteMutation.isPending ? t("common.deleting", "Deleting...") : t("organization.teams.delete", "Delete Team")}
+							{deleteMutation.isPending
+								? t("common.deleting", "Deleting...")
+								: t("organization.teams.delete", "Delete Team")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

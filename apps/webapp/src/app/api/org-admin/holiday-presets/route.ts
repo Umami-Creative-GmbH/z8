@@ -1,12 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import {
-	holidayPreset,
-	holidayPresetAssignment,
-	holidayPresetHoliday,
-} from "@/db/schema";
+import { holidayPreset, holidayPresetAssignment, holidayPresetHoliday } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
@@ -58,27 +54,28 @@ export async function GET(_request: NextRequest) {
 		// Get holiday counts and assignment counts for each preset
 		const presetsWithCounts = await Promise.all(
 			presets.map(async (preset) => {
-				const [holidayCount] = await db
-					.select({
-						count: db.$count(holidayPresetHoliday, eq(holidayPresetHoliday.presetId, preset.id)),
-					})
-					.from(holidayPresetHoliday)
-					.where(eq(holidayPresetHoliday.presetId, preset.id));
-
-				const [assignmentCount] = await db
-					.select({
-						count: db.$count(
-							holidayPresetAssignment,
-							eq(holidayPresetAssignment.presetId, preset.id),
+				const [[holidayCount], [assignmentCount]] = await Promise.all([
+					db
+						.select({
+							count: db.$count(holidayPresetHoliday, eq(holidayPresetHoliday.presetId, preset.id)),
+						})
+						.from(holidayPresetHoliday)
+						.where(eq(holidayPresetHoliday.presetId, preset.id)),
+					db
+						.select({
+							count: db.$count(
+								holidayPresetAssignment,
+								eq(holidayPresetAssignment.presetId, preset.id),
+							),
+						})
+						.from(holidayPresetAssignment)
+						.where(
+							and(
+								eq(holidayPresetAssignment.presetId, preset.id),
+								eq(holidayPresetAssignment.isActive, true),
+							),
 						),
-					})
-					.from(holidayPresetAssignment)
-					.where(
-						and(
-							eq(holidayPresetAssignment.presetId, preset.id),
-							eq(holidayPresetAssignment.isActive, true),
-						),
-					);
+				]);
 
 				return {
 					...preset,

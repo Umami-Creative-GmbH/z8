@@ -96,15 +96,18 @@ describe("getPlatformAnalyticsData", () => {
 		queueCurrentTotal([{ value: 2 }]);
 		queueCurrentTotal([{ value: 0 }]);
 		queueCurrentTotal([{ seats: 9, mrr: 32 }]);
-		executeMock.mockResolvedValueOnce([
-			{ bucket: "2026-05-10T00:00:00.000Z", seats: 8, mrr: 28 },
-		]);
+		executeMock.mockResolvedValueOnce([{ bucket: "2026-05-10T00:00:00.000Z", seats: 8, mrr: 28 }]);
 
 		const data = await getPlatformAnalyticsData({ range: "7d", bucket: "day" }, true);
 
 		expect(data.billingEnabled).toBe(true);
 		expect(data.series.at(-1)).toMatchObject({ seats: 8, mrr: 28, estimatedBilling: true });
-		expect(data.kpis).toMatchObject({ organizations: 2, seats: 9, mrr: 32, estimatedBilling: true });
+		expect(data.kpis).toMatchObject({
+			organizations: 2,
+			seats: 9,
+			mrr: 32,
+			estimatedBilling: true,
+		});
 		expect(executeMock).toHaveBeenCalledTimes(1);
 	});
 

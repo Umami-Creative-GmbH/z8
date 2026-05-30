@@ -1,15 +1,15 @@
 import { DateTime } from "luxon";
+import { dateRangesOverlap } from "@/lib/absences/date-utils";
 import {
 	normalizeAbsenceDurationInput,
 	validateAbsenceDurationInput,
 } from "@/lib/absences/duration";
-import { dateRangesOverlap } from "@/lib/absences/date-utils";
 import { validateSickDetailForCategory } from "@/lib/absences/sick-details";
 import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
 import { mapAbsenceRangeToCanonicalTimestamps } from "../../absences/actions.canonical";
 import type {
-	ManagerAbsenceListResult,
 	ManagerAbsenceListParams,
+	ManagerAbsenceListResult,
 	ManagerAbsenceRowAbsence,
 	ManagerAbsenceSortDirection,
 	ManagerAbsenceSortKey,

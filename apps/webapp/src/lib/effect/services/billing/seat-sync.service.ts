@@ -1,12 +1,12 @@
-import { Context, Effect, Layer } from "effect";
 import { count, eq } from "drizzle-orm";
+import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
-import { subscription, billingSeatAudit } from "@/db/schema";
+import { billingSeatAudit } from "@/db/schema";
+import { createLogger } from "@/lib/logger";
+import { DatabaseError, type StripeError } from "../../errors";
 import { StripeService } from "./stripe.service";
 import { SubscriptionService } from "./subscription.service";
-import { DatabaseError, StripeError } from "../../errors";
-import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("SeatSyncService");
 
@@ -46,9 +46,7 @@ export class SeatSyncService extends Context.Tag("SeatSyncService")<
 		/**
 		 * Get current seat count for an organization without syncing
 		 */
-		readonly getCurrentSeatCount: (
-			organizationId: string,
-		) => Effect.Effect<number, DatabaseError>;
+		readonly getCurrentSeatCount: (organizationId: string) => Effect.Effect<number, DatabaseError>;
 	}
 >() {}
 
@@ -105,7 +103,11 @@ export const SeatSyncServiceLive = Layer.effect(
 						});
 
 						logger.info(
-							{ organizationId, seatCount, subscriptionId: sub.stripeSubscriptionId },
+							{
+								organizationId,
+								seatCount,
+								subscriptionId: sub.stripeSubscriptionId,
+							},
 							"Synced seat count to Stripe",
 						);
 					}
@@ -114,9 +116,7 @@ export const SeatSyncServiceLive = Layer.effect(
 				return seatCount;
 			});
 
-		const getCurrentSeatCount = (
-			organizationId: string,
-		): Effect.Effect<number, DatabaseError> =>
+		const getCurrentSeatCount = (organizationId: string): Effect.Effect<number, DatabaseError> =>
 			Effect.tryPromise({
 				try: async () => {
 					const [result] = await db

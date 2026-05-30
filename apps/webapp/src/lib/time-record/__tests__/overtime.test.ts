@@ -15,10 +15,16 @@ describe("computeOvertimeDelta", () => {
 	});
 
 	it("keeps fractional minute precision for downstream hour rounding", () => {
-		expect(computeOvertimeDelta({ actualMinutes: 480.6, expectedMinutes: 480 })).toBeCloseTo(0.6, 10);
+		expect(computeOvertimeDelta({ actualMinutes: 480.6, expectedMinutes: 480 })).toBeCloseTo(
+			0.6,
+			10,
+		);
 	});
 
 	it("does not round sub-minute overtime before clamping", () => {
-		expect(computeOvertimeDelta({ actualMinutes: 500.3, expectedMinutes: 500 })).toBeCloseTo(0.3, 10);
+		expect(computeOvertimeDelta({ actualMinutes: 500.3, expectedMinutes: 500 })).toBeCloseTo(
+			0.3,
+			10,
+		);
 	});
 });

@@ -23,7 +23,10 @@ export function ProjectHealthAlerts({ projects, onProjectSelect }: ProjectHealth
 		<Card>
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
-					<IconAlertTriangle className="size-5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+					<IconAlertTriangle
+						className="size-5 text-amber-600 dark:text-amber-400"
+						aria-hidden="true"
+					/>
 					{t("reports.projects.healthAlerts.title", "Project Health Alerts")}
 				</CardTitle>
 				<CardDescription>
@@ -114,7 +117,9 @@ function SeverityBadge({ severity }: { severity: Exclude<ProjectHealthSeverity, 
 }
 
 function getProjectSeverity(project: ProjectSummary): Exclude<ProjectHealthSeverity, "none"> {
-	return [project.budgetSeverity, project.deadlineSeverity, project.forecastSeverity].includes("critical")
+	return [project.budgetSeverity, project.deadlineSeverity, project.forecastSeverity].includes(
+		"critical",
+	)
 		? "critical"
 		: "warning";
 }
@@ -153,11 +158,17 @@ function getAlertReason(project: ProjectSummary, t: ReturnType<typeof useTransla
 	}
 
 	if (project.budgetAlertType === "budget_90") {
-		return t("reports.projects.healthAlerts.reason.budget90", "Project has used at least 90% of its budget.");
+		return t(
+			"reports.projects.healthAlerts.reason.budget90",
+			"Project has used at least 90% of its budget.",
+		);
 	}
 
 	if (project.budgetAlertType === "budget_70") {
-		return t("reports.projects.healthAlerts.reason.budget70", "Project has used at least 70% of its budget.");
+		return t(
+			"reports.projects.healthAlerts.reason.budget70",
+			"Project has used at least 70% of its budget.",
+		);
 	}
 
 	if (project.deadlineAlertType !== null) {

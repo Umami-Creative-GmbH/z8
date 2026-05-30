@@ -1,11 +1,23 @@
-import { and, count, countDistinct, eq, gte, inArray, isNull, lt, or, sql, type SQL } from "drizzle-orm";
+import {
+	and,
+	count,
+	countDistinct,
+	eq,
+	gte,
+	inArray,
+	isNull,
+	lt,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { DateTime } from "luxon";
 
 import { db } from "@/db";
 import { organization, session, user } from "@/db/auth-schema";
 import { billingSeatAudit, subscription, timeRecord } from "@/db/schema";
-
+import { env } from "@/env";
 import { buildPlatformAnalyticsSeries, getLatestPointKpis } from "./normalize";
 import { buildPlatformAnalyticsBuckets, parsePlatformAnalyticsParams } from "./range";
 import type {
@@ -15,7 +27,6 @@ import type {
 	PlatformAnalyticsData,
 	PlatformAnalyticsSearchParams,
 } from "./types";
-import { env } from "@/env";
 
 const BILLING_SUBSCRIPTION_STATUSES = ["active", "trialing", "past_due"] as const;
 
@@ -34,17 +45,25 @@ export async function getPlatformAnalyticsData(
 	const effectiveBillingEnabled = billingEnabled && includeBilling;
 	const parsedParams = parsePlatformAnalyticsParams(params);
 	const buckets = buildPlatformAnalyticsBuckets(parsedParams);
-	const [signups, organizations, activeUsers, sessions, timeRecords, currentOrganizations, currentActiveUsers, billing] =
-		await Promise.all([
-			getSignupsByBucket(parsedParams),
-			getOrganizationsByBucket(parsedParams),
-			getActiveUsersByBucket(parsedParams),
-			getSessionsByBucket(parsedParams),
-			includeTimeRecords ? getTimeRecordsByBucket(parsedParams) : Promise.resolve([]),
-			getCurrentOrganizations(),
-			getCurrentActiveUsers(),
-			effectiveBillingEnabled ? getBillingAnalytics(parsedParams) : Promise.resolve(null),
-		]);
+	const [
+		signups,
+		organizations,
+		activeUsers,
+		sessions,
+		timeRecords,
+		currentOrganizations,
+		currentActiveUsers,
+		billing,
+	] = await Promise.all([
+		getSignupsByBucket(parsedParams),
+		getOrganizationsByBucket(parsedParams),
+		getActiveUsersByBucket(parsedParams),
+		getSessionsByBucket(parsedParams),
+		includeTimeRecords ? getTimeRecordsByBucket(parsedParams) : Promise.resolve([]),
+		getCurrentOrganizations(),
+		getCurrentActiveUsers(),
+		effectiveBillingEnabled ? getBillingAnalytics(parsedParams) : Promise.resolve(null),
+	]);
 
 	const series = buildPlatformAnalyticsSeries(
 		buckets,
@@ -96,7 +115,12 @@ function getActiveUsersByBucket(params: ParsedPlatformAnalyticsParams) {
 	return db
 		.select({ bucket, value: countDistinct(session.userId) })
 		.from(session)
-		.where(and(gte(session.createdAt, toDate(params.startIso)), lt(session.createdAt, toDate(params.endIso))))
+		.where(
+			and(
+				gte(session.createdAt, toDate(params.startIso)),
+				lt(session.createdAt, toDate(params.endIso)),
+			),
+		)
 		.groupBy(sql`1`);
 }
 
@@ -129,7 +153,10 @@ async function getCurrentActiveUsers() {
 }
 
 async function getBillingAnalytics(params: ParsedPlatformAnalyticsParams) {
-	const [currentTotals, estimatedRows] = await Promise.all([getCurrentBillingTotals(), getEstimatedBillingRows(params)]);
+	const [currentTotals, estimatedRows] = await Promise.all([
+		getCurrentBillingTotals(),
+		getEstimatedBillingRows(params),
+	]);
 
 	return {
 		currentSeats: currentTotals.seats,

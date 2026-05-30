@@ -91,8 +91,8 @@ export class WorkdayApiClient {
 					Accept: "application/json",
 					...(accessToken
 						? {
-							Authorization: `Bearer ${accessToken}`,
-						}
+								Authorization: `Bearer ${accessToken}`,
+							}
 						: {}),
 				},
 				redirect: "manual",
@@ -126,10 +126,7 @@ export class WorkdayApiClient {
 		return this.findWorker(accessToken, "email", email);
 	}
 
-	async createAttendance(
-		accessToken: string,
-		payload: WorkdayAttendancePayload,
-	): Promise<void> {
+	async createAttendance(accessToken: string, payload: WorkdayAttendancePayload): Promise<void> {
 		await this.postJson(this.getAttendanceUrl(), accessToken, payload, "attendance export");
 	}
 

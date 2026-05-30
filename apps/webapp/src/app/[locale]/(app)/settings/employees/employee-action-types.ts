@@ -1,6 +1,6 @@
+import type { EmployeeClockStatus } from "@/components/user-avatar";
 import type { user } from "@/db/auth-schema";
 import type { employee, team } from "@/db/schema";
-import type { EmployeeClockStatus } from "@/components/user-avatar";
 
 export type EmployeeRole = (typeof employee.$inferSelect)["role"];
 

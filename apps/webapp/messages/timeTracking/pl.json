@@ -81,7 +81,8 @@
         "created": "Wpis czasu został pomyślnie utworzony",
         "pendingApproval": "Wpis czasu przesłany do zatwierdzenia przez menedżera"
       },
-      "title": "Dodaj ręczny wpis czasu"
+      "title": "Dodaj ręczny wpis czasu",
+      "titleForEmployee": "Dodaj ręczny wpis czasu dla {employee}"
     },
     "noCategory": "Brak kategorii (100%)",
     "noProject": "Brak projektu",

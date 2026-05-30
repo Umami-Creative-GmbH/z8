@@ -4,8 +4,9 @@
  * Pure domain logic for evaluating when a schedule should next execute.
  * Handles both preset schedules and custom cron expressions.
  */
-import { DateTime } from "luxon";
+
 import { CronExpressionParser } from "cron-parser";
+import { DateTime } from "luxon";
 import type { ScheduleConfig, ScheduleType } from "./types";
 
 /**
@@ -15,10 +16,7 @@ import type { ScheduleConfig, ScheduleType } from "./types";
  * @param currentTime - Current time for calculation
  * @returns Next execution DateTime
  */
-export function calculateNextExecution(
-	config: ScheduleConfig,
-	currentTime: DateTime,
-): DateTime {
+export function calculateNextExecution(config: ScheduleConfig, currentTime: DateTime): DateTime {
 	const localTime = currentTime.setZone(config.timezone);
 
 	switch (config.type) {
@@ -89,11 +87,7 @@ function calculateNextQuarterly(time: DateTime): DateTime {
  * Calculate next cron execution using cron-parser
  * Note: cron-parser v5+ uses CronExpressionParser.parse() with options including currentDate and tz
  */
-function calculateNextCron(
-	time: DateTime,
-	expression: string,
-	timezone: string,
-): DateTime {
+function calculateNextCron(time: DateTime, expression: string, timezone: string): DateTime {
 	try {
 		// Parse with current date and timezone options
 		const currentDate = time.setZone(timezone).toJSDate();

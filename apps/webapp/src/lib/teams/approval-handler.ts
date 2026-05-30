@@ -5,23 +5,16 @@
  */
 
 import type { TurnContext } from "botbuilder";
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import {
-	approvalRequest,
-	absenceEntry,
-	timeEntry,
-	teamsApprovalCard,
-	employee,
-} from "@/db/schema";
-import { user } from "@/db/auth-schema";
+import { absenceEntry, approvalRequest, employee, teamsApprovalCard, timeEntry } from "@/db/schema";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { updateMessage } from "./bot-adapter";
+import { buildResolvedApprovalCard } from "./cards/approval-card";
 import { getStoredConversation } from "./conversation-manager";
-import { buildResolvedApprovalCard } from "./cards";
+import type { ApprovalCardData, ResolvedTeamsUser, ResolvedTenant } from "./types";
 import { TeamsError } from "./types";
-import type { ResolvedTeamsUser, ResolvedTenant, ApprovalCardData } from "./types";
 
 const logger = createLogger("TeamsApprovalHandler");
 
@@ -112,12 +105,9 @@ export async function handleApprovalAction(
 			where: eq(teamsApprovalCard.approvalRequestId, approvalId),
 		});
 
-		if (cardRecord && cardRecord.teamsActivityId) {
+		if (cardRecord?.teamsActivityId) {
 			// Get conversation reference
-			const conversation = await getStoredConversation(
-				resolvedUser.userId,
-				tenant.organizationId,
-			);
+			const conversation = await getStoredConversation(resolvedUser.userId, tenant.organizationId);
 
 			if (conversation) {
 				// Build original card data for resolved card
@@ -127,28 +117,29 @@ export async function handleApprovalAction(
 					// Build resolved card
 					const userLocale = await getUserLocale(resolvedUser.userId);
 					const t = await getBotTranslate(userLocale);
-					const resolvedCard = buildResolvedApprovalCard(originalCardData, {
-						action: action === "approve" ? "approved" : "rejected",
-						approverName,
-						resolvedAt: new Date(),
-					}, userLocale, t);
+					const resolvedCard = buildResolvedApprovalCard(
+						originalCardData,
+						{
+							action: action === "approve" ? "approved" : "rejected",
+							approverName,
+							resolvedAt: new Date(),
+						},
+						userLocale,
+						t,
+					);
 
 					// Update the card in Teams
 					try {
-						await updateMessage(
-							conversation.conversationReference,
-							cardRecord.teamsActivityId,
-							{
-								type: "message",
-								text: `Approval ${action}d`,
-								attachments: [
-									{
-										contentType: "application/vnd.microsoft.card.adaptive",
-										content: resolvedCard,
-									},
-								],
-							},
-						);
+						await updateMessage(conversation.conversationReference, cardRecord.teamsActivityId, {
+							type: "message",
+							text: `Approval ${action}d`,
+							attachments: [
+								{
+									contentType: "application/vnd.microsoft.card.adaptive",
+									content: resolvedCard,
+								},
+							],
+						});
 					} catch (updateError) {
 						// Log but don't fail - the action already succeeded
 						logger.warn({ error: updateError, approvalId }, "Failed to update Teams card");

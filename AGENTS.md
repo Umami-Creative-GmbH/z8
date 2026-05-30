@@ -2,13 +2,19 @@
 
 Employee time tracking and workforce management SaaS.
 
-## Concurrent Agent Work
+## Essential Agent Rules
 
-Many agents may be running in parallel in this repository. If files have changed and this agent session did not make those changes, treat them as user or peer-agent work. Do not revert, overwrite, discard, or "clean up" those changes unless the user explicitly asks you to do so.
+- Treat concurrent work as normal. Never revert, overwrite, discard, or clean up changes you did not make unless explicitly asked.
+- Use **pnpm** only.
+- Keep all tenant data organization-scoped. Always filter by `organizationId` and enforce org-level permissions.
+- Use Luxon (`DateTime`) for date/time work, not native `Date` for business logic.
+- Use `@tanstack/react-form` for forms. Migrate legacy `react-hook-form` when modifying existing forms.
+- Never edit `src/db/auth-schema.ts` directly; it is generated.
+- Use `@tabler/icons-react` exclusively. Icon components are prefixed with `Icon`.
 
-## Package Manager
+## Timekeeping Rule
 
-Use **pnpm** (not npm or bun).
+Z8 stores canonical instants in UTC and stores the event-local UTC offset on each `time_entry`. Do not derive business meaning from the viewer's timezone. Read [Timekeeping Reference](docs/refs/timekeeping.md) before changing time tracking, calendars, reports, payroll, approvals, imports, exports, or migrations involving time data.
 
 ## Commands
 
@@ -19,60 +25,20 @@ pnpm test             # Run tests (vitest)
 pnpm drizzle-kit push # Push schema to database
 ```
 
-## Environment Variables
+## Required References
 
-This is a **multi-tenant SaaS application**. Configuration follows these rules:
-
-- **System-level settings** (database URLs, Redis, external service credentials): Use environment variables via Phase CLI.
-- **Organization/user-specific settings** (API keys, integrations, preferences): Must use in-app settings panels stored in the database. Never use env vars for tenant-specific config.
-
-**Important for agents**: If a task requires environment variables (e.g., database URLs, system secrets), skip that task and add a notice at the end of your response listing which tasks were skipped and why. Phase CLI variables are not available to agents.
-
-## Quality Checks
-
-Agents must validate their work against these skills before completing tasks:
-
-- **/vercel-react-best-practices** - React/Next.js performance patterns
-- **/web-design-guidelines** - UI accessibility and design compliance
-- **/vercel-composition-patterns** - Component architecture and composition
-
-## Key Conventions
-
-- **Multi-tenancy**: Every feature must be organization-scoped. This is a SaaS app - always filter data by `organizationId` and enforce org-level permissions.
-- **Forms**: Use `@tanstack/react-form`. Migrate legacy `react-hook-form` when modifying existing forms.
-- **Dates**: Use Luxon (`DateTime`), not native `Date`.
-- **Auth schema**: Never edit `src/db/auth-schema.ts` directly - it's auto-generated.
-- **Drizzle migrations**: Drizzle decides which migrations to run by comparing the latest row in `drizzle.__drizzle_migrations.created_at` with each entry's `when` value in `apps/webapp/drizzle/meta/_journal.json`. New migrations must have a `when` greater than every prior migration. If a migration was committed with an older `when` and production may have already advanced past it, do not only edit the old journal entry; add a new idempotent recovery migration with a later `when` so production databases that skipped the old migration are fixed safely.
-- **RBAC**: Uses [CASL](https://casl.js.org/) for role-based access control.
-- **Icons**: Use `@tabler/icons-react` exclusively. All icon components are prefixed with `Icon` (e.g. `IconCheck`, `IconLoader2`). Do **not** use `lucide-react`.
+- [Agent Workflow](docs/refs/agent-workflow.md) - concurrent work, environment variables, quality checks.
+- [Project Conventions](docs/refs/project-conventions.md) - multi-tenancy, forms, migrations, RBAC, icons.
+- [Timekeeping Reference](docs/refs/timekeeping.md) - UTC storage, per-entry offsets, timezone display, calendar boundaries.
+- [Design Context](docs/refs/design-context.md) - users, brand personality, aesthetic direction, design principles.
 
 ## Detailed Documentation
 
-- [Better Auth Schema](docs/better-auth.md) - Custom fields, plugins, type inference
-- [Database Schema](docs/database-schema.md) - File structure, relations, adding tables
-- [Forms](docs/forms.md) - TanStack Form patterns and UI components
-- [i18n](docs/i18n.md) - Tolgee namespaces and translation workflow
-- [Date/Time](docs/dates.md) - Luxon usage patterns
-- [Billing & Stripe](docs/billing-stripe.md) - Stripe setup, webhooks, per-seat billing
+These references keep this file concise; open them when deeper implementation detail is needed.
 
-## Design Context
-
-### Users
-
-Z8 is used by employees, managers, admins, and operations/compliance stakeholders inside organizations that need dependable workforce management. They use it in day-to-day operational contexts: clocking time, checking schedules, managing absences, reviewing approvals, handling payroll exports, and preparing audit-ready records. The core job to be done is to help teams record and manage work time accurately, quickly, and with enough structure to support compliance-sensitive workflows.
-
-### Brand Personality
-
-The brand should feel modern, efficient, and clear. Its voice should be direct, calm, and competent rather than playful or overbearing. The primary emotional goal is confidence: users should feel that the system is reliable, precise, and under control, especially in compliance-heavy or operationally sensitive moments.
-
-### Aesthetic Direction
-
-Future design work should favor product-first restraint over editorial experimentation. The right reference feel is closer to Stripe's crisp, technical polish than to expressive marketing-heavy aesthetics. Use a modern, friendly, tech-blue direction as the canonical palette, with clean neutrals supporting it. Preserve support for both light and dark themes, but keep the overall visual language practical, legible, and operationally trustworthy rather than ornamental.
-
-### Design Principles
-
-1. Prioritize operational clarity: layouts, copy, and interaction patterns should make time tracking, approvals, and reporting feel immediately understandable.
-2. Design for confidence: emphasize reliability, precision, and audit-readiness through stable hierarchy, clear status signaling, and predictable behavior.
-3. Keep the interface restrained: prefer calm, structured surfaces and thoughtful spacing over decorative flourishes or trend-driven visuals.
-4. Use blue as the brand signal: lean on modern, friendly tech-blue accents supported by neutral backgrounds, reserving stronger colors for system states and important feedback.
-5. Maintain inclusive usability: preserve strong readability, sensible contrast, and reduced-complexity interactions as a default baseline across desktop and mobile surfaces.
+- [Better Auth Schema](docs/refs/better-auth.md) - Custom fields, plugins, type inference.
+- [Database Schema](docs/refs/database-schema.md) - File structure, relations, adding tables.
+- [Forms](docs/refs/forms.md) - TanStack Form patterns and UI components.
+- [i18n](docs/refs/i18n.md) - Tolgee namespaces and translation workflow.
+- [Date/Time](docs/refs/dates.md) - Luxon usage patterns.
+- [Billing & Stripe](docs/refs/billing-stripe.md) - Stripe setup, webhooks, per-seat billing.

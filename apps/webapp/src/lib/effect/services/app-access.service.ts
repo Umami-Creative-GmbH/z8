@@ -132,7 +132,7 @@ export const AppAccessServiceLive = Layer.effect(
 					);
 
 					if (!userRecord) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "User not found",
@@ -144,9 +144,9 @@ export const AppAccessServiceLive = Layer.effect(
 					}
 
 					const permissions: AppPermissions = {
-						canUseWebapp: userRecord!.canUseWebapp ?? true,
-						canUseDesktop: userRecord!.canUseDesktop ?? true,
-						canUseMobile: userRecord!.canUseMobile ?? true,
+						canUseWebapp: userRecord.canUseWebapp ?? true,
+						canUseDesktop: userRecord.canUseDesktop ?? true,
+						canUseMobile: userRecord.canUseMobile ?? true,
 					};
 
 					let allowed = true;
@@ -183,7 +183,7 @@ export const AppAccessServiceLive = Layer.effect(
 					);
 
 					if (!userRecord) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "User not found",
@@ -194,9 +194,9 @@ export const AppAccessServiceLive = Layer.effect(
 						);
 					}
 
-					const canUseWebapp = userRecord!.canUseWebapp ?? true;
-					const canUseDesktop = userRecord!.canUseDesktop ?? true;
-					const canUseMobile = userRecord!.canUseMobile ?? true;
+					const canUseWebapp = userRecord.canUseWebapp ?? true;
+					const canUseDesktop = userRecord.canUseDesktop ?? true;
+					const canUseMobile = userRecord.canUseMobile ?? true;
 
 					let allowed = true;
 					let deniedReason = "";
@@ -217,9 +217,9 @@ export const AppAccessServiceLive = Layer.effect(
 						yield* _(
 							Effect.promise(async () =>
 								logAppAccessDenied({
-									userId: userRecord!.id,
-									userName: userRecord!.name,
-									userEmail: userRecord!.email,
+									userId: userRecord.id,
+									userName: userRecord.name,
+									userEmail: userRecord.email,
 									appType,
 									ipAddress:
 										headers.get("x-forwarded-for") || headers.get("x-real-ip") || undefined,
@@ -258,7 +258,7 @@ export const AppAccessServiceLive = Layer.effect(
 					);
 
 					if (!userRecord) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "User not found",
@@ -270,9 +270,9 @@ export const AppAccessServiceLive = Layer.effect(
 					}
 
 					return {
-						canUseWebapp: userRecord!.canUseWebapp ?? true,
-						canUseDesktop: userRecord!.canUseDesktop ?? true,
-						canUseMobile: userRecord!.canUseMobile ?? true,
+						canUseWebapp: userRecord.canUseWebapp ?? true,
+						canUseDesktop: userRecord.canUseDesktop ?? true,
+						canUseMobile: userRecord.canUseMobile ?? true,
 					};
 				}),
 
@@ -303,7 +303,7 @@ export const AppAccessServiceLive = Layer.effect(
 					);
 
 					if (!currentUser) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "User not found",
@@ -315,9 +315,9 @@ export const AppAccessServiceLive = Layer.effect(
 					}
 
 					const currentPermissions: AppPermissions = {
-						canUseWebapp: currentUser!.canUseWebapp ?? true,
-						canUseDesktop: currentUser!.canUseDesktop ?? true,
-						canUseMobile: currentUser!.canUseMobile ?? true,
+						canUseWebapp: currentUser.canUseWebapp ?? true,
+						canUseDesktop: currentUser.canUseDesktop ?? true,
+						canUseMobile: currentUser.canUseMobile ?? true,
 					};
 
 					// Build update object with only changed fields

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import type { SocialProviderId } from "@/lib/social-providers";
 import { env } from "@/env";
+import type { SocialProviderId } from "@/lib/social-providers";
 
 /**
  * GET /api/auth/providers

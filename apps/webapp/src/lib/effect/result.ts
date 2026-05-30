@@ -1,7 +1,7 @@
 import { Cause, type Effect, Exit, Option } from "effect";
+import { env } from "@/env";
 import type { AnyAppError } from "./errors";
 import { runtime } from "./runtime";
-import { env } from "@/env";
 
 export type ServerActionResult<T> =
 	| { success: true; data: T }
@@ -18,9 +18,7 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 
 			const error = defect ?? failure ?? cause;
 			const taggedError =
-				error && typeof error === "object" && "_tag" in error
-					? (error as AnyAppError)
-					: null;
+				error && typeof error === "object" && "_tag" in error ? (error as AnyAppError) : null;
 			const isBuildPhase = env.NEXT_PHASE === "phase-production-build";
 			const isCi = env.CI === "true";
 			const suppressExpectedAuthErrorLog =
@@ -70,7 +68,7 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 }
 
 export async function runServerActionSafe<T>(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// biome-ignore lint/suspicious/noExplicitAny: it is what it is
 	effect: Effect.Effect<T, AnyAppError, any>,
 ): Promise<ServerActionResult<T>> {
 	// Use the runtime which provides all required layers

@@ -5,10 +5,10 @@ import { revalidatePath } from "next/cache";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import {
+	type PaginatedResult,
 	PlatformAdminService,
 	type PlatformUser,
 	type PlatformUserFilters,
-	type PaginatedResult,
 	type UserSession,
 } from "@/lib/effect/services/platform-admin.service";
 
@@ -43,12 +43,7 @@ export async function banUserAction(
 
 		// Ban user
 		yield* _(
-			adminService.banUser(
-				userId,
-				reason,
-				expiresAt ? new Date(expiresAt) : null,
-				admin.userId,
-			),
+			adminService.banUser(userId, reason, expiresAt ? new Date(expiresAt) : null, admin.userId),
 		);
 
 		revalidatePath("/platform-admin/users");
@@ -57,9 +52,7 @@ export async function banUserAction(
 	return runServerActionSafe(effect);
 }
 
-export async function unbanUserAction(
-	userId: string,
-): Promise<ServerActionResult<void>> {
+export async function unbanUserAction(userId: string): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
 		const adminService = yield* _(PlatformAdminService);
 
@@ -91,9 +84,7 @@ export async function listUserSessionsAction(
 	return runServerActionSafe(effect);
 }
 
-export async function revokeSessionAction(
-	sessionId: string,
-): Promise<ServerActionResult<void>> {
+export async function revokeSessionAction(sessionId: string): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
 		const adminService = yield* _(PlatformAdminService);
 

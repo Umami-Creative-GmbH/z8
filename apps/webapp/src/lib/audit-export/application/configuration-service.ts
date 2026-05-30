@@ -3,10 +3,13 @@
  * Manages audit export configuration for organizations
  */
 import { eq } from "drizzle-orm";
-import { db, auditExportConfig, auditSigningKey } from "@/db";
+import { auditExportConfig, db } from "@/db";
 import { createLogger } from "@/lib/logger";
-import { keyManager, type IKeyManager } from "../infrastructure/vault/key-manager";
-import { wormStorageAdapter, type IWORMStorageAdapter } from "../infrastructure/storage/worm-storage-adapter";
+import {
+	type IWORMStorageAdapter,
+	wormStorageAdapter,
+} from "../infrastructure/storage/worm-storage-adapter";
+import { type IKeyManager, keyManager } from "../infrastructure/vault/key-manager";
 
 const logger = createLogger("AuditConfigurationService");
 
@@ -203,9 +206,7 @@ export class ConfigurationService {
 	/**
 	 * Get signing key history for organization
 	 */
-	async getSigningKeyHistory(
-		organizationId: string,
-	): Promise<
+	async getSigningKeyHistory(organizationId: string): Promise<
 		Array<{
 			keyId: string;
 			fingerprint: string;

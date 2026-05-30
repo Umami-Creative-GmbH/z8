@@ -269,17 +269,17 @@ export function SurchargeAssignmentManager({
 												<span className="text-sm">{assignment.model.name}</span>
 											</div>
 										</div>
-									{canManage ? (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="size-8 text-muted-foreground hover:text-destructive"
-											onClick={() => handleDeleteClick(assignment)}
-										>
-											<IconTrash className="size-4" />
-										</Button>
-									) : null}
-								</div>
+										{canManage ? (
+											<Button
+												variant="ghost"
+												size="icon"
+												className="size-8 text-muted-foreground hover:text-destructive"
+												onClick={() => handleDeleteClick(assignment)}
+											>
+												<IconTrash className="size-4" />
+											</Button>
+										) : null}
+									</div>
 								))}
 							</div>
 						) : (
@@ -339,17 +339,17 @@ export function SurchargeAssignmentManager({
 												<span className="text-sm">{assignment.model.name}</span>
 											</div>
 										</div>
-									{canManage ? (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="size-8 text-muted-foreground hover:text-destructive"
-											onClick={() => handleDeleteClick(assignment)}
-										>
-											<IconTrash className="size-4" />
-										</Button>
-									) : null}
-								</div>
+										{canManage ? (
+											<Button
+												variant="ghost"
+												size="icon"
+												className="size-8 text-muted-foreground hover:text-destructive"
+												onClick={() => handleDeleteClick(assignment)}
+											>
+												<IconTrash className="size-4" />
+											</Button>
+										) : null}
+									</div>
 								))}
 							</div>
 						) : (

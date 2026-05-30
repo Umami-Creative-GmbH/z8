@@ -34,7 +34,7 @@ function formatDate(value: unknown): string {
 	// If it's a string that looks like a date, try to parse it
 	if (typeof value === "string") {
 		const date = new Date(value);
-		if (!isNaN(date.getTime())) {
+		if (!Number.isNaN(date.getTime())) {
 			return date.toISOString();
 		}
 	}

@@ -97,7 +97,7 @@ export function WorksCouncilSettingsForm({
 									<select
 										id="works-council-identity-visibility"
 										name="identityVisibility"
-										className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+										className="flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm text-foreground"
 										value={field.state.value}
 										onChange={(event) =>
 											field.handleChange(event.target.value as WorksCouncilIdentityVisibility)
@@ -127,7 +127,7 @@ export function WorksCouncilSettingsForm({
 									<select
 										id="works-council-absence-visibility"
 										name="absenceVisibility"
-										className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+										className="flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm text-foreground"
 										value={field.state.value}
 										onChange={(event) =>
 											field.handleChange(event.target.value as WorksCouncilAbsenceVisibility)

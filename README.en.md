@@ -2,7 +2,7 @@
 
 ![./docs/z8-banner.png](./docs/z8-banner.png)
 
-# Z8 - Workforce Management for Audit-Ready Operations
+# Z8 - Modern Workforce Management
 
 Z8 is a workforce management platform built for organizations that need reliable time tracking, audit-ready records, and clear operational control under German labor law and GoBD compliance (*Grundsätze zur ordnungsmäßigen Führung und Aufbewahrung von Büchern*).
 

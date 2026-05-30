@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ImportReviewRow } from "@/components/settings/import/import-review-table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ImportIssueGroupsProps {
 	rows: ImportReviewRow[];
@@ -58,7 +58,9 @@ export function ImportIssueGroups({ rows }: ImportIssueGroupsProps) {
 					<Card className="gap-4 py-5 shadow-none" key={group.titleKey}>
 						<CardHeader className="px-5">
 							<CardTitle className="text-base">{t(group.titleKey, group.titleFallback)}</CardTitle>
-							<CardDescription>{t(group.descriptionKey, group.descriptionFallback)}</CardDescription>
+							<CardDescription>
+								{t(group.descriptionKey, group.descriptionFallback)}
+							</CardDescription>
 						</CardHeader>
 						<CardContent className="px-5 text-muted-foreground text-sm">
 							{t(group.statusKey, group.statusFallback)}

@@ -14,11 +14,11 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
+import { env } from "@/env";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { getCalendarProvider, isProviderSupported } from "@/lib/calendar-sync/providers";
 import type { CalendarProvider } from "@/lib/calendar-sync/types";
-import { env } from "@/env";
 
 // ============================================
 // ROUTE HANDLER

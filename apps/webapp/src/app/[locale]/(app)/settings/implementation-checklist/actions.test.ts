@@ -62,7 +62,10 @@ vi.mock("@/db", () => ({
 }));
 
 vi.mock("@/db/schema", () => ({
-	discordBotConfig: { organizationId: "discord.organizationId", setupStatus: "discord.setupStatus" },
+	discordBotConfig: {
+		organizationId: "discord.organizationId",
+		setupStatus: "discord.setupStatus",
+	},
 	employee: {
 		organizationId: "employee.organizationId",
 		isActive: "employee.isActive",
@@ -88,9 +91,15 @@ vi.mock("@/db/schema", () => ({
 		organizationId: "notificationPreference.organizationId",
 		enabled: "notificationPreference.enabled",
 	},
-	slackWorkspaceConfig: { organizationId: "slack.organizationId", setupStatus: "slack.setupStatus" },
+	slackWorkspaceConfig: {
+		organizationId: "slack.organizationId",
+		setupStatus: "slack.setupStatus",
+	},
 	teamsTenantConfig: { organizationId: "teams.organizationId", setupStatus: "teams.setupStatus" },
-	telegramBotConfig: { organizationId: "telegram.organizationId", setupStatus: "telegram.setupStatus" },
+	telegramBotConfig: {
+		organizationId: "telegram.organizationId",
+		setupStatus: "telegram.setupStatus",
+	},
 	webhookEndpoint: { organizationId: "webhook.organizationId", isActive: "webhook.isActive" },
 	workPolicy: { organizationId: "workPolicy.organizationId", isActive: "workPolicy.isActive" },
 	workPolicyAssignment: {

@@ -4,19 +4,13 @@
  * Provides compliance data formatted for Teams bot display.
  * Aggregates violations, alerts, and pending exception requests.
  */
+/** biome-ignore-all lint/suspicious/noExplicitAny: it is what it is */
 
-import { and, eq, gte, lte, inArray, desc, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
-import {
-	complianceException,
-	workPolicyViolation,
-	employee,
-	employeeManagers,
-	workPeriod,
-} from "@/db/schema";
-import { user } from "@/db/auth-schema";
-import { DatabaseError } from "../errors";
+import { complianceException, employeeManagers, workPolicyViolation } from "@/db/schema";
+import type { DatabaseError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
 
 // ============================================
@@ -25,7 +19,12 @@ import { DatabaseService, DatabaseServiceLive } from "./database.service";
 
 export interface ComplianceAlert {
 	id: string;
-	type: "rest_period" | "overtime_daily" | "overtime_weekly" | "overtime_monthly" | "max_daily_hours";
+	type:
+		| "rest_period"
+		| "overtime_daily"
+		| "overtime_weekly"
+		| "overtime_monthly"
+		| "max_daily_hours";
 	severity: "warning" | "critical" | "violation";
 	employeeId: string;
 	employeeName: string;
@@ -82,7 +81,6 @@ export class TeamsComplianceService extends Context.Tag("TeamsComplianceService"
 		/**
 		 * Get full compliance summary for Teams display
 		 */
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		readonly getComplianceSummary: (params: {
 			managerId: string;
 			organizationId: string;
@@ -186,7 +184,9 @@ export const TeamsComplianceServiceLive = Layer.effect(
 					const { managerId, organizationId, daysBack = 7, timezone } = params;
 
 					// Get managed employees
-					const managedEmployees = yield* _(getManagedEmployeesWithNames(managerId, organizationId));
+					const managedEmployees = yield* _(
+						getManagedEmployeesWithNames(managerId, organizationId),
+					);
 					if (managedEmployees.size === 0) {
 						return [];
 					}
@@ -244,7 +244,10 @@ export const TeamsComplianceServiceLive = Layer.effect(
 						return {
 							id: v.id,
 							type: v.violationType as ComplianceAlert["type"],
-							severity: calculateSeverity(v.violationType, v.details as Record<string, unknown> | null),
+							severity: calculateSeverity(
+								v.violationType,
+								v.details as Record<string, unknown> | null,
+							),
 							employeeId: v.employeeId,
 							employeeName: managedEmployees.get(v.employeeId) || "Unknown",
 							date: v.violationDate,
@@ -270,7 +273,9 @@ export const TeamsComplianceServiceLive = Layer.effect(
 					const { managerId, organizationId } = params;
 
 					// Get managed employees
-					const managedEmployees = yield* _(getManagedEmployeesWithNames(managerId, organizationId));
+					const managedEmployees = yield* _(
+						getManagedEmployeesWithNames(managerId, organizationId),
+					);
 					if (managedEmployees.size === 0) {
 						return [];
 					}
@@ -350,7 +355,9 @@ export const TeamsComplianceServiceLive = Layer.effect(
 					const { managerId, organizationId } = params;
 
 					// Get managed employees
-					const managedEmployees = yield* _(getManagedEmployeesWithNames(managerId, organizationId));
+					const managedEmployees = yield* _(
+						getManagedEmployeesWithNames(managerId, organizationId),
+					);
 					if (managedEmployees.size === 0) {
 						return 0;
 					}

@@ -67,7 +67,9 @@ describe("DashboardCustomizeMenu", () => {
 		const row = screen.getByTestId("dashboard-widget-menu-row-presence-status");
 
 		expect(screen.getByRole("menuitemcheckbox", { name: "Translated Work Location" })).toBeTruthy();
-		expect(within(row).getByRole("menuitem", { name: "Move Translated Work Location up" })).toBeTruthy();
+		expect(
+			within(row).getByRole("menuitem", { name: "Move Translated Work Location up" }),
+		).toBeTruthy();
 		expect(
 			within(row).getByRole("menuitem", { name: "Move Translated Work Location down" }),
 		).toBeTruthy();
@@ -91,7 +93,9 @@ describe("DashboardCustomizeMenu", () => {
 
 		openMenu();
 		const row = screen.getByTestId("dashboard-widget-menu-row-presence-status");
-		fireEvent.click(within(row).getByRole("menuitem", { name: "Move Translated Work Location up" }));
+		fireEvent.click(
+			within(row).getByRole("menuitem", { name: "Move Translated Work Location up" }),
+		);
 
 		expect(onReorder).toHaveBeenCalledWith(["presence-status", "quick-stats", "vacation-balance"]);
 	});
@@ -102,7 +106,9 @@ describe("DashboardCustomizeMenu", () => {
 		openMenu();
 		const row = screen.getByTestId("dashboard-widget-menu-row-presence-status");
 
-		expect(within(row).getByRole("menuitem", { name: "Move Translated Work Location up" })).toBeTruthy();
+		expect(
+			within(row).getByRole("menuitem", { name: "Move Translated Work Location up" }),
+		).toBeTruthy();
 		expect(
 			within(row).getByRole("menuitem", { name: "Move Translated Work Location down" }),
 		).toBeTruthy();
@@ -115,7 +121,9 @@ describe("DashboardCustomizeMenu", () => {
 
 		openMenu();
 		const row = screen.getByTestId("dashboard-widget-menu-row-presence-status");
-		fireEvent.click(within(row).getByRole("menuitem", { name: "Move Translated Work Location down" }));
+		fireEvent.click(
+			within(row).getByRole("menuitem", { name: "Move Translated Work Location down" }),
+		);
 
 		expect(onReorder).toHaveBeenCalledWith(["quick-stats", "vacation-balance", "presence-status"]);
 	});
@@ -189,22 +197,31 @@ describe("DashboardCustomizeMenu", () => {
 
 		openMenu();
 		fireEvent.click(
-			within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("menuitem", {
-				name: "Move Translated Vacation Balance up",
-			}),
+			within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole(
+				"menuitem",
+				{
+					name: "Move Translated Vacation Balance up",
+				},
+			),
 		);
 		fireEvent.click(
-			within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("menuitem", {
-				name: "Move Translated Vacation Balance up",
-			}),
+			within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole(
+				"menuitem",
+				{
+					name: "Move Translated Vacation Balance up",
+				},
+			),
 		);
 
 		expect(screen.getByRole("menuitem", { name: "Reset layout" })).toBeTruthy();
 		expect(
 			(
-				within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("menuitem", {
-					name: "Move Translated Vacation Balance up",
-				}) as HTMLButtonElement
+				within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole(
+					"menuitem",
+					{
+						name: "Move Translated Vacation Balance up",
+					},
+				) as HTMLButtonElement
 			).disabled,
 		).toBe(true);
 	});

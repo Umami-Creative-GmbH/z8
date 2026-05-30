@@ -4,27 +4,16 @@ import { Cause, Effect, Exit, Option } from "effect";
 import { DateTime } from "luxon";
 import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
-import {
-	type DatabaseService,
-	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
+import { type DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	TimeRecordService,
 	TimeRecordServiceLive,
 } from "@/lib/effect/services/time-record.service";
-import type {
-	CreateTimeRecordInput,
-	ListTimeRecordsFilters,
-	TimeRecord,
-} from "./types";
+import type { CreateTimeRecordInput, ListTimeRecordsFilters, TimeRecord } from "./types";
 
-const hasElevatedRecordScope = (role: string) =>
-	role === "manager" || role === "admin";
+const hasElevatedRecordScope = (role: string) => role === "manager" || role === "admin";
 
-function parseIsoDate(
-	value: string,
-	fieldName: string,
-): ServerActionResult<Date> {
+function parseIsoDate(value: string, fieldName: string): ServerActionResult<Date> {
 	const parsed = DateTime.fromISO(value, { setZone: true });
 	if (!parsed.isValid) {
 		return {
@@ -51,10 +40,7 @@ async function runTimeRecordEffect<T, E>(
 	effect: Effect.Effect<T, E, TimeRecordService | DatabaseService>,
 ): Promise<ServerActionResult<T>> {
 	const exit = await Effect.runPromiseExit(
-		effect.pipe(
-			Effect.provide(TimeRecordServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		),
+		effect.pipe(Effect.provide(TimeRecordServiceLive), Effect.provide(DatabaseServiceLive)),
 	);
 
 	if (Exit.isSuccess(exit)) {
@@ -136,26 +122,16 @@ export async function listTimeRecords(
 		const currentEmployee = authContext.employee;
 
 		const isElevated = hasElevatedRecordScope(currentEmployee.role);
-		if (
-			!isElevated &&
-			filters.employeeId &&
-			filters.employeeId !== currentEmployee.id
-		) {
+		if (!isElevated && filters.employeeId && filters.employeeId !== currentEmployee.id) {
 			return { success: false, error: "Forbidden" };
 		}
 
-		const startAtFromResult = parseOptionalIsoDate(
-			filters.startAtFrom,
-			"startAtFrom",
-		);
+		const startAtFromResult = parseOptionalIsoDate(filters.startAtFrom, "startAtFrom");
 		if (!startAtFromResult.success) {
 			return startAtFromResult;
 		}
 
-		const startAtToResult = parseOptionalIsoDate(
-			filters.startAtTo,
-			"startAtTo",
-		);
+		const startAtToResult = parseOptionalIsoDate(filters.startAtTo, "startAtTo");
 		if (!startAtToResult.success) {
 			return startAtToResult;
 		}

@@ -16,7 +16,9 @@ describe("Teams clock-out command work balance invalidation", () => {
 			'import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service"',
 		);
 		expect(source).toContain("dirtyFromDate:");
-		expect(source).toContain("DateTime.fromJSDate(activePeriod.startTime, { zone: \"utc\" }).toISODate()");
+		expect(source).toContain(
+			'DateTime.fromJSDate(activePeriod.startTime, { zone: "utc" }).toISODate()',
+		);
 		expect(updateIndex).toBeGreaterThanOrEqual(0);
 		expect(dirtyIndex).toBeGreaterThan(updateIndex);
 	});
@@ -33,7 +35,10 @@ describe("Teams clock-out command work balance invalidation", () => {
 		const source = readClockOutSource();
 		const enforcementIndex = source.indexOf("enforceBreaksAfterClockOut({");
 		const adjustedIndex = source.indexOf("breakEnforcementResult.wasAdjusted", enforcementIndex);
-		const dirtyAfterAdjustmentIndex = source.indexOf("await markEmployeeWorkBalanceDirty", adjustedIndex);
+		const dirtyAfterAdjustmentIndex = source.indexOf(
+			"await markEmployeeWorkBalanceDirty",
+			adjustedIndex,
+		);
 
 		expect(enforcementIndex).toBeGreaterThanOrEqual(0);
 		expect(adjustedIndex).toBeGreaterThan(enforcementIndex);
@@ -45,7 +50,9 @@ describe("Teams clock-out command approvals", () => {
 	it("rejects approval-required clock-out before mutating", () => {
 		const source = readClockOutSource();
 		const approvalIndex = source.indexOf("if (needsClockOutApproval)");
-		const unsupportedIndex = source.indexOf("Time changes requiring approval are not supported for this action yet");
+		const unsupportedIndex = source.indexOf(
+			"Time changes requiring approval are not supported for this action yet",
+		);
 		const insertIndex = source.indexOf(".insert(timeEntry)");
 		const updateIndex = source.indexOf(".update(workPeriod)");
 

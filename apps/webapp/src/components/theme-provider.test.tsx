@@ -79,7 +79,13 @@ function mockGeolocationDeferred(latitude = 52.52, longitude = 13.405) {
 function mockGeolocationError() {
 	const getCurrentPosition = vi.fn((_success: PositionCallback, error?: PositionErrorCallback) => {
 		queueMicrotask(() => {
-			error?.({ code: 1, message: "denied", PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 });
+			error?.({
+				code: 1,
+				message: "denied",
+				PERMISSION_DENIED: 1,
+				POSITION_UNAVAILABLE: 2,
+				TIMEOUT: 3,
+			});
 		});
 	});
 	Object.defineProperty(navigator, "geolocation", {
@@ -230,7 +236,10 @@ describe("ThemeProvider", () => {
 	it("exposes the next time-based theme switch when location is available", async () => {
 		useControlledTime("2026-05-27T12:00:00.000Z");
 		window.localStorage.setItem("theme", "time");
-		window.localStorage.setItem("theme-location", JSON.stringify({ latitude: 52.52, longitude: 13.405 }));
+		window.localStorage.setItem(
+			"theme-location",
+			JSON.stringify({ latitude: 52.52, longitude: 13.405 }),
+		);
 
 		render(
 			<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
@@ -294,7 +303,10 @@ describe("ThemeProvider", () => {
 	it("loads stored time theme with stored coordinates without requesting location", async () => {
 		useControlledTime();
 		window.localStorage.setItem("theme", "time");
-		window.localStorage.setItem("theme-location", JSON.stringify({ latitude: 48.8566, longitude: 2.3522 }));
+		window.localStorage.setItem(
+			"theme-location",
+			JSON.stringify({ latitude: 48.8566, longitude: 2.3522 }),
+		);
 		const getCurrentPosition = mockGeolocationSuccess();
 
 		render(
@@ -312,7 +324,10 @@ describe("ThemeProvider", () => {
 	it("recalculates time theme at the next sun boundary", async () => {
 		useControlledTime("2026-05-27T17:59:59.000Z", true);
 		window.localStorage.setItem("theme", "time");
-		window.localStorage.setItem("theme-location", JSON.stringify({ latitude: 52.52, longitude: 13.405 }));
+		window.localStorage.setItem(
+			"theme-location",
+			JSON.stringify({ latitude: 52.52, longitude: 13.405 }),
+		);
 		mockSunCalc.getTimes.mockReturnValue(daylightTimes);
 
 		render(
@@ -335,7 +350,10 @@ describe("ThemeProvider", () => {
 	it("falls back to system theme when sunrise and sunset calculations are invalid", async () => {
 		useControlledTime();
 		window.localStorage.setItem("theme", "time");
-		window.localStorage.setItem("theme-location", JSON.stringify({ latitude: 78.2232, longitude: 15.6267 }));
+		window.localStorage.setItem(
+			"theme-location",
+			JSON.stringify({ latitude: 78.2232, longitude: 15.6267 }),
+		);
 		mockSunCalc.getTimes.mockReturnValue({
 			...daylightTimes,
 			sunrise: new Date(Number.NaN),

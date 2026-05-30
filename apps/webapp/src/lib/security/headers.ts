@@ -2,8 +2,8 @@
  * Enterprise security headers module
  */
 
-import type { SecurityHeadersConfig } from "./types";
 import { env } from "@/env";
+import type { SecurityHeadersConfig } from "./types";
 
 /**
  * Get security headers configuration from environment

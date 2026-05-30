@@ -27,7 +27,9 @@ describe("platform admin layout", () => {
 	});
 
 	it("checks the billing flag at request time on the billing page", () => {
-		const source = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "billing/page.tsx"), "utf8"));
+		const source = stripComments(
+			readFileSync(join(PLATFORM_ADMIN_ROOT, "billing/page.tsx"), "utf8"),
+		);
 		const dynamicBoundary = "await connection()";
 		const billingEnabledCheck = 'if (env.BILLING_ENABLED !== "true")';
 
@@ -36,8 +38,12 @@ describe("platform admin layout", () => {
 	});
 
 	it("links to deployment diagnostics from platform-admin navigation and overview", () => {
-		const layoutSource = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"));
-		const overviewSource = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "page.tsx"), "utf8"));
+		const layoutSource = stripComments(
+			readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"),
+		);
+		const overviewSource = stripComments(
+			readFileSync(join(PLATFORM_ADMIN_ROOT, "page.tsx"), "utf8"),
+		);
 
 		expect(layoutSource).toContain('href: "/platform-admin/diagnostics"');
 		expect(layoutSource).toContain('"Deployment Diagnostics"');
@@ -46,8 +52,12 @@ describe("platform admin layout", () => {
 	});
 
 	it("links to system email templates from platform-admin navigation and overview", () => {
-		const layoutSource = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"));
-		const overviewSource = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "page.tsx"), "utf8"));
+		const layoutSource = stripComments(
+			readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"),
+		);
+		const overviewSource = stripComments(
+			readFileSync(join(PLATFORM_ADMIN_ROOT, "page.tsx"), "utf8"),
+		);
 
 		expect(layoutSource).toContain('href: "/platform-admin/system-email-templates"');
 		expect(layoutSource).toContain('"System Email Templates"');
@@ -59,7 +69,9 @@ describe("platform admin layout", () => {
 		const diagnosticsSource = stripComments(
 			readFileSync(join(PLATFORM_ADMIN_ROOT, "diagnostics/page.tsx"), "utf8"),
 		);
-		const overviewSource = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "page.tsx"), "utf8"));
+		const overviewSource = stripComments(
+			readFileSync(join(PLATFORM_ADMIN_ROOT, "page.tsx"), "utf8"),
+		);
 
 		expect(diagnosticsSource).toContain("getTranslate");
 		expect(diagnosticsSource).toContain("admin:admin.diagnostics.title");
@@ -77,7 +89,7 @@ describe("platform admin layout", () => {
 		const source = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"));
 
 		expect(source).toContain("<PlatformAdminHeaderActions");
-		expect(source).toContain("<LanguageSwitcher variant=\"compact\" />");
+		expect(source).toContain('<LanguageSwitcher variant="compact" />');
 		expect(source).toContain('exitLabel={t("admin:admin.layout.exitAdmin", "Exit Admin")}');
 		expect(source).not.toContain('<span className="hidden sm:inline">');
 	});

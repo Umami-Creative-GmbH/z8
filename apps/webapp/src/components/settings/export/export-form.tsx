@@ -71,7 +71,9 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 			// Switch to history tab
 			router.refresh();
 		} else {
-			toast.error(result.error || t("settings.dataExport.form.submitError", "Failed to start export"));
+			toast.error(
+				result.error || t("settings.dataExport.form.submitError", "Failed to start export"),
+			);
 		}
 
 		setIsSubmitting(false);

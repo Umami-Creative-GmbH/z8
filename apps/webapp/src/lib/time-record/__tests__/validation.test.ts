@@ -4,12 +4,11 @@ import {
 	TIME_RECORD_VALIDATION_MESSAGES,
 	type TimeRecordValidationInput,
 } from "@/lib/time-record/types";
-import {
-	TimeRecordValidationError,
-	validateTimeRecordInput,
-} from "@/lib/time-record/validation";
+import { TimeRecordValidationError, validateTimeRecordInput } from "@/lib/time-record/validation";
 
-function createInput(overrides: Partial<TimeRecordValidationInput> = {}): TimeRecordValidationInput {
+function createInput(
+	overrides: Partial<TimeRecordValidationInput> = {},
+): TimeRecordValidationInput {
 	return {
 		recordKind: "work",
 		startAt: DateTime.fromISO("2026-01-10T09:00:00Z"),
@@ -31,15 +30,15 @@ describe("time-record validation", () => {
 	});
 
 	it("rejects non-finite durations", () => {
-		expect(() => validateTimeRecordInput(createInput({ durationMinutes: Number.NaN }))).toThrowError(
-			TIME_RECORD_VALIDATION_MESSAGES.INVALID_DURATION,
-		);
-		expect(() => validateTimeRecordInput(createInput({ durationMinutes: Number.POSITIVE_INFINITY }))).toThrowError(
-			TIME_RECORD_VALIDATION_MESSAGES.INVALID_DURATION,
-		);
-		expect(() => validateTimeRecordInput(createInput({ durationMinutes: Number.NEGATIVE_INFINITY }))).toThrowError(
-			TIME_RECORD_VALIDATION_MESSAGES.INVALID_DURATION,
-		);
+		expect(() =>
+			validateTimeRecordInput(createInput({ durationMinutes: Number.NaN })),
+		).toThrowError(TIME_RECORD_VALIDATION_MESSAGES.INVALID_DURATION);
+		expect(() =>
+			validateTimeRecordInput(createInput({ durationMinutes: Number.POSITIVE_INFINITY })),
+		).toThrowError(TIME_RECORD_VALIDATION_MESSAGES.INVALID_DURATION);
+		expect(() =>
+			validateTimeRecordInput(createInput({ durationMinutes: Number.NEGATIVE_INFINITY })),
+		).toThrowError(TIME_RECORD_VALIDATION_MESSAGES.INVALID_DURATION);
 	});
 
 	it("rejects invalid time windows where end is before start", () => {
@@ -60,7 +59,7 @@ describe("time-record validation", () => {
 					recordKind: "break",
 					endAt: null,
 				}),
-		),
+			),
 		).toThrowError(TIME_RECORD_VALIDATION_MESSAGES.BREAK_END_REQUIRED);
 	});
 

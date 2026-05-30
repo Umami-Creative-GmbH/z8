@@ -19,6 +19,8 @@ import { formatFactorAsMultiplier } from "@/lib/work-category/work-category.serv
 
 const LAST_CATEGORY_KEY = "z8-last-work-category-id";
 
+const EMPTY_CATEGORIES: WorkCategory[] = [];
+
 interface WorkCategory {
 	id: string;
 	name: string;
@@ -88,7 +90,7 @@ export function WorkCategorySelector({
 		enabled: !!employeeId,
 	});
 
-	const categories = categoriesResult || [];
+	const categories = categoriesResult || EMPTY_CATEGORIES;
 
 	// Build a Map for O(1) category lookups
 	const categoriesMap = new Map(categories.map((c) => [c.id, c]));
@@ -102,12 +104,12 @@ export function WorkCategorySelector({
 			value === undefined
 		) {
 			const lastCategoryId = lastCategoryIdRef.current;
-			if (lastCategoryId && categoriesMap.has(lastCategoryId)) {
+			if (lastCategoryId && categories.some((category) => category.id === lastCategoryId)) {
 				onValueChange(lastCategoryId);
 			}
 			hasAutoSelectedRef.current = true;
 		}
-	}, [autoSelectLast, categories.length, categoriesMap, value, onValueChange]);
+	}, [autoSelectLast, categories, value, onValueChange]);
 
 	// Save selected category to localStorage and update cache
 	const handleValueChange = (newValue: string) => {
@@ -132,7 +134,7 @@ export function WorkCategorySelector({
 		return (
 			<div className="grid gap-2">
 				{showLabel && (
-					<Label className="text-sm text-muted-foreground">
+					<Label className="text-sm text-foreground">
 						{t("timeTracking.workCategory", "Work Category")}
 					</Label>
 				)}
@@ -152,7 +154,7 @@ export function WorkCategorySelector({
 	return (
 		<div className="grid gap-2">
 			{showLabel && (
-				<Label className="text-sm text-muted-foreground">
+				<Label className="text-sm text-foreground">
 					{t("timeTracking.workCategory", "Work Category")}
 				</Label>
 			)}

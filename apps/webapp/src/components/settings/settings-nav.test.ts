@@ -16,9 +16,7 @@ vi.mock("@/stores/organization-settings-store", () => ({
 
 describe("settings nav active state", () => {
 	it("does not mark sibling routes as active when their paths share a prefix", () => {
-		expect(isSettingsNavItemActive("/settings/teams-notifications", "/settings/teams")).toBe(
-			false,
-		);
+		expect(isSettingsNavItemActive("/settings/teams-notifications", "/settings/teams")).toBe(false);
 		expect(
 			isSettingsNavItemActive("/settings/teams-notifications", "/settings/teams-notifications"),
 		).toBe(true);

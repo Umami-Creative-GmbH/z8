@@ -3,12 +3,12 @@
  * Infrastructure layer for immutable storage
  */
 import {
-	S3Client,
-	PutObjectCommand,
 	GetObjectLockConfigurationCommand,
-	PutObjectRetentionCommand,
 	GetObjectRetentionCommand,
 	HeadObjectCommand,
+	PutObjectCommand,
+	PutObjectRetentionCommand,
+	S3Client,
 } from "@aws-sdk/client-s3";
 import { eq } from "drizzle-orm";
 import { auditExportConfig, db } from "@/db";
@@ -142,7 +142,10 @@ export class S3WORMStorageAdapter implements IWORMStorageAdapter {
 			// ObjectLockConfigurationNotFoundError means bucket doesn't have Object Lock
 			const message = error instanceof Error ? error.message : String(error);
 
-			if (message.includes("ObjectLockConfigurationNotFound") || message.includes("ObjectLockConfiguration")) {
+			if (
+				message.includes("ObjectLockConfigurationNotFound") ||
+				message.includes("ObjectLockConfiguration")
+			) {
 				logger.info({ organizationId }, "Object Lock not enabled on bucket");
 				return false;
 			}
@@ -182,7 +185,8 @@ export class S3WORMStorageAdapter implements IWORMStorageAdapter {
 		const auditConfig = await db.query.auditExportConfig.findFirst({
 			where: eq(auditExportConfig.organizationId, organizationId),
 		});
-		const lockMode: "GOVERNANCE" | "COMPLIANCE" = auditConfig?.retentionMode === "compliance" ? "COMPLIANCE" : "GOVERNANCE";
+		const lockMode: "GOVERNANCE" | "COMPLIANCE" =
+			auditConfig?.retentionMode === "compliance" ? "COMPLIANCE" : "GOVERNANCE";
 
 		// Check if Object Lock is supported
 		const objectLockSupported = await this.checkObjectLockSupport(organizationId);
@@ -344,7 +348,11 @@ export class S3WORMStorageAdapter implements IWORMStorageAdapter {
 	/**
 	 * Generate S3 key for audit export
 	 */
-	static generateAuditExportKey(organizationId: string, exportId: string, timestamp?: Date): string {
+	static generateAuditExportKey(
+		organizationId: string,
+		exportId: string,
+		timestamp?: Date,
+	): string {
 		const ts = timestamp ?? new Date();
 		const dateStr = ts.toISOString().split("T")[0]; // YYYY-MM-DD
 		return `audit-exports/${organizationId}/${dateStr}/${exportId}.zip`;

@@ -1,13 +1,13 @@
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
+import type { ApprovalDbService } from "../server/types";
 import {
 	approveCurrentStageInMemory,
 	createChainInMemory,
 	progressApprovalChainIfLinked,
-	resolvePolicyAndCreateApproval,
 	rejectCurrentStageInMemory,
+	resolvePolicyAndCreateApproval,
 } from "./chain-service";
-import type { ApprovalDbService } from "../server/types";
 import type { ApprovalPolicyDraft, ApprovalPolicyEvaluationContext } from "./types";
 
 const context: ApprovalPolicyEvaluationContext = {
@@ -106,9 +106,13 @@ function createChainProgressionDbService(params: {
 					findFirst: vi.fn().mockResolvedValue(params.chain ?? null),
 				},
 			},
-			insert: vi.fn((table: unknown) => ({
+			insert: vi.fn((_table: unknown) => ({
 				values: vi.fn((values: Record<string, unknown>) => {
-					if (values.action && typeof values.action === "string" && values.action.startsWith("approval_")) {
+					if (
+						values.action &&
+						typeof values.action === "string" &&
+						values.action.startsWith("approval_")
+					) {
 						auditEvents.push(values);
 					} else {
 						insertedApprovals.push(values);
@@ -334,7 +338,11 @@ describe("resolvePolicyAndCreateApproval", () => {
 		const outerInserts: Record<string, unknown>[] = [];
 		const auditEvents: Record<string, unknown>[] = [];
 		const captureInsert = (values: Record<string, unknown>) => {
-			if (values.action && typeof values.action === "string" && values.action.startsWith("approval_")) {
+			if (
+				values.action &&
+				typeof values.action === "string" &&
+				values.action.startsWith("approval_")
+			) {
 				auditEvents.push(values);
 			} else {
 				txInserts.push(values);
@@ -356,27 +364,45 @@ describe("resolvePolicyAndCreateApproval", () => {
 					employeeGroupMember: { findMany: vi.fn().mockResolvedValue(params.groupRows ?? []) },
 					employeeGroup: { findMany: vi.fn().mockResolvedValue(params.activeGroups ?? []) },
 					employee: {
-						findMany: vi.fn().mockResolvedValue(params.employees ?? [
-							{ id: "emp-requester", userId: "user-requester", organizationId: "org-1", isActive: true, role: "employee" },
-							{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
-						]),
+						findMany: vi.fn().mockResolvedValue(
+							params.employees ?? [
+								{
+									id: "emp-requester",
+									userId: "user-requester",
+									organizationId: "org-1",
+									isActive: true,
+									role: "employee",
+								},
+								{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
+							],
+						),
 					},
 					employeeManagers: {
-						findMany: vi.fn().mockResolvedValue(params.employeeManagers ?? [
-							{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
-						]),
+						findMany: vi
+							.fn()
+							.mockResolvedValue(
+								params.employeeManagers ?? [
+									{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
+								],
+							),
 					},
 					teamMembership: { findMany: vi.fn().mockResolvedValue(params.teamMemberships ?? []) },
 					team: { findMany: vi.fn().mockResolvedValue(params.teams ?? []) },
 				},
 				insert: vi.fn(() => ({
 					values: vi.fn((values: Record<string, unknown>) => {
-						if (values.action && typeof values.action === "string" && values.action.startsWith("approval_")) {
+						if (
+							values.action &&
+							typeof values.action === "string" &&
+							values.action.startsWith("approval_")
+						) {
 							auditEvents.push(values);
 						} else {
 							outerInserts.push(values);
 						}
-						return { returning: vi.fn().mockResolvedValue([{ id: `outer-${outerInserts.length}` }]) };
+						return {
+							returning: vi.fn().mockResolvedValue([{ id: `outer-${outerInserts.length}` }]),
+						};
 					}),
 				})),
 				transaction,
@@ -393,7 +419,9 @@ describe("resolvePolicyAndCreateApproval", () => {
 		name: "Absence chain",
 		isActive: true,
 		priority: 1,
-		conditions: [{ conditionType: "approval_type", operator: "equals", valueJson: "absence_entry" }],
+		conditions: [
+			{ conditionType: "approval_type", operator: "equals", valueJson: "absence_entry" },
+		],
 		stages: [
 			{
 				id: "stage-1",
@@ -413,7 +441,11 @@ describe("resolvePolicyAndCreateApproval", () => {
 			return await callback({
 				insert: vi.fn(() => ({
 					values: vi.fn((values: Record<string, unknown>) => {
-						if (values.action && typeof values.action === "string" && values.action.startsWith("approval_")) {
+						if (
+							values.action &&
+							typeof values.action === "string" &&
+							values.action.startsWith("approval_")
+						) {
 							auditEvents.push(values);
 						} else {
 							txInserts.push(values);
@@ -435,7 +467,11 @@ describe("resolvePolicyAndCreateApproval", () => {
 								isActive: true,
 								priority: 1,
 								conditions: [
-									{ conditionType: "approval_type", operator: "equals", valueJson: "absence_entry" },
+									{
+										conditionType: "approval_type",
+										operator: "equals",
+										valueJson: "absence_entry",
+									},
 								],
 								stages: [
 									{
@@ -453,14 +489,22 @@ describe("resolvePolicyAndCreateApproval", () => {
 					employeeGroup: { findMany: vi.fn().mockResolvedValue([]) },
 					employee: {
 						findMany: vi.fn().mockResolvedValue([
-							{ id: "emp-requester", userId: "user-requester", organizationId: "org-1", isActive: true, role: "employee" },
+							{
+								id: "emp-requester",
+								userId: "user-requester",
+								organizationId: "org-1",
+								isActive: true,
+								role: "employee",
+							},
 							{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
 						]),
 					},
 					employeeManagers: {
-						findMany: vi.fn().mockResolvedValue([
-							{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
-						]),
+						findMany: vi
+							.fn()
+							.mockResolvedValue([
+								{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
+							]),
 					},
 					teamMembership: { findMany: vi.fn().mockResolvedValue([]) },
 					team: { findMany: vi.fn().mockResolvedValue([]) },
@@ -468,7 +512,9 @@ describe("resolvePolicyAndCreateApproval", () => {
 				insert: vi.fn(() => ({
 					values: vi.fn((values: Record<string, unknown>) => {
 						outerInserts.push(values);
-						return { returning: vi.fn().mockResolvedValue([{ id: `outer-${outerInserts.length}` }]) };
+						return {
+							returning: vi.fn().mockResolvedValue([{ id: `outer-${outerInserts.length}` }]),
+						};
 					}),
 				})),
 				transaction,
@@ -495,7 +541,11 @@ describe("resolvePolicyAndCreateApproval", () => {
 			}),
 		);
 
-		expect(result).toEqual({ kind: "chain_created", chainInstanceId: "tx-1", approvalRequestId: "tx-2" });
+		expect(result).toEqual({
+			kind: "chain_created",
+			chainInstanceId: "tx-1",
+			approvalRequestId: "tx-2",
+		});
 		expect(transaction).toHaveBeenCalledTimes(1);
 		expect(txInserts).toHaveLength(3);
 		expect(outerInserts).toHaveLength(0);
@@ -511,12 +561,26 @@ describe("resolvePolicyAndCreateApproval", () => {
 					isActive: true,
 					priority: 1,
 					conditions: [],
-					stages: [{ id: "stage-1", stepOrder: 1, label: "Manager", approverType: "direct_manager" }],
+					stages: [
+						{ id: "stage-1", stepOrder: 1, label: "Manager", approverType: "direct_manager" },
+					],
 				},
 			],
 			employees: [
-				{ id: "requester", organizationId: "org-1", userId: "user-requester", isActive: true, role: "employee" },
-				{ id: "team-manager", organizationId: "org-1", userId: "user-manager", isActive: true, role: "manager" },
+				{
+					id: "requester",
+					organizationId: "org-1",
+					userId: "user-requester",
+					isActive: true,
+					role: "employee",
+				},
+				{
+					id: "team-manager",
+					organizationId: "org-1",
+					userId: "user-manager",
+					isActive: true,
+					role: "manager",
+				},
 			],
 			employeeManagers: [],
 			teamMemberships: [{ employeeId: "requester", teamId: "team-1" }],
@@ -586,7 +650,9 @@ describe("resolvePolicyAndCreateApproval", () => {
 
 	it("ignores requester memberships in inactive employee groups", async () => {
 		const { dbService } = createPolicyResolutionDbService({
-			groupRows: [{ organizationId: "org-1", employeeId: "emp-requester", groupId: "group-inactive" }],
+			groupRows: [
+				{ organizationId: "org-1", employeeId: "emp-requester", groupId: "group-inactive" },
+			],
 			activeGroups: [],
 			policies: [
 				{

@@ -2,7 +2,6 @@ import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
 	employee,
-	team,
 	workPolicy,
 	workPolicyAssignment,
 	type workPolicyBreakOption,
@@ -12,7 +11,6 @@ import {
 	type workPolicySchedule,
 	type workPolicyScheduleDay,
 	workPolicyViolation,
-	workPeriod,
 } from "@/db/schema";
 import { type DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService } from "./database.service";
@@ -475,11 +473,12 @@ export const WorkPolicyServiceLive = Layer.effect(
 
 					// 3. Check team-level assignment (priority 1)
 					if (emp.teamId) {
+						const teamId = emp.teamId;
 						const teamAssignment = yield* _(
 							dbService.query("getTeamPolicyAssignment", async () => {
 								return await dbService.db.query.workPolicyAssignment.findFirst({
 									where: and(
-										eq(workPolicyAssignment.teamId, emp.teamId!),
+										eq(workPolicyAssignment.teamId, teamId),
 										eq(workPolicyAssignment.assignmentType, "team"),
 										eq(workPolicyAssignment.isActive, true),
 										or(
@@ -686,7 +685,7 @@ export const WorkPolicyServiceLive = Layer.effect(
 
 					const policy = yield* _(Effect.promise(findEffectivePolicy));
 
-					if (!policy || !policy.regulation) {
+					if (!policy?.regulation) {
 						return {
 							isCompliant: true,
 							warnings: [],

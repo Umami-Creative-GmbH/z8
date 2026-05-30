@@ -1,10 +1,10 @@
-import { Context, Effect, Layer } from "effect";
 import { eq, sql } from "drizzle-orm";
+import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
-import { user, account } from "@/db/auth-schema";
+import { account, user } from "@/db/auth-schema";
 import { platformAdminAuditLog } from "@/db/schema";
-import { ConflictError, DatabaseError, ValidationError } from "../errors";
 import { setConfiguredStatus } from "@/lib/setup/config-cache";
+import { ConflictError, DatabaseError, ValidationError } from "../errors";
 
 // Types
 export interface CreatePlatformAdminInput {
@@ -72,10 +72,7 @@ export class SetupService extends Context.Tag("SetupService")<
 		 */
 		readonly createPlatformAdmin: (
 			input: CreatePlatformAdminInput,
-		) => Effect.Effect<
-			PlatformAdminResult,
-			ValidationError | ConflictError | DatabaseError
-		>;
+		) => Effect.Effect<PlatformAdminResult, ValidationError | ConflictError | DatabaseError>;
 	}
 >() {}
 

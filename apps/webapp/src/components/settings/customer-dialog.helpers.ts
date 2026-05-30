@@ -12,10 +12,7 @@ export interface CustomerDialogFormValues {
 	website: string;
 }
 
-export function requiresScopedProjectSelection(
-	accessTier: SettingsAccessTier,
-	isEditing: boolean,
-) {
+export function requiresScopedProjectSelection(accessTier: SettingsAccessTier, isEditing: boolean) {
 	return accessTier === "manager" && !isEditing;
 }
 

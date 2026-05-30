@@ -1,14 +1,19 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
-import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { EmailTemplateDefinition } from "@/lib/email/template-registry";
 import { EmailTemplateEditor } from "./email-template-editor";
 
 vi.mock("next/dynamic", () => ({
 	default: () =>
-		function ReactEmailEditorMock({ className, placeholder }: { className?: string; placeholder?: string }) {
+		function ReactEmailEditorMock({
+			className,
+			placeholder,
+		}: {
+			className?: string;
+			placeholder?: string;
+		}) {
 			return (
 				<div data-testid="react-email-editor" className={className}>
 					{placeholder}

@@ -5,10 +5,9 @@
  * Mirrors the Teams escalation checker pattern.
  */
 
-import { and, eq, inArray, lte, sql } from "drizzle-orm";
+import { and, eq, inArray, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
 import {
 	approvalRequest,
 	employee,
@@ -153,7 +152,7 @@ async function processBotEscalations(bot: {
 			if (!backupManagerId) continue;
 
 			// Record the escalation
-			const ageHours = DateTime.now().diff(DateTime.fromJSDate(approval.createdAt), "hours").hours;
+			const _ageHours = DateTime.now().diff(DateTime.fromJSDate(approval.createdAt), "hours").hours;
 
 			await db.insert(telegramEscalation).values({
 				organizationId: bot.organizationId,

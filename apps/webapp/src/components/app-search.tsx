@@ -240,7 +240,7 @@ export function AppSearch({
 					<SidebarMenu>
 						<SidebarMenuItem>
 							<SidebarMenuButton
-								className="h-9 justify-start rounded-lg border border-input bg-background px-3 text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+								className="h-9 justify-start rounded-lg border border-input bg-card px-3 text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/50 dark:bg-input/30 dark:hover:bg-input/50"
 								onClick={() => setOpen(true)}
 								tooltip={searchOrRunCommandLabel}
 								type="button"

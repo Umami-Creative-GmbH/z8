@@ -4,7 +4,7 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import type { EmployeeClockStatus } from "@/components/user-avatar";
 import { employee, workPeriod } from "@/db/schema";
-import { DatabaseError, type AnyAppError } from "@/lib/effect/errors";
+import { type AnyAppError, DatabaseError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import {
@@ -71,9 +71,7 @@ export async function getEmployeeClockStatuses(
 				}),
 			),
 		);
-		const organizationEmployeeIds = new Set(
-			organizationEmployeeRows.map((row) => row.id),
-		);
+		const organizationEmployeeIds = new Set(organizationEmployeeRows.map((row) => row.id));
 		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
 		const accessibleEmployeeIds =
 			managedEmployeeIds === null

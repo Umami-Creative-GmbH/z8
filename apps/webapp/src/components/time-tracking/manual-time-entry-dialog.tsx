@@ -4,11 +4,13 @@ import { IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { updateTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
 import { createManualTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { ProjectSelector } from "@/components/time-tracking/project-selector";
+import { TimezoneMismatchDialog } from "@/components/time-tracking/timezone-mismatch-dialog";
 import { WorkCategorySelector } from "@/components/time-tracking/work-category-selector";
 import {
 	ActionPanel,
@@ -23,15 +25,11 @@ import {
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
-import {
-	TFormControl,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
+import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import { formatTimeInZone, getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 import { useRouter } from "@/navigation";
 
@@ -40,6 +38,14 @@ interface Props {
 	employeeTimezone: string;
 	hasManager: boolean;
 	onSuccess?: () => void;
+	targetEmployeeId?: string;
+	targetEmployeeName?: string;
+	defaultDate?: string;
+	defaultClockInTime?: string;
+	defaultClockOutTime?: string;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
+	hideTrigger?: boolean;
 }
 
 interface FormValues {
@@ -56,29 +62,114 @@ export function ManualTimeEntryDialog({
 	employeeTimezone,
 	hasManager: _hasManager,
 	onSuccess,
+	targetEmployeeId,
+	targetEmployeeName,
+	defaultDate,
+	defaultClockInTime,
+	defaultClockOutTime,
+	open: controlledOpen,
+	onOpenChange,
+	hideTrigger = false,
 }: Props) {
 	const { t } = useTranslate();
-	const [open, setOpen] = useState(false);
+	const [internalOpen, setInternalOpen] = useState(false);
+	const [pendingMismatch, setPendingMismatch] = useState<{
+		value: FormValues;
+		browserTimezone: string;
+	} | null>(null);
+	const [isTimezoneContinuationPending, setIsTimezoneContinuationPending] = useState(false);
+	const isTimezoneContinuationPendingRef = useRef(false);
+	const wasOpenRef = useRef(false);
 	const router = useRouter();
 	const timeFormat = useTimeFormat();
 	const timezoneAbbr = getTimezoneAbbreviation(employeeTimezone);
+	const open = controlledOpen ?? internalOpen;
 
 	// Default to today's date
 	const getDefaultValues = (): FormValues => {
 		const today = DateTime.now().setZone(employeeTimezone).toISODate() || "";
 		return {
-			date: today,
-			clockInTime: "09:00",
-			clockOutTime: "17:00",
+			date: defaultDate ?? today,
+			clockInTime: defaultClockInTime ?? "09:00",
+			clockOutTime: defaultClockOutTime ?? "17:00",
 			reason: "",
 			projectId: undefined,
 			workCategoryId: undefined,
 		};
 	};
 
+	async function submitManualEntry(
+		value: FormValues,
+		timezone: string,
+		browserTimezone: string | null,
+	) {
+		const result = await createManualTimeEntry({
+			...(targetEmployeeId ? { employeeId: targetEmployeeId } : {}),
+			date: value.date,
+			clockInTime: value.clockInTime,
+			clockOutTime: value.clockOutTime,
+			reason: value.reason,
+			timezone,
+			browserTimezone,
+			projectId: value.projectId,
+			workCategoryId: value.workCategoryId,
+		});
+
+		if (result.success) {
+			// Show adjusted times info if times were modified
+			if (result.data?.wasAdjusted && result.data.adjustedTimes) {
+				const adjustedIn = formatTimeInZone(
+					result.data.adjustedTimes.clockIn,
+					employeeTimezone,
+					false,
+					timeFormat,
+				);
+				const adjustedOut = formatTimeInZone(
+					result.data.adjustedTimes.clockOut,
+					employeeTimezone,
+					false,
+					timeFormat,
+				);
+				toast.info(
+					t(
+						"timeTracking.manualEntry.success.adjusted",
+						"Times adjusted to {clockIn} - {clockOut} to avoid overlap",
+						{ clockIn: adjustedIn, clockOut: adjustedOut },
+					),
+					{ duration: 6000 },
+				);
+			}
+
+			if (result.data?.requiresApproval) {
+				toast.success(
+					t(
+						"timeTracking.manualEntry.success.pendingApproval",
+						"Time entry submitted for manager approval",
+					),
+				);
+			} else {
+				toast.success(
+					t("timeTracking.manualEntry.success.created", "Time entry created successfully"),
+				);
+			}
+			handleOpenChange(false);
+			router.refresh();
+			onSuccess?.();
+		} else {
+			toast.error(
+				result.error ||
+					t("timeTracking.manualEntry.errors.createFailed", "Failed to create time entry"),
+			);
+		}
+	}
+
 	const form = useForm({
 		defaultValues: getDefaultValues(),
 		onSubmit: async ({ value }) => {
+			if (isTimezoneContinuationPendingRef.current) {
+				return;
+			}
+
 			// Validate time span - clock out must be after clock in
 			const [inHours, inMinutes] = value.clockInTime.split(":").map(Number);
 			const [outHours, outMinutes] = value.clockOutTime.split(":").map(Number);
@@ -114,148 +205,147 @@ export function ManualTimeEntryDialog({
 				return;
 			}
 
-			const result = await createManualTimeEntry({
-				date: value.date,
-				clockInTime: value.clockInTime,
-				clockOutTime: value.clockOutTime,
-				reason: value.reason,
-				projectId: value.projectId,
-				workCategoryId: value.workCategoryId,
-			});
-
-			if (result.success) {
-				// Show adjusted times info if times were modified
-				if (result.data?.wasAdjusted && result.data.adjustedTimes) {
-					const adjustedIn = formatTimeInZone(
-						result.data.adjustedTimes.clockIn,
-						employeeTimezone,
-						false,
-						timeFormat,
-					);
-					const adjustedOut = formatTimeInZone(
-						result.data.adjustedTimes.clockOut,
-						employeeTimezone,
-						false,
-						timeFormat,
-					);
-					toast.info(
-						t(
-							"timeTracking.manualEntry.success.adjusted",
-							"Times adjusted to {clockIn} - {clockOut} to avoid overlap",
-							{ clockIn: adjustedIn, clockOut: adjustedOut },
-						),
-						{ duration: 6000 },
-					);
-				}
-
-				if (result.data?.requiresApproval) {
-					toast.success(
-						t(
-							"timeTracking.manualEntry.success.pendingApproval",
-							"Time entry submitted for manager approval",
-						),
-					);
-				} else {
-					toast.success(
-						t("timeTracking.manualEntry.success.created", "Time entry created successfully"),
-					);
-				}
-				setOpen(false);
-				router.refresh();
-				onSuccess?.();
-			} else {
-				toast.error(
-					result.error ||
-						t("timeTracking.manualEntry.errors.createFailed", "Failed to create time entry"),
-				);
+			const browserTimezone = getBrowserTimezone();
+			if (!targetEmployeeId && browserTimezone && browserTimezone !== employeeTimezone) {
+				setPendingMismatch({ value, browserTimezone });
+				return;
 			}
+
+			await submitManualEntry(
+				value,
+				employeeTimezone,
+				!targetEmployeeId && browserTimezone === employeeTimezone ? browserTimezone : null,
+			);
 		},
 	});
+
+	async function handleUpdateTimezoneAndSubmit() {
+		if (!pendingMismatch || isTimezoneContinuationPendingRef.current) return;
+		isTimezoneContinuationPendingRef.current = true;
+		setIsTimezoneContinuationPending(true);
+
+		try {
+			const result = await updateTimezone(pendingMismatch.browserTimezone);
+			if (!result?.success) {
+				toast.error(result?.error || "Failed to update timezone");
+				isTimezoneContinuationPendingRef.current = false;
+				setIsTimezoneContinuationPending(false);
+				return;
+			}
+
+			const { value, browserTimezone } = pendingMismatch;
+			await submitManualEntry(value, browserTimezone, browserTimezone);
+			setPendingMismatch(null);
+		} catch {
+			toast.error("An error occurred while updating timezone");
+			isTimezoneContinuationPendingRef.current = false;
+			setIsTimezoneContinuationPending(false);
+			return;
+		}
+
+		isTimezoneContinuationPendingRef.current = false;
+		setIsTimezoneContinuationPending(false);
+	}
+
+	async function handleContinueOnce() {
+		if (!pendingMismatch || isTimezoneContinuationPendingRef.current) return;
+		isTimezoneContinuationPendingRef.current = true;
+		setIsTimezoneContinuationPending(true);
+
+		try {
+			const { value, browserTimezone } = pendingMismatch;
+			await submitManualEntry(value, browserTimezone, browserTimezone);
+			setPendingMismatch(null);
+		} catch (error) {
+			isTimezoneContinuationPendingRef.current = false;
+			setIsTimezoneContinuationPending(false);
+			throw error;
+		}
+
+		isTimezoneContinuationPendingRef.current = false;
+		setIsTimezoneContinuationPending(false);
+	}
 
 	const handleOpenChange = (isOpen: boolean) => {
 		if (isOpen) {
 			form.reset(getDefaultValues());
 		}
-		setOpen(isOpen);
+		if (controlledOpen === undefined) {
+			setInternalOpen(isOpen);
+		}
+		onOpenChange?.(isOpen);
 	};
 
+	useEffect(() => {
+		if (open && !wasOpenRef.current) {
+			form.reset(getDefaultValues());
+		}
+		wasOpenRef.current = open;
+	});
+
 	return (
-		<ActionPanel open={open} onOpenChange={handleOpenChange}>
-			<ActionPanelTrigger asChild>
-				<Button
-					aria-label={t("timeTracking.manualEntry.addButton", "Add Manual Entry")}
-					className="size-8"
-					variant="outline"
-					size="icon"
-				>
-					<IconPlus aria-hidden="true" className="size-4" />
-				</Button>
-			</ActionPanelTrigger>
-			<ActionPanelContent size="compact">
-				<ActionPanelHeader>
-					<ActionPanelTitle>
-						{t("timeTracking.manualEntry.title", "Add Manual Time Entry")}
-					</ActionPanelTitle>
-					<ActionPanelDescription>
-						{t(
-							"timeTracking.manualEntry.description",
-							"Create a time entry for a past date. Approval may be required based on your organization's change policy.",
-						)}
-					</ActionPanelDescription>
-				</ActionPanelHeader>
-				<form
-					onSubmit={(e) => {
-						e.preventDefault();
-						form.handleSubmit();
-					}}
-					className="flex min-h-0 flex-col"
-				>
-					<ActionPanelBody className="grid gap-4">
-						<p className="text-xs text-muted-foreground">
+		<>
+			<ActionPanel open={open} onOpenChange={handleOpenChange}>
+				{hideTrigger ? null : (
+					<ActionPanelTrigger asChild>
+						<Button
+							aria-label={t("timeTracking.manualEntry.addButton", "Add Manual Entry")}
+							className="size-8"
+							variant="outline"
+							size="icon"
+						>
+							<IconPlus aria-hidden="true" className="size-4" />
+						</Button>
+					</ActionPanelTrigger>
+				)}
+				<ActionPanelContent size="compact">
+					<ActionPanelHeader>
+						<ActionPanelTitle>
+							{targetEmployeeName
+								? t(
+										"timeTracking.manualEntry.titleForEmployee",
+										"Add Manual Time Entry for {employee}",
+										{ employee: targetEmployeeName },
+									)
+								: t("timeTracking.manualEntry.title", "Add Manual Time Entry")}
+						</ActionPanelTitle>
+						<ActionPanelDescription>
 							{t(
-								"timeTracking.correction.timezoneNote",
-								"Times are in your local timezone ({timezone})",
-								{ timezone: timezoneAbbr },
+								"timeTracking.manualEntry.description",
+								"Create a time entry for a past date. Approval may be required based on your organization's change policy.",
 							)}
-						</p>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							form.handleSubmit();
+						}}
+						className="flex min-h-0 flex-col"
+					>
+						<ActionPanelBody className="grid gap-4">
+							<p className="text-xs text-muted-foreground">
+								{t(
+									"timeTracking.correction.timezoneNote",
+									"Times are in your local timezone ({timezone})",
+									{ timezone: timezoneAbbr },
+								)}
+							</p>
 
-						{/* Date Field */}
-						<form.Field name="date">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>
-										{t("timeTracking.manualEntry.dateLabel", "Date")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<DatePicker
-											name="date"
-											value={field.state.value}
-											onChange={field.handleChange}
-											onBlur={field.handleBlur}
-											max={DateTime.now().setZone(employeeTimezone).toISODate() || undefined}
-											required
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-
-						{/* Time Fields */}
-						<div className="grid grid-cols-2 gap-4">
-							<form.Field name="clockInTime">
+							{/* Date Field */}
+							<form.Field name="date">
 								{(field) => (
 									<TFormItem>
 										<TFormLabel hasError={fieldHasError(field)}>
-											{t("timeTracking.manualEntry.clockInLabel", "Clock In")}
+											{t("timeTracking.manualEntry.dateLabel", "Date")}
 										</TFormLabel>
 										<TFormControl hasError={fieldHasError(field)}>
-											<TimeInput
-												name="clockInTime"
-												autoComplete="off"
+											<DatePicker
+												name="date"
 												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
+												onChange={field.handleChange}
 												onBlur={field.handleBlur}
+												max={DateTime.now().setZone(employeeTimezone).toISODate() || undefined}
 												required
 											/>
 										</TFormControl>
@@ -264,101 +354,136 @@ export function ManualTimeEntryDialog({
 								)}
 							</form.Field>
 
-							<form.Field name="clockOutTime">
-								{(field) => (
-									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)}>
-											{t("timeTracking.manualEntry.clockOutLabel", "Clock Out")}
-										</TFormLabel>
-										<TFormControl hasError={fieldHasError(field)}>
-											<TimeInput
-												name="clockOutTime"
-												autoComplete="off"
-												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-												required
-											/>
-										</TFormControl>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
-							</form.Field>
-						</div>
-
-						{/* Reason Field */}
-						<form.Field name="reason">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>
-										{t("timeTracking.manualEntry.reasonLabel", "Reason")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<Textarea
-											name="reason"
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-											placeholder={t(
-												"timeTracking.manualEntry.reasonPlaceholder",
-												"Describe what you worked on…",
-											)}
-											required
-											rows={2}
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-
-						{/* Project Selector */}
-						<form.Field name="projectId">
-							{(field) => (
-								<ProjectSelector
-									value={field.state.value}
-									onValueChange={(value) => field.handleChange(value)}
-									autoSelectLast={false}
-								/>
-							)}
-						</form.Field>
-
-						{/* Work Category Selector */}
-						<form.Field name="workCategoryId">
-							{(field) => (
-								<WorkCategorySelector
-									employeeId={employeeId}
-									value={field.state.value}
-									onValueChange={(value) => field.handleChange(value)}
-									autoSelectLast={false}
-								/>
-							)}
-						</form.Field>
-					</ActionPanelBody>
-
-					<ActionPanelFooter className="gap-2">
-						<ActionPanelClose asChild>
-							<Button type="button" variant="outline">
-								{t("common.cancel", "Cancel")}
-							</Button>
-						</ActionPanelClose>
-						<form.Subscribe selector={(state) => state.isSubmitting}>
-							{(isSubmitting) => (
-								<Button type="submit" disabled={isSubmitting}>
-									{isSubmitting ? (
-										<>
-											<IconLoader2 className="size-4 animate-spin" />
-											{t("timeTracking.manualEntry.submitting", "Creating…")}
-										</>
-									) : (
-										t("timeTracking.manualEntry.submit", "Create Entry")
+							{/* Time Fields */}
+							<div className="grid grid-cols-2 gap-4">
+								<form.Field name="clockInTime">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel hasError={fieldHasError(field)}>
+												{t("timeTracking.manualEntry.clockInLabel", "Clock In")}
+											</TFormLabel>
+											<TFormControl hasError={fieldHasError(field)}>
+												<TimeInput
+													name="clockInTime"
+													autoComplete="off"
+													value={field.state.value}
+													onChange={(e) => field.handleChange(e.target.value)}
+													onBlur={field.handleBlur}
+													required
+												/>
+											</TFormControl>
+											<TFormMessage field={field} />
+										</TFormItem>
 									)}
+								</form.Field>
+
+								<form.Field name="clockOutTime">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel hasError={fieldHasError(field)}>
+												{t("timeTracking.manualEntry.clockOutLabel", "Clock Out")}
+											</TFormLabel>
+											<TFormControl hasError={fieldHasError(field)}>
+												<TimeInput
+													name="clockOutTime"
+													autoComplete="off"
+													value={field.state.value}
+													onChange={(e) => field.handleChange(e.target.value)}
+													onBlur={field.handleBlur}
+													required
+												/>
+											</TFormControl>
+											<TFormMessage field={field} />
+										</TFormItem>
+									)}
+								</form.Field>
+							</div>
+
+							{/* Reason Field */}
+							<form.Field name="reason">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("timeTracking.manualEntry.reasonLabel", "Reason")}
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field)}>
+											<Textarea
+												name="reason"
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+												placeholder={t(
+													"timeTracking.manualEntry.reasonPlaceholder",
+													"Describe what you worked on…",
+												)}
+												required
+												rows={2}
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+
+							{/* Project Selector */}
+							<form.Field name="projectId">
+								{(field) => (
+									<ProjectSelector
+										value={field.state.value}
+										onValueChange={(value) => field.handleChange(value)}
+										autoSelectLast={false}
+									/>
+								)}
+							</form.Field>
+
+							{/* Work Category Selector */}
+							<form.Field name="workCategoryId">
+								{(field) => (
+									<WorkCategorySelector
+										employeeId={targetEmployeeId ?? employeeId}
+										value={field.state.value}
+										onValueChange={(value) => field.handleChange(value)}
+										autoSelectLast={false}
+									/>
+								)}
+							</form.Field>
+						</ActionPanelBody>
+
+						<ActionPanelFooter className="gap-2">
+							<ActionPanelClose asChild>
+								<Button type="button" variant="outline" disabled={isTimezoneContinuationPending}>
+									{t("common.cancel", "Cancel")}
 								</Button>
-							)}
-						</form.Subscribe>
-					</ActionPanelFooter>
-				</form>
-			</ActionPanelContent>
-		</ActionPanel>
+							</ActionPanelClose>
+							<form.Subscribe selector={(state) => state.isSubmitting}>
+								{(isSubmitting) => (
+									<Button type="submit" disabled={isSubmitting || isTimezoneContinuationPending}>
+										{isSubmitting ? (
+											<>
+												<IconLoader2 className="size-4 animate-spin" />
+												{t("timeTracking.manualEntry.submitting", "Creating…")}
+											</>
+										) : (
+											t("timeTracking.manualEntry.submit", "Create Entry")
+										)}
+									</Button>
+								)}
+							</form.Subscribe>
+						</ActionPanelFooter>
+					</form>
+				</ActionPanelContent>
+			</ActionPanel>
+			{pendingMismatch ? (
+				<TimezoneMismatchDialog
+					open
+					savedTimezone={employeeTimezone}
+					browserTimezone={pendingMismatch.browserTimezone}
+					isPending={isTimezoneContinuationPending}
+					onUpdateAndContinue={handleUpdateTimezoneAndSubmit}
+					onContinueOnce={handleContinueOnce}
+					onCancel={() => setPendingMismatch(null)}
+				/>
+			) : null}
+		</>
 	);
 }

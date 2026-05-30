@@ -191,6 +191,12 @@ export const queryKeys = {
 		list: (orgId: string) => ["holiday-assignments", orgId] as const,
 	},
 
+	// Holiday category assignments (custom holiday categories to org/team/employee)
+	holidayCategoryAssignments: {
+		all: ["holiday-category-assignments"] as const,
+		list: (orgId: string) => ["holiday-category-assignments", orgId] as const,
+	},
+
 	// Vacation policies
 	vacationPolicies: {
 		all: ["vacation-policies"] as const,
@@ -381,7 +387,7 @@ export const queryKeys = {
 		list: (orgId: string) => ["work-policies", "list", orgId] as const,
 		detail: (policyId: string) => ["work-policies", "detail", policyId] as const,
 		assignments: (orgId: string) => ["work-policies", "assignments", orgId] as const,
-		presets: () => ["work-policies", "presets"] as const,
+		presets: (orgId: string) => ["work-policies", "presets", orgId] as const,
 		violations: {
 			all: ["work-policies", "violations"] as const,
 			list: (orgId: string, dateRange: { start: Date; end: Date }) =>

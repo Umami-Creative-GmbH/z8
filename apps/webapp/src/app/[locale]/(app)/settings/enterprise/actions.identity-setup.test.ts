@@ -218,6 +218,8 @@ describe("enterprise identity setup action contracts", () => {
 			ssoSource.indexOf("getOrCreateEnterpriseIdentitySetupRecord"),
 		);
 		expect(ssoSource.indexOf(validationCall)).toBeLessThan(ssoSource.indexOf("storeOrgSecret"));
-		expect(ssoSource.indexOf(validationCall)).toBeLessThan(ssoSource.indexOf("registerSSOProvider"));
+		expect(ssoSource.indexOf(validationCall)).toBeLessThan(
+			ssoSource.indexOf("registerSSOProvider"),
+		);
 	});
 });

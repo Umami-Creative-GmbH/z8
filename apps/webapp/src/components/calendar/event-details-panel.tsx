@@ -356,7 +356,9 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 }
 
 function getEventTitle(event: CalendarEvent, t: ReturnType<typeof useTranslate>["t"]) {
-	return event.titleKey ? t(event.titleKey, event.title, getEventTranslationParams(event)) : event.title;
+	return event.titleKey
+		? t(event.titleKey, event.title, getEventTranslationParams(event))
+		: event.title;
 }
 
 function getEventDescription(event: CalendarEvent, t: ReturnType<typeof useTranslate>["t"]) {

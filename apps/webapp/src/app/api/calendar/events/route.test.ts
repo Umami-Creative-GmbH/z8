@@ -14,6 +14,7 @@ const mockState = vi.hoisted(() => ({
 	getEmployeeWorkBalance: vi.fn(async () => null),
 	findEmployee: vi.fn(),
 	findManagerLinks: vi.fn(),
+	findUserSettings: vi.fn(),
 }));
 
 vi.mock("next/server", async () => {
@@ -36,6 +37,9 @@ vi.mock("@/db", () => ({
 			},
 			employeeManagers: {
 				findMany: mockState.findManagerLinks,
+			},
+			userSettings: {
+				findFirst: mockState.findUserSettings,
 			},
 		},
 	},
@@ -96,12 +100,14 @@ describe("GET /api/calendar/events", () => {
 		});
 		mockState.findEmployee.mockResolvedValue({
 			id: "employee-1",
+			userId: "user-1",
 			organizationId: "org-1",
 			isActive: true,
 			role: "employee",
 			teamId: null,
 		});
 		mockState.findManagerLinks.mockResolvedValue([]);
+		mockState.findUserSettings.mockResolvedValue({ timezone: "Europe/Berlin" });
 	});
 
 	it("scopes employee calendar event requests to the caller's employee record", async () => {
@@ -116,14 +122,24 @@ describe("GET /api/calendar/events", () => {
 			organizationId: "org-1",
 			employeeId: "employee-1",
 		});
-		expect(mockState.getTimeEntriesForMonth).toHaveBeenCalledWith(4, 2026, {
-			organizationId: "org-1",
-			employeeId: "employee-1",
-		});
-		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(4, 2026, {
-			organizationId: "org-1",
-			employeeId: "employee-1",
-		});
+		expect(mockState.getTimeEntriesForMonth).toHaveBeenCalledWith(
+			4,
+			2026,
+			{
+				organizationId: "org-1",
+				employeeId: "employee-1",
+			},
+			"Europe/Berlin",
+		);
+		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(
+			4,
+			2026,
+			{
+				organizationId: "org-1",
+				employeeId: "employee-1",
+			},
+			"Europe/Berlin",
+		);
 	});
 
 	it("returns daily requirements for the scoped employee", async () => {
@@ -146,8 +162,9 @@ describe("GET /api/calendar/events", () => {
 		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			employeeId: "employee-1",
-			startDate: new Date("2026-05-01T00:00:00.000Z"),
-			endDate: new Date("2026-05-31T23:59:59.999Z"),
+			startDate: new Date("2026-04-30T22:00:00.000Z"),
+			endDate: new Date("2026-05-31T21:59:59.999Z"),
+			timezone: "Europe/Berlin",
 		});
 		expect(body.dailyRequirements).toEqual({
 			"2026-05-04": {
@@ -202,6 +219,88 @@ describe("GET /api/calendar/events", () => {
 			balanceMinutes: 120,
 			actualMinutes: 2520,
 			requiredMinutes: 2400,
+		});
+	});
+
+	it("returns the selected employee calendar timezone", async () => {
+		mockState.getVerifiedOrgContext.mockResolvedValueOnce({
+			isValid: true,
+			user: { id: "manager-user", role: "user" },
+			userId: "manager-user",
+			organizationId: "org-1",
+			employeeId: "manager-1",
+			role: "manager",
+		});
+		mockState.findEmployee
+			.mockResolvedValueOnce({
+				id: "manager-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "manager",
+				teamId: null,
+				userId: "manager-user",
+			})
+			.mockResolvedValueOnce({
+				id: "employee-2",
+				organizationId: "org-1",
+				isActive: true,
+				role: "employee",
+				teamId: null,
+				userId: "employee-user-2",
+			});
+		mockState.findManagerLinks.mockResolvedValueOnce([{ employeeId: "employee-2" }]);
+		mockState.findUserSettings.mockResolvedValueOnce({ timezone: "America/New_York" });
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&employeeId=employee-2&year=2026&month=4&showWorkPeriods=true",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(body.calendarTimezone).toBe("America/New_York");
+		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(
+			4,
+			2026,
+			{
+				organizationId: "org-1",
+				employeeId: "employee-2",
+			},
+			"America/New_York",
+		);
+	});
+
+	it("passes selected timezone into daily requirements and actual minute grouping", async () => {
+		mockState.findUserSettings.mockResolvedValueOnce({ timezone: "America/New_York" });
+		mockState.getWorkPeriodsForMonth.mockResolvedValueOnce([
+			{
+				id: "work-period-late-utc",
+				type: "work_period",
+				date: new Date("2026-06-01T02:00:00.000Z"),
+				title: "Work period",
+				color: "#10b981",
+				metadata: { durationMinutes: 120, employeeName: "Ada" },
+			},
+		]);
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&month=4&showWorkPeriods=false",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			startDate: new Date("2026-05-01T04:00:00.000Z"),
+			endDate: new Date("2026-06-01T03:59:59.999Z"),
+			timezone: "America/New_York",
+		});
+		expect(body.dailyActualMinutes).toEqual({
+			"2026-05-31": 120,
 		});
 	});
 
@@ -322,6 +421,51 @@ describe("GET /api/calendar/events", () => {
 		expect(body.events).toEqual([]);
 		expect(body.dailyActualMinutes).toEqual({
 			"2026-05-04": 480,
+		});
+	});
+
+	it("returns running work periods as events but excludes them from daily actual minutes", async () => {
+		const completedWorkPeriod = {
+			id: "work-period-completed",
+			type: "work_period",
+			date: new Date("2026-05-04T08:00:00.000Z"),
+			title: "Work period",
+			color: "#10b981",
+			metadata: { durationMinutes: 360, employeeName: "Ada" },
+		};
+		const runningWorkPeriod = {
+			id: "work-period-running",
+			type: "work_period",
+			date: new Date("2026-05-04T14:00:00.000Z"),
+			title: "Work period",
+			color: "#10b981",
+			metadata: { durationMinutes: 120, employeeName: "Ada", isRunning: true },
+		};
+		mockState.getWorkPeriodsForMonth.mockResolvedValueOnce([
+			completedWorkPeriod,
+			runningWorkPeriod,
+		]);
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&month=4&showWorkPeriods=true",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(body.events).toEqual([
+			{
+				...completedWorkPeriod,
+				date: "2026-05-04T08:00:00.000Z",
+			},
+			{
+				...runningWorkPeriod,
+				date: "2026-05-04T14:00:00.000Z",
+			},
+		]);
+		expect(body.dailyActualMinutes).toEqual({
+			"2026-05-04": 360,
 		});
 	});
 });

@@ -68,7 +68,9 @@ function createFakeTx(input: {
 			values: vi.fn((values: Record<string, unknown>) => {
 				calls.inserts.push({ table, values });
 				return {
-					returning: vi.fn().mockImplementation(async () => [{ id: insertIds.shift() ?? "created-id" }]),
+					returning: vi
+						.fn()
+						.mockImplementation(async () => [{ id: insertIds.shift() ?? "created-id" }]),
 				};
 			}),
 		})),

@@ -1,5 +1,7 @@
 import type { CalendarEvent, CalendarEventType } from "./types";
 
+type WorkPeriodCalendarId = "work_period_running" | "work_period_pending" | "work_period_rejected";
+
 /**
  * Schedule-X event format for v3
  * Uses Temporal API types directly
@@ -10,7 +12,10 @@ export interface ScheduleXEvent {
 	title: string;
 	start: Temporal.PlainDate | Temporal.ZonedDateTime;
 	end: Temporal.PlainDate | Temporal.ZonedDateTime;
-	calendarId: CalendarEventType;
+	calendarId: CalendarEventType | WorkPeriodCalendarId;
+	_customContent?: {
+		timeGrid?: string;
+	};
 	_eventData: CalendarEvent; // Store original for details panel
 }
 
@@ -49,6 +54,19 @@ export const calendarColors = {
 		colorName: "work_period",
 		lightColors: {
 			main: "#10b981", // Green (emerald)
+			container: "#d1fae5",
+			onContainer: "#065f46",
+		},
+		darkColors: {
+			main: "#34d399",
+			container: "#064e3b",
+			onContainer: "#a7f3d0",
+		},
+	},
+	work_period_running: {
+		colorName: "work_period_running",
+		lightColors: {
+			main: "#10b981",
 			container: "#d1fae5",
 			onContainer: "#065f46",
 		},
@@ -173,6 +191,66 @@ export function toTemporalZonedDateTime(
 	return Temporal.Instant.from(safeDate.toISOString()).toZonedDateTimeISO(timeZone);
 }
 
+function formatUtcOffsetMinutes(offsetMinutes: number): string {
+	const sign = offsetMinutes >= 0 ? "+" : "-";
+	const absoluteMinutes = Math.abs(offsetMinutes);
+	const hours = Math.floor(absoluteMinutes / 60);
+	const minutes = absoluteMinutes % 60;
+
+	return `UTC${sign}${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function toTemporalZonedDateTimeWithOffset(
+	date: Date | string | unknown,
+	offsetMinutes: number | undefined,
+	fallbackTimeZone: string | undefined,
+): Temporal.ZonedDateTime {
+	if (typeof offsetMinutes !== "number") {
+		return toTemporalZonedDateTime(date, fallbackTimeZone);
+	}
+
+	const safeDate = toSafeDate(date);
+	const wallClockDate = new Date(safeDate.getTime() + offsetMinutes * 60_000);
+	return Temporal.ZonedDateTime.from({
+		timeZone: "UTC",
+		year: wallClockDate.getUTCFullYear(),
+		month: wallClockDate.getUTCMonth() + 1,
+		day: wallClockDate.getUTCDate(),
+		hour: wallClockDate.getUTCHours(),
+		minute: wallClockDate.getUTCMinutes(),
+		second: wallClockDate.getUTCSeconds(),
+		millisecond: wallClockDate.getUTCMilliseconds(),
+	});
+}
+
+function formatEndpointTimezoneLabel(timezone: unknown, offsetMinutes: unknown): string | null {
+	if (typeof offsetMinutes !== "number") return null;
+
+	const offsetLabel = formatUtcOffsetMinutes(offsetMinutes);
+	return typeof timezone === "string" && timezone.trim()
+		? `${timezone} (${offsetLabel})`
+		: offsetLabel;
+}
+
+function buildWorkPeriodTimezoneLabel(event: CalendarEvent): string | null {
+	if (event.type !== "work_period") return null;
+
+	const startLabel = formatEndpointTimezoneLabel(
+		event.metadata.clockInTimezone,
+		event.metadata.clockInUtcOffsetMinutes,
+	);
+	const endLabel =
+		formatEndpointTimezoneLabel(
+			event.metadata.clockOutTimezone,
+			event.metadata.clockOutUtcOffsetMinutes,
+		) ?? startLabel;
+
+	if (!startLabel && !endLabel) return null;
+	if (startLabel === endLabel) return startLabel ?? null;
+
+	return `${startLabel ?? "calendar timezone"} -> ${endLabel ?? "calendar timezone"}`;
+}
+
 /**
  * Convert a Date to Temporal.PlainDate for all-day events
  * Uses UTC to avoid timezone-related day shifts for all-day events
@@ -266,11 +344,32 @@ export function calendarEventToScheduleX(
 		}
 
 		if (event.type === "work_period") {
-			// Work periods span from clock-in to clock-out
-			// Display as a timed block showing work time
-			// Breaks appear as gaps between these blocks
-			const start = toTemporalZonedDateTime(startDate, timeZone);
-			const end = toTemporalZonedDateTime(endDate, timeZone);
+			// Work periods render in the timezone context captured on each endpoint.
+			const start = toTemporalZonedDateTimeWithOffset(
+				startDate,
+				event.metadata.clockInUtcOffsetMinutes,
+				timeZone,
+			);
+			let end = toTemporalZonedDateTimeWithOffset(
+				endDate,
+				event.metadata.clockOutUtcOffsetMinutes ?? event.metadata.clockInUtcOffsetMinutes,
+				timeZone,
+			);
+			if (
+				typeof event.metadata.clockInUtcOffsetMinutes === "number" &&
+				typeof event.metadata.clockOutUtcOffsetMinutes === "number" &&
+				event.metadata.clockInUtcOffsetMinutes !== event.metadata.clockOutUtcOffsetMinutes
+			) {
+				const durationMs = Math.max(0, endDate.getTime() - startDate.getTime());
+				end = start.add({ milliseconds: durationMs });
+			}
+			if (
+				event.metadata.isRunning &&
+				end.epochMilliseconds - start.epochMilliseconds < 30 * 60_000
+			) {
+				end = start.add({ minutes: 30 });
+			}
+			const timezoneLabel = buildWorkPeriodTimezoneLabel(event);
 
 			// Determine calendar ID based on approval status
 			// Pending/rejected work periods get different styling
@@ -279,10 +378,12 @@ export function calendarEventToScheduleX(
 				| "pending"
 				| "rejected"
 				| undefined;
-			let calendarId: string = "work_period";
-			if (approvalStatus === "pending") {
+			let calendarId: ScheduleXEvent["calendarId"] = event.metadata.isRunning
+				? "work_period_running"
+				: "work_period";
+			if (!event.metadata.isRunning && approvalStatus === "pending") {
 				calendarId = "work_period_pending";
-			} else if (approvalStatus === "rejected") {
+			} else if (!event.metadata.isRunning && approvalStatus === "rejected") {
 				calendarId = "work_period_rejected";
 			}
 
@@ -291,15 +392,25 @@ export function calendarEventToScheduleX(
 				title: event.title,
 				start,
 				end,
-				calendarId: calendarId as CalendarEventType,
+				calendarId,
+				...((event.metadata.isRunning || timezoneLabel) && {
+					_customContent: {
+						timeGrid: event.metadata.isRunning
+							? `<span class="inline-flex items-center gap-1.5"><span class="relative inline-flex size-2 shrink-0" aria-hidden="true"><span class="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75"></span><span class="relative inline-flex size-2 rounded-full bg-red-500"></span></span><span>${escapeHtml(event.title)}</span>${timezoneLabel ? `<span class="text-[10px] opacity-80">${escapeHtml(timezoneLabel)}</span>` : ""}</span>`
+							: `<span class="inline-flex flex-col gap-0.5"><span>${escapeHtml(event.title)}</span><span class="text-[10px] opacity-80">${escapeHtml(timezoneLabel ?? "")}</span></span>`,
+					},
+				}),
 				_eventData: event,
 			};
 		}
 
 		if (event.type === "time_entry") {
 			// Time entries are point-in-time, show as 30-minute block
-			// Use Temporal.ZonedDateTime for timed events
-			const start = toTemporalZonedDateTime(startDate, timeZone);
+			const start = toTemporalZonedDateTimeWithOffset(
+				startDate,
+				event.metadata.utcOffsetMinutes,
+				timeZone,
+			);
 			const end = start.add({ minutes: 30 });
 
 			return {
@@ -370,6 +481,7 @@ export function getScheduleXCalendars() {
 		holiday: calendarColors.holiday,
 		absence: calendarColors.absence,
 		work_period: calendarColors.work_period,
+		work_period_running: calendarColors.work_period_running,
 		work_period_pending: calendarColors.work_period_pending,
 		work_period_rejected: calendarColors.work_period_rejected,
 		time_entry: calendarColors.time_entry,
@@ -401,6 +513,23 @@ function toScheduleXSafeIdPart(value: string): string {
 	return safeValue || "event";
 }
 
+function escapeHtml(value: string): string {
+	return value
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
+}
+
+function zonedDateTimeToDate(value: ScheduleXEvent["start"]): Date | null {
+	if (value instanceof Temporal.ZonedDateTime) {
+		return new Date(value.epochMilliseconds);
+	}
+
+	return null;
+}
+
 /**
  * Generate break events from work periods
  * Breaks are the gaps between consecutive work periods on the same day
@@ -408,7 +537,7 @@ function toScheduleXSafeIdPart(value: string): string {
  */
 export function generateBreakEvents(
 	workPeriodEvents: ScheduleXEvent[],
-	timeZone?: string,
+	_timeZone?: string,
 ): ScheduleXEvent[] {
 	const breakEvents: ScheduleXEvent[] = [];
 
@@ -419,12 +548,7 @@ export function generateBreakEvents(
 		if (event.calendarId !== "work_period") continue;
 
 		const employeeName = event._eventData.metadata?.employeeName || "Unknown";
-		// Get date string from the start time
-		const startDate = event._eventData.date;
-		const dateKey =
-			startDate instanceof Date
-				? `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`
-				: String(startDate).split("T")[0];
+		const dateKey = event.start.toString().slice(0, 10);
 		const groupKey = `${dateKey}_${employeeName}`;
 
 		if (!periodsByDayAndEmployee.has(groupKey)) {
@@ -439,10 +563,8 @@ export function generateBreakEvents(
 
 		// Sort by start time
 		periods.sort((a, b) => {
-			const aStart = a._eventData.date;
-			const bStart = b._eventData.date;
-			const aTime = aStart instanceof Date ? aStart.getTime() : new Date(String(aStart)).getTime();
-			const bTime = bStart instanceof Date ? bStart.getTime() : new Date(String(bStart)).getTime();
+			const aTime = zonedDateTimeToDate(a.start)?.getTime() ?? 0;
+			const bTime = zonedDateTimeToDate(b.start)?.getTime() ?? 0;
 			return aTime - bTime;
 		});
 
@@ -451,16 +573,13 @@ export function generateBreakEvents(
 			const currentPeriod = periods[i];
 			const nextPeriod = periods[i + 1];
 
-			// Get end time of current period and start time of next period
-			const currentEnd = currentPeriod._eventData.endDate;
-			const nextStart = nextPeriod._eventData.date;
+			const currentEnd = zonedDateTimeToDate(currentPeriod.end);
+			const nextStart = zonedDateTimeToDate(nextPeriod.start);
 
-			if (!currentEnd) continue;
+			if (!currentEnd || !nextStart) continue;
 
-			const currentEndTime =
-				currentEnd instanceof Date ? currentEnd.getTime() : new Date(String(currentEnd)).getTime();
-			const nextStartTime =
-				nextStart instanceof Date ? nextStart.getTime() : new Date(String(nextStart)).getTime();
+			const currentEndTime = currentEnd.getTime();
+			const nextStartTime = nextStart.getTime();
 
 			// Calculate gap duration in minutes
 			const gapMinutes = (nextStartTime - currentEndTime) / (1000 * 60);
@@ -468,15 +587,15 @@ export function generateBreakEvents(
 			// Only create break if gap is at least 1 minute
 			if (gapMinutes >= 1) {
 				const employeeName = currentPeriod._eventData.metadata?.employeeName || "Unknown";
-				const breakStart = currentEnd instanceof Date ? currentEnd : new Date(String(currentEnd));
-				const breakEnd = nextStart instanceof Date ? nextStart : new Date(String(nextStart));
+				const breakStart = currentEnd;
+				const breakEnd = nextStart;
 				const breakEventId = `break_${toScheduleXSafeIdPart(currentPeriod.id)}_${toScheduleXSafeIdPart(nextPeriod.id)}_${i}`;
 
 				const breakEvent: ScheduleXEvent = {
 					id: breakEventId,
 					title: `Break - ${formatBreakDuration(gapMinutes)}`,
-					start: toTemporalZonedDateTime(breakStart, timeZone),
-					end: toTemporalZonedDateTime(breakEnd, timeZone),
+					start: currentPeriod.end,
+					end: nextPeriod.start,
 					calendarId: "break",
 					_eventData: {
 						id: breakEventId,

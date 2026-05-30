@@ -13,7 +13,7 @@ import {
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
-import { organization, user, session, passkey } from "../auth-schema";
+import { organization, passkey, session, user } from "../auth-schema";
 
 // ============================================
 // CONDITIONAL ACCESS MODULE ENUMS

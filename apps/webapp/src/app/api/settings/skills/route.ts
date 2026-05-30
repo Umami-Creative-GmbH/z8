@@ -26,11 +26,11 @@ export async function GET(request: Request) {
 	const skills = await db.query.skill.findMany({
 		where: includeInactive
 			? eq(skill.organizationId, organizationId)
-			: and(
-					eq(skill.organizationId, organizationId),
-					eq(skill.isActive, true),
-				),
-		orderBy: (skillTable, { asc: ascOrder }) => [ascOrder(skillTable.category), ascOrder(skillTable.name)],
+			: and(eq(skill.organizationId, organizationId), eq(skill.isActive, true)),
+		orderBy: (skillTable, { asc: ascOrder }) => [
+			ascOrder(skillTable.category),
+			ascOrder(skillTable.name),
+		],
 	});
 
 	return NextResponse.json({ success: true, data: skills });

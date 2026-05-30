@@ -86,6 +86,17 @@
         "noOrganization": "No se ha seleccionado ninguna organización"
       },
       "form": {
+        "approvalsTesting": {
+          "label": "Pruebas de aprobaciones",
+          "pendingAbsences": {
+            "description": "Crear solicitudes de ausencia pendientes de aprobación del gerente",
+            "title": "Aprobaciones de ausencia pendientes"
+          },
+          "pendingTimeCorrections": {
+            "description": "Crear correcciones de tiempo pendientes de aprobación del gerente",
+            "title": "Aprobaciones de corrección de tiempo pendientes"
+          }
+        },
         "dataTypes": {
           "absences": {
             "description": "Vacaciones, bajas por enfermedad y otras ausencias",
@@ -183,6 +194,14 @@
         "managers": {
           "description": "Asignando gerentes a los empleados",
           "label": "Asignaciones de gerentes"
+        },
+        "pendingAbsenceApprovals": {
+          "description": "Creando solicitudes de aprobación de ausencia pendientes",
+          "label": "Aprobaciones de ausencia pendientes"
+        },
+        "pendingTimeCorrectionApprovals": {
+          "description": "Creando solicitudes de aprobación de corrección de tiempo pendientes",
+          "label": "Aprobaciones de corrección de tiempo pendientes"
         },
         "projects": {
           "description": "Creando proyectos de muestra",

@@ -64,7 +64,7 @@ function replaceStandaloneTextValue(text: string, previewValue: string, token: s
 }
 
 function replaceTextNodeValues(html: string, previewValue: string, token: string) {
-	return html.replace(/>([^<]+)</g, (match, text: string) => {
+	return html.replace(/>([^<]+)</g, (_match, text: string) => {
 		return `>${replaceStandaloneTextValue(text, previewValue, token)}<`;
 	});
 }
@@ -81,10 +81,12 @@ async function createSystemDraft(definition: EmailTemplateDefinition) {
 	let starterDraftHtml = await definition.renderDefault(definition.previewData as never);
 	const replacements = definition.variables
 		.flatMap((variable) =>
-			getGlobalPreviewReplacementValues(definition.previewData[variable.name]).map((previewValue) => ({
-				previewValue,
-				token: `{{${variable.name}}}`,
-			})),
+			getGlobalPreviewReplacementValues(definition.previewData[variable.name]).map(
+				(previewValue) => ({
+					previewValue,
+					token: `{{${variable.name}}}`,
+				}),
+			),
 		)
 		.filter((replacement) => replacement.previewValue)
 		.sort((left, right) => right.previewValue.length - left.previewValue.length);

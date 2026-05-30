@@ -14,11 +14,7 @@ const appTypeLabels: Record<string, string> = {
 	mobile: "mobile application",
 };
 
-function AccessDeniedContent({
-	searchParams,
-}: {
-	searchParams: Promise<{ app?: string }>;
-}) {
+function AccessDeniedContent({ searchParams }: { searchParams: Promise<{ app?: string }> }) {
 	const params = use(searchParams);
 	const { t } = useTranslate();
 	const { push } = useRouter();
@@ -27,7 +23,7 @@ function AccessDeniedContent({
 
 	async function handleSignOut() {
 		await authClient.signOut();
-	push("/sign-in");
+		push("/sign-in");
 	}
 
 	return (

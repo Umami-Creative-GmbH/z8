@@ -58,11 +58,11 @@ function Carousel({
 	const [canScrollPrev, setCanScrollPrev] = React.useState(false);
 	const [canScrollNext, setCanScrollNext] = React.useState(false);
 
-	const onSelect = (api: CarouselApi) => {
+	const onSelect = React.useEffectEvent((api: CarouselApi) => {
 		if (!api) return;
 		setCanScrollPrev(api.canScrollPrev());
 		setCanScrollNext(api.canScrollNext());
-	};
+	});
 
 	const scrollPrev = () => {
 		api?.scrollPrev();
@@ -73,10 +73,10 @@ function Carousel({
 	};
 
 	const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-		if (event.key === "IconArrowLeft") {
+		if (event.key === "ArrowLeft") {
 			event.preventDefault();
 			scrollPrev();
-		} else if (event.key === "IconArrowRight") {
+		} else if (event.key === "ArrowRight") {
 			event.preventDefault();
 			scrollNext();
 		}
@@ -94,15 +94,16 @@ function Carousel({
 		api.on("select", onSelect);
 
 		return () => {
+			api?.off("reInit", onSelect);
 			api?.off("select", onSelect);
 		};
-	}, [api, onSelect]);
+	}, [api]);
 
 	return (
 		<CarouselContext.Provider
 			value={{
 				carouselRef,
-				api: api,
+				api,
 				opts,
 				orientation: orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
 				scrollPrev,

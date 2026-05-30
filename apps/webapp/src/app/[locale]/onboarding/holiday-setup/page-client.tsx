@@ -103,7 +103,9 @@ export default function HolidaySetupPage() {
 			push("/onboarding/work-templates");
 		} else {
 			setLoading(false);
-			toast.error(result.error || t("onboarding.holidaySetup.skipError", "Failed to skip holiday setup"));
+			toast.error(
+				result.error || t("onboarding.holidaySetup.skipError", "Failed to skip holiday setup"),
+			);
 		}
 	}
 
@@ -121,7 +123,10 @@ export default function HolidaySetupPage() {
 
 	const selectedCountryName = countries.find((c) => c.code === selectedCountry)?.name;
 
-	const handleCountrySelect = (country: CountryOption, onCountryChange: (value: string) => void) => {
+	const handleCountrySelect = (
+		country: CountryOption,
+		onCountryChange: (value: string) => void,
+	) => {
 		onCountryChange(country.code);
 		form.setFieldValue("presetName", `${country.name} Holidays`);
 		setCountryOpen(false);
@@ -177,14 +182,14 @@ export default function HolidaySetupPage() {
 										<Label>{t("onboarding.holidaySetup.country", "Country")}</Label>
 										<Popover open={countryOpen} onOpenChange={setCountryOpen}>
 											<PopoverTrigger asChild>
-								<Button
-									variant="outline"
-									role="combobox"
-									aria-expanded={countryOpen}
-									aria-controls={countryListboxId}
-									className="w-full justify-between font-normal"
-									disabled={countriesLoading || loading}
-								>
+												<Button
+													variant="outline"
+													role="combobox"
+													aria-expanded={countryOpen}
+													aria-controls={countryListboxId}
+													className="w-full justify-between font-normal"
+													disabled={countriesLoading || loading}
+												>
 													{selectedCountryName ||
 														t("onboarding.holidaySetup.selectCountry", "Select a country")}
 													<IconSelector className="ml-2 size-4 shrink-0 opacity-50" />
@@ -201,19 +206,19 @@ export default function HolidaySetupPage() {
 															"Search countries...",
 														)}
 													/>
-											<CommandList id={countryListboxId}>
+													<CommandList id={countryListboxId}>
 														<CommandEmpty>
 															{t("onboarding.holidaySetup.noCountry", "No country found")}
 														</CommandEmpty>
 														<CommandGroup>
-											{countries.map((country) => (
-												<CommandItem
-													key={country.code}
-													value={country.name}
-													onSelect={() => {
-														handleCountrySelect(country, field.handleChange);
-													}}
-												>
+															{countries.map((country) => (
+																<CommandItem
+																	key={country.code}
+																	value={country.name}
+																	onSelect={() => {
+																		handleCountrySelect(country, field.handleChange);
+																	}}
+																>
 																	<IconCheck
 																		className={cn(
 																			"mr-2 size-4",

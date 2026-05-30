@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -39,12 +39,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 		const [existingCategory] = await db
 			.select()
 			.from(holidayCategory)
-			.where(
-				and(
-					eq(holidayCategory.id, id),
-					eq(holidayCategory.organizationId, activeOrgId),
-				),
-			)
+			.where(and(eq(holidayCategory.id, id), eq(holidayCategory.organizationId, activeOrgId)))
 			.limit(1);
 
 		if (!existingCategory) {
@@ -112,12 +107,7 @@ export async function DELETE(
 		const [existingCategory] = await db
 			.select()
 			.from(holidayCategory)
-			.where(
-				and(
-					eq(holidayCategory.id, id),
-					eq(holidayCategory.organizationId, activeOrgId),
-				),
-			)
+			.where(and(eq(holidayCategory.id, id), eq(holidayCategory.organizationId, activeOrgId)))
 			.limit(1);
 
 		if (!existingCategory) {

@@ -17,7 +17,6 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
-import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,6 +35,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { useEmployees } from "@/lib/query/use-employees";
 import type { SettingsAccessTier } from "@/lib/settings-access";

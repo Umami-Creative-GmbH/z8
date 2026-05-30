@@ -8,7 +8,6 @@ import {
 	employee,
 	employeeGroup,
 	employeeGroupMember,
-	employeeManagers,
 	team,
 	teamMembership,
 } from "@/db/schema";
@@ -116,11 +115,16 @@ function jsonString(value: unknown) {
 }
 
 function jsonStringArray(value: unknown) {
-	return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : undefined;
+	return Array.isArray(value)
+		? value.filter((item): item is string => typeof item === "string")
+		: undefined;
 }
 
 function jsonObjectValue(value: unknown) {
-	return value && typeof value === "object" && !Array.isArray(value) && typeof (value as { value?: unknown }).value === "string"
+	return value &&
+		typeof value === "object" &&
+		!Array.isArray(value) &&
+		typeof (value as { value?: unknown }).value === "string"
 		? (value as { value: string }).value
 		: undefined;
 }
@@ -224,7 +228,10 @@ async function updateRows(
 	values: Record<string, unknown>,
 	where: unknown,
 ) {
-	const updateQuery = dbService.db.update(table as never).set(values as never).where(where as never);
+	const updateQuery = dbService.db
+		.update(table as never)
+		.set(values as never)
+		.where(where as never);
 	if (updateQuery && typeof updateQuery === "object" && "returning" in updateQuery) {
 		const rows = (await updateQuery.returning()) as unknown;
 		if (Array.isArray(rows) && rows.length === 0) {
@@ -239,38 +246,45 @@ async function updateRows(
 	return updateQuery;
 }
 
-async function loadPolicyContext(dbService: ApprovalDbService, context: ApprovalPolicyEvaluationContext) {
-	const [policies, groupRows, activeGroups, employees, managerLinks, teamMemberships, teams] = await Promise.all([
-		dbService.db.query.approvalPolicy.findMany({
-			where: eq(approvalPolicy.organizationId, context.organizationId),
-			orderBy: [asc(approvalPolicy.priority)],
-			with: { conditions: true, stages: true },
-		}),
-		context.employeeGroupIds.length === 0
-			? dbService.db.query.employeeGroupMember.findMany({
-					where: and(
-						eq(employeeGroupMember.organizationId, context.organizationId),
-						eq(employeeGroupMember.employeeId, context.requesterEmployeeId),
-					),
-				})
-			: Promise.resolve([]),
-		dbService.db.query.employeeGroup.findMany({
-			where: and(eq(employeeGroup.organizationId, context.organizationId), eq(employeeGroup.isActive, true)),
-		}),
-		dbService.db.query.employee.findMany({
-			where: eq(employee.organizationId, context.organizationId),
-		}),
-		dbService.db.query.employeeManagers.findMany(),
-		dbService.db.query.teamMembership.findMany({
-			where: and(
-				eq(teamMembership.organizationId, context.organizationId),
-				eq(teamMembership.employeeId, context.requesterEmployeeId),
-			),
-		}),
-		dbService.db.query.team.findMany({
-			where: eq(team.organizationId, context.organizationId),
-		}),
-	]);
+async function loadPolicyContext(
+	dbService: ApprovalDbService,
+	context: ApprovalPolicyEvaluationContext,
+) {
+	const [policies, groupRows, activeGroups, employees, managerLinks, teamMemberships, teams] =
+		await Promise.all([
+			dbService.db.query.approvalPolicy.findMany({
+				where: eq(approvalPolicy.organizationId, context.organizationId),
+				orderBy: [asc(approvalPolicy.priority)],
+				with: { conditions: true, stages: true },
+			}),
+			context.employeeGroupIds.length === 0
+				? dbService.db.query.employeeGroupMember.findMany({
+						where: and(
+							eq(employeeGroupMember.organizationId, context.organizationId),
+							eq(employeeGroupMember.employeeId, context.requesterEmployeeId),
+						),
+					})
+				: Promise.resolve([]),
+			dbService.db.query.employeeGroup.findMany({
+				where: and(
+					eq(employeeGroup.organizationId, context.organizationId),
+					eq(employeeGroup.isActive, true),
+				),
+			}),
+			dbService.db.query.employee.findMany({
+				where: eq(employee.organizationId, context.organizationId),
+			}),
+			dbService.db.query.employeeManagers.findMany(),
+			dbService.db.query.teamMembership.findMany({
+				where: and(
+					eq(teamMembership.organizationId, context.organizationId),
+					eq(teamMembership.employeeId, context.requesterEmployeeId),
+				),
+			}),
+			dbService.db.query.team.findMany({
+				where: eq(team.organizationId, context.organizationId),
+			}),
+		]);
 	const activeGroupIds = new Set((activeGroups as Array<{ id: string }>).map((group) => group.id));
 
 	return {
@@ -281,12 +295,18 @@ async function loadPolicyContext(dbService: ApprovalDbService, context: Approval
 				context.employeeGroupIds.length > 0
 					? context.employeeGroupIds.filter((groupId) => activeGroupIds.has(groupId))
 					: (groupRows as Array<{ groupId: string; organizationId: string }>).flatMap((row) =>
-						row.organizationId === context.organizationId && activeGroupIds.has(row.groupId) ? [row.groupId] : [],
-					),
+							row.organizationId === context.organizationId && activeGroupIds.has(row.groupId)
+								? [row.groupId]
+								: [],
+						),
 		},
 		employees: employees as Parameters<typeof resolveApproverFromDirectory>[0]["employees"],
-		managerLinks: managerLinks as Parameters<typeof resolveApproverFromDirectory>[0]["managerLinks"],
-		teamMemberships: teamMemberships as NonNullable<Parameters<typeof resolveApproverFromDirectory>[0]["teamMemberships"]>,
+		managerLinks: managerLinks as Parameters<
+			typeof resolveApproverFromDirectory
+		>[0]["managerLinks"],
+		teamMemberships: teamMemberships as NonNullable<
+			Parameters<typeof resolveApproverFromDirectory>[0]["teamMemberships"]
+		>,
 		teams: teams as NonNullable<Parameters<typeof resolveApproverFromDirectory>[0]["teams"]>,
 	};
 }
@@ -363,10 +383,7 @@ export function approveCurrentStageInMemory(
 	};
 }
 
-export function rejectCurrentStageInMemory(
-	chain: ChainInMemory,
-	decidedBy: string,
-): ChainInMemory {
+export function rejectCurrentStageInMemory(chain: ChainInMemory, decidedBy: string): ChainInMemory {
 	return {
 		...chain,
 		status: "rejected",
@@ -589,7 +606,8 @@ export function progressApprovalChainIfLinked(
 						{
 							context: {
 								organizationId: chainRecord.organizationId,
-								approvalType: chainRecord.entityType as ApprovalPolicyEvaluationContext["approvalType"],
+								approvalType:
+									chainRecord.entityType as ApprovalPolicyEvaluationContext["approvalType"],
 								requesterEmployeeId: chainRecord.requesterEmployeeId,
 								teamId: null,
 								locationId: null,
@@ -601,7 +619,8 @@ export function progressApprovalChainIfLinked(
 								entityId: chainRecord.entityId,
 							},
 							defaultApproverId: next.resolvedApproverEmployeeId,
-							metadata: (currentApproval as { metadata?: Record<string, unknown> } | null)?.metadata,
+							metadata: (currentApproval as { metadata?: Record<string, unknown> } | null)
+								?.metadata,
 						},
 						next.resolvedApproverEmployeeId,
 					);
@@ -664,14 +683,22 @@ export function resolvePolicyAndCreateApproval(
 	input: ResolvePolicyAndCreateApprovalInput,
 ): Effect.Effect<ResolvePolicyAndCreateApprovalResult, AnyAppError, never> {
 	return Effect.gen(function* (_) {
-		const loaded = yield* _(dbService.query("loadApprovalPolicyContext", () => loadPolicyContext(dbService, input.context)));
+		const loaded = yield* _(
+			dbService.query("loadApprovalPolicyContext", () =>
+				loadPolicyContext(dbService, input.context),
+			),
+		);
 		const matchedPolicy = findMatchingPolicy(loaded.context, loaded.policies);
 		const requesterUserId = userIdForEmployee(loaded.employees, loaded.context.requesterEmployeeId);
 
 		if (!matchedPolicy) {
 			const approvalRequestId = yield* _(
 				dbService.query("createDefaultApprovalRequest", () =>
-					insertApprovalRequest(dbService, { ...input, context: loaded.context }, input.defaultApproverId),
+					insertApprovalRequest(
+						dbService,
+						{ ...input, context: loaded.context },
+						input.defaultApproverId,
+					),
 				),
 			);
 			yield* _(
@@ -691,10 +718,12 @@ export function resolvePolicyAndCreateApproval(
 		}
 
 		const resolvedStages: Array<{
-			stage: typeof matchedPolicy.stages[number];
+			stage: (typeof matchedPolicy.stages)[number];
 			approverEmployeeId: string;
 		}> = [];
-		for (const stage of matchedPolicy.stages.slice().sort((left, right) => left.stepOrder - right.stepOrder)) {
+		for (const stage of matchedPolicy.stages
+			.slice()
+			.sort((left, right) => left.stepOrder - right.stepOrder)) {
 			const resolved = resolveApproverFromDirectory({
 				organizationId: loaded.context.organizationId,
 				requesterEmployeeId: loaded.context.requesterEmployeeId,
@@ -823,7 +852,7 @@ export function resolvePolicyAndCreateApproval(
 		};
 
 		const result = yield* _(
-				dbService.query("createApprovalChain", async () => {
+			dbService.query("createApprovalChain", async () => {
 				if (supportsTransactions(dbService)) {
 					return await dbService.db.transaction(async (tx) => {
 						const transactionalDb = Object.assign(Object.create(tx as object), {

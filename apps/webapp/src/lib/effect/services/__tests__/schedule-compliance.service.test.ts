@@ -51,33 +51,30 @@ describe("ScheduleComplianceService", () => {
 			}),
 		);
 
-		const workPolicyLayer = Layer.succeed(
-			WorkPolicyService,
-			{
-				getEffectivePolicy: vi.fn(() =>
-					Effect.succeed({
-						policyId: "policy_1",
-						policyName: "Default",
-						assignmentType: "organization",
-						assignedVia: "Organization Default",
-						schedule: null,
-						regulation: {
-							maxDailyMinutes: 480,
-							maxWeeklyMinutes: null,
-							maxUninterruptedMinutes: null,
-							breakRules: [],
-							minRestPeriodMinutes: 660,
-							restPeriodEnforcement: "warn",
-							overtimeDailyThresholdMinutes: 420,
-							overtimeWeeklyThresholdMinutes: 2000,
-							overtimeMonthlyThresholdMinutes: 8000,
-							alertBeforeLimitMinutes: 30,
-							alertThresholdPercent: 80,
-						},
-					}),
-				),
-			} as never,
-		);
+		const workPolicyLayer = Layer.succeed(WorkPolicyService, {
+			getEffectivePolicy: vi.fn(() =>
+				Effect.succeed({
+					policyId: "policy_1",
+					policyName: "Default",
+					assignmentType: "organization",
+					assignedVia: "Organization Default",
+					schedule: null,
+					regulation: {
+						maxDailyMinutes: 480,
+						maxWeeklyMinutes: null,
+						maxUninterruptedMinutes: null,
+						breakRules: [],
+						minRestPeriodMinutes: 660,
+						restPeriodEnforcement: "warn",
+						overtimeDailyThresholdMinutes: 420,
+						overtimeWeeklyThresholdMinutes: 2000,
+						overtimeMonthlyThresholdMinutes: 8000,
+						alertBeforeLimitMinutes: 30,
+						alertThresholdPercent: 80,
+					},
+				}),
+			),
+		} as never);
 
 		const layer = ScheduleComplianceServiceLive.pipe(
 			Layer.provide(workPolicyLayer),
@@ -123,12 +120,9 @@ describe("ScheduleComplianceService", () => {
 			}),
 		);
 
-		const workPolicyLayer = Layer.succeed(
-			WorkPolicyService,
-			{
-				getEffectivePolicy: vi.fn(() => Effect.succeed(null)),
-			} as never,
-		);
+		const workPolicyLayer = Layer.succeed(WorkPolicyService, {
+			getEffectivePolicy: vi.fn(() => Effect.succeed(null)),
+		} as never);
 
 		const layer = ScheduleComplianceServiceLive.pipe(
 			Layer.provide(workPolicyLayer),

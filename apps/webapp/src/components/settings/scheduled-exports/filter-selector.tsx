@@ -3,12 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
 
 export interface FilterItem {
 	id: string;
@@ -86,9 +82,7 @@ export function FilterSelector({
 								</label>
 							</div>
 						))}
-						{items.length === 0 && (
-							<p className="text-sm text-muted-foreground">{emptyMessage}</p>
-						)}
+						{items.length === 0 && <p className="text-sm text-muted-foreground">{emptyMessage}</p>}
 					</ScrollArea>
 					{selectedIds.length > 0 && (
 						<div className="border-t p-2">

@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest";
 import { PLATFORM_SYSTEM_EMAIL_TEMPLATE_KEYS } from "@/db/schema";
 import {
-	PLATFORM_SYSTEM_EMAIL_TEMPLATE_REGISTRY,
 	getPlatformSystemEmailTemplateDefinition,
+	PLATFORM_SYSTEM_EMAIL_TEMPLATE_REGISTRY,
 } from "./system-template-registry";
 
 describe("PLATFORM_SYSTEM_EMAIL_TEMPLATE_REGISTRY", () => {

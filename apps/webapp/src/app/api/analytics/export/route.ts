@@ -5,7 +5,7 @@
  * Requires authentication and validates export requests.
  */
 
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { generateCsv } from "@/lib/reporting/csv-export";
@@ -32,8 +32,6 @@ const exportRequestSchema = z.object({
 			message: "Filename can only contain letters, numbers, underscores, and hyphens",
 		}),
 });
-
-type ExportRequestBody = z.infer<typeof exportRequestSchema>;
 
 /**
  * Sanitize data to prevent Excel formula injection.

@@ -10,7 +10,7 @@ import {
 } from "@/app/[locale]/(app)/settings/locations/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -29,7 +29,10 @@ interface LocationManagementProps {
 	canManageLocations: boolean;
 }
 
-export function LocationManagement({ organizationId, canManageLocations }: LocationManagementProps) {
+export function LocationManagement({
+	organizationId,
+	canManageLocations,
+}: LocationManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);

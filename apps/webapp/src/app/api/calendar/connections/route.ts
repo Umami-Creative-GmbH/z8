@@ -7,9 +7,8 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { type NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
 import { headers } from "next/headers";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { calendarConnection, employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -37,10 +36,7 @@ export async function GET(_request: NextRequest) {
 
 		// Get employee record
 		const emp = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.userId, session.user.id),
-				eq(employee.organizationId, activeOrgId),
-			),
+			where: and(eq(employee.userId, session.user.id), eq(employee.organizationId, activeOrgId)),
 		});
 
 		if (!emp) {
@@ -81,9 +77,6 @@ export async function GET(_request: NextRequest) {
 		return NextResponse.json({ connections: result });
 	} catch (error) {
 		console.error("Error fetching calendar connections:", error);
-		return NextResponse.json(
-			{ error: "Failed to fetch connections" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to fetch connections" }, { status: 500 });
 	}
 }

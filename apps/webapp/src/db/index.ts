@@ -102,7 +102,6 @@ if (env.NODE_ENV !== "production") {
 	globalForDb.db = db;
 }
 
-export { db, pool };
 // Export auth schema tables
 export * from "./auth-schema";
 // Export business schema tables (excludes auth schema imports to avoid duplicates)
@@ -112,15 +111,23 @@ export {
 	absenceCategoryRelations,
 	absenceEntry,
 	absenceEntryRelations,
+	// Enums
+	absenceTypeEnum,
 	appAuthCode,
 	appAuthCodeStatusEnum,
 	appAuthTypeEnum,
-	// Enums
-	absenceTypeEnum,
 	// Approval tables
 	approvalRequest,
 	approvalRequestRelations,
 	approvalStatusEnum,
+	// Audit export tables (signed packages, WORM retention)
+	auditExportConfig,
+	auditExportConfigRelations,
+	auditExportFile,
+	auditExportFileRelations,
+	auditExportPackage,
+	auditExportPackageRelations,
+	auditExportStatusEnum,
 	// Audit tables
 	auditLog,
 	auditLogRelations,
@@ -130,20 +137,10 @@ export {
 	auditPackRequest,
 	auditPackRequestRelations,
 	auditPackStatusEnum,
-	// Audit export tables (signed packages, WORM retention)
-	auditExportConfig,
-	auditExportConfigRelations,
-	auditExportFile,
-	auditExportFileRelations,
-	auditExportPackage,
-	auditExportPackageRelations,
-	auditExportStatusEnum,
 	auditSigningKey,
 	auditSigningKeyRelations,
 	auditVerificationLog,
 	auditVerificationLogRelations,
-	verificationCheckEnum,
-	wormRetentionModeEnum,
 	// Data export tables
 	dataExport,
 	dataExportRelations,
@@ -179,18 +176,40 @@ export {
 	notificationTypeEnum,
 	organizationBranding,
 	organizationBrandingRelations,
-	organizationSecret,
-	organizationSecretKey,
 	// Enterprise tables
 	organizationDomain,
 	organizationDomainRelations,
 	// Relations - CRITICAL: All relations must be exported for Drizzle queries to work
 	organizationRelations,
+	organizationSecret,
+	organizationSecretKey,
+	// Payroll export tables
+	payrollExportConfig,
+	payrollExportConfigRelations,
+	payrollExportFormat,
+	payrollExportFormatEnum,
+	payrollExportFormatRelations,
+	payrollExportJob,
+	payrollExportJobRelations,
+	payrollExportStatusEnum,
+	payrollExportSyncRecord,
+	payrollExportSyncRecordRelations,
+	payrollWageTypeMapping,
+	payrollWageTypeMappingRelations,
+	// Project tables
+	project,
+	projectRelations,
 	pushSubscription,
 	pushSubscriptionRelations,
 	recurrenceTypeEnum,
 	roleEnum,
 	type SurchargeCalculationDetails,
+	// Scheduled export tables
+	scheduledExport,
+	scheduledExportExecution,
+	scheduledExportExecutionRelations,
+	scheduledExportRelations,
+	secretStoreProviderEnum,
 	shift,
 	shiftRelations,
 	shiftRequest,
@@ -229,6 +248,10 @@ export {
 	vacationAllowanceRelations,
 	vacationPolicyAssignment,
 	vacationPolicyAssignmentRelations,
+	verificationCheckEnum,
+	// Work category tables
+	workCategory,
+	workCategoryRelations,
 	workPeriod,
 	workPeriodRelations,
 	// Work policy tables (unified schedules + regulations)
@@ -248,29 +271,6 @@ export {
 	workPolicyScheduleRelations,
 	workPolicyViolation,
 	workPolicyViolationRelations,
-	// Payroll export tables
-	payrollExportConfig,
-	payrollExportConfigRelations,
-	payrollExportFormat,
-	payrollExportFormatEnum,
-	payrollExportFormatRelations,
-	payrollExportJob,
-	payrollExportJobRelations,
-	payrollExportStatusEnum,
-	payrollExportSyncRecord,
-	payrollExportSyncRecordRelations,
-	payrollWageTypeMapping,
-	payrollWageTypeMappingRelations,
-	// Work category tables
-	workCategory,
-	workCategoryRelations,
-	// Project tables
-	project,
-	projectRelations,
-	// Scheduled export tables
-	scheduledExport,
-	scheduledExportRelations,
-	scheduledExportExecution,
-	scheduledExportExecutionRelations,
-	secretStoreProviderEnum,
+	wormRetentionModeEnum,
 } from "./schema";
+export { db, pool };

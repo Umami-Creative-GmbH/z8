@@ -1,5 +1,5 @@
-import { DateTime } from "luxon";
 import { eq, inArray, isNull } from "drizzle-orm";
+import { DateTime } from "luxon";
 
 import {
 	absenceCategory,
@@ -319,7 +319,9 @@ export async function runCanonicalBackfill(
 		await insertIfPresent(tx, timeRecordWork, payload.timeRecordWork);
 		await insertIfPresent(tx, timeRecordAbsence, payload.timeRecordAbsence);
 
-		const allocationRecordIds = payload.timeRecordAllocation.map((allocation) => allocation.recordId);
+		const allocationRecordIds = payload.timeRecordAllocation.map(
+			(allocation) => allocation.recordId,
+		);
 		if (allocationRecordIds.length > 0) {
 			await tx
 				.delete(timeRecordAllocation)
@@ -327,7 +329,9 @@ export async function runCanonicalBackfill(
 			await tx.insert(timeRecordAllocation).values(payload.timeRecordAllocation);
 		}
 
-		const decisionRecordIds = payload.timeRecordApprovalDecision.map((decision) => decision.recordId);
+		const decisionRecordIds = payload.timeRecordApprovalDecision.map(
+			(decision) => decision.recordId,
+		);
 		if (decisionRecordIds.length > 0) {
 			await tx
 				.delete(timeRecordApprovalDecision)
@@ -366,34 +370,41 @@ export async function runCanonicalBackfill(
 async function loadCanonicalBackfillInput(
 	input: CanonicalBackfillRunInput,
 ): Promise<CanonicalBackfillInput> {
-	const [targetEmployees, workPeriods, scopedAbsenceEntries, nullOrgAbsenceEntries, approvalRequests, absenceCategories] =
-		await Promise.all([
-			db.query.employee.findMany({
-				where: eq(employee.organizationId, input.organizationId),
-				columns: { id: true },
-			}),
-			db.query.workPeriod.findMany({
-				where: eq(workPeriod.organizationId, input.organizationId),
-			}),
-			db.query.absenceEntry.findMany({
-				where: eq(absenceEntry.organizationId, input.organizationId),
-			}),
-			db.query.absenceEntry.findMany({
-				where: isNull(absenceEntry.organizationId),
-			}),
-			db.query.approvalRequest.findMany({
-				where: eq(approvalRequest.organizationId, input.organizationId),
-			}),
-			db.query.absenceCategory.findMany({
-				where: eq(absenceCategory.organizationId, input.organizationId),
-				columns: { id: true, countsAgainstVacation: true },
-			}),
-		]);
+	const [
+		targetEmployees,
+		workPeriods,
+		scopedAbsenceEntries,
+		nullOrgAbsenceEntries,
+		approvalRequests,
+		absenceCategories,
+	] = await Promise.all([
+		db.query.employee.findMany({
+			where: eq(employee.organizationId, input.organizationId),
+			columns: { id: true },
+		}),
+		db.query.workPeriod.findMany({
+			where: eq(workPeriod.organizationId, input.organizationId),
+		}),
+		db.query.absenceEntry.findMany({
+			where: eq(absenceEntry.organizationId, input.organizationId),
+		}),
+		db.query.absenceEntry.findMany({
+			where: isNull(absenceEntry.organizationId),
+		}),
+		db.query.approvalRequest.findMany({
+			where: eq(approvalRequest.organizationId, input.organizationId),
+		}),
+		db.query.absenceCategory.findMany({
+			where: eq(absenceCategory.organizationId, input.organizationId),
+			columns: { id: true, countsAgainstVacation: true },
+		}),
+	]);
 
 	const targetEmployeeIds = new Set(targetEmployees.map((record) => record.id));
 	const normalizedScopedAbsenceEntries: LegacyAbsenceEntry[] = scopedAbsenceEntries
 		.filter(
-			(record): record is typeof record & { organizationId: string } => record.organizationId !== null,
+			(record): record is typeof record & { organizationId: string } =>
+				record.organizationId !== null,
 		)
 		.map((record) => ({
 			...record,
@@ -440,7 +451,9 @@ async function insertIfPresent<TTable, TValue>(
 	await tx.insert(table).values(values).onConflictDoNothing();
 }
 
-function mapApprovalStatusToAction(status: LegacyApprovalStatus): "submitted" | "approved" | "rejected" {
+function mapApprovalStatusToAction(
+	status: LegacyApprovalStatus,
+): "submitted" | "approved" | "rejected" {
 	if (status === "pending") {
 		return "submitted";
 	}

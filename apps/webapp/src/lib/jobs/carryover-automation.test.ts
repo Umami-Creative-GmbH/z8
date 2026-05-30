@@ -194,12 +194,7 @@ describe("runVacationAutomation calendar-year scheduling", () => {
 			"system-automation",
 			"Europe/Berlin",
 		);
-		expect(accrueVacationDaysMock).not.toHaveBeenCalledWith(
-			"org-2",
-			12,
-			2025,
-			"system-automation",
-		);
+		expect(accrueVacationDaysMock).not.toHaveBeenCalledWith("org-2", 12, 2025, "system-automation");
 	});
 });
 
@@ -242,12 +237,7 @@ describe("runMonthlyAccrual calendar-year labels", () => {
 			"Europe/Berlin",
 		);
 		expect(getVacationAllowanceMock).not.toHaveBeenCalledWith("org-2", 2025);
-		expect(accrueVacationDaysMock).not.toHaveBeenCalledWith(
-			"org-2",
-			12,
-			2025,
-			"system-automation",
-		);
+		expect(accrueVacationDaysMock).not.toHaveBeenCalledWith("org-2", 12, 2025, "system-automation");
 		expect(result.month).toBe(1);
 		expect(result.year).toBe(2026);
 	});

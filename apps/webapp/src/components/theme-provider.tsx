@@ -173,7 +173,11 @@ function getTimeThemeInfo(
 		return undefined;
 	}
 
-	return { currentTheme, nextSwitchAt: tomorrowTimes.sunrise, nextTheme: "light" };
+	return {
+		currentTheme,
+		nextSwitchAt: tomorrowTimes.sunrise,
+		nextTheme: "light",
+	};
 }
 
 function resolveTheme(
@@ -219,7 +223,11 @@ function requestThemeLocation(): Promise<ThemeLocation> {
 				reject(new Error("Geolocation returned invalid coordinates"));
 			},
 			(error) => reject(error),
-			{ enableHighAccuracy: false, maximumAge: 86_400_000, timeout: GEOLOCATION_TIMEOUT_MS },
+			{
+				enableHighAccuracy: false,
+				maximumAge: 86_400_000,
+				timeout: GEOLOCATION_TIMEOUT_MS,
+			},
 		);
 	});
 }
@@ -296,7 +304,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 		readStoredLocation(storageKey),
 	);
 	const [themeError, setThemeError] = useState<ThemeError | undefined>();
-	const [timeTick, setTimeTick] = useState(0);
+	const [, forceTimeThemeRefresh] = useState(0);
 	const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(() => getSystemTheme());
 	const locationRequestIdRef = useRef(0);
 	const isMountedRef = useRef(true);
@@ -328,7 +336,6 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 
 		const media = window.matchMedia("(prefers-color-scheme: dark)");
 		const updateSystemTheme = () => setSystemTheme(media.matches ? "dark" : "light");
-		updateSystemTheme();
 		media.addEventListener("change", updateSystemTheme);
 
 		return () => media.removeEventListener("change", updateSystemTheme);
@@ -343,16 +350,39 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 			return;
 		}
 
-		const nextBoundary = getNextSunBoundary(location);
-		if (!nextBoundary) {
-			return;
-		}
+		let timeout: number | undefined;
+		let isCancelled = false;
 
-		const delay = Math.min(Math.max(nextBoundary.getTime() - Date.now() + 1000, 0), MAX_TIMEOUT_MS);
-		const timeout = window.setTimeout(() => setTimeTick((value) => value + 1), delay);
+		const scheduleNextUpdate = () => {
+			if (isCancelled) {
+				return;
+			}
 
-		return () => window.clearTimeout(timeout);
-	}, [location, theme, timeTick]);
+			const nextBoundary = getNextSunBoundary(location);
+			if (!nextBoundary) {
+				return;
+			}
+
+			const delay = Math.min(
+				Math.max(nextBoundary.getTime() - Date.now() + 1000, 0),
+				MAX_TIMEOUT_MS,
+			);
+
+			timeout = window.setTimeout(() => {
+				forceTimeThemeRefresh((value) => value + 1);
+				scheduleNextUpdate();
+			}, delay);
+		};
+
+		scheduleNextUpdate();
+
+		return () => {
+			isCancelled = true;
+			if (timeout !== undefined) {
+				window.clearTimeout(timeout);
+			}
+		};
+	}, [location, theme]);
 
 	const clearThemeError = () => setThemeError(undefined);
 

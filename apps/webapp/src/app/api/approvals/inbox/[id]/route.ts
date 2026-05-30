@@ -4,21 +4,20 @@
  * GET /api/approvals/inbox/[id] - Get approval detail for slide-over panel
  */
 
-import { type NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
+import { getApprovalHandler } from "@/lib/approvals/domain/registry";
+import type { ApprovalDetail, ApprovalType } from "@/lib/approvals/domain/types";
+import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/manager-eligibility-db";
+import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { getApprovalHandler } from "@/lib/approvals/domain/registry";
-import type { ApprovalType } from "@/lib/approvals/domain/types";
-import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/manager-eligibility-db";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import type { AnyAppError } from "@/lib/effect/errors";
-import type { ApprovalDetail } from "@/lib/approvals/domain/types";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -26,10 +25,7 @@ import "@/lib/approvals/init";
 
 const logger = createLogger("ApprovalDetailAPI");
 
-export async function GET(
-	_request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	try {
 		const { id } = await params;
 
@@ -42,10 +38,7 @@ export async function GET(
 		// Get active organization from session
 		const activeOrganizationId = session.session?.activeOrganizationId;
 		if (!activeOrganizationId) {
-			return NextResponse.json(
-				{ error: "No active organization" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
 		// Get current employee for the active organization
@@ -120,15 +113,16 @@ export async function GET(
 		const detail = await Effect.runPromise(
 			handler
 				.getDetail(request.entityId, currentEmployee.organizationId)
-				.pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<ApprovalDetail<unknown>, AnyAppError, never>,
+				.pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<
+				ApprovalDetail<unknown>,
+				AnyAppError,
+				never
+			>,
 		);
 
 		return NextResponse.json(detail);
 	} catch (error) {
 		logger.error({ error }, "Failed to fetch approval detail");
-		return NextResponse.json(
-			{ error: "Failed to fetch approval detail" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to fetch approval detail" }, { status: 500 });
 	}
 }

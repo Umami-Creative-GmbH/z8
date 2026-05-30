@@ -1,7 +1,7 @@
 "use client";
 
-import { useTranslate } from "@tolgee/react";
 import { IconArrowLeft } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/navigation";
 

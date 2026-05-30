@@ -1,10 +1,22 @@
 "use client";
 
 import * as React from "react";
-import * as RechartsPrimitive from "recharts";
+import type * as RechartsPrimitive from "recharts";
 import type { NameType, Payload, ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 import { cn } from "@/lib/utils";
+
+const ResponsiveContainer = React.lazy(() =>
+	import("recharts").then((mod) => ({ default: mod.ResponsiveContainer })),
+) as React.ComponentType<React.ComponentProps<typeof RechartsPrimitive.ResponsiveContainer>>;
+
+const ChartTooltip = React.lazy(() =>
+	import("recharts").then((mod) => ({ default: mod.Tooltip })),
+) as React.ComponentType<React.ComponentProps<typeof RechartsPrimitive.Tooltip>>;
+
+const ChartLegend = React.lazy(() =>
+	import("recharts").then((mod) => ({ default: mod.Legend })),
+) as React.ComponentType<React.ComponentProps<typeof RechartsPrimitive.Legend>>;
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const;
@@ -83,7 +95,9 @@ function ChartContainer({
 				{...props}
 			>
 				<ChartStyle config={config} id={chartId} />
-				<RechartsPrimitive.ResponsiveContainer>{children}</RechartsPrimitive.ResponsiveContainer>
+				<React.Suspense fallback={null}>
+					<ResponsiveContainer>{children}</ResponsiveContainer>
+				</React.Suspense>
 			</div>
 		</ChartContext.Provider>
 	);
@@ -96,12 +110,9 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 		return null;
 	}
 
-	return (
-		<style
-			dangerouslySetInnerHTML={{
-				__html: Object.entries(THEMES)
-					.map(
-						([theme, prefix]) => `
+	const cssText = Object.entries(THEMES)
+		.map(
+			([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
 	.map(([key, itemConfig], index) => {
@@ -112,14 +123,11 @@ ${colorConfig
 	.join("\n")}
 }
 `,
-					)
-					.join("\n"),
-			}}
-		/>
-	);
-};
+		)
+		.join("\n");
 
-const ChartTooltip = RechartsPrimitive.Tooltip;
+	return <style>{cssText}</style>;
+};
 
 function ChartTooltipContent({
 	active,
@@ -258,8 +266,6 @@ function ChartTooltipContent({
 		</div>
 	);
 }
-
-const ChartLegend = RechartsPrimitive.Legend;
 
 function ChartLegendContent({
 	className,

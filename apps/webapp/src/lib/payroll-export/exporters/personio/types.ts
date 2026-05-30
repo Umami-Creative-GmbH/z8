@@ -106,9 +106,7 @@ export interface PersonioErrorResponse {
 /**
  * Union type for Personio API response
  */
-export type PersonioApiResponse<T = unknown> =
-	| PersonioSuccessResponse<T>
-	| PersonioErrorResponse;
+export type PersonioApiResponse<T = unknown> = PersonioSuccessResponse<T> | PersonioErrorResponse;
 
 /**
  * Personio employee data from API

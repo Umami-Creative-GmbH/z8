@@ -1,14 +1,10 @@
 "use client";
 
-import { IconCopy, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
+import { IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import {
-	createWebhook,
-	getAvailableEventTypes,
-	updateWebhook,
-} from "@/app/[locale]/(app)/settings/webhooks/actions";
+import { createWebhook, updateWebhook } from "@/app/[locale]/(app)/settings/webhooks/actions";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -24,7 +20,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { NotificationType } from "@/lib/notifications/types";
 import type { PublicWebhookEndpoint, WebhookEndpoint } from "@/lib/webhooks/types";
 import { useRouter } from "@/navigation";
 import { WebhookSecretDialog } from "./webhook-secret-dialog";

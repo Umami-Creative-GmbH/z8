@@ -8,17 +8,20 @@ import { implementationChecklistManualState } from "@/db/schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import {
 	IMPLEMENTATION_CHECKLIST_ITEMS,
-	isImplementationChecklistItemId,
 	type ImplementationChecklistItemId,
+	isImplementationChecklistItemId,
 } from "@/lib/implementation-checklist/definition";
 
 import {
-	loadImplementationChecklistForContext,
 	type ImplementationChecklistActionResult,
 	type ImplementationChecklistViewModel,
+	loadImplementationChecklistForContext,
 } from "./queries";
 
-export type { ImplementationChecklistActionResult, ImplementationChecklistViewModel } from "./queries";
+export type {
+	ImplementationChecklistActionResult,
+	ImplementationChecklistViewModel,
+} from "./queries";
 
 const IMPLEMENTATION_CHECKLIST_PATH = "/settings/implementation-checklist";
 const IMPLEMENTATION_CHECKLIST_MUTATION_ERROR = "Failed to update checklist item.";
@@ -55,7 +58,7 @@ export async function getImplementationChecklist(): Promise<
 
 export async function markImplementationChecklistItemComplete(
 	itemId: string,
-): Promise<ImplementationChecklistActionResult> {
+): Promise<ImplementationChecklistActionResult<undefined>> {
 	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
 	const validation = validateManualItemId(itemId);
 
@@ -97,7 +100,7 @@ export async function markImplementationChecklistItemComplete(
 
 export async function markImplementationChecklistItemIncomplete(
 	itemId: string,
-): Promise<ImplementationChecklistActionResult> {
+): Promise<ImplementationChecklistActionResult<undefined>> {
 	const { organizationId } = await requireOrgAdminSettingsAccess();
 	const validation = validateManualItemId(itemId);
 

@@ -39,14 +39,15 @@ function isScheduledWorkDay(schedule: ReturnDateSchedule, date: DateTime): boole
 			return true;
 		case "custom":
 			return false;
-		case "weekdays":
 		default:
 			return date.weekday >= 1 && date.weekday <= 5;
 	}
 }
 
 function isAbsent(dateKey: string, absenceRanges: AbsenceRange[]): boolean {
-	return absenceRanges.some((absence) => absence.startDate <= dateKey && absence.endDate >= dateKey);
+	return absenceRanges.some(
+		(absence) => absence.startDate <= dateKey && absence.endDate >= dateKey,
+	);
 }
 
 export function getNextAvailableReturnDate({

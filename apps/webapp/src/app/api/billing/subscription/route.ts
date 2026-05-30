@@ -1,15 +1,14 @@
-import { NextResponse } from "next/server";
-import { connection } from "next/server";
-import { headers } from "next/headers";
 import { Effect } from "effect";
+import { headers } from "next/headers";
+import { connection, NextResponse } from "next/server";
+import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import {
-	SubscriptionService,
-	SubscriptionServiceLive,
 	BillingEnforcementService,
 	BillingEnforcementServiceLive,
+	SubscriptionService,
+	SubscriptionServiceLive,
 } from "@/lib/effect/services/billing";
-import { env } from "@/env";
 
 /**
  * Get current subscription status for the organization

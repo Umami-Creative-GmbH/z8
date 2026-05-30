@@ -1,7 +1,7 @@
 "use client";
 
 import { IconDownload, IconLoader2 } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -37,6 +37,7 @@ export function InviteCodeQRDialog({
 	onOpenChange,
 }: InviteCodeQRDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const [format, setFormat] = useState<"png" | "svg">("png");
 	const [qrData, setQrData] = useState<{ png?: string; svg?: string }>({});
 
@@ -49,6 +50,7 @@ export function InviteCodeQRDialog({
 			return result.data;
 		},
 		onSuccess: (data) => {
+			queryClient.invalidateQueries();
 			setQrData((prev) => ({
 				...prev,
 				[data.format]: data.data,

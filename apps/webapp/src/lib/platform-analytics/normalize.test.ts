@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
-import { buildPlatformAnalyticsBuckets, parsePlatformAnalyticsParams } from "./range";
 import { buildPlatformAnalyticsSeries, getLatestPointKpis } from "./normalize";
+import { buildPlatformAnalyticsBuckets, parsePlatformAnalyticsParams } from "./range";
 
 const NOW = DateTime.fromISO("2026-05-10T12:00:00Z", { zone: "utc" });
 
@@ -72,8 +72,12 @@ describe("buildPlatformAnalyticsSeries", () => {
 			false,
 		);
 
-		expect(series.find((point) => point.bucketKey === "2026-04-25")).toMatchObject({ activeUsers: 11 });
-		expect(series.find((point) => point.bucketKey === "2026-05-02")).toMatchObject({ activeUsers: 0 });
+		expect(series.find((point) => point.bucketKey === "2026-04-25")).toMatchObject({
+			activeUsers: 11,
+		});
+		expect(series.find((point) => point.bucketKey === "2026-05-02")).toMatchObject({
+			activeUsers: 0,
+		});
 	});
 
 	it("maps monthly aggregate rows by yyyy-MM bucket key", () => {
@@ -93,8 +97,12 @@ describe("buildPlatformAnalyticsSeries", () => {
 			false,
 		);
 
-		expect(series.find((point) => point.bucketKey === "2026-05")).toMatchObject({ organizations: 8 });
-		expect(series.find((point) => point.bucketKey === "2026-04")).toMatchObject({ organizations: 0 });
+		expect(series.find((point) => point.bucketKey === "2026-05")).toMatchObject({
+			organizations: 8,
+		});
+		expect(series.find((point) => point.bucketKey === "2026-04")).toMatchObject({
+			organizations: 0,
+		});
 	});
 
 	it("maps Date bucket input the same as the equivalent ISO string", () => {

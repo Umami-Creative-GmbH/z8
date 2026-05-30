@@ -85,7 +85,9 @@ describe("GET /api/auth/app-login", () => {
 
 	it("rejects desktop deep links outside the expected auth callback", async () => {
 		const response = await GET(
-			createRequest("https://app.example.com/api/auth/app-login?app=desktop&redirect=z8://evil/callback"),
+			createRequest(
+				"https://app.example.com/api/auth/app-login?app=desktop&redirect=z8://evil/callback",
+			),
 		);
 
 		expect(response.status).toBe(400);

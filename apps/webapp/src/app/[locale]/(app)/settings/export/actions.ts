@@ -70,9 +70,7 @@ export async function startExportAction(
 		);
 
 		// Step 3: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -151,9 +149,7 @@ export async function getExportHistoryAction(
 		);
 
 		// Step 3: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -190,9 +186,7 @@ export async function regenerateDownloadUrlAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -229,9 +223,7 @@ export async function deleteExportAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -289,9 +281,7 @@ export async function getStorageConfigAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -348,9 +338,7 @@ export async function saveStorageConfigAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -448,9 +436,7 @@ export async function testStorageConnectionAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -540,9 +526,7 @@ export async function deleteStorageConfigAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(

@@ -52,7 +52,7 @@ export interface AccrualJobResult {
 
 /**
  * Run annual carryover for all organizations
-	 * Should be scheduled to run on January 1st
+ * Should be scheduled to run on January 1st
  */
 export async function runAnnualCarryover(targetYear?: number): Promise<CarryoverJobResult> {
 	const startedAt = new Date();
@@ -80,10 +80,7 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 				);
 
 				if (!fromYear && !isCalendarYearStart) {
-					logger.info(
-						{ organizationId: org.id },
-						"Carryover not due for organization",
-					);
+					logger.info({ organizationId: org.id }, "Carryover not due for organization");
 					continue;
 				}
 

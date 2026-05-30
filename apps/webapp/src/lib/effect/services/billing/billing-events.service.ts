@@ -1,16 +1,16 @@
-import { Context, Effect, Layer } from "effect";
-import type Stripe from "stripe";
-import { DateTime } from "luxon";
 import { eq } from "drizzle-orm";
+import { Context, Effect, Layer } from "effect";
+import { DateTime } from "luxon";
+import type Stripe from "stripe";
 import { db } from "@/db";
 import { stripeEvent, subscription } from "@/db/schema";
+import { env } from "@/env";
 import { sendBillingSystemEmail } from "@/lib/billing/billing-system-email";
+import { createLogger } from "@/lib/logger";
+import { DatabaseError, type StripeError } from "../../errors";
+import { SeatSyncService } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";
 import { SubscriptionService } from "./subscription.service";
-import { SeatSyncService } from "./seat-sync.service";
-import { DatabaseError, StripeError } from "../../errors";
-import { createLogger } from "@/lib/logger";
-import { env } from "@/env";
 
 const logger = createLogger("BillingEventsService");
 const DEFAULT_APP_URL = "https://app.z8-time.app";
@@ -36,8 +36,9 @@ const formatStripeAmount = (amount?: number | null, currency?: string | null) =>
 	}
 };
 
-const getCustomerId = (customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined) =>
-	typeof customer === "string" ? customer : customer?.id;
+const getCustomerId = (
+	customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined,
+) => (typeof customer === "string" ? customer : customer?.id);
 
 const getCustomerEmailFromObject = (
 	customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined,
@@ -54,7 +55,9 @@ export class BillingEventsService extends Context.Tag("BillingEventsService")<
 		 * Process a Stripe webhook event
 		 * Handles idempotency checking and event dispatch
 		 */
-		readonly processEvent: (event: Stripe.Event) => Effect.Effect<void, DatabaseError | StripeError>;
+		readonly processEvent: (
+			event: Stripe.Event,
+		) => Effect.Effect<void, DatabaseError | StripeError>;
 
 		/**
 		 * Check if an event has already been processed
@@ -107,7 +110,10 @@ export const BillingEventsServiceLive = Layer.effect(
 				Effect.match({
 					onFailure: (error) => {
 						logger.warn(
-							{ templateKey: params.templateKey, error: error instanceof Error ? error.name : typeof error },
+							{
+								templateKey: params.templateKey,
+								error: error instanceof Error ? error.name : typeof error,
+							},
 							"Billing system email failed outside sender guard",
 						);
 					},
@@ -138,9 +144,8 @@ export const BillingEventsServiceLive = Layer.effect(
 				}
 
 				// Get subscription ID as string
-				const subscriptionId = typeof session.subscription === "string"
-					? session.subscription
-					: session.subscription.id;
+				const subscriptionId =
+					typeof session.subscription === "string" ? session.subscription : session.subscription.id;
 
 				// Fetch subscription details from Stripe
 				const stripeSub = yield* stripeService.getSubscription(subscriptionId);
@@ -150,9 +155,8 @@ export const BillingEventsServiceLive = Layer.effect(
 				const billingInterval = priceInterval === "year" ? "year" : "month";
 
 				// Get customer ID
-				const customerId = typeof session.customer === "string"
-					? session.customer
-					: session.customer?.id ?? "";
+				const customerId =
+					typeof session.customer === "string" ? session.customer : (session.customer?.id ?? "");
 
 				// Create subscription record
 				yield* subscriptionService.create({
@@ -176,7 +180,11 @@ export const BillingEventsServiceLive = Layer.effect(
 				yield* seatSyncService.syncSeatsForOrganization(organizationId);
 
 				logger.info(
-					{ organizationId, subscriptionId: stripeSub.id, status: stripeSub.status },
+					{
+						organizationId,
+						subscriptionId: stripeSub.id,
+						status: stripeSub.status,
+					},
 					"Subscription created from checkout",
 				);
 			});
@@ -434,9 +442,7 @@ export const BillingEventsServiceLive = Layer.effect(
 				});
 			});
 
-		const handleInvoiceFinalized = (
-			invoice: Stripe.Invoice,
-		): Effect.Effect<void, DatabaseError> =>
+		const handleInvoiceFinalized = (invoice: Stripe.Invoice): Effect.Effect<void, DatabaseError> =>
 			Effect.gen(function* () {
 				const customerEmail = yield* resolveCustomerEmail(invoice.customer, invoice.customer_email);
 
@@ -709,9 +715,7 @@ export const BillingEventsServiceLive = Layer.effect(
 					try {
 						switch (event.type) {
 							case "checkout.session.completed":
-								yield* handleCheckoutSessionCompleted(
-									event.data.object as Stripe.Checkout.Session,
-								);
+								yield* handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
 								break;
 
 							case "customer.subscription.created":
@@ -738,15 +742,11 @@ export const BillingEventsServiceLive = Layer.effect(
 								break;
 
 							case "customer.subscription.paused":
-								yield* handleCustomerSubscriptionPaused(
-									event.data.object as Stripe.Subscription,
-								);
+								yield* handleCustomerSubscriptionPaused(event.data.object as Stripe.Subscription);
 								break;
 
 							case "customer.subscription.resumed":
-								yield* handleCustomerSubscriptionResumed(
-									event.data.object as Stripe.Subscription,
-								);
+								yield* handleCustomerSubscriptionResumed(event.data.object as Stripe.Subscription);
 								break;
 
 							case "invoice.finalized":
@@ -754,9 +754,7 @@ export const BillingEventsServiceLive = Layer.effect(
 								break;
 
 							case "payment_intent.payment_failed":
-								yield* handlePaymentIntentFailed(
-									event.data.object as Stripe.PaymentIntent,
-								);
+								yield* handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
 								break;
 
 							default:
@@ -797,7 +795,10 @@ export const BillingEventsServiceLive = Layer.effect(
 								}),
 						});
 
-						logger.error({ error, eventType: event.type, eventId: event.id }, "Event processing failed");
+						logger.error(
+							{ error, eventType: event.type, eventId: event.id },
+							"Event processing failed",
+						);
 						throw error;
 					}
 				}),

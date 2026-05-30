@@ -86,6 +86,17 @@
         "noOrganization": "Aucune organisation sélectionnée"
       },
       "form": {
+        "approvalsTesting": {
+          "label": "Test des approbations",
+          "pendingAbsences": {
+            "description": "Créer des demandes d'absence en attente d'approbation par le responsable",
+            "title": "Approbations d'absence en attente"
+          },
+          "pendingTimeCorrections": {
+            "description": "Créer des corrections de temps en attente d'approbation par le responsable",
+            "title": "Approbations de correction de temps en attente"
+          }
+        },
         "dataTypes": {
           "absences": {
             "description": "Vacances, congés maladie et autres absences",
@@ -183,6 +194,14 @@
         "managers": {
           "description": "Assignation des managers aux employés",
           "label": "Affectations de managers"
+        },
+        "pendingAbsenceApprovals": {
+          "description": "Création de demandes d'approbation d'absence en attente",
+          "label": "Approbations d'absence en attente"
+        },
+        "pendingTimeCorrectionApprovals": {
+          "description": "Création de demandes d'approbation de correction de temps en attente",
+          "label": "Approbations de correction de temps en attente"
         },
         "projects": {
           "description": "Création des projets d'exemple",

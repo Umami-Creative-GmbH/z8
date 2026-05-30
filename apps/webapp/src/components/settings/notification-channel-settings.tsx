@@ -2,7 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
@@ -51,12 +51,14 @@ export function NotificationChannelSettings({
 		? getSetupStatusLabel(config.setupStatus, t)
 		: t("settings.notifications.status.notConfigured", "Not configured");
 	const controlsDisabled = !isConfigured;
+	const queryClient = useQueryClient();
 	const { refresh } = useRouter();
 
 	const updateMutation = useMutation({
 		mutationFn: updateAction,
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries();
 				toast.success(
 					t("settings.notifications.saved", "{channelName} notification settings saved", {
 						channelName,

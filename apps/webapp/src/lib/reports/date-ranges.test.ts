@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { DateTime, Settings } from "luxon";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { formatDateRangeLabel, getDateRangeForPreset } from "./date-ranges";
 
 function dateRangeIsoDates(range: ReturnType<typeof getDateRangeForPreset>) {
@@ -41,7 +41,9 @@ describe("getDateRangeForPreset", () => {
 			start: "2026-01-01",
 			end: "2026-05-12",
 		});
-		expect(DateTime.fromJSDate(range.end, { zone: "utc" }).toISO()).toBe("2026-05-12T10:30:00.000Z");
+		expect(DateTime.fromJSDate(range.end, { zone: "utc" }).toISO()).toBe(
+			"2026-05-12T10:30:00.000Z",
+		);
 	});
 
 	test("returns the previous calendar year for last_year", () => {
@@ -66,11 +68,15 @@ describe("getDateRangeForPreset", () => {
 	});
 
 	test("uses the configured timezone for calendar-year preset boundaries", () => {
-		expect(dateRangeIsoTimes(getDateRangeForPreset("current_year", { timezone: "Europe/Berlin" }))).toEqual({
+		expect(
+			dateRangeIsoTimes(getDateRangeForPreset("current_year", { timezone: "Europe/Berlin" })),
+		).toEqual({
 			start: "2025-12-31T23:00:00.000Z",
 			end: "2026-12-31T22:59:59.999Z",
 		});
-		expect(dateRangeIsoTimes(getDateRangeForPreset("last_year", { timezone: "Europe/Berlin" }))).toEqual({
+		expect(
+			dateRangeIsoTimes(getDateRangeForPreset("last_year", { timezone: "Europe/Berlin" })),
+		).toEqual({
 			start: "2024-12-31T23:00:00.000Z",
 			end: "2025-12-31T22:59:59.999Z",
 		});
@@ -81,7 +87,9 @@ describe("getDateRangeForPreset", () => {
 	});
 
 	test("uses the configured timezone for quarter preset boundaries", () => {
-		expect(dateRangeIsoTimes(getDateRangeForPreset("q2", { year: 2024, timezone: "Europe/Berlin" }))).toEqual({
+		expect(
+			dateRangeIsoTimes(getDateRangeForPreset("q2", { year: 2024, timezone: "Europe/Berlin" })),
+		).toEqual({
 			start: "2024-03-31T22:00:00.000Z",
 			end: "2024-06-30T21:59:59.999Z",
 		});

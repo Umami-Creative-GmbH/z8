@@ -78,7 +78,10 @@ describe("resolveEligibleManagers", () => {
 				teamMemberships: [],
 				teams: [],
 			}),
-		).toEqual({ ok: false, reason: "Requester has no active direct or team manager in this organization." });
+		).toEqual({
+			ok: false,
+			reason: "Requester has no active direct or team manager in this organization.",
+		});
 	});
 
 	it("rejects inactive requesters before resolving managers", () => {
@@ -124,6 +127,11 @@ describe("resolveEligibleManagers", () => {
 				teamMemberships: [],
 				teams: [],
 			}),
-		).toEqual({ ok: true, source: "direct", managerId: "direct-a", managerIds: ["direct-a", "direct-b"] });
+		).toEqual({
+			ok: true,
+			source: "direct",
+			managerId: "direct-a",
+			managerIds: ["direct-a", "direct-b"],
+		});
 	});
 });

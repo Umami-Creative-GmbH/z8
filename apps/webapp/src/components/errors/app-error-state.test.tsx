@@ -10,22 +10,22 @@ const { backMock } = vi.hoisted(() => ({
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (
-			_key: string,
-			defaultValue?: string,
-			params?: Record<string, string | number>,
-		) => {
+		t: (_key: string, defaultValue?: string, params?: Record<string, string | number>) => {
 			if (!defaultValue) {
 				return _key;
 			}
 
-			return defaultValue.replace(/\{(\w+)\}/g, (_, token: string) => String(params?.[token] ?? `{${token}}`));
+			return defaultValue.replace(/\{(\w+)\}/g, (_, token: string) =>
+				String(params?.[token] ?? `{${token}}`),
+			);
 		},
 	}),
 }));
 
 vi.mock("@/navigation", () => ({
-	Link: ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a>,
+	Link: ({ children, href }: { children: ReactNode; href: string }) => (
+		<a href={href}>{children}</a>
+	),
 	useRouter: () => ({ back: backMock }),
 }));
 

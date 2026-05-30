@@ -24,21 +24,20 @@ const SSL_MODES = new Set<PostgresSslMode>([
 
 export function getPostgresSslConfig(
 	env: PostgresSslEnv = appEnv,
-	readCertificateFile: ReadCertificateFile = (path) => readFileSync(path, "utf8")
+	readCertificateFile: ReadCertificateFile = (path) => readFileSync(path, "utf8"),
 ): PostgresSslConfig {
 	const mode = (env.POSTGRES_SSL_MODE ?? "disable") as PostgresSslMode;
 
 	if (!SSL_MODES.has(mode)) {
-		throw new Error(
-			`POSTGRES_SSL_MODE must be one of: ${Array.from(SSL_MODES).join(", ")}`
-		);
+		throw new Error(`POSTGRES_SSL_MODE must be one of: ${Array.from(SSL_MODES).join(", ")}`);
 	}
 
 	if (mode === "disable") {
 		return false;
 	}
 
-	const ca = env.POSTGRES_SSL_CA_CERT ??
+	const ca =
+		env.POSTGRES_SSL_CA_CERT ??
 		(env.POSTGRES_SSL_ROOT_CERT_PATH
 			? readCertificateFile(env.POSTGRES_SSL_ROOT_CERT_PATH)
 			: undefined);

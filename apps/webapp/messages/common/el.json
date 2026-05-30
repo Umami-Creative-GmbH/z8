@@ -389,7 +389,8 @@
       "markedRead": "Σημειώθηκαν {count} ειδοποιήσεις ως αναγνωσμένες",
       "markReadFailed": "Αποτυχία σήμανσης ειδοποιήσεων ως αναγνωσμένων"
     },
-    "unreadBadge": "{count} μη αναγνωσμένα"
+    "unreadBadge": "{count} μη αναγνωσμένα",
+    "unreadCountOverflow": "99+"
   },
   "offline": {
     "banner": {

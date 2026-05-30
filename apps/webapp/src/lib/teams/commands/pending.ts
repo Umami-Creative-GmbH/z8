@@ -7,8 +7,7 @@
 import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { approvalRequest, employee, absenceEntry, absenceCategory } from "@/db/schema";
-import { user } from "@/db/auth-schema";
+import { absenceEntry, approvalRequest, employee } from "@/db/schema";
 import { fmtShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
@@ -38,7 +37,10 @@ export const pendingCommand: BotCommand = {
 			if (pendingRequests.length === 0) {
 				return {
 					type: "text",
-					text: t("bot.cmd.pending.none", "You have no pending approval requests. Nice work keeping up!"),
+					text: t(
+						"bot.cmd.pending.none",
+						"You have no pending approval requests. Nice work keeping up!",
+					),
 				};
 			}
 

@@ -1,13 +1,8 @@
+import { and, desc, eq, gte, isNull, or, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { and, eq, desc, isNull, or, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
-import {
-	accessPolicy,
-	trustedDevice,
-	sessionExtension,
-	accessViolationLog,
-} from "@/db/schema";
+import { accessPolicy, accessViolationLog, sessionExtension, trustedDevice } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { getActiveAccessPolicies } from "./cached-queries";
 
@@ -161,8 +156,9 @@ const IP_CACHE_MAX_SIZE = 1000;
  */
 function ipToNumber(ip: string): number | null {
 	// Check cache first
-	if (ipToNumberCache.has(ip)) {
-		return ipToNumberCache.get(ip)!;
+	const cached = ipToNumberCache.get(ip);
+	if (cached !== undefined) {
+		return cached;
 	}
 
 	// Parse IP
@@ -175,7 +171,7 @@ function ipToNumber(ip: string): number | null {
 	let num = 0;
 	for (let i = 0; i < 4; i++) {
 		const part = parseInt(parts[i], 10);
-		if (isNaN(part) || part < 0 || part > 255) {
+		if (Number.isNaN(part) || part < 0 || part > 255) {
 			ipToNumberCache.set(ip, null);
 			return null;
 		}
@@ -202,8 +198,9 @@ const bitmaskCache = new Map<number, number>();
  * Get bitmask for CIDR notation (cached)
  */
 function getBitmask(bits: number): number {
-	if (bitmaskCache.has(bits)) {
-		return bitmaskCache.get(bits)!;
+	const cached = bitmaskCache.get(bits);
+	if (cached !== undefined) {
+		return cached;
 	}
 	const mask = ~(2 ** (32 - bits) - 1);
 	bitmaskCache.set(bits, mask);
@@ -213,7 +210,7 @@ function getBitmask(bits: number): number {
 /**
  * Check if an IP address matches a CIDR range
  */
-function ipMatchesCidr(ip: string, cidr: string): boolean {
+function _ipMatchesCidr(ip: string, cidr: string): boolean {
 	const [range, bitsStr] = cidr.split("/");
 	const bits = bitsStr ? parseInt(bitsStr, 10) : 32;
 
@@ -563,13 +560,14 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 
 				// Find trusted device if fingerprint provided
 				let trustedDeviceId: string | undefined;
-				if (accessContext.deviceFingerprint) {
+				const deviceFingerprint = accessContext.deviceFingerprint;
+				if (deviceFingerprint) {
 					const device = yield* Effect.tryPromise(() =>
 						db.query.trustedDevice.findFirst({
 							where: and(
 								eq(trustedDevice.userId, accessContext.userId),
 								eq(trustedDevice.organizationId, organizationId),
-								eq(trustedDevice.deviceFingerprint, accessContext.deviceFingerprint!),
+								eq(trustedDevice.deviceFingerprint, deviceFingerprint),
 								eq(trustedDevice.isActive, true),
 							),
 						}),
@@ -621,7 +619,8 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 						organizationId: params.organizationId,
 						userId: params.userId,
 						sessionId: params.sessionId,
-						violationType: params.violationType as typeof accessViolationLog.$inferInsert.violationType,
+						violationType:
+							params.violationType as typeof accessViolationLog.$inferInsert.violationType,
 						policyId: params.policyId,
 						ipAddress: params.context.ipAddress,
 						country: params.context.country,
@@ -647,7 +646,10 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 		getActivePolicies: (organizationId: string) =>
 			Effect.tryPromise(() =>
 				db.query.accessPolicy.findMany({
-					where: and(eq(accessPolicy.organizationId, organizationId), eq(accessPolicy.enabled, true)),
+					where: and(
+						eq(accessPolicy.organizationId, organizationId),
+						eq(accessPolicy.enabled, true),
+					),
 					orderBy: [desc(accessPolicy.priority)],
 				}),
 			),
@@ -707,7 +709,11 @@ export const ConditionalAccessServiceLive = Layer.succeed(
 				}
 
 				logger.info(
-					{ userId, organizationId, terminatedCount: sessionsToTerminate.length },
+					{
+						userId,
+						organizationId,
+						terminatedCount: sessionsToTerminate.length,
+					},
 					"Excess sessions terminated",
 				);
 

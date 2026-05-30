@@ -41,9 +41,9 @@ export * from "./export";
 export * from "./holiday";
 // Identity management (role templates, lifecycle)
 export * from "./identity";
+export * from "./implementation-checklist";
 // Import review staging and audit tables
 export * from "./import-review";
-export * from "./implementation-checklist";
 // Invite codes
 export * from "./invite-code";
 export * from "./notification";
@@ -58,9 +58,9 @@ export * from "./project";
 export * from "./relations";
 // Scheduled exports
 export * from "./scheduled-export";
-export * from "./secret-store";
 // SCIM provisioning
 export * from "./scim";
+export * from "./secret-store";
 export * from "./shift";
 // Skills & qualifications
 export * from "./skill";

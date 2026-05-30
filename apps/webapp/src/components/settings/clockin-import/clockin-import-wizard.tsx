@@ -321,7 +321,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 										value={entry.employeeId ?? ""}
 										aria-label={`${t("settings.clockinImport.mapping.mapEmployee", "Map")} ${entry.clockinEmployeeName}`}
 										onChange={(event) => updateMapping(entry.clockinEmployeeId, event.target.value)}
-										className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+										className="h-10 rounded-md border border-input px-3 text-sm"
 									>
 										<option value="">
 											{t("settings.clockinImport.mapping.skipEmployee", "Skip this employee")}

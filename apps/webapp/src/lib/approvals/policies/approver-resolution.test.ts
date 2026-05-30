@@ -46,7 +46,12 @@ describe("resolveApproverFromDirectory", () => {
 				stage: stage({ approverType: "direct_manager" }),
 				employees: [
 					...employees,
-					{ id: "emp_team_manager", organizationId: "org_1", isActive: true, role: "manager" as const },
+					{
+						id: "emp_team_manager",
+						organizationId: "org_1",
+						isActive: true,
+						role: "manager" as const,
+					},
 				],
 				managerLinks: [],
 				teamMemberships: [{ employeeId: "emp_requester", teamId: "team_1" }],
@@ -63,7 +68,12 @@ describe("resolveApproverFromDirectory", () => {
 				stage: stage({ approverType: "direct_manager" }),
 				employees: [
 					...employees,
-					{ id: "emp_backup_manager", organizationId: "org_1", isActive: true, role: "manager" as const },
+					{
+						id: "emp_backup_manager",
+						organizationId: "org_1",
+						isActive: true,
+						role: "manager" as const,
+					},
 				],
 				managerLinks: [
 					{ employeeId: "emp_requester", managerId: "emp_backup_manager" },
@@ -83,8 +93,18 @@ describe("resolveApproverFromDirectory", () => {
 				stage: stage({ approverType: "direct_manager" }),
 				employees: [
 					...employees,
-					{ id: "emp_z_manager", organizationId: "org_1", isActive: true, role: "manager" as const },
-					{ id: "emp_a_manager", organizationId: "org_1", isActive: true, role: "manager" as const },
+					{
+						id: "emp_z_manager",
+						organizationId: "org_1",
+						isActive: true,
+						role: "manager" as const,
+					},
+					{
+						id: "emp_a_manager",
+						organizationId: "org_1",
+						isActive: true,
+						role: "manager" as const,
+					},
 				],
 				managerLinks: [
 					{ employeeId: "emp_requester", managerId: "emp_z_manager" },
@@ -186,7 +206,12 @@ describe("resolveApproverFromDirectory", () => {
 				requesterEmployeeId: "emp_requester",
 				stage: stage({ approverType: "org_admin" }),
 				employees: [
-					{ id: "emp_requester", organizationId: "org_1", isActive: true, role: "employee" as const },
+					{
+						id: "emp_requester",
+						organizationId: "org_1",
+						isActive: true,
+						role: "employee" as const,
+					},
 					{ id: "emp_admin_z", organizationId: "org_1", isActive: true, role: "admin" as const },
 					{ id: "emp_admin_a", organizationId: "org_1", isActive: true, role: "admin" as const },
 				],
@@ -224,7 +249,10 @@ describe("resolveApproverFromDirectory", () => {
 				teamMemberships,
 				teams,
 			}),
-		).toEqual({ ok: false, reason: "Requester has no active direct manager in this organization." });
+		).toEqual({
+			ok: false,
+			reason: "Requester has no active direct manager in this organization.",
+		});
 	});
 
 	it("rejects manager manager when direct manager is outside the organization", () => {
@@ -240,7 +268,10 @@ describe("resolveApproverFromDirectory", () => {
 				teamMemberships,
 				teams,
 			}),
-		).toEqual({ ok: false, reason: "Requester has no active direct manager in this organization." });
+		).toEqual({
+			ok: false,
+			reason: "Requester has no active direct manager in this organization.",
+		});
 	});
 
 	it("rejects unsupported team lead stages", () => {

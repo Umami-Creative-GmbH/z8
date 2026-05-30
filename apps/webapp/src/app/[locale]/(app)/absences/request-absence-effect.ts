@@ -24,9 +24,9 @@ import {
 	type VacationOverrideSummary,
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceRequest } from "@/lib/absences/types";
-import { createAbsenceApprovalWorkflow } from "@/lib/approvals/server/absence-approvals";
-import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import { createAbsenceApprovalWorkflow } from "@/lib/approvals/server/absence-approvals";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -51,8 +51,8 @@ import {
 import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
-	markAutoApprovedAbsenceWorkBalanceDirtyBestEffort,
 	getMissingAbsenceApproverMessage,
+	markAutoApprovedAbsenceWorkBalanceDirtyBestEffort,
 	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
@@ -214,7 +214,8 @@ function createRequestedAbsenceRecordsInTransaction(params: {
 	createdBy: string;
 	hasManagerApprovalWorkflow: boolean;
 }) {
-	const { dbService, currentEmployee, data, category, createdBy, hasManagerApprovalWorkflow } = params;
+	const { dbService, currentEmployee, data, category, createdBy, hasManagerApprovalWorkflow } =
+		params;
 
 	return dbService.query("createRequestedAbsenceRecords", async () => {
 		return await dbService.db.transaction(async (tx) => {
@@ -567,11 +568,8 @@ function requestAbsenceWithResolverEffect(
 					sickDetail: data.sickDetail,
 				});
 				if (sickDetailError) {
-					yield* _(
-						Effect.fail(createSickDetailValidationError(sickDetailError)),
-					);
+					yield* _(Effect.fail(createSickDetailValidationError(sickDetailError)));
 				}
-
 
 				const defaultApproverId = category.requiresApproval
 					? yield* _(getAbsenceDefaultApproverId(dbService, currentEmployee))
@@ -615,7 +613,7 @@ function requestAbsenceWithResolverEffect(
 
 				logger.info(
 					{
-					categoryId: requestData.categoryId,
+						categoryId: requestData.categoryId,
 						categoryName: category.name,
 						businessDays,
 						requiresApproval: category.requiresApproval,

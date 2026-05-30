@@ -7,7 +7,6 @@ import {
 	IconChevronRight,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { Link } from "@/navigation";
 import type {
 	WorkdayTimelineData,
 	WorkdayTimelineItemType,
@@ -19,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Link } from "@/navigation";
 
 export interface SerializableSelectedWorkdayDate {
 	dateKey: string;
@@ -94,7 +94,9 @@ function DayPicker({ selectedDate }: { selectedDate: SerializableSelectedWorkday
 						href={dayHref(selectedDate.previousDateKey)}
 					>
 						<IconChevronLeft aria-hidden="true" className="size-4" />
-						<span className="sr-only">{t("timeTracking.timeline.previousDay", "Previous day")}</span>
+						<span className="sr-only">
+							{t("timeTracking.timeline.previousDay", "Previous day")}
+						</span>
 					</Link>
 				</Button>
 				<Button asChild size="sm" variant="outline">
@@ -197,13 +199,17 @@ function TimelineRowContent({
 }) {
 	return (
 		<div className="flex gap-3 px-4 py-3">
-			<div className={cn("mt-1 size-2.5 shrink-0 rounded-full", severityClassName(item.severity))} />
+			<div
+				className={cn("mt-1 size-2.5 shrink-0 rounded-full", severityClassName(item.severity))}
+			/>
 			<div className="min-w-0 flex-1 space-y-1">
 				<div className="flex flex-wrap items-center gap-2">
 					<p className="break-words font-medium text-sm leading-5">{item.title}</p>
 					{item.badge && <Badge variant="secondary">{item.badge}</Badge>}
 				</div>
-				{timeRange && <p className="font-medium text-muted-foreground text-xs tabular-nums">{timeRange}</p>}
+				{timeRange && (
+					<p className="font-medium text-muted-foreground text-xs tabular-nums">{timeRange}</p>
+				)}
 				{item.subtitle && (
 					<p className="break-words text-muted-foreground text-sm leading-5">{item.subtitle}</p>
 				)}

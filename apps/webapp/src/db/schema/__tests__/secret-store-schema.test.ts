@@ -10,7 +10,11 @@ import {
 	organizationSecretKey as schemaOrganizationSecretKey,
 	secretStoreProviderEnum as schemaSecretStoreProviderEnum,
 } from "@/db/schema";
-import { organizationSecret, organizationSecretKey, secretStoreProviderEnum } from "@/db/schema/secret-store";
+import {
+	organizationSecret,
+	organizationSecretKey,
+	secretStoreProviderEnum,
+} from "@/db/schema/secret-store";
 
 describe("secret store schema", () => {
 	it("types Scaleway organization key metadata without key material", () => {

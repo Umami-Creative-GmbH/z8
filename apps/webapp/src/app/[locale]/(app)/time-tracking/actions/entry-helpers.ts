@@ -8,6 +8,7 @@ import {
 	getProjectTotalHours,
 } from "@/lib/notifications/project-notification-triggers";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
 import { getRequestMetadata } from "./auth";
 import { BOOKABLE_PROJECT_STATUSES } from "./shared";
 
@@ -21,17 +22,37 @@ type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	> | null;
 };
 
-export async function createTimeEntry(params: {
-	employeeId: string;
-	organizationId: string;
-	type: "clock_in" | "clock_out" | "correction";
-	timestamp: Date;
-	createdBy: string;
-	replacesEntryId?: string;
-	notes?: string;
-	isSuperseded?: boolean;
-}, client: TimeEntryDbClient = db): Promise<typeof timeEntry.$inferSelect> {
-	const { employeeId, organizationId, type, timestamp, createdBy, replacesEntryId, notes, isSuperseded } = params;
+export async function createTimeEntry(
+	params: {
+		employeeId: string;
+		organizationId: string;
+		type: "clock_in" | "clock_out" | "correction";
+		timestamp: Date;
+		createdBy: string;
+		utcOffsetMinutes: number;
+		timezone: string;
+		timezoneSource: TimeEntryTimezoneSource;
+		replacesEntryId?: string;
+		notes?: string;
+		location?: string;
+		isSuperseded?: boolean;
+	},
+	client: TimeEntryDbClient = db,
+): Promise<typeof timeEntry.$inferSelect> {
+	const {
+		employeeId,
+		organizationId,
+		type,
+		timestamp,
+		createdBy,
+		utcOffsetMinutes,
+		timezone,
+		timezoneSource,
+		replacesEntryId,
+		notes,
+		location,
+		isSuperseded,
+	} = params;
 
 	const [previousEntry] = await client
 		.select()
@@ -61,8 +82,12 @@ export async function createTimeEntry(params: {
 			ipAddress,
 			deviceInfo: userAgent,
 			createdBy,
+			utcOffsetMinutes,
+			timezone,
+			timezoneSource,
 			replacesEntryId,
 			notes,
+			location,
 			...(isSuperseded === undefined ? {} : { isSuperseded }),
 		})
 		.returning();

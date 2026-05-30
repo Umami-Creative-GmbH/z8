@@ -10,9 +10,9 @@
 	},
 	"dependencies": {
 		"@tabler/icons-react": "^3.44.0",
-		"fumadocs-core": "^16.9.1",
-		"fumadocs-mdx": "^15.0.8",
-		"fumadocs-ui": "^16.9.1",
+		"fumadocs-core": "^16.9.2",
+		"fumadocs-mdx": "^15.0.9",
+		"fumadocs-ui": "^16.9.2",
 		"next": "16.2.6",
 		"react": "19.2.6",
 		"react-dom": "19.2.6"

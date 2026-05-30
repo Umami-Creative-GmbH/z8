@@ -8,6 +8,7 @@ import {
 	validateChainDetailed,
 	verifyHash,
 } from "@/lib/time-tracking/blockchain";
+import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
 import { type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
@@ -24,6 +25,9 @@ export interface CreateTimeEntryInput {
 	location?: string;
 	ipAddress?: string;
 	deviceInfo?: string;
+	utcOffsetMinutes: number;
+	timezone: string;
+	timezoneSource: TimeEntryTimezoneSource;
 }
 
 export interface CreateCorrectionInput {
@@ -36,6 +40,9 @@ export interface CreateCorrectionInput {
 	ipAddress?: string;
 	deviceInfo?: string;
 	isSuperseded?: boolean;
+	utcOffsetMinutes: number;
+	timezone: string;
+	timezoneSource: TimeEntryTimezoneSource;
 }
 
 export interface GetTimeEntriesInput {
@@ -162,6 +169,9 @@ export const TimeEntryServiceLive = Layer.effect(
 									ipAddress: input.ipAddress,
 									deviceInfo: input.deviceInfo,
 									createdBy: input.createdBy,
+									utcOffsetMinutes: input.utcOffsetMinutes,
+									timezone: input.timezone,
+									timezoneSource: input.timezoneSource,
 								})
 								.returning();
 							return entry;
@@ -297,9 +307,10 @@ export const TimeEntryServiceLive = Layer.effect(
 									ipAddress: input.ipAddress,
 									deviceInfo: input.deviceInfo,
 									createdBy: input.createdBy,
-									...(input.isSuperseded === undefined
-										? {}
-										: { isSuperseded: input.isSuperseded }),
+									utcOffsetMinutes: input.utcOffsetMinutes,
+									timezone: input.timezone,
+									timezoneSource: input.timezoneSource,
+									...(input.isSuperseded === undefined ? {} : { isSuperseded: input.isSuperseded }),
 								})
 								.returning();
 

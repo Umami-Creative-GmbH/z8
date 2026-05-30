@@ -52,7 +52,10 @@ export async function runWorkBalanceRefresh(): Promise<WorkBalanceJobResult> {
 			result.balancesUpdated += 1;
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			logger.error({ error: message, employeeId: employee.id }, "Failed to refresh employee work balance");
+			logger.error(
+				{ error: message, employeeId: employee.id },
+				"Failed to refresh employee work balance",
+			);
 			await markEmployeeWorkBalanceFailed({
 				employeeId: employee.id,
 				organizationId: employee.organizationId,

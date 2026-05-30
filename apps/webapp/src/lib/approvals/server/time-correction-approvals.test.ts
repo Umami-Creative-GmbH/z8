@@ -1,13 +1,12 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { markEmployeeWorkBalanceDirty, onTimeCorrectionApproved, onTimeCorrectionRejected } = vi.hoisted(
-	() => ({
+const { markEmployeeWorkBalanceDirty, onTimeCorrectionApproved, onTimeCorrectionRejected } =
+	vi.hoisted(() => ({
 		markEmployeeWorkBalanceDirty: vi.fn().mockResolvedValue(undefined),
 		onTimeCorrectionApproved: vi.fn(),
 		onTimeCorrectionRejected: vi.fn(),
-	}),
-);
+	}));
 
 vi.mock("@/env", () => ({
 	env: {
@@ -32,8 +31,8 @@ vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty,
 }));
 
-import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
+import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
 import {
 	approveTimeCorrectionWithCurrentApproverEffect,
 	buildTimeCorrectionApprovalPolicyContext,
@@ -60,7 +59,13 @@ function createPolicyResolutionDbService(policies: unknown[]) {
 				employeeGroup: { findMany: vi.fn().mockResolvedValue([]) },
 				employee: {
 					findMany: vi.fn().mockResolvedValue([
-						{ id: "emp-requester", userId: "user-requester", organizationId: "org-1", isActive: true, role: "employee" },
+						{
+							id: "emp-requester",
+							userId: "user-requester",
+							organizationId: "org-1",
+							isActive: true,
+							role: "employee",
+						},
 						{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
 					]),
 				},
@@ -226,9 +231,9 @@ describe("time correction requester decision notifications", () => {
 			dirtyFromDate: "2026-05-11",
 		});
 		expect(dbService.db.transaction).toHaveBeenCalled();
-		expect(
-			vi.mocked(dbService.db.transaction).mock.invocationCallOrder[0],
-		).toBeLessThan(markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0]);
+		expect(vi.mocked(dbService.db.transaction).mock.invocationCallOrder[0]).toBeLessThan(
+			markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
+		);
 	});
 
 	it("keeps approval successful when dirty marking fails", async () => {
@@ -314,7 +319,9 @@ describe("time correction requester decision notifications", () => {
 	it("approves the active correction instead of an older rejected correction for the same period", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 		vi.mocked(dbService.db.select).mockReturnValueOnce({
-			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([rejectedCorrection, correction]) }),
+			from: vi
+				.fn()
+				.mockReturnValue({ where: vi.fn().mockResolvedValue([rejectedCorrection, correction]) }),
 		} as never);
 
 		await runTimeCorrectionDecisionEffect(
@@ -450,7 +457,9 @@ describe("time correction requester decision notifications", () => {
 			metadata: null,
 		});
 		vi.mocked(dbService.db.select).mockReturnValueOnce({
-			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([correction, secondCorrection]) }),
+			from: vi
+				.fn()
+				.mockReturnValue({ where: vi.fn().mockResolvedValue([correction, secondCorrection]) }),
 		} as never);
 
 		await expect(
@@ -537,7 +546,9 @@ describe("time correction requester decision notifications", () => {
 	it("does not roll back older superseded correction entries when rejecting a pending time correction", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 		vi.mocked(dbService.db.select).mockReturnValueOnce({
-			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([rejectedCorrection, correction]) }),
+			from: vi
+				.fn()
+				.mockReturnValue({ where: vi.fn().mockResolvedValue([rejectedCorrection, correction]) }),
 		} as never);
 
 		await runTimeCorrectionDecisionEffect(
@@ -641,7 +652,9 @@ describe("time correction requester decision notifications", () => {
 			metadata: null,
 		});
 		vi.mocked(dbService.db.select).mockReturnValueOnce({
-			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([correction, secondCorrection]) }),
+			from: vi
+				.fn()
+				.mockReturnValue({ where: vi.fn().mockResolvedValue([correction, secondCorrection]) }),
 		} as never);
 
 		await expect(
@@ -931,7 +944,9 @@ describe("time correction approval policy resolution", () => {
 				name: "Broken time policy",
 				isActive: true,
 				priority: 1,
-				conditions: [{ conditionType: "approval_type", operator: "equals", valueJson: "time_entry" }],
+				conditions: [
+					{ conditionType: "approval_type", operator: "equals", valueJson: "time_entry" },
+				],
 				stages: [
 					{
 						id: "stage-1",

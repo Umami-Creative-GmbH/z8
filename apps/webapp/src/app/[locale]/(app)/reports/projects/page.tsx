@@ -8,10 +8,7 @@ export default async function ProjectReportsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	// Auth is checked in layout
-	const [t, access] = await Promise.all([
-		getTranslate(),
-		getCurrentEmployeeProjectReportAccess(),
-	]);
+	const [t, access] = await Promise.all([getTranslate(), getCurrentEmployeeProjectReportAccess()]);
 
 	if (!access) {
 		return (

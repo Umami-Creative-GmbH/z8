@@ -127,13 +127,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 				for (const [wageTypeCode, data] of sortedWageTypes) {
 					if (data.hours > 0 || datevConfig.includeZeroHours) {
 						lines.push(
-							this.generateDataRow(
-								personnelNumber,
-								wageTypeCode,
-								data.hours,
-								dateStr,
-								data.note,
-							),
+							this.generateDataRow(personnelNumber, wageTypeCode, data.hours, dateStr, data.note),
 						);
 					}
 				}
@@ -252,7 +246,8 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 			const personnelNumber = this.getPersonnelNumberFromAbsence(absence, config);
 			const wageTypeCode = mappedCode;
-			const note = mapping.datevWageTypeName || mapping.wageTypeName || absence.absenceCategoryName || "";
+			const note =
+				mapping.datevWageTypeName || mapping.wageTypeName || absence.absenceCategoryName || "";
 
 			// Calculate days (DATEV typically uses days for absences, not hours)
 			// Use startOf('day') to ensure consistent date comparison
@@ -324,13 +319,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	 */
 	private generateHeaderRow(): string {
 		// DATEV Lohn standard columns
-		return [
-			"Personalnummer",
-			"Lohnart",
-			"Betrag",
-			"Datum",
-			"Bemerkung",
-		]
+		return ["Personalnummer", "Lohnart", "Betrag", "Datum", "Bemerkung"]
 			.map((col) => this.escapeCSV(col))
 			.join(";");
 	}
@@ -409,9 +398,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	 */
 	private generateFileName(dateRange: { start: DateTime | null; end: DateTime | null }): string {
 		const now = DateTime.now();
-		const dateStr = dateRange.start
-			? dateRange.start.toFormat("yyyy-MM")
-			: now.toFormat("yyyy-MM");
+		const dateStr = dateRange.start ? dateRange.start.toFormat("yyyy-MM") : now.toFormat("yyyy-MM");
 		return `datev_lohn_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
 	}
 }

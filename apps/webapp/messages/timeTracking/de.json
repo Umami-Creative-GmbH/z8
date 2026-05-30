@@ -81,7 +81,8 @@
         "created": "Zeiteintrag erfolgreich erstellt",
         "pendingApproval": "Zeiteintrag zur Genehmigung durch den Manager eingereicht"
       },
-      "title": "Manuellen Zeiteintrag hinzufügen"
+      "title": "Manuellen Zeiteintrag hinzufügen",
+      "titleForEmployee": "Manuelle Zeiterfassung für {employee} hinzufügen"
     },
     "noCategory": "Keine Kategorie (100 %)",
     "noProject": "Kein Projekt",

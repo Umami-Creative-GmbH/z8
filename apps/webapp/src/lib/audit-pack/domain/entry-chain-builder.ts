@@ -10,7 +10,8 @@ function normalizeIsoTimestamp(timestamp: string): string {
 	return (
 		parsed
 			.toUTC()
-			.toISO({ includeOffset: true, suppressMilliseconds: false, suppressSeconds: false }) ?? timestamp
+			.toISO({ includeOffset: true, suppressMilliseconds: false, suppressSeconds: false }) ??
+		timestamp
 	);
 }
 

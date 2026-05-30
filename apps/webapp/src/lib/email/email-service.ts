@@ -11,19 +11,19 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { organizationEmailConfig } from "@/db/schema";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault";
 import {
 	ConsoleTransport,
 	createSystemResendTransport,
 	createSystemSmtpTransport,
-	ResendTransport,
-	SmtpTransport,
 	type EmailMessage,
 	type EmailTransport,
 	type EmailTransportResult,
+	ResendTransport,
+	SmtpTransport,
 } from "./transports";
-import { env } from "@/env";
 
 const logger = createLogger("EmailService");
 
@@ -100,7 +100,7 @@ async function getTransportForOrg(organizationId?: string): Promise<EmailTranspo
 		});
 
 		// No config or inactive, use system default
-		if (!config || !config.isActive) {
+		if (!config?.isActive) {
 			return getSystemTransport();
 		}
 

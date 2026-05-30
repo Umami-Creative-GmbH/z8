@@ -42,7 +42,8 @@ function mapAbsenceRangeToCanonicalTimestamps(input: {
 	const startOfStartDate = DateTime.fromISO(input.startDate, { zone: "utc" }).startOf("day");
 	const endOfEndDate = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf("day");
 
-	const startAt = input.startPeriod === "pm" ? startOfStartDate.plus({ hours: 12 }) : startOfStartDate;
+	const startAt =
+		input.startPeriod === "pm" ? startOfStartDate.plus({ hours: 12 }) : startOfStartDate;
 	const endAt = input.endPeriod === "am" ? endOfEndDate.minus({ hours: 12 }) : endOfEndDate;
 
 	return { startAt: startAt.toJSDate(), endAt: endAt.toJSDate() };
@@ -174,13 +175,8 @@ export function splitVacationAroundSickRange(input: {
 	sickStartDate: string;
 	sickEndDate: string;
 }): VacationSegment[] {
-	if (
-		input.sickEndDate < input.vacationStartDate ||
-		input.sickStartDate > input.vacationEndDate
-	) {
-		return [
-			{ startDate: input.vacationStartDate, endDate: input.vacationEndDate },
-		];
+	if (input.sickEndDate < input.vacationStartDate || input.sickStartDate > input.vacationEndDate) {
+		return [{ startDate: input.vacationStartDate, endDate: input.vacationEndDate }];
 	}
 
 	const segments: VacationSegment[] = [];
@@ -255,7 +251,14 @@ export async function adjustVacationAbsencesForSickness(input: {
 		if (vacation.status !== "pending" && vacation.status !== "approved") continue;
 		if (!vacation.category.countsAgainstVacation) continue;
 		if (vacation.startPeriod !== "full_day" || vacation.endPeriod !== "full_day") continue;
-		if (!dateRangesOverlap(input.sickStartDate, input.sickEndDate, vacation.startDate, vacation.endDate)) {
+		if (
+			!dateRangesOverlap(
+				input.sickStartDate,
+				input.sickEndDate,
+				vacation.startDate,
+				vacation.endDate,
+			)
+		) {
 			continue;
 		}
 
@@ -290,7 +293,12 @@ export async function adjustVacationAbsencesForSickness(input: {
 					status: "rejected",
 					rejectionReason: "Overridden by sick absence",
 				})
-				.where(and(eq(absenceEntry.id, vacation.id), eq(absenceEntry.organizationId, input.organizationId)));
+				.where(
+					and(
+						eq(absenceEntry.id, vacation.id),
+						eq(absenceEntry.organizationId, input.organizationId),
+					),
+				);
 			await rejectCanonicalAbsenceInTransaction(input.tx, {
 				organizationId: input.organizationId,
 				canonicalRecordId: vacation.canonicalRecordId,
@@ -309,7 +317,12 @@ export async function adjustVacationAbsencesForSickness(input: {
 				endDate: firstSegment.endDate,
 				endPeriod: "full_day",
 			})
-			.where(and(eq(absenceEntry.id, vacation.id), eq(absenceEntry.organizationId, input.organizationId)));
+			.where(
+				and(
+					eq(absenceEntry.id, vacation.id),
+					eq(absenceEntry.organizationId, input.organizationId),
+				),
+			);
 		await updateCanonicalAbsenceRangeInTransaction(input.tx, {
 			organizationId: input.organizationId,
 			canonicalRecordId: vacation.canonicalRecordId,

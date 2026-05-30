@@ -73,11 +73,14 @@ export function NavUser({
 	const { clearThemeError, setTheme, theme, themeError, timeThemeInfo } = useTheme();
 	useEffect(() => {
 		if (themeError === "location-required") {
-			toast.error(t("user.theme-location-required", "Location permission is required for time-based theme."), {
-				description: t("user.theme-system", "System theme will be used instead."),
-				duration: 6000,
-				id: "theme-location-required",
-			});
+			toast.error(
+				t("user.theme-location-required", "Location permission is required for time-based theme."),
+				{
+					description: t("user.theme-system", "System theme will be used instead."),
+					duration: 6000,
+					id: "theme-location-required",
+				},
+			);
 		}
 	}, [themeError, t]);
 	const { fontSize, setFontSize } = useFontSizePreference();
@@ -152,7 +155,9 @@ export function NavUser({
 						timeThemeInfo.nextTheme === "dark"
 							? t("user.theme-dark", "Dark")
 							: t("user.theme-light", "Light"),
-					time: DateTime.fromJSDate(timeThemeInfo.nextSwitchAt).setLocale(locale).toLocaleString(DateTime.TIME_SIMPLE),
+					time: DateTime.fromJSDate(timeThemeInfo.nextSwitchAt)
+						.setLocale(locale)
+						.toLocaleString(DateTime.TIME_SIMPLE),
 				},
 			)
 		: undefined;
@@ -349,7 +354,9 @@ export function NavUser({
 												</p>
 											)}
 											{theme === "time" && timeThemeDescription && (
-												<p className="px-2 py-1 text-muted-foreground text-xs">{timeThemeDescription}</p>
+												<p className="px-2 py-1 text-muted-foreground text-xs">
+													{timeThemeDescription}
+												</p>
 											)}
 										</CollapsibleContent>
 									</Collapsible>
@@ -419,7 +426,10 @@ export function NavUser({
 												</DropdownMenuRadioItem>
 											</DropdownMenuRadioGroup>
 											{themeError === "location-required" && (
-												<p className="max-w-52 px-2 py-1 text-muted-foreground text-xs" role="alert">
+												<p
+													className="max-w-52 px-2 py-1 text-muted-foreground text-xs"
+													role="alert"
+												>
 													{t(
 														"user.theme-location-required",
 														"Location permission is required for time-based theme.",

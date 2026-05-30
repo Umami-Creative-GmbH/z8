@@ -6,7 +6,7 @@ function resolveApp(searchParams: URLSearchParams): SupportedApp {
 	return searchParams.get("app") === "desktop" ? "desktop" : "mobile";
 }
 
-function getAllowedScheme(app: SupportedApp): string {
+function _getAllowedScheme(app: SupportedApp): string {
 	return app === "desktop" ? "z8://" : "z8mobile://";
 }
 

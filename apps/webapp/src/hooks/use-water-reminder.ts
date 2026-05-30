@@ -46,6 +46,7 @@ export function useWaterReminder(options: UseWaterReminderOptions = {}) {
 	const [dismissed, setDismissed] = useState(false);
 	const [showReminder, setShowReminder] = useState(false);
 	const [lastReminderTime, setLastReminderTime] = useState(0);
+	const [minutesUntilReminder, setMinutesUntilReminder] = useState<number | null>(null);
 
 	// Get hydration stats for snooze state and intake
 	const { snoozedUntil, todayIntake } = useHydrationStats({ enabled });
@@ -75,69 +76,56 @@ export function useWaterReminder(options: UseWaterReminderOptions = {}) {
 		return new Date(snoozedUntil) > new Date();
 	})();
 
-	// Calculate minutes until next reminder
-	const calculateMinutesUntilReminder = () => {
-		if (!reminderEnabled || isSnoozed || dismissed) {
-			return null;
-		}
-
-		const now = Date.now();
-
-		// Use the most recent of: session start, last intake, or last reminder
-		let referenceTime: number;
-
-		if (lastIntakeTime) {
-			referenceTime = new Date(lastIntakeTime).getTime();
-		} else if (workSessionStart) {
-			referenceTime = new Date(workSessionStart).getTime();
-		} else {
-			// No reference point, don't show reminder
-			return null;
-		}
-
-		// If we've shown a reminder, use that as reference
-		if (lastReminderTime > referenceTime) {
-			referenceTime = lastReminderTime;
-		}
-
-		const elapsedMinutes = (now - referenceTime) / 1000 / 60;
-		const minutesUntil = intervalMinutes - elapsedMinutes;
-
-		return minutesUntil;
-	};
-
-	// Trigger push notification
-	const triggerPushNotification = async () => {
-		try {
-			// Check if push is supported and the page is not visible
-			if (typeof document !== "undefined" && document.visibilityState === "hidden") {
-				await fetch("/api/wellness/water-reminder", {
-					method: "POST",
-					credentials: "include",
-				});
-			}
-		} catch {
-			// Silently fail if push notification fails
-			console.debug("Water reminder push notification failed");
-		}
-	};
-
 	// Timer effect
 	useEffect(() => {
 		if (!reminderEnabled || isSnoozed || dismissed || !enabled) {
-			startTransition(() => setShowReminder(false));
+			startTransition(() => {
+				setShowReminder(false);
+				setMinutesUntilReminder(null);
+			});
 			return;
 		}
 
 		const checkReminder = () => {
-			const minutesUntil = calculateMinutesUntilReminder();
+			const minutesUntil = (() => {
+				if (!reminderEnabled || isSnoozed || dismissed) {
+					return null;
+				}
+
+				const now = Date.now();
+				let referenceTime: number;
+
+				if (lastIntakeTime) {
+					referenceTime = new Date(lastIntakeTime).getTime();
+				} else if (workSessionStart) {
+					referenceTime = new Date(workSessionStart).getTime();
+				} else {
+					return null;
+				}
+
+				if (lastReminderTime > referenceTime) {
+					referenceTime = lastReminderTime;
+				}
+
+				const elapsedMinutes = (now - referenceTime) / 1000 / 60;
+				return intervalMinutes - elapsedMinutes;
+			})();
+
+			setMinutesUntilReminder(minutesUntil);
 
 			if (minutesUntil !== null && minutesUntil <= 0) {
 				setShowReminder(true);
 				onReminder?.();
 				setLastReminderTime(Date.now());
 				// Trigger push notification if page is not visible
-				triggerPushNotification();
+				if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+					fetch("/api/wellness/water-reminder", {
+						method: "POST",
+						credentials: "include",
+					}).catch(() => {
+						console.debug("Water reminder push notification failed");
+					});
+				}
 			}
 		};
 
@@ -151,11 +139,13 @@ export function useWaterReminder(options: UseWaterReminderOptions = {}) {
 	}, [
 		reminderEnabled,
 		isSnoozed,
+		intervalMinutes,
+		lastIntakeTime,
+		lastReminderTime,
+		workSessionStart,
 		dismissed,
 		enabled,
-		calculateMinutesUntilReminder,
 		onReminder,
-		triggerPushNotification,
 	]);
 
 	// Reset reminder when water is logged
@@ -196,7 +186,7 @@ export function useWaterReminder(options: UseWaterReminderOptions = {}) {
 		isDismissed: dismissed,
 
 		// Calculated values
-		minutesUntilReminder: calculateMinutesUntilReminder(),
+		minutesUntilReminder,
 
 		// Actions
 		dismiss,

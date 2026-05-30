@@ -8,8 +8,8 @@ vi.mock("@/lib/time-tracking/calculations", () => ({
 	calculateWorkHours: vi.fn(),
 }));
 
-import { DatabaseService } from "../database.service";
 import { AnalyticsService } from "../analytics.service";
+import { DatabaseService } from "../database.service";
 
 function conditionIncludes(value: unknown, expected: unknown): boolean {
 	const seen = new WeakSet<object>();

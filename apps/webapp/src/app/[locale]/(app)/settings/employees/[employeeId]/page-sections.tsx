@@ -420,6 +420,33 @@ export function EmployeeEditFormCard({
 							)}
 							disabled={!canEditOrgAdminFields || isUpdating}
 						/>
+						<form.Field name="startDate">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)}>
+										{t("settings.employees.detailView.startDate", "Start date")}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(field)}>
+										<Input
+											name="startDate"
+											type="date"
+											autoComplete="off"
+											value={field.state.value || ""}
+											onChange={(event) => field.handleChange(event.target.value)}
+											onBlur={field.handleBlur}
+											disabled={!canEditManagerFields || isUpdating}
+										/>
+									</TFormControl>
+									<TFormDescription>
+										{t(
+											"settings.employees.detailView.startDateDescription",
+											"Work-balance tracking starts on this date",
+										)}
+									</TFormDescription>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
 					</div>
 
 					<form.Field name="role">

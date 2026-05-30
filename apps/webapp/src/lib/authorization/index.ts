@@ -26,79 +26,74 @@
  * ```
  */
 
-// Types
-export type {
-	Action,
-	Subject,
-	PlatformSubject,
-	OrganizationSubject,
-	WorkforceSubject,
-	PrincipalContext,
-	OrgMembership,
-	EmployeeInfo,
-	TeamPermissions,
-	CustomRoleInfo,
-	OrgScopedSubject,
-	TeamScopedSubject,
-	EmployeeScopedSubject,
-	ApprovalSubject,
-	SubjectTypeMap,
-	DatabaseSubjectName,
-	AppSubjectRecord,
-	EmployeeAuthorizationSubject,
-	TimeEntryAuthorizationSubject,
-	AbsenceAuthorizationSubject,
-	ApprovalAuthorizationSubject,
-} from "./types";
-
-export { asAppSubject } from "./subjects";
-
-export {
-	accessibleByDrizzle,
-	UnsupportedAuthorizationConditionError,
-} from "./query";
-
-export type { AccessiblePredicate, DrizzleFieldMap } from "./query";
-
 // Ability builder
 export {
-	defineAbilityFor,
-	createEmptyAbility,
+	type AppAbility,
 	can,
 	cannot,
-	type AppAbility,
+	createEmptyAbility,
+	defineAbilityFor,
 } from "./ability";
-
+// Effect helpers
+export {
+	buildPermissionFlags,
+	checkAbility,
+	guardWith,
+	requireAbility,
+	requireAbsenceApprover,
+	requireEmployeeAdmin,
+	requireExportAdmin,
+	requireLocationAdmin,
+	requireManagerOrAbove,
+	requireOrgAdmin,
+	requireOrgOwner,
+	requirePrincipalCan,
+	requireProjectAdmin,
+	requireReportGenerator,
+	requireScheduleAdmin,
+	requireVacationPolicyAdmin,
+	requireWorkPolicyAdmin,
+	withAuthorization,
+} from "./effect-helpers";
 // Enforcement helpers
 export {
 	assertCan,
-	throwIfCannot,
 	checkCan,
 	checkCannot,
 	checkMany,
 	ForbiddenError,
-	toHttpError,
 	isForbiddenError,
+	throwIfCannot,
+	toHttpError,
 } from "./enforce";
 
-// Effect helpers
+export type { AccessiblePredicate, DrizzleFieldMap } from "./query";
 export {
-	checkAbility,
-	requireAbility,
-	requirePrincipalCan,
-	requireOrgAdmin,
-	requireOrgOwner,
-	requireEmployeeAdmin,
-	requireManagerOrAbove,
-	requireLocationAdmin,
-	requireProjectAdmin,
-	requireWorkPolicyAdmin,
-	requireVacationPolicyAdmin,
-	requireExportAdmin,
-	requireScheduleAdmin,
-	requireAbsenceApprover,
-	requireReportGenerator,
-	withAuthorization,
-	guardWith,
-	buildPermissionFlags,
-} from "./effect-helpers";
+	accessibleByDrizzle,
+	UnsupportedAuthorizationConditionError,
+} from "./query";
+export { asAppSubject } from "./subjects";
+// Types
+export type {
+	AbsenceAuthorizationSubject,
+	Action,
+	ApprovalAuthorizationSubject,
+	ApprovalSubject,
+	AppSubjectRecord,
+	CustomRoleInfo,
+	DatabaseSubjectName,
+	EmployeeAuthorizationSubject,
+	EmployeeInfo,
+	EmployeeScopedSubject,
+	OrganizationSubject,
+	OrgMembership,
+	OrgScopedSubject,
+	PlatformSubject,
+	PrincipalContext,
+	Subject,
+	SubjectTypeMap,
+	TeamPermissions,
+	TeamScopedSubject,
+	TimeEntryAuthorizationSubject,
+	WorkforceSubject,
+} from "./types";

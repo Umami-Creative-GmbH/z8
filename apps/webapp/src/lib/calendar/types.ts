@@ -62,6 +62,8 @@ export interface TimeEntryEvent extends CalendarEvent {
 		entryType: "clock_in" | "clock_out" | "correction";
 		employeeName: string;
 		time?: string; // Formatted time string (e.g., "2:30 PM")
+		utcOffsetMinutes?: number;
+		timezone?: string;
 	};
 }
 
@@ -83,6 +85,10 @@ export interface WorkPeriodEvent extends CalendarEvent {
 		// Time fields - formatted time strings (e.g., "2:30 PM")
 		startTime?: string;
 		endTime?: string;
+		clockInUtcOffsetMinutes?: number;
+		clockInTimezone?: string;
+		clockOutUtcOffsetMinutes?: number;
+		clockOutTimezone?: string;
 		// Project fields - optional, only present if work period is assigned to a project
 		projectId?: string;
 		projectName?: string;
@@ -96,6 +102,7 @@ export interface WorkPeriodEvent extends CalendarEvent {
 		// "pending" = awaiting manager approval
 		// "rejected" = manager rejected the change
 		approvalStatus?: "approved" | "pending" | "rejected";
+		isRunning?: true;
 	};
 }
 

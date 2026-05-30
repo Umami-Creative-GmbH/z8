@@ -1,8 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
-
-import { subscription } from "@/db/schema";
 import { member } from "@/db/auth-schema";
+import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import {
 	type BillingAccessResult,
@@ -10,15 +9,16 @@ import {
 	BillingEnforcementServiceLive,
 } from "./billing-enforcement.service";
 
-const { findFirst, insertValues, onConflictDoNothing, returning, select, selectFrom, selectWhere } = vi.hoisted(() => ({
-	findFirst: vi.fn(),
-	insertValues: vi.fn(),
-	onConflictDoNothing: vi.fn(),
-	returning: vi.fn(),
-	select: vi.fn(),
-	selectFrom: vi.fn(),
-	selectWhere: vi.fn(),
-}));
+const { findFirst, insertValues, onConflictDoNothing, returning, select, selectFrom, selectWhere } =
+	vi.hoisted(() => ({
+		findFirst: vi.fn(),
+		insertValues: vi.fn(),
+		onConflictDoNothing: vi.fn(),
+		returning: vi.fn(),
+		select: vi.fn(),
+		selectFrom: vi.fn(),
+		selectWhere: vi.fn(),
+	}));
 
 vi.mock("@/db", () => ({
 	db: {

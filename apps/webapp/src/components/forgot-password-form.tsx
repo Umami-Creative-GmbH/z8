@@ -140,7 +140,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 		// Verify Turnstile token server-side if enabled
 		if (turnstileConfig?.enabled && turnstileToken) {
 			const verifyResult = await verifyTurnstileWithServer(turnstileToken).catch(() => null);
-			if (!verifyResult || !verifyResult.success) {
+			if (!verifyResult?.success) {
 				setError(verifyResult?.error || t("auth.turnstile-failed", "Verification failed."));
 				setTurnstileToken(null);
 				turnstileRef.current?.reset();

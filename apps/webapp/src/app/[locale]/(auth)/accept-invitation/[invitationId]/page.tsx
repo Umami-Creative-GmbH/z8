@@ -36,13 +36,13 @@ export default async function AcceptInvitationPage({ params }: AcceptInvitationP
 			invitation={
 				typedInvitation
 					? {
-						email: typedInvitation.email,
-						inviterName: typedInvitation.user?.name ?? null,
-						isExpired: typedInvitation.expiresAt < new Date(),
-						organizationName: typedInvitation.organization?.name ?? null,
-						role: typedInvitation.role ?? null,
-						status: typedInvitation.status,
-					}
+							email: typedInvitation.email,
+							inviterName: typedInvitation.user?.name ?? null,
+							isExpired: typedInvitation.expiresAt < new Date(),
+							organizationName: typedInvitation.organization?.name ?? null,
+							role: typedInvitation.role ?? null,
+							status: typedInvitation.status,
+						}
 					: null
 			}
 			invitationId={invitationId}

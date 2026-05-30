@@ -67,6 +67,7 @@ function generateId() {
  * @param {string} [event.projectId] - Optional project ID
  * @param {string} [event.workCategoryId] - Optional work category ID
  * @param {"office"|"home"|"remote"|"other"} [event.workLocationType] - Optional work location type
+ * @param {string|null} [event.browserTimezone] - Browser timezone captured at click time
  * @returns {Promise<string>} The ID of the queued event
  */
 async function enqueue(event) {
@@ -86,6 +87,7 @@ async function enqueue(event) {
 			projectId: event.projectId,
 			workCategoryId: event.workCategoryId,
 			workLocationType: event.workLocationType,
+			browserTimezone: event.browserTimezone ?? null,
 			retryCount: 0,
 			createdAt: Date.now(),
 		};

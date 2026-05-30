@@ -3,7 +3,12 @@ import { createRedisConnectionOptions, createRedisTlsOptions } from "./redis-con
 
 describe("createRedisTlsOptions", () => {
 	test("returns undefined when Redis TLS is disabled", () => {
-		expect(createRedisTlsOptions(false, "-----BEGIN CERTIFICATE-----\ntest-ca\n-----END CERTIFICATE-----")).toBeUndefined();
+		expect(
+			createRedisTlsOptions(
+				false,
+				"-----BEGIN CERTIFICATE-----\ntest-ca\n-----END CERTIFICATE-----",
+			),
+		).toBeUndefined();
 	});
 
 	test("uses an explicit undefined CA when enabled without a CA cert", () => {

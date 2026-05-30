@@ -5,19 +5,19 @@
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault/secrets";
+import type {
+	AbsenceData,
+	ApiExportResult,
+	IPayrollExporter,
+	WageTypeMapping,
+	WorkPeriodData,
+} from "../../types";
 import { PersonioApiClient } from "./api-client";
 import type {
-	IPayrollExporter,
-	WorkPeriodData,
-	AbsenceData,
-	WageTypeMapping,
-	ApiExportResult,
-} from "../../types";
-import type {
+	PersonioAbsenceRequest,
+	PersonioAttendanceRequest,
 	PersonioConfig,
 	PersonioCredentials,
-	PersonioAttendanceRequest,
-	PersonioAbsenceRequest,
 	PersonioSyncAttemptResult,
 } from "./types";
 import { DEFAULT_PERSONIO_CONFIG } from "./types";
@@ -155,7 +155,10 @@ export class PersonioExporter implements IPayrollExporter {
 		let apiCallCount = 0;
 
 		// Export attendance records in batches
-		const attendanceResults: Array<{ result: PersonioSyncAttemptResult; workPeriod: WorkPeriodData }> = [];
+		const attendanceResults: Array<{
+			result: PersonioSyncAttemptResult;
+			workPeriod: WorkPeriodData;
+		}> = [];
 		for (let i = 0; i < attendanceData.length; i += personioConfig.batchSize) {
 			const batch = attendanceData.slice(i, i + personioConfig.batchSize);
 			const batchRequests = batch.map((item) => item.request);
@@ -346,7 +349,7 @@ export class PersonioExporter implements IPayrollExporter {
 
 			// Parse wage type code as Personio time-off type ID
 			const timeOffTypeId = parseInt(mapping.wageTypeCode, 10);
-			if (isNaN(timeOffTypeId)) {
+			if (Number.isNaN(timeOffTypeId)) {
 				logger.warn(
 					{
 						absenceId: absence.id,
@@ -394,7 +397,7 @@ export class PersonioExporter implements IPayrollExporter {
 			if (!employeeNumber) return null;
 			// Try to parse as number for Personio
 			const numericId = parseInt(employeeNumber, 10);
-			return isNaN(numericId) ? employeeNumber : numericId;
+			return Number.isNaN(numericId) ? employeeNumber : numericId;
 		}
 
 		if (strategy === "email") {
@@ -407,9 +410,7 @@ export class PersonioExporter implements IPayrollExporter {
 	/**
 	 * Get credentials from Vault
 	 */
-	private async getCredentials(
-		organizationId: string,
-	): Promise<PersonioCredentials | null> {
+	private async getCredentials(organizationId: string): Promise<PersonioCredentials | null> {
 		const [clientId, clientSecret] = await Promise.all([
 			getOrgSecret(organizationId, VAULT_KEY_CLIENT_ID),
 			getOrgSecret(organizationId, VAULT_KEY_CLIENT_SECRET),

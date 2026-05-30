@@ -19,8 +19,8 @@ describe("getPostgresSslConfig", () => {
 					POSTGRES_SSL_MODE: "verify-full",
 					POSTGRES_SSL_ROOT_CERT_PATH: "/path/to/scaleway-ca.pem",
 				},
-				(path) => `cert from ${path}`
-			)
+				(path) => `cert from ${path}`,
+			),
 		).toEqual({
 			ca: "cert from /path/to/scaleway-ca.pem",
 			rejectUnauthorized: true,
@@ -32,7 +32,7 @@ describe("getPostgresSslConfig", () => {
 			getPostgresSslConfig({
 				POSTGRES_SSL_MODE: "verify-full",
 				POSTGRES_SSL_CA_CERT: "-----BEGIN CERTIFICATE-----\ncert\n-----END CERTIFICATE-----",
-			})
+			}),
 		).toEqual({
 			ca: "-----BEGIN CERTIFICATE-----\ncert\n-----END CERTIFICATE-----",
 			rejectUnauthorized: true,

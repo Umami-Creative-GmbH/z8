@@ -1,8 +1,8 @@
 import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AbsenceData, WorkPeriodData } from "../../types";
-import { WorkdayConnector } from "./workday-connector";
 import { DEFAULT_WORKDAY_CONFIG } from "./types";
+import { WorkdayConnector } from "./workday-connector";
 
 vi.mock("node:dns", () => ({
 	promises: {
@@ -52,7 +52,10 @@ describe("WorkdayConnector", () => {
 			}),
 		).resolves.toEqual({
 			valid: false,
-			errors: ["instanceUrl must use HTTPS", "instanceUrl cannot target private or internal addresses"],
+			errors: [
+				"instanceUrl must use HTTPS",
+				"instanceUrl cannot target private or internal addresses",
+			],
 		});
 	});
 
@@ -153,8 +156,7 @@ describe("WorkdayConnector", () => {
 			}),
 		).resolves.toEqual({
 			success: false,
-			error:
-				"Workday credentials not configured. Please enter your Client ID and Client Secret.",
+			error: "Workday credentials not configured. Please enter your Client ID and Client Secret.",
 		});
 	});
 
@@ -238,17 +240,11 @@ describe("WorkdayConnector", () => {
 			},
 		];
 
-		const result = await connector.export(
-			"org_123",
-			workPeriods,
-			absences,
-			[],
-			{
-				...DEFAULT_WORKDAY_CONFIG,
-				instanceUrl: "https://example.workday.com",
-				tenantId: "acme",
-			},
-		);
+		const result = await connector.export("org_123", workPeriods, absences, [], {
+			...DEFAULT_WORKDAY_CONFIG,
+			instanceUrl: "https://example.workday.com",
+			tenantId: "acme",
+		});
 
 		expect(result.success).toBe(true);
 		expect(result.totalRecords).toBe(3);

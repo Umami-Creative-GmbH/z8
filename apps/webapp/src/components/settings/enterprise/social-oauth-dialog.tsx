@@ -91,7 +91,11 @@ export function SocialOAuthDialog({
 			return;
 		}
 
-		toast.error(isEditing ? t("settings.enterprise.socialOAuth.updateConfigError", "Failed to update config") : t("settings.enterprise.socialOAuth.addProviderError", "Failed to add provider"));
+		toast.error(
+			isEditing
+				? t("settings.enterprise.socialOAuth.updateConfigError", "Failed to update config")
+				: t("settings.enterprise.socialOAuth.addProviderError", "Failed to add provider"),
+		);
 	};
 
 	const form = useForm({
@@ -173,13 +177,21 @@ export function SocialOAuthDialog({
 				<ActionPanelHeader>
 					<ActionPanelTitle>
 						{isEditing
-							? t("settings.enterprise.socialOAuth.editTitle", "Edit {provider} OAuth", { provider: PROVIDER_INFO[editConfig.provider].name })
+							? t("settings.enterprise.socialOAuth.editTitle", "Edit {provider} OAuth", {
+									provider: PROVIDER_INFO[editConfig.provider].name,
+								})
 							: t("settings.enterprise.socialOAuth.addTitle", "Add Social OAuth Provider")}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{isEditing
-							? t("settings.enterprise.socialOAuth.editDescription", "Update your OAuth credentials.")
-							: t("settings.enterprise.socialOAuth.addDescription", "Configure your own OAuth app for social login.")}
+							? t(
+									"settings.enterprise.socialOAuth.editDescription",
+									"Update your OAuth credentials.",
+								)
+							: t(
+									"settings.enterprise.socialOAuth.addDescription",
+									"Configure your own OAuth app for social login.",
+								)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 				<form
@@ -196,7 +208,9 @@ export function SocialOAuthDialog({
 									const providerInfo = PROVIDER_INFO[field.state.value as SocialOAuthProvider];
 									return (
 										<div className="space-y-2">
-											<Label htmlFor="provider">{t("settings.enterprise.provider", "Provider")}</Label>
+											<Label htmlFor="provider">
+												{t("settings.enterprise.provider", "Provider")}
+											</Label>
 											<Select
 												value={field.state.value}
 												onValueChange={(value) => field.handleChange(value as SocialOAuthProvider)}
@@ -220,14 +234,21 @@ export function SocialOAuthDialog({
 											</Select>
 											{providerInfo && (
 												<p className="text-sm text-muted-foreground">
-												{t("settings.enterprise.socialOAuth.createAppAt", "Create an OAuth app at")}{" "}
+													{t(
+														"settings.enterprise.socialOAuth.createAppAt",
+														"Create an OAuth app at",
+													)}{" "}
 													<a
 														href={providerInfo.docsUrl}
 														target="_blank"
 														rel="noopener noreferrer"
 														className="text-primary underline"
 													>
-													{t("settings.enterprise.socialOAuth.developerConsole", "{provider} Developer Console", { provider: providerInfo.name })}
+														{t(
+															"settings.enterprise.socialOAuth.developerConsole",
+															"{provider} Developer Console",
+															{ provider: providerInfo.name },
+														)}
 													</a>
 												</p>
 											)}
@@ -241,17 +262,21 @@ export function SocialOAuthDialog({
 							name="clientId"
 							validators={{
 								onChange: ({ value }) => {
-									if (!value) return t("settings.enterprise.clientIdRequired", "Client ID is required");
+									if (!value)
+										return t("settings.enterprise.clientIdRequired", "Client ID is required");
 									return undefined;
 								},
 							}}
 						>
 							{(field) => (
 								<div className="space-y-2">
-							<Label htmlFor="clientId">{t("settings.enterprise.clientId", "Client ID")}</Label>
+									<Label htmlFor="clientId">{t("settings.enterprise.clientId", "Client ID")}</Label>
 									<Input
 										id="clientId"
-							placeholder={t("settings.enterprise.socialOAuth.clientIdPlaceholder", "Your OAuth client ID")}
+										placeholder={t(
+											"settings.enterprise.socialOAuth.clientIdPlaceholder",
+											"Your OAuth client ID",
+										)}
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
@@ -270,7 +295,11 @@ export function SocialOAuthDialog({
 									name="clientSecret"
 									validators={{
 										onChange: ({ value }) => {
-										if (!isEditing && !value) return t("settings.enterprise.clientSecretRequired", "Client Secret is required");
+											if (!isEditing && !value)
+												return t(
+													"settings.enterprise.clientSecretRequired",
+													"Client Secret is required",
+												);
 											return undefined;
 										},
 									}}
@@ -278,7 +307,9 @@ export function SocialOAuthDialog({
 									{(field) => (
 										<div className="space-y-2">
 											<Label htmlFor="clientSecret">
-								{selectedProvider === "apple" ? t("settings.enterprise.socialOAuth.privateKey", "Private Key (.p8)") : t("settings.enterprise.clientSecret", "Client Secret")}
+												{selectedProvider === "apple"
+													? t("settings.enterprise.socialOAuth.privateKey", "Private Key (.p8)")
+													: t("settings.enterprise.clientSecret", "Client Secret")}
 											</Label>
 											{selectedProvider === "apple" ? (
 												<Textarea
@@ -294,7 +325,15 @@ export function SocialOAuthDialog({
 													id="clientSecret"
 													type="password"
 													placeholder={
-								isEditing ? t("settings.enterprise.leaveBlankKeepExisting", "Leave blank to keep existing") : t("settings.enterprise.socialOAuth.clientSecretPlaceholder", "Your OAuth client secret")
+														isEditing
+															? t(
+																	"settings.enterprise.leaveBlankKeepExisting",
+																	"Leave blank to keep existing",
+																)
+															: t(
+																	"settings.enterprise.socialOAuth.clientSecretPlaceholder",
+																	"Your OAuth client secret",
+																)
 													}
 													value={field.state.value}
 													onChange={(e) => field.handleChange(e.target.value)}
@@ -303,7 +342,10 @@ export function SocialOAuthDialog({
 											)}
 											{isEditing && (
 												<p className="text-sm text-muted-foreground">
-							{t("settings.enterprise.keepExistingSecretHelp", "Leave blank to keep the existing secret")}
+													{t(
+														"settings.enterprise.keepExistingSecretHelp",
+														"Leave blank to keep the existing secret",
+													)}
 												</p>
 											)}
 											{field.state.meta.errors.length > 0 && (
@@ -325,7 +367,10 @@ export function SocialOAuthDialog({
 											validators={{
 												onChange: ({ value }) => {
 													if (!isEditing && !value) {
-									return t("settings.enterprise.socialOAuth.appleTeamIdRequired", "Team ID is required for Apple");
+														return t(
+															"settings.enterprise.socialOAuth.appleTeamIdRequired",
+															"Team ID is required for Apple",
+														);
 													}
 													return undefined;
 												},
@@ -333,7 +378,9 @@ export function SocialOAuthDialog({
 										>
 											{(field) => (
 												<div className="space-y-2">
-							<Label htmlFor="appleTeamId">{t("settings.enterprise.socialOAuth.teamId", "Team ID")}</Label>
+													<Label htmlFor="appleTeamId">
+														{t("settings.enterprise.socialOAuth.teamId", "Team ID")}
+													</Label>
 													<Input
 														id="appleTeamId"
 														placeholder="ABCD1234EF"
@@ -342,7 +389,10 @@ export function SocialOAuthDialog({
 														onBlur={field.handleBlur}
 													/>
 													<p className="text-sm text-muted-foreground">
-							{t("settings.enterprise.socialOAuth.appleTeamIdHelp", "Found in your Apple Developer account")}
+														{t(
+															"settings.enterprise.socialOAuth.appleTeamIdHelp",
+															"Found in your Apple Developer account",
+														)}
 													</p>
 													{field.state.meta.errors.length > 0 && (
 														<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
@@ -356,7 +406,10 @@ export function SocialOAuthDialog({
 											validators={{
 												onChange: ({ value }) => {
 													if (!isEditing && !value) {
-									return t("settings.enterprise.socialOAuth.appleKeyIdRequired", "Key ID is required for Apple");
+														return t(
+															"settings.enterprise.socialOAuth.appleKeyIdRequired",
+															"Key ID is required for Apple",
+														);
 													}
 													return undefined;
 												},
@@ -364,7 +417,9 @@ export function SocialOAuthDialog({
 										>
 											{(field) => (
 												<div className="space-y-2">
-							<Label htmlFor="appleKeyId">{t("settings.enterprise.socialOAuth.keyId", "Key ID")}</Label>
+													<Label htmlFor="appleKeyId">
+														{t("settings.enterprise.socialOAuth.keyId", "Key ID")}
+													</Label>
 													<Input
 														id="appleKeyId"
 														placeholder="ZYXW9876VU"
@@ -373,7 +428,10 @@ export function SocialOAuthDialog({
 														onBlur={field.handleBlur}
 													/>
 													<p className="text-sm text-muted-foreground">
-							{t("settings.enterprise.socialOAuth.appleKeyIdHelp", "The Key ID associated with your private key")}
+														{t(
+															"settings.enterprise.socialOAuth.appleKeyIdHelp",
+															"The Key ID associated with your private key",
+														)}
 													</p>
 													{field.state.meta.errors.length > 0 && (
 														<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
@@ -391,9 +449,12 @@ export function SocialOAuthDialog({
 								{(field) => (
 									<div className="flex items-center justify-between">
 										<div className="space-y-0.5">
-							<Label htmlFor="isActive">{t("common.active", "Active")}</Label>
+											<Label htmlFor="isActive">{t("common.active", "Active")}</Label>
 											<p className="text-sm text-muted-foreground">
-							{t("settings.enterprise.enableProviderHelp", "Enable or disable this provider")}
+												{t(
+													"settings.enterprise.enableProviderHelp",
+													"Enable or disable this provider",
+												)}
 											</p>
 										</div>
 										<Switch
@@ -409,16 +470,16 @@ export function SocialOAuthDialog({
 
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-						{t("common.cancel", "Cancel")}
+							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
 							{isSubmitting
 								? isEditing
-							? t("common.updating", "Updating...")
-							: t("common.adding", "Adding...")
-						: isEditing
-							? t("common.update", "Update")
-							: t("settings.enterprise.addProvider", "Add Provider")}
+									? t("common.updating", "Updating...")
+									: t("common.adding", "Adding...")
+								: isEditing
+									? t("common.update", "Update")
+									: t("settings.enterprise.addProvider", "Add Provider")}
 						</Button>
 					</ActionPanelFooter>
 				</form>

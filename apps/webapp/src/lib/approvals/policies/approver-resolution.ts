@@ -1,4 +1,8 @@
-import { resolvePrimaryEligibleManager, type EligibleTeam, type EligibleTeamMembership } from "./manager-eligibility";
+import {
+	type EligibleTeam,
+	type EligibleTeamMembership,
+	resolvePrimaryEligibleManager,
+} from "./manager-eligibility";
 import type { ApprovalPolicyStageDraft } from "./types";
 
 export interface ApproverDirectoryEmployee {
@@ -35,9 +39,7 @@ function activeEmployeeInOrg(
 ) {
 	return employees.find(
 		(employee) =>
-			employee.id === employeeId &&
-			employee.organizationId === organizationId &&
-			employee.isActive,
+			employee.id === employeeId && employee.organizationId === organizationId && employee.isActive,
 	);
 }
 
@@ -87,14 +89,17 @@ export function resolveApproverFromDirectory(
 				directManagerId(managerLinks, requester.id),
 			);
 			if (!manager) {
-				return { ok: false, reason: "Requester has no active direct manager in this organization." };
+				return {
+					ok: false,
+					reason: "Requester has no active direct manager in this organization.",
+				};
 			}
 
 			const secondManager = activeEmployeeInOrg(
 				employees,
 				organizationId,
 				directManagerId(managerLinks, manager.id),
-			)
+			);
 			return secondManager
 				? { ok: true, approverEmployeeId: secondManager.id }
 				: { ok: false, reason: "Requester manager has no active manager in this organization." };

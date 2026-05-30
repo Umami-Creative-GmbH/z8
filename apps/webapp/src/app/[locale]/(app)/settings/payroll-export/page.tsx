@@ -1,14 +1,14 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { DatevConfigForm } from "@/components/settings/payroll-export/datev-config-form";
-import { LexwareConfigForm } from "@/components/settings/payroll-export/lexware-config-form";
-import { SageConfigForm } from "@/components/settings/payroll-export/sage-config-form";
-import { PersonioConfigForm } from "@/components/settings/payroll-export/personio-config-form";
-import { SuccessFactorsConfigForm } from "@/components/settings/payroll-export/successfactors-config-form";
-import { WorkdayConfigForm } from "@/components/settings/payroll-export/workday-config-form";
 import { ExportForm } from "@/components/settings/payroll-export/export-form";
 import { ExportHistory } from "@/components/settings/payroll-export/export-history";
+import { LexwareConfigForm } from "@/components/settings/payroll-export/lexware-config-form";
+import { PersonioConfigForm } from "@/components/settings/payroll-export/personio-config-form";
+import { SageConfigForm } from "@/components/settings/payroll-export/sage-config-form";
+import { SuccessFactorsConfigForm } from "@/components/settings/payroll-export/successfactors-config-form";
 import { WageTypeMappings } from "@/components/settings/payroll-export/wage-type-mappings";
+import { WorkdayConfigForm } from "@/components/settings/payroll-export/workday-config-form";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,12 +16,12 @@ import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getDatevConfigAction,
+	getExportHistoryAction,
 	getLexwareConfigAction,
-	getSageConfigAction,
 	getPersonioConfigAction,
+	getSageConfigAction,
 	getSuccessFactorsConfigAction,
 	getWorkdayConfigAction,
-	getExportHistoryAction,
 } from "./actions";
 
 type ExportAvailabilityEntry = {
@@ -38,7 +38,15 @@ async function PayrollExportContent() {
 	]);
 
 	// Fetch configs and history in parallel
-	const [datevConfigResult, lexwareConfigResult, sageConfigResult, personioConfigResult, successFactorsConfigResult, workdayConfigResult, historyResult] = await Promise.all([
+	const [
+		datevConfigResult,
+		lexwareConfigResult,
+		sageConfigResult,
+		personioConfigResult,
+		successFactorsConfigResult,
+		workdayConfigResult,
+		historyResult,
+	] = await Promise.all([
 		getDatevConfigAction(organizationId),
 		getLexwareConfigAction(organizationId),
 		getSageConfigAction(organizationId),
@@ -52,7 +60,9 @@ async function PayrollExportContent() {
 	const lexwareConfig = lexwareConfigResult.success ? lexwareConfigResult.data : null;
 	const sageConfig = sageConfigResult.success ? sageConfigResult.data : null;
 	const personioConfig = personioConfigResult.success ? personioConfigResult.data : null;
-	const successFactorsConfig = successFactorsConfigResult.success ? successFactorsConfigResult.data : null;
+	const successFactorsConfig = successFactorsConfigResult.success
+		? successFactorsConfigResult.data
+		: null;
 	const workdayConfig = workdayConfigResult.success ? workdayConfigResult.data : null;
 	const exports = historyResult.success ? historyResult.data : [];
 	const exportAvailability: Record<string, ExportAvailabilityEntry> = {
@@ -122,15 +132,11 @@ async function PayrollExportContent() {
 					<TabsTrigger value="export">
 						{t("settings.payrollExport.tabs.export", "Export")}
 					</TabsTrigger>
-					<TabsTrigger value="datev">
-						{t("settings.payrollExport.tabs.datev", "DATEV")}
-					</TabsTrigger>
+					<TabsTrigger value="datev">{t("settings.payrollExport.tabs.datev", "DATEV")}</TabsTrigger>
 					<TabsTrigger value="lexware">
 						{t("settings.payrollExport.tabs.lexware", "Lexware")}
 					</TabsTrigger>
-					<TabsTrigger value="sage">
-						{t("settings.payrollExport.tabs.sage", "Sage")}
-					</TabsTrigger>
+					<TabsTrigger value="sage">{t("settings.payrollExport.tabs.sage", "Sage")}</TabsTrigger>
 					<TabsTrigger value="personio">
 						{t("settings.payrollExport.tabs.personio", "Personio")}
 					</TabsTrigger>
@@ -173,7 +179,10 @@ async function PayrollExportContent() {
 				</TabsContent>
 
 				<TabsContent value="successfactors" className="mt-4">
-					<SuccessFactorsConfigForm organizationId={organizationId} initialConfig={successFactorsConfig} />
+					<SuccessFactorsConfigForm
+						organizationId={organizationId}
+						initialConfig={successFactorsConfig}
+					/>
 				</TabsContent>
 
 				<TabsContent value="workday" className="mt-4">

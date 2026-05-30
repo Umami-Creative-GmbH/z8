@@ -389,7 +389,8 @@
       "markedRead": "{count} Benachrichtigunge als gläse markiert",
       "markReadFailed": "Benachrichtigunge chönd nöd als gläse markiert werde"
     },
-    "unreadBadge": "{count} ungiläse"
+    "unreadBadge": "{count} ungiläse",
+    "unreadCountOverflow": "99+"
   },
   "offline": {
     "banner": {

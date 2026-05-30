@@ -76,7 +76,7 @@ export async function getTenantConfigByOrganization(
 			where: eq(teamsTenantConfig.organizationId, organizationId),
 		});
 
-		if (!config || config.setupStatus !== "active") {
+		if (config?.setupStatus !== "active") {
 			return null;
 		}
 

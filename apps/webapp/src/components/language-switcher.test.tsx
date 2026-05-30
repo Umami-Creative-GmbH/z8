@@ -22,14 +22,21 @@ vi.mock("@/navigation", () => ({
 vi.mock("@/tolgee/language", () => ({
 	setLanguage: vi.fn(() => Promise.resolve()),
 	persistLocaleToDb: vi.fn(
-		() => new Promise<void>((resolve) => {
-			resolvePersistLocale = resolve;
-		}),
+		() =>
+			new Promise<void>((resolve) => {
+				resolvePersistLocale = resolve;
+			}),
 	),
 }));
 
 vi.mock("@/components/ui/select", () => ({
-	Select: ({ children, onValueChange }: { children: React.ReactNode; onValueChange: (value: string) => void }) => (
+	Select: ({
+		children,
+		onValueChange,
+	}: {
+		children: React.ReactNode;
+		onValueChange: (value: string) => void;
+	}) => (
 		<div>
 			<button type="button" onClick={() => onValueChange("de")}>
 				Deutsch

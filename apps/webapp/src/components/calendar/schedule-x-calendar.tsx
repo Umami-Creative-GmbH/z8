@@ -11,7 +11,6 @@ import {
 } from "@schedule-x/calendar";
 import { createCalendarControlsPlugin } from "@schedule-x/calendar-controls";
 
-import { createCurrentTimePlugin } from "@schedule-x/current-time";
 import { createEventModalPlugin } from "@schedule-x/event-modal";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
@@ -23,7 +22,7 @@ import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 
 import { useEffect, useRef, useState } from "react";
-import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import { useUserTimezone, useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,20 +34,38 @@ import {
 import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
 import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
-import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 import { buildRequirementHeaderContent } from "./daily-requirement-strip";
+import {
+	buildCalendarTimeZoneDate,
+	buildCurrentTimeIndicatorPosition,
+	filterEventsForScheduleXView,
+	hasExceededPointerDragThreshold,
+	isIntentionalRangePointerDown,
+	isScheduleXEventElement,
+	resolveClickableCalendarEvent,
+	shouldRetryRequirementHeaderInjection,
+} from "./schedule-x-calendar-utils";
 
 export type ViewMode = "day" | "week" | "month" | "year";
 
+interface RangeSelectionStart {
+	date: Date;
+	clientX: number;
+	clientY: number;
+}
+
 interface ScheduleXCalendarWrapperProps {
 	events: CalendarEvent[];
+	timeZone?: string;
 	isLoading?: boolean;
 	viewMode: ViewMode;
 	onViewModeChange: (mode: ViewMode) => void;
 	onEventClick?: (event: CalendarEvent) => void;
 	onRangeChange?: (range: { start: Date; end: Date }) => void;
+	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
 	workHoursData?: DailyWorkHoursSummaries;
+	isSummaryLoading?: boolean;
 }
 
 // Map view mode to Schedule-X view names
@@ -73,15 +90,70 @@ function clearRequirementHeaderContent(container: HTMLDivElement) {
 	}
 }
 
+function roundToQuarterHour(minutes: number) {
+	return Math.max(0, Math.min(23 * 60 + 45, Math.round(minutes / 15) * 15));
+}
+
+function getPointerDateTime(
+	container: HTMLDivElement,
+	event: PointerEvent,
+	visibleDates: DateTime[],
+	timeZone: string,
+) {
+	if (visibleDates.length === 0) return null;
+
+	const target = event.target instanceof Element ? event.target : null;
+	const dateAttributeElement = target?.closest<HTMLElement>(
+		"[data-time-grid-date], [data-date], [data-date-time]",
+	);
+	const dateAttribute =
+		dateAttributeElement?.dataset.timeGridDate ??
+		dateAttributeElement?.dataset.date ??
+		dateAttributeElement?.dataset.dateTime;
+	const attributeDate = dateAttribute
+		? DateTime.fromISO(dateAttribute.slice(0, 10), { zone: timeZone })
+		: null;
+
+	const dayCells = Array.from(container.querySelectorAll<HTMLElement>(".sx__time-grid-day"));
+	const matchingDayCell = dayCells.find((cell) => {
+		const rect = cell.getBoundingClientRect();
+		return (
+			event.clientX >= rect.left &&
+			event.clientX <= rect.right &&
+			event.clientY >= rect.top &&
+			event.clientY <= rect.bottom
+		);
+	});
+	const timeGrid =
+		matchingDayCell ?? container.querySelector<HTMLElement>(".sx__time-grid-wrapper");
+	if (!timeGrid) return null;
+
+	const timeGridRect = timeGrid.getBoundingClientRect();
+	if (timeGridRect.height <= 0) return null;
+
+	const dayIndex = matchingDayCell ? Math.max(0, dayCells.indexOf(matchingDayCell)) : 0;
+	const date = attributeDate?.isValid
+		? attributeDate
+		: visibleDates[Math.min(dayIndex, visibleDates.length - 1)];
+	const minutes = roundToQuarterHour(
+		((event.clientY - timeGridRect.top) / timeGridRect.height) * 24 * 60,
+	);
+
+	return buildCalendarTimeZoneDate(date.toISODate() ?? "", minutes, timeZone);
+}
+
 export function ScheduleXCalendarWrapper({
 	events,
+	timeZone: explicitTimeZone,
 	isLoading = false,
 	viewMode,
 	onViewModeChange,
 	onEventClick,
 	onRangeChange,
+	onTimeRangeSelect,
 	onRefresh,
 	workHoursData = new Map(),
+	isSummaryLoading = false,
 }: ScheduleXCalendarWrapperProps) {
 	const { resolvedTheme } = useTheme();
 	const { t } = useTranslate();
@@ -89,19 +161,36 @@ export function ScheduleXCalendarWrapper({
 	const locale = tolgee.getLanguage() ?? "en";
 	const scheduleXLocale = toScheduleXLocale(locale);
 	const weekStartDay = useWeekStartDay();
-	const timeZone = useOrganizationTimezone();
+	const viewerTimeZone = useUserTimezone();
+	const timeZone = explicitTimeZone ?? viewerTimeZone;
 	const isDark = resolvedTheme === "dark";
 
 	// Track current date for display
 	const [currentDate, setCurrentDate] = useState<DateTime>(() => DateTime.now());
+	const [runningPeriodNow, setRunningPeriodNow] = useState<Date>(() => new Date());
 
 	// Create calendar plugins (must be stable references)
 	const [calendarControls] = useState(() => createCalendarControlsPlugin());
-	const [currentTimePlugin] = useState(() => createCurrentTimePlugin());
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
+	const selectionStartRef = useRef<RangeSelectionStart | null>(null);
+
+	const hasVisibleRunningPeriod =
+		(viewMode === "day" || viewMode === "week") &&
+		events.some((event) => event.type === "work_period" && event.metadata.isRunning);
+
+	const liveEvents = hasVisibleRunningPeriod
+		? events.map((event) =>
+				event.type === "work_period" && event.metadata.isRunning
+					? { ...event, endDate: runningPeriodNow }
+					: event,
+			)
+		: events;
 
 	// Convert events to Schedule-X format
-	const baseScheduleXEvents = calendarEventsToScheduleX(events, timeZone);
+	const baseScheduleXEvents = calendarEventsToScheduleX(
+		filterEventsForScheduleXView(liveEvents, viewMode),
+		timeZone,
+	);
 
 	// Generate break events only for day/week view
 	const scheduleXEvents = (() => {
@@ -203,9 +292,9 @@ export function ScheduleXCalendarWrapper({
 	const handleEventClick = (event: { id: string }) => {
 		if (!onEventClick) return;
 
-		const scheduleXEvent = scheduleXEvents.find((e) => e.id === event.id);
-		if (scheduleXEvent?._eventData) {
-			onEventClick(scheduleXEvent._eventData);
+		const calendarEvent = resolveClickableCalendarEvent(scheduleXEvents, event);
+		if (calendarEvent) {
+			onEventClick(calendarEvent);
 		}
 	};
 
@@ -242,7 +331,7 @@ export function ScheduleXCalendarWrapper({
 		isDark,
 		locale: scheduleXLocale,
 		calendars: getScheduleXCalendars(),
-		plugins: [createEventModalPlugin(), calendarControls, currentTimePlugin],
+		plugins: [createEventModalPlugin(), calendarControls],
 		callbacks: {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			onEventClick: handleEventClick as any,
@@ -258,6 +347,16 @@ export function ScheduleXCalendarWrapper({
 			calendarControls.setView(scheduleXView);
 		}
 	}, [calendar, viewMode, calendarControls]);
+
+	useEffect(() => {
+		if (!hasVisibleRunningPeriod) return;
+
+		const interval = window.setInterval(() => {
+			setRunningPeriodNow(new Date());
+		}, 60_000);
+
+		return () => window.clearInterval(interval);
+	}, [hasVisibleRunningPeriod]);
 
 	// Update events when they change
 	useEffect(() => {
@@ -284,6 +383,54 @@ export function ScheduleXCalendarWrapper({
 			calendar.setTheme(isDark ? "dark" : "light");
 		}
 	}, [calendar, isDark]);
+
+	useEffect(() => {
+		const container = calendarContainerRef.current;
+		if (!container || isLoading || (viewMode !== "day" && viewMode !== "week")) return;
+
+		let frame = 0;
+		let timeout: number | null = null;
+		const clearIndicators = () => {
+			for (const indicator of container.querySelectorAll(".z8-current-time-indicator")) {
+				indicator.remove();
+			}
+		};
+		const renderIndicator = () => {
+			clearIndicators();
+			const position = buildCurrentTimeIndicatorPosition(new Date(), timeZone);
+			if (!position) return;
+
+			const todayElement = container.querySelector<HTMLElement>(
+				`[data-time-grid-date="${position.dateKey}"]`,
+			);
+			if (!todayElement) return;
+
+			const indicator = document.createElement("div");
+			indicator.className = "sx__current-time-indicator z8-current-time-indicator";
+			indicator.style.top = `${position.topPercent}%`;
+			indicator.setAttribute("aria-hidden", "true");
+			todayElement.append(indicator);
+		};
+		const scheduleIndicator = () => {
+			frame = window.requestAnimationFrame(renderIndicator);
+			timeout = window.setTimeout(scheduleIndicator, 60_000 - (Date.now() % 60_000));
+		};
+
+		scheduleIndicator();
+		const observer = new MutationObserver(() => {
+			if (container.querySelector(".z8-current-time-indicator")) return;
+			window.cancelAnimationFrame(frame);
+			frame = window.requestAnimationFrame(renderIndicator);
+		});
+		observer.observe(container, { childList: true, subtree: true });
+
+		return () => {
+			observer.disconnect();
+			window.cancelAnimationFrame(frame);
+			if (timeout !== null) window.clearTimeout(timeout);
+			clearIndicators();
+		};
+	}, [timeZone, viewMode, isLoading]);
 
 	// Scroll to current time on mount and when switching to day/week view
 	useEffect(() => {
@@ -316,13 +463,34 @@ export function ScheduleXCalendarWrapper({
 		const container = calendarContainerRef.current;
 		if (!container || (viewMode !== "day" && viewMode !== "week")) return;
 
-		const frame = window.requestAnimationFrame(() => {
+		let frame = 0;
+		let retryTimeout: number | null = null;
+		let disposed = false;
+		const maxAttempts = 40;
+		const retryDelayMs = 50;
+
+		const renderHeaderContent = (attempt = 0) => {
+			if (disposed) return;
+
 			clearRequirementHeaderContent(container);
 			const headerCells = getHeaderCells(container);
+			const shouldRetry = shouldRetryRequirementHeaderInjection({
+				headerCellCount: headerCells.length,
+				visibleDateCount: visibleRequirementDates.length,
+			});
 
 			for (const [index, date] of visibleRequirementDates.entries()) {
 				const headerCell = headerCells[index];
 				if (!headerCell) continue;
+
+				if (isSummaryLoading) {
+					const skeleton = document.createElement("div");
+					skeleton.className =
+						"z8-requirement-header-summary z8-requirement-header-summary--skeleton";
+					skeleton.setAttribute("aria-hidden", "true");
+					headerCell.append(skeleton);
+					continue;
+				}
 
 				const summary = workHoursData.get(date.toFormat("yyyy-MM-dd"));
 				if (!summary) continue;
@@ -351,13 +519,68 @@ export function ScheduleXCalendarWrapper({
 
 				headerCell.append(wrapper);
 			}
-		});
+
+			if (shouldRetry && attempt < maxAttempts) {
+				retryTimeout = window.setTimeout(() => {
+					frame = window.requestAnimationFrame(() => renderHeaderContent(attempt + 1));
+				}, retryDelayMs);
+			}
+		};
+
+		frame = window.requestAnimationFrame(() => renderHeaderContent());
 
 		return () => {
+			disposed = true;
 			window.cancelAnimationFrame(frame);
+			if (retryTimeout !== null) window.clearTimeout(retryTimeout);
 			clearRequirementHeaderContent(container);
 		};
-	}, [t, viewMode, visibleRequirementDates, workHoursData]);
+	}, [t, viewMode, visibleRequirementDates, workHoursData, isSummaryLoading]);
+
+	useEffect(() => {
+		const container = calendarContainerRef.current;
+		if (!container || !onTimeRangeSelect || (viewMode !== "day" && viewMode !== "week")) return;
+
+		const handlePointerDown = (event: PointerEvent) => {
+			const target = event.target instanceof Element ? event.target : null;
+			if (
+				!(target instanceof HTMLElement) ||
+				isScheduleXEventElement(target) ||
+				!isIntentionalRangePointerDown(event)
+			) {
+				return;
+			}
+
+			const date = getPointerDateTime(container, event, visibleRequirementDates, timeZone);
+			selectionStartRef.current = date
+				? { date, clientX: event.clientX, clientY: event.clientY }
+				: null;
+		};
+
+		const handlePointerUp = (event: PointerEvent) => {
+			const start = selectionStartRef.current;
+			selectionStartRef.current = null;
+			if (!start) return;
+			if (!hasExceededPointerDragThreshold(start, event)) return;
+
+			const target = event.target instanceof Element ? event.target : null;
+			if (target instanceof HTMLElement && isScheduleXEventElement(target)) return;
+
+			const end = getPointerDateTime(container, event, visibleRequirementDates, timeZone);
+			if (!end || start.date.getTime() === end.getTime()) return;
+
+			onTimeRangeSelect({ start: start.date, end });
+		};
+
+		container.addEventListener("pointerdown", handlePointerDown);
+		window.addEventListener("pointerup", handlePointerUp);
+
+		return () => {
+			selectionStartRef.current = null;
+			container.removeEventListener("pointerdown", handlePointerDown);
+			window.removeEventListener("pointerup", handlePointerUp);
+		};
+	}, [onTimeRangeSelect, timeZone, viewMode, visibleRequirementDates]);
 
 	if (isLoading) {
 		return (

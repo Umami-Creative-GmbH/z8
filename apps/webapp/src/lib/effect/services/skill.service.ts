@@ -1,20 +1,19 @@
 import { and, eq, gt, inArray, isNull, lte, or } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
+	type employeeSkill as EmployeeSkillTable,
 	employee,
 	employeeSkill,
 	locationSubarea,
-	shift,
+	type skillRequirementOverride as OverrideTable,
+	type skill as SkillTable,
+	type subareaSkillRequirement as SubareaSkillReqTable,
 	shiftTemplate,
 	shiftTemplateSkillRequirement,
 	skill,
 	skillRequirementOverride,
 	subareaSkillRequirement,
-	type skill as SkillTable,
-	type employeeSkill as EmployeeSkillTable,
-	type subareaSkillRequirement as SubareaSkillReqTable,
 	type shiftTemplateSkillRequirement as TemplateSkillReqTable,
-	type skillRequirementOverride as OverrideTable,
 } from "@/db/schema";
 import { type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
@@ -272,7 +271,7 @@ export const SkillServiceLive = Layer.effect(
 					);
 
 					if (!existing) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "Skill not found",
@@ -283,9 +282,15 @@ export const SkillServiceLive = Layer.effect(
 						);
 					}
 
+					const existingSkill = existing;
+
 					// Validate custom category
-					const newCategory = input.category ?? existing!.category;
-					if (newCategory === "custom" && !input.customCategoryName && !existing!.customCategoryName) {
+					const newCategory = input.category ?? existingSkill.category;
+					if (
+						newCategory === "custom" &&
+						!input.customCategoryName &&
+						!existingSkill.customCategoryName
+					) {
 						yield* _(
 							Effect.fail(
 								new ValidationError({
@@ -302,13 +307,21 @@ export const SkillServiceLive = Layer.effect(
 								.update(skill)
 								.set({
 									...(input.name !== undefined && { name: input.name }),
-									...(input.description !== undefined && { description: input.description }),
-									...(input.category !== undefined && { category: input.category }),
+									...(input.description !== undefined && {
+										description: input.description,
+									}),
+									...(input.category !== undefined && {
+										category: input.category,
+									}),
 									...(input.customCategoryName !== undefined && {
 										customCategoryName: input.customCategoryName,
 									}),
-									...(input.requiresExpiry !== undefined && { requiresExpiry: input.requiresExpiry }),
-									...(input.isActive !== undefined && { isActive: input.isActive }),
+									...(input.requiresExpiry !== undefined && {
+										requiresExpiry: input.requiresExpiry,
+									}),
+									...(input.isActive !== undefined && {
+										isActive: input.isActive,
+									}),
 									updatedBy: input.updatedBy,
 								})
 								.where(eq(skill.id, id))
@@ -419,7 +432,7 @@ export const SkillServiceLive = Layer.effect(
 					);
 
 					if (!skillRecord) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "Skill not found or inactive",
@@ -430,8 +443,10 @@ export const SkillServiceLive = Layer.effect(
 						);
 					}
 
+					const activeSkill = skillRecord;
+
 					// Validate expiry if skill requires it
-					if (skillRecord!.requiresExpiry && !input.expiresAt) {
+					if (activeSkill.requiresExpiry && !input.expiresAt) {
 						yield* _(
 							Effect.fail(
 								new ValidationError({
@@ -775,12 +790,17 @@ export const SkillServiceLive = Layer.effect(
 					);
 
 					// Get template requirements if applicable
-					let templateReqs: Array<{ skillId: string; isRequired: boolean; skill: Skill }> = [];
+					let templateReqs: Array<{
+						skillId: string;
+						isRequired: boolean;
+						skill: Skill;
+					}> = [];
 					if (shiftData.templateId) {
+						const templateId = shiftData.templateId;
 						templateReqs = yield* _(
 							dbService.query("getTemplateRequirements", async () => {
 								return await dbService.db.query.shiftTemplateSkillRequirement.findMany({
-									where: eq(shiftTemplateSkillRequirement.templateId, shiftData.templateId!),
+									where: eq(shiftTemplateSkillRequirement.templateId, templateId),
 									with: {
 										skill: true,
 									},
@@ -790,10 +810,7 @@ export const SkillServiceLive = Layer.effect(
 					}
 
 					// Combine all requirements (deduped by skillId, taking most restrictive isRequired)
-					const allRequirements = new Map<
-						string,
-						{ skill: Skill; isRequired: boolean }
-					>();
+					const allRequirements = new Map<string, { skill: Skill; isRequired: boolean }>();
 
 					for (const req of [...subareaReqs, ...templateReqs]) {
 						const existing = allRequirements.get(req.skillId);
@@ -819,13 +836,19 @@ export const SkillServiceLive = Layer.effect(
 					}
 
 					// Map expired skills
-					const expiredSkillsResult: SkillValidationResult["expiredSkills"] = expiredSkills
-						.filter((es) => allRequirements.has(es.skillId))
-						.map((es) => ({
+					const expiredSkillsResult: SkillValidationResult["expiredSkills"] = [];
+					for (const es of expiredSkills) {
+						const expiresAt = es.expiresAt;
+						if (!allRequirements.has(es.skillId) || !(expiresAt instanceof Date)) {
+							continue;
+						}
+
+						expiredSkillsResult.push({
 							id: es.skillId,
 							name: es.skill.name,
-							expiresAt: es.expiresAt!,
-						}));
+							expiresAt,
+						});
+					}
 
 					const hasRequiredMissing = missingSkills.some((s) => s.isRequired);
 
@@ -893,13 +916,19 @@ export const SkillServiceLive = Layer.effect(
 
 					// Map expired skills (only those required by subarea)
 					const requiredSkillIds = new Set(subareaReqs.map((r) => r.skillId));
-					const expiredSkillsResult: SkillValidationResult["expiredSkills"] = expiredSkillsData
-						.filter((es) => requiredSkillIds.has(es.skillId))
-						.map((es) => ({
+					const expiredSkillsResult: SkillValidationResult["expiredSkills"] = [];
+					for (const es of expiredSkillsData) {
+						const expiresAt = es.expiresAt;
+						if (!requiredSkillIds.has(es.skillId) || !(expiresAt instanceof Date)) {
+							continue;
+						}
+
+						expiredSkillsResult.push({
 							id: es.skillId,
 							name: es.skill.name,
-							expiresAt: es.expiresAt!,
-						}));
+							expiresAt,
+						});
+					}
 
 					const hasRequiredMissing = missingSkills.some((s) => s.isRequired);
 

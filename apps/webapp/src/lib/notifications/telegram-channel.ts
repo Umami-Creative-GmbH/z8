@@ -5,9 +5,9 @@
  * Mirrors the Teams notification channel pattern.
  */
 
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { employee, approvalRequest } from "@/db/schema";
+import { approvalRequest, employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import type { NotificationType } from "./types";
 
@@ -101,10 +101,7 @@ export async function sendTelegramNotification(params: TelegramNotificationParam
 			parse_mode: "MarkdownV2",
 		});
 
-		logger.debug(
-			{ userId: params.userId, type: params.type },
-			"Telegram notification sent",
-		);
+		logger.debug({ userId: params.userId, type: params.type }, "Telegram notification sent");
 	} catch (error) {
 		logger.error({ error, params }, "Failed to send Telegram notification");
 		throw error;

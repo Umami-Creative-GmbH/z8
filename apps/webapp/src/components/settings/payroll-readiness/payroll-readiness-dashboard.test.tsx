@@ -97,14 +97,15 @@ describe("PayrollReadinessDashboard", () => {
 
 	it("renders blocked summary and affected employee row with name and employee number", async () => {
 		const { PayrollReadinessDashboard } = await import("./payroll-readiness-dashboard");
-		const affectedEmployees: PayrollReadinessResult["groups"][number]["checks"][number]["affectedEmployees"] = [
-			{
-				id: "employee-1",
-				name: "Ada Lovelace",
-				email: "ada@example.com",
-				employeeNumber: "E-1001",
-			},
-		];
+		const affectedEmployees: PayrollReadinessResult["groups"][number]["checks"][number]["affectedEmployees"] =
+			[
+				{
+					id: "employee-1",
+					name: "Ada Lovelace",
+					email: "ada@example.com",
+					employeeNumber: "E-1001",
+				},
+			];
 		const blockedData: PayrollReadinessResult = {
 			...readyData,
 			status: "blocked",
@@ -123,7 +124,8 @@ describe("PayrollReadinessDashboard", () => {
 							id: "pending-approvals",
 							group: "time",
 							title: "Pending approvals",
-							description: "All time and absence approval requests must be resolved before payroll export.",
+							description:
+								"All time and absence approval requests must be resolved before payroll export.",
 							status: "fail",
 							severity: "blocker",
 							required: true,
@@ -142,6 +144,8 @@ describe("PayrollReadinessDashboard", () => {
 		const row = screen.getByRole("row", { name: /Ada Lovelace.*E-1001/ });
 		expect(within(row).getByText("Ada Lovelace")).toBeTruthy();
 		expect(within(row).getByText("E-1001")).toBeTruthy();
-		expect(screen.getByRole("link", { name: "Review approval inbox" }).getAttribute("href")).toBe("/approvals/inbox");
+		expect(screen.getByRole("link", { name: "Review approval inbox" }).getAttribute("href")).toBe(
+			"/approvals/inbox",
+		);
 	});
 });

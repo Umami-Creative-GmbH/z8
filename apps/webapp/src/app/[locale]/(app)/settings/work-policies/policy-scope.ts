@@ -34,9 +34,6 @@ export function canAccessWorkPolicyComplianceActions(accessTier: SettingsAccessT
 	return accessTier === "orgAdmin";
 }
 
-export function policyBelongsToOrganization(
-	policyOrganizationId: string,
-	organizationId: string,
-) {
+export function policyBelongsToOrganization(policyOrganizationId: string, organizationId: string) {
 	return policyOrganizationId === organizationId;
 }

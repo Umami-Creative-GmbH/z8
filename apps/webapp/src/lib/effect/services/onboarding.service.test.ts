@@ -17,7 +17,11 @@ vi.mock("next/headers", () => ({
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
-		api: { createOrganization: vi.fn(), getSession: vi.fn(), updateUser: vi.fn() },
+		api: {
+			createOrganization: vi.fn(),
+			getSession: vi.fn(),
+			updateUser: vi.fn(),
+		},
 	},
 }));
 
@@ -171,10 +175,10 @@ describe("OnboardingService.updateProfile", () => {
 		const employeeSet = vi.fn();
 		vi.mocked(headers).mockResolvedValue(new Headers());
 		vi.mocked(auth.api.updateUser).mockResolvedValue({} as never);
-		const findEmployee = vi
-			.fn()
-			.mockResolvedValueOnce(null)
-			.mockResolvedValueOnce({ id: "emp-fallback", organizationId: "org-other" });
+		const findEmployee = vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce({
+			id: "emp-fallback",
+			organizationId: "org-other",
+		});
 
 		const mockDb = {
 			query: {

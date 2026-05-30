@@ -2,24 +2,29 @@
  * Verification Service
  * Verifies audit package integrity and cryptographic proofs
  */
+
+import { and, eq } from "drizzle-orm";
 import JSZip from "jszip";
-import { eq, and } from "drizzle-orm";
-import { db, auditExportPackage, auditExportFile, auditVerificationLog, auditSigningKey } from "@/db";
+import { auditExportPackage, auditVerificationLog, db } from "@/db";
 import { createLogger } from "@/lib/logger";
 import { getPresignedUrl } from "@/lib/storage/export-s3-client";
 import {
-	VerificationResult,
-	VerificationCheck,
-	AuditManifest,
-	AuditFileEntry,
-	SHA256Hash,
 	Ed25519Signature,
 	RFC3161Timestamp,
+	SHA256Hash,
+	type VerificationCheck,
+	type VerificationResult,
 } from "../domain/models";
 import { hashProvider, type IHashProvider } from "../infrastructure/crypto/hash-provider";
-import { signingProvider, type ISigningProvider } from "../infrastructure/crypto/signing-provider";
-import { timestampProvider, type ITimestampProvider } from "../infrastructure/crypto/timestamp-provider";
-import { wormStorageAdapter, type IWORMStorageAdapter } from "../infrastructure/storage/worm-storage-adapter";
+import { type ISigningProvider, signingProvider } from "../infrastructure/crypto/signing-provider";
+import {
+	type ITimestampProvider,
+	timestampProvider,
+} from "../infrastructure/crypto/timestamp-provider";
+import {
+	type IWORMStorageAdapter,
+	wormStorageAdapter,
+} from "../infrastructure/storage/worm-storage-adapter";
 
 const logger = createLogger("VerificationService");
 
@@ -52,7 +57,8 @@ export class VerificationService {
 	 * Verify an audit package by ID
 	 */
 	async verifyPackage(params: VerifyPackageParams): Promise<VerificationResult> {
-		const { packageId, organizationId, verifiedById, verificationSource, clientIp, userAgent } = params;
+		const { packageId, organizationId, verifiedById, verificationSource, clientIp, userAgent } =
+			params;
 
 		logger.info({ packageId, organizationId }, "Starting package verification");
 
@@ -77,7 +83,10 @@ export class VerificationService {
 			}
 
 			if (packageData.status !== "completed") {
-				return this.createFailedResult(`Package is not completed (status: ${packageData.status})`, verifiedAt);
+				return this.createFailedResult(
+					`Package is not completed (status: ${packageData.status})`,
+					verifiedAt,
+				);
 			}
 
 			// Check 1: Verify WORM Object Lock
@@ -98,10 +107,7 @@ export class VerificationService {
 
 			// Check 3: Verify Merkle root
 			if (packageData.merkleRoot) {
-				const merkleCheck = await this.verifyMerkleRoot(
-					packageData.files,
-					packageData.merkleRoot,
-				);
+				const merkleCheck = await this.verifyMerkleRoot(packageData.files, packageData.merkleRoot);
 				checks.push(merkleCheck);
 			} else {
 				checks.push({
@@ -147,7 +153,10 @@ export class VerificationService {
 			// Check 6 (audit_pack only): verify expected package contents
 			if (packageData.exportType === "audit_pack") {
 				if (packageData.s3Key) {
-					const coverageCheck = await this.verifyAuditPackContents(organizationId, packageData.s3Key);
+					const coverageCheck = await this.verifyAuditPackContents(
+						organizationId,
+						packageData.s3Key,
+					);
 					checks.push(coverageCheck);
 				} else {
 					checks.push({
@@ -162,7 +171,10 @@ export class VerificationService {
 			const isValid = checks.every((c) => c.passed);
 			const summary = isValid
 				? "All cryptographic proofs verified successfully"
-				: `Verification failed: ${checks.filter((c) => !c.passed).map((c) => c.name).join(", ")}`;
+				: `Verification failed: ${checks
+						.filter((c) => !c.passed)
+						.map((c) => c.name)
+						.join(", ")}`;
 
 			const result: VerificationResult = {
 				isValid,
@@ -201,10 +213,7 @@ export class VerificationService {
 	/**
 	 * Verify WORM Object Lock status
 	 */
-	private async verifyWORMLock(
-		organizationId: string,
-		s3Key: string,
-	): Promise<VerificationCheck> {
+	private async verifyWORMLock(organizationId: string, s3Key: string): Promise<VerificationCheck> {
 		const lockStatus = await this.storage.verifyObjectLock(organizationId, s3Key);
 
 		if (lockStatus.locked) {

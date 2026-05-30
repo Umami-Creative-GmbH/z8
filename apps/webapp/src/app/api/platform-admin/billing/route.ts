@@ -1,11 +1,10 @@
-import { NextResponse } from "next/server";
-import { connection } from "next/server";
+import { and, count, eq, gte, sql } from "drizzle-orm";
 import { headers } from "next/headers";
-import { count, eq, sql, and, gte } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
-import { subscription, stripeEvent } from "@/db/schema";
+import { stripeEvent, subscription } from "@/db/schema";
 import { env } from "@/env";
+import { auth } from "@/lib/auth";
 
 // Prices in EUR (net)
 const MONTHLY_PRICE = 4;
@@ -141,12 +140,7 @@ export async function GET() {
 				seats: sql<number>`COALESCE(SUM(${subscription.currentSeats}), 0)`,
 			})
 			.from(subscription)
-			.where(
-				and(
-					eq(subscription.billingInterval, "year"),
-					eq(subscription.status, "active"),
-				),
-			);
+			.where(and(eq(subscription.billingInterval, "year"), eq(subscription.status, "active")));
 
 		const [monthlyData] = await db
 			.select({
@@ -154,12 +148,7 @@ export async function GET() {
 				seats: sql<number>`COALESCE(SUM(${subscription.currentSeats}), 0)`,
 			})
 			.from(subscription)
-			.where(
-				and(
-					eq(subscription.billingInterval, "month"),
-					eq(subscription.status, "active"),
-				),
-			);
+			.where(and(eq(subscription.billingInterval, "month"), eq(subscription.status, "active")));
 
 		return NextResponse.json({
 			enabled: true,

@@ -1,7 +1,7 @@
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { eq } from "drizzle-orm";
 
 const mockState = vi.hoisted(() => ({
 	headers: vi.fn(),
@@ -90,10 +90,10 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.headers.mockResolvedValue(new Headers());
-	mockState.getSession.mockResolvedValue({
-		user: { id: "user-1" },
-		session: { activeOrganizationId: "org-1" },
-	});
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1" },
+			session: { activeOrganizationId: "org-1" },
+		});
 		mockState.getAbility.mockResolvedValue({
 			cannot: vi.fn(() => false),
 		});

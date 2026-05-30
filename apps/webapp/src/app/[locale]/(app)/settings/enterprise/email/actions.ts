@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { organizationEmailConfig, type EmailTransportType } from "@/db/schema";
+import { type EmailTransportType, organizationEmailConfig } from "@/db/schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { sendTestEmail } from "@/lib/email/email-service";
 import { createLogger } from "@/lib/logger";
@@ -11,8 +11,8 @@ import {
 	deleteOrgSecret,
 	getSecretStoreStatus,
 	hasOrgSecret,
-	storeOrgSecret,
 	type SecretStoreStatus,
+	storeOrgSecret,
 } from "@/lib/vault";
 
 const logger = createLogger("EmailConfigActions");
@@ -182,7 +182,10 @@ export async function saveEmailConfig(
 		revalidatePath("/settings/enterprise");
 		return { success: true };
 	} catch (error) {
-		logger.error({ error, organizationId: authorizedOrganizationId }, "Failed to save email config");
+		logger.error(
+			{ error, organizationId: authorizedOrganizationId },
+			"Failed to save email config",
+		);
 		return {
 			success: false,
 			error: error instanceof Error ? error.message : "Failed to save email configuration",
@@ -222,7 +225,10 @@ export async function testEmailConfig(
 			return { success: true };
 		}
 
-		logger.warn({ organizationId: authorizedOrganizationId, error: result.error }, "Test email failed");
+		logger.warn(
+			{ organizationId: authorizedOrganizationId, error: result.error },
+			"Test email failed",
+		);
 		return { success: false, error: result.error };
 	} catch (error) {
 		logger.error({ error, organizationId: authorizedOrganizationId }, "Failed to send test email");
@@ -256,7 +262,10 @@ export async function deleteEmailConfig(
 		revalidatePath("/settings/enterprise");
 		return { success: true };
 	} catch (error) {
-		logger.error({ error, organizationId: authorizedOrganizationId }, "Failed to delete email config");
+		logger.error(
+			{ error, organizationId: authorizedOrganizationId },
+			"Failed to delete email config",
+		);
 		return {
 			success: false,
 			error: error instanceof Error ? error.message : "Failed to delete email configuration",

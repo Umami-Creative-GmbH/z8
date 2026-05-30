@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { PlatformAnalyticsCharts } from "@/components/platform-admin/platform-analytics-charts";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getPlatformAnalyticsData } from "@/lib/platform-analytics/service";
 import { parsePlatformAnalyticsParams } from "@/lib/platform-analytics/range";
+import { getPlatformAnalyticsData } from "@/lib/platform-analytics/service";
 import type {
 	ParsedPlatformAnalyticsParams,
 	PlatformAnalyticsSearchParams,

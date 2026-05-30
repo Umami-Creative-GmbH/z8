@@ -102,7 +102,9 @@ describe("enterprise identity validation", () => {
 			validateEnterpriseIdentityProviderInput({ providerId: "acme-okta", domain: "not a domain" }),
 		).toEqual("Enter a valid email domain such as example.com");
 		for (const providerId of ["a", "acme", "acme-okta", "acme-123"]) {
-			expect(validateEnterpriseIdentityProviderInput({ providerId, domain: "acme.com" })).toBeNull();
+			expect(
+				validateEnterpriseIdentityProviderInput({ providerId, domain: "acme.com" }),
+			).toBeNull();
 		}
 		expect(
 			validateEnterpriseIdentityProviderInput({ providerId: "acme-okta", domain: "acme.com" }),

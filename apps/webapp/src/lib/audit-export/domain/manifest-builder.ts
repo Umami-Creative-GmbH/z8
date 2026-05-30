@@ -4,8 +4,8 @@
  */
 import JSZip from "jszip";
 import { createLogger } from "@/lib/logger";
-import { AuditManifest, AuditFileEntry, SHA256Hash } from "./models";
 import { hashProvider, type IHashProvider } from "../infrastructure/crypto/hash-provider";
+import { AuditFileEntry, AuditManifest, type SHA256Hash } from "./models";
 
 const logger = createLogger("ManifestBuilder");
 
@@ -30,7 +30,10 @@ export interface IManifestBuilder {
 	/**
 	 * Verify manifest against ZIP content
 	 */
-	verifyManifest(manifest: AuditManifest, zipContent: Buffer): Promise<{
+	verifyManifest(
+		manifest: AuditManifest,
+		zipContent: Buffer,
+	): Promise<{
 		isValid: boolean;
 		invalidFiles: string[];
 		merkleRootMatch: boolean;

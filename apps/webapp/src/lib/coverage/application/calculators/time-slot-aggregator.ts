@@ -5,10 +5,10 @@
 
 import type { CoverageRuleEntity } from "../../domain/entities/coverage-rule";
 import {
+	minutesToTime,
 	type TimeRangeData,
 	timeRangesOverlap,
 	timeToMinutes,
-	minutesToTime,
 } from "../../domain/value-objects/time-range";
 
 /**
@@ -145,9 +145,6 @@ export function hasRulesInTimeRange(
 	timeRange: TimeRangeData,
 ): boolean {
 	return rules.some((rule) =>
-		timeRangesOverlap(
-			{ startTime: rule.startTime, endTime: rule.endTime },
-			timeRange,
-		),
+		timeRangesOverlap({ startTime: rule.startTime, endTime: rule.endTime }, timeRange),
 	);
 }

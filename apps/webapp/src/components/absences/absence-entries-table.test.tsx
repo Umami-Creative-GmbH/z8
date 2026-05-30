@@ -145,7 +145,9 @@ describe("AbsenceEntriesTable", () => {
 		render(
 			<AbsenceEntriesTable
 				currentDate="2026-05-21"
-				absences={[buildAbsence({ id: "approved-today", status: "approved", startDate: "2026-05-21" })]}
+				absences={[
+					buildAbsence({ id: "approved-today", status: "approved", startDate: "2026-05-21" }),
+				]}
 			/>,
 		);
 
@@ -185,7 +187,7 @@ describe("AbsenceEntriesTable", () => {
 		expect((await screen.findAllByText("Cancel absence")).length).toBeGreaterThan(0);
 	});
 
-	it("renders the search input with an explicit background", () => {
+	it("renders the search input with the shared card surface", () => {
 		render(
 			<AbsenceEntriesTable
 				currentDate="2026-05-20"
@@ -194,7 +196,7 @@ describe("AbsenceEntriesTable", () => {
 		);
 
 		expect(screen.getByPlaceholderText("Search by type, status, or notes…").className).toContain(
-			"bg-background",
+			"bg-card",
 		);
 	});
 });

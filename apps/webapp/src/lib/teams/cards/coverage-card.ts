@@ -7,8 +7,8 @@
 
 import { DateTime } from "luxon";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
-import type { CoverageSummary } from "@/lib/effect/services/coverage.service";
 import { fmtFullDate } from "@/lib/bot-platform/i18n";
+import type { CoverageSummary } from "@/lib/effect/services/coverage.service";
 
 // ============================================
 // TYPES
@@ -31,7 +31,6 @@ function getStatusColor(status: "understaffed" | "adequate" | "overstaffed"): st
 			return "attention"; // Red
 		case "overstaffed":
 			return "accent"; // Blue
-		case "adequate":
 		default:
 			return "good"; // Green
 	}
@@ -43,7 +42,6 @@ function getStatusIcon(status: "understaffed" | "adequate" | "overstaffed"): str
 			return "🔴";
 		case "overstaffed":
 			return "🔵";
-		case "adequate":
 		default:
 			return "🟢";
 	}
@@ -174,7 +172,11 @@ export function buildCoverageCard(input: CoverageCardInput): Record<string, unkn
 		if (subareaCount >= 5) {
 			body.push({
 				type: "TextBlock",
-				text: t("teamsBot:commands.coverage.moreLocationsMarkdown", "_+{count} more locations..._", { count: bySubarea.size - 5 }),
+				text: t(
+					"teamsBot:commands.coverage.moreLocationsMarkdown",
+					"_+{count} more locations..._",
+					{ count: bySubarea.size - 5 },
+				),
 				isSubtle: true,
 				spacing: "medium",
 			});

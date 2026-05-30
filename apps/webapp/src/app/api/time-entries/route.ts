@@ -1,9 +1,13 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
+import {
+	createTimeEntry,
+	validateProjectAssignment,
+} from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
 import { db } from "@/db";
-import { employee, timeEntry, workPeriod } from "@/db/schema";
+import { employee, project, timeEntry, userSettings, workCategory, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
@@ -20,7 +24,31 @@ import {
 } from "@/lib/billing/guard";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
+import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
+import {
+	isValidIanaTimezone,
+	resolveTimeEntryTimezoneCapture,
+} from "@/lib/time-tracking/timezone-capture";
 import { isWorkLocationType } from "@/lib/time-tracking/work-location";
+
+class TimeEntryConflictError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "TimeEntryConflictError";
+	}
+}
+
+async function getSavedUserTimezone(userId: string): Promise<string | null> {
+	try {
+		const settings = await db.query.userSettings.findFirst({
+			where: eq(userSettings.userId, userId),
+			columns: { timezone: true },
+		});
+		return isValidIanaTimezone(settings?.timezone) ? settings.timezone : null;
+	} catch {
+		return null;
+	}
+}
 
 /**
  * GET /api/time-entries
@@ -147,7 +175,7 @@ export async function GET(request: NextRequest) {
 		const entries = await runtime.runPromise(effect);
 
 		return NextResponse.json({ entries });
-	} catch (error) {
+	} catch (_error) {
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }
@@ -171,7 +199,16 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const { type, timestamp, notes, location, projectId, workLocationType } = body;
+		const {
+			type,
+			timestamp,
+			notes,
+			location,
+			projectId,
+			workCategoryId,
+			workLocationType,
+			browserTimezone,
+		} = body;
 
 		// Validate required fields
 		if (!type || !["clock_in", "clock_out"].includes(type)) {
@@ -219,76 +256,158 @@ export async function POST(request: NextRequest) {
 			return createBillingForbiddenResponse(billingAccess);
 		}
 
-		// Extract request metadata from already-resolved headers
-		const ipAddress =
-			resolvedHeaders.get("x-forwarded-for") || resolvedHeaders.get("x-real-ip") || "unknown";
-		const deviceInfo = resolvedHeaders.get("user-agent") || "unknown";
-
-		const effect = Effect.gen(function* (_) {
-			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(
-				timeEntryService.createTimeEntry({
-					employeeId: currentEmployee.id,
-					organizationId: activeOrgId,
-					type,
-					timestamp: timestamp ? new Date(timestamp) : new Date(),
-					createdBy: session.user.id,
-					notes,
-					location,
-					ipAddress,
-					deviceInfo,
-				}),
-			);
+		const entryTime = timestamp ? new Date(timestamp) : new Date();
+		const savedTimezone = (await getSavedUserTimezone(session.user.id)) ?? "UTC";
+		const requestBrowserTimezone = isValidIanaTimezone(browserTimezone) ? browserTimezone : null;
+		const timezoneCapture = resolveTimeEntryTimezoneCapture({
+			timestamp: entryTime,
+			browserTimezone: requestBrowserTimezone,
+			fallbackTimezone: savedTimezone,
+			browserSource: "browser",
+			fallbackSource: "user_setting",
 		});
 
-		const entry = await runtime.runPromise(effect);
+		if (projectId) {
+			const [assignedProject] = await db
+				.select()
+				.from(project)
+				.where(and(eq(project.id, projectId), eq(project.organizationId, activeOrgId)))
+				.limit(1);
 
-		// Manage work periods based on entry type
-		const entryTime = timestamp ? new Date(timestamp) : new Date();
+			if (!assignedProject) {
+				return NextResponse.json({ error: "Project not found" }, { status: 400 });
+			}
 
-		if (type === "clock_in") {
-			// Create a new work period with organizationId
-			await db.insert(workPeriod).values({
-				employeeId: currentEmployee.id,
-				organizationId: activeOrgId,
-				clockInId: entry.id,
-				startTime: entryTime,
-				isActive: true,
-				workLocationType: resolvedWorkLocationType,
-			});
-		} else if (type === "clock_out") {
-			// Find and close the active work period for this employee in this org
-			const [activePeriod] = await db
+			const projectValidation = await validateProjectAssignment(
+				projectId,
+				currentEmployee.id,
+				currentEmployee.teamId,
+			);
+			if (!projectValidation.isValid) {
+				return NextResponse.json(
+					{ error: projectValidation.error || "Cannot assign to this project" },
+					{ status: 400 },
+				);
+			}
+		}
+
+		if (workCategoryId) {
+			const [category] = await db
+				.select()
+				.from(workCategory)
+				.where(
+					and(
+						eq(workCategory.id, workCategoryId),
+						eq(workCategory.organizationId, activeOrgId),
+						eq(workCategory.isActive, true),
+					),
+				)
+				.limit(1);
+
+			if (!category) {
+				return NextResponse.json({ error: "Work category not found" }, { status: 400 });
+			}
+
+			const hasCategoryAccess = await employeeHasAccessToCategory(
+				currentEmployee.id,
+				workCategoryId,
+			);
+			if (!hasCategoryAccess) {
+				return NextResponse.json({ error: "Cannot assign to this work category" }, { status: 400 });
+			}
+		}
+
+		const entry = await db.transaction(async (tx) => {
+			const lockKey = `${activeOrgId}:${currentEmployee.id}`;
+			await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+
+			const [activePeriod] = await tx
 				.select()
 				.from(workPeriod)
 				.where(
 					and(
 						eq(workPeriod.employeeId, currentEmployee.id),
 						eq(workPeriod.organizationId, activeOrgId),
+						eq(workPeriod.isActive, true),
 						isNull(workPeriod.endTime),
 					),
 				)
 				.limit(1);
 
-			if (activePeriod) {
+			if (type === "clock_in" && activePeriod) {
+				throw new TimeEntryConflictError("Active work period already exists");
+			}
+
+			if (type === "clock_out" && !activePeriod) {
+				throw new Error("No active work period found");
+			}
+
+			const createdEntry = await createTimeEntry(
+				{
+					employeeId: currentEmployee.id,
+					organizationId: activeOrgId,
+					type,
+					timestamp: entryTime,
+					createdBy: session.user.id,
+					notes,
+					location,
+					...timezoneCapture,
+				},
+				tx,
+			);
+
+			if (type === "clock_in") {
+				await tx.insert(workPeriod).values({
+					employeeId: currentEmployee.id,
+					organizationId: activeOrgId,
+					clockInId: createdEntry.id,
+					startTime: entryTime,
+					isActive: true,
+					workLocationType: resolvedWorkLocationType,
+				});
+			} else if (activePeriod) {
 				const durationMs = entryTime.getTime() - activePeriod.startTime.getTime();
 				const durationMinutes = Math.round(durationMs / 60000);
 
-				await db
+				const updatedPeriods = await tx
 					.update(workPeriod)
 					.set({
-						clockOutId: entry.id,
+						clockOutId: createdEntry.id,
 						endTime: entryTime,
 						durationMinutes,
 						isActive: false,
 						...(projectId && { projectId }),
+						...(workCategoryId && { workCategoryId }),
 					})
-					.where(eq(workPeriod.id, activePeriod.id));
+					.where(
+						and(
+							eq(workPeriod.id, activePeriod.id),
+							eq(workPeriod.employeeId, currentEmployee.id),
+							eq(workPeriod.organizationId, activeOrgId),
+							eq(workPeriod.isActive, true),
+							isNull(workPeriod.endTime),
+						),
+					)
+					.returning({ id: workPeriod.id });
+
+				if (updatedPeriods.length === 0) {
+					throw new TimeEntryConflictError("Active work period changed");
+				}
 			}
-		}
+
+			return createdEntry;
+		});
 
 		return NextResponse.json({ entry }, { status: 201 });
 	} catch (error) {
+		if (error instanceof TimeEntryConflictError) {
+			return NextResponse.json({ error: error.message }, { status: 409 });
+		}
+
+		if (error instanceof Error && error.message === "No active work period found") {
+			return NextResponse.json({ error: "No active work period found" }, { status: 400 });
+		}
+
 		// Handle Effect errors
 		if (error instanceof Error && error.message.includes("NotFoundError")) {
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });

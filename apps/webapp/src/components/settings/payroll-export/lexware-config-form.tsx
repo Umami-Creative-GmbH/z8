@@ -7,8 +7,8 @@ import Image from "next/image";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import {
-	saveLexwareConfigAction,
 	type LexwareConfigResult,
+	saveLexwareConfigAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,12 +29,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { LexwareLohnConfig } from "@/lib/payroll-export/types";
 
 interface LexwareConfigFormProps {
@@ -68,16 +63,11 @@ export function LexwareConfigForm({
 				});
 
 				if (result.success) {
-					toast.success(
-						t("settings.payrollExport.lexware.saveSuccess", "Configuration saved"),
-					);
+					toast.success(t("settings.payrollExport.lexware.saveSuccess", "Configuration saved"));
 					onConfigSaved?.();
 				} else {
 					toast.error(
-						t(
-							"settings.payrollExport.lexware.saveError",
-							"Failed to save configuration",
-						),
+						t("settings.payrollExport.lexware.saveError", "Failed to save configuration"),
 						{
 							description: result.error,
 						},
@@ -167,9 +157,7 @@ export function LexwareConfigForm({
 								</div>
 								<Select
 									value={field.state.value}
-									onValueChange={(v) =>
-										field.handleChange(v as "employeeNumber" | "employeeId")
-									}
+									onValueChange={(v) => field.handleChange(v as "employeeNumber" | "employeeId")}
 								>
 									<SelectTrigger>
 										<SelectValue />
@@ -198,10 +186,7 @@ export function LexwareConfigForm({
 							<div className="flex items-center justify-between rounded-lg border p-4">
 								<div className="space-y-0.5">
 									<Label htmlFor="includeZeroHours" className="text-base">
-										{t(
-											"settings.payrollExport.lexware.includeZeroHours",
-											"Include Zero Hours",
-										)}
+										{t("settings.payrollExport.lexware.includeZeroHours", "Include Zero Hours")}
 									</Label>
 									<p className="text-sm text-muted-foreground">
 										{t(
@@ -224,10 +209,7 @@ export function LexwareConfigForm({
 							<div className="flex items-center justify-between rounded-lg border p-4">
 								<div className="space-y-0.5">
 									<Label htmlFor="includeStunden" className="text-base">
-										{t(
-											"settings.payrollExport.lexware.includeStunden",
-											"Include Hours Column",
-										)}
+										{t("settings.payrollExport.lexware.includeStunden", "Include Hours Column")}
 									</Label>
 									<p className="text-sm text-muted-foreground">
 										{t(

@@ -86,6 +86,17 @@
         "noOrganization": "Kei Organisation usgwählt"
       },
       "form": {
+        "approvalsTesting": {
+          "label": "Freigabetests",
+          "pendingAbsences": {
+            "description": "Abwesenheitsanträge erstellen, die auf die Genehmigung durch den Vorgesetzten warten",
+            "title": "Ausstehende Abwesenheitsgenehmigungen"
+          },
+          "pendingTimeCorrections": {
+            "description": "Zeitkorrekturen erstellen, die auf die Genehmigung durch den Vorgesetzten warten",
+            "title": "Ausstehende Zeitkorrekturgenehmigungen"
+          }
+        },
         "dataTypes": {
           "absences": {
             "description": "Ferie, Chrankheit und anderi Absänze",
@@ -183,6 +194,14 @@
         "managers": {
           "description": "Manager de Mitarbeiter zueordne",
           "label": "Manager-Zueordnige"
+        },
+        "pendingAbsenceApprovals": {
+          "description": "Erstelle ausstehende Abwesenheitsanträge",
+          "label": "Ausstehende Abwesenheitsgenehmigungen"
+        },
+        "pendingTimeCorrectionApprovals": {
+          "description": "Erstelle ausstehende Zeitkorrekturanträge",
+          "label": "Ausstehende Zeitkorrekturgenehmigungen"
         },
         "projects": {
           "description": "Bispiilprojekt erstelle",

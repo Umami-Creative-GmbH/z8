@@ -18,7 +18,8 @@ export function partitionDateRangeByMonth(startDate: string, endDate: string): I
 }
 
 export function chunkEmployeeIds(employeeIds: string[], chunkSize: number): string[][] {
-	if (!Number.isInteger(chunkSize) || chunkSize <= 0) throw new RangeError("Employee chunk size must be a positive integer");
+	if (!Number.isInteger(chunkSize) || chunkSize <= 0)
+		throw new RangeError("Employee chunk size must be a positive integer");
 	const chunks: string[][] = [];
 	for (let index = 0; index < employeeIds.length; index += chunkSize) {
 		chunks.push(employeeIds.slice(index, index + chunkSize));

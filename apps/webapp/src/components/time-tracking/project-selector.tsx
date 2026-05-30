@@ -70,12 +70,12 @@ export function ProjectSelector({
 			value === undefined
 		) {
 			const lastProjectId = lastProjectIdRef.current;
-			if (lastProjectId && projectsMap.has(lastProjectId)) {
+			if (lastProjectId && projects.some((project) => project.id === lastProjectId)) {
 				onValueChange(lastProjectId);
 			}
 			hasAutoSelectedRef.current = true;
 		}
-	}, [autoSelectLast, projects.length, projectsMap, value, onValueChange]);
+	}, [autoSelectLast, projects, value, onValueChange]);
 
 	// Save selected project to localStorage and update cache
 	const handleValueChange = (newValue: string) => {

@@ -48,15 +48,15 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 vi.mock("@aws-sdk/client-s3", () => ({
-	S3Client: vi.fn().mockImplementation(function (config) {
+	S3Client: vi.fn().mockImplementation(function S3Client(config) {
 		mockState.lastS3Config = config;
 		return { send: mockState.send };
 	}),
-	GetObjectCommand: vi.fn().mockImplementation(function (input) {
+	GetObjectCommand: vi.fn().mockImplementation(function GetObjectCommand(input) {
 		mockState.lastGetObjectCommand = input;
 		return { input };
 	}),
-	PutObjectCommand: vi.fn().mockImplementation(function (input) {
+	PutObjectCommand: vi.fn().mockImplementation(function PutObjectCommand(input) {
 		mockState.lastPutObjectCommand = input;
 		return { input };
 	}),

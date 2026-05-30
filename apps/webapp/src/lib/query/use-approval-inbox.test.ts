@@ -1,10 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import type { BulkDecisionResult } from "@/lib/approvals/domain/types";
-import {
-	readBulkDecisionResult,
-	readQueryError,
-	type useBulkApprove,
-} from "./use-approval-inbox";
+import { readBulkDecisionResult, readQueryError, type useBulkApprove } from "./use-approval-inbox";
 
 describe("useApprovalInbox contracts", () => {
 	it("returns the richer bulk decision result from bulk approve mutations", () => {

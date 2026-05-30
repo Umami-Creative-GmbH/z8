@@ -6,8 +6,8 @@
  */
 
 import { Context, Effect, Layer } from "effect";
-import type { ApprovalType, ApprovalTypeHandler } from "./types";
 import { NotFoundError } from "@/lib/effect/errors";
+import type { ApprovalType, ApprovalTypeHandler } from "./types";
 
 // ============================================
 // REGISTRY SERVICE

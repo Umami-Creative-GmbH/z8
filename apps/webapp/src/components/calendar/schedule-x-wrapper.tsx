@@ -1,8 +1,8 @@
 "use client";
 
 import "temporal-polyfill/global";
-import dynamic from "next/dynamic";
 import { useTranslate } from "@tolgee/react";
+import dynamic from "next/dynamic";
 import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import type { ViewMode } from "./schedule-x-calendar";
 
@@ -29,13 +29,16 @@ const ScheduleXCalendarWrapper = dynamic(
 
 interface ScheduleXWrapperProps {
 	events: CalendarEvent[];
+	timeZone?: string;
 	isLoading?: boolean;
 	viewMode: ViewMode;
 	onViewModeChange: (mode: ViewMode) => void;
 	onEventClick?: (event: CalendarEvent) => void;
 	onRangeChange?: (range: { start: Date; end: Date }) => void;
+	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
 	workHoursData?: DailyWorkHoursSummaries;
+	isSummaryLoading?: boolean;
 }
 
 /**

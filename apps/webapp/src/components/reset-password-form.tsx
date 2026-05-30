@@ -283,7 +283,7 @@ function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<
 				{isLoading ? (
 					<>
 						<IconLoader2 className="mr-2 size-4 animate-spin" />
-					{t("common.loading", "Loading…")}
+						{t("common.loading", "Loading…")}
 					</>
 				) : (
 					t("auth.reset-password-button", "Reset Password")

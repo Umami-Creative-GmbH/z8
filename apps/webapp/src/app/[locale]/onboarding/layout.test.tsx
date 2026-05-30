@@ -34,9 +34,7 @@ describe("OnboardingLayout", () => {
 	it("uses the auth-style full-screen glass shell", async () => {
 		render(
 			await OnboardingLayout({
-				children: (
-					<div data-slot="card">Onboarding content</div>
-				),
+				children: <div data-slot="card">Onboarding content</div>,
 			}),
 		);
 

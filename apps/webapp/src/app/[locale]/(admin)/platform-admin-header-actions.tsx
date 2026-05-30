@@ -1,6 +1,5 @@
 "use client";
 
-import type { ComponentType } from "react";
 import {
 	IconActivityHeartbeat,
 	IconBuilding,
@@ -13,6 +12,7 @@ import {
 	IconSettings,
 	IconUsers,
 } from "@tabler/icons-react";
+import type { ComponentType } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Link, usePathname } from "@/navigation";

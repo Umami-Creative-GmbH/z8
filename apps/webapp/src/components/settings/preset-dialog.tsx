@@ -11,8 +11,6 @@ import {
 	getHolidayPreset,
 	updateHolidayPreset,
 } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -22,6 +20,8 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -199,7 +199,9 @@ export function PresetDialog({
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
-					<ActionPanelTitle>{t("settings.holidays.presets.editTitle", "Edit Preset")}</ActionPanelTitle>
+					<ActionPanelTitle>
+						{t("settings.holidays.presets.editTitle", "Edit Preset")}
+					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{t(
 							"settings.holidays.presets.editDescription",
@@ -217,192 +219,192 @@ export function PresetDialog({
 				) : (
 					<>
 						<ActionPanelBody className="space-y-4">
-						<form
-							onSubmit={(e) => {
-								e.preventDefault();
-								form.handleSubmit();
-							}}
-							className="space-y-4"
-						>
-							{/* Preset Info */}
-							<div className="grid grid-cols-2 gap-4">
-								<form.Field
-									name="name"
-									validators={{
-										onChange: ({ value }) => {
-											if (!value) return "Name is required";
-											if (value.length > 255) return "Name is too long";
-											return undefined;
-										},
-									}}
-								>
-									{(field) => (
-										<div className="space-y-2">
-											<Label>{t("settings.holidays.presets.name", "Name")}</Label>
-											<Input
-												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-												placeholder="e.g., Germany - Bavaria"
-											/>
-											{field.state.meta.errors.length > 0 && (
-												<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-											)}
-										</div>
-									)}
-								</form.Field>
-								<form.Field name="color">
-									{(field) => (
-										<div className="space-y-2">
-											<Label>{t("settings.holidays.presets.color", "Color")}</Label>
-											<div className="flex gap-2">
-												<Input
-													type="color"
-													value={field.state.value || "#3B82F6"}
-													onChange={(e) => field.handleChange(e.target.value)}
-													className="w-12 h-10 p-1 cursor-pointer"
-												/>
+							<form
+								onSubmit={(e) => {
+									e.preventDefault();
+									form.handleSubmit();
+								}}
+								className="space-y-4"
+							>
+								{/* Preset Info */}
+								<div className="grid grid-cols-2 gap-4">
+									<form.Field
+										name="name"
+										validators={{
+											onChange: ({ value }) => {
+												if (!value) return "Name is required";
+												if (value.length > 255) return "Name is too long";
+												return undefined;
+											},
+										}}
+									>
+										{(field) => (
+											<div className="space-y-2">
+												<Label>{t("settings.holidays.presets.name", "Name")}</Label>
 												<Input
 													value={field.state.value}
 													onChange={(e) => field.handleChange(e.target.value)}
-													placeholder="#EF4444"
-													className="flex-1"
+													onBlur={field.handleBlur}
+													placeholder="e.g., Germany - Bavaria"
 												/>
+												{field.state.meta.errors.length > 0 && (
+													<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+												)}
 											</div>
+										)}
+									</form.Field>
+									<form.Field name="color">
+										{(field) => (
+											<div className="space-y-2">
+												<Label>{t("settings.holidays.presets.color", "Color")}</Label>
+												<div className="flex gap-2">
+													<Input
+														type="color"
+														value={field.state.value || "#3B82F6"}
+														onChange={(e) => field.handleChange(e.target.value)}
+														className="w-12 h-10 p-1 cursor-pointer"
+													/>
+													<Input
+														value={field.state.value}
+														onChange={(e) => field.handleChange(e.target.value)}
+														placeholder="#EF4444"
+														className="flex-1"
+													/>
+												</div>
+											</div>
+										)}
+									</form.Field>
+								</div>
+
+								<form.Field name="description">
+									{(field) => (
+										<div className="space-y-2">
+											<Label>
+												{t("settings.holidays.presets.description", "Description")} (
+												{t("common.optional", "optional")})
+											</Label>
+											<Textarea
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+												rows={2}
+											/>
 										</div>
 									)}
 								</form.Field>
-							</div>
 
-							<form.Field name="description">
-								{(field) => (
-									<div className="space-y-2">
-										<Label>
-											{t("settings.holidays.presets.description", "Description")} (
-											{t("common.optional", "optional")})
-										</Label>
-										<Textarea
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-											rows={2}
-										/>
+								{/* Location Info (read-only) */}
+								{formatLocation() && (
+									<div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+										<IconMapPin className="size-4" />
+										<span>{formatLocation()}</span>
 									</div>
 								)}
-							</form.Field>
 
-							{/* Location Info (read-only) */}
-							{formatLocation() && (
-								<div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-									<IconMapPin className="size-4" />
-									<span>{formatLocation()}</span>
-								</div>
-							)}
+								{data?.preset?.year && (
+									<div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+										<IconCalendar className="size-4" />
+										<span>
+											{t("settings.holidays.presets.year", "Year")}: {data.preset.year}
+										</span>
+									</div>
+								)}
 
-							{data?.preset?.year && (
-								<div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-									<IconCalendar className="size-4" />
-									<span>
-										{t("settings.holidays.presets.year", "Year")}: {data.preset.year}
-									</span>
-								</div>
-							)}
-
-							<form.Field name="isActive">
-								{(field) => (
-									<div className="flex items-center justify-between rounded-lg border p-3">
-										<div className="space-y-0.5">
-											<Label>{t("settings.holidays.presets.active", "Active")}</Label>
-											<p className="text-sm text-muted-foreground">
-												{t(
-													"settings.holidays.presets.activeDescription",
-													"Inactive presets won't apply to employees",
-												)}
-											</p>
+								<form.Field name="isActive">
+									{(field) => (
+										<div className="flex items-center justify-between rounded-lg border p-3">
+											<div className="space-y-0.5">
+												<Label>{t("settings.holidays.presets.active", "Active")}</Label>
+												<p className="text-sm text-muted-foreground">
+													{t(
+														"settings.holidays.presets.activeDescription",
+														"Inactive presets won't apply to employees",
+													)}
+												</p>
+											</div>
+											<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 										</div>
-										<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
-									</div>
-								)}
-							</form.Field>
-						</form>
+									)}
+								</form.Field>
+							</form>
 
-						{/* Holidays List */}
-						<div className="border-t pt-4">
-							<div className="flex items-center justify-between mb-3">
-								<h4 className="text-sm font-medium flex items-center gap-2">
-									<IconCalendar className="size-4" />
-									{t("settings.holidays.presets.holidaysList", "Holidays")}
-									<Badge variant="secondary">{data?.holidays?.length || 0}</Badge>
-								</h4>
-							</div>
+							{/* Holidays List */}
+							<div className="border-t pt-4">
+								<div className="flex items-center justify-between mb-3">
+									<h4 className="text-sm font-medium flex items-center gap-2">
+										<IconCalendar className="size-4" />
+										{t("settings.holidays.presets.holidaysList", "Holidays")}
+										<Badge variant="secondary">{data?.holidays?.length || 0}</Badge>
+									</h4>
+								</div>
 
-							<ScrollArea className="h-[200px] rounded-md border">
-								{data?.holidays && data.holidays.length > 0 ? (
-									<Table>
-										<TableHeader>
-											<TableRow>
-												<TableHead>{t("common.name", "Name")}</TableHead>
-												<TableHead>{t("settings.holidays.presets.date", "Date")}</TableHead>
-												<TableHead>{t("settings.holidays.presets.type", "Type")}</TableHead>
-												<TableHead className="w-[50px]" />
-											</TableRow>
-										</TableHeader>
-										<TableBody>
-											{data.holidays.map((holiday) => (
-												<TableRow key={holiday.id}>
-													<TableCell className="font-medium">{holiday.name}</TableCell>
-													<TableCell>
-														{formatDate(holiday.month, holiday.day)}
-														{holiday.durationDays > 1 && (
-															<span className="text-muted-foreground ml-1">
-																(+{holiday.durationDays - 1}d)
-															</span>
-														)}
-													</TableCell>
-													<TableCell>
-														{holiday.category ? (
-															<Badge
-																variant="outline"
-																style={{
-																	borderColor: holiday.category.color || undefined,
-																	color: holiday.category.color || undefined,
-																}}
-															>
-																{holiday.category.name}
-															</Badge>
-														) : (
-															<span className="text-muted-foreground">
-																{holiday.holidayType || "-"}
-															</span>
-														)}
-													</TableCell>
-													<TableCell>
-														<Button
-															variant="ghost"
-															size="icon"
-															className="size-8 text-muted-foreground hover:text-destructive"
-															onClick={() => deleteHolidayMutation.mutate(holiday.id)}
-															disabled={deleteHolidayMutation.isPending}
-															aria-label={t(
-																"settings.holidays.presets.removeHoliday",
-																'Remove holiday "{holiday}" from preset',
-																{ holiday: holiday.name },
-															)}
-														>
-															<IconTrash className="size-4" />
-														</Button>
-													</TableCell>
+								<ScrollArea className="h-[200px] rounded-md border">
+									{data?.holidays && data.holidays.length > 0 ? (
+										<Table>
+											<TableHeader>
+												<TableRow>
+													<TableHead>{t("common.name", "Name")}</TableHead>
+													<TableHead>{t("settings.holidays.presets.date", "Date")}</TableHead>
+													<TableHead>{t("settings.holidays.presets.type", "Type")}</TableHead>
+													<TableHead className="w-[50px]" />
 												</TableRow>
-											))}
-										</TableBody>
-									</Table>
-								) : (
-									<div className="flex items-center justify-center h-full text-muted-foreground">
-										{t("settings.holidays.presets.noHolidays", "No holidays in this preset")}
-									</div>
-								)}
-							</ScrollArea>
-						</div>
+											</TableHeader>
+											<TableBody>
+												{data.holidays.map((holiday) => (
+													<TableRow key={holiday.id}>
+														<TableCell className="font-medium">{holiday.name}</TableCell>
+														<TableCell>
+															{formatDate(holiday.month, holiday.day)}
+															{holiday.durationDays > 1 && (
+																<span className="text-muted-foreground ml-1">
+																	(+{holiday.durationDays - 1}d)
+																</span>
+															)}
+														</TableCell>
+														<TableCell>
+															{holiday.category ? (
+																<Badge
+																	variant="outline"
+																	style={{
+																		borderColor: holiday.category.color || undefined,
+																		color: holiday.category.color || undefined,
+																	}}
+																>
+																	{holiday.category.name}
+																</Badge>
+															) : (
+																<span className="text-muted-foreground">
+																	{holiday.holidayType || "-"}
+																</span>
+															)}
+														</TableCell>
+														<TableCell>
+															<Button
+																variant="ghost"
+																size="icon"
+																className="size-8 text-muted-foreground hover:text-destructive"
+																onClick={() => deleteHolidayMutation.mutate(holiday.id)}
+																disabled={deleteHolidayMutation.isPending}
+																aria-label={t(
+																	"settings.holidays.presets.removeHoliday",
+																	'Remove holiday "{holiday}" from preset',
+																	{ holiday: holiday.name },
+																)}
+															>
+																<IconTrash className="size-4" />
+															</Button>
+														</TableCell>
+													</TableRow>
+												))}
+											</TableBody>
+										</Table>
+									) : (
+										<div className="flex items-center justify-center h-full text-muted-foreground">
+											{t("settings.holidays.presets.noHolidays", "No holidays in this preset")}
+										</div>
+									)}
+								</ScrollArea>
+							</div>
 						</ActionPanelBody>
 
 						<ActionPanelFooter>

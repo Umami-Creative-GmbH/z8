@@ -44,6 +44,9 @@ export const timeEntry = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 		type: timeEntryTypeEnum("type").notNull(),
 		timestamp: timestamp("timestamp").notNull(),
+		utcOffsetMinutes: integer("utc_offset_minutes").notNull(),
+		timezone: text("timezone"),
+		timezoneSource: text("timezone_source").notNull(),
 
 		// Blockchain linking
 		previousEntryId: uuid("previous_entry_id"), // Links to previous entry
@@ -157,10 +160,7 @@ export const workPeriod = pgTable(
 		index("workPeriod_projectId_idx").on(table.projectId),
 		index("workPeriod_workCategoryId_idx").on(table.workCategoryId),
 		index("workPeriod_approvalStatus_idx").on(table.approvalStatus),
-		index("workPeriod_org_canonicalRecordId_idx").on(
-			table.organizationId,
-			table.canonicalRecordId,
-		),
+		index("workPeriod_org_canonicalRecordId_idx").on(table.organizationId, table.canonicalRecordId),
 		foreignKey({
 			columns: [table.canonicalRecordId, table.organizationId],
 			foreignColumns: [timeRecord.id, timeRecord.organizationId],
@@ -242,10 +242,7 @@ export const employeeWorkBalance = pgTable(
 			.notNull(),
 	},
 	(table) => [
-		uniqueIndex("employeeWorkBalance_org_employee_idx").on(
-			table.organizationId,
-			table.employeeId,
-		),
+		uniqueIndex("employeeWorkBalance_org_employee_idx").on(table.organizationId, table.employeeId),
 		index("employeeWorkBalance_org_idx").on(table.organizationId),
 		index("employeeWorkBalance_employee_org_idx").on(table.employeeId, table.organizationId),
 		index("employeeWorkBalance_dirty_idx").on(table.isDirty, table.refreshRequestedAt),
@@ -295,10 +292,7 @@ export const employeeWorkBalancePeriod = pgTable(
 			table.periodType,
 			table.periodStart,
 		),
-		index("employeeWorkBalancePeriod_employee_org_idx").on(
-			table.employeeId,
-			table.organizationId,
-		),
+		index("employeeWorkBalancePeriod_employee_org_idx").on(table.employeeId, table.organizationId),
 		index("employeeWorkBalancePeriod_dirty_idx").on(table.isDirty, table.refreshRequestedAt),
 		foreignKey({
 			columns: [table.employeeId, table.organizationId],

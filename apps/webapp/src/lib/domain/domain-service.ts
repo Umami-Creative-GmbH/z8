@@ -6,7 +6,6 @@ import { db } from "@/db";
 import { type AuthConfig, organizationBranding, organizationDomain } from "@/db/schema";
 import { getConfiguredProviders } from "@/lib/social-oauth";
 import { domainCache } from "./domain-cache";
-import { env } from "@/env";
 import {
 	DEFAULT_AUTH_CONFIG,
 	DEFAULT_BRANDING,
@@ -45,7 +44,7 @@ export async function getDomainConfig(hostname: string): Promise<DomainAuthConte
 		where: eq(organizationDomain.domain, normalizedHostname),
 	});
 
-	if (!domainRecord || !domainRecord.domainVerified) {
+	if (!domainRecord?.domainVerified) {
 		return null;
 	}
 

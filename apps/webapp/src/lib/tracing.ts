@@ -10,7 +10,7 @@
  * - Vacation requests
  */
 
-import { trace, SpanStatusCode, type Span, type SpanOptions } from "@opentelemetry/api";
+import { type Span, type SpanOptions, SpanStatusCode, trace } from "@opentelemetry/api";
 
 // Create a tracer for business operations
 const tracer = trace.getTracer("z8-business", "1.0.0");

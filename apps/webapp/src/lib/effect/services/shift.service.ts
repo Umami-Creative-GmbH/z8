@@ -85,7 +85,12 @@ export interface SkillWarning {
 
 export interface ShiftMetadata {
 	hasOverlap: boolean;
-	overlappingShifts: Array<{ id: string; date: Date; startTime: string; endTime: string }>;
+	overlappingShifts: Array<{
+		id: string;
+		date: Date;
+		startTime: string;
+		endTime: string;
+	}>;
 	skillWarning?: SkillWarning;
 }
 
@@ -263,8 +268,12 @@ export const ShiftServiceLive = Layer.effect(
 									...(input.startTime && { startTime: input.startTime }),
 									...(input.endTime && { endTime: input.endTime }),
 									...(input.color !== undefined && { color: input.color }),
-									...(input.isActive !== undefined && { isActive: input.isActive }),
-									...(input.subareaId !== undefined && { subareaId: input.subareaId }),
+									...(input.isActive !== undefined && {
+										isActive: input.isActive,
+									}),
+									...(input.subareaId !== undefined && {
+										subareaId: input.subareaId,
+									}),
 								})
 								.where(eq(shiftTemplate.id, id))
 								.returning();
@@ -455,10 +464,11 @@ export const ShiftServiceLive = Layer.effect(
 							skill: typeof skill.$inferSelect;
 						}> = [];
 						if (input.templateId) {
+							const templateId = input.templateId;
 							templateReqs = yield* _(
 								dbService.query("getTemplateSkillRequirements", async () => {
 									return await dbService.db.query.shiftTemplateSkillRequirement.findMany({
-										where: eq(shiftTemplateSkillRequirement.templateId, input.templateId!),
+										where: eq(shiftTemplateSkillRequirement.templateId, templateId),
 										with: { skill: true },
 									});
 								}),
@@ -473,7 +483,10 @@ export const ShiftServiceLive = Layer.effect(
 						for (const req of [...subareaReqs, ...templateReqs]) {
 							const existing = allRequirements.get(req.skillId);
 							if (!existing || (req.isRequired && !existing.isRequired)) {
-								allRequirements.set(req.skillId, { skill: req.skill, isRequired: req.isRequired });
+								allRequirements.set(req.skillId, {
+									skill: req.skill,
+									isRequired: req.isRequired,
+								});
 							}
 						}
 
@@ -491,13 +504,21 @@ export const ShiftServiceLive = Layer.effect(
 						}
 
 						// Map expired skills (only those that are required)
-						const expiredSkills: SkillWarning["expiredSkills"] = expiredEmployeeSkills
-							.filter((es) => allRequirements.has(es.skillId))
-							.map((es) => ({
+						const expiredSkills: SkillWarning["expiredSkills"] = [];
+						for (const es of expiredEmployeeSkills) {
+							const expiresAt = es.expiresAt;
+							if (!allRequirements.has(es.skillId) || !(expiresAt instanceof Date)) {
+								continue;
+							}
+
+							const normalizedExpiresAt: Date = new Date(expiresAt.getTime());
+
+							expiredSkills.push({
 								id: es.skillId,
 								name: es.skill.name,
-								expiresAt: es.expiresAt!,
-							}));
+								expiresAt: normalizedExpiresAt,
+							});
+						}
 
 						if (missingSkills.length > 0 || expiredSkills.length > 0) {
 							skillWarning = {

@@ -5,10 +5,10 @@ import { revalidatePath } from "next/cache";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import {
+	type PaginatedResult,
 	PlatformAdminService,
 	type PlatformOrganization,
 	type PlatformOrgFilters,
-	type PaginatedResult,
 } from "@/lib/effect/services/platform-admin.service";
 
 export async function listOrganizationsAction(
@@ -79,12 +79,7 @@ export async function deleteOrganizationAction(
 
 		// Delete organization
 		yield* _(
-			adminService.deleteOrganization(
-				organizationId,
-				immediate,
-				skipNotification,
-				admin.userId,
-			),
+			adminService.deleteOrganization(organizationId, immediate, skipNotification, admin.userId),
 		);
 
 		revalidatePath("/platform-admin/organizations");

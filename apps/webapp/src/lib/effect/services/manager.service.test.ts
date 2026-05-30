@@ -13,7 +13,12 @@ function createManagerServiceTestContext({
 	employeeRecord?: { id: string; organizationId: string } | null;
 	existingAssignment?: { id: string } | null;
 	managerRecord?: { id: string; organizationId: string } | null;
-	managerAssignments?: Array<{ id: string; employeeId: string; managerId: string; isPrimary: boolean }>;
+	managerAssignments?: Array<{
+		id: string;
+		employeeId: string;
+		managerId: string;
+		isPrimary: boolean;
+	}>;
 } = {}) {
 	const updatedTables: unknown[] = [];
 	const updateWhere = vi.fn(async () => undefined);
@@ -104,8 +109,18 @@ describe("ManagerService", () => {
 		const { employeeTableUpdateCount, employeeManagersTableUpdateCount, runRemoveManager } =
 			createManagerServiceTestContext({
 				managerAssignments: [
-					{ id: "assignment-1", employeeId: "employee-1", managerId: "manager-1", isPrimary: true },
-					{ id: "assignment-2", employeeId: "employee-1", managerId: "manager-2", isPrimary: false },
+					{
+						id: "assignment-1",
+						employeeId: "employee-1",
+						managerId: "manager-1",
+						isPrimary: true,
+					},
+					{
+						id: "assignment-2",
+						employeeId: "employee-1",
+						managerId: "manager-2",
+						isPrimary: false,
+					},
 				],
 			});
 

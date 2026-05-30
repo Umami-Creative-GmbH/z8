@@ -1,7 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -48,6 +48,7 @@ export function ApiKeyCreateDialog({
 	onKeyCreated,
 }: ApiKeyCreateDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 
 	// Form state
 	const [name, setName] = useState("");
@@ -89,6 +90,7 @@ export function ApiKeyCreateDialog({
 			return result.data;
 		},
 		onSuccess: (data) => {
+			queryClient.invalidateQueries({ queryKey: ["apiKeys", organizationId] });
 			toast.success(t("settings.apiKeys.created", "API key created successfully"));
 			onKeyCreated(data);
 		},
@@ -154,7 +156,7 @@ export function ApiKeyCreateDialog({
 						<Label>{t("settings.apiKeys.form.scopes", "Permissions")} *</Label>
 						<div className="grid grid-cols-2 gap-2 p-3 border rounded-md bg-muted/30">
 							{API_KEY_SCOPES.map((scope) => (
-								<div key={scope} className="flex items-center space-x-2">
+								<div key={scope} className="flex items-center gap-x-2">
 									<Checkbox
 										id={scope}
 										checked={selectedScopes.includes(scope)}
@@ -175,7 +177,7 @@ export function ApiKeyCreateDialog({
 
 					{/* Rate Limiting */}
 					<div className="space-y-3">
-						<div className="flex items-center space-x-2">
+						<div className="flex items-center gap-x-2">
 							<Checkbox
 								id="rateLimitEnabled"
 								checked={rateLimitEnabled}

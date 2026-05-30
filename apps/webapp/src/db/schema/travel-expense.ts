@@ -93,10 +93,7 @@ export const travelExpenseAttachment = pgTable(
 		index("travelExpenseAttachment_claimId_idx").on(table.claimId),
 		index("travelExpenseAttachment_organizationId_idx").on(table.organizationId),
 		index("travelExpenseAttachment_uploadedBy_idx").on(table.uploadedBy),
-		uniqueIndex("travelExpenseAttachment_claim_storageKey_idx").on(
-			table.claimId,
-			table.storageKey,
-		),
+		uniqueIndex("travelExpenseAttachment_claim_storageKey_idx").on(table.claimId, table.storageKey),
 	],
 );
 

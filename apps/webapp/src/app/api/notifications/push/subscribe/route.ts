@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { isPushAvailable, savePushSubscription } from "@/lib/notifications/push-service";
 
@@ -34,12 +34,7 @@ export async function POST(request: NextRequest) {
 		const { subscription, deviceName } = body;
 
 		// Validate subscription object
-		if (
-			!subscription ||
-			!subscription.endpoint ||
-			!subscription.keys?.p256dh ||
-			!subscription.keys?.auth
-		) {
+		if (!subscription?.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
 			return NextResponse.json({ error: "Invalid subscription object" }, { status: 400 });
 		}
 

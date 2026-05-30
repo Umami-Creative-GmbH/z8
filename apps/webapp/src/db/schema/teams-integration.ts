@@ -10,8 +10,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { organization, user } from "../auth-schema";
-import { employee } from "./organization";
 import { approvalRequest } from "./approval";
+import { employee } from "./organization";
 
 // ============================================
 // TEAMS INTEGRATION (Multi-Tenant SaaS Bot)

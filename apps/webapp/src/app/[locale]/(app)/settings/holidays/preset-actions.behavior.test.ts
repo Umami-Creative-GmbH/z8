@@ -30,7 +30,14 @@ const mockState = vi.hoisted(() => ({
 			effectiveUntil: null,
 			isActive: true,
 			createdAt: new Date("2026-01-01T00:00:00.000Z"),
-			preset: { id: "preset-1", name: "Org preset", year: 2026, color: null, countryCode: "DE", stateCode: null },
+			preset: {
+				id: "preset-1",
+				name: "Org preset",
+				year: 2026,
+				color: null,
+				countryCode: "DE",
+				stateCode: null,
+			},
 			team: null,
 			employee: null,
 		},
@@ -45,7 +52,14 @@ const mockState = vi.hoisted(() => ({
 			effectiveUntil: null,
 			isActive: true,
 			createdAt: new Date("2026-01-02T00:00:00.000Z"),
-			preset: { id: "preset-2", name: "Team preset", year: 2026, color: null, countryCode: "DE", stateCode: null },
+			preset: {
+				id: "preset-2",
+				name: "Team preset",
+				year: 2026,
+				color: null,
+				countryCode: "DE",
+				stateCode: null,
+			},
 			team: { id: "team-managed", name: "Managed Team" },
 			employee: null,
 		},
@@ -60,7 +74,14 @@ const mockState = vi.hoisted(() => ({
 			effectiveUntil: null,
 			isActive: true,
 			createdAt: new Date("2026-01-03T00:00:00.000Z"),
-			preset: { id: "preset-3", name: "Employee preset", year: 2026, color: null, countryCode: "DE", stateCode: null },
+			preset: {
+				id: "preset-3",
+				name: "Employee preset",
+				year: 2026,
+				color: null,
+				countryCode: "DE",
+				stateCode: null,
+			},
 			team: null,
 			employee: { id: "employee-managed", firstName: "Mina", lastName: "Miller" },
 		},
@@ -75,7 +96,14 @@ const mockState = vi.hoisted(() => ({
 			effectiveUntil: null,
 			isActive: true,
 			createdAt: new Date("2026-01-04T00:00:00.000Z"),
-			preset: { id: "preset-4", name: "Other preset", year: 2026, color: null, countryCode: "DE", stateCode: null },
+			preset: {
+				id: "preset-4",
+				name: "Other preset",
+				year: 2026,
+				color: null,
+				countryCode: "DE",
+				stateCode: null,
+			},
 			team: { id: "team-other", name: "Other Team" },
 			employee: null,
 		},
@@ -125,13 +153,48 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 vi.mock("@/db/schema", () => ({
-	employee: { id: "id", userId: "userId", isActive: "isActive", organizationId: "organizationId", firstName: "firstName", lastName: "lastName", position: "position" },
+	employee: {
+		id: "id",
+		userId: "userId",
+		isActive: "isActive",
+		organizationId: "organizationId",
+		firstName: "firstName",
+		lastName: "lastName",
+		position: "position",
+	},
 	holidayCategory: { id: "id", organizationId: "organizationId", name: "name", color: "color" },
-	holidayPreset: { id: "id", organizationId: "organizationId", countryCode: "countryCode", stateCode: "stateCode", regionCode: "regionCode", year: "year", name: "name", color: "color", createdAt: "createdAt" },
-	holidayPresetAssignment: { id: "id", presetId: "presetId", organizationId: "organizationId", assignmentType: "assignmentType", teamId: "teamId", employeeId: "employeeId", priority: "priority", effectiveFrom: "effectiveFrom", effectiveUntil: "effectiveUntil", isActive: "isActive", createdAt: "createdAt" },
+	holidayPreset: {
+		id: "id",
+		organizationId: "organizationId",
+		countryCode: "countryCode",
+		stateCode: "stateCode",
+		regionCode: "regionCode",
+		year: "year",
+		name: "name",
+		color: "color",
+		createdAt: "createdAt",
+	},
+	holidayPresetAssignment: {
+		id: "id",
+		presetId: "presetId",
+		organizationId: "organizationId",
+		assignmentType: "assignmentType",
+		teamId: "teamId",
+		employeeId: "employeeId",
+		priority: "priority",
+		effectiveFrom: "effectiveFrom",
+		effectiveUntil: "effectiveUntil",
+		isActive: "isActive",
+		createdAt: "createdAt",
+	},
 	holidayPresetHoliday: { presetId: "presetId" },
 	team: { id: "id", name: "name", organizationId: "organizationId" },
-	teamPermissions: { employeeId: "employeeId", organizationId: "organizationId", teamId: "teamId", canManageTeamSettings: "canManageTeamSettings" },
+	teamPermissions: {
+		employeeId: "employeeId",
+		organizationId: "organizationId",
+		teamId: "teamId",
+		canManageTeamSettings: "canManageTeamSettings",
+	},
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async () => {
@@ -157,54 +220,56 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 								};
 							}
 							return {
-							from: vi.fn((table: any) => ({
-								where: vi.fn((condition: any) => ({
-									limit: vi.fn(async () => {
-										const serialized = JSON.stringify(condition);
-										if (serialized.includes("countryCode")) {
+								from: vi.fn((table: any) => ({
+									where: vi.fn((condition: any) => ({
+										limit: vi.fn(async () => {
+											const serialized = JSON.stringify(condition);
+											if (serialized.includes("countryCode")) {
+												return [];
+											}
+											if (serialized.includes("category-other")) {
+												return [];
+											}
+											if (
+												serialized.includes("preset-existing") ||
+												table?.organizationId === "organizationId"
+											) {
+												return [mockState.presetDetail.preset];
+											}
 											return [];
-										}
-										if (serialized.includes("category-other")) {
-											return [];
-										}
-										if (serialized.includes("preset-existing") || table?.organizationId === "organizationId") {
-											return [mockState.presetDetail.preset];
+										}),
+									})),
+									leftJoin: vi.fn(() => ({
+										where: vi.fn(() => ({
+											orderBy: vi.fn(async () => mockState.presetDetail.holidays),
+										})),
+									})),
+									orderBy: vi.fn(async () => {
+										if (table?.presetId === "presetId") {
+											return mockState.presetDetail.holidays;
 										}
 										return [];
 									}),
-								})),
-								innerJoin: vi.fn(() => ({
-									where: vi.fn(() => ({ limit: vi.fn(async () => [{ id: "owned-row" }]) })),
-								})),
-								leftJoin: vi.fn(() => ({
-									where: vi.fn(() => ({ orderBy: vi.fn(async () => mockState.presetDetail.holidays) })),
-								})),
-								orderBy: vi.fn(async () => {
-									if (table?.presetId === "presetId") {
-										return mockState.presetDetail.holidays;
-									}
-									return [];
-								}),
-								innerJoin: vi.fn(() => ({
-									where: vi.fn(() => ({ limit: vi.fn(async () => [{ id: "owned-row" }]) })),
-									leftJoin: vi.fn(() => ({
+									innerJoin: vi.fn(() => ({
+										where: vi.fn(() => ({ limit: vi.fn(async () => [{ id: "owned-row" }]) })),
 										leftJoin: vi.fn(() => ({
 											leftJoin: vi.fn(() => ({
-												where: vi.fn((condition: any) => ({
-													orderBy: vi.fn(async () => {
-														const serialized = JSON.stringify(condition);
-														if (serialized.includes("preset-existing")) {
-															return [];
-														}
-														return mockState.presetAssignments;
-													}),
+												leftJoin: vi.fn(() => ({
+													where: vi.fn((condition: any) => ({
+														orderBy: vi.fn(async () => {
+															const serialized = JSON.stringify(condition);
+															if (serialized.includes("preset-existing")) {
+																return [];
+															}
+															return mockState.presetAssignments;
+														}),
+													})),
 												})),
 											})),
 										})),
 									})),
 								})),
-							})),
-						};
+							};
 						}),
 						leftJoin: vi.fn(() => ({
 							where: vi.fn(() => ({ orderBy: vi.fn(async () => mockState.presetDetail.holidays) })),
@@ -236,7 +301,9 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 				},
 			});
 		}),
-		getManagedEmployeeIdsForSettingsActor: vi.fn(() => Effect.succeed(mockState.managedEmployeeIds)),
+		getManagedEmployeeIdsForSettingsActor: vi.fn(() =>
+			Effect.succeed(mockState.managedEmployeeIds),
+		),
 		requireOrgAdminEmployeeSettingsAccess: vi.fn((actor: any, options: any) =>
 			actor.accessTier === "orgAdmin"
 				? Effect.void
@@ -247,7 +314,7 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 							resource: options.resource,
 							action: options.action,
 						}),
-				  ),
+					),
 		),
 	};
 });
@@ -282,50 +349,53 @@ vi.mock("@/lib/effect/runtime", async () => {
 				};
 			}
 			return {
-			from: vi.fn((table: any) => ({
-				where: vi.fn((condition: any) => ({
-					limit: vi.fn(async () => {
-						const serialized = JSON.stringify(condition);
-						if (serialized.includes("countryCode")) {
+				from: vi.fn((table: any) => ({
+					where: vi.fn((condition: any) => ({
+						limit: vi.fn(async () => {
+							const serialized = JSON.stringify(condition);
+							if (serialized.includes("countryCode")) {
+								return [];
+							}
+							if (
+								serialized.includes("preset-existing") ||
+								table?.organizationId === "organizationId"
+							) {
+								return [mockState.presetDetail.preset];
+							}
 							return [];
-						}
-						if (serialized.includes("preset-existing") || table?.organizationId === "organizationId") {
-							return [mockState.presetDetail.preset];
+						}),
+					})),
+					leftJoin: vi.fn(() => ({
+						where: vi.fn(() => ({ orderBy: vi.fn(async () => mockState.presetDetail.holidays) })),
+					})),
+					orderBy: vi.fn(async () => {
+						if (table?.presetId === "presetId") {
+							return mockState.presetDetail.holidays;
 						}
 						return [];
 					}),
-				})),
-				leftJoin: vi.fn(() => ({
-					where: vi.fn(() => ({ orderBy: vi.fn(async () => mockState.presetDetail.holidays) })),
-				})),
-				orderBy: vi.fn(async () => {
-					if (table?.presetId === "presetId") {
-						return mockState.presetDetail.holidays;
-					}
-					return [];
-				}),
-				innerJoin: vi.fn(() => ({
-					leftJoin: vi.fn(() => ({
+					innerJoin: vi.fn(() => ({
 						leftJoin: vi.fn(() => ({
 							leftJoin: vi.fn(() => ({
-								where: vi.fn((condition: any) => ({
-									orderBy: vi.fn(async () => {
-										const serialized = JSON.stringify(condition);
-										if (serialized.includes("preset-existing")) {
-											return [];
-										}
-										return mockState.presetAssignments;
-									}),
+								leftJoin: vi.fn(() => ({
+									where: vi.fn((condition: any) => ({
+										orderBy: vi.fn(async () => {
+											const serialized = JSON.stringify(condition);
+											if (serialized.includes("preset-existing")) {
+												return [];
+											}
+											return mockState.presetAssignments;
+										}),
+									})),
 								})),
 							})),
 						})),
 					})),
 				})),
-			})),
-			leftJoin: vi.fn(() => ({
-				where: vi.fn(() => ({ orderBy: vi.fn(async () => mockState.presetDetail.holidays) })),
-			})),
-		};
+				leftJoin: vi.fn(() => ({
+					where: vi.fn(() => ({ orderBy: vi.fn(async () => mockState.presetDetail.holidays) })),
+				})),
+			};
 		}),
 		insert: vi.fn(() => ({
 			values: vi.fn((value: unknown) => ({
@@ -354,7 +424,11 @@ vi.mock("@/lib/effect/runtime", async () => {
 	return {
 		AppLayer: Layer.mergeAll(
 			Layer.succeed(AuthService, {
-				getSession: () => Effect.succeed({ user: mockState.actor.session.user, session: { activeOrganizationId: mockState.actor.organizationId } }),
+				getSession: () =>
+					Effect.succeed({
+						user: mockState.actor.session.user,
+						session: { activeOrganizationId: mockState.actor.organizationId },
+					}),
 			}),
 			Layer.succeed(DatabaseService, {
 				db,
@@ -390,7 +464,9 @@ vi.mock("@/lib/effect/result", async () => {
 	};
 });
 
-const { assignmentRangesOverlap, buildPresetLocationConflictConditions } = await import("./preset-scheduling");
+const { assignmentRangesOverlap, buildPresetLocationConflictConditions } = await import(
+	"./preset-scheduling"
+);
 const {
 	createHolidayPreset,
 	createPresetAssignment,
@@ -496,8 +572,14 @@ describe("holiday preset settings scope behavior", () => {
 		expect(mockState.actorContextCalls).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({ organizationId: "org-1", queryName: "getHolidayPresets:actor" }),
-				expect.objectContaining({ organizationId: "org-1", queryName: "getTeamsForAssignment:actor" }),
-				expect.objectContaining({ organizationId: "org-1", queryName: "getEmployeesForAssignment:actor" }),
+				expect.objectContaining({
+					organizationId: "org-1",
+					queryName: "getTeamsForAssignment:actor",
+				}),
+				expect.objectContaining({
+					organizationId: "org-1",
+					queryName: "getEmployeesForAssignment:actor",
+				}),
 			]),
 		);
 	});

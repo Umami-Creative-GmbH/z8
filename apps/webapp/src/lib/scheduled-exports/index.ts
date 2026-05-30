@@ -5,11 +5,10 @@
  * data exports, and audit reports.
  */
 
-// Domain layer - pure business logic
-export * from "./domain";
-
 // Application layer - orchestration and executors
 export * from "./application";
+// Domain layer - pure business logic
+export * from "./domain";
 
 // Infrastructure layer - delivery services
 export { DeliveryService } from "./infrastructure/delivery-service";

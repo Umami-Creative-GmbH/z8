@@ -51,7 +51,12 @@ vi.mock("@/db/schema", () => ({
 		isActive: "isActive",
 		role: "role",
 	},
-	project: { id: "id", organizationId: "organizationId", customerId: "customerId", isActive: "isActive" },
+	project: {
+		id: "id",
+		organizationId: "organizationId",
+		customerId: "customerId",
+		isActive: "isActive",
+	},
 	projectManager: { id: "id", projectId: "projectId", employeeId: "employeeId" },
 }));
 
@@ -200,7 +205,9 @@ vi.mock("@/db", () => ({
 	},
 }));
 
-const { createCustomer, getCustomers, getCustomersForSelection, updateCustomer } = await import("./actions");
+const { createCustomer, getCustomers, getCustomersForSelection, updateCustomer } = await import(
+	"./actions"
+);
 
 describe("customer settings manager scope", () => {
 	beforeEach(() => {

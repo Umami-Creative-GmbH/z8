@@ -182,7 +182,11 @@ export function DataTable<TData, TValue>({
 
 	return (
 		<div
-			className={cn("rounded-md border transition-opacity", isFetching && "opacity-60", className)}
+			className={cn(
+				"rounded-md border bg-card transition-opacity",
+				isFetching && "opacity-60",
+				className,
+			)}
 		>
 			<Table>
 				<TableHeader>

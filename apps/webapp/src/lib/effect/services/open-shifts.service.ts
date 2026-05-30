@@ -5,11 +5,11 @@
  * and shift pickup requests.
  */
 
-import { and, eq, gte, lte, isNull, sql, desc, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
-import { shift, shiftRequest, shiftTemplate, locationSubarea, location, employee } from "@/db/schema";
-import { DatabaseError, NotFoundError, ValidationError } from "../errors";
+import { employee, location, locationSubarea, shift, shiftRequest } from "@/db/schema";
+import { type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
 
 // ============================================

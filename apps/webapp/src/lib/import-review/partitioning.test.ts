@@ -15,9 +15,15 @@ describe("import review partitioning", () => {
 	});
 
 	it("rejects invalid date ranges", () => {
-		expect(() => partitionDateRangeByMonth("not-a-date", "2026-03-10")).toThrow("Invalid import start date: not-a-date");
-		expect(() => partitionDateRangeByMonth("2026-01-15", "not-a-date")).toThrow("Invalid import end date: not-a-date");
-		expect(() => partitionDateRangeByMonth("2026-03-10", "2026-01-15")).toThrow("Import start date must be on or before end date");
+		expect(() => partitionDateRangeByMonth("not-a-date", "2026-03-10")).toThrow(
+			"Invalid import start date: not-a-date",
+		);
+		expect(() => partitionDateRangeByMonth("2026-01-15", "not-a-date")).toThrow(
+			"Invalid import end date: not-a-date",
+		);
+		expect(() => partitionDateRangeByMonth("2026-03-10", "2026-01-15")).toThrow(
+			"Import start date must be on or before end date",
+		);
 	});
 
 	it("rejects non-positive and fractional employee chunk sizes", () => {

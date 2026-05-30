@@ -86,6 +86,17 @@
         "noOrganization": "No organization selected"
       },
       "form": {
+        "approvalsTesting": {
+          "label": "Approvals Testing",
+          "pendingAbsences": {
+            "description": "Create absence requests waiting for manager approval",
+            "title": "Pending absence approvals"
+          },
+          "pendingTimeCorrections": {
+            "description": "Create time corrections waiting for manager approval",
+            "title": "Pending time correction approvals"
+          }
+        },
         "dataTypes": {
           "absences": {
             "description": "Vacation, sick leave, and other absences",
@@ -183,6 +194,14 @@
         "managers": {
           "description": "Assigning managers to employees",
           "label": "Manager Assignments"
+        },
+        "pendingAbsenceApprovals": {
+          "description": "Creating pending absence approval requests",
+          "label": "Pending Absence Approvals"
+        },
+        "pendingTimeCorrectionApprovals": {
+          "description": "Creating pending time correction approval requests",
+          "label": "Pending Time Correction Approvals"
         },
         "projects": {
           "description": "Creating sample projects",

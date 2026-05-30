@@ -40,9 +40,15 @@ beforeEach(() => {
 	listImportBatchJobsForBatchMock.mockResolvedValue([]);
 	readyCommitJobsFromJobsMock.mockReturnValue([]);
 	enqueueImportCommitJobMock.mockResolvedValue(undefined);
-	scanClockinImportPartitionMock.mockRejectedValue(new Error("Clockin import scan is not implemented"));
-	scanClockodoImportPartitionMock.mockRejectedValue(new Error("Clockodo import scan is not implemented"));
-	commitAcceptedRowsForEntityMock.mockRejectedValue(new Error("Import review commit is not implemented"));
+	scanClockinImportPartitionMock.mockRejectedValue(
+		new Error("Clockin import scan is not implemented"),
+	);
+	scanClockodoImportPartitionMock.mockRejectedValue(
+		new Error("Clockodo import scan is not implemented"),
+	);
+	commitAcceptedRowsForEntityMock.mockRejectedValue(
+		new Error("Import review commit is not implemented"),
+	);
 });
 
 function scanJob(overrides: Record<string, unknown> = {}) {
@@ -138,7 +144,11 @@ describe("processImportReviewJob", () => {
 	});
 
 	it("routes commit jobs and marks them completed with committed row count", async () => {
-		commitAcceptedRowsForEntityMock.mockResolvedValue({ committedRows: 5, failedRows: 0, errors: [] });
+		commitAcceptedRowsForEntityMock.mockResolvedValue({
+			committedRows: 5,
+			failedRows: 0,
+			errors: [],
+		});
 
 		const result = await processImportReviewJob(commitJob());
 
@@ -262,7 +272,9 @@ describe("processImportReviewJob", () => {
 	});
 
 	it("rejects placeholder scan failures without marking the job completed", async () => {
-		await expect(processImportReviewJob(scanJob())).rejects.toThrow("Clockin import scan is not implemented");
+		await expect(processImportReviewJob(scanJob())).rejects.toThrow(
+			"Clockin import scan is not implemented",
+		);
 
 		expect(updateImportBatchJobMock).toHaveBeenCalledTimes(1);
 		expect(updateImportBatchJobMock).toHaveBeenCalledWith({
@@ -279,7 +291,9 @@ describe("processImportReviewJob", () => {
 	it("rejects retryable failures without marking the job failed before the final attempt", async () => {
 		scanClockinImportPartitionMock.mockRejectedValue(new Error("provider unavailable"));
 
-		await expect(processImportReviewJob(scanJob({ jobId: "job_4" }))).rejects.toThrow("provider unavailable");
+		await expect(processImportReviewJob(scanJob({ jobId: "job_4" }))).rejects.toThrow(
+			"provider unavailable",
+		);
 
 		expect(updateImportBatchJobMock).toHaveBeenCalledTimes(1);
 		expect(updateImportBatchJobMock).not.toHaveBeenCalledWith(

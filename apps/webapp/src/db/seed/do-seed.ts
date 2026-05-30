@@ -19,8 +19,8 @@
 // Load environment variables first
 import "dotenv/config";
 
-import { seeders } from "./index";
 import { env } from "@/env";
+import { seeders } from "./index";
 
 const COLORS = {
 	reset: "\x1b[0m",
@@ -134,10 +134,7 @@ async function main() {
 	// Run seeders
 	log("\n🌱 Database Seeding", "bright");
 	log("─".repeat(50), "dim");
-	log(
-		`Database: ${env.POSTGRES_DB}@${env.POSTGRES_HOST}:${env.POSTGRES_PORT || 5432}`,
-		"dim",
-	);
+	log(`Database: ${env.POSTGRES_DB}@${env.POSTGRES_HOST}:${env.POSTGRES_PORT || 5432}`, "dim");
 	log(`Seeders to run: ${seedersToRun.length}`, "dim");
 
 	const results: Array<{ success: boolean; name: string; duration: number; error?: unknown }> = [];
@@ -158,7 +155,7 @@ async function main() {
 	const failed = results.filter((r) => !r.success).length;
 
 	// Summary
-	log("\n" + "─".repeat(50), "dim");
+	log(`\n${"─".repeat(50)}`, "dim");
 	log("📊 Summary", "bright");
 	log(`   Total: ${results.length} seeder(s)`, "dim");
 	log(`   ✓ Successful: ${successful}`, successful > 0 ? "green" : "dim");

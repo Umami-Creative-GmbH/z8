@@ -5,6 +5,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import type { SocialOAuthProvider } from "@/db/schema";
+import { env } from "@/env";
 import { getBaseUrlFromHost } from "@/lib/app-url";
 import { createLogger } from "@/lib/logger";
 import {
@@ -15,7 +16,6 @@ import {
 	STATE_COOKIE_NAME,
 	verifyOAuthState,
 } from "@/lib/social-oauth";
-import { env } from "@/env";
 
 const logger = createLogger("SocialOAuth:Callback");
 

@@ -7,7 +7,6 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
 import { absenceEntry, approvalRequest, employee, telegramApprovalMessage } from "@/db/schema";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
@@ -65,7 +64,9 @@ export async function handleApprovalCallback(
 				await editMessageText(bot.botToken, {
 					chat_id: query.message.chat.id,
 					message_id: query.message.message_id,
-					text: escapeMarkdownV2(t("bot.approval.alreadyProcessed", "This approval has already been processed.")),
+					text: escapeMarkdownV2(
+						t("bot.approval.alreadyProcessed", "This approval has already been processed."),
+					),
 					parse_mode: "MarkdownV2",
 				});
 			}
@@ -125,11 +126,16 @@ export async function handleApprovalCallback(
 		if (query.message && cardData) {
 			const locale = await getUserLocale(userResult.user.userId);
 			const t = await getBotTranslate(locale);
-			const resolvedText = buildResolvedApprovalMessage(cardData, {
-				action: newStatus,
-				approverName,
-				resolvedAt: new Date(),
-			}, t, locale);
+			const resolvedText = buildResolvedApprovalMessage(
+				cardData,
+				{
+					action: newStatus,
+					approverName,
+					resolvedAt: new Date(),
+				},
+				t,
+				locale,
+			);
 
 			await editMessageText(bot.botToken, {
 				chat_id: query.message.chat.id,

@@ -44,19 +44,33 @@ describe("import credential secrets", () => {
 
 		expect(() => decryptImportCredential({ ...encrypted, ciphertext: "AAAA" }, secret)).toThrow();
 		expect(() => decryptImportCredential({ ...encrypted, authTag: "AAAA" }, secret)).toThrow();
-		expect(() => decryptImportCredential({ ...encrypted, iv: "AAAAAAAAAAAAAAAA" }, secret)).toThrow();
+		expect(() =>
+			decryptImportCredential({ ...encrypted, iv: "AAAAAAAAAAAAAAAA" }, secret),
+		).toThrow();
 	});
 
 	it("uses a unique iv for each encryption", () => {
-		const first = encryptImportCredential("clockin-token", secret, new Date("2026-01-01T00:00:00.000Z"));
-		const second = encryptImportCredential("clockin-token", secret, new Date("2026-01-01T00:00:00.000Z"));
+		const first = encryptImportCredential(
+			"clockin-token",
+			secret,
+			new Date("2026-01-01T00:00:00.000Z"),
+		);
+		const second = encryptImportCredential(
+			"clockin-token",
+			secret,
+			new Date("2026-01-01T00:00:00.000Z"),
+		);
 
 		expect(first.iv).not.toBe(second.iv);
 		expect(first.ciphertext).not.toBe(second.ciphertext);
 	});
 
 	it("fails to decrypt when expiry is tampered with before it expires", () => {
-		const encrypted = encryptImportCredential("clockin-token", secret, new Date("2026-01-01T00:00:00.000Z"));
+		const encrypted = encryptImportCredential(
+			"clockin-token",
+			secret,
+			new Date("2026-01-01T00:00:00.000Z"),
+		);
 
 		expect(() =>
 			decryptImportCredential(

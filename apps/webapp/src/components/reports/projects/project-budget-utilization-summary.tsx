@@ -1,11 +1,6 @@
 "use client";
 
-import {
-	IconAlertTriangle,
-	IconChartBar,
-	IconGauge,
-	IconTrendingUp,
-} from "@tabler/icons-react";
+import { IconAlertTriangle, IconChartBar, IconGauge, IconTrendingUp } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,9 +11,7 @@ interface ProjectBudgetUtilizationSummaryProps {
 	totals: ProjectBudgetHealthTotals;
 }
 
-export function ProjectBudgetUtilizationSummary({
-	totals,
-}: ProjectBudgetUtilizationSummaryProps) {
+export function ProjectBudgetUtilizationSummary({ totals }: ProjectBudgetUtilizationSummaryProps) {
 	const { t } = useTranslate();
 
 	const cards = [
@@ -26,7 +19,10 @@ export function ProjectBudgetUtilizationSummary({
 			key: "atOrAbove70",
 			title: t("reports.projects.healthSummary.atOrAbove70", "At or above 70%"),
 			value: totals.projectsAtOrAbove70Budget,
-			description: t("reports.projects.healthSummary.atOrAbove70Description", "Budget usage elevated"),
+			description: t(
+				"reports.projects.healthSummary.atOrAbove70Description",
+				"Budget usage elevated",
+			),
 			icon: IconChartBar,
 			valueClassName: "text-amber-600 dark:text-amber-400",
 			iconClassName: "text-amber-600 dark:text-amber-400",

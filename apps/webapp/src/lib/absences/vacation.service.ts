@@ -232,12 +232,7 @@ export async function calculateAnnualCarryover(
 			// Include previous carryover if still valid
 			let previousCarryover = 0;
 			if (emp.allowance?.customCarryoverDays) {
-				const carryoverBalance = await getCarryoverBalance(
-					emp.id,
-					fromYear,
-					undefined,
-					timezone,
-				);
+				const carryoverBalance = await getCarryoverBalance(emp.id, fromYear, undefined, timezone);
 				previousCarryover = carryoverBalance.balance;
 			}
 
@@ -353,7 +348,11 @@ export async function expireCarryoverDays(
 	}
 
 	// Calculate expiry date
-	const expiryDate = calculateCarryoverExpiryDate(currentYear, policy.carryoverExpiryMonths, timezone);
+	const expiryDate = calculateCarryoverExpiryDate(
+		currentYear,
+		policy.carryoverExpiryMonths,
+		timezone,
+	);
 	const currentDT = DateTime.fromJSDate(currentDate).setZone(timezone);
 
 	// If expiry date hasn't passed, nothing to do

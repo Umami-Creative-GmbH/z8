@@ -1,9 +1,9 @@
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
+import { configurationService } from "@/lib/audit-export";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { configurationService } from "@/lib/audit-export";
 
 /**
  * GET /api/audit-export/public-key

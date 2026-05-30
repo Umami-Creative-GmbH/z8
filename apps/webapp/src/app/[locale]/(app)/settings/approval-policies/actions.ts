@@ -53,7 +53,7 @@ function valuesForReferenceCondition(condition: PolicyInput["conditions"][number
 async function requirePolicyAdmin() {
 	const { getCurrentEmployee } = await import("@/app/[locale]/(app)/absences/current-employee");
 	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee || currentEmployee.role !== "admin") {
+	if (currentEmployee?.role !== "admin") {
 		throw new Error("Only organization admins can manage approval policies.");
 	}
 
@@ -77,7 +77,12 @@ async function existingEmployeeGroupForOrganization(groupId: string, organizatio
 async function findMissingOrganizationReferences(
 	organizationId: string,
 	ids: string[],
-	table: typeof team | typeof location | typeof absenceCategory | typeof employeeGroup | typeof employee,
+	table:
+		| typeof team
+		| typeof location
+		| typeof absenceCategory
+		| typeof employeeGroup
+		| typeof employee,
 ) {
 	const uniqueIds = uniqueValues(ids);
 	if (uniqueIds.length === 0) {
@@ -102,7 +107,13 @@ async function findMissingActiveOrganizationEmployees(organizationId: string, id
 	const rows = await db
 		.select({ id: employee.id })
 		.from(employee)
-		.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true), inArray(employee.id, uniqueIds)));
+		.where(
+			and(
+				eq(employee.organizationId, organizationId),
+				eq(employee.isActive, true),
+				inArray(employee.id, uniqueIds),
+			),
+		);
 	const foundIds = new Set(rows.map((row) => row.id));
 
 	return uniqueIds.filter((id) => !foundIds.has(id));
@@ -117,7 +128,13 @@ async function findMissingActiveEmployeeGroups(organizationId: string, ids: stri
 	const rows = await db
 		.select({ id: employeeGroup.id })
 		.from(employeeGroup)
-		.where(and(eq(employeeGroup.organizationId, organizationId), eq(employeeGroup.isActive, true), inArray(employeeGroup.id, uniqueIds)));
+		.where(
+			and(
+				eq(employeeGroup.organizationId, organizationId),
+				eq(employeeGroup.isActive, true),
+				inArray(employeeGroup.id, uniqueIds),
+			),
+		);
 	const foundIds = new Set(rows.map((row) => row.id));
 
 	return uniqueIds.filter((id) => !foundIds.has(id));
@@ -146,7 +163,13 @@ async function validatePolicyReferences(organizationId: string, input: PolicyInp
 		.filter((stage) => stage.approverType === "specific_employee" && stage.approverEmployeeId)
 		.map((stage) => stage.approverEmployeeId as string);
 
-	const [missingTeams, missingLocations, missingAbsenceCategories, missingGroups, missingApprovers] = await Promise.all([
+	const [
+		missingTeams,
+		missingLocations,
+		missingAbsenceCategories,
+		missingGroups,
+		missingApprovers,
+	] = await Promise.all([
 		findMissingOrganizationReferences(organizationId, teamIds, team),
 		findMissingOrganizationReferences(organizationId, locationIds, location),
 		findMissingOrganizationReferences(organizationId, absenceCategoryIds, absenceCategory),
@@ -194,7 +217,9 @@ function conditionInsertValue(
 	};
 }
 
-function databaseApproverType(approverType: PolicyInput["stages"][number]["approverType"]): DatabaseApproverType {
+function databaseApproverType(
+	approverType: PolicyInput["stages"][number]["approverType"],
+): DatabaseApproverType {
 	if (approverType === "team_lead") {
 		throw new Error("Unsupported approver type.");
 	}
@@ -228,13 +253,19 @@ export async function upsertApprovalPolicy(input: PolicyInput & { id?: string })
 	}
 
 	if (parsed.data.id) {
-		const existingPolicy = await existingPolicyForOrganization(parsed.data.id, currentEmployee.organizationId);
+		const existingPolicy = await existingPolicyForOrganization(
+			parsed.data.id,
+			currentEmployee.organizationId,
+		);
 		if (!existingPolicy) {
 			return { success: false as const, error: "Approval policy could not be saved." };
 		}
 	}
 
-	const referenceError = await validatePolicyReferences(currentEmployee.organizationId, normalized.data);
+	const referenceError = await validatePolicyReferences(
+		currentEmployee.organizationId,
+		normalized.data,
+	);
 	if (referenceError) {
 		return { success: false as const, error: referenceError };
 	}
@@ -266,25 +297,31 @@ export async function upsertApprovalPolicy(input: PolicyInput & { id?: string })
 				})
 				.returning();
 
-			await tx.delete(approvalPolicyCondition).where(
-				and(
-					eq(approvalPolicyCondition.policyId, savedPolicy.id),
-					eq(approvalPolicyCondition.organizationId, currentEmployee.organizationId),
-				),
-			);
-			await tx.delete(approvalPolicyStage).where(
-				and(
-					eq(approvalPolicyStage.policyId, savedPolicy.id),
-					eq(approvalPolicyStage.organizationId, currentEmployee.organizationId),
-				),
-			);
-
-			if (normalized.data.conditions.length > 0) {
-				await tx.insert(approvalPolicyCondition).values(
-					normalized.data.conditions.map((condition) =>
-						conditionInsertValue(currentEmployee.organizationId, savedPolicy.id, condition),
+			await tx
+				.delete(approvalPolicyCondition)
+				.where(
+					and(
+						eq(approvalPolicyCondition.policyId, savedPolicy.id),
+						eq(approvalPolicyCondition.organizationId, currentEmployee.organizationId),
 					),
 				);
+			await tx
+				.delete(approvalPolicyStage)
+				.where(
+					and(
+						eq(approvalPolicyStage.policyId, savedPolicy.id),
+						eq(approvalPolicyStage.organizationId, currentEmployee.organizationId),
+					),
+				);
+
+			if (normalized.data.conditions.length > 0) {
+				await tx
+					.insert(approvalPolicyCondition)
+					.values(
+						normalized.data.conditions.map((condition) =>
+							conditionInsertValue(currentEmployee.organizationId, savedPolicy.id, condition),
+						),
+					);
 			}
 
 			if (normalized.data.stages.length > 0) {
@@ -333,13 +370,19 @@ export async function upsertEmployeeGroup(input: z.infer<typeof employeeGroupInp
 	}
 
 	if (parsed.data.id) {
-		const existingGroup = await existingEmployeeGroupForOrganization(parsed.data.id, currentEmployee.organizationId);
+		const existingGroup = await existingEmployeeGroupForOrganization(
+			parsed.data.id,
+			currentEmployee.organizationId,
+		);
 		if (!existingGroup) {
 			return { success: false as const, error: "Employee group could not be saved." };
 		}
 	}
 
-	const missingEmployees = await findMissingActiveOrganizationEmployees(currentEmployee.organizationId, employeeIds);
+	const missingEmployees = await findMissingActiveOrganizationEmployees(
+		currentEmployee.organizationId,
+		employeeIds,
+	);
 	if (missingEmployees.length > 0) {
 		return { success: false as const, error: "One or more employee group members are invalid." };
 	}
@@ -366,12 +409,14 @@ export async function upsertEmployeeGroup(input: z.infer<typeof employeeGroupInp
 				})
 				.returning();
 
-			await tx.delete(employeeGroupMember).where(
-				and(
-					eq(employeeGroupMember.groupId, group.id),
-					eq(employeeGroupMember.organizationId, currentEmployee.organizationId),
-				),
-			);
+			await tx
+				.delete(employeeGroupMember)
+				.where(
+					and(
+						eq(employeeGroupMember.groupId, group.id),
+						eq(employeeGroupMember.organizationId, currentEmployee.organizationId),
+					),
+				);
 
 			if (employeeIds.length > 0) {
 				await tx.insert(employeeGroupMember).values(

@@ -28,7 +28,8 @@ function formatCommitRowFailure(result: {
 }
 
 function isFinalAttempt(job: Job<ImportReviewJobData>): boolean {
-	const maxAttempts = typeof job.opts.attempts === "number" && job.opts.attempts > 0 ? job.opts.attempts : 1;
+	const maxAttempts =
+		typeof job.opts.attempts === "number" && job.opts.attempts > 0 ? job.opts.attempts : 1;
 	return job.attemptsMade + 1 >= maxAttempts;
 }
 
@@ -141,7 +142,9 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 			}
 
 			default:
-				throw new Error(`Unsupported import review job type: ${String((data as { type?: unknown }).type)}`);
+				throw new Error(
+					`Unsupported import review job type: ${String((data as { type?: unknown }).type)}`,
+				);
 		}
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error);
@@ -153,9 +156,7 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 	}
 }
 
-export async function processImportReviewScanJob(
-	job: Job<ImportScanJobData>,
-): Promise<JobResult> {
+export async function processImportReviewScanJob(job: Job<ImportScanJobData>): Promise<JobResult> {
 	return processImportReviewJob(job);
 }
 

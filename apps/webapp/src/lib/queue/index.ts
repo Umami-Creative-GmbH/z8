@@ -12,11 +12,11 @@
  */
 
 import { type ConnectionOptions, type Job, type JobsOptions, Queue, Worker } from "bullmq";
+import { env } from "@/env";
 import type { CronJobData, CronJobName, CronJobResult } from "@/lib/cron/registry";
 import type { ImportCommitJobData, ImportScanJobData } from "@/lib/import-review/types";
 import { createLogger } from "@/lib/logger";
 import { createRedisConnectionOptions } from "@/lib/redis-config";
-import { env } from "@/env";
 
 const logger = createLogger("JobQueue");
 

@@ -1,5 +1,5 @@
-import QRCode from "qrcode";
 import { Context, Effect, Layer } from "effect";
+import QRCode from "qrcode";
 
 export type QRCodeFormat = "png" | "svg";
 

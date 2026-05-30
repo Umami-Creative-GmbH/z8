@@ -58,8 +58,10 @@ describe("PlatformAdminService listUsers privacy guardrails", () => {
 
 		expect(listUsersSource).toContain("organizationId");
 		expect(listUsersSource).toContain("EXISTS");
+		// biome-ignore lint/suspicious/noTemplateCurlyInString: its ok
 		expect(listUsersSource).toContain('"member"."user_id" = ${user.id}');
 		expect(listUsersSource).toContain(
+			// biome-ignore lint/suspicious/noTemplateCurlyInString: its ok
 			'"member"."organization_id" = ${organizationId}',
 		);
 		expect(listUsersSource).not.toContain("inArray(user.id");
@@ -70,11 +72,7 @@ describe("PlatformAdminService listOrganizations query guardrails", () => {
 	it("qualifies organization count subquery columns to avoid ambiguous SQL", () => {
 		const listOrganizationsSource = getListOrganizationsSource();
 
-		expect(listOrganizationsSource).toContain(
-			'"employee"."organization_id" = "organization"."id"',
-		);
-		expect(listOrganizationsSource).toContain(
-			'"member"."organization_id" = "organization"."id"',
-		);
+		expect(listOrganizationsSource).toContain('"employee"."organization_id" = "organization"."id"');
+		expect(listOrganizationsSource).toContain('"member"."organization_id" = "organization"."id"');
 	});
 });

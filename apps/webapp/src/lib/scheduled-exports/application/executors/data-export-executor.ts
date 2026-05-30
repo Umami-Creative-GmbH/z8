@@ -5,12 +5,12 @@
  * Delegates to the existing data export service.
  */
 import { and, eq } from "drizzle-orm";
-import { db, dataExport, employee } from "@/db";
+import { dataExport, db, employee } from "@/db";
+import { getExportById, processExport } from "@/lib/export/export-service";
 import { createLogger } from "@/lib/logger";
 import { getPresignedUrl } from "@/lib/storage/export-s3-client";
-import { processExport, getExportById } from "@/lib/export/export-service";
-import type { IReportExecutor, ExecuteParams } from "./base-executor";
-import type { ExecutionResult, DataExportReportConfig, ReportConfig } from "../../domain/types";
+import type { DataExportReportConfig, ExecutionResult, ReportConfig } from "../../domain/types";
+import type { ExecuteParams, IReportExecutor } from "./base-executor";
 
 const logger = createLogger("DataExportExecutor");
 
@@ -55,10 +55,7 @@ export class DataExportExecutor implements IReportExecutor {
 			let requestedById: string | undefined;
 			if (createdBy) {
 				const emp = await db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, createdBy),
-						eq(employee.organizationId, organizationId),
-					),
+					where: and(eq(employee.userId, createdBy), eq(employee.organizationId, organizationId)),
 					columns: { id: true },
 				});
 				requestedById = emp?.id;
@@ -67,7 +64,8 @@ export class DataExportExecutor implements IReportExecutor {
 			if (!requestedById) {
 				return {
 					success: false,
-					error: "Unable to determine requester for data export. The schedule creator may not have an employee record.",
+					error:
+						"Unable to determine requester for data export. The schedule creator may not have an employee record.",
 				};
 			}
 
@@ -89,7 +87,7 @@ export class DataExportExecutor implements IReportExecutor {
 
 			// Fetch the completed record to get S3 details
 			const completedRecord = await getExportById(exportRecord.id);
-			if (!completedRecord || completedRecord.status !== "completed") {
+			if (completedRecord?.status !== "completed") {
 				return {
 					success: false,
 					error: "Export processing failed to complete",
@@ -134,7 +132,9 @@ export class DataExportExecutor implements IReportExecutor {
 		if (dataConfig.categories) {
 			for (const category of dataConfig.categories) {
 				if (!VALID_CATEGORIES.includes(category as (typeof VALID_CATEGORIES)[number])) {
-					errors.push(`Invalid category: ${category}. Valid categories: ${VALID_CATEGORIES.join(", ")}`);
+					errors.push(
+						`Invalid category: ${category}. Valid categories: ${VALID_CATEGORIES.join(", ")}`,
+					);
 				}
 			}
 		}

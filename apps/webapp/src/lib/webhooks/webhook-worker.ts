@@ -5,20 +5,19 @@
  */
 
 import type { Job } from "bullmq";
-import type { JobResult } from "@/lib/queue";
 import { createLogger } from "@/lib/logger";
+import type { JobResult } from "@/lib/queue";
+import type { WebhookJobData } from "./types";
+import { MAX_ATTEMPTS } from "./types";
 import { executeWebhookRequest } from "./webhook-delivery";
 import { scheduleWebhookRetry } from "./webhook-queue";
 import {
 	checkAndDisableUnhealthyEndpoint,
-	getDeliveryRecord,
 	getRetryDelay,
 	getWebhookEndpoint,
 	updateDeliveryRecord,
 	updateEndpointStats,
 } from "./webhook-service";
-import type { WebhookJobData } from "./types";
-import { MAX_ATTEMPTS } from "./types";
 
 const logger = createLogger("WebhookWorker");
 

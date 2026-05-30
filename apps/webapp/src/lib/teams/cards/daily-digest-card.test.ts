@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildDailyDigestCard } from "./daily-digest-card";
 import type { DailyDigestData } from "../types";
+import { buildDailyDigestCard } from "./daily-digest-card";
 
 const t = (key: string, defaultValue: string, params?: Record<string, string | number>) => {
 	const translations: Record<string, string> = {

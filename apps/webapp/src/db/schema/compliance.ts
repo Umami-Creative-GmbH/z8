@@ -108,8 +108,14 @@ export const schedulePublishComplianceAck = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 	},
 	(table) => [
-		index("schedulePublishComplianceAck_org_createdAt_idx").on(table.organizationId, table.createdAt),
-		index("schedulePublishComplianceAck_actor_createdAt_idx").on(table.actorEmployeeId, table.createdAt),
+		index("schedulePublishComplianceAck_org_createdAt_idx").on(
+			table.organizationId,
+			table.createdAt,
+		),
+		index("schedulePublishComplianceAck_actor_createdAt_idx").on(
+			table.actorEmployeeId,
+			table.createdAt,
+		),
 		index("schedulePublishComplianceAck_org_rangeStart_idx").on(
 			table.organizationId,
 			table.publishedRangeStart,

@@ -32,9 +32,14 @@ function expectNoManagerApprovalGuardBeforeWrite(name: string, writeMarker: stri
 	);
 	const writeIndex = body.indexOf(writeMarker);
 
-	expect(guardIndex, `${name} should reject unapprovable approval-required changes`).toBeGreaterThanOrEqual(0);
+	expect(
+		guardIndex,
+		`${name} should reject unapprovable approval-required changes`,
+	).toBeGreaterThanOrEqual(0);
 	expect(writeIndex, `${name} should include expected write marker`).toBeGreaterThanOrEqual(0);
-	expect(guardIndex, `${name} should reject missing managers before database writes`).toBeLessThan(writeIndex);
+	expect(guardIndex, `${name} should reject missing managers before database writes`).toBeLessThan(
+		writeIndex,
+	);
 }
 
 function expectPolicyCheckFailureBeforeWrite(name: string, writeMarker: string) {
@@ -44,7 +49,9 @@ function expectPolicyCheckFailureBeforeWrite(name: string, writeMarker: string) 
 	);
 	const writeIndex = body.indexOf(writeMarker);
 
-	expect(guardIndex, `${name} should fail closed when policy checks fail`).toBeGreaterThanOrEqual(0);
+	expect(guardIndex, `${name} should fail closed when policy checks fail`).toBeGreaterThanOrEqual(
+		0,
+	);
 	expect(writeIndex, `${name} should include expected write marker`).toBeGreaterThanOrEqual(0);
 	expect(guardIndex, `${name} should fail closed before database writes`).toBeLessThan(writeIndex);
 }
@@ -72,12 +79,35 @@ describe("legacy time-tracking action billing guards", () => {
 		expectBillingGuardBeforeWrite("clockIn", "createTimeEntry({");
 	});
 
+	it("captures browser timezone context in live clock-in entries", () => {
+		const body = functionBody("clockIn");
+
+		expect(body).toContain("timezoneContext: BrowserTimezoneContext = {}");
+		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
+		expect(body).toContain("browserTimezone: timezoneContext.browserTimezone");
+		expect(body).toContain('browserSource: "browser"');
+		expect(body).toContain('fallbackSource: "user_setting"');
+	});
+
 	it("guards clock-out before creating time entries", () => {
 		expectBillingGuardBeforeWrite("clockOut", "createTimeEntry({");
 	});
 
+	it("captures browser timezone context in live clock-out entries", () => {
+		const body = functionBody("clockOut");
+
+		expect(body).toContain("timezoneContext: BrowserTimezoneContext = {}");
+		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
+		expect(body).toContain("browserTimezone: timezoneContext.browserTimezone");
+		expect(body).toContain('browserSource: "browser"');
+		expect(body).toContain('fallbackSource: "user_setting"');
+	});
+
 	it("guards break insertion before delegating to the clocking mutation", () => {
-		expectBillingGuardBeforeWrite("addBreakToActiveSession", "addBreakToActiveSessionAction(breakMinutes)");
+		expectBillingGuardBeforeWrite(
+			"addBreakToActiveSession",
+			"addBreakToActiveSessionAction(breakMinutes)",
+		);
 	});
 
 	it("guards manual time-entry creation before creating time entries", () => {
@@ -96,27 +126,41 @@ describe("legacy time-tracking action billing guards", () => {
 		expectBillingGuardBeforeWrite(name, writeMarker);
 	});
 
-	it.each(["clockOut", "createManualTimeEntry", "deleteWorkPeriod", "editSameDayTimeEntry"])(
-		"marks work balances dirty after %s changes payable time",
-		(name) => {
-			const body = functionBody(name);
-			expect(body).toContain("await markWorkBalanceDirtyBestEffort(");
-			expect(body).toContain("dirtyFromDate:");
-		},
-	);
+	it.each([
+		"clockOut",
+		"createManualTimeEntry",
+		"deleteWorkPeriod",
+		"editSameDayTimeEntry",
+	])("marks work balances dirty after %s changes payable time", (name) => {
+		const body = functionBody(name);
+		expect(body).toContain("await markWorkBalanceDirtyBestEffort(");
+		expect(body).toContain("dirtyFromDate:");
+	});
 
-	it.each(["updateWorkPeriodProject", "updateWorkPeriodNotes"])(
-		"does not mark work balances dirty after %s metadata changes",
-		(name) => {
-			expect(functionBody(name)).not.toContain("markEmployeeWorkBalanceDirty");
-		},
-	);
+	it.each([
+		"updateWorkPeriodProject",
+		"updateWorkPeriodNotes",
+	])("does not mark work balances dirty after %s metadata changes", (name) => {
+		expect(functionBody(name)).not.toContain("markEmployeeWorkBalanceDirty");
+	});
 
 	it.each([
 		["clockOut", "createTimeEntry({"],
-		["createManualTimeEntry", "createTimeEntry({"],
 	])("rejects approval-required %s without a manager before writing", (name, writeMarker) => {
 		expectNoManagerApprovalGuardBeforeWrite(name, writeMarker);
+	});
+
+	it("auto-approves approval-required manual entries when no manager resolves", () => {
+		const body = functionBody("createManualTimeEntry");
+
+		expect(body).toContain(
+			"const requiresManagerApproval = requiresApproval && Boolean(managerId)",
+		);
+		expect(body).toContain(
+			'const approvalStatus = requiresManagerApproval ? "pending" : "approved"',
+		);
+		expect(body).toContain("const pendingChangesData = requiresManagerApproval");
+		expect(body).toContain("if (requiresManagerApproval && managerId)");
 	});
 
 	it.each([

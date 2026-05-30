@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import {
-	MobileApiError,
 	getMobileOrganizationSummary,
+	MobileApiError,
 	requireMobileSessionContext,
 } from "@/app/api/mobile/shared";
 
 export async function GET(request: Request) {
 	try {
-		const { session, activeOrganizationId, memberships } = await requireMobileSessionContext(request);
+		const { session, activeOrganizationId, memberships } =
+			await requireMobileSessionContext(request);
 		const organizations = await Promise.all(
 			memberships.map(({ organizationId }) =>
 				getMobileOrganizationSummary(session.user.id, organizationId),

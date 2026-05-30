@@ -6,11 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import {
-	AuditAction,
-	getApprovalAuditAction,
-	type AuditLogEntry,
-} from "../audit-logger";
+import { AuditAction, type AuditLogEntry, getApprovalAuditAction } from "../audit-logger";
 import type { TimeRecordApprovalDecision } from "../time-record/approval";
 
 // Use vi.hoisted() for variables that need to be available in vi.mock factories

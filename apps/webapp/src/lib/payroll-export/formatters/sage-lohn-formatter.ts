@@ -99,11 +99,7 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		}
 
 		// Group work periods by employee and date
-		const aggregatedData = this.aggregateWorkPeriods(
-			workPeriods,
-			workCategoryMappings,
-			sageConfig,
-		);
+		const aggregatedData = this.aggregateWorkPeriods(workPeriods, workCategoryMappings, sageConfig);
 
 		// Add absence data
 		this.addAbsenceData(absences, absenceCategoryMappings, aggregatedData, sageConfig);
@@ -204,9 +200,7 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 			if (period.workCategoryId) {
 				const mapping = workCategoryMappings.get(period.workCategoryId);
 				const mappedCode =
-					mapping?.sageWageTypeCode ||
-					mapping?.datevWageTypeCode ||
-					mapping?.wageTypeCode;
+					mapping?.sageWageTypeCode || mapping?.datevWageTypeCode || mapping?.wageTypeCode;
 				if (mapping && mappedCode) {
 					wageTypeCode = mappedCode;
 					note =
@@ -338,15 +332,9 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 	/**
 	 * Generate CSV header row
 	 */
-	private generateHeaderRow(config: SageLohnConfig): string {
+	private generateHeaderRow(_config: SageLohnConfig): string {
 		// Sage uses same column names as DATEV
-		return [
-			"Personalnummer",
-			"Lohnart",
-			"Betrag",
-			"Datum",
-			"Bemerkung",
-		]
+		return ["Personalnummer", "Lohnart", "Betrag", "Datum", "Bemerkung"]
 			.map((col) => this.escapeCSV(col))
 			.join(";");
 	}
@@ -432,9 +420,7 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 	 */
 	private generateFileName(dateRange: { start: DateTime | null; end: DateTime | null }): string {
 		const now = DateTime.now();
-		const dateStr = dateRange.start
-			? dateRange.start.toFormat("yyyy-MM")
-			: now.toFormat("yyyy-MM");
+		const dateStr = dateRange.start ? dateRange.start.toFormat("yyyy-MM") : now.toFormat("yyyy-MM");
 		return `sage_lohn_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
 	}
 }

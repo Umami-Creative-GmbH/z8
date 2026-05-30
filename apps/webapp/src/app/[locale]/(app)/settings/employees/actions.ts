@@ -1,6 +1,6 @@
 "use server";
 
-import { employee } from "@/db/schema";
+import type { employee } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type {
 	AssignManagers,

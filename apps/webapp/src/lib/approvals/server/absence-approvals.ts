@@ -5,8 +5,8 @@ import { syncCanonicalAbsenceApprovalStateInTransaction } from "@/app/[locale]/(
 import { enqueueVacationOverrideCalendarSyncJobs } from "@/app/[locale]/(app)/absences/request-absence-effect-helpers";
 import { absenceEntry, approvalRequest, holiday } from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
-import { adjustVacationAbsencesForSickness } from "@/lib/absences/sick-vacation-override";
 import type { VacationOverrideSummary } from "@/lib/absences/sick-vacation-override";
+import { adjustVacationAbsencesForSickness } from "@/lib/absences/sick-vacation-override";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
@@ -115,9 +115,7 @@ function queueApprovedAbsenceCalendarSync(result: ApprovedAbsenceResult) {
 }
 
 function markWorkBalanceDirtyAfterCommit(mark?: WorkBalanceDirtyMark) {
-	return mark
-		? Effect.promise(() => markEmployeeWorkBalanceDirtyIfNeeded(mark))
-		: Effect.void;
+	return mark ? Effect.promise(() => markEmployeeWorkBalanceDirtyIfNeeded(mark)) : Effect.void;
 }
 
 function ensureAbsenceRecord(
@@ -174,10 +172,10 @@ function updateAbsenceStatus(
 				updatedAbsence?.organizationId &&
 				(status === "approved" || previousAbsence?.status === "approved")
 					? {
-						employeeId: updatedAbsence.employeeId,
-						organizationId: updatedAbsence.organizationId,
-						dirtyFromDate: updatedAbsence.startDate,
-					}
+							employeeId: updatedAbsence.employeeId,
+							organizationId: updatedAbsence.organizationId,
+							dirtyFromDate: updatedAbsence.startDate,
+						}
 					: undefined;
 
 			return { absence: updatedAbsence, workBalanceDirtyMark };
@@ -185,10 +183,12 @@ function updateAbsenceStatus(
 		.pipe(
 			Effect.flatMap((result) =>
 				ensureAbsenceRecord(result.absence as unknown as AbsenceRecord | null).pipe(
-					Effect.map((absence): AbsenceStatusUpdateResult => ({
-						absence,
-						workBalanceDirtyMark: result.workBalanceDirtyMark,
-					})),
+					Effect.map(
+						(absence): AbsenceStatusUpdateResult => ({
+							absence,
+							workBalanceDirtyMark: result.workBalanceDirtyMark,
+						}),
+					),
 				),
 			),
 		);
@@ -254,7 +254,10 @@ export function createAbsenceApprovalWorkflow(
 					})
 					.returning({ id: approvalRequest.id });
 
-				return { kind: "default_created" as const, approvalRequestId: approval?.id ?? input.absence.id };
+				return {
+					kind: "default_created" as const,
+					approvalRequestId: approval?.id ?? input.absence.id,
+				};
 			}),
 		),
 	);
@@ -279,9 +282,7 @@ export function approveAbsenceWithCurrentApproverEffect(
 	).pipe(
 		Effect.tap((result) => markWorkBalanceDirtyAfterCommit(result?.workBalanceDirtyMark)),
 		Effect.tap((result) =>
-			result
-				? Effect.sync(() => queueApprovedAbsenceCalendarSync(result))
-				: Effect.void,
+			result ? Effect.sync(() => queueApprovedAbsenceCalendarSync(result)) : Effect.void,
 		),
 	);
 }
@@ -344,7 +345,6 @@ function notifyApprovedAbsence(
 		endDate: absence.endDate,
 		approverName: currentEmployee.user.name,
 	});
-
 }
 
 function notifyRejectedAbsence(
@@ -377,7 +377,9 @@ function handleApprovedAbsence(
 			updateAbsenceStatus(dbService, entityId, currentEmployee, "approved"),
 		);
 		const vacationOverrideSummary = yield* _(
-			Effect.promise(() => applySickVacationOverrideOnApproval(dbService, absence, currentEmployee)),
+			Effect.promise(() =>
+				applySickVacationOverrideOnApproval(dbService, absence, currentEmployee),
+			),
 		);
 		yield* _(
 			Effect.promise(() =>

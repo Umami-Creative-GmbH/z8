@@ -1,18 +1,18 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTranslate } from "@tolgee/react";
 import {
 	IconClock,
+	IconDots,
 	IconLoader2,
 	IconMapPin,
-	IconDots,
 	IconPalette,
 	IconPencil,
 	IconPlus,
 	IconTrash,
 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -339,7 +339,10 @@ export function ShiftTemplateManagement({
 				<CardContent>
 					{isLoading ? (
 						<div className="flex items-center justify-center py-8">
-							<IconLoader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+							<IconLoader2
+								className="size-6 animate-spin text-muted-foreground"
+								aria-hidden="true"
+							/>
 						</div>
 					) : templates.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-8 text-center">

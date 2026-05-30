@@ -127,7 +127,11 @@ export class TokenExpiredError extends CalendarProviderError {
  */
 export class RefreshTokenInvalidError extends CalendarProviderError {
 	constructor(provider: CalendarProvider) {
-		super(provider, "REFRESH_TOKEN_INVALID", "Refresh token is invalid, re-authentication required");
+		super(
+			provider,
+			"REFRESH_TOKEN_INVALID",
+			"Refresh token is invalid, re-authentication required",
+		);
 		this.name = "RefreshTokenInvalidError";
 	}
 }

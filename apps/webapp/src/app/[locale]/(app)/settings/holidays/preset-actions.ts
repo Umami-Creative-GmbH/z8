@@ -609,7 +609,7 @@ export async function deleteHolidayPreset(presetId: string): Promise<ServerActio
 						operation: "delete",
 						table: "holiday_preset",
 						cause: error,
-				}),
+					}),
 			),
 		);
 
@@ -1361,7 +1361,9 @@ export async function getEmployeesForAssignment(
 					})
 					.from(employee)
 					.innerJoin(user, eq(employee.userId, user.id))
-					.where(and(eq(employee.organizationId, actor.organizationId), eq(employee.isActive, true)))
+					.where(
+						and(eq(employee.organizationId, actor.organizationId), eq(employee.isActive, true)),
+					)
 					.orderBy(user.firstName, user.lastName);
 			}),
 		);

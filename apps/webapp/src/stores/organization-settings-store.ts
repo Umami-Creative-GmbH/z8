@@ -57,8 +57,7 @@ export const useProjectsEnabled = () => useOrganizationSettings((state) => state
 export const useShiftsEnabled = () => useOrganizationSettings((state) => state.shiftsEnabled);
 export const useSurchargesEnabled = () =>
 	useOrganizationSettings((state) => state.surchargesEnabled);
-export const useDemoDataEnabled = () =>
-	useOrganizationSettings((state) => state.demoDataEnabled);
+export const useDemoDataEnabled = () => useOrganizationSettings((state) => state.demoDataEnabled);
 export const useWorksCouncilEnabled = () =>
 	useOrganizationSettings((state) => state.worksCouncilEnabled);
 export const useOrganizationTimezone = () => useOrganizationSettings((state) => state.timezone);

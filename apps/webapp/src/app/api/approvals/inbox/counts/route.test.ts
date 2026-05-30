@@ -1,6 +1,6 @@
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { eq } from "drizzle-orm";
 
 vi.mock("drizzle-orm", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("drizzle-orm")>();

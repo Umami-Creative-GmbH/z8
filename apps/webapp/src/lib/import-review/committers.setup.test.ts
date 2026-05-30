@@ -167,7 +167,9 @@ describe("commitAcceptedRowsForEntity setup/reference rows", () => {
 			}),
 		];
 
-		const result = await commitAcceptedRowsForEntity(commitJob("employee"), { finalAttempt: false });
+		const result = await commitAcceptedRowsForEntity(commitJob("employee"), {
+			finalAttempt: false,
+		});
 
 		expect(result).toEqual({
 			committedRows: 0,
@@ -298,13 +300,16 @@ describe("commitAcceptedRowsForEntity setup/reference rows", () => {
 			],
 		});
 		expect(dbMock.query.holidayCategory.findFirst).toHaveBeenCalledWith(
-			expect.objectContaining({ where: expect.objectContaining({ queryChunks: expect.any(Array) }) }),
+			expect.objectContaining({
+				where: expect.objectContaining({ queryChunks: expect.any(Array) }),
+			}),
 		);
 		expect(dbMock.insert).not.toHaveBeenCalled();
 		expect(dbMock.updates).toContainEqual(
 			expect.objectContaining({
 				rowStatus: "blocked",
-				commitError: "Holiday category holiday_category_other_org does not belong to organization org_1",
+				commitError:
+					"Holiday category holiday_category_other_org does not belong to organization org_1",
 			}),
 		);
 	});

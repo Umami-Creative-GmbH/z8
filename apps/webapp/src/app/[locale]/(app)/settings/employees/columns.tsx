@@ -1,11 +1,11 @@
 "use client";
 
-import { IconArrowDown, IconArrowUp, IconArrowsSort } from "@tabler/icons-react";
+import { IconArrowDown, IconArrowsSort, IconArrowUp } from "@tabler/icons-react";
 import type { ColumnDef, SortDirection } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
+import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { normalizePronouns } from "@/lib/employee-identity";
 import { Link } from "@/navigation";

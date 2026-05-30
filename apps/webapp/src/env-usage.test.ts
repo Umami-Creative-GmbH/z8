@@ -16,7 +16,10 @@ function collectRuntimeFiles(directory: string): string[] {
 			return collectRuntimeFiles(absolutePath);
 		}
 
-		if (!isRuntimeSourceFile(absolutePath) || ALLOWED_DIRECT_ENV_READERS.has(relative(SRC_ROOT, absolutePath))) {
+		if (
+			!isRuntimeSourceFile(absolutePath) ||
+			ALLOWED_DIRECT_ENV_READERS.has(relative(SRC_ROOT, absolutePath))
+		) {
 			return [];
 		}
 
@@ -25,10 +28,17 @@ function collectRuntimeFiles(directory: string): string[] {
 }
 
 function isRuntimeSourceFile(filePath: string): boolean {
-	return RUNTIME_FILE_EXTENSIONS.some((extension) => filePath.endsWith(extension)) && !filePath.includes(".test.");
+	return (
+		RUNTIME_FILE_EXTENSIONS.some((extension) => filePath.endsWith(extension)) &&
+		!filePath.includes(".test.")
+	);
 }
 
-function resolveLocalImport(fromFile: string, specifier: string, sourceFiles: Set<string>): string | null {
+function resolveLocalImport(
+	fromFile: string,
+	specifier: string,
+	sourceFiles: Set<string>,
+): string | null {
 	if (!specifier.startsWith(".") && !specifier.startsWith("@/")) return null;
 
 	const basePath = specifier.startsWith("@/")
@@ -44,7 +54,8 @@ function resolveLocalImport(fromFile: string, specifier: string, sourceFiles: Se
 
 function getRuntimeImports(filePath: string, sourceFiles: Set<string>): string[] {
 	const source = readFileSync(filePath, "utf8");
-	const importPattern = /import\s+(?!type\b)[\s\S]*?from\s+["']([^"']+)["']|import\s*["']([^"']+)["']/g;
+	const importPattern =
+		/import\s+(?!type\b)[\s\S]*?from\s+["']([^"']+)["']|import\s*["']([^"']+)["']/g;
 	const imports: string[] = [];
 	let match: RegExpExecArray | null;
 

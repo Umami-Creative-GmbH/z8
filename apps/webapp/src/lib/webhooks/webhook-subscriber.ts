@@ -7,9 +7,9 @@
 import { randomUUID } from "node:crypto";
 import type { EventPayload, EventSubscriber } from "@/lib/events/types";
 import { createLogger } from "@/lib/logger";
+import type { WebhookPayloadData } from "./types";
 import { addWebhookJob } from "./webhook-queue";
 import { createDeliveryRecord, getActiveWebhooksForEvent } from "./webhook-service";
-import type { WebhookPayloadData } from "./types";
 
 const logger = createLogger("WebhookSubscriber");
 

@@ -2,11 +2,12 @@
  * Vault Key Manager for Audit Export
  * Manages Ed25519 signing keys in HashiCorp Vault
  */
-import { db, auditSigningKey } from "@/db";
-import { eq, and, desc } from "drizzle-orm";
+
+import { and, desc, eq } from "drizzle-orm";
+import { auditSigningKey, db } from "@/db";
 import { createLogger } from "@/lib/logger";
-import { getOrgSecret, storeOrgSecret, deleteOrgSecret } from "@/lib/vault";
-import { signingProvider, type ISigningProvider } from "../crypto/signing-provider";
+import { getOrgSecret, storeOrgSecret } from "@/lib/vault";
+import { type ISigningProvider, signingProvider } from "../crypto/signing-provider";
 
 const logger = createLogger("AuditKeyManager");
 
@@ -128,10 +129,7 @@ export class VaultKeyManager implements IKeyManager {
 			})
 			.returning();
 
-		logger.info(
-			{ organizationId, keyId: keyRecord.id, fingerprint },
-			"Created new signing key",
-		);
+		logger.info({ organizationId, keyId: keyRecord.id, fingerprint }, "Created new signing key");
 
 		return {
 			keyId: keyRecord.id,
@@ -210,10 +208,7 @@ export class VaultKeyManager implements IKeyManager {
 				})
 				.where(eq(auditSigningKey.id, currentKey.keyId));
 
-			logger.info(
-				{ organizationId, oldKeyId: currentKey.keyId },
-				"Archived previous signing key",
-			);
+			logger.info({ organizationId, oldKeyId: currentKey.keyId }, "Archived previous signing key");
 		}
 
 		// Generate new key pair

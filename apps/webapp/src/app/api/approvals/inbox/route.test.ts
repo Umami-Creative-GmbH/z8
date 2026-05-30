@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { eq } from "drizzle-orm";
 
 vi.mock("drizzle-orm", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("drizzle-orm")>();
@@ -141,14 +141,13 @@ describe("GET /api/approvals/inbox", () => {
 		);
 	});
 
-	it("uses the Approval query adapter fields before delegating approval reads", () => {
+	it("delegates approval reads through approver and eligible-scope query parameters", () => {
 		const source = readFileSync("src/app/api/approvals/inbox/route.ts", "utf8");
 
-		expect(source).toContain("accessibleByDrizzle");
 		expect(source).toContain('"Approval"');
-		expect(source).toContain("approvalRequest.organizationId");
-		expect(source).toContain("approvalRequest.requestedBy");
-		expect(source).toContain("approvalRequest.approverId");
+		expect(source).toContain("approverId: currentEmployee.id");
+		expect(source).toContain("organizationId: currentEmployee.organizationId");
+		expect(source).toContain("eligibleApprovalScopes");
 	});
 
 	it("rejects unauthorized requests before delegating", async () => {
@@ -184,7 +183,7 @@ describe("GET /api/approvals/inbox", () => {
 		expect(mockState.getApprovals).not.toHaveBeenCalled();
 	});
 
-	it("preserves employee lookup and delegates approved reads to ApprovalQueryService", async () => {
+	it("preserves employee lookup and delegates assigned approval reads to ApprovalQueryService", async () => {
 		const response = await GET(
 			createRequest(
 				"https://app.example.com/api/approvals/inbox?status=pending&types=travel_expense_claim,absence_entry&limit=15",
@@ -192,22 +191,12 @@ describe("GET /api/approvals/inbox", () => {
 		);
 
 		expect(response.status).toBe(200);
-		expect(mockState.accessibleByDrizzle).toHaveBeenCalledWith(
-			expect.anything(),
-			"read",
-			"Approval",
-			{
-				organizationId: "approvalRequest.organizationId",
-				requestedBy: "approvalRequest.requestedBy",
-				approverId: "approvalRequest.approverId",
-				status: "approvalRequest.status",
-			},
-		);
+		expect(mockState.accessibleByDrizzle).not.toHaveBeenCalled();
 		expect(mockState.findEmployee).toHaveBeenCalledTimes(1);
 		expect(eq).toHaveBeenCalledWith("isActive", true);
 		expect(mockState.getApprovals).toHaveBeenCalledWith({
 			approverId: "employee-1",
-			authorizationPredicate: { type: "sql", source: "approval-access" },
+			authorizationPredicate: undefined,
 			includeAllApprovers: undefined,
 			organizationId: "org-1",
 			status: "pending",
@@ -223,7 +212,7 @@ describe("GET /api/approvals/inbox", () => {
 		});
 	});
 
-	it("denies non-managers when Approval query rules cannot be translated", async () => {
+	it("does not require read-rule translation for directly assigned approval reads", async () => {
 		mockState.accessibleByDrizzle.mockImplementation(() => {
 			throw new mockState.UnsupportedAuthorizationConditionError(
 				"Unconditional database authorization is not supported",
@@ -232,9 +221,15 @@ describe("GET /api/approvals/inbox", () => {
 
 		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
 
-		expect(response.status).toBe(403);
-		expect(mockState.getEligibleApprovalScopesForManager).not.toHaveBeenCalled();
-		expect(mockState.getApprovals).not.toHaveBeenCalled();
+		expect(response.status).toBe(200);
+		expect(mockState.accessibleByDrizzle).not.toHaveBeenCalled();
+		expect(mockState.getEligibleApprovalScopesForManager).toHaveBeenCalled();
+		expect(mockState.getApprovals).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approverId: "employee-1",
+				authorizationPredicate: undefined,
+			}),
+		);
 	});
 
 	it("sets includeAllApprovers for manage-Approval users so admins see org-wide approvals", async () => {
@@ -245,7 +240,7 @@ describe("GET /api/approvals/inbox", () => {
 		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
 
 		expect(response.status).toBe(200);
-		expect(mockState.accessibleByDrizzle).toHaveBeenCalled();
+		expect(mockState.accessibleByDrizzle).not.toHaveBeenCalled();
 		expect(mockState.getApprovals).toHaveBeenCalledWith(
 			expect.objectContaining({ includeAllApprovers: true }),
 		);

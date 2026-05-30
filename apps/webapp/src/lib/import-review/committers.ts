@@ -9,12 +9,13 @@ import {
 	holidayCategory,
 	importStagedRow,
 	surchargeModel,
-	timeEntry,
 	team,
+	timeEntry,
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import type { ImportCommitJobData } from "./types";
 
 type CommitRowError = { rowId: string; message: string };
@@ -75,7 +76,12 @@ async function markCommitted(
 		.where(and(eq(importStagedRow.id, rowId), eq(importStagedRow.organizationId, organizationId)));
 }
 
-async function markBlocked(database: CommitDb, rowId: string, organizationId: string, message: string) {
+async function markBlocked(
+	database: CommitDb,
+	rowId: string,
+	organizationId: string,
+	message: string,
+) {
 	await database
 		.update(importStagedRow)
 		.set({
@@ -106,7 +112,11 @@ async function markCommitFailed(rowId: string, organizationId: string, error: un
 		.where(and(eq(importStagedRow.id, rowId), eq(importStagedRow.organizationId, organizationId)));
 }
 
-async function assertEmployeeInOrganization(database: CommitDb, employeeId: string, organizationId: string) {
+async function assertEmployeeInOrganization(
+	database: CommitDb,
+	employeeId: string,
+	organizationId: string,
+) {
 	const found = await database.query.employee.findFirst({
 		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 	});
@@ -165,6 +175,11 @@ async function commitWorkPeriod(
 
 	const startAt = parseUtcDateTime(payload.startsAt, "startsAt");
 	const endAt = payload.endsAt ? parseUtcDateTime(payload.endsAt, "endsAt") : null;
+	const clockInTimezoneCapture = resolveFallbackTimezoneCapture({
+		timestamp: startAt.toJSDate(),
+		timezone: "UTC",
+		timezoneSource: "backfill",
+	});
 	const previous = await getChainHead(database, payload.employeeId, job.organizationId, chainHeads);
 	const clockInHash = calculateHash({
 		employeeId: payload.employeeId,
@@ -183,12 +198,18 @@ async function commitWorkPeriod(
 			previousHash: previous?.hash ?? null,
 			hash: clockInHash,
 			createdBy: job.committedBy,
+			...clockInTimezoneCapture,
 		})
 		.returning({ id: timeEntry.id, hash: timeEntry.hash });
 
 	let clockOutId: string | null = null;
 	let latestEntry = { id: clockIn.id, hash: clockIn.hash };
 	if (endAt) {
+		const clockOutTimezoneCapture = resolveFallbackTimezoneCapture({
+			timestamp: endAt.toJSDate(),
+			timezone: "UTC",
+			timezoneSource: "backfill",
+		});
 		const clockOutHash = calculateHash({
 			employeeId: payload.employeeId,
 			type: "clock_out",
@@ -206,6 +227,7 @@ async function commitWorkPeriod(
 				previousHash: latestEntry.hash,
 				hash: clockOutHash,
 				createdBy: job.committedBy,
+				...clockOutTimezoneCapture,
 			})
 			.returning({ id: timeEntry.id, hash: timeEntry.hash });
 		clockOutId = clockOut.id;
@@ -230,9 +252,16 @@ async function commitWorkPeriod(
 	return latestEntry;
 }
 
-async function ensureAbsenceCategory(database: CommitDb, organizationId: string, categoryName: string) {
+async function ensureAbsenceCategory(
+	database: CommitDb,
+	organizationId: string,
+	categoryName: string,
+) {
 	const existing = await database.query.absenceCategory.findFirst({
-		where: and(eq(absenceCategory.organizationId, organizationId), eq(absenceCategory.name, categoryName)),
+		where: and(
+			eq(absenceCategory.organizationId, organizationId),
+			eq(absenceCategory.name, categoryName),
+		),
 		columns: { id: true },
 	});
 	if (existing) return existing.id;
@@ -251,7 +280,11 @@ async function ensureAbsenceCategory(database: CommitDb, organizationId: string,
 	return created.id;
 }
 
-async function commitAbsence(database: CommitDb, row: typeof importStagedRow.$inferSelect, job: ImportCommitJobData) {
+async function commitAbsence(
+	database: CommitDb,
+	row: typeof importStagedRow.$inferSelect,
+	job: ImportCommitJobData,
+) {
 	const payload = row.normalizedPayload as unknown as AbsencePayload;
 	await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
 
@@ -276,7 +309,11 @@ async function commitAbsence(database: CommitDb, row: typeof importStagedRow.$in
 	await markCommitted(database, row.id, job.organizationId, "absence_entry", absence.id);
 }
 
-async function commitTeam(database: CommitDb, row: typeof importStagedRow.$inferSelect, job: ImportCommitJobData) {
+async function commitTeam(
+	database: CommitDb,
+	row: typeof importStagedRow.$inferSelect,
+	job: ImportCommitJobData,
+) {
 	const payload = row.normalizedPayload as unknown as SetupReferencePayload;
 	const [created] = await database
 		.insert(team)
@@ -366,7 +403,11 @@ async function commitHoliday(
 	return { status: "committed" };
 }
 
-async function commitSurcharge(database: CommitDb, row: typeof importStagedRow.$inferSelect, job: ImportCommitJobData) {
+async function commitSurcharge(
+	database: CommitDb,
+	row: typeof importStagedRow.$inferSelect,
+	job: ImportCommitJobData,
+) {
 	const payload = row.normalizedPayload as unknown as SetupReferencePayload;
 	const [created] = await database
 		.insert(surchargeModel)

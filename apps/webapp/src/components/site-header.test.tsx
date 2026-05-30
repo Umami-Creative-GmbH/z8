@@ -18,6 +18,11 @@ vi.mock("@/navigation", () => ({
 
 vi.mock("@/components/providers/user-preferences-provider", () => ({
 	useTimeFormat: () => "24h",
+	useUserTimezone: () => "Europe/Berlin",
+}));
+
+vi.mock("@/components/header-timezone-control", () => ({
+	HeaderTimezoneControl: () => <button type="button">Timezone</button>,
 }));
 
 vi.mock("@/components/notifications", () => ({
@@ -37,7 +42,7 @@ vi.mock("@/components/dashboard/dashboard-header-customize", () => ({
 }));
 
 describe("SiteHeader", () => {
-	it("shows the dashboard customize trigger before notifications on the dashboard route", () => {
+	it("shows header actions in the requested order on the dashboard route", () => {
 		pathname = "/en";
 
 		render(<SiteHeader />);
@@ -46,8 +51,9 @@ describe("SiteHeader", () => {
 		expect(buttons).toEqual([
 			"Toggle sidebar",
 			"Customize dashboard",
-			"Notifications",
+			"Timezone",
 			"Clock In",
+			"Notifications",
 		]);
 	});
 
@@ -58,5 +64,6 @@ describe("SiteHeader", () => {
 
 		expect(screen.queryByRole("button", { name: "Customize dashboard" })).toBeNull();
 		expect(screen.getByRole("button", { name: "Notifications" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Timezone" })).toBeTruthy();
 	});
 });

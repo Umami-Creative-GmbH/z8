@@ -1,12 +1,14 @@
 import { Effect, Layer } from "effect";
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
+import { sendBillingSystemEmail } from "../../../billing/billing-system-email";
 import { BillingEventsService, BillingEventsServiceLive } from "./billing-events.service";
-import { sendBillingSystemEmail } from "@/lib/billing/billing-system-email";
 import { SeatSyncService } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";
-import { SubscriptionService, type UpdateSubscriptionFromStripeParams } from "./subscription.service";
+import {
+	SubscriptionService,
+	type UpdateSubscriptionFromStripeParams,
+} from "./subscription.service";
 
 const {
 	stripeEventFindFirst,
@@ -197,15 +199,23 @@ describe("BillingEventsService", () => {
 		{
 			type: "customer.subscription.paused" as const,
 			object: createStripeSubscription({
-				customer: { id: "cus_test_123", object: "customer", email: "paused@example.com" } as Stripe.Customer,
-				pause_collection: { behavior: "void" },
+				customer: {
+					id: "cus_test_123",
+					object: "customer",
+					email: "paused@example.com",
+				} as Stripe.Customer,
+				pause_collection: { behavior: "void", resumes_at: null },
 			}),
 			templateKey: "billing-subscription-paused",
 		},
 		{
 			type: "customer.subscription.resumed" as const,
 			object: createStripeSubscription({
-				customer: { id: "cus_test_123", object: "customer", email: "resumed@example.com" } as Stripe.Customer,
+				customer: {
+					id: "cus_test_123",
+					object: "customer",
+					email: "resumed@example.com",
+				} as Stripe.Customer,
 			}),
 			templateKey: "billing-subscription-resumed",
 		},
@@ -216,7 +226,9 @@ describe("BillingEventsService", () => {
 		},
 		{
 			type: "payment_intent.payment_failed" as const,
-			object: createStripePaymentIntent({ receipt_email: "payment@example.com" }),
+			object: createStripePaymentIntent({
+				receipt_email: "payment@example.com",
+			}),
 			templateKey: "billing-payment-failed",
 		},
 	])("selects $templateKey for $type", async ({ type, object, templateKey }) => {

@@ -6,25 +6,18 @@
  */
 
 import type { Activity, TurnContext } from "botbuilder";
-import { TurnContext as TurnContextClass } from "botbuilder";
-import {
-	executeCommand,
-	parseCommand,
-} from "@/lib/bot-platform/command-registry";
+import { env } from "@/env";
+import { executeCommand, parseCommand } from "@/lib/bot-platform/command-registry";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import type { BotCommandContext } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import { handleApprovalAction } from "./approval-handler";
-import {
-	deactivateConversation,
-	saveConversationReference,
-} from "./conversation-manager";
+import { deactivateConversation, saveConversationReference } from "./conversation-manager";
 import { handleShiftPickupAction } from "./shift-pickup-handler";
 import { resolveTenant, updateTenantServiceUrl } from "./tenant-resolver";
 import { TeamsError } from "./types";
 import { resolveTeamsUser } from "./user-resolver";
-import { env } from "@/env";
 
 const logger = createLogger("TeamsBotHandler");
 
@@ -66,16 +59,10 @@ export async function handleBotActivity(context: TurnContext): Promise<void> {
 				break;
 
 			default:
-				logger.debug(
-					{ activityType: activity.type },
-					"Unhandled activity type",
-				);
+				logger.debug({ activityType: activity.type }, "Unhandled activity type");
 		}
 	} catch (error) {
-		logger.error(
-			{ error, activityType: activity.type },
-			"Error handling bot activity",
-		);
+		logger.error({ error, activityType: activity.type }, "Error handling bot activity");
 
 		if (error instanceof TeamsError) {
 			// Send user-friendly error message
@@ -84,7 +71,10 @@ export async function handleBotActivity(context: TurnContext): Promise<void> {
 		} else {
 			const t = await getBotTranslate(DEFAULT_LANGUAGE);
 			await context.sendActivity(
-				t("bot.static.genericError", "Sorry, something went wrong. Please try again or contact support."),
+				t(
+					"bot.static.genericError",
+					"Sorry, something went wrong. Please try again or contact support.",
+				),
 			);
 		}
 	}
@@ -117,7 +107,10 @@ async function handleMessage(context: TurnContext): Promise<void> {
 	if (tenantResult.status === "unconfigured") {
 		const t = await getBotTranslate(DEFAULT_LANGUAGE);
 		await context.sendActivity(
-			t("bot.static.unconfigured", "Your organization's Z8 integration is being set up. Please wait for your admin to complete configuration."),
+			t(
+				"bot.static.unconfigured",
+				"Your organization's Z8 integration is being set up. Please wait for your admin to complete configuration.",
+			),
 		);
 		return;
 	}
@@ -148,27 +141,16 @@ async function handleMessage(context: TurnContext): Promise<void> {
 		return;
 	}
 
-	const userResult = await resolveTeamsUser(
-		teamsUserId,
-		teamsEmail,
-		tenantId,
-		teamsDisplayName,
-	);
+	const userResult = await resolveTeamsUser(teamsUserId, teamsEmail, tenantId, teamsDisplayName);
 
 	// Save conversation reference for proactive messaging
 	if (userResult.status === "found") {
-		await saveConversationReference(
-			context,
-			userResult.user.userId,
-			tenant.organizationId,
-		);
+		await saveConversationReference(context, userResult.user.userId, tenant.organizationId);
 	}
 
 	// Get user locale
 	const locale =
-		userResult.status === "found"
-			? await getUserLocale(userResult.user.userId)
-			: DEFAULT_LANGUAGE;
+		userResult.status === "found" ? await getUserLocale(userResult.user.userId) : DEFAULT_LANGUAGE;
 	const t = await getBotTranslate(locale);
 
 	// Parse the message as a command
@@ -178,7 +160,7 @@ async function handleMessage(context: TurnContext): Promise<void> {
 	const cleanedText = removeBotMention(text, activity);
 	const parsed = parseCommand(cleanedText);
 
-	if (!parsed || !parsed.command) {
+	if (!parsed?.command) {
 		// If user just mentioned the bot without a command, show help
 		await context.sendActivity(
 			t("bot.static.mentionHelp", 'Hi! I\'m the Z8 bot. Type "help" to see available commands.'),
@@ -193,11 +175,17 @@ async function handleMessage(context: TurnContext): Promise<void> {
 		if (command !== "help" && command !== "?") {
 			if (userResult.status === "not_linked") {
 				await context.sendActivity(
-					t("bot.static.notLinkedTeams", "I couldn't find your Z8 account. Make sure your Teams email matches your Z8 account email."),
+					t(
+						"bot.static.notLinkedTeams",
+						"I couldn't find your Z8 account. Make sure your Teams email matches your Z8 account email.",
+					),
 				);
 			} else if (userResult.status === "no_employee") {
 				await context.sendActivity(
-					t("bot.static.noEmployee", "Your account exists but you don't have an employee record in Z8."),
+					t(
+						"bot.static.noEmployee",
+						"Your account exists but you don't have an employee record in Z8.",
+					),
 				);
 			}
 			return;
@@ -310,12 +298,7 @@ async function handleInvoke(context: TurnContext): Promise<void> {
 
 	// Handle shift pickup action
 	if (value?.action === "shift_pickup" && value?.shiftId) {
-		await handleShiftPickupAction(
-			context,
-			value.shiftId,
-			userResult.user.employeeId,
-			tenant,
-		);
+		await handleShiftPickupAction(context, value.shiftId, userResult.user.employeeId, tenant);
 	}
 
 	await context.sendActivity({
@@ -370,10 +353,7 @@ async function handleConversationUpdate(context: TurnContext): Promise<void> {
 					const conversationId = activity.conversation?.id;
 					const tenantResult = await resolveTenant(tenantId);
 					if (tenantResult.status === "configured" && conversationId) {
-						await deactivateConversation(
-							conversationId,
-							tenantResult.tenant.organizationId,
-						);
+						await deactivateConversation(conversationId, tenantResult.tenant.organizationId);
 					}
 				}
 			}
@@ -411,17 +391,17 @@ async function handleInstallationUpdate(context: TurnContext): Promise<void> {
 /**
  * Send setup instructions for unconfigured tenant
  */
-async function sendSetupInstructions(
-	context: TurnContext,
-	tenantId: string,
-): Promise<void> {
+async function sendSetupInstructions(context: TurnContext, tenantId: string): Promise<void> {
 	const appUrl = env.APP_URL || "https://z8-time.app";
 	const setupUrl = `${appUrl}/api/teams/setup?tenantId=${encodeURIComponent(tenantId)}`;
 	const t = await getBotTranslate(DEFAULT_LANGUAGE);
 
 	await context.sendActivity({
 		type: "message",
-		text: t("bot.static.setupRequired", "Welcome to Z8! To connect this Microsoft 365 organization to your Z8 account, an admin needs to complete the setup."),
+		text: t(
+			"bot.static.setupRequired",
+			"Welcome to Z8! To connect this Microsoft 365 organization to your Z8 account, an admin needs to complete the setup.",
+		),
 		attachments: [
 			{
 				contentType: "application/vnd.microsoft.card.adaptive",
@@ -438,7 +418,10 @@ async function sendSetupInstructions(
 						},
 						{
 							type: "TextBlock",
-							text: t("bot.static.setupBody", "Your organization needs to be connected to Z8. Click below to start the setup process."),
+							text: t(
+								"bot.static.setupBody",
+								"Your organization needs to be connected to Z8. Click below to start the setup process.",
+							),
 							wrap: true,
 						},
 						{
@@ -469,10 +452,7 @@ function removeBotMention(text: string, activity: Activity): string {
 	// Teams includes the mention in the text, we need to remove it
 	if (activity.entities) {
 		for (const entity of activity.entities) {
-			if (
-				entity.type === "mention" &&
-				entity.mentioned?.id === activity.recipient?.id
-			) {
+			if (entity.type === "mention" && entity.mentioned?.id === activity.recipient?.id) {
 				// Remove the mention text
 				const mentionText = entity.text || "";
 				return text.replace(mentionText, "").trim();
@@ -490,15 +470,30 @@ async function getErrorMessage(error: TeamsError): Promise<string> {
 
 	switch (error.code) {
 		case "TENANT_NOT_CONFIGURED":
-			return t("bot.static.errorTenantNotConfigured", "Your organization hasn't completed the Z8 setup yet. Please ask an admin to configure the integration.");
+			return t(
+				"bot.static.errorTenantNotConfigured",
+				"Your organization hasn't completed the Z8 setup yet. Please ask an admin to configure the integration.",
+			);
 		case "USER_NOT_LINKED":
-			return t("bot.static.errorUserNotLinked", "Your Teams account isn't linked to Z8. Make sure your Teams email matches your Z8 account.");
+			return t(
+				"bot.static.errorUserNotLinked",
+				"Your Teams account isn't linked to Z8. Make sure your Teams email matches your Z8 account.",
+			);
 		case "EMPLOYEE_NOT_FOUND":
-			return t("bot.static.errorEmployeeNotFound", "You don't have an employee record in Z8. Please contact your administrator.");
+			return t(
+				"bot.static.errorEmployeeNotFound",
+				"You don't have an employee record in Z8. Please contact your administrator.",
+			);
 		case "APPROVAL_NOT_FOUND":
-			return t("bot.static.errorApprovalNotFound", "This approval request no longer exists or has already been processed.");
+			return t(
+				"bot.static.errorApprovalNotFound",
+				"This approval request no longer exists or has already been processed.",
+			);
 		case "APPROVAL_ALREADY_RESOLVED":
-			return t("bot.static.errorApprovalResolved", "This approval has already been approved or rejected.");
+			return t(
+				"bot.static.errorApprovalResolved",
+				"This approval has already been approved or rejected.",
+			);
 		case "NOT_AUTHORIZED":
 			return t("bot.static.errorNotAuthorized", "You're not authorized to perform this action.");
 		default:

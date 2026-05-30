@@ -57,13 +57,13 @@ vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty,
 }));
 
+import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
 import {
 	buildAbsenceApprovalPolicyContext,
 	createAbsenceApprovalWorkflow,
 	formatAbsenceDateForEmail,
 } from "@/lib/approvals/server/absence-approvals";
-import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import type { ApprovalDbService, CurrentApprover } from "@/lib/approvals/server/types";
 import { EmailService } from "@/lib/effect/services/email.service";
 
@@ -84,7 +84,13 @@ function createPolicyResolutionDbService(policies: unknown[]) {
 				employeeGroup: { findMany: vi.fn().mockResolvedValue([]) },
 				employee: {
 					findMany: vi.fn().mockResolvedValue([
-						{ id: "emp-requester", userId: "user-requester", organizationId: "org-1", isActive: true, role: "employee" },
+						{
+							id: "emp-requester",
+							userId: "user-requester",
+							organizationId: "org-1",
+							isActive: true,
+							role: "employee",
+						},
 						{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
 					]),
 				},
@@ -165,7 +171,11 @@ function createAbsenceDecisionDbService(
 					endPeriod: absenceOverrides.endPeriod ?? "full_day",
 					status: "approved",
 					rejectionReason: null,
-					category: absenceOverrides.category ?? { name: "Vacation", type: "vacation", color: null },
+					category: absenceOverrides.category ?? {
+						name: "Vacation",
+						type: "vacation",
+						color: null,
+					},
 					employee: {
 						userId: "user-requester",
 						organizationId: "org-1",
@@ -228,10 +238,11 @@ describe("absence requester decision notifications", () => {
 						entityId: string,
 						currentEmployee: CurrentApprover,
 					) => Effect.Effect<unknown, unknown, unknown>,
-				) => Effect.gen(function* (_) {
-					yield* _(Effect.promise(() => dbService.db.transaction(async () => undefined)));
-					return yield* _(updateEntity(dbService, entityId, currentEmployee));
-				}),
+				) =>
+					Effect.gen(function* (_) {
+						yield* _(Effect.promise(() => dbService.db.transaction(async () => undefined)));
+						return yield* _(updateEntity(dbService, entityId, currentEmployee));
+					}),
 			),
 		}));
 		const { approveAbsenceWithCurrentApproverEffect } = await import(
@@ -249,9 +260,9 @@ describe("absence requester decision notifications", () => {
 			dirtyFromDate: "2026-05-11",
 		});
 		expect(dbService.db.transaction).toHaveBeenCalled();
-		expect(
-			vi.mocked(dbService.db.transaction).mock.invocationCallOrder[0],
-		).toBeLessThan(markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0]);
+		expect(vi.mocked(dbService.db.transaction).mock.invocationCallOrder[0]).toBeLessThan(
+			markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
+		);
 		vi.doUnmock("@/lib/approvals/server/shared");
 	});
 
@@ -300,7 +311,8 @@ describe("absence requester decision notifications", () => {
 			deletedAbsenceIds: ["vacation-deleted"],
 		});
 		vi.doMock("@/app/[locale]/(app)/absences/actions.canonical", async (importOriginal) => {
-			const actual = await importOriginal<typeof import("@/app/[locale]/(app)/absences/actions.canonical")>();
+			const actual =
+				await importOriginal<typeof import("@/app/[locale]/(app)/absences/actions.canonical")>();
 			return {
 				...actual,
 				syncCanonicalAbsenceApprovalState,
@@ -326,30 +338,31 @@ describe("absence requester decision notifications", () => {
 						entityId: string,
 						currentEmployee: CurrentApprover,
 					) => Effect.Effect<unknown, unknown, unknown>,
-				) => Effect.gen(function* (_) {
-					const result = yield* _(updateEntity(dbService, entityId, currentEmployee));
-					expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
-						absenceId: "absence-1",
-						employeeId: "emp-requester",
-						action: "create",
-					});
-					expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
-						absenceId: "vacation-updated",
-						employeeId: "emp-requester",
-						action: "update",
-					});
-					expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
-						absenceId: "vacation-created",
-						employeeId: "emp-requester",
-						action: "create",
-					});
-					expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
-						absenceId: "vacation-deleted",
-						employeeId: "emp-requester",
-						action: "delete",
-					});
-					return result;
-				}),
+				) =>
+					Effect.gen(function* (_) {
+						const result = yield* _(updateEntity(dbService, entityId, currentEmployee));
+						expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
+							absenceId: "absence-1",
+							employeeId: "emp-requester",
+							action: "create",
+						});
+						expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
+							absenceId: "vacation-updated",
+							employeeId: "emp-requester",
+							action: "update",
+						});
+						expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
+							absenceId: "vacation-created",
+							employeeId: "emp-requester",
+							action: "create",
+						});
+						expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
+							absenceId: "vacation-deleted",
+							employeeId: "emp-requester",
+							action: "delete",
+						});
+						return result;
+					}),
 			),
 		}));
 		const { approveAbsenceWithCurrentApproverEffect } = await import(
@@ -782,7 +795,9 @@ describe("absence approval policy resolution", () => {
 				name: "Broken absence policy",
 				isActive: true,
 				priority: 1,
-				conditions: [{ conditionType: "approval_type", operator: "equals", valueJson: "absence_entry" }],
+				conditions: [
+					{ conditionType: "approval_type", operator: "equals", valueJson: "absence_entry" },
+				],
 				stages: [
 					{
 						id: "stage-1",

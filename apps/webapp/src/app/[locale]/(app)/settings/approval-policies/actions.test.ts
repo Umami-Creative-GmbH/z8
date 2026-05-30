@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { normalizeApprovalPolicyInputForTest, previewApprovalPolicyForTest } from "./action-helpers";
+import {
+	normalizeApprovalPolicyInputForTest,
+	previewApprovalPolicyForTest,
+} from "./action-helpers";
 
 describe("approval policy settings actions", () => {
 	it("normalizes policy input and rejects active policies without stages", () => {
@@ -12,7 +15,10 @@ describe("approval policy settings actions", () => {
 			stages: [],
 		});
 
-		expect(result).toEqual({ success: false, error: "Active policies require at least one approval stage." });
+		expect(result).toEqual({
+			success: false,
+			error: "Active policies require at least one approval stage.",
+		});
 	});
 
 	it("normalizes valid policy input and trims text fields", () => {
@@ -22,7 +28,9 @@ describe("approval policy settings actions", () => {
 			isActive: true,
 			priority: 10,
 			conditions: [{ conditionType: "approval_type", operator: "equals", value: "absence_entry" }],
-			stages: [{ id: "stage_1", stepOrder: 1, label: "  Manager  ", approverType: "direct_manager" }],
+			stages: [
+				{ id: "stage_1", stepOrder: 1, label: "  Manager  ", approverType: "direct_manager" },
+			],
 		});
 
 		expect(result).toEqual({
@@ -32,7 +40,9 @@ describe("approval policy settings actions", () => {
 				description: "Requires manager review",
 				isActive: true,
 				priority: 10,
-				conditions: [{ conditionType: "approval_type", operator: "equals", value: "absence_entry" }],
+				conditions: [
+					{ conditionType: "approval_type", operator: "equals", value: "absence_entry" },
+				],
 				stages: [{ id: "stage_1", stepOrder: 1, label: "Manager", approverType: "direct_manager" }],
 			},
 		});
@@ -60,7 +70,9 @@ describe("approval policy settings actions", () => {
 					name: "Fallback absence chain",
 					isActive: true,
 					priority: 20,
-					conditions: [{ conditionType: "approval_type", operator: "equals", value: "absence_entry" }],
+					conditions: [
+						{ conditionType: "approval_type", operator: "equals", value: "absence_entry" },
+					],
 					stages: [{ id: "stage_2", stepOrder: 1, label: "Admin", approverType: "org_admin" }],
 				},
 				{
@@ -69,8 +81,18 @@ describe("approval policy settings actions", () => {
 					name: "Absence chain",
 					isActive: true,
 					priority: 1,
-					conditions: [{ conditionType: "approval_type", operator: "equals", value: "absence_entry" }],
-					stages: [{ id: "stage_1", stepOrder: 1, label: "Manager", approverType: "specific_employee", approverEmployeeId: "emp_manager" }],
+					conditions: [
+						{ conditionType: "approval_type", operator: "equals", value: "absence_entry" },
+					],
+					stages: [
+						{
+							id: "stage_1",
+							stepOrder: 1,
+							label: "Manager",
+							approverType: "specific_employee",
+							approverEmployeeId: "emp_manager",
+						},
+					],
 				},
 			],
 			employees: [

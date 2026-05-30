@@ -11,17 +11,13 @@
 
 import { and, eq, gte, inArray, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
-import { type NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry, icsFeed } from "@/db/schema";
 import { employee, team } from "@/db/schema/organization";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
-import {
-	generateICS,
-	mapAbsencesToICSEvents,
-} from "@/lib/calendar-sync/domain";
+import { generateICS, mapAbsencesToICSEvents } from "@/lib/calendar-sync/domain";
 import type { ICSFeedOptions } from "@/lib/calendar-sync/types";
 
 // ============================================
@@ -93,12 +89,7 @@ async function handleCalendarIcsFeed(
 				calendarDescription = `Absence calendar for ${emp.user.name}`;
 			}
 
-			absences = await fetchEmployeeAbsences(
-				feed.employeeId,
-				startDate,
-				endDate,
-				statusFilters,
-			);
+			absences = await fetchEmployeeAbsences(feed.employeeId, startDate, endDate, statusFilters);
 		} else if (feed.feedType === "team" && feed.teamId) {
 			// Team feed: fetch absences for all team members
 			const teamRecord = await db.query.team.findFirst({
@@ -111,12 +102,7 @@ async function handleCalendarIcsFeed(
 				includeEmployeeName = true;
 			}
 
-			absences = await fetchTeamAbsences(
-				feed.teamId,
-				startDate,
-				endDate,
-				statusFilters,
-			);
+			absences = await fetchTeamAbsences(feed.teamId, startDate, endDate, statusFilters);
 		}
 
 		// 6. Map absences to ICS events
@@ -182,10 +168,7 @@ async function fetchEmployeeAbsences(
 				inArray(absenceEntry.status, statuses),
 				or(
 					// Absence overlaps with our date range
-					and(
-						lte(absenceEntry.startDate, endDate),
-						gte(absenceEntry.endDate, startDate),
-					),
+					and(lte(absenceEntry.startDate, endDate), gte(absenceEntry.endDate, startDate)),
 				),
 			),
 		);
@@ -247,12 +230,7 @@ async function fetchTeamAbsences(
 			and(
 				inArray(absenceEntry.employeeId, employeeIds),
 				inArray(absenceEntry.status, statuses),
-				or(
-					and(
-						lte(absenceEntry.startDate, endDate),
-						gte(absenceEntry.endDate, startDate),
-					),
-				),
+				or(and(lte(absenceEntry.startDate, endDate), gte(absenceEntry.endDate, startDate))),
 			),
 		);
 

@@ -18,8 +18,8 @@ import {
 	getImportReviewSummary,
 	listImportReviewRows,
 	listRejectedImportReviewRowsForExport,
-	recordRejectedExport,
 	readyCommitJobsFromJobs,
+	recordRejectedExport,
 	saveImportJobSecret,
 	updateImportBatchStatus,
 } from "@/lib/import-review/repository";
@@ -235,10 +235,7 @@ function validateStartImportReviewScanInput(input: unknown): ValidatedStartImpor
 		throw new Error("Organization ID is required");
 	}
 
-	if (
-		typeof input.provider !== "string" ||
-		!isImportProvider(input.provider)
-	) {
+	if (typeof input.provider !== "string" || !isImportProvider(input.provider)) {
 		throw new Error("Invalid import provider");
 	}
 
@@ -320,8 +317,7 @@ function validateStartImportReviewScanInput(input: unknown): ValidatedStartImpor
 
 	if (
 		input.entityTypes.some(
-			(entityType) =>
-				typeof entityType !== "string" || !isImportEntityType(entityType),
+			(entityType) => typeof entityType !== "string" || !isImportEntityType(entityType),
 		)
 	) {
 		throw new Error("Invalid import entity type");
@@ -349,7 +345,9 @@ async function validateMappedEmployeeOwnership(
 	const validEmployees = await db
 		.select({ id: employee.id })
 		.from(employee)
-		.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, mappedEmployeeIds)));
+		.where(
+			and(eq(employee.organizationId, organizationId), inArray(employee.id, mappedEmployeeIds)),
+		);
 
 	const validIds = new Set(validEmployees.map((entry) => entry.id));
 	const invalidIds = mappedEmployeeIds.filter((id) => !validIds.has(id));

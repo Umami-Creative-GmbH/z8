@@ -15,8 +15,14 @@ import {
 	syncCanonicalWorkCorrection,
 } from "@/lib/approvals/server/time-correction-approvals";
 
+export type {
+	ApprovalDecisionAction,
+	ApprovalType,
+	BulkDecisionFailure,
+	BulkDecisionResult,
+	BulkDecisionSuccess,
+} from "@/lib/approvals/domain/types";
 export type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "@/lib/approvals/server/types";
-export type { ApprovalDecisionAction, ApprovalType, BulkDecisionFailure, BulkDecisionResult, BulkDecisionSuccess } from "@/lib/approvals/domain/types";
 export { syncCanonicalWorkCorrection };
 
 export async function approveAbsence(...args: Parameters<typeof approveAbsenceAction>) {
@@ -33,9 +39,7 @@ export async function approveTimeCorrection(
 	return approveTimeCorrectionAction(...args);
 }
 
-export async function rejectTimeCorrection(
-	...args: Parameters<typeof rejectTimeCorrectionAction>
-) {
+export async function rejectTimeCorrection(...args: Parameters<typeof rejectTimeCorrectionAction>) {
 	return rejectTimeCorrectionAction(...args);
 }
 

@@ -69,9 +69,7 @@ describe("getComplianceCommandCenterData", () => {
 
 	it("falls back to an unavailable card when one section loader throws", async () => {
 		const { getAccessControlsSection } = await import("./sections/access-controls");
-		vi.mocked(getAccessControlsSection).mockRejectedValueOnce(
-			new Error("audit log offline"),
-		);
+		vi.mocked(getAccessControlsSection).mockRejectedValueOnce(new Error("audit log offline"));
 
 		const data = await getComplianceCommandCenterData("org-1");
 

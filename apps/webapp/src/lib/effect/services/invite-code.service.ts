@@ -1,24 +1,27 @@
-import { and, desc, eq, gte, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, type SQL, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { nanoid } from "nanoid";
+import { member, user } from "@/db/auth-schema";
 import {
+	type inviteCode as InviteCodeTable,
+	type inviteCodeUsage as InviteCodeUsageTable,
 	inviteCode,
 	inviteCodeUsage,
 	memberApproval,
-	type inviteCode as InviteCodeTable,
-	type inviteCodeUsage as InviteCodeUsageTable,
-	type memberApproval as MemberApprovalTable,
+	team,
 } from "@/db/schema";
-import { member, organization, user } from "@/db/auth-schema";
-import { team } from "@/db/schema";
 import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
-import { type DatabaseError, NotFoundError, ValidationError, AuthorizationError } from "../errors";
+import {
+	type AuthorizationError,
+	type DatabaseError,
+	NotFoundError,
+	ValidationError,
+} from "../errors";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
 type InviteCode = typeof InviteCodeTable.$inferSelect;
 type InviteCodeUsage = typeof InviteCodeUsageTable.$inferSelect;
-type MemberApproval = typeof MemberApprovalTable.$inferSelect;
 type InviteCodeStatus = "active" | "paused" | "expired" | "archived";
 
 export interface CreateInviteCodeInput {
@@ -75,8 +78,8 @@ export interface ValidateInviteCodeResult {
 export interface UseInviteCodeInput {
 	code: string;
 	userId: string;
-	ipAddress?: string;
-	userAgent?: string;
+	ipAddress?: string | null;
+	userAgent?: string | null;
 }
 
 export interface UseInviteCodeResult {
@@ -234,11 +237,12 @@ export const InviteCodeServiceLive = Layer.effect(
 
 					// Validate team exists if provided
 					if (input.defaultTeamId) {
+						const defaultTeamId = input.defaultTeamId;
 						const teamRecord = yield* _(
 							dbService.query("validateTeam", async () => {
 								return await dbService.db.query.team.findFirst({
 									where: and(
-										eq(team.id, input.defaultTeamId!),
+										eq(team.id, defaultTeamId),
 										eq(team.organizationId, input.organizationId),
 									),
 								});
@@ -293,7 +297,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					);
 
 					if (!existing) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "Invite code not found",
@@ -304,14 +308,17 @@ export const InviteCodeServiceLive = Layer.effect(
 						);
 					}
 
+					const existingInviteCode = existing;
+
 					// Validate team if changing
 					if (input.defaultTeamId !== undefined && input.defaultTeamId !== null) {
+						const defaultTeamId = input.defaultTeamId;
 						const teamRecord = yield* _(
 							dbService.query("validateTeam", async () => {
 								return await dbService.db.query.team.findFirst({
 									where: and(
-										eq(team.id, input.defaultTeamId!),
-										eq(team.organizationId, existing!.organizationId),
+										eq(team.id, defaultTeamId),
+										eq(team.organizationId, existingInviteCode.organizationId),
 									),
 								});
 							}),
@@ -335,10 +342,18 @@ export const InviteCodeServiceLive = Layer.effect(
 								.update(inviteCode)
 								.set({
 									...(input.label !== undefined && { label: input.label }),
-									...(input.description !== undefined && { description: input.description }),
-									...(input.maxUses !== undefined && { maxUses: input.maxUses }),
-									...(input.expiresAt !== undefined && { expiresAt: input.expiresAt }),
-									...(input.defaultTeamId !== undefined && { defaultTeamId: input.defaultTeamId }),
+									...(input.description !== undefined && {
+										description: input.description,
+									}),
+									...(input.maxUses !== undefined && {
+										maxUses: input.maxUses,
+									}),
+									...(input.expiresAt !== undefined && {
+										expiresAt: input.expiresAt,
+									}),
+									...(input.defaultTeamId !== undefined && {
+										defaultTeamId: input.defaultTeamId,
+									}),
 									...(input.requiresApproval !== undefined && {
 										requiresApproval: input.requiresApproval,
 									}),
@@ -365,7 +380,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					);
 
 					if (!existing) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "Invite code not found",
@@ -453,22 +468,19 @@ export const InviteCodeServiceLive = Layer.effect(
 				Effect.gen(function* (_) {
 					const results = yield* _(
 						dbService.query("listInviteCodes", async () => {
-							const conditions = [eq(inviteCode.organizationId, query.organizationId)];
-
-							if (query.status) {
-								conditions.push(eq(inviteCode.status, query.status));
-							} else if (!query.includeArchived) {
-								conditions.push(
-									or(
-										eq(inviteCode.status, "active"),
-										eq(inviteCode.status, "paused"),
-										eq(inviteCode.status, "expired"),
-									)!,
-								);
-							}
+							const baseCondition = eq(inviteCode.organizationId, query.organizationId);
+							const whereCondition: SQL = query.status
+								? ((and(baseCondition, eq(inviteCode.status, query.status)) ??
+										baseCondition) as SQL)
+								: !query.includeArchived
+									? ((and(
+											baseCondition,
+											inArray(inviteCode.status, ["active", "paused", "expired"]),
+										) ?? baseCondition) as SQL)
+									: baseCondition;
 
 							return await dbService.db.query.inviteCode.findMany({
-								where: and(...conditions),
+								where: whereCondition,
 								with: {
 									organization: {
 										columns: {
@@ -524,7 +536,11 @@ export const InviteCodeServiceLive = Layer.effect(
 
 					const { usable, reason } = isCodeUsable(result);
 					if (!usable) {
-						return { valid: false, inviteCode: result as InviteCodeWithRelations, error: reason };
+						return {
+							valid: false,
+							inviteCode: result as InviteCodeWithRelations,
+							error: reason,
+						};
 					}
 
 					return { valid: true, inviteCode: result as InviteCodeWithRelations };
@@ -551,7 +567,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					);
 
 					if (!validationResult) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "Invalid invite code",
@@ -562,7 +578,7 @@ export const InviteCodeServiceLive = Layer.effect(
 						);
 					}
 
-					const inviteCodeRecord = validationResult!;
+					const inviteCodeRecord = validationResult;
 					const { usable, reason } = isCodeUsable(inviteCodeRecord);
 
 					if (!usable) {
@@ -586,7 +602,10 @@ export const InviteCodeServiceLive = Layer.effect(
 							},
 							catch: (error) =>
 								new ValidationError({
-									message: error instanceof Error ? error.message : "Invite code redemption is not allowed",
+									message:
+										error instanceof Error
+											? error.message
+											: "Invite code redemption is not allowed",
 									field: "domainRestrictionEnabled",
 								}),
 						}),
@@ -686,7 +705,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					);
 
 					if (!existing) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new NotFoundError({
 									message: "Invite code not found",
@@ -752,7 +771,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					);
 
 					if (!validationResult) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new ValidationError({
 									message: "Invalid invite code",
@@ -762,7 +781,7 @@ export const InviteCodeServiceLive = Layer.effect(
 						);
 					}
 
-					const { usable, reason } = isCodeUsable(validationResult!);
+					const { usable, reason } = isCodeUsable(validationResult);
 					if (!usable) {
 						yield* _(
 							Effect.fail(
@@ -797,7 +816,7 @@ export const InviteCodeServiceLive = Layer.effect(
 						}),
 					);
 
-					if (!userRecord || !userRecord.pendingInviteCode) {
+					if (!userRecord?.pendingInviteCode) {
 						return null;
 					}
 

@@ -39,15 +39,15 @@ vi.mock("@/lib/travel-expenses/attachment-validation", () => ({
 }));
 
 vi.mock("@aws-sdk/client-s3", () => ({
-	GetObjectCommand: vi.fn().mockImplementation(function (input) {
+	GetObjectCommand: vi.fn().mockImplementation(function GetObjectCommand(input) {
 		mockState.getCommand(input);
 		return { input, type: "get" };
 	}),
-	DeleteObjectCommand: vi.fn().mockImplementation(function (input) {
+	DeleteObjectCommand: vi.fn().mockImplementation(function DeleteObjectCommand(input) {
 		mockState.deleteCommand(input);
 		return { input, type: "delete" };
 	}),
-	PutObjectCommand: vi.fn().mockImplementation(function (input) {
+	PutObjectCommand: vi.fn().mockImplementation(function PutObjectCommand(input) {
 		return { input, type: "put" };
 	}),
 }));
@@ -90,18 +90,25 @@ const { POST } = await import("./route");
 describe("travel expense upload processing", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.claimFindFirst.mockResolvedValue({ id: "claim_1", organizationId: "org_1" });
+		mockState.claimFindFirst.mockResolvedValue({
+			id: "claim_1",
+			organizationId: "org_1",
+		});
 		mockState.publicSend.mockImplementation((command) => {
 			if (command.type === "get") {
 				return Promise.resolve({
 					ContentLength: 8,
-					Body: { transformToByteArray: () => Promise.resolve(new Uint8Array([1, 2, 3, 4])) },
+					Body: {
+						transformToByteArray: () => Promise.resolve(new Uint8Array([1, 2, 3, 4])),
+					},
 				});
 			}
 
 			return Promise.resolve({});
 		});
-		mockState.uploadPrivateObject.mockResolvedValue({ bucket: "private-bucket" });
+		mockState.uploadPrivateObject.mockResolvedValue({
+			bucket: "private-bucket",
+		});
 		mockState.returning.mockResolvedValue([
 			{
 				id: "attachment_1",

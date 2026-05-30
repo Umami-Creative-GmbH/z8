@@ -181,8 +181,14 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		workPeriods: WorkPeriodData[],
 		workCategoryMappings: Map<string, WageTypeMapping>,
 		config: LexwareLohnConfig,
-	): Map<string, Map<string, Map<string, { value: number; hours: number; hourlyRate: number | null }>>> {
-		const result = new Map<string, Map<string, Map<string, { value: number; hours: number; hourlyRate: number | null }>>>();
+	): Map<
+		string,
+		Map<string, Map<string, { value: number; hours: number; hourlyRate: number | null }>>
+	> {
+		const result = new Map<
+			string,
+			Map<string, Map<string, { value: number; hours: number; hourlyRate: number | null }>>
+		>();
 
 		for (const period of workPeriods) {
 			if (!period.durationMinutes || !period.endTime) continue;
@@ -234,7 +240,10 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 	private addAbsenceData(
 		absences: AbsenceData[],
 		absenceCategoryMappings: Map<string, WageTypeMapping>,
-		aggregatedData: Map<string, Map<string, Map<string, { value: number; hours: number; hourlyRate: number | null }>>>,
+		aggregatedData: Map<
+			string,
+			Map<string, Map<string, { value: number; hours: number; hourlyRate: number | null }>>
+		>,
 		config: LexwareLohnConfig,
 	): void {
 		for (const absence of absences) {
@@ -316,13 +325,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 	 * Generate CSV header row
 	 */
 	private generateHeaderRow(config: LexwareLohnConfig): string {
-		const headers = [
-			"Jahr",
-			"Monat",
-			"Personalnummer",
-			"Lohnartennummer",
-			"Wert",
-		];
+		const headers = ["Jahr", "Monat", "Personalnummer", "Lohnartennummer", "Wert"];
 
 		if (config.includeStunden) {
 			headers.push("Stunden");
@@ -425,9 +428,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 	 */
 	private generateFileName(dateRange: { start: DateTime | null; end: DateTime | null }): string {
 		const now = DateTime.now();
-		const dateStr = dateRange.start
-			? dateRange.start.toFormat("yyyy-MM")
-			: now.toFormat("yyyy-MM");
+		const dateStr = dateRange.start ? dateRange.start.toFormat("yyyy-MM") : now.toFormat("yyyy-MM");
 		return `lexware_lohn_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
 	}
 }

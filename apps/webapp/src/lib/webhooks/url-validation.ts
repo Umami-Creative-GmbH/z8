@@ -22,14 +22,13 @@ function parseIPv4ToNumber(ip: string): number | null {
 			if (p.startsWith("0") && p.length > 1) return parseInt(p, 8);
 			return parseInt(p, 10);
 		});
-		if (nums.some((n) => isNaN(n) || n < 0 || n > 255)) return null;
+		if (nums.some((n) => Number.isNaN(n) || n < 0 || n > 255)) return null;
 		return ((nums[0]! << 24) | (nums[1]! << 16) | (nums[2]! << 8) | nums[3]!) >>> 0;
 	}
 	// Single decimal/hex number (e.g., 2130706433 or 0x7f000001)
 	if (parts.length === 1) {
-		const num =
-			ip.startsWith("0x") || ip.startsWith("0X") ? parseInt(ip, 16) : parseInt(ip, 10);
-		if (!isNaN(num) && num >= 0 && num <= 0xffffffff) return num >>> 0;
+		const num = ip.startsWith("0x") || ip.startsWith("0X") ? parseInt(ip, 16) : parseInt(ip, 10);
+		if (!Number.isNaN(num) && num >= 0 && num <= 0xffffffff) return num >>> 0;
 	}
 	return null;
 }
@@ -84,11 +83,7 @@ export function isPrivateIP(hostname: string): boolean {
 	}
 
 	// Common cloud metadata hostnames
-	const metadataHostnames = [
-		"metadata.google.internal",
-		"metadata.goog",
-		"instance-data",
-	];
+	const metadataHostnames = ["metadata.google.internal", "metadata.goog", "instance-data"];
 	if (metadataHostnames.includes(hostname.toLowerCase())) {
 		return true;
 	}

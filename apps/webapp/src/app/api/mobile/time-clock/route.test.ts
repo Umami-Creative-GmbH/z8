@@ -82,6 +82,48 @@ describe("POST /api/mobile/time-clock", () => {
 		expect(mockState.clockOut).not.toHaveBeenCalled();
 	});
 
+	it("passes explicit browser timezone to clock-in context", async () => {
+		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+
+		const response = await POST(
+			new Request("https://app.example.com/api/mobile/time-clock", {
+				method: "POST",
+				body: JSON.stringify({
+					action: "clock_in",
+					workLocationType: "remote",
+					browserTimezone: "Europe/Berlin",
+				}),
+				headers: {
+					"content-type": "application/json",
+				},
+			}),
+		);
+
+		expect(response.status).toBe(200);
+		expect(mockState.clockIn).toHaveBeenCalledWith("remote", { browserTimezone: "Europe/Berlin" });
+	});
+
+	it("does not treat generic timezone as browser provenance", async () => {
+		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+
+		const response = await POST(
+			new Request("https://app.example.com/api/mobile/time-clock", {
+				method: "POST",
+				body: JSON.stringify({
+					action: "clock_in",
+					workLocationType: "remote",
+					timezone: "Europe/Berlin",
+				}),
+				headers: {
+					"content-type": "application/json",
+				},
+			}),
+		);
+
+		expect(response.status).toBe(200);
+		expect(mockState.clockIn).toHaveBeenCalledWith("remote");
+	});
+
 	it("rejects obsolete field work location when clocking in", async () => {
 		const response = await POST(
 			new Request("https://app.example.com/api/mobile/time-clock", {

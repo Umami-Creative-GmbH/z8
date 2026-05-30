@@ -140,7 +140,10 @@ export function getNamespacesForRoute(pathname: string): Namespace[] {
  * Dynamic import functions for each namespace and language.
  * Tolgee CLI owns the generated JSON files after this manual split.
  */
-const namespaceImports: Record<Namespace, Record<string, () => Promise<unknown>>> = Object.fromEntries(
+const namespaceImports: Record<
+	Namespace,
+	Record<string, () => Promise<unknown>>
+> = Object.fromEntries(
 	ALL_NAMESPACES.map((namespace) => [
 		namespace,
 		Object.fromEntries(
@@ -213,7 +216,9 @@ export async function loadRouteTranslations(
 // Tolgee's expected translation data type
 type TreeTranslationsData = { [key: string]: TreeTranslationsData | string };
 
-export function mergeTreeTranslations(items: readonly TreeTranslationsData[]): TreeTranslationsData {
+export function mergeTreeTranslations(
+	items: readonly TreeTranslationsData[],
+): TreeTranslationsData {
 	const merged: TreeTranslationsData = {};
 
 	for (const item of items) {

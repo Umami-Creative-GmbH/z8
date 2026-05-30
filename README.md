@@ -2,7 +2,7 @@ Deutsch | [English](README.en.md)
 
 ![./docs/z8-banner.png](./docs/z8-banner.png)
 
-# Z8 - Workforce Management für auditfähige Betriebsabläufe
+# Z8 - Modern Workforce Management
 
 Z8 ist eine Workforce-Management-Plattform für Organisationen, die zuverlässige Zeiterfassung, prüfungssichere Unterlagen und klare operative Kontrolle im Rahmen des deutschen Arbeitsrechts und der GoBD-Compliance (*Grundsätze zur ordnungsmäßigen Führung und Aufbewahrung von Büchern*) benötigen.
 

@@ -33,7 +33,9 @@ export function DashboardCustomizeMenu({
 	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
 	const hiddenWidgetSet = new Set(hiddenWidgets);
-	const visibleIndexByWidget = new Map(visibleWidgetOrder.map((widgetId, index) => [widgetId, index]));
+	const visibleIndexByWidget = new Map(
+		visibleWidgetOrder.map((widgetId, index) => [widgetId, index]),
+	);
 
 	function moveWidget(widgetId: WidgetId, direction: "up" | "down") {
 		const currentIndex = visibleIndexByWidget.get(widgetId);
@@ -47,7 +49,10 @@ export function DashboardCustomizeMenu({
 		}
 
 		const nextOrder = [...visibleWidgetOrder];
-		[nextOrder[currentIndex], nextOrder[nextIndex]] = [nextOrder[nextIndex], nextOrder[currentIndex]];
+		[nextOrder[currentIndex], nextOrder[nextIndex]] = [
+			nextOrder[nextIndex],
+			nextOrder[currentIndex],
+		];
 		onReorder(nextOrder);
 	}
 

@@ -15,10 +15,10 @@ import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { discordBotConfig } from "@/db/schema";
+import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { createLogger } from "@/lib/logger";
 import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
-import { env } from "@/env";
 
 const logger = createLogger("DiscordSetup");
 
@@ -37,8 +37,7 @@ export async function POST(request: NextRequest) {
 		if (!botToken || !applicationId || !publicKey || !organizationId) {
 			return NextResponse.json(
 				{
-					error:
-						"botToken, applicationId, publicKey, and organizationId are required",
+					error: "botToken, applicationId, publicKey, and organizationId are required",
 				},
 				{ status: 400 },
 			);
@@ -48,12 +47,7 @@ export async function POST(request: NextRequest) {
 		const [membership] = await db
 			.select()
 			.from(member)
-			.where(
-				and(
-					eq(member.userId, session.user.id),
-					eq(member.organizationId, organizationId),
-				),
-			)
+			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
 			.limit(1);
 
 		if (!membership || (membership.role !== "admin" && membership.role !== "owner")) {
@@ -61,16 +55,13 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Verify the bot token with Discord
-		const { getApplicationInfo, registerDiscordSlashCommands } = await import(
-			"@/lib/discord"
-		);
+		const { getApplicationInfo, registerDiscordSlashCommands } = await import("@/lib/discord");
 
 		const appInfo = await getApplicationInfo(botToken);
 		if (!appInfo) {
 			return NextResponse.json(
 				{
-					error:
-						"Invalid bot token. Please check your Discord bot credentials.",
+					error: "Invalid bot token. Please check your Discord bot credentials.",
 				},
 				{ status: 400 },
 			);
@@ -121,10 +112,7 @@ export async function POST(request: NextRequest) {
 			await registerDiscordSlashCommands(botToken, applicationId);
 			commandsRegistered = true;
 		} catch (error) {
-			logger.warn(
-				{ error, organizationId },
-				"Failed to register slash commands",
-			);
+			logger.warn({ error, organizationId }, "Failed to register slash commands");
 		}
 
 		// Build the interactions endpoint URL
@@ -148,10 +136,7 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		logger.error({ error }, "Discord setup failed");
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }
 
@@ -168,22 +153,14 @@ export async function DELETE(request: NextRequest) {
 		const organizationId = searchParams.get("organizationId");
 
 		if (!organizationId) {
-			return NextResponse.json(
-				{ error: "organizationId is required" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
 		}
 
 		// Verify user is an admin member of this organization
 		const [membership] = await db
 			.select()
 			.from(member)
-			.where(
-				and(
-					eq(member.userId, session.user.id),
-					eq(member.organizationId, organizationId),
-				),
-			)
+			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
 			.limit(1);
 
 		if (!membership || (membership.role !== "admin" && membership.role !== "owner")) {
@@ -213,9 +190,6 @@ export async function DELETE(request: NextRequest) {
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		logger.error({ error }, "Discord disconnect failed");
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

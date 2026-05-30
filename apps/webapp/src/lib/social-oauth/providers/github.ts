@@ -1,5 +1,5 @@
 import { createLogger } from "@/lib/logger";
-import type { OAuthCredentials, OAuthProviderImpl, OAuthTokens, OAuthUserInfo } from "../types";
+import type { OAuthProviderImpl, OAuthTokens, OAuthUserInfo } from "../types";
 
 const logger = createLogger("SocialOAuth:GitHub");
 

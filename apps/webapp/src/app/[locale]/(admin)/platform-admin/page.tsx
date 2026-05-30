@@ -36,35 +36,35 @@ interface StatCardProps {
 	variant?: "default" | "warning" | "destructive" | "success";
 }
 
+const STAT_CARD_VARIANT_STYLES = {
+	default: "hover:border-border",
+	warning: "border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50",
+	destructive: "border-red-500/30 bg-red-500/5 hover:border-red-500/50",
+	success: "border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/50",
+};
+
+const STAT_CARD_ICON_STYLES = {
+	default: "bg-muted text-muted-foreground",
+	warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+	destructive: "bg-red-500/10 text-red-600 dark:text-red-400",
+	success: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+};
+
 function StatCard({ title, value, description, icon, href, variant = "default" }: StatCardProps) {
-	const variantStyles = {
-		default: "hover:border-border",
-		warning: "border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50",
-		destructive: "border-red-500/30 bg-red-500/5 hover:border-red-500/50",
-		success: "border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/50",
-	};
-
-	const iconStyles = {
-		default: "bg-muted text-muted-foreground",
-		warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-		destructive: "bg-red-500/10 text-red-600 dark:text-red-400",
-		success: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-	};
-
 	return (
 		<Link href={href} className="group block">
 			<Card
 				className={cn(
 					"relative overflow-hidden transition-all duration-200",
 					"hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20",
-					variantStyles[variant],
+					STAT_CARD_VARIANT_STYLES[variant],
 				)}
 			>
 				<CardHeader className="flex flex-row items-start justify-between gap-0 pb-3">
 					<div
 						className={cn(
 							"flex size-10 items-center justify-center rounded-lg transition-transform group-hover:scale-105",
-							iconStyles[variant],
+							STAT_CARD_ICON_STYLES[variant],
 						)}
 					>
 						{icon}

@@ -24,11 +24,15 @@ import {
 } from "@/lib/effect/services/billing/billing-enforcement.service";
 import { createLogger } from "@/lib/logger";
 import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
+import { getUserTimezone } from "@/lib/user-preferences/timezone-server";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { DOMAIN_HEADERS } from "@/proxy";
 
 const logger = createLogger("app-layout");
-const billingDisabledAccess: BillingAccessResult = { canAccess: true, state: "disabled" };
+const billingDisabledAccess: BillingAccessResult = {
+	canAccess: true,
+	state: "disabled",
+};
 const billingCheckFailedAccess: BillingAccessResult = {
 	canAccess: false,
 	state: "suspended",
@@ -51,25 +55,22 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 		// Session cookie exists but is invalid - redirect to session-expired handler
 		// which properly clears cookies before redirecting to sign-in.
 		// This prevents redirect loops when proxy sees cookie but session is invalid.
-		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/" + locale;
-		const sessionExpiredUrl =
-			"/api/auth/session-expired?locale=" +
-			locale +
-			"&callbackUrl=" +
-			encodeURIComponent(pathname);
+		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
+		const sessionExpiredUrl = `/api/auth/session-expired?locale=${locale}&callbackUrl=${encodeURIComponent(pathname)}`;
 		redirect(sessionExpiredUrl);
 	}
 
 	// Sync DB locale preference on load (null = user hasn't set preference, respect browser/cookie)
-	const [dbLocale, weekStartDay, timeFormat] = await Promise.all([
+	const [dbLocale, weekStartDay, timeFormat, timezone] = await Promise.all([
 		getUserLocaleRaw(session.user.id),
 		getUserWeekStartDay(session.user.id),
 		getUserTimeFormat(session.user.id),
+		getUserTimezone(session.user.id),
 	]);
 	if (dbLocale && dbLocale !== locale) {
 		// User has a saved locale preference that differs from current URL — redirect
-		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/" + locale;
-		const newPath = pathname.replace("/" + locale, "/" + dbLocale);
+		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
+		const newPath = pathname.replace(`/${locale}`, `/${dbLocale}`);
 		redirect(newPath);
 	}
 
@@ -104,15 +105,15 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 					}),
 				])
 			: [null, null];
-	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/" + locale;
+	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
 	const isBillingRecoveryPath =
-		pathname === "/" + locale + "/settings/billing" ||
-		pathname.startsWith("/" + locale + "/settings/billing/") ||
-		pathname === "/" + locale + "/billing/suspended" ||
-		pathname.startsWith("/" + locale + "/billing/suspended/");
+		pathname === `/${locale}/settings/billing` ||
+		pathname.startsWith(`/${locale}/settings/billing/`) ||
+		pathname === `/${locale}/billing/suspended` ||
+		pathname.startsWith(`/${locale}/billing/suspended/`);
 
 	if (billingAccess.canAccess === false && !isBillingRecoveryPath) {
-		redirect("/" + locale + "/billing/suspended");
+		redirect(`/${locale}/billing/suspended`);
 	}
 
 	const trialDaysRemaining =
@@ -130,7 +131,11 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 
 	return (
 		<PushPermissionProvider>
-			<UserPreferencesProvider weekStartDay={weekStartDay} timeFormat={timeFormat}>
+			<UserPreferencesProvider
+				weekStartDay={weekStartDay}
+				timeFormat={timeFormat}
+				timezone={timezone}
+			>
 				<OrganizationSettingsProvider>
 					<SidebarProvider
 						style={
@@ -140,10 +145,7 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 							} as React.CSSProperties
 						}
 					>
-						<ServerAppSidebar
-							variant="inset"
-							showWorksCouncilNav={Boolean(activeOrganizationId)}
-						/>
+						<ServerAppSidebar variant="inset" showWorksCouncilNav={Boolean(activeOrganizationId)} />
 						<SidebarInset>
 							<SiteHeader />
 							{showTrialBanner ? (

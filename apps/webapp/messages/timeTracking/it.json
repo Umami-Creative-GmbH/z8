@@ -81,7 +81,8 @@
         "created": "Voce di tempo creata con successo",
         "pendingApproval": "Voce di tempo inviata per l'approvazione del manager"
       },
-      "title": "Aggiungi voce di tempo manuale"
+      "title": "Aggiungi voce di tempo manuale",
+      "titleForEmployee": "Aggiungi inserimento manuale del tempo per {employee}"
     },
     "noCategory": "Nessuna categoria (100%)",
     "noProject": "Nessun progetto",

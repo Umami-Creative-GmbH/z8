@@ -1,5 +1,5 @@
-import { connection } from "next/server";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { ShiftTemplateManagement } from "@/components/settings/shift-template-management";
 import {
 	getSchedulingSettingsAccessContext,
@@ -11,7 +11,7 @@ export default async function ShiftTemplatesPage() {
 
 	const accessContext = await getSchedulingSettingsAccessContext();
 
-	if (!accessContext || !accessContext.canAccessShiftTemplates) {
+	if (!accessContext?.canAccessShiftTemplates) {
 		redirect("/settings");
 	}
 

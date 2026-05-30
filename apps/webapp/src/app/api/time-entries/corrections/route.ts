@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee, timeEntry } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -9,6 +9,7 @@ import { canApproveFor, getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
+import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 
 /**
  * POST /api/time-entries/corrections
@@ -112,6 +113,12 @@ export async function POST(request: NextRequest) {
 		const ipAddress =
 			headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
 		const deviceInfo = headersList.get("user-agent") || "unknown";
+		const correctionTimestamp = new Date(timestamp);
+		const timezoneCapture = resolveFallbackTimezoneCapture({
+			timestamp: correctionTimestamp,
+			timezone: entryToCorrect.timezone ?? "UTC",
+			timezoneSource: "user_setting",
+		});
 
 		const effect = Effect.gen(function* (_) {
 			const timeEntryService = yield* _(TimeEntryService);
@@ -120,11 +127,12 @@ export async function POST(request: NextRequest) {
 					employeeId: entryToCorrect.employeeId,
 					organizationId: currentEmployee.organizationId,
 					replacesEntryId,
-					timestamp: new Date(timestamp),
+					timestamp: correctionTimestamp,
 					createdBy: session.user.id,
 					notes,
 					ipAddress,
 					deviceInfo,
+					...timezoneCapture,
 				}),
 			);
 		});

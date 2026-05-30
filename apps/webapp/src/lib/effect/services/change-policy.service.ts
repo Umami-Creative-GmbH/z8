@@ -1,11 +1,11 @@
 import { and, desc, eq, isNull, lte, or } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { Context, Effect, Layer } from "effect";
+import { DateTime } from "luxon";
 import {
+	type changePolicyAssignment as ChangePolicyAssignmentTable,
+	type changePolicy as ChangePolicyTable,
 	changePolicy,
 	changePolicyAssignment,
-	type changePolicy as ChangePolicyTable,
-	type changePolicyAssignment as ChangePolicyAssignmentTable,
 	employee,
 	employeeManagers,
 } from "@/db/schema";
@@ -34,8 +34,14 @@ export interface ResolvedChangePolicy {
  * Edit capability result - determines what the user can do
  */
 export type EditCapability =
-	| { type: "direct"; reason: "within_self_service" | "no_policy" | "trust_mode" }
-	| { type: "approval_required"; reason: "within_approval_window" | "zero_day_policy" }
+	| {
+			type: "direct";
+			reason: "within_self_service" | "no_policy" | "trust_mode";
+	  }
+	| {
+			type: "approval_required";
+			reason: "within_approval_window" | "zero_day_policy";
+	  }
 	| { type: "forbidden"; reason: "beyond_approval_window"; daysBack: number };
 
 /**
@@ -159,7 +165,11 @@ export class ChangePolicyService extends Context.Tag("ChangePolicyService")<
 				ChangePolicyAssignment & {
 					policy: ChangePolicy;
 					team?: { id: string; name: string } | null;
-					employee?: { id: string; firstName: string | null; lastName: string | null } | null;
+					employee?: {
+						id: string;
+						firstName: string | null;
+						lastName: string | null;
+					} | null;
 				}
 			>,
 			DatabaseError
@@ -180,10 +190,12 @@ export const ChangePolicyServiceLive = Layer.effect(
 			timezone: string,
 			currentTime: Date = new Date(),
 		): number => {
-			const workPeriodDate = DateTime.fromJSDate(workPeriodEndTime, { zone: timezone }).startOf(
-				"day",
-			);
-			const currentDate = DateTime.fromJSDate(currentTime, { zone: timezone }).startOf("day");
+			const workPeriodDate = DateTime.fromJSDate(workPeriodEndTime, {
+				zone: timezone,
+			}).startOf("day");
+			const currentDate = DateTime.fromJSDate(currentTime, {
+				zone: timezone,
+			}).startOf("day");
 			return Math.floor(currentDate.diff(workPeriodDate, "days").days);
 		};
 
@@ -252,12 +264,13 @@ export const ChangePolicyServiceLive = Layer.effect(
 				}
 
 				// 2. Check for team assignment (priority 1)
-				if (emp.teamId) {
+				const teamId = emp.teamId;
+				if (teamId) {
 					const teamAssignment = yield* _(
 						dbService.query("getTeamPolicyAssignment", async () => {
 							return await dbService.db.query.changePolicyAssignment.findFirst({
 								where: and(
-									eq(changePolicyAssignment.teamId, emp.teamId!),
+									eq(changePolicyAssignment.teamId, teamId),
 									eq(changePolicyAssignment.assignmentType, "team"),
 									temporalConditions,
 								),
@@ -341,7 +354,10 @@ export const ChangePolicyServiceLive = Layer.effect(
 
 					// Within self-service window (including same day when selfServiceDays=0)
 					if (daysBack <= policy.selfServiceDays) {
-						return { type: "direct" as const, reason: "within_self_service" as const };
+						return {
+							type: "direct" as const,
+							reason: "within_self_service" as const,
+						};
 					}
 
 					// Within approval window
@@ -495,18 +511,24 @@ export const ChangePolicyServiceLive = Layer.effect(
 								.update(changePolicy)
 								.set({
 									...(input.name !== undefined && { name: input.name }),
-									...(input.description !== undefined && { description: input.description }),
+									...(input.description !== undefined && {
+										description: input.description,
+									}),
 									...(input.selfServiceDays !== undefined && {
 										selfServiceDays: input.selfServiceDays,
 									}),
-									...(input.approvalDays !== undefined && { approvalDays: input.approvalDays }),
+									...(input.approvalDays !== undefined && {
+										approvalDays: input.approvalDays,
+									}),
 									...(input.noApprovalRequired !== undefined && {
 										noApprovalRequired: input.noApprovalRequired,
 									}),
 									...(input.notifyAllManagers !== undefined && {
 										notifyAllManagers: input.notifyAllManagers,
 									}),
-									...(input.isActive !== undefined && { isActive: input.isActive }),
+									...(input.isActive !== undefined && {
+										isActive: input.isActive,
+									}),
 									updatedBy: input.updatedBy,
 								})
 								.where(eq(changePolicy.id, id))

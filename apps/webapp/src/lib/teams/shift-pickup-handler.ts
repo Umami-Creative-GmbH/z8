@@ -7,9 +7,11 @@
 
 import type { TurnContext } from "botbuilder";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
+import {
+	OpenShiftsService,
+	OpenShiftsServiceFullLive,
+} from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
-import { OpenShiftsService, OpenShiftsServiceFullLive } from "@/lib/effect/services/open-shifts.service";
 import type { ResolvedTenant } from "./types";
 
 const logger = createLogger("TeamsShiftPickup");
@@ -51,9 +53,7 @@ export async function handleShiftPickupAction(
 			return { success: true, requestId: result.requestId };
 		});
 
-		const result = await Effect.runPromise(
-			program.pipe(Effect.provide(OpenShiftsServiceFullLive)),
-		);
+		const result = await Effect.runPromise(program.pipe(Effect.provide(OpenShiftsServiceFullLive)));
 
 		logger.info(
 			{ shiftId, requesterId, requestId: result.requestId },
@@ -73,13 +73,20 @@ export async function handleShiftPickupAction(
 		// Check for specific error types
 		const errorMessage = error instanceof Error ? error.message : String(error);
 
-		if (errorMessage.includes("not found") || errorMessage.includes("unavailable") || errorMessage.includes("not open")) {
+		if (
+			errorMessage.includes("not found") ||
+			errorMessage.includes("unavailable") ||
+			errorMessage.includes("not open")
+		) {
 			logger.warn({ shiftId, requesterId }, "Shift no longer available for pickup");
 			await context.sendActivity({
 				type: "message",
 				text: "⚠️ **Shift no longer available**\n\nThis shift has already been assigned or is no longer open. Please check for other available shifts.",
 			});
-		} else if (errorMessage.includes("pending request") || errorMessage.includes("already requested")) {
+		} else if (
+			errorMessage.includes("pending request") ||
+			errorMessage.includes("already requested")
+		) {
 			await context.sendActivity({
 				type: "message",
 				text: "ℹ️ **Request already pending**\n\nYou already have a pending pickup request for this shift. Please wait for your manager to review it.",

@@ -7,16 +7,16 @@
 
 import { DateTime } from "luxon";
 import { describe, expect, test } from "vitest";
+import type { PresenceRequirementEvidence } from "@/db/schema/compliance-finding";
 import {
-	PresenceRequirementRule,
 	type AbsenceDay,
 	type HolidayDay,
 	type PresenceConfig,
+	PresenceRequirementRule,
 	type PresenceRuleDetectionInput,
 	type WorkPeriodWithLocation,
 } from "../presence-requirement-rule";
 import type { EmployeeWithPolicy } from "../types";
-import type { PresenceRequirementEvidence } from "@/db/schema/compliance-finding";
 
 // ============================================
 // Test helpers
@@ -61,9 +61,7 @@ function makeWorkPeriod(
 	};
 }
 
-function makePresenceConfig(
-	overrides?: Partial<PresenceConfig>,
-): PresenceConfig {
+function makePresenceConfig(overrides?: Partial<PresenceConfig>): PresenceConfig {
 	return {
 		presenceMode: "minimum_count",
 		requiredOnsiteDays: 3,
@@ -319,9 +317,7 @@ describe("PresenceRequirementRule", () => {
 			);
 
 			expect(findings).toHaveLength(1);
-			expect(
-				(findings[0].evidence as PresenceRequirementEvidence).actualOnsiteDays,
-			).toBe(0);
+			expect((findings[0].evidence as PresenceRequirementEvidence).actualOnsiteDays).toBe(0);
 		});
 
 		test("other does not count as on-site", async () => {

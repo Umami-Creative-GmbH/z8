@@ -54,12 +54,16 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 // Dynamically import heavy chart components - only loaded when drawer opens
-const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
+const Area = dynamic(() => import("recharts").then((mod) => mod.Area), {
+	ssr: false,
+});
 const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
 const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), {
 	ssr: false,
 });
-const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), {
+	ssr: false,
+});
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

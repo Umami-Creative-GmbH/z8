@@ -8,13 +8,13 @@ vi.mock("@/lib/effect/services/auth.service", () => ({
 	AuthService: Symbol.for("AuthService"),
 }));
 
-import { getOvertimeBurnDownData } from "../actions";
 import type {
 	DateRange,
 	OvertimeBurnDownData,
 	OvertimeBurnDownParams,
 } from "@/lib/analytics/types";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { getOvertimeBurnDownData } from "../actions";
 
 describe("analytics overtime burn-down action", () => {
 	it("exports getOvertimeBurnDownData as a function", () => {

@@ -18,12 +18,12 @@ vi.mock("@/env", () => ({
 }));
 
 vi.mock("@aws-sdk/client-s3", () => ({
-	DeleteObjectCommand: vi.fn().mockImplementation(function (input) {
+	DeleteObjectCommand: vi.fn().mockImplementation(function DeleteObjectCommand(input) {
 		return { input };
 	}),
-	S3Client: vi.fn().mockImplementation(function () {
+	S3Client: vi.fn().mockImplementation(function S3Client() {
 		return {
-		send: mockState.send,
+			send: mockState.send,
 		};
 	}),
 }));
@@ -53,29 +53,47 @@ describe("avatar storage", () => {
 
 	it("extracts owned avatar keys from the public S3 URL", () => {
 		expect(
-			getOwnedAvatarKeyFromPublicUrl("https://cdn.example.com/avatars/user-1/avatar-id.webp", "user-1"),
+			getOwnedAvatarKeyFromPublicUrl(
+				"https://cdn.example.com/avatars/user-1/avatar-id.webp",
+				"user-1",
+			),
 		).toBe("avatars/user-1/avatar-id.webp");
 		expect(
-			getOwnedAvatarKeyFromPublicUrl("https://cdn.example.com/avatars/user-1-1716500000000.webp", "user-1"),
+			getOwnedAvatarKeyFromPublicUrl(
+				"https://cdn.example.com/avatars/user-1-1716500000000.webp",
+				"user-1",
+			),
 		).toBe("avatars/user-1-1716500000000.webp");
 	});
 
 	it("rejects external, unowned, and non-avatar URLs", () => {
 		expect(
-			getOwnedAvatarKeyFromPublicUrl("https://other.example.com/avatars/user-1/avatar-id.webp", "user-1"),
+			getOwnedAvatarKeyFromPublicUrl(
+				"https://other.example.com/avatars/user-1/avatar-id.webp",
+				"user-1",
+			),
 		).toBeNull();
 		expect(
-			getOwnedAvatarKeyFromPublicUrl("https://cdn.example.com/avatars/user-2/avatar-id.webp", "user-1"),
+			getOwnedAvatarKeyFromPublicUrl(
+				"https://cdn.example.com/avatars/user-2/avatar-id.webp",
+				"user-1",
+			),
 		).toBeNull();
 		expect(
-			getOwnedAvatarKeyFromPublicUrl("https://cdn.example.com/org-logos/user-1/avatar-id.webp", "user-1"),
+			getOwnedAvatarKeyFromPublicUrl(
+				"https://cdn.example.com/org-logos/user-1/avatar-id.webp",
+				"user-1",
+			),
 		).toBeNull();
 	});
 
 	it("deletes only owned avatar objects", async () => {
 		mockState.send.mockResolvedValueOnce({});
 
-		await deleteOwnedAvatarObject("https://cdn.example.com/avatars/user-1/avatar-id.webp", "user-1");
+		await deleteOwnedAvatarObject(
+			"https://cdn.example.com/avatars/user-1/avatar-id.webp",
+			"user-1",
+		);
 
 		expect(DeleteObjectCommand).toHaveBeenCalledWith({
 			Bucket: "public-bucket",
@@ -83,7 +101,10 @@ describe("avatar storage", () => {
 		});
 		expect(mockState.send).toHaveBeenCalledTimes(1);
 
-		await deleteOwnedAvatarObject("https://cdn.example.com/avatars/user-2/avatar-id.webp", "user-1");
+		await deleteOwnedAvatarObject(
+			"https://cdn.example.com/avatars/user-2/avatar-id.webp",
+			"user-1",
+		);
 
 		expect(mockState.send).toHaveBeenCalledTimes(1);
 	});

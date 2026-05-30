@@ -19,9 +19,10 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import {
-	buildApprovalPerformanceData,
 	type ApprovalAnalyticsRow,
+	buildApprovalPerformanceData,
 } from "@/lib/analytics/approval-performance";
+import { clampOvertime } from "@/lib/analytics/overtime-burndown";
 import type {
 	AbsencePatternsData,
 	AbsencePatternsParams,
@@ -38,19 +39,15 @@ import type {
 	WorkHoursAnalyticsData,
 	WorkHoursParams,
 } from "@/lib/analytics/types";
-import {
-	calculateSLADeadline,
-	calculateSLAStatus,
-} from "@/lib/approvals/domain/sla-calculator";
+import { calculateSLADeadline, calculateSLAStatus } from "@/lib/approvals/domain/sla-calculator";
 import type { ApprovalPriority, ApprovalType } from "@/lib/approvals/domain/types";
-import { clampOvertime } from "@/lib/analytics/overtime-burndown";
 import { differenceInDays, format } from "@/lib/datetime/luxon-utils";
+import { computeOvertimeDelta } from "@/lib/time-record/overtime";
 import {
 	calculateExpectedWorkHours,
 	calculateExpectedWorkHoursForEmployee,
 	calculateWorkHours,
 } from "@/lib/time-tracking/calculations";
-import { computeOvertimeDelta } from "@/lib/time-record/overtime";
 import type { DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
@@ -70,7 +67,11 @@ function calculateClusteringScore(absences: Array<{ startDate: Date; endDate: Da
 		let currentDT = startDT;
 
 		while (currentDT <= endDT) {
-			const dateKey = currentDT.toISODate()!;
+			const dateKey = currentDT.toISODate();
+			if (!dateKey) {
+				currentDT = currentDT.plus({ days: 1 });
+				continue;
+			}
 			dateCountMap.set(dateKey, (dateCountMap.get(dateKey) || 0) + 1);
 			currentDT = currentDT.plus({ days: 1 });
 		}
@@ -152,7 +153,10 @@ function getSlaStatusForAnalytics(
 function buildGroupedOvertimeRows(
 	records: OvertimeBurnDownWeeklyRecord[],
 	weekStarts: string[],
-	groupSelector: (record: OvertimeBurnDownWeeklyRecord) => { id: string; label: string },
+	groupSelector: (record: OvertimeBurnDownWeeklyRecord) => {
+		id: string;
+		label: string;
+	},
 ): OvertimeBurnDownGroupedRow[] {
 	const grouped = new Map<
 		string,
@@ -179,7 +183,9 @@ function buildGroupedOvertimeRows(
 		grouped.set(group.id, {
 			id: group.id,
 			label: group.label,
-			weeklyMap: new Map([[record.weekStart, roundToTwoDecimals(clampOvertime(record.overtimeHours))]]),
+			weeklyMap: new Map([
+				[record.weekStart, roundToTwoDecimals(clampOvertime(record.overtimeHours))],
+			]),
 		});
 	}
 
@@ -189,7 +195,8 @@ function buildGroupedOvertimeRows(
 				weekStart,
 				overtimeHours: roundToTwoDecimals(group.weeklyMap.get(weekStart) || 0),
 			}));
-			const previousOvertimeHours = weekly.length >= 2 ? weekly[weekly.length - 2].overtimeHours : 0;
+			const previousOvertimeHours =
+				weekly.length >= 2 ? weekly[weekly.length - 2].overtimeHours : 0;
 			const currentOvertimeHours = weekly.length > 0 ? weekly[weekly.length - 1].overtimeHours : 0;
 			const wowDeltaHours = roundToTwoDecimals(currentOvertimeHours - previousOvertimeHours);
 
@@ -210,8 +217,8 @@ export function buildOvertimeBurnDownDataForTesting(
 	records: OvertimeBurnDownWeeklyRecord[],
 	allWeekStarts: string[] = [],
 ): OvertimeBurnDownData {
-	const inferredWeekStarts = Array.from(new Set(records.map((record) => record.weekStart))).sort((a, b) =>
-		a.localeCompare(b),
+	const inferredWeekStarts = Array.from(new Set(records.map((record) => record.weekStart))).sort(
+		(a, b) => a.localeCompare(b),
 	);
 	const weekStarts = Array.from(new Set([...allWeekStarts, ...inferredWeekStarts])).sort((a, b) =>
 		a.localeCompare(b),
@@ -225,7 +232,9 @@ export function buildOvertimeBurnDownDataForTesting(
 	for (const record of records) {
 		weekTotalsMap.set(
 			record.weekStart,
-			roundToTwoDecimals((weekTotalsMap.get(record.weekStart) || 0) + clampOvertime(record.overtimeHours)),
+			roundToTwoDecimals(
+				(weekTotalsMap.get(record.weekStart) || 0) + clampOvertime(record.overtimeHours),
+			),
 		);
 	}
 
@@ -236,7 +245,8 @@ export function buildOvertimeBurnDownDataForTesting(
 
 	const previousOvertimeHours =
 		weeklySeries.length >= 2 ? weeklySeries[weeklySeries.length - 2].overtimeHours : 0;
-	const currentOvertimeHours = weeklySeries.length > 0 ? weeklySeries[weeklySeries.length - 1].overtimeHours : 0;
+	const currentOvertimeHours =
+		weeklySeries.length > 0 ? weeklySeries[weeklySeries.length - 1].overtimeHours : 0;
 	const wowDeltaHours = roundToTwoDecimals(currentOvertimeHours - previousOvertimeHours);
 
 	const byTeam = buildGroupedOvertimeRows(records, weekStarts, (record) => ({
@@ -471,7 +481,10 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						for (const absence of absences) {
 							const month = format(new Date(absence.startDate), "yyyy-MM");
 							const days = differenceInDays(new Date(absence.endDate), new Date(absence.startDate));
-							const existing = monthlyMap.get(month) || { taken: 0, remaining: 0 };
+							const existing = monthlyMap.get(month) || {
+								taken: 0,
+								remaining: 0,
+							};
 							existing.taken += Math.max(1, days);
 							monthlyMap.set(month, existing);
 						}
@@ -617,7 +630,10 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						const totalHours = employeeData.reduce((sum, e) => sum + e.totalHours, 0);
 						const totalMinutes = employeeData.reduce((sum, e) => sum + e.totalMinutes, 0);
 						const totalExpected = employeeData.reduce((sum, e) => sum + e.expectedHours, 0);
-						const totalExpectedMinutes = employeeData.reduce((sum, e) => sum + e.expectedMinutes, 0);
+						const totalExpectedMinutes = employeeData.reduce(
+							(sum, e) => sum + e.expectedMinutes,
+							0,
+						);
 						const overtimeMinutes = computeOvertimeDelta({
 							actualMinutes: totalMinutes,
 							expectedMinutes: totalExpectedMinutes,
@@ -645,11 +661,13 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						// Group work periods by date
 						const dailyHoursMap = new Map<string, number>();
 						for (const wp of workPeriods) {
-							if (!wp.endTime) continue;
-							const dateKey = DateTime.fromJSDate(new Date(wp.startTime)).toISODate()!;
+							const startTime = wp.startTime;
+							const endTime = wp.endTime;
+							if (startTime == null || endTime == null) continue;
+							const dateKey = DateTime.fromJSDate(new Date(startTime)).toISODate();
+							if (!dateKey) continue;
 							const hours =
-								(new Date(wp.endTime).getTime() - new Date(wp.startTime).getTime()) /
-								(1000 * 60 * 60);
+								(new Date(endTime).getTime() - new Date(startTime).getTime()) / (1000 * 60 * 60);
 							dailyHoursMap.set(dateKey, (dailyHoursMap.get(dateKey) || 0) + hours);
 						}
 
@@ -735,7 +753,10 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						for (const absence of orgAbsences) {
 							const categoryName = absence.category.name;
 							const days = differenceInDays(new Date(absence.endDate), new Date(absence.startDate));
-							const existing = typeMap.get(categoryName) || { count: 0, days: 0 };
+							const existing = typeMap.get(categoryName) || {
+								count: 0,
+								days: 0,
+							};
 							existing.count++;
 							existing.days += Math.max(1, days);
 							typeMap.set(categoryName, existing);
@@ -752,7 +773,12 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						// Group by team
 						const teamMap = new Map<
 							string,
-							{ count: number; days: number; name: string; employeeCount: number }
+							{
+								count: number;
+								days: number;
+								name: string;
+								employeeCount: number;
+							}
 						>();
 						const teamEmployeeCounts = new Map<string, Set<string>>();
 
@@ -850,11 +876,18 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						// Find vacation hotspots (dates with multiple people off)
 						const vacationDateMap = new Map<string, number>();
 						for (const absence of vacationAbsences) {
-							const startDT = DateTime.fromJSDate(new Date(absence.startDate));
-							const endDT = DateTime.fromJSDate(new Date(absence.endDate));
+							const startDate = absence.startDate;
+							const endDate = absence.endDate;
+							if (startDate == null || endDate == null) continue;
+							const startDT = DateTime.fromJSDate(new Date(startDate));
+							const endDT = DateTime.fromJSDate(new Date(endDate));
 							let currentDT = startDT;
 							while (currentDT <= endDT) {
-								const dateKey = currentDT.toISODate()!;
+								const dateKey = currentDT.toISODate();
+								if (!dateKey) {
+									currentDT = currentDT.plus({ days: 1 });
+									continue;
+								}
 								vacationDateMap.set(dateKey, (vacationDateMap.get(dateKey) || 0) + 1);
 								currentDT = currentDT.plus({ days: 1 });
 							}
@@ -871,20 +904,28 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							{ absence: number; sick: number; vacation: number }
 						>();
 						for (const absence of orgAbsences) {
-							const startDT = DateTime.fromJSDate(new Date(absence.startDate));
-							const endDT = DateTime.fromJSDate(new Date(absence.endDate));
+							const startDate = absence.startDate;
+							const endDate = absence.endDate;
+							if (startDate == null || endDate == null) continue;
+							const startDT = DateTime.fromJSDate(new Date(startDate));
+							const endDT = DateTime.fromJSDate(new Date(endDate));
 							let currentDT = startDT;
+							const categoryName = absence.category.name ?? "";
 
 							const isSick =
-								absence.category.name.toLowerCase().includes("sick") ||
-								absence.category.name.toLowerCase().includes("krank");
+								categoryName.toLowerCase().includes("sick") ||
+								categoryName.toLowerCase().includes("krank");
 							const isVacation =
-								absence.category.name.toLowerCase().includes("vacation") ||
-								absence.category.name.toLowerCase().includes("urlaub") ||
-								absence.category.name.toLowerCase().includes("holiday");
+								categoryName.toLowerCase().includes("vacation") ||
+								categoryName.toLowerCase().includes("urlaub") ||
+								categoryName.toLowerCase().includes("holiday");
 
 							while (currentDT <= endDT) {
-								const dateKey = currentDT.toISODate()!;
+								const dateKey = currentDT.toISODate();
+								if (!dateKey) {
+									currentDT = currentDT.plus({ days: 1 });
+									continue;
+								}
 								const existing = timelineDateMap.get(dateKey) || {
 									absence: 0,
 									sick: 0,
@@ -1006,25 +1047,38 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							status: approval.status,
 							submittedAt: approval.createdAt,
 							decidedAt: approval.approvedAt,
-							slaStatus: getSlaStatusForAnalytics(approval.entityType, "normal", approval.createdAt),
+							slaStatus: getSlaStatusForAnalytics(
+								approval.entityType,
+								"normal",
+								approval.createdAt,
+							),
 						}));
 
 						const travelRows: ApprovalAnalyticsRow[] = travelClaims
-							.filter((claim) => claim.submittedAt)
-							.map((claim) => ({
-								source: "travel_expense_claim",
-								type: "travel_expense_claim",
-								organizationId: claim.organizationId,
-								requesterEmployeeId: claim.employeeId,
-								requesterTeamId: claim.employee?.teamId ?? null,
-								requesterTeamName: claim.employee?.team?.name ?? null,
-								approverEmployeeId: claim.approverId,
-								approverName: claim.approver?.user.name ?? null,
-								status: claim.status === "submitted" ? "pending" : claim.status,
-								submittedAt: claim.submittedAt!,
-								decidedAt: claim.decidedAt,
-								slaStatus: getSlaStatusForAnalytics("travel_expense_claim", "normal", claim.submittedAt!),
-							}));
+							.map((claim): ApprovalAnalyticsRow | null => {
+								const submittedAt = claim.submittedAt;
+								if (submittedAt == null) return null;
+
+								return {
+									source: "travel_expense_claim",
+									type: "travel_expense_claim" as const,
+									organizationId: claim.organizationId,
+									requesterEmployeeId: claim.employeeId,
+									requesterTeamId: claim.employee?.teamId ?? null,
+									requesterTeamName: claim.employee?.team?.name ?? null,
+									approverEmployeeId: claim.approverId,
+									approverName: claim.approver?.user.name ?? null,
+									status: claim.status === "submitted" ? "pending" : claim.status,
+									submittedAt,
+									decidedAt: claim.decidedAt,
+									slaStatus: getSlaStatusForAnalytics(
+										"travel_expense_claim",
+										"normal",
+										submittedAt,
+									),
+								} satisfies ApprovalAnalyticsRow;
+							})
+							.filter((row): row is ApprovalAnalyticsRow => row !== null);
 
 						const managerEffectiveness = buildApprovalPerformanceData([
 							...approvalRows,
@@ -1073,7 +1127,11 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						const rangeStart = DateTime.fromJSDate(dateRange.start).startOf("day");
 						const rangeEnd = DateTime.fromJSDate(dateRange.end).endOf("day");
 
-						const weekBuckets: Array<{ weekStart: DateTime; weekStartIso: string; weekEnd: DateTime }> = [];
+						const weekBuckets: Array<{
+							weekStart: DateTime;
+							weekStartIso: string;
+							weekEnd: DateTime;
+						}> = [];
 						let currentWeek = rangeStart.startOf("week");
 						const finalWeek = rangeEnd.startOf("week");
 
@@ -1168,8 +1226,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 
 						for (const employeeAssignments of assignmentByEmployee.values()) {
 							employeeAssignments.sort(
-								(a, b) =>
-									new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime(),
+								(a, b) => new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime(),
 							);
 						}
 
@@ -1205,7 +1262,9 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 												const weekStartDate = weekStart.toJSDate();
 												const activeAssignment = employeeAssignments.find((assignment) => {
 													const effectiveFrom = new Date(assignment.effectiveFrom);
-													const effectiveTo = assignment.effectiveTo ? new Date(assignment.effectiveTo) : null;
+													const effectiveTo = assignment.effectiveTo
+														? new Date(assignment.effectiveTo)
+														: null;
 													return (
 														effectiveFrom.getTime() <= weekStartDate.getTime() &&
 														(!effectiveTo || effectiveTo.getTime() >= weekStartDate.getTime())

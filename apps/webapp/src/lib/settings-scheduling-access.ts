@@ -1,6 +1,13 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { coverageRule, employee, location, shiftTemplate, subareaEmployee, teamPermissions } from "@/db/schema";
+import {
+	coverageRule,
+	employee,
+	location,
+	shiftTemplate,
+	subareaEmployee,
+	teamPermissions,
+} from "@/db/schema";
 import type { AuthContext } from "@/lib/auth-helpers";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import type { SettingsAccessTier } from "@/lib/settings-access";
@@ -134,7 +141,7 @@ export async function getSchedulingSettingsAccessContext(): Promise<SchedulingSe
 
 	const currentEmployee = settingsRouteContext.authContext.employee;
 
-	if (!currentEmployee || currentEmployee.role !== "manager") {
+	if (currentEmployee?.role !== "manager") {
 		return null;
 	}
 
@@ -154,7 +161,9 @@ export async function getSchedulingSettingsAccessContext(): Promise<SchedulingSe
 		}),
 	]);
 
-	const canManageTeamSettings = managerTeamPermissions.some((permission) => permission.canManageTeamSettings);
+	const canManageTeamSettings = managerTeamPermissions.some(
+		(permission) => permission.canManageTeamSettings,
+	);
 	const manageableTeamIds = new Set(
 		managerTeamPermissions
 			.filter((permission) => permission.canManageTeamSettings && permission.teamId)
@@ -167,25 +176,25 @@ export async function getSchedulingSettingsAccessContext(): Promise<SchedulingSe
 		manageableTeamIds.size === 0
 			? new Set<string>()
 			: new Set(
-				(
-					await db.query.employee.findMany({
-						where: and(
-							eq(employee.organizationId, organizationId),
-							inArray(employee.teamId, [...manageableTeamIds]),
-						),
-						columns: {},
-						with: {
-							subareaAssignments: {
-								columns: {
-									subareaId: true,
+					(
+						await db.query.employee.findMany({
+							where: and(
+								eq(employee.organizationId, organizationId),
+								inArray(employee.teamId, [...manageableTeamIds]),
+							),
+							columns: {},
+							with: {
+								subareaAssignments: {
+									columns: {
+										subareaId: true,
+									},
 								},
 							},
-						},
-					})
-				).flatMap((teamEmployee) =>
-					teamEmployee.subareaAssignments.map((assignment) => assignment.subareaId),
-				),
-			);
+						})
+					).flatMap((teamEmployee) =>
+						teamEmployee.subareaAssignments.map((assignment) => assignment.subareaId),
+					),
+				);
 
 	return {
 		...settingsRouteContext,

@@ -9,10 +9,16 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { absenceCategory, absenceEntry, calendarConnection, employee, syncedAbsence } from "@/db/schema";
+import {
+	absenceCategory,
+	absenceEntry,
+	calendarConnection,
+	employee,
+	syncedAbsence,
+} from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import type { CalendarSyncJobData, JobResult } from "@/lib/queue";
-import { mapAbsenceToCalendarEvent } from "../domain";
+import { mapAbsenceToCalendarEvent } from "../domain/event-mapper";
 import { getCalendarProvider, isTokenExpired } from "../providers";
 import { getCalendarTokens, storeCalendarTokens } from "../token-store";
 
@@ -157,11 +163,7 @@ async function handleCreate(
 
 	// Create event in external calendar
 	const provider = getCalendarProvider(connection.provider);
-	const createEffect = provider.createEvent(
-		credentials,
-		connection.calendarId,
-		eventToCreate,
-	);
+	const createEffect = provider.createEvent(credentials, connection.calendarId, eventToCreate);
 
 	const result = await Effect.runPromise(createEffect);
 
@@ -376,9 +378,7 @@ async function handleDelete(
 // TOKEN MANAGEMENT
 // ============================================
 
-async function ensureValidCredentials(
-	connection: typeof calendarConnection.$inferSelect,
-): Promise<{
+async function ensureValidCredentials(connection: typeof calendarConnection.$inferSelect): Promise<{
 	accessToken: string;
 	refreshToken: string | null;
 	expiresAt: Date | null;
@@ -406,18 +406,13 @@ async function ensureValidCredentials(
 	}
 
 	if (!tokens.refreshToken) {
-		logger.warn(
-			{ connectionId: connection.id },
-			"Token expired and no refresh token available",
-		);
+		logger.warn({ connectionId: connection.id }, "Token expired and no refresh token available");
 		return null;
 	}
 
 	try {
 		const provider = getCalendarProvider(connection.provider);
-		const refreshResult = await Effect.runPromise(
-			provider.refreshAccessToken(tokens.refreshToken),
-		);
+		const refreshResult = await Effect.runPromise(provider.refreshAccessToken(tokens.refreshToken));
 
 		// Store refreshed tokens in Vault
 		await storeCalendarTokens(connection.organizationId, connection.id, {

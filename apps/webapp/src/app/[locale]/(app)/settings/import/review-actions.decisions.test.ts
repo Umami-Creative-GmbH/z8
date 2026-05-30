@@ -273,7 +273,9 @@ describe("import review decision actions", () => {
 			{ id: "job_employee", entityType: "employee" },
 			{ id: "job_work_period", entityType: "work_period" },
 		]);
-		mockState.readyCommitJobsFromJobs.mockReturnValue([{ id: "job_employee", entityType: "employee" }]);
+		mockState.readyCommitJobsFromJobs.mockReturnValue([
+			{ id: "job_employee", entityType: "employee" },
+		]);
 
 		const result = await startImportCommitAction({ organizationId: "org_1", batchId: "batch_1" });
 

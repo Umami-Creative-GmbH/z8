@@ -1,5 +1,5 @@
-import { connection } from "next/server";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { CoverageRulesManagement } from "@/components/settings/coverage-rules-management";
 import {
 	getSchedulingSettingsAccessContext,
@@ -13,7 +13,7 @@ export default async function CoverageRulesSettingsPage() {
 	await getTranslate();
 	const accessContext = await getSchedulingSettingsAccessContext();
 
-	if (!accessContext || !accessContext.canAccessCoverageRules) {
+	if (!accessContext?.canAccessCoverageRules) {
 		redirect("/settings");
 	}
 

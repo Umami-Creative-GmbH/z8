@@ -2,7 +2,7 @@
 
 import { IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -10,7 +10,6 @@ import {
 	createSurchargeModel,
 	updateSurchargeModel,
 } from "@/app/[locale]/(app)/settings/surcharges/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -20,15 +19,11 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-	TFormControl,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import type { SurchargeModelWithRules } from "@/lib/surcharges/validation";
@@ -63,6 +58,7 @@ export function SurchargeModelDialog({
 	onSuccess,
 }: SurchargeModelDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const isEditing = !!editingModel;
 
 	const form = useForm({
@@ -142,6 +138,7 @@ export function SurchargeModelDialog({
 			createSurchargeModel(organizationId, data as Parameters<typeof createSurchargeModel>[1]),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries();
 				toast.success(t("settings.surcharges.modelCreated", "Surcharge model created"));
 				onSuccess();
 			} else {
@@ -161,6 +158,7 @@ export function SurchargeModelDialog({
 			updateSurchargeModel(editingModel!.id, data),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries();
 				toast.success(t("settings.surcharges.modelUpdated", "Surcharge model updated"));
 				onSuccess();
 			} else {
@@ -204,124 +202,124 @@ export function SurchargeModelDialog({
 					<ActionPanelBody className="space-y-6">
 						{/* Basic Info */}
 						<div className="grid gap-4">
-						<form.Field name="name">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>
-										{t("settings.surcharges.modelName", "Model Name")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<Input
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-											placeholder={t(
-												"settings.surcharges.modelNamePlaceholder",
-												"e.g., Weekend Premium",
-											)}
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-
-						<form.Field name="description">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>
-										{t("settings.surcharges.descriptionLabel", "Description")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<Textarea
-											value={field.state.value || ""}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-											placeholder={t(
-												"settings.surcharges.descriptionPlaceholder",
-												"Optional description of this surcharge model",
-											)}
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-						</div>
-
-						{/* Surcharge Rules */}
-						<div className="space-y-4">
-						<div className="flex items-center justify-between">
-							<h3 className="text-sm font-medium">
-								{t("settings.surcharges.rules", "Surcharge Rules")}
-							</h3>
-							<form.Field name="rules">
+							<form.Field name="name">
 								{(field) => (
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										onClick={() => {
-											field.pushValue({ ...defaultRule, priority: field.state.value.length });
-										}}
-									>
-										<IconPlus className="mr-2 size-4" />
-										{t("settings.surcharges.addRule", "Add Rule")}
-									</Button>
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("settings.surcharges.modelName", "Model Name")}
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field)}>
+											<Input
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+												placeholder={t(
+													"settings.surcharges.modelNamePlaceholder",
+													"e.g., Weekend Premium",
+												)}
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+
+							<form.Field name="description">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("settings.surcharges.descriptionLabel", "Description")}
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field)}>
+											<Textarea
+												value={field.state.value || ""}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+												placeholder={t(
+													"settings.surcharges.descriptionPlaceholder",
+													"Optional description of this surcharge model",
+												)}
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
 								)}
 							</form.Field>
 						</div>
 
-						<form.Field name="rules" mode="array">
-							{(field) => (
-								<div className="space-y-4">
-									{field.state.value.length === 0 ? (
-										<div className="flex flex-col items-center justify-center py-8 text-center border rounded-lg border-dashed">
-											<p className="text-sm text-muted-foreground">
-												{t("settings.surcharges.noRules", "No surcharge rules defined")}
-											</p>
-											<p className="text-xs text-muted-foreground mt-1">
-												{t(
-													"settings.surcharges.noRulesDescription",
-													"Add rules to define when surcharges apply",
-												)}
-											</p>
-										</div>
-									) : (
-										field.state.value.map((_, ruleIndex) => (
-											// biome-ignore lint/suspicious/noArrayIndexKey: Dynamic form array - no stable IDs for new rules
-											<form.Field key={ruleIndex} name={`rules[${ruleIndex}]`}>
-												{() => (
-													<SurchargeRuleEditor
-														ruleIndex={ruleIndex}
-														form={form}
-														onRemove={() => field.removeValue(ruleIndex)}
-													/>
-												)}
-											</form.Field>
-										))
+						{/* Surcharge Rules */}
+						<div className="space-y-4">
+							<div className="flex items-center justify-between">
+								<h3 className="text-sm font-medium">
+									{t("settings.surcharges.rules", "Surcharge Rules")}
+								</h3>
+								<form.Field name="rules">
+									{(field) => (
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											onClick={() => {
+												field.pushValue({ ...defaultRule, priority: field.state.value.length });
+											}}
+										>
+											<IconPlus className="mr-2 size-4" />
+											{t("settings.surcharges.addRule", "Add Rule")}
+										</Button>
 									)}
-								</div>
-							)}
-						</form.Field>
+								</form.Field>
+							</div>
+
+							<form.Field name="rules" mode="array">
+								{(field) => (
+									<div className="space-y-4">
+										{field.state.value.length === 0 ? (
+											<div className="flex flex-col items-center justify-center py-8 text-center border rounded-lg border-dashed">
+												<p className="text-sm text-muted-foreground">
+													{t("settings.surcharges.noRules", "No surcharge rules defined")}
+												</p>
+												<p className="text-xs text-muted-foreground mt-1">
+													{t(
+														"settings.surcharges.noRulesDescription",
+														"Add rules to define when surcharges apply",
+													)}
+												</p>
+											</div>
+										) : (
+											field.state.value.map((_, ruleIndex) => (
+												// biome-ignore lint/suspicious/noArrayIndexKey: Dynamic form array - no stable IDs for new rules
+												<form.Field key={ruleIndex} name={`rules[${ruleIndex}]`}>
+													{() => (
+														<SurchargeRuleEditor
+															ruleIndex={ruleIndex}
+															form={form}
+															onRemove={() => field.removeValue(ruleIndex)}
+														/>
+													)}
+												</form.Field>
+											))
+										)}
+									</div>
+								)}
+							</form.Field>
 						</div>
 
 						{/* Active Status */}
 						<form.Field name="isActive">
-						{(field) => (
-							<div className="flex items-center justify-between rounded-lg border p-4">
-								<div className="space-y-0.5">
-									<Label>{t("settings.surcharges.active", "Active")}</Label>
-									<p className="text-xs text-muted-foreground">
-										{t(
-											"settings.surcharges.activeDescription",
-											"Inactive models won't be used for calculations",
-										)}
-									</p>
+							{(field) => (
+								<div className="flex items-center justify-between rounded-lg border p-4">
+									<div className="space-y-0.5">
+										<Label>{t("settings.surcharges.active", "Active")}</Label>
+										<p className="text-xs text-muted-foreground">
+											{t(
+												"settings.surcharges.activeDescription",
+												"Inactive models won't be used for calculations",
+											)}
+										</p>
+									</div>
+									<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 								</div>
-								<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
-							</div>
-						)}
+							)}
 						</form.Field>
 					</ActionPanelBody>
 

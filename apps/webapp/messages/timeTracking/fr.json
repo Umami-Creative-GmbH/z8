@@ -81,7 +81,8 @@
         "created": "Saisie de temps créée avec succès",
         "pendingApproval": "Saisie de temps soumise pour approbation par le manager"
       },
-      "title": "Ajouter une saisie de temps manuelle"
+      "title": "Ajouter une saisie de temps manuelle",
+      "titleForEmployee": "Ajouter une saisie de temps manuelle pour {employee}"
     },
     "noCategory": "Aucune catégorie (100 %)",
     "noProject": "Aucun projet",

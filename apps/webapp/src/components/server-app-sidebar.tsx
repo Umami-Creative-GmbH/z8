@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import {
 	getAuthContext,
 	getCurrentSettingsAccessTier,
@@ -6,7 +7,6 @@ import {
 } from "@/lib/auth-helpers";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
-import { env } from "@/env";
 import { AppSidebar } from "./app-sidebar";
 
 export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSidebar>) {
@@ -31,7 +31,11 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 		worksCouncilEnabled: currentOrganization?.worksCouncilEnabled ?? false,
 	};
 	let showWorksCouncilNav = false;
-	if (props.showWorksCouncilNav && currentOrganization?.worksCouncilEnabled && activeOrganizationId) {
+	if (
+		props.showWorksCouncilNav &&
+		currentOrganization?.worksCouncilEnabled &&
+		activeOrganizationId
+	) {
 		const ability = await requireAbility();
 		showWorksCouncilNav = canViewWorksCouncilPortal(
 			ability,

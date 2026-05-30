@@ -37,6 +37,8 @@ async function syncEvent(event) {
 		if (event.location) body.location = event.location;
 		if (event.projectId) body.projectId = event.projectId;
 		if (event.workCategoryId) body.workCategoryId = event.workCategoryId;
+		const browserTimezone = event.browserTimezone ?? null;
+		if (browserTimezone) body.browserTimezone = browserTimezone;
 		const workLocationType = normalizeWorkLocationType(event.workLocationType);
 		if (workLocationType) body.workLocationType = workLocationType;
 

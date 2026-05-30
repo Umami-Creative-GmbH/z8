@@ -175,7 +175,7 @@ export function AuditConfigForm({ organizationId, initialConfig }: AuditConfigFo
 							</Label>
 							<Select
 								value={config.retentionYears.toString()}
-								onValueChange={(value) => handleUpdate({ retentionYears: parseInt(value) })}
+								onValueChange={(value) => handleUpdate({ retentionYears: parseInt(value, 10) })}
 								disabled={loading}
 							>
 								<SelectTrigger id="retentionYears">

@@ -4,7 +4,6 @@ import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
 import {
 	employee,
 	location,
@@ -12,24 +11,18 @@ import {
 	locationSubarea,
 	subareaEmployee,
 } from "@/db/schema";
-import {
-	AuthorizationError,
-	ConflictError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import {
-	assignLocationEmployeeSchema,
-	assignSubareaEmployeeSchema,
-	updateAssignmentSchema,
 	type AssignLocationEmployee,
 	type AssignSubareaEmployee,
+	assignLocationEmployeeSchema,
+	assignSubareaEmployeeSchema,
 	type UpdateAssignment,
+	updateAssignmentSchema,
 } from "@/lib/validations/location";
 import {
 	getLocationSettingsActorContext,
@@ -348,7 +341,9 @@ export async function removeLocationEmployee(
 				// Delete assignment
 				yield* _(
 					dbService.query("deleteAssignment", async () => {
-						return await dbService.db.delete(locationEmployee).where(eq(locationEmployee.id, assignmentId));
+						return await dbService.db
+							.delete(locationEmployee)
+							.where(eq(locationEmployee.id, assignmentId));
 					}),
 				);
 
@@ -681,7 +676,9 @@ export async function removeSubareaEmployee(
 				// Delete assignment
 				yield* _(
 					dbService.query("deleteAssignment", async () => {
-						return await dbService.db.delete(subareaEmployee).where(eq(subareaEmployee.id, assignmentId));
+						return await dbService.db
+							.delete(subareaEmployee)
+							.where(eq(subareaEmployee.id, assignmentId));
 					}),
 				);
 

@@ -10,7 +10,9 @@ describe("enterprise identity enforcement helpers", () => {
 	});
 
 	it("rejects subdomains and unrelated domains", () => {
-		expect(isEmailInEnterpriseIdentityDomain("employee@team.example.com", "example.com")).toBe(false);
+		expect(isEmailInEnterpriseIdentityDomain("employee@team.example.com", "example.com")).toBe(
+			false,
+		);
 		expect(isEmailInEnterpriseIdentityDomain("employee@example.co", "example.com")).toBe(false);
 	});
 

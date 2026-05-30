@@ -1,7 +1,6 @@
 "use client";
 
-import { IconAlertTriangle } from "@tabler/icons-react";
-import { IconLoader2 } from "@tabler/icons-react";
+import { IconAlertTriangle, IconLoader2 } from "@tabler/icons-react";
 import {
 	ActionPanel,
 	ActionPanelBody,

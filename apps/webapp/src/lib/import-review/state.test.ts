@@ -3,11 +3,15 @@ import { canCommitRow, nextBatchStatusAfterJobs, normalizeDecision } from "./sta
 
 describe("import review state", () => {
 	it("moves scanning batches to needs_review when all scan jobs complete", () => {
-		expect(nextBatchStatusAfterJobs("scanning", [{ status: "completed" }, { status: "completed" }])).toBe("needs_review");
+		expect(
+			nextBatchStatusAfterJobs("scanning", [{ status: "completed" }, { status: "completed" }]),
+		).toBe("needs_review");
 	});
 
 	it("moves scanning batches to scan_failed when any scan job fails", () => {
-		expect(nextBatchStatusAfterJobs("scanning", [{ status: "completed" }, { status: "failed" }])).toBe("scan_failed");
+		expect(
+			nextBatchStatusAfterJobs("scanning", [{ status: "completed" }, { status: "failed" }]),
+		).toBe("scan_failed");
 	});
 
 	it("allows only accepted staged rows to commit", () => {

@@ -5,14 +5,13 @@
  * and escalates them to backup managers.
  */
 
-import { and, eq, lt, isNull } from "drizzle-orm";
+import { and, eq, isNull, lt } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { approvalRequest, teamsEscalation, employeeManagers, employee } from "@/db/schema";
-import { user } from "@/db/auth-schema";
+import { approvalRequest, employee, employeeManagers, teamsEscalation } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
-import { getAllActiveTenants } from "../tenant-resolver";
 import { sendApprovalCardToManager } from "../approval-handler";
+import { getAllActiveTenants } from "../tenant-resolver";
 import type { EscalationResult } from "../types";
 
 const logger = createLogger("TeamsEscalationChecker");
@@ -86,9 +85,7 @@ async function processTenantEscalations(tenant: {
 	organizationId: string;
 	escalationTimeoutHours: number;
 }): Promise<number> {
-	const cutoffTime = DateTime.now()
-		.minus({ hours: tenant.escalationTimeoutHours })
-		.toJSDate();
+	const cutoffTime = DateTime.now().minus({ hours: tenant.escalationTimeoutHours }).toJSDate();
 
 	// Find pending approvals older than the cutoff that haven't been escalated
 	const pendingApprovals = await db
@@ -100,10 +97,7 @@ async function processTenantEscalations(tenant: {
 			createdAt: approvalRequest.createdAt,
 		})
 		.from(approvalRequest)
-		.leftJoin(
-			teamsEscalation,
-			eq(approvalRequest.id, teamsEscalation.approvalRequestId),
-		)
+		.leftJoin(teamsEscalation, eq(approvalRequest.id, teamsEscalation.approvalRequestId))
 		.where(
 			and(
 				eq(approvalRequest.organizationId, tenant.organizationId),
@@ -114,10 +108,7 @@ async function processTenantEscalations(tenant: {
 		);
 
 	if (pendingApprovals.length === 0) {
-		logger.debug(
-			{ organizationId: tenant.organizationId },
-			"No approvals to escalate",
-		);
+		logger.debug({ organizationId: tenant.organizationId }, "No approvals to escalate");
 		return 0;
 	}
 
@@ -142,18 +133,12 @@ async function processTenantEscalations(tenant: {
 				);
 			}
 		} catch (error) {
-			logger.error(
-				{ error, approvalId: approval.id },
-				"Failed to escalate approval",
-			);
+			logger.error({ error, approvalId: approval.id }, "Failed to escalate approval");
 		}
 	}
 
 	if (escalated > 0) {
-		logger.info(
-			{ organizationId: tenant.organizationId, escalated },
-			"Escalated approvals",
-		);
+		logger.info({ organizationId: tenant.organizationId, escalated }, "Escalated approvals");
 	}
 
 	return escalated;
@@ -183,9 +168,7 @@ async function escalateApproval(
 	const orgManagers = managers.filter((m) => m.manager.organizationId === organizationId);
 
 	// Find a backup (non-primary manager who isn't the current approver)
-	const backupManager = orgManagers.find(
-		(m) => m.managerId !== currentApproverId && !m.isPrimary,
-	);
+	const backupManager = orgManagers.find((m) => m.managerId !== currentApproverId && !m.isPrimary);
 
 	// If no backup, try any other manager
 	const escalateTo =

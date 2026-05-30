@@ -3,11 +3,12 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { absenceCategory, absenceEntry, timeEntry, workPeriod } from "@/db/schema";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
-import type { ClockinClient } from "./client";
 import {
-	isClockinAbsenceDuplicate,
-	isClockinWorkdayDuplicate,
-} from "./duplicate-detection";
+	resolveFallbackTimezoneCapture,
+	type TimeEntryTimezoneSource,
+} from "@/lib/time-tracking/timezone-capture";
+import type { ClockinClient } from "./client";
+import { isClockinAbsenceDuplicate, isClockinWorkdayDuplicate } from "./duplicate-detection";
 import type {
 	ClockinEntityImportResult,
 	ClockinImportResult,
@@ -24,7 +25,15 @@ function emptyResult(): ClockinEntityImportResult {
 }
 
 function mapAbsenceCategory(name: string | null): {
-	type: "vacation" | "sick" | "home_office" | "personal" | "unpaid" | "parental" | "bereavement" | "custom";
+	type:
+		| "vacation"
+		| "sick"
+		| "home_office"
+		| "personal"
+		| "unpaid"
+		| "parental"
+		| "bereavement"
+		| "custom";
 	countsAgainstVacation: boolean;
 	name: string;
 } {
@@ -72,6 +81,9 @@ export interface ClockinImportDependencies {
 		previousEntryId: string | null;
 		createdBy: string;
 		notes?: string | null;
+		utcOffsetMinutes: number;
+		timezone: string;
+		timezoneSource: TimeEntryTimezoneSource;
 	}): Promise<{ id: string; hash: string }>;
 	insertWorkPeriod(input: {
 		employeeId: string;
@@ -86,7 +98,15 @@ export interface ClockinImportDependencies {
 	ensureAbsenceCategory(input: {
 		organizationId: string;
 		name: string;
-		type: "vacation" | "sick" | "home_office" | "personal" | "unpaid" | "parental" | "bereavement" | "custom";
+		type:
+			| "vacation"
+			| "sick"
+			| "home_office"
+			| "personal"
+			| "unpaid"
+			| "parental"
+			| "bereavement"
+			| "custom";
 		countsAgainstVacation: boolean;
 	}): Promise<string>;
 	insertAbsence(input: {
@@ -105,7 +125,11 @@ const defaultDependencies: ClockinImportDependencies = {
 		if (employeeIds.length === 0) return [];
 
 		return db
-			.select({ employeeId: workPeriod.employeeId, startTime: workPeriod.startTime, endTime: workPeriod.endTime })
+			.select({
+				employeeId: workPeriod.employeeId,
+				startTime: workPeriod.startTime,
+				endTime: workPeriod.endTime,
+			})
 			.from(workPeriod)
 			.where(
 				and(
@@ -120,7 +144,11 @@ const defaultDependencies: ClockinImportDependencies = {
 		if (employeeIds.length === 0) return [];
 
 		return db
-			.select({ employeeId: absenceEntry.employeeId, startDate: absenceEntry.startDate, endDate: absenceEntry.endDate })
+			.select({
+				employeeId: absenceEntry.employeeId,
+				startDate: absenceEntry.startDate,
+				endDate: absenceEntry.endDate,
+			})
 			.from(absenceEntry)
 			.where(
 				and(
@@ -201,7 +229,9 @@ export async function orchestrateClockinImport(
 
 	const mappedEmployees = mappings.filter((entry) => entry.employeeId);
 	const employeeIds = mappedEmployees.map((entry) => entry.employeeId!);
-	const employeeIdByClockinId = new Map(mappedEmployees.map((entry) => [entry.clockinEmployeeId, entry.employeeId!]));
+	const employeeIdByClockinId = new Map(
+		mappedEmployees.map((entry) => [entry.clockinEmployeeId, entry.employeeId!]),
+	);
 
 	try {
 		if (selections.workdays) {
@@ -238,11 +268,15 @@ export async function orchestrateClockinImport(
 
 				try {
 					const currentState =
-						chainStateByEmployee.get(employeeId) ??
-						(await deps.getTimeEntryChainState(employeeId));
+						chainStateByEmployee.get(employeeId) ?? (await deps.getTimeEntryChainState(employeeId));
 
 					const startAt = DateTime.fromISO(workday.starts_at).toUTC();
 					const endAt = workday.ends_at ? DateTime.fromISO(workday.ends_at).toUTC() : null;
+					const clockInTimezoneCapture = resolveFallbackTimezoneCapture({
+						timestamp: startAt.toJSDate(),
+						timezone: "UTC",
+						timezoneSource: "backfill",
+					});
 					const clockInHash = calculateHash({
 						employeeId,
 						type: "clock_in",
@@ -260,6 +294,7 @@ export async function orchestrateClockinImport(
 						previousEntryId: currentState.previousEntryId,
 						createdBy,
 						notes: null,
+						...clockInTimezoneCapture,
 					});
 
 					let latestState: TimeEntryChainState = {
@@ -269,6 +304,11 @@ export async function orchestrateClockinImport(
 
 					let clockOutId: string | null = null;
 					if (endAt) {
+						const clockOutTimezoneCapture = resolveFallbackTimezoneCapture({
+							timestamp: endAt.toJSDate(),
+							timezone: "UTC",
+							timezoneSource: "backfill",
+						});
 						const clockOutHash = calculateHash({
 							employeeId,
 							type: "clock_out",
@@ -286,6 +326,7 @@ export async function orchestrateClockinImport(
 							previousEntryId: latestState.previousEntryId,
 							createdBy,
 							notes: null,
+							...clockOutTimezoneCapture,
 						});
 
 						clockOutId = insertedClockOut.id;
@@ -302,8 +343,7 @@ export async function orchestrateClockinImport(
 						clockOutId,
 						startTime: startAt.toJSDate(),
 						endTime: endAt?.toJSDate() ?? null,
-						durationMinutes:
-							endAt ? Math.round(endAt.diff(startAt, "minutes").minutes) : null,
+						durationMinutes: endAt ? Math.round(endAt.diff(startAt, "minutes").minutes) : null,
 						isActive: !endAt,
 					});
 

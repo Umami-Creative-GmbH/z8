@@ -26,7 +26,10 @@ export const statusCommand: BotCommand = {
 			const t = await getBotTranslate(ctx.locale);
 
 			const emp = await db.query.employee.findFirst({
-				where: and(eq(employee.id, ctx.employeeId), eq(employee.organizationId, ctx.organizationId)),
+				where: and(
+					eq(employee.id, ctx.employeeId),
+					eq(employee.organizationId, ctx.organizationId),
+				),
 			});
 
 			if (!emp) {
@@ -60,11 +63,15 @@ export const statusCommand: BotCommand = {
 
 			return {
 				type: "text",
-				text: t("bot.cmd.status.clockedIn", "You are clocked in since {time} ({hours}h {minutes}m).", {
-					time: fmtTime(clockInTime, ctx.locale),
-					hours,
-					minutes,
-				}),
+				text: t(
+					"bot.cmd.status.clockedIn",
+					"You are clocked in since {time} ({hours}h {minutes}m).",
+					{
+						time: fmtTime(clockInTime, ctx.locale),
+						hours,
+						minutes,
+					},
+				),
 			};
 		} catch (error) {
 			logger.error({ error, ctx }, "Failed to get status");

@@ -3,8 +3,8 @@ import {
 	HeadBucketCommand,
 	type S3ServiceException,
 } from "@aws-sdk/client-s3";
-import { createLogger } from "@/lib/logger";
 import { env } from "@/env";
+import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("StorageInit");
 
@@ -52,8 +52,7 @@ function parseS3Error(error: unknown): StorageInitError {
 					code: "CONNECTION_FAILED",
 					message: "Invalid S3 secret access key",
 					details: "The signature calculated does not match the one provided",
-					remedy:
-						"Verify S3_PUBLIC_SECRET_ACCESS_KEY is correct and matches the access key",
+					remedy: "Verify S3_PUBLIC_SECRET_ACCESS_KEY is correct and matches the access key",
 				};
 
 			case "AccessDenied":
@@ -219,7 +218,11 @@ export async function initializeStorage(): Promise<StorageInitResult> {
 
 		if (exists) {
 			logger.info({ bucket }, "S3 bucket verified");
-			if (privateBucket && privateBucket !== bucket && !(await bucketExists(client, privateBucket))) {
+			if (
+				privateBucket &&
+				privateBucket !== bucket &&
+				!(await bucketExists(client, privateBucket))
+			) {
 				await createBucket(client, privateBucket, region);
 				logger.info({ bucket: privateBucket }, "Private S3 bucket created successfully");
 			}
@@ -232,7 +235,11 @@ export async function initializeStorage(): Promise<StorageInitResult> {
 		try {
 			await createBucket(client, bucket, region);
 			logger.info({ bucket }, "S3 bucket created successfully");
-			if (privateBucket && privateBucket !== bucket && !(await bucketExists(client, privateBucket))) {
+			if (
+				privateBucket &&
+				privateBucket !== bucket &&
+				!(await bucketExists(client, privateBucket))
+			) {
 				await createBucket(client, privateBucket, region);
 				logger.info({ bucket: privateBucket }, "Private S3 bucket created successfully");
 			}

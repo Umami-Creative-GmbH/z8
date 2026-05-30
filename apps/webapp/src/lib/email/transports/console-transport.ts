@@ -5,9 +5,9 @@
  * Used as a development fallback when no email provider is configured.
  */
 
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import type { EmailMessage, EmailTransport, EmailTransportResult } from "./base";
-import { env } from "@/env";
 
 const logger = createLogger("ConsoleTransport");
 
@@ -34,7 +34,7 @@ export class ConsoleTransport implements EmailTransport {
 	async send(message: EmailMessage): Promise<EmailTransportResult> {
 		const from = message.from || this.formatFrom();
 
-		console.log("\n" + "=".repeat(60));
+		console.log(`\n${"=".repeat(60)}`);
 		console.log("EMAIL (Console Transport - No API key configured)");
 		console.log("=".repeat(60));
 		console.log("From:", from);
@@ -45,7 +45,7 @@ export class ConsoleTransport implements EmailTransport {
 		}
 		console.log("-".repeat(60));
 		console.log("HTML Length:", message.html.length, "characters");
-		console.log("=".repeat(60) + "\n");
+		console.log(`${"=".repeat(60)}\n`);
 
 		logger.info(
 			{ to: `${message.to.slice(0, 3)}***`, subject: message.subject },

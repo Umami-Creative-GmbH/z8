@@ -32,8 +32,16 @@ describe("BProgressBar", () => {
 
 		render(<BProgressBar />);
 
-		expect(documentAddEventListener).toHaveBeenCalledWith("click", expect.any(Function), expect.any(Object));
-		expect(anchorAddEventListener).not.toHaveBeenCalledWith("click", expect.any(Function), expect.anything());
+		expect(documentAddEventListener).toHaveBeenCalledWith(
+			"click",
+			expect.any(Function),
+			expect.any(Object),
+		);
+		expect(anchorAddEventListener).not.toHaveBeenCalledWith(
+			"click",
+			expect.any(Function),
+			expect.anything(),
+		);
 	});
 
 	it("starts progress for dynamically added links", async () => {

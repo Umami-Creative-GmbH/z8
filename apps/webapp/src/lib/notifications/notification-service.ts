@@ -417,7 +417,7 @@ export async function markAsRead(
 		if (updated) {
 			logger.debug({ notificationId }, "Notification marked as read");
 
-		// Publish count update to Redis for real-time SSE updates
+			// Publish count update to Redis for real-time SSE updates
 			// Get organizationId from the updated notification
 			const newCount = await getUnreadCount(userId, organizationId);
 			void publishNotificationEvent(userId, "count_update", {
@@ -557,7 +557,7 @@ export async function deleteOldNotifications(olderThanDays: number = 90): Promis
  */
 export async function isChannelEnabled(
 	userId: string,
-	organizationId: string,
+	_organizationId: string,
 	notificationType: NotificationType,
 	channel: NotificationChannel,
 ): Promise<boolean> {

@@ -1,11 +1,18 @@
 "use server";
 
-import { DateTime } from "luxon";
 import { and, count, eq, gte, inArray, lt } from "drizzle-orm";
 import { Effect } from "effect";
+import { DateTime } from "luxon";
 import { db } from "@/db";
 import { member, session } from "@/db/auth-schema";
-import { absenceEntry, approvalRequest, employee, team, teamPermissions, timeEntry } from "@/db/schema";
+import {
+	absenceEntry,
+	approvalRequest,
+	employee,
+	team,
+	teamPermissions,
+	timeEntry,
+} from "@/db/schema";
 import { AuthorizationError, DatabaseError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -68,7 +75,10 @@ function getStatisticsActorContext(queryName: string) {
 			try: () =>
 				Promise.all([
 					db.query.member.findFirst({
-						where: and(eq(member.userId, authSession.user.id), eq(member.organizationId, organizationId)),
+						where: and(
+							eq(member.userId, authSession.user.id),
+							eq(member.organizationId, organizationId),
+						),
 						columns: { role: true },
 					}),
 					db.query.employee.findFirst({
@@ -134,7 +144,7 @@ function getManageableTeamIds(actor: StatisticsActorContext, queryName: string) 
 			return null as Set<string> | null;
 		}
 
-		if (!actor.currentEmployee || actor.currentEmployee.role !== "manager") {
+		if (actor.currentEmployee?.role !== "manager") {
 			return new Set<string>();
 		}
 
@@ -390,7 +400,9 @@ export async function getManagerStatisticsReadView(): Promise<
 
 		const scopedEmployeeIds = teamScopedEmployees.map((employeeRecord) => employeeRecord.id);
 		const totalEmployees = teamScopedEmployees.length;
-		const activeEmployees = teamScopedEmployees.filter((employeeRecord) => employeeRecord.isActive).length;
+		const activeEmployees = teamScopedEmployees.filter(
+			(employeeRecord) => employeeRecord.isActive,
+		).length;
 
 		if (scopedEmployeeIds.length === 0) {
 			return buildStatisticsBase({

@@ -9,7 +9,7 @@ import { eq } from "drizzle-orm";
 import type { DateTime } from "luxon";
 import { db } from "@/db";
 import { userSettings } from "@/db/schema/user-settings";
-import { ALL_LANGUAGES, DEFAULT_LANGUAGE, TolgeeBase, loadNamespaces } from "@/tolgee/shared";
+import { ALL_LANGUAGES, DEFAULT_LANGUAGE, loadNamespaces, TolgeeBase } from "@/tolgee/shared";
 
 /** The translate function signature returned by getBotTranslate */
 export type BotTranslateFn = (

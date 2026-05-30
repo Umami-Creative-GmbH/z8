@@ -150,10 +150,7 @@ export function EmployeeSkillsCard({
 			<CardContent>
 				{isLoading ? (
 					<div className="flex items-center justify-center py-8">
-						<IconLoader2
-							className="size-6 animate-spin text-muted-foreground"
-							aria-hidden="true"
-						/>
+						<IconLoader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
 					</div>
 				) : skills.length === 0 ? (
 					<div className="py-8 text-center text-muted-foreground">
@@ -294,6 +291,7 @@ function AssignSkillDialog({
 	onSuccess,
 }: AssignSkillDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 
 	// Fetch available skills
 	const { data: allSkills, isLoading: isLoadingSkills } = useOrganizationSkills({
@@ -330,6 +328,7 @@ function AssignSkillDialog({
 			return result.data;
 		},
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.employee(employeeId) });
 			toast.success(t("settings.skills.skillAssigned", "Skill assigned"));
 			form.reset();
 			onSuccess();

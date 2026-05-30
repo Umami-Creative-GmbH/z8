@@ -1,19 +1,19 @@
 // Billing Services - Stripe integration for SaaS billing
 // These services are disabled when BILLING_ENABLED !== "true"
 
+export * from "./billing-enforcement.service";
+export * from "./billing-events.service";
+export * from "./seat-sync.service";
 export * from "./stripe.service";
 export * from "./subscription.service";
-export * from "./seat-sync.service";
-export * from "./billing-events.service";
-export * from "./billing-enforcement.service";
 
 // Re-export combined layer for convenience
 import { Layer } from "effect";
+import { BillingEnforcementServiceLive } from "./billing-enforcement.service";
+import { BillingEventsServiceLive } from "./billing-events.service";
+import { SeatSyncServiceLive } from "./seat-sync.service";
 import { StripeServiceLive } from "./stripe.service";
 import { SubscriptionServiceLive } from "./subscription.service";
-import { SeatSyncServiceLive } from "./seat-sync.service";
-import { BillingEventsServiceLive } from "./billing-events.service";
-import { BillingEnforcementServiceLive } from "./billing-enforcement.service";
 
 /**
  * Combined layer for all billing services

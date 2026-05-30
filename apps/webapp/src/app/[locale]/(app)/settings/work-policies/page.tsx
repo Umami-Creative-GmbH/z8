@@ -1,6 +1,6 @@
-import { connection } from "next/server";
 import { redirect } from "next/navigation";
-import { WorkPolicyManagement } from "@/components/settings/work-policy-management";
+import { connection } from "next/server";
+import { WorkPolicyManagement } from "@/components/settings/work-policy/work-policy-management";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 export default async function WorkPoliciesPage() {

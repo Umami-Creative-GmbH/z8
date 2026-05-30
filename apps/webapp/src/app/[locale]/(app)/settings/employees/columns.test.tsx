@@ -90,7 +90,9 @@ describe("employee directory columns", () => {
 	});
 
 	it("passes clock status to the directory avatar", () => {
-		renderEmployeeCell(createEmployee({ clockStatus: "clocked-in" } as Partial<EmployeeWithRelations>));
+		renderEmployeeCell(
+			createEmployee({ clockStatus: "clocked-in" } as Partial<EmployeeWithRelations>),
+		);
 
 		expect(screen.getByText("", { selector: '[data-clock-status="clocked-in"]' })).toBeTruthy();
 	});

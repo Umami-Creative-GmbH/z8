@@ -1,7 +1,7 @@
 import { Context, Effect, Layer } from "effect";
 import Stripe from "stripe";
-import { StripeError } from "../../errors";
 import { env } from "@/env";
+import { StripeError } from "../../errors";
 
 export interface StripeConfig {
 	secretKey: string;
@@ -77,12 +77,10 @@ export const StripeServiceLive = Layer.effect(
 			enabled: env.BILLING_ENABLED === "true",
 		};
 
-		const stripe = config.enabled && config.secretKey
-			? new Stripe(config.secretKey, {
-					apiVersion: "2026-04-22.dahlia",
-					typescript: true,
-				})
-			: null;
+		const stripe =
+			config.enabled && config.secretKey
+				? new Stripe(config.secretKey, { typescript: true })
+				: null;
 
 		return StripeService.of({
 			client: stripe,

@@ -15,13 +15,7 @@ import {
 	employeeCustomRole,
 } from "@/db/schema";
 import { isValidPermission } from "@/lib/authorization/permission-registry";
-import type { Action, Subject } from "@/lib/authorization/types";
-import {
-	ConflictError,
-	type DatabaseError,
-	NotFoundError,
-	ValidationError,
-} from "../errors";
+import { ConflictError, type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
 // ============================================
@@ -182,7 +176,10 @@ export const CustomRoleServiceLive = Layer.effect(
 				createdBy: roleRecord.createdBy,
 				updatedAt: roleRecord.updatedAt,
 				updatedBy: roleRecord.updatedBy,
-				permissions: perms.map((p) => ({ action: p.action, subject: p.subject })),
+				permissions: perms.map((p) => ({
+					action: p.action,
+					subject: p.subject,
+				})),
 				assignedCount: assignedCountResult[0]?.count ?? 0,
 			};
 		};
@@ -238,15 +235,24 @@ export const CustomRoleServiceLive = Layer.effect(
 									updatedAt: new Date(),
 								})
 								.returning({ id: customRole.id });
-							return row!;
+							if (!row) {
+								throw new Error("Failed to create custom role");
+							}
+							return row;
 						}),
 					);
 
 					yield* _(
-						writeAuditLog(orgId, result.id, "role_created", {
-							name: input.name,
-							baseTier: input.baseTier,
-						}, createdBy),
+						writeAuditLog(
+							orgId,
+							result.id,
+							"role_created",
+							{
+								name: input.name,
+								baseTier: input.baseTier,
+							},
+							createdBy,
+						),
 					);
 
 					return result.id;
@@ -258,10 +264,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					const role = yield* _(
 						dbService.query("getCustomRoleForUpdate", async () => {
 							return await dbService.db.query.customRole.findFirst({
-								where: and(
-									eq(customRole.id, roleId),
-									eq(customRole.organizationId, orgId),
-								),
+								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -279,12 +282,13 @@ export const CustomRoleServiceLive = Layer.effect(
 
 					// Check name conflict if name is being changed
 					if (input.name && input.name.trim() !== role.name) {
+						const trimmedName = input.name.trim();
 						const existing = yield* _(
 							dbService.query("checkDuplicateRoleNameOnUpdate", async () => {
 								return await dbService.db.query.customRole.findFirst({
 									where: and(
 										eq(customRole.organizationId, orgId),
-										eq(customRole.name, input.name!.trim()),
+										eq(customRole.name, trimmedName),
 									),
 								});
 							}),
@@ -321,9 +325,15 @@ export const CustomRoleServiceLive = Layer.effect(
 					);
 
 					yield* _(
-						writeAuditLog(orgId, roleId, "role_updated", {
-							changes: input,
-						}, updatedBy),
+						writeAuditLog(
+							orgId,
+							roleId,
+							"role_updated",
+							{
+								changes: input,
+							},
+							updatedBy,
+						),
 					);
 				}),
 
@@ -333,10 +343,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					yield* _(
 						dbService.query("getCustomRoleForDelete", async () => {
 							return await dbService.db.query.customRole.findFirst({
-								where: and(
-									eq(customRole.id, roleId),
-									eq(customRole.organizationId, orgId),
-								),
+								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -366,9 +373,7 @@ export const CustomRoleServiceLive = Layer.effect(
 						}),
 					);
 
-					yield* _(
-						writeAuditLog(orgId, roleId, "role_deleted", {}, deletedBy),
-					);
+					yield* _(writeAuditLog(orgId, roleId, "role_deleted", {}, deletedBy));
 				}),
 
 			getRole: (roleId, orgId) =>
@@ -376,10 +381,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					const role = yield* _(
 						dbService.query("getCustomRole", async () => {
 							return await dbService.db.query.customRole.findFirst({
-								where: and(
-									eq(customRole.id, roleId),
-									eq(customRole.organizationId, orgId),
-								),
+								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -407,10 +409,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					const roles = yield* _(
 						dbService.query("listCustomRoles", async () => {
 							return await dbService.db.query.customRole.findMany({
-								where: and(
-									eq(customRole.organizationId, orgId),
-									eq(customRole.isActive, true),
-								),
+								where: and(eq(customRole.organizationId, orgId), eq(customRole.isActive, true)),
 								orderBy: (table, { asc }) => [asc(table.name)],
 							});
 						}),
@@ -418,9 +417,7 @@ export const CustomRoleServiceLive = Layer.effect(
 
 					return yield* _(
 						dbService.query("listCustomRolesWithDetails", async () => {
-							return await Promise.all(
-								roles.map((role) => loadRoleWithDetails(role)),
-							);
+							return await Promise.all(roles.map((role) => loadRoleWithDetails(role)));
 						}),
 					);
 				}),
@@ -431,10 +428,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					yield* _(
 						dbService.query("getCustomRoleForSetPerms", async () => {
 							return await dbService.db.query.customRole.findFirst({
-								where: and(
-									eq(customRole.id, roleId),
-									eq(customRole.organizationId, orgId),
-								),
+								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -484,9 +478,15 @@ export const CustomRoleServiceLive = Layer.effect(
 					);
 
 					yield* _(
-						writeAuditLog(orgId, roleId, "permission_added", {
-							permissions: permissions.map((p) => `${p.action}:${p.subject}`),
-						}, userId),
+						writeAuditLog(
+							orgId,
+							roleId,
+							"permission_added",
+							{
+								permissions: permissions.map((p) => `${p.action}:${p.subject}`),
+							},
+							userId,
+						),
 					);
 				}),
 
@@ -496,10 +496,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					yield* _(
 						dbService.query("verifyEmployeeOrgForAssign", async () => {
 							return await dbService.db.query.employee.findFirst({
-								where: and(
-									eq(employee.id, employeeId),
-									eq(employee.organizationId, orgId),
-								),
+								where: and(eq(employee.id, employeeId), eq(employee.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -554,9 +551,15 @@ export const CustomRoleServiceLive = Layer.effect(
 					);
 
 					yield* _(
-						writeAuditLog(orgId, roleId, "employee_assigned", {
-							employeeId,
-						}, assignedBy),
+						writeAuditLog(
+							orgId,
+							roleId,
+							"employee_assigned",
+							{
+								employeeId,
+							},
+							assignedBy,
+						),
 					);
 				}),
 
@@ -566,10 +569,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					yield* _(
 						dbService.query("verifyEmployeeOrgForUnassign", async () => {
 							return await dbService.db.query.employee.findFirst({
-								where: and(
-									eq(employee.id, employeeId),
-									eq(employee.organizationId, orgId),
-								),
+								where: and(eq(employee.id, employeeId), eq(employee.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -589,10 +589,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					yield* _(
 						dbService.query("getCustomRoleForUnassign", async () => {
 							return await dbService.db.query.customRole.findFirst({
-								where: and(
-									eq(customRole.id, roleId),
-									eq(customRole.organizationId, orgId),
-								),
+								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -622,9 +619,15 @@ export const CustomRoleServiceLive = Layer.effect(
 					);
 
 					yield* _(
-						writeAuditLog(orgId, roleId, "employee_unassigned", {
-							employeeId,
-						}, unassignedBy),
+						writeAuditLog(
+							orgId,
+							roleId,
+							"employee_unassigned",
+							{
+								employeeId,
+							},
+							unassignedBy,
+						),
 					);
 				}),
 
@@ -647,9 +650,7 @@ export const CustomRoleServiceLive = Layer.effect(
 
 					return yield* _(
 						dbService.query("getEmployeeCustomRolesWithDetails", async () => {
-							return await Promise.all(
-								activeRoles.map((role) => loadRoleWithDetails(role)),
-							);
+							return await Promise.all(activeRoles.map((role) => loadRoleWithDetails(role)));
 						}),
 					);
 				}),

@@ -5,7 +5,10 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 import { startImportCommitAction } from "@/app/[locale]/(app)/settings/import/review-actions";
 import { ImportIssueGroups } from "@/components/settings/import/import-issue-groups";
-import { ImportReviewTable, type ImportReviewRow } from "@/components/settings/import/import-review-table";
+import {
+	type ImportReviewRow,
+	ImportReviewTable,
+} from "@/components/settings/import/import-review-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -27,16 +30,33 @@ interface ImportReviewPageProps {
 
 const summaryItems = [
 	{ labelKey: "settings.import.review.summary.total", fallback: "Total", key: "totalRows" },
-	{ labelKey: "settings.import.review.summary.accepted", fallback: "Accepted", key: "acceptedRows" },
-	{ labelKey: "settings.import.review.summary.rejected", fallback: "Rejected", key: "rejectedRows" },
+	{
+		labelKey: "settings.import.review.summary.accepted",
+		fallback: "Accepted",
+		key: "acceptedRows",
+	},
+	{
+		labelKey: "settings.import.review.summary.rejected",
+		fallback: "Rejected",
+		key: "rejectedRows",
+	},
 	{ labelKey: "settings.import.review.summary.blocked", fallback: "Blocked", key: "blockedRows" },
-	{ labelKey: "settings.import.review.summary.committed", fallback: "Committed", key: "committedRows" },
+	{
+		labelKey: "settings.import.review.summary.committed",
+		fallback: "Committed",
+		key: "committedRows",
+	},
 	{ labelKey: "settings.import.review.summary.issues", fallback: "Issues", key: "issueCount" },
 ] as const;
 
 const numberFormatter = new Intl.NumberFormat();
 
-export function ImportReviewPage({ organizationId, batchId, summary, rows }: ImportReviewPageProps) {
+export function ImportReviewPage({
+	organizationId,
+	batchId,
+	summary,
+	rows,
+}: ImportReviewPageProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
 	const commitDisabled = isPending || summary.blockedRows > 0 || summary.acceptedRows === 0;
@@ -55,8 +75,7 @@ export function ImportReviewPage({ organizationId, batchId, summary, rows }: Imp
 			}
 
 			toast.error(
-				result.error ??
-					t("settings.import.review.commitFailed", "Failed to start import commit"),
+				result.error ?? t("settings.import.review.commitFailed", "Failed to start import commit"),
 			);
 		});
 	}

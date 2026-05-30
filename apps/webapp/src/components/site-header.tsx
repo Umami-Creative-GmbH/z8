@@ -2,6 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { DashboardHeaderCustomize } from "@/components/dashboard/dashboard-header-customize";
+import { HeaderTimezoneControl } from "@/components/header-timezone-control";
 import { NotificationBell } from "@/components/notifications";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { TimeClockPopover } from "@/components/time-tracking/time-clock-popover";
@@ -58,8 +59,9 @@ export function SiteHeader() {
 				<h1 className="font-medium text-base">{t(titleKey, defaultTitle)}</h1>
 				<div className="ml-auto flex items-center gap-2">
 					{isDashboardRoute ? <DashboardHeaderCustomize /> : null}
-					<NotificationBell />
+					<HeaderTimezoneControl />
 					<TimeClockPopover timeFormat={timeFormat} />
+					<NotificationBell />
 				</div>
 			</div>
 		</header>

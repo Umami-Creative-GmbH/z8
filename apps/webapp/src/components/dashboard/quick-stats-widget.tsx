@@ -37,6 +37,20 @@ type QuickStats = {
 	};
 };
 
+const CIRCULAR_PROGRESS_COLOR_CLASSES = {
+	blue: "stroke-blue-500",
+	purple: "stroke-purple-500",
+	green: "stroke-emerald-500",
+	orange: "stroke-orange-500",
+};
+
+const CIRCULAR_PROGRESS_GLOW_CLASSES = {
+	blue: "stroke-blue-400/50",
+	purple: "stroke-purple-400/50",
+	green: "stroke-emerald-400/50",
+	orange: "stroke-orange-400/50",
+};
+
 function CircularProgress({
 	progress,
 	size = 80,
@@ -53,20 +67,6 @@ function CircularProgress({
 	const radius = (size - strokeWidth) / 2;
 	const circumference = 2 * Math.PI * radius;
 	const strokeDashoffset = circumference - (Math.min(progress, 100) / 100) * circumference;
-
-	const colorClasses = {
-		blue: "stroke-blue-500",
-		purple: "stroke-purple-500",
-		green: "stroke-emerald-500",
-		orange: "stroke-orange-500",
-	};
-
-	const glowClasses = {
-		blue: "stroke-blue-400/50",
-		purple: "stroke-purple-400/50",
-		green: "stroke-emerald-400/50",
-		orange: "stroke-orange-400/50",
-	};
 
 	return (
 		<div className="relative inline-flex items-center justify-center">
@@ -88,7 +88,10 @@ function CircularProgress({
 					fill="none"
 					strokeWidth={strokeWidth}
 					strokeLinecap="round"
-					className={cn("transition-all duration-500 ease-out", colorClasses[color])}
+					className={cn(
+						"transition-all duration-500 ease-out",
+						CIRCULAR_PROGRESS_COLOR_CLASSES[color],
+					)}
 					style={{
 						strokeDasharray: circumference,
 						strokeDashoffset,
@@ -103,7 +106,7 @@ function CircularProgress({
 						fill="none"
 						strokeWidth={strokeWidth}
 						strokeLinecap="round"
-						className={cn("blur-sm", glowClasses[color])}
+						className={cn("blur-sm", CIRCULAR_PROGRESS_GLOW_CLASSES[color])}
 						style={{
 							strokeDasharray: circumference,
 							strokeDashoffset,

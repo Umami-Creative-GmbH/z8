@@ -60,9 +60,7 @@ function activeEmployeeInOrg(
 ) {
 	return employees.find(
 		(employee) =>
-			employee.id === employeeId &&
-			employee.organizationId === organizationId &&
-			employee.isActive,
+			employee.id === employeeId && employee.organizationId === organizationId && employee.isActive,
 	);
 }
 
@@ -99,8 +97,14 @@ function teamManagerIds(input: ResolveEligibleManagersInput) {
 	);
 }
 
-export function resolveEligibleManagers(input: ResolveEligibleManagersInput): EligibleManagerResult {
-	const requester = activeEmployeeInOrg(input.employees, input.organizationId, input.requesterEmployeeId);
+export function resolveEligibleManagers(
+	input: ResolveEligibleManagersInput,
+): EligibleManagerResult {
+	const requester = activeEmployeeInOrg(
+		input.employees,
+		input.organizationId,
+		input.requesterEmployeeId,
+	);
 	if (!requester) {
 		return { ok: false, reason: "Requester is not active in this organization." };
 	}
@@ -115,7 +119,10 @@ export function resolveEligibleManagers(input: ResolveEligibleManagersInput): El
 		return { ok: true, source: "team", managerIds: team };
 	}
 
-	return { ok: false, reason: "Requester has no active direct or team manager in this organization." };
+	return {
+		ok: false,
+		reason: "Requester has no active direct or team manager in this organization.",
+	};
 }
 
 export function resolvePrimaryEligibleManager(

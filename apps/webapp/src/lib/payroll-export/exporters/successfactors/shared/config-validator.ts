@@ -14,9 +14,7 @@ export interface ValidationResult {
 /**
  * Validate SAP SuccessFactors configuration
  */
-export function validateSuccessFactorsConfig(
-	config: Record<string, unknown>,
-): ValidationResult {
+export function validateSuccessFactorsConfig(config: Record<string, unknown>): ValidationResult {
 	const errors: string[] = [];
 	const sfConfig = config as Partial<SuccessFactorsConfig>;
 
@@ -49,10 +47,7 @@ export function validateSuccessFactorsConfig(
 	}
 
 	// Validate batch size
-	if (
-		sfConfig.batchSize !== undefined &&
-		(sfConfig.batchSize < 1 || sfConfig.batchSize > 100)
-	) {
+	if (sfConfig.batchSize !== undefined && (sfConfig.batchSize < 1 || sfConfig.batchSize > 100)) {
 		errors.push("Batch size must be between 1 and 100");
 	}
 

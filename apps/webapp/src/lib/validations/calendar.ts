@@ -63,6 +63,8 @@ export const timeEntryEventSchema = calendarEventSchema.extend({
 	metadata: z.object({
 		entryType: z.enum(["clock_in", "clock_out", "correction"]),
 		employeeName: z.string(),
+		utcOffsetMinutes: z.number().int().optional(),
+		timezone: z.string().optional(),
 	}),
 });
 
@@ -74,6 +76,10 @@ export const workPeriodEventSchema = calendarEventSchema.extend({
 	metadata: z.object({
 		durationMinutes: z.number().int(),
 		employeeName: z.string(),
+		clockInUtcOffsetMinutes: z.number().int().optional(),
+		clockInTimezone: z.string().optional(),
+		clockOutUtcOffsetMinutes: z.number().int().optional(),
+		clockOutTimezone: z.string().optional(),
 	}),
 });
 

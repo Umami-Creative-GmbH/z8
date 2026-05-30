@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanupExpiredExports } from "@/lib/export/export-service";
 import { deleteOldAuditLogs } from "@/lib/audit/cleanup";
+import { cleanupExpiredExports } from "@/lib/export/export-service";
 import { deleteOldNotifications } from "@/lib/notifications/notification-service";
 import { runCleanup } from "./cleanup";
 

@@ -1,12 +1,18 @@
 "use client";
 
+import { DateTime } from "luxon";
 import { useState } from "react";
+import type { SelectableEmployee } from "@/components/employee-select/types";
+import { useUserTimezone } from "@/components/providers/user-preferences-provider";
+import { ManualTimeEntryDialog } from "@/components/time-tracking/manual-time-entry-dialog";
 import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useOrganization } from "@/hooks/use-organization";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
+import { useRouter } from "@/navigation";
 import { CalendarEmployeeSelector } from "./calendar-employee-selector";
 import { CalendarFiltersComponent } from "./calendar-filters";
 import { CalendarLegend } from "./calendar-legend";
@@ -22,18 +28,37 @@ import { YearCalendarView } from "./year-calendar-view";
 interface CalendarViewProps {
 	organizationId: string;
 	currentEmployeeId?: string;
+	initialSelectedEmployeeId?: string;
 }
 
-export function CalendarView({ organizationId, currentEmployeeId }: CalendarViewProps) {
+function isRunningWorkPeriod(event: CalendarEvent): boolean {
+	return event.type === "work_period" && event.metadata.isRunning === true;
+}
+
+interface ManualEntryDefaults {
+	date: string;
+	clockInTime: string;
+	clockOutTime: string;
+}
+
+export function CalendarView({
+	organizationId,
+	currentEmployeeId,
+	initialSelectedEmployeeId,
+}: CalendarViewProps) {
+	const router = useRouter();
 	const { isManagerOrAbove } = useOrganization();
+	const viewerTimeZone = useUserTimezone();
+	const initialEmployeeId = initialSelectedEmployeeId ?? currentEmployeeId ?? null;
+	const initialFilterEmployeeId = initialEmployeeId ?? undefined;
 
 	// View mode state
 	const [viewMode, setViewMode] = useState<ViewMode>("week");
 
 	// Selected employee for calendar view (defaults to current user)
-	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(
-		currentEmployeeId ?? null,
-	);
+	const [previousInitialEmployeeId, setPreviousInitialEmployeeId] = useState(initialEmployeeId);
+	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(initialEmployeeId);
+	const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
 
 	// Current date range for data fetching
 	const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -45,6 +70,8 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 	// Dialog states for work period actions
 	const [showSplitDialog, setShowSplitDialog] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [manualEntryOpen, setManualEntryOpen] = useState(false);
+	const [manualEntryDefaults, setManualEntryDefaults] = useState<ManualEntryDefaults | null>(null);
 
 	// Event type filters
 	const [filters, setFilters] = useState<CalendarFilters>({
@@ -52,33 +79,75 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 		showAbsences: true,
 		showTimeEntries: false,
 		showWorkPeriods: true,
-		// Always filter to selected employee (never undefined - avoids fetching all)
-		employeeId: currentEmployeeId,
+		// Calendar pages pass the authenticated employee, keeping this scoped by default.
+		employeeId: initialFilterEmployeeId,
 	});
 
+	if (previousInitialEmployeeId !== initialEmployeeId) {
+		setPreviousInitialEmployeeId(initialEmployeeId);
+		setSelectedEmployeeId(initialEmployeeId);
+		setSelectedEmployeeName(null);
+		setFilters((prev) => {
+			if (prev.employeeId === initialFilterEmployeeId) {
+				return prev;
+			}
+
+			return {
+				...prev,
+				employeeId: initialFilterEmployeeId,
+			};
+		});
+	}
+
+	const getEmployeeDisplayName = (employee?: SelectableEmployee) => {
+		if (!employee) return null;
+		return buildAuthUserDisplayName(employee.user);
+	};
+
 	// Handle employee selection change
-	const handleEmployeeChange = (employeeId: string | null) => {
-		setSelectedEmployeeId(employeeId);
+	const handleEmployeeChange = (employeeId: string | null, employee?: SelectableEmployee) => {
+		const nextEmployeeId = employeeId ?? currentEmployeeId ?? null;
+
+		setSelectedEmployeeId(nextEmployeeId);
+		setSelectedEmployeeName(getEmployeeDisplayName(employee));
 		setFilters((prev) => ({
 			...prev,
-			// Always use explicit employeeId, fallback to current user (never undefined)
-			employeeId: employeeId ?? currentEmployeeId,
+			// Always prefer the explicit selection, falling back to the current user.
+			employeeId: nextEmployeeId ?? undefined,
 		}));
+
+		if (!employeeId || employeeId === currentEmployeeId) {
+			router.push("/calendar");
+			return;
+		}
+
+		router.push(`/calendar/${employeeId}`);
 	};
 
 	// Fetch calendar events
 	// When in year view, fetch all 12 months at once
-	const { events, dailyRequirements, dailyActualMinutes, workBalance, isLoading, error, refetch } =
-		useCalendarData({
-			organizationId,
-			month: currentMonth.getMonth(),
-			year: viewMode === "year" ? currentYear : currentMonth.getFullYear(),
-			filters,
-			fullYear: viewMode === "year",
-		});
+	const {
+		events,
+		dailyRequirements,
+		dailyActualMinutes,
+		workBalance,
+		calendarTimezone,
+		isLoading,
+		isFetching,
+		error,
+		refetch,
+	} = useCalendarData({
+		organizationId,
+		month: currentMonth.getMonth(),
+		year: viewMode === "year" ? currentYear : currentMonth.getFullYear(),
+		filters,
+		fullYear: viewMode === "year",
+	});
+	const calendarTimeZone = calendarTimezone ?? viewerTimeZone;
+	const completedEvents = events.filter((event) => !isRunningWorkPeriod(event));
 
 	const workHoursData = buildDailyWorkHoursSummaries({
-		events,
+		events: completedEvents,
 		dailyRequirements,
 		dailyActualMinutes,
 	});
@@ -93,6 +162,22 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 		// Update current month based on range midpoint
 		const midpoint = new Date((range.start.getTime() + range.end.getTime()) / 2);
 		setCurrentMonth(midpoint);
+	};
+
+	const handleTimeRangeSelect = (range: { start: Date; end: Date }) => {
+		const [clockInDate, clockOutDate] =
+			range.start.getTime() <= range.end.getTime()
+				? [range.start, range.end]
+				: [range.end, range.start];
+		const clockIn = DateTime.fromJSDate(clockInDate, { zone: calendarTimeZone });
+		const clockOut = DateTime.fromJSDate(clockOutDate, { zone: calendarTimeZone });
+
+		setManualEntryDefaults({
+			date: clockIn.toISODate() ?? "",
+			clockInTime: clockIn.toFormat("HH:mm"),
+			clockOutTime: clockOut.toFormat("HH:mm"),
+		});
+		setManualEntryOpen(true);
 	};
 
 	// Handle day click from year view
@@ -141,6 +226,21 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 				</div>
 			)}
 
+			<ManualTimeEntryDialog
+				employeeId={selectedEmployeeId ?? currentEmployeeId ?? ""}
+				employeeTimezone={calendarTimeZone}
+				hasManager={false}
+				targetEmployeeId={selectedEmployeeId ?? undefined}
+				targetEmployeeName={selectedEmployeeName ?? undefined}
+				defaultDate={manualEntryDefaults?.date}
+				defaultClockInTime={manualEntryDefaults?.clockInTime}
+				defaultClockOutTime={manualEntryDefaults?.clockOutTime}
+				open={manualEntryOpen}
+				onOpenChange={setManualEntryOpen}
+				hideTrigger
+				onSuccess={refetch}
+			/>
+
 			{/* Main content grid */}
 			<div
 				className={
@@ -179,7 +279,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 				>
 					{viewMode === "year" ? (
 						<YearCalendarView
-							events={events}
+							events={completedEvents}
 							year={currentYear}
 							viewMode={viewMode}
 							onYearChange={setCurrentYear}
@@ -190,24 +290,28 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 					) : viewMode === "month" ? (
 						<MonthWorkSummaryView
 							monthDate={currentMonth}
-							events={events}
+							events={completedEvents}
 							workHoursData={workHoursData}
 							viewMode={viewMode}
 							onViewModeChange={setViewMode}
 							onMonthChange={setCurrentMonth}
 							onDayClick={handleDayClick}
 							onRefresh={refetch}
+							isSummaryLoading={isFetching}
 						/>
 					) : (
 						<ScheduleXWrapper
 							events={events}
+							timeZone={calendarTimeZone}
 							isLoading={isLoading}
 							viewMode={viewMode}
 							onViewModeChange={setViewMode}
 							onEventClick={handleEventClick}
 							onRangeChange={handleRangeChange}
+							onTimeRangeSelect={handleTimeRangeSelect}
 							onRefresh={refetch}
 							workHoursData={workHoursData}
+							isSummaryLoading={isFetching}
 						/>
 					)}
 				</div>

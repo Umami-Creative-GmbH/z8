@@ -10,6 +10,7 @@ import {
 	updateTimeEntryNotes,
 } from "@/app/[locale]/(app)/time-tracking/actions";
 import { useOfflineClock } from "@/hooks/use-offline-clock";
+import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { queryKeys } from "./keys";
 
@@ -18,6 +19,10 @@ export interface TimeClockState {
 	employeeId: string | null;
 	isClockedIn: boolean;
 	activeWorkPeriod: { id: string; startTime: Date } | null;
+}
+
+function resolveBrowserTimezone(params?: { browserTimezone?: string | null }) {
+	return params && "browserTimezone" in params ? params.browserTimezone : getBrowserTimezone();
 }
 
 /**
@@ -106,14 +111,19 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	// Clock in mutation with offline support
 	const clockInMutation = useMutation({
-		mutationFn: async (params: { workLocationType?: WorkLocationType }) => {
+		mutationFn: async (params?: {
+			workLocationType?: WorkLocationType;
+			browserTimezone?: string | null;
+		}) => {
 			// When offline, queue the event for later sync
 			if (isOffline) {
+				const browserTimezone = resolveBrowserTimezone(params);
 				const result = await queueClockEvent({
 					type: "clock_in",
 					timestamp: Date.now(),
 					organizationId: "pending", // Will be resolved on sync
 					workLocationType: params?.workLocationType,
+					browserTimezone,
 				});
 
 				if (result.success) {
@@ -144,7 +154,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			}
 
 			// Online - use normal server action
-			return clockIn(params?.workLocationType);
+			return clockIn(params?.workLocationType, {
+				browserTimezone: resolveBrowserTimezone(params),
+			});
 		},
 		onSuccess: (result) => {
 			if (result.success && !("queued" in result)) {
@@ -162,15 +174,21 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	// Clock out mutation with offline support
 	const clockOutMutation = useMutation({
-		mutationFn: async (params?: { projectId?: string; workCategoryId?: string }) => {
+		mutationFn: async (params?: {
+			projectId?: string;
+			workCategoryId?: string;
+			browserTimezone?: string | null;
+		}) => {
 			// When offline, queue the event for later sync
 			if (isOffline) {
+				const browserTimezone = resolveBrowserTimezone(params);
 				const result = await queueClockEvent({
 					type: "clock_out",
 					timestamp: Date.now(),
 					organizationId: "pending", // Will be resolved on sync
 					projectId: params?.projectId,
 					workCategoryId: params?.workCategoryId,
+					browserTimezone,
 				});
 
 				if (result.success) {
@@ -197,7 +215,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			}
 
 			// Online - use normal server action
-			return clockOut(params?.projectId, params?.workCategoryId);
+			return clockOut(params?.projectId, params?.workCategoryId, {
+				browserTimezone: resolveBrowserTimezone(params),
+			});
 		},
 		onSuccess: (result) => {
 			if (result.success && !("queued" in result)) {
@@ -217,6 +237,11 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 	const updateNotesMutation = useMutation({
 		mutationFn: ({ entryId, notes }: { entryId: string; notes: string }) =>
 			updateTimeEntryNotes(entryId, notes),
+		onSuccess: (result) => {
+			if (result.success) {
+				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
+			}
+		},
 	});
 
 	// Add break mutation (online only - break changes must be confirmed immediately)
@@ -265,7 +290,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		isSyncing,
 
 		// Mutations
-		clockIn: (params?: { workLocationType?: WorkLocationType }) =>
+		clockIn: (params?: { workLocationType?: WorkLocationType; browserTimezone?: string | null }) =>
 			clockInMutation.mutateAsync(params ?? {}),
 		clockOut: clockOutMutation.mutateAsync,
 		addBreak: addBreakMutation.mutateAsync,

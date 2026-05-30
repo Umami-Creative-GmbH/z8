@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -33,7 +33,15 @@ vi.mock("@/lib/query", () => ({
 }));
 
 vi.mock("@/navigation", () => ({
-	Link: ({ children, href, className }: { children: ReactNode; href: string; className?: string }) => (
+	Link: ({
+		children,
+		href,
+		className,
+	}: {
+		children: ReactNode;
+		href: string;
+		className?: string;
+	}) => (
 		<a href={href} className={className}>
 			{children}
 		</a>

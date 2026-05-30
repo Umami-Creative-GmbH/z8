@@ -1,6 +1,10 @@
 import { DateTime } from "luxon";
 
-import type { ProjectHealthFields, ProjectSummary, ProjectBudgetHealthTotals } from "./project-types";
+import type {
+	ProjectBudgetHealthTotals,
+	ProjectHealthFields,
+	ProjectSummary,
+} from "./project-types";
 
 interface BuildProjectHealthFieldsParams {
 	projectName: string;
@@ -23,10 +27,20 @@ export function buildProjectHealthFields({
 	rangeStart,
 	rangeEnd,
 }: BuildProjectHealthFieldsParams): ProjectHealthFields {
-	const percentBudgetUsed = budgetHours && budgetHours > 0 ? (cumulativeHours / budgetHours) * 100 : null;
+	const percentBudgetUsed =
+		budgetHours && budgetHours > 0 ? (cumulativeHours / budgetHours) * 100 : null;
 	const budgetFields = buildBudgetFields(percentBudgetUsed);
 	const deadlineFields = buildDeadlineFields(deadline, now);
-	const forecastFields = buildForecastFields({ projectName, rangeHours, cumulativeHours, budgetHours, deadline, now, rangeStart, rangeEnd });
+	const forecastFields = buildForecastFields({
+		projectName,
+		rangeHours,
+		cumulativeHours,
+		budgetHours,
+		deadline,
+		now,
+		rangeStart,
+		rangeEnd,
+	});
 
 	return {
 		...budgetFields,
@@ -68,30 +82,34 @@ export function buildProjectHealthTotals(projects: ProjectSummary[]): ProjectBud
 }
 
 export function sortProjectHealthAlerts(projects: ProjectSummary[]): ProjectSummary[] {
-	return projects
-		.filter(hasProjectHealthAlert)
-		.toSorted((left, right) => {
-			const severityDiff = severityRank(right) - severityRank(left);
+	return projects.filter(hasProjectHealthAlert).toSorted((left, right) => {
+		const severityDiff = severityRank(right) - severityRank(left);
 
-			if (severityDiff !== 0) {
-				return severityDiff;
-			}
+		if (severityDiff !== 0) {
+			return severityDiff;
+		}
 
-			const deadlineDiff = riskDateTime(left) - riskDateTime(right);
+		const deadlineDiff = riskDateTime(left) - riskDateTime(right);
 
-			if (deadlineDiff !== 0 && !Number.isNaN(deadlineDiff)) {
-				return deadlineDiff;
-			}
+		if (deadlineDiff !== 0 && !Number.isNaN(deadlineDiff)) {
+			return deadlineDiff;
+		}
 
-			return (right.percentBudgetUsed ?? 0) - (left.percentBudgetUsed ?? 0);
-		});
+		return (right.percentBudgetUsed ?? 0) - (left.percentBudgetUsed ?? 0);
+	});
 }
 
 export function hasProjectHealthAlert(project: ProjectSummary): boolean {
-	return project.budgetSeverity !== "none" || project.deadlineSeverity !== "none" || project.forecastSeverity !== "none";
+	return (
+		project.budgetSeverity !== "none" ||
+		project.deadlineSeverity !== "none" ||
+		project.forecastSeverity !== "none"
+	);
 }
 
-function buildBudgetFields(percentBudgetUsed: number | null): Pick<ProjectHealthFields, "budgetSeverity" | "budgetAlertType"> {
+function buildBudgetFields(
+	percentBudgetUsed: number | null,
+): Pick<ProjectHealthFields, "budgetSeverity" | "budgetAlertType"> {
 	if (percentBudgetUsed === null || percentBudgetUsed < 70) {
 		return { budgetSeverity: "none", budgetAlertType: null };
 	}
@@ -107,7 +125,10 @@ function buildBudgetFields(percentBudgetUsed: number | null): Pick<ProjectHealth
 	return { budgetSeverity: "warning", budgetAlertType: "budget_70" };
 }
 
-function buildDeadlineFields(deadline: Date | null, now: Date): Pick<ProjectHealthFields, "deadlineSeverity" | "deadlineAlertType"> {
+function buildDeadlineFields(
+	deadline: Date | null,
+	now: Date,
+): Pick<ProjectHealthFields, "deadlineSeverity" | "deadlineAlertType"> {
 	if (!deadline) {
 		return { deadlineSeverity: "none", deadlineAlertType: null };
 	}
@@ -156,17 +177,25 @@ function buildForecastFields({
 		return { forecastSeverity: "none", forecastBudgetExhaustionDate: null, forecastMessage: null };
 	}
 
-	const rangeDays = Math.max(1, DateTime.fromJSDate(rangeEnd).diff(DateTime.fromJSDate(rangeStart), "days").days);
+	const rangeDays = Math.max(
+		1,
+		DateTime.fromJSDate(rangeEnd).diff(DateTime.fromJSDate(rangeStart), "days").days,
+	);
 	const averageDailyHours = rangeHours / rangeDays;
 	const remainingBudgetHours = budgetHours - cumulativeHours;
 	const daysUntilExhaustion = remainingBudgetHours / averageDailyHours;
-	const forecastBudgetExhaustionDate = DateTime.fromJSDate(now).plus({ days: daysUntilExhaustion }).toJSDate();
+	const forecastBudgetExhaustionDate = DateTime.fromJSDate(now)
+		.plus({ days: daysUntilExhaustion })
+		.toJSDate();
 
 	if (forecastBudgetExhaustionDate >= deadline) {
 		return { forecastSeverity: "none", forecastBudgetExhaustionDate: null, forecastMessage: null };
 	}
 
-	const deadlineBufferDays = DateTime.fromJSDate(deadline).diff(DateTime.fromJSDate(forecastBudgetExhaustionDate), "days").days;
+	const deadlineBufferDays = DateTime.fromJSDate(deadline).diff(
+		DateTime.fromJSDate(forecastBudgetExhaustionDate),
+		"days",
+	).days;
 
 	return {
 		forecastSeverity: deadlineBufferDays <= 3 ? "critical" : "warning",
@@ -176,11 +205,17 @@ function buildForecastFields({
 }
 
 function severityRank(project: ProjectSummary): number {
-	if ([project.budgetSeverity, project.deadlineSeverity, project.forecastSeverity].includes("critical")) {
+	if (
+		[project.budgetSeverity, project.deadlineSeverity, project.forecastSeverity].includes(
+			"critical",
+		)
+	) {
 		return 2;
 	}
 
-	if ([project.budgetSeverity, project.deadlineSeverity, project.forecastSeverity].includes("warning")) {
+	if (
+		[project.budgetSeverity, project.deadlineSeverity, project.forecastSeverity].includes("warning")
+	) {
 		return 1;
 	}
 

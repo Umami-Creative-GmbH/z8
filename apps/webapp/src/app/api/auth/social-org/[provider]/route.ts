@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { SocialOAuthProvider } from "@/db/schema";
+import { env } from "@/env";
 import { getBaseUrlFromHost } from "@/lib/app-url";
 import {
 	classifyDomainHost,
@@ -17,7 +18,6 @@ import {
 	STATE_COOKIE_MAX_AGE,
 	STATE_COOKIE_NAME,
 } from "@/lib/social-oauth";
-import { env } from "@/env";
 
 const logger = createLogger("SocialOAuth:Initiate");
 

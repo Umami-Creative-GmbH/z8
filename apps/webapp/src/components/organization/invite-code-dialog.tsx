@@ -5,9 +5,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { DatePicker } from "@/components/ui/date-picker";
+import type { InviteCodeWithRelations } from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
+import {
+	createInviteCode,
+	generateRandomCode,
+	updateInviteCode,
+} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
+import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -17,6 +21,9 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -27,13 +34,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	createInviteCode,
-	updateInviteCode,
-	generateRandomCode,
-} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
-import type { InviteCodeWithRelations } from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
-import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import { queryKeys } from "@/lib/query";
 
 interface InviteCodeDialogProps {
@@ -96,16 +96,15 @@ export function InviteCodeDialog({
 		label: inviteCode?.label || "",
 		description: inviteCode?.description || "",
 		maxUses: inviteCode?.maxUses?.toString() || "",
-		expiresAt: inviteCode?.expiresAt ? new Date(inviteCode.expiresAt).toISOString().split("T")[0] : "",
+		expiresAt: inviteCode?.expiresAt
+			? new Date(inviteCode.expiresAt).toISOString().split("T")[0]
+			: "",
 		defaultTeamId: inviteCode?.defaultTeamId || "",
 		requiresApproval: inviteCode?.requiresApproval ?? true,
 		status: inviteCode?.status === "paused" ? "paused" : "active",
 	};
 
-	const values =
-		draftState?.scopeKey === formScopeKey
-			? draftState.values
-			: initialValues;
+	const values = draftState?.scopeKey === formScopeKey ? draftState.values : initialValues;
 
 	const updateDraft = (updates: Partial<InviteCodeFormValues>) => {
 		setDraftState((prev) => {
@@ -194,22 +193,22 @@ export function InviteCodeDialog({
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
-						<ActionPanelTitle>
-							{isEditing
-								? t("settings.inviteCodes.editCode", "Edit Invite Code")
-								: t("settings.inviteCodes.createCode", "Create Invite Code")}
-						</ActionPanelTitle>
-						<ActionPanelDescription>
-							{isEditing
-								? t(
-										"settings.inviteCodes.editDescription",
-										"Update the settings for this invite code",
-									)
-								: t(
-										"settings.inviteCodes.createDescription",
-										"Create a new invite code for users to join your organization",
-									)}
-						</ActionPanelDescription>
+					<ActionPanelTitle>
+						{isEditing
+							? t("settings.inviteCodes.editCode", "Edit Invite Code")
+							: t("settings.inviteCodes.createCode", "Create Invite Code")}
+					</ActionPanelTitle>
+					<ActionPanelDescription>
+						{isEditing
+							? t(
+									"settings.inviteCodes.editDescription",
+									"Update the settings for this invite code",
+								)
+							: t(
+									"settings.inviteCodes.createDescription",
+									"Create a new invite code for users to join your organization",
+								)}
+					</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
@@ -218,13 +217,13 @@ export function InviteCodeDialog({
 						<div className="grid gap-2">
 							<Label htmlFor="code">{t("settings.inviteCodes.code", "Code")}</Label>
 							<div className="flex flex-col gap-2 sm:flex-row">
-							<Input
-								id="code"
-								value={values.code}
-								onChange={(e) => updateDraft({ code: e.target.value.toUpperCase() })}
-								placeholder={t("settings.inviteCodes.codePlaceholder", "TEAM-ABC123")}
-								disabled={isEditing}
-								className="font-mono uppercase tracking-[0.18em]"
+								<Input
+									id="code"
+									value={values.code}
+									onChange={(e) => updateDraft({ code: e.target.value.toUpperCase() })}
+									placeholder={t("settings.inviteCodes.codePlaceholder", "TEAM-ABC123")}
+									disabled={isEditing}
+									className="font-mono uppercase tracking-[0.18em]"
 								/>
 								{!isEditing && (
 									<Button
@@ -344,13 +343,11 @@ export function InviteCodeDialog({
 						</div>
 
 						{/* Requires Approval */}
-						<div className="flex items-center space-x-2">
+						<div className="flex items-center gap-x-2">
 							<Checkbox
 								id="requiresApproval"
 								checked={values.requiresApproval}
-								onCheckedChange={(checked) =>
-									updateDraft({ requiresApproval: checked === true })
-								}
+								onCheckedChange={(checked) => updateDraft({ requiresApproval: checked === true })}
 							/>
 							<Label htmlFor="requiresApproval" className="cursor-pointer">
 								{t("settings.inviteCodes.requiresApproval", "Require admin approval")}
@@ -367,10 +364,10 @@ export function InviteCodeDialog({
 						{isEditing && (
 							<div className="grid gap-2">
 								<Label htmlFor="status">{t("settings.inviteCodes.status", "Status")}</Label>
-							<Select
-								value={values.status}
-								onValueChange={(v) => updateDraft({ status: v as "active" | "paused" })}
-							>
+								<Select
+									value={values.status}
+									onValueChange={(v) => updateDraft({ status: v as "active" | "paused" })}
+								>
 									<SelectTrigger>
 										<SelectValue />
 									</SelectTrigger>

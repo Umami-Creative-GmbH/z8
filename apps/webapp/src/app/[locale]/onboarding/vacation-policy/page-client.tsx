@@ -83,7 +83,10 @@ export default function VacationPolicyPage() {
 			push("/onboarding/holiday-setup");
 		} else {
 			setLoading(false);
-			toast.error(result.error || t("onboarding.vacationPolicy.skipError", "Failed to skip vacation policy setup"));
+			toast.error(
+				result.error ||
+					t("onboarding.vacationPolicy.skipError", "Failed to skip vacation policy setup"),
+			);
 		}
 	}
 
@@ -223,7 +226,12 @@ export default function VacationPolicyPage() {
 											disabled={loading}
 										>
 											<SelectTrigger>
-												<SelectValue placeholder={t("onboarding.vacationPolicy.selectAccrualType", "Select accrual type")} />
+												<SelectValue
+													placeholder={t(
+														"onboarding.vacationPolicy.selectAccrualType",
+														"Select accrual type",
+													)}
+												/>
 											</SelectTrigger>
 											<SelectContent>
 												<SelectItem value="annual">
@@ -288,7 +296,7 @@ export default function VacationPolicyPage() {
 												type="number"
 												min={0}
 												max={365}
-													placeholder={t("onboarding.vacationPolicy.maxCarryoverPlaceholder", "5")}
+												placeholder={t("onboarding.vacationPolicy.maxCarryoverPlaceholder", "5")}
 												disabled={loading}
 												value={field.state.value}
 												onChange={(e) => field.handleChange(parseInt(e.target.value, 10) || 0)}

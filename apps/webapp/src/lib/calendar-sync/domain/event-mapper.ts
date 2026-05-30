@@ -35,10 +35,7 @@ const DEFAULT_DESCRIPTION_TEMPLATE = "Absence recorded in Z8";
 /**
  * Replace template variables with actual values
  */
-function applyTemplate(
-	template: string,
-	variables: Record<string, string>,
-): string {
+function applyTemplate(template: string, variables: Record<string, string>): string {
 	let result = template;
 	for (const [key, value] of Object.entries(variables)) {
 		result = result.split(`{${key}}`).join(value);
@@ -64,13 +61,13 @@ export function mapAbsenceToCalendarEvent(
 	};
 
 	const titleTemplate = options.includeEmployeeName
-		? options.titleTemplate ?? DEFAULT_TEAM_TITLE_TEMPLATE
-		: options.titleTemplate ?? DEFAULT_TITLE_TEMPLATE;
+		? (options.titleTemplate ?? DEFAULT_TEAM_TITLE_TEMPLATE)
+		: (options.titleTemplate ?? DEFAULT_TITLE_TEMPLATE);
 
 	const title = applyTemplate(titleTemplate, variables);
 	const description = options.descriptionTemplate
 		? applyTemplate(options.descriptionTemplate, variables)
-		: absence.notes ?? DEFAULT_DESCRIPTION_TEMPLATE;
+		: (absence.notes ?? DEFAULT_DESCRIPTION_TEMPLATE);
 
 	// Parse dates from YYYY-MM-DD strings
 	const startDate = new Date(absence.startDate);
@@ -105,8 +102,8 @@ export function mapAbsenceToICSEvent(
 	};
 
 	const titleTemplate = options.includeEmployeeName
-		? options.titleTemplate ?? DEFAULT_TEAM_TITLE_TEMPLATE
-		: options.titleTemplate ?? DEFAULT_TITLE_TEMPLATE;
+		? (options.titleTemplate ?? DEFAULT_TEAM_TITLE_TEMPLATE)
+		: (options.titleTemplate ?? DEFAULT_TITLE_TEMPLATE);
 
 	const summary = applyTemplate(titleTemplate, variables);
 

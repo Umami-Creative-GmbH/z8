@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-	clampOvertime,
-	weekOverWeekDelta,
-	weekStartIso,
-} from "../overtime-burndown";
+import { clampOvertime, weekOverWeekDelta, weekStartIso } from "../overtime-burndown";
 
 describe("overtime burndown helpers", () => {
 	it("clampOvertime caps negatives at zero and passes through positives", () => {

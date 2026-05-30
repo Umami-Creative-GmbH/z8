@@ -14,6 +14,7 @@ export function SWUpdatePrompt() {
 	const { t } = useTranslate();
 	const [updateAvailable, setUpdateAvailable] = useState(false);
 	const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
+	const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
 
 	// Store t in ref to avoid effect dependency (rerender-dependencies)
 	const tRef = useRef(t);
@@ -21,17 +22,9 @@ export function SWUpdatePrompt() {
 		tRef.current = t;
 	}, [t]);
 
-	// Handle update action - defined before use in effect
-	const handleUpdate = () => {
-		if (!registration?.waiting) {
-			// No waiting worker, just reload
-			window.location.reload();
-			return;
-		}
-
-		// Tell waiting SW to skip waiting and take over
-		registration.waiting.postMessage({ type: "SKIP_WAITING" });
-	};
+	useEffect(() => {
+		registrationRef.current = registration;
+	}, [registration]);
 
 	// Listen for SW updates
 	useEffect(() => {
@@ -111,7 +104,15 @@ export function SWUpdatePrompt() {
 			duration: Infinity, // Don't auto-dismiss
 			action: {
 				label: translate("sw.update.reload", "Reload"),
-				onClick: handleUpdate,
+				onClick: () => {
+					const currentRegistration = registrationRef.current;
+					if (!currentRegistration?.waiting) {
+						window.location.reload();
+						return;
+					}
+
+					currentRegistration.waiting.postMessage({ type: "SKIP_WAITING" });
+				},
 			},
 			cancel: {
 				label: translate("sw.update.later", "Later"),
@@ -124,7 +125,7 @@ export function SWUpdatePrompt() {
 		return () => {
 			toast.dismiss(toastId);
 		};
-	}, [updateAvailable, handleUpdate]);
+	}, [updateAvailable]);
 
 	// This component doesn't render anything visible
 	// It uses toasts for UI

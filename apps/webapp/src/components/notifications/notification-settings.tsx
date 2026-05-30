@@ -226,17 +226,23 @@ export function NotificationSettings() {
 		isLoading: isPushLoading,
 	} = usePushNotifications({
 		onSubscribe: () => {
-			toast.success(t("common:notifications.preferences.push.enabledToast", "Push notifications enabled"), {
-				description: t(
-					"common:notifications.preferences.push.enabledToastDescription",
-					"You will now receive browser push notifications",
-				),
-			});
+			toast.success(
+				t("common:notifications.preferences.push.enabledToast", "Push notifications enabled"),
+				{
+					description: t(
+						"common:notifications.preferences.push.enabledToastDescription",
+						"You will now receive browser push notifications",
+					),
+				},
+			);
 		},
 		onError: (error) => {
-			toast.error(t("common:notifications.preferences.push.errorToast", "Push notification error"), {
-				description: error.message,
-			});
+			toast.error(
+				t("common:notifications.preferences.push.errorToast", "Push notification error"),
+				{
+					description: error.message,
+				},
+			);
 		},
 	});
 
@@ -355,10 +361,7 @@ export function NotificationSettings() {
 							{isPushLoading && (
 								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 							)}
-							{t(
-								"common:notifications.preferences.push.enableButton",
-								"Enable Push Notifications",
-							)}
+							{t("common:notifications.preferences.push.enableButton", "Enable Push Notifications")}
 						</Button>
 					</CardContent>
 				</Card>

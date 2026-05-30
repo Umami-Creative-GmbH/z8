@@ -27,10 +27,7 @@ async function checkPlatformConfiguredFromDb(): Promise<boolean> {
 			.limit(1);
 
 		const configured = !!admin;
-		logger.info(
-			{ configured },
-			"Platform configuration status checked from DB",
-		);
+		logger.info({ configured }, "Platform configuration status checked from DB");
 		return configured;
 	} catch (error) {
 		// Check if this is a "relation does not exist" error (42P01)
@@ -39,9 +36,7 @@ async function checkPlatformConfiguredFromDb(): Promise<boolean> {
 		const pgError = error as { code?: string; cause?: { code?: string } };
 		const errorCode = pgError.code || pgError.cause?.code;
 		if (errorCode === "42P01") {
-			logger.info(
-				"Database tables not yet created - assuming fresh instance needs setup",
-			);
+			logger.info("Database tables not yet created - assuming fresh instance needs setup");
 		} else {
 			logger.error({ error }, "Failed to check platform configuration status");
 		}
@@ -109,8 +104,5 @@ export function setConfiguredStatus(status: boolean): void {
 	}
 
 	revalidateTag(CACHE_TAG, CACHE_PROFILE);
-	logger.info(
-		{ configured: status },
-		"Platform configuration cache status updated",
-	);
+	logger.info({ configured: status }, "Platform configuration cache status updated");
 }

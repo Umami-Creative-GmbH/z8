@@ -561,6 +561,9 @@ function AccountLinkingCard({
 		mutationFn: () => generateTelegramLinkCode(userId, organizationId),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.telegram.link(userId, organizationId),
+				});
 				setLinkCode(result.data);
 			} else {
 				toast.error(result.error);

@@ -1,9 +1,9 @@
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
+import { verificationService } from "@/lib/audit-export";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { verificationService } from "@/lib/audit-export";
 
 /**
  * POST /api/audit-export/verify
@@ -45,7 +45,10 @@ export async function POST(request: NextRequest) {
 
 		// Get client info for audit log
 		const headersObj = await headers();
-		const clientIp = headersObj.get("x-forwarded-for")?.split(",")[0] || headersObj.get("x-client-ip") || undefined;
+		const clientIp =
+			headersObj.get("x-forwarded-for")?.split(",")[0] ||
+			headersObj.get("x-client-ip") ||
+			undefined;
 		const userAgent = headersObj.get("user-agent") || undefined;
 
 		const result = await verificationService.verifyPackage({

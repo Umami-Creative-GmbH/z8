@@ -46,14 +46,35 @@ export async function computeEmployeePeriodBalance(input: {
 	periodType: EmployeeWorkBalancePeriodType;
 	periodStart: string;
 	periodEnd: string;
+	calculationStartDate?: string | null;
 	isClosed: boolean;
 	now?: Date;
 }) {
 	const dbClient = input.dbClient ?? db;
-	const startDate = DateTime.fromISO(input.periodStart, { zone: "utc" })
-		.startOf("day")
-		.toJSDate();
-	const endDate = DateTime.fromISO(input.periodEnd, { zone: "utc" }).endOf("day").toJSDate();
+	const periodStart = DateTime.fromISO(input.periodStart, { zone: "utc" }).startOf("day");
+	const periodEnd = DateTime.fromISO(input.periodEnd, { zone: "utc" }).endOf("day");
+	const calculationStart = input.calculationStartDate
+		? DateTime.fromISO(input.calculationStartDate, { zone: "utc" }).startOf("day")
+		: null;
+	const effectiveStart =
+		calculationStart && calculationStart > periodStart ? calculationStart : periodStart;
+
+	if (effectiveStart > periodEnd) {
+		return buildPeriodBalanceValues({
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			periodType: input.periodType,
+			periodStart: input.periodStart,
+			periodEnd: input.periodEnd,
+			actualMinutes: 0,
+			requiredMinutes: 0,
+			computedAt: input.now ?? new Date(),
+			isClosed: input.isClosed,
+		});
+	}
+
+	const startDate = effectiveStart.toJSDate();
+	const endDate = periodEnd.toJSDate();
 
 	const [actualRow, requirements] = await Promise.all([
 		dbClient
@@ -133,6 +154,7 @@ export async function rebuildEmployeeYearBalanceFromMonths(input: {
 	organizationId: string;
 	dbClient?: PeriodAggregationDbClient;
 	dateInYear: string;
+	calculationStartDate?: string | null;
 	now?: Date;
 }) {
 	const dbClient = input.dbClient ?? db;
@@ -151,6 +173,9 @@ export async function rebuildEmployeeYearBalanceFromMonths(input: {
 				eq(employeeWorkBalancePeriod.isClosed, true),
 				gte(employeeWorkBalancePeriod.periodStart, yearPeriod.periodStart),
 				lte(employeeWorkBalancePeriod.periodEnd, yearPeriod.periodEnd),
+				...(input.calculationStartDate
+					? [gte(employeeWorkBalancePeriod.periodEnd, input.calculationStartDate)]
+					: []),
 			),
 		);
 

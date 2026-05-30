@@ -389,7 +389,8 @@
       "markedRead": "Oznaczono {count} powiadomień jako przeczytane",
       "markReadFailed": "Nie udało się oznaczyć powiadomień jako przeczytane"
     },
-    "unreadBadge": "{count} nieprzeczytanych"
+    "unreadBadge": "{count} nieprzeczytanych",
+    "unreadCountOverflow": "99+"
   },
   "offline": {
     "banner": {

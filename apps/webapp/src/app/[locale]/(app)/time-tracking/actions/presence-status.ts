@@ -278,9 +278,7 @@ export function calculatePresenceStatusSummary({
 	while (cursor <= end) {
 		const weekday = WEEKDAY_BY_NUMBER[cursor.weekday];
 		const date = cursor.toISODate();
-		const hasApprovedHomeOfficeException = date
-			? approvedHomeOfficeDateSet.has(date)
-			: false;
+		const hasApprovedHomeOfficeException = date ? approvedHomeOfficeDateSet.has(date) : false;
 		if (
 			date &&
 			presenceMode === "fixed_days" &&

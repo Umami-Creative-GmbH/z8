@@ -47,7 +47,10 @@ export class ManagerService extends Context.Tag("ManagerService")<
 			managerId: string,
 			employeeId: string,
 		) => Effect.Effect<boolean, DatabaseError>;
-		readonly getManagedEmployees: (managerId: string) => Effect.Effect<any[], DatabaseError>;
+		readonly getManagedEmployees: (
+			managerId: string,
+			// biome-ignore lint/suspicious/noExplicitAny: Will be provided at runtime
+		) => Effect.Effect<any[], DatabaseError>;
 	}
 >() {}
 
@@ -189,7 +192,6 @@ export const ManagerServiceLive = Layer.effect(
 									);
 							}),
 						);
-
 					}
 				}),
 
@@ -242,7 +244,6 @@ export const ManagerServiceLive = Layer.effect(
 										.update(employeeManagers)
 										.set({ isPrimary: true })
 										.where(eq(employeeManagers.id, newPrimaryId));
-
 								}),
 							);
 						}

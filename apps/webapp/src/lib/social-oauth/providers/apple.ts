@@ -1,12 +1,12 @@
 import crypto from "node:crypto";
 import { createLogger } from "@/lib/logger";
-import type { OAuthCredentials, OAuthProviderImpl, OAuthTokens, OAuthUserInfo } from "../types";
+import type { OAuthProviderImpl, OAuthTokens, OAuthUserInfo } from "../types";
 
 const logger = createLogger("SocialOAuth:Apple");
 
 const APPLE_AUTH_URL = "https://appleid.apple.com/auth/authorize";
 const APPLE_TOKEN_URL = "https://appleid.apple.com/auth/token";
-const APPLE_KEYS_URL = "https://appleid.apple.com/auth/keys";
+const _APPLE_KEYS_URL = "https://appleid.apple.com/auth/keys";
 
 /**
  * Generate a client secret JWT for Apple Sign In

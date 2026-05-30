@@ -1,9 +1,9 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { member } from "@/db/auth-schema";
 import { db } from "@/db";
-import { customer, employee, project, projectManager } from "@/db/schema";
-import { AuthorizationError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { member } from "@/db/auth-schema";
+import { type customer, employee, project, projectManager } from "@/db/schema";
+import { AuthorizationError, type DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -22,11 +22,14 @@ export interface ProjectSettingsActor {
 	currentEmployee: typeof employee.$inferSelect | null;
 }
 
-function actorAuthorizationError(actor: { session: { user: { id: string } } }, options: {
-	message: string;
-	resource: string;
-	action: string;
-}) {
+function actorAuthorizationError(
+	actor: { session: { user: { id: string } } },
+	options: {
+		message: string;
+		resource: string;
+		action: string;
+	},
+) {
 	return new AuthorizationError({
 		message: options.message,
 		userId: actor.session.user.id,
@@ -60,12 +63,18 @@ export function getProjectSettingsActorContext(options?: {
 
 		const [membershipRecord, employeeRecord] = yield* _(
 			Effect.all([
-				dbService.query(`${options?.queryName ?? "getProjectSettingsActor"}:membership`, async () => {
-					return await db.query.member.findFirst({
-						where: and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)),
-						columns: { role: true },
-					});
-				}),
+				dbService.query(
+					`${options?.queryName ?? "getProjectSettingsActor"}:membership`,
+					async () => {
+						return await db.query.member.findFirst({
+							where: and(
+								eq(member.userId, session.user.id),
+								eq(member.organizationId, organizationId),
+							),
+							columns: { role: true },
+						});
+					},
+				),
 				dbService.query(`${options?.queryName ?? "getProjectSettingsActor"}:employee`, async () => {
 					return await db.query.employee.findFirst({
 						where: and(
@@ -115,7 +124,7 @@ export function getManagedProjectIdsForSettingsActor(actor: ProjectSettingsActor
 			return null as Set<string> | null;
 		}
 
-		if (!actor.currentEmployee || actor.currentEmployee.role !== "manager") {
+		if (actor.currentEmployee?.role !== "manager") {
 			return new Set<string>();
 		}
 
@@ -195,10 +204,7 @@ export function getManagedCustomerIdsForSettingsActor(actor: ProjectSettingsActo
 		const customerProjects = yield* _(
 			actor.dbService.query("getManagedCustomerIdsForSettingsActor", async () => {
 				return await db.query.project.findMany({
-					where: and(
-						eq(project.organizationId, actor.organizationId),
-						eq(project.isActive, true),
-					),
+					where: and(eq(project.organizationId, actor.organizationId), eq(project.isActive, true)),
 					columns: { id: true, customerId: true },
 				});
 			}),
@@ -211,13 +217,16 @@ export function getManagedCustomerIdsForSettingsActor(actor: ProjectSettingsActo
 				continue;
 			}
 
-			const existingProjectIds = customerProjectIds.get(customerProject.customerId) ?? new Set<string>();
+			const existingProjectIds =
+				customerProjectIds.get(customerProject.customerId) ?? new Set<string>();
 			existingProjectIds.add(customerProject.id);
 			customerProjectIds.set(customerProject.customerId, existingProjectIds);
 		}
 
 		const accessibleCustomerIds = [...customerProjectIds.entries()]
-			.filter(([, projectIds]) => [...projectIds].every((projectId) => managedProjectIds.has(projectId)))
+			.filter(([, projectIds]) =>
+				[...projectIds].every((projectId) => managedProjectIds.has(projectId)),
+			)
 			.map(([customerId]) => customerId);
 
 		return new Set(accessibleCustomerIds);

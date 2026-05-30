@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { orchestrateClockinImport, type ClockinImportDependencies } from "@/lib/clockin/import-orchestrator";
 import type { ClockinClient } from "@/lib/clockin/client";
+import {
+	type ClockinImportDependencies,
+	orchestrateClockinImport,
+} from "@/lib/clockin/import-orchestrator";
 
 function createClientMock(overrides: Partial<ClockinClient> = {}): ClockinClient {
 	return {
@@ -14,8 +17,11 @@ function createDeps(): ClockinImportDependencies {
 	return {
 		fetchExistingWorkPeriods: vi.fn().mockResolvedValue([]),
 		fetchExistingAbsences: vi.fn().mockResolvedValue([]),
-		getTimeEntryChainState: vi.fn().mockResolvedValue({ previousHash: null, previousEntryId: null }),
-		insertTimeEntry: vi.fn()
+		getTimeEntryChainState: vi
+			.fn()
+			.mockResolvedValue({ previousHash: null, previousEntryId: null }),
+		insertTimeEntry: vi
+			.fn()
 			.mockResolvedValueOnce({ id: "te-in-1", hash: "hash-in-1" })
 			.mockResolvedValueOnce({ id: "te-out-1", hash: "hash-out-1" }),
 		insertWorkPeriod: vi.fn().mockResolvedValue(undefined),
@@ -60,9 +66,7 @@ describe("orchestrateClockinImport", () => {
 				schedules: false,
 				dateRange: { startDate: "2026-03-01", endDate: "2026-03-31" },
 			},
-			[
-				{ clockinEmployeeId: 100, employeeId: "emp-1", userId: "user-1", mappingType: "manual" },
-			],
+			[{ clockinEmployeeId: 100, employeeId: "emp-1", userId: "user-1", mappingType: "manual" }],
 			deps,
 		);
 
@@ -113,9 +117,7 @@ describe("orchestrateClockinImport", () => {
 				schedules: false,
 				dateRange: { startDate: "2026-03-01", endDate: "2026-03-31" },
 			},
-			[
-				{ clockinEmployeeId: 100, employeeId: "emp-1", userId: "user-1", mappingType: "manual" },
-			],
+			[{ clockinEmployeeId: 100, employeeId: "emp-1", userId: "user-1", mappingType: "manual" }],
 			deps,
 		);
 

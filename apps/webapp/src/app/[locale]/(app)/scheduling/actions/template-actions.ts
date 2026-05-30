@@ -15,7 +15,7 @@ export async function createShiftTemplate(
 	input: CreateTemplateInput,
 ): Promise<SchedulingActionResult<ShiftTemplate>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext || !accessContext.canAccessShiftTemplates) {
+	if (!accessContext?.canAccessShiftTemplates) {
 		return { success: false, error: "Unauthorized" };
 	}
 
@@ -53,7 +53,7 @@ export async function updateShiftTemplate(
 	input: UpdateTemplateInput,
 ): Promise<SchedulingActionResult<ShiftTemplate>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext || !accessContext.canAccessShiftTemplates) {
+	if (!accessContext?.canAccessShiftTemplates) {
 		return { success: false, error: "Unauthorized" };
 	}
 
@@ -66,7 +66,8 @@ export async function updateShiftTemplate(
 		return { success: false, error: "Unauthorized" };
 	}
 
-	const nextSubareaId = input.subareaId !== undefined ? input.subareaId : existingTemplate.subareaId;
+	const nextSubareaId =
+		input.subareaId !== undefined ? input.subareaId : existingTemplate.subareaId;
 	if (
 		!canManageScopedSchedulingSubarea(
 			accessContext.accessTier,
@@ -88,7 +89,7 @@ export async function updateShiftTemplate(
 
 export async function deleteShiftTemplate(id: string): Promise<SchedulingActionResult<void>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext || !accessContext.canAccessShiftTemplates) {
+	if (!accessContext?.canAccessShiftTemplates) {
 		return { success: false, error: "Unauthorized" };
 	}
 
@@ -122,7 +123,7 @@ export async function deleteShiftTemplate(id: string): Promise<SchedulingActionR
 
 export async function getShiftTemplates(): Promise<SchedulingActionResult<ShiftTemplate[]>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext || !accessContext.canAccessShiftTemplates) {
+	if (!accessContext?.canAccessShiftTemplates) {
 		return { success: false, error: "Unauthorized" };
 	}
 

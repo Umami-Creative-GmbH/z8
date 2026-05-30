@@ -1,22 +1,20 @@
-import { Context, Effect, Layer } from "effect";
 import { and, eq } from "drizzle-orm";
+import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
 import {
 	employee,
-	teamPermissions,
-	scimProviderConfig,
+	type roleTemplate,
 	scimProvisioningLog,
-	roleTemplate,
-	roleTemplateMapping,
-	userRoleTemplateAssignment,
+	teamPermissions,
 	userLifecycleEvent,
+	userRoleTemplateAssignment,
 } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import {
-	getScimProviderConfig,
-	getRoleTemplateById,
 	findRoleTemplateMappingForGroup,
+	getRoleTemplateById,
+	getScimProviderConfig,
 } from "./cached-queries";
 
 const logger = createLogger("SCIMProvisioning");
@@ -130,9 +128,10 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 
 						// Apply default role template if configured
 						if (config?.defaultRoleTemplateId && newEmployee) {
+							const defaultRoleTemplateId = config.defaultRoleTemplateId;
 							// Use cached query for role template lookup
 							const template = yield* Effect.tryPromise(() =>
-								getRoleTemplateById(config.defaultRoleTemplateId!),
+								getRoleTemplateById(defaultRoleTemplateId),
 							);
 
 							if (template) {
@@ -262,7 +261,10 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 						if (deprovisionAction === "soft_delete") {
 							// Soft delete: deactivate employee (preserves data for compliance)
 							yield* Effect.tryPromise(() =>
-								db.update(employee).set({ isActive: false }).where(eq(employee.id, employeeRecord.id)),
+								db
+									.update(employee)
+									.set({ isActive: false })
+									.where(eq(employee.id, employeeRecord.id)),
 							);
 						} else {
 							// Suspend: update member status (can be reactivated via SCIM)
@@ -343,7 +345,10 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 						yield* Effect.all([
 							// Reactivate employee
 							Effect.tryPromise(() =>
-								db.update(employee).set({ isActive: true }).where(eq(employee.id, employeeRecord.id)),
+								db
+									.update(employee)
+									.set({ isActive: true })
+									.where(eq(employee.id, employeeRecord.id)),
 							),
 							// Also update member status if suspended
 							Effect.tryPromise(() =>
@@ -468,9 +473,7 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 		applyRoleTemplate: ({ userId, organizationId, roleTemplateId, source, idpGroupId }) =>
 			Effect.gen(function* () {
 				// Use cached query for role template lookup
-				const template = yield* Effect.tryPromise(() =>
-					getRoleTemplateById(roleTemplateId),
-				);
+				const template = yield* Effect.tryPromise(() => getRoleTemplateById(roleTemplateId));
 
 				if (!template) {
 					throw new Error(`Role template ${roleTemplateId} not found`);
@@ -501,7 +504,10 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 							idpGroupId,
 						})
 						.onConflictDoUpdate({
-							target: [userRoleTemplateAssignment.userId, userRoleTemplateAssignment.organizationId],
+							target: [
+								userRoleTemplateAssignment.userId,
+								userRoleTemplateAssignment.organizationId,
+							],
 							set: {
 								roleTemplateId: template.id,
 								assignmentSource: source,

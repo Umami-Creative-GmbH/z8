@@ -13,7 +13,6 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { CreateOrganizationDialog } from "@/components/organization/create-organization-dialog";
 import { OrganizationLogo } from "@/components/organization/organization-logo";
-import { saveLastOrganization } from "@/lib/org-persistence";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -29,6 +28,7 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import type { UserOrganization } from "@/lib/auth-helpers";
+import { saveLastOrganization } from "@/lib/org-persistence";
 import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
@@ -217,7 +217,7 @@ export function OrganizationSwitcher({
 
 			{switching && typeof document !== "undefined"
 				? createPortal(
-						<div className="fixed inset-0 z-[9999] flex items-center justify-center">
+						<div className="fixed inset-0 z-9999 flex items-center justify-center">
 							<div className="absolute inset-0 bg-black/20 backdrop-blur-md" />
 							<div className="relative flex flex-col items-center justify-center gap-4 rounded-lg border bg-card/95 px-12 py-8 shadow-2xl backdrop-blur-sm">
 								<IconLoader2 className="size-8 animate-spin text-primary" />

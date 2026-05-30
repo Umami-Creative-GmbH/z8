@@ -95,12 +95,7 @@ export function transformAbsences(
 		);
 	}
 
-	logMatchingStats(
-		absences.length - skippedNoMapping,
-		matchedCount,
-		unmatchedCount,
-		"absences",
-	);
+	logMatchingStats(absences.length - skippedNoMapping, matchedCount, unmatchedCount, "absences");
 
 	logger.info(
 		{
@@ -124,9 +119,7 @@ function getTimeTypeForAbsence(mapping: WageTypeMapping | undefined): string | n
 
 	// Try SAP SuccessFactors-specific code first, then fall back to other codes
 	const timeType =
-		mapping.successFactorsTimeTypeCode ||
-		mapping.datevWageTypeCode ||
-		mapping.wageTypeCode;
+		mapping.successFactorsTimeTypeCode || mapping.datevWageTypeCode || mapping.wageTypeCode;
 
 	return timeType || null;
 }

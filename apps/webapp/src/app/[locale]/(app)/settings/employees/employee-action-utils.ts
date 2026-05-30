@@ -276,7 +276,7 @@ export function ensureSettingsActorCanAccessEmployeeTarget(
 			return;
 		}
 
-		if (!actor.currentEmployee || actor.currentEmployee.role !== "manager") {
+		if (actor.currentEmployee?.role !== "manager") {
 			return yield* _(
 				Effect.fail(
 					new AuthorizationError({
@@ -419,7 +419,7 @@ export function getManagedEmployeeIdsForSettingsActor(actor: {
 			return null as Set<string> | null;
 		}
 
-		if (!actor.currentEmployee || actor.currentEmployee.role !== "manager") {
+		if (actor.currentEmployee?.role !== "manager") {
 			return new Set<string>();
 		}
 

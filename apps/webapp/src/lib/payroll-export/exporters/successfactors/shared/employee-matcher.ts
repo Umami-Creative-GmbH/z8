@@ -3,7 +3,7 @@
  * Maps local employees to SAP SuccessFactors user identifiers
  */
 import { createLogger } from "@/lib/logger";
-import type { WorkPeriodData, AbsenceData } from "../../../types";
+import type { AbsenceData, WorkPeriodData } from "../../../types";
 import type { SuccessFactorsEmployeeMatchStrategy } from "../types";
 
 const logger = createLogger("SFEmployeeMatcher");

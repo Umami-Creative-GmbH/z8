@@ -312,18 +312,29 @@ export async function updateEmployeeAction(
 					? dateToUtcIsoDate(scopedData.startDate)
 					: previousStartDate;
 				if (nextStartDate !== previousStartDate) {
-					const dirtyFromDate = [previousStartDate, nextStartDate]
-						.filter((value): value is string => Boolean(value))
-						.sort()[0];
-					yield* _(
-						Effect.promise(() =>
-							markEmployeeWorkBalanceDirty({
-								employeeId,
-								organizationId: targetEmployee.organizationId,
-								dirtyFromDate,
-							}),
-						),
-					);
+					if (previousStartDate && !nextStartDate) {
+						yield* _(
+							Effect.promise(() =>
+								requestEmployeeWorkBalanceFullRebuild({
+									employeeId,
+									organizationId: targetEmployee.organizationId,
+								}),
+							),
+						);
+					} else {
+						const dirtyFromDate = [previousStartDate, nextStartDate]
+							.filter((value): value is string => Boolean(value))
+							.sort()[0];
+						yield* _(
+							Effect.promise(() =>
+								markEmployeeWorkBalanceDirty({
+									employeeId,
+									organizationId: targetEmployee.organizationId,
+									dirtyFromDate,
+								}),
+							),
+						);
+					}
 				}
 
 				const effectiveContractType =
@@ -389,7 +400,9 @@ export async function requestEmployeeWorkBalanceRecalculationAction(
 		},
 		execute: (span) =>
 			Effect.gen(function* (_) {
-				const validatedEmployeeId = yield* _(validateInput(employeeIdSchema, employeeId, "employeeId"));
+				const validatedEmployeeId = yield* _(
+					validateInput(employeeIdSchema, employeeId, "employeeId"),
+				);
 				const actor = yield* _(getEmployeeSettingsActorContext());
 				const { dbService } = actor;
 

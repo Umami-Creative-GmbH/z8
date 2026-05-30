@@ -42,6 +42,7 @@ interface BuildDailyWorkRequirementsOptions {
 	policy: EffectiveWorkPolicy | null;
 	startDate: Date;
 	endDate: Date;
+	timezone?: string | null;
 }
 
 function hoursToMinutes(hours: string | null | undefined): number {
@@ -91,11 +92,19 @@ export function buildDailyWorkRequirements({
 	policy,
 	startDate,
 	endDate,
+	timezone,
 }: BuildDailyWorkRequirementsOptions): DailyWorkRequirements {
 	if (!policy?.schedule) return {};
 
-	const start = DateTime.fromJSDate(startDate, { zone: "utc" }).startOf("day");
-	const end = DateTime.fromJSDate(endDate, { zone: "utc" }).startOf("day");
+	const requestedZone = timezone || "utc";
+	const zonedStart = DateTime.fromJSDate(startDate, { zone: "utc" }).setZone(requestedZone);
+	const zonedEnd = DateTime.fromJSDate(endDate, { zone: "utc" }).setZone(requestedZone);
+	const start = (
+		zonedStart.isValid ? zonedStart : DateTime.fromJSDate(startDate, { zone: "utc" })
+	).startOf("day");
+	const end = (zonedEnd.isValid ? zonedEnd : DateTime.fromJSDate(endDate, { zone: "utc" })).startOf(
+		"day",
+	);
 	if (!start.isValid || !end.isValid || end < start) return {};
 
 	const requirements: DailyWorkRequirements = {};
@@ -128,9 +137,17 @@ async function getApprovedAbsenceRanges(params: {
 	employeeId: string;
 	startDate: Date;
 	endDate: Date;
+	timezone?: string | null;
 }): Promise<ApprovedAbsenceRange[]> {
-	const start = DateTime.fromJSDate(params.startDate).toFormat("yyyy-MM-dd");
-	const end = DateTime.fromJSDate(params.endDate).toFormat("yyyy-MM-dd");
+	const requestedZone = params.timezone || "utc";
+	const zonedStart = DateTime.fromJSDate(params.startDate, { zone: "utc" }).setZone(requestedZone);
+	const zonedEnd = DateTime.fromJSDate(params.endDate, { zone: "utc" }).setZone(requestedZone);
+	const start = (
+		zonedStart.isValid ? zonedStart : DateTime.fromJSDate(params.startDate, { zone: "utc" })
+	).toFormat("yyyy-MM-dd");
+	const end = (
+		zonedEnd.isValid ? zonedEnd : DateTime.fromJSDate(params.endDate, { zone: "utc" })
+	).toFormat("yyyy-MM-dd");
 
 	return Effect.runPromise(
 		params.database.query("getApprovedAbsencesForCalendarRequirements", async () => {
@@ -189,6 +206,7 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 	employeeId: string;
 	startDate: Date;
 	endDate: Date;
+	timezone?: string | null;
 }): Promise<DailyWorkRequirements> {
 	return Effect.runPromise(
 		Effect.gen(function* (_) {
@@ -240,6 +258,7 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 				policy,
 				startDate: effectiveStartDate,
 				endDate: params.endDate,
+				timezone: params.timezone,
 			});
 			const approvedAbsences = yield* _(
 				Effect.promise(() =>
@@ -249,6 +268,7 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 						employeeId: params.employeeId,
 						startDate: effectiveStartDate,
 						endDate: params.endDate,
+						timezone: params.timezone,
 					}),
 				),
 			);

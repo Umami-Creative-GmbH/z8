@@ -30,6 +30,8 @@ import {
 	generateDemoEmployeesAction,
 	generateLocationsStepAction,
 	generateManagersStepAction,
+	generatePendingAbsenceApprovalsStepAction,
+	generatePendingTimeCorrectionApprovalsStepAction,
 	generateProjectsStepAction,
 	generateShiftsStepAction,
 	generateShiftTemplatesStepAction,
@@ -108,6 +110,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 	const [includeChangePolicies, setIncludeChangePolicies] = useState(false);
 	// NEW: Shift scheduling options
 	const [includeShifts, setIncludeShifts] = useState(false);
+	const [includePendingAbsenceApprovals, setIncludePendingAbsenceApprovals] = useState(false);
+	const [includePendingTimeCorrectionApprovals, setIncludePendingTimeCorrectionApprovals] =
+		useState(false);
 
 	// Generation steps state
 	const [steps, setSteps] = useState<GenerationStep[]>([]);
@@ -219,6 +224,35 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 			});
 		}
 
+		if (includePendingAbsenceApprovals) {
+			activeSteps.push({
+				id: "pending-absence-approvals",
+				label: t("settings.demo.steps.pendingAbsenceApprovals.label", "Pending Absence Approvals"),
+				description: t(
+					"settings.demo.steps.pendingAbsenceApprovals.description",
+					"Creating pending absence approval requests",
+				),
+				icon: <IconUserCheck className="size-4" />,
+				status: "pending",
+			});
+		}
+
+		if (includePendingTimeCorrectionApprovals) {
+			activeSteps.push({
+				id: "pending-time-correction-approvals",
+				label: t(
+					"settings.demo.steps.pendingTimeCorrectionApprovals.label",
+					"Pending Time Correction Approvals",
+				),
+				description: t(
+					"settings.demo.steps.pendingTimeCorrectionApprovals.description",
+					"Creating pending time correction approval requests",
+				),
+				icon: <IconClock className="size-4" />,
+				status: "pending",
+			});
+		}
+
 		// NEW: Location steps
 		if (includeLocations) {
 			activeSteps.push({
@@ -308,6 +342,8 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 			employeeIds: selectedEmployees === "all" ? undefined : [],
 			// NEW: Location options
 			locationCount: includeLocations ? locationCount : undefined,
+			includePendingAbsenceApprovals,
+			includePendingTimeCorrectionApprovals,
 		};
 
 		const finalResult: DemoDataResult = {
@@ -335,6 +371,8 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 			shiftRecurrencesCreated: 0,
 			shiftsCreated: 0,
 			shiftRequestsCreated: 0,
+			pendingAbsenceApprovalsCreated: 0,
+			pendingTimeCorrectionApprovalsCreated: 0,
 		};
 
 		let hasError = false;
@@ -451,6 +489,48 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 					}),
 				);
 				if (phase3Results.some((r) => !r)) hasError = true;
+			}
+		}
+
+		// Approval testing steps need base time/absence data and run before later optional data.
+		if (!hasError) {
+			const approvalSteps = activeSteps.filter(
+				(s) => s.id === "pending-absence-approvals" || s.id === "pending-time-correction-approvals",
+			);
+			if (approvalSteps.length > 0) {
+				const approvalResults = await Promise.all(
+					approvalSteps.map((step) => {
+						if (step.id === "pending-absence-approvals") {
+							return executeStep(
+								step.id,
+								() => generatePendingAbsenceApprovalsStepAction(input),
+								(data) => {
+									const d = data as { pendingAbsenceApprovalsCreated: number };
+									return {
+										result: `${d.pendingAbsenceApprovalsCreated} pending approvals`,
+										updates: {
+											pendingAbsenceApprovalsCreated: d.pendingAbsenceApprovalsCreated,
+										},
+									};
+								},
+							);
+						}
+						return executeStep(
+							step.id,
+							() => generatePendingTimeCorrectionApprovalsStepAction(input),
+							(data) => {
+								const d = data as { pendingTimeCorrectionApprovalsCreated: number };
+								return {
+									result: `${d.pendingTimeCorrectionApprovalsCreated} pending approvals`,
+									updates: {
+										pendingTimeCorrectionApprovalsCreated: d.pendingTimeCorrectionApprovalsCreated,
+									},
+								};
+							},
+						);
+					}),
+				);
+				if (approvalResults.some((r) => !r)) hasError = true;
 			}
 		}
 
@@ -751,11 +831,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value="all">
-												{t(
-													"settings.demo.form.employees.all",
-													"All employees ({count})",
-													{ count: employees.length },
-												)}
+												{t("settings.demo.form.employees.all", "All employees ({count})", {
+													count: employees.length,
+												})}
 											</SelectItem>
 											<SelectItem value="selected" disabled>
 												{t(
@@ -875,10 +953,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 														max={10}
 														value={teamCount}
 														onChange={(e) => setTeamCount(parseInt(e.target.value, 10) || 4)}
-																className="h-7 w-16 text-xs"
-																onClick={(e) => e.stopPropagation()}
-																onKeyDown={(e) => e.stopPropagation()}
-															/>
+														className="h-7 w-16 text-xs"
+														onClick={(e) => e.stopPropagation()}
+														onKeyDown={(e) => e.stopPropagation()}
+													/>
 												</div>
 											)}
 										</div>
@@ -927,10 +1005,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 														max={15}
 														value={projectCount}
 														onChange={(e) => setProjectCount(parseInt(e.target.value, 10) || 6)}
-																className="h-7 w-16 text-xs"
-																onClick={(e) => e.stopPropagation()}
-																onKeyDown={(e) => e.stopPropagation()}
-															/>
+														className="h-7 w-16 text-xs"
+														onClick={(e) => e.stopPropagation()}
+														onKeyDown={(e) => e.stopPropagation()}
+													/>
 												</div>
 											)}
 										</div>
@@ -947,7 +1025,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 										)}
 										onClick={() => setIncludeLocations(!includeLocations)}
 										onKeyDown={(event) =>
-											handleSelectableCardKeyDown(event, () => setIncludeLocations(!includeLocations))
+											handleSelectableCardKeyDown(event, () =>
+												setIncludeLocations(!includeLocations),
+											)
 										}
 									>
 										<Checkbox
@@ -980,10 +1060,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 														max={10}
 														value={locationCount}
 														onChange={(e) => setLocationCount(parseInt(e.target.value, 10) || 3)}
-																className="h-7 w-16 text-xs"
-																onClick={(e) => e.stopPropagation()}
-																onKeyDown={(e) => e.stopPropagation()}
-															/>
+														className="h-7 w-16 text-xs"
+														onClick={(e) => e.stopPropagation()}
+														onKeyDown={(e) => e.stopPropagation()}
+													/>
 												</div>
 											)}
 										</div>
@@ -1021,11 +1101,11 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 												)}
 											</p>
 											{includeWorkCategories && includeTimeEntries && (
-															<div
-																className="mt-2 flex items-center gap-2"
-																onClick={(e) => e.stopPropagation()}
-																onKeyDown={(e) => e.stopPropagation()}
-															>
+												<div
+													className="mt-2 flex items-center gap-2"
+													onClick={(e) => e.stopPropagation()}
+													onKeyDown={(e) => e.stopPropagation()}
+												>
 													<Checkbox
 														id="assignCategories"
 														checked={assignWorkCategoriesToPeriods}
@@ -1125,6 +1205,99 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 								</div>
 							</div>
 
+							<div className="space-y-4">
+								<Label>{t("settings.demo.form.approvalsTesting.label", "Approvals Testing")}</Label>
+								<div className="grid gap-4 md:grid-cols-2">
+									<div
+										role="checkbox"
+										aria-checked={includePendingAbsenceApprovals}
+										tabIndex={0}
+										className={cn(
+											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+											includePendingAbsenceApprovals
+												? "border-primary bg-primary/5"
+												: "hover:bg-muted/50",
+										)}
+										onClick={() =>
+											setIncludePendingAbsenceApprovals(!includePendingAbsenceApprovals)
+										}
+										onKeyDown={(event) =>
+											handleSelectableCardKeyDown(event, () =>
+												setIncludePendingAbsenceApprovals(!includePendingAbsenceApprovals),
+											)
+										}
+									>
+										<Checkbox
+											tabIndex={-1}
+											aria-hidden="true"
+											checked={includePendingAbsenceApprovals}
+											onCheckedChange={(v) => setIncludePendingAbsenceApprovals(v === true)}
+										/>
+										<div className="space-y-1">
+											<div className="flex items-center gap-2 font-medium">
+												<IconUserCheck className="size-4" aria-hidden="true" />
+												{t(
+													"settings.demo.form.approvalsTesting.pendingAbsences.title",
+													"Pending absence approvals",
+												)}
+											</div>
+											<p className="text-xs text-muted-foreground">
+												{t(
+													"settings.demo.form.approvalsTesting.pendingAbsences.description",
+													"Create absence requests waiting for manager approval",
+												)}
+											</p>
+										</div>
+									</div>
+
+									<div
+										role="checkbox"
+										aria-checked={includePendingTimeCorrectionApprovals}
+										tabIndex={0}
+										className={cn(
+											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+											includePendingTimeCorrectionApprovals
+												? "border-primary bg-primary/5"
+												: "hover:bg-muted/50",
+										)}
+										onClick={() =>
+											setIncludePendingTimeCorrectionApprovals(
+												!includePendingTimeCorrectionApprovals,
+											)
+										}
+										onKeyDown={(event) =>
+											handleSelectableCardKeyDown(event, () =>
+												setIncludePendingTimeCorrectionApprovals(
+													!includePendingTimeCorrectionApprovals,
+												),
+											)
+										}
+									>
+										<Checkbox
+											tabIndex={-1}
+											aria-hidden="true"
+											checked={includePendingTimeCorrectionApprovals}
+											onCheckedChange={(v) => setIncludePendingTimeCorrectionApprovals(v === true)}
+										/>
+										<div className="space-y-1">
+											<div className="flex items-center gap-2 font-medium">
+												<IconClock className="size-4" aria-hidden="true" />
+												{t(
+													"settings.demo.form.approvalsTesting.pendingTimeCorrections.title",
+													"Pending time correction approvals",
+												)}
+											</div>
+											<p className="text-xs text-muted-foreground">
+												{t(
+													"settings.demo.form.approvalsTesting.pendingTimeCorrections.description",
+													"Create time corrections waiting for manager approval",
+												)}
+											</p>
+										</div>
+									</div>
+								</div>
+							</div>
+
 							<div className="flex justify-end">
 								<Button
 									onClick={handleGenerate}
@@ -1136,7 +1309,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 										!includeLocations &&
 										!includeWorkCategories &&
 										!includeChangePolicies &&
-										!includeShifts
+										!includeShifts &&
+										!includePendingAbsenceApprovals &&
+										!includePendingTimeCorrectionApprovals
 									}
 									className="gap-2"
 								>
@@ -1297,11 +1472,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 								</p>
 								<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-500">
 									<li>
-										{t(
-											"settings.demo.generateEmployees.usersCreated",
-											"{count} users created",
-											{ count: employeeResult.usersCreated },
-										)}
+										{t("settings.demo.generateEmployees.usersCreated", "{count} users created", {
+											count: employeeResult.usersCreated,
+										})}
 									</li>
 									<li>
 										{t(
@@ -1394,11 +1567,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 								) : (
 									<>
 										<IconUsers className="size-4" />
-										{t(
-											"settings.demo.generateEmployees.button",
-											"Generate {count} Employees",
-											{ count: employeeCount },
-										)}
+										{t("settings.demo.generateEmployees.button", "Generate {count} Employees", {
+											count: employeeCount,
+										})}
 									</>
 								)}
 							</Button>

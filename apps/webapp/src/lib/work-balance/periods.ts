@@ -16,7 +16,9 @@ function parseIsoDate(date: string) {
 
 function toIsoDate(date: DateTime) {
 	if (!date.isValid) {
-		throw new RangeError(`Invalid date: ${date.invalidExplanation ?? date.invalidReason ?? "unknown reason"}`);
+		throw new RangeError(
+			`Invalid date: ${date.invalidExplanation ?? date.invalidReason ?? "unknown reason"}`,
+		);
 	}
 
 	const isoDate = date.toISODate();

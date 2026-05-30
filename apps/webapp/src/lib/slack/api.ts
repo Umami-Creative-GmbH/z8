@@ -5,8 +5,8 @@
  */
 
 import { WebClient } from "@slack/web-api";
-import { createLogger } from "@/lib/logger";
 import { env } from "@/env";
+import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("SlackAPI");
 

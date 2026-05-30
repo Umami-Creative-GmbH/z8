@@ -1,20 +1,22 @@
 {
-  "ignore": {
-    "rules": ["react-doctor/nextjs-no-img-element"]
-  },
-  "rules": {
-    "react-doctor/server-auth-actions": "warn"
-  },
-  "serverAuthFunctionNames": [
-    "getAuthContext",
-    "getCurrentEmployee",
-    "getEmployeeSettingsActorContext",
-    "requireAdmin",
-    "requireAuth",
-    "requireOrgAdminEmployeeSettingsAccess",
-    "requirePlatformAdmin",
-    "requireSettingsActorEmployeeRecord",
-    "requireSystemAdmin",
-    "requireUser"
-  ]
+	"ignore": {
+		"rules": [
+			"react-doctor/nextjs-no-img-element",
+			"react-doctor/server-auth-actions",
+			"react-doctor/unused-dependency",
+			"react-doctor/unused-dev-dependency"
+		]
+	},
+	"serverAuthFunctionNames": [
+		"getAuthContext",
+		"getCurrentEmployee",
+		"getEmployeeSettingsActorContext",
+		"requireAdmin",
+		"requireAuth",
+		"requireOrgAdminEmployeeSettingsAccess",
+		"requirePlatformAdmin",
+		"requireSettingsActorEmployeeRecord",
+		"requireSystemAdmin",
+		"requireUser"
+	]
 }

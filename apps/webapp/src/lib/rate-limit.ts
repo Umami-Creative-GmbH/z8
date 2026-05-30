@@ -14,9 +14,9 @@
  */
 
 import { Ratelimit } from "@upstash/ratelimit";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { ensureRedisReady, redis as redisClient } from "@/lib/redis";
-import { env } from "@/env";
 
 /**
  * Check if rate limiting is disabled
@@ -55,7 +55,7 @@ function parseRateLimitEnv(
 	}
 	const requests = parseInt(parts[0], 10);
 	const seconds = parseInt(parts[1], 10);
-	if (isNaN(requests) || isNaN(seconds) || requests <= 0 || seconds <= 0) {
+	if (Number.isNaN(requests) || Number.isNaN(seconds) || requests <= 0 || seconds <= 0) {
 		logger.warn({ envValue }, "Invalid rate limit values, using defaults");
 		return { requests: defaultRequests, seconds: defaultSeconds };
 	}
@@ -451,7 +451,9 @@ function generateRateLimitHtml(
 	const waitingButton = escapeHtml(
 		messages.waitingButton ?? RATE_LIMIT_RESPONSE_COPY.waitingButton.fallback,
 	);
-	const retryButton = escapeJsString(messages.retryButton ?? RATE_LIMIT_RESPONSE_COPY.retryButton.fallback);
+	const retryButton = escapeJsString(
+		messages.retryButton ?? RATE_LIMIT_RESPONSE_COPY.retryButton.fallback,
+	);
 	const retryingButton = escapeJsString(
 		messages.retryingButton ?? RATE_LIMIT_RESPONSE_COPY.retryingButton.fallback,
 	);

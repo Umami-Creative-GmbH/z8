@@ -41,23 +41,18 @@ const { importClockodoData } = await import("./actions");
 
 describe("Clockodo import actions", () => {
 	it("disables direct production imports", async () => {
-		const result = await importClockodoData(
-			"admin@example.com",
-			"api-key-123",
-			"org_123",
-			{
-				users: true,
-				teams: false,
-				services: false,
-				entries: false,
-				absences: false,
-				targetHours: false,
-				holidayQuotas: false,
-				nonBusinessDays: false,
-				surcharges: false,
-				dateRange: { preset: "all_data", startDate: null, endDate: null },
-			},
-		);
+		const result = await importClockodoData("admin@example.com", "api-key-123", "org_123", {
+			users: true,
+			teams: false,
+			services: false,
+			entries: false,
+			absences: false,
+			targetHours: false,
+			holidayQuotas: false,
+			nonBusinessDays: false,
+			surcharges: false,
+			dateRange: { preset: "all_data", startDate: null, endDate: null },
+		});
 
 		expect(result).toEqual({
 			success: false,

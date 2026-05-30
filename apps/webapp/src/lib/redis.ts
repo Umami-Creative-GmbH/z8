@@ -36,8 +36,7 @@ const activeStatuses = new Set<RedisStatus>(["ready", "connect", "connecting"]);
 function isAlreadyConnectingError(error: unknown): boolean {
 	return (
 		error instanceof Error &&
-		(error.message.includes("already connecting") ||
-			error.message.includes("Connection is closed"))
+		(error.message.includes("already connecting") || error.message.includes("Connection is closed"))
 	);
 }
 

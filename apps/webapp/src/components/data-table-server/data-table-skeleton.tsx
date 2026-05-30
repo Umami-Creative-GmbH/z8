@@ -44,7 +44,7 @@ export function DataTableSkeleton({
 	showPagination = true,
 	showSelection = false,
 }: DataTableSkeletonProps) {
-	const totalColumns = showSelection ? columnCount + 1 : columnCount;
+	const _totalColumns = showSelection ? columnCount + 1 : columnCount;
 
 	return (
 		<div className="space-y-4">

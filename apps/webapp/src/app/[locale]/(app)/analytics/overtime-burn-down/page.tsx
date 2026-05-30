@@ -26,11 +26,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import type {
-	OvertimeBurnDownData,
-	OvertimeBurnDownGroupedRow,
-	TrendDirection,
-} from "@/lib/analytics/types";
+import type { OvertimeBurnDownData, TrendDirection } from "@/lib/analytics/types";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
@@ -173,7 +169,7 @@ export default function OvertimeBurnDownPage() {
 		return () => {
 			isMounted = false;
 		};
-	}, [dateRange, teamId, costCenterId, managerId, isHydrated, timezone]);
+	}, [dateRange, teamId, costCenterId, managerId, isHydrated, timezone, t]);
 
 	const summary = data?.summary ?? {
 		currentOvertimeHours: 0,

@@ -4,8 +4,8 @@
  * Pure domain logic for calculating date ranges based on strategy.
  * No dependencies on external systems - uses only Luxon for date operations.
  */
-import { DateTime } from "luxon";
-import type { DateRangeConfig, CalculatedDateRange, CustomOffsetConfig } from "./types";
+import type { DateTime } from "luxon";
+import type { CalculatedDateRange, CustomOffsetConfig, DateRangeConfig } from "./types";
 
 /**
  * Calculate date range for an execution based on config and execution time
@@ -92,10 +92,7 @@ function calculatePreviousQuarter(time: DateTime): CalculatedDateRange {
  * Example: { startOffset: { days: 30 }, endOffset: { days: 1 } }
  * => Last 30 days ending yesterday (30 days ago to 1 day ago)
  */
-function calculateCustomOffset(
-	time: DateTime,
-	offset: CustomOffsetConfig,
-): CalculatedDateRange {
+function calculateCustomOffset(time: DateTime, offset: CustomOffsetConfig): CalculatedDateRange {
 	const startOffset = offset.startOffset || { days: 0 };
 	const endOffset = offset.endOffset || { days: 0 };
 

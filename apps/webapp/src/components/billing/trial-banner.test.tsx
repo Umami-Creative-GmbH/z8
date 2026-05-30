@@ -25,11 +25,7 @@ vi.mock("@/navigation", () => ({
 describe("TrialBanner", () => {
 	it("renders trial messaging and upgrade link when billing management is allowed", () => {
 		render(
-			<TrialBanner
-				daysRemaining={9}
-				billingHref="/en/settings/billing"
-				showUpgradeButton={true}
-			/>,
+			<TrialBanner daysRemaining={9} billingHref="/en/settings/billing" showUpgradeButton={true} />,
 		);
 
 		expect(screen.getByText("14-day trial active")).toBeTruthy();
@@ -58,11 +54,7 @@ describe("TrialBanner", () => {
 
 	it("can be dismissed for the current page session", () => {
 		render(
-			<TrialBanner
-				daysRemaining={9}
-				billingHref="/en/settings/billing"
-				showUpgradeButton={true}
-			/>,
+			<TrialBanner daysRemaining={9} billingHref="/en/settings/billing" showUpgradeButton={true} />,
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Dismiss trial banner" }));
@@ -72,7 +64,10 @@ describe("TrialBanner", () => {
 	});
 
 	it("uses the localized app navigation link", () => {
-		const bannerSource = readFileSync(join(process.cwd(), "src/components/billing/trial-banner.tsx"), "utf8");
+		const bannerSource = readFileSync(
+			join(process.cwd(), "src/components/billing/trial-banner.tsx"),
+			"utf8",
+		);
 
 		expect(bannerSource).toContain('import { Link } from "@/navigation"');
 		expect(bannerSource).not.toContain("<a\n");
@@ -101,7 +96,9 @@ describe("TrialBanner", () => {
 			expect(existsSync(join(process.cwd(), `messages/${locale}.json`))).toBe(false);
 		}
 
-		const englishMessages = JSON.parse(readFileSync(join(process.cwd(), "messages/common/en.json"), "utf8"));
+		const englishMessages = JSON.parse(
+			readFileSync(join(process.cwd(), "messages/common/en.json"), "utf8"),
+		);
 		expect(englishMessages.billing.trialBanner).toEqual(expectedEnglish);
 	});
 

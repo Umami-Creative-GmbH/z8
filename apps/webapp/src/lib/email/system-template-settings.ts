@@ -1,7 +1,7 @@
 import type { PlatformSystemEmailTemplateKey } from "@/db/schema";
 import {
-	type PlatformSystemEmailTemplateDefinition,
 	getPlatformSystemEmailTemplateDefinition,
+	type PlatformSystemEmailTemplateDefinition,
 } from "@/lib/email/system-template-registry";
 import { validateTemplateContent } from "@/lib/email/template-validation";
 

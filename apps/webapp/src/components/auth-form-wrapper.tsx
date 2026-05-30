@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { IconArrowLeft } from "@tabler/icons-react";
-import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { env } from "@/env";
 import type { OrganizationBranding } from "@/lib/domain";
 import { cn } from "@/lib/utils";

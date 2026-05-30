@@ -51,9 +51,7 @@ describe("employee time balance schema", () => {
 		const migration = readFileSync(migration0024Url, "utf8");
 
 		expect(migration).toContain('CREATE TABLE "employee_time_balance"');
-		expect(migration).toContain(
-			'CREATE UNIQUE INDEX "employeeTimeBalance_org_employee_year_idx"',
-		);
+		expect(migration).toContain('CREATE UNIQUE INDEX "employeeTimeBalance_org_employee_year_idx"');
 		expect(migration).toContain(
 			'FOREIGN KEY ("employee_id","organization_id") REFERENCES "public"."employee"("id","organization_id") ON DELETE cascade',
 		);

@@ -389,7 +389,8 @@
       "markedRead": "{count} notificações marcadas como lidas",
       "markReadFailed": "Falha ao marcar notificações como lidas"
     },
-    "unreadBadge": "{count} não lidas"
+    "unreadBadge": "{count} não lidas",
+    "unreadCountOverflow": "99+"
   },
   "offline": {
     "banner": {

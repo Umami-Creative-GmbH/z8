@@ -5,7 +5,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { customer, employee, project } from "@/db/schema";
+import { customer, project } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import {
 	AuthorizationError,
@@ -14,7 +14,7 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { AuthService, AuthServiceLive } from "@/lib/effect/services/auth.service";
+import { AuthServiceLive } from "@/lib/effect/services/auth.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import {
@@ -90,10 +90,7 @@ export async function getCustomers(
 				const customers = yield* _(
 					dbService.query("getCustomers", async () => {
 						return await db.query.customer.findMany({
-							where: and(
-								eq(customer.organizationId, organizationId),
-								eq(customer.isActive, true),
-							),
+							where: and(eq(customer.organizationId, organizationId), eq(customer.isActive, true)),
 							orderBy: [desc(customer.createdAt)],
 						});
 					}),
@@ -101,7 +98,9 @@ export async function getCustomers(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return managedCustomerIds
-					? (customers.filter((customerRecord) => managedCustomerIds.has(customerRecord.id)) as CustomerData[])
+					? (customers.filter((customerRecord) =>
+							managedCustomerIds.has(customerRecord.id),
+						) as CustomerData[])
 					: (customers as CustomerData[]);
 			}).pipe(
 				Effect.catchAll((error) =>
@@ -146,7 +145,10 @@ export async function createCustomer(
 		(span) => {
 			return Effect.gen(function* (_) {
 				const actor = yield* _(
-					getProjectSettingsActorContext({ organizationId: input.organizationId, queryName: "createCustomer:actor" }),
+					getProjectSettingsActorContext({
+						organizationId: input.organizationId,
+						queryName: "createCustomer:actor",
+					}),
 				);
 				const session = actor.session;
 				const dbService = actor.dbService;
@@ -183,7 +185,9 @@ export async function createCustomer(
 					scopedProjectId = scopedProject.id;
 					scopedProjectOrganizationId = scopedProject.organizationId;
 				} else if (input.projectId) {
-					const scopedProject = yield* _(getProjectTarget(input.projectId, "createCustomer:getProjectForOrgAdmin"));
+					const scopedProject = yield* _(
+						getProjectTarget(input.projectId, "createCustomer:getProjectForOrgAdmin"),
+					);
 
 					if (scopedProject.organizationId !== input.organizationId) {
 						yield* _(
@@ -571,7 +575,10 @@ export async function getCustomersForSelection(
 		(span) => {
 			return Effect.gen(function* (_) {
 				const actor = yield* _(
-					getProjectSettingsActorContext({ organizationId, queryName: "getCustomersForSelection:actor" }),
+					getProjectSettingsActorContext({
+						organizationId,
+						queryName: "getCustomersForSelection:actor",
+					}),
 				);
 				const managedCustomerIds = yield* _(getManagedCustomerIdsForSettingsActor(actor));
 				const dbService = actor.dbService;
@@ -579,10 +586,7 @@ export async function getCustomersForSelection(
 				const customers = yield* _(
 					dbService.query("getCustomersForSelection", async () => {
 						return await db.query.customer.findMany({
-							where: and(
-								eq(customer.organizationId, organizationId),
-								eq(customer.isActive, true),
-							),
+							where: and(eq(customer.organizationId, organizationId), eq(customer.isActive, true)),
 							columns: { id: true, name: true },
 							orderBy: [customer.name],
 						});

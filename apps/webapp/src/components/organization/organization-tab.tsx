@@ -16,8 +16,8 @@ import { OrganizationDangerZoneCard } from "./organization-danger-zone-card";
 import { OrganizationDetailsCard } from "./organization-details-card";
 import { OrganizationFeaturesCard } from "./organization-features-card";
 import { OrganizationTimezoneCard } from "./organization-timezone-card";
-import { PendingMembersCard } from "./pending-members-card";
 import type { InvitationWithInviter, MemberWithUserAndEmployee } from "./organizations-page-client";
+import { PendingMembersCard } from "./pending-members-card";
 
 interface OrganizationTabProps {
 	organization: typeof authSchema.organization.$inferSelect;
@@ -102,7 +102,9 @@ export function OrganizationTab({
 				<CardHeader>
 					<div className="flex items-start justify-between">
 						<div>
-							<CardTitle>{t("organization.membersInvitations.title", "Members & Invitations")}</CardTitle>
+							<CardTitle>
+								{t("organization.membersInvitations.title", "Members & Invitations")}
+							</CardTitle>
 							<CardDescription>
 								{t(
 									"organization.membersInvitations.description",

@@ -14,6 +14,7 @@ import {
 } from "@/components/time-tracking/clock-in-out-widget-parts";
 import { QuickBreakPopover } from "@/components/time-tracking/quick-break-popover";
 import { SessionReminderPanel } from "@/components/time-tracking/session-reminder-panel";
+import { TimezoneMismatchDialog } from "@/components/time-tracking/timezone-mismatch-dialog";
 import { useClockInOutWidget } from "@/components/time-tracking/use-clock-in-out-widget";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
@@ -134,6 +135,17 @@ export function ClockInOutWidget({ activeWorkPeriod, employeeName, timeFormat }:
 				onOpenChange={widget.setExceptionDialogOpen}
 				defaultExceptionType={widget.uiState.exceptionType}
 			/>
+			{widget.timezoneMismatch ? (
+				<TimezoneMismatchDialog
+					open
+					savedTimezone={widget.timezoneMismatch.savedTimezone}
+					browserTimezone={widget.timezoneMismatch.browserTimezone}
+					isPending={widget.isTimezoneContinuationPending}
+					onUpdateAndContinue={widget.handleTimezoneMismatchUpdateAndContinue}
+					onContinueOnce={widget.handleTimezoneMismatchContinueOnce}
+					onCancel={widget.handleTimezoneMismatchCancel}
+				/>
+			) : null}
 		</Card>
 	);
 }

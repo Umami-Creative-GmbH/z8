@@ -5,7 +5,7 @@
  * Provides common utilities and base functionality.
  */
 
-import { Effect } from "effect";
+import type { Effect } from "effect";
 import type {
 	CalendarEventToCreate,
 	CalendarEventUpdate,
@@ -57,7 +57,9 @@ export interface ICalendarProvider {
 	/**
 	 * Refresh an expired access token
 	 */
-	refreshAccessToken(refreshToken: string): Effect.Effect<TokenRefreshResult, CalendarProviderError>;
+	refreshAccessToken(
+		refreshToken: string,
+	): Effect.Effect<TokenRefreshResult, CalendarProviderError>;
 
 	/**
 	 * Revoke tokens (disconnect)
@@ -146,8 +148,13 @@ export function parseApiError(
 	status: number,
 	body: unknown,
 ): CalendarProviderError {
-	const { CalendarProviderError, TokenExpiredError, RateLimitError, NotFoundError, PermissionDeniedError } =
-		require("../types") as typeof import("../types");
+	const {
+		CalendarProviderError,
+		TokenExpiredError,
+		RateLimitError,
+		NotFoundError,
+		PermissionDeniedError,
+	} = require("../types") as typeof import("../types");
 
 	switch (status) {
 		case 401:
@@ -157,9 +164,10 @@ export function parseApiError(
 		case 404:
 			return new NotFoundError(provider, "event", "unknown");
 		case 429: {
-			const retryAfter = typeof body === "object" && body !== null && "retryAfter" in body
-				? Number((body as { retryAfter?: unknown }).retryAfter)
-				: undefined;
+			const retryAfter =
+				typeof body === "object" && body !== null && "retryAfter" in body
+					? Number((body as { retryAfter?: unknown }).retryAfter)
+					: undefined;
 			return new RateLimitError(provider, retryAfter);
 		}
 		default:

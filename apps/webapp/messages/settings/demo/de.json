@@ -86,6 +86,17 @@
         "noOrganization": "Keine Organisation ausgewählt"
       },
       "form": {
+        "approvalsTesting": {
+          "label": "Genehmigungstests",
+          "pendingAbsences": {
+            "description": "Abwesenheitsanträge erstellen, die auf die Genehmigung durch den Manager warten",
+            "title": "Ausstehende Abwesenheitsgenehmigungen"
+          },
+          "pendingTimeCorrections": {
+            "description": "Zeitkorrekturen erstellen, die auf die Genehmigung durch den Manager warten",
+            "title": "Ausstehende Zeitkorrekturgenehmigungen"
+          }
+        },
         "dataTypes": {
           "absences": {
             "description": "Urlaub, Krankheitsstand und andere Abwesenheiten",
@@ -183,6 +194,14 @@
         "managers": {
           "description": "Manager werden Mitarbeitern zugewiesen",
           "label": "Manager-Zuweisungen"
+        },
+        "pendingAbsenceApprovals": {
+          "description": "Erstellen von ausstehenden Abwesenheitsgenehmigungsanfragen",
+          "label": "Ausstehende Abwesenheitsgenehmigungen"
+        },
+        "pendingTimeCorrectionApprovals": {
+          "description": "Erstellen von ausstehenden Zeitkorrekturgenehmigungsanfragen",
+          "label": "Ausstehende Zeitkorrekturgenehmigungen"
         },
         "projects": {
           "description": "Beispielprojekte werden erstellt",

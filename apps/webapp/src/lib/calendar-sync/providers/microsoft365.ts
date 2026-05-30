@@ -8,6 +8,7 @@
  */
 
 import { Effect } from "effect";
+import { env } from "@/env";
 import {
 	type CalendarEventToCreate,
 	type CalendarEventUpdate,
@@ -25,12 +26,7 @@ import {
 	TokenExpiredError,
 	type TokenRefreshResult,
 } from "../types";
-import {
-	formatDateOnly,
-	type ICalendarProvider,
-	isTokenExpired,
-} from "./base";
-import { env } from "@/env";
+import { formatDateOnly, type ICalendarProvider, isTokenExpired } from "./base";
 
 // ============================================
 // CONSTANTS
@@ -41,13 +37,7 @@ const MS_TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token
 const MS_GRAPH_API = "https://graph.microsoft.com/v1.0";
 
 // Scopes needed for calendar sync
-const CALENDAR_SCOPES = [
-	"openid",
-	"email",
-	"profile",
-	"offline_access",
-	"Calendars.ReadWrite",
-];
+const CALENDAR_SCOPES = ["openid", "email", "profile", "offline_access", "Calendars.ReadWrite"];
 
 // ============================================
 // TYPES
@@ -156,7 +146,10 @@ async function handleMSGraphError(response: Response): Promise<CalendarProviderE
 	}
 
 	if (status === 403) {
-		return new PermissionDeniedError("microsoft365", "Insufficient permissions to access Microsoft Calendar");
+		return new PermissionDeniedError(
+			"microsoft365",
+			"Insufficient permissions to access Microsoft Calendar",
+		);
 	}
 
 	if (status === 404) {
@@ -239,9 +232,7 @@ export class Microsoft365CalendarProvider implements ICalendarProvider {
 				return {
 					accessToken: tokens.access_token,
 					refreshToken: tokens.refresh_token ?? null,
-					expiresAt: tokens.expires_in
-						? new Date(Date.now() + tokens.expires_in * 1000)
-						: null,
+					expiresAt: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null,
 					scope: tokens.scope,
 					providerAccountId: userInfo.mail ?? userInfo.userPrincipalName,
 				};
@@ -260,7 +251,9 @@ export class Microsoft365CalendarProvider implements ICalendarProvider {
 		});
 	}
 
-	refreshAccessToken(refreshToken: string): Effect.Effect<TokenRefreshResult, CalendarProviderError> {
+	refreshAccessToken(
+		refreshToken: string,
+	): Effect.Effect<TokenRefreshResult, CalendarProviderError> {
 		return Effect.tryPromise({
 			try: async () => {
 				const response = await fetch(MS_TOKEN_URL, {
@@ -323,12 +316,16 @@ export class Microsoft365CalendarProvider implements ICalendarProvider {
 		return Effect.tryPromise({
 			try: async () => {
 				// Microsoft Graph uses /me/calendar for primary, or /me/calendars/{id}/events
-				const calendarPath = calendarId === "primary"
-					? "/me/calendar/events"
-					: `/me/calendars/${encodeURIComponent(calendarId)}/events`;
+				const calendarPath =
+					calendarId === "primary"
+						? "/me/calendar/events"
+						: `/me/calendars/${encodeURIComponent(calendarId)}/events`;
 
 				const url = new URL(`${MS_GRAPH_API}${calendarPath}`);
-				url.searchParams.set("$filter", `start/dateTime ge '${startDate.toISOString()}' and end/dateTime le '${endDate.toISOString()}'`);
+				url.searchParams.set(
+					"$filter",
+					`start/dateTime ge '${startDate.toISOString()}' and end/dateTime le '${endDate.toISOString()}'`,
+				);
 				url.searchParams.set("$orderby", "start/dateTime");
 				url.searchParams.set("$top", "250");
 
@@ -364,15 +361,14 @@ export class Microsoft365CalendarProvider implements ICalendarProvider {
 	): Effect.Effect<CreateEventResult, CalendarProviderError> {
 		return Effect.tryPromise({
 			try: async () => {
-				const calendarPath = calendarId === "primary"
-					? "/me/calendar/events"
-					: `/me/calendars/${encodeURIComponent(calendarId)}/events`;
+				const calendarPath =
+					calendarId === "primary"
+						? "/me/calendar/events"
+						: `/me/calendars/${encodeURIComponent(calendarId)}/events`;
 
 				const msEvent: Partial<MSGraphEvent> = {
 					subject: event.title,
-					body: event.description
-						? { content: event.description, contentType: "text" }
-						: undefined,
+					body: event.description ? { content: event.description, contentType: "text" } : undefined,
 					isAllDay: event.isAllDay,
 					showAs: event.status === "tentative" ? "tentative" : "oof", // Out of Office
 					sensitivity: event.visibility === "private" ? "private" : "normal",
@@ -441,9 +437,10 @@ export class Microsoft365CalendarProvider implements ICalendarProvider {
 	): Effect.Effect<void, CalendarProviderError> {
 		return Effect.tryPromise({
 			try: async () => {
-				const calendarPath = calendarId === "primary"
-					? `/me/calendar/events/${encodeURIComponent(update.id)}`
-					: `/me/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(update.id)}`;
+				const calendarPath =
+					calendarId === "primary"
+						? `/me/calendar/events/${encodeURIComponent(update.id)}`
+						: `/me/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(update.id)}`;
 
 				// PATCH for partial update
 				const patchData: Record<string, unknown> = {};
@@ -508,9 +505,10 @@ export class Microsoft365CalendarProvider implements ICalendarProvider {
 	): Effect.Effect<void, CalendarProviderError> {
 		return Effect.tryPromise({
 			try: async () => {
-				const calendarPath = calendarId === "primary"
-					? `/me/calendar/events/${encodeURIComponent(eventId)}`
-					: `/me/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`;
+				const calendarPath =
+					calendarId === "primary"
+						? `/me/calendar/events/${encodeURIComponent(eventId)}`
+						: `/me/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`;
 
 				const response = await fetch(`${MS_GRAPH_API}${calendarPath}`, {
 					method: "DELETE",

@@ -7,8 +7,8 @@
  */
 
 import Vault from "node-vault";
-import { createLogger } from "@/lib/logger";
 import { env } from "@/env";
+import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("VaultClient");
 
@@ -58,7 +58,7 @@ export async function initVaultSecrets(): Promise<void> {
 			// Check if KV secrets engine is already mounted at 'secret/'
 			// In dev mode, this is already enabled by default
 			const mounts = await vaultClient.mounts();
-			if (!mounts.data || !mounts.data["secret/"]) {
+			if (!mounts.data?.["secret/"]) {
 				// Enable KV v2 secrets engine
 				try {
 					await vaultClient.mount({

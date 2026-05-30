@@ -97,6 +97,6 @@ describe("SectionCards", () => {
 		);
 
 		expect(markup).toContain("animate-pulse");
-		expect(markup).not.toContain("data-widget-id=\"managed-employees\"");
+		expect(markup).not.toContain('data-widget-id="managed-employees"');
 	});
 });

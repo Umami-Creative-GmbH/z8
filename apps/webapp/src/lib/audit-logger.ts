@@ -7,9 +7,9 @@
 
 import { db } from "@/db";
 import { auditLog } from "@/db/schema";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import type { TimeRecordApprovalDecision } from "@/lib/time-record/approval";
-import { env } from "@/env";
 
 const logger = createLogger("AuditLog");
 

@@ -17,7 +17,8 @@ interface PageProps {
 }
 
 async function SignUpPageContent({ searchParams }: PageProps) {
-	const { callbackUrl, inviteCode, invitedEmail, invitationId, organizationName } = await searchParams;
+	const { callbackUrl, inviteCode, invitedEmail, invitationId, organizationName } =
+		await searchParams;
 	return (
 		<SignupForm
 			callbackUrl={callbackUrl}

@@ -93,7 +93,11 @@ export async function cancelAbsenceRequestForEmployee(
 		columns: { timezone: true },
 	});
 	const today =
-		DateTime.now().setZone(org?.timezone ?? "UTC").toISODate() ?? DateTime.utc().toISODate() ?? "";
+		DateTime.now()
+			.setZone(org?.timezone ?? "UTC")
+			.toISODate() ??
+		DateTime.utc().toISODate() ??
+		"";
 
 	const canCancel = await canCancelAbsence(currentEmployee.id, absence.employeeId, absence.status, {
 		startDate: absence.startDate,
@@ -117,7 +121,8 @@ export async function cancelAbsenceRequestForEmployee(
 		return { success: false, error: "billing_required" };
 	}
 
-	const shouldNotifyManagers = absence.status === "approved" && absence.employeeId === currentEmployee.id;
+	const shouldNotifyManagers =
+		absence.status === "approved" && absence.employeeId === currentEmployee.id;
 
 	void addCalendarSyncJob({
 		absenceId,

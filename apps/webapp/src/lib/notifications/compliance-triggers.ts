@@ -99,14 +99,19 @@ export async function onComplianceExceptionRequested(
 			});
 		}
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger compliance exception requested notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger compliance exception requested notification",
+		);
 	}
 }
 
 /**
  * Notify employee that their compliance exception was approved
  */
-export async function onComplianceExceptionApproved(params: ExceptionApprovedParams): Promise<void> {
+export async function onComplianceExceptionApproved(
+	params: ExceptionApprovedParams,
+): Promise<void> {
 	try {
 		await createNotification({
 			userId: params.employeeUserId,
@@ -126,7 +131,9 @@ export async function onComplianceExceptionApproved(params: ExceptionApprovedPar
 /**
  * Notify employee that their compliance exception was rejected
  */
-export async function onComplianceExceptionRejected(params: ExceptionRejectedParams): Promise<void> {
+export async function onComplianceExceptionRejected(
+	params: ExceptionRejectedParams,
+): Promise<void> {
 	try {
 		const reasonText = params.reason ? ` Reason: "${params.reason}"` : "";
 		await createNotification({

@@ -138,14 +138,19 @@ export function ShiftDialogSections({
 				<form.Field name="templateId">
 					{(field) => (
 						<div className="space-y-2">
-							<Label>{t("scheduling:scheduling.shiftDialog.template", "Template (Optional)")}</Label>
+							<Label>
+								{t("scheduling:scheduling.shiftDialog.template", "Template (Optional)")}
+							</Label>
 							<Select
 								onValueChange={(value) => field.handleChange(value === "none" ? null : value)}
 								value={field.state.value || "none"}
 							>
 								<SelectTrigger>
 									<SelectValue
-										placeholder={t("scheduling:scheduling.shiftDialog.selectTemplate", "Select a template")}
+										placeholder={t(
+											"scheduling:scheduling.shiftDialog.selectTemplate",
+											"Select a template",
+										)}
 									/>
 								</SelectTrigger>
 								<SelectContent>
@@ -153,11 +158,13 @@ export function ShiftDialogSections({
 										{t("scheduling:scheduling.shiftDialog.noTemplate", "No template")}
 									</SelectItem>
 									{templates.flatMap((template) =>
-										template.isActive ? [
-											<SelectItem key={template.id} value={template.id}>
-												{template.name} ({template.startTime} - {template.endTime})
-											</SelectItem>
-										] : [],
+										template.isActive
+											? [
+													<SelectItem key={template.id} value={template.id}>
+														{template.name} ({template.startTime} - {template.endTime})
+													</SelectItem>,
+												]
+											: [],
 									)}
 								</SelectContent>
 							</Select>
@@ -228,17 +235,22 @@ export function ShiftDialogSections({
 							<Select onValueChange={field.handleChange} value={field.state.value}>
 								<SelectTrigger>
 									<SelectValue
-										placeholder={t("scheduling:scheduling.shiftDialog.selectSubarea", "Select a subarea…")}
+										placeholder={t(
+											"scheduling:scheduling.shiftDialog.selectSubarea",
+											"Select a subarea…",
+										)}
 									/>
 								</SelectTrigger>
 								<SelectContent>
 									{locations.flatMap((location) =>
 										location.subareas.flatMap((subarea) =>
-											subarea.isActive ? [
-												<SelectItem key={subarea.id} value={subarea.id}>
-													{location.name} – {subarea.name}
-												</SelectItem>
-											] : [],
+											subarea.isActive
+												? [
+														<SelectItem key={subarea.id} value={subarea.id}>
+															{location.name} – {subarea.name}
+														</SelectItem>,
+													]
+												: [],
 										),
 									)}
 								</SelectContent>
@@ -270,7 +282,10 @@ export function ShiftDialogSections({
 							>
 								<SelectTrigger>
 									<SelectValue
-										placeholder={t("scheduling:scheduling.shiftDialog.selectEmployee", "Select an employee")}
+										placeholder={t(
+											"scheduling:scheduling.shiftDialog.selectEmployee",
+											"Select an employee",
+										)}
 									/>
 								</SelectTrigger>
 								<SelectContent>
@@ -280,7 +295,10 @@ export function ShiftDialogSections({
 												{t("scheduling:scheduling.shiftDialog.openShift", "Open Shift")}
 											</Badge>
 											<span className="text-muted-foreground">
-												{t("scheduling:scheduling.shiftDialog.anyoneCanPickUp", "Anyone can pick up")}
+												{t(
+													"scheduling:scheduling.shiftDialog.anyoneCanPickUp",
+													"Anyone can pick up",
+												)}
 											</span>
 										</span>
 									</SelectItem>
@@ -301,7 +319,7 @@ export function ShiftDialogSections({
 							<p className="text-sm text-muted-foreground">
 								{t(
 									"scheduling:scheduling.shiftDialog.openShiftHelp",
-									"Leave as \"Open Shift\" to allow employees to claim it",
+									'Leave as "Open Shift" to allow employees to claim it',
 								)}
 							</p>
 						</div>

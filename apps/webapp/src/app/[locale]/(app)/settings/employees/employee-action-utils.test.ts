@@ -6,7 +6,10 @@ import {
 	filterEmployeeUpdateForScopedManager,
 } from "./employee-scope";
 
-const source = readFileSync(fileURLToPath(new URL("./employee-action-utils.ts", import.meta.url)), "utf8");
+const source = readFileSync(
+	fileURLToPath(new URL("./employee-action-utils.ts", import.meta.url)),
+	"utf8",
+);
 
 describe("employee settings scope helpers", () => {
 	it("keeps org admins fully enabled regardless of manager relationships", () => {
@@ -44,11 +47,14 @@ describe("employee settings scope helpers", () => {
 	});
 
 	it("strips org-admin-only employee fields from scoped manager edits", () => {
+		const startDate = new Date("2026-05-01T00:00:00.000Z");
+
 		expect(
 			filterEmployeeUpdateForScopedManager({
 				firstName: "Alex",
 				lastName: "Stone",
 				position: "Supervisor",
+				startDate,
 				role: "admin",
 				employeeNumber: "EMP-1",
 				contractType: "hourly",
@@ -57,6 +63,7 @@ describe("employee settings scope helpers", () => {
 			}),
 		).toEqual({
 			position: "Supervisor",
+			startDate,
 		});
 	});
 

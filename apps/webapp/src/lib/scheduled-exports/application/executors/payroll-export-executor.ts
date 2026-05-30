@@ -5,13 +5,9 @@
  * Delegates to the existing payroll export service.
  */
 import { createLogger } from "@/lib/logger";
-import {
-	createExportJob,
-	processExportJob,
-	getPayrollExportConfig,
-} from "@/lib/payroll-export";
-import type { IReportExecutor, ExecuteParams } from "./base-executor";
+import { createExportJob, getPayrollExportConfig, processExportJob } from "@/lib/payroll-export";
 import type { ExecutionResult, PayrollExportReportConfig, ReportConfig } from "../../domain/types";
+import type { ExecuteParams, IReportExecutor } from "./base-executor";
 
 const logger = createLogger("PayrollExportExecutor");
 
@@ -19,7 +15,7 @@ const logger = createLogger("PayrollExportExecutor");
  * System user ID for scheduled exports
  * This should be a valid user ID in the database for audit purposes
  */
-const SYSTEM_USER_ID = "system";
+const _SYSTEM_USER_ID = "system";
 
 /**
  * Payroll Export Executor
@@ -132,7 +128,9 @@ export class PayrollExportExecutor implements IReportExecutor {
 
 		const validFormats = ["datev_lohn", "sage_lohn", "lexware_lohn", "personio"];
 		if (payrollConfig.formatId && !validFormats.includes(payrollConfig.formatId)) {
-			errors.push(`Invalid formatId: ${payrollConfig.formatId}. Valid formats: ${validFormats.join(", ")}`);
+			errors.push(
+				`Invalid formatId: ${payrollConfig.formatId}. Valid formats: ${validFormats.join(", ")}`,
+			);
 		}
 
 		return {

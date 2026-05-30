@@ -4,47 +4,51 @@
  * Main export for the Teams module.
  */
 
-// Bot and messaging
-export { getBotAdapter, sendProactiveMessage, sendAdaptiveCard, updateMessage, isBotConfigured } from "./bot-adapter";
-export { handleBotActivity } from "./bot-handler";
 export { handleApprovalAction, sendApprovalCardToManager } from "./approval-handler";
-export { triggerApprovalNotification, triggerApprovalResolutionNotification } from "./notification-trigger";
-
-// Resolution
+// Bot and messaging
 export {
-	resolveTenant,
-	getTenantConfigByOrganization,
-	updateTenantServiceUrl,
-	isTeamsEnabledForOrganization,
-	getAllActiveTenants,
-} from "./tenant-resolver";
-export {
-	resolveTeamsUser,
-	getTeamsMapping,
-	deactivateTeamsMapping,
-	getOrganizationTeamsMappings,
-} from "./user-resolver";
-
-// Conversation management
-export {
-	saveConversationReference,
-	getConversationReferenceForUser,
-	getStoredConversation,
-	deactivateConversation,
-	getOrganizationPersonalConversations,
-} from "./conversation-manager";
-
-// Commands
-export { initializeCommands, executeCommand, parseCommand } from "./commands";
-
+	getBotAdapter,
+	isBotConfigured,
+	sendAdaptiveCard,
+	sendProactiveMessage,
+	updateMessage,
+} from "./bot-adapter";
+export { handleBotActivity } from "./bot-handler";
 // Cards
 export {
 	buildApprovalCard,
 	buildApprovalCardWithInvoke,
-	buildResolvedApprovalCard,
 	buildDailyDigestCard,
 	buildDailyDigestText,
+	buildResolvedApprovalCard,
 } from "./cards";
-
+// Commands
+export { executeCommand, initializeCommands, parseCommand } from "./commands";
+// Conversation management
+export {
+	deactivateConversation,
+	getConversationReferenceForUser,
+	getOrganizationPersonalConversations,
+	getStoredConversation,
+	saveConversationReference,
+} from "./conversation-manager";
+export {
+	triggerApprovalNotification,
+	triggerApprovalResolutionNotification,
+} from "./notification-trigger";
+// Resolution
+export {
+	getAllActiveTenants,
+	getTenantConfigByOrganization,
+	isTeamsEnabledForOrganization,
+	resolveTenant,
+	updateTenantServiceUrl,
+} from "./tenant-resolver";
 // Types
 export * from "./types";
+export {
+	deactivateTeamsMapping,
+	getOrganizationTeamsMappings,
+	getTeamsMapping,
+	resolveTeamsUser,
+} from "./user-resolver";

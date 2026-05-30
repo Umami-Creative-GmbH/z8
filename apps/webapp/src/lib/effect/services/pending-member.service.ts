@@ -1,8 +1,13 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { inviteCodeUsage, memberApproval, employee, team, teamPermissions } from "@/db/schema";
-import { member, organization, user } from "@/db/auth-schema";
-import { type DatabaseError, NotFoundError, ValidationError, AuthorizationError } from "../errors";
+import { member, user } from "@/db/auth-schema";
+import { employee, inviteCodeUsage, memberApproval, team } from "@/db/schema";
+import {
+	type AuthorizationError,
+	type DatabaseError,
+	NotFoundError,
+	ValidationError,
+} from "../errors";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -267,23 +272,22 @@ export const PendingMemberServiceLive = Layer.effect(
 			approve: (input) =>
 				Effect.gen(function* (_) {
 					// Get member details
-					const memberDetails = yield* _(
+					const pendingMember = yield* _(
 						dbService.query("getMemberForApproval", async () => {
 							return await getPendingMemberDetails(input.memberId, input.organizationId);
 						}),
+						Effect.flatMap((memberDetails) =>
+							memberDetails
+								? Effect.succeed(memberDetails)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Pending member not found",
+											entityType: "member",
+											entityId: input.memberId,
+										}),
+									),
+						),
 					);
-
-					if (!memberDetails) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Pending member not found",
-									entityType: "member",
-									entityId: input.memberId,
-								}),
-							),
-						);
-					}
 
 					// Check if already approved
 					const existingApproval = yield* _(
@@ -307,11 +311,12 @@ export const PendingMemberServiceLive = Layer.effect(
 
 					// Validate team if provided
 					if (input.assignedTeamId) {
+						const assignedTeamId = input.assignedTeamId;
 						const teamRecord = yield* _(
 							dbService.query("validateTeam", async () => {
 								return await dbService.db.query.team.findFirst({
 									where: and(
-										eq(team.id, input.assignedTeamId!),
+										eq(team.id, assignedTeamId),
 										eq(team.organizationId, input.organizationId),
 									),
 								});
@@ -354,7 +359,7 @@ export const PendingMemberServiceLive = Layer.effect(
 							// Check if employee already exists
 							const existingEmployee = await dbService.db.query.employee.findFirst({
 								where: and(
-									eq(employee.userId, memberDetails!.userId),
+									eq(employee.userId, pendingMember.userId),
 									eq(employee.organizationId, input.organizationId),
 								),
 							});
@@ -363,7 +368,7 @@ export const PendingMemberServiceLive = Layer.effect(
 								const [newEmployee] = await dbService.db
 									.insert(employee)
 									.values({
-										userId: memberDetails!.userId,
+										userId: pendingMember.userId,
 										organizationId: input.organizationId,
 										teamId: input.assignedTeamId,
 										role: "employee",
@@ -391,7 +396,7 @@ export const PendingMemberServiceLive = Layer.effect(
 
 					return {
 						success: true,
-						member: memberDetails!,
+						member: pendingMember,
 						approval,
 					};
 				}),
@@ -399,23 +404,22 @@ export const PendingMemberServiceLive = Layer.effect(
 			reject: (input) =>
 				Effect.gen(function* (_) {
 					// Get member details
-					const memberDetails = yield* _(
+					const pendingMember = yield* _(
 						dbService.query("getMemberForRejection", async () => {
 							return await getPendingMemberDetails(input.memberId, input.organizationId);
 						}),
+						Effect.flatMap((memberDetails) =>
+							memberDetails
+								? Effect.succeed(memberDetails)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Pending member not found",
+											entityType: "member",
+											entityId: input.memberId,
+										}),
+									),
+						),
 					);
-
-					if (!memberDetails) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Pending member not found",
-									entityType: "member",
-									entityId: input.memberId,
-								}),
-							),
-						);
-					}
 
 					// Check if already processed
 					const existingApproval = yield* _(
@@ -463,7 +467,7 @@ export const PendingMemberServiceLive = Layer.effect(
 
 					return {
 						success: true,
-						member: memberDetails!,
+						member: pendingMember,
 						approval: rejection,
 					};
 				}),

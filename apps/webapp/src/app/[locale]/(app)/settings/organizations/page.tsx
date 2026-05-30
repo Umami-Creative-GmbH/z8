@@ -1,11 +1,11 @@
+import { and, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { and, eq } from "drizzle-orm";
 import {
-	OrganizationsPageClient,
 	type InvitationWithInviter,
 	type MemberWithUserAndEmployee,
+	OrganizationsPageClient,
 } from "@/components/organization/organizations-page-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";

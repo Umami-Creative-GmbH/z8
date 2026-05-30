@@ -99,7 +99,9 @@ export async function getActiveWorkPeriod(
 	});
 
 	return activeWorkPeriod
-		? mapWorkPeriodWithEntries(activeWorkPeriod as unknown as Parameters<typeof mapWorkPeriodWithEntries>[0])
+		? mapWorkPeriodWithEntries(
+				activeWorkPeriod as unknown as Parameters<typeof mapWorkPeriodWithEntries>[0],
+			)
 		: null;
 }
 

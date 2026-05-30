@@ -9,15 +9,16 @@ import type { ConversationReference } from "botbuilder";
 
 // Re-export shared bot-platform types for backward compatibility
 export type {
-	BotPlatform,
-	PlatformConfig,
-	BotCommandContext,
-	BotCommand,
-	BotCommandResponse,
-	DailyDigestData,
 	ApprovalCardData,
 	ApprovalResolvedData,
+	BotCommand,
+	BotCommandContext,
+	BotCommandResponse,
+	BotPlatform,
+	DailyDigestData,
+	PlatformConfig,
 } from "@/lib/bot-platform/types";
+
 import type { ApprovalResolvedData } from "@/lib/bot-platform/types";
 /** @deprecated Use ApprovalResolvedData instead */
 export type ApprovalCardResolvedData = ApprovalResolvedData;

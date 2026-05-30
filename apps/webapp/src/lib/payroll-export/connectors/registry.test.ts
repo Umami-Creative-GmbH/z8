@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { PayrollApiConnector } from "./types";
 import { PayrollConnectorRegistry } from "./registry";
+import type { PayrollApiConnector } from "./types";
 
 function createConnector(id: string): PayrollApiConnector {
 	return {

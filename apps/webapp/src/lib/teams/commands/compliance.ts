@@ -6,12 +6,9 @@
  */
 
 import { Effect } from "effect";
+import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
-import type {
-	BotCommand,
-	BotCommandContext,
-	BotCommandResponse,
-} from "@/lib/bot-platform/types";
+import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import {
 	type ComplianceSummary,
 	TeamsComplianceService,
@@ -19,8 +16,8 @@ import {
 } from "@/lib/effect/services/teams-compliance.service";
 import { createLogger } from "@/lib/logger";
 import { buildComplianceCard } from "../cards/compliance-card";
-import { compose, withPermission, withRateLimit } from "./middleware";
-import { env } from "@/env";
+import { compose, withPermission } from "./middleware/permissions.middleware";
+import { withRateLimit } from "./middleware/rate-limit.middleware";
 
 const logger = createLogger("TeamsCommand:Compliance");
 
@@ -34,7 +31,7 @@ function parseDaysArgument(arg: string | undefined): number {
 	}
 
 	const days = parseInt(arg, 10);
-	if (isNaN(days) || days < 1) {
+	if (Number.isNaN(days) || days < 1) {
 		return 7;
 	}
 
@@ -46,9 +43,7 @@ function parseDaysArgument(arg: string | undefined): number {
 // COMMAND HANDLER
 // ============================================
 
-async function complianceHandler(
-	ctx: BotCommandContext,
-): Promise<BotCommandResponse> {
+async function complianceHandler(ctx: BotCommandContext): Promise<BotCommandResponse> {
 	try {
 		const t = await getBotTranslate(ctx.locale);
 		const daysBack = parseDaysArgument(ctx.args[0]);
@@ -76,16 +71,22 @@ async function complianceHandler(
 		});
 
 		const summary = await Effect.runPromise(
-			program.pipe(
-				Effect.provide(TeamsComplianceServiceFullLive),
-			) as Effect.Effect<ComplianceSummary, never, never>,
+			program.pipe(Effect.provide(TeamsComplianceServiceFullLive)) as Effect.Effect<
+				ComplianceSummary,
+				never,
+				never
+			>,
 		);
 
 		// If no compliance data, return text response
 		if (summary.alerts.length === 0 && summary.pendingExceptions.length === 0) {
 			return {
 				type: "text",
-				text: t("bot.cmd.compliance.noIssues", "No compliance issues found in the last {days} days. Your team is in good standing!", { days: daysBack }),
+				text: t(
+					"bot.cmd.compliance.noIssues",
+					"No compliance issues found in the last {days} days. Your team is in good standing!",
+					{ days: daysBack },
+				),
 			};
 		}
 
@@ -110,7 +111,10 @@ async function complianceHandler(
 		const t = await getBotTranslate(ctx.locale);
 		return {
 			type: "text",
-			text: t("bot.cmd.compliance.error", "Failed to retrieve compliance data. Please try again later."),
+			text: t(
+				"bot.cmd.compliance.error",
+				"Failed to retrieve compliance data. Please try again later.",
+			),
 		};
 	}
 }

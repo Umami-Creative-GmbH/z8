@@ -3,22 +3,22 @@
 import { desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { db, auditExportPackage, auditExportConfig } from "@/db";
-import { isOrgAdminCasl } from "@/lib/auth-helpers";
+import { auditExportPackage, db } from "@/db";
+import {
+	type AuditExportConfigData,
+	configurationService,
+	type VerificationResult,
+	verificationService,
+} from "@/lib/audit-export";
+import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { addAuditPackJob } from "@/lib/audit-pack/application/audit-pack-service";
 import { auditPackRequestRepository } from "@/lib/audit-pack/application/request-repository";
-import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { getPresignedUrl } from "@/lib/storage/export-s3-client";
-import {
-	configurationService,
-	verificationService,
-	type AuditExportConfigData,
-	type VerificationResult,
-} from "@/lib/audit-export";
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
@@ -63,9 +63,7 @@ export async function getAuditConfigAction(
  * Initialize audit export for an organization
  * Creates default config and generates signing key
  */
-export async function initializeAuditExportAction(
-	organizationId: string,
-): Promise<
+export async function initializeAuditExportAction(organizationId: string): Promise<
 	ServerActionResult<{
 		config: AuditExportConfigData;
 		signingKeyFingerprint: string;
@@ -118,9 +116,7 @@ export async function updateAuditConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -196,9 +192,7 @@ export async function rotateSigningKeyAction(
 /**
  * Get signing key history for an organization
  */
-export async function getSigningKeyHistoryAction(
-	organizationId: string,
-): Promise<
+export async function getSigningKeyHistoryAction(organizationId: string): Promise<
 	ServerActionResult<
 		Array<{
 			keyId: string;
@@ -241,9 +235,7 @@ export async function getSigningKeyHistoryAction(
 /**
  * Export public key for external verification
  */
-export async function exportPublicKeyAction(
-	organizationId: string,
-): Promise<
+export async function exportPublicKeyAction(organizationId: string): Promise<
 	ServerActionResult<{
 		publicKeyPem: string;
 		fingerprint: string;
@@ -371,7 +363,14 @@ export interface CreateAuditPackResult {
 
 export interface AuditPackRequestInfo {
 	id: string;
-	status: "requested" | "collecting" | "lineage_expanding" | "assembling" | "hardening" | "completed" | "failed";
+	status:
+		| "requested"
+		| "collecting"
+		| "lineage_expanding"
+		| "assembling"
+		| "hardening"
+		| "completed"
+		| "failed";
 	startDate: Date;
 	endDate: Date;
 	errorCode: string | null;
@@ -398,9 +397,7 @@ export async function createAuditPackAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -583,7 +580,7 @@ export async function getAuditPackDownloadUrlAction(
 		);
 
 		const artifact = request?.artifact;
-		if (!request || request.status !== "completed" || !artifact?.s3Key) {
+		if (request?.status !== "completed" || !artifact?.s3Key) {
 			yield* _(
 				Effect.fail(
 					new NotFoundError({
@@ -595,9 +592,7 @@ export async function getAuditPackDownloadUrlAction(
 			);
 		}
 
-		const url = yield* _(
-			Effect.promise(() => getPresignedUrl(organizationId, artifact!.s3Key!)),
-		);
+		const url = yield* _(Effect.promise(() => getPresignedUrl(organizationId, artifact!.s3Key!)));
 
 		yield* _(
 			Effect.promise(() =>

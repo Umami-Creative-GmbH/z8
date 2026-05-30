@@ -11,10 +11,10 @@ import type { NextRequest } from "next/server";
 import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
 import { slackOAuthState, slackWorkspaceConfig } from "@/db/schema";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { exchangeOAuthCode } from "@/lib/slack/api";
 import { storeOrgSecret } from "@/lib/vault";
-import { env } from "@/env";
 
 const logger = createLogger("SlackOAuthCallback");
 
@@ -32,9 +32,7 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 	// Handle user cancellation
 	if (error) {
 		logger.info({ error }, "Slack OAuth flow cancelled by user");
-		return NextResponse.redirect(
-			`${settingsUrl}?slack_error=${encodeURIComponent(error)}`,
-		);
+		return NextResponse.redirect(`${settingsUrl}?slack_error=${encodeURIComponent(error)}`);
 	}
 
 	if (!code || !state) {
@@ -44,10 +42,7 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 	try {
 		// Validate state token
 		const stateRecord = await db.query.slackOAuthState.findFirst({
-			where: and(
-				eq(slackOAuthState.stateToken, state),
-				eq(slackOAuthState.status, "pending"),
-			),
+			where: and(eq(slackOAuthState.stateToken, state), eq(slackOAuthState.status, "pending")),
 		});
 
 		if (!stateRecord) {
@@ -74,9 +69,7 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 		const tokenResult = await exchangeOAuthCode(code, redirectUri);
 
 		if (!tokenResult) {
-			return NextResponse.redirect(
-				`${settingsUrl}?slack_error=token_exchange_failed`,
-			);
+			return NextResponse.redirect(`${settingsUrl}?slack_error=token_exchange_failed`);
 		}
 
 		// Store bot access token in Vault
@@ -88,10 +81,7 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 
 		// Check if workspace config already exists
 		const existing = await db.query.slackWorkspaceConfig.findFirst({
-			where: eq(
-				slackWorkspaceConfig.organizationId,
-				stateRecord.organizationId,
-			),
+			where: eq(slackWorkspaceConfig.organizationId, stateRecord.organizationId),
 		});
 
 		if (existing) {

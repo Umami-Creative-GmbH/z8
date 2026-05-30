@@ -82,7 +82,7 @@ export interface AbilityContext {
 }
 
 // Mapping of subjects to required role level
-const ADMIN_SUBJECTS: Subject[] = [
+const _ADMIN_SUBJECTS: Subject[] = [
 	"Organization",
 	"Team",
 	"Location",

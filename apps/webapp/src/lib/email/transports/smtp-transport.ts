@@ -7,6 +7,7 @@
 
 import { createTransport, type Transporter } from "nodemailer";
 import type SMTPTransport from "nodemailer/lib/smtp-transport";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import type {
 	EmailMessage,
@@ -14,7 +15,6 @@ import type {
 	EmailTransportResult,
 	SmtpTransportConfig,
 } from "./base";
-import { env } from "@/env";
 
 const logger = createLogger("SmtpTransport");
 
@@ -174,4 +174,3 @@ export function createSystemSmtpTransport(): SmtpTransport | null {
 		return null;
 	}
 }
-

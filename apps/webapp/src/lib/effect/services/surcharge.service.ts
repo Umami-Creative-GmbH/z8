@@ -373,11 +373,12 @@ export const SurchargeServiceLive = Layer.effect(
 
 					// 3. Check team-level assignment (priority 1)
 					if (emp.teamId) {
+						const teamId = emp.teamId;
 						const teamAssignment = yield* _(
 							dbService.query("getTeamSurchargeAssignment", async () => {
 								return await dbService.db.query.surchargeModelAssignment.findFirst({
 									where: and(
-										eq(surchargeModelAssignment.teamId, emp.teamId!),
+										eq(surchargeModelAssignment.teamId, teamId),
 										eq(surchargeModelAssignment.assignmentType, "team"),
 										eq(surchargeModelAssignment.isActive, true),
 										or(
@@ -476,6 +477,11 @@ export const SurchargeServiceLive = Layer.effect(
 					// Work period must be completed (have endTime)
 					if (!period.endTime) {
 						return null; // Cannot calculate surcharges for active period
+					}
+
+					const periodEmployee = period.employee;
+					if (!periodEmployee) {
+						return null;
 					}
 
 					// Get effective surcharge model
@@ -592,7 +598,7 @@ export const SurchargeServiceLive = Layer.effect(
 					const org = yield* _(
 						dbService.query("getOrgTimezone", async () => {
 							return await dbService.db.query.organization.findFirst({
-								where: eq(organization.id, period.employee!.organizationId),
+								where: eq(organization.id, periodEmployee.organizationId),
 								columns: { timezone: true },
 							});
 						}),
@@ -624,7 +630,7 @@ export const SurchargeServiceLive = Layer.effect(
 						}),
 					);
 
-					if (!period || !period.endTime || !period.employee) {
+					if (!period?.endTime || !period.employee) {
 						return null;
 					}
 
@@ -797,7 +803,7 @@ export const SurchargeServiceLive = Layer.effect(
 								organizationId: emp.organizationId,
 								workPeriodId: workPeriodId,
 								surchargeRuleId: primaryRule?.ruleId ?? null,
-								surchargeModelId: effectiveModel!.modelId,
+								surchargeModelId: effectiveModel.modelId,
 								calculationDate: new Date(),
 								baseMinutes: result.baseMinutes,
 								qualifyingMinutes: result.qualifyingMinutes,
@@ -835,7 +841,7 @@ export const SurchargeServiceLive = Layer.effect(
 						}),
 					);
 
-					if (!period || !period.endTime || !period.employee) {
+					if (!period?.endTime || !period.employee) {
 						return null;
 					}
 
@@ -981,7 +987,7 @@ export const SurchargeServiceLive = Layer.effect(
 									organizationId: emp.organizationId,
 									workPeriodId: workPeriodId,
 									surchargeRuleId: primaryRule?.ruleId ?? null,
-									surchargeModelId: effectiveModel!.modelId,
+									surchargeModelId: effectiveModel.modelId,
 									calculationDate: new Date(),
 									baseMinutes: result.baseMinutes,
 									qualifyingMinutes: result.qualifyingMinutes,

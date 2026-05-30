@@ -3,6 +3,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { authClient } from "@/lib/auth-client";
 import VerifyEmailPage from "./page";
 
 const { pushMock, searchParams } = vi.hoisted(() => ({
@@ -59,8 +60,8 @@ vi.mock("@/app/[locale]/(auth)/invitation-actions", () => ({
 
 describe("VerifyEmailPage", () => {
 	afterEach(() => {
-		pushMock.mockClear();
 		vi.restoreAllMocks();
+		vi.clearAllMocks();
 	});
 
 	it("cancels the delayed redirect when unmounted", async () => {
@@ -89,5 +90,19 @@ describe("VerifyEmailPage", () => {
 
 		expect(redirectTimer).toBeDefined();
 		expect(clearTimeoutSpy).toHaveBeenCalledWith(redirectTimer);
+	});
+
+	it("verifies the token only once while rendering the success state", async () => {
+		render(<VerifyEmailPage />);
+
+		await waitFor(() => {
+			expect(
+				screen.getByText(
+					"Your email has been successfully verified. You can now sign in to your account.",
+				),
+			).toBeTruthy();
+		});
+
+		expect(authClient.verifyEmail).toHaveBeenCalledTimes(1);
 	});
 });

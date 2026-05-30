@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
-import { buildComplianceCommandCenterData } from "./view-model";
 import type { ComplianceCriticalEvent, ComplianceSectionCard } from "./types";
+import { buildComplianceCommandCenterData } from "./view-model";
 
 const now = DateTime.utc();
 
@@ -122,10 +122,6 @@ describe("buildComplianceCommandCenterData", () => {
 		});
 
 		expect(data.recentCriticalEvents).toHaveLength(3);
-		expect(data.recentCriticalEvents.map((event) => event.id)).toEqual([
-			"evt-0",
-			"evt-4",
-			"evt-2",
-		]);
+		expect(data.recentCriticalEvents.map((event) => event.id)).toEqual(["evt-0", "evt-4", "evt-2"]);
 	});
 });

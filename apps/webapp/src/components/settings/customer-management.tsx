@@ -1,20 +1,14 @@
 "use client";
 
-import {
-	IconAddressBook,
-	IconEdit,
-	IconPlus,
-	IconRefresh,
-	IconTrash,
-} from "@tabler/icons-react";
+import { IconAddressBook, IconEdit, IconPlus, IconRefresh, IconTrash } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
+	type CustomerData,
 	deleteCustomer,
 	getCustomers,
-	type CustomerData,
 } from "@/app/[locale]/(app)/settings/customers/actions";
 import { getProjects } from "@/app/[locale]/(app)/settings/projects/actions";
 import {
@@ -107,7 +101,10 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 	const handleDelete = async () => {
 		if (!deletingCustomer) return;
 		setIsDeleting(true);
-		const result = await deleteCustomer(deletingCustomer.id).then((response) => response, () => null);
+		const result = await deleteCustomer(deletingCustomer.id).then(
+			(response) => response,
+			() => null,
+		);
 		if (!result) {
 			toast.error(t("settings.customers.deleteFailed", "Failed to delete customer"));
 			setIsDeleting(false);
@@ -119,11 +116,13 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 			toast.success(t("settings.customers.deleted", "Customer deleted"));
 			queryClient.invalidateQueries({ queryKey: queryKeys.customers.list(organizationId) });
 		} else {
-			toast.error(result.error || t("settings.customers.deleteFailed", "Failed to delete customer"));
+			toast.error(
+				result.error || t("settings.customers.deleteFailed", "Failed to delete customer"),
+			);
 		}
 
-			setIsDeleting(false);
-			setDeletingCustomer(null);
+		setIsDeleting(false);
+		setDeletingCustomer(null);
 	};
 
 	return (
@@ -232,9 +231,7 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 											)}
 										</TableCell>
 										<TableCell>
-											{cust.contactPerson || (
-												<span className="text-muted-foreground">-</span>
-											)}
+											{cust.contactPerson || <span className="text-muted-foreground">-</span>}
 										</TableCell>
 										<TableCell>
 											{cust.email ? (
@@ -253,18 +250,10 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 										</TableCell>
 										<TableCell>
 											<div className="flex items-center gap-1">
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={() => handleEdit(cust)}
-												>
+												<Button variant="ghost" size="sm" onClick={() => handleEdit(cust)}>
 													<IconEdit className="size-4" />
 												</Button>
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={() => setDeletingCustomer(cust)}
-												>
+												<Button variant="ghost" size="sm" onClick={() => setDeletingCustomer(cust)}>
 													<IconTrash className="size-4 text-destructive" />
 												</Button>
 											</div>

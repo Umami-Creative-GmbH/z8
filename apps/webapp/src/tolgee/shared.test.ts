@@ -1,8 +1,13 @@
-import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { describe, expect, it } from "vitest";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
-import { ALL_LANGUAGES, ALL_NAMESPACES, mergeTreeTranslations, loadRouteTranslations } from "./shared";
+import {
+	ALL_LANGUAGES,
+	ALL_NAMESPACES,
+	loadRouteTranslations,
+	mergeTreeTranslations,
+} from "./shared";
 
 describe("Tolgee route translations", () => {
 	it("lists every language supported by Tolgee and the language switchers", () => {

@@ -32,9 +32,21 @@ const mockState = vi.hoisted(() => {
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...conditions: unknown[]) => ({ type: "and", conditions })),
 	desc: vi.fn((column: unknown) => ({ type: "desc", column })),
-	eq: vi.fn((column: unknown, value: unknown) => ({ type: "eq", column, value })),
-	gte: vi.fn((column: unknown, value: unknown) => ({ type: "gte", column, value })),
-	lte: vi.fn((column: unknown, value: unknown) => ({ type: "lte", column, value })),
+	eq: vi.fn((column: unknown, value: unknown) => ({
+		type: "eq",
+		column,
+		value,
+	})),
+	gte: vi.fn((column: unknown, value: unknown) => ({
+		type: "gte",
+		column,
+		value,
+	})),
+	lte: vi.fn((column: unknown, value: unknown) => ({
+		type: "lte",
+		column,
+		value,
+	})),
 }));
 
 vi.mock("@/db", () => ({
@@ -247,10 +259,25 @@ describe("TimeRecordService", () => {
 		);
 
 		expect(mockState.selectWhere).toHaveBeenCalledTimes(1);
-		const whereArg = mockState.selectWhere.mock.calls[0]?.[0] as { conditions: Array<{ type: string; column: string; value: string }> };
-		expect(whereArg.conditions).toEqual(
+		const firstWhereCall = (mockState.selectWhere.mock.calls as unknown[]).at(0) as
+			| unknown[]
+			| undefined;
+		const whereArg = firstWhereCall?.at(0) as
+			| {
+					conditions: Array<{
+						type: string;
+						column: string;
+						value: string;
+					}>;
+			  }
+			| undefined;
+		expect(whereArg?.conditions).toEqual(
 			expect.arrayContaining([
-				expect.objectContaining({ type: "eq", column: "organizationId", value: "org-1" }),
+				expect.objectContaining({
+					type: "eq",
+					column: "organizationId",
+					value: "org-1",
+				}),
 			]),
 		);
 	});

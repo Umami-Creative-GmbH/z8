@@ -102,7 +102,10 @@ export function PermissionEditor({
 			organizationId,
 			teamId: teamScope === "all" ? null : teamScope,
 			permissions,
-		}).then((response) => response, () => null);
+		}).then(
+			(response) => response,
+			() => null,
+		);
 
 		if (!result) {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
@@ -114,7 +117,9 @@ export function PermissionEditor({
 			toast.success(t("settings.permissions.updateSuccess", "Permissions updated successfully"));
 			onSuccess?.();
 		} else {
-			toast.error(result.error || t("settings.permissions.updateError", "Failed to update permissions"));
+			toast.error(
+				result.error || t("settings.permissions.updateError", "Failed to update permissions"),
+			);
 		}
 
 		setLoading(false);
@@ -127,7 +132,10 @@ export function PermissionEditor({
 			employeeId,
 			organizationId,
 			teamScope === "all" ? undefined : teamScope,
-		).then((response) => response, () => null);
+		).then(
+			(response) => response,
+			() => null,
+		);
 
 		if (!result) {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
@@ -139,7 +147,9 @@ export function PermissionEditor({
 			toast.success(t("settings.permissions.revokeSuccess", "Permissions revoked successfully"));
 			onSuccess?.();
 		} else {
-			toast.error(result.error || t("settings.permissions.revokeError", "Failed to revoke permissions"));
+			toast.error(
+				result.error || t("settings.permissions.revokeError", "Failed to revoke permissions"),
+			);
 		}
 
 		setLoading(false);
@@ -157,7 +167,11 @@ export function PermissionEditor({
 			<CardHeader>
 				<CardTitle>{t("settings.permissions.title", "Team Permissions")}</CardTitle>
 				<CardDescription>
-					{t("settings.permissions.description", "Configure permissions for {employeeName}. Admins automatically have all permissions.", { employeeName })}
+					{t(
+						"settings.permissions.description",
+						"Configure permissions for {employeeName}. Admins automatically have all permissions.",
+						{ employeeName },
+					)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-6">
@@ -169,7 +183,9 @@ export function PermissionEditor({
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-						<SelectItem value="all">{t("settings.permissions.allTeams", "All Teams (Organization-wide)")}</SelectItem>
+							<SelectItem value="all">
+								{t("settings.permissions.allTeams", "All Teams (Organization-wide)")}
+							</SelectItem>
 							{availableTeams.map((team) => (
 								<SelectItem key={team.id} value={team.id}>
 									{team.name}
@@ -179,14 +195,22 @@ export function PermissionEditor({
 					</Select>
 					<p className="text-sm text-muted-foreground">
 						{teamScope === "all"
-						? t("settings.permissions.allTeamsHelp", "Permissions apply to all teams in the organization")
-						: t("settings.permissions.selectedTeamHelp", "Permissions apply only to the selected team")}
+							? t(
+									"settings.permissions.allTeamsHelp",
+									"Permissions apply to all teams in the organization",
+								)
+							: t(
+									"settings.permissions.selectedTeamHelp",
+									"Permissions apply only to the selected team",
+								)}
 					</p>
 				</div>
 
 				{/* Permission Checkboxes */}
 				<div className="space-y-4">
-					<Label className="text-base font-semibold">{t("settings.permissions.permissions", "Permissions")}</Label>
+					<Label className="text-base font-semibold">
+						{t("settings.permissions.permissions", "Permissions")}
+					</Label>
 					<div className="space-y-4">
 						{Object.entries(PERMISSION_KEYS).map(([key, item]) => (
 							<div key={key} className="flex items-start space-x-3 rounded-lg border p-3">
@@ -203,9 +227,11 @@ export function PermissionEditor({
 										htmlFor={key}
 										className="cursor-pointer font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 									>
-									{t(item.labelKey, item.labelFallback)}
-								</Label>
-								<p className="mt-1 text-sm text-muted-foreground">{t(item.descriptionKey, item.descriptionFallback)}</p>
+										{t(item.labelKey, item.labelFallback)}
+									</Label>
+									<p className="mt-1 text-sm text-muted-foreground">
+										{t(item.descriptionKey, item.descriptionFallback)}
+									</p>
 								</div>
 							</div>
 						))}
@@ -219,20 +245,20 @@ export function PermissionEditor({
 							<Button type="button" variant="destructive" onClick={handleRevoke} disabled={loading}>
 								{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 								<IconX className="mr-2 size-4" />
-							{t("settings.permissions.revokeAll", "Revoke All")}
+								{t("settings.permissions.revokeAll", "Revoke All")}
 							</Button>
 						)}
 					</div>
 					<div className="flex gap-2">
 						{onCancel && (
 							<Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-							{t("common.cancel", "Cancel")}
+								{t("common.cancel", "Cancel")}
 							</Button>
 						)}
 						<Button onClick={handleSave} disabled={loading || !isChanged || !hasAnyPermission}>
 							{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							<IconCheck className="mr-2 size-4" />
-						{t("settings.permissions.save", "Save Permissions")}
+							{t("settings.permissions.save", "Save Permissions")}
 						</Button>
 					</div>
 				</div>

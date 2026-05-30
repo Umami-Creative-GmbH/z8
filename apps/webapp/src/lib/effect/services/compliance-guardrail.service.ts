@@ -387,11 +387,10 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 						}),
 					);
 
-					const hasValidException = !!exceptionResult;
 					const shortfallMinutes = minRestMinutes - restPeriodMinutes;
 
 					// If there's a valid exception, allow clock-in
-					if (hasValidException) {
+					if (exceptionResult) {
 						const nextAllowedClockIn = lastClockOut.plus({ minutes: minRestMinutes }).toJSDate();
 						return {
 							canClockIn: true,
@@ -403,7 +402,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 								shortfallMinutes,
 							},
 							hasValidException: true,
-							exceptionId: exceptionResult!.id,
+							exceptionId: exceptionResult.id,
 							minutesUntilAllowed: shortfallMinutes,
 							nextAllowedClockIn,
 						} satisfies RestPeriodCheckResult;
@@ -538,7 +537,12 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					}
 
 					// Sort alerts by severity (most severe first)
-					const severityOrder = { violation: 0, critical: 1, warning: 2, info: 3 };
+					const severityOrder = {
+						violation: 0,
+						critical: 1,
+						warning: 2,
+						info: 3,
+					};
 					alerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
 					return alerts;
@@ -821,13 +825,17 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 									id: true,
 									userId: true,
 								},
-								with: { user: { columns: { firstName: true, lastName: true } } },
+								with: {
+									user: { columns: { firstName: true, lastName: true } },
+								},
 							},
 							approver: {
 								columns: {
 									id: true,
 								},
-								with: { user: { columns: { firstName: true, lastName: true } } },
+								with: {
+									user: { columns: { firstName: true, lastName: true } },
+								},
 							},
 						},
 						orderBy: [desc(complianceException.createdAt)],
@@ -898,13 +906,17 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 									id: true,
 									userId: true,
 								},
-								with: { user: { columns: { firstName: true, lastName: true } } },
+								with: {
+									user: { columns: { firstName: true, lastName: true } },
+								},
 							},
 							approver: {
 								columns: {
 									id: true,
 								},
-								with: { user: { columns: { firstName: true, lastName: true } } },
+								with: {
+									user: { columns: { firstName: true, lastName: true } },
+								},
 							},
 						},
 						orderBy: [desc(complianceException.createdAt)],

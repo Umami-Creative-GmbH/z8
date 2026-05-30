@@ -12,11 +12,11 @@ import type { NotificationType } from "@/lib/notifications/types";
 import { generateWebhookSecret } from "./signature";
 import type {
 	CreateWebhookParams,
+	PublicWebhookEndpoint,
 	UpdateWebhookParams,
 	WebhookDeliveryResult,
 	WebhookEndpoint,
 	WebhookPayloadData,
-	PublicWebhookEndpoint,
 } from "./types";
 import { MAX_ATTEMPTS, RETRY_DELAYS_MS } from "./types";
 
@@ -248,17 +248,18 @@ export async function getDeliveryLogs(
 ): Promise<{ deliveries: (typeof webhookDelivery.$inferSelect)[]; total: number }> {
 	const { limit = 50, offset = 0 } = options;
 
-	const deliveries = await db.query.webhookDelivery.findMany({
-		where: eq(webhookDelivery.webhookEndpointId, webhookId),
-		orderBy: (delivery, { desc }) => [desc(delivery.createdAt)],
-		limit,
-		offset,
-	});
-
-	const [{ count }] = await db
-		.select({ count: sql<number>`count(*)::int` })
-		.from(webhookDelivery)
-		.where(eq(webhookDelivery.webhookEndpointId, webhookId));
+	const [deliveries, [{ count }]] = await Promise.all([
+		db.query.webhookDelivery.findMany({
+			where: eq(webhookDelivery.webhookEndpointId, webhookId),
+			orderBy: (delivery, { desc }) => [desc(delivery.createdAt)],
+			limit,
+			offset,
+		}),
+		db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(webhookDelivery)
+			.where(eq(webhookDelivery.webhookEndpointId, webhookId)),
+	]);
 
 	return { deliveries, total: count };
 }
@@ -312,7 +313,7 @@ export async function checkAndDisableUnhealthyEndpoint(
 		columns: { consecutiveFailures: true, isActive: true },
 	});
 
-	if (endpoint && endpoint.isActive && endpoint.consecutiveFailures >= maxConsecutiveFailures) {
+	if (endpoint?.isActive && endpoint.consecutiveFailures >= maxConsecutiveFailures) {
 		await db
 			.update(webhookEndpoint)
 			.set({ isActive: false })

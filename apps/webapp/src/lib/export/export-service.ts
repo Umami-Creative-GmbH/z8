@@ -9,10 +9,10 @@ import {
 	uploadExport,
 } from "@/lib/storage/export-s3-client";
 import { type ExportCategory, fetchExportData } from "./data-fetchers";
-import { buildExportZip } from "./zip-builder";
-
 // Import and re-export client-safe utilities from utils.ts
 import { type ExportRecord, formatFileSize } from "./utils";
+import { buildExportZip } from "./zip-builder";
+
 export { type ExportRecord, formatFileSize };
 
 const logger = createLogger("ExportService");

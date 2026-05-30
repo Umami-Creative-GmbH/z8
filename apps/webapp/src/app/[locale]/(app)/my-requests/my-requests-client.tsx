@@ -260,7 +260,7 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 							<label className="grid gap-2 text-sm font-medium">
 								{t("myRequests:myRequests.filters.status", "Status")}
 								<select
-									className="h-9 rounded-md border border-input bg-background px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+									className="h-9 rounded-md border border-input px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
 									value={statusFilter}
 									onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
 								>
@@ -284,7 +284,7 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 							<label className="grid gap-2 text-sm font-medium">
 								{t("myRequests:myRequests.filters.type", "Type")}
 								<select
-									className="h-9 rounded-md border border-input bg-background px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+									className="h-9 rounded-md border border-input px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
 									value={sourceTypeFilter}
 									onChange={(event) => setSourceTypeFilter(event.target.value as SourceTypeFilter)}
 								>

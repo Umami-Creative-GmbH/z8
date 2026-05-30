@@ -4,9 +4,7 @@ export type WorkLocationType = (typeof WORK_LOCATION_TYPES)[number];
 
 const WORK_LOCATION_TYPE_SET = new Set<string>(WORK_LOCATION_TYPES);
 
-export function isWorkLocationType(
-	value: string | null | undefined,
-): value is WorkLocationType {
+export function isWorkLocationType(value: string | null | undefined): value is WorkLocationType {
 	return typeof value === "string" && WORK_LOCATION_TYPE_SET.has(value);
 }
 

@@ -1,0 +1,73 @@
+name: Tests
+
+on:
+  # Temporarily disabled for pull requests.
+  # pull_request:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - "apps/**"
+  #     - "packages/**"
+  #     - "docker/scripts/**"
+  #     - "docker/Dockerfile.*"
+  #     - "docker/targets/**"
+  #     - "infra/hetzner-k8s/k8s/app/**"
+  #     - "package.json"
+  #     - "pnpm-lock.yaml"
+  #     - "pnpm-workspace.yaml"
+  #     - "turbo.json"
+  #     - ".github/workflows/tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+        with:
+          package_json_file: package.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: |
+          set +e
+          pnpm test
+          status=$?
+
+          {
+            echo "## Test Results"
+            echo ""
+            echo "Command: \`pnpm test\`"
+            echo ""
+            if [ "$status" -eq 0 ]; then
+              echo "Result: passed"
+            else
+              echo "Result: failed"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$status"

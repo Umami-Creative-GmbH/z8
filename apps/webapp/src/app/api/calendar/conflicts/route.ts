@@ -10,12 +10,13 @@
  */
 
 import { eq } from "drizzle-orm";
-import { type NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
+import { Effect } from "effect";
 import { headers } from "next/headers";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { calendarConnection, employee } from "@/db/schema";
+import { auth } from "@/lib/auth";
 import {
 	detectConflicts,
 	filterConfirmedEvents,
@@ -25,8 +26,6 @@ import {
 import { getCalendarProvider, isTokenExpired } from "@/lib/calendar-sync/providers";
 import { getCalendarTokens, storeCalendarTokens } from "@/lib/calendar-sync/token-store";
 import type { ConflictWarning } from "@/lib/calendar-sync/types";
-import { auth } from "@/lib/auth";
-import { Effect } from "effect";
 
 // ============================================
 // VALIDATION
@@ -87,7 +86,7 @@ export async function POST(request: NextRequest) {
 		});
 
 		// If no connection or conflict detection disabled, return empty
-		if (!connection || !connection.isActive || !connection.conflictDetectionEnabled) {
+		if (!connection?.isActive || !connection.conflictDetectionEnabled) {
 			return NextResponse.json({
 				hasConflicts: false,
 				conflicts: [],
@@ -218,9 +217,6 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		console.error("Error checking calendar conflicts:", error);
-		return NextResponse.json(
-			{ error: "Failed to check calendar conflicts" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to check calendar conflicts" }, { status: 500 });
 	}
 }

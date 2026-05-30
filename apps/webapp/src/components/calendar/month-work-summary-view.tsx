@@ -31,6 +31,7 @@ interface MonthWorkSummaryViewProps {
 	onMonthChange: (date: Date) => void;
 	onDayClick: (date: Date) => void;
 	onRefresh: () => void;
+	isSummaryLoading?: boolean;
 }
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -303,6 +304,7 @@ export function MonthWorkSummaryView({
 	onMonthChange,
 	onDayClick,
 	onRefresh,
+	isSummaryLoading: _isSummaryLoading,
 }: MonthWorkSummaryViewProps) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);

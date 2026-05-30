@@ -6,8 +6,8 @@
  * them initiating a conversation first.
  */
 
+import { type ConversationReference, TurnContext } from "botbuilder";
 import { and, eq } from "drizzle-orm";
-import { TurnContext, type ConversationReference } from "botbuilder";
 import { db } from "@/db";
 import { teamsConversation } from "@/db/schema";
 import { createLogger } from "@/lib/logger";

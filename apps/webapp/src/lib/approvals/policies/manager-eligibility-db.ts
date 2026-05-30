@@ -12,10 +12,14 @@ import {
 interface ApprovalEligibilityDb {
 	query: {
 		approvalRequest: {
-			findFirst(input: { where: SQL | undefined }): Promise<{
-				requestedBy: string;
-				approverId: string;
-			} | null | undefined>;
+			findFirst(input: { where: SQL | undefined }): Promise<
+				| {
+						requestedBy: string;
+						approverId: string;
+				  }
+				| null
+				| undefined
+			>;
 		};
 		employee: {
 			findMany(input: { where: SQL | undefined }): Promise<unknown[]>;

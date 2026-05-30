@@ -13,10 +13,7 @@ const migrationJournal = JSON.parse(
 ) as { entries: Array<{ idx: number; tag: string }> };
 
 const migrationSnapshot = JSON.parse(
-	readFileSync(
-		new URL("../../../../drizzle/meta/0023_snapshot.json", import.meta.url),
-		"utf8",
-	),
+	readFileSync(new URL("../../../../drizzle/meta/0023_snapshot.json", import.meta.url), "utf8"),
 ) as {
 	tables: {
 		"public.subscription": {
@@ -45,22 +42,17 @@ describe("billing schema", () => {
 	});
 
 	it("keeps the local trial migration metadata in sync", () => {
-		expect(migrationSql).toContain(
-			'ALTER COLUMN "stripe_customer_id" DROP NOT NULL',
-		);
-		expect(migrationSql).toMatch(
-			/WHERE\s+"stripe_customer_id"\s+IS\s+NOT\s+NULL/i,
-		);
+		expect(migrationSql).toContain('ALTER COLUMN "stripe_customer_id" DROP NOT NULL');
+		expect(migrationSql).toMatch(/WHERE\s+"stripe_customer_id"\s+IS\s+NOT\s+NULL/i);
 		expect(migrationJournal.entries).toContainEqual(
 			expect.objectContaining({ idx: 23, tag: "0023_billing_local_trials" }),
 		);
+		expect(migrationSnapshot.tables["public.subscription"].columns.stripe_customer_id.notNull).toBe(
+			false,
+		);
 		expect(
-			migrationSnapshot.tables["public.subscription"].columns.stripe_customer_id
-				.notNull,
-		).toBe(false);
-		expect(
-			migrationSnapshot.tables["public.subscription"].indexes
-				.subscription_stripe_customer_id_idx.where,
+			migrationSnapshot.tables["public.subscription"].indexes.subscription_stripe_customer_id_idx
+				.where,
 		).toBe("stripe_customer_id IS NOT NULL");
 	});
 });

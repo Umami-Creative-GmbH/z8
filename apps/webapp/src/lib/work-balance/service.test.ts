@@ -1,5 +1,5 @@
+import { and, eq, gte, isNotNull } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { and, eq, isNotNull } from "drizzle-orm";
 import { employee, employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "./format";
 
@@ -394,7 +394,9 @@ describe("work balance helpers", () => {
 		expect(mockState.db.transaction).toHaveBeenCalledTimes(1);
 		expect(mockState.txExecute).toHaveBeenCalledTimes(1);
 		expect(mockState.txExecute).toHaveBeenCalledWith(
-			expect.objectContaining({ values: expect.arrayContaining(["work-balance:org-1:employee-1"]) }),
+			expect.objectContaining({
+				values: expect.arrayContaining(["work-balance:org-1:employee-1"]),
+			}),
 		);
 		expect(mockState.txDelete).toHaveBeenCalledTimes(1);
 		expect(mockState.txDelete).toHaveBeenCalledWith(employeeWorkBalancePeriod);
@@ -463,8 +465,12 @@ describe("work balance helpers", () => {
 			expect.objectContaining({
 				set: expect.objectContaining({
 					isDirty: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
-					dirtyFromDate: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
-					refreshRequestedAt: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
+					dirtyFromDate: expect.objectContaining({
+						values: expect.arrayContaining([refreshStartedAt]),
+					}),
+					refreshRequestedAt: expect.objectContaining({
+						values: expect.arrayContaining([refreshStartedAt]),
+					}),
 				}),
 			}),
 		);
@@ -528,14 +534,10 @@ describe("work balance helpers", () => {
 		);
 	});
 
-	it("uses the first completed work period when it follows the account", async () => {
+	it("uses employee start date before the first completed work period", async () => {
 		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
-		mockState.selectFrom
-			.mockReturnValueOnce({ where: mockState.selectWhere })
-			.mockReturnValueOnce({ where: mockState.selectWhere });
-		mockState.selectWhere
-			.mockResolvedValueOnce([{ value: new Date("2026-05-20T09:00:00.000Z") }])
-			.mockResolvedValueOnce([{ totalMinutes: 480 }]);
+		mockState.selectFrom.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere.mockResolvedValueOnce([{ totalMinutes: 480 }]);
 		mockState.db.query.employee.findFirst.mockResolvedValueOnce({
 			id: "employee-1",
 			startDate: new Date("2026-05-01T00:00:00.000Z"),
@@ -553,7 +555,7 @@ describe("work balance helpers", () => {
 
 		expect(result).toEqual(
 			expect.objectContaining({
-				computedFromDate: "2026-05-20",
+				computedFromDate: "2026-05-01",
 				actualMinutes: 480,
 				requiredMinutes: 480,
 				balanceMinutes: 0,
@@ -561,7 +563,7 @@ describe("work balance helpers", () => {
 		);
 		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith(
 			expect.objectContaining({
-				startDate: new Date("2026-05-20T00:00:00.000Z"),
+				startDate: new Date("2026-05-01T00:00:00.000Z"),
 			}),
 		);
 	});
@@ -726,6 +728,7 @@ describe("work balance helpers", () => {
 			periodType: "month",
 			periodStart: "2026-02-01",
 			periodEnd: "2026-02-28",
+			calculationStartDate: null,
 			isClosed: true,
 			now,
 		});
@@ -736,6 +739,7 @@ describe("work balance helpers", () => {
 			periodType: "month",
 			periodStart: "2026-03-01",
 			periodEnd: "2026-05-22",
+			calculationStartDate: null,
 			isClosed: false,
 			now,
 		});
@@ -749,6 +753,7 @@ describe("work balance helpers", () => {
 			organizationId: "org-1",
 			dbClient: expect.objectContaining({ select: mockState.txSelect }),
 			dateInYear: "2026-01-01",
+			calculationStartDate: null,
 			now,
 		});
 		expect(mockState.txSelect).toHaveBeenCalledWith({
@@ -840,6 +845,7 @@ describe("work balance helpers", () => {
 			periodType: "month",
 			periodStart: "2026-01-01",
 			periodEnd: "2026-01-31",
+			calculationStartDate: "2026-01-15",
 			isClosed: true,
 			now,
 		});
@@ -850,6 +856,7 @@ describe("work balance helpers", () => {
 			periodType: "month",
 			periodStart: "2026-02-01",
 			periodEnd: "2026-02-28",
+			calculationStartDate: "2026-01-15",
 			isClosed: true,
 			now,
 		});
@@ -860,6 +867,7 @@ describe("work balance helpers", () => {
 			periodType: "month",
 			periodStart: "2026-03-01",
 			periodEnd: "2026-05-22",
+			calculationStartDate: "2026-01-15",
 			isClosed: false,
 			now,
 		});
@@ -869,6 +877,7 @@ describe("work balance helpers", () => {
 			organizationId: "org-1",
 			dbClient: expect.objectContaining({ select: mockState.txSelect }),
 			dateInYear: "2026-01-01",
+			calculationStartDate: "2026-01-15",
 			now,
 		});
 	});
@@ -949,7 +958,9 @@ describe("work balance helpers", () => {
 		).resolves.toEqual({ updated: true });
 
 		expect(mockState.txExecute).toHaveBeenCalledWith(
-			expect.objectContaining({ values: expect.arrayContaining(["work-balance:org-1:employee-1"]) }),
+			expect.objectContaining({
+				values: expect.arrayContaining(["work-balance:org-1:employee-1"]),
+			}),
 		);
 		expect(mockState.computeEmployeePeriodBalance).toHaveBeenNthCalledWith(1, {
 			employeeId: "employee-1",
@@ -958,6 +969,7 @@ describe("work balance helpers", () => {
 			periodType: "month",
 			periodStart: "2026-01-01",
 			periodEnd: "2026-01-31",
+			calculationStartDate: "2026-01-15",
 			isClosed: true,
 			now,
 		});
@@ -967,8 +979,141 @@ describe("work balance helpers", () => {
 			organizationId: "org-1",
 			dbClient: expect.objectContaining({ select: mockState.txSelect }),
 			dateInYear: "2026-01-01",
+			calculationStartDate: "2026-01-15",
 			now,
 		});
+	});
+
+	it("does not rebuild closed months before employee start date", async () => {
+		const now = new Date("2026-05-22T12:00:00.000Z");
+		mockState.db.query.employee.findFirst.mockResolvedValueOnce({
+			id: "employee-1",
+			startDate: new Date("2026-02-10T00:00:00.000Z"),
+		});
+		mockState.computeEmployeePeriodBalance
+			.mockResolvedValueOnce({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				periodType: "month",
+				periodStart: "2026-02-01",
+				periodEnd: "2026-02-28",
+				actualMinutes: 100,
+				requiredMinutes: 80,
+				balanceMinutes: 20,
+				computedAt: now,
+				isClosed: true,
+			})
+			.mockResolvedValueOnce({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				periodType: "month",
+				periodStart: "2026-03-01",
+				periodEnd: "2026-05-22",
+				actualMinutes: 300,
+				requiredMinutes: 240,
+				balanceMinutes: 60,
+				computedAt: now,
+				isClosed: false,
+			});
+		mockState.db.select.mockReturnValueOnce({ from: mockState.selectFrom });
+		mockState.selectFrom.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere.mockResolvedValueOnce([
+			{ actualMinutes: 100, requiredMinutes: 80, firstPeriodStart: "2026-01-01" },
+		]);
+
+		await refreshEmployeeWorkBalanceFromPeriods({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dirtyFromDate: "2026-01-01",
+			now,
+		});
+
+		expect(mockState.computeEmployeePeriodBalance).toHaveBeenNthCalledWith(1, {
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dbClient: expect.objectContaining({ select: mockState.txSelect }),
+			periodType: "month",
+			periodStart: "2026-02-01",
+			periodEnd: "2026-02-28",
+			calculationStartDate: "2026-02-10",
+			isClosed: true,
+			now,
+		});
+		expect(mockState.computeEmployeePeriodBalance).toHaveBeenNthCalledWith(2, {
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dbClient: expect.objectContaining({ select: mockState.txSelect }),
+			periodType: "month",
+			periodStart: "2026-03-01",
+			periodEnd: "2026-05-22",
+			calculationStartDate: "2026-02-10",
+			isClosed: false,
+			now,
+		});
+		expect(mockState.computeEmployeePeriodBalance).toHaveBeenCalledTimes(2);
+		expect(mockState.rebuildEmployeeYearBalanceFromMonths).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dbClient: expect.objectContaining({ select: mockState.txSelect }),
+			dateInYear: "2026-01-01",
+			calculationStartDate: "2026-02-10",
+			now,
+		});
+		expect(gte).toHaveBeenCalledWith(employeeWorkBalancePeriod.periodEnd, "2026-02-10");
+		expect(mockState.txInsertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				actualMinutes: 400,
+				requiredMinutes: 320,
+				balanceMinutes: 80,
+				computedFromDate: "2026-02-10",
+				computedThroughDate: "2026-05-22",
+			}),
+		);
+	});
+
+	it("upserts a zero balance when employee start date is after the refresh window", async () => {
+		const now = new Date("2026-05-22T12:00:00.000Z");
+		mockState.db.query.employee.findFirst.mockResolvedValueOnce({
+			id: "employee-1",
+			startDate: new Date("2026-06-01T00:00:00.000Z"),
+		});
+
+		await expect(
+			refreshEmployeeWorkBalanceFromPeriods({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				dirtyFromDate: "2026-05-01",
+				now,
+			}),
+		).resolves.toEqual({ updated: true });
+
+		expect(mockState.computeEmployeePeriodBalance).not.toHaveBeenCalled();
+		expect(mockState.upsertEmployeeWorkBalancePeriod).not.toHaveBeenCalled();
+		expect(mockState.rebuildEmployeeYearBalanceFromMonths).not.toHaveBeenCalled();
+		expect(mockState.txSelect).not.toHaveBeenCalled();
+		expect(mockState.txDelete).toHaveBeenCalledTimes(1);
+		expect(mockState.txDelete).toHaveBeenCalledWith(employeeWorkBalancePeriod);
+		expect(mockState.deleteWhere).toHaveBeenCalledTimes(1);
+		expect(mockState.deleteWhere).toHaveBeenCalledWith({
+			and: [
+				{ eq: [employeeWorkBalancePeriod.employeeId, "employee-1"] },
+				{ eq: [employeeWorkBalancePeriod.organizationId, "org-1"] },
+			],
+		});
+		expect(mockState.txInsertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				actualMinutes: 0,
+				requiredMinutes: 0,
+				balanceMinutes: 0,
+				computedFromDate: "2026-05-22",
+				computedThroughDate: "2026-05-22",
+				computedAt: now,
+			}),
+		);
 	});
 
 	it("keeps null dirty date stale refreshes scoped to the hot window", async () => {
@@ -1006,6 +1151,7 @@ describe("work balance helpers", () => {
 			periodType: "month",
 			periodStart: "2026-03-01",
 			periodEnd: "2026-05-22",
+			calculationStartDate: null,
 			isClosed: false,
 			now,
 		});

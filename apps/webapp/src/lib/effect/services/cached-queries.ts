@@ -1,12 +1,7 @@
+import { and, desc, eq } from "drizzle-orm";
 import { cache } from "react";
-import { and, eq, desc } from "drizzle-orm";
 import { db } from "@/db";
-import {
-	accessPolicy,
-	scimProviderConfig,
-	roleTemplate,
-	roleTemplateMapping,
-} from "@/db/schema";
+import { accessPolicy, roleTemplate, roleTemplateMapping, scimProviderConfig } from "@/db/schema";
 
 /**
  * Cached queries for request-level deduplication.
@@ -29,10 +24,7 @@ export const getScimProviderConfig = cache(async (organizationId: string) => {
  */
 export const getActiveAccessPolicies = cache(async (organizationId: string) => {
 	return db.query.accessPolicy.findMany({
-		where: and(
-			eq(accessPolicy.organizationId, organizationId),
-			eq(accessPolicy.enabled, true),
-		),
+		where: and(eq(accessPolicy.organizationId, organizationId), eq(accessPolicy.enabled, true)),
 		orderBy: [desc(accessPolicy.priority)],
 	});
 });

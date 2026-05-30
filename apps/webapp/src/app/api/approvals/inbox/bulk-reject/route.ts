@@ -4,18 +4,21 @@
  * POST /api/approvals/inbox/bulk-reject - Reject multiple approvals
  */
 
-import { type NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { auth } from "@/lib/auth";
-import { getAbility } from "@/lib/auth-helpers";
+import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
-import { BulkApprovalService, BulkApprovalServiceLive } from "@/lib/approvals/application/bulk-approval.service";
+import {
+	BulkApprovalService,
+	BulkApprovalServiceLive,
+} from "@/lib/approvals/application/bulk-approval.service";
 import type { BulkDecisionResult } from "@/lib/approvals/domain/types";
-import type { AnyAppError } from "@/lib/effect/errors";
+import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import type { AnyAppError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -32,10 +35,7 @@ export async function POST(request: NextRequest) {
 		const reason = body.reason as string;
 
 		if (!Array.isArray(approvalIds) || approvalIds.length === 0) {
-			return NextResponse.json(
-				{ error: "approvalIds array is required" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "approvalIds array is required" }, { status: 400 });
 		}
 
 		if (approvalIds.length > MAX_BULK_REJECT) {
@@ -46,10 +46,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		if (!reason || reason.trim().length === 0) {
-			return NextResponse.json(
-				{ error: "Rejection reason is required" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Rejection reason is required" }, { status: 400 });
 		}
 
 		const session = await auth.api.getSession({ headers: await headers() });
@@ -59,10 +56,7 @@ export async function POST(request: NextRequest) {
 
 		const activeOrganizationId = session.session?.activeOrganizationId;
 		if (!activeOrganizationId) {
-			return NextResponse.json(
-				{ error: "No active organization" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
 		const ability = await getAbility();
@@ -120,9 +114,6 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json(result);
 	} catch (error) {
 		logger.error({ error }, "Failed to bulk reject");
-		return NextResponse.json(
-			{ error: "Failed to process bulk rejection" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to process bulk rejection" }, { status: 500 });
 	}
 }

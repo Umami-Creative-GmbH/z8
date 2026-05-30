@@ -4,12 +4,12 @@ import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { env } from "@/env";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import { getAuthRequestDiagnostics } from "@/lib/diagnostics";
 import { createLogger } from "@/lib/logger";
-import { env } from "@/env";
 
 const logger = createLogger("OrganizationSwitchRoute");
 const shouldLogAuthDiagnostics = env.NODE_ENV === "production";

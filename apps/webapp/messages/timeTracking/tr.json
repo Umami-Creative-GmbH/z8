@@ -81,7 +81,8 @@
         "created": "Zaman girişi başarıyla oluşturuldu",
         "pendingApproval": "Zaman girişi yönetici onayı için gönderildi"
       },
-      "title": "Manuel Zaman Girişi Ekle"
+      "title": "Manuel Zaman Girişi Ekle",
+      "titleForEmployee": "{employee} için Manuel Zaman Girişi Ekle"
     },
     "noCategory": "Kategori yok (%100)",
     "noProject": "Proje yok",

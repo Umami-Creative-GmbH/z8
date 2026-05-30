@@ -266,7 +266,7 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 				<div className="relative w-full md:max-w-sm">
 					<input
 						aria-label={t("organization.orgChart.searchLabel", "Search employees")}
-						className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary"
+						className="h-10 w-full rounded-md border px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary"
 						autoComplete="off"
 						name="org-chart-employee-search"
 						onChange={(event) => {

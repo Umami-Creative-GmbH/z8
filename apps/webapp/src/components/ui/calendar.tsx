@@ -1,8 +1,8 @@
 "use client";
 
+import { type DayButton, DayPicker, getDefaultClassNames } from "@daypicker/react";
 import { IconChevronDown, IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import * as React from "react";
-import { type DayButton, DayPicker, getDefaultClassNames } from "@daypicker/react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";

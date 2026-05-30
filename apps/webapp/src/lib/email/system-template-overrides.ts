@@ -1,9 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import {
-	platformSystemEmailTemplate,
-	type PlatformSystemEmailTemplateKey,
-} from "@/db/schema";
+import { type PlatformSystemEmailTemplateKey, platformSystemEmailTemplate } from "@/db/schema";
 
 export interface PlatformSystemEmailTemplateOverride {
 	isEnabled: boolean;

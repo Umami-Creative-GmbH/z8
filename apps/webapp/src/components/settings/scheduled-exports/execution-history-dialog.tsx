@@ -1,21 +1,19 @@
 "use client";
 
-import { DateTime } from "luxon";
-import { useEffect, useState } from "react";
-import { useTranslate } from "@tolgee/react";
 import {
 	IconAlertCircle,
 	IconCircleCheck,
+	IconCircleX,
 	IconClock,
 	IconLoader2,
-	IconCircleX,
 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
+import { DateTime } from "luxon";
+import { useEffect, useState } from "react";
 import {
-	getExecutionHistoryAction,
 	type ExecutionHistoryItem,
+	getExecutionHistoryAction,
 } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -24,6 +22,8 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Table,
 	TableBody,
@@ -32,12 +32,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ExecutionHistoryDialogProps {
 	open: boolean;
@@ -70,7 +65,9 @@ export function ExecutionHistoryDialog({
 				);
 
 				if (!result) {
-					setError(t("settings.scheduledExports.history.loadError", "Failed to load execution history"));
+					setError(
+						t("settings.scheduledExports.history.loadError", "Failed to load execution history"),
+					);
 					setIsLoading(false);
 					return;
 				}
@@ -140,16 +137,26 @@ export function ExecutionHistoryDialog({
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
-					<ActionPanelTitle>{t("settings.scheduledExports.history.title", "Execution IconHistory")}</ActionPanelTitle>
+					<ActionPanelTitle>
+						{t("settings.scheduledExports.history.title", "Execution IconHistory")}
+					</ActionPanelTitle>
 					<ActionPanelDescription>
-						{t("settings.scheduledExports.history.description", "Past runs for \"{scheduleName}\"", { scheduleName })}
+						{t("settings.scheduledExports.history.description", 'Past runs for "{scheduleName}"', {
+							scheduleName,
+						})}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<ActionPanelBody role="region" aria-label={t("settings.scheduledExports.history.tableRegion", "Execution history table")}>
+				<ActionPanelBody
+					role="region"
+					aria-label={t("settings.scheduledExports.history.tableRegion", "Execution history table")}
+				>
 					{isLoading && (
 						<div className="flex items-center justify-center py-12">
-							<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-label={t("common.loading", "Loading")} />
+							<IconLoader2
+								className="size-8 animate-spin text-muted-foreground"
+								aria-label={t("common.loading", "Loading")}
+							/>
 						</div>
 					)}
 
@@ -165,7 +172,10 @@ export function ExecutionHistoryDialog({
 							<IconClock className="size-12 mx-auto mb-4 opacity-50" aria-hidden="true" />
 							<p>{t("settings.scheduledExports.history.noExecutions", "No executions yet")}</p>
 							<p className="text-sm">
-								{t("settings.scheduledExports.history.noExecutionsDesc", "This schedule hasn't run yet. Executions will appear here once the schedule triggers.")}
+								{t(
+									"settings.scheduledExports.history.noExecutionsDesc",
+									"This schedule hasn't run yet. Executions will appear here once the schedule triggers.",
+								)}
 							</p>
 						</div>
 					)}
@@ -174,14 +184,28 @@ export function ExecutionHistoryDialog({
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>{t("settings.scheduledExports.history.colStatus", "Status")}</TableHead>
-									<TableHead>{t("settings.scheduledExports.history.colTriggered", "Triggered")}</TableHead>
-									<TableHead>{t("settings.scheduledExports.history.colDateRange", "Date Range")}</TableHead>
-									<TableHead>{t("settings.scheduledExports.history.colRecords", "Records")}</TableHead>
-									<TableHead>{t("settings.scheduledExports.history.colEmails", "Emails")}</TableHead>
-									<TableHead>{t("settings.scheduledExports.history.colDuration", "Duration")}</TableHead>
+									<TableHead>
+										{t("settings.scheduledExports.history.colStatus", "Status")}
+									</TableHead>
+									<TableHead>
+										{t("settings.scheduledExports.history.colTriggered", "Triggered")}
+									</TableHead>
+									<TableHead>
+										{t("settings.scheduledExports.history.colDateRange", "Date Range")}
+									</TableHead>
+									<TableHead>
+										{t("settings.scheduledExports.history.colRecords", "Records")}
+									</TableHead>
+									<TableHead>
+										{t("settings.scheduledExports.history.colEmails", "Emails")}
+									</TableHead>
+									<TableHead>
+										{t("settings.scheduledExports.history.colDuration", "Duration")}
+									</TableHead>
 									<TableHead className="w-[80px]">
-										<span className="sr-only">{t("settings.scheduledExports.history.colActions", "Actions")}</span>
+										<span className="sr-only">
+											{t("settings.scheduledExports.history.colActions", "Actions")}
+										</span>
 									</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -189,9 +213,7 @@ export function ExecutionHistoryDialog({
 								{executions.map((execution) => (
 									<TableRow key={execution.id}>
 										<TableCell>{getStatusBadge(execution.status)}</TableCell>
-										<TableCell className="text-sm">
-											{formatDate(execution.triggeredAt)}
-										</TableCell>
+										<TableCell className="text-sm">{formatDate(execution.triggeredAt)}</TableCell>
 										<TableCell className="text-sm text-muted-foreground">
 											{execution.dateRangeStart} {t("common.to", "to")} {execution.dateRangeEnd}
 										</TableCell>
@@ -209,12 +231,17 @@ export function ExecutionHistoryDialog({
 															<Tooltip>
 																<TooltipTrigger asChild>
 																	<span className="text-destructive ml-1">
-																		({execution.emailsFailed} {t("settings.scheduledExports.history.failed", "failed")})
+																		({execution.emailsFailed}{" "}
+																		{t("settings.scheduledExports.history.failed", "failed")})
 																	</span>
 																</TooltipTrigger>
 																<TooltipContent>
 																	<p>
-																		{t("settings.scheduledExports.history.emailsFailed", "{count} email(s) failed to send", { count: execution.emailsFailed })}
+																		{t(
+																			"settings.scheduledExports.history.emailsFailed",
+																			"{count} email(s) failed to send",
+																			{ count: execution.emailsFailed },
+																		)}
 																	</p>
 																</TooltipContent>
 															</Tooltip>
@@ -236,9 +263,15 @@ export function ExecutionHistoryDialog({
 															<Button
 																variant="ghost"
 																size="sm"
-																aria-label={t("settings.scheduledExports.history.viewError", "View error details")}
+																aria-label={t(
+																	"settings.scheduledExports.history.viewError",
+																	"View error details",
+																)}
 															>
-																<IconAlertCircle className="size-4 text-destructive" aria-hidden="true" />
+																<IconAlertCircle
+																	className="size-4 text-destructive"
+																	aria-hidden="true"
+																/>
 															</Button>
 														</TooltipTrigger>
 														<TooltipContent className="max-w-xs">

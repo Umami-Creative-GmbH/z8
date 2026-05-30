@@ -58,7 +58,12 @@ export class StripeError extends Data.TaggedError("StripeError")<{
 
 export class BillingError extends Data.TaggedError("BillingError")<{
 	message: string;
-	reason: "subscription_required" | "trial_expired" | "payment_failed" | "canceled" | "billing_disabled";
+	reason:
+		| "subscription_required"
+		| "trial_expired"
+		| "payment_failed"
+		| "canceled"
+		| "billing_disabled";
 	organizationId?: string;
 }> {}
 

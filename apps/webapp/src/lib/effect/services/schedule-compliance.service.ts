@@ -66,13 +66,19 @@ function normalizeRegulation(
 			: {}),
 		...(regulation.maxDailyMinutes != null ? { maxDailyMinutes: regulation.maxDailyMinutes } : {}),
 		...(regulation.overtimeDailyThresholdMinutes != null
-			? { overtimeDailyThresholdMinutes: regulation.overtimeDailyThresholdMinutes }
+			? {
+					overtimeDailyThresholdMinutes: regulation.overtimeDailyThresholdMinutes,
+				}
 			: {}),
 		...(regulation.overtimeWeeklyThresholdMinutes != null
-			? { overtimeWeeklyThresholdMinutes: regulation.overtimeWeeklyThresholdMinutes }
+			? {
+					overtimeWeeklyThresholdMinutes: regulation.overtimeWeeklyThresholdMinutes,
+				}
 			: {}),
 		...(regulation.overtimeMonthlyThresholdMinutes != null
-			? { overtimeMonthlyThresholdMinutes: regulation.overtimeMonthlyThresholdMinutes }
+			? {
+					overtimeMonthlyThresholdMinutes: regulation.overtimeMonthlyThresholdMinutes,
+				}
 			: {}),
 	};
 }
@@ -88,8 +94,12 @@ function toShiftInterval(params: {
 		return null;
 	}
 
-	const start = DateTime.fromISO(`${baseDate}T${params.startTime}`, { zone: params.timezone });
-	let end = DateTime.fromISO(`${baseDate}T${params.endTime}`, { zone: params.timezone });
+	const start = DateTime.fromISO(`${baseDate}T${params.startTime}`, {
+		zone: params.timezone,
+	});
+	let end = DateTime.fromISO(`${baseDate}T${params.endTime}`, {
+		zone: params.timezone,
+	});
 
 	if (!start.isValid || !end.isValid) {
 		return null;
@@ -213,22 +223,20 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 											},
 										});
 									}),
-							  );
+								);
 
 					const effectiveRegulation =
 						employeeIds.length === 0
 							? {}
 							: normalizeRegulation(
-									(
-										yield* _(
-											Effect.forEach(employeeIds, (employeeId) =>
-												workPolicyService.getEffectivePolicy(employeeId).pipe(
-													Effect.catchTag("NotFoundError", () => Effect.succeed(null)),
-												),
-											),
-										)
-									).find((policy) => policy?.regulation)?.regulation ?? null,
-							  );
+									(yield* _(
+										Effect.forEach(employeeIds, (employeeId) =>
+											workPolicyService
+												.getEffectivePolicy(employeeId)
+												.pipe(Effect.catchTag("NotFoundError", () => Effect.succeed(null))),
+										),
+									)).find((policy) => policy?.regulation)?.regulation ?? null,
+								);
 
 					const shiftsByEmployee = new Map<string, typeof assignedShifts>();
 					for (const scheduledShift of assignedShifts) {
@@ -258,10 +266,15 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 						const intervals: Interval[] = [];
 
 						for (const employeePeriod of periodsByEmployee.get(employeeId) ?? []) {
+							const endTime = employeePeriod.endTime;
+							if (!endTime) {
+								continue;
+							}
 							const start = DateTime.fromJSDate(employeePeriod.startTime).setZone(input.timezone);
-							const end = DateTime.fromJSDate(employeePeriod.endTime!).setZone(input.timezone);
+							const end = DateTime.fromJSDate(endTime).setZone(input.timezone);
 							const minutes =
-								employeePeriod.durationMinutes ?? Math.max(0, Math.round(end.diff(start, "minutes").minutes));
+								employeePeriod.durationMinutes ??
+								Math.max(0, Math.round(end.diff(start, "minutes").minutes));
 
 							addMinutes(actualMinutesByDay, start.toISODate(), minutes);
 							intervals.push({ start, end });
@@ -279,7 +292,10 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 								continue;
 							}
 
-							const minutes = Math.max(0, Math.round(interval.end.diff(interval.start, "minutes").minutes));
+							const minutes = Math.max(
+								0,
+								Math.round(interval.end.diff(interval.start, "minutes").minutes),
+							);
 							addMinutes(scheduledMinutesByDay, interval.start.toISODate(), minutes);
 							intervals.push(interval);
 						}

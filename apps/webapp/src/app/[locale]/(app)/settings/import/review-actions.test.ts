@@ -103,10 +103,7 @@ describe("import review actions", () => {
 
 		expect(mockState.findMember).toHaveBeenCalledWith({
 			where: {
-				and: [
-					{ eq: ["member.userId", "user_1"] },
-					{ eq: ["member.organizationId", "org_1"] },
-				],
+				and: [{ eq: ["member.userId", "user_1"] }, { eq: ["member.organizationId", "org_1"] }],
 			},
 		});
 
@@ -281,7 +278,10 @@ describe("import review actions", () => {
 			entityTypes: [],
 		});
 
-		expect(result).toEqual({ success: false, error: "At least one import entity type is required" });
+		expect(result).toEqual({
+			success: false,
+			error: "At least one import entity type is required",
+		});
 		expect(mockState.createImportBatch).not.toHaveBeenCalled();
 	});
 
@@ -296,7 +296,10 @@ describe("import review actions", () => {
 			entityTypes: ["employee"],
 		});
 
-		expect(result).toEqual({ success: false, error: "Import start date must be on or before end date" });
+		expect(result).toEqual({
+			success: false,
+			error: "Import start date must be on or before end date",
+		});
 		expect(mockState.createImportBatch).not.toHaveBeenCalled();
 	});
 
@@ -326,7 +329,10 @@ describe("import review actions", () => {
 			entityTypes: ["employee"],
 		});
 
-		expect(result).toEqual({ success: false, error: "Import selected scope must be a plain object" });
+		expect(result).toEqual({
+			success: false,
+			error: "Import selected scope must be a plain object",
+		});
 		expect(mockState.createImportBatch).not.toHaveBeenCalled();
 	});
 

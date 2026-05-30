@@ -186,7 +186,7 @@ export function ApprovalSprintPanel({
 						<div className="text-muted-foreground text-sm">
 							{t(
 								"approvals:sprint.progress",
-								boundedCurrentIndex + 1 + " of " + visibleItems.length,
+								`${boundedCurrentIndex + 1} of ${visibleItems.length}`,
 								{
 									current: boundedCurrentIndex + 1,
 									total: visibleItems.length,

@@ -10,8 +10,8 @@
 
 import { Effect } from "effect";
 import { AuthorizationError } from "@/lib/effect/errors";
-import { defineAbilityFor, type AppAbility } from "./ability";
-import type { Action, Subject, PrincipalContext } from "./types";
+import { type AppAbility, defineAbilityFor } from "./ability";
+import type { Action, PrincipalContext, Subject } from "./types";
 
 // ============================================
 // CORE EFFECT HELPERS

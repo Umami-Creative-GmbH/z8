@@ -1,9 +1,15 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { Effect } from "effect";
-import { CoverageService, type CoverageRuleWithRelations, type TargetCoverageGap, type CoverageSettingsData } from "@/lib/effect/services/coverage.service";
+import { revalidatePath } from "next/cache";
+import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
 import { safeAction } from "@/lib/effect/runtime";
+import {
+	type CoverageRuleWithRelations,
+	CoverageService,
+	type CoverageSettingsData,
+	type TargetCoverageGap,
+} from "@/lib/effect/services/coverage.service";
 import {
 	canManageScopedSchedulingSubarea,
 	filterItemsToManageableSubareas,
@@ -11,12 +17,11 @@ import {
 	getSchedulingSettingsAccessContext,
 } from "@/lib/settings-scheduling-access";
 import {
-	createCoverageRuleSchema,
-	updateCoverageRuleSchema,
 	type CreateCoverageRule,
+	createCoverageRuleSchema,
 	type UpdateCoverageRule,
+	updateCoverageRuleSchema,
 } from "@/lib/validations/coverage";
-import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
 
 // ============================================
 // TYPES
@@ -35,7 +40,7 @@ export async function getCoverageRules(
 	subareaId?: string,
 ): Promise<ServerActionResult<CoverageRuleWithRelations[]>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext || !accessContext.canAccessCoverageRules) {
+	if (!accessContext?.canAccessCoverageRules) {
 		return { success: false, error: "Unauthorized" };
 	}
 
@@ -73,7 +78,7 @@ export async function getCoverageRule(
 	ruleId: string,
 ): Promise<ServerActionResult<CoverageRuleWithRelations | null>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext || !accessContext.canAccessCoverageRules) {
+	if (!accessContext?.canAccessCoverageRules) {
 		return { success: false, error: "Unauthorized" };
 	}
 
@@ -107,7 +112,7 @@ export async function createCoverageRule(
 	data: CreateCoverageRule,
 ): Promise<ServerActionResult<CoverageRuleWithRelations>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext || !accessContext.canAccessCoverageRules) {
+	if (!accessContext?.canAccessCoverageRules) {
 		return { success: false, error: "Unauthorized" };
 	}
 
@@ -158,7 +163,7 @@ export async function updateCoverageRule(
 	data: UpdateCoverageRule,
 ): Promise<ServerActionResult<CoverageRuleWithRelations>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext || !accessContext.canAccessCoverageRules) {
+	if (!accessContext?.canAccessCoverageRules) {
 		return { success: false, error: "Unauthorized" };
 	}
 
@@ -210,7 +215,7 @@ export async function updateCoverageRule(
  */
 export async function deleteCoverageRule(ruleId: string): Promise<ServerActionResult<void>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext || !accessContext.canAccessCoverageRules) {
+	if (!accessContext?.canAccessCoverageRules) {
 		return { success: false, error: "Unauthorized" };
 	}
 
@@ -258,13 +263,14 @@ export async function getTargetHeatmapData(params: {
 	subareaIds?: string[];
 }): Promise<ServerActionResult<HeatmapDataPoint[]>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext || !accessContext.canAccessCoverageRules) {
+	if (!accessContext?.canAccessCoverageRules) {
 		return { success: false, error: "Unauthorized" };
 	}
 
 	const scopedSubareaIds = accessContext.manageableSubareaIds
-		? params.subareaIds?.filter((subareaId) => accessContext.manageableSubareaIds?.has(subareaId)) ??
-			[...accessContext.manageableSubareaIds]
+		? (params.subareaIds?.filter((subareaId) =>
+				accessContext.manageableSubareaIds?.has(subareaId),
+			) ?? [...accessContext.manageableSubareaIds])
 		: params.subareaIds;
 
 	const effect = Effect.gen(function* (_) {
@@ -290,11 +296,7 @@ export async function validateScheduleForPublish(params: {
 	endDate: Date;
 }): Promise<ServerActionResult<{ canPublish: boolean; gaps: TargetCoverageGap[] }>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
-	if (
-		!accessContext ||
-		!accessContext.canAccessCoverageRules ||
-		accessContext.accessTier !== "orgAdmin"
-	) {
+	if (!accessContext?.canAccessCoverageRules || accessContext.accessTier !== "orgAdmin") {
 		return { success: false, error: "Unauthorized" };
 	}
 
@@ -321,11 +323,7 @@ export async function validateScheduleForPublish(params: {
  */
 export async function getCoverageSettings(): Promise<ServerActionResult<CoverageSettingsData>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
-	if (
-		!accessContext ||
-		!accessContext.canAccessCoverageRules ||
-		accessContext.accessTier !== "orgAdmin"
-	) {
+	if (!accessContext?.canAccessCoverageRules || accessContext.accessTier !== "orgAdmin") {
 		return { success: false, error: "Unauthorized" };
 	}
 
@@ -340,11 +338,11 @@ export async function getCoverageSettings(): Promise<ServerActionResult<Coverage
 /**
  * Update coverage settings for the organization.
  */
-export async function updateCoverageSettings(
-	settings: { allowPublishWithGaps: boolean },
-): Promise<ServerActionResult<CoverageSettingsData>> {
+export async function updateCoverageSettings(settings: {
+	allowPublishWithGaps: boolean;
+}): Promise<ServerActionResult<CoverageSettingsData>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
-	if (!accessContext || !accessContext.canManageCoverageSettings) {
+	if (!accessContext?.canManageCoverageSettings) {
 		return { success: false, error: "Unauthorized" };
 	}
 

@@ -51,7 +51,8 @@ function VerifyEmailPendingContent() {
 
 		if (result.error) {
 			setResendMessage(
-				result.error.message || t("auth.resend-verification-failed", "Failed to resend verification email"),
+				result.error.message ||
+					t("auth.resend-verification-failed", "Failed to resend verification email"),
 			);
 		} else {
 			setResendMessage(

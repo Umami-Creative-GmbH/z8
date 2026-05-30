@@ -29,11 +29,17 @@ function getClockStatusBadge(
 	t: ReturnType<typeof useTranslate>["t"],
 ) {
 	if (clockStatus === "clocked-in") {
-		return { label: t("common:presence.clockedIn", "Clocked in"), className: "bg-emerald-500" };
+		return {
+			label: t("common:presence.clockedIn", "Clocked in"),
+			className: "bg-emerald-500",
+		};
 	}
 
 	if (clockStatus === "clocked-out") {
-		return { label: t("common:presence.clockedOut", "Clocked out"), className: "bg-red-500" };
+		return {
+			label: t("common:presence.clockedOut", "Clocked out"),
+			className: "bg-red-500",
+		};
 	}
 
 	return null;
@@ -89,7 +95,11 @@ export function UserAvatar({
 
 	// Generate DiceBear fallback - memoized for performance
 	// Using 2x pixels for retina displays
-	const dicebearAvatar = generateAvatarDataUri({ seed, size: pixels * 2, gender });
+	const dicebearAvatar = generateAvatarDataUri({
+		seed,
+		size: pixels * 2,
+		gender,
+	});
 
 	const initials = getInitials(name);
 	const alt = name || t("common:userAvatar.alt", "User avatar");

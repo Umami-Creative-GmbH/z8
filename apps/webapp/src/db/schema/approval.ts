@@ -1,7 +1,17 @@
 import { sql } from "drizzle-orm";
-import { foreignKey, index, jsonb, pgTable, text, timestamp, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { organization } from "../auth-schema";
+import {
+	foreignKey,
+	index,
+	jsonb,
+	pgTable,
+	text,
+	timestamp,
+	unique,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { organization } from "../auth-schema";
 import { approvalStatusEnum } from "./enums";
 // Import tables for FK references
 import { employee } from "./organization";

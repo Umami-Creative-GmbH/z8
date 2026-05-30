@@ -112,7 +112,9 @@ describe("MyRequestsClient", () => {
 		expect(screen.getByText("Required fixes")).toBeTruthy();
 
 		const needsAttention = screen.getByRole("region", { name: "Needs attention" });
-		expect(within(needsAttention).getByRole("heading", { level: 2, name: "Needs attention" })).toBeTruthy();
+		expect(
+			within(needsAttention).getByRole("heading", { level: 2, name: "Needs attention" }),
+		).toBeTruthy();
 		expect(within(needsAttention).getByText("Coverage needed")).toBeTruthy();
 		expect(within(needsAttention).getByRole("link", { name: "Fix" }).getAttribute("href")).toBe(
 			"/absences",

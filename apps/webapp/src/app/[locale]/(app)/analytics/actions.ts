@@ -10,9 +10,7 @@
  * employee record, never from client input. This ensures multi-tenant isolation.
  */
 
-import { eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { employee } from "@/db/schema";
 import type {
 	AbsencePatternsData,
 	DateRange,
@@ -29,6 +27,7 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AnalyticsService } from "@/lib/effect/services/analytics.service";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { findAnalyticsEmployeeByUserId } from "./current-employee-scope";
 
 /**
  * Get current employee and check if they're a manager or admin
@@ -43,9 +42,11 @@ function checkManagerOrAdminAccess() {
 		// Get current employee
 		const currentEmployee = yield* _(
 			dbService.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
+				return await findAnalyticsEmployeeByUserId(
+					dbService.db,
+					session.user.id,
+					session.session.activeOrganizationId,
+				);
 			}),
 			Effect.flatMap((emp) =>
 				emp

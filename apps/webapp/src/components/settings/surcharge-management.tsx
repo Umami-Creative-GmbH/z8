@@ -3,7 +3,7 @@
 import { IconPencil, IconPercentage, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteSurchargeModel,
@@ -28,7 +28,7 @@ import type { SurchargeModelWithRules } from "@/lib/surcharges/validation";
 import { SurchargeAssignmentDialog } from "./surcharge-assignment-dialog";
 import { SurchargeAssignmentManager } from "./surcharge-assignment-manager";
 import { SurchargeModelDialog } from "./surcharge-model-dialog";
-import { SurchargeReports } from "./surcharge-reports";
+import { SurchargeReports } from "./surcharge-reports/surcharge-reports-root";
 
 interface SurchargeManagementProps {
 	organizationId: string;
@@ -68,16 +68,23 @@ export function SurchargeManagement({ organizationId, canManage }: SurchargeMana
 		setIsLoading(false);
 	};
 
+	const loadDataForEffect = useEffectEvent(async () => {
+		await loadData();
+	});
+
 	useEffect(() => {
-		const timeout = setTimeout(() => loadData(), 0);
+		const timeout = setTimeout(() => loadDataForEffect(), 0);
 		return () => clearTimeout(timeout);
-	}, [loadData]);
+	}, []);
 
 	// Delete model mutation
 	const deleteModelMutation = useMutation({
 		mutationFn: (modelId: string) => deleteSurchargeModel(modelId),
 		onSuccess: (result) => {
 			if (result.success) {
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.surcharges.models.list(organizationId),
+				});
 				toast.success(t("settings.surcharges.modelDeleted", "Surcharge model deleted"));
 				loadData();
 			} else {

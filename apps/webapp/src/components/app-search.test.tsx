@@ -7,15 +7,15 @@ import type { AppSearchResult } from "@/lib/app-search/types";
 
 const { hotkeyRegistrations, pushMock, searchAppRecordsActionMock, translateMock } = vi.hoisted(
 	() => ({
-	hotkeyRegistrations: [] as Array<{
-		keys: string;
-		callback: () => void;
-		options: { preventDefault?: boolean } | undefined;
-	}>,
-	pushMock: vi.fn(),
-	searchAppRecordsActionMock: vi.fn(),
-	translateMock: vi.fn((_key: string, defaultValue?: string) => defaultValue ?? _key),
-}),
+		hotkeyRegistrations: [] as Array<{
+			keys: string;
+			callback: () => void;
+			options: { preventDefault?: boolean } | undefined;
+		}>,
+		pushMock: vi.fn(),
+		searchAppRecordsActionMock: vi.fn(),
+		translateMock: vi.fn((_key: string, defaultValue?: string) => defaultValue ?? _key),
+	}),
 );
 
 vi.mock("@tanstack/react-hotkeys", () => ({
@@ -32,8 +32,22 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("@/components/user-avatar", () => ({
-	UserAvatar: ({ image, name, seed }: { image?: string | null; name?: string | null; seed: string }) => (
-		<span aria-label={name ?? undefined} data-image={image ?? ""} data-seed={seed} data-testid="employee-avatar" />
+	UserAvatar: ({
+		image,
+		name,
+		seed,
+	}: {
+		image?: string | null;
+		name?: string | null;
+		seed: string;
+	}) => (
+		<span
+			aria-label={name ?? undefined}
+			data-image={image ?? ""}
+			data-seed={seed}
+			data-testid="employee-avatar"
+			role="img"
+		/>
 	),
 }));
 
@@ -163,7 +177,8 @@ describe("AppSearch", () => {
 		const trigger = screen.getByRole("button", { name: /^search$/i });
 
 		expect(trigger.className).toContain("border");
-		expect(trigger.className).toContain("bg-background");
+		expect(trigger.className).toContain("bg-card");
+		expect(trigger.className).toContain("dark:bg-input/30");
 	});
 
 	it("registers Mod+K with preventDefault", () => {

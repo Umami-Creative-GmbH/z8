@@ -39,7 +39,7 @@ describe("buildStaticAppSearchResults", () => {
 					? "Translated team absence search description"
 					: key === "appSearch.teamAbsences.keywords.absence"
 						? "abwesenheit"
-					: t(key, defaultValue),
+						: t(key, defaultValue),
 			employeeRole: "manager",
 			settingsAccessTier: "manager",
 			billingEnabled: true,

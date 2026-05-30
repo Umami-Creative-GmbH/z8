@@ -80,7 +80,9 @@ describe("GET /api/mobile/my-requests", () => {
 				recentDecisions: 1,
 				total: 1,
 			},
-			sourceErrors: [{ sourceType: "travel_expense", message: "Travel expense requests could not be loaded." }],
+			sourceErrors: [
+				{ sourceType: "travel_expense", message: "Travel expense requests could not be loaded." },
+			],
 		});
 	});
 

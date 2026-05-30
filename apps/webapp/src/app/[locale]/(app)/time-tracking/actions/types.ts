@@ -29,6 +29,10 @@ export type ClockOutResult = typeof timeEntry.$inferSelect & {
 	pendingApproval?: boolean;
 };
 
+export interface BrowserTimezoneContext {
+	browserTimezone?: string | null;
+}
+
 export interface AssignedProject {
 	id: string;
 	name: string;
@@ -40,10 +44,13 @@ export interface AssignedProject {
 }
 
 export interface ManualTimeEntryInput {
+	employeeId?: string;
 	date: string;
 	clockInTime: string;
 	clockOutTime: string;
 	reason: string;
+	timezone?: string;
+	browserTimezone?: string | null;
 	projectId?: string;
 	workCategoryId?: string;
 }

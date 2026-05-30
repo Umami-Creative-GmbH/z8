@@ -1,10 +1,10 @@
 import {
-	getDayOfWeek,
 	type CoverageRuleEntity,
+	getDayOfWeek,
 } from "@/lib/coverage/domain/entities/coverage-rule";
 import type {
-	CoverageSnapshotEntity,
 	CoverageSlotStatus,
+	CoverageSnapshotEntity,
 	CoverageTimeSlotSnapshot,
 } from "@/lib/coverage/domain/entities/coverage-snapshot";
 
@@ -67,10 +67,7 @@ function overlaps(
 	return rangeAStart < rangeBEnd && rangeAEnd > rangeBStart;
 }
 
-function calculateActualForRule(
-	rule: CoverageRuleEntity,
-	shifts: ShiftForCoverage[],
-): number {
+function calculateActualForRule(rule: CoverageRuleEntity, shifts: ShiftForCoverage[]): number {
 	const ruleStart = timeToMinutes(rule.startTime);
 	const ruleEnd = timeToMinutes(rule.endTime);
 	const employeeIds = new Set<string>();
@@ -89,9 +86,7 @@ function calculateActualForRule(
 	return employeeIds.size;
 }
 
-export function calculateCoverage(
-	input: CoverageCalculationInput,
-): CoverageCalculationResult {
+export function calculateCoverage(input: CoverageCalculationInput): CoverageCalculationResult {
 	const dayOfWeek = getDayOfWeek(input.date);
 	const activeRules = input.rules
 		.filter((rule) => rule.subareaId === input.subareaId)
@@ -126,17 +121,14 @@ export function calculateCoverage(
 		0,
 	);
 
-	const status: CoverageSlotStatus =
-		timeSlots.some((slot) => slot.status === "under")
-			? "under"
-			: timeSlots.some((slot) => slot.status === "over")
-				? "over"
-				: "met";
+	const status: CoverageSlotStatus = timeSlots.some((slot) => slot.status === "under")
+		? "under"
+		: timeSlots.some((slot) => slot.status === "over")
+			? "over"
+			: "met";
 
 	const utilizationPercent =
-		totalRequired === 0
-			? 100
-			: Math.max(0, Math.round((totalActual / totalRequired) * 100));
+		totalRequired === 0 ? 100 : Math.max(0, Math.round((totalActual / totalRequired) * 100));
 
 	return {
 		date: input.date,
@@ -159,9 +151,7 @@ export function calculateCoverage(
 	};
 }
 
-export function extractGaps(
-	results: CoverageCalculationResult[],
-): CoverageGapResult[] {
+export function extractGaps(results: CoverageCalculationResult[]): CoverageGapResult[] {
 	const gaps: CoverageGapResult[] = [];
 
 	for (const result of results) {

@@ -91,8 +91,7 @@ function ensureWorkPeriod(
 function isPendingApprovalUniqueConflict(error: DatabaseError) {
 	const cause = error.cause as { code?: unknown; constraint?: unknown } | undefined;
 	return (
-		cause?.code === "23505" &&
-		cause.constraint === "approvalRequest_pending_entity_unique_idx"
+		cause?.code === "23505" && cause.constraint === "approvalRequest_pending_entity_unique_idx"
 	);
 }
 
@@ -144,7 +143,11 @@ function loadActiveCorrectionEntries(
 					),
 				);
 		})
-		.pipe(Effect.map((entries) => (entries as CorrectionEntry[]).filter((entry) => !entry.isSuperseded)));
+		.pipe(
+			Effect.map((entries) =>
+				(entries as CorrectionEntry[]).filter((entry) => !entry.isSuperseded),
+			),
+		);
 }
 
 function correctionEntryIdsFromApproval(approval: PendingApprovalRequest) {
@@ -309,9 +312,7 @@ function ensureNoPendingTimeCorrectionApproval(dbService: ApprovalDbService, wor
 		})
 		.pipe(
 			Effect.flatMap((pendingApproval) =>
-				pendingApproval
-					? Effect.fail(pendingTimeCorrectionConflict(workPeriodId))
-					: Effect.void,
+				pendingApproval ? Effect.fail(pendingTimeCorrectionConflict(workPeriodId)) : Effect.void,
 			),
 		);
 }
@@ -497,7 +498,10 @@ function activateApprovedTimeCorrectionEntries(
 	});
 }
 
-function getDirtyFromDateForCorrection(period: WorkPeriodRecord, clockInCorrection: CorrectionEntry) {
+function getDirtyFromDateForCorrection(
+	period: WorkPeriodRecord,
+	clockInCorrection: CorrectionEntry,
+) {
 	const dirtyFromDateSource =
 		period.startTime.getTime() <= clockInCorrection.timestamp.getTime()
 			? period.startTime
@@ -506,9 +510,7 @@ function getDirtyFromDateForCorrection(period: WorkPeriodRecord, clockInCorrecti
 }
 
 function markWorkBalanceDirtyAfterCommit(mark?: WorkBalanceDirtyMark) {
-	return mark
-		? Effect.promise(() => markEmployeeWorkBalanceDirtyIfNeeded(mark))
-		: Effect.void;
+	return mark ? Effect.promise(() => markEmployeeWorkBalanceDirtyIfNeeded(mark)) : Effect.void;
 }
 
 async function markEmployeeWorkBalanceDirtyIfNeeded(mark?: WorkBalanceDirtyMark) {
@@ -562,7 +564,9 @@ function rollbackRejectedTimeCorrection(
 	reactivateOriginals: boolean,
 ) {
 	return dbService.query("rollbackRejectedTimeCorrection", async () => {
-		const originalEntryIds = [period.clockInId, period.clockOutId].filter((id): id is string => Boolean(id));
+		const originalEntryIds = [period.clockInId, period.clockOutId].filter((id): id is string =>
+			Boolean(id),
+		);
 		const correctionEntryIds = correctionEntries.map((entry) => entry.id);
 
 		if (reactivateOriginals && originalEntryIds.length > 0) {
@@ -625,10 +629,22 @@ function handleApprovedTimeCorrection(
 			),
 		);
 		const clockOutCorrection = linkedClockOutCorrection as CorrectionEntry | null;
-		yield* _(validateCorrectedPeriodRange(clockInCorrection, clockOutCorrection?.timestamp ?? period.endTime));
+		yield* _(
+			validateCorrectedPeriodRange(
+				clockInCorrection,
+				clockOutCorrection?.timestamp ?? period.endTime,
+			),
+		);
 		const correctedPeriod = calculateCorrectedPeriod(period, clockInCorrection, clockOutCorrection);
 
-		yield* _(activateApprovedTimeCorrectionEntries(dbService, period, clockInCorrection, clockOutCorrection));
+		yield* _(
+			activateApprovedTimeCorrectionEntries(
+				dbService,
+				period,
+				clockInCorrection,
+				clockOutCorrection,
+			),
+		);
 		yield* _(applyTimeCorrection(dbService, entityId, clockInCorrection, correctedPeriod));
 		const workBalanceDirtyMark = {
 			employeeId: period.employeeId,

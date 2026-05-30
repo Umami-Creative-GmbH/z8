@@ -16,7 +16,8 @@ function normalizeIsoTimestamp(timestamp: string): string {
 	return (
 		parsed
 			.toUTC()
-			.toISO({ includeOffset: true, suppressMilliseconds: false, suppressSeconds: false }) ?? timestamp
+			.toISO({ includeOffset: true, suppressMilliseconds: false, suppressSeconds: false }) ??
+		timestamp
 	);
 }
 
@@ -28,7 +29,9 @@ export function normalizeAuditTimelineEvent(input: AuditTimelineInputEvent): Aud
 	};
 }
 
-export function buildAuditTimeline(events: readonly AuditTimelineInputEvent[]): AuditTimelineEvent[] {
+export function buildAuditTimeline(
+	events: readonly AuditTimelineInputEvent[],
+): AuditTimelineEvent[] {
 	return events
 		.map((event) => normalizeAuditTimelineEvent(event))
 		.sort((a, b) => {

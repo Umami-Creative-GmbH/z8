@@ -4,19 +4,15 @@
  */
 import { createLogger } from "@/lib/logger";
 import type {
-	SuccessFactorsCredentials,
-	SuccessFactorsAuthToken,
-	SFTimeRecordRequest,
 	SFAbsenceRequest,
-	SFSyncAttemptResult,
-	SFODataErrorResponse,
 	SFEmployee,
+	SFODataErrorResponse,
+	SFSyncAttemptResult,
+	SFTimeRecordRequest,
+	SuccessFactorsAuthToken,
+	SuccessFactorsCredentials,
 } from "./types";
-import {
-	RETRYABLE_STATUS_CODES,
-	MAX_RETRY_ATTEMPTS,
-	RETRY_BASE_DELAY_MS,
-} from "./types";
+import { MAX_RETRY_ATTEMPTS, RETRY_BASE_DELAY_MS, RETRYABLE_STATUS_CODES } from "./types";
 
 const logger = createLogger("SFApiClient");
 
@@ -100,10 +96,7 @@ export class SuccessFactorsApiClient {
 
 		if (!response.ok) {
 			const errorText = await response.text();
-			logger.error(
-				{ status: response.status, error: errorText },
-				"OAuth authentication failed",
-			);
+			logger.error({ status: response.status, error: errorText }, "OAuth authentication failed");
 			throw new Error(`Authentication failed: ${response.status} - ${errorText}`);
 		}
 
@@ -125,9 +118,7 @@ export class SuccessFactorsApiClient {
 	/**
 	 * Create time records in batch
 	 */
-	async createTimeRecords(
-		records: SFTimeRecordRequest[],
-	): Promise<SFSyncAttemptResult[]> {
+	async createTimeRecords(records: SFTimeRecordRequest[]): Promise<SFSyncAttemptResult[]> {
 		if (records.length === 0) {
 			return [];
 		}
@@ -148,9 +139,7 @@ export class SuccessFactorsApiClient {
 	/**
 	 * Create a single time record with retry logic
 	 */
-	private async createSingleTimeRecord(
-		record: SFTimeRecordRequest,
-	): Promise<SFSyncAttemptResult> {
+	private async createSingleTimeRecord(record: SFTimeRecordRequest): Promise<SFSyncAttemptResult> {
 		const endpoint = "/EmployeeTime";
 
 		// Parse time components for proper ISO 8601 duration format
@@ -182,7 +171,8 @@ export class SuccessFactorsApiClient {
 				}
 				return {
 					success: true,
-					externalId: (data as { d?: { externalCode?: string } })?.d?.externalCode || record.externalCode,
+					externalId:
+						(data as { d?: { externalCode?: string } })?.d?.externalCode || record.externalCode,
 				};
 			}
 
@@ -221,9 +211,7 @@ export class SuccessFactorsApiClient {
 	/**
 	 * Create absence/time-off records in batch
 	 */
-	async createAbsences(
-		absences: SFAbsenceRequest[],
-	): Promise<SFSyncAttemptResult[]> {
+	async createAbsences(absences: SFAbsenceRequest[]): Promise<SFSyncAttemptResult[]> {
 		if (absences.length === 0) {
 			return [];
 		}
@@ -243,9 +231,7 @@ export class SuccessFactorsApiClient {
 	/**
 	 * Create a single absence record with retry logic
 	 */
-	private async createSingleAbsence(
-		absence: SFAbsenceRequest,
-	): Promise<SFSyncAttemptResult> {
+	private async createSingleAbsence(absence: SFAbsenceRequest): Promise<SFSyncAttemptResult> {
 		const endpoint = "/EmployeeTimeOff";
 
 		// Build OData payload with ISO 8601 date format
@@ -271,7 +257,8 @@ export class SuccessFactorsApiClient {
 				}
 				return {
 					success: true,
-					externalId: (data as { d?: { externalCode?: string } })?.d?.externalCode || absence.externalCode,
+					externalId:
+						(data as { d?: { externalCode?: string } })?.d?.externalCode || absence.externalCode,
 				};
 			}
 
@@ -342,11 +329,7 @@ export class SuccessFactorsApiClient {
 	/**
 	 * Make an authenticated request to SAP SuccessFactors OData API
 	 */
-	private async makeRequest(
-		method: string,
-		endpoint: string,
-		body?: unknown,
-	): Promise<Response> {
+	private async makeRequest(method: string, endpoint: string, body?: unknown): Promise<Response> {
 		if (!this.authToken) {
 			throw new Error("Not authenticated");
 		}
@@ -373,10 +356,7 @@ export class SuccessFactorsApiClient {
 	/**
 	 * Execute a function with retry logic and exponential backoff
 	 */
-	private async executeWithRetry<T>(
-		fn: () => Promise<T>,
-		attempt = 1,
-	): Promise<T> {
+	private async executeWithRetry<T>(fn: () => Promise<T>, attempt = 1): Promise<T> {
 		try {
 			return await fn();
 		} catch (error) {
@@ -396,7 +376,7 @@ export class SuccessFactorsApiClient {
 			}
 
 			// Exponential backoff
-			const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+			const delay = RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
 			logger.warn(
 				{ attempt, delay, error: error instanceof Error ? error.message : "Unknown" },
 				`Retrying after error`,

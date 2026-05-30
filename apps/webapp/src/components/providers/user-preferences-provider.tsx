@@ -15,25 +15,30 @@ import {
 const UserPreferencesContext = createContext<{
 	weekStartDay: WeekStartDay;
 	timeFormat: TimeFormat;
+	timezone: string;
 }>({
 	weekStartDay: DEFAULT_WEEK_START_DAY,
 	timeFormat: DEFAULT_TIME_FORMAT,
+	timezone: "UTC",
 });
 
 export function UserPreferencesProvider({
 	children,
 	weekStartDay,
 	timeFormat,
+	timezone,
 }: {
 	children: ReactNode;
 	weekStartDay?: string | null;
 	timeFormat?: string | null;
+	timezone?: string | null;
 }) {
 	return (
 		<UserPreferencesContext.Provider
 			value={{
 				weekStartDay: normalizeWeekStartDay(weekStartDay),
 				timeFormat: normalizeTimeFormat(timeFormat),
+				timezone: timezone || "UTC",
 			}}
 		>
 			{children}
@@ -47,4 +52,8 @@ export function useWeekStartDay() {
 
 export function useTimeFormat() {
 	return use(UserPreferencesContext).timeFormat;
+}
+
+export function useUserTimezone() {
+	return use(UserPreferencesContext).timezone;
 }

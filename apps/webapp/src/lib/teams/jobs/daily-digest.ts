@@ -21,6 +21,7 @@ import {
 	shift,
 	workPeriod,
 } from "@/db/schema";
+import { env } from "@/env";
 import {
 	fmtTime,
 	fmtWeekdayShortDate,
@@ -30,11 +31,10 @@ import {
 import { createLogger } from "@/lib/logger";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import { sendAdaptiveCard } from "../bot-adapter";
-import { buildDailyDigestCard } from "../cards";
+import { buildDailyDigestCard } from "../cards/daily-digest-card";
 import { getOrganizationPersonalConversations } from "../conversation-manager";
 import { getAllActiveTenants } from "../tenant-resolver";
 import type { DailyDigestData } from "../types";
-import { env } from "@/env";
 
 const logger = createLogger("TeamsDailyDigest");
 
@@ -424,7 +424,7 @@ export async function buildDigestDataForManager(
 		}
 
 		// Count clocked-in employees by the shifts they're assigned to
-		const scheduledEmployeeIds = [
+		const _scheduledEmployeeIds = [
 			...new Set(scheduledShifts.map((s) => s.employeeId).filter(Boolean)),
 		] as string[];
 		const clockedInEmployeeIds = new Set(activeWorkPeriods?.map((wp) => wp.employeeId) || []);

@@ -253,6 +253,27 @@
       "when": 1780000000000,
       "tag": "0035_approval_request_metadata_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1780185600000,
+      "tag": "0036_time_entry_timezone_capture",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1780185600001,
+      "tag": "0037_holiday_category_assignment",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1780185600002,
+      "tag": "0038_work_policy_preset_ownership",
+      "breakpoints": true
     }
   ]
 }

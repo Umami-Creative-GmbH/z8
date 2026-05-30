@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const WORK_CATEGORIES_ROOT = fileURLToPath(new URL(".", import.meta.url));
+const _WORK_CATEGORIES_ROOT = fileURLToPath(new URL(".", import.meta.url));
 
 function stripComments(source: string): string {
 	return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
@@ -103,7 +103,13 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 vi.mock("@/db/schema", () => ({
-	employee: { id: "id", userId: "userId", organizationId: "organizationId", isActive: "isActive", role: "role" },
+	employee: {
+		id: "id",
+		userId: "userId",
+		organizationId: "organizationId",
+		isActive: "isActive",
+		role: "role",
+	},
 	projectManager: { employeeId: "employeeId", projectId: "projectId" },
 	locationEmployee: { locationId: "locationId", employeeId: "employeeId" },
 	subareaEmployee: { subareaId: "subareaId", employeeId: "employeeId" },
@@ -124,7 +130,14 @@ vi.mock("@/db/schema", () => ({
 		isActive: "isActive",
 		createdAt: "createdAt",
 	},
-	workCategorySet: { id: "id", organizationId: "organizationId", isActive: "isActive", name: "name", description: "description", createdAt: "createdAt" },
+	workCategorySet: {
+		id: "id",
+		organizationId: "organizationId",
+		isActive: "isActive",
+		name: "name",
+		description: "description",
+		createdAt: "createdAt",
+	},
 	workCategorySetAssignment: {
 		id: "id",
 		setId: "setId",
@@ -136,7 +149,12 @@ vi.mock("@/db/schema", () => ({
 		createdAt: "createdAt",
 	},
 	workCategorySetCategory: { setId: "setId", categoryId: "categoryId", sortOrder: "sortOrder" },
-	workPeriod: { organizationId: "organizationId", employeeId: "employeeId", projectId: "projectId", workCategoryId: "workCategoryId" },
+	workPeriod: {
+		organizationId: "organizationId",
+		employeeId: "employeeId",
+		projectId: "projectId",
+		workCategoryId: "workCategoryId",
+	},
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async () => {
@@ -176,8 +194,10 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 										const execute = async () => mockState.selectQueue.shift() ?? [];
 										return {
 											orderBy: vi.fn(async () => execute()),
-											then: (resolve: (value: unknown[]) => unknown, reject?: (error: unknown) => unknown) =>
-												execute().then(resolve, reject),
+											then: (
+												resolve: (value: unknown[]) => unknown,
+												reject?: (error: unknown) => unknown,
+											) => execute().then(resolve, reject),
 										};
 									}),
 								})),
@@ -186,8 +206,10 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 									return {
 										orderBy: vi.fn(async () => execute()),
 										limit: vi.fn(async () => execute()),
-										then: (resolve: (value: unknown[]) => unknown, reject?: (error: unknown) => unknown) =>
-											execute().then(resolve, reject),
+										then: (
+											resolve: (value: unknown[]) => unknown,
+											reject?: (error: unknown) => unknown,
+										) => execute().then(resolve, reject),
 									};
 								}),
 							})),
@@ -205,7 +227,9 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 				},
 			}),
 		),
-		getManagedEmployeeIdsForSettingsActor: vi.fn(() => Effect.succeed(mockState.managedEmployeeIds)),
+		getManagedEmployeeIdsForSettingsActor: vi.fn(() =>
+			Effect.succeed(mockState.managedEmployeeIds),
+		),
 		requireOrgAdminEmployeeSettingsAccess: vi.fn((actor: typeof mockState.actor, options: any) =>
 			actor.accessTier === "orgAdmin"
 				? Effect.void
@@ -216,7 +240,7 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 							resource: options.resource,
 							action: options.action,
 						}),
-				  ),
+					),
 		),
 	};
 });
@@ -243,13 +267,13 @@ vi.mock("@/lib/effect/runtime", async () => {
 	};
 });
 
-	const {
-		createOrganizationCategory,
-		getOrganizationCategories,
-		getWorkCategorySets,
-		getWorkCategorySetAssignments,
-		getWorkCategorySetDetail,
-	} = await import("./actions");
+const {
+	createOrganizationCategory,
+	getOrganizationCategories,
+	getWorkCategorySets,
+	getWorkCategorySetAssignments,
+	getWorkCategorySetDetail,
+} = await import("./actions");
 
 describe("work category settings manager scope", () => {
 	beforeEach(() => {
@@ -331,19 +355,52 @@ describe("work category settings manager scope", () => {
 	it("shows managers only category definitions used by scoped teams own areas or managed projects", async () => {
 		mockState.selectQueue = [
 			[
-				{ id: "category-area", organizationId: "org-1", name: "Own Area Category", description: null, factor: "1.00", color: null, isActive: true, createdAt: new Date("2026-01-01T00:00:00.000Z") },
-				{ id: "category-team", organizationId: "org-1", name: "Managed Team Category", description: null, factor: "1.00", color: null, isActive: true, createdAt: new Date("2026-01-01T00:00:00.000Z") },
-				{ id: "category-project", organizationId: "org-1", name: "Managed Project Category", description: null, factor: "1.00", color: null, isActive: true, createdAt: new Date("2026-01-01T00:00:00.000Z") },
-				{ id: "category-other", organizationId: "org-1", name: "Other Category", description: null, factor: "1.00", color: null, isActive: true, createdAt: new Date("2026-01-01T00:00:00.000Z") },
+				{
+					id: "category-area",
+					organizationId: "org-1",
+					name: "Own Area Category",
+					description: null,
+					factor: "1.00",
+					color: null,
+					isActive: true,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+				},
+				{
+					id: "category-team",
+					organizationId: "org-1",
+					name: "Managed Team Category",
+					description: null,
+					factor: "1.00",
+					color: null,
+					isActive: true,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+				},
+				{
+					id: "category-project",
+					organizationId: "org-1",
+					name: "Managed Project Category",
+					description: null,
+					factor: "1.00",
+					color: null,
+					isActive: true,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+				},
+				{
+					id: "category-other",
+					organizationId: "org-1",
+					name: "Other Category",
+					description: null,
+					factor: "1.00",
+					color: null,
+					isActive: true,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+				},
 			],
 			[{ count: 1 }],
 			[{ count: 1 }],
 			[{ count: 0 }],
 			[{ count: 1 }],
-			[
-				{ workCategoryId: "category-team" },
-				{ workCategoryId: "category-area" },
-			],
+			[{ workCategoryId: "category-team" }, { workCategoryId: "category-area" }],
 			[{ workCategoryId: "category-project" }],
 		];
 
@@ -362,11 +419,31 @@ describe("work category settings manager scope", () => {
 	it("keeps tenant filters on id-based mutations and removes dead scoped-assignment helpers", () => {
 		const source = stripComments(readFileSync(new URL("./actions.ts", import.meta.url), "utf8"));
 
-		expect(/eq\(workCategory\.id, input\.categoryId\)[\s\S]*eq\(workCategory\.organizationId, actor\.organizationId\)/.test(source)).toBe(true);
-		expect(/eq\(workCategory\.id, categoryId\)[\s\S]*eq\(workCategory\.organizationId, actor\.organizationId\)/.test(source)).toBe(true);
-		expect(/eq\(workCategorySet\.id, input\.setId\)[\s\S]*eq\(workCategorySet\.organizationId, actor\.organizationId\)/.test(source)).toBe(true);
-		expect(/eq\(workCategorySet\.id, setId\)[\s\S]*eq\(workCategorySet\.organizationId, actor\.organizationId\)/.test(source)).toBe(true);
-		expect(/eq\(workCategorySetAssignment\.id, assignmentId\)[\s\S]*eq\(workCategorySetAssignment\.organizationId, actor\.organizationId\)/.test(source)).toBe(true);
+		expect(
+			/eq\(workCategory\.id, input\.categoryId\)[\s\S]*eq\(workCategory\.organizationId, actor\.organizationId\)/.test(
+				source,
+			),
+		).toBe(true);
+		expect(
+			/eq\(workCategory\.id, categoryId\)[\s\S]*eq\(workCategory\.organizationId, actor\.organizationId\)/.test(
+				source,
+			),
+		).toBe(true);
+		expect(
+			/eq\(workCategorySet\.id, input\.setId\)[\s\S]*eq\(workCategorySet\.organizationId, actor\.organizationId\)/.test(
+				source,
+			),
+		).toBe(true);
+		expect(
+			/eq\(workCategorySet\.id, setId\)[\s\S]*eq\(workCategorySet\.organizationId, actor\.organizationId\)/.test(
+				source,
+			),
+		).toBe(true);
+		expect(
+			/eq\(workCategorySetAssignment\.id, assignmentId\)[\s\S]*eq\(workCategorySetAssignment\.organizationId, actor\.organizationId\)/.test(
+				source,
+			),
+		).toBe(true);
 		expect(source.includes("ensureScopedCategoryIds(")).toBe(true);
 		expect(source.includes("getScopedOrganizationWorkCategorySet(")).toBe(true);
 		expect(source.includes("getScopedOrganizationSetAssignment(")).toBe(true);
@@ -409,9 +486,7 @@ describe("work category settings manager scope", () => {
 		mockState.selectQueue = [
 			[{ workCategoryId: "category-team" }],
 			[{ workCategoryId: "category-project" }],
-			[
-				{ categoryId: "category-team", setId: "set-team-managed" },
-			],
+			[{ categoryId: "category-team", setId: "set-team-managed" }],
 		];
 
 		const result = await getWorkCategorySetAssignments("org-1");
@@ -505,8 +580,20 @@ describe("work category settings manager scope", () => {
 		];
 		mockState.selectQueue = [
 			[
-				{ id: "set-org", name: "Org Default", description: null, isActive: true, createdAt: new Date("2026-01-01T00:00:00.000Z") },
-				{ id: "set-team-managed", name: "Managed Team Set", description: null, isActive: true, createdAt: new Date("2026-01-02T00:00:00.000Z") },
+				{
+					id: "set-org",
+					name: "Org Default",
+					description: null,
+					isActive: true,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+				},
+				{
+					id: "set-team-managed",
+					name: "Managed Team Set",
+					description: null,
+					isActive: true,
+					createdAt: new Date("2026-01-02T00:00:00.000Z"),
+				},
 			],
 			[{ count: 1 }],
 			[{ count: 1 }],
@@ -529,9 +616,27 @@ describe("work category settings manager scope", () => {
 		mockState.selectQueue = [
 			[{ workCategoryId: "category-team" }],
 			[{ workCategoryId: "category-project" }],
-			[{ id: "set-other", organizationId: "org-1", isActive: true, name: "Other Set", description: null }],
+			[
+				{
+					id: "set-other",
+					organizationId: "org-1",
+					isActive: true,
+					name: "Other Set",
+					description: null,
+				},
+			],
 			[],
-			[{ id: "category-other", name: "Other", description: null, factor: "1.00", color: null, isActive: true, sortOrder: 0 }],
+			[
+				{
+					id: "category-other",
+					name: "Other",
+					description: null,
+					factor: "1.00",
+					color: null,
+					isActive: true,
+					sortOrder: 0,
+				},
+			],
 		];
 
 		const denied = await getWorkCategorySetDetail("set-other");
@@ -541,9 +646,27 @@ describe("work category settings manager scope", () => {
 		mockState.selectQueue = [
 			[{ workCategoryId: "category-team" }],
 			[{ workCategoryId: "category-project" }],
-			[{ id: "set-team-managed", organizationId: "org-1", isActive: true, name: "Managed Team Set", description: null }],
+			[
+				{
+					id: "set-team-managed",
+					organizationId: "org-1",
+					isActive: true,
+					name: "Managed Team Set",
+					description: null,
+				},
+			],
 			[{ categoryId: "category-team", setId: "set-team-managed" }],
-			[{ id: "category-team", name: "Managed Team Category", description: null, factor: "1.00", color: null, isActive: true, sortOrder: 0 }],
+			[
+				{
+					id: "category-team",
+					name: "Managed Team Category",
+					description: null,
+					factor: "1.00",
+					color: null,
+					isActive: true,
+					sortOrder: 0,
+				},
+			],
 		];
 
 		const allowed = await getWorkCategorySetDetail("set-team-managed");
@@ -567,8 +690,26 @@ describe("work category settings manager scope", () => {
 		};
 		mockState.selectQueue = [
 			[
-				{ id: "category-org", organizationId: "org-1", name: "Org Category", description: null, factor: "1.00", color: null, isActive: true, createdAt: new Date("2026-01-01T00:00:00.000Z") },
-				{ id: "category-other", organizationId: "org-1", name: "Other Category", description: null, factor: "1.00", color: null, isActive: true, createdAt: new Date("2026-01-01T00:00:00.000Z") },
+				{
+					id: "category-org",
+					organizationId: "org-1",
+					name: "Org Category",
+					description: null,
+					factor: "1.00",
+					color: null,
+					isActive: true,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+				},
+				{
+					id: "category-other",
+					organizationId: "org-1",
+					name: "Other Category",
+					description: null,
+					factor: "1.00",
+					color: null,
+					isActive: true,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+				},
 			],
 			[{ count: 1 }],
 			[{ count: 0 }],

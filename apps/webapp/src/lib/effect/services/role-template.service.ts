@@ -1,17 +1,17 @@
-import { Context, Effect, Layer } from "effect";
 import { and, eq, isNull, or } from "drizzle-orm";
+import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
 import {
 	employee,
-	teamPermissions,
 	roleTemplate,
 	roleTemplateMapping,
-	userRoleTemplateAssignment,
+	teamPermissions,
 	userLifecycleEvent,
+	userRoleTemplateAssignment,
 } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
-import { getRoleTemplateById, findRoleTemplateMappingForGroup } from "./cached-queries";
+import { findRoleTemplateMappingForGroup, getRoleTemplateById } from "./cached-queries";
 
 const logger = createLogger("RoleTemplate");
 
@@ -169,9 +169,8 @@ export interface RoleTemplateService {
 	}) => Effect.Effect<void, Error>;
 }
 
-export const RoleTemplateService = Context.GenericTag<RoleTemplateService>(
-	"@z8/RoleTemplateService",
-);
+export const RoleTemplateService =
+	Context.GenericTag<RoleTemplateService>("@z8/RoleTemplateService");
 
 export const RoleTemplateServiceLive = Layer.succeed(
 	RoleTemplateService,
@@ -200,7 +199,11 @@ export const RoleTemplateServiceLive = Layer.succeed(
 				);
 
 				logger.info(
-					{ templateId: created.id, name: created.name, organizationId: input.organizationId },
+					{
+						templateId: created.id,
+						name: created.name,
+						organizationId: input.organizationId,
+					},
 					"Role template created",
 				);
 
@@ -251,7 +254,10 @@ export const RoleTemplateServiceLive = Layer.succeed(
 			Effect.tryPromise(() =>
 				db.query.roleTemplate.findMany({
 					where: and(
-						or(eq(roleTemplate.organizationId, organizationId), isNull(roleTemplate.organizationId)),
+						or(
+							eq(roleTemplate.organizationId, organizationId),
+							isNull(roleTemplate.organizationId),
+						),
 						eq(roleTemplate.isActive, true),
 					),
 				}),
@@ -322,7 +328,14 @@ export const RoleTemplateServiceLive = Layer.succeed(
 				return mapping?.roleTemplate;
 			}),
 
-		applyTemplateToUser: ({ userId, organizationId, roleTemplateId, source, appliedBy, idpGroupId }) =>
+		applyTemplateToUser: ({
+			userId,
+			organizationId,
+			roleTemplateId,
+			source,
+			appliedBy,
+			idpGroupId,
+		}) =>
 			Effect.gen(function* () {
 				// Parallelize all independent lookups for better performance
 				// @see async-parallel rule - 3x improvement
@@ -359,7 +372,10 @@ export const RoleTemplateServiceLive = Layer.succeed(
 				yield* Effect.all([
 					// Update employee role
 					Effect.tryPromise(() =>
-						db.update(employee).set({ role: template.employeeRole }).where(eq(employee.id, employeeRecord.id)),
+						db
+							.update(employee)
+							.set({ role: template.employeeRole })
+							.where(eq(employee.id, employeeRecord.id)),
 					),
 					// Update user app access permissions
 					Effect.tryPromise(() =>
@@ -435,7 +451,10 @@ export const RoleTemplateServiceLive = Layer.succeed(
 							assignedBy: appliedBy,
 						})
 						.onConflictDoUpdate({
-							target: [userRoleTemplateAssignment.userId, userRoleTemplateAssignment.organizationId],
+							target: [
+								userRoleTemplateAssignment.userId,
+								userRoleTemplateAssignment.organizationId,
+							],
 							set: {
 								roleTemplateId,
 								assignmentSource: source,

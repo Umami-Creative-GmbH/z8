@@ -1,9 +1,9 @@
 import { DateTime } from "luxon";
 
 import {
+	type ParsedPlatformAnalyticsParams,
 	PLATFORM_ANALYTICS_BUCKETS,
 	PLATFORM_ANALYTICS_RANGES,
-	type ParsedPlatformAnalyticsParams,
 	type PlatformAnalyticsBucket,
 	type PlatformAnalyticsBucketInfo,
 	type PlatformAnalyticsRange,
@@ -83,7 +83,10 @@ function parseRange(value: string | undefined): PlatformAnalyticsRange {
 		: DEFAULT_RANGE;
 }
 
-function parseBucket(value: string | undefined, range: PlatformAnalyticsRange): PlatformAnalyticsBucket {
+function parseBucket(
+	value: string | undefined,
+	range: PlatformAnalyticsRange,
+): PlatformAnalyticsBucket {
 	const bucket = PLATFORM_ANALYTICS_BUCKETS.includes(value as PlatformAnalyticsBucket)
 		? (value as PlatformAnalyticsBucket)
 		: undefined;

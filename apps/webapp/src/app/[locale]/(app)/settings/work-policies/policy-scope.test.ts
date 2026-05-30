@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
 	canAccessPolicyDefinitions,
+	canAccessWorkPolicyComplianceActions,
+	canManagePolicyAssignmentType,
 	canManagePolicyDefinitions,
 	canManagePolicyTargetEmployee,
-	canManagePolicyAssignmentType,
-	canAccessWorkPolicyComplianceActions,
 	policyBelongsToOrganization,
 } from "./policy-scope";
 

@@ -2,7 +2,7 @@
 
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { ChartContainer, type ChartConfig } from "./chart";
+import { type ChartConfig, ChartContainer } from "./chart";
 
 describe("ChartContainer", () => {
 	it("preserves safe chart config keys for existing CSS variable consumers", () => {
@@ -108,8 +108,12 @@ describe("ChartContainer", () => {
 
 		const chart = container.querySelector("[data-chart]");
 		const style = container.querySelector("style");
-		expect(chart?.getAttribute("data-chart")).toBe("chart-team-color-red-style-script-alert-xss-script-0");
-		expect(style?.textContent).toContain("[data-chart=chart-team-color-red-style-script-alert-xss-script-0]");
+		expect(chart?.getAttribute("data-chart")).toBe(
+			"chart-team-color-red-style-script-alert-xss-script-0",
+		);
+		expect(style?.textContent).toContain(
+			"[data-chart=chart-team-color-red-style-script-alert-xss-script-0]",
+		);
 		expect(style?.textContent).not.toContain(maliciousId);
 		expect(style?.textContent).not.toContain("</style>");
 		expect(container.querySelector("script")).toBeNull();

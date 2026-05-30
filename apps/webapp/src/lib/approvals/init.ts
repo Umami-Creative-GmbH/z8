@@ -6,11 +6,9 @@
  */
 
 import { registerApprovalHandler } from "./domain/registry";
-import {
-	AbsenceRequestHandler,
-	TimeCorrectionHandler,
-	TravelExpenseClaimHandler,
-} from "./handlers";
+import { AbsenceRequestHandler } from "./handlers/absence-request.handler";
+import { TimeCorrectionHandler } from "./handlers/time-correction.handler";
+import { TravelExpenseClaimHandler } from "./handlers/travel-expense-claim.handler";
 
 /**
  * Initialize the approval center by registering all handlers.

@@ -14,6 +14,7 @@ import {
 	workPolicySchedule,
 	workPolicyScheduleDay,
 } from "@/db/schema";
+import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import {
@@ -41,7 +42,6 @@ import {
 } from "../errors";
 import { AuthService } from "./auth.service";
 import { DatabaseService } from "./database.service";
-import { env } from "@/env";
 
 export interface OnboardingSummary {
 	hasOrganization: boolean;
@@ -903,11 +903,26 @@ export const OnboardingServiceLive = Layer.effect(
 						// Save notification preferences
 						// Schema uses (type, channel, enabled) per row, not columns per channel
 						const notificationTypes = [
-							{ type: "approval_request_submitted" as const, enabled: data.notifyApprovals },
-							{ type: "approval_request_approved" as const, enabled: data.notifyStatusUpdates },
-							{ type: "approval_request_rejected" as const, enabled: data.notifyStatusUpdates },
-							{ type: "team_member_added" as const, enabled: data.notifyTeamChanges },
-							{ type: "team_member_removed" as const, enabled: data.notifyTeamChanges },
+							{
+								type: "approval_request_submitted" as const,
+								enabled: data.notifyApprovals,
+							},
+							{
+								type: "approval_request_approved" as const,
+								enabled: data.notifyStatusUpdates,
+							},
+							{
+								type: "approval_request_rejected" as const,
+								enabled: data.notifyStatusUpdates,
+							},
+							{
+								type: "team_member_added" as const,
+								enabled: data.notifyTeamChanges,
+							},
+							{
+								type: "team_member_removed" as const,
+								enabled: data.notifyTeamChanges,
+							},
 						];
 
 						const channels = [

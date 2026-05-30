@@ -15,10 +15,10 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-	updateCalendarSettings,
 	type CalendarSettings,
 	type CalendarSettingsFormValues,
 	type ManagerCalendarReadView,
+	updateCalendarSettings,
 } from "@/app/[locale]/(app)/settings/calendar/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -372,9 +372,7 @@ export function CalendarSettingsForm({ initialSettings, canManage }: CalendarSet
 			{/* Event Customization */}
 			<Card>
 				<CardHeader>
-					<CardTitle>
-						{t("settings.calendar.customization.title", "Event Customization")}
-					</CardTitle>
+					<CardTitle>{t("settings.calendar.customization.title", "Event Customization")}</CardTitle>
 					<CardDescription>
 						{t(
 							"settings.calendar.customization.description",

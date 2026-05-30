@@ -27,11 +27,19 @@ export function validateTimeRecordInput(input: TimeRecordValidationInput): void 
 		throwValidationError("INVALID_END_TIME");
 	}
 
-	if (input.durationMinutes !== null && input.durationMinutes !== undefined && !Number.isFinite(input.durationMinutes)) {
+	if (
+		input.durationMinutes !== null &&
+		input.durationMinutes !== undefined &&
+		!Number.isFinite(input.durationMinutes)
+	) {
 		throwValidationError("INVALID_DURATION");
 	}
 
-	if (input.durationMinutes !== null && input.durationMinutes !== undefined && input.durationMinutes < 0) {
+	if (
+		input.durationMinutes !== null &&
+		input.durationMinutes !== undefined &&
+		input.durationMinutes < 0
+	) {
 		throwValidationError("NEGATIVE_DURATION");
 	}
 

@@ -12,7 +12,7 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { toast } from "sonner";
 import {
 	type AuditPackRequestInfo,
@@ -103,9 +103,13 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 		setIsLoadingRequests(false);
 	};
 
+	const loadRequestsForEffect = useEffectEvent(async () => {
+		await loadRequests(false);
+	});
+
 	useEffect(() => {
-		void Promise.resolve().then(() => loadRequests(false));
-	}, [loadRequests]);
+		void Promise.resolve().then(loadRequestsForEffect);
+	}, []);
 
 	const form = useForm({
 		defaultValues: {

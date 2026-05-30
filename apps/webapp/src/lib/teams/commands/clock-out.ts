@@ -9,6 +9,11 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
+import {
+	calculateAndPersistSurcharges,
+	checkComplianceAfterClockOut,
+	enforceBreaksAfterClockOut,
+} from "@/app/[locale]/(app)/time-tracking/actions";
 import { db } from "@/db";
 import { employee, timeEntry, userSettings, workPeriod } from "@/db/schema";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
@@ -21,13 +26,9 @@ import {
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntry } from "@/lib/time-tracking/validation";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import {
-	calculateAndPersistSurcharges,
-	checkComplianceAfterClockOut,
-	enforceBreaksAfterClockOut,
-} from "@/app/[locale]/(app)/time-tracking/actions";
 
 const logger = createLogger("BotCommand:ClockOut");
 
@@ -43,11 +44,17 @@ export const clockOutCommand: BotCommand = {
 
 			// Look up employee record for org verification
 			const emp = await db.query.employee.findFirst({
-				where: and(eq(employee.id, ctx.employeeId), eq(employee.organizationId, ctx.organizationId)),
+				where: and(
+					eq(employee.id, ctx.employeeId),
+					eq(employee.organizationId, ctx.organizationId),
+				),
 			});
 
 			if (!emp) {
-				return { type: "text", text: t("bot.cmd.clockout.noProfile", "Employee profile not found.") };
+				return {
+					type: "text",
+					text: t("bot.cmd.clockout.noProfile", "Employee profile not found."),
+				};
 			}
 
 			const billingAccess = await requireBillingForMutation(emp.organizationId);
@@ -74,7 +81,10 @@ export const clockOutCommand: BotCommand = {
 			});
 
 			if (!activePeriod) {
-				return { type: "text", text: t("bot.cmd.clockout.notClockedIn", "You are not currently clocked in.") };
+				return {
+					type: "text",
+					text: t("bot.cmd.clockout.notClockedIn", "You are not currently clocked in."),
+				};
 			}
 
 			const now = new Date();
@@ -84,7 +94,8 @@ export const clockOutCommand: BotCommand = {
 			if (!validation.isValid) {
 				return {
 					type: "text",
-					text: validation.error || t("bot.cmd.clockout.cannotNow", "Cannot clock out at this time."),
+					text:
+						validation.error || t("bot.cmd.clockout.cannotNow", "Cannot clock out at this time."),
 				};
 			}
 
@@ -135,11 +146,16 @@ export const clockOutCommand: BotCommand = {
 				timestamp: now.toISOString(),
 				previousHash: previousEntry?.hash || null,
 			});
+			const timezoneCapture = resolveFallbackTimezoneCapture({
+				timestamp: now,
+				timezone,
+				timezoneSource: "user_setting",
+			});
 
 			// Update work period
 			const durationMs = now.getTime() - activePeriod.startTime.getTime();
 			const durationMinutes = Math.floor(durationMs / 60000);
-			const entry = await db.transaction(async (tx) => {
+			const _entry = await db.transaction(async (tx) => {
 				// Create clock-out time entry
 				const [createdEntry] = await tx
 					.insert(timeEntry)
@@ -153,6 +169,7 @@ export const clockOutCommand: BotCommand = {
 						ipAddress: "bot",
 						deviceInfo: `${ctx.platform}-bot`,
 						createdBy: ctx.userId,
+						...timezoneCapture,
 					})
 					.returning();
 

@@ -2,8 +2,8 @@
 
 import { detectLanguageFromHeaders } from "@tolgee/react/server";
 import { cookies, headers } from "next/headers";
-import { setUserLocale } from "@/lib/bot-platform/i18n";
 import { auth } from "@/lib/auth";
+import { setUserLocale } from "@/lib/bot-platform/i18n";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "./shared";
 
 const LANGUAGE_COOKIE = "NEXT_LOCALE";

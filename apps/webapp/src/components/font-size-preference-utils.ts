@@ -2,9 +2,17 @@ const FONT_SIZE_STORAGE_KEY = "z8-font-size";
 
 type FontSizePreference = "default" | "comfortable" | "large";
 
-const FONT_SIZE_OPTIONS: Array<{ value: FontSizePreference; labelKey: string; label: string }> = [
+const FONT_SIZE_OPTIONS: Array<{
+	value: FontSizePreference;
+	labelKey: string;
+	label: string;
+}> = [
 	{ value: "default", labelKey: "user.font-size-default", label: "Default" },
-	{ value: "comfortable", labelKey: "user.font-size-comfortable", label: "Comfortable" },
+	{
+		value: "comfortable",
+		labelKey: "user.font-size-comfortable",
+		label: "Comfortable",
+	},
 	{ value: "large", labelKey: "user.font-size-large", label: "Large" },
 ];
 
@@ -44,9 +52,9 @@ function applyFontSizePreference(value: FontSizePreference) {
 
 export type { FontSizePreference };
 export {
+	applyFontSizePreference,
 	FONT_SIZE_OPTIONS,
 	FONT_SIZE_STORAGE_KEY,
-	applyFontSizePreference,
 	isFontSizePreference,
 	readStoredFontSize,
 	writeStoredFontSize,

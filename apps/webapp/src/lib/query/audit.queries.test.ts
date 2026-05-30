@@ -26,8 +26,7 @@ function collectColumnNames(value: unknown): string[] {
 	}
 
 	const objectValue = value as { config?: { name?: unknown }; queryChunks?: unknown[] };
-	const ownName =
-		typeof objectValue.config?.name === "string" ? [objectValue.config.name] : [];
+	const ownName = typeof objectValue.config?.name === "string" ? [objectValue.config.name] : [];
 	const chunkNames = Array.isArray(objectValue.queryChunks)
 		? objectValue.queryChunks.flatMap(collectColumnNames)
 		: [];

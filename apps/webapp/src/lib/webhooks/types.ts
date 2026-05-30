@@ -4,8 +4,8 @@
  * Type definitions for the webhook system.
  */
 
-import type { NotificationType } from "@/lib/notifications/types";
 import type { WebhookDelivery, WebhookEndpoint } from "@/db/schema";
+import type { NotificationType } from "@/lib/notifications/types";
 
 // Re-export database types
 export type { WebhookDelivery, WebhookEndpoint };

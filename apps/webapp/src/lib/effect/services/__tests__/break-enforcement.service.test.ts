@@ -5,20 +5,11 @@
  * and batch processing for cron jobs.
  */
 
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
 
 // Mock data
-const mockEmployee = {
-	id: "emp-123",
-	organizationId: "org-123",
-	userId: "user-123",
-	teamId: "team-123",
-	firstName: "John",
-	lastName: "Doe",
-};
-
 const mockRegulation = {
 	regulationId: "reg-123",
 	regulationName: "German Time Law",
@@ -29,12 +20,24 @@ const mockRegulation = {
 		{
 			workingMinutesThreshold: 360, // 6 hours
 			requiredBreakMinutes: 30,
-			options: [{ splitCount: 1, minimumSplitMinutes: null, minimumLongestSplitMinutes: null }],
+			options: [
+				{
+					splitCount: 1,
+					minimumSplitMinutes: null,
+					minimumLongestSplitMinutes: null,
+				},
+			],
 		},
 		{
 			workingMinutesThreshold: 540, // 9 hours
 			requiredBreakMinutes: 45,
-			options: [{ splitCount: 1, minimumSplitMinutes: null, minimumLongestSplitMinutes: null }],
+			options: [
+				{
+					splitCount: 1,
+					minimumSplitMinutes: null,
+					minimumLongestSplitMinutes: null,
+				},
+			],
 		},
 	],
 };
@@ -47,25 +50,6 @@ const mockPolicy = {
 	assignmentType: "organization" as const,
 	regulation: mockRegulation,
 	schedule: null,
-};
-
-const mockWorkPeriod = {
-	id: "wp-123",
-	employeeId: "emp-123",
-	clockInId: "entry-1",
-	clockOutId: "entry-2",
-	startTime: new Date("2024-01-15T08:00:00Z"),
-	endTime: new Date("2024-01-15T17:00:00Z"), // 9 hours
-	durationMinutes: 540,
-	isActive: false,
-	wasAutoAdjusted: false,
-	autoAdjustmentReason: null,
-	autoAdjustedAt: null,
-	originalEndTime: null,
-	originalDurationMinutes: null,
-	projectId: null,
-	createdAt: new Date(),
-	updatedAt: new Date(),
 };
 
 // Mock query results
@@ -108,7 +92,11 @@ vi.mock("@/db", () => ({
 }));
 
 vi.mock("@/db/schema", () => ({
-	timeEntry: { id: "time_entry", employeeId: "employee_id", createdAt: "created_at" },
+	timeEntry: {
+		id: "time_entry",
+		employeeId: "employee_id",
+		createdAt: "created_at",
+	},
 	workPeriod: {
 		id: "work_period",
 		employeeId: "employee_id",
@@ -383,9 +371,21 @@ describe("Break Enforcement Service", () => {
 			const multiRuleRegulation = {
 				...mockRegulation,
 				breakRules: [
-					{ workingMinutesThreshold: 360, requiredBreakMinutes: 30, options: [] },
-					{ workingMinutesThreshold: 540, requiredBreakMinutes: 45, options: [] },
-					{ workingMinutesThreshold: 720, requiredBreakMinutes: 60, options: [] }, // 12 hours
+					{
+						workingMinutesThreshold: 360,
+						requiredBreakMinutes: 30,
+						options: [],
+					},
+					{
+						workingMinutesThreshold: 540,
+						requiredBreakMinutes: 45,
+						options: [],
+					},
+					{
+						workingMinutesThreshold: 720,
+						requiredBreakMinutes: 60,
+						options: [],
+					}, // 12 hours
 				],
 			};
 
@@ -471,7 +471,10 @@ describe("Break Enforcement Service", () => {
 			};
 
 			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
-				Effect.succeed({ ...mockPolicy, regulation: noMaxUninterruptedRegulation }),
+				Effect.succeed({
+					...mockPolicy,
+					regulation: noMaxUninterruptedRegulation,
+				}),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");

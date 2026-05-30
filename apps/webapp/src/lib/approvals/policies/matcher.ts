@@ -134,7 +134,9 @@ export function findMatchingPolicy(
 		policies
 			.filter((policy) => policy.isActive && policy.organizationId === context.organizationId)
 			.sort((a, b) => a.priority - b.priority)
-			.find((policy) => policy.conditions.every((condition) => matchesCondition(context, condition))) ?? null
+			.find((policy) =>
+				policy.conditions.every((condition) => matchesCondition(context, condition)),
+			) ?? null
 	);
 }
 
@@ -151,7 +153,9 @@ export function validatePolicyDraft(policy: ApprovalPolicyDraft): string[] {
 
 	for (const stage of policy.stages) {
 		if (stage.approverType === "team_lead") {
-			errors.push("Team lead approver stages are not available until team lead relationships exist.");
+			errors.push(
+				"Team lead approver stages are not available until team lead relationships exist.",
+			);
 		}
 
 		if (stage.approverType === "specific_employee" && !stage.approverEmployeeId) {

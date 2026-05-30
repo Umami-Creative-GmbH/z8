@@ -5,7 +5,7 @@ import { getSettingsAccessTierForUser } from "@/lib/auth-helpers";
 import { AuthorizationError } from "@/lib/effect/errors";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { type SettingsAccessTier } from "@/lib/settings-access";
+import type { SettingsAccessTier } from "@/lib/settings-access";
 
 interface LocationSettingsActorContext {
 	session: {
@@ -28,7 +28,10 @@ type TeamEmployeeAssignmentRow = {
 	locationAssignments: Array<{ locationId: string }>;
 };
 
-export function getLocationSettingsActorContext(options?: { organizationId?: string; queryName?: string }) {
+export function getLocationSettingsActorContext(options?: {
+	organizationId?: string;
+	queryName?: string;
+}) {
 	return Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -51,15 +54,18 @@ export function getLocationSettingsActorContext(options?: { organizationId?: str
 		const [accessTier, currentEmployee] = yield* _(
 			Effect.all([
 				Effect.promise(() => getSettingsAccessTierForUser(session.user.id, organizationId)),
-				dbService.query(`${options?.queryName ?? "getLocationSettingsActor"}:employee`, async () => {
-					return await dbService.db.query.employee.findFirst({
-						where: and(
-							eq(employee.userId, session.user.id),
-							eq(employee.organizationId, organizationId),
-							eq(employee.isActive, true),
-						),
-					});
-				}),
+				dbService.query(
+					`${options?.queryName ?? "getLocationSettingsActor"}:employee`,
+					async () => {
+						return await dbService.db.query.employee.findFirst({
+							where: and(
+								eq(employee.userId, session.user.id),
+								eq(employee.organizationId, organizationId),
+								eq(employee.isActive, true),
+							),
+						});
+					},
+				),
 			]),
 		);
 
@@ -88,7 +94,7 @@ export function getLocationSettingsActorContext(options?: { organizationId?: str
 			};
 		}
 
-		if (!currentEmployee || currentEmployee.role !== "manager") {
+		if (currentEmployee?.role !== "manager") {
 			return yield* _(
 				Effect.fail(
 					new AuthorizationError({
@@ -103,21 +109,27 @@ export function getLocationSettingsActorContext(options?: { organizationId?: str
 
 		const [managerTeamPermissions, managerSubareaAssignments] = yield* _(
 			Effect.all([
-				dbService.query(`${options?.queryName ?? "getLocationSettingsActor"}:teamPermissions`, async () => {
-					return await dbService.db.query.teamPermissions.findMany({
-						where: and(
-							eq(teamPermissions.employeeId, currentEmployee.id),
-							eq(teamPermissions.organizationId, organizationId),
-						),
-						columns: { teamId: true, canManageTeamSettings: true },
-					});
-				}),
-				dbService.query(`${options?.queryName ?? "getLocationSettingsActor"}:subareaAssignments`, async () => {
-					return await dbService.db.query.subareaEmployee.findMany({
-						where: eq(subareaEmployee.employeeId, currentEmployee.id),
-						columns: { subareaId: true },
-					});
-				}),
+				dbService.query(
+					`${options?.queryName ?? "getLocationSettingsActor"}:teamPermissions`,
+					async () => {
+						return await dbService.db.query.teamPermissions.findMany({
+							where: and(
+								eq(teamPermissions.employeeId, currentEmployee.id),
+								eq(teamPermissions.organizationId, organizationId),
+							),
+							columns: { teamId: true, canManageTeamSettings: true },
+						});
+					},
+				),
+				dbService.query(
+					`${options?.queryName ?? "getLocationSettingsActor"}:subareaAssignments`,
+					async () => {
+						return await dbService.db.query.subareaEmployee.findMany({
+							where: eq(subareaEmployee.employeeId, currentEmployee.id),
+							columns: { subareaId: true },
+						});
+					},
+				),
 			]),
 		);
 
@@ -129,24 +141,27 @@ export function getLocationSettingsActorContext(options?: { organizationId?: str
 			manageableTeamIds.length === 0
 				? []
 				: yield* _(
-						dbService.query(`${options?.queryName ?? "getLocationSettingsActor"}:teamEmployees`, async () => {
-							return await dbService.db.query.employee.findMany({
-								where: and(
-									eq(employee.organizationId, organizationId),
-									inArray(employee.teamId, manageableTeamIds),
-								),
-								columns: {},
-								with: {
-									subareaAssignments: {
-										columns: { subareaId: true },
+						dbService.query(
+							`${options?.queryName ?? "getLocationSettingsActor"}:teamEmployees`,
+							async () => {
+								return await dbService.db.query.employee.findMany({
+									where: and(
+										eq(employee.organizationId, organizationId),
+										inArray(employee.teamId, manageableTeamIds),
+									),
+									columns: {},
+									with: {
+										subareaAssignments: {
+											columns: { subareaId: true },
+										},
+										locationAssignments: {
+											columns: { locationId: true },
+										},
 									},
-									locationAssignments: {
-										columns: { locationId: true },
-									},
-								},
-							});
-						}),
-				  );
+								});
+							},
+						),
+					);
 
 		const typedTeamEmployees = teamEmployees as TeamEmployeeAssignmentRow[];
 		const teamManagedSubareaIds = typedTeamEmployees.flatMap((teamEmployee) =>

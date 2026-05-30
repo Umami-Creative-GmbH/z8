@@ -48,7 +48,10 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
 				<SelectValue placeholder={t("common.select-language", "Select language")}>
 					<span className="flex items-center gap-2">
 						{CurrentFlag && (
-							<CurrentFlag className="h-4 w-auto" title={isCompact ? undefined : currentConfig.name} />
+							<CurrentFlag
+								className="h-4 w-auto"
+								title={isCompact ? undefined : currentConfig.name}
+							/>
 						)}
 						{isCompact ? (
 							<span className="font-medium text-foreground text-xs tracking-wide">

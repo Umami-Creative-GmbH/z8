@@ -14,7 +14,11 @@ export function PasswordVisibilityInput(props: Omit<React.ComponentProps<typeof 
 
 	return (
 		<div className="relative">
-			<Input {...props} className={cn("pr-10", props.className)} type={showPassword ? "text" : "password"} />
+			<Input
+				{...props}
+				className={cn("pr-10", props.className)}
+				type={showPassword ? "text" : "password"}
+			/>
 			<button
 				aria-label={
 					showPassword
@@ -39,8 +43,14 @@ export function PasswordStrengthIndicator({ id, password }: { id?: string; passw
 	const { t } = useTranslate();
 	const checks = [
 		{ label: t("setup:setup.password.min_length", "12+ characters"), valid: password.length >= 12 },
-		{ label: t("setup:setup.password.uppercase", "Uppercase letter"), valid: UPPERCASE_REGEX.test(password) },
-		{ label: t("setup:setup.password.lowercase", "Lowercase letter"), valid: LOWERCASE_REGEX.test(password) },
+		{
+			label: t("setup:setup.password.uppercase", "Uppercase letter"),
+			valid: UPPERCASE_REGEX.test(password),
+		},
+		{
+			label: t("setup:setup.password.lowercase", "Lowercase letter"),
+			valid: LOWERCASE_REGEX.test(password),
+		},
 		{ label: t("setup:setup.password.number", "Number"), valid: NUMBER_REGEX.test(password) },
 	];
 	const validCount = checks.filter((check) => check.valid).length;

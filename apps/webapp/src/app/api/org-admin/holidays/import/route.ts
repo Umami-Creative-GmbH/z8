@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { holiday, holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -98,9 +98,7 @@ export async function POST(request: NextRequest) {
 				recurrenceRule: holiday.recurrenceRule,
 			})
 			.from(holiday)
-			.where(
-				and(eq(holiday.organizationId, activeOrgId), eq(holiday.isActive, true)),
-			);
+			.where(and(eq(holiday.organizationId, activeOrgId), eq(holiday.isActive, true)));
 
 		// Process holidays
 		let imported = 0;

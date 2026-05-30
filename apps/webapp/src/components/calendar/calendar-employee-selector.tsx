@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { EmployeeSingleSelect } from "@/components/employee-select";
+import { EmployeeSingleSelect, type SelectableEmployee } from "@/components/employee-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCalendarEmployees } from "@/hooks/use-calendar-employees";
 
@@ -11,7 +11,7 @@ interface CalendarEmployeeSelectorProps {
 	/** Currently selected employee ID */
 	selectedEmployeeId: string | null;
 	/** Callback when employee selection changes */
-	onEmployeeChange: (employeeId: string | null) => void;
+	onEmployeeChange: (employeeId: string | null, employee?: SelectableEmployee) => void;
 	/** Whether current user is manager or above (controls visibility) */
 	isManagerOrAbove: boolean;
 }
@@ -73,7 +73,12 @@ export function CalendarEmployeeSelector({
 	return (
 		<EmployeeSingleSelect
 			value={selectedEmployeeId}
-			onChange={onEmployeeChange}
+			onChange={(employeeId) =>
+				onEmployeeChange(
+					employeeId,
+					employees.find((employee) => employee.id === employeeId),
+				)
+			}
 			employees={employees}
 			showFilters={false}
 			label={t("calendar.employeeSelector.label", "View Calendar")}

@@ -2,7 +2,11 @@ import type { SickDetail } from "./types";
 
 export const sickDetailOptions = [
 	{ value: "child_sick", label: "Child sick", labelKey: "absences.sickDetail.child_sick" },
-	{ value: "with_certificate", label: "With certificate", labelKey: "absences.sickDetail.with_certificate" },
+	{
+		value: "with_certificate",
+		label: "With certificate",
+		labelKey: "absences.sickDetail.with_certificate",
+	},
 	{
 		value: "without_certificate",
 		label: "Without certificate",

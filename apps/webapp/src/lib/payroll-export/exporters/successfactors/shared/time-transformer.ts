@@ -3,7 +3,7 @@
  * Transforms WorkPeriodData to SAP SuccessFactors time record requests
  */
 import { createLogger } from "@/lib/logger";
-import type { WorkPeriodData, WageTypeMapping } from "../../../types";
+import type { WageTypeMapping, WorkPeriodData } from "../../../types";
 import type {
 	SFTimeRecordRequest,
 	SuccessFactorsConfig,
@@ -94,12 +94,7 @@ export function transformWorkPeriods(
 		results.push({ request, sourceId: period.id });
 	}
 
-	logMatchingStats(
-		workPeriods.length,
-		matchedCount,
-		unmatchedCount,
-		"work periods",
-	);
+	logMatchingStats(workPeriods.length, matchedCount, unmatchedCount, "work periods");
 
 	logger.info(
 		{ inputCount: workPeriods.length, outputCount: results.length },
@@ -127,9 +122,7 @@ function getTimeTypeForWorkPeriod(
 
 	// Try SAP SuccessFactors-specific code first, then fall back to other codes
 	const timeType =
-		mapping.successFactorsTimeTypeCode ||
-		mapping.datevWageTypeCode ||
-		mapping.wageTypeCode;
+		mapping.successFactorsTimeTypeCode || mapping.datevWageTypeCode || mapping.wageTypeCode;
 
 	return timeType || DEFAULT_TIME_TYPE;
 }
@@ -144,10 +137,7 @@ export function aggregateWorkPeriodsForCSV(
 	strategy: SuccessFactorsEmployeeMatchStrategy,
 	includeZeroHours: boolean,
 ): Map<string, Map<string, Map<string, { hours: number; note: string }>>> {
-	const result = new Map<
-		string,
-		Map<string, Map<string, { hours: number; note: string }>>
-	>();
+	const result = new Map<string, Map<string, Map<string, { hours: number; note: string }>>>();
 
 	// Build mapping lookup
 	const workCategoryMappings = new Map<string, WageTypeMapping>();

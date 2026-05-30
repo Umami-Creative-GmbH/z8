@@ -3,7 +3,10 @@ export type TimeRecordApprovalStatus = "draft" | "pending" | "approved" | "rejec
 export type TimeRecordApprovalDecision = "submit" | "approve" | "reject";
 
 const APPROVAL_TRANSITIONS: Readonly<
-	Record<TimeRecordApprovalStatus, Partial<Record<TimeRecordApprovalDecision, TimeRecordApprovalStatus>>>
+	Record<
+		TimeRecordApprovalStatus,
+		Partial<Record<TimeRecordApprovalDecision, TimeRecordApprovalStatus>>
+	>
 > = {
 	draft: {
 		submit: "pending",

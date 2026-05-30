@@ -88,7 +88,11 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 				return;
 			}
 
-			const confirmPasswordError = validatePasswordConfirmation(value.confirmPassword, value.password, t);
+			const confirmPasswordError = validatePasswordConfirmation(
+				value.confirmPassword,
+				value.password,
+				t,
+			);
 			if (confirmPasswordError) {
 				setError(confirmPasswordError);
 				return;
@@ -266,7 +270,10 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 								</TFormLabel>
 								<TFormControl hasError={field.state.meta.errors.length > 0}>
 									<PasswordVisibilityInput
-										placeholder={t("setup:setup.field.password_placeholder", "Create a strong password")}
+										placeholder={t(
+											"setup:setup.field.password_placeholder",
+											"Create a strong password",
+										)}
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
@@ -297,7 +304,10 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 								</TFormLabel>
 								<TFormControl hasError={field.state.meta.errors.length > 0}>
 									<PasswordVisibilityInput
-										placeholder={t("setup:setup.field.confirm_password_placeholder", "Confirm your password")}
+										placeholder={t(
+											"setup:setup.field.confirm_password_placeholder",
+											"Confirm your password",
+										)}
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}

@@ -1,6 +1,6 @@
-import { connection } from "next/server";
 import { redirect } from "next/navigation";
-import { HolidayManagement } from "@/components/settings/holiday-management";
+import { connection } from "next/server";
+import { HolidayManagement } from "@/components/settings/holiday/holiday-management";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 export default async function HolidaySettingsPage() {
@@ -20,9 +20,6 @@ export default async function HolidaySettingsPage() {
 	}
 
 	return (
-		<HolidayManagement
-			organizationId={organizationId}
-			canManage={accessTier === "orgAdmin"}
-		/>
+		<HolidayManagement organizationId={organizationId} canManage={accessTier === "orgAdmin"} />
 	);
 }
