@@ -66,10 +66,8 @@ export function WorkPolicyAssignmentDialog({
 		validators: {
 			onChange: ({ value }) => {
 				if (!value.policyId) return "Policy is required";
-				if (assignmentType === "team" && !value.teamId)
-					return "Team is required";
-				if (assignmentType === "employee" && !value.employeeId)
-					return "Employee is required";
+				if (assignmentType === "team" && !value.teamId) return "Team is required";
+				if (assignmentType === "employee" && !value.employeeId) return "Employee is required";
 				return undefined;
 			},
 		},
@@ -128,18 +126,12 @@ export function WorkPolicyAssignmentDialog({
 			createWorkPolicyAssignment(organizationId, {
 				policyId: data.policyId,
 				assignmentType: data.assignmentType,
-				teamId:
-					assignmentType === "team" ? (data.teamId ?? undefined) : undefined,
-				employeeId:
-					assignmentType === "employee"
-						? (data.employeeId ?? undefined)
-						: undefined,
+				teamId: assignmentType === "team" ? (data.teamId ?? undefined) : undefined,
+				employeeId: assignmentType === "employee" ? (data.employeeId ?? undefined) : undefined,
 			}),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.workPolicies.assignmentCreated", "Policy assigned"),
-				);
+				toast.success(t("settings.workPolicies.assignmentCreated", "Policy assigned"));
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.workPolicies.assignments(organizationId),
 				});
@@ -147,18 +139,12 @@ export function WorkPolicyAssignmentDialog({
 				onOpenChange(false);
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.workPolicies.assignmentFailed",
-							"Failed to assign policy",
-						),
+					result.error || t("settings.workPolicies.assignmentFailed", "Failed to assign policy"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(
-				t("settings.workPolicies.assignmentFailed", "Failed to assign policy"),
-			);
+			toast.error(t("settings.workPolicies.assignmentFailed", "Failed to assign policy"));
 		},
 	});
 
@@ -193,8 +179,7 @@ export function WorkPolicyAssignmentDialog({
 		}
 	};
 
-	const isLoading =
-		loadingPolicies || (assignmentType === "team" && loadingTeams);
+	const isLoading = loadingPolicies || (assignmentType === "team" && loadingTeams);
 
 	const isPending = createMutation.isPending;
 
@@ -203,9 +188,7 @@ export function WorkPolicyAssignmentDialog({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{getDialogTitle()}</ActionPanelTitle>
-					<ActionPanelDescription>
-						{getDialogDescription()}
-					</ActionPanelDescription>
+					<ActionPanelDescription>{getDialogDescription()}</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				<form className="flex min-h-0 flex-1 flex-col">
@@ -217,16 +200,10 @@ export function WorkPolicyAssignmentDialog({
 										{t("settings.workPolicies.policy", "Policy")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
-										<Select
-											value={field.state.value}
-											onValueChange={field.handleChange}
-										>
+										<Select value={field.state.value} onValueChange={field.handleChange}>
 											<SelectTrigger>
 												<SelectValue
-													placeholder={t(
-														"settings.workPolicies.selectPolicy",
-														"Select a policy",
-													)}
+													placeholder={t("settings.workPolicies.selectPolicy", "Select a policy")}
 												/>
 											</SelectTrigger>
 											<SelectContent>
@@ -271,16 +248,10 @@ export function WorkPolicyAssignmentDialog({
 											{t("settings.workPolicies.team", "Team")}
 										</TFormLabel>
 										<TFormControl hasError={fieldHasError(field)}>
-											<Select
-												value={field.state.value || ""}
-												onValueChange={field.handleChange}
-											>
+											<Select value={field.state.value || ""} onValueChange={field.handleChange}>
 												<SelectTrigger>
 													<SelectValue
-														placeholder={t(
-															"settings.workPolicies.selectTeam",
-															"Select a team",
-														)}
+														placeholder={t("settings.workPolicies.selectTeam", "Select a team")}
 													/>
 												</SelectTrigger>
 												<SelectContent>
@@ -296,10 +267,7 @@ export function WorkPolicyAssignmentDialog({
 														))
 													) : (
 														<SelectItem value="" disabled>
-															{t(
-																"settings.workPolicies.noTeamsAvailable",
-																"No teams available",
-															)}
+															{t("settings.workPolicies.noTeamsAvailable", "No teams available")}
 														</SelectItem>
 													)}
 												</SelectContent>
@@ -319,10 +287,7 @@ export function WorkPolicyAssignmentDialog({
 										value={field.state.value}
 										onChange={field.handleChange}
 										label={t("settings.workPolicies.employee", "Employee")}
-										placeholder={t(
-											"settings.workPolicies.selectEmployee",
-											"Select an employee",
-										)}
+										placeholder={t("settings.workPolicies.selectEmployee", "Select an employee")}
 									/>
 								)}
 							</form.Field>
@@ -330,25 +295,17 @@ export function WorkPolicyAssignmentDialog({
 					</ActionPanelBody>
 
 					<ActionPanelFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => onOpenChange(false)}
-						>
+						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<form.Subscribe
-							selector={(state) => [state.isSubmitting, state.canSubmit]}
-						>
+						<form.Subscribe selector={(state) => [state.isSubmitting, state.canSubmit]}>
 							{([isSubmitting, canSubmit]) => (
 								<Button
 									type="button"
 									onClick={() => {
 										form.handleSubmit();
 									}}
-									disabled={
-										isPending || isSubmitting || isLoading || !canSubmit
-									}
+									disabled={isPending || isSubmitting || isLoading || !canSubmit}
 								>
 									{(isPending || isSubmitting) && (
 										<IconLoader2 className="mr-2 size-4 animate-spin" />

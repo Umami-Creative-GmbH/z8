@@ -1,12 +1,7 @@
 "use client";
 /* eslint-disable react-doctor/no-giant-component */
 
-import {
-	IconLoader2,
-	IconPencil,
-	IconPlus,
-	IconTrash,
-} from "@tabler/icons-react";
+import { IconLoader2, IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
@@ -116,8 +111,7 @@ export function HolidayList({
 
 	// Delete confirmation state
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-	const [holidayToDelete, setHolidayToDelete] =
-		useState<HolidayWithCategory | null>(null);
+	const [holidayToDelete, setHolidayToDelete] = useState<HolidayWithCategory | null>(null);
 	const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
 
 	// Single delete mutation
@@ -125,23 +119,18 @@ export function HolidayList({
 		mutationFn: (holidayId: string) => deleteHoliday(holidayId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.holidays.deleted", "Holiday deleted successfully"),
-				);
+				toast.success(t("settings.holidays.deleted", "Holiday deleted successfully"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.holidays.all });
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.holidays.deleteFailed", "Failed to delete holiday"),
+					result.error || t("settings.holidays.deleteFailed", "Failed to delete holiday"),
 				);
 			}
 			setDeleteConfirmOpen(false);
 			setHolidayToDelete(null);
 		},
 		onError: () => {
-			toast.error(
-				t("settings.holidays.deleteFailed", "Failed to delete holiday"),
-			);
+			toast.error(t("settings.holidays.deleteFailed", "Failed to delete holiday"));
 			setDeleteConfirmOpen(false);
 			setHolidayToDelete(null);
 		},
@@ -161,19 +150,13 @@ export function HolidayList({
 				setRowSelection({});
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.holidays.bulkDeleteFailed",
-							"Failed to delete holidays",
-						),
+					result.error || t("settings.holidays.bulkDeleteFailed", "Failed to delete holidays"),
 				);
 			}
 			setBulkDeleteConfirmOpen(false);
 		},
 		onError: () => {
-			toast.error(
-				t("settings.holidays.bulkDeleteFailed", "Failed to delete holidays"),
-			);
+			toast.error(t("settings.holidays.bulkDeleteFailed", "Failed to delete holidays"));
 			setBulkDeleteConfirmOpen(false);
 		},
 	});
@@ -224,18 +207,13 @@ export function HolidayList({
 		{
 			accessorKey: "name",
 			header: ({ column }) => (
-				<DataTableColumnHeader
-					column={column}
-					title={t("settings.holidays.list.name", "Name")}
-				/>
+				<DataTableColumnHeader column={column} title={t("settings.holidays.list.name", "Name")} />
 			),
 			cell: ({ row }) => (
 				<div>
 					<div className="font-medium">{row.original.name}</div>
 					{row.original.description && (
-						<div className="text-sm text-muted-foreground">
-							{row.original.description}
-						</div>
+						<div className="text-sm text-muted-foreground">{row.original.description}</div>
 					)}
 				</div>
 			),
@@ -258,13 +236,9 @@ export function HolidayList({
 		{
 			accessorKey: "startDate",
 			header: ({ column }) => (
-				<DataTableColumnHeader
-					column={column}
-					title={t("settings.holidays.list.date", "Date")}
-				/>
+				<DataTableColumnHeader column={column} title={t("settings.holidays.list.date", "Date")} />
 			),
-			cell: ({ row }) =>
-				formatDateRange(row.original.startDate, row.original.endDate),
+			cell: ({ row }) => formatDateRange(row.original.startDate, row.original.endDate),
 		},
 		{
 			accessorKey: "recurrenceType",
@@ -275,9 +249,7 @@ export function HolidayList({
 						{t("settings.holidays.recurrence.none", "One-time")}
 					</span>
 				) : (
-					<Badge variant="secondary">
-						{t("settings.holidays.recurrence.yearly", "Yearly")}
-					</Badge>
+					<Badge variant="secondary">{t("settings.holidays.recurrence.yearly", "Yearly")}</Badge>
 				),
 		},
 		...(canManage
@@ -285,9 +257,7 @@ export function HolidayList({
 					{
 						id: "actions",
 						header: () => (
-							<div className="text-right">
-								{t("settings.holidays.list.actions", "Actions")}
-							</div>
+							<div className="text-right">{t("settings.holidays.list.actions", "Actions")}</div>
 						),
 						cell: ({ row }: { row: { original: HolidayWithCategory } }) => (
 							<div className="flex justify-end gap-2">
@@ -305,8 +275,7 @@ export function HolidayList({
 									onClick={() => handleDeleteClick(row.original)}
 									disabled={deleteMutation.isPending}
 								>
-									{deleteMutation.isPending &&
-									holidayToDelete?.id === row.original.id ? (
+									{deleteMutation.isPending && holidayToDelete?.id === row.original.id ? (
 										<IconLoader2 className="size-4 animate-spin" />
 									) : (
 										<IconTrash className="size-4" />
@@ -326,9 +295,7 @@ export function HolidayList({
 		return (
 			<div className="space-y-4">
 				<div className="flex justify-between items-center">
-					<h3 className="text-lg font-medium">
-						{t("settings.holidays.list.title", "Holidays")}
-					</h3>
+					<h3 className="text-lg font-medium">{t("settings.holidays.list.title", "Holidays")}</h3>
 					{canManage ? (
 						<Button size="sm" onClick={onAddClick}>
 							<IconPlus className="mr-2 size-4" />
@@ -350,9 +317,7 @@ export function HolidayList({
 		return (
 			<div className="space-y-4">
 				<div className="flex justify-between items-center">
-					<h3 className="text-lg font-medium">
-						{t("settings.holidays.list.title", "Holidays")}
-					</h3>
+					<h3 className="text-lg font-medium">{t("settings.holidays.list.title", "Holidays")}</h3>
 					{canManage ? (
 						<Button size="sm" onClick={onAddClick}>
 							<IconPlus className="mr-2 size-4" />
@@ -376,18 +341,13 @@ export function HolidayList({
 		<>
 			<div className="space-y-4">
 				<div className="flex justify-between items-center">
-					<h3 className="text-lg font-medium">
-						{t("settings.holidays.list.title", "Holidays")}
-					</h3>
+					<h3 className="text-lg font-medium">{t("settings.holidays.list.title", "Holidays")}</h3>
 				</div>
 
 				<DataTableToolbar
 					search={search}
 					onSearchChange={setSearch}
-					searchPlaceholder={t(
-						"settings.holidays.searchPlaceholder",
-						"Search holidays...",
-					)}
+					searchPlaceholder={t("settings.holidays.searchPlaceholder", "Search holidays...")}
 					filters={filterConfig}
 					filterValues={{ categoryId }}
 					onFilterChange={(key, value) => {
@@ -462,8 +422,7 @@ export function HolidayList({
 								})),
 							setPageIndex: (index: number) =>
 								setPagination((prev) => ({ ...prev, pageIndex: index })),
-							setPageSize: (size: number) =>
-								setPagination({ pageIndex: 0, pageSize: size }),
+							setPageSize: (size: number) => setPagination({ pageIndex: 0, pageSize: size }),
 							getFilteredSelectedRowModel: () => ({ rows: [] }),
 							getFilteredRowModel: () => ({ rows: [] }),
 						} as any
@@ -474,10 +433,7 @@ export function HolidayList({
 			</div>
 
 			{canManage ? (
-				<AlertDialog
-					open={deleteConfirmOpen}
-					onOpenChange={setDeleteConfirmOpen}
-				>
+				<AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
 					<AlertDialogContent>
 						<AlertDialogHeader>
 							<AlertDialogTitle>
@@ -500,9 +456,7 @@ export function HolidayList({
 								disabled={deleteMutation.isPending}
 								className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 							>
-								{deleteMutation.isPending && (
-									<IconLoader2 className="mr-2 size-4 animate-spin" />
-								)}
+								{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 								{t("common.delete", "Delete")}
 							</AlertDialogAction>
 						</AlertDialogFooter>
@@ -511,17 +465,11 @@ export function HolidayList({
 			) : null}
 
 			{canManage ? (
-				<AlertDialog
-					open={bulkDeleteConfirmOpen}
-					onOpenChange={setBulkDeleteConfirmOpen}
-				>
+				<AlertDialog open={bulkDeleteConfirmOpen} onOpenChange={setBulkDeleteConfirmOpen}>
 					<AlertDialogContent>
 						<AlertDialogHeader>
 							<AlertDialogTitle>
-								{t(
-									"settings.holidays.bulkDelete.title",
-									"Delete Multiple Holidays",
-								)}
+								{t("settings.holidays.bulkDelete.title", "Delete Multiple Holidays")}
 							</AlertDialogTitle>
 							<AlertDialogDescription>
 								{t(
@@ -543,13 +491,9 @@ export function HolidayList({
 								{bulkDeleteMutation.isPending && (
 									<IconLoader2 className="mr-2 size-4 animate-spin" />
 								)}
-								{t(
-									"settings.holidays.bulkDelete.confirm",
-									"Delete {count} Holidays",
-									{
-										count: selectedCount,
-									},
-								)}
+								{t("settings.holidays.bulkDelete.confirm", "Delete {count} Holidays", {
+									count: selectedCount,
+								})}
 							</AlertDialogAction>
 						</AlertDialogFooter>
 					</AlertDialogContent>

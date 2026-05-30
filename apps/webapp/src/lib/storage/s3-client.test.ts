@@ -23,17 +23,13 @@ vi.mock("@aws-sdk/client-s3", () => ({
 	}),
 }));
 
-const { getPublicUrl, S3_PUBLIC_BUCKET, S3_PUBLIC_REGION } = await import(
-	"./s3-client"
-);
+const { getPublicUrl, S3_PUBLIC_BUCKET, S3_PUBLIC_REGION } = await import("./s3-client");
 
 describe("public S3 client", () => {
 	it("uses explicitly public S3 environment variables", () => {
 		expect(S3_PUBLIC_BUCKET).toBe("public-bucket");
 		expect(S3_PUBLIC_REGION).toBe("eu-central-1");
-		expect(getPublicUrl("avatars/user.webp")).toBe(
-			"https://cdn.example.com/avatars/user.webp",
-		);
+		expect(getPublicUrl("avatars/user.webp")).toBe("https://cdn.example.com/avatars/user.webp");
 		expect(mockState.lastConfig).toMatchObject({
 			endpoint: "https://public-s3.example.com",
 			region: "eu-central-1",

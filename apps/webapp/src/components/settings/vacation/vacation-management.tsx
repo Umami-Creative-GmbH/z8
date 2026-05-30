@@ -27,9 +27,7 @@ export function VacationManagement({
 
 	// Assignment dialog state
 	const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
-	const [assignmentType, setAssignmentType] = useState<"team" | "employee">(
-		"team",
-	);
+	const [assignmentType, setAssignmentType] = useState<"team" | "employee">("team");
 
 	// Assignment handlers
 	const handleAssignClick = (type: "team" | "employee") => {

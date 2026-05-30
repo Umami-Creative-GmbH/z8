@@ -108,9 +108,7 @@ export function AssignmentDialog({
 }: AssignmentDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const [validationErrors, setValidationErrors] = useState<
-		Record<string, string>
-	>({});
+	const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
 	const form = useForm({
 		defaultValues: getDefaultAssignmentValues(),
@@ -191,17 +189,14 @@ export function AssignmentDialog({
 				presetId: values.presetId,
 				assignmentType,
 				teamId: assignmentType === "team" ? values.teamId : undefined,
-				employeeId:
-					assignmentType === "employee" ? values.employeeId : undefined,
+				employeeId: assignmentType === "employee" ? values.employeeId : undefined,
 				effectiveFrom: parseDateInputValue(values.effectiveFrom),
 				effectiveUntil: parseDateInputEndValue(values.effectiveUntil),
 				isActive: true,
 			}),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.holidays.assignments.created", "Assignment created"),
-				);
+				toast.success(t("settings.holidays.assignments.created", "Assignment created"));
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.holidayPresetAssignments.list(organizationId),
 				});
@@ -210,40 +205,23 @@ export function AssignmentDialog({
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"settings.holidays.assignments.createFailed",
-							"Failed to create assignment",
-						),
+						t("settings.holidays.assignments.createFailed", "Failed to create assignment"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(
-				t(
-					"settings.holidays.assignments.createFailed",
-					"Failed to create assignment",
-				),
-			);
+			toast.error(t("settings.holidays.assignments.createFailed", "Failed to create assignment"));
 		},
 	});
 
 	const getDialogTitle = () => {
 		switch (assignmentType) {
 			case "organization":
-				return t(
-					"settings.holidays.assignments.setOrgDefault",
-					"Set Organization Default",
-				);
+				return t("settings.holidays.assignments.setOrgDefault", "Set Organization Default");
 			case "team":
-				return t(
-					"settings.holidays.assignments.assignToTeam",
-					"Assign to Team",
-				);
+				return t("settings.holidays.assignments.assignToTeam", "Assign to Team");
 			case "employee":
-				return t(
-					"settings.holidays.assignments.assignToEmployee",
-					"Assign to Employee",
-				);
+				return t("settings.holidays.assignments.assignToEmployee", "Assign to Employee");
 		}
 	};
 
@@ -274,17 +252,13 @@ export function AssignmentDialog({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{getDialogTitle()}</ActionPanelTitle>
-					<ActionPanelDescription>
-						{getDialogDescription()}
-					</ActionPanelDescription>
+					<ActionPanelDescription>{getDialogDescription()}</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				{isLoading ? (
 					<ActionPanelBody className="space-y-4">
 						<Skeleton className="h-10 w-full" />
-						{assignmentType !== "organization" && (
-							<Skeleton className="h-10 w-full" />
-						)}
+						{assignmentType !== "organization" && <Skeleton className="h-10 w-full" />}
 					</ActionPanelBody>
 				) : (
 					<form className="flex min-h-0 flex-1 flex-col">
@@ -293,16 +267,8 @@ export function AssignmentDialog({
 							<form.Field name="presetId">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>
-											{t(
-												"settings.holidays.assignments.preset",
-												"Holiday Preset",
-											)}
-										</Label>
-										<Select
-											value={field.state.value}
-											onValueChange={field.handleChange}
-										>
+										<Label>{t("settings.holidays.assignments.preset", "Holiday Preset")}</Label>
+										<Select value={field.state.value} onValueChange={field.handleChange}>
 											<SelectTrigger>
 												<SelectValue
 													placeholder={t(
@@ -340,9 +306,7 @@ export function AssignmentDialog({
 											)}
 										</p>
 										{validationErrors.presetId && (
-											<p className="text-sm text-destructive">
-												{validationErrors.presetId}
-											</p>
+											<p className="text-sm text-destructive">{validationErrors.presetId}</p>
 										)}
 									</div>
 								)}
@@ -353,10 +317,7 @@ export function AssignmentDialog({
 									{(field) => (
 										<div className="space-y-2">
 											<Label htmlFor="assignment-effective-from">
-												{t(
-													"settings.holidays.assignments.effectiveFrom",
-													"Effective from",
-												)}
+												{t("settings.holidays.assignments.effectiveFrom", "Effective from")}
 											</Label>
 											<Input
 												id="assignment-effective-from"
@@ -365,9 +326,7 @@ export function AssignmentDialog({
 												autoComplete="off"
 												value={field.state.value}
 												onBlur={field.handleBlur}
-												onChange={(event) =>
-													field.handleChange(event.target.value)
-												}
+												onChange={(event) => field.handleChange(event.target.value)}
 											/>
 										</div>
 									)}
@@ -377,10 +336,7 @@ export function AssignmentDialog({
 									{(field) => (
 										<div className="space-y-2">
 											<Label htmlFor="assignment-effective-until">
-												{t(
-													"settings.holidays.assignments.effectiveUntil",
-													"Effective until",
-												)}
+												{t("settings.holidays.assignments.effectiveUntil", "Effective until")}
 											</Label>
 											<Input
 												id="assignment-effective-until"
@@ -389,9 +345,7 @@ export function AssignmentDialog({
 												autoComplete="off"
 												value={field.state.value}
 												onBlur={field.handleBlur}
-												onChange={(event) =>
-													field.handleChange(event.target.value)
-												}
+												onChange={(event) => field.handleChange(event.target.value)}
 												aria-invalid={!!validationErrors.effectiveUntil}
 												aria-describedby={
 													validationErrors.effectiveUntil
@@ -418,13 +372,8 @@ export function AssignmentDialog({
 								<form.Field name="teamId">
 									{(field) => (
 										<div className="space-y-2">
-											<Label>
-												{t("settings.holidays.assignments.team", "Team")}
-											</Label>
-											<Select
-												value={field.state.value}
-												onValueChange={field.handleChange}
-											>
+											<Label>{t("settings.holidays.assignments.team", "Team")}</Label>
+											<Select value={field.state.value} onValueChange={field.handleChange}>
 												<SelectTrigger>
 													<SelectValue
 														placeholder={t(
@@ -448,9 +397,7 @@ export function AssignmentDialog({
 												)}
 											</p>
 											{validationErrors.teamId && (
-												<p className="text-sm text-destructive">
-													{validationErrors.teamId}
-												</p>
+												<p className="text-sm text-destructive">{validationErrors.teamId}</p>
 											)}
 										</div>
 									)}
@@ -465,10 +412,7 @@ export function AssignmentDialog({
 											<EmployeeSingleSelect
 												value={field.state.value || null}
 												onChange={(val) => field.handleChange(val || "")}
-												label={t(
-													"settings.holidays.assignments.employee",
-													"Employee",
-												)}
+												label={t("settings.holidays.assignments.employee", "Employee")}
 												placeholder={t(
 													"settings.holidays.assignments.selectEmployee",
 													"Select an employee",
@@ -501,9 +445,7 @@ export function AssignmentDialog({
 								onClick={() => form.handleSubmit()}
 								disabled={createMutation.isPending}
 							>
-								{createMutation.isPending && (
-									<IconLoader2 className="mr-2 size-4 animate-spin" />
-								)}
+								{createMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 								{t("common.assign", "Assign")}
 							</Button>
 						</ActionPanelFooter>

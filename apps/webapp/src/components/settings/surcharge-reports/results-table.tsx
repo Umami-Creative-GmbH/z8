@@ -1,10 +1,6 @@
 "use client";
 
-import {
-	IconChevronDown,
-	IconChevronRight,
-	IconFileAnalytics,
-} from "@tabler/icons-react";
+import { IconChevronDown, IconChevronRight, IconFileAnalytics } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Fragment } from "react";
 import { Button } from "@/components/ui/button";
@@ -50,10 +46,7 @@ export function SurchargeResultsTable({
 
 	if (isLoading && rows.length === 0) {
 		return (
-			<output
-				aria-live="polite"
-				className="block py-8 text-center text-muted-foreground text-sm"
-			>
+			<output aria-live="polite" className="block py-8 text-center text-muted-foreground text-sm">
 				{t("settings.surcharges.reports.loading", "Loading calculations…")}
 			</output>
 		);
@@ -67,10 +60,7 @@ export function SurchargeResultsTable({
 						<IconFileAnalytics aria-hidden="true" />
 					</EmptyMedia>
 					<EmptyTitle>
-						{t(
-							"settings.surcharges.reports.empty.title",
-							"No surcharge calculations found",
-						)}
+						{t("settings.surcharges.reports.empty.title", "No surcharge calculations found")}
 					</EmptyTitle>
 					<EmptyDescription>
 						{t(
@@ -92,27 +82,13 @@ export function SurchargeResultsTable({
 							{t("settings.surcharges.reports.table.details", "Details")}
 						</span>
 					</TableHead>
-					<TableHead>
-						{t("settings.surcharges.reports.table.date", "Date")}
-					</TableHead>
-					<TableHead>
-						{t("settings.surcharges.reports.table.employee", "Employee")}
-					</TableHead>
-					<TableHead>
-						{t("settings.surcharges.reports.table.base", "Base")}
-					</TableHead>
-					<TableHead>
-						{t("settings.surcharges.reports.table.qualifying", "Qualifying")}
-					</TableHead>
-					<TableHead>
-						{t("settings.surcharges.reports.table.credit", "Credit")}
-					</TableHead>
-					<TableHead>
-						{t("settings.surcharges.reports.table.percentage", "Percentage")}
-					</TableHead>
-					<TableHead>
-						{t("settings.surcharges.reports.table.created", "Created")}
-					</TableHead>
+					<TableHead>{t("settings.surcharges.reports.table.date", "Date")}</TableHead>
+					<TableHead>{t("settings.surcharges.reports.table.employee", "Employee")}</TableHead>
+					<TableHead>{t("settings.surcharges.reports.table.base", "Base")}</TableHead>
+					<TableHead>{t("settings.surcharges.reports.table.qualifying", "Qualifying")}</TableHead>
+					<TableHead>{t("settings.surcharges.reports.table.credit", "Credit")}</TableHead>
+					<TableHead>{t("settings.surcharges.reports.table.percentage", "Percentage")}</TableHead>
+					<TableHead>{t("settings.surcharges.reports.table.created", "Created")}</TableHead>
 				</TableRow>
 			</TableHeader>
 			<TableBody>
@@ -137,9 +113,7 @@ export function SurchargeResultsTable({
 												: "settings.surcharges.reports.details.showForEmployee",
 											`${isExpanded ? "Hide" : "Show"} details for ${employeeName}`,
 										)}
-										onClick={() =>
-											onExpandedChange(isExpanded ? null : calculation.id)
-										}
+										onClick={() => onExpandedChange(isExpanded ? null : calculation.id)}
 									>
 										{isExpanded ? (
 											<IconChevronDown aria-hidden="true" />
@@ -150,25 +124,14 @@ export function SurchargeResultsTable({
 								</TableCell>
 								<TableCell>{formatDate(calculation.calculationDate)}</TableCell>
 								<TableCell>{employeeName}</TableCell>
-								<TableCell>
-									{formatMinutesCell(calculation.baseMinutes)}
-								</TableCell>
-								<TableCell>
-									{formatMinutesCell(calculation.qualifyingMinutes)}
-								</TableCell>
-								<TableCell>
-									{formatMinutesCell(calculation.surchargeMinutes)}
-								</TableCell>
-								<TableCell>
-									{formatPercentage(calculation.appliedPercentage)}
-								</TableCell>
+								<TableCell>{formatMinutesCell(calculation.baseMinutes)}</TableCell>
+								<TableCell>{formatMinutesCell(calculation.qualifyingMinutes)}</TableCell>
+								<TableCell>{formatMinutesCell(calculation.surchargeMinutes)}</TableCell>
+								<TableCell>{formatPercentage(calculation.appliedPercentage)}</TableCell>
 								<TableCell>{formatTimestamp(calculation.createdAt)}</TableCell>
 							</TableRow>
 							{isExpanded ? (
-								<CalculationDetailsRow
-									calculation={calculation}
-									detailsId={detailsId}
-								/>
+								<CalculationDetailsRow calculation={calculation} detailsId={detailsId} />
 							) : null}
 						</Fragment>
 					);

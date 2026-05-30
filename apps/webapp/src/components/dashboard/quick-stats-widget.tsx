@@ -88,7 +88,10 @@ function CircularProgress({
 					fill="none"
 					strokeWidth={strokeWidth}
 					strokeLinecap="round"
-					className={cn("transition-all duration-500 ease-out", CIRCULAR_PROGRESS_COLOR_CLASSES[color])}
+					className={cn(
+						"transition-all duration-500 ease-out",
+						CIRCULAR_PROGRESS_COLOR_CLASSES[color],
+					)}
 					style={{
 						strokeDasharray: circumference,
 						strokeDashoffset,

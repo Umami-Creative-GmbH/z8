@@ -24,13 +24,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [dateError, setDateError] = useState<string | null>(null);
-	const [isShowingPreviousResults, setIsShowingPreviousResults] =
-		useState(false);
+	const [isShowingPreviousResults, setIsShowingPreviousResults] = useState(false);
 	const [expandedId, setExpandedId] = useState<string | null>(null);
 	const [activeFilters, setActiveFilters] = useState(defaultFilters);
-	const [loadedRowsOrganizationId, setLoadedRowsOrganizationId] = useState<
-		string | null
-	>(null);
+	const [loadedRowsOrganizationId, setLoadedRowsOrganizationId] = useState<string | null>(null);
 	const loadedRowsOrganizationIdRef = useRef<string | null>(null);
 	const latestRequestId = useRef(0);
 
@@ -85,9 +82,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			setRows(result.data);
 			loadedRowsOrganizationIdRef.current = organizationId;
 			setLoadedRowsOrganizationId(organizationId);
-			setExpandedId((current) =>
-				result.data.some((row) => row.id === current) ? current : null,
-			);
+			setExpandedId((current) => (result.data.some((row) => row.id === current) ? current : null));
 		} else {
 			if (loadedRowsOrganizationIdRef.current === organizationId) {
 				setIsShowingPreviousResults(true);
@@ -139,9 +134,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 		<div className="space-y-4">
 			<Card>
 				<CardHeader>
-					<CardTitle>
-						{t("settings.surcharges.reports.title", "Surcharge reports")}
-					</CardTitle>
+					<CardTitle>{t("settings.surcharges.reports.title", "Surcharge reports")}</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<form
@@ -153,10 +146,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor={field.name}>
-										{t(
-											"settings.surcharges.reports.filters.startDate",
-											"Start date",
-										)}
+										{t("settings.surcharges.reports.filters.startDate", "Start date")}
 									</Label>
 									<Input
 										id={field.name}
@@ -175,10 +165,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor={field.name}>
-										{t(
-											"settings.surcharges.reports.filters.endDate",
-											"End date",
-										)}
+										{t("settings.surcharges.reports.filters.endDate", "End date")}
 									</Label>
 									<Input
 										id={field.name}
@@ -197,10 +184,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor={field.name}>
-										{t(
-											"settings.surcharges.reports.filters.employeeId",
-											"Employee ID",
-										)}
+										{t("settings.surcharges.reports.filters.employeeId", "Employee ID")}
 									</Label>
 									<Input
 										id={field.name}
@@ -217,17 +201,11 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 
 						<div className="flex items-end">
 							<Button type="submit" disabled={isLoading}>
-								{t(
-									"settings.surcharges.reports.filters.apply",
-									"Apply filters",
-								)}
+								{t("settings.surcharges.reports.filters.apply", "Apply filters")}
 							</Button>
 						</div>
 						{dateError ? (
-							<p
-								role="alert"
-								className="text-destructive text-sm md:col-span-4"
-							>
+							<p role="alert" className="text-destructive text-sm md:col-span-4">
 								{dateError}
 							</p>
 						) : null}
@@ -239,10 +217,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 				<Alert variant="destructive">
 					<IconAlertCircle aria-hidden="true" />
 					<AlertTitle>
-						{t(
-							"settings.surcharges.reports.errors.loadTitle",
-							"Unable to load calculations",
-						)}
+						{t("settings.surcharges.reports.errors.loadTitle", "Unable to load calculations")}
 					</AlertTitle>
 					<AlertDescription>{error}</AlertDescription>
 				</Alert>
@@ -250,10 +225,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			{isShowingPreviousResults ? (
 				<Alert>
 					<AlertTitle>
-						{t(
-							"settings.surcharges.reports.previousResults.title",
-							"Showing previous results.",
-						)}
+						{t("settings.surcharges.reports.previousResults.title", "Showing previous results.")}
 					</AlertTitle>
 					<AlertDescription>
 						{t(
@@ -279,10 +251,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 				</output>
 			) : null}
 
-			<SurchargeSummaryCards
-				calculationCount={displayRows.length}
-				totals={totals}
-			/>
+			<SurchargeSummaryCards calculationCount={displayRows.length} totals={totals} />
 
 			<Card>
 				<CardContent>

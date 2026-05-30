@@ -4,13 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { VacationManagement } from "@/components/settings/vacation/vacation-management";
 import { VacationPoliciesTable } from "@/components/settings/vacation/vacation-policies-table";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ensureDefaultAbsenceCategoriesForOrganization } from "@/lib/absences/default-absence-categories";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
@@ -24,8 +18,7 @@ async function VacationSettingsContent() {
 		redirect("/settings");
 	}
 
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
+	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
 		redirect("/settings");

@@ -91,18 +91,17 @@ export function WorkCategorySetDialog({
 	} | null>(null);
 
 	// Fetch all org-level categories
-	const { data: orgCategoriesResult, isLoading: isLoadingOrgCategories } =
-		useQuery({
-			queryKey: queryKeys.workCategories.orgList(organizationId),
-			queryFn: async () => {
-				const result = await getOrganizationCategories(organizationId);
-				if (!result.success) {
-					throw new Error(result.error || "Failed to fetch categories");
-				}
-				return result.data;
-			},
-			enabled: open,
-		});
+	const { data: orgCategoriesResult, isLoading: isLoadingOrgCategories } = useQuery({
+		queryKey: queryKeys.workCategories.orgList(organizationId),
+		queryFn: async () => {
+			const result = await getOrganizationCategories(organizationId);
+			if (!result.success) {
+				throw new Error(result.error || "Failed to fetch categories");
+			}
+			return result.data;
+		},
+		enabled: open,
+	});
 
 	// Fetch category set details when editing
 	const { data: setDetail, isLoading: isLoadingDetail } = useQuery({
@@ -141,11 +140,7 @@ export function WorkCategorySetDialog({
 
 	// Create set mutation
 	const createSetMutation = useMutation({
-		mutationFn: (data: {
-			name: string;
-			description: string | null;
-			categoryIds: string[];
-		}) =>
+		mutationFn: (data: { name: string; description: string | null; categoryIds: string[] }) =>
 			createWorkCategorySet({
 				organizationId,
 				name: data.name,
@@ -157,37 +152,23 @@ export function WorkCategorySetDialog({
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.workCategorySets.list(organizationId),
 				});
-				toast.success(
-					t("settings.workCategories.setCreated", "Category set created"),
-				);
+				toast.success(t("settings.workCategories.setCreated", "Category set created"));
 				onSuccess();
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"settings.workCategories.setCreateFailed",
-							"Failed to create category set",
-						),
+						t("settings.workCategories.setCreateFailed", "Failed to create category set"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(
-				t(
-					"settings.workCategories.setCreateFailed",
-					"Failed to create category set",
-				),
-			);
+			toast.error(t("settings.workCategories.setCreateFailed", "Failed to create category set"));
 		},
 	});
 
 	// Update set mutation
 	const updateSetMutation = useMutation({
-		mutationFn: (data: {
-			setId: string;
-			name: string;
-			description: string | null;
-		}) =>
+		mutationFn: (data: { setId: string; name: string; description: string | null }) =>
 			updateWorkCategorySet({
 				setId: data.setId,
 				name: data.name,
@@ -197,23 +178,15 @@ export function WorkCategorySetDialog({
 			if (result.success) {
 				if (!categorySet?.id) {
 					toast.error(
-						t(
-							"settings.workCategories.setUpdateFailed",
-							"Failed to update category set",
-						),
+						t("settings.workCategories.setUpdateFailed", "Failed to update category set"),
 					);
 					return;
 				}
 
 				// Also update the categories in the set
-				const updateResult = await updateSetCategories(
-					categorySet.id,
-					selectedCategoryIds,
-				);
+				const updateResult = await updateSetCategories(categorySet.id, selectedCategoryIds);
 				if (updateResult.success) {
-					toast.success(
-						t("settings.workCategories.setUpdated", "Category set updated"),
-					);
+					toast.success(t("settings.workCategories.setUpdated", "Category set updated"));
 					queryClient.invalidateQueries({
 						queryKey: queryKeys.workCategorySets.detail(categorySet.id),
 					});
@@ -224,37 +197,25 @@ export function WorkCategorySetDialog({
 				} else {
 					toast.error(
 						updateResult.error ||
-							t(
-								"settings.workCategories.setUpdateFailed",
-								"Failed to update categories",
-							),
+							t("settings.workCategories.setUpdateFailed", "Failed to update categories"),
 					);
 				}
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"settings.workCategories.setUpdateFailed",
-							"Failed to update category set",
-						),
+						t("settings.workCategories.setUpdateFailed", "Failed to update category set"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(
-				t(
-					"settings.workCategories.setUpdateFailed",
-					"Failed to update category set",
-				),
-			);
+			toast.error(t("settings.workCategories.setUpdateFailed", "Failed to update category set"));
 		},
 	});
 
 	// Toggle category selection
 	const handleToggleCategory = (categoryId: string) => {
 		setSelectionDraft((prev) => {
-			const currentIds =
-				prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
+			const currentIds = prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
 			const nextIds = currentIds.includes(categoryId)
 				? currentIds.filter((id) => id !== categoryId)
 				: [...currentIds, categoryId];
@@ -270,8 +231,7 @@ export function WorkCategorySetDialog({
 	const moveUp = (index: number) => {
 		if (index === 0) return;
 		setSelectionDraft((prev) => {
-			const currentIds =
-				prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
+			const currentIds = prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
 			const newIds = [...currentIds];
 			[newIds[index - 1], newIds[index]] = [newIds[index], newIds[index - 1]];
 			return {
@@ -284,8 +244,7 @@ export function WorkCategorySetDialog({
 	// Move category down in order
 	const moveDown = (index: number) => {
 		setSelectionDraft((prev) => {
-			const currentIds =
-				prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
+			const currentIds = prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
 			if (index === currentIds.length - 1) {
 				return {
 					scopeKey: selectionScopeKey,
@@ -305,8 +264,7 @@ export function WorkCategorySetDialog({
 	// Remove category from selection
 	const removeCategory = (categoryId: string) => {
 		setSelectionDraft((prev) => {
-			const currentIds =
-				prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
+			const currentIds = prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
 			return {
 				scopeKey: selectionScopeKey,
 				ids: currentIds.filter((id) => id !== categoryId),
@@ -343,9 +301,7 @@ export function WorkCategorySetDialog({
 		.filter((c): c is OrgCategory => c !== undefined);
 
 	// Get unselected categories
-	const unselectedCategories = orgCategories.filter(
-		(c) => !selectedCategoryIds.includes(c.id),
-	);
+	const unselectedCategories = orgCategories.filter((c) => !selectedCategoryIds.includes(c.id));
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
@@ -373,9 +329,7 @@ export function WorkCategorySetDialog({
 					<ActionPanelBody className="space-y-4">
 						{/* Set Name */}
 						<div className="space-y-2 px-1">
-							<Label htmlFor="set-name">
-								{t("settings.workCategories.setName", "Name")}
-							</Label>
+							<Label htmlFor="set-name">{t("settings.workCategories.setName", "Name")}</Label>
 							<Input
 								id="set-name"
 								value={metaValues.name}
@@ -421,15 +375,9 @@ export function WorkCategorySetDialog({
 						{/* Categories Section */}
 						<div className="space-y-4 px-1">
 							<div className="flex items-center justify-between">
-								<Label>
-									{t(
-										"settings.workCategories.selectCategories",
-										"Select Categories",
-									)}
-								</Label>
+								<Label>{t("settings.workCategories.selectCategories", "Select Categories")}</Label>
 								<Badge variant="secondary">
-									{selectedCategoryIds.length}{" "}
-									{t("common.selected", "selected")}
+									{selectedCategoryIds.length} {t("common.selected", "selected")}
 								</Badge>
 							</div>
 
@@ -442,10 +390,7 @@ export function WorkCategorySetDialog({
 							) : orgCategories.length === 0 ? (
 								<div className="py-8 text-center text-muted-foreground">
 									<p>
-										{t(
-											"settings.workCategories.noCategoriesAvailable",
-											"No categories available",
-										)}
+										{t("settings.workCategories.noCategoriesAvailable", "No categories available")}
 									</p>
 									<p className="text-sm">
 										{t(
@@ -491,9 +436,7 @@ export function WorkCategorySetDialog({
 																size="icon"
 																className="size-4 p-0"
 																onClick={() => moveDown(index)}
-																disabled={
-																	index === selectedCategories.length - 1
-																}
+																disabled={index === selectedCategories.length - 1}
 																aria-label={t("common.moveDown", "Move down")}
 															>
 																<span className="text-xs" aria-hidden="true">
@@ -508,13 +451,9 @@ export function WorkCategorySetDialog({
 																aria-hidden="true"
 															/>
 														)}
-														<span className="flex-1 font-medium text-sm">
-															{category.name}
-														</span>
+														<span className="flex-1 font-medium text-sm">{category.name}</span>
 														<Badge variant="outline" className="text-xs">
-															{formatFactorAsMultiplier(
-																parseFloat(category.factor),
-															)}
+															{formatFactorAsMultiplier(parseFloat(category.factor))}
 														</Badge>
 														<Button
 															type="button"
@@ -536,10 +475,7 @@ export function WorkCategorySetDialog({
 									{unselectedCategories.length > 0 && (
 										<div className="space-y-2">
 											<p className="text-sm text-muted-foreground">
-												{t(
-													"settings.workCategories.availableCategories",
-													"Available categories",
-												)}
+												{t("settings.workCategories.availableCategories", "Available categories")}
 											</p>
 											<ScrollArea className="h-[200px] rounded-lg border p-2">
 												<div className="space-y-1">
@@ -551,12 +487,8 @@ export function WorkCategorySetDialog({
 															onClick={() => handleToggleCategory(category.id)}
 														>
 															<Checkbox
-																checked={selectedCategoryIds.includes(
-																	category.id,
-																)}
-																onCheckedChange={() =>
-																	handleToggleCategory(category.id)
-																}
+																checked={selectedCategoryIds.includes(category.id)}
+																onCheckedChange={() => handleToggleCategory(category.id)}
 																tabIndex={-1}
 															/>
 															{category.color && (
@@ -566,13 +498,9 @@ export function WorkCategorySetDialog({
 																	aria-hidden="true"
 																/>
 															)}
-															<span className="flex-1 text-sm">
-																{category.name}
-															</span>
+															<span className="flex-1 text-sm">{category.name}</span>
 															<Badge variant="outline" className="text-xs">
-																{formatFactorAsMultiplier(
-																	parseFloat(category.factor),
-																)}
+																{formatFactorAsMultiplier(parseFloat(category.factor))}
 															</Badge>
 														</button>
 													))}
@@ -586,20 +514,13 @@ export function WorkCategorySetDialog({
 					</ActionPanelBody>
 
 					<ActionPanelFooter className="pt-4 border-t">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => onOpenChange(false)}
-						>
+						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isMutating || isLoading}>
 							{isMutating ? (
 								<>
-									<IconLoader2
-										className="mr-2 size-4 animate-spin"
-										aria-hidden="true"
-									/>
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									{t("common.saving", "Saving...")}
 								</>
 							) : isEditing ? (

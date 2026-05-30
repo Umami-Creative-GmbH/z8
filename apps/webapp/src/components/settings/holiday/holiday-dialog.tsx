@@ -63,12 +63,7 @@ export function HolidayDialog({
 		queryFn: async () => {
 			const result = await getHolidayCategories(organizationId);
 			if (!result.success || !result.data) {
-				throw new Error(
-					t(
-						"settings.holidays.categories.loadFailed",
-						"Failed to load categories",
-					),
-				);
+				throw new Error(t("settings.holidays.categories.loadFailed", "Failed to load categories"));
 			}
 			return result.data;
 		},
@@ -117,19 +112,14 @@ export function HolidayDialog({
 			}).catch(() => null);
 
 			if (!response) {
-				toast.error(
-					t("settings.holidays.saveFailed", "Failed to save holiday"),
-				);
+				toast.error(t("settings.holidays.saveFailed", "Failed to save holiday"));
 				setLoading(false);
 				return;
 			}
 
 			if (!response.ok) {
 				const error = await response.json().catch(() => null);
-				toast.error(
-					error?.error ||
-						t("settings.holidays.saveFailed", "Failed to save holiday"),
-				);
+				toast.error(error?.error || t("settings.holidays.saveFailed", "Failed to save holiday"));
 				setLoading(false);
 				return;
 			}
@@ -137,9 +127,7 @@ export function HolidayDialog({
 			toast.success(
 				t(
 					isEditing ? "settings.holidays.updated" : "settings.holidays.created",
-					isEditing
-						? "Holiday updated successfully"
-						: "Holiday created successfully",
+					isEditing ? "Holiday updated successfully" : "Holiday created successfully",
 				),
 			);
 
@@ -161,19 +149,11 @@ export function HolidayDialog({
 		form.setFieldValue("categoryId", editingHoliday.categoryId);
 		form.setFieldValue("startDate", new Date(editingHoliday.startDate));
 		form.setFieldValue("endDate", new Date(editingHoliday.endDate));
-		form.setFieldValue(
-			"recurrenceType",
-			editingHoliday.recurrenceType || "none",
-		);
-		form.setFieldValue(
-			"recurrenceRule",
-			editingHoliday.recurrenceRule || undefined,
-		);
+		form.setFieldValue("recurrenceType", editingHoliday.recurrenceType || "none");
+		form.setFieldValue("recurrenceRule", editingHoliday.recurrenceRule || undefined);
 		form.setFieldValue(
 			"recurrenceEndDate",
-			editingHoliday.recurrenceEndDate
-				? new Date(editingHoliday.recurrenceEndDate)
-				: null,
+			editingHoliday.recurrenceEndDate ? new Date(editingHoliday.recurrenceEndDate) : null,
 		);
 		form.setFieldValue("isActive", editingHoliday.isActive);
 	};
@@ -229,15 +209,10 @@ export function HolidayDialog({
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
-										placeholder={t(
-											"settings.holidays.form.namePlaceholder",
-											"e.g., Christmas Day",
-										)}
+										placeholder={t("settings.holidays.form.namePlaceholder", "e.g., Christmas Day")}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<p className="text-sm text-destructive">
-											{field.state.meta.errors[0]}
-										</p>
+										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 									)}
 								</div>
 							)}
@@ -277,9 +252,7 @@ export function HolidayDialog({
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label>
-										{t("settings.holidays.form.category", "Category")}
-									</Label>
+									<Label>{t("settings.holidays.form.category", "Category")}</Label>
 									<Select
 										value={field.state.value}
 										onValueChange={field.handleChange}
@@ -302,9 +275,7 @@ export function HolidayDialog({
 										</SelectContent>
 									</Select>
 									{field.state.meta.errors.length > 0 && (
-										<p className="text-sm text-destructive">
-											{field.state.meta.errors[0]}
-										</p>
+										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 									)}
 								</div>
 							)}
@@ -323,9 +294,7 @@ export function HolidayDialog({
 							>
 								{(field) => (
 									<div className="space-y-2">
-										<Label>
-											{t("settings.holidays.form.startDate", "Start Date")}
-										</Label>
+										<Label>{t("settings.holidays.form.startDate", "Start Date")}</Label>
 										<DatePicker
 											required
 											value={formatHolidayDatePickerValue(field.state.value)}
@@ -345,9 +314,7 @@ export function HolidayDialog({
 											}}
 										/>
 										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">
-												{field.state.meta.errors[0]}
-											</p>
+											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 										)}
 									</div>
 								)}
@@ -367,9 +334,7 @@ export function HolidayDialog({
 							>
 								{(field) => (
 									<div className="space-y-2">
-										<Label>
-											{t("settings.holidays.form.endDate", "End Date")}
-										</Label>
+										<Label>{t("settings.holidays.form.endDate", "End Date")}</Label>
 										<DatePicker
 											required
 											value={formatHolidayDatePickerValue(field.state.value)}
@@ -379,9 +344,7 @@ export function HolidayDialog({
 											}}
 										/>
 										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">
-												{field.state.meta.errors[0]}
-											</p>
+											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 										)}
 									</div>
 								)}
@@ -392,14 +355,10 @@ export function HolidayDialog({
 						<form.Field name="recurrenceType">
 							{(field) => (
 								<div className="space-y-2">
-									<Label>
-										{t("settings.holidays.form.recurrence.title", "Recurrence")}
-									</Label>
+									<Label>{t("settings.holidays.form.recurrence.title", "Recurrence")}</Label>
 									<Select
 										value={field.state.value}
-										onValueChange={(value) =>
-											field.handleChange(value as RecurrenceType)
-										}
+										onValueChange={(value) => field.handleChange(value as RecurrenceType)}
 									>
 										<SelectTrigger>
 											<SelectValue
@@ -411,16 +370,10 @@ export function HolidayDialog({
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value="none">
-												{t(
-													"settings.holidays.form.recurrence.none",
-													"One-time",
-												)}
+												{t("settings.holidays.form.recurrence.none", "One-time")}
 											</SelectItem>
 											<SelectItem value="yearly">
-												{t(
-													"settings.holidays.form.recurrence.yearly",
-													"Yearly",
-												)}
+												{t("settings.holidays.form.recurrence.yearly", "Yearly")}
 											</SelectItem>
 										</SelectContent>
 									</Select>
@@ -441,9 +394,7 @@ export function HolidayDialog({
 							{(field) => (
 								<div className="flex items-center justify-between rounded-lg border p-3">
 									<div className="space-y-0.5">
-										<Label>
-											{t("settings.holidays.form.active", "Active")}
-										</Label>
+										<Label>{t("settings.holidays.form.active", "Active")}</Label>
 										<p className="text-sm text-muted-foreground">
 											{t(
 												"settings.holidays.form.activeDescription",
@@ -451,10 +402,7 @@ export function HolidayDialog({
 											)}
 										</p>
 									</div>
-									<Switch
-										checked={field.state.value}
-										onCheckedChange={field.handleChange}
-									/>
+									<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 								</div>
 							)}
 						</form.Field>
@@ -470,9 +418,7 @@ export function HolidayDialog({
 						</Button>
 						<Button type="submit" disabled={loading}>
 							{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{isEditing
-								? t("common.save", "Save")
-								: t("common.create", "Create")}
+							{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
 						</Button>
 					</ActionPanelFooter>
 				</form>

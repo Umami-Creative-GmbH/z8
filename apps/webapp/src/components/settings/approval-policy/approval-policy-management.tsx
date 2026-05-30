@@ -11,13 +11,7 @@ import {
 } from "@/app/[locale]/(app)/settings/approval-policies/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -34,9 +28,7 @@ import { ApprovalPolicyPreview } from "./approval-policy-preview";
 const approvalPolicyQueryKey = (organizationId: string) =>
 	["approval-policies", organizationId] as const;
 
-type ApprovalPolicyData = Awaited<
-	ReturnType<typeof getApprovalPolicies>
->[number];
+type ApprovalPolicyData = Awaited<ReturnType<typeof getApprovalPolicies>>[number];
 type ApprovalPolicyPayload = ReturnType<typeof buildApprovalPolicyPayload>;
 
 interface ApprovalPolicyManagementProps {
@@ -51,9 +43,7 @@ function stagesCount(policy: ApprovalPolicyData) {
 	return policy.stages.length;
 }
 
-export function ApprovalPolicyManagement({
-	organizationId,
-}: ApprovalPolicyManagementProps) {
+export function ApprovalPolicyManagement({ organizationId }: ApprovalPolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
@@ -68,26 +58,18 @@ export function ApprovalPolicyManagement({
 			if (!result.success) {
 				toast.error(
 					result.error ||
-						t(
-							"settings.approvalPolicies.toast.saveFailed",
-							"Approval policy could not be saved.",
-						),
+						t("settings.approvalPolicies.toast.saveFailed", "Approval policy could not be saved."),
 				);
 				return;
 			}
 
-			toast.success(
-				t("settings.approvalPolicies.toast.created", "Approval policy created"),
-			);
+			toast.success(t("settings.approvalPolicies.toast.created", "Approval policy created"));
 			await queryClient.invalidateQueries({ queryKey: policyQueryKey });
 			setDialogOpen(false);
 		},
 		onError: () => {
 			toast.error(
-				t(
-					"settings.approvalPolicies.toast.saveFailed",
-					"Approval policy could not be saved.",
-				),
+				t("settings.approvalPolicies.toast.saveFailed", "Approval policy could not be saved."),
 			);
 		},
 	});
@@ -119,10 +101,7 @@ export function ApprovalPolicyManagement({
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 						<div className="space-y-1.5">
 							<CardTitle>
-								{t(
-									"settings.approvalPolicies.activePolicyTable",
-									"Active Policy Table",
-								)}
+								{t("settings.approvalPolicies.activePolicyTable", "Active Policy Table")}
 							</CardTitle>
 							<CardDescription>
 								{t(
@@ -144,10 +123,7 @@ export function ApprovalPolicyManagement({
 						</div>
 					) : isError ? (
 						<div className="py-6 text-sm text-destructive" role="status">
-							{t(
-								"settings.approvalPolicies.loadFailed",
-								"Approval policies could not be loaded.",
-							)}
+							{t("settings.approvalPolicies.loadFailed", "Approval policies could not be loaded.")}
 						</div>
 					) : policies.length === 0 ? (
 						<div className="py-6 text-sm text-muted-foreground">
@@ -160,30 +136,18 @@ export function ApprovalPolicyManagement({
 						<Table>
 							<TableHeader>
 								<TableRow>
+									<TableHead>{t("settings.approvalPolicies.priority", "Priority")}</TableHead>
+									<TableHead className="min-w-0">{t("common.name", "Name")}</TableHead>
 									<TableHead>
-										{t("settings.approvalPolicies.priority", "Priority")}
-									</TableHead>
-									<TableHead className="min-w-0">
-										{t("common.name", "Name")}
-									</TableHead>
-									<TableHead>
-										{t(
-											"settings.approvalPolicies.activeStatus",
-											"Active status",
-										)}
+										{t("settings.approvalPolicies.activeStatus", "Active status")}
 									</TableHead>
 									<TableHead>
-										{t(
-											"settings.approvalPolicies.conditionsCount",
-											"Conditions count",
-										)}
+										{t("settings.approvalPolicies.conditionsCount", "Conditions count")}
 									</TableHead>
 									<TableHead>
 										{t("settings.approvalPolicies.stagesCount", "Stages count")}
 									</TableHead>
-									<TableHead className="w-[80px]">
-										{t("common.actions", "Actions")}
-									</TableHead>
+									<TableHead className="w-[80px]">{t("common.actions", "Actions")}</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -198,14 +162,8 @@ export function ApprovalPolicyManagement({
 										<TableCell>
 											<Badge variant={policy.isActive ? "default" : "outline"}>
 												{policy.isActive
-													? t(
-															"settings.approvalPolicies.status.active",
-															"Active",
-														)
-													: t(
-															"settings.approvalPolicies.status.inactive",
-															"Inactive",
-														)}
+													? t("settings.approvalPolicies.status.active", "Active")
+													: t("settings.approvalPolicies.status.inactive", "Inactive")}
 											</Badge>
 										</TableCell>
 										<TableCell>{conditionsCount(policy)}</TableCell>
@@ -215,10 +173,7 @@ export function ApprovalPolicyManagement({
 												variant="ghost"
 												size="icon"
 												disabled
-												aria-label={t(
-													"settings.approvalPolicies.editPolicy",
-													"Edit policy",
-												)}
+												aria-label={t("settings.approvalPolicies.editPolicy", "Edit policy")}
 											>
 												<IconPencil className="size-4" aria-hidden="true" />
 											</Button>

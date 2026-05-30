@@ -4,13 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { WorkCategoryManagement } from "@/components/settings/work-category/work-category-management";
 import { WorkCategorySetsTable } from "@/components/settings/work-category/work-category-sets-table";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
@@ -23,8 +17,7 @@ async function WorkCategoriesSettingsContent() {
 		redirect("/settings");
 	}
 
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
+	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
 		redirect("/settings");
@@ -33,10 +26,7 @@ async function WorkCategoriesSettingsContent() {
 	const { accessTier } = settingsRouteContext;
 
 	return (
-		<WorkCategoryManagement
-			organizationId={organizationId}
-			canManage={accessTier === "orgAdmin"}
-		>
+		<WorkCategoryManagement organizationId={organizationId} canManage={accessTier === "orgAdmin"}>
 			<div className="grid gap-4">
 				<Card>
 					<CardHeader>
@@ -45,8 +35,7 @@ async function WorkCategoriesSettingsContent() {
 							Category Sets
 						</CardTitle>
 						<CardDescription>
-							Create category sets with different time factors for various work
-							types
+							Create category sets with different time factors for various work types
 						</CardDescription>
 					</CardHeader>
 					<CardContent>

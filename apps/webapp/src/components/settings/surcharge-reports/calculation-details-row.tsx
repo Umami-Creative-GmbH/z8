@@ -11,10 +11,7 @@ type CalculationDetailsRowProps = {
 	detailsId: string;
 };
 
-export function CalculationDetailsRow({
-	calculation,
-	detailsId,
-}: CalculationDetailsRowProps) {
+export function CalculationDetailsRow({ calculation, detailsId }: CalculationDetailsRowProps) {
 	const { t } = useTranslate();
 	const details = calculation.calculationDetails;
 
@@ -26,10 +23,7 @@ export function CalculationDetailsRow({
 					<div className="grid gap-2 md:grid-cols-3">
 						<div>
 							<div className="font-medium">
-								{t(
-									"settings.surcharges.reports.details.workPeriod",
-									"Work period",
-								)}
+								{t("settings.surcharges.reports.details.workPeriod", "Work period")}
 							</div>
 							<div className="text-muted-foreground">
 								{details
@@ -39,10 +33,7 @@ export function CalculationDetailsRow({
 						</div>
 						<div>
 							<div className="font-medium">
-								{t(
-									"settings.surcharges.reports.details.calculatedAt",
-									"Calculated at",
-								)}
+								{t("settings.surcharges.reports.details.calculatedAt", "Calculated at")}
 							</div>
 							<div className="text-muted-foreground">
 								{details ? formatTimestamp(details.calculatedAt) : "-"}
@@ -50,21 +41,15 @@ export function CalculationDetailsRow({
 						</div>
 						<div>
 							<div className="font-medium">
-								{t(
-									"settings.surcharges.reports.details.overlapPolicy",
-									"Overlap policy",
-								)}
-								: {details?.overlapPolicy ?? "-"}
+								{t("settings.surcharges.reports.details.overlapPolicy", "Overlap policy")}:{" "}
+								{details?.overlapPolicy ?? "-"}
 							</div>
 						</div>
 					</div>
 
 					<div className="space-y-2">
 						<div className="font-medium">
-							{t(
-								"settings.surcharges.reports.details.appliedRules",
-								"Applied rules",
-							)}
+							{t("settings.surcharges.reports.details.appliedRules", "Applied rules")}
 						</div>
 						{details?.rulesApplied.length ? (
 							<div className="grid gap-2">
@@ -76,25 +61,16 @@ export function CalculationDetailsRow({
 										</div>
 										<div className="mt-2 grid gap-2 text-muted-foreground text-sm md:grid-cols-3">
 											<div>
-												{t(
-													"settings.surcharges.reports.details.qualifying",
-													"Qualifying",
-												)}
-												: {formatMinutes(rule.qualifyingMinutes)}
+												{t("settings.surcharges.reports.details.qualifying", "Qualifying")}:{" "}
+												{formatMinutes(rule.qualifyingMinutes)}
 											</div>
 											<div>
-												{t(
-													"settings.surcharges.reports.details.surcharge",
-													"Surcharge",
-												)}
-												: {formatMinutes(rule.surchargeMinutes)}
+												{t("settings.surcharges.reports.details.surcharge", "Surcharge")}:{" "}
+												{formatMinutes(rule.surchargeMinutes)}
 											</div>
 											<div>
-												{t(
-													"settings.surcharges.reports.details.percentage",
-													"Percentage",
-												)}
-												: {formatPercentage(rule.percentage)}
+												{t("settings.surcharges.reports.details.percentage", "Percentage")}:{" "}
+												{formatPercentage(rule.percentage)}
 											</div>
 										</div>
 									</div>

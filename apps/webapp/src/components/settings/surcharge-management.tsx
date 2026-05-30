@@ -1,11 +1,6 @@
 "use client";
 
-import {
-	IconPencil,
-	IconPercentage,
-	IconPlus,
-	IconTrash,
-} from "@tabler/icons-react";
+import { IconPencil, IconPercentage, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent, useState } from "react";
@@ -26,13 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryKeys } from "@/lib/query";
 import type { SurchargeModelWithRules } from "@/lib/surcharges/validation";
@@ -46,10 +35,7 @@ interface SurchargeManagementProps {
 	canManage: boolean;
 }
 
-export function SurchargeManagement({
-	organizationId,
-	canManage,
-}: SurchargeManagementProps) {
+export function SurchargeManagement({ organizationId, canManage }: SurchargeManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [models, setModels] = useState<SurchargeModelWithRules[]>([]);
@@ -58,12 +44,11 @@ export function SurchargeManagement({
 
 	// Dialog states
 	const [modelDialogOpen, setModelDialogOpen] = useState(false);
-	const [editingModel, setEditingModel] =
-		useState<SurchargeModelWithRules | null>(null);
+	const [editingModel, setEditingModel] = useState<SurchargeModelWithRules | null>(null);
 	const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
-	const [assignmentType, setAssignmentType] = useState<
-		"organization" | "team" | "employee"
-	>("organization");
+	const [assignmentType, setAssignmentType] = useState<"organization" | "team" | "employee">(
+		"organization",
+	);
 
 	// Delete confirmation states
 	const [deleteModelId, setDeleteModelId] = useState<string | null>(null);
@@ -71,12 +56,10 @@ export function SurchargeManagement({
 	const loadData = async () => {
 		setIsLoading(true);
 
-		const modelsResult = await getSurchargeModels(organizationId).catch(
-			(error: unknown) => {
-				console.error("Failed to load surcharge data:", error);
-				return null;
-			},
-		);
+		const modelsResult = await getSurchargeModels(organizationId).catch((error: unknown) => {
+			console.error("Failed to load surcharge data:", error);
+			return null;
+		});
 
 		if (modelsResult?.success) {
 			setModels(modelsResult.data);
@@ -102,22 +85,15 @@ export function SurchargeManagement({
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.surcharges.models.list(organizationId),
 				});
-				toast.success(
-					t("settings.surcharges.modelDeleted", "Surcharge model deleted"),
-				);
+				toast.success(t("settings.surcharges.modelDeleted", "Surcharge model deleted"));
 				loadData();
 			} else {
-				toast.error(
-					result.error ||
-						t("settings.surcharges.deleteFailed", "Failed to delete"),
-				);
+				toast.error(result.error || t("settings.surcharges.deleteFailed", "Failed to delete"));
 			}
 			setDeleteModelId(null);
 		},
 		onError: () => {
-			toast.error(
-				t("settings.surcharges.deleteFailed", "Failed to delete model"),
-			);
+			toast.error(t("settings.surcharges.deleteFailed", "Failed to delete model"));
 			setDeleteModelId(null);
 		},
 	});
@@ -184,9 +160,7 @@ export function SurchargeManagement({
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-bold">
-					{t("settings.surcharges.title", "Surcharges")}
-				</h1>
+				<h1 className="text-2xl font-bold">{t("settings.surcharges.title", "Surcharges")}</h1>
 				<p className="text-muted-foreground">
 					{t(
 						"settings.surcharges.description",
@@ -195,15 +169,9 @@ export function SurchargeManagement({
 				</p>
 			</div>
 
-			<Tabs
-				value={activeTab}
-				onValueChange={setActiveTab}
-				className="space-y-4"
-			>
+			<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
 				<TabsList>
-					<TabsTrigger value="models">
-						{t("settings.surcharges.tabModels", "Models")}
-					</TabsTrigger>
+					<TabsTrigger value="models">{t("settings.surcharges.tabModels", "Models")}</TabsTrigger>
 					<TabsTrigger value="assignments">
 						{t("settings.surcharges.tabAssignments", "Assignments")}
 					</TabsTrigger>
@@ -238,10 +206,7 @@ export function SurchargeManagement({
 								{canManage ? (
 									<Button onClick={handleCreateModel}>
 										<IconPlus className="mr-2 size-4" />
-										{t(
-											"settings.surcharges.createFirstModel",
-											"Create First Model",
-										)}
+										{t("settings.surcharges.createFirstModel", "Create First Model")}
 									</Button>
 								) : null}
 							</CardContent>
@@ -253,9 +218,7 @@ export function SurchargeManagement({
 									<CardHeader>
 										<div className="flex items-start justify-between">
 											<div className="flex-1 min-w-0">
-												<CardTitle className="text-lg truncate">
-													{model.name}
-												</CardTitle>
+												<CardTitle className="text-lg truncate">{model.name}</CardTitle>
 												{model.description && (
 													<CardDescription className="mt-1 line-clamp-2">
 														{model.description}
@@ -295,10 +258,7 @@ export function SurchargeManagement({
 											</div>
 											<div className="space-y-1">
 												{model.rules.slice(0, 3).map((rule) => (
-													<div
-														key={rule.id}
-														className="flex items-center justify-between text-sm"
-													>
+													<div key={rule.id} className="flex items-center justify-between text-sm">
 														<span className="truncate mr-2">{rule.name}</span>
 														<div className="flex items-center gap-2 flex-shrink-0">
 															<Badge variant="outline" className="text-xs">
@@ -361,17 +321,11 @@ export function SurchargeManagement({
 			) : null}
 
 			{/* Delete Model Confirmation */}
-			<AlertDialog
-				open={canManage && !!deleteModelId}
-				onOpenChange={() => setDeleteModelId(null)}
-			>
+			<AlertDialog open={canManage && !!deleteModelId} onOpenChange={() => setDeleteModelId(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
-							{t(
-								"settings.surcharges.deleteModelTitle",
-								"Delete Surcharge Model?",
-							)}
+							{t("settings.surcharges.deleteModelTitle", "Delete Surcharge Model?")}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{t(
@@ -381,14 +335,10 @@ export function SurchargeManagement({
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
+						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 						<AlertDialogAction
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-							onClick={() =>
-								deleteModelId && deleteModelMutation.mutate(deleteModelId)
-							}
+							onClick={() => deleteModelId && deleteModelMutation.mutate(deleteModelId)}
 						>
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>

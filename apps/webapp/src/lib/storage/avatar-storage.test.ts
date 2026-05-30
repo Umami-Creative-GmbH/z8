@@ -18,11 +18,9 @@ vi.mock("@/env", () => ({
 }));
 
 vi.mock("@aws-sdk/client-s3", () => ({
-	DeleteObjectCommand: vi
-		.fn()
-		.mockImplementation(function DeleteObjectCommand(input) {
-			return { input };
-		}),
+	DeleteObjectCommand: vi.fn().mockImplementation(function DeleteObjectCommand(input) {
+		return { input };
+	}),
 	S3Client: vi.fn().mockImplementation(function S3Client() {
 		return {
 			send: mockState.send,
@@ -44,9 +42,7 @@ describe("avatar storage", () => {
 	});
 
 	it("creates per-user immutable avatar keys", () => {
-		expect(createAvatarStorageKey("user-1", "avatar-id")).toBe(
-			"avatars/user-1/avatar-id.webp",
-		);
+		expect(createAvatarStorageKey("user-1", "avatar-id")).toBe("avatars/user-1/avatar-id.webp");
 	});
 
 	it("creates per-organization immutable logo keys", () => {

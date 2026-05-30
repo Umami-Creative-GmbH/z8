@@ -36,14 +36,9 @@ export function formatDate(value: Date) {
 }
 
 export function formatTimestamp(value: Date | string) {
-	const dateTime =
-		typeof value === "string"
-			? DateTime.fromISO(value)
-			: DateTime.fromJSDate(value);
+	const dateTime = typeof value === "string" ? DateTime.fromISO(value) : DateTime.fromJSDate(value);
 
-	return dateTime.isValid
-		? dateTime.toLocaleString(DateTime.DATETIME_MED)
-		: "-";
+	return dateTime.isValid ? dateTime.toLocaleString(DateTime.DATETIME_MED) : "-";
 }
 
 export function formatPercentage(value: number | string) {
@@ -57,7 +52,5 @@ export function formatPercentage(value: number | string) {
 }
 
 export function getEmployeeName(calculation: SurchargeCalculationWithDetails) {
-	return (
-		buildAuthUserDisplayName(calculation.employee) || calculation.employee.id
-	);
+	return buildAuthUserDisplayName(calculation.employee) || calculation.employee.id;
 }

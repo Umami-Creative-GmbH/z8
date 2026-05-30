@@ -21,11 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query";
 
@@ -145,27 +141,17 @@ function WorkCategoryDialogContent({
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.workCategories.orgList(organizationId),
 				});
-				toast.success(
-					t("settings.workCategories.categoryCreated", "Category created"),
-				);
+				toast.success(t("settings.workCategories.categoryCreated", "Category created"));
 				onSuccess();
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"settings.workCategories.categoryCreateFailed",
-							"Failed to create category",
-						),
+						t("settings.workCategories.categoryCreateFailed", "Failed to create category"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(
-				t(
-					"settings.workCategories.categoryCreateFailed",
-					"Failed to create category",
-				),
-			);
+			toast.error(t("settings.workCategories.categoryCreateFailed", "Failed to create category"));
 		},
 	});
 
@@ -183,27 +169,17 @@ function WorkCategoryDialogContent({
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.workCategories.orgList(organizationId),
 				});
-				toast.success(
-					t("settings.workCategories.categoryUpdated", "Category updated"),
-				);
+				toast.success(t("settings.workCategories.categoryUpdated", "Category updated"));
 				onSuccess();
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"settings.workCategories.categoryUpdateFailed",
-							"Failed to update category",
-						),
+						t("settings.workCategories.categoryUpdateFailed", "Failed to update category"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(
-				t(
-					"settings.workCategories.categoryUpdateFailed",
-					"Failed to update category",
-				),
-			);
+			toast.error(t("settings.workCategories.categoryUpdateFailed", "Failed to update category"));
 		},
 	});
 
@@ -219,10 +195,7 @@ function WorkCategoryDialogContent({
 				</ActionPanelTitle>
 				<ActionPanelDescription>
 					{isEditing
-						? t(
-								"settings.workCategories.editCategoryDescription",
-								"Update the category details",
-							)
+						? t("settings.workCategories.editCategoryDescription", "Update the category details")
 						: t(
 								"settings.workCategories.createCategoryDescription",
 								"Create a new work category that can be assigned to multiple sets",
@@ -239,18 +212,9 @@ function WorkCategoryDialogContent({
 								<ColorPicker
 									value={field.state.value}
 									onChange={(color) => field.handleChange(color)}
-									label={t(
-										"settings.workCategories.chooseColor",
-										"Choose color",
-									)}
-									colorOptionsLabel={t(
-										"settings.workCategories.colorOptions",
-										"Color options",
-									)}
-									noColorLabel={t(
-										"settings.workCategories.noColor",
-										"No color",
-									)}
+									label={t("settings.workCategories.chooseColor", "Choose color")}
+									colorOptionsLabel={t("settings.workCategories.colorOptions", "Color options")}
+									noColorLabel={t("settings.workCategories.noColor", "No color")}
 								/>
 							)}
 						</form.Field>
@@ -297,9 +261,7 @@ function WorkCategoryDialogContent({
 
 					{/* Factor */}
 					<div className="space-y-2">
-						<Label htmlFor="category-factor">
-							{t("settings.workCategories.factor", "Factor")}
-						</Label>
+						<Label htmlFor="category-factor">{t("settings.workCategories.factor", "Factor")}</Label>
 						<form.Field name="factor">
 							{(field) => (
 								<Input
@@ -323,24 +285,13 @@ function WorkCategoryDialogContent({
 				</ActionPanelBody>
 
 				<ActionPanelFooter>
-					<Button
-						type="button"
-						variant="outline"
-						onClick={() => onOpenChange(false)}
-					>
+					<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 						{t("common.cancel", "Cancel")}
 					</Button>
-					<Button
-						type="button"
-						disabled={isMutating}
-						onClick={() => form.handleSubmit()}
-					>
+					<Button type="button" disabled={isMutating} onClick={() => form.handleSubmit()}>
 						{isMutating ? (
 							<>
-								<IconLoader2
-									className="mr-2 size-4 animate-spin"
-									aria-hidden="true"
-								/>
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								{t("common.saving", "Saving...")}
 							</>
 						) : isEditing ? (

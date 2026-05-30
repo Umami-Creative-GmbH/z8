@@ -73,10 +73,7 @@ function getInitialValues(
 	const values = buildPresetReviewValues(preset);
 	return {
 		...values,
-		name:
-			mode === "copySystem" && values.name
-				? `${values.name} Copy`
-				: values.name,
+		name: mode === "copySystem" && values.name ? `${values.name} Copy` : values.name,
 		description: values.description ?? "",
 	};
 }
@@ -107,8 +104,7 @@ function getDialogCopy(mode: ReviewMode) {
 		default:
 			return {
 				title: "Create custom preset",
-				description:
-					"Review and save reusable policy defaults for your organization.",
+				description: "Review and save reusable policy defaults for your organization.",
 				submitLabel: "Save custom preset",
 				success: "Preset created",
 			};
@@ -157,33 +153,18 @@ export function WorkPolicyPresetReviewDialog({
 					}
 
 					if (mode === "editCustom") {
-						return updateWorkPolicyPreset(
-							organizationId,
-							preset.id,
-							reviewedValue,
-						);
+						return updateWorkPolicyPreset(organizationId, preset.id, reviewedValue);
 					}
 
 					if (mode === "copySystem") {
-						return copySystemWorkPolicyPreset(
-							organizationId,
-							preset.id,
-							reviewedValue,
-						);
+						return copySystemWorkPolicyPreset(organizationId, preset.id, reviewedValue);
 					}
 
-					return createWorkPolicyFromPreset(
-						organizationId,
-						preset.id,
-						reviewedValue,
-						setAsDefault,
-					);
+					return createWorkPolicyFromPreset(organizationId, preset.id, reviewedValue, setAsDefault);
 				})();
 
 				if (result.success) {
-					toast.success(
-						t("settings.workPolicies.presetReviewSuccess", copy.success),
-					);
+					toast.success(t("settings.workPolicies.presetReviewSuccess", copy.success));
 					setIsSubmitting(false);
 					onSuccess();
 					onOpenChange(false);
@@ -191,16 +172,10 @@ export function WorkPolicyPresetReviewDialog({
 				}
 
 				setServerError(
-					result.error ??
-						t(
-							"settings.workPolicies.presetReviewError",
-							"Failed to save preset",
-						),
+					result.error ?? t("settings.workPolicies.presetReviewError", "Failed to save preset"),
 				);
 			} catch {
-				setServerError(
-					t("settings.workPolicies.presetReviewError", "Failed to save preset"),
-				);
+				setServerError(t("settings.workPolicies.presetReviewError", "Failed to save preset"));
 			}
 
 			setIsSubmitting(false);
@@ -222,9 +197,7 @@ export function WorkPolicyPresetReviewDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto overscroll-contain sm:max-w-2xl">
 				<DialogHeader>
-					<DialogTitle>
-						{t(`settings.workPolicies.${mode}.title`, copy.title)}
-					</DialogTitle>
+					<DialogTitle>{t(`settings.workPolicies.${mode}.title`, copy.title)}</DialogTitle>
 					<DialogDescription>
 						{t(`settings.workPolicies.${mode}.description`, copy.description)}
 					</DialogDescription>
@@ -262,9 +235,7 @@ export function WorkPolicyPresetReviewDialog({
 										onChange={(event) => field.handleChange(event.target.value)}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<p className="text-sm text-destructive">
-											{field.state.meta.errors[0]}
-										</p>
+										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 									)}
 								</div>
 							)}
@@ -300,9 +271,7 @@ export function WorkPolicyPresetReviewDialog({
 										autoComplete="off"
 										value={field.state.value ?? ""}
 										onBlur={field.handleBlur}
-										onChange={(event) =>
-											field.handleChange(event.target.value.toUpperCase())
-										}
+										onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
 										placeholder="DE"
 									/>
 								</div>
@@ -339,10 +308,7 @@ export function WorkPolicyPresetReviewDialog({
 								<div className="flex items-center justify-between rounded-lg border p-4">
 									<div className="space-y-0.5">
 										<Label htmlFor="preset-review-regulation-enabled">
-											{t(
-												"settings.workPolicies.timeRegulation",
-												"Time Regulation",
-											)}
+											{t("settings.workPolicies.timeRegulation", "Time Regulation")}
 										</Label>
 										<p className="text-xs text-muted-foreground">
 											{t(
@@ -364,10 +330,7 @@ export function WorkPolicyPresetReviewDialog({
 					<div className="space-y-4 rounded-lg border p-4">
 						<div>
 							<h3 className="text-sm font-medium">
-								{t(
-									"settings.workPolicies.scheduleDefaults",
-									"Schedule defaults",
-								)}
+								{t("settings.workPolicies.scheduleDefaults", "Schedule defaults")}
 							</h3>
 							<p className="text-xs text-muted-foreground">
 								{t(
@@ -381,25 +344,17 @@ export function WorkPolicyPresetReviewDialog({
 								{(field) => (
 									<div className="space-y-2">
 										<Label htmlFor="preset-review-schedule-cycle">
-											{t(
-												"settings.workSchedules.scheduleCycle",
-												"Schedule cycle",
-											)}
+											{t("settings.workSchedules.scheduleCycle", "Schedule cycle")}
 										</Label>
 										<Select
 											value={field.state.value ?? "weekly"}
 											onValueChange={(value) =>
 												field.handleChange(
-													value as NonNullable<
-														WorkPolicyPresetInput["schedule"]
-													>["scheduleCycle"],
+													value as NonNullable<WorkPolicyPresetInput["schedule"]>["scheduleCycle"],
 												)
 											}
 										>
-											<SelectTrigger
-												id="preset-review-schedule-cycle"
-												className="w-full"
-											>
+											<SelectTrigger id="preset-review-schedule-cycle" className="w-full">
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -440,10 +395,7 @@ export function WorkPolicyPresetReviewDialog({
 												)
 											}
 										>
-											<SelectTrigger
-												id="preset-review-working-days"
-												className="w-full"
-											>
+											<SelectTrigger id="preset-review-working-days" className="w-full">
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -469,10 +421,7 @@ export function WorkPolicyPresetReviewDialog({
 								{(field) => (
 									<div className="space-y-2">
 										<Label htmlFor="preset-review-hours-per-cycle">
-											{t(
-												"settings.workSchedules.hoursPerCycle",
-												"Hours per cycle",
-											)}
+											{t("settings.workSchedules.hoursPerCycle", "Hours per cycle")}
 										</Label>
 										<Input
 											id="preset-review-hours-per-cycle"
@@ -484,9 +433,7 @@ export function WorkPolicyPresetReviewDialog({
 											step="0.5"
 											value={field.state.value ?? ""}
 											onBlur={field.handleBlur}
-											onChange={(event) =>
-												field.handleChange(event.target.value)
-											}
+											onChange={(event) => field.handleChange(event.target.value)}
 										/>
 									</div>
 								)}
@@ -497,10 +444,7 @@ export function WorkPolicyPresetReviewDialog({
 					<div className="space-y-4 rounded-lg border p-4">
 						<div>
 							<h3 className="text-sm font-medium">
-								{t(
-									"settings.workPolicies.regulationDefaults",
-									"Regulation defaults",
-								)}
+								{t("settings.workPolicies.regulationDefaults", "Regulation defaults")}
 							</h3>
 							<p className="text-xs text-muted-foreground">
 								{t(
@@ -514,9 +458,7 @@ export function WorkPolicyPresetReviewDialog({
 							<form.Field name="regulation.maxDailyMinutes">
 								{(field) => (
 									<div className="space-y-2">
-										<Label htmlFor="preset-review-max-daily-hours">
-											Max daily hours
-										</Label>
+										<Label htmlFor="preset-review-max-daily-hours">Max daily hours</Label>
 										<Input
 											id="preset-review-max-daily-hours"
 											name="preset-review-max-daily-hours"
@@ -530,9 +472,7 @@ export function WorkPolicyPresetReviewDialog({
 											onChange={(event) => {
 												const hours = Number.parseFloat(event.target.value);
 												field.handleChange(
-													Number.isNaN(hours)
-														? undefined
-														: Math.round(hours * 60),
+													Number.isNaN(hours) ? undefined : Math.round(hours * 60),
 												);
 											}}
 										/>
@@ -543,9 +483,7 @@ export function WorkPolicyPresetReviewDialog({
 							<form.Field name="regulation.maxWeeklyMinutes">
 								{(field) => (
 									<div className="space-y-2">
-										<Label htmlFor="preset-review-max-weekly-hours">
-											Max weekly hours
-										</Label>
+										<Label htmlFor="preset-review-max-weekly-hours">Max weekly hours</Label>
 										<Input
 											id="preset-review-max-weekly-hours"
 											name="preset-review-max-weekly-hours"
@@ -559,9 +497,7 @@ export function WorkPolicyPresetReviewDialog({
 											onChange={(event) => {
 												const hours = Number.parseFloat(event.target.value);
 												field.handleChange(
-													Number.isNaN(hours)
-														? undefined
-														: Math.round(hours * 60),
+													Number.isNaN(hours) ? undefined : Math.round(hours * 60),
 												);
 											}}
 										/>
@@ -588,9 +524,7 @@ export function WorkPolicyPresetReviewDialog({
 											onChange={(event) => {
 												const hours = Number.parseFloat(event.target.value);
 												field.handleChange(
-													Number.isNaN(hours)
-														? undefined
-														: Math.round(hours * 60),
+													Number.isNaN(hours) ? undefined : Math.round(hours * 60),
 												);
 											}}
 										/>
@@ -601,9 +535,7 @@ export function WorkPolicyPresetReviewDialog({
 
 						<div className="space-y-3">
 							<div className="flex items-center justify-between">
-								<Label>
-									{t("settings.timeRegulations.breakRules", "Break rules")}
-								</Label>
+								<Label>{t("settings.timeRegulations.breakRules", "Break rules")}</Label>
 								<form.Field name="regulation.breakRules">
 									{(field) => (
 										<Button
@@ -613,10 +545,7 @@ export function WorkPolicyPresetReviewDialog({
 											onClick={() => field.pushValue(defaultBreakRule)}
 										>
 											<IconPlus aria-hidden="true" className="mr-2 size-4" />
-											{t(
-												"settings.timeRegulations.addBreakRule",
-												"Add break rule",
-											)}
+											{t("settings.timeRegulations.addBreakRule", "Add break rule")}
 										</Button>
 									)}
 								</form.Field>
@@ -632,9 +561,7 @@ export function WorkPolicyPresetReviewDialog({
 													className="space-y-3 rounded-lg border bg-muted/20 p-3"
 												>
 													<div className="flex items-center justify-between">
-														<p className="text-sm font-medium">
-															Break rule {ruleIndex + 1}
-														</p>
+														<p className="text-sm font-medium">Break rule {ruleIndex + 1}</p>
 														<Button
 															type="button"
 															variant="ghost"
@@ -643,10 +570,7 @@ export function WorkPolicyPresetReviewDialog({
 															className="size-8 text-destructive hover:text-destructive"
 															onClick={() => rulesField.removeValue(ruleIndex)}
 														>
-															<IconTrash
-																aria-hidden="true"
-																className="size-4"
-															/>
+															<IconTrash aria-hidden="true" className="size-4" />
 															<span className="sr-only">Remove break rule</span>
 														</Button>
 													</div>
@@ -657,9 +581,7 @@ export function WorkPolicyPresetReviewDialog({
 														>
 															{(field) => (
 																<div className="space-y-2">
-																	<Label
-																		htmlFor={`preset-review-break-threshold-${ruleIndex}`}
-																	>
+																	<Label htmlFor={`preset-review-break-threshold-${ruleIndex}`}>
 																		After working hours
 																	</Label>
 																	<Input
@@ -670,20 +592,12 @@ export function WorkPolicyPresetReviewDialog({
 																		min="0"
 																		max="24"
 																		step="0.5"
-																		value={
-																			field.state.value
-																				? field.state.value / 60
-																				: ""
-																		}
+																		value={field.state.value ? field.state.value / 60 : ""}
 																		onBlur={field.handleBlur}
 																		onChange={(event) => {
-																			const hours = Number.parseFloat(
-																				event.target.value,
-																			);
+																			const hours = Number.parseFloat(event.target.value);
 																			field.handleChange(
-																				Number.isNaN(hours)
-																					? 0
-																					: Math.round(hours * 60),
+																				Number.isNaN(hours) ? 0 : Math.round(hours * 60),
 																			);
 																		}}
 																	/>
@@ -696,9 +610,7 @@ export function WorkPolicyPresetReviewDialog({
 														>
 															{(field) => (
 																<div className="space-y-2">
-																	<Label
-																		htmlFor={`preset-review-break-required-${ruleIndex}`}
-																	>
+																	<Label htmlFor={`preset-review-break-required-${ruleIndex}`}>
 																		Break required minutes
 																	</Label>
 																	<Input
@@ -711,13 +623,8 @@ export function WorkPolicyPresetReviewDialog({
 																		value={field.state.value ?? ""}
 																		onBlur={field.handleBlur}
 																		onChange={(event) => {
-																			const minutes = Number.parseInt(
-																				event.target.value,
-																				10,
-																			);
-																			field.handleChange(
-																				Number.isNaN(minutes) ? 0 : minutes,
-																			);
+																			const minutes = Number.parseInt(event.target.value, 10);
+																			field.handleChange(Number.isNaN(minutes) ? 0 : minutes);
 																		}}
 																	/>
 																</div>
@@ -733,160 +640,128 @@ export function WorkPolicyPresetReviewDialog({
 															<div className="space-y-2">
 																<div className="flex items-center justify-between">
 																	<Label>
-																		{t(
-																			"settings.timeRegulations.breakOptions",
-																			"Break options",
-																		)}
+																		{t("settings.timeRegulations.breakOptions", "Break options")}
 																	</Label>
 																	<Button
 																		type="button"
 																		variant="ghost"
 																		size="sm"
-																		onClick={() =>
-																			optionsField.pushValue(defaultBreakOption)
-																		}
+																		onClick={() => optionsField.pushValue(defaultBreakOption)}
 																	>
-																		<IconPlus
-																			aria-hidden="true"
-																			className="mr-1 size-3"
-																		/>
-																		{t(
-																			"settings.timeRegulations.addOption",
-																			"Add option",
-																		)}
+																		<IconPlus aria-hidden="true" className="mr-1 size-3" />
+																		{t("settings.timeRegulations.addOption", "Add option")}
 																	</Button>
 																</div>
 
-																{optionsField.state.value?.map(
-																	(option, optionIndex) => (
-																		<div
-																			key={`${option.splitCount ?? "none"}-${option.minimumSplitMinutes ?? "none"}-${option.minimumLongestSplitMinutes ?? "none"}`}
-																			className="grid gap-3 rounded-md border bg-background p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"
+																{optionsField.state.value?.map((option, optionIndex) => (
+																	<div
+																		key={`${option.splitCount ?? "none"}-${option.minimumSplitMinutes ?? "none"}-${option.minimumLongestSplitMinutes ?? "none"}`}
+																		className="grid gap-3 rounded-md border bg-background p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"
+																	>
+																		<form.Field
+																			name={`regulation.breakRules[${ruleIndex}].options[${optionIndex}].splitCount`}
 																		>
-																			<form.Field
-																				name={`regulation.breakRules[${ruleIndex}].options[${optionIndex}].splitCount`}
-																			>
-																				{(field) => (
-																					<div className="space-y-2">
-																						<Label
-																							htmlFor={`preset-review-break-split-${ruleIndex}-${optionIndex}`}
-																						>
-																							Split count
-																						</Label>
-																						<Input
-																							id={`preset-review-break-split-${ruleIndex}-${optionIndex}`}
-																							name={`preset-review-break-split-${ruleIndex}-${optionIndex}`}
-																							autoComplete="off"
-																							type="number"
-																							min="1"
-																							value={field.state.value ?? ""}
-																							onBlur={field.handleBlur}
-																							onChange={(event) => {
-																								const count = Number.parseInt(
-																									event.target.value,
-																									10,
-																								);
-																								field.handleChange(
-																									Number.isNaN(count)
-																										? null
-																										: count,
-																								);
-																							}}
-																						/>
-																					</div>
-																				)}
-																			</form.Field>
-																			<form.Field
-																				name={`regulation.breakRules[${ruleIndex}].options[${optionIndex}].minimumSplitMinutes`}
-																			>
-																				{(field) => (
-																					<div className="space-y-2">
-																						<Label
-																							htmlFor={`preset-review-break-min-split-${ruleIndex}-${optionIndex}`}
-																						>
-																							Min split minutes
-																						</Label>
-																						<Input
-																							id={`preset-review-break-min-split-${ruleIndex}-${optionIndex}`}
-																							name={`preset-review-break-min-split-${ruleIndex}-${optionIndex}`}
-																							autoComplete="off"
-																							type="number"
-																							min="0"
-																							value={field.state.value ?? ""}
-																							onBlur={field.handleBlur}
-																							onChange={(event) => {
-																								const minutes = Number.parseInt(
-																									event.target.value,
-																									10,
-																								);
-																								field.handleChange(
-																									Number.isNaN(minutes)
-																										? null
-																										: minutes,
-																								);
-																							}}
-																						/>
-																					</div>
-																				)}
-																			</form.Field>
-																			<form.Field
-																				name={`regulation.breakRules[${ruleIndex}].options[${optionIndex}].minimumLongestSplitMinutes`}
-																			>
-																				{(field) => (
-																					<div className="space-y-2">
-																						<Label
-																							htmlFor={`preset-review-break-longest-split-${ruleIndex}-${optionIndex}`}
-																						>
-																							Longest split minutes
-																						</Label>
-																						<Input
-																							id={`preset-review-break-longest-split-${ruleIndex}-${optionIndex}`}
-																							name={`preset-review-break-longest-split-${ruleIndex}-${optionIndex}`}
-																							autoComplete="off"
-																							type="number"
-																							min="0"
-																							value={field.state.value ?? ""}
-																							onBlur={field.handleBlur}
-																							onChange={(event) => {
-																								const minutes = Number.parseInt(
-																									event.target.value,
-																									10,
-																								);
-																								field.handleChange(
-																									Number.isNaN(minutes)
-																										? null
-																										: minutes,
-																								);
-																							}}
-																						/>
-																					</div>
-																				)}
-																			</form.Field>
-																			<Button
-																				type="button"
-																				variant="ghost"
-																				size="icon"
-																				aria-label="Remove break option"
-																				className="self-end text-destructive hover:text-destructive"
-																				onClick={() =>
-																					optionsField.removeValue(optionIndex)
-																				}
-																				disabled={
-																					(optionsField.state.value?.length ??
-																						0) <= 1
-																				}
-																			>
-																				<IconTrash
-																					aria-hidden="true"
-																					className="size-4"
-																				/>
-																				<span className="sr-only">
-																					Remove break option
-																				</span>
-																			</Button>
-																		</div>
-																	),
-																)}
+																			{(field) => (
+																				<div className="space-y-2">
+																					<Label
+																						htmlFor={`preset-review-break-split-${ruleIndex}-${optionIndex}`}
+																					>
+																						Split count
+																					</Label>
+																					<Input
+																						id={`preset-review-break-split-${ruleIndex}-${optionIndex}`}
+																						name={`preset-review-break-split-${ruleIndex}-${optionIndex}`}
+																						autoComplete="off"
+																						type="number"
+																						min="1"
+																						value={field.state.value ?? ""}
+																						onBlur={field.handleBlur}
+																						onChange={(event) => {
+																							const count = Number.parseInt(event.target.value, 10);
+																							field.handleChange(
+																								Number.isNaN(count) ? null : count,
+																							);
+																						}}
+																					/>
+																				</div>
+																			)}
+																		</form.Field>
+																		<form.Field
+																			name={`regulation.breakRules[${ruleIndex}].options[${optionIndex}].minimumSplitMinutes`}
+																		>
+																			{(field) => (
+																				<div className="space-y-2">
+																					<Label
+																						htmlFor={`preset-review-break-min-split-${ruleIndex}-${optionIndex}`}
+																					>
+																						Min split minutes
+																					</Label>
+																					<Input
+																						id={`preset-review-break-min-split-${ruleIndex}-${optionIndex}`}
+																						name={`preset-review-break-min-split-${ruleIndex}-${optionIndex}`}
+																						autoComplete="off"
+																						type="number"
+																						min="0"
+																						value={field.state.value ?? ""}
+																						onBlur={field.handleBlur}
+																						onChange={(event) => {
+																							const minutes = Number.parseInt(
+																								event.target.value,
+																								10,
+																							);
+																							field.handleChange(
+																								Number.isNaN(minutes) ? null : minutes,
+																							);
+																						}}
+																					/>
+																				</div>
+																			)}
+																		</form.Field>
+																		<form.Field
+																			name={`regulation.breakRules[${ruleIndex}].options[${optionIndex}].minimumLongestSplitMinutes`}
+																		>
+																			{(field) => (
+																				<div className="space-y-2">
+																					<Label
+																						htmlFor={`preset-review-break-longest-split-${ruleIndex}-${optionIndex}`}
+																					>
+																						Longest split minutes
+																					</Label>
+																					<Input
+																						id={`preset-review-break-longest-split-${ruleIndex}-${optionIndex}`}
+																						name={`preset-review-break-longest-split-${ruleIndex}-${optionIndex}`}
+																						autoComplete="off"
+																						type="number"
+																						min="0"
+																						value={field.state.value ?? ""}
+																						onBlur={field.handleBlur}
+																						onChange={(event) => {
+																							const minutes = Number.parseInt(
+																								event.target.value,
+																								10,
+																							);
+																							field.handleChange(
+																								Number.isNaN(minutes) ? null : minutes,
+																							);
+																						}}
+																					/>
+																				</div>
+																			)}
+																		</form.Field>
+																		<Button
+																			type="button"
+																			variant="ghost"
+																			size="icon"
+																			aria-label="Remove break option"
+																			className="self-end text-destructive hover:text-destructive"
+																			onClick={() => optionsField.removeValue(optionIndex)}
+																			disabled={(optionsField.state.value?.length ?? 0) <= 1}
+																		>
+																			<IconTrash aria-hidden="true" className="size-4" />
+																			<span className="sr-only">Remove break option</span>
+																		</Button>
+																	</div>
+																))}
 															</div>
 														)}
 													</form.Field>
@@ -894,10 +769,7 @@ export function WorkPolicyPresetReviewDialog({
 											))
 										) : (
 											<p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-												{t(
-													"settings.timeRegulations.noBreakRules",
-													"No break rules defined",
-												)}
+												{t("settings.timeRegulations.noBreakRules", "No break rules defined")}
 											</p>
 										)}
 									</div>
@@ -914,20 +786,13 @@ export function WorkPolicyPresetReviewDialog({
 								onCheckedChange={(checked) => setSetAsDefault(checked === true)}
 							/>
 							<Label htmlFor="preset-review-set-default">
-								{t(
-									"settings.workPolicies.setAsDefault",
-									"Set as organization default",
-								)}
+								{t("settings.workPolicies.setAsDefault", "Set as organization default")}
 							</Label>
 						</div>
 					)}
 
 					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => onOpenChange(false)}
-						>
+						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button
@@ -938,10 +803,7 @@ export function WorkPolicyPresetReviewDialog({
 							disabled={isSubmitting}
 						>
 							{isSubmitting && (
-								<IconLoader2
-									aria-hidden="true"
-									className="mr-2 size-4 animate-spin"
-								/>
+								<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
 							)}
 							{t(`settings.workPolicies.${mode}.submit`, copy.submitLabel)}
 						</Button>

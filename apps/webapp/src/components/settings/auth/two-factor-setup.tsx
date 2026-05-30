@@ -14,37 +14,26 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Dynamic import QRCode (~30KB) - only loaded when 2FA setup dialog opens
-const QRCodeSVG = dynamic(
-	() => import("qrcode.react").then((mod) => mod.QRCodeSVG),
-	{
-		loading: () => <Skeleton className="size-[200px]" />,
-		ssr: false,
-	},
-);
+const QRCodeSVG = dynamic(() => import("qrcode.react").then((mod) => mod.QRCodeSVG), {
+	loading: () => <Skeleton className="size-[200px]" />,
+	ssr: false,
+});
 
 interface TwoFactorSetupProps {
 	isEnabled: boolean;
 	userEmail: string;
 }
 
-export function TwoFactorSetup({
-	isEnabled: initialIsEnabled,
-}: TwoFactorSetupProps) {
+export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupProps) {
 	const { t } = useTranslate();
-	const { isPending, state, actions, handlers } = useTwoFactorSetupController(
-		initialIsEnabled,
-		t,
-	);
+	const { isPending, state, actions, handlers } = useTwoFactorSetupController(initialIsEnabled, t);
 
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
 				<div>
 					<h3 className="text-lg font-medium">
-						{t(
-							"settings.security.twoFactor.title",
-							"Two-Factor Authentication",
-						)}
+						{t("settings.security.twoFactor.title", "Two-Factor Authentication")}
 					</h3>
 					<p className="text-sm text-muted-foreground">
 						{t(
@@ -63,10 +52,7 @@ export function TwoFactorSetup({
 			<div className="flex gap-2">
 				{!state.isEnabled ? (
 					<Button onClick={handlers.handleRequestEnable} disabled={isPending}>
-						{t(
-							"settings.security.twoFactor.enable",
-							"Enable Two-Factor Authentication",
-						)}
+						{t("settings.security.twoFactor.enable", "Enable Two-Factor Authentication")}
 					</Button>
 				) : (
 					<>
@@ -75,10 +61,7 @@ export function TwoFactorSetup({
 							onClick={handlers.handleRequestRegenerate}
 							disabled={isPending}
 						>
-							{t(
-								"settings.security.twoFactor.regenerateBackupCodes",
-								"Regenerate Backup Codes",
-							)}
+							{t("settings.security.twoFactor.regenerateBackupCodes", "Regenerate Backup Codes")}
 						</Button>
 						<Button
 							variant="destructive"
@@ -94,10 +77,7 @@ export function TwoFactorSetup({
 			<PasswordPromptPanel
 				open={state.showPasswordDialog}
 				onOpenChange={actions.setShowPasswordDialog}
-				title={t(
-					"settings.security.twoFactor.enterPasswordTitle",
-					"Enter Your Password",
-				)}
+				title={t("settings.security.twoFactor.enterPasswordTitle", "Enter Your Password")}
 				description={t(
 					"settings.security.twoFactor.confirmPasswordToEnable",
 					"Please confirm your password to enable two-factor authentication",
@@ -118,10 +98,7 @@ export function TwoFactorSetup({
 			<PasswordPromptPanel
 				open={state.showRegenerateDialog}
 				onOpenChange={actions.setShowRegenerateDialog}
-				title={t(
-					"settings.security.twoFactor.enterPasswordTitle",
-					"Enter Your Password",
-				)}
+				title={t("settings.security.twoFactor.enterPasswordTitle", "Enter Your Password")}
 				description={t(
 					"settings.security.twoFactor.confirmPasswordToRegenerate",
 					"Please confirm your password to regenerate backup codes",
@@ -134,10 +111,7 @@ export function TwoFactorSetup({
 					actions.setRegeneratePassword("");
 				}}
 				onConfirm={handlers.handleRegenerateBackupCodes}
-				confirmLabel={t(
-					"settings.security.twoFactor.regenerateCodes",
-					"Regenerate Codes",
-				)}
+				confirmLabel={t("settings.security.twoFactor.regenerateCodes", "Regenerate Codes")}
 				isPending={isPending}
 				t={t}
 			/>

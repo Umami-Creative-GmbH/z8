@@ -24,8 +24,7 @@ export type {
 } from "./queries";
 
 const IMPLEMENTATION_CHECKLIST_PATH = "/settings/implementation-checklist";
-const IMPLEMENTATION_CHECKLIST_MUTATION_ERROR =
-	"Failed to update checklist item.";
+const IMPLEMENTATION_CHECKLIST_MUTATION_ERROR = "Failed to update checklist item.";
 
 type ImplementationChecklistActionFailure = { success: false; error: string };
 type ImplementationChecklistQuerySuccess<T> = { success: true; data: T };
@@ -39,9 +38,7 @@ function validateManualItemId(itemId: string): ManualItemValidationResult {
 		return { success: false, error: "Unknown implementation checklist item" };
 	}
 
-	const item = IMPLEMENTATION_CHECKLIST_ITEMS.find(
-		(checklistItem) => checklistItem.id === itemId,
-	);
+	const item = IMPLEMENTATION_CHECKLIST_ITEMS.find((checklistItem) => checklistItem.id === itemId);
 
 	if (!item?.canManualComplete) {
 		return {
@@ -56,9 +53,7 @@ function validateManualItemId(itemId: string): ManualItemValidationResult {
 export async function getImplementationChecklist(): Promise<
 	ImplementationChecklistActionResult<ImplementationChecklistViewModel>
 > {
-	return loadImplementationChecklistForContext(
-		await requireOrgAdminSettingsAccess(),
-	);
+	return loadImplementationChecklistForContext(await requireOrgAdminSettingsAccess());
 }
 
 export async function markImplementationChecklistItemComplete(

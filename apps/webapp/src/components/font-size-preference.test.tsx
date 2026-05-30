@@ -2,10 +2,7 @@
 
 import { act, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	FontSizeProvider,
-	useFontSizePreference,
-} from "./font-size-preference";
+import { FontSizeProvider, useFontSizePreference } from "./font-size-preference";
 import {
 	applyFontSizePreference,
 	FONT_SIZE_STORAGE_KEY,
@@ -148,10 +145,7 @@ describe("FontSizeProvider", () => {
 	});
 
 	it("keeps working when localStorage access throws", async () => {
-		const localStorageDescriptor = Object.getOwnPropertyDescriptor(
-			window,
-			"localStorage",
-		);
+		const localStorageDescriptor = Object.getOwnPropertyDescriptor(window, "localStorage");
 
 		Object.defineProperty(window, "localStorage", {
 			configurable: true,

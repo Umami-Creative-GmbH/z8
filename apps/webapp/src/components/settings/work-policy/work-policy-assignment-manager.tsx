@@ -30,27 +30,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { queryKeys } from "@/lib/query";
 
 function formatAssignmentEmployeeName(
-	employeeRecord:
-		| { firstName?: string | null; lastName?: string | null }
-		| null
-		| undefined,
+	employeeRecord: { firstName?: string | null; lastName?: string | null } | null | undefined,
 	fallback: string,
 ) {
-	return employeeRecord
-		? buildAuthUserDisplayName(employeeRecord) || fallback
-		: fallback;
+	return employeeRecord ? buildAuthUserDisplayName(employeeRecord) || fallback : fallback;
 }
 
 import { getWorkPolicyAssignmentSectionVisibility } from "../policy-assignment-surface";
@@ -69,9 +58,7 @@ export function WorkPolicyAssignmentManager({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const selectedAssignmentRef = useRef<WorkPolicyAssignmentWithDetails | null>(
-		null,
-	);
+	const selectedAssignmentRef = useRef<WorkPolicyAssignmentWithDetails | null>(null);
 
 	// Fetch assignments
 	const {
@@ -93,13 +80,10 @@ export function WorkPolicyAssignmentManager({
 
 	// Delete mutation
 	const deleteMutation = useMutation({
-		mutationFn: (assignmentId: string) =>
-			deleteWorkPolicyAssignment(assignmentId),
+		mutationFn: (assignmentId: string) => deleteWorkPolicyAssignment(assignmentId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.workPolicies.assignmentDeleted", "Assignment removed"),
-				);
+				toast.success(t("settings.workPolicies.assignmentDeleted", "Assignment removed"));
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.workPolicies.assignments(organizationId),
 				});
@@ -108,20 +92,12 @@ export function WorkPolicyAssignmentManager({
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"settings.workPolicies.assignmentDeleteFailed",
-							"Failed to remove assignment",
-						),
+						t("settings.workPolicies.assignmentDeleteFailed", "Failed to remove assignment"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(
-				t(
-					"settings.workPolicies.assignmentDeleteFailed",
-					"Failed to remove assignment",
-				),
-			);
+			toast.error(t("settings.workPolicies.assignmentDeleteFailed", "Failed to remove assignment"));
 		},
 	});
 
@@ -137,18 +113,12 @@ export function WorkPolicyAssignmentManager({
 	};
 
 	// Group assignments by type
-	const orgAssignment = assignments?.find(
-		(a) => a.assignmentType === "organization",
-	);
-	const teamAssignments =
-		assignments?.filter((a) => a.assignmentType === "team") || [];
-	const employeeAssignments =
-		assignments?.filter((a) => a.assignmentType === "employee") || [];
-	const canManageOrgAssignments =
-		allowedAssignmentTypes.includes("organization");
+	const orgAssignment = assignments?.find((a) => a.assignmentType === "organization");
+	const teamAssignments = assignments?.filter((a) => a.assignmentType === "team") || [];
+	const employeeAssignments = assignments?.filter((a) => a.assignmentType === "employee") || [];
+	const canManageOrgAssignments = allowedAssignmentTypes.includes("organization");
 	const canManageTeamAssignments = allowedAssignmentTypes.includes("team");
-	const canManageEmployeeAssignments =
-		allowedAssignmentTypes.includes("employee");
+	const canManageEmployeeAssignments = allowedAssignmentTypes.includes("employee");
 	const { showOrgSection, showTeamSection, showEmployeeSection } =
 		getWorkPolicyAssignmentSectionVisibility({
 			canManageOrgAssignments,
@@ -182,10 +152,7 @@ export function WorkPolicyAssignmentManager({
 			<Card>
 				<CardContent className="py-8 text-center">
 					<p className="text-destructive">
-						{t(
-							"settings.workPolicies.assignmentsLoadError",
-							"Failed to load assignments",
-						)}
+						{t("settings.workPolicies.assignmentsLoadError", "Failed to load assignments")}
 					</p>
 				</CardContent>
 			</Card>
@@ -203,10 +170,7 @@ export function WorkPolicyAssignmentManager({
 								<IconBuilding className="size-5 text-muted-foreground" />
 								<div>
 									<CardTitle className="text-base">
-										{t(
-											"settings.workPolicies.orgLevel",
-											"Organization Default",
-										)}
+										{t("settings.workPolicies.orgLevel", "Organization Default")}
 									</CardTitle>
 									<CardDescription>
 										{t(
@@ -224,8 +188,7 @@ export function WorkPolicyAssignmentManager({
 										<IconFileText className="size-5 text-muted-foreground" />
 										<div>
 											<p className="font-medium">
-												{orgAssignment.policy?.name ||
-													t("common.unknown", "Unknown")}
+												{orgAssignment.policy?.name || t("common.unknown", "Unknown")}
 											</p>
 										</div>
 									</div>
@@ -243,10 +206,7 @@ export function WorkPolicyAssignmentManager({
 							) : (
 								<div className="flex items-center justify-between p-3 rounded-lg border border-dashed">
 									<p className="text-sm text-muted-foreground">
-										{t(
-											"settings.workPolicies.noOrgAssignment",
-											"No organization default set",
-										)}
+										{t("settings.workPolicies.noOrgAssignment", "No organization default set")}
 									</p>
 									{canManageOrgAssignments ? (
 										<Button
@@ -289,11 +249,7 @@ export function WorkPolicyAssignmentManager({
 									</div>
 								</div>
 								{canManageTeamAssignments ? (
-									<Button
-										onClick={() => onAssignClick("team")}
-										size="sm"
-										variant="outline"
-									>
+									<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
 										<IconPlus className="mr-2 size-4" />
 										{t("settings.workPolicies.addTeam", "Add Team")}
 									</Button>
@@ -303,10 +259,7 @@ export function WorkPolicyAssignmentManager({
 						<CardContent>
 							{teamAssignments.length === 0 ? (
 								<p className="text-sm text-muted-foreground text-center py-4">
-									{t(
-										"settings.workPolicies.noTeamAssignments",
-										"No team-specific policies",
-									)}
+									{t("settings.workPolicies.noTeamAssignments", "No team-specific policies")}
 								</p>
 							) : (
 								<div className="space-y-2">
@@ -319,12 +272,10 @@ export function WorkPolicyAssignmentManager({
 												<IconUsers className="size-4 text-muted-foreground" />
 												<div>
 													<p className="font-medium">
-														{assignment.team?.name ||
-															t("common.unknownTeam", "Unknown Team")}
+														{assignment.team?.name || t("common.unknownTeam", "Unknown Team")}
 													</p>
 													<p className="text-xs text-muted-foreground">
-														{assignment.policy?.name ||
-															t("common.unknown", "Unknown")}
+														{assignment.policy?.name || t("common.unknown", "Unknown")}
 													</p>
 												</div>
 											</div>
@@ -355,10 +306,7 @@ export function WorkPolicyAssignmentManager({
 									<IconUser className="size-5 text-muted-foreground" />
 									<div>
 										<CardTitle className="text-base">
-											{t(
-												"settings.workPolicies.employeeLevel",
-												"Employee Overrides",
-											)}
+											{t("settings.workPolicies.employeeLevel", "Employee Overrides")}
 											{employeeAssignments.length > 0 && (
 												<Badge variant="secondary" className="ml-2">
 													{employeeAssignments.length}
@@ -374,11 +322,7 @@ export function WorkPolicyAssignmentManager({
 									</div>
 								</div>
 								{canManageEmployeeAssignments ? (
-									<Button
-										onClick={() => onAssignClick("employee")}
-										size="sm"
-										variant="outline"
-									>
+									<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
 										<IconPlus className="mr-2 size-4" />
 										{t("settings.workPolicies.addEmployee", "Add Employee")}
 									</Button>
@@ -410,8 +354,7 @@ export function WorkPolicyAssignmentManager({
 														)}
 													</p>
 													<p className="text-xs text-muted-foreground">
-														{assignment.policy?.name ||
-															t("common.unknown", "Unknown")}
+														{assignment.policy?.name || t("common.unknown", "Unknown")}
 													</p>
 												</div>
 											</div>
@@ -456,9 +399,7 @@ export function WorkPolicyAssignmentManager({
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 							disabled={deleteMutation.isPending}
 						>
-							{deleteMutation.isPending && (
-								<IconLoader2 className="mr-2 size-4 animate-spin" />
-							)}
+							{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("common.remove", "Remove")}
 						</AlertDialogAction>
 					</AlertDialogFooter>

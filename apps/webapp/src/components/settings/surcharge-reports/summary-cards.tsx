@@ -15,19 +15,13 @@ type SurchargeSummaryCardsProps = {
 	totals: SummaryTotals;
 };
 
-export function SurchargeSummaryCards({
-	calculationCount,
-	totals,
-}: SurchargeSummaryCardsProps) {
+export function SurchargeSummaryCards({ calculationCount, totals }: SurchargeSummaryCardsProps) {
 	const { t } = useTranslate();
 
 	return (
 		<div className="grid gap-4 md:grid-cols-4">
 			<SummaryCard
-				label={t(
-					"settings.surcharges.reports.summary.calculations",
-					"Calculations",
-				)}
+				label={t("settings.surcharges.reports.summary.calculations", "Calculations")}
 				value={`${calculationCount} calculation${calculationCount === 1 ? "" : "s"}`}
 			/>
 			<SummaryCard
@@ -42,10 +36,7 @@ export function SurchargeSummaryCards({
 				value={formatMinutes(totals.qualifyingMinutes)}
 			/>
 			<SummaryCard
-				label={t(
-					"settings.surcharges.reports.summary.creditedHours",
-					"Credited surcharge hours",
-				)}
+				label={t("settings.surcharges.reports.summary.creditedHours", "Credited surcharge hours")}
 				value={formatMinutes(totals.surchargeMinutes)}
 			/>
 		</div>

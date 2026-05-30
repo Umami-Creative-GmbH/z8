@@ -2,10 +2,7 @@
 
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import {
-	getCookieConsentScript,
-	setCookieConsentScript,
-} from "@/lib/platform-settings";
+import { getCookieConsentScript, setCookieConsentScript } from "@/lib/platform-settings";
 
 export async function getCookieConsentScriptAction(): Promise<{
 	success: boolean;

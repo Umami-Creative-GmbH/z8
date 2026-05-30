@@ -25,11 +25,7 @@ import {
 	setDefaultWorkPolicy,
 	type WorkPolicyWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
-import {
-	DataTable,
-	DataTableSkeleton,
-	DataTableToolbar,
-} from "@/components/data-table-server";
+import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -49,12 +45,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { queryKeys } from "@/lib/query";
 
 interface WorkPolicyTableProps {
@@ -73,8 +64,7 @@ export function WorkPolicyTable({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [policyToDelete, setPolicyToDelete] =
-		useState<WorkPolicyWithDetails | null>(null);
+	const [policyToDelete, setPolicyToDelete] = useState<WorkPolicyWithDetails | null>(null);
 	const [search, setSearch] = useState("");
 
 	// Fetch policies
@@ -108,16 +98,11 @@ export function WorkPolicyTable({
 				setDeleteDialogOpen(false);
 				setPolicyToDelete(null);
 			} else {
-				toast.error(
-					result.error ||
-						t("settings.workPolicies.deleteFailed", "Failed to delete"),
-				);
+				toast.error(result.error || t("settings.workPolicies.deleteFailed", "Failed to delete"));
 			}
 		},
 		onError: () => {
-			toast.error(
-				t("settings.workPolicies.deleteFailed", "Failed to delete policy"),
-			);
+			toast.error(t("settings.workPolicies.deleteFailed", "Failed to delete policy"));
 		},
 	});
 
@@ -126,26 +111,18 @@ export function WorkPolicyTable({
 		mutationFn: (policyId: string) => duplicateWorkPolicy(policyId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.workPolicies.duplicated", "Policy duplicated"),
-				);
+				toast.success(t("settings.workPolicies.duplicated", "Policy duplicated"));
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.workPolicies.list(organizationId),
 				});
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.workPolicies.duplicateFailed", "Failed to duplicate"),
+					result.error || t("settings.workPolicies.duplicateFailed", "Failed to duplicate"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(
-				t(
-					"settings.workPolicies.duplicateFailed",
-					"Failed to duplicate policy",
-				),
-			);
+			toast.error(t("settings.workPolicies.duplicateFailed", "Failed to duplicate policy"));
 		},
 	});
 
@@ -154,29 +131,18 @@ export function WorkPolicyTable({
 		mutationFn: (policyId: string) => setDefaultWorkPolicy(policyId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.workPolicies.defaultSet", "Default policy set"),
-				);
+				toast.success(t("settings.workPolicies.defaultSet", "Default policy set"));
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.workPolicies.list(organizationId),
 				});
 			} else {
 				toast.error(
-					result.error ||
-						t(
-							"settings.workPolicies.setDefaultFailed",
-							"Failed to set default",
-						),
+					result.error || t("settings.workPolicies.setDefaultFailed", "Failed to set default"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(
-				t(
-					"settings.workPolicies.setDefaultFailed",
-					"Failed to set default policy",
-				),
-			);
+			toast.error(t("settings.workPolicies.setDefaultFailed", "Failed to set default policy"));
 		},
 	});
 
@@ -246,9 +212,7 @@ export function WorkPolicyTable({
 		{
 			accessorKey: "features",
 			header: () => (
-				<div className="text-center">
-					{t("settings.workPolicies.features", "Features")}
-				</div>
+				<div className="text-center">{t("settings.workPolicies.features", "Features")}</div>
 			),
 			cell: ({ row }) => (
 				<div className="flex justify-center gap-1">
@@ -262,10 +226,7 @@ export function WorkPolicyTable({
 									</Badge>
 								</TooltipTrigger>
 								<TooltipContent>
-									{t(
-										"settings.workPolicies.scheduleEnabled",
-										"Work schedule enabled",
-									)}
+									{t("settings.workPolicies.scheduleEnabled", "Work schedule enabled")}
 								</TooltipContent>
 							</Tooltip>
 						</TooltipProvider>
@@ -280,10 +241,7 @@ export function WorkPolicyTable({
 									</Badge>
 								</TooltipTrigger>
 								<TooltipContent>
-									{t(
-										"settings.workPolicies.regulationEnabled",
-										"Time regulation enabled",
-									)}
+									{t("settings.workPolicies.regulationEnabled", "Time regulation enabled")}
 								</TooltipContent>
 							</Tooltip>
 						</TooltipProvider>
@@ -308,10 +266,7 @@ export function WorkPolicyTable({
 														period: row.original.presence.evaluationPeriod,
 													},
 												)
-											: t(
-													"settings.workPolicies.presenceSummaryFixedDays",
-													"Fixed days on-site",
-												)
+											: t("settings.workPolicies.presenceSummaryFixedDays", "Fixed days on-site")
 										: t(
 												"settings.workPolicies.presenceEnabledTooltip",
 												"On-site presence required",
@@ -326,9 +281,7 @@ export function WorkPolicyTable({
 		{
 			accessorKey: "scheduleHours",
 			header: () => (
-				<div className="text-center">
-					{t("settings.workPolicies.weeklyHours", "Weekly Hours")}
-				</div>
+				<div className="text-center">{t("settings.workPolicies.weeklyHours", "Weekly Hours")}</div>
 			),
 			cell: ({ row }) => {
 				if (!row.original.scheduleEnabled || !row.original.schedule) {
@@ -336,21 +289,13 @@ export function WorkPolicyTable({
 				}
 				const schedule = row.original.schedule;
 				if (schedule.scheduleType === "simple" && schedule.hoursPerCycle) {
-					return (
-						<div className="text-center tabular-nums">
-							{schedule.hoursPerCycle}h
-						</div>
-					);
+					return <div className="text-center tabular-nums">{schedule.hoursPerCycle}h</div>;
 				}
 				if (schedule.scheduleType === "detailed" && schedule.days) {
 					const totalHours = schedule.days
 						.filter((d) => d.isWorkDay)
 						.reduce((sum, d) => sum + parseFloat(d.hoursPerDay || "0"), 0);
-					return (
-						<div className="text-center tabular-nums">
-							{totalHours.toFixed(1)}h
-						</div>
-					);
+					return <div className="text-center tabular-nums">{totalHours.toFixed(1)}h</div>;
 				}
 				return <div className="text-center text-muted-foreground">-</div>;
 			},
@@ -358,9 +303,7 @@ export function WorkPolicyTable({
 		{
 			accessorKey: "breakRules",
 			header: () => (
-				<div className="text-center">
-					{t("settings.workPolicies.breakRules", "Break Rules")}
-				</div>
+				<div className="text-center">{t("settings.workPolicies.breakRules", "Break Rules")}</div>
 			),
 			cell: ({ row }) => {
 				if (!row.original.regulationEnabled || !row.original.regulation) {
@@ -368,9 +311,7 @@ export function WorkPolicyTable({
 				}
 				return (
 					<div className="text-center">
-						<Badge variant="outline">
-							{row.original.regulation.breakRules?.length || 0}
-						</Badge>
+						<Badge variant="outline">{row.original.regulation.breakRules?.length || 0}</Badge>
 					</div>
 				);
 			},
@@ -384,9 +325,7 @@ export function WorkPolicyTable({
 								<DropdownMenuTrigger asChild>
 									<Button variant="ghost" size="icon" className="size-8">
 										<IconDots className="size-4" />
-										<span className="sr-only">
-											{t("common.openMenu", "Open menu")}
-										</span>
+										<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end">
@@ -407,10 +346,7 @@ export function WorkPolicyTable({
 											disabled={setDefaultMutation.isPending}
 										>
 											<IconStar className="mr-2 size-4" />
-											{t(
-												"settings.workPolicies.setAsDefault",
-												"Set as Default",
-											)}
+											{t("settings.workPolicies.setAsDefault", "Set as Default")}
 										</DropdownMenuItem>
 									)}
 									<DropdownMenuSeparator />
@@ -465,18 +401,10 @@ export function WorkPolicyTable({
 			<DataTableToolbar
 				search={search}
 				onSearchChange={setSearch}
-				searchPlaceholder={t(
-					"settings.workPolicies.searchPlaceholder",
-					"Search policies...",
-				)}
+				searchPlaceholder={t("settings.workPolicies.searchPlaceholder", "Search policies...")}
 				actions={
 					<div className="flex items-center gap-2">
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => refetch()}
-							disabled={isFetching}
-						>
+						<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 							{isFetching ? (
 								<IconLoader2 className="size-4 animate-spin" />
 							) : (
@@ -500,10 +428,7 @@ export function WorkPolicyTable({
 				isFetching={isFetching}
 				emptyMessage={
 					search
-						? t(
-								"settings.workPolicies.noSearchResults",
-								"No policies match your search.",
-							)
+						? t("settings.workPolicies.noSearchResults", "No policies match your search.")
 						: t(
 								"settings.workPolicies.noPolicies",
 								"No work policies. Create a policy to define work schedules and time regulations.",
@@ -534,9 +459,7 @@ export function WorkPolicyTable({
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 							disabled={deleteMutation.isPending}
 						>
-							{deleteMutation.isPending && (
-								<IconLoader2 className="mr-2 size-4 animate-spin" />
-							)}
+							{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>

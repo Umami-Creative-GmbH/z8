@@ -31,13 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query";
 
@@ -83,8 +77,7 @@ export function WorkCategoryAssignmentManager({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [selectedAssignment, setSelectedAssignment] =
-		useState<AssignmentData | null>(null);
+	const [selectedAssignment, setSelectedAssignment] = useState<AssignmentData | null>(null);
 
 	// Fetch assignments
 	const {
@@ -107,9 +100,7 @@ export function WorkCategoryAssignmentManager({
 		mutationFn: (assignmentId: string) => deleteSetAssignment(assignmentId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.workCategories.assignmentDeleted", "Assignment removed"),
-				);
+				toast.success(t("settings.workCategories.assignmentDeleted", "Assignment removed"));
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.workCategorySetAssignments.list(organizationId),
 				});
@@ -118,19 +109,13 @@ export function WorkCategoryAssignmentManager({
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"settings.workCategories.assignmentDeleteFailed",
-							"Failed to remove assignment",
-						),
+						t("settings.workCategories.assignmentDeleteFailed", "Failed to remove assignment"),
 				);
 			}
 		},
 		onError: () => {
 			toast.error(
-				t(
-					"settings.workCategories.assignmentDeleteFailed",
-					"Failed to remove assignment",
-				),
+				t("settings.workCategories.assignmentDeleteFailed", "Failed to remove assignment"),
 			);
 		},
 	});
@@ -169,10 +154,7 @@ export function WorkCategoryAssignmentManager({
 			<Card>
 				<CardContent className="py-8 text-center">
 					<p className="text-destructive">
-						{t(
-							"settings.workCategories.assignmentsLoadError",
-							"Failed to load assignments",
-						)}
+						{t("settings.workCategories.assignmentsLoadError", "Failed to load assignments")}
 					</p>
 				</CardContent>
 			</Card>
@@ -181,15 +163,9 @@ export function WorkCategoryAssignmentManager({
 
 	// Group assignments by type
 	const allAssignments = assignments || [];
-	const orgAssignment = allAssignments.find(
-		(a) => a.assignmentType === "organization",
-	);
-	const teamAssignments = allAssignments.filter(
-		(a) => a.assignmentType === "team",
-	);
-	const employeeAssignments = allAssignments.filter(
-		(a) => a.assignmentType === "employee",
-	);
+	const orgAssignment = allAssignments.find((a) => a.assignmentType === "organization");
+	const teamAssignments = allAssignments.filter((a) => a.assignmentType === "team");
+	const employeeAssignments = allAssignments.filter((a) => a.assignmentType === "employee");
 
 	return (
 		<>
@@ -201,10 +177,7 @@ export function WorkCategoryAssignmentManager({
 							<IconBuilding className="size-5 text-muted-foreground" />
 							<div>
 								<CardTitle className="text-base">
-									{t(
-										"settings.workCategories.orgLevel",
-										"Organization Default",
-									)}
+									{t("settings.workCategories.orgLevel", "Organization Default")}
 								</CardTitle>
 								<CardDescription>
 									{t(
@@ -218,17 +191,10 @@ export function WorkCategoryAssignmentManager({
 					<CardContent>
 						<div className="flex items-center justify-between mb-2">
 							<h4 className="text-sm font-medium text-muted-foreground">
-								{t(
-									"settings.workCategories.defaultSet",
-									"Default Category Set",
-								)}
+								{t("settings.workCategories.defaultSet", "Default Category Set")}
 							</h4>
 							{canManage && !orgAssignment && (
-								<Button
-									onClick={() => onAssignClick("organization")}
-									size="sm"
-									variant="outline"
-								>
+								<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
 									<IconPlus className="mr-2 size-4" />
 									{t("settings.workCategories.setDefault", "Set Default")}
 								</Button>
@@ -239,9 +205,7 @@ export function WorkCategoryAssignmentManager({
 								<div className="flex items-center gap-3">
 									<IconTag className="size-4 text-muted-foreground" />
 									<div>
-										<span className="font-medium">
-											{orgAssignment.set.name}
-										</span>
+										<span className="font-medium">{orgAssignment.set.name}</span>
 										{orgAssignment.set.description && (
 											<p className="text-sm text-muted-foreground">
 												{orgAssignment.set.description}
@@ -298,11 +262,7 @@ export function WorkCategoryAssignmentManager({
 					<CardContent>
 						{canManage ? (
 							<div className="flex justify-end mb-2">
-								<Button
-									onClick={() => onAssignClick("team")}
-									size="sm"
-									variant="outline"
-								>
+								<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
 									<IconPlus className="mr-2 size-4" />
 									{t("settings.workCategories.assignTeam", "Assign to Team")}
 								</Button>
@@ -318,9 +278,7 @@ export function WorkCategoryAssignmentManager({
 										<div className="flex items-center gap-3">
 											<IconUsers className="size-4 text-muted-foreground" />
 											<div>
-												<span className="font-medium">
-													{assignment.team?.name}
-												</span>
+												<span className="font-medium">{assignment.team?.name}</span>
 												<span className="text-muted-foreground mx-2">→</span>
 												<span className="text-sm">{assignment.set.name}</span>
 											</div>
@@ -341,10 +299,7 @@ export function WorkCategoryAssignmentManager({
 							</div>
 						) : (
 							<p className="text-sm text-muted-foreground text-center py-4">
-								{t(
-									"settings.workCategories.noTeamAssignments",
-									"No team-level assignments",
-								)}
+								{t("settings.workCategories.noTeamAssignments", "No team-level assignments")}
 							</p>
 						)}
 					</CardContent>
@@ -357,10 +312,7 @@ export function WorkCategoryAssignmentManager({
 							<IconUser className="size-5 text-muted-foreground" />
 							<div>
 								<CardTitle className="text-base">
-									{t(
-										"settings.workCategories.employeeLevel",
-										"Employee Overrides",
-									)}
+									{t("settings.workCategories.employeeLevel", "Employee Overrides")}
 									{employeeAssignments.length > 0 && (
 										<Badge variant="secondary" className="ml-2">
 											{employeeAssignments.length}
@@ -379,16 +331,9 @@ export function WorkCategoryAssignmentManager({
 					<CardContent>
 						{canManage ? (
 							<div className="flex justify-end mb-2">
-								<Button
-									onClick={() => onAssignClick("employee")}
-									size="sm"
-									variant="outline"
-								>
+								<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
 									<IconPlus className="mr-2 size-4" />
-									{t(
-										"settings.workCategories.assignEmployee",
-										"Assign to Employee",
-									)}
+									{t("settings.workCategories.assignEmployee", "Assign to Employee")}
 								</Button>
 							</div>
 						) : null}
@@ -403,8 +348,7 @@ export function WorkCategoryAssignmentManager({
 											<IconUser className="size-4 text-muted-foreground" />
 											<div>
 												<span className="font-medium">
-													{assignment.employee?.firstName}{" "}
-													{assignment.employee?.lastName}
+													{assignment.employee?.firstName} {assignment.employee?.lastName}
 												</span>
 												<span className="text-muted-foreground mx-2">→</span>
 												<span className="text-sm">{assignment.set.name}</span>
@@ -426,10 +370,7 @@ export function WorkCategoryAssignmentManager({
 							</div>
 						) : (
 							<p className="text-sm text-muted-foreground text-center py-4">
-								{t(
-									"settings.workCategories.noEmployeeAssignments",
-									"No employee-level overrides",
-								)}
+								{t("settings.workCategories.noEmployeeAssignments", "No employee-level overrides")}
 							</p>
 						)}
 					</CardContent>
@@ -437,17 +378,11 @@ export function WorkCategoryAssignmentManager({
 			</div>
 
 			{/* Delete Confirmation Dialog */}
-			<AlertDialog
-				open={canManage && deleteDialogOpen}
-				onOpenChange={setDeleteDialogOpen}
-			>
+			<AlertDialog open={canManage && deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
-							{t(
-								"settings.workCategories.deleteAssignmentTitle",
-								"Remove Assignment?",
-							)}
+							{t("settings.workCategories.deleteAssignmentTitle", "Remove Assignment?")}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{selectedAssignment?.assignmentType === "organization" &&

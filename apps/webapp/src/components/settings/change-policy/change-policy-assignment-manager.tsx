@@ -31,13 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { queryKeys } from "@/lib/query";
@@ -59,9 +53,7 @@ const formatPolicySummary = (
 
 	const parts: string[] = [];
 	if (policy.selfServiceDays === 0) {
-		parts.push(
-			t("settings.changePolicies.sameDaySelfService", "Same-day self-service"),
-		);
+		parts.push(t("settings.changePolicies.sameDaySelfService", "Same-day self-service"));
 	} else {
 		parts.push(
 			t("settings.changePolicies.daysSelfService", "{days}d self-service", {
@@ -136,10 +128,7 @@ const renderAssignmentView = ({
 						<IconBuilding className="size-5 text-muted-foreground" />
 						<div className="flex-1">
 							<CardTitle className="text-base">
-								{t(
-									"settings.changePolicies.organizationDefault",
-									"Organization Default",
-								)}
+								{t("settings.changePolicies.organizationDefault", "Organization Default")}
 							</CardTitle>
 							<CardDescription>
 								{t(
@@ -157,9 +146,7 @@ const renderAssignmentView = ({
 								<div className="flex items-center gap-3">
 									<IconShieldCheck className="size-4 text-primary" />
 									<div>
-										<span className="font-medium">
-											{orgAssignment.policy?.name}
-										</span>
+										<span className="font-medium">{orgAssignment.policy?.name}</span>
 										{orgAssignment.policy?.noApprovalRequired && (
 											<Badge variant="outline" className="ml-2 text-xs">
 												{t("settings.changePolicies.trustMode", "Trust Mode")}
@@ -178,9 +165,7 @@ const renderAssignmentView = ({
 										onClick={() => handleDeleteClick(orgAssignment)}
 									>
 										<IconTrash className="size-4" />
-										<span className="sr-only">
-											{t("common.remove", "Remove")}
-										</span>
+										<span className="sr-only">{t("common.remove", "Remove")}</span>
 									</Button>
 								) : null}
 							</div>
@@ -191,10 +176,7 @@ const renderAssignmentView = ({
 								<IconLock className="size-5 text-muted-foreground" />
 								<div>
 									<p className="font-medium text-muted-foreground">
-										{t(
-											"settings.changePolicies.noOrgDefault",
-											"No Organization Default",
-										)}
+										{t("settings.changePolicies.noOrgDefault", "No Organization Default")}
 									</p>
 									<p className="text-sm text-muted-foreground">
 										{t(
@@ -206,16 +188,9 @@ const renderAssignmentView = ({
 							</div>
 							{canManage ? (
 								<div className="flex justify-end">
-									<Button
-										onClick={() => onAssignClick("organization")}
-										size="sm"
-										variant="outline"
-									>
+									<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
 										<IconPlus className="mr-2 size-4" />
-										{t(
-											"settings.changePolicies.setOrgDefault",
-											"Set Organization Default",
-										)}
+										{t("settings.changePolicies.setOrgDefault", "Set Organization Default")}
 									</Button>
 								</div>
 							) : null}
@@ -249,11 +224,7 @@ const renderAssignmentView = ({
 				<CardContent>
 					{canManage ? (
 						<div className="flex justify-end mb-4">
-							<Button
-								onClick={() => onAssignClick("team")}
-								size="sm"
-								variant="outline"
-							>
+							<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
 								<IconPlus className="mr-2 size-4" />
 								{t("settings.changePolicies.assignToTeam", "Assign to Team")}
 							</Button>
@@ -269,9 +240,7 @@ const renderAssignmentView = ({
 									<div className="flex items-center justify-between">
 										<div className="flex items-center gap-3">
 											<IconUsers className="size-4 text-muted-foreground" />
-											<span className="font-medium">
-												{assignment.team?.name}
-											</span>
+											<span className="font-medium">{assignment.team?.name}</span>
 										</div>
 										{canManage ? (
 											<Button
@@ -281,9 +250,7 @@ const renderAssignmentView = ({
 												onClick={() => handleDeleteClick(assignment)}
 											>
 												<IconTrash className="size-4" />
-												<span className="sr-only">
-													{t("common.remove", "Remove")}
-												</span>
+												<span className="sr-only">{t("common.remove", "Remove")}</span>
 											</Button>
 										) : null}
 									</div>
@@ -322,10 +289,7 @@ const renderAssignmentView = ({
 						<IconUser className="size-5 text-muted-foreground" />
 						<div className="flex-1">
 							<CardTitle className="text-base">
-								{t(
-									"settings.changePolicies.employeeOverrides",
-									"Employee Overrides",
-								)}
+								{t("settings.changePolicies.employeeOverrides", "Employee Overrides")}
 								{employeeAssignments.length > 0 && (
 									<Badge variant="secondary" className="ml-2">
 										{employeeAssignments.length}
@@ -344,16 +308,9 @@ const renderAssignmentView = ({
 				<CardContent>
 					{canManage ? (
 						<div className="flex justify-end mb-4">
-							<Button
-								onClick={() => onAssignClick("employee")}
-								size="sm"
-								variant="outline"
-							>
+							<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
 								<IconPlus className="mr-2 size-4" />
-								{t(
-									"settings.changePolicies.assignToEmployee",
-									"Assign to Employee",
-								)}
+								{t("settings.changePolicies.assignToEmployee", "Assign to Employee")}
 							</Button>
 						</div>
 					) : null}
@@ -367,9 +324,7 @@ const renderAssignmentView = ({
 									<div className="flex items-center justify-between">
 										<div className="flex items-center gap-3">
 											<IconUser className="size-4 text-muted-foreground" />
-											<span className="font-medium">
-												{getEmployeeName(assignment.employee)}
-											</span>
+											<span className="font-medium">{getEmployeeName(assignment.employee)}</span>
 										</div>
 										{canManage ? (
 											<Button
@@ -379,9 +334,7 @@ const renderAssignmentView = ({
 												onClick={() => handleDeleteClick(assignment)}
 											>
 												<IconTrash className="size-4" />
-												<span className="sr-only">
-													{t("common.remove", "Remove")}
-												</span>
+												<span className="sr-only">{t("common.remove", "Remove")}</span>
 											</Button>
 										) : null}
 									</div>
@@ -415,17 +368,11 @@ const renderAssignmentView = ({
 			</Card>
 		</div>
 
-		<AlertDialog
-			open={canManage && deleteDialogOpen}
-			onOpenChange={setDeleteDialogOpen}
-		>
+		<AlertDialog open={canManage && deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
 					<AlertDialogTitle>
-						{t(
-							"settings.changePolicies.removeAssignmentTitle",
-							"Remove Policy Assignment?",
-						)}
+						{t("settings.changePolicies.removeAssignmentTitle", "Remove Policy Assignment?")}
 					</AlertDialogTitle>
 					<AlertDialogDescription>
 						{selectedAssignment?.assignmentType === "organization" &&
@@ -499,13 +446,10 @@ export function ChangePolicyAssignmentManager({
 	});
 
 	const deleteMutation = useMutation({
-		mutationFn: (assignmentId: string) =>
-			deleteChangePolicyAssignment(assignmentId),
+		mutationFn: (assignmentId: string) => deleteChangePolicyAssignment(assignmentId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.changePolicies.assignmentDeleted", "Assignment removed"),
-				);
+				toast.success(t("settings.changePolicies.assignmentDeleted", "Assignment removed"));
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.changePolicies.assignments(organizationId),
 				});
@@ -514,19 +458,13 @@ export function ChangePolicyAssignmentManager({
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"settings.changePolicies.assignmentDeleteFailed",
-							"Failed to remove assignment",
-						),
+						t("settings.changePolicies.assignmentDeleteFailed", "Failed to remove assignment"),
 				);
 			}
 		},
 		onError: () => {
 			toast.error(
-				t(
-					"settings.changePolicies.assignmentDeleteFailed",
-					"Failed to remove assignment",
-				),
+				t("settings.changePolicies.assignmentDeleteFailed", "Failed to remove assignment"),
 			);
 		},
 	});
@@ -542,12 +480,9 @@ export function ChangePolicyAssignmentManager({
 		}
 	};
 
-	const orgAssignment =
-		assignments?.find((a) => a.assignmentType === "organization") ?? null;
-	const teamAssignments =
-		assignments?.filter((a) => a.assignmentType === "team") ?? [];
-	const employeeAssignments =
-		assignments?.filter((a) => a.assignmentType === "employee") ?? [];
+	const orgAssignment = assignments?.find((a) => a.assignmentType === "organization") ?? null;
+	const teamAssignments = assignments?.filter((a) => a.assignmentType === "team") ?? [];
+	const employeeAssignments = assignments?.filter((a) => a.assignmentType === "employee") ?? [];
 
 	if (isLoading) {
 		return (
@@ -572,10 +507,7 @@ export function ChangePolicyAssignmentManager({
 			<Card>
 				<CardContent className="py-8 text-center">
 					<p className="text-destructive">
-						{t(
-							"settings.changePolicies.assignmentsLoadError",
-							"Failed to load policy assignments",
-						)}
+						{t("settings.changePolicies.assignmentsLoadError", "Failed to load policy assignments")}
 					</p>
 				</CardContent>
 			</Card>

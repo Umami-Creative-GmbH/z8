@@ -26,11 +26,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -116,16 +112,12 @@ export function VacationPolicyForm({
 						: (null as Date | null),
 					isCompanyDefault: existingPolicy.isCompanyDefault,
 					defaultAnnualDays: existingPolicy.defaultAnnualDays,
-					accrualType: existingPolicy.accrualType as
-						| "annual"
-						| "monthly"
-						| "biweekly",
+					accrualType: existingPolicy.accrualType as "annual" | "monthly" | "biweekly",
 					accrualStartMonth: existingPolicy.accrualStartMonth || 1,
 					allowCarryover: existingPolicy.allowCarryover,
 					maxCarryoverDays: existingPolicy.maxCarryoverDays || "",
 					carryoverExpiryMonths:
-						existingPolicy.carryoverExpiryMonths ||
-						(undefined as number | undefined),
+						existingPolicy.carryoverExpiryMonths || (undefined as number | undefined),
 				}
 			: {
 					name: "",
@@ -147,9 +139,7 @@ export function VacationPolicyForm({
 					? await updateVacationPolicy(existingPolicy.id, {
 							name: value.name,
 							startDate: formatDateStr(value.startDate),
-							validUntil: value.validUntil
-								? formatDateStr(value.validUntil)
-								: undefined,
+							validUntil: value.validUntil ? formatDateStr(value.validUntil) : undefined,
 							isCompanyDefault: value.isCompanyDefault,
 							defaultAnnualDays: value.defaultAnnualDays,
 							accrualType: value.accrualType,
@@ -161,9 +151,7 @@ export function VacationPolicyForm({
 					: await createVacationPolicy({
 							organizationId,
 							startDate: formatDateStr(value.startDate),
-							validUntil: value.validUntil
-								? formatDateStr(value.validUntil)
-								: undefined,
+							validUntil: value.validUntil ? formatDateStr(value.validUntil) : undefined,
 							isCompanyDefault: value.isCompanyDefault,
 							name: value.name,
 							defaultAnnualDays: value.defaultAnnualDays,
@@ -177,37 +165,23 @@ export function VacationPolicyForm({
 				if (result.success) {
 					toast.success(
 						existingPolicy
-							? t(
-									"settings.vacation.policyUpdated",
-									"Policy updated successfully",
-								)
-							: t(
-									"settings.vacation.policyCreated",
-									"Policy created successfully",
-								),
+							? t("settings.vacation.policyUpdated", "Policy updated successfully")
+							: t("settings.vacation.policyCreated", "Policy created successfully"),
 					);
 					onOpenChange(false);
 					router.refresh();
 				} else {
-					toast.error(
-						result.error ||
-							t("settings.vacation.saveFailed", "Failed to save policy"),
-					);
+					toast.error(result.error || t("settings.vacation.saveFailed", "Failed to save policy"));
 				}
 			} catch (_error) {
-				toast.error(
-					t("common.unexpectedError", "An unexpected error occurred"),
-				);
+				toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			}
 			setLoading(false);
 		},
 	});
 
 	// Subscribe to allowCarryover for conditional fields
-	const allowCarryover = useStore(
-		form.store,
-		(state) => state.values.allowCarryover,
-	);
+	const allowCarryover = useStore(form.store, (state) => state.values.allowCarryover);
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
@@ -228,10 +202,7 @@ export function VacationPolicyForm({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<form
-					onSubmit={form.handleSubmit}
-					className="flex min-h-0 flex-1 flex-col"
-				>
+				<form onSubmit={form.handleSubmit} className="flex min-h-0 flex-1 flex-col">
 					<ActionPanelBody className="space-y-6">
 						<form.Field
 							name="name"
@@ -240,27 +211,15 @@ export function VacationPolicyForm({
 									.string()
 									.min(
 										1,
-										t(
-											"settings.vacation.policyForm.policyNameRequired",
-											"Policy name is required",
-										),
+										t("settings.vacation.policyForm.policyNameRequired", "Policy name is required"),
 									)
-									.max(
-										100,
-										t(
-											"settings.vacation.policyForm.nameTooLong",
-											"Name too long",
-										),
-									),
+									.max(100, t("settings.vacation.policyForm.nameTooLong", "Name too long")),
 							}}
 						>
 							{(field) => (
 								<div className="space-y-2">
 									<Label htmlFor="policyName">
-										{t(
-											"settings.vacation.policyForm.policyName",
-											"Policy Name",
-										)}
+										{t("settings.vacation.policyForm.policyName", "Policy Name")}
 									</Label>
 									<Input
 										id="policyName"
@@ -292,15 +251,9 @@ export function VacationPolicyForm({
 								{(field) => (
 									<div className="space-y-2">
 										<Label>
-											{t(
-												"settings.vacation.policyForm.effectiveFrom",
-												"Effective From",
-											)}
+											{t("settings.vacation.policyForm.effectiveFrom", "Effective From")}
 										</Label>
-										<Popover
-											open={startDateOpen}
-											onOpenChange={setStartDateOpen}
-										>
+										<Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
 											<PopoverTrigger asChild>
 												<Button
 													variant="outline"
@@ -311,16 +264,9 @@ export function VacationPolicyForm({
 												>
 													<IconCalendar className="mr-2 size-4" />
 													{field.state.value ? (
-														DateTime.fromJSDate(
-															field.state.value,
-														).toLocaleString(DateTime.DATE_MED)
+														DateTime.fromJSDate(field.state.value).toLocaleString(DateTime.DATE_MED)
 													) : (
-														<span>
-															{t(
-																"settings.vacation.policyForm.pickDate",
-																"Pick a date",
-															)}
-														</span>
+														<span>{t("settings.vacation.policyForm.pickDate", "Pick a date")}</span>
 													)}
 												</Button>
 											</PopoverTrigger>
@@ -352,15 +298,9 @@ export function VacationPolicyForm({
 								{(field) => (
 									<div className="space-y-2">
 										<Label>
-											{t(
-												"settings.vacation.policyForm.validUntil",
-												"Valid Until (optional)",
-											)}
+											{t("settings.vacation.policyForm.validUntil", "Valid Until (optional)")}
 										</Label>
-										<Popover
-											open={validUntilOpen}
-											onOpenChange={setValidUntilOpen}
-										>
+										<Popover open={validUntilOpen} onOpenChange={setValidUntilOpen}>
 											<PopoverTrigger asChild>
 												<Button
 													variant="outline"
@@ -371,15 +311,10 @@ export function VacationPolicyForm({
 												>
 													<IconCalendar className="mr-2 size-4" />
 													{field.state.value ? (
-														DateTime.fromJSDate(
-															field.state.value,
-														).toLocaleString(DateTime.DATE_MED)
+														DateTime.fromJSDate(field.state.value).toLocaleString(DateTime.DATE_MED)
 													) : (
 														<span>
-															{t(
-																"settings.vacation.policyForm.noEndDate",
-																"No end date",
-															)}
+															{t("settings.vacation.policyForm.noEndDate", "No end date")}
 														</span>
 													)}
 												</Button>
@@ -395,10 +330,7 @@ export function VacationPolicyForm({
 															setValidUntilOpen(false);
 														}}
 													>
-														{t(
-															"settings.vacation.policyForm.clearDate",
-															"Clear date",
-														)}
+														{t("settings.vacation.policyForm.clearDate", "Clear date")}
 													</Button>
 												</div>
 												<Calendar
@@ -429,19 +361,11 @@ export function VacationPolicyForm({
 									<Checkbox
 										id="isCompanyDefault"
 										checked={field.state.value}
-										onCheckedChange={(checked) =>
-											field.handleChange(checked === true)
-										}
+										onCheckedChange={(checked) => field.handleChange(checked === true)}
 									/>
 									<div className="space-y-1 leading-none">
-										<Label
-											htmlFor="isCompanyDefault"
-											className="cursor-pointer"
-										>
-											{t(
-												"settings.vacation.policyForm.companyDefault",
-												"Set as Company Default",
-											)}
+										<Label htmlFor="isCompanyDefault" className="cursor-pointer">
+											{t("settings.vacation.policyForm.companyDefault", "Set as Company Default")}
 										</Label>
 										<p className="text-sm text-muted-foreground">
 											{t(
@@ -460,24 +384,15 @@ export function VacationPolicyForm({
 								onChange: z
 									.string()
 									.refine(
-										(val) =>
-											val &&
-											!Number.isNaN(parseFloat(val)) &&
-											parseFloat(val) > 0,
-										t(
-											"settings.vacation.policyForm.positiveNumber",
-											"Must be a positive number",
-										),
+										(val) => val && !Number.isNaN(parseFloat(val)) && parseFloat(val) > 0,
+										t("settings.vacation.policyForm.positiveNumber", "Must be a positive number"),
 									),
 							}}
 						>
 							{(field) => (
 								<div className="space-y-2">
 									<Label htmlFor="defaultAnnualDays">
-										{t(
-											"settings.vacation.policyForm.defaultAnnualDays",
-											"Default Annual Days",
-										)}
+										{t("settings.vacation.policyForm.defaultAnnualDays", "Default Annual Days")}
 									</Label>
 									<Input
 										id="defaultAnnualDays"
@@ -507,17 +422,12 @@ export function VacationPolicyForm({
 							{(field) => (
 								<div className="space-y-2">
 									<Label htmlFor="accrualType">
-										{t(
-											"settings.vacation.policyForm.accrualType",
-											"Accrual Type",
-										)}
+										{t("settings.vacation.policyForm.accrualType", "Accrual Type")}
 									</Label>
 									<Select
 										value={field.state.value}
 										onValueChange={(value) =>
-											field.handleChange(
-												value as "annual" | "monthly" | "biweekly",
-											)
+											field.handleChange(value as "annual" | "monthly" | "biweekly")
 										}
 									>
 										<SelectTrigger id="accrualType">
@@ -530,22 +440,13 @@ export function VacationPolicyForm({
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value="annual">
-												{t(
-													"settings.vacation.policyForm.accrualAnnual",
-													"Annual (all at once)",
-												)}
+												{t("settings.vacation.policyForm.accrualAnnual", "Annual (all at once)")}
 											</SelectItem>
 											<SelectItem value="monthly">
-												{t(
-													"settings.vacation.policyForm.accrualMonthly",
-													"Monthly accrual",
-												)}
+												{t("settings.vacation.policyForm.accrualMonthly", "Monthly accrual")}
 											</SelectItem>
 											<SelectItem value="biweekly">
-												{t(
-													"settings.vacation.policyForm.accrualBiweekly",
-													"Biweekly accrual",
-												)}
+												{t("settings.vacation.policyForm.accrualBiweekly", "Biweekly accrual")}
 											</SelectItem>
 										</SelectContent>
 									</Select>
@@ -563,38 +464,25 @@ export function VacationPolicyForm({
 							{(field) => (
 								<div className="space-y-2">
 									<Label htmlFor="accrualStartMonth">
-										{t(
-											"settings.vacation.policyForm.accrualStartMonth",
-											"Accrual Start Month",
-										)}
+										{t("settings.vacation.policyForm.accrualStartMonth", "Accrual Start Month")}
 									</Label>
 									<Select
 										value={field.state.value?.toString() || "1"}
-										onValueChange={(val) =>
-											field.handleChange(parseInt(val, 10))
-										}
+										onValueChange={(val) => field.handleChange(parseInt(val, 10))}
 									>
 										<SelectTrigger id="accrualStartMonth">
 											<SelectValue
-												placeholder={t(
-													"settings.vacation.policyForm.selectMonth",
-													"Select month",
-												)}
+												placeholder={t("settings.vacation.policyForm.selectMonth", "Select month")}
 											/>
 										</SelectTrigger>
 										<SelectContent>
-											{Array.from({ length: 12 }, (_, i) => i + 1).map(
-												(month) => (
-													<SelectItem key={month} value={month.toString()}>
-														{new Date(2000, month - 1).toLocaleString(
-															"default",
-															{
-																month: "long",
-															},
-														)}
-													</SelectItem>
-												),
-											)}
+											{Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+												<SelectItem key={month} value={month.toString()}>
+													{new Date(2000, month - 1).toLocaleString("default", {
+														month: "long",
+													})}
+												</SelectItem>
+											))}
 										</SelectContent>
 									</Select>
 									<p className="text-sm text-muted-foreground">
@@ -612,10 +500,7 @@ export function VacationPolicyForm({
 								<div className="flex flex-row items-center justify-between rounded-lg border p-4">
 									<div className="space-y-0.5">
 										<Label className="text-base">
-											{t(
-												"settings.vacation.policyForm.allowCarryover",
-												"Allow Carryover",
-											)}
+											{t("settings.vacation.policyForm.allowCarryover", "Allow Carryover")}
 										</Label>
 										<p className="text-sm text-muted-foreground">
 											{t(
@@ -624,10 +509,7 @@ export function VacationPolicyForm({
 											)}
 										</p>
 									</div>
-									<Switch
-										checked={field.state.value}
-										onCheckedChange={field.handleChange}
-									/>
+									<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 								</div>
 							)}
 						</form.Field>
@@ -682,9 +564,7 @@ export function VacationPolicyForm({
 												value={field.state.value || ""}
 												onChange={(e) =>
 													field.handleChange(
-														e.target.value
-															? parseInt(e.target.value, 10)
-															: undefined,
+														e.target.value ? parseInt(e.target.value, 10) : undefined,
 													)
 												}
 												onBlur={field.handleBlur}

@@ -4,10 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import {
-	type PlatformSystemEmailTemplateKey,
-	platformSystemEmailTemplate,
-} from "@/db/schema";
+import { type PlatformSystemEmailTemplateKey, platformSystemEmailTemplate } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { sendEmail } from "@/lib/email/email-service";
 import {
@@ -20,13 +17,9 @@ import {
 	type SavePlatformSystemEmailTemplateInput,
 	validatePlatformSystemEmailTemplateInput,
 } from "@/lib/email/system-template-settings";
-import {
-	interpolateTemplate,
-	sanitizeEmailHtml,
-} from "@/lib/email/template-validation";
+import { interpolateTemplate, sanitizeEmailHtml } from "@/lib/email/template-validation";
 
-const PLATFORM_SYSTEM_EMAIL_TEMPLATE_SETTINGS_PATH =
-	"/platform-admin/system-email-templates";
+const PLATFORM_SYSTEM_EMAIL_TEMPLATE_SETTINGS_PATH = "/platform-admin/system-email-templates";
 
 type PlatformSystemEmailTemplateListEntry = Omit<
 	PlatformSystemEmailTemplateDefinition,
@@ -75,22 +68,14 @@ function escapeRegExp(value: string) {
 	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function replaceStandaloneTextValue(
-	text: string,
-	previewValue: string,
-	token: string,
-) {
+function replaceStandaloneTextValue(text: string, previewValue: string, token: string) {
 	return text.replace(
 		new RegExp(`(^|[^\\w.])${escapeRegExp(previewValue)}(?![\\w.])`, "g"),
 		`$1${token}`,
 	);
 }
 
-function replaceTextNodeValues(
-	html: string,
-	previewValue: string,
-	token: string,
-) {
+function replaceTextNodeValues(html: string, previewValue: string, token: string) {
 	return html.replace(/>([^<]+)</g, (_match, text: string) => {
 		return `>${replaceStandaloneTextValue(text, previewValue, token)}<`;
 	});
@@ -104,25 +89,19 @@ function getGlobalPreviewReplacementValues(value: unknown) {
 	return typeof value === "string" ? [value] : [];
 }
 
-async function createSystemDraft(
-	definition: PlatformSystemEmailTemplateDefinition,
-) {
-	let starterDraftHtml = await definition.renderDefault(
-		definition.previewData as never,
-	);
+async function createSystemDraft(definition: PlatformSystemEmailTemplateDefinition) {
+	let starterDraftHtml = await definition.renderDefault(definition.previewData as never);
 	const replacements = definition.variables
 		.flatMap((variable) =>
-			getGlobalPreviewReplacementValues(
-				definition.previewData[variable.name],
-			).map((previewValue) => ({
-				previewValue,
-				token: `{{${variable.name}}}`,
-			})),
+			getGlobalPreviewReplacementValues(definition.previewData[variable.name]).map(
+				(previewValue) => ({
+					previewValue,
+					token: `{{${variable.name}}}`,
+				}),
+			),
 		)
 		.filter((replacement) => replacement.previewValue)
-		.sort(
-			(left, right) => right.previewValue.length - left.previewValue.length,
-		);
+		.sort((left, right) => right.previewValue.length - left.previewValue.length);
 
 	for (const { previewValue, token } of replacements) {
 		starterDraftHtml = starterDraftHtml.split(previewValue).join(token);
@@ -145,8 +124,7 @@ async function createSystemDraft(
 }
 
 async function requirePlatformAdminSession(): Promise<
-	| { success: true; session: PlatformAdminSession }
-	| { success: false; errors: string[] }
+	{ success: true; session: PlatformAdminSession } | { success: false; errors: string[] }
 > {
 	const headersList = await headers();
 	const session = await auth.api.getSession({ headers: headersList });
@@ -285,9 +263,7 @@ export async function sendPlatformSystemEmailTemplateTest(
 		return { success: false, errors: ["HTML body is required"] };
 	}
 
-	const previewData = getPlatformSystemEmailTemplateDefinition(
-		input.templateKey,
-	).previewData;
+	const previewData = getPlatformSystemEmailTemplateDefinition(input.templateKey).previewData;
 	const result = await sendEmail({
 		to: authResult.session.user.email,
 		subject: interpolateTemplate(input.subject, previewData),

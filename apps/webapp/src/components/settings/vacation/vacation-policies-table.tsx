@@ -18,11 +18,7 @@ import {
 	deleteVacationPolicy,
 	getVacationPolicies,
 } from "@/app/[locale]/(app)/settings/vacation/actions";
-import {
-	DataTable,
-	DataTableSkeleton,
-	DataTableToolbar,
-} from "@/components/data-table-server";
+import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -68,10 +64,7 @@ interface VacationPoliciesTableProps {
 	canManagePolicies?: boolean;
 }
 
-const getAccrualTypeLabel = (
-	t: ReturnType<typeof useTranslate>["t"],
-	type: string,
-) => {
+const getAccrualTypeLabel = (t: ReturnType<typeof useTranslate>["t"], type: string) => {
 	const labels: Record<string, string> = {
 		annual: t("vacation.accrual-type.annual", "Annual"),
 		monthly: t("vacation.accrual-type.monthly", "Monthly"),
@@ -104,12 +97,8 @@ export function VacationPoliciesTable({
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [policyToDelete, setPolicyToDelete] = useState<VacationPolicy | null>(
-		null,
-	);
-	const [editingPolicy, setEditingPolicy] = useState<VacationPolicy | null>(
-		null,
-	);
+	const [policyToDelete, setPolicyToDelete] = useState<VacationPolicy | null>(null);
+	const [editingPolicy, setEditingPolicy] = useState<VacationPolicy | null>(null);
 	const [createFormOpen, setCreateFormOpen] = useState(false);
 
 	// Fetch policies with React Query
@@ -135,25 +124,18 @@ export function VacationPoliciesTable({
 		mutationFn: (policyId: string) => deleteVacationPolicy(policyId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("vacation.policies.deleted", "Policy deleted successfully"),
-				);
+				toast.success(t("vacation.policies.deleted", "Policy deleted successfully"));
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.vacationPolicies.list(organizationId),
 				});
 				setDeleteDialogOpen(false);
 				setPolicyToDelete(null);
 			} else {
-				toast.error(
-					result.error ||
-						t("vacation.policies.deleteFailed", "Failed to delete policy"),
-				);
+				toast.error(result.error || t("vacation.policies.deleteFailed", "Failed to delete policy"));
 			}
 		},
 		onError: () => {
-			toast.error(
-				t("vacation.policies.deleteFailed", "Failed to delete policy"),
-			);
+			toast.error(t("vacation.policies.deleteFailed", "Failed to delete policy"));
 		},
 	});
 
@@ -192,9 +174,7 @@ export function VacationPoliciesTable({
 		if (!search) return policies;
 
 		const searchLower = search.toLowerCase();
-		return policies.filter((pol) =>
-			pol.name.toLowerCase().includes(searchLower),
-		);
+		return policies.filter((pol) => pol.name.toLowerCase().includes(searchLower));
 	})();
 
 	// Column definitions
@@ -229,23 +209,17 @@ export function VacationPoliciesTable({
 		{
 			accessorKey: "defaultAnnualDays",
 			header: () => (
-				<div className="text-right">
-					{t("vacation.policies.header.annual-days", "Annual Days")}
-				</div>
+				<div className="text-right">{t("vacation.policies.header.annual-days", "Annual Days")}</div>
 			),
 			cell: ({ row }) => (
-				<div className="text-right tabular-nums">
-					{row.original.defaultAnnualDays}
-				</div>
+				<div className="text-right tabular-nums">{row.original.defaultAnnualDays}</div>
 			),
 		},
 		{
 			accessorKey: "accrualType",
 			header: t("vacation.policies.header.accrual", "Accrual"),
 			cell: ({ row }) => (
-				<Badge variant="secondary">
-					{getAccrualTypeLabel(t, row.original.accrualType)}
-				</Badge>
+				<Badge variant="secondary">{getAccrualTypeLabel(t, row.original.accrualType)}</Badge>
 			),
 		},
 		{
@@ -286,11 +260,7 @@ export function VacationPoliciesTable({
 						</Badge>
 					);
 				}
-				return (
-					<Badge variant="outline">
-						{t("vacation.policies.active", "Active")}
-					</Badge>
-				);
+				return <Badge variant="outline">{t("vacation.policies.active", "Active")}</Badge>;
 			},
 		},
 		...(canManagePolicies
@@ -302,15 +272,11 @@ export function VacationPoliciesTable({
 								<DropdownMenuTrigger asChild>
 									<Button variant="ghost" size="icon" className="size-8">
 										<IconDots className="size-4" />
-										<span className="sr-only">
-											{t("common.openMenu", "Open menu")}
-										</span>
+										<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end">
-									<DropdownMenuItem
-										onClick={() => handleEditClick(row.original)}
-									>
+									<DropdownMenuItem onClick={() => handleEditClick(row.original)}>
 										<IconPencil className="mr-2 size-4" />
 										{t("common.edit", "Edit")}
 									</DropdownMenuItem>
@@ -366,26 +332,16 @@ export function VacationPoliciesTable({
 				<DataTableToolbar
 					search={search}
 					onSearchChange={setSearch}
-					searchPlaceholder={t(
-						"vacation.policies.searchPlaceholder",
-						"Search policies...",
-					)}
+					searchPlaceholder={t("vacation.policies.searchPlaceholder", "Search policies...")}
 					actions={
 						<div className="flex items-center gap-2">
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => refetch()}
-								disabled={isFetching}
-							>
+							<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 								{isFetching ? (
 									<IconLoader2 className="size-4 animate-spin" />
 								) : (
 									<IconRefresh className="size-4" />
 								)}
-								<span className="sr-only">
-									{t("common.refresh", "Refresh")}
-								</span>
+								<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 							</Button>
 							{canManagePolicies ? (
 								<Button onClick={handleCreateClick}>
@@ -403,10 +359,7 @@ export function VacationPoliciesTable({
 					isFetching={isFetching}
 					emptyMessage={
 						search
-							? t(
-									"vacation.policies.noSearchResults",
-									"No policies match your search.",
-								)
+							? t("vacation.policies.noSearchResults", "No policies match your search.")
 							: t(
 									"vacation.policies.no-policies-created",
 									"No vacation policies created yet. Create a policy to define vacation allowances for your team.",
@@ -444,9 +397,7 @@ export function VacationPoliciesTable({
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 							disabled={deleteMutation.isPending}
 						>
-							{deleteMutation.isPending && (
-								<IconLoader2 className="mr-2 size-4 animate-spin" />
-							)}
+							{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>

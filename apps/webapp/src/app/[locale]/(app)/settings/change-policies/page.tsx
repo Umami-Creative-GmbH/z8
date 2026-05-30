@@ -24,9 +24,6 @@ export default async function ChangePoliciesSettingsPage() {
 	}
 
 	return (
-		<ChangePolicyManagement
-			organizationId={organizationId}
-			canManage={accessTier === "orgAdmin"}
-		/>
+		<ChangePolicyManagement organizationId={organizationId} canManage={accessTier === "orgAdmin"} />
 	);
 }

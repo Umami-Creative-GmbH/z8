@@ -20,9 +20,6 @@ export default async function HolidaySettingsPage() {
 	}
 
 	return (
-		<HolidayManagement
-			organizationId={organizationId}
-			canManage={accessTier === "orgAdmin"}
-		/>
+		<HolidayManagement organizationId={organizationId} canManage={accessTier === "orgAdmin"} />
 	);
 }
