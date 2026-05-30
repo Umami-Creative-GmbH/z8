@@ -84,19 +84,14 @@ export interface SCIMProvisioningService {
 	}) => Effect.Effect<void, Error>;
 }
 
-export const SCIMProvisioningService =
-	Context.GenericTag<SCIMProvisioningService>("@z8/SCIMProvisioningService");
+export const SCIMProvisioningService = Context.GenericTag<SCIMProvisioningService>(
+	"@z8/SCIMProvisioningService",
+);
 
 export const SCIMProvisioningServiceLive = Layer.succeed(
 	SCIMProvisioningService,
 	SCIMProvisioningService.of({
-		onUserProvisioned: ({
-			userId,
-			email,
-			name,
-			organizationId,
-			scimExternalId,
-		}) =>
+		onUserProvisioned: ({ userId, email, name, organizationId, scimExternalId }) =>
 			Effect.gen(function* () {
 				try {
 					// Parallelize independent queries for better performance
@@ -108,10 +103,7 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 						Effect.tryPromise(() =>
 							db.query.employee.findFirst({
 								where: (emp, { eq: eqOp, and: andOp }) =>
-									andOp(
-										eqOp(emp.userId, userId),
-										eqOp(emp.organizationId, organizationId),
-									),
+									andOp(eqOp(emp.userId, userId), eqOp(emp.organizationId, organizationId)),
 							}),
 						),
 					]);
@@ -143,11 +135,7 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 							);
 
 							if (template) {
-								yield* applyRoleTemplateToEmployee(
-									newEmployee,
-									template,
-									organizationId,
-								);
+								yield* applyRoleTemplateToEmployee(newEmployee, template, organizationId);
 
 								// Record template assignment
 								yield* Effect.tryPromise(() =>
@@ -202,22 +190,14 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 							createdBy: userId, // Self-created via SCIM
 							metadata: {
 								scimExternalId,
-								notes: config?.autoActivateUsers
-									? "Auto-activated via SCIM"
-									: "Pending approval",
+								notes: config?.autoActivateUsers ? "Auto-activated via SCIM" : "Pending approval",
 							},
 						}),
 					);
 
-					logger.info(
-						{ userId, organizationId },
-						"SCIM user provisioned successfully",
-					);
+					logger.info({ userId, organizationId }, "SCIM user provisioned successfully");
 				} catch (error) {
-					logger.error(
-						{ error, userId, organizationId },
-						"SCIM user provisioning failed",
-					);
+					logger.error({ error, userId, organizationId }, "SCIM user provisioning failed");
 
 					// Log error event
 					yield* Effect.tryPromise(() =>
@@ -227,8 +207,7 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 							userId,
 							metadata: {
 								errorCode: "PROVISIONING_FAILED",
-								errorMessage:
-									error instanceof Error ? error.message : "Unknown error",
+								errorMessage: error instanceof Error ? error.message : "Unknown error",
 							},
 						}),
 					);
@@ -271,10 +250,7 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 						Effect.tryPromise(() =>
 							db.query.employee.findFirst({
 								where: (emp, { eq: eqOp, and: andOp }) =>
-									andOp(
-										eqOp(emp.userId, userId),
-										eqOp(emp.organizationId, organizationId),
-									),
+									andOp(eqOp(emp.userId, userId), eqOp(emp.organizationId, organizationId)),
 							}),
 						),
 					]);
@@ -332,10 +308,7 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 						}),
 					);
 
-					logger.info(
-						{ userId, organizationId, deprovisionAction },
-						"SCIM user deprovisioned",
-					);
+					logger.info({ userId, organizationId, deprovisionAction }, "SCIM user deprovisioned");
 				} catch (error) {
 					logger.error({ error, userId }, "SCIM user deprovisioning failed");
 
@@ -346,8 +319,7 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 							userId,
 							metadata: {
 								errorCode: "DEPROVISIONING_FAILED",
-								errorMessage:
-									error instanceof Error ? error.message : "Unknown error",
+								errorMessage: error instanceof Error ? error.message : "Unknown error",
 							},
 						}),
 					);
@@ -363,10 +335,7 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 					const employeeRecord = yield* Effect.tryPromise(() =>
 						db.query.employee.findFirst({
 							where: (emp, { eq: eqOp, and: andOp }) =>
-								andOp(
-									eqOp(emp.userId, userId),
-									eqOp(emp.organizationId, organizationId),
-								),
+								andOp(eqOp(emp.userId, userId), eqOp(emp.organizationId, organizationId)),
 						}),
 					);
 
@@ -422,20 +391,13 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 						const [mappingResult, employeeRecord] = yield* Effect.all([
 							// Use cached query for IdP group mapping lookup
 							Effect.tryPromise(() =>
-								findRoleTemplateMappingForGroup(
-									organizationId,
-									"scim",
-									groupId,
-								),
+								findRoleTemplateMappingForGroup(organizationId, "scim", groupId),
 							),
 							// Fetch employee record in parallel
 							Effect.tryPromise(() =>
 								db.query.employee.findFirst({
 									where: (emp, { eq: eqOp, and: andOp }) =>
-										andOp(
-											eqOp(emp.userId, userId),
-											eqOp(emp.organizationId, organizationId),
-										),
+										andOp(eqOp(emp.userId, userId), eqOp(emp.organizationId, organizationId)),
 								}),
 							),
 						]);
@@ -445,11 +407,7 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 						const template = mapping?.roleTemplate;
 
 						if (template && employeeRecord) {
-							yield* applyRoleTemplateToEmployee(
-								employeeRecord,
-								template,
-								organizationId,
-							);
+							yield* applyRoleTemplateToEmployee(employeeRecord, template, organizationId);
 
 							// Record template assignment
 							yield* Effect.tryPromise(() =>
@@ -497,10 +455,7 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 					yield* Effect.tryPromise(() =>
 						db.insert(scimProvisioningLog).values({
 							organizationId,
-							eventType:
-								action === "added"
-									? "group_member_added"
-									: "group_member_removed",
+							eventType: action === "added" ? "group_member_added" : "group_member_removed",
 							userId,
 							metadata: {
 								scimGroupId: groupId,
@@ -508,31 +463,17 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 						}),
 					);
 
-					logger.info(
-						{ userId, organizationId, groupId, action },
-						"SCIM group membership changed",
-					);
+					logger.info({ userId, organizationId, groupId, action }, "SCIM group membership changed");
 				} catch (error) {
-					logger.error(
-						{ error, userId, groupId, action },
-						"SCIM group membership change failed",
-					);
+					logger.error({ error, userId, groupId, action }, "SCIM group membership change failed");
 					throw error;
 				}
 			}),
 
-		applyRoleTemplate: ({
-			userId,
-			organizationId,
-			roleTemplateId,
-			source,
-			idpGroupId,
-		}) =>
+		applyRoleTemplate: ({ userId, organizationId, roleTemplateId, source, idpGroupId }) =>
 			Effect.gen(function* () {
 				// Use cached query for role template lookup
-				const template = yield* Effect.tryPromise(() =>
-					getRoleTemplateById(roleTemplateId),
-				);
+				const template = yield* Effect.tryPromise(() => getRoleTemplateById(roleTemplateId));
 
 				if (!template) {
 					throw new Error(`Role template ${roleTemplateId} not found`);
@@ -541,24 +482,15 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 				const employeeRecord = yield* Effect.tryPromise(() =>
 					db.query.employee.findFirst({
 						where: (emp, { eq: eqOp, and: andOp }) =>
-							andOp(
-								eqOp(emp.userId, userId),
-								eqOp(emp.organizationId, organizationId),
-							),
+							andOp(eqOp(emp.userId, userId), eqOp(emp.organizationId, organizationId)),
 					}),
 				);
 
 				if (!employeeRecord) {
-					throw new Error(
-						`Employee record not found for user ${userId} in org ${organizationId}`,
-					);
+					throw new Error(`Employee record not found for user ${userId} in org ${organizationId}`);
 				}
 
-				yield* applyRoleTemplateToEmployee(
-					employeeRecord,
-					template,
-					organizationId,
-				);
+				yield* applyRoleTemplateToEmployee(employeeRecord, template, organizationId);
 
 				// Record template assignment
 				yield* Effect.tryPromise(() =>
@@ -585,10 +517,7 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 						}),
 				);
 
-				logger.info(
-					{ userId, organizationId, roleTemplateId, source },
-					"Role template applied",
-				);
+				logger.info({ userId, organizationId, roleTemplateId, source }, "Role template applied");
 			}),
 	}),
 );
@@ -653,8 +582,7 @@ function applyRoleTemplateToEmployee(
 							canCreateTeams: permissions.canCreateTeams ?? false,
 							canManageTeamMembers: permissions.canManageTeamMembers ?? false,
 							canManageTeamSettings: permissions.canManageTeamSettings ?? false,
-							canApproveTeamRequests:
-								permissions.canApproveTeamRequests ?? false,
+							canApproveTeamRequests: permissions.canApproveTeamRequests ?? false,
 						})
 						.where(eq(teamPermissions.id, existingPermission.id)),
 				);

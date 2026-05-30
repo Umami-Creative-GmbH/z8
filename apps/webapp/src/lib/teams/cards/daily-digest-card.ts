@@ -5,9 +5,9 @@
  */
 
 import { DateTime } from "luxon";
-import type { DailyDigestData } from "../types";
-import { fmtFullDate, type BotTranslateFn } from "@/lib/bot-platform/i18n";
+import { type BotTranslateFn, fmtFullDate } from "@/lib/bot-platform/i18n";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
+import type { DailyDigestData } from "../types";
 
 const fallbackT: BotTranslateFn = (_key, defaultValue, params) =>
 	Object.entries(params ?? {}).reduce(
@@ -383,7 +383,11 @@ export function buildDailyDigestText(
 	if (data.pendingApprovals === 0) {
 		lines.push(t("teamsBot:digest.textPendingApprovalsNone", "**Pending Approvals:** None"));
 	} else {
-		lines.push(t("teamsBot:digest.textPendingApprovalsCount", "**Pending Approvals:** {count}", { count: data.pendingApprovals }));
+		lines.push(
+			t("teamsBot:digest.textPendingApprovalsCount", "**Pending Approvals:** {count}", {
+				count: data.pendingApprovals,
+			}),
+		);
 	}
 	lines.push("");
 
@@ -393,14 +397,18 @@ export function buildDailyDigestText(
 		lines.push(t("teamsBot:digest.everyoneAvailable", "Everyone is available today"));
 	} else {
 		for (const emp of data.employeesOut.slice(0, 5)) {
-			lines.push(t("teamsBot:digest.textEmployeeOut", "• {name} - {category} (returns {returnDate})", {
-				name: emp.name,
-				category: emp.category,
-				returnDate: emp.returnDate,
-			}));
+			lines.push(
+				t("teamsBot:digest.textEmployeeOut", "• {name} - {category} (returns {returnDate})", {
+					name: emp.name,
+					category: emp.category,
+					returnDate: emp.returnDate,
+				}),
+			);
 		}
 		if (data.employeesOut.length > 5) {
-			lines.push(t("teamsBot:common.moreBullet", "• +{count} more", { count: data.employeesOut.length - 5 }));
+			lines.push(
+				t("teamsBot:common.moreBullet", "• +{count} more", { count: data.employeesOut.length - 5 }),
+			);
 		}
 	}
 	lines.push("");
@@ -411,14 +419,20 @@ export function buildDailyDigestText(
 		lines.push(t("teamsBot:digest.noOneClockedIn", "No one is clocked in yet"));
 	} else {
 		for (const emp of data.employeesClockedIn.slice(0, 5)) {
-			lines.push(t("teamsBot:digest.textClockedInEmployee", "• {name} - since {clockedInAt} ({duration})", {
-				name: emp.name,
-				clockedInAt: emp.clockedInAt,
-				duration: emp.durationSoFar,
-			}));
+			lines.push(
+				t("teamsBot:digest.textClockedInEmployee", "• {name} - since {clockedInAt} ({duration})", {
+					name: emp.name,
+					clockedInAt: emp.clockedInAt,
+					duration: emp.durationSoFar,
+				}),
+			);
 		}
 		if (data.employeesClockedIn.length > 5) {
-			lines.push(t("teamsBot:common.moreBullet", "• +{count} more", { count: data.employeesClockedIn.length - 5 }));
+			lines.push(
+				t("teamsBot:common.moreBullet", "• +{count} more", {
+					count: data.employeesClockedIn.length - 5,
+				}),
+			);
 		}
 	}
 	lines.push("");
@@ -439,10 +453,12 @@ export function buildDailyDigestText(
 	// Open shifts
 	if (data.openShiftsToday || data.openShiftsTomorrow) {
 		lines.push(t("teamsBot:digest.textOpenShifts", "**📋 Open Shifts:**"));
-		lines.push(t("teamsBot:digest.todayTomorrow", "Today: {today} | Tomorrow: {tomorrow}", {
-			today: data.openShiftsToday || 0,
-			tomorrow: data.openShiftsTomorrow || 0,
-		}));
+		lines.push(
+			t("teamsBot:digest.todayTomorrow", "Today: {today} | Tomorrow: {tomorrow}", {
+				today: data.openShiftsToday || 0,
+				tomorrow: data.openShiftsTomorrow || 0,
+			}),
+		);
 		lines.push("");
 	}
 
@@ -450,9 +466,13 @@ export function buildDailyDigestText(
 	if (data.compliancePending && data.compliancePending > 0) {
 		lines.push(t("teamsBot:digest.textCompliance", "**⚠️ Compliance:**"));
 		lines.push(
-			t("teamsBot:digest.pendingExceptionRequests", "{count, plural, one {# pending exception request awaiting review} other {# pending exception requests awaiting review}}", {
-				count: data.compliancePending,
-			}),
+			t(
+				"teamsBot:digest.pendingExceptionRequests",
+				"{count, plural, one {# pending exception request awaiting review} other {# pending exception requests awaiting review}}",
+				{
+					count: data.compliancePending,
+				},
+			),
 		);
 		lines.push("");
 	}

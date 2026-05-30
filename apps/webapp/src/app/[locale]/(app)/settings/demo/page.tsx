@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { getTranslate } from "@/tolgee/server";
 import { DemoDataWizard } from "@/components/settings/demo-data-wizard";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { getTranslate } from "@/tolgee/server";
 import { assertDemoDataEnabledForOrganization, getOrganizationEmployees } from "./actions";
 
 async function DemoSettingsContent() {
@@ -37,11 +37,7 @@ async function DemoSettingsContent() {
 				</p>
 			</div>
 
-			<DemoDataWizard
-				key={organizationId}
-				organizationId={organizationId}
-				employees={employees}
-			/>
+			<DemoDataWizard key={organizationId} organizationId={organizationId} employees={employees} />
 		</div>
 	);
 }

@@ -3,10 +3,10 @@
  * Signs audit manifests with Ed25519
  */
 import { createLogger } from "@/lib/logger";
-import { AuditManifest, Ed25519Signature, SHA256Hash } from "./models";
-import { signingProvider, type ISigningProvider } from "../infrastructure/crypto/signing-provider";
-import { keyManager, type IKeyManager } from "../infrastructure/vault/key-manager";
 import { hashProvider, type IHashProvider } from "../infrastructure/crypto/hash-provider";
+import { type ISigningProvider, signingProvider } from "../infrastructure/crypto/signing-provider";
+import { type IKeyManager, keyManager } from "../infrastructure/vault/key-manager";
+import { type AuditManifest, Ed25519Signature, type SHA256Hash } from "./models";
 
 const logger = createLogger("SigningService");
 
@@ -73,7 +73,8 @@ export class SigningService implements ISigningService {
 		);
 
 		// Get or create signing key
-		const { keyId, publicKeyPem, fingerprint } = await this.keys.getOrCreateSigningKey(organizationId);
+		const { keyId, publicKeyPem, fingerprint } =
+			await this.keys.getOrCreateSigningKey(organizationId);
 
 		// Get private key from Vault
 		const privateKeyPem = await this.keys.getPrivateKey(organizationId);

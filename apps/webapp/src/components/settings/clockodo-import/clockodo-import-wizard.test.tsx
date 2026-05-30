@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -263,7 +263,9 @@ describe("ClockodoImportWizard", () => {
 			"disabled",
 			true,
 		);
-		expect(screen.getByText("Select both a start and end date before starting the scan.")).toBeTruthy();
+		expect(
+			screen.getByText("Select both a start and end date before starting the scan."),
+		).toBeTruthy();
 		expect(mocks.startImportReviewScan).not.toHaveBeenCalled();
 	});
 
@@ -307,7 +309,9 @@ describe("ClockodoImportWizard", () => {
 			"disabled",
 			true,
 		);
-		expect(screen.getByText("Select at least one Clockodo user before starting the scan.")).toBeTruthy();
+		expect(
+			screen.getByText("Select at least one Clockodo user before starting the scan."),
+		).toBeTruthy();
 		expect(mocks.startImportReviewScan).not.toHaveBeenCalled();
 	});
 });

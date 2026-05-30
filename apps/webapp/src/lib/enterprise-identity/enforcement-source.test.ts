@@ -23,11 +23,13 @@ describe("enterprise identity enforcement source contracts", () => {
 	});
 
 	it("enforces active domain restrictions before invite code membership creation", () => {
-		expect(inviteCodeServiceSource).toContain("assertEnterpriseIdentityInviteCodeRedemptionAllowed");
+		expect(inviteCodeServiceSource).toContain(
+			"assertEnterpriseIdentityInviteCodeRedemptionAllowed",
+		);
 		expect(enforcementSource).toContain("domainRestrictionEnabled");
 		expect(inviteCodeServiceSource).toContain("input.userId");
-		expect(inviteCodeServiceSource.indexOf("assertEnterpriseIdentityInviteCodeRedemptionAllowed")).toBeLessThan(
-			inviteCodeServiceSource.indexOf("createMember"),
-		);
+		expect(
+			inviteCodeServiceSource.indexOf("assertEnterpriseIdentityInviteCodeRedemptionAllowed"),
+		).toBeLessThan(inviteCodeServiceSource.indexOf("createMember"));
 	});
 });

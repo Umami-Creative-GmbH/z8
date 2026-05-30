@@ -9,9 +9,9 @@ import {
 	copySystemWorkPolicyPreset,
 	createWorkPolicyFromPreset,
 	createWorkPolicyPreset,
+	updateWorkPolicyPreset,
 	type WorkPolicyPresetInput,
 	type WorkPolicyPresetWithSource,
-	updateWorkPolicyPreset,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";

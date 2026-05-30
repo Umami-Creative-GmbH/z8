@@ -4,7 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { IconGripVertical } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { createContext, use, type CSSProperties, type ReactNode } from "react";
+import { type CSSProperties, createContext, type ReactNode, use } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { WidgetId } from "./widget-registry";

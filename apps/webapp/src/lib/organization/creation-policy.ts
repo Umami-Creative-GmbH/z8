@@ -6,9 +6,7 @@ export function normalizeOrganizationCreationFlag(
 	return flag === "true" ? "true" : "false";
 }
 
-export function isOrganizationCreationDisabled(
-	flag: OrganizationCreationFlag = "false",
-) {
+export function isOrganizationCreationDisabled(flag: OrganizationCreationFlag = "false") {
 	return flag === "true";
 }
 

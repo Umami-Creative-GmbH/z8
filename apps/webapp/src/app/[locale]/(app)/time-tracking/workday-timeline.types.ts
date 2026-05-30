@@ -1,5 +1,5 @@
-import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
 import type { DateTime } from "luxon";
+import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
 
 export type WorkdayTimelineItemType =
 	| "shift"

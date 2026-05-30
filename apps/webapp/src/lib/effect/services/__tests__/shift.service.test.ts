@@ -138,20 +138,19 @@ describe("ShiftService.deleteShift", () => {
 	});
 
 	it("resolves the acting employee from userId before authorizing deletion", async () => {
-		const { deleteWhere, mockDb, runDeleteShift } =
-			createDeleteShiftTestContext({
-				shiftRecord: {
-					id: "shift-1",
-					organizationId: "org-1",
-					status: "draft",
-				},
-				actorEmployee: {
-					id: "emp-5",
-					userId: "user-5",
-					organizationId: "org-1",
-					role: "employee",
-				},
-			});
+		const { deleteWhere, mockDb, runDeleteShift } = createDeleteShiftTestContext({
+			shiftRecord: {
+				id: "shift-1",
+				organizationId: "org-1",
+				status: "draft",
+			},
+			actorEmployee: {
+				id: "emp-5",
+				userId: "user-5",
+				organizationId: "org-1",
+				role: "employee",
+			},
+		});
 
 		expect(await runDeleteShift("shift-1", "user-5")).toMatchObject({
 			_tag: "Left",

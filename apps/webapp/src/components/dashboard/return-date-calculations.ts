@@ -46,7 +46,9 @@ function isScheduledWorkDay(schedule: ReturnDateSchedule, date: DateTime): boole
 }
 
 function isAbsent(dateKey: string, absenceRanges: AbsenceRange[]): boolean {
-	return absenceRanges.some((absence) => absence.startDate <= dateKey && absence.endDate >= dateKey);
+	return absenceRanges.some(
+		(absence) => absence.startDate <= dateKey && absence.endDate >= dateKey,
+	);
 }
 
 export function getNextAvailableReturnDate({

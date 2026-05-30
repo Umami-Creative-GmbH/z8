@@ -2,10 +2,7 @@ import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NotFoundError, ValidationError } from "../../errors";
 import { DatabaseService } from "../database.service";
-import {
-	TimeRecordService,
-	TimeRecordServiceLive,
-} from "../time-record.service";
+import { TimeRecordService, TimeRecordServiceLive } from "../time-record.service";
 
 const mockState = vi.hoisted(() => {
 	const insertReturning = vi.fn();
@@ -262,9 +259,9 @@ describe("TimeRecordService", () => {
 		);
 
 		expect(mockState.selectWhere).toHaveBeenCalledTimes(1);
-		const firstWhereCall = (mockState.selectWhere.mock.calls as unknown[]).at(
-			0,
-		) as unknown[] | undefined;
+		const firstWhereCall = (mockState.selectWhere.mock.calls as unknown[]).at(0) as
+			| unknown[]
+			| undefined;
 		const whereArg = firstWhereCall?.at(0) as
 			| {
 					conditions: Array<{
@@ -285,9 +282,7 @@ describe("TimeRecordService", () => {
 		);
 	});
 
-	it.each([
-		0, -1, 1.5,
-	])("listByOrganization rejects invalid limit: %s", async (limit) => {
+	it.each([0, -1, 1.5])("listByOrganization rejects invalid limit: %s", async (limit) => {
 		const dbLayer = Layer.succeed(
 			DatabaseService,
 			DatabaseService.of({
@@ -307,9 +302,7 @@ describe("TimeRecordService", () => {
 		const error = await Effect.runPromise(
 			Effect.gen(function* (_) {
 				const service = yield* _(TimeRecordService);
-				return yield* _(
-					service.listByOrganization("org-1", { limit }).pipe(Effect.flip),
-				);
+				return yield* _(service.listByOrganization("org-1", { limit }).pipe(Effect.flip));
 			}).pipe(Effect.provide(TimeRecordServiceLive), Effect.provide(dbLayer)),
 		);
 

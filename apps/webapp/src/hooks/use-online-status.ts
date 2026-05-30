@@ -36,7 +36,11 @@ function getServerSnapshot(): boolean {
  * Returns true if online, false if offline.
  */
 export function useOnlineStatus(): boolean {
-	const isOnline = useSyncExternalStore(subscribeToOnlineStatus, getOnlineStatus, getServerSnapshot);
+	const isOnline = useSyncExternalStore(
+		subscribeToOnlineStatus,
+		getOnlineStatus,
+		getServerSnapshot,
+	);
 
 	return isOnline;
 }

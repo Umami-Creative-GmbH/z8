@@ -1,11 +1,14 @@
 import { z } from "zod";
 import {
-	resolveApproverFromDirectory,
 	type ApproverDirectoryEmployee,
 	type ApproverDirectoryManagerLink,
+	resolveApproverFromDirectory,
 } from "@/lib/approvals/policies/approver-resolution";
 import { findMatchingPolicy, validatePolicyDraft } from "@/lib/approvals/policies/matcher";
-import type { ApprovalPolicyDraft, ApprovalPolicyEvaluationContext } from "@/lib/approvals/policies/types";
+import type {
+	ApprovalPolicyDraft,
+	ApprovalPolicyEvaluationContext,
+} from "@/lib/approvals/policies/types";
 
 const conditionSchema = z.object({
 	conditionType: z.enum([
@@ -35,7 +38,13 @@ export const policyInputSchema = z.object({
 			id: z.string(),
 			stepOrder: z.number().int().min(1),
 			label: z.string().trim().min(1),
-			approverType: z.enum(["direct_manager", "manager_manager", "org_admin", "specific_employee", "team_lead"]),
+			approverType: z.enum([
+				"direct_manager",
+				"manager_manager",
+				"org_admin",
+				"specific_employee",
+				"team_lead",
+			]),
 			approverEmployeeId: z.string().trim().optional(),
 		}),
 	),
@@ -61,7 +70,9 @@ function validatePolicyConditionValues(input: PolicyInput) {
 	for (const [index, condition] of input.conditions.entries()) {
 		if (
 			condition.conditionType === "overtime_risk" &&
-			[condition.value, ...(condition.values ?? [])].some((value) => value && !overtimeRiskValues.has(value))
+			[condition.value, ...(condition.values ?? [])].some(
+				(value) => value && !overtimeRiskValues.has(value),
+			)
 		) {
 			return `Condition ${index + 1} (overtime_risk) must be none, warning, or violation.`;
 		}
@@ -118,8 +129,17 @@ export function previewApprovalPolicyForTest(input: {
 			});
 
 			return resolved.ok
-				? { label: stage.label, approverEmployeeId: resolved.approverEmployeeId, status: "resolved" as const }
-				: { label: stage.label, approverEmployeeId: null, status: "unresolved" as const, reason: resolved.reason };
+				? {
+						label: stage.label,
+						approverEmployeeId: resolved.approverEmployeeId,
+						status: "resolved" as const,
+					}
+				: {
+						label: stage.label,
+						approverEmployeeId: null,
+						status: "unresolved" as const,
+						reason: resolved.reason,
+					};
 		}),
 	};
 }

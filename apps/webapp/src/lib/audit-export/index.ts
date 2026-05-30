@@ -9,20 +9,6 @@
  */
 
 // ============================================
-// DOMAIN MODELS
-// ============================================
-export {
-	SHA256Hash,
-	Ed25519Signature,
-	RFC3161Timestamp,
-	AuditFileEntry,
-	AuditManifest,
-	SignedAuditPackage,
-	type VerificationCheck,
-	type VerificationResult,
-} from "./domain/models";
-
-// ============================================
 // APPLICATION SERVICES
 // ============================================
 export {
@@ -31,42 +17,58 @@ export {
 	type HardenExportParams,
 	type HardenExportResult,
 } from "./application/audit-export-orchestrator";
-
 export {
-	VerificationService,
-	verificationService,
-	type VerifyPackageParams,
-} from "./application/verification-service";
-
-export {
+	type AuditExportConfigData,
 	ConfigurationService,
 	configurationService,
-	type AuditExportConfigData,
 	type UpdateConfigParams,
 } from "./application/configuration-service";
 
+export {
+	VerificationService,
+	type VerifyPackageParams,
+	verificationService,
+} from "./application/verification-service";
 // ============================================
 // DOMAIN SERVICES
 // ============================================
-export { ManifestBuilder, manifestBuilder, type IManifestBuilder } from "./domain/manifest-builder";
+export { type IManifestBuilder, ManifestBuilder, manifestBuilder } from "./domain/manifest-builder";
+// ============================================
+// DOMAIN MODELS
+// ============================================
+export {
+	AuditFileEntry,
+	AuditManifest,
+	Ed25519Signature,
+	RFC3161Timestamp,
+	SHA256Hash,
+	SignedAuditPackage,
+	type VerificationCheck,
+	type VerificationResult,
+} from "./domain/models";
 
-export { SigningService, signingService, type ISigningService } from "./domain/signing-service";
+export { type ISigningService, SigningService, signingService } from "./domain/signing-service";
 
-export { TimestampService, timestampService, type ITimestampService } from "./domain/timestamp-service";
+export {
+	type ITimestampService,
+	TimestampService,
+	timestampService,
+} from "./domain/timestamp-service";
 
 // ============================================
 // INFRASTRUCTURE (for advanced usage)
 // ============================================
 export { hashProvider, type IHashProvider } from "./infrastructure/crypto/hash-provider";
 
-export { signingProvider, type ISigningProvider } from "./infrastructure/crypto/signing-provider";
-
-export { timestampProvider, type ITimestampProvider } from "./infrastructure/crypto/timestamp-provider";
-
-export { keyManager, type IKeyManager } from "./infrastructure/vault/key-manager";
+export { type ISigningProvider, signingProvider } from "./infrastructure/crypto/signing-provider";
 
 export {
-	wormStorageAdapter,
-	S3WORMStorageAdapter,
+	type ITimestampProvider,
+	timestampProvider,
+} from "./infrastructure/crypto/timestamp-provider";
+export {
 	type IWORMStorageAdapter,
+	S3WORMStorageAdapter,
+	wormStorageAdapter,
 } from "./infrastructure/storage/worm-storage-adapter";
+export { type IKeyManager, keyManager } from "./infrastructure/vault/key-manager";

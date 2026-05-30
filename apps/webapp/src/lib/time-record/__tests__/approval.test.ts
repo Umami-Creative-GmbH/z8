@@ -19,10 +19,9 @@ describe("time-record approval transitions", () => {
 	});
 
 	it("rejects all other transitions", () => {
-		const invalidTransitions: Array<[
-			Parameters<typeof applyApprovalDecision>[0],
-			TimeRecordApprovalDecision,
-		]> = [
+		const invalidTransitions: Array<
+			[Parameters<typeof applyApprovalDecision>[0], TimeRecordApprovalDecision]
+		> = [
 			["draft", "approve"],
 			["draft", "reject"],
 			["pending", "submit"],

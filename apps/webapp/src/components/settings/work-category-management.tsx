@@ -15,7 +15,11 @@ interface WorkCategoryManagementProps {
 	children: React.ReactNode; // The existing category sets content
 }
 
-export function WorkCategoryManagement({ organizationId, canManage, children }: WorkCategoryManagementProps) {
+export function WorkCategoryManagement({
+	organizationId,
+	canManage,
+	children,
+}: WorkCategoryManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 

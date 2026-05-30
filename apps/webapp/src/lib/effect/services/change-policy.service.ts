@@ -144,22 +144,13 @@ export class ChangePolicyService extends Context.Tag("ChangePolicyService")<
 		readonly updatePolicy: (
 			id: string,
 			input: UpdatePolicyInput,
-		) => Effect.Effect<
-			ChangePolicy,
-			NotFoundError | ValidationError | DatabaseError
-		>;
+		) => Effect.Effect<ChangePolicy, NotFoundError | ValidationError | DatabaseError>;
 
-		readonly deletePolicy: (
-			id: string,
-		) => Effect.Effect<void, NotFoundError | DatabaseError>;
+		readonly deletePolicy: (id: string) => Effect.Effect<void, NotFoundError | DatabaseError>;
 
-		readonly getPolicies: (
-			organizationId: string,
-		) => Effect.Effect<ChangePolicy[], DatabaseError>;
+		readonly getPolicies: (organizationId: string) => Effect.Effect<ChangePolicy[], DatabaseError>;
 
-		readonly getPolicyById: (
-			id: string,
-		) => Effect.Effect<ChangePolicy | null, DatabaseError>;
+		readonly getPolicyById: (id: string) => Effect.Effect<ChangePolicy | null, DatabaseError>;
 
 		readonly assignPolicy: (
 			input: AssignPolicyInput,
@@ -340,12 +331,7 @@ export const ChangePolicyServiceLive = Layer.effect(
 		return ChangePolicyService.of({
 			resolvePolicy: resolvePolicyImpl,
 
-			getEditCapability: ({
-				employeeId,
-				workPeriodEndTime,
-				timezone,
-				currentTime,
-			}) =>
+			getEditCapability: ({ employeeId, workPeriodEndTime, timezone, currentTime }) =>
 				Effect.gen(function* (_) {
 					// Use the helper function directly instead of ChangePolicyService.pipe()
 					const policy = yield* _(resolvePolicyImpl(employeeId, currentTime));
@@ -375,8 +361,7 @@ export const ChangePolicyServiceLive = Layer.effect(
 					}
 
 					// Within approval window
-					const totalApprovalWindow =
-						policy.selfServiceDays + policy.approvalDays;
+					const totalApprovalWindow = policy.selfServiceDays + policy.approvalDays;
 					if (daysBack <= totalApprovalWindow) {
 						return {
 							type: "approval_required" as const,
@@ -400,8 +385,52 @@ export const ChangePolicyServiceLive = Layer.effect(
 						dbService.query("getManagersForApproval", async () => {
 							if (notifyAll) {
 								// Get all managers
-								const result =
-									await dbService.db.query.employeeManagers.findMany({
+								const result = await dbService.db.query.employeeManagers.findMany({
+									where: eq(employeeManagers.employeeId, employeeId),
+									with: {
+										manager: {
+											columns: {
+												id: true,
+												userId: true,
+												firstName: true,
+												lastName: true,
+											},
+										},
+									},
+								});
+
+								return result
+									.filter((r) => r.manager)
+									.map((r) => ({
+										managerId: r.manager.id,
+										userId: r.manager.userId,
+										name:
+											[r.manager.firstName, r.manager.lastName].filter(Boolean).join(" ") ||
+											"Manager",
+										isPrimary: r.isPrimary,
+									}));
+							} else {
+								// Get only primary manager
+								const result = await dbService.db.query.employeeManagers.findFirst({
+									where: and(
+										eq(employeeManagers.employeeId, employeeId),
+										eq(employeeManagers.isPrimary, true),
+									),
+									with: {
+										manager: {
+											columns: {
+												id: true,
+												userId: true,
+												firstName: true,
+												lastName: true,
+											},
+										},
+									},
+								});
+
+								if (!result?.manager) {
+									// Fallback: get any manager
+									const fallback = await dbService.db.query.employeeManagers.findFirst({
 										where: eq(employeeManagers.employeeId, employeeId),
 										with: {
 											manager: {
@@ -414,54 +443,6 @@ export const ChangePolicyServiceLive = Layer.effect(
 											},
 										},
 									});
-
-								return result
-									.filter((r) => r.manager)
-									.map((r) => ({
-										managerId: r.manager.id,
-										userId: r.manager.userId,
-										name:
-											[r.manager.firstName, r.manager.lastName]
-												.filter(Boolean)
-												.join(" ") || "Manager",
-										isPrimary: r.isPrimary,
-									}));
-							} else {
-								// Get only primary manager
-								const result =
-									await dbService.db.query.employeeManagers.findFirst({
-										where: and(
-											eq(employeeManagers.employeeId, employeeId),
-											eq(employeeManagers.isPrimary, true),
-										),
-										with: {
-											manager: {
-												columns: {
-													id: true,
-													userId: true,
-													firstName: true,
-													lastName: true,
-												},
-											},
-										},
-									});
-
-								if (!result?.manager) {
-									// Fallback: get any manager
-									const fallback =
-										await dbService.db.query.employeeManagers.findFirst({
-											where: eq(employeeManagers.employeeId, employeeId),
-											with: {
-												manager: {
-													columns: {
-														id: true,
-														userId: true,
-														firstName: true,
-														lastName: true,
-													},
-												},
-											},
-										});
 
 									if (!fallback?.manager) return [];
 
@@ -606,11 +587,7 @@ export const ChangePolicyServiceLive = Layer.effect(
 				Effect.gen(function* (_) {
 					// Calculate priority based on assignment type
 					const priority =
-						input.assignmentType === "employee"
-							? 2
-							: input.assignmentType === "team"
-								? 1
-								: 0;
+						input.assignmentType === "employee" ? 2 : input.assignmentType === "team" ? 1 : 0;
 
 					const created = yield* _(
 						dbService.query("assignChangePolicy", async () => {

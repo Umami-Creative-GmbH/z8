@@ -128,21 +128,28 @@ export function RateHistoryCard({
 						<IconClock className="size-5" />
 						{t("settings.rateHistory.title", "Rate History")}
 					</CardTitle>
-					<CardDescription>{t("settings.rateHistory.description", "Hourly rate changes over time")}</CardDescription>
+					<CardDescription>
+						{t("settings.rateHistory.description", "Hourly rate changes over time")}
+					</CardDescription>
 				</div>
 				{isAdmin && (
 					<ActionPanel open={dialogOpen} onOpenChange={setDialogOpen}>
 						<ActionPanelTrigger asChild>
 							<Button size="sm">
 								<IconPlus className="mr-2 size-4" />
-						{t("settings.rateHistory.changeRate", "Change Rate")}
+								{t("settings.rateHistory.changeRate", "Change Rate")}
 							</Button>
 						</ActionPanelTrigger>
 						<ActionPanelContent>
 							<ActionPanelHeader>
-							<ActionPanelTitle>{t("settings.rateHistory.updateTitle", "Update Hourly Rate")}</ActionPanelTitle>
-							<ActionPanelDescription>
-								{t("settings.rateHistory.updateDescription", "Create a new rate entry. The current rate will be closed automatically.")}
+								<ActionPanelTitle>
+									{t("settings.rateHistory.updateTitle", "Update Hourly Rate")}
+								</ActionPanelTitle>
+								<ActionPanelDescription>
+									{t(
+										"settings.rateHistory.updateDescription",
+										"Create a new rate entry. The current rate will be closed automatically.",
+									)}
 								</ActionPanelDescription>
 							</ActionPanelHeader>
 							<form
@@ -157,7 +164,9 @@ export function RateHistoryCard({
 									<form.Field name="hourlyRate">
 										{(field) => (
 											<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)}>{t("settings.rateHistory.newHourlyRate", "New Hourly Rate")}</TFormLabel>
+												<TFormLabel hasError={fieldHasError(field)}>
+													{t("settings.rateHistory.newHourlyRate", "New Hourly Rate")}
+												</TFormLabel>
 												<TFormControl hasError={fieldHasError(field)}>
 													<HourlyRateInput
 														value={field.state.value}
@@ -169,7 +178,9 @@ export function RateHistoryCard({
 												</TFormControl>
 												{currentRate && (
 													<TFormDescription>
-											{t("settings.rateHistory.currentRate", "Current rate: {rate}", { rate: formatCurrency(currentRate.hourlyRate, currentRate.currency) })}
+														{t("settings.rateHistory.currentRate", "Current rate: {rate}", {
+															rate: formatCurrency(currentRate.hourlyRate, currentRate.currency),
+														})}
 													</TFormDescription>
 												)}
 												<TFormMessage field={field} />
@@ -180,7 +191,9 @@ export function RateHistoryCard({
 									<form.Field name="effectiveFrom">
 										{(field) => (
 											<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>{t("settings.rateHistory.effectiveFrom", "Effective From")}</TFormLabel>
+												<TFormLabel hasError={fieldHasError(field)}>
+													{t("settings.rateHistory.effectiveFrom", "Effective From")}
+												</TFormLabel>
 												<TFormControl hasError={fieldHasError(field)}>
 													<DatePicker
 														value={field.state.value}
@@ -188,7 +201,12 @@ export function RateHistoryCard({
 														onBlur={field.handleBlur}
 													/>
 												</TFormControl>
-									<TFormDescription>{t("settings.rateHistory.effectiveFromHelp", "When the new rate takes effect")}</TFormDescription>
+												<TFormDescription>
+													{t(
+														"settings.rateHistory.effectiveFromHelp",
+														"When the new rate takes effect",
+													)}
+												</TFormDescription>
 												<TFormMessage field={field} />
 											</TFormItem>
 										)}
@@ -197,13 +215,18 @@ export function RateHistoryCard({
 									<form.Field name="reason">
 										{(field) => (
 											<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>{t("settings.rateHistory.reasonOptional", "Reason (Optional)")}</TFormLabel>
+												<TFormLabel hasError={fieldHasError(field)}>
+													{t("settings.rateHistory.reasonOptional", "Reason (Optional)")}
+												</TFormLabel>
 												<TFormControl hasError={fieldHasError(field)}>
 													<Textarea
 														value={field.state.value}
 														onChange={(e) => field.handleChange(e.target.value)}
 														onBlur={field.handleBlur}
-										placeholder={t("settings.rateHistory.reasonPlaceholder", "e.g., Annual review, Promotion, etc.")}
+														placeholder={t(
+															"settings.rateHistory.reasonPlaceholder",
+															"e.g., Annual review, Promotion, etc.",
+														)}
 														rows={2}
 													/>
 												</TFormControl>
@@ -220,11 +243,11 @@ export function RateHistoryCard({
 										onClick={() => setDialogOpen(false)}
 										disabled={isAddingRate}
 									>
-							{t("common.cancel", "Cancel")}
+										{t("common.cancel", "Cancel")}
 									</Button>
 									<Button type="submit" disabled={isAddingRate}>
 										{isAddingRate && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{t("settings.rateHistory.updateRate", "Update Rate")}
+										{t("settings.rateHistory.updateRate", "Update Rate")}
 									</Button>
 								</ActionPanelFooter>
 							</form>
@@ -238,7 +261,9 @@ export function RateHistoryCard({
 						<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
 					</div>
 				) : rateHistory.length === 0 ? (
-					<div className="text-center text-sm text-muted-foreground">{t("settings.rateHistory.empty", "No rate history available")}</div>
+					<div className="text-center text-sm text-muted-foreground">
+						{t("settings.rateHistory.empty", "No rate history available")}
+					</div>
 				) : (
 					<div className="relative space-y-4 pl-6">
 						{/* Timeline line */}
@@ -274,13 +299,17 @@ export function RateHistoryCard({
 											>
 												{formatCurrency(entry.hourlyRate, entry.currency)}
 											</span>
-						{isCurrent && <Badge variant="default">{t("common.current", "Current")}</Badge>}
+											{isCurrent && (
+												<Badge variant="default">{t("common.current", "Current")}</Badge>
+											)}
 										</div>
 										<div className="flex items-center gap-2 text-xs text-muted-foreground">
 											<IconCalendar className="size-3" />
 											<span>
 												{formatDate(entry.effectiveFrom)} -{" "}
-						{entry.effectiveTo ? formatDate(entry.effectiveTo) : t("common.present", "Present")}
+												{entry.effectiveTo
+													? formatDate(entry.effectiveTo)
+													: t("common.present", "Present")}
 											</span>
 										</div>
 										{entry.reason && (

@@ -86,7 +86,9 @@ export function CreateTeamDialog({
 			onSuccess?.(result.data);
 		},
 		onError: () => {
-			toast.error(t("settings.organization.teams.createDialog.createFailed", CREATE_TEAM_FAILED_FALLBACK));
+			toast.error(
+				t("settings.organization.teams.createDialog.createFailed", CREATE_TEAM_FAILED_FALLBACK),
+			);
 		},
 	});
 
@@ -136,7 +138,10 @@ export function CreateTeamDialog({
 
 						<div className="space-y-2">
 							<Label htmlFor="description">
-								{t("settings.organization.teams.createDialog.descriptionLabel", "Description (Optional)")}
+								{t(
+									"settings.organization.teams.createDialog.descriptionLabel",
+									"Description (Optional)",
+								)}
 							</Label>
 							<Textarea
 								id="description"
@@ -152,7 +157,10 @@ export function CreateTeamDialog({
 
 						<div className="space-y-2">
 							<Label htmlFor="primary-manager">
-								{t("settings.organization.teams.createDialog.fallbackManagerLabel", "Fallback Manager")}
+								{t(
+									"settings.organization.teams.createDialog.fallbackManagerLabel",
+									"Fallback Manager",
+								)}
 							</Label>
 							<Select
 								value={formData.primaryManagerId}

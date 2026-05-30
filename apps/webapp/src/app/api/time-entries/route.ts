@@ -7,14 +7,7 @@ import {
 	validateProjectAssignment,
 } from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
 import { db } from "@/db";
-import {
-	employee,
-	project,
-	timeEntry,
-	userSettings,
-	workCategory,
-	workPeriod,
-} from "@/db/schema";
+import { employee, project, timeEntry, userSettings, workCategory, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
@@ -320,10 +313,7 @@ export async function POST(request: NextRequest) {
 				workCategoryId,
 			);
 			if (!hasCategoryAccess) {
-				return NextResponse.json(
-					{ error: "Cannot assign to this work category" },
-					{ status: 400 },
-				);
+				return NextResponse.json({ error: "Cannot assign to this work category" }, { status: 400 });
 			}
 		}
 

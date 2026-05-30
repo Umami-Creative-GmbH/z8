@@ -1,29 +1,23 @@
-import { DateTime } from "luxon";
 import { gte } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
 	findPayrollJobsByOccurrence: vi.fn(),
 	findAuditRequestsByOccurrence: vi.fn(),
 	getTranslate: vi.fn(
-		async () =>
-			(
-				_key: string,
-				defaultValue?: string,
-				params?: Record<string, string | number>,
-			) => {
-				const template = defaultValue ?? _key;
+		async () => (_key: string, defaultValue?: string, params?: Record<string, string | number>) => {
+			const template = defaultValue ?? _key;
 
-				if (!params) {
-					return template;
-				}
+			if (!params) {
+				return template;
+			}
 
-				return Object.entries(params).reduce(
-					(result, [paramKey, paramValue]) =>
-						result.replaceAll(`{${paramKey}}`, String(paramValue)),
-					template,
-				);
-			},
+			return Object.entries(params).reduce(
+				(result, [paramKey, paramValue]) => result.replaceAll(`{${paramKey}}`, String(paramValue)),
+				template,
+			);
+		},
 	),
 	findPayrollFailuresLast7Days: vi.fn(),
 	findLatestCompletedPayrollExports: vi.fn(),
@@ -412,7 +406,9 @@ describe("getExportOperationsCockpit", () => {
 		expect(mockState.findPayrollJobsByOccurrence).toHaveBeenCalledTimes(1);
 		expect(mockState.findAuditRequestsByOccurrence).toHaveBeenCalledTimes(1);
 		expect(mockState.findScheduledExports).toHaveBeenCalledTimes(1);
-		expect(mockState.findScheduledExecutions).toHaveBeenCalledWith(expect.objectContaining({ limit: 25 }));
+		expect(mockState.findScheduledExecutions).toHaveBeenCalledWith(
+			expect.objectContaining({ limit: 25 }),
+		);
 		expect(mockState.findAuditExportPackages).not.toHaveBeenCalled();
 		expect(mockState.findPayrollFailuresLast7Days).toHaveBeenCalledTimes(1);
 		expect(mockState.findLatestCompletedPayrollExports).toHaveBeenCalledTimes(1);
@@ -514,7 +510,9 @@ describe("getExportOperationsCockpit", () => {
 			},
 		]);
 		mockState.findScheduledExports.mockRejectedValue(new Error("scheduled exports unavailable"));
-		mockState.findScheduledExecutions.mockRejectedValue(new Error("scheduled executions unavailable"));
+		mockState.findScheduledExecutions.mockRejectedValue(
+			new Error("scheduled executions unavailable"),
+		);
 		mockState.findPayrollFailuresLast7Days.mockResolvedValue([{ id: "payroll-failure-1" }]);
 		mockState.findLatestCompletedPayrollExports.mockResolvedValue([]);
 		mockState.findScheduledFailuresLast7Days.mockRejectedValue(
@@ -579,7 +577,9 @@ describe("getExportOperationsCockpit", () => {
 				updatedAt: new Date("2026-04-09T05:00:00.000Z"),
 			},
 		]);
-		mockState.findScheduledExecutions.mockRejectedValue(new Error("scheduled executions unavailable"));
+		mockState.findScheduledExecutions.mockRejectedValue(
+			new Error("scheduled executions unavailable"),
+		);
 		mockState.findScheduledFailuresLast7Days.mockResolvedValue([]);
 		mockState.findAuditRequestsByOccurrence.mockResolvedValue([]);
 		mockState.findAuditFailuresLast7Days.mockResolvedValue([]);
@@ -625,9 +625,7 @@ describe("getExportOperationsCockpit", () => {
 			DateTime.fromISO("2026-04-11T12:00:00.000Z"),
 		);
 
-		expect(result.errors.recentActivity).toBe(
-			"Some activity data is temporarily unavailable.",
-		);
+		expect(result.errors.recentActivity).toBe("Some activity data is temporarily unavailable.");
 	});
 
 	it("does not mark summary degraded when only recent activity sources fail", async () => {
@@ -670,7 +668,9 @@ describe("getExportOperationsCockpit", () => {
 			new Error("scheduled executions unavailable"),
 		);
 		mockState.findScheduledFailuresLast7Days.mockResolvedValue([]);
-		mockState.findAuditRequestsByOccurrence.mockRejectedValue(new Error("audit requests unavailable"));
+		mockState.findAuditRequestsByOccurrence.mockRejectedValue(
+			new Error("audit requests unavailable"),
+		);
 		mockState.findAuditFailuresLast7Days.mockResolvedValue([]);
 		mockState.findAuditExportPackages.mockResolvedValue([
 			{

@@ -4,16 +4,13 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import {
-	platformSystemEmailTemplate,
-	type PlatformSystemEmailTemplateKey,
-} from "@/db/schema";
+import { type PlatformSystemEmailTemplateKey, platformSystemEmailTemplate } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { sendEmail } from "@/lib/email/email-service";
 import {
+	getPlatformSystemEmailTemplateDefinition,
 	PLATFORM_SYSTEM_EMAIL_TEMPLATE_REGISTRY,
 	type PlatformSystemEmailTemplateDefinition,
-	getPlatformSystemEmailTemplateDefinition,
 } from "@/lib/email/system-template-registry";
 import {
 	type PlatformSystemEmailTemplateActionResult,
@@ -22,8 +19,7 @@ import {
 } from "@/lib/email/system-template-settings";
 import { interpolateTemplate, sanitizeEmailHtml } from "@/lib/email/template-validation";
 
-const PLATFORM_SYSTEM_EMAIL_TEMPLATE_SETTINGS_PATH =
-	"/platform-admin/system-email-templates";
+const PLATFORM_SYSTEM_EMAIL_TEMPLATE_SETTINGS_PATH = "/platform-admin/system-email-templates";
 
 type PlatformSystemEmailTemplateListEntry = Omit<
 	PlatformSystemEmailTemplateDefinition,
@@ -97,10 +93,12 @@ async function createSystemDraft(definition: PlatformSystemEmailTemplateDefiniti
 	let starterDraftHtml = await definition.renderDefault(definition.previewData as never);
 	const replacements = definition.variables
 		.flatMap((variable) =>
-			getGlobalPreviewReplacementValues(definition.previewData[variable.name]).map((previewValue) => ({
-				previewValue,
-				token: `{{${variable.name}}}`,
-			})),
+			getGlobalPreviewReplacementValues(definition.previewData[variable.name]).map(
+				(previewValue) => ({
+					previewValue,
+					token: `{{${variable.name}}}`,
+				}),
+			),
 		)
 		.filter((replacement) => replacement.previewValue)
 		.sort((left, right) => right.previewValue.length - left.previewValue.length);

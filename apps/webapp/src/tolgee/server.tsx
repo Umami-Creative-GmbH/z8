@@ -1,6 +1,6 @@
 import { createServerInstance } from "@tolgee/react/server";
-import { getLocale } from "next-intl/server";
 import { headers } from "next/headers";
+import { getLocale } from "next-intl/server";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { getNamespacesForRoute, loadNamespaces, TolgeeBase } from "./shared";
 

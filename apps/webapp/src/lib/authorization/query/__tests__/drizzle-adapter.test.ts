@@ -1,11 +1,11 @@
 import { AbilityBuilder, createMongoAbility, type MongoAbility } from "@casl/ability";
-import { PgDialect, pgTable, text, boolean } from "drizzle-orm/pg-core";
+import { boolean, PgDialect, pgTable, text } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import { defineAbilityFor } from "../../ability";
 import {
 	accessibleByDrizzle,
-	UnsupportedAuthorizationConditionError,
 	type DrizzleFieldMap,
+	UnsupportedAuthorizationConditionError,
 } from "../index";
 
 const documents = pgTable("documents", {
@@ -31,7 +31,12 @@ const fields = {
 	private: documents.private,
 } satisfies DrizzleFieldMap;
 
-function buildAbility(define: (can: AbilityBuilder<TestAbility>["can"], cannot: AbilityBuilder<TestAbility>["cannot"]) => void): TestAbility {
+function buildAbility(
+	define: (
+		can: AbilityBuilder<TestAbility>["can"],
+		cannot: AbilityBuilder<TestAbility>["cannot"],
+	) => void,
+): TestAbility {
 	const { can, cannot, build } = new AbilityBuilder<TestAbility>(createMongoAbility);
 	define(can, cannot);
 	return build();
@@ -118,10 +123,7 @@ describe("accessibleByDrizzle", () => {
 				$and: [
 					{ organizationId: "org-1" },
 					{
-						$or: [
-							{ ownerId: "employee-1" },
-							{ $not: { private: true } },
-						],
+						$or: [{ ownerId: "employee-1" }, { $not: { private: true } }],
 					},
 				],
 			});

@@ -23,8 +23,8 @@ import {
 	type ImplementationChecklistItemId,
 } from "@/lib/implementation-checklist/definition";
 import {
-	resolveImplementationChecklistItems,
 	type ResolvedImplementationChecklistItem,
+	resolveImplementationChecklistItems,
 } from "@/lib/implementation-checklist/status";
 
 export interface ImplementationChecklistViewModel {

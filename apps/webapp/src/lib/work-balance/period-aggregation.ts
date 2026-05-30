@@ -56,7 +56,8 @@ export async function computeEmployeePeriodBalance(input: {
 	const calculationStart = input.calculationStartDate
 		? DateTime.fromISO(input.calculationStartDate, { zone: "utc" }).startOf("day")
 		: null;
-	const effectiveStart = calculationStart && calculationStart > periodStart ? calculationStart : periodStart;
+	const effectiveStart =
+		calculationStart && calculationStart > periodStart ? calculationStart : periodStart;
 
 	if (effectiveStart > periodEnd) {
 		return buildPeriodBalanceValues({

@@ -1,7 +1,7 @@
 "use client";
 
-import { useTranslate } from "@tolgee/react";
 import { IconCheck, IconSelector, IconWorld } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -263,7 +263,9 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 			</PopoverTrigger>
 			<PopoverContent className="w-[400px] p-0" align="start">
 				<Command>
-					<CommandInput placeholder={t("settings.timezone.picker.search", "IconSearch timezone…")} />
+					<CommandInput
+						placeholder={t("settings.timezone.picker.search", "IconSearch timezone…")}
+					/>
 					<CommandEmpty>{t("settings.timezone.picker.empty", "No timezone found.")}</CommandEmpty>
 					<CommandList id={listboxId}>
 						{TIMEZONE_GROUPS.map((group) => (

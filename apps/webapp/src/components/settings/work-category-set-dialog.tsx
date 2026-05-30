@@ -13,9 +13,6 @@ import {
 	updateSetCategories,
 	updateWorkCategorySet,
 } from "@/app/[locale]/(app)/settings/work-categories/actions";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -25,6 +22,9 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -118,7 +118,9 @@ export function WorkCategorySetDialog({
 
 	const selectionScopeKey = `${metaScopeKey}:${setDetail?.categories.map((c) => c.id).join(",") ?? ""}`;
 
-	const initialSelectedCategoryIds = isEditing ? (setDetail?.categories.map((c) => c.id) ?? []) : [];
+	const initialSelectedCategoryIds = isEditing
+		? (setDetail?.categories.map((c) => c.id) ?? [])
+		: [];
 	const selectedCategoryIds =
 		selectionDraft?.scopeKey === selectionScopeKey
 			? selectionDraft.ids
@@ -128,9 +130,9 @@ export function WorkCategorySetDialog({
 		metaDraft?.scopeKey === metaScopeKey
 			? { name: metaDraft.name, description: metaDraft.description }
 			: {
-				name: categorySet?.name || "",
-				description: categorySet?.description || "",
-			};
+					name: categorySet?.name || "",
+					description: categorySet?.description || "",
+				};
 
 	// Create set mutation
 	const createSetMutation = useMutation({
@@ -143,7 +145,9 @@ export function WorkCategorySetDialog({
 			}),
 		onSuccess: (result) => {
 			if (result.success) {
-				queryClient.invalidateQueries({ queryKey: queryKeys.workCategorySets.list(organizationId) });
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.workCategorySets.list(organizationId),
+				});
 				toast.success(t("settings.workCategories.setCreated", "Category set created"));
 				onSuccess();
 			} else {
@@ -306,10 +310,7 @@ export function WorkCategorySetDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<form
-					onSubmit={handleSubmit}
-					className="flex min-h-0 flex-1 flex-col"
-				>
+				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
 					<ActionPanelBody className="space-y-4">
 						{/* Set Name */}
 						<div className="space-y-2 px-1">

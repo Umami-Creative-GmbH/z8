@@ -7,7 +7,7 @@
  */
 import crypto from "node:crypto";
 import { createLogger } from "@/lib/logger";
-import { SHA256Hash, RFC3161Timestamp } from "../../domain/models";
+import { RFC3161Timestamp, type SHA256Hash } from "../../domain/models";
 
 const logger = createLogger("TimestampProvider");
 
@@ -89,10 +89,7 @@ export class FreeTSATimestampProvider implements ITimestampProvider {
 				return new RFC3161Timestamp(tokenBase64, timestamp, this.authority);
 			} catch (error) {
 				lastError = error instanceof Error ? error : new Error(String(error));
-				logger.warn(
-					{ attempt, error: lastError.message },
-					"Timestamp request failed, retrying...",
-				);
+				logger.warn({ attempt, error: lastError.message }, "Timestamp request failed, retrying...");
 
 				if (attempt < this.maxRetries) {
 					await this.delay(this.retryDelayMs * attempt);
@@ -100,7 +97,9 @@ export class FreeTSATimestampProvider implements ITimestampProvider {
 			}
 		}
 
-		throw new Error(`Timestamp request failed after ${this.maxRetries} attempts: ${lastError?.message}`);
+		throw new Error(
+			`Timestamp request failed after ${this.maxRetries} attempts: ${lastError?.message}`,
+		);
 	}
 
 	/**
@@ -151,7 +150,10 @@ export class FreeTSATimestampProvider implements ITimestampProvider {
 
 			return true;
 		} catch (error) {
-			logger.error({ error: error instanceof Error ? error.message : String(error) }, "Timestamp verification failed");
+			logger.error(
+				{ error: error instanceof Error ? error.message : String(error) },
+				"Timestamp verification failed",
+			);
 			return false;
 		}
 	}

@@ -6,10 +6,7 @@ import { member } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { BillingError, DatabaseError } from "../../errors";
-import {
-	type BillingAccessResult,
-	evaluateBillingAccess,
-} from "./billing-access";
+import { type BillingAccessResult, evaluateBillingAccess } from "./billing-access";
 
 export type { BillingAccessResult } from "./billing-access";
 
@@ -20,10 +17,7 @@ export interface CheckBillingAccessOptions {
 
 function checkBillingAccess(
 	organizationId: string,
-	{
-		now = new Date(),
-		createTrialIfMissing = true,
-	}: CheckBillingAccessOptions = {},
+	{ now = new Date(), createTrialIfMissing = true }: CheckBillingAccessOptions = {},
 ) {
 	return Effect.gen(function* () {
 		const billingEnabled = env.BILLING_ENABLED === "true";
@@ -40,9 +34,7 @@ function checkBillingAccess(
 
 				if (existing || !createTrialIfMissing) return existing ?? null;
 
-				const trialEnd = DateTime.fromJSDate(now, { zone: "utc" })
-					.plus({ days: 14 })
-					.toJSDate();
+				const trialEnd = DateTime.fromJSDate(now, { zone: "utc" }).plus({ days: 14 }).toJSDate();
 				const [memberCountResult] = await db
 					.select({ count: count() })
 					.from(member)
@@ -91,9 +83,7 @@ function checkBillingAccess(
  * BillingEnforcementService - Checks subscription status for access control
  * Used by middleware and API routes to enforce read-only mode
  */
-export class BillingEnforcementService extends Context.Tag(
-	"BillingEnforcementService",
-)<
+export class BillingEnforcementService extends Context.Tag("BillingEnforcementService")<
 	BillingEnforcementService,
 	{
 		/**

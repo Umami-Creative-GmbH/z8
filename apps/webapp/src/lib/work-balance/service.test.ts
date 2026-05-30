@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { and, eq, gte, isNotNull } from "drizzle-orm";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { employee, employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "./format";
 
@@ -394,7 +394,9 @@ describe("work balance helpers", () => {
 		expect(mockState.db.transaction).toHaveBeenCalledTimes(1);
 		expect(mockState.txExecute).toHaveBeenCalledTimes(1);
 		expect(mockState.txExecute).toHaveBeenCalledWith(
-			expect.objectContaining({ values: expect.arrayContaining(["work-balance:org-1:employee-1"]) }),
+			expect.objectContaining({
+				values: expect.arrayContaining(["work-balance:org-1:employee-1"]),
+			}),
 		);
 		expect(mockState.txDelete).toHaveBeenCalledTimes(1);
 		expect(mockState.txDelete).toHaveBeenCalledWith(employeeWorkBalancePeriod);
@@ -463,8 +465,12 @@ describe("work balance helpers", () => {
 			expect.objectContaining({
 				set: expect.objectContaining({
 					isDirty: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
-					dirtyFromDate: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
-					refreshRequestedAt: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
+					dirtyFromDate: expect.objectContaining({
+						values: expect.arrayContaining([refreshStartedAt]),
+					}),
+					refreshRequestedAt: expect.objectContaining({
+						values: expect.arrayContaining([refreshStartedAt]),
+					}),
 				}),
 			}),
 		);
@@ -952,7 +958,9 @@ describe("work balance helpers", () => {
 		).resolves.toEqual({ updated: true });
 
 		expect(mockState.txExecute).toHaveBeenCalledWith(
-			expect.objectContaining({ values: expect.arrayContaining(["work-balance:org-1:employee-1"]) }),
+			expect.objectContaining({
+				values: expect.arrayContaining(["work-balance:org-1:employee-1"]),
+			}),
 		);
 		expect(mockState.computeEmployeePeriodBalance).toHaveBeenNthCalledWith(1, {
 			employeeId: "employee-1",

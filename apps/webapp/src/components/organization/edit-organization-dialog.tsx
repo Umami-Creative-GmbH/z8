@@ -67,7 +67,9 @@ export function EditOrganizationDialog({
 				onOpenChange(false);
 				refresh();
 			} else {
-				toast.error(result.error || t("organization.edit.updateError", "Failed to update organization"));
+				toast.error(
+					result.error || t("organization.edit.updateError", "Failed to update organization"),
+				);
 			}
 		});
 	};
@@ -111,7 +113,10 @@ export function EditOrganizationDialog({
 								}
 								placeholder="acme-corp"
 								pattern="[a-z0-9-]+"
-								title={t("organization.edit.slugHelp", "Only lowercase letters, numbers, and hyphens")}
+								title={t(
+									"organization.edit.slugHelp",
+									"Only lowercase letters, numbers, and hyphens",
+								)}
 							/>
 							<p className="text-xs text-muted-foreground">
 								{t("organization.edit.slugHelp", "Only lowercase letters, numbers, and hyphens")}

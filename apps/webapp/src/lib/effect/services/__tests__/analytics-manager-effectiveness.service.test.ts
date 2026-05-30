@@ -65,9 +65,7 @@ describe("AnalyticsService.getManagerEffectiveness", () => {
 				approver: { user: { name: "Mina Manager" } },
 			},
 		]);
-		const groupBy = vi
-			.fn()
-			.mockResolvedValue([{ managerId: "manager-1", count: 7 }]);
+		const groupBy = vi.fn().mockResolvedValue([{ managerId: "manager-1", count: 7 }]);
 		const where = vi.fn().mockReturnValue({ groupBy });
 		const innerJoin = vi.fn().mockReturnValue({ where });
 		const from = vi.fn().mockReturnValue({ innerJoin });
@@ -106,9 +104,7 @@ describe("AnalyticsService.getManagerEffectiveness", () => {
 		expect(innerJoin).toHaveBeenCalledTimes(1);
 		expect(where).toHaveBeenCalledTimes(1);
 		const teamSizeWhereCondition = where.mock.calls[0]?.[0];
-		expect(
-			conditionIncludes(teamSizeWhereCondition, employee.organizationId),
-		).toBe(true);
+		expect(conditionIncludes(teamSizeWhereCondition, employee.organizationId)).toBe(true);
 		expect(conditionIncludes(teamSizeWhereCondition, "org-1")).toBe(true);
 		expect(result.approvalMetrics.totalApprovals).toBe(1);
 		expect(result.approvalMetrics.avgDecisionTimeHours).toBe(4);
@@ -120,8 +116,6 @@ describe("AnalyticsService.getManagerEffectiveness", () => {
 			pendingCount: 1,
 		});
 		expect(result.byTeam.map((row) => row.label)).toContain("Field Sales");
-		expect(result.byType.map((row) => row.id)).toContain(
-			"travel_expense_claim",
-		);
+		expect(result.byType.map((row) => row.id)).toContain("travel_expense_claim");
 	});
 });

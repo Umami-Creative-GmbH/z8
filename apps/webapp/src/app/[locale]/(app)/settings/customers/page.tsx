@@ -1,5 +1,5 @@
-import { connection } from "next/server";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { CustomerManagement } from "@/components/settings/customer-management";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 

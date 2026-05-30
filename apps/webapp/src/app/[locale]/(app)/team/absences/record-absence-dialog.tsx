@@ -24,12 +24,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	TFormControl,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { sickDetailOptions } from "@/lib/absences/sick-details";
@@ -247,11 +242,11 @@ export function RecordAbsenceDialog({
 														</SelectTrigger>
 													</TFormControl>
 													<SelectContent>
-											{sickDetailOptions.map((option) => (
-												<SelectItem key={option.value} value={option.value}>
-													{t(option.labelKey, option.label)}
-												</SelectItem>
-											))}
+														{sickDetailOptions.map((option) => (
+															<SelectItem key={option.value} value={option.value}>
+																{t(option.labelKey, option.label)}
+															</SelectItem>
+														))}
 													</SelectContent>
 												</Select>
 												<TFormMessage field={field} />

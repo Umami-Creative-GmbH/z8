@@ -14,9 +14,8 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("./font-size-preference", async () => {
-	const actual = await vi.importActual<typeof import("./font-size-preference")>(
-		"./font-size-preference",
-	);
+	const actual =
+		await vi.importActual<typeof import("./font-size-preference")>("./font-size-preference");
 	return {
 		...actual,
 		useFontSizePreference: () => mockFontSizeState,
@@ -54,9 +53,7 @@ vi.mock("@/components/ui/dropdown-menu", () => {
 				{children}
 			</button>
 		),
-		DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
-			<div>{children}</div>
-		),
+		DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	};
 });
 

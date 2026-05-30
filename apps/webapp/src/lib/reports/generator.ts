@@ -4,9 +4,9 @@
  * Wrapper for generating reports from background workers.
  */
 
-import { generateEmployeeReport } from "./report-generator";
 import { createLogger } from "@/lib/logger";
 import type { ReportJobData } from "@/lib/queue";
+import { generateEmployeeReport } from "./report-generator";
 
 const logger = createLogger("ReportGenerator");
 

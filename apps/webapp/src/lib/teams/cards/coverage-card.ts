@@ -7,8 +7,8 @@
 
 import { DateTime } from "luxon";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
-import type { CoverageSummary } from "@/lib/effect/services/coverage.service";
 import { fmtFullDate } from "@/lib/bot-platform/i18n";
+import type { CoverageSummary } from "@/lib/effect/services/coverage.service";
 
 // ============================================
 // TYPES
@@ -174,7 +174,11 @@ export function buildCoverageCard(input: CoverageCardInput): Record<string, unkn
 		if (subareaCount >= 5) {
 			body.push({
 				type: "TextBlock",
-				text: t("teamsBot:commands.coverage.moreLocationsMarkdown", "_+{count} more locations..._", { count: bySubarea.size - 5 }),
+				text: t(
+					"teamsBot:commands.coverage.moreLocationsMarkdown",
+					"_+{count} more locations..._",
+					{ count: bySubarea.size - 5 },
+				),
 				isSubtle: true,
 				spacing: "medium",
 			});

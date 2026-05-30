@@ -14,7 +14,9 @@ describe("getInitialApprovalInboxFilters", () => {
 	});
 
 	it("ignores empty types values", () => {
-		const filters = getInitialApprovalInboxFilters(new URLSearchParams("types=travel_expense_claim,"));
+		const filters = getInitialApprovalInboxFilters(
+			new URLSearchParams("types=travel_expense_claim,"),
+		);
 
 		expect(filters).toEqual({
 			status: "pending",

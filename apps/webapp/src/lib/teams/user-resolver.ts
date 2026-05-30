@@ -7,8 +7,8 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { employee, teamsUserMapping } from "@/db/schema";
 import { user } from "@/db/auth-schema";
+import { employee, teamsUserMapping } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import type { ResolvedTeamsUser, UserResolutionResult } from "./types";
 

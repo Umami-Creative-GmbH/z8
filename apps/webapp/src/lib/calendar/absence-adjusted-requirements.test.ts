@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import {
+	applyAbsenceAdjustmentsToRequirements,
+	getAbsenceDayFraction,
+} from "./absence-adjusted-requirements";
 import type { DailyWorkRequirements } from "./types";
-import { applyAbsenceAdjustmentsToRequirements, getAbsenceDayFraction } from "./absence-adjusted-requirements";
 
 const baseRequirements: DailyWorkRequirements = {
 	"2026-05-18": { requiredMinutes: 480, policyId: "policy-1", policyName: "Standard" },

@@ -6,35 +6,35 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
-import { invitation, member, organization, user as authUser } from "@/db/auth-schema";
+import { user as authUser, invitation, member, organization } from "@/db/auth-schema";
 import { employee, employeeManagers, teamPermissions, userSettings } from "@/db/schema";
+import { customRole, customRolePermission, employeeCustomRole } from "@/db/schema/custom-role";
+import type { AppType } from "@/lib/audit-logger";
 import { auth } from "@/lib/auth";
 import {
-	mapSessionUserToAuthContextUser,
 	type AuthContextUser,
+	mapSessionUserToAuthContextUser,
 } from "@/lib/auth/auth-context-user";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
-import { detectAppType, type AppPermissions } from "@/lib/effect/services/app-access.service";
 import {
-	hasSettingsAccessTier,
-	isSettingsAccessMembershipRole,
-	resolveSettingsAccessTier,
-	type ResolveSettingsAccessTierInput,
-	type SettingsAccessTier,
-} from "@/lib/settings-access";
-import type { AppType } from "@/lib/audit-logger";
-import {
-	defineAbilityFor,
 	type Action,
 	type AppAbility,
 	type CustomRoleInfo,
+	defineAbilityFor,
 	type PrincipalContext,
 	type Subject,
 	type TeamPermissions,
 } from "@/lib/authorization";
+import { type AppPermissions, detectAppType } from "@/lib/effect/services/app-access.service";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
 import type { PermissionFlags } from "@/lib/effect/services/permissions.service";
-import { customRole, customRolePermission, employeeCustomRole } from "@/db/schema/custom-role";
+import {
+	hasSettingsAccessTier,
+	isSettingsAccessMembershipRole,
+	type ResolveSettingsAccessTierInput,
+	resolveSettingsAccessTier,
+	type SettingsAccessTier,
+} from "@/lib/settings-access";
 
 export interface AuthContext {
 	user: AuthContextUser;
@@ -705,9 +705,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 	const [memberRecord] = await db
 		.select()
 		.from(member)
-		.where(
-			and(eq(member.userId, userId), eq(member.organizationId, activeOrganizationId)),
-		)
+		.where(and(eq(member.userId, userId), eq(member.organizationId, activeOrganizationId)))
 		.limit(1);
 
 	// Load employee record
@@ -795,10 +793,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 	// Load managed employee IDs
 	let managedEmployeeIds: string[] = [];
 
-	if (
-		employeeRecord &&
-		(employeeRecord.role === "manager" || employeeRecord.role === "admin")
-	) {
+	if (employeeRecord && (employeeRecord.role === "manager" || employeeRecord.role === "admin")) {
 		const managedRecords = await db
 			.select({ employeeId: employeeManagers.employeeId })
 			.from(employeeManagers)
@@ -890,7 +885,10 @@ export const getCurrentSettingsAccessTier = cache(async (): Promise<SettingsAcce
 		return null;
 	}
 
-	return getSettingsAccessTierForUser(session.user.id, session.session?.activeOrganizationId || null);
+	return getSettingsAccessTierForUser(
+		session.user.id,
+		session.session?.activeOrganizationId || null,
+	);
 });
 
 export const getCurrentSettingsRouteContext = cache(
@@ -1013,12 +1011,7 @@ export async function isOrgAdminCasl(organizationId: string): Promise<boolean> {
 		const [memberRecord] = await db
 			.select()
 			.from(member)
-			.where(
-				and(
-					eq(member.userId, session.user.id),
-					eq(member.organizationId, organizationId),
-				),
-			)
+			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
 			.limit(1);
 
 		return memberRecord?.role === "admin" || memberRecord?.role === "owner";
@@ -1035,8 +1028,8 @@ export async function isOrgAdminCasl(organizationId: string): Promise<boolean> {
 
 /**
  * Check whether the current user can manage organization settings in the current org.
-	* This uses the centralized settings access tier for the active organization and
-	* intentionally ignores platform-admin overrides.
+ * This uses the centralized settings access tier for the active organization and
+ * intentionally ignores platform-admin overrides.
  */
 export async function canManageCurrentOrganizationSettings(): Promise<boolean> {
 	const settingsAccessTier = await getCurrentSettingsAccessTier();
@@ -1067,12 +1060,7 @@ export async function isOrgOwnerCasl(organizationId: string): Promise<boolean> {
 		const [memberRecord] = await db
 			.select()
 			.from(member)
-			.where(
-				and(
-					eq(member.userId, session.user.id),
-					eq(member.organizationId, organizationId),
-				),
-			)
+			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
 			.limit(1);
 
 		return memberRecord?.role === "owner";

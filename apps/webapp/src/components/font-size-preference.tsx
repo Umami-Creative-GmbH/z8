@@ -43,20 +43,14 @@ export function FontSizeProvider({ children }: { children: React.ReactNode }) {
 		setFontSize,
 	};
 
-	return (
-		<FontSizeContext.Provider value={value}>
-			{children}
-		</FontSizeContext.Provider>
-	);
+	return <FontSizeContext.Provider value={value}>{children}</FontSizeContext.Provider>;
 }
 
 export function useFontSizePreference() {
 	const context = use(FontSizeContext);
 
 	if (!context) {
-		throw new Error(
-			"useFontSizePreference must be used within FontSizeProvider",
-		);
+		throw new Error("useFontSizePreference must be used within FontSizeProvider");
 	}
 
 	return context;

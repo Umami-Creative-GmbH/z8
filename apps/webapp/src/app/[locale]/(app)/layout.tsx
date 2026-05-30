@@ -57,10 +57,7 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 		// This prevents redirect loops when proxy sees cookie but session is invalid.
 		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/" + locale;
 		const sessionExpiredUrl =
-			"/api/auth/session-expired?locale=" +
-			locale +
-			"&callbackUrl=" +
-			encodeURIComponent(pathname);
+			"/api/auth/session-expired?locale=" + locale + "&callbackUrl=" + encodeURIComponent(pathname);
 		redirect(sessionExpiredUrl);
 	}
 
@@ -121,16 +118,13 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 	}
 
 	const trialDaysRemaining =
-		typeof billingAccess.daysRemaining === "number" &&
-		billingAccess.daysRemaining > 0
+		typeof billingAccess.daysRemaining === "number" && billingAccess.daysRemaining > 0
 			? billingAccess.daysRemaining
 			: null;
 	const membershipRole = membershipRecord?.role;
-	const canManageBilling =
-		membershipRole === "owner" || membershipRole === "admin";
+	const canManageBilling = membershipRole === "owner" || membershipRole === "admin";
 	const hasPreparedTrialSubscription =
-		subscriptionRow?.status === "trialing" &&
-		Boolean(subscriptionRow?.stripeSubscriptionId);
+		subscriptionRow?.status === "trialing" && Boolean(subscriptionRow?.stripeSubscriptionId);
 	const showTrialBanner =
 		billingAccess.state === "trialing" &&
 		trialDaysRemaining !== null &&
@@ -152,10 +146,7 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 							} as React.CSSProperties
 						}
 					>
-						<ServerAppSidebar
-							variant="inset"
-							showWorksCouncilNav={Boolean(activeOrganizationId)}
-						/>
+						<ServerAppSidebar variant="inset" showWorksCouncilNav={Boolean(activeOrganizationId)} />
 						<SidebarInset>
 							<SiteHeader />
 							{showTrialBanner ? (
@@ -166,9 +157,7 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 								/>
 							) : null}
 							<OrganizationDeletionBanner />
-							<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">
-								{children}
-							</div>
+							<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">{children}</div>
 						</SidebarInset>
 					</SidebarProvider>
 				</OrganizationSettingsProvider>

@@ -1,10 +1,32 @@
 export type ImportProvider = "clockodo" | "clockin";
-export type ImportBatchStatus = "draft" | "scanning" | "needs_review" | "committing" | "completed" | "scan_failed" | "commit_failed" | "cancelled";
+export type ImportBatchStatus =
+	| "draft"
+	| "scanning"
+	| "needs_review"
+	| "committing"
+	| "completed"
+	| "scan_failed"
+	| "commit_failed"
+	| "cancelled";
 export type ImportJobStatus = "queued" | "running" | "completed" | "failed";
 export type ImportJobKind = "scan" | "commit";
-export type ImportRowStatus = "staged" | "accepted" | "rejected" | "blocked" | "needs_mapping" | "committing" | "committed" | "commit_failed";
+export type ImportRowStatus =
+	| "staged"
+	| "accepted"
+	| "rejected"
+	| "blocked"
+	| "needs_mapping"
+	| "committing"
+	| "committed"
+	| "commit_failed";
 export type ImportIssueSeverity = "none" | "info" | "warning" | "blocking";
-export type ImportIssueType = "duplicate" | "suspicious_gap" | "unmatched_employee" | "unmatched_project" | "validation_error" | "dependency_blocker";
+export type ImportIssueType =
+	| "duplicate"
+	| "suspicious_gap"
+	| "unmatched_employee"
+	| "unmatched_project"
+	| "validation_error"
+	| "dependency_blocker";
 
 export type ImportEntityType =
 	| "employee"

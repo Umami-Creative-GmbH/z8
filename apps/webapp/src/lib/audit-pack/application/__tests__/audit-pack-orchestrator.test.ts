@@ -28,9 +28,11 @@ function createDependencyMocks() {
 	const collect: AuditPackOrchestratorDependencies["collect"] = vi.fn().mockResolvedValue({
 		baseEntries: ["e-1"],
 	});
-	const expandLineage: AuditPackOrchestratorDependencies["expandLineage"] = vi.fn().mockResolvedValue({
-		lineageEntries: ["e-1", "e-2"],
-	});
+	const expandLineage: AuditPackOrchestratorDependencies["expandLineage"] = vi
+		.fn()
+		.mockResolvedValue({
+			lineageEntries: ["e-1", "e-2"],
+		});
 	const assemble: AuditPackOrchestratorDependencies["assemble"] = vi.fn().mockResolvedValue({
 		zipBuffer: Buffer.from("zip"),
 		counts: {

@@ -221,37 +221,55 @@ export function EmployeeEmploymentHistoryCard({
 			}
 
 			if (result.success) {
-				toast.success(t("settings.employmentHistory.addSuccess", "Employment history change added"));
+				toast.success(
+					t("settings.employmentHistory.addSuccess", "Employment history change added"),
+				);
 				form.reset();
 				setIsAdding(false);
 				return;
 			}
 
-			toast.error(result.error || t("settings.employmentHistory.addError", "Failed to add employment history change"));
+			toast.error(
+				result.error ||
+					t("settings.employmentHistory.addError", "Failed to add employment history change"),
+			);
 		},
 	});
 
 	const handleConfirm = async (historyId: string) => {
 		const result = await onConfirm(historyId).catch(() => null);
 		if (result?.success) {
-			toast.success(t("settings.employmentHistory.confirmSuccess", "Employment history change confirmed"));
+			toast.success(
+				t("settings.employmentHistory.confirmSuccess", "Employment history change confirmed"),
+			);
 			return;
 		}
-		toast.error(result?.error || t("settings.employmentHistory.confirmError", "Failed to confirm employment history change"));
+		toast.error(
+			result?.error ||
+				t("settings.employmentHistory.confirmError", "Failed to confirm employment history change"),
+		);
 	};
 
 	const handleCancel = async (historyId: string) => {
 		const confirmed = window.confirm(
-			t("settings.employmentHistory.cancelConfirm", "Cancel this employment change? This removes the scheduled or draft employment change."),
+			t(
+				"settings.employmentHistory.cancelConfirm",
+				"Cancel this employment change? This removes the scheduled or draft employment change.",
+			),
 		);
 		if (!confirmed) return;
 
 		const result = await onCancel(historyId).catch(() => null);
 		if (result?.success) {
-			toast.success(t("settings.employmentHistory.cancelSuccess", "Employment history change canceled"));
+			toast.success(
+				t("settings.employmentHistory.cancelSuccess", "Employment history change canceled"),
+			);
 			return;
 		}
-		toast.error(result?.error || t("settings.employmentHistory.cancelError", "Failed to cancel employment history change"));
+		toast.error(
+			result?.error ||
+				t("settings.employmentHistory.cancelError", "Failed to cancel employment history change"),
+		);
 	};
 
 	return (
@@ -259,7 +277,12 @@ export function EmployeeEmploymentHistoryCard({
 			<CardHeader className="flex flex-row items-start justify-between gap-4">
 				<div>
 					<CardTitle>{t("settings.employmentHistory.title", "Contract & Work Model")}</CardTitle>
-					<CardDescription>{t("settings.employmentHistory.description", "Confirmed context and scheduled employment changes")}</CardDescription>
+					<CardDescription>
+						{t(
+							"settings.employmentHistory.description",
+							"Confirmed context and scheduled employment changes",
+						)}
+					</CardDescription>
 				</div>
 				{canManage && (
 					<Button
@@ -277,13 +300,22 @@ export function EmployeeEmploymentHistoryCard({
 					<ContextPanel
 						label={t("settings.employmentHistory.currentConfirmed", "Current confirmed")}
 						entry={current}
-						empty={t("settings.employmentHistory.noCurrentContext", "No confirmed contract context")}
+						empty={t(
+							"settings.employmentHistory.noCurrentContext",
+							"No confirmed contract context",
+						)}
 						t={t}
 					/>
 					<ContextPanel
-						label={t("settings.employmentHistory.nextScheduledConfirmed", "Next scheduled confirmed")}
+						label={t(
+							"settings.employmentHistory.nextScheduledConfirmed",
+							"Next scheduled confirmed",
+						)}
 						entry={nextConfirmed}
-						empty={t("settings.employmentHistory.noScheduledChange", "No confirmed change scheduled")}
+						empty={t(
+							"settings.employmentHistory.noScheduledChange",
+							"No confirmed change scheduled",
+						)}
 						t={t}
 					/>
 				</div>
@@ -303,8 +335,14 @@ export function EmployeeEmploymentHistoryCard({
 								name="validFrom"
 								label={t("settings.employmentHistory.effectiveDate", "Effective Date")}
 								disabled={isCreating}
-								description={t("settings.employmentHistory.effectiveDateHelp", "When this contract context takes effect")}
-								requiredMessage={t("settings.employmentHistory.effectiveDateRequired", "Effective Date is required")}
+								description={t(
+									"settings.employmentHistory.effectiveDateHelp",
+									"When this contract context takes effect",
+								)}
+								requiredMessage={t(
+									"settings.employmentHistory.effectiveDateRequired",
+									"Effective Date is required",
+								)}
 								required
 							/>
 							<TextField
@@ -317,7 +355,9 @@ export function EmployeeEmploymentHistoryCard({
 							<form.Field name="reviewState">
 								{(field) => (
 									<TFormItem>
-							<TFormLabel hasError={fieldHasError(field)}>{t("settings.employmentHistory.reviewState", "Review State")}</TFormLabel>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("settings.employmentHistory.reviewState", "Review State")}
+										</TFormLabel>
 										<Select
 											value={field.state.value}
 											onValueChange={(value) => field.handleChange(value as ReviewState)}
@@ -325,13 +365,24 @@ export function EmployeeEmploymentHistoryCard({
 										>
 											<TFormControl hasError={fieldHasError(field)}>
 												<SelectTrigger>
-								<SelectValue placeholder={t("settings.employmentHistory.selectReviewState", "Select review state")} />
+													<SelectValue
+														placeholder={t(
+															"settings.employmentHistory.selectReviewState",
+															"Select review state",
+														)}
+													/>
 												</SelectTrigger>
 											</TFormControl>
 											<SelectContent>
-								<SelectItem value="draft">{t("settings.employmentHistory.states.draft", "draft")}</SelectItem>
-								<SelectItem value="pending">{t("settings.employmentHistory.states.pending", "pending")}</SelectItem>
-								<SelectItem value="confirmed">{t("settings.employmentHistory.states.confirmed", "confirmed")}</SelectItem>
+												<SelectItem value="draft">
+													{t("settings.employmentHistory.states.draft", "draft")}
+												</SelectItem>
+												<SelectItem value="pending">
+													{t("settings.employmentHistory.states.pending", "pending")}
+												</SelectItem>
+												<SelectItem value="confirmed">
+													{t("settings.employmentHistory.states.confirmed", "confirmed")}
+												</SelectItem>
 											</SelectContent>
 										</Select>
 										<TFormMessage field={field} />
@@ -341,7 +392,9 @@ export function EmployeeEmploymentHistoryCard({
 							<form.Field name="workModel">
 								{(field) => (
 									<TFormItem>
-						<TFormLabel hasError={fieldHasError(field)}>{t("settings.employmentHistory.workModel", "Work Model")}</TFormLabel>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("settings.employmentHistory.workModel", "Work Model")}
+										</TFormLabel>
 										<Select
 											value={field.state.value}
 											onValueChange={(value) => field.handleChange(value as WorkModel)}
@@ -349,14 +402,27 @@ export function EmployeeEmploymentHistoryCard({
 										>
 											<TFormControl hasError={fieldHasError(field)}>
 												<SelectTrigger>
-							<SelectValue placeholder={t("settings.employmentHistory.selectWorkModel", "Select work model")} />
+													<SelectValue
+														placeholder={t(
+															"settings.employmentHistory.selectWorkModel",
+															"Select work model",
+														)}
+													/>
 												</SelectTrigger>
 											</TFormControl>
 											<SelectContent>
-							<SelectItem value="onsite">{t("settings.employmentHistory.workModels.onsite", "onsite")}</SelectItem>
-							<SelectItem value="hybrid">{t("settings.employmentHistory.workModels.hybrid", "hybrid")}</SelectItem>
-							<SelectItem value="remote">{t("settings.employmentHistory.workModels.remote", "remote")}</SelectItem>
-							<SelectItem value="flexible">{t("settings.employmentHistory.workModels.flexible", "flexible")}</SelectItem>
+												<SelectItem value="onsite">
+													{t("settings.employmentHistory.workModels.onsite", "onsite")}
+												</SelectItem>
+												<SelectItem value="hybrid">
+													{t("settings.employmentHistory.workModels.hybrid", "hybrid")}
+												</SelectItem>
+												<SelectItem value="remote">
+													{t("settings.employmentHistory.workModels.remote", "remote")}
+												</SelectItem>
+												<SelectItem value="flexible">
+													{t("settings.employmentHistory.workModels.flexible", "flexible")}
+												</SelectItem>
 											</SelectContent>
 										</Select>
 										<TFormMessage field={field} />
@@ -366,7 +432,9 @@ export function EmployeeEmploymentHistoryCard({
 							<form.Field name="contractType">
 								{(field) => (
 									<TFormItem>
-						<TFormLabel hasError={fieldHasError(field)}>{t("settings.employmentHistory.contractType", "Contract Type")}</TFormLabel>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("settings.employmentHistory.contractType", "Contract Type")}
+										</TFormLabel>
 										<Select
 											value={field.state.value}
 											onValueChange={(value) => field.handleChange(value as ContractType)}
@@ -374,12 +442,21 @@ export function EmployeeEmploymentHistoryCard({
 										>
 											<TFormControl hasError={fieldHasError(field)}>
 												<SelectTrigger>
-							<SelectValue placeholder={t("settings.employmentHistory.selectContractType", "Select contract type")} />
+													<SelectValue
+														placeholder={t(
+															"settings.employmentHistory.selectContractType",
+															"Select contract type",
+														)}
+													/>
 												</SelectTrigger>
 											</TFormControl>
 											<SelectContent>
-							<SelectItem value="fixed">{t("settings.employmentHistory.contractTypes.fixed", "fixed")}</SelectItem>
-							<SelectItem value="hourly">{t("settings.employmentHistory.contractTypes.hourly", "hourly")}</SelectItem>
+												<SelectItem value="fixed">
+													{t("settings.employmentHistory.contractTypes.fixed", "fixed")}
+												</SelectItem>
+												<SelectItem value="hourly">
+													{t("settings.employmentHistory.contractTypes.hourly", "hourly")}
+												</SelectItem>
 											</SelectContent>
 										</Select>
 										<TFormMessage field={field} />
@@ -389,27 +466,29 @@ export function EmployeeEmploymentHistoryCard({
 							<TextField
 								form={form}
 								name="hourlyRate"
-					label={t("settings.employmentHistory.hourlyRate", "Hourly Rate")}
+								label={t("settings.employmentHistory.hourlyRate", "Hourly Rate")}
 								type="number"
 								disabled={isCreating}
 							/>
 							<DateField
 								form={form}
 								name="probationStartsOn"
-					label={t("settings.employmentHistory.probationStart", "Probation Start")}
+								label={t("settings.employmentHistory.probationStart", "Probation Start")}
 								disabled={isCreating}
 							/>
 							<DateField
 								form={form}
 								name="probationEndsOn"
-					label={t("settings.employmentHistory.probationEnd", "Probation End")}
+								label={t("settings.employmentHistory.probationEnd", "Probation End")}
 								disabled={isCreating}
 							/>
 						</div>
 						<form.Field name="changeReason">
 							{(field) => (
 								<TFormItem className="mt-4">
-				<TFormLabel hasError={fieldHasError(field)}>{t("settings.employmentHistory.reasonNote", "Reason / Note")}</TFormLabel>
+									<TFormLabel hasError={fieldHasError(field)}>
+										{t("settings.employmentHistory.reasonNote", "Reason / Note")}
+									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
 										<Textarea
 											name="changeReason"
@@ -418,7 +497,10 @@ export function EmployeeEmploymentHistoryCard({
 											onBlur={field.handleBlur}
 											disabled={isCreating}
 											autoComplete="off"
-					placeholder={t("settings.employmentHistory.reasonPlaceholder", "Annual review, role change, or work-model update…")}
+											placeholder={t(
+												"settings.employmentHistory.reasonPlaceholder",
+												"Annual review, role change, or work-model update…",
+											)}
 											rows={2}
 										/>
 									</TFormControl>
@@ -433,23 +515,28 @@ export function EmployeeEmploymentHistoryCard({
 								onClick={() => setIsAdding(false)}
 								disabled={isCreating}
 							>
-					{t("common.cancel", "Cancel")}
+								{t("common.cancel", "Cancel")}
 							</Button>
 							<Button type="submit" disabled={isCreating}>
 								{isCreating && (
 									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								)}
-					{t("settings.employmentHistory.saveChange", "Save Change")}
+								{t("settings.employmentHistory.saveChange", "Save Change")}
 							</Button>
 						</div>
 					</form>
 				)}
 
 				<div className="space-y-3">
-			<div className="text-sm font-medium">{t("settings.employmentHistory.timeline", "Timeline")}</div>
+					<div className="text-sm font-medium">
+						{t("settings.employmentHistory.timeline", "Timeline")}
+					</div>
 					{sortedHistory.length === 0 ? (
 						<div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-				{t("settings.employmentHistory.emptyTimeline", "No contract or work-model history yet.")}
+							{t(
+								"settings.employmentHistory.emptyTimeline",
+								"No contract or work-model history yet.",
+							)}
 						</div>
 					) : (
 						<div className="space-y-3">
@@ -460,10 +547,10 @@ export function EmployeeEmploymentHistoryCard({
 									canManage={canManage}
 									isMutating={isMutating}
 									now={now}
-								onConfirm={handleConfirm}
-								onCancel={handleCancel}
-								t={t}
-							/>
+									onConfirm={handleConfirm}
+									onCancel={handleCancel}
+									t={t}
+								/>
 							))}
 						</div>
 					)}
@@ -490,16 +577,28 @@ function ContextPanel({
 			{entry ? (
 				<div className="space-y-2">
 					<div className="flex flex-wrap items-center gap-2">
-						<Badge variant="default">{t("settings.employmentHistory.weeklyHoursValue", "{hours} / week", { hours: formatWeeklyHours(entry.weeklyContractMinutes) })}</Badge>
+						<Badge variant="default">
+							{t("settings.employmentHistory.weeklyHoursValue", "{hours} / week", {
+								hours: formatWeeklyHours(entry.weeklyContractMinutes),
+							})}
+						</Badge>
 						<Badge variant="outline">{entry.workModel}</Badge>
 						<Badge variant="secondary">{entry.contractType}</Badge>
 					</div>
 					<div className="flex items-center gap-2 text-xs text-muted-foreground">
 						<IconCalendar className="size-3" aria-hidden="true" />
-						<span>{t("settings.employmentHistory.effectiveDateValue", "Effective {date}", { date: formatDate(entry.validFrom) ?? t("common.present", "Present") })}</span>
+						<span>
+							{t("settings.employmentHistory.effectiveDateValue", "Effective {date}", {
+								date: formatDate(entry.validFrom) ?? t("common.present", "Present"),
+							})}
+						</span>
 					</div>
 					{entry.contractType === "hourly" && entry.hourlyRate && (
-					<div className="text-sm">{t("settings.employmentHistory.hourlyRateValue", "{rate} / hour", { rate: formatCurrency(entry.hourlyRate, entry.currency) })}</div>
+						<div className="text-sm">
+							{t("settings.employmentHistory.hourlyRateValue", "{rate} / hour", {
+								rate: formatCurrency(entry.hourlyRate, entry.currency),
+							})}
+						</div>
 					)}
 				</div>
 			) : (
@@ -535,12 +634,14 @@ function TimelineRow({
 				<div className="space-y-2">
 					<div className="flex flex-wrap items-center gap-2">
 						<span className={cn("font-medium", current && "text-primary")}>
-				{t("settings.employmentHistory.weeklyHoursValue", "{hours} / week", { hours: formatWeeklyHours(entry.weeklyContractMinutes) })}
+							{t("settings.employmentHistory.weeklyHoursValue", "{hours} / week", {
+								hours: formatWeeklyHours(entry.weeklyContractMinutes),
+							})}
 						</span>
 						<Badge variant={entry.reviewState === "confirmed" ? "default" : "secondary"}>
 							{entry.reviewState}
 						</Badge>
-			{current && <Badge variant="outline">{t("common.current", "Current")}</Badge>}
+						{current && <Badge variant="outline">{t("common.current", "Current")}</Badge>}
 					</div>
 					<div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
 						<span>{entry.workModel}</span>
@@ -549,17 +650,24 @@ function TimelineRow({
 						{hourlyRate && (
 							<>
 								<span aria-hidden="true">·</span>
-				<span>{t("settings.employmentHistory.hourlyRateValue", "{rate} / hour", { rate: hourlyRate })}</span>
+								<span>
+									{t("settings.employmentHistory.hourlyRateValue", "{rate} / hour", {
+										rate: hourlyRate,
+									})}
+								</span>
 							</>
 						)}
 					</div>
 					<div className="text-xs text-muted-foreground">
 						{formatDate(entry.validFrom)} -{" "}
-			{entry.validUntil ? formatDate(entry.validUntil) : t("common.present", "Present")}
+						{entry.validUntil ? formatDate(entry.validUntil) : t("common.present", "Present")}
 					</div>
 					{entry.probationStartsOn && entry.probationEndsOn && (
 						<div className="text-xs text-muted-foreground">
-			{t("settings.employmentHistory.probationRange", "Probation {startDate} - {endDate}", { startDate: formatDate(entry.probationStartsOn) ?? "", endDate: formatDate(entry.probationEndsOn) ?? "" })}
+							{t("settings.employmentHistory.probationRange", "Probation {startDate} - {endDate}", {
+								startDate: formatDate(entry.probationStartsOn) ?? "",
+								endDate: formatDate(entry.probationEndsOn) ?? "",
+							})}
 						</div>
 					)}
 					{entry.changeReason && (
@@ -580,7 +688,7 @@ function TimelineRow({
 								) : (
 									<IconCheck className="mr-2 size-4" aria-hidden="true" />
 								)}
-				{t("common.confirm", "Confirm")}
+								{t("common.confirm", "Confirm")}
 							</Button>
 						)}
 						{canCancel(entry, now) && (
@@ -591,7 +699,7 @@ function TimelineRow({
 								disabled={isMutating}
 							>
 								<IconX className="mr-2 size-4" aria-hidden="true" />
-				{t("common.cancel", "Cancel")}
+								{t("common.cancel", "Cancel")}
 							</Button>
 						)}
 					</div>
@@ -659,9 +767,7 @@ function DateField({
 		<form.Field
 			name={name}
 			validators={{
-				onSubmit: required
-					? ({ value }) => (value ? undefined : requiredMessage)
-					: undefined,
+				onSubmit: required ? ({ value }) => (value ? undefined : requiredMessage) : undefined,
 			}}
 		>
 			{(field) => (
@@ -679,7 +785,7 @@ function DateField({
 							required={required}
 						/>
 					</TFormControl>
-			{description && <TFormDescription>{description}</TFormDescription>}
+					{description && <TFormDescription>{description}</TFormDescription>}
 					<TFormMessage field={field} />
 				</TFormItem>
 			)}

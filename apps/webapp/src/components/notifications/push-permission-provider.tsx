@@ -49,16 +49,22 @@ export function PushPermissionProvider({ children }: PushPermissionProviderProps
 		subscribe,
 	} = usePushNotifications({
 		onSubscribe: () => {
-			toast.success(t("common:notifications.preferences.push.enabledToast", "Push notifications enabled"), {
-				description: t(
-					"common:notifications.preferences.push.enabledToastDescription",
-					"You will now receive browser push notifications",
-				),
-			});
+			toast.success(
+				t("common:notifications.preferences.push.enabledToast", "Push notifications enabled"),
+				{
+					description: t(
+						"common:notifications.preferences.push.enabledToastDescription",
+						"You will now receive browser push notifications",
+					),
+				},
+			);
 		},
-			onError: (error) => {
+		onError: (error) => {
 			toast.error(
-				t("common:notifications.preferences.push.enableFailedToast", "Could not enable push notifications"),
+				t(
+					"common:notifications.preferences.push.enableFailedToast",
+					"Could not enable push notifications",
+				),
 				{
 					description: error.message,
 				},

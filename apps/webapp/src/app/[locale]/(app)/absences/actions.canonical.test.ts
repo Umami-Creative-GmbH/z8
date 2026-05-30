@@ -79,10 +79,9 @@ describe("absence canonical action routing", () => {
 	});
 
 	it("fails the action when canonical sync fails", async () => {
-		vi.spyOn(
-			canonicalActions.canonicalAbsenceRecordClient,
-			"create",
-		).mockRejectedValue(new Error("canonical write failed"));
+		vi.spyOn(canonicalActions.canonicalAbsenceRecordClient, "create").mockRejectedValue(
+			new Error("canonical write failed"),
+		);
 
 		await expect(
 			canonicalActions.syncAbsenceRequestToCanonicalRecord({
@@ -169,7 +168,10 @@ describe("absence canonical action routing", () => {
 		const setRecord = vi.fn().mockReturnValue({ where: whereRecord });
 		const setAbsence = vi.fn().mockReturnValue({ where: whereAbsence });
 		const tx = {
-			update: vi.fn().mockReturnValueOnce({ set: setRecord }).mockReturnValueOnce({ set: setAbsence }),
+			update: vi
+				.fn()
+				.mockReturnValueOnce({ set: setRecord })
+				.mockReturnValueOnce({ set: setAbsence }),
 		};
 
 		await canonicalActions.updateCanonicalAbsenceRangeInTransaction(tx as never, {

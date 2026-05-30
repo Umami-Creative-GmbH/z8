@@ -47,11 +47,9 @@ vi.mock("@/lib/vault", () => ({
 }));
 
 vi.mock("./transports", () => ({
-	ConsoleTransport: vi
-		.fn()
-		.mockImplementation(function ConsoleTransport() {
-			return makeTransport("Console (Development)", "console-message");
-		}),
+	ConsoleTransport: vi.fn().mockImplementation(function ConsoleTransport() {
+		return makeTransport("Console (Development)", "console-message");
+	}),
 	createSystemResendTransport: createSystemResendTransportMock,
 	createSystemSmtpTransport: createSystemSmtpTransportMock,
 	ResendTransport: vi.fn().mockImplementation(function ResendTransport(...args) {
@@ -90,8 +88,12 @@ describe("email service system transport selection", () => {
 
 	it("uses only the system Resend factory when EMAIL_PROVIDER is resend", async () => {
 		vi.stubEnv("EMAIL_PROVIDER", "resend");
-		createSystemResendTransportMock.mockReturnValue(makeTransport("Resend (System)", "system-resend-message"));
-		createSystemSmtpTransportMock.mockReturnValue(makeTransport("SMTP (System)", "system-smtp-message"));
+		createSystemResendTransportMock.mockReturnValue(
+			makeTransport("Resend (System)", "system-resend-message"),
+		);
+		createSystemSmtpTransportMock.mockReturnValue(
+			makeTransport("SMTP (System)", "system-smtp-message"),
+		);
 
 		const result = await sendSystemEmail();
 
@@ -102,8 +104,12 @@ describe("email service system transport selection", () => {
 
 	it("uses only the system SMTP factory when EMAIL_PROVIDER is smtp", async () => {
 		vi.stubEnv("EMAIL_PROVIDER", "smtp");
-		createSystemResendTransportMock.mockReturnValue(makeTransport("Resend (System)", "system-resend-message"));
-		createSystemSmtpTransportMock.mockReturnValue(makeTransport("SMTP (System)", "system-smtp-message"));
+		createSystemResendTransportMock.mockReturnValue(
+			makeTransport("Resend (System)", "system-resend-message"),
+		);
+		createSystemSmtpTransportMock.mockReturnValue(
+			makeTransport("SMTP (System)", "system-smtp-message"),
+		);
 
 		const result = await sendSystemEmail();
 
@@ -115,7 +121,9 @@ describe("email service system transport selection", () => {
 	it("falls back to console when the selected system provider is unavailable", async () => {
 		vi.stubEnv("EMAIL_PROVIDER", "resend");
 		createSystemResendTransportMock.mockReturnValue(null);
-		createSystemSmtpTransportMock.mockReturnValue(makeTransport("SMTP (System)", "system-smtp-message"));
+		createSystemSmtpTransportMock.mockReturnValue(
+			makeTransport("SMTP (System)", "system-smtp-message"),
+		);
 
 		const result = await sendSystemEmail();
 
@@ -127,7 +135,9 @@ describe("email service system transport selection", () => {
 
 	it("preserves Resend to SMTP to console fallback when EMAIL_PROVIDER is unset", async () => {
 		createSystemResendTransportMock.mockReturnValue(null);
-		createSystemSmtpTransportMock.mockReturnValue(makeTransport("SMTP (System)", "system-smtp-message"));
+		createSystemSmtpTransportMock.mockReturnValue(
+			makeTransport("SMTP (System)", "system-smtp-message"),
+		);
 
 		const result = await sendSystemEmail();
 

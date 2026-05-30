@@ -15,7 +15,5 @@ export const AUTH_BACKGROUND_IMAGES = [
 ] as const;
 
 export function selectRandomAuthBackgroundImage() {
-	return AUTH_BACKGROUND_IMAGES[
-		Math.floor(Math.random() * AUTH_BACKGROUND_IMAGES.length)
-	];
+	return AUTH_BACKGROUND_IMAGES[Math.floor(Math.random() * AUTH_BACKGROUND_IMAGES.length)];
 }

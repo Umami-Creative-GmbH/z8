@@ -138,7 +138,12 @@ export function WelcomePageClient() {
 					</Alert>
 				)}
 
-				<Button size="lg" onClick={handleGetStarted} disabled={loading} className="w-full sm:w-auto">
+				<Button
+					size="lg"
+					onClick={handleGetStarted}
+					disabled={loading}
+					className="w-full sm:w-auto"
+				>
 					{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 					{hasOrganization
 						? t("onboarding.welcome.continueSetup", "Continue Setup")

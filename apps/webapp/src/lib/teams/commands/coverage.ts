@@ -8,21 +8,14 @@
 
 import { Effect } from "effect";
 import { DateTime } from "luxon";
+import { env } from "@/env";
 import { fmtFullDate, fmtLongDate, getBotTranslate } from "@/lib/bot-platform/i18n";
-import type {
-	BotCommand,
-	BotCommandContext,
-	BotCommandResponse,
-} from "@/lib/bot-platform/types";
-import {
-	CoverageService,
-	CoverageServiceFullLive,
-} from "@/lib/effect/services/coverage.service";
+import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
+import { CoverageService, CoverageServiceFullLive } from "@/lib/effect/services/coverage.service";
 import { createLogger } from "@/lib/logger";
 import { buildCoverageCard } from "../cards/coverage-card";
 import { compose, withPermission } from "./middleware/permissions.middleware";
 import { withRateLimit } from "./middleware/rate-limit.middleware";
-import { env } from "@/env";
 
 const logger = createLogger("TeamsCommand:Coverage");
 
@@ -30,10 +23,7 @@ const logger = createLogger("TeamsCommand:Coverage");
 // HELPER FUNCTIONS
 // ============================================
 
-function parseDateArgument(
-	arg: string | undefined,
-	timezone: string,
-): DateTime {
+function parseDateArgument(arg: string | undefined, timezone: string): DateTime {
 	const now = DateTime.now().setZone(timezone);
 
 	if (!arg || arg.toLowerCase() === "today") {
@@ -62,9 +52,7 @@ function parseDateArgument(
 // COMMAND HANDLER
 // ============================================
 
-async function coverageHandler(
-	ctx: BotCommandContext,
-): Promise<BotCommandResponse> {
+async function coverageHandler(ctx: BotCommandContext): Promise<BotCommandResponse> {
 	try {
 		const t = await getBotTranslate(ctx.locale);
 		const dateArg = ctx.args[0];
@@ -92,15 +80,15 @@ async function coverageHandler(
 			);
 		});
 
-		const summary = await Effect.runPromise(
-			program.pipe(Effect.provide(CoverageServiceFullLive)),
-		);
+		const summary = await Effect.runPromise(program.pipe(Effect.provide(CoverageServiceFullLive)));
 
 		// If no coverage data, return text response
 		if (summary.snapshots.length === 0) {
 			return {
 				type: "text",
-				text: t("bot.cmd.coverage.noData", "No scheduled coverage data found for {date}.", { date: fmtFullDate(date, ctx.locale) }),
+				text: t("bot.cmd.coverage.noData", "No scheduled coverage data found for {date}.", {
+					date: fmtFullDate(date, ctx.locale),
+				}),
 			};
 		}
 
@@ -123,7 +111,10 @@ async function coverageHandler(
 		const t = await getBotTranslate(ctx.locale);
 		return {
 			type: "text",
-			text: t("bot.cmd.coverage.error", "Failed to retrieve coverage data. Please try again later."),
+			text: t(
+				"bot.cmd.coverage.error",
+				"Failed to retrieve coverage data. Please try again later.",
+			),
 		};
 	}
 }

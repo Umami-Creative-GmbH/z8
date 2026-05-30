@@ -1,12 +1,16 @@
+import { DateTime } from "luxon";
 import { env } from "@/env";
 import { ClockinClient } from "@/lib/clockin/client";
 import type { ClockinAbsence, ClockinWorkday } from "@/lib/clockin/types";
-import { DateTime } from "luxon";
 import { decryptImportCredential } from "./credential-secret";
 import { classifyTimeWindow, detectMissingMapping } from "./detection";
 import { getImportJobSecret, insertImportIssues, insertStagedRows } from "./repository";
-import type { ImportEmployeeMapping, ImportScanJobData } from "./types";
-import type { ImportIssueDraft, NormalizedImportRow } from "./types";
+import type {
+	ImportEmployeeMapping,
+	ImportIssueDraft,
+	ImportScanJobData,
+	NormalizedImportRow,
+} from "./types";
 
 const DETECTION_RULE_VERSION = "import-review-v1";
 
@@ -82,7 +86,10 @@ function stagedWorkday(
 	row: NormalizedImportRow;
 	issues: ImportIssueDraft[];
 } {
-	const providerSourceId = sourceId("workday", workday.id ?? `${workday.employee_id}:${workday.date}`);
+	const providerSourceId = sourceId(
+		"workday",
+		workday.id ?? `${workday.employee_id}:${workday.date}`,
+	);
 	const mapping = mappings.get(String(workday.employee_id));
 	const employeeId = mapping?.employeeId ?? null;
 	const suspiciousFlags = workday.starts_at
@@ -130,7 +137,10 @@ function stagedAbsence(
 	const providerSourceId = sourceId("absence", absence.id);
 	const mapping = mappings.get(String(absence.employee_id));
 	const employeeId = mapping?.employeeId ?? null;
-	const suspiciousFlags = classifyAbsenceRange({ startsAt: absence.starts_at, endsAt: absence.ends_at });
+	const suspiciousFlags = classifyAbsenceRange({
+		startsAt: absence.starts_at,
+		endsAt: absence.ends_at,
+	});
 	const issues = [
 		detectMissingMapping({ entityType: "absence", providerSourceId, employeeId }),
 		suspiciousFlags.length > 0
@@ -188,7 +198,9 @@ async function loadClient(job: ImportScanJobData): Promise<ClockinClient> {
 	return new ClockinClient(token);
 }
 
-export async function scanClockinImportPartition(job: ImportScanJobData): Promise<ClockinScanResult> {
+export async function scanClockinImportPartition(
+	job: ImportScanJobData,
+): Promise<ClockinScanResult> {
 	if (job.entityType !== "work_period" && job.entityType !== "absence") {
 		throw new Error(`Unsupported Clockin import review entity type: ${job.entityType}`);
 	}
@@ -200,16 +212,20 @@ export async function scanClockinImportPartition(job: ImportScanJobData): Promis
 	const employeeMappings = employeeMappingByProviderId(job.employeeMappings);
 	const staged =
 		job.entityType === "work_period"
-			? (await client.searchWorkdays({
-					employeeIds,
-					startDate: job.dateRange.startDate,
-					endDate: job.dateRange.endDate,
-				})).map((workday) => stagedWorkday(workday, employeeMappings))
-			: (await client.searchAbsences({
-					employeeIds,
-					startDate: job.dateRange.startDate,
-					endDate: job.dateRange.endDate,
-				})).map((absence) => stagedAbsence(absence, employeeMappings));
+			? (
+					await client.searchWorkdays({
+						employeeIds,
+						startDate: job.dateRange.startDate,
+						endDate: job.dateRange.endDate,
+					})
+				).map((workday) => stagedWorkday(workday, employeeMappings))
+			: (
+					await client.searchAbsences({
+						employeeIds,
+						startDate: job.dateRange.startDate,
+						endDate: job.dateRange.endDate,
+					})
+				).map((absence) => stagedAbsence(absence, employeeMappings));
 
 	const inserted = await insertStagedRows({
 		batchId: job.batchId,

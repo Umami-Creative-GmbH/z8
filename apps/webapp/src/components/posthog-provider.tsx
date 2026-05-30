@@ -10,10 +10,7 @@ type PostHogProviderProps = {
 	helpImproveProduct: boolean;
 };
 
-export function PostHogProvider({
-	children,
-	helpImproveProduct,
-}: PostHogProviderProps) {
+export function PostHogProvider({ children, helpImproveProduct }: PostHogProviderProps) {
 	const projectToken = env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN?.trim();
 
 	useEffect(() => {

@@ -8,61 +8,58 @@
 // Initialize handlers on import
 import "./init";
 
-// Export domain types
-export * from "./domain/types";
-
-// Export registry
-export {
-	ApprovalTypeRegistry,
-	ApprovalTypeRegistryLive,
-	registerApprovalHandler,
-	getApprovalHandler,
-	getAllApprovalHandlers,
-	hasApprovalHandler,
-} from "./domain/registry";
-
-// Export SLA utilities
-export {
-	getSLARule,
-	calculateSLADeadline,
-	calculateSLAStatus,
-	getSLAStatusMessage,
-	comparePriority,
-	PRIORITY_WEIGHTS,
-} from "./domain/sla-calculator";
-
-// Export handlers
-export { AbsenceRequestHandler } from "./handlers/absence-request.handler";
-export { TimeCorrectionHandler } from "./handlers/time-correction.handler";
-
 // Export services
 export {
 	ApprovalQueryService,
 	ApprovalQueryServiceLive,
 } from "./application/approval-query.service";
-
 export {
 	BulkApprovalService,
 	BulkApprovalServiceLive,
 } from "./application/bulk-approval.service";
-
-export type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "./server/types";
+// Export registry
 export {
-	approveAbsenceEffect,
-	rejectAbsenceEffect,
-	formatAbsenceDateForEmail,
-} from "./server/absence-approvals";
+	ApprovalTypeRegistry,
+	ApprovalTypeRegistryLive,
+	getAllApprovalHandlers,
+	getApprovalHandler,
+	hasApprovalHandler,
+	registerApprovalHandler,
+} from "./domain/registry";
+// Export SLA utilities
 export {
-	approveTimeCorrectionEffect,
-	rejectTimeCorrectionEffect,
-	calculateCorrectedDurationMinutes,
-	syncCanonicalWorkCorrection,
-} from "./server/time-correction-approvals";
-export { getPendingApprovalCounts, getPendingApprovals, getCurrentEmployee } from "./server/queries";
-
+	calculateSLADeadline,
+	calculateSLAStatus,
+	comparePriority,
+	getSLARule,
+	getSLAStatusMessage,
+	PRIORITY_WEIGHTS,
+} from "./domain/sla-calculator";
+// Export domain types
+export * from "./domain/types";
+// Export handlers
+export { AbsenceRequestHandler } from "./handlers/absence-request.handler";
+export { TimeCorrectionHandler } from "./handlers/time-correction.handler";
 export {
-	ApprovalAuditLogger,
-	ApprovalAuditLoggerLive,
 	type ApprovalAuditAction,
 	type ApprovalAuditEntry,
+	ApprovalAuditLogger,
+	ApprovalAuditLoggerLive,
 } from "./infrastructure/audit-logger";
+export {
+	approveAbsenceEffect,
+	formatAbsenceDateForEmail,
+	rejectAbsenceEffect,
+} from "./server/absence-approvals";
+export {
+	getCurrentEmployee,
+	getPendingApprovalCounts,
+	getPendingApprovals,
+} from "./server/queries";
+export {
+	approveTimeCorrectionEffect,
+	calculateCorrectedDurationMinutes,
+	rejectTimeCorrectionEffect,
+	syncCanonicalWorkCorrection,
+} from "./server/time-correction-approvals";
+export type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "./server/types";

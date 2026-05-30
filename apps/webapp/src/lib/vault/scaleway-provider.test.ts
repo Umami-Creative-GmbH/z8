@@ -169,32 +169,41 @@ describe("scalewaySecretProvider", () => {
 		expect(mocks.onConflictDoUpdate).not.toHaveBeenCalled();
 	});
 
-	test.each([null, { state: "enabled" }])(
-		"rejects created key responses without an id and does not throw a property access error",
-		async (createdKey) => {
-			mocks.client.createOrganizationKey.mockResolvedValue(createdKey);
-			const { scalewaySecretProvider } = await import("./scaleway-provider");
+	test.each([
+		null,
+		{ state: "enabled" },
+	])("rejects created key responses without an id and does not throw a property access error", async (createdKey) => {
+		mocks.client.createOrganizationKey.mockResolvedValue(createdKey);
+		const { scalewaySecretProvider } = await import("./scaleway-provider");
 
-			await expect(
-				scalewaySecretProvider.storeOrgSecret("org-1", "email/api_key", "secret-value"),
-			).rejects.toThrow("Created Scaleway organization key response did not include an id");
-			expect(mocks.client.encrypt).not.toHaveBeenCalled();
-			expect(mocks.onConflictDoUpdate).not.toHaveBeenCalled();
-		},
-	);
+		await expect(
+			scalewaySecretProvider.storeOrgSecret("org-1", "email/api_key", "secret-value"),
+		).rejects.toThrow("Created Scaleway organization key response did not include an id");
+		expect(mocks.client.encrypt).not.toHaveBeenCalled();
+		expect(mocks.onConflictDoUpdate).not.toHaveBeenCalled();
+	});
 
 	test("shares same-process organization key provisioning for simultaneous first writes", async () => {
 		let resolveCreatedKey: (value: { id: string; state: string }) => void = () => undefined;
 		mocks.db.query.organizationSecretKey.findFirst.mockResolvedValue(undefined);
 		mocks.client.createOrganizationKey.mockImplementation(
-			() => new Promise((resolve) => {
-				resolveCreatedKey = resolve;
-			}),
+			() =>
+				new Promise((resolve) => {
+					resolveCreatedKey = resolve;
+				}),
 		);
 		const { scalewaySecretProvider } = await import("./scaleway-provider");
 
-		const firstStore = scalewaySecretProvider.storeOrgSecret("org-1", "email/api_key", "first-value");
-		const secondStore = scalewaySecretProvider.storeOrgSecret("org-1", "email/smtp_password", "second-value");
+		const firstStore = scalewaySecretProvider.storeOrgSecret(
+			"org-1",
+			"email/api_key",
+			"first-value",
+		);
+		const secondStore = scalewaySecretProvider.storeOrgSecret(
+			"org-1",
+			"email/smtp_password",
+			"second-value",
+		);
 
 		await vi.waitFor(() => {
 			expect(mocks.client.createOrganizationKey).toHaveBeenCalledTimes(1);
@@ -346,7 +355,9 @@ describe("scalewaySecretProvider", () => {
 
 	test("throws if local metadata references missing key and does not create second active key", async () => {
 		mocks.db.query.organizationSecretKey.findFirst.mockResolvedValue(localKey);
-		mocks.client.getKey.mockRejectedValue(new Error("Scaleway Key Manager request failed with status 404"));
+		mocks.client.getKey.mockRejectedValue(
+			new Error("Scaleway Key Manager request failed with status 404"),
+		);
 		const { scalewaySecretProvider } = await import("./scaleway-provider");
 
 		await expect(

@@ -15,8 +15,8 @@ import * as schema from "@/db/auth-schema";
 import { employee, scimProvisioningLog } from "@/db/schema";
 import { env } from "@/env";
 import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
-import { getAuthAllowedHosts, getStaticTrustedOrigins } from "@/lib/auth-domain-config";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
+import { getAuthAllowedHosts, getStaticTrustedOrigins } from "@/lib/auth-domain-config";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { getOrganizationBaseUrl } from "./app-url";
 import { getDomainConfig } from "./domain/domain-service";
@@ -170,7 +170,7 @@ export const auth = betterAuth({
 		fallback: env.APP_URL || "https://ui.z8-time.app",
 		protocol: "auto",
 	},
-		//baseURL: env.BETTER_AUTH_URL || "http://localhost:3000",
+	//baseURL: env.BETTER_AUTH_URL || "http://localhost:3000",
 
 	// Dynamic trusted origins for custom domains
 	// This allows auth requests from verified custom domains that proxy to the app

@@ -108,7 +108,10 @@ export function getEnterpriseIdentityReadiness(
 
 	if (!state.provider?.providerId) missing.push("provider");
 	if (!state.domain?.domain || !state.domain.verified) missing.push("domain");
-	if (state.ssoTest.status !== "passed" || state.ssoTest.providerId !== state.provider?.providerId) {
+	if (
+		state.ssoTest.status !== "passed" ||
+		state.ssoTest.providerId !== state.provider?.providerId
+	) {
 		missing.push("ssoTest");
 	}
 

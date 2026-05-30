@@ -58,7 +58,11 @@ function getWeeklyHours(schedule: QuickStatsSchedule): number {
 	return 40;
 }
 
-function getHoursForDate(schedule: QuickStatsSchedule, weeklyHours: number, date: DateTime): number {
+function getHoursForDate(
+	schedule: QuickStatsSchedule,
+	weeklyHours: number,
+	date: DateTime,
+): number {
 	const scheduleDay = schedule?.days?.find((day) => day.dayOfWeek === DAY_NAMES[date.weekday]);
 	if (scheduleDay) {
 		if (!scheduleDay.isWorkDay) return 0;

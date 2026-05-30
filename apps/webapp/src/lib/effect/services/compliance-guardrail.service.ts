@@ -13,10 +13,7 @@ import {
 } from "@/db/schema";
 import { type DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
-import {
-	WorkPolicyService,
-	WorkPolicyServiceLive,
-} from "./work-policy.service";
+import { WorkPolicyService, WorkPolicyServiceLive } from "./work-policy.service";
 
 // ============================================
 // TYPES
@@ -25,11 +22,7 @@ import {
 export interface RequestExceptionInput {
 	employeeId: string;
 	organizationId: string;
-	exceptionType:
-		| "rest_period"
-		| "overtime_daily"
-		| "overtime_weekly"
-		| "overtime_monthly";
+	exceptionType: "rest_period" | "overtime_daily" | "overtime_weekly" | "overtime_monthly";
 	reason: string;
 	plannedDurationMinutes?: number;
 	createdBy: string;
@@ -37,11 +30,7 @@ export interface RequestExceptionInput {
 
 export interface ExceptionWithDetails {
 	id: string;
-	exceptionType:
-		| "rest_period"
-		| "overtime_daily"
-		| "overtime_weekly"
-		| "overtime_monthly";
+	exceptionType: "rest_period" | "overtime_daily" | "overtime_weekly" | "overtime_monthly";
 	status: "pending" | "approved" | "rejected" | "expired" | "used";
 	reason: string;
 	plannedDurationMinutes: number | null;
@@ -80,9 +69,7 @@ export interface ProactiveAlertsInput {
 // SERVICE INTERFACE
 // ============================================
 
-export class ComplianceGuardrailService extends Context.Tag(
-	"ComplianceGuardrailService",
-)<
+export class ComplianceGuardrailService extends Context.Tag("ComplianceGuardrailService")<
 	ComplianceGuardrailService,
 	{
 		/**
@@ -134,10 +121,7 @@ export class ComplianceGuardrailService extends Context.Tag(
 			employeeId: string;
 			exceptionType: string;
 			checkTime?: Date;
-		}) => Effect.Effect<
-			{ hasException: boolean; exceptionId?: string },
-			DatabaseError
-		>;
+		}) => Effect.Effect<{ hasException: boolean; exceptionId?: string }, DatabaseError>;
 
 		/**
 		 * Mark an exception as used (when employee clocks in using it)
@@ -225,21 +209,14 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 		/**
 		 * Get last clock-out time for an employee
 		 */
-		const getLastClockOut = (
-			employeeId: string,
-		): Effect.Effect<Date | null, DatabaseError> =>
+		const getLastClockOut = (employeeId: string): Effect.Effect<Date | null, DatabaseError> =>
 			dbService.query("getLastClockOut", async () => {
 				const [lastPeriod] = await dbService.db
 					.select({
 						endTime: workPeriod.endTime,
 					})
 					.from(workPeriod)
-					.where(
-						and(
-							eq(workPeriod.employeeId, employeeId),
-							eq(workPeriod.isActive, false),
-						),
-					)
+					.where(and(eq(workPeriod.employeeId, employeeId), eq(workPeriod.isActive, false)))
 					.orderBy(desc(workPeriod.endTime))
 					.limit(1);
 
@@ -280,9 +257,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 			timezone: string;
 		}): Effect.Effect<OvertimeStats, NotFoundError | DatabaseError> =>
 			Effect.gen(function* (_) {
-				const policy = yield* _(
-					workPolicyService.getEffectivePolicy(params.employeeId),
-				);
+				const policy = yield* _(workPolicyService.getEffectivePolicy(params.employeeId));
 
 				const now = DateTime.now().setZone(params.timezone);
 				const startOfDay = now.startOf("day").toJSDate();
@@ -309,57 +284,35 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 						thresholdMinutes: regulation?.overtimeDailyThresholdMinutes ?? null,
 						overtimeMinutes:
 							regulation?.overtimeDailyThresholdMinutes != null
-								? Math.max(
-										0,
-										dailyMinutes - regulation.overtimeDailyThresholdMinutes,
-									)
+								? Math.max(0, dailyMinutes - regulation.overtimeDailyThresholdMinutes)
 								: 0,
 						percentOfThreshold:
 							regulation?.overtimeDailyThresholdMinutes != null
-								? Math.round(
-										(dailyMinutes / regulation.overtimeDailyThresholdMinutes) *
-											100,
-									)
+								? Math.round((dailyMinutes / regulation.overtimeDailyThresholdMinutes) * 100)
 								: null,
 					},
 					weekly: {
 						workedMinutes: weeklyMinutes,
-						thresholdMinutes:
-							regulation?.overtimeWeeklyThresholdMinutes ?? null,
+						thresholdMinutes: regulation?.overtimeWeeklyThresholdMinutes ?? null,
 						overtimeMinutes:
 							regulation?.overtimeWeeklyThresholdMinutes != null
-								? Math.max(
-										0,
-										weeklyMinutes - regulation.overtimeWeeklyThresholdMinutes,
-									)
+								? Math.max(0, weeklyMinutes - regulation.overtimeWeeklyThresholdMinutes)
 								: 0,
 						percentOfThreshold:
 							regulation?.overtimeWeeklyThresholdMinutes != null
-								? Math.round(
-										(weeklyMinutes /
-											regulation.overtimeWeeklyThresholdMinutes) *
-											100,
-									)
+								? Math.round((weeklyMinutes / regulation.overtimeWeeklyThresholdMinutes) * 100)
 								: null,
 					},
 					monthly: {
 						workedMinutes: monthlyMinutes,
-						thresholdMinutes:
-							regulation?.overtimeMonthlyThresholdMinutes ?? null,
+						thresholdMinutes: regulation?.overtimeMonthlyThresholdMinutes ?? null,
 						overtimeMinutes:
 							regulation?.overtimeMonthlyThresholdMinutes != null
-								? Math.max(
-										0,
-										monthlyMinutes - regulation.overtimeMonthlyThresholdMinutes,
-									)
+								? Math.max(0, monthlyMinutes - regulation.overtimeMonthlyThresholdMinutes)
 								: 0,
 						percentOfThreshold:
 							regulation?.overtimeMonthlyThresholdMinutes != null
-								? Math.round(
-										(monthlyMinutes /
-											regulation.overtimeMonthlyThresholdMinutes) *
-											100,
-									)
+								? Math.round((monthlyMinutes / regulation.overtimeMonthlyThresholdMinutes) * 100)
 								: null,
 					},
 				} satisfies OvertimeStats;
@@ -369,9 +322,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 			checkRestPeriod: (params) =>
 				Effect.gen(function* (_) {
 					// Get effective policy for this employee
-					const policy = yield* _(
-						workPolicyService.getEffectivePolicy(params.employeeId),
-					);
+					const policy = yield* _(workPolicyService.getEffectivePolicy(params.employeeId));
 
 					// If no policy or no rest period requirement, allow clock-in
 					if (!policy?.regulation?.minRestPeriodMinutes) {
@@ -402,9 +353,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					// Calculate rest period in minutes
 					const now = DateTime.now();
 					const lastClockOut = DateTime.fromJSDate(lastClockOutTime);
-					const restPeriodMinutes = Math.floor(
-						now.diff(lastClockOut, "minutes").minutes,
-					);
+					const restPeriodMinutes = Math.floor(now.diff(lastClockOut, "minutes").minutes);
 
 					// If rest period is satisfied, allow clock-in
 					if (restPeriodMinutes >= minRestMinutes) {
@@ -442,9 +391,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 
 					// If there's a valid exception, allow clock-in
 					if (exceptionResult) {
-						const nextAllowedClockIn = lastClockOut
-							.plus({ minutes: minRestMinutes })
-							.toJSDate();
+						const nextAllowedClockIn = lastClockOut.plus({ minutes: minRestMinutes }).toJSDate();
 						return {
 							canClockIn: true,
 							enforcement,
@@ -462,9 +409,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					}
 
 					// Calculate when clock-in will be allowed
-					const nextAllowedClockIn = lastClockOut
-						.plus({ minutes: minRestMinutes })
-						.toJSDate();
+					const nextAllowedClockIn = lastClockOut.plus({ minutes: minRestMinutes }).toJSDate();
 
 					// No valid exception - check enforcement mode
 					return {
@@ -484,9 +429,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 
 			getProactiveAlerts: (input) =>
 				Effect.gen(function* (_) {
-					const policy = yield* _(
-						workPolicyService.getEffectivePolicy(input.employeeId),
-					);
+					const policy = yield* _(workPolicyService.getEffectivePolicy(input.employeeId));
 
 					if (!policy?.regulation) {
 						return [];
@@ -505,29 +448,22 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					);
 
 					// Add current session to daily total for accurate real-time alerts
-					const totalDailyWithSession =
-						stats.daily.workedMinutes + input.currentSessionMinutes;
+					const totalDailyWithSession = stats.daily.workedMinutes + input.currentSessionMinutes;
 
 					// Check daily overtime threshold
 					if (regulation.overtimeDailyThresholdMinutes != null) {
 						const percentOfLimit = Math.round(
-							(totalDailyWithSession /
-								regulation.overtimeDailyThresholdMinutes) *
-								100,
+							(totalDailyWithSession / regulation.overtimeDailyThresholdMinutes) * 100,
 						);
 
 						if (percentOfLimit >= alertThreshold) {
 							alerts.push({
 								alertType: "overtime_daily",
-								severity: calculateAlertSeverity(
-									percentOfLimit,
-									alertThreshold,
-								),
+								severity: calculateAlertSeverity(percentOfLimit, alertThreshold),
 								message: `Daily overtime: ${formatMinutes(totalDailyWithSession)} of ${formatMinutes(regulation.overtimeDailyThresholdMinutes)} threshold`,
 								minutesRemaining: Math.max(
 									0,
-									regulation.overtimeDailyThresholdMinutes -
-										totalDailyWithSession,
+									regulation.overtimeDailyThresholdMinutes - totalDailyWithSession,
 								),
 								thresholdMinutes: regulation.overtimeDailyThresholdMinutes,
 								currentMinutes: totalDailyWithSession,
@@ -545,15 +481,9 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 						if (percentOfLimit >= alertThreshold) {
 							alerts.push({
 								alertType: "daily_hours",
-								severity: calculateAlertSeverity(
-									percentOfLimit,
-									alertThreshold,
-								),
+								severity: calculateAlertSeverity(percentOfLimit, alertThreshold),
 								message: `Daily limit: ${formatMinutes(totalDailyWithSession)} of ${formatMinutes(regulation.maxDailyMinutes)} maximum`,
-								minutesRemaining: Math.max(
-									0,
-									regulation.maxDailyMinutes - totalDailyWithSession,
-								),
+								minutesRemaining: Math.max(0, regulation.maxDailyMinutes - totalDailyWithSession),
 								thresholdMinutes: regulation.maxDailyMinutes,
 								currentMinutes: totalDailyWithSession,
 								percentOfLimit,
@@ -562,21 +492,16 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					}
 
 					// Check weekly overtime threshold
-					const weeklyWithSession =
-						stats.weekly.workedMinutes + input.currentSessionMinutes;
+					const weeklyWithSession = stats.weekly.workedMinutes + input.currentSessionMinutes;
 					if (regulation.overtimeWeeklyThresholdMinutes != null) {
 						const percentOfLimit = Math.round(
-							(weeklyWithSession / regulation.overtimeWeeklyThresholdMinutes) *
-								100,
+							(weeklyWithSession / regulation.overtimeWeeklyThresholdMinutes) * 100,
 						);
 
 						if (percentOfLimit >= alertThreshold) {
 							alerts.push({
 								alertType: "overtime_weekly",
-								severity: calculateAlertSeverity(
-									percentOfLimit,
-									alertThreshold,
-								),
+								severity: calculateAlertSeverity(percentOfLimit, alertThreshold),
 								message: `Weekly overtime: ${formatMinutes(weeklyWithSession)} of ${formatMinutes(regulation.overtimeWeeklyThresholdMinutes)} threshold`,
 								minutesRemaining: Math.max(
 									0,
@@ -592,23 +517,17 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					// Check max uninterrupted
 					if (regulation.maxUninterruptedMinutes != null) {
 						const percentOfLimit = Math.round(
-							(input.currentSessionMinutes /
-								regulation.maxUninterruptedMinutes) *
-								100,
+							(input.currentSessionMinutes / regulation.maxUninterruptedMinutes) * 100,
 						);
 
 						if (percentOfLimit >= alertThreshold) {
 							alerts.push({
 								alertType: "uninterrupted_work",
-								severity: calculateAlertSeverity(
-									percentOfLimit,
-									alertThreshold,
-								),
+								severity: calculateAlertSeverity(percentOfLimit, alertThreshold),
 								message: `Continuous work: ${formatMinutes(input.currentSessionMinutes)} of ${formatMinutes(regulation.maxUninterruptedMinutes)} maximum`,
 								minutesRemaining: Math.max(
 									0,
-									regulation.maxUninterruptedMinutes -
-										input.currentSessionMinutes,
+									regulation.maxUninterruptedMinutes - input.currentSessionMinutes,
 								),
 								thresholdMinutes: regulation.maxUninterruptedMinutes,
 								currentMinutes: input.currentSessionMinutes,
@@ -624,9 +543,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 						warning: 2,
 						info: 3,
 					};
-					alerts.sort(
-						(a, b) => severityOrder[a.severity] - severityOrder[b.severity],
-					);
+					alerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
 					return alerts;
 				}),
@@ -634,9 +551,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 			getComplianceStatus: (params) =>
 				Effect.gen(function* (_) {
 					// Get policy for alerts
-					const policy = yield* _(
-						workPolicyService.getEffectivePolicy(params.employeeId),
-					);
+					const policy = yield* _(workPolicyService.getEffectivePolicy(params.employeeId));
 
 					const alerts: ComplianceAlert[] = [];
 
@@ -652,28 +567,21 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					if (policy?.regulation) {
 						const regulation = policy.regulation;
 						const alertThreshold = regulation.alertThresholdPercent ?? 80;
-						const totalDailyWithSession =
-							stats.daily.workedMinutes + params.currentSessionMinutes;
+						const totalDailyWithSession = stats.daily.workedMinutes + params.currentSessionMinutes;
 
 						// Check daily overtime threshold
 						if (regulation.overtimeDailyThresholdMinutes != null) {
 							const percentOfLimit = Math.round(
-								(totalDailyWithSession /
-									regulation.overtimeDailyThresholdMinutes) *
-									100,
+								(totalDailyWithSession / regulation.overtimeDailyThresholdMinutes) * 100,
 							);
 							if (percentOfLimit >= alertThreshold) {
 								alerts.push({
 									alertType: "overtime_daily",
-									severity: calculateAlertSeverity(
-										percentOfLimit,
-										alertThreshold,
-									),
+									severity: calculateAlertSeverity(percentOfLimit, alertThreshold),
 									message: `Daily overtime: ${formatMinutes(totalDailyWithSession)} of ${formatMinutes(regulation.overtimeDailyThresholdMinutes)} threshold`,
 									minutesRemaining: Math.max(
 										0,
-										regulation.overtimeDailyThresholdMinutes -
-											totalDailyWithSession,
+										regulation.overtimeDailyThresholdMinutes - totalDailyWithSession,
 									),
 									thresholdMinutes: regulation.overtimeDailyThresholdMinutes,
 									currentMinutes: totalDailyWithSession,
@@ -906,33 +814,32 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 
 			getPendingExceptions: (params) =>
 				dbService.query("getPendingExceptions", async () => {
-					const exceptions =
-						await dbService.db.query.complianceException.findMany({
-							where: and(
-								eq(complianceException.organizationId, params.organizationId),
-								eq(complianceException.status, "pending"),
-							),
-							with: {
-								employee: {
-									columns: {
-										id: true,
-										userId: true,
-									},
-									with: {
-										user: { columns: { firstName: true, lastName: true } },
-									},
+					const exceptions = await dbService.db.query.complianceException.findMany({
+						where: and(
+							eq(complianceException.organizationId, params.organizationId),
+							eq(complianceException.status, "pending"),
+						),
+						with: {
+							employee: {
+								columns: {
+									id: true,
+									userId: true,
 								},
-								approver: {
-									columns: {
-										id: true,
-									},
-									with: {
-										user: { columns: { firstName: true, lastName: true } },
-									},
+								with: {
+									user: { columns: { firstName: true, lastName: true } },
 								},
 							},
-							orderBy: [desc(complianceException.createdAt)],
-						});
+							approver: {
+								columns: {
+									id: true,
+								},
+								with: {
+									user: { columns: { firstName: true, lastName: true } },
+								},
+							},
+						},
+						orderBy: [desc(complianceException.createdAt)],
+					});
 
 					return exceptions.map((e) => ({
 						id: e.id,
@@ -971,9 +878,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					];
 
 					if (organizationId) {
-						conditions.push(
-							eq(complianceException.organizationId, organizationId),
-						);
+						conditions.push(eq(complianceException.organizationId, organizationId));
 					}
 
 					const result = await dbService.db
@@ -987,39 +892,36 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 
 			getMyExceptions: (params) =>
 				dbService.query("getMyExceptions", async () => {
-					const conditions = [
-						eq(complianceException.employeeId, params.employeeId),
-					];
+					const conditions = [eq(complianceException.employeeId, params.employeeId)];
 
 					if (!params.includeExpired) {
 						conditions.push(sql`${complianceException.status} != 'expired'`);
 					}
 
-					const exceptions =
-						await dbService.db.query.complianceException.findMany({
-							where: and(...conditions),
-							with: {
-								employee: {
-									columns: {
-										id: true,
-										userId: true,
-									},
-									with: {
-										user: { columns: { firstName: true, lastName: true } },
-									},
+					const exceptions = await dbService.db.query.complianceException.findMany({
+						where: and(...conditions),
+						with: {
+							employee: {
+								columns: {
+									id: true,
+									userId: true,
 								},
-								approver: {
-									columns: {
-										id: true,
-									},
-									with: {
-										user: { columns: { firstName: true, lastName: true } },
-									},
+								with: {
+									user: { columns: { firstName: true, lastName: true } },
 								},
 							},
-							orderBy: [desc(complianceException.createdAt)],
-							limit: 50,
-						});
+							approver: {
+								columns: {
+									id: true,
+								},
+								with: {
+									user: { columns: { firstName: true, lastName: true } },
+								},
+							},
+						},
+						orderBy: [desc(complianceException.createdAt)],
+						limit: 50,
+					});
 
 					return exceptions.map((e) => ({
 						id: e.id,
@@ -1058,8 +960,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 /**
  * Full layer with all dependencies for running compliance guardrail checks
  */
-export const ComplianceGuardrailServiceFullLive =
-	ComplianceGuardrailServiceLive.pipe(
-		Layer.provide(WorkPolicyServiceLive),
-		Layer.provide(DatabaseServiceLive),
-	);
+export const ComplianceGuardrailServiceFullLive = ComplianceGuardrailServiceLive.pipe(
+	Layer.provide(WorkPolicyServiceLive),
+	Layer.provide(DatabaseServiceLive),
+);

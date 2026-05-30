@@ -9,8 +9,8 @@ import {
 	holidayCategory,
 	importStagedRow,
 	surchargeModel,
-	timeEntry,
 	team,
+	timeEntry,
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
@@ -76,7 +76,12 @@ async function markCommitted(
 		.where(and(eq(importStagedRow.id, rowId), eq(importStagedRow.organizationId, organizationId)));
 }
 
-async function markBlocked(database: CommitDb, rowId: string, organizationId: string, message: string) {
+async function markBlocked(
+	database: CommitDb,
+	rowId: string,
+	organizationId: string,
+	message: string,
+) {
 	await database
 		.update(importStagedRow)
 		.set({
@@ -107,7 +112,11 @@ async function markCommitFailed(rowId: string, organizationId: string, error: un
 		.where(and(eq(importStagedRow.id, rowId), eq(importStagedRow.organizationId, organizationId)));
 }
 
-async function assertEmployeeInOrganization(database: CommitDb, employeeId: string, organizationId: string) {
+async function assertEmployeeInOrganization(
+	database: CommitDb,
+	employeeId: string,
+	organizationId: string,
+) {
 	const found = await database.query.employee.findFirst({
 		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 	});
@@ -243,9 +252,16 @@ async function commitWorkPeriod(
 	return latestEntry;
 }
 
-async function ensureAbsenceCategory(database: CommitDb, organizationId: string, categoryName: string) {
+async function ensureAbsenceCategory(
+	database: CommitDb,
+	organizationId: string,
+	categoryName: string,
+) {
 	const existing = await database.query.absenceCategory.findFirst({
-		where: and(eq(absenceCategory.organizationId, organizationId), eq(absenceCategory.name, categoryName)),
+		where: and(
+			eq(absenceCategory.organizationId, organizationId),
+			eq(absenceCategory.name, categoryName),
+		),
 		columns: { id: true },
 	});
 	if (existing) return existing.id;
@@ -264,7 +280,11 @@ async function ensureAbsenceCategory(database: CommitDb, organizationId: string,
 	return created.id;
 }
 
-async function commitAbsence(database: CommitDb, row: typeof importStagedRow.$inferSelect, job: ImportCommitJobData) {
+async function commitAbsence(
+	database: CommitDb,
+	row: typeof importStagedRow.$inferSelect,
+	job: ImportCommitJobData,
+) {
 	const payload = row.normalizedPayload as unknown as AbsencePayload;
 	await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
 
@@ -289,7 +309,11 @@ async function commitAbsence(database: CommitDb, row: typeof importStagedRow.$in
 	await markCommitted(database, row.id, job.organizationId, "absence_entry", absence.id);
 }
 
-async function commitTeam(database: CommitDb, row: typeof importStagedRow.$inferSelect, job: ImportCommitJobData) {
+async function commitTeam(
+	database: CommitDb,
+	row: typeof importStagedRow.$inferSelect,
+	job: ImportCommitJobData,
+) {
 	const payload = row.normalizedPayload as unknown as SetupReferencePayload;
 	const [created] = await database
 		.insert(team)
@@ -379,7 +403,11 @@ async function commitHoliday(
 	return { status: "committed" };
 }
 
-async function commitSurcharge(database: CommitDb, row: typeof importStagedRow.$inferSelect, job: ImportCommitJobData) {
+async function commitSurcharge(
+	database: CommitDb,
+	row: typeof importStagedRow.$inferSelect,
+	job: ImportCommitJobData,
+) {
 	const payload = row.normalizedPayload as unknown as SetupReferencePayload;
 	const [created] = await database
 		.insert(surchargeModel)

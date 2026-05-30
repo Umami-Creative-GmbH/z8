@@ -186,9 +186,7 @@ describe("email template settings actions", () => {
 
 	it("restores numeric preview values without corrupting unrelated HTML", async () => {
 		const templates = await listEmailTemplates();
-		const absenceSubmitted = templates.find(
-			(entry) => entry.key === "absence-request-submitted",
-		);
+		const absenceSubmitted = templates.find((entry) => entry.key === "absence-request-submitted");
 
 		expect(absenceSubmitted?.starterDraftHtml).toMatch(/{{days}}(?:<!-- -->)? business days/);
 		expect(absenceSubmitted?.starterDraftHtml).not.toContain("3 business days");

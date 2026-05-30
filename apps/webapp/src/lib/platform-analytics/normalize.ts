@@ -20,7 +20,10 @@ export function buildPlatformAnalyticsSeries(
 	estimatedBilling: boolean,
 ): PlatformAnalyticsPoint[] {
 	const rowValues = Object.fromEntries(
-		Object.entries(rows).map(([metric, metricRows]) => [metric, buildMetricValueMap(metricRows, buckets)]),
+		Object.entries(rows).map(([metric, metricRows]) => [
+			metric,
+			buildMetricValueMap(metricRows, buckets),
+		]),
 	) as Record<PlatformAnalyticsMetricKey, Map<string, number>>;
 
 	return buckets.map((bucket) => ({
@@ -55,7 +58,10 @@ export function getLatestPointKpis(
 	};
 }
 
-function buildMetricValueMap(rows: PlatformAnalyticsAggregateRow[], buckets: PlatformAnalyticsBucketInfo[]) {
+function buildMetricValueMap(
+	rows: PlatformAnalyticsAggregateRow[],
+	buckets: PlatformAnalyticsBucketInfo[],
+) {
 	const values = new Map<string, number>();
 
 	for (const row of rows) {
@@ -69,14 +75,22 @@ function buildMetricValueMap(rows: PlatformAnalyticsAggregateRow[], buckets: Pla
 	return values;
 }
 
-function findBucketKey(bucket: PlatformAnalyticsAggregateRow["bucket"], buckets: PlatformAnalyticsBucketInfo[]) {
-	const date = bucket instanceof Date ? DateTime.fromJSDate(bucket, { zone: "utc" }) : DateTime.fromISO(bucket, { zone: "utc" });
+function findBucketKey(
+	bucket: PlatformAnalyticsAggregateRow["bucket"],
+	buckets: PlatformAnalyticsBucketInfo[],
+) {
+	const date =
+		bucket instanceof Date
+			? DateTime.fromJSDate(bucket, { zone: "utc" })
+			: DateTime.fromISO(bucket, { zone: "utc" });
 
 	if (!date.isValid) {
 		return null;
 	}
 
-	return buckets.find((candidate) => candidate.key === formatRowKey(date, candidate.key))?.key ?? null;
+	return (
+		buckets.find((candidate) => candidate.key === formatRowKey(date, candidate.key))?.key ?? null
+	);
 }
 
 function formatRowKey(date: DateTime, bucketKey: string) {

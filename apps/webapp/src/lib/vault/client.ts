@@ -7,8 +7,8 @@
  */
 
 import Vault from "node-vault";
-import { createLogger } from "@/lib/logger";
 import { env } from "@/env";
+import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("VaultClient");
 

@@ -82,8 +82,12 @@ export const PLATFORM_SYSTEM_EMAIL_TEMPLATE_REGISTRY = [
 		},
 		async renderDefault(data) {
 			return [
-				paragraph(`Your ${escapeHtml(data.planName)} trial for ${escapeHtml(data.organizationName)} ends in ${escapeHtml(data.daysRemaining)} days.`),
-				paragraph(`To keep Z8 running without interruption after ${escapeHtml(data.trialEndsAt)}, add a payment method in billing settings.`),
+				paragraph(
+					`Your ${escapeHtml(data.planName)} trial for ${escapeHtml(data.organizationName)} ends in ${escapeHtml(data.daysRemaining)} days.`,
+				),
+				paragraph(
+					`To keep Z8 running without interruption after ${escapeHtml(data.trialEndsAt)}, add a payment method in billing settings.`,
+				),
 				paragraph(`<a href="${escapeHtml(data.billingUrl)}">Review billing settings</a>`),
 			].join("");
 		},
@@ -108,8 +112,12 @@ export const PLATFORM_SYSTEM_EMAIL_TEMPLATE_REGISTRY = [
 		},
 		async renderDefault(data) {
 			return [
-				paragraph(`The ${escapeHtml(data.planName)} subscription for ${escapeHtml(data.organizationName)} is now ${escapeHtml(data.subscriptionStatus)}.`),
-				paragraph("Time tracking data remains available, but paid plan features may be limited until billing is resumed."),
+				paragraph(
+					`The ${escapeHtml(data.planName)} subscription for ${escapeHtml(data.organizationName)} is now ${escapeHtml(data.subscriptionStatus)}.`,
+				),
+				paragraph(
+					"Time tracking data remains available, but paid plan features may be limited until billing is resumed.",
+				),
 				paragraph(`<a href="${escapeHtml(data.billingUrl)}">Manage billing</a>`),
 			].join("");
 		},
@@ -134,7 +142,9 @@ export const PLATFORM_SYSTEM_EMAIL_TEMPLATE_REGISTRY = [
 		},
 		async renderDefault(data) {
 			return [
-				paragraph(`The ${escapeHtml(data.planName)} subscription for ${escapeHtml(data.organizationName)} resumed on ${escapeHtml(data.resumeDate)}.`),
+				paragraph(
+					`The ${escapeHtml(data.planName)} subscription for ${escapeHtml(data.organizationName)} resumed on ${escapeHtml(data.resumeDate)}.`,
+				),
 				paragraph("Your paid Z8 features are active again."),
 				paragraph(`<a href="${escapeHtml(data.billingUrl)}">View billing details</a>`),
 			].join("");
@@ -162,8 +172,12 @@ export const PLATFORM_SYSTEM_EMAIL_TEMPLATE_REGISTRY = [
 		},
 		async renderDefault(data) {
 			return [
-				paragraph(`Invoice ${escapeHtml(data.invoiceNumber)} for ${escapeHtml(data.organizationName)} is ready.`),
-				paragraph(`Amount due: ${escapeHtml(data.invoiceAmount)}. Due date: ${escapeHtml(data.dueDate)}.`),
+				paragraph(
+					`Invoice ${escapeHtml(data.invoiceNumber)} for ${escapeHtml(data.organizationName)} is ready.`,
+				),
+				paragraph(
+					`Amount due: ${escapeHtml(data.invoiceAmount)}. Due date: ${escapeHtml(data.dueDate)}.`,
+				),
 				paragraph(`<a href="${escapeHtml(data.billingUrl)}">Open billing</a>`),
 			].join("");
 		},
@@ -188,17 +202,19 @@ export const PLATFORM_SYSTEM_EMAIL_TEMPLATE_REGISTRY = [
 		},
 		async renderDefault(data) {
 			return [
-				paragraph(`We could not collect ${escapeHtml(data.invoiceAmount)} for ${escapeHtml(data.organizationName)}.`),
-				paragraph(`Please update your payment method before the next retry on ${escapeHtml(data.paymentRetryDate)} to avoid service interruption.`),
+				paragraph(
+					`We could not collect ${escapeHtml(data.invoiceAmount)} for ${escapeHtml(data.organizationName)}.`,
+				),
+				paragraph(
+					`Please update your payment method before the next retry on ${escapeHtml(data.paymentRetryDate)} to avoid service interruption.`,
+				),
 				paragraph(`<a href="${escapeHtml(data.billingUrl)}">Update payment method</a>`),
 			].join("");
 		},
 	},
 ] satisfies PlatformSystemEmailTemplateDefinition[];
 
-export function getPlatformSystemEmailTemplateDefinition(
-	key: PlatformSystemEmailTemplateKey,
-) {
+export function getPlatformSystemEmailTemplateDefinition(key: PlatformSystemEmailTemplateKey) {
 	const definition = PLATFORM_SYSTEM_EMAIL_TEMPLATE_REGISTRY.find((entry) => entry.key === key);
 
 	if (!definition) {

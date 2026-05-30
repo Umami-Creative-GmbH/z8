@@ -81,9 +81,7 @@ describe("app auth code service", () => {
 			status: "success",
 		});
 
-		expect(mockState.updateSet).toHaveBeenCalledWith(
-			expect.objectContaining({ status: "used" }),
-		);
+		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ status: "used" }));
 	});
 
 	it("rejects missing codes", async () => {
@@ -158,9 +156,7 @@ describe("app auth code service", () => {
 			status: "invalid_code",
 		});
 
-		expect(mockState.updateSet).toHaveBeenCalledWith(
-			expect.objectContaining({ status: "used" }),
-		);
+		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ status: "used" }));
 	});
 
 	it("rejects codes when the guarded update affects no rows", async () => {

@@ -1,9 +1,9 @@
 import { Effect } from "effect";
 import { NextResponse } from "next/server";
 import {
+	type BillingAccessResult,
 	BillingEnforcementService,
 	BillingEnforcementServiceLive,
-	type BillingAccessResult,
 } from "@/lib/effect/services/billing/billing-enforcement.service";
 
 type BillingAccessForGuard = Pick<BillingAccessResult, "canAccess" | "reason">;
@@ -19,7 +19,9 @@ export function createBillingForbiddenResponse(access: BillingAccessForGuard) {
 	);
 }
 
-export async function requireBillingForMutation(organizationId: string): Promise<BillingAccessResult> {
+export async function requireBillingForMutation(
+	organizationId: string,
+): Promise<BillingAccessResult> {
 	return Effect.runPromise(
 		Effect.gen(function* () {
 			const billingEnforcementService = yield* BillingEnforcementService;

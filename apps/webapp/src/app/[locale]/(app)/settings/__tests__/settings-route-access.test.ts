@@ -702,8 +702,7 @@ describe("org-admin settings route access", () => {
 				avvSource.indexOf('if (env.BILLING_ENABLED !== "true")'),
 		).toBe(true);
 		expect(
-			avvSource.indexOf("await connection(") <
-				avvSource.indexOf("requireOrgAdminSettingsAccess()"),
+			avvSource.indexOf("await connection(") < avvSource.indexOf("requireOrgAdminSettingsAccess()"),
 		).toBe(true);
 	});
 });

@@ -64,7 +64,9 @@ export function TeamMembersDialog({
 				queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
 				queryClient.invalidateQueries({ queryKey: queryKeys.members.all });
 			} else {
-				toast.error(result.error || t("organization.teams.members.addError", "Failed to add member"));
+				toast.error(
+					result.error || t("organization.teams.members.addError", "Failed to add member"),
+				);
 			}
 		},
 		onError: () => {
@@ -82,7 +84,9 @@ export function TeamMembersDialog({
 				queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
 				queryClient.invalidateQueries({ queryKey: queryKeys.members.all });
 			} else {
-				toast.error(result.error || t("organization.teams.members.removeError", "Failed to remove member"));
+				toast.error(
+					result.error || t("organization.teams.members.removeError", "Failed to remove member"),
+				);
 			}
 		},
 		onError: () => {
@@ -128,9 +132,13 @@ export function TeamMembersDialog({
 				<ActionPanelHeader>
 					<ActionPanelTitle className="flex items-center gap-2">
 						<IconUsers className="size-5" />
-						{t("organization.teams.members.title", "{teamName} - Team Members", { teamName: team.name })}
+						{t("organization.teams.members.title", "{teamName} - Team Members", {
+							teamName: team.name,
+						})}
 					</ActionPanelTitle>
-					<ActionPanelDescription>{t("organization.teams.members.description", "Manage who belongs to this team")}</ActionPanelDescription>
+					<ActionPanelDescription>
+						{t("organization.teams.members.description", "Manage who belongs to this team")}
+					</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				<ActionPanelBody className="space-y-6">
@@ -141,7 +149,12 @@ export function TeamMembersDialog({
 								<div className="flex-1">
 									<Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
 										<SelectTrigger>
-										<SelectValue placeholder={t("organization.teams.members.selectEmployee", "Select an employee to add")} />
+											<SelectValue
+												placeholder={t(
+													"organization.teams.members.selectEmployee",
+													"Select an employee to add",
+												)}
+											/>
 										</SelectTrigger>
 										<SelectContent>
 											{availableEmployees.map((member) => (
@@ -189,15 +202,26 @@ export function TeamMembersDialog({
 					{/* Current Members List */}
 					<div className="space-y-3">
 						<div className="flex items-center justify-between">
-							<h4 className="text-sm font-medium">{t("organization.teams.members.currentMembers", "Current Members ({count})", { count: teamMembers.length })}</h4>
+							<h4 className="text-sm font-medium">
+								{t("organization.teams.members.currentMembers", "Current Members ({count})", {
+									count: teamMembers.length,
+								})}
+							</h4>
 						</div>
 
 						{teamMembers.length === 0 ? (
 							<div className="text-center py-8 text-muted-foreground">
 								<IconUsers className="size-12 mx-auto mb-2 opacity-50" />
-								<p className="text-sm">{t("organization.teams.members.empty", "No members in this team yet")}</p>
+								<p className="text-sm">
+									{t("organization.teams.members.empty", "No members in this team yet")}
+								</p>
 								{canManageMembers && (
-									<p className="text-xs mt-1">{t("organization.teams.members.emptyHelp", "Add members using the dropdown above")}</p>
+									<p className="text-xs mt-1">
+										{t(
+											"organization.teams.members.emptyHelp",
+											"Add members using the dropdown above",
+										)}
+									</p>
 								)}
 							</div>
 						) : (
@@ -248,7 +272,7 @@ export function TeamMembersDialog({
 
 				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
-					{t("common.close", "Close")}
+						{t("common.close", "Close")}
 					</Button>
 				</ActionPanelFooter>
 			</ActionPanelContent>

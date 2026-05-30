@@ -14,18 +14,14 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
-import { team, employee } from "./organization";
 import { roleEnum } from "./enums";
+import { employee, team } from "./organization";
 
 // ============================================
 // IDENTITY MODULE ENUMS
 // ============================================
 
-export const lifecycleEventTypeEnum = pgEnum("lifecycle_event_type", [
-	"join",
-	"move",
-	"leave",
-]);
+export const lifecycleEventTypeEnum = pgEnum("lifecycle_event_type", ["join", "move", "leave"]);
 
 export const lifecycleSourceEnum = pgEnum("lifecycle_source", [
 	"manual",
@@ -226,10 +222,7 @@ export const userRoleTemplateAssignment = pgTable(
 	},
 	(table) => [
 		// One active template assignment per user per org
-		uniqueIndex("userRoleTemplateAssignment_user_org_idx").on(
-			table.userId,
-			table.organizationId,
-		),
+		uniqueIndex("userRoleTemplateAssignment_user_org_idx").on(table.userId, table.organizationId),
 		index("userRoleTemplateAssignment_roleTemplateId_idx").on(table.roleTemplateId),
 	],
 );

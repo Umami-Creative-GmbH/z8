@@ -6,7 +6,10 @@ import {
 	filterEmployeeUpdateForScopedManager,
 } from "./employee-scope";
 
-const source = readFileSync(fileURLToPath(new URL("./employee-action-utils.ts", import.meta.url)), "utf8");
+const source = readFileSync(
+	fileURLToPath(new URL("./employee-action-utils.ts", import.meta.url)),
+	"utf8",
+);
 
 describe("employee settings scope helpers", () => {
 	it("keeps org admins fully enabled regardless of manager relationships", () => {

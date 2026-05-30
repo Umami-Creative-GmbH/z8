@@ -99,8 +99,9 @@ export function buildDailyWorkRequirements({
 	const requestedZone = timezone || "utc";
 	const zonedStart = DateTime.fromJSDate(startDate, { zone: "utc" }).setZone(requestedZone);
 	const zonedEnd = DateTime.fromJSDate(endDate, { zone: "utc" }).setZone(requestedZone);
-	const start = (zonedStart.isValid ? zonedStart : DateTime.fromJSDate(startDate, { zone: "utc" }))
-		.startOf("day");
+	const start = (
+		zonedStart.isValid ? zonedStart : DateTime.fromJSDate(startDate, { zone: "utc" })
+	).startOf("day");
 	const end = (zonedEnd.isValid ? zonedEnd : DateTime.fromJSDate(endDate, { zone: "utc" })).startOf(
 		"day",
 	);
@@ -141,13 +142,11 @@ async function getApprovedAbsenceRanges(params: {
 	const requestedZone = params.timezone || "utc";
 	const zonedStart = DateTime.fromJSDate(params.startDate, { zone: "utc" }).setZone(requestedZone);
 	const zonedEnd = DateTime.fromJSDate(params.endDate, { zone: "utc" }).setZone(requestedZone);
-	const start = (zonedStart.isValid
-		? zonedStart
-		: DateTime.fromJSDate(params.startDate, { zone: "utc" })
+	const start = (
+		zonedStart.isValid ? zonedStart : DateTime.fromJSDate(params.startDate, { zone: "utc" })
 	).toFormat("yyyy-MM-dd");
-	const end = (zonedEnd.isValid
-		? zonedEnd
-		: DateTime.fromJSDate(params.endDate, { zone: "utc" })
+	const end = (
+		zonedEnd.isValid ? zonedEnd : DateTime.fromJSDate(params.endDate, { zone: "utc" })
 	).toFormat("yyyy-MM-dd");
 
 	return Effect.runPromise(

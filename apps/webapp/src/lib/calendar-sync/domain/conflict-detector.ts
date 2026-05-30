@@ -42,10 +42,7 @@ function rangesAdjacent(range1: DateRange, range2: DateRange): boolean {
 
 	// Adjacent if end of one is within 1 hour of start of other
 	const adjacentThreshold = 60 * 60 * 1000; // 1 hour
-	return (
-		(gap1 >= 0 && gap1 <= adjacentThreshold) ||
-		(gap2 >= 0 && gap2 <= adjacentThreshold)
-	);
+	return (gap1 >= 0 && gap1 <= adjacentThreshold) || (gap2 >= 0 && gap2 <= adjacentThreshold);
 }
 
 /**
@@ -167,17 +164,13 @@ export function getConflictSummary(conflicts: ConflictWarning[]): string {
 /**
  * Filter out tentative events (optional - some orgs may want to ignore tentative)
  */
-export function filterConfirmedEvents(
-	events: ExternalCalendarEvent[],
-): ExternalCalendarEvent[] {
+export function filterConfirmedEvents(events: ExternalCalendarEvent[]): ExternalCalendarEvent[] {
 	return events.filter((e) => e.status === "confirmed");
 }
 
 /**
  * Filter events by visibility (exclude private events if needed)
  */
-export function filterPublicEvents(
-	events: ExternalCalendarEvent[],
-): ExternalCalendarEvent[] {
+export function filterPublicEvents(events: ExternalCalendarEvent[]): ExternalCalendarEvent[] {
 	return events.filter((e) => e.visibility !== "private");
 }

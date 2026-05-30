@@ -2,11 +2,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { member } from "@/db/auth-schema";
 import { employee, teamPermissions } from "@/db/schema";
-import {
-	AuthorizationError,
-	type DatabaseError,
-	NotFoundError,
-} from "../errors";
+import { AuthorizationError, type DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService } from "./database.service";
 
 export interface PermissionFlags {
@@ -51,10 +47,7 @@ export class PermissionsService extends Context.Tag("PermissionsService")<
 			permissions: PermissionFlags,
 			teamId: string | null,
 			grantedBy: string,
-		) => Effect.Effect<
-			void,
-			NotFoundError | AuthorizationError | DatabaseError
-		>;
+		) => Effect.Effect<void, NotFoundError | AuthorizationError | DatabaseError>;
 		readonly revokePermissions: (
 			employeeId: string,
 			organizationId: string,
@@ -173,13 +166,7 @@ export const PermissionsServiceLive = Layer.effect(
 					}));
 				}),
 
-			grantPermissions: (
-				employeeId,
-				organizationId,
-				permissions,
-				teamId,
-				grantedBy,
-			) =>
+			grantPermissions: (employeeId, organizationId, permissions, teamId, grantedBy) =>
 				Effect.gen(function* (_) {
 					// Step 1: Verify employee exists
 					const emp = yield* _(
@@ -239,9 +226,7 @@ export const PermissionsServiceLive = Layer.effect(
 							}),
 						);
 
-						canGrant =
-							granterMembership?.role === "owner" ||
-							granterMembership?.role === "admin";
+						canGrant = granterMembership?.role === "owner" || granterMembership?.role === "admin";
 					}
 
 					if (!canGrant) {
@@ -264,9 +249,7 @@ export const PermissionsServiceLive = Layer.effect(
 								where: and(
 									eq(teamPermissions.employeeId, employeeId),
 									eq(teamPermissions.organizationId, organizationId),
-									teamId
-										? eq(teamPermissions.teamId, teamId)
-										: isNull(teamPermissions.teamId),
+									teamId ? eq(teamPermissions.teamId, teamId) : isNull(teamPermissions.teamId),
 								),
 							});
 						}),
@@ -279,17 +262,13 @@ export const PermissionsServiceLive = Layer.effect(
 								await dbService.db
 									.update(teamPermissions)
 									.set({
-										canCreateTeams:
-											permissions.canCreateTeams ?? existing.canCreateTeams,
+										canCreateTeams: permissions.canCreateTeams ?? existing.canCreateTeams,
 										canManageTeamMembers:
-											permissions.canManageTeamMembers ??
-											existing.canManageTeamMembers,
+											permissions.canManageTeamMembers ?? existing.canManageTeamMembers,
 										canManageTeamSettings:
-											permissions.canManageTeamSettings ??
-											existing.canManageTeamSettings,
+											permissions.canManageTeamSettings ?? existing.canManageTeamSettings,
 										canApproveTeamRequests:
-											permissions.canApproveTeamRequests ??
-											existing.canApproveTeamRequests,
+											permissions.canApproveTeamRequests ?? existing.canApproveTeamRequests,
 										grantedBy,
 										grantedAt: new Date(),
 										updatedAt: new Date(),
@@ -306,12 +285,9 @@ export const PermissionsServiceLive = Layer.effect(
 									organizationId,
 									teamId: teamId ?? null, // null = org-wide permissions
 									canCreateTeams: permissions.canCreateTeams ?? false,
-									canManageTeamMembers:
-										permissions.canManageTeamMembers ?? false,
-									canManageTeamSettings:
-										permissions.canManageTeamSettings ?? false,
-									canApproveTeamRequests:
-										permissions.canApproveTeamRequests ?? false,
+									canManageTeamMembers: permissions.canManageTeamMembers ?? false,
+									canManageTeamSettings: permissions.canManageTeamSettings ?? false,
+									canApproveTeamRequests: permissions.canApproveTeamRequests ?? false,
 									grantedBy,
 								});
 							}),
@@ -350,9 +326,7 @@ export const PermissionsServiceLive = Layer.effect(
 									and(
 										eq(teamPermissions.employeeId, employeeId),
 										eq(teamPermissions.organizationId, organizationId),
-										teamId
-											? eq(teamPermissions.teamId, teamId)
-											: isNull(teamPermissions.teamId),
+										teamId ? eq(teamPermissions.teamId, teamId) : isNull(teamPermissions.teamId),
 									),
 								);
 						}),

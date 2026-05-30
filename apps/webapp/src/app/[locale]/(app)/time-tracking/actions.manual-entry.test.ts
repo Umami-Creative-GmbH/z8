@@ -407,8 +407,9 @@ describe("createManualTimeEntry manager-on-behalf", () => {
 		});
 
 		expect(result.success).toBe(true);
-		expect(containsEq(mockState.findProject.mock.calls[0][0].where, "project.id", "project-1"))
-			.toBe(true);
+		expect(
+			containsEq(mockState.findProject.mock.calls[0][0].where, "project.id", "project-1"),
+		).toBe(true);
 		expect(
 			containsEq(mockState.findProject.mock.calls[0][0].where, "project.organizationId", "org-1"),
 		).toBe(true);

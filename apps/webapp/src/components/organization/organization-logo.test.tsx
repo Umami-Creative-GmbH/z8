@@ -6,7 +6,9 @@ import { OrganizationLogo } from "./organization-logo";
 
 describe("OrganizationLogo", () => {
 	it("renders a plain image for an uploaded organization logo", () => {
-		render(<OrganizationLogo logo="https://cdn.example.com/org-logos/org-1/logo.webp" name="Acme" />);
+		render(
+			<OrganizationLogo logo="https://cdn.example.com/org-logos/org-1/logo.webp" name="Acme" />,
+		);
 
 		const image = screen.getByRole("img", { name: "Acme" });
 

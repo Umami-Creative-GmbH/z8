@@ -5,11 +5,11 @@
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import type {
-	PersonioCredentials,
-	PersonioAuthToken,
-	PersonioAttendanceRequest,
 	PersonioAbsenceRequest,
 	PersonioApiResponse,
+	PersonioAttendanceRequest,
+	PersonioAuthToken,
+	PersonioCredentials,
 	PersonioEmployee,
 	PersonioSyncAttemptResult,
 } from "./types";
@@ -70,9 +70,7 @@ export class PersonioApiClient {
 
 			if (!response.ok || !responseData.success) {
 				const errorMsg =
-					"error" in responseData
-						? responseData.error.message
-						: `HTTP ${response.status}`;
+					"error" in responseData ? responseData.error.message : `HTTP ${response.status}`;
 				throw new PersonioApiError(
 					`Authentication failed: ${errorMsg}`,
 					response.status,
@@ -146,11 +144,8 @@ export class PersonioApiClient {
 					response.status === 408; // Timeout
 
 				const errorMsg =
-					"error" in responseData
-						? responseData.error.message
-						: `HTTP ${response.status}`;
-				const errorCode =
-					"error" in responseData ? responseData.error.code : undefined;
+					"error" in responseData ? responseData.error.message : `HTTP ${response.status}`;
+				const errorCode = "error" in responseData ? responseData.error.code : undefined;
 
 				throw new PersonioApiError(errorMsg, response.status, isRetryable, errorCode);
 			}
@@ -211,9 +206,7 @@ export class PersonioApiClient {
 	/**
 	 * Get employee by personnel number
 	 */
-	async getEmployeeByPersonnelNumber(
-		personnelNumber: string,
-	): Promise<PersonioEmployee | null> {
+	async getEmployeeByPersonnelNumber(personnelNumber: string): Promise<PersonioEmployee | null> {
 		try {
 			// Personio API may not support direct filter by personnel_number
 			// We may need to fetch all and filter client-side for now
@@ -222,12 +215,7 @@ export class PersonioApiClient {
 			});
 
 			if (!data) return null;
-			return (
-				data.find(
-					(emp) =>
-						emp.personnel_number === personnelNumber,
-				) || null
-			);
+			return data.find((emp) => emp.personnel_number === personnelNumber) || null;
 		} catch (error) {
 			logger.warn({ error }, "Failed to get employee by personnel number");
 			return null;
@@ -241,30 +229,20 @@ export class PersonioApiClient {
 		attendance: PersonioAttendanceRequest,
 	): Promise<PersonioSyncAttemptResult> {
 		try {
-			const { data } = await this.request<{ id: number }>(
-				"/company/attendances",
-				{
-					method: "POST",
-					body: JSON.stringify(attendance),
-				},
-			);
+			const { data } = await this.request<{ id: number }>("/company/attendances", {
+				method: "POST",
+				body: JSON.stringify(attendance),
+			});
 
 			return {
 				success: true,
 				externalId: data.id,
 			};
 		} catch (error) {
-			const errorMessage =
-				error instanceof PersonioApiError
-					? error.message
-					: "Unknown error";
-			const isRetryable =
-				error instanceof PersonioApiError ? error.isRetryable : true;
+			const errorMessage = error instanceof PersonioApiError ? error.message : "Unknown error";
+			const isRetryable = error instanceof PersonioApiError ? error.isRetryable : true;
 
-			logger.warn(
-				{ date: attendance.date, error: errorMessage },
-				"Failed to create attendance",
-			);
+			logger.warn({ date: attendance.date, error: errorMessage }, "Failed to create attendance");
 
 			return {
 				success: false,
@@ -310,29 +288,20 @@ export class PersonioApiClient {
 	/**
 	 * Create a single absence record
 	 */
-	async createAbsence(
-		absence: PersonioAbsenceRequest,
-	): Promise<PersonioSyncAttemptResult> {
+	async createAbsence(absence: PersonioAbsenceRequest): Promise<PersonioSyncAttemptResult> {
 		try {
-			const { data } = await this.request<{ id: number }>(
-				"/company/time-offs",
-				{
-					method: "POST",
-					body: JSON.stringify(absence),
-				},
-			);
+			const { data } = await this.request<{ id: number }>("/company/time-offs", {
+				method: "POST",
+				body: JSON.stringify(absence),
+			});
 
 			return {
 				success: true,
 				externalId: data.id,
 			};
 		} catch (error) {
-			const errorMessage =
-				error instanceof PersonioApiError
-					? error.message
-					: "Unknown error";
-			const isRetryable =
-				error instanceof PersonioApiError ? error.isRetryable : true;
+			const errorMessage = error instanceof PersonioApiError ? error.message : "Unknown error";
+			const isRetryable = error instanceof PersonioApiError ? error.isRetryable : true;
 
 			logger.warn(
 				{ startDate: absence.start_date, endDate: absence.end_date, error: errorMessage },
@@ -353,9 +322,7 @@ export class PersonioApiClient {
 	/**
 	 * Create absence records in batch
 	 */
-	async createAbsences(
-		absences: PersonioAbsenceRequest[],
-	): Promise<PersonioSyncAttemptResult[]> {
+	async createAbsences(absences: PersonioAbsenceRequest[]): Promise<PersonioSyncAttemptResult[]> {
 		logger.info({ count: absences.length }, "Creating absence periods");
 
 		const results: PersonioSyncAttemptResult[] = [];
@@ -371,10 +338,7 @@ export class PersonioApiClient {
 		}
 
 		const successCount = results.filter((r) => r.success).length;
-		logger.info(
-			{ total: absences.length, success: successCount },
-			"Absence creation completed",
-		);
+		logger.info({ total: absences.length, success: successCount }, "Absence creation completed");
 
 		return results;
 	}

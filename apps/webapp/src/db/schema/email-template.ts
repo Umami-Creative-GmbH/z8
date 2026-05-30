@@ -41,8 +41,7 @@ export const PLATFORM_SYSTEM_EMAIL_TEMPLATE_KEYS = [
 	"billing-payment-failed",
 ] as const;
 
-export type PlatformSystemEmailTemplateKey =
-	(typeof PLATFORM_SYSTEM_EMAIL_TEMPLATE_KEYS)[number];
+export type PlatformSystemEmailTemplateKey = (typeof PLATFORM_SYSTEM_EMAIL_TEMPLATE_KEYS)[number];
 
 export const organizationEmailTemplate = pgTable(
 	"organization_email_template",
@@ -100,7 +99,5 @@ export const platformSystemEmailTemplate = pgTable(
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
-	(table) => [
-		uniqueIndex("platformSystemEmailTemplate_templateKey_idx").on(table.templateKey),
-	],
+	(table) => [uniqueIndex("platformSystemEmailTemplate_templateKey_idx").on(table.templateKey)],
 );

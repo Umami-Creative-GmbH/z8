@@ -1,8 +1,7 @@
 "use client";
 
-import { IconBriefcase } from "@tabler/icons-react";
+import { IconAlertCircle, IconBriefcase, IconChartBar } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { IconAlertCircle, IconChartBar } from "@tabler/icons-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {

@@ -17,7 +17,7 @@ vi.mock("@/env", () => ({
 }));
 
 vi.mock("@aws-sdk/client-s3", () => ({
-	S3Client: vi.fn().mockImplementation(function (config) {
+	S3Client: vi.fn().mockImplementation((config) => {
 		mockState.lastConfig = config;
 		return {};
 	}),

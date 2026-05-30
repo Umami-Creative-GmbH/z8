@@ -17,9 +17,7 @@ export function getSelectedWorkdayDate({
 	const zone = DateTime.now().setZone(timezone).isValid ? timezone : "UTC";
 	const today = DateTime.fromJSDate(now ?? new Date(), { zone: "utc" }).setZone(zone);
 	const parsed =
-		dateParam && DATE_PARAM_PATTERN.test(dateParam)
-			? DateTime.fromISO(dateParam, { zone })
-			: null;
+		dateParam && DATE_PARAM_PATTERN.test(dateParam) ? DateTime.fromISO(dateParam, { zone }) : null;
 	const selected = parsed?.isValid ? parsed : today;
 	const selectedDay = selected.startOf("day");
 

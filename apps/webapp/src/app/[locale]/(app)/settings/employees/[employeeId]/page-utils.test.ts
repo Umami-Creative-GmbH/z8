@@ -14,9 +14,9 @@ describe("employee detail page utilities", () => {
 	});
 
 	it("formats employee dates for date inputs in UTC date-only form", () => {
-		expect(
-			formatEmployeeDetailDateInputValue(new Date("2026-05-01T22:30:00.000Z")),
-		).toBe("2026-05-01");
+		expect(formatEmployeeDetailDateInputValue(new Date("2026-05-01T22:30:00.000Z"))).toBe(
+			"2026-05-01",
+		);
 		expect(formatEmployeeDetailDateInputValue(null)).toBe("");
 		expect(formatEmployeeDetailDateInputValue(undefined)).toBe("");
 	});

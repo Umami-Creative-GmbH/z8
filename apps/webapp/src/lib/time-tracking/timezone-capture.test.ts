@@ -10,10 +10,18 @@ import {
 
 describe("timezone capture utilities", () => {
 	it("derives offsets for the exact timestamp", () => {
-		expect(getUtcOffsetMinutesForZone(new Date("2026-05-29T08:00:00.000Z"), "Europe/Berlin")).toBe(120);
-		expect(getUtcOffsetMinutesForZone(new Date("2026-01-29T08:00:00.000Z"), "Europe/Berlin")).toBe(60);
-		expect(getUtcOffsetMinutesForZone(new Date("2026-05-29T12:00:00.000Z"), "America/New_York")).toBe(-240);
-		expect(getUtcOffsetMinutesForZone(new Date("2026-01-29T12:00:00.000Z"), "America/New_York")).toBe(-300);
+		expect(getUtcOffsetMinutesForZone(new Date("2026-05-29T08:00:00.000Z"), "Europe/Berlin")).toBe(
+			120,
+		);
+		expect(getUtcOffsetMinutesForZone(new Date("2026-01-29T08:00:00.000Z"), "Europe/Berlin")).toBe(
+			60,
+		);
+		expect(
+			getUtcOffsetMinutesForZone(new Date("2026-05-29T12:00:00.000Z"), "America/New_York"),
+		).toBe(-240);
+		expect(
+			getUtcOffsetMinutesForZone(new Date("2026-01-29T12:00:00.000Z"), "America/New_York"),
+		).toBe(-300);
 	});
 
 	it("rejects invalid IANA timezone names", () => {
@@ -56,8 +64,16 @@ describe("timezone capture utilities", () => {
 	});
 
 	it("reads browser timezone defensively", () => {
-		expect(getBrowserTimezone({ DateTimeFormat: () => ({ resolvedOptions: () => ({ timeZone: "Europe/Berlin" }) }) } as unknown as typeof Intl)).toBe("Europe/Berlin");
-		expect(getBrowserTimezone({ DateTimeFormat: () => ({ resolvedOptions: () => ({}) }) } as unknown as typeof Intl)).toBeNull();
+		expect(
+			getBrowserTimezone({
+				DateTimeFormat: () => ({ resolvedOptions: () => ({ timeZone: "Europe/Berlin" }) }),
+			} as unknown as typeof Intl),
+		).toBe("Europe/Berlin");
+		expect(
+			getBrowserTimezone({
+				DateTimeFormat: () => ({ resolvedOptions: () => ({}) }),
+			} as unknown as typeof Intl),
+		).toBeNull();
 	});
 
 	it("returns null when Intl is missing or unavailable", () => {

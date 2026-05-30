@@ -122,7 +122,9 @@ export function WorkCategoryDialog({
 		}) => createOrganizationCategory(data),
 		onSuccess: (result) => {
 			if (result.success) {
-				queryClient.invalidateQueries({ queryKey: queryKeys.workCategories.orgList(organizationId) });
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.workCategories.orgList(organizationId),
+				});
 				toast.success(t("settings.workCategories.categoryCreated", "Category created"));
 				onSuccess();
 			} else {
@@ -148,7 +150,9 @@ export function WorkCategoryDialog({
 		}) => updateOrganizationCategory(data),
 		onSuccess: (result) => {
 			if (result.success) {
-				queryClient.invalidateQueries({ queryKey: queryKeys.workCategories.orgList(organizationId) });
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.workCategories.orgList(organizationId),
+				});
 				toast.success(t("settings.workCategories.categoryUpdated", "Category updated"));
 				onSuccess();
 			} else {

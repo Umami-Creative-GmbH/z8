@@ -1,8 +1,8 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { Effect } from "effect";
+import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import {
 	absenceCategory,
@@ -21,23 +21,23 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	createExportJob,
-	processExportJob,
-	getExportJobHistory,
-	getExportDownloadUrl,
-	getPayrollExportConfig,
-	getWageTypeMappings,
-	getWorkCategories,
+	type DatevLohnConfig,
 	getAbsenceCategories,
 	getEmployeesForFilter,
-	getTeamsForFilter,
+	getExportDownloadUrl,
+	getExportJobHistory,
+	getPayrollExportConfig,
 	getProjectsForFilter,
-	type PayrollExportFilters,
-	type DatevLohnConfig,
+	getTeamsForFilter,
+	getWageTypeMappings,
+	getWorkCategories,
 	type LexwareLohnConfig,
-	type SageLohnConfig,
-	type WorkdayConfig,
-	type WageTypeMapping,
+	type PayrollExportFilters,
 	type PayrollExportJobSummary,
+	processExportJob,
+	type SageLohnConfig,
+	type WageTypeMapping,
+	type WorkdayConfig,
 } from "@/lib/payroll-export";
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
@@ -149,7 +149,12 @@ export interface StartExportInput {
 // ============================================
 
 export interface FilterOptions {
-	employees: Array<{ id: string; firstName: string | null; lastName: string | null; employeeNumber: string | null }>;
+	employees: Array<{
+		id: string;
+		firstName: string | null;
+		lastName: string | null;
+		employeeNumber: string | null;
+	}>;
 	teams: Array<{ id: string; name: string }>;
 	projects: Array<{ id: string; name: string }>;
 }
@@ -168,9 +173,7 @@ export async function getDatevConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -216,9 +219,7 @@ export async function saveDatevConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -327,9 +328,7 @@ export async function getLexwareConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -375,9 +374,7 @@ export async function saveLexwareConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -486,9 +483,7 @@ export async function getSageConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -534,9 +529,7 @@ export async function saveSageConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -663,9 +656,7 @@ export async function getSuccessFactorsConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -725,9 +716,7 @@ export async function saveSuccessFactorsConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -827,10 +816,7 @@ export async function saveSuccessFactorsConfigAction(
 		const hasCredentials = yield* _(
 			Effect.promise(async () => {
 				const clientId = await getOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_ID);
-				const clientSecret = await getOrgSecret(
-					input.organizationId,
-					SF_VAULT_KEY_CLIENT_SECRET,
-				);
+				const clientSecret = await getOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_SECRET);
 				return (
 					clientId !== null &&
 					clientSecret !== null &&
@@ -867,9 +853,7 @@ export async function testSuccessFactorsConnectionAction(input: {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -929,9 +913,7 @@ export async function saveSuccessFactorsCredentialsAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -972,9 +954,7 @@ export async function deleteSuccessFactorsCredentialsAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1046,9 +1026,7 @@ export async function getWorkdayConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1074,10 +1052,7 @@ export async function getWorkdayConfigAction(
 		const hasCredentials = yield* _(
 			Effect.promise(async () => {
 				const clientId = await getOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_ID);
-				const clientSecret = await getOrgSecret(
-					organizationId,
-					WORKDAY_VAULT_KEY_CLIENT_SECRET,
-				);
+				const clientSecret = await getOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET);
 				return (
 					clientId !== null &&
 					clientSecret !== null &&
@@ -1108,9 +1083,7 @@ export async function saveWorkdayConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1224,9 +1197,7 @@ export async function saveWorkdayCredentialsAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1268,11 +1239,7 @@ export async function saveWorkdayCredentialsAction(
 		yield* _(
 			Effect.promise(async () => {
 				await storeOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_ID, clientId);
-				await storeOrgSecret(
-					input.organizationId,
-					WORKDAY_VAULT_KEY_CLIENT_SECRET,
-					clientSecret,
-				);
+				await storeOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET, clientSecret);
 			}),
 		);
 
@@ -1291,9 +1258,7 @@ export async function deleteWorkdayCredentialsAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1331,9 +1296,7 @@ export async function testWorkdayConnectionAction(input: {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1379,9 +1342,7 @@ export async function getMappingsAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1406,9 +1367,7 @@ export async function getMappingsAction(
 		}
 
 		// Get mappings
-		const mappings = yield* _(
-			Effect.promise(() => getWageTypeMappings(configResult.config.id)),
-		);
+		const mappings = yield* _(Effect.promise(() => getWageTypeMappings(configResult.config.id)));
 
 		return mappings;
 	});
@@ -1426,9 +1385,7 @@ export async function saveMappingAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1451,7 +1408,9 @@ export async function saveMappingAction(
 		].filter(Boolean).length;
 
 		if (sourceCount !== 1) {
-			throw new Error("Exactly one of workCategoryId, absenceCategoryId, or specialCategory must be provided");
+			throw new Error(
+				"Exactly one of workCategoryId, absenceCategoryId, or specialCategory must be provided",
+			);
 		}
 
 		// Validate organization ownership of configId and category IDs
@@ -1503,7 +1462,9 @@ export async function saveMappingAction(
 				if (input.workCategoryId) {
 					whereConditions.push(eq(payrollWageTypeMapping.workCategoryId, input.workCategoryId));
 				} else if (input.absenceCategoryId) {
-					whereConditions.push(eq(payrollWageTypeMapping.absenceCategoryId, input.absenceCategoryId));
+					whereConditions.push(
+						eq(payrollWageTypeMapping.absenceCategoryId, input.absenceCategoryId),
+					);
 				} else if (input.specialCategory) {
 					whereConditions.push(eq(payrollWageTypeMapping.specialCategory, input.specialCategory));
 				}
@@ -1518,8 +1479,20 @@ export async function saveMappingAction(
 						.update(payrollWageTypeMapping)
 						.set({
 							// Legacy fields (for backwards compatibility)
-							wageTypeCode: input.wageTypeCode || input.datevWageTypeCode || input.lexwareWageTypeCode || input.sageWageTypeCode || input.successFactorsTimeTypeCode || "",
-							wageTypeName: input.wageTypeName || input.datevWageTypeName || input.lexwareWageTypeName || input.sageWageTypeName || input.successFactorsTimeTypeName || null,
+							wageTypeCode:
+								input.wageTypeCode ||
+								input.datevWageTypeCode ||
+								input.lexwareWageTypeCode ||
+								input.sageWageTypeCode ||
+								input.successFactorsTimeTypeCode ||
+								"",
+							wageTypeName:
+								input.wageTypeName ||
+								input.datevWageTypeName ||
+								input.lexwareWageTypeName ||
+								input.sageWageTypeName ||
+								input.successFactorsTimeTypeName ||
+								null,
 							// Format-specific codes
 							datevWageTypeCode: input.datevWageTypeCode ?? existing.datevWageTypeCode,
 							datevWageTypeName: input.datevWageTypeName ?? existing.datevWageTypeName,
@@ -1527,8 +1500,10 @@ export async function saveMappingAction(
 							lexwareWageTypeName: input.lexwareWageTypeName ?? existing.lexwareWageTypeName,
 							sageWageTypeCode: input.sageWageTypeCode ?? existing.sageWageTypeCode,
 							sageWageTypeName: input.sageWageTypeName ?? existing.sageWageTypeName,
-							successFactorsTimeTypeCode: input.successFactorsTimeTypeCode ?? existing.successFactorsTimeTypeCode,
-							successFactorsTimeTypeName: input.successFactorsTimeTypeName ?? existing.successFactorsTimeTypeName,
+							successFactorsTimeTypeCode:
+								input.successFactorsTimeTypeCode ?? existing.successFactorsTimeTypeCode,
+							successFactorsTimeTypeName:
+								input.successFactorsTimeTypeName ?? existing.successFactorsTimeTypeName,
 							isActive: true,
 						})
 						.where(eq(payrollWageTypeMapping.id, existing.id))
@@ -1545,8 +1520,20 @@ export async function saveMappingAction(
 							absenceCategoryId: input.absenceCategoryId || null,
 							specialCategory: input.specialCategory || null,
 							// Legacy fields (for backwards compatibility)
-							wageTypeCode: input.wageTypeCode || input.datevWageTypeCode || input.lexwareWageTypeCode || input.sageWageTypeCode || input.successFactorsTimeTypeCode || "",
-							wageTypeName: input.wageTypeName || input.datevWageTypeName || input.lexwareWageTypeName || input.sageWageTypeName || input.successFactorsTimeTypeName || null,
+							wageTypeCode:
+								input.wageTypeCode ||
+								input.datevWageTypeCode ||
+								input.lexwareWageTypeCode ||
+								input.sageWageTypeCode ||
+								input.successFactorsTimeTypeCode ||
+								"",
+							wageTypeName:
+								input.wageTypeName ||
+								input.datevWageTypeName ||
+								input.lexwareWageTypeName ||
+								input.sageWageTypeName ||
+								input.successFactorsTimeTypeName ||
+								null,
 							// Format-specific codes
 							datevWageTypeCode: input.datevWageTypeCode || null,
 							datevWageTypeName: input.datevWageTypeName || null,
@@ -1605,9 +1592,7 @@ export async function deleteMappingAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1666,9 +1651,7 @@ export async function getWorkCategoriesAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1683,9 +1666,7 @@ export async function getWorkCategoriesAction(
 			);
 		}
 
-		const categories = yield* _(
-			Effect.promise(() => getWorkCategories(organizationId)),
-		);
+		const categories = yield* _(Effect.promise(() => getWorkCategories(organizationId)));
 
 		return categories;
 	});
@@ -1703,9 +1684,7 @@ export async function getAbsenceCategoriesAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1720,9 +1699,7 @@ export async function getAbsenceCategoriesAction(
 			);
 		}
 
-		const categories = yield* _(
-			Effect.promise(() => getAbsenceCategories(organizationId)),
-		);
+		const categories = yield* _(Effect.promise(() => getAbsenceCategories(organizationId)));
 
 		return categories;
 	});
@@ -1744,9 +1721,7 @@ export async function getFilterOptionsAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1784,9 +1759,14 @@ export async function getFilterOptionsAction(
 /**
  * Start a payroll export
  */
-export async function startExportAction(
-	input: StartExportInput,
-): Promise<ServerActionResult<{ jobId: string; isAsync: boolean; downloadUrl?: string; fileContent?: string }>> {
+export async function startExportAction(input: StartExportInput): Promise<
+	ServerActionResult<{
+		jobId: string;
+		isAsync: boolean;
+		downloadUrl?: string;
+		fileContent?: string;
+	}>
+> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -1817,9 +1797,7 @@ export async function startExportAction(
 			),
 		);
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1870,9 +1848,7 @@ export async function startExportAction(
 
 		// If sync, process immediately and return result
 		if (!isAsync) {
-			const { result, downloadUrl } = yield* _(
-				Effect.promise(() => processExportJob(jobId)),
-			);
+			const { result, downloadUrl } = yield* _(Effect.promise(() => processExportJob(jobId)));
 
 			revalidatePath("/settings/payroll-export");
 
@@ -1880,7 +1856,11 @@ export async function startExportAction(
 				jobId,
 				isAsync: false,
 				downloadUrl,
-				fileContent: result?.content ? (typeof result.content === "string" ? result.content : result.content.toString("utf-8")) : undefined,
+				fileContent: result?.content
+					? typeof result.content === "string"
+						? result.content
+						: result.content.toString("utf-8")
+					: undefined,
 			};
 		}
 
@@ -1903,9 +1883,7 @@ export async function getExportHistoryAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1920,9 +1898,7 @@ export async function getExportHistoryAction(
 			);
 		}
 
-		const history = yield* _(
-			Effect.promise(() => getExportJobHistory(organizationId)),
-		);
+		const history = yield* _(Effect.promise(() => getExportJobHistory(organizationId)));
 
 		return history;
 	});
@@ -1941,9 +1917,7 @@ export async function getExportDownloadUrlAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1958,9 +1932,7 @@ export async function getExportDownloadUrlAction(
 			);
 		}
 
-		const url = yield* _(
-			Effect.promise(() => getExportDownloadUrl(organizationId, jobId)),
-		);
+		const url = yield* _(Effect.promise(() => getExportDownloadUrl(organizationId, jobId)));
 
 		return url;
 	});
@@ -1972,8 +1944,8 @@ export async function getExportDownloadUrlAction(
 // PERSONIO CONFIGURATION TYPES
 // ============================================
 
-import { storeOrgSecret, getOrgSecret, deleteOrgSecret } from "@/lib/vault/secrets";
 import { getExporter, type PersonioConfig } from "@/lib/payroll-export";
+import { deleteOrgSecret, getOrgSecret, storeOrgSecret } from "@/lib/vault/secrets";
 
 const PERSONIO_FORMAT_ID = "personio";
 const VAULT_KEY_CLIENT_ID = "payroll/personio/client_id";
@@ -2014,9 +1986,7 @@ export async function getPersonioConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -2071,9 +2041,7 @@ export async function savePersonioConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -2185,9 +2153,7 @@ export async function savePersonioCredentialsAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -2228,9 +2194,7 @@ export async function deletePersonioCredentialsAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -2271,9 +2235,7 @@ export async function testPersonioConnectionAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -2302,7 +2264,9 @@ export async function testPersonioConnectionAction(
 		const config = configResult?.config.config || {};
 
 		const result = yield* _(
-			Effect.promise(() => exporter.testConnection(organizationId, config as Record<string, unknown>)),
+			Effect.promise(() =>
+				exporter.testConnection(organizationId, config as Record<string, unknown>),
+			),
 		);
 
 		return result;

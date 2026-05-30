@@ -64,22 +64,14 @@ export class ShiftRequestService extends Context.Tag("ShiftRequestService")<
 			input: SwapRequestInput,
 		) => Effect.Effect<
 			ShiftRequest,
-			| ValidationError
-			| NotFoundError
-			| ConflictError
-			| AuthorizationError
-			| DatabaseError
+			ValidationError | NotFoundError | ConflictError | AuthorizationError | DatabaseError
 		>;
 
 		readonly requestPickup: (
 			input: PickupRequestInput,
 		) => Effect.Effect<
 			ShiftRequest,
-			| ValidationError
-			| NotFoundError
-			| ConflictError
-			| AuthorizationError
-			| DatabaseError
+			ValidationError | NotFoundError | ConflictError | AuthorizationError | DatabaseError
 		>;
 
 		readonly approveRequest: (
@@ -94,18 +86,12 @@ export class ShiftRequestService extends Context.Tag("ShiftRequestService")<
 			requestId: string,
 			approverId: string,
 			reason?: string,
-		) => Effect.Effect<
-			ShiftRequest,
-			NotFoundError | AuthorizationError | DatabaseError
-		>;
+		) => Effect.Effect<ShiftRequest, NotFoundError | AuthorizationError | DatabaseError>;
 
 		readonly cancelRequest: (
 			requestId: string,
 			userId: string,
-		) => Effect.Effect<
-			void,
-			NotFoundError | AuthorizationError | DatabaseError
-		>;
+		) => Effect.Effect<void, NotFoundError | AuthorizationError | DatabaseError>;
 
 		readonly getPendingRequests: (
 			approverId: string,
@@ -224,10 +210,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 						}
 
 						// Check same team
-						if (
-							requester.teamId &&
-							targetEmployee?.teamId !== requester.teamId
-						) {
+						if (requester.teamId && targetEmployee?.teamId !== requester.teamId) {
 							return yield* _(
 								Effect.fail(
 									new ValidationError({
@@ -315,8 +298,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 						return yield* _(
 							Effect.fail(
 								new ValidationError({
-									message:
-										"This shift is already assigned. Use swap request instead.",
+									message: "This shift is already assigned. Use swap request instead.",
 									field: "employeeId",
 								}),
 							),
@@ -374,8 +356,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 						return yield* _(
 							Effect.fail(
 								new ConflictError({
-									message:
-										"You already have a pending pickup request for this shift",
+									message: "You already have a pending pickup request for this shift",
 									conflictType: "duplicate_request",
 								}),
 							),
@@ -450,10 +431,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 						}),
 					);
 
-					if (
-						!approver ||
-						(approver.role !== "manager" && approver.role !== "admin")
-					) {
+					if (!approver || (approver.role !== "manager" && approver.role !== "admin")) {
 						return yield* _(
 							Effect.fail(
 								new AuthorizationError({
@@ -583,10 +561,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 						}),
 					);
 
-					if (
-						!approver ||
-						(approver.role !== "manager" && approver.role !== "admin")
-					) {
+					if (!approver || (approver.role !== "manager" && approver.role !== "admin")) {
 						return yield* _(
 							Effect.fail(
 								new AuthorizationError({
@@ -664,10 +639,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 						}),
 					);
 
-					if (
-						!requesterEmployee ||
-						requesterEmployee.id !== request.requesterId
-					) {
+					if (!requesterEmployee || requesterEmployee.id !== request.requesterId) {
 						return yield* _(
 							Effect.fail(
 								new AuthorizationError({
@@ -683,9 +655,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 					// Delete the request
 					yield* _(
 						dbService.query("deleteRequest", async () => {
-							await dbService.db
-								.delete(shiftRequest)
-								.where(eq(shiftRequest.id, requestId));
+							await dbService.db.delete(shiftRequest).where(eq(shiftRequest.id, requestId));
 						}),
 					);
 				}),
@@ -737,9 +707,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 										},
 									},
 								},
-								orderBy: (shiftRequest, { desc }) => [
-									desc(shiftRequest.createdAt),
-								],
+								orderBy: (shiftRequest, { desc }) => [desc(shiftRequest.createdAt)],
 							});
 						}),
 					);
@@ -785,9 +753,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 										},
 									},
 								},
-								orderBy: (shiftRequest, { desc }) => [
-									desc(shiftRequest.createdAt),
-								],
+								orderBy: (shiftRequest, { desc }) => [desc(shiftRequest.createdAt)],
 							});
 						}),
 					);

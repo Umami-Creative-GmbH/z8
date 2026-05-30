@@ -15,10 +15,16 @@ function validateStrongPassword(value: string, t: Translate): string | undefined
 		return t("setup:setup.error.password_max_length", "Password must be at most 128 characters");
 	}
 	if (!UPPERCASE_REGEX.test(value)) {
-		return t("setup:setup.error.password_uppercase", "Password must contain at least one uppercase letter");
+		return t(
+			"setup:setup.error.password_uppercase",
+			"Password must contain at least one uppercase letter",
+		);
 	}
 	if (!LOWERCASE_REGEX.test(value)) {
-		return t("setup:setup.error.password_lowercase", "Password must contain at least one lowercase letter");
+		return t(
+			"setup:setup.error.password_lowercase",
+			"Password must contain at least one lowercase letter",
+		);
 	}
 	if (!NUMBER_REGEX.test(value)) {
 		return t("setup:setup.error.password_number", "Password must contain at least one number");

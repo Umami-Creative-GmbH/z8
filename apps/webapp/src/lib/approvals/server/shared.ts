@@ -14,13 +14,13 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
-import { progressApprovalChainIfLinked } from "../policies/chain-service";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
 	ApprovalAuditLogger,
 	ApprovalAuditLoggerLive,
 	createApprovalAuditLogger,
 } from "../infrastructure/audit-logger";
+import { progressApprovalChainIfLinked } from "../policies/chain-service";
 import type {
 	ApprovalAction,
 	ApprovalDbService,
@@ -230,7 +230,12 @@ function executeApprovalWithCurrentEmployee<T>(
 		);
 
 		yield* _(
-			updatePendingApprovalRequest(dbService, approval.id, currentEmployee.organizationId, statusUpdate),
+			updatePendingApprovalRequest(
+				dbService,
+				approval.id,
+				currentEmployee.organizationId,
+				statusUpdate,
+			),
 		);
 
 		const chainResult = yield* _(

@@ -1,7 +1,5 @@
 import { eq } from "drizzle-orm";
-import {
-	getResolvedSettingsVisibility,
-} from "@/components/settings/settings-config";
+import { getResolvedSettingsVisibility } from "@/components/settings/settings-config";
 import { SettingsGrid } from "@/components/settings/settings-grid";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";

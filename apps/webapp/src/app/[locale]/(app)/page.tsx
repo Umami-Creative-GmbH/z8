@@ -1,9 +1,13 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import { Suspense } from "react";
 import { NoOrganizationError } from "@/components/errors/no-organization-error";
 import { SectionCards, SectionCardsSkeleton } from "@/components/section-cards";
-import { getOnboardingStatus, getPendingInvitationId, getUserOrganizations } from "@/lib/auth-helpers";
+import {
+	getOnboardingStatus,
+	getPendingInvitationId,
+	getUserOrganizations,
+} from "@/lib/auth-helpers";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 
 export default async function Page() {

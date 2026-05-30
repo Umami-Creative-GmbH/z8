@@ -58,9 +58,7 @@ describe("travel-expense claim validation", () => {
 		} catch (error) {
 			expect(error).toBeInstanceOf(TravelExpenseValidationError);
 			expect((error as TravelExpenseValidationError).code).toBe("UNKNOWN_CLAIM_TYPE");
-			expect((error as Error).message).toBe(
-				TRAVEL_EXPENSE_VALIDATION_MESSAGES.UNKNOWN_CLAIM_TYPE,
-			);
+			expect((error as Error).message).toBe(TRAVEL_EXPENSE_VALIDATION_MESSAGES.UNKNOWN_CLAIM_TYPE);
 		}
 	});
 });

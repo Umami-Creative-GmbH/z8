@@ -2,17 +2,17 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	createSkill,
-	updateSkill,
-	deleteSkill,
-	getOrganizationSkills,
 	assignSkillToEmployee,
-	removeSkillFromEmployee,
+	createSkill,
+	deleteSkill,
 	getEmployeeSkills,
+	getOrganizationSkills,
+	getQualifiedEmployeesForSkills,
+	removeSkillFromEmployee,
 	setSubareaSkillRequirements,
 	setTemplateSkillRequirements,
+	updateSkill,
 	validateEmployeeForShift,
-	getQualifiedEmployeesForSkills,
 } from "@/app/[locale]/(app)/settings/skills/actions";
 import type {
 	EmployeeSkillWithDetails,

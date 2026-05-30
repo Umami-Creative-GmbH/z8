@@ -92,7 +92,9 @@ export function TeamCard({
 					<div className="flex items-start gap-2 rounded-md border bg-muted/30 p-3 text-sm">
 						<IconShieldCheck className="mt-0.5 size-4 text-muted-foreground" />
 						<div className="min-w-0">
-							<div className="font-medium">{t("organization.teams.card.fallbackManager", "Fallback manager")}</div>
+							<div className="font-medium">
+								{t("organization.teams.card.fallbackManager", "Fallback manager")}
+							</div>
 							<div className="truncate text-muted-foreground">
 								{primaryManager
 									? `${primaryManager.name}${primaryManager.position ? ` - ${primaryManager.position}` : ""}`
@@ -105,9 +107,13 @@ export function TeamCard({
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">
 						<IconUsers className="size-4" />
 						<span>
-							{t("organization.members.count", "{count, plural, one {# member} other {# members}}", {
-								count: memberCount,
-							})}
+							{t(
+								"organization.members.count",
+								"{count, plural, one {# member} other {# members}}",
+								{
+									count: memberCount,
+								},
+							)}
 						</span>
 					</div>
 

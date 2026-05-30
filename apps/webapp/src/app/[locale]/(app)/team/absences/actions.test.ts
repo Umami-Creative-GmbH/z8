@@ -1,15 +1,10 @@
 import { describe, expect, it } from "vitest";
-import {
-	canActorManageTarget,
-	canUseManagerAbsencePage,
-} from "./manager-absence-permissions";
-import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
 import { getManagerAbsenceEmployees, recordAbsenceForEmployee } from "./actions";
 import {
 	buildCanonicalAbsenceRecordValues,
 	buildInaccessibleTeamAbsenceListResult,
-	clampManagerAbsencePage,
 	buildManagerAbsenceRowAbsences,
+	clampManagerAbsencePage,
 	getAbsenceOverlapConflictMessage,
 	isManagerAbsenceMetricSort,
 	managerAbsenceAdvisoryLockKey,
@@ -17,6 +12,8 @@ import {
 	validateManagerAbsenceSickDetail,
 	validateRecordAbsenceDateRange,
 } from "./manager-absence-action-helpers";
+import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
+import { canActorManageTarget, canUseManagerAbsencePage } from "./manager-absence-permissions";
 import type { ManagerAbsenceListParams } from "./manager-absence-types";
 
 describe("manager absence server action contracts", () => {
@@ -28,52 +25,55 @@ describe("manager absence server action contracts", () => {
 
 describe("manager absence server action helpers", () => {
 	it("builds visible year-overlapping absence row payloads with sick detail", () => {
-		const rows = buildManagerAbsenceRowAbsences([
-			{
-				id: "absence-sick",
-				employeeId: "employee-1",
-				startDate: "2026-05-18",
-				startPeriod: "full_day",
-				endDate: "2026-05-18",
-				endPeriod: "full_day",
-				status: "approved",
-				notes: null,
-				sickDetail: "child_sick",
-				approvedBy: "manager-1",
-				approvedAt: new Date("2026-05-18T00:00:00.000Z"),
-				rejectionReason: null,
-				createdAt: new Date("2026-05-01T00:00:00.000Z"),
-				category: {
-					id: "category-sick",
-					name: "Sick Leave",
-					type: "sick",
-					color: "#f97316",
-					countsAgainstVacation: false,
+		const rows = buildManagerAbsenceRowAbsences(
+			[
+				{
+					id: "absence-sick",
+					employeeId: "employee-1",
+					startDate: "2026-05-18",
+					startPeriod: "full_day",
+					endDate: "2026-05-18",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					sickDetail: "child_sick",
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-05-18T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-05-01T00:00:00.000Z"),
+					category: {
+						id: "category-sick",
+						name: "Sick Leave",
+						type: "sick",
+						color: "#f97316",
+						countsAgainstVacation: false,
+					},
 				},
-			},
-			{
-				id: "absence-old",
-				employeeId: "employee-1",
-				startDate: "2025-05-18",
-				startPeriod: "full_day",
-				endDate: "2025-05-18",
-				endPeriod: "full_day",
-				status: "approved",
-				notes: null,
-				sickDetail: "with_certificate",
-				approvedBy: "manager-1",
-				approvedAt: new Date("2025-05-18T00:00:00.000Z"),
-				rejectionReason: null,
-				createdAt: new Date("2025-05-01T00:00:00.000Z"),
-				category: {
-					id: "category-sick",
-					name: "Old Sick Leave",
-					type: "sick",
-					color: null,
-					countsAgainstVacation: false,
+				{
+					id: "absence-old",
+					employeeId: "employee-1",
+					startDate: "2025-05-18",
+					startPeriod: "full_day",
+					endDate: "2025-05-18",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					sickDetail: "with_certificate",
+					approvedBy: "manager-1",
+					approvedAt: new Date("2025-05-18T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2025-05-01T00:00:00.000Z"),
+					category: {
+						id: "category-sick",
+						name: "Old Sick Leave",
+						type: "sick",
+						color: null,
+						countsAgainstVacation: false,
+					},
 				},
-			},
-		], 2026);
+			],
+			2026,
+		);
 
 		expect(rows).toEqual([
 			{
@@ -85,30 +85,33 @@ describe("manager absence server action helpers", () => {
 	});
 
 	it("redacts stale sick detail from non-sick absence row payloads", () => {
-		const rows = buildManagerAbsenceRowAbsences([
-			{
-				id: "absence-vacation",
-				employeeId: "employee-1",
-				startDate: "2026-06-01",
-				startPeriod: "full_day",
-				endDate: "2026-06-01",
-				endPeriod: "full_day",
-				status: "approved",
-				notes: null,
-				sickDetail: "with_certificate",
-				approvedBy: "manager-1",
-				approvedAt: new Date("2026-06-01T00:00:00.000Z"),
-				rejectionReason: null,
-				createdAt: new Date("2026-05-01T00:00:00.000Z"),
-				category: {
-					id: "category-vacation",
-					name: "Vacation",
-					type: "vacation",
-					color: null,
-					countsAgainstVacation: true,
+		const rows = buildManagerAbsenceRowAbsences(
+			[
+				{
+					id: "absence-vacation",
+					employeeId: "employee-1",
+					startDate: "2026-06-01",
+					startPeriod: "full_day",
+					endDate: "2026-06-01",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					sickDetail: "with_certificate",
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-06-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-05-01T00:00:00.000Z"),
+					category: {
+						id: "category-vacation",
+						name: "Vacation",
+						type: "vacation",
+						color: null,
+						countsAgainstVacation: true,
+					},
 				},
-			},
-		], 2026);
+			],
+			2026,
+		);
 
 		expect(rows[0]?.sickDetail).toBeNull();
 	});
@@ -342,7 +345,10 @@ describe("manager sick absence detail validation", () => {
 
 	it("rejects sick detail for manager-recorded vacation", () => {
 		expect(
-			validateManagerAbsenceSickDetail({ categoryType: "vacation", sickDetail: "with_certificate" }),
+			validateManagerAbsenceSickDetail({
+				categoryType: "vacation",
+				sickDetail: "with_certificate",
+			}),
 		).toBe("Sick detail can only be used for sick absences");
 	});
 });

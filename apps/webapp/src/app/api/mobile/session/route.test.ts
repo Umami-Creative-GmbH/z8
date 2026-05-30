@@ -178,8 +178,6 @@ describe("GET /api/mobile/session", () => {
 				},
 			],
 		});
-		expect(payload.organizations[1]).toEqual(
-			expect.objectContaining({ hasEmployeeRecord: false }),
-		);
+		expect(payload.organizations[1]).toEqual(expect.objectContaining({ hasEmployeeRecord: false }));
 	});
 });

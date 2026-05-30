@@ -7,9 +7,7 @@ type AuthBackgroundImageProps = {
 	initialImage: StaticImageData;
 };
 
-export function AuthBackgroundImage({
-	initialImage,
-}: AuthBackgroundImageProps) {
+export function AuthBackgroundImage({ initialImage }: AuthBackgroundImageProps) {
 	return (
 		<Image
 			alt=""

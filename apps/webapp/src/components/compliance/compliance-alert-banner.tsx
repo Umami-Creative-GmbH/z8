@@ -1,7 +1,13 @@
 "use client";
 
+import {
+	IconAlertTriangle,
+	IconCircleX,
+	IconClock,
+	IconInfoCircle,
+	IconShield,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { IconAlertTriangle, IconClock, IconInfoCircle, IconShield, IconCircleX } from "@tabler/icons-react";
 import type { ComplianceAlert } from "@/db/schema";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";

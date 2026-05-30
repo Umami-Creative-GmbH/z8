@@ -128,7 +128,9 @@ export function validateAbsenceDurationInput(input: AbsenceDurationInput): strin
 		return "Partial-day absences can only be same-day or overnight.";
 	}
 
-	const startAt = DateTime.fromISO(`${normalized.startDate}T${normalized.startTime}`, { zone: "utc" });
+	const startAt = DateTime.fromISO(`${normalized.startDate}T${normalized.startTime}`, {
+		zone: "utc",
+	});
 	const endAt = DateTime.fromISO(`${normalized.endDate}T${normalized.endTime}`, { zone: "utc" });
 
 	if (!startAt.isValid || !endAt.isValid) {
@@ -266,8 +268,12 @@ function inferDurationKind(startPeriod: DayPeriod, endPeriod: DayPeriod): Absenc
 	return startPeriod === "full_day" && endPeriod === "full_day" ? "full_day" : "partial_day";
 }
 
-function hasExplicitPartialTimes(input: Pick<AbsenceDurationInput, "durationKind" | "startTime" | "endTime">): boolean {
-	return input.durationKind === "partial_day" && (hasText(input.startTime) || hasText(input.endTime));
+function hasExplicitPartialTimes(
+	input: Pick<AbsenceDurationInput, "durationKind" | "startTime" | "endTime">,
+): boolean {
+	return (
+		input.durationKind === "partial_day" && (hasText(input.startTime) || hasText(input.endTime))
+	);
 }
 
 function hasLegacyPeriodOnlyIntent(input: AbsenceDurationInput): boolean {

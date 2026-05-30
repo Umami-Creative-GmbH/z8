@@ -5,9 +5,9 @@
  * Used as a development fallback when no email provider is configured.
  */
 
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import type { EmailMessage, EmailTransport, EmailTransportResult } from "./base";
-import { env } from "@/env";
 
 const logger = createLogger("ConsoleTransport");
 

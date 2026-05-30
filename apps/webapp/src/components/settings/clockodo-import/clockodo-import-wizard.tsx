@@ -1,5 +1,6 @@
 "use client";
 
+import type { DateRange } from "@daypicker/react";
 import {
 	IconArrowLeft,
 	IconArrowRight,
@@ -19,9 +20,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
-import type { DateRange } from "@daypicker/react";
 import { toast } from "sonner";
-import { startImportReviewScan } from "@/app/[locale]/(app)/settings/import/review-actions";
 import {
 	type ExistingDataCounts,
 	fetchClockodoUsers,
@@ -31,6 +30,7 @@ import {
 	validateClockodoCredentials,
 	type Z8EmployeeInfo,
 } from "@/app/[locale]/(app)/settings/clockodo-import/actions";
+import { startImportReviewScan } from "@/app/[locale]/(app)/settings/import/review-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -126,7 +126,8 @@ function resolveReviewDateRange(dateRange: ImportSelections["dateRange"]) {
 
 	if (dateRange.preset === "custom" && dateRange.startDate && dateRange.endDate) {
 		return {
-			startDate: DateTime.fromISO(dateRange.startDate).toISODate() ?? dateRange.startDate.slice(0, 10),
+			startDate:
+				DateTime.fromISO(dateRange.startDate).toISODate() ?? dateRange.startDate.slice(0, 10),
 			endDate: DateTime.fromISO(dateRange.endDate).toISODate() ?? dateRange.endDate.slice(0, 10),
 		};
 	}
@@ -324,7 +325,9 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 		(!selections.dateRange.startDate || !selections.dateRange.endDate);
 	const selectedEmployeeIds = selectedClockodoUserIds(userMappings, onlyImportMapped);
 	const isUserScopedSelectionEmpty =
-		userMappings.length > 0 && hasSelectedUserScopedEntity(selections) && selectedEmployeeIds.length === 0;
+		userMappings.length > 0 &&
+		hasSelectedUserScopedEntity(selections) &&
+		selectedEmployeeIds.length === 0;
 	const hasSelectedEntities = Object.entries(selections).some(
 		([key, val]) => key !== "dateRange" && val === true,
 	);
@@ -844,14 +847,14 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 											>
 												{entityLabel(entity.key, entity.label)}
 											</Label>
-										{missingDeps && selections[entity.key] && (
-											<p className="text-xs text-amber-600 dark:text-amber-400">
-												{t(
-													"settings.clockodoImport.selection.dependencyWarning",
-													"Dependencies will be scanned automatically",
-												)}
-											</p>
-										)}
+											{missingDeps && selections[entity.key] && (
+												<p className="text-xs text-amber-600 dark:text-amber-400">
+													{t(
+														"settings.clockodoImport.selection.dependencyWarning",
+														"Dependencies will be scanned automatically",
+													)}
+												</p>
+											)}
 										</div>
 									</div>
 									<Badge variant="secondary" className="tabular-nums">

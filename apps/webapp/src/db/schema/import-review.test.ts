@@ -77,7 +77,6 @@ describe("import review schema exports", () => {
 				]),
 			).toBe(true);
 		}
-
 	});
 
 	it("keeps import review composite foreign key names aligned with migrations", () => {

@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
-
-import type { ProjectSummary } from "./project-types";
 import {
 	buildProjectHealthFields,
 	buildProjectHealthTotals,
 	hasProjectHealthAlert,
 	sortProjectHealthAlerts,
 } from "./project-health";
+import type { ProjectSummary } from "./project-types";
 
 const now = new Date("2026-05-09T12:00:00.000Z");
 const rangeStart = new Date("2026-05-01T00:00:00.000Z");
@@ -41,13 +40,40 @@ function buildSummary(overrides: Partial<ProjectSummary>): ProjectSummary {
 describe("buildProjectHealthFields", () => {
 	it("sets budget alerts at 70, 90, and 100 percent thresholds", () => {
 		expect(
-			buildProjectHealthFields({ projectName: "Budget 70", rangeHours: 0, cumulativeHours: 70, budgetHours: 100, deadline: null, now, rangeStart, rangeEnd }),
+			buildProjectHealthFields({
+				projectName: "Budget 70",
+				rangeHours: 0,
+				cumulativeHours: 70,
+				budgetHours: 100,
+				deadline: null,
+				now,
+				rangeStart,
+				rangeEnd,
+			}),
 		).toMatchObject({ budgetSeverity: "warning", budgetAlertType: "budget_70" });
 		expect(
-			buildProjectHealthFields({ projectName: "Budget 90", rangeHours: 0, cumulativeHours: 90, budgetHours: 100, deadline: null, now, rangeStart, rangeEnd }),
+			buildProjectHealthFields({
+				projectName: "Budget 90",
+				rangeHours: 0,
+				cumulativeHours: 90,
+				budgetHours: 100,
+				deadline: null,
+				now,
+				rangeStart,
+				rangeEnd,
+			}),
 		).toMatchObject({ budgetSeverity: "warning", budgetAlertType: "budget_90" });
 		expect(
-			buildProjectHealthFields({ projectName: "Budget 100", rangeHours: 0, cumulativeHours: 100, budgetHours: 100, deadline: null, now, rangeStart, rangeEnd }),
+			buildProjectHealthFields({
+				projectName: "Budget 100",
+				rangeHours: 0,
+				cumulativeHours: 100,
+				budgetHours: 100,
+				deadline: null,
+				now,
+				rangeStart,
+				rangeEnd,
+			}),
 		).toMatchObject({ budgetSeverity: "critical", budgetAlertType: "budget_100" });
 	});
 
@@ -153,17 +179,41 @@ describe("buildProjectHealthFields", () => {
 	it("does not forecast without average daily hours, budget, or deadline", () => {
 		const base = { projectName: "No Forecast", now, rangeStart, rangeEnd };
 
-		expect(buildProjectHealthFields({ ...base, rangeHours: 0, cumulativeHours: 10, budgetHours: 100, deadline: new Date("2026-05-20") })).toMatchObject({
+		expect(
+			buildProjectHealthFields({
+				...base,
+				rangeHours: 0,
+				cumulativeHours: 10,
+				budgetHours: 100,
+				deadline: new Date("2026-05-20"),
+			}),
+		).toMatchObject({
 			forecastSeverity: "none",
 			forecastBudgetExhaustionDate: null,
 			forecastMessage: null,
 		});
-		expect(buildProjectHealthFields({ ...base, rangeHours: 10, cumulativeHours: 10, budgetHours: null, deadline: new Date("2026-05-20") })).toMatchObject({
+		expect(
+			buildProjectHealthFields({
+				...base,
+				rangeHours: 10,
+				cumulativeHours: 10,
+				budgetHours: null,
+				deadline: new Date("2026-05-20"),
+			}),
+		).toMatchObject({
 			forecastSeverity: "none",
 			forecastBudgetExhaustionDate: null,
 			forecastMessage: null,
 		});
-		expect(buildProjectHealthFields({ ...base, rangeHours: 10, cumulativeHours: 10, budgetHours: 100, deadline: null })).toMatchObject({
+		expect(
+			buildProjectHealthFields({
+				...base,
+				rangeHours: 10,
+				cumulativeHours: 10,
+				budgetHours: 100,
+				deadline: null,
+			}),
+		).toMatchObject({
 			forecastSeverity: "none",
 			forecastBudgetExhaustionDate: null,
 			forecastMessage: null,
@@ -174,10 +224,25 @@ describe("buildProjectHealthFields", () => {
 describe("project health totals and alerts", () => {
 	it("counts budget health totals", () => {
 		const totals = buildProjectHealthTotals([
-			buildSummary({ percentBudgetUsed: 70, budgetSeverity: "warning", budgetAlertType: "budget_70" }),
-			buildSummary({ percentBudgetUsed: 90, budgetSeverity: "warning", budgetAlertType: "budget_90" }),
-			buildSummary({ percentBudgetUsed: 100, budgetSeverity: "critical", budgetAlertType: "budget_100" }),
-			buildSummary({ forecastSeverity: "warning", forecastBudgetExhaustionDate: new Date("2026-05-11T18:00:00.000Z") }),
+			buildSummary({
+				percentBudgetUsed: 70,
+				budgetSeverity: "warning",
+				budgetAlertType: "budget_70",
+			}),
+			buildSummary({
+				percentBudgetUsed: 90,
+				budgetSeverity: "warning",
+				budgetAlertType: "budget_90",
+			}),
+			buildSummary({
+				percentBudgetUsed: 100,
+				budgetSeverity: "critical",
+				budgetAlertType: "budget_100",
+			}),
+			buildSummary({
+				forecastSeverity: "warning",
+				forecastBudgetExhaustionDate: new Date("2026-05-11T18:00:00.000Z"),
+			}),
 		]);
 
 		expect(totals).toEqual({
@@ -189,8 +254,20 @@ describe("project health totals and alerts", () => {
 	});
 
 	it("sorts alerts by severity and risk", () => {
-		const lowBudget = buildSummary({ id: "low-budget", name: "Low Budget", budgetSeverity: "warning", budgetAlertType: "budget_70", percentBudgetUsed: 70 });
-		const highBudget = buildSummary({ id: "high-budget", name: "High Budget", budgetSeverity: "warning", budgetAlertType: "budget_90", percentBudgetUsed: 90 });
+		const lowBudget = buildSummary({
+			id: "low-budget",
+			name: "Low Budget",
+			budgetSeverity: "warning",
+			budgetAlertType: "budget_70",
+			percentBudgetUsed: 70,
+		});
+		const highBudget = buildSummary({
+			id: "high-budget",
+			name: "High Budget",
+			budgetSeverity: "warning",
+			budgetAlertType: "budget_90",
+			percentBudgetUsed: 90,
+		});
 		const laterCritical = buildSummary({
 			id: "later-critical",
 			name: "Later Critical",
@@ -208,12 +285,11 @@ describe("project health totals and alerts", () => {
 			percentBudgetUsed: 50,
 		});
 
-		expect(sortProjectHealthAlerts([lowBudget, laterCritical, highBudget, overdue]).map((project) => project.id)).toEqual([
-			"overdue",
-			"later-critical",
-			"high-budget",
-			"low-budget",
-		]);
+		expect(
+			sortProjectHealthAlerts([lowBudget, laterCritical, highBudget, overdue]).map(
+				(project) => project.id,
+			),
+		).toEqual(["overdue", "later-critical", "high-budget", "low-budget"]);
 		expect(hasProjectHealthAlert(lowBudget)).toBe(true);
 		expect(hasProjectHealthAlert(buildSummary({ id: "healthy" }))).toBe(false);
 	});
@@ -234,9 +310,8 @@ describe("project health totals and alerts", () => {
 			deadlineAlertType: "deadline_7d",
 		});
 
-		expect(sortProjectHealthAlerts([deadlineWarning, forecastRisk]).map((project) => project.id)).toEqual([
-			"forecast-risk",
-			"deadline-warning",
-		]);
+		expect(
+			sortProjectHealthAlerts([deadlineWarning, forecastRisk]).map((project) => project.id),
+		).toEqual(["forecast-risk", "deadline-warning"]);
 	});
 });

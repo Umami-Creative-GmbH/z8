@@ -6,9 +6,9 @@
  */
 
 export {
-	initializeCommands,
-	getCommand,
-	getAllCommands,
-	parseCommand,
 	executeCommand,
+	getAllCommands,
+	getCommand,
+	initializeCommands,
+	parseCommand,
 } from "@/lib/bot-platform/command-registry";

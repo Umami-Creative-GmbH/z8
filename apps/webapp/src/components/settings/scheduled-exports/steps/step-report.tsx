@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useTranslate } from "@tolgee/react";
 import { IconAlertCircle } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -12,9 +13,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import type { ScheduledExportForm } from "../scheduled-export-dialog";
 import type { ReportType } from "@/lib/scheduled-exports/domain/types";
+import type { ScheduledExportForm } from "../scheduled-export-dialog";
 
 interface StepReportProps {
 	form: ScheduledExportForm;
@@ -28,23 +28,38 @@ export function StepReport({ form, payrollConfigs }: StepReportProps) {
 		{
 			value: "payroll_export",
 			label: t("settings.scheduledExports.reportType.payroll", "Payroll Export"),
-			description: t("settings.scheduledExports.reportType.payrollDesc", "Export time data for payroll processing (DATEV, Sage, Lexware, etc.)"),
+			description: t(
+				"settings.scheduledExports.reportType.payrollDesc",
+				"Export time data for payroll processing (DATEV, Sage, Lexware, etc.)",
+			),
 		},
 		{
 			value: "data_export",
 			label: t("settings.scheduledExports.reportType.data", "Data Export"),
-			description: t("settings.scheduledExports.reportType.dataDesc", "Export raw data (employees, time entries, absences)"),
+			description: t(
+				"settings.scheduledExports.reportType.dataDesc",
+				"Export raw data (employees, time entries, absences)",
+			),
 		},
 		{
 			value: "audit_report",
 			label: t("settings.scheduledExports.reportType.audit", "Audit Report"),
-			description: t("settings.scheduledExports.reportType.auditDesc", "GoBD-compliant audit export with cryptographic proofs"),
+			description: t(
+				"settings.scheduledExports.reportType.auditDesc",
+				"GoBD-compliant audit export with cryptographic proofs",
+			),
 		},
 	];
 
 	const DATA_CATEGORIES = [
-		{ id: "employees", label: t("settings.scheduledExports.dataCategories.employees", "Employees") },
-		{ id: "time_entries", label: t("settings.scheduledExports.dataCategories.timeEntries", "Time Entries") },
+		{
+			id: "employees",
+			label: t("settings.scheduledExports.dataCategories.employees", "Employees"),
+		},
+		{
+			id: "time_entries",
+			label: t("settings.scheduledExports.dataCategories.timeEntries", "Time Entries"),
+		},
 		{ id: "absences", label: t("settings.scheduledExports.dataCategories.absences", "Absences") },
 		{ id: "projects", label: t("settings.scheduledExports.dataCategories.projects", "Projects") },
 	];
@@ -75,9 +90,7 @@ export function StepReport({ form, payrollConfigs }: StepReportProps) {
 									<SelectItem key={type.value} value={type.value}>
 										<div>
 											<div>{type.label}</div>
-											<div className="text-xs text-muted-foreground">
-												{type.description}
-											</div>
+											<div className="text-xs text-muted-foreground">{type.description}</div>
 										</div>
 									</SelectItem>
 								))}
@@ -94,7 +107,9 @@ export function StepReport({ form, payrollConfigs }: StepReportProps) {
 							<PayrollReportConfig form={form} payrollConfigs={payrollConfigs} />
 						)}
 
-						{reportType === "data_export" && <DataReportConfig form={form} categories={DATA_CATEGORIES} />}
+						{reportType === "data_export" && (
+							<DataReportConfig form={form} categories={DATA_CATEGORIES} />
+						)}
 
 						{reportType === "audit_report" && <AuditReportConfig form={form} />}
 					</>
@@ -118,9 +133,14 @@ function PayrollReportConfig({
 		return (
 			<Alert role="alert">
 				<IconAlertCircle className="size-4" aria-hidden="true" />
-				<AlertTitle>{t("settings.scheduledExports.report.noPayrollConfig", "No Payroll Configuration")}</AlertTitle>
+				<AlertTitle>
+					{t("settings.scheduledExports.report.noPayrollConfig", "No Payroll Configuration")}
+				</AlertTitle>
 				<AlertDescription>
-					{t("settings.scheduledExports.report.noPayrollConfigDesc", "You need to configure at least one payroll export format (DATEV, Sage, etc.) before creating a scheduled payroll export. Go to Settings → Payroll Export to set up your configuration.")}
+					{t(
+						"settings.scheduledExports.report.noPayrollConfigDesc",
+						"You need to configure at least one payroll export format (DATEV, Sage, etc.) before creating a scheduled payroll export. Go to Settings → Payroll Export to set up your configuration.",
+					)}
 				</AlertDescription>
 			</Alert>
 		);
@@ -147,7 +167,12 @@ function PayrollReportConfig({
 							aria-labelledby="payroll-config-label"
 						>
 							<SelectTrigger aria-describedby="payroll-config-hint">
-								<SelectValue placeholder={t("settings.scheduledExports.report.selectPayrollConfig", "Select payroll configuration")} />
+								<SelectValue
+									placeholder={t(
+										"settings.scheduledExports.report.selectPayrollConfig",
+										"Select payroll configuration",
+									)}
+								/>
 							</SelectTrigger>
 							<SelectContent>
 								{payrollConfigs.map((config) => (
@@ -158,7 +183,10 @@ function PayrollReportConfig({
 							</SelectContent>
 						</Select>
 						<p id="payroll-config-hint" className="text-xs text-muted-foreground">
-							{t("settings.scheduledExports.report.payrollConfigHint", "Select the payroll format configuration to use for this export")}
+							{t(
+								"settings.scheduledExports.report.payrollConfigHint",
+								"Select the payroll format configuration to use for this export",
+							)}
 						</p>
 					</div>
 				)}
@@ -181,7 +209,10 @@ function DataReportConfig({
 			<div className="space-y-2">
 				<Label>{t("settings.scheduledExports.report.dataCategories", "Data Categories")}</Label>
 				<p className="text-sm text-muted-foreground">
-					{t("settings.scheduledExports.report.dataCategoriesHint", "Select which data to include in the export")}
+					{t(
+						"settings.scheduledExports.report.dataCategoriesHint",
+						"Select which data to include in the export",
+					)}
 				</p>
 			</div>
 
@@ -197,7 +228,14 @@ function DataReportConfig({
 					};
 
 					return (
-						<div className="space-y-3" role="group" aria-label={t("settings.scheduledExports.report.dataCategoriesGroup", "Data categories selection")}>
+						<div
+							className="space-y-3"
+							role="group"
+							aria-label={t(
+								"settings.scheduledExports.report.dataCategoriesGroup",
+								"Data categories selection",
+							)}
+						>
 							{categories.map((category) => (
 								<div key={category.id} className="flex items-center space-x-2">
 									<Checkbox
@@ -205,10 +243,7 @@ function DataReportConfig({
 										checked={selectedCategories.includes(category.id)}
 										onCheckedChange={() => toggleCategory(category.id)}
 									/>
-									<label
-										htmlFor={`category-${category.id}`}
-										className="text-sm cursor-pointer"
-									>
+									<label htmlFor={`category-${category.id}`} className="text-sm cursor-pointer">
 										{category.label}
 									</label>
 								</div>
@@ -221,11 +256,7 @@ function DataReportConfig({
 	);
 }
 
-function AuditReportConfig({
-	form,
-}: {
-	form: ScheduledExportForm;
-}) {
+function AuditReportConfig({ form }: { form: ScheduledExportForm }) {
 	const { t } = useTranslate();
 
 	return (
@@ -234,7 +265,10 @@ function AuditReportConfig({
 				<IconAlertCircle className="size-4" aria-hidden="true" />
 				<AlertTitle>{t("settings.scheduledExports.report.auditReport", "Audit Report")}</AlertTitle>
 				<AlertDescription>
-					{t("settings.scheduledExports.report.auditReportDesc", "Audit reports include all time tracking data with cryptographic signatures and timestamps for GoBD compliance. The export will be stored with WORM (Write Once Read Many) protection.")}
+					{t(
+						"settings.scheduledExports.report.auditReportDesc",
+						"Audit reports include all time tracking data with cryptographic signatures and timestamps for GoBD compliance. The export will be stored with WORM (Write Once Read Many) protection.",
+					)}
 				</AlertDescription>
 			</Alert>
 
@@ -252,7 +286,10 @@ function AuditReportConfig({
 							}
 						/>
 						<label htmlFor="include-metadata" className="text-sm cursor-pointer">
-							{t("settings.scheduledExports.report.includeMetadata", "Include audit metadata (signatures, timestamps, checksums)")}
+							{t(
+								"settings.scheduledExports.report.includeMetadata",
+								"Include audit metadata (signatures, timestamps, checksums)",
+							)}
 						</label>
 					</div>
 				)}

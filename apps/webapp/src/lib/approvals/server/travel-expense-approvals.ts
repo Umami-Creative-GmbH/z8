@@ -258,7 +258,11 @@ export function notifyTravelExpenseRequesterAfterDecision(
 	action: "approve" | "reject",
 	reason?: string,
 ): Effect.Effect<void, never, never> {
-	return loadTravelExpenseNotificationContext(dbService, claimId, currentEmployee.organizationId).pipe(
+	return loadTravelExpenseNotificationContext(
+		dbService,
+		claimId,
+		currentEmployee.organizationId,
+	).pipe(
 		Effect.flatMap((claim) =>
 			claim.status === (action === "approve" ? "approved" : "rejected")
 				? Effect.sync(() => notifyTravelExpenseRequester(claim, currentEmployee, action, reason))

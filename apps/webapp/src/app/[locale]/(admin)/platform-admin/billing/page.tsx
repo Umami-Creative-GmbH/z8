@@ -1,22 +1,19 @@
-import { Suspense } from "react";
-import { connection } from "next/server";
-import { redirect } from "next/navigation";
 import {
-	IconCurrencyEuro,
-	IconUsers,
+	IconAlertTriangle,
 	IconBuilding,
 	IconClock,
-	IconAlertTriangle,
+	IconCurrencyEuro,
 	IconTrendingUp,
+	IconUsers,
 } from "@tabler/icons-react";
 import { desc } from "drizzle-orm";
 import { DateTime } from "luxon";
-import { db } from "@/db";
-import { organization } from "@/db/auth-schema";
-import { subscription } from "@/db/schema";
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import {
 	Table,
 	TableBody,
@@ -25,9 +22,12 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
+import { subscription } from "@/db/schema";
+import { env } from "@/env";
 import { cn } from "@/lib/utils";
 import { getTranslate } from "@/tolgee/server";
-import { env } from "@/env";
 
 export default async function AdminBillingPage() {
 	await connection();
@@ -107,10 +107,7 @@ function StatCard({ title, value, description, icon, variant = "default" }: Stat
 		>
 			<CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
 				<div
-					className={cn(
-						"flex size-10 items-center justify-center rounded-lg",
-						iconStyles[variant],
-					)}
+					className={cn("flex size-10 items-center justify-center rounded-lg", iconStyles[variant])}
 				>
 					{icon}
 				</div>
@@ -142,7 +139,7 @@ async function BillingStats() {
 
 	// Calculate metrics
 	const activeSubscriptions = allSubscriptions.filter(
-		(s) => s.status === "active" || s.status === "trialing" || s.status === "past_due"
+		(s) => s.status === "active" || s.status === "trialing" || s.status === "past_due",
 	);
 
 	const totalSeats = activeSubscriptions.reduce((sum, s) => sum + s.currentSeats, 0);
@@ -163,19 +160,15 @@ async function BillingStats() {
 	// Count subscriptions that were trialing and are now active
 	const activeCount = allSubscriptions.filter((s) => s.status === "active").length;
 	const totalTrialsAndActive = trialingCount + activeCount;
-	const conversionRate = totalTrialsAndActive > 0
-		? Math.round((activeCount / totalTrialsAndActive) * 100)
-		: 0;
+	const conversionRate =
+		totalTrialsAndActive > 0 ? Math.round((activeCount / totalTrialsAndActive) * 100) : 0;
 
 	return (
 		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 			<StatCard
 				title={t("admin:admin.billing.metrics.mrr", "MRR")}
 				value={`€${mrr.toLocaleString()}`}
-				description={t(
-					"admin:admin.billing.metrics.mrrDescription",
-					"Monthly recurring revenue",
-				)}
+				description={t("admin:admin.billing.metrics.mrrDescription", "Monthly recurring revenue")}
 				icon={<IconCurrencyEuro className="size-5" aria-hidden="true" />}
 				variant="success"
 			/>
@@ -275,9 +268,7 @@ async function SubscriptionsTable() {
 	const getStatusBadge = (status: string) => {
 		switch (status) {
 			case "trialing":
-				return (
-					<Badge variant="default">{t("admin:admin.billing.status.trialing", "Trial")}</Badge>
-				);
+				return <Badge variant="default">{t("admin:admin.billing.status.trialing", "Trial")}</Badge>;
 			case "active":
 				return (
 					<Badge variant="default" className="bg-green-600">
@@ -286,15 +277,11 @@ async function SubscriptionsTable() {
 				);
 			case "past_due":
 				return (
-					<Badge variant="destructive">
-						{t("admin:admin.billing.status.pastDue", "Past Due")}
-					</Badge>
+					<Badge variant="destructive">{t("admin:admin.billing.status.pastDue", "Past Due")}</Badge>
 				);
 			case "canceled":
 				return (
-					<Badge variant="secondary">
-						{t("admin:admin.billing.status.canceled", "Canceled")}
-					</Badge>
+					<Badge variant="secondary">{t("admin:admin.billing.status.canceled", "Canceled")}</Badge>
 				);
 			default:
 				return <Badge variant="outline">{status}</Badge>;

@@ -350,13 +350,7 @@ interface SkillFormValues {
 	requiresExpiry: boolean;
 }
 
-function SkillDialog({
-	organizationId,
-	skill,
-	open,
-	onOpenChange,
-	onSuccess,
-}: SkillDialogProps) {
+function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: SkillDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const isEditing = !!skill;

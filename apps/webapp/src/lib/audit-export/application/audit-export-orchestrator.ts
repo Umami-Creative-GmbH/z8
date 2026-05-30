@@ -2,24 +2,29 @@
  * Audit Export Orchestrator
  * Main application service that coordinates the audit hardening pipeline
  */
+
+import { and, eq } from "drizzle-orm";
 import JSZip from "jszip";
-import { eq, and } from "drizzle-orm";
 import {
-	db,
-	auditExportPackage,
-	auditExportFile,
 	auditExportConfig,
+	auditExportFile,
+	auditExportPackage,
 	dataExport,
+	db,
 	payrollExportJob,
 } from "@/db";
 import { createLogger } from "@/lib/logger";
 import { getPresignedUrl } from "@/lib/storage/export-s3-client";
-import { SignedAuditPackage, AuditManifest } from "../domain/models";
-import { manifestBuilder, type IManifestBuilder } from "../domain/manifest-builder";
-import { signingService, type ISigningService } from "../domain/signing-service";
-import { timestampService, type ITimestampService } from "../domain/timestamp-service";
-import { wormStorageAdapter, S3WORMStorageAdapter, type IWORMStorageAdapter } from "../infrastructure/storage/worm-storage-adapter";
+import { type IManifestBuilder, manifestBuilder } from "../domain/manifest-builder";
+import { type AuditManifest, SignedAuditPackage } from "../domain/models";
+import { type ISigningService, signingService } from "../domain/signing-service";
+import { type ITimestampService, timestampService } from "../domain/timestamp-service";
 import { hashProvider, type IHashProvider } from "../infrastructure/crypto/hash-provider";
+import {
+	type IWORMStorageAdapter,
+	S3WORMStorageAdapter,
+	wormStorageAdapter,
+} from "../infrastructure/storage/worm-storage-adapter";
 
 const logger = createLogger("AuditExportOrchestrator");
 
@@ -128,18 +133,19 @@ export class AuditExportOrchestrator {
 			await this.updateStatus(packageId, "uploading");
 			const s3Key = S3WORMStorageAdapter.generateAuditExportKey(organizationId, packageId);
 
-			const { objectLockEnabled, retentionUntil, lockMode } = await this.storage.uploadWithRetention(
-				organizationId,
-				s3Key,
-				auditZipBuffer,
-				config.retentionYears,
-				"application/zip",
-				{
-					"export-id": exportId,
-					"package-id": packageId,
-					"export-type": exportType,
-				},
-			);
+			const { objectLockEnabled, retentionUntil, lockMode } =
+				await this.storage.uploadWithRetention(
+					organizationId,
+					s3Key,
+					auditZipBuffer,
+					config.retentionYears,
+					"application/zip",
+					{
+						"export-id": exportId,
+						"package-id": packageId,
+						"export-type": exportType,
+					},
+				);
 
 			// Step 6: Store metadata in database
 			await this.storePackageMetadata(packageId, {
@@ -304,7 +310,14 @@ For questions, contact your system administrator.
 	 */
 	private async updateStatus(
 		packageId: string,
-		status: "pending" | "building_manifest" | "signing" | "timestamping" | "uploading" | "completed" | "failed",
+		status:
+			| "pending"
+			| "building_manifest"
+			| "signing"
+			| "timestamping"
+			| "uploading"
+			| "completed"
+			| "failed",
 	): Promise<void> {
 		const updates: Record<string, unknown> = { status };
 

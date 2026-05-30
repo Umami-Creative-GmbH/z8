@@ -6,17 +6,17 @@
  */
 
 import {
-	CloudAdapter,
-	ConfigurationServiceClientCredentialFactory,
-	ConfigurationBotFrameworkAuthentication,
 	type Activity,
 	type Attachment,
+	CloudAdapter,
+	ConfigurationBotFrameworkAuthentication,
+	ConfigurationServiceClientCredentialFactory,
 	type ConversationReference,
 	type TurnContext,
 } from "botbuilder";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { TeamsError } from "./types";
-import { env } from "@/env";
 
 const logger = createLogger("TeamsBotAdapter");
 
@@ -104,14 +104,10 @@ export async function sendProactiveMessage(
 	let activityId: string | undefined;
 
 	try {
-		await adapter.continueConversationAsync(
-			appId,
-			conversationReference,
-			async (turnContext) => {
-				const response = await turnContext.sendActivity(activity);
-				activityId = response?.id;
-			},
-		);
+		await adapter.continueConversationAsync(appId, conversationReference, async (turnContext) => {
+			const response = await turnContext.sendActivity(activity);
+			activityId = response?.id;
+		});
 
 		logger.debug(
 			{
@@ -182,16 +178,12 @@ export async function updateMessage(
 	}
 
 	try {
-		await adapter.continueConversationAsync(
-			appId,
-			conversationReference,
-			async (turnContext) => {
-				await turnContext.updateActivity({
-					...updatedActivity,
-					id: activityId,
-				});
-			},
-		);
+		await adapter.continueConversationAsync(appId, conversationReference, async (turnContext) => {
+			await turnContext.updateActivity({
+				...updatedActivity,
+				id: activityId,
+			});
+		});
 
 		logger.debug(
 			{

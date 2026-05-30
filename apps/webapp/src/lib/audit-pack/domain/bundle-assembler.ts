@@ -59,14 +59,7 @@ function buildCsv(headers: readonly string[], rows: readonly (readonly unknown[]
 function toEntriesCsv(entries: readonly EntryChainEvidence[]): string {
 	const sortedEntries = [...entries].sort((a, b) => a.id.localeCompare(b.id));
 	return buildCsv(
-		[
-			"id",
-			"organizationId",
-			"occurredAt",
-			"previousEntryId",
-			"replacesEntryId",
-			"supersededById",
-		],
+		["id", "organizationId", "occurredAt", "previousEntryId", "replacesEntryId", "supersededById"],
 		sortedEntries.map((entry) => [
 			entry.id,
 			entry.organizationId,

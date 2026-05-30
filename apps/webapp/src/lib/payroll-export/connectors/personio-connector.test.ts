@@ -58,13 +58,7 @@ describe("createPersonioConnector", () => {
 		await expect(
 			connector.export(organizationId, workPeriods, absences, mappings, config),
 		).resolves.toEqual(exportResult);
-		expect(exportFn).toHaveBeenCalledWith(
-			organizationId,
-			workPeriods,
-			absences,
-			mappings,
-			config,
-		);
+		expect(exportFn).toHaveBeenCalledWith(organizationId, workPeriods, absences, mappings, config);
 	});
 
 	it("delegates getSyncThreshold to the underlying exporter", () => {

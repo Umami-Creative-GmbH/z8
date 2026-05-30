@@ -5,9 +5,9 @@
  */
 
 import type { Job, JobsOptions } from "bullmq";
-import { addJob, type JobResult, type WebhookJobData as QueueWebhookJobData } from "@/lib/queue";
 import { createLogger } from "@/lib/logger";
 import type { NotificationType } from "@/lib/notifications/types";
+import { addJob, type JobResult, type WebhookJobData as QueueWebhookJobData } from "@/lib/queue";
 import type { WebhookPayloadData } from "./types";
 import { RETRY_DELAYS_MS } from "./types";
 

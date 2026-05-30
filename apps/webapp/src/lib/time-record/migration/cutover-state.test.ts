@@ -63,7 +63,10 @@ describe("assertCanonicalCutoverReady", () => {
 			});
 
 		await expect(assertCanonicalCutoverReady("org-1")).resolves.toBeUndefined();
-		expect(runCanonicalBackfill).toHaveBeenCalledWith({ organizationId: "org-1", actorId: "user-1" });
+		expect(runCanonicalBackfill).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			actorId: "user-1",
+		});
 		expect(reconcileLegacyToCanonical).toHaveBeenCalledTimes(2);
 	});
 
@@ -100,7 +103,10 @@ describe("assertCanonicalCutoverReady", () => {
 		await expect(assertCanonicalCutoverReady("org-1")).rejects.toThrow(
 			"Canonical time-record backfill is incomplete for organization org-1",
 		);
-		expect(runCanonicalBackfill).toHaveBeenCalledWith({ organizationId: "org-1", actorId: "user-1" });
+		expect(runCanonicalBackfill).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			actorId: "user-1",
+		});
 		expect(reconcileLegacyToCanonical).toHaveBeenCalledTimes(2);
 	});
 

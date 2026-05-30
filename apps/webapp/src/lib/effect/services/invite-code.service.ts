@@ -102,22 +102,14 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 		readonly update: (
 			id: string,
 			input: UpdateInviteCodeInput,
-		) => Effect.Effect<
-			InviteCode,
-			NotFoundError | ValidationError | DatabaseError
-		>;
+		) => Effect.Effect<InviteCode, NotFoundError | ValidationError | DatabaseError>;
 
 		readonly delete: (
 			id: string,
 			userId: string,
-		) => Effect.Effect<
-			void,
-			NotFoundError | AuthorizationError | DatabaseError
-		>;
+		) => Effect.Effect<void, NotFoundError | AuthorizationError | DatabaseError>;
 
-		readonly getById: (
-			id: string,
-		) => Effect.Effect<InviteCodeWithRelations | null, DatabaseError>;
+		readonly getById: (id: string) => Effect.Effect<InviteCodeWithRelations | null, DatabaseError>;
 
 		readonly getByCode: (
 			organizationId: string,
@@ -129,16 +121,11 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 		) => Effect.Effect<InviteCodeWithRelations[], DatabaseError>;
 
 		// Validation and usage
-		readonly validateCode: (
-			code: string,
-		) => Effect.Effect<ValidateInviteCodeResult, DatabaseError>;
+		readonly validateCode: (code: string) => Effect.Effect<ValidateInviteCodeResult, DatabaseError>;
 
 		readonly useCode: (
 			input: UseInviteCodeInput,
-		) => Effect.Effect<
-			UseInviteCodeResult,
-			ValidationError | NotFoundError | DatabaseError
-		>;
+		) => Effect.Effect<UseInviteCodeResult, ValidationError | NotFoundError | DatabaseError>;
 
 		// Stats
 		readonly getUsageStats: (
@@ -159,18 +146,11 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 
 		readonly processPendingInviteCode: (
 			userId: string,
-		) => Effect.Effect<
-			UseInviteCodeResult | null,
-			ValidationError | NotFoundError | DatabaseError
-		>;
+		) => Effect.Effect<UseInviteCodeResult | null, ValidationError | NotFoundError | DatabaseError>;
 
-		readonly clearPendingInviteCode: (
-			userId: string,
-		) => Effect.Effect<void, DatabaseError>;
+		readonly clearPendingInviteCode: (userId: string) => Effect.Effect<void, DatabaseError>;
 
-		readonly getPendingInviteCode: (
-			userId: string,
-		) => Effect.Effect<string | null, DatabaseError>;
+		readonly getPendingInviteCode: (userId: string) => Effect.Effect<string | null, DatabaseError>;
 	}
 >() {}
 
@@ -198,16 +178,11 @@ export const InviteCodeServiceLive = Layer.effect(
 		};
 
 		// Helper to check if code is expired or exhausted
-		const isCodeUsable = (
-			inviteCodeRecord: InviteCode,
-		): { usable: boolean; reason?: string } => {
+		const isCodeUsable = (inviteCodeRecord: InviteCode): { usable: boolean; reason?: string } => {
 			if (inviteCodeRecord.status !== "active") {
 				return { usable: false, reason: `Code is ${inviteCodeRecord.status}` };
 			}
-			if (
-				inviteCodeRecord.expiresAt &&
-				inviteCodeRecord.expiresAt < new Date()
-			) {
+			if (inviteCodeRecord.expiresAt && inviteCodeRecord.expiresAt < new Date()) {
 				return { usable: false, reason: "Code has expired" };
 			}
 			if (
@@ -253,8 +228,7 @@ export const InviteCodeServiceLive = Layer.effect(
 						yield* _(
 							Effect.fail(
 								new ValidationError({
-									message:
-										"A code with this name already exists for this organization.",
+									message: "A code with this name already exists for this organization.",
 									field: "code",
 								}),
 							),
@@ -279,8 +253,7 @@ export const InviteCodeServiceLive = Layer.effect(
 							yield* _(
 								Effect.fail(
 									new ValidationError({
-										message:
-											"Invalid default team. Team not found in this organization.",
+										message: "Invalid default team. Team not found in this organization.",
 										field: "defaultTeamId",
 									}),
 								),
@@ -338,10 +311,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					const existingInviteCode = existing;
 
 					// Validate team if changing
-					if (
-						input.defaultTeamId !== undefined &&
-						input.defaultTeamId !== null
-					) {
+					if (input.defaultTeamId !== undefined && input.defaultTeamId !== null) {
 						const defaultTeamId = input.defaultTeamId;
 						const teamRecord = yield* _(
 							dbService.query("validateTeam", async () => {
@@ -358,8 +328,7 @@ export const InviteCodeServiceLive = Layer.effect(
 							yield* _(
 								Effect.fail(
 									new ValidationError({
-										message:
-											"Invalid default team. Team not found in this organization.",
+										message: "Invalid default team. Team not found in this organization.",
 										field: "defaultTeamId",
 									}),
 								),
@@ -499,21 +468,14 @@ export const InviteCodeServiceLive = Layer.effect(
 				Effect.gen(function* (_) {
 					const results = yield* _(
 						dbService.query("listInviteCodes", async () => {
-							const baseCondition = eq(
-								inviteCode.organizationId,
-								query.organizationId,
-							);
+							const baseCondition = eq(inviteCode.organizationId, query.organizationId);
 							const whereCondition: SQL = query.status
 								? ((and(baseCondition, eq(inviteCode.status, query.status)) ??
 										baseCondition) as SQL)
 								: !query.includeArchived
 									? ((and(
 											baseCondition,
-											inArray(inviteCode.status, [
-												"active",
-												"paused",
-												"expired",
-											]),
+											inArray(inviteCode.status, ["active", "paused", "expired"]),
 										) ?? baseCondition) as SQL)
 									: baseCondition;
 
@@ -673,9 +635,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					}
 
 					// Create member with appropriate status
-					const memberStatus = inviteCodeRecord.requiresApproval
-						? "pending"
-						: "approved";
+					const memberStatus = inviteCodeRecord.requiresApproval ? "pending" : "approved";
 
 					const newMember = yield* _(
 						dbService.query("createMember", async () => {
@@ -728,8 +688,8 @@ export const InviteCodeServiceLive = Layer.effect(
 						status: memberStatus as "pending" | "approved",
 						organizationId: inviteCodeRecord.organizationId,
 						organizationName:
-							(inviteCodeRecord as InviteCodeWithRelations).organization
-								?.name || "Unknown Organization",
+							(inviteCodeRecord as InviteCodeWithRelations).organization?.name ||
+							"Unknown Organization",
 					};
 				}),
 
@@ -769,14 +729,11 @@ export const InviteCodeServiceLive = Layer.effect(
 								return { total: 0, pending: 0, approved: 0, rejected: 0 };
 							}
 
-							const approvals =
-								await dbService.db.query.memberApproval.findMany({
-									where: sql`${memberApproval.memberId} = ANY(${memberIds})`,
-								});
+							const approvals = await dbService.db.query.memberApproval.findMany({
+								where: sql`${memberApproval.memberId} = ANY(${memberIds})`,
+							});
 
-							const approvalMap = new Map(
-								approvals.map((a) => [a.memberId, a.status]),
-							);
+							const approvalMap = new Map(approvals.map((a) => [a.memberId, a.status]));
 
 							let pending = 0;
 							let approved = 0;
@@ -926,15 +883,13 @@ export const InviteCodeServiceLive = Layer.effect(
 							status: "approved" as const,
 							organizationId: inviteCodeRecord.organizationId,
 							organizationName:
-								(inviteCodeRecord as InviteCodeWithRelations).organization
-									?.name || "Unknown Organization",
+								(inviteCodeRecord as InviteCodeWithRelations).organization?.name ||
+								"Unknown Organization",
 						};
 					}
 
 					// Create member with appropriate status
-					const memberStatus = inviteCodeRecord.requiresApproval
-						? "pending"
-						: "approved";
+					const memberStatus = inviteCodeRecord.requiresApproval ? "pending" : "approved";
 
 					const newMember = yield* _(
 						dbService.query("createMember", async () => {
@@ -986,8 +941,8 @@ export const InviteCodeServiceLive = Layer.effect(
 						status: memberStatus as "pending" | "approved",
 						organizationId: inviteCodeRecord.organizationId,
 						organizationName:
-							(inviteCodeRecord as InviteCodeWithRelations).organization
-								?.name || "Unknown Organization",
+							(inviteCodeRecord as InviteCodeWithRelations).organization?.name ||
+							"Unknown Organization",
 					};
 				}),
 

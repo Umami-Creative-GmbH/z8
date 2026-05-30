@@ -6,12 +6,12 @@
 
 import { DateTime } from "luxon";
 import { fmtFullDate, fmtShortDate, fmtShortDateTime } from "@/lib/bot-platform/i18n";
-import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import type {
 	ApprovalCardData,
 	ApprovalResolvedData,
 	DailyDigestData,
 } from "@/lib/bot-platform/types";
+import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 
 // ============================================
 // APPROVAL MESSAGES
@@ -162,10 +162,7 @@ export function buildDailyDigestBlocks(
 	text: string;
 } {
 	const text = "Daily Digest";
-	const dateFormatted = fmtFullDate(
-		DateTime.fromJSDate(data.date).setZone(data.timezone),
-		locale,
-	);
+	const dateFormatted = fmtFullDate(DateTime.fromJSDate(data.date).setZone(data.timezone), locale);
 
 	const blocks: unknown[] = [
 		{

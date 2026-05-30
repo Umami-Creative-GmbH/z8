@@ -60,10 +60,7 @@ describe("OnboardingService.createOrganization", () => {
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
-		const layer = OnboardingServiceLive.pipe(
-			Layer.provide(authLayer),
-			Layer.provide(dbLayer),
-		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
 
 		const result = await Effect.runPromise(
 			Effect.either(
@@ -139,10 +136,7 @@ describe("OnboardingService.updateProfile", () => {
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
-		const layer = OnboardingServiceLive.pipe(
-			Layer.provide(authLayer),
-			Layer.provide(dbLayer),
-		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
 
 		await Effect.runPromise(
 			Effect.gen(function* () {
@@ -181,13 +175,10 @@ describe("OnboardingService.updateProfile", () => {
 		const employeeSet = vi.fn();
 		vi.mocked(headers).mockResolvedValue(new Headers());
 		vi.mocked(auth.api.updateUser).mockResolvedValue({} as never);
-		const findEmployee = vi
-			.fn()
-			.mockResolvedValueOnce(null)
-			.mockResolvedValueOnce({
-				id: "emp-fallback",
-				organizationId: "org-other",
-			});
+		const findEmployee = vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce({
+			id: "emp-fallback",
+			organizationId: "org-other",
+		});
 
 		const mockDb = {
 			query: {
@@ -231,10 +222,7 @@ describe("OnboardingService.updateProfile", () => {
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
-		const layer = OnboardingServiceLive.pipe(
-			Layer.provide(authLayer),
-			Layer.provide(dbLayer),
-		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
 
 		await Effect.runPromise(
 			Effect.gen(function* () {
@@ -306,10 +294,7 @@ describe("OnboardingService.updateProfile", () => {
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
-		const layer = OnboardingServiceLive.pipe(
-			Layer.provide(authLayer),
-			Layer.provide(dbLayer),
-		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
 
 		await Effect.runPromise(
 			Effect.gen(function* () {
@@ -370,10 +355,7 @@ describe("OnboardingService.updateProfile", () => {
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
-		const layer = OnboardingServiceLive.pipe(
-			Layer.provide(authLayer),
-			Layer.provide(dbLayer),
-		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
 
 		const result = await Effect.runPromise(
 			Effect.either(
@@ -429,10 +411,7 @@ describe("OnboardingService.updateProfile", () => {
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
-		const layer = OnboardingServiceLive.pipe(
-			Layer.provide(authLayer),
-			Layer.provide(dbLayer),
-		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
 
 		const result = await Effect.runPromise(
 			Effect.either(
@@ -506,10 +485,7 @@ describe("OnboardingService.getOnboardingSummary", () => {
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
-		const layer = OnboardingServiceLive.pipe(
-			Layer.provide(authLayer),
-			Layer.provide(dbLayer),
-		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
 
 		const summary = await Effect.runPromise(
 			Effect.gen(function* () {

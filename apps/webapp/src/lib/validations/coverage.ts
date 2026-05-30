@@ -9,9 +9,7 @@ import * as z from "zod";
  */
 const timeFormatRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-const timeSchema = z
-	.string()
-	.regex(timeFormatRegex, "Time must be in HH:mm format (e.g., 09:00)");
+const timeSchema = z.string().regex(timeFormatRegex, "Time must be in HH:mm format (e.g., 09:00)");
 
 /**
  * Day of week enum matching the database enum.

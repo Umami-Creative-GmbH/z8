@@ -85,18 +85,10 @@ describe("employee work balance schema", () => {
 
 		const migration = readFileSync(employeeWorkBalanceMigrationUrl, "utf8");
 		expect(migration).toContain('CREATE TABLE "employee_work_balance"');
-		expect(migration).toContain(
-			'CREATE UNIQUE INDEX "employeeWorkBalance_org_employee_idx"',
-		);
-		expect(migration).toContain(
-			'CREATE INDEX "employeeWorkBalance_org_idx"',
-		);
-		expect(migration).toContain(
-			'CREATE INDEX "employeeWorkBalance_employee_org_idx"',
-		);
-		expect(migration).toContain(
-			'CREATE INDEX "employeeWorkBalance_dirty_idx"',
-		);
+		expect(migration).toContain('CREATE UNIQUE INDEX "employeeWorkBalance_org_employee_idx"');
+		expect(migration).toContain('CREATE INDEX "employeeWorkBalance_org_idx"');
+		expect(migration).toContain('CREATE INDEX "employeeWorkBalance_employee_org_idx"');
+		expect(migration).toContain('CREATE INDEX "employeeWorkBalance_dirty_idx"');
 		expect(migration).toContain(
 			'FOREIGN KEY ("employee_id","organization_id") REFERENCES "public"."employee"("id","organization_id") ON DELETE cascade',
 		);
@@ -127,7 +119,9 @@ describe("employee work balance schema", () => {
 
 		const migration = readFileSync(employeeWorkBalanceRecoveryMigrationUrl, "utf8");
 		expect(migration).toContain('CREATE TABLE IF NOT EXISTS "employee_work_balance"');
-		expect(migration).toContain('CREATE UNIQUE INDEX IF NOT EXISTS "employeeWorkBalance_org_employee_idx"');
+		expect(migration).toContain(
+			'CREATE UNIQUE INDEX IF NOT EXISTS "employeeWorkBalance_org_employee_idx"',
+		);
 	});
 
 	it("includes a migration for the period balance table", () => {
@@ -139,15 +133,9 @@ describe("employee work balance schema", () => {
 		expect(migration).toContain(
 			'CREATE UNIQUE INDEX "employeeWorkBalancePeriod_org_employee_type_start_idx"',
 		);
-		expect(migration).toContain(
-			'CREATE INDEX "employeeWorkBalancePeriod_org_type_start_idx"',
-		);
-		expect(migration).toContain(
-			'CREATE INDEX "employeeWorkBalancePeriod_employee_org_idx"',
-		);
-		expect(migration).toContain(
-			'CREATE INDEX "employeeWorkBalancePeriod_dirty_idx"',
-		);
+		expect(migration).toContain('CREATE INDEX "employeeWorkBalancePeriod_org_type_start_idx"');
+		expect(migration).toContain('CREATE INDEX "employeeWorkBalancePeriod_employee_org_idx"');
+		expect(migration).toContain('CREATE INDEX "employeeWorkBalancePeriod_dirty_idx"');
 		expect(migration).toContain(
 			'FOREIGN KEY ("employee_id","organization_id") REFERENCES "public"."employee"("id","organization_id") ON DELETE cascade',
 		);

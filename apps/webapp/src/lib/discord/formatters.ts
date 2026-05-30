@@ -176,10 +176,7 @@ export function buildDailyDigestEmbed(
 	appUrl: string,
 	locale: string = DEFAULT_LANGUAGE,
 ): DiscordEmbed[] {
-	const dateFormatted = fmtFullDate(
-		DateTime.fromJSDate(data.date).setZone(data.timezone),
-		locale,
-	);
+	const dateFormatted = fmtFullDate(DateTime.fromJSDate(data.date).setZone(data.timezone), locale);
 
 	const fields: DiscordEmbed["fields"] = [];
 

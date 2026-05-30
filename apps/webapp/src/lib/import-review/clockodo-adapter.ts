@@ -262,7 +262,10 @@ function selectedProviderUserIds(job: ImportScanJobData): Set<number> | null {
 	return new Set(ids);
 }
 
-function isSelectedProviderUser(providerUserIds: Set<number> | null, clockodoUserId: number): boolean {
+function isSelectedProviderUser(
+	providerUserIds: Set<number> | null,
+	clockodoUserId: number,
+): boolean {
 	return providerUserIds === null || providerUserIds.has(clockodoUserId);
 }
 

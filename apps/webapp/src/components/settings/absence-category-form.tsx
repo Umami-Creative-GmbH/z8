@@ -35,12 +35,12 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import {
+	type AbsenceCategoryFormValues,
+	type AbsenceCategoryForSettings,
 	buildAbsenceCategoryPayload,
 	DEFAULT_CATEGORY_COLOR,
 	defaultAbsenceCategoryFormValues,
 	getAbsenceCategoryFormValues,
-	type AbsenceCategoryForSettings,
-	type AbsenceCategoryFormValues,
 } from "./absence-category-form-utils";
 
 export interface AbsenceCategoryFormProps {
@@ -57,16 +57,28 @@ const absenceCategoryTypeOptions: Array<{
 	fallback: string;
 }> = [
 	{ value: "custom", labelKey: "settings.absenceCategories.form.typeCustom", fallback: "Custom" },
-	{ value: "vacation", labelKey: "settings.absenceCategories.form.typeVacation", fallback: "Vacation" },
+	{
+		value: "vacation",
+		labelKey: "settings.absenceCategories.form.typeVacation",
+		fallback: "Vacation",
+	},
 	{ value: "sick", labelKey: "settings.absenceCategories.form.typeSick", fallback: "Sick Leave" },
 	{
 		value: "home_office",
 		labelKey: "settings.absenceCategories.form.typeHomeOffice",
 		fallback: "Home Office",
 	},
-	{ value: "personal", labelKey: "settings.absenceCategories.form.typePersonal", fallback: "Personal" },
+	{
+		value: "personal",
+		labelKey: "settings.absenceCategories.form.typePersonal",
+		fallback: "Personal",
+	},
 	{ value: "unpaid", labelKey: "settings.absenceCategories.form.typeUnpaid", fallback: "Unpaid" },
-	{ value: "parental", labelKey: "settings.absenceCategories.form.typeParental", fallback: "Parental Leave" },
+	{
+		value: "parental",
+		labelKey: "settings.absenceCategories.form.typeParental",
+		fallback: "Parental Leave",
+	},
 	{
 		value: "bereavement",
 		labelKey: "settings.absenceCategories.form.typeBereavement",
@@ -211,13 +223,31 @@ export function AbsenceCategoryForm({
 								onChange: z
 									.string()
 									.trim()
-									.min(1, t("settings.absenceCategories.form.nameRequired", "Category name is required"))
-									.max(100, t("settings.absenceCategories.form.nameMaxLength", "Use 100 characters or fewer")),
+									.min(
+										1,
+										t("settings.absenceCategories.form.nameRequired", "Category name is required"),
+									)
+									.max(
+										100,
+										t(
+											"settings.absenceCategories.form.nameMaxLength",
+											"Use 100 characters or fewer",
+										),
+									),
 								onSubmit: z
 									.string()
 									.trim()
-									.min(1, t("settings.absenceCategories.form.nameRequired", "Category name is required"))
-									.max(100, t("settings.absenceCategories.form.nameMaxLength", "Use 100 characters or fewer")),
+									.min(
+										1,
+										t("settings.absenceCategories.form.nameRequired", "Category name is required"),
+									)
+									.max(
+										100,
+										t(
+											"settings.absenceCategories.form.nameMaxLength",
+											"Use 100 characters or fewer",
+										),
+									),
 							}}
 						>
 							{(field) => (
@@ -232,7 +262,10 @@ export function AbsenceCategoryForm({
 										value={field.state.value}
 										onChange={(event) => field.handleChange(event.target.value)}
 										onBlur={field.handleBlur}
-										placeholder={t("settings.absenceCategories.form.namePlaceholder", "e.g., Training Day…")}
+										placeholder={t(
+											"settings.absenceCategories.form.namePlaceholder",
+											"e.g., Training Day…",
+										)}
 									/>
 									<p className="text-sm text-muted-foreground">
 										{t(
@@ -474,7 +507,10 @@ export function AbsenceCategoryForm({
 										/>
 										<div className="space-y-1 leading-none">
 											<Label htmlFor="absenceCategoryRequiresWorkTime" className="cursor-pointer">
-												{t("settings.absenceCategories.form.requiresWorkTime", "Requires Work Time")}
+												{t(
+													"settings.absenceCategories.form.requiresWorkTime",
+													"Requires Work Time",
+												)}
 											</Label>
 											<p className="text-sm text-muted-foreground">
 												{t(

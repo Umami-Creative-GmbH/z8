@@ -138,7 +138,9 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 		...enabledProviderIds,
 		...accounts.map((account) => account.providerId as SocialProviderId),
 	]);
-	const visibleProviders = SOCIAL_PROVIDERS.filter((provider) => visibleProviderIds.has(provider.id));
+	const visibleProviders = SOCIAL_PROVIDERS.filter((provider) =>
+		visibleProviderIds.has(provider.id),
+	);
 
 	const getConnectedAccount = (providerId: string) => {
 		return accounts.find((account) => account.providerId === providerId);

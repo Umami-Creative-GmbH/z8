@@ -3,7 +3,12 @@ import type { ImportEntityType, ImportIssueDraft } from "./types";
 
 const DETECTION_RULE_VERSION = "import-review-v1";
 
-export function createDuplicateIssue(input: { entityType: ImportEntityType; employeeId: string; sourceId: string; startsAt: string }): ImportIssueDraft {
+export function createDuplicateIssue(input: {
+	entityType: ImportEntityType;
+	employeeId: string;
+	sourceId: string;
+	startsAt: string;
+}): ImportIssueDraft {
 	const clusterKey = `duplicate:${input.entityType}:${input.employeeId}:${input.startsAt}`;
 	return {
 		issueType: "duplicate",
@@ -15,7 +20,11 @@ export function createDuplicateIssue(input: { entityType: ImportEntityType; empl
 	};
 }
 
-export function detectMissingMapping(input: { entityType: ImportEntityType; providerSourceId: string; employeeId: string | null }): ImportIssueDraft | null {
+export function detectMissingMapping(input: {
+	entityType: ImportEntityType;
+	providerSourceId: string;
+	employeeId: string | null;
+}): ImportIssueDraft | null {
 	if (input.employeeId) return null;
 	return {
 		issueType: "unmatched_employee",

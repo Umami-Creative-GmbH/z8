@@ -1,8 +1,8 @@
-import { connection } from "next/server";
 import { redirect } from "next/navigation";
-import { getTranslate } from "@/tolgee/server";
+import { connection } from "next/server";
 import { ChangePolicyManagement } from "@/components/settings/change-policy-management";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getTranslate } from "@/tolgee/server";
 
 export default async function ChangePoliciesSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
@@ -24,9 +24,6 @@ export default async function ChangePoliciesSettingsPage() {
 	}
 
 	return (
-		<ChangePolicyManagement
-			organizationId={organizationId}
-			canManage={accessTier === "orgAdmin"}
-		/>
+		<ChangePolicyManagement organizationId={organizationId} canManage={accessTier === "orgAdmin"} />
 	);
 }

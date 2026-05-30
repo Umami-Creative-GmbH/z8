@@ -33,18 +33,18 @@ const { getAccessControlsSection } = await import("./access-controls");
 describe("getAccessControlsSection", () => {
 	it("queries the last 24 hours without pre-filter sampling", async () => {
 		mockState.findMany.mockResolvedValue([
-				{
-					id: "evt-1",
-					action: "permission.revoked",
-					entityType: "employee",
-					timestamp: new Date("2026-04-11T10:00:00.000Z"),
-				},
-				{
-					id: "evt-2",
-					action: "schedule.updated",
-					entityType: "schedule",
-					timestamp: new Date("2026-04-11T11:00:00.000Z"),
-				},
+			{
+				id: "evt-1",
+				action: "permission.revoked",
+				entityType: "employee",
+				timestamp: new Date("2026-04-11T10:00:00.000Z"),
+			},
+			{
+				id: "evt-2",
+				action: "schedule.updated",
+				entityType: "schedule",
+				timestamp: new Date("2026-04-11T11:00:00.000Z"),
+			},
 		]);
 
 		const result = await getAccessControlsSection("org-1");

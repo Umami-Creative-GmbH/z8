@@ -28,12 +28,7 @@ import { NavTeam } from "@/components/nav-team";
 import { NavUser } from "@/components/nav-user";
 import { OrganizationSwitcher } from "@/components/organization-switcher";
 import type { FeatureFlagState } from "@/components/settings/settings-config";
-import {
-	Sidebar,
-	SidebarContent,
-	SidebarFooter,
-	SidebarHeader,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
 import { buildStaticAppCommands } from "@/lib/app-search/static-commands";
 import { buildStaticAppSearchResults } from "@/lib/app-search/static-results";
 import type { StaticAppSearchInput } from "@/lib/app-search/types";
@@ -55,9 +50,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	canCreateOrganizations?: boolean;
 }
 
-const isManagerOrAbove = (
-	role: "admin" | "manager" | "employee" | null | undefined,
-): boolean => {
+const isManagerOrAbove = (role: "admin" | "manager" | "employee" | null | undefined): boolean => {
 	return role === "admin" || role === "manager";
 };
 
@@ -220,10 +213,7 @@ export function AppSidebar({
 				/>
 			</SidebarHeader>
 			<SidebarContent>
-				<AppSearch
-					staticCommands={staticCommands}
-					staticResults={staticSearchResults}
-				/>
+				<AppSearch staticCommands={staticCommands} staticResults={staticSearchResults} />
 				<NavMain items={navPersonal} label="z8 app" />
 				{isManagerOrAbove(employeeRole) && <NavTeam items={navTeam} />}
 				<NavSecondary className="mt-auto" items={navSecondary} />

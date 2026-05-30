@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { holiday } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -64,9 +64,7 @@ export async function GET(request: NextRequest) {
 				recurrenceRule: holiday.recurrenceRule,
 			})
 			.from(holiday)
-			.where(
-				and(eq(holiday.organizationId, activeOrgId), eq(holiday.isActive, true)),
-			);
+			.where(and(eq(holiday.organizationId, activeOrgId), eq(holiday.isActive, true)));
 
 		// Mark duplicates
 		const holidaysWithDuplicateInfo = previewHolidays.map((h) => ({

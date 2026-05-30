@@ -131,12 +131,7 @@ describe("evaluateBillingAccess", () => {
 			reason: "canceled",
 			status: "unpaid",
 		});
-		for (const status of [
-			"incomplete",
-			"incomplete_expired",
-			"paused",
-			"unknown_status",
-		]) {
+		for (const status of ["incomplete", "incomplete_expired", "paused", "unknown_status"]) {
 			expect(
 				evaluateBillingAccess({
 					billingEnabled: true,

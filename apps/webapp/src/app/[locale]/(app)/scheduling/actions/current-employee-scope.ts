@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "@/db";
+import type { db } from "@/db";
 import { employee } from "@/db/schema";
 
 type EmployeeQueryClient = {

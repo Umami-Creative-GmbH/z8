@@ -218,7 +218,9 @@ describe("HeaderTimezoneControl", () => {
 
 		await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith("Failed to update timezone"));
 		expect(mocks.refresh).not.toHaveBeenCalled();
-		expect((screen.getByLabelText("Timezone picker") as HTMLSelectElement).value).toBe("America/New_York");
+		expect((screen.getByLabelText("Timezone picker") as HTMLSelectElement).value).toBe(
+			"America/New_York",
+		);
 		expect(screen.getByText("Saved timezone")).toBeTruthy();
 	});
 });

@@ -5,7 +5,6 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -15,6 +14,7 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -85,7 +85,10 @@ export function CategoryDialog({
 				method,
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(payload),
-			}).then((result) => result, () => null);
+			}).then(
+				(result) => result,
+				() => null,
+			);
 
 			if (!response) {
 				toast.error(t("settings.holidays.categories.saveFailed", "Failed to save category"));
@@ -94,9 +97,10 @@ export function CategoryDialog({
 			}
 
 			if (!response.ok) {
-				const responseError = await response
-					.json()
-					.then((result) => result as { error?: string }, () => null);
+				const responseError = await response.json().then(
+					(result) => result as { error?: string },
+					() => null,
+				);
 				toast.error(
 					responseError?.error ||
 						t("settings.holidays.categories.saveFailed", "Failed to save category"),
@@ -148,184 +152,187 @@ export function CategoryDialog({
 					<ActionPanelBody className="space-y-4">
 						{/* Category Type */}
 						<form.Field name="type">
-						{(field) => (
-							<div className="space-y-2">
-								<Label>{t("settings.holidays.categories.form.type", "Type")}</Label>
-								<Select
-									value={field.state.value}
-									onValueChange={(value) => field.handleChange(value as CategoryType)}
-								>
-									<SelectTrigger>
-										<SelectValue
-											placeholder={t(
-												"settings.holidays.categories.form.typePlaceholder",
-												"Select a category type",
-											)}
-										/>
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="public_holiday">
-											{t("settings.holidays.categories.types.public", "Public Holiday")}
-										</SelectItem>
-										<SelectItem value="company_holiday">
-											{t("settings.holidays.categories.types.company", "Company Holiday")}
-										</SelectItem>
-										<SelectItem value="training_day">
-											{t("settings.holidays.categories.types.training", "Training Day")}
-										</SelectItem>
-										<SelectItem value="custom">
-											{t("settings.holidays.categories.types.custom", "Custom")}
-										</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-						)}
+							{(field) => (
+								<div className="space-y-2">
+									<Label>{t("settings.holidays.categories.form.type", "Type")}</Label>
+									<Select
+										value={field.state.value}
+										onValueChange={(value) => field.handleChange(value as CategoryType)}
+									>
+										<SelectTrigger>
+											<SelectValue
+												placeholder={t(
+													"settings.holidays.categories.form.typePlaceholder",
+													"Select a category type",
+												)}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="public_holiday">
+												{t("settings.holidays.categories.types.public", "Public Holiday")}
+											</SelectItem>
+											<SelectItem value="company_holiday">
+												{t("settings.holidays.categories.types.company", "Company Holiday")}
+											</SelectItem>
+											<SelectItem value="training_day">
+												{t("settings.holidays.categories.types.training", "Training Day")}
+											</SelectItem>
+											<SelectItem value="custom">
+												{t("settings.holidays.categories.types.custom", "Custom")}
+											</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+							)}
 						</form.Field>
 
-					{/* Name */}
+						{/* Name */}
 						<form.Field
-						name="name"
-						validators={{
-							onChange: ({ value }) => {
-								if (!value) return "Name is required";
-								if (value.length > 100) return "Name is too long";
-								return undefined;
-							},
-						}}
-					>
-						{(field) => (
-							<div className="space-y-2">
-								<Label>{t("settings.holidays.categories.form.name", "Name")}</Label>
-								<Input
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-									onBlur={field.handleBlur}
-									placeholder={t(
-										"settings.holidays.categories.form.namePlaceholder",
-										"e.g., National Holidays",
-									)}
-								/>
-								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-								)}
-							</div>
-						)}
-						</form.Field>
-
-					{/* Description */}
-						<form.Field name="description">
-						{(field) => (
-							<div className="space-y-2">
-								<Label>
-									{t("settings.holidays.categories.form.description", "Description")} (
-									{t("settings.holidays.categories.form.optional", "optional")})
-								</Label>
-								<Textarea
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-									onBlur={field.handleBlur}
-									placeholder={t(
-										"settings.holidays.categories.form.descriptionPlaceholder",
-										"Add a description...",
-									)}
-									rows={3}
-								/>
-							</div>
-						)}
-						</form.Field>
-
-					{/* Color */}
-						<form.Field name="color">
-						{(field) => (
-							<div className="space-y-2">
-								<Label>
-									{t("settings.holidays.categories.form.color", "Color")} (
-									{t("settings.holidays.categories.form.optional", "optional")})
-								</Label>
-								<div className="flex gap-2">
+							name="name"
+							validators={{
+								onChange: ({ value }) => {
+									if (!value) return "Name is required";
+									if (value.length > 100) return "Name is too long";
+									return undefined;
+								},
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label>{t("settings.holidays.categories.form.name", "Name")}</Label>
 									<Input
-										type="color"
-										value={field.state.value || "#3B82F6"}
-										onChange={(e) => field.handleChange(e.target.value)}
-										className="w-20 h-10 cursor-pointer"
-									/>
-									<Input
-										type="text"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
-										placeholder={t("settings.holidays.categories.form.colorPlaceholder", "#3B82F6")}
-										className="flex-1"
+										onBlur={field.handleBlur}
+										placeholder={t(
+											"settings.holidays.categories.form.namePlaceholder",
+											"e.g., National Holidays",
+										)}
+									/>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+
+						{/* Description */}
+						<form.Field name="description">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>
+										{t("settings.holidays.categories.form.description", "Description")} (
+										{t("settings.holidays.categories.form.optional", "optional")})
+									</Label>
+									<Textarea
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder={t(
+											"settings.holidays.categories.form.descriptionPlaceholder",
+											"Add a description...",
+										)}
+										rows={3}
 									/>
 								</div>
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"settings.holidays.categories.form.colorDescription",
-										"Hex color code for calendar display",
-									)}
-								</p>
-							</div>
-						)}
+							)}
 						</form.Field>
 
-					{/* Blocks Time Entry Toggle */}
+						{/* Color */}
+						<form.Field name="color">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>
+										{t("settings.holidays.categories.form.color", "Color")} (
+										{t("settings.holidays.categories.form.optional", "optional")})
+									</Label>
+									<div className="flex gap-2">
+										<Input
+											type="color"
+											value={field.state.value || "#3B82F6"}
+											onChange={(e) => field.handleChange(e.target.value)}
+											className="w-20 h-10 cursor-pointer"
+										/>
+										<Input
+											type="text"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											placeholder={t(
+												"settings.holidays.categories.form.colorPlaceholder",
+												"#3B82F6",
+											)}
+											className="flex-1"
+										/>
+									</div>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"settings.holidays.categories.form.colorDescription",
+											"Hex color code for calendar display",
+										)}
+									</p>
+								</div>
+							)}
+						</form.Field>
+
+						{/* Blocks Time Entry Toggle */}
 						<form.Field name="blocksTimeEntry">
-						{(field) => (
-							<div className="flex items-center justify-between rounded-lg border p-3">
-								<div className="space-y-0.5">
-									<Label>
-										{t("settings.holidays.categories.form.blocksTimeEntry", "Blocks Time Entry")}
-									</Label>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"settings.holidays.categories.form.blocksTimeEntryDescription",
-											"Prevent employees from clocking in/out on holidays in this category",
-										)}
-									</p>
+							{(field) => (
+								<div className="flex items-center justify-between rounded-lg border p-3">
+									<div className="space-y-0.5">
+										<Label>
+											{t("settings.holidays.categories.form.blocksTimeEntry", "Blocks Time Entry")}
+										</Label>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"settings.holidays.categories.form.blocksTimeEntryDescription",
+												"Prevent employees from clocking in/out on holidays in this category",
+											)}
+										</p>
+									</div>
+									<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 								</div>
-								<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
-							</div>
-						)}
+							)}
 						</form.Field>
 
-					{/* Exclude from Calculations Toggle */}
+						{/* Exclude from Calculations Toggle */}
 						<form.Field name="excludeFromCalculations">
-						{(field) => (
-							<div className="flex items-center justify-between rounded-lg border p-3">
-								<div className="space-y-0.5">
-									<Label>
-										{t(
-											"settings.holidays.categories.form.excludeFromCalculations",
-											"Exclude from Calculations",
-										)}
-									</Label>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"settings.holidays.categories.form.excludeFromCalculationsDescription",
-											"Exclude holidays in this category from work time calculations",
-										)}
-									</p>
+							{(field) => (
+								<div className="flex items-center justify-between rounded-lg border p-3">
+									<div className="space-y-0.5">
+										<Label>
+											{t(
+												"settings.holidays.categories.form.excludeFromCalculations",
+												"Exclude from Calculations",
+											)}
+										</Label>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"settings.holidays.categories.form.excludeFromCalculationsDescription",
+												"Exclude holidays in this category from work time calculations",
+											)}
+										</p>
+									</div>
+									<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 								</div>
-								<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
-							</div>
-						)}
+							)}
 						</form.Field>
 
-					{/* Active Toggle */}
+						{/* Active Toggle */}
 						<form.Field name="isActive">
-						{(field) => (
-							<div className="flex items-center justify-between rounded-lg border p-3">
-								<div className="space-y-0.5">
-									<Label>{t("settings.holidays.categories.form.active", "Active")}</Label>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"settings.holidays.categories.form.activeDescription",
-											"Inactive categories cannot be assigned to new holidays",
-										)}
-									</p>
+							{(field) => (
+								<div className="flex items-center justify-between rounded-lg border p-3">
+									<div className="space-y-0.5">
+										<Label>{t("settings.holidays.categories.form.active", "Active")}</Label>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"settings.holidays.categories.form.activeDescription",
+												"Inactive categories cannot be assigned to new holidays",
+											)}
+										</p>
+									</div>
+									<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 								</div>
-								<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
-							</div>
-						)}
+							)}
 						</form.Field>
 					</ActionPanelBody>
 

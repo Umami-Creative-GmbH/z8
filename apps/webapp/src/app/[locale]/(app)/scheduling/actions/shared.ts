@@ -1,7 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
-import { employee, location } from "@/db/schema";
+import { type employee, location } from "@/db/schema";
 import type { AnyAppError } from "@/lib/effect/errors";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";

@@ -34,9 +34,7 @@ export function isCompatibleScalewayKey(
 	);
 }
 
-export function isCompatibleScalewayPlatformKey(
-	key: unknown,
-): key is ScalewayKey & { id: string } {
+export function isCompatibleScalewayPlatformKey(key: unknown): key is ScalewayKey & { id: string } {
 	const scalewayKey = key as ScalewayKey;
 	return (
 		isEnabledScalewayKey(key) &&

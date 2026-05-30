@@ -6,25 +6,23 @@
  */
 
 export {
-	generateICS,
-	generateAbsenceUID,
-	mapAbsenceStatusToICS,
-} from "./ics-generator";
-
-export {
+	type AbsenceRequest,
+	type DateRange,
 	detectConflicts,
-	hasBlockingConflicts,
-	getConflictSummary,
 	filterConfirmedEvents,
 	filterPublicEvents,
-	type DateRange,
-	type AbsenceRequest,
+	getConflictSummary,
+	hasBlockingConflicts,
 } from "./conflict-detector";
-
 export {
+	type EventMappingOptions,
+	generateEventTitle,
+	mapAbsencesToICSEvents,
 	mapAbsenceToCalendarEvent,
 	mapAbsenceToICSEvent,
-	mapAbsencesToICSEvents,
-	generateEventTitle,
-	type EventMappingOptions,
 } from "./event-mapper";
+export {
+	generateAbsenceUID,
+	generateICS,
+	mapAbsenceStatusToICS,
+} from "./ics-generator";

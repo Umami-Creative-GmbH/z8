@@ -7,8 +7,12 @@
 
 import { DateTime } from "luxon";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
-import type { ComplianceSummary, ComplianceAlert, ComplianceExceptionSummary } from "@/lib/effect/services/teams-compliance.service";
 import { fmtShortDate } from "@/lib/bot-platform/i18n";
+import type {
+	ComplianceAlert,
+	ComplianceExceptionSummary,
+	ComplianceSummary,
+} from "@/lib/effect/services/teams-compliance.service";
 
 // ============================================
 // TYPES
@@ -210,7 +214,11 @@ export function buildComplianceCard(input: ComplianceCardInput): Record<string, 
 							{
 								type: "TextBlock",
 								text: alert.hasException
-									? t("teamsBot:commands.compliance.exceptionUsedDetails", "{details} (exception used)", { details: alert.details })
+									? t(
+											"teamsBot:commands.compliance.exceptionUsedDetails",
+											"{details} (exception used)",
+											{ details: alert.details },
+										)
 									: alert.details,
 								size: "small",
 								isSubtle: true,
@@ -238,7 +246,11 @@ export function buildComplianceCard(input: ComplianceCardInput): Record<string, 
 		if (summary.alerts.length > 5) {
 			violationItems.push({
 				type: "TextBlock",
-				text: t("teamsBot:commands.compliance.moreViolationsMarkdown", "_+{count} more violations_", { count: summary.alerts.length - 5 }),
+				text: t(
+					"teamsBot:commands.compliance.moreViolationsMarkdown",
+					"_+{count} more violations_",
+					{ count: summary.alerts.length - 5 },
+				),
 				size: "small",
 				isSubtle: true,
 			});
@@ -319,7 +331,9 @@ export function buildComplianceCard(input: ComplianceCardInput): Record<string, 
 		if (summary.pendingExceptions.length > 5) {
 			exceptionItems.push({
 				type: "TextBlock",
-				text: t("teamsBot:commands.compliance.moreRequestsMarkdown", "_+{count} more requests_", { count: summary.pendingExceptions.length - 5 }),
+				text: t("teamsBot:commands.compliance.moreRequestsMarkdown", "_+{count} more requests_", {
+					count: summary.pendingExceptions.length - 5,
+				}),
 				size: "small",
 				isSubtle: true,
 			});
@@ -385,11 +399,19 @@ export function buildComplianceText(input: ComplianceCardInput): string {
 	const t = input.t ?? ((_key, defaultValue) => defaultValue);
 
 	const lines: string[] = [
-		t("teamsBot:commands.compliance.textTitle", "**⚠️ Compliance Summary - Last {days} days**", { days: daysBack }),
+		t("teamsBot:commands.compliance.textTitle", "**⚠️ Compliance Summary - Last {days} days**", {
+			days: daysBack,
+		}),
 		"",
-		t("teamsBot:commands.compliance.textViolations", "**Violations:** {count}", { count: summary.recentViolationsCount }),
-		t("teamsBot:commands.compliance.textCriticalAlerts", "**Critical Alerts:** {count}", { count: summary.criticalAlertsCount }),
-		t("teamsBot:commands.compliance.textPendingExceptions", "**Pending Exceptions:** {count}", { count: summary.pendingExceptions.length }),
+		t("teamsBot:commands.compliance.textViolations", "**Violations:** {count}", {
+			count: summary.recentViolationsCount,
+		}),
+		t("teamsBot:commands.compliance.textCriticalAlerts", "**Critical Alerts:** {count}", {
+			count: summary.criticalAlertsCount,
+		}),
+		t("teamsBot:commands.compliance.textPendingExceptions", "**Pending Exceptions:** {count}", {
+			count: summary.pendingExceptions.length,
+		}),
 		"",
 	];
 
@@ -397,14 +419,20 @@ export function buildComplianceText(input: ComplianceCardInput): string {
 		lines.push(t("teamsBot:commands.compliance.textRecentViolations", "**Recent Violations:**"));
 		for (const alert of summary.alerts.slice(0, 5)) {
 			const icon = getSeverityIcon(alert.severity);
-			lines.push(t("teamsBot:commands.compliance.textViolationItem", "{icon} {employeeName} - {details}", {
-				icon,
-				employeeName: alert.employeeName,
-				details: alert.details,
-			}));
+			lines.push(
+				t("teamsBot:commands.compliance.textViolationItem", "{icon} {employeeName} - {details}", {
+					icon,
+					employeeName: alert.employeeName,
+					details: alert.details,
+				}),
+			);
 		}
 		if (summary.alerts.length > 5) {
-			lines.push(t("teamsBot:commands.compliance.textMore", "  +{count} more", { count: summary.alerts.length - 5 }));
+			lines.push(
+				t("teamsBot:commands.compliance.textMore", "  +{count} more", {
+					count: summary.alerts.length - 5,
+				}),
+			);
 		}
 		lines.push("");
 	}
@@ -412,13 +440,19 @@ export function buildComplianceText(input: ComplianceCardInput): string {
 	if (summary.pendingExceptions.length > 0) {
 		lines.push(t("teamsBot:commands.compliance.textPendingRequests", "**Pending Requests:**"));
 		for (const exception of summary.pendingExceptions.slice(0, 5)) {
-			lines.push(t("teamsBot:commands.compliance.textPendingRequestItem", "📝 {employeeName} - {type}", {
-				employeeName: exception.employeeName,
-				type: getExceptionTypeLabel(exception.exceptionType, t),
-			}));
+			lines.push(
+				t("teamsBot:commands.compliance.textPendingRequestItem", "📝 {employeeName} - {type}", {
+					employeeName: exception.employeeName,
+					type: getExceptionTypeLabel(exception.exceptionType, t),
+				}),
+			);
 		}
 		if (summary.pendingExceptions.length > 5) {
-			lines.push(t("teamsBot:commands.compliance.textMore", "  +{count} more", { count: summary.pendingExceptions.length - 5 }));
+			lines.push(
+				t("teamsBot:commands.compliance.textMore", "  +{count} more", {
+					count: summary.pendingExceptions.length - 5,
+				}),
+			);
 		}
 	}
 

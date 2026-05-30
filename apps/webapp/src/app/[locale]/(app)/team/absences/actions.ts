@@ -15,10 +15,7 @@ import {
 	timeRecordAbsence,
 	vacationAllowance,
 } from "@/db/schema";
-import {
-	calculateBusinessDaysWithHalfDays,
-	dateRangesOverlap,
-} from "@/lib/absences/date-utils";
+import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/absences/date-utils";
 import {
 	normalizeAbsenceDurationInput,
 	toAbsenceEntryDurationFields,
@@ -35,11 +32,11 @@ import { addCalendarSyncJob } from "@/lib/queue";
 import {
 	buildCanonicalAbsenceRecordValues,
 	buildInaccessibleTeamAbsenceListResult,
+	buildManagerAbsenceRowAbsences,
 	clampManagerAbsencePage,
 	isManagerAbsenceMetricSort,
-	buildManagerAbsenceRowAbsences,
-	managerAbsenceAdvisoryLockKey,
 	type ManagerAbsenceListInput,
+	managerAbsenceAdvisoryLockKey,
 	normalizeManagerAbsenceListParams,
 	validateManagerAbsenceSickDetail,
 	validateRecordAbsenceDateRange,
@@ -96,7 +93,11 @@ export async function getManagerAbsenceEmployees(
 
 		if (search) {
 			baseConditions.push(
-				or(ilike(employee.employeeNumber, search), ilike(user.name, search), ilike(user.email, search))!,
+				or(
+					ilike(employee.employeeNumber, search),
+					ilike(user.name, search),
+					ilike(user.email, search),
+				)!,
 			);
 		}
 		if (normalized.teamId) {
@@ -326,7 +327,12 @@ export async function recordAbsenceForEmployee(
 			await tx
 				.update(absenceEntry)
 				.set({ canonicalRecordId: canonicalRecord.id })
-				.where(and(eq(absenceEntry.id, absence.id), eq(absenceEntry.organizationId, actor.organizationId)));
+				.where(
+					and(
+						eq(absenceEntry.id, absence.id),
+						eq(absenceEntry.organizationId, actor.organizationId),
+					),
+				);
 
 			return { success: true as const, absenceId: absence.id, vacationOverrideSummary };
 		});
@@ -347,20 +353,23 @@ export async function recordAbsenceForEmployee(
 		);
 
 		for (const absenceId of transactionResult.vacationOverrideSummary.updatedAbsenceIds) {
-			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "update" }).catch((error) =>
-				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "update" }).catch(
+				(error) =>
+					logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
 			);
 		}
 
 		for (const absenceId of transactionResult.vacationOverrideSummary.createdAbsenceIds) {
-			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "create" }).catch((error) =>
-				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "create" }).catch(
+				(error) =>
+					logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
 			);
 		}
 
 		for (const absenceId of transactionResult.vacationOverrideSummary.deletedAbsenceIds) {
-			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "delete" }).catch((error) =>
-				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "delete" }).catch(
+				(error) =>
+					logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
 			);
 		}
 
@@ -446,9 +455,15 @@ async function selectVisibleEmployees(
 		.select(selectedFields)
 		.from(employee)
 		.innerJoin(user, eq(employee.userId, user.id))
-		.leftJoin(team, and(eq(employee.teamId, team.id), eq(team.organizationId, employee.organizationId)));
+		.leftJoin(
+			team,
+			and(eq(employee.teamId, team.id), eq(team.organizationId, employee.organizationId)),
+		);
 
-	const orderBy = buildNonMetricEmployeeOrderBy(options.sort ?? "employee", options.direction ?? "asc");
+	const orderBy = buildNonMetricEmployeeOrderBy(
+		options.sort ?? "employee",
+		options.direction ?? "asc",
+	);
 
 	if (options.managerId) {
 		const managerQuery = query
@@ -593,7 +608,10 @@ async function addMetricsToRows(
 	]);
 
 	const allowancesByEmployeeId = new Map(
-		employeeAllowances.map((employeeAllowance) => [employeeAllowance.employeeId, employeeAllowance]),
+		employeeAllowances.map((employeeAllowance) => [
+			employeeAllowance.employeeId,
+			employeeAllowance,
+		]),
 	);
 	const absencesByEmployeeId = new Map<string, AbsenceWithCategory[]>();
 	for (const absence of absences as AbsenceWithCategory[]) {

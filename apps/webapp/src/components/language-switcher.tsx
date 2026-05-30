@@ -20,9 +20,7 @@ type LanguageSwitcherProps = {
 	variant?: "default" | "compact";
 };
 
-export function LanguageSwitcher({
-	variant = "default",
-}: LanguageSwitcherProps) {
+export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const { replace } = useRouter();
@@ -42,18 +40,12 @@ export function LanguageSwitcher({
 	const CurrentFlag = currentConfig?.Flag;
 
 	return (
-		<Select
-			value={locale}
-			onValueChange={handleLanguageChange}
-			disabled={isPending}
-		>
+		<Select value={locale} onValueChange={handleLanguageChange} disabled={isPending}>
 			<SelectTrigger
 				aria-label={t("common.select-language", "Select language")}
 				className={cn("bg-background", isCompact ? "w-[88px]" : "w-[160px]")}
 			>
-				<SelectValue
-					placeholder={t("common.select-language", "Select language")}
-				>
+				<SelectValue placeholder={t("common.select-language", "Select language")}>
 					<span className="flex items-center gap-2">
 						{CurrentFlag && (
 							<CurrentFlag

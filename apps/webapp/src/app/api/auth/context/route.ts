@@ -28,12 +28,12 @@ export async function GET() {
 					id: true,
 					shiftsEnabled: true,
 					projectsEnabled: true,
-						surchargesEnabled: true,
-						demoDataEnabled: true,
-						worksCouncilEnabled: true,
-						timezone: true,
-						deletedAt: true,
-					},
+					surchargesEnabled: true,
+					demoDataEnabled: true,
+					worksCouncilEnabled: true,
+					timezone: true,
+					deletedAt: true,
+				},
 			});
 
 			if (org) {
@@ -41,12 +41,12 @@ export async function GET() {
 					organizationId: org.id,
 					shiftsEnabled: org.shiftsEnabled ?? false,
 					projectsEnabled: org.projectsEnabled ?? false,
-						surchargesEnabled: org.surchargesEnabled ?? false,
-						demoDataEnabled: org.demoDataEnabled ?? true,
-						worksCouncilEnabled: org.worksCouncilEnabled ?? false,
-						timezone: org.timezone ?? "UTC",
-						deletedAt: org.deletedAt?.toISOString() ?? null,
-					};
+					surchargesEnabled: org.surchargesEnabled ?? false,
+					demoDataEnabled: org.demoDataEnabled ?? true,
+					worksCouncilEnabled: org.worksCouncilEnabled ?? false,
+					timezone: org.timezone ?? "UTC",
+					deletedAt: org.deletedAt?.toISOString() ?? null,
+				};
 			}
 		}
 

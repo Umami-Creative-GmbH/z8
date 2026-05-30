@@ -5,7 +5,6 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry, coverageRule, shift } from "@/db/schema";
-import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import {
 	type AbsencePlanPreview,
 	buildAbsencePlanPreview,
@@ -13,6 +12,7 @@ import {
 	type ExistingAbsenceInput,
 } from "@/lib/absences/absence-plan-preview";
 import type { AbsenceRequest } from "@/lib/absences/types";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { getCurrentEmployee } from "./current-employee";
 import { getHolidays, getVacationBalance } from "./queries";
 

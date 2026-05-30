@@ -29,7 +29,10 @@ interface LocationManagementProps {
 	canManageLocations: boolean;
 }
 
-export function LocationManagement({ organizationId, canManageLocations }: LocationManagementProps) {
+export function LocationManagement({
+	organizationId,
+	canManageLocations,
+}: LocationManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);

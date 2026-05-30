@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { getManagerTodaySummary } from "./actions";
 import { DashboardWidget } from "./dashboard-widget";
-import { mapManagerTodaySummary, type ManagerTodayMetricCounts } from "./manager-today-summary";
+import { type ManagerTodayMetricCounts, mapManagerTodaySummary } from "./manager-today-summary";
 import { WidgetCard } from "./widget-card";
 
 type EmployeeRole = "admin" | "manager" | "employee";
@@ -96,10 +96,7 @@ export function ManagerTodayWidget() {
 				<div className="space-y-4">
 					{hasError ? (
 						<p className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-							{t(
-								"dashboard.manager-today.error",
-								"Failed to load manager briefing counts.",
-							)}
+							{t("dashboard.manager-today.error", "Failed to load manager briefing counts.")}
 						</p>
 					) : null}
 
@@ -112,9 +109,7 @@ export function ManagerTodayWidget() {
 									item.value > 0 && item.activeClass,
 								)}
 							>
-								<div className="text-2xl font-semibold tabular-nums leading-none">
-									{item.value}
-								</div>
+								<div className="text-2xl font-semibold tabular-nums leading-none">{item.value}</div>
 								<div className="mt-1 text-xs font-medium text-muted-foreground">{item.label}</div>
 							</div>
 						))}
@@ -122,10 +117,7 @@ export function ManagerTodayWidget() {
 
 					{!hasError && metrics.allClear ? (
 						<p className="rounded-lg border border-blue-200/70 bg-blue-50/60 px-3 py-2 text-sm text-blue-950 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-100">
-							{t(
-								"dashboard.manager-today.all-clear",
-								"No manager action is flagged right now.",
-							)}
+							{t("dashboard.manager-today.all-clear", "No manager action is flagged right now.")}
 						</p>
 					) : null}
 				</div>

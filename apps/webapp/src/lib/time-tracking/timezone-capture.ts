@@ -29,13 +29,17 @@ export function getUtcOffsetMinutesForZone(timestamp: Date, timezone: string): n
 export function formatUtcOffset(offsetMinutes: number): string {
 	const sign = offsetMinutes >= 0 ? "+" : "-";
 	const absoluteMinutes = Math.abs(offsetMinutes);
-	const hours = Math.floor(absoluteMinutes / 60).toString().padStart(2, "0");
+	const hours = Math.floor(absoluteMinutes / 60)
+		.toString()
+		.padStart(2, "0");
 	const minutes = (absoluteMinutes % 60).toString().padStart(2, "0");
 
 	return `UTC${sign}${hours}:${minutes}`;
 }
 
-export function getBrowserTimezone(intlApi?: Pick<typeof Intl, "DateTimeFormat"> | null): string | null {
+export function getBrowserTimezone(
+	intlApi?: Pick<typeof Intl, "DateTimeFormat"> | null,
+): string | null {
 	try {
 		if (intlApi === null) {
 			return null;

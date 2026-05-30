@@ -1,19 +1,20 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
-import { useTranslate } from "@tolgee/react";
 import {
 	IconAlertTriangle,
 	IconCircleCheck,
+	IconCircleX,
 	IconLoader2,
 	IconMail,
 	IconSend,
 	IconServer,
 	IconShield,
 	IconTrash,
-	IconCircleX,
 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
+import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import type {
 	EmailConfigInput,
 	EmailConfigOutput,
@@ -40,7 +41,6 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import type { SecretStoreStatus } from "@/lib/vault";
-import { toast } from "sonner";
 
 interface EmailConfigFormProps {
 	organizationId: string;
@@ -48,11 +48,7 @@ interface EmailConfigFormProps {
 	secretStoreStatus: SecretStoreStatus;
 }
 
-function SecretStoreStatusAlert({
-	secretStoreStatus,
-}: {
-	secretStoreStatus: SecretStoreStatus;
-}) {
+function SecretStoreStatusAlert({ secretStoreStatus }: { secretStoreStatus: SecretStoreStatus }) {
 	const { t } = useTranslate();
 
 	if (secretStoreStatus.provider === "scaleway") {
@@ -78,10 +74,7 @@ function SecretStoreStatusAlert({
 				<Alert className="mb-4">
 					<IconShield className="size-4" aria-hidden="true" />
 					<AlertTitle>
-						{t(
-							"settings.enterprise.email.scalewayKeyPending",
-							"Scaleway Key Not Generated Yet",
-						)}
+						{t("settings.enterprise.email.scalewayKeyPending", "Scaleway Key Not Generated Yet")}
 					</AlertTitle>
 					<AlertDescription>
 						{t(
@@ -97,10 +90,7 @@ function SecretStoreStatusAlert({
 			<Alert variant="destructive" className="mb-4">
 				<IconAlertTriangle className="size-4" aria-hidden="true" />
 				<AlertTitle>
-					{t(
-						"settings.enterprise.email.scalewayUnavailable",
-						"Scaleway Secret Store Unavailable",
-					)}
+					{t("settings.enterprise.email.scalewayUnavailable", "Scaleway Secret Store Unavailable")}
 				</AlertTitle>
 				<AlertDescription>
 					{t(
@@ -116,7 +106,9 @@ function SecretStoreStatusAlert({
 		return (
 			<Alert variant="destructive" className="mb-4">
 				<IconAlertTriangle className="size-4" aria-hidden="true" />
-				<AlertTitle>{t("settings.enterprise.email.vaultUnavailable", "Vault Unavailable")}</AlertTitle>
+				<AlertTitle>
+					{t("settings.enterprise.email.vaultUnavailable", "Vault Unavailable")}
+				</AlertTitle>
 				<AlertDescription>
 					{t(
 						"settings.enterprise.email.vaultUnavailableDesc",
@@ -216,7 +208,9 @@ export function EmailConfigForm({
 		if (result.success) {
 			toast.success(t("settings.enterprise.email.testSent", "Test email sent successfully"));
 		} else {
-			toast.error(result.error || t("settings.enterprise.email.testFailed", "Failed to send test email"));
+			toast.error(
+				result.error || t("settings.enterprise.email.testFailed", "Failed to send test email"),
+			);
 		}
 
 		setIsTesting(false);
@@ -616,7 +610,9 @@ export function EmailConfigForm({
 								type="submit"
 								disabled={isPending || isSubmitting || (!isDirty && !!initialConfig)}
 							>
-								{(isPending || isSubmitting) && <IconLoader2 className="size-4 mr-2 animate-spin" />}
+								{(isPending || isSubmitting) && (
+									<IconLoader2 className="size-4 mr-2 animate-spin" />
+								)}
 								{initialConfig
 									? t("settings.enterprise.email.save", "Save Changes")
 									: t("settings.enterprise.email.create", "Create Configuration")}

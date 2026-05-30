@@ -5,9 +5,9 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest, employee, timeEntry, workPeriod } from "@/db/schema";
+import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
-import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -595,7 +595,9 @@ export async function requestTimeCorrectionEffect(
 
 		yield* _(Effect.annotateCurrentSpan("correction.clock_in_correction_id", clockInCorrection.id));
 		if (clockOutCorrectionId) {
-			yield* _(Effect.annotateCurrentSpan("correction.clock_out_correction_id", clockOutCorrectionId));
+			yield* _(
+				Effect.annotateCurrentSpan("correction.clock_out_correction_id", clockOutCorrectionId),
+			);
 		}
 
 		logger.info(

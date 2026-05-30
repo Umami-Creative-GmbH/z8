@@ -223,9 +223,7 @@ describe("getWorkdayTimelineData", () => {
 
 		expect(result.success).toBe(true);
 		if (result.success) {
-			expect(result.data.items.map((item) => item.id)).toEqual([
-				"pending-request:request-overlap",
-			]);
+			expect(result.data.items.map((item) => item.id)).toEqual(["pending-request:request-overlap"]);
 		}
 	});
 
@@ -373,7 +371,9 @@ describe("isWorkPeriodRelevantToSelectedDate", () => {
 	});
 });
 
-function createRequest(overrides: Partial<Parameters<typeof isRequestRelevantToSelectedDate>[0]> = {}) {
+function createRequest(
+	overrides: Partial<Parameters<typeof isRequestRelevantToSelectedDate>[0]> = {},
+) {
 	return {
 		id: "request-1",
 		sourceType: "time_correction" as const,

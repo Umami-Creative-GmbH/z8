@@ -4,10 +4,7 @@ import { getTranslate } from "@/tolgee/server";
 import { listPlatformSystemEmailTemplates } from "./actions";
 
 export default async function PlatformSystemEmailTemplatesPage() {
-	const [t, templates] = await Promise.all([
-		getTranslate(),
-		listPlatformSystemEmailTemplates(),
-	]);
+	const [t, templates] = await Promise.all([getTranslate(), listPlatformSystemEmailTemplates()]);
 
 	return (
 		<div className="space-y-6">

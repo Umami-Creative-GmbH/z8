@@ -9,6 +9,7 @@ import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
+import { env } from "@/env";
 import { getUserLocale } from "@/lib/bot-platform/i18n";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
@@ -16,7 +17,6 @@ import { postMessage } from "../api";
 import { getAllActiveBotConfigs } from "../bot-config";
 import { getOrganizationPrivateConversations } from "../conversation-manager";
 import { buildDailyDigestBlocks } from "../formatters";
-import { env } from "@/env";
 
 const logger = createLogger("SlackDailyDigest");
 
@@ -38,10 +38,7 @@ export async function runSlackDailyDigestJob(): Promise<SlackDailyDigestResult> 
 		const bots = await getAllActiveBotConfigs();
 		const digestEnabledBots = bots.filter((b) => b.enableDailyDigest);
 
-		logger.info(
-			{ botCount: digestEnabledBots.length },
-			"Starting Slack daily digest job",
-		);
+		logger.info({ botCount: digestEnabledBots.length }, "Starting Slack daily digest job");
 
 		for (const bot of digestEnabledBots) {
 			try {
@@ -95,15 +92,11 @@ async function processBotDigest(bot: {
 		return 0;
 	}
 
-	const conversations = await getOrganizationPrivateConversations(
-		bot.organizationId,
-	);
+	const conversations = await getOrganizationPrivateConversations(bot.organizationId);
 	if (conversations.length === 0) return 0;
 
 	const appUrl = env.APP_URL || "https://z8-time.app";
-	const { buildDigestDataForManager } = await import(
-		"@/lib/teams/jobs/daily-digest"
-	);
+	const { buildDigestDataForManager } = await import("@/lib/teams/jobs/daily-digest");
 
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {
@@ -150,9 +143,7 @@ async function processBotDigest(bot: {
 		}),
 	);
 
-	const sent = results.filter(
-		(r) => r.status === "fulfilled" && r.value === true,
-	).length;
+	const sent = results.filter((r) => r.status === "fulfilled" && r.value === true).length;
 
 	logger.info(
 		{ organizationId: bot.organizationId, digestsSent: sent },

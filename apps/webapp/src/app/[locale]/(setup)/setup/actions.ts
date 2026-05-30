@@ -3,7 +3,7 @@
 import { Effect } from "effect";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { SetupService, type PlatformAdminResult } from "@/lib/effect/services/setup.service";
+import { type PlatformAdminResult, SetupService } from "@/lib/effect/services/setup.service";
 
 export interface CreatePlatformAdminData {
 	name: string;

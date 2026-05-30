@@ -2,10 +2,10 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
+import { env } from "@/env";
 import { getDomainConfigByOrganization } from "@/lib/domain/domain-service";
 import { getCanonicalPlatformDomain, getPlatformRootDomain } from "@/lib/domain/platform-domain";
 import { createLogger } from "@/lib/logger";
-import { env } from "@/env";
 
 const logger = createLogger("AppUrl");
 

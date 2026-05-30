@@ -5,7 +5,15 @@ export interface ScheduleDayInput {
 	cycleWeek?: number;
 }
 
-export const DAY_ORDER = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+export const DAY_ORDER = [
+	"monday",
+	"tuesday",
+	"wednesday",
+	"thursday",
+	"friday",
+	"saturday",
+	"sunday",
+];
 
 export function generateDaysFromPreset(
 	preset: "weekdays" | "weekends" | "all_days" | "custom",

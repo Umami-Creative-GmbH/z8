@@ -9,6 +9,7 @@ import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
+import { env } from "@/env";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
@@ -16,7 +17,6 @@ import { sendMessage } from "../api";
 import { getAllActiveBotConfigs } from "../bot-config";
 import { getOrganizationPrivateConversations } from "../conversation-manager";
 import { buildDailyDigestMessage } from "../formatters";
-import { env } from "@/env";
 
 const logger = createLogger("TelegramDailyDigest");
 
@@ -38,10 +38,7 @@ export async function runTelegramDailyDigestJob(): Promise<TelegramDailyDigestRe
 		const bots = await getAllActiveBotConfigs();
 		const digestEnabledBots = bots.filter((b) => b.enableDailyDigest);
 
-		logger.info(
-			{ botCount: digestEnabledBots.length },
-			"Starting Telegram daily digest job",
-		);
+		logger.info({ botCount: digestEnabledBots.length }, "Starting Telegram daily digest job");
 
 		for (const bot of digestEnabledBots) {
 			try {
@@ -95,15 +92,11 @@ async function processBotDigest(bot: {
 		return 0;
 	}
 
-	const conversations = await getOrganizationPrivateConversations(
-		bot.organizationId,
-	);
+	const conversations = await getOrganizationPrivateConversations(bot.organizationId);
 	if (conversations.length === 0) return 0;
 
 	const appUrl = env.APP_URL || "https://z8-time.app";
-	const { buildDigestDataForManager } = await import(
-		"@/lib/teams/jobs/daily-digest"
-	);
+	const { buildDigestDataForManager } = await import("@/lib/teams/jobs/daily-digest");
 
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {
@@ -151,9 +144,7 @@ async function processBotDigest(bot: {
 		}),
 	);
 
-	const sent = results.filter(
-		(r) => r.status === "fulfilled" && r.value === true,
-	).length;
+	const sent = results.filter((r) => r.status === "fulfilled" && r.value === true).length;
 
 	logger.info(
 		{ organizationId: bot.organizationId, digestsSent: sent },

@@ -16,9 +16,7 @@ const FONT_SIZE_OPTIONS: Array<{
 	{ value: "large", labelKey: "user.font-size-large", label: "Large" },
 ];
 
-function isFontSizePreference(
-	value: string | null,
-): value is FontSizePreference {
+function isFontSizePreference(value: string | null): value is FontSizePreference {
 	return value === "default" || value === "comfortable" || value === "large";
 }
 
@@ -31,10 +29,7 @@ function readStoredFontSize(storage: Storage | undefined): FontSizePreference {
 	}
 }
 
-function writeStoredFontSize(
-	storage: Storage | undefined,
-	value: FontSizePreference,
-) {
+function writeStoredFontSize(storage: Storage | undefined, value: FontSizePreference) {
 	try {
 		storage?.setItem(FONT_SIZE_STORAGE_KEY, value);
 	} catch {

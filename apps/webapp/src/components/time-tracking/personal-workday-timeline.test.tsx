@@ -28,7 +28,9 @@ const selectedDate = {
 	label: "May 3, 2026",
 };
 
-function success(data: Partial<SerializableWorkdayTimelineData>): SerializableWorkdayTimelineResult {
+function success(
+	data: Partial<SerializableWorkdayTimelineData>,
+): SerializableWorkdayTimelineResult {
 	return {
 		success: true,
 		data: {
@@ -83,9 +85,7 @@ describe("PersonalWorkdayTimeline", () => {
 
 		expect(screen.getByText("No activity recorded for this day.")).toBeTruthy();
 		expect(
-			screen.getByText(
-				"There are no shifts, absences, or time entries for the selected day yet.",
-			),
+			screen.getByText("There are no shifts, absences, or time entries for the selected day yet."),
 		).toBeTruthy();
 	});
 
@@ -94,9 +94,7 @@ describe("PersonalWorkdayTimeline", () => {
 
 		expect(screen.getByText("No activity recorded for this day.")).toBeTruthy();
 		expect(
-			screen.getByText(
-				"There are no shifts, absences, or time entries for the selected day yet.",
-			),
+			screen.getByText("There are no shifts, absences, or time entries for the selected day yet."),
 		).toBeTruthy();
 	});
 

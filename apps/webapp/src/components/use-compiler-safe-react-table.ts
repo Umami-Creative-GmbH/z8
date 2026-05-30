@@ -6,9 +6,7 @@ import {
 } from "@tanstack/react-table";
 import * as React from "react";
 
-export function useCompilerSafeReactTable<TData extends RowData>(
-	options: TableOptions<TData>,
-) {
+export function useCompilerSafeReactTable<TData extends RowData>(options: TableOptions<TData>) {
 	const resolvedOptions: TableOptionsResolved<TData> = {
 		state: {},
 		onStateChange: () => {},

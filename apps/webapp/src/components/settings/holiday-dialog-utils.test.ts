@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getEndDateAfterStartDateChange, parseHolidayDatePickerValue } from "./holiday-dialog-utils";
+import {
+	getEndDateAfterStartDateChange,
+	parseHolidayDatePickerValue,
+} from "./holiday-dialog-utils";
 
 describe("holiday dialog date helpers", () => {
 	it("defaults the end date to the selected start date when creating a holiday", () => {

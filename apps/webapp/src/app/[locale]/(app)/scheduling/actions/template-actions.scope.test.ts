@@ -10,7 +10,11 @@ const mockState = vi.hoisted(() => ({
 		canAccessShiftTemplates: true,
 		manageableShiftTemplateSubareaIds: new Set(["subarea-team-1"]),
 	},
-	templateTarget: { id: "template-1", organizationId: "org-1", subareaId: "subarea-team-1" as string | null },
+	templateTarget: {
+		id: "template-1",
+		organizationId: "org-1",
+		subareaId: "subarea-team-1" as string | null,
+	},
 	runSchedulingActionResult: { success: true as const, data: { id: "template-1" } },
 	createTemplate: vi.fn(),
 	updateTemplate: vi.fn(),
@@ -25,11 +29,17 @@ vi.mock("effect", async () => {
 
 vi.mock("@/lib/settings-scheduling-access", () => ({
 	canManageScopedSchedulingSubarea: vi.fn(
-		(_tier: string, manageableSubareaIds: Set<string> | null, subareaId: string | null | undefined) =>
-			Boolean(subareaId && manageableSubareaIds?.has(subareaId)),
+		(
+			_tier: string,
+			manageableSubareaIds: Set<string> | null,
+			subareaId: string | null | undefined,
+		) => Boolean(subareaId && manageableSubareaIds?.has(subareaId)),
 	),
-	filterItemsToManageableSubareas: vi.fn((items: any[], manageableSubareaIds: Set<string> | null) =>
-		manageableSubareaIds ? items.filter((item) => manageableSubareaIds.has(item.subareaId)) : items,
+	filterItemsToManageableSubareas: vi.fn(
+		(items: any[], manageableSubareaIds: Set<string> | null) =>
+			manageableSubareaIds
+				? items.filter((item) => manageableSubareaIds.has(item.subareaId))
+				: items,
 	),
 	getSchedulingSettingsAccessContext: vi.fn(async () => mockState.accessContext),
 	getShiftTemplateScopeTarget: vi.fn(async () => mockState.templateTarget),
@@ -45,7 +55,9 @@ vi.mock("@/lib/effect/services/shift.service", async () => {
 	return { ShiftService };
 });
 
-const { createShiftTemplate, deleteShiftTemplate, updateShiftTemplate } = await import("./template-actions");
+const { createShiftTemplate, deleteShiftTemplate, updateShiftTemplate } = await import(
+	"./template-actions"
+);
 
 describe("shift template manager scope", () => {
 	beforeEach(() => {

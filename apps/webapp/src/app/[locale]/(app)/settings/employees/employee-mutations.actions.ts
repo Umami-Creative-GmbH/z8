@@ -400,7 +400,9 @@ export async function requestEmployeeWorkBalanceRecalculationAction(
 		},
 		execute: (span) =>
 			Effect.gen(function* (_) {
-				const validatedEmployeeId = yield* _(validateInput(employeeIdSchema, employeeId, "employeeId"));
+				const validatedEmployeeId = yield* _(
+					validateInput(employeeIdSchema, employeeId, "employeeId"),
+				);
 				const actor = yield* _(getEmployeeSettingsActorContext());
 				const { dbService } = actor;
 

@@ -84,20 +84,14 @@ export function WorkBalanceRecalculationCard({
 							</Button>
 							<Button ref={confirmButtonRef} onClick={handleConfirm}>
 								<IconRefresh className="mr-2 size-4" aria-hidden="true" />
-								{t(
-									"settings.workBalanceRecalculation.confirm",
-									"Confirm Recalculation",
-								)}
+								{t("settings.workBalanceRecalculation.confirm", "Confirm Recalculation")}
 							</Button>
 						</div>
 					</div>
 				) : (
 					<Button onClick={() => setIsConfirming(true)} className="w-full sm:w-auto">
 						<IconRefresh className="mr-2 size-4" aria-hidden="true" />
-						{t(
-							"settings.workBalanceRecalculation.recalculate",
-							"Recalculate Work Balance",
-						)}
+						{t("settings.workBalanceRecalculation.recalculate", "Recalculate Work Balance")}
 					</Button>
 				)}
 			</CardContent>

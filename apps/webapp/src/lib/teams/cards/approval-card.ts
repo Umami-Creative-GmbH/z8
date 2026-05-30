@@ -51,21 +51,32 @@ export function buildApprovalCard(
 		if (data.startDate && data.endDate) {
 			const start = fmtWeekdayShortDateYear(DateTime.fromISO(data.startDate), locale);
 			const end = fmtWeekdayShortDateYear(DateTime.fromISO(data.endDate), locale);
-			facts.push({ title: t("teamsBot:approval.facts.dates", "Dates"), value: `${start} - ${end}` });
+			facts.push({
+				title: t("teamsBot:approval.facts.dates", "Dates"),
+				value: `${start} - ${end}`,
+			});
 		}
 		if (data.days !== undefined) {
 			facts.push({
 				title: t("teamsBot:approval.facts.duration", "Duration"),
-				value: t("teamsBot:approval.durationDays", "{count, plural, one {# day} other {# days}}", { count: data.days }),
+				value: t("teamsBot:approval.durationDays", "{count, plural, one {# day} other {# days}}", {
+					count: data.days,
+				}),
 			});
 		}
 	} else {
 		// Time correction
 		if (data.originalTime) {
-			facts.push({ title: t("teamsBot:approval.facts.original", "Original"), value: data.originalTime });
+			facts.push({
+				title: t("teamsBot:approval.facts.original", "Original"),
+				value: data.originalTime,
+			});
 		}
 		if (data.correctedTime) {
-			facts.push({ title: t("teamsBot:approval.facts.corrected", "Corrected"), value: data.correctedTime });
+			facts.push({
+				title: t("teamsBot:approval.facts.corrected", "Corrected"),
+				value: data.correctedTime,
+			});
 		}
 	}
 
@@ -163,20 +174,31 @@ export function buildApprovalCardWithInvoke(
 		if (data.startDate && data.endDate) {
 			const start = fmtWeekdayShortDate(DateTime.fromISO(data.startDate), locale);
 			const end = fmtWeekdayShortDate(DateTime.fromISO(data.endDate), locale);
-			facts.push({ title: t("teamsBot:approval.facts.dates", "Dates"), value: `${start} - ${end}` });
+			facts.push({
+				title: t("teamsBot:approval.facts.dates", "Dates"),
+				value: `${start} - ${end}`,
+			});
 		}
 		if (data.days !== undefined) {
 			facts.push({
 				title: t("teamsBot:approval.facts.duration", "Duration"),
-				value: t("teamsBot:approval.durationDays", "{count, plural, one {# day} other {# days}}", { count: data.days }),
+				value: t("teamsBot:approval.durationDays", "{count, plural, one {# day} other {# days}}", {
+					count: data.days,
+				}),
 			});
 		}
 	} else {
 		if (data.originalTime) {
-			facts.push({ title: t("teamsBot:approval.facts.original", "Original"), value: data.originalTime });
+			facts.push({
+				title: t("teamsBot:approval.facts.original", "Original"),
+				value: data.originalTime,
+			});
 		}
 		if (data.correctedTime) {
-			facts.push({ title: t("teamsBot:approval.facts.corrected", "Corrected"), value: data.correctedTime });
+			facts.push({
+				title: t("teamsBot:approval.facts.corrected", "Corrected"),
+				value: data.correctedTime,
+			});
 		}
 	}
 
@@ -266,9 +288,10 @@ export function buildResolvedApprovalCard(
 		? t("teamsBot:approval.absenceRequest", "Absence Request")
 		: t("teamsBot:approval.timeCorrectionRequest", "Time Correction Request");
 	const statusColor = resolvedData.action === "approved" ? "good" : "attention";
-	const statusText = resolvedData.action === "approved"
-		? t("teamsBot:approval.status.approved", "APPROVED")
-		: t("teamsBot:approval.status.rejected", "REJECTED");
+	const statusText =
+		resolvedData.action === "approved"
+			? t("teamsBot:approval.status.approved", "APPROVED")
+			: t("teamsBot:approval.status.rejected", "REJECTED");
 
 	const facts: Array<{ title: string; value: string }> = [
 		{ title: t("teamsBot:approval.facts.from", "From"), value: originalData.requesterName },
@@ -276,12 +299,18 @@ export function buildResolvedApprovalCard(
 
 	if (isAbsence) {
 		if (originalData.absenceCategory) {
-			facts.push({ title: t("teamsBot:approval.facts.type", "Type"), value: originalData.absenceCategory });
+			facts.push({
+				title: t("teamsBot:approval.facts.type", "Type"),
+				value: originalData.absenceCategory,
+			});
 		}
 		if (originalData.startDate && originalData.endDate) {
 			const start = fmtWeekdayShortDate(DateTime.fromISO(originalData.startDate), locale);
 			const end = fmtWeekdayShortDate(DateTime.fromISO(originalData.endDate), locale);
-			facts.push({ title: t("teamsBot:approval.facts.dates", "Dates"), value: `${start} - ${end}` });
+			facts.push({
+				title: t("teamsBot:approval.facts.dates", "Dates"),
+				value: `${start} - ${end}`,
+			});
 		}
 	}
 
@@ -291,9 +320,10 @@ export function buildResolvedApprovalCard(
 	});
 
 	facts.push({
-		title: resolvedData.action === "approved"
-			? t("teamsBot:approval.facts.approvedBy", "Approved by")
-			: t("teamsBot:approval.facts.rejectedBy", "Rejected by"),
+		title:
+			resolvedData.action === "approved"
+				? t("teamsBot:approval.facts.approvedBy", "Approved by")
+				: t("teamsBot:approval.facts.rejectedBy", "Rejected by"),
 		value: resolvedData.approverName,
 	});
 

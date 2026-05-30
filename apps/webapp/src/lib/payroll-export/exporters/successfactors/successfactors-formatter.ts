@@ -11,18 +11,16 @@
  */
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
-import { validateSuccessFactorsConfig } from "./shared/config-validator";
-import {
-	aggregateWorkPeriodsForCSV,
-} from "./shared/time-transformer";
-import { aggregateAbsencesForCSV } from "./shared/absence-transformer";
 import type {
-	IPayrollExportFormatter,
-	WorkPeriodData,
 	AbsenceData,
-	WageTypeMapping,
 	ExportResult,
+	IPayrollExportFormatter,
+	WageTypeMapping,
+	WorkPeriodData,
 } from "../../types";
+import { aggregateAbsencesForCSV } from "./shared/absence-transformer";
+import { validateSuccessFactorsConfig } from "./shared/config-validator";
+import { aggregateWorkPeriodsForCSV } from "./shared/time-transformer";
 import type { SuccessFactorsConfig } from "./types";
 import { DEFAULT_SUCCESSFACTORS_CONFIG } from "./types";
 
@@ -71,12 +69,7 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 		);
 
 		// Add absences to aggregated data
-		aggregateAbsencesForCSV(
-			absences,
-			mappings,
-			sfConfig.employeeMatchStrategy,
-			aggregatedData,
-		);
+		aggregateAbsencesForCSV(absences, mappings, sfConfig.employeeMatchStrategy, aggregatedData);
 
 		// Generate CSV content
 		const lines: string[] = [];
@@ -106,15 +99,7 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 
 				for (const [timeType, data] of sortedTimeTypes) {
 					if (data.hours > 0 || sfConfig.includeZeroHours) {
-						lines.push(
-							this.generateDataRow(
-								userId,
-								dateStr,
-								timeType,
-								data.hours,
-								data.note,
-							),
-						);
+						lines.push(this.generateDataRow(userId, dateStr, timeType, data.hours, data.note));
 					}
 				}
 			}
@@ -229,14 +214,9 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 	/**
 	 * Generate file name based on date range
 	 */
-	private generateFileName(dateRange: {
-		start: DateTime | null;
-		end: DateTime | null;
-	}): string {
+	private generateFileName(dateRange: { start: DateTime | null; end: DateTime | null }): string {
 		const now = DateTime.now();
-		const dateStr = dateRange.start
-			? dateRange.start.toFormat("yyyy-MM")
-			: now.toFormat("yyyy-MM");
+		const dateStr = dateRange.start ? dateRange.start.toFormat("yyyy-MM") : now.toFormat("yyyy-MM");
 		return `sap_successfactors_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
 	}
 }

@@ -7,8 +7,8 @@
 
 import { Ratelimit } from "@upstash/ratelimit";
 import { createLogger } from "@/lib/logger";
-import { redis } from "@/lib/redis";
 import { ensureRateLimitRedisReady, isRateLimitDisabled } from "@/lib/rate-limit";
+import { redis } from "@/lib/redis";
 import type { BotCommandContext, BotCommandResponse } from "../../types";
 
 const logger = createLogger("TeamsRateLimit");

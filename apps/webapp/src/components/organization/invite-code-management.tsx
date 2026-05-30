@@ -120,7 +120,9 @@ function InviteCodeMobileCard({
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
-						<DropdownMenuItem onClick={() => onEdit(code)}>{t("common.edit", "Edit")}</DropdownMenuItem>
+						<DropdownMenuItem onClick={() => onEdit(code)}>
+							{t("common.edit", "Edit")}
+						</DropdownMenuItem>
 						<DropdownMenuItem onClick={() => onDelete(code)} className="text-destructive">
 							{t("common.delete", "Delete")}
 						</DropdownMenuItem>
@@ -140,11 +142,15 @@ function InviteCodeMobileCard({
 					<div className="font-medium">{formatUsage(code)}</div>
 				</div>
 				<div>
-					<div className="text-muted-foreground">{t("settings.inviteCodes.expires", "Expires")}</div>
+					<div className="text-muted-foreground">
+						{t("settings.inviteCodes.expires", "Expires")}
+					</div>
 					<div className="font-medium">{formatDate(code.expiresAt)}</div>
 				</div>
 				<div>
-					<div className="text-muted-foreground">{t("settings.inviteCodes.approval", "Approval")}</div>
+					<div className="text-muted-foreground">
+						{t("settings.inviteCodes.approval", "Approval")}
+					</div>
 					<Badge variant={code.requiresApproval ? "default" : "secondary"}>
 						{code.requiresApproval
 							? t("settings.inviteCodes.required", "Required")

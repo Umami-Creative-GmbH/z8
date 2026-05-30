@@ -56,7 +56,11 @@ export function decryptImportCredential(
 ): string {
 	if (credential.expiresAt <= now) throw new Error("Import credential has expired");
 
-	const decipher = createDecipheriv("aes-256-gcm", deriveKey(secret), Buffer.from(credential.iv, "base64"));
+	const decipher = createDecipheriv(
+		"aes-256-gcm",
+		deriveKey(secret),
+		Buffer.from(credential.iv, "base64"),
+	);
 	decipher.setAAD(expiryAad(credential.expiresAt));
 	decipher.setAuthTag(Buffer.from(credential.authTag, "base64"));
 

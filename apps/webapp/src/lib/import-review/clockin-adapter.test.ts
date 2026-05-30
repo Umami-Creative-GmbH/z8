@@ -148,7 +148,9 @@ describe("scanClockinImportPartition", () => {
 			},
 		]);
 
-		const result = await scanClockinImportPartition(scanJob({ entityType: "absence", employeeIds: ["101"] }));
+		const result = await scanClockinImportPartition(
+			scanJob({ entityType: "absence", employeeIds: ["101"] }),
+		);
 
 		expect(result).toEqual({ stagedRows: 1, issues: 1 });
 		expect(mocks.searchAbsences).toHaveBeenCalledWith({
@@ -190,9 +192,7 @@ describe("scanClockinImportPartition", () => {
 		const result = await scanClockinImportPartition(
 			scanJob({
 				employeeIds: ["101"],
-				employeeMappings: [
-					{ providerEmployeeId: "101", employeeId: "emp_1", userId: "user_1" },
-				],
+				employeeMappings: [{ providerEmployeeId: "101", employeeId: "emp_1", userId: "user_1" }],
 			}),
 		);
 
@@ -230,7 +230,9 @@ describe("scanClockinImportPartition", () => {
 			},
 		]);
 
-		const result = await scanClockinImportPartition(scanJob({ entityType: "absence", employeeIds: ["101"] }));
+		const result = await scanClockinImportPartition(
+			scanJob({ entityType: "absence", employeeIds: ["101"] }),
+		);
 
 		expect(result).toEqual({ stagedRows: 1, issues: 1 });
 		expect(mocks.insertStagedRows.mock.calls[0][0].rows[0].normalizedPayload).toEqual(
@@ -266,7 +268,9 @@ describe("scanClockinImportPartition", () => {
 	it("fails clearly when the scoped credential is missing", async () => {
 		mocks.getImportJobSecret.mockResolvedValue(null);
 
-		await expect(scanClockinImportPartition(scanJob())).rejects.toThrow("Import credential was not found");
+		await expect(scanClockinImportPartition(scanJob())).rejects.toThrow(
+			"Import credential was not found",
+		);
 		expect(mocks.clientConstructor).not.toHaveBeenCalled();
 	});
 });

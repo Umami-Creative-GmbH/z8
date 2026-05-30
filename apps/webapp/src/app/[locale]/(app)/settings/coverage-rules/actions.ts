@@ -1,9 +1,15 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { Effect } from "effect";
-import { CoverageService, type CoverageRuleWithRelations, type TargetCoverageGap, type CoverageSettingsData } from "@/lib/effect/services/coverage.service";
+import { revalidatePath } from "next/cache";
+import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
 import { safeAction } from "@/lib/effect/runtime";
+import {
+	type CoverageRuleWithRelations,
+	CoverageService,
+	type CoverageSettingsData,
+	type TargetCoverageGap,
+} from "@/lib/effect/services/coverage.service";
 import {
 	canManageScopedSchedulingSubarea,
 	filterItemsToManageableSubareas,
@@ -11,12 +17,11 @@ import {
 	getSchedulingSettingsAccessContext,
 } from "@/lib/settings-scheduling-access";
 import {
-	createCoverageRuleSchema,
-	updateCoverageRuleSchema,
 	type CreateCoverageRule,
+	createCoverageRuleSchema,
 	type UpdateCoverageRule,
+	updateCoverageRuleSchema,
 } from "@/lib/validations/coverage";
-import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
 
 // ============================================
 // TYPES
@@ -263,8 +268,9 @@ export async function getTargetHeatmapData(params: {
 	}
 
 	const scopedSubareaIds = accessContext.manageableSubareaIds
-		? params.subareaIds?.filter((subareaId) => accessContext.manageableSubareaIds?.has(subareaId)) ??
-			[...accessContext.manageableSubareaIds]
+		? (params.subareaIds?.filter((subareaId) =>
+				accessContext.manageableSubareaIds?.has(subareaId),
+			) ?? [...accessContext.manageableSubareaIds])
 		: params.subareaIds;
 
 	const effect = Effect.gen(function* (_) {
@@ -340,9 +346,9 @@ export async function getCoverageSettings(): Promise<ServerActionResult<Coverage
 /**
  * Update coverage settings for the organization.
  */
-export async function updateCoverageSettings(
-	settings: { allowPublishWithGaps: boolean },
-): Promise<ServerActionResult<CoverageSettingsData>> {
+export async function updateCoverageSettings(settings: {
+	allowPublishWithGaps: boolean;
+}): Promise<ServerActionResult<CoverageSettingsData>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
 	if (!accessContext || !accessContext.canManageCoverageSettings) {
 		return { success: false, error: "Unauthorized" };

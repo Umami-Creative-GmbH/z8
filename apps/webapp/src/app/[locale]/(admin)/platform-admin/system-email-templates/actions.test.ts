@@ -120,7 +120,9 @@ describe("platform system email template actions", () => {
 	});
 
 	it("lists platform system templates with global overrides", async () => {
-		mocks.templates = [{ templateKey: "billing-trial-ending", subject: "Override", isEnabled: true }];
+		mocks.templates = [
+			{ templateKey: "billing-trial-ending", subject: "Override", isEnabled: true },
+		];
 
 		const templates = await listPlatformSystemEmailTemplates();
 
@@ -166,9 +168,7 @@ describe("platform system email template actions", () => {
 		});
 		expect(mocks.insertValues).not.toHaveProperty("organizationId");
 		expect((mocks.insertValues as { html: string }).html).toBe("<p>{{billingUrl}}</p>");
-		expect(mocks.revalidatePath).toHaveBeenCalledWith(
-			"/platform-admin/system-email-templates",
-		);
+		expect(mocks.revalidatePath).toHaveBeenCalledWith("/platform-admin/system-email-templates");
 	});
 
 	it("rejects malformed save input without writing", async () => {
@@ -187,9 +187,7 @@ describe("platform system email template actions", () => {
 		expect(result).toEqual({ success: true });
 		expect(mocks.conditions).toContainEqual({ eq: ["templateKey", "billing-trial-ending"] });
 		expect(JSON.stringify(mocks.deleteWhere)).not.toContain("organizationId");
-		expect(mocks.revalidatePath).toHaveBeenCalledWith(
-			"/platform-admin/system-email-templates",
-		);
+		expect(mocks.revalidatePath).toHaveBeenCalledWith("/platform-admin/system-email-templates");
 	});
 
 	it("test sends through the system transport to the current platform admin", async () => {

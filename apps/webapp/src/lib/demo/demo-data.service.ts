@@ -844,9 +844,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 			inArray(approvalRequest.entityId, periodIds),
 		),
 	});
-	const existingApprovalPeriodIds = new Set(
-		existingApprovals.map((approval) => approval.entityId),
-	);
+	const existingApprovalPeriodIds = new Set(existingApprovals.map((approval) => approval.entityId));
 	const employeeIdSet = new Set(employeeIds);
 	const employeesById = new Map(employees.map((emp) => [emp.id, emp]));
 	const managerAssignments = await db.query.employeeManagers.findMany({
@@ -1503,7 +1501,10 @@ function getWorkCategorySetTemplates() {
 	return [
 		{ name: "Standard Categories", description: "Default work categories for most employees" },
 		{ name: "Field Work Categories", description: "Categories for field workers with travel time" },
-		{ name: "Manufacturing Categories", description: "Categories for production and manufacturing" },
+		{
+			name: "Manufacturing Categories",
+			description: "Categories for production and manufacturing",
+		},
 	] as const;
 }
 
@@ -2098,8 +2099,7 @@ export async function generateDemoData(options: DemoDataOptions): Promise<DemoDa
 		shiftRecurrencesCreated: shiftResult.recurrencesCreated,
 		shiftsCreated: shiftResult.shiftsCreated,
 		shiftRequestsCreated: shiftResult.requestsCreated,
-		pendingAbsenceApprovalsCreated:
-			pendingAbsenceApprovalResult.pendingAbsenceApprovalsCreated,
+		pendingAbsenceApprovalsCreated: pendingAbsenceApprovalResult.pendingAbsenceApprovalsCreated,
 		pendingTimeCorrectionApprovalsCreated:
 			pendingTimeCorrectionApprovalResult.pendingTimeCorrectionApprovalsCreated,
 	};

@@ -6,13 +6,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { env } from "@/env";
 import { StripeService, StripeServiceLive } from "./stripe.service";
 
-const checkoutSessionsCreate = vi.fn(
-	async (params: Record<string, unknown>) => ({
-		id: "cs_test_123",
-		url: "https://checkout.stripe.test/session",
-		params,
-	}),
-);
+const checkoutSessionsCreate = vi.fn(async (params: Record<string, unknown>) => ({
+	id: "cs_test_123",
+	url: "https://checkout.stripe.test/session",
+	params,
+}));
 
 vi.mock("stripe", () => ({
 	default: vi.fn().mockImplementation(function StripeMock() {
@@ -31,12 +29,9 @@ describe("StripeService", () => {
 		vi.clearAllMocks();
 		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "true";
 		(env as { STRIPE_SECRET_KEY: string }).STRIPE_SECRET_KEY = "rk_test_123";
-		(env as { STRIPE_WEBHOOK_SECRET: string }).STRIPE_WEBHOOK_SECRET =
-			"whsec_test_123";
-		(env as { STRIPE_PRICE_MONTHLY_ID: string }).STRIPE_PRICE_MONTHLY_ID =
-			"price_monthly_123";
-		(env as { STRIPE_PRICE_YEARLY_ID: string }).STRIPE_PRICE_YEARLY_ID =
-			"price_yearly_123";
+		(env as { STRIPE_WEBHOOK_SECRET: string }).STRIPE_WEBHOOK_SECRET = "whsec_test_123";
+		(env as { STRIPE_PRICE_MONTHLY_ID: string }).STRIPE_PRICE_MONTHLY_ID = "price_monthly_123";
+		(env as { STRIPE_PRICE_YEARLY_ID: string }).STRIPE_PRICE_YEARLY_ID = "price_yearly_123";
 	});
 
 	it("adds organization metadata to checkout sessions and subscriptions", async () => {

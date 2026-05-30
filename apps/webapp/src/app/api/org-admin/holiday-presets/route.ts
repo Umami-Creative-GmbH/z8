@@ -1,12 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import {
-	holidayPreset,
-	holidayPresetAssignment,
-	holidayPresetHoliday,
-} from "@/db/schema";
+import { holidayPreset, holidayPresetAssignment, holidayPresetHoliday } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";

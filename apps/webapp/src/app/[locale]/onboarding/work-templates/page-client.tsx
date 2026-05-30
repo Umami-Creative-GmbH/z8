@@ -89,7 +89,10 @@ export default function WorkTemplatesPage() {
 			push("/onboarding/notifications");
 		} else {
 			setLoading(false);
-			toast.error(result.error || t("onboarding.workTemplates.skipError", "Failed to skip work schedule template setup"));
+			toast.error(
+				result.error ||
+					t("onboarding.workTemplates.skipError", "Failed to skip work schedule template setup"),
+			);
 		}
 	}
 

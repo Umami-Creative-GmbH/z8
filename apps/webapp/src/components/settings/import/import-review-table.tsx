@@ -71,10 +71,18 @@ export function ImportReviewTable({ rows }: ImportReviewTableProps) {
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead scope="col">{t("settings.import.review.rows.entity", "Entity")}</TableHead>
-								<TableHead scope="col">{t("settings.import.review.rows.status", "Status")}</TableHead>
-								<TableHead scope="col">{t("settings.import.review.rows.sourceId", "Source ID")}</TableHead>
-								<TableHead scope="col">{t("settings.import.review.rows.rowId", "Row ID")}</TableHead>
+								<TableHead scope="col">
+									{t("settings.import.review.rows.entity", "Entity")}
+								</TableHead>
+								<TableHead scope="col">
+									{t("settings.import.review.rows.status", "Status")}
+								</TableHead>
+								<TableHead scope="col">
+									{t("settings.import.review.rows.sourceId", "Source ID")}
+								</TableHead>
+								<TableHead scope="col">
+									{t("settings.import.review.rows.rowId", "Row ID")}
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>

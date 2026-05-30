@@ -39,21 +39,12 @@ export function AuthFormWrapper({
 		: undefined;
 
 	return (
-		<div
-			className={cn("mx-auto w-full max-w-md", className)}
-			style={customStyles}
-			{...props}
-		>
+		<div className={cn("mx-auto w-full max-w-md", className)} style={customStyles} {...props}>
 			<Card className="relative w-full border-white/30 bg-white/20 shadow-xl shadow-black/5 backdrop-blur-[40px] sm:shadow-xl dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75 [&_[data-slot=input]]:bg-background/85 dark:[&_[data-slot=input]]:bg-background/80">
 				<CardContent className="p-5 sm:p-8">
 					<form className="w-full" method="post" {...formProps}>
 						<div className="flex flex-col gap-6">
-							<div
-								className={cn(
-									"flex items-center gap-4",
-									backHref ? "" : "justify-center",
-								)}
-							>
+							<div className={cn("flex items-center gap-4", backHref ? "" : "justify-center")}>
 								{backHref ? (
 									<Button asChild size="icon" variant="ghost">
 										<Link href={backHref}>

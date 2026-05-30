@@ -230,7 +230,9 @@ describe("commitAcceptedRowsForEntity", () => {
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
 
 		expect(result).toEqual({ committedRows: 0, failedRows: 0, errors: [] });
-		expect(dbMock.where).toHaveBeenCalledWith(expect.objectContaining({ queryChunks: expect.any(Array) }));
+		expect(dbMock.where).toHaveBeenCalledWith(
+			expect.objectContaining({ queryChunks: expect.any(Array) }),
+		);
 		expect(dbMock.insert).not.toHaveBeenCalled();
 	});
 
@@ -275,7 +277,9 @@ describe("commitAcceptedRowsForEntity", () => {
 		];
 		dbMock.query.employee.findFirst.mockResolvedValueOnce(null);
 
-		const result = await commitAcceptedRowsForEntity(commitJob("work_period"), { finalAttempt: false });
+		const result = await commitAcceptedRowsForEntity(commitJob("work_period"), {
+			finalAttempt: false,
+		});
 
 		expect(result).toEqual({
 			committedRows: 0,
@@ -298,7 +302,9 @@ describe("commitAcceptedRowsForEntity", () => {
 		];
 		dbMock.query.employee.findFirst.mockResolvedValueOnce(null);
 
-		const result = await commitAcceptedRowsForEntity(commitJob("work_period"), { finalAttempt: true });
+		const result = await commitAcceptedRowsForEntity(commitJob("work_period"), {
+			finalAttempt: true,
+		});
 
 		expect(result.failedRows).toBe(1);
 		expect(dbMock.updates).toContainEqual(
@@ -371,8 +377,12 @@ describe("commitAcceptedRowsForEntity", () => {
 				},
 			}),
 		];
-		dbMock.returning.mockImplementationOnce(() => Promise.resolve([{ id: "created_1", hash: "hash_1" }]));
-		dbMock.returning.mockImplementationOnce(() => Promise.reject(new Error("clock out insert failed")));
+		dbMock.returning.mockImplementationOnce(() =>
+			Promise.resolve([{ id: "created_1", hash: "hash_1" }]),
+		);
+		dbMock.returning.mockImplementationOnce(() =>
+			Promise.reject(new Error("clock out insert failed")),
+		);
 
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
 
@@ -383,7 +393,10 @@ describe("commitAcceptedRowsForEntity", () => {
 		});
 		expect(dbMock.insertCalls).toEqual([]);
 		expect(dbMock.updates).toEqual([
-			expect.objectContaining({ rowStatus: "commit_failed", commitError: "clock out insert failed" }),
+			expect.objectContaining({
+				rowStatus: "commit_failed",
+				commitError: "clock out insert failed",
+			}),
 		]);
 	});
 });

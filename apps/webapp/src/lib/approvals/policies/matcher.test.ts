@@ -29,7 +29,12 @@ const matchingPolicy: ApprovalPolicyDraft = {
 		{ conditionType: "absence_category", operator: "equals", value: "cat_1" },
 		{ conditionType: "employee_group", operator: "in", values: ["group_1", "group_2"] },
 		{ conditionType: "overtime_risk", operator: "in", values: ["warning", "violation"] },
-		{ conditionType: "travel_expense_amount", operator: "between", amountMin: 500, amountMax: 1000 },
+		{
+			conditionType: "travel_expense_amount",
+			operator: "between",
+			amountMin: 500,
+			amountMax: 1000,
+		},
 	],
 	stages: [{ id: "stage_1", stepOrder: 1, label: "Manager", approverType: "direct_manager" }],
 };
@@ -47,7 +52,10 @@ describe("findMatchingPolicy", () => {
 	it("returns null when no active policy matches", () => {
 		const result = findMatchingPolicy(context, [
 			{ ...matchingPolicy, isActive: false },
-			{ ...matchingPolicy, conditions: [{ conditionType: "team", operator: "equals", value: "team_x" }] },
+			{
+				...matchingPolicy,
+				conditions: [{ conditionType: "team", operator: "equals", value: "team_x" }],
+			},
 		]);
 
 		expect(result).toBeNull();
@@ -55,7 +63,10 @@ describe("findMatchingPolicy", () => {
 
 	it("rejects employee group conditions with unsupported operators", () => {
 		const result = findMatchingPolicy(context, [
-			{ ...matchingPolicy, conditions: [{ conditionType: "employee_group", operator: "gte", value: "group_1" }] },
+			{
+				...matchingPolicy,
+				conditions: [{ conditionType: "employee_group", operator: "gte", value: "group_1" }],
+			},
 		]);
 
 		expect(result).toBeNull();
@@ -63,7 +74,10 @@ describe("findMatchingPolicy", () => {
 
 	it("does not treat value as values for in string conditions", () => {
 		const result = findMatchingPolicy(context, [
-			{ ...matchingPolicy, conditions: [{ conditionType: "team", operator: "in", value: "team_1" }] },
+			{
+				...matchingPolicy,
+				conditions: [{ conditionType: "team", operator: "in", value: "team_1" }],
+			},
 		]);
 
 		expect(result).toBeNull();
@@ -71,7 +85,10 @@ describe("findMatchingPolicy", () => {
 
 	it("does not treat value as values for in employee group conditions", () => {
 		const result = findMatchingPolicy(context, [
-			{ ...matchingPolicy, conditions: [{ conditionType: "employee_group", operator: "in", value: "group_1" }] },
+			{
+				...matchingPolicy,
+				conditions: [{ conditionType: "employee_group", operator: "in", value: "group_1" }],
+			},
 		]);
 
 		expect(result).toBeNull();
@@ -119,7 +136,12 @@ describe("validatePolicyDraft", () => {
 					{ conditionType: "travel_expense_amount", operator: "equals", value: "750" },
 					{ conditionType: "travel_expense_amount", operator: "gte" },
 					{ conditionType: "travel_expense_amount", operator: "lte" },
-					{ conditionType: "travel_expense_amount", operator: "between", amountMin: 1000, amountMax: 500 },
+					{
+						conditionType: "travel_expense_amount",
+						operator: "between",
+						amountMin: 1000,
+						amountMax: 500,
+					},
 				],
 			}),
 		).toEqual([

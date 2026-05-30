@@ -5,11 +5,11 @@
  * Creates audit log exports for compliance and monitoring purposes.
  */
 import { and, eq, gte, lte } from "drizzle-orm";
-import { db, auditLog } from "@/db";
+import { auditLog, db } from "@/db";
 import { createLogger } from "@/lib/logger";
-import { uploadExport, getPresignedUrl } from "@/lib/storage/export-s3-client";
-import type { IReportExecutor, ExecuteParams } from "./base-executor";
-import type { ExecutionResult, AuditReportConfig, ReportConfig } from "../../domain/types";
+import { getPresignedUrl, uploadExport } from "@/lib/storage/export-s3-client";
+import type { AuditReportConfig, ExecutionResult, ReportConfig } from "../../domain/types";
+import type { ExecuteParams, IReportExecutor } from "./base-executor";
 
 const logger = createLogger("AuditReportExecutor");
 
@@ -56,9 +56,10 @@ export class AuditReportExecutor implements IReportExecutor {
 			});
 
 			// Filter by event types if specified
-			const filteredLogs = config.auditEventTypes && config.auditEventTypes.length > 0
-				? logs.filter((log) => config.auditEventTypes!.includes(log.action))
-				: logs;
+			const filteredLogs =
+				config.auditEventTypes && config.auditEventTypes.length > 0
+					? logs.filter((log) => config.auditEventTypes!.includes(log.action))
+					: logs;
 
 			logger.info({ count: filteredLogs.length }, "Audit logs fetched");
 

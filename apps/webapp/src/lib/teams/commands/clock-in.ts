@@ -32,11 +32,17 @@ export const clockInCommand: BotCommand = {
 
 			// Look up employee record for org verification
 			const emp = await db.query.employee.findFirst({
-				where: and(eq(employee.id, ctx.employeeId), eq(employee.organizationId, ctx.organizationId)),
+				where: and(
+					eq(employee.id, ctx.employeeId),
+					eq(employee.organizationId, ctx.organizationId),
+				),
 			});
 
 			if (!emp) {
-				return { type: "text", text: t("bot.cmd.clockin.noProfile", "Employee profile not found.") };
+				return {
+					type: "text",
+					text: t("bot.cmd.clockin.noProfile", "Employee profile not found."),
+				};
 			}
 
 			const billingAccess = await requireBillingForMutation(emp.organizationId);
@@ -71,7 +77,11 @@ export const clockInCommand: BotCommand = {
 
 				return {
 					type: "text",
-					text: t("bot.cmd.clockin.alreadyIn", "You are already clocked in since {time} ({hours}h {minutes}m).", { time: fmtTime(clockInTime, ctx.locale), hours, minutes }),
+					text: t(
+						"bot.cmd.clockin.alreadyIn",
+						"You are already clocked in since {time} ({hours}h {minutes}m).",
+						{ time: fmtTime(clockInTime, ctx.locale), hours, minutes },
+					),
 				};
 			}
 
@@ -138,7 +148,9 @@ export const clockInCommand: BotCommand = {
 
 			return {
 				type: "text",
-				text: t("bot.cmd.clockin.success", "Clocked in at {time}.", { time: fmtTime(clockInTime, ctx.locale) }),
+				text: t("bot.cmd.clockin.success", "Clocked in at {time}.", {
+					time: fmtTime(clockInTime, ctx.locale),
+				}),
 			};
 		} catch (error) {
 			logger.error({ error, ctx }, "Failed to clock in");

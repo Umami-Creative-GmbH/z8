@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm";
 import { boolean, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { user, organization } from "../auth-schema";
+import { organization, user } from "../auth-schema";
 
 /**
  * Platform Admin Audit Log

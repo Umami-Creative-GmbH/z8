@@ -258,12 +258,14 @@ export function WorkCategoryAssignmentManager({
 						</div>
 					</CardHeader>
 					<CardContent>
-						{canManage ? <div className="flex justify-end mb-2">
-							<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-								<IconPlus className="mr-2 size-4" />
-								{t("settings.workCategories.assignTeam", "Assign to Team")}
-							</Button>
-						</div> : null}
+						{canManage ? (
+							<div className="flex justify-end mb-2">
+								<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
+									<IconPlus className="mr-2 size-4" />
+									{t("settings.workCategories.assignTeam", "Assign to Team")}
+								</Button>
+							</div>
+						) : null}
 						{teamAssignments.length > 0 ? (
 							<div className="space-y-2">
 								{teamAssignments.map((assignment) => (
@@ -279,18 +281,18 @@ export function WorkCategoryAssignmentManager({
 												<span className="text-sm">{assignment.set.name}</span>
 											</div>
 										</div>
-									{canManage ? (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="size-8 text-muted-foreground hover:text-destructive"
-											onClick={() => handleDeleteClick(assignment)}
-											aria-label={t("common.remove", "Remove")}
-										>
-											<IconTrash className="size-4" />
-										</Button>
-									) : null}
-								</div>
+										{canManage ? (
+											<Button
+												variant="ghost"
+												size="icon"
+												className="size-8 text-muted-foreground hover:text-destructive"
+												onClick={() => handleDeleteClick(assignment)}
+												aria-label={t("common.remove", "Remove")}
+											>
+												<IconTrash className="size-4" />
+											</Button>
+										) : null}
+									</div>
 								))}
 							</div>
 						) : (
@@ -325,12 +327,14 @@ export function WorkCategoryAssignmentManager({
 						</div>
 					</CardHeader>
 					<CardContent>
-						{canManage ? <div className="flex justify-end mb-2">
-							<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-								<IconPlus className="mr-2 size-4" />
-								{t("settings.workCategories.assignEmployee", "Assign to Employee")}
-							</Button>
-						</div> : null}
+						{canManage ? (
+							<div className="flex justify-end mb-2">
+								<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
+									<IconPlus className="mr-2 size-4" />
+									{t("settings.workCategories.assignEmployee", "Assign to Employee")}
+								</Button>
+							</div>
+						) : null}
 						{employeeAssignments.length > 0 ? (
 							<div className="space-y-2">
 								{employeeAssignments.map((assignment) => (
@@ -348,18 +352,18 @@ export function WorkCategoryAssignmentManager({
 												<span className="text-sm">{assignment.set.name}</span>
 											</div>
 										</div>
-									{canManage ? (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="size-8 text-muted-foreground hover:text-destructive"
-											onClick={() => handleDeleteClick(assignment)}
-											aria-label={t("common.remove", "Remove")}
-										>
-											<IconTrash className="size-4" />
-										</Button>
-									) : null}
-								</div>
+										{canManage ? (
+											<Button
+												variant="ghost"
+												size="icon"
+												className="size-8 text-muted-foreground hover:text-destructive"
+												onClick={() => handleDeleteClick(assignment)}
+												aria-label={t("common.remove", "Remove")}
+											>
+												<IconTrash className="size-4" />
+											</Button>
+										) : null}
+									</div>
 								))}
 							</div>
 						) : (

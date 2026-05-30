@@ -78,7 +78,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 		let subjectOverride = title;
 
 		// Generate email content based on notification type
-			switch (type) {
+		switch (type) {
 			case "absence_request_submitted":
 				if (metadata) {
 					templateKey = "absence-request-submitted";

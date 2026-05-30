@@ -17,9 +17,8 @@ export {
 	storeOrgSecret,
 	storeOrgSecrets,
 } from "./secrets";
-
+export type { SecretStoreStatus } from "./status";
 export {
 	getSecretStoreStatus,
 	invalidateSecretStoreStatusCache,
 } from "./status";
-export type { SecretStoreStatus } from "./status";

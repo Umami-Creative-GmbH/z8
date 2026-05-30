@@ -7,9 +7,7 @@ export type ServerActionResult<T> =
 	| { success: true; data: T }
 	| { success: false; error: string; code?: string; holidayName?: string };
 
-export function toServerActionResult<T>(
-	exit: Exit.Exit<T, AnyAppError>,
-): ServerActionResult<T> {
+export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): ServerActionResult<T> {
 	return Exit.match(exit, {
 		onFailure: (cause) => {
 			// Extract defect or failure from cause
@@ -20,9 +18,7 @@ export function toServerActionResult<T>(
 
 			const error = defect ?? failure ?? cause;
 			const taggedError =
-				error && typeof error === "object" && "_tag" in error
-					? (error as AnyAppError)
-					: null;
+				error && typeof error === "object" && "_tag" in error ? (error as AnyAppError) : null;
 			const isBuildPhase = env.NEXT_PHASE === "phase-production-build";
 			const isCi = env.CI === "true";
 			const suppressExpectedAuthErrorLog =

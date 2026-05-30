@@ -1628,9 +1628,7 @@ async function sendOrganizationDeletionNotifications(
 
 	// Filter to only admins and owners
 	const typedAdminMembers = adminMembers as unknown as MemberWithUser[];
-	const adminsAndOwners = typedAdminMembers.filter(
-		(m) => m.role === "admin" || m.role === "owner",
-	);
+	const adminsAndOwners = typedAdminMembers.filter((m) => m.role === "admin" || m.role === "owner");
 
 	const appUrl = await getOrganizationBaseUrl(organizationId);
 	const recoveryUrl = `${appUrl}/settings/organizations`;

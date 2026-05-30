@@ -4,11 +4,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-	generateAvatarDataUri,
-	getInitials,
-	type UserAvatarGender,
-} from "@/lib/avatar";
+import { generateAvatarDataUri, getInitials, type UserAvatarGender } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 
 const sizeConfig = {
@@ -93,16 +89,9 @@ export function UserAvatar({
 }: UserAvatarProps) {
 	const { t } = useTranslate();
 	const [isLoading, setIsLoading] = useState(true);
-	const {
-		class: sizeClass,
-		pixels,
-		spinner: spinnerClass,
-		badge: badgeClass,
-	} = sizeConfig[size];
+	const { class: sizeClass, pixels, spinner: spinnerClass, badge: badgeClass } = sizeConfig[size];
 	const shapeClass = shapeConfig[shape];
-	const clockStatusBadge = showClockStatus
-		? getClockStatusBadge(clockStatus, t)
-		: null;
+	const clockStatusBadge = showClockStatus ? getClockStatusBadge(clockStatus, t) : null;
 
 	// Generate DiceBear fallback - memoized for performance
 	// Using 2x pixels for retina displays
@@ -121,12 +110,7 @@ export function UserAvatar({
 	return (
 		<span className="relative inline-flex shrink-0">
 			<Avatar
-				className={cn(
-					sizeClass,
-					shapeClass,
-					bordered && "border-2 border-background",
-					className,
-				)}
+				className={cn(sizeClass, shapeClass, bordered && "border-2 border-background", className)}
 			>
 				<AvatarImage
 					src={primarySrc}
@@ -136,9 +120,7 @@ export function UserAvatar({
 				/>
 				<AvatarFallback className={cn(shapeClass, "bg-muted")}>
 					{isLoading ? (
-						<IconLoader2
-							className={cn(spinnerClass, "animate-spin text-muted-foreground")}
-						/>
+						<IconLoader2 className={cn(spinnerClass, "animate-spin text-muted-foreground")} />
 					) : (
 						initials
 					)}

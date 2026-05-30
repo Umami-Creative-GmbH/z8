@@ -4,8 +4,8 @@
  * Handles S3 upload and email notification delivery for scheduled exports.
  */
 import { DateTime } from "luxon";
-import { createLogger } from "@/lib/logger";
 import { sendEmail } from "@/lib/email/email-service";
+import { createLogger } from "@/lib/logger";
 import { getPresignedUrl, uploadExport } from "@/lib/storage/export-s3-client";
 import type {
 	CalculatedDateRange,
@@ -71,7 +71,7 @@ export class DeliveryService {
 
 		try {
 			// Determine S3 key and URL
-			let s3Key = exportResult.s3Key;
+			const s3Key = exportResult.s3Key;
 			let s3Url = exportResult.s3Url;
 
 			// If export result doesn't have S3 info but we need it, generate it
@@ -88,10 +88,7 @@ export class DeliveryService {
 			result.s3Url = s3Url;
 
 			// Send emails if configured
-			if (
-				deliveryConfig.method === "email_only" ||
-				deliveryConfig.method === "s3_and_email"
-			) {
+			if (deliveryConfig.method === "email_only" || deliveryConfig.method === "s3_and_email") {
 				const emailResult = await this.sendNotificationEmails({
 					organizationId,
 					scheduleName,
@@ -131,7 +128,15 @@ export class DeliveryService {
 		failed: number;
 		errors: Array<{ recipient: string; error: string; timestamp: string }>;
 	}> {
-		const { organizationId, scheduleName, dateRange, recipients, downloadUrl, recordCount, subjectTemplate } = params;
+		const {
+			organizationId,
+			scheduleName,
+			dateRange,
+			recipients,
+			downloadUrl,
+			recordCount,
+			subjectTemplate,
+		} = params;
 
 		const result = {
 			sent: 0,
@@ -183,10 +188,7 @@ export class DeliveryService {
 	/**
 	 * Render email subject from template
 	 */
-	private renderSubject(
-		template: string | undefined,
-		variables: Record<string, string>,
-	): string {
+	private renderSubject(template: string | undefined, variables: Record<string, string>): string {
 		const defaultTemplate = "Scheduled Export: {scheduleName} ({dateRange})";
 		const finalTemplate = template || defaultTemplate;
 
@@ -200,7 +202,8 @@ export class DeliveryService {
 	 * Render email HTML content
 	 */
 	private renderEmailHtml(data: EmailTemplateData): string {
-		const { scheduleName, dateRangeStart, dateRangeEnd, downloadUrl, recordCount, expiresAt } = data;
+		const { scheduleName, dateRangeStart, dateRangeEnd, downloadUrl, recordCount, expiresAt } =
+			data;
 
 		// Escape user-controlled data to prevent XSS
 		const safeScheduleName = escapeHtml(scheduleName);
@@ -237,17 +240,25 @@ export class DeliveryService {
     <div class="info-value">${safeDateRangeStart} to ${safeDateRangeEnd}</div>
   </div>
 
-  ${recordCount !== undefined ? `
+  ${
+		recordCount !== undefined
+			? `
   <div class="info-row">
     <div class="info-label">Records</div>
     <div class="info-value">${recordCount.toLocaleString()}</div>
   </div>
-  ` : ''}
+  `
+			: ""
+	}
 
-  ${downloadUrl ? `
+  ${
+		downloadUrl
+			? `
   <a href="${escapeHtml(downloadUrl)}" class="button">Download Export</a>
   <p class="expiry">This download link will expire on ${safeExpiresAt}.</p>
-  ` : ''}
+  `
+			: ""
+	}
 
   <div class="footer">
     This is an automated email from your scheduled export configuration.

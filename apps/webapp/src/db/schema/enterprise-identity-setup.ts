@@ -47,15 +47,21 @@ export const enterpriseIdentitySetup = pgTable(
 
 		ssoTest: jsonb("sso_test")
 			.$type<EnterpriseIdentitySetupState["ssoTest"]>()
-			.default(sql`'{"status":"not-run","testEmail":null,"providerId":null,"checkedAt":null,"error":null}'::jsonb`)
+			.default(
+				sql`'{"status":"not-run","testEmail":null,"providerId":null,"checkedAt":null,"error":null}'::jsonb`,
+			)
 			.notNull(),
 		scim: jsonb("scim")
 			.$type<EnterpriseIdentitySetupState["scim"]>()
-			.default(sql`'{"enabled":false,"providerId":null,"verified":false,"lastCheckedAt":null,"error":null}'::jsonb`)
+			.default(
+				sql`'{"enabled":false,"providerId":null,"verified":false,"lastCheckedAt":null,"error":null}'::jsonb`,
+			)
 			.notNull(),
 		enforcement: jsonb("enforcement")
 			.$type<EnterpriseIdentitySetupState["enforcement"]>()
-			.default(sql`'{"ssoRequired":false,"domainRestrictionEnabled":false,"inviteRestrictionEnabled":false}'::jsonb`)
+			.default(
+				sql`'{"ssoRequired":false,"domainRestrictionEnabled":false,"inviteRestrictionEnabled":false}'::jsonb`,
+			)
 			.notNull(),
 		defaultRoleTemplateId: uuid("default_role_template_id").references(() => roleTemplate.id, {
 			onDelete: "set null",

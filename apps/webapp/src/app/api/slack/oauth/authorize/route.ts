@@ -15,9 +15,9 @@ import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { slackOAuthState } from "@/db/schema";
+import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { createLogger } from "@/lib/logger";
-import { env } from "@/env";
 
 const logger = createLogger("SlackOAuthAuthorize");
 
@@ -45,30 +45,19 @@ export async function POST(request: NextRequest) {
 		}
 
 		if (!SLACK_CLIENT_ID) {
-			return NextResponse.json(
-				{ error: "Slack integration is not configured" },
-				{ status: 503 },
-			);
+			return NextResponse.json({ error: "Slack integration is not configured" }, { status: 503 });
 		}
 		const { organizationId } = body;
 
 		if (!organizationId) {
-			return NextResponse.json(
-				{ error: "organizationId is required" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
 		}
 
 		// Verify user is an admin member of this organization
 		const [membership] = await db
 			.select()
 			.from(member)
-			.where(
-				and(
-					eq(member.userId, session.user.id),
-					eq(member.organizationId, organizationId),
-				),
-			)
+			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
 			.limit(1);
 
 		if (!membership || (membership.role !== "admin" && membership.role !== "owner")) {
@@ -98,10 +87,7 @@ export async function POST(request: NextRequest) {
 		authUrl.searchParams.set("redirect_uri", redirectUri);
 		authUrl.searchParams.set("state", stateToken);
 
-		logger.info(
-			{ organizationId, userId: session.user.id },
-			"Slack OAuth flow started",
-		);
+		logger.info({ organizationId, userId: session.user.id }, "Slack OAuth flow started");
 
 		return NextResponse.json({
 			authUrl: authUrl.toString(),
@@ -109,9 +95,6 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		logger.error({ error }, "Failed to start Slack OAuth flow");
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

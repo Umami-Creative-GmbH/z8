@@ -663,10 +663,7 @@ describe("POST /api/time-entries", () => {
 
 		expect(response.status).toBe(400);
 		expect(await response.json()).toEqual({ error: "Cannot assign to this work category" });
-		expect(mockState.employeeHasAccessToCategory).toHaveBeenCalledWith(
-			"employee-1",
-			"category-1",
-		);
+		expect(mockState.employeeHasAccessToCategory).toHaveBeenCalledWith("employee-1", "category-1");
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
 

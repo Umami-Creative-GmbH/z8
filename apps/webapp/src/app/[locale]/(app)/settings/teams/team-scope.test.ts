@@ -68,8 +68,16 @@ describe("team scope helpers", () => {
 		expect(surface.canAccessOrganizationAdminSurface).toBe(true);
 		expect(surface.canCreateTeams).toBe(true);
 		expect(surface.teams).toEqual([
-			expect.objectContaining({ id: TEAM_ALPHA.id, canManageMembers: true, canManageSettings: true }),
-			expect.objectContaining({ id: TEAM_BRAVO.id, canManageMembers: true, canManageSettings: true }),
+			expect.objectContaining({
+				id: TEAM_ALPHA.id,
+				canManageMembers: true,
+				canManageSettings: true,
+			}),
+			expect.objectContaining({
+				id: TEAM_BRAVO.id,
+				canManageMembers: true,
+				canManageSettings: true,
+			}),
 		]);
 	});
 

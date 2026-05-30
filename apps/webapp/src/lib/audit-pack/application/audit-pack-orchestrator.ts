@@ -1,16 +1,10 @@
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
-import {
-	auditLog,
-	approvalRequest,
-	auditPackRequest,
-	db,
-	timeEntry,
-} from "@/db";
+import { approvalRequest, auditLog, type auditPackRequest, db, timeEntry } from "@/db";
 import { auditExportOrchestrator, type HardenExportResult } from "@/lib/audit-export";
-import { assembleAuditPackZip } from "../domain/bundle-assembler";
 import { buildApprovalEvidence } from "../domain/approval-evidence-builder";
 import { buildAuditTimeline } from "../domain/audit-timeline-builder";
+import { assembleAuditPackZip } from "../domain/bundle-assembler";
 import { buildCorrectionClosure } from "../domain/correction-lineage-builder";
 import { buildEntryChainEvidence } from "../domain/entry-chain-builder";
 import type { CorrectionLinkNode } from "../domain/types";
@@ -73,7 +67,10 @@ export interface AuditPackRepository {
 export interface AuditPackOrchestratorDependencies {
 	collect(input: GenerateAuditPackRequestInput): Promise<unknown>;
 	expandLineage(collected: unknown, input: GenerateAuditPackRequestInput): Promise<unknown>;
-	assemble(expanded: unknown, input: GenerateAuditPackRequestInput): Promise<AuditPackAssembledPayload>;
+	assemble(
+		expanded: unknown,
+		input: GenerateAuditPackRequestInput,
+	): Promise<AuditPackAssembledPayload>;
 	harden(
 		assembled: AuditPackAssembledPayload,
 		input: GenerateAuditPackRequestInput,
@@ -167,7 +164,11 @@ export class AuditPackOrchestrator {
 			await this.repository.setStatus({ requestId, organizationId, status: STATUS_COLLECTING });
 			const collected = await this.dependencies.collect(input);
 
-			await this.repository.setStatus({ requestId, organizationId, status: STATUS_LINEAGE_EXPANDING });
+			await this.repository.setStatus({
+				requestId,
+				organizationId,
+				status: STATUS_LINEAGE_EXPANDING,
+			});
 			const expanded = await this.dependencies.expandLineage(collected, input);
 
 			await this.repository.setStatus({ requestId, organizationId, status: STATUS_ASSEMBLING });
@@ -416,7 +417,7 @@ const defaultDependencies: AuditPackOrchestratorDependencies = {
 				const approvedAt =
 					approval.status === "pending"
 						? approval.createdAt
-						: approval.approvedAt ?? approval.updatedAt ?? approval.createdAt;
+						: (approval.approvedAt ?? approval.updatedAt ?? approval.createdAt);
 
 				return {
 					id: approval.id,
@@ -538,4 +539,7 @@ const defaultDependencies: AuditPackOrchestratorDependencies = {
 	},
 };
 
-export const auditPackOrchestrator = new AuditPackOrchestrator(defaultRepository, defaultDependencies);
+export const auditPackOrchestrator = new AuditPackOrchestrator(
+	defaultRepository,
+	defaultDependencies,
+);

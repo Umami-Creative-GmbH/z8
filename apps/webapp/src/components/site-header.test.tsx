@@ -48,13 +48,13 @@ describe("SiteHeader", () => {
 		render(<SiteHeader />);
 
 		const buttons = screen.getAllByRole("button").map((button) => button.textContent);
-			expect(buttons).toEqual([
-				"Toggle sidebar",
-				"Customize dashboard",
-				"Timezone",
-				"Clock In",
-				"Notifications",
-			]);
+		expect(buttons).toEqual([
+			"Toggle sidebar",
+			"Customize dashboard",
+			"Timezone",
+			"Clock In",
+			"Notifications",
+		]);
 	});
 
 	it("does not show the dashboard customize trigger outside the dashboard route", () => {

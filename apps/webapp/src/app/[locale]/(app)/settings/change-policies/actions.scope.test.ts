@@ -24,14 +24,53 @@ const mockState = vi.hoisted(() => ({
 		{ id: "team-other", organizationId: "org-1", name: "Other Team" },
 	],
 	employeeRows: [
-		{ id: "employee-managed", organizationId: "org-1", firstName: "Mina", lastName: "Miller", isActive: true, teamId: "team-managed" },
-		{ id: "employee-fallback", organizationId: "org-1", firstName: "Fall", lastName: "Back", isActive: true, teamId: null },
-		{ id: "employee-other", organizationId: "org-1", firstName: "Otto", lastName: "Other", isActive: true, teamId: "team-other" },
+		{
+			id: "employee-managed",
+			organizationId: "org-1",
+			firstName: "Mina",
+			lastName: "Miller",
+			isActive: true,
+			teamId: "team-managed",
+		},
+		{
+			id: "employee-fallback",
+			organizationId: "org-1",
+			firstName: "Fall",
+			lastName: "Back",
+			isActive: true,
+			teamId: null,
+		},
+		{
+			id: "employee-other",
+			organizationId: "org-1",
+			firstName: "Otto",
+			lastName: "Other",
+			isActive: true,
+			teamId: "team-other",
+		},
 	],
 	policyRows: [
-		{ id: "policy-org", organizationId: "org-1", name: "Org Default", isActive: true, createdAt: new Date("2026-01-01T00:00:00.000Z") },
-		{ id: "policy-team", organizationId: "org-1", name: "Managed Team Policy", isActive: true, createdAt: new Date("2026-01-02T00:00:00.000Z") },
-		{ id: "policy-other", organizationId: "org-1", name: "Other Team Policy", isActive: true, createdAt: new Date("2026-01-03T00:00:00.000Z") },
+		{
+			id: "policy-org",
+			organizationId: "org-1",
+			name: "Org Default",
+			isActive: true,
+			createdAt: new Date("2026-01-01T00:00:00.000Z"),
+		},
+		{
+			id: "policy-team",
+			organizationId: "org-1",
+			name: "Managed Team Policy",
+			isActive: true,
+			createdAt: new Date("2026-01-02T00:00:00.000Z"),
+		},
+		{
+			id: "policy-other",
+			organizationId: "org-1",
+			name: "Other Team Policy",
+			isActive: true,
+			createdAt: new Date("2026-01-03T00:00:00.000Z"),
+		},
 	],
 	assignmentRows: [
 		{
@@ -148,11 +187,11 @@ vi.mock("@/db/schema", () => ({
 		policyId: "policyId",
 		$inferSelect: {},
 	},
-		employee: {
-			id: "id",
-			organizationId: "organizationId",
-			teamId: "teamId",
-			isActive: "isActive",
+	employee: {
+		id: "id",
+		organizationId: "organizationId",
+		teamId: "teamId",
+		isActive: "isActive",
 		firstName: "firstName",
 		lastName: "lastName",
 		$inferSelect: {},
@@ -213,7 +252,9 @@ vi.mock("../employees/employee-action-utils", async () => {
 				},
 			}),
 		),
-		getManagedEmployeeIdsForSettingsActor: vi.fn(() => Effect.succeed(mockState.managedEmployeeIds)),
+		getManagedEmployeeIdsForSettingsActor: vi.fn(() =>
+			Effect.succeed(mockState.managedEmployeeIds),
+		),
 		requireOrgAdminEmployeeSettingsAccess: vi.fn((actor: typeof mockState.actor, options: any) =>
 			actor.accessTier === "orgAdmin"
 				? Effect.void
@@ -224,7 +265,7 @@ vi.mock("../employees/employee-action-utils", async () => {
 							resource: options.resource,
 							action: options.action,
 						}),
-				  ),
+					),
 		),
 	};
 });
@@ -258,7 +299,9 @@ vi.mock("@/lib/effect/runtime", async () => {
 			},
 			employee: {
 				findMany: vi.fn(async () =>
-					mockState.employeeRows.filter((employee) => mockState.managedEmployeeIds.has(employee.id)),
+					mockState.employeeRows.filter((employee) =>
+						mockState.managedEmployeeIds.has(employee.id),
+					),
 				),
 			},
 			teamPermissions: {

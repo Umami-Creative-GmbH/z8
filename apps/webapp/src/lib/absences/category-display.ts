@@ -53,7 +53,11 @@ export function getAbsenceCategoryDisplayName(
 		return t(`settings.absenceCategories.defaults.${category.type}.name`, fallback);
 	}
 
-	return translatedValue(category.nameTranslations, locale) ?? trimmedValue(category.name) ?? category.type;
+	return (
+		translatedValue(category.nameTranslations, locale) ??
+		trimmedValue(category.name) ??
+		category.type
+	);
 }
 
 export function getAbsenceCategoryDisplayDescription(

@@ -1,5 +1,5 @@
-import type { TeamPermissions } from "@/lib/authorization";
 import type { team } from "@/db/schema";
+import type { TeamPermissions } from "@/lib/authorization";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 
 export type ScopedTeam = typeof team.$inferSelect & {
@@ -77,14 +77,15 @@ export function buildTeamSettingsSurface(input: {
 }
 
 export function filterMembersForTeamSettingsSurface<
-	T extends { employee: { id: string; teamId: string | null } | null; teamMemberships?: Array<{ teamId: string }> },
->(
-	input: {
-		members: T[];
-		manageableTeamIds: Set<string>;
-		canAccessOrganizationAdminSurface: boolean;
+	T extends {
+		employee: { id: string; teamId: string | null } | null;
+		teamMemberships?: Array<{ teamId: string }>;
 	},
-): T[] {
+>(input: {
+	members: T[];
+	manageableTeamIds: Set<string>;
+	canAccessOrganizationAdminSurface: boolean;
+}): T[] {
 	if (input.canAccessOrganizationAdminSurface) {
 		return input.members;
 	}

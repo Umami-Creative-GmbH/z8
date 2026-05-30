@@ -6,7 +6,6 @@
  */
 
 import { createLogger } from "@/lib/logger";
-import { getBotTranslate } from "./i18n";
 import { clockInCommand } from "@/lib/teams/commands/clock-in";
 import { clockOutCommand } from "@/lib/teams/commands/clock-out";
 import { clockedInCommand } from "@/lib/teams/commands/clockedin";
@@ -17,6 +16,7 @@ import { openShiftsCommand } from "@/lib/teams/commands/open-shifts";
 import { pendingCommand } from "@/lib/teams/commands/pending";
 import { statusCommand } from "@/lib/teams/commands/status";
 import { whosOutCommand } from "@/lib/teams/commands/whos-out";
+import { getBotTranslate } from "./i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "./types";
 
 const logger = createLogger("BotCommandRegistry");
@@ -35,7 +35,10 @@ const languageCommand: BotCommand = {
 		const t = await getBotTranslate(ctx.locale);
 		return {
 			type: "text",
-			text: t("bot.cmd.language.useInline", "Use /language in Telegram to change your language with inline buttons."),
+			text: t(
+				"bot.cmd.language.useInline",
+				"Use /language in Telegram to change your language with inline buttons.",
+			),
 		};
 	},
 };

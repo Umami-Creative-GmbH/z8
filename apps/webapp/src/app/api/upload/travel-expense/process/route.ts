@@ -1,7 +1,7 @@
 import { DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { and, eq } from "drizzle-orm";
 import { fileTypeFromBuffer } from "file-type";
-import { NextResponse, type NextRequest, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { travelExpenseAttachment, travelExpenseClaim } from "@/db/schema";
 import { getAuthContext } from "@/lib/auth-helpers";

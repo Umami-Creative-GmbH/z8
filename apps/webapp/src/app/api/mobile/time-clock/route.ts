@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { clockIn, clockOut } from "@/app/[locale]/(app)/time-tracking/actions/clocking";
 import {
 	MobileApiError,
 	requireMobileEmployee,
 	requireMobileSessionContext,
 } from "@/app/api/mobile/shared";
-import { clockIn, clockOut } from "@/app/[locale]/(app)/time-tracking/actions/clocking";
 import { isValidIanaTimezone } from "@/lib/time-tracking/timezone-capture";
 import { WORK_LOCATION_TYPES } from "@/lib/time-tracking/work-location";
 
@@ -66,7 +66,10 @@ export async function POST(request: Request) {
 					: await clockOut();
 
 		if (!result.success) {
-			return NextResponse.json({ error: result.error ?? "Time clock action failed" }, { status: 400 });
+			return NextResponse.json(
+				{ error: result.error ?? "Time clock action failed" },
+				{ status: 400 },
+			);
 		}
 
 		return NextResponse.json(result);

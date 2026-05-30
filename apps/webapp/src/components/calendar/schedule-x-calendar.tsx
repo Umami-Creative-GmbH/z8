@@ -485,7 +485,8 @@ export function ScheduleXCalendarWrapper({
 
 				if (isSummaryLoading) {
 					const skeleton = document.createElement("div");
-					skeleton.className = "z8-requirement-header-summary z8-requirement-header-summary--skeleton";
+					skeleton.className =
+						"z8-requirement-header-summary z8-requirement-header-summary--skeleton";
 					skeleton.setAttribute("aria-hidden", "true");
 					headerCell.append(skeleton);
 					continue;

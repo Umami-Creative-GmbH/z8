@@ -10,9 +10,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { FilterSelector, type FilterItem } from "../filter-selector";
-import type { ScheduledExportForm } from "../scheduled-export-dialog";
 import type { DateRangeStrategy } from "@/lib/scheduled-exports/domain/types";
+import { type FilterItem, FilterSelector } from "../filter-selector";
+import type { ScheduledExportForm } from "../scheduled-export-dialog";
 
 interface StepFiltersProps {
 	form: ScheduledExportForm;
@@ -36,22 +36,34 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 		{
 			value: "previous_day",
 			label: t("settings.scheduledExports.dateRange.previousDay", "Previous Day"),
-			description: t("settings.scheduledExports.dateRange.previousDayDesc", "Export data from the previous day"),
+			description: t(
+				"settings.scheduledExports.dateRange.previousDayDesc",
+				"Export data from the previous day",
+			),
 		},
 		{
 			value: "previous_week",
 			label: t("settings.scheduledExports.dateRange.previousWeek", "Previous Week"),
-			description: t("settings.scheduledExports.dateRange.previousWeekDesc", "Export data from the previous week (Mon-Sun)"),
+			description: t(
+				"settings.scheduledExports.dateRange.previousWeekDesc",
+				"Export data from the previous week (Mon-Sun)",
+			),
 		},
 		{
 			value: "previous_month",
 			label: t("settings.scheduledExports.dateRange.previousMonth", "Previous Month"),
-			description: t("settings.scheduledExports.dateRange.previousMonthDesc", "Export data from the previous calendar month"),
+			description: t(
+				"settings.scheduledExports.dateRange.previousMonthDesc",
+				"Export data from the previous calendar month",
+			),
 		},
 		{
 			value: "previous_quarter",
 			label: t("settings.scheduledExports.dateRange.previousQuarter", "Previous Quarter"),
-			description: t("settings.scheduledExports.dateRange.previousQuarterDesc", "Export data from the previous quarter"),
+			description: t(
+				"settings.scheduledExports.dateRange.previousQuarterDesc",
+				"Export data from the previous quarter",
+			),
 		},
 	];
 
@@ -93,25 +105,31 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 									<SelectItem key={strategy.value} value={strategy.value}>
 										<div>
 											<div>{strategy.label}</div>
-											<div className="text-xs text-muted-foreground">
-												{strategy.description}
-											</div>
+											<div className="text-xs text-muted-foreground">{strategy.description}</div>
 										</div>
 									</SelectItem>
 								))}
 							</SelectContent>
 						</Select>
 						<p id="date-range-hint" className="text-xs text-muted-foreground">
-							{t("settings.scheduledExports.filters.dateRangeHint", "The date range is calculated automatically based on when the export runs")}
+							{t(
+								"settings.scheduledExports.filters.dateRangeHint",
+								"The date range is calculated automatically based on when the export runs",
+							)}
 						</p>
 					</div>
 				)}
 			</form.Field>
 
 			<div className="space-y-2">
-				<Label>{t("settings.scheduledExports.filters.filtersOptional", "Filters (Optional)")}</Label>
+				<Label>
+					{t("settings.scheduledExports.filters.filtersOptional", "Filters (Optional)")}
+				</Label>
 				<p className="text-sm text-muted-foreground">
-					{t("settings.scheduledExports.filters.filtersHint", "Leave empty to include all employees, teams, and projects")}
+					{t(
+						"settings.scheduledExports.filters.filtersHint",
+						"Leave empty to include all employees, teams, and projects",
+					)}
 				</p>
 			</div>
 
@@ -138,10 +156,23 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 									selectedIds={employeeIds}
 									onSelectionChange={(ids) => updateFilter("employeeIds", ids)}
 									allLabel={t("settings.scheduledExports.filters.allEmployees", "All Employees")}
-									selectedLabel={(count) => t("settings.scheduledExports.filters.selectedCount", "{count} selected", { count })}
-									emptyMessage={t("settings.scheduledExports.filters.noEmployees", "No employees found")}
-									clearLabel={t("settings.scheduledExports.filters.clearSelection", "Clear Selection")}
-									ariaLabel={t("settings.scheduledExports.filters.selectEmployees", "Select employees to filter")}
+									selectedLabel={(count) =>
+										t("settings.scheduledExports.filters.selectedCount", "{count} selected", {
+											count,
+										})
+									}
+									emptyMessage={t(
+										"settings.scheduledExports.filters.noEmployees",
+										"No employees found",
+									)}
+									clearLabel={t(
+										"settings.scheduledExports.filters.clearSelection",
+										"Clear Selection",
+									)}
+									ariaLabel={t(
+										"settings.scheduledExports.filters.selectEmployees",
+										"Select employees to filter",
+									)}
 								/>
 
 								<FilterSelector
@@ -150,10 +181,20 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 									selectedIds={teamIds}
 									onSelectionChange={(ids) => updateFilter("teamIds", ids)}
 									allLabel={t("settings.scheduledExports.filters.allTeams", "All Teams")}
-									selectedLabel={(count) => t("settings.scheduledExports.filters.selectedCount", "{count} selected", { count })}
+									selectedLabel={(count) =>
+										t("settings.scheduledExports.filters.selectedCount", "{count} selected", {
+											count,
+										})
+									}
 									emptyMessage={t("settings.scheduledExports.filters.noTeams", "No teams found")}
-									clearLabel={t("settings.scheduledExports.filters.clearSelection", "Clear Selection")}
-									ariaLabel={t("settings.scheduledExports.filters.selectTeams", "Select teams to filter")}
+									clearLabel={t(
+										"settings.scheduledExports.filters.clearSelection",
+										"Clear Selection",
+									)}
+									ariaLabel={t(
+										"settings.scheduledExports.filters.selectTeams",
+										"Select teams to filter",
+									)}
 								/>
 
 								<FilterSelector
@@ -162,10 +203,23 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 									selectedIds={projectIds}
 									onSelectionChange={(ids) => updateFilter("projectIds", ids)}
 									allLabel={t("settings.scheduledExports.filters.allProjects", "All Projects")}
-									selectedLabel={(count) => t("settings.scheduledExports.filters.selectedCount", "{count} selected", { count })}
-									emptyMessage={t("settings.scheduledExports.filters.noProjects", "No projects found")}
-									clearLabel={t("settings.scheduledExports.filters.clearSelection", "Clear Selection")}
-									ariaLabel={t("settings.scheduledExports.filters.selectProjects", "Select projects to filter")}
+									selectedLabel={(count) =>
+										t("settings.scheduledExports.filters.selectedCount", "{count} selected", {
+											count,
+										})
+									}
+									emptyMessage={t(
+										"settings.scheduledExports.filters.noProjects",
+										"No projects found",
+									)}
+									clearLabel={t(
+										"settings.scheduledExports.filters.clearSelection",
+										"Clear Selection",
+									)}
+									ariaLabel={t(
+										"settings.scheduledExports.filters.selectProjects",
+										"Select projects to filter",
+									)}
 								/>
 							</>
 						);

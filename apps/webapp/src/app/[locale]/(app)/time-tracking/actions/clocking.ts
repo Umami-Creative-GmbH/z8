@@ -18,11 +18,8 @@ import {
 	resolveFallbackTimezoneCapture,
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
-import {
-	isWorkLocationType,
-	type WorkLocationType,
-} from "@/lib/time-tracking/work-location";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/work-location";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { createClockOutApprovalRequest, createManualEntryApprovalRequest } from "./approvals";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
@@ -78,9 +75,7 @@ async function resolveManualTimeEntryTarget(params: {
 
 	const requesterRole = currentEmployee.role;
 	const canTargetOtherEmployees =
-		requesterRole === "admin" ||
-		requesterRole === "manager" ||
-		sessionUser.role === "admin";
+		requesterRole === "admin" || requesterRole === "manager" || sessionUser.role === "admin";
 	if (!canTargetOtherEmployees) {
 		return { success: false, error: MANUAL_ENTRY_TARGET_AUTH_ERROR };
 	}
@@ -152,7 +147,10 @@ async function markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
 	try {
 		await markEmployeeWorkBalanceDirty(input);
 	} catch (error) {
-		logger.error({ error, ...context }, "Failed to mark work balance dirty after manual time entry");
+		logger.error(
+			{ error, ...context },
+			"Failed to mark work balance dirty after manual time entry",
+		);
 	}
 }
 

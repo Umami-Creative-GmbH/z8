@@ -47,7 +47,13 @@ describe("time tracking approval requests", () => {
 		mockState.findManagerLinks.mockResolvedValue([]);
 		mockState.findEmployees.mockResolvedValue([
 			{ id: "emp-1", userId: "user-1", organizationId: "org-1", isActive: true, role: "employee" },
-			{ id: "manager-1", userId: "manager-user-1", organizationId: "org-1", isActive: true, role: "manager" },
+			{
+				id: "manager-1",
+				userId: "manager-user-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "manager",
+			},
 		]);
 		mockState.insertValues.mockResolvedValue(undefined);
 	});
@@ -60,7 +66,9 @@ describe("time tracking approval requests", () => {
 				name: "Broken time policy",
 				isActive: true,
 				priority: 1,
-				conditions: [{ conditionType: "approval_type", operator: "equals", valueJson: "time_entry" }],
+				conditions: [
+					{ conditionType: "approval_type", operator: "equals", valueJson: "time_entry" },
+				],
 				stages: [
 					{
 						id: "stage-1",

@@ -165,9 +165,10 @@ export function normalizeHiddenWidgets(hiddenWidgets: string[] = []): WidgetId[]
 /**
  * Normalizes saved dashboard layout preferences with order and visibility state.
  */
-export function normalizeWidgetLayout(
-	layout: DashboardWidgetOrder | null | undefined,
-): Omit<Required<DashboardWidgetOrder>, "hidden" | "order" | "version"> & {
+export function normalizeWidgetLayout(layout: DashboardWidgetOrder | null | undefined): Omit<
+	Required<DashboardWidgetOrder>,
+	"hidden" | "order" | "version"
+> & {
 	order: WidgetId[];
 	hidden: WidgetId[];
 	version: 1;

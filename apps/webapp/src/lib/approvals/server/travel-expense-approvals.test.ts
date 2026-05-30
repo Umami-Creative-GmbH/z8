@@ -59,7 +59,7 @@ import {
 	buildTravelExpenseApprovalPolicyContext,
 	createTravelExpenseApprovalWorkflow,
 	notifyTravelExpenseRequesterAfterDecision,
-	notifyTravelExpenseRequesterAfterDecisionForApprover,
+	type notifyTravelExpenseRequesterAfterDecisionForApprover,
 	persistTravelExpenseDecision,
 	preflightTravelExpenseDecision,
 } from "@/lib/approvals/server/travel-expense-approvals";
@@ -75,7 +75,13 @@ function createPolicyResolutionDbService(policies: unknown[]) {
 				employeeGroup: { findMany: vi.fn().mockResolvedValue([]) },
 				employee: {
 					findMany: vi.fn().mockResolvedValue([
-						{ id: "emp-requester", userId: "user-requester", organizationId: "org-1", isActive: true, role: "employee" },
+						{
+							id: "emp-requester",
+							userId: "user-requester",
+							organizationId: "org-1",
+							isActive: true,
+							role: "employee",
+						},
 						{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
 					]),
 				},
@@ -207,9 +213,9 @@ describe("persistTravelExpenseDecision", () => {
 		expectTypeOf<ReturnType<typeof notifyTravelExpenseRequesterAfterDecision>>().toEqualTypeOf<
 			Effect.Effect<void, never, never>
 		>();
-		expectTypeOf<ReturnType<typeof notifyTravelExpenseRequesterAfterDecisionForApprover>>().toEqualTypeOf<
-			Effect.Effect<void, never, never>
-		>();
+		expectTypeOf<
+			ReturnType<typeof notifyTravelExpenseRequesterAfterDecisionForApprover>
+		>().toEqualTypeOf<Effect.Effect<void, never, never>>();
 	});
 
 	it("keeps the submitted-status guard on the write path", async () => {

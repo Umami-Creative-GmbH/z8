@@ -109,44 +109,114 @@ export async function getWorkPeriodsForMonth(
 		// Return individual work periods as timed events (not aggregated)
 		// This allows the calendar to show work blocks at specific times
 		// Breaks appear as gaps between the green work blocks
-		return periods.map(({ period, user, clockInEntry, clockOutEntry, surcharge, project: proj }) => {
-			const notes = clockOutEntry?.notes?.trim();
-			const projectPrefix = proj?.name ? `[${proj.name}] ` : "";
+		return periods.map(
+			({ period, user, clockInEntry, clockOutEntry, surcharge, project: proj }) => {
+				const notes = clockOutEntry?.notes?.trim();
+				const projectPrefix = proj?.name ? `[${proj.name}] ` : "";
 
-			// Use project color if available, otherwise default green
-			const eventColor = proj?.color || "#10b981"; // Green (emerald)
+				// Use project color if available, otherwise default green
+				const eventColor = proj?.color || "#10b981"; // Green (emerald)
 
-			// Format start and end times for display
-			const startDT = dateFromDB(period.startTime);
-			const endDT = period.endTime ? dateFromDB(period.endTime) : null;
-			const startTimeFormatted = startDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
-			const endTimeFormatted = endDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
-			const isRunning = period.isActive && !period.endTime;
+				// Format start and end times for display
+				const startDT = dateFromDB(period.startTime);
+				const endDT = period.endTime ? dateFromDB(period.endTime) : null;
+				const startTimeFormatted = startDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
+				const endTimeFormatted = endDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
+				const isRunning = period.isActive && !period.endTime;
 
-			if (isRunning) {
-				const durationMinutes = Math.max(
-					0,
-					Math.floor(nowDT.diff(startDT ?? nowDT, "minutes").minutes),
-				);
+				if (isRunning) {
+					const durationMinutes = Math.max(
+						0,
+						Math.floor(nowDT.diff(startDT ?? nowDT, "minutes").minutes),
+					);
+
+					return {
+						id: period.id,
+						type: "work_period" as const,
+						date: period.startTime,
+						endDate: now,
+						title: `${projectPrefix}${user.name} - ${formatDuration(durationMinutes)} (running)`,
+						description: "Running work period",
+						descriptionKey: "calendar.calendar.workPeriod.runningDescription",
+						color: eventColor,
+						metadata: {
+							durationMinutes,
+							employeeName: user.name,
+							startTime: startTimeFormatted,
+							// Project fields (only included if assigned to a project)
+							...(proj && {
+								projectId: proj.id,
+								projectName: proj.name,
+								projectColor: proj.color || undefined,
+							}),
+							// Approval status for change policy enforcement
+							approvalStatus: period.approvalStatus ?? "approved",
+							...(clockInEntry && {
+								clockInUtcOffsetMinutes: clockInEntry.utcOffsetMinutes,
+								clockInTimezone: clockInEntry.timezone || undefined,
+							}),
+							isRunning: true,
+						},
+					};
+				}
+
+				const durationMinutes = period.durationMinutes ?? 0;
+				const surchargeMinutes = surcharge?.surchargeMinutes ?? 0;
+				const totalCreditedMinutes = durationMinutes + surchargeMinutes;
+
+				// Format duration, including surcharge if present
+				const baseDuration = formatDuration(durationMinutes);
+				const duration =
+					surchargeMinutes > 0
+						? `${baseDuration} (+${formatDuration(surchargeMinutes)})`
+						: baseDuration;
+
+				// Format: "[Project] Name - 4h 30m (+1h)" or "Name - 4h 30m: Working on report"
+				const title = notes
+					? `${projectPrefix}${user.name} - ${duration}: ${notes}`
+					: `${projectPrefix}${user.name} - ${duration}`;
+
+				// Parse surcharge breakdown from calculation details
+				let surchargeBreakdown: SurchargeBreakdown[] | undefined;
+				if (surcharge?.calculationDetails) {
+					const details = surcharge.calculationDetails as SurchargeCalculationDetails;
+					if (details.rulesApplied && details.rulesApplied.length > 0) {
+						surchargeBreakdown = details.rulesApplied.map((rule) => ({
+							ruleName: rule.ruleName,
+							ruleType: rule.ruleType as SurchargeBreakdown["ruleType"],
+							percentage: rule.percentage,
+							qualifyingMinutes: rule.qualifyingMinutes,
+							surchargeMinutes: rule.surchargeMinutes,
+						}));
+					}
+				}
 
 				return {
 					id: period.id,
 					type: "work_period" as const,
 					date: period.startTime,
-					endDate: now,
-					title: `${projectPrefix}${user.name} - ${formatDuration(durationMinutes)} (running)`,
-					description: "Running work period",
-					descriptionKey: "calendar.calendar.workPeriod.runningDescription",
+					endDate: period.endTime ?? undefined,
+					title,
+					description: notes || "Work period",
+					descriptionKey: notes ? undefined : "calendar.calendar.workPeriod.fallbackDescription",
 					color: eventColor,
 					metadata: {
 						durationMinutes,
 						employeeName: user.name,
+						notes: notes || undefined,
 						startTime: startTimeFormatted,
+						endTime: endTimeFormatted,
 						// Project fields (only included if assigned to a project)
 						...(proj && {
 							projectId: proj.id,
 							projectName: proj.name,
 							projectColor: proj.color || undefined,
+						}),
+						// Surcharge fields (only included if surcharge calculation exists)
+						...(surcharge && {
+							surchargeMinutes,
+							totalCreditedMinutes,
+							surchargeBreakdown,
 						}),
 						// Approval status for change policy enforcement
 						approvalStatus: period.approvalStatus ?? "approved",
@@ -154,82 +224,14 @@ export async function getWorkPeriodsForMonth(
 							clockInUtcOffsetMinutes: clockInEntry.utcOffsetMinutes,
 							clockInTimezone: clockInEntry.timezone || undefined,
 						}),
-						isRunning: true,
+						...(clockOutEntry && {
+							clockOutUtcOffsetMinutes: clockOutEntry.utcOffsetMinutes,
+							clockOutTimezone: clockOutEntry.timezone || undefined,
+						}),
 					},
 				};
-			}
-
-			const durationMinutes = period.durationMinutes ?? 0;
-			const surchargeMinutes = surcharge?.surchargeMinutes ?? 0;
-			const totalCreditedMinutes = durationMinutes + surchargeMinutes;
-
-			// Format duration, including surcharge if present
-			const baseDuration = formatDuration(durationMinutes);
-			const duration =
-				surchargeMinutes > 0
-					? `${baseDuration} (+${formatDuration(surchargeMinutes)})`
-					: baseDuration;
-
-			// Format: "[Project] Name - 4h 30m (+1h)" or "Name - 4h 30m: Working on report"
-			const title = notes
-				? `${projectPrefix}${user.name} - ${duration}: ${notes}`
-				: `${projectPrefix}${user.name} - ${duration}`;
-
-			// Parse surcharge breakdown from calculation details
-			let surchargeBreakdown: SurchargeBreakdown[] | undefined;
-			if (surcharge?.calculationDetails) {
-				const details = surcharge.calculationDetails as SurchargeCalculationDetails;
-				if (details.rulesApplied && details.rulesApplied.length > 0) {
-					surchargeBreakdown = details.rulesApplied.map((rule) => ({
-						ruleName: rule.ruleName,
-						ruleType: rule.ruleType as SurchargeBreakdown["ruleType"],
-						percentage: rule.percentage,
-						qualifyingMinutes: rule.qualifyingMinutes,
-						surchargeMinutes: rule.surchargeMinutes,
-					}));
-				}
-			}
-
-			return {
-				id: period.id,
-				type: "work_period" as const,
-				date: period.startTime,
-				endDate: period.endTime ?? undefined,
-				title,
-				description: notes || "Work period",
-				descriptionKey: notes ? undefined : "calendar.calendar.workPeriod.fallbackDescription",
-				color: eventColor,
-				metadata: {
-					durationMinutes,
-					employeeName: user.name,
-					notes: notes || undefined,
-					startTime: startTimeFormatted,
-					endTime: endTimeFormatted,
-					// Project fields (only included if assigned to a project)
-					...(proj && {
-						projectId: proj.id,
-						projectName: proj.name,
-						projectColor: proj.color || undefined,
-					}),
-					// Surcharge fields (only included if surcharge calculation exists)
-					...(surcharge && {
-						surchargeMinutes,
-						totalCreditedMinutes,
-						surchargeBreakdown,
-					}),
-					// Approval status for change policy enforcement
-					approvalStatus: period.approvalStatus ?? "approved",
-					...(clockInEntry && {
-						clockInUtcOffsetMinutes: clockInEntry.utcOffsetMinutes,
-						clockInTimezone: clockInEntry.timezone || undefined,
-					}),
-					...(clockOutEntry && {
-						clockOutUtcOffsetMinutes: clockOutEntry.utcOffsetMinutes,
-						clockOutTimezone: clockOutEntry.timezone || undefined,
-					}),
-				},
-			};
-		});
+			},
+		);
 	} catch (error) {
 		console.error("Error fetching work periods for calendar:", error);
 		return [];

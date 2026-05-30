@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { DateTime } from "luxon";
+import { describe, expect, it } from "vitest";
 import {
 	normalizePolicyFormValues,
 	type TravelExpensePolicyFormValues,
@@ -22,9 +22,7 @@ describe("normalizePolicyFormValues", () => {
 		expect(normalized.mileageRatePerKm).toBeUndefined();
 		expect(normalized.perDiemRatePerDay).toBeUndefined();
 		expect(normalized.currency).toBe("EUR");
-		expect(DateTime.fromJSDate(normalized.effectiveFrom).toFormat("yyyy-LL-dd")).toBe(
-			"2026-03-01",
-		);
+		expect(DateTime.fromJSDate(normalized.effectiveFrom).toFormat("yyyy-LL-dd")).toBe("2026-03-01");
 	});
 
 	it("parses numeric fields and effectiveTo date", () => {

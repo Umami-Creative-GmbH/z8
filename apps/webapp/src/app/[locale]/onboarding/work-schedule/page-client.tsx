@@ -86,7 +86,10 @@ export default function WorkSchedulePage() {
 
 		if (!result.success) {
 			setLoading(false);
-			toast.error(result.error || t("onboarding.workSchedule.skipError", "Failed to skip work schedule setup"));
+			toast.error(
+				result.error ||
+					t("onboarding.workSchedule.skipError", "Failed to skip work schedule setup"),
+			);
 			return;
 		}
 		push(result.data.nextStep);
@@ -193,7 +196,12 @@ export default function WorkSchedulePage() {
 											disabled={loading}
 										>
 											<SelectTrigger>
-												<SelectValue placeholder={t("onboarding.workSchedule.selectClassification", "Select classification")} />
+												<SelectValue
+													placeholder={t(
+														"onboarding.workSchedule.selectClassification",
+														"Select classification",
+													)}
+												/>
 											</SelectTrigger>
 											<SelectContent>
 												<SelectItem value="daily">

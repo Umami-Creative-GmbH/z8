@@ -2,36 +2,37 @@
  * Payroll Export Service
  * Orchestrates the export process: data fetching, transformation, and file generation
  */
-import { DateTime } from "luxon";
+
 import { eq } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { db, payrollExportJob, payrollExportSyncRecord } from "@/db";
 import { createLogger } from "@/lib/logger";
-import { uploadExport, getPresignedUrl } from "@/lib/storage/export-s3-client";
+import { getPresignedUrl, uploadExport } from "@/lib/storage/export-s3-client";
+import { personioConnector } from "./connectors/personio-connector";
+import { PayrollConnectorRegistry } from "./connectors/registry";
+import { successFactorsConnector } from "./connectors/successfactors-connector";
 import {
-	fetchWorkPeriodsForExport,
+	countWorkPeriods,
 	fetchAbsencesForExport,
+	fetchWorkPeriodsForExport,
 	getPayrollExportConfig,
 	getWageTypeMappings,
-	countWorkPeriods,
 } from "./data-fetcher";
+import { successFactorsFormatter } from "./exporters/successfactors/successfactors-formatter";
+import { workdayConnector } from "./exporters/workday/workday-connector";
 import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
 import { SageLohnFormatter } from "./formatters/sage-lohn-formatter";
-import { personioConnector } from "./connectors/personio-connector";
-import { successFactorsFormatter } from "./exporters/successfactors/successfactors-formatter";
-import { workdayConnector } from "./exporters/workday/workday-connector";
-import { successFactorsConnector } from "./connectors/successfactors-connector";
-import { PayrollConnectorRegistry } from "./connectors/registry";
 import type {
-	IPayrollExportFormatter,
-	IPayrollExporter,
-	PayrollExportFilters,
-	SerializedPayrollExportFilters,
-	ExportResult,
-	ApiExportResult,
-	PayrollExportJobSummary,
-	WorkPeriodData,
 	AbsenceData,
+	ApiExportResult,
+	ExportResult,
+	IPayrollExporter,
+	IPayrollExportFormatter,
+	PayrollExportFilters,
+	PayrollExportJobSummary,
+	SerializedPayrollExportFilters,
+	WorkPeriodData,
 } from "./types";
 
 const logger = createLogger("PayrollExportService");
@@ -167,10 +168,7 @@ export async function createExportJob(params: {
 		})
 		.returning();
 
-	logger.info(
-		{ jobId: job.id, isAsync, workPeriodCount: count },
-		"Payroll export job created",
-	);
+	logger.info({ jobId: job.id, isAsync, workPeriodCount: count }, "Payroll export job created");
 
 	return { jobId: job.id, isAsync };
 }

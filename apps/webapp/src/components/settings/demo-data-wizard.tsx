@@ -227,10 +227,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 		if (includePendingAbsenceApprovals) {
 			activeSteps.push({
 				id: "pending-absence-approvals",
-				label: t(
-					"settings.demo.steps.pendingAbsenceApprovals.label",
-					"Pending Absence Approvals",
-				),
+				label: t("settings.demo.steps.pendingAbsenceApprovals.label", "Pending Absence Approvals"),
 				description: t(
 					"settings.demo.steps.pendingAbsenceApprovals.description",
 					"Creating pending absence approval requests",
@@ -498,9 +495,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 		// Approval testing steps need base time/absence data and run before later optional data.
 		if (!hasError) {
 			const approvalSteps = activeSteps.filter(
-				(s) =>
-					s.id === "pending-absence-approvals" ||
-					s.id === "pending-time-correction-approvals",
+				(s) => s.id === "pending-absence-approvals" || s.id === "pending-time-correction-approvals",
 			);
 			if (approvalSteps.length > 0) {
 				const approvalResults = await Promise.all(
@@ -528,8 +523,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 								return {
 									result: `${d.pendingTimeCorrectionApprovalsCreated} pending approvals`,
 									updates: {
-										pendingTimeCorrectionApprovalsCreated:
-											d.pendingTimeCorrectionApprovalsCreated,
+										pendingTimeCorrectionApprovalsCreated: d.pendingTimeCorrectionApprovalsCreated,
 									},
 								};
 							},
@@ -837,11 +831,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value="all">
-												{t(
-													"settings.demo.form.employees.all",
-													"All employees ({count})",
-													{ count: employees.length },
-												)}
+												{t("settings.demo.form.employees.all", "All employees ({count})", {
+													count: employees.length,
+												})}
 											</SelectItem>
 											<SelectItem value="selected" disabled>
 												{t(
@@ -961,10 +953,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 														max={10}
 														value={teamCount}
 														onChange={(e) => setTeamCount(parseInt(e.target.value, 10) || 4)}
-																className="h-7 w-16 text-xs"
-																onClick={(e) => e.stopPropagation()}
-																onKeyDown={(e) => e.stopPropagation()}
-															/>
+														className="h-7 w-16 text-xs"
+														onClick={(e) => e.stopPropagation()}
+														onKeyDown={(e) => e.stopPropagation()}
+													/>
 												</div>
 											)}
 										</div>
@@ -1013,10 +1005,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 														max={15}
 														value={projectCount}
 														onChange={(e) => setProjectCount(parseInt(e.target.value, 10) || 6)}
-																className="h-7 w-16 text-xs"
-																onClick={(e) => e.stopPropagation()}
-																onKeyDown={(e) => e.stopPropagation()}
-															/>
+														className="h-7 w-16 text-xs"
+														onClick={(e) => e.stopPropagation()}
+														onKeyDown={(e) => e.stopPropagation()}
+													/>
 												</div>
 											)}
 										</div>
@@ -1033,7 +1025,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 										)}
 										onClick={() => setIncludeLocations(!includeLocations)}
 										onKeyDown={(event) =>
-											handleSelectableCardKeyDown(event, () => setIncludeLocations(!includeLocations))
+											handleSelectableCardKeyDown(event, () =>
+												setIncludeLocations(!includeLocations),
+											)
 										}
 									>
 										<Checkbox
@@ -1066,10 +1060,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 														max={10}
 														value={locationCount}
 														onChange={(e) => setLocationCount(parseInt(e.target.value, 10) || 3)}
-																className="h-7 w-16 text-xs"
-																onClick={(e) => e.stopPropagation()}
-																onKeyDown={(e) => e.stopPropagation()}
-															/>
+														className="h-7 w-16 text-xs"
+														onClick={(e) => e.stopPropagation()}
+														onKeyDown={(e) => e.stopPropagation()}
+													/>
 												</div>
 											)}
 										</div>
@@ -1107,11 +1101,11 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 												)}
 											</p>
 											{includeWorkCategories && includeTimeEntries && (
-															<div
-																className="mt-2 flex items-center gap-2"
-																onClick={(e) => e.stopPropagation()}
-																onKeyDown={(e) => e.stopPropagation()}
-															>
+												<div
+													className="mt-2 flex items-center gap-2"
+													onClick={(e) => e.stopPropagation()}
+													onKeyDown={(e) => e.stopPropagation()}
+												>
 													<Checkbox
 														id="assignCategories"
 														checked={assignWorkCategoriesToPeriods}
@@ -1224,7 +1218,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 												? "border-primary bg-primary/5"
 												: "hover:bg-muted/50",
 										)}
-										onClick={() => setIncludePendingAbsenceApprovals(!includePendingAbsenceApprovals)}
+										onClick={() =>
+											setIncludePendingAbsenceApprovals(!includePendingAbsenceApprovals)
+										}
 										onKeyDown={(event) =>
 											handleSelectableCardKeyDown(event, () =>
 												setIncludePendingAbsenceApprovals(!includePendingAbsenceApprovals),
@@ -1265,7 +1261,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 												: "hover:bg-muted/50",
 										)}
 										onClick={() =>
-											setIncludePendingTimeCorrectionApprovals(!includePendingTimeCorrectionApprovals)
+											setIncludePendingTimeCorrectionApprovals(
+												!includePendingTimeCorrectionApprovals,
+											)
 										}
 										onKeyDown={(event) =>
 											handleSelectableCardKeyDown(event, () =>
@@ -1474,11 +1472,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 								</p>
 								<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-500">
 									<li>
-										{t(
-											"settings.demo.generateEmployees.usersCreated",
-											"{count} users created",
-											{ count: employeeResult.usersCreated },
-										)}
+										{t("settings.demo.generateEmployees.usersCreated", "{count} users created", {
+											count: employeeResult.usersCreated,
+										})}
 									</li>
 									<li>
 										{t(
@@ -1571,11 +1567,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 								) : (
 									<>
 										<IconUsers className="size-4" />
-										{t(
-											"settings.demo.generateEmployees.button",
-											"Generate {count} Employees",
-											{ count: employeeCount },
-										)}
+										{t("settings.demo.generateEmployees.button", "Generate {count} Employees", {
+											count: employeeCount,
+										})}
 									</>
 								)}
 							</Button>

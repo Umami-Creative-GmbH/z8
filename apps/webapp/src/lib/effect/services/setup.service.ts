@@ -72,10 +72,7 @@ export class SetupService extends Context.Tag("SetupService")<
 		 */
 		readonly createPlatformAdmin: (
 			input: CreatePlatformAdminInput,
-		) => Effect.Effect<
-			PlatformAdminResult,
-			ValidationError | ConflictError | DatabaseError
-		>;
+		) => Effect.Effect<PlatformAdminResult, ValidationError | ConflictError | DatabaseError>;
 	}
 >() {}
 
@@ -149,9 +146,7 @@ export const SetupServiceLive = Layer.effect(
 							// Acquire advisory lock (prevents concurrent setup operations)
 							// Using a fixed lock key for "platform_setup" operation
 							const SETUP_LOCK_KEY = 1234567890; // Fixed key for setup operation
-							await tx.execute(
-								sql`SELECT pg_advisory_xact_lock(${SETUP_LOCK_KEY})`,
-							);
+							await tx.execute(sql`SELECT pg_advisory_xact_lock(${SETUP_LOCK_KEY})`);
 
 							// Check if any platform admin already exists (within transaction)
 							const [existingAdmin] = await tx

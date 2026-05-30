@@ -59,17 +59,11 @@ export class TimeEntryService extends Context.Tag("TimeEntryService")<
 	{
 		readonly createTimeEntry: (
 			input: CreateTimeEntryInput,
-		) => Effect.Effect<
-			TimeEntry,
-			NotFoundError | ValidationError | DatabaseError
-		>;
+		) => Effect.Effect<TimeEntry, NotFoundError | ValidationError | DatabaseError>;
 
 		readonly createCorrectionEntry: (
 			input: CreateCorrectionInput,
-		) => Effect.Effect<
-			TimeEntry,
-			NotFoundError | ValidationError | DatabaseError
-		>;
+		) => Effect.Effect<TimeEntry, NotFoundError | ValidationError | DatabaseError>;
 
 		readonly getTimeEntries: (
 			input: GetTimeEntriesInput,
@@ -316,9 +310,7 @@ export const TimeEntryServiceLive = Layer.effect(
 									utcOffsetMinutes: input.utcOffsetMinutes,
 									timezone: input.timezone,
 									timezoneSource: input.timezoneSource,
-									...(input.isSuperseded === undefined
-										? {}
-										: { isSuperseded: input.isSuperseded }),
+									...(input.isSuperseded === undefined ? {} : { isSuperseded: input.isSuperseded }),
 								})
 								.returning();
 

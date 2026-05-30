@@ -21,14 +21,9 @@ const getBillingUrl = () => {
 };
 
 const formatStripeTimestamp = (timestamp?: number | null) =>
-	timestamp
-		? DateTime.fromSeconds(timestamp, { zone: "utc" }).toFormat("LLLL d, yyyy")
-		: undefined;
+	timestamp ? DateTime.fromSeconds(timestamp, { zone: "utc" }).toFormat("LLLL d, yyyy") : undefined;
 
-const formatStripeAmount = (
-	amount?: number | null,
-	currency?: string | null,
-) => {
+const formatStripeAmount = (amount?: number | null, currency?: string | null) => {
 	if (amount == null) return undefined;
 
 	try {
@@ -42,25 +37,12 @@ const formatStripeAmount = (
 };
 
 const getCustomerId = (
-	customer:
-		| string
-		| Stripe.Customer
-		| Stripe.DeletedCustomer
-		| null
-		| undefined,
+	customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined,
 ) => (typeof customer === "string" ? customer : customer?.id);
 
 const getCustomerEmailFromObject = (
-	customer:
-		| string
-		| Stripe.Customer
-		| Stripe.DeletedCustomer
-		| null
-		| undefined,
-) =>
-	typeof customer === "object" && customer && "email" in customer
-		? customer.email
-		: undefined;
+	customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined,
+) => (typeof customer === "object" && customer && "email" in customer ? customer.email : undefined);
 
 /**
  * BillingEventsService - Processes Stripe webhook events
@@ -80,9 +62,7 @@ export class BillingEventsService extends Context.Tag("BillingEventsService")<
 		/**
 		 * Check if an event has already been processed
 		 */
-		readonly isEventProcessed: (
-			eventId: string,
-		) => Effect.Effect<boolean, DatabaseError>;
+		readonly isEventProcessed: (eventId: string) => Effect.Effect<boolean, DatabaseError>;
 
 		/**
 		 * Mark an event as processed
@@ -102,16 +82,10 @@ export const BillingEventsServiceLive = Layer.effect(
 		const seatSyncService = yield* SeatSyncService;
 
 		const resolveCustomerEmail = (
-			customer:
-				| string
-				| Stripe.Customer
-				| Stripe.DeletedCustomer
-				| null
-				| undefined,
+			customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined,
 			fallbackEmail?: string | null,
 		): Effect.Effect<string | undefined, never> => {
-			const customerEmail =
-				getCustomerEmailFromObject(customer) ?? fallbackEmail ?? undefined;
+			const customerEmail = getCustomerEmailFromObject(customer) ?? fallbackEmail ?? undefined;
 			if (customerEmail) return Effect.succeed(customerEmail);
 
 			const customerId = getCustomerId(customer);
@@ -120,10 +94,7 @@ export const BillingEventsServiceLive = Layer.effect(
 			return stripeService.getCustomer(customerId).pipe(
 				Effect.match({
 					onFailure: (error) => {
-						logger.warn(
-							{ customerId, error },
-							"Failed to resolve Stripe customer email",
-						);
+						logger.warn({ customerId, error }, "Failed to resolve Stripe customer email");
 						return undefined;
 					},
 					onSuccess: (stripeCustomer) => stripeCustomer.email ?? undefined,
@@ -131,9 +102,7 @@ export const BillingEventsServiceLive = Layer.effect(
 			);
 		};
 
-		const sendBillingEmail = (
-			params: Parameters<typeof sendBillingSystemEmail>[0],
-		) =>
+		const sendBillingEmail = (params: Parameters<typeof sendBillingSystemEmail>[0]) =>
 			Effect.tryPromise({
 				try: () => sendBillingSystemEmail(params),
 				catch: (error) => error,
@@ -170,32 +139,24 @@ export const BillingEventsServiceLive = Layer.effect(
 				const organizationId = session.metadata?.organizationId;
 
 				if (!organizationId || !session.subscription) {
-					logger.warn(
-						{ sessionId: session.id },
-						"Missing organization ID in checkout",
-					);
+					logger.warn({ sessionId: session.id }, "Missing organization ID in checkout");
 					return;
 				}
 
 				// Get subscription ID as string
 				const subscriptionId =
-					typeof session.subscription === "string"
-						? session.subscription
-						: session.subscription.id;
+					typeof session.subscription === "string" ? session.subscription : session.subscription.id;
 
 				// Fetch subscription details from Stripe
 				const stripeSub = yield* stripeService.getSubscription(subscriptionId);
 
 				// Determine billing interval
-				const priceInterval =
-					stripeSub.items.data[0]?.price?.recurring?.interval;
+				const priceInterval = stripeSub.items.data[0]?.price?.recurring?.interval;
 				const billingInterval = priceInterval === "year" ? "year" : "month";
 
 				// Get customer ID
 				const customerId =
-					typeof session.customer === "string"
-						? session.customer
-						: (session.customer?.id ?? "");
+					typeof session.customer === "string" ? session.customer : (session.customer?.id ?? "");
 
 				// Create subscription record
 				yield* subscriptionService.create({
@@ -205,9 +166,7 @@ export const BillingEventsServiceLive = Layer.effect(
 					stripePriceId: stripeSub.items.data[0]?.price?.id ?? "",
 					status: stripeSub.status,
 					billingInterval,
-					trialEnd: stripeSub.trial_end
-						? new Date(stripeSub.trial_end * 1000)
-						: null,
+					trialEnd: stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null,
 					currentPeriodStart: stripeSub.items.data[0]?.current_period_start
 						? new Date(stripeSub.items.data[0].current_period_start * 1000)
 						: new Date(),
@@ -234,8 +193,7 @@ export const BillingEventsServiceLive = Layer.effect(
 			stripeSub: Stripe.Subscription,
 		): Effect.Effect<void, DatabaseError> =>
 			Effect.gen(function* () {
-				const priceInterval =
-					stripeSub.items.data[0]?.price?.recurring?.interval;
+				const priceInterval = stripeSub.items.data[0]?.price?.recurring?.interval;
 				const item = stripeSub.items.data[0];
 
 				yield* subscriptionService.updateFromStripe({
@@ -247,12 +205,8 @@ export const BillingEventsServiceLive = Layer.effect(
 					currentPeriodEnd: item?.current_period_end
 						? new Date(item.current_period_end * 1000)
 						: new Date(),
-					cancelAt: stripeSub.cancel_at
-						? new Date(stripeSub.cancel_at * 1000)
-						: null,
-					canceledAt: stripeSub.canceled_at
-						? new Date(stripeSub.canceled_at * 1000)
-						: null,
+					cancelAt: stripeSub.cancel_at ? new Date(stripeSub.cancel_at * 1000) : null,
+					canceledAt: stripeSub.canceled_at ? new Date(stripeSub.canceled_at * 1000) : null,
 					stripePriceId: item?.price?.id,
 					billingInterval: priceInterval === "year" ? "year" : "month",
 				});
@@ -281,10 +235,7 @@ export const BillingEventsServiceLive = Layer.effect(
 					canceledAt: new Date(),
 				});
 
-				logger.info(
-					{ subscriptionId: stripeSub.id },
-					"Subscription deleted/canceled",
-				);
+				logger.info({ subscriptionId: stripeSub.id }, "Subscription deleted/canceled");
 			});
 
 		const handleInvoicePaymentSucceeded = (
@@ -370,12 +321,7 @@ export const BillingEventsServiceLive = Layer.effect(
 				const customerEmail = yield* resolveCustomerEmail(stripeSub.customer);
 				const trialEndsAt = formatStripeTimestamp(stripeSub.trial_end);
 				const daysRemaining = stripeSub.trial_end
-					? Math.max(
-							0,
-							Math.ceil(
-								(stripeSub.trial_end - DateTime.utc().toSeconds()) / 86_400,
-							),
-						)
+					? Math.max(0, Math.ceil((stripeSub.trial_end - DateTime.utc().toSeconds()) / 86_400))
 					: undefined;
 
 				// This is for sending notifications - could trigger email here
@@ -414,8 +360,7 @@ export const BillingEventsServiceLive = Layer.effect(
 								status: "paused",
 								metadata: {
 									pausedAt: new Date().toISOString(),
-									pauseReason:
-										stripeSub.pause_collection?.behavior ?? "unknown",
+									pauseReason: stripeSub.pause_collection?.behavior ?? "unknown",
 								},
 							})
 							.where(eq(subscription.stripeSubscriptionId, stripeSub.id));
@@ -434,9 +379,7 @@ export const BillingEventsServiceLive = Layer.effect(
 						subscriptionId: stripeSub.id,
 						pauseBehavior: stripeSub.pause_collection?.behavior,
 						resumesAt: stripeSub.pause_collection?.resumes_at
-							? new Date(
-									stripeSub.pause_collection.resumes_at * 1000,
-								).toISOString()
+							? new Date(stripeSub.pause_collection.resumes_at * 1000).toISOString()
 							: null,
 					},
 					"Subscription paused",
@@ -499,14 +442,9 @@ export const BillingEventsServiceLive = Layer.effect(
 				});
 			});
 
-		const handleInvoiceFinalized = (
-			invoice: Stripe.Invoice,
-		): Effect.Effect<void, DatabaseError> =>
+		const handleInvoiceFinalized = (invoice: Stripe.Invoice): Effect.Effect<void, DatabaseError> =>
 			Effect.gen(function* () {
-				const customerEmail = yield* resolveCustomerEmail(
-					invoice.customer,
-					invoice.customer_email,
-				);
+				const customerEmail = yield* resolveCustomerEmail(invoice.customer, invoice.customer_email);
 
 				// Get subscription ID from invoice
 				const invoiceWithSub = invoice as unknown as {
@@ -527,10 +465,7 @@ export const BillingEventsServiceLive = Layer.effect(
 						});
 
 						if (existing) {
-							const existingMetadata = (existing.metadata ?? {}) as Record<
-								string,
-								unknown
-							>;
+							const existingMetadata = (existing.metadata ?? {}) as Record<string, unknown>;
 							await db
 								.update(subscription)
 								.set({
@@ -578,10 +513,7 @@ export const BillingEventsServiceLive = Layer.effect(
 					data: {
 						...baseBillingEmailData(customerEmail),
 						invoiceNumber: invoice.number ?? invoice.id,
-						invoiceAmount: formatStripeAmount(
-							invoice.amount_due,
-							invoice.currency,
-						),
+						invoiceAmount: formatStripeAmount(invoice.amount_due, invoice.currency),
 						amountDue: formatStripeAmount(invoice.amount_due, invoice.currency),
 						dueDate: formatStripeTimestamp(invoice.due_date) ?? "not set",
 						invoiceUrl: invoice.hosted_invoice_url,
@@ -642,10 +574,7 @@ export const BillingEventsServiceLive = Layer.effect(
 							});
 
 							if (existing) {
-								const existingMetadata = (existing.metadata ?? {}) as Record<
-									string,
-									unknown
-								>;
+								const existingMetadata = (existing.metadata ?? {}) as Record<string, unknown>;
 								await db
 									.update(subscription)
 									.set({
@@ -680,14 +609,8 @@ export const BillingEventsServiceLive = Layer.effect(
 					to: customerEmail,
 					data: {
 						...baseBillingEmailData(customerEmail),
-						invoiceAmount: formatStripeAmount(
-							paymentIntent.amount,
-							paymentIntent.currency,
-						),
-						amountDue: formatStripeAmount(
-							paymentIntent.amount,
-							paymentIntent.currency,
-						),
+						invoiceAmount: formatStripeAmount(paymentIntent.amount, paymentIntent.currency),
+						amountDue: formatStripeAmount(paymentIntent.amount, paymentIntent.currency),
 						failureReason: failureMessage,
 						paymentRetryDate: "soon",
 						invoiceUrl: invoiceId ? getBillingUrl() : undefined,
@@ -754,19 +677,14 @@ export const BillingEventsServiceLive = Layer.effect(
 					});
 
 					if (isProcessed) {
-						logger.info(
-							{ eventId: event.id },
-							"Event already processed, skipping",
-						);
+						logger.info({ eventId: event.id }, "Event already processed, skipping");
 						return;
 					}
 
 					// Get organization ID from event if possible
 					let organizationId: string | undefined;
 					if (event.data.object && "metadata" in event.data.object) {
-						const metadata = event.data.object.metadata as
-							| Record<string, string>
-							| undefined;
+						const metadata = event.data.object.metadata as Record<string, string> | undefined;
 						organizationId = metadata?.organizationId;
 					}
 
@@ -797,34 +715,24 @@ export const BillingEventsServiceLive = Layer.effect(
 					try {
 						switch (event.type) {
 							case "checkout.session.completed":
-								yield* handleCheckoutSessionCompleted(
-									event.data.object as Stripe.Checkout.Session,
-								);
+								yield* handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
 								break;
 
 							case "customer.subscription.created":
 							case "customer.subscription.updated":
-								yield* handleSubscriptionUpdated(
-									event.data.object as Stripe.Subscription,
-								);
+								yield* handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
 								break;
 
 							case "customer.subscription.deleted":
-								yield* handleSubscriptionDeleted(
-									event.data.object as Stripe.Subscription,
-								);
+								yield* handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
 								break;
 
 							case "invoice.payment_succeeded":
-								yield* handleInvoicePaymentSucceeded(
-									event.data.object as Stripe.Invoice,
-								);
+								yield* handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice);
 								break;
 
 							case "invoice.payment_failed":
-								yield* handleInvoicePaymentFailed(
-									event.data.object as Stripe.Invoice,
-								);
+								yield* handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
 								break;
 
 							case "customer.subscription.trial_will_end":
@@ -834,27 +742,19 @@ export const BillingEventsServiceLive = Layer.effect(
 								break;
 
 							case "customer.subscription.paused":
-								yield* handleCustomerSubscriptionPaused(
-									event.data.object as Stripe.Subscription,
-								);
+								yield* handleCustomerSubscriptionPaused(event.data.object as Stripe.Subscription);
 								break;
 
 							case "customer.subscription.resumed":
-								yield* handleCustomerSubscriptionResumed(
-									event.data.object as Stripe.Subscription,
-								);
+								yield* handleCustomerSubscriptionResumed(event.data.object as Stripe.Subscription);
 								break;
 
 							case "invoice.finalized":
-								yield* handleInvoiceFinalized(
-									event.data.object as Stripe.Invoice,
-								);
+								yield* handleInvoiceFinalized(event.data.object as Stripe.Invoice);
 								break;
 
 							case "payment_intent.payment_failed":
-								yield* handlePaymentIntentFailed(
-									event.data.object as Stripe.PaymentIntent,
-								);
+								yield* handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
 								break;
 
 							default:

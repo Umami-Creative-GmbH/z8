@@ -24,7 +24,9 @@ describe("platform diagnostics refresh action", () => {
 
 	it("requires platform-admin authorization before testing platform key manager encryption", () => {
 		const source = stripComments(readFileSync(ACTIONS_PATH, "utf8"));
-		const actionStart = source.indexOf("export async function testPlatformKeyManagerEncryptionAction");
+		const actionStart = source.indexOf(
+			"export async function testPlatformKeyManagerEncryptionAction",
+		);
 		expect(actionStart).toBeGreaterThanOrEqual(0);
 		const actionSource = source.slice(actionStart);
 		const authCheck = "adminService.requirePlatformAdmin()";

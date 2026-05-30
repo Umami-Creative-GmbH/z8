@@ -113,9 +113,7 @@ export class PendingMemberService extends Context.Tag("PendingMemberService")<
 		) => Effect.Effect<MemberApproval[], DatabaseError>;
 
 		// Count pending members for an organization
-		readonly countPending: (
-			organizationId: string,
-		) => Effect.Effect<number, DatabaseError>;
+		readonly countPending: (organizationId: string) => Effect.Effect<number, DatabaseError>;
 	}
 >() {}
 
@@ -131,10 +129,7 @@ export const PendingMemberServiceLive = Layer.effect(
 		): Promise<PendingMember | null> => {
 			// Get the member with user details
 			const memberRecord = await dbService.db.query.member.findFirst({
-				where: and(
-					eq(member.id, memberId),
-					eq(member.organizationId, organizationId),
-				),
+				where: and(eq(member.id, memberId), eq(member.organizationId, organizationId)),
 			});
 
 			if (!memberRecord) return null;
@@ -227,9 +222,7 @@ export const PendingMemberServiceLive = Layer.effect(
 										})
 									: [];
 
-							const approvalMap = new Map(
-								approvals.map((a) => [a.memberId, a]),
-							);
+							const approvalMap = new Map(approvals.map((a) => [a.memberId, a]));
 
 							// Filter to only pending (no approval record yet)
 							const pendingUsages =
@@ -281,10 +274,7 @@ export const PendingMemberServiceLive = Layer.effect(
 					// Get member details
 					const pendingMember = yield* _(
 						dbService.query("getMemberForApproval", async () => {
-							return await getPendingMemberDetails(
-								input.memberId,
-								input.organizationId,
-							);
+							return await getPendingMemberDetails(input.memberId, input.organizationId);
 						}),
 						Effect.flatMap((memberDetails) =>
 							memberDetails
@@ -337,8 +327,7 @@ export const PendingMemberServiceLive = Layer.effect(
 							yield* _(
 								Effect.fail(
 									new ValidationError({
-										message:
-											"Invalid team. Team not found in this organization.",
+										message: "Invalid team. Team not found in this organization.",
 										field: "assignedTeamId",
 									}),
 								),
@@ -368,13 +357,12 @@ export const PendingMemberServiceLive = Layer.effect(
 					yield* _(
 						dbService.query("createEmployeeRecord", async () => {
 							// Check if employee already exists
-							const existingEmployee =
-								await dbService.db.query.employee.findFirst({
-									where: and(
-										eq(employee.userId, pendingMember.userId),
-										eq(employee.organizationId, input.organizationId),
-									),
-								});
+							const existingEmployee = await dbService.db.query.employee.findFirst({
+								where: and(
+									eq(employee.userId, pendingMember.userId),
+									eq(employee.organizationId, input.organizationId),
+								),
+							});
 
 							if (!existingEmployee) {
 								const [newEmployee] = await dbService.db
@@ -418,10 +406,7 @@ export const PendingMemberServiceLive = Layer.effect(
 					// Get member details
 					const pendingMember = yield* _(
 						dbService.query("getMemberForRejection", async () => {
-							return await getPendingMemberDetails(
-								input.memberId,
-								input.organizationId,
-							);
+							return await getPendingMemberDetails(input.memberId, input.organizationId);
 						}),
 						Effect.flatMap((memberDetails) =>
 							memberDetails
@@ -476,9 +461,7 @@ export const PendingMemberServiceLive = Layer.effect(
 					// Remove the member record
 					yield* _(
 						dbService.query("removeMember", async () => {
-							await dbService.db
-								.delete(member)
-								.where(eq(member.id, input.memberId));
+							await dbService.db.delete(member).where(eq(member.id, input.memberId));
 						}),
 					);
 
@@ -499,10 +482,9 @@ export const PendingMemberServiceLive = Layer.effect(
 							yield* _(
 								dbService.query(`bulkApprove_${memberId}`, async () => {
 									// Check if already approved
-									const existing =
-										await dbService.db.query.memberApproval.findFirst({
-											where: eq(memberApproval.memberId, memberId),
-										});
+									const existing = await dbService.db.query.memberApproval.findFirst({
+										where: eq(memberApproval.memberId, memberId),
+									});
 
 									if (existing) {
 										failed++;
@@ -510,13 +492,9 @@ export const PendingMemberServiceLive = Layer.effect(
 									}
 
 									// Get member details
-									const memberRecord =
-										await dbService.db.query.member.findFirst({
-											where: and(
-												eq(member.id, memberId),
-												eq(member.organizationId, organizationId),
-											),
-										});
+									const memberRecord = await dbService.db.query.member.findFirst({
+										where: and(eq(member.id, memberId), eq(member.organizationId, organizationId)),
+									});
 
 									if (!memberRecord) {
 										failed++;
@@ -533,13 +511,12 @@ export const PendingMemberServiceLive = Layer.effect(
 									});
 
 									// Create employee record
-									const existingEmployee =
-										await dbService.db.query.employee.findFirst({
-											where: and(
-												eq(employee.userId, memberRecord.userId),
-												eq(employee.organizationId, organizationId),
-											),
-										});
+									const existingEmployee = await dbService.db.query.employee.findFirst({
+										where: and(
+											eq(employee.userId, memberRecord.userId),
+											eq(employee.organizationId, organizationId),
+										),
+									});
 
 									if (!existingEmployee) {
 										await dbService.db.insert(employee).values({
@@ -572,10 +549,9 @@ export const PendingMemberServiceLive = Layer.effect(
 							yield* _(
 								dbService.query(`bulkReject_${memberId}`, async () => {
 									// Check if already processed
-									const existing =
-										await dbService.db.query.memberApproval.findFirst({
-											where: eq(memberApproval.memberId, memberId),
-										});
+									const existing = await dbService.db.query.memberApproval.findFirst({
+										where: eq(memberApproval.memberId, memberId),
+									});
 
 									if (existing) {
 										failed++;
@@ -592,9 +568,7 @@ export const PendingMemberServiceLive = Layer.effect(
 									});
 
 									// Remove member
-									await dbService.db
-										.delete(member)
-										.where(eq(member.id, memberId));
+									await dbService.db.delete(member).where(eq(member.id, memberId));
 
 									rejected++;
 								}),
@@ -644,14 +618,12 @@ export const PendingMemberServiceLive = Layer.effect(
 
 							// Get approvals
 							const memberIds = orgUsages.map((u) => u.memberId);
-							const approvals =
-								await dbService.db.query.memberApproval.findMany({
-									where: sql`${memberApproval.memberId} = ANY(${memberIds})`,
-								});
+							const approvals = await dbService.db.query.memberApproval.findMany({
+								where: sql`${memberApproval.memberId} = ANY(${memberIds})`,
+							});
 
 							const approvedIds = new Set(approvals.map((a) => a.memberId));
-							return orgUsages.filter((u) => !approvedIds.has(u.memberId))
-								.length;
+							return orgUsages.filter((u) => !approvedIds.has(u.memberId)).length;
 						}),
 					);
 

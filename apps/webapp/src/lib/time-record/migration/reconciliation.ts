@@ -1,5 +1,5 @@
-import { DateTime } from "luxon";
 import { and, eq, isNull } from "drizzle-orm";
+import { DateTime } from "luxon";
 
 import {
 	absenceEntry,
@@ -40,75 +40,71 @@ export async function reconcileLegacyToCanonical(
 		canonicalWorkDetails,
 		canonicalAbsenceDetails,
 		canonicalProjectAllocations,
-	] =
-		await Promise.all([
-			db.query.workPeriod.findMany({
-				where: eq(workPeriod.organizationId, organizationId),
-				columns: { id: true, projectId: true, durationMinutes: true, approvalStatus: true },
-			}),
-			db.query.absenceEntry.findMany({
-				where: eq(absenceEntry.organizationId, organizationId),
-				columns: {
-					id: true,
-					endDate: true,
-					endPeriod: true,
-					startDate: true,
-					startPeriod: true,
-					status: true,
-				},
-			}),
-			db.query.timeRecord.findMany({
-				where: and(
-					eq(timeRecord.organizationId, organizationId),
-					eq(timeRecord.recordKind, "work"),
-				),
-				columns: { id: true, durationMinutes: true, approvalState: true },
-			}),
-			db.query.timeRecord.findMany({
-				where: and(
-					eq(timeRecord.organizationId, organizationId),
-					eq(timeRecord.recordKind, "absence"),
-				),
-				columns: { id: true, durationMinutes: true, approvalState: true },
-			}),
-			db.query.absenceEntry.findMany({
-				where: eq(absenceEntry.organizationId, organizationId),
-				columns: { id: true, canonicalRecordId: true },
-			}),
-			db.query.absenceEntry.findMany({
-				where: isNull(absenceEntry.organizationId),
-				columns: {
-					id: true,
-					employeeId: true,
-					canonicalRecordId: true,
-					organizationId: true,
-					endDate: true,
-					endPeriod: true,
-					startDate: true,
-					startPeriod: true,
-					status: true,
-				},
-			}),
-			db.query.employee.findMany({
-				where: eq(employee.organizationId, organizationId),
-				columns: { id: true },
-			}),
-			db.query.timeRecordWork.findMany({
-				where: eq(timeRecordWork.organizationId, organizationId),
-				columns: { recordId: true },
-			}),
-			db.query.timeRecordAbsence.findMany({
-				where: eq(timeRecordAbsence.organizationId, organizationId),
-				columns: { recordId: true },
-			}),
-			db.query.timeRecordAllocation.findMany({
-				where: and(
-					eq(timeRecordAllocation.organizationId, organizationId),
-					eq(timeRecordAllocation.allocationKind, "project"),
-				),
-				columns: { recordId: true, projectId: true },
-			}),
-		]);
+	] = await Promise.all([
+		db.query.workPeriod.findMany({
+			where: eq(workPeriod.organizationId, organizationId),
+			columns: { id: true, projectId: true, durationMinutes: true, approvalStatus: true },
+		}),
+		db.query.absenceEntry.findMany({
+			where: eq(absenceEntry.organizationId, organizationId),
+			columns: {
+				id: true,
+				endDate: true,
+				endPeriod: true,
+				startDate: true,
+				startPeriod: true,
+				status: true,
+			},
+		}),
+		db.query.timeRecord.findMany({
+			where: and(eq(timeRecord.organizationId, organizationId), eq(timeRecord.recordKind, "work")),
+			columns: { id: true, durationMinutes: true, approvalState: true },
+		}),
+		db.query.timeRecord.findMany({
+			where: and(
+				eq(timeRecord.organizationId, organizationId),
+				eq(timeRecord.recordKind, "absence"),
+			),
+			columns: { id: true, durationMinutes: true, approvalState: true },
+		}),
+		db.query.absenceEntry.findMany({
+			where: eq(absenceEntry.organizationId, organizationId),
+			columns: { id: true, canonicalRecordId: true },
+		}),
+		db.query.absenceEntry.findMany({
+			where: isNull(absenceEntry.organizationId),
+			columns: {
+				id: true,
+				employeeId: true,
+				canonicalRecordId: true,
+				organizationId: true,
+				endDate: true,
+				endPeriod: true,
+				startDate: true,
+				startPeriod: true,
+				status: true,
+			},
+		}),
+		db.query.employee.findMany({
+			where: eq(employee.organizationId, organizationId),
+			columns: { id: true },
+		}),
+		db.query.timeRecordWork.findMany({
+			where: eq(timeRecordWork.organizationId, organizationId),
+			columns: { recordId: true },
+		}),
+		db.query.timeRecordAbsence.findMany({
+			where: eq(timeRecordAbsence.organizationId, organizationId),
+			columns: { recordId: true },
+		}),
+		db.query.timeRecordAllocation.findMany({
+			where: and(
+				eq(timeRecordAllocation.organizationId, organizationId),
+				eq(timeRecordAllocation.allocationKind, "project"),
+			),
+			columns: { recordId: true, projectId: true },
+		}),
+	]);
 
 	const legacyWorkIds = new Set(legacyWork.map((row) => row.id));
 	const legacyAbsenceIds = new Set(legacyAbsence.map((row) => row.id));
@@ -120,9 +116,7 @@ export async function reconcileLegacyToCanonical(
 	const canonicalAbsenceById = new Map(canonicalAbsence.map((row) => [row.id, row]));
 	const legacyWorkById = new Map(legacyWork.map((row) => [row.id, row]));
 	const expectedProjectAllocations = new Set(
-		legacyWork
-			.filter((row) => row.projectId)
-			.map((row) => `${row.id}:${row.projectId}`),
+		legacyWork.filter((row) => row.projectId).map((row) => `${row.id}:${row.projectId}`),
 	);
 	const canonicalProjectAllocationKeys = new Set(
 		canonicalProjectAllocations.map((row) => `${row.recordId}:${row.projectId}`),
@@ -176,10 +170,7 @@ function countMissingIds(legacyIds: Set<string>, canonicalIds: Set<string>) {
 }
 
 function countWorkDurationMismatches(
-	legacyWorkById: Map<
-		string,
-		{ durationMinutes: number | null }
-	>,
+	legacyWorkById: Map<string, { durationMinutes: number | null }>,
 	canonicalWorkById: Map<string, { durationMinutes: number | null }>,
 ) {
 	let count = 0;
@@ -255,7 +246,10 @@ function countWorkApprovalStateMismatches(
 
 function countAbsenceApprovalStateMismatches(
 	legacyAbsenceById: Map<string, { status: "pending" | "approved" | "rejected" }>,
-	canonicalAbsenceById: Map<string, { approvalState: "pending" | "approved" | "rejected" | "draft" }>,
+	canonicalAbsenceById: Map<
+		string,
+		{ approvalState: "pending" | "approved" | "rejected" | "draft" }
+	>,
 ) {
 	let count = 0;
 
@@ -285,11 +279,7 @@ function calculateAbsenceDurationMinutes(
 	return Math.max(0, Math.round(endAt.diff(startAt, "minutes").minutes));
 }
 
-function dateWithPeriod(
-	dateIso: string,
-	period: "full_day" | "am" | "pm",
-	edge: "start" | "end",
-) {
+function dateWithPeriod(dateIso: string, period: "full_day" | "am" | "pm", edge: "start" | "end") {
 	const day = DateTime.fromISO(dateIso, { zone: "utc" });
 
 	if (period === "am") {

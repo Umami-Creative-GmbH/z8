@@ -80,9 +80,7 @@ function normalizeTranslationMap(value: unknown) {
 				typeof entry[0] === "string" && typeof entry[1] === "string",
 		)
 		.map(([locale, translation]) => [locale.trim(), translation.trim()] as const)
-		.filter(
-			([locale, translation]) => locale && translation && !isUnsafeTranslationKey(locale),
-		);
+		.filter(([locale, translation]) => locale && translation && !isUnsafeTranslationKey(locale));
 
 	return entries.length > 0 ? Object.fromEntries(entries) : null;
 }

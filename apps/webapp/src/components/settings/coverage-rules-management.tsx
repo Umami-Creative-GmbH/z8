@@ -1,13 +1,13 @@
 "use client";
 
-import { IconPlus, IconPencil, IconTrash, IconTarget, IconShieldCheck } from "@tabler/icons-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { IconPencil, IconPlus, IconShieldCheck, IconTarget, IconTrash } from "@tabler/icons-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-	getCoverageRules,
 	deleteCoverageRule,
+	getCoverageRules,
 	getCoverageSettings,
 	updateCoverageSettings,
 } from "@/app/[locale]/(app)/settings/coverage-rules/actions";
@@ -24,6 +24,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
 	Table,
 	TableBody,
@@ -32,10 +34,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { queryKeys } from "@/lib/query/keys";
 import type { CoverageRuleWithRelations } from "@/lib/effect/services/coverage.service";
+import { queryKeys } from "@/lib/query/keys";
 import { CoverageRuleDialog } from "./coverage-rule-dialog";
 
 interface CoverageRulesManagementProps {
@@ -131,7 +131,9 @@ export function CoverageRulesManagement({
 				toast.success(t("settings.coverageRules.settingsSaved", "Settings saved"));
 				queryClient.invalidateQueries({ queryKey: ["coverage-settings", organizationId] });
 			} else {
-				toast.error(result.error || t("settings.coverageRules.settingsFailed", "Failed to save settings"));
+				toast.error(
+					result.error || t("settings.coverageRules.settingsFailed", "Failed to save settings"),
+				);
 			}
 		},
 		onError: () => {
@@ -315,7 +317,10 @@ export function CoverageRulesManagement({
 															size="icon"
 															className="size-8"
 															onClick={() => handleEditRule(rule)}
-															aria-label={t("settings.coverageRules.editRule", "Edit Coverage Rule")}
+															aria-label={t(
+																"settings.coverageRules.editRule",
+																"Edit Coverage Rule",
+															)}
 														>
 															<IconPencil className="size-4" />
 														</Button>
@@ -324,7 +329,10 @@ export function CoverageRulesManagement({
 															size="icon"
 															className="size-8 text-destructive hover:text-destructive"
 															onClick={() => setDeleteRuleId(rule.id)}
-															aria-label={t("settings.coverageRules.deleteRule", "Delete Coverage Rule")}
+															aria-label={t(
+																"settings.coverageRules.deleteRule",
+																"Delete Coverage Rule",
+															)}
 														>
 															<IconTrash className="size-4" />
 														</Button>

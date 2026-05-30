@@ -8,14 +8,16 @@
  */
 
 import { DateTime } from "luxon";
-import type { PresenceRequirementEvidence } from "@/db/schema/compliance-finding";
+import type {
+	ComplianceFindingSeverity,
+	PresenceRequirementEvidence,
+} from "@/db/schema/compliance-finding";
 import type {
 	ComplianceFindingResult,
 	ComplianceRule,
 	RuleDetectionInput,
 	WorkPeriodData,
 } from "./types";
-import type { ComplianceFindingSeverity } from "@/db/schema/compliance-finding";
 
 // ============================================
 // Extended interfaces for presence detection
@@ -137,9 +139,7 @@ export class PresenceRequirementRule implements ComplianceRule {
 	readonly type = "presence_requirement" as const;
 	readonly description = "Detects when on-site presence requirements are not met";
 
-	async detectViolations(
-		input: RuleDetectionInput,
-	): Promise<ComplianceFindingResult[]> {
+	async detectViolations(input: RuleDetectionInput): Promise<ComplianceFindingResult[]> {
 		// This rule requires the extended input type
 		const presenceInput = input as PresenceRuleDetectionInput;
 
@@ -155,9 +155,7 @@ export class PresenceRequirementRule implements ComplianceRule {
 		const timezone = employee.timezone;
 
 		// Filter to completed work periods only
-		const completedPeriods = workPeriods.filter(
-			(wp) => wp.endTime !== null && !wp.isActive,
-		);
+		const completedPeriods = workPeriods.filter((wp) => wp.endTime !== null && !wp.isActive);
 
 		// Build set of excluded dates (absences + holidays)
 		const excludedDates = new Set<string>();
@@ -194,16 +192,11 @@ export class PresenceRequirementRule implements ComplianceRule {
 		if (presenceConfig.presenceMode === "minimum_count") {
 			// Calculate available working days
 			const allWeekdays = getWeekdayDates(periodStart, periodEnd);
-			const availableWeekdays = allWeekdays.filter(
-				(d) => !excludedDates.has(d.toISODate()!),
-			);
+			const availableWeekdays = allWeekdays.filter((d) => !excludedDates.has(d.toISODate()!));
 			const workingDayCount = availableWeekdays.length;
 
 			// Cap requirement to available days
-			const adjustedRequirement = Math.min(
-				presenceConfig.requiredOnsiteDays,
-				workingDayCount,
-			);
+			const adjustedRequirement = Math.min(presenceConfig.requiredOnsiteDays, workingDayCount);
 
 			// Check for violation
 			if (actualOnsiteDays < adjustedRequirement) {

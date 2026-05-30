@@ -6,9 +6,9 @@
 
 import { Context, Effect, Layer } from "effect";
 import { auditLog } from "@/db/schema";
+import type { AnyAppError } from "@/lib/effect/errors";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import type { ApprovalStatus, ApprovalType } from "../domain/types";
-import type { AnyAppError } from "@/lib/effect/errors";
 import type { ApprovalDbService } from "../server/types";
 
 // ============================================
@@ -74,11 +74,12 @@ export class ApprovalAuditLogger extends Context.Tag("ApprovalAuditLogger")<
 
 function normalizeEntry(entry: ApprovalAuditEntry) {
 	const bulkOperation = entry.action === "bulk_approve" || entry.action === "bulk_reject";
-	const action = entry.action === "bulk_approve"
-		? "approve"
-		: entry.action === "bulk_reject"
-			? "reject"
-			: entry.action;
+	const action =
+		entry.action === "bulk_approve"
+			? "approve"
+			: entry.action === "bulk_reject"
+				? "reject"
+				: entry.action;
 	const metadata = {
 		...(entry.metadata ?? {}),
 		...(bulkOperation ? { bulkOperation: true } : {}),

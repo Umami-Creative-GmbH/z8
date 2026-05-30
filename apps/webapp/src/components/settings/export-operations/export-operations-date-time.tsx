@@ -25,11 +25,11 @@ export function ExportOperationsDateTime({
 		return <>{emptyLabel}</>;
 	}
 
-	const formattedValue = isMounted ? formatBrowserDateTime(date, locale) : formatServerDateTime(date, locale);
+	const formattedValue = isMounted
+		? formatBrowserDateTime(date, locale)
+		: formatServerDateTime(date, locale);
 
-	return (
-		<span suppressHydrationWarning>{formattedValue}</span>
-	);
+	return <span suppressHydrationWarning>{formattedValue}</span>;
 }
 
 function formatBrowserDateTime(date: Date, locale: string) {

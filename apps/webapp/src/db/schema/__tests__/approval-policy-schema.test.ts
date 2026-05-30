@@ -1,18 +1,18 @@
-import { getTableConfig } from "drizzle-orm/pg-core";
 import { readFileSync } from "node:fs";
+import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import {
+	absenceCategory,
 	approvalChainInstance,
 	approvalChainStageInstance,
-	approvalRequest,
 	approvalPolicy,
 	approvalPolicyCondition,
 	approvalPolicyStage,
-	absenceCategory,
+	approvalRequest,
 	employee,
-	employeeManagers,
 	employeeGroup,
 	employeeGroupMember,
+	employeeManagers,
 	location,
 	organizationRelations,
 	team,
@@ -87,9 +87,7 @@ describe("approval policy schema exports", () => {
 		expect(uniqueIndexNames(approvalRequest)).toEqual(
 			expect.arrayContaining(["approvalRequest_id_organizationId_idx"]),
 		);
-		expect(uniqueIndexNames(team)).toEqual(
-			expect.arrayContaining(["team_id_organizationId_idx"]),
-		);
+		expect(uniqueIndexNames(team)).toEqual(expect.arrayContaining(["team_id_organizationId_idx"]));
 		expect(uniqueIndexNames(location)).toEqual(
 			expect.arrayContaining(["location_id_organizationId_idx"]),
 		);
@@ -104,16 +102,20 @@ describe("approval policy schema exports", () => {
 	it("uses org-scoped composite foreign keys for approval policy runtime links", () => {
 		expect(approvalPolicyCondition.employeeGroupId.name).toBe("employee_group_id");
 		expect(
-			hasCompositeForeignKey(approvalPolicyCondition, ["policy_id", "organization_id"], approvalPolicy, [
-				"id",
-				"organization_id",
-			]),
+			hasCompositeForeignKey(
+				approvalPolicyCondition,
+				["policy_id", "organization_id"],
+				approvalPolicy,
+				["id", "organization_id"],
+			),
 		).toBe(true);
 		expect(
-			hasCompositeForeignKey(approvalPolicyStage, ["policy_id", "organization_id"], approvalPolicy, [
-				"id",
-				"organization_id",
-			]),
+			hasCompositeForeignKey(
+				approvalPolicyStage,
+				["policy_id", "organization_id"],
+				approvalPolicy,
+				["id", "organization_id"],
+			),
 		).toBe(true);
 		expect(
 			hasCompositeForeignKey(employeeGroupMember, ["group_id", "organization_id"], employeeGroup, [
@@ -128,10 +130,12 @@ describe("approval policy schema exports", () => {
 			]),
 		).toBe(true);
 		expect(
-			hasCompositeForeignKey(approvalPolicyCondition, ["location_id", "organization_id"], location, [
-				"id",
-				"organization_id",
-			]),
+			hasCompositeForeignKey(
+				approvalPolicyCondition,
+				["location_id", "organization_id"],
+				location,
+				["id", "organization_id"],
+			),
 		).toBe(true);
 		expect(
 			hasCompositeForeignKey(
@@ -142,16 +146,20 @@ describe("approval policy schema exports", () => {
 			),
 		).toBe(true);
 		expect(
-			hasCompositeForeignKey(approvalPolicyCondition, ["employee_group_id", "organization_id"], employeeGroup, [
-				"id",
-				"organization_id",
-			]),
+			hasCompositeForeignKey(
+				approvalPolicyCondition,
+				["employee_group_id", "organization_id"],
+				employeeGroup,
+				["id", "organization_id"],
+			),
 		).toBe(true);
 		expect(
-			hasCompositeForeignKey(approvalPolicyStage, ["approver_employee_id", "organization_id"], employee, [
-				"id",
-				"organization_id",
-			]),
+			hasCompositeForeignKey(
+				approvalPolicyStage,
+				["approver_employee_id", "organization_id"],
+				employee,
+				["id", "organization_id"],
+			),
 		).toBe(true);
 		expect(
 			hasCompositeForeignKey(employeeGroupMember, ["employee_id", "organization_id"], employee, [
@@ -160,16 +168,20 @@ describe("approval policy schema exports", () => {
 			]),
 		).toBe(true);
 		expect(
-			hasCompositeForeignKey(approvalChainInstance, ["policy_id", "organization_id"], approvalPolicy, [
-				"id",
-				"organization_id",
-			]),
+			hasCompositeForeignKey(
+				approvalChainInstance,
+				["policy_id", "organization_id"],
+				approvalPolicy,
+				["id", "organization_id"],
+			),
 		).toBe(true);
 		expect(
-			hasCompositeForeignKey(approvalChainInstance, ["requester_employee_id", "organization_id"], employee, [
-				"id",
-				"organization_id",
-			]),
+			hasCompositeForeignKey(
+				approvalChainInstance,
+				["requester_employee_id", "organization_id"],
+				employee,
+				["id", "organization_id"],
+			),
 		).toBe(true);
 		expect(
 			hasCompositeForeignKey(
@@ -292,8 +304,6 @@ describe("approval policy schema exports", () => {
 		const migration = readFileSync("drizzle/0014_team_membership_primary_manager.sql", "utf8");
 
 		expect(migration).toContain('JOIN "team" ON "team"."id" = "employee"."team_id"');
-		expect(migration).toContain(
-			'AND "team"."organization_id" = "employee"."organization_id"',
-		);
+		expect(migration).toContain('AND "team"."organization_id" = "employee"."organization_id"');
 	});
 });

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useTranslate } from "@tolgee/react";
 import { IconCheck } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ScheduledExportForm } from "../scheduled-export-dialog";
@@ -68,9 +68,7 @@ export function StepReview({ form, filterOptions, payrollConfigs }: StepReviewPr
 	};
 
 	return (
-		<form.Subscribe
-			selector={(state: any) => state.values}
-		>
+		<form.Subscribe selector={(state: any) => state.values}>
 			{(values: any) => {
 				const payrollConfig = payrollConfigs.find((c) => c.id === values.payrollConfigId);
 				const selectedEmployees = filterOptions?.employees.filter((e) =>
@@ -84,16 +82,27 @@ export function StepReview({ form, filterOptions, payrollConfigs }: StepReviewPr
 				);
 
 				return (
-					<div className="space-y-4" role="region" aria-label={t("settings.scheduledExports.review.region", "Configuration summary")}>
+					<div
+						className="space-y-4"
+						role="region"
+						aria-label={t("settings.scheduledExports.review.region", "Configuration summary")}
+					>
 						<div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
 							<IconCheck className="size-4 text-green-500" aria-hidden="true" />
-							<span>{t("settings.scheduledExports.review.instructions", "Review your schedule configuration before creating")}</span>
+							<span>
+								{t(
+									"settings.scheduledExports.review.instructions",
+									"Review your schedule configuration before creating",
+								)}
+							</span>
 						</div>
 
 						{/* Schedule */}
 						<Card>
 							<CardHeader className="pb-2">
-								<CardTitle className="text-base">{t("settings.scheduledExports.review.schedule", "Schedule")}</CardTitle>
+								<CardTitle className="text-base">
+									{t("settings.scheduledExports.review.schedule", "Schedule")}
+								</CardTitle>
 							</CardHeader>
 							<CardContent className="space-y-2 text-sm">
 								<ReviewField
@@ -127,11 +136,15 @@ export function StepReview({ form, filterOptions, payrollConfigs }: StepReviewPr
 						{/* Report */}
 						<Card>
 							<CardHeader className="pb-2">
-								<CardTitle className="text-base">{t("settings.scheduledExports.review.report", "Report")}</CardTitle>
+								<CardTitle className="text-base">
+									{t("settings.scheduledExports.review.report", "Report")}
+								</CardTitle>
 							</CardHeader>
 							<CardContent className="space-y-2 text-sm">
 								<div className="flex justify-between">
-									<span className="text-muted-foreground">{t("settings.scheduledExports.review.reportType", "Report Type")}</span>
+									<span className="text-muted-foreground">
+										{t("settings.scheduledExports.review.reportType", "Report Type")}
+									</span>
 									<Badge variant="secondary">
 										{REPORT_TYPE_LABELS[values.reportType] || values.reportType}
 									</Badge>
@@ -142,20 +155,24 @@ export function StepReview({ form, filterOptions, payrollConfigs }: StepReviewPr
 										value={payrollConfig.formatName}
 									/>
 								)}
-								{values.reportType === "data_export" &&
-									values.reportConfig?.categories && (
-										<ReviewField
-											label={t("settings.scheduledExports.review.categories", "Categories")}
-											value={(values.reportConfig.categories as string[]).join(", ")}
-										/>
-									)}
+								{values.reportType === "data_export" && values.reportConfig?.categories && (
+									<ReviewField
+										label={t("settings.scheduledExports.review.categories", "Categories")}
+										value={(values.reportConfig.categories as string[]).join(", ")}
+									/>
+								)}
 							</CardContent>
 						</Card>
 
 						{/* Filters */}
 						<Card>
 							<CardHeader className="pb-2">
-								<CardTitle className="text-base">{t("settings.scheduledExports.review.filtersAndDateRange", "Filters & Date Range")}</CardTitle>
+								<CardTitle className="text-base">
+									{t(
+										"settings.scheduledExports.review.filtersAndDateRange",
+										"Filters & Date Range",
+									)}
+								</CardTitle>
 							</CardHeader>
 							<CardContent className="space-y-2 text-sm">
 								<ReviewField
@@ -164,21 +181,33 @@ export function StepReview({ form, filterOptions, payrollConfigs }: StepReviewPr
 								/>
 								<ReviewField
 									label={t("settings.scheduledExports.review.employees", "Employees")}
-									value={selectedEmployees && selectedEmployees.length > 0
-										? t("settings.scheduledExports.filters.selectedCount", "{count} selected", { count: selectedEmployees.length })
-										: t("settings.scheduledExports.review.all", "All")}
+									value={
+										selectedEmployees && selectedEmployees.length > 0
+											? t("settings.scheduledExports.filters.selectedCount", "{count} selected", {
+													count: selectedEmployees.length,
+												})
+											: t("settings.scheduledExports.review.all", "All")
+									}
 								/>
 								<ReviewField
 									label={t("settings.scheduledExports.review.teams", "Teams")}
-									value={selectedTeams && selectedTeams.length > 0
-										? t("settings.scheduledExports.filters.selectedCount", "{count} selected", { count: selectedTeams.length })
-										: t("settings.scheduledExports.review.all", "All")}
+									value={
+										selectedTeams && selectedTeams.length > 0
+											? t("settings.scheduledExports.filters.selectedCount", "{count} selected", {
+													count: selectedTeams.length,
+												})
+											: t("settings.scheduledExports.review.all", "All")
+									}
 								/>
 								<ReviewField
 									label={t("settings.scheduledExports.review.projects", "Projects")}
-									value={selectedProjects && selectedProjects.length > 0
-										? t("settings.scheduledExports.filters.selectedCount", "{count} selected", { count: selectedProjects.length })
-										: t("settings.scheduledExports.review.all", "All")}
+									value={
+										selectedProjects && selectedProjects.length > 0
+											? t("settings.scheduledExports.filters.selectedCount", "{count} selected", {
+													count: selectedProjects.length,
+												})
+											: t("settings.scheduledExports.review.all", "All")
+									}
 								/>
 							</CardContent>
 						</Card>
@@ -186,7 +215,9 @@ export function StepReview({ form, filterOptions, payrollConfigs }: StepReviewPr
 						{/* Delivery */}
 						<Card>
 							<CardHeader className="pb-2">
-								<CardTitle className="text-base">{t("settings.scheduledExports.review.delivery", "Delivery")}</CardTitle>
+								<CardTitle className="text-base">
+									{t("settings.scheduledExports.review.delivery", "Delivery")}
+								</CardTitle>
 							</CardHeader>
 							<CardContent className="space-y-2 text-sm">
 								<ReviewField
@@ -197,9 +228,9 @@ export function StepReview({ form, filterOptions, payrollConfigs }: StepReviewPr
 									values.deliveryMethod === "email_only") && (
 									<ReviewField
 										label={t("settings.scheduledExports.review.recipients", "Recipients")}
-										value={values.emailRecipients.length > 0
-											? values.emailRecipients.join(", ")
-											: "-"}
+										value={
+											values.emailRecipients.length > 0 ? values.emailRecipients.join(", ") : "-"
+										}
 									/>
 								)}
 								{values.customS3Prefix && (

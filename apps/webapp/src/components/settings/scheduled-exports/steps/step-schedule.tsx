@@ -12,9 +12,9 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type { ScheduleType } from "@/lib/scheduled-exports/domain/types";
 import { CronPreview } from "../cron-preview";
 import type { ScheduledExportForm } from "../scheduled-export-dialog";
-import type { ScheduleType } from "@/lib/scheduled-exports/domain/types";
 
 interface StepScheduleProps {
 	form: ScheduledExportForm;
@@ -47,17 +47,26 @@ export function StepSchedule({ form }: StepScheduleProps) {
 		{
 			value: "weekly",
 			label: t("settings.scheduledExports.scheduleType.weekly", "Weekly"),
-			description: t("settings.scheduledExports.scheduleType.weeklyDesc", "Every Monday at midnight"),
+			description: t(
+				"settings.scheduledExports.scheduleType.weeklyDesc",
+				"Every Monday at midnight",
+			),
 		},
 		{
 			value: "monthly",
 			label: t("settings.scheduledExports.scheduleType.monthly", "Monthly"),
-			description: t("settings.scheduledExports.scheduleType.monthlyDesc", "1st of every month at midnight"),
+			description: t(
+				"settings.scheduledExports.scheduleType.monthlyDesc",
+				"1st of every month at midnight",
+			),
 		},
 		{
 			value: "quarterly",
 			label: t("settings.scheduledExports.scheduleType.quarterly", "Quarterly"),
-			description: t("settings.scheduledExports.scheduleType.quarterlyDesc", "1st of Jan, Apr, Jul, Oct"),
+			description: t(
+				"settings.scheduledExports.scheduleType.quarterlyDesc",
+				"1st of Jan, Apr, Jul, Oct",
+			),
 		},
 		{
 			value: "cron",
@@ -77,7 +86,10 @@ export function StepSchedule({ form }: StepScheduleProps) {
 							</Label>
 							<Input
 								id="name"
-								placeholder={t("settings.scheduledExports.schedule.namePlaceholder", "e.g., Monthly Payroll Export")}
+								placeholder={t(
+									"settings.scheduledExports.schedule.namePlaceholder",
+									"e.g., Monthly Payroll Export",
+								)}
 								value={field.state.value}
 								onChange={(e) => field.handleChange(e.target.value)}
 								onBlur={field.handleBlur}
@@ -101,7 +113,10 @@ export function StepSchedule({ form }: StepScheduleProps) {
 							</Label>
 							<Textarea
 								id="description"
-								placeholder={t("settings.scheduledExports.schedule.descriptionPlaceholder", "Optional description for this schedule")}
+								placeholder={t(
+									"settings.scheduledExports.schedule.descriptionPlaceholder",
+									"Optional description for this schedule",
+								)}
 								value={field.state.value || ""}
 								onChange={(e) => field.handleChange(e.target.value)}
 								onBlur={field.handleBlur}
@@ -132,9 +147,7 @@ export function StepSchedule({ form }: StepScheduleProps) {
 										<SelectItem key={type.value} value={type.value}>
 											<div>
 												<div>{type.label}</div>
-												<div className="text-xs text-muted-foreground">
-													{type.description}
-												</div>
+												<div className="text-xs text-muted-foreground">{type.description}</div>
 											</div>
 										</SelectItem>
 									))}
@@ -198,7 +211,10 @@ export function StepSchedule({ form }: StepScheduleProps) {
 											aria-invalid={field.state.meta.errors.length > 0}
 										/>
 										<p id="cron-hint" className="text-xs text-muted-foreground">
-											{t("settings.scheduledExports.schedule.cronHint", "Format: minute hour day month weekday (e.g., \"0 0 1 * *\" for 1st of month at midnight)")}
+											{t(
+												"settings.scheduledExports.schedule.cronHint",
+												'Format: minute hour day month weekday (e.g., "0 0 1 * *" for 1st of month at midnight)',
+											)}
 										</p>
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm text-destructive" role="alert">

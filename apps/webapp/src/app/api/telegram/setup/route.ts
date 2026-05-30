@@ -15,10 +15,10 @@ import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { telegramBotConfig } from "@/db/schema";
+import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { createLogger } from "@/lib/logger";
 import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
-import { env } from "@/env";
 
 const logger = createLogger("TelegramSetup");
 
@@ -47,12 +47,7 @@ export async function POST(request: NextRequest) {
 		const [membership] = await db
 			.select()
 			.from(member)
-			.where(
-				and(
-					eq(member.userId, session.user.id),
-					eq(member.organizationId, organizationId),
-				),
-			)
+			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
 			.limit(1);
 
 		if (!membership || membership.role !== "admin") {
@@ -113,11 +108,7 @@ export async function POST(request: NextRequest) {
 		const appUrl = env.APP_URL || "https://z8-time.app";
 		const webhookUrl = `${appUrl}/api/telegram/webhook/${webhookSecret}`;
 
-		const webhookRegistered = await setWebhook(
-			botToken,
-			webhookUrl,
-			webhookSecret,
-		);
+		const webhookRegistered = await setWebhook(botToken, webhookUrl, webhookSecret);
 
 		if (webhookRegistered) {
 			await db
@@ -158,10 +149,7 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		logger.error({ error }, "Telegram setup failed");
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }
 
@@ -178,22 +166,14 @@ export async function DELETE(request: NextRequest) {
 		const organizationId = searchParams.get("organizationId");
 
 		if (!organizationId) {
-			return NextResponse.json(
-				{ error: "organizationId is required" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
 		}
 
 		// Verify user is an admin member of this organization
 		const [membership] = await db
 			.select()
 			.from(member)
-			.where(
-				and(
-					eq(member.userId, session.user.id),
-					eq(member.organizationId, organizationId),
-				),
-			)
+			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
 			.limit(1);
 
 		if (!membership || membership.role !== "admin") {
@@ -208,13 +188,9 @@ export async function DELETE(request: NextRequest) {
 			// Fetch bot token from Vault (fall back to DB for pre-migration configs)
 			const { deleteWebhook } = await import("@/lib/telegram");
 			const { getOrgSecret } = await import("@/lib/vault");
-			const vaultToken = await getOrgSecret(
-				config.organizationId,
-				"telegram/bot_token",
-			);
+			const vaultToken = await getOrgSecret(config.organizationId, "telegram/bot_token");
 			const tokenForCleanup =
-				vaultToken ||
-				(config.botToken !== "vault:managed" ? config.botToken : null);
+				vaultToken || (config.botToken !== "vault:managed" ? config.botToken : null);
 
 			if (tokenForCleanup) {
 				await deleteWebhook(tokenForCleanup);
@@ -238,9 +214,6 @@ export async function DELETE(request: NextRequest) {
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		logger.error({ error }, "Telegram disconnect failed");
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

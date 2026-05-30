@@ -5,11 +5,11 @@
  * Provides factory function to get the appropriate provider.
  */
 
+import { env } from "@/env";
 import type { CalendarProvider } from "../types";
 import type { ICalendarProvider } from "./base";
 import { googleCalendarProvider } from "./google";
 import { microsoft365CalendarProvider } from "./microsoft365";
-import { env } from "@/env";
 
 // ============================================
 // PROVIDER REGISTRY
@@ -38,8 +38,10 @@ export function isProviderSupported(provider: CalendarProvider): boolean {
 	switch (provider) {
 		case "google":
 			// Check for calendar-specific env vars, fallback to social login vars
-			return !!(env.CALENDAR_GOOGLE_CLIENT_ID || env.GOOGLE_CLIENT_ID) &&
-				!!(env.CALENDAR_GOOGLE_CLIENT_SECRET || env.GOOGLE_CLIENT_SECRET);
+			return (
+				!!(env.CALENDAR_GOOGLE_CLIENT_ID || env.GOOGLE_CLIENT_ID) &&
+				!!(env.CALENDAR_GOOGLE_CLIENT_SECRET || env.GOOGLE_CLIENT_SECRET)
+			);
 		case "microsoft365":
 			// Microsoft uses calendar-specific env vars only
 			return !!env.CALENDAR_MICROSOFT_CLIENT_ID && !!env.CALENDAR_MICROSOFT_CLIENT_SECRET;
@@ -75,6 +77,12 @@ export function getSupportedProviders(): Array<{
 
 // Re-export base types and individual providers
 export type { ICalendarProvider } from "./base";
-export { isTokenExpired, formatDateOnly, formatDateTime, addOneDay, generateZ8EventId } from "./base";
+export {
+	addOneDay,
+	formatDateOnly,
+	formatDateTime,
+	generateZ8EventId,
+	isTokenExpired,
+} from "./base";
 export { googleCalendarProvider } from "./google";
 export { microsoft365CalendarProvider } from "./microsoft365";

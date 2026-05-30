@@ -2,9 +2,9 @@
 
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { CreateRateHistory } from "@/lib/validations/employee";
+import type { RateHistoryEntry } from "./rate-action-types";
 import { createRateHistoryEntryAction } from "./rate-mutations.actions";
 import { getEmployeeRateHistoryAction, getRateAtDateAction } from "./rate-queries.actions";
-import type { RateHistoryEntry } from "./rate-action-types";
 
 export type { RateHistoryEntry } from "./rate-action-types";
 

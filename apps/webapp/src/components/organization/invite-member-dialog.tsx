@@ -136,26 +136,41 @@ export function InviteMemberDialog({
 								<SelectContent>
 									<SelectItem value="member">
 										<div className="flex flex-col items-start">
-											<span className="font-medium">{t("organization.members.roles.member", "Member")}</span>
+											<span className="font-medium">
+												{t("organization.members.roles.member", "Member")}
+											</span>
 											<span className="text-xs text-muted-foreground">
-												{t("organization.invite.roleDescriptions.member", "Basic access to organization")}
+												{t(
+													"organization.invite.roleDescriptions.member",
+													"Basic access to organization",
+												)}
 											</span>
 										</div>
 									</SelectItem>
 									<SelectItem value="admin">
 										<div className="flex flex-col items-start">
-											<span className="font-medium">{t("organization.members.roles.admin", "Admin")}</span>
+											<span className="font-medium">
+												{t("organization.members.roles.admin", "Admin")}
+											</span>
 											<span className="text-xs text-muted-foreground">
-												{t("organization.invite.roleDescriptions.admin", "Can invite members and manage settings")}
+												{t(
+													"organization.invite.roleDescriptions.admin",
+													"Can invite members and manage settings",
+												)}
 											</span>
 										</div>
 									</SelectItem>
 									{currentMemberRole === "owner" && (
 										<SelectItem value="owner">
 											<div className="flex flex-col items-start">
-												<span className="font-medium">{t("organization.members.roles.owner", "Owner")}</span>
+												<span className="font-medium">
+													{t("organization.members.roles.owner", "Owner")}
+												</span>
 												<span className="text-xs text-muted-foreground">
-													{t("organization.invite.roleDescriptions.owner", "Full control of organization")}
+													{t(
+														"organization.invite.roleDescriptions.owner",
+														"Full control of organization",
+													)}
 												</span>
 											</div>
 										</SelectItem>
@@ -177,7 +192,10 @@ export function InviteMemberDialog({
 									htmlFor="canCreateOrganizations"
 									className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 								>
-									{t("organization.invite.allowCreateOrganizations", "Allow this user to create organizations")}
+									{t(
+										"organization.invite.allowCreateOrganizations",
+										"Allow this user to create organizations",
+									)}
 								</label>
 							</div>
 						)}

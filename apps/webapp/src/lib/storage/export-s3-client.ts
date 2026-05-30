@@ -33,7 +33,11 @@ function getDefaultPresignedUrlTtlSeconds(): number {
 }
 
 function getPrivateStorageConfig(): S3StorageConfig | null {
-	if (!env.S3_PRIVATE_BUCKET || !env.S3_PRIVATE_ACCESS_KEY_ID || !env.S3_PRIVATE_SECRET_ACCESS_KEY) {
+	if (
+		!env.S3_PRIVATE_BUCKET ||
+		!env.S3_PRIVATE_ACCESS_KEY_ID ||
+		!env.S3_PRIVATE_SECRET_ACCESS_KEY
+	) {
 		return null;
 	}
 

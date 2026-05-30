@@ -328,204 +328,204 @@ export function VacationAssignmentManager({
 
 				{/* Team Level */}
 				{showTeamSection ? (
-				<Card>
-					<CardHeader>
-						<div className="flex items-center gap-2">
-							<IconUsers className="size-5 text-muted-foreground" />
-							<div className="flex-1">
-								<CardTitle className="text-base">
-									{t("settings.vacation.assignments.teamLevel", "Team Overrides")}
-									{teamAssignments.length > 0 && (
-										<Badge variant="secondary" className="ml-2">
-											{teamAssignments.length}
-										</Badge>
-									)}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"settings.vacation.assignments.teamLevelDescription",
-										"Override the company default for specific teams (e.g., different locations or schedules)",
-									)}
-								</CardDescription>
-							</div>
-						</div>
-					</CardHeader>
-					<CardContent>
-						{canManageTeamAssignments ? (
-							<div className="flex justify-end mb-4">
-								<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-									<IconPlus className="mr-2 size-4" />
-									{t("settings.vacation.assignments.assignTeam", "Assign to Team")}
-								</Button>
-							</div>
-						) : null}
-						{teamAssignments.length > 0 ? (
-							<div className="space-y-3">
-								{teamAssignments.map((assignment) => (
-									<div
-										key={assignment.id}
-										className="rounded-lg border p-4 hover:bg-accent/50 transition-colors"
-									>
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-3">
-												<IconUsers className="size-4 text-muted-foreground" />
-												<span className="font-medium">{assignment.team?.name}</span>
-											</div>
-									{canManageTeamAssignments ? (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="size-8 text-muted-foreground hover:text-destructive"
-											onClick={() => handleDeleteClick(assignment)}
-										>
-											<IconTrash className="size-4" />
-										</Button>
-									) : null}
+					<Card>
+						<CardHeader>
+							<div className="flex items-center gap-2">
+								<IconUsers className="size-5 text-muted-foreground" />
+								<div className="flex-1">
+									<CardTitle className="text-base">
+										{t("settings.vacation.assignments.teamLevel", "Team Overrides")}
+										{teamAssignments.length > 0 && (
+											<Badge variant="secondary" className="ml-2">
+												{teamAssignments.length}
+											</Badge>
+										)}
+									</CardTitle>
+									<CardDescription>
+										{t(
+											"settings.vacation.assignments.teamLevelDescription",
+											"Override the company default for specific teams (e.g., different locations or schedules)",
+										)}
+									</CardDescription>
 								</div>
-										<div className="mt-2 ml-7 space-y-1">
-											<div className="flex items-center gap-2 text-sm">
-												<Badge variant="outline" className="text-xs">
-													{t("settings.vacation.current", "Current")}
-												</Badge>
-												<span className="text-muted-foreground">
-													{assignment.policy.name} — {assignment.policy.defaultAnnualDays}{" "}
-													{t("settings.vacation.days", "days")}
-												</span>
-												<span className="text-xs text-muted-foreground">
-													({t("settings.vacation.since", "since")}{" "}
-													{formatDate(assignment.policy.startDate)})
-												</span>
+							</div>
+						</CardHeader>
+						<CardContent>
+							{canManageTeamAssignments ? (
+								<div className="flex justify-end mb-4">
+									<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
+										<IconPlus className="mr-2 size-4" />
+										{t("settings.vacation.assignments.assignTeam", "Assign to Team")}
+									</Button>
+								</div>
+							) : null}
+							{teamAssignments.length > 0 ? (
+								<div className="space-y-3">
+									{teamAssignments.map((assignment) => (
+										<div
+											key={assignment.id}
+											className="rounded-lg border p-4 hover:bg-accent/50 transition-colors"
+										>
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-3">
+													<IconUsers className="size-4 text-muted-foreground" />
+													<span className="font-medium">{assignment.team?.name}</span>
+												</div>
+												{canManageTeamAssignments ? (
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-8 text-muted-foreground hover:text-destructive"
+														onClick={() => handleDeleteClick(assignment)}
+													>
+														<IconTrash className="size-4" />
+													</Button>
+												) : null}
 											</div>
-											{assignment.policy.validUntil && (
-												<div className="flex items-center gap-2 text-sm text-amber-600">
-													<Badge variant="outline" className="text-xs border-amber-300">
-														{t("settings.vacation.expires", "Expires")}
+											<div className="mt-2 ml-7 space-y-1">
+												<div className="flex items-center gap-2 text-sm">
+													<Badge variant="outline" className="text-xs">
+														{t("settings.vacation.current", "Current")}
 													</Badge>
-													<span>
-														{formatDate(assignment.policy.validUntil)} →{" "}
-														{t(
-															"settings.vacation.fallsBackToDefault",
-															"Falls back to company default",
-														)}
+													<span className="text-muted-foreground">
+														{assignment.policy.name} — {assignment.policy.defaultAnnualDays}{" "}
+														{t("settings.vacation.days", "days")}
+													</span>
+													<span className="text-xs text-muted-foreground">
+														({t("settings.vacation.since", "since")}{" "}
+														{formatDate(assignment.policy.startDate)})
 													</span>
 												</div>
-											)}
+												{assignment.policy.validUntil && (
+													<div className="flex items-center gap-2 text-sm text-amber-600">
+														<Badge variant="outline" className="text-xs border-amber-300">
+															{t("settings.vacation.expires", "Expires")}
+														</Badge>
+														<span>
+															{formatDate(assignment.policy.validUntil)} →{" "}
+															{t(
+																"settings.vacation.fallsBackToDefault",
+																"Falls back to company default",
+															)}
+														</span>
+													</div>
+												)}
+											</div>
 										</div>
-									</div>
-								))}
-							</div>
-						) : (
-							<p className="text-sm text-muted-foreground text-center py-4">
-								{t(
-									"settings.vacation.assignments.noTeamPolicies",
-									"No team-specific policies. All teams use the company default.",
-								)}
-							</p>
-						)}
-					</CardContent>
-				</Card>
+									))}
+								</div>
+							) : (
+								<p className="text-sm text-muted-foreground text-center py-4">
+									{t(
+										"settings.vacation.assignments.noTeamPolicies",
+										"No team-specific policies. All teams use the company default.",
+									)}
+								</p>
+							)}
+						</CardContent>
+					</Card>
 				) : null}
 
 				{/* Employee Level */}
 				{showEmployeeSection ? (
-				<Card>
-					<CardHeader>
-						<div className="flex items-center gap-2">
-							<IconUser className="size-5 text-muted-foreground" />
-							<div className="flex-1">
-								<CardTitle className="text-base">
-									{t("settings.vacation.assignments.employeeLevel", "Employee Overrides")}
-									{employeeAssignments.length > 0 && (
-										<Badge variant="secondary" className="ml-2">
-											{employeeAssignments.length}
-										</Badge>
-									)}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"settings.vacation.assignments.employeeLevelDescription",
-										"Override team or company defaults for specific employees (e.g., special contracts)",
-									)}
-								</CardDescription>
-							</div>
-						</div>
-					</CardHeader>
-					<CardContent>
-						{canManageEmployeeAssignments ? (
-							<div className="flex justify-end mb-4">
-								<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-									<IconPlus className="mr-2 size-4" />
-									{t("settings.vacation.assignments.assignEmployee", "Assign to Employee")}
-								</Button>
-							</div>
-						) : null}
-						{employeeAssignments.length > 0 ? (
-							<div className="space-y-3">
-								{employeeAssignments.map((assignment) => (
-									<div
-										key={assignment.id}
-										className="rounded-lg border p-4 hover:bg-accent/50 transition-colors"
-									>
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-3">
-												<IconUser className="size-4 text-muted-foreground" />
-												<span className="font-medium">
-													{assignment.employee?.firstName} {assignment.employee?.lastName}
-												</span>
-											</div>
-									{canManageEmployeeAssignments ? (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="size-8 text-muted-foreground hover:text-destructive"
-											onClick={() => handleDeleteClick(assignment)}
-										>
-											<IconTrash className="size-4" />
-										</Button>
-									) : null}
+					<Card>
+						<CardHeader>
+							<div className="flex items-center gap-2">
+								<IconUser className="size-5 text-muted-foreground" />
+								<div className="flex-1">
+									<CardTitle className="text-base">
+										{t("settings.vacation.assignments.employeeLevel", "Employee Overrides")}
+										{employeeAssignments.length > 0 && (
+											<Badge variant="secondary" className="ml-2">
+												{employeeAssignments.length}
+											</Badge>
+										)}
+									</CardTitle>
+									<CardDescription>
+										{t(
+											"settings.vacation.assignments.employeeLevelDescription",
+											"Override team or company defaults for specific employees (e.g., special contracts)",
+										)}
+									</CardDescription>
 								</div>
-										<div className="mt-2 ml-7 space-y-1">
-											<div className="flex items-center gap-2 text-sm">
-												<Badge variant="outline" className="text-xs">
-													{t("settings.vacation.current", "Current")}
-												</Badge>
-												<span className="text-muted-foreground">
-													{assignment.policy.name} — {assignment.policy.defaultAnnualDays}{" "}
-													{t("settings.vacation.days", "days")}
-												</span>
-												<span className="text-xs text-muted-foreground">
-													({t("settings.vacation.since", "since")}{" "}
-													{formatDate(assignment.policy.startDate)})
-												</span>
-											</div>
-											{assignment.policy.validUntil && (
-												<div className="flex items-center gap-2 text-sm text-amber-600">
-													<Badge variant="outline" className="text-xs border-amber-300">
-														{t("settings.vacation.expires", "Expires")}
-													</Badge>
-													<span>
-														{formatDate(assignment.policy.validUntil)} →{" "}
-														{t(
-															"settings.vacation.fallsBackToTeamOrDefault",
-															"Falls back to team or company default",
-														)}
+							</div>
+						</CardHeader>
+						<CardContent>
+							{canManageEmployeeAssignments ? (
+								<div className="flex justify-end mb-4">
+									<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
+										<IconPlus className="mr-2 size-4" />
+										{t("settings.vacation.assignments.assignEmployee", "Assign to Employee")}
+									</Button>
+								</div>
+							) : null}
+							{employeeAssignments.length > 0 ? (
+								<div className="space-y-3">
+									{employeeAssignments.map((assignment) => (
+										<div
+											key={assignment.id}
+											className="rounded-lg border p-4 hover:bg-accent/50 transition-colors"
+										>
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-3">
+													<IconUser className="size-4 text-muted-foreground" />
+													<span className="font-medium">
+														{assignment.employee?.firstName} {assignment.employee?.lastName}
 													</span>
 												</div>
-											)}
+												{canManageEmployeeAssignments ? (
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-8 text-muted-foreground hover:text-destructive"
+														onClick={() => handleDeleteClick(assignment)}
+													>
+														<IconTrash className="size-4" />
+													</Button>
+												) : null}
+											</div>
+											<div className="mt-2 ml-7 space-y-1">
+												<div className="flex items-center gap-2 text-sm">
+													<Badge variant="outline" className="text-xs">
+														{t("settings.vacation.current", "Current")}
+													</Badge>
+													<span className="text-muted-foreground">
+														{assignment.policy.name} — {assignment.policy.defaultAnnualDays}{" "}
+														{t("settings.vacation.days", "days")}
+													</span>
+													<span className="text-xs text-muted-foreground">
+														({t("settings.vacation.since", "since")}{" "}
+														{formatDate(assignment.policy.startDate)})
+													</span>
+												</div>
+												{assignment.policy.validUntil && (
+													<div className="flex items-center gap-2 text-sm text-amber-600">
+														<Badge variant="outline" className="text-xs border-amber-300">
+															{t("settings.vacation.expires", "Expires")}
+														</Badge>
+														<span>
+															{formatDate(assignment.policy.validUntil)} →{" "}
+															{t(
+																"settings.vacation.fallsBackToTeamOrDefault",
+																"Falls back to team or company default",
+															)}
+														</span>
+													</div>
+												)}
+											</div>
 										</div>
-									</div>
-								))}
-							</div>
-						) : (
-							<p className="text-sm text-muted-foreground text-center py-4">
-								{t(
-									"settings.vacation.assignments.noEmployeePolicies",
-									"No employee-specific policies. Employees use their team or company default.",
-								)}
-							</p>
-						)}
-					</CardContent>
-				</Card>
+									))}
+								</div>
+							) : (
+								<p className="text-sm text-muted-foreground text-center py-4">
+									{t(
+										"settings.vacation.assignments.noEmployeePolicies",
+										"No employee-specific policies. Employees use their team or company default.",
+									)}
+								</p>
+							)}
+						</CardContent>
+					</Card>
 				) : null}
 			</div>
 

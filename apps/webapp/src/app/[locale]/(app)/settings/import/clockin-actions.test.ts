@@ -109,9 +109,7 @@ describe("Clockin actions", () => {
 
 		expect(result).toEqual({
 			success: true,
-			data: [
-				{ id: 1, name: "Ada Lovelace", email: "ada@example.com" },
-			],
+			data: [{ id: 1, name: "Ada Lovelace", email: "ada@example.com" }],
 		});
 	});
 

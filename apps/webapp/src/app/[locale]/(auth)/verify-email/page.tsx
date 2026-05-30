@@ -48,10 +48,7 @@ function VerifyEmailContent() {
 				})
 				.catch((error) => ({
 					error: {
-						message:
-							error instanceof Error
-								? error.message
-								: genericErrorMessage,
+						message: error instanceof Error ? error.message : genericErrorMessage,
 					},
 				}));
 

@@ -7,12 +7,16 @@ import type {
 	WorkPeriodData,
 } from "../types";
 
-export function createPersonioConnector(exporter: IPayrollExporter = personioExporter): IPayrollExporter {
+export function createPersonioConnector(
+	exporter: IPayrollExporter = personioExporter,
+): IPayrollExporter {
 	return {
 		exporterId: exporter.exporterId,
 		exporterName: exporter.exporterName,
 		version: exporter.version,
-		validateConfig(config: Record<string, unknown>): Promise<{ valid: boolean; errors?: string[] }> {
+		validateConfig(
+			config: Record<string, unknown>,
+		): Promise<{ valid: boolean; errors?: string[] }> {
 			return exporter.validateConfig(config);
 		},
 		testConnection(

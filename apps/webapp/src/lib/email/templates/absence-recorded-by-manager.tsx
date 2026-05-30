@@ -27,8 +27,8 @@ export function AbsenceRecordedByManager({
 					<Heading style={h1}>Absence Recorded</Heading>
 					<Text style={text}>Hi {employeeName},</Text>
 					<Text style={text}>
-						{managerName} recorded an absence on your behalf. It has been added to your
-						absence records.
+						{managerName} recorded an absence on your behalf. It has been added to your absence
+						records.
 					</Text>
 
 					<Section style={detailsBox}>

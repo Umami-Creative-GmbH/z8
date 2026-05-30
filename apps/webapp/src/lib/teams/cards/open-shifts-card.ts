@@ -6,8 +6,8 @@
  */
 
 import { DateTime } from "luxon";
-import type { OpenShiftWithDetails } from "@/lib/effect/services/open-shifts.service";
 import { fmtWeekdayShortDate } from "@/lib/bot-platform/i18n";
+import type { OpenShiftWithDetails } from "@/lib/effect/services/open-shifts.service";
 
 // ============================================
 // TYPES
@@ -48,7 +48,7 @@ function calculateShiftDuration(startTime: string, endTime: string): string {
 	const [startH, startM] = startTime.split(":").map(Number);
 	const [endH, endM] = endTime.split(":").map(Number);
 
-	let durationMins = (endH * 60 + endM) - (startH * 60 + startM);
+	let durationMins = endH * 60 + endM - (startH * 60 + startM);
 	if (durationMins < 0) durationMins += 24 * 60; // Handle overnight shifts
 
 	const hours = Math.floor(durationMins / 60);

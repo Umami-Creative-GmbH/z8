@@ -181,11 +181,7 @@ export class SHA256HashProvider implements IHashProvider {
 	/**
 	 * Verify a Merkle proof for a specific leaf
 	 */
-	verifyMerkleProof(
-		leafHash: SHA256Hash,
-		proof: MerkleProof,
-		expectedRoot: SHA256Hash,
-	): boolean {
+	verifyMerkleProof(leafHash: SHA256Hash, proof: MerkleProof, expectedRoot: SHA256Hash): boolean {
 		let currentHash = leafHash.toString();
 
 		for (let i = 0; i < proof.path.length; i++) {

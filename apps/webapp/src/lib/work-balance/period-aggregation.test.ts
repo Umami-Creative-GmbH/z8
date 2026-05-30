@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { eq, gte, isNotNull, lte } from "drizzle-orm";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 
 const mockState = vi.hoisted(() => ({
@@ -250,7 +250,9 @@ describe("work balance period aggregation", () => {
 			expect.objectContaining({
 				set: expect.objectContaining({
 					isDirty: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
-					dirtyFromDate: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
+					dirtyFromDate: expect.objectContaining({
+						values: expect.arrayContaining([refreshStartedAt]),
+					}),
 					refreshRequestedAt: expect.objectContaining({
 						values: expect.arrayContaining([refreshStartedAt]),
 					}),
@@ -260,7 +262,9 @@ describe("work balance period aggregation", () => {
 	});
 
 	it("rebuilds a closed year bucket from closed monthly buckets", async () => {
-		mockState.selectWhere.mockResolvedValueOnce([{ actualMinutes: 18_600, requiredMinutes: 19_200 }]);
+		mockState.selectWhere.mockResolvedValueOnce([
+			{ actualMinutes: 18_600, requiredMinutes: 19_200 },
+		]);
 
 		await rebuildEmployeeYearBalanceFromMonths({
 			employeeId: "employee-1",
@@ -291,7 +295,9 @@ describe("work balance period aggregation", () => {
 	});
 
 	it("clips closed year rebuild source months to the employee calculation start date", async () => {
-		mockState.selectWhere.mockResolvedValueOnce([{ actualMinutes: 18_600, requiredMinutes: 19_200 }]);
+		mockState.selectWhere.mockResolvedValueOnce([
+			{ actualMinutes: 18_600, requiredMinutes: 19_200 },
+		]);
 
 		await rebuildEmployeeYearBalanceFromMonths({
 			employeeId: "employee-1",

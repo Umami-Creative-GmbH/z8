@@ -14,7 +14,9 @@ export function createSuccessFactorsConnector(
 		exporterId: exporter.exporterId,
 		exporterName: exporter.exporterName,
 		version: exporter.version,
-		validateConfig(config: Record<string, unknown>): Promise<{ valid: boolean; errors?: string[] }> {
+		validateConfig(
+			config: Record<string, unknown>,
+		): Promise<{ valid: boolean; errors?: string[] }> {
 			return exporter.validateConfig(config);
 		},
 		testConnection(

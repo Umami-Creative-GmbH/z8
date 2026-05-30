@@ -11,8 +11,13 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import dynamic from "next/dynamic";
 import { memo, useCallback, useState } from "react";
 import { toast } from "sonner";
+import {
+	deleteApiKey,
+	listApiKeys,
+} from "@/app/[locale]/(app)/settings/enterprise/api-keys/actions";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -41,13 +46,8 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-	listApiKeys,
-	deleteApiKey,
-} from "@/app/[locale]/(app)/settings/enterprise/api-keys/actions";
 import type { ApiKeyResponse, CreateApiKeyResponse } from "@/lib/validations/api-key";
 import { MAX_API_KEYS_PER_ORG } from "@/lib/validations/api-key";
-import dynamic from "next/dynamic";
 
 // Dynamically import dialogs - they're only shown on user interaction
 const ApiKeyCreateDialog = dynamic(() =>
@@ -157,9 +157,7 @@ export function ApiKeyPageClient({
 			<div className="mx-auto max-w-4xl">
 				<div className="mb-6 flex items-start justify-between">
 					<div>
-						<h1 className="text-2xl font-semibold">
-							{t("settings.apiKeys.title", "API Keys")}
-						</h1>
+						<h1 className="text-2xl font-semibold">{t("settings.apiKeys.title", "API Keys")}</h1>
 						<p className="text-muted-foreground">
 							{t(
 								"settings.apiKeys.description",
@@ -178,171 +176,171 @@ export function ApiKeyPageClient({
 						{t("settings.apiKeys.create", "Create Key")}
 					</Button>
 				</div>
-					<div className="space-y-6">
+				<div className="space-y-6">
 					<Card>
 						<CardContent className="pt-6">
-						{isLoading ? (
-							<div className="flex items-center justify-center py-8">
-								<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
-							</div>
-						) : apiKeys.length === 0 ? (
-							<div className="text-center py-12">
-								<IconKey className="size-12 mx-auto text-muted-foreground mb-4" />
-								<h3 className="text-lg font-medium mb-2">
-									{t("settings.apiKeys.empty.title", "No API Keys")}
-								</h3>
-								<p className="text-muted-foreground mb-4">
-									{t(
-										"settings.apiKeys.empty.description",
-										"Create your first API key to enable programmatic access to your organization.",
-									)}
-								</p>
-								<Button onClick={() => setCreateDialogOpen(true)}>
-									<IconPlus className="mr-2 size-4" />
-									{t("settings.apiKeys.create", "Create Key")}
-								</Button>
-							</div>
-						) : (
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>{t("settings.apiKeys.name", "Name")}</TableHead>
-										<TableHead>{t("settings.apiKeys.prefix", "Key Prefix")}</TableHead>
-										<TableHead>{t("settings.apiKeys.scopes", "Permissions")}</TableHead>
-										<TableHead>{t("settings.apiKeys.expires", "Expires")}</TableHead>
-										<TableHead>{t("settings.apiKeys.lastUsed", "Last Used")}</TableHead>
-										<TableHead>{t("settings.apiKeys.status", "Status")}</TableHead>
-										<TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{apiKeys.map((apiKey) => {
-										const expStatus = getExpirationStatus(apiKey.expiresAt);
-										return (
-											<TableRow key={apiKey.id}>
-												<TableCell>
-													<div className="font-medium">{apiKey.name}</div>
-													<div className="text-xs text-muted-foreground">
-														{t("settings.apiKeys.createdOn", "Created {date}", {
-															date: formatDate(apiKey.createdAt),
-														})}
-													</div>
-												</TableCell>
-												<TableCell>
-													<div className="flex items-center gap-2">
-														<code className="font-mono text-sm bg-muted px-2 py-1 rounded">
-															{apiKey.prefix || "z8_org_***"}
-														</code>
+							{isLoading ? (
+								<div className="flex items-center justify-center py-8">
+									<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
+								</div>
+							) : apiKeys.length === 0 ? (
+								<div className="text-center py-12">
+									<IconKey className="size-12 mx-auto text-muted-foreground mb-4" />
+									<h3 className="text-lg font-medium mb-2">
+										{t("settings.apiKeys.empty.title", "No API Keys")}
+									</h3>
+									<p className="text-muted-foreground mb-4">
+										{t(
+											"settings.apiKeys.empty.description",
+											"Create your first API key to enable programmatic access to your organization.",
+										)}
+									</p>
+									<Button onClick={() => setCreateDialogOpen(true)}>
+										<IconPlus className="mr-2 size-4" />
+										{t("settings.apiKeys.create", "Create Key")}
+									</Button>
+								</div>
+							) : (
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead>{t("settings.apiKeys.name", "Name")}</TableHead>
+											<TableHead>{t("settings.apiKeys.prefix", "Key Prefix")}</TableHead>
+											<TableHead>{t("settings.apiKeys.scopes", "Permissions")}</TableHead>
+											<TableHead>{t("settings.apiKeys.expires", "Expires")}</TableHead>
+											<TableHead>{t("settings.apiKeys.lastUsed", "Last Used")}</TableHead>
+											<TableHead>{t("settings.apiKeys.status", "Status")}</TableHead>
+											<TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{apiKeys.map((apiKey) => {
+											const expStatus = getExpirationStatus(apiKey.expiresAt);
+											return (
+												<TableRow key={apiKey.id}>
+													<TableCell>
+														<div className="font-medium">{apiKey.name}</div>
+														<div className="text-xs text-muted-foreground">
+															{t("settings.apiKeys.createdOn", "Created {date}", {
+																date: formatDate(apiKey.createdAt),
+															})}
+														</div>
+													</TableCell>
+													<TableCell>
+														<div className="flex items-center gap-2">
+															<code className="font-mono text-sm bg-muted px-2 py-1 rounded">
+																{apiKey.prefix || "z8_org_***"}
+															</code>
+															<Tooltip>
+																<TooltipTrigger asChild>
+																	<Button
+																		variant="ghost"
+																		size="sm"
+																		className="size-6 p-0"
+																		onClick={() => handleCopyPrefix(apiKey.prefix || "", apiKey.id)}
+																	>
+																		{copiedKeyId === apiKey.id ? (
+																			<IconCheck className="size-4 text-green-600" />
+																		) : (
+																			<IconCopy className="size-4" />
+																		)}
+																	</Button>
+																</TooltipTrigger>
+																<TooltipContent>
+																	{t("settings.apiKeys.copyPrefix", "Copy prefix")}
+																</TooltipContent>
+															</Tooltip>
+														</div>
+													</TableCell>
+													<TableCell>
 														<Tooltip>
-															<TooltipTrigger asChild>
+															<TooltipTrigger>
+																<span className="text-sm">{formatScopes(apiKey.scopes)}</span>
+															</TooltipTrigger>
+															<TooltipContent>
+																<div className="space-y-1">
+																	{apiKey.scopes.map((scope) => (
+																		<div key={scope}>{scope}</div>
+																	))}
+																</div>
+															</TooltipContent>
+														</Tooltip>
+													</TableCell>
+													<TableCell>
+														<Badge
+															variant={
+																expStatus.variant as
+																	| "default"
+																	| "secondary"
+																	| "destructive"
+																	| "outline"
+															}
+														>
+															{expStatus.label}
+														</Badge>
+													</TableCell>
+													<TableCell>
+														{apiKey.lastRequest ? formatDate(apiKey.lastRequest) : "-"}
+													</TableCell>
+													<TableCell>
+														<Badge variant={apiKey.enabled ? "default" : "secondary"}>
+															{apiKey.enabled
+																? t("settings.apiKeys.active", "Active")
+																: t("settings.apiKeys.disabled", "Disabled")}
+														</Badge>
+													</TableCell>
+													<TableCell className="text-right">
+														<DropdownMenu>
+															<DropdownMenuTrigger asChild>
 																<Button
 																	variant="ghost"
 																	size="sm"
-																	className="size-6 p-0"
-																	onClick={() => handleCopyPrefix(apiKey.prefix || "", apiKey.id)}
+																	aria-label={t("common.moreActions", "More actions")}
 																>
-																	{copiedKeyId === apiKey.id ? (
-																		<IconCheck className="size-4 text-green-600" />
-																	) : (
-																		<IconCopy className="size-4" />
-																	)}
+																	•••
 																</Button>
-															</TooltipTrigger>
-															<TooltipContent>
-																{t("settings.apiKeys.copyPrefix", "Copy prefix")}
-															</TooltipContent>
-														</Tooltip>
-													</div>
-												</TableCell>
-												<TableCell>
-													<Tooltip>
-														<TooltipTrigger>
-															<span className="text-sm">{formatScopes(apiKey.scopes)}</span>
-														</TooltipTrigger>
-														<TooltipContent>
-															<div className="space-y-1">
-																{apiKey.scopes.map((scope) => (
-																	<div key={scope}>{scope}</div>
-																))}
-															</div>
-														</TooltipContent>
-													</Tooltip>
-												</TableCell>
-												<TableCell>
-													<Badge
-														variant={
-															expStatus.variant as
-																| "default"
-																| "secondary"
-																| "destructive"
-																| "outline"
-														}
-													>
-														{expStatus.label}
-													</Badge>
-												</TableCell>
-												<TableCell>
-													{apiKey.lastRequest ? formatDate(apiKey.lastRequest) : "-"}
-												</TableCell>
-												<TableCell>
-													<Badge variant={apiKey.enabled ? "default" : "secondary"}>
-														{apiKey.enabled
-															? t("settings.apiKeys.active", "Active")
-															: t("settings.apiKeys.disabled", "Disabled")}
-													</Badge>
-												</TableCell>
-												<TableCell className="text-right">
-													<DropdownMenu>
-														<DropdownMenuTrigger asChild>
-															<Button
-																variant="ghost"
-																size="sm"
-																aria-label={t("common.moreActions", "More actions")}
-															>
-																•••
-															</Button>
-														</DropdownMenuTrigger>
-														<DropdownMenuContent align="end">
-															<DropdownMenuItem onClick={() => setEditingKey(apiKey)}>
-																{t("common.edit", "Edit")}
-															</DropdownMenuItem>
-															<DropdownMenuItem
-																onClick={() => setDeleteDialogKey(apiKey)}
-																className="text-destructive"
-															>
-																{t("common.delete", "Delete")}
-															</DropdownMenuItem>
-														</DropdownMenuContent>
-													</DropdownMenu>
-												</TableCell>
-											</TableRow>
-										);
-									})}
-								</TableBody>
-							</Table>
-						)}
-					</CardContent>
-				</Card>
+															</DropdownMenuTrigger>
+															<DropdownMenuContent align="end">
+																<DropdownMenuItem onClick={() => setEditingKey(apiKey)}>
+																	{t("common.edit", "Edit")}
+																</DropdownMenuItem>
+																<DropdownMenuItem
+																	onClick={() => setDeleteDialogKey(apiKey)}
+																	className="text-destructive"
+																>
+																	{t("common.delete", "Delete")}
+																</DropdownMenuItem>
+															</DropdownMenuContent>
+														</DropdownMenu>
+													</TableCell>
+												</TableRow>
+											);
+										})}
+									</TableBody>
+								</Table>
+							)}
+						</CardContent>
+					</Card>
 
-				{/* Security Notice */}
-				<Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
-					<CardContent>
-						<div className="flex gap-3">
-							<IconKey className="size-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-							<div>
-								<h4 className="font-medium text-amber-800 dark:text-amber-200">
-									{t("settings.apiKeys.security.title", "Security Notice")}
-								</h4>
-								<p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-									{t(
-										"settings.apiKeys.security.description",
-										"API keys provide full access to your organization data within their permission scope. Keep them secure and never share them in public repositories or client-side code.",
-									)}
-								</p>
+					{/* Security Notice */}
+					<Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+						<CardContent>
+							<div className="flex gap-3">
+								<IconKey className="size-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+								<div>
+									<h4 className="font-medium text-amber-800 dark:text-amber-200">
+										{t("settings.apiKeys.security.title", "Security Notice")}
+									</h4>
+									<p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+										{t(
+											"settings.apiKeys.security.description",
+											"API keys provide full access to your organization data within their permission scope. Keep them secure and never share them in public repositories or client-side code.",
+										)}
+									</p>
+								</div>
 							</div>
-						</div>
-					</CardContent>
-				</Card>
+						</CardContent>
+					</Card>
 				</div>
 			</div>
 

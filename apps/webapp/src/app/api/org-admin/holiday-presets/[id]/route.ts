@@ -1,12 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import {
-	holidayPreset,
-	holidayPresetAssignment,
-	holidayPresetHoliday,
-} from "@/db/schema";
+import { holidayPreset, holidayPresetAssignment, holidayPresetHoliday } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
@@ -48,12 +44,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 		const [preset] = await db
 			.select()
 			.from(holidayPreset)
-			.where(
-				and(
-					eq(holidayPreset.id, id),
-					eq(holidayPreset.organizationId, activeOrgId),
-				),
-			)
+			.where(and(eq(holidayPreset.id, id), eq(holidayPreset.organizationId, activeOrgId)))
 			.limit(1);
 
 		if (!preset) {
@@ -120,12 +111,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 		const [existingPreset] = await db
 			.select()
 			.from(holidayPreset)
-			.where(
-				and(
-					eq(holidayPreset.id, id),
-					eq(holidayPreset.organizationId, activeOrgId),
-				),
-			)
+			.where(and(eq(holidayPreset.id, id), eq(holidayPreset.organizationId, activeOrgId)))
 			.limit(1);
 
 		if (!existingPreset) {
@@ -200,12 +186,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 		const [existingPreset] = await db
 			.select()
 			.from(holidayPreset)
-			.where(
-				and(
-					eq(holidayPreset.id, id),
-					eq(holidayPreset.organizationId, activeOrgId),
-				),
-			)
+			.where(and(eq(holidayPreset.id, id), eq(holidayPreset.organizationId, activeOrgId)))
 			.limit(1);
 
 		if (!existingPreset) {

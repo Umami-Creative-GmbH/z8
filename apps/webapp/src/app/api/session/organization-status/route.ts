@@ -1,10 +1,10 @@
 import { headers } from "next/headers";
 import { connection, NextResponse } from "next/server";
+import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { getUserOrganizations, validateAppAccess } from "@/lib/auth-helpers";
 import { getAuthRequestDiagnostics } from "@/lib/diagnostics";
 import { createLogger } from "@/lib/logger";
-import { env } from "@/env";
 
 const logger = createLogger("SessionOrganizationStatusRoute");
 const shouldLogAuthDiagnostics = env.NODE_ENV === "production";

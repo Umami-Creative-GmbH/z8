@@ -105,10 +105,7 @@ export function EmployeeDetailPageClient({
 
 		if (result?.success) {
 			toast.success(
-				t(
-					"settings.workBalanceRecalculation.requestSuccess",
-					"Work balance recalculation queued",
-				),
+				t("settings.workBalanceRecalculation.requestSuccess", "Work balance recalculation queued"),
 			);
 			return;
 		}

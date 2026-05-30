@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { Settings } from "luxon";
+import { describe, expect, it } from "vitest";
 import { getSelectedWorkdayDate } from "./workday-timeline-date";
 
 describe("getSelectedWorkdayDate", () => {

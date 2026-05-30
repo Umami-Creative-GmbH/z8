@@ -15,6 +15,7 @@ const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.Cartesi
 });
 const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
 const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
+
 import { ExportButton } from "@/components/analytics/export-button";
 import { DateRangePicker } from "@/components/reports/date-range-picker";
 import { Badge } from "@/components/ui/badge";
@@ -36,8 +37,7 @@ import { getTeamPerformanceData } from "../actions";
 
 function areDateRangesEqual(left: DateRange, right: DateRange) {
 	return (
-		left.start.getTime() === right.start.getTime() &&
-		left.end.getTime() === right.end.getTime()
+		left.start.getTime() === right.start.getTime() && left.end.getTime() === right.end.getTime()
 	);
 }
 
@@ -78,10 +78,7 @@ export default function TeamPerformancePage() {
 		}
 
 		const expectedDefaultDateRange = getDateRangeForPreset("current_month", { timezone });
-		if (
-			!hasUserChangedRange.current &&
-			!areDateRangesEqual(dateRange, expectedDefaultDateRange)
-		) {
+		if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
 			return;
 		}
 		const range = dateRange;
@@ -106,7 +103,9 @@ export default function TeamPerformancePage() {
 				}
 
 				console.error("Failed to load team performance data:", error);
-				toast.error(t("analytics.teamPerformance.errors.loadData", "Failed to load team performance data"));
+				toast.error(
+					t("analytics.teamPerformance.errors.loadData", "Failed to load team performance data"),
+				);
 			}
 
 			if (isCurrent) {
@@ -158,10 +157,17 @@ export default function TeamPerformancePage() {
 						headers: [
 							{ key: "teamName", label: t("analytics.common.team", "Team") },
 							{ key: "totalHours", label: t("analytics.common.totalHours", "Total Hours") },
-							{ key: "avgHoursPerEmployee", label: t("analytics.teamPerformance.avgPerEmployee", "Avg per Employee") },
-							{ key: "employeeCount", label: t("analytics.teamPerformance.employeeCount", "Employee Count") },
+							{
+								key: "avgHoursPerEmployee",
+								label: t("analytics.teamPerformance.avgPerEmployee", "Avg per Employee"),
+							},
+							{
+								key: "employeeCount",
+								label: t("analytics.teamPerformance.employeeCount", "Employee Count"),
+							},
 						],
-						filename: "team-performance-" + (dateRange?.start.toISOString().split("T")[0] ?? "pending"),
+						filename:
+							"team-performance-" + (dateRange?.start.toISOString().split("T")[0] ?? "pending"),
 					}}
 					disabled={!teamData || !dateRange}
 				/>
@@ -178,15 +184,22 @@ export default function TeamPerformancePage() {
 					{/* Team Comparison Chart */}
 					<Card>
 						<CardHeader>
-							<CardTitle>{t("analytics.teamPerformance.comparison.title", "Team Comparison")}</CardTitle>
-							<CardDescription>{t("analytics.teamPerformance.comparison.description", "Total work hours by team for the selected period")}</CardDescription>
+							<CardTitle>
+								{t("analytics.teamPerformance.comparison.title", "Team Comparison")}
+							</CardTitle>
+							<CardDescription>
+								{t(
+									"analytics.teamPerformance.comparison.description",
+									"Total work hours by team for the selected period",
+								)}
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{teamComparisonData.length > 0 ? (
 								<ChartContainer
 									config={{
 										hours: {
-										label: t("analytics.common.hours", "Hours"),
+											label: t("analytics.common.hours", "Hours"),
 											color: "hsl(var(--primary))",
 										},
 									}}
@@ -211,23 +224,39 @@ export default function TeamPerformancePage() {
 					{/* Team Performance Table */}
 					<Card>
 						<CardHeader>
-							<CardTitle>{t("analytics.teamPerformance.details.title", "Team Performance Details")}</CardTitle>
-							<CardDescription>{t("analytics.teamPerformance.details.description", "Breakdown of work hours by team and employee")}</CardDescription>
+							<CardTitle>
+								{t("analytics.teamPerformance.details.title", "Team Performance Details")}
+							</CardTitle>
+							<CardDescription>
+								{t(
+									"analytics.teamPerformance.details.description",
+									"Breakdown of work hours by team and employee",
+								)}
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{teams.length === 0 ? (
 								<div className="flex h-[200px] items-center justify-center text-muted-foreground">
-									{t("analytics.common.noDataForPeriod", "No data available for the selected period")}
+									{t(
+										"analytics.common.noDataForPeriod",
+										"No data available for the selected period",
+									)}
 								</div>
 							) : (
 								<Table>
 									<TableHeader>
 										<TableRow>
-										<TableHead>{t("analytics.common.team", "Team")}</TableHead>
-										<TableHead className="text-right">{t("analytics.common.totalHours", "Total Hours")}</TableHead>
-										<TableHead className="text-right">{t("analytics.teamPerformance.avgPerEmployee", "Avg per Employee")}</TableHead>
-										<TableHead className="text-right">{t("analytics.teamPerformance.employeeCount", "Employee Count")}</TableHead>
-										<TableHead>{t("common.status", "Status")}</TableHead>
+											<TableHead>{t("analytics.common.team", "Team")}</TableHead>
+											<TableHead className="text-right">
+												{t("analytics.common.totalHours", "Total Hours")}
+											</TableHead>
+											<TableHead className="text-right">
+												{t("analytics.teamPerformance.avgPerEmployee", "Avg per Employee")}
+											</TableHead>
+											<TableHead className="text-right">
+												{t("analytics.teamPerformance.employeeCount", "Employee Count")}
+											</TableHead>
+											<TableHead>{t("common.status", "Status")}</TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>
@@ -240,7 +269,9 @@ export default function TeamPerformancePage() {
 												</TableCell>
 												<TableCell className="text-right">{team.employeeCount}</TableCell>
 												<TableCell>
-											<Badge variant="outline">{t("analytics.teamPerformance.onTrack", "On Track")}</Badge>
+													<Badge variant="outline">
+														{t("analytics.teamPerformance.onTrack", "On Track")}
+													</Badge>
 												</TableCell>
 											</TableRow>
 										))}
@@ -253,19 +284,26 @@ export default function TeamPerformancePage() {
 					{/* Overtime/Undertime Breakdown */}
 					<Card>
 						<CardHeader>
-							<CardTitle>{t("analytics.teamPerformance.variance.title", "Overtime & Undertime")}</CardTitle>
-							<CardDescription>{t("analytics.teamPerformance.variance.description", "Hours variance from expected work hours")}</CardDescription>
+							<CardTitle>
+								{t("analytics.teamPerformance.variance.title", "Overtime & Undertime")}
+							</CardTitle>
+							<CardDescription>
+								{t(
+									"analytics.teamPerformance.variance.description",
+									"Hours variance from expected work hours",
+								)}
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{overtimeData.length > 0 ? (
 								<ChartContainer
 									config={{
 										overtime: {
-										label: t("analytics.common.overtime", "Overtime"),
+											label: t("analytics.common.overtime", "Overtime"),
 											color: "hsl(var(--chart-1))",
 										},
 										undertime: {
-										label: t("analytics.common.undertime", "Undertime"),
+											label: t("analytics.common.undertime", "Undertime"),
 											color: "hsl(var(--chart-2))",
 										},
 									}}

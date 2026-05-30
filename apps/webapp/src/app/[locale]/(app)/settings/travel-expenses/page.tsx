@@ -1,7 +1,7 @@
 import { connection } from "next/server";
-import { getTranslate } from "@/tolgee/server";
 import { TravelExpensePolicyManagement } from "@/components/settings/travel-expense-policy-management";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { getTranslate } from "@/tolgee/server";
 
 export default async function TravelExpenseSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode

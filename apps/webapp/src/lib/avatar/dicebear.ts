@@ -9,7 +9,9 @@ export interface DiceBearAvatarOptions {
 	gender?: UserAvatarGender | null;
 }
 
-function getDiceBearSex(gender: UserAvatarGender | null | undefined): ["male"] | ["female"] | undefined {
+function getDiceBearSex(
+	gender: UserAvatarGender | null | undefined,
+): ["male"] | ["female"] | undefined {
 	if (gender === "male") return ["male"];
 	if (gender === "female") return ["female"];
 	return undefined;

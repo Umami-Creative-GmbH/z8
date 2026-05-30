@@ -310,13 +310,17 @@ export function ProjectDialog({
 									<Label>{t("settings.projects.field.color", "Color")}</Label>
 									<div className="flex flex-wrap gap-2">
 										{COLOR_OPTIONS.map((color) => (
-										<button
-											key={color}
-											type="button"
-											aria-label={t("settings.projects.field.colorOption", "Select color {color}", {
-												color,
-											})}
-											onClick={() => field.handleChange(color)}
+											<button
+												key={color}
+												type="button"
+												aria-label={t(
+													"settings.projects.field.colorOption",
+													"Select color {color}",
+													{
+														color,
+													},
+												)}
+												onClick={() => field.handleChange(color)}
 												className={`size-8 rounded-full border-2 transition-transform hover:scale-110 ${
 													field.state.value === color
 														? "border-foreground ring-2 ring-foreground ring-offset-2"

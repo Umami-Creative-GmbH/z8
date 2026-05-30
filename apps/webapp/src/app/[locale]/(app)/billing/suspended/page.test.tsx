@@ -16,25 +16,25 @@ describe("suspended billing recovery route", () => {
 
 		const pageSource = readFileSync(absoluteRoutePath, "utf8");
 
-		expect(pageSource).toContain('getTranslate()');
-		expect(pageSource).toContain('getAbility()');
+		expect(pageSource).toContain("getTranslate()");
+		expect(pageSource).toContain("getAbility()");
 		expect(pageSource).toContain('ability?.can("manage", "OrgBilling")');
-		expect(pageSource).toContain('billing.suspended.title');
-		expect(pageSource).toContain('billing.suspended.adminDescription');
-		expect(pageSource).toContain('billing.suspended.memberDescription');
-		expect(pageSource).toContain('billing.suspended.goToBilling');
+		expect(pageSource).toContain("billing.suspended.title");
+		expect(pageSource).toContain("billing.suspended.adminDescription");
+		expect(pageSource).toContain("billing.suspended.memberDescription");
+		expect(pageSource).toContain("billing.suspended.goToBilling");
 		expect(pageSource).toContain('href="/settings/billing"');
-		expect(pageSource).toContain('canManageBilling ?');
+		expect(pageSource).toContain("canManageBilling ?");
 	});
 
 	it("redirects suspended organizations away from normal app pages but exempts recovery paths", () => {
 		const layoutSource = readFileSync(join(process.cwd(), layoutPath), "utf8");
 
-		expect(layoutSource).toContain('const isBillingRecoveryPath =');
-		expect(layoutSource).toContain('/billing/suspended');
-		expect(layoutSource).toContain('/settings/billing');
-		expect(layoutSource).toContain('billingAccess.canAccess === false');
-		expect(layoutSource).toContain('!isBillingRecoveryPath');
+		expect(layoutSource).toContain("const isBillingRecoveryPath =");
+		expect(layoutSource).toContain("/billing/suspended");
+		expect(layoutSource).toContain("/settings/billing");
+		expect(layoutSource).toContain("billingAccess.canAccess === false");
+		expect(layoutSource).toContain("!isBillingRecoveryPath");
 		expect(layoutSource).toContain('redirect("/" + locale + "/billing/suspended")');
 	});
 
@@ -44,7 +44,7 @@ describe("suspended billing recovery route", () => {
 		expect(layoutSource).not.toContain(".catch(() => billingDisabledAccess)");
 		expect(layoutSource).not.toMatch(/catch\s*\([^)]*\)\s*=>\s*\(\s*\{\s*canAccess:\s*true/);
 		expect(layoutSource).toContain("billingCheckFailedAccess");
-		expect(layoutSource).toContain('canAccess: false');
+		expect(layoutSource).toContain("canAccess: false");
 		expect(layoutSource).toContain('state: "suspended"');
 		expect(layoutSource).toContain('reason: "subscription_required"');
 		expect(layoutSource).toContain('status: "billing_check_failed"');
@@ -54,9 +54,11 @@ describe("suspended billing recovery route", () => {
 		const billingSettingsSource = readFileSync(join(process.cwd(), billingSettingsPath), "utf8");
 
 		expect(billingSettingsSource).not.toContain("let accessResult = { canAccess: true }");
-		expect(billingSettingsSource).not.toMatch(/catch\s*\{[\s\S]*accessResult\s*=\s*\{\s*canAccess:\s*true/);
+		expect(billingSettingsSource).not.toMatch(
+			/catch\s*\{[\s\S]*accessResult\s*=\s*\{\s*canAccess:\s*true/,
+		);
 		expect(billingSettingsSource).toContain("billingCheckFailedAccess");
-		expect(billingSettingsSource).toContain('canAccess: false');
+		expect(billingSettingsSource).toContain("canAccess: false");
 		expect(billingSettingsSource).toContain('state: "suspended"');
 		expect(billingSettingsSource).toContain('reason: "subscription_required"');
 		expect(billingSettingsSource).toContain('status: "billing_check_failed"');
@@ -73,12 +75,16 @@ describe("suspended billing recovery route", () => {
 		};
 
 		for (const locale of ["de", "en", "es", "fr", "it", "pt"]) {
-			const messages = JSON.parse(readFileSync(join(process.cwd(), `messages/common/${locale}.json`), "utf8"));
+			const messages = JSON.parse(
+				readFileSync(join(process.cwd(), `messages/common/${locale}.json`), "utf8"),
+			);
 			expect(messages.billing.suspended).toBeDefined();
 			expect(existsSync(join(process.cwd(), `messages/${locale}.json`))).toBe(false);
 		}
 
-		const englishMessages = JSON.parse(readFileSync(join(process.cwd(), "messages/common/en.json"), "utf8"));
+		const englishMessages = JSON.parse(
+			readFileSync(join(process.cwd(), "messages/common/en.json"), "utf8"),
+		);
 		expect(englishMessages.billing.suspended).toEqual(expectedEnglish);
 	});
 });

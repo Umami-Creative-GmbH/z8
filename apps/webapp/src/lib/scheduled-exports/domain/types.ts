@@ -261,7 +261,10 @@ export const PRESET_SCHEDULES: Record<
 /**
  * Date range strategy descriptions for UI
  */
-export const DATE_RANGE_STRATEGIES: Record<DateRangeStrategy, { label: string; description: string }> = {
+export const DATE_RANGE_STRATEGIES: Record<
+	DateRangeStrategy,
+	{ label: string; description: string }
+> = {
 	previous_day: {
 		label: "Previous Day",
 		description: "Yesterday (00:00 - 23:59)",

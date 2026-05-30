@@ -126,7 +126,9 @@ export default function PlatformSettingsPage() {
 										"admin:admin.settings.cookieConsent.helperPrefix",
 										"Leave empty to disable. Loaded with",
 									)}{" "}
-									<code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs" translate="no">afterInteractive</code>{" "}
+									<code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs" translate="no">
+										afterInteractive
+									</code>{" "}
 									{t("admin:admin.settings.cookieConsent.helperSuffix", "strategy.")}
 								</p>
 							</div>
@@ -167,13 +169,17 @@ export default function PlatformSettingsPage() {
 									<span className="text-sm font-medium">
 										{t("admin:admin.settings.turnstile.siteKey", "Site Key")}
 									</span>
-									<code className="text-xs text-muted-foreground" translate="no">TURNSTILE_SITE_KEY</code>
+									<code className="text-xs text-muted-foreground" translate="no">
+										TURNSTILE_SITE_KEY
+									</code>
 								</div>
 								<div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
 									<span className="text-sm font-medium">
 										{t("admin:admin.settings.turnstile.secretKey", "Secret Key")}
 									</span>
-									<code className="text-xs text-muted-foreground" translate="no">TURNSTILE_SECRET_KEY</code>
+									<code className="text-xs text-muted-foreground" translate="no">
+										TURNSTILE_SECRET_KEY
+									</code>
 								</div>
 							</div>
 							<p className="text-sm text-muted-foreground">

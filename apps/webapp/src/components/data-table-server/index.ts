@@ -15,8 +15,8 @@
  */
 
 export { DataTable } from "./data-table";
-export { createSelectionColumn } from "./selection-column";
 export { DataTableColumnHeader } from "./data-table-column-header";
 export { DataTablePagination } from "./data-table-pagination";
 export { DataTableSkeleton } from "./data-table-skeleton";
 export { DataTableToolbar } from "./data-table-toolbar";
+export { createSelectionColumn } from "./selection-column";

@@ -5,10 +5,10 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { telegramBotConfig, telegramUserMapping } from "@/db/schema";
+import { env } from "@/env";
 import { requireUser } from "@/lib/auth-helpers";
 import { createLogger } from "@/lib/logger";
 import { deleteOrgSecret, getOrgSecret, storeOrgSecret } from "@/lib/vault";
-import { env } from "@/env";
 
 const logger = createLogger("TelegramSettings");
 
@@ -46,9 +46,7 @@ export interface TelegramSettingsFormValues {
 	escalationTimeoutHours: number;
 }
 
-type ActionResult<T = void> =
-	| { success: true; data: T }
-	| { success: false; error: string };
+type ActionResult<T = void> = { success: true; data: T } | { success: false; error: string };
 
 // ============================================
 // HELPERS
@@ -63,10 +61,7 @@ async function requireAdmin(organizationId: string) {
 		),
 	});
 
-	if (
-		!memberRecord ||
-		(memberRecord.role !== "owner" && memberRecord.role !== "admin")
-	) {
+	if (!memberRecord || (memberRecord.role !== "owner" && memberRecord.role !== "admin")) {
 		throw new Error("Unauthorized");
 	}
 
@@ -119,9 +114,7 @@ export async function getTelegramConfig(
 export async function setupTelegramBot(
 	botToken: string,
 	organizationId: string,
-): Promise<
-	ActionResult<{ botUsername: string | null; botDisplayName: string }>
-> {
+): Promise<ActionResult<{ botUsername: string | null; botDisplayName: string }>> {
 	try {
 		const authContext = await requireAdmin(organizationId);
 
@@ -183,11 +176,7 @@ export async function setupTelegramBot(
 		const appUrl = env.APP_URL || "https://z8-time.app";
 		const webhookUrl = `${appUrl}/api/telegram/webhook/${webhookSecret}`;
 
-		const webhookRegistered = await setWebhook(
-			trimmedToken,
-			webhookUrl,
-			webhookSecret,
-		);
+		const webhookRegistered = await setWebhook(trimmedToken, webhookUrl, webhookSecret);
 
 		if (webhookRegistered) {
 			await db
@@ -248,9 +237,7 @@ export async function updateTelegramSettings(
 // DISCONNECT BOT
 // ============================================
 
-export async function disconnectTelegramBot(
-	organizationId: string,
-): Promise<ActionResult> {
+export async function disconnectTelegramBot(organizationId: string): Promise<ActionResult> {
 	try {
 		await requireAdmin(organizationId);
 
@@ -261,13 +248,9 @@ export async function disconnectTelegramBot(
 		if (config) {
 			// Fetch bot token from Vault (fall back to DB for pre-migration configs)
 			const { deleteWebhook } = await import("@/lib/telegram");
-			const vaultToken = await getOrgSecret(
-				config.organizationId,
-				"telegram/bot_token",
-			);
+			const vaultToken = await getOrgSecret(config.organizationId, "telegram/bot_token");
 			const tokenForCleanup =
-				vaultToken ||
-				(config.botToken !== "vault:managed" ? config.botToken : null);
+				vaultToken || (config.botToken !== "vault:managed" ? config.botToken : null);
 
 			if (tokenForCleanup) {
 				await deleteWebhook(tokenForCleanup);
@@ -344,9 +327,7 @@ export async function generateTelegramLinkCode(
 			return { success: false, error: "Unauthorized" };
 		}
 
-		const { generateLinkCode, isTelegramEnabledForOrganization } = await import(
-			"@/lib/telegram"
-		);
+		const { generateLinkCode, isTelegramEnabledForOrganization } = await import("@/lib/telegram");
 
 		const enabled = await isTelegramEnabledForOrganization(organizationId);
 		if (!enabled) {

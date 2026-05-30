@@ -1,7 +1,7 @@
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { organizationSecret, organizationSecretKey } from "@/db/schema";
 import { env } from "@/env";
-import { and, eq, isNull, sql } from "drizzle-orm";
 import { ScalewayKeyManagerClient } from "./scaleway-key-manager-client";
 import {
 	isCompatibleScalewayKey,
@@ -150,14 +150,21 @@ async function invalidateStatusCache(organizationId: string) {
 		await invalidateSecretStoreStatusCache(organizationId);
 	} catch (error) {
 		// Cache invalidation should never fail the secret mutation that already succeeded.
-		console.warn("Failed to invalidate Scaleway secret store status cache", { error, organizationId });
+		console.warn("Failed to invalidate Scaleway secret store status cache", {
+			error,
+			organizationId,
+		});
 	}
 }
 
 export const scalewaySecretProvider: OrganizationSecretProvider = {
 	async storeOrgSecret(organizationId, key, value) {
 		const scalewayKeyId = await ensureOrganizationKey(organizationId);
-		const ciphertext = await client.encrypt(scalewayKeyId, value, associatedData(organizationId, key));
+		const ciphertext = await client.encrypt(
+			scalewayKeyId,
+			value,
+			associatedData(organizationId, key),
+		);
 
 		await db
 			.insert(organizationSecret)

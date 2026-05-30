@@ -1,8 +1,8 @@
 "use client";
 
+import { IconCheck, IconClock, IconShield, IconX } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { IconCheck, IconClock, IconShield, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {

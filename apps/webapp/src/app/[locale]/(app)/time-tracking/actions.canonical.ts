@@ -1,13 +1,8 @@
 import { Effect } from "effect";
 import { db } from "@/db";
 import { timeRecord, timeRecordAllocation, timeRecordWork } from "@/db/schema";
-import {
-	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
-import {
-	TimeEntryService,
-	TimeEntryServiceLive,
-} from "@/lib/effect/services/time-entry.service";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { TimeEntryService, TimeEntryServiceLive } from "@/lib/effect/services/time-entry.service";
 import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 
@@ -28,10 +23,7 @@ export const canonicalTimeEntryClient = {
 		const effect = Effect.gen(function* (_) {
 			const service = yield* _(TimeEntryService);
 			return yield* _(service.createTimeEntry(input));
-		}).pipe(
-			Effect.provide(TimeEntryServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
+		}).pipe(Effect.provide(TimeEntryServiceLive), Effect.provide(DatabaseServiceLive));
 
 		return Effect.runPromise(effect);
 	},
@@ -51,10 +43,7 @@ export const canonicalTimeEntryClient = {
 		const effect = Effect.gen(function* (_) {
 			const service = yield* _(TimeEntryService);
 			return yield* _(service.createCorrectionEntry(input));
-		}).pipe(
-			Effect.provide(TimeEntryServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
+		}).pipe(Effect.provide(TimeEntryServiceLive), Effect.provide(DatabaseServiceLive));
 
 		return Effect.runPromise(effect);
 	},

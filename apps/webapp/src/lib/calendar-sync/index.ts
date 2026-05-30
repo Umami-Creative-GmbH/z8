@@ -7,26 +7,25 @@
  * - Conflict detection during absence creation
  */
 
-// Types
-export * from "./types";
+// Domain (pure functions)
+export {
+	detectConflicts,
+	generateAbsenceUID,
+	generateICS,
+	getConflictSummary,
+	hasBlockingConflicts,
+	mapAbsenceStatusToICS,
+	mapAbsencesToICSEvents,
+	mapAbsenceToCalendarEvent,
+	mapAbsenceToICSEvent,
+} from "./domain";
 
 // Providers
 export {
 	getCalendarProvider,
-	isProviderSupported,
 	getSupportedProviders,
 	type ICalendarProvider,
+	isProviderSupported,
 } from "./providers";
-
-// Domain (pure functions)
-export {
-	generateICS,
-	generateAbsenceUID,
-	mapAbsenceStatusToICS,
-	detectConflicts,
-	hasBlockingConflicts,
-	getConflictSummary,
-	mapAbsenceToCalendarEvent,
-	mapAbsenceToICSEvent,
-	mapAbsencesToICSEvents,
-} from "./domain";
+// Types
+export * from "./types";

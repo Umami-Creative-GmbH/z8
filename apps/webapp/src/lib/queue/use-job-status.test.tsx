@@ -1,13 +1,15 @@
 /* @vitest-environment jsdom */
 
-import { SWRConfig } from "swr";
 import { renderHook, waitFor } from "@testing-library/react";
 import type React from "react";
+import { SWRConfig } from "swr";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useJobStatuses } from "./use-job-status";
 
 function wrapper({ children }: { children: React.ReactNode }) {
-	return <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>{children}</SWRConfig>;
+	return (
+		<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>{children}</SWRConfig>
+	);
 }
 
 describe("useJobStatuses", () => {
@@ -31,7 +33,9 @@ describe("useJobStatuses", () => {
 			{ wrapper },
 		);
 
-		await waitFor(() => expect(result.current.statuses.get("job-complete")?.state).toBe("completed"));
+		await waitFor(() =>
+			expect(result.current.statuses.get("job-complete")?.state).toBe("completed"),
+		);
 
 		expect(result.current.completedCount).toBe(1);
 		expect(result.current.failedCount).toBe(0);

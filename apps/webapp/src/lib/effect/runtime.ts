@@ -33,42 +33,28 @@ const OnboardingLayer = OnboardingServiceLive.pipe(
 );
 
 // Layer for PermissionsService (depends on DatabaseService)
-const PermissionsLayer = PermissionsServiceLive.pipe(
-	Layer.provide(DatabaseServiceLive),
-);
+const PermissionsLayer = PermissionsServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
 // Layer for ManagerService (depends on DatabaseService)
-const ManagerLayer = ManagerServiceLive.pipe(
-	Layer.provide(DatabaseServiceLive),
-);
+const ManagerLayer = ManagerServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
 // Layer for TimeEntryService (depends on DatabaseService)
-const TimeEntryLayer = TimeEntryServiceLive.pipe(
-	Layer.provide(DatabaseServiceLive),
-);
+const TimeEntryLayer = TimeEntryServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
 // Layer for ShiftService (depends on DatabaseService)
 const ShiftLayer = ShiftServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
 // Layer for ShiftRequestService (depends on DatabaseService)
-const ShiftRequestLayer = ShiftRequestServiceLive.pipe(
-	Layer.provide(DatabaseServiceLive),
-);
+const ShiftRequestLayer = ShiftRequestServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
 // Layer for ChangePolicyService (depends on DatabaseService)
-const ChangePolicyLayer = ChangePolicyServiceLive.pipe(
-	Layer.provide(DatabaseServiceLive),
-);
+const ChangePolicyLayer = ChangePolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
 // Layer for WorkPolicyService (depends on DatabaseService)
-const WorkPolicyLayer = WorkPolicyServiceLive.pipe(
-	Layer.provide(DatabaseServiceLive),
-);
+const WorkPolicyLayer = WorkPolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
 // Layer for AppAccessService (depends on DatabaseService)
-const AppAccessLayer = AppAccessServiceLive.pipe(
-	Layer.provide(DatabaseServiceLive),
-);
+const AppAccessLayer = AppAccessServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
 // Layer for PlatformAdminService (no external dependencies - uses auth internally)
 const PlatformAdminLayer = PlatformAdminServiceLive;
@@ -80,14 +66,10 @@ const SetupLayer = SetupServiceLive;
 const SkillLayer = SkillServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
 // Layer for CoverageService (depends on DatabaseService)
-const CoverageLayer = CoverageServiceLive.pipe(
-	Layer.provide(DatabaseServiceLive),
-);
+const CoverageLayer = CoverageServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
 // Layer for CustomRoleService (depends on DatabaseService)
-const CustomRoleLayer = CustomRoleServiceLive.pipe(
-	Layer.provide(DatabaseServiceLive),
-);
+const CustomRoleLayer = CustomRoleServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
 // Combine all service layers
 export const AppLayer = Layer.mergeAll(

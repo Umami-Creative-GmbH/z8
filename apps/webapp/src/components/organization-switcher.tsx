@@ -64,28 +64,21 @@ export function OrganizationSwitcher({
 		}).catch(() => null);
 
 		if (!response) {
-			toast.error(
-				t("organization.switchFailed", "Failed to switch organization"),
-			);
+			toast.error(t("organization.switchFailed", "Failed to switch organization"));
 			setSwitching(false);
 			return;
 		}
 
 		if (!response.ok) {
 			const error = await response.json().catch(() => null);
-			toast.error(
-				error?.error ||
-					t("organization.switchFailed", "Failed to switch organization"),
-			);
+			toast.error(error?.error || t("organization.switchFailed", "Failed to switch organization"));
 			setSwitching(false);
 			return;
 		}
 
 		const result = await response.json().catch(() => null);
 		if (!result) {
-			toast.error(
-				t("organization.switchFailed", "Failed to switch organization"),
-			);
+			toast.error(t("organization.switchFailed", "Failed to switch organization"));
 			setSwitching(false);
 			return;
 		}
@@ -150,9 +143,7 @@ export function OrganizationSwitcher({
 									/>
 								</div>
 								<div className="grid flex-1 text-left text-sm leading-tight">
-									<span className="truncate font-semibold">
-										{activeOrg.name}
-									</span>
+									<span className="truncate font-semibold">{activeOrg.name}</span>
 									<span className="truncate text-xs">
 										{activeOrg.memberRole === "owner"
 											? t("organization.role.owner", "Owner")
@@ -195,9 +186,7 @@ export function OrganizationSwitcher({
 									</div>
 									<div className="flex-1">
 										<div className="font-medium">{org.name}</div>
-										<div className="text-xs text-muted-foreground">
-											{org.memberRole}
-										</div>
+										<div className="text-xs text-muted-foreground">{org.memberRole}</div>
 									</div>
 									{org.id === activeOrg.id && <IconCheck className="size-4" />}
 								</DropdownMenuItem>
@@ -205,10 +194,7 @@ export function OrganizationSwitcher({
 							{canCreateOrganizations && (
 								<>
 									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										className="gap-2 p-2"
-										onClick={() => setCreateDialogOpen(true)}
-									>
+									<DropdownMenuItem className="gap-2 p-2" onClick={() => setCreateDialogOpen(true)}>
 										<div className="flex size-6 items-center justify-center rounded-md border border-dashed">
 											<IconPlus className="size-4" />
 										</div>

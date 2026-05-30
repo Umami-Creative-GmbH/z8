@@ -19,19 +19,14 @@ export function SiteHeader() {
 
 	// Map routes to title translation keys
 	const getTitleKey = () => {
-		if (normalizedPath === "/" || normalizedPath === "")
-			return "dashboard.title";
-		if (normalizedPath.startsWith("/notifications"))
-			return "notifications.title";
+		if (normalizedPath === "/" || normalizedPath === "") return "dashboard.title";
+		if (normalizedPath.startsWith("/notifications")) return "notifications.title";
 		if (normalizedPath.startsWith("/calendar")) return "calendar.title";
-		if (normalizedPath.startsWith("/time-tracking"))
-			return "timeTracking.title";
+		if (normalizedPath.startsWith("/time-tracking")) return "timeTracking.title";
 		if (normalizedPath.startsWith("/absences")) return "absences.title";
-		if (normalizedPath.startsWith("/travel-expenses"))
-			return "settings.travelExpenses.title";
+		if (normalizedPath.startsWith("/travel-expenses")) return "settings.travelExpenses.title";
 		if (normalizedPath.startsWith("/reports")) return "reports.title";
-		if (normalizedPath.startsWith("/settings/holidays"))
-			return "settings.holidays.title";
+		if (normalizedPath.startsWith("/settings/holidays")) return "settings.holidays.title";
 		if (normalizedPath.startsWith("/settings")) return "settings.title";
 		if (normalizedPath.startsWith("/team")) return "team.title";
 
@@ -46,8 +41,7 @@ export function SiteHeader() {
 		if (normalizedPath.startsWith("/absences")) return "Absences";
 		if (normalizedPath.startsWith("/travel-expenses")) return "Travel Expenses";
 		if (normalizedPath.startsWith("/reports")) return "Reports";
-		if (normalizedPath.startsWith("/settings/holidays"))
-			return "Holiday Management";
+		if (normalizedPath.startsWith("/settings/holidays")) return "Holiday Management";
 		if (normalizedPath.startsWith("/settings")) return "Settings";
 		if (normalizedPath.startsWith("/team")) return "Team";
 
@@ -61,10 +55,7 @@ export function SiteHeader() {
 		<header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
 			<div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
 				<SidebarTrigger className="-ml-1" />
-				<Separator
-					className="mx-2 data-[orientation=vertical]:h-4"
-					orientation="vertical"
-				/>
+				<Separator className="mx-2 data-[orientation=vertical]:h-4" orientation="vertical" />
 				<h1 className="font-medium text-base">{t(titleKey, defaultTitle)}</h1>
 				<div className="ml-auto flex items-center gap-2">
 					{isDashboardRoute ? <DashboardHeaderCustomize /> : null}

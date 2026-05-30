@@ -10,7 +10,12 @@ export type ApprovalPolicyConditionType =
 	| "employee_group";
 
 export type ApprovalPolicyConditionOperator = "equals" | "in" | "gte" | "lte" | "between";
-export type ApprovalPolicyApproverType = "direct_manager" | "manager_manager" | "org_admin" | "specific_employee" | "team_lead";
+export type ApprovalPolicyApproverType =
+	| "direct_manager"
+	| "manager_manager"
+	| "org_admin"
+	| "specific_employee"
+	| "team_lead";
 export type ApprovalPolicyOvertimeRisk = "none" | "warning" | "violation";
 
 export interface ApprovalPolicyEvaluationContext {

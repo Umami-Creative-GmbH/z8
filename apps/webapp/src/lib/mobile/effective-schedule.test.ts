@@ -27,9 +27,7 @@ function assignment(name: string, assignedVia: string) {
 				scheduleType: "detailed",
 				hoursPerCycle: "40.00",
 				homeOfficeDaysPerCycle: 1,
-				days: [
-					{ dayOfWeek: "monday", hoursPerDay: "8.00", isWorkDay: true, cycleWeek: 1 },
-				],
+				days: [{ dayOfWeek: "monday", hoursPerDay: "8.00", isWorkDay: true, cycleWeek: 1 }],
 			},
 		},
 		team: assignedVia === "Team A" ? { name: "Team A" } : undefined,
@@ -43,7 +41,9 @@ describe("getMobileEffectiveSchedule", () => {
 	});
 
 	it("returns an individual assignment before team or organization assignments", async () => {
-		mockState.assignmentFindFirst.mockResolvedValueOnce(assignment("Individual Policy", "Individual"));
+		mockState.assignmentFindFirst.mockResolvedValueOnce(
+			assignment("Individual Policy", "Individual"),
+		);
 
 		await expect(getMobileEffectiveSchedule("emp-1", "org-1")).resolves.toEqual({
 			policyName: "Individual Policy",

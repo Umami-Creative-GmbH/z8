@@ -110,7 +110,9 @@ export function buildApprovalMessage(
 } {
 	const lines: string[] = [];
 
-	lines.push(bold(t ? t("bot.approval.newRequest", "New Approval Request") : "New Approval Request"));
+	lines.push(
+		bold(t ? t("bot.approval.newRequest", "New Approval Request") : "New Approval Request"),
+	);
 	lines.push("");
 	lines.push(`${t ? t("bot.approval.from", "From") : "From"}: ${bold(data.requesterName)}`);
 
@@ -120,18 +122,26 @@ export function buildApprovalMessage(
 		if (data.startDate && data.endDate) {
 			const start = fmtShortDate(DateTime.fromISO(data.startDate), locale);
 			const end = fmtShortDate(DateTime.fromISO(data.endDate), locale);
-			lines.push(`${t ? t("bot.approval.period", "Period") : "Period"}: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`);
+			lines.push(
+				`${t ? t("bot.approval.period", "Period") : "Period"}: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`,
+			);
 		}
 	} else if (data.entityType === "time_entry") {
-		lines.push(`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(t ? t("bot.approval.timeCorrection", "Time entry correction") : "Time entry correction")}`);
+		lines.push(
+			`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(t ? t("bot.approval.timeCorrection", "Time entry correction") : "Time entry correction")}`,
+		);
 	}
 
 	if (data.reason) {
-		lines.push(`${t ? t("bot.approval.reason", "Reason") : "Reason"}: ${escapeMarkdownV2(data.reason)}`);
+		lines.push(
+			`${t ? t("bot.approval.reason", "Reason") : "Reason"}: ${escapeMarkdownV2(data.reason)}`,
+		);
 	}
 
 	const submitted = fmtShortDateTime(DateTime.fromJSDate(data.createdAt), locale);
-	lines.push(`${t ? t("bot.approval.submitted", "Submitted") : "Submitted"}: ${escapeMarkdownV2(submitted)}`);
+	lines.push(
+		`${t ? t("bot.approval.submitted", "Submitted") : "Submitted"}: ${escapeMarkdownV2(submitted)}`,
+	);
 
 	// Build inline keyboard with approve/reject buttons
 	// Callback data must be <= 64 bytes, so use compact format
@@ -172,10 +182,16 @@ export function buildResolvedApprovalMessage(
 	const icon = resolved.action === "approved" ? "\u2705" : "\u274C";
 	const status =
 		resolved.action === "approved"
-			? (t ? t("bot.approval.approved", "Approved") : "Approved")
-			: (t ? t("bot.approval.rejected", "Rejected") : "Rejected");
+			? t
+				? t("bot.approval.approved", "Approved")
+				: "Approved"
+			: t
+				? t("bot.approval.rejected", "Rejected")
+				: "Rejected";
 
-	lines.push(`${icon} ${bold(`${t ? t("bot.approval.approval", "Approval") : "Approval"} ${status}`)}`);
+	lines.push(
+		`${icon} ${bold(`${t ? t("bot.approval.approval", "Approval") : "Approval"} ${status}`)}`,
+	);
 	lines.push("");
 	lines.push(`${t ? t("bot.approval.from", "From") : "From"}: ${bold(data.requesterName)}`);
 
@@ -185,12 +201,16 @@ export function buildResolvedApprovalMessage(
 		if (data.startDate && data.endDate) {
 			const start = fmtShortDate(DateTime.fromISO(data.startDate), locale);
 			const end = fmtShortDate(DateTime.fromISO(data.endDate), locale);
-			lines.push(`${t ? t("bot.approval.period", "Period") : "Period"}: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`);
+			lines.push(
+				`${t ? t("bot.approval.period", "Period") : "Period"}: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`,
+			);
 		}
 	}
 
 	lines.push("");
-	lines.push(`${bold(status)} ${t ? t("bot.approval.by", "by") : "by"} ${escapeMarkdownV2(resolved.approverName)}`);
+	lines.push(
+		`${bold(status)} ${t ? t("bot.approval.by", "by") : "by"} ${escapeMarkdownV2(resolved.approverName)}`,
+	);
 	const resolvedAt = fmtShortDateTime(DateTime.fromJSDate(resolved.resolvedAt), locale);
 	lines.push(`${t ? t("bot.approval.at", "at") : "at"} ${escapeMarkdownV2(resolvedAt)}`);
 
@@ -212,26 +232,37 @@ export function buildDailyDigestMessage(
 	locale: string = DEFAULT_LANGUAGE,
 ): string {
 	const lines: string[] = [];
-	const dateFormatted = fmtFullDate(
-		DateTime.fromJSDate(data.date).setZone(data.timezone),
-		locale,
-	);
+	const dateFormatted = fmtFullDate(DateTime.fromJSDate(data.date).setZone(data.timezone), locale);
 
-	lines.push(bold(t ? t("bot.digest.title", "Daily Digest - {date}", { date: dateFormatted }) : `Daily Digest - ${dateFormatted}`));
+	lines.push(
+		bold(
+			t
+				? t("bot.digest.title", "Daily Digest - {date}", { date: dateFormatted })
+				: `Daily Digest - ${dateFormatted}`,
+		),
+	);
 	lines.push("");
 
 	// Pending approvals
 	if (data.pendingApprovals === 0) {
-		lines.push(`${bold(t ? t("bot.digest.pendingApprovals", "Pending Approvals:") : "Pending Approvals:")} ${t ? t("bot.digest.none", "None") : "None"}`);
+		lines.push(
+			`${bold(t ? t("bot.digest.pendingApprovals", "Pending Approvals:") : "Pending Approvals:")} ${t ? t("bot.digest.none", "None") : "None"}`,
+		);
 	} else {
-		lines.push(`${bold(t ? t("bot.digest.pendingApprovals", "Pending Approvals:") : "Pending Approvals:")} ${data.pendingApprovals}`);
+		lines.push(
+			`${bold(t ? t("bot.digest.pendingApprovals", "Pending Approvals:") : "Pending Approvals:")} ${data.pendingApprovals}`,
+		);
 	}
 	lines.push("");
 
 	// Who's out
 	lines.push(bold(t ? t("bot.digest.whosOut", "Who's Out:") : "Who's Out:"));
 	if (data.employeesOut.length === 0) {
-		lines.push(escapeMarkdownV2(t ? t("bot.digest.everyoneAvailable", "Everyone is available") : "Everyone is available"));
+		lines.push(
+			escapeMarkdownV2(
+				t ? t("bot.digest.everyoneAvailable", "Everyone is available") : "Everyone is available",
+			),
+		);
 	} else {
 		for (const emp of data.employeesOut.slice(0, 5)) {
 			lines.push(escapeMarkdownV2(`  ${emp.name} - ${emp.category} (returns ${emp.returnDate})`));
@@ -243,7 +274,9 @@ export function buildDailyDigestMessage(
 	lines.push("");
 
 	// Clocked in
-	lines.push(bold(t ? t("bot.digest.clockedIn", "Currently Clocked In:") : "Currently Clocked In:"));
+	lines.push(
+		bold(t ? t("bot.digest.clockedIn", "Currently Clocked In:") : "Currently Clocked In:"),
+	);
 	if (data.employeesClockedIn.length === 0) {
 		lines.push(escapeMarkdownV2(t ? t("bot.digest.noOneYet", "No one yet") : "No one yet"));
 	} else {
@@ -317,23 +350,38 @@ export function buildEscalationMessage(
 ): string {
 	const lines: string[] = [];
 
-	lines.push(bold(t ? t("bot.escalation.title", "Escalated Approval Request") : "Escalated Approval Request"));
+	lines.push(
+		bold(
+			t ? t("bot.escalation.title", "Escalated Approval Request") : "Escalated Approval Request",
+		),
+	);
 	lines.push("");
 	lines.push(`${t ? t("bot.approval.from", "From") : "From"}: ${bold(requesterName)}`);
 	lines.push(
 		`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(
 			entityType === "absence_entry"
-				? (t ? t("bot.escalation.absenceRequest", "Absence request") : "Absence request")
-				: (t ? t("bot.escalation.timeCorrection", "Time correction") : "Time correction"),
+				? t
+					? t("bot.escalation.absenceRequest", "Absence request")
+					: "Absence request"
+				: t
+					? t("bot.escalation.timeCorrection", "Time correction")
+					: "Time correction",
 		)}`,
 	);
-	lines.push(`${t ? t("bot.escalation.waiting", "Waiting") : "Waiting"}: ${escapeMarkdownV2(`${Math.round(ageHours)}h`)}`);
-	lines.push(`${t ? t("bot.escalation.originalApprover", "Original approver") : "Original approver"}: ${escapeMarkdownV2(originalApproverName)}`);
+	lines.push(
+		`${t ? t("bot.escalation.waiting", "Waiting") : "Waiting"}: ${escapeMarkdownV2(`${Math.round(ageHours)}h`)}`,
+	);
+	lines.push(
+		`${t ? t("bot.escalation.originalApprover", "Original approver") : "Original approver"}: ${escapeMarkdownV2(originalApproverName)}`,
+	);
 	lines.push("");
 	lines.push(
 		escapeMarkdownV2(
 			t
-				? t("bot.escalation.reason", "This request has been escalated to you because the original approver did not respond in time.")
+				? t(
+						"bot.escalation.reason",
+						"This request has been escalated to you because the original approver did not respond in time.",
+					)
 				: "This request has been escalated to you because the original approver did not respond in time.",
 		),
 	);

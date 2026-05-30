@@ -12,7 +12,10 @@ export interface EnterpriseIdentityOrganizationDomainCandidate {
 	authConfig: unknown;
 }
 
-export function isEmailInEnterpriseIdentityDomain(email: string, domain: string | null | undefined) {
+export function isEmailInEnterpriseIdentityDomain(
+	email: string,
+	domain: string | null | undefined,
+) {
 	const normalizedDomain = domain?.trim().toLowerCase();
 	const normalizedEmail = email.trim().toLowerCase();
 	const atIndex = normalizedEmail.lastIndexOf("@");
@@ -22,10 +25,9 @@ export function isEmailInEnterpriseIdentityDomain(email: string, domain: string 
 	return normalizedEmail.slice(atIndex + 1) === normalizedDomain;
 }
 
-export function selectVerifiedEnterpriseIdentityDomain<T extends EnterpriseIdentityOrganizationDomainCandidate>(
-	domains: T[],
-	setupDomain: string | null | undefined,
-) {
+export function selectVerifiedEnterpriseIdentityDomain<
+	T extends EnterpriseIdentityOrganizationDomainCandidate,
+>(domains: T[], setupDomain: string | null | undefined) {
 	const normalizedSetupDomain = setupDomain?.trim().toLowerCase();
 
 	if (!normalizedSetupDomain) return null;

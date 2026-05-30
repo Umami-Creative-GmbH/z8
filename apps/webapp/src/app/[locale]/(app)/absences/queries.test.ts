@@ -29,7 +29,7 @@ describe("expandPresetHolidayForYear", () => {
 
 describe("getVacationBalance calendar ranges", () => {
 	it("derives ranges from calendar-year helpers", () => {
-		expect(source).toContain("timezone = \"UTC\"");
+		expect(source).toContain('timezone = "UTC"');
 		expect(source).toContain("getYearRange(year)");
 		expect(source).toContain("timezone,");
 		expect(source).toContain("lte(absenceEntry.startDate, endOfYear)");

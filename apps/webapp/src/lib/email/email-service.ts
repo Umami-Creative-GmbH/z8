@@ -11,18 +11,18 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { organizationEmailConfig } from "@/db/schema";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault";
-import { env } from "@/env";
 import {
 	ConsoleTransport,
 	createSystemResendTransport,
 	createSystemSmtpTransport,
-	ResendTransport,
-	SmtpTransport,
 	type EmailMessage,
 	type EmailTransport,
 	type EmailTransportResult,
+	ResendTransport,
+	SmtpTransport,
 } from "./transports";
 
 const logger = createLogger("EmailService");

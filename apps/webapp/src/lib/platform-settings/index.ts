@@ -1,5 +1,5 @@
 export {
+	deleteCookieConsentScript,
 	getCookieConsentScript,
 	setCookieConsentScript,
-	deleteCookieConsentScript,
 } from "./service";

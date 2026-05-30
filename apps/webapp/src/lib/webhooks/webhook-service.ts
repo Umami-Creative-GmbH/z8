@@ -12,11 +12,11 @@ import type { NotificationType } from "@/lib/notifications/types";
 import { generateWebhookSecret } from "./signature";
 import type {
 	CreateWebhookParams,
+	PublicWebhookEndpoint,
 	UpdateWebhookParams,
 	WebhookDeliveryResult,
 	WebhookEndpoint,
 	WebhookPayloadData,
-	PublicWebhookEndpoint,
 } from "./types";
 import { MAX_ATTEMPTS, RETRY_DELAYS_MS } from "./types";
 

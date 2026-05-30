@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	IconCheck,
-	IconLoader2,
-	IconMail,
-	IconUserPlus,
-	IconX,
-} from "@tabler/icons-react";
+import { IconCheck, IconLoader2, IconMail, IconUserPlus, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -62,15 +56,11 @@ function getInvitationSignUpUrl(
 		searchParams.set("organizationName", organizationName);
 	}
 
-	const basePath =
-		searchParams.size > 0 ? `/sign-up?${searchParams.toString()}` : "/sign-up";
+	const basePath = searchParams.size > 0 ? `/sign-up?${searchParams.toString()}` : "/sign-up";
 	return withCallbackUrl(basePath, callbackUrl);
 }
 
-export function AcceptInvitationForm({
-	invitation,
-	invitationId,
-}: AcceptInvitationFormProps) {
+export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitationFormProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const { data: session, isPending: sessionLoading } = useSession();
@@ -102,8 +92,7 @@ export function AcceptInvitationForm({
 		return null;
 	})();
 	const normalizedInvitedEmail = invitation?.email.trim().toLowerCase() ?? null;
-	const normalizedSessionEmail =
-		session?.user.email?.trim().toLowerCase() ?? null;
+	const normalizedSessionEmail = session?.user.email?.trim().toLowerCase() ?? null;
 	const emailMismatchMessage = t(
 		"auth.invitation-email-mismatch",
 		"This invitation was sent to a different email address. Sign in with the invited email to continue.",
@@ -113,8 +102,7 @@ export function AcceptInvitationForm({
 		Boolean(normalizedSessionEmail) &&
 		normalizedInvitedEmail !== normalizedSessionEmail;
 	const fatalError = error ?? invitationError;
-	const displayedError =
-		fatalError ?? (isEmailMismatch ? emailMismatchMessage : null);
+	const displayedError = fatalError ?? (isEmailMismatch ? emailMismatchMessage : null);
 
 	const handleAcceptInvitation = async () => {
 		if (!invitation || invitationError) {
@@ -183,15 +171,9 @@ export function AcceptInvitationForm({
 		return (
 			<AuthFormWrapper title={t("auth.accept-invitation", "Accept invitation")}>
 				<div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-					<IconLoader2
-						className="size-8 animate-spin text-muted-foreground"
-						aria-hidden="true"
-					/>
+					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
 					<p aria-live="polite" className="text-muted-foreground text-sm">
-						{t(
-							"auth.loading-invitation",
-							"Checking your invitation details...",
-						)}
+						{t("auth.loading-invitation", "Checking your invitation details...")}
 					</p>
 				</div>
 			</AuthFormWrapper>
@@ -204,19 +186,11 @@ export function AcceptInvitationForm({
 				<Card className="border-none shadow-none">
 					<CardHeader className="px-0 text-center">
 						<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-							<IconCheck
-								className="size-8 text-green-600 dark:text-green-400"
-								aria-hidden="true"
-							/>
+							<IconCheck className="size-8 text-green-600 dark:text-green-400" aria-hidden="true" />
 						</div>
-						<CardTitle>
-							{t("auth.invitation-accepted", "Invitation accepted")}
-						</CardTitle>
+						<CardTitle>{t("auth.invitation-accepted", "Invitation accepted")}</CardTitle>
 						<CardDescription>
-							{t(
-								"auth.invitation-accepted-generic",
-								"Your workspace is being prepared.",
-							)}
+							{t("auth.invitation-accepted-generic", "Your workspace is being prepared.")}
 						</CardDescription>
 					</CardHeader>
 				</Card>
@@ -294,8 +268,7 @@ export function AcceptInvitationForm({
 										{t("auth.workspace", "Workspace")}
 									</dt>
 									<dd className="mt-1 font-medium text-sm">
-										{invitation.organizationName ??
-											t("common.not-available", "Not available")}
+										{invitation.organizationName ?? t("common.not-available", "Not available")}
 									</dd>
 								</div>
 								<div className="rounded-lg border border-border/70 bg-muted/20 p-3">
@@ -303,10 +276,7 @@ export function AcceptInvitationForm({
 										{t("auth.invited-email", "Invited email")}
 									</dt>
 									<dd className="mt-1 flex items-center gap-2 font-medium text-sm">
-										<IconMail
-											className="size-4 text-muted-foreground"
-											aria-hidden="true"
-										/>
+										<IconMail className="size-4 text-muted-foreground" aria-hidden="true" />
 										<span>{invitation.email}</span>
 									</dd>
 								</div>
@@ -315,9 +285,7 @@ export function AcceptInvitationForm({
 										<dt className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
 											{t("auth.role", "Role")}
 										</dt>
-										<dd className="mt-1 font-medium text-sm">
-											{invitation.role}
-										</dd>
+										<dd className="mt-1 font-medium text-sm">{invitation.role}</dd>
 									</div>
 								) : null}
 								{invitation.inviterName ? (
@@ -325,9 +293,7 @@ export function AcceptInvitationForm({
 										<dt className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
 											{t("auth.invited-by-label", "Invited by")}
 										</dt>
-										<dd className="mt-1 font-medium text-sm">
-											{invitation.inviterName}
-										</dd>
+										<dd className="mt-1 font-medium text-sm">{invitation.inviterName}</dd>
 									</div>
 								) : null}
 							</dl>
@@ -383,9 +349,7 @@ export function AcceptInvitationForm({
 
 					{session && isEmailMismatch ? (
 						<Alert>
-							<AlertTitle>
-								{t("auth.wrong-account", "Wrong account")}
-							</AlertTitle>
+							<AlertTitle>{t("auth.wrong-account", "Wrong account")}</AlertTitle>
 							<AlertDescription>
 								{t(
 									"auth.wrong-account-description",
@@ -404,10 +368,7 @@ export function AcceptInvitationForm({
 						>
 							{state === "accepting" ? (
 								<>
-									<IconLoader2
-										className="mr-2 size-4 animate-spin"
-										aria-hidden="true"
-									/>
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									{t("auth.accepting-invitation", "Accepting invitation…")}
 								</>
 							) : session ? (
@@ -422,29 +383,19 @@ export function AcceptInvitationForm({
 						<>
 							<Button asChild className="w-full">
 								<Link href={withCallbackUrl("/sign-in", callbackUrl)}>
-									{t(
-										"auth.sign-in-invited-email",
-										"Sign in with invited email",
-									)}
+									{t("auth.sign-in-invited-email", "Sign in with invited email")}
 								</Link>
 							</Button>
 							<Button asChild className="w-full" variant="outline">
 								<Link href={signUpUrl}>
-									{t(
-										"auth.create-account-invited-email",
-										"Create account with invited email",
-									)}
+									{t("auth.create-account-invited-email", "Create account with invited email")}
 								</Link>
 							</Button>
 						</>
 					) : null}
 
 					{session && isEmailMismatch ? (
-						<Button
-							className="w-full"
-							onClick={handleSignOut}
-							variant="outline"
-						>
+						<Button className="w-full" onClick={handleSignOut} variant="outline">
 							{t("auth.sign-out-and-switch", "Sign out and switch account")}
 						</Button>
 					) : null}

@@ -146,7 +146,10 @@ vi.mock("@/lib/auth-helpers", () => ({
 		if (mockState.membershipRole === "owner" || mockState.membershipRole === "admin") {
 			return "orgAdmin";
 		}
-		if (mockState.currentEmployee?.role === "manager" || mockState.currentEmployee?.role === "admin") {
+		if (
+			mockState.currentEmployee?.role === "manager" ||
+			mockState.currentEmployee?.role === "admin"
+		) {
 			return "manager";
 		}
 		return "member";
@@ -328,9 +331,7 @@ describe("location settings scope behavior", () => {
 			isActive: true,
 		};
 		mockState.teamPermissions = [{ teamId: "team-1", canManageTeamSettings: true }];
-		mockState.managerSubareaAssignments = [
-			{ subareaId: "22222222-2222-4222-8222-222222222222" },
-		];
+		mockState.managerSubareaAssignments = [{ subareaId: "22222222-2222-4222-8222-222222222222" }];
 		mockState.teamEmployees = [
 			{
 				id: "employee-2",
@@ -410,9 +411,10 @@ describe("location settings scope behavior", () => {
 	});
 
 	it("rejects manager location and subarea mutations", async () => {
-		expect(
-			await createLocation({ organizationId: "org-1", name: "Scoped Location" }),
-		).toEqual({ success: false, error: "Only org admins can create locations" });
+		expect(await createLocation({ organizationId: "org-1", name: "Scoped Location" })).toEqual({
+			success: false,
+			error: "Only org admins can create locations",
+		});
 		expect(
 			await updateLocation("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", { name: "Scoped Rename" }),
 		).toEqual({ success: false, error: "Only org admins can update locations" });

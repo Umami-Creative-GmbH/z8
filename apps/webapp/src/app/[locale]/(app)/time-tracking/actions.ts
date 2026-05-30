@@ -22,8 +22,8 @@ import {
 	workPolicy,
 	workPolicyPresence,
 } from "@/db/schema";
-import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
 import { auth } from "@/lib/auth";
 import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
@@ -46,10 +46,7 @@ import {
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
-import {
-	TimeEntryService,
-	TimeEntryServiceLive,
-} from "@/lib/effect/services/time-entry.service";
+import { TimeEntryService, TimeEntryServiceLive } from "@/lib/effect/services/time-entry.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import {
 	WorkPolicyService,
@@ -78,9 +75,11 @@ import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/w
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import { createClockOutApprovalRequest, createManualEntryApprovalRequest } from "./actions/approvals";
+import {
+	createClockOutApprovalRequest,
+	createManualEntryApprovalRequest,
+} from "./actions/approvals";
 import { addBreakToActiveSession as addBreakToActiveSessionAction } from "./actions/clocking";
-import type { BrowserTimezoneContext } from "./actions/types";
 import {
 	calculatePresenceStatusSummary,
 	expandApprovedHomeOfficeDates,
@@ -91,6 +90,7 @@ import {
 	parsePresenceFixedDays,
 	validatePresenceFixedDaysConfig,
 } from "./actions/presence-status";
+import type { BrowserTimezoneContext } from "./actions/types";
 import { canonicalTimeEntryClient, canonicalWorkRecordClient } from "./actions.canonical";
 import type { WorkPeriodWithEntries } from "./types";
 
@@ -760,10 +760,7 @@ export async function requestTimeCorrectionEffect(
 					const transactionalDbService = { db: tx, query: dbService.query };
 					const transactionalEffectDbService =
 						transactionalDbService as unknown as typeof DatabaseService.Service;
-					const createCorrectionEntry = (input: {
-						replacesEntryId: string;
-						timestamp: Date;
-					}) =>
+					const createCorrectionEntry = (input: { replacesEntryId: string; timestamp: Date }) =>
 						Effect.runPromise(
 							Effect.gen(function* (resume) {
 								const timezoneCapture = resolveFallbackTimezoneCapture({
@@ -827,7 +824,9 @@ export async function requestTimeCorrectionEffect(
 
 		yield* _(Effect.annotateCurrentSpan("correction.clock_in_correction_id", clockInCorrection.id));
 		if (clockOutCorrectionId) {
-			yield* _(Effect.annotateCurrentSpan("correction.clock_out_correction_id", clockOutCorrectionId));
+			yield* _(
+				Effect.annotateCurrentSpan("correction.clock_out_correction_id", clockOutCorrectionId),
+			);
 		}
 
 		logger.info(
@@ -2143,7 +2142,8 @@ export async function deleteWorkPeriod(
 			{
 				employeeId: period.employeeId,
 				organizationId: period.organizationId,
-				dirtyFromDate: DateTime.fromJSDate(period.startTime, { zone: "utc" }).toISODate() ?? undefined,
+				dirtyFromDate:
+					DateTime.fromJSDate(period.startTime, { zone: "utc" }).toISODate() ?? undefined,
 			},
 			{ employeeId: period.employeeId, organizationId: period.organizationId, workPeriodId },
 		);

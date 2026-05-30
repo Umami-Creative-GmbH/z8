@@ -152,9 +152,7 @@ export const ApprovalQueryServiceLive = Layer.effect(
 
 					for (const handler of activeHandlers) {
 						const items = yield* _(
-							handler.getApprovals(params).pipe(
-								Effect.catchAllCause(() => Effect.succeed([])),
-							),
+							handler.getApprovals(params).pipe(Effect.catchAllCause(() => Effect.succeed([]))),
 						);
 						allItems.push(...items);
 					}

@@ -65,7 +65,10 @@ vi.mock("@/db", () => ({
 	},
 }));
 
-import { buildCanonicalBackfillPayload, runCanonicalBackfill } from "@/lib/time-record/migration/backfill";
+import {
+	buildCanonicalBackfillPayload,
+	runCanonicalBackfill,
+} from "@/lib/time-record/migration/backfill";
 
 describe("canonical backfill period normalization", () => {
 	beforeEach(() => {
@@ -327,23 +330,21 @@ describe("canonical backfill period normalization", () => {
 	it("loads legacy rows from db and repairs null-org absences attributable by employee org", async () => {
 		mockState.employeeFindMany.mockResolvedValue([{ id: "employee-1" }]);
 		mockState.workPeriodFindMany.mockResolvedValue([]);
-		mockState.absenceEntryFindMany
-			.mockResolvedValueOnce([])
-			.mockResolvedValueOnce([
-				{
-					id: "absence-1",
-					organizationId: null,
-					employeeId: "employee-1",
-					categoryId: "category-1",
-					startDate: "2026-01-15",
-					startPeriod: "full_day",
-					endDate: "2026-01-15",
-					endPeriod: "full_day",
-					status: "approved",
-					createdAt: new Date("2026-01-10T00:00:00.000Z"),
-					updatedAt: new Date("2026-01-10T00:00:00.000Z"),
-				},
-			]);
+		mockState.absenceEntryFindMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
+			{
+				id: "absence-1",
+				organizationId: null,
+				employeeId: "employee-1",
+				categoryId: "category-1",
+				startDate: "2026-01-15",
+				startPeriod: "full_day",
+				endDate: "2026-01-15",
+				endPeriod: "full_day",
+				status: "approved",
+				createdAt: new Date("2026-01-10T00:00:00.000Z"),
+				updatedAt: new Date("2026-01-10T00:00:00.000Z"),
+			},
+		]);
 		mockState.approvalRequestFindMany.mockResolvedValue([]);
 		mockState.absenceCategoryFindMany.mockResolvedValue([
 			{ id: "category-1", countsAgainstVacation: true },

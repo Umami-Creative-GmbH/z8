@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	IconCheck,
-	IconClock,
-	IconDownload,
-	IconLoader2,
-	IconX,
-} from "@tabler/icons-react";
+import { IconCheck, IconClock, IconDownload, IconLoader2, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useTransition } from "react";
@@ -14,13 +8,7 @@ import { toast } from "sonner";
 import { getExportDownloadUrlAction } from "@/app/[locale]/(app)/settings/payroll-export/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -47,7 +35,9 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 			if (result.success && result.data) {
 				window.open(result.data, "_blank");
 			} else {
-				toast.error(t("settings.payrollExport.history.downloadError", "Failed to get download URL"));
+				toast.error(
+					t("settings.payrollExport.history.downloadError", "Failed to get download URL"),
+				);
 			}
 		});
 	};
@@ -108,9 +98,7 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>
-					{t("settings.payrollExport.history.title", "Export History")}
-				</CardTitle>
+				<CardTitle>{t("settings.payrollExport.history.title", "Export History")}</CardTitle>
 				<CardDescription>
 					{t(
 						"settings.payrollExport.history.description",
@@ -130,15 +118,11 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 								<TableHead>
 									{t("settings.payrollExport.history.table.dateRange", "Date Range")}
 								</TableHead>
-								<TableHead>
-									{t("settings.payrollExport.history.table.status", "Status")}
-								</TableHead>
+								<TableHead>{t("settings.payrollExport.history.table.status", "Status")}</TableHead>
 								<TableHead>
 									{t("settings.payrollExport.history.table.records", "Records")}
 								</TableHead>
-								<TableHead>
-									{t("settings.payrollExport.history.table.size", "Size")}
-								</TableHead>
+								<TableHead>{t("settings.payrollExport.history.table.size", "Size")}</TableHead>
 								<TableHead>
 									{t("settings.payrollExport.history.table.createdAt", "Created")}
 								</TableHead>
@@ -148,9 +132,7 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 						<TableBody>
 							{exports.map((exp) => (
 								<TableRow key={exp.id}>
-									<TableCell className="font-medium">
-										{formatDateRange(exp.filters)}
-									</TableCell>
+									<TableCell className="font-medium">{formatDateRange(exp.filters)}</TableCell>
 									<TableCell>{getStatusBadge(exp.status)}</TableCell>
 									<TableCell>
 										{exp.workPeriodCount !== null ? (
@@ -171,9 +153,7 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 									</TableCell>
 									<TableCell>{formatFileSize(exp.fileSizeBytes)}</TableCell>
 									<TableCell className="text-muted-foreground">
-										{DateTime.fromJSDate(new Date(exp.createdAt)).toFormat(
-											"dd.MM.yyyy HH:mm",
-										)}
+										{DateTime.fromJSDate(new Date(exp.createdAt)).toFormat("dd.MM.yyyy HH:mm")}
 									</TableCell>
 									<TableCell>
 										{exp.status === "completed" && exp.fileName && (

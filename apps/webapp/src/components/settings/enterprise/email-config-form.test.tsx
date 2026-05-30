@@ -119,6 +119,8 @@ describe("EmailConfigForm", () => {
 		});
 
 		expect(screen.getByText("Vault Sealed")).toBeTruthy();
-		expect(screen.getByText("HashiCorp Vault is sealed. Please unseal it to store secrets.")).toBeTruthy();
+		expect(
+			screen.getByText("HashiCorp Vault is sealed. Please unseal it to store secrets."),
+		).toBeTruthy();
 	});
 });

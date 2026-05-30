@@ -9,8 +9,8 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import {
-	saveDatevConfigAction,
 	type DatevConfigResult,
+	saveDatevConfigAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,12 +32,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { DatevLohnConfig } from "@/lib/payroll-export/types";
 
 interface DatevConfigFormProps {
@@ -82,12 +77,9 @@ export function DatevConfigForm({
 					toast.success(t("settings.payrollExport.datev.saveSuccess", "Configuration saved"));
 					onConfigSaved?.();
 				} else {
-					toast.error(
-						t("settings.payrollExport.datev.saveError", "Failed to save configuration"),
-						{
-							description: result.error,
-						},
-					);
+					toast.error(t("settings.payrollExport.datev.saveError", "Failed to save configuration"), {
+						description: result.error,
+					});
 				}
 			});
 		},
@@ -241,10 +233,7 @@ export function DatevConfigForm({
 							<div className="space-y-2">
 								<div className="flex items-center gap-2">
 									<Label htmlFor="personnelNumberType">
-										{t(
-											"settings.payrollExport.datev.personnelNumberType",
-											"Personnel Number Type",
-										)}
+										{t("settings.payrollExport.datev.personnelNumberType", "Personnel Number Type")}
 									</Label>
 									<TooltipProvider>
 										<Tooltip>
@@ -264,9 +253,7 @@ export function DatevConfigForm({
 								</div>
 								<Select
 									value={field.state.value}
-									onValueChange={(v) =>
-										field.handleChange(v as "employeeNumber" | "employeeId")
-									}
+									onValueChange={(v) => field.handleChange(v as "employeeNumber" | "employeeId")}
 								>
 									<SelectTrigger>
 										<SelectValue />
@@ -295,10 +282,7 @@ export function DatevConfigForm({
 							<div className="flex items-center justify-between rounded-lg border p-4">
 								<div className="space-y-0.5">
 									<Label htmlFor="includeZeroHours" className="text-base">
-										{t(
-											"settings.payrollExport.datev.includeZeroHours",
-											"Include Zero Hours",
-										)}
+										{t("settings.payrollExport.datev.includeZeroHours", "Include Zero Hours")}
 									</Label>
 									<p className="text-sm text-muted-foreground">
 										{t(

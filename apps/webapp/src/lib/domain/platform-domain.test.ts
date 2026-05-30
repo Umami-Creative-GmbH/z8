@@ -53,9 +53,15 @@ describe("platform domain host helpers", () => {
 	});
 
 	it("classifies the main domain and localhost as main", () => {
-		expect(classifyDomainHost("ui.z8-time.app")).toEqual({ type: "main", hostname: "ui.z8-time.app" });
+		expect(classifyDomainHost("ui.z8-time.app")).toEqual({
+			type: "main",
+			hostname: "ui.z8-time.app",
+		});
 		expect(classifyDomainHost("localhost:3000")).toEqual({ type: "main", hostname: "localhost" });
-		expect(classifyDomainHost("tenant.localhost:3000")).toEqual({ type: "main", hostname: "tenant.localhost" });
+		expect(classifyDomainHost("tenant.localhost:3000")).toEqual({
+			type: "main",
+			hostname: "tenant.localhost",
+		});
 	});
 
 	it("classifies one-label platform organization subdomains", () => {

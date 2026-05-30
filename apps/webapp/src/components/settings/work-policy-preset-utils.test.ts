@@ -70,9 +70,11 @@ describe("work policy preset utilities", () => {
 		expect(summarizeMinutes(600)).toBe("10h");
 		expect(summarizeMinutes(615)).toBe("10h 15m");
 		expect(summarizeBreakRules([])).toBe("No break rules");
-		expect(summarizeBreakRules([{ workingMinutesThreshold: 360, requiredBreakMinutes: 30, options: [] }])).toBe(
-			"30m after 6h",
-		);
+		expect(
+			summarizeBreakRules([
+				{ workingMinutesThreshold: 360, requiredBreakMinutes: 30, options: [] },
+			]),
+		).toBe("30m after 6h");
 	});
 
 	it("parses break rules safely", () => {

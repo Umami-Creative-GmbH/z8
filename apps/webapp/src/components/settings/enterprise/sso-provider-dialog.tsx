@@ -79,9 +79,14 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
-					<ActionPanelTitle>{t("settings.enterprise.sso.addTitle", "Add SSO Provider")}</ActionPanelTitle>
+					<ActionPanelTitle>
+						{t("settings.enterprise.sso.addTitle", "Add SSO Provider")}
+					</ActionPanelTitle>
 					<ActionPanelDescription>
-						{t("settings.enterprise.sso.addDescription", "Configure an OIDC identity provider for enterprise single sign-on.")}
+						{t(
+							"settings.enterprise.sso.addDescription",
+							"Configure an OIDC identity provider for enterprise single sign-on.",
+						)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 				<form
@@ -96,9 +101,16 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 							name="providerId"
 							validators={{
 								onChange: ({ value }) => {
-							if (!value) return t("settings.enterprise.sso.providerIdRequired", "Provider ID is required");
-							if (!PROVIDER_ID_REGEX.test(value)) {
-								return t("settings.enterprise.sso.providerIdInvalid", "Provider ID must contain only lowercase letters, numbers, and hyphens");
+									if (!value)
+										return t(
+											"settings.enterprise.sso.providerIdRequired",
+											"Provider ID is required",
+										);
+									if (!PROVIDER_ID_REGEX.test(value)) {
+										return t(
+											"settings.enterprise.sso.providerIdInvalid",
+											"Provider ID must contain only lowercase letters, numbers, and hyphens",
+										);
 									}
 									return undefined;
 								},
@@ -106,7 +118,9 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 						>
 							{(field) => (
 								<div className="space-y-2">
-							<Label htmlFor="providerId">{t("settings.enterprise.sso.providerId", "Provider ID")}</Label>
+									<Label htmlFor="providerId">
+										{t("settings.enterprise.sso.providerId", "Provider ID")}
+									</Label>
 									<Input
 										id="providerId"
 										placeholder="acme-okta"
@@ -115,7 +129,10 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 										onBlur={field.handleBlur}
 									/>
 									<p className="text-sm text-muted-foreground">
-							{t("settings.enterprise.sso.providerIdHelp", "A unique identifier for this provider (lowercase, no spaces)")}
+										{t(
+											"settings.enterprise.sso.providerIdHelp",
+											"A unique identifier for this provider (lowercase, no spaces)",
+										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
@@ -128,11 +145,15 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 							name="issuer"
 							validators={{
 								onChange: ({ value }) => {
-							if (!value) return t("settings.enterprise.sso.issuerUrlRequired", "Issuer URL is required");
+									if (!value)
+										return t("settings.enterprise.sso.issuerUrlRequired", "Issuer URL is required");
 									try {
 										new URL(value);
 									} catch {
-								return t("settings.enterprise.sso.validUrlRequired", "Please enter a valid URL");
+										return t(
+											"settings.enterprise.sso.validUrlRequired",
+											"Please enter a valid URL",
+										);
 									}
 									return undefined;
 								},
@@ -140,7 +161,9 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 						>
 							{(field) => (
 								<div className="space-y-2">
-							<Label htmlFor="issuer">{t("settings.enterprise.sso.issuerUrl", "Issuer URL")}</Label>
+									<Label htmlFor="issuer">
+										{t("settings.enterprise.sso.issuerUrl", "Issuer URL")}
+									</Label>
 									<Input
 										id="issuer"
 										type="url"
@@ -150,7 +173,10 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 										onBlur={field.handleBlur}
 									/>
 									<p className="text-sm text-muted-foreground">
-							{t("settings.enterprise.sso.issuerUrlHelp", "The OIDC issuer URL from your identity provider")}
+										{t(
+											"settings.enterprise.sso.issuerUrlHelp",
+											"The OIDC issuer URL from your identity provider",
+										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
@@ -163,9 +189,13 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 							name="domain"
 							validators={{
 								onChange: ({ value }) => {
-							if (!value) return t("settings.enterprise.sso.domainRequired", "Domain is required");
+									if (!value)
+										return t("settings.enterprise.sso.domainRequired", "Domain is required");
 									if (!DOMAIN_REGEX.test(value)) {
-								return t("settings.enterprise.sso.domainInvalid", "Please enter a valid domain (e.g., example.com)");
+										return t(
+											"settings.enterprise.sso.domainInvalid",
+											"Please enter a valid domain (e.g., example.com)",
+										);
 									}
 									return undefined;
 								},
@@ -173,7 +203,9 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 						>
 							{(field) => (
 								<div className="space-y-2">
-							<Label htmlFor="domain">{t("settings.enterprise.sso.emailDomain", "Email Domain")}</Label>
+									<Label htmlFor="domain">
+										{t("settings.enterprise.sso.emailDomain", "Email Domain")}
+									</Label>
 									<Input
 										id="domain"
 										placeholder="example.com"
@@ -182,7 +214,10 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 										onBlur={field.handleBlur}
 									/>
 									<p className="text-sm text-muted-foreground">
-							{t("settings.enterprise.sso.emailDomainHelp", "Users with this email domain will be able to use SSO")}
+										{t(
+											"settings.enterprise.sso.emailDomainHelp",
+											"Users with this email domain will be able to use SSO",
+										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
@@ -195,17 +230,21 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 							name="clientId"
 							validators={{
 								onChange: ({ value }) => {
-							if (!value) return t("settings.enterprise.clientIdRequired", "Client ID is required");
+									if (!value)
+										return t("settings.enterprise.clientIdRequired", "Client ID is required");
 									return undefined;
 								},
 							}}
 						>
 							{(field) => (
 								<div className="space-y-2">
-							<Label htmlFor="clientId">{t("settings.enterprise.clientId", "Client ID")}</Label>
+									<Label htmlFor="clientId">{t("settings.enterprise.clientId", "Client ID")}</Label>
 									<Input
 										id="clientId"
-							placeholder={t("settings.enterprise.sso.clientIdPlaceholder", "Your OIDC client ID")}
+										placeholder={t(
+											"settings.enterprise.sso.clientIdPlaceholder",
+											"Your OIDC client ID",
+										)}
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
@@ -221,18 +260,27 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 							name="clientSecret"
 							validators={{
 								onChange: ({ value }) => {
-							if (!value) return t("settings.enterprise.clientSecretRequired", "Client Secret is required");
+									if (!value)
+										return t(
+											"settings.enterprise.clientSecretRequired",
+											"Client Secret is required",
+										);
 									return undefined;
 								},
 							}}
 						>
 							{(field) => (
 								<div className="space-y-2">
-							<Label htmlFor="clientSecret">{t("settings.enterprise.clientSecret", "Client Secret")}</Label>
+									<Label htmlFor="clientSecret">
+										{t("settings.enterprise.clientSecret", "Client Secret")}
+									</Label>
 									<Input
 										id="clientSecret"
 										type="password"
-							placeholder={t("settings.enterprise.sso.clientSecretPlaceholder", "Your OIDC client secret")}
+										placeholder={t(
+											"settings.enterprise.sso.clientSecretPlaceholder",
+											"Your OIDC client secret",
+										)}
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
@@ -247,10 +295,12 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-						{t("common.cancel", "Cancel")}
+							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
-						{isSubmitting ? t("common.adding", "Adding...") : t("settings.enterprise.addProvider", "Add Provider")}
+							{isSubmitting
+								? t("common.adding", "Adding...")
+								: t("settings.enterprise.addProvider", "Add Provider")}
 						</Button>
 					</ActionPanelFooter>
 				</form>

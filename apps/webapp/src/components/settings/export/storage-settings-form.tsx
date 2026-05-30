@@ -186,7 +186,8 @@ export function StorageSettingsForm({
 			} else {
 				setTestResult({
 					success: false,
-					message: result.error ?? t("settings.dataExport.storage.testFailed", "Connection test failed"),
+					message:
+						result.error ?? t("settings.dataExport.storage.testFailed", "Connection test failed"),
 				});
 			}
 
@@ -285,11 +286,7 @@ export function StorageSettingsForm({
 				<CardContent className="space-y-4">
 					{testResult && (
 						<Alert variant={testResult.success ? "default" : "destructive"}>
-							{testResult.success ? (
-								<IconCheck className="size-4" />
-							) : (
-								<IconX className="size-4" />
-							)}
+							{testResult.success ? <IconCheck className="size-4" /> : <IconX className="size-4" />}
 							<AlertTitle>
 								{testResult.success
 									? t("settings.dataExport.storage.connectionSuccess", "Connection Successful")
@@ -391,9 +388,9 @@ export function StorageSettingsForm({
 										"https://s3.example.com",
 									)}
 									value={field.state.value}
-								onChange={(e) => {
-									field.handleChange(e.target.value);
-								}}
+									onChange={(e) => {
+										field.handleChange(e.target.value);
+									}}
 									onBlur={field.handleBlur}
 								/>
 								<p className="text-sm text-muted-foreground">

@@ -1,18 +1,18 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { and, desc, eq, or } from "drizzle-orm";
 import { DateTime } from "luxon";
+import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { db } from "@/db";
 import {
 	enterpriseIdentitySetup,
 	organizationDomain,
 	roleTemplate,
-	scimProviderConfig,
-	scimProvisioningLog,
 	type SocialOAuthProvider,
 	type SocialOAuthProviderConfig,
+	scimProviderConfig,
+	scimProvisioningLog,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { canManageCurrentOrganizationSettings, requireUser } from "@/lib/auth-helpers";
@@ -27,19 +27,19 @@ import {
 	updateOrganizationBranding,
 	verifyDomainOwnership,
 } from "@/lib/domain";
+import { selectVerifiedEnterpriseIdentityDomain } from "@/lib/enterprise-identity/enforcement";
 import type {
 	EnterpriseIdentityProtocol,
 	EnterpriseIdentityProviderPresetId,
 } from "@/lib/enterprise-identity/provider-presets";
-import { selectVerifiedEnterpriseIdentityDomain } from "@/lib/enterprise-identity/enforcement";
 import { buildEnterpriseIdentityScimTokenResponse } from "@/lib/enterprise-identity/scim-token-response";
 import {
 	createDefaultEnterpriseIdentitySetupState,
+	type EnterpriseIdentitySetupState,
+	type EnterpriseIdentitySetupStep,
 	getEnterpriseIdentityReadiness,
 	mapBetterAuthIdentityError,
 	validateEnterpriseIdentityProviderInput,
-	type EnterpriseIdentitySetupState,
-	type EnterpriseIdentitySetupStep,
 } from "@/lib/enterprise-identity/setup-state";
 import {
 	createSocialOAuthConfig,
@@ -110,14 +110,14 @@ export type EnterpriseIdentitySSOInput =
 			clientId: string;
 			clientSecret: string;
 			scopes?: string[];
-		}
+	  }
 	| {
 			protocol: "saml";
 			providerId: string;
 			issuer: string;
 			domain: string;
 			metadata: string;
-		};
+	  };
 
 export interface EnterpriseIdentitySsoTestInput {
 	providerId: string;
@@ -373,7 +373,9 @@ export async function getEnterpriseIdentitySetupAction(): Promise<EnterpriseIden
 	return getSetupResponse(organizationId, authContext.user.id);
 }
 
-export async function updateEnterpriseIdentityProviderAction(input: EnterpriseIdentityProviderInput) {
+export async function updateEnterpriseIdentityProviderAction(
+	input: EnterpriseIdentityProviderInput,
+) {
 	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
 	const providerId = input.providerId.trim();
 	const domain = input.domain.trim().toLowerCase();
@@ -398,13 +400,16 @@ export async function updateEnterpriseIdentityProviderAction(input: EnterpriseId
 	return getSetupResponse(organizationId, authContext.user.id);
 }
 
-export async function registerEnterpriseIdentitySSOProviderAction(input: EnterpriseIdentitySSOInput) {
+export async function registerEnterpriseIdentitySSOProviderAction(
+	input: EnterpriseIdentitySSOInput,
+) {
 	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
 	const providerId = input.providerId.trim();
 	const issuer = input.issuer.trim();
 	const domain = input.domain.trim().toLowerCase();
 
-	if (!providerId || !issuer || !domain) throw new Error("Provider ID, issuer, and domain are required");
+	if (!providerId || !issuer || !domain)
+		throw new Error("Provider ID, issuer, and domain are required");
 	const validationError = validateEnterpriseIdentityProviderInput({ providerId, domain });
 	if (validationError) throw new Error(validationError);
 
@@ -496,7 +501,10 @@ export async function recordEnterpriseIdentitySsoTestAction(input: EnterpriseIde
 
 export async function refreshEnterpriseIdentityDomainStatusAction() {
 	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(
+		organizationId,
+		authContext.user.id,
+	);
 	const provider = await findEnterpriseIdentitySSOProvider(organizationId, setupRecord);
 	const domainVerified = provider?.domainVerified === true;
 
@@ -511,9 +519,14 @@ export async function refreshEnterpriseIdentityDomainStatusAction() {
 	return getSetupResponse(organizationId, authContext.user.id);
 }
 
-export async function generateEnterpriseIdentityScimTokenAction(input: EnterpriseIdentityScimTokenInput) {
+export async function generateEnterpriseIdentityScimTokenAction(
+	input: EnterpriseIdentityScimTokenInput,
+) {
 	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(
+		organizationId,
+		authContext.user.id,
+	);
 	const providerId = input.providerId.trim();
 	const defaultRoleTemplateId = await assertRoleTemplateAllowed(
 		organizationId,
@@ -581,7 +594,10 @@ export async function generateEnterpriseIdentityScimTokenAction(input: Enterpris
 
 export async function refreshEnterpriseIdentityScimStatusAction() {
 	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(
+		organizationId,
+		authContext.user.id,
+	);
 	const isScimTokenGenerationLog = (log: typeof scimProvisioningLog.$inferSelect) => {
 		const metadata = log.metadata;
 		return (
@@ -598,7 +614,8 @@ export async function refreshEnterpriseIdentityScimStatusAction() {
 	const latestLog = latestLogs.find((log) => !isScimTokenGenerationLog(log));
 	const checkedAt = DateTime.utc().toISO();
 	const verified = latestLog ? latestLog.eventType !== "error" : setupRecord.scim.verified;
-	const error = latestLog?.eventType === "error" ? (latestLog.metadata?.errorMessage ?? "SCIM error") : null;
+	const error =
+		latestLog?.eventType === "error" ? (latestLog.metadata?.errorMessage ?? "SCIM error") : null;
 
 	await updateEnterpriseIdentitySetupRecord(organizationId, {
 		scim: {
@@ -641,7 +658,10 @@ export async function updateEnterpriseIdentityAccessPolicyAction(
 
 export async function activateEnterpriseIdentitySetupAction() {
 	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	let setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	let setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(
+		organizationId,
+		authContext.user.id,
+	);
 	setupRecord = await syncEnterpriseIdentityDomainVerification(
 		organizationId,
 		setupRecord,

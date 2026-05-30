@@ -204,12 +204,7 @@ async function handleCallbackQuery(
 				bot,
 			);
 		} else if (callbackData.a === "cmd") {
-			await handleCommandCallback(
-				query,
-				callbackData as CommandCallbackData,
-				telegramUserId,
-				bot,
-			);
+			await handleCommandCallback(query, callbackData as CommandCallbackData, telegramUserId, bot);
 		} else if (callbackData.a === "lang") {
 			await handleLanguageCallback(
 				query,
@@ -239,25 +234,20 @@ async function handleLanguageCommand(
 	// Build 2 buttons per row
 	const rows: TelegramInlineKeyboardButton[][] = [];
 	for (let i = 0; i < LANGUAGE_BUTTONS.length; i += 2) {
-		const row: TelegramInlineKeyboardButton[] = LANGUAGE_BUTTONS.slice(i, i + 2).map(
-			(lang) => {
-				const data: LanguageCallbackData = { a: "lang", l: lang.code };
-				const label =
-					lang.code === currentLocale ? `${lang.label} \u2713` : lang.label;
-				return {
-					text: label,
-					callback_data: JSON.stringify(data),
-				};
-			},
-		);
+		const row: TelegramInlineKeyboardButton[] = LANGUAGE_BUTTONS.slice(i, i + 2).map((lang) => {
+			const data: LanguageCallbackData = { a: "lang", l: lang.code };
+			const label = lang.code === currentLocale ? `${lang.label} \u2713` : lang.label;
+			return {
+				text: label,
+				callback_data: JSON.stringify(data),
+			};
+		});
 		rows.push(row);
 	}
 
 	await sendMessage(bot.botToken, {
 		chat_id: chatId,
-		text: escapeMarkdownV2(
-			t("bot.language.prompt", "Choose your language:"),
-		),
+		text: escapeMarkdownV2(t("bot.language.prompt", "Choose your language:")),
 		parse_mode: "MarkdownV2",
 		reply_markup: { inline_keyboard: rows },
 	});
@@ -288,8 +278,7 @@ async function handleLanguageCallback(
 
 	// Get translator in the new locale
 	const t = await getBotTranslate(newLocale);
-	const langLabel =
-		LANGUAGE_BUTTONS.find((b) => b.code === newLocale)?.label || newLocale;
+	const langLabel = LANGUAGE_BUTTONS.find((b) => b.code === newLocale)?.label || newLocale;
 
 	// Edit the original message to show confirmation
 	await editMessageText(bot.botToken, {

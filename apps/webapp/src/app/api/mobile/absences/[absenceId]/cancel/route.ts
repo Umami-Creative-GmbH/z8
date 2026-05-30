@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
+import { cancelAbsenceRequestForEmployee } from "@/app/[locale]/(app)/absences/actions";
 import {
 	MobileApiError,
 	requireMobileEmployee,
 	requireMobileSessionContext,
 } from "@/app/api/mobile/shared";
-import { cancelAbsenceRequestForEmployee } from "@/app/[locale]/(app)/absences/actions";
 
 export async function POST(
 	request: Request,
@@ -28,13 +28,13 @@ export async function POST(
 						? result.reason
 						: "subscription_required";
 
-				return NextResponse.json(
-					{ error: "billing_required", reason },
-					{ status: 402 },
-				);
+				return NextResponse.json({ error: "billing_required", reason }, { status: 402 });
 			}
 
-			return NextResponse.json({ error: result.error ?? "Failed to cancel absence" }, { status: 400 });
+			return NextResponse.json(
+				{ error: result.error ?? "Failed to cancel absence" },
+				{ status: 400 },
+			);
 		}
 
 		return NextResponse.json(result);

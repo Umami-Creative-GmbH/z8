@@ -1,8 +1,8 @@
 "use client";
 
 import "temporal-polyfill/global";
-import dynamic from "next/dynamic";
 import { useTranslate } from "@tolgee/react";
+import dynamic from "next/dynamic";
 import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import type { ViewMode } from "./schedule-x-calendar";
 

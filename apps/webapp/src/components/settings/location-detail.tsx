@@ -331,15 +331,15 @@ export function LocationDetail({
 												</p>
 											</div>
 										</div>
-									{canManageLocations && (
-										<Button
-											variant="ghost"
-											size="icon"
-											onClick={() => handleRemoveEmployee(assignment.id)}
-										>
-											<IconTrash className="size-4" />
-										</Button>
-									)}
+										{canManageLocations && (
+											<Button
+												variant="ghost"
+												size="icon"
+												onClick={() => handleRemoveEmployee(assignment.id)}
+											>
+												<IconTrash className="size-4" />
+											</Button>
+										)}
 									</div>
 								))}
 							</div>
@@ -382,33 +382,37 @@ export function LocationDetail({
 												)}
 											</div>
 											<div className="flex items-center gap-1">
-										{canManageLocations && (
-											<>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() =>
-														setSubareaEmployeeDialog({
-															open: true,
-															subareaId: subarea.id,
-															subareaName: subarea.name,
-														})
-													}
-												>
-													<IconPlus className="size-4" />
-												</Button>
-												<Button variant="ghost" size="icon" onClick={() => setEditSubarea(subarea)}>
-													<IconEdit className="size-4" />
-												</Button>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() => setDeleteSubareaId(subarea.id)}
-												>
-													<IconTrash className="size-4" />
-												</Button>
-											</>
-										)}
+												{canManageLocations && (
+													<>
+														<Button
+															variant="ghost"
+															size="icon"
+															onClick={() =>
+																setSubareaEmployeeDialog({
+																	open: true,
+																	subareaId: subarea.id,
+																	subareaName: subarea.name,
+																})
+															}
+														>
+															<IconPlus className="size-4" />
+														</Button>
+														<Button
+															variant="ghost"
+															size="icon"
+															onClick={() => setEditSubarea(subarea)}
+														>
+															<IconEdit className="size-4" />
+														</Button>
+														<Button
+															variant="ghost"
+															size="icon"
+															onClick={() => setDeleteSubareaId(subarea.id)}
+														>
+															<IconTrash className="size-4" />
+														</Button>
+													</>
+												)}
 											</div>
 										</div>
 										{subarea.employees.length > 0 && (
@@ -419,16 +423,16 @@ export function LocationDetail({
 															<span>{getEmployeeName(emp.employee)}</span>
 															{emp.isPrimary && <IconStar className="size-3 text-yellow-500" />}
 														</div>
-											{canManageLocations && (
-												<Button
-													variant="ghost"
-													size="icon"
-													className="size-6"
-													onClick={() => handleRemoveSubareaEmployee(emp.id)}
-												>
-													<IconTrash className="size-3" />
-												</Button>
-											)}
+														{canManageLocations && (
+															<Button
+																variant="ghost"
+																size="icon"
+																className="size-6"
+																onClick={() => handleRemoveSubareaEmployee(emp.id)}
+															>
+																<IconTrash className="size-3" />
+															</Button>
+														)}
 													</div>
 												))}
 											</div>
@@ -464,27 +468,29 @@ export function LocationDetail({
 			)}
 
 			{/* Delete Location Dialog */}
-			{canManageLocations && <AlertDialog open={deleteLocationOpen} onOpenChange={setDeleteLocationOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.locations.deleteTitle", "Delete Location")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.locations.deleteDescription",
-								"Are you sure you want to delete this location? This will also delete all subareas and employee assignments.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction onClick={handleDeleteLocation}>
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>}
+			{canManageLocations && (
+				<AlertDialog open={deleteLocationOpen} onOpenChange={setDeleteLocationOpen}>
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>
+								{t("settings.locations.deleteTitle", "Delete Location")}
+							</AlertDialogTitle>
+							<AlertDialogDescription>
+								{t(
+									"settings.locations.deleteDescription",
+									"Are you sure you want to delete this location? This will also delete all subareas and employee assignments.",
+								)}
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+							<AlertDialogAction onClick={handleDeleteLocation}>
+								{t("common.delete", "Delete")}
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
+			)}
 
 			{/* Add Employee Dialog */}
 			{canManageLocations && (
@@ -526,27 +532,29 @@ export function LocationDetail({
 			)}
 
 			{/* Delete Subarea Dialog */}
-			{canManageLocations && <AlertDialog open={!!deleteSubareaId} onOpenChange={() => setDeleteSubareaId(null)}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.locations.deleteSubareaTitle", "Delete Subarea")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.locations.deleteSubareaDescription",
-								"Are you sure you want to delete this subarea? This will also remove all employee assignments.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction onClick={handleDeleteSubarea}>
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>}
+			{canManageLocations && (
+				<AlertDialog open={!!deleteSubareaId} onOpenChange={() => setDeleteSubareaId(null)}>
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>
+								{t("settings.locations.deleteSubareaTitle", "Delete Subarea")}
+							</AlertDialogTitle>
+							<AlertDialogDescription>
+								{t(
+									"settings.locations.deleteSubareaDescription",
+									"Are you sure you want to delete this subarea? This will also remove all employee assignments.",
+								)}
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+							<AlertDialogAction onClick={handleDeleteSubarea}>
+								{t("common.delete", "Delete")}
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
+			)}
 
 			{/* Subarea Employee Dialog */}
 			{canManageLocations && subareaEmployeeDialog && (

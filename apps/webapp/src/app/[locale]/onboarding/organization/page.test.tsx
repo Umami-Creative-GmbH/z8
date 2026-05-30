@@ -3,12 +3,14 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-const { getOnboardingSummaryMock, pushMock, replaceMock, skipOrganizationSetupMock } = vi.hoisted(() => ({
-	getOnboardingSummaryMock: vi.fn(),
-	pushMock: vi.fn(),
-	replaceMock: vi.fn(),
-	skipOrganizationSetupMock: vi.fn(),
-}));
+const { getOnboardingSummaryMock, pushMock, replaceMock, skipOrganizationSetupMock } = vi.hoisted(
+	() => ({
+		getOnboardingSummaryMock: vi.fn(),
+		pushMock: vi.fn(),
+		replaceMock: vi.fn(),
+		skipOrganizationSetupMock: vi.fn(),
+	}),
+);
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),

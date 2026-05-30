@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/db", () => ({
 	db: {
@@ -42,7 +42,9 @@ describe("settings scheduling access helpers", () => {
 
 	it("requires both team settings and own-team shift-template scope for managers", () => {
 		expect(canAccessShiftTemplateSettings("manager", true, new Set(["team-subarea-1"]))).toBe(true);
-		expect(canAccessShiftTemplateSettings("manager", false, new Set(["team-subarea-1"]))).toBe(false);
+		expect(canAccessShiftTemplateSettings("manager", false, new Set(["team-subarea-1"]))).toBe(
+			false,
+		);
 		expect(canAccessShiftTemplateSettings("manager", true, new Set())).toBe(false);
 	});
 
@@ -68,9 +70,15 @@ describe("settings scheduling access helpers", () => {
 	it("denies manager writes outside explicit subarea scope", () => {
 		const manageableSubareaIds = new Set(["subarea-1"]);
 
-		expect(canManageScopedSchedulingSubarea("manager", manageableSubareaIds, "subarea-1")).toBe(true);
-		expect(canManageScopedSchedulingSubarea("manager", manageableSubareaIds, "subarea-2")).toBe(false);
-		expect(canManageScopedSchedulingSubarea("manager", manageableSubareaIds, undefined)).toBe(false);
+		expect(canManageScopedSchedulingSubarea("manager", manageableSubareaIds, "subarea-1")).toBe(
+			true,
+		);
+		expect(canManageScopedSchedulingSubarea("manager", manageableSubareaIds, "subarea-2")).toBe(
+			false,
+		);
+		expect(canManageScopedSchedulingSubarea("manager", manageableSubareaIds, undefined)).toBe(
+			false,
+		);
 	});
 
 	it("filters lists down to manageable subareas for managers", () => {
@@ -87,7 +95,10 @@ describe("settings scheduling access helpers", () => {
 	});
 
 	it("uses directly scoped permission and team-member queries for scheduling access", () => {
-		const source = readFileSync(new URL("./settings-scheduling-access.ts", import.meta.url), "utf8");
+		const source = readFileSync(
+			new URL("./settings-scheduling-access.ts", import.meta.url),
+			"utf8",
+		);
 
 		expect(source.includes("eq(teamPermissions.employeeId, currentEmployee.id)")).toBe(true);
 		expect(source.includes("db.query.employee.findMany(")).toBe(true);

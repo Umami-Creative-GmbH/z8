@@ -32,7 +32,7 @@ import {
 	ApprovalQueryService,
 	ApprovalQueryServiceLive,
 } from "@/lib/approvals/application/approval-query.service";
-import { DatabaseError, type AnyAppError } from "@/lib/effect/errors";
+import { type AnyAppError, DatabaseError } from "@/lib/effect/errors";
 
 function createUnifiedApprovalItem(params: {
 	id: string;

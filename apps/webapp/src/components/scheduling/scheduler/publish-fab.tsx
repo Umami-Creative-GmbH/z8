@@ -1,7 +1,6 @@
 "use client";
 
-import { IconAlertTriangle } from "@tabler/icons-react";
-import { IconLoader2, IconSend } from "@tabler/icons-react";
+import { IconAlertTriangle, IconLoader2, IconSend } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -72,8 +71,8 @@ export function PublishFab({
 						{hasComplianceWarnings && (
 							<p className="text-sm">
 								Compliance checks found {complianceFindingsCount} warning
-								{complianceFindingsCount === 1 ? "" : "s"}; you will need to acknowledge
-								them before publishing.
+								{complianceFindingsCount === 1 ? "" : "s"}; you will need to acknowledge them before
+								publishing.
 							</p>
 						)}
 					</div>

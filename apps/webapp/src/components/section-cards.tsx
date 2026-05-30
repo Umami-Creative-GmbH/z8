@@ -44,10 +44,7 @@ const WIDGET_COMPONENTS: Record<WidgetId, React.ComponentType> = {
 	"presence-status": PresenceStatusWidget,
 };
 
-const WIDGET_SKELETON_KEYS = Array.from(
-	{ length: 8 },
-	(_, index) => `widget-skeleton-${index}`,
-);
+const WIDGET_SKELETON_KEYS = Array.from({ length: 8 }, (_, index) => `widget-skeleton-${index}`);
 
 const subscribeToHydration = () => () => {};
 const getHydratedSnapshot = () => true;
@@ -93,10 +90,7 @@ function HiddenWidgetsEmptyState({ onReset }: { onReset: () => void }) {
 	return (
 		<div className="mx-4 rounded-xl border border-dashed bg-card p-8 text-center lg:mx-6">
 			<h2 className="font-semibold text-card-foreground text-lg">
-				{t(
-					"dashboard.customize.empty-title",
-					"All dashboard widgets are hidden",
-				)}
+				{t("dashboard.customize.empty-title", "All dashboard widgets are hidden")}
 			</h2>
 			<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 				{t(
@@ -123,9 +117,7 @@ function DashboardWidgetLayout({
 	const renderedWidgets = useVisibleWidgets();
 	const fetchingDashboardWidgets = useIsFetching({ queryKey: ["dashboard"] });
 	const visibleWidgetKey = visibleWidgetOrder.join("|");
-	const [hasCheckedRenderedWidgets, setHasCheckedRenderedWidgets] = useState(
-		!visibleWidgetKey,
-	);
+	const [hasCheckedRenderedWidgets, setHasCheckedRenderedWidgets] = useState(!visibleWidgetKey);
 	const [checkedWidgetKey, setCheckedWidgetKey] = useState(visibleWidgetKey);
 
 	if (checkedWidgetKey !== visibleWidgetKey) {
@@ -136,9 +128,7 @@ function DashboardWidgetLayout({
 	const hasConfiguredWidgets = visibleWidgetOrder.length > 0;
 	const shouldShowEmptyState =
 		!hasConfiguredWidgets ||
-		(hasCheckedRenderedWidgets &&
-			fetchingDashboardWidgets === 0 &&
-			renderedWidgets.length === 0);
+		(hasCheckedRenderedWidgets && fetchingDashboardWidgets === 0 && renderedWidgets.length === 0);
 
 	useEffect(() => {
 		if (!visibleWidgetKey) {
@@ -157,10 +147,7 @@ function DashboardWidgetLayout({
 	return (
 		<>
 			{hasConfiguredWidgets ? (
-				<SortableWidgetGrid
-					widgetOrder={visibleWidgetOrder}
-					onReorder={onReorder}
-				>
+				<SortableWidgetGrid widgetOrder={visibleWidgetOrder} onReorder={onReorder}>
 					{visibleWidgetOrder.map((widgetId) => {
 						const WidgetComponent = WIDGET_COMPONENTS[widgetId];
 						if (!WidgetComponent) return null;
@@ -168,16 +155,13 @@ function DashboardWidgetLayout({
 					})}
 				</SortableWidgetGrid>
 			) : null}
-			{shouldShowEmptyState ? (
-				<HiddenWidgetsEmptyState onReset={resetOrder} />
-			) : null}
+			{shouldShowEmptyState ? <HiddenWidgetsEmptyState onReset={resetOrder} /> : null}
 		</>
 	);
 }
 
 export function SectionCards() {
-	const { visibleWidgetOrder, onReorder, resetOrder, isLoading } =
-		useWidgetOrder();
+	const { visibleWidgetOrder, onReorder, resetOrder, isLoading } = useWidgetOrder();
 	const hasHydrated = useHasHydrated();
 
 	if (!hasHydrated || isLoading) {

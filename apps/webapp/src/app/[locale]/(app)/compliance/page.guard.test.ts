@@ -1,10 +1,12 @@
 import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-const { requireOrgAdminSettingsAccessMock, getComplianceCommandCenterDataMock } = vi.hoisted(() => ({
-	requireOrgAdminSettingsAccessMock: vi.fn(),
-	getComplianceCommandCenterDataMock: vi.fn(),
-}));
+const { requireOrgAdminSettingsAccessMock, getComplianceCommandCenterDataMock } = vi.hoisted(
+	() => ({
+		requireOrgAdminSettingsAccessMock: vi.fn(),
+		getComplianceCommandCenterDataMock: vi.fn(),
+	}),
+);
 
 vi.mock("@/lib/auth-helpers", () => ({
 	requireOrgAdminSettingsAccess: requireOrgAdminSettingsAccessMock,

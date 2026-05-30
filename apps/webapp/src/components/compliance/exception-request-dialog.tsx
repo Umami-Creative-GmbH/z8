@@ -1,8 +1,8 @@
 "use client";
 
+import { IconAlertTriangle, IconClock, IconShield } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { IconAlertTriangle, IconClock, IconShield } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { requestComplianceException } from "@/app/[locale]/(app)/settings/compliance/actions";

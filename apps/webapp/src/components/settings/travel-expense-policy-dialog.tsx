@@ -1,8 +1,8 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -11,8 +11,6 @@ import {
 	type UpsertTravelExpensePolicyInput,
 	upsertTravelExpensePolicy,
 } from "@/app/[locale]/(app)/settings/travel-expenses/actions";
-import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -22,6 +20,8 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -75,7 +75,7 @@ export function TravelExpensePolicyDialog({
 
 	const mutation = useMutation({
 		mutationFn: upsertTravelExpensePolicy,
-			onSuccess: async (result) => {
+		onSuccess: async (result) => {
 			if (!result.success) {
 				toast.error(
 					result.error ||

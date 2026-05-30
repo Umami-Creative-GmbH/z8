@@ -13,12 +13,23 @@ import Image from "next/image";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
+	deletePersonioCredentialsAction,
+	type PersonioConfigResult,
 	savePersonioConfigAction,
 	savePersonioCredentialsAction,
-	deletePersonioCredentialsAction,
 	testPersonioConnectionAction,
-	type PersonioConfigResult,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,23 +50,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PersonioConfig } from "@/lib/payroll-export";
 
 interface PersonioConfigFormProps {
@@ -79,9 +74,7 @@ export function PersonioConfigForm({
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
 	const [isTesting, setIsTesting] = useState(false);
-	const [showCredentialsForm, setShowCredentialsForm] = useState(
-		!initialConfig?.hasCredentials,
-	);
+	const [showCredentialsForm, setShowCredentialsForm] = useState(!initialConfig?.hasCredentials);
 
 	// Credentials form state
 	const [clientId, setClientId] = useState("");
@@ -97,16 +90,11 @@ export function PersonioConfigForm({
 				});
 
 				if (result.success) {
-					toast.success(
-						t("settings.payrollExport.personio.saveSuccess", "Configuration saved"),
-					);
+					toast.success(t("settings.payrollExport.personio.saveSuccess", "Configuration saved"));
 					onConfigSaved?.();
 				} else {
 					toast.error(
-						t(
-							"settings.payrollExport.personio.saveError",
-							"Failed to save configuration",
-						),
+						t("settings.payrollExport.personio.saveError", "Failed to save configuration"),
 						{
 							description: result.error,
 						},
@@ -136,10 +124,7 @@ export function PersonioConfigForm({
 
 			if (result.success) {
 				toast.success(
-					t(
-						"settings.payrollExport.personio.credentialsSaved",
-						"API credentials saved securely",
-					),
+					t("settings.payrollExport.personio.credentialsSaved", "API credentials saved securely"),
 				);
 				setShowCredentialsForm(false);
 				setClientId("");
@@ -147,10 +132,7 @@ export function PersonioConfigForm({
 				onConfigSaved?.();
 			} else {
 				toast.error(
-					t(
-						"settings.payrollExport.personio.credentialsError",
-						"Failed to save credentials",
-					),
+					t("settings.payrollExport.personio.credentialsError", "Failed to save credentials"),
 					{
 						description: result.error,
 					},
@@ -165,10 +147,7 @@ export function PersonioConfigForm({
 
 			if (result.success) {
 				toast.success(
-					t(
-						"settings.payrollExport.personio.credentialsDeleted",
-						"API credentials deleted",
-					),
+					t("settings.payrollExport.personio.credentialsDeleted", "API credentials deleted"),
 				);
 				setShowCredentialsForm(true);
 				onConfigSaved?.();
@@ -243,10 +222,7 @@ export function PersonioConfigForm({
 									{initialConfig?.hasCredentials && (
 										<Badge variant="secondary" className="gap-1">
 											<IconCheck className="size-3" aria-hidden="true" />
-											{t(
-												"settings.payrollExport.personio.connected",
-												"Connected",
-											)}
+											{t("settings.payrollExport.personio.connected", "Connected")}
 										</Badge>
 									)}
 								</CardTitle>
@@ -274,9 +250,15 @@ export function PersonioConfigForm({
 												<button
 													type="button"
 													className="inline-flex cursor-help"
-													aria-label={t("settings.payrollExport.personio.clientIdHelp", "Client ID help")}
+													aria-label={t(
+														"settings.payrollExport.personio.clientIdHelp",
+														"Client ID help",
+													)}
 												>
-													<IconInfoCircle className="size-4 text-muted-foreground" aria-hidden="true" />
+													<IconInfoCircle
+														className="size-4 text-muted-foreground"
+														aria-hidden="true"
+													/>
 												</button>
 											</TooltipTrigger>
 											<TooltipContent className="max-w-xs">
@@ -303,10 +285,7 @@ export function PersonioConfigForm({
 							<div className="space-y-2">
 								<div className="flex items-center gap-2">
 									<Label htmlFor="clientSecret">
-										{t(
-											"settings.payrollExport.personio.clientSecret",
-											"API Secret",
-										)}
+										{t("settings.payrollExport.personio.clientSecret", "API Secret")}
 									</Label>
 									<TooltipProvider>
 										<Tooltip>
@@ -314,9 +293,15 @@ export function PersonioConfigForm({
 												<button
 													type="button"
 													className="inline-flex cursor-help"
-													aria-label={t("settings.payrollExport.personio.clientSecretHelp", "API Secret help")}
+													aria-label={t(
+														"settings.payrollExport.personio.clientSecretHelp",
+														"API Secret help",
+													)}
 												>
-													<IconInfoCircle className="size-4 text-muted-foreground" aria-hidden="true" />
+													<IconInfoCircle
+														className="size-4 text-muted-foreground"
+														aria-hidden="true"
+													/>
 												</button>
 											</TooltipTrigger>
 											<TooltipContent className="max-w-xs">
@@ -374,7 +359,10 @@ export function PersonioConfigForm({
 											type="button"
 											variant="ghost"
 											size="sm"
-											aria-label={t("settings.payrollExport.personio.deleteCredentials", "Delete credentials")}
+											aria-label={t(
+												"settings.payrollExport.personio.deleteCredentials",
+												"Delete credentials",
+											)}
 										>
 											<IconTrash className="size-4 text-destructive" aria-hidden="true" />
 										</Button>
@@ -395,9 +383,7 @@ export function PersonioConfigForm({
 											</AlertDialogDescription>
 										</AlertDialogHeader>
 										<AlertDialogFooter>
-											<AlertDialogCancel>
-												{t("common.cancel", "Cancel")}
-											</AlertDialogCancel>
+											<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 											<AlertDialogAction
 												onClick={handleDeleteCredentials}
 												className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -481,9 +467,15 @@ export function PersonioConfigForm({
 													<button
 														type="button"
 														className="inline-flex cursor-help"
-														aria-label={t("settings.payrollExport.personio.employeeMatchStrategyHelp", "Employee matching help")}
+														aria-label={t(
+															"settings.payrollExport.personio.employeeMatchStrategyHelp",
+															"Employee matching help",
+														)}
 													>
-														<IconInfoCircle className="size-4 text-muted-foreground" aria-hidden="true" />
+														<IconInfoCircle
+															className="size-4 text-muted-foreground"
+															aria-hidden="true"
+														/>
 													</button>
 												</TooltipTrigger>
 												<TooltipContent className="max-w-xs">
@@ -499,9 +491,7 @@ export function PersonioConfigForm({
 									</div>
 									<Select
 										value={field.state.value}
-										onValueChange={(v) =>
-											field.handleChange(v as "employeeNumber" | "email")
-										}
+										onValueChange={(v) => field.handleChange(v as "employeeNumber" | "email")}
 									>
 										<SelectTrigger>
 											<SelectValue />
@@ -514,10 +504,7 @@ export function PersonioConfigForm({
 												)}
 											</SelectItem>
 											<SelectItem value="email">
-												{t(
-													"settings.payrollExport.personio.matchByEmail",
-													"Email Address",
-												)}
+												{t("settings.payrollExport.personio.matchByEmail", "Email Address")}
 											</SelectItem>
 										</SelectContent>
 									</Select>
@@ -530,10 +517,7 @@ export function PersonioConfigForm({
 								<div className="flex items-center justify-between rounded-lg border p-4">
 									<div className="space-y-0.5">
 										<Label htmlFor="includeZeroHours" className="text-base">
-											{t(
-												"settings.payrollExport.personio.includeZeroHours",
-												"Include Zero Hours",
-											)}
+											{t("settings.payrollExport.personio.includeZeroHours", "Include Zero Hours")}
 										</Label>
 										<p className="text-sm text-muted-foreground">
 											{t(
@@ -577,10 +561,7 @@ export function PersonioConfigForm({
 								) : (
 									<>
 										<IconPlugConnected className="mr-2 size-4" />
-										{t(
-											"settings.payrollExport.personio.testConnection",
-											"Test Connection",
-										)}
+										{t("settings.payrollExport.personio.testConnection", "Test Connection")}
 									</>
 								)}
 							</Button>

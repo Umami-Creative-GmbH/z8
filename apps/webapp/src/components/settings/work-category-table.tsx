@@ -247,60 +247,62 @@ export function WorkCategoryTable({ organizationId, canManage }: WorkCategoryTab
 													: t("common.sets", "sets")}
 											</Badge>
 										</TableCell>
-									{canManage ? (
-										<TableCell className="text-right">
-											<div className="flex items-center justify-end gap-1">
-												<TooltipProvider>
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<Button
-																variant="ghost"
-																size="icon"
-																className="size-8"
-																onClick={() => handleEditClick(category)}
-																aria-label={t("common.edit", "Edit")}
-															>
-																<IconEdit className="size-4" aria-hidden="true" />
-															</Button>
-														</TooltipTrigger>
-														<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
-													</Tooltip>
-												</TooltipProvider>
-												<TooltipProvider>
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<Button
-																variant="ghost"
-																size="icon"
-																className="size-8 text-muted-foreground hover:text-destructive"
-																onClick={() => handleDeleteClick(category)}
-																disabled={deleteMutation.isPending || category.usedInSetsCount > 0}
-																aria-label={
-																	category.usedInSetsCount > 0
-																		? t(
+										{canManage ? (
+											<TableCell className="text-right">
+												<div className="flex items-center justify-end gap-1">
+													<TooltipProvider>
+														<Tooltip>
+															<TooltipTrigger asChild>
+																<Button
+																	variant="ghost"
+																	size="icon"
+																	className="size-8"
+																	onClick={() => handleEditClick(category)}
+																	aria-label={t("common.edit", "Edit")}
+																>
+																	<IconEdit className="size-4" aria-hidden="true" />
+																</Button>
+															</TooltipTrigger>
+															<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
+														</Tooltip>
+													</TooltipProvider>
+													<TooltipProvider>
+														<Tooltip>
+															<TooltipTrigger asChild>
+																<Button
+																	variant="ghost"
+																	size="icon"
+																	className="size-8 text-muted-foreground hover:text-destructive"
+																	onClick={() => handleDeleteClick(category)}
+																	disabled={
+																		deleteMutation.isPending || category.usedInSetsCount > 0
+																	}
+																	aria-label={
+																		category.usedInSetsCount > 0
+																			? t(
+																					"settings.workCategories.cannotDeleteInUse",
+																					"Remove from sets first",
+																				)
+																			: t("common.delete", "Delete")
+																	}
+																>
+																	<IconTrash className="size-4" aria-hidden="true" />
+																</Button>
+															</TooltipTrigger>
+															<TooltipContent>
+																{category.usedInSetsCount > 0
+																	? t(
 																			"settings.workCategories.cannotDeleteInUse",
 																			"Remove from sets first",
 																		)
-																		: t("common.delete", "Delete")
-																}
-															>
-																<IconTrash className="size-4" aria-hidden="true" />
-															</Button>
-														</TooltipTrigger>
-														<TooltipContent>
-															{category.usedInSetsCount > 0
-																? t(
-																		"settings.workCategories.cannotDeleteInUse",
-																		"Remove from sets first",
-																  )
-																: t("common.delete", "Delete")}
-														</TooltipContent>
-													</Tooltip>
-												</TooltipProvider>
-											</div>
-										</TableCell>
-									) : null}
-								</TableRow>
+																	: t("common.delete", "Delete")}
+															</TooltipContent>
+														</Tooltip>
+													</TooltipProvider>
+												</div>
+											</TableCell>
+										) : null}
+									</TableRow>
 								))}
 							</TableBody>
 						</Table>

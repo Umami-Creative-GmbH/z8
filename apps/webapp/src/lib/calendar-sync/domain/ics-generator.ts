@@ -99,11 +99,7 @@ function addOneDay(date: Date): Date {
  * Generate a single VEVENT component
  */
 function generateVEvent(event: ICSEvent): string {
-	const lines: string[] = [
-		"BEGIN:VEVENT",
-		`UID:${event.uid}`,
-		`DTSTAMP:${formatNow()}`,
-	];
+	const lines: string[] = ["BEGIN:VEVENT", `UID:${event.uid}`, `DTSTAMP:${formatNow()}`];
 
 	// Date/time handling
 	if (event.isAllDay) {
@@ -128,7 +124,9 @@ function generateVEvent(event: ICSEvent): string {
 	}
 
 	if (event.organizer) {
-		lines.push(foldLine(`ORGANIZER;CN=${escapeText(event.organizer.name)}:mailto:${event.organizer.email}`));
+		lines.push(
+			foldLine(`ORGANIZER;CN=${escapeText(event.organizer.name)}:mailto:${event.organizer.email}`),
+		);
 	}
 
 	if (event.categories && event.categories.length > 0) {

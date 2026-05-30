@@ -86,7 +86,9 @@ export async function getProjectsOverview(
 				);
 				const managedProjectIds = new Set(managedProjectRows.map((row) => row.projectId));
 				const canViewPortfolio =
-					currentEmployee.role === "admin" || currentEmployee.role === "manager" || managedProjectIds.size > 0;
+					currentEmployee.role === "admin" ||
+					currentEmployee.role === "manager" ||
+					managedProjectIds.size > 0;
 
 				if (!canViewPortfolio) {
 					return yield* _(
@@ -107,7 +109,8 @@ export async function getProjectsOverview(
 				const projects = yield* _(
 					dbService.query("getProjects", async () => {
 						const whereConditions = [eq(project.organizationId, organizationId)];
-						const isOrgWideReportViewer = currentEmployee.role === "admin" || currentEmployee.role === "manager";
+						const isOrgWideReportViewer =
+							currentEmployee.role === "admin" || currentEmployee.role === "manager";
 
 						if (statusFilter && statusFilter.length > 0) {
 							whereConditions.push(

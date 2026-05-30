@@ -33,10 +33,7 @@ export const TIME_ENTRIES_API = "/api/time-entries";
 export const CLOCK_STATUS_API = "/api/time-entries/status";
 
 /** Routes to precache for offline access */
-export const PRECACHE_ROUTES = [
-	"/",
-	"/time-tracking",
-];
+export const PRECACHE_ROUTES = ["/", "/time-tracking"];
 
 /** Static asset patterns to cache */
 export const STATIC_ASSET_PATTERNS = [

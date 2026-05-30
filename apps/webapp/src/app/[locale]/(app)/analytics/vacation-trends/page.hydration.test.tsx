@@ -117,9 +117,7 @@ describe("VacationTrendsPage range hydration", () => {
 		hydrateOrganizationSettings("Europe/Berlin");
 
 		await waitFor(() => {
-			expect(screen.getByTestId("date-range-start").textContent).toBe(
-				"2025-12-31T23:00:00.000Z",
-			);
+			expect(screen.getByTestId("date-range-start").textContent).toBe("2025-12-31T23:00:00.000Z");
 		});
 		await waitFor(() => {
 			expect(getVacationTrendsDataMock).toHaveBeenCalledWith(

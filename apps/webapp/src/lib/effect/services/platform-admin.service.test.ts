@@ -2,9 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const SERVICE_SOURCE = fileURLToPath(
-	new URL("./platform-admin.service.ts", import.meta.url),
-);
+const SERVICE_SOURCE = fileURLToPath(new URL("./platform-admin.service.ts", import.meta.url));
 
 function getListUsersSource(): string {
 	const source = readFileSync(SERVICE_SOURCE, "utf8");
@@ -74,11 +72,7 @@ describe("PlatformAdminService listOrganizations query guardrails", () => {
 	it("qualifies organization count subquery columns to avoid ambiguous SQL", () => {
 		const listOrganizationsSource = getListOrganizationsSource();
 
-		expect(listOrganizationsSource).toContain(
-			'"employee"."organization_id" = "organization"."id"',
-		);
-		expect(listOrganizationsSource).toContain(
-			'"member"."organization_id" = "organization"."id"',
-		);
+		expect(listOrganizationsSource).toContain('"employee"."organization_id" = "organization"."id"');
+		expect(listOrganizationsSource).toContain('"member"."organization_id" = "organization"."id"');
 	});
 });

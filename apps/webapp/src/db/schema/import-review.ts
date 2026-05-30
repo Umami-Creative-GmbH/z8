@@ -149,11 +149,7 @@ export const importStagedRow = pgTable(
 			.notNull(),
 	},
 	(table) => [
-		unique("import_staged_row_id_batch_org_idx").on(
-			table.id,
-			table.batchId,
-			table.organizationId,
-		),
+		unique("import_staged_row_id_batch_org_idx").on(table.id, table.batchId, table.organizationId),
 		index("importStagedRow_batchId_idx").on(table.batchId),
 		index("importStagedRow_org_entity_idx").on(table.organizationId, table.entityType),
 		index("importStagedRow_status_idx").on(table.rowStatus),

@@ -48,7 +48,12 @@ vi.mock("@/db/schema", () => ({
 	locationEmployee: { id: "id", locationId: "locationId", employeeId: "employeeId" },
 	locationSubarea: { id: "id" },
 	subareaEmployee: { id: "id", subareaId: "subareaId", employeeId: "employeeId" },
-	teamPermissions: { employeeId: "employeeId", organizationId: "organizationId", teamId: "teamId", canManageTeamSettings: "canManageTeamSettings" },
+	teamPermissions: {
+		employeeId: "employeeId",
+		organizationId: "organizationId",
+		teamId: "teamId",
+		canManageTeamSettings: "canManageTeamSettings",
+	},
 }));
 
 vi.mock("@/db/auth-schema", () => ({
@@ -60,7 +65,10 @@ vi.mock("@/lib/auth-helpers", () => ({
 		if (mockState.membershipRole === "owner" || mockState.membershipRole === "admin") {
 			return "orgAdmin";
 		}
-		if (mockState.currentEmployee?.role === "manager" || mockState.currentEmployee?.role === "admin") {
+		if (
+			mockState.currentEmployee?.role === "manager" ||
+			mockState.currentEmployee?.role === "admin"
+		) {
 			return "manager";
 		}
 		return "member";
@@ -70,7 +78,10 @@ vi.mock("@/lib/auth-helpers", () => ({
 vi.mock("@/db", () => ({ db: {} }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn() }, createLogger: vi.fn(() => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() })) }));
+vi.mock("@/lib/logger", () => ({
+	logger: { error: vi.fn() },
+	createLogger: vi.fn(() => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() })),
+}));
 
 vi.mock("@/lib/effect/services/auth.service", async () => {
 	const { Context } = await import("effect");
@@ -104,7 +115,11 @@ vi.mock("@/lib/effect/runtime", async () => {
 					const assignmentId = where?.eq?.[1];
 					if (!assignmentId) return null;
 					return withRelations?.location
-						? { id: assignmentId, locationId: mockState.locationRecord.id, location: mockState.locationRecord }
+						? {
+								id: assignmentId,
+								locationId: mockState.locationRecord.id,
+								location: mockState.locationRecord,
+							}
 						: null;
 				}),
 			},
@@ -114,7 +129,11 @@ vi.mock("@/lib/effect/runtime", async () => {
 					const assignmentId = where?.eq?.[1];
 					if (!assignmentId) return null;
 					return withRelations?.subarea
-						? { id: assignmentId, subareaId: mockState.subareaRecord.id, subarea: mockState.subareaRecord }
+						? {
+								id: assignmentId,
+								subareaId: mockState.subareaRecord.id,
+								subarea: mockState.subareaRecord,
+							}
 						: null;
 				}),
 			},
@@ -167,7 +186,10 @@ vi.mock("@/lib/effect/result", async () => {
 					const error = defect ?? failure ?? cause;
 					return {
 						success: false as const,
-						error: error && typeof error === "object" && "message" in error ? (error as { message: string }).message : "Unknown error",
+						error:
+							error && typeof error === "object" && "message" in error
+								? (error as { message: string }).message
+								: "Unknown error",
 					};
 				},
 			});
@@ -276,7 +298,10 @@ describe("location assignment org-admin parity", () => {
 			success: true,
 			data: undefined,
 		});
-		expect(await removeLocationEmployee("assignment-1")).toEqual({ success: true, data: undefined });
+		expect(await removeLocationEmployee("assignment-1")).toEqual({
+			success: true,
+			data: undefined,
+		});
 		expect(
 			await assignSubareaEmployee({
 				subareaId: "11111111-1111-4111-8111-111111111111",

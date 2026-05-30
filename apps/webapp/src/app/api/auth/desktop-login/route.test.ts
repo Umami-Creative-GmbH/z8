@@ -102,7 +102,9 @@ describe("GET /api/auth/desktop-login", () => {
 
 	it("rejects non-z8 redirect schemes", async () => {
 		const response = await GET(
-			createRequest("https://app.example.com/api/auth/desktop-login?redirect=https://example.com/callback"),
+			createRequest(
+				"https://app.example.com/api/auth/desktop-login?redirect=https://example.com/callback",
+			),
 		);
 
 		expect(response.status).toBe(400);

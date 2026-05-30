@@ -80,6 +80,11 @@ describe("buildPlatformAnalyticsBuckets", () => {
 			key: "2026-02",
 			startIso: "2026-02-01T00:00:00.000Z",
 		});
-		expect(buckets.map((bucket) => bucket.key)).toEqual(["2026-02", "2026-03", "2026-04", "2026-05"]);
+		expect(buckets.map((bucket) => bucket.key)).toEqual([
+			"2026-02",
+			"2026-03",
+			"2026-04",
+			"2026-05",
+		]);
 	});
 });

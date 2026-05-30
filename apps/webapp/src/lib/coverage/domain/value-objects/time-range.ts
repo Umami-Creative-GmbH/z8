@@ -142,7 +142,10 @@ export function createTimeRange(
 /**
  * Check if range1 fully contains range2.
  */
-export function timeRangeFullyContains(container: TimeRangeData, contained: TimeRangeData): boolean {
+export function timeRangeFullyContains(
+	container: TimeRangeData,
+	contained: TimeRangeData,
+): boolean {
 	const containerStart = timeToMinutes(container.startTime);
 	const containerEnd = timeToMinutes(container.endTime);
 	const containedStart = timeToMinutes(contained.startTime);

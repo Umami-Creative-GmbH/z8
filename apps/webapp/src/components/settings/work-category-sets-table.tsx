@@ -209,14 +209,14 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 								"Create your first category set to define work types with time factors",
 							)}
 						</p>
-							{canManage ? (
-								<Button className="mt-4" onClick={() => setCreateDialogOpen(true)}>
-									<IconPlus className="mr-2 size-4" />
-									{t("settings.workCategories.createFirstSet", "Create First Set")}
-								</Button>
-							) : null}
-						</div>
-					) : (
+						{canManage ? (
+							<Button className="mt-4" onClick={() => setCreateDialogOpen(true)}>
+								<IconPlus className="mr-2 size-4" />
+								{t("settings.workCategories.createFirstSet", "Create First Set")}
+							</Button>
+						) : null}
+					</div>
+				) : (
 					<div className="rounded-md border">
 						<Table>
 							<TableHeader>
@@ -239,31 +239,31 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 										<TableCell>
 											<Badge variant="secondary">{set.categoryCount}</Badge>
 										</TableCell>
-									{canManage ? (
-										<TableCell>
-											<div className="flex items-center gap-1">
-												<Button
-													variant="ghost"
-													size="icon"
-													className="size-8"
-													onClick={() => handleEditClick(set)}
-													aria-label={t("common.edit", "Edit")}
-												>
-													<IconEdit className="size-4" />
-												</Button>
-												<Button
-													variant="ghost"
-													size="icon"
-													className="size-8 text-muted-foreground hover:text-destructive"
-													onClick={() => handleDeleteClick(set)}
-													aria-label={t("common.delete", "Delete")}
-												>
-													<IconTrash className="size-4" />
-												</Button>
-											</div>
-										</TableCell>
-									) : null}
-								</TableRow>
+										{canManage ? (
+											<TableCell>
+												<div className="flex items-center gap-1">
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-8"
+														onClick={() => handleEditClick(set)}
+														aria-label={t("common.edit", "Edit")}
+													>
+														<IconEdit className="size-4" />
+													</Button>
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-8 text-muted-foreground hover:text-destructive"
+														onClick={() => handleDeleteClick(set)}
+														aria-label={t("common.delete", "Delete")}
+													>
+														<IconTrash className="size-4" />
+													</Button>
+												</div>
+											</TableCell>
+										) : null}
+									</TableRow>
 								))}
 							</TableBody>
 						</Table>

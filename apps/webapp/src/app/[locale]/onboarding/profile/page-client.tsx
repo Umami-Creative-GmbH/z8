@@ -65,7 +65,11 @@ export default function ProfilePage() {
 	const { t } = useTranslate();
 	const { push } = useRouter();
 	const [loading, setLoading] = useState(false);
-	const today = useSyncExternalStore(subscribeTodaySnapshot, getTodaySnapshot, getServerTodaySnapshot);
+	const today = useSyncExternalStore(
+		subscribeTodaySnapshot,
+		getTodaySnapshot,
+		getServerTodaySnapshot,
+	);
 
 	const form = useForm({
 		defaultValues,
@@ -264,11 +268,13 @@ export default function ProfilePage() {
 													mode="single"
 													selected={field.state.value}
 													onSelect={field.handleChange}
-												disabled={(date) => (today ? date > today : false) || date < BIRTHDAY_START_MONTH}
-												captionLayout="dropdown"
-												startMonth={BIRTHDAY_START_MONTH}
-												endMonth={today ?? undefined}
-												defaultMonth={field.state.value || BIRTHDAY_DEFAULT_MONTH}
+													disabled={(date) =>
+														(today ? date > today : false) || date < BIRTHDAY_START_MONTH
+													}
+													captionLayout="dropdown"
+													startMonth={BIRTHDAY_START_MONTH}
+													endMonth={today ?? undefined}
+													defaultMonth={field.state.value || BIRTHDAY_DEFAULT_MONTH}
 													autoFocus
 												/>
 											</PopoverContent>

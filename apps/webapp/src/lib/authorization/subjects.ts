@@ -1,4 +1,4 @@
-import { subject, type ForcedSubject } from "@casl/ability";
+import { type ForcedSubject, subject } from "@casl/ability";
 import type {
 	AbsenceAuthorizationSubject,
 	ApprovalAuthorizationSubject,

@@ -1,9 +1,9 @@
-import { DateTime } from "luxon";
 import { and, asc, desc, eq, gte, sql } from "drizzle-orm";
+import { DateTime } from "luxon";
 
 import {
-	auditPackRequest,
 	auditExportPackage,
+	auditPackRequest,
 	db,
 	payrollExportJob,
 	scheduledExport,
@@ -262,9 +262,9 @@ export async function getExportOperationsCockpit(
 				auditFailuresLast7DaysResult.status === "rejected" ||
 				latestCompletedAuditPackagesResult.status === "rejected"
 					? t(
-						"settings.exportOperations.errors.summary",
-						"Counts are based on the export data that could be loaded.",
-					)
+							"settings.exportOperations.errors.summary",
+							"Counts are based on the export data that could be loaded.",
+						)
 					: null,
 			alerts:
 				payrollJobsResult.status === "rejected" ||
@@ -272,16 +272,16 @@ export async function getExportOperationsCockpit(
 				scheduledExecutionsResult.status === "rejected" ||
 				auditRequestsResult.status === "rejected"
 					? t(
-						"settings.exportOperations.errors.alerts",
-						"Some alerts may be incomplete while export data is unavailable.",
-					)
+							"settings.exportOperations.errors.alerts",
+							"Some alerts may be incomplete while export data is unavailable.",
+						)
 					: null,
 			upcomingRuns:
 				scheduledExportsResult.status === "rejected"
 					? t(
-						"settings.exportOperations.errors.upcomingRuns",
-						"Scheduled export data is temporarily unavailable.",
-					)
+							"settings.exportOperations.errors.upcomingRuns",
+							"Scheduled export data is temporarily unavailable.",
+						)
 					: null,
 			recentActivity:
 				payrollJobsResult.status === "rejected" ||
@@ -289,9 +289,9 @@ export async function getExportOperationsCockpit(
 				scheduledExecutionsResult.status === "rejected" ||
 				auditRequestsResult.status === "rejected"
 					? t(
-						"settings.exportOperations.errors.recentActivity",
-						"Some activity data is temporarily unavailable.",
-					)
+							"settings.exportOperations.errors.recentActivity",
+							"Some activity data is temporarily unavailable.",
+						)
 					: null,
 		},
 	};
@@ -344,10 +344,7 @@ function buildAlerts(
 			id: latestScheduledExecution.id,
 			source: "scheduled",
 			severity: "error",
-			title: t(
-				"settings.exportOperations.alerts.scheduledFailed.title",
-				"Scheduled export failed",
-			),
+			title: t("settings.exportOperations.alerts.scheduledFailed.title", "Scheduled export failed"),
 			description:
 				latestScheduledExecution.errorMessage ??
 				t(
@@ -355,14 +352,17 @@ function buildAlerts(
 					"{name} did not complete successfully.",
 					{ name: scheduleName },
 				),
-			occurredAt:
-				latestScheduledExecution.completedAt ?? latestScheduledExecution.triggeredAt,
+			occurredAt: latestScheduledExecution.completedAt ?? latestScheduledExecution.triggeredAt,
 			href: "/settings/scheduled-exports",
 		});
 	}
 
 	for (const schedule of scheduledExports) {
-		if (!schedule.isActive || schedule.reportType !== "payroll_export" || schedule.payrollConfigId) {
+		if (
+			!schedule.isActive ||
+			schedule.reportType !== "payroll_export" ||
+			schedule.payrollConfigId
+		) {
 			continue;
 		}
 
@@ -441,10 +441,7 @@ function buildRecentActivity(
 			description:
 				job.fileName ??
 				job.errorMessage ??
-				t(
-					"settings.exportOperations.activity.payroll.description",
-					"Payroll export job recorded.",
-				),
+				t("settings.exportOperations.activity.payroll.description", "Payroll export job recorded."),
 			occurredAt: job.completedAt ?? job.createdAt,
 			href: "/settings/payroll-export" as const,
 		})),
@@ -471,10 +468,7 @@ function buildRecentActivity(
 			title: t("settings.exportOperations.activity.audit.title", "Audit export"),
 			description:
 				request.errorMessage ??
-				t(
-					"settings.exportOperations.activity.audit.description",
-					"Audit export request recorded.",
-				),
+				t("settings.exportOperations.activity.audit.description", "Audit export request recorded."),
 			occurredAt: request.completedAt ?? request.createdAt,
 			href: "/settings/audit-export" as const,
 		})),
@@ -483,15 +477,11 @@ function buildRecentActivity(
 	return activity.sort((left, right) => right.occurredAt.getTime() - left.occurredAt.getTime());
 }
 
-function getLastPayrollExportAt(
-	payrollExports: LatestCompletedPayrollExportRecord[],
-): Date | null {
+function getLastPayrollExportAt(payrollExports: LatestCompletedPayrollExportRecord[]): Date | null {
 	return payrollExports[0]?.completedAt ?? null;
 }
 
-function getLastAuditPackageAt(
-	auditPackages: LatestCompletedAuditPackageRecord[],
-): Date | null {
+function getLastAuditPackageAt(auditPackages: LatestCompletedAuditPackageRecord[]): Date | null {
 	return auditPackages[0]?.completedAt ?? null;
 }
 
@@ -502,7 +492,9 @@ function countFailedRunsLast7Days(
 ): number {
 	const scheduledPayrollJobIds = new Set(
 		scheduledFailures
-			.filter((failure) => failure.underlyingJobType === "payroll_export" && failure.underlyingJobId)
+			.filter(
+				(failure) => failure.underlyingJobType === "payroll_export" && failure.underlyingJobId,
+			)
 			.map((failure) => failure.underlyingJobId as string),
 	);
 

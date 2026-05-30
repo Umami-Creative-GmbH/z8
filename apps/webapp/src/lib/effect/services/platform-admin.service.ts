@@ -1,26 +1,11 @@
-import {
-	and,
-	count,
-	desc,
-	eq,
-	ilike,
-	inArray,
-	isNull,
-	or,
-	sql,
-} from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { member, organization, session, user } from "@/db/auth-schema";
 import { organizationSuspension, platformAdminAuditLog } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import {
-	AuthorizationError,
-	ConflictError,
-	DatabaseError,
-	NotFoundError,
-} from "../errors";
+import { AuthorizationError, ConflictError, DatabaseError, NotFoundError } from "../errors";
 
 // Types
 export interface PlatformUserOrganization {
@@ -129,9 +114,7 @@ export class PlatformAdminService extends Context.Tag("PlatformAdminService")<
 		) => Effect.Effect<void, NotFoundError | DatabaseError>;
 
 		// Session Management
-		readonly listUserSessions: (
-			userId: string,
-		) => Effect.Effect<UserSession[], DatabaseError>;
+		readonly listUserSessions: (userId: string) => Effect.Effect<UserSession[], DatabaseError>;
 
 		readonly revokeSession: (
 			sessionId: string,
@@ -167,9 +150,7 @@ export class PlatformAdminService extends Context.Tag("PlatformAdminService")<
 			adminId: string,
 		) => Effect.Effect<void, NotFoundError | DatabaseError>;
 
-		readonly isOrganizationSuspended: (
-			orgId: string,
-		) => Effect.Effect<boolean, DatabaseError>;
+		readonly isOrganizationSuspended: (orgId: string) => Effect.Effect<boolean, DatabaseError>;
 
 		// Audit
 		readonly logAction: (
@@ -180,9 +161,7 @@ export class PlatformAdminService extends Context.Tag("PlatformAdminService")<
 			metadata?: Record<string, unknown>,
 		) => Effect.Effect<void, DatabaseError>;
 
-		readonly getRecentAuditLogs: (
-			limit?: number,
-		) => Effect.Effect<AuditLogEntry[], DatabaseError>;
+		readonly getRecentAuditLogs: (limit?: number) => Effect.Effect<AuditLogEntry[], DatabaseError>;
 	}
 >() {}
 
@@ -253,14 +232,10 @@ export const PlatformAdminServiceLive = Layer.effect(
 							)`);
 						}
 
-						const whereClause =
-							conditions.length > 0 ? and(...conditions) : undefined;
+						const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
 						// Get total count
-						const [{ total }] = await db
-							.select({ total: count() })
-							.from(user)
-							.where(whereClause);
+						const [{ total }] = await db.select({ total: count() }).from(user).where(whereClause);
 
 						// Get paginated users
 						const users = await db
@@ -293,10 +268,7 @@ export const PlatformAdminServiceLive = Layer.effect(
 											status: member.status,
 										})
 										.from(member)
-										.innerJoin(
-											organization,
-											eq(member.organizationId, organization.id),
-										)
+										.innerJoin(organization, eq(member.organizationId, organization.id))
 										.where(
 											organizationId
 												? and(
@@ -307,14 +279,10 @@ export const PlatformAdminServiceLive = Layer.effect(
 										)
 								: [];
 
-						const membershipsByUserId = new Map<
-							string,
-							PlatformUserOrganization[]
-						>();
+						const membershipsByUserId = new Map<string, PlatformUserOrganization[]>();
 
 						for (const membership of memberships) {
-							const userMemberships =
-								membershipsByUserId.get(membership.userId) ?? [];
+							const userMemberships = membershipsByUserId.get(membership.userId) ?? [];
 							userMemberships.push({
 								id: membership.id,
 								name: membership.name,
@@ -325,12 +293,10 @@ export const PlatformAdminServiceLive = Layer.effect(
 							membershipsByUserId.set(membership.userId, userMemberships);
 						}
 
-						const usersWithOrganizations: PlatformUser[] = users.map(
-							(platformUser) => ({
-								...platformUser,
-								organizations: membershipsByUserId.get(platformUser.id) ?? [],
-							}),
-						);
+						const usersWithOrganizations: PlatformUser[] = users.map((platformUser) => ({
+							...platformUser,
+							organizations: membershipsByUserId.get(platformUser.id) ?? [],
+						}));
 
 						return {
 							data: usersWithOrganizations,
@@ -587,8 +553,7 @@ export const PlatformAdminServiceLive = Layer.effect(
 						}
 						// For "suspended", we filter after joining
 
-						const whereClause =
-							conditions.length > 0 ? and(...conditions) : undefined;
+						const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
 						// Get organizations with counts
 						const orgsWithCounts = await db
@@ -633,9 +598,7 @@ export const PlatformAdminServiceLive = Layer.effect(
 										)
 								: [];
 
-						const suspensionMap = new Map(
-							suspensions.map((s) => [s.organizationId, s.reason]),
-						);
+						const suspensionMap = new Map(suspensions.map((s) => [s.organizationId, s.reason]));
 
 						// Get total count
 						const [{ total }] = await db

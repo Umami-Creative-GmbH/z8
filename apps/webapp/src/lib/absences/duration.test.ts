@@ -183,7 +183,9 @@ describe("absence duration helpers", () => {
 				endTime: "09:00",
 				notes: "",
 			}),
-		).toBe("Enter an end time after the start time, or choose the next end date for an overnight absence.");
+		).toBe(
+			"Enter an end time after the start time, or choose the next end date for an overnight absence.",
+		);
 	});
 
 	it("rejects partial-day absences without both times", () => {

@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mapManagerTodaySummary } from "./manager-today-summary";
@@ -116,9 +116,7 @@ describe("ManagerTodayWidget", () => {
 
 		const metrics = await screen.findByTestId("manager-today-metrics");
 		expect(screen.getByText("Manager Today")).toBeTruthy();
-		expect(screen.getByRole("link", { name: /open brief/i }).getAttribute("href")).toBe(
-			"/today",
-		);
+		expect(screen.getByRole("link", { name: /open brief/i }).getAttribute("href")).toBe("/today");
 		expect(within(metrics).getByText("Critical")).toBeTruthy();
 		expect(within(metrics).getByText("2")).toBeTruthy();
 		expect(within(metrics).getByText("Approvals")).toBeTruthy();
@@ -145,9 +143,7 @@ describe("ManagerTodayWidget", () => {
 
 		renderManagerTodayWidget();
 
-		expect(
-			await screen.findByText("No manager action is flagged right now."),
-		).toBeTruthy();
+		expect(await screen.findByText("No manager action is flagged right now.")).toBeTruthy();
 	});
 
 	it("does not render for employees", async () => {

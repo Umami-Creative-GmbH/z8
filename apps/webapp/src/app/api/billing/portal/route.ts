@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
+import { env } from "@/env";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
@@ -11,7 +12,6 @@ import {
 	SubscriptionServiceLive,
 } from "@/lib/effect/services/billing";
 import { createLogger } from "@/lib/logger";
-import { env } from "@/env";
 
 const logger = createLogger("BillingPortal");
 

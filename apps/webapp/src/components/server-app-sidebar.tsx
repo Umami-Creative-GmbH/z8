@@ -9,23 +9,19 @@ import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { AppSidebar } from "./app-sidebar";
 
-export async function ServerAppSidebar(
-	props: React.ComponentProps<typeof AppSidebar>,
-) {
+export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSidebar>) {
 	const [organizations, authContext, settingsAccessTier] = await Promise.all([
 		getUserOrganizations(),
 		getAuthContext(),
 		getCurrentSettingsAccessTier(),
 	]);
 
-	const activeOrganizationId =
-		authContext?.session.activeOrganizationId ?? null;
+	const activeOrganizationId = authContext?.session.activeOrganizationId ?? null;
 	const currentOrganization = activeOrganizationId
 		? organizations.find((org) => org.id === activeOrganizationId) || null
 		: null;
 	const canCreateOrganizations = canCreateOrganizationsForDeployment(
-		authContext?.user.canCreateOrganizations ||
-			authContext?.user.role === "admin",
+		authContext?.user.canCreateOrganizations || authContext?.user.role === "admin",
 	);
 	const featureFlags = {
 		shiftsEnabled: currentOrganization?.shiftsEnabled ?? false,

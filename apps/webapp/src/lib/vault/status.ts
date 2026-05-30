@@ -1,9 +1,9 @@
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { organizationSecretKey } from "@/db/schema";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { secondaryStorage } from "@/lib/redis";
-import { and, eq, isNull } from "drizzle-orm";
 import { getVaultStatus } from "./client";
 import { ScalewayKeyManagerClient } from "./scaleway-key-manager-client";
 import { isCompatibleScalewayKey } from "./scaleway-key-utils";
@@ -41,9 +41,7 @@ function scalewayStatusCacheKey(organizationId: string) {
 	return `secret-store-status:scaleway:${organizationId}`;
 }
 
-function isScalewayStatusReason(
-	reason: unknown,
-): reason is ScalewaySecretStoreStatus["reason"] {
+function isScalewayStatusReason(reason: unknown): reason is ScalewaySecretStoreStatus["reason"] {
 	return (
 		reason === "available" ||
 		reason === "missing-key" ||

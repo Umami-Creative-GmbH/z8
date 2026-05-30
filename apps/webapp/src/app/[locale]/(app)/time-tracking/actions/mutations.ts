@@ -23,7 +23,10 @@ async function markWorkBalanceDirtyAfterDeleteBestEffort(
 	try {
 		await markEmployeeWorkBalanceDirty(input);
 	} catch (error) {
-		logger.error({ error, ...context }, "Failed to mark work balance dirty after work period delete");
+		logger.error(
+			{ error, ...context },
+			"Failed to mark work balance dirty after work period delete",
+		);
 	}
 }
 
@@ -191,7 +194,8 @@ export async function deleteWorkPeriod(
 				employeeId: currentEmployee.id,
 				organizationId: currentEmployee.organizationId,
 				dirtyFromDate:
-					DateTime.fromJSDate(selectedWorkPeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
+					DateTime.fromJSDate(selectedWorkPeriod.startTime, { zone: "utc" }).toISODate() ??
+					undefined,
 			},
 			{
 				employeeId: currentEmployee.id,

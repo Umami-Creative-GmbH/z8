@@ -7,12 +7,9 @@
 
 import { Effect } from "effect";
 import { DateTime } from "luxon";
+import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
-import type {
-	BotCommand,
-	BotCommandContext,
-	BotCommandResponse,
-} from "@/lib/bot-platform/types";
+import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import {
 	OpenShiftsService,
 	OpenShiftsServiceFullLive,
@@ -20,7 +17,6 @@ import {
 import { createLogger } from "@/lib/logger";
 import { buildOpenShiftsCard } from "../cards/open-shifts-card";
 import { withRateLimit } from "./middleware/rate-limit.middleware";
-import { env } from "@/env";
 
 const logger = createLogger("TeamsCommand:OpenShifts");
 
@@ -33,10 +29,7 @@ interface DateRange {
 	endDate: Date;
 }
 
-function parseDateRangeArgument(
-	arg: string | undefined,
-	timezone: string,
-): DateRange {
+function parseDateRangeArgument(arg: string | undefined, timezone: string): DateRange {
 	const now = DateTime.now().setZone(timezone);
 
 	if (!arg || arg.toLowerCase() === "week") {
@@ -88,16 +81,11 @@ function parseDateRangeArgument(
 // COMMAND HANDLER
 // ============================================
 
-async function openShiftsHandler(
-	ctx: BotCommandContext,
-): Promise<BotCommandResponse> {
+async function openShiftsHandler(ctx: BotCommandContext): Promise<BotCommandResponse> {
 	try {
 		const t = await getBotTranslate(ctx.locale);
 		const rangeArg = ctx.args[0];
-		const { startDate, endDate } = parseDateRangeArgument(
-			rangeArg,
-			ctx.config.digestTimezone,
-		);
+		const { startDate, endDate } = parseDateRangeArgument(rangeArg, ctx.config.digestTimezone);
 
 		logger.debug(
 			{
@@ -122,9 +110,7 @@ async function openShiftsHandler(
 			);
 		});
 
-		const shifts = await Effect.runPromise(
-			program.pipe(Effect.provide(OpenShiftsServiceFullLive)),
-		);
+		const shifts = await Effect.runPromise(program.pipe(Effect.provide(OpenShiftsServiceFullLive)));
 
 		// If no open shifts, return text response
 		if (shifts.length === 0) {
@@ -136,7 +122,11 @@ async function openShiftsHandler(
 						: "the selected period";
 			return {
 				type: "text",
-				text: t("bot.cmd.openshifts.noShifts", "No open shifts found for {period}. All shifts are currently assigned.", { period: rangeDesc }),
+				text: t(
+					"bot.cmd.openshifts.noShifts",
+					"No open shifts found for {period}. All shifts are currently assigned.",
+					{ period: rangeDesc },
+				),
 			};
 		}
 
@@ -161,7 +151,10 @@ async function openShiftsHandler(
 		const t = await getBotTranslate(ctx.locale);
 		return {
 			type: "text",
-			text: t("bot.cmd.openshifts.error", "Failed to retrieve open shifts. Please try again later."),
+			text: t(
+				"bot.cmd.openshifts.error",
+				"Failed to retrieve open shifts. Please try again later.",
+			),
 		};
 	}
 }

@@ -179,10 +179,7 @@ export function calculateSLAStatus(
 /**
  * Get a human-readable SLA status message.
  */
-export function getSLAStatusMessage(
-	status: SLAStatus,
-	hoursRemaining: number | null,
-): string {
+export function getSLAStatusMessage(status: SLAStatus, hoursRemaining: number | null): string {
 	switch (status) {
 		case "overdue":
 			if (hoursRemaining !== null) {

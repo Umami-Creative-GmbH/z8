@@ -1,16 +1,8 @@
 import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { user } from "@/db/auth-schema";
-import {
-	type AppType,
-	logAppAccessChange,
-	logAppAccessDenied,
-} from "@/lib/audit-logger";
-import {
-	AppAccessDeniedError,
-	type DatabaseError,
-	NotFoundError,
-} from "../errors";
+import { type AppType, logAppAccessChange, logAppAccessDenied } from "@/lib/audit-logger";
+import { AppAccessDeniedError, type DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService } from "./database.service";
 
 /**
@@ -89,10 +81,7 @@ export class AppAccessService extends Context.Tag("AppAccessService")<
 		readonly validateAccess: (
 			userId: string,
 			headers: Headers,
-		) => Effect.Effect<
-			AppType,
-			AppAccessDeniedError | NotFoundError | DatabaseError
-		>;
+		) => Effect.Effect<AppType, AppAccessDeniedError | NotFoundError | DatabaseError>;
 
 		/**
 		 * Get current app permissions for a user
@@ -214,16 +203,13 @@ export const AppAccessServiceLive = Layer.effect(
 
 					if (appType === "webapp" && !canUseWebapp) {
 						allowed = false;
-						deniedReason =
-							"Your account does not have access to the web application.";
+						deniedReason = "Your account does not have access to the web application.";
 					} else if (appType === "desktop" && !canUseDesktop) {
 						allowed = false;
-						deniedReason =
-							"Your account does not have access to the desktop application.";
+						deniedReason = "Your account does not have access to the desktop application.";
 					} else if (appType === "mobile" && !canUseMobile) {
 						allowed = false;
-						deniedReason =
-							"Your account does not have access to the mobile application.";
+						deniedReason = "Your account does not have access to the mobile application.";
 					}
 
 					if (!allowed) {
@@ -236,9 +222,7 @@ export const AppAccessServiceLive = Layer.effect(
 									userEmail: userRecord.email,
 									appType,
 									ipAddress:
-										headers.get("x-forwarded-for") ||
-										headers.get("x-real-ip") ||
-										undefined,
+										headers.get("x-forwarded-for") || headers.get("x-real-ip") || undefined,
 									userAgent: headers.get("user-agent") || undefined,
 								}),
 							),
@@ -352,10 +336,7 @@ export const AppAccessServiceLive = Layer.effect(
 					if (Object.keys(updateData).length > 0) {
 						yield* _(
 							dbService.query("updateUserAppPermissions", async () => {
-								await dbService.db
-									.update(user)
-									.set(updateData)
-									.where(eq(user.id, userId));
+								await dbService.db.update(user).set(updateData).where(eq(user.id, userId));
 							}),
 						);
 
@@ -422,12 +403,9 @@ export const AppAccessServiceLive = Layer.effect(
 
 					// Return the new permissions
 					return {
-						canUseWebapp:
-							updateData.canUseWebapp ?? currentPermissions.canUseWebapp,
-						canUseDesktop:
-							updateData.canUseDesktop ?? currentPermissions.canUseDesktop,
-						canUseMobile:
-							updateData.canUseMobile ?? currentPermissions.canUseMobile,
+						canUseWebapp: updateData.canUseWebapp ?? currentPermissions.canUseWebapp,
+						canUseDesktop: updateData.canUseDesktop ?? currentPermissions.canUseDesktop,
+						canUseMobile: updateData.canUseMobile ?? currentPermissions.canUseMobile,
 					};
 				}),
 		});

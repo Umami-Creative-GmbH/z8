@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { db, auditLog } from "@/db";
 import { sql } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { auditLog, db } from "@/db";
 import { deleteOldAuditLogs } from "./cleanup";
 
 const { deleteMock, whereMock, returningMock, infoMock, errorMock, sqlMock } = vi.hoisted(() => ({

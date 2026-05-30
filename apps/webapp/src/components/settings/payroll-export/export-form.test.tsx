@@ -58,7 +58,15 @@ vi.mock("@/components/ui/label", () => ({
 }));
 
 vi.mock("@/components/ui/select", () => ({
-	Select: ({ value, onValueChange, children }: { value: string; onValueChange: (value: string) => void; children: React.ReactNode }) => (
+	Select: ({
+		value,
+		onValueChange,
+		children,
+	}: {
+		value: string;
+		onValueChange: (value: string) => void;
+		children: React.ReactNode;
+	}) => (
 		<select value={value} onChange={(event) => onValueChange(event.target.value)}>
 			{children}
 		</select>
@@ -84,12 +92,16 @@ vi.mock("@/components/ui/select", () => ({
 vi.mock("@/components/ui/tabs", () => ({
 	Tabs: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	TabsList: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	TabsTrigger: ({ children }: { children: React.ReactNode }) => <button type="button">{children}</button>,
+	TabsTrigger: ({ children }: { children: React.ReactNode }) => (
+		<button type="button">{children}</button>
+	),
 	TabsContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
 vi.mock("@/components/ui/checkbox", () => ({
-	Checkbox: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input type="checkbox" {...props} />,
+	Checkbox: (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+		<input type="checkbox" {...props} />
+	),
 }));
 
 vi.mock("@/components/ui/scroll-area", () => ({
@@ -175,9 +187,12 @@ describe("ExportForm", () => {
 			/>,
 		);
 
-		await waitFor(() => {
-			expect(screen.getByRole("button", { name: "Export to DATEV" })).toBeTruthy();
-		}, { timeout: 5000 });
+		await waitFor(
+			() => {
+				expect(screen.getByRole("button", { name: "Export to DATEV" })).toBeTruthy();
+			},
+			{ timeout: 5000 },
+		);
 
 		const formatSelect = screen
 			.getAllByRole("combobox")
@@ -186,9 +201,12 @@ describe("ExportForm", () => {
 		expect(formatSelect).toBeTruthy();
 		fireEvent.change(formatSelect as HTMLSelectElement, { target: { value: "workday_api" } });
 
-		await waitFor(() => {
-			expect(screen.getByRole("button", { name: "Export to Workday" })).toBeTruthy();
-		}, { timeout: 5000 });
+		await waitFor(
+			() => {
+				expect(screen.getByRole("button", { name: "Export to Workday" })).toBeTruthy();
+			},
+			{ timeout: 5000 },
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Export to Workday" }));
 
@@ -242,8 +260,7 @@ describe("ExportForm", () => {
 			(within(formatSelect).getByRole("option", { name: "DATEV" }) as HTMLOptionElement).disabled,
 		).toBe(false);
 		expect(
-			(within(formatSelect).getByRole("option", { name: "Lexware" }) as HTMLOptionElement)
-				.disabled,
+			(within(formatSelect).getByRole("option", { name: "Lexware" }) as HTMLOptionElement).disabled,
 		).toBe(true);
 		expect(
 			(within(formatSelect).getByRole("option", { name: "Sage" }) as HTMLOptionElement).disabled,
@@ -267,8 +284,7 @@ describe("ExportForm", () => {
 			).disabled,
 		).toBe(false);
 		expect(
-			(within(formatSelect).getByRole("option", { name: "Workday" }) as HTMLOptionElement)
-				.disabled,
+			(within(formatSelect).getByRole("option", { name: "Workday" }) as HTMLOptionElement).disabled,
 		).toBe(false);
 		expect(screen.getByText("Lexware - config")).toBeTruthy();
 		expect(screen.getByText("Sage - config")).toBeTruthy();
@@ -293,9 +309,12 @@ describe("ExportForm", () => {
 			/>,
 		);
 
-		await waitFor(() => {
-			expect(screen.getByRole("button", { name: "Export to Workday" })).toBeTruthy();
-		}, { timeout: 5000 });
+		await waitFor(
+			() => {
+				expect(screen.getByRole("button", { name: "Export to Workday" })).toBeTruthy();
+			},
+			{ timeout: 5000 },
+		);
 
 		const formatSelect = screen
 			.getAllByRole("combobox")
@@ -304,9 +323,12 @@ describe("ExportForm", () => {
 		expect(formatSelect).toBeTruthy();
 		fireEvent.change(formatSelect as HTMLSelectElement, { target: { value: "workday_api" } });
 
-		await waitFor(() => {
-			expect(screen.getByRole("button", { name: "Export to Workday" })).toBeTruthy();
-		}, { timeout: 5000 });
+		await waitFor(
+			() => {
+				expect(screen.getByRole("button", { name: "Export to Workday" })).toBeTruthy();
+			},
+			{ timeout: 5000 },
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Export to Workday" }));
 

@@ -27,11 +27,12 @@ describe("ScalewayKeyManagerClient", () => {
 	});
 
 	test("lists organization keys with project, deletion, tag filters, and auth header", async () => {
-		const fetchMock = vi.fn(async () =>
-			new Response(JSON.stringify({ keys: [{ id: "key-1" }] }), {
-				status: 200,
-				headers: { "Content-Type": "application/json" },
-			}),
+		const fetchMock = vi.fn(
+			async () =>
+				new Response(JSON.stringify({ keys: [{ id: "key-1" }] }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				}),
 		);
 		globalThis.fetch = fetchMock as typeof fetch;
 
@@ -52,11 +53,12 @@ describe("ScalewayKeyManagerClient", () => {
 	});
 
 	test("creates a protected AES-256-GCM organization key with expected name and tags", async () => {
-		const fetchMock = vi.fn(async () =>
-			new Response(JSON.stringify({ id: "key-1" }), {
-				status: 201,
-				headers: { "Content-Type": "application/json" },
-			}),
+		const fetchMock = vi.fn(
+			async () =>
+				new Response(JSON.stringify({ id: "key-1" }), {
+					status: 201,
+					headers: { "Content-Type": "application/json" },
+				}),
 		);
 		globalThis.fetch = fetchMock as typeof fetch;
 
@@ -81,11 +83,12 @@ describe("ScalewayKeyManagerClient", () => {
 	});
 
 	test("creates a protected AES-256-GCM platform key with expected name and tag", async () => {
-		const fetchMock = vi.fn(async () =>
-			new Response(JSON.stringify({ id: "key-platform" }), {
-				status: 201,
-				headers: { "Content-Type": "application/json" },
-			}),
+		const fetchMock = vi.fn(
+			async () =>
+				new Response(JSON.stringify({ id: "key-platform" }), {
+					status: 201,
+					headers: { "Content-Type": "application/json" },
+				}),
 		);
 		globalThis.fetch = fetchMock as typeof fetch;
 
@@ -106,11 +109,12 @@ describe("ScalewayKeyManagerClient", () => {
 	});
 
 	test("gets a key from the direct key response object", async () => {
-		const fetchMock = vi.fn(async () =>
-			new Response(JSON.stringify({ id: "key-1", name: "z8-org-org-1-customer-secrets" }), {
-				status: 200,
-				headers: { "Content-Type": "application/json" },
-			}),
+		const fetchMock = vi.fn(
+			async () =>
+				new Response(JSON.stringify({ id: "key-1", name: "z8-org-org-1-customer-secrets" }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				}),
 		);
 		globalThis.fetch = fetchMock as typeof fetch;
 
@@ -170,11 +174,12 @@ describe("ScalewayKeyManagerClient", () => {
 	});
 
 	test("throws a sanitized error for non-2xx responses", async () => {
-		const fetchMock = vi.fn(async () =>
-			new Response(JSON.stringify({ message: "token test-secret-key denied" }), {
-				status: 403,
-				headers: { "Content-Type": "application/json" },
-			}),
+		const fetchMock = vi.fn(
+			async () =>
+				new Response(JSON.stringify({ message: "token test-secret-key denied" }), {
+					status: 403,
+					headers: { "Content-Type": "application/json" },
+				}),
 		);
 		globalThis.fetch = fetchMock as typeof fetch;
 

@@ -60,20 +60,14 @@ function createManagerServiceTestContext({
 	return {
 		db,
 		updatedTables,
-		employeeTableUpdateCount: () =>
-			updatedTables.filter((table) => table === employee).length,
+		employeeTableUpdateCount: () => updatedTables.filter((table) => table === employee).length,
 		employeeManagersTableUpdateCount: () =>
 			updatedTables.filter((table) => table === employeeManagers).length,
 		runAssignManager: (isPrimary: boolean) =>
 			Effect.runPromise(
 				Effect.gen(function* () {
 					const service = yield* ManagerService;
-					yield* service.assignManager(
-						"employee-1",
-						"manager-1",
-						isPrimary,
-						"admin-1",
-					);
+					yield* service.assignManager("employee-1", "manager-1", isPrimary, "admin-1");
 				}).pipe(Effect.provide(layer)),
 			),
 		runRemoveManager: () =>
@@ -88,11 +82,8 @@ function createManagerServiceTestContext({
 
 describe("ManagerService", () => {
 	it("does not sync employee.managerId when assigning a primary manager", async () => {
-		const {
-			employeeTableUpdateCount,
-			employeeManagersTableUpdateCount,
-			runAssignManager,
-		} = createManagerServiceTestContext();
+		const { employeeTableUpdateCount, employeeManagersTableUpdateCount, runAssignManager } =
+			createManagerServiceTestContext();
 
 		await runAssignManager(true);
 
@@ -115,26 +106,23 @@ describe("ManagerService", () => {
 	});
 
 	it("does not sync employee.managerId when removing the primary manager", async () => {
-		const {
-			employeeTableUpdateCount,
-			employeeManagersTableUpdateCount,
-			runRemoveManager,
-		} = createManagerServiceTestContext({
-			managerAssignments: [
-				{
-					id: "assignment-1",
-					employeeId: "employee-1",
-					managerId: "manager-1",
-					isPrimary: true,
-				},
-				{
-					id: "assignment-2",
-					employeeId: "employee-1",
-					managerId: "manager-2",
-					isPrimary: false,
-				},
-			],
-		});
+		const { employeeTableUpdateCount, employeeManagersTableUpdateCount, runRemoveManager } =
+			createManagerServiceTestContext({
+				managerAssignments: [
+					{
+						id: "assignment-1",
+						employeeId: "employee-1",
+						managerId: "manager-1",
+						isPrimary: true,
+					},
+					{
+						id: "assignment-2",
+						employeeId: "employee-1",
+						managerId: "manager-2",
+						isPrimary: false,
+					},
+				],
+			});
 
 		await runRemoveManager();
 

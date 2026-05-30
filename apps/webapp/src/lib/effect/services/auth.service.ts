@@ -43,8 +43,7 @@ export const AuthServiceLive = Layer.effect(
 							...session,
 							session: {
 								...session.session,
-								activeOrganizationId:
-									session.session.activeOrganizationId ?? null,
+								activeOrganizationId: session.session.activeOrganizationId ?? null,
 							},
 						} as Session;
 					},

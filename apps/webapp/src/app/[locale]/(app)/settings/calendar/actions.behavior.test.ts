@@ -25,10 +25,7 @@ const mockState = vi.hoisted(() => ({
 		{ assignmentType: "employee", employeeId: "employee-project", teamId: null },
 		{ assignmentType: "team", employeeId: null, teamId: "team-project" },
 	],
-	teamScopedEmployees: [
-		{ id: "employee-team" },
-		{ id: "employee-project-team" },
-	],
+	teamScopedEmployees: [{ id: "employee-team" }, { id: "employee-project-team" }],
 	calendarSettings: {
 		googleEnabled: true,
 		microsoft365Enabled: false,
@@ -192,7 +189,9 @@ vi.mock("@/lib/calendar-sync/providers", () => ({
 		{ provider: "google", displayName: "Google Calendar", enabled: true },
 		{ provider: "microsoft365", displayName: "Microsoft 365", enabled: true },
 	]),
-	isProviderSupported: vi.fn((provider: string) => provider === "google" || provider === "microsoft365"),
+	isProviderSupported: vi.fn(
+		(provider: string) => provider === "google" || provider === "microsoft365",
+	),
 }));
 
 vi.mock("@/lib/effect/services/auth.service", async () => {

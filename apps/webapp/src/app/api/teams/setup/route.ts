@@ -8,16 +8,16 @@
  * their tenant to a Z8 organization.
  */
 
-import { connection, NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import { and, eq } from "drizzle-orm";
+import { headers } from "next/headers";
+import type { NextRequest } from "next/server";
+import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
-import { teamsTenantConfig, employee } from "@/db/schema";
 import { organization } from "@/db/auth-schema";
+import { employee, teamsTenantConfig } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { headers } from "next/headers";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("TeamsSetup");
@@ -52,7 +52,10 @@ export async function GET(request: NextRequest) {
 
 	// Redirect to Teams integration settings page with tenant ID
 	return NextResponse.redirect(
-		new URL(`/settings/integrations/teams/setup?tenantId=${encodeURIComponent(tenantId)}`, request.url),
+		new URL(
+			`/settings/integrations/teams/setup?tenantId=${encodeURIComponent(tenantId)}`,
+			request.url,
+		),
 	);
 }
 
@@ -69,20 +72,14 @@ export async function POST(request: NextRequest) {
 		// Verify user is authenticated
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user?.id) {
-			return NextResponse.json(
-				{ error: "Authentication required" },
-				{ status: 401 },
-			);
+			return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 		}
 
 		const body = await request.json();
 		const { tenantId, tenantName, organizationId } = body;
 
 		if (!tenantId || !organizationId) {
-			return NextResponse.json(
-				{ error: "Missing required fields" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
 		}
 
 		if (session.session.activeOrganizationId !== organizationId) {
@@ -92,24 +89,21 @@ export async function POST(request: NextRequest) {
 		// Verify user has admin access using CASL
 		// First check they're a member of the organization
 		const emp = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.userId, session.user.id),
-				eq(employee.organizationId, organizationId),
-			),
+			where: and(eq(employee.userId, session.user.id), eq(employee.organizationId, organizationId)),
 		});
 
 		if (!emp) {
-			return NextResponse.json(
-				{ error: "Access denied" },
-				{ status: 403 },
-			);
+			return NextResponse.json({ error: "Access denied" }, { status: 403 });
 		}
 
 		// Check CASL permissions - must be able to manage OrgIntegrations or be employee admin
 		const ability = await getAbility();
 		// Employee admins get manage Team permission, so use that as proxy for employee admin check
 		// Also check OrgIntegrations for org-level admin
-		if (!ability || (ability.cannot("manage", "OrgIntegrations") && ability.cannot("manage", "Team"))) {
+		if (
+			!ability ||
+			(ability.cannot("manage", "OrgIntegrations") && ability.cannot("manage", "Team"))
+		) {
 			const error = new ForbiddenError("manage", "OrgIntegrations");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
@@ -120,10 +114,7 @@ export async function POST(request: NextRequest) {
 		});
 
 		if (!org) {
-			return NextResponse.json(
-				{ error: "Organization not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Organization not found" }, { status: 404 });
 		}
 
 		// Check if tenant is already linked to another org
@@ -190,10 +181,7 @@ export async function POST(request: NextRequest) {
 	} catch (error) {
 		logger.error({ error }, "Failed to setup Teams integration");
 
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }
 
@@ -208,20 +196,14 @@ export async function DELETE(request: NextRequest) {
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user?.id) {
-			return NextResponse.json(
-				{ error: "Authentication required" },
-				{ status: 401 },
-			);
+			return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 		}
 
 		const { searchParams } = new URL(request.url);
 		const organizationId = searchParams.get("organizationId");
 
 		if (!organizationId) {
-			return NextResponse.json(
-				{ error: "Missing organizationId" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Missing organizationId" }, { status: 400 });
 		}
 
 		if (session.session.activeOrganizationId !== organizationId) {
@@ -230,22 +212,19 @@ export async function DELETE(request: NextRequest) {
 
 		// Verify user has admin access using CASL
 		const emp = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.userId, session.user.id),
-				eq(employee.organizationId, organizationId),
-			),
+			where: and(eq(employee.userId, session.user.id), eq(employee.organizationId, organizationId)),
 		});
 
 		if (!emp) {
-			return NextResponse.json(
-				{ error: "Access denied" },
-				{ status: 403 },
-			);
+			return NextResponse.json({ error: "Access denied" }, { status: 403 });
 		}
 
 		// Check CASL permissions - must be able to manage OrgIntegrations or be employee admin
 		const ability = await getAbility();
-		if (!ability || (ability.cannot("manage", "OrgIntegrations") && ability.cannot("manage", "Team"))) {
+		if (
+			!ability ||
+			(ability.cannot("manage", "OrgIntegrations") && ability.cannot("manage", "Team"))
+		) {
 			const error = new ForbiddenError("manage", "OrgIntegrations");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
@@ -257,10 +236,7 @@ export async function DELETE(request: NextRequest) {
 		});
 
 		if (!config) {
-			return NextResponse.json(
-				{ error: "No Teams integration found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "No Teams integration found" }, { status: 404 });
 		}
 
 		await db
@@ -268,10 +244,7 @@ export async function DELETE(request: NextRequest) {
 			.set({ setupStatus: "disabled" })
 			.where(eq(teamsTenantConfig.id, config.id));
 
-		logger.info(
-			{ organizationId, tenantId: config.tenantId },
-			"Disabled Teams integration",
-		);
+		logger.info({ organizationId, tenantId: config.tenantId }, "Disabled Teams integration");
 
 		return NextResponse.json({
 			success: true,
@@ -280,9 +253,6 @@ export async function DELETE(request: NextRequest) {
 	} catch (error) {
 		logger.error({ error }, "Failed to disable Teams integration");
 
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

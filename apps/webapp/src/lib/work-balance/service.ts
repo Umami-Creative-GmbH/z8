@@ -155,7 +155,10 @@ async function getFirstRelevantDate(
 	dbClient: WorkBalanceDbClient = db,
 ): Promise<string | null> {
 	const scopedEmployee = await dbClient.query.employee.findFirst({
-		where: and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
+		where: and(
+			eq(employee.id, input.employeeId),
+			eq(employee.organizationId, input.organizationId),
+		),
 		columns: { id: true, startDate: true },
 	});
 	if (!scopedEmployee) return null;
@@ -190,7 +193,10 @@ async function getEmployeeStartDate(
 	dbClient: WorkBalanceDbClient = db,
 ): Promise<string | null> {
 	const scopedEmployee = await dbClient.query.employee.findFirst({
-		where: and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
+		where: and(
+			eq(employee.id, input.employeeId),
+			eq(employee.organizationId, input.organizationId),
+		),
 		columns: { id: true, startDate: true },
 	});
 	if (!scopedEmployee) return null;
@@ -346,18 +352,20 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 			refreshRequestedAt: currentBalance.refreshRequestedAt,
 		});
 	const hotWindow = getHotWindowRange(now);
-	const fullRebuildStartDate = forceFullRebuild ? await getFirstRelevantDate(input, dbClient) : null;
-	const employeeStartDate = forceFullRebuild
-		? null
-		: await getEmployeeStartDate(input, dbClient);
+	const fullRebuildStartDate = forceFullRebuild
+		? await getFirstRelevantDate(input, dbClient)
+		: null;
+	const employeeStartDate = forceFullRebuild ? null : await getEmployeeStartDate(input, dbClient);
 	const calculationStartDate = employeeStartDate ?? fullRebuildStartDate;
 	if (calculationStartDate && calculationStartDate > hotWindow.endDate) {
-		await dbClient.delete(employeeWorkBalancePeriod).where(
-			and(
-				eq(employeeWorkBalancePeriod.employeeId, input.employeeId),
-				eq(employeeWorkBalancePeriod.organizationId, input.organizationId),
-			),
-		);
+		await dbClient
+			.delete(employeeWorkBalancePeriod)
+			.where(
+				and(
+					eq(employeeWorkBalancePeriod.employeeId, input.employeeId),
+					eq(employeeWorkBalancePeriod.organizationId, input.organizationId),
+				),
+			);
 		await upsertEmployeeWorkBalance(
 			buildWorkBalanceValues({
 				employeeId: input.employeeId,
@@ -440,7 +448,8 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 			organizationId: input.organizationId,
 			actualMinutes: closedTotals.actualMinutes + hotWindowValues.actualMinutes,
 			requiredMinutes: closedTotals.requiredMinutes + hotWindowValues.requiredMinutes,
-			computedFromDate: calculationStartDate ?? closedTotals.firstPeriodStart ?? hotWindow.startDate,
+			computedFromDate:
+				calculationStartDate ?? closedTotals.firstPeriodStart ?? hotWindow.startDate,
 			computedThroughDate: hotWindow.endDate,
 			computedAt: now,
 		}),

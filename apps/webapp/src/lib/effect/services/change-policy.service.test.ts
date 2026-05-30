@@ -1,9 +1,6 @@
 import { Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import {
-	ChangePolicyService,
-	ChangePolicyServiceLive,
-} from "./change-policy.service";
+import { ChangePolicyService, ChangePolicyServiceLive } from "./change-policy.service";
 import { DatabaseService } from "./database.service";
 
 describe("ChangePolicyService", () => {

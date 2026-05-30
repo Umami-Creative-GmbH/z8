@@ -1,5 +1,5 @@
-import { connection } from "next/server";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { SurchargeManagement } from "@/components/settings/surcharge-management";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
@@ -24,9 +24,6 @@ export default async function SurchargeSettingsPage() {
 	}
 
 	return (
-		<SurchargeManagement
-			organizationId={organizationId}
-			canManage={accessTier === "orgAdmin"}
-		/>
+		<SurchargeManagement organizationId={organizationId} canManage={accessTier === "orgAdmin"} />
 	);
 }

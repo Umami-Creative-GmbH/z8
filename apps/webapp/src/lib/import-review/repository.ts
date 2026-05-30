@@ -10,6 +10,7 @@ import {
 	importStagedRow,
 } from "@/db/schema";
 import type { EncryptedImportCredential } from "./credential-secret";
+import { nextBatchStatusAfterJobs } from "./state";
 import type {
 	ImportBatchStatus,
 	ImportDateRange,
@@ -22,7 +23,6 @@ import type {
 	ImportRowStatus,
 	NormalizedImportRow,
 } from "./types";
-import { nextBatchStatusAfterJobs } from "./state";
 
 type ImportRowDecision = "accepted" | "rejected";
 const REVIEW_DECISION_ROW_STATUSES: ImportRowStatus[] = [
@@ -62,7 +62,9 @@ function commitDependencyGroup(entityType: ImportEntityType): number {
 	return COMMIT_OPERATIONAL_ENTITIES.has(entityType) ? 1 : 0;
 }
 
-export function readyCommitJobsFromJobs<T extends { entityType: string; status: ImportJobStatus }>(jobs: T[]): T[] {
+export function readyCommitJobsFromJobs<T extends { entityType: string; status: ImportJobStatus }>(
+	jobs: T[],
+): T[] {
 	if (jobs.some((job) => job.status === "failed")) return [];
 
 	const commitJobs = [...jobs].sort(
@@ -78,7 +80,9 @@ export function readyCommitJobsFromJobs<T extends { entityType: string; status: 
 
 	if (nextGroup === null) return [];
 	return commitJobs.filter(
-		(job) => job.status === "queued" && commitDependencyGroup(job.entityType as ImportEntityType) === nextGroup,
+		(job) =>
+			job.status === "queued" &&
+			commitDependencyGroup(job.entityType as ImportEntityType) === nextGroup,
 	);
 }
 

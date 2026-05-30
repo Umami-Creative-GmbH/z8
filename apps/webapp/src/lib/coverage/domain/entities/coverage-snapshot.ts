@@ -37,9 +37,7 @@ export interface HeatmapDataPoint {
 	totalShortfall: number;
 }
 
-export function snapshotToHeatmapDataPoint(
-	snapshot: CoverageSnapshotEntity,
-): HeatmapDataPoint {
+export function snapshotToHeatmapDataPoint(snapshot: CoverageSnapshotEntity): HeatmapDataPoint {
 	return {
 		date: snapshot.date,
 		subareaId: snapshot.subareaId,

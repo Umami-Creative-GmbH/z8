@@ -66,7 +66,8 @@ export async function updateShiftTemplate(
 		return { success: false, error: "Unauthorized" };
 	}
 
-	const nextSubareaId = input.subareaId !== undefined ? input.subareaId : existingTemplate.subareaId;
+	const nextSubareaId =
+		input.subareaId !== undefined ? input.subareaId : existingTemplate.subareaId;
 	if (
 		!canManageScopedSchedulingSubarea(
 			accessContext.accessTier,

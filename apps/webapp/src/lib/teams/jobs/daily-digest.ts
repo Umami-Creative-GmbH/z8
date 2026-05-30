@@ -21,6 +21,7 @@ import {
 	shift,
 	workPeriod,
 } from "@/db/schema";
+import { env } from "@/env";
 import {
 	fmtTime,
 	fmtWeekdayShortDate,
@@ -34,7 +35,6 @@ import { buildDailyDigestCard } from "../cards/daily-digest-card";
 import { getOrganizationPersonalConversations } from "../conversation-manager";
 import { getAllActiveTenants } from "../tenant-resolver";
 import type { DailyDigestData } from "../types";
-import { env } from "@/env";
 
 const logger = createLogger("TeamsDailyDigest");
 

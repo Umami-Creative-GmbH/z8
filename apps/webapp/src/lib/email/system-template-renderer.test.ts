@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getPlatformSystemEmailTemplateOverride } from "./system-template-overrides";
 import {
-	renderPlatformSystemEmailTemplate,
 	type RenderedPlatformSystemEmailTemplate,
+	renderPlatformSystemEmailTemplate,
 	type SkippedPlatformSystemEmailTemplate,
 } from "./system-template-renderer";
 
@@ -66,9 +66,7 @@ describe("renderPlatformSystemEmailTemplate", () => {
 			data: billingData,
 		});
 
-		expect(getPlatformSystemEmailTemplateOverrideMock).toHaveBeenCalledWith(
-			"billing-trial-ending",
-		);
+		expect(getPlatformSystemEmailTemplateOverrideMock).toHaveBeenCalledWith("billing-trial-ending");
 		expectRenderedTemplate(result);
 		expect(result.subject).toBe("Your Z8 trial ends in 2 days");
 		expect(result.html).toContain("Acme Operations");

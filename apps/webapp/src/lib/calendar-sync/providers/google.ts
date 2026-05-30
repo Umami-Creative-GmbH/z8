@@ -8,6 +8,7 @@
  */
 
 import { Effect } from "effect";
+import { env } from "@/env";
 import {
 	type CalendarEventToCreate,
 	type CalendarEventUpdate,
@@ -32,7 +33,6 @@ import {
 	type ICalendarProvider,
 	isTokenExpired,
 } from "./base";
-import { env } from "@/env";
 
 // ============================================
 // CONSTANTS
@@ -97,7 +97,9 @@ function getClientId(): string {
 	// Use calendar-specific credentials if available, fall back to social login credentials
 	const clientId = env.CALENDAR_GOOGLE_CLIENT_ID || env.GOOGLE_CLIENT_ID;
 	if (!clientId) {
-		throw new Error("CALENDAR_GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID environment variable must be set");
+		throw new Error(
+			"CALENDAR_GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID environment variable must be set",
+		);
 	}
 	return clientId;
 }
@@ -106,19 +108,17 @@ function getClientSecret(): string {
 	// Use calendar-specific credentials if available, fall back to social login credentials
 	const clientSecret = env.CALENDAR_GOOGLE_CLIENT_SECRET || env.GOOGLE_CLIENT_SECRET;
 	if (!clientSecret) {
-		throw new Error("CALENDAR_GOOGLE_CLIENT_SECRET or GOOGLE_CLIENT_SECRET environment variable must be set");
+		throw new Error(
+			"CALENDAR_GOOGLE_CLIENT_SECRET or GOOGLE_CLIENT_SECRET environment variable must be set",
+		);
 	}
 	return clientSecret;
 }
 
 function parseGoogleEvent(event: GoogleEvent): ExternalCalendarEvent {
 	const isAllDay = !!event.start.date;
-	const startDate = isAllDay
-		? new Date(event.start.date!)
-		: new Date(event.start.dateTime!);
-	const endDate = isAllDay
-		? new Date(event.end.date!)
-		: new Date(event.end.dateTime!);
+	const startDate = isAllDay ? new Date(event.start.date!) : new Date(event.start.dateTime!);
+	const endDate = isAllDay ? new Date(event.end.date!) : new Date(event.end.dateTime!);
 
 	return {
 		id: event.id,
@@ -136,9 +136,7 @@ function parseGoogleEvent(event: GoogleEvent): ExternalCalendarEvent {
 	};
 }
 
-async function handleGoogleApiError(
-	response: Response,
-): Promise<CalendarProviderError> {
+async function handleGoogleApiError(response: Response): Promise<CalendarProviderError> {
 	let body: unknown;
 	try {
 		body = await response.json();
@@ -153,7 +151,10 @@ async function handleGoogleApiError(
 	}
 
 	if (status === 403) {
-		return new PermissionDeniedError("google", "Insufficient permissions to access Google Calendar");
+		return new PermissionDeniedError(
+			"google",
+			"Insufficient permissions to access Google Calendar",
+		);
 	}
 
 	if (status === 404) {
@@ -225,12 +226,9 @@ export class GoogleCalendarProvider implements ICalendarProvider {
 				const tokens = (await tokenResponse.json()) as GoogleTokenResponse;
 
 				// Get user info to get account ID
-				const userInfoResponse = await fetch(
-					"https://www.googleapis.com/oauth2/v3/userinfo",
-					{
-						headers: { Authorization: `Bearer ${tokens.access_token}` },
-					},
-				);
+				const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+					headers: { Authorization: `Bearer ${tokens.access_token}` },
+				});
 
 				if (!userInfoResponse.ok) {
 					throw await handleGoogleApiError(userInfoResponse);
@@ -241,9 +239,7 @@ export class GoogleCalendarProvider implements ICalendarProvider {
 				return {
 					accessToken: tokens.access_token,
 					refreshToken: tokens.refresh_token ?? null,
-					expiresAt: tokens.expires_in
-						? new Date(Date.now() + tokens.expires_in * 1000)
-						: null,
+					expiresAt: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null,
 					scope: tokens.scope,
 					providerAccountId: userInfo.email,
 				};
@@ -262,7 +258,9 @@ export class GoogleCalendarProvider implements ICalendarProvider {
 		});
 	}
 
-	refreshAccessToken(refreshToken: string): Effect.Effect<TokenRefreshResult, CalendarProviderError> {
+	refreshAccessToken(
+		refreshToken: string,
+	): Effect.Effect<TokenRefreshResult, CalendarProviderError> {
 		return Effect.tryPromise({
 			try: async () => {
 				const response = await fetch(GOOGLE_TOKEN_URL, {
@@ -337,7 +335,9 @@ export class GoogleCalendarProvider implements ICalendarProvider {
 	): Effect.Effect<ExternalCalendarEvent[], CalendarProviderError> {
 		return Effect.tryPromise({
 			try: async () => {
-				const url = new URL(`${GOOGLE_CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events`);
+				const url = new URL(
+					`${GOOGLE_CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events`,
+				);
 				url.searchParams.set("timeMin", startDate.toISOString());
 				url.searchParams.set("timeMax", endDate.toISOString());
 				url.searchParams.set("singleEvents", "true");

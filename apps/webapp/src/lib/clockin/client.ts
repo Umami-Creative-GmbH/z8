@@ -36,7 +36,7 @@ export class ClockinClient {
 			Array.isArray(response.data) &&
 			!!response.links &&
 			typeof response.links === "object" &&
-			("next" in response.links) &&
+			"next" in response.links &&
 			(response.links.next === null || typeof response.links.next === "string")
 		);
 	}
@@ -68,7 +68,10 @@ export class ClockinClient {
 		}
 	}
 
-	private async requestPage<T>(url: string, init?: RequestInit): Promise<ClockinPaginatedResponse<T>> {
+	private async requestPage<T>(
+		url: string,
+		init?: RequestInit,
+	): Promise<ClockinPaginatedResponse<T>> {
 		const response = await fetch(url, this.getRequestInit(init));
 		const payload = await this.parseResponse<unknown>(response);
 
@@ -110,17 +113,14 @@ export class ClockinClient {
 	}
 
 	async searchWorkdays(input: ClockinWorkdaySearchRequest): Promise<ClockinWorkday[]> {
-		return this.fetchAllPages<ClockinWorkday>(
-			"/v3/workdays/search",
-			{
-				method: "POST",
-				body: JSON.stringify({
-					employee_ids: input.employeeIds,
-					start_date: input.startDate,
-					end_date: input.endDate,
-				}),
-			},
-		);
+		return this.fetchAllPages<ClockinWorkday>("/v3/workdays/search", {
+			method: "POST",
+			body: JSON.stringify({
+				employee_ids: input.employeeIds,
+				start_date: input.startDate,
+				end_date: input.endDate,
+			}),
+		});
 	}
 
 	async searchAbsences(input: ClockinAbsenceSearchRequest): Promise<ClockinAbsence[]> {
@@ -137,12 +137,9 @@ export class ClockinClient {
 			});
 		}
 
-		return this.fetchAllPages<ClockinAbsence>(
-			"/v3/absences/search",
-			{
-				method: "POST",
-				body: JSON.stringify({ scopes }),
-			},
-		);
+		return this.fetchAllPages<ClockinAbsence>("/v3/absences/search", {
+			method: "POST",
+			body: JSON.stringify({ scopes }),
+		});
 	}
 }

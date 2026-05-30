@@ -15,12 +15,7 @@ import {
 	employeeCustomRole,
 } from "@/db/schema";
 import { isValidPermission } from "@/lib/authorization/permission-registry";
-import {
-	ConflictError,
-	type DatabaseError,
-	NotFoundError,
-	ValidationError,
-} from "../errors";
+import { ConflictError, type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
 // ============================================
@@ -95,10 +90,7 @@ export class CustomRoleService extends Context.Tag("CustomRoleService")<
 		readonly getRole: (
 			roleId: string,
 			orgId: string,
-		) => Effect.Effect<
-			CustomRoleWithPermissions,
-			DatabaseError | NotFoundError
-		>;
+		) => Effect.Effect<CustomRoleWithPermissions, DatabaseError | NotFoundError>;
 
 		readonly listRoles: (
 			orgId: string,
@@ -272,10 +264,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					const role = yield* _(
 						dbService.query("getCustomRoleForUpdate", async () => {
 							return await dbService.db.query.customRole.findFirst({
-								where: and(
-									eq(customRole.id, roleId),
-									eq(customRole.organizationId, orgId),
-								),
+								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -354,10 +343,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					yield* _(
 						dbService.query("getCustomRoleForDelete", async () => {
 							return await dbService.db.query.customRole.findFirst({
-								where: and(
-									eq(customRole.id, roleId),
-									eq(customRole.organizationId, orgId),
-								),
+								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -395,10 +381,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					const role = yield* _(
 						dbService.query("getCustomRole", async () => {
 							return await dbService.db.query.customRole.findFirst({
-								where: and(
-									eq(customRole.id, roleId),
-									eq(customRole.organizationId, orgId),
-								),
+								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -426,10 +409,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					const roles = yield* _(
 						dbService.query("listCustomRoles", async () => {
 							return await dbService.db.query.customRole.findMany({
-								where: and(
-									eq(customRole.organizationId, orgId),
-									eq(customRole.isActive, true),
-								),
+								where: and(eq(customRole.organizationId, orgId), eq(customRole.isActive, true)),
 								orderBy: (table, { asc }) => [asc(table.name)],
 							});
 						}),
@@ -437,9 +417,7 @@ export const CustomRoleServiceLive = Layer.effect(
 
 					return yield* _(
 						dbService.query("listCustomRolesWithDetails", async () => {
-							return await Promise.all(
-								roles.map((role) => loadRoleWithDetails(role)),
-							);
+							return await Promise.all(roles.map((role) => loadRoleWithDetails(role)));
 						}),
 					);
 				}),
@@ -450,10 +428,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					yield* _(
 						dbService.query("getCustomRoleForSetPerms", async () => {
 							return await dbService.db.query.customRole.findFirst({
-								where: and(
-									eq(customRole.id, roleId),
-									eq(customRole.organizationId, orgId),
-								),
+								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -521,10 +496,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					yield* _(
 						dbService.query("verifyEmployeeOrgForAssign", async () => {
 							return await dbService.db.query.employee.findFirst({
-								where: and(
-									eq(employee.id, employeeId),
-									eq(employee.organizationId, orgId),
-								),
+								where: and(eq(employee.id, employeeId), eq(employee.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -597,10 +569,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					yield* _(
 						dbService.query("verifyEmployeeOrgForUnassign", async () => {
 							return await dbService.db.query.employee.findFirst({
-								where: and(
-									eq(employee.id, employeeId),
-									eq(employee.organizationId, orgId),
-								),
+								where: and(eq(employee.id, employeeId), eq(employee.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -620,10 +589,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					yield* _(
 						dbService.query("getCustomRoleForUnassign", async () => {
 							return await dbService.db.query.customRole.findFirst({
-								where: and(
-									eq(customRole.id, roleId),
-									eq(customRole.organizationId, orgId),
-								),
+								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
 						}),
 						Effect.flatMap((r) =>
@@ -679,17 +645,12 @@ export const CustomRoleServiceLive = Layer.effect(
 					);
 
 					const activeRoles = assignments
-						.filter(
-							(a) =>
-								a.customRole.isActive && a.customRole.organizationId === orgId,
-						)
+						.filter((a) => a.customRole.isActive && a.customRole.organizationId === orgId)
 						.map((a) => a.customRole);
 
 					return yield* _(
 						dbService.query("getEmployeeCustomRolesWithDetails", async () => {
-							return await Promise.all(
-								activeRoles.map((role) => loadRoleWithDetails(role)),
-							);
+							return await Promise.all(activeRoles.map((role) => loadRoleWithDetails(role)));
 						}),
 					);
 				}),

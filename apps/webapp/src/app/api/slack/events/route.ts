@@ -10,11 +10,11 @@
 
 import type { NextRequest } from "next/server";
 import { connection, NextResponse } from "next/server";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { getBotConfigByTeamId } from "@/lib/slack/bot-config";
 import { handleEvent } from "@/lib/slack/bot-handler";
 import { verifySlackSignature } from "@/lib/slack/signature";
-import { env } from "@/env";
 
 const logger = createLogger("SlackEvents");
 

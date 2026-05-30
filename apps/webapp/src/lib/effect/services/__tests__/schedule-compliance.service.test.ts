@@ -101,9 +101,7 @@ describe("ScheduleComplianceService", () => {
 	});
 
 	it("recordPublishAcknowledgment inserts acknowledgment row", async () => {
-		const insertValues = vi.fn<[Record<string, unknown>], Promise<void>>(
-			async () => undefined,
-		);
+		const insertValues = vi.fn<[Record<string, unknown>], Promise<void>>(async () => undefined);
 		const mockDb = {
 			query: {
 				shift: { findMany: vi.fn(async () => []) },

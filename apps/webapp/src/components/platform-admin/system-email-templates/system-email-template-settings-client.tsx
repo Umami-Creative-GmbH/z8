@@ -9,6 +9,11 @@ import {
 	sendPlatformSystemEmailTemplateTest,
 } from "@/app/[locale]/(admin)/platform-admin/system-email-templates/actions";
 import {
+	EmailTemplateEditor,
+	type EmailTemplateEditorHandle,
+} from "@/components/settings/email-templates/email-template-editor";
+import { EmailTemplateList } from "@/components/settings/email-templates/email-template-list";
+import {
 	AlertDialog,
 	AlertDialogAction,
 	AlertDialogCancel,
@@ -19,11 +24,6 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-	EmailTemplateEditor,
-	type EmailTemplateEditorHandle,
-} from "@/components/settings/email-templates/email-template-editor";
-import { EmailTemplateList } from "@/components/settings/email-templates/email-template-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -125,10 +125,9 @@ export function SystemEmailTemplateSettingsClient({
 		}));
 	};
 
-	const selectedStatus =
-		selectedHasOverride
-			? t("admin:admin.systemEmailTemplates.status.customized", "Customized")
-			: t("admin:admin.systemEmailTemplates.status.default", "Default");
+	const selectedStatus = selectedHasOverride
+		? t("admin:admin.systemEmailTemplates.status.customized", "Customized")
+		: t("admin:admin.systemEmailTemplates.status.default", "Default");
 
 	const actionInput = () => {
 		if (!selectedTemplate || !draft) {
@@ -217,17 +216,17 @@ export function SystemEmailTemplateSettingsClient({
 					}),
 				}));
 				toast.success(
-					t(
-						"admin:admin.systemEmailTemplates.reset",
-						"System email template reset to default",
-					),
+					t("admin:admin.systemEmailTemplates.reset", "System email template reset to default"),
 				);
 				refresh();
 				return;
 			}
 			toast.error(
 				result.errors?.join("\n") ??
-					t("admin:admin.systemEmailTemplates.resetFailed", "Failed to reset system email template"),
+					t(
+						"admin:admin.systemEmailTemplates.resetFailed",
+						"Failed to reset system email template",
+					),
 			);
 		});
 	};

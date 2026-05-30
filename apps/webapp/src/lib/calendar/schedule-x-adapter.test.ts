@@ -22,12 +22,8 @@ describe("calendarEventToScheduleX", () => {
 
 		const scheduleXEvent = calendarEventToScheduleX(workPeriod, "America/New_York");
 
-		expect(scheduleXEvent?.start.toString()).toBe(
-			"2026-05-18T03:40:00-04:00[America/New_York]",
-		);
-		expect(scheduleXEvent?.end.toString()).toBe(
-			"2026-05-18T11:40:00-04:00[America/New_York]",
-		);
+		expect(scheduleXEvent?.start.toString()).toBe("2026-05-18T03:40:00-04:00[America/New_York]");
+		expect(scheduleXEvent?.end.toString()).toBe("2026-05-18T11:40:00-04:00[America/New_York]");
 	});
 
 	it("renders work periods at the saved clock-in and clock-out offsets", () => {
@@ -124,7 +120,9 @@ describe("calendarEventToScheduleX", () => {
 		const timeGrid = scheduleXEvent?._customContent?.timeGrid ?? "";
 
 		expect(timeGrid).toContain("relative inline-flex size-2 shrink-0");
-		expect(timeGrid).toContain("absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75");
+		expect(timeGrid).toContain(
+			"absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75",
+		);
 		expect(timeGrid).toContain("relative inline-flex size-2 rounded-full bg-red-500");
 		expect(timeGrid).toContain("shrink-0");
 		expect(timeGrid).toContain("rounded-full");
@@ -174,12 +172,8 @@ describe("calendarEventToScheduleX", () => {
 
 		const scheduleXEvent = calendarEventToScheduleX(workPeriod, "America/New_York");
 
-		expect(scheduleXEvent?.start.toString()).toBe(
-			"2026-05-18T03:40:00-04:00[America/New_York]",
-		);
-		expect(scheduleXEvent?.end.toString()).toBe(
-			"2026-05-18T11:40:00-04:00[America/New_York]",
-		);
+		expect(scheduleXEvent?.start.toString()).toBe("2026-05-18T03:40:00-04:00[America/New_York]");
+		expect(scheduleXEvent?.end.toString()).toBe("2026-05-18T11:40:00-04:00[America/New_York]");
 	});
 
 	it("keeps single-day holidays on one Schedule-X full-day date", () => {

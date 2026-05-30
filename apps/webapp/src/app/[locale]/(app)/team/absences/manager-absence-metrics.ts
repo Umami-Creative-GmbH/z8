@@ -1,11 +1,8 @@
-import {
-	calculateBusinessDaysWithHalfDays,
-	getYearRange,
-} from "@/lib/absences/date-utils";
+import { DateTime } from "luxon";
+import { calculateBusinessDaysWithHalfDays, getYearRange } from "@/lib/absences/date-utils";
 import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
 import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { DateTime } from "luxon";
 
 interface VacationAllowanceData {
 	defaultAnnualDays: string;

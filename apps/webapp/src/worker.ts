@@ -37,12 +37,7 @@ import {
 	markJobRunning,
 } from "@/lib/cron/tracking";
 import { createLogger } from "@/lib/logger";
-import {
-	createWorker,
-	getJobQueue,
-	type JobData,
-	type JobResult,
-} from "@/lib/queue";
+import { createWorker, getJobQueue, type JobData, type JobResult } from "@/lib/queue";
 
 const logger = createLogger("Worker");
 
@@ -112,10 +107,7 @@ async function processCronJob(job: Job<CronJobData>): Promise<JobResult> {
 		// Mark job as failed with error
 		await markJobFailed(executionId, errorMessage, duration);
 
-		logger.error(
-			{ error: errorMessage, jobId: job.id, type, executionId },
-			"Cron job failed",
-		);
+		logger.error({ error: errorMessage, jobId: job.id, type, executionId }, "Cron job failed");
 
 		return {
 			success: false,
@@ -159,20 +151,14 @@ export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 			}
 
 			case "webhook": {
-				const { processWebhookJob } = await import(
-					"@/lib/webhooks/webhook-worker"
-				);
+				const { processWebhookJob } = await import("@/lib/webhooks/webhook-worker");
 				// Type assertion needed: job.data is WebhookJobData (queue type)
 				// processWebhookJob expects the specific webhook type, which is structurally compatible
-				return processWebhookJob(
-					job as unknown as Parameters<typeof processWebhookJob>[0],
-				);
+				return processWebhookJob(job as unknown as Parameters<typeof processWebhookJob>[0]);
 			}
 
 			case "calendar-sync": {
-				const { processCalendarSyncJob } = await import(
-					"@/lib/calendar-sync/jobs"
-				);
+				const { processCalendarSyncJob } = await import("@/lib/calendar-sync/jobs");
 				return processCalendarSyncJob(job.data);
 			}
 
@@ -185,16 +171,12 @@ export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 			}
 
 			case "import-review-scan": {
-				const { processImportReviewJob } = await import(
-					"@/lib/import-review/worker"
-				);
+				const { processImportReviewJob } = await import("@/lib/import-review/worker");
 				return processImportReviewJob(job as Job<typeof job.data>);
 			}
 
 			case "import-review-commit": {
-				const { processImportReviewJob } = await import(
-					"@/lib/import-review/worker"
-				);
+				const { processImportReviewJob } = await import("@/lib/import-review/worker");
 				return processImportReviewJob(job as Job<typeof job.data>);
 			}
 
@@ -315,16 +297,11 @@ async function main(): Promise<void> {
 	await setupCronJobs(queue);
 
 	// Create the worker
-	const worker = createWorker(
-		processJob as (job: Job<JobData, JobResult>) => Promise<JobResult>,
-	);
+	const worker = createWorker(processJob as (job: Job<JobData, JobResult>) => Promise<JobResult>);
 
 	// Graceful shutdown handlers
 	const shutdown = async (signal: string) => {
-		logger.info(
-			{ signal },
-			"Received shutdown signal, closing worker gracefully...",
-		);
+		logger.info({ signal }, "Received shutdown signal, closing worker gracefully...");
 
 		try {
 			// Close the worker (waits for current jobs to complete)

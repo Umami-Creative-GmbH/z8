@@ -9,11 +9,7 @@
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
-import {
-	complianceException,
-	employeeManagers,
-	workPolicyViolation,
-} from "@/db/schema";
+import { complianceException, employeeManagers, workPolicyViolation } from "@/db/schema";
 import type { DatabaseError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
 
@@ -42,11 +38,7 @@ export interface ComplianceExceptionSummary {
 	id: string;
 	employeeId: string;
 	employeeName: string;
-	exceptionType:
-		| "rest_period"
-		| "overtime_daily"
-		| "overtime_weekly"
-		| "overtime_monthly";
+	exceptionType: "rest_period" | "overtime_daily" | "overtime_weekly" | "overtime_monthly";
 	status: "pending" | "approved" | "rejected" | "expired" | "used";
 	requestedAt: Date;
 	validFrom: Date;
@@ -65,9 +57,7 @@ export interface ComplianceSummary {
 // SERVICE INTERFACE
 // ============================================
 
-export class TeamsComplianceService extends Context.Tag(
-	"TeamsComplianceService",
-)<
+export class TeamsComplianceService extends Context.Tag("TeamsComplianceService")<
 	TeamsComplianceService,
 	{
 		/**
@@ -203,10 +193,7 @@ export const TeamsComplianceServiceLive = Layer.effect(
 
 					const managedEmployeeIds = [...managedEmployees.keys()];
 					const now = DateTime.now().setZone(timezone);
-					const startDate = now
-						.minus({ days: daysBack })
-						.startOf("day")
-						.toJSDate();
+					const startDate = now.minus({ days: daysBack }).startOf("day").toJSDate();
 
 					// Get violations for managed employees
 					const violations = yield* _(
@@ -246,16 +233,12 @@ export const TeamsComplianceServiceLive = Layer.effect(
 
 					// Map violations to alerts
 					const alerts: ComplianceAlert[] = violations.map((v) => {
-						const employeeExceptions =
-							exceptionsByEmployee.get(v.employeeId) || [];
+						const employeeExceptions = exceptionsByEmployee.get(v.employeeId) || [];
 						const matchingException = employeeExceptions.find(
 							(ex) =>
 								ex.exceptionType === v.violationType &&
 								ex.usedAt &&
-								DateTime.fromJSDate(ex.usedAt).hasSame(
-									DateTime.fromJSDate(v.violationDate),
-									"day",
-								),
+								DateTime.fromJSDate(ex.usedAt).hasSame(DateTime.fromJSDate(v.violationDate), "day"),
 						);
 
 						return {
@@ -277,8 +260,7 @@ export const TeamsComplianceServiceLive = Layer.effect(
 					// Sort by severity (violation > critical > warning) then by date
 					const severityOrder = { violation: 0, critical: 1, warning: 2 };
 					alerts.sort((a, b) => {
-						const severityDiff =
-							severityOrder[a.severity] - severityOrder[b.severity];
+						const severityDiff = severityOrder[a.severity] - severityOrder[b.severity];
 						if (severityDiff !== 0) return severityDiff;
 						return b.date.getTime() - a.date.getTime();
 					});

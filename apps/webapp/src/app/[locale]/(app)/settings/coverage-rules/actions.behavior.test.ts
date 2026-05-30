@@ -18,11 +18,17 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock("@/lib/settings-scheduling-access", () => ({
 	canManageScopedSchedulingSubarea: vi.fn(
-		(_tier: string, manageableSubareaIds: Set<string> | null, subareaId: string | null | undefined) =>
-			Boolean(subareaId && manageableSubareaIds?.has(subareaId)),
+		(
+			_tier: string,
+			manageableSubareaIds: Set<string> | null,
+			subareaId: string | null | undefined,
+		) => Boolean(subareaId && manageableSubareaIds?.has(subareaId)),
 	),
-	filterItemsToManageableSubareas: vi.fn((items: any[], manageableSubareaIds: Set<string> | null) =>
-		manageableSubareaIds ? items.filter((item) => manageableSubareaIds.has(item.subareaId)) : items,
+	filterItemsToManageableSubareas: vi.fn(
+		(items: any[], manageableSubareaIds: Set<string> | null) =>
+			manageableSubareaIds
+				? items.filter((item) => manageableSubareaIds.has(item.subareaId))
+				: items,
 	),
 	getCoverageRuleScopeTarget: vi.fn(async () => mockState.coverageRuleTarget),
 	getSchedulingSettingsAccessContext: vi.fn(async () => mockState.accessContext),

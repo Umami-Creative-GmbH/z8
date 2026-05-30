@@ -145,7 +145,9 @@ vi.mock("./shared", () => ({
 	ONE_MINUTE_MS: 60_000,
 }));
 
-const { addBreakToActiveSession, clockIn, clockOut, createManualTimeEntry } = await import("./clocking");
+const { addBreakToActiveSession, clockIn, clockOut, createManualTimeEntry } = await import(
+	"./clocking"
+);
 
 describe("clockIn", () => {
 	beforeEach(() => {
@@ -587,7 +589,10 @@ describe("createManualTimeEntry", () => {
 	});
 
 	it("marks the work balance dirty from the manual clock-in date after creating an approved entry", async () => {
-		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "direct", reason: "within_window" });
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({
+			type: "direct",
+			reason: "within_window",
+		});
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1" })
 			.mockResolvedValueOnce({ id: "clock-out-1" });
@@ -614,7 +619,10 @@ describe("createManualTimeEntry", () => {
 	});
 
 	it("uses submitted timezone for self manual entries when browser timezone differs", async () => {
-		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "direct", reason: "within_window" });
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({
+			type: "direct",
+			reason: "within_window",
+		});
 		mockState.getUserTimezone.mockResolvedValue("Europe/Berlin");
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1" })
@@ -665,7 +673,10 @@ describe("createManualTimeEntry", () => {
 
 	it("uses browser capture for self manual entries when it matches the effective timezone", async () => {
 		vi.setSystemTime(new Date("2026-05-04T14:00:00.000Z"));
-		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "direct", reason: "within_window" });
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({
+			type: "direct",
+			reason: "within_window",
+		});
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1" })
 			.mockResolvedValueOnce({ id: "clock-out-1" });
@@ -825,7 +836,10 @@ describe("createManualTimeEntry", () => {
 	});
 
 	it("keeps manual entry creation successful when dirty marking fails", async () => {
-		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "direct", reason: "within_window" });
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({
+			type: "direct",
+			reason: "within_window",
+		});
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1" })
 			.mockResolvedValueOnce({ id: "clock-out-1" });
@@ -868,7 +882,10 @@ describe("createManualTimeEntry", () => {
 		mockState.getUserTimezone.mockResolvedValue("UTC");
 		mockState.validateTimeEntryRange.mockResolvedValue({ isValid: true });
 		mockState.validateProjectAssignment.mockResolvedValue({ isValid: true });
-		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "approval_required", daysBack: 7 });
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({
+			type: "approval_required",
+			daysBack: 7,
+		});
 		mockState.findWorkPeriods.mockResolvedValue([]);
 		mockState.findEmployees.mockResolvedValue([
 			{ id: "employee-1", organizationId: "org-1", isActive: true, role: "employee" },
@@ -947,12 +964,12 @@ describe("createManualTimeEntry", () => {
 	});
 });
 
-	describe("addBreakToActiveSession", () => {
-		beforeEach(() => {
-			vi.clearAllMocks();
-			mockState.insertReturning.mockReset();
-			mockState.createTimeEntry.mockReset();
-			mockState.updateReturning.mockReset();
+describe("addBreakToActiveSession", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.insertReturning.mockReset();
+		mockState.createTimeEntry.mockReset();
+		mockState.updateReturning.mockReset();
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-05-04T10:00:00.000Z"));
 

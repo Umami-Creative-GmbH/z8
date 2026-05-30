@@ -5,18 +5,17 @@
  */
 
 export {
-	withRateLimit,
-	checkCommandRateLimit,
+	checkPermissions,
+	compose,
+	getManagedEmployeeIds,
+	type PermissionCheckResult,
+	type RequiredRole,
+	withPermission,
+} from "./permissions.middleware";
+export {
 	COMMAND_RATE_LIMITS,
 	type CommandRateLimitConfig,
+	checkCommandRateLimit,
 	type RateLimitResult,
+	withRateLimit,
 } from "./rate-limit.middleware";
-
-export {
-	withPermission,
-	checkPermissions,
-	getManagedEmployeeIds,
-	compose,
-	type RequiredRole,
-	type PermissionCheckResult,
-} from "./permissions.middleware";

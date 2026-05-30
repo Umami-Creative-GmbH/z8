@@ -1,11 +1,6 @@
 "use client";
 
-import {
-	IconCheck,
-	IconLoader2,
-	IconPlugConnected,
-	IconTrash,
-} from "@tabler/icons-react";
+import { IconCheck, IconLoader2, IconPlugConnected, IconTrash } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
@@ -91,10 +86,7 @@ export function WorkdayConfigForm({
 					onConfigSaved?.();
 				} else {
 					toast.error(
-						t(
-							"settings.payrollExport.workday.saveError",
-							"Failed to save configuration",
-						),
+						t("settings.payrollExport.workday.saveError", "Failed to save configuration"),
 						{
 							description: result.error,
 						},
@@ -124,10 +116,7 @@ export function WorkdayConfigForm({
 
 			if (result.success) {
 				toast.success(
-					t(
-						"settings.payrollExport.workday.credentialsSaved",
-						"Credentials saved securely",
-					),
+					t("settings.payrollExport.workday.credentialsSaved", "Credentials saved securely"),
 				);
 				setShowCredentialsForm(false);
 				setClientId("");
@@ -135,10 +124,7 @@ export function WorkdayConfigForm({
 				onConfigSaved?.();
 			} else {
 				toast.error(
-					t(
-						"settings.payrollExport.workday.credentialsSaveError",
-						"Failed to save credentials",
-					),
+					t("settings.payrollExport.workday.credentialsSaveError", "Failed to save credentials"),
 					{
 						description: result.error,
 					},
@@ -153,10 +139,7 @@ export function WorkdayConfigForm({
 
 			if (result.success) {
 				toast.success(
-					t(
-						"settings.payrollExport.workday.credentialsDeleted",
-						"Credentials deleted",
-					),
+					t("settings.payrollExport.workday.credentialsDeleted", "Credentials deleted"),
 				);
 				setShowCredentialsForm(true);
 				onConfigSaved?.();
@@ -189,10 +172,7 @@ export function WorkdayConfigForm({
 
 		if (result.success && result.data.success) {
 			toast.success(
-				t(
-					"settings.payrollExport.workday.connectionSuccess",
-					"Successfully connected to Workday",
-				),
+				t("settings.payrollExport.workday.connectionSuccess", "Successfully connected to Workday"),
 			);
 		} else {
 			toast.error(t("settings.payrollExport.workday.connectionFailed", "Connection test failed"), {
@@ -210,10 +190,7 @@ export function WorkdayConfigForm({
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						{t(
-							"settings.payrollExport.workday.credentialsTitle",
-							"Workday API Credentials",
-						)}
+						{t("settings.payrollExport.workday.credentialsTitle", "Workday API Credentials")}
 						{initialConfig?.hasCredentials && !showCredentialsForm && (
 							<Badge variant="secondary" className="gap-1">
 								<IconCheck className="size-3" aria-hidden="true" />
@@ -365,7 +342,9 @@ export function WorkdayConfigForm({
 
 			<Card>
 				<CardHeader>
-					<CardTitle>{t("settings.payrollExport.workday.configTitle", "Workday Export Settings")}</CardTitle>
+					<CardTitle>
+						{t("settings.payrollExport.workday.configTitle", "Workday Export Settings")}
+					</CardTitle>
 					<CardDescription>
 						{t(
 							"settings.payrollExport.workday.configDescription",
@@ -421,10 +400,7 @@ export function WorkdayConfigForm({
 							{(field) => (
 								<div className="space-y-2">
 									<Label htmlFor="employeeMatchStrategy">
-										{t(
-											"settings.payrollExport.workday.employeeMatchStrategy",
-											"Employee Matching",
-										)}
+										{t("settings.payrollExport.workday.employeeMatchStrategy", "Employee Matching")}
 									</Label>
 									<Select
 										value={field.state.value}
@@ -443,10 +419,7 @@ export function WorkdayConfigForm({
 												)}
 											</SelectItem>
 											<SelectItem value="email">
-												{t(
-													"settings.payrollExport.workday.matchByEmail",
-													"Email Address",
-												)}
+												{t("settings.payrollExport.workday.matchByEmail", "Email Address")}
 											</SelectItem>
 										</SelectContent>
 									</Select>
@@ -486,9 +459,7 @@ export function WorkdayConfigForm({
 										min={1000}
 										step={1000}
 										value={field.state.value}
-										onChange={(e) =>
-											field.handleChange(parseInt(e.target.value, 10) || 30000)
-										}
+										onChange={(e) => field.handleChange(parseInt(e.target.value, 10) || 30000)}
 									/>
 								</div>
 							)}
@@ -499,10 +470,7 @@ export function WorkdayConfigForm({
 								<div className="flex items-center justify-between rounded-lg border p-4">
 									<div className="space-y-0.5">
 										<Label htmlFor="includeZeroHours" className="text-base">
-											{t(
-												"settings.payrollExport.workday.includeZeroHours",
-												"Include Zero Hours",
-											)}
+											{t("settings.payrollExport.workday.includeZeroHours", "Include Zero Hours")}
 										</Label>
 										<p className="text-sm text-muted-foreground">
 											{t(
@@ -550,10 +518,7 @@ export function WorkdayConfigForm({
 							) : (
 								<>
 									<IconPlugConnected className="mr-2 size-4" aria-hidden="true" />
-									{t(
-										"settings.payrollExport.workday.testConnection",
-										"Test Connection",
-									)}
+									{t("settings.payrollExport.workday.testConnection", "Test Connection")}
 								</>
 							)}
 						</Button>

@@ -2,10 +2,7 @@ import { Effect, Layer } from "effect";
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendBillingSystemEmail } from "../../../billing/billing-system-email";
-import {
-	BillingEventsService,
-	BillingEventsServiceLive,
-} from "./billing-events.service";
+import { BillingEventsService, BillingEventsServiceLive } from "./billing-events.service";
 import { SeatSyncService } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";
 import {
@@ -61,9 +58,7 @@ const sendBillingSystemEmailMock = vi.mocked(sendBillingSystemEmail);
 
 describe("BillingEventsService", () => {
 	const getCustomer = vi.fn();
-	const updateFromStripe = vi.fn(
-		(_: UpdateSubscriptionFromStripeParams) => Effect.void,
-	);
+	const updateFromStripe = vi.fn((_: UpdateSubscriptionFromStripeParams) => Effect.void);
 	const appLayer = Layer.mergeAll(
 		Layer.succeed(
 			StripeService,
@@ -236,11 +231,7 @@ describe("BillingEventsService", () => {
 			}),
 			templateKey: "billing-payment-failed",
 		},
-	])("selects $templateKey for $type", async ({
-		type,
-		object,
-		templateKey,
-	}) => {
+	])("selects $templateKey for $type", async ({ type, object, templateKey }) => {
 		await processEvent({ type, object });
 
 		expect(sendBillingSystemEmailMock).toHaveBeenCalledWith(
@@ -249,9 +240,7 @@ describe("BillingEventsService", () => {
 	});
 
 	it("continues processing when billing email sending fails", async () => {
-		sendBillingSystemEmailMock.mockRejectedValueOnce(
-			new Error("email unavailable"),
-		);
+		sendBillingSystemEmailMock.mockRejectedValueOnce(new Error("email unavailable"));
 
 		await expect(
 			processEvent({
@@ -263,9 +252,7 @@ describe("BillingEventsService", () => {
 		expect(sendBillingSystemEmailMock).toHaveBeenCalledWith(
 			expect.objectContaining({ templateKey: "billing-subscription-paused" }),
 		);
-		expect(setValues).toHaveBeenCalledWith(
-			expect.objectContaining({ processed: true }),
-		);
+		expect(setValues).toHaveBeenCalledWith(expect.objectContaining({ processed: true }));
 	});
 
 	async function processEvent({
@@ -293,10 +280,7 @@ describe("BillingEventsService", () => {
 					type,
 					data: { object },
 				} as Stripe.Event);
-			}).pipe(
-				Effect.provide(BillingEventsServiceLive),
-				Effect.provide(appLayer),
-			),
+			}).pipe(Effect.provide(BillingEventsServiceLive), Effect.provide(appLayer)),
 		);
 	}
 });
@@ -334,9 +318,7 @@ function createStripeSubscription(
 	} as Stripe.Subscription;
 }
 
-function createStripeInvoice(
-	overrides: Partial<Stripe.Invoice> = {},
-): Stripe.Invoice {
+function createStripeInvoice(overrides: Partial<Stripe.Invoice> = {}): Stripe.Invoice {
 	return {
 		id: "in_test_123",
 		object: "invoice",

@@ -182,7 +182,11 @@ describe("time-record canonical actions", () => {
 		};
 		expect(whereArg.conditions).toEqual(
 			expect.arrayContaining([
-				expect.objectContaining({ type: "eq", column: "timeRecord.organizationId", value: "org-1" }),
+				expect.objectContaining({
+					type: "eq",
+					column: "timeRecord.organizationId",
+					value: "org-1",
+				}),
 			]),
 		);
 		expect(mockState.selectLimit).toHaveBeenCalledWith(10);

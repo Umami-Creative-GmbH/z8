@@ -200,7 +200,9 @@ export async function seedWorkPolicyPresets() {
 			maxDailyMinutes: preset.maxDailyMinutes,
 			maxWeeklyMinutes: preset.maxWeeklyMinutes,
 			maxUninterruptedMinutes: preset.maxUninterruptedMinutes,
-			breakRulesJson: JSON.stringify(preset.breakRulesJson) as unknown as typeof preset.breakRulesJson,
+			breakRulesJson: JSON.stringify(
+				preset.breakRulesJson,
+			) as unknown as typeof preset.breakRulesJson,
 			isActive: true,
 		};
 

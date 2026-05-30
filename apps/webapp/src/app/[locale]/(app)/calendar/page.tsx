@@ -7,7 +7,9 @@ import { getAuthContext } from "@/lib/auth-helpers";
 
 export async function CalendarPageContent({
 	selectedEmployeeId,
-}: { selectedEmployeeId?: string } = {}) {
+}: {
+	selectedEmployeeId?: string;
+} = {}) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	const authContext = await getAuthContext();

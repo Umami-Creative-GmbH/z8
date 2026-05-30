@@ -4,7 +4,12 @@
  * Defines the contract for all report executors.
  * Each report type (payroll, data, audit) implements this interface.
  */
-import type { CalculatedDateRange, FilterConfig, ReportConfig, ExecutionResult } from "../../domain/types";
+import type {
+	CalculatedDateRange,
+	ExecutionResult,
+	FilterConfig,
+	ReportConfig,
+} from "../../domain/types";
 
 /**
  * Parameters for report execution

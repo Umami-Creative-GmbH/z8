@@ -7,9 +7,9 @@ import Image from "next/image";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
+	type SuccessFactorsConfigResult,
 	saveSuccessFactorsConfigAction,
 	testSuccessFactorsConnectionAction,
-	type SuccessFactorsConfigResult,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,12 +31,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SuccessFactorsConfig } from "@/lib/payroll-export/types";
 
 interface SuccessFactorsConfigFormProps {
@@ -79,10 +74,7 @@ export function SuccessFactorsConfigForm({
 					onConfigSaved?.();
 				} else {
 					toast.error(
-						t(
-							"settings.payrollExport.successfactors.saveError",
-							"Failed to save configuration",
-						),
+						t("settings.payrollExport.successfactors.saveError", "Failed to save configuration"),
 						{
 							description: result.error,
 						},
@@ -97,12 +89,13 @@ export function SuccessFactorsConfigForm({
 		const result = await testSuccessFactorsConnectionAction({
 			organizationId,
 			config: form.state.values,
-		}).then((response) => response, () => null);
+		}).then(
+			(response) => response,
+			() => null,
+		);
 
 		if (!result) {
-			toast.error(
-				t("settings.payrollExport.successfactors.connectionFailed", "Connection failed"),
-			);
+			toast.error(t("settings.payrollExport.successfactors.connectionFailed", "Connection failed"));
 			setIsTestingConnection(false);
 			return;
 		}
@@ -112,14 +105,18 @@ export function SuccessFactorsConfigForm({
 				t("settings.payrollExport.successfactors.connectionSuccess", "Connection successful"),
 			);
 		} else {
-			const errorMessage = result.success && result.data
-				? result.data.error
-				: result.success === false
-					? result.error
-					: undefined;
-			toast.error(t("settings.payrollExport.successfactors.connectionFailed", "Connection failed"), {
-				description: errorMessage,
-			});
+			const errorMessage =
+				result.success && result.data
+					? result.data.error
+					: result.success === false
+						? result.error
+						: undefined;
+			toast.error(
+				t("settings.payrollExport.successfactors.connectionFailed", "Connection failed"),
+				{
+					description: errorMessage,
+				},
+			);
 		}
 
 		setIsTestingConnection(false);
@@ -170,10 +167,7 @@ export function SuccessFactorsConfigForm({
 							<div className="space-y-2">
 								<div className="flex items-center gap-2">
 									<Label htmlFor="instanceUrl">
-										{t(
-											"settings.payrollExport.successfactors.instanceUrl",
-											"Instance URL",
-										)}
+										{t("settings.payrollExport.successfactors.instanceUrl", "Instance URL")}
 									</Label>
 									<TooltipProvider>
 										<Tooltip>
@@ -220,10 +214,7 @@ export function SuccessFactorsConfigForm({
 							<div className="space-y-2">
 								<div className="flex items-center gap-2">
 									<Label htmlFor="companyId">
-										{t(
-											"settings.payrollExport.successfactors.companyId",
-											"Company ID",
-										)}
+										{t("settings.payrollExport.successfactors.companyId", "Company ID")}
 									</Label>
 									<TooltipProvider>
 										<Tooltip>
@@ -342,10 +333,7 @@ export function SuccessFactorsConfigForm({
 							<div className="space-y-2">
 								<div className="flex items-center gap-2">
 									<Label htmlFor="batchSize">
-										{t(
-											"settings.payrollExport.successfactors.batchSize",
-											"Batch Size",
-										)}
+										{t("settings.payrollExport.successfactors.batchSize", "Batch Size")}
 									</Label>
 									<TooltipProvider>
 										<Tooltip>
@@ -419,7 +407,11 @@ export function SuccessFactorsConfigForm({
 							type="button"
 							variant="outline"
 							onClick={handleTestConnection}
-							disabled={isTestingConnection || !form.state.values.instanceUrl || !form.state.values.companyId}
+							disabled={
+								isTestingConnection ||
+								!form.state.values.instanceUrl ||
+								!form.state.values.companyId
+							}
 						>
 							{isTestingConnection ? (
 								<>

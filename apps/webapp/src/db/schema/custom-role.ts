@@ -12,8 +12,8 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
-import { employee } from "./organization";
 import { roleEnum } from "./enums";
+import { employee } from "./organization";
 
 // ============================================
 // CUSTOM ROLES

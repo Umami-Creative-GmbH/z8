@@ -22,20 +22,23 @@ type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	> | null;
 };
 
-export async function createTimeEntry(params: {
-	employeeId: string;
-	organizationId: string;
-	type: "clock_in" | "clock_out" | "correction";
-	timestamp: Date;
-	createdBy: string;
-	utcOffsetMinutes: number;
-	timezone: string;
-	timezoneSource: TimeEntryTimezoneSource;
-	replacesEntryId?: string;
-	notes?: string;
-	location?: string;
-	isSuperseded?: boolean;
-}, client: TimeEntryDbClient = db): Promise<typeof timeEntry.$inferSelect> {
+export async function createTimeEntry(
+	params: {
+		employeeId: string;
+		organizationId: string;
+		type: "clock_in" | "clock_out" | "correction";
+		timestamp: Date;
+		createdBy: string;
+		utcOffsetMinutes: number;
+		timezone: string;
+		timezoneSource: TimeEntryTimezoneSource;
+		replacesEntryId?: string;
+		notes?: string;
+		location?: string;
+		isSuperseded?: boolean;
+	},
+	client: TimeEntryDbClient = db,
+): Promise<typeof timeEntry.$inferSelect> {
 	const {
 		employeeId,
 		organizationId,

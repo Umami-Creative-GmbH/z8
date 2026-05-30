@@ -1,9 +1,6 @@
 import type { CalendarEvent, CalendarEventType } from "./types";
 
-type WorkPeriodCalendarId =
-	| "work_period_running"
-	| "work_period_pending"
-	| "work_period_rejected";
+type WorkPeriodCalendarId = "work_period_running" | "work_period_pending" | "work_period_rejected";
 
 /**
  * Schedule-X event format for v3
@@ -366,7 +363,10 @@ export function calendarEventToScheduleX(
 				const durationMs = Math.max(0, endDate.getTime() - startDate.getTime());
 				end = start.add({ milliseconds: durationMs });
 			}
-			if (event.metadata.isRunning && end.epochMilliseconds - start.epochMilliseconds < 30 * 60_000) {
+			if (
+				event.metadata.isRunning &&
+				end.epochMilliseconds - start.epochMilliseconds < 30 * 60_000
+			) {
 				end = start.add({ minutes: 30 });
 			}
 			const timezoneLabel = buildWorkPeriodTimezoneLabel(event);

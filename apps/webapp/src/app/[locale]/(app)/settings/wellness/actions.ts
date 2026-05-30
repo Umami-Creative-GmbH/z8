@@ -9,9 +9,9 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
-	waterReminderSettingsSchema,
 	type WaterReminderSettings,
 	type WaterReminderSettingsFormValues,
+	waterReminderSettingsSchema,
 } from "@/lib/validations/wellness";
 import { getPresetInterval, type WaterReminderPreset } from "@/lib/wellness/water-presets";
 

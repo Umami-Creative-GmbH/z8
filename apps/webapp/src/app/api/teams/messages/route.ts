@@ -10,10 +10,10 @@
  * It does not use standard Z8 authentication.
  */
 
-import { connection, NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getBotAdapter, handleBotActivity, isBotConfigured } from "@/lib/teams";
+import { connection, NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
+import { getBotAdapter, handleBotActivity, isBotConfigured } from "@/lib/teams";
 
 const logger = createLogger("TeamsWebhook");
 
@@ -24,10 +24,7 @@ export async function POST(request: NextRequest) {
 	// Check if bot is configured
 	if (!isBotConfigured()) {
 		logger.warn("Teams webhook called but bot is not configured");
-		return NextResponse.json(
-			{ error: "Bot not configured" },
-			{ status: 503 },
-		);
+		return NextResponse.json({ error: "Bot not configured" }, { status: 503 });
 	}
 
 	try {
@@ -80,10 +77,7 @@ export async function POST(request: NextRequest) {
 	} catch (error) {
 		logger.error({ error }, "Teams webhook error");
 
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }
 
@@ -92,10 +86,7 @@ export async function GET() {
 	await connection();
 
 	if (!isBotConfigured()) {
-		return NextResponse.json(
-			{ status: "not_configured" },
-			{ status: 503 },
-		);
+		return NextResponse.json({ status: "not_configured" }, { status: 503 });
 	}
 
 	return NextResponse.json({

@@ -2,8 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import type {
 	ApprovalDecisionAction,
-	ApprovalType,
 	ApprovalStatus,
+	ApprovalType,
 	BulkDecisionFailure,
 	BulkDecisionResult,
 	BulkDecisionSuccess,
@@ -23,7 +23,6 @@ vi.mock("@/env", () => ({
 		NODE_ENV: "test",
 	},
 }));
-
 
 describe("buildPendingApprovalResult", () => {
 	it("prevents self-submitted approvals from being shown as pending for the requester", () => {

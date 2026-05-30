@@ -7,16 +7,15 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { type NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
+import { Effect } from "effect";
 import { headers } from "next/headers";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { calendarConnection, employee, syncedAbsence } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getCalendarProvider } from "@/lib/calendar-sync/providers";
 import { deleteCalendarTokens, getCalendarTokens } from "@/lib/calendar-sync/token-store";
-import { Effect } from "effect";
 
 // ============================================
 // VALIDATION
@@ -44,10 +43,7 @@ async function verifyConnectionAccess(
 	if (!conn) return null;
 
 	const emp = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.userId, userId),
-			eq(employee.organizationId, organizationId),
-		),
+		where: and(eq(employee.userId, userId), eq(employee.organizationId, organizationId)),
 	});
 
 	if (!emp || emp.id !== conn.employeeId) return null;
@@ -59,10 +55,7 @@ async function verifyConnectionAccess(
 // GET - Get connection details
 // ============================================
 
-export async function GET(
-	_request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	await connection();
 
 	try {
@@ -111,10 +104,7 @@ export async function GET(
 		});
 	} catch (error) {
 		console.error("Error fetching calendar connection:", error);
-		return NextResponse.json(
-			{ error: "Failed to fetch connection" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to fetch connection" }, { status: 500 });
 	}
 }
 
@@ -122,10 +112,7 @@ export async function GET(
 // PATCH - Update connection settings
 // ============================================
 
-export async function PATCH(
-	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	await connection();
 
 	try {
@@ -180,10 +167,7 @@ export async function PATCH(
 		});
 	} catch (error) {
 		console.error("Error updating calendar connection:", error);
-		return NextResponse.json(
-			{ error: "Failed to update connection" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to update connection" }, { status: 500 });
 	}
 }
 
@@ -249,9 +233,6 @@ export async function DELETE(
 		});
 	} catch (error) {
 		console.error("Error disconnecting calendar:", error);
-		return NextResponse.json(
-			{ error: "Failed to disconnect calendar" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to disconnect calendar" }, { status: 500 });
 	}
 }

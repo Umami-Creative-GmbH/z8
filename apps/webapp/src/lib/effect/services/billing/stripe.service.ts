@@ -28,9 +28,7 @@ export class StripeService extends Context.Tag("StripeService")<
 			metadata?: Record<string, string>;
 		}) => Effect.Effect<Stripe.Customer, StripeError>;
 
-		readonly getCustomer: (
-			customerId: string,
-		) => Effect.Effect<Stripe.Customer, StripeError>;
+		readonly getCustomer: (customerId: string) => Effect.Effect<Stripe.Customer, StripeError>;
 
 		readonly createCheckoutSession: (params: {
 			customerId: string;
@@ -255,11 +253,7 @@ export const StripeServiceLive = Layer.effect(
 						if (!stripe) {
 							throw new Error("Stripe not configured");
 						}
-						return stripe.webhooks.constructEvent(
-							body,
-							signature,
-							config.webhookSecret,
-						);
+						return stripe.webhooks.constructEvent(body, signature, config.webhookSecret);
 					},
 					catch: (error) =>
 						new StripeError({

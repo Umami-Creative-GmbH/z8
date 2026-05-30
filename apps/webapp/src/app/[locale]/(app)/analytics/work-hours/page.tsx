@@ -39,8 +39,7 @@ const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: 
 
 function areDateRangesEqual(left: DateRange, right: DateRange) {
 	return (
-		left.start.getTime() === right.start.getTime() &&
-		left.end.getTime() === right.end.getTime()
+		left.start.getTime() === right.start.getTime() && left.end.getTime() === right.end.getTime()
 	);
 }
 
@@ -81,10 +80,7 @@ export default function WorkHoursPage() {
 		}
 
 		const expectedDefaultDateRange = getDateRangeForPreset("current_month", { timezone });
-		if (
-			!hasUserChangedRange.current &&
-			!areDateRangesEqual(dateRange, expectedDefaultDateRange)
-		) {
+		if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
 			return;
 		}
 		const range = dateRange;
@@ -109,7 +105,9 @@ export default function WorkHoursPage() {
 				}
 
 				console.error("Failed to load work hours analytics data:", error);
-				toast.error(t("analytics.workHours.errors.loadData", "Failed to load work hours analytics data"));
+				toast.error(
+					t("analytics.workHours.errors.loadData", "Failed to load work hours analytics data"),
+				);
 			}
 
 			if (isCurrent) {
@@ -154,9 +152,18 @@ export default function WorkHoursPage() {
 						headers: [
 							{ key: "employeeName", label: t("analytics.common.employee", "Employee") },
 							{ key: "totalHours", label: t("analytics.common.totalHours", "Total Hours") },
-							{ key: "overtimeHours", label: t("analytics.common.overtimeHours", "Overtime Hours") },
-							{ key: "undertimeHours", label: t("analytics.common.undertimeHours", "Undertime Hours") },
-							{ key: "avgHoursPerWeek", label: t("analytics.workHours.avgHoursPerWeek", "Avg Hours/Week") },
+							{
+								key: "overtimeHours",
+								label: t("analytics.common.overtimeHours", "Overtime Hours"),
+							},
+							{
+								key: "undertimeHours",
+								label: t("analytics.common.undertimeHours", "Undertime Hours"),
+							},
+							{
+								key: "avgHoursPerWeek",
+								label: t("analytics.workHours.avgHoursPerWeek", "Avg Hours/Week"),
+							},
 						],
 						filename: "work-hours-" + (dateRange?.start.toISOString().split("T")[0] ?? "pending"),
 					}}
@@ -175,19 +182,26 @@ export default function WorkHoursPage() {
 					{/* Overtime/Undertime Trend */}
 					<Card>
 						<CardHeader>
-							<CardTitle>{t("analytics.workHours.varianceTrend.title", "Overtime & Undertime Trend")}</CardTitle>
-							<CardDescription>{t("analytics.workHours.varianceTrend.description", "Hours variance from expected work hours over time")}</CardDescription>
+							<CardTitle>
+								{t("analytics.workHours.varianceTrend.title", "Overtime & Undertime Trend")}
+							</CardTitle>
+							<CardDescription>
+								{t(
+									"analytics.workHours.varianceTrend.description",
+									"Hours variance from expected work hours over time",
+								)}
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{trendData.length > 0 ? (
 								<ChartContainer
 									config={{
 										overtime: {
-										label: t("analytics.common.overtime", "Overtime"),
+											label: t("analytics.common.overtime", "Overtime"),
 											color: "hsl(var(--chart-1))",
 										},
 										undertime: {
-										label: t("analytics.common.undertime", "Undertime"),
+											label: t("analytics.common.undertime", "Undertime"),
 											color: "hsl(var(--chart-2))",
 										},
 									}}
@@ -228,18 +242,23 @@ export default function WorkHoursPage() {
 					<Card>
 						<CardHeader>
 							<CardTitle>{t("analytics.workHours.daily.title", "Daily Work Hours")}</CardTitle>
-							<CardDescription>{t("analytics.workHours.daily.description", "Actual vs expected work hours per day")}</CardDescription>
+							<CardDescription>
+								{t(
+									"analytics.workHours.daily.description",
+									"Actual vs expected work hours per day",
+								)}
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{dailyHoursData.length > 0 ? (
 								<ChartContainer
 									config={{
 										actual: {
-										label: t("analytics.workHours.actualHours", "Actual Hours"),
+											label: t("analytics.workHours.actualHours", "Actual Hours"),
 											color: "hsl(var(--primary))",
 										},
 										expected: {
-										label: t("analytics.workHours.expectedHours", "Expected Hours"),
+											label: t("analytics.workHours.expectedHours", "Expected Hours"),
 											color: "hsl(var(--muted-foreground))",
 										},
 									}}
@@ -278,23 +297,39 @@ export default function WorkHoursPage() {
 					{/* Employee Work Hours Comparison */}
 					<Card>
 						<CardHeader>
-							<CardTitle>{t("analytics.workHours.employeeComparison.title", "Employee Work Hours")}</CardTitle>
-							<CardDescription>{t("analytics.workHours.employeeComparison.description", "Total hours and variance from expected by employee")}</CardDescription>
+							<CardTitle>
+								{t("analytics.workHours.employeeComparison.title", "Employee Work Hours")}
+							</CardTitle>
+							<CardDescription>
+								{t(
+									"analytics.workHours.employeeComparison.description",
+									"Total hours and variance from expected by employee",
+								)}
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{employees.length === 0 ? (
 								<div className="flex h-[200px] items-center justify-center text-muted-foreground">
-									{t("analytics.common.noDataForPeriod", "No data available for the selected period")}
+									{t(
+										"analytics.common.noDataForPeriod",
+										"No data available for the selected period",
+									)}
 								</div>
 							) : (
 								<Table>
 									<TableHeader>
 										<TableRow>
-										<TableHead>{t("analytics.common.employee", "Employee")}</TableHead>
-										<TableHead className="text-right">{t("analytics.common.totalHours", "Total Hours")}</TableHead>
-										<TableHead className="text-right">{t("analytics.workHours.expectedHours", "Expected Hours")}</TableHead>
-										<TableHead className="text-right">{t("analytics.workHours.variance", "Variance")}</TableHead>
-										<TableHead>{t("common.status", "Status")}</TableHead>
+											<TableHead>{t("analytics.common.employee", "Employee")}</TableHead>
+											<TableHead className="text-right">
+												{t("analytics.common.totalHours", "Total Hours")}
+											</TableHead>
+											<TableHead className="text-right">
+												{t("analytics.workHours.expectedHours", "Expected Hours")}
+											</TableHead>
+											<TableHead className="text-right">
+												{t("analytics.workHours.variance", "Variance")}
+											</TableHead>
+											<TableHead>{t("common.status", "Status")}</TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>
@@ -339,15 +374,22 @@ export default function WorkHoursPage() {
 					{/* Work Hours Distribution */}
 					<Card>
 						<CardHeader>
-							<CardTitle>{t("analytics.workHours.distribution.title", "Work Hours Distribution")}</CardTitle>
-							<CardDescription>{t("analytics.workHours.distribution.description", "Employee work hours comparison (horizontal bar)")}</CardDescription>
+							<CardTitle>
+								{t("analytics.workHours.distribution.title", "Work Hours Distribution")}
+							</CardTitle>
+							<CardDescription>
+								{t(
+									"analytics.workHours.distribution.description",
+									"Employee work hours comparison (horizontal bar)",
+								)}
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{distributionData.length > 0 ? (
 								<ChartContainer
 									config={{
 										hours: {
-										label: t("analytics.common.hours", "Hours"),
+											label: t("analytics.common.hours", "Hours"),
 											color: "hsl(var(--chart-4))",
 										},
 									}}

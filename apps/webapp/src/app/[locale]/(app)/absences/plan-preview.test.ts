@@ -123,11 +123,7 @@ describe("getAbsencePlanPreview", () => {
 	it("calls getVacationBalance with the current employee id and calendar year", async () => {
 		await getAbsencePlanPreview(previewRequest);
 
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith(
-			"emp-current",
-			2026,
-			"Europe/Berlin",
-		);
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026, "Europe/Berlin");
 	});
 
 	it("uses the request start date calendar year for vacation balance", async () => {
@@ -137,11 +133,7 @@ describe("getAbsencePlanPreview", () => {
 			endDate: "2026-03-05",
 		});
 
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith(
-			"emp-current",
-			2026,
-			"Europe/Berlin",
-		);
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026, "Europe/Berlin");
 	});
 
 	it("returns an error when no active employee exists", async () => {
@@ -160,11 +152,7 @@ describe("getAbsencePlanPreview", () => {
 			organizationId: "org-client",
 		} as typeof previewRequest & { employeeId: string; organizationId: string });
 
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith(
-			"emp-current",
-			2026,
-			"Europe/Berlin",
-		);
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026, "Europe/Berlin");
 		expect(mockState.getHolidays).toHaveBeenCalledWith(
 			"emp-current",
 			expect.any(Date),

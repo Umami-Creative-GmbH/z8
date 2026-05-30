@@ -23,11 +23,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { sanitizeCallbackUrl, withCallbackUrl } from "@/lib/auth/callback-url";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
@@ -91,10 +87,7 @@ const SignupSocialAuth = function SignupSocialAuth({
 			<div className="flex flex-wrap justify-center gap-2 *:w-1/4">
 				{providersLoading
 					? SOCIAL_SKELETON_KEYS.slice(0, skeletonCount).map((key) => (
-							<div
-								key={key}
-								className="h-10 animate-pulse rounded-md bg-muted"
-							/>
+							<div key={key} className="h-10 animate-pulse rounded-md bg-muted" />
 						))
 					: filteredProviders.map((provider) => (
 							<Tooltip key={provider.id}>
@@ -107,19 +100,13 @@ const SignupSocialAuth = function SignupSocialAuth({
 									>
 										<provider.icon aria-hidden="true" className="size-4" />
 										<span className="sr-only">
-											{t(
-												`auth.sign-up-with.${provider.id}`,
-												`Sign up with ${provider.name}`,
-											)}
+											{t(`auth.sign-up-with.${provider.id}`, `Sign up with ${provider.name}`)}
 										</span>
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
 									<span className="text-sm">
-										{t(
-											`auth.sign-up-with.${provider.id}`,
-											`Sign up with ${provider.name}`,
-										)}
+										{t(`auth.sign-up-with.${provider.id}`, `Sign up with ${provider.name}`)}
 									</span>
 								</TooltipContent>
 							</Tooltip>
@@ -155,9 +142,7 @@ export function SignupForm({
 
 	const handleTurnstileError = () => {
 		setTurnstileToken(null);
-		setError(
-			t("auth.turnstile-error", "Verification failed. Please try again."),
-		);
+		setError(t("auth.turnstile-error", "Verification failed. Please try again."));
 		turnstileRef.current?.reset();
 	};
 
@@ -211,10 +196,7 @@ export function SignupForm({
 				if (turnstileConfig?.enabled && turnstileToken) {
 					const verifyResult = await verifyTurnstileWithServer(turnstileToken);
 					if (!verifyResult.success) {
-						setError(
-							verifyResult.error ||
-								t("auth.turnstile-failed", "Verification failed."),
-						);
+						setError(verifyResult.error || t("auth.turnstile-failed", "Verification failed."));
 						setTurnstileToken(null);
 						turnstileRef.current?.reset();
 						setIsLoading(false);
@@ -234,10 +216,7 @@ export function SignupForm({
 				});
 
 				if (signupResult.error) {
-					setError(
-						signupResult.error.message ||
-							t("auth.signup-failed", "Failed to sign up"),
-					);
+					setError(signupResult.error.message || t("auth.signup-failed", "Failed to sign up"));
 					if (turnstileConfig?.enabled) {
 						setTurnstileToken(null);
 						turnstileRef.current?.reset();
@@ -268,9 +247,7 @@ export function SignupForm({
 				}
 			} catch (err) {
 				setError(
-					err instanceof Error
-						? err.message
-						: t("common.error-occurred", "An error occurred"),
+					err instanceof Error ? err.message : t("common.error-occurred", "An error occurred"),
 				);
 				if (turnstileConfig?.enabled) {
 					setTurnstileToken(null);
@@ -282,8 +259,7 @@ export function SignupForm({
 		},
 	});
 	const formData = useStore(form.store, (state) => state.values);
-	const { enabledProviders, isLoading: providersLoading } =
-		useEnabledProviders();
+	const { enabledProviders, isLoading: providersLoading } = useEnabledProviders();
 	const displayedOrganizationName = initialOrganizationName ?? organizationName;
 
 	// Validate invite code on mount
@@ -293,9 +269,7 @@ export function SignupForm({
 				.then((result) => {
 					if (result.success && result.data?.valid) {
 						setInviteCodeValid(true);
-						setOrganizationName(
-							result.data.inviteCode?.organization?.name || null,
-						);
+						setOrganizationName(result.data.inviteCode?.organization?.name || null);
 					} else {
 						setInviteCodeValid(false);
 					}
@@ -326,9 +300,7 @@ export function SignupForm({
 			return enabledProviders;
 		}
 
-		return enabledProviders.filter((provider) =>
-			allowedSocialProviders.includes(provider.id),
-		);
+		return enabledProviders.filter((provider) => allowedSocialProviders.includes(provider.id));
 	})();
 	const getFieldErrorId = (field: string) => `${field}-error`;
 
@@ -380,9 +352,7 @@ export function SignupForm({
 		setError(null);
 
 		if (turnstileConfig?.enabled && !turnstileToken) {
-			setError(
-				t("auth.turnstile-required", "Please complete the verification."),
-			);
+			setError(t("auth.turnstile-required", "Please complete the verification."));
 			return;
 		}
 
@@ -397,8 +367,7 @@ export function SignupForm({
 			// For social signup with invite code, redirect to join page after auth
 			// The join page will process the code for the new user
 			const callbackURL =
-				sanitizedCallbackUrl ||
-				(inviteCode && inviteCodeValid ? `/join/${inviteCode}` : "/");
+				sanitizedCallbackUrl || (inviteCode && inviteCodeValid ? `/join/${inviteCode}` : "/");
 
 			await authClient.signIn.social({
 				provider,
@@ -409,10 +378,7 @@ export function SignupForm({
 			setError(
 				err instanceof Error
 					? err.message
-					: t(
-							"auth.social-signup-error",
-							"An error occurred during social sign-up",
-						),
+					: t("auth.social-signup-error", "An error occurred during social sign-up"),
 			);
 		}
 	};
@@ -427,30 +393,22 @@ export function SignupForm({
 			{...props}
 		>
 			{error ? (
-				<div
-					className="rounded-md bg-destructive/15 p-3 text-destructive text-sm"
-					role="alert"
-				>
+				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm" role="alert">
 					{error}
 				</div>
 			) : null}
 
 			{/* Show organization info when signing up via invite */}
-			{displayedOrganizationName &&
-				(isInvitationSignup || (inviteCode && inviteCodeValid)) && (
-					<Alert className="border-primary/20 bg-primary/5">
-						<IconBuilding className="size-4" />
-						<AlertDescription>
-							{t(
-								"auth.signing-up-to-join",
-								"You're signing up to join {organization}",
-								{
-									organization: displayedOrganizationName,
-								},
-							)}
-						</AlertDescription>
-					</Alert>
-				)}
+			{displayedOrganizationName && (isInvitationSignup || (inviteCode && inviteCodeValid)) && (
+				<Alert className="border-primary/20 bg-primary/5">
+					<IconBuilding className="size-4" />
+					<AlertDescription>
+						{t("auth.signing-up-to-join", "You're signing up to join {organization}", {
+							organization: displayedOrganizationName,
+						})}
+					</AlertDescription>
+				</Alert>
+			)}
 
 			{inviteCode && inviteCodeValid === false && (
 				<Alert variant="destructive">
@@ -479,9 +437,7 @@ export function SignupForm({
 								const errorMessage = getFieldError(field.state.meta.errors);
 								return (
 									<div className="grid gap-3">
-										<Label htmlFor="firstName">
-											{t("auth.first-name", "First Name")}
-										</Label>
+										<Label htmlFor="firstName">{t("auth.first-name", "First Name")}</Label>
 										<Input
 											aria-describedby={getDescribedBy(
 												errorMessage && getFieldErrorId("firstName"),
@@ -498,10 +454,7 @@ export function SignupForm({
 											value={field.state.value}
 										/>
 										{errorMessage ? (
-											<p
-												className="text-destructive text-sm"
-												id={getFieldErrorId("firstName")}
-											>
+											<p className="text-destructive text-sm" id={getFieldErrorId("firstName")}>
 												{errorMessage}
 											</p>
 										) : null}
@@ -521,13 +474,9 @@ export function SignupForm({
 								const errorMessage = getFieldError(field.state.meta.errors);
 								return (
 									<div className="grid gap-3">
-										<Label htmlFor="lastName">
-											{t("auth.last-name", "Last Name")}
-										</Label>
+										<Label htmlFor="lastName">{t("auth.last-name", "Last Name")}</Label>
 										<Input
-											aria-describedby={getDescribedBy(
-												errorMessage && getFieldErrorId("lastName"),
-											)}
+											aria-describedby={getDescribedBy(errorMessage && getFieldErrorId("lastName"))}
 											aria-invalid={errorMessage ? "true" : "false"}
 											id="lastName"
 											name={field.name}
@@ -540,10 +489,7 @@ export function SignupForm({
 											value={field.state.value}
 										/>
 										{errorMessage ? (
-											<p
-												className="text-destructive text-sm"
-												id={getFieldErrorId("lastName")}
-											>
+											<p className="text-destructive text-sm" id={getFieldErrorId("lastName")}>
 												{errorMessage}
 											</p>
 										) : null}
@@ -571,9 +517,7 @@ export function SignupForm({
 											errorMessage && getFieldErrorId("email"),
 										)}
 										aria-invalid={errorMessage ? "true" : "false"}
-										className={
-											isInvitationSignup ? "bg-muted/40 font-medium" : undefined
-										}
+										className={isInvitationSignup ? "bg-muted/40 font-medium" : undefined}
 										id="email"
 										name={field.name}
 										autoComplete="email"
@@ -581,19 +525,13 @@ export function SignupForm({
 										readOnly={isInvitationSignup}
 										onBlur={field.handleBlur}
 										onChange={(e) => field.handleChange(e.target.value)}
-										placeholder={t(
-											"auth.email-placeholder",
-											"jane@example.com…",
-										)}
+										placeholder={t("auth.email-placeholder", "jane@example.com…")}
 										required
 										type="email"
 										value={field.state.value}
 									/>
 									{isInvitationSignup ? (
-										<p
-											className="text-muted-foreground text-sm"
-											id="email-invite-note"
-										>
+										<p className="text-muted-foreground text-sm" id="email-invite-note">
 											{t(
 												"auth.invited-email-locked",
 												"Use the invited email address for this account so you can join the organization automatically.",
@@ -601,10 +539,7 @@ export function SignupForm({
 										</p>
 									) : null}
 									{errorMessage ? (
-										<p
-											className="text-destructive text-sm"
-											id={getFieldErrorId("email")}
-										>
+										<p className="text-destructive text-sm" id={getFieldErrorId("email")}>
 											{errorMessage}
 										</p>
 									) : null}
@@ -636,9 +571,7 @@ export function SignupForm({
 								const errorMessage = getFieldError(field.state.meta.errors);
 								return (
 									<>
-										<Label htmlFor="password">
-											{t("auth.password", "Password")}
-										</Label>
+										<Label htmlFor="password">{t("auth.password", "Password")}</Label>
 										<PasswordVisibilityInput
 											aria-describedby={getDescribedBy(
 												"password-guidance",
@@ -662,10 +595,7 @@ export function SignupForm({
 											password={formData.password}
 										/>
 										{errorMessage ? (
-											<p
-												className="text-destructive text-sm"
-												id={getFieldErrorId("password")}
-											>
+											<p className="text-destructive text-sm" id={getFieldErrorId("password")}>
 												{errorMessage}
 											</p>
 										) : null}

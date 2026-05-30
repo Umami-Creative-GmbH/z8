@@ -7,18 +7,10 @@ import { Suspense, useEffect, useReducer, useRef } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-	InputOTP,
-	InputOTPGroup,
-	InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	getPostSignInRedirectUrl,
 	sanitizeCallbackUrl,
@@ -169,9 +161,7 @@ const LoginCredentialsFields = function LoginCredentialsFields({
 					value={email}
 					disabled={requires2FA}
 				/>
-				{fieldErrors.email ? (
-					<p className="text-destructive text-sm">{fieldErrors.email}</p>
-				) : null}
+				{fieldErrors.email ? <p className="text-destructive text-sm">{fieldErrors.email}</p> : null}
 			</div>
 			<div className="grid gap-3">
 				<Label htmlFor="password">{t("auth.password", "Password")}</Label>
@@ -232,12 +222,7 @@ const LoginAlternativeAuth = function LoginAlternativeAuth({
 				{showPasskey && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={onPasskeyLogin}
-								disabled={isLoading}
-							>
+							<Button type="button" variant="outline" onClick={onPasskeyLogin} disabled={isLoading}>
 								<IconKey className="size-4" />
 								<span className="sr-only">
 									{t("auth.login-with.passkey", "Login with Passkey")}
@@ -245,19 +230,14 @@ const LoginAlternativeAuth = function LoginAlternativeAuth({
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
-							<span className="text-sm">
-								{t("auth.login-with.passkey", "Login with Passkey")}
-							</span>
+							<span className="text-sm">{t("auth.login-with.passkey", "Login with Passkey")}</span>
 						</TooltipContent>
 					</Tooltip>
 				)}
 
 				{providersLoading
 					? SOCIAL_SKELETON_KEYS.slice(0, skeletonCount).map((key) => (
-							<div
-								key={key}
-								className="h-10 animate-pulse rounded-md bg-muted"
-							/>
+							<div key={key} className="h-10 animate-pulse rounded-md bg-muted" />
 						))
 					: filteredProviders.map((provider) => (
 							<Tooltip key={provider.id}>
@@ -270,19 +250,13 @@ const LoginAlternativeAuth = function LoginAlternativeAuth({
 									>
 										<provider.icon className="size-4" />
 										<span className="sr-only">
-											{t(
-												`auth.login-with.${provider.id}`,
-												`Login with ${provider.name}`,
-											)}
+											{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
 										</span>
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
 									<span className="text-sm">
-										{t(
-											`auth.login-with.${provider.id}`,
-											`Login with ${provider.name}`,
-										)}
+										{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
 									</span>
 								</TooltipContent>
 							</Tooltip>
@@ -292,10 +266,7 @@ const LoginAlternativeAuth = function LoginAlternativeAuth({
 	);
 };
 
-function LoginFormContent({
-	className,
-	...props
-}: React.ComponentProps<"div">) {
+function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
 	const { push } = useRouter();
 	const searchParams = useSearchParams();
@@ -308,8 +279,7 @@ function LoginFormContent({
 	);
 	const postSignInRedirectUrl = getPostSignInRedirectUrl(callbackUrl);
 	const [state, dispatch] = useReducer(formReducer, initialState);
-	const { enabledProviders, isLoading: providersLoading } =
-		useEnabledProviders();
+	const { enabledProviders, isLoading: providersLoading } = useEnabledProviders();
 
 	// Destructure for easier access
 	const {
@@ -367,9 +337,7 @@ function LoginFormContent({
 			return enabledProviders;
 		}
 
-		return enabledProviders.filter((provider) =>
-			allowedSocialProviders.includes(provider.id),
-		);
+		return enabledProviders.filter((provider) => allowedSocialProviders.includes(provider.id));
 	})();
 
 	// Reset loading state when component mounts (e.g., after logout redirect)
@@ -463,10 +431,7 @@ function LoginFormContent({
 		if (turnstileConfig?.enabled && !turnstileToken) {
 			dispatch({
 				type: "SET_ERROR",
-				error: t(
-					"auth.turnstile-required",
-					"Please complete the verification.",
-				),
+				error: t("auth.turnstile-required", "Please complete the verification."),
 			});
 			dispatch({ type: "SET_LOADING", loading: false });
 			return;
@@ -479,9 +444,7 @@ function LoginFormContent({
 				if (!verifyResult.success) {
 					dispatch({
 						type: "SET_ERROR",
-						error:
-							verifyResult.error ||
-							t("auth.turnstile-failed", "Verification failed."),
+						error: verifyResult.error || t("auth.turnstile-failed", "Verification failed."),
 					});
 					dispatch({ type: "SET_TURNSTILE_TOKEN", token: null });
 					turnstileRef.current?.reset();
@@ -519,9 +482,7 @@ function LoginFormContent({
 						} else {
 							dispatch({
 								type: "SET_ERROR",
-								error:
-									ctx.error.message ||
-									t("auth.login-failed", "Failed to sign in"),
+								error: ctx.error.message || t("auth.login-failed", "Failed to sign in"),
 							});
 						}
 					},
@@ -534,9 +495,7 @@ function LoginFormContent({
 				if (signInResult.error.status !== 403) {
 					dispatch({
 						type: "SET_ERROR",
-						error:
-							signInResult.error.message ||
-							t("auth.login-failed", "Failed to sign in"),
+						error: signInResult.error.message || t("auth.login-failed", "Failed to sign in"),
 					});
 				}
 				// Reset Turnstile for retry (tokens are single-use)
@@ -555,8 +514,7 @@ function LoginFormContent({
 				try {
 					const userResponse = await fetch("/api/user/onboarding-status");
 					if (userResponse.ok) {
-						const { onboardingComplete, onboardingStep } =
-							await userResponse.json();
+						const { onboardingComplete, onboardingStep } = await userResponse.json();
 
 						if (!onboardingComplete) {
 							// Resume onboarding from last step
@@ -589,9 +547,7 @@ function LoginFormContent({
 		}
 	};
 
-	const handleSocialLogin = async (
-		provider: "google" | "github" | "linkedin" | "apple",
-	) => {
+	const handleSocialLogin = async (provider: "google" | "github" | "linkedin" | "apple") => {
 		dispatch({ type: "SET_LOADING", loading: true });
 		dispatch({ type: "SET_ERROR", error: null });
 
@@ -616,10 +572,7 @@ function LoginFormContent({
 				error:
 					err instanceof Error
 						? err.message
-						: t(
-								"auth.social-login-error",
-								"An error occurred during social sign-in",
-							),
+						: t("auth.social-login-error", "An error occurred during social sign-in"),
 			});
 		}
 	};
@@ -645,8 +598,7 @@ function LoginFormContent({
 				try {
 					const userResponse = await fetch("/api/user/onboarding-status");
 					if (userResponse.ok) {
-						const { onboardingComplete, onboardingStep } =
-							await userResponse.json();
+						const { onboardingComplete, onboardingStep } = await userResponse.json();
 
 						if (!onboardingComplete) {
 							push(getOnboardingStepPath(onboardingStep));
@@ -672,10 +624,7 @@ function LoginFormContent({
 		if (!ssoProviderId) {
 			dispatch({
 				type: "SET_ERROR",
-				error: t(
-					"auth.sso-not-configured",
-					"SSO is not configured for this domain",
-				),
+				error: t("auth.sso-not-configured", "SSO is not configured for this domain"),
 			});
 			return;
 		}
@@ -722,8 +671,7 @@ function LoginFormContent({
 				dispatch({
 					type: "SET_ERROR",
 					error:
-						result.error.message ||
-						t("auth.2fa-verification-failed", "2FA verification failed"),
+						result.error.message || t("auth.2fa-verification-failed", "2FA verification failed"),
 				});
 				dispatch({ type: "SET_LOADING", loading: false });
 			} else {
@@ -731,8 +679,7 @@ function LoginFormContent({
 				try {
 					const userResponse = await fetch("/api/user/onboarding-status");
 					if (userResponse.ok) {
-						const { onboardingComplete, onboardingStep } =
-							await userResponse.json();
+						const { onboardingComplete, onboardingStep } = await userResponse.json();
 
 						if (!onboardingComplete) {
 							// Resume onboarding from last step
@@ -754,10 +701,7 @@ function LoginFormContent({
 				error:
 					err instanceof Error
 						? err.message
-						: t(
-								"auth.2fa-verification-error",
-								"An error occurred during 2FA verification",
-							),
+						: t("auth.2fa-verification-error", "An error occurred during 2FA verification"),
 			});
 			dispatch({ type: "SET_LOADING", loading: false });
 		}
@@ -772,19 +716,12 @@ function LoginFormContent({
 			{...props}
 		>
 			{error ? (
-				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">
-					{error}
-				</div>
+				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">{error}</div>
 			) : null}
 
 			{/* SSO Button - show prominently when SSO is the primary method */}
 			{showSSO && !requires2FA && (
-				<Button
-					type="button"
-					className="w-full"
-					onClick={handleSSOLogin}
-					disabled={isLoading}
-				>
+				<Button type="button" className="w-full" onClick={handleSSOLogin} disabled={isLoading}>
 					<IconFingerprint className="mr-2 size-4" />
 					{t("auth.login-with-sso", "Sign in with SSO")}
 				</Button>
@@ -797,9 +734,7 @@ function LoginFormContent({
 						<span className="w-full border-t" />
 					</div>
 					<div className="relative flex justify-center text-xs uppercase">
-						<span className="bg-card px-2 text-muted-foreground">
-							{t("auth.or", "or")}
-						</span>
+						<span className="bg-card px-2 text-muted-foreground">{t("auth.or", "or")}</span>
 					</div>
 				</div>
 			)}
@@ -820,9 +755,7 @@ function LoginFormContent({
 			{requires2FA ? (
 				<>
 					<div className="grid gap-3">
-						<Label htmlFor="otp">
-							{t("auth.2fa-code", "Two-Factor Authentication Code")}
-						</Label>
+						<Label htmlFor="otp">{t("auth.2fa-code", "Two-Factor Authentication Code")}</Label>
 						<div className="flex justify-center">
 							<InputOTP
 								maxLength={6}
@@ -840,10 +773,7 @@ function LoginFormContent({
 							</InputOTP>
 						</div>
 						<p className="text-sm text-muted-foreground text-center">
-							{t(
-								"auth.2fa-enter-code",
-								"Enter the 6-digit code from your authenticator app",
-							)}
+							{t("auth.2fa-enter-code", "Enter the 6-digit code from your authenticator app")}
 						</p>
 					</div>
 					<div className="flex items-center justify-center space-x-2">
@@ -890,9 +820,7 @@ function LoginFormContent({
 
 					<Button
 						className="w-full"
-						disabled={
-							isLoading || (turnstileConfig?.enabled && !turnstileToken)
-						}
+						disabled={isLoading || (turnstileConfig?.enabled && !turnstileToken)}
 						type="submit"
 					>
 						{isLoading ? (
@@ -908,10 +836,7 @@ function LoginFormContent({
 			) : null}
 			{!requires2FA && showEmailPassword && (
 				<div className="-mt-6 text-center">
-					<Link
-						className="text-xs underline-offset-2 hover:underline"
-						href="/forgot-password"
-					>
+					<Link className="text-xs underline-offset-2 hover:underline" href="/forgot-password">
 						{t("auth.forgot-password", "Forgot your password?")}
 					</Link>
 				</div>

@@ -25,9 +25,7 @@ export default async function ImportPage() {
 		<div className="p-6">
 			<div className="mx-auto max-w-5xl space-y-6">
 				<div>
-					<h1 className="text-2xl font-semibold">
-						{t("settings.import.title", "Import Data")}
-					</h1>
+					<h1 className="text-2xl font-semibold">{t("settings.import.title", "Import Data")}</h1>
 					<p className="text-muted-foreground">
 						{t(
 							"settings.import.description",

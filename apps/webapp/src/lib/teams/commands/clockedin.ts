@@ -11,11 +11,7 @@ import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, workPeriod } from "@/db/schema";
 import { fmtTime, getBotTranslate } from "@/lib/bot-platform/i18n";
-import type {
-	BotCommand,
-	BotCommandContext,
-	BotCommandResponse,
-} from "@/lib/bot-platform/types";
+import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("TeamsCommand:ClockedIn");
@@ -80,16 +76,18 @@ export const clockedInCommand: BotCommand = {
 			if (activeWorkPeriods.length === 0) {
 				return {
 					type: "text",
-					text: t("bot.cmd.clockedin.noneActive", "None of your {total} team members are currently clocked in.", { total: orgManagedEmployees.length }),
+					text: t(
+						"bot.cmd.clockedin.noneActive",
+						"None of your {total} team members are currently clocked in.",
+						{ total: orgManagedEmployees.length },
+					),
 				};
 			}
 
 			// Build response with details
 			const now = DateTime.now().setZone(ctx.config.digestTimezone);
 			const lines = activeWorkPeriods.map((entry) => {
-				const clockInTime = DateTime.fromJSDate(entry.startTime).setZone(
-					ctx.config.digestTimezone,
-				);
+				const clockInTime = DateTime.fromJSDate(entry.startTime).setZone(ctx.config.digestTimezone);
 				const duration = now.diff(clockInTime, ["hours", "minutes"]);
 				const hours = Math.floor(duration.hours);
 				const minutes = Math.floor(duration.minutes % 60);

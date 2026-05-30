@@ -1,10 +1,18 @@
 "use client";
 
 import { IconCheck, IconLoader2, IconUserCheck, IconUserX, IconX } from "@tabler/icons-react";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+	approvePendingMember,
+	bulkApprovePendingMembers,
+	bulkRejectPendingMembers,
+	listPendingMembers,
+	rejectPendingMember,
+} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
+import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -35,15 +43,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-	listPendingMembers,
-	approvePendingMember,
-	rejectPendingMember,
-	bulkApprovePendingMembers,
-	bulkRejectPendingMembers,
-} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
 import type { PendingMember } from "@/lib/effect/services/pending-member.service";
-import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import { queryKeys } from "@/lib/query";
 
 interface PendingMembersCardProps {

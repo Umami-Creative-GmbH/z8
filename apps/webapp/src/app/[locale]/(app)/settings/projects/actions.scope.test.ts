@@ -53,7 +53,12 @@ vi.mock("@/db/schema", () => ({
 		createdAt: "createdAt",
 		$inferInsert: {},
 	},
-	projectAssignment: { id: "id", projectId: "projectId", employeeId: "employeeId", teamId: "teamId" },
+	projectAssignment: {
+		id: "id",
+		projectId: "projectId",
+		employeeId: "employeeId",
+		teamId: "teamId",
+	},
 	projectManager: { id: "id", projectId: "projectId", employeeId: "employeeId" },
 	projectNotificationState: { projectId: "projectId" },
 	team: { id: "id", organizationId: "organizationId", name: "name" },
@@ -177,7 +182,10 @@ vi.mock("@/db", () => ({
 
 					return {
 						values: vi.fn(async (values: unknown) => {
-							if (table?.employeeId === "employeeId" && mockState.transactionProjectManagerShouldFail) {
+							if (
+								table?.employeeId === "employeeId" &&
+								mockState.transactionProjectManagerShouldFail
+							) {
 								throw new Error("project-manager-insert-failed");
 							}
 

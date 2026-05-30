@@ -150,7 +150,9 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 													</h2>
 												</CardTitle>
 												<CardDescription>
-													{item.descriptionKey ? t(item.descriptionKey, item.description) : item.description}
+													{item.descriptionKey
+														? t(item.descriptionKey, item.description)
+														: item.description}
 												</CardDescription>
 											</div>
 											<Badge variant={item.status === "complete" ? "secondary" : "outline"}>
@@ -167,7 +169,9 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 								<div className="flex flex-wrap items-center gap-3">
 									<Button asChild size="sm">
 										<Link href={item.href}>
-											{item.actionLabelKey ? t(item.actionLabelKey, item.actionLabel) : item.actionLabel}
+											{item.actionLabelKey
+												? t(item.actionLabelKey, item.actionLabel)
+												: item.actionLabel}
 										</Link>
 									</Button>
 									{item.canToggleManualCompletion ? (

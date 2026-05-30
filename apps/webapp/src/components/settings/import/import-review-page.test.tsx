@@ -55,7 +55,9 @@ describe("ImportReviewPage", () => {
 				organizationId="org_1"
 				batchId="batch_1"
 				summary={{ ...baseSummary, blockedRows: 1 }}
-				rows={[{ ...acceptedRow, id: "row_blocked", rowStatus: "blocked", issueSeverity: "blocking" }]}
+				rows={[
+					{ ...acceptedRow, id: "row_blocked", rowStatus: "blocked", issueSeverity: "blocking" },
+				]}
 			/>,
 		);
 
@@ -107,7 +109,9 @@ describe("ImportReviewPage", () => {
 				organizationId="org_1"
 				batchId="batch_1"
 				summary={{ ...baseSummary, blockedRows: 1 }}
-				rows={[{ ...acceptedRow, id: "row_blocked", rowStatus: "blocked", issueSeverity: "blocking" }]}
+				rows={[
+					{ ...acceptedRow, id: "row_blocked", rowStatus: "blocked", issueSeverity: "blocking" },
+				]}
 			/>,
 		);
 

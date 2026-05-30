@@ -2,11 +2,7 @@ import { index, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-co
 import { user } from "../auth-schema";
 
 export const appAuthTypeEnum = pgEnum("app_auth_type", ["mobile", "desktop"]);
-export const appAuthCodeStatusEnum = pgEnum("app_auth_code_status", [
-	"pending",
-	"used",
-	"expired",
-]);
+export const appAuthCodeStatusEnum = pgEnum("app_auth_code_status", ["pending", "used", "expired"]);
 
 export const appAuthCode = pgTable(
 	"app_auth_code",

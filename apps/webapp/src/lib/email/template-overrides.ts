@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { organizationEmailTemplate, type EmailTemplateKey } from "@/db/schema";
+import { type EmailTemplateKey, organizationEmailTemplate } from "@/db/schema";
 
 export interface EnabledOrganizationEmailTemplate {
 	subject: string;

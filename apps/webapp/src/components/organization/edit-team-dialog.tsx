@@ -62,11 +62,15 @@ export function EditTeamDialog({
 			}),
 		onSuccess: (result) => {
 			if (!result.success) {
-				toast.error(result.error || t("organization.teams.edit.updateError", "Failed to update team"));
+				toast.error(
+					result.error || t("organization.teams.edit.updateError", "Failed to update team"),
+				);
 				return;
 			}
 			void Promise.all([
-				queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(result.data.organizationId) }),
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.teams.list(result.data.organizationId),
+				}),
 				queryClient.invalidateQueries({ queryKey: queryKeys.teams.detail(result.data.id) }),
 			]);
 			toast.success(t("organization.teams.edit.updateSuccess", "Team updated successfully"));
@@ -104,7 +108,9 @@ export function EditTeamDialog({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{t("organization.teams.edit.title", "Edit Team")}</ActionPanelTitle>
-					<ActionPanelDescription>{t("organization.teams.edit.description", "Update team name and description")}</ActionPanelDescription>
+					<ActionPanelDescription>
+						{t("organization.teams.edit.description", "Update team name and description")}
+					</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				<form key={team.id} onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
@@ -115,33 +121,50 @@ export function EditTeamDialog({
 								id="name"
 								name="name"
 								defaultValue={team.name}
-								placeholder={t("organization.teams.edit.namePlaceholder", "Engineering, Sales, Marketing...")}
+								placeholder={t(
+									"organization.teams.edit.namePlaceholder",
+									"Engineering, Sales, Marketing...",
+								)}
 								required
 							/>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="description">{t("organization.teams.edit.descriptionLabel", "Description (Optional)")}</Label>
+							<Label htmlFor="description">
+								{t("organization.teams.edit.descriptionLabel", "Description (Optional)")}
+							</Label>
 							<Textarea
 								id="description"
 								name="description"
 								defaultValue={team.description || ""}
-								placeholder={t("organization.teams.edit.descriptionPlaceholder", "A brief description of this team")}
+								placeholder={t(
+									"organization.teams.edit.descriptionPlaceholder",
+									"A brief description of this team",
+								)}
 								rows={3}
 							/>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="primaryManagerId">{t("organization.teams.edit.fallbackManagerLabel", "Fallback Manager")}</Label>
+							<Label htmlFor="primaryManagerId">
+								{t("organization.teams.edit.fallbackManagerLabel", "Fallback Manager")}
+							</Label>
 							<Select
 								name="primaryManagerId"
 								defaultValue={team.primaryManagerId ?? NO_MANAGER_VALUE}
 							>
 								<SelectTrigger id="primaryManagerId">
-									<SelectValue placeholder={t("organization.teams.edit.fallbackManagerPlaceholder", "Select a fallback manager")} />
+									<SelectValue
+										placeholder={t(
+											"organization.teams.edit.fallbackManagerPlaceholder",
+											"Select a fallback manager",
+										)}
+									/>
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value={NO_MANAGER_VALUE}>{t("organization.teams.edit.noFallbackManager", "No fallback manager")}</SelectItem>
+									<SelectItem value={NO_MANAGER_VALUE}>
+										{t("organization.teams.edit.noFallbackManager", "No fallback manager")}
+									</SelectItem>
 									{managerOptions.map((manager) => (
 										<SelectItem key={manager.employeeId} value={manager.employeeId}>
 											{manager.name}
@@ -151,7 +174,10 @@ export function EditTeamDialog({
 								</SelectContent>
 							</Select>
 							<p className="text-xs text-muted-foreground">
-								{t("organization.teams.edit.fallbackManagerHelp", "Used for approvals when a team member has no direct manager.")}
+								{t(
+									"organization.teams.edit.fallbackManagerHelp",
+									"Used for approvals when a team member has no direct manager.",
+								)}
 							</p>
 						</div>
 					</ActionPanelBody>

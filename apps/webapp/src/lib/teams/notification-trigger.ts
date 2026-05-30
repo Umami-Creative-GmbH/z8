@@ -6,8 +6,8 @@
  */
 
 import { createLogger } from "@/lib/logger";
-import { isTeamsEnabledForOrganization, getTenantConfigByOrganization } from "./tenant-resolver";
 import { sendApprovalCardToManager } from "./approval-handler";
+import { getTenantConfigByOrganization, isTeamsEnabledForOrganization } from "./tenant-resolver";
 
 const logger = createLogger("TeamsNotificationTrigger");
 
@@ -29,20 +29,14 @@ export async function triggerApprovalNotification(
 		// Check if Teams is enabled for this org
 		const teamsEnabled = await isTeamsEnabledForOrganization(organizationId);
 		if (!teamsEnabled) {
-			logger.debug(
-				{ organizationId },
-				"Teams not enabled, skipping approval notification",
-			);
+			logger.debug({ organizationId }, "Teams not enabled, skipping approval notification");
 			return;
 		}
 
 		// Check if approvals are enabled
 		const config = await getTenantConfigByOrganization(organizationId);
 		if (!config?.enableApprovals) {
-			logger.debug(
-				{ organizationId },
-				"Teams approvals disabled, skipping notification",
-			);
+			logger.debug({ organizationId }, "Teams approvals disabled, skipping notification");
 			return;
 		}
 

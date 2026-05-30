@@ -15,9 +15,13 @@ vi.mock("@/navigation", () => ({
 }));
 
 vi.mock("@/components/settings/export-operations/export-operations-date-time", () => ({
-	ExportOperationsDateTime: ({ value, emptyLabel }: { value: Date | string | null; emptyLabel?: string }) => (
-		<span>{value ? "formatted-date-time" : (emptyLabel ?? "")}</span>
-	),
+	ExportOperationsDateTime: ({
+		value,
+		emptyLabel,
+	}: {
+		value: Date | string | null;
+		emptyLabel?: string;
+	}) => <span>{value ? "formatted-date-time" : (emptyLabel ?? "")}</span>,
 }));
 
 vi.mock("@/components/ui/card", () => ({
@@ -123,9 +127,13 @@ describe("ExportOperationsDashboard", () => {
 				.getAttribute("href"),
 		).toBe("/settings/payroll-export");
 
-		const upcomingRunsSection = screen.getByRole("heading", { name: "Upcoming runs" }).closest("section");
+		const upcomingRunsSection = screen
+			.getByRole("heading", { name: "Upcoming runs" })
+			.closest("section");
 		expect(upcomingRunsSection).toBeTruthy();
-		expect(within(upcomingRunsSection as HTMLElement).getByText("Weekly payroll export")).toBeTruthy();
+		expect(
+			within(upcomingRunsSection as HTMLElement).getByText("Weekly payroll export"),
+		).toBeTruthy();
 		expect(
 			within(upcomingRunsSection as HTMLElement)
 				.getByRole("link", {
@@ -134,12 +142,22 @@ describe("ExportOperationsDashboard", () => {
 				.getAttribute("href"),
 		).toBe("/settings/scheduled-exports");
 
-		const recentActivitySection = screen.getByRole("heading", { name: "Recent activity" }).closest("section");
+		const recentActivitySection = screen
+			.getByRole("heading", { name: "Recent activity" })
+			.closest("section");
 		expect(recentActivitySection).toBeTruthy();
-		expect(within(recentActivitySection as HTMLElement).getByText("Audit pack generated")).toBeTruthy();
-		expect(within(recentActivitySection as HTMLElement).getByText("Expanding lineage")).toBeTruthy();
-		expect(within(recentActivitySection as HTMLElement).queryByText("Lineage Expanding")).toBeNull();
-		expect(within(recentActivitySection as HTMLElement).queryByText("lineage_expanding")).toBeNull();
+		expect(
+			within(recentActivitySection as HTMLElement).getByText("Audit pack generated"),
+		).toBeTruthy();
+		expect(
+			within(recentActivitySection as HTMLElement).getByText("Expanding lineage"),
+		).toBeTruthy();
+		expect(
+			within(recentActivitySection as HTMLElement).queryByText("Lineage Expanding"),
+		).toBeNull();
+		expect(
+			within(recentActivitySection as HTMLElement).queryByText("lineage_expanding"),
+		).toBeNull();
 		expect(
 			within(recentActivitySection as HTMLElement)
 				.getByRole("link", {
@@ -170,8 +188,12 @@ describe("ExportOperationsDashboard", () => {
 			/>,
 		);
 
-		expect(screen.getByText("Counts are based on the export data that could be loaded.")).toBeTruthy();
-		expect(screen.getByText("Some alerts may be incomplete while export data is unavailable.")).toBeTruthy();
+		expect(
+			screen.getByText("Counts are based on the export data that could be loaded."),
+		).toBeTruthy();
+		expect(
+			screen.getByText("Some alerts may be incomplete while export data is unavailable."),
+		).toBeTruthy();
 		expect(screen.getByText("Scheduled export data is temporarily unavailable.")).toBeTruthy();
 		expect(screen.getByText("Some activity data is temporarily unavailable.")).toBeTruthy();
 		expect(screen.getByText("Payroll export failed")).toBeTruthy();
@@ -205,7 +227,9 @@ describe("ExportOperationsDashboard", () => {
 			/>,
 		);
 
-		expect(screen.getByText("Some alerts may be incomplete while export data is unavailable.")).toBeTruthy();
+		expect(
+			screen.getByText("Some alerts may be incomplete while export data is unavailable."),
+		).toBeTruthy();
 		expect(screen.getByText("Some activity data is temporarily unavailable.")).toBeTruthy();
 		expect(screen.queryByText("No alerts right now")).toBeNull();
 		expect(screen.queryByText("No recent export activity")).toBeNull();

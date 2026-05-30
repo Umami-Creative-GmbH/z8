@@ -55,26 +55,25 @@ describe("time correction request safety", () => {
 	it.each([
 		["modular", modularSource],
 		["legacy", legacySource],
-	])(
-		"creates %s inactive correction entries and approval workflow in one transaction",
-		(_name, source) => {
-			const body = functionBody(source, "requestTimeCorrectionEffect");
-			const transactionIndex = body.indexOf("dbService.db.transaction");
-			const clockInIndex = Math.max(
-				body.indexOf("createTimeEntry("),
-				body.indexOf("createCorrectionEntry"),
-			);
-			const approvalIndex = body.indexOf("createTimeCorrectionApprovalWorkflow(transactionalDbService");
-			const emailIndex = body.indexOf("emailService.send");
+	])("creates %s inactive correction entries and approval workflow in one transaction", (_name, source) => {
+		const body = functionBody(source, "requestTimeCorrectionEffect");
+		const transactionIndex = body.indexOf("dbService.db.transaction");
+		const clockInIndex = Math.max(
+			body.indexOf("createTimeEntry("),
+			body.indexOf("createCorrectionEntry"),
+		);
+		const approvalIndex = body.indexOf(
+			"createTimeCorrectionApprovalWorkflow(transactionalDbService",
+		);
+		const emailIndex = body.indexOf("emailService.send");
 
-			expect(transactionIndex).toBeGreaterThanOrEqual(0);
-			expect(clockInIndex).toBeGreaterThan(transactionIndex);
-			expect(approvalIndex).toBeGreaterThan(transactionIndex);
-			expect(emailIndex).toBeGreaterThan(approvalIndex);
-			expect(body).toContain("isSuperseded: true");
-			expect(body).not.toContain("markTimeEntrySuperseded");
-		},
-	);
+		expect(transactionIndex).toBeGreaterThanOrEqual(0);
+		expect(clockInIndex).toBeGreaterThan(transactionIndex);
+		expect(approvalIndex).toBeGreaterThan(transactionIndex);
+		expect(emailIndex).toBeGreaterThan(approvalIndex);
+		expect(body).toContain("isSuperseded: true");
+		expect(body).not.toContain("markTimeEntrySuperseded");
+	});
 
 	it.each([
 		["modular", modularSource],
@@ -105,36 +104,36 @@ describe("time correction request safety", () => {
 		const body = functionBody(source, "editSameDayTimeEntry");
 
 		expect(body).toContain("Failed to verify edit policy. Please try again.");
-		expect(body).not.toContain('editCapability = { type: "direct", reason: "within_self_service" };');
+		expect(body).not.toContain(
+			'editCapability = { type: "direct", reason: "within_self_service" };',
+		);
 	});
 
 	it.each([
 		["modular", modularSource, "selectedWorkPeriod.endTime"],
 		["legacy", legacySource, "period.endTime"],
-	])(
-		"rejects %s direct clock-in-only edits after the existing clock-out",
-		(_name, source, existingClockOutExpression) => {
-			const body = functionBody(source, "editSameDayTimeEntry");
+	])("rejects %s direct clock-in-only edits after the existing clock-out", (_name, source, existingClockOutExpression) => {
+		const body = functionBody(source, "editSameDayTimeEntry");
 
-			expect(body).toContain(`const effectiveClockOut = correctedClockOutDate ?? ${existingClockOutExpression}`);
-			expect(body).toContain("if (effectiveClockOut && effectiveClockOut <= correctedClockInDate)");
-			expect(body).toContain("Clock out time must be after clock in time");
-		},
-	);
+		expect(body).toContain(
+			`const effectiveClockOut = correctedClockOutDate ?? ${existingClockOutExpression}`,
+		);
+		expect(body).toContain("if (effectiveClockOut && effectiveClockOut <= correctedClockInDate)");
+		expect(body).toContain("Clock out time must be after clock in time");
+	});
 
 	it.each([
 		["modular", modularSource, "selectedWorkPeriod.endTime"],
 		["legacy", legacySource, "period.endTime"],
-	])(
-		"rejects %s approval requests when clock-in-only correction is after the existing clock-out",
-		(_name, source, existingClockOutExpression) => {
-			const body = functionBody(source, "requestTimeCorrectionEffect");
+	])("rejects %s approval requests when clock-in-only correction is after the existing clock-out", (_name, source, existingClockOutExpression) => {
+		const body = functionBody(source, "requestTimeCorrectionEffect");
 
-			expect(body).toContain(`const effectiveClockOut = correctedClockOutDate ?? ${existingClockOutExpression}`);
-			expect(body).toContain("if (effectiveClockOut && effectiveClockOut <= correctedClockInDate)");
-			expect(body).toContain("Clock out time must be after clock in time");
-		},
-	);
+		expect(body).toContain(
+			`const effectiveClockOut = correctedClockOutDate ?? ${existingClockOutExpression}`,
+		);
+		expect(body).toContain("if (effectiveClockOut && effectiveClockOut <= correctedClockInDate)");
+		expect(body).toContain("Clock out time must be after clock in time");
+	});
 });
 
 describe("resolveCorrectionApprovalManager", () => {

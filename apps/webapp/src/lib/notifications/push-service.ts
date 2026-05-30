@@ -9,9 +9,9 @@ import { and, eq } from "drizzle-orm";
 import webpush from "web-push";
 import { db } from "@/db";
 import { pushSubscription } from "@/db/schema";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import type { NotificationType } from "./types";
-import { env } from "@/env";
 
 const logger = createLogger("PushService");
 

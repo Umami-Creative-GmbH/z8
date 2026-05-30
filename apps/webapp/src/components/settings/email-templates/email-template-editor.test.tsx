@@ -8,7 +8,13 @@ import { EmailTemplateEditor } from "./email-template-editor";
 
 vi.mock("next/dynamic", () => ({
 	default: () =>
-		function ReactEmailEditorMock({ className, placeholder }: { className?: string; placeholder?: string }) {
+		function ReactEmailEditorMock({
+			className,
+			placeholder,
+		}: {
+			className?: string;
+			placeholder?: string;
+		}) {
 			return (
 				<div data-testid="react-email-editor" className={className}>
 					{placeholder}

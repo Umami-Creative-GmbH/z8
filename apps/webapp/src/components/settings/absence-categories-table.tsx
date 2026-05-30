@@ -166,133 +166,133 @@ export function AbsenceCategoriesTable({
 	})();
 
 	const columns: ColumnDef<AbsenceCategoryForSettings>[] = [
-			{
-				accessorKey: "name",
-				header: t("settings.absenceCategories.header.name", "Name"),
-				cell: ({ row }) => {
-					const displayName = getAbsenceCategoryDisplayName(row.original, locale, t);
-					const displayDescription = getAbsenceCategoryDisplayDescription(row.original, locale, t);
+		{
+			accessorKey: "name",
+			header: t("settings.absenceCategories.header.name", "Name"),
+			cell: ({ row }) => {
+				const displayName = getAbsenceCategoryDisplayName(row.original, locale, t);
+				const displayDescription = getAbsenceCategoryDisplayDescription(row.original, locale, t);
 
-					return (
-						<div className="flex items-center gap-2">
-							{row.original.color ? (
-								<span
-									className="size-3 shrink-0 rounded-full border"
-									style={{ backgroundColor: row.original.color }}
-									title={t("settings.absenceCategories.colorIndicator", "Category color")}
-								/>
+				return (
+					<div className="flex items-center gap-2">
+						{row.original.color ? (
+							<span
+								className="size-3 shrink-0 rounded-full border"
+								style={{ backgroundColor: row.original.color }}
+								title={t("settings.absenceCategories.colorIndicator", "Category color")}
+							/>
+						) : null}
+						<div className="min-w-0">
+							<div className="font-medium">{displayName}</div>
+							{displayDescription ? (
+								<div className="break-words text-muted-foreground text-sm">
+									{displayDescription}
+								</div>
 							) : null}
-							<div className="min-w-0">
-								<div className="font-medium">{displayName}</div>
-								{displayDescription ? (
-									<div className="break-words text-muted-foreground text-sm">
-										{displayDescription}
-									</div>
-								) : null}
-							</div>
 						</div>
-					);
-				},
+					</div>
+				);
 			},
-			{
-				accessorKey: "type",
-				header: t("settings.absenceCategories.header.type", "Type"),
-				cell: ({ row }) => (
-					<Badge variant="secondary">{getCategoryTypeLabel(t, row.original.type)}</Badge>
+		},
+		{
+			accessorKey: "type",
+			header: t("settings.absenceCategories.header.type", "Type"),
+			cell: ({ row }) => (
+				<Badge variant="secondary">{getCategoryTypeLabel(t, row.original.type)}</Badge>
+			),
+		},
+		{
+			accessorKey: "requiresApproval",
+			header: t("settings.absenceCategories.header.approval", "Approval"),
+			cell: ({ row }) =>
+				row.original.requiresApproval ? (
+					<Badge variant="outline">
+						{t("settings.absenceCategories.approvalRequired", "Required")}
+					</Badge>
+				) : (
+					<span className="text-muted-foreground text-sm">
+						{t("settings.absenceCategories.noApproval", "Not required")}
+					</span>
 				),
-			},
-			{
-				accessorKey: "requiresApproval",
-				header: t("settings.absenceCategories.header.approval", "Approval"),
-				cell: ({ row }) =>
-					row.original.requiresApproval ? (
-						<Badge variant="outline">
-							{t("settings.absenceCategories.approvalRequired", "Required")}
-						</Badge>
-					) : (
-						<span className="text-muted-foreground text-sm">
-							{t("settings.absenceCategories.noApproval", "Not required")}
-						</span>
-					),
-			},
-			{
-				accessorKey: "countsAgainstVacation",
-				header: t("settings.absenceCategories.header.vacationBalance", "Vacation Balance"),
-				cell: ({ row }) =>
-					row.original.countsAgainstVacation ? (
-						<Badge variant="outline">
-							{t("settings.absenceCategories.countsAgainstVacation", "Deducts balance")}
-						</Badge>
-					) : (
-						<span className="text-muted-foreground text-sm">
-							{t("settings.absenceCategories.noVacationDeduction", "No deduction")}
-						</span>
-					),
-			},
-			{
-				accessorKey: "isActive",
-				header: t("settings.absenceCategories.header.status", "Status"),
-				cell: ({ row }) =>
-					row.original.isActive ? (
-						<Badge variant="outline">{t("settings.absenceCategories.active", "Active")}</Badge>
-					) : (
-						<Badge variant="secondary" className="text-muted-foreground">
-							{t("settings.absenceCategories.inactive", "Inactive")}
-						</Badge>
-					),
-			},
-			...(canManageCategories
-				? [
-						{
-							id: "actions",
-							cell: ({ row }: { row: { original: AbsenceCategoryForSettings } }) => {
-								const displayName = getAbsenceCategoryDisplayName(row.original, locale, t);
+		},
+		{
+			accessorKey: "countsAgainstVacation",
+			header: t("settings.absenceCategories.header.vacationBalance", "Vacation Balance"),
+			cell: ({ row }) =>
+				row.original.countsAgainstVacation ? (
+					<Badge variant="outline">
+						{t("settings.absenceCategories.countsAgainstVacation", "Deducts balance")}
+					</Badge>
+				) : (
+					<span className="text-muted-foreground text-sm">
+						{t("settings.absenceCategories.noVacationDeduction", "No deduction")}
+					</span>
+				),
+		},
+		{
+			accessorKey: "isActive",
+			header: t("settings.absenceCategories.header.status", "Status"),
+			cell: ({ row }) =>
+				row.original.isActive ? (
+					<Badge variant="outline">{t("settings.absenceCategories.active", "Active")}</Badge>
+				) : (
+					<Badge variant="secondary" className="text-muted-foreground">
+						{t("settings.absenceCategories.inactive", "Inactive")}
+					</Badge>
+				),
+		},
+		...(canManageCategories
+			? [
+					{
+						id: "actions",
+						cell: ({ row }: { row: { original: AbsenceCategoryForSettings } }) => {
+							const displayName = getAbsenceCategoryDisplayName(row.original, locale, t);
 
-								return (
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon"
-												className="size-8"
-												aria-label={`${t("common.openMenu", "Open menu")} ${displayName}`}
-											>
-												<IconDots aria-hidden="true" className="size-4" />
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem onClick={() => setEditingCategory(row.original)}>
-												<IconPencil aria-hidden="true" className="mr-2 size-4" />
-												{t("common.edit", "Edit")}
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => toggleActive(row.original)}
-												disabled={toggleActivePending}
-											>
-												{row.original.isActive ? (
-													<IconX aria-hidden="true" className="mr-2 size-4" />
-												) : (
-													<IconCheck aria-hidden="true" className="mr-2 size-4" />
-												)}
-												{row.original.isActive
-													? t("settings.absenceCategories.deactivate", "Deactivate")
-													: t("settings.absenceCategories.reactivate", "Reactivate")}
-											</DropdownMenuItem>
-											<DropdownMenuSeparator />
-											<DropdownMenuItem
-												className="text-destructive"
-												onClick={() => setCategoryToDelete(row.original)}
-											>
-												<IconTrash aria-hidden="true" className="mr-2 size-4" />
-												{t("common.delete", "Delete")}
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								);
-							},
+							return (
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											className="size-8"
+											aria-label={`${t("common.openMenu", "Open menu")} ${displayName}`}
+										>
+											<IconDots aria-hidden="true" className="size-4" />
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end">
+										<DropdownMenuItem onClick={() => setEditingCategory(row.original)}>
+											<IconPencil aria-hidden="true" className="mr-2 size-4" />
+											{t("common.edit", "Edit")}
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => toggleActive(row.original)}
+											disabled={toggleActivePending}
+										>
+											{row.original.isActive ? (
+												<IconX aria-hidden="true" className="mr-2 size-4" />
+											) : (
+												<IconCheck aria-hidden="true" className="mr-2 size-4" />
+											)}
+											{row.original.isActive
+												? t("settings.absenceCategories.deactivate", "Deactivate")
+												: t("settings.absenceCategories.reactivate", "Reactivate")}
+										</DropdownMenuItem>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											className="text-destructive"
+											onClick={() => setCategoryToDelete(row.original)}
+										>
+											<IconTrash aria-hidden="true" className="mr-2 size-4" />
+											{t("common.delete", "Delete")}
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							);
 						},
-					]
-				: []),
+					},
+				]
+			: []),
 	];
 
 	const handleFormClose = (open: boolean) => {

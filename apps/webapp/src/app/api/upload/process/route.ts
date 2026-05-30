@@ -6,7 +6,10 @@ import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { auth } from "@/lib/auth";
-import { createAvatarStorageKey, createOrganizationLogoStorageKey } from "@/lib/storage/avatar-storage";
+import {
+	createAvatarStorageKey,
+	createOrganizationLogoStorageKey,
+} from "@/lib/storage/avatar-storage";
 import { getPublicUrl, S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 

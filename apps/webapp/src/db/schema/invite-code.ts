@@ -12,8 +12,8 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { member, organization, user } from "../auth-schema";
+import { approvalStatusEnum, inviteCodeStatusEnum, memberStatusEnum } from "./enums";
 import { team } from "./organization";
-import { inviteCodeStatusEnum, memberStatusEnum, approvalStatusEnum } from "./enums";
 
 // ============================================
 // ORGANIZATION INVITE CODES

@@ -46,9 +46,7 @@ export class SeatSyncService extends Context.Tag("SeatSyncService")<
 		/**
 		 * Get current seat count for an organization without syncing
 		 */
-		readonly getCurrentSeatCount: (
-			organizationId: string,
-		) => Effect.Effect<number, DatabaseError>;
+		readonly getCurrentSeatCount: (organizationId: string) => Effect.Effect<number, DatabaseError>;
 	}
 >() {}
 
@@ -85,14 +83,11 @@ export const SeatSyncServiceLive = Layer.effect(
 				yield* subscriptionService.updateSeatCount(organizationId, seatCount);
 
 				// Get subscription to update Stripe
-				const sub =
-					yield* subscriptionService.getByOrganization(organizationId);
+				const sub = yield* subscriptionService.getByOrganization(organizationId);
 
 				if (sub?.stripeSubscriptionId && stripeService.config.enabled) {
 					// Get subscription from Stripe to find subscription item
-					const stripeSub = yield* stripeService.getSubscription(
-						sub.stripeSubscriptionId,
-					);
+					const stripeSub = yield* stripeService.getSubscription(sub.stripeSubscriptionId);
 					const subscriptionItem = stripeSub.items.data[0];
 
 					if (subscriptionItem) {
@@ -121,9 +116,7 @@ export const SeatSyncServiceLive = Layer.effect(
 				return seatCount;
 			});
 
-		const getCurrentSeatCount = (
-			organizationId: string,
-		): Effect.Effect<number, DatabaseError> =>
+		const getCurrentSeatCount = (organizationId: string): Effect.Effect<number, DatabaseError> =>
 			Effect.tryPromise({
 				try: async () => {
 					const [result] = await db
@@ -149,8 +142,7 @@ export const SeatSyncServiceLive = Layer.effect(
 			handleMemberAdded: (organizationId, memberId, userId) =>
 				Effect.gen(function* () {
 					// Get previous seat count
-					const sub =
-						yield* subscriptionService.getByOrganization(organizationId);
+					const sub = yield* subscriptionService.getByOrganization(organizationId);
 					const previousSeats = sub?.currentSeats ?? 0;
 
 					// Sync seats
@@ -166,8 +158,7 @@ export const SeatSyncServiceLive = Layer.effect(
 								newSeats,
 								memberId,
 								userId,
-								stripeReported:
-									stripeService.config.enabled && !!sub?.stripeSubscriptionId,
+								stripeReported: stripeService.config.enabled && !!sub?.stripeSubscriptionId,
 							});
 						},
 						catch: (error) =>
@@ -188,8 +179,7 @@ export const SeatSyncServiceLive = Layer.effect(
 			handleMemberRemoved: (organizationId, memberId, userId) =>
 				Effect.gen(function* () {
 					// Get previous seat count
-					const sub =
-						yield* subscriptionService.getByOrganization(organizationId);
+					const sub = yield* subscriptionService.getByOrganization(organizationId);
 					const previousSeats = sub?.currentSeats ?? 0;
 
 					// Sync seats
@@ -205,8 +195,7 @@ export const SeatSyncServiceLive = Layer.effect(
 								newSeats,
 								memberId,
 								userId,
-								stripeReported:
-									stripeService.config.enabled && !!sub?.stripeSubscriptionId,
+								stripeReported: stripeService.config.enabled && !!sub?.stripeSubscriptionId,
 							});
 						},
 						catch: (error) =>

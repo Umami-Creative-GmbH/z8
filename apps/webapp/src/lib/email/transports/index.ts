@@ -19,4 +19,3 @@ export type {
 export { ConsoleTransport } from "./console-transport";
 export { createSystemResendTransport, ResendTransport } from "./resend-transport";
 export { createSystemSmtpTransport, SmtpTransport } from "./smtp-transport";
-

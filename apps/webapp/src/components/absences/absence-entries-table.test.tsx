@@ -145,7 +145,9 @@ describe("AbsenceEntriesTable", () => {
 		render(
 			<AbsenceEntriesTable
 				currentDate="2026-05-21"
-				absences={[buildAbsence({ id: "approved-today", status: "approved", startDate: "2026-05-21" })]}
+				absences={[
+					buildAbsence({ id: "approved-today", status: "approved", startDate: "2026-05-21" }),
+				]}
 			/>,
 		);
 

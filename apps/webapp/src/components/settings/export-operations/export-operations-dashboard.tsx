@@ -1,9 +1,16 @@
 import type { ReactNode } from "react";
+import { ExportOperationsDateTime } from "@/components/settings/export-operations/export-operations-date-time";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExportOperationsDateTime } from "@/components/settings/export-operations/export-operations-date-time";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import type {
 	ExportOperationsActivityItem,
 	ExportOperationsAlert,
@@ -123,7 +130,9 @@ function AlertsCard({
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					<h2 className="text-base font-semibold">{t("settings.exportOperations.alerts.title", "Alerts")}</h2>
+					<h2 className="text-base font-semibold">
+						{t("settings.exportOperations.alerts.title", "Alerts")}
+					</h2>
 				</CardTitle>
 				<CardDescription>
 					{t(
@@ -136,18 +145,18 @@ function AlertsCard({
 			<CardContent>
 				{alerts.length === 0 ? (
 					error ? null : (
-					<p className="text-muted-foreground text-sm">
-						{t("settings.exportOperations.alerts.empty", "No alerts right now")}
-					</p>
+						<p className="text-muted-foreground text-sm">
+							{t("settings.exportOperations.alerts.empty", "No alerts right now")}
+						</p>
 					)
 				) : (
 					<div className="space-y-3">
 						{alerts.map((alert) => (
 							<Alert key={alert.id}>
-							<AlertTitle className="flex items-center justify-between gap-3">
-								<span>{alert.title}</span>
-								<Badge>{getSeverityLabel(alert.severity, t)}</Badge>
-							</AlertTitle>
+								<AlertTitle className="flex items-center justify-between gap-3">
+									<span>{alert.title}</span>
+									<Badge>{getSeverityLabel(alert.severity, t)}</Badge>
+								</AlertTitle>
 								<AlertDescription>
 									<div className="space-y-2">
 										<p className="break-words">{alert.description}</p>
@@ -203,8 +212,12 @@ function UpcomingRunsCard({
 						<TableHeader>
 							<TableRow>
 								<TableHead>{t("settings.exportOperations.upcomingRuns.name", "Name")}</TableHead>
-								<TableHead>{t("settings.exportOperations.upcomingRuns.when", "Scheduled for")}</TableHead>
-								<TableHead>{t("settings.exportOperations.upcomingRuns.link", "Settings")}</TableHead>
+								<TableHead>
+									{t("settings.exportOperations.upcomingRuns.when", "Scheduled for")}
+								</TableHead>
+								<TableHead>
+									{t("settings.exportOperations.upcomingRuns.link", "Settings")}
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -257,18 +270,26 @@ function RecentActivityCard({
 			<CardContent>
 				{items.length === 0 ? (
 					error ? null : (
-					<p className="text-muted-foreground text-sm">
-						{t("settings.exportOperations.recentActivity.empty", "No recent export activity")}
-					</p>
+						<p className="text-muted-foreground text-sm">
+							{t("settings.exportOperations.recentActivity.empty", "No recent export activity")}
+						</p>
 					)
 				) : (
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>{t("settings.exportOperations.recentActivity.export", "Export")}</TableHead>
-								<TableHead>{t("settings.exportOperations.recentActivity.status", "Status")}</TableHead>
-								<TableHead>{t("settings.exportOperations.recentActivity.when", "Occurred")}</TableHead>
-								<TableHead>{t("settings.exportOperations.recentActivity.link", "Settings")}</TableHead>
+								<TableHead>
+									{t("settings.exportOperations.recentActivity.export", "Export")}
+								</TableHead>
+								<TableHead>
+									{t("settings.exportOperations.recentActivity.status", "Status")}
+								</TableHead>
+								<TableHead>
+									{t("settings.exportOperations.recentActivity.when", "Occurred")}
+								</TableHead>
+								<TableHead>
+									{t("settings.exportOperations.recentActivity.link", "Settings")}
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -277,7 +298,9 @@ function RecentActivityCard({
 									<TableCell>
 										<div className="min-w-0 space-y-1">
 											<p className="font-medium">{item.title}</p>
-											<p className="text-muted-foreground text-sm break-words">{item.description}</p>
+											<p className="text-muted-foreground text-sm break-words">
+												{item.description}
+											</p>
 										</div>
 									</TableCell>
 									<TableCell>
@@ -305,17 +328,20 @@ const settingsLinkClassName =
 	"rounded-sm text-sm font-medium underline underline-offset-4 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
 function getSettingsLinkLabel(
-	href: ExportOperationsAlert["href"] | ExportOperationsUpcomingRun["href"] | ExportOperationsActivityItem["href"],
+	href:
+		| ExportOperationsAlert["href"]
+		| ExportOperationsUpcomingRun["href"]
+		| ExportOperationsActivityItem["href"],
 	t: TranslateFn,
 ) {
-		switch (href) {
-			case "/settings/payroll-export":
-				return t("settings.exportOperations.links.payroll", "Open payroll export settings");
-			case "/settings/scheduled-exports":
-				return t("settings.exportOperations.links.scheduled", "Open scheduled export settings");
-			case "/settings/audit-export":
-				return t("settings.exportOperations.links.audit", "Open audit export settings");
-		}
+	switch (href) {
+		case "/settings/payroll-export":
+			return t("settings.exportOperations.links.payroll", "Open payroll export settings");
+		case "/settings/scheduled-exports":
+			return t("settings.exportOperations.links.scheduled", "Open scheduled export settings");
+		case "/settings/audit-export":
+			return t("settings.exportOperations.links.audit", "Open audit export settings");
+	}
 }
 
 function getSeverityLabel(severity: ExportOperationsAlert["severity"], t: TranslateFn) {

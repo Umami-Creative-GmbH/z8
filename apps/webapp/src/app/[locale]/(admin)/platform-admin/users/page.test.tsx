@@ -228,6 +228,8 @@ describe("Platform admin users page", () => {
 			vi.advanceTimersByTime(300);
 		});
 
-		expect(pushMock).toHaveBeenCalledWith("/platform-admin/users?search=ada&organizationId=org-acme");
+		expect(pushMock).toHaveBeenCalledWith(
+			"/platform-admin/users?search=ada&organizationId=org-acme",
+		);
 	});
 });

@@ -31,19 +31,15 @@ export function accessibleByDrizzle<TAbility extends AnyAbility>(
 		);
 	}
 
-	return rulesToCondition(
-		rules,
-		(rule) => ruleToPredicate(rule, fields),
-		{
-			and: combineAnd,
-			or: combineOr,
-			empty: () => {
-				throw new UnsupportedAuthorizationConditionError(
-					"Unconditional database authorization is not supported",
-				);
-			},
+	return rulesToCondition(rules, (rule) => ruleToPredicate(rule, fields), {
+		and: combineAnd,
+		or: combineOr,
+		empty: () => {
+			throw new UnsupportedAuthorizationConditionError(
+				"Unconditional database authorization is not supported",
+			);
 		},
-	);
+	});
 }
 
 function ruleToPredicate<TAbility extends AnyAbility>(
@@ -103,11 +99,7 @@ function conditionToPredicate(condition: MongoCondition, fields: DrizzleFieldMap
 	return combineAnd(predicates);
 }
 
-function readBooleanConditions(
-	operator: string,
-	value: unknown,
-	fields: DrizzleFieldMap,
-): SQL[] {
+function readBooleanConditions(operator: string, value: unknown, fields: DrizzleFieldMap): SQL[] {
 	if (!Array.isArray(value) || value.length === 0) {
 		throw unsupportedOperator(operator);
 	}
@@ -124,7 +116,9 @@ function readBooleanConditions(
 function combineAnd(predicates: SQL[]): SQL {
 	const predicate = and(...predicates);
 	if (!predicate) {
-		throw new UnsupportedAuthorizationConditionError("Empty authorization condition is not supported");
+		throw new UnsupportedAuthorizationConditionError(
+			"Empty authorization condition is not supported",
+		);
 	}
 
 	return predicate;
@@ -133,14 +127,21 @@ function combineAnd(predicates: SQL[]): SQL {
 function combineOr(predicates: SQL[]): SQL {
 	const predicate = or(...predicates);
 	if (!predicate) {
-		throw new UnsupportedAuthorizationConditionError("Empty authorization condition is not supported");
+		throw new UnsupportedAuthorizationConditionError(
+			"Empty authorization condition is not supported",
+		);
 	}
 
 	return predicate;
 }
 
 function isInOperator(value: unknown): value is { $in: readonly unknown[] } {
-	return isPlainObject(value) && "$in" in value && Array.isArray(value.$in) && Object.keys(value).length === 1;
+	return (
+		isPlainObject(value) &&
+		"$in" in value &&
+		Array.isArray(value.$in) &&
+		Object.keys(value).length === 1
+	);
 }
 
 function isNeOperator(value: unknown): value is { $ne: unknown } {

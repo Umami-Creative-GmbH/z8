@@ -40,11 +40,7 @@ interface Interval {
 	end: DateTime;
 }
 
-function addMinutes(
-	target: Record<string, number>,
-	dayKey: string | null,
-	minutes: number,
-): void {
+function addMinutes(target: Record<string, number>, dayKey: string | null, minutes: number): void {
 	if (!dayKey || minutes <= 0) {
 		return;
 	}
@@ -68,25 +64,20 @@ function normalizeRegulation(
 		...(regulation.minRestPeriodMinutes != null
 			? { minRestPeriodMinutes: regulation.minRestPeriodMinutes }
 			: {}),
-		...(regulation.maxDailyMinutes != null
-			? { maxDailyMinutes: regulation.maxDailyMinutes }
-			: {}),
+		...(regulation.maxDailyMinutes != null ? { maxDailyMinutes: regulation.maxDailyMinutes } : {}),
 		...(regulation.overtimeDailyThresholdMinutes != null
 			? {
-					overtimeDailyThresholdMinutes:
-						regulation.overtimeDailyThresholdMinutes,
+					overtimeDailyThresholdMinutes: regulation.overtimeDailyThresholdMinutes,
 				}
 			: {}),
 		...(regulation.overtimeWeeklyThresholdMinutes != null
 			? {
-					overtimeWeeklyThresholdMinutes:
-						regulation.overtimeWeeklyThresholdMinutes,
+					overtimeWeeklyThresholdMinutes: regulation.overtimeWeeklyThresholdMinutes,
 				}
 			: {}),
 		...(regulation.overtimeMonthlyThresholdMinutes != null
 			? {
-					overtimeMonthlyThresholdMinutes:
-						regulation.overtimeMonthlyThresholdMinutes,
+					overtimeMonthlyThresholdMinutes: regulation.overtimeMonthlyThresholdMinutes,
 				}
 			: {}),
 	};
@@ -98,9 +89,7 @@ function toShiftInterval(params: {
 	endTime: string;
 	timezone: string;
 }): Interval | null {
-	const baseDate = DateTime.fromJSDate(params.date)
-		.setZone(params.timezone)
-		.toISODate();
+	const baseDate = DateTime.fromJSDate(params.date).setZone(params.timezone).toISODate();
 	if (!baseDate) {
 		return null;
 	}
@@ -155,9 +144,7 @@ function toSortedJson(value: Record<string, number>): string {
 	return JSON.stringify(stable);
 }
 
-export class ScheduleComplianceService extends Context.Tag(
-	"ScheduleComplianceService",
-)<
+export class ScheduleComplianceService extends Context.Tag("ScheduleComplianceService")<
 	ScheduleComplianceService,
 	{
 		readonly evaluateScheduleWindow: (
@@ -179,25 +166,22 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 			evaluateScheduleWindow: (input) =>
 				Effect.gen(function* (_) {
 					const assignedShifts = yield* _(
-						dbService.query(
-							"getAssignedShiftsForScheduleCompliance",
-							async () => {
-								return await dbService.db.query.shift.findMany({
-									where: and(
-										eq(shift.organizationId, input.organizationId),
-										gte(shift.date, input.startDate),
-										lte(shift.date, input.endDate),
-										isNotNull(shift.employeeId),
-									),
-									columns: {
-										employeeId: true,
-										date: true,
-										startTime: true,
-										endTime: true,
-									},
-								});
-							},
-						),
+						dbService.query("getAssignedShiftsForScheduleCompliance", async () => {
+							return await dbService.db.query.shift.findMany({
+								where: and(
+									eq(shift.organizationId, input.organizationId),
+									gte(shift.date, input.startDate),
+									lte(shift.date, input.endDate),
+									isNotNull(shift.employeeId),
+								),
+								columns: {
+									employeeId: true,
+									date: true,
+									startTime: true,
+									endTime: true,
+								},
+							});
+						}),
 					);
 
 					const employeeIds = [
@@ -222,26 +206,23 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 						employeeIds.length === 0
 							? []
 							: yield* _(
-									dbService.query(
-										"getWorkPeriodsForScheduleCompliance",
-										async () => {
-											return await dbService.db.query.workPeriod.findMany({
-												where: and(
-													eq(workPeriod.organizationId, input.organizationId),
-													inArray(workPeriod.employeeId, employeeIds),
-													gte(workPeriod.startTime, lookbackStart),
-													lte(workPeriod.startTime, rangeEnd),
-													isNotNull(workPeriod.endTime),
-												),
-												columns: {
-													employeeId: true,
-													startTime: true,
-													endTime: true,
-													durationMinutes: true,
-												},
-											});
-										},
-									),
+									dbService.query("getWorkPeriodsForScheduleCompliance", async () => {
+										return await dbService.db.query.workPeriod.findMany({
+											where: and(
+												eq(workPeriod.organizationId, input.organizationId),
+												inArray(workPeriod.employeeId, employeeIds),
+												gte(workPeriod.startTime, lookbackStart),
+												lte(workPeriod.startTime, rangeEnd),
+												isNotNull(workPeriod.endTime),
+											),
+											columns: {
+												employeeId: true,
+												startTime: true,
+												endTime: true,
+												durationMinutes: true,
+											},
+										});
+									}),
 								);
 
 					const effectiveRegulation =
@@ -252,11 +233,7 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 										Effect.forEach(employeeIds, (employeeId) =>
 											workPolicyService
 												.getEffectivePolicy(employeeId)
-												.pipe(
-													Effect.catchTag("NotFoundError", () =>
-														Effect.succeed(null),
-													),
-												),
+												.pipe(Effect.catchTag("NotFoundError", () => Effect.succeed(null))),
 										),
 									)).find((policy) => policy?.regulation)?.regulation ?? null,
 								);
@@ -266,8 +243,7 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 						if (!scheduledShift.employeeId) {
 							continue;
 						}
-						const existing =
-							shiftsByEmployee.get(scheduledShift.employeeId) ?? [];
+						const existing = shiftsByEmployee.get(scheduledShift.employeeId) ?? [];
 						existing.push(scheduledShift);
 						shiftsByEmployee.set(scheduledShift.employeeId, existing);
 					}
@@ -282,96 +258,73 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 					const windowStart = DateTime.fromJSDate(input.startDate)
 						.setZone(input.timezone)
 						.startOf("day");
-					const windowEnd = DateTime.fromJSDate(input.endDate)
-						.setZone(input.timezone)
-						.endOf("day");
+					const windowEnd = DateTime.fromJSDate(input.endDate).setZone(input.timezone).endOf("day");
 
-					const employees: EmployeeScheduleComplianceInput[] = employeeIds.map(
-						(employeeId) => {
-							const actualMinutesByDay: Record<string, number> = {};
-							const scheduledMinutesByDay: Record<string, number> = {};
-							const intervals: Interval[] = [];
+					const employees: EmployeeScheduleComplianceInput[] = employeeIds.map((employeeId) => {
+						const actualMinutesByDay: Record<string, number> = {};
+						const scheduledMinutesByDay: Record<string, number> = {};
+						const intervals: Interval[] = [];
 
-							for (const employeePeriod of periodsByEmployee.get(employeeId) ??
-								[]) {
-								const endTime = employeePeriod.endTime;
-								if (!endTime) {
-									continue;
-								}
-								const start = DateTime.fromJSDate(
-									employeePeriod.startTime,
-								).setZone(input.timezone);
-								const end = DateTime.fromJSDate(endTime).setZone(
-									input.timezone,
-								);
-								const minutes =
-									employeePeriod.durationMinutes ??
-									Math.max(0, Math.round(end.diff(start, "minutes").minutes));
+						for (const employeePeriod of periodsByEmployee.get(employeeId) ?? []) {
+							const endTime = employeePeriod.endTime;
+							if (!endTime) {
+								continue;
+							}
+							const start = DateTime.fromJSDate(employeePeriod.startTime).setZone(input.timezone);
+							const end = DateTime.fromJSDate(endTime).setZone(input.timezone);
+							const minutes =
+								employeePeriod.durationMinutes ??
+								Math.max(0, Math.round(end.diff(start, "minutes").minutes));
 
-								addMinutes(actualMinutesByDay, start.toISODate(), minutes);
-								intervals.push({ start, end });
+							addMinutes(actualMinutesByDay, start.toISODate(), minutes);
+							intervals.push({ start, end });
+						}
+
+						for (const employeeShift of shiftsByEmployee.get(employeeId) ?? []) {
+							const interval = toShiftInterval({
+								date: employeeShift.date,
+								startTime: employeeShift.startTime,
+								endTime: employeeShift.endTime,
+								timezone: input.timezone,
+							});
+
+							if (!interval) {
+								continue;
 							}
 
-							for (const employeeShift of shiftsByEmployee.get(employeeId) ??
-								[]) {
-								const interval = toShiftInterval({
-									date: employeeShift.date,
-									startTime: employeeShift.startTime,
-									endTime: employeeShift.endTime,
-									timezone: input.timezone,
+							const minutes = Math.max(
+								0,
+								Math.round(interval.end.diff(interval.start, "minutes").minutes),
+							);
+							addMinutes(scheduledMinutesByDay, interval.start.toISODate(), minutes);
+							intervals.push(interval);
+						}
+
+						intervals.sort((a, b) => a.start.toMillis() - b.start.toMillis());
+
+						const restTransitions: EmployeeScheduleComplianceInput["restTransitions"] = [];
+						for (let index = 1; index < intervals.length; index++) {
+							const previous = intervals[index - 1];
+							const current = intervals[index];
+							if (
+								current.start > previous.end &&
+								current.start >= windowStart &&
+								current.start <= windowEnd
+							) {
+								restTransitions.push({
+									fromEndIso: previous.end.toISO() ?? previous.end.toUTC().toISO() ?? "",
+									toStartIso: current.start.toISO() ?? current.start.toUTC().toISO() ?? "",
 								});
-
-								if (!interval) {
-									continue;
-								}
-
-								const minutes = Math.max(
-									0,
-									Math.round(
-										interval.end.diff(interval.start, "minutes").minutes,
-									),
-								);
-								addMinutes(
-									scheduledMinutesByDay,
-									interval.start.toISODate(),
-									minutes,
-								);
-								intervals.push(interval);
 							}
+						}
 
-							intervals.sort((a, b) => a.start.toMillis() - b.start.toMillis());
-
-							const restTransitions: EmployeeScheduleComplianceInput["restTransitions"] =
-								[];
-							for (let index = 1; index < intervals.length; index++) {
-								const previous = intervals[index - 1];
-								const current = intervals[index];
-								if (
-									current.start > previous.end &&
-									current.start >= windowStart &&
-									current.start <= windowEnd
-								) {
-									restTransitions.push({
-										fromEndIso:
-											previous.end.toISO() ??
-											previous.end.toUTC().toISO() ??
-											"",
-										toStartIso:
-											current.start.toISO() ??
-											current.start.toUTC().toISO() ??
-											"",
-									});
-								}
-							}
-
-							return {
-								employeeId,
-								actualMinutesByDay,
-								scheduledMinutesByDay,
-								restTransitions,
-							};
-						},
-					);
+						return {
+							employeeId,
+							actualMinutesByDay,
+							scheduledMinutesByDay,
+							restTransitions,
+						};
+					});
 
 					const evaluationResult = evaluateScheduleCompliance({
 						timezone: input.timezone,
@@ -393,20 +346,17 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 				}),
 
 			recordPublishAcknowledgment: (input) =>
-				dbService.query(
-					"recordSchedulePublishComplianceAcknowledgment",
-					async () => {
-						await dbService.db.insert(schedulePublishComplianceAck).values({
-							organizationId: input.organizationId,
-							actorEmployeeId: input.actorEmployeeId,
-							publishedRangeStart: input.publishedRangeStart,
-							publishedRangeEnd: input.publishedRangeEnd,
-							warningCountTotal: input.warningCountTotal,
-							warningCountsByType: toSortedJson(input.warningCountsByType),
-							evaluationFingerprint: input.evaluationFingerprint,
-						});
-					},
-				),
+				dbService.query("recordSchedulePublishComplianceAcknowledgment", async () => {
+					await dbService.db.insert(schedulePublishComplianceAck).values({
+						organizationId: input.organizationId,
+						actorEmployeeId: input.actorEmployeeId,
+						publishedRangeStart: input.publishedRangeStart,
+						publishedRangeEnd: input.publishedRangeEnd,
+						warningCountTotal: input.warningCountTotal,
+						warningCountsByType: toSortedJson(input.warningCountsByType),
+						evaluationFingerprint: input.evaluationFingerprint,
+					});
+				}),
 		});
 	}),
 );

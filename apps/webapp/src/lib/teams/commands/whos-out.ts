@@ -5,11 +5,11 @@
  * Only shows employees that the requesting manager manages.
  */
 
-import { and, eq, lte, gte, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { absenceEntry, absenceCategory, employee, employeeManagers } from "@/db/schema";
 import { user } from "@/db/auth-schema";
+import { absenceCategory, absenceEntry, employee, employeeManagers } from "@/db/schema";
 import { fmtWeekdayShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
@@ -80,7 +80,11 @@ export const whosOutCommand: BotCommand = {
 			if (absences.length === 0) {
 				return {
 					type: "text",
-					text: t("bot.cmd.whosout.noneOut", "All {total} of your team members are available today.", { total: orgManagedEmployees.length }),
+					text: t(
+						"bot.cmd.whosout.noneOut",
+						"All {total} of your team members are available today.",
+						{ total: orgManagedEmployees.length },
+					),
 				};
 			}
 

@@ -48,9 +48,7 @@ export class AuthorizationService extends Context.Tag("AuthorizationService")<
 		/**
 		 * Build CASL ability from principal context
 		 */
-		readonly getAbility: (
-			principal: PrincipalContext,
-		) => Effect.Effect<AppAbility, never>;
+		readonly getAbility: (principal: PrincipalContext) => Effect.Effect<AppAbility, never>;
 
 		/**
 		 * Load principal and build ability in one step
@@ -185,8 +183,7 @@ export const AuthorizationServiceLive = Layer.effect(
 
 					if (
 						employeeRecord &&
-						(employeeRecord.role === "manager" ||
-							employeeRecord.role === "admin")
+						(employeeRecord.role === "manager" || employeeRecord.role === "admin")
 					) {
 						const managedRecords = yield* _(
 							dbService.query("getManagedEmployeesForAuth", async () => {
@@ -220,10 +217,7 @@ export const AuthorizationServiceLive = Layer.effect(
 										and(
 											eq(employeeCustomRole.customRoleId, customRole.id),
 											eq(customRole.isActive, true),
-											eq(
-												customRole.organizationId,
-												employeeRecord.organizationId,
-											),
+											eq(customRole.organizationId, employeeRecord.organizationId),
 										),
 									)
 									.leftJoin(
@@ -378,8 +372,7 @@ export const AuthorizationServiceLive = Layer.effect(
 
 					if (
 						employeeRecord &&
-						(employeeRecord.role === "manager" ||
-							employeeRecord.role === "admin")
+						(employeeRecord.role === "manager" || employeeRecord.role === "admin")
 					) {
 						const managedRecords = yield* _(
 							dbService.query("getManagedEmployeesForAuth", async () => {
@@ -413,10 +406,7 @@ export const AuthorizationServiceLive = Layer.effect(
 										and(
 											eq(employeeCustomRole.customRoleId, customRole.id),
 											eq(customRole.isActive, true),
-											eq(
-												customRole.organizationId,
-												employeeRecord.organizationId,
-											),
+											eq(customRole.organizationId, employeeRecord.organizationId),
 										),
 									)
 									.leftJoin(
@@ -477,8 +467,7 @@ export const AuthorizationServiceLive = Layer.effect(
 					return defineAbilityFor(principal);
 				}),
 
-			can: (ability, action, subject) =>
-				Effect.succeed(ability.can(action, subject)),
+			can: (ability, action, subject) => Effect.succeed(ability.can(action, subject)),
 
 			require: (ability, action, subject, subjectId) =>
 				Effect.gen(function* (_) {

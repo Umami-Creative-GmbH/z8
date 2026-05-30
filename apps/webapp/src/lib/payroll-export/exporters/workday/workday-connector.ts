@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { isPrivateIP, resolveAndValidateUrl } from "@/lib/webhooks/url-validation";
 import type {
 	AbsenceData,
 	ApiExportResult,
@@ -6,7 +7,6 @@ import type {
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../../types";
-import { isPrivateIP, resolveAndValidateUrl } from "@/lib/webhooks/url-validation";
 import { WorkdayApiClient } from "./api-client";
 import {
 	DEFAULT_WORKDAY_CONFIG,
@@ -59,7 +59,10 @@ interface WorkdayConnectorDeps {
 	createApiClient?: (config: WorkdayConfig) => {
 		getOAuthToken: (credentials: WorkdayOAuthCredentials) => Promise<{ accessToken: string }>;
 		testConnection: (accessToken?: string) => Promise<{ success: boolean; error?: string }>;
-		findWorkerByEmployeeNumber: (accessToken: string, employeeNumber: string) => Promise<WorkdayWorker | null>;
+		findWorkerByEmployeeNumber: (
+			accessToken: string,
+			employeeNumber: string,
+		) => Promise<WorkdayWorker | null>;
 		findWorkerByEmail: (accessToken: string, email: string) => Promise<WorkdayWorker | null>;
 		createAttendance: (accessToken: string, payload: WorkdayAttendancePayload) => Promise<void>;
 		createAbsence: (accessToken: string, payload: WorkdayAbsencePayload) => Promise<void>;
@@ -175,8 +178,7 @@ export class WorkdayConnector implements IPayrollExporter {
 			...absences.map((absence) => absence.employeeId),
 		]).size;
 		const totalRecords = workPeriods.length + absences.length;
-		const errors: ApiExportResult["errors"] = [
-		];
+		const errors: ApiExportResult["errors"] = [];
 		const skipped: NonNullable<ApiExportResult["skipped"]> = [];
 		let apiCallCount = 0;
 		let syncedRecords = 0;

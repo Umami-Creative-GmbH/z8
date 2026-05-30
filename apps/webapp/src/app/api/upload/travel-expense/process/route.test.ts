@@ -39,17 +39,15 @@ vi.mock("@/lib/travel-expenses/attachment-validation", () => ({
 }));
 
 vi.mock("@aws-sdk/client-s3", () => ({
-	GetObjectCommand: vi.fn().mockImplementation(function (input) {
+	GetObjectCommand: vi.fn().mockImplementation((input) => {
 		mockState.getCommand(input);
 		return { input, type: "get" };
 	}),
-	DeleteObjectCommand: vi.fn().mockImplementation(function (input) {
+	DeleteObjectCommand: vi.fn().mockImplementation((input) => {
 		mockState.deleteCommand(input);
 		return { input, type: "delete" };
 	}),
-	PutObjectCommand: vi.fn().mockImplementation(function (input) {
-		return { input, type: "put" };
-	}),
+	PutObjectCommand: vi.fn().mockImplementation((input) => ({ input, type: "put" })),
 }));
 
 vi.mock("@/lib/storage/s3-client", () => ({

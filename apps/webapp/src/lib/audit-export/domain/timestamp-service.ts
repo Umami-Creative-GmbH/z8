@@ -3,9 +3,12 @@
  * Manages RFC 3161 trusted timestamping
  */
 import { createLogger } from "@/lib/logger";
-import { AuditManifest, RFC3161Timestamp, SHA256Hash } from "./models";
-import { timestampProvider, type ITimestampProvider } from "../infrastructure/crypto/timestamp-provider";
 import { hashProvider, type IHashProvider } from "../infrastructure/crypto/hash-provider";
+import {
+	type ITimestampProvider,
+	timestampProvider,
+} from "../infrastructure/crypto/timestamp-provider";
+import { AuditManifest, type RFC3161Timestamp, type SHA256Hash } from "./models";
 
 const logger = createLogger("TimestampService");
 
@@ -22,7 +25,10 @@ export interface ITimestampService {
 	/**
 	 * Verify a timestamp token
 	 */
-	verifyTimestamp(timestamp: RFC3161Timestamp, manifestHash: SHA256Hash): Promise<{
+	verifyTimestamp(
+		timestamp: RFC3161Timestamp,
+		manifestHash: SHA256Hash,
+	): Promise<{
 		isValid: boolean;
 		timestampedAt: Date;
 		authority: string;

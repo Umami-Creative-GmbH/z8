@@ -13,8 +13,8 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
-import { employee } from "./organization";
 import { dataExport } from "./export";
+import { employee } from "./organization";
 import { payrollExportJob } from "./payroll-export";
 
 // ============================================
@@ -271,14 +271,15 @@ export const auditVerificationLog = pgTable(
 		checksFailed: text("checks_failed").array(),
 
 		// Detailed errors (if any)
-		errorDetails: jsonb("error_details").$type<
-			Array<{
-				check: string;
-				message: string;
-				expected?: string;
-				actual?: string;
-			}>
-		>(),
+		errorDetails:
+			jsonb("error_details").$type<
+				Array<{
+					check: string;
+					message: string;
+					expected?: string;
+					actual?: string;
+				}>
+			>(),
 
 		// Who verified
 		verifiedById: text("verified_by_id").references(() => user.id),

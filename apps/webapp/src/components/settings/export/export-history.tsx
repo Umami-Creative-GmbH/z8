@@ -54,11 +54,15 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 
 	const handleDownload = async (exportId: string) => {
 		setLoadingAction(`download-${exportId}`);
-		const result = await regenerateDownloadUrlAction(exportId, organizationId).catch((error: unknown) => {
-			toast.error(t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"));
-			console.error("Download error:", error);
-			return null;
-		});
+		const result = await regenerateDownloadUrlAction(exportId, organizationId).catch(
+			(error: unknown) => {
+				toast.error(
+					t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"),
+				);
+				console.error("Download error:", error);
+				return null;
+			},
+		);
 
 		if (!result) {
 			setLoadingAction(null);
@@ -73,7 +77,9 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 			}
 			toast.success(t("settings.dataExport.history.downloadSuccess", "Download started"));
 		} else {
-			toast.error(result.error || t("settings.dataExport.history.downloadError", "Failed to download"));
+			toast.error(
+				result.error || t("settings.dataExport.history.downloadError", "Failed to download"),
+			);
 		}
 
 		setLoadingAction(null);
@@ -96,7 +102,9 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 			toast.success(t("settings.dataExport.history.deleteSuccess", "Export deleted"));
 			router.refresh();
 		} else {
-			toast.error(result.error || t("settings.dataExport.history.deleteError", "Failed to delete export"));
+			toast.error(
+				result.error || t("settings.dataExport.history.deleteError", "Failed to delete export"),
+			);
 		}
 
 		setLoadingAction(null);

@@ -6,8 +6,8 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
-import { connection } from "next/server";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -83,13 +83,13 @@ async function StatisticsContent() {
 					<p className="text-muted-foreground">
 						{canViewOrgWideStatistics
 							? t(
-								"settings.statistics.description",
-								"View statistics and metrics about your instance",
-							)
+									"settings.statistics.description",
+									"View statistics and metrics about your instance",
+								)
 							: t(
-								"settings.statistics.managerDescription",
-								"Review read-only analytics for the teams you manage.",
-							)}
+									"settings.statistics.managerDescription",
+									"Review read-only analytics for the teams you manage.",
+								)}
 					</p>
 				</div>
 				<Card className="border-destructive">
@@ -117,13 +117,13 @@ async function StatisticsContent() {
 					<p className="text-muted-foreground">
 						{canViewOrgWideStatistics
 							? t(
-								"settings.statistics.description",
-								"View statistics and metrics about your instance",
-							)
+									"settings.statistics.description",
+									"View statistics and metrics about your instance",
+								)
 							: t(
-								"settings.statistics.managerDescription",
-								"Review read-only analytics for the teams you manage.",
-							)}
+									"settings.statistics.managerDescription",
+									"Review read-only analytics for the teams you manage.",
+								)}
 					</p>
 				</div>
 				<p className="text-xs text-muted-foreground">

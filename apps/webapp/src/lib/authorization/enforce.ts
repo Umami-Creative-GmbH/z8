@@ -70,22 +70,14 @@ export const throwIfCannot = assertCan;
  * }
  * ```
  */
-export function checkCan(
-	ability: AppAbility,
-	action: Action,
-	subject: Subject,
-): boolean {
+export function checkCan(ability: AppAbility, action: Action, subject: Subject): boolean {
 	return ability.can(action, subject);
 }
 
 /**
  * Check if action is denied.
  */
-export function checkCannot(
-	ability: AppAbility,
-	action: Action,
-	subject: Subject,
-): boolean {
+export function checkCannot(ability: AppAbility, action: Action, subject: Subject): boolean {
 	return ability.cannot(action, subject);
 }
 

@@ -18,13 +18,13 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { useRouter } from "@/navigation";
 import {
 	CUSTOM_INTERVAL_RANGE,
 	DAILY_GOAL_RANGE,
 	WATER_PRESETS,
 	type WaterReminderPreset,
 } from "@/lib/wellness/water-presets";
+import { useRouter } from "@/navigation";
 import { configureWellnessOnboarding, skipWellnessSetup } from "./actions";
 
 export default function WellnessPage() {
@@ -181,9 +181,9 @@ export default function WellnessPage() {
 														<span className="flex items-center gap-2">
 															{preset.label}
 															{preset.recommended && (
-														<span className="text-xs text-primary">
-															{t("onboarding.wellness.recommended", "(Recommended)")}
-														</span>
+																<span className="text-xs text-primary">
+																	{t("onboarding.wellness.recommended", "(Recommended)")}
+																</span>
 															)}
 														</span>
 													</SelectItem>

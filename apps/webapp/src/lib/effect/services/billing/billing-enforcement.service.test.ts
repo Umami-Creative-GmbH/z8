@@ -9,23 +9,16 @@ import {
 	BillingEnforcementServiceLive,
 } from "./billing-enforcement.service";
 
-const {
-	findFirst,
-	insertValues,
-	onConflictDoNothing,
-	returning,
-	select,
-	selectFrom,
-	selectWhere,
-} = vi.hoisted(() => ({
-	findFirst: vi.fn(),
-	insertValues: vi.fn(),
-	onConflictDoNothing: vi.fn(),
-	returning: vi.fn(),
-	select: vi.fn(),
-	selectFrom: vi.fn(),
-	selectWhere: vi.fn(),
-}));
+const { findFirst, insertValues, onConflictDoNothing, returning, select, selectFrom, selectWhere } =
+	vi.hoisted(() => ({
+		findFirst: vi.fn(),
+		insertValues: vi.fn(),
+		onConflictDoNothing: vi.fn(),
+		returning: vi.fn(),
+		select: vi.fn(),
+		selectFrom: vi.fn(),
+		selectWhere: vi.fn(),
+	}));
 
 vi.mock("@/db", () => ({
 	db: {
@@ -170,9 +163,7 @@ describe("BillingEnforcementService", () => {
 			Effect.gen(function* () {
 				const enforcementService = yield* BillingEnforcementService;
 
-				return yield* enforcementService
-					.requireActiveSubscription("org_123")
-					.pipe(Effect.flip);
+				return yield* enforcementService.requireActiveSubscription("org_123").pipe(Effect.flip);
 			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
 		);
 
@@ -194,9 +185,7 @@ describe("BillingEnforcementService", () => {
 			Effect.gen(function* () {
 				const enforcementService = yield* BillingEnforcementService;
 
-				return yield* enforcementService
-					.requireActiveSubscription("org_123")
-					.pipe(Effect.flip);
+				return yield* enforcementService.requireActiveSubscription("org_123").pipe(Effect.flip);
 			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
 		);
 

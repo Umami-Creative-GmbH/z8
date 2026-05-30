@@ -117,9 +117,9 @@ describe("WorkdayApiClient", () => {
 	});
 
 	it("posts attendance payloads", async () => {
-		const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-			new Response(JSON.stringify({ id: "attendance-1" }), { status: 201 }),
-		);
+		const fetchSpy = vi
+			.spyOn(globalThis, "fetch")
+			.mockResolvedValue(new Response(JSON.stringify({ id: "attendance-1" }), { status: 201 }));
 
 		const client = new WorkdayApiClient({
 			instanceUrl: "https://example.workday.com",

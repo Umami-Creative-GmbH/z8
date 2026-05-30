@@ -44,7 +44,8 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		id: "holidays",
 		title: "Holidays",
 		titleKey: "settings.implementationChecklist.items.holidays.title",
-		description: "Configure public holidays and closing days used by absence and payroll workflows.",
+		description:
+			"Configure public holidays and closing days used by absence and payroll workflows.",
 		descriptionKey: "settings.implementationChecklist.items.holidays.description",
 		helperText: "Z8 checks for active holiday presets, assignments, or custom holidays.",
 		helperTextKey: "settings.implementationChecklist.items.holidays.helperText",
@@ -88,7 +89,8 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		titleKey: "settings.implementationChecklist.items.payrollReadiness.title",
 		description: "Confirm payroll readiness checks and export operations before the first pay run.",
 		descriptionKey: "settings.implementationChecklist.items.payrollReadiness.description",
-		helperText: "Manual review: export readiness should be confirmed by an admin before payroll cutoff.",
+		helperText:
+			"Manual review: export readiness should be confirmed by an admin before payroll cutoff.",
 		helperTextKey: "settings.implementationChecklist.items.payrollReadiness.helperText",
 		actionLabel: "Review payroll readiness",
 		actionLabelKey: "settings.implementationChecklist.items.payrollReadiness.actionLabel",
@@ -128,7 +130,8 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		id: "employee-import",
 		title: "First employee import",
 		titleKey: "settings.implementationChecklist.items.employeeImport.title",
-		description: "Add the first employees so schedules, approvals, and payroll exports have real users.",
+		description:
+			"Add the first employees so schedules, approvals, and payroll exports have real users.",
 		descriptionKey: "settings.implementationChecklist.items.employeeImport.description",
 		helperText: "Z8 checks whether the organization has more than the founding/admin employee.",
 		helperTextKey: "settings.implementationChecklist.items.employeeImport.helperText",

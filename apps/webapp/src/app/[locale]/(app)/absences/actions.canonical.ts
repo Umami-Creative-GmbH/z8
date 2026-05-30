@@ -36,16 +36,11 @@ export function mapAbsenceRangeToCanonicalTimestamps(input: {
 	const startOfStartDate = DateTime.fromISO(input.startDate, {
 		zone: "utc",
 	}).startOf("day");
-	const endOfEndDate = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf(
-		"day",
-	);
+	const endOfEndDate = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf("day");
 
 	const startAt =
-		input.startPeriod === "pm"
-			? startOfStartDate.plus({ hours: 12 })
-			: startOfStartDate;
-	const endAt =
-		input.endPeriod === "am" ? endOfEndDate.minus({ hours: 12 }) : endOfEndDate;
+		input.startPeriod === "pm" ? startOfStartDate.plus({ hours: 12 }) : startOfStartDate;
+	const endAt = input.endPeriod === "am" ? endOfEndDate.minus({ hours: 12 }) : endOfEndDate;
 
 	return {
 		startAt: startAt.toJSDate(),

@@ -5,7 +5,7 @@
  * Integrates with existing employee and employeeManagers tables.
  */
 
-import { eq, and, count } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
@@ -41,10 +41,7 @@ export async function checkPermissions(
 	try {
 		// Get employee record
 		const emp = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.id, ctx.employeeId),
-				eq(employee.organizationId, ctx.organizationId),
-			),
+			where: and(eq(employee.id, ctx.employeeId), eq(employee.organizationId, ctx.organizationId)),
 			columns: {
 				id: true,
 				role: true,

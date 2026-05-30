@@ -1,13 +1,13 @@
 import { IconShield } from "@tabler/icons-react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { PlatformAdminHeaderActions } from "./platform-admin-header-actions";
-import type { PlatformAdminNavItem } from "./platform-admin-header-actions";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
+import type { PlatformAdminNavItem } from "./platform-admin-header-actions";
+import { PlatformAdminHeaderActions } from "./platform-admin-header-actions";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
 	const headersList = await headers();

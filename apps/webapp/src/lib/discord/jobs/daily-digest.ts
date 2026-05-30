@@ -9,6 +9,7 @@ import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
+import { env } from "@/env";
 import { getUserLocale } from "@/lib/bot-platform/i18n";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
@@ -16,7 +17,6 @@ import { sendMessage } from "../api";
 import { getAllActiveBotConfigs } from "../bot-config";
 import { getOrganizationConversations } from "../conversation-manager";
 import { buildDailyDigestEmbed } from "../formatters";
-import { env } from "@/env";
 
 const logger = createLogger("DiscordDailyDigest");
 
@@ -38,10 +38,7 @@ export async function runDiscordDailyDigestJob(): Promise<DiscordDailyDigestResu
 		const bots = await getAllActiveBotConfigs();
 		const digestEnabledBots = bots.filter((b) => b.enableDailyDigest);
 
-		logger.info(
-			{ botCount: digestEnabledBots.length },
-			"Starting Discord daily digest job",
-		);
+		logger.info({ botCount: digestEnabledBots.length }, "Starting Discord daily digest job");
 
 		for (const bot of digestEnabledBots) {
 			try {
@@ -99,9 +96,7 @@ async function processBotDigest(bot: {
 	if (conversations.length === 0) return 0;
 
 	const appUrl = env.APP_URL || "https://z8-time.app";
-	const { buildDigestDataForManager } = await import(
-		"@/lib/teams/jobs/daily-digest"
-	);
+	const { buildDigestDataForManager } = await import("@/lib/teams/jobs/daily-digest");
 
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {
@@ -138,18 +133,13 @@ async function processBotDigest(bot: {
 
 				return true;
 			} catch (error) {
-				logger.warn(
-					{ error, userId: conv.userId },
-					"Failed to send Discord digest",
-				);
+				logger.warn({ error, userId: conv.userId }, "Failed to send Discord digest");
 				return false;
 			}
 		}),
 	);
 
-	const sent = results.filter(
-		(r) => r.status === "fulfilled" && r.value === true,
-	).length;
+	const sent = results.filter((r) => r.status === "fulfilled" && r.value === true).length;
 
 	logger.info(
 		{ organizationId: bot.organizationId, digestsSent: sent },

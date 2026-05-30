@@ -5,9 +5,9 @@
  * Integrates with the Teams bot module for proactive messaging.
  */
 
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { employee, approvalRequest } from "@/db/schema";
+import { approvalRequest, employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import type { NotificationType } from "./types";
 
@@ -55,11 +55,8 @@ export async function isTeamsAvailable(organizationId: string): Promise<boolean>
 export async function sendTeamsNotification(params: TeamsNotificationParams): Promise<void> {
 	try {
 		// Dynamically import Teams module to avoid circular dependencies
-		const {
-			getConversationReferenceForUser,
-			sendProactiveMessage,
-			sendApprovalCardToManager,
-		} = await import("@/lib/teams");
+		const { getConversationReferenceForUser, sendProactiveMessage, sendApprovalCardToManager } =
+			await import("@/lib/teams");
 
 		// Handle approval-related notifications specially
 		if (params.type === "approval_request_submitted" && params.entityType === "approval_request") {
@@ -79,11 +76,7 @@ export async function sendTeamsNotification(params: TeamsNotificationParams): Pr
 
 				if (emp) {
 					// Send approval card
-					await sendApprovalCardToManager(
-						approval.id,
-						emp.id,
-						params.organizationId,
-					);
+					await sendApprovalCardToManager(approval.id, emp.id, params.organizationId);
 					return;
 				}
 			}
@@ -114,10 +107,7 @@ export async function sendTeamsNotification(params: TeamsNotificationParams): Pr
 			text,
 		});
 
-		logger.debug(
-			{ userId: params.userId, type: params.type },
-			"Teams notification sent",
-		);
+		logger.debug({ userId: params.userId, type: params.type }, "Teams notification sent");
 	} catch (error) {
 		logger.error({ error, params }, "Failed to send Teams notification");
 		throw error;

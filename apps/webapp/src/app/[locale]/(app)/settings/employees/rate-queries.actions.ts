@@ -6,13 +6,13 @@ import { employeeRateHistory } from "@/db/schema";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { createLogger } from "@/lib/logger";
-import type { RateHistoryEntry } from "./rate-action-types";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeSettingsActorContext,
 	getTargetEmployee,
 	runTracedEmployeeAction,
 } from "./employee-action-utils";
+import type { RateHistoryEntry } from "./rate-action-types";
 
 const logger = createLogger("RateHistoryActions");
 
@@ -27,17 +27,17 @@ export async function getEmployeeRateHistoryAction(
 		logError: (error) => {
 			logger.error({ error, employeeId }, "Failed to get rate history");
 		},
-			execute: (span) =>
-				Effect.gen(function* (_) {
-					const actor = yield* _(getEmployeeSettingsActorContext());
-					const { dbService } = actor;
-					const targetEmployee = yield* _(getTargetEmployee(employeeId));
+		execute: (span) =>
+			Effect.gen(function* (_) {
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				const { dbService } = actor;
+				const targetEmployee = yield* _(getTargetEmployee(employeeId));
 
-					yield* _(
-						ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-							message: "You do not have access to this employee's rates",
-							resource: "rate_history",
-							action: "read",
+				yield* _(
+					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+						message: "You do not have access to this employee's rates",
+						resource: "rate_history",
+						action: "read",
 					}),
 				);
 
@@ -72,17 +72,17 @@ export async function getRateAtDateAction(
 		logError: (error) => {
 			logger.error({ error, employeeId, date }, "Failed to get rate at date");
 		},
-			execute: () =>
-				Effect.gen(function* (_) {
-					const actor = yield* _(getEmployeeSettingsActorContext());
-					const { dbService } = actor;
-					const targetEmployee = yield* _(getTargetEmployee(employeeId));
+		execute: () =>
+			Effect.gen(function* (_) {
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				const { dbService } = actor;
+				const targetEmployee = yield* _(getTargetEmployee(employeeId));
 
-					yield* _(
-						ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-							message: "You do not have access to this employee's rates",
-							resource: "rate_history",
-							action: "read",
+				yield* _(
+					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+						message: "You do not have access to this employee's rates",
+						resource: "rate_history",
+						action: "read",
 					}),
 				);
 

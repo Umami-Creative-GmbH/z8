@@ -1,21 +1,14 @@
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
-import {
-	timeEntry,
-	type WorkPeriodAutoAdjustmentReason,
-	workPeriod,
-} from "@/db/schema";
+import { timeEntry, type WorkPeriodAutoAdjustmentReason, workPeriod } from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { type DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
-import {
-	WorkPolicyService,
-	WorkPolicyServiceLive,
-} from "./work-policy.service";
+import { WorkPolicyService, WorkPolicyServiceLive } from "./work-policy.service";
 
 // ============================================
 // TYPES
@@ -56,9 +49,7 @@ export interface ProcessUnprocessedPeriodsResult {
 // SERVICE INTERFACE
 // ============================================
 
-export class BreakEnforcementService extends Context.Tag(
-	"BreakEnforcementService",
-)<
+export class BreakEnforcementService extends Context.Tag("BreakEnforcementService")<
 	BreakEnforcementService,
 	{
 		/**
@@ -120,8 +111,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 			timezone: string,
 		): Effect.Effect<number, DatabaseError> =>
 			Effect.gen(function* (_) {
-				const { start: todayStartDT, end: todayEndDT } =
-					getTodayRangeInTimezone(timezone);
+				const { start: todayStartDT, end: todayEndDT } = getTodayRangeInTimezone(timezone);
 				const todayStart = dateToDB(todayStartDT)!;
 				const todayEnd = dateToDB(todayEndDT)!;
 
@@ -250,9 +240,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 			NotFoundError | DatabaseError
 		> =>
 			Effect.gen(function* (_) {
-				const policy = yield* _(
-					workPolicyService.getEffectivePolicy(params.employeeId),
-				);
+				const policy = yield* _(workPolicyService.getEffectivePolicy(params.employeeId));
 
 				// If no policy or no regulation enabled, no break requirements
 				if (!policy || !policy.regulation) {
@@ -269,13 +257,8 @@ export const BreakEnforcementServiceLive = Layer.effect(
 
 				// Find the applicable break rule (highest threshold that applies)
 				const applicableRule = regulation.breakRules
-					.filter(
-						(rule) =>
-							params.sessionDurationMinutes > rule.workingMinutesThreshold,
-					)
-					.sort(
-						(a, b) => b.workingMinutesThreshold - a.workingMinutesThreshold,
-					)[0];
+					.filter((rule) => params.sessionDurationMinutes > rule.workingMinutesThreshold)
+					.sort((a, b) => b.workingMinutesThreshold - a.workingMinutesThreshold)[0];
 
 				if (!applicableRule) {
 					return {
@@ -339,9 +322,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				}
 
 				// Calculate breaks taken today
-				const breaksTaken = yield* _(
-					calculateBreaksTakenToday(input.employeeId, input.timezone),
-				);
+				const breaksTaken = yield* _(calculateBreaksTakenToday(input.employeeId, input.timezone));
 
 				// Calculate break deficit
 				const deficitResult = yield* _(
@@ -361,10 +342,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				// Insert after maxUninterruptedMinutes from start, or after the threshold
 				const maxUninterrupted = deficitResult.maxUninterruptedMinutes;
 				const insertAfterMinutes = maxUninterrupted
-					? Math.min(
-							maxUninterrupted,
-							deficitResult.applicableRule.workingMinutesThreshold,
-						)
+					? Math.min(maxUninterrupted, deficitResult.applicableRule.workingMinutesThreshold)
 					: deficitResult.applicableRule.workingMinutesThreshold;
 
 				// Calculate break insertion point
@@ -385,17 +363,13 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				}
 
 				// Validate break times are within the work period
-				if (
-					breakStartDate <= period.startTime ||
-					breakEndDate >= period.endTime
-				) {
+				if (breakStartDate <= period.startTime || breakEndDate >= period.endTime) {
 					return { wasAdjusted: false };
 				}
 
 				// Store original values for audit trail
 				const originalEndTime = period.endTime;
-				const originalDurationMinutes =
-					period.durationMinutes || input.sessionDurationMinutes;
+				const originalDurationMinutes = period.durationMinutes || input.sessionDurationMinutes;
 
 				// Create clock-out entry for first period at break start
 				const firstClockOut = yield* _(
@@ -424,12 +398,10 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				);
 
 				// Calculate new durations
-				const firstDurationMs =
-					breakStartDate.getTime() - period.startTime.getTime();
+				const firstDurationMs = breakStartDate.getTime() - period.startTime.getTime();
 				const firstDurationMinutes = Math.floor(firstDurationMs / 60000);
 
-				const secondDurationMs =
-					period.endTime.getTime() - breakEndDate.getTime();
+				const secondDurationMs = period.endTime.getTime() - breakEndDate.getTime();
 				const secondDurationMinutes = Math.floor(secondDurationMs / 60000);
 
 				// Build auto-adjustment reason
@@ -493,8 +465,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 						breakInsertedAt: breakStartDate.toISOString(),
 						regulationName: deficitResult.regulationName!,
 						originalDurationMinutes,
-						adjustedDurationMinutes:
-							firstDurationMinutes + secondDurationMinutes,
+						adjustedDurationMinutes: firstDurationMinutes + secondDurationMinutes,
 					},
 				};
 			});
@@ -502,8 +473,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 		return BreakEnforcementService.of({
 			calculateBreakDeficit: (params) => calculateBreakDeficitInternal(params),
 
-			enforceBreaksAfterClockOut: (input) =>
-				enforceBreaksAfterClockOutInternal(input),
+			enforceBreaksAfterClockOut: (input) => enforceBreaksAfterClockOutInternal(input),
 
 			processUnprocessedPeriods: (input) =>
 				Effect.gen(function* (_) {
@@ -555,10 +525,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 
 					for (const period of periods) {
 						// Filter by organization if specified
-						if (
-							input.organizationId &&
-							period.employee?.organizationId !== input.organizationId
-						) {
+						if (input.organizationId && period.employee?.organizationId !== input.organizationId) {
 							continue;
 						}
 
@@ -703,9 +670,7 @@ export const calculateBreakDeficitForTesting = (
 	never
 > =>
 	Effect.gen(function* (_) {
-		const policy = yield* _(
-			mockPolicyService.getEffectivePolicy(params.employeeId),
-		);
+		const policy = yield* _(mockPolicyService.getEffectivePolicy(params.employeeId));
 
 		if (!policy || !policy.regulation) {
 			return {
@@ -721,9 +686,7 @@ export const calculateBreakDeficitForTesting = (
 
 		// Find the applicable break rule (highest threshold that applies)
 		const applicableRule = regulation.breakRules
-			.filter(
-				(rule) => params.sessionDurationMinutes > rule.workingMinutesThreshold,
-			)
+			.filter((rule) => params.sessionDurationMinutes > rule.workingMinutesThreshold)
 			.sort((a, b) => b.workingMinutesThreshold - a.workingMinutesThreshold)[0];
 
 		if (!applicableRule) {
@@ -736,10 +699,7 @@ export const calculateBreakDeficitForTesting = (
 			};
 		}
 
-		const deficit = Math.max(
-			0,
-			applicableRule.requiredBreakMinutes - params.breaksTakenMinutes,
-		);
+		const deficit = Math.max(0, applicableRule.requiredBreakMinutes - params.breaksTakenMinutes);
 
 		return {
 			deficit,
