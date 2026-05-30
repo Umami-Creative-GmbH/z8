@@ -63,7 +63,14 @@ const DAYS_OF_WEEK = [
 	{ value: "sunday", label: "Sunday" },
 ] as const;
 
-type DayOfWeek = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+type DayOfWeek =
+	| "monday"
+	| "tuesday"
+	| "wednesday"
+	| "thursday"
+	| "friday"
+	| "saturday"
+	| "sunday";
 
 const defaultDays: ScheduleDayInput[] = DAYS_OF_WEEK.map((day) => ({
 	dayOfWeek: day.value,
@@ -123,7 +130,9 @@ function parsePresenceFixedDays(value: string | null): string[] {
 
 	try {
 		const parsed = JSON.parse(value) as unknown;
-		return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+		return Array.isArray(parsed)
+			? parsed.filter((item): item is string => typeof item === "string")
+			: [];
 	} catch {
 		return [];
 	}
@@ -147,18 +156,18 @@ function buildWorkPolicyFormValues(
 		workingDaysPreset: editingPolicy.schedule?.workingDaysPreset ?? "weekdays",
 		hoursPerCycle: editingPolicy.schedule?.hoursPerCycle || "40",
 		homeOfficeDaysPerCycle: editingPolicy.schedule?.homeOfficeDaysPerCycle || 0,
-		days:
-			editingPolicy.schedule?.days.length
-				? editingPolicy.schedule.days.map((day) => ({
-						dayOfWeek: day.dayOfWeek as DayOfWeek,
-						hoursPerDay: day.hoursPerDay,
-						isWorkDay: day.isWorkDay,
-						cycleWeek: day.cycleWeek ?? 1,
-					}))
-				: defaultDays,
+		days: editingPolicy.schedule?.days.length
+			? editingPolicy.schedule.days.map((day) => ({
+					dayOfWeek: day.dayOfWeek as DayOfWeek,
+					hoursPerDay: day.hoursPerDay,
+					isWorkDay: day.isWorkDay,
+					cycleWeek: day.cycleWeek ?? 1,
+				}))
+			: defaultDays,
 		maxDailyMinutes: editingPolicy.regulation?.maxDailyMinutes ?? null,
 		maxWeeklyMinutes: editingPolicy.regulation?.maxWeeklyMinutes ?? null,
-		maxUninterruptedMinutes: editingPolicy.regulation?.maxUninterruptedMinutes ?? null,
+		maxUninterruptedMinutes:
+			editingPolicy.regulation?.maxUninterruptedMinutes ?? null,
 		breakRules: (editingPolicy.regulation?.breakRules || []).map((rule) => ({
 			workingMinutesThreshold: rule.workingMinutesThreshold,
 			requiredBreakMinutes: rule.requiredBreakMinutes,
@@ -206,8 +215,13 @@ export function WorkPolicyDialog({
 							scheduleCycle: value.scheduleCycle,
 							scheduleType: value.scheduleType,
 							workingDaysPreset:
-								value.scheduleType === "detailed" ? ("custom" as const) : value.workingDaysPreset,
-							hoursPerCycle: value.scheduleType === "simple" ? value.hoursPerCycle : undefined,
+								value.scheduleType === "detailed"
+									? ("custom" as const)
+									: value.workingDaysPreset,
+							hoursPerCycle:
+								value.scheduleType === "simple"
+									? value.hoursPerCycle
+									: undefined,
 							homeOfficeDaysPerCycle: value.homeOfficeDaysPerCycle,
 							days: value.scheduleType === "detailed" ? value.days : undefined,
 						}
@@ -216,7 +230,8 @@ export function WorkPolicyDialog({
 					? {
 							maxDailyMinutes: value.maxDailyMinutes ?? undefined,
 							maxWeeklyMinutes: value.maxWeeklyMinutes ?? undefined,
-							maxUninterruptedMinutes: value.maxUninterruptedMinutes ?? undefined,
+							maxUninterruptedMinutes:
+								value.maxUninterruptedMinutes ?? undefined,
 							breakRules: value.breakRules,
 						}
 					: undefined,
@@ -268,11 +283,16 @@ export function WorkPolicyDialog({
 				});
 				onSuccess();
 			} else {
-				toast.error(result.error || t("settings.workPolicies.createFailed", "Failed to create"));
+				toast.error(
+					result.error ||
+						t("settings.workPolicies.createFailed", "Failed to create"),
+				);
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.workPolicies.createFailed", "Failed to create policy"));
+			toast.error(
+				t("settings.workPolicies.createFailed", "Failed to create policy"),
+			);
 		},
 	});
 
@@ -288,7 +308,9 @@ export function WorkPolicyDialog({
 			if (result.success) {
 				toast.success(t("settings.workPolicies.updated", "Policy updated"));
 				void Promise.all([
-					queryClient.invalidateQueries({ queryKey: queryKeys.workPolicies.list(organizationId) }),
+					queryClient.invalidateQueries({
+						queryKey: queryKeys.workPolicies.list(organizationId),
+					}),
 					editingPolicy
 						? queryClient.invalidateQueries({
 								queryKey: queryKeys.workPolicies.detail(editingPolicy.id),
@@ -297,30 +319,60 @@ export function WorkPolicyDialog({
 				]);
 				onSuccess();
 			} else {
-				toast.error(result.error || t("settings.workPolicies.updateFailed", "Failed to update"));
+				toast.error(
+					result.error ||
+						t("settings.workPolicies.updateFailed", "Failed to update"),
+				);
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.workPolicies.updateFailed", "Failed to update policy"));
+			toast.error(
+				t("settings.workPolicies.updateFailed", "Failed to update policy"),
+			);
 		},
 	});
 
 	const isPending = createMutation.isPending || updateMutation.isPending;
 
 	// Subscribe to form values for conditional rendering
-	const scheduleEnabled = useStore(form.store, (state) => state.values.scheduleEnabled);
-	const regulationEnabled = useStore(form.store, (state) => state.values.regulationEnabled);
-	const presenceEnabled = useStore(form.store, (state) => state.values.presenceEnabled);
-	const presenceMode = useStore(form.store, (state) => state.values.presence.presenceMode);
+	const scheduleEnabled = useStore(
+		form.store,
+		(state) => state.values.scheduleEnabled,
+	);
+	const regulationEnabled = useStore(
+		form.store,
+		(state) => state.values.regulationEnabled,
+	);
+	const presenceEnabled = useStore(
+		form.store,
+		(state) => state.values.presenceEnabled,
+	);
+	const presenceMode = useStore(
+		form.store,
+		(state) => state.values.presence.presenceMode,
+	);
 	const _presenceFixedDays = useStore(
 		form.store,
 		(state) => state.values.presence.requiredOnsiteFixedDays,
 	);
-	const scheduleType = useStore(form.store, (state) => state.values.scheduleType);
-	const days = useStore(form.store, (state) => state.values.days) || defaultDays;
-	const workingDaysPreset = useStore(form.store, (state) => state.values.workingDaysPreset);
-	const hoursPerCycle = useStore(form.store, (state) => state.values.hoursPerCycle);
-	const scheduleCycle = useStore(form.store, (state) => state.values.scheduleCycle);
+	const scheduleType = useStore(
+		form.store,
+		(state) => state.values.scheduleType,
+	);
+	const days =
+		useStore(form.store, (state) => state.values.days) || defaultDays;
+	const workingDaysPreset = useStore(
+		form.store,
+		(state) => state.values.workingDaysPreset,
+	);
+	const hoursPerCycle = useStore(
+		form.store,
+		(state) => state.values.hoursPerCycle,
+	);
+	const scheduleCycle = useStore(
+		form.store,
+		(state) => state.values.scheduleCycle,
+	);
 	const homeOfficeDaysPerCycle = useStore(
 		form.store,
 		(state) => state.values.homeOfficeDaysPerCycle,
@@ -340,7 +392,9 @@ export function WorkPolicyDialog({
 		const generatedDays = generateDaysFromPreset(workingDaysPreset);
 		const workDayCount = generatedDays.filter((d) => d.isWorkDay).length;
 		const hoursPerDay =
-			workDayCount > 0 ? (parseFloat(hoursPerCycle || "40") / workDayCount).toFixed(1) : "0";
+			workDayCount > 0
+				? (parseFloat(hoursPerCycle || "40") / workDayCount).toFixed(1)
+				: "0";
 		return generatedDays.map((d) => ({
 			...d,
 			hoursPerDay: d.isWorkDay ? hoursPerDay : "0",
@@ -391,7 +445,9 @@ export function WorkPolicyDialog({
 											)}
 										/>
 										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+											<p className="text-sm text-destructive">
+												{field.state.meta.errors[0]}
+											</p>
 										)}
 									</div>
 								)}
@@ -400,7 +456,12 @@ export function WorkPolicyDialog({
 							<form.Field name="description">
 								{(field) => (
 									<div className="space-y-2 sm:col-span-2">
-										<Label>{t("settings.workPolicies.descriptionLabel", "Description")}</Label>
+										<Label>
+											{t(
+												"settings.workPolicies.descriptionLabel",
+												"Description",
+											)}
+										</Label>
 										<Textarea
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
@@ -425,7 +486,12 @@ export function WorkPolicyDialog({
 									{(field) => (
 										<div className="flex items-center justify-between rounded-lg border p-4">
 											<div className="space-y-0.5">
-												<Label>{t("settings.workPolicies.workSchedule", "Work Schedule")}</Label>
+												<Label>
+													{t(
+														"settings.workPolicies.workSchedule",
+														"Work Schedule",
+													)}
+												</Label>
 												<p className="text-xs text-muted-foreground">
 													{t(
 														"settings.workPolicies.workScheduleDescription",
@@ -433,7 +499,10 @@ export function WorkPolicyDialog({
 													)}
 												</p>
 											</div>
-											<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
+											<Switch
+												checked={field.state.value}
+												onCheckedChange={field.handleChange}
+											/>
 										</div>
 									)}
 								</form.Field>
@@ -443,7 +512,10 @@ export function WorkPolicyDialog({
 										<div className="flex items-center justify-between rounded-lg border p-4">
 											<div className="space-y-0.5">
 												<Label>
-													{t("settings.workPolicies.timeRegulation", "Time Regulation")}
+													{t(
+														"settings.workPolicies.timeRegulation",
+														"Time Regulation",
+													)}
 												</Label>
 												<p className="text-xs text-muted-foreground">
 													{t(
@@ -452,7 +524,10 @@ export function WorkPolicyDialog({
 													)}
 												</p>
 											</div>
-											<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
+											<Switch
+												checked={field.state.value}
+												onCheckedChange={field.handleChange}
+											/>
 										</div>
 									)}
 								</form.Field>
@@ -462,7 +537,10 @@ export function WorkPolicyDialog({
 										<div className="flex items-center justify-between rounded-lg border p-4">
 											<div className="space-y-0.5">
 												<Label>
-													{t("settings.workPolicies.presenceEnabled", "Presence Requirements")}
+													{t(
+														"settings.workPolicies.presenceEnabled",
+														"Presence Requirements",
+													)}
 												</Label>
 												<p className="text-xs text-muted-foreground">
 													{t(
@@ -471,7 +549,10 @@ export function WorkPolicyDialog({
 													)}
 												</p>
 											</div>
-											<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
+											<Switch
+												checked={field.state.value}
+												onCheckedChange={field.handleChange}
+											/>
 										</div>
 									)}
 								</form.Field>
@@ -492,36 +573,58 @@ export function WorkPolicyDialog({
 								<Separator />
 								<div className="space-y-4">
 									<h3 className="text-sm font-medium">
-										{t("settings.workPolicies.scheduleConfiguration", "Schedule Configuration")}
+										{t(
+											"settings.workPolicies.scheduleConfiguration",
+											"Schedule Configuration",
+										)}
 									</h3>
 
 									<div className="grid gap-4 sm:grid-cols-2">
 										<form.Field name="scheduleCycle">
 											{(field) => (
 												<div className="space-y-2">
-													<Label>{t("settings.workSchedules.cycle.label", "Cycle")}</Label>
+													<Label>
+														{t("settings.workSchedules.cycle.label", "Cycle")}
+													</Label>
 													<Select
 														value={field.state.value}
-														onValueChange={(v) => field.handleChange(v as typeof field.state.value)}
+														onValueChange={(v) =>
+															field.handleChange(v as typeof field.state.value)
+														}
 													>
 														<SelectTrigger>
 															<SelectValue />
 														</SelectTrigger>
 														<SelectContent>
 															<SelectItem value="daily">
-																{t("settings.workSchedules.cycle.daily", "Daily")}
+																{t(
+																	"settings.workSchedules.cycle.daily",
+																	"Daily",
+																)}
 															</SelectItem>
 															<SelectItem value="weekly">
-																{t("settings.workSchedules.cycle.weekly", "Weekly")}
+																{t(
+																	"settings.workSchedules.cycle.weekly",
+																	"Weekly",
+																)}
 															</SelectItem>
 															<SelectItem value="biweekly">
-																{t("settings.workSchedules.cycle.biweekly", "Biweekly")}
+																{t(
+																	"settings.workSchedules.cycle.biweekly",
+																	"Biweekly",
+																)}
 															</SelectItem>
 															<SelectItem value="monthly">
-																{t("settings.workSchedules.cycle.monthly", "Monthly")}
+																{t(
+																	"settings.workSchedules.cycle.monthly",
+																	"Monthly",
+																)}
 															</SelectItem>
 															<SelectItem value="yearly">
-																{t("settings.workSchedules.cycle.yearly", "Yearly")}
+																{t(
+																	"settings.workSchedules.cycle.yearly",
+																	"Yearly",
+																)}
 															</SelectItem>
 														</SelectContent>
 													</Select>
@@ -533,14 +636,19 @@ export function WorkPolicyDialog({
 											{(field) => (
 												<div className="space-y-2">
 													<Label>
-														{t("settings.workSchedules.homeOfficeDays", "Home Office Days")}
+														{t(
+															"settings.workSchedules.homeOfficeDays",
+															"Home Office Days",
+														)}
 													</Label>
 													<Input
 														type="number"
 														min="0"
 														max="31"
 														value={field.state.value}
-														onChange={(e) => field.handleChange(Number(e.target.value))}
+														onChange={(e) =>
+															field.handleChange(Number(e.target.value))
+														}
 														onBlur={field.handleBlur}
 													/>
 												</div>
@@ -553,14 +661,19 @@ export function WorkPolicyDialog({
 										{(field) => (
 											<Tabs
 												value={field.state.value}
-												onValueChange={(v) => field.handleChange(v as typeof field.state.value)}
+												onValueChange={(v) =>
+													field.handleChange(v as typeof field.state.value)
+												}
 											>
 												<TabsList className="grid w-full grid-cols-2">
 													<TabsTrigger value="simple">
 														{t("settings.workSchedules.type.simple", "Simple")}
 													</TabsTrigger>
 													<TabsTrigger value="detailed">
-														{t("settings.workSchedules.type.detailed", "Detailed")}
+														{t(
+															"settings.workSchedules.type.detailed",
+															"Detailed",
+														)}
 													</TabsTrigger>
 												</TabsList>
 
@@ -569,12 +682,17 @@ export function WorkPolicyDialog({
 														{(presetField) => (
 															<div className="space-y-2">
 																<Label>
-																	{t("settings.workSchedules.workingDays.label", "Working Days")}
+																	{t(
+																		"settings.workSchedules.workingDays.label",
+																		"Working Days",
+																	)}
 																</Label>
 																<Select
 																	value={presetField.state.value}
 																	onValueChange={(v) =>
-																		presetField.handleChange(v as typeof presetField.state.value)
+																		presetField.handleChange(
+																			v as typeof presetField.state.value,
+																		)
 																	}
 																>
 																	<SelectTrigger>
@@ -594,7 +712,10 @@ export function WorkPolicyDialog({
 																			)}
 																		</SelectItem>
 																		<SelectItem value="all_days">
-																			{t("settings.workSchedules.workingDays.allDays", "All Days")}
+																			{t(
+																				"settings.workSchedules.workingDays.allDays",
+																				"All Days",
+																			)}
 																		</SelectItem>
 																	</SelectContent>
 																</Select>
@@ -606,7 +727,10 @@ export function WorkPolicyDialog({
 														{(hoursField) => (
 															<div className="space-y-2">
 																<Label>
-																	{t("settings.workSchedules.hoursPerCycle", "Hours per Cycle")}
+																	{t(
+																		"settings.workSchedules.hoursPerCycle",
+																		"Hours per Cycle",
+																	)}
 																</Label>
 																<Input
 																	type="number"
@@ -614,7 +738,9 @@ export function WorkPolicyDialog({
 																	max="744"
 																	step="0.5"
 																	value={hoursField.state.value}
-																	onChange={(e) => hoursField.handleChange(e.target.value)}
+																	onChange={(e) =>
+																		hoursField.handleChange(e.target.value)
+																	}
 																	onBlur={hoursField.handleBlur}
 																/>
 															</div>
@@ -622,7 +748,10 @@ export function WorkPolicyDialog({
 													</form.Field>
 												</TabsContent>
 
-												<TabsContent value="detailed" className="space-y-4 pt-4">
+												<TabsContent
+													value="detailed"
+													className="space-y-4 pt-4"
+												>
 													<div className="space-y-3">
 														{DAYS_OF_WEEK.map((day, index) => (
 															<div
@@ -633,7 +762,10 @@ export function WorkPolicyDialog({
 																	checked={days[index]?.isWorkDay ?? false}
 																	onCheckedChange={(checked) => {
 																		const newDays = [...days];
-																		newDays[index] = { ...newDays[index], isWorkDay: !!checked };
+																		newDays[index] = {
+																			...newDays[index],
+																			isWorkDay: !!checked,
+																		};
 																		form.setFieldValue("days", newDays);
 																	}}
 																/>
@@ -660,14 +792,18 @@ export function WorkPolicyDialog({
 																	/>
 																</div>
 																<span className="text-sm text-muted-foreground w-12">
-																	{t("settings.workSchedules.hoursUnit", "hours")}
+																	{t(
+																		"settings.workSchedules.hoursUnit",
+																		"hours",
+																	)}
 																</span>
 															</div>
 														))}
 													</div>
 													<div className="text-right text-sm font-medium pt-2 border-t">
 														{t("settings.workSchedules.totalHours", "Total")}:{" "}
-														{totalHours.toFixed(1)} {t("settings.workSchedules.hoursUnit", "hours")}
+														{totalHours.toFixed(1)}{" "}
+														{t("settings.workSchedules.hoursUnit", "hours")}
 													</div>
 												</TabsContent>
 											</Tabs>
@@ -695,28 +831,45 @@ export function WorkPolicyDialog({
 								<Separator />
 								<div className="space-y-4">
 									<h3 className="text-sm font-medium">
-										{t("settings.workPolicies.regulationConfiguration", "Regulation Configuration")}
+										{t(
+											"settings.workPolicies.regulationConfiguration",
+											"Regulation Configuration",
+										)}
 									</h3>
 
 									{/* Working Time Limits */}
 									<div className="space-y-4">
 										<h4 className="text-sm text-muted-foreground">
-											{t("settings.timeRegulations.workingTimeLimits", "Working Time Limits")}
+											{t(
+												"settings.timeRegulations.workingTimeLimits",
+												"Working Time Limits",
+											)}
 										</h4>
 										<div className="grid gap-4 sm:grid-cols-3">
 											<form.Field name="maxDailyMinutes">
 												{(field) => (
 													<div className="space-y-2">
-														<Label>{t("settings.timeRegulations.maxDaily", "Max Daily")}</Label>
+														<Label>
+															{t(
+																"settings.timeRegulations.maxDaily",
+																"Max Daily",
+															)}
+														</Label>
 														<div className="flex items-center gap-2">
 															<Input
 																type="number"
 																min="1"
 																max="24"
-																value={field.state.value ? Math.floor(field.state.value / 60) : ""}
+																value={
+																	field.state.value
+																		? Math.floor(field.state.value / 60)
+																		: ""
+																}
 																onChange={(e) => {
 																	const hours = parseInt(e.target.value, 10);
-																	field.handleChange(Number.isNaN(hours) ? null : hours * 60);
+																	field.handleChange(
+																		Number.isNaN(hours) ? null : hours * 60,
+																	);
 																}}
 																onBlur={field.handleBlur}
 																placeholder="—"
@@ -733,16 +886,27 @@ export function WorkPolicyDialog({
 											<form.Field name="maxWeeklyMinutes">
 												{(field) => (
 													<div className="space-y-2">
-														<Label>{t("settings.timeRegulations.maxWeekly", "Max Weekly")}</Label>
+														<Label>
+															{t(
+																"settings.timeRegulations.maxWeekly",
+																"Max Weekly",
+															)}
+														</Label>
 														<div className="flex items-center gap-2">
 															<Input
 																type="number"
 																min="1"
 																max="168"
-																value={field.state.value ? Math.floor(field.state.value / 60) : ""}
+																value={
+																	field.state.value
+																		? Math.floor(field.state.value / 60)
+																		: ""
+																}
 																onChange={(e) => {
 																	const hours = parseInt(e.target.value, 10);
-																	field.handleChange(Number.isNaN(hours) ? null : hours * 60);
+																	field.handleChange(
+																		Number.isNaN(hours) ? null : hours * 60,
+																	);
 																}}
 																onBlur={field.handleBlur}
 																placeholder="—"
@@ -760,7 +924,10 @@ export function WorkPolicyDialog({
 												{(field) => (
 													<div className="space-y-2">
 														<Label>
-															{t("settings.timeRegulations.maxUninterrupted", "Max Uninterrupted")}
+															{t(
+																"settings.timeRegulations.maxUninterrupted",
+																"Max Uninterrupted",
+															)}
 														</Label>
 														<div className="flex items-center gap-2">
 															<Input
@@ -768,11 +935,17 @@ export function WorkPolicyDialog({
 																min="0.5"
 																max="12"
 																step="0.5"
-																value={field.state.value ? field.state.value / 60 : ""}
+																value={
+																	field.state.value
+																		? field.state.value / 60
+																		: ""
+																}
 																onChange={(e) => {
 																	const hours = parseFloat(e.target.value);
 																	field.handleChange(
-																		Number.isNaN(hours) ? null : Math.round(hours * 60),
+																		Number.isNaN(hours)
+																			? null
+																			: Math.round(hours * 60),
 																	);
 																}}
 																onBlur={field.handleBlur}
@@ -793,7 +966,10 @@ export function WorkPolicyDialog({
 									<div className="space-y-4">
 										<div className="flex items-center justify-between">
 											<h4 className="text-sm text-muted-foreground">
-												{t("settings.timeRegulations.breakRules", "Break Rules")}
+												{t(
+													"settings.timeRegulations.breakRules",
+													"Break Rules",
+												)}
 											</h4>
 											<form.Field name="breakRules">
 												{(field) => (
@@ -806,7 +982,10 @@ export function WorkPolicyDialog({
 														}}
 													>
 														<IconPlus className="mr-2 size-4" />
-														{t("settings.timeRegulations.addBreakRule", "Add Break Rule")}
+														{t(
+															"settings.timeRegulations.addBreakRule",
+															"Add Break Rule",
+														)}
 													</Button>
 												)}
 											</form.Field>
@@ -834,12 +1013,17 @@ export function WorkPolicyDialog({
 														field.state.value.map((rule, ruleIndex) => {
 															const ruleKey = `${rule.workingMinutesThreshold}-${rule.requiredBreakMinutes}-${rule.options.length}-${ruleIndex}`;
 															return (
-																<form.Field key={ruleKey} name={`breakRules[${ruleIndex}]`}>
+																<form.Field
+																	key={ruleKey}
+																	name={`breakRules[${ruleIndex}]`}
+																>
 																	{() => (
 																		<BreakRuleEditor
 																			ruleIndex={ruleIndex}
 																			form={form}
-																			onRemove={() => field.removeValue(ruleIndex)}
+																			onRemove={() =>
+																				field.removeValue(ruleIndex)
+																			}
 																		/>
 																	)}
 																</form.Field>
@@ -860,24 +1044,34 @@ export function WorkPolicyDialog({
 								<Separator />
 								<div className="space-y-4">
 									<h3 className="text-sm font-medium">
-										{t("settings.workPolicies.presenceConfiguration", "Presence Configuration")}
+										{t(
+											"settings.workPolicies.presenceConfiguration",
+											"Presence Configuration",
+										)}
 									</h3>
 
 									{/* Mode */}
 									<div className="space-y-2">
-										<Label>{t("settings.workPolicies.presenceMode", "Mode")}</Label>
+										<Label>
+											{t("settings.workPolicies.presenceMode", "Mode")}
+										</Label>
 										<form.Field name="presence.presenceMode">
 											{(field) => (
 												<RadioGroup
 													value={field.state.value}
-													onValueChange={(v) => field.handleChange(v as PresenceModeType)}
+													onValueChange={(v) =>
+														field.handleChange(v as PresenceModeType)
+													}
 													className="grid gap-3 sm:grid-cols-2"
 												>
 													<label
 														htmlFor="presence-mode-minimum-count"
 														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
 													>
-														<RadioGroupItem id="presence-mode-minimum-count" value="minimum_count" />
+														<RadioGroupItem
+															id="presence-mode-minimum-count"
+															value="minimum_count"
+														/>
 														<div className="space-y-0.5">
 															<span className="text-sm font-medium">
 																{t(
@@ -897,7 +1091,10 @@ export function WorkPolicyDialog({
 														htmlFor="presence-mode-fixed-days"
 														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
 													>
-														<RadioGroupItem id="presence-mode-fixed-days" value="fixed_days" />
+														<RadioGroupItem
+															id="presence-mode-fixed-days"
+															value="fixed_days"
+														/>
 														<div className="space-y-0.5">
 															<span className="text-sm font-medium">
 																{t(
@@ -948,12 +1145,18 @@ export function WorkPolicyDialog({
 														min={1}
 														max={7}
 														value={field.state.value}
-														onChange={(e) => field.handleChange(parseInt(e.target.value, 10) || 1)}
+														onChange={(e) =>
+															field.handleChange(
+																parseInt(e.target.value, 10) || 1,
+															)
+														}
 														onBlur={field.handleBlur}
 														className="w-32"
 													/>
 													{field.state.meta.errors.length > 0 && (
-														<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+														<p className="text-sm text-destructive">
+															{field.state.meta.errors[0]}
+														</p>
 													)}
 													<p className="text-xs text-muted-foreground">
 														{t(
@@ -993,7 +1196,9 @@ export function WorkPolicyDialog({
 													</Label>
 													<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
 														{DAYS_OF_WEEK.map((day) => {
-															const isChecked = (field.state.value || []).includes(day.value);
+															const isChecked = (
+																field.state.value || []
+															).includes(day.value);
 															const dayId = `presence-fixed-day-${day.value}`;
 															return (
 																<label
@@ -1007,10 +1212,15 @@ export function WorkPolicyDialog({
 																		onCheckedChange={(checked) => {
 																			const current = field.state.value || [];
 																			if (checked) {
-																				field.handleChange([...current, day.value]);
+																				field.handleChange([
+																					...current,
+																					day.value,
+																				]);
 																			} else {
 																				field.handleChange(
-																					current.filter((d: string) => d !== day.value),
+																					current.filter(
+																						(d: string) => d !== day.value,
+																					),
 																				);
 																			}
 																		}}
@@ -1023,7 +1233,9 @@ export function WorkPolicyDialog({
 														})}
 													</div>
 													{field.state.meta.errors.length > 0 && (
-														<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+														<p className="text-sm text-destructive">
+															{field.state.meta.errors[0]}
+														</p>
 													)}
 												</div>
 											)}
@@ -1044,7 +1256,9 @@ export function WorkPolicyDialog({
 													<Select
 														value={field.state.value}
 														onValueChange={(v) =>
-															field.handleChange(v as PresenceEvaluationPeriodType)
+															field.handleChange(
+																v as PresenceEvaluationPeriodType,
+															)
 														}
 													>
 														<SelectTrigger>
@@ -1052,13 +1266,22 @@ export function WorkPolicyDialog({
 														</SelectTrigger>
 														<SelectContent>
 															<SelectItem value="weekly">
-																{t("settings.workPolicies.presenceEvaluationWeekly", "Weekly")}
+																{t(
+																	"settings.workPolicies.presenceEvaluationWeekly",
+																	"Weekly",
+																)}
 															</SelectItem>
 															<SelectItem value="biweekly">
-																{t("settings.workPolicies.presenceEvaluationBiweekly", "Biweekly")}
+																{t(
+																	"settings.workPolicies.presenceEvaluationBiweekly",
+																	"Biweekly",
+																)}
 															</SelectItem>
 															<SelectItem value="monthly">
-																{t("settings.workPolicies.presenceEvaluationMonthly", "Monthly")}
+																{t(
+																	"settings.workPolicies.presenceEvaluationMonthly",
+																	"Monthly",
+																)}
 															</SelectItem>
 														</SelectContent>
 													</Select>
@@ -1069,17 +1292,27 @@ export function WorkPolicyDialog({
 										<form.Field name="presence.locationId">
 											{(field) => (
 												<div className="space-y-2">
-													<Label>{t("settings.workPolicies.presenceLocation", "Location")}</Label>
+													<Label>
+														{t(
+															"settings.workPolicies.presenceLocation",
+															"Location",
+														)}
+													</Label>
 													<Select
 														value={field.state.value || "__any__"}
-														onValueChange={(v) => field.handleChange(v === "__any__" ? "" : v)}
+														onValueChange={(v) =>
+															field.handleChange(v === "__any__" ? "" : v)
+														}
 													>
 														<SelectTrigger>
 															<SelectValue />
 														</SelectTrigger>
 														<SelectContent>
 															<SelectItem value="__any__">
-																{t("settings.workPolicies.presenceAnyLocation", "Any location")}
+																{t(
+																	"settings.workPolicies.presenceAnyLocation",
+																	"Any location",
+																)}
 															</SelectItem>
 														</SelectContent>
 													</Select>
@@ -1096,22 +1329,35 @@ export function WorkPolicyDialog({
 
 									{/* Enforcement */}
 									<div className="space-y-2">
-										<Label>{t("settings.workPolicies.presenceEnforcement", "Enforcement")}</Label>
+										<Label>
+											{t(
+												"settings.workPolicies.presenceEnforcement",
+												"Enforcement",
+											)}
+										</Label>
 										<form.Field name="presence.enforcement">
 											{(field) => (
 												<RadioGroup
 													value={field.state.value}
-													onValueChange={(v) => field.handleChange(v as PresenceEnforcementType)}
+													onValueChange={(v) =>
+														field.handleChange(v as PresenceEnforcementType)
+													}
 													className="grid gap-3 sm:grid-cols-3"
 												>
 													<label
 														htmlFor="presence-enforcement-none"
 														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
 													>
-														<RadioGroupItem id="presence-enforcement-none" value="none" />
+														<RadioGroupItem
+															id="presence-enforcement-none"
+															value="none"
+														/>
 														<div className="space-y-0.5">
 															<span className="text-sm font-medium">
-																{t("settings.workPolicies.presenceEnforcementNone", "None")}
+																{t(
+																	"settings.workPolicies.presenceEnforcementNone",
+																	"None",
+																)}
 															</span>
 															<p className="text-xs text-muted-foreground">
 																{t(
@@ -1125,10 +1371,16 @@ export function WorkPolicyDialog({
 														htmlFor="presence-enforcement-warn"
 														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
 													>
-														<RadioGroupItem id="presence-enforcement-warn" value="warn" />
+														<RadioGroupItem
+															id="presence-enforcement-warn"
+															value="warn"
+														/>
 														<div className="space-y-0.5">
 															<span className="text-sm font-medium">
-																{t("settings.workPolicies.presenceEnforcementWarn", "Warn")}
+																{t(
+																	"settings.workPolicies.presenceEnforcementWarn",
+																	"Warn",
+																)}
 															</span>
 															<p className="text-xs text-muted-foreground">
 																{t(
@@ -1142,10 +1394,16 @@ export function WorkPolicyDialog({
 														htmlFor="presence-enforcement-block"
 														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
 													>
-														<RadioGroupItem id="presence-enforcement-block" value="block" />
+														<RadioGroupItem
+															id="presence-enforcement-block"
+															value="block"
+														/>
 														<div className="space-y-0.5">
 															<span className="text-sm font-medium">
-																{t("settings.workPolicies.presenceEnforcementEscalate", "Escalate")}
+																{t(
+																	"settings.workPolicies.presenceEnforcementEscalate",
+																	"Escalate",
+																)}
 															</span>
 															<p className="text-xs text-muted-foreground">
 																{t(
@@ -1165,7 +1423,11 @@ export function WorkPolicyDialog({
 					</ActionPanelBody>
 
 					<ActionPanelFooter>
-						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => onOpenChange(false)}
+						>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button
@@ -1173,10 +1435,17 @@ export function WorkPolicyDialog({
 							onClick={() => {
 								form.handleSubmit();
 							}}
-							disabled={isPending || (!scheduleEnabled && !regulationEnabled && !presenceEnabled)}
+							disabled={
+								isPending ||
+								(!scheduleEnabled && !regulationEnabled && !presenceEnabled)
+							}
 						>
-							{isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
+							{isPending && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
+							)}
+							{isEditing
+								? t("common.save", "Save")
+								: t("common.create", "Create")}
 						</Button>
 					</ActionPanelFooter>
 				</form>
