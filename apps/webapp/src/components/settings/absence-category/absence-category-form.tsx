@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import type { AbsenceCategoryType } from "@/app/[locale]/(app)/settings/vacation/actions";
@@ -37,8 +37,6 @@ import { ALL_LANGUAGES } from "@/tolgee/shared";
 import {
 	type AbsenceCategoryForSettings,
 	buildAbsenceCategoryPayload,
-	DEFAULT_CATEGORY_COLOR,
-	defaultAbsenceCategoryFormValues,
 	getAbsenceCategoryFormValues,
 } from "./absence-category-form-utils";
 
@@ -95,6 +93,7 @@ function getFieldError(error: unknown) {
 		: "Invalid value";
 }
 
+// eslint-disable-next-line react-doctor/no-giant-component
 export function AbsenceCategoryForm({
 	open,
 	onOpenChange,
@@ -104,17 +103,6 @@ export function AbsenceCategoryForm({
 }: AbsenceCategoryFormProps) {
 	const { t } = useTranslate();
 	const [loading, setLoading] = useState(false);
-	const categoryId = existingCategory?.id;
-	const categoryType = existingCategory?.type;
-	const categoryName = existingCategory?.name;
-	const categoryDescription = existingCategory?.description;
-	const categoryNameTranslations = existingCategory?.nameTranslations;
-	const categoryDescriptionTranslations = existingCategory?.descriptionTranslations;
-	const categoryRequiresWorkTime = existingCategory?.requiresWorkTime;
-	const categoryRequiresApproval = existingCategory?.requiresApproval;
-	const categoryCountsAgainstVacation = existingCategory?.countsAgainstVacation;
-	const categoryColor = existingCategory?.color;
-	const categoryIsActive = existingCategory?.isActive;
 
 	const form = useForm({
 		defaultValues: getAbsenceCategoryFormValues(existingCategory),
@@ -154,41 +142,6 @@ export function AbsenceCategoryForm({
 		},
 	});
 
-	useEffect(() => {
-		if (open) {
-			form.reset(
-				categoryId
-					? {
-							name: categoryName ?? "",
-							type: categoryType ?? "custom",
-							description: categoryDescription ?? "",
-							nameTranslations: { ...(categoryNameTranslations ?? {}) },
-							descriptionTranslations: { ...(categoryDescriptionTranslations ?? {}) },
-							requiresWorkTime: categoryRequiresWorkTime ?? false,
-							requiresApproval: categoryRequiresApproval ?? true,
-							countsAgainstVacation: categoryCountsAgainstVacation ?? false,
-							color: categoryColor ?? DEFAULT_CATEGORY_COLOR,
-							isActive: categoryIsActive ?? true,
-						}
-					: { ...defaultAbsenceCategoryFormValues },
-			);
-		}
-	}, [
-		open,
-		categoryId,
-		categoryType,
-		categoryName,
-		categoryDescription,
-		categoryNameTranslations,
-		categoryDescriptionTranslations,
-		categoryRequiresWorkTime,
-		categoryRequiresApproval,
-		categoryCountsAgainstVacation,
-		categoryColor,
-		categoryIsActive,
-		form,
-	]);
-
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent>
@@ -209,10 +162,7 @@ export function AbsenceCategoryForm({
 				</ActionPanelHeader>
 
 				<form
-					onSubmit={(event) => {
-						event.preventDefault();
-						form.handleSubmit();
-					}}
+					onSubmit={form.handleSubmit}
 					className="flex min-h-0 flex-1 flex-col"
 				>
 					<ActionPanelBody className="space-y-6">

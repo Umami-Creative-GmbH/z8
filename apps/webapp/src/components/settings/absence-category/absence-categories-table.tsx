@@ -68,6 +68,7 @@ const getCategoryTypeLabel = (t: ReturnType<typeof useTranslate>["t"], type: str
 	return labels[type] || type;
 };
 
+// eslint-disable-next-line react-doctor/no-giant-component
 export function AbsenceCategoriesTable({
 	organizationId,
 	canManageCategories,
@@ -185,7 +186,7 @@ export function AbsenceCategoriesTable({
 						<div className="min-w-0">
 							<div className="font-medium">{displayName}</div>
 							{displayDescription ? (
-								<div className="break-words text-muted-foreground text-sm">
+								<div className="wrap-break-word text-muted-foreground text-sm">
 									{displayDescription}
 								</div>
 							) : null}
@@ -419,6 +420,7 @@ export function AbsenceCategoriesTable({
 
 			{canManageCategories && editingCategory ? (
 				<AbsenceCategoryForm
+					key={`edit-${editingCategory.id}`}
 					open={!!editingCategory}
 					onOpenChange={handleFormClose}
 					organizationId={organizationId}
@@ -428,6 +430,7 @@ export function AbsenceCategoriesTable({
 
 			{canManageCategories && createFormOpen ? (
 				<AbsenceCategoryForm
+					key="create"
 					open={createFormOpen}
 					onOpenChange={handleFormClose}
 					organizationId={organizationId}

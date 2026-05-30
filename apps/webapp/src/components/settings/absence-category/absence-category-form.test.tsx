@@ -159,6 +159,7 @@ describe("absence category form helpers", () => {
 
 		const { rerender } = render(
 			<AbsenceCategoryForm
+				key={firstCategory.id}
 				open={true}
 				onOpenChange={vi.fn()}
 				organizationId="org_1"
@@ -173,6 +174,7 @@ describe("absence category form helpers", () => {
 
 		rerender(
 			<AbsenceCategoryForm
+				key={secondCategory.id}
 				open={true}
 				onOpenChange={vi.fn()}
 				organizationId="org_1"
