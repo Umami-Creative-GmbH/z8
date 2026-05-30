@@ -1,7 +1,7 @@
 import { Context, Effect, Layer } from "effect";
 import Stripe from "stripe";
-import { StripeError } from "../../errors";
 import { env } from "@/env";
+import { StripeError } from "../../errors";
 
 export interface StripeConfig {
 	secretKey: string;
@@ -28,7 +28,9 @@ export class StripeService extends Context.Tag("StripeService")<
 			metadata?: Record<string, string>;
 		}) => Effect.Effect<Stripe.Customer, StripeError>;
 
-		readonly getCustomer: (customerId: string) => Effect.Effect<Stripe.Customer, StripeError>;
+		readonly getCustomer: (
+			customerId: string,
+		) => Effect.Effect<Stripe.Customer, StripeError>;
 
 		readonly createCheckoutSession: (params: {
 			customerId: string;
@@ -77,12 +79,13 @@ export const StripeServiceLive = Layer.effect(
 			enabled: env.BILLING_ENABLED === "true",
 		};
 
-		const stripe = config.enabled && config.secretKey
-			? new Stripe(config.secretKey, {
-					apiVersion: "2026-04-22.dahlia",
-					typescript: true,
-				})
-			: null;
+		const stripe =
+			config.enabled && config.secretKey
+				? new Stripe(config.secretKey, {
+						apiVersion: "2026-04-22.dahlia",
+						typescript: true,
+					})
+				: null;
 
 		return StripeService.of({
 			client: stripe,
@@ -255,7 +258,11 @@ export const StripeServiceLive = Layer.effect(
 						if (!stripe) {
 							throw new Error("Stripe not configured");
 						}
-						return stripe.webhooks.constructEvent(body, signature, config.webhookSecret);
+						return stripe.webhooks.constructEvent(
+							body,
+							signature,
+							config.webhookSecret,
+						);
 					},
 					catch: (error) =>
 						new StripeError({
