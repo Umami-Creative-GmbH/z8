@@ -155,7 +155,7 @@ async function main() {
 	const failed = results.filter((r) => !r.success).length;
 
 	// Summary
-	log("\n" + "─".repeat(50), "dim");
+	log(`\n${"─".repeat(50)}`, "dim");
 	log("📊 Summary", "bright");
 	log(`   Total: ${results.length} seeder(s)`, "dim");
 	log(`   ✓ Successful: ${successful}`, successful > 0 ? "green" : "dim");

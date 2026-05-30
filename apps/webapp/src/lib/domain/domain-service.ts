@@ -4,7 +4,6 @@ import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { type AuthConfig, organizationBranding, organizationDomain } from "@/db/schema";
-import { env } from "@/env";
 import { getConfiguredProviders } from "@/lib/social-oauth";
 import { domainCache } from "./domain-cache";
 import {
@@ -45,7 +44,7 @@ export async function getDomainConfig(hostname: string): Promise<DomainAuthConte
 		where: eq(organizationDomain.domain, normalizedHostname),
 	});
 
-	if (!domainRecord || !domainRecord.domainVerified) {
+	if (!domainRecord?.domainVerified) {
 		return null;
 	}
 

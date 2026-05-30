@@ -8,7 +8,7 @@ import {
 	type ITimestampProvider,
 	timestampProvider,
 } from "../infrastructure/crypto/timestamp-provider";
-import { AuditManifest, type RFC3161Timestamp, type SHA256Hash } from "./models";
+import type { RFC3161Timestamp, SHA256Hash } from "./models";
 
 const logger = createLogger("TimestampService");
 
@@ -42,7 +42,7 @@ export interface ITimestampService {
 export class TimestampService implements ITimestampService {
 	constructor(
 		private readonly tsa: ITimestampProvider = timestampProvider,
-		private readonly hash: IHashProvider = hashProvider,
+		readonly _hash: IHashProvider = hashProvider,
 	) {}
 
 	/**

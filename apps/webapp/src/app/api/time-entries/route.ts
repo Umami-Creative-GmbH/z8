@@ -175,7 +175,7 @@ export async function GET(request: NextRequest) {
 		const entries = await runtime.runPromise(effect);
 
 		return NextResponse.json({ entries });
-	} catch (error) {
+	} catch (_error) {
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

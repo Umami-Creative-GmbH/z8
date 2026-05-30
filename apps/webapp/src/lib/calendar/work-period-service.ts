@@ -241,7 +241,7 @@ export async function getWorkPeriodsForMonth(
 /**
  * Aggregate work periods by day and employee
  */
-function aggregateByDay(
+function _aggregateByDay(
 	periods: Array<{
 		period: typeof workPeriod.$inferSelect;
 		employee: typeof employee.$inferSelect;

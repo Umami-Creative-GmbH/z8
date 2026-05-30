@@ -53,7 +53,7 @@ function valuesForReferenceCondition(condition: PolicyInput["conditions"][number
 async function requirePolicyAdmin() {
 	const { getCurrentEmployee } = await import("@/app/[locale]/(app)/absences/current-employee");
 	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee || currentEmployee.role !== "admin") {
+	if (currentEmployee?.role !== "admin") {
 		throw new Error("Only organization admins can manage approval policies.");
 	}
 

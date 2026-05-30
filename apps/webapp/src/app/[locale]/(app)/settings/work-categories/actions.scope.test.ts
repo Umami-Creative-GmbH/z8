@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const WORK_CATEGORIES_ROOT = fileURLToPath(new URL(".", import.meta.url));
+const _WORK_CATEGORIES_ROOT = fileURLToPath(new URL(".", import.meta.url));
 
 function stripComments(source: string): string {
 	return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");

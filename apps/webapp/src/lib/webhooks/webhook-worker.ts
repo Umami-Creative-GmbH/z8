@@ -13,7 +13,6 @@ import { executeWebhookRequest } from "./webhook-delivery";
 import { scheduleWebhookRetry } from "./webhook-queue";
 import {
 	checkAndDisableUnhealthyEndpoint,
-	getDeliveryRecord,
 	getRetryDelay,
 	getWebhookEndpoint,
 	updateDeliveryRecord,

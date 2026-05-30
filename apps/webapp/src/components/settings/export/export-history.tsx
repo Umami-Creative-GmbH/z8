@@ -38,7 +38,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import type { ExportCategory } from "@/lib/export/types";
 import { type ExportRecord, formatFileSize } from "@/lib/export/utils";
 import { useRouter } from "@/navigation";
 

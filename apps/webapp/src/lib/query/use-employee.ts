@@ -151,7 +151,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 		staleTime: 30 * 1000,
 	});
 
-	const invalidateEmploymentHistoryQueries = () => {
+	const _invalidateEmploymentHistoryQueries = () => {
 		queryClient.invalidateQueries({
 			queryKey: queryKeys.employees.employmentHistory(employeeId),
 		});

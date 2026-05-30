@@ -10,9 +10,7 @@
  * employee record, never from client input. This ensures multi-tenant isolation.
  */
 
-import { eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { employee } from "@/db/schema";
 import type {
 	AbsencePatternsData,
 	DateRange,

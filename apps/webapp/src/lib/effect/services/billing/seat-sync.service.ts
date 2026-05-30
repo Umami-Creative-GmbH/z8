@@ -2,7 +2,7 @@ import { count, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
-import { billingSeatAudit, subscription } from "@/db/schema";
+import { billingSeatAudit } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { DatabaseError, type StripeError } from "../../errors";
 import { StripeService } from "./stripe.service";

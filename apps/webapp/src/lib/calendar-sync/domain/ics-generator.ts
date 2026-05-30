@@ -44,7 +44,7 @@ function foldLine(line: string): string {
 
 	while (remaining.length > FOLD_LENGTH) {
 		parts.push(remaining.substring(0, FOLD_LENGTH));
-		remaining = " " + remaining.substring(FOLD_LENGTH);
+		remaining = ` ${remaining.substring(FOLD_LENGTH)}`;
 	}
 	parts.push(remaining);
 

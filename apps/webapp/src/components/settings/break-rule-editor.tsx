@@ -82,7 +82,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 											value={field.state.value ? field.state.value / 60 : ""}
 											onChange={(e) => {
 												const hours = parseFloat(e.target.value);
-												field.handleChange(isNaN(hours) ? 60 : Math.round(hours * 60));
+												field.handleChange(Number.isNaN(hours) ? 60 : Math.round(hours * 60));
 											}}
 											onBlur={field.handleBlur}
 											className="w-20"
@@ -117,8 +117,8 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 											max="120"
 											value={field.state.value || ""}
 											onChange={(e) => {
-												const mins = parseInt(e.target.value);
-												field.handleChange(isNaN(mins) ? 5 : mins);
+												const mins = parseInt(e.target.value, 10);
+												field.handleChange(Number.isNaN(mins) ? 5 : mins);
 											}}
 											onBlur={field.handleBlur}
 											className="w-20"
@@ -184,7 +184,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 														<Select
 															value={field.state.value?.toString() ?? "null"}
 															onValueChange={(val) => {
-																field.handleChange(val === "null" ? null : parseInt(val));
+																field.handleChange(val === "null" ? null : parseInt(val, 10));
 															}}
 														>
 															<SelectTrigger className="w-full">
@@ -225,8 +225,8 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 																max="60"
 																value={field.state.value || ""}
 																onChange={(e) => {
-																	const mins = parseInt(e.target.value);
-																	field.handleChange(isNaN(mins) ? null : mins);
+																	const mins = parseInt(e.target.value, 10);
+																	field.handleChange(Number.isNaN(mins) ? null : mins);
 																}}
 																className="w-16"
 															/>
@@ -254,8 +254,8 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 																max="60"
 																value={field.state.value || ""}
 																onChange={(e) => {
-																	const mins = parseInt(e.target.value);
-																	field.handleChange(isNaN(mins) ? null : mins);
+																	const mins = parseInt(e.target.value, 10);
+																	field.handleChange(Number.isNaN(mins) ? null : mins);
 																}}
 																className="w-16"
 															/>

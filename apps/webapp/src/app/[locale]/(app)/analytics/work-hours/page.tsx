@@ -120,7 +120,7 @@ export default function WorkHoursPage() {
 		return () => {
 			isCurrent = false;
 		};
-	}, [dateRange, isHydrated, timezone]);
+	}, [dateRange, isHydrated, timezone, t]);
 
 	const employees = workHoursData?.byEmployee || [];
 
@@ -165,7 +165,7 @@ export default function WorkHoursPage() {
 								label: t("analytics.workHours.avgHoursPerWeek", "Avg Hours/Week"),
 							},
 						],
-						filename: "work-hours-" + (dateRange?.start.toISOString().split("T")[0] ?? "pending"),
+						filename: `work-hours-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
 					}}
 					disabled={!workHoursData || !dateRange}
 				/>

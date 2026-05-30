@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCheck, IconGripVertical, IconLoader2, IconX } from "@tabler/icons-react";
+import { IconLoader2, IconX } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -9,7 +9,6 @@ import {
 	createWorkCategorySet,
 	getOrganizationCategories,
 	getWorkCategorySetDetail,
-	reorderSetCategories,
 	updateSetCategories,
 	updateWorkCategorySet,
 } from "@/app/[locale]/(app)/settings/work-categories/actions";

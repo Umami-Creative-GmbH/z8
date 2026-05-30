@@ -200,9 +200,9 @@
 	input:-webkit-autofill:focus,
 	input[data-com-onepassword-filled] {
 		-webkit-text-fill-color: var(--foreground);
-		-webkit-box-shadow: 0 0 0 1000px var(--background) inset !important;
-		box-shadow: 0 0 0 1000px var(--background) inset !important;
-		background-color: var(--background) !important;
+		-webkit-box-shadow: 0 0 0 1000px var(--background) inset;
+		box-shadow: 0 0 0 1000px var(--background) inset;
+		background-color: var(--background);
 		transition: background-color 5000s ease-in-out 0s;
 	}
 
@@ -210,8 +210,8 @@
 	.dark input:-webkit-autofill:hover,
 	.dark input:-webkit-autofill:focus,
 	.dark input[data-com-onepassword-filled] {
-		-webkit-box-shadow: 0 0 0 1000px var(--background) inset !important;
-		box-shadow: 0 0 0 1000px var(--background) inset !important;
+		-webkit-box-shadow: 0 0 0 1000px var(--background) inset;
+		box-shadow: 0 0 0 1000px var(--background) inset;
 	}
 }
 
@@ -221,19 +221,19 @@
 
 .dark [aria-labelledby="email-template-body-label"] .tiptap.ProseMirror,
 .dark [aria-labelledby="email-template-body-label"].tiptap-extended .tiptap.ProseMirror {
-	background-color: var(--card) !important;
-	color: var(--card-foreground) !important;
+	background-color: var(--card);
+	color: var(--card-foreground);
 }
 
 .dark [aria-labelledby="email-template-body-label"] .node-container,
 .dark [aria-labelledby="email-template-body-label"] [data-type="container"] {
-	background-color: var(--card) !important;
-	color: var(--card-foreground) !important;
+	background-color: var(--card);
+	color: var(--card-foreground);
 }
 
 .dark [aria-labelledby="email-template-body-label"] .node-paragraph,
 .dark [aria-labelledby="email-template-body-label"].tiptap-extended .node-paragraph {
-	color: var(--card-foreground) !important;
+	color: var(--card-foreground);
 }
 
 /* Schedule-X Calendar Customizations - must be in @layer components to override theme */
@@ -294,9 +294,9 @@
 	*,
 	*::before,
 	*::after {
-		animation-duration: 0.01ms !important;
-		animation-iteration-count: 1 !important;
-		transition-duration: 0.01ms !important;
-		scroll-behavior: auto !important;
+		animation-duration: 0.01ms;
+		animation-iteration-count: 1;
+		transition-duration: 0.01ms;
+		scroll-behavior: auto;
 	}
 }

@@ -8,7 +8,6 @@
 import { and, eq, isNull, lt } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
 import { approvalRequest, employee, employeeManagers, teamsEscalation } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { sendApprovalCardToManager } from "../approval-handler";

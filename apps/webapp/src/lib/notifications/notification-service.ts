@@ -557,7 +557,7 @@ export async function deleteOldNotifications(olderThanDays: number = 90): Promis
  */
 export async function isChannelEnabled(
 	userId: string,
-	organizationId: string,
+	_organizationId: string,
 	notificationType: NotificationType,
 	channel: NotificationChannel,
 ): Promise<boolean> {

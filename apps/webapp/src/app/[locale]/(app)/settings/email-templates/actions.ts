@@ -64,7 +64,7 @@ function replaceStandaloneTextValue(text: string, previewValue: string, token: s
 }
 
 function replaceTextNodeValues(html: string, previewValue: string, token: string) {
-	return html.replace(/>([^<]+)</g, (match, text: string) => {
+	return html.replace(/>([^<]+)</g, (_match, text: string) => {
 		return `>${replaceStandaloneTextValue(text, previewValue, token)}<`;
 	});
 }

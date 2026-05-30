@@ -4,7 +4,6 @@ import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
 import {
 	employee,
 	location,
@@ -12,15 +11,9 @@ import {
 	locationSubarea,
 	subareaEmployee,
 } from "@/db/schema";
-import {
-	AuthorizationError,
-	ConflictError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import {

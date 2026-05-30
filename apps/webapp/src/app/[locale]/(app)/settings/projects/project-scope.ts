@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
@@ -124,7 +124,7 @@ export function getManagedProjectIdsForSettingsActor(actor: ProjectSettingsActor
 			return null as Set<string> | null;
 		}
 
-		if (!actor.currentEmployee || actor.currentEmployee.role !== "manager") {
+		if (actor.currentEmployee?.role !== "manager") {
 			return new Set<string>();
 		}
 

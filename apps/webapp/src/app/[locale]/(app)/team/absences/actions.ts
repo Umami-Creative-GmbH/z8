@@ -46,7 +46,6 @@ import { canActorManageTarget, canUseManagerAbsencePage } from "./manager-absenc
 import type {
 	ManagerAbsenceActor,
 	ManagerAbsenceEmployeeRow,
-	ManagerAbsenceListParams,
 	ManagerAbsenceListResult,
 	ManagerAbsenceSortDirection,
 	ManagerAbsenceSortKey,

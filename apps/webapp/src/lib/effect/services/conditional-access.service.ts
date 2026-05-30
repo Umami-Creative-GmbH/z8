@@ -210,7 +210,7 @@ function getBitmask(bits: number): number {
 /**
  * Check if an IP address matches a CIDR range
  */
-function ipMatchesCidr(ip: string, cidr: string): boolean {
+function _ipMatchesCidr(ip: string, cidr: string): boolean {
 	const [range, bitsStr] = cidr.split("/");
 	const bits = bitsStr ? parseInt(bitsStr, 10) : 32;
 

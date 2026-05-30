@@ -100,7 +100,7 @@ async function getTransportForOrg(organizationId?: string): Promise<EmailTranspo
 		});
 
 		// No config or inactive, use system default
-		if (!config || !config.isActive) {
+		if (!config?.isActive) {
 			return getSystemTransport();
 		}
 

@@ -118,7 +118,7 @@ export default function TeamPerformancePage() {
 		return () => {
 			isCurrent = false;
 		};
-	}, [dateRange, isHydrated, timezone]);
+	}, [dateRange, isHydrated, timezone, t]);
 
 	const teams = teamData?.teams || [];
 
@@ -166,8 +166,7 @@ export default function TeamPerformancePage() {
 								label: t("analytics.teamPerformance.employeeCount", "Employee Count"),
 							},
 						],
-						filename:
-							"team-performance-" + (dateRange?.start.toISOString().split("T")[0] ?? "pending"),
+						filename: `team-performance-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
 					}}
 					disabled={!teamData || !dateRange}
 				/>

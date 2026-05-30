@@ -313,7 +313,7 @@ export async function checkAndDisableUnhealthyEndpoint(
 		columns: { consecutiveFailures: true, isActive: true },
 	});
 
-	if (endpoint && endpoint.isActive && endpoint.consecutiveFailures >= maxConsecutiveFailures) {
+	if (endpoint?.isActive && endpoint.consecutiveFailures >= maxConsecutiveFailures) {
 		await db
 			.update(webhookEndpoint)
 			.set({ isActive: false })

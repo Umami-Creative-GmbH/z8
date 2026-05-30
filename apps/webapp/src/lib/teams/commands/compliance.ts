@@ -31,7 +31,7 @@ function parseDaysArgument(arg: string | undefined): number {
 	}
 
 	const days = parseInt(arg, 10);
-	if (isNaN(days) || days < 1) {
+	if (Number.isNaN(days) || days < 1) {
 		return 7;
 	}
 

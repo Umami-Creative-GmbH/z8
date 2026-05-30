@@ -332,7 +332,7 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 	/**
 	 * Generate CSV header row
 	 */
-	private generateHeaderRow(config: SageLohnConfig): string {
+	private generateHeaderRow(_config: SageLohnConfig): string {
 		// Sage uses same column names as DATEV
 		return ["Personalnummer", "Lohnart", "Betrag", "Datum", "Bemerkung"]
 			.map((col) => this.escapeCSV(col))

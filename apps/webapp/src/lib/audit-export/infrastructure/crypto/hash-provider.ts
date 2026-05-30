@@ -130,7 +130,7 @@ export class SHA256HashProvider implements IHashProvider {
 		}
 
 		let currentLevel = hashes.map((h) => h.toString());
-		let levelSize = currentLevel.length;
+		let _levelSize = currentLevel.length;
 		let leafIndices = Array.from({ length: leafCount }, (_, i) => i);
 
 		while (currentLevel.length > 1) {
@@ -169,7 +169,7 @@ export class SHA256HashProvider implements IHashProvider {
 
 			currentLevel = nextLevel;
 			leafIndices = nextLeafIndices;
-			levelSize = currentLevel.length;
+			_levelSize = currentLevel.length;
 		}
 
 		return {

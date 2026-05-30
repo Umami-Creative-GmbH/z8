@@ -144,7 +144,7 @@ function getManageableTeamIds(actor: StatisticsActorContext, queryName: string) 
 			return null as Set<string> | null;
 		}
 
-		if (!actor.currentEmployee || actor.currentEmployee.role !== "manager") {
+		if (actor.currentEmployee?.role !== "manager") {
 			return new Set<string>();
 		}
 

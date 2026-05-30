@@ -13,7 +13,7 @@ export default async function CoverageRulesSettingsPage() {
 	await getTranslate();
 	const accessContext = await getSchedulingSettingsAccessContext();
 
-	if (!accessContext || !accessContext.canAccessCoverageRules) {
+	if (!accessContext?.canAccessCoverageRules) {
 		redirect("/settings");
 	}
 

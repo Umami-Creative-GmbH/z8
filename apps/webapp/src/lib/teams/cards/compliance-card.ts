@@ -8,11 +8,7 @@
 import { DateTime } from "luxon";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
 import { fmtShortDate } from "@/lib/bot-platform/i18n";
-import type {
-	ComplianceAlert,
-	ComplianceExceptionSummary,
-	ComplianceSummary,
-} from "@/lib/effect/services/teams-compliance.service";
+import type { ComplianceSummary } from "@/lib/effect/services/teams-compliance.service";
 
 // ============================================
 // TYPES
@@ -30,13 +26,12 @@ export interface ComplianceCardInput {
 // HELPER FUNCTIONS
 // ============================================
 
-function getSeverityColor(severity: "warning" | "critical" | "violation"): string {
+function _getSeverityColor(severity: "warning" | "critical" | "violation"): string {
 	switch (severity) {
 		case "violation":
 			return "attention"; // Red
 		case "critical":
 			return "warning"; // Yellow/Orange
-		case "warning":
 		default:
 			return "default";
 	}
@@ -48,7 +43,6 @@ function getSeverityIcon(severity: "warning" | "critical" | "violation"): string
 			return "🔴";
 		case "critical":
 			return "🟠";
-		case "warning":
 		default:
 			return "🟡";
 	}

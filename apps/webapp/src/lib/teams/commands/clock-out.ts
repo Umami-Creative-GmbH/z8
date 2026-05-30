@@ -155,7 +155,7 @@ export const clockOutCommand: BotCommand = {
 			// Update work period
 			const durationMs = now.getTime() - activePeriod.startTime.getTime();
 			const durationMinutes = Math.floor(durationMs / 60000);
-			const entry = await db.transaction(async (tx) => {
+			const _entry = await db.transaction(async (tx) => {
 				// Create clock-out time entry
 				const [createdEntry] = await tx
 					.insert(timeEntry)

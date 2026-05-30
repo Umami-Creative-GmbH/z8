@@ -1955,11 +1955,7 @@ export async function createWorkPolicyFromPreset(
 			}),
 		);
 
-		if (
-			!preset ||
-			!preset.isActive ||
-			(preset.organizationId && preset.organizationId !== organizationId)
-		) {
+		if (!preset?.isActive || (preset.organizationId && preset.organizationId !== organizationId)) {
 			return yield* _(
 				Effect.fail(
 					new NotFoundError({

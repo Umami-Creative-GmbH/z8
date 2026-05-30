@@ -37,7 +37,7 @@ type ImplementationChecklistActionFailure = { success: false; error: string };
 type ImplementationChecklistMutationSuccess = { success: true };
 type ImplementationChecklistQuerySuccess<T> = { success: true; data: T };
 
-export type ImplementationChecklistActionResult<T = void> = [T] extends [void]
+export type ImplementationChecklistActionResult<T = void> = [T] extends [undefined]
 	? ImplementationChecklistMutationSuccess | ImplementationChecklistActionFailure
 	: ImplementationChecklistQuerySuccess<T> | ImplementationChecklistActionFailure;
 

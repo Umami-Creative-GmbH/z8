@@ -1,7 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
-	decimal,
 	index,
 	integer,
 	jsonb,

@@ -1,15 +1,12 @@
 "use client";
 
 import {
-	IconCheck,
-	IconCopy,
 	IconDots,
 	IconEdit,
 	IconHistory,
 	IconPlayerPlay,
 	IconRefresh,
 	IconTrash,
-	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";

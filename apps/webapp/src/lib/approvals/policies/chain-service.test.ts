@@ -106,7 +106,7 @@ function createChainProgressionDbService(params: {
 					findFirst: vi.fn().mockResolvedValue(params.chain ?? null),
 				},
 			},
-			insert: vi.fn((table: unknown) => ({
+			insert: vi.fn((_table: unknown) => ({
 				values: vi.fn((values: Record<string, unknown>) => {
 					if (
 						values.action &&

@@ -24,7 +24,7 @@ import {
 	type Subject,
 	type TeamPermissions,
 } from "@/lib/authorization";
-import { type AppPermissions, detectAppType } from "@/lib/effect/services/app-access.service";
+import { detectAppType } from "@/lib/effect/services/app-access.service";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
 import type { PermissionFlags } from "@/lib/effect/services/permissions.service";
@@ -134,7 +134,7 @@ export async function requireUser(): Promise<AuthContext> {
 export async function requireAuth(): Promise<AuthContext> {
 	const context = await getAuthContext();
 
-	if (!context || !context.employee) {
+	if (!context?.employee) {
 		throw new Error("Authentication required");
 	}
 
@@ -537,7 +537,7 @@ export async function getVerifiedOrgContext(requestedOrgId: string | null): Prom
 } | null> {
 	const verification = await verifyOrgMembership(requestedOrgId);
 
-	if (!verification || !verification.isValid) {
+	if (!verification?.isValid) {
 		return null;
 	}
 

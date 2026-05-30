@@ -386,7 +386,7 @@ async function getVisibleModelIdsForManagerScope(scopeContext: SurchargeScopeCon
 
 async function requireOrgAdminSurchargeActor(organizationId?: string) {
 	const actor = await getSurchargeSettingsActor(organizationId);
-	if (!actor || actor.accessTier !== "orgAdmin") {
+	if (actor?.accessTier !== "orgAdmin") {
 		return null;
 	}
 

@@ -6,7 +6,6 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { webhookDelivery } from "@/db/schema";
 import { env } from "@/env";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -44,7 +43,7 @@ const logger = createLogger("WebhookActions");
  */
 function verifyOwnerRole(memberRecord: { role: string } | null | undefined, userId: string) {
 	return Effect.gen(function* (_) {
-		if (!memberRecord || memberRecord.role !== "owner") {
+		if (memberRecord?.role !== "owner") {
 			yield* _(
 				Effect.fail(
 					new AuthorizationError({

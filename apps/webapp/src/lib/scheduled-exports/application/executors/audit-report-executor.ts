@@ -151,7 +151,7 @@ export class AuditReportExecutor implements IReportExecutor {
 	/**
 	 * Validate audit report configuration
 	 */
-	validateConfig(config: ReportConfig): { valid: boolean; errors?: string[] } {
+	validateConfig(_config: ReportConfig): { valid: boolean; errors?: string[] } {
 		// Audit reports have minimal validation - all fields are optional
 		return { valid: true };
 	}

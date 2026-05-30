@@ -3,7 +3,7 @@
 import { desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { auditExportConfig, auditExportPackage, db } from "@/db";
+import { auditExportPackage, db } from "@/db";
 import {
 	type AuditExportConfigData,
 	configurationService,
@@ -580,7 +580,7 @@ export async function getAuditPackDownloadUrlAction(
 		);
 
 		const artifact = request?.artifact;
-		if (!request || request.status !== "completed" || !artifact?.s3Key) {
+		if (request?.status !== "completed" || !artifact?.s3Key) {
 			yield* _(
 				Effect.fail(
 					new NotFoundError({

@@ -135,7 +135,7 @@ export class FreeTSATimestampProvider implements ITimestampProvider {
 			// Verify timestamp is reasonable (not in future, not too old)
 			const tsTime = timestamp.getTimestamp();
 			const now = new Date();
-			const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+			const _fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
 			const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
 
 			if (tsTime > now) {

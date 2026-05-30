@@ -141,7 +141,7 @@ export async function getSchedulingSettingsAccessContext(): Promise<SchedulingSe
 
 	const currentEmployee = settingsRouteContext.authContext.employee;
 
-	if (!currentEmployee || currentEmployee.role !== "manager") {
+	if (currentEmployee?.role !== "manager") {
 		return null;
 	}
 

@@ -430,7 +430,7 @@ export function ScheduleXCalendarWrapper({
 			if (timeout !== null) window.clearTimeout(timeout);
 			clearIndicators();
 		};
-	}, [timeZone, viewMode, isLoading, calendar, currentDate]);
+	}, [timeZone, viewMode, isLoading]);
 
 	// Scroll to current time on mount and when switching to day/week view
 	useEffect(() => {

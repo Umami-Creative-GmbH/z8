@@ -17,7 +17,6 @@ import {
 	getFilterOptionsAction,
 	startExportAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -133,7 +132,7 @@ export function ExportForm({
 	const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
 
 	// Export result
-	const [exportResult, setExportResult] = useState<{
+	const [_exportResult, _setExportResult] = useState<{
 		isAsync: boolean;
 		fileContent?: string;
 		fileName?: string;
@@ -151,7 +150,7 @@ export function ExportForm({
 	// Load filter options on mount
 	useEffect(() => {
 		loadFilterOptions();
-	}, [organizationId]);
+	}, []);
 
 	useEffect(() => {
 		if (exportAvailability[selectedFormatId]?.configured) {
@@ -240,7 +239,6 @@ export function ExportForm({
 				);
 			case "workday_api":
 				return t("settings.payrollExport.export.exportButtonWorkday", "Export to Workday");
-			case "datev_lohn":
 			default:
 				return t("settings.payrollExport.export.exportButtonDatev", "Export to DATEV");
 		}
@@ -361,7 +359,7 @@ export function ExportForm({
 									<Label>{t("settings.payrollExport.export.year", "Year")}</Label>
 									<Select
 										value={selectedYear.toString()}
-										onValueChange={(v) => setSelectedYear(parseInt(v))}
+										onValueChange={(v) => setSelectedYear(parseInt(v, 10))}
 									>
 										<SelectTrigger>
 											<SelectValue />
@@ -379,7 +377,7 @@ export function ExportForm({
 									<Label>{t("settings.payrollExport.export.month", "Month")}</Label>
 									<Select
 										value={selectedMonth.toString()}
-										onValueChange={(v) => setSelectedMonth(parseInt(v))}
+										onValueChange={(v) => setSelectedMonth(parseInt(v, 10))}
 									>
 										<SelectTrigger>
 											<SelectValue />

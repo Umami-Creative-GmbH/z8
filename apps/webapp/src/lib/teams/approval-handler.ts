@@ -7,7 +7,6 @@
 import type { TurnContext } from "botbuilder";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
 import { absenceEntry, approvalRequest, employee, teamsApprovalCard, timeEntry } from "@/db/schema";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
@@ -106,7 +105,7 @@ export async function handleApprovalAction(
 			where: eq(teamsApprovalCard.approvalRequestId, approvalId),
 		});
 
-		if (cardRecord && cardRecord.teamsActivityId) {
+		if (cardRecord?.teamsActivityId) {
 			// Get conversation reference
 			const conversation = await getStoredConversation(resolvedUser.userId, tenant.organizationId);
 

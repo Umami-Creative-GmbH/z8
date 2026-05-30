@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
 			.limit(1);
 
-		if (!membership || membership.role !== "admin") {
+		if (membership?.role !== "admin") {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
@@ -176,7 +176,7 @@ export async function DELETE(request: NextRequest) {
 			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
 			.limit(1);
 
-		if (!membership || membership.role !== "admin") {
+		if (membership?.role !== "admin") {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 

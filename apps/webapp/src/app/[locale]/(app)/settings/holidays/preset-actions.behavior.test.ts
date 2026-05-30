@@ -239,9 +239,6 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 											return [];
 										}),
 									})),
-									innerJoin: vi.fn(() => ({
-										where: vi.fn(() => ({ limit: vi.fn(async () => [{ id: "owned-row" }]) })),
-									})),
 									leftJoin: vi.fn(() => ({
 										where: vi.fn(() => ({
 											orderBy: vi.fn(async () => mockState.presetDetail.holidays),

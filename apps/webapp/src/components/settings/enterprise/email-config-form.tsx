@@ -419,7 +419,9 @@ export function EmailConfigForm({
 														type="number"
 														placeholder="587"
 														value={field.state.value ?? 587}
-														onChange={(e) => field.handleChange(Number.parseInt(e.target.value))}
+														onChange={(e) =>
+															field.handleChange(Number.parseInt(e.target.value, 10))
+														}
 														onBlur={field.handleBlur}
 													/>
 												</div>

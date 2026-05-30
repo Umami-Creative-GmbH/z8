@@ -34,12 +34,7 @@ export async function POST(request: NextRequest) {
 		const { subscription, deviceName } = body;
 
 		// Validate subscription object
-		if (
-			!subscription ||
-			!subscription.endpoint ||
-			!subscription.keys?.p256dh ||
-			!subscription.keys?.auth
-		) {
+		if (!subscription?.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
 			return NextResponse.json({ error: "Invalid subscription object" }, { status: 400 });
 		}
 

@@ -5,7 +5,7 @@
  * Unlike Teams (which uses email matching), Telegram requires explicit linking.
  */
 
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, telegramLinkCode, telegramUserMapping } from "@/db/schema";
 import { createLogger } from "@/lib/logger";

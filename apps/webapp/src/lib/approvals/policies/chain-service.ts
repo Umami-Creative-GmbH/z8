@@ -8,7 +8,6 @@ import {
 	employee,
 	employeeGroup,
 	employeeGroupMember,
-	employeeManagers,
 	team,
 	teamMembership,
 } from "@/db/schema";

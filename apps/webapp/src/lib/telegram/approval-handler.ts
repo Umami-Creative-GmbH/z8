@@ -7,7 +7,6 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
 import { absenceEntry, approvalRequest, employee, telegramApprovalMessage } from "@/db/schema";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";

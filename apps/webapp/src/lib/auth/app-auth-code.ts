@@ -48,8 +48,7 @@ export async function consumeAppAuthCode(input: {
 	});
 
 	if (
-		!record ||
-		record.status !== "pending" ||
+		record?.status !== "pending" ||
 		!record.codeChallenge ||
 		!isMatchingChallenge(input.verifier, record.codeChallenge)
 	) {

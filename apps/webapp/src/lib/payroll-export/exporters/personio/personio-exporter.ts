@@ -349,7 +349,7 @@ export class PersonioExporter implements IPayrollExporter {
 
 			// Parse wage type code as Personio time-off type ID
 			const timeOffTypeId = parseInt(mapping.wageTypeCode, 10);
-			if (isNaN(timeOffTypeId)) {
+			if (Number.isNaN(timeOffTypeId)) {
 				logger.warn(
 					{
 						absenceId: absence.id,
@@ -397,7 +397,7 @@ export class PersonioExporter implements IPayrollExporter {
 			if (!employeeNumber) return null;
 			// Try to parse as number for Personio
 			const numericId = parseInt(employeeNumber, 10);
-			return isNaN(numericId) ? employeeNumber : numericId;
+			return Number.isNaN(numericId) ? employeeNumber : numericId;
 		}
 
 		if (strategy === "email") {

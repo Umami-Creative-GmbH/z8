@@ -7,7 +7,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { telegramConversation, telegramUserMapping } from "@/db/schema";
+import { telegramConversation } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("TelegramConversationManager");

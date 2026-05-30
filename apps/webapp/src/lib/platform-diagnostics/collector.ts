@@ -35,7 +35,7 @@ function isConfigured(value: string | undefined): boolean {
 	return typeof value === "string" && value.trim().length > 0;
 }
 
-function createConfigItem(
+function _createConfigItem(
 	title: string,
 	configured: boolean,
 	description: string,

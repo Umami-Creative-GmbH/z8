@@ -424,7 +424,7 @@ export async function buildDigestDataForManager(
 		}
 
 		// Count clocked-in employees by the shifts they're assigned to
-		const scheduledEmployeeIds = [
+		const _scheduledEmployeeIds = [
 			...new Set(scheduledShifts.map((s) => s.employeeId).filter(Boolean)),
 		] as string[];
 		const clockedInEmployeeIds = new Set(activeWorkPeriods?.map((wp) => wp.employeeId) || []);

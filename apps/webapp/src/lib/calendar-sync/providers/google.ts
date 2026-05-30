@@ -26,13 +26,7 @@ import {
 	TokenExpiredError,
 	type TokenRefreshResult,
 } from "../types";
-import {
-	addOneDay,
-	formatDateOnly,
-	generateZ8EventId,
-	type ICalendarProvider,
-	isTokenExpired,
-} from "./base";
+import { addOneDay, formatDateOnly, type ICalendarProvider, isTokenExpired } from "./base";
 
 // ============================================
 // CONSTANTS

@@ -101,7 +101,6 @@ function getDialogCopy(mode: ReviewMode) {
 				submitLabel: "Create policy",
 				success: "Policy created",
 			};
-		case "createCustom":
 		default:
 			return {
 				title: "Create custom preset",

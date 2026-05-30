@@ -34,7 +34,6 @@ import { recordAbsenceForEmployee } from "./actions";
 import {
 	buildRecordAbsenceForEmployeeInput,
 	getDefaultRecordAbsenceFormValues,
-	type RecordAbsenceFormValues,
 	validateRecordAbsenceFormDateRange,
 } from "./record-absence-form-utils";
 

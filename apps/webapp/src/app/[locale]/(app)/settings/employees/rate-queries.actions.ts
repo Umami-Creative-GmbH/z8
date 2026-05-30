@@ -1,10 +1,9 @@
 "use server";
 
-import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { employeeRateHistory } from "@/db/schema";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,

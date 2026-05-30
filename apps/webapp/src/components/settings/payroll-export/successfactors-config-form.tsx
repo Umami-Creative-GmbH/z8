@@ -100,7 +100,7 @@ export function SuccessFactorsConfigForm({
 			return;
 		}
 
-		if (result.success && result.data && result.data.success) {
+		if (result.success && result.data?.success) {
 			toast.success(
 				t("settings.payrollExport.successfactors.connectionSuccess", "Connection successful"),
 			);

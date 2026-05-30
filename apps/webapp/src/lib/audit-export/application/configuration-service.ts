@@ -3,7 +3,7 @@
  * Manages audit export configuration for organizations
  */
 import { eq } from "drizzle-orm";
-import { auditExportConfig, auditSigningKey, db } from "@/db";
+import { auditExportConfig, db } from "@/db";
 import { createLogger } from "@/lib/logger";
 import {
 	type IWORMStorageAdapter,

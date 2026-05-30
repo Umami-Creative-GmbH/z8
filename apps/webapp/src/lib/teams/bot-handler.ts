@@ -6,7 +6,6 @@
  */
 
 import type { Activity, TurnContext } from "botbuilder";
-import { TurnContext as TurnContextClass } from "botbuilder";
 import { env } from "@/env";
 import { executeCommand, parseCommand } from "@/lib/bot-platform/command-registry";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
@@ -161,7 +160,7 @@ async function handleMessage(context: TurnContext): Promise<void> {
 	const cleanedText = removeBotMention(text, activity);
 	const parsed = parseCommand(cleanedText);
 
-	if (!parsed || !parsed.command) {
+	if (!parsed?.command) {
 		// If user just mentioned the bot without a command, show help
 		await context.sendActivity(
 			t("bot.static.mentionHelp", 'Hi! I\'m the Z8 bot. Type "help" to see available commands.'),

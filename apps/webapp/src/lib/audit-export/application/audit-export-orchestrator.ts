@@ -3,16 +3,9 @@
  * Main application service that coordinates the audit hardening pipeline
  */
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import JSZip from "jszip";
-import {
-	auditExportConfig,
-	auditExportFile,
-	auditExportPackage,
-	dataExport,
-	db,
-	payrollExportJob,
-} from "@/db";
+import { auditExportConfig, auditExportFile, auditExportPackage, db } from "@/db";
 import { createLogger } from "@/lib/logger";
 import { getPresignedUrl } from "@/lib/storage/export-s3-client";
 import { type IManifestBuilder, manifestBuilder } from "../domain/manifest-builder";

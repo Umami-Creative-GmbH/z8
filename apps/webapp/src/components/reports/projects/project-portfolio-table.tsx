@@ -1,6 +1,6 @@
 "use client";
 
-import { IconChartBar, IconChevronRight } from "@tabler/icons-react";
+import { IconChevronRight } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";

@@ -10,7 +10,7 @@ import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, teamsUserMapping } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
-import type { ResolvedTeamsUser, UserResolutionResult } from "./types";
+import type { UserResolutionResult } from "./types";
 
 const logger = createLogger("TeamsUserResolver");
 

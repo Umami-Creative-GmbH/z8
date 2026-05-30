@@ -335,7 +335,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 	const importMutation = useMutation({
 		mutationFn: () => {
 			// Convert user mappings to serialized format for the server action
-			const serializedMappings: ImportUserMapping[] = userMappings.map((m) => ({
+			const _serializedMappings: ImportUserMapping[] = userMappings.map((m) => ({
 				clockodoUserId: m.clockodoUserId,
 				employeeId: m.employeeId,
 				userId: m.userId,

@@ -15,7 +15,7 @@ const logger = createLogger("PayrollExportExecutor");
  * System user ID for scheduled exports
  * This should be a valid user ID in the database for audit purposes
  */
-const SYSTEM_USER_ID = "system";
+const _SYSTEM_USER_ID = "system";
 
 /**
  * Payroll Export Executor

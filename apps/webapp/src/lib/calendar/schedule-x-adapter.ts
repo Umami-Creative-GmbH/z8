@@ -537,7 +537,7 @@ function zonedDateTimeToDate(value: ScheduleXEvent["start"]): Date | null {
  */
 export function generateBreakEvents(
 	workPeriodEvents: ScheduleXEvent[],
-	timeZone?: string,
+	_timeZone?: string,
 ): ScheduleXEvent[] {
 	const breakEvents: ScheduleXEvent[] = [];
 

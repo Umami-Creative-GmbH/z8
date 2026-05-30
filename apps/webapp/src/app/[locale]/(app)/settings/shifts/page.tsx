@@ -11,7 +11,7 @@ export default async function ShiftTemplatesPage() {
 
 	const accessContext = await getSchedulingSettingsAccessContext();
 
-	if (!accessContext || !accessContext.canAccessShiftTemplates) {
+	if (!accessContext?.canAccessShiftTemplates) {
 		redirect("/settings");
 	}
 

@@ -6,7 +6,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { auditSigningKey, db } from "@/db";
 import { createLogger } from "@/lib/logger";
-import { deleteOrgSecret, getOrgSecret, storeOrgSecret } from "@/lib/vault";
+import { getOrgSecret, storeOrgSecret } from "@/lib/vault";
 import { type ISigningProvider, signingProvider } from "../crypto/signing-provider";
 
 const logger = createLogger("AuditKeyManager");

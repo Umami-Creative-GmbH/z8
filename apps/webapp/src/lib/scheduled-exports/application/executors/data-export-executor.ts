@@ -87,7 +87,7 @@ export class DataExportExecutor implements IReportExecutor {
 
 			// Fetch the completed record to get S3 details
 			const completedRecord = await getExportById(exportRecord.id);
-			if (!completedRecord || completedRecord.status !== "completed") {
+			if (completedRecord?.status !== "completed") {
 				return {
 					success: false,
 					error: "Export processing failed to complete",

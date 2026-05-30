@@ -129,7 +129,7 @@ async function requirePlatformAdminSession(): Promise<
 	const headersList = await headers();
 	const session = await auth.api.getSession({ headers: headersList });
 
-	if (!session?.user || session.user.role !== "admin") {
+	if (session.user?.role !== "admin") {
 		return { success: false, errors: ["Unauthorized"] };
 	}
 

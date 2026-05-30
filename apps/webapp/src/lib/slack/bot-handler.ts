@@ -68,7 +68,7 @@ export async function handleSlashCommand(
 	// Parse command
 	const parsed = parseCommand(`/${text}`);
 
-	if (!parsed || !parsed.command) {
+	if (!parsed?.command) {
 		return { text: "Unknown command. Use `/z8 help` to see available commands." };
 	}
 

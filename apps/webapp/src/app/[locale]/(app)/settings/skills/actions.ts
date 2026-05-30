@@ -1,17 +1,12 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidateTag } from "next/cache";
 import { employee } from "@/db/schema";
 import { CACHE_TAGS } from "@/lib/cache/tags";
-import {
-	type AnyAppError,
-	AuthorizationError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -20,7 +15,6 @@ import {
 	type AssignSkillInput,
 	type CreateSkillInput,
 	type EmployeeSkillWithDetails,
-	type SetSkillRequirementsInput,
 	SkillService,
 	type SkillValidationResult,
 	type SkillWithRelations,
@@ -28,9 +22,7 @@ import {
 } from "@/lib/effect/services/skill.service";
 import { createLogger } from "@/lib/logger";
 import {
-	ensureCanAccessEmployeeSettingsTarget,
 	ensureSettingsActorCanAccessEmployeeTarget,
-	getEmployeeContext,
 	getEmployeeSettingsActorContext,
 	getTargetEmployee,
 	requireOrgAdminEmployeeSettingsAccess,

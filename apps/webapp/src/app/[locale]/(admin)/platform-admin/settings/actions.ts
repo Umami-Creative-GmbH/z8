@@ -12,7 +12,7 @@ export async function getCookieConsentScriptAction(): Promise<{
 	const headersList = await headers();
 	const session = await auth.api.getSession({ headers: headersList });
 
-	if (!session?.user || session.user.role !== "admin") {
+	if (session.user?.role !== "admin") {
 		return { success: false, error: "Unauthorized" };
 	}
 
@@ -31,7 +31,7 @@ export async function setCookieConsentScriptAction(
 	const headersList = await headers();
 	const session = await auth.api.getSession({ headers: headersList });
 
-	if (!session?.user || session.user.role !== "admin") {
+	if (session.user?.role !== "admin") {
 		return { success: false, error: "Unauthorized" };
 	}
 

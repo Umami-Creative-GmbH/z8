@@ -14,7 +14,7 @@ export default async function ImportPage() {
 		getTranslate(),
 	]);
 
-	const memberRecord = await db.query.member.findFirst({
+	const _memberRecord = await db.query.member.findFirst({
 		where: and(
 			eq(authSchema.member.userId, authContext.user.id),
 			eq(authSchema.member.organizationId, organizationId),

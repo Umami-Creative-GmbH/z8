@@ -35,7 +35,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import {
-	type AbsenceCategoryFormValues,
 	type AbsenceCategoryForSettings,
 	buildAbsenceCategoryPayload,
 	DEFAULT_CATEGORY_COLOR,

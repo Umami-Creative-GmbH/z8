@@ -5,7 +5,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { customer, employee, project } from "@/db/schema";
+import { customer, project } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import {
 	AuthorizationError,
@@ -14,7 +14,7 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { AuthService, AuthServiceLive } from "@/lib/effect/services/auth.service";
+import { AuthServiceLive } from "@/lib/effect/services/auth.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import {

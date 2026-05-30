@@ -109,7 +109,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 	const [isShowingPreviousResults, setIsShowingPreviousResults] = useState(false);
 	const [expandedId, setExpandedId] = useState<string | null>(null);
 	const [loadedRowsOrganizationId, setLoadedRowsOrganizationId] = useState<string | null>(null);
-	const [loadRequestVersion, requestLoad] = useReducer((version: number) => version + 1, 0);
+	const [_loadRequestVersion, requestLoad] = useReducer((version: number) => version + 1, 0);
 	const appliedFilters = useRef(defaultFilters);
 	const loadedRowsOrganizationIdRef = useRef<string | null>(null);
 	const latestRequestId = useRef(0);
@@ -192,7 +192,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 
 	useEffect(() => {
 		loadCalculations(appliedFilters.current);
-	}, [organizationId, loadRequestVersion]);
+	}, []);
 
 	const displayRows = loadedRowsOrganizationId === organizationId ? rows : [];
 	const totals = displayRows.reduce(

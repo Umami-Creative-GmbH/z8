@@ -1,6 +1,6 @@
 "use client";
 
-import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
@@ -309,7 +309,7 @@ export function WorkPolicyDialog({
 	const regulationEnabled = useStore(form.store, (state) => state.values.regulationEnabled);
 	const presenceEnabled = useStore(form.store, (state) => state.values.presenceEnabled);
 	const presenceMode = useStore(form.store, (state) => state.values.presence.presenceMode);
-	const presenceFixedDays = useStore(
+	const _presenceFixedDays = useStore(
 		form.store,
 		(state) => state.values.presence.requiredOnsiteFixedDays,
 	);
@@ -322,7 +322,7 @@ export function WorkPolicyDialog({
 		form.store,
 		(state) => state.values.homeOfficeDaysPerCycle,
 	);
-	const breakRules = useStore(form.store, (state) => state.values.breakRules);
+	const _breakRules = useStore(form.store, (state) => state.values.breakRules);
 
 	// Calculate total hours for detailed mode
 	const totalHours = days
@@ -718,8 +718,8 @@ export function WorkPolicyDialog({
 																max="24"
 																value={field.state.value ? Math.floor(field.state.value / 60) : ""}
 																onChange={(e) => {
-																	const hours = parseInt(e.target.value);
-																	field.handleChange(isNaN(hours) ? null : hours * 60);
+																	const hours = parseInt(e.target.value, 10);
+																	field.handleChange(Number.isNaN(hours) ? null : hours * 60);
 																}}
 																onBlur={field.handleBlur}
 																placeholder="—"
@@ -744,8 +744,8 @@ export function WorkPolicyDialog({
 																max="168"
 																value={field.state.value ? Math.floor(field.state.value / 60) : ""}
 																onChange={(e) => {
-																	const hours = parseInt(e.target.value);
-																	field.handleChange(isNaN(hours) ? null : hours * 60);
+																	const hours = parseInt(e.target.value, 10);
+																	field.handleChange(Number.isNaN(hours) ? null : hours * 60);
 																}}
 																onBlur={field.handleBlur}
 																placeholder="—"
@@ -774,7 +774,9 @@ export function WorkPolicyDialog({
 																value={field.state.value ? field.state.value / 60 : ""}
 																onChange={(e) => {
 																	const hours = parseFloat(e.target.value);
-																	field.handleChange(isNaN(hours) ? null : Math.round(hours * 60));
+																	field.handleChange(
+																		Number.isNaN(hours) ? null : Math.round(hours * 60),
+																	);
 																}}
 																onBlur={field.handleBlur}
 																placeholder="—"
@@ -940,7 +942,7 @@ export function WorkPolicyDialog({
 														min={1}
 														max={7}
 														value={field.state.value}
-														onChange={(e) => field.handleChange(parseInt(e.target.value) || 1)}
+														onChange={(e) => field.handleChange(parseInt(e.target.value, 10) || 1)}
 														onBlur={field.handleBlur}
 														className="w-32"
 													/>

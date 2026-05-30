@@ -7,8 +7,7 @@
 import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
-import { absenceCategory, absenceEntry, approvalRequest, employee } from "@/db/schema";
+import { absenceEntry, approvalRequest, employee } from "@/db/schema";
 import { fmtShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";

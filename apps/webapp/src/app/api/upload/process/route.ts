@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 				),
 			});
 
-			if (!currentMember || currentMember.role !== "owner") {
+			if (currentMember?.role !== "owner") {
 				return NextResponse.json(
 					{ error: "Only organization owners can update branding images" },
 					{ status: 403 },

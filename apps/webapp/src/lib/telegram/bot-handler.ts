@@ -133,7 +133,7 @@ async function handleMessage(
 	// Parse command
 	const parsed = parseCommand(text);
 
-	if (!parsed || !parsed.command) {
+	if (!parsed?.command) {
 		const t = await getBotTranslate(locale);
 		await sendMessage(bot.botToken, {
 			chat_id: chatId,

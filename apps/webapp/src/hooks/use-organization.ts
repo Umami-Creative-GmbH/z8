@@ -51,7 +51,7 @@ export function useOrganization(): OrganizationContext {
 	const resetSettings = useOrganizationSettings((state) => state.reset);
 
 	// Track active organization to detect changes
-	const activeOrganizationId = session?.session?.activeOrganizationId;
+	const _activeOrganizationId = session?.session?.activeOrganizationId;
 
 	const fetchEmployeeContext = async () => {
 		if (!session?.user?.id) {
@@ -103,7 +103,7 @@ export function useOrganization(): OrganizationContext {
 			const timeout = setTimeout(() => void fetchEmployeeContextForEffect(), 0);
 			return () => clearTimeout(timeout);
 		}
-	}, [sessionLoading, activeOrganizationId]);
+	}, [sessionLoading]);
 
 	const organizationId = employeeContext?.organizationId ?? null;
 	const role = employeeContext?.role ?? null;

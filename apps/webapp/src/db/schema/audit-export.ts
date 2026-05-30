@@ -14,7 +14,6 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
 import { dataExport } from "./export";
-import { employee } from "./organization";
 import { payrollExportJob } from "./payroll-export";
 
 // ============================================

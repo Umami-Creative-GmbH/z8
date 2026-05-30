@@ -1,7 +1,6 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
-import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { EmailTemplateDefinition } from "@/lib/email/template-registry";
 import { EmailTemplateEditor } from "./email-template-editor";

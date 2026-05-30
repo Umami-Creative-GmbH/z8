@@ -7,7 +7,6 @@
 
 import type { TurnContext } from "botbuilder";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import {
 	OpenShiftsService,
 	OpenShiftsServiceFullLive,

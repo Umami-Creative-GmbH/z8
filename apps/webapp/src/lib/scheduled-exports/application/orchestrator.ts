@@ -9,7 +9,7 @@
  * - Updating next execution times
  */
 
-import { and, eq, lte, sql } from "drizzle-orm";
+import { and, eq, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db, scheduledExport, scheduledExportExecution } from "@/db";
 import type { ScheduledExport, ScheduledExportExecution } from "@/db/schema/scheduled-export";

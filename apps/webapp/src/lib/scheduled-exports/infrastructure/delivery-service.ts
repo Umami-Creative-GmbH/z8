@@ -6,7 +6,7 @@
 import { DateTime } from "luxon";
 import { sendEmail } from "@/lib/email/email-service";
 import { createLogger } from "@/lib/logger";
-import { getPresignedUrl, uploadExport } from "@/lib/storage/export-s3-client";
+import { getPresignedUrl } from "@/lib/storage/export-s3-client";
 import type {
 	CalculatedDateRange,
 	DeliveryConfig,

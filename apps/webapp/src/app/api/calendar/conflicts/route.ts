@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
 		});
 
 		// If no connection or conflict detection disabled, return empty
-		if (!connection || !connection.isActive || !connection.conflictDetectionEnabled) {
+		if (!connection?.isActive || !connection.conflictDetectionEnabled) {
 			return NextResponse.json({
 				hasConflicts: false,
 				conflicts: [],

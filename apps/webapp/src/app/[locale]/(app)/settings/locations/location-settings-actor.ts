@@ -94,7 +94,7 @@ export function getLocationSettingsActorContext(options?: {
 			};
 		}
 
-		if (!currentEmployee || currentEmployee.role !== "manager") {
+		if (currentEmployee?.role !== "manager") {
 			return yield* _(
 				Effect.fail(
 					new AuthorizationError({

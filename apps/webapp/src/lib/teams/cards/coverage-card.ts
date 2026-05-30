@@ -31,7 +31,6 @@ function getStatusColor(status: "understaffed" | "adequate" | "overstaffed"): st
 			return "attention"; // Red
 		case "overstaffed":
 			return "accent"; // Blue
-		case "adequate":
 		default:
 			return "good"; // Green
 	}
@@ -43,7 +42,6 @@ function getStatusIcon(status: "understaffed" | "adequate" | "overstaffed"): str
 			return "🔴";
 		case "overstaffed":
 			return "🔵";
-		case "adequate":
 		default:
 			return "🟢";
 	}

@@ -243,7 +243,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				const policy = yield* _(workPolicyService.getEffectivePolicy(params.employeeId));
 
 				// If no policy or no regulation enabled, no break requirements
-				if (!policy || !policy.regulation) {
+				if (!policy?.regulation) {
 					return {
 						deficit: 0,
 						applicableRule: null,
@@ -672,7 +672,7 @@ export const calculateBreakDeficitForTesting = (
 	Effect.gen(function* (_) {
 		const policy = yield* _(mockPolicyService.getEffectivePolicy(params.employeeId));
 
-		if (!policy || !policy.regulation) {
+		if (!policy?.regulation) {
 			return {
 				deficit: 0,
 				applicableRule: null,

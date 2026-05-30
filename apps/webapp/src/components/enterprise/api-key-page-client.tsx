@@ -12,7 +12,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
-import { memo, useCallback, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteApiKey,

@@ -55,7 +55,7 @@ function parseRateLimitEnv(
 	}
 	const requests = parseInt(parts[0], 10);
 	const seconds = parseInt(parts[1], 10);
-	if (isNaN(requests) || isNaN(seconds) || requests <= 0 || seconds <= 0) {
+	if (Number.isNaN(requests) || Number.isNaN(seconds) || requests <= 0 || seconds <= 0) {
 		logger.warn({ envValue }, "Invalid rate limit values, using defaults");
 		return { requests: defaultRequests, seconds: defaultSeconds };
 	}

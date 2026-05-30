@@ -8,7 +8,6 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import {
 	type TravelExpensePolicyData,
-	type UpsertTravelExpensePolicyInput,
 	upsertTravelExpensePolicy,
 } from "@/app/[locale]/(app)/settings/travel-expenses/actions";
 import {
@@ -29,7 +28,6 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import {
 	getTravelExpensePolicyFormValues,
 	normalizePolicyFormValues,
-	type TravelExpensePolicyFormValues,
 } from "./travel-expense-policy-dialog-utils";
 
 interface TravelExpensePolicyDialogProps {

@@ -2,12 +2,7 @@ import JSZip from "jszip";
 import { createLogger } from "@/lib/logger";
 import type { ExportCategory } from "./data-fetchers";
 import { CSV_COLUMNS, isCSVCategory, toCSV } from "./formatters/csv-formatter";
-import {
-	CATEGORY_DESCRIPTIONS,
-	countRecords,
-	isJSONCategory,
-	toJSON,
-} from "./formatters/json-formatter";
+import { countRecords, isJSONCategory, toJSON } from "./formatters/json-formatter";
 
 const logger = createLogger("ZipBuilder");
 

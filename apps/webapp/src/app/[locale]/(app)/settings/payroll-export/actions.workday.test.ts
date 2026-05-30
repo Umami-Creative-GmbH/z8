@@ -110,7 +110,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 vi.mock("@/lib/effect/result", async () => {
 	const { Cause, Effect, Exit, Option } = await import("effect");
 
-	const toServerActionResult = <T>(exit: unknown) =>
+	const toServerActionResult = <_T>(exit: unknown) =>
 		Exit.match(exit as never, {
 			onFailure: (cause) => {
 				const defects = Cause.defects(cause);

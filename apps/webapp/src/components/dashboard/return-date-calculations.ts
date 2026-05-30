@@ -39,7 +39,6 @@ function isScheduledWorkDay(schedule: ReturnDateSchedule, date: DateTime): boole
 			return true;
 		case "custom":
 			return false;
-		case "weekdays":
 		default:
 			return date.weekday >= 1 && date.weekday <= 5;
 	}

@@ -120,7 +120,7 @@ export default function VacationTrendsPage() {
 		return () => {
 			isCurrent = false;
 		};
-	}, [dateRange, isHydrated, timezone]);
+	}, [dateRange, isHydrated, timezone, t]);
 
 	const overallData = vacationData?.overall || {
 		totalDaysAllocated: 0,
@@ -162,8 +162,7 @@ export default function VacationTrendsPage() {
 								label: t("analytics.vacationTrends.utilizationPercent", "Utilization %"),
 							},
 						],
-						filename:
-							"vacation-trends-" + (dateRange?.start.toISOString().split("T")[0] ?? "pending"),
+						filename: `vacation-trends-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
 					}}
 					disabled={!vacationData || !dateRange}
 				/>

@@ -10,7 +10,7 @@ async function ApprovalPoliciesSettingsContent() {
 
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
-	if (!settingsRouteContext || settingsRouteContext.accessTier !== "orgAdmin") {
+	if (settingsRouteContext?.accessTier !== "orgAdmin") {
 		redirect("/settings");
 	}
 
