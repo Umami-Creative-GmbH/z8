@@ -169,7 +169,10 @@ export async function executeCommand(
 			"Executing bot command",
 		);
 
-		return await command.handler(context);
+		return await command.handler({
+			...context,
+			listCommands: getAllCommands,
+		});
 	} catch (error) {
 		logger.error(
 			{

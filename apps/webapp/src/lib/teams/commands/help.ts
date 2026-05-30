@@ -6,7 +6,6 @@
 
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
-import { getAllCommands } from "@/lib/bot-platform/command-registry";
 
 export const helpCommand: BotCommand = {
 	name: "help",
@@ -16,7 +15,7 @@ export const helpCommand: BotCommand = {
 	requiresAuth: false,
 	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		const t = await getBotTranslate(ctx.locale);
-		const commands = getAllCommands();
+		const commands = ctx.listCommands?.() ?? [helpCommand];
 
 		// Sort commands alphabetically, but put help last
 		const sortedCommands = commands.sort((a, b) => {

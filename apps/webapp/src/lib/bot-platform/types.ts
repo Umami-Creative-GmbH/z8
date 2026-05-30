@@ -48,6 +48,8 @@ export interface BotCommandContext {
 	args: string[];
 	/** User's preferred locale (e.g., "en", "de") */
 	locale: string;
+	/** Registry-provided command listing for commands like help. */
+	listCommands?: () => BotCommand[];
 }
 
 /**
