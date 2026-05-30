@@ -163,7 +163,7 @@ export function PasswordChangeForm() {
 					</div>
 
 					{/* Revoke Other Sessions */}
-					<div className="flex items-center space-x-2">
+					<div className="flex items-center gap-x-2">
 						<Switch
 							id="revokeOtherSessions"
 							checked={revokeOtherSessions}

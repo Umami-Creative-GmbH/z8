@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -37,7 +37,7 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
-	const [accountToUnlink, setAccountToUnlink] = useState<{
+	const accountToUnlinkRef = useRef<{
 		providerId: string;
 		accountId: string;
 	} | null>(null);
@@ -80,7 +80,7 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 				t("settings.socialAccounts.disconnectSuccess", "Account disconnected successfully"),
 			);
 			setUnlinkDialogOpen(false);
-			setAccountToUnlink(null);
+			accountToUnlinkRef.current = null;
 			queryClient.invalidateQueries({ queryKey: queryKeys.auth.accounts() });
 		},
 		onError: (error) => {
@@ -123,12 +123,12 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 	};
 
 	const handleUnlink = () => {
-		if (!accountToUnlink) return;
-		unlinkMutation.mutate(accountToUnlink);
+		if (!accountToUnlinkRef.current) return;
+		unlinkMutation.mutate(accountToUnlinkRef.current);
 	};
 
 	const confirmUnlink = (providerId: string, accountId: string) => {
-		setAccountToUnlink({ providerId, accountId });
+		accountToUnlinkRef.current = { providerId, accountId };
 		setUnlinkDialogOpen(true);
 	};
 
