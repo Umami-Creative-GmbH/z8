@@ -19,12 +19,18 @@ const forbiddenPatterns = [
 ];
 
 const targetedForbiddenPatterns: Record<string, RegExp[]> = {
-	"src/lib/export/data-fetchers.ts": [/\bemp\.firstName\b/, /\bemp\.lastName\b/],
+	"src/lib/export/data-fetchers.ts": [
+		/\bemp\.firstName\b/,
+		/\bemp\.lastName\b/,
+	],
 	"src/app/[locale]/(app)/settings/compliance/actions.ts": [
 		/\bemp\.firstName\b/,
 		/\bemp\.lastName\b/,
 	],
-	"src/lib/jobs/export-processor.ts": [/\bemp\.firstName\b/, /\bemp\.lastName\b/],
+	"src/lib/jobs/export-processor.ts": [
+		/\bemp\.firstName\b/,
+		/\bemp\.lastName\b/,
+	],
 	"src/lib/payroll-export/data-fetcher.ts": [
 		/p\.employee\?\.firstName/,
 		/p\.employee\?\.lastName/,
@@ -34,7 +40,10 @@ const targetedForbiddenPatterns: Record<string, RegExp[]> = {
 		/getEmployeesForFilter[\s\S]*columns:\s*\{\s*id:\s*true,\s*firstName:\s*true,\s*lastName:\s*true/s,
 		/getEmployeesForFilter[\s\S]*orderBy:\s*\([^)]*\)\s*=>\s*\[asc\([^)]*\.lastName\),\s*asc\([^)]*\.firstName\)\]/,
 	],
-	"src/app/[locale]/(app)/settings/locations/actions.ts": [/\be\.firstName\b/, /\be\.lastName\b/],
+	"src/app/[locale]/(app)/settings/locations/actions.ts": [
+		/\be\.firstName\b/,
+		/\be\.lastName\b/,
+	],
 	"src/components/settings/work-policy/work-policy-compliance-view.tsx": [
 		/\bemployeeRecord\.firstName\b/,
 		/\bemployeeRecord\.lastName\b/,
@@ -82,12 +91,17 @@ describe("employee name source sweep", () => {
 		const offenders = collectSourceFiles(srcRoot).flatMap((filePath) => {
 			const relativePath = relative(process.cwd(), filePath);
 
-			if (allowedPathFragments.some((fragment) => relativePath.includes(fragment))) {
+			if (
+				allowedPathFragments.some((fragment) => relativePath.includes(fragment))
+			) {
 				return [];
 			}
 
 			const source = readFileSync(filePath, "utf8");
-			const patterns = [...forbiddenPatterns, ...(targetedForbiddenPatterns[relativePath] ?? [])];
+			const patterns = [
+				...forbiddenPatterns,
+				...(targetedForbiddenPatterns[relativePath] ?? []),
+			];
 
 			return patterns
 				.filter((pattern) => pattern.test(source))
