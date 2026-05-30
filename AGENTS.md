@@ -34,9 +34,11 @@ pnpm drizzle-kit push # Push schema to database
 
 ## Detailed Documentation
 
-- [Better Auth Schema](docs/better-auth.md) - Custom fields, plugins, type inference.
-- [Database Schema](docs/database-schema.md) - File structure, relations, adding tables.
-- [Forms](docs/forms.md) - TanStack Form patterns and UI components.
-- [i18n](docs/i18n.md) - Tolgee namespaces and translation workflow.
-- [Date/Time](docs/dates.md) - Luxon usage patterns.
-- [Billing & Stripe](docs/billing-stripe.md) - Stripe setup, webhooks, per-seat billing.
+These references keep this file concise; open them when deeper implementation detail is needed.
+
+- [Better Auth Schema](docs/refs/better-auth.md) - Custom fields, plugins, type inference.
+- [Database Schema](docs/refs/database-schema.md) - File structure, relations, adding tables.
+- [Forms](docs/refs/forms.md) - TanStack Form patterns and UI components.
+- [i18n](docs/refs/i18n.md) - Tolgee namespaces and translation workflow.
+- [Date/Time](docs/refs/dates.md) - Luxon usage patterns.
+- [Billing & Stripe](docs/refs/billing-stripe.md) - Stripe setup, webhooks, per-seat billing.
