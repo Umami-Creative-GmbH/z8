@@ -28,7 +28,12 @@ import {
 } from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+} from "@/components/ui/card";
 import {
 	Select,
 	SelectContent,
@@ -79,7 +84,10 @@ interface WorkPolicyComplianceViewProps {
 	organizationId: string;
 }
 
-const violationTypeColors: Record<string, "destructive" | "secondary" | "outline"> = {
+const violationTypeColors: Record<
+	string,
+	"destructive" | "secondary" | "outline"
+> = {
 	max_daily: "destructive",
 	max_weekly: "destructive",
 	max_uninterrupted: "secondary",
@@ -87,29 +95,45 @@ const violationTypeColors: Record<string, "destructive" | "secondary" | "outline
 	schedule_deviation: "outline",
 };
 
-export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianceViewProps) {
+export function WorkPolicyComplianceView({
+	organizationId,
+}: WorkPolicyComplianceViewProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d">("30d");
 	const [acknowledgeDialogOpen, setAcknowledgeDialogOpen] = useState(false);
-	const [selectedViolation, setSelectedViolation] = useState<WorkPolicyViolationWithDetails | null>(
-		null,
-	);
+	const [selectedViolation, setSelectedViolation] =
+		useState<WorkPolicyViolationWithDetails | null>(null);
 	const [acknowledgeNote, setAcknowledgeNote] = useState("");
 
 	// Helper function to get translated violation type labels
 	const getViolationTypeLabel = (type: string): string => {
 		switch (type) {
 			case "max_daily":
-				return t("settings.workPolicies.violationType.maxDaily", "Max Daily Exceeded");
+				return t(
+					"settings.workPolicies.violationType.maxDaily",
+					"Max Daily Exceeded",
+				);
 			case "max_weekly":
-				return t("settings.workPolicies.violationType.maxWeekly", "Max Weekly Exceeded");
+				return t(
+					"settings.workPolicies.violationType.maxWeekly",
+					"Max Weekly Exceeded",
+				);
 			case "max_uninterrupted":
-				return t("settings.workPolicies.violationType.maxUninterrupted", "Max Continuous Exceeded");
+				return t(
+					"settings.workPolicies.violationType.maxUninterrupted",
+					"Max Continuous Exceeded",
+				);
 			case "break_required":
-				return t("settings.workPolicies.violationType.breakRequired", "Required Break Missing");
+				return t(
+					"settings.workPolicies.violationType.breakRequired",
+					"Required Break Missing",
+				);
 			case "schedule_deviation":
-				return t("settings.workPolicies.violationType.scheduleDeviation", "Schedule Deviation");
+				return t(
+					"settings.workPolicies.violationType.scheduleDeviation",
+					"Schedule Deviation",
+				);
 			default:
 				return type;
 		}
@@ -137,7 +161,10 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 	})();
 
 	// Create stable query key
-	const queryKey = queryKeys.workPolicies.violations.list(organizationId, range);
+	const queryKey = queryKeys.workPolicies.violations.list(
+		organizationId,
+		range,
+	);
 
 	// Fetch violations
 	const {
@@ -148,7 +175,11 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 	} = useQuery({
 		queryKey,
 		queryFn: async () => {
-			const result = await getWorkPolicyViolations(organizationId, range.start, range.end);
+			const result = await getWorkPolicyViolations(
+				organizationId,
+				range.start,
+				range.end,
+			);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch violations");
 			}
@@ -160,11 +191,21 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 
 	// Acknowledge mutation
 	const acknowledgeMutation = useMutation({
-		mutationFn: ({ violationId, note }: { violationId: string; note?: string }) =>
-			acknowledgeWorkPolicyViolation(violationId, note),
+		mutationFn: ({
+			violationId,
+			note,
+		}: {
+			violationId: string;
+			note?: string;
+		}) => acknowledgeWorkPolicyViolation(violationId, note),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("settings.workPolicies.violationAcknowledged", "Violation acknowledged"));
+				toast.success(
+					t(
+						"settings.workPolicies.violationAcknowledged",
+						"Violation acknowledged",
+					),
+				);
 				queryClient.invalidateQueries({ queryKey });
 				setAcknowledgeDialogOpen(false);
 				setSelectedViolation(null);
@@ -172,16 +213,26 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 			} else {
 				toast.error(
 					result.error ||
-						t("settings.workPolicies.acknowledgeFailed", "Failed to acknowledge violation"),
+						t(
+							"settings.workPolicies.acknowledgeFailed",
+							"Failed to acknowledge violation",
+						),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.workPolicies.acknowledgeFailed", "Failed to acknowledge violation"));
+			toast.error(
+				t(
+					"settings.workPolicies.acknowledgeFailed",
+					"Failed to acknowledge violation",
+				),
+			);
 		},
 	});
 
-	const handleAcknowledgeClick = (violation: WorkPolicyViolationWithDetails) => {
+	const handleAcknowledgeClick = (
+		violation: WorkPolicyViolationWithDetails,
+	) => {
 		setSelectedViolation(violation);
 		setAcknowledgeNote("");
 		setAcknowledgeDialogOpen(true);
@@ -199,7 +250,9 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 	// CSV Export function
 	const handleExportCSV = () => {
 		if (!violations || violations.length === 0) {
-			toast.error(t("settings.workPolicies.noDataToExport", "No data to export"));
+			toast.error(
+				t("settings.workPolicies.noDataToExport", "No data to export"),
+			);
 			return;
 		}
 
@@ -214,7 +267,10 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 		];
 
 		const unknownLabel = t("common.unknown", "Unknown");
-		const acknowledgedLabel = t("settings.workPolicies.acknowledged", "Acknowledged");
+		const acknowledgedLabel = t(
+			"settings.workPolicies.acknowledged",
+			"Acknowledged",
+		);
 		const pendingLabel = t("settings.workPolicies.pending", "Pending");
 
 		const rows = violations.map((v) => {
@@ -226,7 +282,9 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 				v.policy?.name || unknownLabel,
 				getViolationTypeLabel(v.violationType) || v.violationType,
 				v.acknowledgedAt ? acknowledgedLabel : pendingLabel,
-				v.acknowledgedAt ? DateTime.fromJSDate(v.acknowledgedAt).toFormat("yyyy-MM-dd HH:mm") : "",
+				v.acknowledgedAt
+					? DateTime.fromJSDate(v.acknowledgedAt).toFormat("yyyy-MM-dd HH:mm")
+					: "",
 				v.acknowledgedNote || "",
 			];
 		});
@@ -258,7 +316,12 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
 
-		toast.success(t("settings.workPolicies.exportSuccess", "Violations exported successfully"));
+		toast.success(
+			t(
+				"settings.workPolicies.exportSuccess",
+				"Violations exported successfully",
+			),
+		);
 	};
 
 	// Calculate summary stats
@@ -266,11 +329,16 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 		total: violations?.length || 0,
 		unacknowledged: violations?.filter((v) => !v.acknowledgedAt).length || 0,
 		byType: {
-			max_daily: violations?.filter((v) => v.violationType === "max_daily").length || 0,
-			max_weekly: violations?.filter((v) => v.violationType === "max_weekly").length || 0,
-			break_required: violations?.filter((v) => v.violationType === "break_required").length || 0,
+			max_daily:
+				violations?.filter((v) => v.violationType === "max_daily").length || 0,
+			max_weekly:
+				violations?.filter((v) => v.violationType === "max_weekly").length || 0,
+			break_required:
+				violations?.filter((v) => v.violationType === "break_required")
+					.length || 0,
 			max_uninterrupted:
-				violations?.filter((v) => v.violationType === "max_uninterrupted").length || 0,
+				violations?.filter((v) => v.violationType === "max_uninterrupted")
+					.length || 0,
 		},
 	};
 
@@ -299,7 +367,10 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 			<Card>
 				<CardContent className="py-8 text-center">
 					<p className="text-destructive">
-						{t("settings.workPolicies.violationsLoadError", "Failed to load violations")}
+						{t(
+							"settings.workPolicies.violationsLoadError",
+							"Failed to load violations",
+						)}
 					</p>
 					<Button className="mt-4" variant="outline" onClick={() => refetch()}>
 						<IconRefresh className="mr-2 size-4" />
@@ -314,7 +385,10 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 		<div className="space-y-4">
 			{/* Date Range Selector */}
 			<div className="flex items-center justify-between">
-				<Select value={dateRange} onValueChange={(v) => setDateRange(v as typeof dateRange)}>
+				<Select
+					value={dateRange}
+					onValueChange={(v) => setDateRange(v as typeof dateRange)}
+				>
 					<SelectTrigger className="w-40">
 						<SelectValue />
 					</SelectTrigger>
@@ -367,7 +441,9 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold text-destructive">{stats.unacknowledged}</div>
+						<div className="text-2xl font-bold text-destructive">
+							{stats.unacknowledged}
+						</div>
 					</CardContent>
 				</Card>
 				<Card>
@@ -387,7 +463,9 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{stats.byType.break_required}</div>
+						<div className="text-2xl font-bold">
+							{stats.byType.break_required}
+						</div>
 					</CardContent>
 				</Card>
 			</div>
@@ -413,11 +491,17 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>{t("settings.workPolicies.employee", "Employee")}</TableHead>
+								<TableHead>
+									{t("settings.workPolicies.employee", "Employee")}
+								</TableHead>
 								<TableHead>{t("settings.workPolicies.date", "Date")}</TableHead>
-								<TableHead>{t("settings.workPolicies.policyName", "Policy")}</TableHead>
+								<TableHead>
+									{t("settings.workPolicies.policyName", "Policy")}
+								</TableHead>
 								<TableHead>{t("settings.workPolicies.type", "Type")}</TableHead>
-								<TableHead>{t("settings.workPolicies.status", "Status")}</TableHead>
+								<TableHead>
+									{t("settings.workPolicies.status", "Status")}
+								</TableHead>
 								<TableHead className="w-[100px]" />
 							</TableRow>
 						</TableHeader>
@@ -425,24 +509,38 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 							{violations.map((violation) => (
 								<TableRow key={violation.id}>
 									<TableCell className="font-medium">
-										{formatEmployeeName(violation.employee, t("common.unknown", "Unknown"))}
+										{formatEmployeeName(
+											violation.employee,
+											t("common.unknown", "Unknown"),
+										)}
 									</TableCell>
 									<TableCell>
-										{DateTime.fromJSDate(violation.violationDate).toFormat("LLL d, yyyy")}
+										{DateTime.fromJSDate(violation.violationDate).toFormat(
+											"LLL d, yyyy",
+										)}
 									</TableCell>
 									<TableCell className="text-sm text-muted-foreground">
 										{violation.policy?.name || t("common.unknown", "Unknown")}
 									</TableCell>
 									<TableCell>
-										<Badge variant={violationTypeColors[violation.violationType] || "outline"}>
-											{getViolationTypeLabel(violation.violationType) || violation.violationType}
+										<Badge
+											variant={
+												violationTypeColors[violation.violationType] ||
+												"outline"
+											}
+										>
+											{getViolationTypeLabel(violation.violationType) ||
+												violation.violationType}
 										</Badge>
 									</TableCell>
 									<TableCell>
 										{violation.acknowledgedAt ? (
 											<Badge variant="secondary">
 												<IconCheck className="mr-1 size-3" />
-												{t("settings.workPolicies.acknowledged", "Acknowledged")}
+												{t(
+													"settings.workPolicies.acknowledged",
+													"Acknowledged",
+												)}
 											</Badge>
 										) : (
 											<Badge variant="outline">
@@ -470,11 +568,17 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 			)}
 
 			{/* Acknowledge ActionPanel */}
-			<ActionPanel open={acknowledgeDialogOpen} onOpenChange={setAcknowledgeDialogOpen}>
+			<ActionPanel
+				open={acknowledgeDialogOpen}
+				onOpenChange={setAcknowledgeDialogOpen}
+			>
 				<ActionPanelContent>
 					<ActionPanelHeader>
 						<ActionPanelTitle>
-							{t("settings.workPolicies.acknowledgeViolation", "Acknowledge Violation")}
+							{t(
+								"settings.workPolicies.acknowledgeViolation",
+								"Acknowledge Violation",
+							)}
 						</ActionPanelTitle>
 						<ActionPanelDescription>
 							{t(
@@ -504,7 +608,9 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 											{t("settings.workPolicies.dateLabel", "Date:")}
 										</span>{" "}
 										<span className="font-medium">
-											{DateTime.fromJSDate(selectedViolation.violationDate).toFormat("LLL d, yyyy")}
+											{DateTime.fromJSDate(
+												selectedViolation.violationDate,
+											).toFormat("LLL d, yyyy")}
 										</span>
 									</div>
 									<div className="col-span-2">
@@ -512,7 +618,10 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 											{t("settings.workPolicies.typeLabel", "Type:")}
 										</span>{" "}
 										<Badge
-											variant={violationTypeColors[selectedViolation.violationType] || "outline"}
+											variant={
+												violationTypeColors[selectedViolation.violationType] ||
+												"outline"
+											}
 										>
 											{getViolationTypeLabel(selectedViolation.violationType) ||
 												selectedViolation.violationType}
@@ -523,10 +632,12 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 						)}
 
 						<div className="space-y-2">
-							<label className="text-sm font-medium">
-								{t("settings.workPolicies.note", "Note")} ({t("common.optional", "optional")})
+							<label htmlFor="acknowledge-note" className="text-sm font-medium">
+								{t("settings.workPolicies.note", "Note")} (
+								{t("common.optional", "optional")})
 							</label>
 							<Textarea
+								id="acknowledge-note"
 								value={acknowledgeNote}
 								onChange={(e) => setAcknowledgeNote(e.target.value)}
 								placeholder={t(
@@ -539,10 +650,17 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 					</ActionPanelBody>
 
 					<ActionPanelFooter>
-						<Button type="button" variant="outline" onClick={() => setAcknowledgeDialogOpen(false)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setAcknowledgeDialogOpen(false)}
+						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button onClick={handleAcknowledgeConfirm} disabled={acknowledgeMutation.isPending}>
+						<Button
+							onClick={handleAcknowledgeConfirm}
+							disabled={acknowledgeMutation.isPending}
+						>
 							{acknowledgeMutation.isPending && (
 								<IconLoader2 className="mr-2 size-4 animate-spin" />
 							)}

@@ -7,16 +7,16 @@
 			"react-doctor/unused-dev-dependency"
 		]
 	},
-  "serverAuthFunctionNames": [
-    "getAuthContext",
-    "getCurrentEmployee",
-    "getEmployeeSettingsActorContext",
-    "requireAdmin",
-    "requireAuth",
-    "requireOrgAdminEmployeeSettingsAccess",
-    "requirePlatformAdmin",
-    "requireSettingsActorEmployeeRecord",
-    "requireSystemAdmin",
-    "requireUser"
-  ]
+	"serverAuthFunctionNames": [
+		"getAuthContext",
+		"getCurrentEmployee",
+		"getEmployeeSettingsActorContext",
+		"requireAdmin",
+		"requireAuth",
+		"requireOrgAdminEmployeeSettingsAccess",
+		"requirePlatformAdmin",
+		"requireSettingsActorEmployeeRecord",
+		"requireSystemAdmin",
+		"requireUser"
+	]
 }

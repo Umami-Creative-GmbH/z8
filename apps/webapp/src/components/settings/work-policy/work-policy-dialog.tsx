@@ -1,11 +1,12 @@
 "use client";
+/* eslint-disable react-doctor/no-giant-component */
 
 import { IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
 	type BreakRuleInput,
@@ -14,8 +15,8 @@ import {
 	updateWorkPolicy,
 	type WorkPolicyWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
-import { WorkSchedulePreview } from "@/components/settings/work-policy-preview";
-import { generateDaysFromPreset } from "@/components/settings/work-policy-preview-utils";
+import { WorkSchedulePreview } from "@/components/settings/work-policy/work-policy-preview";
+import { generateDaysFromPreset } from "@/components/settings/work-policy/work-policy-preview-utils";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -42,7 +43,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query";
-import { BreakRuleEditor } from "./break-rule-editor";
+import { BreakRuleEditor } from "../break-rule-editor";
 
 interface WorkPolicyDialogProps {
 	open: boolean;
@@ -117,6 +118,69 @@ const formDefaultValues = {
 	},
 };
 
+function parsePresenceFixedDays(value: string | null): string[] {
+	if (!value) return [];
+
+	try {
+		const parsed = JSON.parse(value) as unknown;
+		return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+	} catch {
+		return [];
+	}
+}
+
+function buildWorkPolicyFormValues(
+	editingPolicy: WorkPolicyWithDetails | null,
+): typeof formDefaultValues {
+	if (!editingPolicy) {
+		return formDefaultValues;
+	}
+
+	return {
+		name: editingPolicy.name,
+		description: editingPolicy.description || "",
+		scheduleEnabled: editingPolicy.scheduleEnabled,
+		regulationEnabled: editingPolicy.regulationEnabled,
+		presenceEnabled: editingPolicy.presenceEnabled,
+		scheduleCycle: editingPolicy.schedule?.scheduleCycle ?? "weekly",
+		scheduleType: editingPolicy.schedule?.scheduleType ?? "simple",
+		workingDaysPreset: editingPolicy.schedule?.workingDaysPreset ?? "weekdays",
+		hoursPerCycle: editingPolicy.schedule?.hoursPerCycle || "40",
+		homeOfficeDaysPerCycle: editingPolicy.schedule?.homeOfficeDaysPerCycle || 0,
+		days:
+			editingPolicy.schedule?.days.length
+				? editingPolicy.schedule.days.map((day) => ({
+						dayOfWeek: day.dayOfWeek as DayOfWeek,
+						hoursPerDay: day.hoursPerDay,
+						isWorkDay: day.isWorkDay,
+						cycleWeek: day.cycleWeek ?? 1,
+					}))
+				: defaultDays,
+		maxDailyMinutes: editingPolicy.regulation?.maxDailyMinutes ?? null,
+		maxWeeklyMinutes: editingPolicy.regulation?.maxWeeklyMinutes ?? null,
+		maxUninterruptedMinutes: editingPolicy.regulation?.maxUninterruptedMinutes ?? null,
+		breakRules: (editingPolicy.regulation?.breakRules || []).map((rule) => ({
+			workingMinutesThreshold: rule.workingMinutesThreshold,
+			requiredBreakMinutes: rule.requiredBreakMinutes,
+			options: (rule.options || []).map((option) => ({
+				splitCount: option.splitCount,
+				minimumSplitMinutes: option.minimumSplitMinutes,
+				minimumLongestSplitMinutes: option.minimumLongestSplitMinutes,
+			})),
+		})),
+		presence: {
+			presenceMode: editingPolicy.presence?.presenceMode ?? "minimum_count",
+			requiredOnsiteDays: editingPolicy.presence?.requiredOnsiteDays ?? 3,
+			requiredOnsiteFixedDays: parsePresenceFixedDays(
+				editingPolicy.presence?.requiredOnsiteFixedDays ?? null,
+			),
+			locationId: editingPolicy.presence?.locationId ?? "",
+			evaluationPeriod: editingPolicy.presence?.evaluationPeriod ?? "weekly",
+			enforcement: editingPolicy.presence?.enforcement ?? "warn",
+		},
+	};
+}
+
 export function WorkPolicyDialog({
 	open,
 	onOpenChange,
@@ -181,79 +245,14 @@ export function WorkPolicyDialog({
 			}
 		},
 	});
-
-	// Reset form when opening or editing policy changes
+	const resetScopeRef = useRef("");
 	useEffect(() => {
-		if (open) {
-			if (editingPolicy) {
-				form.reset();
-				form.setFieldValue("name", editingPolicy.name);
-				form.setFieldValue("description", editingPolicy.description || "");
-				form.setFieldValue("scheduleEnabled", editingPolicy.scheduleEnabled);
-				form.setFieldValue("regulationEnabled", editingPolicy.regulationEnabled);
-				form.setFieldValue("presenceEnabled", editingPolicy.presenceEnabled);
-
-				// Schedule fields
-				if (editingPolicy.schedule) {
-					form.setFieldValue("scheduleCycle", editingPolicy.schedule.scheduleCycle);
-					form.setFieldValue("scheduleType", editingPolicy.schedule.scheduleType);
-					form.setFieldValue("workingDaysPreset", editingPolicy.schedule.workingDaysPreset);
-					form.setFieldValue("hoursPerCycle", editingPolicy.schedule.hoursPerCycle || "40");
-					form.setFieldValue(
-						"homeOfficeDaysPerCycle",
-						editingPolicy.schedule.homeOfficeDaysPerCycle || 0,
-					);
-					form.setFieldValue(
-						"days",
-						editingPolicy.schedule.days.length > 0
-							? editingPolicy.schedule.days.map((d) => ({
-									dayOfWeek: d.dayOfWeek as DayOfWeek,
-									hoursPerDay: d.hoursPerDay,
-									isWorkDay: d.isWorkDay,
-									cycleWeek: d.cycleWeek ?? 1,
-								}))
-							: defaultDays,
-					);
-				}
-
-				// Presence fields
-				if (editingPolicy.presence) {
-					form.setFieldValue("presence", {
-						presenceMode: editingPolicy.presence.presenceMode ?? "minimum_count",
-						requiredOnsiteDays: editingPolicy.presence.requiredOnsiteDays ?? 3,
-						requiredOnsiteFixedDays: editingPolicy.presence.requiredOnsiteFixedDays
-							? JSON.parse(editingPolicy.presence.requiredOnsiteFixedDays)
-							: [],
-						locationId: editingPolicy.presence.locationId ?? "",
-						evaluationPeriod: editingPolicy.presence.evaluationPeriod ?? "weekly",
-						enforcement: editingPolicy.presence.enforcement ?? "warn",
-					});
-				}
-
-				// Regulation fields
-				if (editingPolicy.regulation) {
-					form.setFieldValue("maxDailyMinutes", editingPolicy.regulation.maxDailyMinutes);
-					form.setFieldValue("maxWeeklyMinutes", editingPolicy.regulation.maxWeeklyMinutes);
-					form.setFieldValue(
-						"maxUninterruptedMinutes",
-						editingPolicy.regulation.maxUninterruptedMinutes,
-					);
-					form.setFieldValue(
-						"breakRules",
-						(editingPolicy.regulation.breakRules || []).map((rule) => ({
-							workingMinutesThreshold: rule.workingMinutesThreshold,
-							requiredBreakMinutes: rule.requiredBreakMinutes,
-							options: (rule.options || []).map((opt) => ({
-								splitCount: opt.splitCount,
-								minimumSplitMinutes: opt.minimumSplitMinutes,
-								minimumLongestSplitMinutes: opt.minimumLongestSplitMinutes,
-							})),
-						})),
-					);
-				}
-			} else {
-				form.reset();
-			}
+		const nextResetScope = open ? `${editingPolicy?.id ?? "new"}` : "";
+		if (open && resetScopeRef.current !== nextResetScope) {
+			resetScopeRef.current = nextResetScope;
+			form.reset(buildWorkPolicyFormValues(editingPolicy));
+		} else if (!open && resetScopeRef.current !== "") {
+			resetScopeRef.current = "";
 		}
 	}, [open, editingPolicy, form]);
 
@@ -279,8 +278,12 @@ export function WorkPolicyDialog({
 
 	// Update mutation
 	const updateMutation = useMutation({
-		mutationFn: (data: Parameters<typeof updateWorkPolicy>[1]) =>
-			updateWorkPolicy(editingPolicy!.id, data),
+		mutationFn: (data: Parameters<typeof updateWorkPolicy>[1]) => {
+			if (!editingPolicy) {
+				throw new Error("Cannot update policy without an editing target");
+			}
+			return updateWorkPolicy(editingPolicy.id, data);
+		},
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.workPolicies.updated", "Policy updated"));
@@ -361,13 +364,7 @@ export function WorkPolicyDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<form
-					onSubmit={(e) => {
-						e.preventDefault();
-						form.handleSubmit();
-					}}
-					className="flex min-h-0 flex-1 flex-col"
-				>
+				<form className="flex min-h-0 flex-1 flex-col">
 					<ActionPanelBody className="space-y-6">
 						{/* Basic Info */}
 						<div className="grid gap-4 sm:grid-cols-2">
@@ -834,17 +831,20 @@ export function WorkPolicyDialog({
 															</p>
 														</div>
 													) : (
-														field.state.value.map((_, ruleIndex) => (
-															<form.Field key={ruleIndex} name={`breakRules[${ruleIndex}]`}>
-																{() => (
-																	<BreakRuleEditor
-																		ruleIndex={ruleIndex}
-																		form={form}
-																		onRemove={() => field.removeValue(ruleIndex)}
-																	/>
-																)}
-															</form.Field>
-														))
+														field.state.value.map((rule, ruleIndex) => {
+															const ruleKey = `${rule.workingMinutesThreshold}-${rule.requiredBreakMinutes}-${rule.options.length}-${ruleIndex}`;
+															return (
+																<form.Field key={ruleKey} name={`breakRules[${ruleIndex}]`}>
+																	{() => (
+																		<BreakRuleEditor
+																			ruleIndex={ruleIndex}
+																			form={form}
+																			onRemove={() => field.removeValue(ruleIndex)}
+																		/>
+																	)}
+																</form.Field>
+															);
+														})
 													)}
 												</div>
 											)}
@@ -873,8 +873,11 @@ export function WorkPolicyDialog({
 													onValueChange={(v) => field.handleChange(v as PresenceModeType)}
 													className="grid gap-3 sm:grid-cols-2"
 												>
-													<label className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer [&:has([data-state=checked])]:border-primary">
-														<RadioGroupItem value="minimum_count" />
+													<label
+														htmlFor="presence-mode-minimum-count"
+														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
+													>
+														<RadioGroupItem id="presence-mode-minimum-count" value="minimum_count" />
 														<div className="space-y-0.5">
 															<span className="text-sm font-medium">
 																{t(
@@ -890,8 +893,11 @@ export function WorkPolicyDialog({
 															</p>
 														</div>
 													</label>
-													<label className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer [&:has([data-state=checked])]:border-primary">
-														<RadioGroupItem value="fixed_days" />
+													<label
+														htmlFor="presence-mode-fixed-days"
+														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
+													>
+														<RadioGroupItem id="presence-mode-fixed-days" value="fixed_days" />
 														<div className="space-y-0.5">
 															<span className="text-sm font-medium">
 																{t(
@@ -988,12 +994,15 @@ export function WorkPolicyDialog({
 													<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
 														{DAYS_OF_WEEK.map((day) => {
 															const isChecked = (field.state.value || []).includes(day.value);
+															const dayId = `presence-fixed-day-${day.value}`;
 															return (
 																<label
+																	htmlFor={dayId}
 																	key={day.value}
 																	className="flex items-center gap-2 rounded-lg border p-3 cursor-pointer"
 																>
 																	<Checkbox
+																		id={dayId}
 																		checked={isChecked}
 																		onCheckedChange={(checked) => {
 																			const current = field.state.value || [];
@@ -1095,8 +1104,11 @@ export function WorkPolicyDialog({
 													onValueChange={(v) => field.handleChange(v as PresenceEnforcementType)}
 													className="grid gap-3 sm:grid-cols-3"
 												>
-													<label className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer [&:has([data-state=checked])]:border-primary">
-														<RadioGroupItem value="none" />
+													<label
+														htmlFor="presence-enforcement-none"
+														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
+													>
+														<RadioGroupItem id="presence-enforcement-none" value="none" />
 														<div className="space-y-0.5">
 															<span className="text-sm font-medium">
 																{t("settings.workPolicies.presenceEnforcementNone", "None")}
@@ -1109,8 +1121,11 @@ export function WorkPolicyDialog({
 															</p>
 														</div>
 													</label>
-													<label className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer [&:has([data-state=checked])]:border-primary">
-														<RadioGroupItem value="warn" />
+													<label
+														htmlFor="presence-enforcement-warn"
+														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
+													>
+														<RadioGroupItem id="presence-enforcement-warn" value="warn" />
 														<div className="space-y-0.5">
 															<span className="text-sm font-medium">
 																{t("settings.workPolicies.presenceEnforcementWarn", "Warn")}
@@ -1123,8 +1138,11 @@ export function WorkPolicyDialog({
 															</p>
 														</div>
 													</label>
-													<label className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer [&:has([data-state=checked])]:border-primary">
-														<RadioGroupItem value="block" />
+													<label
+														htmlFor="presence-enforcement-block"
+														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
+													>
+														<RadioGroupItem id="presence-enforcement-block" value="block" />
 														<div className="space-y-0.5">
 															<span className="text-sm font-medium">
 																{t("settings.workPolicies.presenceEnforcementEscalate", "Escalate")}
@@ -1151,7 +1169,10 @@ export function WorkPolicyDialog({
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button
-							type="submit"
+							type="button"
+							onClick={() => {
+								form.handleSubmit();
+							}}
 							disabled={isPending || (!scheduleEnabled && !regulationEnabled && !presenceEnabled)}
 						>
 							{isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}

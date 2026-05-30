@@ -28,7 +28,7 @@ export function WorkSchedulePreview({
 	const { t } = useTranslate();
 
 	// Sort days by day order
-	const sortedDays = [...days].sort(
+	const sortedDays = days.toSorted(
 		(a, b) => DAY_ORDER.indexOf(a.dayOfWeek) - DAY_ORDER.indexOf(b.dayOfWeek),
 	);
 

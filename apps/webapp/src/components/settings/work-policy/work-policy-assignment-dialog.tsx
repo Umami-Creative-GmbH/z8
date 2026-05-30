@@ -4,7 +4,6 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect } from "react";
 import { toast } from "sonner";
 import {
 	createWorkPolicyAssignment,
@@ -77,17 +76,21 @@ export function WorkPolicyAssignmentDialog({
 		},
 	});
 
-	// Reset form when dialog opens
-	useEffect(() => {
-		if (open) {
-			form.reset({
-				policyId: "",
-				assignmentType,
-				teamId: null,
-				employeeId: null,
-			});
+	const resetForm = () => {
+		form.reset({
+			policyId: "",
+			assignmentType,
+			teamId: null,
+			employeeId: null,
+		});
+	};
+
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (nextOpen) {
+			resetForm();
 		}
-	}, [open, assignmentType, form]);
+		onOpenChange(nextOpen);
+	};
 
 	// Fetch policies
 	const { data: policies, isLoading: loadingPolicies } = useQuery({
@@ -181,21 +184,14 @@ export function WorkPolicyAssignmentDialog({
 	const isPending = createMutation.isPending;
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{getDialogTitle()}</ActionPanelTitle>
 					<ActionPanelDescription>{getDialogDescription()}</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<form
-					onSubmit={(e) => {
-						e.preventDefault();
-						e.stopPropagation();
-						form.handleSubmit();
-					}}
-					className="flex min-h-0 flex-1 flex-col"
-				>
+				<form className="flex min-h-0 flex-1 flex-col">
 					<ActionPanelBody className="space-y-4">
 						<form.Field name="policyId">
 							{(field) => (
@@ -305,7 +301,10 @@ export function WorkPolicyAssignmentDialog({
 						<form.Subscribe selector={(state) => [state.isSubmitting, state.canSubmit]}>
 							{([isSubmitting, canSubmit]) => (
 								<Button
-									type="submit"
+									type="button"
+									onClick={() => {
+										form.handleSubmit();
+									}}
 									disabled={isPending || isSubmitting || isLoading || !canSubmit}
 								>
 									{(isPending || isSubmitting) && (

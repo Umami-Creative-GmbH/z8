@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-doctor/no-giant-component */
 
 import {
 	IconArchive,
@@ -10,7 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useReducer } from "react";
 import { toast } from "sonner";
 import {
 	archiveWorkPolicyPreset,
@@ -57,6 +58,61 @@ interface WorkPolicyPresetImportProps {
 
 type ReviewMode = "createCustom" | "editCustom" | "copySystem" | "useAsPolicy";
 
+interface PresetImportUiState {
+	search: string;
+	sourceFilter: PresetSourceFilter;
+	countryFilter: string;
+	reviewOpen: boolean;
+	reviewMode: ReviewMode;
+	reviewPreset: WorkPolicyPresetWithSource | null;
+	archivePreset: WorkPolicyPresetWithSource | null;
+}
+
+type PresetImportUiAction =
+	| { type: "setSearch"; value: string }
+	| { type: "setSourceFilter"; value: PresetSourceFilter }
+	| { type: "setCountryFilter"; value: string }
+	| { type: "openReview"; mode: ReviewMode; preset: WorkPolicyPresetWithSource | null }
+	| { type: "setReviewOpen"; value: boolean }
+	| { type: "setArchivePreset"; value: WorkPolicyPresetWithSource | null };
+
+const presetImportInitialState: PresetImportUiState = {
+	search: "",
+	sourceFilter: "all",
+	countryFilter: "all",
+	reviewOpen: false,
+	reviewMode: "createCustom",
+	reviewPreset: null,
+	archivePreset: null,
+};
+
+function presetImportUiReducer(
+	state: PresetImportUiState,
+	action: PresetImportUiAction,
+): PresetImportUiState {
+	switch (action.type) {
+		case "setSearch":
+			return { ...state, search: action.value };
+		case "setSourceFilter":
+			return { ...state, sourceFilter: action.value };
+		case "setCountryFilter":
+			return { ...state, countryFilter: action.value };
+		case "openReview":
+			return {
+				...state,
+				reviewMode: action.mode,
+				reviewPreset: action.preset,
+				reviewOpen: true,
+			};
+		case "setReviewOpen":
+			return { ...state, reviewOpen: action.value };
+		case "setArchivePreset":
+			return { ...state, archivePreset: action.value };
+		default:
+			return state;
+	}
+}
+
 const countryFlags: Record<string, string> = {
 	DE: "🇩🇪",
 	EU: "🇪🇺",
@@ -90,13 +146,7 @@ export function WorkPolicyPresetImport({
 }: WorkPolicyPresetImportProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const [search, setSearch] = useState("");
-	const [sourceFilter, setSourceFilter] = useState<PresetSourceFilter>("all");
-	const [countryFilter, setCountryFilter] = useState("all");
-	const [reviewOpen, setReviewOpen] = useState(false);
-	const [reviewMode, setReviewMode] = useState<ReviewMode>("createCustom");
-	const [reviewPreset, setReviewPreset] = useState<WorkPolicyPresetWithSource | null>(null);
-	const [archivePreset, setArchivePreset] = useState<WorkPolicyPresetWithSource | null>(null);
+	const [uiState, dispatch] = useReducer(presetImportUiReducer, presetImportInitialState);
 
 	const presetsQueryKey = queryKeys.workPolicies.presets(organizationId);
 
@@ -129,7 +179,7 @@ export function WorkPolicyPresetImport({
 
 			toast.success(t("settings.workPolicies.archivePresetSuccess", "Preset archived"));
 			queryClient.invalidateQueries({ queryKey: presetsQueryKey });
-			setArchivePreset(null);
+			dispatch({ type: "setArchivePreset", value: null });
 			onImportSuccess();
 		},
 		onError: () => {
@@ -138,9 +188,7 @@ export function WorkPolicyPresetImport({
 	});
 
 	const openReviewDialog = (mode: ReviewMode, preset: WorkPolicyPresetWithSource | null = null) => {
-		setReviewMode(mode);
-		setReviewPreset(preset);
-		setReviewOpen(true);
+		dispatch({ type: "openReview", mode, preset });
 	};
 
 	const handleReviewSuccess = () => {
@@ -160,9 +208,9 @@ export function WorkPolicyPresetImport({
 		),
 	).sort();
 	const filteredPresets = filterWorkPolicyPresets(presets ?? [], {
-		search,
-		source: sourceFilter,
-		countryCode: countryFilter === "all" ? null : countryFilter,
+		search: uiState.search,
+		source: uiState.sourceFilter,
+		countryCode: uiState.countryFilter === "all" ? null : uiState.countryFilter,
 	});
 
 	if (isLoading) {
@@ -220,13 +268,15 @@ export function WorkPolicyPresetImport({
 					aria-label={t("settings.workPolicies.searchPresets", "Search presets")}
 					autoComplete="off"
 					name="preset-search"
-					value={search}
-					onChange={(event) => setSearch(event.target.value)}
+					value={uiState.search}
+					onChange={(event) => dispatch({ type: "setSearch", value: event.target.value })}
 					placeholder="Search presets..."
 				/>
 				<Select
-					value={sourceFilter}
-					onValueChange={(value) => setSourceFilter(value as PresetSourceFilter)}
+					value={uiState.sourceFilter}
+					onValueChange={(value) =>
+						dispatch({ type: "setSourceFilter", value: value as PresetSourceFilter })
+					}
 				>
 					<SelectTrigger className="w-full sm:w-36" aria-label="Preset source">
 						<SelectValue />
@@ -243,7 +293,10 @@ export function WorkPolicyPresetImport({
 						</SelectItem>
 					</SelectContent>
 				</Select>
-				<Select value={countryFilter} onValueChange={setCountryFilter}>
+				<Select
+					value={uiState.countryFilter}
+					onValueChange={(value) => dispatch({ type: "setCountryFilter", value })}
+				>
 					<SelectTrigger className="w-full sm:w-36" aria-label="Preset country">
 						<SelectValue />
 					</SelectTrigger>
@@ -354,7 +407,7 @@ export function WorkPolicyPresetImport({
 													variant="outline"
 													size="sm"
 													disabled={archiveMutation.isPending}
-													onClick={() => setArchivePreset(preset)}
+														onClick={() => dispatch({ type: "setArchivePreset", value: preset })}
 												>
 													{isArchiving ? (
 														<IconLoader2 className="mr-2 size-4 animate-spin" />
@@ -374,18 +427,18 @@ export function WorkPolicyPresetImport({
 			)}
 
 			<WorkPolicyPresetReviewDialog
-				open={reviewOpen}
-				onOpenChange={setReviewOpen}
+				open={uiState.reviewOpen}
+				onOpenChange={(open) => dispatch({ type: "setReviewOpen", value: open })}
 				organizationId={organizationId}
-				mode={reviewMode}
-				preset={reviewPreset}
+				mode={uiState.reviewMode}
+				preset={uiState.reviewPreset}
 				onSuccess={handleReviewSuccess}
 			/>
 
 			<AlertDialog
-				open={archivePreset !== null}
+				open={uiState.archivePreset !== null}
 				onOpenChange={(open) => {
-					if (!open) setArchivePreset(null);
+					if (!open) dispatch({ type: "setArchivePreset", value: null });
 				}}
 			>
 				<AlertDialogContent>
@@ -405,10 +458,10 @@ export function WorkPolicyPresetImport({
 							{t("common.cancel", "Cancel")}
 						</AlertDialogCancel>
 						<AlertDialogAction
-							disabled={!archivePreset || archiveMutation.isPending}
+							disabled={!uiState.archivePreset || archiveMutation.isPending}
 							onClick={(event) => {
 								event.preventDefault();
-								if (archivePreset) archiveMutation.mutate(archivePreset.id);
+								if (uiState.archivePreset) archiveMutation.mutate(uiState.archivePreset.id);
 							}}
 						>
 							{archiveMutation.isPending ? (
