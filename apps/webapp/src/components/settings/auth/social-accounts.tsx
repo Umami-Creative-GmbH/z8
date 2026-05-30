@@ -16,11 +16,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
-import { SOCIAL_PROVIDERS, type SocialProviderId } from "@/lib/social-providers";
+import {
+	SOCIAL_PROVIDERS,
+	type SocialProviderId,
+} from "@/lib/social-providers";
 
 interface ConnectedAccount {
 	id: string;
@@ -41,7 +49,9 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 		providerId: string;
 		accountId: string;
 	} | null>(null);
-	const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
+	const [connectingProvider, setConnectingProvider] = useState<string | null>(
+		null,
+	);
 
 	// Query for connected accounts
 	const accountsQuery = useQuery({
@@ -52,7 +62,10 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 				throw new Error(
 					getAuthErrorMessage(
 						result.error,
-						t("settings.socialAccounts.loadFailed", "Failed to load connected accounts"),
+						t(
+							"settings.socialAccounts.loadFailed",
+							"Failed to load connected accounts",
+						),
 					),
 				);
 			}
@@ -63,13 +76,22 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 
 	// Mutation for unlinking an account
 	const unlinkMutation = useMutation({
-		mutationFn: async ({ providerId, accountId }: { providerId: string; accountId: string }) => {
+		mutationFn: async ({
+			providerId,
+			accountId,
+		}: {
+			providerId: string;
+			accountId: string;
+		}) => {
 			const result = await authClient.unlinkAccount({ providerId, accountId });
 			if (result.error) {
 				throw new Error(
 					getAuthErrorMessage(
 						result.error,
-						t("settings.socialAccounts.disconnectFailed", "Failed to disconnect account"),
+						t(
+							"settings.socialAccounts.disconnectFailed",
+							"Failed to disconnect account",
+						),
 					),
 				);
 			}
@@ -77,19 +99,31 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 		},
 		onSuccess: () => {
 			toast.success(
-				t("settings.socialAccounts.disconnectSuccess", "Account disconnected successfully"),
+				t(
+					"settings.socialAccounts.disconnectSuccess",
+					"Account disconnected successfully",
+				),
 			);
 			setUnlinkDialogOpen(false);
 			accountToUnlinkRef.current = null;
 			queryClient.invalidateQueries({ queryKey: queryKeys.auth.accounts() });
 		},
 		onError: (error) => {
-			toast.error(t("settings.socialAccounts.disconnectFailed", "Failed to disconnect account"), {
-				description:
-					error instanceof Error
-						? error.message
-						: t("settings.socialAccounts.unexpectedError", "An unexpected error occurred"),
-			});
+			toast.error(
+				t(
+					"settings.socialAccounts.disconnectFailed",
+					"Failed to disconnect account",
+				),
+				{
+					description:
+						error instanceof Error
+							? error.message
+							: t(
+									"settings.socialAccounts.unexpectedError",
+									"An unexpected error occurred",
+								),
+				},
+			);
 		},
 	});
 
@@ -106,19 +140,31 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 					throw new Error(
 						getAuthErrorMessage(
 							result.error,
-							t("settings.socialAccounts.connectFailed", "Failed to connect account"),
+							t(
+								"settings.socialAccounts.connectFailed",
+								"Failed to connect account",
+							),
 						),
 					);
 				}
 			})
 			.catch((error: unknown) => {
 				setConnectingProvider(null);
-				toast.error(t("settings.socialAccounts.connectFailed", "Failed to connect account"), {
-					description:
-						error instanceof Error
-							? error.message
-							: t("settings.socialAccounts.unexpectedError", "An unexpected error occurred"),
-				});
+				toast.error(
+					t(
+						"settings.socialAccounts.connectFailed",
+						"Failed to connect account",
+					),
+					{
+						description:
+							error instanceof Error
+								? error.message
+								: t(
+										"settings.socialAccounts.unexpectedError",
+										"An unexpected error occurred",
+									),
+					},
+				);
 			});
 	};
 
@@ -153,7 +199,10 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 					{t("settings.socialAccounts.title", "Social Accounts")}
 				</h3>
 				<p className="text-sm text-muted-foreground">
-					{t("settings.socialAccounts.description", "Link your social accounts for easier sign-in")}
+					{t(
+						"settings.socialAccounts.description",
+						"Link your social accounts for easier sign-in",
+					)}
 				</p>
 			</div>
 
@@ -172,12 +221,18 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 											<Icon aria-hidden="true" className="size-5" />
 										</div>
 										<div className="min-w-0">
-											<CardTitle className="truncate text-base">{provider.name}</CardTitle>
+											<CardTitle className="truncate text-base">
+												{provider.name}
+											</CardTitle>
 											<CardDescription className="truncate">
 												{isConnected && connectedAccount
-													? t("settings.socialAccounts.connectedAs", "Connected as {accountId}", {
-															accountId: connectedAccount.accountId,
-														})
+													? t(
+															"settings.socialAccounts.connectedAs",
+															"Connected as {accountId}",
+															{
+																accountId: connectedAccount.accountId,
+															},
+														)
 													: t(
 															"settings.socialAccounts.connectProvider",
 															"Connect your {provider} account",
@@ -198,11 +253,17 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 													variant="outline"
 													size="sm"
 													onClick={() =>
-														confirmUnlink(connectedAccount.providerId, connectedAccount.id)
+														confirmUnlink(
+															connectedAccount.providerId,
+															connectedAccount.id,
+														)
 													}
 													disabled={isPending}
 												>
-													{t("settings.socialAccounts.disconnect", "Disconnect")}
+													{t(
+														"settings.socialAccounts.disconnect",
+														"Disconnect",
+													)}
 												</Button>
 											</>
 										) : (
@@ -210,10 +271,15 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 												variant="outline"
 												size="sm"
 												onClick={() => handleConnect(provider.id)}
-												disabled={isPending || connectingProvider === provider.id}
+												disabled={
+													isPending || connectingProvider === provider.id
+												}
 											>
 												{connectingProvider === provider.id
-													? t("settings.socialAccounts.connecting", "Connecting…")
+													? t(
+															"settings.socialAccounts.connecting",
+															"Connecting…",
+														)
 													: t("settings.socialAccounts.connect", "Connect")}
 											</Button>
 										)}
@@ -230,7 +296,10 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
-							{t("settings.socialAccounts.disconnectTitle", "Disconnect Account?")}
+							{t(
+								"settings.socialAccounts.disconnectTitle",
+								"Disconnect Account?",
+							)}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{t(

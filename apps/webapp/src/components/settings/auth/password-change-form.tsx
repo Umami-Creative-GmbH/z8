@@ -14,7 +14,13 @@ import {
 	validateStrongPassword,
 } from "@/components/auth/password-validation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
@@ -29,7 +35,9 @@ export function PasswordChangeForm() {
 	});
 	const [revokeOtherSessions, setRevokeOtherSessions] = useState(false);
 	const [isPasswordLoading, setIsPasswordLoading] = useState(false);
-	const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
+	const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>(
+		{},
+	);
 
 	// Handle password change
 	const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -37,7 +45,10 @@ export function PasswordChangeForm() {
 		setIsPasswordLoading(true);
 		setPasswordErrors({});
 		const nextErrors: Record<string, string> = {};
-		const newPasswordError = validateStrongPassword(passwordData.newPassword, t);
+		const newPasswordError = validateStrongPassword(
+			passwordData.newPassword,
+			t,
+		);
 		if (newPasswordError) {
 			nextErrors.newPassword = newPasswordError;
 		}
@@ -64,7 +75,9 @@ export function PasswordChangeForm() {
 		});
 
 		if (result.success) {
-			toast.success(t("profile.password-changed", "Password changed successfully"));
+			toast.success(
+				t("profile.password-changed", "Password changed successfully"),
+			);
 			// Reset form
 			setPasswordData({
 				currentPassword: "",
@@ -73,12 +86,21 @@ export function PasswordChangeForm() {
 			});
 			setRevokeOtherSessions(false);
 		} else {
-			if (result.error?.includes("incorrect") || result.error?.includes("Invalid")) {
+			if (
+				result.error?.includes("incorrect") ||
+				result.error?.includes("Invalid")
+			) {
 				setPasswordErrors({
-					currentPassword: t("profile.invalid-current-password", "Current password is incorrect"),
+					currentPassword: t(
+						"profile.invalid-current-password",
+						"Current password is incorrect",
+					),
 				});
 			}
-			toast.error(result.error || t("profile.password-change-failed", "Failed to change password"));
+			toast.error(
+				result.error ||
+					t("profile.password-change-failed", "Failed to change password"),
+			);
 		}
 
 		setIsPasswordLoading(false);
@@ -118,29 +140,45 @@ export function PasswordChangeForm() {
 							id="currentPassword"
 							autoComplete="current-password"
 							value={passwordData.currentPassword}
-							onChange={(e) => handlePasswordChange("currentPassword", e.target.value)}
-							placeholder={t("profile.current-password-placeholder", "Enter current password")}
+							onChange={(e) =>
+								handlePasswordChange("currentPassword", e.target.value)
+							}
+							placeholder={t(
+								"profile.current-password-placeholder",
+								"Enter current password",
+							)}
 							required
 						/>
 						{passwordErrors.currentPassword ? (
-							<p className="text-destructive text-sm">{passwordErrors.currentPassword}</p>
+							<p className="text-destructive text-sm">
+								{passwordErrors.currentPassword}
+							</p>
 						) : null}
 					</div>
 
 					{/* New Password */}
 					<div className="space-y-2">
-						<Label htmlFor="newPassword">{t("profile.new-password", "New Password")}</Label>
+						<Label htmlFor="newPassword">
+							{t("profile.new-password", "New Password")}
+						</Label>
 						<PasswordVisibilityInput
 							id="newPassword"
 							autoComplete="new-password"
 							value={passwordData.newPassword}
-							onChange={(e) => handlePasswordChange("newPassword", e.target.value)}
-							placeholder={t("profile.new-password-placeholder", "Enter new password")}
+							onChange={(e) =>
+								handlePasswordChange("newPassword", e.target.value)
+							}
+							placeholder={t(
+								"profile.new-password-placeholder",
+								"Enter new password",
+							)}
 							required
 						/>
 						<PasswordStrengthIndicator password={passwordData.newPassword} />
 						{passwordErrors.newPassword ? (
-							<p className="text-destructive text-sm">{passwordErrors.newPassword}</p>
+							<p className="text-destructive text-sm">
+								{passwordErrors.newPassword}
+							</p>
 						) : null}
 					</div>
 
@@ -153,12 +191,19 @@ export function PasswordChangeForm() {
 							id="confirmPassword"
 							autoComplete="new-password"
 							value={passwordData.confirmPassword}
-							onChange={(e) => handlePasswordChange("confirmPassword", e.target.value)}
-							placeholder={t("profile.confirm-password-placeholder", "Confirm new password")}
+							onChange={(e) =>
+								handlePasswordChange("confirmPassword", e.target.value)
+							}
+							placeholder={t(
+								"profile.confirm-password-placeholder",
+								"Confirm new password",
+							)}
 							required
 						/>
 						{passwordErrors.confirmPassword ? (
-							<p className="text-destructive text-sm">{passwordErrors.confirmPassword}</p>
+							<p className="text-destructive text-sm">
+								{passwordErrors.confirmPassword}
+							</p>
 						) : null}
 					</div>
 
