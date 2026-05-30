@@ -2,7 +2,8 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { DateTime } from "luxon";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,13 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 	const { t } = useTranslate();
 	const [timezone, setTimezone] = useState(currentTimezone);
 	const [isLoading, setIsLoading] = useState(false);
+	const [currentTime, setCurrentTime] = useState<string | null>(null);
+
+	useEffect(() => {
+		setCurrentTime(
+			DateTime.now().setZone(timezone).setLocale("en-US").toLocaleString(DateTime.DATETIME_MED),
+		);
+	}, [timezone]);
 
 	const handleSave = async () => {
 		setIsLoading(true);
@@ -60,12 +68,8 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 					<p className="text-sm text-muted-foreground">
 						{t("settings.timezone.currentTimePrefix", "Current time in {timezone}:", {
 							timezone,
-						})}{" "}
-						{new Date().toLocaleString("en-US", {
-							timeZone: timezone,
-							dateStyle: "medium",
-							timeStyle: "short",
 						})}
+						{currentTime ? ` ${currentTime}` : null}
 					</p>
 				</div>
 
