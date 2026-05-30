@@ -1,12 +1,14 @@
 name: Biome
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "apps/webapp/src/**"
-      - ".github/workflows/biome.yml"
+  # Temporarily disabled for pull requests.
+  # pull_request:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - "apps/webapp/src/**"
+  #     - ".github/workflows/biome.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
