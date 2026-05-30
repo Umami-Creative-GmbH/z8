@@ -54,8 +54,36 @@ jobs:
 
           echo "status=$status" >> "$GITHUB_OUTPUT"
 
-      - name: Comment Biome result
+      - name: Add Biome result to job summary
         if: always()
+        run: |
+          status="${{ steps.biome.outputs.status }}"
+          conclusion="failed"
+          if [ "$status" = "0" ]; then
+            conclusion="passed"
+          fi
+
+          {
+            echo "### Biome src check $conclusion"
+            echo
+            echo "\`pnpm exec biome ci --max-diagnostics=30 src\` in \`apps/webapp\` exited with status \`${status:-unknown}\`."
+            echo
+            echo "<details><summary>Biome output</summary>"
+            echo
+            echo '```text'
+            if [ -f "$RUNNER_TEMP/biome-output.txt" ]; then
+              head -c 60000 "$RUNNER_TEMP/biome-output.txt"
+            else
+              echo "Biome output was not captured."
+            fi
+            echo
+            echo '```'
+            echo
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment Biome result
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
