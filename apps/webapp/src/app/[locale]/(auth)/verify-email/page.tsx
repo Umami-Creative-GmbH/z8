@@ -20,8 +20,10 @@ function VerifyEmailContent() {
 	const { t } = useTranslate();
 	const { push } = useRouter();
 	const searchParams = useSearchParams();
-	const { get } = searchParams;
-	const getSearchParam = (key: string) => get.call(searchParams, key);
+	const token = searchParams.get("token");
+	const missingTokenMessage = t("auth.missing-verification-token", "Missing verification token");
+	const genericErrorMessage = t("common.error-occurred", "An error occurred");
+	const verificationFailedMessage = t("auth.verification-failed-error", "Verification failed");
 	const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 	const [errorMessage, setErrorMessage] = useState<string>("");
 	const [joinResult, setJoinResult] = useState<JoinResult>(null);
@@ -32,11 +34,9 @@ function VerifyEmailContent() {
 		let redirectTimeout: ReturnType<typeof setTimeout> | undefined;
 
 		const verifyEmail = async () => {
-			const token = getSearchParam("token");
-
 			if (!token) {
 				setStatus("error");
-				setErrorMessage(t("auth.missing-verification-token", "Missing verification token"));
+				setErrorMessage(missingTokenMessage);
 				return;
 			}
 
@@ -51,15 +51,13 @@ function VerifyEmailContent() {
 						message:
 							error instanceof Error
 								? error.message
-								: t("common.error-occurred", "An error occurred"),
+								: genericErrorMessage,
 					},
 				}));
 
 			if (result.error) {
 				setStatus("error");
-				setErrorMessage(
-					result.error.message || t("auth.verification-failed-error", "Verification failed"),
-				);
+				setErrorMessage(result.error.message || verificationFailedMessage);
 				return;
 			}
 
@@ -102,7 +100,7 @@ function VerifyEmailContent() {
 				clearTimeout(redirectTimeout);
 			}
 		};
-	}, [getSearchParam, push, t]);
+	}, [genericErrorMessage, missingTokenMessage, push, token, verificationFailedMessage]);
 
 	const getTitle = () => {
 		if (status === "loading") return t("auth.verifying-email", "Verifying your email...");
