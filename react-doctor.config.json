@@ -2,7 +2,6 @@
   "ignore": {
     "rules": [
       "react-doctor/nextjs-no-img-element",
-      "react-doctor/server-auth-actions",
       "react-doctor/unused-dependency",
       "react-doctor/unused-dev-dependency"
     ]
