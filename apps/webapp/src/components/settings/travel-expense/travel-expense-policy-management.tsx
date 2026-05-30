@@ -11,7 +11,13 @@ import {
 } from "@/app/[locale]/(app)/settings/travel-expenses/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -59,12 +65,12 @@ function formatRate(value: string | null, currency: string): string {
 		return "-";
 	}
 
-	return new Intl.NumberFormat(undefined, {
+	return amount.toLocaleString(undefined, {
 		style: "currency",
-		currency,
+		currency: currency.toUpperCase(),
 		minimumFractionDigits: 2,
 		maximumFractionDigits: 2,
-	}).format(amount);
+	});
 }
 
 export function TravelExpensePolicyManagement({
@@ -73,7 +79,8 @@ export function TravelExpensePolicyManagement({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
-	const [editingPolicy, setEditingPolicy] = useState<TravelExpensePolicyData | null>(null);
+	const [editingPolicy, setEditingPolicy] =
+		useState<TravelExpensePolicyData | null>(null);
 
 	const policyQueryKey = travelExpensePolicyQueryKey(organizationId);
 
@@ -82,7 +89,9 @@ export function TravelExpensePolicyManagement({
 		queryFn: async () => {
 			const result = await getTravelExpensePolicies();
 			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch travel expense policies");
+				throw new Error(
+					result.error || "Failed to fetch travel expense policies",
+				);
 			}
 			return result.data;
 		},
@@ -101,7 +110,9 @@ export function TravelExpensePolicyManagement({
 	};
 
 	const handleSuccess = async () => {
-		await queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.list() });
+		await queryClient.invalidateQueries({
+			queryKey: queryKeys.travelExpenses.list(),
+		});
 		await queryClient.invalidateQueries({ queryKey: policyQueryKey });
 		setDialogOpen(false);
 		setEditingPolicy(null);
@@ -130,7 +141,9 @@ export function TravelExpensePolicyManagement({
 
 			<Card>
 				<CardHeader>
-					<CardTitle>{t("settings.travelExpenses.policies", "Policies")}</CardTitle>
+					<CardTitle>
+						{t("settings.travelExpenses.policies", "Policies")}
+					</CardTitle>
 					<CardDescription>
 						{t(
 							"settings.travelExpenses.policiesDescription",
@@ -155,11 +168,20 @@ export function TravelExpensePolicyManagement({
 							<TableHeader>
 								<TableRow>
 									<TableHead>
-										{t("settings.travelExpenses.effectiveFrom", "Effective From")}
+										{t(
+											"settings.travelExpenses.effectiveFrom",
+											"Effective From",
+										)}
 									</TableHead>
-									<TableHead>{t("settings.travelExpenses.effectiveTo", "Effective To")}</TableHead>
-									<TableHead>{t("settings.travelExpenses.currency", "Currency")}</TableHead>
-									<TableHead>{t("settings.travelExpenses.mileageRate", "Mileage / km")}</TableHead>
+									<TableHead>
+										{t("settings.travelExpenses.effectiveTo", "Effective To")}
+									</TableHead>
+									<TableHead>
+										{t("settings.travelExpenses.currency", "Currency")}
+									</TableHead>
+									<TableHead>
+										{t("settings.travelExpenses.mileageRate", "Mileage / km")}
+									</TableHead>
 									<TableHead>
 										{t("settings.travelExpenses.perDiemRate", "Per diem / day")}
 									</TableHead>
@@ -173,8 +195,12 @@ export function TravelExpensePolicyManagement({
 										<TableCell>{formatDate(policy.effectiveFrom)}</TableCell>
 										<TableCell>{formatDate(policy.effectiveTo)}</TableCell>
 										<TableCell>{policy.currency}</TableCell>
-										<TableCell>{formatRate(policy.mileageRatePerKm, policy.currency)}</TableCell>
-										<TableCell>{formatRate(policy.perDiemRatePerDay, policy.currency)}</TableCell>
+										<TableCell>
+											{formatRate(policy.mileageRatePerKm, policy.currency)}
+										</TableCell>
+										<TableCell>
+											{formatRate(policy.perDiemRatePerDay, policy.currency)}
+										</TableCell>
 										<TableCell>
 											<Badge variant={policy.isActive ? "default" : "outline"}>
 												{policy.isActive
@@ -201,6 +227,7 @@ export function TravelExpensePolicyManagement({
 			</Card>
 
 			<TravelExpensePolicyDialog
+				key={`${editingPolicy?.id ?? "new"}-${dialogOpen ? "open" : "closed"}`}
 				open={dialogOpen}
 				onOpenChange={setDialogOpen}
 				editingPolicy={editingPolicy}

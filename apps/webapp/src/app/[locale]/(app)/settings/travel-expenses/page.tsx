@@ -1,5 +1,5 @@
 import { connection } from "next/server";
-import { TravelExpensePolicyManagement } from "@/components/settings/travel-expense-policy-management";
+import { TravelExpensePolicyManagement } from "@/components/settings/travel-expense/travel-expense-policy-management";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
