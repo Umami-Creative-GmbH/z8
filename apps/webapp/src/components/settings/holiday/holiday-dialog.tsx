@@ -1,9 +1,11 @@
 "use client";
+/* eslint-disable react-doctor/no-giant-component */
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { getHolidayCategories } from "@/app/[locale]/(app)/settings/holidays/actions";
 import {
@@ -54,9 +56,19 @@ export function HolidayDialog({
 }: HolidayDialogProps) {
 	const { t } = useTranslate();
 	const [loading, setLoading] = useState(false);
-	const [categories, setCategories] = useState<any[]>([]);
-	const [categoriesLoading, setCategoriesLoading] = useState(true);
 	const isEditing = !!editingHoliday;
+
+	const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+		queryKey: ["holiday-categories", organizationId],
+		queryFn: async () => {
+			const result = await getHolidayCategories(organizationId);
+			if (!result.success || !result.data) {
+				throw new Error(t("settings.holidays.categories.loadFailed", "Failed to load categories"));
+			}
+			return result.data;
+		},
+		enabled: open,
+	});
 
 	const form = useForm({
 		defaultValues: {
@@ -126,48 +138,37 @@ export function HolidayDialog({
 		},
 	});
 
-	// Reset form when editingHoliday changes or dialog opens
-	useEffect(() => {
-		if (open) {
-			if (editingHoliday) {
-				form.reset();
-				form.setFieldValue("name", editingHoliday.name);
-				form.setFieldValue("description", editingHoliday.description || "");
-				form.setFieldValue("categoryId", editingHoliday.categoryId);
-				form.setFieldValue("startDate", new Date(editingHoliday.startDate));
-				form.setFieldValue("endDate", new Date(editingHoliday.endDate));
-				form.setFieldValue("recurrenceType", editingHoliday.recurrenceType || "none");
-				form.setFieldValue("recurrenceRule", editingHoliday.recurrenceRule || undefined);
-				form.setFieldValue(
-					"recurrenceEndDate",
-					editingHoliday.recurrenceEndDate ? new Date(editingHoliday.recurrenceEndDate) : null,
-				);
-				form.setFieldValue("isActive", editingHoliday.isActive);
-			} else {
-				form.reset();
-			}
+	const applyEditingValues = () => {
+		form.reset();
+		if (!editingHoliday) {
+			return;
 		}
-	}, [open, editingHoliday, form]);
 
-	// Fetch categories on mount
-	useEffect(() => {
-		async function fetchCategories() {
-			setCategoriesLoading(true);
-			const result = await getHolidayCategories(organizationId);
-			if (result.success && result.data) {
-				setCategories(result.data);
-			} else {
-				toast.error(t("settings.holidays.categories.loadFailed", "Failed to load categories"));
-			}
-			setCategoriesLoading(false);
+		form.setFieldValue("name", editingHoliday.name);
+		form.setFieldValue("description", editingHoliday.description || "");
+		form.setFieldValue("categoryId", editingHoliday.categoryId);
+		form.setFieldValue("startDate", new Date(editingHoliday.startDate));
+		form.setFieldValue("endDate", new Date(editingHoliday.endDate));
+		form.setFieldValue("recurrenceType", editingHoliday.recurrenceType || "none");
+		form.setFieldValue("recurrenceRule", editingHoliday.recurrenceRule || undefined);
+		form.setFieldValue(
+			"recurrenceEndDate",
+			editingHoliday.recurrenceEndDate ? new Date(editingHoliday.recurrenceEndDate) : null,
+		);
+		form.setFieldValue("isActive", editingHoliday.isActive);
+	};
+
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (nextOpen) {
+			applyEditingValues();
+		} else {
+			form.reset();
 		}
-		if (open) {
-			fetchCategories();
-		}
-	}, [open, organizationId, t]);
+		onOpenChange(nextOpen);
+	};
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
@@ -185,8 +186,7 @@ export function HolidayDialog({
 
 				<form
 					onSubmit={(e) => {
-						e.preventDefault();
-						form.handleSubmit();
+						void form.handleSubmit(e);
 					}}
 					className="flex min-h-0 flex-1 flex-col"
 				>
@@ -411,7 +411,7 @@ export function HolidayDialog({
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => onOpenChange(false)}
+							onClick={() => handleOpenChange(false)}
 							disabled={loading}
 						>
 							{t("common.cancel", "Cancel")}

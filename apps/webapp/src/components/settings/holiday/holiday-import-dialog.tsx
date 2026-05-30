@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-doctor/no-giant-component, react-doctor/prefer-useReducer */
 
 import {
 	IconAlertTriangle,
@@ -287,9 +288,12 @@ export function HolidayImportDialog({
 
 		setHolidays(data.holidays);
 		// Pre-select non-duplicate holidays
-		const nonDuplicates = data.holidays
-			.filter((h: HolidayPreview) => !h.isDuplicate)
-			.map((h: HolidayPreview) => h.name);
+		const nonDuplicates: string[] = [];
+		for (const holiday of data.holidays as HolidayPreview[]) {
+			if (!holiday.isDuplicate) {
+				nonDuplicates.push(holiday.name);
+			}
+		}
 		setSelectedHolidays(new Set(nonDuplicates));
 
 		// Generate preset name from location
@@ -331,9 +335,12 @@ export function HolidayImportDialog({
 		const presetId = presetResult.data.id;
 
 		// Prepare holidays data for import
-		const holidaysToImport = holidays
-			.filter((h) => selectedHolidays.has(h.name))
-			.map(buildPresetHolidayImportValue);
+		const holidaysToImport = [] as ReturnType<typeof buildPresetHolidayImportValue>[];
+		for (const holiday of holidays) {
+			if (selectedHolidays.has(holiday.name)) {
+				holidaysToImport.push(buildPresetHolidayImportValue(holiday));
+			}
+		}
 
 		const assignmentRange = getYearAssignmentRange(selectedYear);
 

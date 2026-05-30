@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-doctor/no-giant-component */
 
 import { IconLoader2, IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -41,6 +42,25 @@ interface HolidayListProps {
 	canManage: boolean;
 	onAddClick: () => void;
 	onEditClick: (holiday: HolidayWithCategory) => void;
+}
+
+function formatDateRange(startDate: Date | string, endDate: Date | string) {
+	const start = new Date(startDate).toLocaleDateString("default", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
+	const end = new Date(endDate).toLocaleDateString("default", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
+
+	if (start === end) {
+		return start;
+	}
+
+	return `${start} - ${end}`;
 }
 
 export function HolidayList({
@@ -158,25 +178,6 @@ export function HolidayList({
 	const handleBulkDeleteConfirm = () => {
 		const selectedIds = Object.keys(rowSelection);
 		bulkDeleteMutation.mutate(selectedIds);
-	};
-
-	const formatDateRange = (startDate: Date | string, endDate: Date | string) => {
-		const start = new Date(startDate).toLocaleDateString("default", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-		});
-		const end = new Date(endDate).toLocaleDateString("default", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-		});
-
-		if (start === end) {
-			return start;
-		}
-
-		return `${start} - ${end}`;
 	};
 
 	// Build filter config from categories

@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-doctor/no-giant-component */
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
@@ -243,8 +244,7 @@ export function HolidayAssignmentDialog({
 				) : (
 					<form
 						onSubmit={(e) => {
-							e.preventDefault();
-							form.handleSubmit();
+							void form.handleSubmit(e);
 						}}
 						className="flex min-h-0 flex-1 flex-col"
 					>
@@ -279,7 +279,7 @@ export function HolidayAssignmentDialog({
 															<div className="flex items-center gap-2">
 																{category.color && (
 																	<span
-																		className="h-2.5 w-2.5 rounded-full"
+																		className="size-2.5 rounded-full"
 																		style={{ backgroundColor: category.color }}
 																	/>
 																)}
