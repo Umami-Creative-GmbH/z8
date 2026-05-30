@@ -1,11 +1,20 @@
 /* @vitest-environment jsdom */
 
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SurchargeReports } from "./surcharge-reports";
+import { SurchargeReports } from "./surcharge-reports-root";
 
 const getSurchargeCalculationsForPeriodMock = vi.fn();
-const translateMock = vi.fn((_key: string, fallback?: string) => fallback ?? _key);
+const translateMock = vi.fn(
+	(_key: string, fallback?: string) => fallback ?? _key,
+);
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: translateMock }),
@@ -80,9 +89,11 @@ const rowLimitCalculations = Array.from({ length: 500 }, (_, index) => ({
 
 function deferredResult(data: unknown[]) {
 	let resolve: (value: { success: true; data: unknown[] }) => void = () => {};
-	const promise = new Promise<{ success: true; data: unknown[] }>((promiseResolve) => {
-		resolve = promiseResolve;
-	});
+	const promise = new Promise<{ success: true; data: unknown[] }>(
+		(promiseResolve) => {
+			resolve = promiseResolve;
+		},
+	);
 
 	return { promise, resolve: () => resolve({ success: true, data }) };
 }
@@ -119,7 +130,10 @@ describe("SurchargeReports", () => {
 	});
 
 	it("renders an empty state when no calculations match", async () => {
-		getSurchargeCalculationsForPeriodMock.mockResolvedValueOnce({ success: true, data: [] });
+		getSurchargeCalculationsForPeriodMock.mockResolvedValueOnce({
+			success: true,
+			data: [],
+		});
 
 		render(<SurchargeReports organizationId="org-1" />);
 
@@ -127,7 +141,9 @@ describe("SurchargeReports", () => {
 			expect(screen.getByText("No surcharge calculations found")).toBeTruthy();
 		});
 		expect(
-			screen.getByText("No surcharge calculations matched the selected filters."),
+			screen.getByText(
+				"No surcharge calculations matched the selected filters.",
+			),
 		).toBeTruthy();
 	});
 
@@ -189,7 +205,10 @@ describe("SurchargeReports", () => {
 			data: [
 				{
 					...calculation,
-					calculationDetails: { ...calculation.calculationDetails, rulesApplied: [] },
+					calculationDetails: {
+						...calculation.calculationDetails,
+						rulesApplied: [],
+					},
 				},
 			],
 		});
@@ -233,7 +252,9 @@ describe("SurchargeReports", () => {
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
 
-		expect(await screen.findByText("Start date must be on or before end date.")).toBeTruthy();
+		expect(
+			await screen.findByText("Start date must be on or before end date."),
+		).toBeTruthy();
 		expect(screen.queryByText("Mina Miller")).toBeNull();
 		expect(screen.queryByText("Night premium")).toBeNull();
 		expect(screen.getByText("No surcharge calculations found")).toBeTruthy();
@@ -246,7 +267,10 @@ describe("SurchargeReports", () => {
 	it("preserves previous same-organization rows when a later load fails", async () => {
 		getSurchargeCalculationsForPeriodMock
 			.mockResolvedValueOnce({ success: true, data: [calculation] })
-			.mockResolvedValueOnce({ success: false, error: "Failed to fetch calculations" });
+			.mockResolvedValueOnce({
+				success: false,
+				error: "Failed to fetch calculations",
+			});
 
 		render(<SurchargeReports organizationId="org-1" />);
 
@@ -274,7 +298,10 @@ describe("SurchargeReports", () => {
 	});
 
 	it("waits for apply before fetching edited filters", async () => {
-		getSurchargeCalculationsForPeriodMock.mockResolvedValue({ success: true, data: [] });
+		getSurchargeCalculationsForPeriodMock.mockResolvedValue({
+			success: true,
+			data: [],
+		});
 
 		render(<SurchargeReports organizationId="org-1" />);
 
