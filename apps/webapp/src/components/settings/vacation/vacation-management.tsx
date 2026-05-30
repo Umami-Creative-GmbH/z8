@@ -5,7 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryKeys } from "@/lib/query";
-import { AbsenceCategoriesTable } from "./absence-categories-table";
+import { AbsenceCategoriesTable } from "../absence-category/absence-categories-table";
 import { VacationAssignmentDialog } from "./vacation-assignment-dialog";
 import { VacationAssignmentManager } from "./vacation-assignment-manager";
 
@@ -27,7 +27,9 @@ export function VacationManagement({
 
 	// Assignment dialog state
 	const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
-	const [assignmentType, setAssignmentType] = useState<"team" | "employee">("team");
+	const [assignmentType, setAssignmentType] = useState<"team" | "employee">(
+		"team",
+	);
 
 	// Assignment handlers
 	const handleAssignClick = (type: "team" | "employee") => {

@@ -64,6 +64,14 @@ const formatDate = (dateStr: string) => {
 	return DateTime.fromISO(dateStr).toFormat("LLL yyyy");
 };
 
+const formatPolicy = (
+	policy: PolicyOption,
+	t: ReturnType<typeof useTranslate>["t"],
+) => {
+	const dateInfo = `(from ${formatDate(policy.startDate)})`;
+	return `${policy.name} - ${policy.defaultAnnualDays} ${t("settings.vacation.days", "days")} ${dateInfo}`;
+};
+
 export function VacationAssignmentDialog({
 	open,
 	onOpenChange,
@@ -73,7 +81,9 @@ export function VacationAssignmentDialog({
 }: VacationAssignmentDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+	const [validationErrors, setValidationErrors] = useState<
+		Record<string, string>
+	>({});
 
 	const form = useForm({
 		defaultValues: {
@@ -141,16 +151,26 @@ export function VacationAssignmentDialog({
 
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: (values: { policyId: string; teamId: string; employeeId: string }) =>
+		mutationFn: (values: {
+			policyId: string;
+			teamId: string;
+			employeeId: string;
+		}) =>
 			createVacationPolicyAssignment({
 				policyId: values.policyId,
 				assignmentType,
 				teamId: assignmentType === "team" ? values.teamId : undefined,
-				employeeId: assignmentType === "employee" ? values.employeeId : undefined,
+				employeeId:
+					assignmentType === "employee" ? values.employeeId : undefined,
 			}),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("settings.vacation.assignments.created", "Policy assignment created"));
+				toast.success(
+					t(
+						"settings.vacation.assignments.created",
+						"Policy assignment created",
+					),
+				);
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.vacationPolicyAssignments.list(organizationId),
 				});
@@ -159,13 +179,19 @@ export function VacationAssignmentDialog({
 			} else {
 				toast.error(
 					result.error ||
-						t("settings.vacation.assignments.createFailed", "Failed to create policy assignment"),
+						t(
+							"settings.vacation.assignments.createFailed",
+							"Failed to create policy assignment",
+						),
 				);
 			}
 		},
 		onError: () => {
 			toast.error(
-				t("settings.vacation.assignments.createFailed", "Failed to create policy assignment"),
+				t(
+					"settings.vacation.assignments.createFailed",
+					"Failed to create policy assignment",
+				),
 			);
 		},
 	});
@@ -173,9 +199,15 @@ export function VacationAssignmentDialog({
 	const getDialogTitle = () => {
 		switch (assignmentType) {
 			case "team":
-				return t("settings.vacation.assignments.assignTeamPolicy", "Assign Team Policy");
+				return t(
+					"settings.vacation.assignments.assignTeamPolicy",
+					"Assign Team Policy",
+				);
 			case "employee":
-				return t("settings.vacation.assignments.assignEmployeePolicy", "Assign Employee Policy");
+				return t(
+					"settings.vacation.assignments.assignEmployeePolicy",
+					"Assign Employee Policy",
+				);
 		}
 	};
 
@@ -194,11 +226,6 @@ export function VacationAssignmentDialog({
 		}
 	};
 
-	const formatPolicy = (policy: PolicyOption) => {
-		const dateInfo = `(from ${formatDate(policy.startDate)})`;
-		return `${policy.name} - ${policy.defaultAnnualDays} days ${dateInfo}`;
-	};
-
 	const isLoading = policiesLoading || teamsLoading;
 
 	return (
@@ -206,7 +233,9 @@ export function VacationAssignmentDialog({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{getDialogTitle()}</ActionPanelTitle>
-					<ActionPanelDescription>{getDialogDescription()}</ActionPanelDescription>
+					<ActionPanelDescription>
+						{getDialogDescription()}
+					</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				{isLoading ? (
@@ -216,10 +245,7 @@ export function VacationAssignmentDialog({
 					</ActionPanelBody>
 				) : (
 					<form
-						onSubmit={(e) => {
-							e.preventDefault();
-							form.handleSubmit();
-						}}
+						onSubmit={form.handleSubmit}
 						className="flex min-h-0 flex-1 flex-col"
 					>
 						<ActionPanelBody className="space-y-4">
@@ -227,8 +253,16 @@ export function VacationAssignmentDialog({
 							<form.Field name="policyId">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>{t("settings.vacation.assignments.policy", "Vacation Policy")}</Label>
-										<Select value={field.state.value} onValueChange={field.handleChange}>
+										<Label>
+											{t(
+												"settings.vacation.assignments.policy",
+												"Vacation Policy",
+											)}
+										</Label>
+										<Select
+											value={field.state.value}
+											onValueChange={field.handleChange}
+										>
 											<SelectTrigger>
 												<SelectValue
 													placeholder={t(
@@ -249,7 +283,7 @@ export function VacationAssignmentDialog({
 													policies?.map((policy) => (
 														<SelectItem key={policy.id} value={policy.id}>
 															<div className="flex items-center gap-2">
-																<span>{formatPolicy(policy)}</span>
+																<span>{formatPolicy(policy, t)}</span>
 																{policy.isCompanyDefault && (
 																	<span className="text-xs bg-primary text-primary-foreground px-1 rounded">
 																		{t("settings.vacation.default", "Default")}
@@ -257,7 +291,10 @@ export function VacationAssignmentDialog({
 																)}
 																{policy.allowCarryover && (
 																	<span className="text-xs bg-secondary px-1 rounded">
-																		{t("settings.vacation.carryover", "Carryover")}
+																		{t(
+																			"settings.vacation.carryover",
+																			"Carryover",
+																		)}
 																	</span>
 																)}
 															</div>
@@ -273,7 +310,9 @@ export function VacationAssignmentDialog({
 											)}
 										</p>
 										{validationErrors.policyId && (
-											<p className="text-sm text-destructive">{validationErrors.policyId}</p>
+											<p className="text-sm text-destructive">
+												{validationErrors.policyId}
+											</p>
 										)}
 									</div>
 								)}
@@ -284,8 +323,13 @@ export function VacationAssignmentDialog({
 								<form.Field name="teamId">
 									{(field) => (
 										<div className="space-y-2">
-											<Label>{t("settings.vacation.assignments.team", "Team")}</Label>
-											<Select value={field.state.value} onValueChange={field.handleChange}>
+											<Label>
+												{t("settings.vacation.assignments.team", "Team")}
+											</Label>
+											<Select
+												value={field.state.value}
+												onValueChange={field.handleChange}
+											>
 												<SelectTrigger>
 													<SelectValue
 														placeholder={t(
@@ -309,7 +353,9 @@ export function VacationAssignmentDialog({
 												)}
 											</p>
 											{validationErrors.teamId && (
-												<p className="text-sm text-destructive">{validationErrors.teamId}</p>
+												<p className="text-sm text-destructive">
+													{validationErrors.teamId}
+												</p>
 											)}
 										</div>
 									)}
@@ -324,7 +370,10 @@ export function VacationAssignmentDialog({
 											<EmployeeSingleSelect
 												value={field.state.value || null}
 												onChange={(val) => field.handleChange(val || "")}
-												label={t("settings.vacation.assignments.employee", "Employee")}
+												label={t(
+													"settings.vacation.assignments.employee",
+													"Employee",
+												)}
 												placeholder={t(
 													"settings.vacation.assignments.selectEmployee",
 													"Select an employee",
@@ -352,8 +401,13 @@ export function VacationAssignmentDialog({
 							>
 								{t("common.cancel", "Cancel")}
 							</Button>
-							<Button type="submit" disabled={createMutation.isPending || policies?.length === 0}>
-								{createMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+							<Button
+								type="submit"
+								disabled={createMutation.isPending || policies?.length === 0}
+							>
+								{createMutation.isPending && (
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
+								)}
 								{t("common.assign", "Assign")}
 							</Button>
 						</ActionPanelFooter>

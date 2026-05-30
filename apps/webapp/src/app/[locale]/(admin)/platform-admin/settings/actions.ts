@@ -2,7 +2,10 @@
 
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { getCookieConsentScript, setCookieConsentScript } from "@/lib/platform-settings";
+import {
+	getCookieConsentScript,
+	setCookieConsentScript,
+} from "@/lib/platform-settings";
 
 export async function getCookieConsentScriptAction(): Promise<{
 	success: boolean;
@@ -12,7 +15,7 @@ export async function getCookieConsentScriptAction(): Promise<{
 	const headersList = await headers();
 	const session = await auth.api.getSession({ headers: headersList });
 
-	if (session.user?.role !== "admin") {
+	if (!session || session.user?.role !== "admin") {
 		return { success: false, error: "Unauthorized" };
 	}
 
@@ -31,7 +34,7 @@ export async function setCookieConsentScriptAction(
 	const headersList = await headers();
 	const session = await auth.api.getSession({ headers: headersList });
 
-	if (session.user?.role !== "admin") {
+	if (!session || session.user?.role !== "admin") {
 		return { success: false, error: "Unauthorized" };
 	}
 

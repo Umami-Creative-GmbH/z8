@@ -34,10 +34,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query";
-import { getVacationAssignmentSectionVisibility } from "./policy-assignment-surface";
+import { getVacationAssignmentSectionVisibility } from "../policy-assignment-surface";
 
 interface VacationAssignmentManagerProps {
 	organizationId: string;
@@ -91,14 +97,20 @@ const formatDate = (dateStr: string) => {
 };
 
 // Helper to format policy summary
-const formatPolicySummary = (policy: PolicyData, t: ReturnType<typeof useTranslate>["t"]) => {
-	const parts = [`${policy.defaultAnnualDays} ${t("settings.vacation.days", "days")}`];
+const formatPolicySummary = (
+	policy: PolicyData,
+	t: ReturnType<typeof useTranslate>["t"],
+) => {
+	const parts = [
+		`${policy.defaultAnnualDays} ${t("settings.vacation.days", "days")}`,
+	];
 	if (policy.allowCarryover) {
 		parts.push(t("settings.vacation.carryover", "Carryover"));
 	}
 	return parts.join(", ");
 };
 
+// eslint-disable-next-line react-doctor/no-giant-component
 export function VacationAssignmentManager({
 	organizationId,
 	allowedAssignmentTypes,
@@ -107,9 +119,8 @@ export function VacationAssignmentManager({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [selectedAssignment, setSelectedAssignment] = useState<VacationPolicyAssignmentData | null>(
-		null,
-	);
+	const [selectedAssignment, setSelectedAssignment] =
+		useState<VacationPolicyAssignmentData | null>(null);
 
 	// Fetch company default policies (current and next)
 	const { data: companyDefaults, isLoading: defaultsLoading } = useQuery({
@@ -117,7 +128,9 @@ export function VacationAssignmentManager({
 		queryFn: async () => {
 			const result = await getCompanyDefaultPolicies(organizationId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch company default policies");
+				throw new Error(
+					result.error || "Failed to fetch company default policies",
+				);
 			}
 			return result.data as CompanyDefaultPolicies;
 		},
@@ -141,10 +154,16 @@ export function VacationAssignmentManager({
 
 	// Delete assignment mutation
 	const deleteMutation = useMutation({
-		mutationFn: (assignmentId: string) => deleteVacationPolicyAssignment(assignmentId),
+		mutationFn: (assignmentId: string) =>
+			deleteVacationPolicyAssignment(assignmentId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("settings.vacation.assignments.deleted", "Policy assignment removed"));
+				toast.success(
+					t(
+						"settings.vacation.assignments.deleted",
+						"Policy assignment removed",
+					),
+				);
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.vacationPolicyAssignments.list(organizationId),
 				});
@@ -153,13 +172,19 @@ export function VacationAssignmentManager({
 			} else {
 				toast.error(
 					result.error ||
-						t("settings.vacation.assignments.deleteFailed", "Failed to remove policy assignment"),
+						t(
+							"settings.vacation.assignments.deleteFailed",
+							"Failed to remove policy assignment",
+						),
 				);
 			}
 		},
 		onError: () => {
 			toast.error(
-				t("settings.vacation.assignments.deleteFailed", "Failed to remove policy assignment"),
+				t(
+					"settings.vacation.assignments.deleteFailed",
+					"Failed to remove policy assignment",
+				),
 			);
 		},
 	});
@@ -177,16 +202,22 @@ export function VacationAssignmentManager({
 
 	// Group assignments by type (filter out organization type - handled by isCompanyDefault)
 	const policyAssignments = assignments || [];
-	const teamAssignments = policyAssignments.filter((a) => a.assignmentType === "team");
-	const employeeAssignments = policyAssignments.filter((a) => a.assignmentType === "employee");
+	const teamAssignments = policyAssignments.filter(
+		(a) => a.assignmentType === "team",
+	);
+	const employeeAssignments = policyAssignments.filter(
+		(a) => a.assignmentType === "employee",
+	);
 	const canManageTeamAssignments = allowedAssignmentTypes.includes("team");
-	const canManageEmployeeAssignments = allowedAssignmentTypes.includes("employee");
-	const { showTeamSection, showEmployeeSection } = getVacationAssignmentSectionVisibility({
-		canManageTeamAssignments,
-		teamAssignmentsCount: teamAssignments.length,
-		canManageEmployeeAssignments,
-		employeeAssignmentsCount: employeeAssignments.length,
-	});
+	const canManageEmployeeAssignments =
+		allowedAssignmentTypes.includes("employee");
+	const { showTeamSection, showEmployeeSection } =
+		getVacationAssignmentSectionVisibility({
+			canManageTeamAssignments,
+			teamAssignmentsCount: teamAssignments.length,
+			canManageEmployeeAssignments,
+			employeeAssignmentsCount: employeeAssignments.length,
+		});
 
 	const isLoading = defaultsLoading || assignmentsLoading;
 
@@ -213,7 +244,10 @@ export function VacationAssignmentManager({
 			<Card>
 				<CardContent className="py-8 text-center">
 					<p className="text-destructive">
-						{t("settings.vacation.assignments.loadError", "Failed to load policy assignments")}
+						{t(
+							"settings.vacation.assignments.loadError",
+							"Failed to load policy assignments",
+						)}
 					</p>
 				</CardContent>
 			</Card>
@@ -242,7 +276,10 @@ export function VacationAssignmentManager({
 							<IconBuilding className="size-5 text-muted-foreground" />
 							<div className="flex-1">
 								<CardTitle className="text-base flex items-center gap-2">
-									{t("settings.vacation.assignments.companyDefault", "Company Default")}
+									{t(
+										"settings.vacation.assignments.companyDefault",
+										"Company Default",
+									)}
 									<Badge variant="default" className="bg-primary">
 										<IconStar className="mr-1 size-3" />
 										{t("settings.vacation.required", "Required")}
@@ -263,7 +300,10 @@ export function VacationAssignmentManager({
 								<IconAlertTriangle className="size-5 text-destructive" />
 								<div>
 									<p className="font-medium text-destructive">
-										{t("settings.vacation.noDefaultPolicy", "No Company Default Policy")}
+										{t(
+											"settings.vacation.noDefaultPolicy",
+											"No Company Default Policy",
+										)}
 									</p>
 									<p className="text-sm text-muted-foreground">
 										{t(
@@ -289,9 +329,11 @@ export function VacationAssignmentManager({
 									<div className="flex items-center gap-3">
 										<IconCalendarDollar className="size-4 text-primary" />
 										<div>
-											<span className="font-medium">{companyDefaults.current.name}</span>
+											<span className="font-medium">
+												{companyDefaults.current.name}
+											</span>
 											<span className="text-sm text-muted-foreground ml-2">
-												— {formatPolicySummary(companyDefaults.current, t)}
+												({formatPolicySummary(companyDefaults.current, t)})
 											</span>
 										</div>
 									</div>
@@ -313,9 +355,11 @@ export function VacationAssignmentManager({
 										<div className="flex items-center gap-3">
 											<IconCalendarDollar className="size-4 text-muted-foreground" />
 											<div>
-												<span className="font-medium">{companyDefaults.next.name}</span>
+												<span className="font-medium">
+													{companyDefaults.next.name}
+												</span>
 												<span className="text-sm text-muted-foreground ml-2">
-													— {formatPolicySummary(companyDefaults.next, t)}
+													({formatPolicySummary(companyDefaults.next, t)})
 												</span>
 											</div>
 										</div>
@@ -334,7 +378,10 @@ export function VacationAssignmentManager({
 								<IconUsers className="size-5 text-muted-foreground" />
 								<div className="flex-1">
 									<CardTitle className="text-base">
-										{t("settings.vacation.assignments.teamLevel", "Team Overrides")}
+										{t(
+											"settings.vacation.assignments.teamLevel",
+											"Team Overrides",
+										)}
 										{teamAssignments.length > 0 && (
 											<Badge variant="secondary" className="ml-2">
 												{teamAssignments.length}
@@ -353,9 +400,16 @@ export function VacationAssignmentManager({
 						<CardContent>
 							{canManageTeamAssignments ? (
 								<div className="flex justify-end mb-4">
-									<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
+									<Button
+										onClick={() => onAssignClick("team")}
+										size="sm"
+										variant="outline"
+									>
 										<IconPlus className="mr-2 size-4" />
-										{t("settings.vacation.assignments.assignTeam", "Assign to Team")}
+										{t(
+											"settings.vacation.assignments.assignTeam",
+											"Assign to Team",
+										)}
 									</Button>
 								</div>
 							) : null}
@@ -369,7 +423,9 @@ export function VacationAssignmentManager({
 											<div className="flex items-center justify-between">
 												<div className="flex items-center gap-3">
 													<IconUsers className="size-4 text-muted-foreground" />
-													<span className="font-medium">{assignment.team?.name}</span>
+													<span className="font-medium">
+														{assignment.team?.name}
+													</span>
 												</div>
 												{canManageTeamAssignments ? (
 													<Button
@@ -388,7 +444,8 @@ export function VacationAssignmentManager({
 														{t("settings.vacation.current", "Current")}
 													</Badge>
 													<span className="text-muted-foreground">
-														{assignment.policy.name} — {assignment.policy.defaultAnnualDays}{" "}
+														{assignment.policy.name},{" "}
+														{assignment.policy.defaultAnnualDays}{" "}
 														{t("settings.vacation.days", "days")}
 													</span>
 													<span className="text-xs text-muted-foreground">
@@ -398,7 +455,10 @@ export function VacationAssignmentManager({
 												</div>
 												{assignment.policy.validUntil && (
 													<div className="flex items-center gap-2 text-sm text-amber-600">
-														<Badge variant="outline" className="text-xs border-amber-300">
+														<Badge
+															variant="outline"
+															className="text-xs border-amber-300"
+														>
 															{t("settings.vacation.expires", "Expires")}
 														</Badge>
 														<span>
@@ -434,7 +494,10 @@ export function VacationAssignmentManager({
 								<IconUser className="size-5 text-muted-foreground" />
 								<div className="flex-1">
 									<CardTitle className="text-base">
-										{t("settings.vacation.assignments.employeeLevel", "Employee Overrides")}
+										{t(
+											"settings.vacation.assignments.employeeLevel",
+											"Employee Overrides",
+										)}
 										{employeeAssignments.length > 0 && (
 											<Badge variant="secondary" className="ml-2">
 												{employeeAssignments.length}
@@ -453,9 +516,16 @@ export function VacationAssignmentManager({
 						<CardContent>
 							{canManageEmployeeAssignments ? (
 								<div className="flex justify-end mb-4">
-									<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
+									<Button
+										onClick={() => onAssignClick("employee")}
+										size="sm"
+										variant="outline"
+									>
 										<IconPlus className="mr-2 size-4" />
-										{t("settings.vacation.assignments.assignEmployee", "Assign to Employee")}
+										{t(
+											"settings.vacation.assignments.assignEmployee",
+											"Assign to Employee",
+										)}
 									</Button>
 								</div>
 							) : null}
@@ -470,7 +540,8 @@ export function VacationAssignmentManager({
 												<div className="flex items-center gap-3">
 													<IconUser className="size-4 text-muted-foreground" />
 													<span className="font-medium">
-														{assignment.employee?.firstName} {assignment.employee?.lastName}
+														{assignment.employee?.firstName}{" "}
+														{assignment.employee?.lastName}
 													</span>
 												</div>
 												{canManageEmployeeAssignments ? (
@@ -490,7 +561,8 @@ export function VacationAssignmentManager({
 														{t("settings.vacation.current", "Current")}
 													</Badge>
 													<span className="text-muted-foreground">
-														{assignment.policy.name} — {assignment.policy.defaultAnnualDays}{" "}
+														{assignment.policy.name},{" "}
+														{assignment.policy.defaultAnnualDays}{" "}
 														{t("settings.vacation.days", "days")}
 													</span>
 													<span className="text-xs text-muted-foreground">
@@ -500,7 +572,10 @@ export function VacationAssignmentManager({
 												</div>
 												{assignment.policy.validUntil && (
 													<div className="flex items-center gap-2 text-sm text-amber-600">
-														<Badge variant="outline" className="text-xs border-amber-300">
+														<Badge
+															variant="outline"
+															className="text-xs border-amber-300"
+														>
 															{t("settings.vacation.expires", "Expires")}
 														</Badge>
 														<span>
@@ -534,7 +609,10 @@ export function VacationAssignmentManager({
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
-							{t("settings.vacation.assignments.deleteTitle", "Remove Policy Assignment?")}
+							{t(
+								"settings.vacation.assignments.deleteTitle",
+								"Remove Policy Assignment?",
+							)}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{selectedAssignment?.assignmentType === "team" &&
