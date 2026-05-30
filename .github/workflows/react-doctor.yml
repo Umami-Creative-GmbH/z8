@@ -36,7 +36,6 @@ jobs:
       - name: Run React Doctor
         uses: millionco/react-doctor@main
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          diff: ${{ github.base_ref }}
+          directory: apps/webapp
           fail-on: error
           annotations: true
