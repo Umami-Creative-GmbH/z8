@@ -14,7 +14,8 @@ async function ApprovalPoliciesSettingsContent() {
 		redirect("/settings");
 	}
 
-	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
+	const organizationId =
+		settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
 		redirect("/settings");

@@ -53,13 +53,21 @@ const absenceCategoryTypeOptions: Array<{
 	labelKey: string;
 	fallback: string;
 }> = [
-	{ value: "custom", labelKey: "settings.absenceCategories.form.typeCustom", fallback: "Custom" },
+	{
+		value: "custom",
+		labelKey: "settings.absenceCategories.form.typeCustom",
+		fallback: "Custom",
+	},
 	{
 		value: "vacation",
 		labelKey: "settings.absenceCategories.form.typeVacation",
 		fallback: "Vacation",
 	},
-	{ value: "sick", labelKey: "settings.absenceCategories.form.typeSick", fallback: "Sick Leave" },
+	{
+		value: "sick",
+		labelKey: "settings.absenceCategories.form.typeSick",
+		fallback: "Sick Leave",
+	},
 	{
 		value: "home_office",
 		labelKey: "settings.absenceCategories.form.typeHomeOffice",
@@ -70,7 +78,11 @@ const absenceCategoryTypeOptions: Array<{
 		labelKey: "settings.absenceCategories.form.typePersonal",
 		fallback: "Personal",
 	},
-	{ value: "unpaid", labelKey: "settings.absenceCategories.form.typeUnpaid", fallback: "Unpaid" },
+	{
+		value: "unpaid",
+		labelKey: "settings.absenceCategories.form.typeUnpaid",
+		fallback: "Unpaid",
+	},
 	{
 		value: "parental",
 		labelKey: "settings.absenceCategories.form.typeParental",
@@ -123,19 +135,30 @@ export function AbsenceCategoryForm({
 				if (result.success) {
 					toast.success(
 						existingCategory
-							? t("settings.absenceCategories.categoryUpdated", "Absence category updated")
-							: t("settings.absenceCategories.categoryCreated", "Absence category created"),
+							? t(
+									"settings.absenceCategories.categoryUpdated",
+									"Absence category updated",
+								)
+							: t(
+									"settings.absenceCategories.categoryCreated",
+									"Absence category created",
+								),
 					);
 					onSuccess?.();
 					onOpenChange(false);
 				} else {
 					toast.error(
 						result.error ||
-							t("settings.absenceCategories.saveFailed", "Could not save the absence category"),
+							t(
+								"settings.absenceCategories.saveFailed",
+								"Could not save the absence category",
+							),
 					);
 				}
 			} catch (_error) {
-				toast.error(t("common.unexpectedError", "An unexpected error occurred"));
+				toast.error(
+					t("common.unexpectedError", "An unexpected error occurred"),
+				);
 			}
 
 			setLoading(false);
@@ -151,7 +174,10 @@ export function AbsenceCategoryForm({
 							? t("settings.absenceCategories.editCategory", 'Edit "{name}"', {
 									name: existingCategory.name,
 								})
-							: t("settings.absenceCategories.createCategory", "Create Absence Category")}
+							: t(
+									"settings.absenceCategories.createCategory",
+									"Create Absence Category",
+								)}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{t(
@@ -174,7 +200,10 @@ export function AbsenceCategoryForm({
 									.trim()
 									.min(
 										1,
-										t("settings.absenceCategories.form.nameRequired", "Category name is required"),
+										t(
+											"settings.absenceCategories.form.nameRequired",
+											"Category name is required",
+										),
 									)
 									.max(
 										100,
@@ -188,7 +217,10 @@ export function AbsenceCategoryForm({
 									.trim()
 									.min(
 										1,
-										t("settings.absenceCategories.form.nameRequired", "Category name is required"),
+										t(
+											"settings.absenceCategories.form.nameRequired",
+											"Category name is required",
+										),
 									)
 									.max(
 										100,
@@ -223,7 +255,11 @@ export function AbsenceCategoryForm({
 										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (
-										<p className="text-sm text-destructive" role="alert" aria-live="polite">
+										<p
+											className="text-sm text-destructive"
+											role="alert"
+											aria-live="polite"
+										>
 											{getFieldError(field.state.meta.errors[0])}
 										</p>
 									)}
@@ -240,9 +276,14 @@ export function AbsenceCategoryForm({
 										</Label>
 										<Select
 											value={field.state.value}
-											onValueChange={(value) => field.handleChange(value as AbsenceCategoryType)}
+											onValueChange={(value) =>
+												field.handleChange(value as AbsenceCategoryType)
+											}
 										>
-											<SelectTrigger id="absenceCategoryType" className="w-full">
+											<SelectTrigger
+												id="absenceCategoryType"
+												className="w-full"
+											>
 												<SelectValue
 													placeholder={t(
 														"settings.absenceCategories.form.typePlaceholder",
@@ -280,12 +321,17 @@ export function AbsenceCategoryForm({
 											type="color"
 											autoComplete="off"
 											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
+											onChange={(event) =>
+												field.handleChange(event.target.value)
+											}
 											onBlur={field.handleBlur}
 											className="h-10 w-full p-1 md:w-24"
 										/>
 										<p className="text-sm text-muted-foreground">
-											{t("settings.absenceCategories.form.colorHelp", "Calendar marker")}
+											{t(
+												"settings.absenceCategories.form.colorHelp",
+												"Calendar marker",
+											)}
 										</p>
 									</div>
 								)}
@@ -296,7 +342,10 @@ export function AbsenceCategoryForm({
 							{(field) => (
 								<div className="space-y-2">
 									<Label htmlFor="absenceCategoryDescription">
-										{t("settings.absenceCategories.form.description", "Description")}
+										{t(
+											"settings.absenceCategories.form.description",
+											"Description",
+										)}
 									</Label>
 									<Textarea
 										id="absenceCategoryDescription"
@@ -323,7 +372,10 @@ export function AbsenceCategoryForm({
 						<section className="space-y-3">
 							<div className="space-y-1">
 								<h3 className="text-sm font-medium">
-									{t("settings.absenceCategories.form.translations", "Translations")}
+									{t(
+										"settings.absenceCategories.form.translations",
+										"Translations",
+									)}
 								</h3>
 								<p className="text-sm text-muted-foreground">
 									{t(
@@ -341,7 +393,9 @@ export function AbsenceCategoryForm({
 											<form.Field name={`nameTranslations.${locale}`}>
 												{(field) => (
 													<div className="space-y-2">
-														<Label htmlFor={`absenceCategoryNameTranslation-${locale}`}>
+														<Label
+															htmlFor={`absenceCategoryNameTranslation-${locale}`}
+														>
 															{t(
 																"settings.absenceCategories.form.nameTranslation",
 																"{locale} name",
@@ -352,7 +406,9 @@ export function AbsenceCategoryForm({
 															id={`absenceCategoryNameTranslation-${locale}`}
 															autoComplete="off"
 															value={field.state.value ?? ""}
-															onChange={(event) => field.handleChange(event.target.value)}
+															onChange={(event) =>
+																field.handleChange(event.target.value)
+															}
 															onBlur={field.handleBlur}
 															placeholder={t(
 																"settings.absenceCategories.form.nameTranslationPlaceholder",
@@ -366,7 +422,9 @@ export function AbsenceCategoryForm({
 											<form.Field name={`descriptionTranslations.${locale}`}>
 												{(field) => (
 													<div className="space-y-2">
-														<Label htmlFor={`absenceCategoryDescriptionTranslation-${locale}`}>
+														<Label
+															htmlFor={`absenceCategoryDescriptionTranslation-${locale}`}
+														>
 															{t(
 																"settings.absenceCategories.form.descriptionTranslation",
 																"{locale} description",
@@ -377,7 +435,9 @@ export function AbsenceCategoryForm({
 															id={`absenceCategoryDescriptionTranslation-${locale}`}
 															autoComplete="off"
 															value={field.state.value ?? ""}
-															onChange={(event) => field.handleChange(event.target.value)}
+															onChange={(event) =>
+																field.handleChange(event.target.value)
+															}
 															onBlur={field.handleBlur}
 															placeholder={t(
 																"settings.absenceCategories.form.descriptionTranslationPlaceholder",
@@ -400,11 +460,19 @@ export function AbsenceCategoryForm({
 										<Checkbox
 											id="absenceCategoryRequiresApproval"
 											checked={field.state.value}
-											onCheckedChange={(checked) => field.handleChange(checked === true)}
+											onCheckedChange={(checked) =>
+												field.handleChange(checked === true)
+											}
 										/>
 										<div className="space-y-1 leading-none">
-											<Label htmlFor="absenceCategoryRequiresApproval" className="cursor-pointer">
-												{t("settings.absenceCategories.form.requiresApproval", "Requires Approval")}
+											<Label
+												htmlFor="absenceCategoryRequiresApproval"
+												className="cursor-pointer"
+											>
+												{t(
+													"settings.absenceCategories.form.requiresApproval",
+													"Requires Approval",
+												)}
 											</Label>
 											<p className="text-sm text-muted-foreground">
 												{t(
@@ -423,7 +491,9 @@ export function AbsenceCategoryForm({
 										<Checkbox
 											id="absenceCategoryCountsAgainstVacation"
 											checked={field.state.value}
-											onCheckedChange={(checked) => field.handleChange(checked === true)}
+											onCheckedChange={(checked) =>
+												field.handleChange(checked === true)
+											}
 										/>
 										<div className="space-y-1 leading-none">
 											<Label
@@ -452,10 +522,15 @@ export function AbsenceCategoryForm({
 										<Checkbox
 											id="absenceCategoryRequiresWorkTime"
 											checked={field.state.value}
-											onCheckedChange={(checked) => field.handleChange(checked === true)}
+											onCheckedChange={(checked) =>
+												field.handleChange(checked === true)
+											}
 										/>
 										<div className="space-y-1 leading-none">
-											<Label htmlFor="absenceCategoryRequiresWorkTime" className="cursor-pointer">
+											<Label
+												htmlFor="absenceCategoryRequiresWorkTime"
+												className="cursor-pointer"
+											>
 												{t(
 													"settings.absenceCategories.form.requiresWorkTime",
 													"Requires Work Time",
@@ -477,7 +552,10 @@ export function AbsenceCategoryForm({
 							{(field) => (
 								<div className="flex items-center justify-between gap-4 rounded-lg border p-4">
 									<div className="space-y-1">
-										<Label htmlFor="absenceCategoryIsActive" className="text-base">
+										<Label
+											htmlFor="absenceCategoryIsActive"
+											className="text-base"
+										>
 											{t("settings.absenceCategories.form.active", "Active")}
 										</Label>
 										<p className="text-sm text-muted-foreground">
@@ -507,12 +585,23 @@ export function AbsenceCategoryForm({
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={loading}>
-							{loading && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
+							{loading && (
+								<IconLoader2
+									className="mr-2 size-4 animate-spin"
+									aria-hidden="true"
+								/>
+							)}
 							{loading
 								? t("common.saving", "Saving…")
 								: existingCategory
-									? t("settings.absenceCategories.updateCategory", "Update Category")
-									: t("settings.absenceCategories.createCategoryButton", "Create Category")}
+									? t(
+											"settings.absenceCategories.updateCategory",
+											"Update Category",
+										)
+									: t(
+											"settings.absenceCategories.createCategoryButton",
+											"Create Category",
+										)}
 						</Button>
 					</ActionPanelFooter>
 				</form>
