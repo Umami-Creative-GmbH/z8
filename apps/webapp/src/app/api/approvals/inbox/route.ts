@@ -16,10 +16,10 @@ import {
 } from "@/lib/approvals/application/approval-query.service";
 import type {
 	ApprovalPriority,
-	PaginatedApprovalResult,
 	ApprovalQueryParams,
 	ApprovalStatus,
 	ApprovalType,
+	PaginatedApprovalResult,
 } from "@/lib/approvals/domain/types";
 import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
@@ -44,7 +44,10 @@ export async function GET(request: NextRequest) {
 		// Get active organization from session
 		const activeOrganizationId = session.session?.activeOrganizationId;
 		if (!activeOrganizationId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		// Check CASL permissions; eligible managers are authorized after employee lookup.
@@ -65,7 +68,10 @@ export async function GET(request: NextRequest) {
 		});
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Employee not found" },
+				{ status: 404 },
+			);
 		}
 
 		const canManageApprovals = ability.cannot("manage", "Approval") === false;
@@ -90,15 +96,23 @@ export async function GET(request: NextRequest) {
 
 		const status = (searchParams.get("status") as ApprovalStatus) || "pending";
 		const typesParam = searchParams.get("types");
-		const types = typesParam ? (typesParam.split(",") as ApprovalType[]) : undefined;
+		const types = typesParam
+			? (typesParam.split(",") as ApprovalType[])
+			: undefined;
 		const teamId = searchParams.get("teamId") || undefined;
 		const search = searchParams.get("search") || undefined;
-		const priority = searchParams.get("priority") as ApprovalPriority | undefined;
-		const minAgeDays = searchParams.get("minAgeDays")
-			? parseInt(searchParams.get("minAgeDays")!, 10)
+		const priority = searchParams.get("priority") as
+			| ApprovalPriority
+			| undefined;
+		const minAgeDaysParam = searchParams.get("minAgeDays");
+		const minAgeDays = minAgeDaysParam
+			? parseInt(minAgeDaysParam, 10)
 			: undefined;
 		const cursor = searchParams.get("cursor") || undefined;
-		const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
+		const limit = Math.min(
+			parseInt(searchParams.get("limit") || "20", 10),
+			100,
+		);
 
 		// Date range filter
 		let dateRange: { from: Date; to: Date } | undefined;
@@ -152,6 +166,9 @@ export async function GET(request: NextRequest) {
 		}
 
 		logger.error({ error }, "Failed to fetch approvals");
-		return NextResponse.json({ error: "Failed to fetch approvals" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Failed to fetch approvals" },
+			{ status: 500 },
+		);
 	}
 }
