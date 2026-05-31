@@ -172,6 +172,9 @@ export function ApprovalDetailPanel({
 
 	if (!approval) return null;
 
+	const panelItem = item ?? approval;
+	const panelActions = actions ?? panelItem.capabilities;
+
 	return (
 		<Sheet open={open} onOpenChange={handleClose}>
 			<SheetContent className="w-[500px] sm:max-w-[500px] overflow-y-auto overscroll-behavior-contain">
@@ -179,18 +182,18 @@ export function ApprovalDetailPanel({
 					<div className="flex items-start justify-between gap-3">
 						<div>
 							<SheetTitle>{t("approvals:approvals.detailTitle", "Approval details")}</SheetTitle>
-							<SheetDescription>{item.summary.detail}</SheetDescription>
+							<SheetDescription>{panelItem.summary.detail}</SheetDescription>
 						</div>
-						{item.summary.badge && (
+						{panelItem.summary.badge && (
 							<Badge
 								variant="secondary"
 								style={
-									item.summary.badge.color
-										? { backgroundColor: item.summary.badge.color }
+									panelItem.summary.badge.color
+										? { backgroundColor: panelItem.summary.badge.color }
 										: undefined
 								}
 							>
-								{item.summary.badge.label}
+								{panelItem.summary.badge.label}
 							</Badge>
 						)}
 					</div>
@@ -203,15 +206,15 @@ export function ApprovalDetailPanel({
 						</SectionTitle>
 						<div className="flex items-center gap-3">
 							<UserAvatar
-								image={item.requester.image}
-								seed={item.requester.id}
-								name={item.requester.name}
+								image={panelItem.requester.image}
+								seed={panelItem.requester.id}
+								name={panelItem.requester.name}
 								size="md"
-								clockStatus={presence.getStatus(item.requester.id)}
+								clockStatus={presence.getStatus(panelItem.requester.id)}
 							/>
 							<div>
-								<div className="font-medium">{item.requester.name}</div>
-								<div className="text-sm text-muted-foreground">{item.requester.email}</div>
+								<div className="font-medium">{panelItem.requester.name}</div>
+								<div className="text-sm text-muted-foreground">{panelItem.requester.email}</div>
 							</div>
 						</div>
 					</div>
@@ -270,7 +273,7 @@ export function ApprovalDetailPanel({
 								variant="outline"
 								className="flex-1"
 								onClick={() => setIsRejecting(true)}
-								disabled={!actions.canReject || isPending}
+								disabled={!panelActions.canReject || isPending}
 							>
 								<IconX className="mr-2 size-4" aria-hidden="true" />
 								{t("approvals:approvals.reject", "Reject")}
@@ -278,7 +281,7 @@ export function ApprovalDetailPanel({
 							<Button
 								className="flex-1"
 								onClick={handleApprove}
-								disabled={!actions.canApprove || isPending}
+								disabled={!panelActions.canApprove || isPending}
 							>
 								{approveMutation.isPending && (
 									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
