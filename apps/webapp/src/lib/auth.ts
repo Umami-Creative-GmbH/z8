@@ -498,6 +498,11 @@ export const auth = betterAuth({
 							defaultValue: false,
 							input: true,
 						},
+						targetTeamId: {
+							type: "string",
+							required: false,
+							input: false,
+						},
 					},
 				},
 			},

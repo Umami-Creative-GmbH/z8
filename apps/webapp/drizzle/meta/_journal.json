@@ -281,6 +281,13 @@
       "when": 1780185600003,
       "tag": "0039_shift_pickup_requested_notification",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1780185600004,
+      "tag": "0040_invitation_target_team",
+      "breakpoints": true
     }
   ]
 }
