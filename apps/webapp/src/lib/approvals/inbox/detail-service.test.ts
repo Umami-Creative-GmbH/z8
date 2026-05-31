@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { getApprovalInboxDetailFromRequest } from "@/lib/approvals/inbox/read-service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 
 const request = {
 	id: "approval-1",
@@ -68,6 +69,26 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		expect(result.item.id).toBe("approval-1");
 		expect(result.sections.map((section) => section.type)).toEqual(["key_value", "timeline"]);
 		expect(JSON.parse(JSON.stringify(result))).toEqual(result);
+	});
+
+	it("provides database services required by registered detail handlers", async () => {
+		const detail = createDetail();
+		const handler = {
+			type: "absence_entry",
+			displayName: "Absence Request",
+			supportsBulkApprove: true,
+			getDetail: vi.fn(() =>
+				Effect.gen(function* (_) {
+					const dbService = yield* _(DatabaseService);
+					return yield* _(dbService.query("getDetail", async () => detail));
+				}),
+			),
+		} as never;
+
+		const result = await getApprovalInboxDetailFromRequest({ request, handler });
+
+		expect(result.item.id).toBe("approval-1");
+		expect(handler.getDetail).toHaveBeenCalledWith("absence-1", "org-1");
 	});
 
 	it("rejects unsupported entity types before calling the handler", async () => {

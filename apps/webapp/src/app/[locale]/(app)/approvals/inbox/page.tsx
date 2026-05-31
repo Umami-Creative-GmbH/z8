@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import {
 	ActionPanel,
@@ -108,6 +108,18 @@ const RISK_RANK: Record<ApprovalInboxItem["triage"]["riskLevel"], number> = {
 	high: 3,
 };
 
+function subscribeHydrationSnapshot() {
+	return () => undefined;
+}
+
+function getClientHydrationSnapshot() {
+	return true;
+}
+
+function getServerHydrationSnapshot() {
+	return false;
+}
+
 function groupFastLaneItems(items: ApprovalInboxItem[]): ApprovalInboxFastLaneGroupView[] {
 	const groups = new Map<ApprovalInboxFastLaneGroup, ApprovalInboxItem[]>();
 
@@ -162,6 +174,11 @@ function ApprovalInboxContent() {
 	const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
 	const [bulkRejectReason, setBulkRejectReason] = useState("");
 	const [sprintOpen, setSprintOpen] = useState(false);
+	const hasHydrated = useSyncExternalStore(
+		subscribeHydrationSnapshot,
+		getClientHydrationSnapshot,
+		getServerHydrationSnapshot,
+	);
 	const bulkActionInFlightRef = useRef(false);
 
 	const {
@@ -376,7 +393,7 @@ function ApprovalInboxContent() {
 	};
 
 	// Loading state
-	if (isLoading) {
+	if (!hasHydrated || (isLoading && !data)) {
 		return (
 			<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 				<div className="flex items-center justify-between px-4 lg:px-6">

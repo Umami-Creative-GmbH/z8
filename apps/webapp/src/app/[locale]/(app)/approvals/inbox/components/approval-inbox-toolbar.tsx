@@ -2,6 +2,7 @@
 
 import { IconSearch, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -49,6 +50,7 @@ export function ApprovalInboxToolbar({
 	supportedTypes,
 }: ApprovalInboxToolbarProps) {
 	const { t } = useTranslate();
+	const [searchInput, setSearchInput] = useState(filters.search ?? "");
 	const visibleTypes = APPROVAL_TYPES.filter((type) => supportedTypes.includes(type.value));
 
 	const activeFilterCount = (filters.types?.length ? 1 : 0) + (filters.search ? 1 : 0);
@@ -64,14 +66,30 @@ export function ApprovalInboxToolbar({
 		});
 	};
 
+	useEffect(() => {
+		setSearchInput(filters.search ?? "");
+	}, [filters.search]);
+
+	useEffect(() => {
+		const nextSearch = searchInput || undefined;
+		if (nextSearch === filters.search) return;
+
+		const timeoutId = window.setTimeout(() => {
+			onFiltersChange({
+				...filters,
+				search: nextSearch,
+			});
+		}, 300);
+
+		return () => window.clearTimeout(timeoutId);
+	}, [filters, onFiltersChange, searchInput]);
+
 	const handleSearchChange = (value: string) => {
-		onFiltersChange({
-			...filters,
-			search: value || undefined,
-		});
+		setSearchInput(value);
 	};
 
 	const clearFilters = () => {
+		setSearchInput("");
 		onFiltersChange({ status: "pending" });
 	};
 
@@ -102,7 +120,7 @@ export function ApprovalInboxToolbar({
 					/>
 					<Input
 						placeholder={t("approvals:approvals.searchPlaceholder", "Search by name or email…")}
-						value={filters.search || ""}
+						value={searchInput}
 						onChange={(e) => handleSearchChange(e.target.value)}
 						className="pl-9"
 						aria-label={t("approvals:approvals.searchLabel", "Search approvals")}

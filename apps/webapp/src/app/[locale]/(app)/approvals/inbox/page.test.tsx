@@ -1,6 +1,8 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { hydrateRoot, type Root } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	ApprovalInboxItem,
@@ -297,6 +299,54 @@ describe("ApprovalInboxPage", () => {
 			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
 		);
 		expect(container.querySelectorAll(":scope > div > .px-4.lg\\:px-6")).toHaveLength(2);
+	});
+
+	it("keeps the first hydrated render consistent when client query data is already cached", async () => {
+		approvalInboxMock
+			.mockReturnValueOnce({
+				data: undefined,
+				isLoading: true,
+				isError: false,
+				error: null,
+				isFetching: true,
+				fetchNextPage: vi.fn(),
+				hasNextPage: false,
+				isFetchingNextPage: false,
+				refetch: refetchMock,
+			})
+			.mockReturnValue({
+				data: {
+					pages: [makeApprovalInboxPage()],
+				},
+				isLoading: false,
+				isError: false,
+				error: null,
+				isFetching: false,
+				fetchNextPage: vi.fn(),
+				hasNextPage: false,
+				isFetchingNextPage: false,
+				refetch: refetchMock,
+			});
+
+		const container = document.createElement("div");
+		container.innerHTML = renderToString(<ApprovalInboxPage />);
+		document.body.appendChild(container);
+		const onRecoverableError = vi.fn();
+		let root: Root | null = null;
+
+		try {
+			await act(async () => {
+				root = hydrateRoot(container, <ApprovalInboxPage />, { onRecoverableError });
+			});
+
+			await waitFor(() => {
+				expect(screen.getByText("Approval Inbox")).toBeTruthy();
+			});
+			expect(onRecoverableError).not.toHaveBeenCalled();
+		} finally {
+			root?.unmount();
+			container.remove();
+		}
 	});
 
 	it("shows a toast when bulk approve throws instead of leaving an uncaught rejection", async () => {
@@ -642,6 +692,28 @@ describe("ApprovalInboxPage", () => {
 
 		expect(screen.queryByRole("button", { name: /Approve Selected/ })).toBeNull();
 		expect(bulkApproveMutateAsyncMock).not.toHaveBeenCalled();
+	});
+
+	it("keeps inbox content mounted while search results are loading", () => {
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [makeApprovalInboxPage()],
+			},
+			isLoading: true,
+			isError: false,
+			error: null,
+			isFetching: true,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		expect(screen.getByText("Approval Inbox")).toBeTruthy();
+		expect(screen.getByText("Avery Employee")).toBeTruthy();
+		expect(screen.queryByText("loading")).toBeNull();
 	});
 
 	it("renders duplicate inbox warnings once", () => {

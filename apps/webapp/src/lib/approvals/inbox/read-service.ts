@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect, Exit } from "effect";
 import { db } from "@/db";
 import { approvalRequest } from "@/db/schema";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import type {
 	ApprovalDetail,
 	ApprovalQueryParams,
@@ -86,7 +87,9 @@ export async function getApprovalInboxListFromSources({
 	) as ApprovalInboxListResult["counts"];
 
 	for (const source of selectedSources) {
-		const approvalsExit = await Effect.runPromiseExit(source.handler.getApprovals(params));
+		const approvalsExit = await Effect.runPromiseExit(
+			source.handler.getApprovals(params).pipe(Effect.provide(DatabaseServiceLive)),
+		);
 		if (Exit.isFailure(approvalsExit)) {
 			warnings.push({
 				source: source.type,
@@ -102,7 +105,7 @@ export async function getApprovalInboxListFromSources({
 			source.handler.getCount(params.approverId, params.organizationId, {
 				eligibleApprovalScopes: params.eligibleApprovalScopes,
 				includeAllApprovers: params.includeAllApprovers,
-			}),
+			}).pipe(Effect.provide(DatabaseServiceLive)),
 		);
 		counts[source.type] = Exit.isSuccess(countExit) ? countExit.value : 0;
 	}
@@ -158,7 +161,9 @@ export async function getApprovalInboxDetailFromRequest({
 		throw new ApprovalInboxBadRequestError("Approval detail mismatch");
 	}
 
-	const detail = await Effect.runPromise(handler.getDetail(request.entityId, request.organizationId));
+	const detail = await Effect.runPromise(
+		handler.getDetail(request.entityId, request.organizationId).pipe(Effect.provide(DatabaseServiceLive)),
+	);
 	validateDetailMatchesRequest(detail, request);
 
 	const source: ApprovalInboxSource = {

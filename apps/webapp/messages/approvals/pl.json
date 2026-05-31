@@ -83,11 +83,11 @@
   },
   "fastLanes": {
     "approve": "Zatwierdź",
-    "approveGroup": "Zatwierdź ${label}",
+    "approveGroup": "Zatwierdź {label}",
     "confirmReject": "Potwierdź odrzucenie",
-    "confirmRejectGroup": "Potwierdź odrzucenie ${label}",
+    "confirmRejectGroup": "Potwierdź odrzucenie {label}",
     "description": "Przeglądaj podobne wnioski o niskim priorytecie w partiach.",
-    "expandGroup": "Rozwiń ${label}",
+    "expandGroup": "Rozwiń {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Nieobecności bez wykrytych konfliktów.",
@@ -107,14 +107,14 @@
       }
     },
     "reject": "Odrzuć",
-    "rejectGroup": "Odrzuć ${label}",
+    "rejectGroup": "Odrzuć {label}",
     "rejectReason": "Powód masowego odrzucenia",
     "risk": {
       "high": "Wysokie ryzyko",
       "low": "Niskie ryzyko",
       "medium": "Średnie ryzyko"
     },
-    "showGroup": "Pokaż ${label}",
+    "showGroup": "Pokaż {label}",
     "title": "Szybkie ścieżki"
   },
   "sprint": {
@@ -124,7 +124,7 @@
     "confirmReject": "Potwierdź odrzucenie",
     "description": "Przeglądaj oczekujące zatwierdzenia jedno po drugim za pomocą skrótów klawiszowych.",
     "openDetails": "Otwórz szczegóły",
-    "progress": "${currentIndex + 1} z ${visibleItems.length}",
+    "progress": "{current} z {total}",
     "reject": "Odrzuć",
     "rejectCurrentApproval": "Odrzuć bieżące zatwierdzenie",
     "rejectReason": "Powód odrzucenia sprintu",

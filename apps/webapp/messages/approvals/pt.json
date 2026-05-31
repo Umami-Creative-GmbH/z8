@@ -83,11 +83,11 @@
   },
   "fastLanes": {
     "approve": "Aprovar",
-    "approveGroup": "Aprovar ${label}",
+    "approveGroup": "Aprovar {label}",
     "confirmReject": "Confirmar rejeição",
-    "confirmRejectGroup": "Confirmar rejeição de ${label}",
+    "confirmRejectGroup": "Confirmar rejeição de {label}",
     "description": "Analise solicitações semelhantes de baixo atrito em lote.",
-    "expandGroup": "Expandir ${label}",
+    "expandGroup": "Expandir {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Ausências sem conflitos detectados.",
@@ -107,14 +107,14 @@
       }
     },
     "reject": "Rejeitar",
-    "rejectGroup": "Rejeitar ${label}",
+    "rejectGroup": "Rejeitar {label}",
     "rejectReason": "Motivo da rejeição em massa",
     "risk": {
       "high": "Alto risco",
       "low": "Baixo risco",
       "medium": "Médio risco"
     },
-    "showGroup": "Mostrar ${label}",
+    "showGroup": "Mostrar {label}",
     "title": "Vias rápidas"
   },
   "sprint": {
@@ -124,7 +124,7 @@
     "confirmReject": "Confirmar rejeição",
     "description": "Analise as aprovações pendentes uma a uma com atalhos de teclado.",
     "openDetails": "Abrir detalhes",
-    "progress": "${currentIndex + 1} de ${visibleItems.length}",
+    "progress": "{current} de {total}",
     "reject": "Rejeitar",
     "rejectCurrentApproval": "Rejeitar aprovação atual",
     "rejectReason": "Motivo da rejeição da sprint",

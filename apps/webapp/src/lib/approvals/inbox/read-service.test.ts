@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { getApprovalInboxListFromSources } from "@/lib/approvals/inbox/read-service";
 import type { ApprovalInboxSource } from "@/lib/approvals/inbox/source-adapters";
 import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 
 function item(overrides: Partial<UnifiedApprovalItem>): UnifiedApprovalItem {
 	return {
@@ -99,6 +100,42 @@ describe("getApprovalInboxListFromSources", () => {
 		expect(result.warnings).toEqual([
 			{ source: "time_entry", message: "Time Correction approvals could not be loaded." },
 		]);
+	});
+
+	it("provides database services required by registered approval handlers", async () => {
+		const approval = item({ id: "approval-from-db-service" });
+		const databaseBackedSource: ApprovalInboxSource = {
+			type: "absence_entry",
+			displayName: "Absence Request",
+			supportsBulkApprove: true,
+			handler: {
+				type: "absence_entry",
+				displayName: "Absence Request",
+				supportsBulkApprove: true,
+				getApprovals: vi.fn(() =>
+					Effect.gen(function* (_) {
+						const dbService = yield* _(DatabaseService);
+						return yield* _(dbService.query("getApprovals", async () => [approval]));
+					}),
+				),
+				getCount: vi.fn(() =>
+					Effect.gen(function* (_) {
+						const dbService = yield* _(DatabaseService);
+						return yield* _(dbService.query("getApprovalCount", async () => 1));
+					}),
+				),
+			} as never,
+		};
+
+		const result = await getApprovalInboxListFromSources({
+			sources: [databaseBackedSource],
+			params: { approverId: "manager-1", organizationId: "org-1", status: "pending", limit: 20 },
+			now: new Date("2026-05-31T09:00:00.000Z"),
+		});
+
+		expect(result.items.map((approval) => approval.id)).toEqual(["approval-from-db-service"]);
+		expect(result.counts.absence_entry).toBe(1);
+		expect(result.warnings).toEqual([]);
 	});
 
 	it("returns page 2 from a stable cursor without repeating page 1", async () => {

@@ -83,11 +83,11 @@
   },
   "fastLanes": {
     "approve": "Genehmigen",
-    "approveGroup": "${label} genehmigen",
+    "approveGroup": "{label} genehmigen",
     "confirmReject": "Ablehnung bestätigen",
-    "confirmRejectGroup": "Ablehnung von ${label} bestätigen",
+    "confirmRejectGroup": "Ablehnung von {label} bestätigen",
     "description": "Ähnliche unkomplizierte Anfragen stapelweise prüfen.",
-    "expandGroup": "${label} aufklappen",
+    "expandGroup": "{label} aufklappen",
     "groups": {
       "lowRiskAbsence": {
         "description": "Abwesenheiten ohne erkannte Konflikte.",
@@ -107,14 +107,14 @@
       }
     },
     "reject": "Ablehnen",
-    "rejectGroup": "${label} ablehnen",
+    "rejectGroup": "{label} ablehnen",
     "rejectReason": "Grund für Massenablehnung",
     "risk": {
       "high": "Hohes Risiko",
       "low": "Geringes Risiko",
       "medium": "Mittleres Risiko"
     },
-    "showGroup": "${label} anzeigen",
+    "showGroup": "{label} anzeigen",
     "title": "Schnellverfahren"
   },
   "sprint": {
@@ -124,7 +124,7 @@
     "confirmReject": "Ablehnung bestätigen",
     "description": "Ausstehende Genehmigungen einzeln mit Tastaturkürzeln prüfen.",
     "openDetails": "Details öffnen",
-    "progress": "${currentIndex + 1} von ${visibleItems.length}",
+    "progress": "{current} von {total}",
     "reject": "Ablehnen",
     "rejectCurrentApproval": "Aktuelle Genehmigung ablehnen",
     "rejectReason": "Grund für Sprint-Ablehnung",

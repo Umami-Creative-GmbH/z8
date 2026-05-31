@@ -1,8 +1,37 @@
-import { describe, expect, expectTypeOf, it } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import type { ApprovalInboxBulkDecisionResult } from "@/lib/approvals/inbox/types";
-import { readBulkDecisionResult, readQueryError, type useBulkApprove } from "./use-approval-inbox";
+import {
+	readBulkDecisionResult,
+	readQueryError,
+	type useBulkApprove,
+	useApprovalInbox,
+} from "./use-approval-inbox";
+
+const queryMockState = vi.hoisted(() => ({
+	useInfiniteQuery: vi.fn(),
+}));
+
+vi.mock("@tanstack/react-query", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@tanstack/react-query")>();
+	return {
+		...actual,
+		useInfiniteQuery: queryMockState.useInfiniteQuery,
+	};
+});
 
 describe("useApprovalInbox contracts", () => {
+	it("keeps previous inbox data while a changed search query loads", () => {
+		queryMockState.useInfiniteQuery.mockReturnValue({});
+
+		useApprovalInbox({ status: "pending", search: "avery" });
+
+		expect(queryMockState.useInfiniteQuery).toHaveBeenCalledWith(
+			expect.objectContaining({
+				placeholderData: expect.any(Function),
+			}),
+		);
+	});
+
 	it("returns the richer bulk decision result from bulk approve mutations", () => {
 		type BulkApproveMutationResult = Awaited<
 			ReturnType<ReturnType<typeof useBulkApprove>["mutateAsync"]>

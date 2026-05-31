@@ -6,7 +6,13 @@
  * Provides hooks for fetching and mutating approvals in the unified inbox.
  */
 
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	keepPreviousData,
+	useInfiniteQuery,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
 import { SUPPORTED_APPROVAL_INBOX_TYPES } from "@/lib/approvals/inbox/types";
 import type {
 	ApprovalInboxBulkDecisionResult,
@@ -240,6 +246,7 @@ export function useApprovalInbox(filters: ApprovalInboxFilters = {}) {
 		queryFn: ({ pageParam }) => fetchApprovals(filters, pageParam as string | undefined),
 		getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
 		initialPageParam: undefined as string | undefined,
+		placeholderData: keepPreviousData,
 		enabled: isClient,
 	});
 }
