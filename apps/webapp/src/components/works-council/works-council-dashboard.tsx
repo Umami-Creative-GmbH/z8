@@ -3,12 +3,16 @@ import type { SuppressedValue } from "@/lib/works-council/privacy";
 import type { WorksCouncilPortalModel } from "@/lib/works-council/review-data";
 
 function formatTimestamp(timestamp: string) {
-	return DateTime.fromISO(timestamp).toLocaleString(DateTime.DATETIME_MED);
+	return DateTime.fromISO(timestamp).setLocale("en-US").toLocaleString(DateTime.DATETIME_MED);
 }
 
 function formatDateRange(range: { start: string; end: string }) {
-	const start = DateTime.fromISO(range.start, { zone: "utc" }).toLocaleString(DateTime.DATE_MED);
-	const end = DateTime.fromISO(range.end, { zone: "utc" }).toLocaleString(DateTime.DATE_MED);
+	const start = DateTime.fromISO(range.start, { zone: "utc" })
+		.setLocale("en-US")
+		.toLocaleString(DateTime.DATE_MED);
+	const end = DateTime.fromISO(range.end, { zone: "utc" })
+		.setLocale("en-US")
+		.toLocaleString(DateTime.DATE_MED);
 	return `${start} - ${end}`;
 }
 
