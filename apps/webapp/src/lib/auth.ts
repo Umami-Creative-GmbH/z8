@@ -29,6 +29,28 @@ import { secondaryStorage } from "./redis";
 const logger = createLogger("Auth");
 const targetTeamIdSchema = z.string().uuid();
 
+type InvitationTargetTeamLookupDb = Pick<typeof db, "query">;
+
+export async function resolveInvitationTargetTeamId(
+	dbClient: InvitationTargetTeamLookupDb,
+	organizationId: string,
+	targetTeamId: string | null | undefined,
+) {
+	const targetTeamIdResult = targetTeamId ? targetTeamIdSchema.safeParse(targetTeamId) : null;
+	if (!targetTeamIdResult?.success) {
+		return null;
+	}
+
+	const targetTeam = await dbClient.query.team.findFirst({
+		where: and(
+			eq(team.id, targetTeamIdResult.data),
+			eq(team.organizationId, organizationId),
+		),
+	});
+
+	return targetTeam?.id ?? null;
+}
+
 const BILLING_ENABLED = env.BILLING_ENABLED === "true";
 
 function getAuthSecrets() {
@@ -544,17 +566,11 @@ export const auth = betterAuth({
 							eq(schema.invitation.organizationId, invitation.organizationId),
 						),
 					});
-					const targetTeamIdResult = invitationRecord?.targetTeamId
-						? targetTeamIdSchema.safeParse(invitationRecord.targetTeamId)
-						: null;
-					const targetTeam = targetTeamIdResult?.success
-						? await db.query.team.findFirst({
-								where: and(
-									eq(team.id, targetTeamIdResult.data),
-									eq(team.organizationId, invitation.organizationId),
-								),
-							})
-						: null;
+					const targetTeamId = await resolveInvitationTargetTeamId(
+						db,
+						invitation.organizationId,
+						invitationRecord?.targetTeamId,
+					);
 
 					// Update user's organization creation permission based on invitation
 					await db
@@ -569,7 +585,7 @@ export const auth = betterAuth({
 						userId: user.id,
 						organizationId: invitation.organizationId,
 						memberRole: member.role,
-						targetTeamId: targetTeam?.id ?? null,
+						targetTeamId,
 					});
 				},
 

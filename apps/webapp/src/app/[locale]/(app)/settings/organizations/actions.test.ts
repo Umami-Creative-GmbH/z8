@@ -50,6 +50,8 @@ vi.mock("@/db", () => ({
 	},
 }));
 
+const { sendInvitation, updateInvitationTargetTeam } = await import("./actions");
+
 describe("organization feature allowlist", () => {
 	it("allows only supported organization feature flags", () => {
 		expect(isOrganizationFeature("shiftsEnabled")).toBe(true);
@@ -65,6 +67,14 @@ describe("organization feature allowlist", () => {
 describe("organization invitation actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		getSessionMock.mockReset();
+		createInvitationMock.mockReset();
+		memberFindFirstMock.mockReset();
+		invitationFindFirstMock.mockReset();
+		teamFindFirstMock.mockReset();
+		userFindFirstMock.mockReset();
+		updateSetMock.mockReset();
+		updateWhereMock.mockReset();
 		getSessionMock.mockResolvedValue({
 			user: { id: "user-admin" },
 			session: {
@@ -88,13 +98,12 @@ describe("organization invitation actions", () => {
 			organizationId: "org-1",
 		});
 		createInvitationMock.mockResolvedValue({ id: "invitation-created" });
+		updateSetMock.mockReturnValue({ where: updateWhereMock });
 		updateWhereMock.mockResolvedValue([{ id: "updated" }]);
 	});
 
 	it("rejects a direct invite target team outside the organization", async () => {
 		teamFindFirstMock.mockResolvedValue(null);
-
-		const { sendInvitation } = await import("./actions");
 
 		const result = await sendInvitation({
 			organizationId: "org-1",
@@ -120,8 +129,6 @@ describe("organization invitation actions", () => {
 				status: "pending",
 			});
 
-		const { sendInvitation } = await import("./actions");
-
 		const result = await sendInvitation({
 			organizationId: "org-1",
 			email: "invitee@example.com",
@@ -145,8 +152,6 @@ describe("organization invitation actions", () => {
 			status: "pending",
 		});
 
-		const { updateInvitationTargetTeam } = await import("./actions");
-
 		const result = await updateInvitationTargetTeam({
 			invitationId: "invite-1",
 			organizationId: "org-1",
@@ -167,8 +172,6 @@ describe("organization invitation actions", () => {
 		});
 		teamFindFirstMock.mockResolvedValue(null);
 
-		const { updateInvitationTargetTeam } = await import("./actions");
-
 		const result = await updateInvitationTargetTeam({
 			invitationId: "invite-1",
 			organizationId: "org-1",
@@ -184,8 +187,6 @@ describe("organization invitation actions", () => {
 	});
 
 	it("rejects malformed target team ids before updating an invitation", async () => {
-		const { updateInvitationTargetTeam } = await import("./actions");
-
 		const result = await updateInvitationTargetTeam({
 			invitationId: "invite-1",
 			organizationId: "org-1",
@@ -215,8 +216,6 @@ describe("organization invitation actions", () => {
 			role: "member",
 		});
 
-		const { updateInvitationTargetTeam } = await import("./actions");
-
 		const result = await updateInvitationTargetTeam({
 			invitationId: "invite-1",
 			organizationId: "org-1",
@@ -238,8 +237,6 @@ describe("organization invitation actions", () => {
 			status: "pending",
 		});
 
-		const { updateInvitationTargetTeam } = await import("./actions");
-
 		const result = await updateInvitationTargetTeam({
 			invitationId: "invite-1",
 			organizationId: "org-1",
@@ -253,8 +250,6 @@ describe("organization invitation actions", () => {
 
 	it("does not update when no pending invitation exists for the organization", async () => {
 		invitationFindFirstMock.mockResolvedValue(null);
-
-		const { updateInvitationTargetTeam } = await import("./actions");
 
 		const result = await updateInvitationTargetTeam({
 			invitationId: "invite-1",
