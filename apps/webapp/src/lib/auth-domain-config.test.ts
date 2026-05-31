@@ -9,7 +9,11 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock("@/env", () => ({ env: mockState.env }));
 
-const { getAuthAllowedHosts, getStaticTrustedOrigins } = await import("./auth-domain-config");
+const {
+	getAuthAllowedHosts,
+	getOrganizationPlatformOrigins,
+	getStaticTrustedOrigins,
+} = await import("./auth-domain-config");
 
 describe("auth domain config", () => {
 	beforeEach(() => {
@@ -26,5 +30,12 @@ describe("auth domain config", () => {
 	it("trusts the platform wildcard origin for CSRF and redirects", () => {
 		expect(getStaticTrustedOrigins()).toContain("https://*.ui.z8-time.app");
 		expect(getStaticTrustedOrigins()).toContain("https://ui.z8-time.app");
+	});
+
+	it("builds exact trusted origins for an organization's generated platform URLs", () => {
+		expect(getOrganizationPlatformOrigins({ id: "org_123", slug: "acme" })).toEqual([
+			"https://acme.ui.z8-time.app",
+			"https://org_123.ui.z8-time.app",
+		]);
 	});
 });

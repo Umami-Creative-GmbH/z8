@@ -1,4 +1,8 @@
+import { eq } from "drizzle-orm";
 import { DomainsAndBrandingTabs } from "@/components/settings/enterprise/domains-branding-tabs";
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
+import { getOrganizationPlatformOrigins } from "@/lib/auth-domain-config";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import {
@@ -14,12 +18,20 @@ export default async function CustomDomainsPage() {
 		getTranslate(),
 	]);
 
-	const [domains, branding, providers, socialOAuthConfigs] = await Promise.all([
+	const [domains, branding, providers, socialOAuthConfigs, organizationRecord] = await Promise.all([
 		listDomainsAction(),
 		getBrandingAction(),
 		listSSOProvidersAction(),
 		listSocialOAuthConfigsAction(),
+		db.query.organization.findFirst({
+			where: eq(organization.id, organizationId),
+			columns: { id: true, slug: true },
+		}),
 	]);
+	const [canonicalDefaultUrl, aliasDefaultUrl] = getOrganizationPlatformOrigins({
+		id: organizationId,
+		slug: organizationRecord?.slug ?? organizationId,
+	});
 
 	return (
 		<div className="p-6">
@@ -41,6 +53,7 @@ export default async function CustomDomainsPage() {
 					initialProviders={providers as any}
 					initialSocialOAuthConfigs={socialOAuthConfigs}
 					organizationId={organizationId}
+					defaultUrls={{ canonical: canonicalDefaultUrl, alias: aliasDefaultUrl }}
 				/>
 			</div>
 		</div>

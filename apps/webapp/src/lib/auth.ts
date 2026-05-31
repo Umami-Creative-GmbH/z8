@@ -16,10 +16,15 @@ import { employee, scimProvisioningLog } from "@/db/schema";
 import { env } from "@/env";
 import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
-import { getAuthAllowedHosts, getStaticTrustedOrigins } from "@/lib/auth-domain-config";
+import {
+	getAuthAllowedHosts,
+	getOrganizationPlatformOrigins,
+	getStaticTrustedOrigins,
+} from "@/lib/auth-domain-config";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { getOrganizationBaseUrl } from "./app-url";
 import { getDomainConfig } from "./domain/domain-service";
+import { classifyDomainHost, resolvePlatformOrganization } from "./domain/platform-domain";
 import { sendEmail } from "./email/email-service";
 import { renderOrganizationEmailTemplate } from "./email/template-renderer";
 import { createLogger } from "./logger";
@@ -188,8 +193,26 @@ export const auth = betterAuth({
 		const currentOrigin = `${protocol}://${host}`;
 		origins.push(currentOrigin);
 
-		// Verify against registered custom domains
 		const normalizedHost = host.toLowerCase().replace(/:\d+$/, "");
+		// Add both generated platform URLs when the request is on a platform org URL.
+		try {
+			const platformDomain = classifyDomainHost(normalizedHost);
+			if (platformDomain?.type === "platformOrganization") {
+				const platformOrganization = await resolvePlatformOrganization(platformDomain.label);
+				if (platformOrganization) {
+					origins.push(
+						...getOrganizationPlatformOrigins({
+							id: platformOrganization.id,
+							slug: platformOrganization.slug,
+						}),
+					);
+				}
+			}
+		} catch (error) {
+			logger.warn({ error, host }, "Failed to verify platform domain for trusted origins");
+		}
+
+		// Verify against registered custom domains
 		try {
 			const domainConfig = await getDomainConfig(normalizedHost);
 			if (domainConfig) {
