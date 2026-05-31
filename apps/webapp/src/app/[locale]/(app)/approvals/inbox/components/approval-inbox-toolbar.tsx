@@ -14,7 +14,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import type { ApprovalPriority, ApprovalType } from "@/lib/approvals/domain/types";
+import type { ApprovalInboxType } from "@/lib/approvals/inbox/types";
 import type { ApprovalInboxFilters } from "@/lib/query/use-approval-inbox";
 
 interface ApprovalInboxToolbarProps {
@@ -24,50 +24,36 @@ interface ApprovalInboxToolbarProps {
 	totalCount: number;
 	allSelected: boolean;
 	onSelectAll: (checked: boolean) => void;
+	supportedTypes: ApprovalInboxType[];
 }
 
-const APPROVAL_TYPES: { value: ApprovalType; label: string }[] = [
+const TYPE_LABELS: Record<ApprovalInboxType, string> = {
+	absence_entry: "Absence Requests",
+	time_entry: "Time Corrections",
+	travel_expense_claim: "Travel Expenses",
+};
+
+const APPROVAL_TYPES: { value: ApprovalInboxType; label: string }[] = [
 	{ value: "absence_entry", label: "Absence Requests" },
 	{ value: "time_entry", label: "Time Corrections" },
-	{ value: "shift_request", label: "Shift Requests" },
 	{ value: "travel_expense_claim", label: "Travel Expenses" },
-];
-
-function _getApprovalTypeLabel(type: ApprovalType): string {
-	return APPROVAL_TYPES.find((approvalType) => approvalType.value === type)?.label ?? type;
-}
-
-const PRIORITIES: { value: ApprovalPriority; label: string; color: string }[] = [
-	{ value: "urgent", label: "Urgent", color: "destructive" },
-	{ value: "high", label: "High", color: "warning" },
-	{ value: "normal", label: "Normal", color: "default" },
-	{ value: "low", label: "Low", color: "secondary" },
-];
-
-const AGE_OPTIONS: { value: number; label: string }[] = [
-	{ value: 1, label: "Older than 1 day" },
-	{ value: 3, label: "Older than 3 days" },
-	{ value: 7, label: "Older than 1 week" },
-	{ value: 14, label: "Older than 2 weeks" },
 ];
 
 export function ApprovalInboxToolbar({
 	filters,
 	onFiltersChange,
 	selectedCount,
-	totalCount: _totalCount,
+	totalCount,
 	allSelected,
 	onSelectAll,
+	supportedTypes,
 }: ApprovalInboxToolbarProps) {
 	const { t } = useTranslate();
+	const visibleTypes = APPROVAL_TYPES.filter((type) => supportedTypes.includes(type.value));
 
-	const activeFilterCount =
-		(filters.types?.length ? 1 : 0) +
-		(filters.priority ? 1 : 0) +
-		(filters.minAgeDays ? 1 : 0) +
-		(filters.search ? 1 : 0);
+	const activeFilterCount = (filters.types?.length ? 1 : 0) + (filters.search ? 1 : 0);
 
-	const handleTypeToggle = (type: ApprovalType) => {
+	const handleTypeToggle = (type: ApprovalInboxType) => {
 		const currentTypes = filters.types || [];
 		const newTypes = currentTypes.includes(type)
 			? currentTypes.filter((t) => t !== type)
@@ -75,20 +61,6 @@ export function ApprovalInboxToolbar({
 		onFiltersChange({
 			...filters,
 			types: newTypes.length > 0 ? newTypes : undefined,
-		});
-	};
-
-	const handlePriorityToggle = (priority: ApprovalPriority) => {
-		onFiltersChange({
-			...filters,
-			priority: filters.priority === priority ? undefined : priority,
-		});
-	};
-
-	const handleAgeToggle = (age: number) => {
-		onFiltersChange({
-			...filters,
-			minAgeDays: filters.minAgeDays === age ? undefined : age,
 		});
 	};
 
@@ -104,23 +76,26 @@ export function ApprovalInboxToolbar({
 	};
 
 	return (
-		<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-			{/* Left side: Select all + Search */}
-			<div className="flex items-center gap-4">
+		<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
 				<div className="flex items-center gap-2">
 					<Checkbox
 						checked={allSelected}
 						onCheckedChange={onSelectAll}
 						aria-label={t("approvals:approvals.selectAll", "Select all")}
 					/>
-					{selectedCount > 0 && (
-						<span className="text-sm text-muted-foreground">
-							{selectedCount} {t("common.selected", "selected")}
-						</span>
-					)}
+					<span className="text-sm text-muted-foreground">
+						{selectedCount > 0
+							? t("approvals:approvals.selectedCount", `${selectedCount} selected`, {
+									count: selectedCount,
+								})
+							: t("approvals:approvals.totalCount", `${totalCount} pending`, {
+									count: totalCount,
+								})}
+					</span>
 				</div>
 
-				<div className="relative w-64">
+				<div className="relative w-full sm:w-72">
 					<IconSearch
 						className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
 						aria-hidden="true"
@@ -135,9 +110,7 @@ export function ApprovalInboxToolbar({
 				</div>
 			</div>
 
-			{/* Right side: Filters */}
-			<div className="flex items-center gap-2">
-				{/* Type filter */}
+			<div className="flex flex-wrap items-center gap-2">
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button variant="outline" size="sm">
@@ -154,77 +127,18 @@ export function ApprovalInboxToolbar({
 							{t("approvals:approvals.filterByType", "Filter by type")}
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
-						{APPROVAL_TYPES.map((type) => (
+						{visibleTypes.map((type) => (
 							<DropdownMenuCheckboxItem
 								key={type.value}
 								checked={filters.types?.includes(type.value) || false}
 								onCheckedChange={() => handleTypeToggle(type.value)}
 							>
-								{t(`approvals:approvals.types.${type.value}`, type.label)}
+								{t(`approvals:approvals.types.${type.value}`, TYPE_LABELS[type.value])}
 							</DropdownMenuCheckboxItem>
 						))}
 					</DropdownMenuContent>
 				</DropdownMenu>
 
-				{/* Priority filter */}
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button variant="outline" size="sm">
-							{t("approvals:approvals.priority", "Priority")}
-							{filters.priority && (
-								<Badge variant="secondary" className="ml-2">
-									1
-								</Badge>
-							)}
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						<DropdownMenuLabel>
-							{t("approvals:approvals.filterByPriority", "Filter by priority")}
-						</DropdownMenuLabel>
-						<DropdownMenuSeparator />
-						{PRIORITIES.map((priority) => (
-							<DropdownMenuCheckboxItem
-								key={priority.value}
-								checked={filters.priority === priority.value}
-								onCheckedChange={() => handlePriorityToggle(priority.value)}
-							>
-								{t(`approvals:approvals.priorities.${priority.value}`, priority.label)}
-							</DropdownMenuCheckboxItem>
-						))}
-					</DropdownMenuContent>
-				</DropdownMenu>
-
-				{/* Age filter */}
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button variant="outline" size="sm">
-							{t("approvals:approvals.age", "Age")}
-							{filters.minAgeDays && (
-								<Badge variant="secondary" className="ml-2">
-									1
-								</Badge>
-							)}
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						<DropdownMenuLabel>
-							{t("approvals:approvals.filterByAge", "Filter by age")}
-						</DropdownMenuLabel>
-						<DropdownMenuSeparator />
-						{AGE_OPTIONS.map((age) => (
-							<DropdownMenuCheckboxItem
-								key={age.value}
-								checked={filters.minAgeDays === age.value}
-								onCheckedChange={() => handleAgeToggle(age.value)}
-							>
-								{t(`approvals:approvals.ages.${age.value}`, age.label)}
-							</DropdownMenuCheckboxItem>
-						))}
-					</DropdownMenuContent>
-				</DropdownMenu>
-
-				{/* Clear filters */}
 				{activeFilterCount > 0 && (
 					<Button variant="ghost" size="sm" onClick={clearFilters}>
 						<IconX className="mr-1 size-4" aria-hidden="true" />

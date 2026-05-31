@@ -5,26 +5,22 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
-import { getApprovalHandler } from "@/lib/approvals/domain/registry";
-import type { ApprovalType } from "@/lib/approvals/domain/types";
-import { ApprovalAuditLoggerLive } from "@/lib/approvals/infrastructure/audit-logger";
+import { rejectApprovalInboxItem } from "@/lib/approvals/inbox/decision-service";
+import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
 import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import {
-	type AnyAppError,
 	AuthorizationError,
 	ConflictError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -50,10 +46,6 @@ function toApprovalErrorResponse(error: unknown) {
 	}
 
 	return null;
-}
-
-function extractApprovalError(cause: Cause.Cause<AnyAppError>) {
-	return Option.getOrNull(Cause.failureOption(cause)) ?? [...Cause.defects(cause)][0] ?? cause;
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -93,7 +85,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 		// Get the approval request
 		const approvalReq = await db.query.approvalRequest.findFirst({
-			where: eq(approvalRequest.id, id),
+			where: and(
+				eq(approvalRequest.id, id),
+				eq(approvalRequest.organizationId, currentEmployee.organizationId),
+			),
 		});
 
 		if (!approvalReq) {
@@ -129,6 +124,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 			);
 		}
 
+		if (!isSupportedInboxType(approvalReq.entityType)) {
+			return NextResponse.json({ error: "Unsupported approval type" }, { status: 400 });
+		}
+
 		// Check status
 		if (approvalReq.status !== "pending") {
 			return NextResponse.json(
@@ -138,46 +137,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 		}
 
 		// Parse body only after authentication and approval authorization.
-		const body = await request.json();
-		const reason = body.reason as string;
+		const body = await request.json().catch(() => ({}));
+		const reason = typeof body.reason === "string" ? body.reason : "";
 
 		if (!reason || reason.trim().length === 0) {
 			return NextResponse.json({ error: "Rejection reason is required" }, { status: 400 });
 		}
 
-		// Get handler
-		const handler = getApprovalHandler(approvalReq.entityType as ApprovalType);
-		if (!handler) {
-			return NextResponse.json(
-				{ error: `Unknown approval type: ${approvalReq.entityType}` },
-				{ status: 400 },
-			);
-		}
-
-		const handlerOptions =
-			approvalReq.approverId !== currentEmployee.id
-				? { approvalRequestId: approvalReq.id, allowAnyApprover: true }
-				: undefined;
-
-		// Execute rejection
-		const exit = await Effect.runPromiseExit(
-			(handlerOptions
-				? handler.reject(approvalReq.entityId, currentEmployee.id, reason, handlerOptions)
-				: handler.reject(approvalReq.entityId, currentEmployee.id, reason)
-			).pipe(
-				Effect.provide(DatabaseServiceLive),
-				Effect.provide(ApprovalAuditLoggerLive),
-			) as Effect.Effect<void, AnyAppError, never>,
-		);
-
-		if (Exit.isFailure(exit)) {
-			const errorResponse = toApprovalErrorResponse(extractApprovalError(exit.cause));
-			if (errorResponse) {
-				return errorResponse;
-			}
-
-			throw extractApprovalError(exit.cause);
-		}
+		const result = await rejectApprovalInboxItem({
+			approvalId: id,
+			actorEmployeeId: currentEmployee.id,
+			organizationId: currentEmployee.organizationId,
+			reason,
+			includeAllApprovers: canManageApprovals || undefined,
+			eligibleApprovalScopes:
+				!canManageApprovals && isEligibleManager
+					? [
+							{
+								requesterEmployeeId: approvalReq.requestedBy,
+								eligibleApproverIds: [approvalReq.approverId, currentEmployee.id],
+							},
+						]
+					: [],
+		});
 
 		logger.info(
 			{
@@ -190,8 +172,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 			"Approval rejected via unified inbox",
 		);
 
-		return NextResponse.json({ success: true });
+		return NextResponse.json({ success: true, result });
 	} catch (error) {
+		const errorResponse = toApprovalErrorResponse(error);
+		if (errorResponse) {
+			return errorResponse;
+		}
+
 		logger.error({ error }, "Failed to reject");
 		return NextResponse.json(
 			{ success: false, error: "Failed to reject request" },

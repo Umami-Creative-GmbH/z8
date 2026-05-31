@@ -18,11 +18,14 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import type { ApprovalRiskLevel, ApprovalRiskReason } from "@/lib/approvals/domain/types";
-import type { TriagedApprovalItem } from "@/lib/approvals/triage";
+import type {
+	ApprovalInboxItem,
+	ApprovalInboxPriority,
+	ApprovalInboxRiskLevel,
+} from "@/lib/approvals/inbox/types";
 
 interface ApprovalSprintCardProps {
-	item: TriagedApprovalItem;
+	item: ApprovalInboxItem;
 	isBusy: boolean;
 	onApprove: () => void;
 	onReject: () => void;
@@ -30,10 +33,17 @@ interface ApprovalSprintCardProps {
 	onOpenDetails: () => void;
 }
 
-const RISK_BADGE_VARIANTS: Record<ApprovalRiskLevel, "secondary" | "outline" | "destructive"> = {
+const RISK_BADGE_VARIANTS: Record<ApprovalInboxRiskLevel, "secondary" | "outline" | "destructive"> = {
 	low: "secondary",
 	medium: "outline",
 	high: "destructive",
+};
+
+const PRIORITY_BADGE_VARIANTS: Record<ApprovalInboxPriority, "secondary" | "outline" | "destructive"> = {
+	low: "secondary",
+	normal: "outline",
+	high: "outline",
+	urgent: "destructive",
 };
 
 export function ApprovalSprintCard({
@@ -45,6 +55,8 @@ export function ApprovalSprintCard({
 	onOpenDetails,
 }: ApprovalSprintCardProps) {
 	const { t } = useTranslate();
+	const canApprove = item.capabilities.canApprove;
+	const canReject = item.capabilities.canReject;
 
 	return (
 		<Card className="border-primary/10 bg-card/95 shadow-xs">
@@ -55,9 +67,9 @@ export function ApprovalSprintCard({
 							{item.requester.name}
 						</p>
 						<CardTitle className="break-words text-xl tracking-tight">
-							{item.display.title}
+							{item.summary.title}
 						</CardTitle>
-						<CardDescription className="break-words">{item.display.subtitle}</CardDescription>
+						<CardDescription className="break-words">{item.summary.subtitle}</CardDescription>
 					</div>
 					<Badge variant={RISK_BADGE_VARIANTS[item.triage.riskLevel]}>
 						{getRiskLabel(t, item.triage.riskLevel)}
@@ -68,9 +80,31 @@ export function ApprovalSprintCard({
 			<CardContent className="space-y-5">
 				<div className="rounded-lg border bg-muted/30 p-4">
 					<div className="text-muted-foreground text-xs uppercase tracking-wide">
-						{item.typeName}
+						{getTypeLabel(t, item.type)}
 					</div>
-					<p className="mt-2 break-words text-sm leading-6">{item.display.summary}</p>
+					<p className="mt-2 break-words text-sm leading-6">{item.summary.detail}</p>
+				</div>
+
+				<div className="space-y-2 rounded-lg border bg-background p-4">
+					<div className="font-medium text-sm">{t("approvals:sprint.triage", "Triage")}</div>
+					<p className="break-words text-muted-foreground text-sm leading-6">
+						{item.triage.explanation}
+					</p>
+					<div className="flex flex-wrap gap-2">
+						<Badge variant={PRIORITY_BADGE_VARIANTS[item.triage.priority]}>
+							{getPriorityLabel(t, item.triage.priority)}
+						</Badge>
+						<Badge variant="outline">
+							{t("approvals:sprint.age", `${item.timing.ageDays}d old`, {
+								count: item.timing.ageDays,
+							})}
+						</Badge>
+						{item.capabilities.canBulkApprove ? (
+							<Badge variant="secondary">
+								{t("approvals:sprint.capabilities.bulkApprove", "Bulk eligible")}
+							</Badge>
+						) : null}
+					</div>
 				</div>
 
 				<div className="flex flex-wrap gap-2">
@@ -79,6 +113,16 @@ export function ApprovalSprintCard({
 							{getRiskReasonLabel(t, reason)}
 						</Badge>
 					))}
+					{canApprove ? null : (
+						<Badge variant="outline">
+							{t("approvals:sprint.capabilities.approveUnavailable", "Approval unavailable")}
+						</Badge>
+					)}
+					{canReject ? null : (
+						<Badge variant="outline">
+							{t("approvals:sprint.capabilities.rejectUnavailable", "Rejection unavailable")}
+						</Badge>
+					)}
 				</div>
 			</CardContent>
 
@@ -91,7 +135,7 @@ export function ApprovalSprintCard({
 					<Button
 						type="button"
 						onClick={onApprove}
-						disabled={isBusy}
+						disabled={isBusy || !canApprove}
 						aria-label={t("approvals:sprint.approveCurrentApproval", "Approve current approval")}
 					>
 						<IconCheck aria-hidden="true" />
@@ -101,7 +145,7 @@ export function ApprovalSprintCard({
 						type="button"
 						variant="outline"
 						onClick={onReject}
-						disabled={isBusy}
+						disabled={isBusy || !canReject}
 						aria-label={t("approvals:sprint.rejectCurrentApproval", "Reject current approval")}
 					>
 						<IconX aria-hidden="true" />
@@ -124,7 +168,7 @@ export function ApprovalSprintCard({
 	);
 }
 
-function getRiskLabel(t: ReturnType<typeof useTranslate>["t"], riskLevel: ApprovalRiskLevel) {
+function getRiskLabel(t: ReturnType<typeof useTranslate>["t"], riskLevel: ApprovalInboxRiskLevel) {
 	switch (riskLevel) {
 		case "low":
 			return t("approvals:sprint.risk.low", "Low risk");
@@ -135,7 +179,20 @@ function getRiskLabel(t: ReturnType<typeof useTranslate>["t"], riskLevel: Approv
 	}
 }
 
-function getRiskReasonLabel(t: ReturnType<typeof useTranslate>["t"], reason: ApprovalRiskReason) {
+function getPriorityLabel(t: ReturnType<typeof useTranslate>["t"], priority: ApprovalInboxPriority) {
+	switch (priority) {
+		case "urgent":
+			return t("approvals:sprint.priority.urgent", "Urgent priority");
+		case "high":
+			return t("approvals:sprint.priority.high", "High priority");
+		case "normal":
+			return t("approvals:sprint.priority.normal", "Normal priority");
+		case "low":
+			return t("approvals:sprint.priority.low", "Low priority");
+	}
+}
+
+function getRiskReasonLabel(t: ReturnType<typeof useTranslate>["t"], reason: string) {
 	switch (reason) {
 		case "no_conflicts_detected":
 			return t("approvals:sprint.riskReasons.noConflictsDetected", "No conflicts detected");
@@ -147,5 +204,18 @@ function getRiskReasonLabel(t: ReturnType<typeof useTranslate>["t"], reason: App
 			return t("approvals:sprint.riskReasons.payrollRelevant", "Payroll relevant");
 		case "needs_review":
 			return t("approvals:sprint.riskReasons.needsReview", "Needs review");
+		default:
+			return reason;
+	}
+}
+
+function getTypeLabel(t: ReturnType<typeof useTranslate>["t"], type: ApprovalInboxItem["type"]) {
+	switch (type) {
+		case "absence_entry":
+			return t("approvals:sprint.types.absenceEntry", "Absence request");
+		case "time_entry":
+			return t("approvals:sprint.types.timeEntry", "Time entry");
+		case "travel_expense_claim":
+			return t("approvals:sprint.types.travelExpenseClaim", "Travel expense claim");
 	}
 }

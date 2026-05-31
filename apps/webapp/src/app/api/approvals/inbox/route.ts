@@ -5,33 +5,25 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
-import {
-	ApprovalQueryService,
-	ApprovalQueryServiceLive,
-} from "@/lib/approvals/application/approval-query.service";
-import type {
-	ApprovalPriority,
-	ApprovalQueryParams,
-	ApprovalStatus,
-	ApprovalType,
-	PaginatedApprovalResult,
-} from "@/lib/approvals/domain/types";
+import type { ApprovalPriority, ApprovalStatus } from "@/lib/approvals/domain/types";
+import { getApprovalInboxList } from "@/lib/approvals/inbox/read-service";
+import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
 import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import type { AnyAppError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
 import "@/lib/approvals/init";
 
 const logger = createLogger("ApprovalInboxAPI");
+const ISO_DATETIME_WITH_OFFSET_PATTERN = /^\d{4}-\d{2}-\d{2}T.+(?:Z|[+-]\d{2}:\d{2})$/;
 
 export async function GET(request: NextRequest) {
 	try {
@@ -88,32 +80,44 @@ export async function GET(request: NextRequest) {
 		// Parse query parameters
 		const { searchParams } = new URL(request.url);
 
-		const status = (searchParams.get("status") as ApprovalStatus) || "pending";
+		const status = parseStatus(searchParams.get("status"));
 		const typesParam = searchParams.get("types");
-		const types = typesParam ? (typesParam.split(",") as ApprovalType[]) : undefined;
+		const types = typesParam
+			? typesParam.split(",").filter(isSupportedInboxType)
+			: undefined;
 		const teamId = searchParams.get("teamId") || undefined;
 		const search = searchParams.get("search") || undefined;
-		const priority = searchParams.get("priority") as ApprovalPriority | undefined;
+		const priority = parsePriority(searchParams.get("priority"));
 		const minAgeDaysParam = searchParams.get("minAgeDays");
-		const minAgeDays = minAgeDaysParam ? parseInt(minAgeDaysParam, 10) : undefined;
+		const parsedMinAgeDays = minAgeDaysParam ? Number.parseInt(minAgeDaysParam, 10) : NaN;
+		const minAgeDays = Number.isFinite(parsedMinAgeDays) ? parsedMinAgeDays : undefined;
 		const cursor = searchParams.get("cursor") || undefined;
-		const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
+		const parsedLimit = Number.parseInt(searchParams.get("limit") || "20", 10);
+		const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 100) : 20;
 
 		// Date range filter
 		let dateRange: { from: Date; to: Date } | undefined;
 		const dateFrom = searchParams.get("dateFrom");
 		const dateTo = searchParams.get("dateTo");
+		if ((dateFrom && !dateTo) || (!dateFrom && dateTo)) {
+			return NextResponse.json(
+				{ error: "Both dateFrom and dateTo are required" },
+				{ status: 400 },
+			);
+		}
 		if (dateFrom && dateTo) {
-			dateRange = {
-				from: new Date(dateFrom),
-				to: new Date(dateTo),
-			};
+			const from = parseDateRangeInstant(dateFrom);
+			const to = parseDateRangeInstant(dateTo);
+
+			if (!from || !to || from > to) {
+				return NextResponse.json({ error: "Invalid date range" }, { status: 400 });
+			}
+
+			dateRange = { from: from.toJSDate(), to: to.toJSDate() };
 		}
 
-		// Build query params
-		const params: ApprovalQueryParams = {
+		const result = await getApprovalInboxList({
 			approverId: currentEmployee.id,
-			authorizationPredicate: undefined,
 			includeAllApprovers: canManageApprovals || undefined,
 			organizationId: currentEmployee.organizationId,
 			status,
@@ -126,25 +130,9 @@ export async function GET(request: NextRequest) {
 			cursor,
 			limit,
 			eligibleApprovalScopes,
-		};
-
-		const result = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const approvalQueryService = yield* _(ApprovalQueryService);
-				return yield* _(approvalQueryService.getApprovals(params));
-			}).pipe(Effect.provide(ApprovalQueryServiceLive)) as Effect.Effect<
-				PaginatedApprovalResult,
-				AnyAppError,
-				never
-			>,
-		);
-
-		return NextResponse.json({
-			items: result.items,
-			nextCursor: result.nextCursor,
-			hasMore: result.hasMore,
-			total: result.total,
 		});
+
+		return NextResponse.json(result);
 	} catch (error) {
 		if (error instanceof Error && "digest" in error) {
 			throw error;
@@ -153,4 +141,23 @@ export async function GET(request: NextRequest) {
 		logger.error({ error }, "Failed to fetch approvals");
 		return NextResponse.json({ error: "Failed to fetch approvals" }, { status: 500 });
 	}
+}
+
+function parseStatus(status: string | null): ApprovalStatus {
+	return status === "approved" || status === "rejected" || status === "pending"
+		? status
+		: "pending";
+}
+
+function parsePriority(priority: string | null): ApprovalPriority | undefined {
+	return priority === "urgent" || priority === "high" || priority === "normal" || priority === "low"
+		? priority
+		: undefined;
+}
+
+function parseDateRangeInstant(value: string): DateTime | null {
+	if (!ISO_DATETIME_WITH_OFFSET_PATTERN.test(value)) return null;
+
+	const parsed = DateTime.fromISO(value, { setZone: true });
+	return parsed.isValid ? parsed.toUTC() : null;
 }

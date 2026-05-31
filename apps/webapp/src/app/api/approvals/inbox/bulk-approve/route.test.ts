@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { Effect } from "effect";
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -8,7 +7,8 @@ const mockState = vi.hoisted(() => ({
 	getSession: vi.fn(),
 	getAbility: vi.fn(),
 	findEmployee: vi.fn(),
-	bulkDecide: vi.fn(),
+	getEligibleApprovalScopesForManager: vi.fn(),
+	bulkApproveApprovalInboxItems: vi.fn(),
 	logger: {
 		info: vi.fn(),
 		error: vi.fn(),
@@ -40,6 +40,10 @@ vi.mock("@/lib/auth-helpers", () => ({
 	getAbility: mockState.getAbility,
 }));
 
+vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
+	getEligibleApprovalScopesForManager: mockState.getEligibleApprovalScopesForManager,
+}));
+
 vi.mock("@/db", () => ({
 	db: {
 		query: {
@@ -58,20 +62,9 @@ vi.mock("@/db/schema", () => ({
 	},
 }));
 
-vi.mock("@/lib/approvals/application/bulk-approval.service", async () => {
-	const { Context, Layer } = await import("effect");
-	const BulkApprovalService = Context.GenericTag<any>("BulkApprovalService");
-
-	return {
-		BulkApprovalService,
-		BulkApprovalServiceLive: Layer.succeed(
-			BulkApprovalService,
-			BulkApprovalService.of({
-				bulkDecide: mockState.bulkDecide,
-			}),
-		),
-	};
-});
+vi.mock("@/lib/approvals/inbox/decision-service", () => ({
+	bulkApproveApprovalInboxItems: mockState.bulkApproveApprovalInboxItems,
+}));
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => mockState.logger,
@@ -101,27 +94,51 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 			id: "employee-1",
 			organizationId: "org-1",
 		});
-		mockState.bulkDecide.mockReturnValue(
-			Effect.succeed({
-				succeeded: [],
-				failed: [],
-			}),
-		);
+		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([]);
+		mockState.bulkApproveApprovalInboxItems.mockResolvedValue({
+			succeeded: [],
+			failed: [],
+		});
 	});
 
-	it("delegates bulk approval with the acting user id for audit attribution", async () => {
+	it("delegates bulk approval to the DB-backed inbox decision service", async () => {
 		const response = await POST(createRequest({ approvalIds: ["approval-1"] }));
 
 		expect(response.status).toBe(200);
 		expect(eq).toHaveBeenCalledWith("isActive", true);
-		expect(mockState.bulkDecide).toHaveBeenCalledWith(
-			["approval-1"],
-			"employee-1",
-			"org-1",
-			"approve",
-			undefined,
-			"user-1",
-		);
+		expect(mockState.bulkApproveApprovalInboxItems).toHaveBeenCalledWith({
+			approvalIds: ["approval-1"],
+			actorEmployeeId: "employee-1",
+			organizationId: "org-1",
+			includeAllApprovers: true,
+			eligibleApprovalScopes: [],
+		});
+	});
+
+	it("passes eligible approval scopes for approve-only bulk approvers", async () => {
+		const eligibleApprovalScopes = [
+			{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["employee-1", "employee-3"] },
+		];
+		mockState.getAbility.mockResolvedValue({
+			cannot: vi.fn((action) => action === "manage"),
+		});
+		mockState.getEligibleApprovalScopesForManager.mockResolvedValue(eligibleApprovalScopes);
+
+		const response = await POST(createRequest({ approvalIds: ["approval-1"] }));
+
+		expect(response.status).toBe(200);
+		expect(mockState.getEligibleApprovalScopesForManager).toHaveBeenCalledWith({
+			db: expect.anything(),
+			managerEmployeeId: "employee-1",
+			organizationId: "org-1",
+		});
+		expect(mockState.bulkApproveApprovalInboxItems).toHaveBeenCalledWith({
+			approvalIds: ["approval-1"],
+			actorEmployeeId: "employee-1",
+			organizationId: "org-1",
+			includeAllApprovers: undefined,
+			eligibleApprovalScopes,
+		});
 	});
 
 	it("does not delegate when no active employee is found", async () => {
@@ -130,7 +147,7 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 		const response = await POST(createRequest({ approvalIds: ["approval-1"] }));
 
 		expect(response.status).toBe(404);
-		expect(mockState.bulkDecide).not.toHaveBeenCalled();
+		expect(mockState.bulkApproveApprovalInboxItems).not.toHaveBeenCalled();
 	});
 
 	it("rejects forbidden requests before employee lookup or mutation", async () => {
@@ -142,6 +159,6 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 
 		expect(response.status).toBe(403);
 		expect(mockState.findEmployee).not.toHaveBeenCalled();
-		expect(mockState.bulkDecide).not.toHaveBeenCalled();
+		expect(mockState.bulkApproveApprovalInboxItems).not.toHaveBeenCalled();
 	});
 });
