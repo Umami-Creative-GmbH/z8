@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, teamPermissions } from "@/db/schema";
@@ -18,8 +18,10 @@ export async function ensureEmployeeForOrganizationMember(
 		userId: string;
 		organizationId: string;
 		memberRole: OrganizationMemberRole;
+		targetTeamId?: string | null;
 	},
 ) {
+	const isAdminRole = hasAdminOrganizationRole(input.memberRole);
 	const existingEmployee = await dbClient.query.employee.findFirst({
 		where: and(
 			eq(employee.userId, input.userId),
@@ -28,19 +30,64 @@ export async function ensureEmployeeForOrganizationMember(
 	});
 
 	if (existingEmployee) {
+		if (!existingEmployee.isActive && existingEmployee.teamId === null) {
+			const [reactivatedEmployee] = await dbClient
+				.update(employee)
+				.set({
+					isActive: true,
+					teamId: input.targetTeamId ?? null,
+					...(isAdminRole ? { role: "admin" as const } : {}),
+				})
+				.where(
+					and(
+						eq(employee.id, existingEmployee.id),
+						eq(employee.organizationId, input.organizationId),
+					),
+				)
+				.returning();
+
+			const updatedEmployee = reactivatedEmployee ?? existingEmployee;
+
+			if (isAdminRole) {
+				const existingPermissions = await dbClient.query.teamPermissions.findFirst({
+					where: and(
+						eq(teamPermissions.employeeId, updatedEmployee.id),
+						eq(teamPermissions.organizationId, input.organizationId),
+						isNull(teamPermissions.teamId),
+					),
+				});
+
+				if (!existingPermissions) {
+					await dbClient.insert(teamPermissions).values({
+						employeeId: updatedEmployee.id,
+						organizationId: input.organizationId,
+						teamId: null,
+						canCreateTeams: true,
+						canManageTeamMembers: true,
+						canManageTeamSettings: true,
+						canApproveTeamRequests: true,
+						grantedBy: updatedEmployee.id,
+					});
+				}
+			}
+
+			return updatedEmployee;
+		}
+
 		return existingEmployee;
 	}
 
 	const insertResult = dbClient.insert(employee).values({
 		userId: input.userId,
 		organizationId: input.organizationId,
-		role: hasAdminOrganizationRole(input.memberRole) ? "admin" : "employee",
+		role: isAdminRole ? "admin" : "employee",
 		isActive: true,
+		teamId: input.targetTeamId ?? null,
 	});
 
 	const [newEmployee] = insertResult.returning ? await insertResult.returning() : [];
 
-	if (newEmployee && hasAdminOrganizationRole(input.memberRole)) {
+	if (newEmployee && isAdminRole) {
 		await dbClient.insert(teamPermissions).values({
 			employeeId: newEmployee.id,
 			organizationId: input.organizationId,

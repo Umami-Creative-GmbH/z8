@@ -1,11 +1,11 @@
 import { relations } from "drizzle-orm";
 import {
-	boolean,
-	index,
-	integer,
 	pgTable,
 	text,
 	timestamp,
+	boolean,
+	integer,
+	index,
 	uniqueIndex,
 } from "drizzle-orm/pg-core";
 
@@ -157,6 +157,7 @@ export const invitation = pgTable(
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
 		canCreateOrganizations: boolean("can_create_organizations").default(false),
+		targetTeamId: text("target_team_id"),
 	},
 	(table) => [
 		index("invitation_organizationId_idx").on(table.organizationId),

@@ -15,6 +15,7 @@ export interface MemberWithUserAndEmployee {
 
 export type InvitationWithInviter = typeof authSchema.invitation.$inferSelect & {
 	user: typeof authSchema.user.$inferSelect; // The inviter - relation named "user" in auth-schema
+	targetTeam?: { id: string; name: string } | null;
 };
 
 interface OrganizationsPageClientProps {

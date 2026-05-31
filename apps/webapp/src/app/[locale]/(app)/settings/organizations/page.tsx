@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -10,7 +10,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { employee } from "@/db/schema";
+import { employee, team } from "@/db/schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { getTranslate } from "@/tolgee/server";
@@ -91,7 +91,26 @@ async function OrganizationsPageContent() {
 		);
 	}
 
-	const typedInvitations = invitations as unknown as InvitationWithInviter[];
+	const targetTeamIds = Array.from(
+		new Set(
+			invitations.map((invitation) => invitation.targetTeamId).filter((id): id is string => !!id),
+		),
+	);
+	const targetTeams = targetTeamIds.length
+		? await db
+				.select({ id: team.id, name: team.name })
+				.from(team)
+				.where(and(eq(team.organizationId, organizationId), inArray(team.id, targetTeamIds)))
+		: [];
+	const targetTeamsById = new Map(
+		targetTeams.map((team) => [team.id, { id: team.id, name: team.name }]),
+	);
+	const typedInvitations = invitations.map((invitation) => ({
+		...invitation,
+		targetTeam: invitation.targetTeamId
+			? (targetTeamsById.get(invitation.targetTeamId) ?? null)
+			: null,
+	})) as unknown as InvitationWithInviter[];
 	const typedMembers = members as unknown as MemberWithUserAndEmployee[];
 
 	return (

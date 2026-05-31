@@ -9,6 +9,7 @@ export const invitationSchema = z.object({
 		message: "Role must be owner, admin, or member",
 	}),
 	canCreateOrganizations: z.boolean().default(false).optional(),
+	targetTeamId: z.string().uuid("Invalid target team").nullable().optional(),
 });
 
 /**

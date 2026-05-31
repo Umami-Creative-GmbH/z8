@@ -10,8 +10,13 @@ describe("ensureEmployeeForOrganizationMember", () => {
 	function createDbMock(existingEmployee: unknown = null) {
 		const returning = vi.fn().mockResolvedValue([{ id: "employee-1" }]);
 		const values = vi.fn(() => ({ returning }));
+		const updateReturning = vi.fn().mockResolvedValue([{ id: "employee-existing", isActive: true }]);
+		const where = vi.fn(() => ({ returning: updateReturning }));
+		const set = vi.fn(() => ({ where }));
 		const insert = vi.fn(() => ({ values }));
+		const update = vi.fn(() => ({ set }));
 		const findFirst = vi.fn().mockResolvedValue(existingEmployee);
+		const teamPermissionsFindFirst = vi.fn().mockResolvedValue(null);
 		const memberFindMany = vi.fn().mockResolvedValue([]);
 		const employeeFindMany = vi.fn().mockResolvedValue([]);
 
@@ -19,8 +24,10 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			query: {
 				member: { findMany: memberFindMany },
 				employee: { findFirst, findMany: employeeFindMany },
+				teamPermissions: { findFirst: teamPermissionsFindFirst },
 			},
 			insert,
+			update,
 		} as unknown as ProvisioningDb;
 
 		return {
@@ -29,6 +36,11 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			insert,
 			values,
 			returning,
+			update,
+			set,
+			where,
+			updateReturning,
+			teamPermissionsFindFirst,
 			memberFindMany,
 			employeeFindMany,
 		};
@@ -48,6 +60,109 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			organizationId: "org-1",
 			role: "employee",
 			isActive: true,
+			teamId: null,
+		});
+	});
+
+	it("sets targetTeamId when creating a new employee", async () => {
+		const { db, values } = createDbMock();
+
+		await ensureEmployeeForOrganizationMember(db, {
+			userId: "user-1",
+			organizationId: "org-1",
+			memberRole: "member",
+			targetTeamId: "team-1",
+		});
+
+		expect(values).toHaveBeenCalledWith({
+			userId: "user-1",
+			organizationId: "org-1",
+			role: "employee",
+			isActive: true,
+			teamId: "team-1",
+		});
+	});
+
+	it("does not move an existing active employee to a new invite target team", async () => {
+		const existingEmployee = {
+			id: "employee-existing",
+			userId: "user-1",
+			organizationId: "org-1",
+			teamId: "team-existing",
+			isActive: true,
+		};
+		const { db, update } = createDbMock(existingEmployee);
+
+		const result = await ensureEmployeeForOrganizationMember(db, {
+			userId: "user-1",
+			organizationId: "org-1",
+			memberRole: "member",
+			targetTeamId: "team-new",
+		});
+
+		expect(result).toBe(existingEmployee);
+		expect(update).not.toHaveBeenCalled();
+	});
+
+	it("reactivates an inactive employee without a team using targetTeamId", async () => {
+		const { db, set, updateReturning } = createDbMock({
+			id: "employee-existing",
+			userId: "user-1",
+			organizationId: "org-1",
+			teamId: null,
+			isActive: false,
+		});
+		updateReturning.mockResolvedValue([
+			{ id: "employee-existing", isActive: true, teamId: "team-1" },
+		]);
+
+		await ensureEmployeeForOrganizationMember(db, {
+			userId: "user-1",
+			organizationId: "org-1",
+			memberRole: "member",
+			targetTeamId: "team-1",
+		});
+
+		expect(set).toHaveBeenCalledWith({
+			isActive: true,
+			teamId: "team-1",
+		});
+	});
+
+	it("reactivates an inactive admin employee without a team and grants org-wide team permissions", async () => {
+		const { db, set, updateReturning, teamPermissionsFindFirst, values } = createDbMock({
+			id: "employee-existing",
+			userId: "user-1",
+			organizationId: "org-1",
+			teamId: null,
+			isActive: false,
+		});
+		updateReturning.mockResolvedValue([
+			{ id: "employee-existing", isActive: true, teamId: "team-1", role: "admin" },
+		]);
+
+		await ensureEmployeeForOrganizationMember(db, {
+			userId: "user-1",
+			organizationId: "org-1",
+			memberRole: "admin",
+			targetTeamId: "team-1",
+		});
+
+		expect(set).toHaveBeenCalledWith({
+			isActive: true,
+			teamId: "team-1",
+			role: "admin",
+		});
+		expect(teamPermissionsFindFirst).toHaveBeenCalledOnce();
+		expect(values).toHaveBeenCalledWith({
+			employeeId: "employee-existing",
+			organizationId: "org-1",
+			teamId: null,
+			canCreateTeams: true,
+			canManageTeamMembers: true,
+			canManageTeamSettings: true,
+			canApproveTeamRequests: true,
+			grantedBy: "employee-existing",
 		});
 	});
 
@@ -78,6 +193,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			organizationId: "org-1",
 			role: "admin",
 			isActive: true,
+			teamId: null,
 		});
 	});
 });

@@ -312,20 +312,18 @@ export function InviteCodeDialog({
 						{/* Default Team */}
 						<div className="grid gap-2">
 							<Label htmlFor="defaultTeam">
-								{t("settings.inviteCodes.defaultTeam", "Default Team")}
+								{t("settings.inviteCodes.targetTeam", "Target team")}
 							</Label>
 							<Select
 								value={values.defaultTeamId || "none"}
 								onValueChange={(v) => updateDraft({ defaultTeamId: v === "none" ? "" : v })}
 							>
 								<SelectTrigger>
-									<SelectValue
-										placeholder={t("settings.inviteCodes.noDefaultTeam", "No default team")}
-									/>
+									<SelectValue placeholder={t("settings.inviteCodes.noTargetTeam", "No team")} />
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="none">
-										{t("settings.inviteCodes.noDefaultTeam", "No default team")}
+										{t("settings.inviteCodes.noTargetTeam", "No team")}
 									</SelectItem>
 									{teams.map((team) => (
 										<SelectItem key={team.id} value={team.id}>
@@ -336,8 +334,8 @@ export function InviteCodeDialog({
 							</Select>
 							<p className="text-sm text-muted-foreground">
 								{t(
-									"settings.inviteCodes.defaultTeamHelp",
-									"New members will be suggested for this team during approval",
+									"settings.inviteCodes.targetTeamHelp",
+									"New members will use this team by default when they join.",
 								)}
 							</p>
 						</div>

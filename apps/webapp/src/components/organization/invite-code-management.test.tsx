@@ -58,4 +58,42 @@ describe("InviteCodeManagement responsive UX", () => {
 		expect(qrPanel).toContain("break-all");
 		expect(qrPanel).toContain("size-[min(256px,70vw)]");
 	});
+
+	it("uses target team copy while preserving the defaultTeamId payload field", () => {
+		const createPanel = readFileSync(
+			join(process.cwd(), "src/components/organization/invite-code-dialog.tsx"),
+			"utf8",
+		);
+
+		expect(createPanel).toContain('t("settings.inviteCodes.targetTeam", "Target team")');
+		expect(createPanel).toContain('t("settings.inviteCodes.noTargetTeam", "No team")');
+		expect(createPanel).toContain('"settings.inviteCodes.targetTeamHelp"');
+		expect(createPanel).toContain('"New members will use this team by default when they join."');
+		expect(createPanel).toContain("defaultTeamId: formValues.defaultTeamId || undefined");
+		expect(createPanel).toContain("defaultTeamId: formValues.defaultTeamId || null");
+	});
+
+	it("shows the target team column on desktop and mobile invite code cards", () => {
+		const source = readFileSync(
+			join(process.cwd(), "src/components/organization/invite-code-management.tsx"),
+			"utf8",
+		);
+
+		expect(source).toContain('t("settings.inviteCodes.targetTeam", "Target team")');
+		expect(source).toContain('code.defaultTeam?.name || "-"');
+		expect(source).toContain("sm:grid-cols-2");
+	});
+
+	it("makes pending-member invite-code team prefill explicitly clearable", () => {
+		const source = readFileSync(
+			join(process.cwd(), "src/components/organization/pending-members-card.tsx"),
+			"utf8",
+		);
+
+		expect(source).toContain("useState<Record<string, string | null>>({})");
+		expect(source).toContain('const NO_TEAM_VALUE = "none"');
+		expect(source).toContain("member.id in teamAssignments");
+		expect(source).toContain("teamAssignments[member.id] === null");
+		expect(source).toContain("member.inviteCode?.defaultTeamId");
+	});
 });

@@ -9,10 +9,11 @@ import { admin } from "better-auth/plugins/admin";
 import { bearer } from "better-auth/plugins/bearer";
 import { organization } from "better-auth/plugins/organization";
 import { twoFactor } from "better-auth/plugins/two-factor";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
-import { employee, scimProvisioningLog } from "@/db/schema";
+import { employee, scimProvisioningLog, team } from "@/db/schema";
 import { env } from "@/env";
 import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
@@ -31,6 +32,29 @@ import { createLogger } from "./logger";
 import { secondaryStorage } from "./redis";
 
 const logger = createLogger("Auth");
+const targetTeamIdSchema = z.string().uuid();
+
+type InvitationTargetTeamLookupDb = Pick<typeof db, "query">;
+
+export async function resolveInvitationTargetTeamId(
+	dbClient: InvitationTargetTeamLookupDb,
+	organizationId: string,
+	targetTeamId: string | null | undefined,
+) {
+	const targetTeamIdResult = targetTeamId ? targetTeamIdSchema.safeParse(targetTeamId) : null;
+	if (!targetTeamIdResult?.success) {
+		return null;
+	}
+
+	const targetTeam = await dbClient.query.team.findFirst({
+		where: and(
+			eq(team.id, targetTeamIdResult.data),
+			eq(team.organizationId, organizationId),
+		),
+	});
+
+	return targetTeam?.id ?? null;
+}
 
 const BILLING_ENABLED = env.BILLING_ENABLED === "true";
 
@@ -521,6 +545,11 @@ export const auth = betterAuth({
 							defaultValue: false,
 							input: true,
 						},
+						targetTeamId: {
+							type: "string",
+							required: false,
+							input: false,
+						},
 					},
 				},
 			},
@@ -553,10 +582,18 @@ export const auth = betterAuth({
 			organizationHooks: {
 				// Update user permissions when accepting invitation
 				afterAcceptInvitation: async ({ user, invitation, member }) => {
-					// Fetch the full invitation record to get canCreateOrganizations
+					// Fetch the full invitation record to get custom invitation fields.
 					const invitationRecord = await db.query.invitation.findFirst({
-						where: eq(schema.invitation.id, invitation.id),
+						where: and(
+							eq(schema.invitation.id, invitation.id),
+							eq(schema.invitation.organizationId, invitation.organizationId),
+						),
 					});
+					const targetTeamId = await resolveInvitationTargetTeamId(
+						db,
+						invitation.organizationId,
+						invitationRecord?.targetTeamId,
+					);
 
 					// Update user's organization creation permission based on invitation
 					await db
@@ -571,6 +608,7 @@ export const auth = betterAuth({
 						userId: user.id,
 						organizationId: invitation.organizationId,
 						memberRole: member.role,
+						targetTeamId,
 					});
 				},
 
