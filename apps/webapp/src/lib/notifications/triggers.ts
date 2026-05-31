@@ -50,7 +50,7 @@ function i18nMetadata(
 // Helper to format YYYY-MM-DD date strings
 const formatDateStr = (dateStr: string) => {
 	const dt = DateTime.fromISO(dateStr);
-	return dt.toLocaleString({ month: "short", day: "numeric" });
+	return dt.setLocale("en-US").toLocaleString({ month: "short", day: "numeric" });
 };
 
 // =============================================================================
