@@ -59,6 +59,13 @@ interface GetApprovalInboxDetailFromRequestInput {
 
 const DEFAULT_LIMIT = 50;
 
+function provideDatabase<A>(
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	effect: Effect.Effect<A, unknown, any>,
+): Effect.Effect<A, unknown, never> {
+	return effect.pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<A, unknown, never>;
+}
+
 const riskRank: Record<ApprovalInboxRiskLevel, number> = {
 	high: 0,
 	medium: 1,
@@ -87,9 +94,7 @@ export async function getApprovalInboxListFromSources({
 	) as ApprovalInboxListResult["counts"];
 
 	for (const source of selectedSources) {
-		const approvalsExit = await Effect.runPromiseExit(
-			source.handler.getApprovals(params).pipe(Effect.provide(DatabaseServiceLive)),
-		);
+		const approvalsExit = await Effect.runPromiseExit(provideDatabase(source.handler.getApprovals(params)));
 		if (Exit.isFailure(approvalsExit)) {
 			warnings.push({
 				source: source.type,
@@ -102,10 +107,12 @@ export async function getApprovalInboxListFromSources({
 
 	for (const source of sources) {
 		const countExit = await Effect.runPromiseExit(
-			source.handler.getCount(params.approverId, params.organizationId, {
-				eligibleApprovalScopes: params.eligibleApprovalScopes,
-				includeAllApprovers: params.includeAllApprovers,
-			}).pipe(Effect.provide(DatabaseServiceLive)),
+			provideDatabase(
+				source.handler.getCount(params.approverId, params.organizationId, {
+					eligibleApprovalScopes: params.eligibleApprovalScopes,
+					includeAllApprovers: params.includeAllApprovers,
+				}),
+			),
 		);
 		counts[source.type] = Exit.isSuccess(countExit) ? countExit.value : 0;
 	}
@@ -162,7 +169,7 @@ export async function getApprovalInboxDetailFromRequest({
 	}
 
 	const detail = await Effect.runPromise(
-		handler.getDetail(request.entityId, request.organizationId).pipe(Effect.provide(DatabaseServiceLive)),
+		provideDatabase(handler.getDetail(request.entityId, request.organizationId)),
 	);
 	validateDetailMatchesRequest(detail, request);
 
