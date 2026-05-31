@@ -195,7 +195,7 @@ export const InviteCodeServiceLive = Layer.effect(
 			return { usable: true };
 		};
 
-		type RedemptionDb = typeof dbService.db;
+		type RedemptionDb = Pick<typeof dbService.db, "query" | "insert" | "update">;
 
 		const resolveInviteCodeTargetTeamId = async (
 			dbClient: RedemptionDb,
