@@ -288,6 +288,13 @@
       "when": 1780185600004,
       "tag": "0040_invitation_target_team",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1780185600005,
+      "tag": "0041_invitation_target_team_text_recovery",
+      "breakpoints": true
     }
   ]
 }
