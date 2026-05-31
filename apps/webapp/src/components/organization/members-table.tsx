@@ -444,7 +444,6 @@ export function MembersTable({
 							seed={row.original.user.id}
 							image={row.original.user.image}
 							name={row.original.user.name}
-							gender={row.original.employee?.gender ?? null}
 							size="sm"
 							clockStatus={
 								row.original.employee?.id ? presence.getStatus(row.original.employee.id) : "unknown"

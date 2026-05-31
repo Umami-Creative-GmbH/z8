@@ -269,7 +269,6 @@ export default function EmployeeAllowanceEditPage({
 								image={employee.user.image}
 								seed={employeeId}
 								name={employee.user.name}
-								gender={employee.gender}
 								size="lg"
 								clockStatus="unknown"
 							/>
