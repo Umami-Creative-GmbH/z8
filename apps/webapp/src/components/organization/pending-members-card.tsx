@@ -7,7 +7,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
 	approvePendingMember,
-	bulkApprovePendingMembers,
 	bulkRejectPendingMembers,
 	listPendingMembers,
 	rejectPendingMember,
@@ -63,22 +62,22 @@ function resolveApproveTeamId(
 	teamAssignments: Record<string, string | null>,
 ) {
 	if (member.id in teamAssignments) {
-		return teamAssignments[member.id] === null ? undefined : teamAssignments[member.id];
+		return teamAssignments[member.id] === null ? null : teamAssignments[member.id];
 	}
 
 	return member.inviteCode?.defaultTeamId || undefined;
 }
 
-export function resolveBulkApproveTeamId(
+export function buildBulkApproveRequests(
 	pendingMembers: PendingMemberTeamSource[],
 	selectedMemberIds: string[],
 	teamAssignments: Record<string, string | null>,
 ) {
-	const selectedMember = selectedMemberIds
-		.map((id) => pendingMembers.find((member) => member.id === id))
-		.find((member): member is PendingMemberTeamSource => !!member);
+	return selectedMemberIds.flatMap((memberId) => {
+		const member = pendingMembers.find((pendingMember) => pendingMember.id === memberId);
 
-	return selectedMember ? resolveApproveTeamId(selectedMember, teamAssignments) : undefined;
+		return member ? [{ memberId, teamId: resolveApproveTeamId(member, teamAssignments) }] : [];
+	});
 }
 
 export function PendingMembersCard({ organizationId, currentMemberRole }: PendingMembersCardProps) {
@@ -111,7 +110,7 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 
 	// Approve mutation
 	const approveMutation = useMutation({
-		mutationFn: async ({ memberId, teamId }: { memberId: string; teamId?: string }) => {
+		mutationFn: async ({ memberId, teamId }: { memberId: string; teamId?: string | null }) => {
 			const result = await approvePendingMember({
 				memberId,
 				organizationId,
@@ -153,10 +152,21 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 	const bulkApproveMutation = useMutation({
 		mutationFn: async () => {
 			const memberIds = Array.from(selectedMembers);
-			const commonTeam = resolveBulkApproveTeamId(pendingMembers, memberIds, teamAssignments);
-			const result = await bulkApprovePendingMembers(memberIds, organizationId, commonTeam);
-			if (!result.success) throw new Error(result.error || "Failed to approve");
-			return result.data;
+			const requests = buildBulkApproveRequests(pendingMembers, memberIds, teamAssignments);
+
+			await Promise.all(
+				requests.map(async ({ memberId, teamId }) => {
+					const result = await approvePendingMember({
+						memberId,
+						organizationId,
+						assignedTeamId: teamId,
+					});
+
+					if (!result.success) throw new Error(result.error || "Failed to approve");
+				}),
+			);
+
+			return { approved: requests.length, failed: 0 };
 		},
 		onSuccess: (data) => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.pendingMembers.list(organizationId) });
