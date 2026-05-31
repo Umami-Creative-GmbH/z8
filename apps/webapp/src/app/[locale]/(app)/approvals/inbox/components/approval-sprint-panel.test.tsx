@@ -3,7 +3,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { TriagedApprovalItem } from "@/lib/approvals/triage";
+import type { ApprovalInboxItem } from "@/lib/approvals/inbox/types";
 import { ApprovalSprintPanel } from "./approval-sprint-panel";
 
 const approveMutation = vi.fn();
@@ -22,38 +22,50 @@ vi.mock("@/lib/query/use-approval-inbox", () => ({
 	useRejectApproval: () => ({ isPending: false, mutateAsync: rejectMutation }),
 }));
 
-function createApproval(id: string, requesterName: string, title: string): TriagedApprovalItem {
+function createApproval(
+	id: string,
+	requesterName: string,
+	title: string,
+	capabilities: Partial<ApprovalInboxItem["capabilities"]> = {},
+): ApprovalInboxItem {
 	return {
 		id,
-		approvalType: "absence_entry",
+		type: "absence_entry",
 		entityId: `entity-${id}`,
-		typeName: "Absence Request",
+		status: "pending",
 		requester: {
 			id: `employee-${id}`,
-			userId: `user-${id}`,
 			name: requesterName,
 			email: `${id}@example.com`,
 			image: null,
 			teamId: null,
 		},
-		approverId: "manager-1",
-		organizationId: "org-1",
-		status: "pending",
-		createdAt: new Date("2026-05-01T00:00:00.000Z"),
-		resolvedAt: null,
-		priority: "normal",
-		sla: { deadline: null, status: "on_time", hoursRemaining: null },
-		display: {
+		summary: {
 			title,
 			subtitle: "May 2026",
-			summary: `${title} summary`,
+			detail: `${title} summary`,
+			badge: null,
+		},
+		timing: {
+			createdAt: "2026-05-01T00:00:00.000Z",
+			resolvedAt: null,
+			slaDeadline: null,
+			ageDays: 1,
 		},
 		triage: {
+			priority: "normal",
 			riskLevel: "medium",
 			riskReasons: ["needs_review"],
 			fastLaneGroup: null,
 			isPayrollRelevant: false,
-			ageDays: 1,
+			explanation: "Needs manager review.",
+		},
+		capabilities: {
+			canApprove: true,
+			canReject: true,
+			canBulkApprove: true,
+			requiresRejectReason: true,
+			...capabilities,
 		},
 	};
 }
@@ -163,8 +175,8 @@ describe("ApprovalSprintPanel", () => {
 
 		fireEvent.keyDown(window, { key: "a" });
 
+		await waitFor(() => expect(approveMutation).toHaveBeenCalledWith("approval-1"));
 		await waitFor(() => expect(screen.getByText("Time correction")).toBeTruthy());
-		expect(approveMutation).toHaveBeenCalledWith("approval-1");
 
 		fireEvent.keyDown(window, { key: "s" });
 
@@ -174,7 +186,99 @@ describe("ApprovalSprintPanel", () => {
 		expect(rejectMutation).not.toHaveBeenCalled();
 	});
 
-	it("disables keyboard shortcut handling while reject reason UI is open", () => {
+	it("disables approve button and shortcut when approval cannot be approved", () => {
+		const cannotApprove = [
+			createApproval("approval-1", "Ada Lovelace", "Vacation request", { canApprove: false }),
+		];
+
+		render(
+			<ApprovalSprintPanel
+				open={true}
+				items={cannotApprove}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		const approveButton = screen.getByRole("button", { name: "Approve current approval" });
+		expect(approveButton).toHaveProperty("disabled", true);
+		expect(screen.getByText("Approval unavailable")).toBeTruthy();
+
+		fireEvent.click(approveButton);
+		fireEvent.keyDown(window, { key: "a" });
+
+		expect(approveMutation).not.toHaveBeenCalled();
+	});
+
+	it("rejects the current approval with the keyboard shortcut and typed reason", async () => {
+		rejectMutation.mockResolvedValue({ success: true });
+
+		render(
+			<ApprovalSprintPanel
+				open={true}
+				items={approvals}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		fireEvent.keyDown(window, { key: "r" });
+		fireEvent.change(screen.getByLabelText("Reason for rejection"), {
+			target: { value: "Not enough detail" },
+		});
+		fireEvent.keyDown(window, { key: "r" });
+
+		await waitFor(() =>
+			expect(rejectMutation).toHaveBeenCalledWith({
+				approvalId: "approval-1",
+				reason: "Not enough detail",
+			}),
+		);
+	});
+
+	it("disables reject button and shortcut when approval cannot be rejected", () => {
+		const cannotReject = [
+			createApproval("approval-1", "Ada Lovelace", "Vacation request", { canReject: false }),
+		];
+
+		render(
+			<ApprovalSprintPanel
+				open={true}
+				items={cannotReject}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		const rejectButton = screen.getByRole("button", { name: "Reject current approval" });
+		expect(rejectButton).toHaveProperty("disabled", true);
+		expect(screen.getByText("Rejection unavailable")).toBeTruthy();
+
+		fireEvent.click(rejectButton);
+		fireEvent.keyDown(window, { key: "r" });
+
+		expect(screen.queryByLabelText("Reason for rejection")).toBeNull();
+		expect(rejectMutation).not.toHaveBeenCalled();
+	});
+
+	it("does not reject with keyboard shortcut when reason is blank", () => {
+		render(
+			<ApprovalSprintPanel
+				open={true}
+				items={approvals}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		fireEvent.keyDown(window, { key: "r" });
+		fireEvent.keyDown(window, { key: "r" });
+
+		expect(screen.getByLabelText("Reason for rejection")).toBeTruthy();
+		expect(rejectMutation).not.toHaveBeenCalled();
+	});
+
+	it("ignores keyboard shortcuts while typing a rejection reason", () => {
 		render(
 			<ApprovalSprintPanel
 				open={true}
@@ -186,8 +290,9 @@ describe("ApprovalSprintPanel", () => {
 
 		fireEvent.keyDown(window, { key: "r" });
 
-		expect(screen.getByLabelText("Sprint reject reason")).toBeTruthy();
+		expect(screen.getByLabelText("Reason for rejection")).toBeTruthy();
 
+		fireEvent.focus(screen.getByLabelText("Reason for rejection"));
 		fireEvent.keyDown(window, { key: "a" });
 		fireEvent.keyDown(window, { key: "s" });
 
@@ -213,7 +318,7 @@ describe("ApprovalSprintPanel", () => {
 		fireEvent.keyDown(window, { key: "n" });
 
 		expect(screen.getByText("Vacation request")).toBeTruthy();
-		expect(screen.queryByLabelText("Sprint reject reason")).toBeNull();
+		expect(screen.queryByLabelText("Reason for rejection")).toBeNull();
 		expect(approveMutation).not.toHaveBeenCalled();
 		expect(rejectMutation).not.toHaveBeenCalled();
 	});
@@ -229,13 +334,14 @@ describe("ApprovalSprintPanel", () => {
 		);
 		const input = document.createElement("input");
 		document.body.appendChild(input);
+		fireEvent.focus(input);
 
 		fireEvent.keyDown(input, { key: "a" });
 		fireEvent.keyDown(input, { key: "r" });
 		fireEvent.keyDown(input, { key: "s" });
 
 		expect(screen.getByText("Vacation request")).toBeTruthy();
-		expect(screen.queryByLabelText("Sprint reject reason")).toBeNull();
+		expect(screen.queryByLabelText("Reason for rejection")).toBeNull();
 		expect(approveMutation).not.toHaveBeenCalled();
 
 		input.remove();

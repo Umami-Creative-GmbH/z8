@@ -64,7 +64,7 @@ const { buildEnterpriseIdentityScimTokenResponse } = await import(
 
 function getFunctionSource(functionName: string) {
 	const match = source.match(
-		new RegExp(`export async function ${functionName}\\([\\s\\S]*?\\n}\\n`),
+		new RegExp(`export async function ${functionName}\\([\\s\\S]*?\\r?\\n}\\r?\\n`),
 	);
 
 	if (!match) throw new Error(`Missing ${functionName}`);

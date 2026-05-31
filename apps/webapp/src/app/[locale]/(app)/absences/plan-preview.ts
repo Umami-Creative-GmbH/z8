@@ -208,7 +208,7 @@ async function evaluateCoverageRisk({
 	for (const affectedShift of affectedShifts) {
 		const date = DateTime.fromJSDate(affectedShift.date, { zone: "utc" });
 		const dateKey = date.toISODate();
-		const weekday = date.weekdayLong;
+		const weekday = date.setLocale("en-US").weekdayLong;
 		if (!dateKey || !weekday) {
 			continue;
 		}

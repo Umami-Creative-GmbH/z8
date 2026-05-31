@@ -83,11 +83,11 @@
   },
   "fastLanes": {
     "approve": "Genehmige",
-    "approveGroup": "${label} genehmige",
+    "approveGroup": "{label} genehmige",
     "confirmReject": "Ablehnig bestätige",
-    "confirmRejectGroup": "${label} ablehne bestätige",
+    "confirmRejectGroup": "{label} ablehne bestätige",
     "description": "Ähnlichi, unkomplizierti Aafroge in Stapel überprüfe.",
-    "expandGroup": "${label} uufklappe",
+    "expandGroup": "{label} uufklappe",
     "groups": {
       "lowRiskAbsence": {
         "description": "Absänze ohni erkennbari Konflikt.",
@@ -107,14 +107,14 @@
       }
     },
     "reject": "Ablehne",
-    "rejectGroup": "${label} ablehne",
+    "rejectGroup": "{label} ablehne",
     "rejectReason": "Grund für Sammel-Ablehnig",
     "risk": {
       "high": "Hohes Risiko",
       "low": "Niidriges Risiko",
       "medium": "Mittlers Risiko"
     },
-    "showGroup": "${label} aazeige",
+    "showGroup": "{label} aazeige",
     "title": "Schnellspure"
   },
   "sprint": {
@@ -124,7 +124,7 @@
     "confirmReject": "Ablehnig bestätige",
     "description": "Uusstehendi Genehmigunge einzeln mit Tastaturkürzel überprüfe.",
     "openDetails": "Details ufmache",
-    "progress": "${currentIndex + 1} vo ${visibleItems.length}",
+    "progress": "{current} vo {total}",
     "reject": "Ablehne",
     "rejectCurrentApproval": "Aktuelli Freigab ablehne",
     "rejectReason": "Grund für d'Ablehnig vom Sprint",

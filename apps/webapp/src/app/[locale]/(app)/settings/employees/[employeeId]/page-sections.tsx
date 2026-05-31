@@ -151,7 +151,6 @@ export function EmployeeOverviewCard({
 						image={employee.user.image}
 						seed={employee.user.id}
 						name={employeeDisplayName}
-						gender={employee.gender}
 						size="lg"
 						clockStatus={presence.getStatus(employee.id)}
 					/>

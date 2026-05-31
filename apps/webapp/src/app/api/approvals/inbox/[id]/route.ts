@@ -5,19 +5,16 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
-import { getApprovalHandler } from "@/lib/approvals/domain/registry";
-import type { ApprovalDetail, ApprovalType } from "@/lib/approvals/domain/types";
+import { getApprovalInboxDetail } from "@/lib/approvals/inbox/read-service";
+import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
 import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import type { AnyAppError } from "@/lib/effect/errors";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -56,14 +53,16 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
 		// Get the approval request
 		const request = await db.query.approvalRequest.findFirst({
-			where: eq(approvalRequest.id, id),
+			where: and(
+				eq(approvalRequest.id, id),
+				eq(approvalRequest.organizationId, currentEmployee.organizationId),
+			),
 		});
 
 		if (!request) {
 			return NextResponse.json({ error: "Approval not found" }, { status: 404 });
 		}
 
-		// Verify authorization - must be in the same organization
 		if (request.organizationId !== currentEmployee.organizationId) {
 			return NextResponse.json({ error: "Approval not found" }, { status: 404 });
 		}
@@ -100,25 +99,14 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
-		// Get handler
-		const handler = getApprovalHandler(request.entityType as ApprovalType);
-		if (!handler) {
-			return NextResponse.json(
-				{ error: `Unknown approval type: ${request.entityType}` },
-				{ status: 400 },
-			);
+		if (!isSupportedInboxType(request.entityType)) {
+			return NextResponse.json({ error: "Unsupported approval type" }, { status: 400 });
 		}
 
-		// Fetch detail with organization validation
-		const detail = await Effect.runPromise(
-			handler
-				.getDetail(request.entityId, currentEmployee.organizationId)
-				.pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<
-				ApprovalDetail<unknown>,
-				AnyAppError,
-				never
-			>,
-		);
+		const detail = await getApprovalInboxDetail({
+			approvalId: id,
+			organizationId: currentEmployee.organizationId,
+		});
 
 		return NextResponse.json(detail);
 	} catch (error) {

@@ -39,10 +39,10 @@ const permissionFlagsSchema = z.object({
 });
 
 const grantPermissionsSchema = z.object({
-	employeeId: z.string().uuid("Invalid employee ID"),
+	employeeId: z.uuid("Invalid employee ID"),
 	organizationId: z.string().min(1, "Organization ID is required"),
 	permissions: permissionFlagsSchema,
-	teamId: z.string().uuid("Invalid team ID").nullable().optional(),
+	teamId: z.uuid("Invalid team ID").nullable().optional(),
 });
 
 type GrantPermissions = z.infer<typeof grantPermissionsSchema>;

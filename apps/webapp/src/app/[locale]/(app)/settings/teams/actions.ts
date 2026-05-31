@@ -40,13 +40,13 @@ const createTeamSchema = z.object({
 	organizationId: z.string().min(1, "Organization ID is required"),
 	name: z.string().min(1, "Team name is required").max(100, "Team name is too long"),
 	description: z.string().max(500, "Description is too long").optional().nullable(),
-	primaryManagerId: z.string().uuid().nullable().optional(),
+	primaryManagerId: z.uuid().nullable().optional(),
 });
 
 const updateTeamSchema = z.object({
 	name: z.string().min(1, "Team name is required").max(100, "Team name is too long").optional(),
 	description: z.string().max(500, "Description is too long").optional().nullable(),
-	primaryManagerId: z.string().uuid().nullable().optional(),
+	primaryManagerId: z.uuid().nullable().optional(),
 });
 
 type CreateTeam = z.infer<typeof createTeamSchema>;

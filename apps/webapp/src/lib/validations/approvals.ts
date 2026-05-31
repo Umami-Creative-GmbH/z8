@@ -6,7 +6,7 @@ import { z } from "zod";
 const approvalUserSchema = z.object({
 	id: z.string(),
 	name: z.string(),
-	email: z.string().email(),
+	email: z.email(),
 	image: z.string().nullable(),
 });
 
@@ -27,7 +27,7 @@ const dayPeriodSchema = z.enum(["full_day", "am", "pm"]);
  * Note: startDate/endDate are YYYY-MM-DD strings (logical calendar dates)
  */
 const absenceInfoSchema = z.object({
-	id: z.string().uuid(),
+	id: z.uuid(),
 	startDate: z.string(), // YYYY-MM-DD
 	startPeriod: dayPeriodSchema,
 	endDate: z.string(), // YYYY-MM-DD
@@ -45,7 +45,7 @@ const absenceInfoSchema = z.object({
  * Reuses workPeriodWithEntriesSchema but only includes relevant fields
  */
 const workPeriodForApprovalSchema = z.object({
-	id: z.string().uuid(),
+	id: z.uuid(),
 	startTime: z.coerce.date(),
 	endTime: z.coerce.date().nullable(),
 	clockInEntry: z.object({
@@ -63,8 +63,8 @@ const workPeriodForApprovalSchema = z.object({
  * Used in absence approval workflows
  */
 export const approvalWithAbsenceSchema = z.object({
-	id: z.string().uuid(),
-	entityId: z.string().uuid(),
+	id: z.uuid(),
+	entityId: z.uuid(),
 	entityType: z.string(),
 	status: z.enum(["pending", "approved", "rejected"]),
 	createdAt: z.coerce.date(),
@@ -78,8 +78,8 @@ export const approvalWithAbsenceSchema = z.object({
  * This is the most complex nested date structure in the app
  */
 export const approvalWithTimeCorrectionSchema = z.object({
-	id: z.string().uuid(),
-	entityId: z.string().uuid(),
+	id: z.uuid(),
+	entityId: z.uuid(),
 	entityType: z.string(),
 	status: z.enum(["pending", "approved", "rejected"]),
 	createdAt: z.coerce.date(),

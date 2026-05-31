@@ -149,7 +149,7 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 	return (
 		<>
 			<Card>
-				<CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+				<CardHeader className="flex flex-row items-start justify-between gap-y-0 pb-2">
 					<div className="space-y-1">
 						<div className="flex items-center gap-2">
 							<CardTitle className="text-base font-medium">{webhook.name}</CardTitle>

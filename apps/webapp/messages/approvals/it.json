@@ -83,11 +83,11 @@
   },
   "fastLanes": {
     "approve": "Approva",
-    "approveGroup": "Approva ${label}",
+    "approveGroup": "Approva {label}",
     "confirmReject": "Conferma rifiuto",
-    "confirmRejectGroup": "Conferma rifiuto ${label}",
+    "confirmRejectGroup": "Conferma rifiuto {label}",
     "description": "Revisiona in blocco richieste simili a basso attrito.",
-    "expandGroup": "Espandi ${label}",
+    "expandGroup": "Espandi {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Assenze senza conflitti rilevati.",
@@ -107,14 +107,14 @@
       }
     },
     "reject": "Rifiuta",
-    "rejectGroup": "Rifiuta ${label}",
+    "rejectGroup": "Rifiuta {label}",
     "rejectReason": "Motivazione rifiuto in blocco",
     "risk": {
       "high": "Alto rischio",
       "low": "Basso rischio",
       "medium": "Rischio medio"
     },
-    "showGroup": "Mostra ${label}",
+    "showGroup": "Mostra {label}",
     "title": "Corsie preferenziali"
   },
   "sprint": {
@@ -124,7 +124,7 @@
     "confirmReject": "Conferma rifiuto",
     "description": "Revisiona le approvazioni in sospeso una alla volta con le scorciatoie da tastiera.",
     "openDetails": "Apri dettagli",
-    "progress": "${currentIndex + 1} di ${visibleItems.length}",
+    "progress": "{current} di {total}",
     "reject": "Rifiuta",
     "rejectCurrentApproval": "Rifiuta approvazione corrente",
     "rejectReason": "Motivazione rifiuto sprint",

@@ -5,11 +5,11 @@ import { z } from "zod";
  * Maps to the holiday table in the database
  */
 export const holidaySchema = z.object({
-	id: z.string().uuid(),
+	id: z.uuid(),
 	name: z.string(),
 	startDate: z.coerce.date(),
 	endDate: z.coerce.date(),
-	categoryId: z.string().uuid(),
+	categoryId: z.uuid(),
 	recurrencePattern: z.string().nullable().optional(),
 	recurrenceEndDate: z.coerce.date().nullable().optional(),
 });
@@ -20,7 +20,7 @@ export const holidaySchema = z.object({
  */
 export const holidayWithCategorySchema = holidaySchema.extend({
 	category: z.object({
-		id: z.string().uuid(),
+		id: z.uuid(),
 		name: z.string(),
 		type: z.string(),
 		blocksTimeEntry: z.boolean(),
@@ -34,7 +34,7 @@ export const createHolidaySchema = z.object({
 	name: z.string().min(1, "Holiday name is required"),
 	startDate: z.coerce.date(),
 	endDate: z.coerce.date(),
-	categoryId: z.string().uuid(),
+	categoryId: z.uuid(),
 	recurrencePattern: z.string().nullable().optional(),
 	recurrenceEndDate: z.coerce.date().nullable().optional(),
 });

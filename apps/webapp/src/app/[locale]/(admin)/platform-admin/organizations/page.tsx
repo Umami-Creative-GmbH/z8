@@ -612,7 +612,7 @@ export default function OrganizationsPage() {
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<div className="space-y-4 py-4">
-						<div className="flex items-center space-x-2">
+						<div className="flex items-center gap-x-2">
 							<Checkbox
 								id="immediate"
 								checked={deleteImmediate}
@@ -625,7 +625,7 @@ export default function OrganizationsPage() {
 								)}
 							</Label>
 						</div>
-						<div className="flex items-center space-x-2">
+						<div className="flex items-center gap-x-2">
 							<Checkbox
 								id="skipNotification"
 								checked={deleteSkipNotification}

@@ -83,11 +83,11 @@
   },
   "fastLanes": {
     "approve": "Έγκριση",
-    "approveGroup": "Έγκριση ${label}",
+    "approveGroup": "Έγκριση {label}",
     "confirmReject": "Επιβεβαίωση απόρριψης",
-    "confirmRejectGroup": "Επιβεβαίωση απόρριψης ${label}",
+    "confirmRejectGroup": "Επιβεβαίωση απόρριψης {label}",
     "description": "Επανεξέταση παρόμοιων αιτημάτων χαμηλής τριβής σε παρτίδες.",
-    "expandGroup": "Ανάπτυξη ${label}",
+    "expandGroup": "Ανάπτυξη {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Απουσίες χωρίς ανιχνευμένες συγκρούσεις.",
@@ -107,14 +107,14 @@
       }
     },
     "reject": "Απόρριψη",
-    "rejectGroup": "Απόρριψη ${label}",
+    "rejectGroup": "Απόρριψη {label}",
     "rejectReason": "Αιτιολογία μαζικής απόρριψης",
     "risk": {
       "high": "Υψηλός κίνδυνος",
       "low": "Χαμηλός κίνδυνος",
       "medium": "Μεσαίος κίνδυνος"
     },
-    "showGroup": "Εμφάνιση ${label}",
+    "showGroup": "Εμφάνιση {label}",
     "title": "Γρήγορες διαδρομές"
   },
   "sprint": {
@@ -124,7 +124,7 @@
     "confirmReject": "Επιβεβαίωση απόρριψης",
     "description": "Επανεξέταση εκκρεμών εγκρίσεων μία προς μία με συντομεύσεις πληκτρολογίου.",
     "openDetails": "Άνοιγμα λεπτομερειών",
-    "progress": "${currentIndex + 1} από ${visibleItems.length}",
+    "progress": "{current} από {total}",
     "reject": "Απόρριψη",
     "rejectCurrentApproval": "Απόρριψη τρέχουσας έγκρισης",
     "rejectReason": "Αιτιολογία απόρριψης κύκλου έγκρισης",

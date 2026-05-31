@@ -63,9 +63,7 @@ vi.mock("@/hooks/use-image-upload", () => ({
 }));
 
 vi.mock("@/components/user-avatar", () => ({
-	UserAvatar: ({ gender, name }: { gender?: string | null; name: string }) => (
-		<div data-avatar-gender={gender ?? ""}>{name}</div>
-	),
+	UserAvatar: ({ name }: { name: string }) => <div>{name}</div>,
 }));
 
 vi.mock("@/components/ui/popover", () => ({
@@ -193,12 +191,10 @@ describe("ProfileForm", () => {
 		expect(updateProfileImageMock).not.toHaveBeenCalled();
 	});
 
-	it("passes selected gender to the profile picture preview", async () => {
+	it("renders the profile picture preview", async () => {
 		renderProfileForm();
 
-		expect((await screen.findByText("Auth Fallback")).getAttribute("data-avatar-gender")).toBe(
-			"female",
-		);
+		expect(await screen.findByText("Auth Fallback")).toBeTruthy();
 	});
 
 	it("loads a disabled product improvement preference", async () => {

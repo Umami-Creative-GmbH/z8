@@ -5,20 +5,20 @@ import { z } from "zod";
  * Maps to the timeEntry table in the database
  */
 export const timeEntrySchema = z.object({
-	id: z.string().uuid(),
-	employeeId: z.string().uuid(),
+	id: z.uuid(),
+	employeeId: z.uuid(),
 	type: z.enum(["clock_in", "clock_out"]),
 	timestamp: z.coerce.date(),
 
 	// Blockchain linking
-	previousEntryId: z.string().uuid().nullable(),
+	previousEntryId: z.uuid().nullable(),
 	hash: z.string(),
 	previousHash: z.string().nullable(),
 
 	// Correction tracking
-	replacesEntryId: z.string().uuid().nullable(),
+	replacesEntryId: z.uuid().nullable(),
 	isSuperseded: z.boolean().default(false),
-	supersededById: z.string().uuid().nullable(),
+	supersededById: z.uuid().nullable(),
 
 	// Metadata
 	notes: z.string().nullable(),
@@ -35,8 +35,8 @@ export const timeEntrySchema = z.object({
  * Used in time tracking components and approval workflows
  */
 export const workPeriodWithEntriesSchema = z.object({
-	id: z.string().uuid(),
-	employeeId: z.string().uuid(),
+	id: z.uuid(),
+	employeeId: z.uuid(),
 	startTime: z.coerce.date(),
 	endTime: z.coerce.date().nullable(),
 	durationMinutes: z.number().int().nullable(),

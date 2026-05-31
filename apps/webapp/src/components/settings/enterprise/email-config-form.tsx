@@ -274,7 +274,7 @@ export function EmailConfigForm({
 									onValueChange={(value) => field.handleChange(value as "resend" | "smtp")}
 									className="flex flex-col gap-3"
 								>
-									<div className="flex items-center space-x-2">
+									<div className="flex items-center gap-x-2">
 										<RadioGroupItem value="resend" id="resend" />
 										<Label htmlFor="resend" className="flex items-center gap-2 cursor-pointer">
 											<IconSend className="size-4" />
@@ -284,7 +284,7 @@ export function EmailConfigForm({
 											</Badge>
 										</Label>
 									</div>
-									<div className="flex items-center space-x-2">
+									<div className="flex items-center gap-x-2">
 										<RadioGroupItem value="smtp" id="smtp" />
 										<Label htmlFor="smtp" className="flex items-center gap-2 cursor-pointer">
 											<IconServer className="size-4" />
@@ -481,7 +481,7 @@ export function EmailConfigForm({
 									<div className="flex flex-col gap-3">
 										<form.Field name="smtpSecure">
 											{(field) => (
-												<div className="flex items-center space-x-2">
+												<div className="flex items-center gap-x-2">
 													<Checkbox
 														id="smtpSecure"
 														checked={field.state.value ?? true}
@@ -496,7 +496,7 @@ export function EmailConfigForm({
 
 										<form.Field name="smtpRequireTls">
 											{(field) => (
-												<div className="flex items-center space-x-2">
+												<div className="flex items-center gap-x-2">
 													<Checkbox
 														id="smtpRequireTls"
 														checked={field.state.value ?? true}
@@ -520,7 +520,7 @@ export function EmailConfigForm({
 					{/* Active Toggle */}
 					<form.Field name="isActive">
 						{(field) => (
-							<div className="flex items-center space-x-2">
+							<div className="flex items-center gap-x-2">
 								<Checkbox
 									id="isActive"
 									checked={field.state.value}

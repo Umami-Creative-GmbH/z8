@@ -121,10 +121,10 @@ export type UpdateSurchargeModelData = z.infer<typeof updateSurchargeModelSchema
 
 export const surchargeAssignmentFormSchema = z
 	.object({
-		modelId: z.string().uuid("Invalid model ID"),
+		modelId: z.uuid("Invalid model ID"),
 		assignmentType: z.enum(["organization", "team", "employee"]),
-		teamId: z.string().uuid().optional().nullable(),
-		employeeId: z.string().uuid().optional().nullable(),
+		teamId: z.uuid().optional().nullable(),
+		employeeId: z.uuid().optional().nullable(),
 		effectiveFrom: z.date().optional().nullable(),
 		effectiveUntil: z.date().optional().nullable(),
 		isActive: z.boolean().default(true),
@@ -157,7 +157,7 @@ export const surchargeCalculationsQuerySchema = z.object({
 	organizationId: z.string(),
 	startDate: z.date(),
 	endDate: z.date(),
-	employeeId: z.string().uuid().optional(),
+	employeeId: z.uuid().optional(),
 });
 
 export type SurchargeCalculationsQuery = z.infer<typeof surchargeCalculationsQuerySchema>;

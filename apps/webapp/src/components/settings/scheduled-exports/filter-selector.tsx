@@ -64,7 +64,7 @@ export function FilterSelector({
 				<PopoverContent className="w-[300px] p-0" align="start">
 					<ScrollArea className="h-[200px] p-4">
 						{items.map((item) => (
-							<div key={item.id} className="flex items-center space-x-2 py-1">
+							<div key={item.id} className="flex items-center gap-x-2 py-1">
 								<Checkbox
 									id={`filter-${item.id}`}
 									checked={selectedIds.includes(item.id)}

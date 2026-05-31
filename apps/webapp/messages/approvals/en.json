@@ -83,11 +83,11 @@
   },
   "fastLanes": {
     "approve": "Approve",
-    "approveGroup": "Approve ${label}",
+    "approveGroup": "Approve {label}",
     "confirmReject": "Confirm reject",
-    "confirmRejectGroup": "Confirm reject ${label}",
+    "confirmRejectGroup": "Confirm reject {label}",
     "description": "Review similar low-friction requests in batches.",
-    "expandGroup": "Expand ${label}",
+    "expandGroup": "Expand {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Absences with no detected conflicts.",
@@ -107,14 +107,14 @@
       }
     },
     "reject": "Reject",
-    "rejectGroup": "Reject ${label}",
+    "rejectGroup": "Reject {label}",
     "rejectReason": "Bulk reject reason",
     "risk": {
       "high": "High risk",
       "low": "Low risk",
       "medium": "Medium risk"
     },
-    "showGroup": "Show ${label}",
+    "showGroup": "Show {label}",
     "title": "Fast lanes"
   },
   "sprint": {
@@ -124,7 +124,7 @@
     "confirmReject": "Confirm reject",
     "description": "Review pending approvals one at a time with keyboard shortcuts.",
     "openDetails": "Open details",
-    "progress": "${currentIndex + 1} of ${visibleItems.length}",
+    "progress": "{current} of {total}",
     "reject": "Reject",
     "rejectCurrentApproval": "Reject current approval",
     "rejectReason": "Sprint reject reason",

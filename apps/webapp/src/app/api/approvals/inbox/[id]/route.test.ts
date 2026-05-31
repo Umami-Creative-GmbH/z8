@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { Effect } from "effect";
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -19,7 +18,7 @@ const mockState = vi.hoisted(() => ({
 	findEmployee: vi.fn(),
 	findApprovalRequest: vi.fn(),
 	isEligibleManagerForApprovalRequest: vi.fn(async () => false),
-	handlerGetDetail: vi.fn(),
+	getApprovalInboxDetail: vi.fn(),
 	logger: {
 		error: vi.fn(),
 	},
@@ -69,11 +68,13 @@ vi.mock("@/db/schema", () => ({
 	},
 }));
 
-vi.mock("@/lib/approvals/domain/registry", () => ({
-	registerApprovalHandler: vi.fn(),
-	getApprovalHandler: vi.fn(() => ({
-		getDetail: mockState.handlerGetDetail,
-	})),
+vi.mock("@/lib/approvals/inbox/read-service", () => ({
+	getApprovalInboxDetail: mockState.getApprovalInboxDetail,
+}));
+
+vi.mock("@/lib/approvals/inbox/source-adapters", () => ({
+	isSupportedInboxType: (type: string) =>
+		["absence_entry", "time_entry", "travel_expense_claim"].includes(type),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -114,7 +115,11 @@ describe("GET /api/approvals/inbox/[id]", () => {
 			organizationId: "org-1",
 			status: "pending",
 		});
-		mockState.handlerGetDetail.mockReturnValue(Effect.succeed({ id: "entity-1", title: "Detail" }));
+		mockState.getApprovalInboxDetail.mockResolvedValue({
+			item: { id: "approval-1" },
+			sections: [],
+			actions: {},
+		});
 	});
 
 	it("does not delegate when no active employee is found in the active organization", async () => {
@@ -126,16 +131,39 @@ describe("GET /api/approvals/inbox/[id]", () => {
 
 		expect(response.status).toBe(404);
 		expect(eq).toHaveBeenCalledWith("isActive", true);
-		expect(mockState.handlerGetDetail).not.toHaveBeenCalled();
+		expect(mockState.getApprovalInboxDetail).not.toHaveBeenCalled();
 	});
 
-	it("delegates detail reads for active employees", async () => {
+	it("delegates detail reads to the serializable inbox detail service", async () => {
 		const response = await GET(createRequest(), {
 			params: Promise.resolve({ id: "approval-1" }),
 		});
 
 		expect(response.status).toBe(200);
-		expect(mockState.handlerGetDetail).toHaveBeenCalledWith("entity-1", "org-1");
+		expect(mockState.getApprovalInboxDetail).toHaveBeenCalledWith({
+			approvalId: "approval-1",
+			organizationId: "org-1",
+		});
+	});
+
+	it("returns 400 for unsupported approval types before delegating detail reads", async () => {
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "shift_request",
+			approverId: "employee-1",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await GET(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(400);
+		await expect(response.json()).resolves.toEqual({ error: "Unsupported approval type" });
+		expect(mockState.getApprovalInboxDetail).not.toHaveBeenCalled();
 	});
 
 	it("returns 403 when an assigned approver lacks approve or manage permission", async () => {
@@ -149,7 +177,30 @@ describe("GET /api/approvals/inbox/[id]", () => {
 		});
 
 		expect(response.status).toBe(403);
-		expect(mockState.handlerGetDetail).not.toHaveBeenCalled();
+		expect(mockState.getApprovalInboxDetail).not.toHaveBeenCalled();
+	});
+
+	it("returns 403 instead of unsupported type when an assigned approver lacks approval permission", async () => {
+		mockState.getAbility.mockResolvedValue({
+			can: vi.fn(() => false),
+			cannot: vi.fn(() => true),
+		});
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "shift_request",
+			approverId: "employee-1",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await GET(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(403);
+		expect(mockState.getApprovalInboxDetail).not.toHaveBeenCalled();
 	});
 
 	it("allows an eligible fallback manager with approve permission to read a request assigned to another eligible manager", async () => {
@@ -173,7 +224,10 @@ describe("GET /api/approvals/inbox/[id]", () => {
 		});
 
 		expect(response.status).toBe(200);
-		expect(mockState.handlerGetDetail).toHaveBeenCalledWith("entity-1", "org-1");
+		expect(mockState.getApprovalInboxDetail).toHaveBeenCalledWith({
+			approvalId: "approval-1",
+			organizationId: "org-1",
+		});
 	});
 
 	it("returns 403 when an eligible fallback manager lacks approve or manage permission", async () => {
@@ -197,7 +251,31 @@ describe("GET /api/approvals/inbox/[id]", () => {
 		});
 
 		expect(response.status).toBe(403);
-		expect(mockState.handlerGetDetail).not.toHaveBeenCalled();
+		expect(mockState.getApprovalInboxDetail).not.toHaveBeenCalled();
+	});
+
+	it("returns 403 instead of unsupported type when approval scope does not include the request", async () => {
+		mockState.getAbility.mockResolvedValue({
+			can: vi.fn(() => false),
+			cannot: vi.fn((action) => action === "manage"),
+		});
+		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(false);
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "shift_request",
+			approverId: "employee-2",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await GET(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(403);
+		expect(mockState.getApprovalInboxDetail).not.toHaveBeenCalled();
 	});
 
 	it("returns 404 before detail authorization when the approval belongs to another organization", async () => {
@@ -216,6 +294,6 @@ describe("GET /api/approvals/inbox/[id]", () => {
 		});
 
 		expect(response.status).toBe(404);
-		expect(mockState.handlerGetDetail).not.toHaveBeenCalled();
+		expect(mockState.getApprovalInboxDetail).not.toHaveBeenCalled();
 	});
 });

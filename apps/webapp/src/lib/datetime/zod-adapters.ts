@@ -21,10 +21,7 @@ import { fromJSDate, isValid, now, parseISO } from "./luxon-utils";
 export const dateTimeSchema = z
 	.union([
 		z.date().transform((d) => fromJSDate(d, "utc")),
-		z
-			.string()
-			.datetime()
-			.transform((s) => parseISO(s, "utc")),
+		z.iso.datetime().transform((s) => parseISO(s, "utc")),
 		z.custom<DateTime>((val) => val && typeof val === "object" && "toJSDate" in val),
 	])
 	.refine((val) => isValid(val as DateTime), { message: "Invalid date" });
@@ -148,18 +145,14 @@ export function formDateSchemaOptional() {
  * });
  */
 export function apiDateSchema() {
-	return z
-		.string()
-		.datetime()
-		.transform((s) => parseISO(s, "utc"));
+	return z.iso.datetime().transform((s) => parseISO(s, "utc"));
 }
 
 /**
  * Optional API date schema
  */
 export function apiDateSchemaOptional() {
-	return z
-		.string()
+	return z.iso
 		.datetime()
 		.optional()
 		.nullable()

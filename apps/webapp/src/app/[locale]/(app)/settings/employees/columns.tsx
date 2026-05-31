@@ -153,7 +153,6 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 						image={row.original.user.image}
 						seed={row.original.user.id}
 						name={displayName}
-						gender={row.original.gender}
 						clockStatus={employee.clockStatus ?? "unknown"}
 						size="sm"
 					/>

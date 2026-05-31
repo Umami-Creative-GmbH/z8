@@ -1,9 +1,16 @@
 "use client";
 
-import { IconCheck, IconInbox, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconCheck,
+	IconInbox,
+	IconLoader2,
+	IconRefresh,
+	IconX,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import {
 	ActionPanel,
@@ -19,12 +26,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import type {
-	ApprovalType,
-	BulkDecisionFailure,
-	BulkDecisionResult,
-	UnifiedApprovalItem,
-} from "@/lib/approvals/domain/types";
-import { groupApprovalFastLanes, sortSprintApprovals } from "@/lib/approvals/triage";
+	ApprovalInboxBulkDecisionResult,
+	ApprovalInboxDecisionFailure,
+	ApprovalInboxFastLaneGroup,
+	ApprovalInboxItem,
+	ApprovalInboxType,
+	ApprovalInboxWarning,
+} from "@/lib/approvals/inbox/types";
 import {
 	type ApprovalInboxFilters,
 	useApprovalInbox,
@@ -39,7 +47,7 @@ import { ApprovalSprintPanel } from "./components/approval-sprint-panel";
 
 function getBulkFailureMessage(
 	t: ReturnType<typeof useTranslate>["t"],
-	failed: BulkDecisionFailure[],
+	failed: ApprovalInboxDecisionFailure[],
 	fallbackKey: string,
 ): string {
 	const summary = t(fallbackKey, `${failed.length} request(s) failed`, { count: failed.length });
@@ -50,7 +58,7 @@ function getBulkFailureMessage(
 
 function handleBulkDecisionToasts(
 	t: ReturnType<typeof useTranslate>["t"],
-	result: BulkDecisionResult,
+	result: ApprovalInboxBulkDecisionResult,
 	successKey: string,
 	successLabel: string,
 	failureKey: string,
@@ -72,6 +80,72 @@ function getErrorMessage(error: unknown, fallback: string): string {
 	return error instanceof Error && error.message ? error.message : fallback;
 }
 
+function dedupeWarnings(warnings: ApprovalInboxWarning[]): ApprovalInboxWarning[] {
+	const seen = new Set<string>();
+	const uniqueWarnings: ApprovalInboxWarning[] = [];
+
+	for (const warning of warnings) {
+		const key = `${warning.source}:${warning.message}`;
+		if (seen.has(key)) {
+			continue;
+		}
+
+		seen.add(key);
+		uniqueWarnings.push(warning);
+	}
+
+	return uniqueWarnings;
+}
+
+type ApprovalInboxFastLaneGroupView = {
+	key: ApprovalInboxFastLaneGroup;
+	items: ApprovalInboxItem[];
+};
+
+const RISK_RANK: Record<ApprovalInboxItem["triage"]["riskLevel"], number> = {
+	low: 1,
+	medium: 2,
+	high: 3,
+};
+
+function subscribeHydrationSnapshot() {
+	return () => undefined;
+}
+
+function getClientHydrationSnapshot() {
+	return true;
+}
+
+function getServerHydrationSnapshot() {
+	return false;
+}
+
+function groupFastLaneItems(items: ApprovalInboxItem[]): ApprovalInboxFastLaneGroupView[] {
+	const groups = new Map<ApprovalInboxFastLaneGroup, ApprovalInboxItem[]>();
+
+	for (const item of items) {
+		const groupKey = item.triage.fastLaneGroup;
+		if (groupKey === null) {
+			continue;
+		}
+
+		groups.set(groupKey, [...(groups.get(groupKey) ?? []), item]);
+	}
+
+	return Array.from(groups, ([key, groupedItems]) => ({ key, items: groupedItems }));
+}
+
+function sortSprintItems(items: ApprovalInboxItem[]): ApprovalInboxItem[] {
+	return [...items].sort((first, second) => {
+		const riskDifference = RISK_RANK[second.triage.riskLevel] - RISK_RANK[first.triage.riskLevel];
+		if (riskDifference !== 0) {
+			return riskDifference;
+		}
+
+		return second.timing.ageDays - first.timing.ageDays;
+	});
+}
+
 export function getInitialApprovalInboxFilters(
 	searchParams: Pick<URLSearchParams, "get"> | null,
 ): ApprovalInboxFilters {
@@ -79,7 +153,9 @@ export function getInitialApprovalInboxFilters(
 	const types = rawTypes
 		?.split(",")
 		.map((value) => value.trim())
-		.filter((value): value is ApprovalType => value.length > 0);
+		.filter((value): value is ApprovalInboxType =>
+			["absence_entry", "time_entry", "travel_expense_claim"].includes(value),
+		);
 
 	return {
 		status: "pending",
@@ -94,10 +170,16 @@ function ApprovalInboxContent() {
 		getInitialApprovalInboxFilters(searchParams),
 	);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-	const [detailApproval, setDetailApproval] = useState<UnifiedApprovalItem | null>(null);
+	const [detailApproval, setDetailApproval] = useState<ApprovalInboxItem | null>(null);
 	const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
 	const [bulkRejectReason, setBulkRejectReason] = useState("");
 	const [sprintOpen, setSprintOpen] = useState(false);
+	const hasHydrated = useSyncExternalStore(
+		subscribeHydrationSnapshot,
+		getClientHydrationSnapshot,
+		getServerHydrationSnapshot,
+	);
+	const bulkActionInFlightRef = useRef(false);
 
 	const {
 		data,
@@ -114,12 +196,23 @@ function ApprovalInboxContent() {
 	const bulkApproveMutation = useBulkApprove();
 	const bulkRejectMutation = useBulkReject();
 
-	// Flatten pages into single array
-	const items = data?.pages.flatMap((page) => page.items) ?? [];
-	const totalCount = data?.pages[0]?.total ?? 0;
+	const pages = data?.pages ?? [];
+	const items = pages.flatMap((page) => page.items);
+	const firstPage = pages[0];
+	const totalCount = firstPage?.total ?? 0;
+	const warnings = dedupeWarnings(pages.flatMap((page) => page.warnings));
+	const supportedTypes = firstPage?.supportedTypes ?? [];
+	const itemIdsKey = items.map((item) => item.id).join("\u001f");
 	const pendingItems = items.filter((item) => item.status === "pending");
-	const fastLaneGroups = groupApprovalFastLanes(pendingItems);
-	const sprintItems = sortSprintApprovals(pendingItems);
+	const fastLaneGroups = groupFastLaneItems(pendingItems);
+	const sprintItems = sortSprintItems(pendingItems);
+	const selectedItems = items.filter((item) => selectedIds.has(item.id));
+	const selectedBulkApproveIds = selectedItems
+		.filter((item) => item.capabilities.canApprove && item.capabilities.canBulkApprove)
+		.map((item) => item.id);
+	const selectedBulkRejectIds = selectedItems
+		.filter((item) => item.capabilities.canReject)
+		.map((item) => item.id);
 
 	// Selection handlers - use functional setState for stable callbacks
 	const handleSelectAll = (checked: boolean) => {
@@ -144,10 +237,11 @@ function ApprovalInboxContent() {
 	};
 
 	const handleBulkApprove = async () => {
-		if (selectedIds.size === 0) return;
+		if (selectedBulkApproveIds.length === 0 || bulkActionInFlightRef.current) return;
 
+		bulkActionInFlightRef.current = true;
 		try {
-			const result = await bulkApproveMutation.mutateAsync(Array.from(selectedIds));
+			const result = await bulkApproveMutation.mutateAsync(selectedBulkApproveIds);
 			handleBulkDecisionToasts(
 				t,
 				result,
@@ -165,16 +259,19 @@ function ApprovalInboxContent() {
 					t("approvals:approvals.bulkApproveRequestFailed", "Bulk approve failed"),
 				),
 			);
+		} finally {
+			bulkActionInFlightRef.current = false;
 		}
 	};
 
 	const handleBulkReject = async () => {
 		const reason = bulkRejectReason.trim();
-		if (selectedIds.size === 0 || !reason) return;
+		if (selectedBulkRejectIds.length === 0 || !reason || bulkActionInFlightRef.current) return;
 
+		bulkActionInFlightRef.current = true;
 		try {
 			const result = await bulkRejectMutation.mutateAsync({
-				approvalIds: Array.from(selectedIds),
+				approvalIds: selectedBulkRejectIds,
 				reason,
 			});
 			handleBulkDecisionToasts(
@@ -196,12 +293,15 @@ function ApprovalInboxContent() {
 					t("approvals:approvals.bulkRejectRequestFailed", "Bulk reject failed"),
 				),
 			);
+		} finally {
+			bulkActionInFlightRef.current = false;
 		}
 	};
 
 	const handleFastLaneApprove = async (approvalIds: string[]) => {
-		if (approvalIds.length === 0) return;
+		if (approvalIds.length === 0 || bulkActionInFlightRef.current) return;
 
+		bulkActionInFlightRef.current = true;
 		try {
 			const result = await bulkApproveMutation.mutateAsync(approvalIds);
 			handleBulkDecisionToasts(
@@ -221,13 +321,16 @@ function ApprovalInboxContent() {
 					t("approvals:approvals.bulkApproveRequestFailed", "Bulk approve failed"),
 				),
 			);
+		} finally {
+			bulkActionInFlightRef.current = false;
 		}
 	};
 
 	const handleFastLaneReject = async (approvalIds: string[], reason: string) => {
 		const trimmedReason = reason.trim();
-		if (approvalIds.length === 0 || !trimmedReason) return;
+		if (approvalIds.length === 0 || !trimmedReason || bulkActionInFlightRef.current) return;
 
+		bulkActionInFlightRef.current = true;
 		try {
 			const result = await bulkRejectMutation.mutateAsync({
 				approvalIds,
@@ -250,10 +353,12 @@ function ApprovalInboxContent() {
 					t("approvals:approvals.bulkRejectRequestFailed", "Bulk reject failed"),
 				),
 			);
+		} finally {
+			bulkActionInFlightRef.current = false;
 		}
 	};
 
-	const handleOpenDetail = (approval: UnifiedApprovalItem) => {
+	const handleOpenDetail = (approval: ApprovalInboxItem) => {
 		setDetailApproval(approval);
 	};
 
@@ -267,9 +372,28 @@ function ApprovalInboxContent() {
 	};
 
 	const isBulkActionPending = bulkApproveMutation.isPending || bulkRejectMutation.isPending;
+	const canBulkApproveSelection = selectedBulkApproveIds.length > 0;
+	const canBulkRejectSelection = selectedBulkRejectIds.length > 0;
+
+	useEffect(() => {
+		const currentItemIds = new Set(itemIdsKey ? itemIdsKey.split("\u001f") : []);
+
+		setSelectedIds((currentSelectedIds) => {
+			const visibleSelectedIds = new Set(
+				Array.from(currentSelectedIds).filter((approvalId) => currentItemIds.has(approvalId)),
+			);
+
+			return visibleSelectedIds.size === currentSelectedIds.size ? currentSelectedIds : visibleSelectedIds;
+		});
+	}, [itemIdsKey]);
+
+	const handleFiltersChange = (nextFilters: ApprovalInboxFilters) => {
+		setSelectedIds(new Set());
+		setFilters(nextFilters);
+	};
 
 	// Loading state
-	if (isLoading) {
+	if (!hasHydrated || (isLoading && !data)) {
 		return (
 			<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 				<div className="flex items-center justify-between px-4 lg:px-6">
@@ -366,12 +490,15 @@ function ApprovalInboxContent() {
 							<Button
 								variant="outline"
 								onClick={() => setBulkRejectOpen(true)}
-								disabled={isBulkActionPending}
+								disabled={isBulkActionPending || !canBulkRejectSelection}
 							>
 								<IconX className="mr-2 size-4" aria-hidden="true" />
 								{t("approvals:approvals.rejectSelected", "Reject Selected")} ({selectedIds.size})
 							</Button>
-							<Button onClick={handleBulkApprove} disabled={isBulkActionPending}>
+							<Button
+								onClick={handleBulkApprove}
+								disabled={isBulkActionPending || !canBulkApproveSelection}
+							>
 								{bulkApproveMutation.isPending ? (
 									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								) : (
@@ -402,6 +529,22 @@ function ApprovalInboxContent() {
 
 			{/* Main content */}
 			<div className="px-4 lg:px-6">
+				{warnings.length > 0 && (
+					<div className="mb-4 space-y-2">
+						{warnings.map((warning) => (
+							<div
+								key={`${warning.source}:${warning.message}`}
+								className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
+							>
+								<IconAlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+								<div>
+									<div className="font-medium">{warning.source}</div>
+									<div>{warning.message}</div>
+								</div>
+							</div>
+						))}
+					</div>
+				)}
 				<Card>
 					<CardHeader className="pb-0">
 						<CardTitle className="flex items-center gap-2">
@@ -430,11 +573,12 @@ function ApprovalInboxContent() {
 						<div className="mt-4">
 							<ApprovalInboxToolbar
 								filters={filters}
-								onFiltersChange={setFilters}
+								onFiltersChange={handleFiltersChange}
 								selectedCount={selectedIds.size}
-								totalCount={items.length}
+								totalCount={totalCount}
 								allSelected={items.length > 0 && selectedIds.size === items.length}
 								onSelectAll={handleSelectAll}
+								supportedTypes={supportedTypes}
 							/>
 						</div>
 
@@ -481,7 +625,12 @@ function ApprovalInboxContent() {
 				items={sprintItems}
 				onOpenChange={setSprintOpen}
 				onActioned={handleApprovalActioned}
-				onOpenDetails={handleOpenDetail}
+				onOpenDetails={(approval) => {
+					const item = items.find((candidate) => candidate.id === approval.id);
+					if (item) {
+						handleOpenDetail(item);
+					}
+				}}
 				shortcutsEnabled={detailApproval === null}
 			/>
 
@@ -535,7 +684,9 @@ function ApprovalInboxContent() {
 						<Button
 							variant="destructive"
 							onClick={handleBulkReject}
-							disabled={!bulkRejectReason.trim() || bulkRejectMutation.isPending}
+							disabled={
+								!bulkRejectReason.trim() || bulkRejectMutation.isPending || !canBulkRejectSelection
+							}
 						>
 							{bulkRejectMutation.isPending && (
 								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />

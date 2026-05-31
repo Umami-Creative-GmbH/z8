@@ -134,7 +134,6 @@ function ResultGroup({
 								image={result.image}
 								seed={result.avatarSeed ?? result.id}
 								name={result.title}
-								gender={result.gender}
 								size="sm"
 								showClockStatus={false}
 							/>

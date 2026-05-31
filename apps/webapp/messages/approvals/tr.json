@@ -83,11 +83,11 @@
   },
   "fastLanes": {
     "approve": "Onayla",
-    "approveGroup": "${label} öğesini onayla",
+    "approveGroup": "{label} öğesini onayla",
     "confirmReject": "Reddetmeyi onayla",
-    "confirmRejectGroup": "${label} öğesini reddetmeyi onayla",
+    "confirmRejectGroup": "{label} öğesini reddetmeyi onayla",
     "description": "Benzer düşük sürtünmeli talepleri toplu olarak inceleyin.",
-    "expandGroup": "${label} öğesini genişlet",
+    "expandGroup": "{label} öğesini genişlet",
     "groups": {
       "lowRiskAbsence": {
         "description": "Çakışma tespit edilmeyen devamsızlıklar.",
@@ -107,14 +107,14 @@
       }
     },
     "reject": "Reddet",
-    "rejectGroup": "${label} öğesini reddet",
+    "rejectGroup": "{label} öğesini reddet",
     "rejectReason": "Toplu reddetme nedeni",
     "risk": {
       "high": "Yüksek risk",
       "low": "Düşük risk",
       "medium": "Orta risk"
     },
-    "showGroup": "${label} öğesini göster",
+    "showGroup": "{label} öğesini göster",
     "title": "Hızlı şeritler"
   },
   "sprint": {
@@ -124,7 +124,7 @@
     "confirmReject": "Reddetmeyi onayla",
     "description": "Bekleyen onayları klavye kısayollarıyla tek tek inceleyin.",
     "openDetails": "Ayrıntıları aç",
-    "progress": "${visibleItems.length} üzerinden ${currentIndex + 1}",
+    "progress": "{total} üzerinden {current}",
     "reject": "Reddet",
     "rejectCurrentApproval": "Mevcut onayı reddet",
     "rejectReason": "Sprint reddetme nedeni",

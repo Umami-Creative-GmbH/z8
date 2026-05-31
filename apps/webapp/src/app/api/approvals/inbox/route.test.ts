@@ -1,6 +1,4 @@
-import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
-import { Effect } from "effect";
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -26,7 +24,7 @@ const mockState = vi.hoisted(() => ({
 	},
 	findEmployee: vi.fn(),
 	getEligibleApprovalScopesForManager: vi.fn(async () => []),
-	getApprovals: vi.fn(),
+	getApprovalInboxList: vi.fn(),
 	logger: {
 		error: vi.fn(),
 	},
@@ -83,21 +81,14 @@ vi.mock("@/lib/authorization", () => ({
 	toHttpError: vi.fn(() => ({ body: { error: "Forbidden" }, status: 403 })),
 }));
 
-vi.mock("@/lib/approvals/application/approval-query.service", async () => {
-	const { Context, Layer } = await import("effect");
-	const ApprovalQueryService = Context.GenericTag<any>("ApprovalQueryService");
+vi.mock("@/lib/approvals/inbox/read-service", () => ({
+	getApprovalInboxList: mockState.getApprovalInboxList,
+}));
 
-	return {
-		ApprovalQueryService,
-		ApprovalQueryServiceLive: Layer.succeed(
-			ApprovalQueryService,
-			ApprovalQueryService.of({
-				getApprovals: mockState.getApprovals,
-				getCounts: vi.fn(),
-			}),
-		),
-	};
-});
+vi.mock("@/lib/approvals/inbox/source-adapters", () => ({
+	isSupportedInboxType: (type: string) =>
+		["absence_entry", "time_entry", "travel_expense_claim"].includes(type),
+}));
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => mockState.logger,
@@ -131,23 +122,15 @@ describe("GET /api/approvals/inbox", () => {
 		});
 		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([]);
 		mockState.accessibleByDrizzle.mockReturnValue({ type: "sql", source: "approval-access" });
-		mockState.getApprovals.mockReturnValue(
-			Effect.succeed({
-				items: [],
-				nextCursor: null,
-				hasMore: false,
-				total: 0,
-			}),
-		);
-	});
-
-	it("delegates approval reads through approver and eligible-scope query parameters", () => {
-		const source = readFileSync("src/app/api/approvals/inbox/route.ts", "utf8");
-
-		expect(source).toContain('"Approval"');
-		expect(source).toContain("approverId: currentEmployee.id");
-		expect(source).toContain("organizationId: currentEmployee.organizationId");
-		expect(source).toContain("eligibleApprovalScopes");
+		mockState.getApprovalInboxList.mockResolvedValue({
+			items: [],
+			nextCursor: null,
+			hasMore: false,
+			total: 0,
+			counts: {},
+			supportedTypes: [],
+			warnings: [],
+		});
 	});
 
 	it("rejects unauthorized requests before delegating", async () => {
@@ -156,7 +139,7 @@ describe("GET /api/approvals/inbox", () => {
 		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
 
 		expect(response.status).toBe(401);
-		expect(mockState.getApprovals).not.toHaveBeenCalled();
+		expect(mockState.getApprovalInboxList).not.toHaveBeenCalled();
 	});
 
 	it("rejects requests when ability cannot be resolved before delegating", async () => {
@@ -166,7 +149,7 @@ describe("GET /api/approvals/inbox", () => {
 
 		expect(response.status).toBe(403);
 		expect(mockState.findEmployee).not.toHaveBeenCalled();
-		expect(mockState.getApprovals).not.toHaveBeenCalled();
+		expect(mockState.getApprovalInboxList).not.toHaveBeenCalled();
 	});
 
 	it("rejects users without approval permission even when they have eligible requesters", async () => {
@@ -180,36 +163,136 @@ describe("GET /api/approvals/inbox", () => {
 		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
 
 		expect(response.status).toBe(403);
-		expect(mockState.getApprovals).not.toHaveBeenCalled();
+		expect(mockState.getApprovalInboxList).not.toHaveBeenCalled();
 	});
 
-	it("preserves employee lookup and delegates assigned approval reads to ApprovalQueryService", async () => {
+	it("preserves employee lookup and delegates assigned approval reads to the inbox list service", async () => {
+		mockState.getApprovalInboxList.mockResolvedValue({
+			items: [],
+			nextCursor: "cursor-2",
+			hasMore: true,
+			total: 12,
+			counts: { absence_entry: 2, time_entry: 3, travel_expense_claim: 7 },
+			supportedTypes: ["absence_entry", "time_entry", "travel_expense_claim"],
+			warnings: [{ source: "travel_expense_claim", message: "Some claims were skipped" }],
+		});
+
 		const response = await GET(
 			createRequest(
-				"https://app.example.com/api/approvals/inbox?status=pending&types=travel_expense_claim,absence_entry&limit=15",
+				"https://app.example.com/api/approvals/inbox?status=pending&types=travel_expense_claim,shift_request,absence_entry&limit=15",
 			),
 		);
+		const body = await response.json();
 
 		expect(response.status).toBe(200);
+		expect(body).toEqual({
+			items: [],
+			nextCursor: "cursor-2",
+			hasMore: true,
+			total: 12,
+			counts: { absence_entry: 2, time_entry: 3, travel_expense_claim: 7 },
+			supportedTypes: ["absence_entry", "time_entry", "travel_expense_claim"],
+			warnings: [{ source: "travel_expense_claim", message: "Some claims were skipped" }],
+		});
 		expect(mockState.accessibleByDrizzle).not.toHaveBeenCalled();
 		expect(mockState.findEmployee).toHaveBeenCalledTimes(1);
 		expect(eq).toHaveBeenCalledWith("isActive", true);
-		expect(mockState.getApprovals).toHaveBeenCalledWith({
+		expect(mockState.getApprovalInboxList).toHaveBeenCalledWith({
 			approverId: "employee-1",
-			authorizationPredicate: undefined,
 			includeAllApprovers: undefined,
 			organizationId: "org-1",
 			status: "pending",
 			types: ["travel_expense_claim", "absence_entry"],
 			teamId: undefined,
 			search: undefined,
-			priority: null,
+			priority: undefined,
 			minAgeDays: undefined,
 			dateRange: undefined,
 			cursor: undefined,
 			limit: 15,
 			eligibleApprovalScopes: [],
 		});
+	});
+
+	it("rejects partial date ranges", async () => {
+		const response = await GET(
+			createRequest("https://app.example.com/api/approvals/inbox?dateFrom=2026-01-01"),
+		);
+		const body = await response.json();
+
+		expect(response.status).toBe(400);
+		expect(body).toEqual({ error: "Both dateFrom and dateTo are required" });
+		expect(mockState.getApprovalInboxList).not.toHaveBeenCalled();
+	});
+
+	it("rejects malformed date ranges", async () => {
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/approvals/inbox?dateFrom=not-a-date&dateTo=2026-01-31",
+			),
+		);
+		const body = await response.json();
+
+		expect(response.status).toBe(400);
+		expect(body).toEqual({ error: "Invalid date range" });
+		expect(mockState.getApprovalInboxList).not.toHaveBeenCalled();
+	});
+
+	it("rejects normalized calendar overflow date ranges", async () => {
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/approvals/inbox?dateFrom=2026-02-31&dateTo=2026-03-01T00:00:00.000Z",
+			),
+		);
+		const body = await response.json();
+
+		expect(response.status).toBe(400);
+		expect(body).toEqual({ error: "Invalid date range" });
+		expect(mockState.getApprovalInboxList).not.toHaveBeenCalled();
+	});
+
+	it("rejects ambiguous non-ISO date ranges", async () => {
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/approvals/inbox?dateFrom=01/02/2026&dateTo=2026-01-31T00:00:00.000Z",
+			),
+		);
+		const body = await response.json();
+
+		expect(response.status).toBe(400);
+		expect(body).toEqual({ error: "Invalid date range" });
+		expect(mockState.getApprovalInboxList).not.toHaveBeenCalled();
+	});
+
+	it("rejects inverted date ranges", async () => {
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/approvals/inbox?dateFrom=2026-02-01&dateTo=2026-01-31",
+			),
+		);
+		const body = await response.json();
+
+		expect(response.status).toBe(400);
+		expect(body).toEqual({ error: "Invalid date range" });
+		expect(mockState.getApprovalInboxList).not.toHaveBeenCalled();
+	});
+
+	it("passes validated date ranges to the inbox list service", async () => {
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/approvals/inbox?dateFrom=2026-05-31T00:00:00.000Z&dateTo=2026-05-31T23:59:59.000Z",
+			),
+		);
+
+		expect(response.status).toBe(200);
+		expect(mockState.getApprovalInboxList).toHaveBeenCalledWith(
+			expect.objectContaining({
+				dateRange: {
+					from: new Date("2026-05-31T00:00:00.000Z"),
+					to: new Date("2026-05-31T23:59:59.000Z"),
+				},
+			}),
+		);
 	});
 
 	it("does not require read-rule translation for directly assigned approval reads", async () => {
@@ -224,10 +307,9 @@ describe("GET /api/approvals/inbox", () => {
 		expect(response.status).toBe(200);
 		expect(mockState.accessibleByDrizzle).not.toHaveBeenCalled();
 		expect(mockState.getEligibleApprovalScopesForManager).toHaveBeenCalled();
-		expect(mockState.getApprovals).toHaveBeenCalledWith(
+		expect(mockState.getApprovalInboxList).toHaveBeenCalledWith(
 			expect.objectContaining({
 				approverId: "employee-1",
-				authorizationPredicate: undefined,
 			}),
 		);
 	});
@@ -241,7 +323,7 @@ describe("GET /api/approvals/inbox", () => {
 
 		expect(response.status).toBe(200);
 		expect(mockState.accessibleByDrizzle).not.toHaveBeenCalled();
-		expect(mockState.getApprovals).toHaveBeenCalledWith(
+		expect(mockState.getApprovalInboxList).toHaveBeenCalledWith(
 			expect.objectContaining({ includeAllApprovers: true }),
 		);
 	});
@@ -254,9 +336,8 @@ describe("GET /api/approvals/inbox", () => {
 		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
 
 		expect(response.status).toBe(200);
-		expect(mockState.getApprovals).toHaveBeenCalledWith(
+		expect(mockState.getApprovalInboxList).toHaveBeenCalledWith(
 			expect.objectContaining({
-				authorizationPredicate: undefined,
 				eligibleApprovalScopes: [
 					{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["employee-1"] },
 				],

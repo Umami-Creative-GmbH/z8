@@ -16,7 +16,7 @@ import { AuthFormWrapper } from "./auth-form-wrapper";
 import { type TurnstileRef, TurnstileWidget } from "./turnstile-widget";
 
 const forgotPasswordSchema = z.object({
-	email: z.string().email("Invalid email address"),
+	email: z.email("Invalid email address"),
 });
 
 export function ForgotPasswordForm({ className, ...props }: React.ComponentProps<"div">) {
@@ -88,7 +88,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 	};
 
 	const validateEmail = (value: string) => {
-		const result = z.string().email().safeParse(value);
+		const result = z.email().safeParse(value);
 		if (result.success) {
 			clearFieldError("email");
 		} else {

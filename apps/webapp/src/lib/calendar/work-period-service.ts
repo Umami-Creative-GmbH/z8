@@ -120,8 +120,10 @@ export async function getWorkPeriodsForMonth(
 				// Format start and end times for display
 				const startDT = dateFromDB(period.startTime);
 				const endDT = period.endTime ? dateFromDB(period.endTime) : null;
-				const startTimeFormatted = startDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
-				const endTimeFormatted = endDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
+				const startTimeFormatted =
+					startDT?.setLocale("en-US").toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
+				const endTimeFormatted =
+					endDT?.setLocale("en-US").toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
 				const isRunning = period.isActive && !period.endTime;
 
 				if (isRunning) {

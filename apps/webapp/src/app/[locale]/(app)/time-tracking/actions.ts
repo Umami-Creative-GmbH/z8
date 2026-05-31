@@ -3329,7 +3329,7 @@ export async function getPresenceStatus(
 	employeeId: string,
 ): Promise<ServerActionResult<PresenceStatusSummary>> {
 	const parsed = z
-		.object({ employeeId: z.string().uuid("Invalid employee ID") })
+		.object({ employeeId: z.uuid("Invalid employee ID") })
 		.safeParse({ employeeId });
 	if (!parsed.success) {
 		return {

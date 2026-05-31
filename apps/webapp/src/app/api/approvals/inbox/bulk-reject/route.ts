@@ -5,20 +5,15 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
-import {
-	BulkApprovalService,
-	BulkApprovalServiceLive,
-} from "@/lib/approvals/application/bulk-approval.service";
-import type { BulkDecisionResult } from "@/lib/approvals/domain/types";
+import { bulkRejectApprovalInboxItems } from "@/lib/approvals/inbox/decision-service";
+import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import type { AnyAppError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -30,9 +25,11 @@ const MAX_BULK_REJECT = 50;
 
 export async function POST(request: NextRequest) {
 	try {
-		const body = await request.json();
-		const approvalIds = body.approvalIds as string[];
-		const reason = body.reason as string;
+		const body = await request.json().catch(() => ({}));
+		const approvalIds = Array.isArray(body.approvalIds)
+			? body.approvalIds.filter((id: unknown): id is string => typeof id === "string" && id.length > 0)
+			: [];
+		const reason = typeof body.reason === "string" ? body.reason : "";
 
 		if (!Array.isArray(approvalIds) || approvalIds.length === 0) {
 			return NextResponse.json({ error: "approvalIds array is required" }, { status: 400 });
@@ -60,10 +57,14 @@ export async function POST(request: NextRequest) {
 		}
 
 		const ability = await getAbility();
-		if (
-			!ability ||
-			(ability.cannot("approve", "Approval") && ability.cannot("manage", "Approval"))
-		) {
+		if (!ability) {
+			const error = new ForbiddenError("approve", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+		const canManageApprovals = ability.cannot("manage", "Approval") === false;
+		const canApproveApprovals = ability.cannot("approve", "Approval") === false;
+		if (!canApproveApprovals && !canManageApprovals) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
@@ -81,25 +82,22 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 		}
 
-		const result = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const bulkApprovalService = yield* _(BulkApprovalService);
-				return yield* _(
-					bulkApprovalService.bulkDecide(
-						approvalIds,
-						currentEmployee.id,
-						currentEmployee.organizationId,
-						"reject",
-						reason,
-						session.user.id,
-					),
-				);
-			}).pipe(Effect.provide(BulkApprovalServiceLive)) as Effect.Effect<
-				BulkDecisionResult,
-				AnyAppError,
-				never
-			>,
-		);
+		const eligibleApprovalScopes = canManageApprovals
+			? []
+			: await getEligibleApprovalScopesForManager({
+					db,
+					managerEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				});
+
+		const result = await bulkRejectApprovalInboxItems({
+			approvalIds,
+			actorEmployeeId: currentEmployee.id,
+			organizationId: currentEmployee.organizationId,
+			reason,
+			includeAllApprovers: canManageApprovals || undefined,
+			eligibleApprovalScopes,
+		});
 
 		logger.info(
 			{

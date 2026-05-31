@@ -152,7 +152,7 @@ export function DomainAuthConfigDialog({
 						</div>
 						<div className="grid grid-cols-2 gap-3">
 							{SOCIAL_PROVIDERS.map((provider) => (
-								<div key={provider.id} className="flex items-center space-x-2">
+								<div key={provider.id} className="flex items-center gap-x-2">
 									<Checkbox
 										id={provider.id}
 										checked={config.socialProvidersEnabled.includes(provider.id)}

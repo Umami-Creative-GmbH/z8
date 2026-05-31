@@ -188,7 +188,7 @@ export function LocationEmployeeDialog({
 							{/* Primary Supervisor Checkbox */}
 							<form.Field name="isPrimary">
 								{(field) => (
-									<div className="flex items-center space-x-2">
+									<div className="flex items-center gap-x-2">
 										<Checkbox
 											id="isPrimary"
 											checked={field.state.value}

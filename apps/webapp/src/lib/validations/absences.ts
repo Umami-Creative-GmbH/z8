@@ -19,7 +19,7 @@ export const vacationBalanceSchema = z.object({
  * Schema for absence request (form submission)
  */
 export const absenceRequestSchema = z.object({
-	categoryId: z.string().uuid(),
+	categoryId: z.uuid(),
 	startDate: z.coerce.date(),
 	endDate: z.coerce.date(),
 	notes: z.string().optional(),
@@ -30,7 +30,7 @@ export const absenceRequestSchema = z.object({
  * Schema for employee allowance update
  */
 export const employeeAllowanceUpdateSchema = z.object({
-	employeeId: z.string().uuid(),
+	employeeId: z.uuid(),
 	year: z.number().int(),
 	customAnnualDays: z.number().optional(),
 	customCarryoverDays: z.number().optional(),
@@ -42,7 +42,7 @@ export const employeeAllowanceUpdateSchema = z.object({
  * Schema for absence category information
  */
 const absenceCategorySchema = z.object({
-	id: z.string().uuid(),
+	id: z.uuid(),
 	name: z.string(),
 	type: z.string(),
 	color: z.string().nullable(),
@@ -54,15 +54,15 @@ const absenceCategorySchema = z.object({
  * Used when displaying absence records with related data
  */
 export const absenceWithCategorySchema = z.object({
-	id: z.string().uuid(),
-	employeeId: z.string().uuid(),
+	id: z.uuid(),
+	employeeId: z.uuid(),
 	startDate: z.coerce.date(),
 	endDate: z.coerce.date(),
 	status: z.enum(["pending", "approved", "rejected"]),
 	notes: z.string().nullable(),
 	sickDetail: sickDetailSchema.nullable(),
 	category: absenceCategorySchema,
-	approvedBy: z.string().uuid().nullable(),
+	approvedBy: z.uuid().nullable(),
 	approvedAt: z.coerce.date().nullable(),
 	rejectionReason: z.string().nullable(),
 	createdAt: z.coerce.date(),

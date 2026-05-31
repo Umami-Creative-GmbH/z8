@@ -100,7 +100,7 @@ export function ShiftDialogSections({
 				}}
 			>
 				{(field) => (
-					<div className="flex flex-col space-y-2">
+					<div className="flex flex-col gap-y-2">
 						<Label>{t("scheduling:scheduling.shiftDialog.date", "Date")}</Label>
 						<Popover>
 							<PopoverTrigger asChild>
@@ -137,7 +137,7 @@ export function ShiftDialogSections({
 			{isManager && templates.length > 0 && (
 				<form.Field name="templateId">
 					{(field) => (
-						<div className="space-y-2">
+						<div className="gap-y-2">
 							<Label>
 								{t("scheduling:scheduling.shiftDialog.template", "Template (Optional)")}
 							</Label>
@@ -187,7 +187,7 @@ export function ShiftDialogSections({
 					}}
 				>
 					{(field) => (
-						<div className="space-y-2">
+						<div className="gap-y-2">
 							<Label>{t("scheduling:scheduling.shiftDialog.startTime", "Start Time")}</Label>
 							<TimeInput
 								value={field.state.value}
@@ -207,7 +207,7 @@ export function ShiftDialogSections({
 					}}
 				>
 					{(field) => (
-						<div className="space-y-2">
+						<div className="gap-y-2">
 							<Label>{t("scheduling:scheduling.shiftDialog.endTime", "End Time")}</Label>
 							<TimeInput
 								value={field.state.value}
@@ -224,7 +224,7 @@ export function ShiftDialogSections({
 			{isManager && (
 				<form.Field name="subareaId">
 					{(field) => (
-						<div className="space-y-2">
+						<div className="gap-y-2">
 							<Label>
 								<span className="flex items-center gap-2">
 									<IconMapPin className="size-4" aria-hidden="true" />
@@ -269,7 +269,7 @@ export function ShiftDialogSections({
 			{isManager && (
 				<form.Field name="employeeId">
 					{(field) => (
-						<div className="space-y-2">
+						<div className="gap-y-2">
 							<Label>
 								<span className="flex items-center gap-2">
 									<IconUsers className="size-4" aria-hidden="true" />
@@ -334,7 +334,7 @@ export function ShiftDialogSections({
 			{isManager && (
 				<form.Field name="notes">
 					{(field) => (
-						<div className="space-y-2">
+						<div className="gap-y-2">
 							<Label>{t("scheduling:scheduling.shiftDialog.notes", "Notes (Optional)")}</Label>
 							<Textarea
 								placeholder={t(

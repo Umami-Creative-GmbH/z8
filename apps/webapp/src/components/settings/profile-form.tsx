@@ -389,7 +389,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
 										seed={user.id}
 										image={previewUrl || avatarImage || undefined}
 										name={displayName}
-										gender={selectedGender || null}
 										size="xl"
 										clockStatus={
 											currentEmployeeId ? presence.getStatus(currentEmployeeId) : "unknown"

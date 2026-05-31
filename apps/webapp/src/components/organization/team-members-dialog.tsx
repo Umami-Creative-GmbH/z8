@@ -160,13 +160,12 @@ export function TeamMembersDialog({
 											{availableEmployees.map((member) => (
 												<SelectItem key={member.employee!.id} value={member.employee!.id}>
 													<div className="flex items-center gap-2">
-														<UserAvatar
-															seed={member.user.id}
-															image={member.user.image}
-															name={member.user.name}
-															gender={member.employee?.gender ?? null}
-															size="xs"
-															clockStatus={presence.getStatus(member.employee!.id)}
+													<UserAvatar
+														seed={member.user.id}
+														image={member.user.image}
+														name={member.user.name}
+														size="xs"
+														clockStatus={presence.getStatus(member.employee!.id)}
 														/>
 														<span>{member.user.name}</span>
 														{member.employee?.position && (
@@ -233,13 +232,12 @@ export function TeamMembersDialog({
 											className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
 										>
 											<div className="flex items-center gap-3 flex-1 min-w-0">
-												<UserAvatar
-													seed={member.user.id}
-													image={member.user.image}
-													name={member.user.name}
-													gender={member.employee?.gender ?? null}
-													size="sm"
-													clockStatus={presence.getStatus(member.employee!.id)}
+													<UserAvatar
+														seed={member.user.id}
+														image={member.user.image}
+														name={member.user.name}
+														size="sm"
+														clockStatus={presence.getStatus(member.employee!.id)}
 												/>
 												<div className="flex-1 min-w-0">
 													<div className="font-medium truncate">{member.user.name}</div>

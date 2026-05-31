@@ -28,7 +28,7 @@ import { AuthFormWrapper } from "./auth-form-wrapper";
 import { type TurnstileRef, TurnstileWidget } from "./turnstile-widget";
 
 const loginSchema = z.object({
-	email: z.string().email("Invalid email address"),
+	email: z.email("Invalid email address"),
 	password: z.string().min(1, "Password is required"),
 });
 
@@ -351,7 +351,7 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 	};
 
 	const validateEmail = (value: string) => {
-		const result = z.string().email().safeParse(value);
+		const result = z.email().safeParse(value);
 		if (result.success) {
 			dispatch({ type: "CLEAR_FIELD_ERROR", field: "email" });
 		} else {
@@ -776,7 +776,7 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 							{t("auth.2fa-enter-code", "Enter the 6-digit code from your authenticator app")}
 						</p>
 					</div>
-					<div className="flex items-center justify-center space-x-2">
+					<div className="flex items-center justify-center gap-x-2">
 						<Switch
 							id="trustDevice"
 							checked={trustDevice}

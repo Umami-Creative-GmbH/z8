@@ -29,7 +29,7 @@ export const dayOfWeekSchema = z.enum([
  */
 export const coverageRuleSchema = z
 	.object({
-		subareaId: z.string().uuid("Invalid subarea ID"),
+		subareaId: z.uuid("Invalid subarea ID"),
 		dayOfWeek: dayOfWeekSchema,
 		startTime: timeSchema,
 		endTime: timeSchema,
@@ -54,7 +54,7 @@ export const coverageRuleSchema = z
  */
 export const createCoverageRuleSchema = z
 	.object({
-		subareaId: z.string().uuid("Invalid subarea ID"),
+		subareaId: z.uuid("Invalid subarea ID"),
 		dayOfWeek: dayOfWeekSchema,
 		startTime: timeSchema,
 		endTime: timeSchema,
@@ -79,7 +79,7 @@ export const createCoverageRuleSchema = z
  */
 export const updateCoverageRuleSchema = z
 	.object({
-		subareaId: z.string().uuid("Invalid subarea ID").optional(),
+		subareaId: z.uuid("Invalid subarea ID").optional(),
 		dayOfWeek: dayOfWeekSchema.optional(),
 		startTime: timeSchema.optional(),
 		endTime: timeSchema.optional(),
@@ -119,7 +119,7 @@ export const bulkCreateCoverageRulesSchema = z.object({
 export const coverageDateRangeSchema = z.object({
 	startDate: z.coerce.date(),
 	endDate: z.coerce.date(),
-	subareaIds: z.array(z.string().uuid()).optional(),
+	subareaIds: z.array(z.uuid()).optional(),
 });
 
 // ============================================
