@@ -111,6 +111,33 @@ describe("organization invitation actions", () => {
 		expect(createInvitationMock).not.toHaveBeenCalled();
 	});
 
+	it("persists target team and organization creation permission after creating an invitation", async () => {
+		invitationFindFirstMock
+			.mockResolvedValueOnce(null)
+			.mockResolvedValueOnce({
+				id: "invite-created",
+				organizationId: "org-1",
+				status: "pending",
+			});
+
+		const { sendInvitation } = await import("./actions");
+
+		const result = await sendInvitation({
+			organizationId: "org-1",
+			email: "invitee@example.com",
+			role: "member",
+			canCreateOrganizations: true,
+			targetTeamId: "11111111-1111-4111-8111-111111111111",
+		});
+
+		expect(result).toMatchObject({ success: true });
+		expect(createInvitationMock).toHaveBeenCalledOnce();
+		expect(updateSetMock).toHaveBeenCalledWith({
+			canCreateOrganizations: true,
+			targetTeamId: "11111111-1111-4111-8111-111111111111",
+		});
+	});
+
 	it("allows an admin to update the target team for a pending invitation", async () => {
 		invitationFindFirstMock.mockResolvedValue({
 			id: "invite-1",
@@ -130,5 +157,99 @@ describe("organization invitation actions", () => {
 		expect(updateSetMock).toHaveBeenCalledWith({
 			targetTeamId: "11111111-1111-4111-8111-111111111111",
 		});
+	});
+
+	it("rejects invalid target teams when updating a pending invitation", async () => {
+		invitationFindFirstMock.mockResolvedValue({
+			id: "invite-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+		teamFindFirstMock.mockResolvedValue(null);
+
+		const { updateInvitationTargetTeam } = await import("./actions");
+
+		const result = await updateInvitationTargetTeam({
+			invitationId: "invite-1",
+			organizationId: "org-1",
+			targetTeamId: "22222222-2222-4222-8222-222222222222",
+		});
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "Target team not found in this organization",
+		});
+		expect(updateSetMock).not.toHaveBeenCalled();
+	});
+
+	it("requires admin or owner role to update an invitation target team", async () => {
+		invitationFindFirstMock.mockResolvedValue({
+			id: "invite-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+		memberFindFirstMock.mockResolvedValue({
+			id: "member-regular",
+			userId: "user-admin",
+			organizationId: "org-1",
+			role: "member",
+		});
+
+		const { updateInvitationTargetTeam } = await import("./actions");
+
+		const result = await updateInvitationTargetTeam({
+			invitationId: "invite-1",
+			organizationId: "org-1",
+			targetTeamId: "11111111-1111-4111-8111-111111111111",
+		});
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+			error: "Only admins and owners can update invitations",
+		});
+		expect(updateSetMock).not.toHaveBeenCalled();
+	});
+
+	it("allows clearing the target team from a pending invitation", async () => {
+		invitationFindFirstMock.mockResolvedValue({
+			id: "invite-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const { updateInvitationTargetTeam } = await import("./actions");
+
+		const result = await updateInvitationTargetTeam({
+			invitationId: "invite-1",
+			organizationId: "org-1",
+			targetTeamId: null,
+		});
+
+		expect(result).toMatchObject({ success: true });
+		expect(teamFindFirstMock).not.toHaveBeenCalled();
+		expect(updateSetMock).toHaveBeenCalledWith({ targetTeamId: null });
+	});
+
+	it("does not update when no pending invitation exists for the organization", async () => {
+		invitationFindFirstMock.mockResolvedValue(null);
+
+		const { updateInvitationTargetTeam } = await import("./actions");
+
+		const result = await updateInvitationTargetTeam({
+			invitationId: "invite-1",
+			organizationId: "wrong-org",
+			targetTeamId: "11111111-1111-4111-8111-111111111111",
+		});
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "NotFoundError",
+			error: "Invitation not found",
+		});
+		expect(memberFindFirstMock).not.toHaveBeenCalled();
+		expect(teamFindFirstMock).not.toHaveBeenCalled();
+		expect(updateSetMock).not.toHaveBeenCalled();
 	});
 });
