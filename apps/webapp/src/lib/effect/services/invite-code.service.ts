@@ -5,6 +5,7 @@ import { member, user } from "@/db/auth-schema";
 import {
 	type inviteCode as InviteCodeTable,
 	type inviteCodeUsage as InviteCodeUsageTable,
+	employee,
 	inviteCode,
 	inviteCodeUsage,
 	memberApproval,
@@ -192,6 +193,19 @@ export const InviteCodeServiceLive = Layer.effect(
 				return { usable: false, reason: "Code has reached maximum uses" };
 			}
 			return { usable: true };
+		};
+
+		const resolveInviteCodeTargetTeamId = async (
+			organizationId: string,
+			targetTeamId: string | null | undefined,
+		) => {
+			if (!targetTeamId) return null;
+
+			const targetTeam = await dbService.db.query.team.findFirst({
+				where: and(eq(team.id, targetTeamId), eq(team.organizationId, organizationId)),
+			});
+
+			return targetTeam?.id ?? null;
 		};
 
 		return InviteCodeService.of({
@@ -649,6 +663,8 @@ export const InviteCodeServiceLive = Layer.effect(
 									userId: input.userId,
 									organizationId: inviteCodeRecord.organizationId,
 									role: "member",
+									status: memberStatus,
+									inviteCodeId: inviteCodeRecord.id,
 									createdAt: new Date(),
 								})
 								.returning();
@@ -669,6 +685,34 @@ export const InviteCodeServiceLive = Layer.effect(
 							});
 						}),
 					);
+
+					if (!inviteCodeRecord.requiresApproval) {
+						yield* _(
+							dbService.query("provisionEmployee", async () => {
+								const existingEmployee = await dbService.db.query.employee.findFirst({
+									where: and(
+										eq(employee.userId, input.userId),
+										eq(employee.organizationId, inviteCodeRecord.organizationId),
+									),
+								});
+
+								if (existingEmployee) return;
+
+								const targetTeamId = await resolveInviteCodeTargetTeamId(
+									inviteCodeRecord.organizationId,
+									inviteCodeRecord.defaultTeamId,
+								);
+
+								await dbService.db.insert(employee).values({
+									userId: input.userId,
+									organizationId: inviteCodeRecord.organizationId,
+									teamId: targetTeamId,
+									role: "employee",
+									isActive: true,
+								});
+							}),
+						);
+					}
 
 					// Increment usage count
 					yield* _(
@@ -922,6 +966,34 @@ export const InviteCodeServiceLive = Layer.effect(
 							});
 						}),
 					);
+
+					if (!inviteCodeRecord.requiresApproval) {
+						yield* _(
+							dbService.query("provisionEmployee", async () => {
+								const existingEmployee = await dbService.db.query.employee.findFirst({
+									where: and(
+										eq(employee.userId, userId),
+										eq(employee.organizationId, inviteCodeRecord.organizationId),
+									),
+								});
+
+								if (existingEmployee) return;
+
+								const targetTeamId = await resolveInviteCodeTargetTeamId(
+									inviteCodeRecord.organizationId,
+									inviteCodeRecord.defaultTeamId,
+								);
+
+								await dbService.db.insert(employee).values({
+									userId,
+									organizationId: inviteCodeRecord.organizationId,
+									teamId: targetTeamId,
+									role: "employee",
+									isActive: true,
+								});
+							}),
+						);
+					}
 
 					// Increment usage count
 					yield* _(
