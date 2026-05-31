@@ -24,6 +24,25 @@ describe("MembersTable invitation target teams", () => {
 
 		expect(file).toContain("targetTeamId: invitation.targetTeamId ?? null");
 	});
+
+	it("updates the local pending invitation target team after editing", () => {
+		const table = componentSource();
+		const dialog = readFileSync(
+			join(process.cwd(), "src/components/organization/edit-invitation-target-team-dialog.tsx"),
+			"utf8",
+		);
+
+		expect(dialog).toContain("onUpdated:");
+		expect(dialog).toContain("onUpdated({");
+		expect(dialog).toContain("targetTeamId: updatedTargetTeamId");
+		expect(dialog).toContain("targetTeam: updatedTargetTeam");
+		expect(table).toContain("handleInvitationTargetTeamUpdated");
+		expect(table).toContain("setInvitations((currentInvitations) =>");
+		expect(table).toContain("invitation.id === invitationId");
+		expect(table).toContain("targetTeamId: update.targetTeamId");
+		expect(table).toContain("targetTeam: update.targetTeam");
+		expect(table).toContain("onUpdated={handleInvitationTargetTeamUpdated}");
+	});
 });
 
 describe("Organizations settings page invitation target teams", () => {

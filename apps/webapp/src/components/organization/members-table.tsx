@@ -318,6 +318,26 @@ export function MembersTable({
 		}
 	};
 
+	const handleInvitationTargetTeamUpdated = (update: {
+		targetTeamId: string | null;
+		targetTeam: { id: string; name: string } | null;
+	}) => {
+		const invitationId = invitationToEditTargetTeam?.id;
+		if (!invitationId) return;
+
+		setInvitations((currentInvitations) =>
+			currentInvitations.map((invitation) =>
+				invitation.id === invitationId
+					? {
+							...invitation,
+							targetTeamId: update.targetTeamId,
+							targetTeam: update.targetTeam,
+						}
+					: invitation,
+			),
+		);
+	};
+
 	const handleToggleStatus = (employeeId: string, currentlyActive: boolean) => {
 		toggleStatusMutation.mutate({ employeeId, isActive: !currentlyActive });
 	};
@@ -758,6 +778,7 @@ export function MembersTable({
 				invitation={invitationToEditTargetTeam}
 				open={editTargetTeamDialogOpen}
 				onOpenChange={handleEditTargetTeamOpenChange}
+				onUpdated={handleInvitationTargetTeamUpdated}
 			/>
 		</div>
 	);

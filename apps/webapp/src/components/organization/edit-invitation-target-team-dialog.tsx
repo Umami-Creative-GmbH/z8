@@ -33,6 +33,10 @@ interface EditInvitationTargetTeamDialogProps {
 	invitation: InvitationWithInviter | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	onUpdated: (update: {
+		targetTeamId: string | null;
+		targetTeam: { id: string; name: string } | null;
+	}) => void;
 }
 
 export function EditInvitationTargetTeamDialog({
@@ -40,6 +44,7 @@ export function EditInvitationTargetTeamDialog({
 	invitation,
 	open,
 	onOpenChange,
+	onUpdated,
 }: EditInvitationTargetTeamDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -75,10 +80,19 @@ export function EditInvitationTargetTeamDialog({
 		},
 		onSuccess: (result) => {
 			if (result.success) {
+				const updatedTargetTeamId = selectedTargetTeamId === "none" ? null : selectedTargetTeamId;
+				const updatedTargetTeam = updatedTargetTeamId
+					? (teams.find((team) => team.id === updatedTargetTeamId) ?? null)
+					: null;
+
 				toast.success(
 					t("organization.members.targetTeamUpdateSuccess", "Invitation target team updated"),
 				);
 				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
+				onUpdated({
+					targetTeamId: updatedTargetTeamId,
+					targetTeam: updatedTargetTeam,
+				});
 				onOpenChange(false);
 			} else {
 				toast.error(
