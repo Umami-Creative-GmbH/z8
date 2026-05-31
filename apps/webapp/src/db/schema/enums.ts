@@ -165,6 +165,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"shift_swap_approved",
 	"shift_swap_rejected",
 	"shift_pickup_available",
+	"shift_pickup_requested",
 	"shift_pickup_approved",
 	// Project notifications
 	"project_budget_warning_70",

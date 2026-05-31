@@ -134,6 +134,12 @@
         "copiedToClipboard": "In d'Zwüscheablage kopiert",
         "customDomain": "Eigeti Domain",
         "customDomainDescription": "Konfiguriere e eigeti Domain, zum e organisationsspezifischi Aamäldesiite mit dim Branding z'aktiviere.",
+        "defaultUrl": {
+          "alias": "Organisations-ID-Alias",
+          "canonical": "Kanonisch"
+        },
+        "defaultUrls": "Standard-URLs",
+        "defaultUrlsDescription": "Die vom System verwaltete URLs funktioniered automatisch ohni benutzerdefinierti DNS-Iistellige.",
         "deleteAria": "Eigeti Domain {domain} lösche",
         "deleted": "Domain gelöscht",
         "deleteDescription": "Bisch sicher, dass du \"{domain}\" lösche wotsch? Die Aktion chan nöd rückgängig gmacht werde. Benutzer chönd sich nüm über die eigeti Domain aamälde.",

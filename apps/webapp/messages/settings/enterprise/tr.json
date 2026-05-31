@@ -134,6 +134,12 @@
         "copiedToClipboard": "Panoya kopyalandı",
         "customDomain": "Özel Alan Adı",
         "customDomainDescription": "Markanızla kuruma özel bir giriş sayfası etkinleştirmek için özel bir alan adı yapılandırın.",
+        "defaultUrl": {
+          "alias": "Kuruluş kimliği diğer adı",
+          "canonical": "Kurallı"
+        },
+        "defaultUrls": "Varsayılan URL'ler",
+        "defaultUrlsDescription": "Bu platform tarafından yönetilen URL'ler, özel DNS kurulumu olmadan otomatik olarak çalışır.",
         "deleteAria": "{domain} özel alan adını sil",
         "deleted": "Etki alanı silindi",
         "deleteDescription": "\"{domain}\" alan adını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz. Kullanıcılar artık bu özel alan adı üzerinden giriş yapamayacaklar.",

@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { member, organization, session, user } from "@/db/auth-schema";
 import { organizationSuspension, platformAdminAuditLog } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { addOrganizationDeletionNotificationJob } from "@/lib/queue";
 import { AuthorizationError, ConflictError, DatabaseError, NotFoundError } from "../errors";
 
 // Types
@@ -783,21 +784,23 @@ export const PlatformAdminServiceLive = Layer.effect(
 							throw { type: "not_found" };
 						}
 
+						const deletionDate = new Date();
+
+						if (!immediate) {
+							deletionDate.setDate(deletionDate.getDate() + 5);
+						}
+
 						if (immediate) {
 							// Set deletedAt to now - the cleanup job will handle actual deletion
 							// For truly immediate deletion, we'd call the cleanup function directly
 							await db
 								.update(organization)
 								.set({
-									deletedAt: new Date(),
+									deletedAt: deletionDate,
 									deletedBy: adminId,
 								})
 								.where(eq(organization.id, orgId));
 						} else {
-							// Schedule for 5 days from now (same as org owner deletion)
-							const deletionDate = new Date();
-							deletionDate.setDate(deletionDate.getDate() + 5);
-
 							await db
 								.update(organization)
 								.set({
@@ -820,7 +823,20 @@ export const PlatformAdminServiceLive = Layer.effect(
 							}),
 						});
 
-						// TODO: If !skipNotification, trigger notification job
+						if (!skipNotification) {
+							const [adminUser] = await db
+								.select({ email: user.email })
+								.from(user)
+								.where(eq(user.id, adminId))
+								.limit(1);
+
+							await addOrganizationDeletionNotificationJob({
+								organizationId: orgId,
+								organizationName: existingOrg.name,
+								deletedByName: adminUser?.email ?? adminId,
+								deletionDate: deletionDate.toISOString(),
+							});
+						}
 					},
 					catch: (error) => {
 						if (

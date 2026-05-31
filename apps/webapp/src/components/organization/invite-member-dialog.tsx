@@ -1,11 +1,12 @@
 "use client";
 
 import { IconLoader2, IconMail } from "@tabler/icons-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "@tanstack/react-form";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
 import { toast } from "sonner";
 import { sendInvitation } from "@/app/[locale]/(app)/settings/organizations/actions";
+import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -48,11 +49,12 @@ export function InviteMemberDialog({
 	const { refresh } = useRouter();
 	const queryClient = useQueryClient();
 
-	const [formData, setFormData] = useState({
-		email: "",
-		role: "member" as "owner" | "admin" | "member",
-		canCreateOrganizations: false,
+	const { data: teamsResult } = useQuery({
+		queryKey: queryKeys.teams.list(organizationId),
+		queryFn: () => listTeams(organizationId),
+		enabled: open,
 	});
+	const teams = teamsResult?.success ? teamsResult.data : [];
 
 	const inviteMutation = useMutation({
 		mutationFn: (data: {
@@ -60,15 +62,38 @@ export function InviteMemberDialog({
 			email: string;
 			role: "owner" | "admin" | "member";
 			canCreateOrganizations: boolean;
+			targetTeamId: string | null;
 		}) => sendInvitation(data),
-		onSuccess: (result) => {
+		onError: () => {
+			toast.error(t("organization.invite.error", "Failed to send invitation"));
+		},
+	});
+
+	const form = useForm({
+		defaultValues: {
+			email: "",
+			role: "member" as "owner" | "admin" | "member",
+			canCreateOrganizations: false,
+			targetTeamId: "none",
+		},
+		onSubmit: async ({ value }) => {
+			const result = await inviteMutation
+				.mutateAsync({
+					organizationId,
+					email: value.email,
+					role: value.role,
+					canCreateOrganizations: value.canCreateOrganizations,
+					targetTeamId: value.targetTeamId === "none" ? null : value.targetTeamId,
+				})
+				.catch(() => null);
+
+			if (!result) {
+				return;
+			}
+
 			if (result.success) {
 				toast.success(t("organization.invite.success", "Invitation sent successfully"));
-				setFormData({
-					email: "",
-					role: "member",
-					canCreateOrganizations: false,
-				});
+				form.reset();
 				onOpenChange(false);
 				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
 				refresh();
@@ -76,20 +101,7 @@ export function InviteMemberDialog({
 				toast.error(result.error || t("organization.invite.error", "Failed to send invitation"));
 			}
 		},
-		onError: () => {
-			toast.error(t("organization.invite.error", "Failed to send invitation"));
-		},
 	});
-
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		inviteMutation.mutate({
-			organizationId,
-			email: formData.email,
-			role: formData.role,
-			canCreateOrganizations: formData.canCreateOrganizations,
-		});
-	};
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
@@ -103,101 +115,148 @@ export function InviteMemberDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						void form.handleSubmit();
+					}}
+					className="flex min-h-0 flex-1 flex-col"
+				>
 					<ActionPanelBody className="space-y-5">
-						<div className="space-y-2">
-							<Label htmlFor="email">{t("organization.invite.emailLabel", "Email Address")}</Label>
-							<div className="relative">
-								<IconMail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-								<Input
-									id="email"
-									type="email"
-									autoComplete="email"
-									value={formData.email}
-									onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-									placeholder="colleague@example.com"
-									className="pl-9"
-									required
-								/>
-							</div>
-						</div>
+						<form.Field name="email">
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="email">
+										{t("organization.invite.emailLabel", "Email Address")}
+									</Label>
+									<div className="relative">
+										<IconMail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+										<Input
+											id="email"
+											type="email"
+											autoComplete="email"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											placeholder="colleague@example.com"
+											className="pl-9"
+											required
+										/>
+									</div>
+								</div>
+							)}
+						</form.Field>
 
-						<div className="space-y-2">
-							<Label htmlFor="role">{t("organization.members.role", "Role")}</Label>
-							<Select
-								value={formData.role}
-								onValueChange={(value: "owner" | "admin" | "member") =>
-									setFormData({ ...formData, role: value })
-								}
-							>
-								<SelectTrigger id="role">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="member">
-										<div className="flex flex-col items-start">
-											<span className="font-medium">
-												{t("organization.members.roles.member", "Member")}
-											</span>
-											<span className="text-xs text-muted-foreground">
-												{t(
-													"organization.invite.roleDescriptions.member",
-													"Basic access to organization",
-												)}
-											</span>
-										</div>
-									</SelectItem>
-									<SelectItem value="admin">
-										<div className="flex flex-col items-start">
-											<span className="font-medium">
-												{t("organization.members.roles.admin", "Admin")}
-											</span>
-											<span className="text-xs text-muted-foreground">
-												{t(
-													"organization.invite.roleDescriptions.admin",
-													"Can invite members and manage settings",
-												)}
-											</span>
-										</div>
-									</SelectItem>
-									{currentMemberRole === "owner" && (
-										<SelectItem value="owner">
-											<div className="flex flex-col items-start">
-												<span className="font-medium">
-													{t("organization.members.roles.owner", "Owner")}
-												</span>
-												<span className="text-xs text-muted-foreground">
-													{t(
-														"organization.invite.roleDescriptions.owner",
-														"Full control of organization",
-													)}
-												</span>
-											</div>
-										</SelectItem>
-									)}
-								</SelectContent>
-							</Select>
-						</div>
+						<form.Field name="role">
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="role">{t("organization.members.role", "Role")}</Label>
+									<Select
+										value={field.state.value}
+										onValueChange={(value: "owner" | "admin" | "member") =>
+											field.handleChange(value)
+										}
+									>
+										<SelectTrigger id="role">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="member">
+												<div className="flex flex-col items-start">
+													<span className="font-medium">
+														{t("organization.members.roles.member", "Member")}
+													</span>
+													<span className="text-xs text-muted-foreground">
+														{t(
+															"organization.invite.roleDescriptions.member",
+															"Basic access to organization",
+														)}
+													</span>
+												</div>
+											</SelectItem>
+											<SelectItem value="admin">
+												<div className="flex flex-col items-start">
+													<span className="font-medium">
+														{t("organization.members.roles.admin", "Admin")}
+													</span>
+													<span className="text-xs text-muted-foreground">
+														{t(
+															"organization.invite.roleDescriptions.admin",
+															"Can invite members and manage settings",
+														)}
+													</span>
+												</div>
+											</SelectItem>
+											{currentMemberRole === "owner" && (
+												<SelectItem value="owner">
+													<div className="flex flex-col items-start">
+														<span className="font-medium">
+															{t("organization.members.roles.owner", "Owner")}
+														</span>
+														<span className="text-xs text-muted-foreground">
+															{t(
+																"organization.invite.roleDescriptions.owner",
+																"Full control of organization",
+															)}
+														</span>
+													</div>
+												</SelectItem>
+											)}
+										</SelectContent>
+									</Select>
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field name="targetTeamId">
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="targetTeam">
+										{t("organization.invite.targetTeam", "Target team")}
+									</Label>
+									<Select value={field.state.value} onValueChange={field.handleChange}>
+										<SelectTrigger
+											id="targetTeam"
+											aria-label={t("organization.invite.targetTeam", "Target team")}
+										>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">
+												{t("organization.invite.noTargetTeam", "No team")}
+											</SelectItem>
+											{teams.map((team) => (
+												<SelectItem key={team.id} value={team.id}>
+													{team.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+							)}
+						</form.Field>
 
 						{currentMemberRole === "owner" && (
-							<div className="flex items-center gap-x-2">
-								<Checkbox
-									id="canCreateOrganizations"
-									checked={formData.canCreateOrganizations}
-									onCheckedChange={(checked) =>
-										setFormData({ ...formData, canCreateOrganizations: checked as boolean })
-									}
-								/>
-								<label
-									htmlFor="canCreateOrganizations"
-									className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-								>
-									{t(
-										"organization.invite.allowCreateOrganizations",
-										"Allow this user to create organizations",
-									)}
-								</label>
-							</div>
+							<form.Field name="canCreateOrganizations">
+								{(field) => (
+									<div className="flex items-center gap-x-2">
+										<Checkbox
+											id="canCreateOrganizations"
+											checked={field.state.value}
+											onCheckedChange={(checked) => field.handleChange(checked === true)}
+										/>
+										<label
+											htmlFor="canCreateOrganizations"
+											className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+										>
+											{t(
+												"organization.invite.allowCreateOrganizations",
+												"Allow this user to create organizations",
+											)}
+										</label>
+									</div>
+								)}
+							</form.Field>
 						)}
 					</ActionPanelBody>
 

@@ -118,6 +118,7 @@ const NOTIFICATION_CATEGORIES = [
 			"shift_swap_approved",
 			"shift_swap_rejected",
 			"shift_pickup_available",
+			"shift_pickup_requested",
 			"shift_pickup_approved",
 		] as NotificationType[],
 	},
@@ -148,6 +149,7 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	shift_swap_approved: "Swap approved",
 	shift_swap_rejected: "Swap rejected",
 	shift_pickup_available: "Open shift available",
+	shift_pickup_requested: "Pickup requested",
 	shift_pickup_approved: "Pickup approved",
 	// Project notifications
 	project_budget_warning_70: "Budget 70% used",

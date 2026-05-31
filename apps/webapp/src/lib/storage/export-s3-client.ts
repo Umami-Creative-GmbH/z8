@@ -103,8 +103,7 @@ export async function isExportS3Configured(organizationId?: string): Promise<boo
  * Note: This checks if any config exists, actual validation happens async
  */
 export function isExportS3ConfiguredSync(): boolean {
-	// This is a placeholder - actual check happens async
-	return true;
+	return !!getPrivateStorageConfig();
 }
 
 /**

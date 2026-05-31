@@ -1,499 +1,508 @@
 {
-  "accessDenied": {
-    "contactAdmin": "Skontaktuj się z administratorem organizacji, aby poprosić o dostęp.",
-    "description": "Twoje konto nie posiada uprawnień dostępu do {{appLabel}}.",
-    "signOut": "Wyloguj",
-    "title": "Ograniczony dostęp"
-  },
-  "actions": {
-    "cancel": "Anuluj",
-    "delete": "Usuń",
-    "refresh": "Odśwież"
-  },
-  "analytics": {
-    "export": {
-      "export": "Eksportuj",
-      "exportAsCsv": "Eksportuj do CSV",
-      "exportAsExcel": "Eksportuj do Excela",
-      "exportedAsFormat": "Wyeksportowano jako {format}",
-      "exportingFormat": "Eksportowanie {format}…",
-      "failedAsFormat": "Nie udało się wyeksportować jako {format}"
-    }
-  },
-  "appSearch": {
-    "commandDescription": "Przeszukuj strony, osoby, zespoły, ustawienia lub akcje",
-    "commandPlaceholder": "Przeszukuj strony, osoby, zespoły, ustawienia lub akcje…",
-    "commands": {
-      "addManualTimeEntry": {
-        "subtitle": "Zarejestruj godziny dla poprzedniej zmiany lub korekty",
-        "title": "Dodaj ręczny wpis czasu"
-      },
-      "createProject": {
-        "subtitle": "Otwórz ustawienia projektu, aby zdefiniować nowy projekt",
-        "title": "Utwórz projekt"
-      },
-      "inviteTeammate": {
-        "subtitle": "Otwórz zarządzanie organizacją, aby dodać współpracownika",
-        "title": "Zaproś członka zespołu"
-      },
-      "openApprovalsInbox": {
-        "subtitle": "Przejrzyj oczekujące wnioski pracowników",
-        "title": "Otwórz skrzynkę odbiorczą zatwierdzeń"
-      },
-      "openMyRequests": {
-        "subtitle": "Przejrzyj swoje przesłane nieobecności i wydatki",
-        "title": "Otwórz moje wnioski"
-      },
-      "openPayrollReadiness": {
-        "subtitle": "Sprawdź, czy dane o czasie pracy są gotowe do listy płac",
-        "title": "Otwórz gotowość listy płac"
-      },
-      "openSettings": {
-        "subtitle": "Zarządzaj swoim profilem, bezpieczeństwem i ustawieniami organizacji",
-        "title": "Otwórz ustawienia"
-      },
-      "requestAbsence": {
-        "subtitle": "Rozpocznij wniosek o urlop, zwolnienie lekarskie lub czas wolny",
-        "title": "Zawnioskuj o nieobecność"
-      },
-      "submitTravelExpense": {
-        "subtitle": "Utwórz wniosek o zwrot kosztów podróży",
-        "title": "Prześlij wydatek podróżny"
-      }
-    },
-    "empty": "Nie znaleziono wyników.",
-    "groups": {
-      "actions": "Akcje",
-      "pages": "Strony",
-      "people": "Osoby",
-      "settings": "Ustawienia",
-      "teams": "Zespoły"
-    },
-    "search": "Szukaj",
-    "searchOrRunCommand": "Szukaj lub wykonaj polecenie",
-    "teamAbsences": {
-      "description": "Przejrzyj metryki nieobecności pracowników i rejestruj nieobecności"
-    }
-  },
-  "billing": {
-    "suspended": {
-      "adminDescription": "Twój okres próbny zakończył się lub subskrypcja nie jest już ważna. Zaktualizuj dane rozliczeniowe, aby kontynuować korzystanie z Z8.",
-      "goToBilling": "Przejdź do rozliczeń",
-      "memberDescription": "Ta organizacja jest zawieszona. Skontaktuj się z administratorem organizacji, aby zaktualizować dane rozliczeniowe.",
-      "title": "Organizacja zawieszona"
-    },
-    "trialBanner": {
-      "description": "Pozostało {days} dni. Dodaj dane płatności teraz; płatna subskrypcja rozpocznie się po zakończeniu okresu próbnego.",
-      "dismiss": "Zamknij baner wersji próbnej",
-      "title": "Aktywny 14-dniowy okres próbny",
-      "upgrade": "Uaktualnij"
-    }
-  },
-  "colors": {
-    "blue": "Niebieski",
-    "green": "Zielony",
-    "indigo": "Indygo",
-    "orange": "Pomarańczowy",
-    "pink": "Różowy",
-    "purple": "Fioletowy",
-    "red": "Czerwony",
-    "teal": "Morski"
-  },
-  "common": {
-    "actions": "Akcje",
-    "active": "Aktywne",
-    "add": "Dodaj",
-    "adding": "Dodawanie...",
-    "all": "Wszystkie",
-    "approve": "Zatwierdź",
-    "assign": "Przypisz",
-    "back": "Wstecz",
-    "cancel": "Anuluj",
-    "clear": "Wyczyść",
-    "clearSearch": "Wyczyść wyszukiwanie",
-    "clearSelection": "Wyczyść",
-    "close": "Zamknij",
-    "confirm": "Potwierdź",
-    "continue": "Kontynuuj",
-    "copy": "Kopiuj",
-    "create": "Utwórz",
-    "current": "Bieżący",
-    "days": {
-      "friday": "Piątek",
-      "label": "dni",
-      "monday": "Poniedziałek",
-      "saturday": "Sobota",
-      "sunday": "Niedziela",
-      "thursday": "Czwartek",
-      "tuesday": "Wtorek",
-      "wednesday": "Środa"
-    },
-    "delete": "Usuń",
-    "deleting": "Usuwanie...",
-    "description": "Opis",
-    "deselectAll": "Odznacz wszystko",
-    "details": "Szczegóły",
-    "download": "Pobierz",
-    "duplicate": "Duplikuj",
-    "edit": "Edytuj",
-    "enabled": "Włączone",
-    "error": "Błąd",
-    "error-occurred": "Wystąpił błąd",
-    "gender": {
-      "female": "Kobieta",
-      "male": "Mężczyzna",
-      "other": "Inne"
-    },
-    "goToDashboard": "Przejdź do pulpitu",
-    "inactive": "Nieaktywne",
-    "label": "Etykieta",
-    "loading": "Ładowanie...",
-    "loadMore": "Załaduj więcej",
-    "months": {
-      "april": "Kwiecień",
-      "august": "Sierpień",
-      "december": "Grudzień",
-      "february": "Luty",
-      "january": "Styczeń",
-      "july": "Lipiec",
-      "june": "Czerwiec",
-      "march": "Marzec",
-      "may": "Maj",
-      "november": "Listopad",
-      "october": "Październik",
-      "september": "Wrzesień"
-    },
-    "more": "więcej",
-    "moreActions": "Więcej akcji",
-    "moveDown": "Przesuń w dół",
-    "moveUp": "Przesuń w górę",
-    "name": "Nazwa",
-    "never": "Nigdy",
-    "new": "Nowy",
-    "next": "Dalej",
-    "notApplicable": "N/D",
-    "not-available": "Niedostępne",
-    "openEnded": "Bezterminowo",
-    "openMenu": "Otwórz menu",
-    "optional": "opcjonalne",
-    "or": "Lub",
-    "pending": "Oczekujące",
-    "present": "Obecny",
-    "previous": "Poprzedni",
-    "recovering": "Odzyskiwanie...",
-    "refresh": "Odśwież",
-    "refreshing": "Odświeżanie...",
-    "reject": "Odrzuć",
-    "rejecting": "Odrzucanie...",
-    "remove": "Usuń",
-    "removing": "Usuwanie...",
-    "reset": "Resetuj",
-    "retry": "Ponów",
-    "save": "Zapisz",
-    "saveChanges": "Zapisz zmiany",
-    "saving": "Zapisywanie...",
-    "selectAll": "Zaznacz wszystko",
-    "selected": "wybrano",
-    "select-language": "Wybierz język",
-    "set": "zestaw",
-    "sets": "zestawy",
-    "skip": "Pomiń",
-    "start": "Start",
-    "status": "Status",
-    "submitting": "Przesyłanie…",
-    "to": "do",
-    "today": "Dzisiaj",
-    "unexpectedError": "Wystąpił nieoczekiwany błąd",
-    "unknown": "Nieznany",
-    "unknownEmployee": "Nieznany pracownik",
-    "unknownTeam": "Nieznany zespół",
-    "unnamed": "Bez nazwy",
-    "update": "Aktualizuj",
-    "updating": "Aktualizowanie...",
-    "uploading": "Przesyłanie...",
-    "validate": "Weryfikuj",
-    "validationError": "Błąd walidacji",
-    "weekdays": {
-      "fr": "Pt",
-      "fri": "Pią",
-      "mo": "Pn",
-      "mon": "Pon",
-      "sa": "So",
-      "sat": "Sob",
-      "su": "Nd",
-      "sun": "Nie",
-      "th": "Cz",
-      "thu": "Czw",
-      "tu": "Wt",
-      "tue": "Wto",
-      "we": "Śr",
-      "wed": "Śro"
-    }
-  },
-  "employeeSelect": {
-    "countSelected": "Wybrano {count} pracowników",
-    "countWithMore": "{count} pracowników (+{more} więcej)",
-    "noEmployeesFound": "Nie znaleziono pracowników",
-    "role": "Rola",
-    "searchPlaceholder": "Szukaj według imienia, nazwiska, adresu e-mail lub stanowiska...",
-    "selected": "Wybrano {count}",
-    "selectEmployee": "Wybierz pracownika",
-    "selectEmployees": "Wybierz pracowników",
-    "selectMultipleEmployees": "Wybierz jednego lub więcej pracowników z listy",
-    "selectOneEmployee": "Wybierz pracownika z listy",
-    "status": "Status",
-    "team": "Zespół",
-    "totalEmployees": "{count} pracowników",
-    "tryDifferentSearch": "Spróbuj zmienić wyszukiwanie lub filtry"
-  },
-  "errors": {
-    "failedToLoad": "Nie udało się załadować danych",
-    "noEmployee": {
-      "contactAdmin": "Skontaktuj się z administratorem",
-      "createOrg": "Utwórz organizację",
-      "description": "Potrzebujesz profilu pracownika, aby ${feature}. Utwórz organizację lub skontaktuj się z administratorem.",
-      "emailBody": "Cześć,\n\nPotrzebuję skonfigurowanego profilu pracownika, aby uzyskać dostęp do funkcji platformy. Czy mógłbyś mi w tym pomóc?\n\nDziękuję!",
-      "emailSubject": "Wymagana konfiguracja profilu pracownika",
-      "helpText": "Jeśli otrzymałeś zaproszenie do organizacji, poproś administratora o skonfigurowanie Twojego profilu pracownika.",
-      "title": "Wymagany profil pracownika"
-    },
-    "noOrganization": {
-      "createOrg": "Utwórz organizację",
-      "description": "Nie należysz jeszcze do żadnej organizacji. Utwórz ją, aby rozpocząć, lub poczekaj na zaproszenie.",
-      "title": "Nie znaleziono organizacji",
-      "waiting": "Czekasz na zaproszenie?",
-      "waitingDesc": "Twój administrator wyśle Ci wiadomość e-mail z zaproszeniem. Sprawdź swoją skrzynkę odbiorczą oraz folder spam."
-    },
-    "unexpected": {
-      "digest": "Odniesienie: {digest}"
-    }
-  },
-  "generic": {
-    "done": "Gotowe",
-    "submit": "Wyślij"
-  },
-  "header": {
-    "clock-in": "Rozpocznij pracę",
-    "clock-out": "Zakończ pracę"
-  },
-  "info": {
-    "agb": "Regulamin",
-    "back-to-login": "Powrót do logowania",
-    "imprint": "Nota prawna",
-    "trust-center": "Centrum zaufania"
-  },
-  "nav": {
-    "absences": "Nieobecności",
-    "approvals": "Zatwierdzenia",
-    "calendar": "Kalendarz",
-    "compliance": "Zgodność",
-    "dashboard": "Pulpit",
-    "feedback": "Opinia",
-    "get-help": "Uzyskaj pomoc",
-    "my-requests": "Moje wnioski",
-    "org-explorer": "Eksplorator organizacji",
-    "platform-admin": "Administrator platformy",
-    "reports": "Raporty",
-    "scheduling": "Harmonogram",
-    "settings": "Ustawienia",
-    "team": "Zespół",
-    "teamAbsences": "Nieobecności zespołu",
-    "team-label": "Zespół",
-    "time-tracking": "Rejestracja czasu pracy",
-    "travel-expenses": "Wydatki podróżne",
-    "worksCouncil": "Rada Zakładowa"
-  },
-  "notifications": {
-    "actions": {
-      "deleteAll": "Usuń wszystko",
-      "markAllRead": "Oznacz wszystkie jako przeczytane",
-      "markAsRead": "Oznacz jako przeczytane",
-      "markRead": "Oznacz jako przeczytane",
-      "settings": "Ustawienia powiadomień",
-      "viewAll": "Wyświetl wszystkie powiadomienia"
-    },
-    "content": {
-      "teamMemberAdded": {
-        "message": "Zostałeś dodany do zespołu {teamName} przez {performedByName}.",
-        "title": "Dodano do zespołu"
-      }
-    },
-    "description": "Przeglądaj aktualizacje, zatwierdzenia i alerty systemowe na jednej osi czasu.",
-    "empty": {
-      "description": "Jesteś na bieżąco! Nowe powiadomienia pojawią się tutaj.",
-      "inboxDescription": "Jesteś na bieżąco. Nowe aktualizacje pojawią się tutaj.",
-      "noMatchesDescription": "Dostosuj wyszukiwanie lub filtr odczytu, aby rozszerzyć widok skrzynki odbiorczej.",
-      "noMatchesTitle": "Brak pasujących powiadomień",
-      "title": "Brak powiadomień",
-      "unreadDescription": "Jesteś na bieżąco. Nowe nieprzeczytane aktualizacje pojawią się tutaj.",
-      "unreadTitle": "Brak nieprzeczytanych powiadomień"
-    },
-    "error": {
-      "title": "Nie udało się załadować powiadomień"
-    },
-    "filters": {
-      "all": "Wszystkie",
-      "ariaLabel": "Filtruj powiadomienia według statusu odczytu",
-      "read": "Przeczytane",
-      "unread": "Nieprzeczytane"
-    },
-    "preferences": {
-      "disabled": "Powiadomienia wyłączone",
-      "enabled": "Powiadomienia włączone",
-      "permissionModal": {
-        "benefits": {
-          "pendingApprovals": "Otrzymuj powiadomienia o oczekujących wnioskach do zatwierdzenia",
-          "requestUpdates": "Otrzymuj powiadomienia, gdy Twoje wnioski zostaną zatwierdzone lub odrzucone",
-          "teamSecurity": "Bądź na bieżąco z aktualizacjami zespołu i bezpieczeństwa"
-        },
-        "description": "Włącz powiadomienia push, aby otrzymywać natychmiastowe aktualizacje o zatwierdzeniach, korektach czasu pracy i ważnych zmianach w zespole – nawet gdy nie używasz aplikacji.",
-        "enable": "Włącz powiadomienia",
-        "notNow": "Nie teraz",
-        "title": "Bądź na bieżąco"
-      },
-      "push": {
-        "blockedDescription": "Powiadomienia push są blokowane przez Twoją przeglądarkę. Aby je włączyć, musisz zaktualizować ustawienia przeglądarki.",
-        "blockedHelp": "Kliknij ikonę kłódki na pasku adresu przeglądarki i zezwól na powiadomienia dla tej witryny, a następnie odśwież stronę.",
-        "blockedTitle": "Powiadomienia push zablokowane",
-        "enableButton": "Włącz powiadomienia push",
-        "enableDescription": "Otrzymuj natychmiastowe powiadomienia, nawet gdy nie używasz aplikacji",
-        "enabledIndicator": "Powiadomienia push są włączone",
-        "enabledToast": "Powiadomienia push włączone",
-        "enabledToastDescription": "Od teraz będziesz otrzymywać powiadomienia push z przeglądarki",
-        "enableFailedToast": "Nie udało się włączyć powiadomień push",
-        "enableTitle": "Włącz powiadomienia push",
-        "errorToast": "Błąd powiadomień push"
-      },
-      "toggleAria": "Powiadomienia {channel} dla {type}",
-      "updateFailed": "Nie udało się zaktualizować preferencji"
-    },
-    "search": {
-      "ariaLabel": "Szukaj powiadomień",
-      "placeholder": "Szukaj powiadomień..."
-    },
-    "selection": {
-      "selectAll": "Zaznacz wszystkie widoczne",
-      "selectAllAria": "Zaznacz wszystkie widoczne powiadomienia",
-      "selectNamedAria": "Zaznacz {title}",
-      "visibleSelected": "Zaznaczono {count} widocznych"
-    },
-    "timeline": {
-      "earlier": "Wcześniejsze",
-      "today": "Dzisiaj",
-      "yesterday": "Wczoraj"
-    },
-    "title": "Powiadomienia",
-    "toasts": {
-      "deleted": "Usunięto {count} powiadomień",
-      "deleteFailed": "Nie udało się usunąć powiadomień",
-      "markedRead": "Oznaczono {count} powiadomień jako przeczytane",
-      "markReadFailed": "Nie udało się oznaczyć powiadomień jako przeczytane"
-    },
-    "unreadBadge": "{count} nieprzeczytanych",
-    "unreadCountOverflow": "99+"
-  },
-  "offline": {
-    "banner": {
-      "offline": "Jesteś offline",
-      "offlineWithPending": "Offline - {count} zdarzenie(-a) oczekujące",
-      "pending": "{count} zdarzenie(-a) oczekujące na synchronizację",
-      "retry": "Ponów próbę",
-      "syncing": "Synchronizowanie {count} zdarzenia(-e)..."
-    }
-  },
-  "presence": {
-    "clockedIn": "Rozpoczęto pracę",
-    "clockedOut": "Zakończono pracę"
-  },
-  "roles": {
-    "admin": "Administrator",
-    "employee": "Pracownik",
-    "manager": "Menedżer"
-  },
-  "status": {
-    "active": "Aktywny",
-    "inactive": "Nieaktywny"
-  },
-  "table": {
-    "clearFilters": "Wyczyść filtry",
-    "clearSort": "Wyczyść sortowanie",
-    "description": "Wyświetlanie łącznej liczby odwiedzających z ostatnich 6 miesięcy. To tylko losowy tekst do przetestowania układu. Rozciąga się na wiele linii i powinien się zawijać.",
-    "goToFirstPage": "Idź do pierwszej strony",
-    "goToLastPage": "Idź do ostatniej strony",
-    "goToNextPage": "Idź do następnej strony",
-    "goToPreviousPage": "Idź do poprzedniej strony",
-    "header": "Nagłówek",
-    "limit": "Limit",
-    "noResults": "Brak wyników.",
-    "pageOfPages": "Strona {current} z {total}",
-    "reviewer": "Recenzent",
-    "rowsPerPage": "Wierszy na stronę",
-    "searchPlaceholder": "Szukaj...",
-    "selectedOfTotal": "{selected} z {total} wybranych wierszy",
-    "select-reviewer": "Wybierz recenzenta",
-    "select-status": "Wybierz status",
-    "select-type": "Wybierz typ",
-    "showing-visitors": "Wyświetlanie łącznej liczby odwiedzających z ostatnich 6 miesięcy",
-    "sortAscending": "Rosnąco",
-    "sortDescending": "Malejąco",
-    "status": "Status",
-    "status-options": {
-      "done": "Gotowe",
-      "in-progress": "W toku",
-      "not-started": "Nie rozpoczęto"
-    },
-    "target": "Cel",
-    "totalRows": "{total} wiersz(e)",
-    "trending-up": "Wzrost o 5,2% w tym miesiącu",
-    "type": "Typ",
-    "type-options": {
-      "capabilities": "Możliwości",
-      "cover-page": "Strona tytułowa",
-      "design": "Projekt",
-      "executive-summary": "Podsumowanie dla kierownictwa",
-      "focus-documents": "Dokumenty główne",
-      "narrative": "Narracja",
-      "table-of-contents": "Spis treści",
-      "technical-approach": "Podejście techniczne"
-    }
-  },
-  "time": {
-    "am": "AM",
-    "hoursAndMinutes": "{hours}godz. {minutes}min.",
-    "hoursOnly": "{hours}godz.",
-    "pm": "PM"
-  },
-  "userAvatar": {
-    "alt": "Awatar użytkownika"
-  },
-  "user": {
-    "font-size": "Rozmiar czcionki",
-    "language": "Język",
-    "logging-out": "Wylogowywanie...",
-    "log-out": "Wyloguj",
-    "log-out-failed": "Nie udało się wylogować. Spróbuj ponownie.",
-    "profile": "Profil",
-    "security": "Bezpieczeństwo",
-    "theme": "Motyw",
-    "theme-dark": "Ciemny",
-    "theme-light": "Jasny",
-    "theme-location-required": "Uprawnienie do lokalizacji jest wymagane dla motywu opartego na czasie.",
-    "theme-system": "Systemowy",
-    "theme-time": "Oparty na czasie",
-    "theme-time-info": "Tryb oparty na czasie używa trybu {currentMode}. Przełączy się na {nextMode} o {time}.",
-    "theme-toggle": "Przełącz motyw"
-  },
-  "validation": {
-    "first-name-required": "Imię jest wymagane",
-    "invalid-email": "Nieprawidłowy adres e-mail",
-    "invalid-password": "Nieprawidłowe hasło",
-    "last-name-required": "Nazwisko jest wymagane",
-    "password-required": "Hasło jest wymagane"
-  },
-  "workBalance": {
-    "label": "Bilans całkowity",
-    "notCalculated": "Jeszcze nie obliczono",
-    "pendingDescription": "Pracownik wkrótce obliczy ten bilans.",
-    "updatedEveryThreeHours": "Aktualizowane co 3 godziny"
-  }
+	"accessDenied": {
+		"contactAdmin": "Skontaktuj się z administratorem organizacji, aby poprosić o dostęp.",
+		"description": "Twoje konto nie posiada uprawnień dostępu do {{appLabel}}.",
+		"signOut": "Wyloguj",
+		"title": "Ograniczony dostęp"
+	},
+	"actions": {
+		"cancel": "Anuluj",
+		"delete": "Usuń",
+		"refresh": "Odśwież"
+	},
+	"analytics": {
+		"export": {
+			"export": "Eksportuj",
+			"exportAsCsv": "Eksportuj do CSV",
+			"exportAsExcel": "Eksportuj do Excela",
+			"exportedAsFormat": "Wyeksportowano jako {format}",
+			"exportingFormat": "Eksportowanie {format}…",
+			"failedAsFormat": "Nie udało się wyeksportować jako {format}"
+		}
+	},
+	"appSearch": {
+		"commandDescription": "Przeszukuj strony, osoby, zespoły, ustawienia lub akcje",
+		"commandPlaceholder": "Przeszukuj strony, osoby, zespoły, ustawienia lub akcje…",
+		"commands": {
+			"addManualTimeEntry": {
+				"subtitle": "Zarejestruj godziny dla poprzedniej zmiany lub korekty",
+				"title": "Dodaj ręczny wpis czasu"
+			},
+			"createProject": {
+				"subtitle": "Otwórz ustawienia projektu, aby zdefiniować nowy projekt",
+				"title": "Utwórz projekt"
+			},
+			"inviteTeammate": {
+				"subtitle": "Otwórz zarządzanie organizacją, aby dodać współpracownika",
+				"title": "Zaproś członka zespołu"
+			},
+			"openApprovalsInbox": {
+				"subtitle": "Przejrzyj oczekujące wnioski pracowników",
+				"title": "Otwórz skrzynkę odbiorczą zatwierdzeń"
+			},
+			"openMyRequests": {
+				"subtitle": "Przejrzyj swoje przesłane nieobecności i wydatki",
+				"title": "Otwórz moje wnioski"
+			},
+			"openPayrollReadiness": {
+				"subtitle": "Sprawdź, czy dane o czasie pracy są gotowe do listy płac",
+				"title": "Otwórz gotowość listy płac"
+			},
+			"openSettings": {
+				"subtitle": "Zarządzaj swoim profilem, bezpieczeństwem i ustawieniami organizacji",
+				"title": "Otwórz ustawienia"
+			},
+			"requestAbsence": {
+				"subtitle": "Rozpocznij wniosek o urlop, zwolnienie lekarskie lub czas wolny",
+				"title": "Zawnioskuj o nieobecność"
+			},
+			"submitTravelExpense": {
+				"subtitle": "Utwórz wniosek o zwrot kosztów podróży",
+				"title": "Prześlij wydatek podróżny"
+			}
+		},
+		"empty": "Nie znaleziono wyników.",
+		"groups": {
+			"actions": "Akcje",
+			"pages": "Strony",
+			"people": "Osoby",
+			"settings": "Ustawienia",
+			"teams": "Zespoły"
+		},
+		"search": "Szukaj",
+		"searchOrRunCommand": "Szukaj lub wykonaj polecenie",
+		"teamAbsences": {
+			"description": "Przejrzyj metryki nieobecności pracowników i rejestruj nieobecności"
+		}
+	},
+	"billing": {
+		"suspended": {
+			"adminDescription": "Twój okres próbny zakończył się lub subskrypcja nie jest już ważna. Zaktualizuj dane rozliczeniowe, aby kontynuować korzystanie z Z8.",
+			"goToBilling": "Przejdź do rozliczeń",
+			"memberDescription": "Ta organizacja jest zawieszona. Skontaktuj się z administratorem organizacji, aby zaktualizować dane rozliczeniowe.",
+			"title": "Organizacja zawieszona"
+		},
+		"trialBanner": {
+			"description": "Pozostało {days} dni. Dodaj dane płatności teraz; płatna subskrypcja rozpocznie się po zakończeniu okresu próbnego.",
+			"dismiss": "Zamknij baner wersji próbnej",
+			"title": "Aktywny 14-dniowy okres próbny",
+			"upgrade": "Uaktualnij"
+		}
+	},
+	"colors": {
+		"blue": "Niebieski",
+		"green": "Zielony",
+		"indigo": "Indygo",
+		"orange": "Pomarańczowy",
+		"pink": "Różowy",
+		"purple": "Fioletowy",
+		"red": "Czerwony",
+		"teal": "Morski"
+	},
+	"common": {
+		"actions": "Akcje",
+		"active": "Aktywne",
+		"add": "Dodaj",
+		"adding": "Dodawanie...",
+		"all": "Wszystkie",
+		"approve": "Zatwierdź",
+		"assign": "Przypisz",
+		"back": "Wstecz",
+		"cancel": "Anuluj",
+		"clear": "Wyczyść",
+		"clearSearch": "Wyczyść wyszukiwanie",
+		"clearSelection": "Wyczyść",
+		"close": "Zamknij",
+		"confirm": "Potwierdź",
+		"continue": "Kontynuuj",
+		"copy": "Kopiuj",
+		"create": "Utwórz",
+		"current": "Bieżący",
+		"days": {
+			"friday": "Piątek",
+			"label": "dni",
+			"monday": "Poniedziałek",
+			"saturday": "Sobota",
+			"sunday": "Niedziela",
+			"thursday": "Czwartek",
+			"tuesday": "Wtorek",
+			"wednesday": "Środa"
+		},
+		"delete": "Usuń",
+		"deleting": "Usuwanie...",
+		"description": "Opis",
+		"deselectAll": "Odznacz wszystko",
+		"details": "Szczegóły",
+		"download": "Pobierz",
+		"duplicate": "Duplikuj",
+		"edit": "Edytuj",
+		"enabled": "Włączone",
+		"error": "Błąd",
+		"error-occurred": "Wystąpił błąd",
+		"gender": {
+			"female": "Kobieta",
+			"male": "Mężczyzna",
+			"other": "Inne"
+		},
+		"goToDashboard": "Przejdź do pulpitu",
+		"inactive": "Nieaktywne",
+		"label": "Etykieta",
+		"loading": "Ładowanie...",
+		"loadMore": "Załaduj więcej",
+		"months": {
+			"april": "Kwiecień",
+			"august": "Sierpień",
+			"december": "Grudzień",
+			"february": "Luty",
+			"january": "Styczeń",
+			"july": "Lipiec",
+			"june": "Czerwiec",
+			"march": "Marzec",
+			"may": "Maj",
+			"november": "Listopad",
+			"october": "Październik",
+			"september": "Wrzesień"
+		},
+		"more": "więcej",
+		"moreActions": "Więcej akcji",
+		"moveDown": "Przesuń w dół",
+		"moveUp": "Przesuń w górę",
+		"name": "Nazwa",
+		"never": "Nigdy",
+		"new": "Nowy",
+		"next": "Dalej",
+		"notApplicable": "N/D",
+		"not-available": "Niedostępne",
+		"open": "Otwórz",
+		"openEnded": "Bezterminowo",
+		"openMenu": "Otwórz menu",
+		"optional": "opcjonalne",
+		"or": "Lub",
+		"pending": "Oczekujące",
+		"present": "Obecny",
+		"previous": "Poprzedni",
+		"recovering": "Odzyskiwanie...",
+		"refresh": "Odśwież",
+		"refreshing": "Odświeżanie...",
+		"reject": "Odrzuć",
+		"rejecting": "Odrzucanie...",
+		"remove": "Usuń",
+		"removing": "Usuwanie...",
+		"reset": "Resetuj",
+		"retry": "Ponów",
+		"save": "Zapisz",
+		"saveChanges": "Zapisz zmiany",
+		"saving": "Zapisywanie...",
+		"selectAll": "Zaznacz wszystko",
+		"selected": "wybrano",
+		"select-language": "Wybierz język",
+		"set": "zestaw",
+		"sets": "zestawy",
+		"skip": "Pomiń",
+		"start": "Start",
+		"status": "Status",
+		"submitting": "Przesyłanie…",
+		"to": "do",
+		"today": "Dzisiaj",
+		"unexpectedError": "Wystąpił nieoczekiwany błąd",
+		"unknown": "Nieznany",
+		"unknownEmployee": "Nieznany pracownik",
+		"unknownTeam": "Nieznany zespół",
+		"unnamed": "Bez nazwy",
+		"update": "Aktualizuj",
+		"updating": "Aktualizowanie...",
+		"uploading": "Przesyłanie...",
+		"validate": "Weryfikuj",
+		"validationError": "Błąd walidacji",
+		"weekdays": {
+			"fr": "Pt",
+			"fri": "Pią",
+			"mo": "Pn",
+			"mon": "Pon",
+			"sa": "So",
+			"sat": "Sob",
+			"su": "Nd",
+			"sun": "Nie",
+			"th": "Cz",
+			"thu": "Czw",
+			"tu": "Wt",
+			"tue": "Wto",
+			"we": "Śr",
+			"wed": "Śro"
+		}
+	},
+	"employeeSelect": {
+		"countSelected": "Wybrano {count} pracowników",
+		"countWithMore": "{count} pracowników (+{more} więcej)",
+		"noEmployeesFound": "Nie znaleziono pracowników",
+		"role": "Rola",
+		"searchPlaceholder": "Szukaj według imienia, nazwiska, adresu e-mail lub stanowiska...",
+		"selected": "Wybrano {count}",
+		"selectEmployee": "Wybierz pracownika",
+		"selectEmployees": "Wybierz pracowników",
+		"selectMultipleEmployees": "Wybierz jednego lub więcej pracowników z listy",
+		"selectOneEmployee": "Wybierz pracownika z listy",
+		"status": "Status",
+		"team": "Zespół",
+		"totalEmployees": "{count} pracowników",
+		"tryDifferentSearch": "Spróbuj zmienić wyszukiwanie lub filtry"
+	},
+	"errors": {
+		"failedToLoad": "Nie udało się załadować danych",
+		"noEmployee": {
+			"contactAdmin": "Skontaktuj się z administratorem",
+			"createOrg": "Utwórz organizację",
+			"description": "Potrzebujesz profilu pracownika, aby ${feature}. Utwórz organizację lub skontaktuj się z administratorem.",
+			"emailBody": "Cześć,\n\nPotrzebuję skonfigurowanego profilu pracownika, aby uzyskać dostęp do funkcji platformy. Czy mógłbyś mi w tym pomóc?\n\nDziękuję!",
+			"emailSubject": "Wymagana konfiguracja profilu pracownika",
+			"helpText": "Jeśli otrzymałeś zaproszenie do organizacji, poproś administratora o skonfigurowanie Twojego profilu pracownika.",
+			"title": "Wymagany profil pracownika"
+		},
+		"noOrganization": {
+			"createOrg": "Utwórz organizację",
+			"description": "Nie należysz jeszcze do żadnej organizacji. Utwórz ją, aby rozpocząć, lub poczekaj na zaproszenie.",
+			"title": "Nie znaleziono organizacji",
+			"waiting": "Czekasz na zaproszenie?",
+			"waitingDesc": "Twój administrator wyśle Ci wiadomość e-mail z zaproszeniem. Sprawdź swoją skrzynkę odbiorczą oraz folder spam."
+		},
+		"unexpected": {
+			"digest": "Odniesienie: {digest}"
+		}
+	},
+	"generic": {
+		"done": "Gotowe",
+		"submit": "Wyślij"
+	},
+	"header": {
+		"clock-in": "Rozpocznij pracę",
+		"clock-out": "Zakończ pracę"
+	},
+	"info": {
+		"agb": "Regulamin",
+		"back-to-login": "Powrót do logowania",
+		"imprint": "Nota prawna",
+		"trust-center": "Centrum zaufania"
+	},
+	"nav": {
+		"absences": "Nieobecności",
+		"approvals": "Zatwierdzenia",
+		"calendar": "Kalendarz",
+		"compliance": "Zgodność",
+		"dashboard": "Pulpit",
+		"feedback": "Opinia",
+		"get-help": "Uzyskaj pomoc",
+		"my-requests": "Moje wnioski",
+		"org-explorer": "Eksplorator organizacji",
+		"platform-admin": "Administrator platformy",
+		"reports": "Raporty",
+		"scheduling": "Harmonogram",
+		"settings": "Ustawienia",
+		"team": "Zespół",
+		"teamAbsences": "Nieobecności zespołu",
+		"team-label": "Zespół",
+		"time-tracking": "Rejestracja czasu pracy",
+		"travel-expenses": "Wydatki podróżne",
+		"worksCouncil": "Rada Zakładowa"
+	},
+	"notifications": {
+		"actions": {
+			"deleteAll": "Usuń wszystko",
+			"markAllRead": "Oznacz wszystkie jako przeczytane",
+			"markAsRead": "Oznacz jako przeczytane",
+			"markRead": "Oznacz jako przeczytane",
+			"settings": "Ustawienia powiadomień",
+			"viewAll": "Wyświetl wszystkie powiadomienia"
+		},
+		"content": {
+			"teamMemberAdded": {
+				"message": "Zostałeś dodany do zespołu {teamName} przez {performedByName}.",
+				"title": "Dodano do zespołu"
+			}
+		},
+		"description": "Przeglądaj aktualizacje, zatwierdzenia i alerty systemowe na jednej osi czasu.",
+		"empty": {
+			"description": "Jesteś na bieżąco! Nowe powiadomienia pojawią się tutaj.",
+			"inboxDescription": "Jesteś na bieżąco. Nowe aktualizacje pojawią się tutaj.",
+			"noMatchesDescription": "Dostosuj wyszukiwanie lub filtr odczytu, aby rozszerzyć widok skrzynki odbiorczej.",
+			"noMatchesTitle": "Brak pasujących powiadomień",
+			"title": "Brak powiadomień",
+			"unreadDescription": "Jesteś na bieżąco. Nowe nieprzeczytane aktualizacje pojawią się tutaj.",
+			"unreadTitle": "Brak nieprzeczytanych powiadomień"
+		},
+		"error": {
+			"title": "Nie udało się załadować powiadomień"
+		},
+		"filters": {
+			"all": "Wszystkie",
+			"ariaLabel": "Filtruj powiadomienia według statusu odczytu",
+			"read": "Przeczytane",
+			"unread": "Nieprzeczytane"
+		},
+		"preferences": {
+			"disabled": "Powiadomienia wyłączone",
+			"enabled": "Powiadomienia włączone",
+			"permissionModal": {
+				"benefits": {
+					"pendingApprovals": "Otrzymuj powiadomienia o oczekujących wnioskach do zatwierdzenia",
+					"requestUpdates": "Otrzymuj powiadomienia, gdy Twoje wnioski zostaną zatwierdzone lub odrzucone",
+					"teamSecurity": "Bądź na bieżąco z aktualizacjami zespołu i bezpieczeństwa"
+				},
+				"description": "Włącz powiadomienia push, aby otrzymywać natychmiastowe aktualizacje o zatwierdzeniach, korektach czasu pracy i ważnych zmianach w zespole – nawet gdy nie używasz aplikacji.",
+				"enable": "Włącz powiadomienia",
+				"notNow": "Nie teraz",
+				"title": "Bądź na bieżąco"
+			},
+			"push": {
+				"blockedDescription": "Powiadomienia push są blokowane przez Twoją przeglądarkę. Aby je włączyć, musisz zaktualizować ustawienia przeglądarki.",
+				"blockedHelp": "Kliknij ikonę kłódki na pasku adresu przeglądarki i zezwól na powiadomienia dla tej witryny, a następnie odśwież stronę.",
+				"blockedTitle": "Powiadomienia push zablokowane",
+				"enableButton": "Włącz powiadomienia push",
+				"enableDescription": "Otrzymuj natychmiastowe powiadomienia, nawet gdy nie używasz aplikacji",
+				"enabledIndicator": "Powiadomienia push są włączone",
+				"enabledToast": "Powiadomienia push włączone",
+				"enabledToastDescription": "Od teraz będziesz otrzymywać powiadomienia push z przeglądarki",
+				"enableFailedToast": "Nie udało się włączyć powiadomień push",
+				"enableTitle": "Włącz powiadomienia push",
+				"errorToast": "Błąd powiadomień push"
+			},
+			"toggleAria": "Powiadomienia {channel} dla {type}",
+			"updateFailed": "Nie udało się zaktualizować preferencji"
+		},
+		"search": {
+			"ariaLabel": "Szukaj powiadomień",
+			"placeholder": "Szukaj powiadomień..."
+		},
+		"selection": {
+			"selectAll": "Zaznacz wszystkie widoczne",
+			"selectAllAria": "Zaznacz wszystkie widoczne powiadomienia",
+			"selectNamedAria": "Zaznacz {title}",
+			"visibleSelected": "Zaznaczono {count} widocznych"
+		},
+		"timeline": {
+			"earlier": "Wcześniejsze",
+			"today": "Dzisiaj",
+			"yesterday": "Wczoraj"
+		},
+		"title": "Powiadomienia",
+		"toasts": {
+			"deleted": "Usunięto {count} powiadomień",
+			"deleteFailed": "Nie udało się usunąć powiadomień",
+			"markedRead": "Oznaczono {count} powiadomień jako przeczytane",
+			"markReadFailed": "Nie udało się oznaczyć powiadomień jako przeczytane"
+		},
+		"unreadBadge": "{count} nieprzeczytanych",
+		"unreadCountOverflow": "99+"
+	},
+	"offline": {
+		"banner": {
+			"offline": "Jesteś offline",
+			"offlineWithPending": "Offline - {count} zdarzenie(-a) oczekujące",
+			"pending": "{count} zdarzenie(-a) oczekujące na synchronizację",
+			"retry": "Ponów próbę",
+			"syncing": "Synchronizowanie {count} zdarzenia(-e)..."
+		}
+	},
+	"presence": {
+		"clockedIn": "Rozpoczęto pracę",
+		"clockedOut": "Zakończono pracę"
+	},
+	"roles": {
+		"admin": "Administrator",
+		"employee": "Pracownik",
+		"manager": "Menedżer"
+	},
+	"status": {
+		"active": "Aktywny",
+		"inactive": "Nieaktywny"
+	},
+	"table": {
+		"clearFilters": "Wyczyść filtry",
+		"clearSort": "Wyczyść sortowanie",
+		"description": "Wyświetlanie łącznej liczby odwiedzających z ostatnich 6 miesięcy. To tylko losowy tekst do przetestowania układu. Rozciąga się na wiele linii i powinien się zawijać.",
+		"goToFirstPage": "Idź do pierwszej strony",
+		"goToLastPage": "Idź do ostatniej strony",
+		"goToNextPage": "Idź do następnej strony",
+		"goToPreviousPage": "Idź do poprzedniej strony",
+		"header": "Nagłówek",
+		"limit": "Limit",
+		"noResults": "Brak wyników.",
+		"pageOfPages": "Strona {current} z {total}",
+		"reviewer": "Recenzent",
+		"rowsPerPage": "Wierszy na stronę",
+		"searchPlaceholder": "Szukaj...",
+		"selectedOfTotal": "{selected} z {total} wybranych wierszy",
+		"select-reviewer": "Wybierz recenzenta",
+		"select-status": "Wybierz status",
+		"select-type": "Wybierz typ",
+		"showing-visitors": "Wyświetlanie łącznej liczby odwiedzających z ostatnich 6 miesięcy",
+		"sortAscending": "Rosnąco",
+		"sortDescending": "Malejąco",
+		"status": "Status",
+		"status-options": {
+			"done": "Gotowe",
+			"in-progress": "W toku",
+			"not-started": "Nie rozpoczęto"
+		},
+		"target": "Cel",
+		"totalRows": "{total} wiersz(e)",
+		"trending-up": "Wzrost o 5,2% w tym miesiącu",
+		"type": "Typ",
+		"type-options": {
+			"capabilities": "Możliwości",
+			"cover-page": "Strona tytułowa",
+			"design": "Projekt",
+			"executive-summary": "Podsumowanie dla kierownictwa",
+			"focus-documents": "Dokumenty główne",
+			"narrative": "Narracja",
+			"table-of-contents": "Spis treści",
+			"technical-approach": "Podejście techniczne"
+		}
+	},
+	"time": {
+		"am": "AM",
+		"hoursAndMinutes": "{hours}godz. {minutes}min.",
+		"hoursOnly": "{hours}godz.",
+		"pm": "PM"
+	},
+	"sw": {
+		"update": {
+			"description": "Dostępna jest nowa wersja. Odśwież, aby zaktualizować.",
+			"later": "Później",
+			"reload": "Odśwież",
+			"title": "Dostępna aktualizacja"
+		}
+	},
+	"userAvatar": {
+		"alt": "Awatar użytkownika"
+	},
+	"user": {
+		"font-size": "Rozmiar czcionki",
+		"language": "Język",
+		"logging-out": "Wylogowywanie...",
+		"log-out": "Wyloguj",
+		"log-out-failed": "Nie udało się wylogować. Spróbuj ponownie.",
+		"profile": "Profil",
+		"security": "Bezpieczeństwo",
+		"theme": "Motyw",
+		"theme-dark": "Ciemny",
+		"theme-light": "Jasny",
+		"theme-location-required": "Uprawnienie do lokalizacji jest wymagane dla motywu opartego na czasie.",
+		"theme-system": "Systemowy",
+		"theme-time": "Oparty na czasie",
+		"theme-time-info": "Tryb oparty na czasie używa trybu {currentMode}. Przełączy się na {nextMode} o {time}.",
+		"theme-toggle": "Przełącz motyw"
+	},
+	"validation": {
+		"first-name-required": "Imię jest wymagane",
+		"invalid-email": "Nieprawidłowy adres e-mail",
+		"invalid-password": "Nieprawidłowe hasło",
+		"last-name-required": "Nazwisko jest wymagane",
+		"password-required": "Hasło jest wymagane"
+	},
+	"workBalance": {
+		"label": "Bilans całkowity",
+		"notCalculated": "Jeszcze nie obliczono",
+		"pendingDescription": "Pracownik wkrótce obliczy ten bilans.",
+		"updatedEveryThreeHours": "Aktualizowane co 3 godziny"
+	}
 }

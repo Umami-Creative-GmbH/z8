@@ -134,6 +134,12 @@
         "copiedToClipboard": "Copiado al portapapeles",
         "customDomain": "Dominio personalizado",
         "customDomainDescription": "Configure un dominio personalizado para habilitar una página de inicio de sesión específica de la organización con su marca.",
+        "defaultUrl": {
+          "alias": "Alias del ID de la organización",
+          "canonical": "Canónico"
+        },
+        "defaultUrls": "URLs predeterminadas",
+        "defaultUrlsDescription": "Estas URLs gestionadas por la plataforma funcionan automáticamente sin necesidad de configurar DNS personalizados.",
         "deleteAria": "Eliminar dominio personalizado {domain}",
         "deleted": "Dominio eliminado",
         "deleteDescription": "¿Está seguro de que desea eliminar \"{domain}\"? Esta acción no se puede deshacer. Los usuarios ya no podrán iniciar sesión a través de este dominio personalizado.",

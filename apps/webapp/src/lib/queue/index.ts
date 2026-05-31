@@ -34,6 +34,7 @@ export type JobType =
 	| "cleanup"
 	| "webhook"
 	| "calendar-sync"
+	| "organization-deletion-notification"
 	| "audit-pack"
 	| "import-review-scan"
 	| "import-review-commit";
@@ -89,6 +90,14 @@ export interface CalendarSyncJobData {
 	action: "create" | "update" | "delete";
 }
 
+export interface OrganizationDeletionNotificationJobData {
+	type: "organization-deletion-notification";
+	organizationId: string;
+	organizationName: string;
+	deletedByName: string;
+	deletionDate: string;
+}
+
 export interface AuditPackJobData {
 	type: "audit-pack";
 	requestId: string;
@@ -107,6 +116,7 @@ export type JobData =
 	| CronJobData
 	| WebhookJobData
 	| CalendarSyncJobData
+	| OrganizationDeletionNotificationJobData
 	| AuditPackJobData
 	| ImportReviewScanQueueJobData
 	| ImportReviewCommitQueueJobData;
@@ -218,6 +228,19 @@ export async function addCalendarSyncJob(
 	data: Omit<CalendarSyncJobData, "type">,
 ): Promise<Job<JobData, JobResult>> {
 	return addJob("calendar-sync", { ...data, type: "calendar-sync" }, { priority: 3 });
+}
+
+/**
+ * Queue deletion notification emails for organization admins and owners.
+ */
+export async function addOrganizationDeletionNotificationJob(
+	data: Omit<OrganizationDeletionNotificationJobData, "type">,
+): Promise<Job<JobData, JobResult>> {
+	return addJob(
+		"organization-deletion-notification",
+		{ ...data, type: "organization-deletion-notification" },
+		{ priority: 1 },
+	);
 }
 
 /**

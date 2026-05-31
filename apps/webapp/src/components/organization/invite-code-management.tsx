@@ -132,6 +132,12 @@ function InviteCodeMobileCard({
 
 			<div className="mt-4 grid grid-cols-2 gap-3 text-sm">
 				<div>
+					<div className="text-muted-foreground">
+						{t("settings.inviteCodes.targetTeam", "Target team")}
+					</div>
+					<div className="font-medium">{code.defaultTeam?.name || "-"}</div>
+				</div>
+				<div>
 					<div className="text-muted-foreground">{t("settings.inviteCodes.status", "Status")}</div>
 					<Badge variant="secondary" className={statusColors[code.status]}>
 						{t(`settings.inviteCodes.status.${code.status}`, code.status)}
@@ -301,6 +307,7 @@ export function InviteCodeManagement({
 									<TableRow>
 										<TableHead>{t("settings.inviteCodes.code", "Code")}</TableHead>
 										<TableHead>{t("settings.inviteCodes.label", "Label")}</TableHead>
+										<TableHead>{t("settings.inviteCodes.targetTeam", "Target team")}</TableHead>
 										<TableHead>{t("settings.inviteCodes.status", "Status")}</TableHead>
 										<TableHead>{t("settings.inviteCodes.usage", "Usage")}</TableHead>
 										<TableHead>{t("settings.inviteCodes.expires", "Expires")}</TableHead>
@@ -348,6 +355,7 @@ export function InviteCodeManagement({
 													)}
 												</div>
 											</TableCell>
+											<TableCell>{code.defaultTeam?.name || "-"}</TableCell>
 											<TableCell>
 												<Badge variant="secondary" className={statusColors[code.status]}>
 													{t(`settings.inviteCodes.status.${code.status}`, code.status)}

@@ -162,6 +162,14 @@ export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 				return processCalendarSyncJob(job.data);
 			}
 
+			case "organization-deletion-notification": {
+				const { sendOrganizationDeletionNotifications } = await import(
+					"@/lib/jobs/organization-deletion-notification"
+				);
+				await sendOrganizationDeletionNotifications(job.data);
+				return { success: true, message: "Organization deletion notifications sent" };
+			}
+
 			case "audit-pack": {
 				const { processAuditPack } = await import(
 					"@/lib/audit-pack/application/audit-pack-processor"

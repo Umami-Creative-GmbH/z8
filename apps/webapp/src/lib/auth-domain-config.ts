@@ -27,3 +27,14 @@ export function getStaticTrustedOrigins(): string[] {
 		new Set([defaultOrigin, `https://${platformRoot}`, `https://*.${platformRoot}`]),
 	);
 }
+
+export function getOrganizationPlatformOrigins(organization: { id: string; slug: string }): string[] {
+	const platformRoot = getPlatformRootDomain();
+
+	return Array.from(
+		new Set([
+			`https://${organization.slug}.${platformRoot}`,
+			`https://${organization.id}.${platformRoot}`,
+		]),
+	);
+}

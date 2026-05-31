@@ -108,7 +108,17 @@ vi.mock("./branding-form", () => ({
 }));
 
 vi.mock("./domain-management", () => ({
-	DomainManagement: () => <div>Domain management</div>,
+	DomainManagement: ({
+		defaultUrls,
+	}: {
+		defaultUrls: { canonical: string; alias: string };
+	}) => (
+		<div>
+			<div>Domain management</div>
+			<div>{defaultUrls.canonical}</div>
+			<div>{defaultUrls.alias}</div>
+		</div>
+	),
 }));
 
 vi.mock("./social-oauth-management", () => ({
@@ -212,6 +222,10 @@ function renderDomainsTabs() {
 			initialProviders={[]}
 			initialSocialOAuthConfigs={[]}
 			organizationId="org_123"
+			defaultUrls={{
+				canonical: "https://acme.ui.z8-time.app",
+				alias: "https://org_123.ui.z8-time.app",
+			}}
 		/>,
 	);
 }
@@ -485,6 +499,13 @@ describe("IdentitySetupWizard behavior", () => {
 });
 
 describe("DomainsAndBrandingTabs behavior", () => {
+	it("renders generated platform URLs before custom domain setup", () => {
+		renderDomainsTabs();
+
+		expect(screen.getByText("https://acme.ui.z8-time.app")).toBeTruthy();
+		expect(screen.getByText("https://org_123.ui.z8-time.app")).toBeTruthy();
+	});
+
 	it("renders a usable guided setup link in the SSO tab", () => {
 		renderDomainsTabs();
 

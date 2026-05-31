@@ -2,6 +2,7 @@
 
 import {
 	IconCheck,
+	IconExternalLink,
 	IconPlus,
 	IconRefresh,
 	IconSettings,
@@ -51,9 +52,17 @@ interface Domain {
 interface DomainManagementProps {
 	initialDomains: Domain[];
 	organizationId: string;
+	defaultUrls: {
+		canonical: string;
+		alias: string;
+	};
 }
 
-export function DomainManagement({ initialDomains, organizationId }: DomainManagementProps) {
+export function DomainManagement({
+	initialDomains,
+	organizationId,
+	defaultUrls,
+}: DomainManagementProps) {
 	const { t } = useTranslate();
 	// Since each org can only have 1 domain, we track it as a single domain
 	const [domain, setDomain] = useState<Domain | null>(initialDomains[0] ?? null);
@@ -177,6 +186,46 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 
 	return (
 		<>
+			<Card>
+				<CardHeader>
+					<CardTitle>{t("settings.enterprise.domains.defaultUrls", "Default URLs")}</CardTitle>
+					<CardDescription>
+						{t(
+							"settings.enterprise.domains.defaultUrlsDescription",
+							"These platform-managed URLs work automatically without custom DNS setup.",
+						)}
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-3">
+					{[
+						{
+							label: t("settings.enterprise.domains.defaultUrl.canonical", "Canonical"),
+							url: defaultUrls.canonical,
+						},
+						{
+							label: t("settings.enterprise.domains.defaultUrl.alias", "Organization ID alias"),
+							url: defaultUrls.alias,
+						},
+					].map(({ label, url }) => (
+						<div
+							key={url}
+							className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+						>
+							<div className="min-w-0">
+								<p className="text-sm font-medium">{label}</p>
+								<p className="truncate font-mono text-muted-foreground text-sm">{url}</p>
+							</div>
+							<Button asChild variant="outline" size="sm" className="w-fit">
+								<a href={url} target="_blank" rel="noreferrer">
+									<IconExternalLink className="mr-2 size-4" aria-hidden="true" />
+									{t("common.open", "Open")}
+								</a>
+							</Button>
+						</div>
+					))}
+				</CardContent>
+			</Card>
+
 			<Card>
 				<CardHeader>
 					<CardTitle>{t("settings.enterprise.domains.customDomain", "Custom Domain")}</CardTitle>

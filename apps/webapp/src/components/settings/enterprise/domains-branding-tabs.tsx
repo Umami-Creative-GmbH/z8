@@ -38,6 +38,10 @@ interface DomainsAndBrandingTabsProps {
 	initialProviders: SSOProvider[];
 	initialSocialOAuthConfigs: SocialOAuthConfigResponse[];
 	organizationId: string;
+	defaultUrls: {
+		canonical: string;
+		alias: string;
+	};
 }
 
 export function DomainsAndBrandingTabs({
@@ -46,6 +50,7 @@ export function DomainsAndBrandingTabs({
 	initialProviders,
 	initialSocialOAuthConfigs,
 	organizationId,
+	defaultUrls,
 }: DomainsAndBrandingTabsProps) {
 	const { t } = useTranslate();
 
@@ -65,7 +70,11 @@ export function DomainsAndBrandingTabs({
 			</TabsList>
 
 			<TabsContent value="domains" className="space-y-4">
-				<DomainManagement initialDomains={initialDomains} organizationId={organizationId} />
+				<DomainManagement
+					initialDomains={initialDomains}
+					organizationId={organizationId}
+					defaultUrls={defaultUrls}
+				/>
 			</TabsContent>
 
 			<TabsContent value="branding" className="space-y-4">

@@ -90,6 +90,7 @@
       "emailLabel": "Adres e-mail",
       "error": "Nie udało się wysłać zaproszenia",
       "member": "Zaproś członka",
+      "noTargetTeam": "Brak zespołu",
       "roleDescriptions": {
         "admin": "Może zapraszać członków i zarządzać ustawieniami",
         "member": "Podstawowy dostęp do organizacji",
@@ -97,6 +98,7 @@
       },
       "submit": "Wyślij zaproszenie",
       "success": "Zaproszenie wysłane pomyślnie",
+      "targetTeam": "Zespół docelowy",
       "title": "Zaproś członka"
     },
     "joinOrCreate": "Dołącz lub utwórz nową",
@@ -116,6 +118,8 @@
       "cancel": "Anuluj",
       "count": "{count, plural, one {# członek} few {# członków} many {# członków} other {# członka}}",
       "deactivate": "Dezaktywuj",
+      "editTargetTeam": "Edytuj zespół docelowy",
+      "editTargetTeamDescription": "Wybierz zespół, do którego ma dołączyć to oczekujące zaproszenie po zaakceptowaniu.",
       "email": "E-mail",
       "emailVerified": "E-mail zweryfikowany",
       "employeeActivateSuccess": "Pracownik został pomyślnie aktywowany",
@@ -136,6 +140,7 @@
       "noInvitations": "Brak oczekujących zaproszeń.",
       "noMemberResults": "Brak członków pasujących do wyszukiwania.",
       "noMembers": "Brak członków w tej organizacji.",
+      "noTargetTeam": "Brak zespołu",
       "pending": "Oczekujące",
       "pendingInvitations": "Oczekujące zaproszenia",
       "remove": "Usuń z organizacji",
@@ -158,6 +163,9 @@
       "searchMembers": "Szukaj członków...",
       "sent": "Wysłano",
       "status": "Status",
+      "targetTeam": "Zespół docelowy",
+      "targetTeamUpdateError": "Nie udało się zaktualizować zespołu docelowego",
+      "targetTeamUpdateSuccess": "Zaktualizowano zespół docelowy zaproszenia",
       "verified": "Zweryfikowano",
       "you": "Ty"
     },

@@ -28,8 +28,13 @@ describe("enterprise identity enforcement source contracts", () => {
 		);
 		expect(enforcementSource).toContain("domainRestrictionEnabled");
 		expect(inviteCodeServiceSource).toContain("input.userId");
+		expect(inviteCodeServiceSource).toContain("redeemInviteCode");
+		expect(inviteCodeServiceSource).toContain("redeemPendingInviteCode");
 		expect(
 			inviteCodeServiceSource.indexOf("assertEnterpriseIdentityInviteCodeRedemptionAllowed"),
-		).toBeLessThan(inviteCodeServiceSource.indexOf("createMember"));
+		).toBeLessThan(inviteCodeServiceSource.indexOf("redeemInviteCode"));
+		expect(
+			inviteCodeServiceSource.lastIndexOf("assertEnterpriseIdentityInviteCodeRedemptionAllowed"),
+		).toBeLessThan(inviteCodeServiceSource.indexOf("redeemPendingInviteCode"));
 	});
 });

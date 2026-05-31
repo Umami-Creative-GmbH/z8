@@ -134,6 +134,12 @@
         "copiedToClipboard": "Copiado para a área de transferência",
         "customDomain": "Domínio Personalizado",
         "customDomainDescription": "Configure um domínio personalizado para habilitar uma página de login específica da organização com sua marca.",
+        "defaultUrl": {
+          "alias": "Alias do ID da organização",
+          "canonical": "Canônico"
+        },
+        "defaultUrls": "URLs padrão",
+        "defaultUrlsDescription": "Estas URLs gerenciadas pela plataforma funcionam automaticamente sem configuração de DNS personalizada.",
         "deleteAria": "Excluir domínio personalizado {domain}",
         "deleted": "Domínio excluído",
         "deleteDescription": "Tem certeza de que deseja excluir \"{domain}\"? Esta ação não pode ser desfeita. Os usuários não poderão mais fazer login através deste domínio personalizado.",

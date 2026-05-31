@@ -105,10 +105,10 @@ export function ApprovalInboxToolbar({
 					<span className="text-sm text-muted-foreground">
 						{selectedCount > 0
 							? t("approvals:approvals.selectedCount", `${selectedCount} selected`, {
-									count: selectedCount,
+									selectedCount,
 								})
 							: t("approvals:approvals.totalCount", `${totalCount} pending`, {
-									count: totalCount,
+									totalCount,
 								})}
 					</span>
 				</div>
