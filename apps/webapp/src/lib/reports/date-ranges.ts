@@ -157,8 +157,12 @@ export function formatDateRangeLabel(
 	const startDT = (start instanceof Date ? DateTime.fromJSDate(start) : start).setZone(timezone);
 	const endDT = (end instanceof Date ? DateTime.fromJSDate(end) : end).setZone(timezone);
 
-	const startStr = startDT.toLocaleString({ year: "numeric", month: "short", day: "numeric" });
-	const endStr = endDT.toLocaleString({ year: "numeric", month: "short", day: "numeric" });
+	const startStr = startDT
+		.setLocale("en-US")
+		.toLocaleString({ year: "numeric", month: "short", day: "numeric" });
+	const endStr = endDT
+		.setLocale("en-US")
+		.toLocaleString({ year: "numeric", month: "short", day: "numeric" });
 
 	return `${startStr} - ${endStr}`;
 }
