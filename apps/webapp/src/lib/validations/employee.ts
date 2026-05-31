@@ -67,9 +67,9 @@ export const personalInformationSchema = z.object({
 
 // Full employee creation schema
 export const createEmployeeSchema = z.object({
-	userId: z.string().uuid("Invalid user ID"),
+	userId: z.uuid("Invalid user ID"),
 	organizationId: z.string().min(1, "Organization ID is required"),
-	teamId: z.string().uuid("Invalid team ID").optional().nullable(),
+	teamId: z.uuid("Invalid team ID").optional().nullable(),
 	role: employeeRoleSchema,
 	position: z
 		.string()
@@ -95,7 +95,7 @@ export const createEmployeeSchema = z.object({
 // Employee update schema (more permissive, all fields optional)
 export const updateEmployeeSchema = z
 	.object({
-		teamId: z.string().uuid("Invalid team ID").optional().nullable(),
+		teamId: z.uuid("Invalid team ID").optional().nullable(),
 		role: employeeRoleSchema.optional(),
 		position: z.string().max(100, "Position is too long").optional().nullable(),
 		employeeNumber: z.string().max(50, "Employee number is too long").optional().nullable(),
@@ -139,7 +139,7 @@ export const updateEmployeeSchema = z
 
 // Manager assignment schema
 export const managerAssignmentSchema = z.object({
-	managerId: z.string().uuid("Invalid manager ID"),
+	managerId: z.uuid("Invalid manager ID"),
 	isPrimary: z.boolean(),
 });
 

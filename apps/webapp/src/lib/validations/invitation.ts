@@ -4,7 +4,7 @@ import { z } from "zod";
  * Validation schema for sending member invitations
  */
 export const invitationSchema = z.object({
-	email: z.string().email("Invalid email address"),
+	email: z.email("Invalid email address"),
 	role: z.enum(["owner", "admin", "member"], {
 		message: "Role must be owner, admin, or member",
 	}),

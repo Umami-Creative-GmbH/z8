@@ -4,7 +4,7 @@ export const holidayFormSchema = z
 	.object({
 		name: z.string().min(1, "Name is required").max(255),
 		description: z.string().optional(),
-		categoryId: z.string().uuid("Invalid category"),
+		categoryId: z.uuid("Invalid category"),
 		startDate: z.date({ message: "Start date is required" }),
 		endDate: z.date({ message: "End date is required" }),
 		recurrenceType: z.enum(["none", "yearly", "custom"]),
@@ -54,7 +54,7 @@ export const holidayImportSchema = z.object({
 			type: z.enum(["public", "bank", "optional", "school", "observance"]),
 		}),
 	),
-	categoryId: z.string().uuid().optional(),
+	categoryId: z.uuid().optional(),
 	createRecurring: z.boolean().default(true),
 	skipDuplicates: z.boolean().default(true),
 });
@@ -93,7 +93,7 @@ export const holidayPresetHolidayFormSchema = z.object({
 	holidayType: z.enum(["public", "bank", "optional", "school", "observance"]).optional(),
 	isFloating: z.boolean().default(false),
 	floatingRule: z.string().optional(),
-	categoryId: z.string().uuid().optional(),
+	categoryId: z.uuid().optional(),
 	isActive: z.boolean().default(true),
 });
 
@@ -102,7 +102,7 @@ export type HolidayPresetHolidayFormValues = z.infer<typeof holidayPresetHoliday
 // Schema for bulk adding holidays to a preset
 export const holidayPresetHolidaysBulkSchema = z.object({
 	holidays: z.array(holidayPresetHolidayFormSchema.omit({ categoryId: true })),
-	categoryId: z.string().uuid().optional(),
+	categoryId: z.uuid().optional(),
 });
 
 export type HolidayPresetHolidaysBulkValues = z.infer<typeof holidayPresetHolidaysBulkSchema>;
@@ -110,10 +110,10 @@ export type HolidayPresetHolidaysBulkValues = z.infer<typeof holidayPresetHolida
 // Schema for preset assignment
 export const holidayPresetAssignmentFormSchema = z
 	.object({
-		presetId: z.string().uuid("Invalid preset"),
+		presetId: z.uuid("Invalid preset"),
 		assignmentType: z.enum(["organization", "team", "employee"]),
-		teamId: z.string().uuid().optional().nullable(),
-		employeeId: z.string().uuid().optional().nullable(),
+		teamId: z.uuid().optional().nullable(),
+		employeeId: z.uuid().optional().nullable(),
 		effectiveFrom: z.date().optional().nullable(),
 		effectiveUntil: z.date().optional().nullable(),
 		isActive: z.boolean().default(true),
@@ -171,7 +171,7 @@ export const holidayPresetImportSchema = z.object({
 		.string()
 		.regex(/^#[0-9A-F]{6}$/i, "Invalid hex color")
 		.optional(),
-	categoryId: z.string().uuid().optional(),
+	categoryId: z.uuid().optional(),
 	setAsOrgDefault: z.boolean().default(false),
 	mergeIfExists: z.boolean().default(true),
 });

@@ -25,7 +25,7 @@ import { ForbiddenError, toHttpError } from "@/lib/authorization";
 
 const createFeedSchema = z.object({
 	feedType: z.enum(["user", "team"]),
-	teamId: z.string().uuid().optional(),
+	teamId: z.uuid().optional(),
 	includeApproved: z.boolean().default(true),
 	includePending: z.boolean().default(true),
 });

@@ -28,7 +28,7 @@ export const upsertEmploymentHistorySchema = z
 		probationStartsOn: z.coerce.date().optional().nullable(),
 		probationEndsOn: z.coerce.date().optional().nullable(),
 		workModel: workModelSchema.default("onsite"),
-		workPolicyId: z.string().uuid("Invalid work policy ID").optional().nullable(),
+		workPolicyId: z.uuid("Invalid work policy ID").optional().nullable(),
 		hourlyRate: strictHourlyRateSchema,
 		currency: z.string().min(3).max(3).default("EUR"),
 		changeReason: z.string().max(1000, "Reason is too long").optional().nullable(),

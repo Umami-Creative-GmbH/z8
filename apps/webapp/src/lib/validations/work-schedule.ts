@@ -133,10 +133,10 @@ export const updateWorkScheduleTemplateSchema = z.object({
 // Assignment schema
 export const createWorkScheduleAssignmentSchema = z
 	.object({
-		templateId: z.string().uuid("Invalid template ID"),
+		templateId: z.uuid("Invalid template ID"),
 		assignmentType: assignmentTypeSchema,
-		teamId: z.string().uuid("Invalid team ID").optional().nullable(),
-		employeeId: z.string().uuid("Invalid employee ID").optional().nullable(),
+		teamId: z.uuid("Invalid team ID").optional().nullable(),
+		employeeId: z.uuid("Invalid employee ID").optional().nullable(),
 		effectiveFrom: z.date().optional().nullable(),
 		effectiveUntil: z.date().optional().nullable(),
 	})
@@ -163,7 +163,7 @@ export const createWorkScheduleAssignmentSchema = z
 
 // Delete assignment schema
 export const deleteWorkScheduleAssignmentSchema = z.object({
-	assignmentId: z.string().uuid("Invalid assignment ID"),
+	assignmentId: z.uuid("Invalid assignment ID"),
 });
 
 // Work classification schema for employee schedules

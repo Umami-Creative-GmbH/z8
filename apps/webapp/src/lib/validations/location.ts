@@ -48,7 +48,7 @@ export const subareaSchema = z.object({
 
 // Create subarea (includes locationId)
 export const createSubareaSchema = subareaSchema.extend({
-	locationId: z.string().uuid("Invalid location ID"),
+	locationId: z.uuid("Invalid location ID"),
 });
 
 // Update subarea (all fields optional, plus isActive)
@@ -62,15 +62,15 @@ export const updateSubareaSchema = subareaSchema.partial().extend({
 
 // Assign employee to location
 export const assignLocationEmployeeSchema = z.object({
-	locationId: z.string().uuid("Invalid location ID"),
-	employeeId: z.string().uuid("Invalid employee ID"),
+	locationId: z.uuid("Invalid location ID"),
+	employeeId: z.uuid("Invalid employee ID"),
 	isPrimary: z.boolean().default(false),
 });
 
 // Assign employee to subarea
 export const assignSubareaEmployeeSchema = z.object({
-	subareaId: z.string().uuid("Invalid subarea ID"),
-	employeeId: z.string().uuid("Invalid employee ID"),
+	subareaId: z.uuid("Invalid subarea ID"),
+	employeeId: z.uuid("Invalid employee ID"),
 	isPrimary: z.boolean().default(false),
 });
 

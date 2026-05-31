@@ -320,7 +320,7 @@ export function SignupForm({
 		validatePasswordConfirmation(value, formData.password, t);
 
 	const validateEmail = (value: string) => {
-		const result = z.string().email().safeParse(value);
+		const result = z.email().safeParse(value);
 		if (result.success) {
 			return undefined;
 		} else {

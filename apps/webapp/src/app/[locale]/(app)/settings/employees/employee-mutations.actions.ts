@@ -43,7 +43,7 @@ import {
 import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
 
 const logger = createLogger("EmployeeActions");
-const employeeIdSchema = z.string().uuid("Invalid employee ID");
+const employeeIdSchema = z.uuid("Invalid employee ID");
 
 export async function createEmployeeAction(
 	data: CreateEmployee,
