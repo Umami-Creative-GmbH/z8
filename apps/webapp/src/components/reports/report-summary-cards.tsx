@@ -34,7 +34,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 		<div className={`grid gap-4 md:grid-cols-2 ${isHourly ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
 			{/* Total Work Hours */}
 			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">
 						{t("reports.summary.totalWorkHours", "Total Work Hours")}
 					</CardTitle>
@@ -57,7 +57,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 
 			{/* IconHome Office Days */}
 			<Card className="border-amber-500">
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">
 						{t("reports.summary.homeOfficeDays", "Home Office Days")}
 					</CardTitle>
@@ -78,7 +78,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 
 			{/* Vacation Days */}
 			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">
 						{t("reports.summary.vacationDays", "Vacation Days")}
 					</CardTitle>
@@ -96,7 +96,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 
 			{/* Total Absences */}
 			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">
 						{t("reports.summary.totalAbsences", "Total Absences")}
 					</CardTitle>
@@ -120,7 +120,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 			{/* Earnings - Only for hourly employees */}
 			{isHourly && reportData.hourlyEarnings && (
 				<Card className="border-green-500">
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+					<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">
 							{t("reports.summary.totalEarnings", "Total Earnings")}
 						</CardTitle>

@@ -93,7 +93,7 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 			<CardContent>
 				<div className="space-y-6">
 					{/* Select All */}
-					<div className="flex items-center space-x-2 border-b pb-4">
+					<div className="flex items-center gap-x-2 border-b pb-4">
 						<Checkbox
 							id="select-all"
 							checked={allSelected}
@@ -111,7 +111,7 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 					{/* Category Checkboxes */}
 					<div className="grid gap-4 sm:grid-cols-2">
 						{EXPORT_CATEGORIES.map((category) => (
-							<div key={category} className="flex items-start space-x-3">
+							<div key={category} className="flex items-start gap-x-3">
 								<Checkbox
 									id={category}
 									checked={selectedCategories.has(category)}

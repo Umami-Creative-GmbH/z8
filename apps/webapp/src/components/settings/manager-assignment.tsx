@@ -171,7 +171,7 @@ export function ManagerAssignment({
 									return (
 										<div
 											key={manager.id}
-											className="flex items-center space-x-3 rounded-lg p-2 hover:bg-accent"
+											className="flex items-center gap-x-3 rounded-lg p-2 hover:bg-accent"
 										>
 											<Checkbox
 												id={`manager-${manager.id}`}
@@ -222,7 +222,7 @@ export function ManagerAssignment({
 									return (
 										<div
 											key={manager.id}
-											className="flex items-center space-x-3 rounded-lg border p-3"
+											className="flex items-center gap-x-3 rounded-lg border p-3"
 										>
 											<RadioGroupItem value={manager.id} id={`primary-${manager.id}`} />
 											<Label

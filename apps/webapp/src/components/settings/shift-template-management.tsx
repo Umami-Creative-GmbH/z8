@@ -322,7 +322,7 @@ export function ShiftTemplateManagement({
 			</div>
 
 			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-4">
 					<div>
 						<CardTitle className="text-base font-medium">
 							{t("settings.shiftTemplates.list.title", "Templates")}

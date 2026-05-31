@@ -127,7 +127,7 @@ export function EmployeeSelectTrigger({
 		>
 			<div className="flex items-center gap-2 flex-wrap">
 				{/* Stacked avatars */}
-				<div className="flex -space-x-2">
+				<div className="flex -gap-x-2">
 					{displayedEmployees.map((employee) => (
 						<UserAvatar
 							key={employee.id}

@@ -256,7 +256,7 @@ export default function AnalyticsOverviewPage() {
 				<>
 					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 						<Card>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 								<CardTitle className="text-sm font-medium">
 									{t("analytics.overview.kpis.totalEmployees.title", "Total Employees")}
 								</CardTitle>
@@ -274,7 +274,7 @@ export default function AnalyticsOverviewPage() {
 						</Card>
 
 						<Card>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 								<CardTitle className="text-sm font-medium">
 									{t("analytics.overview.kpis.avgWorkHours.title", "Avg Work Hours")}
 								</CardTitle>
@@ -292,7 +292,7 @@ export default function AnalyticsOverviewPage() {
 						</Card>
 
 						<Card>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 								<CardTitle className="text-sm font-medium">
 									{t("analytics.overview.kpis.totalAbsenceDays.title", "Total Absence Days")}
 								</CardTitle>
@@ -310,7 +310,7 @@ export default function AnalyticsOverviewPage() {
 						</Card>
 
 						<Card>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 								<CardTitle className="text-sm font-medium">
 									{t("analytics.overview.kpis.approvalRate.title", "Approval Rate")}
 								</CardTitle>

@@ -159,7 +159,7 @@ export default function WorkTemplatesPage() {
 								}}
 							>
 								{(field) => (
-									<div className="space-y-2">
+									<div className="gap-y-2">
 										<Label>{t("onboarding.workTemplates.name", "Template Name")}</Label>
 										<Input
 											value={field.state.value}
@@ -196,7 +196,7 @@ export default function WorkTemplatesPage() {
 								}}
 							>
 								{(field) => (
-									<div className="space-y-2">
+									<div className="gap-y-2">
 										<Label>{t("onboarding.workTemplates.hoursPerWeek", "Hours per Week")}</Label>
 										<Input
 											type="number"
@@ -228,11 +228,11 @@ export default function WorkTemplatesPage() {
 							{/* Working Days */}
 							<form.Field name="workingDays">
 								{(field) => (
-									<div className="space-y-2">
+									<div className="gap-y-2">
 										<Label>{t("onboarding.workTemplates.workingDays", "Working Days")}</Label>
 										<div className="grid grid-cols-7 gap-2">
 											{DAYS_OF_WEEK.map((day) => (
-												<div key={day.value} className="flex flex-col items-center space-y-2">
+												<div key={day.value} className="flex flex-col items-center gap-y-2">
 													<Checkbox
 														checked={field.state.value?.includes(day.value)}
 														onCheckedChange={(checked) => {

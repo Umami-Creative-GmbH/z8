@@ -430,7 +430,7 @@ export function ExportForm({
 								<PopoverContent className="w-[300px] p-0" align="start">
 									<ScrollArea className="h-[200px] p-4">
 										{filterOptions?.employees.map((emp) => (
-											<div key={emp.id} className="flex items-center space-x-2 py-1">
+											<div key={emp.id} className="flex items-center gap-x-2 py-1">
 												<Checkbox
 													id={`emp-${emp.id}`}
 													checked={selectedEmployeeIds.includes(emp.id)}
@@ -479,7 +479,7 @@ export function ExportForm({
 								<PopoverContent className="w-[300px] p-0" align="start">
 									<ScrollArea className="h-[200px] p-4">
 										{filterOptions?.teams.map((team) => (
-											<div key={team.id} className="flex items-center space-x-2 py-1">
+											<div key={team.id} className="flex items-center gap-x-2 py-1">
 												<Checkbox
 													id={`team-${team.id}`}
 													checked={selectedTeamIds.includes(team.id)}
@@ -525,7 +525,7 @@ export function ExportForm({
 								<PopoverContent className="w-[300px] p-0" align="start">
 									<ScrollArea className="h-[200px] p-4">
 										{filterOptions?.projects.map((project) => (
-											<div key={project.id} className="flex items-center space-x-2 py-1">
+											<div key={project.id} className="flex items-center gap-x-2 py-1">
 												<Checkbox
 													id={`project-${project.id}`}
 													checked={selectedProjectIds.includes(project.id)}

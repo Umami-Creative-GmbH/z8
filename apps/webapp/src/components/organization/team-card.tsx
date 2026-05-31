@@ -120,7 +120,7 @@ export function TeamCard({
 					{/* Avatar Stack */}
 					{memberCount > 0 && (
 						<div className="flex items-center gap-2">
-							<div className="flex -space-x-2">
+							<div className="flex -gap-x-2">
 								{displayedEmployees.map((emp) => (
 									<UserAvatar
 										key={emp.user.id}

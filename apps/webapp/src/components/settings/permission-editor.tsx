@@ -213,7 +213,7 @@ export function PermissionEditor({
 					</Label>
 					<div className="space-y-4">
 						{Object.entries(PERMISSION_KEYS).map(([key, item]) => (
-							<div key={key} className="flex items-start space-x-3 rounded-lg border p-3">
+							<div key={key} className="flex items-start gap-x-3 rounded-lg border p-3">
 								<Checkbox
 									id={key}
 									checked={permissions[key as keyof typeof permissions]}

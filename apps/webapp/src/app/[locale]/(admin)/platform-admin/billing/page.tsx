@@ -105,7 +105,7 @@ function StatCard({ title, value, description, icon, variant = "default" }: Stat
 				variantStyles[variant],
 			)}
 		>
-			<CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+			<CardHeader className="flex flex-row items-start justify-between gap-y-0 pb-3">
 				<div
 					className={cn("flex size-10 items-center justify-center rounded-lg", iconStyles[variant])}
 				>

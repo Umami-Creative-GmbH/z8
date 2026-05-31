@@ -92,7 +92,7 @@ export function TimeEntriesTable({
 
 	return (
 		<Card>
-			<CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 pb-4">
+			<CardHeader className="flex flex-row items-center justify-between gap-3 gap-y-0 pb-4">
 				<CardTitle>{t("timeTracking.table.title", "Time Entries")}</CardTitle>
 				<div className="flex items-center gap-2">
 					<Button asChild variant="outline" size="sm">

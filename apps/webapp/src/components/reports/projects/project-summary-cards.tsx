@@ -38,7 +38,7 @@ export function ProjectSummaryCards({
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 				{/* Total Hours */}
 				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+					<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">
 							{t("reports.projects.cards.totalHours", "Total Hours")}
 						</CardTitle>
@@ -56,7 +56,7 @@ export function ProjectSummaryCards({
 
 				{/* Team Members */}
 				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+					<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">
 							{t("reports.projects.cards.teamMembers", "Team Members")}
 						</CardTitle>
@@ -72,7 +72,7 @@ export function ProjectSummaryCards({
 
 				{/* Budget Status */}
 				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+					<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">
 							{t("reports.projects.cards.budgetUsed", "Budget Used")}
 						</CardTitle>
@@ -97,7 +97,7 @@ export function ProjectSummaryCards({
 
 				{/* Daily Average */}
 				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+					<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">
 							{t("reports.projects.cards.dailyAverage", "Daily Average")}
 						</CardTitle>
@@ -118,7 +118,7 @@ export function ProjectSummaryCards({
 		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
 			{/* Total Projects */}
 			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">
 						{t("reports.projects.cards.totalProjects", "Total Projects")}
 					</CardTitle>
@@ -136,7 +136,7 @@ export function ProjectSummaryCards({
 
 			{/* Total Hours */}
 			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">
 						{t("reports.projects.cards.totalHours", "Total Hours")}
 					</CardTitle>
@@ -152,7 +152,7 @@ export function ProjectSummaryCards({
 
 			{/* Active Projects */}
 			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">
 						{t("reports.projects.cards.activeProjects", "Active Projects")}
 					</CardTitle>
@@ -168,7 +168,7 @@ export function ProjectSummaryCards({
 
 			{/* Over Budget */}
 			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">
 						{t("reports.projects.cards.overBudget", "Over Budget")}
 					</CardTitle>
@@ -184,7 +184,7 @@ export function ProjectSummaryCards({
 
 			{/* Overdue */}
 			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">
 						{t("reports.projects.cards.overdue", "Overdue")}
 					</CardTitle>

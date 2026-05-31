@@ -159,7 +159,7 @@ export default function ProfilePage() {
 								}}
 							>
 								{(field) => (
-									<div className="space-y-2">
+									<div className="gap-y-2">
 										<Label>{t("onboarding.profile.firstName", "First Name")}</Label>
 										<Input
 											value={field.state.value}
@@ -187,7 +187,7 @@ export default function ProfilePage() {
 								}}
 							>
 								{(field) => (
-									<div className="space-y-2">
+									<div className="gap-y-2">
 										<Label>{t("onboarding.profile.lastName", "Last Name")}</Label>
 										<Input
 											value={field.state.value}
@@ -210,7 +210,7 @@ export default function ProfilePage() {
 							{/* Gender (Optional) */}
 							<form.Field name="gender">
 								{(field) => (
-									<div className="space-y-2">
+									<div className="gap-y-2">
 										<Label>{t("onboarding.profile.genderOptional", "Gender (Optional)")}</Label>
 										<div className="grid grid-cols-3 gap-3">
 											{genderOptions.map((option) => {
@@ -243,7 +243,7 @@ export default function ProfilePage() {
 							{/* Birthday (Optional) */}
 							<form.Field name="birthday">
 								{(field) => (
-									<div className="flex flex-col space-y-2">
+									<div className="flex flex-col gap-y-2">
 										<Label>{t("onboarding.profile.birthdayOptional", "Birthday (Optional)")}</Label>
 										<Popover>
 											<PopoverTrigger asChild>
@@ -291,7 +291,7 @@ export default function ProfilePage() {
 
 							<form.Field name="weekStartDay">
 								{(field) => (
-									<div className="space-y-2">
+									<div className="gap-y-2">
 										<Label htmlFor="week-start-day">
 											{t("onboarding.profile.weekStartDay", "First day of the week")}
 										</Label>
@@ -323,7 +323,7 @@ export default function ProfilePage() {
 
 							<form.Field name="timeFormat">
 								{(field) => (
-									<div className="space-y-2">
+									<div className="gap-y-2">
 										<Label htmlFor="time-format">
 											{t("onboarding.profile.timeFormat", "Time format")}
 										</Label>

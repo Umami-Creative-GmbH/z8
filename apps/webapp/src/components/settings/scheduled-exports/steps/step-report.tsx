@@ -237,7 +237,7 @@ function DataReportConfig({
 							)}
 						>
 							{categories.map((category) => (
-								<div key={category.id} className="flex items-center space-x-2">
+								<div key={category.id} className="flex items-center gap-x-2">
 									<Checkbox
 										id={`category-${category.id}`}
 										checked={selectedCategories.includes(category.id)}
@@ -274,7 +274,7 @@ function AuditReportConfig({ form }: { form: ScheduledExportForm }) {
 
 			<form.Field name="reportConfig">
 				{(field: any) => (
-					<div className="flex items-center space-x-2">
+					<div className="flex items-center gap-x-2">
 						<Checkbox
 							id="include-metadata"
 							checked={field.state.value?.includeMetadata ?? true}
