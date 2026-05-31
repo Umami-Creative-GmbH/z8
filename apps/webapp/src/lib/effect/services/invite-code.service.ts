@@ -195,17 +195,49 @@ export const InviteCodeServiceLive = Layer.effect(
 			return { usable: true };
 		};
 
+		type RedemptionDb = typeof dbService.db;
+
 		const resolveInviteCodeTargetTeamId = async (
+			dbClient: RedemptionDb,
 			organizationId: string,
 			targetTeamId: string | null | undefined,
 		) => {
 			if (!targetTeamId) return null;
 
-			const targetTeam = await dbService.db.query.team.findFirst({
+			const targetTeam = await dbClient.query.team.findFirst({
 				where: and(eq(team.id, targetTeamId), eq(team.organizationId, organizationId)),
 			});
 
 			return targetTeam?.id ?? null;
+		};
+
+		const provisionEmployeeForInviteCode = async (
+			dbClient: RedemptionDb,
+			inviteCodeRecord: InviteCode,
+			userId: string,
+		) => {
+			const existingEmployee = await dbClient.query.employee.findFirst({
+				where: and(
+					eq(employee.userId, userId),
+					eq(employee.organizationId, inviteCodeRecord.organizationId),
+				),
+			});
+
+			if (existingEmployee) return;
+
+			const targetTeamId = await resolveInviteCodeTargetTeamId(
+				dbClient,
+				inviteCodeRecord.organizationId,
+				inviteCodeRecord.defaultTeamId,
+			);
+
+			await dbClient.insert(employee).values({
+				userId,
+				organizationId: inviteCodeRecord.organizationId,
+				teamId: targetTeamId,
+				role: "employee",
+				isActive: true,
+			});
 		};
 
 		return InviteCodeService.of({
@@ -652,77 +684,49 @@ export const InviteCodeServiceLive = Layer.effect(
 					const memberStatus = inviteCodeRecord.requiresApproval ? "pending" : "approved";
 
 					const newMember = yield* _(
-						dbService.query("createMember", async () => {
-							// Generate a unique member ID
-							const memberId = nanoid();
+						dbService.query("redeemInviteCode", async () => {
+							return await dbService.db.transaction(async (tx) => {
+								const redemptionDb = tx as RedemptionDb;
+								const memberId = nanoid();
 
-							const [createdMember] = await dbService.db
-								.insert(member)
-								.values({
-									id: memberId,
-									userId: input.userId,
-									organizationId: inviteCodeRecord.organizationId,
-									role: "member",
-									status: memberStatus,
+								const [createdMember] = await redemptionDb
+									.insert(member)
+									.values({
+										id: memberId,
+										userId: input.userId,
+										organizationId: inviteCodeRecord.organizationId,
+										role: "member",
+										status: memberStatus,
+										inviteCodeId: inviteCodeRecord.id,
+										createdAt: new Date(),
+									})
+									.returning();
+
+								await redemptionDb.insert(inviteCodeUsage).values({
 									inviteCodeId: inviteCodeRecord.id,
-									createdAt: new Date(),
-								})
-								.returning();
-
-							return createdMember;
-						}),
-					);
-
-					// Record the usage
-					yield* _(
-						dbService.query("recordUsage", async () => {
-							await dbService.db.insert(inviteCodeUsage).values({
-								inviteCodeId: inviteCodeRecord.id,
-								userId: input.userId,
-								memberId: newMember.id,
-								ipAddress: input.ipAddress,
-								userAgent: input.userAgent,
-							});
-						}),
-					);
-
-					if (!inviteCodeRecord.requiresApproval) {
-						yield* _(
-							dbService.query("provisionEmployee", async () => {
-								const existingEmployee = await dbService.db.query.employee.findFirst({
-									where: and(
-										eq(employee.userId, input.userId),
-										eq(employee.organizationId, inviteCodeRecord.organizationId),
-									),
-								});
-
-								if (existingEmployee) return;
-
-								const targetTeamId = await resolveInviteCodeTargetTeamId(
-									inviteCodeRecord.organizationId,
-									inviteCodeRecord.defaultTeamId,
-								);
-
-								await dbService.db.insert(employee).values({
 									userId: input.userId,
-									organizationId: inviteCodeRecord.organizationId,
-									teamId: targetTeamId,
-									role: "employee",
-									isActive: true,
+									memberId: createdMember.id,
+									ipAddress: input.ipAddress,
+									userAgent: input.userAgent,
 								});
-							}),
-						);
-					}
 
-					// Increment usage count
-					yield* _(
-						dbService.query("incrementUsageCount", async () => {
-							await dbService.db
-								.update(inviteCode)
-								.set({
-									currentUses: sql`${inviteCode.currentUses} + 1`,
-								})
-								.where(eq(inviteCode.id, inviteCodeRecord.id));
+								if (!inviteCodeRecord.requiresApproval) {
+									await provisionEmployeeForInviteCode(
+										redemptionDb,
+										inviteCodeRecord,
+										input.userId,
+									);
+								}
+
+								await redemptionDb
+									.update(inviteCode)
+									.set({
+										currentUses: sql`${inviteCode.currentUses} + 1`,
+									})
+									.where(eq(inviteCode.id, inviteCodeRecord.id));
+
+								return createdMember;
+							});
 						}),
 					);
 
@@ -907,6 +911,25 @@ export const InviteCodeServiceLive = Layer.effect(
 						return null;
 					}
 
+					yield* _(
+						Effect.tryPromise({
+							try: async () => {
+								await assertEnterpriseIdentityInviteCodeRedemptionAllowed({
+									organizationId: inviteCodeRecord.organizationId,
+									userId,
+								});
+							},
+							catch: (error) =>
+								new ValidationError({
+									message:
+										error instanceof Error
+											? error.message
+											: "Invite code redemption is not allowed",
+									field: "domainRestrictionEnabled",
+								}),
+						}),
+					);
+
 					// Check if user is already a member of this organization
 					const existingMember = yield* _(
 						dbService.query("checkExistingMember", async () => {
@@ -936,74 +959,43 @@ export const InviteCodeServiceLive = Layer.effect(
 					const memberStatus = inviteCodeRecord.requiresApproval ? "pending" : "approved";
 
 					const newMember = yield* _(
-						dbService.query("createMember", async () => {
-							const memberId = nanoid();
+						dbService.query("redeemPendingInviteCode", async () => {
+							return await dbService.db.transaction(async (tx) => {
+								const redemptionDb = tx as RedemptionDb;
+								const memberId = nanoid();
 
-							const [createdMember] = await dbService.db
-								.insert(member)
-								.values({
-									id: memberId,
-									userId,
-									organizationId: inviteCodeRecord.organizationId,
-									role: "member",
-									status: memberStatus,
+								const [createdMember] = await redemptionDb
+									.insert(member)
+									.values({
+										id: memberId,
+										userId,
+										organizationId: inviteCodeRecord.organizationId,
+										role: "member",
+										status: memberStatus,
+										inviteCodeId: inviteCodeRecord.id,
+										createdAt: new Date(),
+									})
+									.returning();
+
+								await redemptionDb.insert(inviteCodeUsage).values({
 									inviteCodeId: inviteCodeRecord.id,
-									createdAt: new Date(),
-								})
-								.returning();
-
-							return createdMember;
-						}),
-					);
-
-					// Record the usage
-					yield* _(
-						dbService.query("recordUsage", async () => {
-							await dbService.db.insert(inviteCodeUsage).values({
-								inviteCodeId: inviteCodeRecord.id,
-								userId,
-								memberId: newMember.id,
-							});
-						}),
-					);
-
-					if (!inviteCodeRecord.requiresApproval) {
-						yield* _(
-							dbService.query("provisionEmployee", async () => {
-								const existingEmployee = await dbService.db.query.employee.findFirst({
-									where: and(
-										eq(employee.userId, userId),
-										eq(employee.organizationId, inviteCodeRecord.organizationId),
-									),
-								});
-
-								if (existingEmployee) return;
-
-								const targetTeamId = await resolveInviteCodeTargetTeamId(
-									inviteCodeRecord.organizationId,
-									inviteCodeRecord.defaultTeamId,
-								);
-
-								await dbService.db.insert(employee).values({
 									userId,
-									organizationId: inviteCodeRecord.organizationId,
-									teamId: targetTeamId,
-									role: "employee",
-									isActive: true,
+									memberId: createdMember.id,
 								});
-							}),
-						);
-					}
 
-					// Increment usage count
-					yield* _(
-						dbService.query("incrementUsageCount", async () => {
-							await dbService.db
-								.update(inviteCode)
-								.set({
-									currentUses: sql`${inviteCode.currentUses} + 1`,
-								})
-								.where(eq(inviteCode.id, inviteCodeRecord.id));
+								if (!inviteCodeRecord.requiresApproval) {
+									await provisionEmployeeForInviteCode(redemptionDb, inviteCodeRecord, userId);
+								}
+
+								await redemptionDb
+									.update(inviteCode)
+									.set({
+										currentUses: sql`${inviteCode.currentUses} + 1`,
+									})
+									.where(eq(inviteCode.id, inviteCodeRecord.id));
+
+								return createdMember;
+							});
 						}),
 					);
 
