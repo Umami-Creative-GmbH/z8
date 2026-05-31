@@ -59,11 +59,12 @@ export async function decideApprovalInboxItemFromRequest({
 	handler: ApprovalTypeHandler;
 	runEffect?: DecisionEffectRunner;
 }): Promise<ApprovalInboxDecisionSuccess> {
-	if (!isSupportedInboxType(request.entityType)) {
+	const requestType = request.entityType;
+	if (!isSupportedInboxType(requestType)) {
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
 	}
 
-	if (handler.type !== request.entityType) {
+	if (handler.type !== requestType) {
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
 	}
 
@@ -92,7 +93,7 @@ export async function decideApprovalInboxItemFromRequest({
 		},
 		onSuccess: () => ({
 			id: request.id,
-			type: request.entityType,
+			type: requestType,
 			status: action === "approve" ? "approved" : "rejected",
 		}),
 	});
