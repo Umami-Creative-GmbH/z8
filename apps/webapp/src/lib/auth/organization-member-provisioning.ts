@@ -18,6 +18,7 @@ export async function ensureEmployeeForOrganizationMember(
 		userId: string;
 		organizationId: string;
 		memberRole: OrganizationMemberRole;
+		targetTeamId?: string | null;
 	},
 ) {
 	const existingEmployee = await dbClient.query.employee.findFirst({
@@ -28,6 +29,19 @@ export async function ensureEmployeeForOrganizationMember(
 	});
 
 	if (existingEmployee) {
+		if (!existingEmployee.isActive && existingEmployee.teamId === null) {
+			const [reactivatedEmployee] = await dbClient
+				.update(employee)
+				.set({
+					isActive: true,
+					teamId: input.targetTeamId ?? null,
+				})
+				.where(eq(employee.id, existingEmployee.id))
+				.returning();
+
+			return reactivatedEmployee ?? existingEmployee;
+		}
+
 		return existingEmployee;
 	}
 
@@ -36,6 +50,7 @@ export async function ensureEmployeeForOrganizationMember(
 		organizationId: input.organizationId,
 		role: hasAdminOrganizationRole(input.memberRole) ? "admin" : "employee",
 		isActive: true,
+		teamId: input.targetTeamId ?? null,
 	});
 
 	const [newEmployee] = insertResult.returning ? await insertResult.returning() : [];
