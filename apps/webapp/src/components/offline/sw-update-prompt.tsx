@@ -98,12 +98,12 @@ export function SWUpdatePrompt() {
 		if (!updateAvailable) return;
 
 		// Use ref to get current t without triggering effect on t changes
-		const translate = tRef.current;
-		const toastId = toast(translate("sw.update.title", "Update available"), {
-			description: translate("sw.update.description", "A new version is ready. Reload to update."),
+		const t = tRef.current;
+		const toastId = toast(t("sw.update.title", "Update available"), {
+			description: t("sw.update.description", "A new version is ready. Reload to update."),
 			duration: Infinity, // Don't auto-dismiss
 			action: {
-				label: translate("sw.update.reload", "Reload"),
+				label: t("sw.update.reload", "Reload"),
 				onClick: () => {
 					const currentRegistration = registrationRef.current;
 					if (!currentRegistration?.waiting) {
@@ -115,7 +115,7 @@ export function SWUpdatePrompt() {
 				},
 			},
 			cancel: {
-				label: translate("sw.update.later", "Later"),
+				label: t("sw.update.later", "Later"),
 				onClick: () => {
 					// Just dismiss the toast
 				},
