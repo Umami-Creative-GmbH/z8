@@ -16,8 +16,10 @@ import type {
 } from "./types";
 
 type InboxDecisionAction = "approve" | "reject";
+// Matches ApprovalTypeHandler approve/reject effects, which may require any app service layer.
 type DecisionEffectRunner = (
-	effect: Effect.Effect<void, unknown, unknown>,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	effect: Effect.Effect<void, unknown, any>,
 ) => Promise<Exit.Exit<void, unknown>>;
 type EligibleApprovalScope = {
 	requesterEmployeeId: string;
