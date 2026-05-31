@@ -10,6 +10,7 @@ import { bearer } from "better-auth/plugins/bearer";
 import { organization } from "better-auth/plugins/organization";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
 import { employee, scimProvisioningLog, team } from "@/db/schema";
@@ -26,6 +27,7 @@ import { createLogger } from "./logger";
 import { secondaryStorage } from "./redis";
 
 const logger = createLogger("Auth");
+const targetTeamIdSchema = z.string().uuid();
 
 const BILLING_ENABLED = env.BILLING_ENABLED === "true";
 
@@ -542,10 +544,13 @@ export const auth = betterAuth({
 							eq(schema.invitation.organizationId, invitation.organizationId),
 						),
 					});
-					const targetTeam = invitationRecord?.targetTeamId
+					const targetTeamIdResult = invitationRecord?.targetTeamId
+						? targetTeamIdSchema.safeParse(invitationRecord.targetTeamId)
+						: null;
+					const targetTeam = targetTeamIdResult?.success
 						? await db.query.team.findFirst({
 								where: and(
-									eq(team.id, invitationRecord.targetTeamId),
+									eq(team.id, targetTeamIdResult.data),
 									eq(team.organizationId, invitation.organizationId),
 								),
 							})

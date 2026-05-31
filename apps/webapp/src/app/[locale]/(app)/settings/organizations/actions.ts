@@ -4,6 +4,7 @@ import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
+import { z } from "zod";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
@@ -33,11 +34,13 @@ import { isOrganizationFeature } from "./organization-features";
 
 const logger = createLogger("OrganizationActions");
 
-type UpdateInvitationTargetTeamData = {
-	invitationId: string;
-	organizationId: string;
-	targetTeamId?: string | null;
-};
+const updateInvitationTargetTeamSchema = z.object({
+	invitationId: z.string().min(1),
+	organizationId: z.string().min(1),
+	targetTeamId: z.string().uuid("Invalid target team").nullable().optional(),
+});
+
+type UpdateInvitationTargetTeamData = z.infer<typeof updateInvitationTargetTeamSchema>;
 
 type MemberWithUser = typeof authSchema.member.$inferSelect & {
 	user: Pick<typeof authSchema.user.$inferSelect, "name" | "email"> | null;
@@ -307,14 +310,25 @@ export async function sendInvitation(
 export async function updateInvitationTargetTeam(
 	data: UpdateInvitationTargetTeamData,
 ): Promise<ServerActionResult<void>> {
+	const validationResult = updateInvitationTargetTeamSchema.safeParse(data);
+	if (!validationResult.success) {
+		const issue = validationResult.error.issues[0];
+		return {
+			success: false,
+			error: issue?.message || "Invalid input",
+			code: "ValidationError",
+		};
+	}
+
+	const validatedData = validationResult.data;
 	const tracer = trace.getTracer("organizations");
 
 	const effect = tracer.startActiveSpan(
 		"updateInvitationTargetTeam",
 		{
 			attributes: {
-				"invitation.id": data.invitationId,
-				"organization.id": data.organizationId,
+				"invitation.id": validatedData.invitationId,
+				"organization.id": validatedData.organizationId,
 			},
 		},
 		(span) => {
@@ -327,8 +341,8 @@ export async function updateInvitationTargetTeam(
 					dbService.query("getPendingInvitation", async () => {
 						return await db.query.invitation.findFirst({
 							where: and(
-								eq(authSchema.invitation.id, data.invitationId),
-								eq(authSchema.invitation.organizationId, data.organizationId),
+								eq(authSchema.invitation.id, validatedData.invitationId),
+								eq(authSchema.invitation.organizationId, validatedData.organizationId),
 								eq(authSchema.invitation.status, "pending"),
 							),
 						});
@@ -340,7 +354,7 @@ export async function updateInvitationTargetTeam(
 									new NotFoundError({
 										message: "Invitation not found",
 										entityType: "invitation",
-										entityId: data.invitationId,
+										entityId: validatedData.invitationId,
 									}),
 								),
 					),
@@ -380,12 +394,12 @@ export async function updateInvitationTargetTeam(
 					);
 				}
 
-				if (data.targetTeamId) {
+				if (validatedData.targetTeamId) {
 					const targetTeam = yield* _(
 						dbService.query("getInvitationTargetTeam", async () => {
 							return await db.query.team.findFirst({
 								where: and(
-									eq(team.id, data.targetTeamId!),
+									eq(team.id, validatedData.targetTeamId!),
 									eq(team.organizationId, invitation.organizationId),
 								),
 							});
@@ -398,7 +412,7 @@ export async function updateInvitationTargetTeam(
 								new ValidationError({
 									message: "Target team not found in this organization",
 									field: "targetTeamId",
-									value: data.targetTeamId,
+									value: validatedData.targetTeamId,
 								}),
 							),
 						);
@@ -410,7 +424,7 @@ export async function updateInvitationTargetTeam(
 						try: async () => {
 							await db
 								.update(authSchema.invitation)
-								.set({ targetTeamId: data.targetTeamId ?? null })
+								.set({ targetTeamId: validatedData.targetTeamId ?? null })
 								.where(
 									and(
 										eq(authSchema.invitation.id, invitation.id),

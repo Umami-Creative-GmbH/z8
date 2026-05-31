@@ -183,6 +183,25 @@ describe("organization invitation actions", () => {
 		expect(updateSetMock).not.toHaveBeenCalled();
 	});
 
+	it("rejects malformed target team ids before updating an invitation", async () => {
+		const { updateInvitationTargetTeam } = await import("./actions");
+
+		const result = await updateInvitationTargetTeam({
+			invitationId: "invite-1",
+			organizationId: "org-1",
+			targetTeamId: "not-a-uuid",
+		});
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "Invalid target team",
+		});
+		expect(invitationFindFirstMock).not.toHaveBeenCalled();
+		expect(teamFindFirstMock).not.toHaveBeenCalled();
+		expect(updateSetMock).not.toHaveBeenCalled();
+	});
+
 	it("requires admin or owner role to update an invitation target team", async () => {
 		invitationFindFirstMock.mockResolvedValue({
 			id: "invite-1",
