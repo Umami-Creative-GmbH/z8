@@ -51,13 +51,15 @@ interface PendingMembersCardProps {
 	currentMemberRole: "owner" | "admin" | "member";
 }
 
+const NO_TEAM_VALUE = "none";
+
 export function PendingMembersCard({ organizationId, currentMemberRole }: PendingMembersCardProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
 	const [rejectDialogMember, setRejectDialogMember] = useState<PendingMember | null>(null);
 	const [bulkRejectDialogOpen, setBulkRejectDialogOpen] = useState(false);
-	const [teamAssignments, setTeamAssignments] = useState<Record<string, string>>({});
+	const [teamAssignments, setTeamAssignments] = useState<Record<string, string | null>>({});
 
 	const canManage = currentMemberRole === "admin" || currentMemberRole === "owner";
 
@@ -124,7 +126,9 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 		mutationFn: async () => {
 			const memberIds = Array.from(selectedMembers);
 			// Get the most common team assignment (or undefined if none)
-			const teamValues = memberIds.map((id) => teamAssignments[id]).filter(Boolean);
+			const teamValues = memberIds
+				.map((id) => teamAssignments[id])
+				.filter((teamId): teamId is string => !!teamId);
 			const commonTeam = teamValues.length > 0 ? teamValues[0] : undefined;
 			const result = await bulkApprovePendingMembers(memberIds, organizationId, commonTeam);
 			if (!result.success) throw new Error(result.error || "Failed to approve");
@@ -190,8 +194,24 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 	const handleTeamChange = (memberId: string, teamId: string) => {
 		setTeamAssignments((prev) => ({
 			...prev,
-			[memberId]: teamId === "" ? undefined! : teamId,
+			[memberId]: teamId === NO_TEAM_VALUE ? null : teamId,
 		}));
+	};
+
+	const getTeamSelectValue = (member: PendingMember) => {
+		if (member.id in teamAssignments) {
+			return teamAssignments[member.id] ?? NO_TEAM_VALUE;
+		}
+
+		return member.inviteCode?.defaultTeamId || NO_TEAM_VALUE;
+	};
+
+	const getApproveTeamId = (member: PendingMember) => {
+		if (member.id in teamAssignments) {
+			return teamAssignments[member.id] === null ? undefined : teamAssignments[member.id];
+		}
+
+		return member.inviteCode?.defaultTeamId || undefined;
 	};
 
 	const formatDate = (date: Date | string | null | undefined) => {
@@ -314,14 +334,14 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 									<TableCell>{formatDate(member.createdAt)}</TableCell>
 									<TableCell>
 										<Select
-											value={teamAssignments[member.id] || member.inviteCode?.defaultTeamId || ""}
+											value={getTeamSelectValue(member)}
 											onValueChange={(value) => handleTeamChange(member.id, value)}
 										>
 											<SelectTrigger className="w-[180px]">
 												<SelectValue placeholder={t("settings.pendingMembers.noTeam", "No team")} />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value="">
+												<SelectItem value={NO_TEAM_VALUE}>
 													{t("settings.pendingMembers.noTeam", "No team")}
 												</SelectItem>
 												{teams.map((team) => (
@@ -343,10 +363,7 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 														onClick={() =>
 															approveMutation.mutate({
 																memberId: member.id,
-																teamId:
-																	teamAssignments[member.id] ||
-																	member.inviteCode?.defaultTeamId ||
-																	undefined,
+																teamId: getApproveTeamId(member),
 															})
 														}
 														disabled={approveMutation.isPending}
