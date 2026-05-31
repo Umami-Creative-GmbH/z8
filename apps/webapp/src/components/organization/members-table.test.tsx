@@ -1,11 +1,24 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { resolveInvitationTargetTeamUpdate } from "./edit-invitation-target-team-dialog";
 
 const componentSource = () =>
 	readFileSync(join(process.cwd(), "src/components/organization/members-table.tsx"), "utf8");
 
 describe("MembersTable invitation target teams", () => {
+	it("resolves local target team updates from the submitted id", () => {
+		const update = resolveInvitationTargetTeamUpdate("team-a", [
+			{ id: "team-a", name: "Submitted Team" },
+			{ id: "team-b", name: "Later Selected Team" },
+		]);
+
+		expect(update).toEqual({
+			targetTeamId: "team-a",
+			targetTeam: { id: "team-a", name: "Submitted Team" },
+		});
+	});
+
 	it("shows pending invitation target teams and exposes the edit action", () => {
 		const file = componentSource();
 
@@ -33,9 +46,14 @@ describe("MembersTable invitation target teams", () => {
 		);
 
 		expect(dialog).toContain("onUpdated:");
-		expect(dialog).toContain("onUpdated({");
-		expect(dialog).toContain("targetTeamId: updatedTargetTeamId");
-		expect(dialog).toContain("targetTeam: updatedTargetTeam");
+		expect(dialog).toContain("mutationFn: ({ targetTeamId }");
+		expect(dialog).toContain("onSuccess: (result, variables)");
+		expect(dialog).toContain(
+			"const update = resolveInvitationTargetTeamUpdate(variables.targetTeamId, teams)",
+		);
+		expect(dialog).toContain("onUpdated(update)");
+		expect(dialog).toContain("disabled={updateMutation.isPending}");
+		expect(dialog).toContain("updateMutation.mutate({ targetTeamId: submittedTargetTeamId })");
 		expect(table).toContain("handleInvitationTargetTeamUpdated");
 		expect(table).toContain("setInvitations((currentInvitations) =>");
 		expect(table).toContain("invitation.id === invitationId");

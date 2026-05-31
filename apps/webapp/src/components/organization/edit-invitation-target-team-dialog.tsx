@@ -28,6 +28,18 @@ import {
 import { queryKeys } from "@/lib/query";
 import type { InvitationWithInviter } from "./organizations-page-client";
 
+type TargetTeamOption = { id: string; name: string };
+
+export function resolveInvitationTargetTeamUpdate(
+	targetTeamId: string | null,
+	teams: TargetTeamOption[],
+) {
+	return {
+		targetTeamId,
+		targetTeam: targetTeamId ? (teams.find((team) => team.id === targetTeamId) ?? null) : null,
+	};
+}
+
 interface EditInvitationTargetTeamDialogProps {
 	organizationId: string;
 	invitation: InvitationWithInviter | null;
@@ -67,7 +79,7 @@ export function EditInvitationTargetTeamDialog({
 	}, [open, invitationId, invitation?.targetTeamId]);
 
 	const updateMutation = useMutation({
-		mutationFn: () => {
+		mutationFn: ({ targetTeamId }: { targetTeamId: string | null }) => {
 			if (!invitation) {
 				throw new Error("Invitation is required");
 			}
@@ -75,24 +87,18 @@ export function EditInvitationTargetTeamDialog({
 			return updateInvitationTargetTeam({
 				invitationId: invitation.id,
 				organizationId,
-				targetTeamId: selectedTargetTeamId === "none" ? null : selectedTargetTeamId,
+				targetTeamId,
 			});
 		},
-		onSuccess: (result) => {
+		onSuccess: (result, variables) => {
 			if (result.success) {
-				const updatedTargetTeamId = selectedTargetTeamId === "none" ? null : selectedTargetTeamId;
-				const updatedTargetTeam = updatedTargetTeamId
-					? (teams.find((team) => team.id === updatedTargetTeamId) ?? null)
-					: null;
+				const update = resolveInvitationTargetTeamUpdate(variables.targetTeamId, teams);
 
 				toast.success(
 					t("organization.members.targetTeamUpdateSuccess", "Invitation target team updated"),
 				);
 				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
-				onUpdated({
-					targetTeamId: updatedTargetTeamId,
-					targetTeam: updatedTargetTeam,
-				});
+				onUpdated(update);
 				onOpenChange(false);
 			} else {
 				toast.error(
@@ -109,6 +115,8 @@ export function EditInvitationTargetTeamDialog({
 			);
 		},
 	});
+
+	const submittedTargetTeamId = selectedTargetTeamId === "none" ? null : selectedTargetTeamId;
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
@@ -130,7 +138,11 @@ export function EditInvitationTargetTeamDialog({
 						<Label htmlFor="invitationTargetTeam">
 							{t("organization.members.targetTeam", "Target Team")}
 						</Label>
-						<Select value={selectedTargetTeamId} onValueChange={setSelectedTargetTeamId}>
+						<Select
+							value={selectedTargetTeamId}
+							onValueChange={setSelectedTargetTeamId}
+							disabled={updateMutation.isPending}
+						>
 							<SelectTrigger
 								id="invitationTargetTeam"
 								aria-label={t("organization.members.targetTeam", "Target Team")}
@@ -162,7 +174,7 @@ export function EditInvitationTargetTeamDialog({
 					</Button>
 					<Button
 						type="button"
-						onClick={() => updateMutation.mutate()}
+						onClick={() => updateMutation.mutate({ targetTeamId: submittedTargetTeamId })}
 						disabled={!invitation || updateMutation.isPending}
 					>
 						{updateMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
