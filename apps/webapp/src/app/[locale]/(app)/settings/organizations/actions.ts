@@ -6,7 +6,7 @@ import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { employee } from "@/db/schema";
+import { employee, team } from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import {
@@ -32,6 +32,12 @@ import {
 import { isOrganizationFeature } from "./organization-features";
 
 const logger = createLogger("OrganizationActions");
+
+type UpdateInvitationTargetTeamData = {
+	invitationId: string;
+	organizationId: string;
+	targetTeamId?: string | null;
+};
 
 type MemberWithUser = typeof authSchema.member.$inferSelect & {
 	user: Pick<typeof authSchema.user.$inferSelect, "name" | "email"> | null;
@@ -119,6 +125,31 @@ export async function sendInvitation(
 				}
 
 				const validatedData = validationResult.data;
+
+				if (validatedData.targetTeamId) {
+					const targetTeam = yield* _(
+						dbService.query("getInvitationTargetTeam", async () => {
+							return await db.query.team.findFirst({
+								where: and(
+									eq(team.id, validatedData.targetTeamId!),
+									eq(team.organizationId, data.organizationId),
+								),
+							});
+						}),
+					);
+
+					if (!targetTeam) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Target team not found in this organization",
+									field: "targetTeamId",
+									value: validatedData.targetTeamId,
+								}),
+							),
+						);
+					}
+				}
 
 				yield* _(
 					Effect.tryPromise({
@@ -209,23 +240,28 @@ export async function sendInvitation(
 								headers: await headers(),
 							});
 
-							// Update invitation record with canCreateOrganizations flag if specified
-							if (validatedData!.canCreateOrganizations) {
-								const newInvitation = await db.query.invitation.findFirst({
-									where: and(
-										eq(authSchema.invitation.email, validatedData!.email),
-										eq(authSchema.invitation.organizationId, data.organizationId),
-										eq(authSchema.invitation.status, "pending"),
-									),
-									orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
-								});
+							const newInvitation = await db.query.invitation.findFirst({
+								where: and(
+									eq(authSchema.invitation.email, validatedData!.email),
+									eq(authSchema.invitation.organizationId, data.organizationId),
+									eq(authSchema.invitation.status, "pending"),
+								),
+								orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
+							});
 
-								if (newInvitation) {
-									await db
-										.update(authSchema.invitation)
-										.set({ canCreateOrganizations: true })
-										.where(eq(authSchema.invitation.id, newInvitation.id));
-								}
+							if (newInvitation) {
+								await db
+									.update(authSchema.invitation)
+									.set({
+										canCreateOrganizations: validatedData!.canCreateOrganizations ?? false,
+										targetTeamId: validatedData!.targetTeamId ?? null,
+									})
+									.where(
+										and(
+											eq(authSchema.invitation.id, newInvitation.id),
+											eq(authSchema.invitation.organizationId, data.organizationId),
+										),
+									);
 							}
 						},
 						catch: (error) => {
@@ -256,6 +292,151 @@ export async function sendInvitation(
 							message: String(error),
 						});
 						logger.error({ error }, "Failed to send invitation");
+						return yield* _(Effect.fail(error as AnyAppError));
+					}),
+				),
+				Effect.onExit(() => Effect.sync(() => span.end())),
+				Effect.provide(AppLayer),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect);
+}
+
+export async function updateInvitationTargetTeam(
+	data: UpdateInvitationTargetTeamData,
+): Promise<ServerActionResult<void>> {
+	const tracer = trace.getTracer("organizations");
+
+	const effect = tracer.startActiveSpan(
+		"updateInvitationTargetTeam",
+		{
+			attributes: {
+				"invitation.id": data.invitationId,
+				"organization.id": data.organizationId,
+			},
+		},
+		(span) => {
+			return Effect.gen(function* (_) {
+				const authService = yield* _(AuthService);
+				const session = yield* _(authService.getSession());
+				const dbService = yield* _(DatabaseService);
+
+				const invitation = yield* _(
+					dbService.query("getPendingInvitation", async () => {
+						return await db.query.invitation.findFirst({
+							where: and(
+								eq(authSchema.invitation.id, data.invitationId),
+								eq(authSchema.invitation.organizationId, data.organizationId),
+								eq(authSchema.invitation.status, "pending"),
+							),
+						});
+					}),
+					Effect.flatMap((invitationRecord) =>
+						invitationRecord
+							? Effect.succeed(invitationRecord)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Invitation not found",
+										entityType: "invitation",
+										entityId: data.invitationId,
+									}),
+								),
+					),
+				);
+
+				const memberRecord = yield* _(
+					dbService.query("getCurrentMember", async () => {
+						return await db.query.member.findFirst({
+							where: and(
+								eq(authSchema.member.userId, session.user.id),
+								eq(authSchema.member.organizationId, invitation.organizationId),
+							),
+						});
+					}),
+					Effect.flatMap((member) =>
+						member
+							? Effect.succeed(member)
+							: Effect.fail(
+									new NotFoundError({
+										message: "You are not a member of this organization",
+										entityType: "member",
+									}),
+								),
+					),
+				);
+
+				if (memberRecord.role !== "admin" && memberRecord.role !== "owner") {
+					yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Only admins and owners can update invitations",
+								userId: session.user.id,
+								resource: "invitation",
+								action: "update",
+							}),
+						),
+					);
+				}
+
+				if (data.targetTeamId) {
+					const targetTeam = yield* _(
+						dbService.query("getInvitationTargetTeam", async () => {
+							return await db.query.team.findFirst({
+								where: and(
+									eq(team.id, data.targetTeamId!),
+									eq(team.organizationId, invitation.organizationId),
+								),
+							});
+						}),
+					);
+
+					if (!targetTeam) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Target team not found in this organization",
+									field: "targetTeamId",
+									value: data.targetTeamId,
+								}),
+							),
+						);
+					}
+				}
+
+				yield* _(
+					Effect.tryPromise({
+						try: async () => {
+							await db
+								.update(authSchema.invitation)
+								.set({ targetTeamId: data.targetTeamId ?? null })
+								.where(
+									and(
+										eq(authSchema.invitation.id, invitation.id),
+										eq(authSchema.invitation.organizationId, invitation.organizationId),
+										eq(authSchema.invitation.status, "pending"),
+									),
+								);
+						},
+						catch: (error) =>
+							new ValidationError({
+								message: error instanceof Error ? error.message : "Failed to update invitation",
+								field: "invitation",
+							}),
+					}),
+				);
+
+				span.setStatus({ code: SpanStatusCode.OK });
+			}).pipe(
+				Effect.catchAll((error) =>
+					Effect.gen(function* (_) {
+						span.recordException(error as Error);
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: String(error),
+						});
+						logger.error({ error }, "Failed to update invitation target team");
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),

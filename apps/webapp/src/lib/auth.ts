@@ -9,10 +9,10 @@ import { admin } from "better-auth/plugins/admin";
 import { bearer } from "better-auth/plugins/bearer";
 import { organization } from "better-auth/plugins/organization";
 import { twoFactor } from "better-auth/plugins/two-factor";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
-import { employee, scimProvisioningLog } from "@/db/schema";
+import { employee, scimProvisioningLog, team } from "@/db/schema";
 import { env } from "@/env";
 import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
@@ -535,10 +535,21 @@ export const auth = betterAuth({
 			organizationHooks: {
 				// Update user permissions when accepting invitation
 				afterAcceptInvitation: async ({ user, invitation, member }) => {
-					// Fetch the full invitation record to get canCreateOrganizations
+					// Fetch the full invitation record to get custom invitation fields.
 					const invitationRecord = await db.query.invitation.findFirst({
-						where: eq(schema.invitation.id, invitation.id),
+						where: and(
+							eq(schema.invitation.id, invitation.id),
+							eq(schema.invitation.organizationId, invitation.organizationId),
+						),
 					});
+					const targetTeam = invitationRecord?.targetTeamId
+						? await db.query.team.findFirst({
+								where: and(
+									eq(team.id, invitationRecord.targetTeamId),
+									eq(team.organizationId, invitation.organizationId),
+								),
+							})
+						: null;
 
 					// Update user's organization creation permission based on invitation
 					await db
@@ -553,6 +564,7 @@ export const auth = betterAuth({
 						userId: user.id,
 						organizationId: invitation.organizationId,
 						memberRole: member.role,
+						targetTeamId: targetTeam?.id ?? null,
 					});
 				},
 
