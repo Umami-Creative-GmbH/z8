@@ -16,6 +16,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 		const insert = vi.fn(() => ({ values }));
 		const update = vi.fn(() => ({ set }));
 		const findFirst = vi.fn().mockResolvedValue(existingEmployee);
+		const teamPermissionsFindFirst = vi.fn().mockResolvedValue(null);
 		const memberFindMany = vi.fn().mockResolvedValue([]);
 		const employeeFindMany = vi.fn().mockResolvedValue([]);
 
@@ -23,6 +24,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			query: {
 				member: { findMany: memberFindMany },
 				employee: { findFirst, findMany: employeeFindMany },
+				teamPermissions: { findFirst: teamPermissionsFindFirst },
 			},
 			insert,
 			update,
@@ -36,7 +38,9 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			returning,
 			update,
 			set,
+			where,
 			updateReturning,
+			teamPermissionsFindFirst,
 			memberFindMany,
 			employeeFindMany,
 		};
@@ -122,6 +126,43 @@ describe("ensureEmployeeForOrganizationMember", () => {
 		expect(set).toHaveBeenCalledWith({
 			isActive: true,
 			teamId: "team-1",
+		});
+	});
+
+	it("reactivates an inactive admin employee without a team and grants org-wide team permissions", async () => {
+		const { db, set, updateReturning, teamPermissionsFindFirst, values } = createDbMock({
+			id: "employee-existing",
+			userId: "user-1",
+			organizationId: "org-1",
+			teamId: null,
+			isActive: false,
+		});
+		updateReturning.mockResolvedValue([
+			{ id: "employee-existing", isActive: true, teamId: "team-1", role: "admin" },
+		]);
+
+		await ensureEmployeeForOrganizationMember(db, {
+			userId: "user-1",
+			organizationId: "org-1",
+			memberRole: "admin",
+			targetTeamId: "team-1",
+		});
+
+		expect(set).toHaveBeenCalledWith({
+			isActive: true,
+			teamId: "team-1",
+			role: "admin",
+		});
+		expect(teamPermissionsFindFirst).toHaveBeenCalledOnce();
+		expect(values).toHaveBeenCalledWith({
+			employeeId: "employee-existing",
+			organizationId: "org-1",
+			teamId: null,
+			canCreateTeams: true,
+			canManageTeamMembers: true,
+			canManageTeamSettings: true,
+			canApproveTeamRequests: true,
+			grantedBy: "employee-existing",
 		});
 	});
 
