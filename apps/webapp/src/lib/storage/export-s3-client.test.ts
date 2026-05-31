@@ -1,6 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
+	env: {
+		S3_PRIVATE_BUCKET: "private-export-bucket",
+		S3_PRIVATE_ACCESS_KEY_ID: "private-access-key",
+		S3_PRIVATE_SECRET_ACCESS_KEY: "private-secret-key",
+		S3_PRIVATE_ENDPOINT: "https://private-s3.example.com",
+		S3_PRIVATE_REGION: "eu-central-1",
+		S3_PRIVATE_FORCE_PATH_STYLE: "false",
+		S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS: "600",
+	},
 	findFirst: vi.fn(),
 	getOrgSecret: vi.fn(),
 	getSignedUrl: vi.fn(),
@@ -11,15 +20,7 @@ const mockState = vi.hoisted(() => ({
 }));
 
 vi.mock("@/env", () => ({
-	env: {
-		S3_PRIVATE_BUCKET: "private-export-bucket",
-		S3_PRIVATE_ACCESS_KEY_ID: "private-access-key",
-		S3_PRIVATE_SECRET_ACCESS_KEY: "private-secret-key",
-		S3_PRIVATE_ENDPOINT: "https://private-s3.example.com",
-		S3_PRIVATE_REGION: "eu-central-1",
-		S3_PRIVATE_FORCE_PATH_STYLE: "false",
-		S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS: "600",
-	},
+	env: mockState.env,
 }));
 
 vi.mock("@/db", () => ({
@@ -69,13 +70,24 @@ vi.mock("@aws-sdk/s3-request-presigner", () => ({
 	getSignedUrl: mockState.getSignedUrl,
 }));
 
-const { getPresignedUrl, getStorageConfig, isExportS3Configured, uploadExport } = await import(
-	"./export-s3-client"
-);
+const {
+	getPresignedUrl,
+	getStorageConfig,
+	isExportS3Configured,
+	isExportS3ConfiguredSync,
+	uploadExport,
+} = await import("./export-s3-client");
 
 describe("export S3 client", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.env.S3_PRIVATE_BUCKET = "private-export-bucket";
+		mockState.env.S3_PRIVATE_ACCESS_KEY_ID = "private-access-key";
+		mockState.env.S3_PRIVATE_SECRET_ACCESS_KEY = "private-secret-key";
+		mockState.env.S3_PRIVATE_ENDPOINT = "https://private-s3.example.com";
+		mockState.env.S3_PRIVATE_REGION = "eu-central-1";
+		mockState.env.S3_PRIVATE_FORCE_PATH_STYLE = "false";
+		mockState.env.S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS = "600";
 		mockState.findFirst.mockResolvedValue(null);
 		mockState.getOrgSecret.mockReset();
 		mockState.getSignedUrl.mockResolvedValue("https://signed.example.com/export.zip");
@@ -97,6 +109,14 @@ describe("export S3 client", () => {
 
 		await expect(isExportS3Configured("org_1")).resolves.toBe(true);
 		expect(mockState.getOrgSecret).not.toHaveBeenCalled();
+	});
+
+	it("reports sync export S3 availability from private storage environment", () => {
+		expect(isExportS3ConfiguredSync()).toBe(true);
+
+		mockState.env.S3_PRIVATE_SECRET_ACCESS_KEY = "";
+
+		expect(isExportS3ConfiguredSync()).toBe(false);
 	});
 
 	it("prefers organization-owned storage when it is configured", async () => {

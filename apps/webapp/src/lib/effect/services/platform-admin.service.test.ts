@@ -26,6 +26,19 @@ function getListOrganizationsSource(): string {
 	return source.slice(start, end);
 }
 
+function getDeleteOrganizationSource(): string {
+	const source = readFileSync(SERVICE_SOURCE, "utf8");
+	const start = source.indexOf(
+		"deleteOrganization: (orgId, immediate, skipNotification, adminId) =>",
+	);
+	const end = source.indexOf("\n\t\t\tisOrganizationSuspended:", start);
+
+	expect(start).toBeGreaterThan(-1);
+	expect(end).toBeGreaterThan(start);
+
+	return source.slice(start, end);
+}
+
 describe("PlatformAdminService listUsers privacy guardrails", () => {
 	it("does not select full names or profile images for the platform users list", () => {
 		const listUsersSource = getListUsersSource();
@@ -74,5 +87,14 @@ describe("PlatformAdminService listOrganizations query guardrails", () => {
 
 		expect(listOrganizationsSource).toContain('"employee"."organization_id" = "organization"."id"');
 		expect(listOrganizationsSource).toContain('"member"."organization_id" = "organization"."id"');
+	});
+});
+
+describe("PlatformAdminService deleteOrganization notification dispatch", () => {
+	it("queues deletion notifications unless notifications are skipped", () => {
+		const deleteOrganizationSource = getDeleteOrganizationSource();
+
+		expect(deleteOrganizationSource).toContain("if (!skipNotification)");
+		expect(deleteOrganizationSource).toContain("addOrganizationDeletionNotificationJob");
 	});
 });
