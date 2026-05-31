@@ -1,500 +1,508 @@
 {
-  "accessDenied": {
-    "contactAdmin": "Bitte kontaktiere Sie Ihre Organisations-Administrator, um Zuegriff z'becho.",
-    "description": "Ihr Konto hät kei Zuegriffsrächt für {{appLabel}}.",
-    "signOut": "Abmälde",
-    "title": "Zuegriff iigschränkt"
-  },
-  "actions": {
-    "cancel": "Abbräche",
-    "delete": "Lösche",
-    "refresh": "Aktualisiere"
-  },
-  "analytics": {
-    "export": {
-      "export": "Exportiere",
-      "exportAsCsv": "Als CSV exportiere",
-      "exportAsExcel": "Als Excel exportiere",
-      "exportedAsFormat": "Exportiert als {format}",
-      "exportingFormat": "Exportiere als {format}…",
-      "failedAsFormat": "Export als {format} fehlgschlage"
-    }
-  },
-  "appSearch": {
-    "commandDescription": "Seiten, Personen, Teams, Einstellungen oder Aktionen durchsuchen",
-    "commandPlaceholder": "Seiten, Personen, Teams, Einstellungen oder Aktionen durchsuchen…",
-    "commands": {
-      "addManualTimeEntry": {
-        "subtitle": "Stunden für eine vergangene Schicht oder Korrektur erfassen",
-        "title": "Manuelle Zeiterfassung hinzufügen"
-      },
-      "createProject": {
-        "subtitle": "Projekteinstellungen öffnen, um ein neues Projekt zu definieren",
-        "title": "Projekt erstellen"
-      },
-      "inviteTeammate": {
-        "subtitle": "Organisationsverwaltung öffnen, um einen Kollegen hinzuzufügen",
-        "title": "Teammitglied einladen"
-      },
-      "openApprovalsInbox": {
-        "subtitle": "Ausstehende Mitarbeiteranfragen überprüfen",
-        "title": "Genehmigungseingang öffnen"
-      },
-      "openMyRequests": {
-        "subtitle": "Eingereichte Abwesenheiten und Spesen überprüfen",
-        "title": "Meine Anfragen öffnen"
-      },
-      "openPayrollReadiness": {
-        "subtitle": "Prüfen, ob Zeitdaten für die Lohnabrechnung bereit sind",
-        "title": "Lohnabrechnungsbereitschaft öffnen"
-      },
-      "openSettings": {
-        "subtitle": "Profil, Sicherheit und Organisationseinstellungen verwalten",
-        "title": "Einstellungen öffnen"
-      },
-      "requestAbsence": {
-        "subtitle": "Urlaubs-, Krankheits- oder Freistellungsantrag starten",
-        "title": "Abwesenheit beantragen"
-      },
-      "submitTravelExpense": {
-        "subtitle": "Rückerstattungsantrag für Reisekosten erstellen",
-        "title": "Reisespesen einreichen"
-      }
-    },
-    "empty": "Keine Ergebnisse gefunden.",
-    "groups": {
-      "actions": "Aktionen",
-      "pages": "Seiten",
-      "people": "Personen",
-      "settings": "Einstellungen",
-      "teams": "Teams"
-    },
-    "search": "Suche",
-    "searchOrRunCommand": "Suchen oder Befehl ausführen",
-    "teamAbsences": {
-      "description": "Abwesenheitskennzahlen der Mitarbeiter prüfen und Abwesenheiten erfassen"
-    }
-  },
-  "billing": {
-    "suspended": {
-      "adminDescription": "Dii Testphase isch abglaufe oder dis Abo isch nümme gültig. Aktualisier d'Abrechnig, zum Z8 wiiter z'nutze.",
-      "goToBilling": "Zur Abrechnig",
-      "memberDescription": "Die Organisation isch suspendiert. Kontaktier en Organisations-Admin, zum d'Abrechnig z'aktualisiere.",
-      "title": "Organisation suspendiert"
-    },
-    "trialBanner": {
-      "description": "{days} Täg übrig. Füeg jetzt Zahligsdate hii; dis zahlpflichtige Abo fangt nach de Testphase aa.",
-      "dismiss": "Test-Banner usblende",
-      "title": "14-Täg-Testphase aktiv",
-      "upgrade": "Upgrade"
-    }
-  },
-  "colors": {
-    "blue": "Blau",
-    "green": "Grüen",
-    "indigo": "Indigo",
-    "orange": "Orange",
-    "pink": "Pink",
-    "purple": "Violett",
-    "red": "Rot",
-    "teal": "Türkis"
-  },
-  "common": {
-    "actions": "Aaktione",
-    "active": "Aktiv",
-    "add": "Hinzuefüege",
-    "adding": "Wird hinzugefügt...",
-    "all": "Alli",
-    "approve": "Bestätige",
-    "assign": "Zueordne",
-    "back": "Zrugg",
-    "cancel": "Abbräche",
-    "clear": "Lösche",
-    "clearSearch": "Suech lösche",
-    "clearSelection": "Lösche",
-    "close": "Schliesse",
-    "confirm": "Bestätige",
-    "continue": "Wiiter",
-    "copy": "Kopiere",
-    "create": "Erstelle",
-    "current": "Aktuell",
-    "days": {
-      "friday": "Friitig",
-      "label": "Täg",
-      "monday": "Mäntig",
-      "saturday": "Samschtig",
-      "sunday": "Sunntig",
-      "thursday": "Donschtig",
-      "tuesday": "Ziischtig",
-      "wednesday": "Mittwuch"
-    },
-    "delete": "Lösche",
-    "deleting": "Am Lösche...",
-    "description": "Beschriibig",
-    "deselectAll": "Alli abwähle",
-    "details": "Details",
-    "download": "Abelade",
-    "duplicate": "Dupliziere",
-    "edit": "Bearbeite",
-    "enabled": "Aktiviert",
-    "error": "Fehler",
-    "error-occurred": "Es isch en Fehler ufträtte",
-    "gender": {
-      "female": "Wiiblich",
-      "male": "Männlich",
-      "other": "Andersch"
-    },
-    "goToDashboard": "Zum Dashboard",
-    "inactive": "Inaktiv",
-    "label": "Bezeichnig",
-    "loading": "Am Lade...",
-    "loadMore": "Meh lade",
-    "months": {
-      "april": "April",
-      "august": "Auguscht",
-      "december": "Dezämber",
-      "february": "Februar",
-      "january": "Januar",
-      "july": "Juli",
-      "june": "Juni",
-      "march": "März",
-      "may": "Mai",
-      "november": "Novämber",
-      "october": "Oktobär",
-      "september": "Septämber"
-    },
-    "more": "meh",
-    "moreActions": "Meh Aaktione",
-    "moveDown": "Abewärts verschiebe",
-    "moveUp": "Ufewärts verschiebe",
-    "name": "Name",
-    "never": "Nie",
-    "new": "Neu",
-    "next": "Wiiter",
-    "notApplicable": "n. v.",
-    "not-available": "Nöd verfüegbar",
-    "open": "Öffne",
-    "openEnded": "Offes Ändi",
-    "openMenu": "Menü öffne",
-    "optional": "optional",
-    "or": "Oder",
-    "pending": "Usschtändig",
-    "present": "Aawesend",
-    "previous": "Zrugg",
-    "recovering": "Wird wiederhergstellt...",
-    "refresh": "Aktualisiere",
-    "refreshing": "Wird aktualisiert...",
-    "reject": "Ablehne",
-    "rejecting": "Wird abglehnt...",
-    "remove": "Entfärne",
-    "removing": "Am Entfärne...",
-    "reset": "Zruggsetze",
-    "retry": "Widerhole",
-    "save": "Spichere",
-    "saveChanges": "Änderige spichere",
-    "saving": "Am Spichere...",
-    "selectAll": "Alli uswähle",
-    "selected": "usgwählt",
-    "select-language": "Sprach uswähle",
-    "set": "setze",
-    "sets": "Sets",
-    "skip": "Überspringe",
-    "start": "Start",
-    "status": "Status",
-    "submitting": "Wird übermittlet…",
-    "to": "bis",
-    "today": "Hüt",
-    "unexpectedError": "Es isch en unerwartete Fehler ufträtte",
-    "unknown": "Unbekannt",
-    "unknownEmployee": "Unbekannte Mitarbeiter",
-    "unknownTeam": "Unbekannts Team",
-    "unnamed": "Ohni Name",
-    "update": "Aktualisiere",
-    "updating": "Wird aktualisiert...",
-    "uploading": "Am ufelade...",
-    "validate": "Validiere",
-    "validationError": "Validierigsfehler",
-    "weekdays": {
-      "fr": "Fr",
-      "fri": "Fri",
-      "mo": "Mo",
-      "mon": "Mon",
-      "sa": "Sa",
-      "sat": "Sam",
-      "su": "So",
-      "sun": "Son",
-      "th": "Do",
-      "thu": "Don",
-      "tu": "Di",
-      "tue": "Die",
-      "we": "Mi",
-      "wed": "Mit"
-    }
-  },
-  "employeeSelect": {
-    "countSelected": "{count} Aagstellti usgwählt",
-    "countWithMore": "{count} Aagstellti (+{more} wiiteri)",
-    "noEmployeesFound": "Kei Aagstellti gfunde",
-    "role": "Rolle",
-    "searchPlaceholder": "Suche nach Name, E-Mail oder Position...",
-    "selected": "{count} usgwählt",
-    "selectEmployee": "Aagstellte uswähle",
-    "selectEmployees": "Aagstellti uswähle",
-    "selectMultipleEmployees": "Wähled Sie ein oder mehri Aagstellti us de Lischt",
-    "selectOneEmployee": "Wähled Sie en Aagstellte us de Lischt",
-    "status": "Status",
-    "team": "Team",
-    "totalEmployees": "{count} Aagstellti",
-    "tryDifferentSearch": "Versueched Sie, d'Suech oder d'Filter aazpasse"
-  },
-  "errors": {
-    "failedToLoad": "Date chönd nöd glade werde",
-    "noEmployee": {
-      "contactAdmin": "Administrator kontaktiere",
-      "createOrg": "Organisation erstelle",
-      "description": "Du bruchsch es Mitarbeiterprofil für ${feature}. Bitte erstel en Organisation oder kontaktier din Administrator.",
-      "emailBody": "Hallo,\n\nich bruche es Mitarbeiterprofil, zum uf d'Plattform-Funktione zuegriffe. Chöntsch du mir bitte debi hälfe?\n\nDanke!",
-      "emailSubject": "Mitarbeiterprofil-Irichtig erforderlich",
-      "helpText": "Wenn du zu ere Organisation iglade worde bisch, bitt din Administrator, dis Mitarbeiterprofil izrichte.",
-      "title": "Mitarbeiterprofil erforderlich"
-    },
-    "noOrganization": {
-      "createOrg": "Organisation erstelle",
-      "description": "Du bisch no kei Teil von ere Organisation. Erstel eini, zum afange, oder wart uf en Iladig.",
-      "title": "Kei Organisation gfunde",
-      "waiting": "Wartisch uf en Iladig?",
-      "waitingDesc": "Din Administrator schickt dir en Iladigs-E-Mail. Prüef din Postigang und de Spam-Ordner."
-    },
-    "unexpected": {
-      "digest": "Referänz: {digest}"
-    }
-  },
-  "generic": {
-    "done": "Fertig",
-    "submit": "Abschicke"
-  },
-  "header": {
-    "clock-in": "Istämple",
-    "clock-out": "Ufstämple"
-  },
-  "info": {
-    "agb": "AGB",
-    "back-to-login": "Zrugg zum Login",
-    "imprint": "Impressum",
-    "trust-center": "Trust Center"
-  },
-  "nav": {
-    "absences": "Abweseheite",
-    "approvals": "Freigabe",
-    "calendar": "Kaländer",
-    "compliance": "Compliance",
-    "dashboard": "Dashboard",
-    "feedback": "Feedback",
-    "get-help": "Hilf becho",
-    "my-requests": "Mini Aafroge",
-    "org-explorer": "Org-Explorer",
-    "platform-admin": "Plattform-Admin",
-    "reports": "Bericht",
-    "scheduling": "Planig",
-    "settings": "Istellige",
-    "team": "Team",
-    "teamAbsences": "Team-Abweseheite",
-    "team-label": "Team",
-    "time-tracking": "Ziiterfassig",
-    "travel-expenses": "Spesä",
-    "worksCouncil": "Betriebsrat"
-  },
-  "notifications": {
-    "actions": {
-      "deleteAll": "Alli lösche",
-      "markAllRead": "Alli als gläse markiere",
-      "markAsRead": "Als gläse markiere",
-      "markRead": "Gläse markiere",
-      "settings": "Benachrichtigungseistellige",
-      "viewAll": "Alli Benachrichtigunge aaluege"
-    },
-    "content": {
-      "teamMemberAdded": {
-        "message": "Du bisch vo {performedByName} zum Team {teamName} hinzugefügt worde.",
-        "title": "Zum Team hinzugefügt"
-      }
-    },
-    "description": "Updates, Freigabe und System-Mäldige uf eim Blick gseh.",
-    "empty": {
-      "description": "Du bisch uf em neuste Stand! Neui Benachrichtigunge erschined do.",
-      "inboxDescription": "Du bisch uf em neuste Stand. Neui Updates erschined do.",
-      "noMatchesDescription": "Pass d'Suech- oder Filter-Iistellige a, zum d'Aasicht z'erwiitere.",
-      "noMatchesTitle": "Kei passendi Benachrichtigunge",
-      "title": "Kei Benachrichtigunge",
-      "unreadDescription": "Du bisch uf em neuste Stand. Neui ungiläseni Updates erschined do.",
-      "unreadTitle": "Kei ungiläseni Benachrichtigunge"
-    },
-    "error": {
-      "title": "Benachrichtigunge chönd nöd glade werde"
-    },
-    "filters": {
-      "all": "Alli",
-      "ariaLabel": "Benachrichtigunge nach Läseschtatus filtere",
-      "read": "Gläse",
-      "unread": "Ungiläse"
-    },
-    "preferences": {
-      "disabled": "Benachrichtigung deaktiviert",
-      "enabled": "Benachrichtigung aktiviert",
-      "permissionModal": {
-        "benefits": {
-          "pendingApprovals": "Benachrichtigunge für usschtändigi Genehmigungsaaträg erhalte",
-          "requestUpdates": "Benachrichtigt werde, wenn dini Aaträg genehmigt oder abglehnt werded",
-          "teamSecurity": "Über Team- und Sicherheitsupdates uf em Laufende blibe"
-        },
-        "description": "Aktivier Push-Benachrichtigunge, um sofort Updates zu Genehmigunge, Ziitkorrekture und wichtige Teamänderige z'erhalte – au wenn d'App grad nöd offe isch.",
-        "enable": "Benachrichtigunge aktiviere",
-        "notNow": "Nöd jetzt",
-        "title": "Uf em Laufende blibe"
-      },
-      "push": {
-        "blockedDescription": "Push-Benachrichtigunge sind vo dim Browser blockiert. Zum sie z'aktiviere, muesch d'Browser-Iistellige aapasse.",
-        "blockedHelp": "Klick uf s'Schloss-Symbol i de Adressziile vom Browser und erlaub Benachrichtigunge für die Siite, dänn lad d'Siite neu.",
-        "blockedTitle": "Push-Benachrichtigunge blockiert",
-        "enableButton": "Push-Benachrichtigunge aktiviere",
-        "enableDescription": "Erhalt sofort Benachrichtigunge, au wänn d'App nöd offe isch",
-        "enabledIndicator": "Push-Benachrichtigunge sind aktiviert",
-        "enabledToast": "Push-Benachrichtigunge aktiviert",
-        "enabledToastDescription": "Du wirsch jetzt Browser-Push-Benachrichtigunge becho",
-        "enableFailedToast": "Push-Benachrichtigunge händ nöd chönne aktiviert werde",
-        "enableTitle": "Push-Benachrichtigunge aktiviere",
-        "errorToast": "Fehler bi de Push-Benachrichtigunge"
-      },
-      "toggleAria": "{channel}-Benachrichtigunge für {type}",
-      "updateFailed": "Iistellig hät nöd chönne aktualisiert werde"
-    },
-    "search": {
-      "ariaLabel": "Benachrichtigunge sueche",
-      "placeholder": "Benachrichtigunge sueche..."
-    },
-    "selection": {
-      "selectAll": "Alli sichtbare uswähle",
-      "selectAllAria": "Alli sichtbare Benachrichtigunge uswähle",
-      "selectNamedAria": "{title} uswähle",
-      "visibleSelected": "{count} sichtbar usgwählt"
-    },
-    "timeline": {
-      "earlier": "Früener",
-      "today": "Hüt",
-      "yesterday": "Gester"
-    },
-    "title": "Benachrichtigunge",
-    "toasts": {
-      "deleted": "{count} Benachrichtigunge glöscht",
-      "deleteFailed": "Benachrichtigunge chönd nöd glöscht werde",
-      "markedRead": "{count} Benachrichtigunge als gläse markiert",
-      "markReadFailed": "Benachrichtigunge chönd nöd als gläse markiert werde"
-    },
-    "unreadBadge": "{count} ungiläse",
-    "unreadCountOverflow": "99+"
-  },
-  "offline": {
-    "banner": {
-      "offline": "Sie sind offline",
-      "offlineWithPending": "Offline - {count} Ereignis(se) usstahnd",
-      "pending": "{count} Ereignis(se) warte uf d'Synchronisierig",
-      "retry": "Widerhole",
-      "syncing": "Synchronisiere {count} Ereignis(se)..."
-    }
-  },
-  "presence": {
-    "clockedIn": "Iigstämplet",
-    "clockedOut": "Uusgstämplet"
-  },
-  "roles": {
-    "admin": "Admin",
-    "employee": "Aagstellte",
-    "manager": "Vorgesetzte/r"
-  },
-  "status": {
-    "active": "Aktiv",
-    "inactive": "Inaktiv"
-  },
-  "table": {
-    "clearFilters": "Filter zruggsetze",
-    "clearSort": "Sortierig uufhebe",
-    "description": "Zeigt d'Gsamtzahl vo de Bsuecher für die letschte 6 Mönet. Das isch nur en zufällige Text, zum s'Layout z'teste. Er gaht über mehreri Ziile und sött umbroche werde.",
-    "goToFirstPage": "Zur erschte Siite",
-    "goToLastPage": "Zur letschte Siite",
-    "goToNextPage": "Zur nöchschte Siite",
-    "goToPreviousPage": "Zur vorherige Siite",
-    "header": "Header",
-    "limit": "Limit",
-    "noResults": "Kei Ergebnis.",
-    "pageOfPages": "Siite {current} vo {total}",
-    "reviewer": "Prüfer",
-    "rowsPerPage": "Ziile pro Siite",
-    "searchPlaceholder": "Sueche...",
-    "selectedOfTotal": "{selected} vo {total} Ziile usgwählt",
-    "select-reviewer": "En Prüfer uswähle",
-    "select-status": "En Status uswähle",
-    "select-type": "En Typ uswähle",
-    "showing-visitors": "Zeige d'Gsamtzahl vo de Bsuecher für die letschte 6 Mönet",
-    "sortAscending": "Ufstiigend",
-    "sortDescending": "Abstiigend",
-    "status": "Status",
-    "status-options": {
-      "done": "Erledigt",
-      "in-progress": "In Bearbeitig",
-      "not-started": "Noch nöd agfange"
-    },
-    "target": "Ziel",
-    "totalRows": "{total} Ziile",
-    "trending-up": "Diesen Monat um 5,2% gstige",
-    "type": "Typ",
-    "type-options": {
-      "capabilities": "Fähigkeite",
-      "cover-page": "Deckblatt",
-      "design": "Design",
-      "executive-summary": "Zusammenfassig",
-      "focus-documents": "Fokus-Dokumänt",
-      "narrative": "Narrativ",
-      "table-of-contents": "Inhaltsverzeichnis",
-      "technical-approach": "Technischs Vorgehe"
-    }
-  },
-  "time": {
-    "am": "AM",
-    "hoursAndMinutes": "{hours}h {minutes}min",
-    "hoursOnly": "{hours}h",
-    "pm": "PM"
-  },
-  "userAvatar": {
-    "alt": "Benutzer-Avatar"
-  },
-  "user": {
-    "font-size": "Schriftgrössi",
-    "language": "Spraach",
-    "logging-out": "Am abmelde...",
-    "log-out": "Abmelde",
-    "log-out-failed": "Abmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
-    "profile": "Profil",
-    "security": "Sicherheit",
-    "theme": "Theme",
-    "theme-dark": "Dunkel",
-    "theme-light": "Hell",
-    "theme-location-required": "Für das zeitbasierte Design ist eine Standortberechtigung erforderlich.",
-    "theme-system": "System",
-    "theme-time": "Zeitbasiert",
-    "theme-time-info": "Zeitbasiert verwendet den {currentMode}-Modus. Wechselt um {time} zu {nextMode}.",
-    "theme-toggle": "Theme wächsle"
-  },
-  "validation": {
-    "first-name-required": "Vorname isch erforderlich",
-    "invalid-email": "Ungültigi E-Mail-Adress",
-    "invalid-password": "Ungültigs Passwort",
-    "last-name-required": "Nachname isch erforderlich",
-    "password-required": "Passwort isch erforderlich"
-  },
-  "workBalance": {
-    "label": "Gsamtbilanz",
-    "notCalculated": "No nöd berächnet",
-    "pendingDescription": "De Arbeiter wird die Bilanz bald berächne.",
-    "updatedEveryThreeHours": "Wird alli 3 Stunde aktualisiert"
-  }
+	"accessDenied": {
+		"contactAdmin": "Bitte kontaktiere Sie Ihre Organisations-Administrator, um Zuegriff z'becho.",
+		"description": "Ihr Konto hät kei Zuegriffsrächt für {{appLabel}}.",
+		"signOut": "Abmälde",
+		"title": "Zuegriff iigschränkt"
+	},
+	"actions": {
+		"cancel": "Abbräche",
+		"delete": "Lösche",
+		"refresh": "Aktualisiere"
+	},
+	"analytics": {
+		"export": {
+			"export": "Exportiere",
+			"exportAsCsv": "Als CSV exportiere",
+			"exportAsExcel": "Als Excel exportiere",
+			"exportedAsFormat": "Exportiert als {format}",
+			"exportingFormat": "Exportiere als {format}…",
+			"failedAsFormat": "Export als {format} fehlgschlage"
+		}
+	},
+	"appSearch": {
+		"commandDescription": "Seiten, Personen, Teams, Einstellungen oder Aktionen durchsuchen",
+		"commandPlaceholder": "Seiten, Personen, Teams, Einstellungen oder Aktionen durchsuchen…",
+		"commands": {
+			"addManualTimeEntry": {
+				"subtitle": "Stunden für eine vergangene Schicht oder Korrektur erfassen",
+				"title": "Manuelle Zeiterfassung hinzufügen"
+			},
+			"createProject": {
+				"subtitle": "Projekteinstellungen öffnen, um ein neues Projekt zu definieren",
+				"title": "Projekt erstellen"
+			},
+			"inviteTeammate": {
+				"subtitle": "Organisationsverwaltung öffnen, um einen Kollegen hinzuzufügen",
+				"title": "Teammitglied einladen"
+			},
+			"openApprovalsInbox": {
+				"subtitle": "Ausstehende Mitarbeiteranfragen überprüfen",
+				"title": "Genehmigungseingang öffnen"
+			},
+			"openMyRequests": {
+				"subtitle": "Eingereichte Abwesenheiten und Spesen überprüfen",
+				"title": "Meine Anfragen öffnen"
+			},
+			"openPayrollReadiness": {
+				"subtitle": "Prüfen, ob Zeitdaten für die Lohnabrechnung bereit sind",
+				"title": "Lohnabrechnungsbereitschaft öffnen"
+			},
+			"openSettings": {
+				"subtitle": "Profil, Sicherheit und Organisationseinstellungen verwalten",
+				"title": "Einstellungen öffnen"
+			},
+			"requestAbsence": {
+				"subtitle": "Urlaubs-, Krankheits- oder Freistellungsantrag starten",
+				"title": "Abwesenheit beantragen"
+			},
+			"submitTravelExpense": {
+				"subtitle": "Rückerstattungsantrag für Reisekosten erstellen",
+				"title": "Reisespesen einreichen"
+			}
+		},
+		"empty": "Keine Ergebnisse gefunden.",
+		"groups": {
+			"actions": "Aktionen",
+			"pages": "Seiten",
+			"people": "Personen",
+			"settings": "Einstellungen",
+			"teams": "Teams"
+		},
+		"search": "Suche",
+		"searchOrRunCommand": "Suchen oder Befehl ausführen",
+		"teamAbsences": {
+			"description": "Abwesenheitskennzahlen der Mitarbeiter prüfen und Abwesenheiten erfassen"
+		}
+	},
+	"billing": {
+		"suspended": {
+			"adminDescription": "Dii Testphase isch abglaufe oder dis Abo isch nümme gültig. Aktualisier d'Abrechnig, zum Z8 wiiter z'nutze.",
+			"goToBilling": "Zur Abrechnig",
+			"memberDescription": "Die Organisation isch suspendiert. Kontaktier en Organisations-Admin, zum d'Abrechnig z'aktualisiere.",
+			"title": "Organisation suspendiert"
+		},
+		"trialBanner": {
+			"description": "{days} Täg übrig. Füeg jetzt Zahligsdate hii; dis zahlpflichtige Abo fangt nach de Testphase aa.",
+			"dismiss": "Test-Banner usblende",
+			"title": "14-Täg-Testphase aktiv",
+			"upgrade": "Upgrade"
+		}
+	},
+	"colors": {
+		"blue": "Blau",
+		"green": "Grüen",
+		"indigo": "Indigo",
+		"orange": "Orange",
+		"pink": "Pink",
+		"purple": "Violett",
+		"red": "Rot",
+		"teal": "Türkis"
+	},
+	"common": {
+		"actions": "Aaktione",
+		"active": "Aktiv",
+		"add": "Hinzuefüege",
+		"adding": "Wird hinzugefügt...",
+		"all": "Alli",
+		"approve": "Bestätige",
+		"assign": "Zueordne",
+		"back": "Zrugg",
+		"cancel": "Abbräche",
+		"clear": "Lösche",
+		"clearSearch": "Suech lösche",
+		"clearSelection": "Lösche",
+		"close": "Schliesse",
+		"confirm": "Bestätige",
+		"continue": "Wiiter",
+		"copy": "Kopiere",
+		"create": "Erstelle",
+		"current": "Aktuell",
+		"days": {
+			"friday": "Friitig",
+			"label": "Täg",
+			"monday": "Mäntig",
+			"saturday": "Samschtig",
+			"sunday": "Sunntig",
+			"thursday": "Donschtig",
+			"tuesday": "Ziischtig",
+			"wednesday": "Mittwuch"
+		},
+		"delete": "Lösche",
+		"deleting": "Am Lösche...",
+		"description": "Beschriibig",
+		"deselectAll": "Alli abwähle",
+		"details": "Details",
+		"download": "Abelade",
+		"duplicate": "Dupliziere",
+		"edit": "Bearbeite",
+		"enabled": "Aktiviert",
+		"error": "Fehler",
+		"error-occurred": "Es isch en Fehler ufträtte",
+		"gender": {
+			"female": "Wiiblich",
+			"male": "Männlich",
+			"other": "Andersch"
+		},
+		"goToDashboard": "Zum Dashboard",
+		"inactive": "Inaktiv",
+		"label": "Bezeichnig",
+		"loading": "Am Lade...",
+		"loadMore": "Meh lade",
+		"months": {
+			"april": "April",
+			"august": "Auguscht",
+			"december": "Dezämber",
+			"february": "Februar",
+			"january": "Januar",
+			"july": "Juli",
+			"june": "Juni",
+			"march": "März",
+			"may": "Mai",
+			"november": "Novämber",
+			"october": "Oktobär",
+			"september": "Septämber"
+		},
+		"more": "meh",
+		"moreActions": "Meh Aaktione",
+		"moveDown": "Abewärts verschiebe",
+		"moveUp": "Ufewärts verschiebe",
+		"name": "Name",
+		"never": "Nie",
+		"new": "Neu",
+		"next": "Wiiter",
+		"notApplicable": "n. v.",
+		"not-available": "Nöd verfüegbar",
+		"open": "Öffne",
+		"openEnded": "Offes Ändi",
+		"openMenu": "Menü öffne",
+		"optional": "optional",
+		"or": "Oder",
+		"pending": "Usschtändig",
+		"present": "Aawesend",
+		"previous": "Zrugg",
+		"recovering": "Wird wiederhergstellt...",
+		"refresh": "Aktualisiere",
+		"refreshing": "Wird aktualisiert...",
+		"reject": "Ablehne",
+		"rejecting": "Wird abglehnt...",
+		"remove": "Entfärne",
+		"removing": "Am Entfärne...",
+		"reset": "Zruggsetze",
+		"retry": "Widerhole",
+		"save": "Spichere",
+		"saveChanges": "Änderige spichere",
+		"saving": "Am Spichere...",
+		"selectAll": "Alli uswähle",
+		"selected": "usgwählt",
+		"select-language": "Sprach uswähle",
+		"set": "setze",
+		"sets": "Sets",
+		"skip": "Überspringe",
+		"start": "Start",
+		"status": "Status",
+		"submitting": "Wird übermittlet…",
+		"to": "bis",
+		"today": "Hüt",
+		"unexpectedError": "Es isch en unerwartete Fehler ufträtte",
+		"unknown": "Unbekannt",
+		"unknownEmployee": "Unbekannte Mitarbeiter",
+		"unknownTeam": "Unbekannts Team",
+		"unnamed": "Ohni Name",
+		"update": "Aktualisiere",
+		"updating": "Wird aktualisiert...",
+		"uploading": "Am ufelade...",
+		"validate": "Validiere",
+		"validationError": "Validierigsfehler",
+		"weekdays": {
+			"fr": "Fr",
+			"fri": "Fri",
+			"mo": "Mo",
+			"mon": "Mon",
+			"sa": "Sa",
+			"sat": "Sam",
+			"su": "So",
+			"sun": "Son",
+			"th": "Do",
+			"thu": "Don",
+			"tu": "Di",
+			"tue": "Die",
+			"we": "Mi",
+			"wed": "Mit"
+		}
+	},
+	"employeeSelect": {
+		"countSelected": "{count} Aagstellti usgwählt",
+		"countWithMore": "{count} Aagstellti (+{more} wiiteri)",
+		"noEmployeesFound": "Kei Aagstellti gfunde",
+		"role": "Rolle",
+		"searchPlaceholder": "Suche nach Name, E-Mail oder Position...",
+		"selected": "{count} usgwählt",
+		"selectEmployee": "Aagstellte uswähle",
+		"selectEmployees": "Aagstellti uswähle",
+		"selectMultipleEmployees": "Wähled Sie ein oder mehri Aagstellti us de Lischt",
+		"selectOneEmployee": "Wähled Sie en Aagstellte us de Lischt",
+		"status": "Status",
+		"team": "Team",
+		"totalEmployees": "{count} Aagstellti",
+		"tryDifferentSearch": "Versueched Sie, d'Suech oder d'Filter aazpasse"
+	},
+	"errors": {
+		"failedToLoad": "Date chönd nöd glade werde",
+		"noEmployee": {
+			"contactAdmin": "Administrator kontaktiere",
+			"createOrg": "Organisation erstelle",
+			"description": "Du bruchsch es Mitarbeiterprofil für ${feature}. Bitte erstel en Organisation oder kontaktier din Administrator.",
+			"emailBody": "Hallo,\n\nich bruche es Mitarbeiterprofil, zum uf d'Plattform-Funktione zuegriffe. Chöntsch du mir bitte debi hälfe?\n\nDanke!",
+			"emailSubject": "Mitarbeiterprofil-Irichtig erforderlich",
+			"helpText": "Wenn du zu ere Organisation iglade worde bisch, bitt din Administrator, dis Mitarbeiterprofil izrichte.",
+			"title": "Mitarbeiterprofil erforderlich"
+		},
+		"noOrganization": {
+			"createOrg": "Organisation erstelle",
+			"description": "Du bisch no kei Teil von ere Organisation. Erstel eini, zum afange, oder wart uf en Iladig.",
+			"title": "Kei Organisation gfunde",
+			"waiting": "Wartisch uf en Iladig?",
+			"waitingDesc": "Din Administrator schickt dir en Iladigs-E-Mail. Prüef din Postigang und de Spam-Ordner."
+		},
+		"unexpected": {
+			"digest": "Referänz: {digest}"
+		}
+	},
+	"generic": {
+		"done": "Fertig",
+		"submit": "Abschicke"
+	},
+	"header": {
+		"clock-in": "Istämple",
+		"clock-out": "Ufstämple"
+	},
+	"info": {
+		"agb": "AGB",
+		"back-to-login": "Zrugg zum Login",
+		"imprint": "Impressum",
+		"trust-center": "Trust Center"
+	},
+	"nav": {
+		"absences": "Abweseheite",
+		"approvals": "Freigabe",
+		"calendar": "Kaländer",
+		"compliance": "Compliance",
+		"dashboard": "Dashboard",
+		"feedback": "Feedback",
+		"get-help": "Hilf becho",
+		"my-requests": "Mini Aafroge",
+		"org-explorer": "Org-Explorer",
+		"platform-admin": "Plattform-Admin",
+		"reports": "Bericht",
+		"scheduling": "Planig",
+		"settings": "Istellige",
+		"team": "Team",
+		"teamAbsences": "Team-Abweseheite",
+		"team-label": "Team",
+		"time-tracking": "Ziiterfassig",
+		"travel-expenses": "Spesä",
+		"worksCouncil": "Betriebsrat"
+	},
+	"notifications": {
+		"actions": {
+			"deleteAll": "Alli lösche",
+			"markAllRead": "Alli als gläse markiere",
+			"markAsRead": "Als gläse markiere",
+			"markRead": "Gläse markiere",
+			"settings": "Benachrichtigungseistellige",
+			"viewAll": "Alli Benachrichtigunge aaluege"
+		},
+		"content": {
+			"teamMemberAdded": {
+				"message": "Du bisch vo {performedByName} zum Team {teamName} hinzugefügt worde.",
+				"title": "Zum Team hinzugefügt"
+			}
+		},
+		"description": "Updates, Freigabe und System-Mäldige uf eim Blick gseh.",
+		"empty": {
+			"description": "Du bisch uf em neuste Stand! Neui Benachrichtigunge erschined do.",
+			"inboxDescription": "Du bisch uf em neuste Stand. Neui Updates erschined do.",
+			"noMatchesDescription": "Pass d'Suech- oder Filter-Iistellige a, zum d'Aasicht z'erwiitere.",
+			"noMatchesTitle": "Kei passendi Benachrichtigunge",
+			"title": "Kei Benachrichtigunge",
+			"unreadDescription": "Du bisch uf em neuste Stand. Neui ungiläseni Updates erschined do.",
+			"unreadTitle": "Kei ungiläseni Benachrichtigunge"
+		},
+		"error": {
+			"title": "Benachrichtigunge chönd nöd glade werde"
+		},
+		"filters": {
+			"all": "Alli",
+			"ariaLabel": "Benachrichtigunge nach Läseschtatus filtere",
+			"read": "Gläse",
+			"unread": "Ungiläse"
+		},
+		"preferences": {
+			"disabled": "Benachrichtigung deaktiviert",
+			"enabled": "Benachrichtigung aktiviert",
+			"permissionModal": {
+				"benefits": {
+					"pendingApprovals": "Benachrichtigunge für usschtändigi Genehmigungsaaträg erhalte",
+					"requestUpdates": "Benachrichtigt werde, wenn dini Aaträg genehmigt oder abglehnt werded",
+					"teamSecurity": "Über Team- und Sicherheitsupdates uf em Laufende blibe"
+				},
+				"description": "Aktivier Push-Benachrichtigunge, um sofort Updates zu Genehmigunge, Ziitkorrekture und wichtige Teamänderige z'erhalte – au wenn d'App grad nöd offe isch.",
+				"enable": "Benachrichtigunge aktiviere",
+				"notNow": "Nöd jetzt",
+				"title": "Uf em Laufende blibe"
+			},
+			"push": {
+				"blockedDescription": "Push-Benachrichtigunge sind vo dim Browser blockiert. Zum sie z'aktiviere, muesch d'Browser-Iistellige aapasse.",
+				"blockedHelp": "Klick uf s'Schloss-Symbol i de Adressziile vom Browser und erlaub Benachrichtigunge für die Siite, dänn lad d'Siite neu.",
+				"blockedTitle": "Push-Benachrichtigunge blockiert",
+				"enableButton": "Push-Benachrichtigunge aktiviere",
+				"enableDescription": "Erhalt sofort Benachrichtigunge, au wänn d'App nöd offe isch",
+				"enabledIndicator": "Push-Benachrichtigunge sind aktiviert",
+				"enabledToast": "Push-Benachrichtigunge aktiviert",
+				"enabledToastDescription": "Du wirsch jetzt Browser-Push-Benachrichtigunge becho",
+				"enableFailedToast": "Push-Benachrichtigunge händ nöd chönne aktiviert werde",
+				"enableTitle": "Push-Benachrichtigunge aktiviere",
+				"errorToast": "Fehler bi de Push-Benachrichtigunge"
+			},
+			"toggleAria": "{channel}-Benachrichtigunge für {type}",
+			"updateFailed": "Iistellig hät nöd chönne aktualisiert werde"
+		},
+		"search": {
+			"ariaLabel": "Benachrichtigunge sueche",
+			"placeholder": "Benachrichtigunge sueche..."
+		},
+		"selection": {
+			"selectAll": "Alli sichtbare uswähle",
+			"selectAllAria": "Alli sichtbare Benachrichtigunge uswähle",
+			"selectNamedAria": "{title} uswähle",
+			"visibleSelected": "{count} sichtbar usgwählt"
+		},
+		"timeline": {
+			"earlier": "Früener",
+			"today": "Hüt",
+			"yesterday": "Gester"
+		},
+		"title": "Benachrichtigunge",
+		"toasts": {
+			"deleted": "{count} Benachrichtigunge glöscht",
+			"deleteFailed": "Benachrichtigunge chönd nöd glöscht werde",
+			"markedRead": "{count} Benachrichtigunge als gläse markiert",
+			"markReadFailed": "Benachrichtigunge chönd nöd als gläse markiert werde"
+		},
+		"unreadBadge": "{count} ungiläse",
+		"unreadCountOverflow": "99+"
+	},
+	"offline": {
+		"banner": {
+			"offline": "Sie sind offline",
+			"offlineWithPending": "Offline - {count} Ereignis(se) usstahnd",
+			"pending": "{count} Ereignis(se) warte uf d'Synchronisierig",
+			"retry": "Widerhole",
+			"syncing": "Synchronisiere {count} Ereignis(se)..."
+		}
+	},
+	"presence": {
+		"clockedIn": "Iigstämplet",
+		"clockedOut": "Uusgstämplet"
+	},
+	"roles": {
+		"admin": "Admin",
+		"employee": "Aagstellte",
+		"manager": "Vorgesetzte/r"
+	},
+	"status": {
+		"active": "Aktiv",
+		"inactive": "Inaktiv"
+	},
+	"table": {
+		"clearFilters": "Filter zruggsetze",
+		"clearSort": "Sortierig uufhebe",
+		"description": "Zeigt d'Gsamtzahl vo de Bsuecher für die letschte 6 Mönet. Das isch nur en zufällige Text, zum s'Layout z'teste. Er gaht über mehreri Ziile und sött umbroche werde.",
+		"goToFirstPage": "Zur erschte Siite",
+		"goToLastPage": "Zur letschte Siite",
+		"goToNextPage": "Zur nöchschte Siite",
+		"goToPreviousPage": "Zur vorherige Siite",
+		"header": "Header",
+		"limit": "Limit",
+		"noResults": "Kei Ergebnis.",
+		"pageOfPages": "Siite {current} vo {total}",
+		"reviewer": "Prüfer",
+		"rowsPerPage": "Ziile pro Siite",
+		"searchPlaceholder": "Sueche...",
+		"selectedOfTotal": "{selected} vo {total} Ziile usgwählt",
+		"select-reviewer": "En Prüfer uswähle",
+		"select-status": "En Status uswähle",
+		"select-type": "En Typ uswähle",
+		"showing-visitors": "Zeige d'Gsamtzahl vo de Bsuecher für die letschte 6 Mönet",
+		"sortAscending": "Ufstiigend",
+		"sortDescending": "Abstiigend",
+		"status": "Status",
+		"status-options": {
+			"done": "Erledigt",
+			"in-progress": "In Bearbeitig",
+			"not-started": "Noch nöd agfange"
+		},
+		"target": "Ziel",
+		"totalRows": "{total} Ziile",
+		"trending-up": "Diesen Monat um 5,2% gstige",
+		"type": "Typ",
+		"type-options": {
+			"capabilities": "Fähigkeite",
+			"cover-page": "Deckblatt",
+			"design": "Design",
+			"executive-summary": "Zusammenfassig",
+			"focus-documents": "Fokus-Dokumänt",
+			"narrative": "Narrativ",
+			"table-of-contents": "Inhaltsverzeichnis",
+			"technical-approach": "Technischs Vorgehe"
+		}
+	},
+	"time": {
+		"am": "AM",
+		"hoursAndMinutes": "{hours}h {minutes}min",
+		"hoursOnly": "{hours}h",
+		"pm": "PM"
+	},
+	"sw": {
+		"update": {
+			"description": "E neui Version isch bereit. Neu lade zum aktualisiere.",
+			"later": "Später",
+			"reload": "Neu lade",
+			"title": "Update verfügbar"
+		}
+	},
+	"userAvatar": {
+		"alt": "Benutzer-Avatar"
+	},
+	"user": {
+		"font-size": "Schriftgrössi",
+		"language": "Spraach",
+		"logging-out": "Am abmelde...",
+		"log-out": "Abmelde",
+		"log-out-failed": "Abmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+		"profile": "Profil",
+		"security": "Sicherheit",
+		"theme": "Theme",
+		"theme-dark": "Dunkel",
+		"theme-light": "Hell",
+		"theme-location-required": "Für das zeitbasierte Design ist eine Standortberechtigung erforderlich.",
+		"theme-system": "System",
+		"theme-time": "Zeitbasiert",
+		"theme-time-info": "Zeitbasiert verwendet den {currentMode}-Modus. Wechselt um {time} zu {nextMode}.",
+		"theme-toggle": "Theme wächsle"
+	},
+	"validation": {
+		"first-name-required": "Vorname isch erforderlich",
+		"invalid-email": "Ungültigi E-Mail-Adress",
+		"invalid-password": "Ungültigs Passwort",
+		"last-name-required": "Nachname isch erforderlich",
+		"password-required": "Passwort isch erforderlich"
+	},
+	"workBalance": {
+		"label": "Gsamtbilanz",
+		"notCalculated": "No nöd berächnet",
+		"pendingDescription": "De Arbeiter wird die Bilanz bald berächne.",
+		"updatedEveryThreeHours": "Wird alli 3 Stunde aktualisiert"
+	}
 }

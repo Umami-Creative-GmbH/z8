@@ -48,11 +48,9 @@ function getAgeLabel(t: ReturnType<typeof useTranslate>["t"], ageDays: number): 
 		return t("approvals:approvals.requestedToday", "Today");
 	}
 
-	return t(
-		"approvals:approvals.requestAgeDays",
-		ageDays === 1 ? "1 day" : `${ageDays} days`,
-		{ count: ageDays },
-	);
+	return t("approvals:approvals.requestAgeDays", ageDays === 1 ? "1 day" : `${ageDays} days`, {
+		count: ageDays,
+	});
 }
 
 export function ApprovalInboxTable({
@@ -73,7 +71,9 @@ export function ApprovalInboxTable({
 		<div className="overflow-hidden rounded-md border bg-card">
 			{items.length === 0 ? (
 				<div className="flex min-h-40 flex-col items-center justify-center gap-2 px-4 py-10 text-center">
-					<p className="font-medium text-sm">{t("approvals:approvals.noRequests", "No pending requests")}</p>
+					<p className="font-medium text-sm">
+						{t("approvals:approvals.noRequests", "No pending requests")}
+					</p>
 					<p className="max-w-sm text-muted-foreground text-sm">
 						{t(
 							"approvals:approvals.noRequestsDescription",
@@ -113,6 +113,7 @@ export function ApprovalInboxTable({
 									aria-label={t(
 										"approvals:approvals.openDetailsFor",
 										`Open details for ${item.summary.title}`,
+										{ title: item.summary.title },
 									)}
 								>
 									<div className="flex min-w-0 items-center gap-3">
@@ -138,7 +139,9 @@ export function ApprovalInboxTable({
 												{t(`approvals:approvals.types.${item.type}`, TYPE_LABELS[item.type])}
 											</span>
 											<Badge variant={RISK_BADGE_VARIANTS[item.triage.riskLevel]}>
-												{isHighRisk && <IconAlertTriangle className="mr-1 size-3" aria-hidden="true" />}
+												{isHighRisk && (
+													<IconAlertTriangle className="mr-1 size-3" aria-hidden="true" />
+												)}
 												{t(
 													`approvals:approvals.risk.${item.triage.riskLevel}`,
 													`${item.triage.riskLevel} risk`,
@@ -151,7 +154,9 @@ export function ApprovalInboxTable({
 												{item.summary.detail}
 											</div>
 										</div>
-										<p className="text-muted-foreground text-xs leading-5">{item.triage.explanation}</p>
+										<p className="text-muted-foreground text-xs leading-5">
+											{item.triage.explanation}
+										</p>
 									</div>
 
 									<div className="text-muted-foreground text-sm md:text-right">

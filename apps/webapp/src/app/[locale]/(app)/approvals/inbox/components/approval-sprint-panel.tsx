@@ -108,7 +108,8 @@ export function ApprovalSprintPanel({
 	};
 
 	const handleReject = async () => {
-		if (!currentItem || isBusy || !currentItem.capabilities.canReject || !trimmedRejectReason) return;
+		if (!currentItem || isBusy || !currentItem.capabilities.canReject || !trimmedRejectReason)
+			return;
 		if (submittingApprovalRef.current === currentItem.id) return;
 
 		submittingApprovalRef.current = currentItem.id;
@@ -205,14 +206,10 @@ export function ApprovalSprintPanel({
 				{currentItem ? (
 					<div className="space-y-4">
 						<div className="text-muted-foreground text-sm">
-							{t(
-								"approvals:sprint.progress",
-								`${boundedCurrentIndex + 1} of ${visibleItems.length}`,
-								{
-									current: boundedCurrentIndex + 1,
-									total: visibleItems.length,
-								},
-							)}
+							{t("approvals:sprint.progress", "{current} of {total}", {
+								current: boundedCurrentIndex + 1,
+								total: visibleItems.length,
+							})}
 						</div>
 						<ApprovalSprintCard
 							item={currentItem}
@@ -245,7 +242,11 @@ export function ApprovalSprintPanel({
 										type="button"
 										variant="destructive"
 										onClick={handleReject}
-										disabled={isBusy || !currentItem.capabilities.canReject || trimmedRejectReason.length === 0}
+										disabled={
+											isBusy ||
+											!currentItem.capabilities.canReject ||
+											trimmedRejectReason.length === 0
+										}
 									>
 										{isBusy ? <IconLoader2 className="animate-spin" aria-hidden="true" /> : null}
 										{t("approvals:sprint.confirmReject", "Confirm reject")}

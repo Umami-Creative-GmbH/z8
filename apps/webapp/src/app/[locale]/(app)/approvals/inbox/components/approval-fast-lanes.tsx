@@ -32,11 +32,12 @@ const RISK_RANK: Record<ApprovalInboxRiskLevel, number> = {
 	high: 3,
 };
 
-const RISK_BADGE_VARIANTS: Record<ApprovalInboxRiskLevel, "secondary" | "outline" | "destructive"> = {
-	low: "secondary",
-	medium: "outline",
-	high: "destructive",
-};
+const RISK_BADGE_VARIANTS: Record<ApprovalInboxRiskLevel, "secondary" | "outline" | "destructive"> =
+	{
+		low: "secondary",
+		medium: "outline",
+		high: "destructive",
+	};
 
 export function ApprovalFastLanes({
 	groups,
@@ -119,7 +120,7 @@ export function ApprovalFastLanes({
 												{t(
 													"approvals:fastLanes.notEligibleApprove",
 													`${notApprovableCount} not eligible for bulk approve`,
-													{ count: notApprovableCount },
+													{ notApprovableCount },
 												)}
 											</p>
 										) : null}
@@ -128,7 +129,7 @@ export function ApprovalFastLanes({
 												{t(
 													"approvals:fastLanes.notEligibleReject",
 													`${notRejectableCount} not eligible for bulk reject`,
-													{ count: notRejectableCount },
+													{ notRejectableCount },
 												)}
 											</p>
 										) : null}
@@ -179,8 +180,8 @@ export function ApprovalFastLanes({
 											<Button
 												size="sm"
 												variant="destructive"
-											onClick={() => onBulkReject(rejectableIds, trimmedReason)}
-											disabled={isBusy || trimmedReason.length === 0}
+												onClick={() => onBulkReject(rejectableIds, trimmedReason)}
+												disabled={isBusy || trimmedReason.length === 0}
 												aria-label={t(
 													"approvals:fastLanes.confirmRejectGroup",
 													`Confirm reject ${actionLabel}`,
@@ -210,14 +211,14 @@ export function ApprovalFastLanes({
 										</CollapsibleTrigger>
 										<CollapsibleContent className="space-y-2 pt-2">
 											{group.items.map((item) => (
-											<div key={item.id} className="rounded-lg border bg-background px-3 py-2">
-												<div className="break-words font-medium text-sm">
-													{item.requester.name}
+												<div key={item.id} className="rounded-lg border bg-background px-3 py-2">
+													<div className="break-words font-medium text-sm">
+														{item.requester.name}
+													</div>
+													<div className="break-words text-sm text-muted-foreground">
+														{item.summary.detail}
+													</div>
 												</div>
-												<div className="break-words text-sm text-muted-foreground">
-													{item.summary.detail}
-												</div>
-											</div>
 											))}
 										</CollapsibleContent>
 									</Collapsible>

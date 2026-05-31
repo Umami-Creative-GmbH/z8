@@ -33,13 +33,17 @@ interface ApprovalSprintCardProps {
 	onOpenDetails: () => void;
 }
 
-const RISK_BADGE_VARIANTS: Record<ApprovalInboxRiskLevel, "secondary" | "outline" | "destructive"> = {
-	low: "secondary",
-	medium: "outline",
-	high: "destructive",
-};
+const RISK_BADGE_VARIANTS: Record<ApprovalInboxRiskLevel, "secondary" | "outline" | "destructive"> =
+	{
+		low: "secondary",
+		medium: "outline",
+		high: "destructive",
+	};
 
-const PRIORITY_BADGE_VARIANTS: Record<ApprovalInboxPriority, "secondary" | "outline" | "destructive"> = {
+const PRIORITY_BADGE_VARIANTS: Record<
+	ApprovalInboxPriority,
+	"secondary" | "outline" | "destructive"
+> = {
 	low: "secondary",
 	normal: "outline",
 	high: "outline",
@@ -96,7 +100,7 @@ export function ApprovalSprintCard({
 						</Badge>
 						<Badge variant="outline">
 							{t("approvals:sprint.age", `${item.timing.ageDays}d old`, {
-								count: item.timing.ageDays,
+								ageDays: item.timing.ageDays,
 							})}
 						</Badge>
 						{item.capabilities.canBulkApprove ? (
@@ -179,7 +183,10 @@ function getRiskLabel(t: ReturnType<typeof useTranslate>["t"], riskLevel: Approv
 	}
 }
 
-function getPriorityLabel(t: ReturnType<typeof useTranslate>["t"], priority: ApprovalInboxPriority) {
+function getPriorityLabel(
+	t: ReturnType<typeof useTranslate>["t"],
+	priority: ApprovalInboxPriority,
+) {
 	switch (priority) {
 		case "urgent":
 			return t("approvals:sprint.priority.urgent", "Urgent priority");
