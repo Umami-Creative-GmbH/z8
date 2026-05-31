@@ -1,2 +1,2 @@
-export type { DiceBearAvatarOptions, UserAvatarGender } from "./dicebear";
+export type { DiceBearAvatarOptions } from "./dicebear";
 export { generateAvatarDataUri, getInitials } from "./dicebear";

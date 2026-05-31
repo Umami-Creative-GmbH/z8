@@ -1,12 +1,9 @@
 import { Avatar } from "@dicebear/core";
 import lorelei from "@dicebear/styles/lorelei.json" with { type: "json" };
 
-export type UserAvatarGender = "male" | "female" | "other";
-
 export interface DiceBearAvatarOptions {
 	seed: string;
 	size?: number;
-	gender?: UserAvatarGender | null;
 }
 
 /**
@@ -19,6 +16,7 @@ export function generateAvatarDataUri({ seed, size = 128 }: DiceBearAvatarOption
 		size,
 		backgroundColor: ["b6e3f4", "c0aede", "d1d4f9", "ffd5dc", "ffdfbf"],
 		backgroundColorFill: "solid",
+		beardProbability: 0, // No beards for user avatars
 		borderRadius: 50, // Circular avatar
 	});
 
