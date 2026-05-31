@@ -6,6 +6,7 @@ import {
 	IconDots,
 	IconLoader2,
 	IconMail,
+	IconPencil,
 	IconPlayerPause,
 	IconPlayerPlay,
 	IconRefresh,
@@ -56,6 +57,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserAvatar } from "@/components/user-avatar";
 import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
 import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
+import { EditInvitationTargetTeamDialog } from "./edit-invitation-target-team-dialog";
 import type { InvitationWithInviter, MemberWithUserAndEmployee } from "./organizations-page-client";
 
 interface MembersTableProps {
@@ -89,6 +91,9 @@ export function MembersTable({
 	}));
 	const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
 	const [memberToRemove, setMemberToRemove] = useState<MemberWithUserAndEmployee | null>(null);
+	const [invitationToEditTargetTeam, setInvitationToEditTargetTeam] =
+		useState<InvitationWithInviter | null>(null);
+	const [editTargetTeamDialogOpen, setEditTargetTeamDialogOpen] = useState(false);
 	const [memberSearch, setMemberSearch] = useState("");
 	const [invitationSearch, setInvitationSearch] = useState("");
 
@@ -222,6 +227,7 @@ export function MembersTable({
 				email: invitation.email,
 				role: invitation.role as "owner" | "admin" | "member",
 				canCreateOrganizations: invitation.canCreateOrganizations ?? undefined,
+				targetTeamId: invitation.targetTeamId ?? null,
 			});
 		},
 		onSuccess: (result) => {
@@ -300,6 +306,18 @@ export function MembersTable({
 		resendInvitationMutation.mutate(invitation);
 	};
 
+	const handleEditInvitationTargetTeam = (invitation: InvitationWithInviter) => {
+		setInvitationToEditTargetTeam(invitation);
+		setEditTargetTeamDialogOpen(true);
+	};
+
+	const handleEditTargetTeamOpenChange = (open: boolean) => {
+		setEditTargetTeamDialogOpen(open);
+		if (!open) {
+			setInvitationToEditTargetTeam(null);
+		}
+	};
+
 	const handleToggleStatus = (employeeId: string, currentlyActive: boolean) => {
 		toggleStatusMutation.mutate({ employeeId, isActive: !currentlyActive });
 	};
@@ -366,6 +384,18 @@ export function MembersTable({
 			),
 		},
 		{
+			accessorKey: "targetTeam",
+			header: t("organization.members.targetTeam", "Target Team"),
+			cell: ({ row }) =>
+				row.original.targetTeam ? (
+					<Badge variant="secondary">{row.original.targetTeam.name}</Badge>
+				) : (
+					<span className="text-sm text-muted-foreground">
+						{t("organization.members.noTargetTeam", "No team")}
+					</span>
+				),
+		},
+		{
 			accessorKey: "invitedBy",
 			header: t("organization.members.invitedBy", "Invited By"),
 			cell: ({ row }) => (
@@ -415,6 +445,10 @@ export function MembersTable({
 								<DropdownMenuItem onClick={() => handleResendInvitation(row.original)}>
 									<IconMail className="mr-2 size-4" />
 									{t("organization.members.resend", "Resend")}
+								</DropdownMenuItem>
+								<DropdownMenuItem onClick={() => handleEditInvitationTargetTeam(row.original)}>
+									<IconPencil className="mr-2 size-4" />
+									{t("organization.members.editTargetTeam", "Edit target team")}
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
@@ -718,6 +752,13 @@ export function MembersTable({
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			<EditInvitationTargetTeamDialog
+				organizationId={organizationId}
+				invitation={invitationToEditTargetTeam}
+				open={editTargetTeamDialogOpen}
+				onOpenChange={handleEditTargetTeamOpenChange}
+			/>
 		</div>
 	);
 }
