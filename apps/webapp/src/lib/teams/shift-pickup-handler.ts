@@ -6,15 +6,100 @@
  */
 
 import type { TurnContext } from "botbuilder";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { db } from "@/db";
+import { employee, employeeManagers, shift } from "@/db/schema";
 import {
 	OpenShiftsService,
 	OpenShiftsServiceFullLive,
 } from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
+import { createNotification } from "@/lib/notifications/notification-service";
 import type { ResolvedTenant } from "./types";
 
 const logger = createLogger("TeamsShiftPickup");
+
+interface NotifyPrimaryManagerAboutShiftPickupParams {
+	requestId: string;
+	shiftId: string;
+	requesterId: string;
+	organizationId: string;
+}
+
+export async function notifyPrimaryManagerAboutShiftPickup({
+	requestId,
+	shiftId,
+	requesterId,
+	organizationId,
+}: NotifyPrimaryManagerAboutShiftPickupParams): Promise<void> {
+	try {
+		const primaryManager = await db.query.employeeManagers.findFirst({
+			where: and(
+				eq(employeeManagers.employeeId, requesterId),
+				eq(employeeManagers.isPrimary, true),
+			),
+			columns: { managerId: true },
+		});
+
+		if (!primaryManager) {
+			logger.debug({ requesterId, organizationId }, "No primary manager for shift pickup request");
+			return;
+		}
+
+		const [requester, manager, requestedShift] = await Promise.all([
+			db.query.employee.findFirst({
+				where: and(eq(employee.id, requesterId), eq(employee.organizationId, organizationId)),
+				columns: { firstName: true, lastName: true },
+			}),
+			db.query.employee.findFirst({
+				where: and(eq(employee.id, primaryManager.managerId), eq(employee.organizationId, organizationId)),
+				columns: { userId: true },
+			}),
+			db.query.shift.findFirst({
+				where: and(eq(shift.id, shiftId), eq(shift.organizationId, organizationId)),
+				columns: { date: true, startTime: true, endTime: true },
+			}),
+		]);
+
+		if (!requester || !manager?.userId || !requestedShift) {
+			logger.debug(
+				{ requesterId, managerId: primaryManager.managerId, shiftId, organizationId },
+				"Missing data for shift pickup manager notification",
+			);
+			return;
+		}
+
+		const requesterName =
+			[requester.firstName, requester.lastName].filter(Boolean).join(" ") || "An employee";
+		const shiftDate = requestedShift.date.toLocaleDateString("en-US", {
+			weekday: "short",
+			month: "short",
+			day: "numeric",
+		});
+
+		await createNotification({
+			userId: manager.userId,
+			organizationId,
+			type: "shift_pickup_requested",
+			title: "Shift pickup request",
+			message: `${requesterName} requested to pick up the shift on ${shiftDate} (${requestedShift.startTime} - ${requestedShift.endTime}).`,
+			entityType: "shift_request",
+			entityId: requestId,
+			actionUrl: "/scheduling",
+			metadata: {
+				shiftId,
+				requesterId,
+				managerId: primaryManager.managerId,
+			},
+		});
+	} catch (error) {
+		logger.error(
+			{ error, requestId, shiftId, requesterId, organizationId },
+			"Failed to notify primary manager about shift pickup request",
+		);
+	}
+}
 
 /**
  * Handle a shift pickup request from an Adaptive Card button click
@@ -65,8 +150,12 @@ export async function handleShiftPickupAction(
 			text: "✅ **Shift pickup request submitted!**\n\nYour manager will review and approve your request. You'll be notified once a decision is made.",
 		});
 
-		// TODO: Send notification to manager about new pickup request
-		// This would integrate with the existing notification service
+		await notifyPrimaryManagerAboutShiftPickup({
+			requestId: result.requestId,
+			shiftId,
+			requesterId,
+			organizationId: tenant.organizationId,
+		});
 	} catch (error) {
 		logger.error({ error, shiftId, requesterId }, "Failed to process shift pickup request");
 
