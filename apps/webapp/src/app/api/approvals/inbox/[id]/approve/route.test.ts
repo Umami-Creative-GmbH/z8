@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { Context, Effect, Layer } from "effect";
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthorizationError, ConflictError, NotFoundError } from "@/lib/effect/errors";
@@ -11,8 +10,7 @@ const mockState = vi.hoisted(() => ({
 	findEmployee: vi.fn(),
 	findApprovalRequest: vi.fn(),
 	isEligibleManagerForApprovalRequest: vi.fn(async () => false),
-	insertAuditLog: vi.fn(),
-	handlerApprove: vi.fn(),
+	approveApprovalInboxItem: vi.fn(),
 	logger: {
 		info: vi.fn(),
 		error: vi.fn(),
@@ -58,9 +56,6 @@ vi.mock("@/db", () => ({
 				findFirst: mockState.findApprovalRequest,
 			},
 		},
-		insert: vi.fn(() => ({
-			values: mockState.insertAuditLog,
-		})),
 	},
 }));
 
@@ -73,30 +68,16 @@ vi.mock("@/db/schema", () => ({
 		organizationId: "organizationId",
 		isActive: "isActive",
 	},
-	auditLog: "auditLog",
 }));
 
-vi.mock("@/lib/approvals/domain/registry", () => ({
-	registerApprovalHandler: vi.fn(),
-	getApprovalHandler: vi.fn(() => ({
-		approve: mockState.handlerApprove,
-	})),
+vi.mock("@/lib/approvals/inbox/decision-service", () => ({
+	approveApprovalInboxItem: mockState.approveApprovalInboxItem,
 }));
 
-vi.mock("@/lib/approvals/infrastructure/audit-logger", () => {
-	const ApprovalAuditLogger = Context.GenericTag<any>("ApprovalAuditLogger");
-
-	return {
-		ApprovalAuditLogger,
-		ApprovalAuditLoggerLive: Layer.succeed(
-			ApprovalAuditLogger,
-			ApprovalAuditLogger.of({
-				log: vi.fn(() => Effect.succeed(undefined)),
-				logBatch: vi.fn(() => Effect.succeed(undefined)),
-			}),
-		),
-	};
-});
+vi.mock("@/lib/approvals/inbox/source-adapters", () => ({
+	isSupportedInboxType: (type: string) =>
+		["absence_entry", "time_entry", "travel_expense_claim"].includes(type),
+}));
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => mockState.logger,
@@ -134,7 +115,11 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 			organizationId: "org-1",
 			status: "pending",
 		});
-		mockState.handlerApprove.mockReturnValue(Effect.succeed(undefined));
+		mockState.approveApprovalInboxItem.mockResolvedValue({
+			id: "approval-1",
+			type: "absence_entry",
+			status: "approved",
+		});
 	});
 
 	it("allows an eligible fallback team manager to approve a request assigned to another manager", async () => {
@@ -157,9 +142,17 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 
 		expect(response.status).toBe(200);
-		expect(mockState.handlerApprove).toHaveBeenCalledWith("entity-1", "employee-1", {
-			approvalRequestId: "approval-1",
-			allowAnyApprover: true,
+		expect(mockState.approveApprovalInboxItem).toHaveBeenCalledWith({
+			approvalId: "approval-1",
+			actorEmployeeId: "employee-1",
+			organizationId: "org-1",
+			includeAllApprovers: undefined,
+			eligibleApprovalScopes: [
+				{
+					requesterEmployeeId: "requester-1",
+					eligibleApproverIds: ["employee-2", "employee-1"],
+				},
+			],
 		});
 	});
 
@@ -179,7 +172,27 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 
 		expect(response.status).toBe(403);
-		expect(mockState.handlerApprove).not.toHaveBeenCalled();
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
+	});
+
+	it("returns 403 instead of unsupported type when an assigned approver lacks approval permission", async () => {
+		mockState.getAbility.mockResolvedValue({ cannot: vi.fn(() => true) });
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "shift_request",
+			approverId: "employee-1",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(403);
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
 	it("returns 403 when an eligible fallback manager lacks approve or manage permission", async () => {
@@ -200,7 +213,7 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 
 		expect(response.status).toBe(403);
-		expect(mockState.handlerApprove).not.toHaveBeenCalled();
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
 	it("returns 403 when a requester manager tries to approve a request assigned to a non-manager policy approver", async () => {
@@ -223,7 +236,7 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 
 		expect(response.status).toBe(403);
-		expect(mockState.handlerApprove).not.toHaveBeenCalled();
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
 	it("rejects requests when ability cannot be resolved before employee lookup or mutation", async () => {
@@ -235,7 +248,7 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 
 		expect(response.status).toBe(403);
 		expect(mockState.findEmployee).not.toHaveBeenCalled();
-		expect(mockState.handlerApprove).not.toHaveBeenCalled();
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
 	it("does not delegate when no active employee is found in the active organization", async () => {
@@ -247,17 +260,46 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 
 		expect(response.status).toBe(404);
 		expect(eq).toHaveBeenCalledWith("isActive", true);
-		expect(mockState.handlerApprove).not.toHaveBeenCalled();
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
-	it("does not write a duplicate audit row after a successful approval", async () => {
+	it("delegates approved decisions to the DB-backed inbox decision service", async () => {
 		const response = await POST(createRequest(), {
 			params: Promise.resolve({ id: "approval-1" }),
 		});
 
 		expect(response.status).toBe(200);
-		expect(mockState.handlerApprove).toHaveBeenCalledWith("entity-1", "employee-1");
-		expect(mockState.insertAuditLog).not.toHaveBeenCalled();
+		expect(mockState.approveApprovalInboxItem).toHaveBeenCalledWith({
+			approvalId: "approval-1",
+			actorEmployeeId: "employee-1",
+			organizationId: "org-1",
+			includeAllApprovers: true,
+			eligibleApprovalScopes: [],
+		});
+		await expect(response.json()).resolves.toEqual({
+			success: true,
+			result: { id: "approval-1", type: "absence_entry", status: "approved" },
+		});
+	});
+
+	it("returns 400 for unsupported approval types before delegating approval decisions", async () => {
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "shift_request",
+			approverId: "employee-1",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(400);
+		await expect(response.json()).resolves.toEqual({ error: "Unsupported approval type" });
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
 	it("allows manage-Approval users to approve requests assigned to another employee in the same organization", async () => {
@@ -275,9 +317,12 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 
 		expect(response.status).toBe(200);
-		expect(mockState.handlerApprove).toHaveBeenCalledWith("entity-1", "employee-1", {
-			approvalRequestId: "approval-1",
-			allowAnyApprover: true,
+		expect(mockState.approveApprovalInboxItem).toHaveBeenCalledWith({
+			approvalId: "approval-1",
+			actorEmployeeId: "employee-1",
+			organizationId: "org-1",
+			includeAllApprovers: true,
+			eligibleApprovalScopes: [],
 		});
 	});
 
@@ -299,7 +344,30 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 
 		expect(response.status).toBe(403);
-		expect(mockState.handlerApprove).not.toHaveBeenCalled();
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
+	});
+
+	it("returns 403 instead of unsupported type when approval scope does not include the request", async () => {
+		mockState.getAbility.mockResolvedValue({
+			cannot: vi.fn((action) => action === "manage"),
+		});
+		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(false);
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "shift_request",
+			approverId: "employee-2",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(403);
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
 	it("returns 404 before approver authorization when the approval belongs to another organization", async () => {
@@ -317,16 +385,10 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 
 		expect(response.status).toBe(404);
-		expect(mockState.handlerApprove).not.toHaveBeenCalled();
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
-	it("provides the approval audit logger layer required by shared approval handlers", async () => {
-		mockState.handlerApprove.mockReturnValue(
-			Effect.flatMap(Context.GenericTag<any>("ApprovalAuditLogger"), () =>
-				Effect.succeed(undefined),
-			),
-		);
-
+	it("returns wrapper success responses", async () => {
 		const response = await POST(createRequest(), {
 			params: Promise.resolve({ id: "approval-1" }),
 		});
@@ -334,14 +396,12 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		expect(response.status).toBe(200);
 	});
 
-	it("returns handler conflict errors as 409 responses", async () => {
-		mockState.handlerApprove.mockReturnValue(
-			Effect.fail(
-				new ConflictError({
-					message: "Approval request is already approved",
-					conflictType: "approval_status",
-				}),
-			),
+	it("returns decision service conflict errors as 409 responses", async () => {
+		mockState.approveApprovalInboxItem.mockRejectedValue(
+			new ConflictError({
+				message: "Approval request is already approved",
+				conflictType: "approval_status",
+			}),
 		);
 
 		const response = await POST(createRequest(), {
@@ -354,13 +414,11 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 	});
 
-	it("returns handler authorization errors as 403 responses", async () => {
-		mockState.handlerApprove.mockReturnValue(
-			Effect.fail(
-				new AuthorizationError({
-					message: "You are not allowed to approve this request",
-				}),
-			),
+	it("returns decision service authorization errors as 403 responses", async () => {
+		mockState.approveApprovalInboxItem.mockRejectedValue(
+			new AuthorizationError({
+				message: "You are not allowed to approve this request",
+			}),
 		);
 
 		const response = await POST(createRequest(), {
@@ -373,15 +431,13 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 	});
 
-	it("returns handler not-found errors as 404 responses", async () => {
-		mockState.handlerApprove.mockReturnValue(
-			Effect.fail(
-				new NotFoundError({
-					message: "Absence request not found",
-					entityType: "absence_request",
-					entityId: "entity-1",
-				}),
-			),
+	it("returns decision service not-found errors as 404 responses", async () => {
+		mockState.approveApprovalInboxItem.mockRejectedValue(
+			new NotFoundError({
+				message: "Absence request not found",
+				entityType: "absence_request",
+				entityId: "entity-1",
+			}),
 		);
 
 		const response = await POST(createRequest(), {
@@ -412,6 +468,6 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		await expect(response.json()).resolves.toEqual({
 			error: "Request is already approved",
 		});
-		expect(mockState.handlerApprove).not.toHaveBeenCalled();
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 });

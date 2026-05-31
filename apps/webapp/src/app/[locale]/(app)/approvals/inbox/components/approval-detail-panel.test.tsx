@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ApprovalInboxItem } from "@/lib/approvals/inbox/types";
 import { ApprovalDetailPanel } from "./approval-detail-panel";
 import { normalizeTravelExpenseDetailEntity } from "./approval-detail-utils";
 
@@ -14,51 +14,104 @@ vi.mock("sonner", () => ({
 	toast: { success: vi.fn(), error: vi.fn() },
 }));
 
+vi.mock("@/components/ui/button", () => ({
+	Button: ({ disabled, children, ...props }: React.ComponentProps<"button">) => (
+		<button
+			{...props}
+			type={props.type ?? "button"}
+			aria-disabled={disabled ? "true" : "false"}
+			data-disabled={disabled ? "true" : "false"}
+		>
+			{children}
+		</button>
+	),
+}));
+
+const mockState = vi.hoisted(() => ({
+	actions: {
+		canApprove: true,
+		canReject: true,
+		canBulkApprove: true,
+		requiresRejectReason: true,
+	},
+	approveIsPending: false,
+	rejectIsPending: false,
+	approveMutateAsync: vi.fn(),
+	rejectMutateAsync: vi.fn(),
+}));
+
 vi.mock("@/lib/query/use-approval-inbox", () => ({
 	useApprovalDetail: () => ({
 		data: {
-			entity: {
-				sickDetail: "child_sick",
-				category: { type: "sick" },
-			},
-			timeline: [],
+			item: approvalItem,
+			sections: [
+				{
+					type: "key_value",
+					title: "Request",
+					rows: [{ label: "Type", value: "Absence Request" }],
+				},
+				{ type: "callout", title: "Risk", body: "No conflicts detected.", tone: "info" },
+			],
+			actions: mockState.actions,
 		},
 	}),
-	useApproveApproval: () => ({ isPending: false, mutateAsync: vi.fn() }),
-	useRejectApproval: () => ({ isPending: false, mutateAsync: vi.fn() }),
+	useApproveApproval: () => ({
+		isPending: mockState.approveIsPending,
+		mutateAsync: mockState.approveMutateAsync,
+	}),
+	useRejectApproval: () => ({
+		isPending: mockState.rejectIsPending,
+		mutateAsync: mockState.rejectMutateAsync,
+	}),
 }));
 
 vi.mock("@/lib/query", () => ({
 	useEmployeeClockStatuses: () => ({ getStatus: () => null }),
 }));
 
-const sickApproval: UnifiedApprovalItem = {
+const approvalItem: ApprovalInboxItem = {
 	id: "approval-1",
-	approvalType: "absence_entry",
+	type: "absence_entry",
 	entityId: "absence-1",
-	typeName: "Absence Request",
+	status: "pending",
 	requester: {
 		id: "employee-1",
-		userId: "user-1",
 		name: "Ada Lovelace",
 		email: "ada@example.com",
 		image: null,
 		teamId: null,
 	},
-	approverId: "manager-1",
-	organizationId: "org-1",
-	status: "pending",
-	createdAt: new Date("2026-05-01T00:00:00.000Z"),
-	resolvedAt: null,
-	priority: "normal",
-	sla: { deadline: null, status: "on_time", hoursRemaining: null },
-	display: {
-		title: "Sick Leave",
+	summary: {
+		title: "Absence Request",
 		subtitle: "May 18, 2026",
-		summary: "Sick Leave, May 18, 2026",
+		detail: "Sick Leave, May 18, 2026",
 		badge: { label: "Sick Leave", color: null },
 	},
+	timing: {
+		createdAt: "2026-05-01T00:00:00.000Z",
+		resolvedAt: null,
+		slaDeadline: null,
+		ageDays: 1,
+	},
+	triage: {
+		priority: "normal",
+		riskLevel: "low",
+		riskReasons: ["no_conflicts_detected"],
+		fastLaneGroup: "low_risk_absence",
+		isPayrollRelevant: false,
+		explanation: "No conflicts detected.",
+	},
+	capabilities: {
+		canApprove: true,
+		canReject: true,
+		canBulkApprove: true,
+		requiresRejectReason: true,
+	},
 };
+
+function expectButtonDisabled(button: HTMLElement) {
+	expect(button.getAttribute("data-disabled")).toBe("true");
+}
 
 describe("normalizeTravelExpenseDetailEntity", () => {
 	it("converts serialized trip dates into Date objects", () => {
@@ -79,17 +132,187 @@ describe("normalizeTravelExpenseDetailEntity", () => {
 });
 
 describe("ApprovalDetailPanel", () => {
-	it("shows sick detail for sick absence approvals", async () => {
+	beforeEach(() => {
+		mockState.actions = { ...approvalItem.capabilities };
+		mockState.approveIsPending = false;
+		mockState.rejectIsPending = false;
+		mockState.approveMutateAsync.mockReset();
+		mockState.rejectMutateAsync.mockReset();
+		mockState.approveMutateAsync.mockResolvedValue({ success: true });
+		mockState.rejectMutateAsync.mockResolvedValue({ success: true });
+	});
+
+	it("shows generic approval detail sections", async () => {
 		render(
 			<ApprovalDetailPanel
-				approval={sickApproval}
+				approval={approvalItem}
 				open={true}
 				onOpenChange={vi.fn()}
 				onActioned={vi.fn()}
 			/>,
 		);
 
-		expect(await screen.findByText("Sick detail")).toBeTruthy();
-		expect(screen.getByText("Child sick")).toBeTruthy();
+		expect(await screen.findByText("Request")).toBeTruthy();
+		expect(screen.getByText("Absence Request")).toBeTruthy();
+		expect(screen.getByText("No conflicts detected.")).toBeTruthy();
+	});
+
+	it("approves with the approval id when approval is allowed", async () => {
+		render(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /Approve/ }));
+
+		await waitFor(() => {
+			expect(mockState.approveMutateAsync).toHaveBeenCalledWith("approval-1");
+		});
+	});
+
+	it("requires a nonblank rejection reason and rejects with the approval id and reason", async () => {
+		render(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /Reject/ }));
+		const confirmButton = screen.getByRole("button", { name: /Confirm Rejection/ });
+		expectButtonDisabled(confirmButton);
+
+		fireEvent.change(screen.getByLabelText("Reason for rejection"), {
+			target: { value: "   " },
+		});
+		expectButtonDisabled(confirmButton);
+
+		fireEvent.change(screen.getByLabelText("Reason for rejection"), {
+			target: { value: " Needs correction " },
+		});
+		fireEvent.click(confirmButton);
+
+		await waitFor(() => {
+			expect(mockState.rejectMutateAsync).toHaveBeenCalledWith({
+				approvalId: "approval-1",
+				reason: "Needs correction",
+			});
+		});
+	});
+
+	it("does not approve when approval is disabled", () => {
+		mockState.actions = { ...approvalItem.capabilities, canApprove: false };
+		render(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		const approveButton = screen.getByRole("button", { name: /Approve/ });
+		expectButtonDisabled(approveButton);
+		fireEvent.click(approveButton);
+
+		expect(mockState.approveMutateAsync).not.toHaveBeenCalled();
+	});
+
+	it("does not approve while any approval action is pending", () => {
+		const { rerender } = render(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		mockState.rejectIsPending = true;
+		rerender(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		const approveButton = screen.getByRole("button", { name: /Approve/ });
+		expectButtonDisabled(approveButton);
+		fireEvent.click(approveButton);
+
+		expect(mockState.approveMutateAsync).not.toHaveBeenCalled();
+	});
+
+	it("does not reject when rejection is disabled", () => {
+		const { rerender } = render(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /Reject/ }));
+		fireEvent.change(screen.getByLabelText("Reason for rejection"), {
+			target: { value: "Not enough coverage" },
+		});
+
+		mockState.actions = { ...approvalItem.capabilities, canReject: false };
+		rerender(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		const confirmButton = screen.getByRole("button", { name: /Confirm Rejection/ });
+		expectButtonDisabled(confirmButton);
+		fireEvent.click(confirmButton);
+
+		expect(mockState.rejectMutateAsync).not.toHaveBeenCalled();
+	});
+
+	it("does not reject while any approval action is pending", () => {
+		const { rerender } = render(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /Reject/ }));
+
+		fireEvent.change(screen.getByLabelText("Reason for rejection"), {
+			target: { value: "Needs manager review" },
+		});
+
+		mockState.approveIsPending = true;
+		rerender(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		const confirmButton = screen.getByRole("button", { name: /Confirm Rejection/ });
+		expectButtonDisabled(confirmButton);
+		fireEvent.click(confirmButton);
+
+		expect(mockState.rejectMutateAsync).not.toHaveBeenCalled();
 	});
 });

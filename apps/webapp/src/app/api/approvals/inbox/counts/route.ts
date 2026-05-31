@@ -5,21 +5,15 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
-import {
-	ApprovalQueryService,
-	ApprovalQueryServiceLive,
-} from "@/lib/approvals/application/approval-query.service";
-import type { ApprovalType } from "@/lib/approvals/domain/types";
+import { getApprovalInboxCounts } from "@/lib/approvals/inbox/read-service";
 import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import type { AnyAppError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -80,21 +74,14 @@ export async function GET() {
 					organizationId: currentEmployee.organizationId,
 				});
 
-		const counts = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const approvalQueryService = yield* _(ApprovalQueryService);
-				return yield* _(
-					approvalQueryService.getCounts(currentEmployee.id, currentEmployee.organizationId, {
-						eligibleApprovalScopes,
-						includeAllApprovers: canManageApprovals || undefined,
-					}),
-				);
-			}).pipe(Effect.provide(ApprovalQueryServiceLive)) as Effect.Effect<
-				Record<ApprovalType, number>,
-				AnyAppError,
-				never
-			>,
-		);
+		const counts = await getApprovalInboxCounts({
+			approverId: currentEmployee.id,
+			includeAllApprovers: canManageApprovals || undefined,
+			organizationId: currentEmployee.organizationId,
+			status: "pending",
+			limit: 1,
+			eligibleApprovalScopes,
+		});
 
 		return NextResponse.json(counts);
 	} catch (error) {

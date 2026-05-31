@@ -7,15 +7,16 @@
  */
 
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { SUPPORTED_APPROVAL_INBOX_TYPES } from "@/lib/approvals/inbox/types";
 import type {
-	ApprovalDetail,
-	ApprovalPriority,
-	ApprovalStatus,
-	ApprovalType,
-	BulkDecisionResult,
-	PaginatedApprovalResult,
-	UnifiedApprovalItem,
-} from "@/lib/approvals/domain/types";
+	ApprovalInboxBulkDecisionResult,
+	ApprovalInboxDetailResult,
+	ApprovalInboxItem,
+	ApprovalInboxListResult,
+	ApprovalInboxPriority,
+	ApprovalInboxStatus,
+	ApprovalInboxType,
+} from "@/lib/approvals/inbox/types";
 import { queryKeys } from "./keys";
 
 // ============================================
@@ -23,11 +24,11 @@ import { queryKeys } from "./keys";
 // ============================================
 
 export interface ApprovalInboxFilters {
-	status?: ApprovalStatus;
-	types?: ApprovalType[];
+	status?: ApprovalInboxStatus;
+	types?: ApprovalInboxType[];
 	teamId?: string;
 	search?: string;
-	priority?: ApprovalPriority;
+	priority?: ApprovalInboxPriority;
 	minAgeDays?: number;
 	dateRange?: {
 		from: Date;
@@ -42,7 +43,7 @@ export interface ApprovalInboxFilters {
 async function fetchApprovals(
 	filters: ApprovalInboxFilters,
 	cursor?: string,
-): Promise<PaginatedApprovalResult> {
+): Promise<ApprovalInboxListResult> {
 	const params = new URLSearchParams();
 
 	if (filters.status) params.set("status", filters.status);
@@ -87,7 +88,7 @@ export async function readQueryError(response: Response, fallback: string): Prom
 	);
 }
 
-async function fetchApprovalCounts(): Promise<Record<ApprovalType, number>> {
+async function fetchApprovalCounts(): Promise<Record<ApprovalInboxType, number>> {
 	const response = await fetch("/api/approvals/inbox/counts");
 	if (!response.ok) {
 		throw new Error("Failed to fetch approval counts");
@@ -95,7 +96,7 @@ async function fetchApprovalCounts(): Promise<Record<ApprovalType, number>> {
 	return response.json();
 }
 
-async function fetchApprovalDetail(approvalId: string): Promise<ApprovalDetail> {
+async function fetchApprovalDetail(approvalId: string): Promise<ApprovalInboxDetailResult> {
 	const response = await fetch(`/api/approvals/inbox/${approvalId}`);
 	if (!response.ok) {
 		throw new Error("Failed to fetch approval detail");
@@ -123,11 +124,18 @@ async function rejectApproval(
 }
 
 type BulkDecisionAction = "approve" | "reject";
+const SUPPORTED_BULK_FAILURE_CODES = [
+	"forbidden",
+	"stale",
+	"validation_failed",
+	"not_found",
+	"unsupported",
+] as const;
 
 export async function readBulkDecisionResult(
 	response: Response,
 	action: BulkDecisionAction = "approve",
-): Promise<BulkDecisionResult> {
+): Promise<ApprovalInboxBulkDecisionResult> {
 	const rawPayload = await response.text();
 	let payload: unknown = null;
 
@@ -156,15 +164,47 @@ export async function readBulkDecisionResult(
 		!("succeeded" in payload) ||
 		!("failed" in payload) ||
 		!Array.isArray(payload.succeeded) ||
-		!Array.isArray(payload.failed)
+		!Array.isArray(payload.failed) ||
+		!payload.succeeded.every(isBulkDecisionSuccess) ||
+		!payload.failed.every(isBulkDecisionFailure)
 	) {
 		throw new Error(`Invalid bulk ${action} response`);
 	}
 
-	return payload as BulkDecisionResult;
+	return payload as ApprovalInboxBulkDecisionResult;
 }
 
-async function bulkApproveApprovals(approvalIds: string[]): Promise<BulkDecisionResult> {
+function isBulkDecisionSuccess(value: unknown): boolean {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"id" in value &&
+		typeof value.id === "string" &&
+		"type" in value &&
+		SUPPORTED_APPROVAL_INBOX_TYPES.includes(value.type as ApprovalInboxType) &&
+		"status" in value &&
+		(value.status === "approved" || value.status === "rejected")
+	);
+}
+
+function isBulkDecisionFailure(value: unknown): boolean {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"id" in value &&
+		typeof value.id === "string" &&
+		"code" in value &&
+		SUPPORTED_BULK_FAILURE_CODES.includes(
+			value.code as (typeof SUPPORTED_BULK_FAILURE_CODES)[number],
+		) &&
+		"message" in value &&
+		typeof value.message === "string"
+	);
+}
+
+async function bulkApproveApprovals(
+	approvalIds: string[],
+): Promise<ApprovalInboxBulkDecisionResult> {
 	const response = await fetch("/api/approvals/inbox/bulk-approve", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -176,7 +216,7 @@ async function bulkApproveApprovals(approvalIds: string[]): Promise<BulkDecision
 async function bulkRejectApprovals(
 	approvalIds: string[],
 	reason: string,
-): Promise<BulkDecisionResult> {
+): Promise<ApprovalInboxBulkDecisionResult> {
 	const response = await fetch("/api/approvals/inbox/bulk-reject", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -292,7 +332,7 @@ export function useBulkReject() {
 /**
  * Helper hook to get all loaded approval items from infinite query.
  */
-export function useApprovalItems(filters: ApprovalInboxFilters = {}): UnifiedApprovalItem[] {
+export function useApprovalItems(filters: ApprovalInboxFilters = {}): ApprovalInboxItem[] {
 	const { data } = useApprovalInbox(filters);
 	return data?.pages.flatMap((page) => page.items) ?? [];
 }

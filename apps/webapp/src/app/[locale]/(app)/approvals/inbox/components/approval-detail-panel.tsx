@@ -1,12 +1,8 @@
 "use client";
 
 import {
-	IconCalendarOff,
 	IconCheck,
-	IconClockEdit,
-	IconExchange,
 	IconLoader2,
-	IconReceipt,
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -25,10 +21,10 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
-import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
-import type { SickDetail } from "@/lib/absences/types";
-import type { ApprovalType, UnifiedApprovalItem } from "@/lib/approvals/domain/types";
-import { format, formatRelative } from "@/lib/datetime/luxon-utils";
+import type {
+	ApprovalInboxDetailSection,
+	ApprovalInboxItem,
+} from "@/lib/approvals/inbox/types";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import {
 	useApprovalDetail,
@@ -36,45 +32,85 @@ import {
 	useRejectApproval,
 } from "@/lib/query/use-approval-inbox";
 import { cn } from "@/lib/utils";
-import {
-	normalizeTravelExpenseDetailEntity,
-	type TravelExpenseDetailEntity,
-} from "./approval-detail-utils";
 
 interface ApprovalDetailPanelProps {
-	approval: UnifiedApprovalItem | null;
+	approval: ApprovalInboxItem | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onActioned: () => void;
 }
 
-function getAbsenceSickDetail(entity: unknown): SickDetail | null {
-	if (typeof entity !== "object" || entity === null) return null;
-	if (!("category" in entity) || !("sickDetail" in entity)) return null;
-
-	const category = entity.category;
-	if (typeof category !== "object" || category === null || !("type" in category)) return null;
-	if (category.type !== "sick") return null;
-
-	const sickDetail = entity.sickDetail;
-	return typeof sickDetail === "string" ? (sickDetail as SickDetail) : null;
+function SectionTitle({ children }: { children: React.ReactNode }) {
+	return <h4 className="mb-2 text-sm font-medium text-muted-foreground">{children}</h4>;
 }
 
-// Icon mapping for approval types
-const TYPE_ICONS: Record<ApprovalType, React.ComponentType<{ className?: string }>> = {
-	absence_entry: IconCalendarOff,
-	time_entry: IconClockEdit,
-	shift_request: IconExchange,
-	travel_expense_claim: IconReceipt,
-};
-
-// Priority badge variants
-const PRIORITY_VARIANTS: Record<string, "destructive" | "outline" | "default" | "secondary"> = {
-	urgent: "destructive",
-	high: "outline",
-	normal: "default",
-	low: "secondary",
-};
+function renderDetailSection(section: ApprovalInboxDetailSection) {
+	switch (section.type) {
+		case "key_value":
+			return (
+				<section key={section.title}>
+					<SectionTitle>{section.title}</SectionTitle>
+					<div className="space-y-3 rounded-md border bg-card/40 p-3">
+						{section.rows.map((row) => (
+							<div key={`${row.label}-${row.value}`} className="flex justify-between gap-4">
+								<span className="text-sm text-muted-foreground">{row.label}</span>
+								<span
+									className={cn(
+										"text-right text-sm font-medium",
+										row.tone === "warning" && "text-amber-600 dark:text-amber-400",
+										row.tone === "danger" && "text-destructive",
+									)}
+								>
+									{row.value}
+								</span>
+							</div>
+						))}
+					</div>
+				</section>
+			);
+		case "text":
+			return (
+				<section key={section.title}>
+					<SectionTitle>{section.title}</SectionTitle>
+					<p className="rounded-md border bg-card/40 p-3 text-sm leading-6">{section.body}</p>
+				</section>
+			);
+		case "timeline":
+			return (
+				<section key={section.title}>
+					<SectionTitle>{section.title}</SectionTitle>
+					<div className="space-y-3 rounded-md border bg-card/40 p-3">
+						{section.events.map((event) => (
+							<div key={event.id} className="border-l pl-3">
+								<p className="text-sm font-medium">{event.label}</p>
+								<p className="text-xs text-muted-foreground">
+									{event.at}
+									{event.actorName ? ` by ${event.actorName}` : ""}
+								</p>
+							</div>
+						))}
+					</div>
+				</section>
+			);
+		case "callout":
+			return (
+				<section
+					key={section.title}
+					className={cn(
+						"rounded-md border p-3",
+						section.tone === "info" && "border-blue-200 bg-blue-50/60 dark:border-blue-900 dark:bg-blue-950/20",
+						section.tone === "warning" &&
+							"border-amber-200 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20",
+						section.tone === "danger" &&
+							"border-destructive/30 bg-destructive/5 text-destructive",
+					)}
+				>
+					<h4 className="text-sm font-medium">{section.title}</h4>
+					<p className="mt-1 text-sm leading-6 text-muted-foreground">{section.body}</p>
+				</section>
+			);
+	}
+}
 
 export function ApprovalDetailPanel({
 	approval,
@@ -92,9 +128,13 @@ export function ApprovalDetailPanel({
 	const presence = useEmployeeClockStatuses(approval ? [approval.requester.id] : [], {
 		polling: false,
 	});
+	const item = detail?.item ?? approval;
+	const actions = detail?.actions ?? item?.capabilities;
+	const sections = detail?.sections ?? [];
+	const isPending = approveMutation.isPending || rejectMutation.isPending;
 
 	const handleApprove = async () => {
-		if (!approval) return;
+		if (!approval || !actions?.canApprove || isPending) return;
 
 		const result = await approveMutation.mutateAsync(approval.id);
 		if (result.success) {
@@ -107,7 +147,7 @@ export function ApprovalDetailPanel({
 	};
 
 	const handleReject = async () => {
-		if (!approval || !rejectionReason.trim()) return;
+		if (!approval || !actions?.canReject || !rejectionReason.trim() || isPending) return;
 
 		const result = await rejectMutation.mutateAsync({
 			approvalId: approval.id,
@@ -132,215 +172,53 @@ export function ApprovalDetailPanel({
 
 	if (!approval) return null;
 
-	const TypeIcon = TYPE_ICONS[approval.approvalType] || IconClockEdit;
-	const isPending = approveMutation.isPending || rejectMutation.isPending;
-	const travelExpenseDetail =
-		approval.approvalType === "travel_expense_claim" && detail?.entity
-			? normalizeTravelExpenseDetailEntity(detail.entity as TravelExpenseDetailEntity)
-			: null;
-	const sickDetail =
-		approval.approvalType === "absence_entry" ? getAbsenceSickDetail(detail?.entity) : null;
-
 	return (
 		<Sheet open={open} onOpenChange={handleClose}>
 			<SheetContent className="w-[500px] sm:max-w-[500px] overflow-y-auto overscroll-behavior-contain">
 				<SheetHeader>
-					<div className="flex items-center gap-2">
-						<TypeIcon className="size-5 text-muted-foreground" aria-hidden="true" />
-						<SheetTitle>{approval.typeName}</SheetTitle>
+					<div className="flex items-start justify-between gap-3">
+						<div>
+							<SheetTitle>{t("approvals:approvals.detailTitle", "Approval details")}</SheetTitle>
+							<SheetDescription>{item.summary.detail}</SheetDescription>
+						</div>
+						{item.summary.badge && (
+							<Badge
+								variant="secondary"
+								style={
+									item.summary.badge.color
+										? { backgroundColor: item.summary.badge.color }
+										: undefined
+								}
+							>
+								{item.summary.badge.label}
+							</Badge>
+						)}
 					</div>
-					<SheetDescription>{approval.display.summary}</SheetDescription>
 				</SheetHeader>
 
 				<div className="mt-6 space-y-6">
-					{/* Requester info */}
 					<div>
-						<h4 className="text-sm font-medium text-muted-foreground mb-2">
+						<SectionTitle>
 							{t("approvals:approvals.requester", "Requester")}
-						</h4>
+						</SectionTitle>
 						<div className="flex items-center gap-3">
 							<UserAvatar
-								image={approval.requester.image}
-								seed={approval.requester.userId}
-								name={approval.requester.name}
+								image={item.requester.image}
+								seed={item.requester.id}
+								name={item.requester.name}
 								size="md"
-								clockStatus={presence.getStatus(approval.requester.id)}
+								clockStatus={presence.getStatus(item.requester.id)}
 							/>
 							<div>
-								<div className="font-medium">{approval.requester.name}</div>
-								<div className="text-sm text-muted-foreground">{approval.requester.email}</div>
+								<div className="font-medium">{item.requester.name}</div>
+								<div className="text-sm text-muted-foreground">{item.requester.email}</div>
 							</div>
 						</div>
 					</div>
 
-					<Separator />
+					{sections.length > 0 && <Separator />}
 
-					{/* Request details */}
-					<div>
-						<h4 className="text-sm font-medium text-muted-foreground mb-2">
-							{t("approvals:approvals.details", "Details")}
-						</h4>
-						<div className="space-y-3">
-							<div className="flex justify-between">
-								<span className="text-sm text-muted-foreground">
-									{t("approvals:approvals.type", "Type")}
-								</span>
-								<span className="text-sm font-medium">{approval.display.title}</span>
-							</div>
-							{approval.display.badge && (
-								<div className="flex justify-between items-center">
-									<span className="text-sm text-muted-foreground">
-										{t("approvals:approvals.category", "Category")}
-									</span>
-									<Badge
-										style={
-											approval.display.badge.color
-												? { backgroundColor: approval.display.badge.color }
-												: undefined
-										}
-									>
-										{approval.display.badge.label}
-									</Badge>
-								</div>
-							)}
-							{sickDetail && (
-								<div className="flex justify-between gap-4">
-									<span className="text-sm text-muted-foreground">
-										{t("approvals:approvals.sickDetail", "Sick detail")}
-									</span>
-									<span className="text-right text-sm font-medium">
-										{t(getSickDetailLabelKey(sickDetail), getSickDetailLabel(sickDetail))}
-									</span>
-								</div>
-							)}
-							{travelExpenseDetail ? (
-								<>
-									<div className="flex justify-between">
-										<span className="text-sm text-muted-foreground">
-											{t("approvals:approvals.destination", "Destination")}
-										</span>
-										<span className="text-sm font-medium">
-											{travelExpenseDetail.destinationCity || t("common.notApplicable", "N/A")}
-										</span>
-									</div>
-									<div className="flex justify-between">
-										<span className="text-sm text-muted-foreground">
-											{t("approvals:approvals.amount", "Amount")}
-										</span>
-										<span className="text-sm font-medium">
-											{travelExpenseDetail.calculatedCurrency}{" "}
-											{travelExpenseDetail.calculatedAmount}
-										</span>
-									</div>
-									<div className="flex justify-between">
-										<span className="text-sm text-muted-foreground">
-											{t("approvals:approvals.tripDates", "Trip dates")}
-										</span>
-										<span className="text-sm font-medium">
-											{format(travelExpenseDetail.tripStart, "PP")} -{" "}
-											{format(travelExpenseDetail.tripEnd, "PP")}
-										</span>
-									</div>
-									{travelExpenseDetail.notes && (
-										<div className="flex justify-between gap-4">
-											<span className="text-sm text-muted-foreground">
-												{t("approvals:approvals.note", "Note")}
-											</span>
-											<span className="text-sm font-medium text-right">
-												{travelExpenseDetail.notes}
-											</span>
-										</div>
-									)}
-								</>
-							) : (
-								<div className="flex justify-between">
-									<span className="text-sm text-muted-foreground">
-										{t("approvals:approvals.dates", "Dates")}
-									</span>
-									<span className="text-sm font-medium">{approval.display.subtitle}</span>
-								</div>
-							)}
-						</div>
-					</div>
-
-					<Separator />
-
-					{/* Status info */}
-					<div>
-						<h4 className="text-sm font-medium text-muted-foreground mb-2">
-							{t("approvals:approvals.status", "Status")}
-						</h4>
-						<div className="space-y-3">
-							<div className="flex justify-between items-center">
-								<span className="text-sm text-muted-foreground">
-									{t("approvals:approvals.priority", "Priority")}
-								</span>
-								<Badge variant={PRIORITY_VARIANTS[approval.priority]}>
-									{t(`approvals:approvals.priorities.${approval.priority}`, approval.priority)}
-								</Badge>
-							</div>
-							<div className="flex justify-between">
-								<span className="text-sm text-muted-foreground">
-									{t("approvals:approvals.requested", "Requested")}
-								</span>
-								<span className="text-sm">
-									{format(approval.createdAt, "PPp")}
-									<span className="text-muted-foreground ml-1">
-										({formatRelative(approval.createdAt)})
-									</span>
-								</span>
-							</div>
-							{approval.sla.deadline && (
-								<div className="flex justify-between">
-									<span className="text-sm text-muted-foreground">
-										{t("approvals:approvals.slaDeadline", "SLA Deadline")}
-									</span>
-									<span
-										className={cn(
-											"text-sm",
-											approval.sla.status === "overdue" && "text-destructive",
-											approval.sla.status === "approaching" && "text-amber-500",
-										)}
-									>
-										{format(approval.sla.deadline, "PPp")}
-									</span>
-								</div>
-							)}
-						</div>
-					</div>
-
-					{/* Timeline */}
-					{detail?.timeline && detail.timeline.length > 0 && (
-						<>
-							<Separator />
-							<div>
-								<h4 className="text-sm font-medium text-muted-foreground mb-2">
-									{t("approvals:approvals.timeline", "Timeline")}
-								</h4>
-								<div className="space-y-3">
-									{detail.timeline.map((event) => (
-										<div key={event.id} className="flex gap-3">
-											{event.performedBy && (
-												<UserAvatar
-													image={event.performedBy.image}
-													seed={event.performedBy.name}
-													name={event.performedBy.name}
-													size="sm"
-													clockStatus="unknown"
-												/>
-											)}
-											<div className="flex-1 min-w-0">
-												<p className="text-sm">{event.message}</p>
-												<p className="text-xs text-muted-foreground">
-													{format(event.timestamp, "PPp")}
-												</p>
-											</div>
-										</div>
-									))}
-								</div>
-							</div>
-						</>
-					)}
+					{sections.map(renderDetailSection)}
 				</div>
 
 				<SheetFooter className="mt-8">
@@ -376,7 +254,7 @@ export function ApprovalDetailPanel({
 								<Button
 									variant="destructive"
 									onClick={handleReject}
-									disabled={!rejectionReason.trim() || isPending}
+									disabled={!actions?.canReject || !rejectionReason.trim() || isPending}
 								>
 									{rejectMutation.isPending && (
 										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
@@ -392,12 +270,16 @@ export function ApprovalDetailPanel({
 								variant="outline"
 								className="flex-1"
 								onClick={() => setIsRejecting(true)}
-								disabled={isPending}
+								disabled={!actions.canReject || isPending}
 							>
 								<IconX className="mr-2 size-4" aria-hidden="true" />
 								{t("approvals:approvals.reject", "Reject")}
 							</Button>
-							<Button className="flex-1" onClick={handleApprove} disabled={isPending}>
+							<Button
+								className="flex-1"
+								onClick={handleApprove}
+								disabled={!actions.canApprove || isPending}
+							>
 								{approveMutation.isPending && (
 									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								)}

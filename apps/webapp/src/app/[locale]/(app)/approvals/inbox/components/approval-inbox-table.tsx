@@ -3,85 +3,55 @@
 import {
 	IconAlertTriangle,
 	IconCalendarOff,
-	IconClock,
 	IconClockEdit,
-	IconExchange,
 	IconReceipt,
 } from "@tabler/icons-react";
-import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { DataTable } from "@/components/data-table-server";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
-import type {
-	ApprovalPriority,
-	ApprovalType,
-	SLAStatus,
-	UnifiedApprovalItem,
-} from "@/lib/approvals/domain/types";
-import { formatRelative } from "@/lib/datetime/luxon-utils";
+import type { ApprovalInboxItem, ApprovalInboxType } from "@/lib/approvals/inbox/types";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { cn } from "@/lib/utils";
 
 interface ApprovalInboxTableProps {
-	items: UnifiedApprovalItem[];
+	items: ApprovalInboxItem[];
 	selectedIds: Set<string>;
 	onSelectItem: (id: string, checked: boolean) => void;
-	onRowClick: (item: UnifiedApprovalItem) => void;
+	onRowClick: (item: ApprovalInboxItem) => void;
 	isFetching: boolean;
 }
 
-// Icon mapping for approval types
-const TYPE_ICONS: Record<ApprovalType, React.ComponentType<{ className?: string }>> = {
+const TYPE_ICONS: Record<ApprovalInboxType, React.ComponentType<{ className?: string }>> = {
 	absence_entry: IconCalendarOff,
 	time_entry: IconClockEdit,
-	shift_request: IconExchange,
 	travel_expense_claim: IconReceipt,
 };
 
-// Priority badge variants
-const PRIORITY_VARIANTS: Record<
-	ApprovalPriority,
-	"destructive" | "outline" | "default" | "secondary"
-> = {
-	urgent: "destructive",
-	high: "outline",
-	normal: "default",
-	low: "secondary",
+const TYPE_LABELS: Record<ApprovalInboxType, string> = {
+	absence_entry: "Absence Requests",
+	time_entry: "Time Corrections",
+	travel_expense_claim: "Travel Expenses",
 };
 
-// SLA status colors
-function getSLAStatusColor(status: SLAStatus): string {
-	switch (status) {
-		case "overdue":
-			return "text-destructive";
-		case "approaching":
-			return "text-amber-500";
-		case "on_time":
-			return "text-muted-foreground";
-	}
-}
+const RISK_BADGE_VARIANTS: Record<
+	ApprovalInboxItem["triage"]["riskLevel"],
+	"destructive" | "outline" | "secondary"
+> = {
+	low: "secondary",
+	medium: "outline",
+	high: "destructive",
+};
 
-// Selection cell component that reads from refs to avoid column recreation
-function SelectionCell({
-	row,
-	selectedIds,
-	onSelectItem,
-	ariaLabel,
-}: {
-	row: CellContext<UnifiedApprovalItem, unknown>["row"];
-	selectedIds: Set<string>;
-	onSelectItem: (id: string, checked: boolean) => void;
-	ariaLabel: string;
-}) {
-	return (
-		<Checkbox
-			checked={selectedIds.has(row.original.id)}
-			onCheckedChange={(checked) => onSelectItem(row.original.id, !!checked)}
-			onClick={(e) => e.stopPropagation()}
-			aria-label={ariaLabel}
-		/>
+function getAgeLabel(t: ReturnType<typeof useTranslate>["t"], ageDays: number): string {
+	if (ageDays <= 0) {
+		return t("approvals:approvals.requestedToday", "Today");
+	}
+
+	return t(
+		"approvals:approvals.requestAgeDays",
+		ageDays === 1 ? "1 day" : `${ageDays} days`,
+		{ count: ageDays },
 	);
 }
 
@@ -93,150 +63,106 @@ export function ApprovalInboxTable({
 	isFetching,
 }: ApprovalInboxTableProps) {
 	const { t } = useTranslate();
-
 	const ariaLabel = t("approvals:approvals.selectRow", "Select row");
 	const presence = useEmployeeClockStatuses(
 		items.map((item) => item.requester.id),
 		{ polling: false },
 	);
 
-	const columns: ColumnDef<UnifiedApprovalItem>[] = [
-		// Selection column - uses refs to avoid recreation
-		{
-			id: "select",
-			header: () => null,
-			cell: ({ row }) => (
-				<SelectionCell
-					row={row}
-					selectedIds={selectedIds}
-					onSelectItem={onSelectItem}
-					ariaLabel={ariaLabel}
-				/>
-			),
-			enableSorting: false,
-			enableHiding: false,
-			size: 40,
-		},
-		// Type column
-		{
-			accessorKey: "approvalType",
-			header: t("approvals:approvals.type", "Type"),
-			cell: ({ row }) => {
-				const TypeIcon = TYPE_ICONS[row.original.approvalType] || IconClockEdit;
-				return (
-					<div className="flex items-center gap-2">
-						<TypeIcon className="size-4 text-muted-foreground" aria-hidden="true" />
-						<span className="text-sm">{row.original.typeName}</span>
-					</div>
-				);
-			},
-			size: 150,
-		},
-		// Requester column
-		{
-			accessorKey: "requester",
-			header: t("approvals:approvals.requester", "Requester"),
-			cell: ({ row }) => (
-				<div className="flex items-center gap-3">
-					<UserAvatar
-						image={row.original.requester.image}
-						seed={row.original.requester.userId}
-						name={row.original.requester.name}
-						size="sm"
-						clockStatus={presence.getStatus(row.original.requester.id)}
-					/>
-					<div className="min-w-0">
-						<div className="font-medium truncate">{row.original.requester.name}</div>
-						<div className="text-xs text-muted-foreground truncate">
-							{row.original.requester.email}
-						</div>
-					</div>
-				</div>
-			),
-			size: 200,
-		},
-		// Summary column
-		{
-			accessorKey: "display.summary",
-			header: t("approvals:approvals.details", "Details"),
-			cell: ({ row }) => (
-				<div className="min-w-0">
-					<div className="font-medium truncate">{row.original.display.title}</div>
-					<div className="text-sm text-muted-foreground truncate">
-						{row.original.display.subtitle}
-					</div>
-				</div>
-			),
-		},
-		// Priority column
-		{
-			accessorKey: "priority",
-			header: t("approvals:approvals.priority", "Priority"),
-			cell: ({ row }) => (
-				<Badge variant={PRIORITY_VARIANTS[row.original.priority]}>
-					{t(`approvals:approvals.priorities.${row.original.priority}`, row.original.priority)}
-				</Badge>
-			),
-			size: 100,
-		},
-		// SLA column
-		{
-			accessorKey: "sla",
-			header: t("approvals:approvals.sla", "SLA"),
-			cell: ({ row }) => {
-				const { sla } = row.original;
-				if (!sla.deadline) {
-					return <span className="text-muted-foreground">-</span>;
-				}
-
-				return (
-					<div className={cn("flex items-center gap-1", getSLAStatusColor(sla.status))}>
-						{sla.status === "overdue" && (
-							<IconAlertTriangle className="size-4" aria-hidden="true" />
-						)}
-						{sla.status === "approaching" && <IconClock className="size-4" aria-hidden="true" />}
-						<span className="text-sm">
-							{sla.hoursRemaining !== null
-								? sla.hoursRemaining < 0
-									? `${Math.abs(sla.hoursRemaining)}h overdue`
-									: `${sla.hoursRemaining}h left`
-								: "-"}
-						</span>
-					</div>
-				);
-			},
-			size: 120,
-		},
-		// Age column
-		{
-			accessorKey: "createdAt",
-			header: t("approvals:approvals.requested", "Requested"),
-			cell: ({ row }) => (
-				<span className="text-sm text-muted-foreground">
-					{formatRelative(row.original.createdAt)}
-				</span>
-			),
-			size: 120,
-		},
-	];
-
-	const getRowClassName = (row: UnifiedApprovalItem) =>
-		cn(
-			"cursor-pointer hover:bg-muted/50 transition-colors",
-			selectedIds.has(row.id) && "bg-muted/30",
-		);
-
 	return (
-		<div className="rounded-md border">
-			<DataTable
-				columns={columns}
-				data={items}
-				isFetching={isFetching}
-				onRowClick={onRowClick}
-				getRowId={(row) => row.id}
-				rowClassName={getRowClassName}
-				emptyMessage={t("approvals:approvals.noRequests", "No pending requests")}
-			/>
+		<div className="overflow-hidden rounded-md border bg-card">
+			{items.length === 0 ? (
+				<div className="flex min-h-40 flex-col items-center justify-center gap-2 px-4 py-10 text-center">
+					<p className="font-medium text-sm">{t("approvals:approvals.noRequests", "No pending requests")}</p>
+					<p className="max-w-sm text-muted-foreground text-sm">
+						{t(
+							"approvals:approvals.noRequestsDescription",
+							"New approval requests will appear here when they need manager review.",
+						)}
+					</p>
+				</div>
+			) : (
+				<div className="divide-y">
+					{items.map((item) => {
+						const TypeIcon = TYPE_ICONS[item.type];
+						const isSelected = selectedIds.has(item.id);
+						const isHighRisk = item.triage.riskLevel === "high";
+
+						return (
+							<div
+								key={item.id}
+								className={cn(
+									"grid w-full grid-cols-[2.25rem_minmax(0,1fr)] gap-4 px-4 py-4 transition-colors hover:bg-muted/40 md:items-center",
+									isSelected && "bg-muted/30",
+									isFetching && "opacity-70",
+								)}
+							>
+								<div className="flex items-start md:items-center">
+									<Checkbox
+										checked={isSelected}
+										onCheckedChange={(checked) => onSelectItem(item.id, !!checked)}
+										onClick={(event) => event.stopPropagation()}
+										aria-label={ariaLabel}
+									/>
+								</div>
+
+								<button
+									type="button"
+									onClick={() => onRowClick(item)}
+									className="grid min-w-0 gap-4 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:grid-cols-[minmax(12rem,1.1fr)_minmax(12rem,1.4fr)_8rem] md:items-center"
+									aria-label={t(
+										"approvals:approvals.openDetailsFor",
+										`Open details for ${item.summary.title}`,
+									)}
+								>
+									<div className="flex min-w-0 items-center gap-3">
+										<UserAvatar
+											image={item.requester.image}
+											seed={item.requester.id}
+											name={item.requester.name}
+											size="sm"
+											clockStatus={presence.getStatus(item.requester.id)}
+										/>
+										<div className="min-w-0">
+											<div className="truncate font-medium text-sm">{item.requester.name}</div>
+											<div className="truncate text-muted-foreground text-xs">
+												{item.requester.email}
+											</div>
+										</div>
+									</div>
+
+									<div className="min-w-0 space-y-2">
+										<div className="flex flex-wrap items-center gap-2">
+											<span className="inline-flex items-center gap-1.5 rounded-md border bg-muted/40 px-2 py-1 text-muted-foreground text-xs">
+												<TypeIcon className="size-3.5" aria-hidden="true" />
+												{t(`approvals:approvals.types.${item.type}`, TYPE_LABELS[item.type])}
+											</span>
+											<Badge variant={RISK_BADGE_VARIANTS[item.triage.riskLevel]}>
+												{isHighRisk && <IconAlertTriangle className="mr-1 size-3" aria-hidden="true" />}
+												{t(
+													`approvals:approvals.risk.${item.triage.riskLevel}`,
+													`${item.triage.riskLevel} risk`,
+												)}
+											</Badge>
+										</div>
+										<div>
+											<div className="truncate font-medium text-sm">{item.summary.title}</div>
+											<div className="truncate text-muted-foreground text-sm">
+												{item.summary.detail}
+											</div>
+										</div>
+										<p className="text-muted-foreground text-xs leading-5">{item.triage.explanation}</p>
+									</div>
+
+									<div className="text-muted-foreground text-sm md:text-right">
+										{getAgeLabel(t, item.timing.ageDays)}
+									</div>
+								</button>
+							</div>
+						);
+					})}
+				</div>
+			)}
 		</div>
 	);
 }

@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("drizzle-orm", async (importOriginal) => {
@@ -17,7 +16,7 @@ const mockState = vi.hoisted(() => ({
 	getAbility: vi.fn(),
 	findEmployee: vi.fn(),
 	getEligibleApprovalScopesForManager: vi.fn(),
-	getCounts: vi.fn(),
+	getApprovalInboxCounts: vi.fn(),
 	logger: {
 		error: vi.fn(),
 	},
@@ -61,21 +60,9 @@ vi.mock("@/db/schema", () => ({
 	},
 }));
 
-vi.mock("@/lib/approvals/application/approval-query.service", async () => {
-	const { Context, Layer } = await import("effect");
-	const ApprovalQueryService = Context.GenericTag<any>("ApprovalQueryService");
-
-	return {
-		ApprovalQueryService,
-		ApprovalQueryServiceLive: Layer.succeed(
-			ApprovalQueryService,
-			ApprovalQueryService.of({
-				getApprovals: vi.fn(),
-				getCounts: mockState.getCounts,
-			}),
-		),
-	};
-});
+vi.mock("@/lib/approvals/inbox/read-service", () => ({
+	getApprovalInboxCounts: mockState.getApprovalInboxCounts,
+}));
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => mockState.logger,
@@ -99,14 +86,11 @@ describe("GET /api/approvals/inbox/counts", () => {
 			organizationId: "org-1",
 		});
 		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([]);
-		mockState.getCounts.mockReturnValue(
-			Effect.succeed({
-				absence_entry: 0,
-				time_entry: 1,
-				shift_request: 0,
-				travel_expense_claim: 2,
-			}),
-		);
+		mockState.getApprovalInboxCounts.mockResolvedValue({
+			absence_entry: 0,
+			time_entry: 1,
+			travel_expense_claim: 2,
+		});
 	});
 
 	it("rejects requests without an active organization before delegating", async () => {
@@ -119,7 +103,7 @@ describe("GET /api/approvals/inbox/counts", () => {
 
 		expect(response.status).toBe(400);
 		expect(mockState.findEmployee).not.toHaveBeenCalled();
-		expect(mockState.getCounts).not.toHaveBeenCalled();
+		expect(mockState.getApprovalInboxCounts).not.toHaveBeenCalled();
 	});
 
 	it("rejects missing employees before delegating", async () => {
@@ -128,16 +112,20 @@ describe("GET /api/approvals/inbox/counts", () => {
 		const response = await GET();
 
 		expect(response.status).toBe(404);
-		expect(mockState.getCounts).not.toHaveBeenCalled();
+		expect(mockState.getApprovalInboxCounts).not.toHaveBeenCalled();
 	});
 
-	it("preserves employee lookup and delegates count reads to ApprovalQueryService", async () => {
+	it("preserves employee lookup and delegates count reads to the inbox counts service", async () => {
 		const response = await GET();
 
 		expect(response.status).toBe(200);
 		expect(mockState.findEmployee).toHaveBeenCalledTimes(1);
 		expect(eq).toHaveBeenCalledWith("isActive", true);
-		expect(mockState.getCounts).toHaveBeenCalledWith("employee-1", "org-1", {
+		expect(mockState.getApprovalInboxCounts).toHaveBeenCalledWith({
+			approverId: "employee-1",
+			organizationId: "org-1",
+			status: "pending",
+			limit: 1,
 			eligibleApprovalScopes: [],
 			includeAllApprovers: undefined,
 		});
@@ -152,7 +140,11 @@ describe("GET /api/approvals/inbox/counts", () => {
 
 		expect(response.status).toBe(200);
 		expect(mockState.getEligibleApprovalScopesForManager).not.toHaveBeenCalled();
-		expect(mockState.getCounts).toHaveBeenCalledWith("employee-1", "org-1", {
+		expect(mockState.getApprovalInboxCounts).toHaveBeenCalledWith({
+			approverId: "employee-1",
+			organizationId: "org-1",
+			status: "pending",
+			limit: 1,
 			eligibleApprovalScopes: [],
 			includeAllApprovers: true,
 		});
@@ -175,7 +167,11 @@ describe("GET /api/approvals/inbox/counts", () => {
 			managerEmployeeId: "employee-1",
 			organizationId: "org-1",
 		});
-		expect(mockState.getCounts).toHaveBeenCalledWith("employee-1", "org-1", {
+		expect(mockState.getApprovalInboxCounts).toHaveBeenCalledWith({
+			approverId: "employee-1",
+			organizationId: "org-1",
+			status: "pending",
+			limit: 1,
 			eligibleApprovalScopes,
 			includeAllApprovers: undefined,
 		});
