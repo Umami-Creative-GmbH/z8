@@ -53,6 +53,34 @@ interface PendingMembersCardProps {
 
 const NO_TEAM_VALUE = "none";
 
+type PendingMemberTeamSource = {
+	id: string;
+	inviteCode?: { defaultTeamId?: string | null } | null;
+};
+
+function resolveApproveTeamId(
+	member: PendingMemberTeamSource,
+	teamAssignments: Record<string, string | null>,
+) {
+	if (member.id in teamAssignments) {
+		return teamAssignments[member.id] === null ? undefined : teamAssignments[member.id];
+	}
+
+	return member.inviteCode?.defaultTeamId || undefined;
+}
+
+export function resolveBulkApproveTeamId(
+	pendingMembers: PendingMemberTeamSource[],
+	selectedMemberIds: string[],
+	teamAssignments: Record<string, string | null>,
+) {
+	const selectedMember = selectedMemberIds
+		.map((id) => pendingMembers.find((member) => member.id === id))
+		.find((member): member is PendingMemberTeamSource => !!member);
+
+	return selectedMember ? resolveApproveTeamId(selectedMember, teamAssignments) : undefined;
+}
+
 export function PendingMembersCard({ organizationId, currentMemberRole }: PendingMembersCardProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -125,11 +153,7 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 	const bulkApproveMutation = useMutation({
 		mutationFn: async () => {
 			const memberIds = Array.from(selectedMembers);
-			// Get the most common team assignment (or undefined if none)
-			const teamValues = memberIds
-				.map((id) => teamAssignments[id])
-				.filter((teamId): teamId is string => !!teamId);
-			const commonTeam = teamValues.length > 0 ? teamValues[0] : undefined;
+			const commonTeam = resolveBulkApproveTeamId(pendingMembers, memberIds, teamAssignments);
 			const result = await bulkApprovePendingMembers(memberIds, organizationId, commonTeam);
 			if (!result.success) throw new Error(result.error || "Failed to approve");
 			return result.data;
@@ -207,11 +231,7 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 	};
 
 	const getApproveTeamId = (member: PendingMember) => {
-		if (member.id in teamAssignments) {
-			return teamAssignments[member.id] === null ? undefined : teamAssignments[member.id];
-		}
-
-		return member.inviteCode?.defaultTeamId || undefined;
+		return resolveApproveTeamId(member, teamAssignments);
 	};
 
 	const formatDate = (date: Date | string | null | undefined) => {
