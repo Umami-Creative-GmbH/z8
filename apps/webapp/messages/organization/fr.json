@@ -90,6 +90,7 @@
       "emailLabel": "Adresse e-mail",
       "error": "Échec de l'envoi de l'invitation",
       "member": "Inviter un membre",
+      "noTargetTeam": "Aucune équipe",
       "roleDescriptions": {
         "admin": "Peut inviter des membres et gérer les paramètres",
         "member": "Accès de base à l'organisation",
@@ -97,6 +98,7 @@
       },
       "submit": "Envoyer l'invitation",
       "success": "Invitation envoyée avec succès",
+      "targetTeam": "Équipe cible",
       "title": "Inviter un membre"
     },
     "joinOrCreate": "Rejoindre ou créer",
@@ -116,6 +118,8 @@
       "cancel": "Annuler",
       "count": "{count, plural, one {# membre} other {# membres}}",
       "deactivate": "Désactiver",
+      "editTargetTeam": "Modifier l'équipe cible",
+      "editTargetTeamDescription": "Choisissez l'équipe que cette invitation en attente devra rejoindre après acceptation.",
       "email": "E-mail",
       "emailVerified": "E-mail vérifié",
       "employeeActivateSuccess": "Employé activé avec succès",
@@ -136,6 +140,7 @@
       "noInvitations": "Aucune invitation en attente.",
       "noMemberResults": "Aucun membre ne correspond à votre recherche.",
       "noMembers": "Aucun membre dans cette organisation.",
+      "noTargetTeam": "Aucune équipe",
       "pending": "En attente",
       "pendingInvitations": "Invitations en attente",
       "remove": "Retirer de l'organisation",
@@ -158,6 +163,9 @@
       "searchMembers": "Rechercher des membres...",
       "sent": "Envoyé",
       "status": "Statut",
+      "targetTeam": "Équipe cible",
+      "targetTeamUpdateError": "Échec de la mise à jour de l'équipe cible",
+      "targetTeamUpdateSuccess": "Équipe cible de l'invitation mise à jour",
       "verified": "Vérifié",
       "you": "Vous"
     },

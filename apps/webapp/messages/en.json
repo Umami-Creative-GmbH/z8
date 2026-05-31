@@ -1,0 +1,10 @@
+{
+  "sw": {
+    "update": {
+      "description": "A new version is ready. Reload to update.",
+      "later": "Later",
+      "reload": "Reload",
+      "title": "Update available"
+    }
+  }
+}

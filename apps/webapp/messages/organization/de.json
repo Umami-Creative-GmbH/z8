@@ -90,6 +90,7 @@
       "emailLabel": "E-Mail-Adresse",
       "error": "Fehler beim Senden der Einladung",
       "member": "Mitglied einladen",
+      "noTargetTeam": "Kein Team",
       "roleDescriptions": {
         "admin": "Kann Mitglieder einladen und Einstellungen verwalten",
         "member": "Basiszugriff auf die Organisation",
@@ -97,6 +98,7 @@
       },
       "submit": "Einladung senden",
       "success": "Einladung erfolgreich gesendet",
+      "targetTeam": "Ziel-Team",
       "title": "Mitglied einladen"
     },
     "joinOrCreate": "Beitreten oder erstellen",
@@ -116,6 +118,8 @@
       "cancel": "Abbrechen",
       "count": "{count, plural, one {# Mitglied} other {# Mitglieder}}",
       "deactivate": "Deaktivieren",
+      "editTargetTeam": "Ziel-Team bearbeiten",
+      "editTargetTeamDescription": "Wählen Sie aus, welchem Team diese ausstehende Einladung nach der Annahme beitreten soll.",
       "email": "E-Mail",
       "emailVerified": "E-Mail verifiziert",
       "employeeActivateSuccess": "Mitarbeiter erfolgreich aktiviert",
@@ -136,6 +140,7 @@
       "noInvitations": "Keine ausstehenden Einladungen.",
       "noMemberResults": "Keine Mitglieder entsprechen Ihrer Suche.",
       "noMembers": "Keine Mitglieder in dieser Organisation.",
+      "noTargetTeam": "Kein Team",
       "pending": "Ausstehend",
       "pendingInvitations": "Ausstehende Einladungen",
       "remove": "Aus Organisation entfernen",
@@ -158,6 +163,9 @@
       "searchMembers": "Mitglieder suchen...",
       "sent": "Gesendet",
       "status": "Status",
+      "targetTeam": "Ziel-Team",
+      "targetTeamUpdateError": "Aktualisierung des Ziel-Teams fehlgeschlagen",
+      "targetTeamUpdateSuccess": "Ziel-Team der Einladung wurde aktualisiert",
       "verified": "Verifiziert",
       "you": "Du"
     },

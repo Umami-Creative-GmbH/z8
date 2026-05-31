@@ -134,6 +134,12 @@
         "copiedToClipboard": "Copié dans le presse-papiers",
         "customDomain": "Domaine personnalisé",
         "customDomainDescription": "Configurez un domaine personnalisé pour activer une page de connexion spécifique à l'organisation avec votre image de marque.",
+        "defaultUrl": {
+          "alias": "Alias d'ID d'organisation",
+          "canonical": "Canonique"
+        },
+        "defaultUrls": "URL par défaut",
+        "defaultUrlsDescription": "Ces URL gérées par la plateforme fonctionnent automatiquement sans configuration DNS personnalisée.",
         "deleteAria": "Supprimer le domaine personnalisé {domain}",
         "deleted": "Domaine supprimé",
         "deleteDescription": "Êtes-vous sûr de vouloir supprimer « {domain} » ? Cette action est irréversible. Les utilisateurs ne pourront plus se connecter via ce domaine personnalisé.",

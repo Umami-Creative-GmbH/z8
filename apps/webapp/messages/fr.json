@@ -1,0 +1,10 @@
+{
+  "sw": {
+    "update": {
+      "description": "Une nouvelle version est disponible. Rechargez pour mettre à jour.",
+      "later": "Plus tard",
+      "reload": "Recharger",
+      "title": "Mise à jour disponible"
+    }
+  }
+}

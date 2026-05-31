@@ -90,6 +90,7 @@
       "emailLabel": "Email Address",
       "error": "Failed to send invitation",
       "member": "Invite Member",
+      "noTargetTeam": "No team",
       "roleDescriptions": {
         "admin": "Can invite members and manage settings",
         "member": "Basic access to organization",
@@ -97,6 +98,7 @@
       },
       "submit": "Send Invitation",
       "success": "Invitation sent successfully",
+      "targetTeam": "Target team",
       "title": "Invite Member"
     },
     "joinOrCreate": "Join or create one",
@@ -116,6 +118,8 @@
       "cancel": "Cancel",
       "count": "{count, plural, one {# member} other {# members}}",
       "deactivate": "Deactivate",
+      "editTargetTeam": "Edit target team",
+      "editTargetTeamDescription": "Choose which team this pending invitation should join after acceptance.",
       "email": "Email",
       "emailVerified": "Email Verified",
       "employeeActivateSuccess": "Employee activated successfully",
@@ -136,6 +140,7 @@
       "noInvitations": "No pending invitations.",
       "noMemberResults": "No members match your search.",
       "noMembers": "No members in this organization.",
+      "noTargetTeam": "No team",
       "pending": "Pending",
       "pendingInvitations": "Pending Invitations",
       "remove": "Remove from Organization",
@@ -158,6 +163,9 @@
       "searchMembers": "Search members...",
       "sent": "Sent",
       "status": "Status",
+      "targetTeam": "Target Team",
+      "targetTeamUpdateError": "Failed to update target team",
+      "targetTeamUpdateSuccess": "Invitation target team updated",
       "verified": "Verified",
       "you": "You"
     },

@@ -90,6 +90,7 @@
       "emailLabel": "E-posta Adresi",
       "error": "Davetiye gönderilemedi",
       "member": "Üye Davet Et",
+      "noTargetTeam": "Ekip yok",
       "roleDescriptions": {
         "admin": "Üye davet edebilir ve ayarları yönetebilir",
         "member": "Organizasyona temel erişim",
@@ -97,6 +98,7 @@
       },
       "submit": "Davetiye Gönder",
       "success": "Davetiye başarıyla gönderildi",
+      "targetTeam": "Hedef ekip",
       "title": "Üye Davet Et"
     },
     "joinOrCreate": "Katıl veya bir tane oluştur",
@@ -116,6 +118,8 @@
       "cancel": "İptal",
       "count": "{count, plural, other {# üye} }",
       "deactivate": "Devre dışı bırak",
+      "editTargetTeam": "Hedef ekibi düzenle",
+      "editTargetTeamDescription": "Bu bekleyen davetin kabul edildikten sonra hangi ekibe katılacağını seçin.",
       "email": "E-posta",
       "emailVerified": "E-posta Doğrulandı",
       "employeeActivateSuccess": "Çalışan başarıyla etkinleştirildi",
@@ -136,6 +140,7 @@
       "noInvitations": "Bekleyen davetiye yok.",
       "noMemberResults": "Aramanızla eşleşen üye bulunamadı.",
       "noMembers": "Bu organizasyonda üye yok.",
+      "noTargetTeam": "Ekip yok",
       "pending": "Beklemede",
       "pendingInvitations": "Bekleyen Davetiyeler",
       "remove": "Organizasyondan Kaldır",
@@ -158,6 +163,9 @@
       "searchMembers": "Üyeleri ara...",
       "sent": "Gönderildi",
       "status": "Durum",
+      "targetTeam": "Hedef Ekip",
+      "targetTeamUpdateError": "Hedef ekip güncellenemedi",
+      "targetTeamUpdateSuccess": "Davet hedef ekibi güncellendi",
       "verified": "Doğrulandı",
       "you": "Siz"
     },

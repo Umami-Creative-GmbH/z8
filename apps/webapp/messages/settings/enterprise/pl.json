@@ -134,6 +134,12 @@
         "copiedToClipboard": "Skopiowano do schowka",
         "customDomain": "Domena niestandardowa",
         "customDomainDescription": "Skonfiguruj domenę niestandardową, aby włączyć stronę logowania specyficzną dla organizacji z własnym brandingiem.",
+        "defaultUrl": {
+          "alias": "Alias identyfikatora organizacji",
+          "canonical": "Kanon"
+        },
+        "defaultUrls": "Domyślne adresy URL",
+        "defaultUrlsDescription": "Te adresy URL zarządzane przez platformę działają automatycznie bez konieczności konfiguracji niestandardowego DNS.",
         "deleteAria": "Usuń domenę niestandardową {domain}",
         "deleted": "Domenę usunięto",
         "deleteDescription": "Czy na pewno chcesz usunąć „{domain}”? Tej akcji nie można cofnąć. Użytkownicy nie będą już mogli logować się za pośrednictwem tej domeny niestandardowej.",

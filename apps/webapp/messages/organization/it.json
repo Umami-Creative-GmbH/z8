@@ -90,6 +90,7 @@
       "emailLabel": "Indirizzo email",
       "error": "Impossibile inviare l'invito",
       "member": "Invita membro",
+      "noTargetTeam": "Nessun team",
       "roleDescriptions": {
         "admin": "Può invitare membri e gestire le impostazioni",
         "member": "Accesso di base all'organizzazione",
@@ -97,6 +98,7 @@
       },
       "submit": "Invia invito",
       "success": "Invito inviato correttamente",
+      "targetTeam": "Team di destinazione",
       "title": "Invita membro"
     },
     "joinOrCreate": "Unisciti o crea",
@@ -116,6 +118,8 @@
       "cancel": "Annulla",
       "count": "{count, plural, one {# membro} other {# membri}}",
       "deactivate": "Disattiva",
+      "editTargetTeam": "Modifica team di destinazione",
+      "editTargetTeamDescription": "Scegli a quale team si unirà questo invito in sospeso dopo l'accettazione.",
       "email": "Email",
       "emailVerified": "Email verificata",
       "employeeActivateSuccess": "Dipendente attivato correttamente",
@@ -136,6 +140,7 @@
       "noInvitations": "Nessun invito in sospeso.",
       "noMemberResults": "Nessun membro corrisponde alla ricerca.",
       "noMembers": "Nessun membro in questa organizzazione.",
+      "noTargetTeam": "Nessun team",
       "pending": "In sospeso",
       "pendingInvitations": "Inviti in sospeso",
       "remove": "Rimuovi dall'organizzazione",
@@ -158,6 +163,9 @@
       "searchMembers": "Cerca membri...",
       "sent": "Inviato",
       "status": "Stato",
+      "targetTeam": "Team di destinazione",
+      "targetTeamUpdateError": "Impossibile aggiornare il team di destinazione",
+      "targetTeamUpdateSuccess": "Team di destinazione dell'invito aggiornato",
       "verified": "Verificato",
       "you": "Tu"
     },

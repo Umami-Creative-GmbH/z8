@@ -90,6 +90,7 @@
       "emailLabel": "Dirección de correo electrónico",
       "error": "Error al enviar la invitación",
       "member": "Invitar a un miembro",
+      "noTargetTeam": "Sin equipo",
       "roleDescriptions": {
         "admin": "Puede invitar a miembros y gestionar la configuración",
         "member": "Acceso básico a la organización",
@@ -97,6 +98,7 @@
       },
       "submit": "Enviar invitación",
       "success": "Invitación enviada correctamente",
+      "targetTeam": "Equipo de destino",
       "title": "Invitar a un miembro"
     },
     "joinOrCreate": "Unirse o crear una",
@@ -116,6 +118,8 @@
       "cancel": "Cancelar",
       "count": "{count, plural, one {# miembro} other {# miembros}}",
       "deactivate": "Desactivar",
+      "editTargetTeam": "Editar equipo de destino",
+      "editTargetTeamDescription": "Elige a qué equipo debe unirse esta invitación pendiente tras ser aceptada.",
       "email": "Correo electrónico",
       "emailVerified": "Correo electrónico verificado",
       "employeeActivateSuccess": "Empleado activado correctamente",
@@ -136,6 +140,7 @@
       "noInvitations": "No hay invitaciones pendientes.",
       "noMemberResults": "No hay miembros que coincidan con su búsqueda.",
       "noMembers": "No hay miembros en esta organización.",
+      "noTargetTeam": "Sin equipo",
       "pending": "Pendiente",
       "pendingInvitations": "Invitaciones pendientes",
       "remove": "Eliminar de la organización",
@@ -158,6 +163,9 @@
       "searchMembers": "Buscar miembros...",
       "sent": "Enviado",
       "status": "Estado",
+      "targetTeam": "Equipo de destino",
+      "targetTeamUpdateError": "Error al actualizar el equipo de destino",
+      "targetTeamUpdateSuccess": "Equipo de destino de la invitación actualizado",
       "verified": "Verificado",
       "you": "Tú"
     },

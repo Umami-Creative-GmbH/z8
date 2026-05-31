@@ -90,6 +90,7 @@
       "emailLabel": "E-Mail-Adress",
       "error": "Fehler bim Versende vo de Iiladig",
       "member": "Mitgliid iilade",
+      "noTargetTeam": "Keis Team",
       "roleDescriptions": {
         "admin": "Cha Mitgliider iilade und Iistellige verwalte",
         "member": "Grundlegende Zuegriff uf d'Organisation",
@@ -97,6 +98,7 @@
       },
       "submit": "Iiladig versende",
       "success": "Iiladig erfolgriich versendet",
+      "targetTeam": "Ziil-Team",
       "title": "Mitgliid iilade"
     },
     "joinOrCreate": "Biträte oder e neui erstelle",
@@ -116,6 +118,8 @@
       "cancel": "Abbräche",
       "count": "{count, plural, one {# Mitgliid} other {# Mitgliider}}",
       "deactivate": "Deaktiviere",
+      "editTargetTeam": "Ziil-Team bearbeite",
+      "editTargetTeamDescription": "Wähle us, weles Team dere usstehende Iiladig nach de Aannahm zuegordnet werde söll.",
       "email": "E-Mail",
       "emailVerified": "E-Mail verifiziert",
       "employeeActivateSuccess": "Mitarbeiter erfolgriich aktiviert",
@@ -136,6 +140,7 @@
       "noInvitations": "Kei usstehende Iiladige.",
       "noMemberResults": "Kei Mitgliider gfunde, wo uf dini Suech passe.",
       "noMembers": "Kei Mitgliider in dere Organisation.",
+      "noTargetTeam": "Keis Team",
       "pending": "Usstehend",
       "pendingInvitations": "Usstehendi Iiladige",
       "remove": "Us de Organisation entferne",
@@ -158,6 +163,9 @@
       "searchMembers": "Mitglieder sueche...",
       "sent": "Gsendet",
       "status": "Status",
+      "targetTeam": "Ziil-Team",
+      "targetTeamUpdateError": "Aktualisierig vom Ziil-Team isch fehlgschlage",
+      "targetTeamUpdateSuccess": "Ziil-Team für Iiladig aktualisiert",
       "verified": "Verifiziert",
       "you": "Du"
     },

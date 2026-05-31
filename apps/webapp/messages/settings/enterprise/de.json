@@ -134,6 +134,12 @@
         "copiedToClipboard": "In die Zwischenablage kopiert",
         "customDomain": "Benutzerdefinierte Domain",
         "customDomainDescription": "Konfigurieren Sie eine benutzerdefinierte Domain, um eine organisationsspezifische Anmeldeseite mit Ihrem Branding zu ermöglichen.",
+        "defaultUrl": {
+          "alias": "Organisations-ID-Alias",
+          "canonical": "Kanonisch"
+        },
+        "defaultUrls": "Standard-URLs",
+        "defaultUrlsDescription": "Diese plattformverwalteten URLs funktionieren automatisch ohne benutzerdefinierte DNS-Einrichtung.",
         "deleteAria": "Benutzerdefinierte Domain {domain} löschen",
         "deleted": "Domain gelöscht",
         "deleteDescription": "Sind Sie sicher, dass Sie \"{domain}\" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden. Benutzer können sich dann nicht mehr über diese benutzerdefinierte Domain anmelden.",

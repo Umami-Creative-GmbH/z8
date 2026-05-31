@@ -1,0 +1,10 @@
+{
+  "sw": {
+    "update": {
+      "description": "Dostępna jest nowa wersja. Odśwież, aby zaktualizować.",
+      "later": "Później",
+      "reload": "Odśwież",
+      "title": "Dostępna aktualizacja"
+    }
+  }
+}

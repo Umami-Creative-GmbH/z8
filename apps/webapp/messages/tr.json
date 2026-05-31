@@ -1,0 +1,10 @@
+{
+  "sw": {
+    "update": {
+      "description": "Yeni bir sürüm hazır. Güncellemek için yeniden yükleyin.",
+      "later": "Daha sonra",
+      "reload": "Yeniden yükle",
+      "title": "Güncelleme mevcut"
+    }
+  }
+}

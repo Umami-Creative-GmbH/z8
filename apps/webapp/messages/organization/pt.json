@@ -90,6 +90,7 @@
       "emailLabel": "Endereço de e-mail",
       "error": "Falha ao enviar convite",
       "member": "Convidar membro",
+      "noTargetTeam": "Sem equipe",
       "roleDescriptions": {
         "admin": "Pode convidar membros e gerenciar configurações",
         "member": "Acesso básico à organização",
@@ -97,6 +98,7 @@
       },
       "submit": "Enviar convite",
       "success": "Convite enviado com sucesso",
+      "targetTeam": "Equipe de destino",
       "title": "Convidar membro"
     },
     "joinOrCreate": "Juntar-se ou criar",
@@ -116,6 +118,8 @@
       "cancel": "Cancelar",
       "count": "{count, plural, one {# membro} other {# membros}}",
       "deactivate": "Desativar",
+      "editTargetTeam": "Editar equipe de destino",
+      "editTargetTeamDescription": "Escolha a qual equipe este convite pendente deve se juntar após a aceitação.",
       "email": "E-mail",
       "emailVerified": "E-mail verificado",
       "employeeActivateSuccess": "Funcionário ativado com sucesso",
@@ -136,6 +140,7 @@
       "noInvitations": "Nenhum convite pendente.",
       "noMemberResults": "Nenhum membro corresponde à sua pesquisa.",
       "noMembers": "Nenhum membro nesta organização.",
+      "noTargetTeam": "Sem equipe",
       "pending": "Pendente",
       "pendingInvitations": "Convites pendentes",
       "remove": "Remover da organização",
@@ -158,6 +163,9 @@
       "searchMembers": "Pesquisar membros...",
       "sent": "Enviado",
       "status": "Status",
+      "targetTeam": "Equipe de destino",
+      "targetTeamUpdateError": "Falha ao atualizar a equipe de destino",
+      "targetTeamUpdateSuccess": "Equipe de destino do convite atualizada",
       "verified": "Verificado",
       "you": "Você"
     },

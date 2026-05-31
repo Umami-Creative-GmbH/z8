@@ -134,6 +134,12 @@
         "copiedToClipboard": "Copied to clipboard",
         "customDomain": "Custom Domain",
         "customDomainDescription": "Configure a custom domain to enable an organization-specific login page with your branding.",
+        "defaultUrl": {
+          "alias": "Organization ID alias",
+          "canonical": "Canonical"
+        },
+        "defaultUrls": "Default URLs",
+        "defaultUrlsDescription": "These platform-managed URLs work automatically without custom DNS setup.",
         "deleteAria": "Delete custom domain {domain}",
         "deleted": "Domain deleted",
         "deleteDescription": "Are you sure you want to delete \"{domain}\"? This action cannot be undone. Users will no longer be able to sign in via this custom domain.",
