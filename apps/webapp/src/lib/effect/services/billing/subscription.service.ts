@@ -1,8 +1,8 @@
-import { count, eq } from "drizzle-orm";
+import { and, count, eq, notLike } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { member } from "@/db/auth-schema";
+import { member, user } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { DatabaseError, NotFoundError } from "../../errors";
@@ -116,11 +116,18 @@ function mapToSubscriptionInfo(sub: typeof subscription.$inferSelect): Subscript
 	};
 }
 
-async function countOrganizationMembers(organizationId: string): Promise<number> {
+async function countBillableOrganizationMembers(organizationId: string): Promise<number> {
 	const [memberCountResult] = await db
 		.select({ count: count() })
 		.from(member)
-		.where(eq(member.organizationId, organizationId));
+		.innerJoin(user, eq(user.id, member.userId))
+		.where(
+			and(
+				eq(member.organizationId, organizationId),
+				eq(member.status, "approved"),
+				notLike(user.email, "%@demo.invalid"),
+			),
+		);
 
 	return memberCountResult?.count ?? 0;
 }
@@ -136,7 +143,7 @@ export const SubscriptionServiceLive = Layer.succeed(
 					});
 
 					if (!sub) return null;
-					const currentSeats = await countOrganizationMembers(organizationId);
+					const currentSeats = await countBillableOrganizationMembers(organizationId);
 					return mapToSubscriptionInfo({ ...sub, currentSeats });
 				},
 				catch: (error) =>
@@ -226,7 +233,7 @@ export const SubscriptionServiceLive = Layer.succeed(
 					if (existing) return mapToSubscriptionInfo(existing);
 
 					const trialEnd = DateTime.fromJSDate(now, { zone: "utc" }).plus({ days: 14 }).toJSDate();
-					const currentSeats = await countOrganizationMembers(organizationId);
+					const currentSeats = await countBillableOrganizationMembers(organizationId);
 					const inserted = await db
 						.insert(subscription)
 						.values({

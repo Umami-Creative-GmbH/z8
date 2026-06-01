@@ -1,5 +1,0 @@
-phase:
-  host: https://phase.umami-creative.app
-serviceToken:
-  existingSecret: phase-service-token
-  existingSecretKey: token

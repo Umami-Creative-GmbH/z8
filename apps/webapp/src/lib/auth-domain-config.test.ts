@@ -33,9 +33,9 @@ describe("auth domain config", () => {
 	});
 
 	it("builds exact trusted origins for an organization's generated platform URLs", () => {
-		expect(getOrganizationPlatformOrigins({ id: "org_123", slug: "acme" })).toEqual([
+		expect(getOrganizationPlatformOrigins({ id: "Org_ID-123", slug: "acme" })).toEqual([
 			"https://acme.ui.z8-time.app",
-			"https://org_123.ui.z8-time.app",
+			"https://orgid-4f72675f49442d313233.ui.z8-time.app",
 		]);
 	});
 });

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { env } from "@/env";
+import { avvHostingDetails } from "@/lib/avv/avv-details";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
@@ -86,18 +87,23 @@ export default async function AvvPage() {
 						</div>
 					</div>
 
-					<div className="space-y-1">
+					<div className="space-y-2">
 						<h2 className="text-sm font-medium text-muted-foreground">
 							{t("settings.avv.hosting.title", "Hosting & Subprozessoren")}
 						</h2>
 						<p className="text-sm">
 							{t("settings.avv.hosting.descriptionPrefix", "Alle Daten werden auf Servern der ")}
-							Hetzner Online GmbH in Deutschland
+							{avvHostingDetails.displayText}
 							{t(
 								"settings.avv.hosting.descriptionSuffix",
-								" gehostet. Es werden keine weiteren Subprozessoren eingesetzt.",
+								" gehostet. Derzeit eingesetzte Subprozessoren:",
 							)}
 						</p>
+						<ul className="list-disc space-y-1 pl-5 text-sm">
+							{avvHostingDetails.subprocessors.map((subprocessor) => (
+								<li key={subprocessor.providerName}>{subprocessor.displayText}</li>
+							))}
+						</ul>
 					</div>
 
 					<div className="border-t pt-6">

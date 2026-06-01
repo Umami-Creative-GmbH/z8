@@ -242,8 +242,8 @@ test("trimmed runtime Dockerfiles allow pnpm to read workspace overrides", async
 
 test("production worker and migration manifests use the trimmed runtime layout", async () => {
   const [workerManifest, migrationManifest] = await Promise.all([
-    fs.readFile(new URL("../../infra/hetzner-k8s/k8s/app/worker-deployment.yaml", import.meta.url), "utf8"),
-    fs.readFile(new URL("../../infra/hetzner-k8s/k8s/app/migration-job.yaml", import.meta.url), "utf8"),
+    fs.readFile(new URL("../../deploy/k8s/worker.yaml", import.meta.url), "utf8"),
+    fs.readFile(new URL("../../deploy/k8s/migration.yaml", import.meta.url), "utf8"),
   ]);
 
   assert.match(workerManifest, /workingDir:\s+\/app\b/);

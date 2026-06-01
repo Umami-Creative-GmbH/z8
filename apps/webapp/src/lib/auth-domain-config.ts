@@ -1,6 +1,9 @@
 import { env } from "@/env";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
-import { getPlatformRootDomain } from "@/lib/domain/platform-domain";
+import {
+	getPlatformOrganizationAliasLabel,
+	getPlatformRootDomain,
+} from "@/lib/domain/platform-domain";
 
 function hostFromUrlOrHost(value: string): string {
 	try {
@@ -34,7 +37,7 @@ export function getOrganizationPlatformOrigins(organization: { id: string; slug:
 	return Array.from(
 		new Set([
 			`https://${organization.slug}.${platformRoot}`,
-			`https://${organization.id}.${platformRoot}`,
+			`https://${getPlatformOrganizationAliasLabel(organization.id)}.${platformRoot}`,
 		]),
 	);
 }

@@ -102,9 +102,54 @@ export function getPlatformOrganizationLabel(host: string | null): string | null
 	return classification?.type === "platformOrganization" ? classification.label : null;
 }
 
+export function getPlatformOrganizationAliasLabel(organizationId: string): string {
+	const bytes = new TextEncoder().encode(organizationId);
+	const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+
+	return `orgid-${hex}`;
+}
+
+function getOrganizationIdFromAliasLabel(label: string): string | null {
+	if (!label.startsWith("orgid-")) {
+		return null;
+	}
+
+	const hex = label.slice("orgid-".length);
+	if (!hex || hex.length % 2 !== 0 || /[^0-9a-f]/.test(hex)) {
+		return null;
+	}
+
+	const bytes = new Uint8Array(hex.length / 2);
+	for (let index = 0; index < hex.length; index += 2) {
+		bytes[index / 2] = Number.parseInt(hex.slice(index, index + 2), 16);
+	}
+
+	try {
+		return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+	} catch {
+		return null;
+	}
+}
+
 export async function resolvePlatformOrganization(
 	label: string,
 ): Promise<PlatformOrganizationRecord | null> {
+	const aliasOrganizationId = getOrganizationIdFromAliasLabel(label);
+	if (aliasOrganizationId) {
+		const [byId, bySlug] = await Promise.all([
+			db.query.organization.findFirst({
+				where: eq(organization.id, aliasOrganizationId),
+				columns: { id: true, slug: true, name: true },
+			}),
+			db.query.organization.findFirst({
+				where: eq(organization.slug, label),
+				columns: { id: true, slug: true, name: true },
+			}),
+		]);
+
+		return byId ?? bySlug ?? null;
+	}
+
 	const [bySlug, byId] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(organization.slug, label),

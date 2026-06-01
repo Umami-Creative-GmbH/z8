@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { resolveInvitationTargetTeamId } from "./auth";
 
@@ -70,5 +72,18 @@ describe("resolveInvitationTargetTeamId", () => {
 				"11111111-1111-4111-8111-111111111111",
 			),
 		).resolves.toBeNull();
+	});
+});
+
+describe("billing seat sync hooks", () => {
+	it("syncs billing seats after standard invitation acceptance", () => {
+		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
+		const acceptInvitationHook = source.slice(
+			source.indexOf("afterAcceptInvitation"),
+			source.indexOf("// Create employee record when user is added to organization"),
+		);
+
+		expect(acceptInvitationHook).toContain("syncBillingSeats");
+		expect(acceptInvitationHook).toContain("change: \"added\"");
 	});
 });

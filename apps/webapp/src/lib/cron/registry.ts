@@ -12,6 +12,7 @@
  */
 
 import type { JobsOptions } from "bullmq";
+import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 
 // ============================================
 // TYPES
@@ -247,6 +248,18 @@ export const CRON_JOBS = {
 		processor: async () => {
 			const { runOrganizationCleanup } = await import("@/lib/jobs/organization-cleanup");
 			return runOrganizationCleanup();
+		},
+		defaultJobOptions: { attempts: 2, priority: 8 },
+	},
+
+	"cron:billing-seat-reconciliation": {
+		schedule: "0 * * * *", // Hourly
+		description: "Run billing seat reconciliation",
+		processor: async (): Promise<BillingSeatReconciliationResult> => {
+			const { runBillingSeatReconciliation } = await import(
+				"@/lib/jobs/billing-seat-reconciliation"
+			);
+			return runBillingSeatReconciliation();
 		},
 		defaultJobOptions: { attempts: 2, priority: 8 },
 	},

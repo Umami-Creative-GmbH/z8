@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { Settings } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { member } from "@/db/auth-schema";
+import { member, user } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { SubscriptionService, SubscriptionServiceLive } from "./subscription.service";
@@ -16,7 +16,11 @@ const {
 	updateWhere,
 	select,
 	selectFrom,
+	selectInnerJoin,
 	selectWhere,
+	andMock,
+	eqMock,
+	notLikeMock,
 } = vi.hoisted(() => ({
 	findFirst: vi.fn(),
 	insertValues: vi.fn(),
@@ -27,7 +31,11 @@ const {
 	updateWhere: vi.fn(),
 	select: vi.fn(),
 	selectFrom: vi.fn(),
+	selectInnerJoin: vi.fn(),
 	selectWhere: vi.fn(),
+	andMock: vi.fn((...conditions) => ({ type: "and", conditions })),
+	eqMock: vi.fn((column, value) => ({ type: "eq", column, value })),
+	notLikeMock: vi.fn((column, value) => ({ type: "notLike", column, value })),
 }));
 
 vi.mock("@/db", () => ({
@@ -49,7 +57,9 @@ vi.mock("@/db", () => ({
 
 vi.mock("drizzle-orm", async (importOriginal) => ({
 	...(await importOriginal<typeof import("drizzle-orm")>()),
-	eq: vi.fn((column, value) => ({ column, value })),
+	and: andMock,
+	eq: eqMock,
+	notLike: notLikeMock,
 }));
 
 describe("SubscriptionService", () => {
@@ -83,7 +93,8 @@ describe("SubscriptionService", () => {
 		updateWhere.mockResolvedValue(undefined);
 		setValues.mockReturnValue({ where: updateWhere });
 		select.mockReturnValue({ from: selectFrom });
-		selectFrom.mockReturnValue({ where: selectWhere });
+		selectFrom.mockReturnValue({ innerJoin: selectInnerJoin, where: selectWhere });
+		selectInnerJoin.mockReturnValue({ where: selectWhere });
 		selectWhere.mockResolvedValue([{ count: 3 }]);
 		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "false";
 	});
@@ -117,14 +128,14 @@ describe("SubscriptionService", () => {
 				currentSeats: 5,
 			}),
 		);
-		expect(updateWhere).toHaveBeenCalledWith({
+		expect(updateWhere).toHaveBeenCalledWith(expect.objectContaining({
 			column: subscription.organizationId,
 			value: "org_123",
-		});
+		}));
 		expect(insertValues).not.toHaveBeenCalled();
 	});
 
-	it("returns current organization member count instead of stale stored seats", async () => {
+	it("returns current billable organization seats instead of stale stored seats", async () => {
 		findFirst.mockResolvedValueOnce({
 			...existingSubscriptionRow,
 			status: "trialing",
@@ -145,6 +156,19 @@ describe("SubscriptionService", () => {
 			currentSeats: 3,
 		});
 		expect(selectFrom).toHaveBeenCalledWith(member);
+		expect(selectInnerJoin).toHaveBeenCalledWith(user, {
+			type: "eq",
+			column: user.id,
+			value: member.userId,
+		});
+		expect(selectWhere).toHaveBeenCalledWith({
+			type: "and",
+			conditions: [
+				{ type: "eq", column: member.organizationId, value: "org_123" },
+				{ type: "eq", column: member.status, value: "approved" },
+				{ type: "notLike", column: user.email, value: "%@demo.invalid" },
+			],
+		});
 	});
 
 	it("creates a local trial without a Stripe customer using current organization seats", async () => {

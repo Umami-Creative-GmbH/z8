@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { member } from "@/db/auth-schema";
@@ -169,6 +171,19 @@ describe("InviteCodeService.useCode", () => {
 			}),
 		]);
 		expect(insertedEmployees).toEqual([]);
+	});
+});
+
+describe("InviteCodeService billing seat sync", () => {
+	it("syncs billing seats after approved invite code member creation paths", () => {
+		const source = readFileSync(
+			join(process.cwd(), "src/lib/effect/services/invite-code.service.ts"),
+			"utf8",
+		);
+
+		expect(source).toContain("syncBillingSeatsAfterMemberChange");
+		expect(source).toContain("memberId: newMember.id");
+		expect(source).toContain("change: \"added\"");
 	});
 });
 

@@ -6,7 +6,7 @@ import {
 	IconTrendingUp,
 	IconUsers,
 } from "@tabler/icons-react";
-import { desc } from "drizzle-orm";
+import { and, count, desc, eq, inArray, like, notLike } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
@@ -23,11 +23,12 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { db } from "@/db";
-import { organization } from "@/db/auth-schema";
+import { member, organization, user } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { cn } from "@/lib/utils";
 import { getTranslate } from "@/tolgee/server";
+import { SyncSeatsButton } from "./sync-seats-button";
 
 export default async function AdminBillingPage() {
 	await connection();
@@ -236,11 +237,7 @@ function BillingStatsLoading() {
 async function SubscriptionsTable() {
 	await connection();
 
-	// Fetch subscriptions and organizations in parallel (async-parallel)
-	// Note: We fetch all orgs since we don't know IDs upfront, but this is
-	// still better than sequential fetches. For large datasets, consider
-	// using a JOIN or subquery instead.
-	const [t, subscriptions, allOrgs] = await Promise.all([
+	const [t, subscriptions] = await Promise.all([
 		getTranslate(),
 		db
 			.select({
@@ -256,14 +253,39 @@ async function SubscriptionsTable() {
 			.from(subscription)
 			.orderBy(desc(subscription.createdAt))
 			.limit(50),
-		db.select({ id: organization.id, name: organization.name }).from(organization),
 	]);
 
-	// Filter to only needed orgs
-	const orgIds = new Set(subscriptions.map((s) => s.organizationId));
-	const orgs = allOrgs.filter((o) => orgIds.has(o.id));
-
+	const organizationIds = [...new Set(subscriptions.map((s) => s.organizationId))];
+	const [orgs, usedSeatCounts, demoUserCounts] =
+		organizationIds.length > 0
+			? await Promise.all([
+					db
+						.select({ id: organization.id, name: organization.name })
+						.from(organization)
+						.where(inArray(organization.id, organizationIds)),
+					db
+						.select({ organizationId: member.organizationId, total: count() })
+						.from(member)
+						.innerJoin(user, eq(user.id, member.userId))
+						.where(
+							and(
+								inArray(member.organizationId, organizationIds),
+								eq(member.status, "approved"),
+								notLike(user.email, "%@demo.invalid"),
+							),
+						)
+						.groupBy(member.organizationId),
+					db
+						.select({ organizationId: member.organizationId, total: count() })
+						.from(member)
+						.innerJoin(user, eq(user.id, member.userId))
+						.where(and(inArray(member.organizationId, organizationIds), like(user.email, "%@demo.invalid")))
+						.groupBy(member.organizationId),
+				])
+			: [[], [], []];
 	const orgMap = new Map(orgs.map((o) => [o.id, o.name]));
+	const usedSeatCountMap = new Map(usedSeatCounts.map((row) => [row.organizationId, row.total]));
+	const demoUserCountMap = new Map(demoUserCounts.map((row) => [row.organizationId, row.total]));
 
 	const getStatusBadge = (status: string) => {
 		switch (status) {
@@ -313,39 +335,59 @@ async function SubscriptionsTable() {
 							<TableHead>{t("admin:admin.billing.table.organization", "Organization")}</TableHead>
 							<TableHead>{t("admin:admin.billing.table.status", "Status")}</TableHead>
 							<TableHead className="text-right">
-								{t("admin:admin.billing.table.seats", "Seats")}
+								{t("admin:admin.billing.table.licensedSeats", "Licensed seats")}
+							</TableHead>
+							<TableHead className="text-right">
+								{t("admin:admin.billing.table.usedSeats", "Used seats")}
+							</TableHead>
+							<TableHead className="text-right">
+								{t("admin:admin.billing.table.demoUsers", "Demo users")}
 							</TableHead>
 							<TableHead>{t("admin:admin.billing.table.billing", "Billing")}</TableHead>
 							<TableHead>{t("admin:admin.billing.table.periodEnd", "Period End")}</TableHead>
 							<TableHead>{t("admin:admin.billing.table.created", "Created")}</TableHead>
+							<TableHead>
+								<span className="sr-only">{t("admin:admin.billing.table.actions", "Actions")}</span>
+							</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
 						{subscriptions.length === 0 ? (
 							<TableRow>
-								<TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+								<TableCell colSpan={9} className="text-center text-muted-foreground py-8">
 									{t("admin:admin.billing.table.noSubscriptions", "No subscriptions yet")}
 								</TableCell>
 							</TableRow>
 						) : (
-							subscriptions.map((sub) => (
-								<TableRow key={sub.id}>
-									<TableCell className="font-medium">
-										{orgMap.get(sub.organizationId) || sub.organizationId.slice(0, 8)}
-									</TableCell>
-									<TableCell>{getStatusBadge(sub.status)}</TableCell>
-									<TableCell className="text-right tabular-nums">{sub.currentSeats}</TableCell>
-									<TableCell>{formatBillingInterval(sub.billingInterval)}</TableCell>
-									<TableCell>
-										{sub.status === "trialing"
-											? formatDate(sub.trialEnd)
-											: formatDate(sub.currentPeriodEnd)}
-									</TableCell>
-									<TableCell className="text-muted-foreground">
-										{formatDate(sub.createdAt)}
-									</TableCell>
-								</TableRow>
-							))
+							subscriptions.map((sub) => {
+								const orgName = orgMap.get(sub.organizationId) || sub.organizationId.slice(0, 8);
+
+								return (
+									<TableRow key={sub.id}>
+										<TableCell className="font-medium">{orgName}</TableCell>
+										<TableCell>{getStatusBadge(sub.status)}</TableCell>
+										<TableCell className="text-right tabular-nums">{sub.currentSeats}</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{usedSeatCountMap.get(sub.organizationId) ?? 0}
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{demoUserCountMap.get(sub.organizationId) ?? 0}
+										</TableCell>
+										<TableCell>{formatBillingInterval(sub.billingInterval)}</TableCell>
+										<TableCell>
+											{sub.status === "trialing"
+												? formatDate(sub.trialEnd)
+												: formatDate(sub.currentPeriodEnd)}
+										</TableCell>
+										<TableCell className="text-muted-foreground">
+											{formatDate(sub.createdAt)}
+										</TableCell>
+										<TableCell className="text-right">
+											<SyncSeatsButton organizationId={sub.organizationId} organizationName={orgName} />
+										</TableCell>
+									</TableRow>
+								);
+							})
 						)}
 					</TableBody>
 				</Table>

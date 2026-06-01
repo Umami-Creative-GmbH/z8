@@ -39,7 +39,6 @@ on:
       - "docker/scripts/**"
       - "docker/Dockerfile.*"
       - "docker/targets/**"
-      - "infra/hetzner-k8s/k8s/app/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"

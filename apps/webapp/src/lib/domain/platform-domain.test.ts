@@ -25,6 +25,7 @@ vi.mock("@/lib/social-oauth", () => ({ getConfiguredProviders: mockState.getConf
 const {
 	classifyDomainHost,
 	getPlatformDomainConfig,
+	getPlatformOrganizationAliasLabel,
 	getPlatformOrganizationLabel,
 	normalizeDomainHost,
 	resolvePlatformOrganization,
@@ -72,6 +73,10 @@ describe("platform domain host helpers", () => {
 			rootDomain: "ui.z8-time.app",
 		});
 		expect(getPlatformOrganizationLabel("org_123.ui.z8-time.app")).toBe("org_123");
+	});
+
+	it("builds a dns-safe organization id alias label", () => {
+		expect(getPlatformOrganizationAliasLabel("Org_ID-123")).toBe("orgid-4f72675f49442d313233");
 	});
 
 	it("classifies one-label localhost platform subdomains as organizations", () => {
@@ -148,6 +153,17 @@ describe("platform organization resolution", () => {
 		const result = await resolvePlatformOrganization("org_123");
 
 		expect(result).toEqual({ id: "org_123", slug: "acme", name: "Acme" });
+		expect(mockState.db.query.organization.findFirst).toHaveBeenCalledTimes(2);
+	});
+
+	it("resolves encoded organization id aliases without lowercasing the id", async () => {
+		mockState.db.query.organization.findFirst
+			.mockResolvedValueOnce({ id: "Org_ID-123", slug: "acme", name: "Acme" })
+			.mockResolvedValueOnce(null);
+
+		const result = await resolvePlatformOrganization("orgid-4f72675f49442d313233");
+
+		expect(result).toEqual({ id: "Org_ID-123", slug: "acme", name: "Acme" });
 		expect(mockState.db.query.organization.findFirst).toHaveBeenCalledTimes(2);
 	});
 

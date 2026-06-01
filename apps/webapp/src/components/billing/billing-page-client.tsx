@@ -10,6 +10,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useSearchParams } from "next/navigation";
+import { useLocale } from "next-intl";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -19,6 +20,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 interface SubscriptionInfo {
 	id: string;
+	hasStripeCustomer: boolean;
+	hasStripeSubscription: boolean;
 	status: string;
 	isActive: boolean;
 	isTrialing: boolean;
@@ -50,6 +53,7 @@ const YEARLY_PRICE_TOTAL = 36;
 
 function BillingPageClientContent({ subscription, accessResult, isOwner }: BillingPageClientProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const searchParams = useSearchParams();
 	const { get } = searchParams;
 	const getSearchParam = (key: string) => get.call(searchParams, key);
@@ -59,6 +63,9 @@ function BillingPageClientContent({ subscription, accessResult, isOwner }: Billi
 	// Handle success/cancel redirects from Stripe
 	const success = getSearchParam("success");
 	const canceled = getSearchParam("canceled");
+	const canManageBilling = Boolean(
+		subscription?.hasStripeCustomer && subscription.hasStripeSubscription,
+	);
 
 	const handleSubscribe = async (interval: "month" | "year") => {
 		setIsLoading(true);
@@ -126,7 +133,9 @@ function BillingPageClientContent({ subscription, accessResult, isOwner }: Billi
 
 	const formatDate = (dateStr: string | null) => {
 		if (!dateStr) return t("common:common.notApplicable", "N/A");
-		return DateTime.fromISO(dateStr).toLocaleString(DateTime.DATE_MED);
+		return DateTime.fromISO(dateStr, { zone: "utc" })
+			.setLocale(locale)
+			.toLocaleString(DateTime.DATE_MED);
 	};
 
 	const getTrialDaysRemaining = () => {
@@ -160,6 +169,107 @@ function BillingPageClientContent({ subscription, accessResult, isOwner }: Billi
 				return <Badge variant="outline">{subscription.status}</Badge>;
 		}
 	};
+
+	const renderPricingCards = ({
+		buttonLabels,
+		description,
+		title,
+	}: {
+		buttonLabels: { monthly: string; yearly: string };
+		description?: string;
+		title?: string;
+	}) => (
+		<Card>
+			<CardHeader>
+				<CardTitle>{title ?? t("billing.choosePlan", "Choose Your Plan")}</CardTitle>
+				<CardDescription>
+					{description ??
+						t(
+							"billing.choosePlanDescription",
+							"Start with a 14-day free trial. No credit card required to start.",
+						)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="grid gap-6 md:grid-cols-2">
+					<Card className="border-2">
+						<CardHeader>
+							<CardTitle>{t("billing.plans.monthly.title", "Monthly")}</CardTitle>
+							<CardDescription>
+								{t("billing.plans.monthly.description", "Flexible month-to-month billing")}
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<div>
+								<span className="text-4xl font-bold">€{MONTHLY_PRICE}</span>
+								<span className="text-muted-foreground">
+									{t("billing.perSeatMonth", "/seat/month")}
+								</span>
+						</div>
+						<ul className="space-y-2 text-sm">
+							<li className="flex items-center gap-2">
+								<IconCheck className="size-4 text-green-600" />
+								{t("billing.features.cancelAnytime", "Cancel anytime")}
+								</li>
+								<li className="flex items-center gap-2">
+									<IconCheck className="size-4 text-green-600" />
+									{t("billing.features.allFeatures", "All features included")}
+								</li>
+							</ul>
+							<Button
+								className="w-full"
+								variant="outline"
+								onClick={() => handleSubscribe("month")}
+								disabled={isLoading}
+							>
+								{isLoading ? t("billing.starting", "Starting...") : buttonLabels.monthly}
+							</Button>
+						</CardContent>
+					</Card>
+
+					<Card className="border-2 border-primary">
+						<CardHeader>
+							<div className="flex items-center justify-between">
+								<div>
+									<CardTitle>{t("billing.plans.yearly.title", "Yearly")}</CardTitle>
+									<CardDescription>
+										{t("billing.plans.yearly.description", "Save 25% with annual billing")}
+									</CardDescription>
+								</div>
+								<Badge>{t("billing.bestValue", "Best Value")}</Badge>
+							</div>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<div>
+								<span className="text-4xl font-bold">€{YEARLY_PRICE_PER_MONTH}</span>
+								<span className="text-muted-foreground">
+									{t("billing.perSeatMonth", "/seat/month")}
+								</span>
+								<p className="text-sm text-muted-foreground">
+									{t("billing.seatBilledAnnually", "€{price}/seat billed annually", {
+										price: YEARLY_PRICE_TOTAL,
+									})}
+								</p>
+						</div>
+						<ul className="space-y-2 text-sm">
+							<li className="flex items-center gap-2">
+								<IconCheck className="size-4 text-green-600" />
+								{t("billing.features.yearlyDiscount", "25% discount vs monthly")}
+								</li>
+								<li className="flex items-center gap-2">
+									<IconCheck className="size-4 text-green-600" />
+									{t("billing.features.allFeatures", "All features included")}
+								</li>
+							</ul>
+							<Button className="w-full" onClick={() => handleSubscribe("year")} disabled={isLoading}>
+								{isLoading ? t("billing.starting", "Starting...") : buttonLabels.yearly}
+							</Button>
+						</CardContent>
+					</Card>
+				</div>
+			</CardContent>
+		</Card>
+	);
 
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
@@ -242,11 +352,13 @@ function BillingPageClientContent({ subscription, accessResult, isOwner }: Billi
 											: t("billing.interval.monthlyBilling", "Monthly billing")}
 									</CardDescription>
 								</div>
-								<Button variant="outline" onClick={handleManageBilling} disabled={isPortalLoading}>
-									{isPortalLoading
-										? t("billing.opening", "Opening...")
-										: t("billing.manageBilling", "Manage Billing")}
-								</Button>
+								{canManageBilling && (
+									<Button variant="outline" onClick={handleManageBilling} disabled={isPortalLoading}>
+										{isPortalLoading
+											? t("billing.opening", "Opening...")
+											: t("billing.manageBilling", "Manage Billing")}
+									</Button>
+								)}
 							</div>
 						</CardHeader>
 						<CardContent>
@@ -336,6 +448,19 @@ function BillingPageClientContent({ subscription, accessResult, isOwner }: Billi
 							</div>
 						</CardContent>
 					</Card>
+					{subscription.isTrialing &&
+						!canManageBilling &&
+						renderPricingCards({
+							buttonLabels: {
+								monthly: t("billing.upgradeMonthly", "Upgrade Monthly"),
+								yearly: t("billing.upgradeYearly", "Upgrade Yearly"),
+							},
+							description: t(
+								"billing.chooseUpgradePlanDescription",
+								"Choose a billing cadence now. Your paid subscription starts only after the remaining trial period.",
+							),
+							title: t("billing.choosePlan", "Choose Your Plan"),
+						})}
 					{subscription.status === "trialing" && (
 						<Alert>
 							<IconCreditCard aria-hidden="true" className="size-4" />
@@ -354,113 +479,12 @@ function BillingPageClientContent({ subscription, accessResult, isOwner }: Billi
 			) : (
 				/* No Subscription - Show Pricing */
 				<div className="space-y-6">
-					<Card>
-						<CardHeader>
-							<CardTitle>{t("billing.choosePlan", "Choose Your Plan")}</CardTitle>
-							<CardDescription>
-								{t(
-									"billing.choosePlanDescription",
-									"Start with a 14-day free trial. No credit card required to start.",
-								)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div className="grid gap-6 md:grid-cols-2">
-								{/* Monthly Plan */}
-								<Card className="border-2">
-									<CardHeader>
-										<CardTitle>{t("billing.plans.monthly.title", "Monthly")}</CardTitle>
-										<CardDescription>
-											{t("billing.plans.monthly.description", "Flexible month-to-month billing")}
-										</CardDescription>
-									</CardHeader>
-									<CardContent className="space-y-4">
-										<div>
-											<span className="text-4xl font-bold">€{MONTHLY_PRICE}</span>
-											<span className="text-muted-foreground">
-												{t("billing.perSeatMonth", "/seat/month")}
-											</span>
-										</div>
-										<ul className="space-y-2 text-sm">
-											<li className="flex items-center gap-2">
-												<IconCheck className="size-4 text-green-600" />
-												{t("billing.features.trial", "14-day free trial")}
-											</li>
-											<li className="flex items-center gap-2">
-												<IconCheck className="size-4 text-green-600" />
-												{t("billing.features.cancelAnytime", "Cancel anytime")}
-											</li>
-											<li className="flex items-center gap-2">
-												<IconCheck className="size-4 text-green-600" />
-												{t("billing.features.allFeatures", "All features included")}
-											</li>
-										</ul>
-										<Button
-											className="w-full"
-											variant="outline"
-											onClick={() => handleSubscribe("month")}
-											disabled={isLoading}
-										>
-											{isLoading
-												? t("billing.starting", "Starting...")
-												: t("billing.startTrial", "Start Free Trial")}
-										</Button>
-									</CardContent>
-								</Card>
-
-								{/* Yearly Plan */}
-								<Card className="border-2 border-primary">
-									<CardHeader>
-										<div className="flex items-center justify-between">
-											<div>
-												<CardTitle>{t("billing.plans.yearly.title", "Yearly")}</CardTitle>
-												<CardDescription>
-													{t("billing.plans.yearly.description", "Save 25% with annual billing")}
-												</CardDescription>
-											</div>
-											<Badge>{t("billing.bestValue", "Best Value")}</Badge>
-										</div>
-									</CardHeader>
-									<CardContent className="space-y-4">
-										<div>
-											<span className="text-4xl font-bold">€{YEARLY_PRICE_PER_MONTH}</span>
-											<span className="text-muted-foreground">
-												{t("billing.perSeatMonth", "/seat/month")}
-											</span>
-											<p className="text-sm text-muted-foreground">
-												{t("billing.seatBilledAnnually", "€{price}/seat billed annually", {
-													price: YEARLY_PRICE_TOTAL,
-												})}
-											</p>
-										</div>
-										<ul className="space-y-2 text-sm">
-											<li className="flex items-center gap-2">
-												<IconCheck className="size-4 text-green-600" />
-												{t("billing.features.trial", "14-day free trial")}
-											</li>
-											<li className="flex items-center gap-2">
-												<IconCheck className="size-4 text-green-600" />
-												{t("billing.features.yearlyDiscount", "25% discount vs monthly")}
-											</li>
-											<li className="flex items-center gap-2">
-												<IconCheck className="size-4 text-green-600" />
-												{t("billing.features.allFeatures", "All features included")}
-											</li>
-										</ul>
-										<Button
-											className="w-full"
-											onClick={() => handleSubscribe("year")}
-											disabled={isLoading}
-										>
-											{isLoading
-												? t("billing.starting", "Starting...")
-												: t("billing.startTrial", "Start Free Trial")}
-										</Button>
-									</CardContent>
-								</Card>
-							</div>
-						</CardContent>
-					</Card>
+					{renderPricingCards({
+						buttonLabels: {
+							monthly: t("billing.startTrial", "Start Free Trial"),
+							yearly: t("billing.startTrial", "Start Free Trial"),
+						},
+					})}
 
 					<p className="text-center text-sm text-muted-foreground">
 						{t(

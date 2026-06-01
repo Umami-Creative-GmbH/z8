@@ -1,7 +1,7 @@
-import { count, eq } from "drizzle-orm";
+import { and, count, eq, notLike } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
-import { member } from "@/db/auth-schema";
+import { member, user } from "@/db/auth-schema";
 import { billingSeatAudit } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { DatabaseError, type StripeError } from "../../errors";
@@ -9,6 +9,22 @@ import { StripeService } from "./stripe.service";
 import { SubscriptionService } from "./subscription.service";
 
 const logger = createLogger("SeatSyncService");
+
+async function countBillableMembers(organizationId: string): Promise<number> {
+	const [result] = await db
+		.select({ count: count() })
+		.from(member)
+		.innerJoin(user, eq(user.id, member.userId))
+		.where(
+			and(
+				eq(member.organizationId, organizationId),
+				eq(member.status, "approved"),
+				notLike(user.email, "%@demo.invalid"),
+			),
+		);
+
+	return result?.count ?? 0;
+}
 
 /**
  * SeatSyncService - Real-time seat counting and Stripe usage reporting
@@ -60,24 +76,16 @@ export const SeatSyncServiceLive = Layer.effect(
 			organizationId: string,
 		): Effect.Effect<number, DatabaseError | StripeError> =>
 			Effect.gen(function* () {
-				// Count active members
-				const [result] = yield* Effect.tryPromise({
-					try: async () => {
-						return await db
-							.select({ count: count() })
-							.from(member)
-							.where(eq(member.organizationId, organizationId));
-					},
+				const seatCount = yield* Effect.tryPromise({
+					try: () => countBillableMembers(organizationId),
 					catch: (error) =>
 						new DatabaseError({
-							message: "Failed to count members",
+							message: "Failed to count billable members",
 							operation: "syncSeatsForOrganization",
 							table: "member",
 							cause: error,
 						}),
 				});
-
-				const seatCount = result?.count ?? 0;
 
 				// Update subscription record
 				yield* subscriptionService.updateSeatCount(organizationId, seatCount);
@@ -118,16 +126,10 @@ export const SeatSyncServiceLive = Layer.effect(
 
 		const getCurrentSeatCount = (organizationId: string): Effect.Effect<number, DatabaseError> =>
 			Effect.tryPromise({
-				try: async () => {
-					const [result] = await db
-						.select({ count: count() })
-						.from(member)
-						.where(eq(member.organizationId, organizationId));
-					return result?.count ?? 0;
-				},
+				try: () => countBillableMembers(organizationId),
 				catch: (error) =>
 					new DatabaseError({
-						message: "Failed to get current seat count",
+						message: "Failed to get current billable seat count",
 						operation: "getCurrentSeatCount",
 						table: "member",
 						cause: error,

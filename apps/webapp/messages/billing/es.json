@@ -24,6 +24,7 @@
     },
     "choosePlan": "Elige tu plan",
     "choosePlanDescription": "Comienza con una prueba gratuita de 14 días. No se requiere tarjeta de crédito para empezar.",
+    "chooseUpgradePlanDescription": "Elige ahora una frecuencia de facturación. Tu suscripción de pago comienza solo después del período de prueba restante.",
     "currentPlan": "Plan actual",
     "days": "{count} días",
     "description": "Administra tu suscripción y los detalles de facturación",
@@ -81,6 +82,8 @@
     },
     "title": "Facturación y suscripción",
     "trialEnds": "La prueba termina",
+    "upgradeMonthly": "Actualizar mensualmente",
+    "upgradeYearly": "Actualizar anualmente",
     "vatNotice": "Los precios mostrados son precios netos sin IVA. El IVA se añadirá cuando corresponda.",
     "yearTotal": "€{amount}/año total"
   }

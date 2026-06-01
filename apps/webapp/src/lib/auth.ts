@@ -17,6 +17,7 @@ import { employee, scimProvisioningLog, team } from "@/db/schema";
 import { env } from "@/env";
 import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
+import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import {
 	getAuthAllowedHosts,
 	getOrganizationPlatformOrigins,
@@ -55,8 +56,6 @@ export async function resolveInvitationTargetTeamId(
 
 	return targetTeam?.id ?? null;
 }
-
-const BILLING_ENABLED = env.BILLING_ENABLED === "true";
 
 function getAuthSecrets() {
 	const resolved = resolveAuthSecrets({
@@ -114,8 +113,6 @@ async function getSSOTrustedOrigins(request: Request, pathname: string): Promise
 	return [...origins];
 }
 
-type MemberSeatChange = "added" | "removed";
-
 /**
  * Get the primary organization ID for a user (for auth emails)
  * Returns the first organization the user is a member of
@@ -150,46 +147,8 @@ async function syncBillingSeats({
 	memberId,
 	userId,
 	change,
-}: {
-	organizationId: string;
-	memberId: string;
-	userId: string;
-	change: MemberSeatChange;
-}) {
-	if (!BILLING_ENABLED) {
-		return;
-	}
-
-	try {
-		const { Effect, Layer } = await import("effect");
-		const { SeatSyncService, SeatSyncServiceLive, StripeServiceLive, SubscriptionServiceLive } =
-			await import("@/lib/effect/services/billing");
-
-		const layers = SeatSyncServiceLive.pipe(
-			Layer.provide(StripeServiceLive),
-			Layer.provide(SubscriptionServiceLive),
-		);
-
-		const program = Effect.gen(function* () {
-			const seatSyncService = yield* SeatSyncService;
-
-			if (change === "added") {
-				yield* seatSyncService.handleMemberAdded(organizationId, memberId, userId);
-				return;
-			}
-
-			yield* seatSyncService.handleMemberRemoved(organizationId, memberId, userId);
-		});
-
-		await Effect.runPromise(program.pipe(Effect.provide(layers)));
-	} catch (error) {
-		logger.error(
-			{ error, organizationId },
-			change === "added"
-				? "Failed to sync seats after member added"
-				: "Failed to sync seats after member removed",
-		);
-	}
+}: Parameters<typeof syncBillingSeatsAfterMemberChange>[0]) {
+	await syncBillingSeatsAfterMemberChange({ organizationId, memberId, userId, change });
 }
 
 export const auth = betterAuth({
@@ -609,6 +568,13 @@ export const auth = betterAuth({
 						organizationId: invitation.organizationId,
 						memberRole: member.role,
 						targetTeamId,
+					});
+
+					await syncBillingSeats({
+						organizationId: invitation.organizationId,
+						memberId: member.id,
+						userId: user.id,
+						change: "added",
 					});
 				},
 

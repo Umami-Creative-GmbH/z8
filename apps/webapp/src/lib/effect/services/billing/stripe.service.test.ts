@@ -114,6 +114,55 @@ describe("StripeService", () => {
 		});
 	});
 
+	it("allows Stripe Checkout to update customer billing details for tax ID collection", async () => {
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				const stripeService = yield* StripeService;
+
+				yield* stripeService.createCheckoutSession({
+					customerId: "cus_test_123",
+					priceId: "price_monthly_123",
+					organizationId: "org_123",
+					quantity: 5,
+					successUrl: "https://app.test/settings/billing?success=true",
+					cancelUrl: "https://app.test/settings/billing?canceled=true",
+				});
+			}).pipe(Effect.provide(StripeServiceLive)),
+		);
+
+		expect(checkoutSessionsCreate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				customer_update: { address: "auto", name: "auto" },
+				tax_id_collection: { enabled: true },
+			}),
+		);
+	});
+
+	it("rejects product ids before creating checkout sessions", async () => {
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+					const stripeService = yield* StripeService;
+
+					return yield* stripeService.createCheckoutSession({
+						customerId: "cus_test_123",
+						priceId: "prod_123",
+						organizationId: "org_123",
+						quantity: 5,
+						successUrl: "https://app.test/settings/billing?success=true",
+						cancelUrl: "https://app.test/settings/billing?canceled=true",
+					});
+			}).pipe(Effect.provide(StripeServiceLive), Effect.either),
+		);
+
+		expect(result._tag).toBe("Left");
+		expect(result._tag === "Left" ? result.left : null).toMatchObject({
+			message: "Stripe checkout price must be a Price ID starting with price_",
+			operation: "createCheckoutSession",
+		});
+
+		expect(checkoutSessionsCreate).not.toHaveBeenCalled();
+	});
+
 	it("checkout route computes remaining trial days instead of starting a fresh trial", () => {
 		const routeSource = readFileSync(
 			join(process.cwd(), "src/app/api/billing/checkout/route.ts"),
