@@ -84,6 +84,7 @@ async function BillingSettingsContent() {
 				subscription
 					? {
 							id: subscription.id,
+							hasStripeCustomer: Boolean(subscription.stripeCustomerId),
 							status: subscription.status,
 							isActive: subscription.isActive,
 							isTrialing: subscription.isTrialing,

@@ -132,7 +132,8 @@ export const StripeServiceLive = Layer.effect(
 				}),
 
 			createCheckoutSession: (params) =>
-				Effect.tryPromise({
+				params.priceId.startsWith("price_")
+					? Effect.tryPromise({
 					try: async () => {
 						if (!stripe) {
 							throw new Error("Stripe not configured");
@@ -169,7 +170,13 @@ export const StripeServiceLive = Layer.effect(
 							stripeCode: (error as Stripe.StripeRawError)?.code,
 							cause: error,
 						}),
-				}),
+					})
+					: Effect.fail(
+							new StripeError({
+								message: "Stripe checkout price must be a Price ID starting with price_",
+								operation: "createCheckoutSession",
+							}),
+						),
 
 			createPortalSession: (params) =>
 				Effect.tryPromise({

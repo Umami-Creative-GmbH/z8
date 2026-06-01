@@ -16,6 +16,10 @@ vi.mock("next/navigation", () => ({
 	useSearchParams: () => new URLSearchParams(),
 }));
 
+vi.mock("next-intl", () => ({
+	useLocale: () => "de",
+}));
+
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({}),
 }));
@@ -26,6 +30,7 @@ describe("BillingPageClient", () => {
 			<BillingPageClient
 				subscription={{
 					id: "sub_123",
+					hasStripeCustomer: true,
 					status: "trialing",
 					isActive: true,
 					isTrialing: true,
@@ -47,6 +52,57 @@ describe("BillingPageClient", () => {
 				"Stripe Checkout collects payment details now. Your paid subscription starts only after the trial expires.",
 			),
 		).toBeTruthy();
+	});
+
+	it("offers checkout instead of the Stripe portal for local-only trials", () => {
+		render(
+			<BillingPageClient
+				subscription={{
+					id: "sub_123",
+					hasStripeCustomer: false,
+					status: "trialing",
+					isActive: true,
+					isTrialing: true,
+					isPastDue: false,
+					currentSeats: 4,
+					trialEnd: "2026-06-01T00:00:00.000Z",
+					currentPeriodEnd: null,
+					billingInterval: null,
+					cancelAt: null,
+				}}
+				accessResult={{ canAccess: true, status: "trialing" }}
+				isOwner={true}
+			/>,
+		);
+
+		expect(screen.queryByText("Manage Billing")).toBeNull();
+		expect(screen.getByRole("button", { name: "Upgrade Monthly" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Upgrade Yearly" })).toBeTruthy();
+	});
+
+	it("formats subscription dates with the active app locale", () => {
+		render(
+			<BillingPageClient
+				subscription={{
+					id: "sub_123",
+					hasStripeCustomer: true,
+					status: "active",
+					isActive: true,
+					isTrialing: false,
+					isPastDue: false,
+					currentSeats: 4,
+					trialEnd: null,
+					currentPeriodEnd: "2026-06-15T00:00:00.000Z",
+					billingInterval: "month",
+					cancelAt: null,
+				}}
+				accessResult={{ canAccess: true, status: "active" }}
+				isOwner={true}
+			/>,
+		);
+
+		expect(screen.getByText("15. Juni 2026")).toBeTruthy();
+		expect(screen.queryByText("Jun 15, 2026")).toBeNull();
 	});
 
 	it("uses localized checkout keys and fallbacks", () => {

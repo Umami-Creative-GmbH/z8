@@ -10,6 +10,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useSearchParams } from "next/navigation";
+import { useLocale } from "next-intl";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -19,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 interface SubscriptionInfo {
 	id: string;
+	hasStripeCustomer: boolean;
 	status: string;
 	isActive: boolean;
 	isTrialing: boolean;
@@ -50,6 +52,7 @@ const YEARLY_PRICE_TOTAL = 36;
 
 function BillingPageClientContent({ subscription, accessResult, isOwner }: BillingPageClientProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const searchParams = useSearchParams();
 	const { get } = searchParams;
 	const getSearchParam = (key: string) => get.call(searchParams, key);
@@ -59,6 +62,7 @@ function BillingPageClientContent({ subscription, accessResult, isOwner }: Billi
 	// Handle success/cancel redirects from Stripe
 	const success = getSearchParam("success");
 	const canceled = getSearchParam("canceled");
+	const canManageBilling = Boolean(subscription?.hasStripeCustomer);
 
 	const handleSubscribe = async (interval: "month" | "year") => {
 		setIsLoading(true);
@@ -126,7 +130,9 @@ function BillingPageClientContent({ subscription, accessResult, isOwner }: Billi
 
 	const formatDate = (dateStr: string | null) => {
 		if (!dateStr) return t("common:common.notApplicable", "N/A");
-		return DateTime.fromISO(dateStr).toLocaleString(DateTime.DATE_MED);
+		return DateTime.fromISO(dateStr, { zone: "utc" })
+			.setLocale(locale)
+			.toLocaleString(DateTime.DATE_MED);
 	};
 
 	const getTrialDaysRemaining = () => {
@@ -242,11 +248,26 @@ function BillingPageClientContent({ subscription, accessResult, isOwner }: Billi
 											: t("billing.interval.monthlyBilling", "Monthly billing")}
 									</CardDescription>
 								</div>
-								<Button variant="outline" onClick={handleManageBilling} disabled={isPortalLoading}>
-									{isPortalLoading
-										? t("billing.opening", "Opening...")
-										: t("billing.manageBilling", "Manage Billing")}
-								</Button>
+								{canManageBilling ? (
+									<Button variant="outline" onClick={handleManageBilling} disabled={isPortalLoading}>
+										{isPortalLoading
+											? t("billing.opening", "Opening...")
+											: t("billing.manageBilling", "Manage Billing")}
+									</Button>
+								) : (
+									<div className="flex flex-wrap gap-2">
+										<Button variant="outline" onClick={() => handleSubscribe("month")} disabled={isLoading}>
+											{isLoading
+												? t("billing.starting", "Starting...")
+												: t("billing.upgradeMonthly", "Upgrade Monthly")}
+										</Button>
+										<Button onClick={() => handleSubscribe("year")} disabled={isLoading}>
+											{isLoading
+												? t("billing.starting", "Starting...")
+												: t("billing.upgradeYearly", "Upgrade Yearly")}
+										</Button>
+									</div>
+								)}
 							</div>
 						</CardHeader>
 						<CardContent>

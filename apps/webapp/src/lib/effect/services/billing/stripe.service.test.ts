@@ -114,6 +114,31 @@ describe("StripeService", () => {
 		});
 	});
 
+	it("rejects product ids before creating checkout sessions", async () => {
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+					const stripeService = yield* StripeService;
+
+					return yield* stripeService.createCheckoutSession({
+						customerId: "cus_test_123",
+						priceId: "prod_123",
+						organizationId: "org_123",
+						quantity: 5,
+						successUrl: "https://app.test/settings/billing?success=true",
+						cancelUrl: "https://app.test/settings/billing?canceled=true",
+					});
+			}).pipe(Effect.provide(StripeServiceLive), Effect.either),
+		);
+
+		expect(result._tag).toBe("Left");
+		expect(result._tag === "Left" ? result.left : null).toMatchObject({
+			message: "Stripe checkout price must be a Price ID starting with price_",
+			operation: "createCheckoutSession",
+		});
+
+		expect(checkoutSessionsCreate).not.toHaveBeenCalled();
+	});
+
 	it("checkout route computes remaining trial days instead of starting a fresh trial", () => {
 		const routeSource = readFileSync(
 			join(process.cwd(), "src/app/api/billing/checkout/route.ts"),
