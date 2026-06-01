@@ -160,6 +160,7 @@ export const StripeServiceLive = Layer.effect(
 							subscription_data: subscriptionData,
 							allow_promotion_codes: true,
 							billing_address_collection: "auto",
+							customer_update: { address: "auto", name: "auto" },
 							tax_id_collection: { enabled: true },
 						});
 					},

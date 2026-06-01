@@ -610,6 +610,13 @@ export const auth = betterAuth({
 						memberRole: member.role,
 						targetTeamId,
 					});
+
+					await syncBillingSeats({
+						organizationId: invitation.organizationId,
+						memberId: member.id,
+						userId: user.id,
+						change: "added",
+					});
 				},
 
 				// Create employee record when user is added to organization

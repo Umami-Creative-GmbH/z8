@@ -114,6 +114,30 @@ describe("StripeService", () => {
 		});
 	});
 
+	it("allows Stripe Checkout to update customer billing details for tax ID collection", async () => {
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				const stripeService = yield* StripeService;
+
+				yield* stripeService.createCheckoutSession({
+					customerId: "cus_test_123",
+					priceId: "price_monthly_123",
+					organizationId: "org_123",
+					quantity: 5,
+					successUrl: "https://app.test/settings/billing?success=true",
+					cancelUrl: "https://app.test/settings/billing?canceled=true",
+				});
+			}).pipe(Effect.provide(StripeServiceLive)),
+		);
+
+		expect(checkoutSessionsCreate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				customer_update: { address: "auto", name: "auto" },
+				tax_id_collection: { enabled: true },
+			}),
+		);
+	});
+
 	it("rejects product ids before creating checkout sessions", async () => {
 		const result = await Effect.runPromise(
 			Effect.gen(function* () {

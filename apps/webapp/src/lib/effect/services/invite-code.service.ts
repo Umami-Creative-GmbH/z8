@@ -12,6 +12,7 @@ import {
 	team,
 } from "@/db/schema";
 import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
+import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import {
 	type AuthorizationError,
 	type DatabaseError,
@@ -730,6 +731,19 @@ export const InviteCodeServiceLive = Layer.effect(
 						}),
 					);
 
+					if (memberStatus === "approved") {
+						yield* _(
+							Effect.promise(() =>
+								syncBillingSeatsAfterMemberChange({
+									organizationId: inviteCodeRecord.organizationId,
+									memberId: newMember.id,
+									userId: input.userId,
+									change: "added",
+								}),
+							),
+						);
+					}
+
 					return {
 						success: true,
 						memberId: newMember.id,
@@ -998,6 +1012,19 @@ export const InviteCodeServiceLive = Layer.effect(
 							});
 						}),
 					);
+
+					if (memberStatus === "approved") {
+						yield* _(
+							Effect.promise(() =>
+								syncBillingSeatsAfterMemberChange({
+									organizationId: inviteCodeRecord.organizationId,
+									memberId: newMember.id,
+									userId,
+									change: "added",
+								}),
+							),
+						);
+					}
 
 					return {
 						success: true,
