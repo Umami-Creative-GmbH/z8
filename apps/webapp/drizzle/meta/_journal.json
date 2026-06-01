@@ -295,6 +295,13 @@
       "when": 1780185600005,
       "tag": "0041_invitation_target_team_text_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1780304304743,
+      "tag": "0042_approval_policy_runtime_tables",
+      "breakpoints": true
     }
   ]
 }

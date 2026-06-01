@@ -17,10 +17,10 @@ spec:
           image: ghcr.io/umami-creative-gmbh/z8-migration:latest
           imagePullPolicy: Always
           env:
-	            - name: REDIS_HOST
-	              value: valkey
-	            - name: REDIS_PORT
-	              value: "6379"
+            - name: REDIS_HOST
+              value: valkey
+            - name: REDIS_PORT
+              value: "6379"
             - name: DB_MIGRATION_LOCK_ID
               value: "74382643"
             - name: DRIZZLE_MIGRATE_COMMAND
