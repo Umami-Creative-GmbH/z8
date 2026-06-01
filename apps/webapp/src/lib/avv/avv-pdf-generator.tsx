@@ -7,6 +7,8 @@
  * The settings/avv page.tsx enforces BILLING_ENABLED + owner/admin role checks.
  */
 
+import { avvHostingDetails } from "./avv-details";
+
 const styleDefinitions = {
 	page: {
 		padding: 50,
@@ -207,10 +209,11 @@ export async function exportAvvToPDF(organizationName: string): Promise<Uint8Arr
 					von Unterauftragnehmern.
 				</Text>
 				<Text style={styles.paragraph}>Derzeit eingesetzte Unterauftragnehmer:</Text>
-				<Text style={styles.listItem}>
-					\u2022 Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, Deutschland \u2013
-					Hosting und Infrastruktur
-				</Text>
+				{avvHostingDetails.subprocessors.map((subprocessor) => (
+					<Text key={subprocessor.providerName} style={styles.listItem}>
+						\u2022 {subprocessor.pdfText}
+					</Text>
+				))}
 				<Text style={{ ...styles.paragraph, marginTop: 8 }}>
 					Es werden keine weiteren Subprozessoren für die Verarbeitung personenbezogener Daten
 					eingesetzt.
