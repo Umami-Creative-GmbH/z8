@@ -1,17 +1,35 @@
 {
   "version": 1,
   "skills": {
+    "better-auth-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/best-practices/SKILL.md",
+      "computedHash": "a4c830509e85557b59339d8d93a4e243e9e59c686e7678854d39230e12c2a6dc"
+    },
+    "create-auth-skill": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/create-auth/SKILL.md",
+      "computedHash": "31c027d02dbf1faa37f58191f574b9443143042fb2b684fe32df53ab0270487c"
+    },
+    "email-and-password-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/emailAndPassword/SKILL.md",
+      "computedHash": "747d7f73bd9e2ec5317b8ef88dc70f97df716d00e3d02de4051feebaa48b062d"
+    },
     "hetzner-server": {
       "source": "connorads/dotfiles",
       "sourceType": "github",
       "skillPath": ".agents/skills/hetzner-server/SKILL.md",
-      "computedHash": "b36388d7e97282390220a36b2afda4b90004e0086dde91d8e4838c5647d4cdbc"
+      "computedHash": "c09b8a469c98344ecf02a0dc21b37881b50e53ec43358b05ff83d66c069a7aad"
     },
     "migrate-to-temporal-api": {
       "source": "Umami-Creative-GmbH/Agent-Skills",
       "sourceType": "github",
       "skillPath": "skills/migrate-to-temporal-api/SKILL.md",
-      "computedHash": "5c32ec9fab85022b27cbac2a9d6760c7e37076463a3f0dc1f2687e919df3c3ac"
+      "computedHash": "6737d96abddd8669f7a02a829fd941623e52de1e13b110f99a1823c1a89392fa"
     },
     "next-best-practices": {
       "source": "vercel-labs/next-skills",
@@ -31,23 +49,35 @@
       "skillPath": "skills/next-upgrade/SKILL.md",
       "computedHash": "e3aeb1f9e8a68d24df0c1c2e3c8ab97ede09a7251a2c76988318d02254346979"
     },
+    "organization-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/organization/SKILL.md",
+      "computedHash": "79a5a85b43d10e9fe37582b3506b051a33a991817b938f349099baa5ddba21aa"
+    },
     "stripe-best-practices": {
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/stripe-best-practices/SKILL.md",
-      "computedHash": "0409d2e17af849bc4ea8be0e4561457f3329782796b0c2cb8ba9338ff4ac9149"
+      "computedHash": "966d0ce005fb82e1a63ead1ec8c5546a9088c0d8f103f88c382c4cda810857cc"
     },
     "stripe-projects": {
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/stripe-projects/SKILL.md",
-      "computedHash": "bd10528e91908319afb057d5c72a2eb4669a79e8b70ebc393da61a88b48a138b"
+      "computedHash": "5f82f044d22f5d23b5ddd8cf0370d173e05d9d82345176e388eb49deeac3af0e"
+    },
+    "two-factor-authentication-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/twoFactor/SKILL.md",
+      "computedHash": "7e297aaf887e11fdc03e52bdbf44974e161e8f7c393170ced7dc66cace4f6d46"
     },
     "upgrade-stripe": {
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/upgrade-stripe/SKILL.md",
-      "computedHash": "a57abb5c15d7591ac5f86e8debae66927d96e309121f1d0007b76e161432fef1"
+      "computedHash": "a0f0bf709f65ba8d7aa8d55322d030e6b3f16756cb6f0be80463395306305ef3"
     }
   }
 }
