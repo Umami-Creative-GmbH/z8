@@ -24,6 +24,7 @@
     },
     "choosePlan": "Wählen Sie Ihren Plan",
     "choosePlanDescription": "Starten Sie mit einer 14-tägigen kostenlosen Testversion. Keine Kreditkarte erforderlich.",
+    "chooseUpgradePlanDescription": "Wählen Sie jetzt einen Abrechnungsrhythmus. Ihr kostenpflichtiges Abonnement beginnt erst nach der verbleibenden Testphase.",
     "currentPlan": "Aktueller Plan",
     "days": "{count} Tage",
     "description": "Verwalten Sie Ihr Abonnement und Ihre Zahlungsdetails",
@@ -81,6 +82,8 @@
     },
     "title": "Abrechnung & Abonnement",
     "trialEnds": "Testversion endet",
+    "upgradeMonthly": "Monatlich upgraden",
+    "upgradeYearly": "Jährlich upgraden",
     "vatNotice": "Die angezeigten Preise sind Nettopreise ohne MwSt. Die MwSt. wird gegebenenfalls hinzugefügt.",
     "yearTotal": "€{amount}/Jahr insgesamt"
   }

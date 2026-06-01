@@ -10,7 +10,7 @@
       "description": "Laden Sie Ihren Auftragsverarbeitungsvertrag gemäß Art. 28 DSGVO herunter.",
       "hosting": {
         "descriptionPrefix": "Alle Daten werden auf Servern der ",
-        "descriptionSuffix": " gehostet. Es werden keine weiteren Subprozessoren eingesetzt.",
+        "descriptionSuffix": " gehostet. Derzeit eingesetzte Subprozessoren:",
         "title": "Hosting & Subprozessoren"
       },
       "title": "Auftragsverarbeitungsvertrag (AVV)"

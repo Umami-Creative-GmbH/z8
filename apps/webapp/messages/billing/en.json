@@ -24,6 +24,7 @@
     },
     "choosePlan": "Choose Your Plan",
     "choosePlanDescription": "Start with a 14-day free trial. No credit card required to start.",
+    "chooseUpgradePlanDescription": "Choose a billing cadence now. Your paid subscription starts only after the remaining trial period.",
     "currentPlan": "Current Plan",
     "days": "{count} days",
     "description": "Manage your subscription and billing details",
@@ -81,6 +82,8 @@
     },
     "title": "Billing & Subscription",
     "trialEnds": "Trial Ends",
+    "upgradeMonthly": "Upgrade Monthly",
+    "upgradeYearly": "Upgrade Yearly",
     "vatNotice": "Prices shown are net prices excluding VAT. VAT will be added where applicable.",
     "yearTotal": "€{amount}/year total"
   }
