@@ -188,35 +188,6 @@ kubectl apply -f migration.yaml
 kubectl wait --for=condition=complete job/z8-migration -n z8 --timeout=300s
 ```
 
-### Docs App Deployment
-
-The docs app is prepared for deployment through the manifests under `infra/hetzner-k8s/k8s` and is intentionally configured to run as a single replica.
-
-Resources:
-
-- `infra/hetzner-k8s/k8s/app/docs-deployment.yaml`
-- `infra/hetzner-k8s/k8s/app/docs-service.yaml`
-- `infra/hetzner-k8s/k8s/app/docs-ingress.yaml`
-
-Image:
-
-- `ghcr.io/umami-creative-gmbh/z8-docs`
-
-When you are ready to roll it out, apply the manifests and restart `deployment/docs` so pods pull a newly published `latest` image:
-
-```bash
-kubectl apply -k infra/hetzner-k8s/k8s
-kubectl rollout restart deployment/docs -n app-prod
-kubectl rollout status deployment/docs -n app-prod --timeout=300s
-kubectl get deployment docs -n app-prod
-kubectl get service docs -n app-prod
-kubectl get ingress docs -n app-prod
-```
-
-Expected host:
-
-- `docs.z8-time.app`
-
 ## Services
 
 | Service | Port | Description |
