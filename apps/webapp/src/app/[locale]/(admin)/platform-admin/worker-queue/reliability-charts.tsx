@@ -5,25 +5,13 @@ import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ChartConfig } from "@/components/ui/chart";
+import {
+	type ChartConfig,
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+} from "@/components/ui/chart";
 import type { WorkerReliabilityData } from "./reliability";
-
-const ChartContainer = dynamic(
-	() => import("@/components/ui/chart").then((mod) => mod.ChartContainer),
-	{
-		ssr: false,
-	},
-);
-const ChartTooltip = dynamic(
-	() => import("@/components/ui/chart").then((mod) => mod.ChartTooltip),
-	{
-		ssr: false,
-	},
-);
-const ChartTooltipContent = dynamic(
-	() => import("@/components/ui/chart").then((mod) => mod.ChartTooltipContent),
-	{ ssr: false },
-);
 
 const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
 const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
