@@ -28,6 +28,27 @@ EXCEPTION
 	WHEN duplicate_object THEN NULL;
 END $$;
 --> statement-breakpoint
+DO $$ BEGIN
+	IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'location_id_organizationId_idx' AND conrelid = 'public.location'::regclass)
+		AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.relname = 'location_id_organizationId_idx' AND n.nspname = 'public') THEN
+		ALTER TABLE "public"."location" ADD CONSTRAINT "location_id_organizationId_idx" UNIQUE("id","organization_id");
+	END IF;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+	IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'absenceCategory_id_organizationId_idx' AND conrelid = 'public.absence_category'::regclass)
+		AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.relname = 'absenceCategory_id_organizationId_idx' AND n.nspname = 'public') THEN
+		ALTER TABLE "public"."absence_category" ADD CONSTRAINT "absenceCategory_id_organizationId_idx" UNIQUE("id","organization_id");
+	END IF;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+	IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'approvalRequest_id_organizationId_idx' AND conrelid = 'public.approval_request'::regclass)
+		AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.relname = 'approvalRequest_id_organizationId_idx' AND n.nspname = 'public') THEN
+		ALTER TABLE "public"."approval_request" ADD CONSTRAINT "approvalRequest_id_organizationId_idx" UNIQUE("id","organization_id");
+	END IF;
+END $$;
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "employee_group" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"organization_id" text NOT NULL,

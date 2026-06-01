@@ -306,4 +306,18 @@ describe("approval policy schema exports", () => {
 		expect(migration).toContain('JOIN "team" ON "team"."id" = "employee"."team_id"');
 		expect(migration).toContain('AND "team"."organization_id" = "employee"."organization_id"');
 	});
+
+	it("adds parent uniqueness required by approval policy composite foreign keys", () => {
+		const migration = readFileSync("drizzle/0042_approval_policy_runtime_tables.sql", "utf8");
+
+		expect(migration).toContain(
+			'ADD CONSTRAINT "location_id_organizationId_idx" UNIQUE("id","organization_id")',
+		);
+		expect(migration).toContain(
+			'ADD CONSTRAINT "absenceCategory_id_organizationId_idx" UNIQUE("id","organization_id")',
+		);
+		expect(migration).toContain(
+			'ADD CONSTRAINT "approvalRequest_id_organizationId_idx" UNIQUE("id","organization_id")',
+		);
+	});
 });
