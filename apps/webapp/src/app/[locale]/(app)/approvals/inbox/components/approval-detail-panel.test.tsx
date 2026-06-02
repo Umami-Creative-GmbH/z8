@@ -157,6 +157,30 @@ describe("ApprovalDetailPanel", () => {
 		expect(screen.getByText("No conflicts detected.")).toBeTruthy();
 	});
 
+	it("keeps the header badge clear of the close button and pads the detail content", async () => {
+		render(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		const dialog = await screen.findByRole("dialog");
+		const header = dialog.querySelector('[data-slot="sheet-header"]');
+		const body = dialog.querySelector('[data-slot="approval-detail-body"]');
+		const footer = dialog.querySelector('[data-slot="sheet-footer"]');
+		const badge = screen.getByText("Sick Leave");
+
+		expect(header?.className).toContain("pr-12");
+		expect(header?.className).toContain("px-5");
+		expect(body?.className).toContain("px-5");
+		expect(footer?.className).toContain("px-5");
+		expect(badge.className).toContain("max-w-");
+		expect(badge.className).toContain("truncate");
+	});
+
 	it("approves with the approval id when approval is allowed", async () => {
 		render(
 			<ApprovalDetailPanel

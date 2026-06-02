@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Context, Effect, Exit, Option } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 
@@ -532,6 +532,90 @@ describe("getApprovalStatusUpdate", () => {
 
 		expect(txInsertValues).toHaveBeenCalledTimes(1);
 		expect(outerInsertValues).not.toHaveBeenCalled();
+	});
+
+	it("preserves caller-provided services inside transactional approval side effects", async () => {
+		class TestApprovalSideEffectService extends Context.Tag("TestApprovalSideEffectService")<
+			TestApprovalSideEffectService,
+			{ readonly run: () => Effect.Effect<void> }
+		>() {}
+
+		const approvalFindFirst = vi.fn().mockResolvedValue({
+			id: "approval-1",
+			entityId: "claim-1",
+			entityType: "travel_expense_claim",
+			approverId: "employee-1",
+			organizationId: "org-1",
+			status: "pending",
+			approvedAt: null,
+			rejectionReason: null,
+			updatedAt: new Date("2026-04-09T09:30:00.000Z"),
+		});
+		const returning = vi.fn().mockResolvedValue([{ id: "approval-1" }]);
+		const where = vi.fn().mockReturnValue({ returning });
+		const set = vi.fn().mockReturnValue({ where });
+		const tx = {
+			query: {
+				approvalRequest: {
+					findFirst: approvalFindFirst,
+				},
+			},
+			update: vi.fn().mockReturnValue({ set }),
+			insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue(undefined) }),
+		};
+		const dbService = DatabaseService.of({
+			db: {
+				query: {
+					approvalRequest: {
+						findFirst: approvalFindFirst,
+					},
+				},
+				update: vi.fn().mockReturnValue({ set }),
+				insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue(undefined) }),
+				transaction: vi.fn(async (callback: (transaction: typeof tx) => Promise<void>) => {
+					await callback(tx);
+				}),
+			},
+			query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+		});
+		const auditLogger = ApprovalAuditLogger.of({
+			log: vi.fn().mockReturnValue(Effect.void),
+			logBatch: vi.fn(),
+		});
+		const sideEffect = vi.fn().mockReturnValue(Effect.void);
+
+		await Effect.runPromise(
+			processApprovalWithCurrentEmployee(
+				dbService,
+				{
+					id: "employee-1",
+					userId: "user-1",
+					organizationId: "org-1",
+					user: {
+						id: "user-1",
+						name: "Morgan Reviewer",
+						email: "morgan@example.com",
+						image: null,
+					},
+				},
+				"travel_expense_claim",
+				"claim-1",
+				"approve",
+				undefined,
+				() =>
+					Effect.gen(function* (_) {
+						const service = yield* _(TestApprovalSideEffectService);
+						yield* _(service.run());
+					}),
+				undefined,
+				{ transactional: true },
+			).pipe(
+				Effect.provideService(ApprovalAuditLogger, auditLogger),
+				Effect.provideService(TestApprovalSideEffectService, { run: sideEffect }),
+			),
+		);
+
+		expect(sideEffect).toHaveBeenCalledTimes(1);
 	});
 
 	it("continues existing side effects for unlinked approval requests", async () => {

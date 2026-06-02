@@ -2,6 +2,7 @@
 
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppSearchResult } from "@/lib/app-search/types";
 
@@ -190,6 +191,17 @@ describe("AppSearch", () => {
 				options: { preventDefault: true },
 			}),
 		);
+	});
+
+	it("server-renders a hydration-stable shortcut label", () => {
+		const markup = renderToString(
+			<SidebarProvider>
+				<AppSearch staticCommands={staticCommands} staticResults={staticResults} />
+			</SidebarProvider>,
+		);
+
+		expect(markup).toContain("Ctrl+K");
+		expect(markup).not.toContain("⌘ K");
 	});
 
 	it("shows the OS-aware search shortcut in the main menu", async () => {

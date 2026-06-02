@@ -1,10 +1,21 @@
 "use client";
 
+import { IconAdjustmentsHorizontal } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
 import type { SelectableEmployee } from "@/components/employee-select/types";
 import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { ManualTimeEntryDialog } from "@/components/time-tracking/manual-time-entry-dialog";
+import { Button } from "@/components/ui/button";
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "@/components/ui/sheet";
 import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
@@ -35,6 +46,14 @@ function isRunningWorkPeriod(event: CalendarEvent): boolean {
 	return event.type === "work_period" && event.metadata.isRunning === true;
 }
 
+function getInitialViewMode(): ViewMode {
+	if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) {
+		return "day";
+	}
+
+	return "week";
+}
+
 interface ManualEntryDefaults {
 	date: string;
 	clockInTime: string;
@@ -47,13 +66,20 @@ export function CalendarView({
 	initialSelectedEmployeeId,
 }: CalendarViewProps) {
 	const router = useRouter();
+	const { t } = useTranslate();
 	const { isManagerOrAbove } = useOrganization();
 	const viewerTimeZone = useUserTimezone();
 	const initialEmployeeId = initialSelectedEmployeeId ?? currentEmployeeId ?? null;
 	const initialFilterEmployeeId = initialEmployeeId ?? undefined;
+	const mobileControlsTitle = t("calendar.mobileControls.title", "Filters & Legend");
+	const mobileControlsDescription = t(
+		"calendar.mobileControls.description",
+		"Choose which calendar entries are visible.",
+	);
 
 	// View mode state
-	const [viewMode, setViewMode] = useState<ViewMode>("week");
+	const [viewMode, setViewMode] = useState<ViewMode>(() => getInitialViewMode());
+	const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
 
 	// Selected employee for calendar view (defaults to current user)
 	const [previousInitialEmployeeId, setPreviousInitialEmployeeId] = useState(initialEmployeeId);
@@ -251,7 +277,7 @@ export function CalendarView({
 			>
 				{/* Filters sidebar - hidden for year view */}
 				{viewMode !== "year" && (
-					<div className="space-y-4 order-2 md:order-1">
+					<div className="space-y-2 order-2 md:order-1 md:space-y-4">
 						{/* Employee selector - replaces team toggle for better performance */}
 						<CalendarEmployeeSelector
 							currentEmployeeId={currentEmployeeId}
@@ -259,13 +285,51 @@ export function CalendarView({
 							onEmployeeChange={handleEmployeeChange}
 							isManagerOrAbove={isManagerOrAbove}
 						/>
-						<WorkBalanceCard balance={workBalance} compact />
-						<CalendarFiltersComponent
-							filters={filters}
-							onFiltersChange={setFilters}
-							currentEmployeeId={currentEmployeeId}
-						/>
-						<CalendarLegend />
+						<div data-testid="calendar-desktop-work-balance" className="hidden md:block">
+							<WorkBalanceCard balance={workBalance} compact />
+						</div>
+						<div data-testid="calendar-mobile-work-balance" className="md:hidden">
+							<WorkBalanceCard balance={workBalance} compact mobileCompact />
+						</div>
+						<div data-testid="calendar-desktop-controls" className="hidden space-y-4 md:block">
+							<CalendarFiltersComponent
+								filters={filters}
+								onFiltersChange={setFilters}
+								currentEmployeeId={currentEmployeeId}
+								idPrefix="calendar-desktop"
+							/>
+							<CalendarLegend />
+						</div>
+						<div data-testid="calendar-mobile-controls" className="space-y-2 md:hidden">
+							<Sheet open={mobileControlsOpen} onOpenChange={setMobileControlsOpen}>
+								<SheetTrigger asChild>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										className="h-8 w-full gap-2 px-3"
+									>
+										<IconAdjustmentsHorizontal className="size-4" />
+										{mobileControlsTitle}
+									</Button>
+								</SheetTrigger>
+								<SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto">
+									<SheetHeader>
+										<SheetTitle>{mobileControlsTitle}</SheetTitle>
+										<SheetDescription>{mobileControlsDescription}</SheetDescription>
+									</SheetHeader>
+									<div className="space-y-4 p-4 pt-0">
+										<CalendarFiltersComponent
+											filters={filters}
+											onFiltersChange={setFilters}
+											currentEmployeeId={currentEmployeeId}
+											idPrefix="calendar-mobile"
+										/>
+										<CalendarLegend />
+									</div>
+								</SheetContent>
+							</Sheet>
+						</div>
 					</div>
 				)}
 

@@ -308,6 +308,7 @@ export function processApprovalWithCurrentEmployee<T>(
 ) {
 	return Effect.gen(function* (_) {
 		const auditLogger = yield* _(ApprovalAuditLogger);
+		const callerContext = yield* _(Effect.context<never>());
 
 		if (!options?.transactional) {
 			return yield* _(
@@ -350,6 +351,7 @@ export function processApprovalWithCurrentEmployee<T>(
 								options,
 							).pipe(
 								Effect.provideService(ApprovalAuditLogger, transactionalAuditLogger),
+								Effect.provide(callerContext),
 							) as Effect.Effect<T | undefined, AnyAppError, never>,
 						);
 

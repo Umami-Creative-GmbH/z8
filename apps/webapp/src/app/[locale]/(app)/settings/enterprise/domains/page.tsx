@@ -28,7 +28,7 @@ export default async function CustomDomainsPage() {
 			columns: { id: true, slug: true },
 		}),
 	]);
-	const [canonicalDefaultUrl, aliasDefaultUrl] = getOrganizationPlatformOrigins({
+	const [canonicalDefaultUrl] = getOrganizationPlatformOrigins({
 		id: organizationId,
 		slug: organizationRecord?.slug ?? organizationId,
 	});
@@ -53,7 +53,7 @@ export default async function CustomDomainsPage() {
 					initialProviders={providers as any}
 					initialSocialOAuthConfigs={socialOAuthConfigs}
 					organizationId={organizationId}
-					defaultUrls={{ canonical: canonicalDefaultUrl, alias: aliasDefaultUrl }}
+					defaultUrls={{ canonical: canonicalDefaultUrl }}
 				/>
 			</div>
 		</div>

@@ -3,8 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import {
 	type CurrentTeamEmployee,
+	getCalendarManagedEmployees,
 	getCurrentEmployee,
-	getManagedEmployees,
 	type ManagedEmployee,
 } from "@/app/[locale]/(app)/team/actions";
 import type { SelectableEmployee } from "@/components/employee-select/types";
@@ -102,7 +102,7 @@ export function useCalendarEmployees(currentEmployeeId?: string): UseCalendarEmp
 			// Fetch current employee and managed employees in parallel
 			const [currentEmp, managedResult] = await Promise.all([
 				getCurrentEmployee(),
-				getManagedEmployees(),
+				getCalendarManagedEmployees(),
 			]);
 
 			// Transform current employee if available

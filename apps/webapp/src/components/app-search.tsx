@@ -45,6 +45,7 @@ const EMPTY_LIVE_RESULTS: LiveAppSearchResults = {
 };
 
 const SEARCH_HOTKEY = "Mod+K";
+const SEARCH_HOTKEY_FALLBACK_LABEL = "Ctrl+K";
 
 const EMPTY_STATIC_COMMANDS: AppSearchResult[] = [];
 
@@ -177,11 +178,15 @@ export function AppSearch({
 	const visibleLiveResults = shouldSearchLiveRecords ? liveResults : EMPTY_LIVE_RESULTS;
 	const visibleLiveError = shouldSearchLiveRecords ? liveError : null;
 
-	const searchShortcutLabel = formatForDisplay(SEARCH_HOTKEY);
+	const [searchShortcutLabel, setSearchShortcutLabel] = useState(SEARCH_HOTKEY_FALLBACK_LABEL);
 
 	useHotkey(SEARCH_HOTKEY, () => setOpen((currentOpen) => !currentOpen), {
 		preventDefault: true,
 	});
+
+	useEffect(() => {
+		setSearchShortcutLabel(formatForDisplay(SEARCH_HOTKEY));
+	}, []);
 
 	useEffect(() => {
 		if (!shouldSearchLiveRecords) {

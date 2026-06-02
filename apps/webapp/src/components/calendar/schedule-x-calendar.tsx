@@ -279,6 +279,29 @@ export function ScheduleXCalendarWrapper({
 		}
 	})();
 
+	const mobileDateRangeDisplay = (() => {
+		const localizedCurrentDate = currentDate.setLocale(locale);
+
+		switch (viewMode) {
+			case "day":
+				return localizedCurrentDate.toFormat("ccc, d. LLL yyyy");
+			case "week": {
+				const { start: weekStart, end: weekEnd } = getWeekBounds(
+					localizedCurrentDate,
+					weekStartDay,
+				);
+				if (weekStart.year === weekEnd.year) {
+					return `${weekStart.toFormat("d. LLL")} - ${weekEnd.toFormat("d. LLL yyyy")}`;
+				}
+				return `${weekStart.toFormat("d. LLL yyyy")} - ${weekEnd.toFormat("d. LLL yyyy")}`;
+			}
+			case "month":
+				return localizedCurrentDate.toFormat("LLL yyyy");
+			default:
+				return localizedCurrentDate.toFormat("d. LLL yyyy");
+		}
+	})();
+
 	const visibleRequirementDates = (() => {
 		if (viewMode === "day") return [currentDate.startOf("day")];
 		if (viewMode === "week") {
@@ -329,6 +352,7 @@ export function ScheduleXCalendarWrapper({
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		events: scheduleXEvents as any,
 		isDark,
+		isResponsive: false,
 		locale: scheduleXLocale,
 		calendars: getScheduleXCalendars(),
 		plugins: [createEventModalPlugin(), calendarControls],
@@ -595,7 +619,10 @@ export function ScheduleXCalendarWrapper({
 	return (
 		<div className="flex flex-col h-full min-h-[500px]">
 			{/* Custom navigation header */}
-			<div className="flex items-center justify-between gap-4 pb-3 mb-3">
+			<div
+				data-testid="calendar-desktop-header"
+				className="hidden items-center justify-between gap-4 pb-3 mb-3 lg:flex"
+			>
 				<div className="flex items-center gap-2">
 					<Button
 						variant="outline"
@@ -637,6 +664,59 @@ export function ScheduleXCalendarWrapper({
 						<TabsTrigger value="year">{t("calendar.view.year", "Year")}</TabsTrigger>
 					</TabsList>
 				</Tabs>
+			</div>
+			<div data-testid="calendar-mobile-header" className="pb-3 mb-3 lg:hidden">
+				<h2
+					data-testid="calendar-mobile-date-range"
+					className="mb-2 truncate whitespace-nowrap text-lg font-semibold"
+				>
+					{mobileDateRangeDisplay}
+				</h2>
+				<div
+					data-testid="calendar-mobile-header-controls"
+					className="overflow-x-auto whitespace-nowrap"
+				>
+					<div className="flex w-max items-center gap-2">
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={navigatePrevious}
+							aria-label={t("calendar.view.previous", "Previous")}
+						>
+							<IconChevronLeft className="size-4" />
+						</Button>
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={navigateNext}
+							aria-label={t("calendar.view.next", "Next")}
+						>
+							<IconChevronRight className="size-4" />
+						</Button>
+						<Button variant="outline" size="sm" onClick={navigateToday}>
+							{t("calendar.view.today", "Today")}
+						</Button>
+						{onRefresh && (
+							<Button
+								variant="outline"
+								size="icon"
+								onClick={onRefresh}
+								aria-label={t("calendar.view.refresh", "Refresh")}
+								title={t("calendar.view.refresh", "Refresh")}
+							>
+								<IconReload className="size-4" />
+							</Button>
+						)}
+						<Tabs value={viewMode} onValueChange={(v) => onViewModeChange(v as ViewMode)}>
+							<TabsList>
+								<TabsTrigger value="day">{t("calendar.view.day", "Day")}</TabsTrigger>
+								<TabsTrigger value="week">{t("calendar.view.week", "Week")}</TabsTrigger>
+								<TabsTrigger value="month">{t("calendar.view.month", "Month")}</TabsTrigger>
+								<TabsTrigger value="year">{t("calendar.view.year", "Year")}</TabsTrigger>
+							</TabsList>
+						</Tabs>
+					</div>
+				</div>
 			</div>
 
 			{/* Calendar with internal scroll - styles applied via style tag above */}

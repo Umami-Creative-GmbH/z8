@@ -54,7 +54,6 @@ interface DomainManagementProps {
 	organizationId: string;
 	defaultUrls: {
 		canonical: string;
-		alias: string;
 	};
 }
 
@@ -201,10 +200,6 @@ export function DomainManagement({
 						{
 							label: t("settings.enterprise.domains.defaultUrl.canonical", "Canonical"),
 							url: defaultUrls.canonical,
-						},
-						{
-							label: t("settings.enterprise.domains.defaultUrl.alias", "Organization ID alias"),
-							url: defaultUrls.alias,
 						},
 					].map(({ label, url }) => (
 						<div

@@ -25,6 +25,12 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ push }),
 }));
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string) => fallback,
+	}),
+}));
+
 vi.mock("@/components/providers/user-preferences-provider", () => ({
 	useUserTimezone: () => "Europe/Berlin",
 }));
@@ -45,7 +51,13 @@ vi.mock("@/hooks/use-calendar-data", () => ({
 }));
 
 vi.mock("@/components/work-balance/work-balance-card", () => ({
-	WorkBalanceCard: () => <div data-testid="work-balance-card" />,
+	WorkBalanceCard: ({ compact, mobileCompact }: { compact?: boolean; mobileCompact?: boolean }) => (
+		<div
+			data-testid="work-balance-card"
+			data-compact={String(compact)}
+			data-mobile-compact={String(mobileCompact)}
+		/>
+	),
 }));
 
 vi.mock("./calendar-employee-selector", () => ({
@@ -217,6 +229,20 @@ const runningWorkPeriod: CalendarEvent = {
 	},
 };
 
+function setMobileViewport(isMobile: boolean) {
+	Object.defineProperty(window, "matchMedia", {
+		configurable: true,
+		value: vi.fn().mockImplementation((query: string) => ({
+			matches: query === "(max-width: 767px)" ? isMobile : false,
+			media: query,
+			onchange: null,
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			dispatchEvent: vi.fn(),
+		})),
+	});
+}
+
 describe("CalendarView", () => {
 	beforeEach(() => {
 		capturedCalendarFilters.length = 0;
@@ -225,6 +251,21 @@ describe("CalendarView", () => {
 		mockCalendarData.isFetching = false;
 		push.mockClear();
 		refetch.mockClear();
+		setMobileViewport(false);
+	});
+
+	it("defaults to week view on desktop", () => {
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode")).toBe("week");
+	});
+
+	it("defaults to day view on mobile", () => {
+		setMobileViewport(true);
+
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode")).toBe("day");
 	});
 
 	it("initializes filters from initialSelectedEmployeeId", () => {
@@ -285,6 +326,50 @@ describe("CalendarView", () => {
 		expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-1" });
 	});
 
+	it("renders desktop sidebar controls and mobile controls sheet trigger in non-year views", () => {
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		const desktopControls = screen.getByTestId("calendar-desktop-controls");
+		const mobileControls = screen.getByTestId("calendar-mobile-controls");
+
+		expect(desktopControls.className).toContain("hidden");
+		expect(desktopControls.className).toContain("md:block");
+		expect(mobileControls.className).toContain("md:hidden");
+		const controlsButton = screen.getByRole("button", {
+			name: /^(Filter & Legende|Filters & Legend)$/,
+		});
+
+		expect(controlsButton).toBeTruthy();
+		fireEvent.click(controlsButton);
+		expect(screen.getAllByTestId("calendar-filters")).toHaveLength(2);
+		expect(screen.getAllByTestId("calendar-legend")).toHaveLength(2);
+	});
+
+	it("renders a denser mobile work balance and compact mobile controls trigger", () => {
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		const mobileControls = screen.getByTestId("calendar-mobile-controls");
+		const mobileBalance = screen.getByTestId("calendar-mobile-work-balance");
+		const mobileControlsButton = screen.getByRole("button", {
+			name: /^(Filter & Legende|Filters & Legend)$/,
+		});
+
+		expect(mobileControls.className).toContain("space-y-2");
+		expect(mobileBalance.className).toContain("md:hidden");
+		expect(
+			mobileBalance
+				.querySelector("[data-testid='work-balance-card']")
+				?.getAttribute("data-compact"),
+		).toBe("true");
+		expect(
+			mobileBalance
+				.querySelector("[data-testid='work-balance-card']")
+				?.getAttribute("data-mobile-compact"),
+		).toBe("true");
+		expect(mobileControlsButton.className).toContain("h-8");
+		expect(mobileControlsButton.className).toContain("px-3");
+	});
+
 	it("passes completed work periods but not running work periods to month view", () => {
 		mockCalendarData.events = [completedWorkPeriod, runningWorkPeriod];
 
@@ -317,7 +402,7 @@ describe("CalendarView", () => {
 		expect(screen.getByTestId("month-work-summary-view").getAttribute("data-view-mode")).toBe(
 			"month",
 		);
-		expect(screen.getByTestId("work-balance-card")).toBeTruthy();
+		expect(screen.getAllByTestId("work-balance-card")).toHaveLength(2);
 		expect(screen.queryByTestId("schedule-x-wrapper")).toBeNull();
 
 		fireEvent.click(screen.getByRole("button", { name: "Refresh month" }));

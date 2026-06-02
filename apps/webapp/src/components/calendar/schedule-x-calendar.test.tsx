@@ -2,9 +2,11 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { render, screen } from "@testing-library/react";
 import { DateTime } from "luxon";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkPeriodEvent } from "@/lib/calendar/types";
+import { ScheduleXCalendarWrapper } from "./schedule-x-calendar";
 import {
 	buildCalendarTimeZoneDate,
 	buildCurrentTimeIndicatorPosition,
@@ -15,6 +17,50 @@ import {
 	resolveClickableCalendarEvent,
 	shouldRetryRequirementHeaderInjection,
 } from "./schedule-x-calendar-utils";
+
+const useCalendarAppMock = vi.hoisted(() =>
+	vi.fn(() => ({
+		events: { set: vi.fn() },
+		setTheme: vi.fn(),
+	})),
+);
+
+vi.mock("@schedule-x/calendar", () => ({
+	createViewDay: () => "day",
+	createViewMonthAgenda: () => "month-agenda",
+	createViewMonthGrid: () => "month-grid",
+	createViewWeek: () => "week",
+}));
+
+vi.mock("@schedule-x/calendar-controls", () => ({
+	createCalendarControlsPlugin: () => ({
+		setDate: vi.fn(),
+		setView: vi.fn(),
+	}),
+}));
+
+vi.mock("@schedule-x/event-modal", () => ({
+	createEventModalPlugin: () => ({}),
+}));
+
+vi.mock("@schedule-x/react", () => ({
+	ScheduleXCalendar: () => <div data-testid="schedule-x-calendar" />,
+	useCalendarApp: useCalendarAppMock,
+}));
+
+vi.mock("@/components/providers/user-preferences-provider", () => ({
+	useUserTimezone: () => "Europe/Berlin",
+	useWeekStartDay: () => 1,
+}));
+
+vi.mock("@/components/theme-provider", () => ({
+	useTheme: () => ({ resolvedTheme: "light" }),
+}));
+
+vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({ getLanguage: () => "en" }),
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
 
 const completedWorkPeriod: WorkPeriodEvent = {
 	id: "work-completed",
@@ -41,6 +87,53 @@ const runningWorkPeriod: WorkPeriodEvent = {
 		isRunning: true,
 	},
 };
+
+beforeEach(() => {
+	useCalendarAppMock.mockClear();
+});
+
+describe("ScheduleXCalendarWrapper header", () => {
+	it("renders separate desktop and mobile headers with compact mobile week text", () => {
+		render(
+			<ScheduleXCalendarWrapper
+				events={[]}
+				onRefresh={vi.fn()}
+				onViewModeChange={vi.fn()}
+				viewMode="week"
+			/>,
+		);
+
+		const desktopHeader = screen.getByTestId("calendar-desktop-header");
+		const mobileHeader = screen.getByTestId("calendar-mobile-header");
+		const mobileDateRange = screen.getByTestId("calendar-mobile-date-range");
+		const mobileControls = screen.getByTestId("calendar-mobile-header-controls");
+
+		expect(desktopHeader.classList.contains("hidden")).toBe(true);
+		expect(desktopHeader.classList.contains("lg:flex")).toBe(true);
+		expect(mobileHeader.classList.contains("lg:hidden")).toBe(true);
+		expect(mobileDateRange.classList.contains("whitespace-nowrap")).toBe(true);
+		expect(mobileDateRange.classList.contains("truncate")).toBe(true);
+		expect(mobileControls.classList.contains("overflow-x-auto")).toBe(true);
+		expect(mobileControls.classList.contains("whitespace-nowrap")).toBe(true);
+		expect(mobileDateRange.textContent).not.toMatch(/, \d{4}$/);
+	});
+
+	it("uses the parent-provided initial view without Schedule-X responsive view coercion", () => {
+		render(
+			<ScheduleXCalendarWrapper
+				events={[]}
+				onRefresh={vi.fn()}
+				onViewModeChange={vi.fn()}
+				viewMode="day"
+			/>,
+		);
+
+		const calendarConfig = useCalendarAppMock.mock.calls[0]?.[0];
+
+		expect(calendarConfig.defaultView).toBe("day");
+		expect(calendarConfig.isResponsive).toBe(false);
+	});
+});
 
 describe("filterEventsForScheduleXView", () => {
 	it("keeps running work periods in day and week views", () => {
