@@ -261,7 +261,7 @@ export function EmployeeSelectModal({
 					<CommandPrimitive
 						shouldFilter={false}
 						className={cn(
-							"bg-popover text-popover-foreground flex h-full flex-col overflow-hidden",
+							"bg-popover text-popover-foreground flex h-full min-h-0 flex-col overflow-hidden",
 							"border-0",
 						)}
 					>
@@ -412,7 +412,7 @@ export function EmployeeSelectModal({
 						{/* Employee list */}
 						<CommandPrimitive.List
 							id={listboxId}
-							className="max-h-[320px] overflow-y-auto overflow-x-hidden scroll-py-2 p-2"
+							className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scroll-py-2 p-2"
 						>
 							<EmployeeSelectList
 								employees={employees}

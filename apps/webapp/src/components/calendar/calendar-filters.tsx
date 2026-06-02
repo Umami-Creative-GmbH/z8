@@ -10,10 +10,20 @@ interface CalendarFiltersProps {
 	filters: CalendarFilters;
 	onFiltersChange: (filters: CalendarFilters) => void;
 	currentEmployeeId?: string;
+	idPrefix?: string;
 }
 
-export function CalendarFiltersComponent({ filters, onFiltersChange }: CalendarFiltersProps) {
+export function CalendarFiltersComponent({
+	filters,
+	onFiltersChange,
+	idPrefix,
+}: CalendarFiltersProps) {
 	const { t } = useTranslate();
+	const getSwitchId = (id: string) => (idPrefix ? `${idPrefix}-${id}` : id);
+	const holidaysId = getSwitchId("show-holidays");
+	const absencesId = getSwitchId("show-absences");
+	const timeEntriesId = getSwitchId("show-time-entries");
+	const workPeriodsId = getSwitchId("show-work-periods");
 
 	const handleToggle = (key: keyof CalendarFilters) => {
 		onFiltersChange({
@@ -29,41 +39,41 @@ export function CalendarFiltersComponent({ filters, onFiltersChange }: CalendarF
 			</CardHeader>
 			<CardContent className="space-y-3 px-4 py-3">
 				<div className="flex items-center justify-between">
-					<Label htmlFor="show-holidays" className="text-sm">
+					<Label htmlFor={holidaysId} className="text-sm">
 						{t("calendar.filter.holidays", "Holidays")}
 					</Label>
 					<Switch
-						id="show-holidays"
+						id={holidaysId}
 						checked={filters.showHolidays}
 						onCheckedChange={() => handleToggle("showHolidays")}
 					/>
 				</div>
 				<div className="flex items-center justify-between">
-					<Label htmlFor="show-absences" className="text-sm">
+					<Label htmlFor={absencesId} className="text-sm">
 						{t("calendar.filter.absences", "Absences")}
 					</Label>
 					<Switch
-						id="show-absences"
+						id={absencesId}
 						checked={filters.showAbsences}
 						onCheckedChange={() => handleToggle("showAbsences")}
 					/>
 				</div>
 				<div className="flex items-center justify-between">
-					<Label htmlFor="show-time-entries" className="text-sm">
+					<Label htmlFor={timeEntriesId} className="text-sm">
 						{t("calendar.filter.timeEntries", "Time Entries")}
 					</Label>
 					<Switch
-						id="show-time-entries"
+						id={timeEntriesId}
 						checked={filters.showTimeEntries}
 						onCheckedChange={() => handleToggle("showTimeEntries")}
 					/>
 				</div>
 				<div className="flex items-center justify-between">
-					<Label htmlFor="show-work-periods" className="text-sm">
+					<Label htmlFor={workPeriodsId} className="text-sm">
 						{t("calendar.filter.workPeriods", "Work Periods")}
 					</Label>
 					<Switch
-						id="show-work-periods"
+						id={workPeriodsId}
 						checked={filters.showWorkPeriods}
 						onCheckedChange={() => handleToggle("showWorkPeriods")}
 					/>
