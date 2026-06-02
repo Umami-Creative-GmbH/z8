@@ -40,7 +40,6 @@ interface DomainsAndBrandingTabsProps {
 	organizationId: string;
 	defaultUrls: {
 		canonical: string;
-		alias: string;
 	};
 }
 
