@@ -41,7 +41,7 @@ interface ApprovalDetailPanelProps {
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-	return <h4 className="mb-2 text-sm font-medium text-muted-foreground">{children}</h4>;
+	return <h4 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{children}</h4>;
 }
 
 function renderDetailSection(section: ApprovalInboxDetailSection) {
@@ -50,13 +50,16 @@ function renderDetailSection(section: ApprovalInboxDetailSection) {
 			return (
 				<section key={section.title}>
 					<SectionTitle>{section.title}</SectionTitle>
-					<div className="space-y-3 rounded-md border bg-card/40 p-3">
+					<div className="space-y-3 rounded-xl border bg-card/60 p-4 shadow-sm">
 						{section.rows.map((row) => (
-							<div key={`${row.label}-${row.value}`} className="flex justify-between gap-4">
+							<div
+								key={`${row.label}-${row.value}`}
+								className="grid grid-cols-[minmax(0,1fr)_minmax(8rem,max-content)] items-start gap-4"
+							>
 								<span className="text-sm text-muted-foreground">{row.label}</span>
 								<span
 									className={cn(
-										"text-right text-sm font-medium",
+										"min-w-0 text-right text-sm font-semibold text-foreground",
 										row.tone === "warning" && "text-amber-600 dark:text-amber-400",
 										row.tone === "danger" && "text-destructive",
 									)}
@@ -72,17 +75,17 @@ function renderDetailSection(section: ApprovalInboxDetailSection) {
 			return (
 				<section key={section.title}>
 					<SectionTitle>{section.title}</SectionTitle>
-					<p className="rounded-md border bg-card/40 p-3 text-sm leading-6">{section.body}</p>
+					<p className="rounded-xl border bg-card/60 p-4 text-sm leading-6 shadow-sm">{section.body}</p>
 				</section>
 			);
 		case "timeline":
 			return (
 				<section key={section.title}>
 					<SectionTitle>{section.title}</SectionTitle>
-					<div className="space-y-3 rounded-md border bg-card/40 p-3">
+					<div className="space-y-3 rounded-xl border bg-card/60 p-4 shadow-sm">
 						{section.events.map((event) => (
-							<div key={event.id} className="border-l pl-3">
-								<p className="text-sm font-medium">{event.label}</p>
+							<div key={event.id} className="border-l-2 border-primary/30 pl-3">
+								<p className="text-sm font-semibold">{event.label}</p>
 								<p className="text-xs text-muted-foreground">
 									{event.at}
 									{event.actorName ? ` by ${event.actorName}` : ""}
@@ -97,7 +100,7 @@ function renderDetailSection(section: ApprovalInboxDetailSection) {
 				<section
 					key={section.title}
 					className={cn(
-						"rounded-md border p-3",
+						"rounded-xl border p-4 shadow-sm",
 						section.tone === "info" && "border-blue-200 bg-blue-50/60 dark:border-blue-900 dark:bg-blue-950/20",
 						section.tone === "warning" &&
 							"border-amber-200 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20",
@@ -177,16 +180,18 @@ export function ApprovalDetailPanel({
 
 	return (
 		<Sheet open={open} onOpenChange={handleClose}>
-			<SheetContent className="w-[500px] sm:max-w-[500px] overflow-y-auto overscroll-behavior-contain">
-				<SheetHeader>
-					<div className="flex items-start justify-between gap-3">
-						<div>
+			<SheetContent className="w-[min(100vw,560px)] gap-0 overflow-hidden p-0 sm:max-w-[560px]">
+				<SheetHeader className="border-b px-5 py-5 pr-12 sm:px-6">
+					<div className="flex items-start gap-3">
+						<div className="min-w-0 flex-1">
 							<SheetTitle>{t("approvals:approvals.detailTitle", "Approval details")}</SheetTitle>
-							<SheetDescription>{panelItem.summary.detail}</SheetDescription>
+							<SheetDescription className="mt-1 line-clamp-2">{panelItem.summary.detail}</SheetDescription>
 						</div>
 						{panelItem.summary.badge && (
 							<Badge
+								className="mt-0.5 max-w-[10rem] shrink-0 truncate sm:max-w-[13rem]"
 								variant="secondary"
+								title={panelItem.summary.badge.label}
 								style={
 									panelItem.summary.badge.color
 										? { backgroundColor: panelItem.summary.badge.color }
@@ -199,12 +204,12 @@ export function ApprovalDetailPanel({
 					</div>
 				</SheetHeader>
 
-				<div className="mt-6 space-y-6">
+				<div data-slot="approval-detail-body" className="flex-1 space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
 					<div>
 						<SectionTitle>
 							{t("approvals:approvals.requester", "Requester")}
 						</SectionTitle>
-						<div className="flex items-center gap-3">
+						<div className="flex items-center gap-3 rounded-xl border bg-card/60 p-4 shadow-sm">
 							<UserAvatar
 								image={panelItem.requester.image}
 								seed={panelItem.requester.id}
@@ -212,9 +217,9 @@ export function ApprovalDetailPanel({
 								size="md"
 								clockStatus={presence.getStatus(panelItem.requester.id)}
 							/>
-							<div>
-								<div className="font-medium">{panelItem.requester.name}</div>
-								<div className="text-sm text-muted-foreground">{panelItem.requester.email}</div>
+							<div className="min-w-0">
+								<div className="truncate font-semibold">{panelItem.requester.name}</div>
+								<div className="truncate text-sm text-muted-foreground">{panelItem.requester.email}</div>
 							</div>
 						</div>
 					</div>
@@ -224,7 +229,7 @@ export function ApprovalDetailPanel({
 					{sections.map(renderDetailSection)}
 				</div>
 
-				<SheetFooter className="mt-8">
+				<SheetFooter className="border-t bg-muted/95 px-5 py-4 sm:px-6">
 					{isRejecting ? (
 						<div className="w-full space-y-4">
 							<div>
