@@ -7,5 +7,6 @@
  */
 
 export * from "./registry";
+export * from "./schedule-overrides";
 export * from "./schedules";
 export * from "./tracking";
