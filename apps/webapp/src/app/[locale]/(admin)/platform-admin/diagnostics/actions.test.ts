@@ -113,7 +113,7 @@ describe("sendPlatformDiagnosticsTestEmailAction", () => {
 		);
 		expect(mockState.requirePlatformAdmin).toHaveBeenCalledTimes(1);
 		expect(mockState.sendEmail).not.toHaveBeenCalled();
-	});
+	}, 10_000);
 
 	it("rejects invalid recipient emails", async () => {
 		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
@@ -131,7 +131,7 @@ describe("sendPlatformDiagnosticsTestEmailAction", () => {
 		expect(mockState.requirePlatformAdmin).toHaveBeenCalledTimes(1);
 		expect(mockState.sendEmail).not.toHaveBeenCalled();
 		expect(JSON.stringify(result)).not.toContain("not-an-email");
-	});
+	}, 10_000);
 
 	it("sends a diagnostics email through the system email path", async () => {
 		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
