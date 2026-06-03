@@ -4,15 +4,25 @@ import { AuthorizationError } from "@/lib/effect/errors";
 import { buildAvailableJobNames, isVisibleCronJobName, mapCronExecution } from "./actions-helpers";
 
 const mocks = vi.hoisted(() => ({
+	getAllJobMetrics: vi.fn(),
+	getExecutionsSince: vi.fn(),
 	getJobExecutionHistory: vi.fn(),
+	getJobQueue: vi.fn(),
+	getRecentExecutions: vi.fn(),
+	isQueueHealthy: vi.fn(),
+	listCronScheduleOverrides: vi.fn(),
 	requirePlatformAdmin: vi.fn(),
 }));
 
 vi.mock("@/lib/cron/tracking", () => ({
-	getAllJobMetrics: vi.fn(),
-	getExecutionsSince: vi.fn(),
+	getAllJobMetrics: mocks.getAllJobMetrics,
+	getExecutionsSince: mocks.getExecutionsSince,
 	getJobExecutionHistory: mocks.getJobExecutionHistory,
-	getRecentExecutions: vi.fn(),
+	getRecentExecutions: mocks.getRecentExecutions,
+}));
+
+vi.mock("@/lib/cron/schedule-overrides", () => ({
+	listCronScheduleOverrides: mocks.listCronScheduleOverrides,
 }));
 
 vi.mock("@/lib/effect/runtime", async () => {
@@ -60,11 +70,11 @@ vi.mock("@/lib/effect/result", async () => {
 });
 
 vi.mock("@/lib/queue", () => ({
-	getJobQueue: vi.fn(),
-	isQueueHealthy: vi.fn(),
+	getJobQueue: mocks.getJobQueue,
+	isQueueHealthy: mocks.isQueueHealthy,
 }));
 
-import { getWorkerQueueJobExecutions } from "./actions";
+import { getWorkerQueueJobExecutions, getWorkerQueueStats } from "./actions";
 
 const executionRow = {
 	id: "exec-1",
@@ -77,8 +87,19 @@ const executionRow = {
 };
 
 beforeEach(() => {
+	mocks.getAllJobMetrics.mockReset();
+	mocks.getExecutionsSince.mockReset();
 	mocks.getJobExecutionHistory.mockReset();
+	mocks.getJobQueue.mockReset();
+	mocks.getRecentExecutions.mockReset();
+	mocks.isQueueHealthy.mockReset();
+	mocks.listCronScheduleOverrides.mockReset();
 	mocks.requirePlatformAdmin.mockReset();
+	mocks.getAllJobMetrics.mockResolvedValue([]);
+	mocks.getExecutionsSince.mockResolvedValue([]);
+	mocks.getRecentExecutions.mockResolvedValue([]);
+	mocks.isQueueHealthy.mockResolvedValue(false);
+	mocks.listCronScheduleOverrides.mockResolvedValue([]);
 	mocks.requirePlatformAdmin.mockReturnValue(
 		Effect.succeed({ userId: "platform-admin-1", email: "admin@example.com" }),
 	);
@@ -129,6 +150,50 @@ describe("worker queue action helpers", () => {
 			"cron:scheduled-exports",
 			"cron:work-balance",
 		]);
+	});
+});
+
+describe("getWorkerQueueStats", () => {
+	it("includes visible scheduled cron rows with override mismatch status", async () => {
+		mocks.isQueueHealthy.mockResolvedValue(true);
+		mocks.getJobQueue.mockReturnValue({
+			getJobCounts: vi.fn().mockResolvedValue({}),
+			getRepeatableJobs: vi.fn().mockResolvedValue([
+				{
+					name: "cron:export",
+					pattern: "*/5 * * * *",
+					next: Date.parse("2026-06-03T12:05:00.000Z"),
+				},
+				{
+					name: "cron:telemetry",
+					pattern: "* * * * *",
+					next: Date.parse("2026-06-03T12:01:00.000Z"),
+				},
+			]),
+		});
+		mocks.listCronScheduleOverrides.mockResolvedValue([
+			{
+				jobName: "cron:export",
+				presetId: "hourly",
+				pattern: "0 * * * *",
+			},
+		]);
+
+		const result = await getWorkerQueueStats();
+
+		expect(result.success).toBe(true);
+		if (!result.success) {
+			throw new Error(result.error);
+		}
+		expect(result.data.scheduledJobs).toContainEqual(
+			expect.objectContaining({
+				name: "cron:export",
+				effectivePattern: "0 * * * *",
+				isOverridden: true,
+				hasScheduleMismatch: true,
+			}),
+		);
+		expect(result.data.scheduledJobs.some((job) => job.name === "cron:telemetry")).toBe(false);
 	});
 });
 

@@ -1,6 +1,8 @@
 "use server";
 
 import { Effect } from "effect";
+import { listCronScheduleOverrides } from "@/lib/cron/schedule-overrides";
+import { buildScheduledJobRows, type ScheduledCronJobRow } from "@/lib/cron/schedules";
 import {
 	getAllJobMetrics,
 	getExecutionsSince,
@@ -58,6 +60,7 @@ export interface WorkerQueueStats {
 	isConnected: boolean;
 	counts: QueueCounts;
 	repeatableJobs: RepeatableJob[];
+	scheduledJobs: ScheduledCronJobRow[];
 	availableJobNames: string[];
 	recentExecutions: RecentExecution[];
 	jobMetrics: JobMetric[];
@@ -120,6 +123,21 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 					next: job.next ? new Date(job.next).toISOString() : null,
 				}));
 		}
+
+		const scheduleOverrides = yield* Effect.tryPromise({
+			try: () => listCronScheduleOverrides(),
+			catch: () =>
+				new DatabaseError({
+					message: "Failed to fetch cron schedule overrides",
+					operation: "query",
+					table: "cron_schedule_override",
+				}),
+		});
+
+		const scheduledJobs = buildScheduledJobRows({
+			overrides: scheduleOverrides,
+			repeatableJobs,
+		}).filter((job) => isVisibleCronJobName(job.name));
 
 		const executions = yield* Effect.tryPromise({
 			try: () => getRecentExecutions(RECENT_EXECUTION_LIMIT),
@@ -196,6 +214,7 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 			isConnected,
 			counts,
 			repeatableJobs,
+			scheduledJobs,
 			availableJobNames,
 			recentExecutions,
 			jobMetrics,
