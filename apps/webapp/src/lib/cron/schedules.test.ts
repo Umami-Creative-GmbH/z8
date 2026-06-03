@@ -51,6 +51,25 @@ describe("cron schedule presets", () => {
 		expect(schedules["cron:vacation"].isOverridden).toBe(false);
 	});
 
+	it("ignores unknown override job names", () => {
+		const schedules = resolveEffectiveCronSchedules({
+			overrides: [
+				{
+					jobName: "cron:not-real",
+					presetId: "hourly",
+					pattern: "0 * * * *",
+				},
+			],
+		});
+
+		expect(schedules["cron:export"]).toMatchObject({
+			jobName: "cron:export",
+			defaultPattern: "*/5 * * * *",
+			effectivePattern: "*/5 * * * *",
+			isOverridden: false,
+		});
+	});
+
 	it("builds rows with mismatch status from BullMQ repeatables", () => {
 		const rows = buildScheduledJobRows({
 			overrides: [

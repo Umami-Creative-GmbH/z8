@@ -7,7 +7,7 @@ export interface CronSchedulePreset {
 }
 
 export interface CronScheduleOverrideLike {
-	jobName: CronJobName;
+	jobName: string;
 	presetId: string | null;
 	pattern: string;
 }
