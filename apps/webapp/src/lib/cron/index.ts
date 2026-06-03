@@ -7,4 +7,5 @@
  */
 
 export * from "./registry";
+export * from "./schedules";
 export * from "./tracking";
