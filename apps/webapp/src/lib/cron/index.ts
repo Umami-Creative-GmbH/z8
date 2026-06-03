@@ -6,6 +6,7 @@
  * - Tracking: Execution history and metrics
  */
 
+export * from "./reconciliation";
 export * from "./registry";
 export * from "./schedule-overrides";
 export * from "./schedules";
