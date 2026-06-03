@@ -122,13 +122,12 @@ Expected: FAIL with `Missing Dockerfile contract snippet: ARG RUNTIME_BASE_IMAGE
 # syntax=docker/dockerfile:1.4
 ARG RUNTIME_BASE_IMAGE=app-runtime
 
-ARG ALPINE_VERSION=3.21
 ARG NODE_VERSION=26
 ARG PNPM_VERSION=11.5.1
-ARG TURBO_VERSION=2.8.10
+ARG TURBO_VERSION=2.9.16
 ARG NEXT_PUBLIC_BUILD_HASH
 
-FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS base
+FROM node:${NODE_VERSION}-alpine AS base
 ...
 FROM base AS app-runtime
 ...
