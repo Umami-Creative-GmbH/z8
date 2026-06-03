@@ -383,7 +383,9 @@ function ApprovalInboxContent() {
 				Array.from(currentSelectedIds).filter((approvalId) => currentItemIds.has(approvalId)),
 			);
 
-			return visibleSelectedIds.size === currentSelectedIds.size ? currentSelectedIds : visibleSelectedIds;
+			return visibleSelectedIds.size === currentSelectedIds.size
+				? currentSelectedIds
+				: visibleSelectedIds;
 		});
 	}, [itemIdsKey]);
 

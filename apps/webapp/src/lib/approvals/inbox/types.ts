@@ -70,13 +70,13 @@ export type ApprovalInboxDetailSection =
 			type: "key_value";
 			title: string;
 			rows: Array<{ label: string; value: string; tone?: "default" | "warning" | "danger" }>;
-		}
+	  }
 	| { type: "text"; title: string; body: string }
 	| {
 			type: "timeline";
 			title: string;
 			events: Array<{ id: string; label: string; at: string; actorName: string | null }>;
-		}
+	  }
 	| { type: "callout"; title: string; body: string; tone: "info" | "warning" | "danger" };
 
 export interface ApprovalInboxDetailResult {

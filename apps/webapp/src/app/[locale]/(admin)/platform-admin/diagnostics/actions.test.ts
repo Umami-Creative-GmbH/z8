@@ -77,12 +77,8 @@ describe("platform diagnostics refresh action", () => {
 		expect(actionSource).toContain(authCheck);
 		expect(actionSource).toContain(fakerCall);
 		expect(actionSource).toContain(encryptionCall);
-		expect(actionSource.indexOf(authCheck)).toBeLessThan(
-			actionSource.indexOf(fakerCall),
-		);
-		expect(actionSource.indexOf(fakerCall)).toBeLessThan(
-			actionSource.indexOf(encryptionCall),
-		);
+		expect(actionSource.indexOf(authCheck)).toBeLessThan(actionSource.indexOf(fakerCall));
+		expect(actionSource.indexOf(fakerCall)).toBeLessThan(actionSource.indexOf(encryptionCall));
 		expect(actionSource).toContain("runServerActionSafe");
 	});
 });
@@ -154,12 +150,8 @@ describe("sendPlatformDiagnosticsTestEmailAction", () => {
 				subject: "Z8 platform diagnostics test email",
 			}),
 		);
-		expect(mockState.sendEmail.mock.calls[0][0]).not.toHaveProperty(
-			"organizationId",
-		);
-		expect(mockState.sendEmail.mock.calls[0][0].html).toContain(
-			"Z8 platform diagnostics",
-		);
+		expect(mockState.sendEmail.mock.calls[0][0]).not.toHaveProperty("organizationId");
+		expect(mockState.sendEmail.mock.calls[0][0].html).toContain("Z8 platform diagnostics");
 	});
 
 	it("returns a safe error when transport delivery fails", async () => {

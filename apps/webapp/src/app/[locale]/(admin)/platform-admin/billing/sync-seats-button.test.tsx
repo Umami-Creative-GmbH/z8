@@ -5,8 +5,8 @@ import userEvent from "@testing-library/user-event";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SyncSeatsButton } from "./sync-seats-button";
 import { syncOrganizationSeatsAction } from "./actions";
+import { SyncSeatsButton } from "./sync-seats-button";
 
 vi.mock("next/navigation", () => ({
 	useRouter: vi.fn(),

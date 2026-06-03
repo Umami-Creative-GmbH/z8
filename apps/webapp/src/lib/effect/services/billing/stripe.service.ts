@@ -134,44 +134,44 @@ export const StripeServiceLive = Layer.effect(
 			createCheckoutSession: (params) =>
 				params.priceId.startsWith("price_")
 					? Effect.tryPromise({
-					try: async () => {
-						if (!stripe) {
-							throw new Error("Stripe not configured");
-						}
-						const subscriptionData = {
-							metadata: { organizationId: params.organizationId },
-							...(params.trialPeriodDays && params.trialPeriodDays > 0
-								? { trial_period_days: params.trialPeriodDays }
-								: {}),
-						};
+							try: async () => {
+								if (!stripe) {
+									throw new Error("Stripe not configured");
+								}
+								const subscriptionData = {
+									metadata: { organizationId: params.organizationId },
+									...(params.trialPeriodDays && params.trialPeriodDays > 0
+										? { trial_period_days: params.trialPeriodDays }
+										: {}),
+								};
 
-						return await stripe.checkout.sessions.create({
-							customer: params.customerId,
-							mode: "subscription",
-							metadata: { organizationId: params.organizationId },
-							line_items: [
-								{
-									price: params.priceId,
-									quantity: params.quantity,
-								},
-							],
-							success_url: params.successUrl,
-							cancel_url: params.cancelUrl,
-							subscription_data: subscriptionData,
-							allow_promotion_codes: true,
-							billing_address_collection: "auto",
-							customer_update: { address: "auto", name: "auto" },
-							tax_id_collection: { enabled: true },
-						});
-					},
-					catch: (error) =>
-						new StripeError({
-							message: "Failed to create checkout session",
-							operation: "createCheckoutSession",
-							stripeCode: (error as Stripe.StripeRawError)?.code,
-							cause: error,
-						}),
-					})
+								return await stripe.checkout.sessions.create({
+									customer: params.customerId,
+									mode: "subscription",
+									metadata: { organizationId: params.organizationId },
+									line_items: [
+										{
+											price: params.priceId,
+											quantity: params.quantity,
+										},
+									],
+									success_url: params.successUrl,
+									cancel_url: params.cancelUrl,
+									subscription_data: subscriptionData,
+									allow_promotion_codes: true,
+									billing_address_collection: "auto",
+									customer_update: { address: "auto", name: "auto" },
+									tax_id_collection: { enabled: true },
+								});
+							},
+							catch: (error) =>
+								new StripeError({
+									message: "Failed to create checkout session",
+									operation: "createCheckoutSession",
+									stripeCode: (error as Stripe.StripeRawError)?.code,
+									cause: error,
+								}),
+						})
 					: Effect.fail(
 							new StripeError({
 								message: "Stripe checkout price must be a Price ID starting with price_",

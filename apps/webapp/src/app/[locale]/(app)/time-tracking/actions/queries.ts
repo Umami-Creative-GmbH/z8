@@ -314,9 +314,7 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		presenceEnabled: boolean;
 	}>
 > {
-	const parsed = z
-		.object({ employeeId: z.uuid("Invalid employee ID") })
-		.safeParse({ employeeId });
+	const parsed = z.object({ employeeId: z.uuid("Invalid employee ID") }).safeParse({ employeeId });
 
 	if (!parsed.success) {
 		return { success: false as const, error: parsed.error.issues[0]?.message || "Invalid input" };

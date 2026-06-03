@@ -3328,9 +3328,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 export async function getPresenceStatus(
 	employeeId: string,
 ): Promise<ServerActionResult<PresenceStatusSummary>> {
-	const parsed = z
-		.object({ employeeId: z.uuid("Invalid employee ID") })
-		.safeParse({ employeeId });
+	const parsed = z.object({ employeeId: z.uuid("Invalid employee ID") }).safeParse({ employeeId });
 	if (!parsed.success) {
 		return {
 			success: false as const,

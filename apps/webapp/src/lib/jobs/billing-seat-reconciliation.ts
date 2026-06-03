@@ -60,7 +60,10 @@ export async function runBillingSeatReconciliation(): Promise<BillingSeatReconci
 			);
 			synced += 1;
 		} catch (error) {
-			logger.error({ error, organizationId: item.organizationId }, "Failed to reconcile billing seats");
+			logger.error(
+				{ error, organizationId: item.organizationId },
+				"Failed to reconcile billing seats",
+			);
 			errors.push({ organizationId: item.organizationId, error: getErrorMessage(error) });
 		}
 	}

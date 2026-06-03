@@ -134,7 +134,12 @@ describe("approval inbox decision service", () => {
 				handler: { type: "absence_entry", approve: vi.fn(), reject } as never,
 			}),
 		).resolves.toEqual({ id: "approval-1", type: "absence_entry", status: "rejected" });
-		expect(reject).toHaveBeenCalledWith("absence-1", "manager-1", "Missing documentation", undefined);
+		expect(reject).toHaveBeenCalledWith(
+			"absence-1",
+			"manager-1",
+			"Missing documentation",
+			undefined,
+		);
 	});
 
 	it("passes approval request options when rejecting as a non-assigned actor", async () => {
@@ -264,7 +269,11 @@ describe("approval inbox decision service", () => {
 			actorEmployeeId: "manager-1",
 			action: "approve",
 			resolveHandler: () =>
-				({ type: "absence_entry", approve: vi.fn(() => Effect.succeed(undefined)), reject: vi.fn() }) as never,
+				({
+					type: "absence_entry",
+					approve: vi.fn(() => Effect.succeed(undefined)),
+					reject: vi.fn(),
+				}) as never,
 		});
 
 		expect(result.succeeded).toHaveLength(1);
@@ -424,7 +433,9 @@ describe("approval inbox decision service", () => {
 			runEffect,
 		});
 
-		expect(result.succeeded).toEqual([{ id: "approval-1", type: "absence_entry", status: "approved" }]);
+		expect(result.succeeded).toEqual([
+			{ id: "approval-1", type: "absence_entry", status: "approved" },
+		]);
 		expect(result.failed).toEqual([]);
 		expect(runEffect).toHaveBeenCalledWith(effect);
 	});
@@ -450,7 +461,11 @@ describe("approval inbox decision service", () => {
 
 		expect(result.succeeded).toEqual([]);
 		expect(result.failed).toEqual([
-			{ id: "approval-1", code: "unsupported", message: "Unsupported approval type: absence_entry" },
+			{
+				id: "approval-1",
+				code: "unsupported",
+				message: "Unsupported approval type: absence_entry",
+			},
 		]);
 		expect(approve).not.toHaveBeenCalled();
 	});
@@ -474,7 +489,11 @@ describe("approval inbox decision service", () => {
 
 		expect(result.succeeded).toEqual([]);
 		expect(result.failed).toEqual([
-			{ id: "approval-1", code: "unsupported", message: "Unsupported approval type: absence_entry" },
+			{
+				id: "approval-1",
+				code: "unsupported",
+				message: "Unsupported approval type: absence_entry",
+			},
 		]);
 	});
 
@@ -564,7 +583,9 @@ describe("approval inbox decision service", () => {
 			resolveHandler: () =>
 				({
 					type: "absence_entry",
-					approve: vi.fn(() => Effect.fail(new Error("database password connection string leaked"))),
+					approve: vi.fn(() =>
+						Effect.fail(new Error("database password connection string leaked")),
+					),
 					reject: vi.fn(),
 				}) as never,
 		});

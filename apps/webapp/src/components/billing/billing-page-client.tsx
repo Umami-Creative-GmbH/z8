@@ -205,11 +205,11 @@ function BillingPageClientContent({ subscription, accessResult, isOwner }: Billi
 								<span className="text-muted-foreground">
 									{t("billing.perSeatMonth", "/seat/month")}
 								</span>
-						</div>
-						<ul className="space-y-2 text-sm">
-							<li className="flex items-center gap-2">
-								<IconCheck className="size-4 text-green-600" />
-								{t("billing.features.cancelAnytime", "Cancel anytime")}
+							</div>
+							<ul className="space-y-2 text-sm">
+								<li className="flex items-center gap-2">
+									<IconCheck className="size-4 text-green-600" />
+									{t("billing.features.cancelAnytime", "Cancel anytime")}
 								</li>
 								<li className="flex items-center gap-2">
 									<IconCheck className="size-4 text-green-600" />
@@ -250,18 +250,22 @@ function BillingPageClientContent({ subscription, accessResult, isOwner }: Billi
 										price: YEARLY_PRICE_TOTAL,
 									})}
 								</p>
-						</div>
-						<ul className="space-y-2 text-sm">
-							<li className="flex items-center gap-2">
-								<IconCheck className="size-4 text-green-600" />
-								{t("billing.features.yearlyDiscount", "25% discount vs monthly")}
+							</div>
+							<ul className="space-y-2 text-sm">
+								<li className="flex items-center gap-2">
+									<IconCheck className="size-4 text-green-600" />
+									{t("billing.features.yearlyDiscount", "25% discount vs monthly")}
 								</li>
 								<li className="flex items-center gap-2">
 									<IconCheck className="size-4 text-green-600" />
 									{t("billing.features.allFeatures", "All features included")}
 								</li>
 							</ul>
-							<Button className="w-full" onClick={() => handleSubscribe("year")} disabled={isLoading}>
+							<Button
+								className="w-full"
+								onClick={() => handleSubscribe("year")}
+								disabled={isLoading}
+							>
 								{isLoading ? t("billing.starting", "Starting...") : buttonLabels.yearly}
 							</Button>
 						</CardContent>
@@ -353,7 +357,11 @@ function BillingPageClientContent({ subscription, accessResult, isOwner }: Billi
 									</CardDescription>
 								</div>
 								{canManageBilling && (
-									<Button variant="outline" onClick={handleManageBilling} disabled={isPortalLoading}>
+									<Button
+										variant="outline"
+										onClick={handleManageBilling}
+										disabled={isPortalLoading}
+									>
 										{isPortalLoading
 											? t("billing.opening", "Opening...")
 											: t("billing.manageBilling", "Manage Billing")}

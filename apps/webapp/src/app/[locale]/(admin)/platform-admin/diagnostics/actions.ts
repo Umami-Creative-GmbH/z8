@@ -3,11 +3,11 @@
 import { faker } from "@faker-js/faker";
 import { Effect } from "effect";
 import { z } from "zod";
-import { sendEmail } from "@/lib/email/email-service";
 import { EmailError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
+import { sendEmail } from "@/lib/email/email-service";
 import {
 	collectPlatformDiagnostics,
 	type PlatformDiagnosticsSnapshot,
@@ -50,8 +50,7 @@ export async function sendPlatformDiagnosticsTestEmailAction(input: {
 		if (!parsed.success) {
 			return yield* Effect.fail(
 				new ValidationError({
-					message:
-						parsed.error.issues[0]?.message ?? "Enter a valid email address.",
+					message: parsed.error.issues[0]?.message ?? "Enter a valid email address.",
 					field: "to",
 				}),
 			);

@@ -9,11 +9,8 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock("@/env", () => ({ env: mockState.env }));
 
-const {
-	getAuthAllowedHosts,
-	getOrganizationPlatformOrigins,
-	getStaticTrustedOrigins,
-} = await import("./auth-domain-config");
+const { getAuthAllowedHosts, getOrganizationPlatformOrigins, getStaticTrustedOrigins } =
+	await import("./auth-domain-config");
 
 describe("auth domain config", () => {
 	beforeEach(() => {

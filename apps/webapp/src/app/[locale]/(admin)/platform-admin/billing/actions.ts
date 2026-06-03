@@ -44,7 +44,9 @@ export async function syncOrganizationSeatsAction(
 				Effect.catchTag("AuthorizationError", (error) =>
 					Effect.succeed({ success: false as const, error: error.message }),
 				),
-				Effect.catchAll(() => Effect.succeed({ success: false as const, error: "Failed to sync seats" })),
+				Effect.catchAll(() =>
+					Effect.succeed({ success: false as const, error: "Failed to sync seats" }),
+				),
 				Effect.provide(layers),
 			),
 		);

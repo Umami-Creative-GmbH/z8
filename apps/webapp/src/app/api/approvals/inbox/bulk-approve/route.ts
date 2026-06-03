@@ -28,7 +28,9 @@ export async function POST(request: NextRequest) {
 		// Parse body
 		const body = await request.json().catch(() => ({}));
 		const approvalIds = Array.isArray(body.approvalIds)
-			? body.approvalIds.filter((id: unknown): id is string => typeof id === "string" && id.length > 0)
+			? body.approvalIds.filter(
+					(id: unknown): id is string => typeof id === "string" && id.length > 0,
+				)
 			: [];
 
 		if (!Array.isArray(approvalIds) || approvalIds.length === 0) {

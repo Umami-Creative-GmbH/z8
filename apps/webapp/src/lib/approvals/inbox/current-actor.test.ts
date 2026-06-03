@@ -24,7 +24,9 @@ describe("createApprovalInboxActorContext", () => {
 			session: { user: { id: "user-1" }, session: { activeOrganizationId: "org-1" } },
 			ability: { cannot: vi.fn((action: string) => action === "manage") },
 			findCurrentEmployee: vi.fn(async () => ({ id: "employee-1", organizationId: "org-1" })),
-			loadEligibleApprovalScopes: vi.fn(async () => [{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["employee-1"] }]),
+			loadEligibleApprovalScopes: vi.fn(async () => [
+				{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["employee-1"] },
+			]),
 		});
 
 		expect(context.includeAllApprovers).toBe(false);

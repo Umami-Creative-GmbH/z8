@@ -277,7 +277,9 @@ export function DiagnosticsClient({
 
 			<Card>
 				<CardHeader className="space-y-2">
-					<CardTitle>{t("admin:admin.diagnostics.emailTest.title", "Email Delivery Test")}</CardTitle>
+					<CardTitle>
+						{t("admin:admin.diagnostics.emailTest.title", "Email Delivery Test")}
+					</CardTitle>
 					<CardDescription>
 						{t(
 							"admin:admin.diagnostics.emailTest.description",
@@ -297,7 +299,10 @@ export function DiagnosticsClient({
 								disabled={isEmailPending}
 							/>
 						</label>
-						<Button onClick={sendTestEmail} disabled={isEmailPending || emailRecipient.trim().length === 0}>
+						<Button
+							onClick={sendTestEmail}
+							disabled={isEmailPending || emailRecipient.trim().length === 0}
+						>
 							{isEmailPending ? (
 								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 							) : null}

@@ -27,7 +27,9 @@ export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json().catch(() => ({}));
 		const approvalIds = Array.isArray(body.approvalIds)
-			? body.approvalIds.filter((id: unknown): id is string => typeof id === "string" && id.length > 0)
+			? body.approvalIds.filter(
+					(id: unknown): id is string => typeof id === "string" && id.length > 0,
+				)
 			: [];
 		const reason = typeof body.reason === "string" ? body.reason : "";
 

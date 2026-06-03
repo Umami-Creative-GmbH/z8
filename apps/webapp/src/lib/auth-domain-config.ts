@@ -31,7 +31,10 @@ export function getStaticTrustedOrigins(): string[] {
 	);
 }
 
-export function getOrganizationPlatformOrigins(organization: { id: string; slug: string }): string[] {
+export function getOrganizationPlatformOrigins(organization: {
+	id: string;
+	slug: string;
+}): string[] {
 	const platformRoot = getPlatformRootDomain();
 
 	return Array.from(

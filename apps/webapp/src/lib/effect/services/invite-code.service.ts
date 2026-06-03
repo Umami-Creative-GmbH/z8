@@ -3,16 +3,16 @@ import { Context, Effect, Layer } from "effect";
 import { nanoid } from "nanoid";
 import { member, user } from "@/db/auth-schema";
 import {
+	employee,
 	type inviteCode as InviteCodeTable,
 	type inviteCodeUsage as InviteCodeUsageTable,
-	employee,
 	inviteCode,
 	inviteCodeUsage,
 	memberApproval,
 	team,
 } from "@/db/schema";
-import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
+import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
 import {
 	type AuthorizationError,
 	type DatabaseError,

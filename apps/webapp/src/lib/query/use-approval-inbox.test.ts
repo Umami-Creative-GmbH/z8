@@ -3,8 +3,8 @@ import type { ApprovalInboxBulkDecisionResult } from "@/lib/approvals/inbox/type
 import {
 	readBulkDecisionResult,
 	readQueryError,
-	type useBulkApprove,
 	useApprovalInbox,
+	type useBulkApprove,
 } from "./use-approval-inbox";
 
 const queryMockState = vi.hoisted(() => ({
@@ -112,14 +112,12 @@ describe("useApprovalInbox contracts", () => {
 	});
 
 	it("rejects non-array bulk decision collections", async () => {
-		const nonArraySucceeded = new Response(
-			JSON.stringify({ succeeded: {}, failed: [] }),
-			{ status: 200 },
-		);
-		const nonArrayFailed = new Response(
-			JSON.stringify({ succeeded: [], failed: {} }),
-			{ status: 200 },
-		);
+		const nonArraySucceeded = new Response(JSON.stringify({ succeeded: {}, failed: [] }), {
+			status: 200,
+		});
+		const nonArrayFailed = new Response(JSON.stringify({ succeeded: [], failed: {} }), {
+			status: 200,
+		});
 
 		await expect(readBulkDecisionResult(nonArraySucceeded, "approve")).rejects.toThrow(
 			"Invalid bulk approve response",

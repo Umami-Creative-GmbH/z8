@@ -117,10 +117,7 @@ describe("DiagnosticsClient", () => {
 	it("defaults the email test recipient to the signed-in admin email", () => {
 		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
 
-		expect(screen.getByLabelText("Recipient email")).toHaveProperty(
-			"value",
-			"admin@example.com",
-		);
+		expect(screen.getByLabelText("Recipient email")).toHaveProperty("value", "admin@example.com");
 	});
 
 	it("keeps item status labels accessible when the visual label is hidden", () => {
@@ -197,7 +194,9 @@ describe("DiagnosticsClient", () => {
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Send test email" }));
 
-		await waitFor(() => expect(screen.getByText("Test email sent to ops@example.com.")).toBeTruthy());
+		await waitFor(() =>
+			expect(screen.getByText("Test email sent to ops@example.com.")).toBeTruthy(),
+		);
 		expect(screen.getByText("Message ID: msg_123")).toBeTruthy();
 		expect(sendPlatformDiagnosticsTestEmailActionMock).toHaveBeenCalledWith({
 			to: "ops@example.com",

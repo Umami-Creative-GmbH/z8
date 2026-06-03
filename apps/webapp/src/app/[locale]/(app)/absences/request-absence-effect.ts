@@ -206,13 +206,18 @@ function getRequestingEmployee(
 		);
 }
 
-function createRequestedAbsenceRecordsInTransaction(params: {
+export function createRequestedAbsenceRecordsInTransaction(params: {
 	dbService: typeof DatabaseService.Service;
 	currentEmployee: RequestAbsenceEmployeeContext;
 	data: NormalizedAbsenceDurationInput & Pick<AbsenceRequest, "sickDetail">;
 	category: { countsAgainstVacation: boolean; requiresApproval: boolean; type: string };
 	createdBy: string;
 	hasManagerApprovalWorkflow: boolean;
+	approvalWorkflow?: {
+		categoryId: string;
+		approverId: string;
+		create?: typeof createApprovalWorkflow;
+	};
 }) {
 	const { dbService, currentEmployee, data, category, createdBy, hasManagerApprovalWorkflow } =
 		params;
@@ -296,6 +301,24 @@ function createRequestedAbsenceRecordsInTransaction(params: {
 						eq(absenceEntry.organizationId, currentEmployee.organizationId),
 					),
 				);
+
+			if (params.approvalWorkflow) {
+				const transactionalDbService = {
+					db: tx,
+					query: dbService.query,
+				} as typeof DatabaseService.Service;
+				const create = params.approvalWorkflow.create ?? createApprovalWorkflow;
+
+				await Effect.runPromise(
+					create(
+						transactionalDbService,
+						currentEmployee,
+						newAbsence.id,
+						params.approvalWorkflow.categoryId,
+						params.approvalWorkflow.approverId,
+					),
+				);
+			}
 
 			return { ...newAbsence, canonicalRecordId: canonicalRecord.id, vacationOverrideSummary };
 		});
@@ -629,6 +652,13 @@ function requestAbsenceWithResolverEffect(
 						category,
 						createdBy: userId,
 						hasManagerApprovalWorkflow: Boolean(defaultApproverId),
+						approvalWorkflow:
+							category.requiresApproval && defaultApproverId
+								? {
+										categoryId: requestData.categoryId,
+										approverId: defaultApproverId,
+									}
+								: undefined,
 					}),
 				);
 
@@ -643,16 +673,6 @@ function requestAbsenceWithResolverEffect(
 				logger.info({ absenceId: newAbsence.id }, "Absence entry created");
 
 				if (category.requiresApproval && defaultApproverId) {
-					yield* _(
-						createApprovalWorkflow(
-							dbService,
-							currentEmployee,
-							newAbsence.id,
-							requestData.categoryId,
-							defaultApproverId,
-						),
-					);
-
 					span.setAttribute("absence.has_approval_request", true);
 					span.setAttribute("absence.approver_id", defaultApproverId);
 

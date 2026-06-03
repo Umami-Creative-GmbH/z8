@@ -128,10 +128,12 @@ describe("SubscriptionService", () => {
 				currentSeats: 5,
 			}),
 		);
-		expect(updateWhere).toHaveBeenCalledWith(expect.objectContaining({
-			column: subscription.organizationId,
-			value: "org_123",
-		}));
+		expect(updateWhere).toHaveBeenCalledWith(
+			expect.objectContaining({
+				column: subscription.organizationId,
+				value: "org_123",
+			}),
+		);
 		expect(insertValues).not.toHaveBeenCalled();
 	});
 

@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { env } from "@/env";
-import { avvHostingDetails } from "@/lib/avv/avv-details";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { avvHostingDetails } from "@/lib/avv/avv-details";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function AvvPage() {

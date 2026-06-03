@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getSupportedInboxSources, isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
+import {
+	getSupportedInboxSources,
+	isSupportedInboxType,
+} from "@/lib/approvals/inbox/source-adapters";
 
 describe("approval inbox source adapters", () => {
 	it("returns only registered live inbox sources", () => {

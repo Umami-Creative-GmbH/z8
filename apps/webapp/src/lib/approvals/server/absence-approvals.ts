@@ -401,17 +401,19 @@ function handleApprovedAbsence(
 		const html = yield* _(Effect.promise(() => renderAbsenceRequestApproved(emailContext)));
 
 		yield* _(
-			emailService.send({
-				to: absence.employee.user.email,
-				subject: `Absence Request Approved: ${absence.category.name}`,
-				html,
-			}).pipe(
-				Effect.catchTag("EmailError", (error) =>
-					Effect.sync(() =>
-						logger.error({ error, absenceId: entityId }, "Failed to send absence approval email"),
+			emailService
+				.send({
+					to: absence.employee.user.email,
+					subject: `Absence Request Approved: ${absence.category.name}`,
+					html,
+				})
+				.pipe(
+					Effect.catchTag("EmailError", (error) =>
+						Effect.sync(() =>
+							logger.error({ error, absenceId: entityId }, "Failed to send absence approval email"),
+						),
 					),
 				),
-			),
 		);
 
 		notifyApprovedAbsence(absence, entityId, currentEmployee);
@@ -457,17 +459,22 @@ function handleRejectedAbsence(
 		);
 
 		yield* _(
-			emailService.send({
-				to: absence.employee.user.email,
-				subject: `Absence Request Rejected: ${absence.category.name}`,
-				html,
-			}).pipe(
-				Effect.catchTag("EmailError", (error) =>
-					Effect.sync(() =>
-						logger.error({ error, absenceId: entityId }, "Failed to send absence rejection email"),
+			emailService
+				.send({
+					to: absence.employee.user.email,
+					subject: `Absence Request Rejected: ${absence.category.name}`,
+					html,
+				})
+				.pipe(
+					Effect.catchTag("EmailError", (error) =>
+						Effect.sync(() =>
+							logger.error(
+								{ error, absenceId: entityId },
+								"Failed to send absence rejection email",
+							),
+						),
 					),
 				),
-			),
 		);
 
 		notifyRejectedAbsence(absence, entityId, currentEmployee, reason);

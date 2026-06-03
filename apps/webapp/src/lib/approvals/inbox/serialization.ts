@@ -9,7 +9,9 @@ export function serializeDate(value: Date | string | null | undefined): string |
 			: DateTime.fromJSDate(value, { zone: "utc" });
 
 	if (!dateTime.isValid) {
-		throw new Error(`Invalid approval inbox date: ${dateTime.invalidExplanation ?? "unknown reason"}`);
+		throw new Error(
+			`Invalid approval inbox date: ${dateTime.invalidExplanation ?? "unknown reason"}`,
+		);
 	}
 
 	const iso = dateTime.toUTC().toISO();
@@ -37,11 +39,7 @@ export function assertSerializableApprovalPayload(payload: unknown): void {
 	JSON.parse(JSON.stringify(payload));
 }
 
-function assertJsonSafeApprovalPayload(
-	value: unknown,
-	path: string,
-	seen: WeakSet<object>,
-): void {
+function assertJsonSafeApprovalPayload(value: unknown, path: string, seen: WeakSet<object>): void {
 	if (typeof value === "function") {
 		throw new Error(`Approval inbox payload contains function at ${path}`);
 	}

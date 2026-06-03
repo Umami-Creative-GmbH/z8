@@ -1,3 +1,4 @@
+import { getAgeDays } from "./serialization";
 import type {
 	ApprovalInboxPriority,
 	ApprovalInboxRiskLevel,
@@ -5,7 +6,6 @@ import type {
 	ApprovalInboxTriage,
 	ApprovalInboxType,
 } from "./types";
-import { getAgeDays } from "./serialization";
 
 const STALE_AFTER_DAYS = 3;
 const SMALL_TIME_CORRECTION_MINUTES = 15;

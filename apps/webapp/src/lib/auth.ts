@@ -17,12 +17,12 @@ import { employee, scimProvisioningLog, team } from "@/db/schema";
 import { env } from "@/env";
 import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
-import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import {
 	getAuthAllowedHosts,
 	getOrganizationPlatformOrigins,
 	getStaticTrustedOrigins,
 } from "@/lib/auth-domain-config";
+import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { getOrganizationBaseUrl } from "./app-url";
 import { getDomainConfig } from "./domain/domain-service";
@@ -48,10 +48,7 @@ export async function resolveInvitationTargetTeamId(
 	}
 
 	const targetTeam = await dbClient.query.team.findFirst({
-		where: and(
-			eq(team.id, targetTeamIdResult.data),
-			eq(team.organizationId, organizationId),
-		),
+		where: and(eq(team.id, targetTeamIdResult.data), eq(team.organizationId, organizationId)),
 	});
 
 	return targetTeam?.id ?? null;

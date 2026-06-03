@@ -13,7 +13,6 @@ import {
 	useQuery,
 	useQueryClient,
 } from "@tanstack/react-query";
-import { SUPPORTED_APPROVAL_INBOX_TYPES } from "@/lib/approvals/inbox/types";
 import type {
 	ApprovalInboxBulkDecisionResult,
 	ApprovalInboxDetailResult,
@@ -23,6 +22,7 @@ import type {
 	ApprovalInboxStatus,
 	ApprovalInboxType,
 } from "@/lib/approvals/inbox/types";
+import { SUPPORTED_APPROVAL_INBOX_TYPES } from "@/lib/approvals/inbox/types";
 import { queryKeys } from "./keys";
 
 // ============================================

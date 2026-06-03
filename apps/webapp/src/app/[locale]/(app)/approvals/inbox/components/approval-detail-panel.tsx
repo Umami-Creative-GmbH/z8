@@ -1,10 +1,6 @@
 "use client";
 
-import {
-	IconCheck,
-	IconLoader2,
-	IconX,
-} from "@tabler/icons-react";
+import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -21,10 +17,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
-import type {
-	ApprovalInboxDetailSection,
-	ApprovalInboxItem,
-} from "@/lib/approvals/inbox/types";
+import type { ApprovalInboxDetailSection, ApprovalInboxItem } from "@/lib/approvals/inbox/types";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import {
 	useApprovalDetail,
@@ -41,7 +34,11 @@ interface ApprovalDetailPanelProps {
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-	return <h4 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{children}</h4>;
+	return (
+		<h4 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+			{children}
+		</h4>
+	);
 }
 
 function renderDetailSection(section: ApprovalInboxDetailSection) {
@@ -75,7 +72,9 @@ function renderDetailSection(section: ApprovalInboxDetailSection) {
 			return (
 				<section key={section.title}>
 					<SectionTitle>{section.title}</SectionTitle>
-					<p className="rounded-xl border bg-card/60 p-4 text-sm leading-6 shadow-sm">{section.body}</p>
+					<p className="rounded-xl border bg-card/60 p-4 text-sm leading-6 shadow-sm">
+						{section.body}
+					</p>
 				</section>
 			);
 		case "timeline":
@@ -101,11 +100,11 @@ function renderDetailSection(section: ApprovalInboxDetailSection) {
 					key={section.title}
 					className={cn(
 						"rounded-xl border p-4 shadow-sm",
-						section.tone === "info" && "border-blue-200 bg-blue-50/60 dark:border-blue-900 dark:bg-blue-950/20",
+						section.tone === "info" &&
+							"border-blue-200 bg-blue-50/60 dark:border-blue-900 dark:bg-blue-950/20",
 						section.tone === "warning" &&
 							"border-amber-200 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20",
-						section.tone === "danger" &&
-							"border-destructive/30 bg-destructive/5 text-destructive",
+						section.tone === "danger" && "border-destructive/30 bg-destructive/5 text-destructive",
 					)}
 				>
 					<h4 className="text-sm font-medium">{section.title}</h4>
@@ -185,7 +184,9 @@ export function ApprovalDetailPanel({
 					<div className="flex items-start gap-3">
 						<div className="min-w-0 flex-1">
 							<SheetTitle>{t("approvals:approvals.detailTitle", "Approval details")}</SheetTitle>
-							<SheetDescription className="mt-1 line-clamp-2">{panelItem.summary.detail}</SheetDescription>
+							<SheetDescription className="mt-1 line-clamp-2">
+								{panelItem.summary.detail}
+							</SheetDescription>
 						</div>
 						{panelItem.summary.badge && (
 							<Badge
@@ -204,11 +205,12 @@ export function ApprovalDetailPanel({
 					</div>
 				</SheetHeader>
 
-				<div data-slot="approval-detail-body" className="flex-1 space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
+				<div
+					data-slot="approval-detail-body"
+					className="flex-1 space-y-6 overflow-y-auto px-5 py-5 sm:px-6"
+				>
 					<div>
-						<SectionTitle>
-							{t("approvals:approvals.requester", "Requester")}
-						</SectionTitle>
+						<SectionTitle>{t("approvals:approvals.requester", "Requester")}</SectionTitle>
 						<div className="flex items-center gap-3 rounded-xl border bg-card/60 p-4 shadow-sm">
 							<UserAvatar
 								image={panelItem.requester.image}
@@ -219,7 +221,9 @@ export function ApprovalDetailPanel({
 							/>
 							<div className="min-w-0">
 								<div className="truncate font-semibold">{panelItem.requester.name}</div>
-								<div className="truncate text-sm text-muted-foreground">{panelItem.requester.email}</div>
+								<div className="truncate text-sm text-muted-foreground">
+									{panelItem.requester.email}
+								</div>
 							</div>
 						</div>
 					</div>
