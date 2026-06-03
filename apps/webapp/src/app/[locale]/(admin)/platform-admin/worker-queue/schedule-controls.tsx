@@ -107,6 +107,23 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 		},
 	});
 
+	function getDefaultFormValues(): ScheduleFormValues {
+		return {
+			presetId: job.presetId ?? "",
+			confirmation: "",
+		};
+	}
+
+	function openEditForm() {
+		form.reset(getDefaultFormValues());
+		setIsEditing(true);
+	}
+
+	function closeEditForm() {
+		form.reset(getDefaultFormValues());
+		setIsEditing(false);
+	}
+
 	const resetDisabled = !job.isOverridden || isSubmitting;
 	const resetNeedsConfirmation = highRisk && isResetConfirming;
 	const canSubmitReset = !highRisk || resetConfirmation === labels.confirmationText;
@@ -158,7 +175,7 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 					type="button"
 					variant="outline"
 					size="sm"
-					onClick={() => setIsEditing(true)}
+					onClick={openEditForm}
 					disabled={!job.canEdit || isSubmitting}
 				>
 					{labels.edit}
@@ -232,14 +249,22 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 					) : null}
 
 					<div className="flex items-center gap-2">
-						<Button type="submit" size="sm" disabled={isSubmitting}>
-							{labels.save}
-						</Button>
+						<form.Subscribe selector={(state) => state.values.confirmation}>
+							{(confirmation) => (
+								<Button
+									type="submit"
+									size="sm"
+									disabled={isSubmitting || (highRisk && confirmation !== labels.confirmationText)}
+								>
+									{labels.save}
+								</Button>
+							)}
+						</form.Subscribe>
 						<Button
 							type="button"
 							variant="ghost"
 							size="sm"
-							onClick={() => setIsEditing(false)}
+							onClick={closeEditForm}
 							disabled={isSubmitting}
 						>
 							{labels.cancel}

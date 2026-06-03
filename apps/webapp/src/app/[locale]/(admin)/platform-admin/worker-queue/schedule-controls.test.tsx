@@ -76,6 +76,8 @@ function renderControls(job: ScheduledCronJobRow = buildJob()) {
 
 describe("ScheduleControls", () => {
 	beforeEach(() => {
+		vi.mocked(updateCronSchedule).mockClear();
+		vi.mocked(resetCronSchedule).mockClear();
 		vi.mocked(updateCronSchedule).mockResolvedValue({
 			success: true,
 			data: { immediateReconciled: true, warning: null },
@@ -136,6 +138,40 @@ describe("ScheduleControls", () => {
 				confirmation: labels.confirmationText,
 			});
 		});
+	});
+
+	it("does not submit a high-risk edit without the exact confirmation", () => {
+		renderControls(
+			buildJob({
+				jobName: "cron:billing-seat-reconciliation",
+				name: "cron:billing-seat-reconciliation",
+				presetId: "daily-midnight",
+				effectivePattern: "0 0 * * *",
+			}),
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: labels.edit }));
+		fireEvent.change(screen.getByLabelText(labels.presetLabel), { target: { value: "hourly" } });
+
+		const saveButton = screen.getByRole<HTMLButtonElement>("button", { name: labels.save });
+		expect(saveButton.disabled).toBe(true);
+
+		fireEvent.click(saveButton);
+
+		expect(updateCronSchedule).not.toHaveBeenCalled();
+	});
+
+	it("resets edited preset state when canceling and reopening", () => {
+		renderControls();
+
+		fireEvent.click(screen.getByRole("button", { name: labels.edit }));
+		fireEvent.change(screen.getByLabelText(labels.presetLabel), { target: { value: "hourly" } });
+		fireEvent.click(screen.getByRole("button", { name: labels.cancel }));
+		fireEvent.click(screen.getByRole("button", { name: labels.edit }));
+
+		expect(screen.getByLabelText<HTMLSelectElement>(labels.presetLabel).value).toBe(
+			"every-5-minutes",
+		);
 	});
 
 	it("disables editing and shows read-only text when the schedule cannot be edited", () => {
