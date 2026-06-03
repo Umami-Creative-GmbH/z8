@@ -2,7 +2,7 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -73,10 +73,11 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isResetConfirming, setIsResetConfirming] = useState(false);
 	const [resetConfirmation, setResetConfirmation] = useState("");
+	const defaultPresetId = job.presetId ?? presets[0]?.id ?? "";
 
 	const form = useForm({
 		defaultValues: {
-			presetId: job.presetId ?? "",
+			presetId: defaultPresetId,
 			confirmation: "",
 		} satisfies ScheduleFormValues,
 		onSubmit: async ({ value }) => {
@@ -109,10 +110,20 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 
 	function getDefaultFormValues(): ScheduleFormValues {
 		return {
-			presetId: job.presetId ?? "",
+			presetId: defaultPresetId,
 			confirmation: "",
 		};
 	}
+
+	useEffect(() => {
+		if (isEditing) {
+			void job.jobName;
+			form.reset({
+				presetId: defaultPresetId,
+				confirmation: "",
+			});
+		}
+	}, [isEditing, job.jobName, defaultPresetId, form.reset]);
 
 	function openEditForm() {
 		form.reset(getDefaultFormValues());

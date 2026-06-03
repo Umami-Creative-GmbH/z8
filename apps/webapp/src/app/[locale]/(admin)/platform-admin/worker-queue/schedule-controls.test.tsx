@@ -174,6 +174,40 @@ describe("ScheduleControls", () => {
 		);
 	});
 
+	it("syncs open edit form values when job props change before submit", async () => {
+		const { rerender } = renderControls(
+			buildJob({
+				jobName: "cron:billing-seat-reconciliation",
+				name: "cron:billing-seat-reconciliation",
+				presetId: "daily-midnight",
+				effectivePattern: "0 0 * * *",
+			}),
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: labels.edit }));
+		fireEvent.change(screen.getByLabelText(labels.presetLabel), { target: { value: "hourly" } });
+		fireEvent.change(screen.getByLabelText(labels.confirmationLabel), {
+			target: { value: labels.confirmationText },
+		});
+
+		rerender(
+			<ScheduleControls
+				job={buildJob({ presetId: "every-5-minutes", effectivePattern: "*/5 * * * *" })}
+				labels={labels}
+				presets={presets}
+			/>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: labels.save }));
+
+		await waitFor(() => {
+			expect(updateCronSchedule).toHaveBeenCalledWith({
+				jobName: "cron:export",
+				presetId: "every-5-minutes",
+				confirmation: undefined,
+			});
+		});
+	});
+
 	it("disables editing and shows read-only text when the schedule cannot be edited", () => {
 		renderControls(buildJob({ canEdit: false }));
 
