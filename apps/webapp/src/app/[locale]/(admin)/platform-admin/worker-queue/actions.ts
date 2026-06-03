@@ -1,8 +1,19 @@
 "use server";
 
 import { Effect } from "effect";
-import { listCronScheduleOverrides } from "@/lib/cron/schedule-overrides";
-import { buildScheduledJobRows, type ScheduledCronJobRow } from "@/lib/cron/schedules";
+import { reconcileCronJobSchedule } from "@/lib/cron/reconciliation";
+import { CRON_JOBS, type CronJobName, isCronJobName } from "@/lib/cron/registry";
+import {
+	deleteCronScheduleOverride,
+	listCronScheduleOverrides,
+	upsertCronScheduleOverride,
+} from "@/lib/cron/schedule-overrides";
+import {
+	buildScheduledJobRows,
+	getPresetById,
+	isHighRiskCronJob,
+	type ScheduledCronJobRow,
+} from "@/lib/cron/schedules";
 import {
 	getAllJobMetrics,
 	getExecutionsSince,
@@ -68,7 +79,160 @@ export interface WorkerQueueStats {
 	fetchedAt: string;
 }
 
+export interface CronScheduleMutationResult {
+	immediateReconciled: boolean;
+	warning: string | null;
+}
+
+export interface CronScheduleMutationInput {
+	jobName: string;
+	presetId?: string;
+	confirmation?: string;
+}
+
 const RELIABILITY_WINDOW_DAYS = 30;
+const HIGH_RISK_CONFIRMATION = "I understand the operational impact";
+
+function validateCronScheduleJob(input: CronScheduleMutationInput) {
+	if (!isCronJobName(input.jobName) || !isVisibleCronJobName(input.jobName)) {
+		return Effect.fail(
+			new ValidationError({
+				message: "Invalid cron job name",
+				field: "jobName",
+				value: input.jobName,
+			}),
+		);
+	}
+
+	const jobName = input.jobName;
+	if (isHighRiskCronJob(jobName) && input.confirmation !== HIGH_RISK_CONFIRMATION) {
+		return Effect.fail(
+			new ValidationError({
+				message: "High-risk cron schedule changes require confirmation",
+				field: "confirmation",
+			}),
+		);
+	}
+
+	return Effect.succeed(jobName);
+}
+
+function reconcileCronSchedule(jobName: CronJobName, pattern: string) {
+	return Effect.promise(async (): Promise<CronScheduleMutationResult> => {
+		try {
+			const result = await reconcileCronJobSchedule({ queue: getJobQueue(), jobName, pattern });
+
+			if (!result.success) {
+				return { immediateReconciled: false, warning: result.error };
+			}
+
+			return { immediateReconciled: true, warning: null };
+		} catch (error) {
+			return {
+				immediateReconciled: false,
+				warning: error instanceof Error ? error.message : String(error),
+			};
+		}
+	});
+}
+
+export async function updateCronSchedule(
+	input: CronScheduleMutationInput,
+): Promise<ServerActionResult<CronScheduleMutationResult>> {
+	const effect = Effect.gen(function* () {
+		const adminService = yield* PlatformAdminService;
+		const admin = yield* adminService.requirePlatformAdmin();
+		const jobName = yield* validateCronScheduleJob(input);
+		const preset = input.presetId ? getPresetById(input.presetId) : null;
+
+		if (!preset) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Invalid cron schedule preset",
+					field: "presetId",
+					value: input.presetId,
+				}),
+			);
+		}
+
+		const defaultPattern = CRON_JOBS[jobName].schedule;
+		if (preset.pattern === defaultPattern) {
+			yield* Effect.tryPromise({
+				try: () => deleteCronScheduleOverride(jobName),
+				catch: () =>
+					new DatabaseError({
+						message: "Failed to delete cron schedule override",
+						operation: "delete",
+						table: "cron_schedule_override",
+					}),
+			});
+		} else {
+			yield* Effect.tryPromise({
+				try: () =>
+					upsertCronScheduleOverride({
+						jobName,
+						presetId: preset.id,
+						pattern: preset.pattern,
+						updatedBy: admin.userId,
+					}),
+				catch: () =>
+					new DatabaseError({
+						message: "Failed to save cron schedule override",
+						operation: "upsert",
+						table: "cron_schedule_override",
+					}),
+			});
+		}
+
+		const reconciliation = yield* reconcileCronSchedule(jobName, preset.pattern);
+
+		yield* adminService.logAction(admin.userId, "update_cron_schedule", "cron_job", jobName, {
+			oldPattern: defaultPattern,
+			newPattern: preset.pattern,
+			presetId: preset.id,
+			immediateReconciled: reconciliation.immediateReconciled,
+			reconciliationError: reconciliation.warning,
+		});
+
+		return reconciliation;
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+export async function resetCronSchedule(
+	input: CronScheduleMutationInput,
+): Promise<ServerActionResult<CronScheduleMutationResult>> {
+	const effect = Effect.gen(function* () {
+		const adminService = yield* PlatformAdminService;
+		const admin = yield* adminService.requirePlatformAdmin();
+		const jobName = yield* validateCronScheduleJob(input);
+		const defaultPattern = CRON_JOBS[jobName].schedule;
+
+		yield* Effect.tryPromise({
+			try: () => deleteCronScheduleOverride(jobName),
+			catch: () =>
+				new DatabaseError({
+					message: "Failed to delete cron schedule override",
+					operation: "delete",
+					table: "cron_schedule_override",
+				}),
+		});
+
+		const reconciliation = yield* reconcileCronSchedule(jobName, defaultPattern);
+
+		yield* adminService.logAction(admin.userId, "reset_cron_schedule", "cron_job", jobName, {
+			oldPattern: defaultPattern,
+			newPattern: defaultPattern,
+			immediateReconciled: reconciliation.immediateReconciled,
+			reconciliationError: reconciliation.warning,
+		});
+
+		return reconciliation;
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
 
 export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQueueStats>> {
 	const effect = Effect.gen(function* () {
