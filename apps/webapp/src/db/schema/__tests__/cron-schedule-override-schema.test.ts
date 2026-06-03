@@ -10,4 +10,8 @@ describe("cronScheduleOverride schema", () => {
 		expect(cronScheduleOverride.pattern.name).toBe("pattern");
 		expect(cronScheduleOverride.updatedBy.name).toBe("updated_by");
 	});
+
+	it("refreshes updatedAt on row updates", () => {
+		expect(cronScheduleOverride.updatedAt.onUpdateFn).toEqual(expect.any(Function));
+	});
 });

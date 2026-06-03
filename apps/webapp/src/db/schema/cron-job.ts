@@ -19,6 +19,8 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+
 import { user } from "../auth-schema";
 
 /**
@@ -95,7 +97,10 @@ export const cronScheduleOverride = pgTable(
 			.notNull()
 			.references(() => user.id),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
 	},
 	(table) => [
 		uniqueIndex("idx_cron_schedule_override_job_name_unique").on(table.jobName),
