@@ -395,6 +395,31 @@ describe("cron schedule mutations", () => {
 		);
 	});
 
+	it("audits update oldPattern from an existing override", async () => {
+		mocks.listCronScheduleOverrides.mockResolvedValue([
+			{
+				jobName: "cron:export",
+				presetId: "every-30-minutes",
+				pattern: "*/30 * * * *",
+			},
+		]);
+
+		const result = await updateCronSchedule({ jobName: "cron:export", presetId: "hourly" });
+
+		expect(result.success).toBe(true);
+		expect(mocks.logAction).toHaveBeenCalledWith(
+			"platform-admin-1",
+			"update_cron_schedule",
+			"cron_job",
+			"cron:export",
+			expect.objectContaining({
+				oldPattern: "*/30 * * * *",
+				newPattern: "0 * * * *",
+				presetId: "hourly",
+			}),
+		);
+	});
+
 	it("deletes an override, reconciles the default pattern, and audits reset", async () => {
 		const result = await resetCronSchedule({ jobName: "cron:export" });
 
@@ -419,6 +444,30 @@ describe("cron schedule mutations", () => {
 				newPattern: "*/5 * * * *",
 				immediateReconciled: true,
 				reconciliationError: null,
+			}),
+		);
+	});
+
+	it("audits reset oldPattern from an existing override", async () => {
+		mocks.listCronScheduleOverrides.mockResolvedValue([
+			{
+				jobName: "cron:export",
+				presetId: "every-30-minutes",
+				pattern: "*/30 * * * *",
+			},
+		]);
+
+		const result = await resetCronSchedule({ jobName: "cron:export" });
+
+		expect(result.success).toBe(true);
+		expect(mocks.logAction).toHaveBeenCalledWith(
+			"platform-admin-1",
+			"reset_cron_schedule",
+			"cron_job",
+			"cron:export",
+			expect.objectContaining({
+				oldPattern: "*/30 * * * *",
+				newPattern: "*/5 * * * *",
 			}),
 		);
 	});

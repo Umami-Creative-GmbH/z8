@@ -136,6 +136,22 @@ function reconcileCronSchedule(jobName: CronJobName, pattern: string) {
 	});
 }
 
+function getCurrentCronSchedulePattern(jobName: CronJobName, defaultPattern: string) {
+	return Effect.gen(function* () {
+		const overrides = yield* Effect.tryPromise({
+			try: () => listCronScheduleOverrides(),
+			catch: () =>
+				new DatabaseError({
+					message: "Failed to fetch cron schedule overrides",
+					operation: "query",
+					table: "cron_schedule_override",
+				}),
+		});
+
+		return overrides.find((override) => override.jobName === jobName)?.pattern ?? defaultPattern;
+	});
+}
+
 export async function updateCronSchedule(
 	input: CronScheduleMutationInput,
 ): Promise<ServerActionResult<CronScheduleMutationResult>> {
@@ -156,6 +172,8 @@ export async function updateCronSchedule(
 		}
 
 		const defaultPattern = CRON_JOBS[jobName].schedule;
+		const oldPattern = yield* getCurrentCronSchedulePattern(jobName, defaultPattern);
+
 		if (preset.pattern === defaultPattern) {
 			yield* Effect.tryPromise({
 				try: () => deleteCronScheduleOverride(jobName),
@@ -187,7 +205,7 @@ export async function updateCronSchedule(
 		const reconciliation = yield* reconcileCronSchedule(jobName, preset.pattern);
 
 		yield* adminService.logAction(admin.userId, "update_cron_schedule", "cron_job", jobName, {
-			oldPattern: defaultPattern,
+			oldPattern,
 			newPattern: preset.pattern,
 			presetId: preset.id,
 			immediateReconciled: reconciliation.immediateReconciled,
@@ -208,6 +226,7 @@ export async function resetCronSchedule(
 		const admin = yield* adminService.requirePlatformAdmin();
 		const jobName = yield* validateCronScheduleJob(input);
 		const defaultPattern = CRON_JOBS[jobName].schedule;
+		const oldPattern = yield* getCurrentCronSchedulePattern(jobName, defaultPattern);
 
 		yield* Effect.tryPromise({
 			try: () => deleteCronScheduleOverride(jobName),
@@ -222,7 +241,7 @@ export async function resetCronSchedule(
 		const reconciliation = yield* reconcileCronSchedule(jobName, defaultPattern);
 
 		yield* adminService.logAction(admin.userId, "reset_cron_schedule", "cron_job", jobName, {
-			oldPattern: defaultPattern,
+			oldPattern,
 			newPattern: defaultPattern,
 			immediateReconciled: reconciliation.immediateReconciled,
 			reconciliationError: reconciliation.warning,
