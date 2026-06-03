@@ -1,4 +1,7 @@
+import { Effect } from "effect";
 import { connection } from "next/server";
+import { AppLayer } from "@/lib/effect/runtime";
+import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
 import { collectPlatformDiagnostics } from "@/lib/platform-diagnostics";
 import { getTranslate } from "@/tolgee/server";
 import { DiagnosticsClient } from "./diagnostics-client";
@@ -6,7 +9,16 @@ import { DiagnosticsClient } from "./diagnostics-client";
 export default async function PlatformDiagnosticsPage() {
 	await connection();
 
-	const [t, snapshot] = await Promise.all([getTranslate(), collectPlatformDiagnostics()]);
+	const [t, snapshot, admin] = await Promise.all([
+		getTranslate(),
+		collectPlatformDiagnostics(),
+		Effect.runPromise(
+			Effect.gen(function* () {
+				const adminService = yield* PlatformAdminService;
+				return yield* adminService.requirePlatformAdmin();
+			}).pipe(Effect.provide(AppLayer)),
+		),
+	]);
 
 	return (
 		<div className="space-y-10">
@@ -22,7 +34,7 @@ export default async function PlatformDiagnosticsPage() {
 				</p>
 			</div>
 
-			<DiagnosticsClient initialSnapshot={snapshot} />
+			<DiagnosticsClient initialSnapshot={snapshot} adminEmail={admin.email} />
 		</div>
 	);
 }

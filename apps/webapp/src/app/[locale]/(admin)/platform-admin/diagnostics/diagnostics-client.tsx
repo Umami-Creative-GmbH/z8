@@ -118,12 +118,15 @@ function DiagnosticsSection({
 
 export function DiagnosticsClient({
 	initialSnapshot,
+	adminEmail,
 }: {
 	initialSnapshot: PlatformDiagnosticsSnapshot;
+	adminEmail: string;
 }) {
 	const { t } = useTranslate();
 	const [snapshot, setSnapshot] = useState<PlatformDiagnosticsSnapshot>(() => initialSnapshot);
 	const [error, setError] = useState<string | null>(null);
+	const [emailRecipient, setEmailRecipient] = useState(adminEmail);
 	const [encryptionResult, setEncryptionResult] =
 		useState<PlatformKeyManagerEncryptionResult | null>(null);
 	const [encryptionError, setEncryptionError] = useState<string | null>(null);
@@ -249,6 +252,29 @@ export function DiagnosticsClient({
 					statusLabels={statusLabels}
 				/>
 			</div>
+
+			<Card>
+				<CardHeader className="space-y-2">
+					<CardTitle>{t("admin:admin.diagnostics.emailTest.title", "Email Delivery Test")}</CardTitle>
+					<CardDescription>
+						{t(
+							"admin:admin.diagnostics.emailTest.description",
+							"Send a diagnostics email through the system email transport.",
+						)}
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<label className="space-y-2 text-sm font-medium">
+						<span>{t("admin:admin.diagnostics.emailTest.recipient", "Recipient email")}</span>
+						<input
+							className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+							type="email"
+							value={emailRecipient}
+							onChange={(event) => setEmailRecipient(event.target.value)}
+						/>
+					</label>
+				</CardContent>
+			</Card>
 
 			{snapshot.secretStoreProvider === "scaleway" ? (
 				<Card>
