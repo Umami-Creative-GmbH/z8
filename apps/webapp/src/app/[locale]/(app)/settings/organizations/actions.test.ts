@@ -121,13 +121,11 @@ describe("organization invitation actions", () => {
 	});
 
 	it("persists target team and organization creation permission after creating an invitation", async () => {
-		invitationFindFirstMock
-			.mockResolvedValueOnce(null)
-			.mockResolvedValueOnce({
-				id: "invite-created",
-				organizationId: "org-1",
-				status: "pending",
-			});
+		invitationFindFirstMock.mockResolvedValueOnce(null).mockResolvedValueOnce({
+			id: "invite-created",
+			organizationId: "org-1",
+			status: "pending",
+		});
 
 		const result = await sendInvitation({
 			organizationId: "org-1",

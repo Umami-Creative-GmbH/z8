@@ -1,9 +1,6 @@
 import { getAllApprovalHandlers, getApprovalHandler } from "@/lib/approvals/domain/registry";
 import type { ApprovalTypeHandler } from "@/lib/approvals/domain/types";
-import {
-	SUPPORTED_APPROVAL_INBOX_TYPES,
-	type ApprovalInboxType,
-} from "./types";
+import { type ApprovalInboxType, SUPPORTED_APPROVAL_INBOX_TYPES } from "./types";
 
 const supportedTypeSet = new Set<string>(SUPPORTED_APPROVAL_INBOX_TYPES);
 

@@ -162,12 +162,12 @@ async function EmployeeAllowancesContent() {
 											<TableRow key={emp.id}>
 												<TableCell>
 													<div className="flex items-center gap-3">
-												<UserAvatar
-													image={emp.user.image}
-													seed={emp.id}
-													name={emp.user.name}
-													size="sm"
-													clockStatus="unknown"
+														<UserAvatar
+															image={emp.user.image}
+															seed={emp.id}
+															name={emp.user.name}
+															size="sm"
+															clockStatus="unknown"
 														/>
 														<div>
 															<div className="font-medium">{emp.user.name}</div>

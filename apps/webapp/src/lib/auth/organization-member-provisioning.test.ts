@@ -10,7 +10,9 @@ describe("ensureEmployeeForOrganizationMember", () => {
 	function createDbMock(existingEmployee: unknown = null) {
 		const returning = vi.fn().mockResolvedValue([{ id: "employee-1" }]);
 		const values = vi.fn(() => ({ returning }));
-		const updateReturning = vi.fn().mockResolvedValue([{ id: "employee-existing", isActive: true }]);
+		const updateReturning = vi
+			.fn()
+			.mockResolvedValue([{ id: "employee-existing", isActive: true }]);
 		const where = vi.fn(() => ({ returning: updateReturning }));
 		const set = vi.fn(() => ({ where }));
 		const insert = vi.fn(() => ({ values }));

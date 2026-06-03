@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const markEmployeeWorkBalanceDirtyMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
@@ -14,6 +15,7 @@ vi.mock("@/lib/logger", () => ({
 	})),
 }));
 
+import { createRequestedAbsenceRecordsInTransaction } from "./request-absence-effect";
 import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
@@ -22,6 +24,28 @@ import {
 	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
+
+function createInsertBuilder(result?: unknown[]) {
+	return {
+		values: vi.fn(() => ({
+			returning: vi.fn().mockResolvedValue(result ?? []),
+		})),
+	};
+}
+
+function createVoidInsertBuilder() {
+	return {
+		values: vi.fn().mockResolvedValue(undefined),
+	};
+}
+
+function createUpdateBuilder() {
+	return {
+		set: vi.fn(() => ({
+			where: vi.fn().mockResolvedValue(undefined),
+		})),
+	};
+}
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -153,6 +177,62 @@ describe("shouldApplySickVacationOverrideImmediately", () => {
 				hasManagerApprovalWorkflow: false,
 			}),
 		).toBe(true);
+	});
+});
+
+describe("createRequestedAbsenceRecordsInTransaction", () => {
+	it("creates approval-required absences and approval workflow in the same transaction", async () => {
+		const transaction = vi.fn(async (callback) => callback(tx));
+		const insert = vi
+			.fn()
+			.mockReturnValueOnce(createInsertBuilder([{ id: "absence-1" }]))
+			.mockReturnValueOnce(createInsertBuilder([{ id: "canonical-1" }]))
+			.mockReturnValueOnce(createVoidInsertBuilder());
+		const tx = {
+			insert,
+			update: vi.fn(() => createUpdateBuilder()),
+		};
+		const dbService = {
+			db: { transaction },
+			query: vi.fn((_name, run) => Effect.tryPromise({ try: run, catch: (error) => error })),
+		};
+		const createApprovalWorkflow = vi.fn(() => Effect.fail(new Error("approval failed")));
+
+		await expect(
+			Effect.runPromise(
+				createRequestedAbsenceRecordsInTransaction({
+					dbService: dbService as never,
+					currentEmployee: { id: "employee-1", organizationId: "org-1", teamId: "team-1" },
+					data: {
+						categoryId: "category-1",
+						startDate: "2026-05-11",
+						startPeriod: "full_day",
+						endDate: "2026-05-12",
+						endPeriod: "full_day",
+						notes: "Vacation",
+						durationKind: "full_day",
+						sickDetail: null,
+					},
+					category: { countsAgainstVacation: true, requiresApproval: true, type: "vacation" },
+					createdBy: "user-1",
+					hasManagerApprovalWorkflow: true,
+					approvalWorkflow: {
+						categoryId: "category-1",
+						approverId: "manager-1",
+						create: createApprovalWorkflow,
+					},
+				}),
+			),
+		).rejects.toThrow("approval failed");
+
+		expect(transaction).toHaveBeenCalledTimes(1);
+		expect(createApprovalWorkflow).toHaveBeenCalledWith(
+			expect.objectContaining({ db: tx }),
+			expect.objectContaining({ id: "employee-1", organizationId: "org-1", teamId: "team-1" }),
+			"absence-1",
+			"category-1",
+			"manager-1",
+		);
 	});
 });
 

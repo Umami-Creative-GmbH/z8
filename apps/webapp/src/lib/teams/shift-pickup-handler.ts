@@ -53,7 +53,10 @@ export async function notifyPrimaryManagerAboutShiftPickup({
 				columns: { firstName: true, lastName: true },
 			}),
 			db.query.employee.findFirst({
-				where: and(eq(employee.id, primaryManager.managerId), eq(employee.organizationId, organizationId)),
+				where: and(
+					eq(employee.id, primaryManager.managerId),
+					eq(employee.organizationId, organizationId),
+				),
 				columns: { userId: true },
 			}),
 			db.query.shift.findFirst({

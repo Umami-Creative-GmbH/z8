@@ -54,7 +54,10 @@ export async function createApprovalInboxActorContext({
 }: {
 	session: ApprovalInboxSessionLike | null;
 	ability: ApprovalInboxAbilityLike | null;
-	findCurrentEmployee: (userId: string, organizationId: string) => Promise<ApprovalInboxEmployeeContext | null>;
+	findCurrentEmployee: (
+		userId: string,
+		organizationId: string,
+	) => Promise<ApprovalInboxEmployeeContext | null>;
 	loadEligibleApprovalScopes: (input: {
 		managerEmployeeId: string;
 		organizationId: string;

@@ -90,6 +90,78 @@ describe("collectPlatformDiagnostics", () => {
 		expect(serialized).not.toContain("stripe-webhook-secret-that-must-not-leak");
 	});
 
+	it("reports safe system email provider configuration states", async () => {
+		const snapshot = await collectPlatformDiagnostics(
+			buildDeps({
+				env: {
+					RESEND_API_KEY: "re_secret_that_must_not_leak",
+					EMAIL_FROM: "ops@example.com",
+					SMTP_HOST: "smtp.internal.example.com",
+					SMTP_PORT: "587",
+					SMTP_USERNAME: "smtp-user-that-must-not-leak",
+					SMTP_PASSWORD: "smtp-password-that-must-not-leak",
+					SMTP_FROM_EMAIL: "smtp-from@example.com",
+				},
+			}),
+		);
+		const serialized = JSON.stringify(snapshot);
+
+		expect(snapshot.configuration).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					title: "System Resend",
+					status: "healthy",
+					value: "Configured",
+				}),
+				expect.objectContaining({
+					title: "System SMTP",
+					status: "healthy",
+					value: "Configured",
+				}),
+			]),
+		);
+		expect(serialized).not.toContain("re_secret_that_must_not_leak");
+		expect(serialized).not.toContain("ops@example.com");
+		expect(serialized).not.toContain("smtp.internal.example.com");
+		expect(serialized).not.toContain("smtp-user-that-must-not-leak");
+		expect(serialized).not.toContain("smtp-password-that-must-not-leak");
+		expect(serialized).not.toContain("smtp-from@example.com");
+	});
+
+	it("reports missing and incomplete system email provider configuration safely", async () => {
+		const snapshot = await collectPlatformDiagnostics(
+			buildDeps({
+				env: {
+					SMTP_HOST: "smtp.internal.example.com",
+					SMTP_PORT: "587",
+					SMTP_USERNAME: "smtp-user-that-must-not-leak",
+					SMTP_PASSWORD: undefined,
+					SMTP_FROM_EMAIL: "smtp-from@example.com",
+				},
+			}),
+		);
+		const serialized = JSON.stringify(snapshot);
+
+		expect(snapshot.configuration).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					title: "System Resend",
+					status: "disabled",
+					value: "Not configured",
+				}),
+				expect.objectContaining({
+					title: "System SMTP",
+					status: "warning",
+					value: "Incomplete",
+				}),
+			]),
+		);
+		expect(snapshot.overallStatus).toBe("warning");
+		expect(serialized).not.toContain("smtp.internal.example.com");
+		expect(serialized).not.toContain("smtp-user-that-must-not-leak");
+		expect(serialized).not.toContain("smtp-from@example.com");
+	});
+
 	it("marks optional Turnstile as disabled when either key is missing", async () => {
 		const snapshot = await collectPlatformDiagnostics(
 			buildDeps({

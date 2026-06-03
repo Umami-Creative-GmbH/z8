@@ -7,9 +7,7 @@ import {
 
 describe("approval inbox serialization", () => {
 	it("serializes dates as ISO strings", () => {
-		expect(serializeDate(new Date("2026-05-31T09:00:00.000Z"))).toBe(
-			"2026-05-31T09:00:00.000Z",
-		);
+		expect(serializeDate(new Date("2026-05-31T09:00:00.000Z"))).toBe("2026-05-31T09:00:00.000Z");
 	});
 
 	it("serializes null dates as null", () => {
@@ -21,9 +19,7 @@ describe("approval inbox serialization", () => {
 	});
 
 	it("normalizes ISO strings with offsets to UTC ISO strings", () => {
-		expect(serializeDate("2026-05-31T11:00:00.000+02:00")).toBe(
-			"2026-05-31T09:00:00.000Z",
-		);
+		expect(serializeDate("2026-05-31T11:00:00.000+02:00")).toBe("2026-05-31T09:00:00.000Z");
 	});
 
 	it("throws for invalid ISO strings", () => {
@@ -52,9 +48,7 @@ describe("approval inbox serialization", () => {
 	});
 
 	it("rejects undefined object fields", () => {
-		expect(() => assertSerializableApprovalPayload({ bad: undefined })).toThrow(
-			/undefined value/,
-		);
+		expect(() => assertSerializableApprovalPayload({ bad: undefined })).toThrow(/undefined value/);
 	});
 
 	it("rejects undefined array items", () => {

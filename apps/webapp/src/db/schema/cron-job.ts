@@ -14,9 +14,14 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	uniqueIndex,
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
+
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+
+import { user } from "../auth-schema";
 
 /**
  * Cron job execution status
@@ -81,6 +86,30 @@ export const cronJobExecution = pgTable(
 	],
 );
 
+export const cronScheduleOverride = pgTable(
+	"cron_schedule_override",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		jobName: varchar("job_name", { length: 100 }).notNull(),
+		presetId: varchar("preset_id", { length: 100 }).notNull(),
+		pattern: varchar("pattern", { length: 100 }).notNull(),
+		updatedBy: text("updated_by")
+			.notNull()
+			.references(() => user.id),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("idx_cron_schedule_override_job_name_unique").on(table.jobName),
+		index("idx_cron_schedule_override_updated_by").on(table.updatedBy),
+	],
+);
+
 // Type exports
 export type CronJobExecution = typeof cronJobExecution.$inferSelect;
 export type NewCronJobExecution = typeof cronJobExecution.$inferInsert;
+export type CronScheduleOverride = typeof cronScheduleOverride.$inferSelect;
+export type NewCronScheduleOverride = typeof cronScheduleOverride.$inferInsert;

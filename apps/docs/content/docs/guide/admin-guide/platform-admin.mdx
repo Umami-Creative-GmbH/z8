@@ -26,6 +26,8 @@ Platform admin access is separate from organization administration. Organization
 
 Open `/platform-admin` to reach the platform-scoped admin area. The current route set includes an overview dashboard plus dedicated pages for users, organizations, deployment diagnostics, worker queue operations, settings, and optional billing views. The worker queue view includes queue counts, scheduled cron jobs, recent executions, and failure and runtime duration trends plus stale job indicators.
 
+Platform admins can edit visible worker cron schedules from the worker queue page using approved presets, or reset a job back to its code-defined default. Schedule changes are saved durably, audited, and applied to BullMQ immediately when the queue is reachable; worker startup reconciles saved schedules again if immediate queue reconciliation was unavailable.
+
 The overview dashboard highlights platform-wide metrics such as total users, banned users, active organizations, and suspended organizations, with links into the related management pages.
 
 ## Users

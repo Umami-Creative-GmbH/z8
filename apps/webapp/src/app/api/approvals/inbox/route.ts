@@ -82,9 +82,7 @@ export async function GET(request: NextRequest) {
 
 		const status = parseStatus(searchParams.get("status"));
 		const typesParam = searchParams.get("types");
-		const types = typesParam
-			? typesParam.split(",").filter(isSupportedInboxType)
-			: undefined;
+		const types = typesParam ? typesParam.split(",").filter(isSupportedInboxType) : undefined;
 		const teamId = searchParams.get("teamId") || undefined;
 		const search = searchParams.get("search") || undefined;
 		const priority = parsePriority(searchParams.get("priority"));
@@ -100,10 +98,7 @@ export async function GET(request: NextRequest) {
 		const dateFrom = searchParams.get("dateFrom");
 		const dateTo = searchParams.get("dateTo");
 		if ((dateFrom && !dateTo) || (!dateFrom && dateTo)) {
-			return NextResponse.json(
-				{ error: "Both dateFrom and dateTo are required" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Both dateFrom and dateTo are required" }, { status: 400 });
 		}
 		if (dateFrom && dateTo) {
 			const from = parseDateRangeInstant(dateFrom);

@@ -46,9 +46,7 @@ vi.mock("@/components/ui/sheet", async () => {
 			open: boolean;
 			onOpenChange: (open: boolean) => void;
 			children: React.ReactNode;
-		}) => (
-			<SheetContext.Provider value={{ open, onOpenChange }}>{children}</SheetContext.Provider>
-		),
+		}) => <SheetContext.Provider value={{ open, onOpenChange }}>{children}</SheetContext.Provider>,
 		SheetContent: ({
 			side,
 			className,
@@ -140,9 +138,7 @@ describe("NotificationPopover", () => {
 
 		await user.click(screen.getAllByRole("button", { name: "Open notifications" })[0]);
 
-		const sheetContent = await waitFor(() =>
-			screen.getByRole("dialog", { name: "Notifications" }),
-		);
+		const sheetContent = await waitFor(() => screen.getByRole("dialog", { name: "Notifications" }));
 		expect(sheetContent).toBeTruthy();
 		expect(sheetContent.getAttribute("data-side")).toBe("top");
 		expect(sheetContent.className).toContain("max-h-[85dvh]");

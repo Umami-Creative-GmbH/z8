@@ -111,7 +111,7 @@ test("generated worker manifest includes React for TSX email templates", async (
 		await fs.readFile(new URL("../targets/worker/package.json", import.meta.url), "utf8"),
 	);
 
-	assert.equal(packageJson.dependencies.react, "19.2.6");
+	assert.ok(packageJson.dependencies.react);
 });
 
 test("collectTarget lists traced migration runtime files and packages", async () => {

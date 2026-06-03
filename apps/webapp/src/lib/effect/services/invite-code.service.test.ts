@@ -13,7 +13,8 @@ const enterpriseIdentityMock = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/enterprise-identity/enforcement", () => ({
-	assertEnterpriseIdentityInviteCodeRedemptionAllowed: enterpriseIdentityMock.assertRedemptionAllowed,
+	assertEnterpriseIdentityInviteCodeRedemptionAllowed:
+		enterpriseIdentityMock.assertRedemptionAllowed,
 }));
 
 function resetEnterpriseIdentityMock() {
@@ -183,7 +184,7 @@ describe("InviteCodeService billing seat sync", () => {
 
 		expect(source).toContain("syncBillingSeatsAfterMemberChange");
 		expect(source).toContain("memberId: newMember.id");
-		expect(source).toContain("change: \"added\"");
+		expect(source).toContain('change: "added"');
 	});
 });
 

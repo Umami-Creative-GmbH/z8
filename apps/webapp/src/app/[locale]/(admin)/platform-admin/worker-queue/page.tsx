@@ -23,11 +23,14 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { CRON_JOBS } from "@/lib/cron/registry";
+import { CRON_SCHEDULE_PRESETS } from "@/lib/cron/schedules";
 import { getTranslate } from "@/tolgee/server";
 import { getWorkerQueueStats } from "./actions";
 import { RecentExecutions } from "./recent-executions";
 import type { ReliabilityHealth } from "./reliability";
 import { WorkerReliabilityCharts } from "./reliability-charts";
+import { ScheduleControls } from "./schedule-controls";
 
 interface StatCardProps {
 	title: string;
@@ -99,12 +102,15 @@ function formatDuration(value: number | null, unknownLabel: string, locale: stri
 	});
 }
 
-function formatDateTime(value: string | null, locale: string): string {
+function formatDateTime(value: string | number | null, locale: string): string {
 	if (value === null) {
 		return "-";
 	}
 
-	const dateTime = DateTime.fromISO(value).setLocale(locale);
+	const dateTime =
+		typeof value === "number"
+			? DateTime.fromMillis(value).setLocale(locale)
+			: DateTime.fromISO(value).setLocale(locale);
 
 	return dateTime.isValid ? dateTime.toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS) : "-";
 }
@@ -215,6 +221,35 @@ async function WorkerQueueContent({ locale }: { locale: string }) {
 		stale: t("settings.workerQueue.reliability.stale", "Stale"),
 		unknown: t("settings.workerQueue.reliability.unknown", "Unknown"),
 	} satisfies Record<ReliabilityHealth, string>;
+	const scheduleControlLabels = {
+		edit: t("settings.workerQueue.scheduleControls.edit", "Edit"),
+		reset: t("settings.workerQueue.scheduleControls.reset", "Reset"),
+		save: t("settings.workerQueue.scheduleControls.save", "Save schedule"),
+		cancel: t("settings.workerQueue.scheduleControls.cancel", "Cancel"),
+		presetLabel: t("settings.workerQueue.scheduleControls.presetLabel", "Schedule preset"),
+		highRiskTitle: t("settings.workerQueue.scheduleControls.highRiskTitle", "High-risk schedule"),
+		highRiskDescription: t(
+			"settings.workerQueue.scheduleControls.highRiskDescription",
+			"Changing this job can affect billing, cleanup, integrations, compliance, or operational automation.",
+		),
+		confirmationLabel: t(
+			"settings.workerQueue.scheduleControls.confirmationLabel",
+			"Type confirmation",
+		),
+		confirmationText: "I understand the operational impact",
+		saved: t("settings.workerQueue.scheduleControls.saved", "Schedule saved"),
+		resetSaved: t("settings.workerQueue.scheduleControls.resetSaved", "Schedule reset"),
+		warningPrefix: t("settings.workerQueue.scheduleControls.warningPrefix", "Saved with warning"),
+		failed: t("settings.workerQueue.scheduleControls.failed", "Schedule change failed"),
+		mismatch: t(
+			"settings.workerQueue.scheduleControls.mismatch",
+			"BullMQ currently differs from the saved schedule; worker startup will reconcile it.",
+		),
+		readOnly: t(
+			"settings.workerQueue.scheduleControls.readOnly",
+			"This default schedule has no editable preset yet.",
+		),
+	};
 
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
@@ -453,7 +488,7 @@ async function WorkerQueueContent({ locale }: { locale: string }) {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						{stats.repeatableJobs.length === 0 ? (
+						{stats.scheduledJobs.length === 0 ? (
 							<p className="text-muted-foreground text-sm">
 								{t("settings.workerQueue.noScheduledJobs", "No scheduled jobs found")}
 							</p>
@@ -464,17 +499,54 @@ async function WorkerQueueContent({ locale }: { locale: string }) {
 										<TableRow>
 											<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
 											<TableHead>{t("settings.workerQueue.table.schedule", "Schedule")}</TableHead>
+											<TableHead>{t("settings.workerQueue.table.default", "Default")}</TableHead>
 											<TableHead>{t("settings.workerQueue.table.nextRun", "Next Run")}</TableHead>
+											<TableHead>{t("settings.workerQueue.table.actions", "Actions")}</TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>
-										{stats.repeatableJobs.map((job) => (
-											<TableRow key={`${job.name}-${job.pattern}`}>
-												<TableCell className="font-mono text-sm">{job.name}</TableCell>
-												<TableCell className="font-mono text-sm">{job.pattern}</TableCell>
-												<TableCell>{formatDateTime(job.next, locale)}</TableCell>
-											</TableRow>
-										))}
+										{stats.scheduledJobs.map((job) => {
+											const presetLabel =
+												CRON_SCHEDULE_PRESETS.find((preset) => preset.id === job.presetId)?.label ??
+												unknownLabel;
+
+											return (
+												<TableRow key={job.name}>
+													<TableCell className="min-w-64 align-top">
+														<div className="font-mono text-sm">{job.name}</div>
+														<div className="mt-1 max-w-md text-muted-foreground text-xs">
+															{CRON_JOBS[job.jobName].description}
+														</div>
+													</TableCell>
+													<TableCell className="min-w-48 align-top">
+														<div className="flex flex-wrap items-center gap-2">
+															<span>{presetLabel}</span>
+															{job.isOverridden ? (
+																<Badge variant="outline">
+																	{t("settings.workerQueue.schedule.overridden", "Overridden")}
+																</Badge>
+															) : null}
+														</div>
+														<div className="mt-1 font-mono text-muted-foreground text-xs">
+															{job.effectivePattern}
+														</div>
+													</TableCell>
+													<TableCell className="align-top font-mono text-sm">
+														{job.defaultPattern}
+													</TableCell>
+													<TableCell className="align-top">
+														{formatDateTime(job.next, locale)}
+													</TableCell>
+													<TableCell className="min-w-72 align-top">
+														<ScheduleControls
+															job={job}
+															labels={scheduleControlLabels}
+															presets={[...CRON_SCHEDULE_PRESETS]}
+														/>
+													</TableCell>
+												</TableRow>
+											);
+										})}
 									</TableBody>
 								</Table>
 							</div>

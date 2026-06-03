@@ -108,11 +108,7 @@ vi.mock("./branding-form", () => ({
 }));
 
 vi.mock("./domain-management", () => ({
-	DomainManagement: ({
-		defaultUrls,
-	}: {
-		defaultUrls: { canonical: string; alias: string };
-	}) => (
+	DomainManagement: ({ defaultUrls }: { defaultUrls: { canonical: string; alias: string } }) => (
 		<div>
 			<div>Domain management</div>
 			<div>{defaultUrls.canonical}</div>

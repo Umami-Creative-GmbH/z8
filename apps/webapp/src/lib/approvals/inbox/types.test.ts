@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-	SUPPORTED_APPROVAL_INBOX_TYPES,
 	type ApprovalInboxItem,
+	SUPPORTED_APPROVAL_INBOX_TYPES,
 } from "@/lib/approvals/inbox/types";
 
 describe("approval inbox contract types", () => {

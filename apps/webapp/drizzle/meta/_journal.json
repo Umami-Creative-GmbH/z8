@@ -302,6 +302,20 @@
       "when": 1780304304743,
       "tag": "0042_approval_policy_runtime_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1780304304744,
+      "tag": "0043_absence_approval_orphan_recovery",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1780304304745,
+      "tag": "0044_cron_schedule_override",
+      "breakpoints": true
     }
   ]
 }

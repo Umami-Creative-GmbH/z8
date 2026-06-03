@@ -29,6 +29,14 @@ const STRIPE_KEYS = [
 	"STRIPE_PRICE_YEARLY_ID",
 ] as const;
 
+const SMTP_REQUIRED_KEYS = [
+	"SMTP_HOST",
+	"SMTP_PORT",
+	"SMTP_USERNAME",
+	"SMTP_PASSWORD",
+	"SMTP_FROM_EMAIL",
+] as const;
+
 const COOKIE_CONSENT_SCRIPT_KEY = "cookie_consent_script";
 
 function isConfigured(value: string | undefined): boolean {
@@ -58,6 +66,36 @@ function buildTurnstileConfigItem(env: DiagnosticsEnv): DiagnosticsItem {
 		description: configured
 			? "Cloudflare Turnstile site and secret keys are configured."
 			: "Cloudflare Turnstile checks are disabled unless both keys are configured.",
+	};
+}
+
+function buildSystemResendConfigItem(env: DiagnosticsEnv): DiagnosticsItem {
+	const configured = isConfigured(env.RESEND_API_KEY);
+
+	return {
+		title: "System Resend",
+		status: configured ? "healthy" : "disabled",
+		value: configured ? "Configured" : "Not configured",
+		description: configured
+			? "System Resend transport is available for fallback email delivery."
+			: "System Resend transport is disabled unless RESEND_API_KEY is configured.",
+	};
+}
+
+function buildSystemSmtpConfigItem(env: DiagnosticsEnv): DiagnosticsItem {
+	const configuredCount = SMTP_REQUIRED_KEYS.filter((key) => isConfigured(env[key])).length;
+	const configured = configuredCount === SMTP_REQUIRED_KEYS.length;
+	const partiallyConfigured = configuredCount > 0 && !configured;
+
+	return {
+		title: "System SMTP",
+		status: configured ? "healthy" : partiallyConfigured ? "warning" : "disabled",
+		value: configured ? "Configured" : partiallyConfigured ? "Incomplete" : "Not configured",
+		description: configured
+			? "System SMTP transport is available for fallback email delivery."
+			: partiallyConfigured
+				? "System SMTP transport has only part of the required configuration."
+				: "System SMTP transport is disabled unless all required SMTP variables are configured.",
 	};
 }
 
@@ -214,6 +252,8 @@ export async function collectPlatformDiagnostics(
 			description: "Runtime value of BILLING_ENABLED.",
 		},
 		buildTurnstileConfigItem(deps.env),
+		buildSystemResendConfigItem(deps.env),
+		buildSystemSmtpConfigItem(deps.env),
 		cookieConsentResult.ok
 			? {
 					title: "Cookie consent script",

@@ -123,7 +123,11 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 	for (const request of requests) {
 		const handler = resolveHandler(request.entityType);
 
-		if (!handler || !isSupportedInboxType(request.entityType) || handler.type !== request.entityType) {
+		if (
+			!handler ||
+			!isSupportedInboxType(request.entityType) ||
+			handler.type !== request.entityType
+		) {
 			result.failed.push({
 				id: request.id,
 				code: "unsupported",
@@ -298,7 +302,10 @@ function withMissingApprovalFailures(
 	}
 
 	failed.sort((first, second) => {
-		return (requestedOrder.get(first.id) ?? Number.MAX_SAFE_INTEGER) - (requestedOrder.get(second.id) ?? Number.MAX_SAFE_INTEGER);
+		return (
+			(requestedOrder.get(first.id) ?? Number.MAX_SAFE_INTEGER) -
+			(requestedOrder.get(second.id) ?? Number.MAX_SAFE_INTEGER)
+		);
 	});
 
 	return { succeeded: result.succeeded, failed };
@@ -472,7 +479,12 @@ function isAuthorizationFailureMessage(message: string): boolean {
 }
 
 function getErrorMessage(error: unknown): string {
-	if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
+	if (
+		error &&
+		typeof error === "object" &&
+		"message" in error &&
+		typeof error.message === "string"
+	) {
 		return error.message;
 	}
 

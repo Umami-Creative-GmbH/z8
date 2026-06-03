@@ -84,6 +84,6 @@ describe("billing seat sync hooks", () => {
 		);
 
 		expect(acceptInvitationHook).toContain("syncBillingSeats");
-		expect(acceptInvitationHook).toContain("change: \"added\"");
+		expect(acceptInvitationHook).toContain('change: "added"');
 	});
 });

@@ -2,10 +2,7 @@
 
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type {
-	ApprovalInboxFastLaneGroup,
-	ApprovalInboxItem,
-} from "@/lib/approvals/inbox/types";
+import type { ApprovalInboxFastLaneGroup, ApprovalInboxItem } from "@/lib/approvals/inbox/types";
 import { ApprovalFastLanes } from "./approval-fast-lanes";
 
 vi.mock("@tolgee/react", () => ({
@@ -101,11 +98,11 @@ describe("ApprovalFastLanes", () => {
 
 		expect(screen.getByRole("heading", { name: "Fast lanes" })).toBeTruthy();
 		expect(screen.getByText("Review similar low-friction requests in batches.")).toBeTruthy();
-			expect(screen.getByText("Low-risk absences")).toBeTruthy();
-			expect(screen.getByText("2 requests")).toBeTruthy();
-			expect(screen.getByText("Absences with no detected conflicts.")).toBeTruthy();
-			expect(screen.getByText("No conflicts detected.")).toBeTruthy();
-			expect(screen.getByText("Low risk")).toBeTruthy();
+		expect(screen.getByText("Low-risk absences")).toBeTruthy();
+		expect(screen.getByText("2 requests")).toBeTruthy();
+		expect(screen.getByText("Absences with no detected conflicts.")).toBeTruthy();
+		expect(screen.getByText("No conflicts detected.")).toBeTruthy();
+		expect(screen.getByText("Low risk")).toBeTruthy();
 		expect(screen.getByText("Payroll blockers")).toBeTruthy();
 		expect(screen.getByText("1 request")).toBeTruthy();
 		expect(screen.getByText("Payroll-relevant requests that need priority review.")).toBeTruthy();

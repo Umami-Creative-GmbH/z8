@@ -1,8 +1,8 @@
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
+import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
 import { getApprovalInboxListFromSources } from "@/lib/approvals/inbox/read-service";
 import type { ApprovalInboxSource } from "@/lib/approvals/inbox/source-adapters";
-import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 
 function item(overrides: Partial<UnifiedApprovalItem>): UnifiedApprovalItem {
@@ -31,7 +31,10 @@ function item(overrides: Partial<UnifiedApprovalItem>): UnifiedApprovalItem {
 	};
 }
 
-function source(type: ApprovalInboxSource["type"], items: UnifiedApprovalItem[]): ApprovalInboxSource {
+function source(
+	type: ApprovalInboxSource["type"],
+	items: UnifiedApprovalItem[],
+): ApprovalInboxSource {
 	return {
 		type,
 		displayName: type,
@@ -176,9 +179,7 @@ describe("getApprovalInboxListFromSources", () => {
 			now: new Date("2026-05-31T09:00:00.000Z"),
 		});
 		const fractionalResult = await getApprovalInboxListFromSources({
-			sources: [
-				source("absence_entry", [item({ id: "approval-1" }), item({ id: "approval-2" })]),
-			],
+			sources: [source("absence_entry", [item({ id: "approval-1" }), item({ id: "approval-2" })])],
 			params: { approverId: "manager-1", organizationId: "org-1", status: "pending", limit: 0.5 },
 			now: new Date("2026-05-31T09:00:00.000Z"),
 		});

@@ -4,15 +4,20 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlatformDiagnosticsSnapshot } from "@/lib/platform-diagnostics";
 
-const { refreshPlatformDiagnosticsActionMock, testPlatformKeyManagerEncryptionActionMock } =
-	vi.hoisted(() => ({
-		refreshPlatformDiagnosticsActionMock: vi.fn(),
-		testPlatformKeyManagerEncryptionActionMock: vi.fn(),
-	}));
+const {
+	refreshPlatformDiagnosticsActionMock,
+	testPlatformKeyManagerEncryptionActionMock,
+	sendPlatformDiagnosticsTestEmailActionMock,
+} = vi.hoisted(() => ({
+	refreshPlatformDiagnosticsActionMock: vi.fn(),
+	testPlatformKeyManagerEncryptionActionMock: vi.fn(),
+	sendPlatformDiagnosticsTestEmailActionMock: vi.fn(),
+}));
 
 vi.mock("./actions", () => ({
 	refreshPlatformDiagnosticsAction: refreshPlatformDiagnosticsActionMock,
 	testPlatformKeyManagerEncryptionAction: testPlatformKeyManagerEncryptionActionMock,
+	sendPlatformDiagnosticsTestEmailAction: sendPlatformDiagnosticsTestEmailActionMock,
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -99,7 +104,7 @@ describe("DiagnosticsClient", () => {
 	});
 
 	it("renders the initial diagnostics snapshot", () => {
-		render(<DiagnosticsClient initialSnapshot={snapshot()} />);
+		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
 
 		expect(screen.getByText("Deployment Diagnostics")).toBeTruthy();
 		expect(screen.getAllByText("Healthy").length).toBeGreaterThan(0);
@@ -109,8 +114,16 @@ describe("DiagnosticsClient", () => {
 		expect(screen.getByText("Connected")).toBeTruthy();
 	});
 
+	it("defaults the email test recipient to the signed-in admin email", () => {
+		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
+
+		expect(screen.getByLabelText("Recipient email")).toHaveProperty("value", "admin@example.com");
+	});
+
 	it("keeps item status labels accessible when the visual label is hidden", () => {
-		const { container } = render(<DiagnosticsClient initialSnapshot={snapshot()} />);
+		const { container } = render(
+			<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />,
+		);
 
 		const hiddenStatusLabels = Array.from(container.querySelectorAll(".sr-only")).map(
 			(element) => element.textContent,
@@ -138,7 +151,7 @@ describe("DiagnosticsClient", () => {
 			}),
 		});
 
-		render(<DiagnosticsClient initialSnapshot={snapshot()} />);
+		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
 		fireEvent.click(screen.getByRole("button", { name: "Refresh diagnostics" }));
 
 		await waitFor(() => expect(screen.getAllByText("Warning").length).toBeGreaterThan(0));
@@ -161,7 +174,7 @@ describe("DiagnosticsClient", () => {
 			error: "Platform admin access required",
 		});
 
-		render(<DiagnosticsClient initialSnapshot={snapshot()} />);
+		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
 		fireEvent.click(screen.getByRole("button", { name: "Refresh diagnostics" }));
 
 		await waitFor(() => expect(screen.getByText("Platform admin access required")).toBeTruthy());
@@ -169,8 +182,42 @@ describe("DiagnosticsClient", () => {
 		expect(screen.getByText("Connected")).toBeTruthy();
 	});
 
+	it("sends a test email to the edited recipient and shows success", async () => {
+		sendPlatformDiagnosticsTestEmailActionMock.mockResolvedValue({
+			success: true,
+			data: { recipient: "ops@example.com", messageId: "msg_123" },
+		});
+		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
+
+		fireEvent.change(screen.getByLabelText("Recipient email"), {
+			target: { value: "ops@example.com" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Send test email" }));
+
+		await waitFor(() =>
+			expect(screen.getByText("Test email sent to ops@example.com.")).toBeTruthy(),
+		);
+		expect(screen.getByText("Message ID: msg_123")).toBeTruthy();
+		expect(sendPlatformDiagnosticsTestEmailActionMock).toHaveBeenCalledWith({
+			to: "ops@example.com",
+		});
+	});
+
+	it("shows an inline error when the email test fails", async () => {
+		sendPlatformDiagnosticsTestEmailActionMock.mockResolvedValue({
+			success: false,
+			error: "Failed to send test email.",
+		});
+		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Send test email" }));
+
+		await waitFor(() => expect(screen.getByText("Failed to send test email.")).toBeTruthy());
+		expect(screen.getByRole("alert").getAttribute("aria-live")).toBe("polite");
+	});
+
 	it("renders the Scaleway Key Manager encryption test card", () => {
-		render(<DiagnosticsClient initialSnapshot={snapshot()} />);
+		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
 
 		expect(screen.getByText("Scaleway Key Manager Encryption")).toBeTruthy();
 		expect(screen.getByText("Run an end-to-end platform key encrypt/decrypt test.")).toBeTruthy();
@@ -178,7 +225,12 @@ describe("DiagnosticsClient", () => {
 	});
 
 	it("hides the Scaleway Key Manager encryption test card for Vault secret store deployments", () => {
-		render(<DiagnosticsClient initialSnapshot={snapshot({ secretStoreProvider: "vault" })} />);
+		render(
+			<DiagnosticsClient
+				initialSnapshot={snapshot({ secretStoreProvider: "vault" })}
+				adminEmail="admin@example.com"
+			/>,
+		);
 
 		expect(screen.queryByText("Scaleway Key Manager Encryption")).toBeNull();
 		expect(screen.queryByRole("button", { name: "Test encryption" })).toBeNull();
@@ -197,7 +249,7 @@ describe("DiagnosticsClient", () => {
 			},
 		});
 
-		render(<DiagnosticsClient initialSnapshot={snapshot()} />);
+		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
 		fireEvent.click(screen.getByRole("button", { name: "Test encryption" }));
 
 		await waitFor(() => expect(screen.getByText("Input and output match")).toBeTruthy());
@@ -213,7 +265,7 @@ describe("DiagnosticsClient", () => {
 			error: "Scaleway Key Manager request failed",
 		});
 
-		render(<DiagnosticsClient initialSnapshot={snapshot()} />);
+		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
 		fireEvent.click(screen.getByRole("button", { name: "Test encryption" }));
 
 		await waitFor(() =>

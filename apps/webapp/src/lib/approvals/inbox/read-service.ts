@@ -2,20 +2,20 @@ import { and, eq } from "drizzle-orm";
 import { Effect, Exit } from "effect";
 import { db } from "@/db";
 import { approvalRequest } from "@/db/schema";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import type {
 	ApprovalDetail,
 	ApprovalQueryParams,
 	ApprovalTypeHandler,
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ApprovalInboxBadRequestError } from "./current-actor";
 import { getAgeDays, serializeDate } from "./serialization";
 import {
-	getSupportedInboxSources,
-	getSupportedInboxHandler,
-	isSupportedInboxType,
 	type ApprovalInboxSource,
+	getSupportedInboxHandler,
+	getSupportedInboxSources,
+	isSupportedInboxType,
 } from "./source-adapters";
 import { buildInboxTriage } from "./triage";
 import type {
@@ -94,7 +94,9 @@ export async function getApprovalInboxListFromSources({
 	) as ApprovalInboxListResult["counts"];
 
 	for (const source of selectedSources) {
-		const approvalsExit = await Effect.runPromiseExit(provideDatabase(source.handler.getApprovals(params)));
+		const approvalsExit = await Effect.runPromiseExit(
+			provideDatabase(source.handler.getApprovals(params)),
+		);
 		if (Exit.isFailure(approvalsExit)) {
 			warnings.push({
 				source: source.type,
@@ -146,7 +148,9 @@ export async function getApprovalInboxListFromSources({
 	};
 }
 
-export function getApprovalInboxList(params: ApprovalInboxListParams): Promise<ApprovalInboxListResult> {
+export function getApprovalInboxList(
+	params: ApprovalInboxListParams,
+): Promise<ApprovalInboxListResult> {
 	return getApprovalInboxListFromSources({ sources: getSupportedInboxSources(), params });
 }
 
@@ -220,11 +224,11 @@ function validateDetailMatchesRequest(
 ): void {
 	if (
 		detail.approval.id !== request.id ||
-		 detail.approval.entityId !== request.entityId ||
-		 detail.approval.approvalType !== request.entityType ||
-		 detail.approval.organizationId !== request.organizationId ||
-		 detail.approval.approverId !== request.approverId ||
-		 detail.approval.status !== request.status
+		detail.approval.entityId !== request.entityId ||
+		detail.approval.approvalType !== request.entityType ||
+		detail.approval.organizationId !== request.organizationId ||
+		detail.approval.approverId !== request.approverId ||
+		detail.approval.status !== request.status
 	) {
 		throw new ApprovalInboxBadRequestError("Approval detail mismatch");
 	}

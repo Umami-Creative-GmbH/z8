@@ -141,16 +141,16 @@ describe("StripeService", () => {
 	it("rejects product ids before creating checkout sessions", async () => {
 		const result = await Effect.runPromise(
 			Effect.gen(function* () {
-					const stripeService = yield* StripeService;
+				const stripeService = yield* StripeService;
 
-					return yield* stripeService.createCheckoutSession({
-						customerId: "cus_test_123",
-						priceId: "prod_123",
-						organizationId: "org_123",
-						quantity: 5,
-						successUrl: "https://app.test/settings/billing?success=true",
-						cancelUrl: "https://app.test/settings/billing?canceled=true",
-					});
+				return yield* stripeService.createCheckoutSession({
+					customerId: "cus_test_123",
+					priceId: "prod_123",
+					organizationId: "org_123",
+					quantity: 5,
+					successUrl: "https://app.test/settings/billing?success=true",
+					cancelUrl: "https://app.test/settings/billing?canceled=true",
+				});
 			}).pipe(Effect.provide(StripeServiceLive), Effect.either),
 		);
 

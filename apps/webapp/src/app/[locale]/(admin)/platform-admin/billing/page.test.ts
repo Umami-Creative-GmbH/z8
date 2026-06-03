@@ -67,7 +67,7 @@ describe("platform admin billing seat sync button source", () => {
 	it("defines a client button that syncs seats and refreshes the route", () => {
 		const source = readFileSync(new URL("./sync-seats-button.tsx", import.meta.url), "utf8");
 
-		expect(source).toContain("'use client'");
+		expect(source).toMatch(/["']use client["']/);
 		expect(source).toContain("IconRefresh");
 		expect(source).toContain("syncOrganizationSeatsAction(organizationId)");
 		expect(source).toContain("router.refresh()");

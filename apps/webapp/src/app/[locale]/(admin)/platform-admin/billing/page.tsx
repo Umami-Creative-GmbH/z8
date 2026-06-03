@@ -279,7 +279,12 @@ async function SubscriptionsTable() {
 						.select({ organizationId: member.organizationId, total: count() })
 						.from(member)
 						.innerJoin(user, eq(user.id, member.userId))
-						.where(and(inArray(member.organizationId, organizationIds), like(user.email, "%@demo.invalid")))
+						.where(
+							and(
+								inArray(member.organizationId, organizationIds),
+								like(user.email, "%@demo.invalid"),
+							),
+						)
 						.groupBy(member.organizationId),
 				])
 			: [[], [], []];
@@ -383,7 +388,10 @@ async function SubscriptionsTable() {
 											{formatDate(sub.createdAt)}
 										</TableCell>
 										<TableCell className="text-right">
-											<SyncSeatsButton organizationId={sub.organizationId} organizationName={orgName} />
+											<SyncSeatsButton
+												organizationId={sub.organizationId}
+												organizationName={orgName}
+											/>
 										</TableCell>
 									</TableRow>
 								);
