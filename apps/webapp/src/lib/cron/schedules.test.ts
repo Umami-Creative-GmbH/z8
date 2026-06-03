@@ -78,4 +78,37 @@ describe("cron schedule presets", () => {
 			canEdit: true,
 		});
 	});
+
+	it("marks duplicate repeatables as mismatched when matching and stale schedules coexist", () => {
+		const rows = buildScheduledJobRows({
+			overrides: [
+				{
+					jobName: "cron:export",
+					presetId: "hourly",
+					pattern: "0 * * * *",
+				},
+			],
+			repeatableJobs: [
+				{
+					name: "cron:export",
+					pattern: "*/5 * * * *",
+					next: "2026-06-03T12:05:00.000Z",
+				},
+				{
+					name: "cron:export",
+					pattern: "0 * * * *",
+					next: "2026-06-03T13:00:00.000Z",
+				},
+			],
+		});
+
+		const exportRow = rows.find((row) => row.name === "cron:export");
+		expect(exportRow).toMatchObject({
+			name: "cron:export",
+			effectivePattern: "0 * * * *",
+			currentBullMqPattern: "0 * * * *",
+			next: "2026-06-03T13:00:00.000Z",
+			hasScheduleMismatch: true,
+		});
+	});
 });

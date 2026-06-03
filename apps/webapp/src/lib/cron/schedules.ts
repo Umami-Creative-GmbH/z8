@@ -114,21 +114,30 @@ export function buildScheduledJobRows({
 	overrides: readonly CronScheduleOverrideLike[];
 	repeatableJobs: readonly RepeatableCronJobLike[];
 }): ScheduledCronJobRow[] {
-	const repeatableJobsByName = new Map(repeatableJobs.map((job) => [job.name, job]));
+	const repeatableJobsByName = new Map<string, RepeatableCronJobLike[]>();
+	for (const job of repeatableJobs) {
+		repeatableJobsByName.set(job.name, [...(repeatableJobsByName.get(job.name) ?? []), job]);
+	}
+
 	const schedules = resolveEffectiveCronSchedules({ overrides });
 
 	return getAllCronJobNames()
 		.map((name) => {
 			const schedule = schedules[name];
-			const repeatableJob = repeatableJobsByName.get(name);
-			const currentBullMqPattern = repeatableJob?.pattern ?? null;
+			const jobs = repeatableJobsByName.get(name) ?? [];
+			const sortedJobs = [...jobs].sort((left, right) =>
+				(left.pattern ?? "").localeCompare(right.pattern ?? ""),
+			);
+			const selectedJob =
+				jobs.find((job) => job.pattern === schedule.effectivePattern) ?? sortedJobs[0];
+			const currentBullMqPattern = selectedJob?.pattern ?? null;
 
 			return {
 				...schedule,
 				name,
-				next: repeatableJob?.next ?? null,
+				next: selectedJob?.next ?? null,
 				currentBullMqPattern,
-				hasScheduleMismatch: currentBullMqPattern !== schedule.effectivePattern,
+				hasScheduleMismatch: jobs.some((job) => job.pattern !== schedule.effectivePattern),
 			};
 		})
 		.sort((left, right) => left.name.localeCompare(right.name));
