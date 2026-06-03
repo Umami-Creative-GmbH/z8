@@ -137,7 +137,8 @@ export function buildScheduledJobRows({
 				name,
 				next: selectedJob?.next ?? null,
 				currentBullMqPattern,
-				hasScheduleMismatch: jobs.some((job) => job.pattern !== schedule.effectivePattern),
+				hasScheduleMismatch:
+					jobs.length === 0 || jobs.some((job) => job.pattern !== schedule.effectivePattern),
 			};
 		})
 		.sort((left, right) => left.name.localeCompare(right.name));

@@ -111,4 +111,19 @@ describe("cron schedule presets", () => {
 			hasScheduleMismatch: true,
 		});
 	});
+
+	it("marks missing repeatables as mismatched", () => {
+		const rows = buildScheduledJobRows({
+			overrides: [],
+			repeatableJobs: [],
+		});
+
+		const exportRow = rows.find((row) => row.name === "cron:export");
+		expect(exportRow).toMatchObject({
+			name: "cron:export",
+			currentBullMqPattern: null,
+			next: null,
+			hasScheduleMismatch: true,
+		});
+	});
 });
