@@ -27,15 +27,16 @@ import {
 	CRON_JOBS,
 	type CronJobData,
 	type CronJobName,
-	getCronSchedules,
-	isCronJobName,
-} from "@/lib/cron/registry";
-import {
+	type CronScheduleOverrideLike,
 	createJobExecution,
+	isCronJobName,
+	listCronScheduleOverrides,
 	markJobCompleted,
 	markJobFailed,
 	markJobRunning,
-} from "@/lib/cron/tracking";
+	reconcileCronSchedules,
+	resolveEffectiveCronSchedules,
+} from "@/lib/cron";
 import { createLogger } from "@/lib/logger";
 import { createWorker, getJobQueue, type JobData, type JobResult } from "@/lib/queue";
 
@@ -234,51 +235,68 @@ async function setupCronJobs(queue: Queue): Promise<void> {
 		return;
 	}
 
-	logger.info("Setting up repeatable cron jobs from registry...");
+	logger.info("Reconciling repeatable cron jobs from effective schedules...");
 
-	const schedules = getCronSchedules();
+	try {
+		let overrides: Awaited<ReturnType<typeof listCronScheduleOverrides>> = [];
 
-	for (const [type, schedule] of Object.entries(schedules)) {
 		try {
-			// BullMQ automatically deduplicates repeatable jobs with the same options
-			await queue.add(
-				type,
-				{
-					type: type as CronJobName,
-					triggeredAt: new Date().toISOString(),
-					// Note: executionId is NOT included here - it will be created by the worker
-				},
-				{
-					repeat: {
-						pattern: schedule.pattern,
-					},
-					// Use a consistent jobId to ensure deduplication
-					jobId: `cron-${type}`,
-					removeOnComplete: {
-						count: 50, // Keep last 50 completed cron runs
-						age: 24 * 60 * 60, // Keep for 24 hours
-					},
-					removeOnFail: {
-						count: 100, // Keep more failed jobs for debugging
-						age: 7 * 24 * 60 * 60, // Keep for 7 days
-					},
-				},
+			overrides = await listCronScheduleOverrides();
+		} catch (error) {
+			logger.error(
+				{ error },
+				"Failed to read cron schedule overrides; falling back to registry schedules",
 			);
+		}
 
+		const scheduleOverrides: CronScheduleOverrideLike[] = [];
+
+		for (const override of overrides) {
+			if (isCronJobName(override.jobName)) {
+				scheduleOverrides.push({ ...override, jobName: override.jobName });
+			} else {
+				logger.warn({ jobName: override.jobName }, "Ignoring unknown cron schedule override");
+			}
+		}
+
+		const effectiveSchedules = resolveEffectiveCronSchedules({ overrides: scheduleOverrides });
+		const schedules = Object.fromEntries(
+			Object.entries(effectiveSchedules).map(([jobName, schedule]) => [
+				jobName,
+				{ pattern: schedule.effectivePattern },
+			]),
+		) as Record<CronJobName, { pattern: string }>;
+
+		const result = await reconcileCronSchedules({ queue, schedules });
+
+		for (const job of result.reconciled) {
 			logger.debug(
 				{
-					type,
-					pattern: schedule.pattern,
-					description: schedule.description,
+					type: job.jobName,
+					pattern: schedules[job.jobName].pattern,
+					removedCount: job.removedCount,
 				},
-				"Registered repeatable cron job",
+				"Reconciled repeatable cron job",
 			);
-		} catch (error) {
-			logger.error({ error, type }, "Failed to setup cron job");
 		}
-	}
 
-	logger.info(`Setup ${Object.keys(schedules).length} cron jobs from registry`);
+		for (const job of result.failed) {
+			logger.error({ error: job.error, type: job.jobName }, "Failed to reconcile cron job");
+		}
+
+		logger.info(
+			{
+				reconciled: result.reconciled.length,
+				failed: result.failed.length,
+			},
+			"Cron job schedule reconciliation completed",
+		);
+	} catch (error) {
+		logger.error(
+			{ error },
+			"Cron job schedule reconciliation failed; worker startup will continue",
+		);
+	}
 }
 
 /**
