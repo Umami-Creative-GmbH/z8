@@ -82,7 +82,8 @@ export function CalendarView({
 	const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
 
 	// Selected employee for calendar view (defaults to current user)
-	const [lastAppliedInitialEmployeeId, setLastAppliedInitialEmployeeId] = useState(initialEmployeeId);
+	const [lastAppliedInitialEmployeeId, setLastAppliedInitialEmployeeId] =
+		useState(initialEmployeeId);
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(initialEmployeeId);
 	const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
 	const [pendingSelectedEmployeeId, setPendingSelectedEmployeeId] = useState<string | null>(null);

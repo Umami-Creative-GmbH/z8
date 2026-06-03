@@ -352,9 +352,9 @@ describe("CalendarView", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByTestId("employee-selector").getAttribute("data-selected-employee-id")).toBe(
-				"employee-3",
-			);
+			expect(
+				screen.getByTestId("employee-selector").getAttribute("data-selected-employee-id"),
+			).toBe("employee-3");
 		});
 		expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-3" });
 	});
