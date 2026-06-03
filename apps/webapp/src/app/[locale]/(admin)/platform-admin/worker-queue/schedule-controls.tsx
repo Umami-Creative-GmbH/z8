@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CronSchedulePreset, ScheduledCronJobRow } from "@/lib/cron/schedules";
-import { isHighRiskCronJob } from "@/lib/cron/schedules";
 import { resetCronSchedule, updateCronSchedule } from "./actions";
 
 export interface ScheduleControlsLabels {
@@ -30,8 +29,25 @@ export interface ScheduleControlsLabels {
 	readOnly: string;
 }
 
+const HIGH_RISK_CRON_JOB_NAMES = new Set<string>([
+	"cron:billing-seat-reconciliation",
+	"cron:execution-cleanup",
+	"cron:organization-cleanup",
+	"cron:break-enforcement",
+	"cron:teams-daily-digest",
+	"cron:teams-escalation",
+	"cron:telegram-daily-digest",
+	"cron:telegram-escalation",
+	"cron:discord-daily-digest",
+	"cron:discord-escalation",
+	"cron:slack-daily-digest",
+	"cron:slack-escalation",
+]);
+
+type ScheduleControlsJob = ScheduledCronJobRow & { isHighRisk?: boolean };
+
 interface ScheduleControlsProps {
-	job: ScheduledCronJobRow;
+	job: ScheduleControlsJob;
 	labels: ScheduleControlsLabels;
 	presets: CronSchedulePreset[];
 }
@@ -68,7 +84,7 @@ function showMutationResultToast({
 
 export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps) {
 	const router = useRouter();
-	const highRisk = isHighRiskCronJob(job.jobName);
+	const highRisk = job.isHighRisk ?? HIGH_RISK_CRON_JOB_NAMES.has(job.jobName);
 	const [isEditing, setIsEditing] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isResetConfirming, setIsResetConfirming] = useState(false);
