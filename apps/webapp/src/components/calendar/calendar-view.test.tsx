@@ -63,12 +63,17 @@ vi.mock("@/components/work-balance/work-balance-card", () => ({
 vi.mock("./calendar-employee-selector", () => ({
 	CalendarEmployeeSelector: ({
 		onEmployeeChange,
+		selectedEmployeeId,
 	}: {
 		onEmployeeChange: (employeeId: string | null) => void;
+		selectedEmployeeId: string | null;
 	}) => (
-		<div data-testid="employee-selector">
+		<div data-testid="employee-selector" data-selected-employee-id={selectedEmployeeId ?? ""}>
 			<button type="button" onClick={() => onEmployeeChange("employee-2")}>
 				Select employee 2
+			</button>
+			<button type="button" onClick={() => onEmployeeChange("employee-3")}>
+				Select employee 3
 			</button>
 			<button type="button" onClick={() => onEmployeeChange("employee-1")}>
 				Select employee 1
@@ -324,6 +329,34 @@ describe("CalendarView", () => {
 
 		expect(push).toHaveBeenCalledWith("/calendar");
 		expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-1" });
+	});
+
+	it("keeps the latest employee selection when an older route update arrives late", async () => {
+		const { rerender } = render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId={undefined}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select employee 2" }));
+		fireEvent.click(screen.getByRole("button", { name: "Select employee 3" }));
+
+		rerender(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId="employee-2"
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("employee-selector").getAttribute("data-selected-employee-id")).toBe(
+				"employee-3",
+			);
+		});
+		expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-3" });
 	});
 
 	it("renders desktop sidebar controls and mobile controls sheet trigger in non-year views", () => {

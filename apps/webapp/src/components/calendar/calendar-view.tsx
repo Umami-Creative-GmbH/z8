@@ -82,9 +82,10 @@ export function CalendarView({
 	const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
 
 	// Selected employee for calendar view (defaults to current user)
-	const [previousInitialEmployeeId, setPreviousInitialEmployeeId] = useState(initialEmployeeId);
+	const [lastAppliedInitialEmployeeId, setLastAppliedInitialEmployeeId] = useState(initialEmployeeId);
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(initialEmployeeId);
 	const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
+	const [pendingSelectedEmployeeId, setPendingSelectedEmployeeId] = useState<string | null>(null);
 
 	// Current date range for data fetching
 	const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -109,20 +110,24 @@ export function CalendarView({
 		employeeId: initialFilterEmployeeId,
 	});
 
-	if (previousInitialEmployeeId !== initialEmployeeId) {
-		setPreviousInitialEmployeeId(initialEmployeeId);
-		setSelectedEmployeeId(initialEmployeeId);
-		setSelectedEmployeeName(null);
-		setFilters((prev) => {
-			if (prev.employeeId === initialFilterEmployeeId) {
-				return prev;
-			}
+	if (lastAppliedInitialEmployeeId !== initialEmployeeId) {
+		setLastAppliedInitialEmployeeId(initialEmployeeId);
 
-			return {
-				...prev,
-				employeeId: initialFilterEmployeeId,
-			};
-		});
+		if (!pendingSelectedEmployeeId || pendingSelectedEmployeeId === initialEmployeeId) {
+			setPendingSelectedEmployeeId(null);
+			setSelectedEmployeeId(initialEmployeeId);
+			setSelectedEmployeeName(null);
+			setFilters((prev) => {
+				if (prev.employeeId === initialFilterEmployeeId) {
+					return prev;
+				}
+
+				return {
+					...prev,
+					employeeId: initialFilterEmployeeId,
+				};
+			});
+		}
 	}
 
 	const getEmployeeDisplayName = (employee?: SelectableEmployee) => {
@@ -134,6 +139,7 @@ export function CalendarView({
 	const handleEmployeeChange = (employeeId: string | null, employee?: SelectableEmployee) => {
 		const nextEmployeeId = employeeId ?? currentEmployeeId ?? null;
 
+		setPendingSelectedEmployeeId(nextEmployeeId);
 		setSelectedEmployeeId(nextEmployeeId);
 		setSelectedEmployeeName(getEmployeeDisplayName(employee));
 		setFilters((prev) => ({
