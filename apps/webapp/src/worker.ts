@@ -237,49 +237,66 @@ async function setupCronJobs(queue: Queue): Promise<void> {
 
 	logger.info("Reconciling repeatable cron jobs from effective schedules...");
 
-	const overrides = await listCronScheduleOverrides();
-	const scheduleOverrides: CronScheduleOverrideLike[] = [];
+	try {
+		let overrides: Awaited<ReturnType<typeof listCronScheduleOverrides>> = [];
 
-	for (const override of overrides) {
-		if (isCronJobName(override.jobName)) {
-			scheduleOverrides.push({ ...override, jobName: override.jobName });
-		} else {
-			logger.warn({ jobName: override.jobName }, "Ignoring unknown cron schedule override");
+		try {
+			overrides = await listCronScheduleOverrides();
+		} catch (error) {
+			logger.error(
+				{ error },
+				"Failed to read cron schedule overrides; falling back to registry schedules",
+			);
 		}
-	}
 
-	const effectiveSchedules = resolveEffectiveCronSchedules({ overrides: scheduleOverrides });
-	const schedules = Object.fromEntries(
-		Object.entries(effectiveSchedules).map(([jobName, schedule]) => [
-			jobName,
-			{ pattern: schedule.effectivePattern },
-		]),
-	) as Record<CronJobName, { pattern: string }>;
+		const scheduleOverrides: CronScheduleOverrideLike[] = [];
 
-	const result = await reconcileCronSchedules({ queue, schedules });
+		for (const override of overrides) {
+			if (isCronJobName(override.jobName)) {
+				scheduleOverrides.push({ ...override, jobName: override.jobName });
+			} else {
+				logger.warn({ jobName: override.jobName }, "Ignoring unknown cron schedule override");
+			}
+		}
 
-	for (const job of result.reconciled) {
-		logger.debug(
+		const effectiveSchedules = resolveEffectiveCronSchedules({ overrides: scheduleOverrides });
+		const schedules = Object.fromEntries(
+			Object.entries(effectiveSchedules).map(([jobName, schedule]) => [
+				jobName,
+				{ pattern: schedule.effectivePattern },
+			]),
+		) as Record<CronJobName, { pattern: string }>;
+
+		const result = await reconcileCronSchedules({ queue, schedules });
+
+		for (const job of result.reconciled) {
+			logger.debug(
+				{
+					type: job.jobName,
+					pattern: schedules[job.jobName].pattern,
+					removedCount: job.removedCount,
+				},
+				"Reconciled repeatable cron job",
+			);
+		}
+
+		for (const job of result.failed) {
+			logger.error({ error: job.error, type: job.jobName }, "Failed to reconcile cron job");
+		}
+
+		logger.info(
 			{
-				type: job.jobName,
-				pattern: schedules[job.jobName].pattern,
-				removedCount: job.removedCount,
+				reconciled: result.reconciled.length,
+				failed: result.failed.length,
 			},
-			"Reconciled repeatable cron job",
+			"Cron job schedule reconciliation completed",
+		);
+	} catch (error) {
+		logger.error(
+			{ error },
+			"Cron job schedule reconciliation failed; worker startup will continue",
 		);
 	}
-
-	for (const job of result.failed) {
-		logger.error({ error: job.error, type: job.jobName }, "Failed to reconcile cron job");
-	}
-
-	logger.info(
-		{
-			reconciled: result.reconciled.length,
-			failed: result.failed.length,
-		},
-		"Cron job schedule reconciliation completed",
-	);
 }
 
 /**

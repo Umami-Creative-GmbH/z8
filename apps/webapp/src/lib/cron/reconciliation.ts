@@ -29,32 +29,36 @@ export async function reconcileCronJobSchedule({
 }): Promise<CronReconciliationResult> {
 	try {
 		const repeatableJobs = await queue.getRepeatableJobs();
-		const staleRepeatables = repeatableJobs.filter(
+		const targetRepeatables = repeatableJobs.filter((job) => job.name === jobName);
+		const matchingRepeatables = targetRepeatables.filter((job) => job.pattern === pattern);
+		const staleRepeatables = targetRepeatables.filter(
 			(job): job is RepeatableJob & { key: string } =>
-				job.name === jobName && typeof job.key === "string" && job.key.length > 0,
+				job.pattern !== pattern && typeof job.key === "string" && job.key.length > 0,
 		);
+
+		if (matchingRepeatables.length === 0) {
+			await queue.add(
+				jobName,
+				{ type: jobName, triggeredAt: new Date().toISOString() },
+				{
+					...CRON_JOBS[jobName].defaultJobOptions,
+					repeat: { pattern },
+					jobId: `cron-${jobName}`,
+					removeOnComplete: {
+						count: 50,
+						age: 24 * 60 * 60,
+					},
+					removeOnFail: {
+						count: 100,
+						age: 7 * 24 * 60 * 60,
+					},
+				},
+			);
+		}
 
 		for (const job of staleRepeatables) {
 			await queue.removeRepeatableByKey(job.key);
 		}
-
-		await queue.add(
-			jobName,
-			{ type: jobName, triggeredAt: new Date().toISOString() },
-			{
-				...CRON_JOBS[jobName].defaultJobOptions,
-				repeat: { pattern },
-				jobId: `cron-${jobName}`,
-				removeOnComplete: {
-					count: 50,
-					age: 24 * 60 * 60,
-				},
-				removeOnFail: {
-					count: 100,
-					age: 7 * 24 * 60 * 60,
-				},
-			},
-		);
 
 		return { success: true, removedCount: staleRepeatables.length };
 	} catch (error) {

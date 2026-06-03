@@ -61,6 +61,55 @@ describe("cron schedule reconciliation", () => {
 		expect(result.error).toContain("add failed");
 	});
 
+	it("does not remove stale repeatables when adding the desired schedule fails", async () => {
+		const fakeQueue = queue({ addRejects: true });
+
+		const result = await reconcileCronJobSchedule({
+			queue: fakeQueue as never,
+			jobName: "cron:export",
+			pattern: "0 * * * *",
+		});
+
+		expect(result.success).toBe(false);
+		expect(fakeQueue.removeRepeatableByKey).not.toHaveBeenCalled();
+	});
+
+	it("does not add or remove when the desired schedule already exists", async () => {
+		const fakeQueue = queue({
+			repeatables: [{ name: "cron:export", pattern: "0 * * * *", key: "repeat-key-export" }],
+		});
+
+		const result = await reconcileCronJobSchedule({
+			queue: fakeQueue as never,
+			jobName: "cron:export",
+			pattern: "0 * * * *",
+		});
+
+		expect(fakeQueue.add).not.toHaveBeenCalled();
+		expect(fakeQueue.removeRepeatableByKey).not.toHaveBeenCalled();
+		expect(result).toEqual({ success: true, removedCount: 0 });
+	});
+
+	it("removes only stale repeatables when the desired schedule already exists", async () => {
+		const fakeQueue = queue({
+			repeatables: [
+				{ name: "cron:export", pattern: "0 * * * *", key: "repeat-key-export" },
+				{ name: "cron:export", pattern: "*/5 * * * *", key: "repeat-key-export-old" },
+			],
+		});
+
+		const result = await reconcileCronJobSchedule({
+			queue: fakeQueue as never,
+			jobName: "cron:export",
+			pattern: "0 * * * *",
+		});
+
+		expect(fakeQueue.add).not.toHaveBeenCalled();
+		expect(fakeQueue.removeRepeatableByKey).toHaveBeenCalledOnce();
+		expect(fakeQueue.removeRepeatableByKey).toHaveBeenCalledWith("repeat-key-export-old");
+		expect(result).toEqual({ success: true, removedCount: 1 });
+	});
+
 	it("reconciles all provided schedules", async () => {
 		const fakeQueue = queue({ repeatables: [] });
 
