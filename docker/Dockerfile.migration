@@ -11,7 +11,7 @@ RUN apk add --no-cache \
     tini
 
 ARG PNPM_VERSION
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+RUN npm install --global pnpm@${PNPM_VERSION}
 
 ENV PNPM_HOME=/pnpm
 ENV PATH=${PNPM_HOME}/bin:${PNPM_HOME}:${PATH}
