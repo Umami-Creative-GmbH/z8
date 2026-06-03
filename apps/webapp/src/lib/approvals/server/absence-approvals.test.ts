@@ -65,6 +65,7 @@ import {
 	formatAbsenceDateForEmail,
 } from "@/lib/approvals/server/absence-approvals";
 import type { ApprovalDbService, CurrentApprover } from "@/lib/approvals/server/types";
+import { EmailError } from "@/lib/effect/errors";
 import { EmailService } from "@/lib/effect/services/email.service";
 
 beforeEach(() => {
@@ -200,12 +201,15 @@ function createAbsenceDecisionDbService(
 	} as unknown as ApprovalDbService;
 }
 
-function runAbsenceDecisionEffect(effect: Effect.Effect<unknown, unknown, unknown>) {
+function runAbsenceDecisionEffect(
+	effect: Effect.Effect<unknown, unknown, unknown>,
+	emailService = {
+		send: vi.fn(() => Effect.succeed({ messageId: "message-1" })),
+	},
+) {
 	return Effect.runPromise(
 		effect.pipe(
-			Effect.provideService(EmailService, {
-				send: vi.fn(() => Effect.succeed({ messageId: "message-1" })),
-			}),
+			Effect.provideService(EmailService, emailService),
 			Effect.provideService(ApprovalAuditLogger, {
 				log: vi.fn(() => Effect.void),
 				logBatch: vi.fn(() => Effect.void),
@@ -298,6 +302,107 @@ describe("absence requester decision notifications", () => {
 			),
 		).resolves.toBeDefined();
 		expect(onAbsenceRequestApproved).toHaveBeenCalled();
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
+	it("keeps approval successful when requester email delivery fails", async () => {
+		vi.resetModules();
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApproval: vi.fn(),
+			processApprovalWithCurrentEmployee: vi.fn(
+				(
+					dbService: ApprovalDbService,
+					currentEmployee: CurrentApprover,
+					_entityType: string,
+					entityId: string,
+					_action: string,
+					_reason: string | undefined,
+					updateEntity: (
+						dbService: ApprovalDbService,
+						entityId: string,
+						currentEmployee: CurrentApprover,
+					) => Effect.Effect<unknown, unknown, unknown>,
+				) => updateEntity(dbService, entityId, currentEmployee),
+			),
+		}));
+		const { approveAbsenceWithCurrentApproverEffect } = await import(
+			"@/lib/approvals/server/absence-approvals"
+		);
+		const dbService = createAbsenceDecisionDbService();
+		const emailService = {
+			send: vi.fn(() =>
+				Effect.fail(
+					new EmailError({
+						message: "Failed to send email",
+						recipient: "avery@example.com",
+					}),
+				),
+			),
+		};
+
+		await expect(
+			runAbsenceDecisionEffect(
+				approveAbsenceWithCurrentApproverEffect(dbService, absenceCurrentApprover, "absence-1"),
+				emailService,
+			),
+		).resolves.toBeDefined();
+		expect(emailService.send).toHaveBeenCalledWith(
+			expect.objectContaining({ to: "avery@example.com" }),
+		);
+		expect(onAbsenceRequestApproved).toHaveBeenCalled();
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
+	it("keeps rejection successful when requester email delivery fails", async () => {
+		vi.resetModules();
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApproval: vi.fn(),
+			processApprovalWithCurrentEmployee: vi.fn(
+				(
+					dbService: ApprovalDbService,
+					currentEmployee: CurrentApprover,
+					_entityType: string,
+					entityId: string,
+					_action: string,
+					_reason: string | undefined,
+					updateEntity: (
+						dbService: ApprovalDbService,
+						entityId: string,
+						currentEmployee: CurrentApprover,
+					) => Effect.Effect<unknown, unknown, unknown>,
+				) => updateEntity(dbService, entityId, currentEmployee),
+			),
+		}));
+		const { rejectAbsenceWithCurrentApproverEffect } = await import(
+			"@/lib/approvals/server/absence-approvals"
+		);
+		const dbService = createAbsenceDecisionDbService();
+		const emailService = {
+			send: vi.fn(() =>
+				Effect.fail(
+					new EmailError({
+						message: "Failed to send email",
+						recipient: "avery@example.com",
+					}),
+				),
+			),
+		};
+
+		await expect(
+			runAbsenceDecisionEffect(
+				rejectAbsenceWithCurrentApproverEffect(
+					dbService,
+					absenceCurrentApprover,
+					"absence-1",
+					"Insufficient balance",
+				),
+				emailService,
+			),
+		).resolves.toBeDefined();
+		expect(emailService.send).toHaveBeenCalledWith(
+			expect.objectContaining({ to: "avery@example.com" }),
+		);
+		expect(onAbsenceRequestRejected).toHaveBeenCalled();
 		vi.doUnmock("@/lib/approvals/server/shared");
 	});
 
