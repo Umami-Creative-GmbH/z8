@@ -17,16 +17,14 @@ RUN apk add --no-cache \
 
 ARG PNPM_VERSION
 ENV PNPM_HOME=/pnpm
-ENV COREPACK_HOME=/corepack
 ENV PATH=${PNPM_HOME}/bin:${PNPM_HOME}:${PATH}
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
-RUN mkdir -p "${PNPM_HOME}" "${COREPACK_HOME}" && \
-    corepack enable && \
-    corepack prepare pnpm@${PNPM_VERSION} --activate
+RUN mkdir -p "${PNPM_HOME}" && \
+    npm install --global pnpm@${PNPM_VERSION}
 
 WORKDIR /app
 
@@ -78,7 +76,7 @@ ENV NEXT_DEPLOYMENT_ID=${NEXT_DEPLOYMENT_ID} \
 RUN pnpm add -g tsx
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 app
-RUN chown -R app:nodejs /app /corepack
+RUN chown -R app:nodejs /app /pnpm
 
 COPY --from=deps --chown=app:nodejs /app/node_modules ./node_modules
 COPY --from=deps --chown=app:nodejs /app/apps/webapp/node_modules ./apps/webapp/node_modules

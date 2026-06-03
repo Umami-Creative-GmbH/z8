@@ -53,22 +53,35 @@ test("Dockerfiles with global pnpm installs put pnpm global bin on PATH", async 
 	}
 });
 
-test("non-root runtime Dockerfiles can run pnpm without writing root-owned Corepack or workspace paths", async () => {
+test("Dockerfiles install pnpm without relying on Corepack", async () => {
+	const dockerfiles = [
+		"Dockerfile.db-seed",
+		"Dockerfile.docs",
+		"Dockerfile.marketing",
+		"Dockerfile.migration",
+		"Dockerfile.webapp",
+		"Dockerfile.worker",
+	];
+
+	for (const dockerfile of dockerfiles) {
+		const contents = await fs.readFile(new URL(`../${dockerfile}`, import.meta.url), "utf8");
+
+		assert.doesNotMatch(contents, /\bcorepack\b/, `${dockerfile} must not depend on Corepack being present in the base image`);
+		assert.match(contents, /npm install --global pnpm@\$\{PNPM_VERSION\}/, `${dockerfile} must install the pinned pnpm version through npm`);
+	}
+});
+
+test("non-root runtime Dockerfiles can run without root-owned pnpm or workspace paths", async () => {
 	const dockerfiles = ["Dockerfile.docs", "Dockerfile.webapp"];
 
 	for (const dockerfile of dockerfiles) {
 		const contents = await fs.readFile(new URL(`../${dockerfile}`, import.meta.url), "utf8");
 
-		assert.match(contents, /ENV COREPACK_HOME=\/corepack/, `${dockerfile} must use a shared Corepack cache`);
+		assert.match(contents, /RUN mkdir -p "\$\{PNPM_HOME\}"/, `${dockerfile} must create the pnpm home path`);
 		assert.match(
 			contents,
-			/RUN mkdir -p "\$\{PNPM_HOME\}" "\$\{COREPACK_HOME\}"/,
-			`${dockerfile} must create the shared Corepack cache before corepack prepare`,
-		);
-		assert.match(
-			contents,
-			/RUN chown [^\n]+ \/app \/corepack/,
-			`${dockerfile} must make the workspace root and Corepack cache writable for its runtime user`,
+			/RUN chown [^\n]+ \/app \/pnpm/,
+			`${dockerfile} must make the workspace root and pnpm home writable for its runtime user`,
 		);
 	}
 });
