@@ -23,6 +23,7 @@ import type { PlatformKeyManagerEncryptionResult } from "@/lib/vault/platform-ke
 import { Link } from "@/navigation";
 import {
 	refreshPlatformDiagnosticsAction,
+	sendPlatformDiagnosticsTestEmailAction,
 	testPlatformKeyManagerEncryptionAction,
 } from "./actions";
 
@@ -127,10 +128,16 @@ export function DiagnosticsClient({
 	const [snapshot, setSnapshot] = useState<PlatformDiagnosticsSnapshot>(() => initialSnapshot);
 	const [error, setError] = useState<string | null>(null);
 	const [emailRecipient, setEmailRecipient] = useState(adminEmail);
+	const [emailResult, setEmailResult] = useState<{
+		recipient: string;
+		messageId?: string;
+	} | null>(null);
+	const [emailError, setEmailError] = useState<string | null>(null);
 	const [encryptionResult, setEncryptionResult] =
 		useState<PlatformKeyManagerEncryptionResult | null>(null);
 	const [encryptionError, setEncryptionError] = useState<string | null>(null);
 	const [isRefreshPending, startRefreshTransition] = useTransition();
+	const [isEmailPending, startEmailTransition] = useTransition();
 	const [isEncryptionPending, startEncryptionTransition] = useTransition();
 	const statusLabels: Record<DiagnosticsStatus, string> = {
 		healthy: t("admin:admin.diagnostics.status.healthy", "Healthy"),
@@ -173,6 +180,21 @@ export function DiagnosticsClient({
 			}
 
 			setEncryptionError(result.error);
+		});
+	}
+
+	function sendTestEmail() {
+		setEmailError(null);
+		setEmailResult(null);
+		startEmailTransition(async () => {
+			const result = await sendPlatformDiagnosticsTestEmailAction({ to: emailRecipient });
+
+			if (result.success) {
+				setEmailResult(result.data);
+				return;
+			}
+
+			setEmailError(result.error);
 		});
 	}
 
@@ -263,16 +285,54 @@ export function DiagnosticsClient({
 						)}
 					</CardDescription>
 				</CardHeader>
-				<CardContent>
-					<label className="space-y-2 text-sm font-medium">
-						<span>{t("admin:admin.diagnostics.emailTest.recipient", "Recipient email")}</span>
-						<input
-							className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-							type="email"
-							value={emailRecipient}
-							onChange={(event) => setEmailRecipient(event.target.value)}
-						/>
-					</label>
+				<CardContent className="space-y-4">
+					<div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+						<label className="space-y-2 text-sm font-medium">
+							<span>{t("admin:admin.diagnostics.emailTest.recipient", "Recipient email")}</span>
+							<input
+								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+								type="email"
+								value={emailRecipient}
+								onChange={(event) => setEmailRecipient(event.target.value)}
+								disabled={isEmailPending}
+							/>
+						</label>
+						<Button onClick={sendTestEmail} disabled={isEmailPending || emailRecipient.trim().length === 0}>
+							{isEmailPending ? (
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+							) : null}
+							{t("admin:admin.diagnostics.emailTest.actions.send", "Send test email")}
+						</Button>
+					</div>
+					{emailError ? (
+						<div
+							className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-400"
+							role="alert"
+							aria-live="polite"
+						>
+							{emailError}
+						</div>
+					) : null}
+					{emailResult ? (
+						<div
+							className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400"
+							role="status"
+							aria-live="polite"
+						>
+							<p>
+								{t("admin:admin.diagnostics.emailTest.success", "Test email sent to {recipient}.", {
+									recipient: emailResult.recipient,
+								})}
+							</p>
+							{emailResult.messageId ? (
+								<p className="font-mono">
+									{t("admin:admin.diagnostics.emailTest.messageId", "Message ID: {messageId}", {
+										messageId: emailResult.messageId,
+									})}
+								</p>
+							) : null}
+						</div>
+					) : null}
 				</CardContent>
 			</Card>
 

@@ -11,6 +11,9 @@ describe("DiagnosticsClient translations", () => {
 			"Refresh diagnostics",
 			"Platform Configuration",
 			"Service Health",
+			"Email Delivery Test",
+			"Recipient email",
+			"Send test email",
 			"Recommended Actions",
 		]) {
 			expect(source).not.toContain(`>${literal}<`);

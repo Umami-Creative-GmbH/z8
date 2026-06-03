@@ -4,15 +4,20 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlatformDiagnosticsSnapshot } from "@/lib/platform-diagnostics";
 
-const { refreshPlatformDiagnosticsActionMock, testPlatformKeyManagerEncryptionActionMock } =
-	vi.hoisted(() => ({
-		refreshPlatformDiagnosticsActionMock: vi.fn(),
-		testPlatformKeyManagerEncryptionActionMock: vi.fn(),
-	}));
+const {
+	refreshPlatformDiagnosticsActionMock,
+	testPlatformKeyManagerEncryptionActionMock,
+	sendPlatformDiagnosticsTestEmailActionMock,
+} = vi.hoisted(() => ({
+	refreshPlatformDiagnosticsActionMock: vi.fn(),
+	testPlatformKeyManagerEncryptionActionMock: vi.fn(),
+	sendPlatformDiagnosticsTestEmailActionMock: vi.fn(),
+}));
 
 vi.mock("./actions", () => ({
 	refreshPlatformDiagnosticsAction: refreshPlatformDiagnosticsActionMock,
 	testPlatformKeyManagerEncryptionAction: testPlatformKeyManagerEncryptionActionMock,
+	sendPlatformDiagnosticsTestEmailAction: sendPlatformDiagnosticsTestEmailActionMock,
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -178,6 +183,38 @@ describe("DiagnosticsClient", () => {
 		await waitFor(() => expect(screen.getByText("Platform admin access required")).toBeTruthy());
 		expect(screen.getByText("Database")).toBeTruthy();
 		expect(screen.getByText("Connected")).toBeTruthy();
+	});
+
+	it("sends a test email to the edited recipient and shows success", async () => {
+		sendPlatformDiagnosticsTestEmailActionMock.mockResolvedValue({
+			success: true,
+			data: { recipient: "ops@example.com", messageId: "msg_123" },
+		});
+		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
+
+		fireEvent.change(screen.getByLabelText("Recipient email"), {
+			target: { value: "ops@example.com" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Send test email" }));
+
+		await waitFor(() => expect(screen.getByText("Test email sent to ops@example.com.")).toBeTruthy());
+		expect(screen.getByText("Message ID: msg_123")).toBeTruthy();
+		expect(sendPlatformDiagnosticsTestEmailActionMock).toHaveBeenCalledWith({
+			to: "ops@example.com",
+		});
+	});
+
+	it("shows an inline error when the email test fails", async () => {
+		sendPlatformDiagnosticsTestEmailActionMock.mockResolvedValue({
+			success: false,
+			error: "Failed to send test email.",
+		});
+		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Send test email" }));
+
+		await waitFor(() => expect(screen.getByText("Failed to send test email.")).toBeTruthy());
+		expect(screen.getByRole("alert").getAttribute("aria-live")).toBe("polite");
 	});
 
 	it("renders the Scaleway Key Manager encryption test card", () => {
