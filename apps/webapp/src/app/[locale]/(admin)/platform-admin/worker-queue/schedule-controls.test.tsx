@@ -161,6 +161,26 @@ describe("ScheduleControls", () => {
 		expect(updateCronSchedule).not.toHaveBeenCalled();
 	});
 
+	it("does not submit a high-risk edit from direct form submit without confirmation", async () => {
+		renderControls(
+			buildJob({
+				jobName: "cron:billing-seat-reconciliation",
+				name: "cron:billing-seat-reconciliation",
+				presetId: "daily-midnight",
+				effectivePattern: "0 0 * * *",
+			}),
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: labels.edit }));
+		fireEvent.change(screen.getByLabelText(labels.presetLabel), { target: { value: "hourly" } });
+		fireEvent.submit(screen.getByLabelText(labels.presetLabel).closest("form") as HTMLFormElement);
+
+		await waitFor(() => {
+			expect(mocks.toastError).toHaveBeenCalledWith(labels.failed);
+		});
+		expect(updateCronSchedule).not.toHaveBeenCalled();
+	});
+
 	it("resets edited preset state when canceling and reopening", () => {
 		renderControls();
 

@@ -81,6 +81,11 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 			confirmation: "",
 		} satisfies ScheduleFormValues,
 		onSubmit: async ({ value }) => {
+			if (highRisk && value.confirmation !== labels.confirmationText) {
+				toast.error(labels.failed);
+				return;
+			}
+
 			setIsSubmitting(true);
 			try {
 				const result = await updateCronSchedule({
