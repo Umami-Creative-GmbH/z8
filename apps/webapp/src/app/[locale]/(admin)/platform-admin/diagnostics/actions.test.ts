@@ -134,6 +134,7 @@ describe("sendPlatformDiagnosticsTestEmailAction", () => {
 		);
 		expect(mockState.requirePlatformAdmin).toHaveBeenCalledTimes(1);
 		expect(mockState.sendEmail).not.toHaveBeenCalled();
+		expect(JSON.stringify(result)).not.toContain("not-an-email");
 	});
 
 	it("sends a diagnostics email through the system email path", async () => {
@@ -177,6 +178,27 @@ describe("sendPlatformDiagnosticsTestEmailAction", () => {
 				success: false,
 				error: "Failed to send test email.",
 			}),
+		);
+	});
+
+	it("returns a safe error when email delivery rejects", async () => {
+		mockState.sendEmail.mockRejectedValue(
+			new Error("SMTP password was rejected by smtp.internal.example.com"),
+		);
+		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
+
+		const result = await sendPlatformDiagnosticsTestEmailAction({
+			to: "ops@example.com",
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				success: false,
+				error: "Failed to send test email.",
+			}),
+		);
+		expect(JSON.stringify(result)).not.toContain(
+			"SMTP password was rejected by smtp.internal.example.com",
 		);
 	});
 });

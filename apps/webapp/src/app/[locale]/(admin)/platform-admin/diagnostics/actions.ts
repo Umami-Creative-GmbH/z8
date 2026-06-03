@@ -53,22 +53,27 @@ export async function sendPlatformDiagnosticsTestEmailAction(input: {
 					message:
 						parsed.error.issues[0]?.message ?? "Enter a valid email address.",
 					field: "to",
-					value: input.to,
 				}),
 			);
 		}
 
 		const recipient = parsed.data.to;
-		const result = yield* Effect.promise(() =>
-			sendEmail({
-				to: recipient,
-				subject: "Z8 platform diagnostics test email",
-				html: `
-					<p>This is a Z8 platform diagnostics test email.</p>
-					<p>If you received this message, the system email transport accepted a diagnostics delivery request.</p>
-				`,
-			}),
-		);
+		const result = yield* Effect.tryPromise({
+			try: () =>
+				sendEmail({
+					to: recipient,
+					subject: "Z8 platform diagnostics test email",
+					html: `
+						<p>This is a Z8 platform diagnostics test email.</p>
+						<p>If you received this message, the system email transport accepted a diagnostics delivery request.</p>
+					`,
+				}),
+			catch: () =>
+				new EmailError({
+					message: "Failed to send test email.",
+					recipient,
+				}),
+		});
 
 		if (!result.success) {
 			return yield* Effect.fail(
