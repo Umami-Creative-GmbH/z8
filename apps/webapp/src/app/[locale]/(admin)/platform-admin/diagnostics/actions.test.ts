@@ -40,6 +40,57 @@ vi.mock("@/lib/effect/services/platform-admin.service", async () => {
 	return { PlatformAdminService, PlatformAdminServiceLive };
 });
 
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Effect, Layer } = await import("effect");
+	const { PlatformAdminService } = await import("@/lib/effect/services/platform-admin.service");
+
+	return {
+		AppLayer: Layer.succeed(
+			PlatformAdminService,
+			PlatformAdminService.of({
+				requirePlatformAdmin: () =>
+					Effect.tryPromise({
+						try: () => mockState.requirePlatformAdmin(),
+						catch: (error) => error,
+					}),
+			}),
+		),
+	};
+});
+
+vi.mock("@/lib/effect/result", async () => {
+	const { Cause, Effect, Exit, Option } = await import("effect");
+
+	return {
+		runServerActionSafe: async <T, E, R>(effect: Effect.Effect<T, E, R>) => {
+			const exit = await Effect.runPromiseExit(effect as Effect.Effect<T, E, never>);
+
+			return Exit.match(exit, {
+				onFailure: (cause) => {
+					const defect = [...Cause.defects(cause)][0] ?? null;
+					const failure = Option.getOrNull(Cause.failureOption(cause));
+					const error = defect ?? failure ?? cause;
+
+					if (error && typeof error === "object" && "_tag" in error) {
+						return {
+							success: false as const,
+							error: (error as { message: string }).message,
+							code: (error as { _tag: string })._tag,
+						};
+					}
+
+					return {
+						success: false as const,
+						error: error instanceof Error ? error.message : "An unexpected error occurred",
+						code: "UNKNOWN_ERROR",
+					};
+				},
+				onSuccess: (data) => ({ success: true as const, data }),
+			});
+		},
+	};
+});
+
 vi.mock("@/lib/email/email-service", () => ({
 	sendEmail: mockState.sendEmail,
 }));
@@ -113,7 +164,7 @@ describe("sendPlatformDiagnosticsTestEmailAction", () => {
 		);
 		expect(mockState.requirePlatformAdmin).toHaveBeenCalledTimes(1);
 		expect(mockState.sendEmail).not.toHaveBeenCalled();
-	}, 10_000);
+	});
 
 	it("rejects invalid recipient emails", async () => {
 		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
@@ -131,7 +182,7 @@ describe("sendPlatformDiagnosticsTestEmailAction", () => {
 		expect(mockState.requirePlatformAdmin).toHaveBeenCalledTimes(1);
 		expect(mockState.sendEmail).not.toHaveBeenCalled();
 		expect(JSON.stringify(result)).not.toContain("not-an-email");
-	}, 10_000);
+	});
 
 	it("sends a diagnostics email through the system email path", async () => {
 		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
