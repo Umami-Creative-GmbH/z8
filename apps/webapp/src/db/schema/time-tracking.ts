@@ -15,6 +15,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
+import { approvalRequest } from "./approval";
 import { approvalStatusEnum, timeEntryTypeEnum, workLocationTypeEnum } from "./enums";
 import { employee } from "./organization";
 import { project } from "./project";
@@ -137,6 +138,12 @@ export const workPeriod = pgTable(
 		// Pending changes stored when approval is required
 		// Contains the requested changes while waiting for approval
 		pendingChanges: text("pending_changes").$type<WorkPeriodPendingChanges>(),
+		deletedAt: timestamp("deleted_at"),
+		deletedBy: text("deleted_by").references(() => user.id),
+		deletionReason: text("deletion_reason"),
+		deletionApprovalRequestId: uuid("deletion_approval_request_id").references(
+			() => approvalRequest.id,
+		),
 
 		// Auto-adjustment tracking for break enforcement
 		wasAutoAdjusted: boolean("was_auto_adjusted").default(false).notNull(),
