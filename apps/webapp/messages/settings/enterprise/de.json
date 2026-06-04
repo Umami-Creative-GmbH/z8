@@ -135,7 +135,6 @@
         "customDomain": "Benutzerdefinierte Domain",
         "customDomainDescription": "Konfigurieren Sie eine benutzerdefinierte Domain, um eine organisationsspezifische Anmeldeseite mit Ihrem Branding zu ermöglichen.",
         "defaultUrl": {
-          "alias": "Organisations-ID-Alias",
           "canonical": "Kanonisch"
         },
         "defaultUrls": "Standard-URLs",

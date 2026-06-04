@@ -210,6 +210,10 @@
       "workPeriod": "Période de travail",
       "workPeriodPending": "En attente d'approbation"
     },
+    "mobileControls": {
+      "description": "Choisissez les entrées de calendrier visibles.",
+      "title": "Filtres et légende"
+    },
     "monthSummary": {
       "calendarWeek": "Semaine",
       "description": "Heures de politique journalières, hebdomadaires et mensuelles",

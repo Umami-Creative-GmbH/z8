@@ -135,7 +135,6 @@
         "customDomain": "Domaine personnalisé",
         "customDomainDescription": "Configurez un domaine personnalisé pour activer une page de connexion spécifique à l'organisation avec votre image de marque.",
         "defaultUrl": {
-          "alias": "Alias d'ID d'organisation",
           "canonical": "Canonique"
         },
         "defaultUrls": "URL par défaut",

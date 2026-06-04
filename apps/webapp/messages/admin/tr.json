@@ -113,13 +113,16 @@
         "trialing": "Deneme"
       },
       "table": {
+        "actions": "Eylemler",
         "billing": "Faturalandırma",
         "created": "Oluşturulma",
+        "demoUsers": "Demo kullanıcıları",
+        "licensedSeats": "Lisanslı koltuklar",
         "noSubscriptions": "Henüz abonelik yok",
         "organization": "Organizasyon",
         "periodEnd": "Dönem Sonu",
-        "seats": "Koltuklar",
-        "status": "Durum"
+        "status": "Durum",
+        "usedSeats": "Kullanılan koltuklar"
       },
       "title": "Faturalandırma Paneli"
     },
@@ -129,6 +132,16 @@
       },
       "clientDescription": "Güvenli platform yapılandırması ve uygulama düzeyi hizmet sağlığı. Son yenilenme: {date}.",
       "description": "Güvenli platform yapılandırması ve yalnızca uygulama dağıtım sağlık kontrolleri.",
+      "emailTest": {
+        "actions": {
+          "send": "Test e-postası gönder"
+        },
+        "description": "Sistem e-posta aktarımı aracılığıyla bir tanılama e-postası gönderin.",
+        "messageId": "İleti Kimliği: {messageId}",
+        "recipient": "Alıcı e-postası",
+        "success": "Test e-postası {recipient} adresine gönderildi.",
+        "title": "E-posta Teslimat Testi"
+      },
       "keyManager": {
         "actions": {
           "test": "Şifrelemeyi test et"

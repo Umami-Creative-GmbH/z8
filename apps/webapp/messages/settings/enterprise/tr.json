@@ -135,7 +135,6 @@
         "customDomain": "Özel Alan Adı",
         "customDomainDescription": "Markanızla kuruma özel bir giriş sayfası etkinleştirmek için özel bir alan adı yapılandırın.",
         "defaultUrl": {
-          "alias": "Kuruluş kimliği diğer adı",
           "canonical": "Kurallı"
         },
         "defaultUrls": "Varsayılan URL'ler",

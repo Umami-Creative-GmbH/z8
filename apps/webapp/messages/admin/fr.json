@@ -113,13 +113,16 @@
         "trialing": "Essai"
       },
       "table": {
+        "actions": "Actions",
         "billing": "Facturation",
         "created": "Créé",
+        "demoUsers": "Utilisateurs de démonstration",
+        "licensedSeats": "Licences",
         "noSubscriptions": "Aucun abonnement pour le moment",
         "organization": "Organisation",
         "periodEnd": "Fin de période",
-        "seats": "Sièges",
-        "status": "Statut"
+        "status": "Statut",
+        "usedSeats": "Licences utilisées"
       },
       "title": "Tableau de bord de facturation"
     },
@@ -129,6 +132,16 @@
       },
       "clientDescription": "Configuration sécurisée de la plateforme et état des services au niveau de l'application. Dernière actualisation le {date}.",
       "description": "Configuration sécurisée de la plateforme et vérifications de l'état du déploiement des applications uniquement.",
+      "emailTest": {
+        "actions": {
+          "send": "Envoyer un e-mail de test"
+        },
+        "description": "Envoyer un e-mail de diagnostic via le système de transport d'e-mails.",
+        "messageId": "ID du message : {messageId}",
+        "recipient": "E-mail du destinataire",
+        "success": "E-mail de test envoyé à {recipient}.",
+        "title": "Test de livraison d'e-mail"
+      },
       "keyManager": {
         "actions": {
           "test": "Tester le chiffrement"

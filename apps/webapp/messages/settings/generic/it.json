@@ -871,7 +871,26 @@
         "unknown": "Sconosciuto",
         "warning": "Avviso"
       },
+      "scheduleControls": {
+        "cancel": "Annulla",
+        "confirmationLabel": "Digita conferma",
+        "edit": "Modifica",
+        "failed": "Modifica della pianificazione non riuscita",
+        "highRiskDescription": "La modifica di questo job può influire su fatturazione, pulizia, integrazioni, conformità o automazione operativa.",
+        "highRiskTitle": "Pianificazione ad alto rischio",
+        "mismatch": "BullMQ differisce attualmente dalla pianificazione salvata; l'avvio del worker la riconcilierà.",
+        "presetLabel": "Preimpostazione pianificazione",
+        "readOnly": "Questa pianificazione predefinita non ha ancora una preimpostazione modificabile.",
+        "reset": "Ripristina",
+        "resetSaved": "Ripristino pianificazione",
+        "save": "Salva pianificazione",
+        "saved": "Pianificazione salvata",
+        "warningPrefix": "Salvato con avviso"
+      },
       "scheduledJobsDescription": "Job ripetibili configurati nel worker. Vengono eseguiti automaticamente secondo la pianificazione.",
+      "schedule": {
+        "overridden": "Sovrascritto"
+      },
       "sections": {
         "jobMetrics": "Metriche job (ultimi 30 giorni)",
         "queueCounts": "Stato della coda",
@@ -885,7 +904,9 @@
         "running": "In esecuzione"
       },
       "table": {
+        "actions": "Azioni",
         "avgDuration": "Durata media",
+        "default": "Predefinito",
         "duration": "Durata",
         "error": "Errore",
         "failed": "Fallito",

@@ -871,7 +871,26 @@
         "unknown": "Desconocido",
         "warning": "Advertencia"
       },
+      "scheduleControls": {
+        "cancel": "Cancelar",
+        "confirmationLabel": "Escriba la confirmación",
+        "edit": "Editar",
+        "failed": "Error al cambiar la programación",
+        "highRiskDescription": "Cambiar este trabajo puede afectar la facturación, la limpieza, las integraciones, el cumplimiento o la automatización operativa.",
+        "highRiskTitle": "Programación de alto riesgo",
+        "mismatch": "BullMQ difiere actualmente de la programación guardada; el inicio del trabajador lo reconciliará.",
+        "presetLabel": "Preajuste de programación",
+        "readOnly": "Esta programación predeterminada aún no tiene un preajuste editable.",
+        "reset": "Restablecer",
+        "resetSaved": "Restablecimiento de programación",
+        "save": "Guardar programación",
+        "saved": "Programación guardada",
+        "warningPrefix": "Guardado con advertencia"
+      },
       "scheduledJobsDescription": "Trabajos repetibles configurados en el trabajador. Estos se ejecutan automáticamente según la programación.",
+      "schedule": {
+        "overridden": "Anulado"
+      },
       "sections": {
         "jobMetrics": "Métricas de trabajo (últimos 30 días)",
         "queueCounts": "Estado de la cola",
@@ -885,7 +904,9 @@
         "running": "En ejecución"
       },
       "table": {
+        "actions": "Acciones",
         "avgDuration": "Duración promedio",
+        "default": "Predeterminado",
         "duration": "Duración",
         "error": "Error",
         "failed": "Fallido",

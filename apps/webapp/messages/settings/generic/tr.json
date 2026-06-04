@@ -871,7 +871,26 @@
         "unknown": "Bilinmiyor",
         "warning": "Uyarı"
       },
+      "scheduleControls": {
+        "cancel": "İptal",
+        "confirmationLabel": "Onay yazın",
+        "edit": "Düzenle",
+        "failed": "Zamanlama değişikliği başarısız oldu",
+        "highRiskDescription": "Bu işi değiştirmek faturalandırmayı, temizliği, entegrasyonları, uyumluluğu veya operasyonel otomasyonu etkileyebilir.",
+        "highRiskTitle": "Yüksek riskli zamanlama",
+        "mismatch": "BullMQ şu anda kayıtlı zamanlamadan farklı; çalışan başlatma işlemi bunu uzlaştıracaktır.",
+        "presetLabel": "Zamanlama ön ayarı",
+        "readOnly": "Bu varsayılan zamanlamanın henüz düzenlenebilir bir ön ayarı yok.",
+        "reset": "Sıfırla",
+        "resetSaved": "Zamanlamayı sıfırla",
+        "save": "Zamanlamayı kaydet",
+        "saved": "Zamanlama kaydedildi",
+        "warningPrefix": "Uyarıyla kaydedildi"
+      },
       "scheduledJobsDescription": "Worker'da yapılandırılmış tekrarlanabilir işler. Bunlar zamanlamaya göre otomatik olarak çalışır.",
+      "schedule": {
+        "overridden": "Geçersiz kılındı"
+      },
       "sections": {
         "jobMetrics": "İş Metrikleri (Son 30 Gün)",
         "queueCounts": "Kuyruk Durumu",
@@ -885,7 +904,9 @@
         "running": "Çalışıyor"
       },
       "table": {
+        "actions": "Eylemler",
         "avgDuration": "Ortalama Süre",
+        "default": "Varsayılan",
         "duration": "Süre",
         "error": "Hata",
         "failed": "Başarısız",

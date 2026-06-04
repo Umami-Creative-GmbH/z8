@@ -135,7 +135,6 @@
         "customDomain": "Domena niestandardowa",
         "customDomainDescription": "Skonfiguruj domenę niestandardową, aby włączyć stronę logowania specyficzną dla organizacji z własnym brandingiem.",
         "defaultUrl": {
-          "alias": "Alias identyfikatora organizacji",
           "canonical": "Kanon"
         },
         "defaultUrls": "Domyślne adresy URL",

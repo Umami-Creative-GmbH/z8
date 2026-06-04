@@ -210,6 +210,10 @@
       "workPeriod": "Arbetsperiode",
       "workPeriodPending": "Wartet uf Bestätigung"
     },
+    "mobileControls": {
+      "description": "Wähl us, weli Kalender-Iiträg sichtbar sind.",
+      "title": "Filter & Legände"
+    },
     "monthSummary": {
       "calendarWeek": "KW",
       "description": "Tägliche, wöchentliche und monatliche Richtlinienstunden",

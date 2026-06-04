@@ -1,5 +1,3 @@
-"use server";
-
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq, or } from "drizzle-orm";
 import { Effect } from "effect";
@@ -306,7 +304,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 				const transactionalDbService = {
 					db: tx,
 					query: dbService.query,
-				} as typeof DatabaseService.Service;
+				} as unknown as typeof DatabaseService.Service;
 				const create = params.approvalWorkflow.create ?? createApprovalWorkflow;
 
 				await Effect.runPromise(

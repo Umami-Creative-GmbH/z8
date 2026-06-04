@@ -210,6 +210,10 @@
       "workPeriod": "Periodo di lavoro",
       "workPeriodPending": "In attesa di approvazione"
     },
+    "mobileControls": {
+      "description": "Scegli quali voci del calendario rendere visibili.",
+      "title": "Filtri e legenda"
+    },
     "monthSummary": {
       "calendarWeek": "KW",
       "description": "Ore di politica giornaliere, settimanali e mensili",

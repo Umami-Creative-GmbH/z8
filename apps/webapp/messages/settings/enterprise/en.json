@@ -135,7 +135,6 @@
         "customDomain": "Custom Domain",
         "customDomainDescription": "Configure a custom domain to enable an organization-specific login page with your branding.",
         "defaultUrl": {
-          "alias": "Organization ID alias",
           "canonical": "Canonical"
         },
         "defaultUrls": "Default URLs",

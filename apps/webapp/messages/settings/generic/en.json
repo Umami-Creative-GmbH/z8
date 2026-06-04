@@ -871,7 +871,26 @@
         "unknown": "Unknown",
         "warning": "Warning"
       },
+      "scheduleControls": {
+        "cancel": "Cancel",
+        "confirmationLabel": "Type confirmation",
+        "edit": "Edit",
+        "failed": "Schedule change failed",
+        "highRiskDescription": "Changing this job can affect billing, cleanup, integrations, compliance, or operational automation.",
+        "highRiskTitle": "High-risk schedule",
+        "mismatch": "BullMQ currently differs from the saved schedule; worker startup will reconcile it.",
+        "presetLabel": "Schedule preset",
+        "readOnly": "This default schedule has no editable preset yet.",
+        "reset": "Reset",
+        "resetSaved": "Schedule reset",
+        "save": "Save schedule",
+        "saved": "Schedule saved",
+        "warningPrefix": "Saved with warning"
+      },
       "scheduledJobsDescription": "Repeatable jobs configured in the worker. These run automatically on schedule.",
+      "schedule": {
+        "overridden": "Overridden"
+      },
       "sections": {
         "jobMetrics": "Job Metrics (Last 30 Days)",
         "queueCounts": "Queue Status",
@@ -885,7 +904,9 @@
         "running": "Running"
       },
       "table": {
+        "actions": "Actions",
         "avgDuration": "Avg Duration",
+        "default": "Default",
         "duration": "Duration",
         "error": "Error",
         "failed": "Failed",
