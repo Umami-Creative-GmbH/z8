@@ -6,8 +6,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { DeleteWorkPeriodDialog } from "./delete-work-period-dialog";
 
-const { requestTimeEntryDeletion } = vi.hoisted(() => ({
+const { requestTimeEntryDeletion, toastError } = vi.hoisted(() => ({
 	requestTimeEntryDeletion: vi.fn(),
+	toastError: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -18,7 +19,7 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("sonner", () => ({
 	toast: {
-		error: vi.fn(),
+		error: toastError,
 		success: vi.fn(),
 	},
 }));
@@ -48,6 +49,7 @@ describe("DeleteWorkPeriodDialog", () => {
 			success: true,
 			data: { approvalId: "approval-1" },
 		});
+		toastError.mockReset();
 	});
 
 	it("renders deletion request copy and reason field", () => {
@@ -88,5 +90,17 @@ describe("DeleteWorkPeriodDialog", () => {
 		});
 		expect(onDeleteComplete).toHaveBeenCalledOnce();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("requires a non-empty deletion reason", async () => {
+		const user = userEvent.setup();
+
+		render(<DeleteWorkPeriodDialog event={workPeriodEvent} open={true} onOpenChange={vi.fn()} />);
+
+		await user.type(screen.getByLabelText("Reason for deletion"), "   ");
+		await user.click(screen.getByRole("button", { name: /Delete entry/i }));
+
+		expect(requestTimeEntryDeletion).not.toHaveBeenCalled();
+		expect(toastError).toHaveBeenCalledWith("Reason is required");
 	});
 });
