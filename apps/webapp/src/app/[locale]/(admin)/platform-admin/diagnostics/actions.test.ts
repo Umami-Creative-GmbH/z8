@@ -179,7 +179,7 @@ describe("sendPlatformDiagnosticsTestEmailAction", () => {
 		);
 		expect(mockState.requirePlatformAdmin).toHaveBeenCalledTimes(1);
 		expect(mockState.sendEmail).not.toHaveBeenCalled();
-	}, 10_000);
+	});
 
 	it("rejects invalid recipient emails", async () => {
 		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
