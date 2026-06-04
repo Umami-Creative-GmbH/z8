@@ -28,4 +28,8 @@ describe("time tracking read queries", () => {
 	])("excludes deleted work periods from %s getTimeSummary", (_name, sourceText) => {
 		expect(functionBody(sourceText, "getTimeSummary")).toContain("isNull(workPeriod.deletedAt)");
 	});
+
+	it("excludes deleted work periods from modular getPresenceStatus", () => {
+		expect(functionBody(source, "getPresenceStatus")).toContain("isNull(workPeriod.deletedAt)");
+	});
 });

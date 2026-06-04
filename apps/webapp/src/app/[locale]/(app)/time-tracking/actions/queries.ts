@@ -424,6 +424,7 @@ export async function getPresenceStatus(employeeId: string): Promise<
 				return dbService.db.query.workPeriod.findMany({
 					where: and(
 						eq(workPeriod.employeeId, validatedEmployeeId),
+						isNull(workPeriod.deletedAt),
 						gte(workPeriod.startTime, weekStart.toJSDate()),
 						lte(workPeriod.startTime, weekEnd.toJSDate()),
 					),
