@@ -226,6 +226,15 @@ describe("time correction approval workflow safety", () => {
 		expect(body).toContain("organizationId: string");
 		expect(body).toContain("eq(approvalRequest.organizationId, organizationId)");
 	});
+
+	it("scopes approved time correction work period updates to the approval organization", () => {
+		const start = source.indexOf("function applyTimeCorrection");
+		expect(start).toBeGreaterThanOrEqual(0);
+		const body = source.slice(start, source.indexOf("function activateApprovedTimeCorrectionEntries", start));
+
+		expect(body).toContain("eq(workPeriod.id, entityId)");
+		expect(body).toContain("eq(workPeriod.organizationId, approval.organizationId)");
+	});
 });
 
 describe("time correction requester decision notifications", () => {
@@ -412,6 +421,60 @@ describe("time correction requester decision notifications", () => {
 					deletionApprovalRequestId: deletionApproval.id,
 				}),
 			]),
+		);
+	});
+
+	it("rejects deletion approvals when correction timestamps do not match", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		const deletionClockInCorrection = {
+			id: "entry-delete-clock-in-correction",
+			timestamp: new Date("2026-05-11T08:00:00.000Z"),
+			replacesEntryId: "entry-original",
+			isSuperseded: true,
+		};
+		const deletionClockOutCorrection = {
+			id: "entry-delete-clock-out-correction",
+			timestamp: new Date("2026-05-11T08:01:00.000Z"),
+			replacesEntryId: "entry-clock-out-original",
+			isSuperseded: true,
+		};
+
+		vi.mocked(dbService.db.query.workPeriod.findFirst).mockResolvedValueOnce({
+			...period,
+			clockOutId: "entry-clock-out-original",
+		});
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-delete-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: {
+				timeCorrection: {
+					action: "delete",
+					clockInCorrectionId: deletionClockInCorrection.id,
+					clockOutCorrectionId: deletionClockOutCorrection.id,
+				},
+			},
+		});
+		vi.mocked(dbService.db.query.timeEntry.findFirst)
+			.mockResolvedValueOnce(deletionClockInCorrection)
+			.mockResolvedValueOnce(deletionClockOutCorrection);
+
+		await expect(
+			runTimeCorrectionDecisionEffect(
+				approveTimeCorrectionWithCurrentApproverEffect(
+					dbService,
+					timeCorrectionCurrentApprover,
+					"period-1",
+				),
+			),
+		).rejects.toThrow("Deletion approval requires matching correction timestamps");
+
+		expect(dbService.updateSets).not.toEqual(
+			expect.arrayContaining([expect.objectContaining({ clockInId: deletionClockInCorrection.id })]),
 		);
 	});
 

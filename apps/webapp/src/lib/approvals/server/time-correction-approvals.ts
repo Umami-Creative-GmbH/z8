@@ -450,6 +450,19 @@ function validateCorrectedPeriodRange(clockIn: CorrectionEntry, effectiveClockOu
 	return Effect.void;
 }
 
+function validateDeletedPeriodRange(clockIn: CorrectionEntry, clockOut: CorrectionEntry) {
+	if (clockIn.timestamp.getTime() !== clockOut.timestamp.getTime()) {
+		return Effect.fail(
+			new ValidationError({
+				message: "Deletion approval requires matching correction timestamps",
+				field: "timeCorrection.clockOutCorrectionId",
+			}),
+		);
+	}
+
+	return Effect.void;
+}
+
 function applyTimeCorrection(
 	dbService: ApprovalDbService,
 	entityId: string,
@@ -481,7 +494,9 @@ function applyTimeCorrection(
 				updatedAt: new Date(),
 				...deletionFields,
 			})
-			.where(eq(workPeriod.id, entityId));
+			.where(
+				and(eq(workPeriod.id, entityId), eq(workPeriod.organizationId, approval.organizationId)),
+			);
 	});
 }
 
@@ -683,6 +698,9 @@ function handleApprovedTimeCorrection(
 					}),
 				),
 			);
+		}
+		if (correctionAction === "delete" && clockOutCorrection) {
+			yield* _(validateDeletedPeriodRange(clockInCorrection, clockOutCorrection));
 		}
 		const correctedPeriod =
 			correctionAction === "delete" && clockOutCorrection
