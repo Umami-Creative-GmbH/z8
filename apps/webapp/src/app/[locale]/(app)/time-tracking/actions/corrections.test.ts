@@ -148,6 +148,18 @@ describe("time correction request safety", () => {
 		expect(body).toContain("if (effectiveClockOut && effectiveClockOut <= correctedClockInDate)");
 		expect(body).toContain("Clock out time must be after clock in time");
 	});
+
+	it("requests deletion through zero-duration correction entries and approval metadata", () => {
+		const body = functionBody(modularSource, "requestTimeEntryDeletion");
+
+		expect(modularSource).toContain("export async function requestTimeEntryDeletion");
+		expect(body).toContain('action: "delete"');
+		expect(body).toContain("timestamp: selectedWorkPeriod.startTime");
+		expect(body).toContain("isSuperseded: true");
+		expect(body).toContain('data.reason.trim()');
+		expect(body).toContain('return { success: false, error: "Reason is required" }');
+		expect(modularSource).not.toContain("delete(workPeriod)");
+	});
 });
 
 describe("createUtcDateTime", () => {

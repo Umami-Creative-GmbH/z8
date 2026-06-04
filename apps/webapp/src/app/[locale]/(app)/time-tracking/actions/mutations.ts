@@ -1,34 +1,16 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import { createTimeEntry, validateProjectAssignment } from "./entry-helpers";
 import { logger } from "./shared";
 import { calculateDurationMinutes, setTimeOnStoredDate } from "./time-utils";
-
-type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
-
-async function markWorkBalanceDirtyAfterDeleteBestEffort(
-	input: WorkBalanceDirtyInput,
-	context: Record<string, unknown>,
-) {
-	try {
-		await markEmployeeWorkBalanceDirty(input);
-	} catch (error) {
-		logger.error(
-			{ error, ...context },
-			"Failed to mark work balance dirty after work period delete",
-		);
-	}
-}
 
 export async function approveWorkPeriod(
 	workPeriodId: string,
@@ -146,78 +128,8 @@ export async function updateWorkPeriodNotes(
 export async function deleteWorkPeriod(
 	workPeriodId: string,
 ): Promise<ServerActionResult<{ deleted: boolean }>> {
-	const session = await getCurrentSession();
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
-
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "Employee profile not found" };
-	}
-
-	try {
-		const [selectedWorkPeriod] = await db
-			.select()
-			.from(workPeriod)
-			.where(eq(workPeriod.id, workPeriodId))
-			.limit(1);
-
-		if (!selectedWorkPeriod) {
-			return { success: false, error: "Work period not found" };
-		}
-
-		if (selectedWorkPeriod.employeeId !== currentEmployee.id) {
-			return { success: false, error: "You can only delete your own work periods" };
-		}
-
-		if (!selectedWorkPeriod.endTime || !selectedWorkPeriod.clockOutId) {
-			return {
-				success: false,
-				error: "Cannot delete an active work period. Please clock out first.",
-			};
-		}
-
-		const deletionNote = `[Deleted - converted to break by ${session.user.name || session.user.email}]`;
-		await db
-			.update(timeEntry)
-			.set({ isSuperseded: true, notes: deletionNote })
-			.where(eq(timeEntry.id, selectedWorkPeriod.clockInId));
-		await db
-			.update(timeEntry)
-			.set({ isSuperseded: true, notes: deletionNote })
-			.where(eq(timeEntry.id, selectedWorkPeriod.clockOutId));
-		await db.delete(workPeriod).where(eq(workPeriod.id, workPeriodId));
-
-		await markWorkBalanceDirtyAfterDeleteBestEffort(
-			{
-				employeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
-				dirtyFromDate:
-					DateTime.fromJSDate(selectedWorkPeriod.startTime, { zone: "utc" }).toISODate() ??
-					undefined,
-			},
-			{
-				employeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
-				workPeriodId,
-			},
-		);
-
-		logger.info(
-			{
-				workPeriodId,
-				employeeId: currentEmployee.id,
-				deletedBy: session.user.id,
-			},
-			"Work period deleted (converted to break)",
-		);
-
-		return { success: true, data: { deleted: true } };
-	} catch (error) {
-		logger.error({ error }, "Delete work period error");
-		return { success: false, error: "Failed to delete work period. Please try again." };
-	}
+	void workPeriodId;
+	return { success: false, error: "Deletion requires manager approval" };
 }
 
 export async function splitWorkPeriod(

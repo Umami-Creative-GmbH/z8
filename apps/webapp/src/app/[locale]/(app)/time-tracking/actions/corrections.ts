@@ -23,7 +23,7 @@ import { createTimeEntry, markTimeEntrySuperseded } from "./entry-helpers";
 import { getEditCapabilityForPeriod } from "./policy-helpers";
 import { logger } from "./shared";
 import { calculateDurationMinutes, createCorrectionDateTime } from "./time-utils";
-import type { CorrectionRequest, SameDayEditRequest } from "./types";
+import type { CorrectionRequest, SameDayEditRequest, TimeEntryDeletionRequest } from "./types";
 
 type CorrectionTimesResult =
 	| {
@@ -730,6 +730,215 @@ export async function requestTimeCorrectionEffect(
 	);
 
 	return runServerActionSafe(effect);
+}
+
+export async function requestTimeEntryDeletion(
+	data: TimeEntryDeletionRequest,
+): Promise<ServerActionResult<{ approvalId: string }>> {
+	if (!data.reason.trim()) {
+		return { success: false, error: "Reason is required" };
+	}
+
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		const currentEmployee = yield* _(
+			dbService.query("getEmployeeByUserId", async () => {
+				const employeeRecord = await dbService.db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
+
+				if (!employeeRecord) {
+					throw new Error("Employee not found");
+				}
+
+				return employeeRecord;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Employee profile not found",
+						entityType: "employee",
+					}),
+			),
+		);
+
+		const selectedWorkPeriod = yield* _(
+			dbService.query("getWorkPeriodForDeletion", async () => {
+				const [period] = await dbService.db
+					.select()
+					.from(workPeriod)
+					.where(
+						and(
+							eq(workPeriod.id, data.workPeriodId),
+							eq(workPeriod.employeeId, currentEmployee.id),
+							eq(workPeriod.organizationId, currentEmployee.organizationId),
+						),
+					)
+					.limit(1);
+
+				if (!period) {
+					throw new Error("Work period not found");
+				}
+
+				return period;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Work period not found",
+						entityType: "workPeriod",
+						entityId: data.workPeriodId,
+					}),
+			),
+		);
+
+		if (!selectedWorkPeriod.endTime || !selectedWorkPeriod.clockOutId) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Cannot delete an active work period. Please clock out first.",
+						field: "workPeriodId",
+					}),
+				),
+			);
+		}
+
+		const pendingTimeCorrectionApproval = yield* _(
+			dbService.query("getPendingDeletionCorrectionApproval", async () => {
+				return await dbService.db.query.approvalRequest.findFirst({
+					where: and(
+						eq(approvalRequest.organizationId, currentEmployee.organizationId),
+						eq(approvalRequest.entityType, "time_entry"),
+						eq(approvalRequest.entityId, selectedWorkPeriod.id),
+						eq(approvalRequest.status, "pending"),
+					),
+				});
+			}),
+		);
+
+		if (pendingTimeCorrectionApproval) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "A time correction approval is already pending for this work period",
+						field: "pending_time_correction_approval",
+					}),
+				),
+			);
+		}
+
+		const managerDecision = yield* _(
+			Effect.promise(() =>
+				resolveCorrectionApprovalManager({
+					db: dbService.db,
+					requesterEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				}),
+			),
+		);
+
+		const managerId = managerDecision.ok ? managerDecision.managerId : null;
+		if (!managerId) {
+			return yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "No manager assigned to approve corrections",
+						field: "managerId",
+					}),
+				),
+			);
+		}
+
+		const timezone = yield* _(Effect.promise(() => getUserTimezone(session.user.id)));
+		const deletionTimezoneCapture = resolveFallbackTimezoneCapture({
+			timestamp: selectedWorkPeriod.startTime,
+			timezone,
+			timezoneSource: "user_setting",
+		});
+		const deletionMetadata = { action: "delete" as const };
+
+		const result = yield* _(
+			dbService.query("createTimeEntryDeletionRequest", async () => {
+				return await dbService.db.transaction(async (tx) => {
+					const transactionalDbService = { db: tx, query: dbService.query };
+					const clockInCorrection = await createTimeEntry(
+						{
+							employeeId: currentEmployee.id,
+							organizationId: currentEmployee.organizationId,
+							type: "correction",
+							timestamp: selectedWorkPeriod.startTime,
+							createdBy: session.user.id,
+							...deletionTimezoneCapture,
+							replacesEntryId: selectedWorkPeriod.clockInId,
+							notes: data.reason,
+							isSuperseded: true,
+						},
+						tx,
+					);
+					const clockOutCorrection = await createTimeEntry(
+						{
+							employeeId: currentEmployee.id,
+							organizationId: currentEmployee.organizationId,
+							type: "correction",
+							timestamp: selectedWorkPeriod.startTime,
+							createdBy: session.user.id,
+							...deletionTimezoneCapture,
+							replacesEntryId: selectedWorkPeriod.clockOutId!,
+							notes: data.reason,
+							isSuperseded: true,
+						},
+						tx,
+					);
+
+					return await Effect.runPromise(
+						createTimeCorrectionApprovalWorkflow(transactionalDbService, {
+							organizationId: currentEmployee.organizationId,
+							requesterEmployeeId: currentEmployee.id,
+							teamId: currentEmployee.teamId ?? null,
+							workPeriodId: selectedWorkPeriod.id,
+							defaultApproverId: managerId,
+							reason: data.reason,
+							overtimeRisk: "warning",
+							correctionAction: deletionMetadata.action,
+							correctionEntryIds: {
+								clockInCorrectionId: clockInCorrection.id,
+								clockOutCorrectionId: clockOutCorrection.id,
+							},
+						}),
+					);
+				});
+			}),
+		);
+
+		return { approvalId: result.approvalRequestId };
+	}).pipe(
+		Effect.tapError((error) =>
+			Effect.sync(() => {
+				logger.error({ error }, "Failed to process time entry deletion request");
+			}),
+		),
+		Effect.withSpan("requestTimeEntryDeletion", {
+			attributes: {
+				"correction.work_period_id": data.workPeriodId,
+				"correction.action": "delete",
+			},
+		}),
+		Effect.provide(AppLayer),
+		Effect.provide(DatabaseServiceLive),
+	);
+
+	const result = await runServerActionSafe(effect);
+	if (
+		!result.success &&
+		result.error === "A time correction approval is already pending for this work period"
+	) {
+		return { ...result, code: "pending_time_correction_approval" };
+	}
+
+	return result;
 }
 
 export const requestTimeCorrection = requestTimeCorrectionEffect;

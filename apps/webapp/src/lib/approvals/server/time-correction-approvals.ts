@@ -68,8 +68,11 @@ type TimeCorrectionApprovalResult = {
 	workBalanceDirtyMark?: WorkBalanceDirtyMark;
 };
 
+type TimeCorrectionAction = "edit" | "delete";
+
 type TimeCorrectionApprovalMetadata = {
 	timeCorrection?: {
+		action?: TimeCorrectionAction;
 		clockInCorrectionId?: string;
 		clockOutCorrectionId?: string;
 	};
@@ -265,6 +268,7 @@ export function createTimeCorrectionApprovalWorkflow(
 		defaultApproverId: string;
 		reason?: string;
 		overtimeRisk: ApprovalPolicyOvertimeRisk;
+		correctionAction?: TimeCorrectionAction;
 		correctionEntryIds?: {
 			clockInCorrectionId: string;
 			clockOutCorrectionId?: string;
@@ -274,6 +278,7 @@ export function createTimeCorrectionApprovalWorkflow(
 	const metadata: Record<string, unknown> | undefined = input.correctionEntryIds
 		? {
 				timeCorrection: {
+					action: input.correctionAction ?? "edit",
 					clockInCorrectionId: input.correctionEntryIds.clockInCorrectionId,
 					clockOutCorrectionId: input.correctionEntryIds.clockOutCorrectionId,
 				},
