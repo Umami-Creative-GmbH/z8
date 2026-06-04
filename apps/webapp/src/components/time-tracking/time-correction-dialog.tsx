@@ -30,6 +30,7 @@ import { getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 import { useRouter } from "@/navigation";
 import {
 	getTimeCorrectionDefaultValues,
+	isDirectSameDayEdit,
 	isValidClockRange,
 	type TimeCorrectionFormValues,
 } from "./time-correction-dialog-utils";
@@ -76,7 +77,7 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 				return;
 			}
 
-			if (isSameDay) {
+			if (isDirectSameDayEdit({ isSameDay, workPeriod, employeeTimezone, values: value })) {
 				const result = await editSameDayTimeEntry({
 					workPeriodId: workPeriod.id,
 					newClockInDate: value.clockInDate,

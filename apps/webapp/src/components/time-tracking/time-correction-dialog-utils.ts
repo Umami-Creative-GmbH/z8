@@ -33,6 +33,27 @@ export function getTimeCorrectionDefaultValues(
 	};
 }
 
+export function isDirectSameDayEdit(params: {
+	isSameDay: boolean;
+	workPeriod: TimeCorrectionWorkPeriod;
+	employeeTimezone: string;
+	values: TimeCorrectionFormValues;
+}): boolean {
+	if (!params.isSameDay) {
+		return false;
+	}
+
+	const originalClockInDate = formatDateInZone(params.workPeriod.startTime, params.employeeTimezone);
+	const originalClockOutDate = params.workPeriod.endTime
+		? formatDateInZone(params.workPeriod.endTime, params.employeeTimezone)
+		: "";
+
+	return (
+		params.values.clockInDate === originalClockInDate &&
+		(!params.workPeriod.endTime || params.values.clockOutDate === originalClockOutDate)
+	);
+}
+
 export function isValidClockRange(
 	clockInDate: string,
 	clockInTime: string,

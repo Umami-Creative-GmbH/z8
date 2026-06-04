@@ -194,6 +194,19 @@ export async function editSameDayTimeEntry(
 		} as ServerActionResult<{ workPeriodId: string; requiresApproval?: boolean }>;
 	}
 
+	const originalClockInDate =
+		DateTime.fromJSDate(selectedWorkPeriod.startTime, { zone: "utc" }).setZone(timezone).toISODate() ??
+		"";
+	const originalClockOutDate =
+		DateTime.fromJSDate(selectedWorkPeriod.endTime, { zone: "utc" }).setZone(timezone).toISODate() ??
+		"";
+	if (
+		data.newClockInDate !== originalClockInDate ||
+		(data.newClockOutDate && data.newClockOutDate !== originalClockOutDate)
+	) {
+		return { success: false, error: "Date changes require manager approval" };
+	}
+
 	const correctionTimes = buildCorrectionTimes({
 		newClockInDate: data.newClockInDate,
 		newClockInTime: data.newClockInTime,

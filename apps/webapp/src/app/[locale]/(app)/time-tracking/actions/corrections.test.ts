@@ -76,6 +76,16 @@ describe("time correction request safety", () => {
 		expect(body).toContain("isNull(workPeriod.deletedAt)");
 	});
 
+	it("rejects direct same-day edits that change endpoint local dates", () => {
+		const body = functionBody(modularSource, "editSameDayTimeEntry");
+
+		expect(body).toContain("originalClockInDate");
+		expect(body).toContain("originalClockOutDate");
+		expect(body).toContain("data.newClockInDate !== originalClockInDate");
+		expect(body).toContain("data.newClockOutDate !== originalClockOutDate");
+		expect(body).toContain("Date changes require manager approval");
+	});
+
 	it("guards the final same-day work period update by organization and deletion state", () => {
 		const body = functionBody(modularSource, "editSameDayTimeEntry");
 		const finalUpdateIndex = body.indexOf(".update(workPeriod)", body.indexOf("const finalClockOut"));
