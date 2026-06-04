@@ -284,7 +284,7 @@ export async function editSameDayTimeEntry(
 		}
 
 		const finalClockOut = correctedClockOutDate || selectedWorkPeriod.endTime;
-		await db
+		const updatedPeriods = await db
 			.update(workPeriod)
 			.set({
 				clockInId: clockInCorrection.id,
@@ -294,7 +294,18 @@ export async function editSameDayTimeEntry(
 				durationMinutes: calculateDurationMinutes(correctedClockInDate, finalClockOut),
 				updatedAt: new Date(),
 			})
-			.where(eq(workPeriod.id, selectedWorkPeriod.id));
+			.where(
+				and(
+					eq(workPeriod.id, selectedWorkPeriod.id),
+					eq(workPeriod.organizationId, currentEmployee.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
+			.returning({ id: workPeriod.id });
+
+		if (updatedPeriods.length === 0) {
+			throw new Error("Work period was no longer available for update");
+		}
 
 		const earliestAffectedDate =
 			selectedWorkPeriod.startTime <= correctedClockInDate

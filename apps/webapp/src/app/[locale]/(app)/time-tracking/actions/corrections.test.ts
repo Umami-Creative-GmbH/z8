@@ -76,6 +76,19 @@ describe("time correction request safety", () => {
 		expect(body).toContain("isNull(workPeriod.deletedAt)");
 	});
 
+	it("guards the final same-day work period update by organization and deletion state", () => {
+		const body = functionBody(modularSource, "editSameDayTimeEntry");
+		const finalUpdateIndex = body.indexOf(".update(workPeriod)", body.indexOf("const finalClockOut"));
+		const finalUpdateBody = body.slice(finalUpdateIndex, body.indexOf("const earliestAffectedDate"));
+
+		expect(finalUpdateIndex).toBeGreaterThanOrEqual(0);
+		expect(finalUpdateBody).toContain("eq(workPeriod.id, selectedWorkPeriod.id)");
+		expect(finalUpdateBody).toContain(
+			"eq(workPeriod.organizationId, currentEmployee.organizationId)",
+		);
+		expect(finalUpdateBody).toContain("isNull(workPeriod.deletedAt)");
+	});
+
 	it("excludes deleted work periods from correction approval requests", () => {
 		const body = functionBody(modularSource, "requestTimeCorrectionEffect");
 

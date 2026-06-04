@@ -88,7 +88,9 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		const result = await getApprovalInboxDetailFromRequest({ request, handler });
 
 		expect(result.item.id).toBe("approval-1");
-		expect(handler.getDetail).toHaveBeenCalledWith("absence-1", "org-1");
+		expect(handler.getDetail).toHaveBeenCalledWith("absence-1", "org-1", {
+			approvalId: "approval-1",
+		});
 	});
 
 	it("rejects unsupported entity types before calling the handler", async () => {

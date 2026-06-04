@@ -284,6 +284,7 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 	getDetail: (
 		entityId: string,
 		organizationId?: string,
+		context?: { approvalId?: string },
 	) => Effect.Effect<ApprovalDetail<TEntity>, AnyAppError, any>;
 
 	/**
