@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { getManagerAbsenceEmployees, recordAbsenceForEmployee } from "./actions";
+import {
+	getManagerAbsenceCalendar,
+	getManagerAbsenceEmployees,
+	recordAbsenceForEmployee,
+} from "./actions";
 import {
 	buildCanonicalAbsenceRecordValues,
 	buildInaccessibleTeamAbsenceListResult,
+	buildManagerAbsenceCalendarDays,
 	buildManagerAbsenceRowAbsences,
 	clampManagerAbsencePage,
 	getAbsenceOverlapConflictMessage,
@@ -17,8 +22,9 @@ import { canActorManageTarget, canUseManagerAbsencePage } from "./manager-absenc
 import type { ManagerAbsenceListParams } from "./manager-absence-types";
 
 describe("manager absence server action contracts", () => {
-	it("exports the list and record actions", () => {
+	it("exports the list, calendar, and record actions", () => {
 		expect(typeof getManagerAbsenceEmployees).toBe("function");
+		expect(typeof getManagerAbsenceCalendar).toBe("function");
 		expect(typeof recordAbsenceForEmployee).toBe("function");
 	});
 });
@@ -114,6 +120,80 @@ describe("manager absence server action helpers", () => {
 		);
 
 		expect(rows[0]?.sickDetail).toBeNull();
+	});
+
+	it("groups team calendar absences by selected-year date and clips overlapping ranges", () => {
+		const days = buildManagerAbsenceCalendarDays(
+			[
+				{
+					id: "absence-overlap",
+					employeeId: "employee-1",
+					employeeName: "Ada Lovelace",
+					startDate: "2025-12-30",
+					startPeriod: "full_day",
+					endDate: "2026-01-02",
+					endPeriod: "full_day",
+					status: "approved",
+					category: { name: "Vacation", type: "vacation", color: "#3b82f6" },
+				},
+			],
+			2026,
+		);
+
+		expect(days.map((day) => day.date)).toEqual(["2026-01-01", "2026-01-02"]);
+		expect(days[0]).toMatchObject({
+			date: "2026-01-01",
+			approvedCount: 1,
+			pendingCount: 0,
+			totalCount: 1,
+		});
+		expect(days[0]?.entries[0]).toMatchObject({
+			employeeName: "Ada Lovelace",
+			status: "approved",
+			category: { name: "Vacation" },
+		});
+	});
+
+	it("groups approved and pending absences on the same team calendar day", () => {
+		const days = buildManagerAbsenceCalendarDays(
+			[
+				{
+					id: "absence-approved",
+					employeeId: "employee-1",
+					employeeName: "Ada Lovelace",
+					startDate: "2026-06-10",
+					startPeriod: "full_day",
+					endDate: "2026-06-10",
+					endPeriod: "full_day",
+					status: "approved",
+					category: { name: "Vacation", type: "vacation", color: null },
+				},
+				{
+					id: "absence-pending",
+					employeeId: "employee-2",
+					employeeName: "Grace Hopper",
+					startDate: "2026-06-10",
+					startPeriod: "full_day",
+					endDate: "2026-06-10",
+					endPeriod: "full_day",
+					status: "pending",
+					category: { name: "Training", type: "other", color: "#f59e0b" },
+				},
+			],
+			2026,
+		);
+
+		expect(days).toHaveLength(1);
+		expect(days[0]).toMatchObject({
+			date: "2026-06-10",
+			approvedCount: 1,
+			pendingCount: 1,
+			totalCount: 2,
+		});
+		expect(days[0]?.entries.map((entry) => entry.employeeName)).toEqual([
+			"Ada Lovelace",
+			"Grace Hopper",
+		]);
 	});
 
 	it("normalizes list params to safe server-backed pagination defaults", () => {
