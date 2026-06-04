@@ -141,9 +141,7 @@ export const workPeriod = pgTable(
 		deletedAt: timestamp("deleted_at"),
 		deletedBy: text("deleted_by").references(() => user.id),
 		deletionReason: text("deletion_reason"),
-		deletionApprovalRequestId: uuid("deletion_approval_request_id").references(
-			() => approvalRequest.id,
-		),
+		deletionApprovalRequestId: uuid("deletion_approval_request_id"),
 
 		// Auto-adjustment tracking for break enforcement
 		wasAutoAdjusted: boolean("was_auto_adjusted").default(false).notNull(),
@@ -168,9 +166,14 @@ export const workPeriod = pgTable(
 		index("workPeriod_workCategoryId_idx").on(table.workCategoryId),
 		index("workPeriod_approvalStatus_idx").on(table.approvalStatus),
 		index("workPeriod_org_canonicalRecordId_idx").on(table.organizationId, table.canonicalRecordId),
+		index("workPeriod_org_deletedAt_idx").on(table.organizationId, table.deletedAt),
 		foreignKey({
 			columns: [table.canonicalRecordId, table.organizationId],
 			foreignColumns: [timeRecord.id, timeRecord.organizationId],
+		}),
+		foreignKey({
+			columns: [table.deletionApprovalRequestId, table.organizationId],
+			foreignColumns: [approvalRequest.id, approvalRequest.organizationId],
 		}),
 		// Composite index for calendar queries (most common)
 		index("workPeriod_org_startTime_idx").on(table.organizationId, table.startTime),

@@ -10,7 +10,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
- ALTER TABLE "work_period" ADD CONSTRAINT "work_period_deletion_approval_request_id_fk" FOREIGN KEY ("deletion_approval_request_id") REFERENCES "approval_request"("id");
+ ALTER TABLE "work_period" ADD CONSTRAINT "work_period_deletion_approval_request_org_fk" FOREIGN KEY ("deletion_approval_request_id", "organization_id") REFERENCES "approval_request"("id", "organization_id");
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
