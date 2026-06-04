@@ -148,6 +148,53 @@ async function syncBillingSeats({
 	await syncBillingSeatsAfterMemberChange({ organizationId, memberId, userId, change });
 }
 
+type AuthDatabaseAdapterFactory = ReturnType<typeof drizzleAdapter>;
+type AuthDatabaseAdapter = ReturnType<AuthDatabaseAdapterFactory>;
+type AuthFindOneOptions = Parameters<AuthDatabaseAdapter["findOne"]>[0];
+
+function withInsensitiveUserEmailWhere(options: AuthFindOneOptions): AuthFindOneOptions {
+	if (options.model !== "user" || !Array.isArray(options.where)) {
+		return options;
+	}
+
+	let changed = false;
+	const where = options.where.map((clause) => {
+		if (clause.field !== "email" || clause.mode) {
+			return clause;
+		}
+
+		changed = true;
+		return { ...clause, mode: "insensitive" as const };
+	});
+
+	return changed ? { ...options, where } : options;
+}
+
+function wrapEmailLookupCaseInsensitiveAdapter(
+	adapter: AuthDatabaseAdapter,
+): AuthDatabaseAdapter {
+	return {
+		...adapter,
+		findOne: (options) => adapter.findOne(withInsensitiveUserEmailWhere(options)),
+	};
+}
+
+export function makeEmailLookupCaseInsensitiveAdapter(
+	adapter: AuthDatabaseAdapterFactory,
+): AuthDatabaseAdapterFactory;
+export function makeEmailLookupCaseInsensitiveAdapter(
+	adapter: AuthDatabaseAdapter,
+): AuthDatabaseAdapter;
+export function makeEmailLookupCaseInsensitiveAdapter(
+	adapter: AuthDatabaseAdapterFactory | AuthDatabaseAdapter,
+): AuthDatabaseAdapterFactory | AuthDatabaseAdapter {
+	if (typeof adapter === "function") {
+		return (options) => wrapEmailLookupCaseInsensitiveAdapter(adapter(options));
+	}
+
+	return wrapEmailLookupCaseInsensitiveAdapter(adapter);
+}
+
 export const auth = betterAuth({
 	secrets: getAuthSecrets(),
 	baseURL: {
@@ -381,10 +428,12 @@ export const auth = betterAuth({
 			enabled: !!env.APPLE_CLIENT_ID && !!env.APPLE_CLIENT_SECRET,
 		},
 	},
-	database: drizzleAdapter(db, {
-		provider: "pg",
-		schema,
-	}),
+	database: makeEmailLookupCaseInsensitiveAdapter(
+		drizzleAdapter(db, {
+			provider: "pg",
+			schema,
+		}),
+	),
 	plugins: [
 		bearer(), // Enable Bearer token auth for desktop app
 		admin({
