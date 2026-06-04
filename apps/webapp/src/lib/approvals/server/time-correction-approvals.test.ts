@@ -44,7 +44,11 @@ import {
 	createTimeCorrectionApprovalWorkflow,
 	rejectTimeCorrectionWithCurrentApproverEffect,
 } from "@/lib/approvals/server/time-correction-approvals";
-import type { ApprovalDbService, CurrentApprover } from "@/lib/approvals/server/types";
+import type {
+	ApprovalDbService,
+	CurrentApprover,
+	PendingApprovalRequest,
+} from "@/lib/approvals/server/types";
 
 beforeEach(() => {
 	markEmployeeWorkBalanceDirty.mockClear();
@@ -364,6 +368,8 @@ describe("time correction requester decision notifications", () => {
 			approverId: "emp-manager",
 			status: "pending",
 			reason: "Duplicate period",
+			approvedAt: null,
+			rejectionReason: null,
 			metadata: {
 				timeCorrection: {
 					action: "delete",
@@ -371,7 +377,8 @@ describe("time correction requester decision notifications", () => {
 					clockOutCorrectionId: deletionClockOutCorrection.id,
 				},
 			},
-		};
+			updatedAt: new Date("2026-05-11T08:05:00.000Z"),
+		} satisfies PendingApprovalRequest;
 
 		vi.mocked(dbService.db.query.workPeriod.findFirst).mockResolvedValueOnce({
 			...period,
