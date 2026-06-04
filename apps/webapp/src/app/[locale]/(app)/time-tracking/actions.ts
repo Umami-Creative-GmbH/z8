@@ -1072,6 +1072,7 @@ export async function getWorkPeriods(
 	const periods = await db.query.workPeriod.findMany({
 		where: and(
 			eq(workPeriod.employeeId, employeeId),
+			isNull(workPeriod.deletedAt),
 			gte(workPeriod.startTime, startDate),
 			lte(workPeriod.startTime, endDate),
 		),
@@ -1129,6 +1130,7 @@ export async function getTimeSummary(
 		.where(
 			and(
 				eq(workPeriod.employeeId, employeeId),
+				isNull(workPeriod.deletedAt),
 				gte(workPeriod.startTime, monthStart),
 				lte(workPeriod.startTime, monthEnd),
 			),

@@ -166,14 +166,15 @@ describe("time correction request safety", () => {
 		expect(modularSource).not.toContain("delete(workPeriod)");
 	});
 
-	it("preserves original endpoint timezone capture when requesting deletion", () => {
+	it("uses deletion-timestamp timezone capture for both deletion correction entries", () => {
 		const body = functionBody(modularSource, "requestTimeEntryDeletion");
 
 		expect(body).toContain("originalClockInEntry");
-		expect(body).toContain("originalClockOutEntry");
 		expect(body).toContain("captureFromOriginalTimeEntry");
+		expect(body).toContain("timestamp: selectedWorkPeriod.startTime");
 		expect(body).toContain("clockInDeletionTimezoneCapture");
-		expect(body).toContain("clockOutDeletionTimezoneCapture");
+		expect(body).toContain("const clockOutDeletionTimezoneCapture = clockInDeletionTimezoneCapture");
+		expect(body).not.toContain("captureFromOriginalTimeEntry(\n\t\t\toriginalClockOutEntry");
 		expect(body).toContain("utcOffsetMinutes: originalEntry.utcOffsetMinutes");
 		expect(body).toContain("timezone: originalEntry.timezone");
 		expect(body).toContain("timezoneSource: originalEntry.timezoneSource");

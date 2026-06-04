@@ -868,29 +868,15 @@ export async function requestTimeEntryDeletion(
 			);
 		}
 
-		const { originalClockInEntry, originalClockOutEntry } = yield* _(
+		const originalClockInEntry = yield* _(
 			dbService.query("getDeletionOriginalTimeEntries", async () => {
-				const [clockInEntry, clockOutEntry] = await Promise.all([
-					dbService.db.query.timeEntry.findFirst({
-						where: and(
-							eq(timeEntry.id, selectedWorkPeriod.clockInId),
-							eq(timeEntry.employeeId, currentEmployee.id),
-							eq(timeEntry.organizationId, currentEmployee.organizationId),
-						),
-					}),
-					dbService.db.query.timeEntry.findFirst({
-						where: and(
-							eq(timeEntry.id, selectedWorkPeriod.clockOutId!),
-							eq(timeEntry.employeeId, currentEmployee.id),
-							eq(timeEntry.organizationId, currentEmployee.organizationId),
-						),
-					}),
-				]);
-
-				return {
-					originalClockInEntry: clockInEntry ?? null,
-					originalClockOutEntry: clockOutEntry ?? null,
-				};
+				return await dbService.db.query.timeEntry.findFirst({
+					where: and(
+						eq(timeEntry.id, selectedWorkPeriod.clockInId),
+						eq(timeEntry.employeeId, currentEmployee.id),
+						eq(timeEntry.organizationId, currentEmployee.organizationId),
+					),
+				});
 			}),
 		);
 
@@ -920,13 +906,10 @@ export async function requestTimeEntryDeletion(
 			};
 		};
 		const clockInDeletionTimezoneCapture = captureFromOriginalTimeEntry(
-			originalClockInEntry,
+			originalClockInEntry ?? null,
 			fallbackDeletionTimezoneCapture,
 		);
-		const clockOutDeletionTimezoneCapture = captureFromOriginalTimeEntry(
-			originalClockOutEntry,
-			fallbackDeletionTimezoneCapture,
-		);
+		const clockOutDeletionTimezoneCapture = clockInDeletionTimezoneCapture;
 		const deletionMetadata = { action: "delete" as const };
 
 		const result = yield* _(
