@@ -17,7 +17,7 @@ import {
 } from "@tabler/icons-react";
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { searchAppRecordsAction } from "@/app/[locale]/(app)/search/actions";
 import {
 	CommandDialog,
@@ -105,6 +105,18 @@ function getResultSearchValue(result: AppSearchResult) {
 	].join(":");
 }
 
+function subscribeShortcutLabel() {
+	return () => undefined;
+}
+
+function getClientShortcutLabel() {
+	return formatForDisplay(SEARCH_HOTKEY);
+}
+
+function getServerShortcutLabel() {
+	return SEARCH_HOTKEY_FALLBACK_LABEL;
+}
+
 function ResultGroup({
 	label,
 	results,
@@ -178,15 +190,15 @@ export function AppSearch({
 	const visibleLiveResults = shouldSearchLiveRecords ? liveResults : EMPTY_LIVE_RESULTS;
 	const visibleLiveError = shouldSearchLiveRecords ? liveError : null;
 
-	const [searchShortcutLabel, setSearchShortcutLabel] = useState(SEARCH_HOTKEY_FALLBACK_LABEL);
+	const searchShortcutLabel = useSyncExternalStore(
+		subscribeShortcutLabel,
+		getClientShortcutLabel,
+		getServerShortcutLabel,
+	);
 
 	useHotkey(SEARCH_HOTKEY, () => setOpen((currentOpen) => !currentOpen), {
 		preventDefault: true,
 	});
-
-	useEffect(() => {
-		setSearchShortcutLabel(formatForDisplay(SEARCH_HOTKEY));
-	}, []);
 
 	useEffect(() => {
 		if (!shouldSearchLiveRecords) {

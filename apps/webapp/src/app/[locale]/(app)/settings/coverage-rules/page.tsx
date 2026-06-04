@@ -8,10 +8,11 @@ import {
 import { getTranslate } from "@/tolgee/server";
 
 export default async function CoverageRulesSettingsPage() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
-	await getTranslate();
-	const accessContext = await getSchedulingSettingsAccessContext();
+	const [, , accessContext] = await Promise.all([
+		connection(), // Mark as fully dynamic for cacheComponents mode
+		getTranslate(),
+		getSchedulingSettingsAccessContext(),
+	]);
 
 	if (!accessContext?.canAccessCoverageRules) {
 		redirect("/settings");

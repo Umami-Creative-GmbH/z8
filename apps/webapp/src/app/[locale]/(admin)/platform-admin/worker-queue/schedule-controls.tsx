@@ -122,10 +122,12 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 					router.refresh();
 				}
 			} catch (error) {
-				toast.error(error instanceof Error ? error.message : labels.failed);
-			} finally {
 				setIsSubmitting(false);
+				toast.error(error instanceof Error ? error.message : labels.failed);
+				return;
 			}
+
+			setIsSubmitting(false);
 		},
 	});
 
@@ -186,10 +188,12 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 				router.refresh();
 			}
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : labels.failed);
-		} finally {
 			setIsSubmitting(false);
+			toast.error(error instanceof Error ? error.message : labels.failed);
+			return;
 		}
+
+		setIsSubmitting(false);
 	}
 
 	return (

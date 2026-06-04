@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { updateInvitationTargetTeam } from "@/app/[locale]/(app)/settings/organizations/actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
@@ -60,7 +60,10 @@ export function EditInvitationTargetTeamDialog({
 }: EditInvitationTargetTeamDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const [selectedTargetTeamId, setSelectedTargetTeamId] = useState("none");
+	const [targetTeamDraft, setTargetTeamDraft] = useState<{
+		invitationId: string | null;
+		value: string;
+	} | null>(null);
 
 	const { data: teamsResult } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
@@ -69,14 +72,10 @@ export function EditInvitationTargetTeamDialog({
 	});
 	const teams = teamsResult?.success ? teamsResult.data : [];
 	const invitationId = invitation?.id;
-
-	useEffect(() => {
-		if (open && invitationId !== undefined) {
-			setSelectedTargetTeamId(invitation?.targetTeamId ?? "none");
-		} else if (open) {
-			setSelectedTargetTeamId("none");
-		}
-	}, [open, invitationId, invitation?.targetTeamId]);
+	const selectedTargetTeamId =
+		open && targetTeamDraft?.invitationId === (invitationId ?? null)
+			? targetTeamDraft.value
+			: (invitation?.targetTeamId ?? "none");
 
 	const updateMutation = useMutation({
 		mutationFn: ({ targetTeamId }: { targetTeamId: string | null }) => {
@@ -117,6 +116,9 @@ export function EditInvitationTargetTeamDialog({
 	});
 
 	const submittedTargetTeamId = selectedTargetTeamId === "none" ? null : selectedTargetTeamId;
+	const handleTargetTeamChange = (value: string) => {
+		setTargetTeamDraft({ invitationId: invitationId ?? null, value });
+	};
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
@@ -140,7 +142,7 @@ export function EditInvitationTargetTeamDialog({
 						</Label>
 						<Select
 							value={selectedTargetTeamId}
-							onValueChange={setSelectedTargetTeamId}
+							onValueChange={handleTargetTeamChange}
 							disabled={updateMutation.isPending}
 						>
 							<SelectTrigger

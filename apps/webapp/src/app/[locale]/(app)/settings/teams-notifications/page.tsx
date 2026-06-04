@@ -7,8 +7,11 @@ import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function TeamsNotificationsSettingsPage() {
-	const [, t] = await Promise.all([requireOrgAdminSettingsAccess(), getTranslate()]);
-	const configResult = await getTeamsNotificationChannelConfig();
+	const [, t, configResult] = await Promise.all([
+		requireOrgAdminSettingsAccess(),
+		getTranslate(),
+		getTeamsNotificationChannelConfig(),
+	]);
 	const description = t(
 		"settings.notifications.teams.description",
 		"Configure Microsoft Teams notifications for your organization.",

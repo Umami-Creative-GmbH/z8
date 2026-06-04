@@ -12,9 +12,8 @@ import { getTranslate } from "@/tolgee/server";
 import { getExportHistoryAction, getStorageConfigAction } from "./actions";
 
 async function ExportSettingsContent() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
-	const [t, { organizationId }] = await Promise.all([
+	const [, t, { organizationId }] = await Promise.all([
+		connection(), // Mark as fully dynamic for cacheComponents mode
 		getTranslate(),
 		requireOrgAdminSettingsAccess(),
 	]);

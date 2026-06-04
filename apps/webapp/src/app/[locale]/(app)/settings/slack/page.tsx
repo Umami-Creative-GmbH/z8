@@ -7,8 +7,11 @@ import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function SlackSettingsPage() {
-	const [, t] = await Promise.all([requireOrgAdminSettingsAccess(), getTranslate()]);
-	const configResult = await getSlackNotificationChannelConfig();
+	const [, t, configResult] = await Promise.all([
+		requireOrgAdminSettingsAccess(),
+		getTranslate(),
+		getSlackNotificationChannelConfig(),
+	]);
 	const description = t(
 		"settings.notifications.slack.description",
 		"Configure Slack notifications for your organization.",

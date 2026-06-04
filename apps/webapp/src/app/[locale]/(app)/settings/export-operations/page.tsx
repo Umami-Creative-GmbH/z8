@@ -22,9 +22,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function ExportOperationsPageContent() {
-	await connection();
-
-	const [t, { organizationId }] = await Promise.all([
+	const [, t, { organizationId }] = await Promise.all([
+		connection(),
 		getTranslate(),
 		requireOrgAdminSettingsAccess(),
 	]);
