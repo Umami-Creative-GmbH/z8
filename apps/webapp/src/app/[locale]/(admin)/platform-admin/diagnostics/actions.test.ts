@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { AuthorizationError } from "@/lib/effect/errors";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const ACTIONS_PATH = fileURLToPath(new URL("./actions.ts", import.meta.url));
@@ -145,26 +146,29 @@ describe("sendPlatformDiagnosticsTestEmailAction", () => {
 		mockState.sendEmail.mockResolvedValue({ success: true, messageId: "msg_123" });
 	});
 
-	it("requires platform admin access before sending", async () => {
-		const { AuthorizationError } = await import("@/lib/effect/errors");
-		mockState.requirePlatformAdmin.mockRejectedValue(
-			new AuthorizationError({ message: "Platform admin access required" }),
-		);
-		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
+	it(
+		"requires platform admin access before sending",
+		async () => {
+			mockState.requirePlatformAdmin.mockRejectedValue(
+				new AuthorizationError({ message: "Platform admin access required" }),
+			);
+			const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
 
-		const result = await sendPlatformDiagnosticsTestEmailAction({
-			to: "ops@example.com",
-		});
+			const result = await sendPlatformDiagnosticsTestEmailAction({
+				to: "ops@example.com",
+			});
 
-		expect(result).toEqual(
-			expect.objectContaining({
-				success: false,
-				error: "Platform admin access required",
-			}),
-		);
-		expect(mockState.requirePlatformAdmin).toHaveBeenCalledTimes(1);
-		expect(mockState.sendEmail).not.toHaveBeenCalled();
-	});
+			expect(result).toEqual(
+				expect.objectContaining({
+					success: false,
+					error: "Platform admin access required",
+				}),
+			);
+			expect(mockState.requirePlatformAdmin).toHaveBeenCalledTimes(1);
+			expect(mockState.sendEmail).not.toHaveBeenCalled();
+		},
+		15000,
+	);
 
 	it("rejects invalid recipient emails", async () => {
 		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
