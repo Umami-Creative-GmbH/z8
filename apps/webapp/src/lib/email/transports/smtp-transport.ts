@@ -13,10 +13,23 @@ import type {
 	EmailMessage,
 	EmailTransport,
 	EmailTransportResult,
+	SmtpIpMode,
 	SmtpTransportConfig,
 } from "./base";
 
 const logger = createLogger("SmtpTransport");
+
+function smtpFamilyForIpMode(ipMode: SmtpIpMode | undefined): 4 | 6 | undefined {
+	if (ipMode === "ipv4") {
+		return 4;
+	}
+
+	if (ipMode === "ipv6") {
+		return 6;
+	}
+
+	return undefined;
+}
 
 export class SmtpTransport implements EmailTransport {
 	private transporter: Transporter<SMTPTransport.SentMessageInfo>;
@@ -28,12 +41,14 @@ export class SmtpTransport implements EmailTransport {
 		this.fromEmail = config.fromEmail;
 		this.fromName = config.fromName;
 		this.host = config.host;
+		const family = smtpFamilyForIpMode(config.ipMode);
 
 		this.transporter = createTransport({
 			host: config.host,
 			port: config.port,
 			secure: config.secure, // true for 465, false for other ports
 			requireTLS: config.requireTls, // require STARTTLS upgrade
+			...(family ? { family } : {}),
 			auth: {
 				user: config.auth.user,
 				pass: config.auth.pass,
@@ -154,6 +169,7 @@ export function createSystemSmtpTransport(): SmtpTransport | null {
 
 	const secure = env.SMTP_SECURE === "true";
 	const requireTls = env.SMTP_REQUIRE_TLS !== "false"; // Default to true
+	const ipMode = env.SMTP_IP_MODE ?? "auto";
 	const fromName = env.SMTP_FROM_NAME;
 
 	try {
@@ -162,6 +178,7 @@ export function createSystemSmtpTransport(): SmtpTransport | null {
 			port: parseInt(port, 10),
 			secure,
 			requireTls,
+			ipMode,
 			auth: {
 				user: username,
 				pass: password,

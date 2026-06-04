@@ -93,6 +93,7 @@ const parsedEnv = createEnv({
 		SMTP_PASSWORD: z.string().optional(),
 		SMTP_SECURE: z.enum(["true", "false"]).optional(),
 		SMTP_REQUIRE_TLS: z.enum(["true", "false"]).optional(),
+		SMTP_IP_MODE: z.enum(["auto", "ipv4", "ipv6"]).optional(),
 		SMTP_FROM_EMAIL: z.email().optional(),
 		SMTP_FROM_NAME: z.string().optional(),
 
@@ -236,6 +237,7 @@ const parsedEnv = createEnv({
 		SMTP_PASSWORD: process.env.SMTP_PASSWORD,
 		SMTP_SECURE: optionalEnv(process.env.SMTP_SECURE),
 		SMTP_REQUIRE_TLS: optionalEnv(process.env.SMTP_REQUIRE_TLS),
+		SMTP_IP_MODE: optionalEnv(process.env.SMTP_IP_MODE),
 		SMTP_FROM_EMAIL: optionalEnv(process.env.SMTP_FROM_EMAIL),
 		SMTP_FROM_NAME: process.env.SMTP_FROM_NAME,
 		NODE_ENV: process.env.NODE_ENV,
