@@ -8,6 +8,7 @@ import { approvalRequest, employee, timeEntry, workPeriod } from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
+import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -795,6 +796,21 @@ export async function requestTimeEntryDeletion(
 			),
 		);
 
+		const billingAccess = yield* _(
+			Effect.promise(() => requireBillingForMutation(currentEmployee.organizationId)),
+		);
+		if (!isBillingMutationAllowed(billingAccess)) {
+			return yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "billing_required",
+						field: "billing",
+						value: billingAccess.reason ?? "subscription_required",
+					}),
+				),
+			);
+		}
+
 		if (!selectedWorkPeriod.endTime || !selectedWorkPeriod.clockOutId) {
 			yield* _(
 				Effect.fail(
@@ -989,6 +1005,13 @@ export async function requestTimeEntryDeletion(
 		result.error === "A time correction approval is already pending for this work period"
 	) {
 		return { ...result, code: "pending_time_correction_approval" };
+	}
+	if (!result.success && result.error === "billing_required") {
+		return {
+			success: false,
+			error: "billing_required",
+			code: result.holidayName ?? "subscription_required",
+		};
 	}
 
 	return result;

@@ -155,6 +155,9 @@ describe("time correction request safety", () => {
 		expect(modularSource).toContain("export async function requestTimeEntryDeletion");
 		expect(body).toContain("getCurrentEmployee()");
 		expect(body).not.toContain('dbService.query("getEmployeeByUserId"');
+		expect(body).toContain("requireBillingForMutation(currentEmployee.organizationId)");
+		expect(body).toContain("isBillingMutationAllowed(billingAccess)");
+		expect(body).toContain('error: "billing_required"');
 		expect(body).toContain('action: "delete"');
 		expect(body).toContain("timestamp: selectedWorkPeriod.startTime");
 		expect(body).toContain("isSuperseded: true");
