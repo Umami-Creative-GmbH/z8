@@ -129,11 +129,33 @@ describe("enterprise email config actions", () => {
 				smtpIpMode: "ipv6",
 			}),
 		);
+		expect(mocks.storeOrgSecret).toHaveBeenCalledTimes(1);
 		expect(mocks.storeOrgSecret).toHaveBeenCalledWith(
 			"org-1",
 			"email/smtp_password",
 			"smtp-password",
 		);
+	});
+
+	it("rejects empty smtpIpMode without writing DB or secrets", async () => {
+		const result = await saveEmailConfig("org-1", {
+			transportType: "smtp",
+			fromEmail: "noreply@example.com",
+			isActive: true,
+			smtpHost: "smtp.example.com",
+			smtpPort: 587,
+			smtpUsername: "smtp-user",
+			smtpPassword: "smtp-password",
+			smtpIpMode: "",
+		} as Parameters<typeof saveEmailConfig>[1]);
+
+		expect(result).toEqual({ success: false, error: "Invalid SMTP IP mode" });
+		expect(mocks.findFirst).not.toHaveBeenCalled();
+		expect(mocks.insert).not.toHaveBeenCalled();
+		expect(mocks.update).not.toHaveBeenCalled();
+		expect(mocks.values).not.toHaveBeenCalled();
+		expect(mocks.storeOrgSecret).not.toHaveBeenCalled();
+		expect(mocks.deleteOrgSecret).not.toHaveBeenCalled();
 	});
 
 	it("returns smtpIpMode from saved organization email config", async () => {
