@@ -203,6 +203,96 @@ describe("DiagnosticsClient", () => {
 		});
 	});
 
+	it("submits temporary SMTP override settings when provided", async () => {
+		sendPlatformDiagnosticsTestEmailActionMock.mockResolvedValue({
+			success: true,
+			data: { recipient: "ops@example.com", messageId: "override-msg" },
+		});
+		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
+
+		fireEvent.change(screen.getByLabelText("Recipient email"), {
+			target: { value: "ops@example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("SMTP host"), {
+			target: { value: "smtp.example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("SMTP port"), {
+			target: { value: "587" },
+		});
+		fireEvent.change(screen.getByLabelText("SMTP username"), {
+			target: { value: "smtp-user" },
+		});
+		fireEvent.change(screen.getByLabelText("SMTP password"), {
+			target: { value: "smtp-password" },
+		});
+		fireEvent.change(screen.getByLabelText("From email"), {
+			target: { value: "noreply@example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("From name"), {
+			target: { value: "Z8 Ops" },
+		});
+		fireEvent.change(screen.getByLabelText("IP mode"), {
+			target: { value: "ipv4" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Send test email" }));
+
+		await waitFor(() =>
+			expect(screen.getByText("Test email sent to ops@example.com.")).toBeTruthy(),
+		);
+		expect(sendPlatformDiagnosticsTestEmailActionMock).toHaveBeenCalledWith({
+			to: "ops@example.com",
+			smtpOverride: {
+				host: "smtp.example.com",
+				port: 587,
+				username: "smtp-user",
+				password: "smtp-password",
+				fromEmail: "noreply@example.com",
+				fromName: "Z8 Ops",
+				secure: true,
+				requireTls: true,
+				ipMode: "ipv4",
+			},
+		});
+	});
+
+	it("omits the temporary SMTP override from name when blank", async () => {
+		sendPlatformDiagnosticsTestEmailActionMock.mockResolvedValue({
+			success: true,
+			data: { recipient: "ops@example.com", messageId: "override-msg" },
+		});
+		render(<DiagnosticsClient initialSnapshot={snapshot()} adminEmail="admin@example.com" />);
+
+		fireEvent.change(screen.getByLabelText("Recipient email"), {
+			target: { value: "ops@example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("SMTP host"), {
+			target: { value: "smtp.example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("From email"), {
+			target: { value: "noreply@example.com" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Send test email" }));
+
+		await waitFor(() =>
+			expect(screen.getByText("Test email sent to ops@example.com.")).toBeTruthy(),
+		);
+		expect(sendPlatformDiagnosticsTestEmailActionMock).toHaveBeenCalledWith({
+			to: "ops@example.com",
+			smtpOverride: {
+				host: "smtp.example.com",
+				port: 587,
+				username: "",
+				password: "",
+				fromEmail: "noreply@example.com",
+				secure: true,
+				requireTls: true,
+				ipMode: "auto",
+			},
+		});
+		const [{ smtpOverride }] = sendPlatformDiagnosticsTestEmailActionMock.mock.calls[0];
+		expect(Object.hasOwn(smtpOverride, "fromName")).toBe(false);
+	});
+
 	it("shows an inline error when the email test fails", async () => {
 		sendPlatformDiagnosticsTestEmailActionMock.mockResolvedValue({
 			success: false,

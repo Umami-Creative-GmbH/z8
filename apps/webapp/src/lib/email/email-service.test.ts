@@ -173,4 +173,36 @@ describe("email service system transport selection", () => {
 			true,
 		);
 	});
+
+	it("passes organization SMTP IP mode to the SMTP transport", async () => {
+		dbFindFirstMock.mockResolvedValue({
+			organizationId: "org_123",
+			isActive: true,
+			transportType: "smtp",
+			fromEmail: "team@example.com",
+			fromName: "Team",
+			smtpHost: "smtp.example.com",
+			smtpPort: 587,
+			smtpSecure: false,
+			smtpRequireTls: true,
+			smtpUsername: "smtp-user",
+			smtpIpMode: "ipv4",
+		});
+		getOrgSecretMock.mockResolvedValue("smtp-password");
+		const { sendEmail } = await import("./email-service");
+
+		const result = await sendEmail({
+			to: "alex@example.com",
+			subject: "Org SMTP Test",
+			html: "<p>Org SMTP Test</p>",
+			organizationId: "org_123",
+		});
+
+		expect(result).toEqual({ success: true, messageId: "org-smtp-message" });
+		expect(smtpTransportConstructorMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				ipMode: "ipv4",
+			}),
+		);
+	});
 });

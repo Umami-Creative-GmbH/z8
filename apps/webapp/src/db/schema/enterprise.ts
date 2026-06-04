@@ -17,6 +17,7 @@ import type { AuthConfig, SocialOAuthProvider, SocialOAuthProviderConfig } from 
 
 // Email transport type for organizationEmailConfig
 export type EmailTransportType = "resend" | "smtp";
+export type EmailSmtpIpMode = "auto" | "ipv4" | "ipv6";
 
 // ============================================
 // ENTERPRISE: CUSTOM DOMAINS
@@ -125,6 +126,7 @@ export const organizationEmailConfig = pgTable(
 		smtpPort: integer("smtp_port"),
 		smtpSecure: boolean("smtp_secure").default(true), // Use TLS
 		smtpRequireTls: boolean("smtp_require_tls").default(true), // Require STARTTLS
+		smtpIpMode: text("smtp_ip_mode").$type<EmailSmtpIpMode>().default("auto"),
 		smtpUsername: text("smtp_username"),
 		// NOTE: smtpPassword is stored in Vault at: secret/organizations/{orgId}/email/smtp_password
 

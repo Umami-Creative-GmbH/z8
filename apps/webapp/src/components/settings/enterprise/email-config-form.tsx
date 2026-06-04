@@ -168,6 +168,7 @@ export function EmailConfigForm({
 		smtpPort: initialConfig?.smtpPort ?? 587,
 		smtpSecure: initialConfig?.smtpSecure ?? true,
 		smtpRequireTls: initialConfig?.smtpRequireTls ?? true,
+		smtpIpMode: initialConfig?.smtpIpMode ?? "auto",
 		smtpUsername: initialConfig?.smtpUsername ?? "",
 		smtpPassword: "",
 	};
@@ -428,6 +429,41 @@ export function EmailConfigForm({
 											)}
 										</form.Field>
 									</div>
+
+									<form.Field name="smtpIpMode">
+										{(field) => (
+											<div className="space-y-2">
+												<Label htmlFor="smtpIpMode">
+													{t("settings.enterprise.email.smtpIpMode", "IP mode")}
+												</Label>
+												<select
+													id="smtpIpMode"
+													className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+													value={field.state.value ?? "auto"}
+													onChange={(event) =>
+														field.handleChange(event.target.value as "auto" | "ipv4" | "ipv6")
+													}
+													onBlur={field.handleBlur}
+												>
+													<option value="auto">
+														{t("settings.enterprise.email.smtpIpMode.auto", "Auto")}
+													</option>
+													<option value="ipv4">
+														{t("settings.enterprise.email.smtpIpMode.ipv4", "IPv4 only")}
+													</option>
+													<option value="ipv6">
+														{t("settings.enterprise.email.smtpIpMode.ipv6", "IPv6 only")}
+													</option>
+												</select>
+												<p className="text-xs text-muted-foreground">
+													{t(
+														"settings.enterprise.email.smtpIpModeHint",
+														"Use Auto unless your SMTP provider requires a specific IP family.",
+													)}
+												</p>
+											</div>
+										)}
+									</form.Field>
 
 									<div className="grid gap-4 md:grid-cols-2">
 										<form.Field name="smtpUsername">

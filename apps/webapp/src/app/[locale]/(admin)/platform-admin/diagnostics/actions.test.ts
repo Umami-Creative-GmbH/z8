@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const ACTIONS_PATH = fileURLToPath(new URL("./actions.ts", import.meta.url));
 
@@ -11,6 +11,8 @@ function stripComments(source: string): string {
 const mockState = vi.hoisted(() => ({
 	requirePlatformAdmin: vi.fn(),
 	sendEmail: vi.fn(),
+	smtpTransportConstructor: vi.fn(),
+	smtpTransportSend: vi.fn(),
 }));
 
 vi.mock("@/lib/effect/services/platform-admin.service", async () => {
@@ -95,8 +97,21 @@ vi.mock("@/lib/email/email-service", () => ({
 	sendEmail: mockState.sendEmail,
 }));
 
+vi.mock("@/lib/email/transports", () => ({
+	SmtpTransport: vi.fn().mockImplementation(function SmtpTransport(config) {
+		mockState.smtpTransportConstructor(config);
+		return {
+			getName: () => `SMTP (${config.host})`,
+			send: mockState.smtpTransportSend,
+			test: vi.fn(),
+		};
+	}),
+}));
+
+const actionsPromise = import("./actions");
+
 async function importActions() {
-	return await import("./actions");
+	return actionsPromise;
 }
 
 describe("platform diagnostics refresh action", () => {
@@ -135,21 +150,35 @@ describe("platform diagnostics refresh action", () => {
 });
 
 describe("sendPlatformDiagnosticsTestEmailAction", () => {
+	beforeAll(async () => {
+		mockState.requirePlatformAdmin.mockResolvedValue({
+			userId: "admin-1",
+			email: "admin@example.com",
+		});
+		mockState.sendEmail.mockResolvedValue({ success: true, messageId: "warmup-msg" });
+
+		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
+		await sendPlatformDiagnosticsTestEmailAction({ to: "warmup@example.com" });
+
+		vi.clearAllMocks();
+	}, 30_000);
+
 	beforeEach(() => {
-		vi.resetModules();
 		vi.clearAllMocks();
 		mockState.requirePlatformAdmin.mockResolvedValue({
 			userId: "admin-1",
 			email: "admin@example.com",
 		});
 		mockState.sendEmail.mockResolvedValue({ success: true, messageId: "msg_123" });
+		mockState.smtpTransportConstructor.mockClear();
+		mockState.smtpTransportSend.mockResolvedValue({ success: true, messageId: "override-msg" });
 	});
 
 	it("requires platform admin access before sending", async () => {
-		const { AuthorizationError } = await import("@/lib/effect/errors");
-		mockState.requirePlatformAdmin.mockRejectedValue(
-			new AuthorizationError({ message: "Platform admin access required" }),
-		);
+		mockState.requirePlatformAdmin.mockRejectedValue({
+			_tag: "AuthorizationError",
+			message: "Platform admin access required",
+		});
 		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
 
 		const result = await sendPlatformDiagnosticsTestEmailAction({
@@ -203,6 +232,162 @@ describe("sendPlatformDiagnosticsTestEmailAction", () => {
 		);
 		expect(mockState.sendEmail.mock.calls[0][0]).not.toHaveProperty("organizationId");
 		expect(mockState.sendEmail.mock.calls[0][0].html).toContain("Z8 platform diagnostics");
+	});
+
+	it("sends through a temporary SMTP override without using system email fallback", async () => {
+		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
+
+		const result = await sendPlatformDiagnosticsTestEmailAction({
+			to: "ops@example.com",
+			smtpOverride: {
+				host: "smtp.example.com",
+				port: 587,
+				username: "smtp-user",
+				password: "smtp-password",
+				fromEmail: "noreply@example.com",
+				fromName: "Z8 Ops",
+				secure: false,
+				requireTls: true,
+				ipMode: "ipv4",
+			},
+		});
+
+		expect(result).toEqual({
+			success: true,
+			data: { recipient: "ops@example.com", messageId: "override-msg" },
+		});
+		expect(mockState.sendEmail).not.toHaveBeenCalled();
+		expect(mockState.smtpTransportConstructor).toHaveBeenCalledWith(
+			expect.objectContaining({
+				host: "smtp.example.com",
+				port: 587,
+				fromEmail: "noreply@example.com",
+				fromName: "Z8 Ops",
+				secure: false,
+				requireTls: true,
+				ipMode: "ipv4",
+				auth: { user: "smtp-user", pass: "smtp-password" },
+			}),
+		);
+	});
+
+	it("rejects incomplete temporary SMTP overrides without leaking input values", async () => {
+		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
+
+		const result = await sendPlatformDiagnosticsTestEmailAction({
+			to: "ops@example.com",
+			smtpOverride: {
+				host: "smtp.internal.example.com",
+				port: 587,
+				username: "smtp-user",
+				password: "",
+				fromEmail: "noreply@example.com",
+				secure: false,
+				requireTls: true,
+				ipMode: "ipv4",
+			},
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				success: false,
+				error: "Complete SMTP override settings are required.",
+			}),
+		);
+		expect(JSON.stringify(result)).not.toContain("smtp.internal.example.com");
+		expect(mockState.sendEmail).not.toHaveBeenCalled();
+	});
+
+	it("rejects malformed temporary SMTP override ports without leaking input values", async () => {
+		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
+
+		const result = await sendPlatformDiagnosticsTestEmailAction({
+			to: "ops@example.com",
+			smtpOverride: {
+				host: "smtp.internal.example.com",
+				port: 70000,
+				username: "smtp-user",
+				password: "smtp-password",
+				fromEmail: "noreply@example.com",
+				secure: false,
+				requireTls: true,
+				ipMode: "ipv4",
+			},
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				success: false,
+			}),
+		);
+		expect(JSON.stringify(result)).not.toContain("smtp.internal.example.com");
+		expect(JSON.stringify(result)).not.toContain("smtp-user");
+		expect(JSON.stringify(result)).not.toContain("smtp-password");
+		expect(mockState.sendEmail).not.toHaveBeenCalled();
+		expect(mockState.smtpTransportConstructor).not.toHaveBeenCalled();
+	});
+
+	it("rejects invalid temporary SMTP override IP modes without leaking input values", async () => {
+		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
+
+		const result = await sendPlatformDiagnosticsTestEmailAction({
+			to: "ops@example.com",
+			smtpOverride: {
+				host: "smtp.internal.example.com",
+				port: 587,
+				username: "smtp-user",
+				password: "smtp-password",
+				fromEmail: "noreply@example.com",
+				secure: false,
+				requireTls: true,
+				ipMode: "public-internet",
+			},
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				success: false,
+			}),
+		);
+		expect(JSON.stringify(result)).not.toContain("smtp.internal.example.com");
+		expect(JSON.stringify(result)).not.toContain("smtp-user");
+		expect(JSON.stringify(result)).not.toContain("smtp-password");
+		expect(mockState.sendEmail).not.toHaveBeenCalled();
+		expect(mockState.smtpTransportConstructor).not.toHaveBeenCalled();
+	});
+
+	it("returns a safe error when temporary SMTP override delivery fails", async () => {
+		mockState.smtpTransportSend.mockResolvedValue({
+			success: false,
+			error: "SMTP password was rejected by smtp.internal.example.com",
+		});
+		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
+
+		const result = await sendPlatformDiagnosticsTestEmailAction({
+			to: "ops@example.com",
+			smtpOverride: {
+				host: "smtp.internal.example.com",
+				port: 587,
+				username: "smtp-user",
+				password: "smtp-password",
+				fromEmail: "noreply@example.com",
+				secure: false,
+				requireTls: true,
+				ipMode: "ipv4",
+			},
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				success: false,
+				error: "Failed to send test email.",
+			}),
+		);
+		expect(JSON.stringify(result)).not.toContain("smtp.internal.example.com");
+		expect(JSON.stringify(result)).not.toContain(
+			"SMTP password was rejected by smtp.internal.example.com",
+		);
+		expect(mockState.sendEmail).not.toHaveBeenCalled();
 	});
 
 	it("returns a safe error when transport delivery fails", async () => {
