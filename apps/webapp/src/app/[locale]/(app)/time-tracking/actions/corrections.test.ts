@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
+import { createUtcDateTime } from "./time-utils";
 
 const modularSource = readFileSync(
 	fileURLToPath(new URL("./corrections.ts", import.meta.url)),
@@ -41,6 +42,14 @@ function functionBody(source: string, name: string) {
 }
 
 describe("time correction request safety", () => {
+	it("uses explicit correction endpoint dates instead of stored work period endpoint dates", () => {
+		expect(modularSource).toContain("newClockInDate: data.newClockInDate");
+		expect(modularSource).toContain("newClockOutDate: data.newClockOutDate");
+		expect(modularSource).not.toContain("periodStart:");
+		expect(modularSource).not.toContain("periodEnd:");
+		expect(modularSource).not.toContain("setTimeOnStoredDate");
+	});
+
 	it.each([
 		["modular", modularSource],
 		["legacy", legacySource],
@@ -133,6 +142,23 @@ describe("time correction request safety", () => {
 		);
 		expect(body).toContain("if (effectiveClockOut && effectiveClockOut <= correctedClockInDate)");
 		expect(body).toContain("Clock out time must be after clock in time");
+	});
+});
+
+describe("createUtcDateTime", () => {
+	it("builds a UTC instant from an employee local date and time", () => {
+		const result = createUtcDateTime("2026-06-03", "18:15", "Europe/Berlin");
+
+		expect(result?.toISOString()).toBe("2026-06-03T16:15:00.000Z");
+	});
+
+	it("allows a corrected clock-out date to be the same local date as clock-in", () => {
+		const start = createUtcDateTime("2026-06-03", "09:00", "Europe/Berlin");
+		const end = createUtcDateTime("2026-06-03", "17:00", "Europe/Berlin");
+
+		expect(start?.toISOString()).toBe("2026-06-03T07:00:00.000Z");
+		expect(end?.toISOString()).toBe("2026-06-03T15:00:00.000Z");
+		expect(end!.getTime()).toBeGreaterThan(start!.getTime());
 	});
 });
 

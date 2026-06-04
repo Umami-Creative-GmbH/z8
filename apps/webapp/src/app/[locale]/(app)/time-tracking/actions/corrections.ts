@@ -22,7 +22,7 @@ import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import { createTimeEntry, markTimeEntrySuperseded } from "./entry-helpers";
 import { getEditCapabilityForPeriod } from "./policy-helpers";
 import { logger } from "./shared";
-import { calculateDurationMinutes, setTimeOnStoredDate } from "./time-utils";
+import { calculateDurationMinutes, createCorrectionDateTime } from "./time-utils";
 import type { CorrectionRequest, SameDayEditRequest } from "./types";
 
 type CorrectionTimesResult =
@@ -69,30 +69,33 @@ export async function resolveCorrectionApprovalManager(input: {
 }
 
 function buildCorrectionTimes(params: {
-	periodStart: Date;
-	periodEnd?: Date | null;
+	newClockInDate: string;
 	newClockInTime: string;
+	newClockOutDate?: string;
 	newClockOutTime?: string;
 	timezone: string;
 }): CorrectionTimesResult {
-	const correctedClockInDate = setTimeOnStoredDate(
-		params.periodStart,
-		params.newClockInTime,
-		params.timezone,
-	);
+	const correctedClockInDate = createCorrectionDateTime({
+		date: params.newClockInDate,
+		time: params.newClockInTime,
+		timezone: params.timezone,
+	});
 
 	if (!correctedClockInDate) {
-		return { error: "Invalid work period start time" } as const;
+		return { error: "Invalid clock in date or time" } as const;
 	}
 
 	const correctedClockOutDate =
-		params.newClockOutTime && params.periodEnd
-			? (setTimeOnStoredDate(params.periodEnd, params.newClockOutTime, params.timezone) ??
-				undefined)
+		params.newClockOutDate && params.newClockOutTime
+			? (createCorrectionDateTime({
+					date: params.newClockOutDate,
+					time: params.newClockOutTime,
+					timezone: params.timezone,
+				}) ?? undefined)
 			: undefined;
 
-	if (params.newClockOutTime && params.periodEnd && !correctedClockOutDate) {
-		return { error: "Invalid work period end time" } as const;
+	if (params.newClockOutDate && params.newClockOutTime && !correctedClockOutDate) {
+		return { error: "Invalid clock out date or time" } as const;
 	}
 
 	return { correctedClockInDate, correctedClockOutDate } as const;
@@ -175,9 +178,9 @@ export async function editSameDayTimeEntry(
 	}
 
 	const correctionTimes = buildCorrectionTimes({
-		periodStart: selectedWorkPeriod.startTime,
-		periodEnd: selectedWorkPeriod.endTime,
+		newClockInDate: data.newClockInDate,
 		newClockInTime: data.newClockInTime,
+		newClockOutDate: data.newClockOutDate,
 		newClockOutTime: data.newClockOutTime,
 		timezone,
 	});
@@ -428,9 +431,9 @@ export async function requestTimeCorrectionEffect(
 		}
 
 		const correctionTimes = buildCorrectionTimes({
-			periodStart: selectedWorkPeriod.startTime,
-			periodEnd: selectedWorkPeriod.endTime,
+			newClockInDate: data.newClockInDate,
 			newClockInTime: data.newClockInTime,
+			newClockOutDate: data.newClockOutDate,
 			newClockOutTime: data.newClockOutTime,
 			timezone,
 		});
@@ -710,7 +713,9 @@ export async function requestTimeCorrectionEffect(
 		Effect.withSpan("requestTimeCorrection", {
 			attributes: {
 				"correction.work_period_id": data.workPeriodId,
+				"correction.clock_in_date": data.newClockInDate,
 				"correction.clock_in_time": data.newClockInTime,
+				"correction.clock_out_date": data.newClockOutDate || "none",
 				"correction.clock_out_time": data.newClockOutTime || "none",
 			},
 		}),
