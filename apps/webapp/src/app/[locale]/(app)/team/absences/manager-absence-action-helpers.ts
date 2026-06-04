@@ -17,6 +17,8 @@ import type {
 	RecordAbsenceForEmployeeInput,
 } from "./manager-absence-types";
 
+export { buildManagerAbsenceCalendarDays } from "./manager-absence-calendar-helpers";
+
 const PAGE_SIZES = [10, 25, 50] as const;
 const SORT_KEYS = [
 	"employee",

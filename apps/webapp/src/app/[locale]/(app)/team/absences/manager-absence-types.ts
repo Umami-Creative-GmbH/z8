@@ -83,6 +83,36 @@ export interface ManagerAbsenceListResult {
 	pageCount: number;
 }
 
+export interface ManagerAbsenceCalendarEntry {
+	id: string;
+	employeeId: string;
+	employeeName: string;
+	startDate: string;
+	startPeriod: DayPeriod;
+	endDate: string;
+	endPeriod: DayPeriod;
+	status: "approved" | "pending";
+	category: {
+		name: string;
+		type: string;
+		color: string | null;
+	};
+}
+
+export interface ManagerAbsenceCalendarDay {
+	date: string;
+	approvedCount: number;
+	pendingCount: number;
+	totalCount: number;
+	entries: ManagerAbsenceCalendarEntry[];
+}
+
+export interface ManagerAbsenceCalendarResult {
+	year: number;
+	teamId: string | null;
+	entries: ManagerAbsenceCalendarEntry[];
+}
+
 export interface RecordAbsenceForEmployeeInput {
 	employeeId: string;
 	categoryId: string;
