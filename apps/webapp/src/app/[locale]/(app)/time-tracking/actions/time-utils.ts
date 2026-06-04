@@ -69,6 +69,18 @@ export function createUtcDateTime(date: string, time: string, timezone: string):
 	return dateToDB(combinedDateTime.toUTC()) ?? null;
 }
 
+export function createCorrectionDateTime(input: {
+	date?: string;
+	time?: string;
+	timezone: string;
+}): Date | null {
+	if (!input.date || !input.time) {
+		return null;
+	}
+
+	return createUtcDateTime(input.date, input.time, input.timezone);
+}
+
 export function calculateDurationMinutes(startTime: Date, endTime: Date): number {
 	return Math.floor((endTime.getTime() - startTime.getTime()) / 60_000);
 }

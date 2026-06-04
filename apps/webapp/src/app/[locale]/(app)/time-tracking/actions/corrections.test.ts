@@ -1,9 +1,14 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
+import { createUtcDateTime } from "./time-utils";
 
 const modularSource = readFileSync(
 	fileURLToPath(new URL("./corrections.ts", import.meta.url)),
+	"utf8",
+);
+const modularMutationsSource = readFileSync(
+	fileURLToPath(new URL("./mutations.ts", import.meta.url)),
 	"utf8",
 );
 const legacySource = readFileSync(fileURLToPath(new URL("../actions.ts", import.meta.url)), "utf8");
@@ -41,6 +46,19 @@ function functionBody(source: string, name: string) {
 }
 
 describe("time correction request safety", () => {
+	it("uses explicit correction endpoint dates instead of stored work period endpoint dates", () => {
+		expect(modularSource).toContain("newClockInDate: data.newClockInDate");
+		expect(modularSource).toContain("newClockOutDate: data.newClockOutDate");
+		expect(modularSource).not.toContain("periodStart:");
+		expect(modularSource).not.toContain("periodEnd:");
+		expect(modularSource).not.toContain("setTimeOnStoredDate");
+	});
+
+	it("rejects partial explicit clock-out endpoint inputs", () => {
+		expect(modularSource).toContain("if (params.newClockOutDate || params.newClockOutTime)");
+		expect(modularSource).toContain('return { error: "Invalid clock out date or time" } as const;');
+	});
+
 	it.each([
 		["modular", modularSource],
 		["legacy", legacySource],
@@ -50,6 +68,54 @@ describe("time correction request safety", () => {
 		expect(body).toContain("eq(workPeriod.id, data.workPeriodId)");
 		expect(body).toContain("eq(workPeriod.employeeId, currentEmployee.id)");
 		expect(body).toContain("eq(workPeriod.organizationId, currentEmployee.organizationId)");
+	});
+
+	it("excludes deleted work periods from direct same-day edits", () => {
+		const body = functionBody(modularSource, "editSameDayTimeEntry");
+
+		expect(body).toContain("isNull(workPeriod.deletedAt)");
+	});
+
+	it("rejects direct same-day edits that change endpoint local dates", () => {
+		const body = functionBody(modularSource, "editSameDayTimeEntry");
+
+		expect(body).toContain("originalClockInDate");
+		expect(body).toContain("originalClockOutDate");
+		expect(body).toContain("data.newClockInDate !== originalClockInDate");
+		expect(body).toContain("data.newClockOutDate !== originalClockOutDate");
+		expect(body).toContain("Date changes require manager approval");
+	});
+
+	it("guards the final same-day work period update by organization and deletion state", () => {
+		const body = functionBody(modularSource, "editSameDayTimeEntry");
+		const finalUpdateIndex = body.indexOf(".update(workPeriod)", body.indexOf("const finalClockOut"));
+		const finalUpdateBody = body.slice(finalUpdateIndex, body.indexOf("const earliestAffectedDate"));
+
+		expect(finalUpdateIndex).toBeGreaterThanOrEqual(0);
+		expect(finalUpdateBody).toContain("eq(workPeriod.id, selectedWorkPeriod.id)");
+		expect(finalUpdateBody).toContain(
+			"eq(workPeriod.organizationId, currentEmployee.organizationId)",
+		);
+		expect(finalUpdateBody).toContain("isNull(workPeriod.deletedAt)");
+	});
+
+	it("excludes deleted work periods from correction approval requests", () => {
+		const body = functionBody(modularSource, "requestTimeCorrectionEffect");
+
+		expect(body).toContain("isNull(workPeriod.deletedAt)");
+	});
+
+	it.each([
+		["legacy notes", legacySource, "updateWorkPeriodNotes"],
+		["legacy split", legacySource, "splitWorkPeriod"],
+		["legacy project", legacySource, "updateWorkPeriodProject"],
+		["modular notes", modularMutationsSource, "updateWorkPeriodNotes"],
+		["modular split", modularMutationsSource, "splitWorkPeriod"],
+		["modular project", modularMutationsSource, "updateWorkPeriodProject"],
+	])("excludes deleted work periods from %s calendar mutations", (_name, source, functionName) => {
+		const body = functionBody(source, functionName);
+
+		expect(body).toContain("isNull(workPeriod.deletedAt)");
 	});
 
 	it.each([
@@ -133,6 +199,61 @@ describe("time correction request safety", () => {
 		);
 		expect(body).toContain("if (effectiveClockOut && effectiveClockOut <= correctedClockInDate)");
 		expect(body).toContain("Clock out time must be after clock in time");
+	});
+
+	it("requests deletion through zero-duration correction entries and approval metadata", () => {
+		const body = functionBody(modularSource, "requestTimeEntryDeletion");
+
+		expect(modularSource).toContain("export async function requestTimeEntryDeletion");
+		expect(body).toContain("getCurrentEmployee()");
+		expect(body).not.toContain('dbService.query("getEmployeeByUserId"');
+		expect(body).toContain("requireBillingForMutation(currentEmployee.organizationId)");
+		expect(body).toContain("isBillingMutationAllowed(billingAccess)");
+		expect(body).toContain('error: "billing_required"');
+		expect(body).toContain('action: "delete"');
+		expect(body).toContain("timestamp: selectedWorkPeriod.startTime");
+		expect(body).toContain("isSuperseded: true");
+		expect(body).toContain('data.reason.trim()');
+		expect(body).toContain('return { success: false, error: "Reason is required" }');
+		expect(modularSource).not.toContain("delete(workPeriod)");
+	});
+
+	it("uses deletion-timestamp timezone capture for both deletion correction entries", () => {
+		const body = functionBody(modularSource, "requestTimeEntryDeletion");
+
+		expect(body).toContain("originalClockInEntry");
+		expect(body).toContain("captureFromOriginalTimeEntry");
+		expect(body).toContain("timestamp: selectedWorkPeriod.startTime");
+		expect(body).toContain("clockInDeletionTimezoneCapture");
+		expect(body).toContain("const clockOutDeletionTimezoneCapture = clockInDeletionTimezoneCapture");
+		expect(body).not.toContain("captureFromOriginalTimeEntry(\n\t\t\toriginalClockOutEntry");
+		expect(body).toContain("utcOffsetMinutes: originalEntry.utcOffsetMinutes");
+		expect(body).toContain("timezone: originalEntry.timezone");
+		expect(body).toContain("timezoneSource: originalEntry.timezoneSource");
+	});
+
+	it("blocks the legacy exported delete work period action", () => {
+		const body = functionBody(legacySource, "deleteWorkPeriod");
+
+		expect(body).toContain('return { success: false, error: "Deletion requires manager approval" }');
+		expect(body).not.toContain("delete(workPeriod)");
+	});
+});
+
+describe("createUtcDateTime", () => {
+	it("builds a UTC instant from an employee local date and time", () => {
+		const result = createUtcDateTime("2026-06-03", "18:15", "Europe/Berlin");
+
+		expect(result?.toISOString()).toBe("2026-06-03T16:15:00.000Z");
+	});
+
+	it("allows a corrected clock-out date to be the same local date as clock-in", () => {
+		const start = createUtcDateTime("2026-06-03", "09:00", "Europe/Berlin");
+		const end = createUtcDateTime("2026-06-03", "17:00", "Europe/Berlin");
+
+		expect(start?.toISOString()).toBe("2026-06-03T07:00:00.000Z");
+		expect(end?.toISOString()).toBe("2026-06-03T15:00:00.000Z");
+		expect(end!.getTime()).toBeGreaterThan(start!.getTime());
 	});
 });
 

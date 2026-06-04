@@ -39,6 +39,7 @@ interface WorkPeriodRecord {
 	startTime: Date;
 	endTime: Date | null;
 	durationMinutes: number | null;
+	deletedAt: Date | null;
 	employee: {
 		userId: string;
 		organizationId: string;
@@ -68,8 +69,11 @@ type TimeCorrectionApprovalResult = {
 	workBalanceDirtyMark?: WorkBalanceDirtyMark;
 };
 
+type TimeCorrectionAction = "edit" | "delete";
+
 type TimeCorrectionApprovalMetadata = {
 	timeCorrection?: {
+		action?: TimeCorrectionAction;
 		clockInCorrectionId?: string;
 		clockOutCorrectionId?: string;
 	};
@@ -153,6 +157,10 @@ function loadActiveCorrectionEntries(
 function correctionEntryIdsFromApproval(approval: PendingApprovalRequest) {
 	const metadata = approval.metadata as TimeCorrectionApprovalMetadata | null;
 	return metadata?.timeCorrection;
+}
+
+function correctionActionFromApproval(approval: PendingApprovalRequest): TimeCorrectionAction {
+	return correctionEntryIdsFromApproval(approval)?.action ?? "edit";
 }
 
 function loadApprovalLinkedCorrectionEntry(
@@ -265,6 +273,7 @@ export function createTimeCorrectionApprovalWorkflow(
 		defaultApproverId: string;
 		reason?: string;
 		overtimeRisk: ApprovalPolicyOvertimeRisk;
+		correctionAction?: TimeCorrectionAction;
 		correctionEntryIds?: {
 			clockInCorrectionId: string;
 			clockOutCorrectionId?: string;
@@ -274,13 +283,18 @@ export function createTimeCorrectionApprovalWorkflow(
 	const metadata: Record<string, unknown> | undefined = input.correctionEntryIds
 		? {
 				timeCorrection: {
+					action: input.correctionAction ?? "edit",
 					clockInCorrectionId: input.correctionEntryIds.clockInCorrectionId,
 					clockOutCorrectionId: input.correctionEntryIds.clockOutCorrectionId,
 				},
 			}
 		: undefined;
 
-	return ensureNoPendingTimeCorrectionApproval(dbService, input.workPeriodId).pipe(
+	return ensureNoPendingTimeCorrectionApproval(
+		dbService,
+		input.organizationId,
+		input.workPeriodId,
+	).pipe(
 		Effect.flatMap(() =>
 			resolvePolicyAndCreateApproval(dbService, {
 				context: buildTimeCorrectionApprovalPolicyContext(input),
@@ -299,11 +313,16 @@ export function createTimeCorrectionApprovalWorkflow(
 	);
 }
 
-function ensureNoPendingTimeCorrectionApproval(dbService: ApprovalDbService, workPeriodId: string) {
+function ensureNoPendingTimeCorrectionApproval(
+	dbService: ApprovalDbService,
+	organizationId: string,
+	workPeriodId: string,
+) {
 	return dbService
 		.query("getPendingTimeCorrectionApproval", async () => {
 			return await dbService.db.query.approvalRequest.findFirst({
 				where: and(
+					eq(approvalRequest.organizationId, organizationId),
 					eq(approvalRequest.entityType, "time_entry"),
 					eq(approvalRequest.entityId, workPeriodId),
 					eq(approvalRequest.status, "pending"),
@@ -415,6 +434,10 @@ function calculateCorrectedPeriod(
 	};
 }
 
+function calculateDeletedPeriod(_clockIn: CorrectionEntry, clockOut: CorrectionEntry) {
+	return { endTime: clockOut.timestamp, durationMinutes: 0, clockOutId: clockOut.id };
+}
+
 function validateCorrectedPeriodRange(clockIn: CorrectionEntry, effectiveClockOut: Date | null) {
 	if (effectiveClockOut && effectiveClockOut <= clockIn.timestamp) {
 		return Effect.fail(
@@ -428,13 +451,51 @@ function validateCorrectedPeriodRange(clockIn: CorrectionEntry, effectiveClockOu
 	return Effect.void;
 }
 
+function validateDeletedPeriodRange(clockIn: CorrectionEntry, clockOut: CorrectionEntry) {
+	if (clockIn.timestamp.getTime() !== clockOut.timestamp.getTime()) {
+		return Effect.fail(
+			new ValidationError({
+				message: "Deletion approval requires matching correction timestamps",
+				field: "timeCorrection.clockOutCorrectionId",
+			}),
+		);
+	}
+
+	return Effect.void;
+}
+
+function ensureWorkPeriodNotDeleted(period: WorkPeriodRecord) {
+	return period.deletedAt
+		? Effect.fail(
+				new ValidationError({
+					message: "Cannot apply time correction to a deleted work period",
+					field: "workPeriodId",
+					value: period.id,
+				}),
+			)
+		: Effect.void;
+}
+
 function applyTimeCorrection(
 	dbService: ApprovalDbService,
 	entityId: string,
+	approval: PendingApprovalRequest,
+	currentEmployee: CurrentApprover,
+	correctionAction: TimeCorrectionAction,
 	clockInCorrection: CorrectionEntry,
 	correctedPeriod: ReturnType<typeof calculateCorrectedPeriod>,
 ) {
 	return dbService.query("applyTimeCorrection", async () => {
+		const deletionFields =
+			correctionAction === "delete"
+				? {
+						deletedAt: new Date(),
+						deletedBy: currentEmployee.userId,
+						deletionReason: approval.reason ?? null,
+						deletionApprovalRequestId: approval.id,
+					}
+				: {};
+
 		await dbService.db
 			.update(workPeriod)
 			.set({
@@ -444,8 +505,11 @@ function applyTimeCorrection(
 				endTime: correctedPeriod.endTime,
 				durationMinutes: correctedPeriod.durationMinutes,
 				updatedAt: new Date(),
+				...deletionFields,
 			})
-			.where(eq(workPeriod.id, entityId));
+			.where(
+				and(eq(workPeriod.id, entityId), eq(workPeriod.organizationId, approval.organizationId)),
+			);
 	});
 }
 
@@ -606,7 +670,9 @@ function handleApprovedTimeCorrection(
 ) {
 	return Effect.gen(function* (_) {
 		const period = yield* _(loadWorkPeriod(dbService, entityId));
+		yield* _(ensureWorkPeriodNotDeleted(period));
 		const correctionEntryIds = correctionEntryIdsFromApproval(approval);
+		const correctionAction = correctionActionFromApproval(approval);
 		const linkedClockInCorrection = yield* _(
 			resolveCorrectionEntryForApproval(
 				dbService,
@@ -629,13 +695,31 @@ function handleApprovedTimeCorrection(
 			),
 		);
 		const clockOutCorrection = linkedClockOutCorrection as CorrectionEntry | null;
-		yield* _(
-			validateCorrectedPeriodRange(
-				clockInCorrection,
-				clockOutCorrection?.timestamp ?? period.endTime,
-			),
-		);
-		const correctedPeriod = calculateCorrectedPeriod(period, clockInCorrection, clockOutCorrection);
+		if (correctionAction === "edit") {
+			yield* _(
+				validateCorrectedPeriodRange(
+					clockInCorrection,
+					clockOutCorrection?.timestamp ?? period.endTime,
+				),
+			);
+		}
+		if (correctionAction === "delete" && !clockOutCorrection) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Deletion approval requires clock-in and clock-out correction entries",
+						field: "timeCorrection.clockOutCorrectionId",
+					}),
+				),
+			);
+		}
+		if (correctionAction === "delete" && clockOutCorrection) {
+			yield* _(validateDeletedPeriodRange(clockInCorrection, clockOutCorrection));
+		}
+		const correctedPeriod =
+			correctionAction === "delete" && clockOutCorrection
+				? calculateDeletedPeriod(clockInCorrection, clockOutCorrection)
+				: calculateCorrectedPeriod(period, clockInCorrection, clockOutCorrection);
 
 		yield* _(
 			activateApprovedTimeCorrectionEntries(
@@ -645,7 +729,17 @@ function handleApprovedTimeCorrection(
 				clockOutCorrection,
 			),
 		);
-		yield* _(applyTimeCorrection(dbService, entityId, clockInCorrection, correctedPeriod));
+		yield* _(
+			applyTimeCorrection(
+				dbService,
+				entityId,
+				approval,
+				currentEmployee,
+				correctionAction,
+				clockInCorrection,
+				correctedPeriod,
+			),
+		);
 		const workBalanceDirtyMark = {
 			employeeId: period.employeeId,
 			organizationId: period.organizationId,
@@ -659,7 +753,7 @@ function handleApprovedTimeCorrection(
 					startAt: clockInCorrection.timestamp,
 					endAt: correctedPeriod.endTime,
 					durationMinutes: correctedPeriod.durationMinutes,
-					updatedBy: currentEmployee.user.id,
+					updatedBy: currentEmployee.userId,
 				}),
 			),
 		);

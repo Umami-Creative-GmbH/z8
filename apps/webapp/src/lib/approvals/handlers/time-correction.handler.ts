@@ -176,7 +176,7 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 	getCount: (approverId, organizationId, visibility) =>
 		getApprovalCount("time_entry", approverId, organizationId, visibility),
 
-	getDetail: (entityId, organizationId) =>
+	getDetail: (entityId, organizationId, context) =>
 		Effect.gen(function* (_) {
 			const dbService = yield* _(DatabaseService);
 
@@ -184,7 +184,10 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 			const period = yield* _(
 				dbService.query("getWorkPeriodDetail", async () => {
 					return await dbService.db.query.workPeriod.findFirst({
-						where: eq(workPeriod.id, entityId),
+						where: and(
+							eq(workPeriod.id, entityId),
+							...(organizationId ? [eq(workPeriod.organizationId, organizationId)] : []),
+						),
 						with: {
 							employee: { with: { user: true } },
 							clockIn: true,
@@ -223,6 +226,8 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 				dbService.query("getApprovalRequest", async () => {
 					return await dbService.db.query.approvalRequest.findFirst({
 						where: and(
+							...(context?.approvalId ? [eq(approvalRequest.id, context.approvalId)] : []),
+							...(organizationId ? [eq(approvalRequest.organizationId, organizationId)] : []),
 							eq(approvalRequest.entityType, "time_entry"),
 							eq(approvalRequest.entityId, entityId),
 						),
