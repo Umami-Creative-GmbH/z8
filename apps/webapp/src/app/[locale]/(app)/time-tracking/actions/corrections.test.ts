@@ -7,6 +7,10 @@ const modularSource = readFileSync(
 	fileURLToPath(new URL("./corrections.ts", import.meta.url)),
 	"utf8",
 );
+const modularMutationsSource = readFileSync(
+	fileURLToPath(new URL("./mutations.ts", import.meta.url)),
+	"utf8",
+);
 const legacySource = readFileSync(fileURLToPath(new URL("../actions.ts", import.meta.url)), "utf8");
 
 const { resolveCorrectionApprovalManager } = await import("./corrections");
@@ -74,6 +78,19 @@ describe("time correction request safety", () => {
 
 	it("excludes deleted work periods from correction approval requests", () => {
 		const body = functionBody(modularSource, "requestTimeCorrectionEffect");
+
+		expect(body).toContain("isNull(workPeriod.deletedAt)");
+	});
+
+	it.each([
+		["legacy notes", legacySource, "updateWorkPeriodNotes"],
+		["legacy split", legacySource, "splitWorkPeriod"],
+		["legacy project", legacySource, "updateWorkPeriodProject"],
+		["modular notes", modularMutationsSource, "updateWorkPeriodNotes"],
+		["modular split", modularMutationsSource, "splitWorkPeriod"],
+		["modular project", modularMutationsSource, "updateWorkPeriodProject"],
+	])("excludes deleted work periods from %s calendar mutations", (_name, source, functionName) => {
+		const body = functionBody(source, functionName);
 
 		expect(body).toContain("isNull(workPeriod.deletedAt)");
 	});

@@ -206,7 +206,14 @@ export async function editSameDayTimeEntry(
 	const [period] = await db
 		.select()
 		.from(workPeriod)
-		.where(eq(workPeriod.id, data.workPeriodId))
+		.where(
+			and(
+				eq(workPeriod.id, data.workPeriodId),
+				eq(workPeriod.employeeId, emp.id),
+				eq(workPeriod.organizationId, emp.organizationId),
+				isNull(workPeriod.deletedAt),
+			),
+		)
 		.limit(1);
 
 	if (!period) {
@@ -455,7 +462,13 @@ export async function editSameDayTimeEntry(
 				durationMinutes,
 				updatedAt: new Date(),
 			})
-			.where(eq(workPeriod.id, period.id));
+			.where(
+				and(
+					eq(workPeriod.id, period.id),
+					eq(workPeriod.organizationId, emp.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			);
 
 		const dirtyFromDateSource =
 			period.startTime.getTime() <= correctedClockInDate.getTime()
@@ -600,6 +613,7 @@ export async function requestTimeCorrectionEffect(
 							eq(workPeriod.id, data.workPeriodId),
 							eq(workPeriod.employeeId, currentEmployee.id),
 							eq(workPeriod.organizationId, currentEmployee.organizationId),
+							isNull(workPeriod.deletedAt),
 						),
 					)
 					.limit(1);
@@ -2020,7 +2034,14 @@ export async function updateWorkPeriodNotes(
 		const [period] = await db
 			.select()
 			.from(workPeriod)
-			.where(eq(workPeriod.id, workPeriodId))
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.employeeId, emp.id),
+					eq(workPeriod.organizationId, emp.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
 			.limit(1);
 
 		if (!period) {
@@ -2107,7 +2128,14 @@ export async function splitWorkPeriod(
 		const [period] = await db
 			.select()
 			.from(workPeriod)
-			.where(eq(workPeriod.id, workPeriodId))
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.employeeId, emp.id),
+					eq(workPeriod.organizationId, emp.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
 			.limit(1);
 
 		if (!period) {
@@ -2234,7 +2262,13 @@ export async function splitWorkPeriod(
 				durationMinutes: firstDurationMinutes,
 				updatedAt: new Date(),
 			})
-			.where(eq(workPeriod.id, period.id));
+			.where(
+				and(
+					eq(workPeriod.id, period.id),
+					eq(workPeriod.organizationId, emp.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			);
 
 		// Create a new work period for the second segment
 		const [secondPeriod] = await db
@@ -2492,7 +2526,14 @@ export async function updateWorkPeriodProject(
 		const [period] = await db
 			.select()
 			.from(workPeriod)
-			.where(eq(workPeriod.id, workPeriodId))
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.employeeId, emp.id),
+					eq(workPeriod.organizationId, emp.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
 			.limit(1);
 
 		if (!period) {
@@ -2539,7 +2580,13 @@ export async function updateWorkPeriodProject(
 				projectId: projectId,
 				updatedAt: new Date(),
 			})
-			.where(eq(workPeriod.id, workPeriodId));
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.organizationId, emp.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			);
 
 		return {
 			success: true,

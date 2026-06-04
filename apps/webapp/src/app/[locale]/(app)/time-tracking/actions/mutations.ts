@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";
@@ -99,7 +99,14 @@ export async function updateWorkPeriodNotes(
 		const [selectedWorkPeriod] = await db
 			.select()
 			.from(workPeriod)
-			.where(eq(workPeriod.id, workPeriodId))
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.employeeId, currentEmployee.id),
+					eq(workPeriod.organizationId, currentEmployee.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
 			.limit(1);
 
 		if (!selectedWorkPeriod) {
@@ -153,7 +160,14 @@ export async function splitWorkPeriod(
 		const [selectedWorkPeriod] = await db
 			.select()
 			.from(workPeriod)
-			.where(eq(workPeriod.id, workPeriodId))
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.employeeId, currentEmployee.id),
+					eq(workPeriod.organizationId, currentEmployee.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
 			.limit(1);
 
 		if (!selectedWorkPeriod) {
@@ -232,7 +246,13 @@ export async function splitWorkPeriod(
 				durationMinutes: calculateDurationMinutes(selectedWorkPeriod.startTime, splitDate),
 				updatedAt: new Date(),
 			})
-			.where(eq(workPeriod.id, selectedWorkPeriod.id));
+			.where(
+				and(
+					eq(workPeriod.id, selectedWorkPeriod.id),
+					eq(workPeriod.organizationId, currentEmployee.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			);
 
 		const [secondWorkPeriod] = await db
 			.insert(workPeriod)
@@ -330,7 +350,14 @@ export async function updateWorkPeriodProject(
 		const [selectedWorkPeriod] = await db
 			.select()
 			.from(workPeriod)
-			.where(eq(workPeriod.id, workPeriodId))
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.employeeId, currentEmployee.id),
+					eq(workPeriod.organizationId, currentEmployee.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
 			.limit(1);
 
 		if (!selectedWorkPeriod) {
@@ -361,7 +388,13 @@ export async function updateWorkPeriodProject(
 				projectId,
 				updatedAt: new Date(),
 			})
-			.where(eq(workPeriod.id, workPeriodId));
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.organizationId, currentEmployee.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			);
 
 		return { success: true, data: { workPeriodId, projectId } };
 	} catch (error) {
