@@ -12,6 +12,7 @@ const mockState = vi.hoisted(() => ({
 	requirePlatformAdmin: vi.fn(),
 	sendEmail: vi.fn(),
 	smtpTransportConstructor: vi.fn(),
+	smtpTransportSend: vi.fn(),
 }));
 
 vi.mock("@/lib/effect/services/platform-admin.service", async () => {
@@ -101,7 +102,7 @@ vi.mock("@/lib/email/transports", () => ({
 		mockState.smtpTransportConstructor(config);
 		return {
 			getName: () => `SMTP (${config.host})`,
-			send: vi.fn(async () => ({ success: true, messageId: "override-msg" })),
+			send: mockState.smtpTransportSend,
 			test: vi.fn(),
 		};
 	}),
@@ -156,6 +157,7 @@ describe("sendPlatformDiagnosticsTestEmailAction", () => {
 		});
 		mockState.sendEmail.mockResolvedValue({ success: true, messageId: "msg_123" });
 		mockState.smtpTransportConstructor.mockClear();
+		mockState.smtpTransportSend.mockResolvedValue({ success: true, messageId: "override-msg" });
 	});
 
 	it("requires platform admin access before sending", async () => {
@@ -279,6 +281,98 @@ describe("sendPlatformDiagnosticsTestEmailAction", () => {
 			}),
 		);
 		expect(JSON.stringify(result)).not.toContain("smtp.internal.example.com");
+		expect(mockState.sendEmail).not.toHaveBeenCalled();
+	});
+
+	it("rejects malformed temporary SMTP override ports without leaking input values", async () => {
+		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
+
+		const result = await sendPlatformDiagnosticsTestEmailAction({
+			to: "ops@example.com",
+			smtpOverride: {
+				host: "smtp.internal.example.com",
+				port: 70000,
+				username: "smtp-user",
+				password: "smtp-password",
+				fromEmail: "noreply@example.com",
+				secure: false,
+				requireTls: true,
+				ipMode: "ipv4",
+			},
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				success: false,
+			}),
+		);
+		expect(JSON.stringify(result)).not.toContain("smtp.internal.example.com");
+		expect(JSON.stringify(result)).not.toContain("smtp-user");
+		expect(JSON.stringify(result)).not.toContain("smtp-password");
+		expect(mockState.sendEmail).not.toHaveBeenCalled();
+		expect(mockState.smtpTransportConstructor).not.toHaveBeenCalled();
+	});
+
+	it("rejects invalid temporary SMTP override IP modes without leaking input values", async () => {
+		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
+
+		const result = await sendPlatformDiagnosticsTestEmailAction({
+			to: "ops@example.com",
+			smtpOverride: {
+				host: "smtp.internal.example.com",
+				port: 587,
+				username: "smtp-user",
+				password: "smtp-password",
+				fromEmail: "noreply@example.com",
+				secure: false,
+				requireTls: true,
+				ipMode: "public-internet",
+			},
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				success: false,
+			}),
+		);
+		expect(JSON.stringify(result)).not.toContain("smtp.internal.example.com");
+		expect(JSON.stringify(result)).not.toContain("smtp-user");
+		expect(JSON.stringify(result)).not.toContain("smtp-password");
+		expect(mockState.sendEmail).not.toHaveBeenCalled();
+		expect(mockState.smtpTransportConstructor).not.toHaveBeenCalled();
+	});
+
+	it("returns a safe error when temporary SMTP override delivery fails", async () => {
+		mockState.smtpTransportSend.mockResolvedValue({
+			success: false,
+			error: "SMTP password was rejected by smtp.internal.example.com",
+		});
+		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
+
+		const result = await sendPlatformDiagnosticsTestEmailAction({
+			to: "ops@example.com",
+			smtpOverride: {
+				host: "smtp.internal.example.com",
+				port: 587,
+				username: "smtp-user",
+				password: "smtp-password",
+				fromEmail: "noreply@example.com",
+				secure: false,
+				requireTls: true,
+				ipMode: "ipv4",
+			},
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				success: false,
+				error: "Failed to send test email.",
+			}),
+		);
+		expect(JSON.stringify(result)).not.toContain("smtp.internal.example.com");
+		expect(JSON.stringify(result)).not.toContain(
+			"SMTP password was rejected by smtp.internal.example.com",
+		);
 		expect(mockState.sendEmail).not.toHaveBeenCalled();
 	});
 

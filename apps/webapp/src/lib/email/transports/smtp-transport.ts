@@ -19,6 +19,36 @@ import type {
 
 const logger = createLogger("SmtpTransport");
 
+function maskEmailAddress(email: string): string {
+	return `${email.slice(0, 3)}***`;
+}
+
+function getSmtpErrorSummary(error: unknown): {
+	name: string;
+	code?: unknown;
+	command?: unknown;
+} {
+	const summary = {
+		name: error instanceof Error ? error.name : typeof error,
+	} as {
+		name: string;
+		code?: unknown;
+		command?: unknown;
+	};
+
+	if (error && typeof error === "object") {
+		if ("code" in error) {
+			summary.code = error.code;
+		}
+
+		if ("command" in error) {
+			summary.command = error.command;
+		}
+	}
+
+	return summary;
+}
+
 function smtpFamilyForIpMode(ipMode: SmtpIpMode | undefined): 4 | 6 | undefined {
 	if (ipMode === "ipv4") {
 		return 4;
@@ -86,7 +116,7 @@ export class SmtpTransport implements EmailTransport {
 			});
 
 			logger.info(
-				{ messageId: info.messageId, to: `${message.to.slice(0, 3)}***` },
+				{ messageId: info.messageId, to: maskEmailAddress(message.to) },
 				"Email sent via SMTP",
 			);
 
@@ -96,7 +126,10 @@ export class SmtpTransport implements EmailTransport {
 			};
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : "Unknown error";
-			logger.error({ error, to: message.to }, "Failed to send email via SMTP");
+			logger.error(
+				{ error: getSmtpErrorSummary(error), to: maskEmailAddress(message.to) },
+				"Failed to send email via SMTP",
+			);
 			return {
 				success: false,
 				error: errorMessage,
@@ -110,7 +143,7 @@ export class SmtpTransport implements EmailTransport {
 			await this.transporter.verify();
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : "Unknown error";
-			logger.error({ error }, "SMTP connection verification failed");
+			logger.error({ error: getSmtpErrorSummary(error) }, "SMTP connection verification failed");
 			return {
 				success: false,
 				error: `Connection failed: ${errorMessage}`,
@@ -187,7 +220,10 @@ export function createSystemSmtpTransport(): SmtpTransport | null {
 			fromName,
 		});
 	} catch (error) {
-		logger.error({ error }, "Failed to create system SMTP transport from env vars");
+		logger.error(
+			{ error: getSmtpErrorSummary(error) },
+			"Failed to create system SMTP transport from env vars",
+		);
 		return null;
 	}
 }

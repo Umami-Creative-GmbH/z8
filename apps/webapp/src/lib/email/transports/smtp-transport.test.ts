@@ -1,16 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const createTransportMock = vi.hoisted(() => vi.fn());
+const loggerMock = vi.hoisted(() => ({
+	error: vi.fn(),
+	info: vi.fn(),
+}));
 
 vi.mock("nodemailer", () => ({
 	createTransport: createTransportMock,
 }));
 
 vi.mock("@/lib/logger", () => ({
-	createLogger: () => ({
-		error: vi.fn(),
-		info: vi.fn(),
-	}),
+	createLogger: () => loggerMock,
 }));
 
 function mockTransporter() {
@@ -92,5 +93,45 @@ describe("SmtpTransport IP mode", () => {
 
 		expect(transport).not.toBeNull();
 		expect(createTransportMock).toHaveBeenCalledWith(expect.objectContaining({ family: 4 }));
+	});
+
+	it("redacts SMTP send failure logs", async () => {
+		const transporter = mockTransporter();
+		const providerError = Object.assign(
+			new Error("535 auth failed for smtp.internal.example.com as smtp-user"),
+			{ code: "EAUTH", command: "AUTH PLAIN" },
+		);
+		transporter.sendMail.mockRejectedValue(providerError);
+		createTransportMock.mockReturnValue(transporter);
+		const { SmtpTransport } = await import("./smtp-transport");
+
+		const transport = new SmtpTransport({
+			host: "smtp.internal.example.com",
+			port: 587,
+			secure: false,
+			requireTls: true,
+			auth: { user: "smtp-user", pass: "smtp-password" },
+			fromEmail: "noreply@example.com",
+		});
+
+		await transport.send({
+			to: "operations.team@example.com",
+			subject: "Test",
+			html: "<p>Test</p>",
+		});
+
+		expect(loggerMock.error).toHaveBeenCalledWith(
+			expect.objectContaining({
+				error: { name: "Error", code: "EAUTH", command: "AUTH PLAIN" },
+				to: "ope***",
+			}),
+			"Failed to send email via SMTP",
+		);
+		expect(JSON.stringify(loggerMock.error.mock.calls)).not.toContain(
+			"535 auth failed for smtp.internal.example.com as smtp-user",
+		);
+		expect(JSON.stringify(loggerMock.error.mock.calls)).not.toContain(
+			"operations.team@example.com",
+		);
 	});
 });
