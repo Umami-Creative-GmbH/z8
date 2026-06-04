@@ -85,6 +85,12 @@ function buildCorrectionTimes(params: {
 		return { error: "Invalid clock in date or time" } as const;
 	}
 
+	if (params.newClockOutDate || params.newClockOutTime) {
+		if (!params.newClockOutDate || !params.newClockOutTime) {
+			return { error: "Invalid clock out date or time" } as const;
+		}
+	}
+
 	const correctedClockOutDate =
 		params.newClockOutDate && params.newClockOutTime
 			? (createCorrectionDateTime({

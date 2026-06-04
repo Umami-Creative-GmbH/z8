@@ -50,6 +50,11 @@ describe("time correction request safety", () => {
 		expect(modularSource).not.toContain("setTimeOnStoredDate");
 	});
 
+	it("rejects partial explicit clock-out endpoint inputs", () => {
+		expect(modularSource).toContain("if (params.newClockOutDate || params.newClockOutTime)");
+		expect(modularSource).toContain('return { error: "Invalid clock out date or time" } as const;');
+	});
+
 	it.each([
 		["modular", modularSource],
 		["legacy", legacySource],
