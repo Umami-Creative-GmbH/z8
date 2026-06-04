@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import {
 	editSameDayTimeEntry,
 	requestTimeCorrection,
-} from "@/app/[locale]/(app)/time-tracking/actions";
+} from "@/app/[locale]/(app)/time-tracking/actions/corrections";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -21,6 +21,7 @@ import {
 	ActionPanelTrigger,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,7 +59,14 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 	const form = useForm({
 		defaultValues: getDefaultValues(),
 		onSubmit: async ({ value }) => {
-			if (!isValidClockRange(value.clockInTime, value.clockOutTime)) {
+			if (
+				!isValidClockRange(
+					value.clockInDate,
+					value.clockInTime,
+					value.clockOutDate,
+					value.clockOutTime,
+				)
+			) {
 				toast.error(
 					t(
 						"timeTracking.correction.errors.invalidTimeRange",
@@ -71,7 +79,9 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 			if (isSameDay) {
 				const result = await editSameDayTimeEntry({
 					workPeriodId: workPeriod.id,
+					newClockInDate: value.clockInDate,
 					newClockInTime: value.clockInTime,
+					newClockOutDate: value.clockOutDate || undefined,
 					newClockOutTime: value.clockOutTime || undefined,
 					reason: value.reason || undefined,
 				});
@@ -91,7 +101,9 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 			} else {
 				const result = await requestTimeCorrection({
 					workPeriodId: workPeriod.id,
+					newClockInDate: value.clockInDate,
 					newClockInTime: value.clockInTime,
+					newClockOutDate: value.clockOutDate || undefined,
 					newClockOutTime: value.clockOutTime || undefined,
 					reason: value.reason,
 				});
@@ -161,6 +173,28 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 						)}
 					</p>
 					<div className="grid grid-cols-2 gap-4">
+						<form.Field name="clockInDate">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)} required>
+										{t("timeTracking.correction.clockInDate", "Clock In Date")}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(field)}>
+										<Input
+											type="date"
+											name="clockInDate"
+											autoComplete="off"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+											required
+										/>
+									</TFormControl>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
+
 						<form.Field name="clockInTime">
 							{(field) => (
 								<TFormItem>
@@ -183,25 +217,49 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 						</form.Field>
 
 						{workPeriod.endTime && (
-							<form.Field name="clockOutTime">
-								{(field) => (
-									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)}>
-											{t("timeTracking.correction.clockOut", "Clock Out")}
-										</TFormLabel>
-										<TFormControl hasError={fieldHasError(field)}>
-											<TimeInput
-												name="clockOutTime"
-												autoComplete="off"
-												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-											/>
-										</TFormControl>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
-							</form.Field>
+							<>
+								<form.Field name="clockOutDate">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel hasError={fieldHasError(field)} required>
+												{t("timeTracking.correction.clockOutDate", "Clock Out Date")}
+											</TFormLabel>
+											<TFormControl hasError={fieldHasError(field)}>
+												<Input
+													type="date"
+													name="clockOutDate"
+													autoComplete="off"
+													value={field.state.value}
+													onChange={(e) => field.handleChange(e.target.value)}
+													onBlur={field.handleBlur}
+													required
+												/>
+											</TFormControl>
+											<TFormMessage field={field} />
+										</TFormItem>
+									)}
+								</form.Field>
+
+								<form.Field name="clockOutTime">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel hasError={fieldHasError(field)}>
+												{t("timeTracking.correction.clockOut", "Clock Out")}
+											</TFormLabel>
+											<TFormControl hasError={fieldHasError(field)}>
+												<TimeInput
+													name="clockOutTime"
+													autoComplete="off"
+													value={field.state.value}
+													onChange={(e) => field.handleChange(e.target.value)}
+													onBlur={field.handleBlur}
+												/>
+											</TFormControl>
+											<TFormMessage field={field} />
+										</TFormItem>
+									)}
+								</form.Field>
+							</>
 						)}
 					</div>
 
