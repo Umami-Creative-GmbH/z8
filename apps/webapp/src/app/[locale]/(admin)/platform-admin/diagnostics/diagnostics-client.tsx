@@ -128,6 +128,17 @@ export function DiagnosticsClient({
 	const [snapshot, setSnapshot] = useState<PlatformDiagnosticsSnapshot>(() => initialSnapshot);
 	const [error, setError] = useState<string | null>(null);
 	const [emailRecipient, setEmailRecipient] = useState(adminEmail);
+	const [smtpOverride, setSmtpOverride] = useState({
+		host: "",
+		port: "587",
+		username: "",
+		password: "",
+		fromEmail: "",
+		fromName: "",
+		secure: true,
+		requireTls: true,
+		ipMode: "auto" as "auto" | "ipv4" | "ipv6",
+	});
 	const [emailResult, setEmailResult] = useState<{
 		recipient: string;
 		messageId?: string;
@@ -183,11 +194,44 @@ export function DiagnosticsClient({
 		});
 	}
 
+	function buildSmtpOverrideInput() {
+		const hasTextOverride =
+			smtpOverride.host.trim().length > 0 ||
+			smtpOverride.username.trim().length > 0 ||
+			smtpOverride.password.length > 0 ||
+			smtpOverride.fromEmail.trim().length > 0 ||
+			smtpOverride.fromName.trim().length > 0;
+		const hasControlOverride =
+			smtpOverride.port !== "587" ||
+			!smtpOverride.secure ||
+			!smtpOverride.requireTls ||
+			smtpOverride.ipMode !== "auto";
+
+		if (!hasTextOverride && !hasControlOverride) {
+			return undefined;
+		}
+
+		return {
+			host: smtpOverride.host.trim(),
+			port: Number.parseInt(smtpOverride.port, 10),
+			username: smtpOverride.username.trim(),
+			password: smtpOverride.password,
+			fromEmail: smtpOverride.fromEmail.trim(),
+			fromName: smtpOverride.fromName.trim() || undefined,
+			secure: smtpOverride.secure,
+			requireTls: smtpOverride.requireTls,
+			ipMode: smtpOverride.ipMode,
+		};
+	}
+
 	function sendTestEmail() {
 		setEmailError(null);
 		setEmailResult(null);
 		startEmailTransition(async () => {
-			const result = await sendPlatformDiagnosticsTestEmailAction({ to: emailRecipient });
+			const result = await sendPlatformDiagnosticsTestEmailAction({
+				to: emailRecipient,
+				smtpOverride: buildSmtpOverrideInput(),
+			});
 
 			if (result.success) {
 				setEmailResult(result.data);
@@ -308,6 +352,193 @@ export function DiagnosticsClient({
 							) : null}
 							{t("admin:admin.diagnostics.emailTest.actions.send", "Send test email")}
 						</Button>
+					</div>
+					<div className="space-y-4 rounded-lg border bg-muted/20 p-4">
+						<div className="space-y-1">
+							<h3 className="text-sm font-medium">
+								{t(
+									"admin:admin.diagnostics.emailTest.smtpOverride.title",
+									"Temporary SMTP override",
+								)}
+							</h3>
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"admin:admin.diagnostics.emailTest.smtpOverride.description",
+									"Leave blank to use the configured system email transport. If filled, the test uses these SMTP settings only.",
+								)}
+							</p>
+						</div>
+						<div className="grid gap-3 md:grid-cols-2">
+							<label className="space-y-2 text-sm font-medium">
+								<span>
+									{t("admin:admin.diagnostics.emailTest.smtpOverride.host", "SMTP host")}
+								</span>
+								<input
+									className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+									name="smtp-host"
+									autoComplete="off"
+									spellCheck={false}
+									value={smtpOverride.host}
+									onChange={(event) =>
+										setSmtpOverride((current) => ({ ...current, host: event.target.value }))
+									}
+									disabled={isEmailPending}
+								/>
+							</label>
+							<label className="space-y-2 text-sm font-medium">
+								<span>
+									{t("admin:admin.diagnostics.emailTest.smtpOverride.port", "SMTP port")}
+								</span>
+								<input
+									className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+									name="smtp-port"
+									autoComplete="off"
+									type="number"
+									value={smtpOverride.port}
+									onChange={(event) =>
+										setSmtpOverride((current) => ({ ...current, port: event.target.value }))
+									}
+									disabled={isEmailPending}
+								/>
+							</label>
+							<label className="space-y-2 text-sm font-medium">
+								<span>
+									{t(
+										"admin:admin.diagnostics.emailTest.smtpOverride.username",
+										"SMTP username",
+									)}
+								</span>
+								<input
+									className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+									name="smtp-username"
+									autoComplete="off"
+									spellCheck={false}
+									value={smtpOverride.username}
+									onChange={(event) =>
+										setSmtpOverride((current) => ({ ...current, username: event.target.value }))
+									}
+									disabled={isEmailPending}
+								/>
+							</label>
+							<label className="space-y-2 text-sm font-medium">
+								<span>
+									{t(
+										"admin:admin.diagnostics.emailTest.smtpOverride.password",
+										"SMTP password",
+									)}
+								</span>
+								<input
+									className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+									name="smtp-password"
+									autoComplete="off"
+									type="password"
+									value={smtpOverride.password}
+									onChange={(event) =>
+										setSmtpOverride((current) => ({ ...current, password: event.target.value }))
+									}
+									disabled={isEmailPending}
+								/>
+							</label>
+							<label className="space-y-2 text-sm font-medium">
+								<span>
+									{t(
+										"admin:admin.diagnostics.emailTest.smtpOverride.fromEmail",
+										"From email",
+									)}
+								</span>
+								<input
+									className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+									name="smtp-from-email"
+									autoComplete="off"
+									spellCheck={false}
+									type="email"
+									value={smtpOverride.fromEmail}
+									onChange={(event) =>
+										setSmtpOverride((current) => ({ ...current, fromEmail: event.target.value }))
+									}
+									disabled={isEmailPending}
+								/>
+							</label>
+							<label className="space-y-2 text-sm font-medium">
+								<span>
+									{t("admin:admin.diagnostics.emailTest.smtpOverride.fromName", "From name")}
+								</span>
+								<input
+									className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+									name="smtp-from-name"
+									autoComplete="off"
+									value={smtpOverride.fromName}
+									onChange={(event) =>
+										setSmtpOverride((current) => ({ ...current, fromName: event.target.value }))
+									}
+									disabled={isEmailPending}
+								/>
+							</label>
+							<label className="space-y-2 text-sm font-medium">
+								<span>
+									{t("admin:admin.diagnostics.emailTest.smtpOverride.ipMode", "IP mode")}
+								</span>
+								<select
+									className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+									name="smtp-ip-mode"
+									value={smtpOverride.ipMode}
+									onChange={(event) =>
+										setSmtpOverride((current) => ({
+											...current,
+											ipMode: event.target.value as "auto" | "ipv4" | "ipv6",
+										}))
+									}
+									disabled={isEmailPending}
+								>
+									<option value="auto">
+										{t("admin:admin.diagnostics.emailTest.smtpOverride.ipMode.auto", "Auto")}
+									</option>
+									<option value="ipv4">
+										{t(
+											"admin:admin.diagnostics.emailTest.smtpOverride.ipMode.ipv4",
+											"IPv4 only",
+										)}
+									</option>
+									<option value="ipv6">
+										{t(
+											"admin:admin.diagnostics.emailTest.smtpOverride.ipMode.ipv6",
+											"IPv6 only",
+										)}
+									</option>
+								</select>
+							</label>
+						</div>
+						<div className="flex flex-wrap gap-4">
+							<label className="flex items-center gap-2 text-sm font-medium">
+								<input
+									type="checkbox"
+									name="smtp-secure"
+									checked={smtpOverride.secure}
+									onChange={(event) =>
+										setSmtpOverride((current) => ({ ...current, secure: event.target.checked }))
+									}
+									disabled={isEmailPending}
+								/>
+								<span>{t("admin:admin.diagnostics.emailTest.smtpOverride.secure", "Use TLS")}</span>
+							</label>
+							<label className="flex items-center gap-2 text-sm font-medium">
+								<input
+									type="checkbox"
+									name="smtp-require-tls"
+									checked={smtpOverride.requireTls}
+									onChange={(event) =>
+										setSmtpOverride((current) => ({
+											...current,
+											requireTls: event.target.checked,
+										}))
+									}
+									disabled={isEmailPending}
+								/>
+								<span>
+									{t("admin:admin.diagnostics.emailTest.smtpOverride.requireTls", "Require STARTTLS")}
+								</span>
+							</label>
+						</div>
 					</div>
 					{emailError ? (
 						<div
