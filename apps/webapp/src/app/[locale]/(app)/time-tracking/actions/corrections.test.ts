@@ -160,6 +160,13 @@ describe("time correction request safety", () => {
 		expect(body).toContain('return { success: false, error: "Reason is required" }');
 		expect(modularSource).not.toContain("delete(workPeriod)");
 	});
+
+	it("blocks the legacy exported delete work period action", () => {
+		const body = functionBody(legacySource, "deleteWorkPeriod");
+
+		expect(body).toContain('return { success: false, error: "Deletion requires manager approval" }');
+		expect(body).not.toContain("delete(workPeriod)");
+	});
 });
 
 describe("createUtcDateTime", () => {

@@ -285,7 +285,11 @@ export function createTimeCorrectionApprovalWorkflow(
 			}
 		: undefined;
 
-	return ensureNoPendingTimeCorrectionApproval(dbService, input.workPeriodId).pipe(
+	return ensureNoPendingTimeCorrectionApproval(
+		dbService,
+		input.organizationId,
+		input.workPeriodId,
+	).pipe(
 		Effect.flatMap(() =>
 			resolvePolicyAndCreateApproval(dbService, {
 				context: buildTimeCorrectionApprovalPolicyContext(input),
@@ -304,11 +308,16 @@ export function createTimeCorrectionApprovalWorkflow(
 	);
 }
 
-function ensureNoPendingTimeCorrectionApproval(dbService: ApprovalDbService, workPeriodId: string) {
+function ensureNoPendingTimeCorrectionApproval(
+	dbService: ApprovalDbService,
+	organizationId: string,
+	workPeriodId: string,
+) {
 	return dbService
 		.query("getPendingTimeCorrectionApproval", async () => {
 			return await dbService.db.query.approvalRequest.findFirst({
 				where: and(
+					eq(approvalRequest.organizationId, organizationId),
 					eq(approvalRequest.entityType, "time_entry"),
 					eq(approvalRequest.entityId, workPeriodId),
 					eq(approvalRequest.status, "pending"),
