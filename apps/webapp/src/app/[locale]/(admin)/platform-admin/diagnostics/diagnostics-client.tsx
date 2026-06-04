@@ -211,17 +211,22 @@ export function DiagnosticsClient({
 			return undefined;
 		}
 
-		return {
+		const input = {
 			host: smtpOverride.host.trim(),
 			port: Number.parseInt(smtpOverride.port, 10),
 			username: smtpOverride.username.trim(),
 			password: smtpOverride.password,
 			fromEmail: smtpOverride.fromEmail.trim(),
-			fromName: smtpOverride.fromName.trim() || undefined,
 			secure: smtpOverride.secure,
 			requireTls: smtpOverride.requireTls,
 			ipMode: smtpOverride.ipMode,
 		};
+
+		if (smtpOverride.fromName.trim().length > 0) {
+			return { ...input, fromName: smtpOverride.fromName.trim() };
+		}
+
+		return input;
 	}
 
 	function sendTestEmail() {
