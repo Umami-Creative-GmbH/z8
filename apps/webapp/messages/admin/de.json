@@ -113,13 +113,16 @@
         "trialing": "Testphase"
       },
       "table": {
+        "actions": "Aktionen",
         "billing": "Abrechnung",
         "created": "Erstellt",
+        "demoUsers": "Demo-Benutzer",
+        "licensedSeats": "Lizenzierte Plätze",
         "noSubscriptions": "Noch keine Abonnements vorhanden",
         "organization": "Organisation",
         "periodEnd": "Abrechnungsende",
-        "seats": "Plätze",
-        "status": "Status"
+        "status": "Status",
+        "usedSeats": "Genutzte Plätze"
       },
       "title": "Abrechnungs-Dashboard"
     },
@@ -129,6 +132,16 @@
       },
       "clientDescription": "Sichere Plattformkonfiguration und Dienststatus auf App-Ebene. Zuletzt aktualisiert am {date}.",
       "description": "Sichere Plattformkonfiguration und Integritätsprüfungen für App-only-Bereitstellungen.",
+      "emailTest": {
+        "actions": {
+          "send": "Test-E-Mail senden"
+        },
+        "description": "Senden Sie eine Diagnose-E-Mail über den System-E-Mail-Transport.",
+        "messageId": "Nachrichten-ID: {messageId}",
+        "recipient": "Empfänger-E-Mail",
+        "success": "Test-E-Mail an {recipient} gesendet.",
+        "title": "E-Mail-Zustellungstest"
+      },
       "keyManager": {
         "actions": {
           "test": "Verschlüsselung testen"

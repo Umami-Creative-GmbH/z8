@@ -1,508 +1,508 @@
 {
-	"accessDenied": {
-		"contactAdmin": "Erişim talep etmek için lütfen kuruluş yöneticinizle iletişime geçin.",
-		"description": "Hesabınızın {{appLabel}} uygulamasına erişim izni yok.",
-		"signOut": "Oturumu Kapat",
-		"title": "Erişim Kısıtlandı"
-	},
-	"actions": {
-		"cancel": "İptal",
-		"delete": "Sil",
-		"refresh": "Yenile"
-	},
-	"analytics": {
-		"export": {
-			"export": "Dışa Aktar",
-			"exportAsCsv": "CSV olarak dışa aktar",
-			"exportAsExcel": "Excel olarak dışa aktar",
-			"exportedAsFormat": "{format} olarak dışa aktarıldı",
-			"exportingFormat": "{format} dışa aktarılıyor…",
-			"failedAsFormat": "{format} olarak dışa aktarılamadı"
-		}
-	},
-	"appSearch": {
-		"commandDescription": "Sayfaları, kişileri, ekipleri, ayarları veya eylemleri arayın",
-		"commandPlaceholder": "Sayfaları, kişileri, ekipleri, ayarları veya eylemleri arayın…",
-		"commands": {
-			"addManualTimeEntry": {
-				"subtitle": "Geçmiş bir vardiya veya düzeltme için saat kaydı girin",
-				"title": "Manuel zaman girişi ekle"
-			},
-			"createProject": {
-				"subtitle": "Yeni bir proje tanımlamak için proje ayarlarını açın",
-				"title": "Proje oluştur"
-			},
-			"inviteTeammate": {
-				"subtitle": "Bir iş arkadaşı eklemek için organizasyon yönetimini açın",
-				"title": "Ekip arkadaşını davet et"
-			},
-			"openApprovalsInbox": {
-				"subtitle": "Bekleyen çalışan taleplerini inceleyin",
-				"title": "Onay kutusunu aç"
-			},
-			"openMyRequests": {
-				"subtitle": "Gönderdiğiniz izin ve masraf taleplerini inceleyin",
-				"title": "Taleplerimi aç"
-			},
-			"openPayrollReadiness": {
-				"subtitle": "Zaman verilerinin bordro için hazır olup olmadığını kontrol edin",
-				"title": "Bordro hazırlığını aç"
-			},
-			"openSettings": {
-				"subtitle": "Profilinizi, güvenliğinizi ve organizasyon ayarlarınızı yönetin",
-				"title": "Ayarları aç"
-			},
-			"requestAbsence": {
-				"subtitle": "Tatil, hastalık izni veya izin talebi başlatın",
-				"title": "İzin talep et"
-			},
-			"submitTravelExpense": {
-				"subtitle": "Seyahat masrafları için geri ödeme talebi oluşturun",
-				"title": "Seyahat masrafı gönder"
-			}
-		},
-		"empty": "Sonuç bulunamadı.",
-		"groups": {
-			"actions": "Eylemler",
-			"pages": "Sayfalar",
-			"people": "Kişiler",
-			"settings": "Ayarlar",
-			"teams": "Ekipler"
-		},
-		"search": "Ara",
-		"searchOrRunCommand": "Ara veya komut çalıştır",
-		"teamAbsences": {
-			"description": "Çalışan izin metriklerini inceleyin ve izinleri kaydedin"
-		}
-	},
-	"billing": {
-		"suspended": {
-			"adminDescription": "Deneme süreniz sona erdi veya aboneliğiniz artık geçerli değil. Z8'i kullanmaya devam etmek için faturalandırmayı güncelleyin.",
-			"goToBilling": "Faturalandırmaya git",
-			"memberDescription": "Bu kuruluş askıya alındı. Faturalandırmayı güncellemek için bir kuruluş yöneticisiyle iletişime geçin.",
-			"title": "Kuruluş askıya alındı"
-		},
-		"trialBanner": {
-			"description": "{days} gün kaldı. Ödeme bilgilerini şimdi ekleyin; ücretli aboneliğiniz deneme süresinden sonra başlar.",
-			"dismiss": "Deneme sürümü başlığını kapat",
-			"title": "14 günlük deneme süresi aktif",
-			"upgrade": "Yükselt"
-		}
-	},
-	"colors": {
-		"blue": "Mavi",
-		"green": "Yeşil",
-		"indigo": "Çivit Mavisi",
-		"orange": "Turuncu",
-		"pink": "Pembe",
-		"purple": "Mor",
-		"red": "Kırmızı",
-		"teal": "Deniz Mavisi"
-	},
-	"common": {
-		"actions": "Eylemler",
-		"active": "Aktif",
-		"add": "Ekle",
-		"adding": "Ekleniyor...",
-		"all": "Tümü",
-		"approve": "Onayla",
-		"assign": "Ata",
-		"back": "Geri",
-		"cancel": "İptal",
-		"clear": "Temizle",
-		"clearSearch": "Aramayı temizle",
-		"clearSelection": "Temizle",
-		"close": "Kapat",
-		"confirm": "Onayla",
-		"continue": "Devam et",
-		"copy": "Kopyala",
-		"create": "Oluştur",
-		"current": "Mevcut",
-		"days": {
-			"friday": "Cuma",
-			"label": "günler",
-			"monday": "Pazartesi",
-			"saturday": "Cumartesi",
-			"sunday": "Pazar",
-			"thursday": "Perşembe",
-			"tuesday": "Salı",
-			"wednesday": "Çarşamba"
-		},
-		"delete": "Sil",
-		"deleting": "Siliniyor...",
-		"description": "Açıklama",
-		"deselectAll": "Tümünün Seçimini Kaldır",
-		"details": "Ayrıntılar",
-		"download": "İndir",
-		"duplicate": "Çoğalt",
-		"edit": "Düzenle",
-		"enabled": "Etkin",
-		"error": "Hata",
-		"error-occurred": "Bir hata oluştu",
-		"gender": {
-			"female": "Kadın",
-			"male": "Erkek",
-			"other": "Diğer"
-		},
-		"goToDashboard": "Panele Git",
-		"inactive": "Etkin değil",
-		"label": "Etiket",
-		"loading": "Yükleniyor...",
-		"loadMore": "Daha Fazla Yükle",
-		"months": {
-			"april": "Nisan",
-			"august": "Ağustos",
-			"december": "Aralık",
-			"february": "Şubat",
-			"january": "Ocak",
-			"july": "Temmuz",
-			"june": "Haziran",
-			"march": "Mart",
-			"may": "Mayıs",
-			"november": "Kasım",
-			"october": "Ekim",
-			"september": "Eylül"
-		},
-		"more": "daha fazla",
-		"moreActions": "Diğer eylemler",
-		"moveDown": "Aşağı taşı",
-		"moveUp": "Yukarı taşı",
-		"name": "Ad",
-		"never": "Asla",
-		"new": "Yeni",
-		"next": "İleri",
-		"notApplicable": "N/A",
-		"not-available": "Mevcut değil",
-		"open": "Aç",
-		"openEnded": "Ucu açık",
-		"openMenu": "Menüyü aç",
-		"optional": "isteğe bağlı",
-		"or": "Veya",
-		"pending": "Beklemede",
-		"present": "Mevcut",
-		"previous": "Önceki",
-		"recovering": "Kurtarılıyor...",
-		"refresh": "Yenile",
-		"refreshing": "Yenileniyor...",
-		"reject": "Reddet",
-		"rejecting": "Reddediliyor…",
-		"remove": "Kaldır",
-		"removing": "Kaldırılıyor...",
-		"reset": "Sıfırla",
-		"retry": "Yeniden dene",
-		"save": "Kaydet",
-		"saveChanges": "Değişiklikleri Kaydet",
-		"saving": "Kaydediliyor...",
-		"selectAll": "Tümünü Seç",
-		"selected": "seçili",
-		"select-language": "Dil seç",
-		"set": "ayarla",
-		"sets": "setler",
-		"skip": "Atla",
-		"start": "Başlat",
-		"status": "Durum",
-		"submitting": "Gönderiliyor…",
-		"to": "ile",
-		"today": "Bugün",
-		"unexpectedError": "Beklenmedik bir hata oluştu",
-		"unknown": "Bilinmiyor",
-		"unknownEmployee": "Bilinmeyen Çalışan",
-		"unknownTeam": "Bilinmeyen Ekip",
-		"unnamed": "İsimsiz",
-		"update": "Güncelle",
-		"updating": "Güncelleniyor...",
-		"uploading": "Yükleniyor...",
-		"validate": "Doğrula",
-		"validationError": "Doğrulama hatası",
-		"weekdays": {
-			"fr": "Cu",
-			"fri": "Cum",
-			"mo": "Pzt",
-			"mon": "Pzt",
-			"sa": "Ct",
-			"sat": "Cmt",
-			"su": "Paz",
-			"sun": "Paz",
-			"th": "Per",
-			"thu": "Per",
-			"tu": "Sal",
-			"tue": "Sal",
-			"we": "Çar",
-			"wed": "Çar"
-		}
-	},
-	"employeeSelect": {
-		"countSelected": "{count} çalışan seçildi",
-		"countWithMore": "{count} çalışan (+{more} daha)",
-		"noEmployeesFound": "Çalışan bulunamadı",
-		"role": "Rol",
-		"searchPlaceholder": "İsim, e-posta veya pozisyon ile ara...",
-		"selected": "{count} seçildi",
-		"selectEmployee": "Çalışan seç",
-		"selectEmployees": "Çalışanları seç",
-		"selectMultipleEmployees": "Listeden bir veya daha fazla çalışan seçin",
-		"selectOneEmployee": "Listeden bir çalışan seçin",
-		"status": "Durum",
-		"team": "Ekip",
-		"totalEmployees": "{count} çalışan",
-		"tryDifferentSearch": "Aramanızı veya filtrelerinizi değiştirmeyi deneyin"
-	},
-	"errors": {
-		"failedToLoad": "Veri yüklenemedi",
-		"noEmployee": {
-			"contactAdmin": "Yöneticiyle İletişime Geçin",
-			"createOrg": "Organizasyon Oluştur",
-			"description": "${feature} için bir çalışan profiline ihtiyacınız var. Lütfen bir organizasyon oluşturun veya yöneticinizle iletişime geçin.",
-			"emailBody": "Merhaba,\n\nPlatform özelliklerine erişebilmek için bir çalışan profiline ihtiyacım var. Bu konuda bana yardımcı olabilir misiniz?\n\nTeşekkürler!",
-			"emailSubject": "Çalışan Profili Kurulumu Gerekli",
-			"helpText": "Bir organizasyona davet edildiyseniz, yöneticinizden çalışan profilinizi oluşturmasını isteyin.",
-			"title": "Çalışan Profili Gerekli"
-		},
-		"noOrganization": {
-			"createOrg": "Organizasyon Oluştur",
-			"description": "Henüz herhangi bir organizasyonun parçası değilsiniz. Başlamak için bir tane oluşturun veya bir davetiye bekleyin.",
-			"title": "Organizasyon Bulunamadı",
-			"waiting": "Davetiye mi bekliyorsunuz?",
-			"waitingDesc": "Yöneticiniz size bir davet e-postası gönderecek. Gelen kutunuzu ve spam klasörünüzü kontrol edin."
-		},
-		"unexpected": {
-			"digest": "Referans: {digest}"
-		}
-	},
-	"generic": {
-		"done": "Tamam",
-		"submit": "Gönder"
-	},
-	"header": {
-		"clock-in": "Giriş Yap",
-		"clock-out": "Çıkış Yap"
-	},
-	"info": {
-		"agb": "Şartlar ve Koşullar",
-		"back-to-login": "Giriş ekranına dön",
-		"imprint": "Künye",
-		"trust-center": "Güven Merkezi"
-	},
-	"nav": {
-		"absences": "İzinler",
-		"approvals": "Onaylar",
-		"calendar": "Takvim",
-		"compliance": "Uyumluluk",
-		"dashboard": "Panel",
-		"feedback": "Geri bildirim",
-		"get-help": "Yardım Al",
-		"my-requests": "Taleplerim",
-		"org-explorer": "Kuruluş Gezgini",
-		"platform-admin": "Platform Yöneticisi",
-		"reports": "Raporlar",
-		"scheduling": "Planlama",
-		"settings": "Ayarlar",
-		"team": "Ekip",
-		"teamAbsences": "Ekip Devamsızlıkları",
-		"team-label": "Ekip",
-		"time-tracking": "Zaman Takibi",
-		"travel-expenses": "Seyahat Masrafları",
-		"worksCouncil": "İşçi Konseyi"
-	},
-	"notifications": {
-		"actions": {
-			"deleteAll": "Hepsini sil",
-			"markAllRead": "Hepsini okundu olarak işaretle",
-			"markAsRead": "Okundu olarak işaretle",
-			"markRead": "Okundu olarak işaretle",
-			"settings": "Bildirim ayarları",
-			"viewAll": "Tüm bildirimleri görüntüle"
-		},
-		"content": {
-			"teamMemberAdded": {
-				"message": "{performedByName} tarafından {teamName} ekibine eklendiniz.",
-				"title": "Ekibe eklendi"
-			}
-		},
-		"description": "Güncellemeleri, onayları ve sistem uyarılarını tek bir zaman çizelgesinde inceleyin.",
-		"empty": {
-			"description": "Her şey güncel! Yeni bildirimler burada görünecektir.",
-			"inboxDescription": "Her şey güncel. Yeni güncellemeler burada görünecektir.",
-			"noMatchesDescription": "Bu gelen kutusu görünümünü genişletmek için arama veya okuma filtresini ayarlayın.",
-			"noMatchesTitle": "Eşleşen bildirim yok",
-			"title": "Bildirim yok",
-			"unreadDescription": "Her şey güncel. Yeni okunmamış güncellemeler burada görünecektir.",
-			"unreadTitle": "Okunmamış bildirim yok"
-		},
-		"error": {
-			"title": "Bildirimler yüklenemedi"
-		},
-		"filters": {
-			"all": "Tümü",
-			"ariaLabel": "Bildirimleri okuma durumuna göre filtrele",
-			"read": "Okundu",
-			"unread": "Okunmadı"
-		},
-		"preferences": {
-			"disabled": "Bildirim devre dışı bırakıldı",
-			"enabled": "Bildirim etkinleştirildi",
-			"permissionModal": {
-				"benefits": {
-					"pendingApprovals": "Bekleyen onay talepleri için uyarılar alın",
-					"requestUpdates": "Talepleriniz onaylandığında veya reddedildiğinde bildirim alın",
-					"teamSecurity": "Ekip ve güvenlik güncellemelerinden haberdar olun"
-				},
-				"description": "Uygulamayı kullanmadığınız zamanlarda bile onaylar, zaman düzeltmeleri ve önemli ekip değişiklikleri hakkında anlık güncellemeler almak için anlık bildirimleri etkinleştirin.",
-				"enable": "Bildirimleri Etkinleştir",
-				"notNow": "Şimdi Değil",
-				"title": "Güncel Kalın"
-			},
-			"push": {
-				"blockedDescription": "Anlık bildirimler tarayıcınız tarafından engellenmiş. Etkinleştirmek için tarayıcı ayarlarınızı güncellemeniz gerekiyor.",
-				"blockedHelp": "Tarayıcınızın adres çubuğundaki kilit simgesine tıklayın ve bu site için bildirimlere izin verin, ardından sayfayı yenileyin.",
-				"blockedTitle": "Anlık Bildirimler Engellendi",
-				"enableButton": "Anlık Bildirimleri Etkinleştir",
-				"enableDescription": "Uygulamayı kullanmadığınız zamanlarda bile anında bildirim alın",
-				"enabledIndicator": "Anlık bildirimler etkinleştirildi",
-				"enabledToast": "Anlık bildirimler etkin",
-				"enabledToastDescription": "Artık tarayıcı anlık bildirimlerini alacaksınız",
-				"enableFailedToast": "Anlık bildirimler etkinleştirilemedi",
-				"enableTitle": "Anlık Bildirimleri Etkinleştir",
-				"errorToast": "Anlık bildirim hatası"
-			},
-			"toggleAria": "{type} için {channel} bildirimleri",
-			"updateFailed": "Tercih güncellenemedi"
-		},
-		"search": {
-			"ariaLabel": "Bildirimleri ara",
-			"placeholder": "Bildirimleri ara..."
-		},
-		"selection": {
-			"selectAll": "Görünenlerin tümünü seç",
-			"selectAllAria": "Görünen tüm bildirimleri seç",
-			"selectNamedAria": "{title} öğesini seç",
-			"visibleSelected": "{count} görünür öğe seçildi"
-		},
-		"timeline": {
-			"earlier": "Daha önce",
-			"today": "Bugün",
-			"yesterday": "Dün"
-		},
-		"title": "Bildirimler",
-		"toasts": {
-			"deleted": "{count} bildirim silindi",
-			"deleteFailed": "Bildirimler silinemedi",
-			"markedRead": "{count} bildirim okundu olarak işaretlendi",
-			"markReadFailed": "Bildirimler okundu olarak işaretlenemedi"
-		},
-		"unreadBadge": "{count} okunmamış",
-		"unreadCountOverflow": "99+"
-	},
-	"offline": {
-		"banner": {
-			"offline": "Çevrimdışısınız",
-			"offlineWithPending": "Çevrimdışı - {count} etkinlik bekliyor",
-			"pending": "{count} etkinlik senkronizasyon bekliyor",
-			"retry": "Yeniden dene",
-			"syncing": "{count} etkinlik senkronize ediliyor..."
-		}
-	},
-	"presence": {
-		"clockedIn": "Giriş yapıldı",
-		"clockedOut": "Çıkış yapıldı"
-	},
-	"roles": {
-		"admin": "Yönetici",
-		"employee": "Çalışan",
-		"manager": "Yönetici"
-	},
-	"status": {
-		"active": "Aktif",
-		"inactive": "Pasif"
-	},
-	"table": {
-		"clearFilters": "Filtreleri temizle",
-		"clearSort": "Sıralamayı temizle",
-		"description": "Son 6 aydaki toplam ziyaretçi sayısı gösteriliyor. Bu, düzeni test etmek için yazılmış rastgele bir metindir. Birden fazla satıra yayılır ve kaydırılması gerekir.",
-		"goToFirstPage": "İlk sayfaya git",
-		"goToLastPage": "Son sayfaya git",
-		"goToNextPage": "Sonraki sayfaya git",
-		"goToPreviousPage": "Önceki sayfaya git",
-		"header": "Başlık",
-		"limit": "Sınır",
-		"noResults": "Sonuç bulunamadı.",
-		"pageOfPages": "{total} sayfa içinde {current}",
-		"reviewer": "Gözden Geçiren",
-		"rowsPerPage": "Sayfa başına satır",
-		"searchPlaceholder": "Ara...",
-		"selectedOfTotal": "{total} satırdan {selected} tanesi seçildi",
-		"select-reviewer": "Bir gözden geçiren seçin",
-		"select-status": "Bir durum seçin",
-		"select-type": "Bir tür seçin",
-		"showing-visitors": "Son 6 aydaki toplam ziyaretçi sayısı gösteriliyor",
-		"sortAscending": "Artan",
-		"sortDescending": "Azalan",
-		"status": "Durum",
-		"status-options": {
-			"done": "Tamamlandı",
-			"in-progress": "Devam Ediyor",
-			"not-started": "Başlamadı"
-		},
-		"target": "Hedef",
-		"totalRows": "{total} satır",
-		"trending-up": "Bu ay %5,2 artışta",
-		"type": "Tür",
-		"type-options": {
-			"capabilities": "Yetenekler",
-			"cover-page": "Kapak Sayfası",
-			"design": "Tasarım",
-			"executive-summary": "Yönetici Özeti",
-			"focus-documents": "Odak Belgeler",
-			"narrative": "Anlatım",
-			"table-of-contents": "İçindekiler",
-			"technical-approach": "Teknik Yaklaşım"
-		}
-	},
-	"time": {
-		"am": "ÖÖ",
-		"hoursAndMinutes": "{hours}s {minutes}dk",
-		"hoursOnly": "{hours}s",
-		"pm": "ÖS"
-	},
-	"sw": {
-		"update": {
-			"description": "Yeni bir sürüm hazır. Güncellemek için yeniden yükleyin.",
-			"later": "Daha sonra",
-			"reload": "Yeniden yükle",
-			"title": "Güncelleme mevcut"
-		}
-	},
-	"userAvatar": {
-		"alt": "Kullanıcı avatarı"
-	},
-	"user": {
-		"font-size": "Yazı tipi boyutu",
-		"language": "Dil",
-		"logging-out": "Çıkış yapılıyor...",
-		"log-out": "Çıkış yap",
-		"log-out-failed": "Çıkış yapılamadı. Lütfen tekrar deneyin.",
-		"profile": "Profil",
-		"security": "Güvenlik",
-		"theme": "Tema",
-		"theme-dark": "Koyu",
-		"theme-light": "Açık",
-		"theme-location-required": "Zamana dayalı tema için konum izni gereklidir.",
-		"theme-system": "Sistem",
-		"theme-time": "Zamana dayalı",
-		"theme-time-info": "Zamana dayalı mod {currentMode} modunu kullanıyor. {time} saatinde {nextMode} moduna geçiş yapar.",
-		"theme-toggle": "Temayı değiştir"
-	},
-	"validation": {
-		"first-name-required": "Ad gerekli",
-		"invalid-email": "Geçersiz e-posta adresi",
-		"invalid-password": "Geçersiz şifre",
-		"last-name-required": "Soyad gerekli",
-		"password-required": "Şifre gerekli"
-	},
-	"workBalance": {
-		"label": "Tüm zamanların bakiyesi",
-		"notCalculated": "Henüz hesaplanmadı",
-		"pendingDescription": "Çalışan bu bakiyeyi yakında hesaplayacaktır.",
-		"updatedEveryThreeHours": "Her 3 saatte bir güncellenir"
-	}
+  "accessDenied": {
+    "contactAdmin": "Erişim talep etmek için lütfen kuruluş yöneticinizle iletişime geçin.",
+    "description": "Hesabınızın {{appLabel}} uygulamasına erişim izni yok.",
+    "signOut": "Oturumu Kapat",
+    "title": "Erişim Kısıtlandı"
+  },
+  "actions": {
+    "cancel": "İptal",
+    "delete": "Sil",
+    "refresh": "Yenile"
+  },
+  "analytics": {
+    "export": {
+      "export": "Dışa Aktar",
+      "exportAsCsv": "CSV olarak dışa aktar",
+      "exportAsExcel": "Excel olarak dışa aktar",
+      "exportedAsFormat": "{format} olarak dışa aktarıldı",
+      "exportingFormat": "{format} dışa aktarılıyor…",
+      "failedAsFormat": "{format} olarak dışa aktarılamadı"
+    }
+  },
+  "appSearch": {
+    "commandDescription": "Sayfaları, kişileri, ekipleri, ayarları veya eylemleri arayın",
+    "commandPlaceholder": "Sayfaları, kişileri, ekipleri, ayarları veya eylemleri arayın…",
+    "commands": {
+      "addManualTimeEntry": {
+        "subtitle": "Geçmiş bir vardiya veya düzeltme için saat kaydı girin",
+        "title": "Manuel zaman girişi ekle"
+      },
+      "createProject": {
+        "subtitle": "Yeni bir proje tanımlamak için proje ayarlarını açın",
+        "title": "Proje oluştur"
+      },
+      "inviteTeammate": {
+        "subtitle": "Bir iş arkadaşı eklemek için organizasyon yönetimini açın",
+        "title": "Ekip arkadaşını davet et"
+      },
+      "openApprovalsInbox": {
+        "subtitle": "Bekleyen çalışan taleplerini inceleyin",
+        "title": "Onay kutusunu aç"
+      },
+      "openMyRequests": {
+        "subtitle": "Gönderdiğiniz izin ve masraf taleplerini inceleyin",
+        "title": "Taleplerimi aç"
+      },
+      "openPayrollReadiness": {
+        "subtitle": "Zaman verilerinin bordro için hazır olup olmadığını kontrol edin",
+        "title": "Bordro hazırlığını aç"
+      },
+      "openSettings": {
+        "subtitle": "Profilinizi, güvenliğinizi ve organizasyon ayarlarınızı yönetin",
+        "title": "Ayarları aç"
+      },
+      "requestAbsence": {
+        "subtitle": "Tatil, hastalık izni veya izin talebi başlatın",
+        "title": "İzin talep et"
+      },
+      "submitTravelExpense": {
+        "subtitle": "Seyahat masrafları için geri ödeme talebi oluşturun",
+        "title": "Seyahat masrafı gönder"
+      }
+    },
+    "empty": "Sonuç bulunamadı.",
+    "groups": {
+      "actions": "Eylemler",
+      "pages": "Sayfalar",
+      "people": "Kişiler",
+      "settings": "Ayarlar",
+      "teams": "Ekipler"
+    },
+    "search": "Ara",
+    "searchOrRunCommand": "Ara veya komut çalıştır",
+    "teamAbsences": {
+      "description": "Çalışan izin metriklerini inceleyin ve izinleri kaydedin"
+    }
+  },
+  "billing": {
+    "suspended": {
+      "adminDescription": "Deneme süreniz sona erdi veya aboneliğiniz artık geçerli değil. Z8'i kullanmaya devam etmek için faturalandırmayı güncelleyin.",
+      "goToBilling": "Faturalandırmaya git",
+      "memberDescription": "Bu kuruluş askıya alındı. Faturalandırmayı güncellemek için bir kuruluş yöneticisiyle iletişime geçin.",
+      "title": "Kuruluş askıya alındı"
+    },
+    "trialBanner": {
+      "description": "{days} gün kaldı. Ödeme bilgilerini şimdi ekleyin; ücretli aboneliğiniz deneme süresinden sonra başlar.",
+      "dismiss": "Deneme sürümü başlığını kapat",
+      "title": "14 günlük deneme süresi aktif",
+      "upgrade": "Yükselt"
+    }
+  },
+  "colors": {
+    "blue": "Mavi",
+    "green": "Yeşil",
+    "indigo": "Çivit Mavisi",
+    "orange": "Turuncu",
+    "pink": "Pembe",
+    "purple": "Mor",
+    "red": "Kırmızı",
+    "teal": "Deniz Mavisi"
+  },
+  "common": {
+    "actions": "Eylemler",
+    "active": "Aktif",
+    "add": "Ekle",
+    "adding": "Ekleniyor...",
+    "all": "Tümü",
+    "approve": "Onayla",
+    "assign": "Ata",
+    "back": "Geri",
+    "cancel": "İptal",
+    "clear": "Temizle",
+    "clearSearch": "Aramayı temizle",
+    "clearSelection": "Temizle",
+    "close": "Kapat",
+    "confirm": "Onayla",
+    "continue": "Devam et",
+    "copy": "Kopyala",
+    "create": "Oluştur",
+    "current": "Mevcut",
+    "days": {
+      "friday": "Cuma",
+      "label": "günler",
+      "monday": "Pazartesi",
+      "saturday": "Cumartesi",
+      "sunday": "Pazar",
+      "thursday": "Perşembe",
+      "tuesday": "Salı",
+      "wednesday": "Çarşamba"
+    },
+    "delete": "Sil",
+    "deleting": "Siliniyor...",
+    "description": "Açıklama",
+    "deselectAll": "Tümünün Seçimini Kaldır",
+    "details": "Ayrıntılar",
+    "download": "İndir",
+    "duplicate": "Çoğalt",
+    "edit": "Düzenle",
+    "enabled": "Etkin",
+    "error": "Hata",
+    "error-occurred": "Bir hata oluştu",
+    "gender": {
+      "female": "Kadın",
+      "male": "Erkek",
+      "other": "Diğer"
+    },
+    "goToDashboard": "Panele Git",
+    "inactive": "Etkin değil",
+    "label": "Etiket",
+    "loading": "Yükleniyor...",
+    "loadMore": "Daha Fazla Yükle",
+    "months": {
+      "april": "Nisan",
+      "august": "Ağustos",
+      "december": "Aralık",
+      "february": "Şubat",
+      "january": "Ocak",
+      "july": "Temmuz",
+      "june": "Haziran",
+      "march": "Mart",
+      "may": "Mayıs",
+      "november": "Kasım",
+      "october": "Ekim",
+      "september": "Eylül"
+    },
+    "more": "daha fazla",
+    "moreActions": "Diğer eylemler",
+    "moveDown": "Aşağı taşı",
+    "moveUp": "Yukarı taşı",
+    "name": "Ad",
+    "never": "Asla",
+    "new": "Yeni",
+    "next": "İleri",
+    "notApplicable": "N/A",
+    "not-available": "Mevcut değil",
+    "open": "Aç",
+    "openEnded": "Ucu açık",
+    "openMenu": "Menüyü aç",
+    "optional": "isteğe bağlı",
+    "or": "Veya",
+    "pending": "Beklemede",
+    "present": "Mevcut",
+    "previous": "Önceki",
+    "recovering": "Kurtarılıyor...",
+    "refresh": "Yenile",
+    "refreshing": "Yenileniyor...",
+    "reject": "Reddet",
+    "rejecting": "Reddediliyor…",
+    "remove": "Kaldır",
+    "removing": "Kaldırılıyor...",
+    "reset": "Sıfırla",
+    "retry": "Yeniden dene",
+    "save": "Kaydet",
+    "saveChanges": "Değişiklikleri Kaydet",
+    "saving": "Kaydediliyor...",
+    "selectAll": "Tümünü Seç",
+    "selected": "seçili",
+    "select-language": "Dil seç",
+    "set": "ayarla",
+    "sets": "setler",
+    "skip": "Atla",
+    "start": "Başlat",
+    "status": "Durum",
+    "submitting": "Gönderiliyor…",
+    "sw": {
+      "update": {
+        "description": "Yeni bir sürüm hazır. Güncellemek için yeniden yükleyin.",
+        "later": "Daha sonra",
+        "reload": "Yeniden yükle",
+        "title": "Güncelleme mevcut"
+      }
+    },
+    "to": "ile",
+    "today": "Bugün",
+    "unexpectedError": "Beklenmedik bir hata oluştu",
+    "unknown": "Bilinmiyor",
+    "unknownEmployee": "Bilinmeyen Çalışan",
+    "unknownTeam": "Bilinmeyen Ekip",
+    "unnamed": "İsimsiz",
+    "update": "Güncelle",
+    "updating": "Güncelleniyor...",
+    "uploading": "Yükleniyor...",
+    "validate": "Doğrula",
+    "validationError": "Doğrulama hatası",
+    "weekdays": {
+      "fr": "Cu",
+      "fri": "Cum",
+      "mo": "Pzt",
+      "mon": "Pzt",
+      "sa": "Ct",
+      "sat": "Cmt",
+      "su": "Paz",
+      "sun": "Paz",
+      "th": "Per",
+      "thu": "Per",
+      "tu": "Sal",
+      "tue": "Sal",
+      "we": "Çar",
+      "wed": "Çar"
+    }
+  },
+  "employeeSelect": {
+    "countSelected": "{count} çalışan seçildi",
+    "countWithMore": "{count} çalışan (+{more} daha)",
+    "noEmployeesFound": "Çalışan bulunamadı",
+    "role": "Rol",
+    "searchPlaceholder": "İsim, e-posta veya pozisyon ile ara...",
+    "selected": "{count} seçildi",
+    "selectEmployee": "Çalışan seç",
+    "selectEmployees": "Çalışanları seç",
+    "selectMultipleEmployees": "Listeden bir veya daha fazla çalışan seçin",
+    "selectOneEmployee": "Listeden bir çalışan seçin",
+    "status": "Durum",
+    "team": "Ekip",
+    "totalEmployees": "{count} çalışan",
+    "tryDifferentSearch": "Aramanızı veya filtrelerinizi değiştirmeyi deneyin"
+  },
+  "errors": {
+    "failedToLoad": "Veri yüklenemedi",
+    "noEmployee": {
+      "contactAdmin": "Yöneticiyle İletişime Geçin",
+      "createOrg": "Organizasyon Oluştur",
+      "description": "${feature} için bir çalışan profiline ihtiyacınız var. Lütfen bir organizasyon oluşturun veya yöneticinizle iletişime geçin.",
+      "emailBody": "Merhaba,\n\nPlatform özelliklerine erişebilmek için bir çalışan profiline ihtiyacım var. Bu konuda bana yardımcı olabilir misiniz?\n\nTeşekkürler!",
+      "emailSubject": "Çalışan Profili Kurulumu Gerekli",
+      "helpText": "Bir organizasyona davet edildiyseniz, yöneticinizden çalışan profilinizi oluşturmasını isteyin.",
+      "title": "Çalışan Profili Gerekli"
+    },
+    "noOrganization": {
+      "createOrg": "Organizasyon Oluştur",
+      "description": "Henüz herhangi bir organizasyonun parçası değilsiniz. Başlamak için bir tane oluşturun veya bir davetiye bekleyin.",
+      "title": "Organizasyon Bulunamadı",
+      "waiting": "Davetiye mi bekliyorsunuz?",
+      "waitingDesc": "Yöneticiniz size bir davet e-postası gönderecek. Gelen kutunuzu ve spam klasörünüzü kontrol edin."
+    },
+    "unexpected": {
+      "digest": "Referans: {digest}"
+    }
+  },
+  "generic": {
+    "done": "Tamam",
+    "submit": "Gönder"
+  },
+  "header": {
+    "clock-in": "Giriş Yap",
+    "clock-out": "Çıkış Yap"
+  },
+  "info": {
+    "agb": "Şartlar ve Koşullar",
+    "back-to-login": "Giriş ekranına dön",
+    "imprint": "Künye",
+    "trust-center": "Güven Merkezi"
+  },
+  "nav": {
+    "absences": "İzinler",
+    "approvals": "Onaylar",
+    "calendar": "Takvim",
+    "compliance": "Uyumluluk",
+    "dashboard": "Panel",
+    "feedback": "Geri bildirim",
+    "get-help": "Yardım Al",
+    "my-requests": "Taleplerim",
+    "org-explorer": "Kuruluş Gezgini",
+    "platform-admin": "Platform Yöneticisi",
+    "reports": "Raporlar",
+    "scheduling": "Planlama",
+    "settings": "Ayarlar",
+    "team": "Ekip",
+    "teamAbsences": "Ekip Devamsızlıkları",
+    "team-label": "Ekip",
+    "time-tracking": "Zaman Takibi",
+    "travel-expenses": "Seyahat Masrafları",
+    "worksCouncil": "İşçi Konseyi"
+  },
+  "notifications": {
+    "actions": {
+      "deleteAll": "Hepsini sil",
+      "markAllRead": "Hepsini okundu olarak işaretle",
+      "markAsRead": "Okundu olarak işaretle",
+      "markRead": "Okundu olarak işaretle",
+      "settings": "Bildirim ayarları",
+      "viewAll": "Tüm bildirimleri görüntüle"
+    },
+    "content": {
+      "teamMemberAdded": {
+        "message": "{performedByName} tarafından {teamName} ekibine eklendiniz.",
+        "title": "Ekibe eklendi"
+      }
+    },
+    "description": "Güncellemeleri, onayları ve sistem uyarılarını tek bir zaman çizelgesinde inceleyin.",
+    "empty": {
+      "description": "Her şey güncel! Yeni bildirimler burada görünecektir.",
+      "inboxDescription": "Her şey güncel. Yeni güncellemeler burada görünecektir.",
+      "noMatchesDescription": "Bu gelen kutusu görünümünü genişletmek için arama veya okuma filtresini ayarlayın.",
+      "noMatchesTitle": "Eşleşen bildirim yok",
+      "title": "Bildirim yok",
+      "unreadDescription": "Her şey güncel. Yeni okunmamış güncellemeler burada görünecektir.",
+      "unreadTitle": "Okunmamış bildirim yok"
+    },
+    "error": {
+      "title": "Bildirimler yüklenemedi"
+    },
+    "filters": {
+      "all": "Tümü",
+      "ariaLabel": "Bildirimleri okuma durumuna göre filtrele",
+      "read": "Okundu",
+      "unread": "Okunmadı"
+    },
+    "preferences": {
+      "disabled": "Bildirim devre dışı bırakıldı",
+      "enabled": "Bildirim etkinleştirildi",
+      "permissionModal": {
+        "benefits": {
+          "pendingApprovals": "Bekleyen onay talepleri için uyarılar alın",
+          "requestUpdates": "Talepleriniz onaylandığında veya reddedildiğinde bildirim alın",
+          "teamSecurity": "Ekip ve güvenlik güncellemelerinden haberdar olun"
+        },
+        "description": "Uygulamayı kullanmadığınız zamanlarda bile onaylar, zaman düzeltmeleri ve önemli ekip değişiklikleri hakkında anlık güncellemeler almak için anlık bildirimleri etkinleştirin.",
+        "enable": "Bildirimleri Etkinleştir",
+        "notNow": "Şimdi Değil",
+        "title": "Güncel Kalın"
+      },
+      "push": {
+        "blockedDescription": "Anlık bildirimler tarayıcınız tarafından engellenmiş. Etkinleştirmek için tarayıcı ayarlarınızı güncellemeniz gerekiyor.",
+        "blockedHelp": "Tarayıcınızın adres çubuğundaki kilit simgesine tıklayın ve bu site için bildirimlere izin verin, ardından sayfayı yenileyin.",
+        "blockedTitle": "Anlık Bildirimler Engellendi",
+        "enableButton": "Anlık Bildirimleri Etkinleştir",
+        "enableDescription": "Uygulamayı kullanmadığınız zamanlarda bile anında bildirim alın",
+        "enabledIndicator": "Anlık bildirimler etkinleştirildi",
+        "enabledToast": "Anlık bildirimler etkin",
+        "enabledToastDescription": "Artık tarayıcı anlık bildirimlerini alacaksınız",
+        "enableFailedToast": "Anlık bildirimler etkinleştirilemedi",
+        "enableTitle": "Anlık Bildirimleri Etkinleştir",
+        "errorToast": "Anlık bildirim hatası"
+      },
+      "toggleAria": "{type} için {channel} bildirimleri",
+      "updateFailed": "Tercih güncellenemedi"
+    },
+    "search": {
+      "ariaLabel": "Bildirimleri ara",
+      "placeholder": "Bildirimleri ara..."
+    },
+    "selection": {
+      "selectAll": "Görünenlerin tümünü seç",
+      "selectAllAria": "Görünen tüm bildirimleri seç",
+      "selectNamedAria": "{title} öğesini seç",
+      "visibleSelected": "{count} görünür öğe seçildi"
+    },
+    "timeline": {
+      "earlier": "Daha önce",
+      "today": "Bugün",
+      "yesterday": "Dün"
+    },
+    "title": "Bildirimler",
+    "toasts": {
+      "deleted": "{count} bildirim silindi",
+      "deleteFailed": "Bildirimler silinemedi",
+      "markedRead": "{count} bildirim okundu olarak işaretlendi",
+      "markReadFailed": "Bildirimler okundu olarak işaretlenemedi"
+    },
+    "unreadBadge": "{count} okunmamış",
+    "unreadCountOverflow": "99+"
+  },
+  "offline": {
+    "banner": {
+      "offline": "Çevrimdışısınız",
+      "offlineWithPending": "Çevrimdışı - {count} etkinlik bekliyor",
+      "pending": "{count} etkinlik senkronizasyon bekliyor",
+      "retry": "Yeniden dene",
+      "syncing": "{count} etkinlik senkronize ediliyor..."
+    }
+  },
+  "presence": {
+    "clockedIn": "Giriş yapıldı",
+    "clockedOut": "Çıkış yapıldı"
+  },
+  "roles": {
+    "admin": "Yönetici",
+    "employee": "Çalışan",
+    "manager": "Yönetici"
+  },
+  "status": {
+    "active": "Aktif",
+    "inactive": "Pasif"
+  },
+  "table": {
+    "clearFilters": "Filtreleri temizle",
+    "clearSort": "Sıralamayı temizle",
+    "description": "Son 6 aydaki toplam ziyaretçi sayısı gösteriliyor. Bu, düzeni test etmek için yazılmış rastgele bir metindir. Birden fazla satıra yayılır ve kaydırılması gerekir.",
+    "goToFirstPage": "İlk sayfaya git",
+    "goToLastPage": "Son sayfaya git",
+    "goToNextPage": "Sonraki sayfaya git",
+    "goToPreviousPage": "Önceki sayfaya git",
+    "header": "Başlık",
+    "limit": "Sınır",
+    "noResults": "Sonuç bulunamadı.",
+    "pageOfPages": "{total} sayfa içinde {current}",
+    "reviewer": "Gözden Geçiren",
+    "rowsPerPage": "Sayfa başına satır",
+    "searchPlaceholder": "Ara...",
+    "selectedOfTotal": "{total} satırdan {selected} tanesi seçildi",
+    "select-reviewer": "Bir gözden geçiren seçin",
+    "select-status": "Bir durum seçin",
+    "select-type": "Bir tür seçin",
+    "showing-visitors": "Son 6 aydaki toplam ziyaretçi sayısı gösteriliyor",
+    "sortAscending": "Artan",
+    "sortDescending": "Azalan",
+    "status": "Durum",
+    "status-options": {
+      "done": "Tamamlandı",
+      "in-progress": "Devam Ediyor",
+      "not-started": "Başlamadı"
+    },
+    "target": "Hedef",
+    "totalRows": "{total} satır",
+    "trending-up": "Bu ay %5,2 artışta",
+    "type": "Tür",
+    "type-options": {
+      "capabilities": "Yetenekler",
+      "cover-page": "Kapak Sayfası",
+      "design": "Tasarım",
+      "executive-summary": "Yönetici Özeti",
+      "focus-documents": "Odak Belgeler",
+      "narrative": "Anlatım",
+      "table-of-contents": "İçindekiler",
+      "technical-approach": "Teknik Yaklaşım"
+    }
+  },
+  "time": {
+    "am": "ÖÖ",
+    "hoursAndMinutes": "{hours}s {minutes}dk",
+    "hoursOnly": "{hours}s",
+    "pm": "ÖS"
+  },
+  "userAvatar": {
+    "alt": "Kullanıcı avatarı"
+  },
+  "user": {
+    "font-size": "Yazı tipi boyutu",
+    "language": "Dil",
+    "logging-out": "Çıkış yapılıyor...",
+    "log-out": "Çıkış yap",
+    "log-out-failed": "Çıkış yapılamadı. Lütfen tekrar deneyin.",
+    "profile": "Profil",
+    "security": "Güvenlik",
+    "theme": "Tema",
+    "theme-dark": "Koyu",
+    "theme-light": "Açık",
+    "theme-location-required": "Zamana dayalı tema için konum izni gereklidir.",
+    "theme-system": "Sistem",
+    "theme-time": "Zamana dayalı",
+    "theme-time-info": "Zamana dayalı mod {currentMode} modunu kullanıyor. {time} saatinde {nextMode} moduna geçiş yapar.",
+    "theme-toggle": "Temayı değiştir"
+  },
+  "validation": {
+    "first-name-required": "Ad gerekli",
+    "invalid-email": "Geçersiz e-posta adresi",
+    "invalid-password": "Geçersiz şifre",
+    "last-name-required": "Soyad gerekli",
+    "password-required": "Şifre gerekli"
+  },
+  "workBalance": {
+    "label": "Tüm zamanların bakiyesi",
+    "notCalculated": "Henüz hesaplanmadı",
+    "pendingDescription": "Çalışan bu bakiyeyi yakında hesaplayacaktır.",
+    "updatedEveryThreeHours": "Her 3 saatte bir güncellenir"
+  }
 }

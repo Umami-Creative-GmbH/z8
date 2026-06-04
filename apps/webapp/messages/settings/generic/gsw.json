@@ -871,7 +871,26 @@
         "unknown": "Unbekannt",
         "warning": "Warnig"
       },
+      "scheduleControls": {
+        "cancel": "Abbräche",
+        "confirmationLabel": "Bestätigung iigäh",
+        "edit": "Bearbeite",
+        "failed": "Änderig vom Ziitplan isch fehlgschlage",
+        "highRiskDescription": "D Ändere vo däm Job chan d Abrechnig, d Bereinigung, Integratione, Compliance oder d Automatisierig vo Abläuf beiflusse.",
+        "highRiskTitle": "Ziitplan mit hohem Risiko",
+        "mismatch": "BullMQ wiicht momentan vom gspicherete Ziitplan ab; de Worker-Start wird das abgliiche.",
+        "presetLabel": "Ziitplan-Vorgab",
+        "readOnly": "Für dä Standard-Ziitplan gits no kei bearbeitbari Vorgab.",
+        "reset": "Zurücksetze",
+        "resetSaved": "Ziitplan zurücksetze",
+        "save": "Ziitplan spichere",
+        "saved": "Ziitplan gspicheret",
+        "warningPrefix": "Mit Warnig gspicheret"
+      },
       "scheduledJobsDescription": "Wiederholbari Jobs, wo im Worker konfiguriert sind. Die laufed automatisch nach Ziitplan.",
+      "schedule": {
+        "overridden": "Überschriebe"
+      },
       "sections": {
         "jobMetrics": "Job-Metrike (letzte 30 Täg)",
         "queueCounts": "Warteschlange-Status",
@@ -885,7 +904,9 @@
         "running": "Am Laufe"
       },
       "table": {
+        "actions": "Aktione",
         "avgDuration": "Durschnittlichi Duur",
+        "default": "Standard",
         "duration": "Duur",
         "error": "Fehler",
         "failed": "Fehlgschlage",

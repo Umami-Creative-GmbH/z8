@@ -871,7 +871,26 @@
         "unknown": "Nieznane",
         "warning": "Ostrzeżenie"
       },
+      "scheduleControls": {
+        "cancel": "Anuluj",
+        "confirmationLabel": "Wpisz potwierdzenie",
+        "edit": "Edytuj",
+        "failed": "Zmiana harmonogramu nie powiodła się",
+        "highRiskDescription": "Zmiana tego zadania może wpłynąć na rozliczenia, czyszczenie, integracje, zgodność lub automatyzację operacyjną.",
+        "highRiskTitle": "Harmonogram wysokiego ryzyka",
+        "mismatch": "BullMQ różni się obecnie od zapisanego harmonogramu; uruchomienie procesu roboczego dokona synchronizacji.",
+        "presetLabel": "Ustawienie wstępne harmonogramu",
+        "readOnly": "Ten domyślny harmonogram nie posiada jeszcze edytowalnego ustawienia wstępnego.",
+        "reset": "Resetuj",
+        "resetSaved": "Resetowanie harmonogramu",
+        "save": "Zapisz harmonogram",
+        "saved": "Harmonogram zapisany",
+        "warningPrefix": "Zapisano z ostrzeżeniem"
+      },
       "scheduledJobsDescription": "Powtarzalne zadania skonfigurowane w procesie roboczym (worker). Uruchamiają się automatycznie zgodnie z harmonogramem.",
+      "schedule": {
+        "overridden": "Zastąpione"
+      },
       "sections": {
         "jobMetrics": "Metryki zadań (ostatnie 30 dni)",
         "queueCounts": "Status kolejki",
@@ -885,7 +904,9 @@
         "running": "Uruchomione"
       },
       "table": {
+        "actions": "Akcje",
         "avgDuration": "Śr. czas trwania",
+        "default": "Domyślne",
         "duration": "Czas trwania",
         "error": "Błąd",
         "failed": "Nieudane",

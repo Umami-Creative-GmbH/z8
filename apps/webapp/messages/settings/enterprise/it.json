@@ -135,7 +135,6 @@
         "customDomain": "Dominio personalizzato",
         "customDomainDescription": "Configura un dominio personalizzato per abilitare una pagina di accesso specifica per l'organizzazione con il tuo branding.",
         "defaultUrl": {
-          "alias": "Alias ID organizzazione",
           "canonical": "Canonico"
         },
         "defaultUrls": "URL predefiniti",

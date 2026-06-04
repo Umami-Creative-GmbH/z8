@@ -871,7 +871,26 @@
         "unknown": "Inconnu",
         "warning": "Avertissement"
       },
+      "scheduleControls": {
+        "cancel": "Annuler",
+        "confirmationLabel": "Confirmer la saisie",
+        "edit": "Modifier",
+        "failed": "Échec de la modification du planning",
+        "highRiskDescription": "La modification de cette tâche peut affecter la facturation, le nettoyage, les intégrations, la conformité ou l'automatisation opérationnelle.",
+        "highRiskTitle": "Planning à haut risque",
+        "mismatch": "Le planning actuel de BullMQ diffère du planning enregistré ; le démarrage du worker le réconciliera.",
+        "presetLabel": "Préréglage du planning",
+        "readOnly": "Ce planning par défaut n'a pas encore de préréglage modifiable.",
+        "reset": "Réinitialiser",
+        "resetSaved": "Réinitialisation du planning",
+        "save": "Enregistrer le planning",
+        "saved": "Planning enregistré",
+        "warningPrefix": "Enregistré avec un avertissement"
+      },
       "scheduledJobsDescription": "Jobs répétables configurés dans le worker. Ils s'exécutent automatiquement selon la planification.",
+      "schedule": {
+        "overridden": "Remplacé"
+      },
       "sections": {
         "jobMetrics": "Métriques des jobs (30 derniers jours)",
         "queueCounts": "État de la file d'attente",
@@ -885,7 +904,9 @@
         "running": "En cours"
       },
       "table": {
+        "actions": "Actions",
         "avgDuration": "Durée moyenne",
+        "default": "Par défaut",
         "duration": "Durée",
         "error": "Erreur",
         "failed": "Échoué",

@@ -871,7 +871,26 @@
         "unknown": "Desconhecido",
         "warning": "Aviso"
       },
+      "scheduleControls": {
+        "cancel": "Cancelar",
+        "confirmationLabel": "Digite a confirmação",
+        "edit": "Editar",
+        "failed": "Falha ao alterar agendamento",
+        "highRiskDescription": "Alterar este trabalho pode afetar o faturamento, limpeza, integrações, conformidade ou automação operacional.",
+        "highRiskTitle": "Agendamento de alto risco",
+        "mismatch": "O BullMQ difere atualmente do agendamento salvo; a inicialização do worker irá reconciliá-lo.",
+        "presetLabel": "Predefinição de agendamento",
+        "readOnly": "Este agendamento padrão ainda não possui uma predefinição editável.",
+        "reset": "Redefinir",
+        "resetSaved": "Redefinição de agendamento",
+        "save": "Salvar agendamento",
+        "saved": "Agendamento salvo",
+        "warningPrefix": "Salvo com aviso"
+      },
       "scheduledJobsDescription": "Jobs repetíveis configurados no worker. Eles são executados automaticamente conforme o agendamento.",
+      "schedule": {
+        "overridden": "Substituído"
+      },
       "sections": {
         "jobMetrics": "Métricas do Job (Últimos 30 dias)",
         "queueCounts": "Status da Fila",
@@ -885,7 +904,9 @@
         "running": "Em execução"
       },
       "table": {
+        "actions": "Ações",
         "avgDuration": "Duração Média",
+        "default": "Padrão",
         "duration": "Duração",
         "error": "Erro",
         "failed": "Com falha",

@@ -210,6 +210,10 @@
       "workPeriod": "Περίοδος εργασίας",
       "workPeriodPending": "Εκκρεμεί έγκριση"
     },
+    "mobileControls": {
+      "description": "Επιλέξτε ποιες καταχωρίσεις ημερολογίου θα είναι ορατές.",
+      "title": "Φίλτρα & Υπόμνημα"
+    },
     "monthSummary": {
       "calendarWeek": "ΕΒ",
       "description": "Ημερήσιες, εβδομαδιαίες και μηνιαίες ώρες πολιτικής",

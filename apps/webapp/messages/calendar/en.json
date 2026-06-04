@@ -210,6 +210,10 @@
       "workPeriod": "Work Period",
       "workPeriodPending": "Pending Approval"
     },
+    "mobileControls": {
+      "description": "Choose which calendar entries are visible.",
+      "title": "Filters & Legend"
+    },
     "monthSummary": {
       "calendarWeek": "CW",
       "description": "Daily, weekly, and monthly policy hours",

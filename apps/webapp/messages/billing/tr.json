@@ -24,6 +24,7 @@
     },
     "choosePlan": "Planınızı Seçin",
     "choosePlanDescription": "14 günlük ücretsiz deneme ile başlayın. Başlamak için kredi kartı gerekmez.",
+    "chooseUpgradePlanDescription": "Şimdi bir faturalandırma periyodu seçin. Ücretli aboneliğiniz yalnızca kalan deneme süresinden sonra başlar.",
     "currentPlan": "Mevcut Plan",
     "days": "{count} gün",
     "description": "Aboneliğinizi ve faturalandırma bilgilerinizi yönetin",
@@ -45,7 +46,6 @@
     "features": {
       "allFeatures": "Tüm özellikler dahil",
       "cancelAnytime": "İstediğiniz zaman iptal edin",
-      "trial": "14 gün ücretsiz deneme",
       "yearlyDiscount": "Aylık ödemeye göre %25 indirim"
     },
     "interval": {
@@ -81,6 +81,8 @@
     },
     "title": "Faturalandırma ve Abonelik",
     "trialEnds": "Deneme Bitişi",
+    "upgradeMonthly": "Aylık Yükseltme",
+    "upgradeYearly": "Yıllık Yükseltme",
     "vatNotice": "Gösterilen fiyatlar KDV hariç net fiyatlardır. Uygulanabilir durumlarda KDV eklenecektir.",
     "yearTotal": "Toplam €{amount}/yıl"
   }

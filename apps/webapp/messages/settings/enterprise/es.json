@@ -135,7 +135,6 @@
         "customDomain": "Dominio personalizado",
         "customDomainDescription": "Configure un dominio personalizado para habilitar una página de inicio de sesión específica de la organización con su marca.",
         "defaultUrl": {
-          "alias": "Alias del ID de la organización",
           "canonical": "Canónico"
         },
         "defaultUrls": "URLs predeterminadas",

@@ -24,7 +24,7 @@
     },
     "choosePlan": "Scegli il tuo piano",
     "choosePlanDescription": "Inizia con una prova gratuita di 14 giorni. Nessuna carta di credito richiesta per iniziare.",
-    "chooseUpgradePlanDescription": "Scegli ora una cadenza di fatturazione. Il tuo abbonamento a pagamento inizia solo dopo il periodo di prova rimanente.",
+    "chooseUpgradePlanDescription": "Scegli ora una frequenza di fatturazione. Il tuo abbonamento a pagamento inizierà solo dopo il periodo di prova rimanente.",
     "currentPlan": "Piano attuale",
     "days": "{count} giorni",
     "description": "Gestisci il tuo abbonamento e i dettagli di fatturazione",
@@ -46,7 +46,6 @@
     "features": {
       "allFeatures": "Tutte le funzionalità incluse",
       "cancelAnytime": "Annulla in qualsiasi momento",
-      "trial": "Prova gratuita di 14 giorni",
       "yearlyDiscount": "Sconto del 25% rispetto al mensile"
     },
     "interval": {
@@ -82,8 +81,8 @@
     },
     "title": "Fatturazione e Abbonamento",
     "trialEnds": "Fine Prova",
-    "upgradeMonthly": "Passa al mensile",
-    "upgradeYearly": "Passa all'annuale",
+    "upgradeMonthly": "Passa a mensile",
+    "upgradeYearly": "Passa a annuale",
     "vatNotice": "I prezzi mostrati sono prezzi netti IVA esclusa. L'IVA verrà aggiunta ove applicabile.",
     "yearTotal": "€{amount}/anno totale"
   }

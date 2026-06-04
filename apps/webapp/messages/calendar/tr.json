@@ -210,6 +210,10 @@
       "workPeriod": "Çalışma Dönemi",
       "workPeriodPending": "Onay Bekliyor"
     },
+    "mobileControls": {
+      "description": "Hangi takvim girişlerinin görüneceğini seçin.",
+      "title": "Filtreler ve Gösterge"
+    },
     "monthSummary": {
       "calendarWeek": "Takvim Haftası",
       "description": "Günlük, haftalık ve aylık politika saatleri",

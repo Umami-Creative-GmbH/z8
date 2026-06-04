@@ -113,13 +113,16 @@
         "trialing": "Okres próbny"
       },
       "table": {
+        "actions": "Akcje",
         "billing": "Rozliczenia",
         "created": "Utworzono",
+        "demoUsers": "Użytkownicy demo",
+        "licensedSeats": "Licencjonowane miejsca",
         "noSubscriptions": "Brak subskrypcji",
         "organization": "Organizacja",
         "periodEnd": "Koniec okresu",
-        "seats": "Miejsca",
-        "status": "Status"
+        "status": "Status",
+        "usedSeats": "Wykorzystane miejsca"
       },
       "title": "Panel rozliczeń"
     },
@@ -129,6 +132,16 @@
       },
       "clientDescription": "Bezpieczna konfiguracja platformy i stan usług na poziomie aplikacji. Ostatnia aktualizacja: {date}.",
       "description": "Bezpieczna konfiguracja platformy i kontrola stanu wdrożenia aplikacji.",
+      "emailTest": {
+        "actions": {
+          "send": "Wyślij testowy e-mail"
+        },
+        "description": "Wyślij e-mail diagnostyczny za pośrednictwem systemowego transportu poczty.",
+        "messageId": "Identyfikator wiadomości: {messageId}",
+        "recipient": "E-mail odbiorcy",
+        "success": "Testowy e-mail wysłany do {recipient}.",
+        "title": "Test dostarczania e-maila"
+      },
       "keyManager": {
         "actions": {
           "test": "Testuj szyfrowanie"

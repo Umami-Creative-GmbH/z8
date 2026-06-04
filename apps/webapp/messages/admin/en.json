@@ -113,13 +113,16 @@
         "trialing": "Trial"
       },
       "table": {
+        "actions": "Actions",
         "billing": "Billing",
         "created": "Created",
+        "demoUsers": "Demo users",
+        "licensedSeats": "Licensed seats",
         "noSubscriptions": "No subscriptions yet",
         "organization": "Organization",
         "periodEnd": "Period End",
-        "seats": "Seats",
-        "status": "Status"
+        "status": "Status",
+        "usedSeats": "Used seats"
       },
       "title": "Billing Dashboard"
     },
@@ -129,6 +132,16 @@
       },
       "clientDescription": "Safe platform configuration and app-level service health. Last refreshed {date}.",
       "description": "Safe platform configuration and app-only deployment health checks.",
+      "emailTest": {
+        "actions": {
+          "send": "Send test email"
+        },
+        "description": "Send a diagnostics email through the system email transport.",
+        "messageId": "Message ID: {messageId}",
+        "recipient": "Recipient email",
+        "success": "Test email sent to {recipient}.",
+        "title": "Email Delivery Test"
+      },
       "keyManager": {
         "actions": {
           "test": "Test encryption"

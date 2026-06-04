@@ -24,7 +24,7 @@
     },
     "choosePlan": "Escolha seu plano",
     "choosePlanDescription": "Comece com um teste gratuito de 14 dias. Sem necessidade de cartão de crédito para começar.",
-    "chooseUpgradePlanDescription": "Escolha agora uma frequência de faturamento. Sua assinatura paga começa apenas após o período de teste restante.",
+    "chooseUpgradePlanDescription": "Escolha uma cadência de faturamento agora. Sua assinatura paga começa apenas após o período de teste restante.",
     "currentPlan": "Plano atual",
     "days": "{count} dias",
     "description": "Gerencie sua assinatura e detalhes de faturamento",
@@ -46,7 +46,6 @@
     "features": {
       "allFeatures": "Todos os recursos incluídos",
       "cancelAnytime": "Cancele a qualquer momento",
-      "trial": "Teste gratuito de 14 dias",
       "yearlyDiscount": "25% de desconto em relação ao mensal"
     },
     "interval": {
@@ -82,8 +81,8 @@
     },
     "title": "Faturamento e Assinatura",
     "trialEnds": "Fim do Teste",
-    "upgradeMonthly": "Atualizar mensalmente",
-    "upgradeYearly": "Atualizar anualmente",
+    "upgradeMonthly": "Assinar mensalmente",
+    "upgradeYearly": "Assinar anualmente",
     "vatNotice": "Os preços exibidos são preços líquidos, sem IVA. O IVA será adicionado quando aplicável.",
     "yearTotal": "€{amount}/ano total"
   }

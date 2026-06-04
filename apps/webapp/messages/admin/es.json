@@ -113,13 +113,16 @@
         "trialing": "Prueba"
       },
       "table": {
+        "actions": "Acciones",
         "billing": "Facturación",
         "created": "Creado",
+        "demoUsers": "Usuarios de demostración",
+        "licensedSeats": "Licencias disponibles",
         "noSubscriptions": "Aún no hay suscripciones",
         "organization": "Organización",
         "periodEnd": "Fin del periodo",
-        "seats": "Asientos",
-        "status": "Estado"
+        "status": "Estado",
+        "usedSeats": "Licencias utilizadas"
       },
       "title": "Panel de facturación"
     },
@@ -129,6 +132,16 @@
       },
       "clientDescription": "Configuración segura de la plataforma y estado del servicio a nivel de aplicación. Última actualización: {date}.",
       "description": "Configuración segura de la plataforma y comprobaciones de estado de implementación solo para aplicaciones.",
+      "emailTest": {
+        "actions": {
+          "send": "Enviar correo electrónico de prueba"
+        },
+        "description": "Enviar un correo electrónico de diagnóstico a través del transporte de correo del sistema.",
+        "messageId": "ID del mensaje: {messageId}",
+        "recipient": "Correo electrónico del destinatario",
+        "success": "Correo electrónico de prueba enviado a {recipient}.",
+        "title": "Prueba de entrega de correo electrónico"
+      },
       "keyManager": {
         "actions": {
           "test": "Probar cifrado"

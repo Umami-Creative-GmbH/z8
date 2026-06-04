@@ -113,13 +113,16 @@
         "trialing": "Prova"
       },
       "table": {
+        "actions": "Azioni",
         "billing": "Fatturazione",
         "created": "Creato",
+        "demoUsers": "Utenti demo",
+        "licensedSeats": "Posti con licenza",
         "noSubscriptions": "Nessun abbonamento ancora",
         "organization": "Organizzazione",
         "periodEnd": "Fine periodo",
-        "seats": "Posti",
-        "status": "Stato"
+        "status": "Stato",
+        "usedSeats": "Posti utilizzati"
       },
       "title": "Dashboard di fatturazione"
     },
@@ -129,6 +132,16 @@
       },
       "clientDescription": "Configurazione sicura della piattaforma e stato del servizio a livello di app. Ultimo aggiornamento {date}.",
       "description": "Configurazione sicura della piattaforma e controlli di integrità del deployment solo app.",
+      "emailTest": {
+        "actions": {
+          "send": "Invia email di test"
+        },
+        "description": "Invia un'email di diagnostica tramite il sistema di trasporto email.",
+        "messageId": "ID messaggio: {messageId}",
+        "recipient": "Email destinatario",
+        "success": "Email di test inviata a {recipient}.",
+        "title": "Test di recapito email"
+      },
       "keyManager": {
         "actions": {
           "test": "Test di crittografia"

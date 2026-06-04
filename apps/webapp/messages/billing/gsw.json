@@ -24,6 +24,7 @@
     },
     "choosePlan": "Wähl diin Plan",
     "choosePlanDescription": "Starte mit ere 14-tägige Testphase. Kei Kreditcharte zum Starte erforderlich.",
+    "chooseUpgradePlanDescription": "Wähl jetzt en Abrechnigszyklus. Dis kostenpflichtige Abonnement fangt erst nach em Rescht vo de Testzyt a.",
     "currentPlan": "Aktuelle Plan",
     "days": "{count} Täg",
     "description": "Abo und Rechnigsdetails verwalte",
@@ -45,7 +46,6 @@
     "features": {
       "allFeatures": "Alli Funktione inbegriffe",
       "cancelAnytime": "Jederziit chündbar",
-      "trial": "14 Täg choschtelos teste",
       "yearlyDiscount": "25% Rabatt im Vergliich zur monatliche Zahlig"
     },
     "interval": {
@@ -81,6 +81,8 @@
     },
     "title": "Abrechnig & Abo",
     "trialEnds": "Testabo endet",
+    "upgradeMonthly": "Uf monatlich upgrade",
+    "upgradeYearly": "Uf jährlich upgrade",
     "vatNotice": "D Priise sind Nettopriise exklusive MwSt. D MwSt. wird da, wo aagwändet, dezuegrächnet.",
     "yearTotal": "€{amount}/Jahr total"
   }

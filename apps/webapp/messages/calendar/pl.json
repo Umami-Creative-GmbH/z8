@@ -210,6 +210,10 @@
       "workPeriod": "Okres pracy",
       "workPeriodPending": "Oczekuje na zatwierdzenie"
     },
+    "mobileControls": {
+      "description": "Wybierz, które wpisy w kalendarzu mają być widoczne.",
+      "title": "Filtry i legenda"
+    },
     "monthSummary": {
       "calendarWeek": "KT",
       "description": "Dzienne, tygodniowe i miesięczne godziny polityki",

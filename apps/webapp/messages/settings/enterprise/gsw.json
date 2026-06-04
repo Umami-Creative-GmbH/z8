@@ -135,7 +135,6 @@
         "customDomain": "Eigeti Domain",
         "customDomainDescription": "Konfiguriere e eigeti Domain, zum e organisationsspezifischi Aamäldesiite mit dim Branding z'aktiviere.",
         "defaultUrl": {
-          "alias": "Organisations-ID-Alias",
           "canonical": "Kanonisch"
         },
         "defaultUrls": "Standard-URLs",

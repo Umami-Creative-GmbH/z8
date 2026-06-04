@@ -113,13 +113,16 @@
         "trialing": "Teste"
       },
       "table": {
+        "actions": "Ações",
         "billing": "Faturamento",
         "created": "Criado",
+        "demoUsers": "Usuários de demonstração",
+        "licensedSeats": "Assentos licenciados",
         "noSubscriptions": "Nenhuma assinatura ainda",
         "organization": "Organização",
         "periodEnd": "Fim do período",
-        "seats": "Assentos",
-        "status": "Status"
+        "status": "Status",
+        "usedSeats": "Assentos utilizados"
       },
       "title": "Painel de faturamento"
     },
@@ -129,6 +132,16 @@
       },
       "clientDescription": "Configuração segura da plataforma e integridade do serviço em nível de aplicativo. Última atualização em {date}.",
       "description": "Configuração segura da plataforma e verificações de integridade de implantação apenas de aplicativos.",
+      "emailTest": {
+        "actions": {
+          "send": "Enviar e-mail de teste"
+        },
+        "description": "Enviar um e-mail de diagnóstico através do transporte de e-mail do sistema.",
+        "messageId": "ID da mensagem: {messageId}",
+        "recipient": "E-mail do destinatário",
+        "success": "E-mail de teste enviado para {recipient}.",
+        "title": "Teste de entrega de e-mail"
+      },
       "keyManager": {
         "actions": {
           "test": "Testar criptografia"

@@ -24,6 +24,7 @@
     },
     "choosePlan": "Wybierz swój plan",
     "choosePlanDescription": "Rozpocznij 14-dniowy bezpłatny okres próbny. Nie wymagamy karty kredytowej na start.",
+    "chooseUpgradePlanDescription": "Wybierz teraz cykl rozliczeniowy. Twoja płatna subskrypcja rozpocznie się dopiero po zakończeniu okresu próbnego.",
     "currentPlan": "Obecny plan",
     "days": "{count} dni",
     "description": "Zarządzaj subskrypcją i danymi rozliczeniowymi",
@@ -45,7 +46,6 @@
     "features": {
       "allFeatures": "Wszystkie funkcje w cenie",
       "cancelAnytime": "Anuluj w dowolnym momencie",
-      "trial": "14-dniowy bezpłatny okres próbny",
       "yearlyDiscount": "25% zniżki w porównaniu z płatnością miesięczną"
     },
     "interval": {
@@ -81,6 +81,8 @@
     },
     "title": "Rozliczenia i subskrypcja",
     "trialEnds": "Koniec okresu próbnego",
+    "upgradeMonthly": "Przejdź na plan miesięczny",
+    "upgradeYearly": "Przejdź na plan roczny",
     "vatNotice": "Podane ceny są cenami netto bez VAT. VAT zostanie doliczony, jeśli ma zastosowanie.",
     "yearTotal": "{amount} €/rok łącznie"
   }

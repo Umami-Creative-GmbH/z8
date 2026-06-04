@@ -10,7 +10,7 @@
       "description": "Laden Sie Ihren Auftragsverarbeitungsvertrag gemäß Art. 28 DSGVO herunter.",
       "hosting": {
         "descriptionPrefix": "Alle Daten werden auf Servern der ",
-        "descriptionSuffix": " gehostet. Derzeit eingesetzte Subprozessoren:",
+        "descriptionSuffix": " gehostet. Es werden keine weiteren Subprozessoren eingesetzt.",
         "title": "Hosting & Subprozessoren"
       },
       "title": "Auftragsverarbeitungsvertrag (AVV)"
@@ -871,7 +871,26 @@
         "unknown": "Unbekannt",
         "warning": "Warnung"
       },
+      "scheduleControls": {
+        "cancel": "Abbrechen",
+        "confirmationLabel": "Bestätigung eingeben",
+        "edit": "Bearbeiten",
+        "failed": "Zeitplanänderung fehlgeschlagen",
+        "highRiskDescription": "Das Ändern dieses Jobs kann sich auf Abrechnung, Bereinigung, Integrationen, Compliance oder betriebliche Automatisierung auswirken.",
+        "highRiskTitle": "Zeitplan mit hohem Risiko",
+        "mismatch": "BullMQ unterscheidet sich derzeit vom gespeicherten Zeitplan; der Worker-Start wird dies abgleichen.",
+        "presetLabel": "Zeitplan-Voreinstellung",
+        "readOnly": "Dieser Standardzeitplan hat noch keine bearbeitbare Voreinstellung.",
+        "reset": "Zurücksetzen",
+        "resetSaved": "Zeitplan zurücksetzen",
+        "save": "Zeitplan speichern",
+        "saved": "Zeitplan gespeichert",
+        "warningPrefix": "Mit Warnung gespeichert"
+      },
       "scheduledJobsDescription": "Im Worker konfigurierte wiederholbare Jobs. Diese werden automatisch nach Zeitplan ausgeführt.",
+      "schedule": {
+        "overridden": "Überschrieben"
+      },
       "sections": {
         "jobMetrics": "Job-Metriken (letzte 30 Tage)",
         "queueCounts": "Warteschlangenstatus",
@@ -885,7 +904,9 @@
         "running": "Wird ausgeführt"
       },
       "table": {
+        "actions": "Aktionen",
         "avgDuration": "Durchschn. Dauer",
+        "default": "Standard",
         "duration": "Dauer",
         "error": "Fehler",
         "failed": "Fehlgeschlagen",

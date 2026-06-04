@@ -210,6 +210,10 @@
       "workPeriod": "Arbeitszeitraum",
       "workPeriodPending": "Ausstehende Genehmigung"
     },
+    "mobileControls": {
+      "description": "Wählen Sie aus, welche Kalendereinträge sichtbar sind.",
+      "title": "Filter & Legende"
+    },
     "monthSummary": {
       "calendarWeek": "KW",
       "description": "Tägliche, wöchentliche und monatliche Richtlinienstunden",

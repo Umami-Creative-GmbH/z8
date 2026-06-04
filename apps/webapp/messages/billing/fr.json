@@ -24,7 +24,7 @@
     },
     "choosePlan": "Choisissez votre formule",
     "choosePlanDescription": "Commencez avec un essai gratuit de 14 jours. Aucune carte bancaire requise pour commencer.",
-    "chooseUpgradePlanDescription": "Choisissez maintenant une cadence de facturation. Votre abonnement payant ne commence qu'après la période d'essai restante.",
+    "chooseUpgradePlanDescription": "Choisissez une fréquence de facturation maintenant. Votre abonnement payant ne débutera qu'après la période d'essai restante.",
     "currentPlan": "Formule actuelle",
     "days": "{count} jours",
     "description": "Gérez votre abonnement et vos informations de facturation",
@@ -46,7 +46,6 @@
     "features": {
       "allFeatures": "Toutes les fonctionnalités incluses",
       "cancelAnytime": "Annulez à tout moment",
-      "trial": "Essai gratuit de 14 jours",
       "yearlyDiscount": "25 % de réduction par rapport au mensuel"
     },
     "interval": {
@@ -82,8 +81,8 @@
     },
     "title": "Facturation et abonnement",
     "trialEnds": "Fin de l'essai",
-    "upgradeMonthly": "Passer au mensuel",
-    "upgradeYearly": "Passer à l'annuel",
+    "upgradeMonthly": "Passer à la facturation mensuelle",
+    "upgradeYearly": "Passer à la facturation annuelle",
     "vatNotice": "Les prix affichés sont des prix nets hors TVA. La TVA sera ajoutée le cas échéant.",
     "yearTotal": "€{amount}/an total"
   }
