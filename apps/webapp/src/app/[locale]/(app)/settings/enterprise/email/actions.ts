@@ -3,7 +3,11 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { type EmailTransportType, organizationEmailConfig } from "@/db/schema";
+import {
+	type EmailSmtpIpMode,
+	type EmailTransportType,
+	organizationEmailConfig,
+} from "@/db/schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { sendTestEmail } from "@/lib/email/email-service";
 import { createLogger } from "@/lib/logger";
@@ -40,6 +44,7 @@ export interface EmailConfigInput {
 	smtpPort?: number;
 	smtpSecure?: boolean;
 	smtpRequireTls?: boolean;
+	smtpIpMode?: EmailSmtpIpMode;
 	smtpUsername?: string;
 	smtpPassword?: string;
 }
@@ -59,6 +64,7 @@ export interface EmailConfigOutput {
 	smtpPort: number | null;
 	smtpSecure: boolean | null;
 	smtpRequireTls: boolean | null;
+	smtpIpMode: EmailSmtpIpMode | null;
 	smtpUsername: string | null;
 	// Status
 	lastTestAt: Date | null;
@@ -101,6 +107,7 @@ export async function getEmailConfig(organizationId: string): Promise<EmailConfi
 			smtpPort: config.smtpPort,
 			smtpSecure: config.smtpSecure,
 			smtpRequireTls: config.smtpRequireTls,
+			smtpIpMode: config.smtpIpMode ?? "auto",
 			smtpUsername: config.smtpUsername,
 			lastTestAt: config.lastTestAt,
 			lastTestSuccess: config.lastTestSuccess,
@@ -133,6 +140,9 @@ export async function saveEmailConfig(
 			if (!config.smtpHost || !config.smtpPort || !config.smtpUsername) {
 				return { success: false, error: "SMTP host, port, and username are required" };
 			}
+			if (config.smtpIpMode && !["auto", "ipv4", "ipv6"].includes(config.smtpIpMode)) {
+				return { success: false, error: "Invalid SMTP IP mode" };
+			}
 		}
 
 		// Check for existing config
@@ -151,6 +161,7 @@ export async function saveEmailConfig(
 			smtpPort: config.transportType === "smtp" ? (config.smtpPort ?? null) : null,
 			smtpSecure: config.transportType === "smtp" ? (config.smtpSecure ?? true) : null,
 			smtpRequireTls: config.transportType === "smtp" ? (config.smtpRequireTls ?? true) : null,
+			smtpIpMode: config.transportType === "smtp" ? (config.smtpIpMode ?? "auto") : null,
 			smtpUsername: config.transportType === "smtp" ? (config.smtpUsername ?? null) : null,
 		};
 
