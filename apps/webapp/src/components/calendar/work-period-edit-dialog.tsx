@@ -200,7 +200,7 @@ export function WorkPeriodEditDialog({
 							disabled={!onSplitClick}
 							className="flex-1 sm:flex-none"
 						>
-							<IconScissors className="mr-1 size-4" />
+							<IconScissors className="mr-1 size-4" aria-hidden="true" />
 							{t("calendar.edit.split", "Split")}
 						</Button>
 						<Button
@@ -210,8 +210,8 @@ export function WorkPeriodEditDialog({
 							disabled={!onDeleteClick}
 							className="flex-1 text-destructive hover:text-destructive sm:flex-none"
 						>
-							<IconTrash className="mr-1 size-4" />
-							{t("calendar.edit.convertToBreak", "Convert to Break")}
+							<IconTrash className="mr-1 size-4" aria-hidden="true" />
+							{t("calendar.edit.deleteEntry", "Delete entry")}
 						</Button>
 					</div>
 				</ActionPanelFooter>
