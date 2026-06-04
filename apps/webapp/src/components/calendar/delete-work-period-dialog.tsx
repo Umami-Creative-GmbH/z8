@@ -113,7 +113,9 @@ export function DeleteWorkPeriodDialog({
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor={reasonId}>{t("calendar.delete.reasonLabel", "Reason for deletion")}</Label>
+							<Label htmlFor={reasonId}>
+								{t("calendar.delete.reasonLabel", "Reason for deletion")}
+							</Label>
 							<Textarea
 								id={reasonId}
 								name="deletionReason"

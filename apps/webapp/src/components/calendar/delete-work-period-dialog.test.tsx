@@ -44,17 +44,14 @@ const workPeriodEvent: CalendarEvent = {
 describe("DeleteWorkPeriodDialog", () => {
 	beforeEach(() => {
 		requestTimeEntryDeletion.mockReset();
-		requestTimeEntryDeletion.mockResolvedValue({ success: true, data: { approvalId: "approval-1" } });
+		requestTimeEntryDeletion.mockResolvedValue({
+			success: true,
+			data: { approvalId: "approval-1" },
+		});
 	});
 
 	it("renders deletion request copy and reason field", () => {
-		render(
-			<DeleteWorkPeriodDialog
-				event={workPeriodEvent}
-				open={true}
-				onOpenChange={vi.fn()}
-			/>,
-		);
+		render(<DeleteWorkPeriodDialog event={workPeriodEvent} open={true} onOpenChange={vi.fn()} />);
 
 		expect(screen.getByRole("heading", { name: "Request deletion?" })).toBeTruthy();
 		expect(
