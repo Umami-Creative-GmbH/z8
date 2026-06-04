@@ -145,6 +145,7 @@ async function getTransportForOrg(organizationId?: string): Promise<EmailTranspo
 				port: config.smtpPort,
 				secure: config.smtpSecure ?? true,
 				requireTls: config.smtpRequireTls ?? true,
+				ipMode: config.smtpIpMode ?? "auto",
 				auth: {
 					user: config.smtpUsername,
 					pass: password,
