@@ -170,9 +170,7 @@ function withInsensitiveUserEmailWhere(options: AuthFindOneOptions): AuthFindOne
 	return changed ? { ...options, where } : options;
 }
 
-function wrapEmailLookupCaseInsensitiveAdapter(
-	adapter: AuthDatabaseAdapter,
-): AuthDatabaseAdapter {
+function wrapEmailLookupCaseInsensitiveAdapter(adapter: AuthDatabaseAdapter): AuthDatabaseAdapter {
 	return {
 		...adapter,
 		findOne: (options) => adapter.findOne(withInsensitiveUserEmailWhere(options)),

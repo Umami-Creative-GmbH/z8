@@ -152,7 +152,10 @@ function DiagnosticsOverviewCard({
 				<div className="space-y-2">
 					<div className="flex flex-wrap items-center gap-3">
 						<CardTitle>{t("admin:admin.diagnostics.title", "Deployment Diagnostics")}</CardTitle>
-						<StatusBadge status={snapshot.overallStatus} label={statusLabels[snapshot.overallStatus]} />
+						<StatusBadge
+							status={snapshot.overallStatus}
+							label={statusLabels[snapshot.overallStatus]}
+						/>
 					</div>
 					<CardDescription>
 						{t(
@@ -251,10 +254,7 @@ function EmailTestCard({
 				<div className="space-y-4 rounded-lg border bg-muted/20 p-4">
 					<div className="space-y-1">
 						<h3 className="text-sm font-medium">
-							{t(
-								"admin:admin.diagnostics.emailTest.smtpOverride.title",
-								"Temporary SMTP override",
-							)}
+							{t("admin:admin.diagnostics.emailTest.smtpOverride.title", "Temporary SMTP override")}
 						</h3>
 						<p className="text-sm text-muted-foreground">
 							{t(
@@ -342,7 +342,9 @@ function EmailTestCard({
 							/>
 						</label>
 						<label className="space-y-2 text-sm font-medium">
-							<span>{t("admin:admin.diagnostics.emailTest.smtpOverride.fromName", "From name")}</span>
+							<span>
+								{t("admin:admin.diagnostics.emailTest.smtpOverride.fromName", "From name")}
+							</span>
 							<input
 								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
 								name="smtp-from-name"

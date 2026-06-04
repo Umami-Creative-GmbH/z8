@@ -60,7 +60,9 @@ function VacationUtilizationCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("analytics.vacationTrends.utilization.title", "Vacation Utilization")}</CardTitle>
+				<CardTitle>
+					{t("analytics.vacationTrends.utilization.title", "Vacation Utilization")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"analytics.vacationTrends.utilization.description",
@@ -101,7 +103,9 @@ function MonthlyUsageCard({ data, t }: { data: VacationMonthlyData; t: VacationT
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("analytics.vacationTrends.monthlyUsage.title", "Monthly Vacation Usage")}</CardTitle>
+				<CardTitle>
+					{t("analytics.vacationTrends.monthlyUsage.title", "Monthly Vacation Usage")}
+				</CardTitle>
 				<CardDescription>
 					{t("analytics.vacationTrends.monthlyUsage.description", "Vacation days taken per month")}
 				</CardDescription>
@@ -178,7 +182,9 @@ function VacationBalanceCard({
 								<TableHead className="text-right">
 									{t("analytics.vacationTrends.remaining", "Remaining")}
 								</TableHead>
-								<TableHead>{t("analytics.vacationTrends.utilizationLabel", "Utilization")}</TableHead>
+								<TableHead>
+									{t("analytics.vacationTrends.utilizationLabel", "Utilization")}
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -210,7 +216,9 @@ function PeakMonthsCard({ data, t }: { data: VacationPeakMonthData; t: VacationT
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("analytics.vacationTrends.peakMonths.title", "Peak Vacation Months")}</CardTitle>
+				<CardTitle>
+					{t("analytics.vacationTrends.peakMonths.title", "Peak Vacation Months")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"analytics.vacationTrends.peakMonths.description",

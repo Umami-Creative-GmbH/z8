@@ -2,7 +2,10 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const source = readFileSync(fileURLToPath(new URL("./workday-timeline-data.ts", import.meta.url)), "utf8");
+const source = readFileSync(
+	fileURLToPath(new URL("./workday-timeline-data.ts", import.meta.url)),
+	"utf8",
+);
 
 const mocks = vi.hoisted(() => ({
 	workPeriodFindMany: vi.fn(),

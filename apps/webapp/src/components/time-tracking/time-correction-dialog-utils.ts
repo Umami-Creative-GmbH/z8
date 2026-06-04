@@ -43,7 +43,10 @@ export function isDirectSameDayEdit(params: {
 		return false;
 	}
 
-	const originalClockInDate = formatDateInZone(params.workPeriod.startTime, params.employeeTimezone);
+	const originalClockInDate = formatDateInZone(
+		params.workPeriod.startTime,
+		params.employeeTimezone,
+	);
 	const originalClockOutDate = params.workPeriod.endTime
 		? formatDateInZone(params.workPeriod.endTime, params.employeeTimezone)
 		: "";

@@ -68,8 +68,7 @@ export async function sendPlatformDiagnosticsTestEmailAction(input: {
 			return yield* Effect.fail(
 				new ValidationError({
 					message:
-						parsed.error.issues[0]?.message ===
-						"Complete SMTP override settings are required."
+						parsed.error.issues[0]?.message === "Complete SMTP override settings are required."
 							? "Complete SMTP override settings are required."
 							: (parsed.error.issues[0]?.message ?? "Enter a valid email address."),
 					field: "to",

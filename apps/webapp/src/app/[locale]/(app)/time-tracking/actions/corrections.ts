@@ -195,11 +195,13 @@ export async function editSameDayTimeEntry(
 	}
 
 	const originalClockInDate =
-		DateTime.fromJSDate(selectedWorkPeriod.startTime, { zone: "utc" }).setZone(timezone).toISODate() ??
-		"";
+		DateTime.fromJSDate(selectedWorkPeriod.startTime, { zone: "utc" })
+			.setZone(timezone)
+			.toISODate() ?? "";
 	const originalClockOutDate =
-		DateTime.fromJSDate(selectedWorkPeriod.endTime, { zone: "utc" }).setZone(timezone).toISODate() ??
-		"";
+		DateTime.fromJSDate(selectedWorkPeriod.endTime, { zone: "utc" })
+			.setZone(timezone)
+			.toISODate() ?? "";
 	if (
 		data.newClockInDate !== originalClockInDate ||
 		(data.newClockOutDate && data.newClockOutDate !== originalClockOutDate)
@@ -920,13 +922,11 @@ export async function requestTimeEntryDeletion(
 			timezoneSource: "user_setting",
 		});
 		const captureFromOriginalTimeEntry = (
-			originalEntry:
-				| Pick<
-						typeof timeEntry.$inferSelect,
-						"utcOffsetMinutes" | "timezone" | "timezoneSource"
-					  >
-				| null,
-				fallbackCapture: TimeEntryTimezoneCapture,
+			originalEntry: Pick<
+				typeof timeEntry.$inferSelect,
+				"utcOffsetMinutes" | "timezone" | "timezoneSource"
+			> | null,
+			fallbackCapture: TimeEntryTimezoneCapture,
 		): TimeEntryTimezoneCapture => {
 			if (!originalEntry?.timezone) {
 				return fallbackCapture;

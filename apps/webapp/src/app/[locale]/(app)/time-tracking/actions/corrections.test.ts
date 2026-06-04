@@ -88,8 +88,14 @@ describe("time correction request safety", () => {
 
 	it("guards the final same-day work period update by organization and deletion state", () => {
 		const body = functionBody(modularSource, "editSameDayTimeEntry");
-		const finalUpdateIndex = body.indexOf(".update(workPeriod)", body.indexOf("const finalClockOut"));
-		const finalUpdateBody = body.slice(finalUpdateIndex, body.indexOf("const earliestAffectedDate"));
+		const finalUpdateIndex = body.indexOf(
+			".update(workPeriod)",
+			body.indexOf("const finalClockOut"),
+		);
+		const finalUpdateBody = body.slice(
+			finalUpdateIndex,
+			body.indexOf("const earliestAffectedDate"),
+		);
 
 		expect(finalUpdateIndex).toBeGreaterThanOrEqual(0);
 		expect(finalUpdateBody).toContain("eq(workPeriod.id, selectedWorkPeriod.id)");
@@ -213,7 +219,7 @@ describe("time correction request safety", () => {
 		expect(body).toContain('action: "delete"');
 		expect(body).toContain("timestamp: selectedWorkPeriod.startTime");
 		expect(body).toContain("isSuperseded: true");
-		expect(body).toContain('data.reason.trim()');
+		expect(body).toContain("data.reason.trim()");
 		expect(body).toContain('return { success: false, error: "Reason is required" }');
 		expect(modularSource).not.toContain("delete(workPeriod)");
 	});
@@ -225,7 +231,9 @@ describe("time correction request safety", () => {
 		expect(body).toContain("captureFromOriginalTimeEntry");
 		expect(body).toContain("timestamp: selectedWorkPeriod.startTime");
 		expect(body).toContain("clockInDeletionTimezoneCapture");
-		expect(body).toContain("const clockOutDeletionTimezoneCapture = clockInDeletionTimezoneCapture");
+		expect(body).toContain(
+			"const clockOutDeletionTimezoneCapture = clockInDeletionTimezoneCapture",
+		);
 		expect(body).not.toContain("captureFromOriginalTimeEntry(\n\t\t\toriginalClockOutEntry");
 		expect(body).toContain("utcOffsetMinutes: originalEntry.utcOffsetMinutes");
 		expect(body).toContain("timezone: originalEntry.timezone");
@@ -235,7 +243,9 @@ describe("time correction request safety", () => {
 	it("blocks the legacy exported delete work period action", () => {
 		const body = functionBody(legacySource, "deleteWorkPeriod");
 
-		expect(body).toContain('return { success: false, error: "Deletion requires manager approval" }');
+		expect(body).toContain(
+			'return { success: false, error: "Deletion requires manager approval" }',
+		);
 		expect(body).not.toContain("delete(workPeriod)");
 	});
 });

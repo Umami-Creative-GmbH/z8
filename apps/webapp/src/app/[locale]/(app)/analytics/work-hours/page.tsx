@@ -48,11 +48,19 @@ type WorkHoursEmployeeData = WorkHoursAnalyticsData["byEmployee"][number];
 type WorkHoursDistributionData = WorkHoursAnalyticsData["distribution"];
 type WorkHoursBarData = { employee: string; hours: number }[];
 
-function VarianceTrendCard({ data, t }: { data: WorkHoursDistributionData; t: WorkHoursTranslate }) {
+function VarianceTrendCard({
+	data,
+	t,
+}: {
+	data: WorkHoursDistributionData;
+	t: WorkHoursTranslate;
+}) {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("analytics.workHours.varianceTrend.title", "Overtime & Undertime Trend")}</CardTitle>
+				<CardTitle>
+					{t("analytics.workHours.varianceTrend.title", "Overtime & Undertime Trend")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"analytics.workHours.varianceTrend.description",
@@ -64,8 +72,14 @@ function VarianceTrendCard({ data, t }: { data: WorkHoursDistributionData; t: Wo
 				{data.length > 0 ? (
 					<ChartContainer
 						config={{
-							overtime: { label: t("analytics.common.overtime", "Overtime"), color: "hsl(var(--chart-1))" },
-							undertime: { label: t("analytics.common.undertime", "Undertime"), color: "hsl(var(--chart-2))" },
+							overtime: {
+								label: t("analytics.common.overtime", "Overtime"),
+								color: "hsl(var(--chart-1))",
+							},
+							undertime: {
+								label: t("analytics.common.undertime", "Undertime"),
+								color: "hsl(var(--chart-2))",
+							},
 						}}
 						className="h-[300px]"
 					>
@@ -74,8 +88,22 @@ function VarianceTrendCard({ data, t }: { data: WorkHoursDistributionData; t: Wo
 							<XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
 							<YAxis tickLine={false} axisLine={false} />
 							<ChartTooltip content={<ChartTooltipContent />} />
-							<Area type="monotone" dataKey="overtime" stackId="1" stroke="var(--color-overtime)" fill="var(--color-overtime)" fillOpacity={0.6} />
-							<Area type="monotone" dataKey="undertime" stackId="2" stroke="var(--color-undertime)" fill="var(--color-undertime)" fillOpacity={0.6} />
+							<Area
+								type="monotone"
+								dataKey="overtime"
+								stackId="1"
+								stroke="var(--color-overtime)"
+								fill="var(--color-overtime)"
+								fillOpacity={0.6}
+							/>
+							<Area
+								type="monotone"
+								dataKey="undertime"
+								stackId="2"
+								stroke="var(--color-undertime)"
+								fill="var(--color-undertime)"
+								fillOpacity={0.6}
+							/>
 						</AreaChart>
 					</ChartContainer>
 				) : (
@@ -88,7 +116,13 @@ function VarianceTrendCard({ data, t }: { data: WorkHoursDistributionData; t: Wo
 	);
 }
 
-function DailyWorkHoursCard({ data, t }: { data: WorkHoursDistributionData; t: WorkHoursTranslate }) {
+function DailyWorkHoursCard({
+	data,
+	t,
+}: {
+	data: WorkHoursDistributionData;
+	t: WorkHoursTranslate;
+}) {
 	return (
 		<Card>
 			<CardHeader>
@@ -101,8 +135,14 @@ function DailyWorkHoursCard({ data, t }: { data: WorkHoursDistributionData; t: W
 				{data.length > 0 ? (
 					<ChartContainer
 						config={{
-							actual: { label: t("analytics.workHours.actualHours", "Actual Hours"), color: "hsl(var(--primary))" },
-							expected: { label: t("analytics.workHours.expectedHours", "Expected Hours"), color: "hsl(var(--muted-foreground))" },
+							actual: {
+								label: t("analytics.workHours.actualHours", "Actual Hours"),
+								color: "hsl(var(--primary))",
+							},
+							expected: {
+								label: t("analytics.workHours.expectedHours", "Expected Hours"),
+								color: "hsl(var(--muted-foreground))",
+							},
 						}}
 						className="h-[300px]"
 					>
@@ -111,8 +151,21 @@ function DailyWorkHoursCard({ data, t }: { data: WorkHoursDistributionData; t: W
 							<XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
 							<YAxis tickLine={false} axisLine={false} />
 							<ChartTooltip content={<ChartTooltipContent />} />
-							<Line type="monotone" dataKey="actual" stroke="var(--color-actual)" strokeWidth={2} dot={{ r: 3 }} />
-							<Line type="monotone" dataKey="expected" stroke="var(--color-expected)" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} />
+							<Line
+								type="monotone"
+								dataKey="actual"
+								stroke="var(--color-actual)"
+								strokeWidth={2}
+								dot={{ r: 3 }}
+							/>
+							<Line
+								type="monotone"
+								dataKey="expected"
+								stroke="var(--color-expected)"
+								strokeWidth={2}
+								strokeDasharray="5 5"
+								dot={{ r: 3 }}
+							/>
 						</LineChart>
 					</ChartContainer>
 				) : (
@@ -135,7 +188,9 @@ function EmployeeWorkHoursCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("analytics.workHours.employeeComparison.title", "Employee Work Hours")}</CardTitle>
+				<CardTitle>
+					{t("analytics.workHours.employeeComparison.title", "Employee Work Hours")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"analytics.workHours.employeeComparison.description",
@@ -153,9 +208,15 @@ function EmployeeWorkHoursCard({
 						<TableHeader>
 							<TableRow>
 								<TableHead>{t("analytics.common.employee", "Employee")}</TableHead>
-								<TableHead className="text-right">{t("analytics.common.totalHours", "Total Hours")}</TableHead>
-								<TableHead className="text-right">{t("analytics.workHours.expectedHours", "Expected Hours")}</TableHead>
-								<TableHead className="text-right">{t("analytics.workHours.variance", "Variance")}</TableHead>
+								<TableHead className="text-right">
+									{t("analytics.common.totalHours", "Total Hours")}
+								</TableHead>
+								<TableHead className="text-right">
+									{t("analytics.workHours.expectedHours", "Expected Hours")}
+								</TableHead>
+								<TableHead className="text-right">
+									{t("analytics.workHours.variance", "Variance")}
+								</TableHead>
 								<TableHead>{t("common.status", "Status")}</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -164,15 +225,27 @@ function EmployeeWorkHoursCard({
 								<TableRow key={employee.employeeId}>
 									<TableCell className="font-medium">{employee.employeeName}</TableCell>
 									<TableCell className="text-right">{employee.totalHours.toFixed(1)}h</TableCell>
-									<TableCell className="text-right">{(employee.totalHours + employee.overtimeHours).toFixed(1)}h</TableCell>
 									<TableCell className="text-right">
-										<span className={employee.overtimeHours >= 0 ? "text-green-600" : "text-orange-600"}>
+										{(employee.totalHours + employee.overtimeHours).toFixed(1)}h
+									</TableCell>
+									<TableCell className="text-right">
+										<span
+											className={employee.overtimeHours >= 0 ? "text-green-600" : "text-orange-600"}
+										>
 											{employee.overtimeHours >= 0 ? "+" : ""}
 											{employee.overtimeHours.toFixed(1)}h
 										</span>
 									</TableCell>
 									<TableCell>
-										<Badge variant={employee.avgHoursPerWeek >= 35 ? "default" : employee.avgHoursPerWeek >= 30 ? "secondary" : "destructive"}>
+										<Badge
+											variant={
+												employee.avgHoursPerWeek >= 35
+													? "default"
+													: employee.avgHoursPerWeek >= 30
+														? "secondary"
+														: "destructive"
+											}
+										>
 											{employee.avgHoursPerWeek.toFixed(0)}h/wk
 										</Badge>
 									</TableCell>
@@ -190,7 +263,9 @@ function WorkHoursDistributionCard({ data, t }: { data: WorkHoursBarData; t: Wor
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("analytics.workHours.distribution.title", "Work Hours Distribution")}</CardTitle>
+				<CardTitle>
+					{t("analytics.workHours.distribution.title", "Work Hours Distribution")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"analytics.workHours.distribution.description",
@@ -201,13 +276,22 @@ function WorkHoursDistributionCard({ data, t }: { data: WorkHoursBarData; t: Wor
 			<CardContent>
 				{data.length > 0 ? (
 					<ChartContainer
-						config={{ hours: { label: t("analytics.common.hours", "Hours"), color: "hsl(var(--chart-4))" } }}
+						config={{
+							hours: { label: t("analytics.common.hours", "Hours"), color: "hsl(var(--chart-4))" },
+						}}
 						className="h-[300px]"
 					>
 						<BarChart data={data} layout="vertical">
 							<CartesianGrid strokeDasharray="3 3" />
 							<XAxis type="number" tickLine={false} axisLine={false} />
-							<YAxis dataKey="employee" type="category" tickLine={false} tickMargin={10} axisLine={false} width={120} />
+							<YAxis
+								dataKey="employee"
+								type="category"
+								tickLine={false}
+								tickMargin={10}
+								axisLine={false}
+								width={120}
+							/>
 							<ChartTooltip content={<ChartTooltipContent />} />
 							<Bar dataKey="hours" fill="var(--color-hours)" radius={4} />
 						</BarChart>

@@ -20,7 +20,7 @@ describe("TimeCorrectionHandler detail loading", () => {
 		expect(body).toContain("context?.approvalId");
 		expect(body).toContain("eq(approvalRequest.id, context.approvalId)");
 		expect(body).toContain("eq(approvalRequest.organizationId, organizationId)");
-		expect(body).toContain("eq(approvalRequest.entityType, \"time_entry\")");
+		expect(body).toContain('eq(approvalRequest.entityType, "time_entry")');
 		expect(body).toContain("eq(approvalRequest.entityId, entityId)");
 	});
 });

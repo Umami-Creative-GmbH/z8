@@ -114,10 +114,7 @@ export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPage
 						</h2>
 						<p className="mt-1 text-muted-foreground text-sm">
 							{calendarResult.error ??
-								t(
-									"team.absences.calendar.error.description",
-									"Please try again in a moment.",
-								)}
+								t("team.absences.calendar.error.description", "Please try again in a moment.")}
 						</p>
 					</div>
 				)}

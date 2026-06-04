@@ -95,8 +95,9 @@ function TeamAbsenceMonth({
 	daysByDate: Map<string, ManagerAbsenceCalendarDay>;
 }) {
 	const days = getMonthDays(year, month);
-	const paddingDays = Array.from({ length: getFirstDayOffset(year, month, weekStartDay) }, (_, index) =>
-		`padding-${month}-${index}`,
+	const paddingDays = Array.from(
+		{ length: getFirstDayOffset(year, month, weekStartDay) },
+		(_, index) => `padding-${month}-${index}`,
 	);
 
 	return (
@@ -195,7 +196,10 @@ export function TeamAbsenceYearCalendar({ data }: TeamAbsenceYearCalendarProps) 
 	const pendingAbsenceDays = calendarDays.reduce((sum, day) => sum + day.pendingCount, 0);
 
 	return (
-		<section className="rounded-lg border bg-card p-4" aria-labelledby="team-absence-year-calendar-title">
+		<section
+			className="rounded-lg border bg-card p-4"
+			aria-labelledby="team-absence-year-calendar-title"
+		>
 			<div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 				<div>
 					<h2 id="team-absence-year-calendar-title" className="font-semibold text-lg">

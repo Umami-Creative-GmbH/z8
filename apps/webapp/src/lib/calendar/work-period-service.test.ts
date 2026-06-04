@@ -3,7 +3,10 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getWorkPeriodsForMonth, workPeriodOverlapsCalendarMonth } from "./work-period-service";
 
-const source = readFileSync(fileURLToPath(new URL("./work-period-service.ts", import.meta.url)), "utf8");
+const source = readFileSync(
+	fileURLToPath(new URL("./work-period-service.ts", import.meta.url)),
+	"utf8",
+);
 
 const mockOperators = vi.hoisted(() => ({
 	and: vi.fn((...conditions: unknown[]) => ({ conditions, type: "and" })),

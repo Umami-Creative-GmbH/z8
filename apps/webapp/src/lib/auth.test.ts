@@ -1,10 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import {
-	makeEmailLookupCaseInsensitiveAdapter,
-	resolveInvitationTargetTeamId,
-} from "./auth";
+import { makeEmailLookupCaseInsensitiveAdapter, resolveInvitationTargetTeamId } from "./auth";
 
 describe("resolveInvitationTargetTeamId", () => {
 	it("returns valid stored target team ids that still exist in the invitation organization", async () => {
@@ -107,9 +104,7 @@ describe("makeEmailLookupCaseInsensitiveAdapter", () => {
 
 		expect(findOne).toHaveBeenCalledWith({
 			model: "user",
-			where: [
-				{ field: "email", value: "USER@Example.com", mode: "insensitive" },
-			],
+			where: [{ field: "email", value: "USER@Example.com", mode: "insensitive" }],
 		});
 	});
 

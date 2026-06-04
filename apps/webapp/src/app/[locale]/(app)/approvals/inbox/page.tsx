@@ -206,7 +206,8 @@ function ApprovalInboxContent() {
 	const warnings = dedupeWarnings(pages.flatMap((page) => page.warnings));
 	const supportedTypes = firstPage?.supportedTypes ?? [];
 	const itemIdsKey = items.map((item) => item.id).join("\u001f");
-	const selectedIds = selectedIdDraft.itemIdsKey === itemIdsKey ? selectedIdDraft.ids : new Set<string>();
+	const selectedIds =
+		selectedIdDraft.itemIdsKey === itemIdsKey ? selectedIdDraft.ids : new Set<string>();
 	const pendingItems = items.filter((item) => item.status === "pending");
 	const fastLaneGroups = groupFastLaneItems(pendingItems);
 	const sprintItems = sortSprintItems(pendingItems);
@@ -230,7 +231,8 @@ function ApprovalInboxContent() {
 
 	const handleSelectItem = (id: string, checked: boolean) => {
 		setSelectedIdDraft((previousDraft) => {
-			const previousIds = previousDraft.itemIdsKey === itemIdsKey ? previousDraft.ids : new Set<string>();
+			const previousIds =
+				previousDraft.itemIdsKey === itemIdsKey ? previousDraft.ids : new Set<string>();
 			const newSelection = new Set(previousIds);
 			if (checked) {
 				newSelection.add(id);

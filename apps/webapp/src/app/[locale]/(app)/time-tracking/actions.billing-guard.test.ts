@@ -149,7 +149,9 @@ describe("legacy time-tracking action billing guards", () => {
 	it("blocks the legacy delete work period action instead of hard deleting", () => {
 		const body = functionBody("deleteWorkPeriod");
 
-		expect(body).toContain('return { success: false, error: "Deletion requires manager approval" }');
+		expect(body).toContain(
+			'return { success: false, error: "Deletion requires manager approval" }',
+		);
 		expect(body).not.toContain("requireBillingForMutation");
 		expect(body).not.toContain("markWorkBalanceDirtyBestEffort");
 		expect(body).not.toContain("delete(workPeriod)");

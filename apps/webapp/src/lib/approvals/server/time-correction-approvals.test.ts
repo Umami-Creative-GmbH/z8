@@ -3,7 +3,10 @@ import { fileURLToPath } from "node:url";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const source = readFileSync(fileURLToPath(new URL("./time-correction-approvals.ts", import.meta.url)), "utf8");
+const source = readFileSync(
+	fileURLToPath(new URL("./time-correction-approvals.ts", import.meta.url)),
+	"utf8",
+);
 
 const { markEmployeeWorkBalanceDirty, onTimeCorrectionApproved, onTimeCorrectionRejected } =
 	vi.hoisted(() => ({
@@ -225,7 +228,10 @@ describe("time correction approval workflow safety", () => {
 	it("scopes pending time correction approval checks to the workflow organization", () => {
 		const start = source.indexOf("function ensureNoPendingTimeCorrectionApproval");
 		expect(start).toBeGreaterThanOrEqual(0);
-		const body = source.slice(start, source.indexOf("export async function syncCanonicalWorkCorrection", start));
+		const body = source.slice(
+			start,
+			source.indexOf("export async function syncCanonicalWorkCorrection", start),
+		);
 
 		expect(body).toContain("organizationId: string");
 		expect(body).toContain("eq(approvalRequest.organizationId, organizationId)");
@@ -234,7 +240,10 @@ describe("time correction approval workflow safety", () => {
 	it("scopes approved time correction work period updates to the approval organization", () => {
 		const start = source.indexOf("function applyTimeCorrection");
 		expect(start).toBeGreaterThanOrEqual(0);
-		const body = source.slice(start, source.indexOf("function activateApprovedTimeCorrectionEntries", start));
+		const body = source.slice(
+			start,
+			source.indexOf("function activateApprovedTimeCorrectionEntries", start),
+		);
 
 		expect(body).toContain("eq(workPeriod.id, entityId)");
 		expect(body).toContain("eq(workPeriod.organizationId, approval.organizationId)");
@@ -481,7 +490,9 @@ describe("time correction requester decision notifications", () => {
 		).rejects.toThrow("Deletion approval requires matching correction timestamps");
 
 		expect(dbService.updateSets).not.toEqual(
-			expect.arrayContaining([expect.objectContaining({ clockInId: deletionClockInCorrection.id })]),
+			expect.arrayContaining([
+				expect.objectContaining({ clockInId: deletionClockInCorrection.id }),
+			]),
 		);
 	});
 
