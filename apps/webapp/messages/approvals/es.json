@@ -35,7 +35,7 @@
     "notes": "Notas",
     "noTimeCorrectionApprovals": "No hay solicitudes de corrección de tiempo pendientes por revisar.",
     "offFrom": "ausente desde",
-    "openDetailsFor": "Abrir detalles de ${item.summary.title}",
+    "openDetailsFor": "Abrir detalles de {title}",
     "openInbox": "Abrir bandeja de entrada",
     "originalTimes": "Horarios originales",
     "pendingRequests": "Solicitudes pendientes",
@@ -59,25 +59,25 @@
     "searchLabel": "Buscar aprobaciones",
     "searchPlaceholder": "Buscar por nombre o correo electrónico…",
     "selectAll": "Seleccionar todo",
-    "selectedCount": "${selectedCount} seleccionados",
+    "selectedCount": "{selectedCount} seleccionados",
     "selectRow": "Seleccionar fila",
     "timeCorrectionApproved": "Corrección de tiempo aprobada",
     "timeCorrectionRejected": "Corrección de tiempo rechazada",
     "timeCorrections": "Correcciones de tiempo",
     "timeCorrectionsDescription": "Revise y apruebe las solicitudes de corrección de registro de tiempo de los miembros de su equipo",
     "title": "Aprobaciones",
-    "totalCount": "${totalCount} pendientes",
+    "totalCount": "{totalCount} pendientes",
     "type": "Tipo",
     "unifiedInboxBannerDescription": "Vea todos los tipos de aprobación en un solo lugar con filtrado, acciones masivas y seguimiento de SLA.",
     "unifiedInboxBannerTitle": "Pruebe la nueva bandeja de entrada unificada"
   },
   "fastLanes": {
     "approve": "Aprobar",
-    "approveGroup": "Aprobar ${label}",
+    "approveGroup": "Aprobar {label}",
     "confirmReject": "Confirmar rechazo",
-    "confirmRejectGroup": "Confirmar rechazo de ${label}",
+    "confirmRejectGroup": "Confirmar rechazo de {label}",
     "description": "Revisar solicitudes similares de baja fricción en lotes.",
-    "expandGroup": "Expandir ${label}",
+    "expandGroup": "Expandir {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Ausencias sin conflictos detectados.",
@@ -96,21 +96,21 @@
         "label": "Solicitudes antiguas"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} no elegibles para aprobación masiva",
-    "notEligibleReject": "${notRejectableCount} no elegibles para rechazo masivo",
+    "notEligibleApprove": "{notApprovableCount} no elegibles para aprobación masiva",
+    "notEligibleReject": "{notRejectableCount} no elegibles para rechazo masivo",
     "reject": "Rechazar",
-    "rejectGroup": "Rechazar ${label}",
+    "rejectGroup": "Rechazar {label}",
     "rejectReason": "Motivo de rechazo masivo",
     "risk": {
       "high": "Alto riesgo",
       "low": "Bajo riesgo",
       "medium": "Riesgo medio"
     },
-    "showGroup": "Mostrar ${label}",
+    "showGroup": "Mostrar {label}",
     "title": "Vías rápidas"
   },
   "sprint": {
-    "age": "Hace ${item.timing.ageDays} días",
+    "age": "Hace {ageDays} días",
     "approve": "Aprobar",
     "approveCurrentApproval": "Aprobar solicitud actual",
     "capabilities": {
@@ -128,7 +128,7 @@
       "normal": "Prioridad normal",
       "urgent": "Prioridad urgente"
     },
-    "progress": "${currentIndex + 1} de ${visibleItems.length}",
+    "progress": "{current} de {total}",
     "reject": "Rechazar",
     "rejectCurrentApproval": "Rechazar solicitud actual",
     "rejectReason": "Motivo de rechazo del sprint",

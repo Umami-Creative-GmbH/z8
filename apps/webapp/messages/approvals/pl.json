@@ -35,7 +35,7 @@
     "notes": "Notatki",
     "noTimeCorrectionApprovals": "Brak oczekujących wniosków o korektę czasu do przejrzenia.",
     "offFrom": "nieobecny od",
-    "openDetailsFor": "Otwórz szczegóły dla ${item.summary.title}",
+    "openDetailsFor": "Otwórz szczegóły dla {title}",
     "openInbox": "Otwórz skrzynkę odbiorczą",
     "originalTimes": "Oryginalne czasy",
     "pendingRequests": "Oczekujące wnioski",
@@ -59,25 +59,25 @@
     "searchLabel": "Szukaj zatwierdzeń",
     "searchPlaceholder": "Szukaj według imienia, nazwiska lub adresu e-mail…",
     "selectAll": "Zaznacz wszystko",
-    "selectedCount": "Wybrano ${selectedCount}",
+    "selectedCount": "Wybrano {selectedCount}",
     "selectRow": "Zaznacz wiersz",
     "timeCorrectionApproved": "Korekta czasu zatwierdzona",
     "timeCorrectionRejected": "Korekta czasu odrzucona",
     "timeCorrections": "Korekty czasu pracy",
     "timeCorrectionsDescription": "Przeglądaj i zatwierdzaj wnioski o korektę czasu pracy członków swojego zespołu",
     "title": "Zatwierdzenia",
-    "totalCount": "${totalCount} oczekujących",
+    "totalCount": "{totalCount} oczekujących",
     "type": "Typ",
     "unifiedInboxBannerDescription": "Przeglądaj wszystkie typy zatwierdzeń w jednym miejscu dzięki filtrowaniu, akcjom masowym i śledzeniu SLA.",
     "unifiedInboxBannerTitle": "Wypróbuj nową ujednoliconą skrzynkę odbiorczą"
   },
   "fastLanes": {
     "approve": "Zatwierdź",
-    "approveGroup": "Zatwierdź ${label}",
+    "approveGroup": "Zatwierdź {label}",
     "confirmReject": "Potwierdź odrzucenie",
-    "confirmRejectGroup": "Potwierdź odrzucenie ${label}",
+    "confirmRejectGroup": "Potwierdź odrzucenie {label}",
     "description": "Przeglądaj podobne wnioski o niskim priorytecie w partiach.",
-    "expandGroup": "Rozwiń ${label}",
+    "expandGroup": "Rozwiń {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Nieobecności bez wykrytych konfliktów.",
@@ -96,21 +96,21 @@
         "label": "Zaległe wnioski"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} nie kwalifikuje się do zatwierdzenia zbiorczego",
-    "notEligibleReject": "${notRejectableCount} nie kwalifikuje się do odrzucenia zbiorczego",
+    "notEligibleApprove": "{notApprovableCount} nie kwalifikuje się do zatwierdzenia zbiorczego",
+    "notEligibleReject": "{notRejectableCount} nie kwalifikuje się do odrzucenia zbiorczego",
     "reject": "Odrzuć",
-    "rejectGroup": "Odrzuć ${label}",
+    "rejectGroup": "Odrzuć {label}",
     "rejectReason": "Powód masowego odrzucenia",
     "risk": {
       "high": "Wysokie ryzyko",
       "low": "Niskie ryzyko",
       "medium": "Średnie ryzyko"
     },
-    "showGroup": "Pokaż ${label}",
+    "showGroup": "Pokaż {label}",
     "title": "Szybkie ścieżki"
   },
   "sprint": {
-    "age": "${item.timing.ageDays} dni temu",
+    "age": "{ageDays} dni temu",
     "approve": "Zatwierdź",
     "approveCurrentApproval": "Zatwierdź bieżące zatwierdzenie",
     "capabilities": {
@@ -128,7 +128,7 @@
       "normal": "Normalny priorytet",
       "urgent": "Pilny priorytet"
     },
-    "progress": "${currentIndex + 1} z ${visibleItems.length}",
+    "progress": "{current} z {total}",
     "reject": "Odrzuć",
     "rejectCurrentApproval": "Odrzuć bieżące zatwierdzenie",
     "rejectReason": "Powód odrzucenia sprintu",

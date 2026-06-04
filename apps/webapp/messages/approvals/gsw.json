@@ -35,7 +35,7 @@
     "notes": "Notize",
     "noTimeCorrectionApprovals": "Kei offeni Zitkorrekturaträg zum Prüefe.",
     "offFrom": "abwesend vom",
-    "openDetailsFor": "Details öffne für ${item.summary.title}",
+    "openDetailsFor": "Details öffne für {title}",
     "openInbox": "Postig öffne",
     "originalTimes": "Ursprünglichi Zite",
     "pendingRequests": "Offeni Aaträg",
@@ -59,25 +59,25 @@
     "searchLabel": "Gsuech dureueche",
     "searchPlaceholder": "Suche nach Name oder E-Mail…",
     "selectAll": "Alli uswähle",
-    "selectedCount": "${selectedCount} usgwählt",
+    "selectedCount": "{selectedCount} usgwählt",
     "selectRow": "Ziile uswähle",
     "timeCorrectionApproved": "Ziitkorrektur gnähmigt",
     "timeCorrectionRejected": "Ziitkorrektur abglähnt",
     "timeCorrections": "Ziitkorrekture",
     "timeCorrectionsDescription": "Prüfe und genehmige Aaträg für Ziitkorrekture vo dim Team",
     "title": "Genehmigunge",
-    "totalCount": "${totalCount} usstehend",
+    "totalCount": "{totalCount} usstehend",
     "type": "Typ",
     "unifiedInboxBannerDescription": "Gseh alli Genehmigungsarte uf eim Blick mit Filter, Sammelaktione und SLA-Tracking.",
     "unifiedInboxBannerTitle": "Probier de neu zentrali Postig us"
   },
   "fastLanes": {
     "approve": "Genehmige",
-    "approveGroup": "${label} genehmige",
+    "approveGroup": "{label} genehmige",
     "confirmReject": "Ablehnig bestätige",
-    "confirmRejectGroup": "${label} ablehne bestätige",
+    "confirmRejectGroup": "{label} ablehne bestätige",
     "description": "Ähnlichi, unkomplizierti Aafroge in Stapel überprüfe.",
-    "expandGroup": "${label} uufklappe",
+    "expandGroup": "{label} uufklappe",
     "groups": {
       "lowRiskAbsence": {
         "description": "Absänze ohni erkennbari Konflikt.",
@@ -96,21 +96,21 @@
         "label": "Veralteti Aafroge"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} nöd für Sammelfreigab geeignet",
-    "notEligibleReject": "${notRejectableCount} nöd für Sammelablehnig geeignet",
+    "notEligibleApprove": "{notApprovableCount} nöd für Sammelfreigab geeignet",
+    "notEligibleReject": "{notRejectableCount} nöd für Sammelablehnig geeignet",
     "reject": "Ablehne",
-    "rejectGroup": "${label} ablehne",
+    "rejectGroup": "{label} ablehne",
     "rejectReason": "Grund für Sammel-Ablehnig",
     "risk": {
       "high": "Hohes Risiko",
       "low": "Niidriges Risiko",
       "medium": "Mittlers Risiko"
     },
-    "showGroup": "${label} aazeige",
+    "showGroup": "{label} aazeige",
     "title": "Schnellspure"
   },
   "sprint": {
-    "age": "${item.timing.ageDays} Täg alt",
+    "age": "{ageDays} Täg alt",
     "approve": "Genehmige",
     "approveCurrentApproval": "Aktuelli Genehmigung freigäh",
     "capabilities": {
@@ -128,7 +128,7 @@
       "normal": "Normali Priorität",
       "urgent": "Dringendi Priorität"
     },
-    "progress": "${currentIndex + 1} vo ${visibleItems.length}",
+    "progress": "{current} vo {total}",
     "reject": "Ablehne",
     "rejectCurrentApproval": "Aktuelli Freigab ablehne",
     "rejectReason": "Grund für d'Ablehnig vom Sprint",
