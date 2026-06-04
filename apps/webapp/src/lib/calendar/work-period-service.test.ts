@@ -1,5 +1,9 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getWorkPeriodsForMonth, workPeriodOverlapsCalendarMonth } from "./work-period-service";
+
+const source = readFileSync(fileURLToPath(new URL("./work-period-service.ts", import.meta.url)), "utf8");
 
 const mockOperators = vi.hoisted(() => ({
 	and: vi.fn((...conditions: unknown[]) => ({ conditions, type: "and" })),
@@ -73,6 +77,15 @@ describe("getWorkPeriodsForMonth", () => {
 			expect.anything(),
 			new Date("2026-06-01T03:59:59.999Z"),
 		);
+	});
+
+	it("excludes deleted work periods from calendar month reads", () => {
+		const body = source.slice(
+			source.indexOf("export async function getWorkPeriodsForMonth"),
+			source.indexOf("/**\n * Aggregate work periods by day and employee"),
+		);
+
+		expect(body).toContain("isNull(workPeriod.deletedAt)");
 	});
 
 	it("returns an active work period as a running calendar event ending now", async () => {

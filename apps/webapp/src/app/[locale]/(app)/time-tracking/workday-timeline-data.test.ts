@@ -1,4 +1,8 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const source = readFileSync(fileURLToPath(new URL("./workday-timeline-data.ts", import.meta.url)), "utf8");
 
 const mocks = vi.hoisted(() => ({
 	workPeriodFindMany: vi.fn(),
@@ -96,6 +100,15 @@ describe("getWorkdayTimelineData", () => {
 		expect(workPeriodOptions).toEqual(expect.objectContaining({ where: expect.any(Object) }));
 		expect(shiftOptions).toEqual(expect.objectContaining({ where: expect.any(Object) }));
 		expect(absenceOptions).toEqual(expect.objectContaining({ where: expect.any(Object) }));
+	});
+
+	it("excludes deleted work periods from the normal timeline read", () => {
+		const body = source.slice(
+			source.indexOf("async function loadWorkPeriods"),
+			source.indexOf("async function loadShifts"),
+		);
+
+		expect(body).toContain("isNull(workPeriod.deletedAt)");
 	});
 
 	it("filters pending requests to the selected workday before normalization", async () => {
