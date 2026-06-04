@@ -153,12 +153,27 @@ describe("time correction request safety", () => {
 		const body = functionBody(modularSource, "requestTimeEntryDeletion");
 
 		expect(modularSource).toContain("export async function requestTimeEntryDeletion");
+		expect(body).toContain("getCurrentEmployee()");
+		expect(body).not.toContain('dbService.query("getEmployeeByUserId"');
 		expect(body).toContain('action: "delete"');
 		expect(body).toContain("timestamp: selectedWorkPeriod.startTime");
 		expect(body).toContain("isSuperseded: true");
 		expect(body).toContain('data.reason.trim()');
 		expect(body).toContain('return { success: false, error: "Reason is required" }');
 		expect(modularSource).not.toContain("delete(workPeriod)");
+	});
+
+	it("preserves original endpoint timezone capture when requesting deletion", () => {
+		const body = functionBody(modularSource, "requestTimeEntryDeletion");
+
+		expect(body).toContain("originalClockInEntry");
+		expect(body).toContain("originalClockOutEntry");
+		expect(body).toContain("captureFromOriginalTimeEntry");
+		expect(body).toContain("clockInDeletionTimezoneCapture");
+		expect(body).toContain("clockOutDeletionTimezoneCapture");
+		expect(body).toContain("utcOffsetMinutes: originalEntry.utcOffsetMinutes");
+		expect(body).toContain("timezone: originalEntry.timezone");
+		expect(body).toContain("timezoneSource: originalEntry.timezoneSource");
 	});
 
 	it("blocks the legacy exported delete work period action", () => {

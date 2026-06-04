@@ -15,7 +15,10 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
-import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
+import {
+	resolveFallbackTimezoneCapture,
+	type TimeEntryTimezoneCapture,
+} from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
@@ -745,11 +748,8 @@ export async function requestTimeEntryDeletion(
 		const dbService = yield* _(DatabaseService);
 
 		const currentEmployee = yield* _(
-			dbService.query("getEmployeeByUserId", async () => {
-				const employeeRecord = await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-
+			Effect.promise(async () => {
+				const employeeRecord = await getCurrentEmployee();
 				if (!employeeRecord) {
 					throw new Error("Employee not found");
 				}
@@ -852,12 +852,65 @@ export async function requestTimeEntryDeletion(
 			);
 		}
 
+		const { originalClockInEntry, originalClockOutEntry } = yield* _(
+			dbService.query("getDeletionOriginalTimeEntries", async () => {
+				const [clockInEntry, clockOutEntry] = await Promise.all([
+					dbService.db.query.timeEntry.findFirst({
+						where: and(
+							eq(timeEntry.id, selectedWorkPeriod.clockInId),
+							eq(timeEntry.employeeId, currentEmployee.id),
+							eq(timeEntry.organizationId, currentEmployee.organizationId),
+						),
+					}),
+					dbService.db.query.timeEntry.findFirst({
+						where: and(
+							eq(timeEntry.id, selectedWorkPeriod.clockOutId!),
+							eq(timeEntry.employeeId, currentEmployee.id),
+							eq(timeEntry.organizationId, currentEmployee.organizationId),
+						),
+					}),
+				]);
+
+				return {
+					originalClockInEntry: clockInEntry ?? null,
+					originalClockOutEntry: clockOutEntry ?? null,
+				};
+			}),
+		);
+
 		const timezone = yield* _(Effect.promise(() => getUserTimezone(session.user.id)));
-		const deletionTimezoneCapture = resolveFallbackTimezoneCapture({
+		const fallbackDeletionTimezoneCapture = resolveFallbackTimezoneCapture({
 			timestamp: selectedWorkPeriod.startTime,
 			timezone,
 			timezoneSource: "user_setting",
 		});
+		const captureFromOriginalTimeEntry = (
+			originalEntry:
+				| Pick<
+						typeof timeEntry.$inferSelect,
+						"utcOffsetMinutes" | "timezone" | "timezoneSource"
+					  >
+				| null,
+				fallbackCapture: TimeEntryTimezoneCapture,
+		): TimeEntryTimezoneCapture => {
+			if (!originalEntry?.timezone) {
+				return fallbackCapture;
+			}
+
+			return {
+				utcOffsetMinutes: originalEntry.utcOffsetMinutes,
+				timezone: originalEntry.timezone,
+				timezoneSource: originalEntry.timezoneSource as TimeEntryTimezoneCapture["timezoneSource"],
+			};
+		};
+		const clockInDeletionTimezoneCapture = captureFromOriginalTimeEntry(
+			originalClockInEntry,
+			fallbackDeletionTimezoneCapture,
+		);
+		const clockOutDeletionTimezoneCapture = captureFromOriginalTimeEntry(
+			originalClockOutEntry,
+			fallbackDeletionTimezoneCapture,
+		);
 		const deletionMetadata = { action: "delete" as const };
 
 		const result = yield* _(
@@ -871,7 +924,7 @@ export async function requestTimeEntryDeletion(
 							type: "correction",
 							timestamp: selectedWorkPeriod.startTime,
 							createdBy: session.user.id,
-							...deletionTimezoneCapture,
+							...clockInDeletionTimezoneCapture,
 							replacesEntryId: selectedWorkPeriod.clockInId,
 							notes: data.reason,
 							isSuperseded: true,
@@ -885,7 +938,7 @@ export async function requestTimeEntryDeletion(
 							type: "correction",
 							timestamp: selectedWorkPeriod.startTime,
 							createdBy: session.user.id,
-							...deletionTimezoneCapture,
+							...clockOutDeletionTimezoneCapture,
 							replacesEntryId: selectedWorkPeriod.clockOutId!,
 							notes: data.reason,
 							isSuperseded: true,
