@@ -13,10 +13,53 @@ import type {
 	EmailMessage,
 	EmailTransport,
 	EmailTransportResult,
+	SmtpIpMode,
 	SmtpTransportConfig,
 } from "./base";
 
 const logger = createLogger("SmtpTransport");
+
+function maskEmailAddress(email: string): string {
+	return `${email.slice(0, 3)}***`;
+}
+
+function getSmtpErrorSummary(error: unknown): {
+	name: string;
+	code?: unknown;
+	command?: unknown;
+} {
+	const summary = {
+		name: error instanceof Error ? error.name : typeof error,
+	} as {
+		name: string;
+		code?: unknown;
+		command?: unknown;
+	};
+
+	if (error && typeof error === "object") {
+		if ("code" in error) {
+			summary.code = error.code;
+		}
+
+		if ("command" in error) {
+			summary.command = error.command;
+		}
+	}
+
+	return summary;
+}
+
+function smtpFamilyForIpMode(ipMode: SmtpIpMode | undefined): 4 | 6 | undefined {
+	if (ipMode === "ipv4") {
+		return 4;
+	}
+
+	if (ipMode === "ipv6") {
+		return 6;
+	}
+
+	return undefined;
+}
 
 export class SmtpTransport implements EmailTransport {
 	private transporter: Transporter<SMTPTransport.SentMessageInfo>;
@@ -28,12 +71,14 @@ export class SmtpTransport implements EmailTransport {
 		this.fromEmail = config.fromEmail;
 		this.fromName = config.fromName;
 		this.host = config.host;
+		const family = smtpFamilyForIpMode(config.ipMode);
 
 		this.transporter = createTransport({
 			host: config.host,
 			port: config.port,
 			secure: config.secure, // true for 465, false for other ports
 			requireTLS: config.requireTls, // require STARTTLS upgrade
+			...(family ? { family } : {}),
 			auth: {
 				user: config.auth.user,
 				pass: config.auth.pass,
@@ -71,7 +116,7 @@ export class SmtpTransport implements EmailTransport {
 			});
 
 			logger.info(
-				{ messageId: info.messageId, to: `${message.to.slice(0, 3)}***` },
+				{ messageId: info.messageId, to: maskEmailAddress(message.to) },
 				"Email sent via SMTP",
 			);
 
@@ -81,7 +126,10 @@ export class SmtpTransport implements EmailTransport {
 			};
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : "Unknown error";
-			logger.error({ error, to: message.to }, "Failed to send email via SMTP");
+			logger.error(
+				{ error: getSmtpErrorSummary(error), to: maskEmailAddress(message.to) },
+				"Failed to send email via SMTP",
+			);
 			return {
 				success: false,
 				error: errorMessage,
@@ -95,7 +143,7 @@ export class SmtpTransport implements EmailTransport {
 			await this.transporter.verify();
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : "Unknown error";
-			logger.error({ error }, "SMTP connection verification failed");
+			logger.error({ error: getSmtpErrorSummary(error) }, "SMTP connection verification failed");
 			return {
 				success: false,
 				error: `Connection failed: ${errorMessage}`,
@@ -154,6 +202,7 @@ export function createSystemSmtpTransport(): SmtpTransport | null {
 
 	const secure = env.SMTP_SECURE === "true";
 	const requireTls = env.SMTP_REQUIRE_TLS !== "false"; // Default to true
+	const ipMode = env.SMTP_IP_MODE ?? "auto";
 	const fromName = env.SMTP_FROM_NAME;
 
 	try {
@@ -162,6 +211,7 @@ export function createSystemSmtpTransport(): SmtpTransport | null {
 			port: parseInt(port, 10),
 			secure,
 			requireTls,
+			ipMode,
 			auth: {
 				user: username,
 				pass: password,
@@ -170,7 +220,10 @@ export function createSystemSmtpTransport(): SmtpTransport | null {
 			fromName,
 		});
 	} catch (error) {
-		logger.error({ error }, "Failed to create system SMTP transport from env vars");
+		logger.error(
+			{ error: getSmtpErrorSummary(error) },
+			"Failed to create system SMTP transport from env vars",
+		);
 		return null;
 	}
 }

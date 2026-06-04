@@ -7,9 +7,8 @@ import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function ImportPage() {
-	await connection();
-
-	const [{ authContext, organizationId }, t] = await Promise.all([
+	const [, { authContext, organizationId }, t] = await Promise.all([
+		connection(),
 		requireOrgAdminSettingsAccess(),
 		getTranslate(),
 	]);

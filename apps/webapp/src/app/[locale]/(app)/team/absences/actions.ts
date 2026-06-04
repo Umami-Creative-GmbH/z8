@@ -45,6 +45,7 @@ import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
 import { canActorManageTarget, canUseManagerAbsencePage } from "./manager-absence-permissions";
 import type {
 	ManagerAbsenceActor,
+	ManagerAbsenceCalendarResult,
 	ManagerAbsenceEmployeeRow,
 	ManagerAbsenceListResult,
 	ManagerAbsenceSortDirection,
@@ -174,6 +175,110 @@ export async function getManagerAbsenceEmployees(
 	} catch (error) {
 		logger.error({ error }, "Failed to list manager absence employees");
 		return { success: false, error: "Failed to load employees", code: "UNKNOWN_ERROR" };
+	}
+}
+
+export async function getManagerAbsenceCalendar(params: {
+	year?: number;
+	teamId?: string | null;
+}): Promise<ServerActionResult<ManagerAbsenceCalendarResult>> {
+	try {
+		const actorResult = await resolveActor();
+		if (!actorResult.success) return actorResult;
+
+		const actor = actorResult.data;
+		const normalized = normalizeManagerAbsenceListParams({
+			year: params.year,
+			teamId: params.teamId ?? null,
+		});
+		const teams = await selectVisibleTeams(actor);
+		const accessibleTeamIds = new Set(teams.map((teamOption) => teamOption.id));
+
+		if (normalized.teamId && !accessibleTeamIds.has(normalized.teamId)) {
+			return {
+				success: true,
+				data: { year: normalized.year, teamId: null, entries: [] },
+			};
+		}
+
+		const yearStart = `${normalized.year}-01-01`;
+		const yearEnd = `${normalized.year}-12-31`;
+		const employeeConditions = [
+			eq(employee.organizationId, actor.organizationId),
+			eq(employee.isActive, true),
+		];
+
+		if (normalized.teamId) {
+			employeeConditions.push(eq(employee.teamId, normalized.teamId));
+		}
+
+		const selectedFields = {
+			id: absenceEntry.id,
+			employeeId: absenceEntry.employeeId,
+			employeeName: user.name,
+			startDate: absenceEntry.startDate,
+			startPeriod: absenceEntry.startPeriod,
+			endDate: absenceEntry.endDate,
+			endPeriod: absenceEntry.endPeriod,
+			status: absenceEntry.status,
+			categoryName: absenceCategory.name,
+			categoryType: absenceCategory.type,
+			categoryColor: absenceCategory.color,
+		};
+		const absenceConditions = [
+			eq(absenceEntry.organizationId, actor.organizationId),
+			eq(absenceCategory.organizationId, actor.organizationId),
+			...employeeConditions,
+			lte(absenceEntry.startDate, yearEnd),
+			gte(absenceEntry.endDate, yearStart),
+			or(eq(absenceEntry.status, "approved"), eq(absenceEntry.status, "pending"))!,
+		];
+
+		const rows =
+			actor.role === "manager"
+				? await db
+						.select(selectedFields)
+						.from(absenceEntry)
+						.innerJoin(employee, eq(absenceEntry.employeeId, employee.id))
+						.innerJoin(user, eq(employee.userId, user.id))
+						.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
+						.innerJoin(employeeManagers, eq(employeeManagers.employeeId, employee.id))
+						.where(and(...absenceConditions, eq(employeeManagers.managerId, actor.id)))
+						.orderBy(asc(absenceEntry.startDate), asc(user.name))
+				: await db
+						.select(selectedFields)
+						.from(absenceEntry)
+						.innerJoin(employee, eq(absenceEntry.employeeId, employee.id))
+						.innerJoin(user, eq(employee.userId, user.id))
+						.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
+						.where(and(...absenceConditions))
+						.orderBy(asc(absenceEntry.startDate), asc(user.name));
+
+		return {
+			success: true,
+			data: {
+				year: normalized.year,
+				teamId: normalized.teamId,
+				entries: rows.map((row) => ({
+					id: row.id,
+					employeeId: row.employeeId,
+					employeeName: row.employeeName,
+					startDate: row.startDate,
+					startPeriod: row.startPeriod,
+					endDate: row.endDate,
+					endPeriod: row.endPeriod,
+					status: row.status as "approved" | "pending",
+					category: {
+						name: row.categoryName,
+						type: row.categoryType,
+						color: row.categoryColor,
+					},
+				})),
+			},
+		};
+	} catch (error) {
+		logger.error({ error }, "Failed to load manager absence calendar");
+		return { success: false, error: "Failed to load absence calendar", code: "UNKNOWN_ERROR" };
 	}
 }
 

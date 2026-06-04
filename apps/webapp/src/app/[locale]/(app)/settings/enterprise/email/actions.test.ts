@@ -59,7 +59,7 @@ vi.mock("@/lib/vault", () => ({
 	storeOrgSecret: mocks.storeOrgSecret,
 }));
 
-import { getSecretStoreConnectionStatus, saveEmailConfig } from "./actions";
+import { getEmailConfig, getSecretStoreConnectionStatus, saveEmailConfig } from "./actions";
 
 describe("enterprise email config actions", () => {
 	beforeEach(() => {
@@ -105,5 +105,121 @@ describe("enterprise email config actions", () => {
 			"Organization access mismatch",
 		);
 		expect(mocks.getSecretStoreStatus).not.toHaveBeenCalled();
+	});
+
+	it("saves smtpIpMode for SMTP configs without storing it as a secret", async () => {
+		const result = await saveEmailConfig("org-1", {
+			transportType: "smtp",
+			fromEmail: "noreply@example.com",
+			fromName: "Example",
+			isActive: true,
+			smtpHost: "smtp.example.com",
+			smtpPort: 587,
+			smtpSecure: false,
+			smtpRequireTls: true,
+			smtpUsername: "smtp-user",
+			smtpPassword: "smtp-password",
+			smtpIpMode: "ipv6",
+		});
+
+		expect(result).toEqual({ success: true });
+		expect(mocks.insert).toHaveBeenCalledTimes(1);
+		expect(mocks.values).toHaveBeenCalledWith(
+			expect.objectContaining({
+				smtpIpMode: "ipv6",
+			}),
+		);
+		expect(mocks.storeOrgSecret).toHaveBeenCalledTimes(1);
+		expect(mocks.storeOrgSecret).toHaveBeenCalledWith(
+			"org-1",
+			"email/smtp_password",
+			"smtp-password",
+		);
+	});
+
+	it("rejects empty smtpIpMode without writing DB or secrets", async () => {
+		const result = await saveEmailConfig("org-1", {
+			transportType: "smtp",
+			fromEmail: "noreply@example.com",
+			isActive: true,
+			smtpHost: "smtp.example.com",
+			smtpPort: 587,
+			smtpUsername: "smtp-user",
+			smtpPassword: "smtp-password",
+			smtpIpMode: "",
+		} as Parameters<typeof saveEmailConfig>[1]);
+
+		expect(result).toEqual({ success: false, error: "Invalid SMTP IP mode" });
+		expect(mocks.findFirst).not.toHaveBeenCalled();
+		expect(mocks.insert).not.toHaveBeenCalled();
+		expect(mocks.update).not.toHaveBeenCalled();
+		expect(mocks.values).not.toHaveBeenCalled();
+		expect(mocks.storeOrgSecret).not.toHaveBeenCalled();
+		expect(mocks.deleteOrgSecret).not.toHaveBeenCalled();
+	});
+
+	it("returns smtpIpMode from saved organization email config", async () => {
+		mocks.findFirst.mockResolvedValue({
+			id: "config-1",
+			organizationId: "org-1",
+			transportType: "smtp",
+			fromEmail: "noreply@example.com",
+			fromName: "Example",
+			isActive: true,
+			smtpHost: "smtp.example.com",
+			smtpPort: 587,
+			smtpSecure: false,
+			smtpRequireTls: true,
+			smtpUsername: "smtp-user",
+			smtpIpMode: "ipv4",
+			lastTestAt: null,
+			lastTestSuccess: null,
+			lastTestError: null,
+			createdAt: new Date("2026-06-04T00:00:00.000Z"),
+			updatedAt: new Date("2026-06-04T00:00:00.000Z"),
+		});
+		mocks.hasOrgSecret.mockResolvedValue(false);
+
+		const result = await getEmailConfig("org-1");
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				smtpIpMode: "ipv4",
+				hasResendApiKey: false,
+				hasSmtpPassword: false,
+			}),
+		);
+	});
+
+	it("returns null smtpIpMode for resend organization email config", async () => {
+		mocks.findFirst.mockResolvedValue({
+			id: "config-1",
+			organizationId: "org-1",
+			transportType: "resend",
+			fromEmail: "noreply@example.com",
+			fromName: "Example",
+			isActive: true,
+			smtpHost: null,
+			smtpPort: null,
+			smtpSecure: null,
+			smtpRequireTls: null,
+			smtpUsername: null,
+			smtpIpMode: null,
+			lastTestAt: null,
+			lastTestSuccess: null,
+			lastTestError: null,
+			createdAt: new Date("2026-06-04T00:00:00.000Z"),
+			updatedAt: new Date("2026-06-04T00:00:00.000Z"),
+		});
+		mocks.hasOrgSecret.mockResolvedValue(false);
+
+		const result = await getEmailConfig("org-1");
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				transportType: "resend",
+				smtpIpMode: null,
+			}),
+		);
 	});
 });

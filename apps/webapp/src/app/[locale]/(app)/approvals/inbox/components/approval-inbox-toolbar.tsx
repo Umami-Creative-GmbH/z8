@@ -50,7 +50,12 @@ export function ApprovalInboxToolbar({
 	supportedTypes,
 }: ApprovalInboxToolbarProps) {
 	const { t } = useTranslate();
-	const [searchInput, setSearchInput] = useState(filters.search ?? "");
+	const [searchDraft, setSearchDraft] = useState({
+		forSearch: filters.search,
+		value: filters.search ?? "",
+	});
+	const searchInput =
+		searchDraft.forSearch === filters.search ? searchDraft.value : (filters.search ?? "");
 	const visibleTypes = APPROVAL_TYPES.filter((type) => supportedTypes.includes(type.value));
 
 	const activeFilterCount = (filters.types?.length ? 1 : 0) + (filters.search ? 1 : 0);
@@ -67,10 +72,6 @@ export function ApprovalInboxToolbar({
 	};
 
 	useEffect(() => {
-		setSearchInput(filters.search ?? "");
-	}, [filters.search]);
-
-	useEffect(() => {
 		const nextSearch = searchInput || undefined;
 		if (nextSearch === filters.search) return;
 
@@ -85,11 +86,11 @@ export function ApprovalInboxToolbar({
 	}, [filters, onFiltersChange, searchInput]);
 
 	const handleSearchChange = (value: string) => {
-		setSearchInput(value);
+		setSearchDraft({ forSearch: filters.search, value });
 	};
 
 	const clearFilters = () => {
-		setSearchInput("");
+		setSearchDraft({ forSearch: undefined, value: "" });
 		onFiltersChange({ status: "pending" });
 	};
 

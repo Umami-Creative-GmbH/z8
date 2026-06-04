@@ -141,6 +141,7 @@ async function loadWorkPeriods({
 		where: and(
 			eq(workPeriod.organizationId, organizationId),
 			eq(workPeriod.employeeId, employeeId),
+			isNull(workPeriod.deletedAt),
 			lte(workPeriod.startTime, endBound),
 			or(gte(workPeriod.endTime, startBound), isNull(workPeriod.endTime)),
 		),

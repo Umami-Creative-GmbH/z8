@@ -13,10 +13,9 @@ export default async function PlatformDiagnosticsPage() {
 		getTranslate(),
 		collectPlatformDiagnostics(),
 		Effect.runPromise(
-			Effect.gen(function* () {
-				const adminService = yield* PlatformAdminService;
-				return yield* adminService.requirePlatformAdmin();
-			}).pipe(Effect.provide(AppLayer)),
+			Effect.flatMap(PlatformAdminService, (adminService) =>
+				adminService.requirePlatformAdmin(),
+			).pipe(Effect.provide(AppLayer)),
 		),
 	]);
 

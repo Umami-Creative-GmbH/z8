@@ -9,7 +9,7 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState, useTransition } from "react";
+import { type Dispatch, type SetStateAction, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -117,6 +117,337 @@ function DiagnosticsSection({
 	);
 }
 
+type DiagnosticsTranslate = ReturnType<typeof useTranslate>["t"];
+
+type SmtpOverrideState = {
+	host: string;
+	port: string;
+	username: string;
+	password: string;
+	fromEmail: string;
+	fromName: string;
+	secure: boolean;
+	requireTls: boolean;
+	ipMode: "auto" | "ipv4" | "ipv6";
+};
+
+function DiagnosticsOverviewCard({
+	snapshot,
+	statusLabels,
+	isRefreshPending,
+	error,
+	onRefresh,
+	t,
+}: {
+	snapshot: PlatformDiagnosticsSnapshot;
+	statusLabels: Record<DiagnosticsStatus, string>;
+	isRefreshPending: boolean;
+	error: string | null;
+	onRefresh: () => void;
+	t: DiagnosticsTranslate;
+}) {
+	return (
+		<Card>
+			<CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+				<div className="space-y-2">
+					<div className="flex flex-wrap items-center gap-3">
+						<CardTitle>{t("admin:admin.diagnostics.title", "Deployment Diagnostics")}</CardTitle>
+						<StatusBadge
+							status={snapshot.overallStatus}
+							label={statusLabels[snapshot.overallStatus]}
+						/>
+					</div>
+					<CardDescription>
+						{t(
+							"admin:admin.diagnostics.clientDescription",
+							"Safe platform configuration and app-level service health. Last refreshed {date}.",
+							{ date: snapshot.fetchedAt },
+						)}
+					</CardDescription>
+					<p className="sr-only" role="status" aria-live="polite">
+						{t(
+							"admin:admin.diagnostics.statusAnnouncement",
+							"Diagnostics status {status}. Last refreshed {date}.",
+							{ status: statusLabels[snapshot.overallStatus], date: snapshot.fetchedAt },
+						)}
+					</p>
+				</div>
+				<Button
+					onClick={onRefresh}
+					disabled={isRefreshPending}
+					aria-label={t("admin:admin.diagnostics.actions.refresh", "Refresh diagnostics")}
+				>
+					{isRefreshPending ? (
+						<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+					) : (
+						<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+					)}
+					{t("admin:admin.diagnostics.actions.refresh", "Refresh diagnostics")}
+				</Button>
+			</CardHeader>
+			{error ? (
+				<CardContent>
+					<div
+						className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-400"
+						role="alert"
+						aria-live="polite"
+					>
+						{error}
+					</div>
+				</CardContent>
+			) : null}
+		</Card>
+	);
+}
+
+function EmailTestCard({
+	emailRecipient,
+	emailError,
+	emailResult,
+	smtpOverride,
+	isEmailPending,
+	onRecipientChange,
+	onSmtpOverrideChange,
+	onSend,
+	t,
+}: {
+	emailRecipient: string;
+	emailError: string | null;
+	emailResult: { recipient: string; messageId?: string } | null;
+	smtpOverride: SmtpOverrideState;
+	isEmailPending: boolean;
+	onRecipientChange: (value: string) => void;
+	onSmtpOverrideChange: Dispatch<SetStateAction<SmtpOverrideState>>;
+	onSend: () => void;
+	t: DiagnosticsTranslate;
+}) {
+	return (
+		<Card>
+			<CardHeader className="space-y-2">
+				<CardTitle>{t("admin:admin.diagnostics.emailTest.title", "Email Delivery Test")}</CardTitle>
+				<CardDescription>
+					{t(
+						"admin:admin.diagnostics.emailTest.description",
+						"Send a diagnostics email through the system email transport.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+					<label className="space-y-2 text-sm font-medium">
+						<span>{t("admin:admin.diagnostics.emailTest.recipient", "Recipient email")}</span>
+						<input
+							className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+							type="email"
+							value={emailRecipient}
+							onChange={(event) => onRecipientChange(event.target.value)}
+							disabled={isEmailPending}
+						/>
+					</label>
+					<Button onClick={onSend} disabled={isEmailPending || emailRecipient.trim().length === 0}>
+						{isEmailPending ? (
+							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+						) : null}
+						{t("admin:admin.diagnostics.emailTest.actions.send", "Send test email")}
+					</Button>
+				</div>
+				<div className="space-y-4 rounded-lg border bg-muted/20 p-4">
+					<div className="space-y-1">
+						<h3 className="text-sm font-medium">
+							{t("admin:admin.diagnostics.emailTest.smtpOverride.title", "Temporary SMTP override")}
+						</h3>
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"admin:admin.diagnostics.emailTest.smtpOverride.description",
+								"Leave blank to use the configured system email transport. If filled, the test uses these SMTP settings only.",
+							)}
+						</p>
+					</div>
+					<div className="grid gap-3 md:grid-cols-2">
+						<label className="space-y-2 text-sm font-medium">
+							<span>{t("admin:admin.diagnostics.emailTest.smtpOverride.host", "SMTP host")}</span>
+							<input
+								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+								name="smtp-host"
+								autoComplete="off"
+								spellCheck={false}
+								value={smtpOverride.host}
+								onChange={(event) =>
+									onSmtpOverrideChange((current) => ({ ...current, host: event.target.value }))
+								}
+								disabled={isEmailPending}
+							/>
+						</label>
+						<label className="space-y-2 text-sm font-medium">
+							<span>{t("admin:admin.diagnostics.emailTest.smtpOverride.port", "SMTP port")}</span>
+							<input
+								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+								name="smtp-port"
+								autoComplete="off"
+								type="number"
+								value={smtpOverride.port}
+								onChange={(event) =>
+									onSmtpOverrideChange((current) => ({ ...current, port: event.target.value }))
+								}
+								disabled={isEmailPending}
+							/>
+						</label>
+						<label className="space-y-2 text-sm font-medium">
+							<span>
+								{t("admin:admin.diagnostics.emailTest.smtpOverride.username", "SMTP username")}
+							</span>
+							<input
+								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+								name="smtp-username"
+								autoComplete="off"
+								spellCheck={false}
+								value={smtpOverride.username}
+								onChange={(event) =>
+									onSmtpOverrideChange((current) => ({ ...current, username: event.target.value }))
+								}
+								disabled={isEmailPending}
+							/>
+						</label>
+						<label className="space-y-2 text-sm font-medium">
+							<span>
+								{t("admin:admin.diagnostics.emailTest.smtpOverride.password", "SMTP password")}
+							</span>
+							<input
+								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+								name="smtp-password"
+								autoComplete="off"
+								type="password"
+								value={smtpOverride.password}
+								onChange={(event) =>
+									onSmtpOverrideChange((current) => ({ ...current, password: event.target.value }))
+								}
+								disabled={isEmailPending}
+							/>
+						</label>
+						<label className="space-y-2 text-sm font-medium">
+							<span>
+								{t("admin:admin.diagnostics.emailTest.smtpOverride.fromEmail", "From email")}
+							</span>
+							<input
+								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+								name="smtp-from-email"
+								autoComplete="off"
+								spellCheck={false}
+								type="email"
+								value={smtpOverride.fromEmail}
+								onChange={(event) =>
+									onSmtpOverrideChange((current) => ({ ...current, fromEmail: event.target.value }))
+								}
+								disabled={isEmailPending}
+							/>
+						</label>
+						<label className="space-y-2 text-sm font-medium">
+							<span>
+								{t("admin:admin.diagnostics.emailTest.smtpOverride.fromName", "From name")}
+							</span>
+							<input
+								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+								name="smtp-from-name"
+								autoComplete="off"
+								value={smtpOverride.fromName}
+								onChange={(event) =>
+									onSmtpOverrideChange((current) => ({ ...current, fromName: event.target.value }))
+								}
+								disabled={isEmailPending}
+							/>
+						</label>
+						<label className="space-y-2 text-sm font-medium">
+							<span>{t("admin:admin.diagnostics.emailTest.smtpOverride.ipMode", "IP mode")}</span>
+							<select
+								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+								name="smtp-ip-mode"
+								value={smtpOverride.ipMode}
+								onChange={(event) =>
+									onSmtpOverrideChange((current) => ({
+										...current,
+										ipMode: event.target.value as "auto" | "ipv4" | "ipv6",
+									}))
+								}
+								disabled={isEmailPending}
+							>
+								<option value="auto">
+									{t("admin:admin.diagnostics.emailTest.smtpOverride.ipMode.auto", "Auto")}
+								</option>
+								<option value="ipv4">
+									{t("admin:admin.diagnostics.emailTest.smtpOverride.ipMode.ipv4", "IPv4 only")}
+								</option>
+								<option value="ipv6">
+									{t("admin:admin.diagnostics.emailTest.smtpOverride.ipMode.ipv6", "IPv6 only")}
+								</option>
+							</select>
+						</label>
+					</div>
+					<div className="flex flex-wrap gap-4">
+						<label className="flex items-center gap-2 text-sm font-medium">
+							<input
+								type="checkbox"
+								name="smtp-secure"
+								checked={smtpOverride.secure}
+								onChange={(event) =>
+									onSmtpOverrideChange((current) => ({ ...current, secure: event.target.checked }))
+								}
+								disabled={isEmailPending}
+							/>
+							<span>{t("admin:admin.diagnostics.emailTest.smtpOverride.secure", "Use TLS")}</span>
+						</label>
+						<label className="flex items-center gap-2 text-sm font-medium">
+							<input
+								type="checkbox"
+								name="smtp-require-tls"
+								checked={smtpOverride.requireTls}
+								onChange={(event) =>
+									onSmtpOverrideChange((current) => ({
+										...current,
+										requireTls: event.target.checked,
+									}))
+								}
+								disabled={isEmailPending}
+							/>
+							<span>
+								{t("admin:admin.diagnostics.emailTest.smtpOverride.requireTls", "Require STARTTLS")}
+							</span>
+						</label>
+					</div>
+				</div>
+				{emailError ? (
+					<div
+						className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-400"
+						role="alert"
+						aria-live="polite"
+					>
+						{emailError}
+					</div>
+				) : null}
+				{emailResult ? (
+					<div
+						className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400"
+						role="status"
+						aria-live="polite"
+					>
+						<p>
+							{t("admin:admin.diagnostics.emailTest.success", "Test email sent to {recipient}.", {
+								recipient: emailResult.recipient,
+							})}
+						</p>
+						{emailResult.messageId ? (
+							<p className="font-mono">
+								{t("admin:admin.diagnostics.emailTest.messageId", "Message ID: {messageId}", {
+									messageId: emailResult.messageId,
+								})}
+							</p>
+						) : null}
+					</div>
+				) : null}
+			</CardContent>
+		</Card>
+	);
+}
+
 export function DiagnosticsClient({
 	initialSnapshot,
 	adminEmail,
@@ -128,6 +459,17 @@ export function DiagnosticsClient({
 	const [snapshot, setSnapshot] = useState<PlatformDiagnosticsSnapshot>(() => initialSnapshot);
 	const [error, setError] = useState<string | null>(null);
 	const [emailRecipient, setEmailRecipient] = useState(adminEmail);
+	const [smtpOverride, setSmtpOverride] = useState<SmtpOverrideState>({
+		host: "",
+		port: "587",
+		username: "",
+		password: "",
+		fromEmail: "",
+		fromName: "",
+		secure: true,
+		requireTls: true,
+		ipMode: "auto",
+	});
 	const [emailResult, setEmailResult] = useState<{
 		recipient: string;
 		messageId?: string;
@@ -183,11 +525,49 @@ export function DiagnosticsClient({
 		});
 	}
 
+	function buildSmtpOverrideInput() {
+		const hasTextOverride =
+			smtpOverride.host.trim().length > 0 ||
+			smtpOverride.username.trim().length > 0 ||
+			smtpOverride.password.length > 0 ||
+			smtpOverride.fromEmail.trim().length > 0 ||
+			smtpOverride.fromName.trim().length > 0;
+		const hasControlOverride =
+			smtpOverride.port !== "587" ||
+			!smtpOverride.secure ||
+			!smtpOverride.requireTls ||
+			smtpOverride.ipMode !== "auto";
+
+		if (!hasTextOverride && !hasControlOverride) {
+			return undefined;
+		}
+
+		const input = {
+			host: smtpOverride.host.trim(),
+			port: Number.parseInt(smtpOverride.port, 10),
+			username: smtpOverride.username.trim(),
+			password: smtpOverride.password,
+			fromEmail: smtpOverride.fromEmail.trim(),
+			secure: smtpOverride.secure,
+			requireTls: smtpOverride.requireTls,
+			ipMode: smtpOverride.ipMode,
+		};
+
+		if (smtpOverride.fromName.trim().length > 0) {
+			return { ...input, fromName: smtpOverride.fromName.trim() };
+		}
+
+		return input;
+	}
+
 	function sendTestEmail() {
 		setEmailError(null);
 		setEmailResult(null);
 		startEmailTransition(async () => {
-			const result = await sendPlatformDiagnosticsTestEmailAction({ to: emailRecipient });
+			const result = await sendPlatformDiagnosticsTestEmailAction({
+				to: emailRecipient,
+				smtpOverride: buildSmtpOverrideInput(),
+			});
 
 			if (result.success) {
 				setEmailResult(result.data);
@@ -200,56 +580,14 @@ export function DiagnosticsClient({
 
 	return (
 		<div className="space-y-6">
-			<Card>
-				<CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-					<div className="space-y-2">
-						<div className="flex flex-wrap items-center gap-3">
-							<CardTitle>{t("admin:admin.diagnostics.title", "Deployment Diagnostics")}</CardTitle>
-							<StatusBadge
-								status={snapshot.overallStatus}
-								label={statusLabels[snapshot.overallStatus]}
-							/>
-						</div>
-						<CardDescription>
-							{t(
-								"admin:admin.diagnostics.clientDescription",
-								"Safe platform configuration and app-level service health. Last refreshed {date}.",
-								{ date: snapshot.fetchedAt },
-							)}
-						</CardDescription>
-						<p className="sr-only" role="status" aria-live="polite">
-							{t(
-								"admin:admin.diagnostics.statusAnnouncement",
-								"Diagnostics status {status}. Last refreshed {date}.",
-								{ status: statusLabels[snapshot.overallStatus], date: snapshot.fetchedAt },
-							)}
-						</p>
-					</div>
-					<Button
-						onClick={refreshDiagnostics}
-						disabled={isRefreshPending}
-						aria-label={t("admin:admin.diagnostics.actions.refresh", "Refresh diagnostics")}
-					>
-						{isRefreshPending ? (
-							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-						) : (
-							<IconRefresh className="mr-2 size-4" aria-hidden="true" />
-						)}
-						{t("admin:admin.diagnostics.actions.refresh", "Refresh diagnostics")}
-					</Button>
-				</CardHeader>
-				{error ? (
-					<CardContent>
-						<div
-							className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-400"
-							role="alert"
-							aria-live="polite"
-						>
-							{error}
-						</div>
-					</CardContent>
-				) : null}
-			</Card>
+			<DiagnosticsOverviewCard
+				snapshot={snapshot}
+				statusLabels={statusLabels}
+				isRefreshPending={isRefreshPending}
+				error={error}
+				onRefresh={refreshDiagnostics}
+				t={t}
+			/>
 
 			<div className="grid gap-6 xl:grid-cols-2">
 				<DiagnosticsSection
@@ -275,71 +613,17 @@ export function DiagnosticsClient({
 				/>
 			</div>
 
-			<Card>
-				<CardHeader className="space-y-2">
-					<CardTitle>
-						{t("admin:admin.diagnostics.emailTest.title", "Email Delivery Test")}
-					</CardTitle>
-					<CardDescription>
-						{t(
-							"admin:admin.diagnostics.emailTest.description",
-							"Send a diagnostics email through the system email transport.",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-4">
-					<div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-						<label className="space-y-2 text-sm font-medium">
-							<span>{t("admin:admin.diagnostics.emailTest.recipient", "Recipient email")}</span>
-							<input
-								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-								type="email"
-								value={emailRecipient}
-								onChange={(event) => setEmailRecipient(event.target.value)}
-								disabled={isEmailPending}
-							/>
-						</label>
-						<Button
-							onClick={sendTestEmail}
-							disabled={isEmailPending || emailRecipient.trim().length === 0}
-						>
-							{isEmailPending ? (
-								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-							) : null}
-							{t("admin:admin.diagnostics.emailTest.actions.send", "Send test email")}
-						</Button>
-					</div>
-					{emailError ? (
-						<div
-							className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-400"
-							role="alert"
-							aria-live="polite"
-						>
-							{emailError}
-						</div>
-					) : null}
-					{emailResult ? (
-						<div
-							className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400"
-							role="status"
-							aria-live="polite"
-						>
-							<p>
-								{t("admin:admin.diagnostics.emailTest.success", "Test email sent to {recipient}.", {
-									recipient: emailResult.recipient,
-								})}
-							</p>
-							{emailResult.messageId ? (
-								<p className="font-mono">
-									{t("admin:admin.diagnostics.emailTest.messageId", "Message ID: {messageId}", {
-										messageId: emailResult.messageId,
-									})}
-								</p>
-							) : null}
-						</div>
-					) : null}
-				</CardContent>
-			</Card>
+			<EmailTestCard
+				emailRecipient={emailRecipient}
+				emailError={emailError}
+				emailResult={emailResult}
+				smtpOverride={smtpOverride}
+				isEmailPending={isEmailPending}
+				onRecipientChange={setEmailRecipient}
+				onSmtpOverrideChange={setSmtpOverride}
+				onSend={sendTestEmail}
+				t={t}
+			/>
 
 			{snapshot.secretStoreProvider === "scaleway" ? (
 				<Card>

@@ -43,6 +43,218 @@ function areDateRangesEqual(left: DateRange, right: DateRange) {
 	);
 }
 
+type VacationTrendsTranslate = ReturnType<typeof useTranslate>["t"];
+
+type VacationOverallData = NonNullable<VacationTrendsData["overall"]>;
+type VacationEmployeeData = VacationTrendsData["byEmployee"][number];
+type VacationMonthlyData = VacationTrendsData["byMonth"];
+type VacationPeakMonthData = NonNullable<VacationTrendsData["patterns"]>["peakMonths"];
+
+function VacationUtilizationCard({
+	overallData,
+	t,
+}: {
+	overallData: VacationOverallData;
+	t: VacationTrendsTranslate;
+}) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					{t("analytics.vacationTrends.utilization.title", "Vacation Utilization")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"analytics.vacationTrends.utilization.description",
+						"Overall vacation days usage across organization",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="space-y-4">
+					<div className="flex items-center justify-between">
+						<div className="space-y-1">
+							<p className="text-sm font-medium">
+								{t("analytics.vacationTrends.utilization.overall", "Overall Utilization")}
+							</p>
+							<p className="text-2xl font-bold">{overallData.utilizationRate.toFixed(1)}%</p>
+						</div>
+						<div className="text-right text-sm text-muted-foreground">
+							<p>
+								{t("analytics.vacationTrends.daysTaken", "{count} days taken", {
+									count: overallData.totalDaysTaken,
+								})}
+							</p>
+							<p>
+								{t("analytics.vacationTrends.daysRemaining", "{count} days remaining", {
+									count: overallData.totalDaysRemaining,
+								})}
+							</p>
+						</div>
+					</div>
+					<Progress value={overallData.utilizationRate} className="h-2" />
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+function MonthlyUsageCard({ data, t }: { data: VacationMonthlyData; t: VacationTrendsTranslate }) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					{t("analytics.vacationTrends.monthlyUsage.title", "Monthly Vacation Usage")}
+				</CardTitle>
+				<CardDescription>
+					{t("analytics.vacationTrends.monthlyUsage.description", "Vacation days taken per month")}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{data.length > 0 ? (
+					<ChartContainer
+						config={{
+							days: {
+								label: t("analytics.common.days", "Days"),
+								color: "hsl(var(--primary))",
+							},
+						}}
+						className="h-[300px]"
+					>
+						<LineChart data={data}>
+							<CartesianGrid strokeDasharray="3 3" />
+							<XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
+							<YAxis tickLine={false} axisLine={false} />
+							<ChartTooltip content={<ChartTooltipContent />} />
+							<Line
+								type="monotone"
+								dataKey="days"
+								stroke="var(--color-days)"
+								strokeWidth={2}
+								dot={{ r: 4 }}
+							/>
+						</LineChart>
+					</ChartContainer>
+				) : (
+					<div className="flex h-[300px] items-center justify-center text-muted-foreground">
+						{t("analytics.vacationTrends.monthlyUsage.empty", "No monthly usage data available")}
+					</div>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+function VacationBalanceCard({
+	employees,
+	t,
+}: {
+	employees: VacationEmployeeData[];
+	t: VacationTrendsTranslate;
+}) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>{t("analytics.vacationTrends.balance.title", "Vacation Balance")}</CardTitle>
+				<CardDescription>
+					{t(
+						"analytics.vacationTrends.balance.description",
+						"Days allocated, taken, and remaining by employee",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{employees.length === 0 ? (
+					<div className="flex h-[200px] items-center justify-center text-muted-foreground">
+						{t("analytics.common.noDataForPeriod", "No data available for the selected period")}
+					</div>
+				) : (
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>{t("analytics.common.employee", "Employee")}</TableHead>
+								<TableHead className="text-right">
+									{t("analytics.vacationTrends.allocated", "Allocated")}
+								</TableHead>
+								<TableHead className="text-right">
+									{t("analytics.vacationTrends.taken", "Taken")}
+								</TableHead>
+								<TableHead className="text-right">
+									{t("analytics.vacationTrends.remaining", "Remaining")}
+								</TableHead>
+								<TableHead>
+									{t("analytics.vacationTrends.utilizationLabel", "Utilization")}
+								</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{employees.map((employee) => (
+								<TableRow key={employee.employeeId}>
+									<TableCell className="font-medium">{employee.employeeName}</TableCell>
+									<TableCell className="text-right">{employee.allocated}</TableCell>
+									<TableCell className="text-right">{employee.taken}</TableCell>
+									<TableCell className="text-right">{employee.remaining}</TableCell>
+									<TableCell>
+										<div className="flex items-center gap-2">
+											<Progress value={employee.utilizationRate} className="h-2 w-[100px]" />
+											<span className="text-sm text-muted-foreground">
+												{employee.utilizationRate.toFixed(0)}%
+											</span>
+										</div>
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+function PeakMonthsCard({ data, t }: { data: VacationPeakMonthData; t: VacationTrendsTranslate }) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					{t("analytics.vacationTrends.peakMonths.title", "Peak Vacation Months")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"analytics.vacationTrends.peakMonths.description",
+						"Months with highest vacation activity",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{data.length > 0 ? (
+					<ChartContainer
+						config={{
+							count: {
+								label: t("analytics.vacationTrends.vacationDays", "Vacation Days"),
+								color: "hsl(var(--chart-3))",
+							},
+						}}
+						className="h-[300px]"
+					>
+						<BarChart data={data}>
+							<CartesianGrid strokeDasharray="3 3" />
+							<XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
+							<YAxis tickLine={false} axisLine={false} />
+							<ChartTooltip content={<ChartTooltipContent />} />
+							<Bar dataKey="count" fill="var(--color-count)" radius={4} />
+						</BarChart>
+					</ChartContainer>
+				) : (
+					<div className="flex h-[300px] items-center justify-center text-muted-foreground">
+						{t("analytics.vacationTrends.peakMonths.empty", "No peak month data available")}
+					</div>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
 export default function VacationTrendsPage() {
 	const { t } = useTranslate();
 	const { isHydrated, timezone } = useOrganizationSettings(
@@ -176,197 +388,10 @@ export default function VacationTrendsPage() {
 
 			{!loading && (
 				<>
-					{/* Overall Vacation Utilization */}
-					<Card>
-						<CardHeader>
-							<CardTitle>
-								{t("analytics.vacationTrends.utilization.title", "Vacation Utilization")}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"analytics.vacationTrends.utilization.description",
-									"Overall vacation days usage across organization",
-								)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div className="space-y-4">
-								<div className="flex items-center justify-between">
-									<div className="space-y-1">
-										<p className="text-sm font-medium">
-											{t("analytics.vacationTrends.utilization.overall", "Overall Utilization")}
-										</p>
-										<p className="text-2xl font-bold">{overallData.utilizationRate.toFixed(1)}%</p>
-									</div>
-									<div className="text-right text-sm text-muted-foreground">
-										<p>
-											{t("analytics.vacationTrends.daysTaken", "{count} days taken", {
-												count: overallData.totalDaysTaken,
-											})}
-										</p>
-										<p>
-											{t("analytics.vacationTrends.daysRemaining", "{count} days remaining", {
-												count: overallData.totalDaysRemaining,
-											})}
-										</p>
-									</div>
-								</div>
-								<Progress value={overallData.utilizationRate} className="h-2" />
-							</div>
-						</CardContent>
-					</Card>
-
-					{/* Monthly Vacation Usage */}
-					<Card>
-						<CardHeader>
-							<CardTitle>
-								{t("analytics.vacationTrends.monthlyUsage.title", "Monthly Vacation Usage")}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"analytics.vacationTrends.monthlyUsage.description",
-									"Vacation days taken per month",
-								)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{monthlyUsageData.length > 0 ? (
-								<ChartContainer
-									config={{
-										days: {
-											label: t("analytics.common.days", "Days"),
-											color: "hsl(var(--primary))",
-										},
-									}}
-									className="h-[300px]"
-								>
-									<LineChart data={monthlyUsageData}>
-										<CartesianGrid strokeDasharray="3 3" />
-										<XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
-										<YAxis tickLine={false} axisLine={false} />
-										<ChartTooltip content={<ChartTooltipContent />} />
-										<Line
-											type="monotone"
-											dataKey="days"
-											stroke="var(--color-days)"
-											strokeWidth={2}
-											dot={{ r: 4 }}
-										/>
-									</LineChart>
-								</ChartContainer>
-							) : (
-								<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-									{t(
-										"analytics.vacationTrends.monthlyUsage.empty",
-										"No monthly usage data available",
-									)}
-								</div>
-							)}
-						</CardContent>
-					</Card>
-
-					{/* Vacation Balance by Employee */}
-					<Card>
-						<CardHeader>
-							<CardTitle>
-								{t("analytics.vacationTrends.balance.title", "Vacation Balance")}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"analytics.vacationTrends.balance.description",
-									"Days allocated, taken, and remaining by employee",
-								)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{employees.length === 0 ? (
-								<div className="flex h-[200px] items-center justify-center text-muted-foreground">
-									{t(
-										"analytics.common.noDataForPeriod",
-										"No data available for the selected period",
-									)}
-								</div>
-							) : (
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>{t("analytics.common.employee", "Employee")}</TableHead>
-											<TableHead className="text-right">
-												{t("analytics.vacationTrends.allocated", "Allocated")}
-											</TableHead>
-											<TableHead className="text-right">
-												{t("analytics.vacationTrends.taken", "Taken")}
-											</TableHead>
-											<TableHead className="text-right">
-												{t("analytics.vacationTrends.remaining", "Remaining")}
-											</TableHead>
-											<TableHead>
-												{t("analytics.vacationTrends.utilizationLabel", "Utilization")}
-											</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{employees.map((emp) => (
-											<TableRow key={emp.employeeId}>
-												<TableCell className="font-medium">{emp.employeeName}</TableCell>
-												<TableCell className="text-right">{emp.allocated}</TableCell>
-												<TableCell className="text-right">{emp.taken}</TableCell>
-												<TableCell className="text-right">{emp.remaining}</TableCell>
-												<TableCell>
-													<div className="flex items-center gap-2">
-														<Progress value={emp.utilizationRate} className="h-2 w-[100px]" />
-														<span className="text-sm text-muted-foreground">
-															{emp.utilizationRate.toFixed(0)}%
-														</span>
-													</div>
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							)}
-						</CardContent>
-					</Card>
-
-					{/* Peak Vacation Months */}
-					<Card>
-						<CardHeader>
-							<CardTitle>
-								{t("analytics.vacationTrends.peakMonths.title", "Peak Vacation Months")}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"analytics.vacationTrends.peakMonths.description",
-									"Months with highest vacation activity",
-								)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{peakMonthsData.length > 0 ? (
-								<ChartContainer
-									config={{
-										count: {
-											label: t("analytics.vacationTrends.vacationDays", "Vacation Days"),
-											color: "hsl(var(--chart-3))",
-										},
-									}}
-									className="h-[300px]"
-								>
-									<BarChart data={peakMonthsData}>
-										<CartesianGrid strokeDasharray="3 3" />
-										<XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
-										<YAxis tickLine={false} axisLine={false} />
-										<ChartTooltip content={<ChartTooltipContent />} />
-										<Bar dataKey="count" fill="var(--color-count)" radius={4} />
-									</BarChart>
-								</ChartContainer>
-							) : (
-								<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-									{t("analytics.vacationTrends.peakMonths.empty", "No peak month data available")}
-								</div>
-							)}
-						</CardContent>
-					</Card>
+					<VacationUtilizationCard overallData={overallData} t={t} />
+					<MonthlyUsageCard data={monthlyUsageData} t={t} />
+					<VacationBalanceCard employees={employees} t={t} />
+					<PeakMonthsCard data={peakMonthsData} t={t} />
 				</>
 			)}
 		</div>

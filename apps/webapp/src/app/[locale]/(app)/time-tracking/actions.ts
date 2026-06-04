@@ -206,7 +206,14 @@ export async function editSameDayTimeEntry(
 	const [period] = await db
 		.select()
 		.from(workPeriod)
-		.where(eq(workPeriod.id, data.workPeriodId))
+		.where(
+			and(
+				eq(workPeriod.id, data.workPeriodId),
+				eq(workPeriod.employeeId, emp.id),
+				eq(workPeriod.organizationId, emp.organizationId),
+				isNull(workPeriod.deletedAt),
+			),
+		)
 		.limit(1);
 
 	if (!period) {
@@ -455,7 +462,13 @@ export async function editSameDayTimeEntry(
 				durationMinutes,
 				updatedAt: new Date(),
 			})
-			.where(eq(workPeriod.id, period.id));
+			.where(
+				and(
+					eq(workPeriod.id, period.id),
+					eq(workPeriod.organizationId, emp.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			);
 
 		const dirtyFromDateSource =
 			period.startTime.getTime() <= correctedClockInDate.getTime()
@@ -600,6 +613,7 @@ export async function requestTimeCorrectionEffect(
 							eq(workPeriod.id, data.workPeriodId),
 							eq(workPeriod.employeeId, currentEmployee.id),
 							eq(workPeriod.organizationId, currentEmployee.organizationId),
+							isNull(workPeriod.deletedAt),
 						),
 					)
 					.limit(1);
@@ -1072,6 +1086,7 @@ export async function getWorkPeriods(
 	const periods = await db.query.workPeriod.findMany({
 		where: and(
 			eq(workPeriod.employeeId, employeeId),
+			isNull(workPeriod.deletedAt),
 			gte(workPeriod.startTime, startDate),
 			lte(workPeriod.startTime, endDate),
 		),
@@ -1129,6 +1144,7 @@ export async function getTimeSummary(
 		.where(
 			and(
 				eq(workPeriod.employeeId, employeeId),
+				isNull(workPeriod.deletedAt),
 				gte(workPeriod.startTime, monthStart),
 				lte(workPeriod.startTime, monthEnd),
 			),
@@ -2018,7 +2034,14 @@ export async function updateWorkPeriodNotes(
 		const [period] = await db
 			.select()
 			.from(workPeriod)
-			.where(eq(workPeriod.id, workPeriodId))
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.employeeId, emp.id),
+					eq(workPeriod.organizationId, emp.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
 			.limit(1);
 
 		if (!period) {
@@ -2071,100 +2094,8 @@ export async function updateWorkPeriodNotes(
 export async function deleteWorkPeriod(
 	workPeriodId: string,
 ): Promise<ServerActionResult<{ deleted: boolean }>> {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
-
-	const emp = await getCurrentEmployee();
-	if (!emp) {
-		return { success: false, error: "Employee profile not found" };
-	}
-	try {
-		// Get the work period
-		const [period] = await db
-			.select()
-			.from(workPeriod)
-			.where(eq(workPeriod.id, workPeriodId))
-			.limit(1);
-
-		if (!period) {
-			return { success: false, error: "Work period not found" };
-		}
-
-		// Verify ownership
-		if (period.employeeId !== emp.id) {
-			return {
-				success: false,
-				error: "You can only delete your own work periods",
-			};
-		}
-
-		// Cannot delete active work periods
-		if (!period.endTime || !period.clockOutId) {
-			return {
-				success: false,
-				error: "Cannot delete an active work period. Please clock out first.",
-			};
-		}
-
-		const billingAccess = await requireBillingForMutation(emp.organizationId);
-		if (!isBillingMutationAllowed(billingAccess)) {
-			return {
-				success: false,
-				error: "billing_required",
-				code: billingAccess.reason ?? "subscription_required",
-			};
-		}
-
-		// Mark time entries as superseded (audit trail)
-		// This keeps the time entry records for compliance/auditing
-		await db
-			.update(timeEntry)
-			.set({
-				isSuperseded: true,
-				notes: `[Deleted - converted to break by ${session.user.name || session.user.email}]`,
-			})
-			.where(eq(timeEntry.id, period.clockInId));
-
-		await db
-			.update(timeEntry)
-			.set({
-				isSuperseded: true,
-				notes: `[Deleted - converted to break by ${session.user.name || session.user.email}]`,
-			})
-			.where(eq(timeEntry.id, period.clockOutId));
-
-		// Delete the work period record
-		await db.delete(workPeriod).where(eq(workPeriod.id, workPeriodId));
-
-		await markWorkBalanceDirtyBestEffort(
-			{
-				employeeId: period.employeeId,
-				organizationId: period.organizationId,
-				dirtyFromDate:
-					DateTime.fromJSDate(period.startTime, { zone: "utc" }).toISODate() ?? undefined,
-			},
-			{ employeeId: period.employeeId, organizationId: period.organizationId, workPeriodId },
-		);
-
-		logger.info(
-			{
-				workPeriodId,
-				employeeId: emp.id,
-				deletedBy: session.user.id,
-			},
-			"Work period deleted (converted to break)",
-		);
-
-		return { success: true, data: { deleted: true } };
-	} catch (error) {
-		logger.error({ error }, "Delete work period error");
-		return {
-			success: false,
-			error: "Failed to delete work period. Please try again.",
-		};
-	}
+	void workPeriodId;
+	return { success: false, error: "Deletion requires manager approval" };
 }
 
 /**
@@ -2197,7 +2128,14 @@ export async function splitWorkPeriod(
 		const [period] = await db
 			.select()
 			.from(workPeriod)
-			.where(eq(workPeriod.id, workPeriodId))
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.employeeId, emp.id),
+					eq(workPeriod.organizationId, emp.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
 			.limit(1);
 
 		if (!period) {
@@ -2324,7 +2262,13 @@ export async function splitWorkPeriod(
 				durationMinutes: firstDurationMinutes,
 				updatedAt: new Date(),
 			})
-			.where(eq(workPeriod.id, period.id));
+			.where(
+				and(
+					eq(workPeriod.id, period.id),
+					eq(workPeriod.organizationId, emp.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			);
 
 		// Create a new work period for the second segment
 		const [secondPeriod] = await db
@@ -2582,7 +2526,14 @@ export async function updateWorkPeriodProject(
 		const [period] = await db
 			.select()
 			.from(workPeriod)
-			.where(eq(workPeriod.id, workPeriodId))
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.employeeId, emp.id),
+					eq(workPeriod.organizationId, emp.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
 			.limit(1);
 
 		if (!period) {
@@ -2629,7 +2580,13 @@ export async function updateWorkPeriodProject(
 				projectId: projectId,
 				updatedAt: new Date(),
 			})
-			.where(eq(workPeriod.id, workPeriodId));
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.organizationId, emp.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			);
 
 		return {
 			success: true,

@@ -57,12 +57,15 @@ export interface ResendTransportConfig {
 	fromName?: string;
 }
 
+export type SmtpIpMode = "auto" | "ipv4" | "ipv6";
+
 export interface SmtpTransportConfig {
 	type: "smtp";
 	host: string;
 	port: number;
 	secure: boolean;
 	requireTls: boolean;
+	ipMode?: SmtpIpMode;
 	auth: {
 		user: string;
 		pass: string;

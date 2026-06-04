@@ -30,9 +30,8 @@ type ExportAvailabilityEntry = {
 };
 
 async function PayrollExportContent() {
-	await connection(); // Mark as fully dynamic
-
-	const [t, { organizationId }] = await Promise.all([
+	const [, t, { organizationId }] = await Promise.all([
+		connection(), // Mark as fully dynamic
 		getTranslate(),
 		requireOrgAdminSettingsAccess(),
 	]);

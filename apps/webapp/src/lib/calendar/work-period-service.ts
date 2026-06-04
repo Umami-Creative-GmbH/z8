@@ -79,6 +79,7 @@ export async function getWorkPeriodsForMonth(
 		const conditions = [
 			// Direct organization filter (no join needed for org filtering)
 			eq(workPeriod.organizationId, filters.organizationId),
+			isNull(workPeriod.deletedAt),
 			periodDateCondition,
 		];
 

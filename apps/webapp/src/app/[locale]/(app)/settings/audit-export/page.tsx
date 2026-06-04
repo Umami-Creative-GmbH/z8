@@ -17,10 +17,9 @@ export const metadata = {
 };
 
 async function AuditExportSettingsContent() {
-	await connection();
-
 	// Parallelize all initial fetches to avoid waterfalls
-	const [t, { organizationId }] = await Promise.all([
+	const [, t, { organizationId }] = await Promise.all([
+		connection(),
 		getTranslate(),
 		requireOrgAdminSettingsAccess(),
 	]);

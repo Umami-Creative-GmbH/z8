@@ -4,12 +4,11 @@ import { getTranslate } from "@/tolgee/server";
 import { getEnterpriseIdentitySetupAction } from "../actions";
 
 export default async function EnterpriseIdentitySetupPage() {
-	const [{ organizationId }, t] = await Promise.all([
+	const [{ organizationId }, t, setup] = await Promise.all([
 		requireOrgAdminSettingsAccess(),
 		getTranslate(),
+		getEnterpriseIdentitySetupAction(),
 	]);
-
-	const setup = await getEnterpriseIdentitySetupAction();
 
 	return (
 		<div className="p-4 sm:p-6">

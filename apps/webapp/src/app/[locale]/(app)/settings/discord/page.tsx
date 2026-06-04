@@ -7,8 +7,11 @@ import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function DiscordSettingsPage() {
-	const [, t] = await Promise.all([requireOrgAdminSettingsAccess(), getTranslate()]);
-	const configResult = await getDiscordNotificationChannelConfig();
+	const [, t, configResult] = await Promise.all([
+		requireOrgAdminSettingsAccess(),
+		getTranslate(),
+		getDiscordNotificationChannelConfig(),
+	]);
 	const description = t(
 		"settings.notifications.discord.description",
 		"Configure Discord notifications for your organization.",

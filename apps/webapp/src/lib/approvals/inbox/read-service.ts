@@ -173,7 +173,9 @@ export async function getApprovalInboxDetailFromRequest({
 	}
 
 	const detail = await Effect.runPromise(
-		provideDatabase(handler.getDetail(request.entityId, request.organizationId)),
+		provideDatabase(
+			handler.getDetail(request.entityId, request.organizationId, { approvalId: request.id }),
+		),
 	);
 	validateDetailMatchesRequest(detail, request);
 

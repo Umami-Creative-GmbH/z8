@@ -85,6 +85,7 @@ export interface PendingApprovalRequest {
 	approverId: string;
 	organizationId: string;
 	status: "pending" | "approved" | "rejected";
+	reason: string | null;
 	approvedAt: Date | null;
 	rejectionReason: string | null;
 	metadata: Record<string, unknown> | null;

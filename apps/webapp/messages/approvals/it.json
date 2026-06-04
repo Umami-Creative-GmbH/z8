@@ -35,7 +35,7 @@
     "notes": "Note",
     "noTimeCorrectionApprovals": "Nessuna richiesta di correzione oraria in sospeso da revisionare.",
     "offFrom": "assente dal",
-    "openDetailsFor": "Apri i dettagli per ${item.summary.title}",
+    "openDetailsFor": "Apri i dettagli per {title}",
     "openInbox": "Apri posta in arrivo",
     "originalTimes": "Orari originali",
     "pendingRequests": "Richieste in sospeso",
@@ -59,25 +59,25 @@
     "searchLabel": "Cerca approvazioni",
     "searchPlaceholder": "Cerca per nome o email...",
     "selectAll": "Seleziona tutto",
-    "selectedCount": "${selectedCount} selezionati",
+    "selectedCount": "{selectedCount} selezionati",
     "selectRow": "Seleziona riga",
     "timeCorrectionApproved": "Correzione orario approvata",
     "timeCorrectionRejected": "Correzione orario respinta",
     "timeCorrections": "Correzioni orario",
     "timeCorrectionsDescription": "Esamina e approva le richieste di correzione delle registrazioni orarie dei membri del tuo team",
     "title": "Approvazioni",
-    "totalCount": "${totalCount} in sospeso",
+    "totalCount": "{totalCount} in sospeso",
     "type": "Tipo",
     "unifiedInboxBannerDescription": "Visualizza tutti i tipi di approvazione in un unico posto con filtri, azioni collettive e monitoraggio SLA.",
     "unifiedInboxBannerTitle": "Prova la nuova Posta in arrivo unificata"
   },
   "fastLanes": {
     "approve": "Approva",
-    "approveGroup": "Approva ${label}",
+    "approveGroup": "Approva {label}",
     "confirmReject": "Conferma rifiuto",
-    "confirmRejectGroup": "Conferma rifiuto ${label}",
+    "confirmRejectGroup": "Conferma rifiuto {label}",
     "description": "Revisiona in blocco richieste simili a basso attrito.",
-    "expandGroup": "Espandi ${label}",
+    "expandGroup": "Espandi {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Assenze senza conflitti rilevati.",
@@ -96,21 +96,21 @@
         "label": "Richieste datate"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} non idonei per l'approvazione massiva",
-    "notEligibleReject": "${notRejectableCount} non idonei per il rifiuto massivo",
+    "notEligibleApprove": "{notApprovableCount} non idonei per l'approvazione massiva",
+    "notEligibleReject": "{notRejectableCount} non idonei per il rifiuto massivo",
     "reject": "Rifiuta",
-    "rejectGroup": "Rifiuta ${label}",
+    "rejectGroup": "Rifiuta {label}",
     "rejectReason": "Motivazione rifiuto in blocco",
     "risk": {
       "high": "Alto rischio",
       "low": "Basso rischio",
       "medium": "Rischio medio"
     },
-    "showGroup": "Mostra ${label}",
+    "showGroup": "Mostra {label}",
     "title": "Corsie preferenziali"
   },
   "sprint": {
-    "age": "${item.timing.ageDays}g fa",
+    "age": "{ageDays}g fa",
     "approve": "Approva",
     "approveCurrentApproval": "Approva approvazione corrente",
     "capabilities": {
@@ -128,7 +128,7 @@
       "normal": "Priorità normale",
       "urgent": "Priorità urgente"
     },
-    "progress": "${currentIndex + 1} di ${visibleItems.length}",
+    "progress": "{current} di {total}",
     "reject": "Rifiuta",
     "rejectCurrentApproval": "Rifiuta approvazione corrente",
     "rejectReason": "Motivazione rifiuto sprint",

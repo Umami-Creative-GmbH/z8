@@ -3,17 +3,21 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const source = readFileSync(fileURLToPath(new URL("./actions.ts", import.meta.url)), "utf8");
+const correctionsSource = readFileSync(
+	fileURLToPath(new URL("./actions/corrections.ts", import.meta.url)),
+	"utf8",
+);
 
-function functionBody(name: string) {
-	const match = new RegExp(`(?:export\\s+)?async function ${name}\\s*\\(`).exec(source);
+function functionBody(name: string, targetSource = source) {
+	const match = new RegExp(`(?:export\\s+)?async function ${name}\\s*\\(`).exec(targetSource);
 	const start = match?.index ?? -1;
 	expect(start, `${name} should exist`).toBeGreaterThanOrEqual(0);
-	const nextExport = source.indexOf("export async function", start + 1);
-	return source.slice(start, nextExport === -1 ? undefined : nextExport);
+	const nextExport = targetSource.indexOf("export async function", start + 1);
+	return targetSource.slice(start, nextExport === -1 ? undefined : nextExport);
 }
 
-function expectBillingGuardBeforeWrite(name: string, writeMarker: string) {
-	const body = functionBody(name);
+function expectBillingGuardBeforeWrite(name: string, writeMarker: string, targetSource = source) {
+	const body = functionBody(name, targetSource);
 	const guardIndex = body.indexOf("requireBillingForMutation");
 	const writeIndex = body.indexOf(writeMarker);
 
@@ -118,7 +122,6 @@ describe("legacy time-tracking action billing guards", () => {
 		["editSameDayTimeEntry", "createTimeEntry({"],
 		["requestTimeCorrection", "requestTimeCorrectionEffect(data)"],
 		["updateWorkPeriodNotes", "await db.update"],
-		["deleteWorkPeriod", ".update(timeEntry)"],
 		["splitWorkPeriod", "createTimeEntry({"],
 		["updateTimeEntryNotes", "await db.update"],
 		["updateWorkPeriodProject", ".update(workPeriod)"],
@@ -129,7 +132,6 @@ describe("legacy time-tracking action billing guards", () => {
 	it.each([
 		"clockOut",
 		"createManualTimeEntry",
-		"deleteWorkPeriod",
 		"editSameDayTimeEntry",
 	])("marks work balances dirty after %s changes payable time", (name) => {
 		const body = functionBody(name);
@@ -142,6 +144,31 @@ describe("legacy time-tracking action billing guards", () => {
 		"updateWorkPeriodNotes",
 	])("does not mark work balances dirty after %s metadata changes", (name) => {
 		expect(functionBody(name)).not.toContain("markEmployeeWorkBalanceDirty");
+	});
+
+	it("blocks the legacy delete work period action instead of hard deleting", () => {
+		const body = functionBody("deleteWorkPeriod");
+
+		expect(body).toContain(
+			'return { success: false, error: "Deletion requires manager approval" }',
+		);
+		expect(body).not.toContain("requireBillingForMutation");
+		expect(body).not.toContain("markWorkBalanceDirtyBestEffort");
+		expect(body).not.toContain("delete(workPeriod)");
+	});
+
+	it("guards deletion approval requests before creating correction entries", () => {
+		const body = functionBody("requestTimeEntryDeletion", correctionsSource);
+		const guardIndex = body.indexOf("requireBillingForMutation");
+		const writeIndex = body.indexOf("createTimeEntry(");
+
+		expect(guardIndex).toBeGreaterThanOrEqual(0);
+		expect(body).toContain("isBillingMutationAllowed");
+		expect(body).toContain('message: "billing_required"');
+		expect(body).toContain('value: billingAccess.reason ?? "subscription_required"');
+		expect(body).toContain('error: "billing_required"');
+		expect(writeIndex).toBeGreaterThanOrEqual(0);
+		expect(guardIndex).toBeLessThan(writeIndex);
 	});
 
 	it.each([

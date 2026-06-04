@@ -6,8 +6,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getTranslate } from "@/tolgee/server";
 import { getAbsenceCategories } from "../../absences/actions";
 import { getCurrentEmployee } from "../actions";
-import { getManagerAbsenceEmployees } from "./actions";
+import { getManagerAbsenceCalendar, getManagerAbsenceEmployees } from "./actions";
 import { canUseManagerAbsencePage } from "./manager-absence-permissions";
+import { TeamAbsenceYearCalendar } from "./team-absence-year-calendar";
 import { TeamAbsencesTable } from "./team-absences-table";
 
 type TeamAbsencesPageProps = {
@@ -56,15 +57,20 @@ export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPage
 	}
 
 	const search = (params.search ?? "").trim();
-	const [listResult, categories] = await Promise.all([
+	const selectedYear = parsePositiveInteger(params.year);
+	const [listResult, calendarResult, categories] = await Promise.all([
 		getManagerAbsenceEmployees({
 			search,
 			page: parsePositiveInteger(params.page),
 			pageSize: parsePositiveInteger(params.pageSize),
-			year: parsePositiveInteger(params.year),
+			year: selectedYear,
 			teamId: params.teamId,
 			sort: params.sort,
 			direction: params.direction,
+		}),
+		getManagerAbsenceCalendar({
+			year: selectedYear,
+			teamId: params.teamId,
 		}),
 		getAbsenceCategories(currentEmployee.organizationId),
 	]);
@@ -98,7 +104,20 @@ export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPage
 				<p className="text-muted-foreground">{description}</p>
 			</div>
 
-			<div className="px-4 lg:px-6">
+			<div className="space-y-6 px-4 lg:px-6">
+				{calendarResult.success ? (
+					<TeamAbsenceYearCalendar data={calendarResult.data} />
+				) : (
+					<div className="rounded-lg border bg-card p-6 text-center">
+						<h2 className="font-semibold">
+							{t("team.absences.calendar.error.title", "Unable to load calendar")}
+						</h2>
+						<p className="mt-1 text-muted-foreground text-sm">
+							{calendarResult.error ??
+								t("team.absences.calendar.error.description", "Please try again in a moment.")}
+						</p>
+					</div>
+				)}
 				<TeamAbsencesTable data={listResult.data} categories={categories} search={search} />
 			</div>
 		</div>
