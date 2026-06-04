@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const ACTIONS_PATH = fileURLToPath(new URL("./actions.ts", import.meta.url));
 
@@ -108,8 +108,10 @@ vi.mock("@/lib/email/transports", () => ({
 	}),
 }));
 
+const actionsPromise = import("./actions");
+
 async function importActions() {
-	return await import("./actions");
+	return actionsPromise;
 }
 
 describe("platform diagnostics refresh action", () => {
@@ -148,8 +150,20 @@ describe("platform diagnostics refresh action", () => {
 });
 
 describe("sendPlatformDiagnosticsTestEmailAction", () => {
+	beforeAll(async () => {
+		mockState.requirePlatformAdmin.mockResolvedValue({
+			userId: "admin-1",
+			email: "admin@example.com",
+		});
+		mockState.sendEmail.mockResolvedValue({ success: true, messageId: "warmup-msg" });
+
+		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
+		await sendPlatformDiagnosticsTestEmailAction({ to: "warmup@example.com" });
+
+		vi.clearAllMocks();
+	}, 30_000);
+
 	beforeEach(() => {
-		vi.resetModules();
 		vi.clearAllMocks();
 		mockState.requirePlatformAdmin.mockResolvedValue({
 			userId: "admin-1",
@@ -161,10 +175,10 @@ describe("sendPlatformDiagnosticsTestEmailAction", () => {
 	});
 
 	it("requires platform admin access before sending", async () => {
-		const { AuthorizationError } = await import("@/lib/effect/errors");
-		mockState.requirePlatformAdmin.mockRejectedValue(
-			new AuthorizationError({ message: "Platform admin access required" }),
-		);
+		mockState.requirePlatformAdmin.mockRejectedValue({
+			_tag: "AuthorizationError",
+			message: "Platform admin access required",
+		});
 		const { sendPlatformDiagnosticsTestEmailAction } = await importActions();
 
 		const result = await sendPlatformDiagnosticsTestEmailAction({
