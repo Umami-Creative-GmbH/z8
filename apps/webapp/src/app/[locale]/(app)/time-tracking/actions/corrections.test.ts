@@ -66,6 +66,18 @@ describe("time correction request safety", () => {
 		expect(body).toContain("eq(workPeriod.organizationId, currentEmployee.organizationId)");
 	});
 
+	it("excludes deleted work periods from direct same-day edits", () => {
+		const body = functionBody(modularSource, "editSameDayTimeEntry");
+
+		expect(body).toContain("isNull(workPeriod.deletedAt)");
+	});
+
+	it("excludes deleted work periods from correction approval requests", () => {
+		const body = functionBody(modularSource, "requestTimeCorrectionEffect");
+
+		expect(body).toContain("isNull(workPeriod.deletedAt)");
+	});
+
 	it.each([
 		["modular", modularSource],
 		["legacy", legacySource],

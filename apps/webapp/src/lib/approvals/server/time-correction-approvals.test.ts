@@ -579,6 +579,28 @@ describe("time correction requester decision notifications", () => {
 		);
 	});
 
+	it("rejects approval application when the work period is already deleted", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		vi.mocked(dbService.db.query.workPeriod.findFirst).mockResolvedValueOnce({
+			...period,
+			deletedAt: new Date("2026-05-12T09:00:00.000Z"),
+		});
+
+		await expect(
+			runTimeCorrectionDecisionEffect(
+				approveTimeCorrectionWithCurrentApproverEffect(
+					dbService,
+					timeCorrectionCurrentApprover,
+					"period-1",
+				),
+			),
+		).rejects.toThrow("Cannot apply time correction to a deleted work period");
+
+		expect(dbService.updateSets).not.toEqual(
+			expect.arrayContaining([expect.objectContaining({ clockInId: correction.id })]),
+		);
+	});
+
 	it("approves a legacy pending correction without metadata when one active correction is unambiguous", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({

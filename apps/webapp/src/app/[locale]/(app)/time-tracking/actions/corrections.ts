@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
@@ -128,7 +128,14 @@ export async function editSameDayTimeEntry(
 	const [selectedWorkPeriod] = await db
 		.select()
 		.from(workPeriod)
-		.where(eq(workPeriod.id, data.workPeriodId))
+		.where(
+			and(
+				eq(workPeriod.id, data.workPeriodId),
+				eq(workPeriod.employeeId, currentEmployee.id),
+				eq(workPeriod.organizationId, currentEmployee.organizationId),
+				isNull(workPeriod.deletedAt),
+			),
+		)
 		.limit(1);
 
 	if (!selectedWorkPeriod) {
@@ -405,6 +412,7 @@ export async function requestTimeCorrectionEffect(
 							eq(workPeriod.id, data.workPeriodId),
 							eq(workPeriod.employeeId, currentEmployee.id),
 							eq(workPeriod.organizationId, currentEmployee.organizationId),
+							isNull(workPeriod.deletedAt),
 						),
 					)
 					.limit(1);
@@ -776,6 +784,7 @@ export async function requestTimeEntryDeletion(
 							eq(workPeriod.id, data.workPeriodId),
 							eq(workPeriod.employeeId, currentEmployee.id),
 							eq(workPeriod.organizationId, currentEmployee.organizationId),
+							isNull(workPeriod.deletedAt),
 						),
 					)
 					.limit(1);

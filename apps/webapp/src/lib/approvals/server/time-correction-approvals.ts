@@ -39,6 +39,7 @@ interface WorkPeriodRecord {
 	startTime: Date;
 	endTime: Date | null;
 	durationMinutes: number | null;
+	deletedAt: Date | null;
 	employee: {
 		userId: string;
 		organizationId: string;
@@ -463,6 +464,18 @@ function validateDeletedPeriodRange(clockIn: CorrectionEntry, clockOut: Correcti
 	return Effect.void;
 }
 
+function ensureWorkPeriodNotDeleted(period: WorkPeriodRecord) {
+	return period.deletedAt
+		? Effect.fail(
+				new ValidationError({
+					message: "Cannot apply time correction to a deleted work period",
+					field: "workPeriodId",
+					value: period.id,
+				}),
+			)
+		: Effect.void;
+}
+
 function applyTimeCorrection(
 	dbService: ApprovalDbService,
 	entityId: string,
@@ -657,6 +670,7 @@ function handleApprovedTimeCorrection(
 ) {
 	return Effect.gen(function* (_) {
 		const period = yield* _(loadWorkPeriod(dbService, entityId));
+		yield* _(ensureWorkPeriodNotDeleted(period));
 		const correctionEntryIds = correctionEntryIdsFromApproval(approval);
 		const correctionAction = correctionActionFromApproval(approval);
 		const linkedClockInCorrection = yield* _(
