@@ -158,6 +158,10 @@ function correctionEntryIdsFromApproval(approval: PendingApprovalRequest) {
 	return metadata?.timeCorrection;
 }
 
+function correctionActionFromApproval(approval: PendingApprovalRequest): TimeCorrectionAction {
+	return correctionEntryIdsFromApproval(approval)?.action ?? "edit";
+}
+
 function loadApprovalLinkedCorrectionEntry(
 	dbService: ApprovalDbService,
 	period: WorkPeriodRecord,
@@ -429,6 +433,10 @@ function calculateCorrectedPeriod(
 	};
 }
 
+function calculateDeletedPeriod(_clockIn: CorrectionEntry, clockOut: CorrectionEntry) {
+	return { endTime: clockOut.timestamp, durationMinutes: 0, clockOutId: clockOut.id };
+}
+
 function validateCorrectedPeriodRange(clockIn: CorrectionEntry, effectiveClockOut: Date | null) {
 	if (effectiveClockOut && effectiveClockOut <= clockIn.timestamp) {
 		return Effect.fail(
@@ -445,10 +453,23 @@ function validateCorrectedPeriodRange(clockIn: CorrectionEntry, effectiveClockOu
 function applyTimeCorrection(
 	dbService: ApprovalDbService,
 	entityId: string,
+	approval: PendingApprovalRequest,
+	currentEmployee: CurrentApprover,
+	correctionAction: TimeCorrectionAction,
 	clockInCorrection: CorrectionEntry,
 	correctedPeriod: ReturnType<typeof calculateCorrectedPeriod>,
 ) {
 	return dbService.query("applyTimeCorrection", async () => {
+		const deletionFields =
+			correctionAction === "delete"
+				? {
+						deletedAt: new Date(),
+						deletedBy: currentEmployee.userId,
+						deletionReason: approval.reason ?? null,
+						deletionApprovalRequestId: approval.id,
+					}
+				: {};
+
 		await dbService.db
 			.update(workPeriod)
 			.set({
@@ -458,6 +479,7 @@ function applyTimeCorrection(
 				endTime: correctedPeriod.endTime,
 				durationMinutes: correctedPeriod.durationMinutes,
 				updatedAt: new Date(),
+				...deletionFields,
 			})
 			.where(eq(workPeriod.id, entityId));
 	});
@@ -621,6 +643,7 @@ function handleApprovedTimeCorrection(
 	return Effect.gen(function* (_) {
 		const period = yield* _(loadWorkPeriod(dbService, entityId));
 		const correctionEntryIds = correctionEntryIdsFromApproval(approval);
+		const correctionAction = correctionActionFromApproval(approval);
 		const linkedClockInCorrection = yield* _(
 			resolveCorrectionEntryForApproval(
 				dbService,
@@ -643,13 +666,28 @@ function handleApprovedTimeCorrection(
 			),
 		);
 		const clockOutCorrection = linkedClockOutCorrection as CorrectionEntry | null;
-		yield* _(
-			validateCorrectedPeriodRange(
-				clockInCorrection,
-				clockOutCorrection?.timestamp ?? period.endTime,
-			),
-		);
-		const correctedPeriod = calculateCorrectedPeriod(period, clockInCorrection, clockOutCorrection);
+		if (correctionAction === "edit") {
+			yield* _(
+				validateCorrectedPeriodRange(
+					clockInCorrection,
+					clockOutCorrection?.timestamp ?? period.endTime,
+				),
+			);
+		}
+		if (correctionAction === "delete" && !clockOutCorrection) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Deletion approval requires clock-in and clock-out correction entries",
+						field: "timeCorrection.clockOutCorrectionId",
+					}),
+				),
+			);
+		}
+		const correctedPeriod =
+			correctionAction === "delete" && clockOutCorrection
+				? calculateDeletedPeriod(clockInCorrection, clockOutCorrection)
+				: calculateCorrectedPeriod(period, clockInCorrection, clockOutCorrection);
 
 		yield* _(
 			activateApprovedTimeCorrectionEntries(
@@ -659,7 +697,17 @@ function handleApprovedTimeCorrection(
 				clockOutCorrection,
 			),
 		);
-		yield* _(applyTimeCorrection(dbService, entityId, clockInCorrection, correctedPeriod));
+		yield* _(
+			applyTimeCorrection(
+				dbService,
+				entityId,
+				approval,
+				currentEmployee,
+				correctionAction,
+				clockInCorrection,
+				correctedPeriod,
+			),
+		);
 		const workBalanceDirtyMark = {
 			employeeId: period.employeeId,
 			organizationId: period.organizationId,
@@ -673,7 +721,7 @@ function handleApprovedTimeCorrection(
 					startAt: clockInCorrection.timestamp,
 					endAt: correctedPeriod.endTime,
 					durationMinutes: correctedPeriod.durationMinutes,
-					updatedBy: currentEmployee.user.id,
+					updatedBy: currentEmployee.userId,
 				}),
 			),
 		);
