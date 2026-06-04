@@ -117,6 +117,155 @@ function DiagnosticsSection({
 	);
 }
 
+type DiagnosticsTranslate = ReturnType<typeof useTranslate>["t"];
+
+function DiagnosticsOverviewCard({
+	snapshot,
+	statusLabels,
+	isRefreshPending,
+	error,
+	onRefresh,
+	t,
+}: {
+	snapshot: PlatformDiagnosticsSnapshot;
+	statusLabels: Record<DiagnosticsStatus, string>;
+	isRefreshPending: boolean;
+	error: string | null;
+	onRefresh: () => void;
+	t: DiagnosticsTranslate;
+}) {
+	return (
+		<Card>
+			<CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+				<div className="space-y-2">
+					<div className="flex flex-wrap items-center gap-3">
+						<CardTitle>{t("admin:admin.diagnostics.title", "Deployment Diagnostics")}</CardTitle>
+						<StatusBadge status={snapshot.overallStatus} label={statusLabels[snapshot.overallStatus]} />
+					</div>
+					<CardDescription>
+						{t(
+							"admin:admin.diagnostics.clientDescription",
+							"Safe platform configuration and app-level service health. Last refreshed {date}.",
+							{ date: snapshot.fetchedAt },
+						)}
+					</CardDescription>
+					<p className="sr-only" role="status" aria-live="polite">
+						{t(
+							"admin:admin.diagnostics.statusAnnouncement",
+							"Diagnostics status {status}. Last refreshed {date}.",
+							{ status: statusLabels[snapshot.overallStatus], date: snapshot.fetchedAt },
+						)}
+					</p>
+				</div>
+				<Button
+					onClick={onRefresh}
+					disabled={isRefreshPending}
+					aria-label={t("admin:admin.diagnostics.actions.refresh", "Refresh diagnostics")}
+				>
+					{isRefreshPending ? (
+						<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+					) : (
+						<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+					)}
+					{t("admin:admin.diagnostics.actions.refresh", "Refresh diagnostics")}
+				</Button>
+			</CardHeader>
+			{error ? (
+				<CardContent>
+					<div
+						className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-400"
+						role="alert"
+						aria-live="polite"
+					>
+						{error}
+					</div>
+				</CardContent>
+			) : null}
+		</Card>
+	);
+}
+
+function EmailTestCard({
+	emailRecipient,
+	emailError,
+	emailResult,
+	isEmailPending,
+	onRecipientChange,
+	onSend,
+	t,
+}: {
+	emailRecipient: string;
+	emailError: string | null;
+	emailResult: { recipient: string; messageId?: string } | null;
+	isEmailPending: boolean;
+	onRecipientChange: (value: string) => void;
+	onSend: () => void;
+	t: DiagnosticsTranslate;
+}) {
+	return (
+		<Card>
+			<CardHeader className="space-y-2">
+				<CardTitle>{t("admin:admin.diagnostics.emailTest.title", "Email Delivery Test")}</CardTitle>
+				<CardDescription>
+					{t(
+						"admin:admin.diagnostics.emailTest.description",
+						"Send a diagnostics email through the system email transport.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+					<label className="space-y-2 text-sm font-medium">
+						<span>{t("admin:admin.diagnostics.emailTest.recipient", "Recipient email")}</span>
+						<input
+							className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+							type="email"
+							value={emailRecipient}
+							onChange={(event) => onRecipientChange(event.target.value)}
+							disabled={isEmailPending}
+						/>
+					</label>
+					<Button onClick={onSend} disabled={isEmailPending || emailRecipient.trim().length === 0}>
+						{isEmailPending ? (
+							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+						) : null}
+						{t("admin:admin.diagnostics.emailTest.actions.send", "Send test email")}
+					</Button>
+				</div>
+				{emailError ? (
+					<div
+						className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-400"
+						role="alert"
+						aria-live="polite"
+					>
+						{emailError}
+					</div>
+				) : null}
+				{emailResult ? (
+					<div
+						className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400"
+						role="status"
+						aria-live="polite"
+					>
+						<p>
+							{t("admin:admin.diagnostics.emailTest.success", "Test email sent to {recipient}.", {
+								recipient: emailResult.recipient,
+							})}
+						</p>
+						{emailResult.messageId ? (
+							<p className="font-mono">
+								{t("admin:admin.diagnostics.emailTest.messageId", "Message ID: {messageId}", {
+									messageId: emailResult.messageId,
+								})}
+							</p>
+						) : null}
+					</div>
+				) : null}
+			</CardContent>
+		</Card>
+	);
+}
+
 export function DiagnosticsClient({
 	initialSnapshot,
 	adminEmail,
@@ -200,56 +349,14 @@ export function DiagnosticsClient({
 
 	return (
 		<div className="space-y-6">
-			<Card>
-				<CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-					<div className="space-y-2">
-						<div className="flex flex-wrap items-center gap-3">
-							<CardTitle>{t("admin:admin.diagnostics.title", "Deployment Diagnostics")}</CardTitle>
-							<StatusBadge
-								status={snapshot.overallStatus}
-								label={statusLabels[snapshot.overallStatus]}
-							/>
-						</div>
-						<CardDescription>
-							{t(
-								"admin:admin.diagnostics.clientDescription",
-								"Safe platform configuration and app-level service health. Last refreshed {date}.",
-								{ date: snapshot.fetchedAt },
-							)}
-						</CardDescription>
-						<p className="sr-only" role="status" aria-live="polite">
-							{t(
-								"admin:admin.diagnostics.statusAnnouncement",
-								"Diagnostics status {status}. Last refreshed {date}.",
-								{ status: statusLabels[snapshot.overallStatus], date: snapshot.fetchedAt },
-							)}
-						</p>
-					</div>
-					<Button
-						onClick={refreshDiagnostics}
-						disabled={isRefreshPending}
-						aria-label={t("admin:admin.diagnostics.actions.refresh", "Refresh diagnostics")}
-					>
-						{isRefreshPending ? (
-							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-						) : (
-							<IconRefresh className="mr-2 size-4" aria-hidden="true" />
-						)}
-						{t("admin:admin.diagnostics.actions.refresh", "Refresh diagnostics")}
-					</Button>
-				</CardHeader>
-				{error ? (
-					<CardContent>
-						<div
-							className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-400"
-							role="alert"
-							aria-live="polite"
-						>
-							{error}
-						</div>
-					</CardContent>
-				) : null}
-			</Card>
+			<DiagnosticsOverviewCard
+				snapshot={snapshot}
+				statusLabels={statusLabels}
+				isRefreshPending={isRefreshPending}
+				error={error}
+				onRefresh={refreshDiagnostics}
+				t={t}
+			/>
 
 			<div className="grid gap-6 xl:grid-cols-2">
 				<DiagnosticsSection
@@ -275,71 +382,15 @@ export function DiagnosticsClient({
 				/>
 			</div>
 
-			<Card>
-				<CardHeader className="space-y-2">
-					<CardTitle>
-						{t("admin:admin.diagnostics.emailTest.title", "Email Delivery Test")}
-					</CardTitle>
-					<CardDescription>
-						{t(
-							"admin:admin.diagnostics.emailTest.description",
-							"Send a diagnostics email through the system email transport.",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-4">
-					<div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-						<label className="space-y-2 text-sm font-medium">
-							<span>{t("admin:admin.diagnostics.emailTest.recipient", "Recipient email")}</span>
-							<input
-								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-								type="email"
-								value={emailRecipient}
-								onChange={(event) => setEmailRecipient(event.target.value)}
-								disabled={isEmailPending}
-							/>
-						</label>
-						<Button
-							onClick={sendTestEmail}
-							disabled={isEmailPending || emailRecipient.trim().length === 0}
-						>
-							{isEmailPending ? (
-								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-							) : null}
-							{t("admin:admin.diagnostics.emailTest.actions.send", "Send test email")}
-						</Button>
-					</div>
-					{emailError ? (
-						<div
-							className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-400"
-							role="alert"
-							aria-live="polite"
-						>
-							{emailError}
-						</div>
-					) : null}
-					{emailResult ? (
-						<div
-							className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400"
-							role="status"
-							aria-live="polite"
-						>
-							<p>
-								{t("admin:admin.diagnostics.emailTest.success", "Test email sent to {recipient}.", {
-									recipient: emailResult.recipient,
-								})}
-							</p>
-							{emailResult.messageId ? (
-								<p className="font-mono">
-									{t("admin:admin.diagnostics.emailTest.messageId", "Message ID: {messageId}", {
-										messageId: emailResult.messageId,
-									})}
-								</p>
-							) : null}
-						</div>
-					) : null}
-				</CardContent>
-			</Card>
+			<EmailTestCard
+				emailRecipient={emailRecipient}
+				emailError={emailError}
+				emailResult={emailResult}
+				isEmailPending={isEmailPending}
+				onRecipientChange={setEmailRecipient}
+				onSend={sendTestEmail}
+				t={t}
+			/>
 
 			{snapshot.secretStoreProvider === "scaleway" ? (
 				<Card>

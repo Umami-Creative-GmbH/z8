@@ -43,6 +43,185 @@ function areDateRangesEqual(left: DateRange, right: DateRange) {
 	);
 }
 
+type WorkHoursTranslate = ReturnType<typeof useTranslate>["t"];
+type WorkHoursEmployeeData = WorkHoursAnalyticsData["byEmployee"][number];
+type WorkHoursDistributionData = WorkHoursAnalyticsData["distribution"];
+type WorkHoursBarData = { employee: string; hours: number }[];
+
+function VarianceTrendCard({ data, t }: { data: WorkHoursDistributionData; t: WorkHoursTranslate }) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>{t("analytics.workHours.varianceTrend.title", "Overtime & Undertime Trend")}</CardTitle>
+				<CardDescription>
+					{t(
+						"analytics.workHours.varianceTrend.description",
+						"Hours variance from expected work hours over time",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{data.length > 0 ? (
+					<ChartContainer
+						config={{
+							overtime: { label: t("analytics.common.overtime", "Overtime"), color: "hsl(var(--chart-1))" },
+							undertime: { label: t("analytics.common.undertime", "Undertime"), color: "hsl(var(--chart-2))" },
+						}}
+						className="h-[300px]"
+					>
+						<AreaChart data={data}>
+							<CartesianGrid strokeDasharray="3 3" />
+							<XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
+							<YAxis tickLine={false} axisLine={false} />
+							<ChartTooltip content={<ChartTooltipContent />} />
+							<Area type="monotone" dataKey="overtime" stackId="1" stroke="var(--color-overtime)" fill="var(--color-overtime)" fillOpacity={0.6} />
+							<Area type="monotone" dataKey="undertime" stackId="2" stroke="var(--color-undertime)" fill="var(--color-undertime)" fillOpacity={0.6} />
+						</AreaChart>
+					</ChartContainer>
+				) : (
+					<div className="flex h-[300px] items-center justify-center text-muted-foreground">
+						{t("analytics.workHours.varianceTrend.empty", "No trend data available")}
+					</div>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+function DailyWorkHoursCard({ data, t }: { data: WorkHoursDistributionData; t: WorkHoursTranslate }) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>{t("analytics.workHours.daily.title", "Daily Work Hours")}</CardTitle>
+				<CardDescription>
+					{t("analytics.workHours.daily.description", "Actual vs expected work hours per day")}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{data.length > 0 ? (
+					<ChartContainer
+						config={{
+							actual: { label: t("analytics.workHours.actualHours", "Actual Hours"), color: "hsl(var(--primary))" },
+							expected: { label: t("analytics.workHours.expectedHours", "Expected Hours"), color: "hsl(var(--muted-foreground))" },
+						}}
+						className="h-[300px]"
+					>
+						<LineChart data={data}>
+							<CartesianGrid strokeDasharray="3 3" />
+							<XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
+							<YAxis tickLine={false} axisLine={false} />
+							<ChartTooltip content={<ChartTooltipContent />} />
+							<Line type="monotone" dataKey="actual" stroke="var(--color-actual)" strokeWidth={2} dot={{ r: 3 }} />
+							<Line type="monotone" dataKey="expected" stroke="var(--color-expected)" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} />
+						</LineChart>
+					</ChartContainer>
+				) : (
+					<div className="flex h-[300px] items-center justify-center text-muted-foreground">
+						{t("analytics.workHours.daily.empty", "No daily hours data available")}
+					</div>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+function EmployeeWorkHoursCard({
+	employees,
+	t,
+}: {
+	employees: WorkHoursEmployeeData[];
+	t: WorkHoursTranslate;
+}) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>{t("analytics.workHours.employeeComparison.title", "Employee Work Hours")}</CardTitle>
+				<CardDescription>
+					{t(
+						"analytics.workHours.employeeComparison.description",
+						"Total hours and variance from expected by employee",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{employees.length === 0 ? (
+					<div className="flex h-[200px] items-center justify-center text-muted-foreground">
+						{t("analytics.common.noDataForPeriod", "No data available for the selected period")}
+					</div>
+				) : (
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>{t("analytics.common.employee", "Employee")}</TableHead>
+								<TableHead className="text-right">{t("analytics.common.totalHours", "Total Hours")}</TableHead>
+								<TableHead className="text-right">{t("analytics.workHours.expectedHours", "Expected Hours")}</TableHead>
+								<TableHead className="text-right">{t("analytics.workHours.variance", "Variance")}</TableHead>
+								<TableHead>{t("common.status", "Status")}</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{employees.map((employee) => (
+								<TableRow key={employee.employeeId}>
+									<TableCell className="font-medium">{employee.employeeName}</TableCell>
+									<TableCell className="text-right">{employee.totalHours.toFixed(1)}h</TableCell>
+									<TableCell className="text-right">{(employee.totalHours + employee.overtimeHours).toFixed(1)}h</TableCell>
+									<TableCell className="text-right">
+										<span className={employee.overtimeHours >= 0 ? "text-green-600" : "text-orange-600"}>
+											{employee.overtimeHours >= 0 ? "+" : ""}
+											{employee.overtimeHours.toFixed(1)}h
+										</span>
+									</TableCell>
+									<TableCell>
+										<Badge variant={employee.avgHoursPerWeek >= 35 ? "default" : employee.avgHoursPerWeek >= 30 ? "secondary" : "destructive"}>
+											{employee.avgHoursPerWeek.toFixed(0)}h/wk
+										</Badge>
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+function WorkHoursDistributionCard({ data, t }: { data: WorkHoursBarData; t: WorkHoursTranslate }) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>{t("analytics.workHours.distribution.title", "Work Hours Distribution")}</CardTitle>
+				<CardDescription>
+					{t(
+						"analytics.workHours.distribution.description",
+						"Employee work hours comparison (horizontal bar)",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{data.length > 0 ? (
+					<ChartContainer
+						config={{ hours: { label: t("analytics.common.hours", "Hours"), color: "hsl(var(--chart-4))" } }}
+						className="h-[300px]"
+					>
+						<BarChart data={data} layout="vertical">
+							<CartesianGrid strokeDasharray="3 3" />
+							<XAxis type="number" tickLine={false} axisLine={false} />
+							<YAxis dataKey="employee" type="category" tickLine={false} tickMargin={10} axisLine={false} width={120} />
+							<ChartTooltip content={<ChartTooltipContent />} />
+							<Bar dataKey="hours" fill="var(--color-hours)" radius={4} />
+						</BarChart>
+					</ChartContainer>
+				) : (
+					<div className="flex h-[300px] items-center justify-center text-muted-foreground">
+						{t("analytics.workHours.distribution.empty", "No distribution data available")}
+					</div>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
 export default function WorkHoursPage() {
 	const { t } = useTranslate();
 	const { isHydrated, timezone } = useOrganizationSettings(
@@ -179,244 +358,10 @@ export default function WorkHoursPage() {
 
 			{!loading && (
 				<>
-					{/* Overtime/Undertime Trend */}
-					<Card>
-						<CardHeader>
-							<CardTitle>
-								{t("analytics.workHours.varianceTrend.title", "Overtime & Undertime Trend")}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"analytics.workHours.varianceTrend.description",
-									"Hours variance from expected work hours over time",
-								)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{trendData.length > 0 ? (
-								<ChartContainer
-									config={{
-										overtime: {
-											label: t("analytics.common.overtime", "Overtime"),
-											color: "hsl(var(--chart-1))",
-										},
-										undertime: {
-											label: t("analytics.common.undertime", "Undertime"),
-											color: "hsl(var(--chart-2))",
-										},
-									}}
-									className="h-[300px]"
-								>
-									<AreaChart data={trendData}>
-										<CartesianGrid strokeDasharray="3 3" />
-										<XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
-										<YAxis tickLine={false} axisLine={false} />
-										<ChartTooltip content={<ChartTooltipContent />} />
-										<Area
-											type="monotone"
-											dataKey="overtime"
-											stackId="1"
-											stroke="var(--color-overtime)"
-											fill="var(--color-overtime)"
-											fillOpacity={0.6}
-										/>
-										<Area
-											type="monotone"
-											dataKey="undertime"
-											stackId="2"
-											stroke="var(--color-undertime)"
-											fill="var(--color-undertime)"
-											fillOpacity={0.6}
-										/>
-									</AreaChart>
-								</ChartContainer>
-							) : (
-								<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-									{t("analytics.workHours.varianceTrend.empty", "No trend data available")}
-								</div>
-							)}
-						</CardContent>
-					</Card>
-
-					{/* Daily Work Hours */}
-					<Card>
-						<CardHeader>
-							<CardTitle>{t("analytics.workHours.daily.title", "Daily Work Hours")}</CardTitle>
-							<CardDescription>
-								{t(
-									"analytics.workHours.daily.description",
-									"Actual vs expected work hours per day",
-								)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{dailyHoursData.length > 0 ? (
-								<ChartContainer
-									config={{
-										actual: {
-											label: t("analytics.workHours.actualHours", "Actual Hours"),
-											color: "hsl(var(--primary))",
-										},
-										expected: {
-											label: t("analytics.workHours.expectedHours", "Expected Hours"),
-											color: "hsl(var(--muted-foreground))",
-										},
-									}}
-									className="h-[300px]"
-								>
-									<LineChart data={dailyHoursData}>
-										<CartesianGrid strokeDasharray="3 3" />
-										<XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
-										<YAxis tickLine={false} axisLine={false} />
-										<ChartTooltip content={<ChartTooltipContent />} />
-										<Line
-											type="monotone"
-											dataKey="actual"
-											stroke="var(--color-actual)"
-											strokeWidth={2}
-											dot={{ r: 3 }}
-										/>
-										<Line
-											type="monotone"
-											dataKey="expected"
-											stroke="var(--color-expected)"
-											strokeWidth={2}
-											strokeDasharray="5 5"
-											dot={{ r: 3 }}
-										/>
-									</LineChart>
-								</ChartContainer>
-							) : (
-								<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-									{t("analytics.workHours.daily.empty", "No daily hours data available")}
-								</div>
-							)}
-						</CardContent>
-					</Card>
-
-					{/* Employee Work Hours Comparison */}
-					<Card>
-						<CardHeader>
-							<CardTitle>
-								{t("analytics.workHours.employeeComparison.title", "Employee Work Hours")}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"analytics.workHours.employeeComparison.description",
-									"Total hours and variance from expected by employee",
-								)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{employees.length === 0 ? (
-								<div className="flex h-[200px] items-center justify-center text-muted-foreground">
-									{t(
-										"analytics.common.noDataForPeriod",
-										"No data available for the selected period",
-									)}
-								</div>
-							) : (
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>{t("analytics.common.employee", "Employee")}</TableHead>
-											<TableHead className="text-right">
-												{t("analytics.common.totalHours", "Total Hours")}
-											</TableHead>
-											<TableHead className="text-right">
-												{t("analytics.workHours.expectedHours", "Expected Hours")}
-											</TableHead>
-											<TableHead className="text-right">
-												{t("analytics.workHours.variance", "Variance")}
-											</TableHead>
-											<TableHead>{t("common.status", "Status")}</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{employees.map((emp) => (
-											<TableRow key={emp.employeeId}>
-												<TableCell className="font-medium">{emp.employeeName}</TableCell>
-												<TableCell className="text-right">{emp.totalHours.toFixed(1)}h</TableCell>
-												<TableCell className="text-right">
-													{(emp.totalHours + emp.overtimeHours).toFixed(1)}h
-												</TableCell>
-												<TableCell className="text-right">
-													<span
-														className={
-															emp.overtimeHours >= 0 ? "text-green-600" : "text-orange-600"
-														}
-													>
-														{emp.overtimeHours >= 0 ? "+" : ""}
-														{emp.overtimeHours.toFixed(1)}h
-													</span>
-												</TableCell>
-												<TableCell>
-													<Badge
-														variant={
-															emp.avgHoursPerWeek >= 35
-																? "default"
-																: emp.avgHoursPerWeek >= 30
-																	? "secondary"
-																	: "destructive"
-														}
-													>
-														{emp.avgHoursPerWeek.toFixed(0)}h/wk
-													</Badge>
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							)}
-						</CardContent>
-					</Card>
-
-					{/* Work Hours Distribution */}
-					<Card>
-						<CardHeader>
-							<CardTitle>
-								{t("analytics.workHours.distribution.title", "Work Hours Distribution")}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"analytics.workHours.distribution.description",
-									"Employee work hours comparison (horizontal bar)",
-								)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{distributionData.length > 0 ? (
-								<ChartContainer
-									config={{
-										hours: {
-											label: t("analytics.common.hours", "Hours"),
-											color: "hsl(var(--chart-4))",
-										},
-									}}
-									className="h-[300px]"
-								>
-									<BarChart data={distributionData} layout="vertical">
-										<CartesianGrid strokeDasharray="3 3" />
-										<XAxis type="number" tickLine={false} axisLine={false} />
-										<YAxis
-											dataKey="employee"
-											type="category"
-											tickLine={false}
-											tickMargin={10}
-											axisLine={false}
-											width={120}
-										/>
-										<ChartTooltip content={<ChartTooltipContent />} />
-										<Bar dataKey="hours" fill="var(--color-hours)" radius={4} />
-									</BarChart>
-								</ChartContainer>
-							) : (
-								<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-									{t("analytics.workHours.distribution.empty", "No distribution data available")}
-								</div>
-							)}
-						</CardContent>
-					</Card>
+					<VarianceTrendCard data={trendData} t={t} />
+					<DailyWorkHoursCard data={dailyHoursData} t={t} />
+					<EmployeeWorkHoursCard employees={employees} t={t} />
+					<WorkHoursDistributionCard data={distributionData} t={t} />
 				</>
 			)}
 		</div>

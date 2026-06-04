@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { toast } from "sonner";
 import type {
 	NotificationChannelConfig,
@@ -37,6 +38,85 @@ const fallbackSettings: NotificationChannelSettingsFormValues = {
 	digestTimezone: "Europe/Berlin",
 	escalationTimeoutHours: 24,
 };
+
+type NotificationTranslate = ReturnType<typeof useTranslate>["t"];
+
+function ChannelSummaryCard({
+	channelName,
+	description,
+	config,
+	isActive,
+	statusLabel,
+	t,
+}: {
+	channelName: string;
+	description: string;
+	config: NotificationChannelConfig | null;
+	isActive: boolean;
+	statusLabel: string;
+	t: NotificationTranslate;
+}) {
+	return (
+		<Card>
+			<CardHeader>
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+					<div className="min-w-0 space-y-1">
+						<CardTitle>{channelName}</CardTitle>
+						<CardDescription>{description}</CardDescription>
+					</div>
+					<Badge variant={isActive ? "default" : "secondary"}>{statusLabel}</Badge>
+				</div>
+			</CardHeader>
+			<CardContent className="space-y-2">
+				<p className="break-words text-sm font-medium">
+					{config?.displayName ??
+						t("settings.notifications.notConnected", "{channelName} is not connected", {
+							channelName,
+						})}
+				</p>
+				<p className="text-sm text-muted-foreground">
+					{config
+						? t(
+								"settings.notifications.manageEnabledFeatures",
+								"Manage which notification features are enabled for this integration.",
+							)
+						: t(
+								"settings.notifications.connectBeforeChanging",
+								"Connect or configure this integration before changing notification settings.",
+							)}
+				</p>
+			</CardContent>
+		</Card>
+	);
+}
+
+function FeatureToggleRow({
+	id,
+	label,
+	description,
+	children,
+}: {
+	id: string;
+	label: string;
+	description: string;
+	children: ReactNode;
+}) {
+	const descriptionId = `${id}-description`;
+
+	return (
+		<div className="flex min-w-0 items-center justify-between gap-4">
+			<div className="min-w-0 space-y-1">
+				<Label htmlFor={id} className="text-sm font-medium">
+					{label}
+				</Label>
+				<p id={descriptionId} className="break-words text-sm text-muted-foreground">
+					{description}
+				</p>
+			</div>
+			{children}
+		</div>
+	);
+}
 
 export function NotificationChannelSettings({
 	channelName,
@@ -98,36 +178,14 @@ export function NotificationChannelSettings({
 
 	return (
 		<div className="min-w-0 space-y-6">
-			<Card>
-				<CardHeader>
-					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-						<div className="min-w-0 space-y-1">
-							<CardTitle>{channelName}</CardTitle>
-							<CardDescription>{description}</CardDescription>
-						</div>
-						<Badge variant={isActive ? "default" : "secondary"}>{statusLabel}</Badge>
-					</div>
-				</CardHeader>
-				<CardContent className="space-y-2">
-					<p className="break-words text-sm font-medium">
-						{config?.displayName ??
-							t("settings.notifications.notConnected", "{channelName} is not connected", {
-								channelName,
-							})}
-					</p>
-					<p className="text-sm text-muted-foreground">
-						{config
-							? t(
-									"settings.notifications.manageEnabledFeatures",
-									"Manage which notification features are enabled for this integration.",
-								)
-							: t(
-									"settings.notifications.connectBeforeChanging",
-									"Connect or configure this integration before changing notification settings.",
-								)}
-					</p>
-				</CardContent>
-			</Card>
+			<ChannelSummaryCard
+				channelName={channelName}
+				description={description}
+				config={config}
+				isActive={isActive}
+				statusLabel={statusLabel}
+				t={t}
+			/>
 
 			<Card>
 				<CardHeader>
@@ -147,21 +205,14 @@ export function NotificationChannelSettings({
 							form.handleSubmit();
 						}}
 					>
-						<div className="flex min-w-0 items-center justify-between gap-4">
-							<div className="min-w-0 space-y-1">
-								<Label htmlFor="enableApprovals" className="text-sm font-medium">
-									{t("settings.notifications.approvals", "Approval notifications")}
-								</Label>
-								<p
-									id="enableApprovals-description"
-									className="break-words text-sm text-muted-foreground"
-								>
-									{t(
-										"settings.notifications.approvalsDescription",
-										"Send approval requests and approval status updates.",
-									)}
-								</p>
-							</div>
+						<FeatureToggleRow
+							id="enableApprovals"
+							label={t("settings.notifications.approvals", "Approval notifications")}
+							description={t(
+								"settings.notifications.approvalsDescription",
+								"Send approval requests and approval status updates.",
+							)}
+						>
 							<form.Field name="enableApprovals">
 								{(field) => (
 									<Switch
@@ -174,25 +225,18 @@ export function NotificationChannelSettings({
 									/>
 								)}
 							</form.Field>
-						</div>
+						</FeatureToggleRow>
 
 						<div className="h-px bg-border" />
 
-						<div className="flex min-w-0 items-center justify-between gap-4">
-							<div className="min-w-0 space-y-1">
-								<Label htmlFor="enableCommands" className="text-sm font-medium">
-									{t("settings.notifications.commands", "Commands")}
-								</Label>
-								<p
-									id="enableCommands-description"
-									className="break-words text-sm text-muted-foreground"
-								>
-									{t(
-										"settings.notifications.commandsDescription",
-										"Allow supported workplace commands from this channel.",
-									)}
-								</p>
-							</div>
+						<FeatureToggleRow
+							id="enableCommands"
+							label={t("settings.notifications.commands", "Commands")}
+							description={t(
+								"settings.notifications.commandsDescription",
+								"Allow supported workplace commands from this channel.",
+							)}
+						>
 							<form.Field name="enableCommands">
 								{(field) => (
 									<Switch
@@ -205,26 +249,19 @@ export function NotificationChannelSettings({
 									/>
 								)}
 							</form.Field>
-						</div>
+						</FeatureToggleRow>
 
 						<div className="h-px bg-border" />
 
 						<div className="space-y-3">
-							<div className="flex min-w-0 items-center justify-between gap-4">
-								<div className="min-w-0 space-y-1">
-									<Label htmlFor="enableDailyDigest" className="text-sm font-medium">
-										{t("settings.notifications.dailyDigest", "Daily digest")}
-									</Label>
-									<p
-										id="enableDailyDigest-description"
-										className="break-words text-sm text-muted-foreground"
-									>
-										{t(
-											"settings.notifications.dailyDigestDescription",
-											"Send a daily summary of absences, schedules, and pending work.",
-										)}
-									</p>
-								</div>
+							<FeatureToggleRow
+								id="enableDailyDigest"
+								label={t("settings.notifications.dailyDigest", "Daily digest")}
+								description={t(
+									"settings.notifications.dailyDigestDescription",
+									"Send a daily summary of absences, schedules, and pending work.",
+								)}
+							>
 								<form.Field name="enableDailyDigest">
 									{(field) => (
 										<Switch
@@ -237,7 +274,7 @@ export function NotificationChannelSettings({
 										/>
 									)}
 								</form.Field>
-							</div>
+							</FeatureToggleRow>
 
 							<div className="grid gap-3 rounded-lg border bg-muted/30 p-3 sm:grid-cols-2">
 								<form.Field name="digestTime">
@@ -284,21 +321,14 @@ export function NotificationChannelSettings({
 						<div className="h-px bg-border" />
 
 						<div className="space-y-3">
-							<div className="flex min-w-0 items-center justify-between gap-4">
-								<div className="min-w-0 space-y-1">
-									<Label htmlFor="enableEscalations" className="text-sm font-medium">
-										{t("settings.notifications.escalations", "Escalations")}
-									</Label>
-									<p
-										id="enableEscalations-description"
-										className="break-words text-sm text-muted-foreground"
-									>
-										{t(
-											"settings.notifications.escalationsDescription",
-											"Escalate unanswered approval requests after the configured timeout.",
-										)}
-									</p>
-								</div>
+							<FeatureToggleRow
+								id="enableEscalations"
+								label={t("settings.notifications.escalations", "Escalations")}
+								description={t(
+									"settings.notifications.escalationsDescription",
+									"Escalate unanswered approval requests after the configured timeout.",
+								)}
+							>
 								<form.Field name="enableEscalations">
 									{(field) => (
 										<Switch
@@ -311,7 +341,7 @@ export function NotificationChannelSettings({
 										/>
 									)}
 								</form.Field>
-							</div>
+							</FeatureToggleRow>
 
 							<form.Field name="escalationTimeoutHours">
 								{(field) => (
