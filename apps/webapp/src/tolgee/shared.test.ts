@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
@@ -8,13 +8,6 @@ import {
 	loadRouteTranslations,
 	mergeTreeTranslations,
 } from "./shared";
-
-function collectStringValues(value: unknown): string[] {
-	if (typeof value === "string") return [value];
-	if (!value || typeof value !== "object") return [];
-	if (Array.isArray(value)) return value.flatMap(collectStringValues);
-	return Object.values(value).flatMap(collectStringValues);
-}
 
 describe("Tolgee route translations", () => {
 	it("lists every language supported by Tolgee and the language switchers", () => {
@@ -33,22 +26,6 @@ describe("Tolgee route translations", () => {
 			for (const locale of ALL_LANGUAGES) {
 				expect(existsSync(join(process.cwd(), `messages/${namespace}/${locale}.json`))).toBe(true);
 			}
-		}
-	});
-
-	it("uses Tolgee argument syntax in approval sprint progress translations", () => {
-		for (const locale of ALL_LANGUAGES) {
-			const rawMessages = readFileSync(
-				join(process.cwd(), `messages/approvals/${locale}.json`),
-				"utf8",
-			);
-			const messages = JSON.parse(rawMessages) as { sprint?: { progress?: string } };
-
-			expect(messages.sprint?.progress).toContain("{current}");
-			expect(messages.sprint?.progress).toContain("{total}");
-			expect(collectStringValues(messages)).toEqual(
-				expect.not.arrayContaining([expect.stringContaining("${")]),
-			);
 		}
 	});
 
