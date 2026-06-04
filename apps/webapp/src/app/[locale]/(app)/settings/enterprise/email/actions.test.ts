@@ -190,4 +190,36 @@ describe("enterprise email config actions", () => {
 			}),
 		);
 	});
+
+	it("returns null smtpIpMode for resend organization email config", async () => {
+		mocks.findFirst.mockResolvedValue({
+			id: "config-1",
+			organizationId: "org-1",
+			transportType: "resend",
+			fromEmail: "noreply@example.com",
+			fromName: "Example",
+			isActive: true,
+			smtpHost: null,
+			smtpPort: null,
+			smtpSecure: null,
+			smtpRequireTls: null,
+			smtpUsername: null,
+			smtpIpMode: null,
+			lastTestAt: null,
+			lastTestSuccess: null,
+			lastTestError: null,
+			createdAt: new Date("2026-06-04T00:00:00.000Z"),
+			updatedAt: new Date("2026-06-04T00:00:00.000Z"),
+		});
+		mocks.hasOrgSecret.mockResolvedValue(false);
+
+		const result = await getEmailConfig("org-1");
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				transportType: "resend",
+				smtpIpMode: null,
+			}),
+		);
+	});
 });

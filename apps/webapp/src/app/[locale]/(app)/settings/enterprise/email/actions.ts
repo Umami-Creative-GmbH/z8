@@ -108,7 +108,7 @@ export async function getEmailConfig(organizationId: string): Promise<EmailConfi
 			smtpPort: config.smtpPort,
 			smtpSecure: config.smtpSecure,
 			smtpRequireTls: config.smtpRequireTls,
-			smtpIpMode: config.smtpIpMode ?? "auto",
+			smtpIpMode: config.transportType === "smtp" ? (config.smtpIpMode ?? "auto") : null,
 			smtpUsername: config.smtpUsername,
 			lastTestAt: config.lastTestAt,
 			lastTestSuccess: config.lastTestSuccess,
