@@ -160,13 +160,18 @@ describe("app sidebar compliance navigation", () => {
 		);
 	});
 
-	it("orders Calendar after Time Tracking and before My Requests", () => {
+	it("orders personal navigation items", () => {
 		render(<AppSidebar />);
 
-		expect(navMainSpy.mock.lastCall?.[0].map((item) => item.url).slice(1, 4)).toEqual([
+		expect(navMainSpy.mock.lastCall?.[0].map((item) => item.url)).toEqual([
+			"/",
 			"/time-tracking",
 			"/calendar",
+			"/absences",
+			"/travel-expenses",
 			"/my-requests",
+			"/reports",
+			"/organization",
 		]);
 	});
 

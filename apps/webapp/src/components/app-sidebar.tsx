@@ -101,16 +101,6 @@ export function AppSidebar({
 			icon: IconCalendarEvent,
 		},
 		{
-			title: t("nav.my-requests", "My Requests"),
-			url: "/my-requests",
-			icon: IconFileDescription,
-		},
-		{
-			title: t("nav.org-explorer", "Org Explorer"),
-			url: "/organization",
-			icon: IconHierarchy,
-		},
-		{
 			title: t("nav.absences", "Absences"),
 			url: "/absences",
 			icon: IconBeach,
@@ -121,9 +111,19 @@ export function AppSidebar({
 			icon: IconReceipt,
 		},
 		{
+			title: t("nav.my-requests", "My Requests"),
+			url: "/my-requests",
+			icon: IconFileDescription,
+		},
+		{
 			title: t("nav.reports", "Reports"),
 			url: "/reports",
 			icon: IconReport,
+		},
+		{
+			title: t("nav.org-explorer", "Org Explorer"),
+			url: "/organization",
+			icon: IconHierarchy,
 		},
 	];
 

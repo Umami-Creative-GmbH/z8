@@ -10,6 +10,9 @@ const logger = createLogger("SetupConfigCache");
 const CACHE_TAG = "platform-configured";
 const CACHE_PROFILE = "default";
 const REDIS_CACHE_KEY = "setup:platform-configured";
+const shouldSkipPlatformConfigCheckDuringBuild =
+	process.env.NEXT_PHASE === "phase-production-build" ||
+	process.env.npm_lifecycle_event === "build";
 
 // In-memory flag: once the platform is configured, it never reverts.
 // This avoids per-request DB queries in middleware where unstable_cache
@@ -80,6 +83,8 @@ const getCachedPlatformConfigured = unstable_cache(
  * in middleware it queries the DB directly, but only until the first `true`).
  */
 export async function isPlatformConfigured(): Promise<boolean> {
+	if (shouldSkipPlatformConfigCheckDuringBuild) return false;
+
 	if (_configuredInMemory === true) return true;
 
 	const redisResult = await getPlatformConfiguredFromRedis();
