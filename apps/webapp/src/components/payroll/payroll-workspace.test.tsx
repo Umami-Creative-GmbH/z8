@@ -3,6 +3,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { PayrollWorkspace } from "./payroll-workspace";
 
 const actionMocks = vi.hoisted(() => ({
@@ -21,7 +22,7 @@ vi.mock("@/app/[locale]/(app)/payroll/actions", () => ({
 	startScopedPayrollExportAction: actionMocks.startScopedPayrollExportAction,
 }));
 
-const summary = {
+const baseSummary: PayrollWorkspaceSummary = {
 	organizationName: "Acme GmbH",
 	period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
 	generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
@@ -63,11 +64,24 @@ const summary = {
 			label: "Pending absence approval",
 		},
 	],
-} as const;
+};
+
+function buildSummary(overrides: Partial<PayrollWorkspaceSummary> = {}): PayrollWorkspaceSummary {
+	return {
+		...baseSummary,
+		...overrides,
+		period: overrides.period ?? baseSummary.period,
+		totals: overrides.totals ?? baseSummary.totals,
+		employees: overrides.employees ?? baseSummary.employees,
+		blockers: overrides.blockers ?? baseSummary.blockers,
+	};
+}
+
+const summary = buildSummary();
 
 describe("PayrollWorkspace", () => {
 	beforeEach(() => {
-		vi.clearAllMocks();
+		vi.resetAllMocks();
 		actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValue({
 			success: true,
 			data: summary,
@@ -102,8 +116,8 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByLabelText("Engineering")).toBeTruthy();
 		expect(screen.getAllByText("Ada Lovelace").length).toBeGreaterThanOrEqual(2);
 		expect(screen.getByText("Missing clock-out")).toBeTruthy();
-		expect(screen.getByText("Download combined PDF")).toBeTruthy();
-		expect(screen.getByText("Trigger payroll export")).toBeTruthy();
+		expect(screen.getByText("Download PDF")).toBeTruthy();
+		expect(screen.getByText("Trigger export")).toBeTruthy();
 	});
 
 	it("passes scoped employee ids when employee and team filters change", async () => {
@@ -127,5 +141,182 @@ describe("PayrollWorkspace", () => {
 				expect.objectContaining({ employeeIds: ["employee-1"] }),
 			);
 		});
+	});
+
+	it("moves to the previous month from the selected month", async () => {
+		actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValueOnce({
+			success: true,
+			data: buildSummary({
+				period: { start: "2026-05-01", end: "2026-05-31", label: "May 2026" },
+			}),
+		});
+
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Previous period" }));
+
+		await waitFor(() => {
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
+				expect.objectContaining({
+					startDate: "2026-05-01",
+					endDate: "2026-05-31",
+					label: "May 2026",
+				}),
+			);
+		});
+	});
+
+	it("moves to the next month from the selected month", async () => {
+		actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValueOnce({
+			success: true,
+			data: buildSummary({
+				period: { start: "2026-07-01", end: "2026-07-31", label: "July 2026" },
+			}),
+		});
+
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Next period" }));
+
+		await waitFor(() => {
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
+				expect.objectContaining({
+					startDate: "2026-07-01",
+					endDate: "2026-07-31",
+					label: "July 2026",
+				}),
+			);
+		});
+	});
+
+	it("moves to the previous week from the selected week", async () => {
+		actionMocks.getPayrollWorkspaceSummaryAction
+			.mockResolvedValueOnce({
+				success: true,
+				data: buildSummary({
+					period: { start: "2026-06-01", end: "2026-06-07", label: "Jun 1 - Jun 7, 2026" },
+				}),
+			})
+			.mockResolvedValueOnce({
+				success: true,
+				data: buildSummary({
+					period: { start: "2026-05-25", end: "2026-05-31", label: "May 25 - May 31, 2026" },
+				}),
+			});
+
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Week" }));
+		await waitFor(() => expect(screen.getAllByText("Jun 1 - Jun 7, 2026").length).toBeGreaterThan(0));
+		await waitFor(() =>
+			expect((screen.getByRole("button", { name: "Previous period" }) as HTMLButtonElement).disabled).toBe(
+				false,
+			),
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Previous period" }));
+
+		await waitFor(() => {
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					startDate: "2026-05-25",
+					endDate: "2026-05-31",
+					label: "May 25 - May 31, 2026",
+				}),
+			);
+		});
+	});
+
+	it("moves to the next week from the selected week", async () => {
+		actionMocks.getPayrollWorkspaceSummaryAction
+			.mockResolvedValueOnce({
+				success: true,
+				data: buildSummary({
+					period: { start: "2026-06-01", end: "2026-06-07", label: "Jun 1 - Jun 7, 2026" },
+				}),
+			})
+			.mockResolvedValueOnce({
+				success: true,
+				data: buildSummary({
+					period: { start: "2026-06-08", end: "2026-06-14", label: "Jun 8 - Jun 14, 2026" },
+				}),
+			});
+
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Week" }));
+		await waitFor(() => expect(screen.getAllByText("Jun 1 - Jun 7, 2026").length).toBeGreaterThan(0));
+		await waitFor(() =>
+			expect((screen.getByRole("button", { name: "Next period" }) as HTMLButtonElement).disabled).toBe(
+				false,
+			),
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Next period" }));
+
+		await waitFor(() => {
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					startDate: "2026-06-08",
+					endDate: "2026-06-14",
+					label: "Jun 8 - Jun 14, 2026",
+				}),
+			);
+		});
+	});
+
+	it("returns to the current month", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		vi.setSystemTime(new Date("2026-08-15T12:00:00Z"));
+
+		try {
+			actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValueOnce({
+				success: true,
+				data: buildSummary({
+					period: { start: "2026-08-01", end: "2026-08-31", label: "August 2026" },
+				}),
+			});
+
+			render(
+				<PayrollWorkspace
+					initialSummary={summary}
+					exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+				/>,
+			);
+
+			fireEvent.click(screen.getByRole("button", { name: "Current period" }));
+
+			await waitFor(() => {
+				expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
+					expect.objectContaining({
+						startDate: "2026-08-01",
+						endDate: "2026-08-31",
+						label: "August 2026",
+					}),
+				);
+			});
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });
