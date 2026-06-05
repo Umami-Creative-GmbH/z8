@@ -268,7 +268,7 @@ export async function exportPayrollSummaryToPDF(
 					{summary.employees.map((employee) => (
 						<View
 							key={employee.id}
-							style={[styles.tableRow, employee.hasBlockers ? styles.tableRowBlocked : undefined]}
+							style={employee.hasBlockers ? [styles.tableRow, styles.tableRowBlocked] : styles.tableRow}
 							wrap={false}
 						>
 							<View style={[styles.cell, styles.employeeCell]}>
