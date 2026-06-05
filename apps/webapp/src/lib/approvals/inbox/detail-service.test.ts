@@ -93,6 +93,85 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		});
 	});
 
+	it("renders original and requested times for time correction details", async () => {
+		const timeCorrectionRequest = {
+			...request,
+			entityType: "time_entry",
+			entityId: "period-1",
+		};
+		const detail = createDetail({
+			approvalType: "time_entry",
+			entityId: "period-1",
+			typeName: "Time Correction",
+			display: { title: "Time Correction", subtitle: "May 31", summary: "Pending correction" },
+		});
+		detail.entity = {
+			pendingCorrection: {
+				action: "edit",
+				clockIn: {
+					original: new Date("2026-05-31T08:00:00.000Z"),
+					requested: new Date("2026-05-31T08:15:00.000Z"),
+				},
+				clockOut: {
+					original: new Date("2026-05-31T16:00:00.000Z"),
+					requested: new Date("2026-05-31T16:30:00.000Z"),
+				},
+				isOrphaned: false,
+			},
+		};
+
+		const result = await getApprovalInboxDetailFromRequest({
+			request: timeCorrectionRequest,
+			handler: createHandler(detail, "time_entry"),
+		});
+
+		expect(result.sections).toContainEqual({
+			type: "key_value",
+			title: "Requested Correction",
+			rows: [
+				{ label: "Action", value: "Edit" },
+				{ label: "Clock in", value: "08:00 -> 08:15" },
+				{ label: "Clock out", value: "16:00 -> 16:30" },
+			],
+		});
+	});
+
+	it("warns when a pending time correction approval has missing correction entries", async () => {
+		const timeCorrectionRequest = {
+			...request,
+			entityType: "time_entry",
+			entityId: "period-1",
+		};
+		const detail = createDetail({
+			approvalType: "time_entry",
+			entityId: "period-1",
+			typeName: "Time Correction",
+			display: { title: "Time Correction", subtitle: "May 31", summary: "Pending correction" },
+		});
+		detail.entity = {
+			pendingCorrection: {
+				action: "edit",
+				clockIn: { original: new Date("2026-05-31T08:00:00.000Z"), requested: null },
+				clockOut: null,
+				isOrphaned: true,
+			},
+		};
+
+		const result = await getApprovalInboxDetailFromRequest({
+			request: timeCorrectionRequest,
+			handler: createHandler(detail, "time_entry"),
+		});
+
+		expect(result.sections).toContainEqual({
+			type: "callout",
+			title: "Correction data missing",
+			body: "This approval references correction entries that no longer exist or no longer match the work period. Reject it or clean up the stale approval request before approving.",
+			tone: "danger",
+		});
+		expect(result.actions.canApprove).toBe(false);
+		expect(result.actions.canReject).toBe(true);
+	});
+
 	it("rejects unsupported entity types before calling the handler", async () => {
 		const handler = createHandler();
 

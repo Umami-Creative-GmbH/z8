@@ -9,7 +9,7 @@ import { IconClockEdit } from "@tabler/icons-react";
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { approvalRequest, employee, workPeriod } from "@/db/schema";
+import { approvalRequest, employee, timeEntry, workPeriod } from "@/db/schema";
 import { NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
@@ -51,6 +51,7 @@ interface WorkPeriodWithRelations {
 	startTime: Date;
 	endTime: Date | null;
 	durationMinutes: number | null;
+	pendingCorrection?: PendingTimeCorrectionReview;
 	employee: {
 		id: string;
 		userId: string;
@@ -73,6 +74,29 @@ interface WorkPeriodWithRelations {
 	} | null;
 }
 
+interface CorrectionEntryForReview {
+	id: string;
+	timestamp: Date;
+	replacesEntryId: string | null;
+}
+
+type TimeCorrectionAction = "edit" | "delete";
+
+interface PendingTimeCorrectionReview {
+	action: TimeCorrectionAction;
+	clockIn: { original: Date; requested: Date | null };
+	clockOut: { original: Date | null; requested: Date | null } | null;
+	isOrphaned: boolean;
+}
+
+type TimeCorrectionApprovalMetadata = {
+	timeCorrection?: {
+		action?: TimeCorrectionAction;
+		clockInCorrectionId?: string;
+		clockOutCorrectionId?: string;
+	};
+};
+
 /**
  * Format duration in minutes to human-readable string.
  */
@@ -90,6 +114,47 @@ function formatDuration(minutes: number | null): string {
  */
 function formatTime(date: Date): string {
 	return DateTime.fromJSDate(date).toFormat("HH:mm");
+}
+
+function correctionMetadataFromRequest(request: { metadata?: unknown }) {
+	return (request.metadata as TimeCorrectionApprovalMetadata | null)?.timeCorrection;
+}
+
+function buildPendingCorrectionReview(
+	period: WorkPeriodWithRelations,
+	request: { metadata?: unknown },
+	correctionEntries: CorrectionEntryForReview[],
+): PendingTimeCorrectionReview {
+	const metadata = correctionMetadataFromRequest(request);
+	const correctionById = new Map(correctionEntries.map((entry) => [entry.id, entry]));
+	const clockInCorrection = metadata?.clockInCorrectionId
+		? correctionById.get(metadata.clockInCorrectionId)
+		: undefined;
+	const clockOutCorrection = metadata?.clockOutCorrectionId
+		? correctionById.get(metadata.clockOutCorrectionId)
+		: undefined;
+	const matchingClockInCorrection =
+		clockInCorrection?.replacesEntryId === period.clockIn.id ? clockInCorrection : null;
+	const matchingClockOutCorrection =
+		clockOutCorrection?.replacesEntryId === period.clockOut?.id ? clockOutCorrection : null;
+
+	return {
+		action: metadata?.action ?? "edit",
+		clockIn: {
+			original: period.clockIn.timestamp,
+			requested: matchingClockInCorrection?.timestamp ?? null,
+		},
+		clockOut:
+			period.clockOut || metadata?.clockOutCorrectionId
+				? {
+						original: period.clockOut?.timestamp ?? null,
+						requested: matchingClockOutCorrection?.timestamp ?? null,
+					}
+				: null,
+		isOrphaned:
+			Boolean(metadata?.clockInCorrectionId && !matchingClockInCorrection) ||
+			Boolean(metadata?.clockOutCorrectionId && !matchingClockOutCorrection),
+	};
 }
 
 /**
@@ -250,6 +315,35 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 
 			const priority = TimeCorrectionHandler.calculatePriority(period, request.createdAt);
 			const slaDeadline = TimeCorrectionHandler.calculateSLADeadline(period, request.createdAt);
+			const correctionMetadata = correctionMetadataFromRequest(request);
+			const correctionIds = [
+				correctionMetadata?.clockInCorrectionId,
+				correctionMetadata?.clockOutCorrectionId,
+			].filter((id): id is string => Boolean(id));
+			const correctionEntries = yield* _(
+				dbService.query("getPendingCorrectionEntriesForReview", async () => {
+					if (correctionIds.length === 0) {
+						return [];
+					}
+
+					return await dbService.db.query.timeEntry.findMany({
+						where: and(
+							inArray(timeEntry.id, correctionIds),
+							eq(timeEntry.type, "correction"),
+							eq(timeEntry.employeeId, period.employee.id),
+							eq(timeEntry.organizationId, period.employee.organizationId),
+						),
+					});
+				}),
+			);
+			const periodWithCorrection = {
+				...period,
+				pendingCorrection: buildPendingCorrectionReview(
+					period,
+					request,
+					correctionEntries as CorrectionEntryForReview[],
+				),
+			};
 
 			// Build timeline
 			const timeline: ApprovalTimelineEvent[] = [
@@ -320,7 +414,7 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 					sla: buildSLAInfo(slaDeadline),
 					display: TimeCorrectionHandler.getDisplayMetadata(period),
 				},
-				entity: period,
+				entity: periodWithCorrection,
 				timeline,
 			} as ApprovalDetail<WorkPeriodWithRelations>;
 		}),

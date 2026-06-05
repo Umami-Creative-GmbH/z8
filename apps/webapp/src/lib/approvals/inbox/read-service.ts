@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { Effect, Exit } from "effect";
+import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest } from "@/db/schema";
 import type {
@@ -186,11 +187,14 @@ export async function getApprovalInboxDetailFromRequest({
 		handler,
 	};
 	const item = toInboxItem(source, detail.approval, undefined);
+	const actions = isOrphanedTimeCorrectionDetail(detail)
+		? { ...item.capabilities, canApprove: false, canBulkApprove: false }
+		: item.capabilities;
 
 	return {
 		item,
 		sections: buildDetailSections(detail),
-		actions: item.capabilities,
+		actions,
 	};
 }
 
@@ -299,6 +303,8 @@ function buildDetailSections(detail: ApprovalDetail): ApprovalInboxDetailSection
 		},
 	];
 
+	sections.push(...buildTimeCorrectionDetailSections(detail));
+
 	if (detail.timeline.length > 0) {
 		sections.push({
 			type: "timeline",
@@ -313,6 +319,80 @@ function buildDetailSections(detail: ApprovalDetail): ApprovalInboxDetailSection
 	}
 
 	return sections;
+}
+
+interface TimeCorrectionReviewDetail {
+	action: "edit" | "delete";
+	clockIn: { original: Date; requested: Date | null };
+	clockOut: { original: Date | null; requested: Date | null } | null;
+	isOrphaned: boolean;
+}
+
+function hasPendingCorrectionDetail(entity: unknown): entity is {
+	pendingCorrection: TimeCorrectionReviewDetail;
+} {
+	return (
+		typeof entity === "object" &&
+		entity !== null &&
+		"pendingCorrection" in entity &&
+		typeof (entity as { pendingCorrection?: unknown }).pendingCorrection === "object" &&
+		(entity as { pendingCorrection?: unknown }).pendingCorrection !== null
+	);
+}
+
+function isOrphanedTimeCorrectionDetail(detail: ApprovalDetail) {
+	return (
+		detail.approval.approvalType === "time_entry" &&
+		hasPendingCorrectionDetail(detail.entity) &&
+		detail.entity.pendingCorrection.isOrphaned
+	);
+}
+
+function buildTimeCorrectionDetailSections(detail: ApprovalDetail): ApprovalInboxDetailSection[] {
+	if (detail.approval.approvalType !== "time_entry" || !hasPendingCorrectionDetail(detail.entity)) {
+		return [];
+	}
+
+	const correction = detail.entity.pendingCorrection;
+	const rows = [
+		{ label: "Action", value: correction.action === "delete" ? "Delete" : "Edit" },
+		{
+			label: "Clock in",
+			value: formatCorrectionChange(correction.clockIn.original, correction.clockIn.requested),
+			...(correction.clockIn.requested ? {} : { tone: "danger" as const }),
+		},
+	];
+
+	if (correction.clockOut) {
+		rows.push({
+			label: "Clock out",
+			value: formatCorrectionChange(correction.clockOut.original, correction.clockOut.requested),
+			...(correction.clockOut.requested ? {} : { tone: "danger" as const }),
+		});
+	}
+
+	const sections: ApprovalInboxDetailSection[] = [
+		{ type: "key_value", title: "Requested Correction", rows },
+	];
+
+	if (correction.isOrphaned) {
+		sections.unshift({
+			type: "callout",
+			title: "Correction data missing",
+			body: "This approval references correction entries that no longer exist or no longer match the work period. Reject it or clean up the stale approval request before approving.",
+			tone: "danger",
+		});
+	}
+
+	return sections;
+}
+
+function formatCorrectionChange(original: Date | null, requested: Date | null) {
+	return `${formatCorrectionTime(original)} -> ${formatCorrectionTime(requested)}`;
+}
+
+function formatCorrectionTime(value: Date | null) {
+	return value ? DateTime.fromJSDate(value, { zone: "utc" }).toFormat("HH:mm") : "missing";
 }
 
 function compareInboxItems(left: ApprovalInboxItem, right: ApprovalInboxItem): number {
