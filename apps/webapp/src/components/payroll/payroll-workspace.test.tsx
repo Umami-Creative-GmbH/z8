@@ -20,7 +20,7 @@ const summary = {
 	period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
 	generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
 	generatedBy: { id: "payroll-1", name: "Payroll User" },
-	totals: { employeeCount: 1, totalWorkedHours: 8, blockerCount: 1 },
+	totals: { employeeCount: 1, totalWorkedHours: 8, blockerCount: 2 },
 	employees: [
 		{
 			id: "employee-1",
@@ -40,6 +40,12 @@ const summary = {
 			type: "missing_clock_out",
 			label: "Missing clock-out",
 		},
+		{
+			id: "blocker-2",
+			employeeId: "employee-1",
+			type: "pending_absence",
+			label: "Pending absence approval",
+		},
 	],
 } as const;
 
@@ -53,7 +59,18 @@ describe("PayrollWorkspace", () => {
 		);
 		expect(screen.getByText("Payroll")).toBeTruthy();
 		expect(screen.getByText("June 2026")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Month" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Week" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Custom" })).toBeTruthy();
+		expect(screen.getByLabelText("Start")).toBeTruthy();
+		expect(screen.getByLabelText("End")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Apply" })).toBeTruthy();
+		expect(screen.getByText("Employees")).toBeTruthy();
+		expect(screen.getByText("1")).toBeTruthy();
+		expect(screen.getByText("Worked hours")).toBeTruthy();
 		expect(screen.getByText("8.00 h")).toBeTruthy();
+		expect(screen.getByText("Blockers")).toBeTruthy();
+		expect(screen.getByText("2")).toBeTruthy();
 		expect(screen.getByText("Ada Lovelace")).toBeTruthy();
 		expect(screen.getByText("Missing clock-out")).toBeTruthy();
 		expect(screen.getByText("Download combined PDF")).toBeTruthy();
