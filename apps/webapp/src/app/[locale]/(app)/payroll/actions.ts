@@ -43,19 +43,26 @@ const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 type PayrollWorkspaceExportFormatId = (typeof PAYROLL_WORKSPACE_EXPORT_FORMATS)[number];
 type PayrollWorkspaceActorRole = "admin" | "manager" | "employee";
 
+export interface ScopedPayrollEmployeeIdsForAction {
+	employeeIds: string[] | undefined;
+	hasScope: boolean;
+}
+
 export function resolveScopedPayrollEmployeeIdsForAction(input: {
 	role: PayrollWorkspaceActorRole;
 	requestedEmployeeIds?: string[];
 	allowedEmployeeIds: string[];
-}): string[] | undefined {
+}): ScopedPayrollEmployeeIdsForAction {
 	if (input.role === "admin") {
-		return input.requestedEmployeeIds;
+		return { employeeIds: input.requestedEmployeeIds, hasScope: true };
 	}
 
-	return intersectPayrollScope({
+	const employeeIds = intersectPayrollScope({
 		allowedEmployeeIds: input.allowedEmployeeIds,
 		requestedEmployeeIds: input.requestedEmployeeIds,
 	});
+
+	return { employeeIds, hasScope: employeeIds.length > 0 };
 }
 
 export async function getPayrollWorkspaceSummaryAction(
@@ -196,14 +203,25 @@ async function resolvePayrollWorkspaceActionContext(request: PayrollWorkspaceReq
 		});
 	}
 
+	const scopedResult = resolveScopedPayrollEmployeeIdsForAction({
+		role: authContext.employee.role,
+		requestedEmployeeIds,
+		allowedEmployeeIds,
+	});
+
+	if (!scopedResult.hasScope) {
+		throw new AuthorizationError({
+			message: "No payroll employees are available in your access scope",
+			userId: authContext.user.id,
+			resource: "payroll_workspace",
+			action: "read",
+		});
+	}
+
 	return {
 		authContext,
 		period,
-		scopedEmployeeIds: resolveScopedPayrollEmployeeIdsForAction({
-			role: authContext.employee.role,
-			requestedEmployeeIds,
-			allowedEmployeeIds,
-		}),
+		scopedEmployeeIds: scopedResult.employeeIds,
 	};
 }
 
