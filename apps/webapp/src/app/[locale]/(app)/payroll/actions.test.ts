@@ -21,6 +21,16 @@ describe("resolveScopedPayrollEmployeeIdsForAction", () => {
 		).toEqual({ employeeIds: undefined, hasScope: true });
 	});
 
+	it("denies admin scope when an explicit empty employee selection is requested", () => {
+		expect(
+			resolveScopedPayrollEmployeeIdsForAction({
+				role: "admin",
+				requestedEmployeeIds: [],
+				allowedEmployeeIds: ["employee-1"],
+			}),
+		).toEqual({ employeeIds: [], hasScope: false });
+	});
+
 	it("intersects requested employee IDs with allowed scope for non-admin payroll users", () => {
 		expect(
 			resolveScopedPayrollEmployeeIdsForAction({
