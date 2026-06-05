@@ -75,6 +75,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 	);
 	const filtersHaveNoMatches = filteredEmployeeIds?.length === 0;
 	const hasExportFormats = exportFormats.length > 0;
+	const readyEmployeeCount = summary.employees.filter((employee) => !employee.hasBlockers).length;
 	const request = {
 		startDate: summary.period.start,
 		endDate: summary.period.end,
@@ -234,10 +235,12 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 					<div className="space-y-2">
 						<div className="flex items-center gap-2 text-muted-foreground text-sm">
 							<IconCalendarWeek aria-hidden="true" className="size-4" />
-							<span>Payroll controls</span>
+							<span>Selected period</span>
 						</div>
 						<div>
-							<CardTitle className="text-2xl">{summary.period.label}</CardTitle>
+							<CardTitle aria-level={2} className="text-2xl" role="heading">
+								{summary.period.label}
+							</CardTitle>
 							<CardDescription>
 								{summary.period.start} to {summary.period.end}
 							</CardDescription>
@@ -398,13 +401,13 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			</Card>
 
 			<section className="grid gap-4 md:grid-cols-4">
-				<SummaryCard label="Selected period" value={summary.period.label} />
 				<SummaryCard
 					icon={<IconUsers aria-hidden="true" className="size-5" />}
 					label="Employees"
 					value={summary.totals.employeeCount.toString()}
 				/>
 				<SummaryCard label="Worked hours" value={formatHours(summary.totals.totalWorkedHours)} />
+				<SummaryCard label="Ready" value={readyEmployeeCount.toString()} />
 				<SummaryCard
 					label="Blockers"
 					value={summary.totals.blockerCount.toString()}
@@ -414,12 +417,12 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Payroll filters</CardTitle>
+					<CardTitle>Payroll scope</CardTitle>
 					<CardDescription>
-						Limit this workspace to employees and teams in your payroll scope.
+						Narrow this payroll workspace by assigned employees or teams.
 					</CardDescription>
 				</CardHeader>
-				<CardContent className="grid gap-5 md:grid-cols-2">
+				<CardContent className="grid gap-6 md:grid-cols-2">
 					<div className="space-y-3">
 						<div className="font-medium text-sm">Assigned employees</div>
 						<div className="grid gap-2">
@@ -472,9 +475,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			{summary.blockers.length > 0 ? (
 				<Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
 					<IconAlertTriangle aria-hidden="true" className="size-4" />
-					<AlertTitle>Payroll blockers require review</AlertTitle>
+					<AlertTitle>{summary.blockers.length} payroll blockers need review</AlertTitle>
 					<AlertDescription>
-						<ul className="grid gap-1">
+						<ul className="mt-2 grid gap-1">
 							{summary.blockers.map((blocker) => (
 								<li key={blocker.id}>{blocker.label}</li>
 							))}
@@ -504,14 +507,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 						</TableHeader>
 						<TableBody>
 							{summary.employees.map((employee) => (
-								<TableRow
-									key={employee.id}
-									className={
-										employee.contractType === "hourly"
-											? "bg-blue-50/50 dark:bg-blue-950/20"
-											: undefined
-									}
-								>
+								<TableRow key={employee.id}>
 									<TableCell>
 										<div className="font-medium">{employee.name}</div>
 										<div className="text-muted-foreground text-xs">
@@ -530,7 +526,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 									<TableCell>{formatAbsences(employee.absenceDaysByCategory)}</TableCell>
 									<TableCell>
 										<Badge variant={employee.hasBlockers ? "destructive" : "secondary"}>
-											{employee.hasBlockers ? "Blocked" : "Ready"}
+											{employee.hasBlockers ? "Blocked" : "Ready for payroll"}
 										</Badge>
 									</TableCell>
 								</TableRow>
