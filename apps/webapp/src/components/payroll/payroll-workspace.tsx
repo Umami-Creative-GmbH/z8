@@ -75,7 +75,12 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 	);
 	const filtersHaveNoMatches = filteredEmployeeIds?.length === 0;
 	const hasExportFormats = exportFormats.length > 0;
-	const readyEmployeeCount = summary.employees.filter((employee) => !employee.hasBlockers).length;
+	const displayedEmployees = filtersHaveNoMatches ? [] : summary.employees;
+	const displayedBlockers = filtersHaveNoMatches ? [] : summary.blockers;
+	const displayedTotals = filtersHaveNoMatches
+		? { employeeCount: 0, totalWorkedHours: 0, blockerCount: 0 }
+		: summary.totals;
+	const readyEmployeeCount = displayedEmployees.filter((employee) => !employee.hasBlockers).length;
 	const request = {
 		startDate: summary.period.start,
 		endDate: summary.period.end,
@@ -246,7 +251,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 							</CardDescription>
 						</div>
 						<p className="text-muted-foreground text-sm">
-							{summary.totals.employeeCount} employees in scope
+							{displayedTotals.employeeCount} employees in scope
 						</p>
 						{filtersHaveNoMatches ? (
 							<p className="text-destructive text-sm">
@@ -404,14 +409,14 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				<SummaryCard
 					icon={<IconUsers aria-hidden="true" className="size-5" />}
 					label="Employees"
-					value={summary.totals.employeeCount.toString()}
+					value={displayedTotals.employeeCount.toString()}
 				/>
-				<SummaryCard label="Worked hours" value={formatHours(summary.totals.totalWorkedHours)} />
+				<SummaryCard label="Worked hours" value={formatHours(displayedTotals.totalWorkedHours)} />
 				<SummaryCard label="Ready" value={readyEmployeeCount.toString()} />
 				<SummaryCard
 					label="Blockers"
-					value={summary.totals.blockerCount.toString()}
-					tone={summary.totals.blockerCount > 0 ? "warning" : "default"}
+					value={displayedTotals.blockerCount.toString()}
+					tone={displayedTotals.blockerCount > 0 ? "warning" : "default"}
 				/>
 			</section>
 
@@ -472,13 +477,13 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				</CardContent>
 			</Card>
 
-			{summary.blockers.length > 0 ? (
+			{displayedBlockers.length > 0 ? (
 				<Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
 					<IconAlertTriangle aria-hidden="true" className="size-4" />
-					<AlertTitle>{summary.blockers.length} payroll blockers need review</AlertTitle>
+					<AlertTitle>{displayedBlockers.length} payroll blockers need review</AlertTitle>
 					<AlertDescription>
 						<ul className="mt-2 grid gap-1">
-							{summary.blockers.map((blocker) => (
+							{displayedBlockers.map((blocker) => (
 								<li key={blocker.id}>{blocker.label}</li>
 							))}
 						</ul>
@@ -506,31 +511,39 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{summary.employees.map((employee) => (
-								<TableRow key={employee.id}>
-									<TableCell>
-										<div className="font-medium">{employee.name}</div>
-										<div className="text-muted-foreground text-xs">
-											{employee.employeeNumber ?? "No employee number"}
-										</div>
-									</TableCell>
-									<TableCell>{employee.teamName ?? "No team"}</TableCell>
-									<TableCell>
-										<Badge variant={employee.contractType === "hourly" ? "default" : "secondary"}>
-											{employee.contractType === "hourly" ? "Hourly" : "Fixed"}
-										</Badge>
-									</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{formatTableHours(employee.workedHours)}
-									</TableCell>
-									<TableCell>{formatAbsences(employee.absenceDaysByCategory)}</TableCell>
-									<TableCell>
-										<Badge variant={employee.hasBlockers ? "destructive" : "secondary"}>
-											{employee.hasBlockers ? "Blocked" : "Ready for payroll"}
-										</Badge>
+							{displayedEmployees.length > 0 ? (
+								displayedEmployees.map((employee) => (
+									<TableRow key={employee.id}>
+										<TableCell>
+											<div className="font-medium">{employee.name}</div>
+											<div className="text-muted-foreground text-xs">
+												{employee.employeeNumber ?? "No employee number"}
+											</div>
+										</TableCell>
+										<TableCell>{employee.teamName ?? "No team"}</TableCell>
+										<TableCell>
+											<Badge variant={employee.contractType === "hourly" ? "default" : "secondary"}>
+												{employee.contractType === "hourly" ? "Hourly" : "Fixed"}
+											</Badge>
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{formatTableHours(employee.workedHours)}
+										</TableCell>
+										<TableCell>{formatAbsences(employee.absenceDaysByCategory)}</TableCell>
+										<TableCell>
+											<Badge variant={employee.hasBlockers ? "destructive" : "secondary"}>
+												{employee.hasBlockers ? "Blocked" : "Ready for payroll"}
+											</Badge>
+										</TableCell>
+									</TableRow>
+								))
+							) : (
+								<TableRow>
+									<TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+										No employees match the selected payroll filters.
 									</TableCell>
 								</TableRow>
-							))}
+							)}
 						</TableBody>
 					</Table>
 				</CardContent>

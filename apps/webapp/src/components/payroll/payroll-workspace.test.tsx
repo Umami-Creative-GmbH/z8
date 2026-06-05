@@ -160,6 +160,12 @@ describe("PayrollWorkspace", () => {
 		await waitFor(() => {
 			expect(screen.getAllByText("No employees match the selected payroll filters.").length).toBeGreaterThan(0);
 		});
+		const employeesSummaryCard = screen.getByText("Employees").closest('[data-slot="card"]');
+		expect(employeesSummaryCard).toBeTruthy();
+		expect(within(employeesSummaryCard as HTMLElement).getByText("0")).toBeTruthy();
+		const employeeTotalsCard = screen.getByText("Employee totals").closest('[data-slot="card"]');
+		expect(employeeTotalsCard).toBeTruthy();
+		expect(within(employeeTotalsCard as HTMLElement).queryByText("E-1")).toBeNull();
 		expect((screen.getByRole("button", { name: "Download PDF" }) as HTMLButtonElement).disabled).toBe(true);
 		expect((screen.getByRole("button", { name: "Trigger export" }) as HTMLButtonElement).disabled).toBe(true);
 	});
