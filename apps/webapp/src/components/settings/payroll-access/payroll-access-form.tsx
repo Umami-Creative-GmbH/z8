@@ -51,9 +51,11 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 						result.error || t("settings.payrollAccess.saveFailed", "Failed to save payroll access"),
 					);
 				}
-			} finally {
+			} catch (error) {
 				setIsPending(false);
+				throw error;
 			}
+			setIsPending(false);
 		},
 	});
 
