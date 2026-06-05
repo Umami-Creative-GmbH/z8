@@ -96,7 +96,9 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expect(screen.getByText("Payroll")).toBeTruthy();
-		expect(screen.getByText("Review payroll totals, readiness, and exports for the selected period.")).toBeTruthy();
+		expect(
+			screen.getByText("Review payroll totals, readiness, and exports for the selected period."),
+		).toBeTruthy();
 		expect(screen.getByRole("heading", { name: "June 2026" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Previous period" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Next period" })).toBeTruthy();
@@ -132,7 +134,9 @@ describe("PayrollWorkspace", () => {
 
 		const exportLabel = screen.getByText("Payroll export target");
 		const exportTarget = screen.getByLabelText("Payroll export target") as HTMLButtonElement;
-		const triggerExportButton = screen.getByRole("button", { name: "Trigger export" }) as HTMLButtonElement;
+		const triggerExportButton = screen.getByRole("button", {
+			name: "Trigger export",
+		}) as HTMLButtonElement;
 
 		expect(exportLabel.getAttribute("for")).toBe("payroll-export-target");
 		expect(exportTarget.id).toBe("payroll-export-target");
@@ -158,7 +162,9 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByLabelText("Engineering"));
 
 		await waitFor(() => {
-			expect(screen.getAllByText("No employees match the selected payroll filters.").length).toBeGreaterThan(0);
+			expect(
+				screen.getAllByText("No employees match the selected payroll filters.").length,
+			).toBeGreaterThan(0);
 		});
 		const employeesSummaryCard = screen.getByText("Employees").closest('[data-slot="card"]');
 		expect(employeesSummaryCard).toBeTruthy();
@@ -166,8 +172,12 @@ describe("PayrollWorkspace", () => {
 		const employeeTotalsCard = screen.getByText("Employee totals").closest('[data-slot="card"]');
 		expect(employeeTotalsCard).toBeTruthy();
 		expect(within(employeeTotalsCard as HTMLElement).queryByText("E-1")).toBeNull();
-		expect((screen.getByRole("button", { name: "Download PDF" }) as HTMLButtonElement).disabled).toBe(true);
-		expect((screen.getByRole("button", { name: "Trigger export" }) as HTMLButtonElement).disabled).toBe(true);
+		expect(
+			(screen.getByRole("button", { name: "Download PDF" }) as HTMLButtonElement).disabled,
+		).toBe(true);
+		expect(
+			(screen.getByRole("button", { name: "Trigger export" }) as HTMLButtonElement).disabled,
+		).toBe(true);
 	});
 
 	it("passes scoped employee ids when employee and team filters change", async () => {
@@ -272,11 +282,13 @@ describe("PayrollWorkspace", () => {
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Week" }));
-		await waitFor(() => expect(screen.getAllByText("Jun 1 - Jun 7, 2026").length).toBeGreaterThan(0));
 		await waitFor(() =>
-			expect((screen.getByRole("button", { name: "Previous period" }) as HTMLButtonElement).disabled).toBe(
-				false,
-			),
+			expect(screen.getAllByText("Jun 1 - Jun 7, 2026").length).toBeGreaterThan(0),
+		);
+		await waitFor(() =>
+			expect(
+				(screen.getByRole("button", { name: "Previous period" }) as HTMLButtonElement).disabled,
+			).toBe(false),
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Previous period" }));
@@ -313,11 +325,13 @@ describe("PayrollWorkspace", () => {
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Week" }));
-		await waitFor(() => expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1));
 		await waitFor(() =>
-			expect((screen.getByRole("button", { name: "Previous period" }) as HTMLButtonElement).disabled).toBe(
-				false,
-			),
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
+		);
+		await waitFor(() =>
+			expect(
+				(screen.getByRole("button", { name: "Previous period" }) as HTMLButtonElement).disabled,
+			).toBe(false),
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Previous period" }));
@@ -356,11 +370,13 @@ describe("PayrollWorkspace", () => {
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Week" }));
-		await waitFor(() => expect(screen.getAllByText("Jun 1 - Jun 7, 2026").length).toBeGreaterThan(0));
 		await waitFor(() =>
-			expect((screen.getByRole("button", { name: "Next period" }) as HTMLButtonElement).disabled).toBe(
-				false,
-			),
+			expect(screen.getAllByText("Jun 1 - Jun 7, 2026").length).toBeGreaterThan(0),
+		);
+		await waitFor(() =>
+			expect(
+				(screen.getByRole("button", { name: "Next period" }) as HTMLButtonElement).disabled,
+			).toBe(false),
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Next period" }));

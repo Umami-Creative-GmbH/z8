@@ -147,8 +147,10 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			return;
 		}
 
-		refreshSummary(buildPeriodRequest(DateTime.utc().startOf(nextMode), nextMode), filteredEmployeeIds, () =>
-			setDateMode(nextMode),
+		refreshSummary(
+			buildPeriodRequest(DateTime.utc().startOf(nextMode), nextMode),
+			filteredEmployeeIds,
+			() => setDateMode(nextMode),
 		);
 	}
 
@@ -548,7 +550,6 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 					</Table>
 				</CardContent>
 			</Card>
-
 		</div>
 	);
 }
