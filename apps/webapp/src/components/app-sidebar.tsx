@@ -4,6 +4,7 @@ import {
 	IconBeach,
 	IconCalendar,
 	IconCalendarEvent,
+	IconCash,
 	IconClipboardCheck,
 	IconClock,
 	IconDashboard,
@@ -42,6 +43,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	employeeRole?: "admin" | "manager" | "employee" | null;
 	shiftsEnabled?: boolean;
 	showComplianceNav?: boolean;
+	showPayrollNav?: boolean;
 	showWorksCouncilNav?: boolean;
 	showPlatformAdminNav?: boolean;
 	settingsAccessTier?: SettingsAccessTier;
@@ -62,6 +64,7 @@ export function AppSidebar({
 	employeeRole = null,
 	shiftsEnabled = false,
 	showComplianceNav = false,
+	showPayrollNav = false,
 	showWorksCouncilNav = false,
 	showPlatformAdminNav = false,
 	settingsAccessTier = "member",
@@ -78,6 +81,7 @@ export function AppSidebar({
 		settingsAccessTier,
 		billingEnabled,
 		showComplianceNav,
+		showPayrollNav,
 		featureFlags,
 	};
 	const staticCommands = buildStaticAppCommands(staticSearchInput);
@@ -125,6 +129,15 @@ export function AppSidebar({
 			url: "/reports",
 			icon: IconReport,
 		},
+		...(showPayrollNav
+			? [
+					{
+						title: t("nav.payroll", "Payroll"),
+						url: "/payroll",
+						icon: IconCash,
+					},
+				]
+			: []),
 	];
 
 	// Team section - admin/manager only
