@@ -165,6 +165,32 @@ describe("payroll export canonical data fetching", () => {
 		]);
 	});
 
+	it("returns no work export rows for an explicit empty employee scope", async () => {
+		mockState.timeRecordFindMany.mockResolvedValue([
+			{
+				id: "record-1",
+				employeeId: "emp-1",
+				startAt: new Date("2026-01-10T08:00:00.000Z"),
+				endAt: new Date("2026-01-10T16:00:00.000Z"),
+				durationMinutes: 480,
+				employee: null,
+				work: null,
+				allocations: [],
+			},
+		]);
+
+		const results = await dataFetcher.fetchWorkPeriodsForExport("org-1", {
+			dateRange: {
+				start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
+				end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+			},
+			employeeIds: [],
+		});
+
+		expect(results).toEqual([]);
+		expect(mockState.timeRecordFindMany).not.toHaveBeenCalled();
+	});
+
 	it("fetches absence export rows from canonical time records", async () => {
 		mockState.timeRecordFindMany.mockResolvedValue([
 			{
@@ -219,6 +245,33 @@ describe("payroll export canonical data fetching", () => {
 		]);
 	});
 
+	it("returns no absence export rows for an explicit empty employee scope", async () => {
+		mockState.employeeFindMany.mockResolvedValue([{ id: "emp-2" }]);
+		mockState.timeRecordFindMany.mockResolvedValue([
+			{
+				id: "record-2",
+				employeeId: "emp-2",
+				startAt: new Date("2026-01-12T00:00:00.000Z"),
+				endAt: new Date("2026-01-13T23:59:59.000Z"),
+				approvalState: "approved",
+				employee: null,
+				absence: null,
+			},
+		]);
+
+		const results = await dataFetcher.fetchAbsencesForExport("org-1", {
+			dateRange: {
+				start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
+				end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+			},
+			employeeIds: [],
+		});
+
+		expect(results).toEqual([]);
+		expect(mockState.employeeFindMany).not.toHaveBeenCalled();
+		expect(mockState.timeRecordFindMany).not.toHaveBeenCalled();
+	});
+
 	it("counts work export rows from canonical time records", async () => {
 		mockState.timeRecordFindMany.mockResolvedValue([
 			{
@@ -246,5 +299,26 @@ describe("payroll export canonical data fetching", () => {
 		expect(mockState.timeRecordFindMany).toHaveBeenCalledTimes(1);
 		expect(mockState.workPeriodFindMany).not.toHaveBeenCalled();
 		expect(count).toBe(1);
+	});
+
+	it("counts zero work export rows for an explicit empty employee scope", async () => {
+		mockState.timeRecordFindMany.mockResolvedValue([
+			{
+				id: "record-1",
+				employee: null,
+				allocations: [],
+			},
+		]);
+
+		const count = await dataFetcher.countWorkPeriods("org-1", {
+			dateRange: {
+				start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
+				end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+			},
+			employeeIds: [],
+		});
+
+		expect(count).toBe(0);
+		expect(mockState.timeRecordFindMany).not.toHaveBeenCalled();
 	});
 });

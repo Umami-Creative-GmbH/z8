@@ -24,6 +24,7 @@ const {
 	requireAbilityMock,
 	canCreateOrganizationsForDeploymentMock,
 	canViewWorksCouncilPortalMock,
+	hasActivePayrollAccessGrantMock,
 } = vi.hoisted(() => ({
 	navMainSpy: vi.fn(),
 	navSecondarySpy: vi.fn(),
@@ -36,6 +37,7 @@ const {
 	requireAbilityMock: vi.fn(),
 	canCreateOrganizationsForDeploymentMock: vi.fn(),
 	canViewWorksCouncilPortalMock: vi.fn(),
+	hasActivePayrollAccessGrantMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -53,6 +55,10 @@ vi.mock("@/lib/auth-client", () => ({
 
 vi.mock("@/lib/works-council/permissions", () => ({
 	canViewWorksCouncilPortal: canViewWorksCouncilPortalMock,
+}));
+
+vi.mock("@/lib/payroll-access/permissions", () => ({
+	hasActivePayrollAccessGrant: hasActivePayrollAccessGrantMock,
 }));
 
 vi.mock("@/components/nav-main", () => ({
@@ -140,6 +146,7 @@ describe("app sidebar compliance navigation", () => {
 		requireAbilityMock.mockReset();
 		canCreateOrganizationsForDeploymentMock.mockReset();
 		canViewWorksCouncilPortalMock.mockReset();
+		hasActivePayrollAccessGrantMock.mockReset();
 		vi.resetModules();
 	});
 
@@ -185,6 +192,32 @@ describe("app sidebar compliance navigation", () => {
 			expect.arrayContaining([
 				expect.objectContaining({ title: "Org Explorer", url: "/organization" }),
 			]),
+		);
+	});
+
+	it("renders Payroll navigation when payroll access is enabled", () => {
+		render(<AppSidebar employeeRole="employee" showPayrollNav />);
+		expect(screen.getByText("Payroll")).toBeTruthy();
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				staticResults: expect.arrayContaining([
+					expect.objectContaining({ title: "Payroll", href: "/payroll" }),
+				]),
+				staticCommands: expect.arrayContaining([
+					expect.objectContaining({ title: "Open payroll", href: "/payroll" }),
+				]),
+			}),
+		);
+	});
+
+	it("hides Payroll navigation by default", () => {
+		render(<AppSidebar employeeRole="employee" />);
+		expect(screen.queryByText("Payroll")).toBeNull();
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				staticResults: expect.not.arrayContaining([expect.objectContaining({ href: "/payroll" })]),
+				staticCommands: expect.not.arrayContaining([expect.objectContaining({ href: "/payroll" })]),
+			}),
 		);
 	});
 
@@ -604,6 +637,7 @@ describe("app sidebar compliance navigation", () => {
 			},
 			session: { activeOrganizationId: "org_1" },
 			employee: {
+				id: "emp_admin",
 				organizationId: "org_1",
 				role: "admin",
 			},
@@ -635,6 +669,7 @@ describe("app sidebar compliance navigation", () => {
 		expect(appSidebarSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
 				showComplianceNav: true,
+				showPayrollNav: true,
 				showPlatformAdminNav: false,
 				employeeRole: "admin",
 				shiftsEnabled: true,
@@ -650,6 +685,7 @@ describe("app sidebar compliance navigation", () => {
 				},
 			}),
 		);
+		expect(hasActivePayrollAccessGrantMock).not.toHaveBeenCalled();
 
 		appSidebarSpy.mockReset();
 		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
@@ -659,6 +695,7 @@ describe("app sidebar compliance navigation", () => {
 		expect(appSidebarSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
 				showComplianceNav: false,
+				showPayrollNav: true,
 				showPlatformAdminNav: false,
 				settingsAccessTier: "member",
 				billingEnabled: false,
@@ -671,6 +708,112 @@ describe("app sidebar compliance navigation", () => {
 					worksCouncilEnabled: false,
 				},
 			}),
+		);
+	});
+
+	it("passes scoped payroll navigation for active employees with payroll access grants", async () => {
+		vi.stubEnv("BILLING_ENABLED", "false");
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+		getUserOrganizationsMock.mockResolvedValue([
+			{
+				id: "org_1",
+				shiftsEnabled: false,
+				projectsEnabled: false,
+				surchargesEnabled: false,
+				demoDataEnabled: true,
+				worksCouncilEnabled: false,
+			},
+		]);
+		getAuthContextMock.mockResolvedValue({
+			user: { role: "user" },
+			session: { activeOrganizationId: "org_1" },
+			employee: {
+				id: "emp_1",
+				organizationId: "org_1",
+				role: "employee",
+			},
+		});
+		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
+		hasActivePayrollAccessGrantMock.mockResolvedValue(true);
+
+		vi.doMock("@/lib/auth-helpers", () => ({
+			getUserOrganizations: getUserOrganizationsMock,
+			getAuthContext: getAuthContextMock,
+			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+			requireAbility: requireAbilityMock,
+		}));
+		vi.doMock("@/lib/organization/creation-policy.server", () => ({
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+		}));
+
+		vi.doMock("./app-sidebar", () => ({
+			AppSidebar: (props: Record<string, unknown>) => {
+				appSidebarSpy(props);
+				return <div data-testid="server-sidebar-proxy" />;
+			},
+		}));
+
+		const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+		render(await ServerAppSidebar({}));
+
+		expect(appSidebarSpy).toHaveBeenCalledWith(
+			expect.objectContaining({ showPayrollNav: true, employeeRole: "employee" }),
+		);
+		expect(hasActivePayrollAccessGrantMock).toHaveBeenCalledWith({
+			organizationId: "org_1",
+			payrollEmployeeId: "emp_1",
+		});
+	});
+
+	it("hides scoped payroll navigation for employees without active grants", async () => {
+		vi.stubEnv("BILLING_ENABLED", "false");
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+		getUserOrganizationsMock.mockResolvedValue([
+			{
+				id: "org_1",
+				shiftsEnabled: false,
+				projectsEnabled: false,
+				surchargesEnabled: false,
+				demoDataEnabled: true,
+				worksCouncilEnabled: false,
+			},
+		]);
+		getAuthContextMock.mockResolvedValue({
+			user: { role: "user" },
+			session: { activeOrganizationId: "org_1" },
+			employee: {
+				id: "emp_1",
+				organizationId: "org_1",
+				role: "employee",
+			},
+		});
+		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
+		hasActivePayrollAccessGrantMock.mockResolvedValue(false);
+
+		vi.doMock("@/lib/auth-helpers", () => ({
+			getUserOrganizations: getUserOrganizationsMock,
+			getAuthContext: getAuthContextMock,
+			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+			requireAbility: requireAbilityMock,
+		}));
+		vi.doMock("@/lib/organization/creation-policy.server", () => ({
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+		}));
+
+		vi.doMock("./app-sidebar", () => ({
+			AppSidebar: (props: Record<string, unknown>) => {
+				appSidebarSpy(props);
+				return <div data-testid="server-sidebar-proxy" />;
+			},
+		}));
+
+		const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+		render(await ServerAppSidebar({}));
+
+		expect(appSidebarSpy).toHaveBeenCalledWith(
+			expect.objectContaining({ showPayrollNav: false, employeeRole: "employee" }),
 		);
 	});
 

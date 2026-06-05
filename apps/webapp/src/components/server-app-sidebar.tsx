@@ -6,6 +6,7 @@ import {
 	requireAbility,
 } from "@/lib/auth-helpers";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
+import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { AppSidebar } from "./app-sidebar";
 
@@ -20,6 +21,7 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 	const currentOrganization = activeOrganizationId
 		? organizations.find((org) => org.id === activeOrganizationId) || null
 		: null;
+	const activeEmployee = authContext?.employee ?? null;
 	const canCreateOrganizations = canCreateOrganizationsForDeployment(
 		authContext?.user.canCreateOrganizations || authContext?.user.role === "admin",
 	);
@@ -43,15 +45,29 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 			activeOrganizationId,
 		);
 	}
+	let showPayrollNav = false;
+	if (activeEmployee?.role === "admin") {
+		showPayrollNav = true;
+	} else if (
+		activeEmployee &&
+		activeOrganizationId &&
+		activeEmployee.organizationId === activeOrganizationId
+	) {
+		showPayrollNav = await hasActivePayrollAccessGrant({
+			organizationId: activeOrganizationId,
+			payrollEmployeeId: activeEmployee.id,
+		});
+	}
 
 	return (
 		<AppSidebar
 			{...props}
 			organizations={organizations}
 			currentOrganization={currentOrganization}
-			employeeRole={authContext?.employee?.role ?? null}
+			employeeRole={activeEmployee?.role ?? null}
 			shiftsEnabled={currentOrganization?.shiftsEnabled ?? false}
 			showComplianceNav={settingsAccessTier === "orgAdmin"}
+			showPayrollNav={showPayrollNav}
 			showPlatformAdminNav={authContext?.user.role === "admin"}
 			settingsAccessTier={settingsAccessTier ?? "member"}
 			billingEnabled={env.BILLING_ENABLED === "true"}
