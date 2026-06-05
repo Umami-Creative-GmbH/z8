@@ -6,11 +6,11 @@ export interface SavePayrollAccessInput {
 	employeeIds: string[];
 }
 
-export interface PayrollAccessAdminContextInput {
+export interface PayrollOfficerSettingsContextInput {
 	userId?: string;
-	role: "admin" | "manager" | "employee" | null;
 	employeeOrganizationId: string | null;
 	activeOrganizationId: string | null;
+	canManagePayrollOfficerSettings: boolean;
 }
 
 export interface PayrollAccessOwnershipInput {
@@ -18,28 +18,28 @@ export interface PayrollAccessOwnershipInput {
 	organizationTeamIds: string[];
 }
 
-export function assertPayrollAccessAdminContext(
-	context: PayrollAccessAdminContextInput,
+export function assertPayrollOfficerSettingsContext(
+	context: PayrollOfficerSettingsContextInput,
 	action: "read" | "write",
 ): void {
 	if (!context.activeOrganizationId || !context.employeeOrganizationId) {
 		throw new AuthenticationError({ message: "Authentication required", userId: context.userId });
 	}
 
-	if (context.role !== "admin") {
-		throw new AuthorizationError({
-			message: "Admin access required",
-			userId: context.userId,
-			resource: "payroll_access",
-			action,
-		});
-	}
-
 	if (context.employeeOrganizationId !== context.activeOrganizationId) {
 		throw new AuthorizationError({
 			message: "Active organization employee context is required",
 			userId: context.userId,
-			resource: "payroll_access",
+			resource: "PayrollOfficerSettings",
+			action,
+		});
+	}
+
+	if (!context.canManagePayrollOfficerSettings) {
+		throw new AuthorizationError({
+			message: "Payroll officer settings access required",
+			userId: context.userId,
+			resource: "PayrollOfficerSettings",
 			action,
 		});
 	}

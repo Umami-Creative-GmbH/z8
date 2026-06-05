@@ -103,6 +103,12 @@ describe("Organization Owner", () => {
 		expect(ability.can("read", "OrgBilling")).toBe(true);
 	});
 
+	it("can manage payroll officer settings", () => {
+		const ability = defineAbilityFor(ownerPrincipal);
+
+		expect(ability.can("manage", "PayrollOfficerSettings")).toBe(true);
+	});
+
 	it("can manage webhooks", () => {
 		const ability = defineAbilityFor(ownerPrincipal);
 
@@ -175,6 +181,12 @@ describe("Organization Admin", () => {
 		expect(ability.can("read", "OrgBilling")).toBe(true);
 	});
 
+	it("can manage payroll officer settings", () => {
+		const ability = defineAbilityFor(adminPrincipal);
+
+		expect(ability.can("manage", "PayrollOfficerSettings")).toBe(true);
+	});
+
 	it("can read, export, and configure Works Council mode", () => {
 		const ability = defineAbilityFor(adminPrincipal);
 
@@ -212,6 +224,12 @@ describe("Organization Member", () => {
 		expect(ability.can("manage", "OrgSettings")).toBe(false);
 		expect(ability.can("manage", "OrgBilling")).toBe(false);
 		expect(ability.can("manage", "OrgMembers")).toBe(false);
+	});
+
+	it("cannot manage payroll officer settings", () => {
+		const ability = defineAbilityFor(memberPrincipal);
+
+		expect(ability.can("manage", "PayrollOfficerSettings")).toBe(false);
 	});
 
 	it("cannot read, export, or configure Works Council mode", () => {
@@ -258,6 +276,12 @@ describe("Employee Admin", () => {
 
 		expect(ability.can("manage", "Report")).toBe(true);
 		expect(ability.can("manage", "Location")).toBe(true);
+	});
+
+	it("cannot manage payroll officer settings through employee admin role alone", () => {
+		const ability = defineAbilityFor(empAdminPrincipal);
+
+		expect(ability.can("manage", "PayrollOfficerSettings")).toBe(false);
 	});
 });
 

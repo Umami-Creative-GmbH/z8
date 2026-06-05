@@ -3,9 +3,12 @@
 import {
 	IconAlertTriangle,
 	IconCalendarWeek,
+	IconChevronLeft,
+	IconChevronRight,
 	IconDownload,
 	IconFileExport,
 	IconLoader2,
+	IconRefresh,
 	IconUsers,
 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
@@ -72,6 +75,12 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 	);
 	const filtersHaveNoMatches = filteredEmployeeIds?.length === 0;
 	const hasExportFormats = exportFormats.length > 0;
+	const displayedEmployees = filtersHaveNoMatches ? [] : summary.employees;
+	const displayedBlockers = filtersHaveNoMatches ? [] : summary.blockers;
+	const displayedTotals = filtersHaveNoMatches
+		? { employeeCount: 0, totalWorkedHours: 0, blockerCount: 0 }
+		: summary.totals;
+	const readyEmployeeCount = displayedEmployees.filter((employee) => !employee.hasBlockers).length;
 	const request = {
 		startDate: summary.period.start,
 		endDate: summary.period.end,
@@ -79,7 +88,11 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		employeeIds: filteredEmployeeIds,
 	};
 
-	function refreshSummary(nextRequest: PayrollPeriodRequest, employeeIds = filteredEmployeeIds) {
+	function refreshSummary(
+		nextRequest: PayrollPeriodRequest,
+		employeeIds = filteredEmployeeIds,
+		onSuccess?: () => void,
+	) {
 		if (employeeIds?.length === 0) {
 			toast.error("No employees match the selected payroll filters");
 			return;
@@ -96,6 +109,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			setSummary(result.data);
 			setStartDate(result.data.period.start);
 			setEndDate(result.data.period.end);
+			onSuccess?.();
 		});
 	}
 
@@ -128,18 +142,32 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 	}
 
 	function applyDateMode(nextMode: PayrollDateRangeMode) {
-		setDateMode(nextMode);
+		if (nextMode === "custom") {
+			setDateMode(nextMode);
+			return;
+		}
 
-		if (nextMode === "custom") return;
+		refreshSummary(
+			buildPeriodRequest(DateTime.utc().startOf(nextMode), nextMode),
+			filteredEmployeeIds,
+			() => setDateMode(nextMode),
+		);
+	}
 
-		const now = DateTime.utc();
-		const start = now.startOf(nextMode);
-		const end = now.endOf(nextMode);
-		refreshSummary({
-			startDate: start.toISODate() ?? summary.period.start,
-			endDate: end.toISODate() ?? summary.period.end,
-			label: formatPeriodLabel(start, end, nextMode),
-		});
+	function navigatePeriod(direction: "previous" | "next") {
+		if (dateMode === "custom") return;
+
+		const currentStart = DateTime.fromISO(summary.period.start, { zone: "utc" });
+		const amount = direction === "previous" ? -1 : 1;
+		const nextStart = currentStart.plus({ [dateMode]: amount }).startOf(dateMode);
+
+		refreshSummary(buildPeriodRequest(nextStart, dateMode));
+	}
+
+	function returnToCurrentPeriod() {
+		if (dateMode === "custom") return;
+
+		refreshSummary(buildPeriodRequest(DateTime.utc().startOf(dateMode), dateMode));
 	}
 
 	function applyCustomRange() {
@@ -200,92 +228,208 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+			<header className="space-y-1">
 				<div className="space-y-1">
 					<h1 className="text-3xl font-semibold tracking-tight">Payroll</h1>
-					<p className="text-muted-foreground">{summary.period.label}</p>
+					<p className="text-muted-foreground">
+						Review payroll totals, readiness, and exports for the selected period.
+					</p>
 				</div>
+			</header>
 
-				<div className="flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-sm md:flex-row md:items-end">
-					<div className="flex gap-1 rounded-lg bg-muted p-1">
-						{(["month", "week", "custom"] as const).map((mode) => (
-							<Button
-								key={mode}
-								type="button"
-								variant={dateMode === mode ? "default" : "ghost"}
-								size="sm"
-								disabled={isPending}
-								onClick={() => applyDateMode(mode)}
-							>
-								{toTitleCase(mode)}
-							</Button>
-						))}
+			<Card>
+				<CardHeader className="gap-4 lg:flex-row lg:items-start lg:justify-between">
+					<div className="space-y-2">
+						<div className="flex items-center gap-2 text-muted-foreground text-sm">
+							<IconCalendarWeek aria-hidden="true" className="size-4" />
+							<span>Selected period</span>
+						</div>
+						<div>
+							<CardTitle aria-level={2} className="text-2xl" role="heading">
+								{summary.period.label}
+							</CardTitle>
+							<CardDescription>
+								{summary.period.start} to {summary.period.end}
+							</CardDescription>
+						</div>
+						<p className="text-muted-foreground text-sm">
+							{displayedTotals.employeeCount} employees in scope
+						</p>
+						{filtersHaveNoMatches ? (
+							<p className="text-destructive text-sm">
+								No employees match the selected payroll filters.
+							</p>
+						) : null}
 					</div>
 
-					<div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-						<div className="space-y-1">
-							<Label htmlFor="payroll-start-date">Start</Label>
-							<Input
-								id="payroll-start-date"
-								name="payroll-start-date"
-								autoComplete="off"
-								type="date"
-								value={startDate}
-								disabled={dateMode !== "custom" || isPending}
-								onChange={(event) => setStartDate(event.target.value)}
-							/>
-						</div>
-						<div className="space-y-1">
-							<Label htmlFor="payroll-end-date">End</Label>
-							<Input
-								id="payroll-end-date"
-								name="payroll-end-date"
-								autoComplete="off"
-								type="date"
-								value={endDate}
-								disabled={dateMode !== "custom" || isPending}
-								onChange={(event) => setEndDate(event.target.value)}
-							/>
-						</div>
+					<div className="flex flex-wrap gap-2">
 						<Button
 							type="button"
-							disabled={dateMode !== "custom" || isPending}
-							onClick={applyCustomRange}
+							variant="outline"
+							size="sm"
+							disabled={dateMode === "custom" || isPending}
+							onClick={() => navigatePeriod("previous")}
+						>
+							<IconChevronLeft aria-hidden="true" className="size-4" />
+							Previous period
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={dateMode === "custom" || isPending}
+							onClick={() => navigatePeriod("next")}
+						>
+							Next period
+							<IconChevronRight aria-hidden="true" className="size-4" />
+						</Button>
+						<Button
+							type="button"
+							variant="secondary"
+							size="sm"
+							disabled={dateMode === "custom" || isPending}
+							onClick={returnToCurrentPeriod}
+						>
+							<IconRefresh aria-hidden="true" className="size-4" />
+							Current period
+						</Button>
+					</div>
+				</CardHeader>
+				<CardContent className="grid gap-5 xl:grid-cols-[1fr_auto]">
+					<div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+						<div className="flex gap-1 rounded-lg bg-muted p-1">
+							{(["month", "week", "custom"] as const).map((mode) => (
+								<Button
+									key={mode}
+									type="button"
+									variant={dateMode === mode ? "default" : "ghost"}
+									size="sm"
+									disabled={isPending}
+									aria-pressed={dateMode === mode}
+									onClick={() => applyDateMode(mode)}
+								>
+									{toTitleCase(mode)}
+								</Button>
+							))}
+						</div>
+
+						<div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+							<div className="space-y-1">
+								<Label htmlFor="payroll-start-date">Start</Label>
+								<Input
+									id="payroll-start-date"
+									name="payroll-start-date"
+									autoComplete="off"
+									type="date"
+									value={startDate}
+									disabled={dateMode !== "custom" || isPending}
+									onChange={(event) => setStartDate(event.target.value)}
+								/>
+							</div>
+							<div className="space-y-1">
+								<Label htmlFor="payroll-end-date">End</Label>
+								<Input
+									id="payroll-end-date"
+									name="payroll-end-date"
+									autoComplete="off"
+									type="date"
+									value={endDate}
+									disabled={dateMode !== "custom" || isPending}
+									onChange={(event) => setEndDate(event.target.value)}
+								/>
+							</div>
+							<Button
+								type="button"
+								disabled={dateMode !== "custom" || isPending}
+								onClick={applyCustomRange}
+							>
+								{isPending ? (
+									<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+								) : (
+									<IconCalendarWeek aria-hidden="true" className="size-4" />
+								)}
+								Apply
+							</Button>
+						</div>
+					</div>
+
+					<div className="flex flex-col gap-3 lg:flex-row lg:items-end xl:justify-end">
+						<Button
+							type="button"
+							variant="outline"
+							disabled={isPending || filtersHaveNoMatches}
+							onClick={downloadPdf}
 						>
 							{isPending ? (
 								<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 							) : (
-								<IconCalendarWeek aria-hidden="true" className="size-4" />
+								<IconDownload aria-hidden="true" className="size-4" />
 							)}
-							Apply
+							Download PDF
+						</Button>
+
+						<div className="flex flex-col gap-2 lg:min-w-56">
+							<Label htmlFor="payroll-export-target">Payroll export target</Label>
+							<Select
+								value={formatId}
+								onValueChange={setFormatId}
+								disabled={!hasExportFormats || isPending}
+							>
+								<SelectTrigger id="payroll-export-target" className="w-full">
+									<SelectValue placeholder="Select format" />
+								</SelectTrigger>
+								<SelectContent>
+									{exportFormats.map((format) => (
+										<SelectItem key={format.id} value={format.id}>
+											{format.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							{!hasExportFormats ? (
+								<p className="text-muted-foreground text-sm">No configured payroll export target</p>
+							) : null}
+						</div>
+
+						<Button
+							type="button"
+							disabled={!hasExportFormats || isPending || filtersHaveNoMatches}
+							onClick={triggerExport}
+						>
+							{isPending ? (
+								<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+							) : (
+								<IconFileExport aria-hidden="true" className="size-4" />
+							)}
+							Trigger export
 						</Button>
 					</div>
-				</div>
-			</header>
+				</CardContent>
+			</Card>
 
 			<section className="grid gap-4 md:grid-cols-4">
-				<SummaryCard label="Selected period" value={summary.period.label} />
 				<SummaryCard
 					icon={<IconUsers aria-hidden="true" className="size-5" />}
 					label="Employees"
-					value={summary.totals.employeeCount.toString()}
+					value={displayedTotals.employeeCount.toString()}
 				/>
-				<SummaryCard label="Worked hours" value={formatHours(summary.totals.totalWorkedHours)} />
+				<SummaryCard label="Worked hours" value={formatHours(displayedTotals.totalWorkedHours)} />
+				<SummaryCard label="Ready" value={readyEmployeeCount.toString()} />
 				<SummaryCard
 					label="Blockers"
-					value={summary.totals.blockerCount.toString()}
-					tone={summary.totals.blockerCount > 0 ? "warning" : "default"}
+					value={displayedTotals.blockerCount.toString()}
+					tone={displayedTotals.blockerCount > 0 ? "warning" : "default"}
 				/>
 			</section>
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Payroll filters</CardTitle>
+					<CardTitle>Payroll scope</CardTitle>
 					<CardDescription>
-						Limit this workspace to employees and teams in your payroll scope.
+						Narrow this payroll workspace by assigned employees or teams.
 					</CardDescription>
 				</CardHeader>
-				<CardContent className="grid gap-5 md:grid-cols-2">
+				<CardContent className="grid gap-6 md:grid-cols-2">
 					<div className="space-y-3">
 						<div className="font-medium text-sm">Assigned employees</div>
 						<div className="grid gap-2">
@@ -335,13 +479,13 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				</CardContent>
 			</Card>
 
-			{summary.blockers.length > 0 ? (
+			{displayedBlockers.length > 0 ? (
 				<Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
 					<IconAlertTriangle aria-hidden="true" className="size-4" />
-					<AlertTitle>Payroll blockers require review</AlertTitle>
+					<AlertTitle>{displayedBlockers.length} payroll blockers need review</AlertTitle>
 					<AlertDescription>
-						<ul className="grid gap-1">
-							{summary.blockers.map((blocker) => (
+						<ul className="mt-2 grid gap-1">
+							{displayedBlockers.map((blocker) => (
 								<li key={blocker.id}>{blocker.label}</li>
 							))}
 						</ul>
@@ -369,100 +513,41 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{summary.employees.map((employee) => (
-								<TableRow
-									key={employee.id}
-									className={
-										employee.contractType === "hourly"
-											? "bg-blue-50/50 dark:bg-blue-950/20"
-											: undefined
-									}
-								>
-									<TableCell>
-										<div className="font-medium">{employee.name}</div>
-										<div className="text-muted-foreground text-xs">
-											{employee.employeeNumber ?? "No employee number"}
-										</div>
-									</TableCell>
-									<TableCell>{employee.teamName ?? "No team"}</TableCell>
-									<TableCell>
-										<Badge variant={employee.contractType === "hourly" ? "default" : "secondary"}>
-											{employee.contractType === "hourly" ? "Hourly" : "Fixed"}
-										</Badge>
-									</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{formatTableHours(employee.workedHours)}
-									</TableCell>
-									<TableCell>{formatAbsences(employee.absenceDaysByCategory)}</TableCell>
-									<TableCell>
-										<Badge variant={employee.hasBlockers ? "destructive" : "secondary"}>
-											{employee.hasBlockers ? "Blocked" : "Ready"}
-										</Badge>
+							{displayedEmployees.length > 0 ? (
+								displayedEmployees.map((employee) => (
+									<TableRow key={employee.id}>
+										<TableCell>
+											<div className="font-medium">{employee.name}</div>
+											<div className="text-muted-foreground text-xs">
+												{employee.employeeNumber ?? "No employee number"}
+											</div>
+										</TableCell>
+										<TableCell>{employee.teamName ?? "No team"}</TableCell>
+										<TableCell>
+											<Badge variant={employee.contractType === "hourly" ? "default" : "secondary"}>
+												{employee.contractType === "hourly" ? "Hourly" : "Fixed"}
+											</Badge>
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{formatTableHours(employee.workedHours)}
+										</TableCell>
+										<TableCell>{formatAbsences(employee.absenceDaysByCategory)}</TableCell>
+										<TableCell>
+											<Badge variant={employee.hasBlockers ? "destructive" : "secondary"}>
+												{employee.hasBlockers ? "Blocked" : "Ready for payroll"}
+											</Badge>
+										</TableCell>
+									</TableRow>
+								))
+							) : (
+								<TableRow>
+									<TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+										No employees match the selected payroll filters.
 									</TableCell>
 								</TableRow>
-							))}
+							)}
 						</TableBody>
 					</Table>
-				</CardContent>
-			</Card>
-
-			<Card>
-				<CardHeader>
-					<CardTitle>Exports</CardTitle>
-					<CardDescription>
-						Download a review PDF or start a configured payroll export.
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="flex flex-col gap-3 md:flex-row md:items-end">
-					<Button
-						type="button"
-						variant="outline"
-						disabled={isPending || filtersHaveNoMatches}
-						onClick={downloadPdf}
-					>
-						{isPending ? (
-							<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
-						) : (
-							<IconDownload aria-hidden="true" className="size-4" />
-						)}
-						Download combined PDF
-					</Button>
-
-					<div className="flex flex-col gap-2 md:min-w-56">
-						<Label>Payroll export target</Label>
-						<Select
-							value={formatId}
-							onValueChange={setFormatId}
-							disabled={!hasExportFormats || isPending}
-						>
-							<SelectTrigger aria-label="Payroll export target" className="w-full">
-								<SelectValue placeholder="Select format" />
-							</SelectTrigger>
-							<SelectContent>
-								{exportFormats.map((format) => (
-									<SelectItem key={format.id} value={format.id}>
-										{format.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-						{!hasExportFormats ? (
-							<p className="text-muted-foreground text-sm">No configured payroll export target</p>
-						) : null}
-					</div>
-
-					<Button
-						type="button"
-						disabled={!hasExportFormats || isPending || filtersHaveNoMatches}
-						onClick={triggerExport}
-					>
-						{isPending ? (
-							<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
-						) : (
-							<IconFileExport aria-hidden="true" className="size-4" />
-						)}
-						Trigger payroll export
-					</Button>
 				</CardContent>
 			</Card>
 		</div>
@@ -520,6 +605,17 @@ function basePeriodRequest(summary: PayrollWorkspaceSummary): PayrollPeriodReque
 		startDate: summary.period.start,
 		endDate: summary.period.end,
 		label: summary.period.label,
+	};
+}
+
+function buildPeriodRequest(start: DateTime, mode: Exclude<PayrollDateRangeMode, "custom">) {
+	const normalizedStart = start.startOf(mode);
+	const end = normalizedStart.endOf(mode);
+
+	return {
+		startDate: normalizedStart.toISODate() ?? "",
+		endDate: end.toISODate() ?? "",
+		label: formatPeriodLabel(normalizedStart, end, mode),
 	};
 }
 

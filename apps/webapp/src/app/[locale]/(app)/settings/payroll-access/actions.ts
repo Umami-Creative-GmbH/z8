@@ -12,7 +12,7 @@ import {
 	payrollAccessTeam,
 	team,
 } from "@/db/schema";
-import { type AuthContext, requireAdmin } from "@/lib/auth-helpers";
+import { type AuthContext, requireAbility, requireAuth } from "@/lib/auth-helpers";
 import {
 	AuthenticationError,
 	AuthorizationError,
@@ -21,7 +21,7 @@ import {
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import {
-	assertPayrollAccessAdminContext,
+	assertPayrollOfficerSettingsContext,
 	buildValidatedPayrollAccessInput,
 	type SavePayrollAccessInput,
 	validateId,
@@ -259,13 +259,13 @@ async function requirePayrollAccessAdminContext(
 	action: "read" | "write",
 ): Promise<AuthContext & { employee: NonNullable<AuthContext["employee"]> }> {
 	try {
-		const authContext = await requireAdmin();
-		assertPayrollAccessAdminContext(
+		const [authContext, ability] = await Promise.all([requireAuth(), requireAbility()]);
+		assertPayrollOfficerSettingsContext(
 			{
 				userId: authContext.user.id,
-				role: authContext.employee?.role ?? null,
 				employeeOrganizationId: authContext.employee?.organizationId ?? null,
 				activeOrganizationId: authContext.session.activeOrganizationId,
+				canManagePayrollOfficerSettings: ability.can("manage", "PayrollOfficerSettings"),
 			},
 			action,
 		);
@@ -275,13 +275,6 @@ async function requirePayrollAccessAdminContext(
 		if (isAppError(error)) throw error;
 		if (error instanceof Error && error.message === "Authentication required") {
 			throw new AuthenticationError({ message: "Authentication required" });
-		}
-		if (error instanceof Error && error.message === "Admin access required") {
-			throw new AuthorizationError({
-				message: "Admin access required",
-				resource: "payroll_access",
-				action,
-			});
 		}
 		throw error;
 	}
