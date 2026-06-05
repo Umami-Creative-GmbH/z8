@@ -50,7 +50,7 @@ describe("PostHogProvider", () => {
 
 	it("does not initialize tracking when product improvement consent is disabled", () => {
 		render(
-			<PostHogProvider helpImproveProduct={false}>
+			<PostHogProvider disabled={false} helpImproveProduct={false}>
 				<div>App</div>
 			</PostHogProvider>,
 		);
@@ -65,7 +65,7 @@ describe("PostHogProvider", () => {
 
 	it("initializes tracking when product improvement consent is enabled", () => {
 		render(
-			<PostHogProvider helpImproveProduct>
+			<PostHogProvider disabled={false} helpImproveProduct>
 				<div>App</div>
 			</PostHogProvider>,
 		);
@@ -81,11 +81,9 @@ describe("PostHogProvider", () => {
 		);
 	});
 
-	it("does not initialize tracking in development mode", () => {
-		vi.stubEnv("NODE_ENV", "development");
-
+	it("does not initialize tracking when disabled", () => {
 		render(
-			<PostHogProvider helpImproveProduct>
+			<PostHogProvider disabled helpImproveProduct>
 				<div>App</div>
 			</PostHogProvider>,
 		);

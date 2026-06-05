@@ -7,12 +7,13 @@ import { env } from "@/env";
 
 type PostHogProviderProps = {
 	children: React.ReactNode;
+	disabled: boolean;
 	helpImproveProduct: boolean;
 };
 
-export function PostHogProvider({ children, helpImproveProduct }: PostHogProviderProps) {
+export function PostHogProvider({ children, disabled, helpImproveProduct }: PostHogProviderProps) {
 	const projectToken = env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN?.trim();
-	const isPostHogEnabled = process.env.NODE_ENV !== "development" && !!projectToken;
+	const isPostHogEnabled = !disabled && !!projectToken;
 
 	useEffect(() => {
 		if (!isPostHogEnabled) {
