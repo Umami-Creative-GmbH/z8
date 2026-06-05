@@ -1,0 +1,311 @@
+import type { PayrollEmployeeSummary, PayrollWorkspaceSummary } from "./types";
+
+const styleDefinitions = {
+	page: {
+		paddingTop: 34,
+		paddingRight: 36,
+		paddingBottom: 44,
+		paddingLeft: 36,
+		fontFamily: "Helvetica",
+		fontSize: 9,
+		lineHeight: 1.35,
+		color: "#1F2937",
+	},
+	header: {
+		paddingBottom: 14,
+		marginBottom: 14,
+		borderBottomWidth: 2,
+		borderBottomColor: "#1D4ED8",
+	},
+	kicker: {
+		fontSize: 8,
+		fontWeight: "bold" as const,
+		letterSpacing: 1.2,
+		textTransform: "uppercase" as const,
+		color: "#1D4ED8",
+		marginBottom: 4,
+	},
+	title: {
+		fontSize: 20,
+		fontWeight: "bold" as const,
+		color: "#0F172A",
+		marginBottom: 8,
+	},
+	headerGrid: {
+		flexDirection: "row" as const,
+		flexWrap: "wrap" as const,
+	},
+	headerItem: {
+		width: "50%",
+		marginBottom: 3,
+	},
+	label: {
+		fontSize: 7,
+		fontWeight: "bold" as const,
+		letterSpacing: 0.4,
+		textTransform: "uppercase" as const,
+		color: "#64748B",
+	},
+	value: {
+		fontSize: 9,
+		color: "#0F172A",
+	},
+	metrics: {
+		flexDirection: "row" as const,
+		marginBottom: 14,
+	},
+	metricCard: {
+		flex: 1,
+		paddingTop: 8,
+		paddingRight: 9,
+		paddingBottom: 8,
+		paddingLeft: 9,
+		borderWidth: 1,
+		borderColor: "#CBD5E1",
+		backgroundColor: "#F8FAFC",
+		marginRight: 6,
+	},
+	metricCardLast: {
+		marginRight: 0,
+	},
+	metricValue: {
+		fontSize: 15,
+		fontWeight: "bold" as const,
+		color: "#0F172A",
+		marginTop: 2,
+	},
+	sectionTitle: {
+		fontSize: 11,
+		fontWeight: "bold" as const,
+		color: "#0F172A",
+		marginTop: 4,
+		marginBottom: 7,
+	},
+	blockerBand: {
+		padding: 10,
+		marginBottom: 14,
+		borderLeftWidth: 5,
+		borderLeftColor: "#D97706",
+		borderTopWidth: 1,
+		borderRightWidth: 1,
+		borderBottomWidth: 1,
+		borderTopColor: "#F59E0B",
+		borderRightColor: "#F59E0B",
+		borderBottomColor: "#F59E0B",
+		backgroundColor: "#FFFBEB",
+	},
+	blockerTitle: {
+		fontSize: 10,
+		fontWeight: "bold" as const,
+		color: "#92400E",
+		marginBottom: 4,
+	},
+	blockerText: {
+		fontSize: 8,
+		color: "#78350F",
+		marginBottom: 2,
+	},
+	table: {
+		borderWidth: 1,
+		borderColor: "#CBD5E1",
+	},
+	tableHeader: {
+		flexDirection: "row" as const,
+		backgroundColor: "#1E3A8A",
+		color: "#FFFFFF",
+		fontSize: 7,
+		fontWeight: "bold" as const,
+		letterSpacing: 0.2,
+		textTransform: "uppercase" as const,
+	},
+	tableRow: {
+		flexDirection: "row" as const,
+		borderTopWidth: 1,
+		borderTopColor: "#E2E8F0",
+		minHeight: 26,
+	},
+	tableRowBlocked: {
+		backgroundColor: "#FFFBEB",
+	},
+	cell: {
+		paddingTop: 5,
+		paddingRight: 5,
+		paddingBottom: 5,
+		paddingLeft: 5,
+	},
+	employeeCell: {
+		width: "25%",
+	},
+	teamCell: {
+		width: "14%",
+	},
+	contractCell: {
+		width: "12%",
+	},
+	hoursCell: {
+		width: "12%",
+		textAlign: "right" as const,
+	},
+	absenceCell: {
+		width: "27%",
+	},
+	statusCell: {
+		width: "10%",
+	},
+	employeeName: {
+		fontWeight: "bold" as const,
+		color: "#0F172A",
+	},
+	muted: {
+		color: "#64748B",
+	},
+	footer: {
+		position: "absolute" as const,
+		left: 36,
+		right: 36,
+		bottom: 24,
+		paddingTop: 8,
+		borderTopWidth: 1,
+		borderTopColor: "#CBD5E1",
+		fontSize: 7,
+		color: "#64748B",
+		textAlign: "center" as const,
+	},
+} as const;
+
+function formatHours(hours: number): string {
+	return `${hours.toFixed(2)}h`;
+}
+
+function formatGeneratedAt(summary: PayrollWorkspaceSummary): string {
+	return summary.generatedAt.toUTC().toFormat("yyyy-LL-dd HH:mm 'UTC'");
+}
+
+function formatContractType(contractType: PayrollEmployeeSummary["contractType"]): string {
+	return contractType === "hourly" ? "Hourly" : "Fixed";
+}
+
+function formatAbsences(employee: PayrollEmployeeSummary): string {
+	if (employee.absenceDaysByCategory.length === 0) {
+		return "None";
+	}
+
+	return employee.absenceDaysByCategory
+		.map((absence) => `${absence.categoryName}: ${absence.days.toFixed(2)}d`)
+		.join("; ");
+}
+
+export async function exportPayrollSummaryToPDF(
+	summary: PayrollWorkspaceSummary,
+): Promise<Uint8Array> {
+	const { Document, Page, pdf, StyleSheet, Text, View } = await import("@react-pdf/renderer");
+	const styles = StyleSheet.create(styleDefinitions);
+
+	const PayrollSummaryPDF = () => (
+		<Document>
+			<Page size="A4" style={styles.page}>
+				<View style={styles.header}>
+					<Text style={styles.kicker}>Payroll Export Audit</Text>
+					<Text style={styles.title}>{summary.organizationName}</Text>
+					<View style={styles.headerGrid}>
+						<View style={styles.headerItem}>
+							<Text style={styles.label}>Period</Text>
+							<Text style={styles.value}>
+								{summary.period.label} ({summary.period.start} - {summary.period.end})
+							</Text>
+						</View>
+						<View style={styles.headerItem}>
+							<Text style={styles.label}>Generated</Text>
+							<Text style={styles.value}>{formatGeneratedAt(summary)}</Text>
+						</View>
+						<View style={styles.headerItem}>
+							<Text style={styles.label}>Generated by</Text>
+							<Text style={styles.value}>{summary.generatedBy.name}</Text>
+						</View>
+						<View style={styles.headerItem}>
+							<Text style={styles.label}>Export scope</Text>
+							<Text style={styles.value}>Combined payroll summary</Text>
+						</View>
+					</View>
+				</View>
+
+				<View style={styles.metrics}>
+					<View style={styles.metricCard}>
+						<Text style={styles.label}>Employees</Text>
+						<Text style={styles.metricValue}>{summary.totals.employeeCount}</Text>
+					</View>
+					<View style={styles.metricCard}>
+						<Text style={styles.label}>Worked hours</Text>
+						<Text style={styles.metricValue}>{formatHours(summary.totals.totalWorkedHours)}</Text>
+					</View>
+					<View style={[styles.metricCard, styles.metricCardLast]}>
+						<Text style={styles.label}>Blockers</Text>
+						<Text style={styles.metricValue}>{summary.totals.blockerCount}</Text>
+					</View>
+				</View>
+
+				{summary.blockers.length > 0 && (
+					<View style={styles.blockerBand}>
+						<Text style={styles.blockerTitle}>Blocker review required</Text>
+						{summary.blockers.map((blocker) => (
+							<Text key={blocker.id} style={styles.blockerText}>
+								{blocker.label}
+							</Text>
+						))}
+					</View>
+				)}
+
+				<Text style={styles.sectionTitle}>Employee totals</Text>
+				<View style={styles.table}>
+					<View style={styles.tableHeader} fixed>
+						<Text style={[styles.cell, styles.employeeCell]}>Employee</Text>
+						<Text style={[styles.cell, styles.teamCell]}>Team</Text>
+						<Text style={[styles.cell, styles.contractCell]}>Contract</Text>
+						<Text style={[styles.cell, styles.hoursCell]}>Hours</Text>
+						<Text style={[styles.cell, styles.absenceCell]}>Absence totals</Text>
+						<Text style={[styles.cell, styles.statusCell]}>Status</Text>
+					</View>
+					{summary.employees.map((employee) => (
+						<View
+							key={employee.id}
+							style={[styles.tableRow, employee.hasBlockers ? styles.tableRowBlocked : undefined]}
+							wrap={false}
+						>
+							<View style={[styles.cell, styles.employeeCell]}>
+								<Text style={styles.employeeName}>{employee.name}</Text>
+								<Text style={styles.muted}>{employee.employeeNumber ?? "No employee no."}</Text>
+							</View>
+							<Text style={[styles.cell, styles.teamCell]}>{employee.teamName ?? "No team"}</Text>
+							<Text style={[styles.cell, styles.contractCell]}>
+								{formatContractType(employee.contractType)}
+							</Text>
+							<Text style={[styles.cell, styles.hoursCell]}>{formatHours(employee.workedHours)}</Text>
+							<Text style={[styles.cell, styles.absenceCell]}>{formatAbsences(employee)}</Text>
+							<Text style={[styles.cell, styles.statusCell]}>
+								{employee.hasBlockers ? "Review" : "Clear"}
+							</Text>
+						</View>
+					))}
+				</View>
+
+				<Text style={styles.footer}>
+					Audit note: Blockers are informational review markers and did not prevent this export.
+					Confirm unresolved items before payroll submission.
+				</Text>
+			</Page>
+		</Document>
+	);
+
+	const blob = await pdf(<PayrollSummaryPDF />).toBlob();
+	return new Uint8Array(await blob.arrayBuffer());
+}
+
+export function generatePayrollPDFFilename(summary: PayrollWorkspaceSummary): string {
+	const organizationSlug =
+		summary.organizationName
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/^-+|-+$/g, "") || "organization";
+
+	return `payroll-${organizationSlug}-${summary.period.start}-${summary.period.end}.pdf`;
+}
