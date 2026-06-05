@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 import { buildPayrollSummaryFromRows } from "./summary";
@@ -88,5 +89,20 @@ describe("buildPayrollSummaryFromRows", () => {
 
 		expect(summary.totals.blockerCount).toBe(1);
 		expect(summary.employees[0]?.hasBlockers).toBe(true);
+	});
+});
+
+describe("getPayrollWorkspaceSummary source constraints", () => {
+	it("scopes pending approval blockers through canonical time records", () => {
+		const source = readFileSync(new URL("./summary.ts", import.meta.url), "utf8");
+
+		expect(source).toContain("eq(approvalRequest.canonicalRecordId, timeRecord.id)");
+		expect(source).toContain('eq(approvalRequest.entityType, "time_entry")');
+		expect(source).toContain("eq(timeRecord.organizationId, organizationId)");
+		expect(source).toContain("inArray(timeRecord.employeeId, allowedEmployeeIds)");
+		expect(source).toContain("lte(timeRecord.startAt, period.end.toUTC().toJSDate())");
+		expect(source).toContain(
+			"or(isNull(timeRecord.endAt), gte(timeRecord.endAt, period.start.toUTC().toJSDate()))",
+		);
 	});
 });

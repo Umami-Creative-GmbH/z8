@@ -279,13 +279,24 @@ async function getBlockers(
 				),
 			),
 		db
-			.select({ id: approvalRequest.id, employeeId: approvalRequest.requestedBy })
+			.select({ id: approvalRequest.id, employeeId: timeRecord.employeeId })
 			.from(approvalRequest)
+			.innerJoin(
+				timeRecord,
+				and(
+					eq(approvalRequest.canonicalRecordId, timeRecord.id),
+					eq(timeRecord.organizationId, organizationId),
+				),
+			)
 			.where(
 				and(
 					eq(approvalRequest.organizationId, organizationId),
 					eq(approvalRequest.status, "pending"),
+					eq(approvalRequest.entityType, "time_entry"),
 					inArray(approvalRequest.requestedBy, allowedEmployeeIds),
+					inArray(timeRecord.employeeId, allowedEmployeeIds),
+					lte(timeRecord.startAt, period.end.toUTC().toJSDate()),
+					or(isNull(timeRecord.endAt), gte(timeRecord.endAt, period.start.toUTC().toJSDate())),
 				),
 			),
 	]);
