@@ -4,6 +4,7 @@ import {
 	buildPayrollSummaryFromRows,
 	calculatePayrollAbsenceDays,
 	calculatePayrollWorkedMinutes,
+	filterMissingClockOutBlockers,
 	filterPendingTimeApprovalBlockers,
 } from "./summary";
 
@@ -251,6 +252,38 @@ describe("filterPendingTimeApprovalBlockers", () => {
 				employeeId: "employee-1",
 				type: "pending_time_correction",
 				label: "Pending time correction",
+			},
+		]);
+	});
+});
+
+describe("filterMissingClockOutBlockers", () => {
+	it("includes open work records that started before the payroll period", () => {
+		const blockers = filterMissingClockOutBlockers({
+			period: {
+				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
+				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+			},
+			rows: [
+				{
+					id: "record-1",
+					employeeId: "employee-1",
+					startAt: DateTime.fromISO("2026-05-31T23:00:00Z"),
+				},
+				{
+					id: "record-2",
+					employeeId: "employee-1",
+					startAt: DateTime.fromISO("2026-07-01T00:00:00Z"),
+				},
+			],
+		});
+
+		expect(blockers).toEqual([
+			{
+				id: "record-1",
+				employeeId: "employee-1",
+				type: "missing_clock_out",
+				label: "Missing clock-out",
 			},
 		]);
 	});

@@ -1,6 +1,6 @@
 import { and, eq, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
-import { organization } from "@/db/auth-schema";
+import { organization, user } from "@/db/auth-schema";
 import {
 	absenceCategory,
 	approvalRequest,
@@ -33,6 +33,12 @@ export interface PendingTimeApprovalBlockerRow {
 	employeeId: string;
 	startAt: DateTime;
 	endAt: DateTime | null;
+}
+
+export interface MissingClockOutBlockerRow {
+	id: string;
+	employeeId: string;
+	startAt: DateTime;
 }
 
 export function buildPayrollSummaryFromRows(input: {
@@ -199,6 +205,20 @@ export function filterPendingTimeApprovalBlockers(input: {
 		}));
 }
 
+export function filterMissingClockOutBlockers(input: {
+	period: PayrollDateTimePeriod;
+	rows: MissingClockOutBlockerRow[];
+}): PayrollBlocker[] {
+	return input.rows
+		.filter((row) => row.startAt.toUTC() <= input.period.end.toUTC())
+		.map((row) => ({
+			id: row.id,
+			employeeId: row.employeeId,
+			type: "missing_clock_out" as const,
+			label: "Missing clock-out",
+		}));
+}
+
 export async function getPayrollWorkspaceSummary(input: {
 	organizationId: string;
 	allowedEmployeeIds: string[];
@@ -255,13 +275,13 @@ async function getEmployeeRows(
 	const rows = await db
 		.select({
 			id: employee.id,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
+			userName: user.name,
 			employeeNumber: employee.employeeNumber,
 			teamName: team.name,
 			contractType: employee.contractType,
 		})
 		.from(employee)
+		.innerJoin(user, eq(employee.userId, user.id))
 		.leftJoin(team, and(eq(employee.teamId, team.id), eq(team.organizationId, organizationId)))
 		.where(
 			and(
@@ -273,7 +293,7 @@ async function getEmployeeRows(
 
 	return rows.map((row) => ({
 		id: row.id,
-		name: formatEmployeeName(row.firstName, row.lastName),
+		name: formatEmployeeDisplayName(row.userName, row.employeeNumber, row.id),
 		employeeNumber: row.employeeNumber,
 		teamName: row.teamName,
 		contractType: row.contractType,
@@ -376,7 +396,7 @@ async function getBlockers(
 	const { db } = await import("@/db");
 	const [missingClockOutRows, pendingAbsenceRows, pendingApprovalRows] = await Promise.all([
 		db
-			.select({ id: timeRecord.id, employeeId: timeRecord.employeeId })
+			.select({ id: timeRecord.id, employeeId: timeRecord.employeeId, startAt: timeRecord.startAt })
 			.from(timeRecord)
 			.where(
 				and(
@@ -384,7 +404,6 @@ async function getBlockers(
 					eq(timeRecord.recordKind, "work"),
 					inArray(timeRecord.employeeId, allowedEmployeeIds),
 					isNull(timeRecord.endAt),
-					gte(timeRecord.startAt, period.start.toUTC().toJSDate()),
 					lte(timeRecord.startAt, period.end.toUTC().toJSDate()),
 				),
 			),
@@ -455,13 +474,16 @@ async function getBlockers(
 		})),
 	});
 
-	return [
-		...missingClockOutRows.map((row) => ({
-			id: row.id,
-			employeeId: row.employeeId,
-			type: "missing_clock_out" as const,
-			label: "Missing clock-out",
+	const missingClockOutBlockers = filterMissingClockOutBlockers({
+		period,
+		rows: missingClockOutRows.map((row) => ({
+			...row,
+			startAt: DateTime.fromJSDate(row.startAt, { zone: "utc" }),
 		})),
+	});
+
+	return [
+		...missingClockOutBlockers,
 		...pendingAbsenceRows.map((row) => ({
 			id: row.id,
 			employeeId: row.employeeId,
@@ -480,8 +502,12 @@ function toPayrollPeriod(period: { start: DateTime; end: DateTime; label: string
 	};
 }
 
-function formatEmployeeName(firstName: string | null, lastName: string | null): string {
-	return [firstName, lastName].filter(Boolean).join(" ") || "Unnamed employee";
+function formatEmployeeDisplayName(
+	userName: string | null,
+	employeeNumber: string | null,
+	employeeId: string,
+): string {
+	return userName?.trim() || employeeNumber?.trim() || employeeId;
 }
 
 function parsePayrollPeriod(period: PayrollPeriod): PayrollDateTimePeriod {
