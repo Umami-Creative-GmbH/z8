@@ -10,7 +10,10 @@ const { savePayrollAccessActionMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: { count?: number }) =>
+			params?.count === undefined ? fallback : fallback.replace("{count}", String(params.count)),
+	}),
 }));
 vi.mock("@/app/[locale]/(app)/settings/payroll-access/actions", () => ({
 	savePayrollAccessAction: savePayrollAccessActionMock,
@@ -31,9 +34,20 @@ describe("PayrollAccessForm", () => {
 			/>,
 		);
 
-		expect(screen.getByText("Payroll access")).toBeTruthy();
+		expect(screen.getByText("Payroll Officers")).toBeTruthy();
+		expect(
+			screen.getByText(
+				"Activate payroll officers and assign the teams or employees they can include in payroll workflows.",
+			),
+		).toBeTruthy();
 		expect(screen.getAllByText("Ada Lovelace").length).toBeGreaterThan(0);
 		expect(screen.getByText("Ops")).toBeTruthy();
+	});
+
+	it("renders an empty state when no employees are available", () => {
+		render(<PayrollAccessForm employees={[]} teams={[]} initialGrants={[]} />);
+
+		expect(screen.getByText("No employees available")).toBeTruthy();
 	});
 
 	it("resets grant selections when switching payroll employees before submitting", async () => {
@@ -57,19 +71,20 @@ describe("PayrollAccessForm", () => {
 			/>,
 		);
 
+		expect(screen.getByText("1 active payroll officers")).toBeTruthy();
 		expect(screen.getByRole<HTMLInputElement>("checkbox", { name: "Ops" }).checked).toBe(true);
 		expect(screen.getByRole<HTMLInputElement>("checkbox", { name: "Ada Lovelace" }).checked).toBe(
 			true,
 		);
 
-		await user.selectOptions(screen.getByLabelText("Payroll employee"), "employee-b");
+		await user.selectOptions(screen.getByLabelText("Payroll officer"), "employee-b");
 
 		expect(screen.getByRole<HTMLInputElement>("checkbox", { name: "Ops" }).checked).toBe(false);
 		expect(screen.getByRole<HTMLInputElement>("checkbox", { name: "Ada Lovelace" }).checked).toBe(
 			false,
 		);
 
-		await user.click(screen.getByRole("button", { name: "Save payroll access" }));
+		await user.click(screen.getByRole("button", { name: "Save payroll officer" }));
 
 		await waitFor(() => expect(savePayrollAccessActionMock).toHaveBeenCalledTimes(1));
 		expect(savePayrollAccessActionMock).toHaveBeenCalledWith({
@@ -95,7 +110,7 @@ describe("PayrollAccessForm", () => {
 
 		await user.click(screen.getByRole("checkbox", { name: "Ops" }));
 		await user.click(screen.getByRole("checkbox", { name: "Grace Hopper" }));
-		await user.click(screen.getByRole("button", { name: "Save payroll access" }));
+		await user.click(screen.getByRole("button", { name: "Save payroll officer" }));
 
 		await waitFor(() => expect(savePayrollAccessActionMock).toHaveBeenCalledTimes(1));
 		expect(savePayrollAccessActionMock).toHaveBeenCalledWith({

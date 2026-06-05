@@ -3,7 +3,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { db, employee, payrollExportConfig, payrollExportFormat } from "@/db";
+import { db, payrollExportConfig, payrollExportFormat } from "@/db";
 import { type AuthContext, getAuthContext } from "@/lib/auth-helpers";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -143,7 +143,7 @@ async function buildScopedPayrollWorkspaceSummary(
 
 	return getPayrollWorkspaceSummary({
 		organizationId: authContext.employee.organizationId,
-		allowedEmployeeIds: scopedEmployeeIds ?? (await getActiveOrganizationEmployeeIds(authContext)),
+		allowedEmployeeIds: scopedEmployeeIds,
 		period,
 		generatedBy: {
 			id: authContext.employee.id,
@@ -155,20 +155,17 @@ async function buildScopedPayrollWorkspaceSummary(
 async function resolvePayrollWorkspaceActionContext(request: PayrollWorkspaceRequest): Promise<{
 	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> };
 	period: { start: DateTime; end: DateTime; label: string };
-	scopedEmployeeIds: string[] | undefined;
+	scopedEmployeeIds: string[];
 }> {
 	const authContext = await requireActiveOrganizationEmployee();
 	const period = validatePayrollWorkspaceRequest(request);
 	const requestedEmployeeIds = validateRequestedEmployeeIds(request.employeeIds);
-	const allowedEmployeeIds =
-		authContext.employee.role === "admin"
-			? []
-			: await resolvePayrollAccessibleEmployeeIds({
-					organizationId: authContext.employee.organizationId,
-					payrollEmployeeId: authContext.employee.id,
-				});
+	const allowedEmployeeIds = await resolvePayrollAccessibleEmployeeIds({
+		organizationId: authContext.employee.organizationId,
+		payrollEmployeeId: authContext.employee.id,
+	});
 
-	if (authContext.employee.role !== "admin" && allowedEmployeeIds.length === 0) {
+	if (allowedEmployeeIds.length === 0) {
 		throw new AuthorizationError({
 			message: "No payroll employees are assigned to your access scope",
 			userId: authContext.user.id,
@@ -284,22 +281,6 @@ function validateExportFormatId(formatId: string): PayrollWorkspaceExportFormatI
 	}
 
 	return formatId as PayrollWorkspaceExportFormatId;
-}
-
-async function getActiveOrganizationEmployeeIds(
-	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> },
-): Promise<string[]> {
-	const rows = await db
-		.select({ id: employee.id })
-		.from(employee)
-		.where(
-			and(
-				eq(employee.organizationId, authContext.employee.organizationId),
-				eq(employee.isActive, true),
-			),
-		);
-
-	return rows.map((row) => row.id).sort();
 }
 
 async function runPayrollWorkspaceAction<T>(

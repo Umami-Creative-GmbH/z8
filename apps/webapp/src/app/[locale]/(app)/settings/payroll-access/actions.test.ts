@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import {
-	assertPayrollAccessAdminContext,
+	assertPayrollOfficerSettingsContext,
 	buildValidatedPayrollAccessInput,
 } from "./action-helpers";
 
@@ -18,17 +18,17 @@ vi.mock("@/db/schema", () => ({
 	payrollAccessTeam: {},
 	team: {},
 }));
-vi.mock("@/lib/auth-helpers", () => ({ requireAdmin: vi.fn() }));
+vi.mock("@/lib/auth-helpers", () => ({ requireAbility: vi.fn(), requireAuth: vi.fn() }));
 
 describe("payroll access action validation", () => {
-	it("rejects non-admin employee contexts", () => {
+	it("rejects contexts without payroll officer settings permission", () => {
 		expect(() =>
-			assertPayrollAccessAdminContext(
+			assertPayrollOfficerSettingsContext(
 				{
 					userId: "user-1",
-					role: "manager",
 					employeeOrganizationId: "org-1",
 					activeOrganizationId: "org-1",
+					canManagePayrollOfficerSettings: false,
 				},
 				"write",
 			),
@@ -37,12 +37,12 @@ describe("payroll access action validation", () => {
 
 	it("rejects mismatched active organization contexts", () => {
 		expect(() =>
-			assertPayrollAccessAdminContext(
+			assertPayrollOfficerSettingsContext(
 				{
 					userId: "user-1",
-					role: "admin",
 					employeeOrganizationId: "org-1",
 					activeOrganizationId: "org-2",
+					canManagePayrollOfficerSettings: true,
 				},
 				"write",
 			),

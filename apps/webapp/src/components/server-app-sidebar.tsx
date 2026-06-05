@@ -46,9 +46,7 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 		);
 	}
 	let showPayrollNav = false;
-	if (activeEmployee?.role === "admin") {
-		showPayrollNav = true;
-	} else if (
+	if (
 		activeEmployee &&
 		activeOrganizationId &&
 		activeEmployee.organizationId === activeOrganizationId

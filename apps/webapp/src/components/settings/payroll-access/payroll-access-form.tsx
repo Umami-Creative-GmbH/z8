@@ -45,10 +45,11 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 			try {
 				const result = await savePayrollAccessAction(value);
 				if (result.success) {
-					toast.success(t("settings.payrollAccess.saved", "Payroll access saved"));
+					toast.success(t("settings.payrollAccess.saved", "Payroll officer settings saved"));
 				} else {
 					toast.error(
-						result.error || t("settings.payrollAccess.saveFailed", "Failed to save payroll access"),
+						result.error ||
+							t("settings.payrollAccess.saveFailed", "Failed to save payroll officer settings"),
 					);
 				}
 			} catch (error) {
@@ -69,18 +70,19 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 		>
 			<Card>
 				<CardHeader>
-					<CardTitle>{t("settings.payrollAccess.title", "Payroll access")}</CardTitle>
+					<CardTitle>{t("settings.payrollAccess.title", "Payroll Officers")}</CardTitle>
 					<CardDescription>
 						{t(
 							"settings.payrollAccess.description",
-							"Assign teams and individual employees that a payroll user can include in payroll workspaces.",
+							"Activate payroll officers and assign the teams or employees they can include in payroll workflows.",
 						)}
 					</CardDescription>
 					{initialGrants.length > 0 ? (
 						<p className="text-sm text-muted-foreground">
 							{t(
 								"settings.payrollAccess.activeGrantCount",
-								`${initialGrants.length} active payroll access grant${initialGrants.length === 1 ? "" : "s"}`,
+								"{count} active payroll officers",
+								{ count: initialGrants.length },
 							)}
 						</p>
 					) : null}
@@ -90,7 +92,7 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 						{(field) => (
 							<div className="space-y-2">
 								<Label htmlFor="payroll-access-payroll-employee">
-									{t("settings.payrollAccess.payrollEmployee", "Payroll employee")}
+									{t("settings.payrollAccess.payrollEmployee", "Payroll officer")}
 								</Label>
 								<select
 									id="payroll-access-payroll-employee"
@@ -158,26 +160,32 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 								<legend className="text-sm font-medium">
 									{t("settings.payrollAccess.employees", "Employees")}
 								</legend>
-								<div className="grid gap-2 md:grid-cols-2">
-									{employees.map((employee) => (
-										<label
-											key={employee.id}
-											className="flex items-center gap-2 rounded-md border p-3 text-sm"
-										>
-											<input
-												type="checkbox"
-												checked={field.state.value.includes(employee.id)}
-												onChange={(event) =>
-													field.handleChange(
-														toggleId(field.state.value, employee.id, event.target.checked),
-													)
-												}
-												disabled={isPending}
-											/>
-											<span>{employee.name}</span>
-										</label>
-									))}
-								</div>
+								{employees.length === 0 ? (
+									<p className="text-sm text-muted-foreground">
+										{t("settings.payrollAccess.noEmployees", "No employees available")}
+									</p>
+								) : (
+									<div className="grid gap-2 md:grid-cols-2">
+										{employees.map((employee) => (
+											<label
+												key={employee.id}
+												className="flex items-center gap-2 rounded-md border p-3 text-sm"
+											>
+												<input
+													type="checkbox"
+													checked={field.state.value.includes(employee.id)}
+													onChange={(event) =>
+														field.handleChange(
+															toggleId(field.state.value, employee.id, event.target.checked),
+														)
+													}
+													disabled={isPending}
+												/>
+												<span>{employee.name}</span>
+											</label>
+										))}
+									</div>
+								)}
 							</fieldset>
 						)}
 					</form.Field>
@@ -186,7 +194,7 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 						{isPending ? (
 							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 						) : null}
-						{t("settings.payrollAccess.save", "Save payroll access")}
+						{t("settings.payrollAccess.save", "Save payroll officer")}
 					</Button>
 				</CardContent>
 			</Card>

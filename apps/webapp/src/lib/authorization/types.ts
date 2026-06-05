@@ -61,6 +61,7 @@ export type OrganizationSubject =
 	| "AuditLog" // Audit log access
 	| "Export" // Data exports
 	| "PayrollExport" // Payroll exports
+	| "PayrollOfficerSettings" // Payroll officer access grants
 	| "ScheduledExport" // Scheduled exports
 	| "WorksCouncil" // Works council review portal
 	| "DemoData"; // Demo data management
@@ -214,6 +215,7 @@ export type SubjectTypeMap = {
 	AuditLog: OrgScopedSubject;
 	Export: OrgScopedSubject;
 	PayrollExport: OrgScopedSubject;
+	PayrollOfficerSettings: OrgScopedSubject;
 	ScheduledExport: OrgScopedSubject;
 	WorksCouncil: OrgScopedSubject;
 	DemoData: OrgScopedSubject;

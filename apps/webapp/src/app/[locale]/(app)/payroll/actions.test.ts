@@ -2,23 +2,23 @@ import { describe, expect, it } from "vitest";
 import { resolveScopedPayrollEmployeeIdsForAction } from "./action-helpers";
 
 describe("resolveScopedPayrollEmployeeIdsForAction", () => {
-	it("returns requested employee IDs for admins", () => {
+	it("intersects requested employee IDs with allowed scope for admins", () => {
 		expect(
 			resolveScopedPayrollEmployeeIdsForAction({
 				role: "admin",
 				requestedEmployeeIds: ["employee-3", "employee-1"],
 				allowedEmployeeIds: ["employee-1"],
 			}),
-		).toEqual({ employeeIds: ["employee-3", "employee-1"], hasScope: true });
+		).toEqual({ employeeIds: ["employee-1"], hasScope: true });
 	});
 
-	it("leaves admin scope unrestricted when no employees are requested", () => {
+	it("uses allowed employee IDs for admins when none are requested", () => {
 		expect(
 			resolveScopedPayrollEmployeeIdsForAction({
 				role: "admin",
 				allowedEmployeeIds: ["employee-1"],
 			}),
-		).toEqual({ employeeIds: undefined, hasScope: true });
+		).toEqual({ employeeIds: ["employee-1"], hasScope: true });
 	});
 
 	it("denies admin scope when an explicit empty employee selection is requested", () => {
@@ -58,5 +58,17 @@ describe("resolveScopedPayrollEmployeeIdsForAction", () => {
 				allowedEmployeeIds: ["employee-1", "employee-2"],
 			}),
 		).toEqual({ employeeIds: [], hasScope: false });
+	});
+
+	it("keeps admin requests constrained by active payroll grant scope", async () => {
+		const { resolveScopedPayrollEmployeeIdsForAction } = await import("./action-helpers");
+
+		expect(
+			resolveScopedPayrollEmployeeIdsForAction({
+				role: "admin",
+				allowedEmployeeIds: ["employee-1"],
+				requestedEmployeeIds: ["employee-1", "employee-2"],
+			}),
+		).toEqual({ employeeIds: ["employee-1"], hasScope: true });
 	});
 });

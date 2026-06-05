@@ -89,6 +89,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("manage", "AuditLog");
 			can("manage", "Export");
 			can("manage", "PayrollExport");
+			can("manage", "PayrollOfficerSettings");
 			can("manage", "ScheduledExport");
 			can(["read", "export", "configure"], "WorksCouncil");
 			can("manage", "DemoData");
@@ -111,6 +112,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("manage", "AuditLog");
 			can("manage", "Export");
 			can("manage", "PayrollExport");
+			can("manage", "PayrollOfficerSettings");
 			can("manage", "ScheduledExport");
 			can(["read", "export", "configure"], "WorksCouncil");
 			can("manage", "DemoData");

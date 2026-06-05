@@ -1,11 +1,13 @@
 import { connection } from "next/server";
 import { PayrollAccessForm } from "@/components/settings/payroll-access/payroll-access-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getTranslate } from "@/tolgee/server";
 import { getPayrollAccessAdminDataAction } from "./actions";
 
 export default async function PayrollAccessSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
+	const t = await getTranslate();
 	const result = await getPayrollAccessAdminDataAction();
 
 	if (!result.success) {
@@ -13,9 +15,17 @@ export default async function PayrollAccessSettingsPage() {
 			<div className="space-y-6">
 				<Card>
 					<CardHeader>
-						<CardTitle>Admin access required</CardTitle>
+						<CardTitle>
+							{t(
+								"settings.payrollAccess.deniedTitle",
+								"Payroll officer settings access required",
+							)}
+						</CardTitle>
 						<CardDescription>
-							Only organization admins can manage payroll access grants.
+							{t(
+								"settings.payrollAccess.deniedDescription",
+								"Only authorized organization admins can manage payroll officers.",
+							)}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -29,9 +39,14 @@ export default async function PayrollAccessSettingsPage() {
 	return (
 		<div className="space-y-6">
 			<div className="space-y-2">
-				<h1 className="text-3xl font-semibold tracking-tight">Payroll access</h1>
+				<h1 className="text-3xl font-semibold tracking-tight">
+					{t("settings.payrollAccess.title", "Payroll Officers")}
+				</h1>
 				<p className="text-muted-foreground">
-					Control which employees and teams payroll users can work with inside payroll workflows.
+					{t(
+						"settings.payrollAccess.description",
+						"Activate payroll officers and assign the teams or employees they can include in payroll workflows.",
+					)}
 				</p>
 			</div>
 			<PayrollAccessForm

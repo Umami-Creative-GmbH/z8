@@ -643,6 +643,7 @@ describe("app sidebar compliance navigation", () => {
 			},
 		});
 		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("orgAdmin");
+		hasActivePayrollAccessGrantMock.mockResolvedValue(false);
 
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
@@ -669,7 +670,7 @@ describe("app sidebar compliance navigation", () => {
 		expect(appSidebarSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
 				showComplianceNav: true,
-				showPayrollNav: true,
+				showPayrollNav: false,
 				showPlatformAdminNav: false,
 				employeeRole: "admin",
 				shiftsEnabled: true,
@@ -685,7 +686,10 @@ describe("app sidebar compliance navigation", () => {
 				},
 			}),
 		);
-		expect(hasActivePayrollAccessGrantMock).not.toHaveBeenCalled();
+		expect(hasActivePayrollAccessGrantMock).toHaveBeenCalledWith({
+			organizationId: "org_1",
+			payrollEmployeeId: "emp_admin",
+		});
 
 		appSidebarSpy.mockReset();
 		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
@@ -695,7 +699,7 @@ describe("app sidebar compliance navigation", () => {
 		expect(appSidebarSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
 				showComplianceNav: false,
-				showPayrollNav: true,
+				showPayrollNav: false,
 				showPlatformAdminNav: false,
 				settingsAccessTier: "member",
 				billingEnabled: false,
@@ -763,6 +767,112 @@ describe("app sidebar compliance navigation", () => {
 		expect(hasActivePayrollAccessGrantMock).toHaveBeenCalledWith({
 			organizationId: "org_1",
 			payrollEmployeeId: "emp_1",
+		});
+	});
+
+	it("hides payroll navigation for admins without an active payroll grant", async () => {
+		vi.stubEnv("BILLING_ENABLED", "false");
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+		getUserOrganizationsMock.mockResolvedValue([
+			{
+				id: "org_1",
+				name: "Org",
+				slug: "org",
+				logo: null,
+				shiftsEnabled: false,
+				projectsEnabled: false,
+				surchargesEnabled: false,
+				demoDataEnabled: true,
+				worksCouncilEnabled: false,
+			},
+		]);
+		getAuthContextMock.mockResolvedValue({
+			user: { role: "user" },
+			session: { activeOrganizationId: "org_1" },
+			employee: { id: "employee-admin", organizationId: "org_1", role: "admin" },
+		});
+		getCurrentSettingsAccessTierMock.mockResolvedValue("orgAdmin");
+		hasActivePayrollAccessGrantMock.mockResolvedValue(false);
+
+		vi.doMock("@/lib/auth-helpers", () => ({
+			getUserOrganizations: getUserOrganizationsMock,
+			getAuthContext: getAuthContextMock,
+			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+			requireAbility: requireAbilityMock,
+		}));
+		vi.doMock("@/lib/organization/creation-policy.server", () => ({
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+		}));
+		vi.doMock("./app-sidebar", () => ({
+			AppSidebar: (props: Record<string, unknown>) => {
+				appSidebarSpy(props);
+				return <div data-testid="server-sidebar-proxy" />;
+			},
+		}));
+
+		const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+		render(await ServerAppSidebar({}));
+
+		expect(appSidebarSpy).toHaveBeenCalledWith(
+			expect.objectContaining({ showPayrollNav: false, employeeRole: "admin" }),
+		);
+		expect(hasActivePayrollAccessGrantMock).toHaveBeenCalledWith({
+			organizationId: "org_1",
+			payrollEmployeeId: "employee-admin",
+		});
+	});
+
+	it("shows payroll navigation for admins with an active payroll grant", async () => {
+		vi.stubEnv("BILLING_ENABLED", "false");
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+		getUserOrganizationsMock.mockResolvedValue([
+			{
+				id: "org_1",
+				name: "Org",
+				slug: "org",
+				logo: null,
+				shiftsEnabled: false,
+				projectsEnabled: false,
+				surchargesEnabled: false,
+				demoDataEnabled: true,
+				worksCouncilEnabled: false,
+			},
+		]);
+		getAuthContextMock.mockResolvedValue({
+			user: { role: "user" },
+			session: { activeOrganizationId: "org_1" },
+			employee: { id: "employee-admin", organizationId: "org_1", role: "admin" },
+		});
+		getCurrentSettingsAccessTierMock.mockResolvedValue("orgAdmin");
+		hasActivePayrollAccessGrantMock.mockResolvedValue(true);
+
+		vi.doMock("@/lib/auth-helpers", () => ({
+			getUserOrganizations: getUserOrganizationsMock,
+			getAuthContext: getAuthContextMock,
+			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+			requireAbility: requireAbilityMock,
+		}));
+		vi.doMock("@/lib/organization/creation-policy.server", () => ({
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+		}));
+		vi.doMock("./app-sidebar", () => ({
+			AppSidebar: (props: Record<string, unknown>) => {
+				appSidebarSpy(props);
+				return <div data-testid="server-sidebar-proxy" />;
+			},
+		}));
+
+		const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+		render(await ServerAppSidebar({}));
+
+		expect(appSidebarSpy).toHaveBeenCalledWith(
+			expect.objectContaining({ showPayrollNav: true, employeeRole: "admin" }),
+		);
+		expect(hasActivePayrollAccessGrantMock).toHaveBeenCalledWith({
+			organizationId: "org_1",
+			payrollEmployeeId: "employee-admin",
 		});
 	});
 
