@@ -98,6 +98,8 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("Payroll")).toBeTruthy();
 		expect(screen.getAllByText("June 2026").length).toBeGreaterThanOrEqual(2);
 		expect(screen.getByRole("button", { name: "Month" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Month" }).getAttribute("aria-pressed")).toBe("true");
+		expect(screen.getByRole("button", { name: "Week" }).getAttribute("aria-pressed")).toBe("false");
 		expect(screen.getByRole("button", { name: "Week" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Custom" })).toBeTruthy();
 		expect(screen.getByLabelText("Start")).toBeTruthy();
@@ -237,6 +239,47 @@ describe("PayrollWorkspace", () => {
 					startDate: "2026-05-25",
 					endDate: "2026-05-31",
 					label: "May 25 - May 31, 2026",
+				}),
+			);
+		});
+	});
+
+	it("keeps month mode when switching to week fails", async () => {
+		actionMocks.getPayrollWorkspaceSummaryAction
+			.mockResolvedValueOnce({
+				success: false,
+				error: "Unable to load week",
+			})
+			.mockResolvedValueOnce({
+				success: true,
+				data: buildSummary({
+					period: { start: "2026-05-01", end: "2026-05-31", label: "May 2026" },
+				}),
+			});
+
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Week" }));
+		await waitFor(() => expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1));
+		await waitFor(() =>
+			expect((screen.getByRole("button", { name: "Previous period" }) as HTMLButtonElement).disabled).toBe(
+				false,
+			),
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Previous period" }));
+
+		await waitFor(() => {
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					startDate: "2026-05-01",
+					endDate: "2026-05-31",
+					label: "May 2026",
 				}),
 			);
 		});

@@ -82,7 +82,11 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		employeeIds: filteredEmployeeIds,
 	};
 
-	function refreshSummary(nextRequest: PayrollPeriodRequest, employeeIds = filteredEmployeeIds) {
+	function refreshSummary(
+		nextRequest: PayrollPeriodRequest,
+		employeeIds = filteredEmployeeIds,
+		onSuccess?: () => void,
+	) {
 		if (employeeIds?.length === 0) {
 			toast.error("No employees match the selected payroll filters");
 			return;
@@ -99,6 +103,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			setSummary(result.data);
 			setStartDate(result.data.period.start);
 			setEndDate(result.data.period.end);
+			onSuccess?.();
 		});
 	}
 
@@ -131,11 +136,14 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 	}
 
 	function applyDateMode(nextMode: PayrollDateRangeMode) {
-		setDateMode(nextMode);
+		if (nextMode === "custom") {
+			setDateMode(nextMode);
+			return;
+		}
 
-		if (nextMode === "custom") return;
-
-		refreshSummary(buildPeriodRequest(DateTime.utc().startOf(nextMode), nextMode));
+		refreshSummary(buildPeriodRequest(DateTime.utc().startOf(nextMode), nextMode), filteredEmployeeIds, () =>
+			setDateMode(nextMode),
+		);
 	}
 
 	function navigatePeriod(direction: "previous" | "next") {
@@ -287,6 +295,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 									variant={dateMode === mode ? "default" : "ghost"}
 									size="sm"
 									disabled={isPending}
+									aria-pressed={dateMode === mode}
 									onClick={() => applyDateMode(mode)}
 								>
 									{toTitleCase(mode)}
