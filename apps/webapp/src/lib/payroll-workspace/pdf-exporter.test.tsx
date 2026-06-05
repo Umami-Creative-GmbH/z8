@@ -21,7 +21,14 @@ const summary: PayrollWorkspaceSummary = {
 			hasBlockers: true,
 		},
 	],
-	blockers: [{ id: "blocker-1", employeeId: "employee-1", type: "missing_clock_out", label: "Missing clock-out" }],
+	blockers: [
+		{
+			id: "blocker-1",
+			employeeId: "employee-1",
+			type: "missing_clock_out",
+			label: "Missing clock-out",
+		},
+	],
 };
 
 describe("payroll PDF exporter", () => {

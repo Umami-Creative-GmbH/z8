@@ -268,7 +268,9 @@ export async function exportPayrollSummaryToPDF(
 					{summary.employees.map((employee) => (
 						<View
 							key={employee.id}
-							style={employee.hasBlockers ? [styles.tableRow, styles.tableRowBlocked] : styles.tableRow}
+							style={
+								employee.hasBlockers ? [styles.tableRow, styles.tableRowBlocked] : styles.tableRow
+							}
 							wrap={false}
 						>
 							<View style={[styles.cell, styles.employeeCell]}>
@@ -279,7 +281,9 @@ export async function exportPayrollSummaryToPDF(
 							<Text style={[styles.cell, styles.contractCell]}>
 								{formatContractType(employee.contractType)}
 							</Text>
-							<Text style={[styles.cell, styles.hoursCell]}>{formatHours(employee.workedHours)}</Text>
+							<Text style={[styles.cell, styles.hoursCell]}>
+								{formatHours(employee.workedHours)}
+							</Text>
 							<Text style={[styles.cell, styles.absenceCell]}>{formatAbsences(employee)}</Text>
 							<Text style={[styles.cell, styles.statusCell]}>
 								{employee.hasBlockers ? "Review" : "Clear"}
