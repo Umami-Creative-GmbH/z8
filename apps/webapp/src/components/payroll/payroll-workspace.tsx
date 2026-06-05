@@ -59,6 +59,7 @@ interface PayrollPeriodRequest {
 	startDate: string;
 	endDate: string;
 	label: string;
+	employeeIds?: string[];
 }
 
 export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorkspaceProps) {
@@ -66,19 +67,35 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 	const [dateMode, setDateMode] = useState<PayrollDateRangeMode>("month");
 	const [startDate, setStartDate] = useState(initialSummary.period.start);
 	const [endDate, setEndDate] = useState(initialSummary.period.end);
+	const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
+	const [selectedTeamNames, setSelectedTeamNames] = useState<string[]>([]);
 	const [formatId, setFormatId] = useState(exportFormats[0]?.id ?? "");
 	const [isPending, startTransition] = useTransition();
 
+	const scopedEmployees = initialSummary.employees;
+	const teamOptions = getTeamOptions(scopedEmployees);
+	const filteredEmployeeIds = getFilteredEmployeeIds(
+		scopedEmployees,
+		selectedEmployeeIds,
+		selectedTeamNames,
+	);
+	const filtersHaveNoMatches = filteredEmployeeIds?.length === 0;
 	const hasExportFormats = exportFormats.length > 0;
 	const request = {
 		startDate: summary.period.start,
 		endDate: summary.period.end,
 		label: summary.period.label,
+		employeeIds: filteredEmployeeIds,
 	};
 
-	function refreshSummary(nextRequest: PayrollPeriodRequest) {
+	function refreshSummary(nextRequest: PayrollPeriodRequest, employeeIds = filteredEmployeeIds) {
+		if (employeeIds?.length === 0) {
+			toast.error("No employees match the selected payroll filters");
+			return;
+		}
+
 		startTransition(async () => {
-			const result = await getPayrollWorkspaceSummaryAction(nextRequest);
+			const result = await getPayrollWorkspaceSummaryAction({ ...nextRequest, employeeIds });
 
 			if (!result.success) {
 				toast.error(result.error);
@@ -89,6 +106,34 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			setStartDate(result.data.period.start);
 			setEndDate(result.data.period.end);
 		});
+	}
+
+	function toggleEmployeeFilter(employeeId: string, checked: boolean) {
+		const nextEmployeeIds = checked
+			? [...selectedEmployeeIds, employeeId]
+			: selectedEmployeeIds.filter((selectedEmployeeId) => selectedEmployeeId !== employeeId);
+		const nextFilteredEmployeeIds = getFilteredEmployeeIds(
+			scopedEmployees,
+			nextEmployeeIds,
+			selectedTeamNames,
+		);
+
+		setSelectedEmployeeIds(nextEmployeeIds);
+		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
+	}
+
+	function toggleTeamFilter(teamName: string, checked: boolean) {
+		const nextTeamNames = checked
+			? [...selectedTeamNames, teamName]
+			: selectedTeamNames.filter((selectedTeamName) => selectedTeamName !== teamName);
+		const nextFilteredEmployeeIds = getFilteredEmployeeIds(
+			scopedEmployees,
+			selectedEmployeeIds,
+			nextTeamNames,
+		);
+
+		setSelectedTeamNames(nextTeamNames);
+		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
 	}
 
 	function applyDateMode(nextMode: PayrollDateRangeMode) {
@@ -118,6 +163,11 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 	}
 
 	function downloadPdf() {
+		if (filtersHaveNoMatches) {
+			toast.error("No employees match the selected payroll filters");
+			return;
+		}
+
 		startTransition(async () => {
 			const result = await exportPayrollPdfAction(request);
 
@@ -140,6 +190,10 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 
 	function triggerExport() {
 		if (!formatId) return;
+		if (filtersHaveNoMatches) {
+			toast.error("No employees match the selected payroll filters");
+			return;
+		}
 
 		startTransition(async () => {
 			const result = await startScopedPayrollExportAction({ ...request, formatId });
@@ -218,7 +272,8 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				</div>
 			</header>
 
-			<section className="grid gap-4 md:grid-cols-3">
+			<section className="grid gap-4 md:grid-cols-4">
+				<SummaryCard label="Selected period" value={summary.period.label} />
 				<SummaryCard
 					icon={<IconUsers aria-hidden="true" className="size-5" />}
 					label="Employees"
@@ -231,6 +286,59 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 					tone={summary.totals.blockerCount > 0 ? "warning" : "default"}
 				/>
 			</section>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>Payroll filters</CardTitle>
+					<CardDescription>Limit this workspace to employees and teams in your payroll scope.</CardDescription>
+				</CardHeader>
+				<CardContent className="grid gap-5 md:grid-cols-2">
+					<div className="space-y-3">
+						<div className="font-medium text-sm">Assigned employees</div>
+						<div className="grid gap-2">
+							{scopedEmployees.map((employee) => (
+								<label key={employee.id} className="flex items-center gap-2 text-sm">
+									<input
+										type="checkbox"
+										className="size-4 rounded border-input accent-primary"
+										checked={selectedEmployeeIds.includes(employee.id)}
+										disabled={isPending}
+										onChange={(event) => toggleEmployeeFilter(employee.id, event.target.checked)}
+									/>
+									<span>{employee.name}</span>
+								</label>
+							))}
+						</div>
+					</div>
+
+					<div className="space-y-3">
+						<div className="font-medium text-sm">Assigned teams</div>
+						<div className="grid gap-2">
+							{teamOptions.length > 0 ? (
+								teamOptions.map((teamName) => (
+									<label key={teamName} className="flex items-center gap-2 text-sm">
+										<input
+											type="checkbox"
+											className="size-4 rounded border-input accent-primary"
+											checked={selectedTeamNames.includes(teamName)}
+											disabled={isPending}
+											onChange={(event) => toggleTeamFilter(teamName, event.target.checked)}
+										/>
+										<span>{teamName}</span>
+									</label>
+								))
+							) : (
+								<p className="text-muted-foreground text-sm">No assigned teams in this payroll scope.</p>
+							)}
+						</div>
+					</div>
+					{filtersHaveNoMatches ? (
+						<p className="text-destructive text-sm md:col-span-2">
+							No employees match the selected payroll filters.
+						</p>
+					) : null}
+				</CardContent>
+			</Card>
 
 			{summary.blockers.length > 0 ? (
 				<Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
@@ -305,7 +413,12 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 					<CardDescription>Download a review PDF or start a configured payroll export.</CardDescription>
 				</CardHeader>
 				<CardContent className="flex flex-col gap-3 md:flex-row md:items-end">
-					<Button type="button" variant="outline" disabled={isPending} onClick={downloadPdf}>
+					<Button
+						type="button"
+						variant="outline"
+						disabled={isPending || filtersHaveNoMatches}
+						onClick={downloadPdf}
+					>
 						{isPending ? (
 							<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 						) : (
@@ -337,7 +450,11 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 						) : null}
 					</div>
 
-					<Button type="button" disabled={!hasExportFormats || isPending} onClick={triggerExport}>
+					<Button
+						type="button"
+						disabled={!hasExportFormats || isPending || filtersHaveNoMatches}
+						onClick={triggerExport}
+					>
 						{isPending ? (
 							<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 						) : (
@@ -393,6 +510,40 @@ function formatAbsences(absences: PayrollWorkspaceSummary["employees"][number]["
 	if (absences.length === 0) return "None";
 
 	return absences.map((absence) => `${absence.categoryName}: ${absence.days}`).join(", ");
+}
+
+function basePeriodRequest(summary: PayrollWorkspaceSummary): PayrollPeriodRequest {
+	return {
+		startDate: summary.period.start,
+		endDate: summary.period.end,
+		label: summary.period.label,
+	};
+}
+
+function getTeamOptions(employees: PayrollWorkspaceSummary["employees"]): string[] {
+	return [...new Set(employees.map((employee) => employee.teamName).filter(Boolean))].sort() as string[];
+}
+
+function getFilteredEmployeeIds(
+	employees: PayrollWorkspaceSummary["employees"],
+	selectedEmployeeIds: string[],
+	selectedTeamNames: string[],
+): string[] | undefined {
+	if (selectedEmployeeIds.length === 0 && selectedTeamNames.length === 0) return undefined;
+
+	const selectedEmployeeIdSet = new Set(selectedEmployeeIds);
+	const selectedTeamNameSet = new Set(selectedTeamNames);
+	return employees
+		.filter((employee) => {
+			const matchesEmployee =
+				selectedEmployeeIds.length === 0 || selectedEmployeeIdSet.has(employee.id);
+			const matchesTeam =
+				selectedTeamNames.length === 0 ||
+				(employee.teamName !== null && selectedTeamNameSet.has(employee.teamName));
+
+			return matchesEmployee && matchesTeam;
+		})
+		.map((employee) => employee.id);
 }
 
 function formatPeriodLabel(start: DateTime, end: DateTime, mode: PayrollDateRangeMode) {
