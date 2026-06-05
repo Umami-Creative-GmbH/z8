@@ -6,6 +6,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -35,6 +36,7 @@ export const payrollAccessGrant = pgTable(
 	(table) => [
 		index("payrollAccessGrant_organizationId_idx").on(table.organizationId),
 		index("payrollAccessGrant_payrollEmployeeId_idx").on(table.payrollEmployeeId),
+		unique("payrollAccessGrant_id_organizationId_idx").on(table.id, table.organizationId),
 		uniqueIndex("payrollAccessGrant_active_employee_idx")
 			.on(table.organizationId, table.payrollEmployeeId)
 			.where(sql`is_active = true`),
@@ -52,9 +54,7 @@ export const payrollAccessTeam = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		grantId: uuid("grant_id")
-			.notNull()
-			.references(() => payrollAccessGrant.id, { onDelete: "cascade" }),
+		grantId: uuid("grant_id").notNull(),
 		teamId: uuid("team_id").notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		createdBy: text("created_by")
@@ -66,6 +66,10 @@ export const payrollAccessTeam = pgTable(
 		index("payrollAccessTeam_grantId_idx").on(table.grantId),
 		index("payrollAccessTeam_teamId_idx").on(table.teamId),
 		uniqueIndex("payrollAccessTeam_grant_team_idx").on(table.grantId, table.teamId),
+		foreignKey({
+			columns: [table.grantId, table.organizationId],
+			foreignColumns: [payrollAccessGrant.id, payrollAccessGrant.organizationId],
+		}).onDelete("cascade"),
 		foreignKey({
 			columns: [table.teamId, table.organizationId],
 			foreignColumns: [team.id, team.organizationId],
@@ -80,9 +84,7 @@ export const payrollAccessEmployee = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		grantId: uuid("grant_id")
-			.notNull()
-			.references(() => payrollAccessGrant.id, { onDelete: "cascade" }),
+		grantId: uuid("grant_id").notNull(),
 		employeeId: uuid("employee_id").notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		createdBy: text("created_by")
@@ -94,6 +96,10 @@ export const payrollAccessEmployee = pgTable(
 		index("payrollAccessEmployee_grantId_idx").on(table.grantId),
 		index("payrollAccessEmployee_employeeId_idx").on(table.employeeId),
 		uniqueIndex("payrollAccessEmployee_grant_employee_idx").on(table.grantId, table.employeeId),
+		foreignKey({
+			columns: [table.grantId, table.organizationId],
+			foreignColumns: [payrollAccessGrant.id, payrollAccessGrant.organizationId],
+		}).onDelete("cascade"),
 		foreignKey({
 			columns: [table.employeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],

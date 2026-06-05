@@ -52,13 +52,21 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-	ALTER TABLE "payroll_access_team" ADD CONSTRAINT "payroll_access_team_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "organization"("id") ON DELETE CASCADE;
+	ALTER TABLE "payroll_access_grant" ADD CONSTRAINT "payrollAccessGrant_id_organizationId_idx" UNIQUE("id", "organization_id");
 EXCEPTION
 	WHEN duplicate_object THEN null;
 END $$;
 
 DO $$ BEGIN
-	ALTER TABLE "payroll_access_team" ADD CONSTRAINT "payroll_access_team_grant_id_payroll_access_grant_id_fk" FOREIGN KEY ("grant_id") REFERENCES "payroll_access_grant"("id") ON DELETE CASCADE;
+	ALTER TABLE "payroll_access_team" ADD CONSTRAINT "payroll_access_team_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "organization"("id") ON DELETE CASCADE;
+EXCEPTION
+	WHEN duplicate_object THEN null;
+END $$;
+
+ALTER TABLE "payroll_access_team" DROP CONSTRAINT IF EXISTS "payroll_access_team_grant_id_payroll_access_grant_id_fk";
+
+DO $$ BEGIN
+	ALTER TABLE "payroll_access_team" ADD CONSTRAINT "payroll_access_team_grant_id_organization_id_payroll_access_grant_id_organization_id_fk" FOREIGN KEY ("grant_id", "organization_id") REFERENCES "payroll_access_grant"("id", "organization_id") ON DELETE CASCADE;
 EXCEPTION
 	WHEN duplicate_object THEN null;
 END $$;
@@ -81,8 +89,10 @@ EXCEPTION
 	WHEN duplicate_object THEN null;
 END $$;
 
+ALTER TABLE "payroll_access_employee" DROP CONSTRAINT IF EXISTS "payroll_access_employee_grant_id_payroll_access_grant_id_fk";
+
 DO $$ BEGIN
-	ALTER TABLE "payroll_access_employee" ADD CONSTRAINT "payroll_access_employee_grant_id_payroll_access_grant_id_fk" FOREIGN KEY ("grant_id") REFERENCES "payroll_access_grant"("id") ON DELETE CASCADE;
+	ALTER TABLE "payroll_access_employee" ADD CONSTRAINT "payroll_access_employee_grant_id_organization_id_payroll_access_grant_id_organization_id_fk" FOREIGN KEY ("grant_id", "organization_id") REFERENCES "payroll_access_grant"("id", "organization_id") ON DELETE CASCADE;
 EXCEPTION
 	WHEN duplicate_object THEN null;
 END $$;
