@@ -79,11 +79,9 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 					</CardDescription>
 					{initialGrants.length > 0 ? (
 						<p className="text-sm text-muted-foreground">
-							{t(
-								"settings.payrollAccess.activeGrantCount",
-								"{count} active payroll officers",
-								{ count: initialGrants.length },
-							)}
+							{t("settings.payrollAccess.activeGrantCount", "{count} active payroll officers", {
+								count: initialGrants.length,
+							})}
 						</p>
 					) : null}
 				</CardHeader>

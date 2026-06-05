@@ -16,10 +16,7 @@ export default async function PayrollAccessSettingsPage() {
 				<Card>
 					<CardHeader>
 						<CardTitle>
-							{t(
-								"settings.payrollAccess.deniedTitle",
-								"Payroll officer settings access required",
-							)}
+							{t("settings.payrollAccess.deniedTitle", "Payroll officer settings access required")}
 						</CardTitle>
 						<CardDescription>
 							{t(
