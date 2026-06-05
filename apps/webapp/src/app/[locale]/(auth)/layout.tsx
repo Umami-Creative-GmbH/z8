@@ -112,7 +112,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 			<div className="relative min-h-svh overflow-x-hidden bg-background">
 				<AuthBackgroundImage initialImage={backgroundImage} />
 				<section className="relative z-10 flex min-h-svh flex-col px-4 pt-4 pb-0 sm:px-8 sm:pt-6 sm:pb-0 lg:px-10">
-					<div className="flex items-center justify-end gap-2 drop-shadow-sm">
+					<div className="auth-shell-controls auth-shell-controls-readable flex items-center justify-end gap-2 drop-shadow-sm [&_[data-slot=dropdown-menu-trigger]]:!border-white/20 [&_[data-slot=dropdown-menu-trigger]]:!bg-slate-950/85 [&_[data-slot=dropdown-menu-trigger]]:!text-white [&_[data-slot=dropdown-menu-trigger]]:!shadow-lg [&_[data-slot=dropdown-menu-trigger]]:!shadow-slate-950/20 [&_[data-slot=dropdown-menu-trigger]]:!backdrop-blur-xl [&_[data-slot=dropdown-menu-trigger]:hover]:!bg-slate-950/95 [&_[data-slot=select-trigger]]:!border-white/20 [&_[data-slot=select-trigger]]:!bg-slate-950/85 [&_[data-slot=select-trigger]]:!text-white [&_[data-slot=select-trigger]]:!shadow-lg [&_[data-slot=select-trigger]]:!shadow-slate-950/20 [&_[data-slot=select-trigger]]:!backdrop-blur-xl [&_[data-slot=select-trigger]:hover]:!bg-slate-950/95 [&_[data-slot=select-trigger]_svg]:!text-white">
 						<ThemeToggle />
 						<FontSizeToggle />
 						<LanguageSwitcher />

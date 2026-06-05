@@ -117,7 +117,11 @@ describe("AuthLayout", () => {
 		expect(backgroundImage.className).toContain("inset-0");
 		expect(backgroundImage.className).toContain("object-cover");
 		expect(backgroundImage.closest("aside")).toBeNull();
-		expect(screen.getByRole("button", { name: "Font size" })).toBeTruthy();
+		const controls = screen.getByRole("button", { name: "Font size" }).closest("div");
+		expect(controls?.className).toContain("auth-shell-controls");
+		expect(controls?.className).toContain("auth-shell-controls-readable");
+		expect(controls?.className).toContain("[&_[data-slot=dropdown-menu-trigger]]:!bg-slate-950/85");
+		expect(controls?.className).toContain("[&_[data-slot=select-trigger]]:!bg-slate-950/85");
 	});
 
 	it("does not fall back to the platform cookie script on custom domains", async () => {

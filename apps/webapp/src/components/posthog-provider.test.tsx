@@ -2,7 +2,7 @@
 
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { initMock, optInMock, optOutMock, resetMock } = vi.hoisted(() => ({
 	initMock: vi.fn(),
@@ -11,11 +11,13 @@ const { initMock, optInMock, optOutMock, resetMock } = vi.hoisted(() => ({
 	resetMock: vi.fn(),
 }));
 
+const mockEnv = vi.hoisted(() => ({
+	NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "phc_test",
+	NEXT_PUBLIC_POSTHOG_HOST: "https://eu.i.posthog.com",
+}));
+
 vi.mock("@/env", () => ({
-	env: {
-		NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "phc_test",
-		NEXT_PUBLIC_POSTHOG_HOST: "https://eu.i.posthog.com",
-	},
+	env: mockEnv,
 }));
 
 vi.mock("posthog-js", () => ({
@@ -38,11 +40,17 @@ import { PostHogProvider } from "./posthog-provider";
 describe("PostHogProvider", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockEnv.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN = "phc_test";
+		mockEnv.NEXT_PUBLIC_POSTHOG_HOST = "https://eu.i.posthog.com";
+	});
+
+	afterEach(() => {
+		vi.unstubAllEnvs();
 	});
 
 	it("does not initialize tracking when product improvement consent is disabled", () => {
 		render(
-			<PostHogProvider helpImproveProduct={false}>
+			<PostHogProvider disabled={false} helpImproveProduct={false}>
 				<div>App</div>
 			</PostHogProvider>,
 		);
@@ -57,7 +65,7 @@ describe("PostHogProvider", () => {
 
 	it("initializes tracking when product improvement consent is enabled", () => {
 		render(
-			<PostHogProvider helpImproveProduct>
+			<PostHogProvider disabled={false} helpImproveProduct>
 				<div>App</div>
 			</PostHogProvider>,
 		);
@@ -71,5 +79,20 @@ describe("PostHogProvider", () => {
 		expect(initMock.mock.invocationCallOrder[0]).toBeLessThan(
 			optInMock.mock.invocationCallOrder[0],
 		);
+	});
+
+	it("does not initialize tracking when disabled", () => {
+		render(
+			<PostHogProvider disabled helpImproveProduct>
+				<div>App</div>
+			</PostHogProvider>,
+		);
+
+		expect(screen.getByText("App")).toBeTruthy();
+		expect(screen.queryByTestId("posthog-provider")).toBeNull();
+		expect(initMock).not.toHaveBeenCalled();
+		expect(optInMock).not.toHaveBeenCalled();
+		expect(optOutMock).not.toHaveBeenCalled();
+		expect(resetMock).not.toHaveBeenCalled();
 	});
 });

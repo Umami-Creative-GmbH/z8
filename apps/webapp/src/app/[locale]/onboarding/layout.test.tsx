@@ -48,7 +48,11 @@ describe("OnboardingLayout", () => {
 		expect(background.className).toContain("object-cover");
 		expect(main?.className).toContain("onboarding-glass-scope");
 		expect(main?.className).toContain("flex-1");
-		expect(screen.getByRole("button", { name: "Theme" })).toBeTruthy();
+		const controls = screen.getByRole("button", { name: "Theme" }).closest("div");
+		expect(controls?.className).toContain("auth-shell-controls");
+		expect(controls?.className).toContain("auth-shell-controls-readable");
+		expect(controls?.className).toContain("[&_[data-slot=dropdown-menu-trigger]]:!bg-slate-950/85");
+		expect(controls?.className).toContain("[&_[data-slot=select-trigger]]:!bg-slate-950/85");
 		expect(screen.getByRole("button", { name: "Font size" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Language" })).toBeTruthy();
 		expect(footer.closest("div")?.className).toContain("drop-shadow-sm");

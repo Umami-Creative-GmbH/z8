@@ -7,20 +7,22 @@ import { env } from "@/env";
 
 type PostHogProviderProps = {
 	children: React.ReactNode;
+	disabled: boolean;
 	helpImproveProduct: boolean;
 };
 
-export function PostHogProvider({ children, helpImproveProduct }: PostHogProviderProps) {
+export function PostHogProvider({ children, disabled, helpImproveProduct }: PostHogProviderProps) {
 	const projectToken = env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN?.trim();
+	const isPostHogEnabled = !disabled && !!projectToken;
 
 	useEffect(() => {
-		if (!helpImproveProduct) {
-			posthog.opt_out_capturing();
-			posthog.reset();
+		if (!isPostHogEnabled) {
 			return;
 		}
 
-		if (!projectToken) {
+		if (!helpImproveProduct) {
+			posthog.opt_out_capturing();
+			posthog.reset();
 			return;
 		}
 
@@ -32,9 +34,9 @@ export function PostHogProvider({ children, helpImproveProduct }: PostHogProvide
 			capture_pageleave: true,
 		});
 		posthog.opt_in_capturing();
-	}, [helpImproveProduct, projectToken]);
+	}, [helpImproveProduct, isPostHogEnabled, projectToken]);
 
-	if (!(projectToken && helpImproveProduct)) {
+	if (!(isPostHogEnabled && helpImproveProduct)) {
 		return <>{children}</>;
 	}
 

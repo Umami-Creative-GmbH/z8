@@ -10,6 +10,7 @@ import { PostHogProvider } from "@/components/posthog-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { db } from "@/db";
 import { userSettings } from "@/db/schema";
+import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { TolgeeNextProvider } from "@/tolgee/client";
@@ -104,8 +105,13 @@ function AppProviders({ children, locale }: { children: ReactNode; locale: strin
 
 async function PostHogConsentProvider({ children }: { children: ReactNode }) {
 	const helpImproveProduct = await getHelpImproveProduct();
+	const disabled = env.NODE_ENV === "development";
 
-	return <PostHogProvider helpImproveProduct={helpImproveProduct}>{children}</PostHogProvider>;
+	return (
+		<PostHogProvider disabled={disabled} helpImproveProduct={helpImproveProduct}>
+			{children}
+		</PostHogProvider>
+	);
 }
 
 export default async function LocaleLayout({ children, params }: Props) {
