@@ -11,7 +11,7 @@ type StaticAppCommandDefinition = {
 	subtitleDefault: string;
 	keywords: { key: string; defaultValue: string }[];
 	href: string;
-	visibleFor: "employee" | "manager" | "orgAdmin";
+	visibleFor: "employee" | "manager" | "orgAdmin" | "payroll";
 	requiresProjectsEnabled?: boolean;
 };
 
@@ -139,6 +139,20 @@ const STATIC_APP_COMMANDS: StaticAppCommandDefinition[] = [
 		visibleFor: "orgAdmin",
 	},
 	{
+		id: "open-payroll",
+		titleKey: "appSearch.commands.openPayroll.title",
+		titleDefault: "Open payroll",
+		subtitleKey: "appSearch.commands.openPayroll.subtitle",
+		subtitleDefault: "Review scoped payroll workspace",
+		keywords: [
+			{ key: "appSearch.commands.openPayroll.keywords.payroll", defaultValue: "payroll" },
+			{ key: "appSearch.commands.openPayroll.keywords.wages", defaultValue: "wages" },
+			{ key: "appSearch.commands.openPayroll.keywords.export", defaultValue: "export" },
+		],
+		href: "/payroll",
+		visibleFor: "payroll",
+	},
+	{
 		id: "open-settings",
 		titleKey: "appSearch.commands.openSettings.title",
 		titleDefault: "Open settings",
@@ -159,7 +173,7 @@ function isManagerOrAdmin(employeeRole: StaticAppCommandInput["employeeRole"]): 
 
 function isVisibleCommand(
 	command: StaticAppCommandDefinition,
-	{ employeeRole, settingsAccessTier, featureFlags }: StaticAppCommandInput,
+	{ employeeRole, settingsAccessTier, featureFlags, showPayrollNav }: StaticAppCommandInput,
 ): boolean {
 	if (command.requiresProjectsEnabled && !featureFlags?.projectsEnabled) {
 		return false;
@@ -167,6 +181,10 @@ function isVisibleCommand(
 
 	if (command.visibleFor === "orgAdmin") {
 		return hasSettingsAccessTier(settingsAccessTier, "orgAdmin");
+	}
+
+	if (command.visibleFor === "payroll") {
+		return showPayrollNav === true;
 	}
 
 	if (command.visibleFor === "manager") {

@@ -23,4 +23,15 @@ describe("TimeCorrectionHandler detail loading", () => {
 		expect(body).toContain('eq(approvalRequest.entityType, "time_entry")');
 		expect(body).toContain("eq(approvalRequest.entityId, entityId)");
 	});
+
+	it("loads correction entries referenced by approval metadata for review details", () => {
+		const body = handlerSection();
+
+		expect(source).toContain("timeEntry");
+		expect(body).toContain("correctionMetadataFromRequest(request)");
+		expect(body).toContain("clockInCorrectionId");
+		expect(body).toContain("pendingCorrection");
+		expect(source).toContain("replacesEntryId === period.clockIn.id");
+		expect(source).toContain("isOrphaned");
+	});
 });

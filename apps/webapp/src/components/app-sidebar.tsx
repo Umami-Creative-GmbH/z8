@@ -4,6 +4,7 @@ import {
 	IconBeach,
 	IconCalendar,
 	IconCalendarEvent,
+	IconCash,
 	IconClipboardCheck,
 	IconClock,
 	IconDashboard,
@@ -42,6 +43,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	employeeRole?: "admin" | "manager" | "employee" | null;
 	shiftsEnabled?: boolean;
 	showComplianceNav?: boolean;
+	showPayrollNav?: boolean;
 	showWorksCouncilNav?: boolean;
 	showPlatformAdminNav?: boolean;
 	settingsAccessTier?: SettingsAccessTier;
@@ -62,6 +64,7 @@ export function AppSidebar({
 	employeeRole = null,
 	shiftsEnabled = false,
 	showComplianceNav = false,
+	showPayrollNav = false,
 	showWorksCouncilNav = false,
 	showPlatformAdminNav = false,
 	settingsAccessTier = "member",
@@ -78,6 +81,7 @@ export function AppSidebar({
 		settingsAccessTier,
 		billingEnabled,
 		showComplianceNav,
+		showPayrollNav,
 		featureFlags,
 	};
 	const staticCommands = buildStaticAppCommands(staticSearchInput);
@@ -101,16 +105,6 @@ export function AppSidebar({
 			icon: IconCalendarEvent,
 		},
 		{
-			title: t("nav.my-requests", "My Requests"),
-			url: "/my-requests",
-			icon: IconFileDescription,
-		},
-		{
-			title: t("nav.org-explorer", "Org Explorer"),
-			url: "/organization",
-			icon: IconHierarchy,
-		},
-		{
 			title: t("nav.absences", "Absences"),
 			url: "/absences",
 			icon: IconBeach,
@@ -121,10 +115,29 @@ export function AppSidebar({
 			icon: IconReceipt,
 		},
 		{
+			title: t("nav.my-requests", "My Requests"),
+			url: "/my-requests",
+			icon: IconFileDescription,
+		},
+		{
 			title: t("nav.reports", "Reports"),
 			url: "/reports",
 			icon: IconReport,
 		},
+		{
+			title: t("nav.org-explorer", "Org Explorer"),
+			url: "/organization",
+			icon: IconHierarchy,
+		},
+		...(showPayrollNav
+			? [
+					{
+						title: t("nav.payroll", "Payroll"),
+						url: "/payroll",
+						icon: IconCash,
+					},
+				]
+			: []),
 	];
 
 	// Team section - admin/manager only

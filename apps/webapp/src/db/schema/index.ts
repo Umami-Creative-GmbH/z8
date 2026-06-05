@@ -50,6 +50,7 @@ export * from "./notification";
 // Domain tables
 export * from "./organization";
 // Payroll export
+export * from "./payroll-access";
 export * from "./payroll-export";
 // Platform admin (audit log, org suspension)
 export * from "./platform-admin";

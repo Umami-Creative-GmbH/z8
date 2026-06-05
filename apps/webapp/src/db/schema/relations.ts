@@ -69,6 +69,7 @@ import {
 	teamMembership,
 	teamPermissions,
 } from "./organization";
+import { payrollAccessEmployee, payrollAccessGrant, payrollAccessTeam } from "./payroll-access";
 import {
 	payrollExportConfig,
 	payrollExportFormat,
@@ -238,6 +239,9 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	webhookEndpoints: many(webhookEndpoint),
 	webhookDeliveries: many(webhookDelivery),
 	// Payroll exports
+	payrollAccessGrants: many(payrollAccessGrant),
+	payrollAccessTeams: many(payrollAccessTeam),
+	payrollAccessEmployees: many(payrollAccessEmployee),
 	payrollExportConfigs: many(payrollExportConfig),
 	payrollExportJobs: many(payrollExportJob),
 	// Coverage
@@ -401,6 +405,7 @@ export const teamRelations = relations(team, ({ one, many }) => ({
 	workCategorySetAssignments: many(workCategorySetAssignment),
 	// Change policies
 	changePolicyAssignments: many(changePolicyAssignment),
+	payrollAccessTeams: many(payrollAccessTeam),
 }));
 
 export const teamMembershipRelations = relations(teamMembership, ({ one }) => ({
@@ -609,6 +614,12 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	workCategorySetAssignments: many(workCategorySetAssignment),
 	// Change policies
 	changePolicyAssignments: many(changePolicyAssignment),
+	payrollAccessGrants: many(payrollAccessGrant, {
+		relationName: "payrollAccessGrant_payrollEmployee",
+	}),
+	payrollAccessAssignments: many(payrollAccessEmployee, {
+		relationName: "payrollAccessEmployee_employee",
+	}),
 	// Skills & qualifications
 	skills: many(employeeSkill),
 	skillOverrides: many(skillRequirementOverride),
@@ -1993,6 +2004,61 @@ export const webhookDeliveryRelations = relations(webhookDelivery, ({ one }) => 
 // ============================================
 // PAYROLL EXPORT RELATIONS
 // ============================================
+
+export const payrollAccessGrantRelations = relations(payrollAccessGrant, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [payrollAccessGrant.organizationId],
+		references: [organization.id],
+	}),
+	payrollEmployee: one(employee, {
+		fields: [payrollAccessGrant.payrollEmployeeId],
+		references: [employee.id],
+		relationName: "payrollAccessGrant_payrollEmployee",
+	}),
+	creator: one(user, {
+		fields: [payrollAccessGrant.createdBy],
+		references: [user.id],
+		relationName: "payrollAccessGrant_creator",
+	}),
+	updater: one(user, {
+		fields: [payrollAccessGrant.updatedBy],
+		references: [user.id],
+		relationName: "payrollAccessGrant_updater",
+	}),
+	teams: many(payrollAccessTeam),
+	employees: many(payrollAccessEmployee),
+}));
+
+export const payrollAccessTeamRelations = relations(payrollAccessTeam, ({ one }) => ({
+	grant: one(payrollAccessGrant, {
+		fields: [payrollAccessTeam.grantId],
+		references: [payrollAccessGrant.id],
+	}),
+	team: one(team, {
+		fields: [payrollAccessTeam.teamId],
+		references: [team.id],
+	}),
+	creator: one(user, {
+		fields: [payrollAccessTeam.createdBy],
+		references: [user.id],
+	}),
+}));
+
+export const payrollAccessEmployeeRelations = relations(payrollAccessEmployee, ({ one }) => ({
+	grant: one(payrollAccessGrant, {
+		fields: [payrollAccessEmployee.grantId],
+		references: [payrollAccessGrant.id],
+	}),
+	employee: one(employee, {
+		fields: [payrollAccessEmployee.employeeId],
+		references: [employee.id],
+		relationName: "payrollAccessEmployee_employee",
+	}),
+	creator: one(user, {
+		fields: [payrollAccessEmployee.createdBy],
+		references: [user.id],
+	}),
+}));
 
 export const payrollExportFormatRelations = relations(payrollExportFormat, ({ many }) => ({
 	configs: many(payrollExportConfig),

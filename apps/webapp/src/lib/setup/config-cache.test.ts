@@ -75,10 +75,22 @@ describe("isPlatformConfigured", () => {
 		vi.resetModules();
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+		vi.stubEnv("NEXT_PHASE", undefined);
+		vi.stubEnv("npm_lifecycle_event", undefined);
 		mocks.adminExists = false;
 		mocks.redisStore.clear();
+		mocks.dbLimit.mockClear();
 		mocks.dbLimit.mockImplementation(async () => (mocks.adminExists ? [{ id: "admin" }] : []));
 		mocks.revalidateTag.mockClear();
+	});
+
+	it("does not query the database during a production build", async () => {
+		vi.stubEnv("NEXT_PHASE", "phase-production-build");
+
+		const { isPlatformConfigured } = await loadConfigCache();
+
+		await expect(isPlatformConfigured()).resolves.toBe(false);
+		expect(mocks.dbLimit).not.toHaveBeenCalled();
 	});
 
 	it("uses Redis to avoid DB checks across module instances once configured", async () => {

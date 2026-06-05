@@ -25,6 +25,7 @@ export interface StaticAppSearchInput {
 	settingsAccessTier: SettingsAccessTier;
 	billingEnabled: boolean;
 	showComplianceNav: boolean;
+	showPayrollNav?: boolean;
 	featureFlags?: FeatureFlagState;
 }
 

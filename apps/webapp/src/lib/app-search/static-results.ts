@@ -87,6 +87,13 @@ const TEAM_PAGE_DESTINATIONS = [
 	},
 ] as const;
 
+const PAYROLL_PAGE_DESTINATION = {
+	id: "payroll",
+	titleKey: "nav.payroll",
+	titleDefault: "Payroll",
+	href: "/payroll",
+} as const;
+
 const SETTINGS_PAGE_DESTINATION = {
 	id: "settings",
 	titleKey: "nav.settings",
@@ -125,6 +132,7 @@ export function buildStaticAppSearchResults({
 	settingsAccessTier,
 	billingEnabled,
 	showComplianceNav,
+	showPayrollNav,
 	featureFlags,
 }: StaticAppSearchInput): AppSearchResult[] {
 	const pageResults: AppSearchResult[] = PERSONAL_PAGE_DESTINATIONS.map((destination) => ({
@@ -172,6 +180,15 @@ export function buildStaticAppSearchResults({
 			id: "page:compliance",
 			title: t("nav.compliance", "Compliance"),
 			href: "/compliance",
+		});
+	}
+
+	if (showPayrollNav) {
+		pageResults.push({
+			type: "page",
+			id: `page:${PAYROLL_PAGE_DESTINATION.id}`,
+			title: t(PAYROLL_PAGE_DESTINATION.titleKey, PAYROLL_PAGE_DESTINATION.titleDefault),
+			href: PAYROLL_PAGE_DESTINATION.href,
 		});
 	}
 
