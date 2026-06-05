@@ -36,6 +36,7 @@ import { getVacationAllowance } from "@/lib/query/vacation.queries";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { calculateAdjustedExpectedHoursForRange } from "./quick-stats-calculations";
+import { mapRecentlyApprovedRequestRows } from "./recently-approved-requests";
 import { type AbsenceRange, getNextAvailableReturnDate } from "./return-date-calculations";
 
 export type ManagerTodaySummaryResult = {
@@ -482,7 +483,7 @@ export async function getRecentlyApprovedRequests(
 			}),
 		);
 
-		return requests;
+		return mapRecentlyApprovedRequestRows(requests);
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
