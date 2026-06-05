@@ -1,8 +1,4 @@
-import {
-	AuthenticationError,
-	AuthorizationError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 
 export interface SavePayrollAccessInput {
 	payrollEmployeeId: string;

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
 	intersectPayrollScope,
-	resolvePayrollAccessibleEmployeeIdsFromRows,
 	type PayrollAccessEmployeeRow,
 	type PayrollAccessGrantRow,
 	type PayrollAccessTeamMemberRow,
+	resolvePayrollAccessibleEmployeeIdsFromRows,
 } from "./permissions";
 
 const grant: PayrollAccessGrantRow = {

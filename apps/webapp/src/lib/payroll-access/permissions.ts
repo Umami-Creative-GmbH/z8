@@ -62,7 +62,9 @@ export function intersectPayrollScope(input: {
 		return [...allowedEmployeeIds].sort();
 	}
 
-	return input.requestedEmployeeIds.filter((employeeId) => allowedEmployeeIds.has(employeeId)).sort();
+	return input.requestedEmployeeIds
+		.filter((employeeId) => allowedEmployeeIds.has(employeeId))
+		.sort();
 }
 
 export async function hasActivePayrollAccessGrant(input: {

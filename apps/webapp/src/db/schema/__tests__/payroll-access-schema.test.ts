@@ -1,10 +1,6 @@
 import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
-import {
-	payrollAccessEmployee,
-	payrollAccessGrant,
-	payrollAccessTeam,
-} from "@/db/schema";
+import { payrollAccessEmployee, payrollAccessGrant, payrollAccessTeam } from "@/db/schema";
 
 function tableColumnNames(table: { [key: string]: unknown }): string[] {
 	return Object.keys(table).filter((key) => !key.startsWith("_") && key !== "enableRLS");
@@ -52,7 +48,14 @@ describe("payroll access schema", () => {
 			]),
 		);
 		expect(tableColumnNames(payrollAccessTeam)).toEqual(
-			expect.arrayContaining(["id", "organizationId", "grantId", "teamId", "createdAt", "createdBy"]),
+			expect.arrayContaining([
+				"id",
+				"organizationId",
+				"grantId",
+				"teamId",
+				"createdAt",
+				"createdBy",
+			]),
 		);
 		expect(tableColumnNames(payrollAccessEmployee)).toEqual(
 			expect.arrayContaining([

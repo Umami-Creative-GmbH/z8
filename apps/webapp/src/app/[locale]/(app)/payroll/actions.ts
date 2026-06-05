@@ -4,10 +4,10 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db, employee, payrollExportConfig, payrollExportFormat } from "@/db";
-import { getAuthContext, type AuthContext } from "@/lib/auth-helpers";
+import { type AuthContext, getAuthContext } from "@/lib/auth-helpers";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { resolveScopedPayrollEmployeeIdsForAction } from "./action-helpers";
+import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
 import {
 	createExportJob,
 	getFormatter,
@@ -15,13 +15,13 @@ import {
 	type PayrollExportFilters,
 	processExportJob,
 } from "@/lib/payroll-export";
-import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
 import {
 	exportPayrollSummaryToPDF,
 	generatePayrollPDFFilename,
 } from "@/lib/payroll-workspace/pdf-exporter";
 import { getPayrollWorkspaceSummary } from "@/lib/payroll-workspace/summary";
 import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
+import { resolveScopedPayrollEmployeeIdsForAction } from "./action-helpers";
 
 export interface PayrollWorkspaceRequest {
 	startDate: string;
@@ -64,9 +64,8 @@ export async function startScopedPayrollExportAction(
 ): Promise<ServerActionResult<{ jobId: string; isAsync: boolean; fileContent?: string }>> {
 	return runPayrollWorkspaceAction(async () => {
 		const formatId = validateExportFormatId(request.formatId);
-		const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
-			request,
-		);
+		const { authContext, period, scopedEmployeeIds } =
+			await resolvePayrollWorkspaceActionContext(request);
 
 		const configuredFormat = await getPayrollExportConfig(
 			authContext.employee.organizationId,
@@ -139,7 +138,8 @@ export async function getConfiguredPayrollExportFormatsAction(): Promise<
 async function buildScopedPayrollWorkspaceSummary(
 	request: PayrollWorkspaceRequest,
 ): Promise<PayrollWorkspaceSummary> {
-	const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(request);
+	const { authContext, period, scopedEmployeeIds } =
+		await resolvePayrollWorkspaceActionContext(request);
 
 	return getPayrollWorkspaceSummary({
 		organizationId: authContext.employee.organizationId,
@@ -262,7 +262,9 @@ function validateRequestedEmployeeIds(employeeIds: string[] | undefined): string
 	}
 
 	const uniqueEmployeeIds = [...new Set(employeeIds)];
-	if (uniqueEmployeeIds.some((employeeId) => typeof employeeId !== "string" || !employeeId.trim())) {
+	if (
+		uniqueEmployeeIds.some((employeeId) => typeof employeeId !== "string" || !employeeId.trim())
+	) {
 		throw new ValidationError({
 			message: "employeeIds must contain only strings",
 			field: "employeeIds",
@@ -290,7 +292,12 @@ async function getActiveOrganizationEmployeeIds(
 	const rows = await db
 		.select({ id: employee.id })
 		.from(employee)
-		.where(and(eq(employee.organizationId, authContext.employee.organizationId), eq(employee.isActive, true)));
+		.where(
+			and(
+				eq(employee.organizationId, authContext.employee.organizationId),
+				eq(employee.isActive, true),
+			),
+		);
 
 	return rows.map((row) => row.id).sort();
 }
@@ -312,7 +319,9 @@ async function runPayrollWorkspaceAction<T>(
 	);
 }
 
-function isAppError(error: unknown): error is ValidationError | AuthenticationError | AuthorizationError {
+function isAppError(
+	error: unknown,
+): error is ValidationError | AuthenticationError | AuthorizationError {
 	return (
 		error instanceof ValidationError ||
 		error instanceof AuthenticationError ||

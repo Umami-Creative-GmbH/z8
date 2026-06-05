@@ -69,11 +69,7 @@ import {
 	teamMembership,
 	teamPermissions,
 } from "./organization";
-import {
-	payrollAccessEmployee,
-	payrollAccessGrant,
-	payrollAccessTeam,
-} from "./payroll-access";
+import { payrollAccessEmployee, payrollAccessGrant, payrollAccessTeam } from "./payroll-access";
 import {
 	payrollExportConfig,
 	payrollExportFormat,
