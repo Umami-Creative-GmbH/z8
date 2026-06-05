@@ -36,6 +36,16 @@ describe("getPostHogServer", () => {
 		expect(mockState.PostHogConstructor).not.toHaveBeenCalled();
 	});
 
+	it("returns null in development mode even when the PostHog project token is configured", async () => {
+		vi.stubEnv("NODE_ENV", "development");
+		vi.stubEnv("NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN", "phc_test");
+
+		const { getPostHogServer } = await import("./posthog-server");
+
+		expect(getPostHogServer()).toBeNull();
+		expect(mockState.PostHogConstructor).not.toHaveBeenCalled();
+	});
+
 	it("creates a singleton PostHog client when the project token is configured", async () => {
 		vi.stubEnv("NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN", "phc_test");
 

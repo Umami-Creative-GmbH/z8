@@ -4,6 +4,10 @@ import { env } from "@/env";
 let posthogInstance: PostHog | null = null;
 
 export function getPostHogServer(): PostHog | null {
+	if (env.NODE_ENV === "development") {
+		return null;
+	}
+
 	const projectToken = env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN?.trim();
 
 	if (!projectToken) {
