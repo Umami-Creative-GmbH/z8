@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
+import { env } from "@/env";
 import { secondaryStorage } from "@/lib/redis";
 import { createLogger } from "../logger";
 
@@ -11,8 +12,7 @@ const CACHE_TAG = "platform-configured";
 const CACHE_PROFILE = "default";
 const REDIS_CACHE_KEY = "setup:platform-configured";
 const shouldSkipPlatformConfigCheckDuringBuild =
-	process.env.NEXT_PHASE === "phase-production-build" ||
-	process.env.npm_lifecycle_event === "build";
+	env.NEXT_PHASE === "phase-production-build" || env.npm_lifecycle_event === "build";
 
 // In-memory flag: once the platform is configured, it never reverts.
 // This avoids per-request DB queries in middleware where unstable_cache
