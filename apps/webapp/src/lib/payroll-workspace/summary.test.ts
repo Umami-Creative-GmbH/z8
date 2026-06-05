@@ -1,7 +1,11 @@
-import { readFileSync } from "node:fs";
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
-import { buildPayrollSummaryFromRows } from "./summary";
+import {
+	buildPayrollSummaryFromRows,
+	calculatePayrollAbsenceDays,
+	calculatePayrollWorkedMinutes,
+	filterPendingTimeApprovalBlockers,
+} from "./summary";
 
 describe("buildPayrollSummaryFromRows", () => {
 	it("returns total worked hours per employee", () => {
@@ -92,17 +96,162 @@ describe("buildPayrollSummaryFromRows", () => {
 	});
 });
 
-describe("getPayrollWorkspaceSummary source constraints", () => {
-	it("scopes pending approval blockers through canonical time records", () => {
-		const source = readFileSync(new URL("./summary.ts", import.meta.url), "utf8");
+describe("calculatePayrollWorkedMinutes", () => {
+	it("clips work records that start before or end after the payroll period", () => {
+		const period = {
+			start: DateTime.fromISO("2026-06-01T00:00:00Z"),
+			end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+		};
 
-		expect(source).toContain("eq(approvalRequest.canonicalRecordId, timeRecord.id)");
-		expect(source).toContain('eq(approvalRequest.entityType, "time_entry")');
-		expect(source).toContain("eq(timeRecord.organizationId, organizationId)");
-		expect(source).toContain("inArray(timeRecord.employeeId, allowedEmployeeIds)");
-		expect(source).toContain("lte(timeRecord.startAt, period.end.toUTC().toJSDate())");
-		expect(source).toContain(
-			"or(isNull(timeRecord.endAt), gte(timeRecord.endAt, period.start.toUTC().toJSDate()))",
-		);
+		expect(
+			calculatePayrollWorkedMinutes(
+				[
+					{
+						employeeId: "employee-1",
+						durationMinutes: 120,
+						startAt: DateTime.fromISO("2026-05-31T23:00:00Z"),
+						endAt: DateTime.fromISO("2026-06-01T01:00:00Z"),
+					},
+					{
+						employeeId: "employee-1",
+						durationMinutes: 120,
+						startAt: DateTime.fromISO("2026-06-30T23:00:00Z"),
+						endAt: DateTime.fromISO("2026-07-01T01:00:00Z"),
+					},
+				],
+				period,
+			).get("employee-1"),
+		).toBe(120);
+	});
+
+	it("excludes open work records from payable worked totals", () => {
+		const period = {
+			start: DateTime.fromISO("2026-06-01T00:00:00Z"),
+			end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+		};
+
+		expect(
+			calculatePayrollWorkedMinutes(
+				[
+					{
+						employeeId: "employee-1",
+						durationMinutes: null,
+						startAt: DateTime.fromISO("2026-06-10T09:00:00Z"),
+						endAt: null,
+					},
+				],
+				period,
+			).get("employee-1"),
+		).toBeUndefined();
+	});
+});
+
+describe("calculatePayrollAbsenceDays", () => {
+	it("counts full-day same-day absences as one day", () => {
+		expect(
+			calculatePayrollAbsenceDays({
+				startAt: DateTime.fromISO("2026-06-10T00:00:00Z"),
+				endAt: DateTime.fromISO("2026-06-10T23:59:59Z"),
+				startPeriod: "full_day",
+				endPeriod: "full_day",
+				period: {
+					start: DateTime.fromISO("2026-06-01T00:00:00Z"),
+					end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+				},
+			}),
+		).toBe(1);
+	});
+
+	it("counts same-day half-day absences as half a day", () => {
+		expect(
+			calculatePayrollAbsenceDays({
+				startAt: DateTime.fromISO("2026-06-10T00:00:00Z"),
+				endAt: DateTime.fromISO("2026-06-10T11:59:59Z"),
+				startPeriod: "am",
+				endPeriod: "am",
+				period: {
+					start: DateTime.fromISO("2026-06-01T00:00:00Z"),
+					end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+				},
+			}),
+		).toBe(0.5);
+	});
+
+	it("clips multi-day absences to the selected payroll period", () => {
+		expect(
+			calculatePayrollAbsenceDays({
+				startAt: DateTime.fromISO("2026-05-30T00:00:00Z"),
+				endAt: DateTime.fromISO("2026-06-02T23:59:59Z"),
+				startPeriod: "full_day",
+				endPeriod: "full_day",
+				period: {
+					start: DateTime.fromISO("2026-06-01T00:00:00Z"),
+					end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+				},
+			}),
+		).toBe(2);
+	});
+});
+
+describe("filterPendingTimeApprovalBlockers", () => {
+	it("keeps only pending time approvals linked to overlapping canonical time records", () => {
+		const blockers = filterPendingTimeApprovalBlockers({
+			organizationId: "org-1",
+			allowedEmployeeIds: ["employee-1"],
+			period: {
+				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
+				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+			},
+			rows: [
+				{
+					id: "approval-1",
+					organizationId: "org-1",
+					requestedBy: "employee-1",
+					status: "pending",
+					entityType: "time_entry",
+					canonicalRecordId: "record-1",
+					recordId: "record-1",
+					recordOrganizationId: "org-1",
+					employeeId: "employee-1",
+					startAt: DateTime.fromISO("2026-06-10T09:00:00Z"),
+					endAt: DateTime.fromISO("2026-06-10T10:00:00Z"),
+				},
+				{
+					id: "approval-2",
+					organizationId: "org-1",
+					requestedBy: "employee-1",
+					status: "pending",
+					entityType: "expense",
+					canonicalRecordId: null,
+					recordId: null,
+					recordOrganizationId: null,
+					employeeId: "employee-1",
+					startAt: DateTime.fromISO("2026-06-10T09:00:00Z"),
+					endAt: DateTime.fromISO("2026-06-10T10:00:00Z"),
+				},
+				{
+					id: "approval-3",
+					organizationId: "org-1",
+					requestedBy: "employee-1",
+					status: "pending",
+					entityType: "time_entry",
+					canonicalRecordId: "record-3",
+					recordId: "record-3",
+					recordOrganizationId: "org-1",
+					employeeId: "employee-1",
+					startAt: DateTime.fromISO("2026-07-10T09:00:00Z"),
+					endAt: DateTime.fromISO("2026-07-10T10:00:00Z"),
+				},
+			],
+		});
+
+		expect(blockers).toEqual([
+			{
+				id: "approval-1",
+				employeeId: "employee-1",
+				type: "pending_time_correction",
+				label: "Pending time correction",
+			},
+		]);
 	});
 });

@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { organization } from "@/db/auth-schema";
 import {
@@ -11,12 +11,29 @@ import {
 } from "@/db/schema";
 import type {
 	PayrollBlocker,
+	PayrollDayPeriod,
 	PayrollPeriod,
 	PayrollSummaryAbsenceRow,
 	PayrollSummaryEmployeeSource,
 	PayrollSummaryWorkRow,
 	PayrollWorkspaceSummary,
 } from "./types";
+
+type PayrollDateTimePeriod = { start: DateTime; end: DateTime };
+
+export interface PendingTimeApprovalBlockerRow {
+	id: string;
+	organizationId: string;
+	requestedBy: string;
+	status: string;
+	entityType: string;
+	canonicalRecordId: string | null;
+	recordId: string | null;
+	recordOrganizationId: string | null;
+	employeeId: string;
+	startAt: DateTime;
+	endAt: DateTime | null;
+}
 
 export function buildPayrollSummaryFromRows(input: {
 	organizationName: string;
@@ -28,13 +45,8 @@ export function buildPayrollSummaryFromRows(input: {
 	absenceRows: PayrollSummaryAbsenceRow[];
 	blockers: PayrollBlocker[];
 }): PayrollWorkspaceSummary {
-	const workedMinutesByEmployee = new Map<string, number>();
-	for (const row of input.workRows) {
-		workedMinutesByEmployee.set(
-			row.employeeId,
-			(workedMinutesByEmployee.get(row.employeeId) ?? 0) + (row.durationMinutes ?? 0),
-		);
-	}
+	const summaryPeriod = parsePayrollPeriod(input.period);
+	const workedMinutesByEmployee = calculatePayrollWorkedMinutes(input.workRows, summaryPeriod);
 
 	const absenceDaysByEmployee = new Map<
 		string,
@@ -43,10 +55,21 @@ export function buildPayrollSummaryFromRows(input: {
 	for (const row of input.absenceRows) {
 		const employeeAbsences = absenceDaysByEmployee.get(row.employeeId) ?? new Map();
 		const existing = employeeAbsences.get(row.categoryId);
+		const days =
+			row.days ??
+			(row.startAt && row.startPeriod && row.endPeriod
+				? calculatePayrollAbsenceDays({
+						startAt: row.startAt,
+						endAt: row.endAt ?? null,
+						startPeriod: row.startPeriod,
+						endPeriod: row.endPeriod,
+						period: summaryPeriod,
+					})
+				: 0);
 		employeeAbsences.set(row.categoryId, {
 			categoryId: row.categoryId,
 			categoryName: row.categoryName,
-			days: (existing?.days ?? 0) + row.days,
+			days: (existing?.days ?? 0) + days,
 		});
 		absenceDaysByEmployee.set(row.employeeId, employeeAbsences);
 	}
@@ -83,6 +106,97 @@ export function buildPayrollSummaryFromRows(input: {
 		employees,
 		blockers: input.blockers,
 	};
+}
+
+export function calculatePayrollWorkedMinutes(
+	workRows: PayrollSummaryWorkRow[],
+	period: PayrollDateTimePeriod,
+): Map<string, number> {
+	const workedMinutesByEmployee = new Map<string, number>();
+	for (const row of workRows) {
+		const minutes = row.startAt
+			? row.endAt
+				? calculateOverlappingMinutes(row.startAt, row.endAt, period)
+				: 0
+			: (row.durationMinutes ?? 0);
+
+		if (minutes <= 0) continue;
+
+		workedMinutesByEmployee.set(
+			row.employeeId,
+			(workedMinutesByEmployee.get(row.employeeId) ?? 0) + minutes,
+		);
+	}
+
+	return workedMinutesByEmployee;
+}
+
+export function calculatePayrollAbsenceDays(input: {
+	startAt: DateTime;
+	endAt: DateTime | null;
+	startPeriod: PayrollDayPeriod;
+	endPeriod: PayrollDayPeriod;
+	period: PayrollDateTimePeriod;
+}): number {
+	const recordStartDate = input.startAt.toUTC().startOf("day");
+	const recordEndDate = (input.endAt ?? input.startAt).toUTC().startOf("day");
+	if (recordEndDate < recordStartDate) return 0;
+
+	let days = 0;
+	let day = recordStartDate;
+	while (day <= recordEndDate) {
+		for (const slot of getAbsenceSlotsForDay(
+			day,
+			recordStartDate,
+			recordEndDate,
+			input.startPeriod,
+			input.endPeriod,
+		)) {
+			if (
+				intervalsOverlap(slot.start, slot.end, input.period.start.toUTC(), input.period.end.toUTC())
+			) {
+				days += 0.5;
+			}
+		}
+		day = day.plus({ days: 1 });
+	}
+
+	return roundDays(days);
+}
+
+export function filterPendingTimeApprovalBlockers(input: {
+	organizationId: string;
+	allowedEmployeeIds: string[];
+	period: PayrollDateTimePeriod;
+	rows: PendingTimeApprovalBlockerRow[];
+}): PayrollBlocker[] {
+	const allowedEmployeeIds = new Set(input.allowedEmployeeIds);
+
+	return input.rows
+		.filter(
+			(row) =>
+				row.organizationId === input.organizationId &&
+				row.recordOrganizationId === input.organizationId &&
+				row.status === "pending" &&
+				row.entityType === "time_entry" &&
+				row.canonicalRecordId !== null &&
+				row.canonicalRecordId === row.recordId &&
+				allowedEmployeeIds.has(row.requestedBy) &&
+				allowedEmployeeIds.has(row.employeeId) &&
+				row.endAt !== null &&
+				intervalsOverlap(
+					row.startAt.toUTC(),
+					row.endAt.toUTC(),
+					input.period.start,
+					input.period.end,
+				),
+		)
+		.map((row) => ({
+			id: row.id,
+			employeeId: row.employeeId,
+			type: "pending_time_correction" as const,
+			label: "Pending time correction",
+		}));
 }
 
 export async function getPayrollWorkspaceSummary(input: {
@@ -176,6 +290,8 @@ async function getWorkRows(
 		.select({
 			employeeId: timeRecord.employeeId,
 			durationMinutes: timeRecord.durationMinutes,
+			startAt: timeRecord.startAt,
+			endAt: timeRecord.endAt,
 		})
 		.from(timeRecord)
 		.where(
@@ -183,10 +299,19 @@ async function getWorkRows(
 				eq(timeRecord.organizationId, organizationId),
 				eq(timeRecord.recordKind, "work"),
 				eq(timeRecord.approvalState, "approved"),
+				isNotNull(timeRecord.endAt),
 				inArray(timeRecord.employeeId, allowedEmployeeIds),
-				gte(timeRecord.startAt, period.start.toUTC().toJSDate()),
 				lte(timeRecord.startAt, period.end.toUTC().toJSDate()),
+				gte(timeRecord.endAt, period.start.toUTC().toJSDate()),
 			),
+		)
+		.then((rows) =>
+			rows.map((row) => ({
+				employeeId: row.employeeId,
+				durationMinutes: row.durationMinutes,
+				startAt: DateTime.fromJSDate(row.startAt, { zone: "utc" }),
+				endAt: row.endAt ? DateTime.fromJSDate(row.endAt, { zone: "utc" }) : null,
+			})),
 		);
 }
 
@@ -203,6 +328,8 @@ async function getAbsenceRows(
 			endAt: timeRecord.endAt,
 			categoryId: absenceCategory.id,
 			categoryName: absenceCategory.name,
+			startPeriod: timeRecordAbsence.startPeriod,
+			endPeriod: timeRecordAbsence.endPeriod,
 		})
 		.from(timeRecord)
 		.innerJoin(
@@ -234,7 +361,10 @@ async function getAbsenceRows(
 		employeeId: row.employeeId,
 		categoryId: row.categoryId,
 		categoryName: row.categoryName,
-		days: countOverlappingUtcDays(row.startAt, row.endAt, period),
+		startAt: DateTime.fromJSDate(row.startAt, { zone: "utc" }),
+		endAt: row.endAt ? DateTime.fromJSDate(row.endAt, { zone: "utc" }) : null,
+		startPeriod: row.startPeriod,
+		endPeriod: row.endPeriod,
 	}));
 }
 
@@ -279,7 +409,19 @@ async function getBlockers(
 				),
 			),
 		db
-			.select({ id: approvalRequest.id, employeeId: timeRecord.employeeId })
+			.select({
+				id: approvalRequest.id,
+				organizationId: approvalRequest.organizationId,
+				requestedBy: approvalRequest.requestedBy,
+				status: approvalRequest.status,
+				entityType: approvalRequest.entityType,
+				canonicalRecordId: approvalRequest.canonicalRecordId,
+				recordId: timeRecord.id,
+				recordOrganizationId: timeRecord.organizationId,
+				employeeId: timeRecord.employeeId,
+				startAt: timeRecord.startAt,
+				endAt: timeRecord.endAt,
+			})
 			.from(approvalRequest)
 			.innerJoin(
 				timeRecord,
@@ -295,11 +437,23 @@ async function getBlockers(
 					eq(approvalRequest.entityType, "time_entry"),
 					inArray(approvalRequest.requestedBy, allowedEmployeeIds),
 					inArray(timeRecord.employeeId, allowedEmployeeIds),
+					isNotNull(timeRecord.endAt),
 					lte(timeRecord.startAt, period.end.toUTC().toJSDate()),
-					or(isNull(timeRecord.endAt), gte(timeRecord.endAt, period.start.toUTC().toJSDate())),
+					gte(timeRecord.endAt, period.start.toUTC().toJSDate()),
 				),
 			),
 	]);
+
+	const pendingApprovalBlockers = filterPendingTimeApprovalBlockers({
+		organizationId,
+		allowedEmployeeIds,
+		period,
+		rows: pendingApprovalRows.map((row) => ({
+			...row,
+			startAt: DateTime.fromJSDate(row.startAt, { zone: "utc" }),
+			endAt: row.endAt ? DateTime.fromJSDate(row.endAt, { zone: "utc" }) : null,
+		})),
+	});
 
 	return [
 		...missingClockOutRows.map((row) => ({
@@ -314,12 +468,7 @@ async function getBlockers(
 			type: "pending_absence" as const,
 			label: "Pending absence",
 		})),
-		...pendingApprovalRows.map((row) => ({
-			id: row.id,
-			employeeId: row.employeeId,
-			type: "pending_time_correction" as const,
-			label: "Pending time correction",
-		})),
+		...pendingApprovalBlockers,
 	];
 }
 
@@ -331,22 +480,73 @@ function toPayrollPeriod(period: { start: DateTime; end: DateTime; label: string
 	};
 }
 
-function countOverlappingUtcDays(
-	startAt: Date,
-	endAt: Date | null,
-	period: { start: DateTime; end: DateTime },
-): number {
-	const recordStart = DateTime.fromJSDate(startAt, { zone: "utc" }).startOf("day");
-	const recordEnd = DateTime.fromJSDate(endAt ?? startAt, { zone: "utc" }).startOf("day");
-	const overlapStart = DateTime.max(recordStart, period.start.toUTC().startOf("day"));
-	const overlapEnd = DateTime.min(recordEnd, period.end.toUTC().startOf("day"));
-	const inclusiveDays = Math.floor(overlapEnd.diff(overlapStart, "days").days) + 1;
-
-	return Math.max(1, inclusiveDays);
-}
-
 function formatEmployeeName(firstName: string | null, lastName: string | null): string {
 	return [firstName, lastName].filter(Boolean).join(" ") || "Unnamed employee";
+}
+
+function parsePayrollPeriod(period: PayrollPeriod): PayrollDateTimePeriod {
+	return {
+		start: parsePayrollPeriodBoundary(period.start, "start"),
+		end: parsePayrollPeriodBoundary(period.end, "end"),
+	};
+}
+
+function parsePayrollPeriodBoundary(value: string, edge: "start" | "end"): DateTime {
+	const parsed = DateTime.fromISO(value, { zone: "utc" });
+	if (value.length === 10) {
+		return edge === "start" ? parsed.startOf("day") : parsed.endOf("day");
+	}
+
+	return parsed.toUTC();
+}
+
+function calculateOverlappingMinutes(
+	startAt: DateTime,
+	endAt: DateTime,
+	period: PayrollDateTimePeriod,
+): number {
+	const overlapStart = DateTime.max(startAt.toUTC(), period.start.toUTC());
+	const overlapEnd = DateTime.min(endAt.toUTC(), period.end.toUTC());
+
+	return Math.max(0, Math.round(overlapEnd.diff(overlapStart, "minutes").minutes));
+}
+
+function intervalsOverlap(
+	startAt: DateTime,
+	endAt: DateTime,
+	periodStart: DateTime,
+	periodEnd: DateTime,
+): boolean {
+	return startAt.toUTC() <= periodEnd.toUTC() && endAt.toUTC() >= periodStart.toUTC();
+}
+
+function getAbsenceSlotsForDay(
+	day: DateTime,
+	recordStartDate: DateTime,
+	recordEndDate: DateTime,
+	startPeriod: PayrollDayPeriod,
+	endPeriod: PayrollDayPeriod,
+): Array<{ start: DateTime; end: DateTime }> {
+	const slots = [
+		{
+			period: "am" as const,
+			start: day.startOf("day"),
+			end: day.startOf("day").plus({ hours: 12 }),
+		},
+		{ period: "pm" as const, start: day.startOf("day").plus({ hours: 12 }), end: day.endOf("day") },
+	];
+	const startSlot = day.hasSame(recordStartDate, "day") ? firstAbsenceSlot(startPeriod) : "am";
+	const endSlot = day.hasSame(recordEndDate, "day") ? lastAbsenceSlot(endPeriod) : "pm";
+
+	return slots.filter((slot) => slot.period >= startSlot && slot.period <= endSlot);
+}
+
+function firstAbsenceSlot(period: PayrollDayPeriod): "am" | "pm" {
+	return period === "pm" ? "pm" : "am";
+}
+
+function lastAbsenceSlot(period: PayrollDayPeriod): "am" | "pm" {
+	return period === "am" ? "am" : "pm";
 }
 
 function roundHours(hours: number): number {
