@@ -8,6 +8,7 @@ import {
 	IconDownload,
 	IconFileExport,
 	IconLoader2,
+	IconRefresh,
 	IconUsers,
 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
@@ -271,6 +272,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 							disabled={dateMode === "custom" || isPending}
 							onClick={returnToCurrentPeriod}
 						>
+							<IconRefresh aria-hidden="true" className="size-4" />
 							Current period
 						</Button>
 					</div>
