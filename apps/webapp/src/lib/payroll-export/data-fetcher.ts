@@ -29,6 +29,9 @@ export async function fetchWorkPeriodsForExport(
 	filters: PayrollExportFilters,
 ): Promise<WorkPeriodData[]> {
 	await assertCanonicalCutoverReady(organizationId);
+	if (hasEmptyEmployeeScope(filters)) {
+		return [];
+	}
 
 	logger.info(
 		{ organizationId, filters: serializeFilters(filters) },
@@ -153,6 +156,9 @@ export async function fetchAbsencesForExport(
 	filters: PayrollExportFilters,
 ): Promise<AbsenceData[]> {
 	await assertCanonicalCutoverReady(organizationId);
+	if (hasEmptyEmployeeScope(filters)) {
+		return [];
+	}
 
 	logger.info(
 		{ organizationId, filters: serializeFilters(filters) },
@@ -418,6 +424,9 @@ export async function countWorkPeriods(
 	filters: PayrollExportFilters,
 ): Promise<number> {
 	await assertCanonicalCutoverReady(organizationId);
+	if (hasEmptyEmployeeScope(filters)) {
+		return 0;
+	}
 
 	const whereConditions = [
 		eq(timeRecord.organizationId, organizationId),
@@ -482,4 +491,8 @@ function serializeFilters(filters: PayrollExportFilters) {
 		teamIds: filters.teamIds,
 		projectIds: filters.projectIds,
 	};
+}
+
+function hasEmptyEmployeeScope(filters: PayrollExportFilters) {
+	return filters.employeeIds !== undefined && filters.employeeIds.length === 0;
 }
