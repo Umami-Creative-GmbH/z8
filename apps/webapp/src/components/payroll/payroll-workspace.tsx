@@ -362,13 +362,13 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 						</Button>
 
 						<div className="flex flex-col gap-2 lg:min-w-56">
-							<Label>Payroll export target</Label>
+							<Label htmlFor="payroll-export-target">Payroll export target</Label>
 							<Select
 								value={formatId}
 								onValueChange={setFormatId}
 								disabled={!hasExportFormats || isPending}
 							>
-								<SelectTrigger aria-label="Payroll export target" className="w-full">
+								<SelectTrigger id="payroll-export-target" className="w-full">
 									<SelectValue placeholder="Select format" />
 								</SelectTrigger>
 								<SelectContent>

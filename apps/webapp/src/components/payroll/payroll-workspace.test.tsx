@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
@@ -111,6 +111,9 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("Worked hours")).toBeTruthy();
 		expect(screen.getByText("8.00 h")).toBeTruthy();
 		expect(screen.getByText("Ready")).toBeTruthy();
+		const readySummaryCard = screen.getByText("Ready").closest('[data-slot="card"]');
+		expect(readySummaryCard).toBeTruthy();
+		expect(within(readySummaryCard as HTMLElement).getByText("1")).toBeTruthy();
 		expect(screen.getByText("Blockers")).toBeTruthy();
 		expect(screen.getAllByText("Selected period")).toHaveLength(1);
 		expect(screen.getByText("Payroll scope")).toBeTruthy();
@@ -122,6 +125,43 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("Missing clock-out")).toBeTruthy();
 		expect(screen.getByText("Download PDF")).toBeTruthy();
 		expect(screen.getByText("Trigger export")).toBeTruthy();
+	});
+
+	it("disables export controls when no export formats are configured", () => {
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+
+		const exportLabel = screen.getByText("Payroll export target");
+		const exportTarget = screen.getByLabelText("Payroll export target") as HTMLButtonElement;
+		const triggerExportButton = screen.getByRole("button", { name: "Trigger export" }) as HTMLButtonElement;
+
+		expect(exportLabel.getAttribute("for")).toBe("payroll-export-target");
+		expect(exportTarget.id).toBe("payroll-export-target");
+		expect(exportTarget.disabled).toBe(true);
+		expect(triggerExportButton.disabled).toBe(true);
+		expect(screen.getByText("No configured payroll export target")).toBeTruthy();
+	});
+
+	it("disables PDF and export actions when filters produce no matches", async () => {
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByLabelText("Ada Lovelace"));
+		await waitFor(() => {
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
+				expect.objectContaining({ employeeIds: ["employee-1"] }),
+			);
+		});
+		fireEvent.click(screen.getByLabelText("Engineering"));
+
+		await waitFor(() => {
+			expect(screen.getAllByText("No employees match the selected payroll filters.").length).toBeGreaterThan(0);
+		});
+		expect((screen.getByRole("button", { name: "Download PDF" }) as HTMLButtonElement).disabled).toBe(true);
+		expect((screen.getByRole("button", { name: "Trigger export" }) as HTMLButtonElement).disabled).toBe(true);
 	});
 
 	it("passes scoped employee ids when employee and team filters change", async () => {
