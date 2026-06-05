@@ -15,19 +15,13 @@ import { toast } from "sonner";
 import {
 	exportPayrollPdfAction,
 	getPayrollWorkspaceSummaryAction,
-	startScopedPayrollExportAction,
 	type PayrollExportFormatOption,
+	startScopedPayrollExportAction,
 } from "@/app/[locale]/(app)/payroll/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -45,10 +39,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import type {
-	PayrollDateRangeMode,
-	PayrollWorkspaceSummary,
-} from "@/lib/payroll-workspace/types";
+import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 
 interface PayrollWorkspaceProps {
 	initialSummary: PayrollWorkspaceSummary;
@@ -141,7 +132,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 
 		if (nextMode === "custom") return;
 
-		const now = DateTime.now();
+		const now = DateTime.utc();
 		const start = now.startOf(nextMode);
 		const end = now.endOf(nextMode);
 		refreshSummary({
@@ -290,7 +281,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			<Card>
 				<CardHeader>
 					<CardTitle>Payroll filters</CardTitle>
-					<CardDescription>Limit this workspace to employees and teams in your payroll scope.</CardDescription>
+					<CardDescription>
+						Limit this workspace to employees and teams in your payroll scope.
+					</CardDescription>
 				</CardHeader>
 				<CardContent className="grid gap-5 md:grid-cols-2">
 					<div className="space-y-3">
@@ -328,7 +321,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 									</label>
 								))
 							) : (
-								<p className="text-muted-foreground text-sm">No assigned teams in this payroll scope.</p>
+								<p className="text-muted-foreground text-sm">
+									No assigned teams in this payroll scope.
+								</p>
 							)}
 						</div>
 					</div>
@@ -357,7 +352,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			<Card>
 				<CardHeader>
 					<CardTitle>Employee totals</CardTitle>
-					<CardDescription>Worked time, absence totals, contract type, and payroll status.</CardDescription>
+					<CardDescription>
+						Worked time, absence totals, contract type, and payroll status.
+					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<Table>
@@ -393,7 +390,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 											{employee.contractType === "hourly" ? "Hourly" : "Fixed"}
 										</Badge>
 									</TableCell>
-									<TableCell className="text-right tabular-nums">{formatTableHours(employee.workedHours)}</TableCell>
+									<TableCell className="text-right tabular-nums">
+										{formatTableHours(employee.workedHours)}
+									</TableCell>
 									<TableCell>{formatAbsences(employee.absenceDaysByCategory)}</TableCell>
 									<TableCell>
 										<Badge variant={employee.hasBlockers ? "destructive" : "secondary"}>
@@ -410,7 +409,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			<Card>
 				<CardHeader>
 					<CardTitle>Exports</CardTitle>
-					<CardDescription>Download a review PDF or start a configured payroll export.</CardDescription>
+					<CardDescription>
+						Download a review PDF or start a configured payroll export.
+					</CardDescription>
 				</CardHeader>
 				<CardContent className="flex flex-col gap-3 md:flex-row md:items-end">
 					<Button
@@ -506,7 +507,9 @@ function formatTableHours(hours: number) {
 	return `${hours.toLocaleString(undefined, { maximumFractionDigits: 2 })} h`;
 }
 
-function formatAbsences(absences: PayrollWorkspaceSummary["employees"][number]["absenceDaysByCategory"]) {
+function formatAbsences(
+	absences: PayrollWorkspaceSummary["employees"][number]["absenceDaysByCategory"],
+) {
 	if (absences.length === 0) return "None";
 
 	return absences.map((absence) => `${absence.categoryName}: ${absence.days}`).join(", ");
@@ -521,7 +524,9 @@ function basePeriodRequest(summary: PayrollWorkspaceSummary): PayrollPeriodReque
 }
 
 function getTeamOptions(employees: PayrollWorkspaceSummary["employees"]): string[] {
-	return [...new Set(employees.map((employee) => employee.teamName).filter(Boolean))].sort() as string[];
+	return [
+		...new Set(employees.map((employee) => employee.teamName).filter(Boolean)),
+	].sort() as string[];
 }
 
 function getFilteredEmployeeIds(

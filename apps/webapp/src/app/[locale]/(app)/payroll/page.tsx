@@ -1,13 +1,7 @@
 import { DateTime } from "luxon";
 import { connection } from "next/server";
 import { PayrollWorkspace } from "@/components/payroll/payroll-workspace";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	getConfiguredPayrollExportFormatsAction,
 	getPayrollWorkspaceSummaryAction,
@@ -16,7 +10,7 @@ import {
 export default async function PayrollPage() {
 	await connection();
 
-	const now = DateTime.now();
+	const now = DateTime.utc();
 	const start = now.startOf("month");
 	const end = now.endOf("month");
 	const initialRequest = {

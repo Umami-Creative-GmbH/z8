@@ -68,7 +68,10 @@ const summary = {
 describe("PayrollWorkspace", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValue({ success: true, data: summary });
+		actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValue({
+			success: true,
+			data: summary,
+		});
 	});
 
 	it("renders summary cards, employee rows, period controls, and blockers", () => {
