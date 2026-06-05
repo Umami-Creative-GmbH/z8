@@ -2,12 +2,14 @@ import { eq } from "drizzle-orm";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
+import { secondaryStorage } from "@/lib/redis";
 import { createLogger } from "../logger";
 
 const logger = createLogger("SetupConfigCache");
 
 const CACHE_TAG = "platform-configured";
 const CACHE_PROFILE = "default";
+const REDIS_CACHE_KEY = "setup:platform-configured";
 
 // In-memory flag: once the platform is configured, it never reverts.
 // This avoids per-request DB queries in middleware where unstable_cache
@@ -46,6 +48,16 @@ async function checkPlatformConfiguredFromDb(): Promise<boolean> {
 	}
 }
 
+async function getPlatformConfiguredFromRedis(): Promise<boolean | null> {
+	const cached = await secondaryStorage.get(REDIS_CACHE_KEY);
+	if (cached === "true") return true;
+	return null;
+}
+
+async function setPlatformConfiguredInRedis(): Promise<void> {
+	await secondaryStorage.set(REDIS_CACHE_KEY, "true");
+}
+
 /**
  * Cached version of the platform configuration check.
  * Uses Next.js unstable_cache which works correctly across requests
@@ -70,6 +82,12 @@ const getCachedPlatformConfigured = unstable_cache(
 export async function isPlatformConfigured(): Promise<boolean> {
 	if (_configuredInMemory === true) return true;
 
+	const redisResult = await getPlatformConfiguredFromRedis();
+	if (redisResult === true) {
+		_configuredInMemory = true;
+		return true;
+	}
+
 	let result = await getCachedPlatformConfigured();
 
 	// Avoid sticky false values from stale cache entries.
@@ -78,7 +96,10 @@ export async function isPlatformConfigured(): Promise<boolean> {
 		result = await checkPlatformConfiguredFromDb();
 	}
 
-	if (result) _configuredInMemory = true;
+	if (result) {
+		_configuredInMemory = true;
+		await setPlatformConfiguredInRedis();
+	}
 	return result;
 }
 
@@ -88,6 +109,7 @@ export async function isPlatformConfigured(): Promise<boolean> {
  */
 export async function invalidateConfigCache(): Promise<void> {
 	revalidateTag(CACHE_TAG, CACHE_PROFILE);
+	await secondaryStorage.delete(REDIS_CACHE_KEY);
 	_configuredInMemory = null;
 	logger.info("Platform configuration cache invalidated");
 }
@@ -99,8 +121,10 @@ export async function invalidateConfigCache(): Promise<void> {
 export function setConfiguredStatus(status: boolean): void {
 	if (status) {
 		_configuredInMemory = true;
+		void setPlatformConfiguredInRedis();
 	} else {
 		_configuredInMemory = null;
+		void secondaryStorage.delete(REDIS_CACHE_KEY);
 	}
 
 	revalidateTag(CACHE_TAG, CACHE_PROFILE);
