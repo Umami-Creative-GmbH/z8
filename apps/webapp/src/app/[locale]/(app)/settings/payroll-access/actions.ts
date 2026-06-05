@@ -50,6 +50,84 @@ export interface PayrollAccessAdminData {
 	grants: PayrollAccessGrantData[];
 }
 
+export interface PayrollAccessAdminContextInput {
+	userId?: string;
+	role: "admin" | "manager" | "employee" | null;
+	employeeOrganizationId: string | null;
+	activeOrganizationId: string | null;
+}
+
+export interface PayrollAccessOwnershipInput {
+	activeEmployeeIds: string[];
+	organizationTeamIds: string[];
+}
+
+export function assertPayrollAccessAdminContext(
+	context: PayrollAccessAdminContextInput,
+	action: "read" | "write",
+): void {
+	if (!context.activeOrganizationId || !context.employeeOrganizationId) {
+		throw new AuthenticationError({ message: "Authentication required", userId: context.userId });
+	}
+
+	if (context.role !== "admin") {
+		throw new AuthorizationError({
+			message: "Admin access required",
+			userId: context.userId,
+			resource: "payroll_access",
+			action,
+		});
+	}
+
+	if (context.employeeOrganizationId !== context.activeOrganizationId) {
+		throw new AuthorizationError({
+			message: "Active organization employee context is required",
+			userId: context.userId,
+			resource: "payroll_access",
+			action,
+		});
+	}
+}
+
+export function buildValidatedPayrollAccessInput(
+	input: SavePayrollAccessInput,
+	ownership: PayrollAccessOwnershipInput,
+): SavePayrollAccessInput {
+	if (!input || typeof input !== "object") {
+		throw new ValidationError({ message: "Payroll access input is required" });
+	}
+
+	const payrollEmployeeId = validateId(input.payrollEmployeeId, "payrollEmployeeId");
+	const teamIds = validateIdList(input.teamIds, "teamIds");
+	const employeeIds = validateIdList(input.employeeIds, "employeeIds");
+	const activeEmployeeIds = new Set(ownership.activeEmployeeIds);
+	const organizationTeamIds = new Set(ownership.organizationTeamIds);
+
+	if (!activeEmployeeIds.has(payrollEmployeeId)) {
+		throw new ValidationError({
+			message: "Payroll employee must belong to the active organization",
+			field: "payrollEmployeeId",
+			value: payrollEmployeeId,
+		});
+	}
+
+	if (teamIds.some((teamId) => !organizationTeamIds.has(teamId))) {
+		throw new ValidationError({
+			message: "All teams must belong to the active organization",
+			field: "teamIds",
+		});
+	}
+
+	if (employeeIds.some((employeeId) => !activeEmployeeIds.has(employeeId))) {
+		throw new ValidationError({
+			message: "All employees must belong to the active organization",
+			field: "employeeIds",
+		});
+	}
+
+	return { payrollEmployeeId, teamIds, employeeIds };
+}
+
 export async function getPayrollAccessAdminDataAction(): Promise<
 	ServerActionResult<PayrollAccessAdminData>
 > {
@@ -257,18 +335,15 @@ async function requirePayrollAccessAdminContext(
 ): Promise<AuthContext & { employee: NonNullable<AuthContext["employee"]> }> {
 	try {
 		const authContext = await requireAdmin();
-		if (!authContext.employee || !authContext.session.activeOrganizationId) {
-			throw new AuthenticationError({ message: "Authentication required" });
-		}
-
-		if (authContext.employee.organizationId !== authContext.session.activeOrganizationId) {
-			throw new AuthorizationError({
-				message: "Active organization employee context is required",
+		assertPayrollAccessAdminContext(
+			{
 				userId: authContext.user.id,
-				resource: "payroll_access",
-				action,
-			});
-		}
+				role: authContext.employee?.role ?? null,
+				employeeOrganizationId: authContext.employee?.organizationId ?? null,
+				activeOrganizationId: authContext.session.activeOrganizationId,
+			},
+			action,
+		);
 
 		return authContext as AuthContext & { employee: NonNullable<AuthContext["employee"]> };
 	} catch (error) {
@@ -298,60 +373,34 @@ async function validateSavePayrollAccessInput(
 	const payrollEmployeeId = validateId(input.payrollEmployeeId, "payrollEmployeeId");
 	const teamIds = validateIdList(input.teamIds, "teamIds");
 	const employeeIds = validateIdList(input.employeeIds, "employeeIds");
+	const employeeIdsToValidate = [payrollEmployeeId, ...employeeIds];
 
-	const [payrollEmployeeRecord] = await db
+	const activeEmployeeRows = await db
 		.select({ id: employee.id })
 		.from(employee)
 		.where(
 			and(
-				eq(employee.id, payrollEmployeeId),
 				eq(employee.organizationId, organizationId),
 				eq(employee.isActive, true),
+				inArray(employee.id, employeeIdsToValidate),
 			),
-		)
-		.limit(1);
+		);
 
-	if (!payrollEmployeeRecord) {
-		throw new ValidationError({
-			message: "Payroll employee must belong to the active organization",
-			field: "payrollEmployeeId",
-			value: payrollEmployeeId,
-		});
-	}
-
+	let teamRows: { id: string }[] = [];
 	if (teamIds.length > 0) {
-		const rows = await db
+		teamRows = await db
 			.select({ id: team.id })
 			.from(team)
 			.where(and(eq(team.organizationId, organizationId), inArray(team.id, teamIds)));
-		if (rows.length !== teamIds.length) {
-			throw new ValidationError({
-				message: "All teams must belong to the active organization",
-				field: "teamIds",
-			});
-		}
 	}
 
-	if (employeeIds.length > 0) {
-		const rows = await db
-			.select({ id: employee.id })
-			.from(employee)
-			.where(
-				and(
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-					inArray(employee.id, employeeIds),
-				),
-			);
-		if (rows.length !== employeeIds.length) {
-			throw new ValidationError({
-				message: "All employees must belong to the active organization",
-				field: "employeeIds",
-			});
-		}
-	}
-
-	return { payrollEmployeeId, teamIds, employeeIds };
+	return buildValidatedPayrollAccessInput(
+		{ payrollEmployeeId, teamIds, employeeIds },
+		{
+			activeEmployeeIds: activeEmployeeRows.map((row) => row.id),
+			organizationTeamIds: teamRows.map((row) => row.id),
+		},
+	);
 }
 
 function validateId(value: unknown, field: string): string {

@@ -26,6 +26,13 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 	const { t } = useTranslate();
 	const [isPending, setIsPending] = useState(false);
 	const firstGrant = initialGrants[0];
+	const getGrantValues = (payrollEmployeeId: string) => {
+		const grant = initialGrants.find((grant) => grant.payrollEmployeeId === payrollEmployeeId);
+		return {
+			teamIds: grant?.teamIds ?? [],
+			employeeIds: grant?.employeeIds ?? [],
+		};
+	};
 
 	const form = useForm({
 		defaultValues: {
@@ -88,7 +95,13 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 									name="payrollEmployeeId"
 									className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
 									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value)}
+									onChange={(event) => {
+										const payrollEmployeeId = event.target.value;
+										const grantValues = getGrantValues(payrollEmployeeId);
+										field.handleChange(payrollEmployeeId);
+										form.setFieldValue("teamIds", grantValues.teamIds);
+										form.setFieldValue("employeeIds", grantValues.employeeIds);
+									}}
 									disabled={isPending || employees.length === 0}
 								>
 									{employees.map((employee) => (
