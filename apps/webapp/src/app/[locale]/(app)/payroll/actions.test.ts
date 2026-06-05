@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveScopedPayrollEmployeeIdsForAction } from "./actions";
+import { resolveScopedPayrollEmployeeIdsForAction } from "./action-helpers";
 
 describe("resolveScopedPayrollEmployeeIdsForAction", () => {
 	it("returns requested employee IDs for admins", () => {

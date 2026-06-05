@@ -7,6 +7,7 @@ import { db, employee, payrollExportConfig, payrollExportFormat } from "@/db";
 import { getAuthContext, type AuthContext } from "@/lib/auth-helpers";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { resolveScopedPayrollEmployeeIdsForAction } from "./action-helpers";
 import {
 	createExportJob,
 	getFormatter,
@@ -14,10 +15,7 @@ import {
 	type PayrollExportFilters,
 	processExportJob,
 } from "@/lib/payroll-export";
-import {
-	intersectPayrollScope,
-	resolvePayrollAccessibleEmployeeIds,
-} from "@/lib/payroll-access/permissions";
+import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
 import {
 	exportPayrollSummaryToPDF,
 	generatePayrollPDFFilename,
@@ -41,33 +39,6 @@ const PAYROLL_WORKSPACE_EXPORT_FORMATS = ["datev_lohn", "lexware_lohn", "sage_lo
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 type PayrollWorkspaceExportFormatId = (typeof PAYROLL_WORKSPACE_EXPORT_FORMATS)[number];
-type PayrollWorkspaceActorRole = "admin" | "manager" | "employee";
-
-export interface ScopedPayrollEmployeeIdsForAction {
-	employeeIds: string[] | undefined;
-	hasScope: boolean;
-}
-
-export function resolveScopedPayrollEmployeeIdsForAction(input: {
-	role: PayrollWorkspaceActorRole;
-	requestedEmployeeIds?: string[];
-	allowedEmployeeIds: string[];
-}): ScopedPayrollEmployeeIdsForAction {
-	if (input.role === "admin") {
-		return {
-			employeeIds: input.requestedEmployeeIds,
-			hasScope: input.requestedEmployeeIds === undefined || input.requestedEmployeeIds.length > 0,
-		};
-	}
-
-	const employeeIds = intersectPayrollScope({
-		allowedEmployeeIds: input.allowedEmployeeIds,
-		requestedEmployeeIds: input.requestedEmployeeIds,
-	});
-
-	return { employeeIds, hasScope: employeeIds.length > 0 };
-}
-
 export async function getPayrollWorkspaceSummaryAction(
 	request: PayrollWorkspaceRequest,
 ): Promise<ServerActionResult<PayrollWorkspaceSummary>> {

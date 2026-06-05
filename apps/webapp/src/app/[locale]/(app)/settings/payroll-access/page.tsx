@@ -1,8 +1,11 @@
+import { connection } from "next/server";
 import { PayrollAccessForm } from "@/components/settings/payroll-access/payroll-access-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getPayrollAccessAdminDataAction } from "./actions";
 
 export default async function PayrollAccessSettingsPage() {
+	await connection(); // Mark as fully dynamic for cacheComponents mode
+
 	const result = await getPayrollAccessAdminDataAction();
 
 	if (!result.success) {
