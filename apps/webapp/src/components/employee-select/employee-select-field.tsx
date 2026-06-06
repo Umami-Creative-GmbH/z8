@@ -135,8 +135,19 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 	};
 
 	// Handle confirm (for multi-select)
-	const handleConfirm = () => {
-		// Selection changes are already applied via handleSelect/handleDeselect
+	const handleConfirm = (confirmedIds?: string[], confirmedEmployees?: SelectableEmployee[]) => {
+		if (props.mode === "multiple" && confirmedIds) {
+			props.onChange(confirmedIds);
+			if (confirmedEmployees) {
+				setLocalSelectedEmployees((prev) => {
+					const next = new Map(prev);
+					for (const employee of confirmedEmployees) {
+						next.set(employee.id, employee);
+					}
+					return next;
+				});
+			}
+		}
 		setModalOpen(false);
 	};
 

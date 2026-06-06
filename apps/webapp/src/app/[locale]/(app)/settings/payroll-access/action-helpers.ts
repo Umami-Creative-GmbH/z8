@@ -2,6 +2,7 @@ import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/
 
 export interface SavePayrollAccessInput {
 	payrollEmployeeId: string;
+	scope: "all" | "specific";
 	teamIds: string[];
 	employeeIds: string[];
 }
@@ -22,11 +23,14 @@ export function assertPayrollOfficerSettingsContext(
 	context: PayrollOfficerSettingsContextInput,
 	action: "read" | "write",
 ): void {
-	if (!context.activeOrganizationId || !context.employeeOrganizationId) {
+	if (!context.activeOrganizationId) {
 		throw new AuthenticationError({ message: "Authentication required", userId: context.userId });
 	}
 
-	if (context.employeeOrganizationId !== context.activeOrganizationId) {
+	if (
+		context.employeeOrganizationId !== null &&
+		context.employeeOrganizationId !== context.activeOrganizationId
+	) {
 		throw new AuthorizationError({
 			message: "Active organization employee context is required",
 			userId: context.userId,
@@ -54,6 +58,7 @@ export function buildValidatedPayrollAccessInput(
 	}
 
 	const payrollEmployeeId = validateId(input.payrollEmployeeId, "payrollEmployeeId");
+	const scope = validatePayrollAccessScope(input.scope);
 	const teamIds = validateIdList(input.teamIds, "teamIds");
 	const employeeIds = validateIdList(input.employeeIds, "employeeIds");
 	const activeEmployeeIds = new Set(ownership.activeEmployeeIds);
@@ -81,7 +86,27 @@ export function buildValidatedPayrollAccessInput(
 		});
 	}
 
-	return { payrollEmployeeId, teamIds, employeeIds };
+	if (scope === "all") {
+		return { payrollEmployeeId, scope, teamIds: [], employeeIds: [] };
+	}
+
+	if (teamIds.length === 0 && employeeIds.length === 0) {
+		throw new ValidationError({
+			message: "Specific payroll access requires at least one team or employee",
+			field: "scope",
+			value: scope,
+		});
+	}
+
+	return { payrollEmployeeId, scope, teamIds, employeeIds };
+}
+
+export function validatePayrollAccessScope(value: unknown): "all" | "specific" {
+	if (value === "all" || value === "specific") {
+		return value;
+	}
+
+	throw new ValidationError({ message: "Payroll access scope is required", field: "scope", value });
 }
 
 export function validateId(value: unknown, field: string): string {

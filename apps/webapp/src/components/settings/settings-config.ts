@@ -47,6 +47,7 @@ export type SettingsIconName =
 	| "chart-bar"
 	| "database-export"
 	| "test-pipe"
+	| "user-dollar"
 	| "mail"
 	| "tag"
 	| "server"
@@ -239,6 +240,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Create custom permission roles for your organization",
 		href: "/settings/roles",
 		icon: "shield-check",
+		minimumTier: "orgAdmin",
+		group: "administration",
+	},
+	{
+		id: "payroll-access",
+		titleKey: "settings.payrollAccess.title",
+		titleDefault: "Payroll Officers",
+		descriptionKey: "settings.payrollAccess.description",
+		descriptionDefault:
+			"Activate payroll officers and assign the teams or employees they can include in payroll workflows.",
+		href: "/settings/payroll-access",
+		icon: "user-dollar",
 		minimumTier: "orgAdmin",
 		group: "administration",
 	},

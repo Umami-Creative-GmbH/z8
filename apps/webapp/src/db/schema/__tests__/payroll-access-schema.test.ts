@@ -40,6 +40,7 @@ describe("payroll access schema", () => {
 				"id",
 				"organizationId",
 				"payrollEmployeeId",
+				"scope",
 				"isActive",
 				"createdAt",
 				"createdBy",

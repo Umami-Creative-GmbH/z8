@@ -14,6 +14,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"billing/page.tsx",
 	"avv/page.tsx",
 	"roles/page.tsx",
+	"payroll-access/page.tsx",
 	"travel-expenses/page.tsx",
 	"enterprise/domains/page.tsx",
 	"enterprise/identity-setup/page.tsx",
@@ -59,6 +60,14 @@ describe("org-admin settings route access", () => {
 		}
 	});
 
+	it("keeps payroll officer settings on the shared detail page spacing", () => {
+		const source = stripComments(readFileSync(join(SETTINGS_ROOT, "payroll-access/page.tsx"), "utf8"));
+
+		expect(source).toContain('className="flex flex-1 flex-col gap-6 p-4 md:p-6"');
+		expect(source).toContain('className="space-y-1"');
+		expect(source).toContain('className="text-2xl font-semibold"');
+	});
+
 	it("treats owners as org admins for settings route checks", () => {
 		const accessTier = resolveSettingsTierFromContext({
 			activeOrganizationId: "org-1",
@@ -75,6 +84,7 @@ describe("org-admin settings route access", () => {
 			"/settings/billing",
 			"/settings/avv",
 			"/settings/roles",
+			"/settings/payroll-access",
 			"/settings/travel-expenses",
 			"/settings/enterprise/domains",
 			"/settings/enterprise/identity-setup",
@@ -627,9 +637,9 @@ describe("org-admin settings route access", () => {
 		expect(source.includes('currentEmployee?.role === "admin"')).toBe(false);
 	});
 
-	it.each(
-		ORG_ADMIN_SETTINGS_ROUTES,
-	)("permits owner and admin through %s while keeping members out", (route) => {
+	it.each(ORG_ADMIN_SETTINGS_ROUTES)(
+		"permits owner and admin through %s while keeping members out",
+		(route) => {
 		const ownerTier = resolveSettingsTierFromContext({
 			activeOrganizationId: "org-1",
 			membershipRole: "owner",
@@ -649,7 +659,8 @@ describe("org-admin settings route access", () => {
 		expect(canResolvedTierAccessRoute(ownerTier, route)).toBe(true);
 		expect(canResolvedTierAccessRoute(adminTier, route)).toBe(true);
 		expect(canResolvedTierAccessRoute(memberTier, route)).toBe(false);
-	});
+		},
+	);
 
 	it("replaces direct admin-only page guards with the shared org-admin helper", () => {
 		const offenders: string[] = [];

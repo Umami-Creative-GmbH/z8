@@ -23,6 +23,7 @@ export const payrollAccessGrant = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		payrollEmployeeId: uuid("payroll_employee_id").notNull(),
+		scope: text("scope").default("specific").notNull(),
 		isActive: boolean("is_active").default(true).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		createdBy: text("created_by")

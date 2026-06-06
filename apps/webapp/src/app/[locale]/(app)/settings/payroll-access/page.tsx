@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { PayrollAccessForm } from "@/components/settings/payroll-access/payroll-access-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import { getPayrollAccessAdminDataAction } from "./actions";
 
@@ -8,11 +9,12 @@ export default async function PayrollAccessSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	const t = await getTranslate();
+	await requireOrgAdminSettingsAccess();
 	const result = await getPayrollAccessAdminDataAction();
 
 	if (!result.success) {
 		return (
-			<div className="space-y-6">
+			<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 				<Card>
 					<CardHeader>
 						<CardTitle>
@@ -34,9 +36,9 @@ export default async function PayrollAccessSettingsPage() {
 	}
 
 	return (
-		<div className="space-y-6">
-			<div className="space-y-2">
-				<h1 className="text-3xl font-semibold tracking-tight">
+		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+			<div className="space-y-1">
+				<h1 className="text-2xl font-semibold">
 					{t("settings.payrollAccess.title", "Payroll Officers")}
 				</h1>
 				<p className="text-muted-foreground">

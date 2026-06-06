@@ -165,22 +165,21 @@ export function EmployeeSelectModal({
 	// Handle confirm for multi-select
 	const handleConfirm = () => {
 		if (mode === "multiple") {
-			// Apply all pending selections
-			const toDeselect = selectedIds.filter((id) => !activePendingIds.includes(id));
-			const toSelect = activePendingIds.filter((id) => !selectedIds.includes(id));
-
-			for (const id of toDeselect) {
-				onDeselect(id);
+			const employeesById = new Map<string, SelectableEmployee>();
+			for (const employee of employees) {
+				employeesById.set(employee.id, employee);
+			}
+			for (const [id, employee] of selectedEmployeesMap) {
+				employeesById.set(id, employee);
 			}
 
-			for (const id of toSelect) {
-				const employee = selectedEmployeesMap.get(id);
-				if (employee) {
-					onSelect(employee);
-				}
-			}
+			onConfirm(
+				activePendingIds,
+				activePendingIds.map((id) => employeesById.get(id)).filter(Boolean) as SelectableEmployee[],
+			);
+		} else {
+			onConfirm();
 		}
-		onConfirm();
 		onOpenChange(false);
 	};
 
@@ -271,7 +270,7 @@ export function EmployeeSelectModal({
 							<CommandPrimitive.Input
 								placeholder={t(
 									"common:employeeSelect.searchPlaceholder",
-									"IconSearch by name, email, or position...",
+									"Search by name, email, or position...",
 								)}
 								value={search}
 								onValueChange={setSearch}
