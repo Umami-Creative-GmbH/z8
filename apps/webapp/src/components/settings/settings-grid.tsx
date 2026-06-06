@@ -35,7 +35,9 @@ export function SettingsGrid({ visibleSettings, visibleGroups }: SettingsGridPro
 
 				return (
 					<section key={group.id}>
-						<h2 className="text-lg font-medium mb-4">{t(group.labelKey, group.labelDefault)}</h2>
+						<h2 className="sticky top-0 z-10 -mx-1 mb-4 bg-background px-1 py-2 text-lg font-medium">
+							{t(group.labelKey, group.labelDefault)}
+						</h2>
 						<div className="grid gap-4 md:grid-cols-2">
 							{entriesForGroup.map((entry) => {
 								const hasFeatureFlag = !!entry.requiredFeature;

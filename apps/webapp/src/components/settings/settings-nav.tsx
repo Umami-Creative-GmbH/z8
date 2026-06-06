@@ -52,9 +52,11 @@ export function SettingsNav({ accessTier, billingEnabled }: SettingsNavProps) {
 				if (groupEntries.length === 0) return null;
 
 				return (
-					<SidebarGroup key={group.id}>
-						<SidebarGroupLabel>{t(group.labelKey, group.labelDefault)}</SidebarGroupLabel>
-						<SidebarGroupContent>
+					<SidebarGroup key={group.id} className="p-0">
+						<SidebarGroupLabel className="sticky top-0 z-10 rounded-none bg-card px-4">
+							{t(group.labelKey, group.labelDefault)}
+						</SidebarGroupLabel>
+						<SidebarGroupContent className="px-2 pb-2">
 							<SidebarMenu>
 								{groupEntries.map((item) => {
 									const isActive = isSettingsNavItemActive(pathname, item.href);
