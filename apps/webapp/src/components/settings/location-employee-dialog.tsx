@@ -43,7 +43,14 @@ interface FormValues {
 	isPrimary: boolean;
 }
 
-export function LocationEmployeeDialog({
+export function LocationEmployeeDialog(props: LocationEmployeeDialogProps) {
+	const { locationId, open } = props;
+	const formKey = open ? `${locationId}:open` : `${locationId}:closed`;
+
+	return <LocationEmployeeDialogContent key={formKey} {...props} />;
+}
+
+function LocationEmployeeDialogContent({
 	organizationId,
 	locationId,
 	open,

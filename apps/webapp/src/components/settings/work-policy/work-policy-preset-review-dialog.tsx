@@ -111,7 +111,14 @@ function getDialogCopy(mode: ReviewMode) {
 	}
 }
 
-export function WorkPolicyPresetReviewDialog({
+export function WorkPolicyPresetReviewDialog(props: WorkPolicyPresetReviewDialogProps) {
+	const { open, mode, preset } = props;
+	const formKey = open ? `${mode}:${preset?.id ?? "new"}:open` : "closed";
+
+	return <WorkPolicyPresetReviewDialogContent key={formKey} {...props} />;
+}
+
+function WorkPolicyPresetReviewDialogContent({
 	open,
 	onOpenChange,
 	organizationId,

@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkPolicyPresetWithSource } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import {
@@ -406,5 +406,60 @@ describe("WorkPolicyPresetReviewDialog", () => {
 		await user.click(screen.getByRole("button", { name: "Save custom preset" }));
 
 		expect(screen.getByText("A preset with this name already exists")).toBeTruthy();
+	});
+
+	it("resets reviewed values when reopened for a different preset", async () => {
+		const user = userEvent.setup();
+
+		function ReviewHarness() {
+			const [open, setOpen] = useState(false);
+			const [preset, setPreset] = useState<WorkPolicyPresetWithSource | null>(systemPreset);
+
+			return (
+				<>
+					<button
+						type="button"
+						onClick={() => {
+							setPreset(systemPreset);
+							setOpen(true);
+						}}
+					>
+						Open System
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							setPreset(customPreset);
+							setOpen(true);
+						}}
+					>
+						Open Custom
+					</button>
+					<button type="button" onClick={() => setOpen(false)}>
+						Close
+					</button>
+					<WorkPolicyPresetReviewDialog
+						open={open}
+						onOpenChange={setOpen}
+						organizationId="org-1"
+						mode="useAsPolicy"
+						preset={preset}
+						onSuccess={vi.fn()}
+					/>
+				</>
+			);
+		}
+
+		renderWithQueryClient(<ReviewHarness />);
+
+		await user.click(screen.getByRole("button", { name: "Open System" }));
+		const nameInput = screen.getByLabelText("Name");
+		await user.clear(nameInput);
+		await user.type(nameInput, "Edited stale value");
+		await user.click(screen.getByRole("button", { name: "Close" }));
+
+		await user.click(screen.getByRole("button", { name: "Open Custom" }));
+
+		expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Retail 38h");
 	});
 });

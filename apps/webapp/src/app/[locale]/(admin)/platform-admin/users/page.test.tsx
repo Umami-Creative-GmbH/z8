@@ -226,6 +226,20 @@ describe("Platform admin users page", () => {
 		);
 	});
 
+	it("uses URL filters for the first users query", () => {
+		window.history.replaceState(
+			null,
+			"",
+			"/platform-admin/users?search=ada&status=active&organizationId=org-acme",
+		);
+
+		render(<UsersPage />);
+
+		expect(useQueryMock).toHaveBeenCalledTimes(1);
+		const queryConfig = useQueryMock.mock.calls[0]?.[0];
+		expect(queryConfig.queryKey).toEqual(["admin-users", "ada", "active", "org-acme", 1]);
+	});
+
 	it("preserves organizationId when updating search filters", () => {
 		vi.useFakeTimers();
 		window.history.replaceState(null, "", "/platform-admin/users?organizationId=org-acme");

@@ -44,7 +44,14 @@ interface FormValues {
 	isPrimary: boolean;
 }
 
-export function SubareaEmployeeDialog({
+export function SubareaEmployeeDialog(props: SubareaEmployeeDialogProps) {
+	const { subareaId, open } = props;
+	const formKey = open ? `${subareaId}:open` : `${subareaId}:closed`;
+
+	return <SubareaEmployeeDialogContent key={formKey} {...props} />;
+}
+
+function SubareaEmployeeDialogContent({
 	organizationId,
 	subareaId,
 	subareaName,
