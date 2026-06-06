@@ -172,6 +172,9 @@ export function useImageUpload({
 			uppy.addFile({
 				name: file.name,
 				type: file.type,
+				meta: {
+					contentType: file.type,
+				},
 				data: file,
 			});
 		} catch (err) {

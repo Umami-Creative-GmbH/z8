@@ -82,9 +82,10 @@ function validateTusUploadRequest(request: Request): Response | null {
 
 	const uploadMetadata = request.headers.get("upload-metadata");
 	if (!uploadMetadata) {
-		return null;
+		return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
 	}
 
+	let hasValidMimeType = false;
 	for (const metadataItem of uploadMetadata.split(",")) {
 		const [key, value] = metadataItem.trim().split(/\s+/, 2);
 		if (!MIME_METADATA_KEYS.has(key) || !value) {
@@ -95,9 +96,11 @@ function validateTusUploadRequest(request: Request): Response | null {
 		if (!ALLOWED_MIME_TYPES.has(contentType)) {
 			return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
 		}
+
+		hasValidMimeType = true;
 	}
 
-	return null;
+	return hasValidMimeType ? null : NextResponse.json({ error: "Invalid file type" }, { status: 400 });
 }
 
 // Wrapper to add authentication before handling TUS requests
