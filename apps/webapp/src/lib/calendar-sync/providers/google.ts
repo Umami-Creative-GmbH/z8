@@ -269,10 +269,10 @@ export class GoogleCalendarProvider implements ICalendarProvider {
 				});
 
 				if (!response.ok) {
-					const error = await handleGoogleApiError(response);
 					if (response.status === 400) {
 						throw new RefreshTokenInvalidError("google");
 					}
+					const error = await handleGoogleApiError(response);
 					throw error;
 				}
 

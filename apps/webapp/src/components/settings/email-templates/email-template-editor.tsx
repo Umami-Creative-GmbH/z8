@@ -124,16 +124,17 @@ export function EmailTemplateEditor({
 							content={editorDocument}
 							placeholder="Write the operational email body..."
 							className="min-h-64 [&_.ProseMirror]:min-h-64 [&_.ProseMirror]:!bg-background [&_.ProseMirror]:p-3 [&_.ProseMirror]:text-foreground [&_.ProseMirror]:caret-foreground [&_.ProseMirror]:outline-none dark:[&_.ProseMirror]:!bg-card"
-							onUpdate={async (editorRef: EmailEditorRef) => {
-								const updateVersion = updateVersionRef.current + 1;
-								updateVersionRef.current = updateVersion;
-								const [email, json] = await Promise.all([
-									editorRef.getEmail(),
-									Promise.resolve(editorRef.getJSON()),
-								]);
-								if (updateVersion !== updateVersionRef.current) {
-									return;
-								}
+								onUpdate={async (editorRef: EmailEditorRef) => {
+									const updateVersion = updateVersionRef.current + 1;
+									updateVersionRef.current = updateVersion;
+									const [email, json] = await Promise.all([
+										editorRef.getEmail(),
+										Promise.resolve(editorRef.getJSON()),
+									]);
+									const isLatestUpdate = updateVersion === updateVersionRef.current;
+									if (!isLatestUpdate) {
+										return;
+									}
 								onHtmlChange(email.html);
 								onPlainTextChange(email.text);
 								onEditorDocumentChange(json as Record<string, unknown>);

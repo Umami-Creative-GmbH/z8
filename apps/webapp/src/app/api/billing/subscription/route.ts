@@ -17,8 +17,6 @@ import {
  * Returns subscription info including status, seats, trial end, etc.
  */
 export async function GET() {
-	await connection();
-
 	// Check if billing is enabled
 	if (env.BILLING_ENABLED !== "true") {
 		return NextResponse.json({
@@ -26,6 +24,8 @@ export async function GET() {
 			subscription: null,
 		});
 	}
+
+	await connection();
 
 	// Auth check
 	const headersList = await headers();

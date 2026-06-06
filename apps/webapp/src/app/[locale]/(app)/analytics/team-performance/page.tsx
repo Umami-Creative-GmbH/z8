@@ -87,10 +87,15 @@ export default function TeamPerformancePage() {
 		async function loadData() {
 			setLoading(true);
 			try {
+				if (!isCurrent) {
+					return;
+				}
+
 				// Organization ID is now derived server-side from authenticated session
 				const result = await getTeamPerformanceData(range);
+				const shouldUpdate = isCurrent;
 
-				if (!isCurrent) {
+				if (!shouldUpdate) {
 					return;
 				}
 

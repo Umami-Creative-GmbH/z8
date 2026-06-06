@@ -57,11 +57,11 @@ export async function validateClockinCredentials(
 	organizationId: string,
 ): Promise<ActionResult<ClockinPreview>> {
 	try {
-		await requireAdmin(organizationId);
-
 		if (!token.trim()) {
 			return { success: false, error: "API token is required" };
 		}
+
+		await requireAdmin(organizationId);
 
 		const client = new ClockinClient(token.trim());
 		const connection = await client.testConnection();
@@ -108,11 +108,11 @@ export async function fetchClockinEmployees(
 	organizationId: string,
 ): Promise<ActionResult<ClockinEmployeeInfo[]>> {
 	try {
-		await requireAdmin(organizationId);
-
 		if (!token.trim()) {
 			return { success: false, error: "API token is required" };
 		}
+
+		await requireAdmin(organizationId);
 
 		const client = new ClockinClient(token.trim());
 		const employees = await client.getEmployees();

@@ -112,11 +112,11 @@ export async function validateClockodoCredentials(
 	organizationId: string,
 ): Promise<ActionResult<ClockodoDataPreview>> {
 	try {
-		await requireAdmin(organizationId);
-
 		if (!email?.trim() || !apiKey?.trim()) {
 			return { success: false, error: "Email and API key are required" };
 		}
+
+		await requireAdmin(organizationId);
 
 		const client = new ClockodoClient(email.trim(), apiKey.trim());
 

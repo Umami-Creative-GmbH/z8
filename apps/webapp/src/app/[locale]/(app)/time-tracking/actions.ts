@@ -2845,15 +2845,16 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 	const { targetEmployee, isOwnEntry } = targetResolution;
 
+	if (isOwnEntry && data.timezone !== undefined && !IANAZone.isValidZone(data.timezone)) {
+		return { success: false, error: "Invalid timezone" };
+	}
+
 	// Use the employee's saved timezone as the authoritative fallback for entry capture.
 	const settingsData = await db.query.userSettings.findFirst({
 		where: eq(userSettings.userId, targetEmployee.userId),
 		columns: { timezone: true },
 	});
 	const savedTimezone = settingsData?.timezone || "UTC";
-	if (isOwnEntry && data.timezone !== undefined && !IANAZone.isValidZone(data.timezone)) {
-		return { success: false, error: "Invalid timezone" };
-	}
 	const timezone = isOwnEntry ? (data.timezone ?? savedTimezone) : savedTimezone;
 	const matchingBrowserTimezone =
 		isOwnEntry && data.browserTimezone === timezone && IANAZone.isValidZone(data.browserTimezone)
