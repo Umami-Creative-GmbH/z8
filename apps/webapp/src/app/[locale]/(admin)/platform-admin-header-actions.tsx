@@ -23,7 +23,7 @@ export type PlatformAdminNavItem = {
 	label: string;
 };
 
-const platformAdminIcons = {
+export const platformAdminIcons = {
 	analytics: IconChartLine,
 	billing: IconCreditCard,
 	diagnostics: IconActivityHeartbeat,
@@ -41,7 +41,7 @@ type PlatformAdminHeaderActionsProps = {
 	showExit?: boolean;
 };
 
-function isActivePlatformAdminItem(pathname: string, item: PlatformAdminNavItem) {
+export function isActivePlatformAdminItem(pathname: string, item: PlatformAdminNavItem) {
 	if (item.href === "/platform-admin") {
 		return pathname === item.href;
 	}

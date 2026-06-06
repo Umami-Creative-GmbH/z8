@@ -165,19 +165,19 @@ export default function PlatformSettingsPage() {
 					<CardContent>
 						<div className="space-y-4">
 							<div className="space-y-2">
-								<div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
+								<div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between rounded-lg border bg-muted/30 px-4 py-3">
 									<span className="text-sm font-medium">
 										{t("admin:admin.settings.turnstile.siteKey", "Site Key")}
 									</span>
-									<code className="text-xs text-muted-foreground" translate="no">
+									<code className="break-all text-left text-xs text-muted-foreground sm:text-right" translate="no">
 										TURNSTILE_SITE_KEY
 									</code>
 								</div>
-								<div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
+								<div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between rounded-lg border bg-muted/30 px-4 py-3">
 									<span className="text-sm font-medium">
 										{t("admin:admin.settings.turnstile.secretKey", "Secret Key")}
 									</span>
-									<code className="text-xs text-muted-foreground" translate="no">
+									<code className="break-all text-left text-xs text-muted-foreground sm:text-right" translate="no">
 										TURNSTILE_SECRET_KEY
 									</code>
 								</div>
