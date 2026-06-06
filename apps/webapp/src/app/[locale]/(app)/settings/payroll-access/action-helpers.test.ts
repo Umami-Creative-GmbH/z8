@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
-import { assertPayrollOfficerSettingsContext, buildValidatedPayrollAccessInput } from "./action-helpers";
+import {
+	assertPayrollOfficerSettingsContext,
+	buildValidatedPayrollAccessInput,
+} from "./action-helpers";
 
 describe("assertPayrollOfficerSettingsContext", () => {
 	it("allows active-org users with CASL manage permission", () => {

@@ -124,9 +124,9 @@ describe("PayrollAccessForm", () => {
 	it("disables adding when no employees are available", () => {
 		render(<PayrollAccessForm employees={[]} teams={[]} initialGrants={[]} />);
 
-		expect(screen.getByRole<HTMLButtonElement>("button", { name: "Add payroll officer" }).disabled).toBe(
-			true,
-		);
+		expect(
+			screen.getByRole<HTMLButtonElement>("button", { name: "Add payroll officer" }).disabled,
+		).toBe(true);
 	});
 
 	it("opens an editor for an existing payroll officer", async () => {
@@ -157,11 +157,11 @@ describe("PayrollAccessForm", () => {
 		await user.click(screen.getByRole("button", { name: "Edit" }));
 
 		expect(
-			screen.getByRole("radio", { name: "Specific teams or employees" }).getAttribute("aria-checked"),
+			screen
+				.getByRole("radio", { name: "Specific teams or employees" })
+				.getAttribute("aria-checked"),
 		).toBe("true");
-		expect(screen.getByRole("switch", { name: "Ops" }).getAttribute("aria-checked")).toBe(
-			"true",
-		);
+		expect(screen.getByRole("switch", { name: "Ops" }).getAttribute("aria-checked")).toBe("true");
 		expect(screen.getByRole<HTMLInputElement>("checkbox", { name: "Ada Lovelace" }).checked).toBe(
 			true,
 		);
@@ -237,9 +237,7 @@ describe("PayrollAccessForm", () => {
 
 		await user.click(screen.getByTestId("payroll-access-team-team-ops"));
 
-		expect(screen.getByRole("switch", { name: "Ops" }).getAttribute("aria-checked")).toBe(
-			"true",
-		);
+		expect(screen.getByRole("switch", { name: "Ops" }).getAttribute("aria-checked")).toBe("true");
 	});
 
 	it("lists existing payroll officers and excludes them when adding another officer", async () => {

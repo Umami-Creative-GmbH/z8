@@ -169,7 +169,10 @@ export default function PlatformSettingsPage() {
 									<span className="text-sm font-medium">
 										{t("admin:admin.settings.turnstile.siteKey", "Site Key")}
 									</span>
-									<code className="break-all text-left text-xs text-muted-foreground sm:text-right" translate="no">
+									<code
+										className="break-all text-left text-xs text-muted-foreground sm:text-right"
+										translate="no"
+									>
 										TURNSTILE_SITE_KEY
 									</code>
 								</div>
@@ -177,7 +180,10 @@ export default function PlatformSettingsPage() {
 									<span className="text-sm font-medium">
 										{t("admin:admin.settings.turnstile.secretKey", "Secret Key")}
 									</span>
-									<code className="break-all text-left text-xs text-muted-foreground sm:text-right" translate="no">
+									<code
+										className="break-all text-left text-xs text-muted-foreground sm:text-right"
+										translate="no"
+									>
 										TURNSTILE_SECRET_KEY
 									</code>
 								</div>

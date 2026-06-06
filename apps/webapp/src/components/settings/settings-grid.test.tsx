@@ -2,8 +2,8 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { SettingsGrid } from "./settings-grid";
 import type { SettingsEntry, SettingsGroupConfig } from "./settings-config";
+import { SettingsGrid } from "./settings-grid";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({

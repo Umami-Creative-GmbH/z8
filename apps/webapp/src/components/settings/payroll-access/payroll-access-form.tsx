@@ -13,15 +13,13 @@ import type {
 	SavePayrollAccessInput,
 } from "@/app/[locale]/(app)/settings/payroll-access/actions";
 import { savePayrollAccessAction } from "@/app/[locale]/(app)/settings/payroll-access/actions";
-import { EmployeeMultiSelect, EmployeeSingleSelect, type SelectableEmployee } from "@/components/employee-select";
-import { Button } from "@/components/ui/button";
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+	EmployeeMultiSelect,
+	EmployeeSingleSelect,
+	type SelectableEmployee,
+} from "@/components/employee-select";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface PayrollAccessFormProps {
@@ -105,7 +103,11 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 		<div className="space-y-6">
 			<Card>
 				<CardHeader className="flex justify-end">
-					<Button type="button" onClick={openAddEditor} disabled={employees.length === initialGrants.length}>
+					<Button
+						type="button"
+						onClick={openAddEditor}
+						disabled={employees.length === initialGrants.length}
+					>
 						<IconPlus className="size-4" aria-hidden="true" />
 						{t("settings.payrollAccess.add", "Add payroll officer")}
 					</Button>
@@ -126,11 +128,14 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 										<p className="font-medium text-sm">
 											{employeeById.get(grant.payrollEmployeeId)?.name ?? grant.payrollEmployeeId}
 										</p>
-										<p className="text-muted-foreground text-sm">
-											{getScopeSummary({ grant, t })}
-										</p>
+										<p className="text-muted-foreground text-sm">{getScopeSummary({ grant, t })}</p>
 									</div>
-									<Button type="button" variant="outline" size="sm" onClick={() => openEditEditor(grant)}>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={() => openEditEditor(grant)}
+									>
 										<IconEdit className="size-4" aria-hidden="true" />
 										{t("settings.payrollAccess.edit", "Edit")}
 									</Button>
@@ -168,7 +173,10 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 								{(field) => (
 									<EmployeeSingleSelect
 										label={t("settings.payrollAccess.payrollEmployee", "Payroll officer")}
-										placeholder={t("settings.payrollAccess.selectPayrollEmployee", "Select employee")}
+										placeholder={t(
+											"settings.payrollAccess.selectPayrollEmployee",
+											"Select employee",
+										)}
 										value={field.state.value || null}
 										onChange={(value) => field.handleChange(value ?? "")}
 										excludeIds={excludedPayrollEmployeeIds}
@@ -208,7 +216,10 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 											</ToggleGroupItem>
 											<ToggleGroupItem
 												value="specific"
-												aria-label={t("settings.payrollAccess.specificScope", "Specific teams or employees")}
+												aria-label={t(
+													"settings.payrollAccess.specificScope",
+													"Specific teams or employees",
+												)}
 											>
 												{t("settings.payrollAccess.specificScope", "Specific teams or employees")}
 											</ToggleGroupItem>
@@ -241,7 +252,10 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 														{t("settings.payrollAccess.noTeams", "No teams available")}
 													</p>
 												) : (
-													<div className="grid gap-2 sm:grid-cols-2" data-testid="payroll-access-team-grid">
+													<div
+														className="grid gap-2 sm:grid-cols-2"
+														data-testid="payroll-access-team-grid"
+													>
 														{teams.map((team) => {
 															const isSelected = field.state.value.includes(team.id);
 
@@ -254,11 +268,15 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 																	aria-label={team.name}
 																	data-testid={`payroll-access-team-${team.id}`}
 																	onClick={() => {
-																		field.handleChange(toggleId(field.state.value, team.id, !isSelected));
+																		field.handleChange(
+																			toggleId(field.state.value, team.id, !isSelected),
+																		);
 																	}}
 																	disabled={isPending}
 																	className={`flex items-center justify-between gap-4 rounded-md border p-3 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-																		isSelected ? "border-primary/60 bg-primary/5" : "hover:bg-accent/50"
+																		isSelected
+																			? "border-primary/60 bg-primary/5"
+																			: "hover:bg-accent/50"
 																	}`}
 																>
 																	<span>{team.name}</span>
@@ -270,7 +288,9 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 																	>
 																		<span
 																			className={`block size-4 rounded-full bg-background ring-0 transition-transform dark:bg-foreground ${
-																				isSelected ? "translate-x-[calc(100%-2px)] dark:bg-primary-foreground" : "translate-x-0"
+																				isSelected
+																					? "translate-x-[calc(100%-2px)] dark:bg-primary-foreground"
+																					: "translate-x-0"
 																			}`}
 																		/>
 																	</span>
@@ -287,7 +307,10 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 										{(field) => (
 											<EmployeeMultiSelect
 												label={t("settings.payrollAccess.employees", "Employees")}
-												placeholder={t("settings.payrollAccess.selectEmployees", "Select employees")}
+												placeholder={t(
+													"settings.payrollAccess.selectEmployees",
+													"Select employees",
+												)}
 												value={field.state.value}
 												onChange={field.handleChange}
 												employees={employeeOptions}

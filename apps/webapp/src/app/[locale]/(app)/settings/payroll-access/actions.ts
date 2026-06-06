@@ -79,12 +79,12 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 					.from(team)
 					.where(eq(team.organizationId, organizationId))
 					.orderBy(asc(team.name)),
-					db
-						.select({
-							id: payrollAccessGrant.id,
-							payrollEmployeeId: payrollAccessGrant.payrollEmployeeId,
-							scope: payrollAccessGrant.scope,
-						})
+				db
+					.select({
+						id: payrollAccessGrant.id,
+						payrollEmployeeId: payrollAccessGrant.payrollEmployeeId,
+						scope: payrollAccessGrant.scope,
+					})
 					.from(payrollAccessGrant)
 					.where(
 						and(

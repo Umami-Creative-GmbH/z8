@@ -6,6 +6,8 @@ describe("settings layout sidebar", () => {
 		const source = readFileSync("src/app/[locale]/(app)/settings/layout.tsx", "utf8");
 
 		expect(source).toContain('className="w-64 border-r bg-card hidden md:block overflow-auto"');
-		expect(source).not.toContain('className="w-64 border-r bg-card p-4 hidden md:block overflow-auto"');
+		expect(source).not.toContain(
+			'className="w-64 border-r bg-card p-4 hidden md:block overflow-auto"',
+		);
 	});
 });

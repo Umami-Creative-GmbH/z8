@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils";
 import { Link, usePathname } from "@/navigation";
 import {
 	isActivePlatformAdminItem,
-	platformAdminIcons,
 	type PlatformAdminNavItem,
+	platformAdminIcons,
 } from "./platform-admin-header-actions";
 
 type PlatformAdminMobileMenuProps = {
@@ -34,12 +34,7 @@ export function PlatformAdminMobileMenu({
 	return (
 		<Sheet>
 			<SheetTrigger asChild>
-				<Button
-					aria-label={openMenuLabel}
-					className="md:hidden"
-					size="icon"
-					variant="ghost"
-				>
+				<Button aria-label={openMenuLabel} className="md:hidden" size="icon" variant="ghost">
 					<IconMenu2 className="size-5" aria-hidden="true" />
 				</Button>
 			</SheetTrigger>
