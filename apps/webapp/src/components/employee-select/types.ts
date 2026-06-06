@@ -139,7 +139,7 @@ export interface EmployeeSelectModalProps {
 	selectedIds: string[];
 	onSelect: (employee: SelectableEmployee) => void;
 	onDeselect: (employeeId: string) => void;
-	onConfirm: () => void;
+	onConfirm: (selectedIds?: string[], selectedEmployees?: SelectableEmployee[]) => void;
 	excludeIds?: string[];
 	filters?: EmployeeSelectFilters;
 	showFilters?: boolean;

@@ -84,6 +84,22 @@ describe("settings visibility tiers", () => {
 		expect(memberEntries.some((entry) => entry.id === "implementation-checklist")).toBe(false);
 	});
 
+	it("shows payroll officer settings in administration for org admins", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const managerEntries = getVisibleSettings("manager", true);
+		const memberEntries = getVisibleSettings("member", true);
+
+		expect(orgAdminEntries.find((entry) => entry.id === "payroll-access")).toMatchObject({
+			titleDefault: "Payroll Officers",
+			href: "/settings/payroll-access",
+			icon: "user-dollar",
+			minimumTier: "orgAdmin",
+			group: "administration",
+		});
+		expect(managerEntries.some((entry) => entry.id === "payroll-access")).toBe(false);
+		expect(memberEntries.some((entry) => entry.id === "payroll-access")).toBe(false);
+	});
+
 	it("groups notification preferences and channel configuration together", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 		const notificationEntries = entries.filter((entry) => entry.group === "notifications");

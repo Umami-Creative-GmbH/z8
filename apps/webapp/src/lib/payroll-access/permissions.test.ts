@@ -11,6 +11,7 @@ const grant: PayrollAccessGrantRow = {
 	id: "grant-1",
 	organizationId: "org-1",
 	payrollEmployeeId: "payroll-1",
+	scope: "specific",
 	isActive: true,
 };
 
@@ -62,6 +63,21 @@ describe("resolvePayrollAccessibleEmployeeIdsFromRows", () => {
 				teamRows: [{ employeeId: "employee-3", organizationId: "org-1", isActive: true }],
 			}),
 		).toEqual(["employee-3"]);
+	});
+
+	it("returns all active organization employees for all scope", () => {
+		expect(
+			resolvePayrollAccessibleEmployeeIdsFromRows({
+				grant: { ...grant, scope: "all" },
+				directRows: [],
+				teamRows: [],
+				allEmployeeRows: [
+					{ employeeId: "employee-1", organizationId: "org-1", isActive: true },
+					{ employeeId: "employee-2", organizationId: "org-1", isActive: false },
+					{ employeeId: "employee-3", organizationId: "org-2", isActive: true },
+				],
+			}),
+		).toEqual(["employee-1"]);
 	});
 });
 

@@ -11,6 +11,7 @@ export interface PayrollAccessGrantRow {
 	id: string;
 	organizationId: string;
 	payrollEmployeeId: string;
+	scope: "all" | "specific";
 	isActive: boolean;
 }
 
@@ -36,14 +37,19 @@ export function resolvePayrollAccessibleEmployeeIdsFromRows(input: {
 	grant: PayrollAccessGrantRow | null;
 	directRows: PayrollAccessEmployeeRow[];
 	teamRows: PayrollAccessTeamMemberRow[];
+	allEmployeeRows?: PayrollAccessEmployeeRow[];
 }): string[] {
 	if (!input.grant?.isActive) {
 		return [];
 	}
 
 	const accessibleEmployeeIds = new Set<string>();
+	const rows =
+		input.grant.scope === "all"
+			? (input.allEmployeeRows ?? [])
+			: [...input.directRows, ...input.teamRows];
 
-	for (const row of [...input.directRows, ...input.teamRows]) {
+	for (const row of rows) {
 		if (row.isActive && row.organizationId === input.grant.organizationId) {
 			accessibleEmployeeIds.add(row.employeeId);
 		}
@@ -97,6 +103,7 @@ export async function resolvePayrollAccessibleEmployeeIds(input: {
 			id: payrollAccessGrant.id,
 			organizationId: payrollAccessGrant.organizationId,
 			payrollEmployeeId: payrollAccessGrant.payrollEmployeeId,
+			scope: payrollAccessGrant.scope,
 			isActive: payrollAccessGrant.isActive,
 		})
 		.from(payrollAccessGrant)
@@ -111,6 +118,28 @@ export async function resolvePayrollAccessibleEmployeeIds(input: {
 
 	if (!grant) {
 		return [];
+	}
+	const normalizedGrant: PayrollAccessGrantRow = {
+		...grant,
+		scope: grant.scope === "all" ? "all" : "specific",
+	};
+
+	if (normalizedGrant.scope === "all") {
+		const allEmployeeRows = await db
+			.select({
+				employeeId: employee.id,
+				organizationId: employee.organizationId,
+				isActive: employee.isActive,
+			})
+			.from(employee)
+			.where(eq(employee.organizationId, input.organizationId));
+
+		return resolvePayrollAccessibleEmployeeIdsFromRows({
+			grant: normalizedGrant,
+			directRows: [],
+			teamRows: [],
+			allEmployeeRows,
+		});
 	}
 
 	const directRows = await db
@@ -141,7 +170,11 @@ export async function resolvePayrollAccessibleEmployeeIds(input: {
 
 	const assignedTeamIds = assignedTeamRows.map((row) => row.teamId);
 	if (assignedTeamIds.length === 0) {
-		return resolvePayrollAccessibleEmployeeIdsFromRows({ grant, directRows, teamRows: [] });
+		return resolvePayrollAccessibleEmployeeIdsFromRows({
+			grant: normalizedGrant,
+			directRows,
+			teamRows: [],
+		});
 	}
 
 	const [employeeTeamRows, teamMembershipRows] = await Promise.all([
@@ -176,7 +209,7 @@ export async function resolvePayrollAccessibleEmployeeIds(input: {
 	]);
 
 	return resolvePayrollAccessibleEmployeeIdsFromRows({
-		grant,
+		grant: normalizedGrant,
 		directRows,
 		teamRows: [...employeeTeamRows, ...teamMembershipRows],
 	});

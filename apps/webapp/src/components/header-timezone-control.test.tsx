@@ -118,6 +118,22 @@ describe("HeaderTimezoneControl", () => {
 		expect(screen.queryByText(/14:34:56/)).toBeNull();
 	});
 
+	it("keeps only the UTC offset visible in the mobile trigger", () => {
+		const { container } = render(<HeaderTimezoneControl />);
+
+		const trigger = screen.getByRole("button", { name: /Current timezone Europe\/Berlin/i });
+		const icon = container.querySelector("svg");
+		const time = screen.getByText("14:34");
+		const offset = screen.getByText("UTC+02:00");
+
+		expect(trigger.contains(offset)).toBe(true);
+		expect(icon?.classList.contains("hidden")).toBe(true);
+		expect(icon?.classList.contains("sm:block")).toBe(true);
+		expect(time.classList.contains("hidden")).toBe(true);
+		expect(time.classList.contains("sm:inline")).toBe(true);
+		expect(offset.classList.contains("hidden")).toBe(false);
+	});
+
 	it("updates the displayed time at the next minute boundary", async () => {
 		render(<HeaderTimezoneControl />);
 

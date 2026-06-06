@@ -8,6 +8,7 @@ import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 import type { PlatformAdminNavItem } from "./platform-admin-header-actions";
 import { PlatformAdminHeaderActions } from "./platform-admin-header-actions";
+import { PlatformAdminMobileMenu } from "./platform-admin-mobile-menu";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
 	const headersList = await headers();
@@ -87,6 +88,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 				<div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-6 lg:px-8">
 					{/* Left: Branding + Nav */}
 					<div className="flex items-center gap-8">
+						<PlatformAdminMobileMenu
+							navItems={navItems}
+							openMenuLabel={t("admin:admin.layout.openMenu", "Open admin menu")}
+							menuTitle={t("admin:admin.layout.menuTitle", "Admin Menu")}
+						/>
+
 						{/* Branding */}
 						<Link
 							href="/platform-admin"

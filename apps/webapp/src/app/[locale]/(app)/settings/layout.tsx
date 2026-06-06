@@ -22,7 +22,7 @@ async function SettingsLayoutContent({
 	return (
 		<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
 			{/* Settings navigation sidebar */}
-			<aside className="w-64 border-r bg-card p-4 hidden md:block overflow-auto">
+			<aside className="w-64 border-r bg-card hidden md:block overflow-auto">
 				<SettingsNav accessTier={accessTier} billingEnabled={billingEnabled} />
 			</aside>
 
@@ -38,8 +38,8 @@ async function SettingsLayoutContent({
 function SettingsLayoutLoading({ children }: { children: React.ReactNode }) {
 	return (
 		<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
-			<aside className="w-64 border-r bg-card p-4 hidden md:block overflow-auto">
-				<div className="space-y-3">
+			<aside className="w-64 border-r bg-card hidden md:block overflow-auto">
+				<div className="space-y-3 p-4">
 					<Skeleton className="h-6 w-28" />
 					<Skeleton className="h-5 w-full" />
 					<Skeleton className="h-5 w-11/12" />

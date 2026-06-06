@@ -33,6 +33,7 @@ export type { SavePayrollAccessInput } from "./action-helpers";
 export interface PayrollAccessEmployeeOption {
 	id: string;
 	name: string;
+	email: string;
 }
 
 export interface PayrollAccessTeamOption {
@@ -43,6 +44,7 @@ export interface PayrollAccessTeamOption {
 export interface PayrollAccessGrantData {
 	id: string;
 	payrollEmployeeId: string;
+	scope: "all" | "specific";
 	teamIds: string[];
 	employeeIds: string[];
 }
@@ -57,8 +59,7 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 	ServerActionResult<PayrollAccessAdminData>
 > {
 	return runPayrollAccessAdminAction(async () => {
-		const authContext = await requirePayrollAccessAdminContext("read");
-		const organizationId = authContext.employee.organizationId;
+		const { organizationId } = await requirePayrollAccessAdminContext("read");
 
 		const [employeeRows, teamRows, grantRows, grantTeamRows, grantEmployeeRows] = await Promise.all(
 			[
@@ -67,6 +68,7 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 						id: employee.id,
 						employeeNumber: employee.employeeNumber,
 						userName: user.name,
+						userEmail: user.email,
 					})
 					.from(employee)
 					.innerJoin(user, eq(employee.userId, user.id))
@@ -81,6 +83,7 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 					.select({
 						id: payrollAccessGrant.id,
 						payrollEmployeeId: payrollAccessGrant.payrollEmployeeId,
+						scope: payrollAccessGrant.scope,
 					})
 					.from(payrollAccessGrant)
 					.where(
@@ -108,11 +111,13 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 			employees: employeeRows.map((row) => ({
 				id: row.id,
 				name: row.userName?.trim() || row.employeeNumber || row.id,
+				email: row.userEmail,
 			})),
 			teams: teamRows,
 			grants: grantRows.map((grant) => ({
 				id: grant.id,
 				payrollEmployeeId: grant.payrollEmployeeId,
+				scope: grant.scope === "all" ? "all" : "specific",
 				teamIds: grantTeamRows
 					.filter((row) => row.grantId === grant.id)
 					.map((row) => row.teamId)
@@ -130,8 +135,7 @@ export async function savePayrollAccessAction(
 	input: SavePayrollAccessInput,
 ): Promise<ServerActionResult<{ grantId: string }>> {
 	return runPayrollAccessAdminAction(async () => {
-		const authContext = await requirePayrollAccessAdminContext("write");
-		const organizationId = authContext.employee.organizationId;
+		const { authContext, organizationId } = await requirePayrollAccessAdminContext("write");
 		const validated = await validateSavePayrollAccessInput(input, organizationId);
 
 		const grantId = await db.transaction(async (tx) => {
@@ -166,7 +170,11 @@ export async function savePayrollAccessAction(
 				if (existingInactiveGrant) {
 					await tx
 						.update(payrollAccessGrant)
-						.set({ isActive: true, updatedBy: authContext.user.id })
+						.set({
+							isActive: true,
+							scope: validated.scope,
+							updatedBy: authContext.user.id,
+						})
 						.where(
 							and(
 								eq(payrollAccessGrant.id, existingInactiveGrant.id),
@@ -180,6 +188,7 @@ export async function savePayrollAccessAction(
 						.values({
 							organizationId,
 							payrollEmployeeId: validated.payrollEmployeeId,
+							scope: validated.scope,
 							createdBy: authContext.user.id,
 							updatedBy: authContext.user.id,
 						})
@@ -197,7 +206,7 @@ export async function savePayrollAccessAction(
 			} else {
 				await tx
 					.update(payrollAccessGrant)
-					.set({ updatedBy: authContext.user.id })
+					.set({ scope: validated.scope, updatedBy: authContext.user.id })
 					.where(
 						and(
 							eq(payrollAccessGrant.id, grantId),
@@ -257,20 +266,21 @@ export async function savePayrollAccessAction(
 
 async function requirePayrollAccessAdminContext(
 	action: "read" | "write",
-): Promise<AuthContext & { employee: NonNullable<AuthContext["employee"]> }> {
+): Promise<{ authContext: AuthContext; organizationId: string }> {
 	try {
 		const [authContext, ability] = await Promise.all([requireAuth(), requireAbility()]);
+		const activeOrganizationId = authContext.session.activeOrganizationId;
 		assertPayrollOfficerSettingsContext(
 			{
 				userId: authContext.user.id,
 				employeeOrganizationId: authContext.employee?.organizationId ?? null,
-				activeOrganizationId: authContext.session.activeOrganizationId,
+				activeOrganizationId,
 				canManagePayrollOfficerSettings: ability.can("manage", "PayrollOfficerSettings"),
 			},
 			action,
 		);
 
-		return authContext as AuthContext & { employee: NonNullable<AuthContext["employee"]> };
+		return { authContext, organizationId: activeOrganizationId as string };
 	} catch (error) {
 		if (isAppError(error)) throw error;
 		if (error instanceof Error && error.message === "Authentication required") {
@@ -313,7 +323,7 @@ async function validateSavePayrollAccessInput(
 	}
 
 	return buildValidatedPayrollAccessInput(
-		{ payrollEmployeeId, teamIds, employeeIds },
+		{ payrollEmployeeId, scope: input.scope, teamIds, employeeIds },
 		{
 			activeEmployeeIds: activeEmployeeRows.map((row) => row.id),
 			organizationTeamIds: teamRows.map((row) => row.id),

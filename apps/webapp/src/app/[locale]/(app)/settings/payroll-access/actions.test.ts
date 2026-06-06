@@ -54,6 +54,7 @@ describe("payroll access action validation", () => {
 			buildValidatedPayrollAccessInput(
 				{
 					payrollEmployeeId: "employee-a",
+					scope: "specific",
 					teamIds: [],
 					employeeIds: [],
 				},
@@ -70,6 +71,7 @@ describe("payroll access action validation", () => {
 			buildValidatedPayrollAccessInput(
 				{
 					payrollEmployeeId: "employee-a",
+					scope: "specific",
 					teamIds: ["team-other"],
 					employeeIds: [],
 				},
@@ -84,6 +86,7 @@ describe("payroll access action validation", () => {
 			buildValidatedPayrollAccessInput(
 				{
 					payrollEmployeeId: "employee-a",
+					scope: "specific",
 					teamIds: [],
 					employeeIds: ["employee-other"],
 				},
@@ -100,6 +103,7 @@ describe("payroll access action validation", () => {
 			buildValidatedPayrollAccessInput(
 				{
 					payrollEmployeeId: "employee-a",
+					scope: "specific",
 					teamIds: ["team-ops", "team-ops"],
 					employeeIds: ["employee-b", "employee-b"],
 				},
@@ -110,6 +114,7 @@ describe("payroll access action validation", () => {
 			),
 		).toEqual({
 			payrollEmployeeId: "employee-a",
+			scope: "specific",
 			teamIds: ["team-ops"],
 			employeeIds: ["employee-b"],
 		});
