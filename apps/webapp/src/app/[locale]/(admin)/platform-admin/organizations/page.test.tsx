@@ -44,6 +44,10 @@ vi.mock("@/navigation", () => ({
 	}),
 }));
 
+vi.mock("next/navigation", () => ({
+	useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+
 vi.mock("./actions", () => ({
 	deleteOrganizationAction: vi.fn(),
 	listOrganizationsAction: vi.fn(),

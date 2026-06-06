@@ -4,7 +4,8 @@ import { IconBan, IconCheck, IconDevices, IconSearch, IconUser, IconX } from "@t
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	ActionPanel,
@@ -63,25 +64,8 @@ const LOADING_ROW_KEYS = ["loading-1", "loading-2", "loading-3", "loading-4", "l
 const SESSION_LOADING_KEYS = ["session-loading-1", "session-loading-2", "session-loading-3"];
 type UserStatusFilter = "all" | "active" | "banned";
 
-function getInitialFilters(): { search: string; status: UserStatusFilter; organizationId: string } {
-	if (typeof window === "undefined") {
-		return {
-			search: "",
-			status: "all" as const,
-			organizationId: "",
-		};
-	}
-
-	const params = new URLSearchParams(window.location.search);
-	const statusParam = params.get("status");
-	const status: UserStatusFilter =
-		statusParam === "active" || statusParam === "banned" ? statusParam : "all";
-
-	return {
-		search: params.get("search") ?? "",
-		status,
-		organizationId: params.get("organizationId") ?? "",
-	};
+function getUserStatusFilter(status: string | null): UserStatusFilter {
+	return status === "active" || status === "banned" ? status : "all";
 }
 
 function getRedactedUserLabel(userId: string): string {
@@ -94,15 +78,45 @@ function getRedactedUserLabel(userId: string): string {
 }
 
 export default function UsersPage() {
+	return (
+		<Suspense fallback={<UsersPageSkeleton />}>
+			<UsersPageBody />
+		</Suspense>
+	);
+}
+
+function UsersPageSkeleton() {
+	return (
+		<div className="space-y-8">
+			<div className="space-y-2">
+				<Skeleton className="h-8 w-52" />
+				<Skeleton className="h-5 w-full max-w-lg" />
+			</div>
+			<div className="flex flex-col gap-4 sm:flex-row">
+				<Skeleton className="h-10 flex-1" />
+				<Skeleton className="h-10 w-full sm:w-40" />
+			</div>
+			<Card>
+				<CardContent className="space-y-3 p-6">
+					{LOADING_ROW_KEYS.map((key) => (
+						<Skeleton key={key} className="h-14 w-full rounded-lg" />
+					))}
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
+
+function UsersPageBody() {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const initialFilters = getInitialFilters();
+	const searchParams = useSearchParams();
 
 	const [page, setPage] = useState(1);
-	const [search, setSearch] = useState(initialFilters.search);
-	const [status, setStatus] = useState<UserStatusFilter>(initialFilters.status);
-	const [organizationId] = useState(initialFilters.organizationId);
+	const [search, setSearch] = useState("");
+	const [status, setStatus] = useState<UserStatusFilter>("all");
+	const [organizationId, setOrganizationId] = useState("");
 	const [isPending, startTransition] = useTransition();
 	const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -113,6 +127,13 @@ export default function UsersPage() {
 	const [sessionsDialogUser, setSessionsDialogUser] = useState<PlatformUser | null>(null);
 	const [sessions, setSessions] = useState<UserSession[]>([]);
 	const [sessionsLoading, setSessionsLoading] = useState(false);
+
+	useEffect(() => {
+		setSearch(searchParams.get("search") ?? "");
+		setStatus(getUserStatusFilter(searchParams.get("status")));
+		setOrganizationId(searchParams.get("organizationId") ?? "");
+		setPage(1);
+	}, [searchParams]);
 
 	const { data, isLoading } = useQuery({
 		queryKey: ["admin-users", search, status, organizationId, page],

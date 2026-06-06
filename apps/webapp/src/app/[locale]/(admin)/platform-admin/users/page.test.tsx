@@ -41,6 +41,10 @@ vi.mock("@/navigation", () => ({
 	}),
 }));
 
+vi.mock("next/navigation", () => ({
+	useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+
 vi.mock("./actions", () => ({
 	banUserAction: vi.fn(),
 	listUserSessionsAction: vi.fn(),
@@ -64,8 +68,12 @@ vi.mock("@/components/ui/action-panel", () => ({
 vi.mock("@/components/ui/alert-dialog", () => ({
 	AlertDialog: ({ children, open }: { children: React.ReactNode; open?: boolean }) =>
 		open ? <div>{children}</div> : null,
-	AlertDialogAction: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
-	AlertDialogCancel: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
+	AlertDialogAction: ({ children }: { children: React.ReactNode }) => (
+		<button type="button">{children}</button>
+	),
+	AlertDialogCancel: ({ children }: { children: React.ReactNode }) => (
+		<button type="button">{children}</button>
+	),
 	AlertDialogContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	AlertDialogDescription: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	AlertDialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -102,7 +110,9 @@ vi.mock("@/components/ui/select", () => ({
 	Select: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	SelectContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	SelectItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	SelectTrigger: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
+	SelectTrigger: ({ children }: { children: React.ReactNode }) => (
+		<button type="button">{children}</button>
+	),
 	SelectValue: ({ placeholder }: { placeholder?: string }) => <span>{placeholder}</span>,
 }));
 
