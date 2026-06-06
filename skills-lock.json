@@ -19,12 +19,6 @@
       "skillPath": "better-auth/emailAndPassword/SKILL.md",
       "computedHash": "747d7f73bd9e2ec5317b8ef88dc70f97df716d00e3d02de4051feebaa48b062d"
     },
-    "hetzner-server": {
-      "source": "connorads/dotfiles",
-      "sourceType": "github",
-      "skillPath": ".agents/skills/hetzner-server/SKILL.md",
-      "computedHash": "c09b8a469c98344ecf02a0dc21b37881b50e53ec43358b05ff83d66c069a7aad"
-    },
     "migrate-to-temporal-api": {
       "source": "Umami-Creative-GmbH/Agent-Skills",
       "sourceType": "github",
@@ -65,7 +59,7 @@
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/stripe-projects/SKILL.md",
-      "computedHash": "5f82f044d22f5d23b5ddd8cf0370d173e05d9d82345176e388eb49deeac3af0e"
+      "computedHash": "63da9119cf20b5c5b722d7a6d49d4f7d984a10f29f5d44a68e59839e4da9b68f"
     },
     "two-factor-authentication-best-practices": {
       "source": "better-auth/skills",
