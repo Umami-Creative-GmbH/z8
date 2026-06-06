@@ -20,7 +20,10 @@ import {
 } from "@/lib/vault";
 
 const logger = createLogger("EmailConfigActions");
-const allowedSmtpIpModes: readonly string[] = ["auto", "ipv4", "ipv6"];
+
+function isAllowedSmtpIpMode(mode: EmailSmtpIpMode): boolean {
+	return mode === "auto" || mode === "ipv4" || mode === "ipv6";
+}
 
 async function requireMatchingOrganizationAccess(organizationId: string): Promise<string> {
 	const access = await requireOrgAdminSettingsAccess();
@@ -141,7 +144,7 @@ export async function saveEmailConfig(
 			if (!config.smtpHost || !config.smtpPort || !config.smtpUsername) {
 				return { success: false, error: "SMTP host, port, and username are required" };
 			}
-			if (config.smtpIpMode !== undefined && !allowedSmtpIpModes.includes(config.smtpIpMode)) {
+			if (config.smtpIpMode !== undefined && !isAllowedSmtpIpMode(config.smtpIpMode)) {
 				return { success: false, error: "Invalid SMTP IP mode" };
 			}
 		}

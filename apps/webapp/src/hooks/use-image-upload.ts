@@ -5,7 +5,7 @@ import German from "@uppy/locales/lib/de_DE";
 import English from "@uppy/locales/lib/en_US";
 import Tus from "@uppy/tus";
 import { useLocale } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useImageProcessMutation } from "@/lib/query/use-image-process";
 import { getTusFileKeyFromUploadUrl } from "@/lib/upload/tus-url";
 
@@ -44,9 +44,8 @@ export function useImageUpload({
 
 	const uppyLocale = locale === "de" ? German : English;
 
-	const uppyRef = useRef<Uppy | null>(null);
-	if (!uppyRef.current) {
-		uppyRef.current = new Uppy({
+	const [uppy] = useState(() =>
+		new Uppy({
 			restrictions: {
 				maxFileSize,
 				maxNumberOfFiles: 1,
@@ -59,9 +58,8 @@ export function useImageUpload({
 			retryDelays: [0, 1000, 3000, 5000],
 			chunkSize: 5 * 1024 * 1024, // 5MB chunks
 			// Credentials included automatically via cookies
-		});
-	}
-	const uppy = uppyRef.current;
+		}),
+	);
 
 	// Update locale when it changes
 	useEffect(() => {
