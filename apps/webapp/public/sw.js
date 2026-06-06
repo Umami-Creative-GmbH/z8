@@ -38,6 +38,7 @@ const APP_SHELL_FILES = [
 
 // Track if update is available (for prompt-to-refresh)
 let updateAvailable = false;
+let hadActiveWorkerOnInstall = false;
 
 // =============================================================================
 // INSTALL EVENT
@@ -45,6 +46,7 @@ let updateAvailable = false;
 
 self.addEventListener("install", (event) => {
 	console.log("[SW] Installing service worker");
+	hadActiveWorkerOnInstall = Boolean(self.registration?.active);
 
 	event.waitUntil(
 		(async () => {
@@ -75,6 +77,7 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
 	console.log("[SW] Activating service worker");
+	const notifyUpdate = shouldNotifyUpdateOnActivation();
 
 	event.waitUntil(
 		(async () => {
@@ -102,7 +105,9 @@ self.addEventListener("activate", (event) => {
 			await self.clients.claim();
 
 			// Notify clients of update
-			self.SyncService.broadcastMessage({ type: "SW_UPDATE_AVAILABLE" });
+			if (notifyUpdate) {
+				self.SyncService.broadcastMessage({ type: "SW_UPDATE_AVAILABLE" });
+			}
 		})(),
 	);
 });
@@ -286,6 +291,22 @@ function isStaticAsset(pathname) {
 	}
 
 	return !!pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|css|js)$/);
+}
+
+function shouldNotifyUpdateOnActivation() {
+	return hadActiveWorkerOnInstall;
+}
+
+function getSafeNotificationUrl(urlToOpen) {
+	try {
+		const url = new URL(urlToOpen || "/", self.location.origin);
+		if (url.origin !== self.location.origin) {
+			return new URL("/", self.location.origin).href;
+		}
+		return url.href;
+	} catch (_error) {
+		return new URL("/", self.location.origin).href;
+	}
 }
 
 // =============================================================================
@@ -550,10 +571,7 @@ self.addEventListener("notificationclick", (event) => {
 		}
 	}
 
-	// Ensure URL is absolute
-	if (!urlToOpen.startsWith("http")) {
-		urlToOpen = new URL(urlToOpen, self.location.origin).href;
-	}
+	urlToOpen = getSafeNotificationUrl(urlToOpen);
 
 	event.waitUntil(
 		// Try to focus an existing window with this URL, or open a new one

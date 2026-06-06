@@ -426,6 +426,37 @@ describe("POST /api/time-entries", () => {
 		);
 	});
 
+	it("uses the captured organization for offline sync requests", async () => {
+		mockState.limit.mockReset();
+		mockState.limit.mockResolvedValueOnce([
+			{ id: "employee-2", organizationId: "org-2", teamId: "team-2" },
+		]);
+
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					type: "clock_in",
+					timestamp: "2026-05-04T09:00:00.000Z",
+					organizationId: "org-2",
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(201);
+		expect(mockState.requireBillingForMutation).toHaveBeenCalledWith("org-2");
+		expect(mockState.txExecute).toHaveBeenCalledWith(
+			expect.objectContaining({ values: ["org-2:employee-2"] }),
+		);
+		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
+			expect.objectContaining({ employeeId: "employee-2", organizationId: "org-2" }),
+			expect.anything(),
+		);
+		expect(mockState.values).toHaveBeenCalledWith(
+			expect.objectContaining({ employeeId: "employee-2", organizationId: "org-2" }),
+		);
+	});
+
 	it("acquires a per-employee transaction lock before active period lookup", async () => {
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {

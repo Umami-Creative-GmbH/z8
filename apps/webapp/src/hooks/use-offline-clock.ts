@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { toast } from "sonner";
 import type {
 	ClientToSWMessage,
@@ -49,6 +49,10 @@ async function sendMessageToSW<T>(message: ClientToSWMessage): Promise<T> {
 	});
 }
 
+async function ensureServiceWorkerRegistered(): Promise<ServiceWorkerRegistration> {
+	return navigator.serviceWorker.register("/sw.js", { scope: "/" });
+}
+
 /**
  * Hook for managing offline clock events
  *
@@ -77,6 +81,9 @@ export function useOfflineClock() {
 		}
 
 		let mounted = true;
+		void ensureServiceWorkerRegistered().catch((error) => {
+			console.warn("[OfflineClock] Failed to register service worker:", error);
+		});
 
 		// Wait for SW to be ready
 		navigator.serviceWorker.ready.then(async (_registration) => {
@@ -153,20 +160,6 @@ export function useOfflineClock() {
 		};
 	}, []);
 
-	// Show "back online" notification when recovering
-	useEffect(() => {
-		if (isOnline && pendingCount > 0 && !shownBackOnlineToast.current) {
-			shownBackOnlineToast.current = true;
-			toast.info(
-				`You're back online. Syncing ${pendingCount} pending event${pendingCount > 1 ? "s" : ""}...`,
-			);
-		}
-
-		if (!isOnline) {
-			shownBackOnlineToast.current = false;
-		}
-	}, [isOnline, pendingCount]);
-
 	/**
 	 * Queue a clock event for offline sync
 	 */
@@ -209,6 +202,25 @@ export function useOfflineClock() {
 			setLastError(error instanceof Error ? error.message : "Sync failed");
 		}
 	};
+
+	const triggerSyncWhenOnline = useEffectEvent(async () => {
+		await triggerSync();
+	});
+
+	// Show "back online" notification and trigger sync when recovering.
+	useEffect(() => {
+		if (isOnline && pendingCount > 0 && !shownBackOnlineToast.current) {
+			shownBackOnlineToast.current = true;
+			toast.info(
+				`You're back online. Syncing ${pendingCount} pending event${pendingCount > 1 ? "s" : ""}...`,
+			);
+			void triggerSyncWhenOnline();
+		}
+
+		if (!isOnline) {
+			shownBackOnlineToast.current = false;
+		}
+	}, [isOnline, pendingCount]);
 
 	/**
 	 * Clear old queue entries (> 7 days)
