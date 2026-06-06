@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration0004 = readFileSync(
@@ -68,6 +68,11 @@ const migration0037Url = new URL(
 );
 const migration0038SnapshotUrl = new URL(
 	"../../../drizzle/meta/0038_snapshot.json",
+	import.meta.url,
+);
+const drizzleDirUrl = new URL("../../../drizzle/", import.meta.url);
+const migration0048Url = new URL(
+	"../../../drizzle/0048_payroll_access_scope.sql",
 	import.meta.url,
 );
 
@@ -335,5 +340,28 @@ describe("drizzle follow-up migrations", () => {
 		expect(presetTable?.indexes.workPolicyPreset_org_name_idx).toEqual(
 			expect.objectContaining({ isUnique: true, where: '"organization_id" IS NOT NULL' }),
 		);
+	});
+
+	it("keeps the 0048 payroll access scope migration unique and idempotent", () => {
+		const migration0048Files = readdirSync(drizzleDirUrl).filter((fileName) =>
+			fileName.startsWith("0048_"),
+		);
+		const migration0048Entries = migrationJournal.entries.filter((entry) =>
+			entry.tag.startsWith("0048_"),
+		);
+
+		expect(migration0048Files).toEqual(["0048_payroll_access_scope.sql"]);
+		expect(migration0048Entries.map((entry) => entry.tag)).toEqual([
+			"0048_payroll_access_scope",
+		]);
+		expect(existsSync(migration0048Url)).toBe(true);
+
+		const migration0048 = readFileSync(migration0048Url, "utf8");
+
+		expect(migration0048).toContain('ADD COLUMN IF NOT EXISTS "scope" text');
+		expect(migration0048).toContain('ADD CONSTRAINT "payroll_access_grant_scope_check"');
+		expect(migration0048).toContain("WHEN duplicate_object THEN null");
+		expect(migration0048).not.toContain("CREATE TABLE");
+		expect(migration0048).not.toContain("ALTER TYPE");
 	});
 });
