@@ -4,7 +4,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { getAvailableEmployees } from "@/app/[locale]/(app)/settings/locations/actions";
 import { assignLocationEmployee } from "@/app/[locale]/(app)/settings/locations/assignment-actions";
@@ -91,12 +91,12 @@ export function LocationEmployeeDialog({
 		},
 	});
 
-	// Reset form when dialog opens
-	useEffect(() => {
-		if (open) {
+	function handleOpenChange(nextOpen: boolean) {
+		if (nextOpen) {
 			form.reset();
 		}
-	}, [open, form]);
+		onOpenChange(nextOpen);
+	}
 
 	// Fetch available employees
 	const { data: employees, isLoading } = useQuery({
@@ -119,7 +119,7 @@ export function LocationEmployeeDialog({
 	};
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>

@@ -2,7 +2,7 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -137,16 +137,6 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 			confirmation: "",
 		};
 	}
-
-	useEffect(() => {
-		if (isEditing) {
-			void job.jobName;
-			form.reset({
-				presetId: defaultPresetId,
-				confirmation: "",
-			});
-		}
-	}, [isEditing, job.jobName, defaultPresetId, form.reset]);
 
 	function openEditForm() {
 		form.reset(getDefaultFormValues());

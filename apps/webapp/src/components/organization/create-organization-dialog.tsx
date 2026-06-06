@@ -196,7 +196,13 @@ export function CreateOrganizationDialog({
 									<Label>{t("organization.nameLabel", "Organization Name")}</Label>
 									<Input
 										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
+										onChange={(e) => {
+											const nextName = e.target.value;
+											field.handleChange(nextName);
+											if (nextName && !slugManuallyEdited.current) {
+												form.setFieldValue("slug", generateSlug(nextName));
+											}
+										}}
 										onBlur={field.handleBlur}
 										placeholder={t("organization.namePlaceholder", "Acme Inc.")}
 										disabled={loading}

@@ -3,7 +3,7 @@
 import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	copySystemWorkPolicyPreset,
@@ -123,7 +123,6 @@ export function WorkPolicyPresetReviewDialog({
 	const [serverError, setServerError] = useState<string | null>(null);
 	const [setAsDefault, setSetAsDefault] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const resetKeyRef = useRef("");
 	const copy = getDialogCopy(mode);
 
 	const form = useForm({
@@ -182,19 +181,15 @@ export function WorkPolicyPresetReviewDialog({
 		},
 	});
 
-	useEffect(() => {
-		const nextResetKey = open ? `${mode}:${preset?.id ?? "new"}` : "";
-		if (open && resetKeyRef.current !== nextResetKey) {
-			resetKeyRef.current = nextResetKey;
-			const values = getInitialValues(mode, preset);
-			form.reset(values);
-		} else if (!open && resetKeyRef.current !== "") {
-			resetKeyRef.current = "";
+	function handleOpenChange(nextOpen: boolean) {
+		if (nextOpen) {
+			form.reset(getInitialValues(mode, preset));
 		}
-	}, [open, mode, preset, form]);
+		onOpenChange(nextOpen);
+	}
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto overscroll-contain sm:max-w-2xl">
 				<DialogHeader>
 					<DialogTitle>{t(`settings.workPolicies.${mode}.title`, copy.title)}</DialogTitle>

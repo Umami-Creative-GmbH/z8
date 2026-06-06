@@ -5,7 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { getAbsencePlanPreview, requestAbsence } from "@/app/[locale]/(app)/absences/actions";
 import {
@@ -105,6 +105,12 @@ export function RequestAbsenceDialog({
 	const isControlled = controlledOpen !== undefined;
 	const open = isControlled ? controlledOpen : internalOpen;
 	const setOpen = (nextOpen: boolean) => {
+		if (nextOpen) {
+			form.reset(createDefaultValues(initialDate));
+		} else {
+			form.reset();
+		}
+
 		if (isControlled) {
 			controlledOnOpenChange?.(nextOpen);
 			return;
@@ -219,19 +225,6 @@ export function RequestAbsenceDialog({
 		},
 		enabled: canLoadPlanPreview,
 	});
-
-	useEffect(() => {
-		if (initialDate && open) {
-			form.setFieldValue("startDate", initialDate);
-			form.setFieldValue("endDate", initialDate);
-		}
-	}, [initialDate, open, form]);
-
-	useEffect(() => {
-		if (!open) {
-			form.reset();
-		}
-	}, [open, form]);
 
 	const showTrigger = !isControlled || trigger;
 
