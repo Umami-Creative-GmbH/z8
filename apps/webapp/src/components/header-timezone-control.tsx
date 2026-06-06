@@ -96,13 +96,13 @@ export function HeaderTimezoneControl() {
 			<PopoverTrigger asChild>
 				<Button
 					aria-label={`Current timezone ${displayTimezone}, ${timeLabel}, ${offsetLabel}`}
-					className="h-9 gap-2 px-3"
+					className="h-9 gap-1 px-2 sm:gap-2 sm:px-3"
 					suppressHydrationWarning
 					type="button"
 					variant="ghost"
 				>
-					<IconClock className="size-4" aria-hidden="true" />
-					<span className="font-medium tabular-nums" suppressHydrationWarning>
+					<IconClock className="hidden size-4 sm:block" aria-hidden="true" />
+					<span className="hidden font-medium tabular-nums sm:inline" suppressHydrationWarning>
 						{timeLabel}
 					</span>
 					<Badge variant="secondary" className="font-mono text-[11px]">
