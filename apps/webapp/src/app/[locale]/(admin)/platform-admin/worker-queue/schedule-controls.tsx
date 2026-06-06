@@ -229,9 +229,8 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 			{isEditing ? (
 				<form
 					className="space-y-3 rounded-md border bg-muted/30 p-3"
-					onSubmit={(event) => {
-						event.preventDefault();
-						form.handleSubmit();
+					action={async () => {
+						await form.handleSubmit();
 					}}
 				>
 					{highRisk ? (
