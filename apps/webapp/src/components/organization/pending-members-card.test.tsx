@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBulkApproveRequests } from "./pending-members-card";
+import { buildBulkApproveRequests } from "./pending-members-card.utils";
 
 describe("buildBulkApproveRequests", () => {
 	it("preserves each selected member's resolved invite-code target team", () => {

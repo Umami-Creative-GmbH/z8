@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { resolveInvitationTargetTeamUpdate } from "./edit-invitation-target-team-dialog";
+import { resolveInvitationTargetTeamUpdate } from "./edit-invitation-target-team-dialog.utils";
 
 const componentSource = () =>
 	readFileSync(join(process.cwd(), "src/components/organization/members-table.tsx"), "utf8");
@@ -46,6 +46,9 @@ describe("MembersTable invitation target teams", () => {
 		);
 
 		expect(dialog).toContain("onUpdated:");
+		expect(dialog).toContain(
+			'import { resolveInvitationTargetTeamUpdate } from "./edit-invitation-target-team-dialog.utils"',
+		);
 		expect(dialog).toContain("mutationFn: ({ targetTeamId }");
 		expect(dialog).toContain("onSuccess: (result, variables)");
 		expect(dialog).toContain(

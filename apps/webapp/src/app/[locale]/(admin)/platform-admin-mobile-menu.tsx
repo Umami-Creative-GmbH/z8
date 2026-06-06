@@ -16,7 +16,7 @@ import {
 	isActivePlatformAdminItem,
 	type PlatformAdminNavItem,
 	platformAdminIcons,
-} from "./platform-admin-header-actions";
+} from "./platform-admin-nav";
 
 type PlatformAdminMobileMenuProps = {
 	navItems: readonly PlatformAdminNavItem[];
