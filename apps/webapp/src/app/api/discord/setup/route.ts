@@ -18,11 +18,18 @@ import { discordBotConfig } from "@/db/schema";
 import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { createLogger } from "@/lib/logger";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
 
 const logger = createLogger("DiscordSetup");
 
 export async function POST(request: NextRequest) {
+	const clientIp = getClientIp(request);
+	const rateLimitResult = await checkRateLimit(clientIp, "api");
+	if (!rateLimitResult.allowed) {
+		return createRateLimitResponse(rateLimitResult, request);
+	}
+
 	await connection();
 
 	try {
@@ -141,6 +148,12 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+	const clientIp = getClientIp(request);
+	const rateLimitResult = await checkRateLimit(clientIp, "api");
+	if (!rateLimitResult.allowed) {
+		return createRateLimitResponse(rateLimitResult, request);
+	}
+
 	await connection();
 
 	try {

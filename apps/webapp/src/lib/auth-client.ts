@@ -43,12 +43,12 @@ const createClientConfig = () => ({
 type AuthClientConfig = ReturnType<typeof createClientConfig>;
 type AuthClient = ReturnType<typeof createAuthClient<AuthClientConfig>>;
 
-// Lazy singleton - only created when actually accessed on the client
-let _authClient: AuthClient | null = null;
+// Shared client is safe to create during pre-render and keeps Better Auth state unified.
+const authClientInstance: AuthClient = createAuthClient(createClientConfig());
 
 /**
  * Get the auth client instance.
- * This function lazily initializes the client only on the client-side.
+ * Returns the shared client only on the client-side.
  * Returns null on server side - callers must handle this case.
  */
 export function getAuthClient(): AuthClient | null {
@@ -56,11 +56,7 @@ export function getAuthClient(): AuthClient | null {
 		return null;
 	}
 
-	if (!_authClient) {
-		_authClient = createAuthClient(createClientConfig());
-	}
-
-	return _authClient;
+	return authClientInstance;
 }
 
 /**
@@ -94,23 +90,10 @@ export const authClient = new Proxy({} as AuthClient, {
 /**
  * Hook to get the current session.
  * Must be used in a client component.
- * Returns loading state during SSR to prevent hydration mismatches.
+ * For server components, use auth.api.getSession() from @/lib/auth.
  */
 export function useSession() {
-	const client = getAuthClient();
-
-	// During SSR, return a loading state
-	// This matches what the client will show initially during hydration
-	if (!client) {
-		return {
-			data: null,
-			isPending: true,
-			error: null,
-			refetch: () => Promise.resolve(),
-		};
-	}
-
-	return client.useSession();
+	return authClientInstance.useSession();
 }
 
 // Re-export commonly used methods via getters for convenience

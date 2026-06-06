@@ -13,7 +13,8 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -62,36 +63,49 @@ const PAGE_SIZE = 20;
 const LOADING_ROW_KEYS = ["loading-1", "loading-2", "loading-3", "loading-4", "loading-5"];
 type OrganizationStatusFilter = "all" | "active" | "suspended" | "deleted";
 
-function getInitialFilters(): { search: string; status: OrganizationStatusFilter } {
-	if (typeof window === "undefined") {
-		return {
-			search: "",
-			status: "all" as const,
-		};
-	}
-
-	const params = new URLSearchParams(window.location.search);
-	const statusParam = params.get("status");
-	const status: OrganizationStatusFilter =
-		statusParam === "active" || statusParam === "suspended" || statusParam === "deleted"
-			? statusParam
-			: "all";
-
-	return {
-		search: params.get("search") ?? "",
-		status,
-	};
+function getOrganizationStatusFilter(status: string | null): OrganizationStatusFilter {
+	return status === "active" || status === "suspended" || status === "deleted" ? status : "all";
 }
 
 export default function OrganizationsPage() {
+	return (
+		<Suspense fallback={<OrganizationsPageSkeleton />}>
+			<OrganizationsPageBody />
+		</Suspense>
+	);
+}
+
+function OrganizationsPageSkeleton() {
+	return (
+		<div className="space-y-8">
+			<div className="space-y-2">
+				<Skeleton className="h-8 w-72" />
+				<Skeleton className="h-5 w-full max-w-lg" />
+			</div>
+			<div className="flex flex-col gap-4 sm:flex-row">
+				<Skeleton className="h-10 flex-1" />
+				<Skeleton className="h-10 w-full sm:w-40" />
+			</div>
+			<Card>
+				<CardContent className="space-y-3 p-6">
+					{LOADING_ROW_KEYS.map((key) => (
+						<Skeleton key={key} className="h-14 w-full rounded-lg" />
+					))}
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
+
+function OrganizationsPageBody() {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const initialFilters = getInitialFilters();
+	const searchParams = useSearchParams();
 
 	const [page, setPage] = useState(1);
-	const [search, setSearch] = useState(initialFilters.search);
-	const [status, setStatus] = useState<OrganizationStatusFilter>(initialFilters.status);
+	const [search, setSearch] = useState("");
+	const [status, setStatus] = useState<OrganizationStatusFilter>("all");
 	const [isPending, startTransition] = useTransition();
 	const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -102,6 +116,12 @@ export default function OrganizationsPage() {
 	const [deleteImmediate, setDeleteImmediate] = useState(false);
 	const [deleteSkipNotification, setDeleteSkipNotification] = useState(false);
 	const [deleteConfirmName, setDeleteConfirmName] = useState("");
+
+	useEffect(() => {
+		setSearch(searchParams.get("search") ?? "");
+		setStatus(getOrganizationStatusFilter(searchParams.get("status")));
+		setPage(1);
+	}, [searchParams]);
 
 	const { data, error, isError, isLoading } = useQuery({
 		queryKey: ["admin-organizations", search, status, page],

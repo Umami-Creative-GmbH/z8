@@ -3,7 +3,7 @@
 import { IconAdjustmentsHorizontal } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SelectableEmployee } from "@/components/employee-select/types";
 import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { ManualTimeEntryDialog } from "@/components/time-tracking/manual-time-entry-dialog";
@@ -46,14 +46,6 @@ function isRunningWorkPeriod(event: CalendarEvent): boolean {
 	return event.type === "work_period" && event.metadata.isRunning === true;
 }
 
-function getInitialViewMode(): ViewMode {
-	if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) {
-		return "day";
-	}
-
-	return "week";
-}
-
 interface ManualEntryDefaults {
 	date: string;
 	clockInTime: string;
@@ -78,8 +70,14 @@ export function CalendarView({
 	);
 
 	// View mode state
-	const [viewMode, setViewMode] = useState<ViewMode>(() => getInitialViewMode());
+	const [viewMode, setViewMode] = useState<ViewMode>("week");
 	const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
+
+	useEffect(() => {
+		if (window.matchMedia("(max-width: 767px)").matches) {
+			setViewMode("day");
+		}
+	}, []);
 
 	// Selected employee for calendar view (defaults to current user)
 	const [lastAppliedInitialEmployeeId, setLastAppliedInitialEmployeeId] =
