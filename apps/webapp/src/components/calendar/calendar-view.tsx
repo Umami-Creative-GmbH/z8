@@ -74,9 +74,13 @@ export function CalendarView({
 	const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
 
 	useEffect(() => {
-		if (window.matchMedia("(max-width: 767px)").matches) {
-			setViewMode("day");
-		}
+		const timeoutId = window.setTimeout(() => {
+			if (window.matchMedia("(max-width: 767px)").matches) {
+				setViewMode("day");
+			}
+		}, 0);
+
+		return () => window.clearTimeout(timeoutId);
 	}, []);
 
 	// Selected employee for calendar view (defaults to current user)
