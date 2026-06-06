@@ -34,8 +34,8 @@ jobs:
           fetch-depth: 0
 
       - name: Run React Doctor
-        uses: millionco/react-doctor@main
+        uses: millionco/react-doctor@v2
         with:
           directory: apps/webapp
-          fail-on: error
-          annotations: true
+          blocking: error
+          review-comments: true
