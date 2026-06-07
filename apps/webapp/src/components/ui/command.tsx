@@ -1,16 +1,18 @@
 "use client";
 
-import { IconSearch } from "@tabler/icons-react";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+import { IconSearch, IconX } from "@tabler/icons-react";
 import { Command as CommandPrimitive } from "cmdk";
-import type * as React from "react";
+import * as React from "react";
 import {
 	Dialog,
-	DialogContent,
 	DialogDescription,
-	DialogHeader,
+	DialogPortal,
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+
+const COMMAND_DIALOG_CLOSE_DURATION_MS = 160;
 
 function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
 	return (
@@ -31,6 +33,9 @@ function CommandDialog({
 	children,
 	className,
 	showCloseButton = true,
+	open,
+	defaultOpen,
+	onOpenChange,
 	...props
 }: React.ComponentProps<typeof Dialog> & {
 	title?: string;
@@ -38,20 +43,71 @@ function CommandDialog({
 	className?: string;
 	showCloseButton?: boolean;
 }) {
+	const isControlled = open !== undefined;
+	const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen ?? false);
+	const actualOpen = isControlled ? open : uncontrolledOpen;
+	const [renderedOpen, setRenderedOpen] = React.useState(actualOpen);
+	const [visualOpen, setVisualOpen] = React.useState(actualOpen);
+
+	// Keep Base UI mounted until the custom backdrop/content fade finishes.
+	React.useEffect(() => {
+		if (actualOpen) {
+			setRenderedOpen(true);
+			const frame = requestAnimationFrame(() => setVisualOpen(true));
+			return () => cancelAnimationFrame(frame);
+		}
+
+		setVisualOpen(false);
+		const timeout = window.setTimeout(() => {
+			setRenderedOpen(false);
+		}, COMMAND_DIALOG_CLOSE_DURATION_MS);
+
+		return () => window.clearTimeout(timeout);
+	}, [actualOpen]);
+
+	const handleOpenChange: React.ComponentProps<typeof Dialog>["onOpenChange"] = (
+		nextOpen,
+		eventDetails,
+	) => {
+		if (!isControlled) {
+			setUncontrolledOpen(nextOpen);
+		}
+
+		onOpenChange?.(nextOpen, eventDetails);
+	};
+
 	return (
-		<Dialog {...props}>
-			<DialogHeader className="sr-only">
-				<DialogTitle>{title}</DialogTitle>
-				<DialogDescription>{description}</DialogDescription>
-			</DialogHeader>
-			<DialogContent
-				className={cn("overflow-hidden p-0", className)}
-				showCloseButton={showCloseButton}
-			>
-				<Command className="[&_[cmdk-group-heading]]:text-muted-foreground **:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5">
-					{children}
-				</Command>
-			</DialogContent>
+		<Dialog open={renderedOpen} onOpenChange={handleOpenChange} {...props}>
+			<DialogPortal data-slot="command-dialog-portal">
+				<DialogPrimitive.Backdrop
+					data-slot="command-dialog-overlay"
+					data-command-open={visualOpen}
+					className="fixed inset-0 z-50 bg-black/50 opacity-0 transition-opacity duration-150 data-[command-open=true]:opacity-100"
+				/>
+				<DialogPrimitive.Popup
+					data-slot="command-dialog-content"
+					data-command-open={visualOpen}
+					className={cn(
+						"bg-background fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] scale-95 gap-4 overflow-hidden rounded-lg border p-0 opacity-0 shadow-lg transition-[opacity,transform] duration-150 outline-none data-[command-open=true]:scale-100 data-[command-open=true]:opacity-100 sm:max-w-lg",
+						className,
+					)}
+				>
+					<DialogTitle className="sr-only">{title}</DialogTitle>
+					<DialogDescription className="sr-only">{description}</DialogDescription>
+					<Command className="[&_[cmdk-group-heading]]:text-muted-foreground **:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5">
+						{children}
+					</Command>
+					{showCloseButton && (
+						<DialogPrimitive.Close
+							data-slot="command-dialog-close"
+							className="ring-offset-background focus:ring-ring data-[open]:bg-accent data-[open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+						>
+							<IconX />
+							<span className="sr-only">Close</span>
+						</DialogPrimitive.Close>
+					)}
+				</DialogPrimitive.Popup>
+			</DialogPortal>
 		</Dialog>
 	);
 }
