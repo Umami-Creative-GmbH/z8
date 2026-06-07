@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration0004 = readFileSync(
@@ -71,10 +71,7 @@ const migration0038SnapshotUrl = new URL(
 	import.meta.url,
 );
 const drizzleDirUrl = new URL("../../../drizzle/", import.meta.url);
-const migration0048Url = new URL(
-	"../../../drizzle/0048_payroll_access_scope.sql",
-	import.meta.url,
-);
+const migration0048Url = new URL("../../../drizzle/0048_payroll_access_scope.sql", import.meta.url);
 
 const migration0004Statements = migration0004
 	.split("--> statement-breakpoint")
@@ -351,9 +348,7 @@ describe("drizzle follow-up migrations", () => {
 		);
 
 		expect(migration0048Files).toEqual(["0048_payroll_access_scope.sql"]);
-		expect(migration0048Entries.map((entry) => entry.tag)).toEqual([
-			"0048_payroll_access_scope",
-		]);
+		expect(migration0048Entries.map((entry) => entry.tag)).toEqual(["0048_payroll_access_scope"]);
 		expect(existsSync(migration0048Url)).toBe(true);
 
 		const migration0048 = readFileSync(migration0048Url, "utf8");

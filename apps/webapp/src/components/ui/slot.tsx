@@ -46,7 +46,11 @@ function Slot({ children, ref: forwardedRef, ...slotProps }: SlotProps) {
 			};
 		} else if (propName === "className") {
 			props[propName] = [slotProp, childProp].filter(Boolean).join(" ");
-		} else if (propName === "style" && typeof slotProp === "object" && typeof childProp === "object") {
+		} else if (
+			propName === "style" &&
+			typeof slotProp === "object" &&
+			typeof childProp === "object"
+		) {
 			props[propName] = { ...slotProp, ...childProp };
 		}
 	}

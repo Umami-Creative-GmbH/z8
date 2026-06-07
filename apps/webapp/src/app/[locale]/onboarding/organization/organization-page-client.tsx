@@ -205,13 +205,13 @@ export default function OrganizationPageClient({
 												<Label>{t("organization.nameLabel", "Organization Name")}</Label>
 												<Input
 													value={field.state.value}
-											onChange={(e) => {
-												const nextName = e.target.value;
-												field.handleChange(nextName);
-												if (nextName && !slugManuallyEdited.current) {
-													form.setFieldValue("slug", generateSlug(nextName));
-												}
-											}}
+													onChange={(e) => {
+														const nextName = e.target.value;
+														field.handleChange(nextName);
+														if (nextName && !slugManuallyEdited.current) {
+															form.setFieldValue("slug", generateSlug(nextName));
+														}
+													}}
 													onBlur={field.handleBlur}
 													placeholder={t("organization.namePlaceholder", "Acme Inc.")}
 													disabled={loading}

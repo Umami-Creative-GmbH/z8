@@ -37,7 +37,14 @@ type SheetContentProps = SheetPrimitive.Popup.Props & {
 	showCloseButton?: boolean;
 };
 
-function Sheet({ children, onOpenChange, open: openProp, defaultOpen, modal = "trap-focus", ...props }: SheetProps) {
+function Sheet({
+	children,
+	onOpenChange,
+	open: openProp,
+	defaultOpen,
+	modal = "trap-focus",
+	...props
+}: SheetProps) {
 	const dismissHandlersRef = React.useRef<DismissEventHandlers>({});
 	const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen ?? false);
 	const targetOpen = openProp ?? uncontrolledOpen;
@@ -73,10 +80,7 @@ function Sheet({ children, onOpenChange, open: openProp, defaultOpen, modal = "t
 
 		onOpenChange?.(open, eventDetails);
 	};
-	const context = React.useMemo(
-		() => ({ dismissHandlersRef, visualOpen }),
-		[visualOpen],
-	);
+	const context = React.useMemo(() => ({ dismissHandlersRef, visualOpen }), [visualOpen]);
 
 	return (
 		<SheetContext.Provider value={context}>

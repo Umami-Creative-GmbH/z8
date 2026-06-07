@@ -38,7 +38,9 @@ function isNativeButtonComponent(type: React.ElementType) {
 }
 
 function isZ8NativeButtonElement(element: React.ReactElement) {
-	return isNativeButtonComponent(element.type) && !(element.props as NativeButtonElementProps).asChild;
+	return (
+		isNativeButtonComponent(element.type) && !(element.props as NativeButtonElementProps).asChild
+	);
 }
 
 function isNativeButtonElement(element: React.ReactElement) {

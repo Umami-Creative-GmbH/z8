@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 
 const uiDir = join(process.cwd(), "src/components/ui");
 const srcDir = join(process.cwd(), "src");
-const forbiddenRadixImportPattern = /(?:from\s+["'](?:@radix-ui\/[^"']+|radix-ui)["']|import\s+["'](?:@radix-ui\/[^"']+|radix-ui)["'])/;
+const forbiddenRadixImportPattern =
+	/(?:from\s+["'](?:@radix-ui\/[^"']+|radix-ui)["']|import\s+["'](?:@radix-ui\/[^"']+|radix-ui)["'])/;
 const forbiddenRadixDependencyPattern = /"(?:@radix-ui\/[^"']+|radix-ui)"\s*:/;
 
 function collectSourceFiles(dir: string): string[] {

@@ -85,13 +85,7 @@ type TFormLabelProps = React.ComponentProps<typeof Label> & {
 	required?: boolean;
 };
 
-function TFormLabel({
-	className,
-	hasError,
-	required,
-	children,
-	...props
-}: TFormLabelProps) {
+function TFormLabel({ className, hasError, required, children, ...props }: TFormLabelProps) {
 	const { id } = useTFormItem();
 
 	return (

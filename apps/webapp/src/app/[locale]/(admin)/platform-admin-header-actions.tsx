@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 import { Link, usePathname } from "@/navigation";
 import {
 	isActivePlatformAdminItem,
-	platformAdminIcons,
 	type PlatformAdminNavItem,
+	platformAdminIcons,
 } from "./platform-admin-nav";
 
 type PlatformAdminHeaderActionsProps = {

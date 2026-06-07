@@ -250,7 +250,7 @@ export function NavUser({
 									>
 										<CollapsibleTrigger asChild>
 											<DropdownMenuItem
-											className="w-full data-[panel-open]:bg-accent data-[panel-open]:text-accent-foreground [&[data-panel-open]>svg:last-child]:rotate-180"
+												className="w-full data-[panel-open]:bg-accent data-[panel-open]:text-accent-foreground [&[data-panel-open]>svg:last-child]:rotate-180"
 												disabled={isPending}
 												onSelect={(event) => event.preventDefault()}
 											>
@@ -259,7 +259,7 @@ export function NavUser({
 												<IconChevronDown className="ml-auto size-4 transition-transform duration-200" />
 											</DropdownMenuItem>
 										</CollapsibleTrigger>
-									<CollapsibleContent className="overflow-hidden pl-2 motion-safe:data-closed:animate-accordion-up motion-safe:data-open:animate-accordion-down">
+										<CollapsibleContent className="overflow-hidden pl-2 motion-safe:data-closed:animate-accordion-up motion-safe:data-open:animate-accordion-down">
 											<DropdownMenuRadioGroup value={locale} onValueChange={handleLanguageChange}>
 												{ALL_LANGUAGES.map((lang) => {
 													const config = LANGUAGE_CONFIG[lang];
@@ -289,7 +289,7 @@ export function NavUser({
 									>
 										<CollapsibleTrigger asChild>
 											<DropdownMenuItem
-											className="w-full data-[panel-open]:bg-accent data-[panel-open]:text-accent-foreground [&[data-panel-open]>svg:last-child]:rotate-180"
+												className="w-full data-[panel-open]:bg-accent data-[panel-open]:text-accent-foreground [&[data-panel-open]>svg:last-child]:rotate-180"
 												onSelect={(event) => event.preventDefault()}
 											>
 												<IconTextSize aria-hidden="true" className="mr-2 size-4" stroke={1.5} />
@@ -297,7 +297,7 @@ export function NavUser({
 												<IconChevronDown className="ml-auto size-4 transition-transform duration-200" />
 											</DropdownMenuItem>
 										</CollapsibleTrigger>
-									<CollapsibleContent className="overflow-hidden pl-2 motion-safe:data-closed:animate-accordion-up motion-safe:data-open:animate-accordion-down">
+										<CollapsibleContent className="overflow-hidden pl-2 motion-safe:data-closed:animate-accordion-up motion-safe:data-open:animate-accordion-down">
 											<DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
 												{FONT_SIZE_OPTIONS.map((option) => (
 													<DropdownMenuRadioItem
@@ -318,7 +318,7 @@ export function NavUser({
 									>
 										<CollapsibleTrigger asChild>
 											<DropdownMenuItem
-											className="w-full data-[panel-open]:bg-accent data-[panel-open]:text-accent-foreground [&[data-panel-open]>svg:last-child]:rotate-180"
+												className="w-full data-[panel-open]:bg-accent data-[panel-open]:text-accent-foreground [&[data-panel-open]>svg:last-child]:rotate-180"
 												onSelect={(event) => event.preventDefault()}
 											>
 												<IconPalette className="mr-2 size-4" stroke={1.5} />
@@ -326,7 +326,7 @@ export function NavUser({
 												<IconChevronDown className="ml-auto size-4 transition-transform duration-200" />
 											</DropdownMenuItem>
 										</CollapsibleTrigger>
-									<CollapsibleContent className="overflow-hidden pl-2 motion-safe:data-closed:animate-accordion-up motion-safe:data-open:animate-accordion-down">
+										<CollapsibleContent className="overflow-hidden pl-2 motion-safe:data-closed:animate-accordion-up motion-safe:data-open:animate-accordion-down">
 											<DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
 												<DropdownMenuRadioItem className={mobileRadioItemClassName} value="light">
 													<IconSun className="mr-2 size-4" />

@@ -88,20 +88,11 @@ type CollapsibleContentProps = ComponentProps<typeof CollapsiblePrimitive.Panel>
 	asChild?: boolean;
 };
 
-function CollapsibleContent({
-	asChild,
-	children,
-	render,
-	...props
-}: CollapsibleContentProps) {
+function CollapsibleContent({ asChild, children, render, ...props }: CollapsibleContentProps) {
 	const baseRender = asChild && isValidElement(children) ? children : render;
 
 	return (
-		<CollapsiblePrimitive.Panel
-			data-slot="collapsible-content"
-			render={baseRender}
-			{...props}
-		>
+		<CollapsiblePrimitive.Panel data-slot="collapsible-content" render={baseRender} {...props}>
 			{asChild ? null : children}
 		</CollapsiblePrimitive.Panel>
 	);

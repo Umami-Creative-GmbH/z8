@@ -4,12 +4,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { IconSearch, IconX } from "@tabler/icons-react";
 import { Command as CommandPrimitive } from "cmdk";
 import * as React from "react";
-import {
-	Dialog,
-	DialogDescription,
-	DialogPortal,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogDescription, DialogPortal, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 const COMMAND_DIALOG_CLOSE_DURATION_MS = 160;
