@@ -31,20 +31,21 @@ const logger = createLogger("StripeWebhook");
  * - payment_intent.payment_failed
  */
 export async function POST(request: NextRequest) {
-	await connection();
-
 	// Check if billing is enabled
 	if (env.BILLING_ENABLED !== "true") {
 		return NextResponse.json({ error: "Billing not enabled" }, { status: 404 });
 	}
 
-	const body = await request.text();
+	await connection();
+
 	const signature = request.headers.get("stripe-signature");
 
 	if (!signature) {
 		logger.warn("Webhook received without signature");
 		return NextResponse.json({ error: "Missing signature" }, { status: 400 });
 	}
+
+	const body = await request.text();
 
 	// Build service layers
 	const layers = Layer.mergeAll(StripeServiceLive, SubscriptionServiceLive).pipe(

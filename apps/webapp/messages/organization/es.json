@@ -102,6 +102,14 @@
       "title": "Invitar a un miembro"
     },
     "joinOrCreate": "Unirse o crear una",
+    "language": {
+      "adminOnly": "Solo los administradores y propietarios de la organización pueden cambiar la configuración del idioma de notificación.",
+      "default": "Idioma de notificación predeterminado",
+      "description": "Establezca el idioma de respaldo para el correo electrónico, Telegram y otras notificaciones salientes cuando un usuario no haya seleccionado un idioma de interfaz.",
+      "title": "Idioma de notificación",
+      "updated": "Idioma de notificación de la organización actualizado",
+      "updateFailed": "Error al actualizar el idioma de notificación de la organización"
+    },
     "logo": {
       "changeLabel": "Cambiar logotipo de la organización",
       "removeLabel": "Eliminar logotipo de la organización",

@@ -5,21 +5,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { CalendarView } from "./calendar-view";
 
-const { capturedCalendarFilters, mockCalendarData, push, refetch } = vi.hoisted(() => ({
-	capturedCalendarFilters: [] as unknown[],
-	push: vi.fn(),
-	refetch: vi.fn(),
-	mockCalendarData: {
-		events: [] as CalendarEvent[],
-		dailyRequirements: new Map(),
-		dailyActualMinutes: new Map(),
-		workBalance: null,
-		calendarTimezone: null as string | null,
-		isLoading: false,
-		isFetching: false,
-		error: null,
-	},
-}));
+const { capturedCalendarFilters, mockCalendarData, onScheduleXWrapperRender, push, refetch } =
+	vi.hoisted(() => ({
+		capturedCalendarFilters: [] as unknown[],
+		onScheduleXWrapperRender: vi.fn(),
+		push: vi.fn(),
+		refetch: vi.fn(),
+		mockCalendarData: {
+			events: [] as CalendarEvent[],
+			dailyRequirements: new Map(),
+			dailyActualMinutes: new Map(),
+			workBalance: null,
+			calendarTimezone: null as string | null,
+			isLoading: false,
+			isFetching: false,
+			error: null,
+		},
+	}));
 
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({ push }),
@@ -128,32 +130,36 @@ vi.mock("./schedule-x-wrapper", () => ({
 		onViewModeChange: (mode: "month" | "year") => void;
 		timeZone?: string;
 		viewMode: string;
-	}) => (
-		<div
-			data-testid="schedule-x-wrapper"
-			data-view-mode={viewMode}
-			data-time-zone={timeZone}
-			data-summary-loading={String(isSummaryLoading)}
-		>
-			<button
-				type="button"
-				onClick={() =>
-					onTimeRangeSelect?.({
-						start: new Date("2026-05-29T10:45:00.000Z"),
-						end: new Date("2026-05-29T08:15:00.000Z"),
-					})
-				}
+	}) => {
+		onScheduleXWrapperRender(viewMode);
+
+		return (
+			<div
+				data-testid="schedule-x-wrapper"
+				data-view-mode={viewMode}
+				data-time-zone={timeZone}
+				data-summary-loading={String(isSummaryLoading)}
 			>
-				Select time range
-			</button>
-			<button type="button" onClick={() => onViewModeChange("month")}>
-				Month
-			</button>
-			<button type="button" onClick={() => onViewModeChange("year")}>
-				Year
-			</button>
-		</div>
-	),
+				<button
+					type="button"
+					onClick={() =>
+						onTimeRangeSelect?.({
+							start: new Date("2026-05-29T10:45:00.000Z"),
+							end: new Date("2026-05-29T08:15:00.000Z"),
+						})
+					}
+				>
+					Select time range
+				</button>
+				<button type="button" onClick={() => onViewModeChange("month")}>
+					Month
+				</button>
+				<button type="button" onClick={() => onViewModeChange("year")}>
+					Year
+				</button>
+			</div>
+		);
+	},
 }));
 
 vi.mock("@/components/time-tracking/manual-time-entry-dialog", () => ({
@@ -254,6 +260,7 @@ describe("CalendarView", () => {
 		mockCalendarData.events = [];
 		mockCalendarData.calendarTimezone = null;
 		mockCalendarData.isFetching = false;
+		onScheduleXWrapperRender.mockReset();
 		push.mockClear();
 		refetch.mockClear();
 		setMobileViewport(false);
@@ -265,12 +272,47 @@ describe("CalendarView", () => {
 		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode")).toBe("week");
 	});
 
-	it("defaults to day view on mobile", () => {
+	it("starts from week view on mobile and switches to day after mount", async () => {
 		setMobileViewport(true);
 
 		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
 
-		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode")).toBe("day");
+		expect(onScheduleXWrapperRender).toHaveBeenNthCalledWith(1, "week");
+
+		await waitFor(() => {
+			expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode")).toBe("day");
+		});
+	});
+
+	it("does not read matchMedia before the stable initial calendar render", async () => {
+		let hasRenderedScheduleX = false;
+		onScheduleXWrapperRender.mockImplementation(() => {
+			hasRenderedScheduleX = true;
+		});
+		Object.defineProperty(window, "matchMedia", {
+			configurable: true,
+			value: vi.fn().mockImplementation((query: string) => {
+				if (!hasRenderedScheduleX) {
+					throw new Error("matchMedia was read before the first calendar render");
+				}
+
+				return {
+					matches: query === "(max-width: 767px)",
+					media: query,
+					onchange: null,
+					addEventListener: vi.fn(),
+					removeEventListener: vi.fn(),
+					dispatchEvent: vi.fn(),
+				};
+			}),
+		});
+
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		expect(onScheduleXWrapperRender).toHaveBeenNthCalledWith(1, "week");
+		await waitFor(() => {
+			expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode")).toBe("day");
+		});
 	});
 
 	it("initializes filters from initialSelectedEmployeeId", () => {

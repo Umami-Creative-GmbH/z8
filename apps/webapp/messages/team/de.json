@@ -4,6 +4,22 @@
       "actions": {
         "recordForEmployee": "Abwesenheit für {name} erfassen"
       },
+      "calendar": {
+        "approved": "Genehmigt",
+        "description": "Genehmigte und ausstehende Abwesenheiten für das ausgewählte Team und Jahr.",
+        "error": {
+          "description": "Bitte versuchen Sie es gleich noch einmal.",
+          "title": "Kalender konnte nicht geladen werden"
+        },
+        "legend": {
+          "approved": "Genehmigt",
+          "pending": "Ausstehend"
+        },
+        "pending": "Ausstehend",
+        "pendingDays": "{count} ausstehend",
+        "title": "Jahreskalender",
+        "totalDays": "{count} abwesend"
+      },
       "description": "Überprüfen Sie die Freistellungen und erfassen Sie genehmigte Abwesenheiten für Ihr Team.",
       "empty": {
         "description": "Versuchen Sie, die Filter oder die Suche anzupassen, um Teammitglieder zu finden.",

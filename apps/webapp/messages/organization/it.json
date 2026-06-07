@@ -102,6 +102,14 @@
       "title": "Invita membro"
     },
     "joinOrCreate": "Unisciti o crea",
+    "language": {
+      "adminOnly": "Solo gli amministratori e i proprietari dell'organizzazione possono modificare l'impostazione della lingua di notifica.",
+      "default": "Lingua di notifica predefinita",
+      "description": "Imposta la lingua di fallback per email, Telegram e altre notifiche in uscita quando un utente non ha selezionato una lingua per l'interfaccia.",
+      "title": "Lingua di notifica",
+      "updated": "Lingua di notifica dell'organizzazione aggiornata",
+      "updateFailed": "Impossibile aggiornare la lingua di notifica dell'organizzazione"
+    },
     "logo": {
       "changeLabel": "Cambia logo dell'organizzazione",
       "removeLabel": "Rimuovi logo dell'organizzazione",

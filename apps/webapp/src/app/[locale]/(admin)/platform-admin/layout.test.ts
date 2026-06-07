@@ -105,8 +105,6 @@ describe("platform admin layout", () => {
 		expect(source).toContain("TooltipTrigger asChild");
 		expect(source).toContain("aria-label={item.label}");
 		expect(source).toContain("aria-label={exitLabel}");
-		expect(source).toContain('item.href === "/platform-admin"');
-		expect(source).toContain("pathname === item.href || pathname.startsWith(`${item.href}/`)");
 		expect(source).toContain("bg-accent text-accent-foreground");
 	});
 
@@ -145,13 +143,15 @@ describe("platform admin layout", () => {
 		expect(source).toContain("bg-accent text-accent-foreground");
 	});
 
-	it("exports shared platform admin nav helpers for desktop and mobile", () => {
+	it("keeps shared platform admin nav helpers outside component files", () => {
 		const source = stripComments(
-			readFileSync(join(PLATFORM_ADMIN_ROOT, "../platform-admin-header-actions.tsx"), "utf8"),
+			readFileSync(join(PLATFORM_ADMIN_ROOT, "../platform-admin-nav.ts"), "utf8"),
 		);
 
 		expect(source).toContain("export const platformAdminIcons");
 		expect(source).toContain("export function isActivePlatformAdminItem");
+		expect(source).toContain('item.href === "/platform-admin"');
+		expect(source).toContain("pathname === item.href || pathname.startsWith(`${item.href}/`)");
 	});
 
 	it("stacks platform settings environment rows on mobile", () => {

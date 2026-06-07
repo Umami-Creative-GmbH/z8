@@ -33,14 +33,14 @@ export function ExportOperationsDateTime({
 }
 
 function formatBrowserDateTime(date: Date, locale: string) {
-	return new Intl.DateTimeFormat(locale, {
+	return Intl.DateTimeFormat(locale, {
 		dateStyle: "medium",
 		timeStyle: "short",
 	}).format(date);
 }
 
 function formatServerDateTime(date: Date, locale: string) {
-	return new Intl.DateTimeFormat(locale, {
+	return Intl.DateTimeFormat(locale, {
 		dateStyle: "medium",
 		timeStyle: "short",
 		timeZone: "UTC",

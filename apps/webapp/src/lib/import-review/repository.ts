@@ -67,7 +67,7 @@ export function readyCommitJobsFromJobs<T extends { entityType: string; status: 
 ): T[] {
 	if (jobs.some((job) => job.status === "failed")) return [];
 
-	const commitJobs = [...jobs].sort(
+	const commitJobs = jobs.toSorted(
 		(left, right) =>
 			commitEntitySortIndex(left.entityType as ImportEntityType) -
 			commitEntitySortIndex(right.entityType as ImportEntityType),
@@ -444,12 +444,12 @@ export async function applyImportRowDecision(input: {
 			return { updatedCount: updated.length };
 		}
 
-		const blockingRows = rows
-			.filter((row: { issueSeverity: ImportIssueSeverity }) => row.issueSeverity === "blocking")
-			.map((row) => row.id);
-		const acceptedRows = rows
-			.filter((row: { issueSeverity: ImportIssueSeverity }) => row.issueSeverity !== "blocking")
-			.map((row) => row.id);
+		const blockingRows = rows.flatMap((row: { issueSeverity: ImportIssueSeverity; id: string }) =>
+			row.issueSeverity === "blocking" ? [row.id] : [],
+		);
+		const acceptedRows = rows.flatMap((row: { issueSeverity: ImportIssueSeverity; id: string }) =>
+			row.issueSeverity !== "blocking" ? [row.id] : [],
+		);
 		const [acceptedUpdated, blockedUpdated] = await Promise.all([
 			updateRows(acceptedRows, "accepted"),
 			updateRows(blockingRows, "blocked"),

@@ -23,7 +23,9 @@
     },
     "correction": {
       "clockIn": "Rozpocznij pracę",
+      "clockInDate": "Data rozpoczęcia pracy",
       "clockOut": "Zakończ pracę",
+      "clockOutDate": "Data zakończenia pracy",
       "editDescription": "Wprowadź zmiany w dzisiejszym wpisie czasu.",
       "editEntry": "Edytuj wpis czasu",
       "editTitle": "Edytuj wpis czasu",

@@ -216,7 +216,7 @@ export function useSelectedEmployees(employeeIds: string[]) {
 	const hasEmployee = !!currentEmployeeQuery.data;
 
 	// Stable key for the query
-	const sortedIds = [...employeeIds].sort();
+	const sortedIds = Array.from(employeeIds).toSorted();
 
 	const query = useQuery({
 		queryKey: queryKeys.employeeSelect.byIds(sortedIds),

@@ -93,14 +93,18 @@ async function createSystemDraft(definition: PlatformSystemEmailTemplateDefiniti
 	let starterDraftHtml = await definition.renderDefault(definition.previewData as never);
 	const replacements = definition.variables
 		.flatMap((variable) =>
-			getGlobalPreviewReplacementValues(definition.previewData[variable.name]).map(
-				(previewValue) => ({
-					previewValue,
-					token: `{{${variable.name}}}`,
-				}),
+			getGlobalPreviewReplacementValues(definition.previewData[variable.name]).flatMap(
+				(previewValue) =>
+					previewValue
+						? [
+								{
+									previewValue,
+									token: `{{${variable.name}}}`,
+								},
+							]
+						: [],
 			),
 		)
-		.filter((replacement) => replacement.previewValue)
 		.sort((left, right) => right.previewValue.length - left.previewValue.length);
 
 	for (const { previewValue, token } of replacements) {
@@ -147,9 +151,9 @@ export async function listPlatformSystemEmailTemplates(): Promise<
 
 	const overrides = await db.query.platformSystemEmailTemplate.findMany();
 	const overridesByTemplateKey = new Map(
-		overrides
-			.filter((override) => override.isEnabled)
-			.map((override) => [override.templateKey, override]),
+		overrides.flatMap((override) =>
+			override.isEnabled ? [[override.templateKey, override] as const] : [],
+		),
 	);
 
 	return Promise.all(

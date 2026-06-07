@@ -85,15 +85,19 @@ describe("InviteCodeManagement responsive UX", () => {
 	});
 
 	it("makes pending-member invite-code team prefill explicitly clearable", () => {
-		const source = readFileSync(
+		const componentSource = readFileSync(
 			join(process.cwd(), "src/components/organization/pending-members-card.tsx"),
 			"utf8",
 		);
+		const utilsSource = readFileSync(
+			join(process.cwd(), "src/components/organization/pending-members-card.utils.ts"),
+			"utf8",
+		);
 
-		expect(source).toContain("useState<Record<string, string | null>>({})");
-		expect(source).toContain('const NO_TEAM_VALUE = "none"');
-		expect(source).toContain("member.id in teamAssignments");
-		expect(source).toContain("teamAssignments[member.id] === null");
-		expect(source).toContain("member.inviteCode?.defaultTeamId");
+		expect(componentSource).toContain("useState<Record<string, string | null>>({})");
+		expect(componentSource).toContain('const NO_TEAM_VALUE = "none"');
+		expect(utilsSource).toContain("member.id in teamAssignments");
+		expect(utilsSource).toContain("teamAssignments[member.id] === null");
+		expect(utilsSource).toContain("member.inviteCode?.defaultTeamId");
 	});
 });

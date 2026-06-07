@@ -6,9 +6,9 @@ import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
-import type { PlatformAdminNavItem } from "./platform-admin-header-actions";
 import { PlatformAdminHeaderActions } from "./platform-admin-header-actions";
 import { PlatformAdminMobileMenu } from "./platform-admin-mobile-menu";
+import type { PlatformAdminNavItem } from "./platform-admin-nav";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
 	const headersList = await headers();

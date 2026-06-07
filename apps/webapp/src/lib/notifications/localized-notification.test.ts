@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import deCommon from "../../../messages/common/de.json";
+import enCommon from "../../../messages/common/en.json";
 import { getLocalizedNotificationContent } from "./localized-notification";
 import type { NotificationWithMeta } from "./types";
 
@@ -46,6 +48,60 @@ function buildNotification(overrides: Partial<NotificationWithMeta>): Notificati
 }
 
 describe("getLocalizedNotificationContent", () => {
+	it("has common catalog entries for emitted notification i18n keys", () => {
+		expect(enCommon.notifications.content).toMatchObject({
+			absenceRequestSubmitted: {
+				title: "Absence request submitted",
+				message:
+					"Your {categoryName} request for {dateRange} has been submitted and is pending approval.",
+			},
+			teamMemberAdded: {
+				title: "Added to team",
+				message: "You have been added to the {teamName} team by {performedByName}.",
+			},
+			teamMemberRemoved: {
+				title: "Removed from team",
+				message: "You have been removed from the {teamName} team by {performedByName}.",
+			},
+			passwordChanged: {
+				title: "Password changed",
+				message:
+					"Your password was successfully changed. If you didn't make this change, please contact support immediately.",
+			},
+			shiftAssigned: {
+				title: "Shift assigned",
+				message:
+					"You have been assigned a shift on {shiftDate} from {startTime} to {endTime} by {assignedByName}.",
+			},
+		});
+
+		expect(deCommon.notifications.content).toMatchObject({
+			absenceRequestSubmitted: {
+				title: "Abwesenheitsanfrage eingereicht",
+				message:
+					"Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
+			},
+			teamMemberAdded: {
+				title: "Zum Team hinzugefügt",
+				message: "Sie wurden von {performedByName} zum Team {teamName} hinzugefügt.",
+			},
+			teamMemberRemoved: {
+				title: "Aus dem Team entfernt",
+				message: "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
+			},
+			passwordChanged: {
+				title: "Passwort geändert",
+				message:
+					"Ihr Passwort wurde erfolgreich geändert. Wenn Sie diese Änderung nicht vorgenommen haben, wenden Sie sich bitte sofort an den Support.",
+			},
+			shiftAssigned: {
+				title: "Schicht zugewiesen",
+				message:
+					"Ihnen wurde eine Schicht am {shiftDate} von {startTime} bis {endTime} von {assignedByName} zugewiesen.",
+			},
+		});
+	});
+
 	it("localizes manager-recorded absence notification content from metadata", () => {
 		const localized = getLocalizedNotificationContent(buildNotification({}), t, "de");
 

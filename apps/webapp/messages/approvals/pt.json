@@ -35,7 +35,7 @@
     "notes": "Notas",
     "noTimeCorrectionApprovals": "Nenhuma solicitação de correção de horário pendente para revisar.",
     "offFrom": "ausente de",
-    "openDetailsFor": "Abrir detalhes de {title}",
+    "openDetailsFor": "Abrir detalhes de ${item.summary.title}",
     "openInbox": "Abrir Caixa de Entrada",
     "originalTimes": "Horários Originais",
     "pendingRequests": "Solicitações Pendentes",
@@ -59,25 +59,25 @@
     "searchLabel": "Pesquisar aprovações",
     "searchPlaceholder": "Pesquisar por nome ou e-mail…",
     "selectAll": "Selecionar tudo",
-    "selectedCount": "{selectedCount} selecionado(s)",
+    "selectedCount": "${selectedCount} selecionado(s)",
     "selectRow": "Selecionar linha",
     "timeCorrectionApproved": "Correção de tempo aprovada",
     "timeCorrectionRejected": "Correção de tempo rejeitada",
     "timeCorrections": "Correções de Horário",
     "timeCorrectionsDescription": "Revise e aprove as solicitações de correção de registro de horas dos membros da sua equipe",
     "title": "Aprovações",
-    "totalCount": "{totalCount} pendente(s)",
+    "totalCount": "${totalCount} pendente(s)",
     "type": "Tipo",
     "unifiedInboxBannerDescription": "Visualize todos os tipos de aprovação em um só lugar com filtragem, ações em massa e rastreamento de SLA.",
     "unifiedInboxBannerTitle": "Experimente a nova Caixa de Entrada Unificada"
   },
   "fastLanes": {
     "approve": "Aprovar",
-    "approveGroup": "Aprovar {label}",
+    "approveGroup": "Aprovar ${label}",
     "confirmReject": "Confirmar rejeição",
-    "confirmRejectGroup": "Confirmar rejeição de {label}",
+    "confirmRejectGroup": "Confirmar rejeição de ${label}",
     "description": "Analise solicitações semelhantes de baixo atrito em lote.",
-    "expandGroup": "Expandir {label}",
+    "expandGroup": "Expandir ${label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Ausências sem conflitos detectados.",
@@ -96,21 +96,21 @@
         "label": "Solicitações obsoletas"
       }
     },
-    "notEligibleApprove": "{notApprovableCount} não elegível para aprovação em massa",
-    "notEligibleReject": "{notRejectableCount} não elegível para rejeição em massa",
+    "notEligibleApprove": "${notApprovableCount} não elegível para aprovação em massa",
+    "notEligibleReject": "${notRejectableCount} não elegível para rejeição em massa",
     "reject": "Rejeitar",
-    "rejectGroup": "Rejeitar {label}",
+    "rejectGroup": "Rejeitar ${label}",
     "rejectReason": "Motivo da rejeição em massa",
     "risk": {
       "high": "Alto risco",
       "low": "Baixo risco",
       "medium": "Médio risco"
     },
-    "showGroup": "Mostrar {label}",
+    "showGroup": "Mostrar ${label}",
     "title": "Vias rápidas"
   },
   "sprint": {
-    "age": "{ageDays}d atrás",
+    "age": "${item.timing.ageDays}d atrás",
     "approve": "Aprovar",
     "approveCurrentApproval": "Aprovar aprovação atual",
     "capabilities": {
@@ -128,7 +128,7 @@
       "normal": "Prioridade normal",
       "urgent": "Prioridade urgente"
     },
-    "progress": "{current} de {total}",
+    "progress": "${currentIndex + 1} de ${visibleItems.length}",
     "reject": "Rejeitar",
     "rejectCurrentApproval": "Rejeitar aprovação atual",
     "rejectReason": "Motivo da rejeição da sprint",

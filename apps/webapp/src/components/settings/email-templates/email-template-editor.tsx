@@ -131,7 +131,8 @@ export function EmailTemplateEditor({
 									editorRef.getEmail(),
 									Promise.resolve(editorRef.getJSON()),
 								]);
-								if (updateVersion !== updateVersionRef.current) {
+								const isLatestUpdate = updateVersion === updateVersionRef.current;
+								if (!isLatestUpdate) {
 									return;
 								}
 								onHtmlChange(email.html);

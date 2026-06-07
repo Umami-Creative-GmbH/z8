@@ -70,8 +70,8 @@ function uniqueSorted(values: string[]) {
 
 function directManagerIds(input: ResolveEligibleManagersInput) {
 	const links = input.managerLinks.filter((link) => link.employeeId === input.requesterEmployeeId);
-	const primaryIds = links.filter((link) => link.isPrimary).map((link) => link.managerId);
-	const otherIds = links.filter((link) => !link.isPrimary).map((link) => link.managerId);
+	const primaryIds = links.flatMap((link) => (link.isPrimary ? [link.managerId] : []));
+	const otherIds = links.flatMap((link) => (!link.isPrimary ? [link.managerId] : []));
 
 	return uniqueSorted([...primaryIds, ...otherIds]).filter((managerId) =>
 		Boolean(activeManagerInOrg(input.employees, input.organizationId, managerId)),
@@ -80,9 +80,9 @@ function directManagerIds(input: ResolveEligibleManagersInput) {
 
 function teamManagerIds(input: ResolveEligibleManagersInput) {
 	const requesterTeamIds = new Set(
-		input.teamMemberships
-			.filter((membership) => membership.employeeId === input.requesterEmployeeId)
-			.map((membership) => membership.teamId),
+		input.teamMemberships.flatMap((membership) =>
+			membership.employeeId === input.requesterEmployeeId ? [membership.teamId] : [],
+		),
 	);
 
 	return uniqueSorted(
@@ -134,9 +134,13 @@ export function resolvePrimaryEligibleManager(
 	}
 
 	const primaryDirect = input.managerLinks
-		.filter((link) => link.employeeId === input.requesterEmployeeId && link.isPrimary)
-		.map((link) => link.managerId)
-		.filter((managerId) => result.managerIds.includes(managerId))
+		.flatMap((link) =>
+			link.employeeId === input.requesterEmployeeId &&
+			link.isPrimary &&
+			result.managerIds.includes(link.managerId)
+				? [link.managerId]
+				: [],
+		)
 		.toSorted((left, right) => left.localeCompare(right))[0];
 
 	return {

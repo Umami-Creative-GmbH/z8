@@ -44,6 +44,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PendingMember } from "@/lib/effect/services/pending-member.service";
 import { queryKeys } from "@/lib/query";
+import { buildBulkApproveRequests, resolveApproveTeamId } from "./pending-members-card.utils";
 
 interface PendingMembersCardProps {
 	organizationId: string;
@@ -51,34 +52,6 @@ interface PendingMembersCardProps {
 }
 
 const NO_TEAM_VALUE = "none";
-
-type PendingMemberTeamSource = {
-	id: string;
-	inviteCode?: { defaultTeamId?: string | null } | null;
-};
-
-function resolveApproveTeamId(
-	member: PendingMemberTeamSource,
-	teamAssignments: Record<string, string | null>,
-) {
-	if (member.id in teamAssignments) {
-		return teamAssignments[member.id] === null ? null : teamAssignments[member.id];
-	}
-
-	return member.inviteCode?.defaultTeamId || undefined;
-}
-
-export function buildBulkApproveRequests(
-	pendingMembers: PendingMemberTeamSource[],
-	selectedMemberIds: string[],
-	teamAssignments: Record<string, string | null>,
-) {
-	return selectedMemberIds.flatMap((memberId) => {
-		const member = pendingMembers.find((pendingMember) => pendingMember.id === memberId);
-
-		return member ? [{ memberId, teamId: resolveApproveTeamId(member, teamAssignments) }] : [];
-	});
-}
 
 export function PendingMembersCard({ organizationId, currentMemberRole }: PendingMembersCardProps) {
 	const { t } = useTranslate();

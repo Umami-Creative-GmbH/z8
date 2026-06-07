@@ -139,6 +139,22 @@
         "description": "Send a diagnostics email through the system email transport.",
         "messageId": "Message ID: {messageId}",
         "recipient": "Recipient email",
+        "smtpOverride": {
+          "description": "Leave blank to use the configured system email transport. If filled, the test uses these SMTP settings only.",
+          "fromEmail": "From email",
+          "fromName": "From name",
+          "host": "SMTP host",
+          "ipMode": "IP mode",
+          "ipMode.auto": "Auto",
+          "ipMode.ipv4": "IPv4 only",
+          "ipMode.ipv6": "IPv6 only",
+          "password": "SMTP password",
+          "port": "SMTP port",
+          "requireTls": "Require STARTTLS",
+          "secure": "Use TLS",
+          "title": "Temporary SMTP override",
+          "username": "SMTP username"
+        },
         "success": "Test email sent to {recipient}.",
         "title": "Email Delivery Test"
       },
@@ -188,6 +204,7 @@
     },
     "layout": {
       "exitAdmin": "Exit Admin",
+      "menuTitle": "Admin Menu",
       "nav": {
         "analytics": "Analytics",
         "billing": "Billing",
@@ -199,6 +216,7 @@
         "users": "Users",
         "workerQueue": "Worker Queue"
       },
+      "openMenu": "Open admin menu",
       "subtitle": "Platform Management",
       "title": "Admin Console"
     },

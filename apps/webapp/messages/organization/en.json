@@ -102,6 +102,14 @@
       "title": "Invite Member"
     },
     "joinOrCreate": "Join or create one",
+    "language": {
+      "adminOnly": "Only organization admins and owners can change the notification language setting.",
+      "default": "Default notification language",
+      "description": "Set the fallback language for email, Telegram, and other outbound notifications when a user has not selected a UI language.",
+      "title": "Notification language",
+      "updated": "Organization notification language updated",
+      "updateFailed": "Failed to update organization notification language"
+    },
     "logo": {
       "changeLabel": "Change organization logo",
       "removeLabel": "Remove organization logo",

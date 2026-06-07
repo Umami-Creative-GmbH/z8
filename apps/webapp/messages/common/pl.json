@@ -48,6 +48,10 @@
         "subtitle": "Sprawdź, czy dane o czasie pracy są gotowe do listy płac",
         "title": "Otwórz gotowość listy płac"
       },
+      "openPayroll": {
+        "subtitle": "Przejrzyj obszar roboczy płac o ograniczonym zakresie",
+        "title": "Otwórz płace"
+      },
       "openSettings": {
         "subtitle": "Zarządzaj swoim profilem, bezpieczeństwem i ustawieniami organizacji",
         "title": "Otwórz ustawienia"
@@ -301,6 +305,7 @@
     "get-help": "Uzyskaj pomoc",
     "my-requests": "Moje wnioski",
     "org-explorer": "Eksplorator organizacji",
+    "payroll": "Płace",
     "platform-admin": "Administrator platformy",
     "reports": "Raporty",
     "scheduling": "Harmonogram",

@@ -44,6 +44,10 @@ vi.mock("@/navigation", () => ({
 	}),
 }));
 
+vi.mock("next/navigation", () => ({
+	useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+
 vi.mock("./actions", () => ({
 	deleteOrganizationAction: vi.fn(),
 	listOrganizationsAction: vi.fn(),
@@ -242,5 +246,18 @@ describe("Platform admin organizations page", () => {
 		expect(screen.getByRole("link", { name: "4" }).getAttribute("href")).toBe(
 			"/platform-admin/users?organizationId=org-active",
 		);
+	});
+
+	it("uses URL filters for organizations query after state sync", () => {
+		window.history.replaceState(
+			null,
+			"",
+			"/platform-admin/organizations?search=acme&status=suspended",
+		);
+
+		render(<OrganizationsPage />);
+
+		const queryConfig = useQueryMock.mock.calls.at(-1)?.[0];
+		expect(queryConfig.queryKey).toEqual(["admin-organizations", "acme", "suspended", 1]);
 	});
 });

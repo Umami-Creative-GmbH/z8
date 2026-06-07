@@ -1084,9 +1084,9 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							...approvalRows,
 							...travelRows,
 						]);
-						const managerIds = managerEffectiveness.byManager
-							.map((manager) => manager.managerId)
-							.filter((id) => id !== "unassigned");
+						const managerIds = managerEffectiveness.byManager.flatMap((manager) =>
+							manager.managerId !== "unassigned" ? [manager.managerId] : [],
+						);
 						const teamSizes = yield* _(
 							dbService.query("getTeamSizes", async () => {
 								if (managerIds.length === 0) return [];

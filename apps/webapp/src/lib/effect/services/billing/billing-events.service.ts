@@ -14,6 +14,7 @@ import { SubscriptionService } from "./subscription.service";
 
 const logger = createLogger("BillingEventsService");
 const DEFAULT_APP_URL = "https://app.z8-time.app";
+const stripeAmountFormatters = new Map<string, Intl.NumberFormat>();
 
 const getBillingUrl = () => {
 	const appUrl = env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || DEFAULT_APP_URL;
@@ -25,14 +26,22 @@ const formatStripeTimestamp = (timestamp?: number | null) =>
 
 const formatStripeAmount = (amount?: number | null, currency?: string | null) => {
 	if (amount == null) return undefined;
+	const normalizedCurrency = (currency ?? "eur").toUpperCase();
 
 	try {
-		return new Intl.NumberFormat("en", {
+		const cachedFormatter = stripeAmountFormatters.get(normalizedCurrency);
+		if (cachedFormatter) {
+			return cachedFormatter.format(amount / 100);
+		}
+
+		const formatter = Intl.NumberFormat("en", {
 			style: "currency",
-			currency: (currency ?? "eur").toUpperCase(),
-		}).format(amount / 100);
+			currency: normalizedCurrency,
+		});
+		stripeAmountFormatters.set(normalizedCurrency, formatter);
+		return formatter.format(amount / 100);
 	} catch {
-		return `${(currency ?? "eur").toUpperCase()} ${(amount / 100).toFixed(2)}`;
+		return `${normalizedCurrency} ${(amount / 100).toFixed(2)}`;
 	}
 };
 

@@ -7,12 +7,21 @@
 import { format } from "@/lib/datetime/luxon-utils";
 import type { ReportData } from "../types";
 
+const currencyFormatters = new Map<string, Intl.NumberFormat>();
+
 // Helper to format currency
 const formatCurrency = (amount: number, currency: string): string => {
-	return new Intl.NumberFormat("de-DE", {
+	const cachedFormatter = currencyFormatters.get(currency);
+	if (cachedFormatter) {
+		return cachedFormatter.format(amount);
+	}
+
+	const formatter = Intl.NumberFormat("de-DE", {
 		style: "currency",
 		currency: currency,
-	}).format(amount);
+	});
+	currencyFormatters.set(currency, formatter);
+	return formatter.format(amount);
 };
 
 // Style definitions (plain object, used by StyleSheet.create at runtime)

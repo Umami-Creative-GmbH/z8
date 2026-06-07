@@ -102,6 +102,14 @@
       "title": "Mitgliid iilade"
     },
     "joinOrCreate": "Biträte oder e neui erstelle",
+    "language": {
+      "adminOnly": "Nur Organisations-Admins und Inhaber chönd d'Iistellig für d'Benachrichtigungs-Spraach ändere.",
+      "default": "Standard-Benachrichtigungs-Spraach",
+      "description": "Leg d'Fallback-Spraach für E-Mail, Telegram und anderi Benachrichtigige fest, wänn en Benutzer kei UI-Spraach gwählt hät.",
+      "title": "Benachrichtigungs-Spraach",
+      "updated": "Organisations-Benachrichtigungs-Spraach aktualisiert",
+      "updateFailed": "D'Aktualisierig vo de Organisations-Benachrichtigungs-Spraach isch fehlgschlage"
+    },
     "logo": {
       "changeLabel": "Organisationslogo ändere",
       "removeLabel": "Organisationslogo entferne",

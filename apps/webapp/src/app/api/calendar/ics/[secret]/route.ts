@@ -45,7 +45,7 @@ async function handleCalendarIcsFeed(
 		// 2. Update last accessed timestamp (fire and forget)
 		db.update(icsFeed)
 			.set({ lastAccessedAt: new Date() })
-			.where(eq(icsFeed.id, feed.id))
+			.where(and(eq(icsFeed.id, feed.id), eq(icsFeed.organizationId, feed.organizationId)))
 			.catch(() => {
 				// Ignore errors updating access time
 			});
@@ -80,7 +80,10 @@ async function handleCalendarIcsFeed(
 		if (feed.feedType === "user" && feed.employeeId) {
 			// User feed: fetch absences for a single employee
 			const emp = await db.query.employee.findFirst({
-				where: eq(employee.id, feed.employeeId),
+				where: and(
+					eq(employee.id, feed.employeeId),
+					eq(employee.organizationId, feed.organizationId),
+				),
 				with: { user: true },
 			});
 
@@ -89,11 +92,17 @@ async function handleCalendarIcsFeed(
 				calendarDescription = `Absence calendar for ${emp.user.name}`;
 			}
 
-			absences = await fetchEmployeeAbsences(feed.employeeId, startDate, endDate, statusFilters);
+			absences = await fetchEmployeeAbsences(
+				feed.employeeId,
+				feed.organizationId,
+				startDate,
+				endDate,
+				statusFilters,
+			);
 		} else if (feed.feedType === "team" && feed.teamId) {
 			// Team feed: fetch absences for all team members
 			const teamRecord = await db.query.team.findFirst({
-				where: eq(team.id, feed.teamId),
+				where: and(eq(team.id, feed.teamId), eq(team.organizationId, feed.organizationId)),
 			});
 
 			if (teamRecord) {
@@ -102,7 +111,13 @@ async function handleCalendarIcsFeed(
 				includeEmployeeName = true;
 			}
 
-			absences = await fetchTeamAbsences(feed.teamId, startDate, endDate, statusFilters);
+			absences = await fetchTeamAbsences(
+				feed.teamId,
+				feed.organizationId,
+				startDate,
+				endDate,
+				statusFilters,
+			);
 		}
 
 		// 6. Map absences to ICS events
@@ -148,6 +163,7 @@ function getICSHeaders(): HeadersInit {
 
 async function fetchEmployeeAbsences(
 	employeeId: string,
+	organizationId: string,
 	startDate: string,
 	endDate: string,
 	statuses: Array<"pending" | "approved" | "rejected">,
@@ -165,6 +181,9 @@ async function fetchEmployeeAbsences(
 		.where(
 			and(
 				eq(absenceEntry.employeeId, employeeId),
+				eq(absenceEntry.organizationId, organizationId),
+				eq(employee.organizationId, organizationId),
+				eq(absenceCategory.organizationId, organizationId),
 				inArray(absenceEntry.status, statuses),
 				or(
 					// Absence overlaps with our date range
@@ -199,13 +218,14 @@ async function fetchEmployeeAbsences(
 
 async function fetchTeamAbsences(
 	teamId: string,
+	organizationId: string,
 	startDate: string,
 	endDate: string,
 	statuses: Array<"pending" | "approved" | "rejected">,
 ): Promise<AbsenceWithCategory[]> {
 	// First get all employees in the team
 	const teamEmployees = await db.query.employee.findMany({
-		where: eq(employee.teamId, teamId),
+		where: and(eq(employee.teamId, teamId), eq(employee.organizationId, organizationId)),
 		columns: { id: true },
 	});
 
@@ -229,6 +249,9 @@ async function fetchTeamAbsences(
 		.where(
 			and(
 				inArray(absenceEntry.employeeId, employeeIds),
+				eq(absenceEntry.organizationId, organizationId),
+				eq(employee.organizationId, organizationId),
+				eq(absenceCategory.organizationId, organizationId),
 				inArray(absenceEntry.status, statuses),
 				or(and(lte(absenceEntry.startDate, endDate), gte(absenceEntry.endDate, startDate))),
 			),

@@ -87,12 +87,12 @@ export async function proxy(request: NextRequest) {
 		}
 	}
 
-	// Rate limiting for auth endpoints
+	// Rate limiting for auth pages. API routes are excluded by the matcher below and
+	// must enforce rate limits in their route handlers.
 	if (
 		pathWithoutLocale === "/sign-in" ||
 		pathWithoutLocale === "/sign-up" ||
-		pathWithoutLocale === "/forgot-password" ||
-		pathWithoutLocale.startsWith("/api/auth/")
+		pathWithoutLocale === "/forgot-password"
 	) {
 		const clientIp = getClientIp(request);
 		const endpoint =
@@ -169,6 +169,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-	// Match all routes except API, PostHog ingest proxy, static files, and Next.js internals
+	// Match page routes only; API routes need explicit route-handler protections.
 	matcher: ["/((?!api|ingest|_next|.*\\..*).*)"],
 };

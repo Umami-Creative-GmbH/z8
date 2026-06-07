@@ -144,6 +144,8 @@
       "confirm": "Converter para pausa",
       "description": "Isto eliminará permanentemente este período de trabalho. O intervalo aparecerá como uma pausa no calendário.",
       "failed": "Falha ao eliminar período de trabalho",
+      "reasonLabel": "Motivo da exclusão",
+      "reasonRequired": "O motivo é obrigatório",
       "success": "Período de trabalho convertido em pausa",
       "title": "Converter para pausa?"
     },
@@ -166,7 +168,7 @@
       "type": "Tipo"
     },
     "edit": {
-      "convertToBreak": "Converter para pausa",
+      "deleteEntry": "Excluir entrada",
       "notesSaved": "Notas guardadas",
       "notesSaveFailed": "Falha ao guardar notas",
       "projectSaved": "Projeto atualizado",

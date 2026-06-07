@@ -181,9 +181,6 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		console.error("Process upload error:", error);
-		return NextResponse.json(
-			{ error: "Processing failed", details: String(error) },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Processing failed" }, { status: 500 });
 	}
 }

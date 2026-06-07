@@ -190,13 +190,14 @@ async function loadTravelExpenses(
 		limit: SOURCE_QUERY_LIMIT,
 	})) as TravelExpenseRow[];
 
-	return rows
-		.filter((row) => row.status !== "draft")
-		.map((row) => {
-			const status = mapTravelExpenseStatus(row.status);
-			const latestDecisionLog = row.decisionLogs?.[0];
+	return rows.flatMap((row) => {
+		if (row.status === "draft") return [];
 
-			return {
+		const status = mapTravelExpenseStatus(row.status);
+		const latestDecisionLog = row.decisionLogs?.[0];
+
+		return [
+			{
 				id: `travel_expense:${row.id}`,
 				sourceType: "travel_expense",
 				sourceId: row.id,
@@ -210,8 +211,9 @@ async function loadTravelExpenses(
 				decisionReason: latestDecisionLog?.reason ?? latestDecisionLog?.comment ?? null,
 				availableActions: actionsFor(status),
 				sourceHref: "/travel-expenses",
-			};
-		});
+			},
+		];
+	});
 }
 
 function absenceResolvedAt(row: AbsenceRow): Date | null {

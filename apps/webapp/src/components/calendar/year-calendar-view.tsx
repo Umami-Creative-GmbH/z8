@@ -28,6 +28,7 @@ interface YearCalendarViewProps {
 const MONTH_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const monthFormatters = new Map<string, Intl.DateTimeFormat>();
 const weekdayFormatters = new Map<string, Intl.DateTimeFormat>();
+const dayLabelFormatters = new Map<string, Intl.DateTimeFormat>();
 
 function getMonthFormatter(locale: string) {
 	const cachedFormatter = monthFormatters.get(locale);
@@ -35,7 +36,7 @@ function getMonthFormatter(locale: string) {
 		return cachedFormatter;
 	}
 
-	const formatter = new Intl.DateTimeFormat(locale, { month: "long" });
+	const formatter = Intl.DateTimeFormat(locale, { month: "long" });
 	monthFormatters.set(locale, formatter);
 	return formatter;
 }
@@ -46,8 +47,23 @@ function getShortWeekdayFormatter(locale: string) {
 		return cachedFormatter;
 	}
 
-	const formatter = new Intl.DateTimeFormat(locale, { weekday: "short" });
+	const formatter = Intl.DateTimeFormat(locale, { weekday: "short" });
 	weekdayFormatters.set(locale, formatter);
+	return formatter;
+}
+
+function getDayLabelFormatter(locale: string) {
+	const cachedFormatter = dayLabelFormatters.get(locale);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = Intl.DateTimeFormat(locale, {
+		month: "long",
+		day: "numeric",
+		year: "numeric",
+	});
+	dayLabelFormatters.set(locale, formatter);
 	return formatter;
 }
 
@@ -119,11 +135,7 @@ const MiniMonth = function MiniMonth({
 }: MiniMonthProps) {
 	const days = getDaysInMonth(year, month);
 	const firstDay = getFirstDayOfMonth(year, month, weekStartDay);
-	const dayLabelFormatter = new Intl.DateTimeFormat(locale, {
-		month: "long",
-		day: "numeric",
-		year: "numeric",
-	});
+	const dayLabelFormatter = getDayLabelFormatter(locale);
 	const today = new Date();
 	const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 

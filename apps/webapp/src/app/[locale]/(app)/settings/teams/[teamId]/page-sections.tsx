@@ -213,7 +213,7 @@ export function TeamInfoCard(props: {
 												)}
 											/>
 										</SelectTrigger>
-										<SelectContent className="max-w-[var(--radix-select-trigger-width)]">
+										<SelectContent className="max-w-[var(--anchor-width)]">
 											<SelectItem value="none">
 												{t(
 													"settings.teams.detail.info.noPrimaryManager",

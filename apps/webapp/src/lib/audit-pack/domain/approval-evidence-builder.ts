@@ -31,8 +31,9 @@ export function buildApprovalEvidence(
 	organizationId: string,
 ): ApprovalEvidence[] {
 	return inputs
-		.filter((input) => input.organizationId === organizationId)
-		.map((input) => normalizeApprovalEvidence(input))
+		.flatMap((input) =>
+			input.organizationId === organizationId ? [normalizeApprovalEvidence(input)] : [],
+		)
 		.sort((a, b) => {
 			if (a.approvedAt !== b.approvedAt) {
 				return a.approvedAt.localeCompare(b.approvedAt);

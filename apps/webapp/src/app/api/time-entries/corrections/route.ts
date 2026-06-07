@@ -209,14 +209,17 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Build query conditions
-		const conditions = [eq(timeEntry.type, "correction")];
+		const conditions = [
+			eq(timeEntry.type, "correction"),
+			eq(timeEntry.organizationId, activeOrgId),
+		];
 
 		if (entryId) {
 			// Get the original entry and its correction
 			const [originalEntry] = await db
 				.select()
 				.from(timeEntry)
-				.where(eq(timeEntry.id, entryId))
+				.where(and(eq(timeEntry.id, entryId), eq(timeEntry.organizationId, activeOrgId)))
 				.limit(1);
 
 			if (!originalEntry) {
@@ -237,6 +240,24 @@ export async function GET(request: NextRequest) {
 		} else {
 			// Get all corrections for an employee
 			const targetEmployeeId = employeeId || currentEmployee.id;
+
+			if (employeeId) {
+				const [targetEmployee] = await db
+					.select()
+					.from(employee)
+					.where(
+						and(
+							eq(employee.id, employeeId),
+							eq(employee.organizationId, activeOrgId),
+							eq(employee.isActive, true),
+						),
+					)
+					.limit(1);
+
+				if (!targetEmployee) {
+					return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+				}
+			}
 
 			// Only allow viewing own corrections unless user can manage time entries
 			if (targetEmployeeId !== currentEmployee.id) {

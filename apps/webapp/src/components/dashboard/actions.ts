@@ -1,9 +1,10 @@
 "use server";
 
-import { and, desc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { organization } from "@/db/auth-schema";
+import { unstable_cache } from "next/cache";
+import { organization, user } from "@/db/auth-schema";
 import type { DashboardWidgetOrder } from "@/db/schema";
 import {
 	absenceEntry,
@@ -13,6 +14,7 @@ import {
 	holidayCategory,
 	hydrationStats,
 	team,
+	teamMembership,
 	userSettings,
 	waterIntakeLog,
 	workPeriod,
@@ -35,6 +37,12 @@ import { getManagerDailyBriefing } from "@/lib/manager-daily-briefing/get-manage
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
+import {
+	buildTeamStreakLeaders,
+	collectUniqueTeamIds,
+	type TeamStreakLeader,
+} from "./hydration-team-streak-leaders";
+import { createHydrationTeamStreakLeadersCacheConfig } from "./hydration-team-streak-leaders-query";
 import { calculateAdjustedExpectedHoursForRange } from "./quick-stats-calculations";
 import { mapRecentlyApprovedRequestRows } from "./recently-approved-requests";
 import { type AbsenceRange, getNextAvailableReturnDate } from "./return-date-calculations";
@@ -1341,6 +1349,7 @@ export async function getHydrationWidgetData(): Promise<
 		todayIntake: number;
 		dailyGoal: number;
 		goalProgress: number;
+		teamStreakLeaders: TeamStreakLeader[];
 	}>
 > {
 	const effect = Effect.gen(function* (_) {
@@ -1366,6 +1375,7 @@ export async function getHydrationWidgetData(): Promise<
 				todayIntake: 0,
 				dailyGoal: 8,
 				goalProgress: 0,
+				teamStreakLeaders: [],
 			};
 		}
 
@@ -1403,6 +1413,104 @@ export async function getHydrationWidgetData(): Promise<
 
 		const todayIntake = todayIntakeResult[0]?.total ?? 0;
 		const goalProgress = Math.min(100, Math.round((todayIntake / dailyGoal) * 100));
+		const activeOrganizationId = session.session.activeOrganizationId;
+
+		const teamStreakLeaders = yield* _(
+			Effect.tryPromise({
+				try: async () => {
+					if (!activeOrganizationId) {
+						return [];
+					}
+
+					const currentEmployee = await dbService.db.query.employee.findFirst({
+						where: and(
+							eq(employee.userId, session.user.id),
+							eq(employee.organizationId, activeOrganizationId),
+							eq(employee.isActive, true),
+						),
+						columns: {
+							id: true,
+							teamId: true,
+						},
+					});
+
+					if (!currentEmployee) {
+						return [];
+					}
+
+					const memberships = await dbService.db.query.teamMembership.findMany({
+						where: and(
+							eq(teamMembership.organizationId, activeOrganizationId),
+							eq(teamMembership.employeeId, currentEmployee.id),
+						),
+						columns: {
+							teamId: true,
+						},
+					});
+
+					const teamIds = collectUniqueTeamIds(currentEmployee.teamId, memberships);
+
+					if (teamIds.length === 0) {
+						return [];
+					}
+
+					const cacheConfig = createHydrationTeamStreakLeadersCacheConfig({
+						organizationId: activeOrganizationId,
+						currentEmployeeId: currentEmployee.id,
+						teamIds,
+					});
+					const sortedTeamIds = [...teamIds].sort();
+
+					return unstable_cache(
+						async () => {
+							const candidates = await dbService.db
+								.select({
+									employeeId: employee.id,
+									userId: employee.userId,
+									userName: user.name,
+									currentStreak: hydrationStats.currentStreak,
+								})
+								.from(employee)
+								.innerJoin(user, eq(employee.userId, user.id))
+								.leftJoin(hydrationStats, eq(hydrationStats.userId, employee.userId))
+								.leftJoin(
+									teamMembership,
+									and(
+										eq(teamMembership.employeeId, employee.id),
+										eq(teamMembership.organizationId, activeOrganizationId),
+										inArray(teamMembership.teamId, sortedTeamIds),
+									),
+								)
+								.where(
+									and(
+										eq(employee.organizationId, activeOrganizationId),
+										eq(employee.isActive, true),
+										or(inArray(employee.teamId, sortedTeamIds), isNotNull(teamMembership.id)),
+									),
+								);
+
+							return buildTeamStreakLeaders(
+								candidates.map((candidate) => ({
+									employeeId: candidate.employeeId,
+									userId: candidate.userId,
+									displayName: candidate.userName || "Team member",
+									currentStreak: candidate.currentStreak,
+								})),
+								session.user.id,
+							);
+						},
+						cacheConfig.keyParts,
+						cacheConfig.options,
+					)();
+				},
+				catch: (error) =>
+					new DatabaseError({
+						message: "Failed to load hydration team streak leaders",
+						operation: "getHydrationWidgetData.teamStreakLeaders",
+						cause: error,
+					}),
+			}).pipe(Effect.catchAll(() => Effect.succeed([]))),
+		);
 
 		return {
 			enabled: true,
@@ -1411,6 +1519,7 @@ export async function getHydrationWidgetData(): Promise<
 			todayIntake,
 			dailyGoal,
 			goalProgress,
+			teamStreakLeaders,
 		};
 	}).pipe(Effect.provide(AppLayer));
 

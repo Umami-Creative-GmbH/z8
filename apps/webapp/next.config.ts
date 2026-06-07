@@ -75,7 +75,7 @@ const nextConfig: NextConfig = {
 		unoptimized: false,
 	},
 	experimental: {
-		optimizePackageImports: ["@tabler/icons-react", "recharts", "@radix-ui/react-icons"],
+		optimizePackageImports: ["@tabler/icons-react", "recharts"],
 	},
 	turbopack: {
 		root: workspaceRoot,

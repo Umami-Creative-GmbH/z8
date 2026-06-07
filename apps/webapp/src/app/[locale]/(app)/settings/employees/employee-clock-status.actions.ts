@@ -15,7 +15,7 @@ import {
 export type EmployeeClockStatusMap = Record<string, EmployeeClockStatus>;
 
 function normalizeEmployeeIds(employeeIds: string[]) {
-	return [...new Set(employeeIds.map((id) => id.trim()).filter(Boolean))].sort();
+	return Array.from(new Set(employeeIds.map((id) => id.trim()).filter(Boolean))).toSorted();
 }
 
 function resolveQueryEffect<T>(
@@ -107,9 +107,9 @@ export async function getEmployeeClockStatuses(
 
 		const accessibleEmployeeIdSet = new Set(accessibleEmployeeIds);
 		const clockedInEmployeeIds = new Set(
-			activeRows
-				.map((row) => row.employeeId)
-				.filter((employeeId) => accessibleEmployeeIdSet.has(employeeId)),
+			activeRows.flatMap((row) =>
+				accessibleEmployeeIdSet.has(row.employeeId) ? [row.employeeId] : [],
+			),
 		);
 
 		return Object.fromEntries(

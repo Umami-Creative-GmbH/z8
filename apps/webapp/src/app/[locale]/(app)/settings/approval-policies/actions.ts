@@ -159,9 +159,11 @@ async function validatePolicyReferences(organizationId: string, input: PolicyInp
 		}
 	}
 
-	const specificApproverIds = input.stages
-		.filter((stage) => stage.approverType === "specific_employee" && stage.approverEmployeeId)
-		.map((stage) => stage.approverEmployeeId as string);
+	const specificApproverIds = input.stages.flatMap((stage) =>
+		stage.approverType === "specific_employee" && stage.approverEmployeeId
+			? [stage.approverEmployeeId]
+			: [],
+	);
 
 	const [
 		missingTeams,

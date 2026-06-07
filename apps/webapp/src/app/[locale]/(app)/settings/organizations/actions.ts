@@ -7,7 +7,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { employee, team } from "@/db/schema";
+import { employee, organizationNotificationSettings, team } from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import {
@@ -30,6 +30,7 @@ import {
 	updateMemberRoleSchema,
 	updateOrganizationSchema,
 } from "@/lib/validations/invitation";
+import { ALL_LANGUAGES } from "@/tolgee/shared";
 import { isOrganizationFeature } from "./organization-features";
 
 const logger = createLogger("OrganizationActions");
@@ -1310,6 +1311,132 @@ export async function updateOrganizationTimezone(
 						logger.error(
 							{ error, organizationId, timezone },
 							"Failed to update organization timezone",
+						);
+						return yield* _(Effect.fail(error as AnyAppError));
+					}),
+				),
+				Effect.onExit(() => Effect.sync(() => span.end())),
+				Effect.provide(AppLayer),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Update organization default notification language
+ * Requires admin or owner role
+ */
+export async function updateOrganizationDefaultNotificationLanguage(
+	organizationId: string,
+	defaultLanguage: string,
+): Promise<ServerActionResult<void>> {
+	const tracer = trace.getTracer("organizations");
+
+	const effect = tracer.startActiveSpan(
+		"updateOrganizationDefaultNotificationLanguage",
+		{
+			attributes: {
+				"organization.id": organizationId,
+				defaultLanguage,
+			},
+		},
+		(span) => {
+			return Effect.gen(function* (_) {
+				if (!ALL_LANGUAGES.includes(defaultLanguage)) {
+					yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Unsupported language",
+								field: "defaultLanguage",
+								value: defaultLanguage,
+							}),
+						),
+					);
+				}
+
+				const authService = yield* _(AuthService);
+				const session = yield* _(authService.getSession());
+				const dbService = yield* _(DatabaseService);
+
+				const memberRecord = yield* _(
+					dbService.query("getCurrentMember", async () => {
+						return await db.query.member.findFirst({
+							where: and(
+								eq(authSchema.member.userId, session.user.id),
+								eq(authSchema.member.organizationId, organizationId),
+							),
+						});
+					}),
+					Effect.flatMap((member) =>
+						member
+							? Effect.succeed(member)
+							: Effect.fail(
+									new NotFoundError({
+										message: "You are not a member of this organization",
+										entityType: "member",
+									}),
+								),
+					),
+				);
+
+				if (memberRecord.role !== "admin" && memberRecord.role !== "owner") {
+					yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Only admins and owners can change organization notification language",
+								userId: session.user.id,
+								resource: "organization",
+								action: "update",
+							}),
+						),
+					);
+				}
+
+				yield* _(
+					Effect.tryPromise({
+						try: async () => {
+							await db
+								.insert(organizationNotificationSettings)
+								.values({ organizationId, defaultLanguage })
+								.onConflictDoUpdate({
+									target: organizationNotificationSettings.organizationId,
+									set: { defaultLanguage },
+								});
+						},
+						catch: (error) => {
+							return new ValidationError({
+								message:
+									error instanceof Error
+										? error.message
+										: "Failed to update organization notification language",
+								field: "defaultLanguage",
+							});
+						},
+					}),
+				);
+
+				logger.info(
+					{
+						organizationId,
+						defaultLanguage,
+					},
+					`Organization notification language updated to ${defaultLanguage}`,
+				);
+
+				span.setStatus({ code: SpanStatusCode.OK });
+			}).pipe(
+				Effect.catchAll((error) =>
+					Effect.gen(function* (_) {
+						span.recordException(error as Error);
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: String(error),
+						});
+						logger.error(
+							{ error, organizationId, defaultLanguage },
+							"Failed to update organization notification language",
 						);
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),

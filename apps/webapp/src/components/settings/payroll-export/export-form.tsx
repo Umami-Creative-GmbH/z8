@@ -108,11 +108,14 @@ export function ExportForm({
 	];
 	const firstConfiguredFormatId =
 		EXPORT_FORMAT_IDS.find((formatId) => exportAvailability[formatId]?.configured) ?? "datev_lohn";
-	const [selectedFormatId, setSelectedFormatId] = useState<string>(
+	const [requestedFormatId, setRequestedFormatId] = useState<string>(
 		config?.formatId && exportAvailability[config.formatId]?.configured
 			? config.formatId
 			: firstConfiguredFormatId,
 	);
+	const selectedFormatId = exportAvailability[requestedFormatId]?.configured
+		? requestedFormatId
+		: firstConfiguredFormatId;
 	const isSelectedFormatConfigured = Boolean(exportAvailability[selectedFormatId]?.configured);
 
 	// Date selection
@@ -151,14 +154,6 @@ export function ExportForm({
 	useEffect(() => {
 		loadFilterOptions();
 	}, []);
-
-	useEffect(() => {
-		if (exportAvailability[selectedFormatId]?.configured) {
-			return;
-		}
-
-		startReactTransition(() => setSelectedFormatId(firstConfiguredFormatId));
-	}, [exportAvailability, firstConfiguredFormatId, selectedFormatId]);
 
 	const getDateRange = () => {
 		if (dateMode === "month") {
@@ -306,7 +301,7 @@ export function ExportForm({
 			<CardContent className="space-y-6">
 				<div className="space-y-2">
 					<Label>{t("settings.payrollExport.export.format", "Export Format")}</Label>
-					<Select value={selectedFormatId} onValueChange={setSelectedFormatId}>
+					<Select value={selectedFormatId} onValueChange={setRequestedFormatId}>
 						<SelectTrigger>
 							<SelectValue />
 						</SelectTrigger>

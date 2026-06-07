@@ -125,7 +125,7 @@ export function buildScheduledJobRows({
 		.map((name) => {
 			const schedule = schedules[name];
 			const jobs = repeatableJobsByName.get(name) ?? [];
-			const sortedJobs = [...jobs].sort((left, right) =>
+			const sortedJobs = jobs.toSorted((left, right) =>
 				(left.pattern ?? "").localeCompare(right.pattern ?? ""),
 			);
 			const selectedJob =

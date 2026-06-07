@@ -144,6 +144,8 @@
       "confirm": "Converti in pausa",
       "description": "Questo eliminerà definitivamente questo periodo di lavoro. Il vuoto apparirà come una pausa nel calendario.",
       "failed": "Impossibile eliminare il periodo di lavoro",
+      "reasonLabel": "Motivo dell'eliminazione",
+      "reasonRequired": "Il motivo è obbligatorio",
       "success": "Periodo di lavoro convertito in pausa",
       "title": "Converti in pausa?"
     },
@@ -166,7 +168,7 @@
       "type": "Tipo"
     },
     "edit": {
-      "convertToBreak": "Converti in pausa",
+      "deleteEntry": "Elimina voce",
       "notesSaved": "Note salvate",
       "notesSaveFailed": "Impossibile salvare le note",
       "projectSaved": "Progetto aggiornato",

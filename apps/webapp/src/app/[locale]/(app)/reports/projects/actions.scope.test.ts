@@ -23,13 +23,12 @@ describe("project report portfolio scope", () => {
 	it("uses selected-range hours for report totals and cumulative hours for budget health", () => {
 		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
 
-		expect(source).toContain("const cumulativeStats = await dbService.db");
+		expect(source).toContain("const [stats, cumulativeStats] = await Promise.all");
 		expect(source).toContain(
 			"const cumulativeHours = Number(cumulativeStats[0]?.totalMinutes ?? 0) / 60",
 		);
-		expect(source).toContain(
-			"const percentBudgetUsed = budgetHours ? (cumulativeHours / budgetHours) * 100 : null",
-		);
+		expect(source).toContain("const percentBudgetUsed = budgetHours");
+		expect(source).toContain("? (cumulativeHours / budgetHours) * 100");
 		expect(source).toContain("rangeHours: totalHours");
 		expect(source).toContain("cumulativeHours");
 	});

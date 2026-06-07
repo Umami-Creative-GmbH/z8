@@ -95,6 +95,7 @@ vi.mock("@/db/auth-schema", () => ({
 vi.mock("@/lib/cache/tags", () => ({
 	CACHE_TAGS: {
 		TEAMS: (organizationId: string) => `teams:${organizationId}`,
+		EMPLOYEES: (organizationId: string) => `employees:${organizationId}`,
 	},
 }));
 
@@ -592,6 +593,8 @@ describe("team settings server scope", () => {
 		expect(mockState.updateSet).not.toHaveBeenCalledWith(
 			expect.objectContaining({ teamId: "team-b" }),
 		);
+		expect(mockState.revalidateTag).toHaveBeenCalledWith("teams:org-1", "max");
+		expect(mockState.revalidateTag).toHaveBeenCalledWith("employees:org-1", "max");
 	});
 
 	it("adds team membership and sets compatibility team when employee has none", async () => {
@@ -779,6 +782,8 @@ describe("team settings server scope", () => {
 		expect(result.success).toBe(true);
 		expect(mockState.deleteWhere).toHaveBeenCalled();
 		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ teamId: "team-a" }));
+		expect(mockState.revalidateTag).toHaveBeenCalledWith("teams:org-1", "max");
+		expect(mockState.revalidateTag).toHaveBeenCalledWith("employees:org-1", "max");
 	});
 
 	it("removes only selected team membership without changing a different compatibility team", async () => {

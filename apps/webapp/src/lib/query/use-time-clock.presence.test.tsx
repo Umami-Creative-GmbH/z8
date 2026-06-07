@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 	getTimeClockStatus: vi.fn(),
 	updateTimeEntryNotes: vi.fn(),
 	useOfflineClock: vi.fn(),
+	useSession: vi.fn(),
 	getBrowserTimezone: vi.fn(),
 }));
 
@@ -25,6 +26,10 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
 
 vi.mock("@/hooks/use-offline-clock", () => ({
 	useOfflineClock: mocks.useOfflineClock,
+}));
+
+vi.mock("@/lib/auth-client", () => ({
+	useSession: mocks.useSession,
 }));
 
 vi.mock("@/lib/time-tracking/timezone-capture", () => ({
@@ -55,6 +60,11 @@ describe("useTimeClock presence invalidation", () => {
 			employeeId: "emp-1",
 			isClockedIn: false,
 			activeWorkPeriod: null,
+		});
+		mocks.useSession.mockReturnValue({
+			data: { session: { activeOrganizationId: "org-1" } },
+			isPending: false,
+			error: null,
 		});
 		mocks.getBrowserTimezone.mockReturnValue("Europe/Berlin");
 	});
@@ -161,6 +171,7 @@ describe("useTimeClock presence invalidation", () => {
 		expect(queueClockEvent).toHaveBeenCalledWith(
 			expect.objectContaining({
 				type: "clock_in",
+				organizationId: "org-1",
 				workLocationType: "remote",
 				browserTimezone: "Europe/Berlin",
 			}),
@@ -184,6 +195,7 @@ describe("useTimeClock presence invalidation", () => {
 		expect(queueClockEvent).toHaveBeenCalledWith(
 			expect.objectContaining({
 				type: "clock_out",
+				organizationId: "org-1",
 				browserTimezone: "America/New_York",
 			}),
 		);

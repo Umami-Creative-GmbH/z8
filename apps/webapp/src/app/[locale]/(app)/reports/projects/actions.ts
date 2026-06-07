@@ -140,29 +140,30 @@ export async function getProjectsOverview(
 
 						for (const p of projects) {
 							// Get total hours and unique employees for this project in the date range
-							const stats = await dbService.db
-								.select({
-									totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
-									uniqueEmployees: sql<number>`COUNT(DISTINCT ${workPeriod.employeeId})`.mapWith(
-										Number,
+							const [stats, cumulativeStats] = await Promise.all([
+								dbService.db
+									.select({
+										totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+										uniqueEmployees: sql<number>`COUNT(DISTINCT ${workPeriod.employeeId})`.mapWith(
+											Number,
+										),
+										workPeriodCount: sql<number>`COUNT(*)`.mapWith(Number),
+									})
+									.from(workPeriod)
+									.where(
+										and(
+											eq(workPeriod.projectId, p.id),
+											gte(workPeriod.startTime, startDate),
+											lte(workPeriod.startTime, endDate),
+										),
 									),
-									workPeriodCount: sql<number>`COUNT(*)`.mapWith(Number),
-								})
-								.from(workPeriod)
-								.where(
-									and(
-										eq(workPeriod.projectId, p.id),
-										gte(workPeriod.startTime, startDate),
-										lte(workPeriod.startTime, endDate),
-									),
-								);
-
-							const cumulativeStats = await dbService.db
-								.select({
-									totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
-								})
-								.from(workPeriod)
-								.where(eq(workPeriod.projectId, p.id));
+								dbService.db
+									.select({
+										totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+									})
+									.from(workPeriod)
+									.where(eq(workPeriod.projectId, p.id)),
+							]);
 
 							const totalMinutes = Number(stats[0]?.totalMinutes ?? 0);
 							const totalHours = totalMinutes / 60;

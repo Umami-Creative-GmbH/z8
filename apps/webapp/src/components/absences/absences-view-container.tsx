@@ -89,7 +89,8 @@ export function AbsencesViewContainer({
 		latestRequestedYearRef.current = year;
 		try {
 			const data = await getAbsenceCalendarYearData(year);
-			if (latestRequestedYearRef.current !== year) {
+			const isLatestRequest = latestRequestedYearRef.current === year;
+			if (!isLatestRequest) {
 				return;
 			}
 			setCalendarData((current) => ({

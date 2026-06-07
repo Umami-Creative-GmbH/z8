@@ -260,10 +260,11 @@ function buildJobRows(input: BuildReliabilityDataInput): ReliabilityJobRow[] {
 			const failedRuns = jobExecutions.filter((execution) => execution.status === "failed").length;
 			const terminalRuns = completedRuns + failedRuns;
 			const successRate = calculateSuccessRate(completedRuns, failedRuns);
-			const durations = jobExecutions
-				.filter(isTerminalExecution)
-				.map((execution) => execution.durationMs)
-				.filter((duration): duration is number => duration !== null);
+			const durations = jobExecutions.flatMap((execution) =>
+				isTerminalExecution(execution) && execution.durationMs !== null
+					? [execution.durationMs]
+					: [],
+			);
 			const sortedExecutions = jobExecutions.toSorted((a, b) =>
 				sortIsoDesc(a.startedAt, b.startedAt),
 			);
@@ -309,10 +310,9 @@ export function buildReliabilityData(input: BuildReliabilityDataInput): WorkerRe
 	const failedRuns = input.executions.filter((execution) => execution.status === "failed").length;
 	const runningRuns = input.executions.filter((execution) => execution.status === "running").length;
 	const pendingRuns = input.executions.filter((execution) => execution.status === "pending").length;
-	const durationValues = input.executions
-		.filter(isTerminalExecution)
-		.map((execution) => execution.durationMs)
-		.filter((duration): duration is number => duration !== null);
+	const durationValues = input.executions.flatMap((execution) =>
+		isTerminalExecution(execution) && execution.durationMs !== null ? [execution.durationMs] : [],
+	);
 	const jobs = buildJobRows(input);
 
 	return {

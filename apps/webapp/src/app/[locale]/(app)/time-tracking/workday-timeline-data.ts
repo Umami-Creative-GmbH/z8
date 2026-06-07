@@ -298,9 +298,9 @@ export async function getRelevantTimeCorrectionRequestIds({
 	const overlappingWorkPeriodIds = new Set(overlappingWorkPeriods.map((period) => period.id));
 
 	return new Set(
-		approvals
-			.filter((approval) => overlappingWorkPeriodIds.has(approval.entityId))
-			.map((approval) => approval.id),
+		approvals.flatMap((approval) =>
+			overlappingWorkPeriodIds.has(approval.entityId) ? [approval.id] : [],
+		),
 	);
 }
 

@@ -48,6 +48,10 @@
         "subtitle": "Prüfen, ob Zeitdaten für die Lohnabrechnung bereit sind",
         "title": "Lohnabrechnungsbereitschaft öffnen"
       },
+      "openPayroll": {
+        "subtitle": "Lohnabrechnigs-Arbeitsbereich überprüefe",
+        "title": "Lohnabrechnig öffne"
+      },
       "openSettings": {
         "subtitle": "Profil, Sicherheit und Organisationseinstellungen verwalten",
         "title": "Einstellungen öffnen"
@@ -301,6 +305,7 @@
     "get-help": "Hilf becho",
     "my-requests": "Mini Aafroge",
     "org-explorer": "Org-Explorer",
+    "payroll": "Lohnabrechnig",
     "platform-admin": "Plattform-Admin",
     "reports": "Bericht",
     "scheduling": "Planig",

@@ -191,31 +191,30 @@ function getAndVerifyApiKey(
  * Filter API keys by organization and transform to response format
  */
 function transformApiKeysResponse(apiKeys: unknown[], organizationId: string): ApiKeyResponse[] {
-	return (apiKeys as Record<string, unknown>[])
-		.filter((key) => {
-			const meta = parseMetadata(key.metadata);
-			return meta.organizationId === organizationId;
-		})
-		.map((key) => {
-			const meta = parseMetadata(key.metadata);
-			return {
-				id: key.id as string,
-				name: (meta.displayName as string) || (key.name as string) || "Unnamed Key",
-				prefix: (key.start as string) || null,
-				organizationId: (meta.organizationId as string) || organizationId,
-				createdBy: (meta.createdBy as string) || null,
-				createdAt: toISOString(key.createdAt) || DateTime.now().toISO(),
-				updatedAt: toISOString(key.updatedAt) || DateTime.now().toISO(),
-				expiresAt: toISOString(key.expiresAt),
-				lastRequest: toISOString(key.lastRequest),
-				enabled: (key.enabled as boolean) ?? true,
-				scopes: meta.scopes ? (meta.scopes as ApiKeyScope[]) : [],
-				rateLimitEnabled: (key.rateLimitEnabled as boolean) ?? true,
-				rateLimitMax: (key.rateLimitMax as number) || null,
-				rateLimitTimeWindow: (key.rateLimitTimeWindow as number) || null,
-				requestCount: (key.requestCount as number) || null,
-			};
-		});
+	return (apiKeys as Record<string, unknown>[]).flatMap((key) => {
+		const meta = parseMetadata(key.metadata);
+		return meta.organizationId === organizationId
+			? [
+					{
+						id: key.id as string,
+						name: (meta.displayName as string) || (key.name as string) || "Unnamed Key",
+						prefix: (key.start as string) || null,
+						organizationId: (meta.organizationId as string) || organizationId,
+						createdBy: (meta.createdBy as string) || null,
+						createdAt: toISOString(key.createdAt) || DateTime.now().toISO(),
+						updatedAt: toISOString(key.updatedAt) || DateTime.now().toISO(),
+						expiresAt: toISOString(key.expiresAt),
+						lastRequest: toISOString(key.lastRequest),
+						enabled: (key.enabled as boolean) ?? true,
+						scopes: meta.scopes ? (meta.scopes as ApiKeyScope[]) : [],
+						rateLimitEnabled: (key.rateLimitEnabled as boolean) ?? true,
+						rateLimitMax: (key.rateLimitMax as number) || null,
+						rateLimitTimeWindow: (key.rateLimitTimeWindow as number) || null,
+						requestCount: (key.requestCount as number) || null,
+					},
+				]
+			: [];
+	});
 }
 
 // =============================================================================

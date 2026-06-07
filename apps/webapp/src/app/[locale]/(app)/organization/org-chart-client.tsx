@@ -158,8 +158,9 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 		searchRequestSequence.current = requestSequence;
 		setIsSearching(true);
 		const result = await searchOrgEmployees(trimmedQuery);
+		const isLatestRequest = requestSequence === searchRequestSequence.current;
 
-		if (requestSequence !== searchRequestSequence.current) {
+		if (!isLatestRequest) {
 			return;
 		}
 

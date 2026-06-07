@@ -18,8 +18,6 @@ const YEARLY_PRICE_PER_MONTH = 3;
  * Returns: MRR, total seats, active subscriptions, trial conversions, etc.
  */
 export async function GET() {
-	await connection();
-
 	// Check if billing is enabled
 	if (env.BILLING_ENABLED !== "true") {
 		return NextResponse.json({
@@ -27,6 +25,8 @@ export async function GET() {
 			metrics: null,
 		});
 	}
+
+	await connection();
 
 	// Auth check
 	const headersList = await headers();

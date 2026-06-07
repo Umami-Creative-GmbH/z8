@@ -18,14 +18,14 @@ import { getBotAdapter, handleBotActivity, isBotConfigured } from "@/lib/teams";
 const logger = createLogger("TeamsWebhook");
 
 export async function POST(request: NextRequest) {
-	// Opt out of caching
-	await connection();
-
 	// Check if bot is configured
 	if (!isBotConfigured()) {
 		logger.warn("Teams webhook called but bot is not configured");
 		return NextResponse.json({ error: "Bot not configured" }, { status: 503 });
 	}
+
+	// Opt out of caching
+	await connection();
 
 	try {
 		const adapter = getBotAdapter();
@@ -64,9 +64,10 @@ export async function POST(request: NextRequest) {
 		await adapter.process(mockReq as any, mockRes as any, async (context) => {
 			await handleBotActivity(context);
 		});
+		const hasResponseBody = Boolean(responseBody);
 
 		// Return the response
-		if (responseBody) {
+		if (hasResponseBody) {
 			return new NextResponse(responseBody, {
 				status: responseStatus,
 				headers: { "Content-Type": "application/json" },
@@ -83,11 +84,11 @@ export async function POST(request: NextRequest) {
 
 // Also handle GET for webhook verification (some setups require this)
 export async function GET() {
-	await connection();
-
 	if (!isBotConfigured()) {
 		return NextResponse.json({ status: "not_configured" }, { status: 503 });
 	}
+
+	await connection();
 
 	return NextResponse.json({
 		status: "ok",

@@ -175,4 +175,30 @@ describe("image upload processing", () => {
 		expect(response.status).toBe(200);
 		expect(mockState.deleteCommand).not.toHaveBeenCalled();
 	});
+
+	it("returns a generic error without leaking internal storage details", async () => {
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+		mockState.s3Send.mockRejectedValueOnce(
+			new Error("S3 provider failed with secret access-key internal-bucket"),
+		);
+
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: ".tmp/tus/dXNlcl8x-upload",
+					uploadType: "avatar",
+				}),
+		} as never);
+
+		expect(response.status).toBe(500);
+		await expect(response.json()).resolves.toEqual({ error: "Processing failed" });
+		expect(consoleError).toHaveBeenCalledWith(
+			"Process upload error:",
+			expect.objectContaining({
+				message: "S3 provider failed with secret access-key internal-bucket",
+			}),
+		);
+
+		consoleError.mockRestore();
+	});
 });

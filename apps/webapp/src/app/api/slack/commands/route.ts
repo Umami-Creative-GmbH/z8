@@ -20,12 +20,12 @@ const logger = createLogger("SlackCommands");
 const SLACK_SIGNING_SECRET = env.SLACK_SIGNING_SECRET;
 
 export async function POST(request: NextRequest) {
-	await connection();
-
 	if (!SLACK_SIGNING_SECRET) {
 		logger.error("SLACK_SIGNING_SECRET not configured");
 		return NextResponse.json({ error: "Not configured" }, { status: 503 });
 	}
+
+	await connection();
 
 	try {
 		// Read raw body for signature verification

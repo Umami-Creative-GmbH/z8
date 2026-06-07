@@ -28,12 +28,12 @@ const logger = createLogger("BillingCheckout");
  * Returns: { url: string } - URL to redirect to Stripe checkout
  */
 export async function POST(request: NextRequest) {
-	await connection();
-
 	// Check if billing is enabled
 	if (env.BILLING_ENABLED !== "true") {
 		return NextResponse.json({ error: "Billing not enabled" }, { status: 404 });
 	}
+
+	await connection();
 
 	// Auth check
 	const headersList = await headers();

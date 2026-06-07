@@ -48,7 +48,7 @@ function getCurrencyFormatter(currency: string) {
 		return cachedFormatter;
 	}
 
-	const formatter = new Intl.NumberFormat(undefined, { style: "currency", currency });
+	const formatter = Intl.NumberFormat(undefined, { style: "currency", currency });
 	currencyFormatters.set(currency, formatter);
 	return formatter;
 }

@@ -34,6 +34,7 @@ async function syncEvent(event) {
 
 		// Add optional fields
 		if (event.notes) body.notes = event.notes;
+		if (event.organizationId) body.organizationId = event.organizationId;
 		if (event.location) body.location = event.location;
 		if (event.projectId) body.projectId = event.projectId;
 		if (event.workCategoryId) body.workCategoryId = event.workCategoryId;

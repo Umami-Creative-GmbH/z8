@@ -43,9 +43,13 @@ export const defaultAbsenceCategoryFormValues: AbsenceCategoryFormValues = {
 };
 
 function normalizeTranslationMap(value: Record<string, string>) {
-	const entries = Object.entries(value)
-		.map(([locale, translation]) => [locale.trim(), translation.trim()] as const)
-		.filter(([locale, translation]) => locale && translation);
+	const entries = Object.entries(value).flatMap(([locale, translation]) => {
+		const trimmedLocale = locale.trim();
+		const trimmedTranslation = translation.trim();
+		return trimmedLocale && trimmedTranslation
+			? [[trimmedLocale, trimmedTranslation] as const]
+			: [];
+	});
 
 	return Object.fromEntries(entries);
 }

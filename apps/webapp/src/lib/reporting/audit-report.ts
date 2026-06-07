@@ -220,7 +220,7 @@ export async function generateComplianceReport(
 		warnings.push("High number of failed login attempts detected");
 	}
 
-	const uniqueIps = new Set(result.logs.filter((l) => l.ipAddress).map((l) => l.ipAddress));
+	const uniqueIps = new Set(result.logs.flatMap((l) => (l.ipAddress ? [l.ipAddress] : [])));
 	if (uniqueIps.size > 50) {
 		warnings.push(`High number of unique IP addresses (${uniqueIps.size}) accessing the system`);
 	}

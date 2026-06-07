@@ -298,13 +298,17 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 				Effect.orElseSucceed(() => [] as Awaited<ReturnType<typeof queue.getRepeatableJobs>>),
 			);
 
-			repeatableJobs = repeatables
-				.filter((job) => isVisibleCronJobName(job.name))
-				.map((job) => ({
-					name: job.name,
-					pattern: job.pattern || "",
-					next: job.next ? new Date(job.next).toISOString() : null,
-				}));
+			repeatableJobs = repeatables.flatMap((job) =>
+				isVisibleCronJobName(job.name)
+					? [
+							{
+								name: job.name,
+								pattern: job.pattern || "",
+								next: job.next ? new Date(job.next).toISOString() : null,
+							},
+						]
+					: [],
+			);
 		}
 
 		const scheduleOverrides = yield* Effect.tryPromise({
@@ -332,9 +336,9 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 				}),
 		});
 
-		const recentExecutions: RecentExecution[] = executions
-			.filter((exec) => isVisibleCronJobName(exec.jobName))
-			.map(mapCronExecution);
+		const recentExecutions: RecentExecution[] = executions.flatMap((exec) =>
+			isVisibleCronJobName(exec.jobName) ? [mapCronExecution(exec)] : [],
+		);
 
 		const metrics = yield* Effect.tryPromise({
 			try: () => getAllJobMetrics(30),
@@ -346,16 +350,20 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 				}),
 		});
 
-		const jobMetrics: JobMetric[] = metrics
-			.filter((m) => isVisibleCronJobName(m.jobName))
-			.map((m) => ({
-				jobName: m.jobName,
-				totalRuns: m.totalRuns,
-				successfulRuns: m.successfulRuns,
-				failedRuns: m.failedRuns,
-				successRate: m.successRate,
-				avgDurationMs: m.avgDurationMs,
-			}));
+		const jobMetrics: JobMetric[] = metrics.flatMap((m) =>
+			isVisibleCronJobName(m.jobName)
+				? [
+						{
+							jobName: m.jobName,
+							totalRuns: m.totalRuns,
+							successfulRuns: m.successfulRuns,
+							failedRuns: m.failedRuns,
+							successRate: m.successRate,
+							avgDurationMs: m.avgDurationMs,
+						},
+					]
+				: [],
+		);
 
 		const reliabilityCutoff = new Date();
 		reliabilityCutoff.setDate(reliabilityCutoff.getDate() - RELIABILITY_WINDOW_DAYS);
@@ -373,16 +381,20 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 		const reliability = buildReliabilityData({
 			now: new Date(),
 			windowDays: RELIABILITY_WINDOW_DAYS,
-			executions: reliabilityExecutions
-				.filter((exec) => isVisibleCronJobName(exec.jobName))
-				.map((exec) => ({
-					id: exec.id,
-					jobName: exec.jobName,
-					status: exec.status,
-					startedAt: exec.startedAt.toISOString(),
-					completedAt: exec.completedAt?.toISOString() ?? null,
-					durationMs: exec.durationMs,
-				})),
+			executions: reliabilityExecutions.flatMap((exec) =>
+				isVisibleCronJobName(exec.jobName)
+					? [
+							{
+								id: exec.id,
+								jobName: exec.jobName,
+								status: exec.status,
+								startedAt: exec.startedAt.toISOString(),
+								completedAt: exec.completedAt?.toISOString() ?? null,
+								durationMs: exec.durationMs,
+							},
+						]
+					: [],
+			),
 			repeatableJobs,
 		});
 

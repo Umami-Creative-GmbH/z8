@@ -97,9 +97,9 @@ const MiniMonth = function MiniMonth({
 					const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
 					// Determine event type to show
-					const holidayEvents = dayEvents
-						.filter((event) => event.type === "holiday")
-						.filter((event) => Boolean(event.title));
+					const holidayEvents = dayEvents.filter(
+						(event) => event.type === "holiday" && Boolean(event.title),
+					);
 					const hasHoliday = holidayEvents.length > 0;
 					const absenceEvent = dayEvents.find((e) => e.type === "absence");
 					const absenceStatus = absenceEvent?.metadata?.status as

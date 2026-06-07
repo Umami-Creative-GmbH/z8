@@ -171,10 +171,7 @@ export class VerificationService {
 			const isValid = checks.every((c) => c.passed);
 			const summary = isValid
 				? "All cryptographic proofs verified successfully"
-				: `Verification failed: ${checks
-						.filter((c) => !c.passed)
-						.map((c) => c.name)
-						.join(", ")}`;
+				: `Verification failed: ${checks.flatMap((c) => (!c.passed ? [c.name] : [])).join(", ")}`;
 
 			const result: VerificationResult = {
 				isValid,
@@ -290,7 +287,7 @@ export class VerificationService {
 		}
 
 		// Sort by merkle index to ensure correct order
-		const sortedFiles = [...files].sort((a, b) => a.merkleIndex - b.merkleIndex);
+		const sortedFiles = files.toSorted((a, b) => a.merkleIndex - b.merkleIndex);
 		const hashes = sortedFiles.map((f) => new SHA256Hash(f.sha256Hash));
 		const calculatedRoot = this.hash.buildMerkleRoot(hashes);
 
@@ -467,16 +464,20 @@ export class VerificationService {
 			packageId,
 			isValid: result.isValid,
 			checksPerformed: result.checks.map((c) => c.name),
-			checksPassed: result.checks.filter((c) => c.passed).map((c) => c.name),
-			checksFailed: result.checks.filter((c) => !c.passed).map((c) => c.name),
-			errorDetails: result.checks
-				.filter((c) => !c.passed)
-				.map((c) => ({
-					check: c.name,
-					message: c.details,
-					expected: c.expected,
-					actual: c.actual,
-				})),
+			checksPassed: result.checks.flatMap((c) => (c.passed ? [c.name] : [])),
+			checksFailed: result.checks.flatMap((c) => (!c.passed ? [c.name] : [])),
+			errorDetails: result.checks.flatMap((c) =>
+				!c.passed
+					? [
+							{
+								check: c.name,
+								message: c.details,
+								expected: c.expected,
+								actual: c.actual,
+							},
+						]
+					: [],
+			),
 			verifiedById: meta.verifiedById,
 			verificationSource: meta.verificationSource ?? "api",
 			clientIp: meta.clientIp,

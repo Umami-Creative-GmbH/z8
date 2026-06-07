@@ -760,7 +760,7 @@ function sortManagerAbsenceRows(
 	sort: ManagerAbsenceSortKey,
 	direction: ManagerAbsenceSortDirection,
 ): ManagerAbsenceEmployeeRow[] {
-	return [...rows].sort((a, b) => compareManagerAbsenceRows(a, b, sort, direction));
+	return rows.toSorted((a, b) => compareManagerAbsenceRows(a, b, sort, direction));
 }
 
 function compareManagerAbsenceRows(

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -53,7 +53,13 @@ export async function GET(_request: NextRequest) {
 				},
 			})
 			.from(holiday)
-			.innerJoin(holidayCategory, eq(holiday.categoryId, holidayCategory.id))
+			.innerJoin(
+				holidayCategory,
+				and(
+					eq(holiday.categoryId, holidayCategory.id),
+					eq(holidayCategory.organizationId, activeOrgId),
+				),
+			)
 			.where(eq(holiday.organizationId, activeOrgId))
 			.orderBy(holiday.startDate);
 
@@ -106,6 +112,18 @@ export async function POST(request: NextRequest) {
 		// Validate required fields
 		if (!name || !categoryId || !startDate || !endDate || !recurrenceType) {
 			return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+		}
+
+		const [existingCategory] = await db
+			.select()
+			.from(holidayCategory)
+			.where(
+				and(eq(holidayCategory.id, categoryId), eq(holidayCategory.organizationId, activeOrgId)),
+			)
+			.limit(1);
+
+		if (!existingCategory) {
+			return NextResponse.json({ error: "Invalid holiday category" }, { status: 400 });
 		}
 
 		// Create holiday

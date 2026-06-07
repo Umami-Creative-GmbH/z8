@@ -58,16 +58,16 @@ export function WorkerReliabilityCharts({ reliability }: { reliability: WorkerRe
 	const { t } = useTranslate();
 	const params = useParams<{ locale?: string }>();
 	const locale = params.locale ?? "en";
-	const numberFormatter = new Intl.NumberFormat(locale);
-	const decimalFormatter = new Intl.NumberFormat(locale, {
+	const numberFormatter = Intl.NumberFormat(locale);
+	const decimalFormatter = Intl.NumberFormat(locale, {
 		maximumFractionDigits: 1,
 		minimumFractionDigits: 1,
 	});
-	const millisecondFormatter = new Intl.NumberFormat(locale, {
+	const millisecondFormatter = Intl.NumberFormat(locale, {
 		style: "unit",
 		unit: "millisecond",
 	});
-	const secondFormatter = new Intl.NumberFormat(locale, {
+	const secondFormatter = Intl.NumberFormat(locale, {
 		style: "unit",
 		unit: "second",
 		maximumFractionDigits: 1,

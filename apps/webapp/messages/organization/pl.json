@@ -102,6 +102,14 @@
       "title": "Zaproś członka"
     },
     "joinOrCreate": "Dołącz lub utwórz nową",
+    "language": {
+      "adminOnly": "Tylko administratorzy i właściciele organizacji mogą zmieniać ustawienia języka powiadomień.",
+      "default": "Domyślny język powiadomień",
+      "description": "Ustaw język zapasowy dla wiadomości e-mail, Telegrama i innych powiadomień wychodzących, gdy użytkownik nie wybrał języka interfejsu.",
+      "title": "Język powiadomień",
+      "updated": "Zaktualizowano język powiadomień organizacji",
+      "updateFailed": "Nie udało się zaktualizować języka powiadomień organizacji"
+    },
     "logo": {
       "changeLabel": "Zmień logo organizacji",
       "removeLabel": "Usuń logo organizacji",

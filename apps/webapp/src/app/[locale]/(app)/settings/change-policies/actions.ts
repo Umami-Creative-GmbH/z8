@@ -155,9 +155,9 @@ function getScopedChangePolicyAccessContext(organizationId: string, queryName: s
 			: [];
 
 		const manageableTeamIds = new Set(
-			teamPermissionRows
-				.filter((permission) => permission.canManageTeamSettings && permission.teamId)
-				.map((permission) => permission.teamId as string),
+			teamPermissionRows.flatMap((permission) =>
+				permission.canManageTeamSettings && permission.teamId ? [permission.teamId] : [],
+			),
 		);
 
 		return {
@@ -226,14 +226,16 @@ function getVisibleChangePolicyAssignmentsForManagerScope<T extends ChangePolicy
 		}
 
 		const teamAssignmentIds = new Set(
-			assignments
-				.filter((assignment) => assignment.assignmentType === "team" && assignment.teamId)
-				.map((assignment) => assignment.teamId as string),
+			assignments.flatMap((assignment) =>
+				assignment.assignmentType === "team" && assignment.teamId ? [assignment.teamId] : [],
+			),
 		);
 		const employeeAssignmentIds = new Set(
-			assignments
-				.filter((assignment) => assignment.assignmentType === "employee" && assignment.employeeId)
-				.map((assignment) => assignment.employeeId as string),
+			assignments.flatMap((assignment) =>
+				assignment.assignmentType === "employee" && assignment.employeeId
+					? [assignment.employeeId]
+					: [],
+			),
 		);
 		const managedEmployees = managedEmployeeIds.size
 			? ((yield* _(
@@ -290,7 +292,7 @@ function getVisibleChangePolicyAssignmentsForManagerScope<T extends ChangePolicy
 }
 
 function sortAssignmentsByPriority(assignments: ChangePolicyAssignmentWithDetails[]) {
-	return [...assignments].sort((left, right) => {
+	return assignments.toSorted((left, right) => {
 		if (left.priority !== right.priority) {
 			return right.priority - left.priority;
 		}

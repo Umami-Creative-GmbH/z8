@@ -408,21 +408,22 @@ function buildUpcomingRuns(
 	scheduledExports: ScheduledExportRecord[],
 	now: DateTime,
 ): ExportOperationsUpcomingRun[] {
-	return scheduledExports
-		.filter(
-			(schedule) =>
-				schedule.isActive &&
-				(schedule.reportType !== "payroll_export" || Boolean(schedule.payrollConfigId)) &&
-				schedule.nextExecutionAt &&
-				schedule.nextExecutionAt.getTime() > now.toJSDate().getTime(),
-		)
-		.map((schedule) => ({
-			id: schedule.id,
-			source: "scheduled",
-			name: schedule.name,
-			scheduledFor: schedule.nextExecutionAt as Date,
-			href: "/settings/scheduled-exports",
-		}));
+	return scheduledExports.flatMap((schedule) =>
+		schedule.isActive &&
+		(schedule.reportType !== "payroll_export" || Boolean(schedule.payrollConfigId)) &&
+		schedule.nextExecutionAt &&
+		schedule.nextExecutionAt.getTime() > now.toJSDate().getTime()
+			? [
+					{
+						id: schedule.id,
+						source: "scheduled" as const,
+						name: schedule.name,
+						scheduledFor: schedule.nextExecutionAt,
+						href: "/settings/scheduled-exports",
+					},
+				]
+			: [],
+	);
 }
 
 function buildRecentActivity(
@@ -491,11 +492,11 @@ function countFailedRunsLast7Days(
 	auditFailures: AuditFailureCountRecord[],
 ): number {
 	const scheduledPayrollJobIds = new Set(
-		scheduledFailures
-			.filter(
-				(failure) => failure.underlyingJobType === "payroll_export" && failure.underlyingJobId,
-			)
-			.map((failure) => failure.underlyingJobId as string),
+		scheduledFailures.flatMap((failure) =>
+			failure.underlyingJobType === "payroll_export" && failure.underlyingJobId
+				? [failure.underlyingJobId]
+				: [],
+		),
 	);
 
 	const standalonePayrollFailures = payrollFailures.filter(

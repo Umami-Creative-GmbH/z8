@@ -10,6 +10,7 @@ import {
 	updateTimeEntryNotes,
 } from "@/app/[locale]/(app)/time-tracking/actions";
 import { useOfflineClock } from "@/hooks/use-offline-clock";
+import { useSession } from "@/lib/auth-client";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { queryKeys } from "./keys";
@@ -93,6 +94,8 @@ interface UseTimeClockOptions {
 export function useTimeClock(options: UseTimeClockOptions = {}) {
 	const { initialData, enabled = true } = options;
 	const queryClient = useQueryClient();
+	const { data: session } = useSession();
+	const activeOrganizationId = session?.session.activeOrganizationId;
 
 	// Offline support
 	const { isOnline, isOffline, pendingCount, isSyncing, queueClockEvent } = useOfflineClock();
@@ -117,11 +120,15 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		}) => {
 			// When offline, queue the event for later sync
 			if (isOffline) {
+				if (!activeOrganizationId) {
+					return { success: false as const, error: "No active organization" };
+				}
+
 				const browserTimezone = resolveBrowserTimezone(params);
 				const result = await queueClockEvent({
 					type: "clock_in",
 					timestamp: Date.now(),
-					organizationId: "pending", // Will be resolved on sync
+					organizationId: activeOrganizationId,
 					workLocationType: params?.workLocationType,
 					browserTimezone,
 				});
@@ -181,11 +188,15 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		}) => {
 			// When offline, queue the event for later sync
 			if (isOffline) {
+				if (!activeOrganizationId) {
+					return { success: false as const, error: "No active organization" };
+				}
+
 				const browserTimezone = resolveBrowserTimezone(params);
 				const result = await queueClockEvent({
 					type: "clock_out",
 					timestamp: Date.now(),
-					organizationId: "pending", // Will be resolved on sync
+					organizationId: activeOrganizationId,
 					projectId: params?.projectId,
 					workCategoryId: params?.workCategoryId,
 					browserTimezone,

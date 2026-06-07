@@ -55,7 +55,7 @@ function getSimpleWorkDays(
 	schedule: NonNullable<EffectiveWorkPolicy["schedule"]>,
 ): EffectiveWorkPolicyScheduleDayName[] {
 	if (schedule.workingDaysPreset === "custom") {
-		return schedule.days.filter((day) => day.isWorkDay).map((day) => day.dayOfWeek);
+		return schedule.days.flatMap((day) => (day.isWorkDay ? [day.dayOfWeek] : []));
 	}
 
 	return PRESET_DAYS[schedule.workingDaysPreset] ?? [];

@@ -57,7 +57,7 @@ function buildCsv(headers: readonly string[], rows: readonly (readonly unknown[]
 }
 
 function toEntriesCsv(entries: readonly EntryChainEvidence[]): string {
-	const sortedEntries = [...entries].sort((a, b) => a.id.localeCompare(b.id));
+	const sortedEntries = entries.toSorted((a, b) => a.id.localeCompare(b.id));
 	return buildCsv(
 		["id", "organizationId", "occurredAt", "previousEntryId", "replacesEntryId", "supersededById"],
 		sortedEntries.map((entry) => [
@@ -72,7 +72,7 @@ function toEntriesCsv(entries: readonly EntryChainEvidence[]): string {
 }
 
 function toApprovalsCsv(approvals: readonly ApprovalEvidence[]): string {
-	const sortedApprovals = [...approvals].sort((a, b) => a.id.localeCompare(b.id));
+	const sortedApprovals = approvals.toSorted((a, b) => a.id.localeCompare(b.id));
 	return buildCsv(
 		["id", "organizationId", "entryId", "approvedAt", "status", "approvedById"],
 		sortedApprovals.map((approval) => [

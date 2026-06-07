@@ -38,6 +38,7 @@ const APP_SHELL_FILES = [
 
 // Track if update is available (for prompt-to-refresh)
 let updateAvailable = false;
+let hadActiveWorkerOnInstall = false;
 
 // =============================================================================
 // INSTALL EVENT
@@ -45,6 +46,7 @@ let updateAvailable = false;
 
 self.addEventListener("install", (event) => {
 	console.log("[SW] Installing service worker");
+	hadActiveWorkerOnInstall = Boolean(self.registration?.active);
 
 	event.waitUntil(
 		(async () => {
@@ -53,13 +55,15 @@ self.addEventListener("install", (event) => {
 			console.log("[SW] Caching app shell files");
 
 			// Cache files individually to handle failures gracefully
-			for (const file of APP_SHELL_FILES) {
-				try {
-					await cache.add(file);
-				} catch (error) {
-					console.warn("[SW] Failed to cache:", file, error);
-				}
-			}
+			await Promise.all(
+				APP_SHELL_FILES.map(async (file) => {
+					try {
+						await cache.add(file);
+					} catch (error) {
+						console.warn("[SW] Failed to cache:", file, error);
+					}
+				}),
+			);
 
 			// DO NOT skip waiting by default - prompt user to refresh
 			// self.skipWaiting() will be called via message when user accepts update
@@ -73,20 +77,21 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
 	console.log("[SW] Activating service worker");
+	const notifyUpdate = shouldNotifyUpdateOnActivation();
 
 	event.waitUntil(
 		(async () => {
 			// Clean up old caches (keep current push and app shell caches)
 			const cacheNames = await caches.keys();
 			await Promise.all(
-				cacheNames
-					.filter(
-						(name) => name.startsWith("z8-") && name !== PUSH_CACHE && name !== APP_SHELL_CACHE,
-					)
-					.map((name) => {
-						console.log("[SW] Deleting old cache:", name);
-						return caches.delete(name);
-					}),
+				cacheNames.flatMap((name) => {
+					if (!name.startsWith("z8-") || name === PUSH_CACHE || name === APP_SHELL_CACHE) {
+						return [];
+					}
+
+					console.log("[SW] Deleting old cache:", name);
+					return [caches.delete(name)];
+				}),
 			);
 
 			// Clean old entries from offline queue (> 7 days)
@@ -100,7 +105,9 @@ self.addEventListener("activate", (event) => {
 			await self.clients.claim();
 
 			// Notify clients of update
-			self.SyncService.broadcastMessage({ type: "SW_UPDATE_AVAILABLE" });
+			if (notifyUpdate) {
+				self.SyncService.broadcastMessage({ type: "SW_UPDATE_AVAILABLE" });
+			}
 		})(),
 	);
 });
@@ -284,6 +291,22 @@ function isStaticAsset(pathname) {
 	}
 
 	return !!pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|css|js)$/);
+}
+
+function shouldNotifyUpdateOnActivation() {
+	return hadActiveWorkerOnInstall;
+}
+
+function getSafeNotificationUrl(urlToOpen) {
+	try {
+		const url = new URL(urlToOpen || "/", self.location.origin);
+		if (url.origin !== self.location.origin) {
+			return new URL("/", self.location.origin).href;
+		}
+		return url.href;
+	} catch (_error) {
+		return new URL("/", self.location.origin).href;
+	}
 }
 
 // =============================================================================
@@ -548,31 +571,26 @@ self.addEventListener("notificationclick", (event) => {
 		}
 	}
 
-	// Ensure URL is absolute
-	if (!urlToOpen.startsWith("http")) {
-		urlToOpen = new URL(urlToOpen, self.location.origin).href;
-	}
+	urlToOpen = getSafeNotificationUrl(urlToOpen);
 
 	event.waitUntil(
 		// Try to focus an existing window with this URL, or open a new one
-		clients
-			.matchAll({ type: "window", includeUncontrolled: true })
-			.then((windowClients) => {
-				// Check if there's already a window/tab open with the app
-				for (const client of windowClients) {
-					// If we find an existing window, focus it and navigate
-					if (client.url.startsWith(self.location.origin)) {
-						return client.focus().then((focusedClient) => {
-							// Navigate to the action URL
-							if (focusedClient && "navigate" in focusedClient) {
-								return focusedClient.navigate(urlToOpen);
-							}
-						});
-					}
+		clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+			// Check if there's already a window/tab open with the app
+			for (const client of windowClients) {
+				// If we find an existing window, focus it and navigate
+				if (client.url.startsWith(self.location.origin)) {
+					return client.focus().then((focusedClient) => {
+						// Navigate to the action URL
+						if (focusedClient && "navigate" in focusedClient) {
+							return focusedClient.navigate(urlToOpen);
+						}
+					});
 				}
-				// No existing window found, open a new one
-				return clients.openWindow(urlToOpen);
-			}),
+			}
+			// No existing window found, open a new one
+			return clients.openWindow(urlToOpen);
+		}),
 	);
 });
 

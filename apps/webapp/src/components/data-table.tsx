@@ -295,7 +295,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
 					<Button
-						className="flex size-8 text-muted-foreground data-[state=open]:bg-muted"
+						className="flex size-8 text-muted-foreground data-[popup-open]:bg-muted"
 						size="icon"
 						variant="ghost"
 					>
@@ -433,19 +433,20 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" className="w-56">
-							{table
-								.getAllColumns()
-								.filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())
-								.map((column) => (
-									<DropdownMenuCheckboxItem
-										checked={column.getIsVisible()}
-										className="capitalize"
-										key={column.id}
-										onCheckedChange={(value) => column.toggleVisibility(!!value)}
-									>
-										{column.id}
-									</DropdownMenuCheckboxItem>
-								))}
+							{table.getAllColumns().flatMap((column) =>
+								typeof column.accessorFn !== "undefined" && column.getCanHide()
+									? [
+											<DropdownMenuCheckboxItem
+												checked={column.getIsVisible()}
+												className="capitalize"
+												key={column.id}
+												onCheckedChange={(value) => column.toggleVisibility(!!value)}
+											>
+												{column.id}
+											</DropdownMenuCheckboxItem>,
+										]
+									: [],
+							)}
 						</DropdownMenuContent>
 					</DropdownMenu>
 					<Button size="sm" variant="outline">

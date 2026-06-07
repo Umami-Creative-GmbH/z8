@@ -139,6 +139,22 @@
         "description": "Wyślij e-mail diagnostyczny za pośrednictwem systemowego transportu poczty.",
         "messageId": "Identyfikator wiadomości: {messageId}",
         "recipient": "E-mail odbiorcy",
+        "smtpOverride": {
+          "description": "Pozostaw puste, aby użyć skonfigurowanego systemowego transportu poczty e-mail. Jeśli wypełnione, test użyje wyłącznie tych ustawień SMTP.",
+          "fromEmail": "Adres e-mail nadawcy",
+          "fromName": "Nazwa nadawcy",
+          "host": "Host SMTP",
+          "ipMode": "Tryb IP",
+          "ipMode.auto": "Auto",
+          "ipMode.ipv4": "Tylko IPv4",
+          "ipMode.ipv6": "Tylko IPv6",
+          "password": "Hasło SMTP",
+          "port": "Port SMTP",
+          "requireTls": "Wymagaj STARTTLS",
+          "secure": "Użyj TLS",
+          "title": "Tymczasowe zastąpienie SMTP",
+          "username": "Nazwa użytkownika SMTP"
+        },
         "success": "Testowy e-mail wysłany do {recipient}.",
         "title": "Test dostarczania e-maila"
       },
@@ -188,6 +204,7 @@
     },
     "layout": {
       "exitAdmin": "Wyjdź z panelu administratora",
+      "menuTitle": "Menu administratora",
       "nav": {
         "analytics": "Analityka",
         "billing": "Rozliczenia",
@@ -199,6 +216,7 @@
         "users": "Użytkownicy",
         "workerQueue": "Kolejka pracowników"
       },
+      "openMenu": "Otwórz menu administratora",
       "subtitle": "Zarządzanie platformą",
       "title": "Konsola administratora"
     },

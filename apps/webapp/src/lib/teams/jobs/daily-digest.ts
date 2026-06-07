@@ -281,9 +281,9 @@ export async function buildDigestDataForManager(
 	]);
 
 	// Process Phase 1 results
-	const managedEmployeeIds = managedEmployeesResult
-		.filter((m) => m.employee.organizationId === organizationId)
-		.map((m) => m.employeeId);
+	const managedEmployeeIds = managedEmployeesResult.flatMap((m) =>
+		m.employee.organizationId === organizationId ? [m.employeeId] : [],
+	);
 
 	const todayCount = Number(todayShiftsResult[0]?.count) || 0;
 	const tomorrowCount = Number(tomorrowShiftsResult[0]?.count) || 0;

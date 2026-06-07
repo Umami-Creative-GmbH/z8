@@ -37,8 +37,14 @@ export function useWidgetData<T>(
 		}
 		let shouldFinish = true;
 		try {
-			const result = await fetcher();
 			if (!mountedRef.current) {
+				shouldFinish = false;
+				return;
+			}
+
+			const result = await fetcher();
+			const isMounted = mountedRef.current;
+			if (!isMounted) {
 				shouldFinish = false;
 				return;
 			}

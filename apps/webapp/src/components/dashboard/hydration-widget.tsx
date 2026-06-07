@@ -26,7 +26,17 @@ type HydrationWidgetData = {
 	todayIntake: number;
 	dailyGoal: number;
 	goalProgress: number;
+	teamStreakLeaders: Array<{
+		employeeId: string;
+		displayName: string;
+		currentStreak: number;
+		isCurrentUser: boolean;
+	}>;
 };
+
+function formatStreakDays(days: number) {
+	return days === 1 ? "1 day" : `${days} days`;
+}
 
 function WaterGlass({ filled }: { filled: boolean }) {
 	return (
@@ -212,51 +222,94 @@ export function HydrationWidget() {
 				onRefresh={refetch}
 			>
 				{stats && (
-					<div ref={widgetRef} className="flex items-center gap-4">
-						{/* Left: Circular Progress with badge */}
-						<CircularProgress
-							progress={progressPercentage}
-							streak={stats.currentStreak}
-							isRecord={stats.currentStreak === stats.longestStreak && stats.currentStreak > 1}
-						>
-							<span
-								className={cn(
-									"text-xl font-bold tabular-nums",
-									isGoalMet ? "text-emerald-600 dark:text-emerald-400" : "text-foreground",
-								)}
+					<div ref={widgetRef} className="space-y-4">
+						<div className="flex items-center gap-4">
+							{/* Left: Circular Progress with badge */}
+							<CircularProgress
+								progress={progressPercentage}
+								streak={stats.currentStreak}
+								isRecord={stats.currentStreak === stats.longestStreak && stats.currentStreak > 1}
 							>
-								{stats.todayIntake}
-							</span>
-							<span className="text-[10px] text-muted-foreground">
-								{t("dashboard.hydration.of-goal", "of {goal}", { goal: stats.dailyGoal })}
-							</span>
-						</CircularProgress>
+								<span
+									className={cn(
+										"text-xl font-bold tabular-nums",
+										isGoalMet ? "text-emerald-600 dark:text-emerald-400" : "text-foreground",
+									)}
+								>
+									{stats.todayIntake}
+								</span>
+								<span className="text-[10px] text-muted-foreground">
+									{t("dashboard.hydration.of-goal", "of {goal}", { goal: stats.dailyGoal })}
+								</span>
+							</CircularProgress>
 
-						{/* Right: Glass Grid + Add Buttons */}
-						<div className="flex flex-1 flex-col gap-3">
-							{/* Glass Grid */}
-							<div className="flex flex-wrap gap-1.5">
-								{glassesArray.map((index) => (
-									<WaterGlass key={index} filled={index < stats.todayIntake} />
-								))}
-							</div>
+							{/* Right: Glass Grid + Add Buttons */}
+							<div className="flex flex-1 flex-col gap-3">
+								{/* Glass Grid */}
+								<div className="flex flex-wrap gap-1.5">
+									{glassesArray.map((index) => (
+										<WaterGlass key={index} filled={index < stats.todayIntake} />
+									))}
+								</div>
 
-							{/* Add Buttons */}
-							<div className="flex gap-2">
-								<AddButton
-									count={1}
-									onClick={() => handleLogWater(1)}
-									disabled={isLogging}
-									label={addOneGlassLabel}
-								/>
-								<AddButton
-									count={2}
-									onClick={() => handleLogWater(2)}
-									disabled={isLogging}
-									label={addTwoGlassesLabel}
-								/>
+								{/* Add Buttons */}
+								<div className="flex gap-2">
+									<AddButton
+										count={1}
+										onClick={() => handleLogWater(1)}
+										disabled={isLogging}
+										label={addOneGlassLabel}
+									/>
+									<AddButton
+										count={2}
+										onClick={() => handleLogWater(2)}
+										disabled={isLogging}
+										label={addTwoGlassesLabel}
+									/>
+								</div>
 							</div>
 						</div>
+
+						{stats.teamStreakLeaders.length > 0 ? (
+							<div
+								data-testid="hydration-team-streak-leaders"
+								className="rounded-lg border border-blue-500/10 bg-blue-500/[0.03] p-2"
+							>
+								<div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+									<IconFlame className="size-3 text-orange-500" aria-hidden="true" />
+									<span>{t("dashboard.hydration.team-streaks", "Team streaks")}</span>
+								</div>
+								<div className="space-y-1">
+									{stats.teamStreakLeaders.map((leader, index) => {
+										const streakLabel = formatStreakDays(leader.currentStreak);
+										const rowLabel = `${leader.displayName}, rank ${index + 1}, ${leader.currentStreak} day streak${leader.isCurrentUser ? ", current user" : ""}`;
+
+										return (
+											<div
+												key={leader.employeeId}
+												aria-label={rowLabel}
+												className="flex items-center gap-2 rounded-md px-1.5 py-1 text-xs"
+											>
+												<span className="w-6 shrink-0 font-semibold tabular-nums text-blue-600 dark:text-blue-400">
+													#{index + 1}
+												</span>
+												<span className="min-w-0 flex-1 truncate font-medium text-foreground">
+													{leader.displayName}
+												</span>
+												{leader.isCurrentUser ? (
+													<span className="rounded-full border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-300">
+														{t("dashboard.hydration.you", "You")}
+													</span>
+												) : null}
+												<span className="shrink-0 tabular-nums text-muted-foreground">
+													{streakLabel}
+												</span>
+											</div>
+										);
+									})}
+								</div>
+							</div>
+						) : null}
 					</div>
 				)}
 			</WidgetCard>

@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { holiday } from "@/db/schema";
+import { holiday, holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
@@ -59,6 +59,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 			isActive,
 		} = body;
 
+		if (categoryId) {
+			const [existingCategory] = await db
+				.select()
+				.from(holidayCategory)
+				.where(
+					and(eq(holidayCategory.id, categoryId), eq(holidayCategory.organizationId, activeOrgId)),
+				)
+				.limit(1);
+
+			if (!existingCategory) {
+				return NextResponse.json({ error: "Invalid holiday category" }, { status: 400 });
+			}
+		}
+
 		// Update holiday
 		const [updatedHoliday] = await db
 			.update(holiday)
@@ -76,7 +90,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 				...(isActive !== undefined && { isActive }),
 				updatedBy: session.user.id,
 			})
-			.where(eq(holiday.id, id))
+			.where(and(eq(holiday.id, id), eq(holiday.organizationId, activeOrgId)))
 			.returning();
 
 		return NextResponse.json({ holiday: updatedHoliday });

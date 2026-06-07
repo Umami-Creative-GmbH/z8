@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createAppAuthCode, type SupportedApp } from "@/lib/auth/app-auth-code";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 
 function resolveApp(searchParams: URLSearchParams): SupportedApp {
 	return searchParams.get("app") === "desktop" ? "desktop" : "mobile";
@@ -36,6 +37,12 @@ function canUseRequestedApp(
 }
 
 export async function GET(request: NextRequest) {
+	const clientIp = getClientIp(request);
+	const rateLimitResult = await checkRateLimit(clientIp, "auth");
+	if (!rateLimitResult.allowed) {
+		return createRateLimitResponse(rateLimitResult, request);
+	}
+
 	const app = resolveApp(request.nextUrl.searchParams);
 	const redirectUrl = request.nextUrl.searchParams.get("redirect");
 	const codeChallenge = request.nextUrl.searchParams.get("challenge");

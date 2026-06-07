@@ -202,9 +202,9 @@ export async function getManagerDailyBriefingFromSources({
 			)
 		: settledValue(coverageRulesResult, []);
 	const scopedEmployeeIds = new Set(employeeIds);
-	const approvalItems = settledValue(approvalsResult, [])
-		.filter((approval) => scopedEmployeeIds.has(approval.requester.id))
-		.map(approvalToBriefingItem);
+	const approvalItems = settledValue(approvalsResult, []).flatMap((approval) =>
+		scopedEmployeeIds.has(approval.requester.id) ? [approvalToBriefingItem(approval)] : [],
+	);
 	const overtimeItems = settledValue(overtimeResult, []);
 	const payrollItems = settledValue(payrollResult, []);
 
@@ -362,12 +362,12 @@ const databaseSources: ManagerDailyBriefingSources = {
 	},
 
 	async getPublishedShifts({ organizationId, employeeIds, date }) {
-		const { db, employee, shift, team, user } = await import("@/db");
-		const { locationSubarea } = await import("@/db/schema");
-
 		if (employeeIds.length === 0) {
 			return [];
 		}
+
+		const { db, employee, shift, team, user } = await import("@/db");
+		const { locationSubarea } = await import("@/db/schema");
 
 		const rows = await db
 			.select({
@@ -419,11 +419,11 @@ const databaseSources: ManagerDailyBriefingSources = {
 	},
 
 	async getOpenTimeRecords({ organizationId, employeeIds, from, to }) {
-		const { db, workPeriod } = await import("@/db");
-
 		if (employeeIds.length === 0) {
 			return [];
 		}
+
+		const { db, workPeriod } = await import("@/db");
 
 		const rows = await db
 			.select({
@@ -451,11 +451,11 @@ const databaseSources: ManagerDailyBriefingSources = {
 	},
 
 	async getApprovedAbsences({ organizationId, employeeIds, date }) {
-		const { absenceCategory, absenceEntry, db, employee, team, user } = await import("@/db");
-
 		if (employeeIds.length === 0) {
 			return [];
 		}
+
+		const { absenceCategory, absenceEntry, db, employee, team, user } = await import("@/db");
 
 		const rows = await db
 			.select({

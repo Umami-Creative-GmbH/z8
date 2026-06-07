@@ -144,6 +144,8 @@
       "confirm": "In Pause umwandeln",
       "description": "Dies wird diesen Arbeitszeitraum dauerhaft löschen. Die Lücke erscheint als Pause im Kalender.",
       "failed": "Löschen des Arbeitszeitraums fehlgeschlagen",
+      "reasonLabel": "Grund für die Löschung",
+      "reasonRequired": "Grund ist erforderlich",
       "success": "Arbeitszeitraum in Pause umgewandelt",
       "title": "In Pause umwandeln?"
     },
@@ -166,7 +168,7 @@
       "type": "Typ"
     },
     "edit": {
-      "convertToBreak": "In Pause umwandeln",
+      "deleteEntry": "Eintrag löschen",
       "notesSaved": "Notizen gespeichert",
       "notesSaveFailed": "Speichern der Notizen fehlgeschlagen",
       "projectSaved": "Projekt aktualisiert",

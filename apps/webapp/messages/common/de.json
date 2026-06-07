@@ -48,6 +48,10 @@
         "subtitle": "Prüfen, ob Zeitdaten für die Lohnabrechnung bereit sind",
         "title": "Lohnabrechnungsbereitschaft öffnen"
       },
+      "openPayroll": {
+        "subtitle": "Bereichsbezogenen Lohnabrechnungs-Arbeitsbereich überprüfen",
+        "title": "Lohnabrechnung öffnen"
+      },
       "openSettings": {
         "subtitle": "Profil-, Sicherheits- und Organisationseinstellungen verwalten",
         "title": "Einstellungen öffnen"
@@ -301,6 +305,7 @@
     "get-help": "Hilfe",
     "my-requests": "Meine Anfragen",
     "org-explorer": "Organisations-Explorer",
+    "payroll": "Lohnabrechnung",
     "platform-admin": "Plattform-Administrator",
     "reports": "Berichte",
     "scheduling": "Planung",

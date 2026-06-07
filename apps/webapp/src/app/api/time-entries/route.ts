@@ -203,6 +203,7 @@ export async function POST(request: NextRequest) {
 			type,
 			timestamp,
 			notes,
+			organizationId,
 			location,
 			projectId,
 			workCategoryId,
@@ -225,10 +226,12 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Invalid work location type" }, { status: 400 });
 		}
 
-		// Get current user's employee record for the active organization
+		// Offline sync sends the organization captured when the event happened.
 		const activeOrgId = session.session.activeOrganizationId;
+		const requestedOrgId =
+			typeof organizationId === "string" && organizationId ? organizationId : activeOrgId;
 
-		if (!activeOrgId) {
+		if (!requestedOrgId) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
@@ -238,7 +241,7 @@ export async function POST(request: NextRequest) {
 			.where(
 				and(
 					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
+					eq(employee.organizationId, requestedOrgId),
 					eq(employee.isActive, true),
 				),
 			)
@@ -251,7 +254,7 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const billingAccess = await requireBillingForMutation(activeOrgId);
+		const billingAccess = await requireBillingForMutation(requestedOrgId);
 		if (!isBillingMutationAllowed(billingAccess)) {
 			return createBillingForbiddenResponse(billingAccess);
 		}
@@ -271,7 +274,7 @@ export async function POST(request: NextRequest) {
 			const [assignedProject] = await db
 				.select()
 				.from(project)
-				.where(and(eq(project.id, projectId), eq(project.organizationId, activeOrgId)))
+				.where(and(eq(project.id, projectId), eq(project.organizationId, requestedOrgId)))
 				.limit(1);
 
 			if (!assignedProject) {
@@ -298,7 +301,7 @@ export async function POST(request: NextRequest) {
 				.where(
 					and(
 						eq(workCategory.id, workCategoryId),
-						eq(workCategory.organizationId, activeOrgId),
+						eq(workCategory.organizationId, requestedOrgId),
 						eq(workCategory.isActive, true),
 					),
 				)
@@ -318,7 +321,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		const entry = await db.transaction(async (tx) => {
-			const lockKey = `${activeOrgId}:${currentEmployee.id}`;
+			const lockKey = `${requestedOrgId}:${currentEmployee.id}`;
 			await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
 
 			const [activePeriod] = await tx
@@ -327,7 +330,7 @@ export async function POST(request: NextRequest) {
 				.where(
 					and(
 						eq(workPeriod.employeeId, currentEmployee.id),
-						eq(workPeriod.organizationId, activeOrgId),
+						eq(workPeriod.organizationId, requestedOrgId),
 						eq(workPeriod.isActive, true),
 						isNull(workPeriod.endTime),
 					),
@@ -345,7 +348,7 @@ export async function POST(request: NextRequest) {
 			const createdEntry = await createTimeEntry(
 				{
 					employeeId: currentEmployee.id,
-					organizationId: activeOrgId,
+					organizationId: requestedOrgId,
 					type,
 					timestamp: entryTime,
 					createdBy: session.user.id,
@@ -359,7 +362,7 @@ export async function POST(request: NextRequest) {
 			if (type === "clock_in") {
 				await tx.insert(workPeriod).values({
 					employeeId: currentEmployee.id,
-					organizationId: activeOrgId,
+					organizationId: requestedOrgId,
 					clockInId: createdEntry.id,
 					startTime: entryTime,
 					isActive: true,
@@ -383,7 +386,7 @@ export async function POST(request: NextRequest) {
 						and(
 							eq(workPeriod.id, activePeriod.id),
 							eq(workPeriod.employeeId, currentEmployee.id),
-							eq(workPeriod.organizationId, activeOrgId),
+							eq(workPeriod.organizationId, requestedOrgId),
 							eq(workPeriod.isActive, true),
 							isNull(workPeriod.endTime),
 						),

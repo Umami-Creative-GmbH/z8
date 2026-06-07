@@ -1,7 +1,7 @@
 "use client";
 
 import { IconRefresh, IconShieldCheck } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -18,6 +18,10 @@ type WorkBalanceRecalculationCardProps = {
 	t: Translate;
 };
 
+function focusConfirmButton(node: HTMLButtonElement | null) {
+	node?.focus();
+}
+
 export function WorkBalanceRecalculationCard({
 	employeeName,
 	isPending,
@@ -25,13 +29,6 @@ export function WorkBalanceRecalculationCard({
 	t,
 }: WorkBalanceRecalculationCardProps) {
 	const [isConfirming, setIsConfirming] = useState(false);
-	const confirmButtonRef = useRef<HTMLButtonElement>(null);
-
-	useEffect(() => {
-		if (isConfirming) {
-			confirmButtonRef.current?.focus();
-		}
-	}, [isConfirming]);
 
 	const handleConfirm = async () => {
 		try {
@@ -82,7 +79,7 @@ export function WorkBalanceRecalculationCard({
 							<Button variant="outline" onClick={() => setIsConfirming(false)}>
 								{t("common.cancel", "Cancel")}
 							</Button>
-							<Button ref={confirmButtonRef} onClick={handleConfirm}>
+							<Button ref={focusConfirmButton} onClick={handleConfirm}>
 								<IconRefresh className="mr-2 size-4" aria-hidden="true" />
 								{t("settings.workBalanceRecalculation.confirm", "Confirm Recalculation")}
 							</Button>

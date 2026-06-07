@@ -143,7 +143,7 @@ export function useCalendarEmployees(currentEmployeeId?: string): UseCalendarEmp
 		}
 
 		// Add managed employees (sorted alphabetically)
-		const sortedManaged = [...data.managedEmployees].sort((a, b) => {
+		const sortedManaged = data.managedEmployees.toSorted((a, b) => {
 			const nameA = buildAuthUserDisplayName(a.user);
 			const nameB = buildAuthUserDisplayName(b.user);
 			return nameA.localeCompare(nameB);
