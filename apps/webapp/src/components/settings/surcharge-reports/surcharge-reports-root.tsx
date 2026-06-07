@@ -73,8 +73,9 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			success: false as const,
 			error: "Failed to load surcharge calculations.",
 		}));
+		const isLatestRequest = requestId === latestRequestId.current;
 
-		if (requestId !== latestRequestId.current) {
+		if (!isLatestRequest) {
 			return;
 		}
 

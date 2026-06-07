@@ -528,12 +528,12 @@ export async function generateEnterpriseIdentityScimTokenAction(
 		authContext.user.id,
 	);
 	const providerId = input.providerId.trim();
+	if (!providerId) throw new Error("Provider ID is required");
+
 	const defaultRoleTemplateId = await assertRoleTemplateAllowed(
 		organizationId,
 		input.defaultRoleTemplateId,
 	);
-
-	if (!providerId) throw new Error("Provider ID is required");
 
 	let tokenResult: { token?: string; scimToken?: string };
 	try {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { consumeAppAuthCode, type SupportedApp } from "@/lib/auth/app-auth-code";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 
 const bodySchema = z.object({
 	code: z.string().trim().min(1),
@@ -14,6 +15,12 @@ function resolveAppType(request: Request): SupportedApp | null {
 }
 
 export async function POST(request: Request) {
+	const clientIp = getClientIp(request);
+	const rateLimitResult = await checkRateLimit(clientIp, "auth");
+	if (!rateLimitResult.allowed) {
+		return createRateLimitResponse(rateLimitResult, request);
+	}
+
 	const app = resolveAppType(request);
 	if (!app) {
 		return NextResponse.json({ error: "Supported app type required" }, { status: 400 });

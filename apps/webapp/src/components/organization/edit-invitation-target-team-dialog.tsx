@@ -26,19 +26,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { queryKeys } from "@/lib/query";
+import { resolveInvitationTargetTeamUpdate } from "./edit-invitation-target-team-dialog.utils";
 import type { InvitationWithInviter } from "./organizations-page-client";
-
-type TargetTeamOption = { id: string; name: string };
-
-export function resolveInvitationTargetTeamUpdate(
-	targetTeamId: string | null,
-	teams: TargetTeamOption[],
-) {
-	return {
-		targetTeamId,
-		targetTeam: targetTeamId ? (teams.find((team) => team.id === targetTeamId) ?? null) : null,
-	};
-}
 
 interface EditInvitationTargetTeamDialogProps {
 	organizationId: string;

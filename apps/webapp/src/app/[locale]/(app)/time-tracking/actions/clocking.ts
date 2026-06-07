@@ -742,12 +742,13 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 	const { targetEmployee, isOwnEntry } = targetResolution;
 
-	const savedTimezone = isOwnEntry
-		? await getUserTimezone(session.user.id)
-		: await getUserTimezone(targetEmployee.userId ?? session.user.id);
 	if (isOwnEntry && data.timezone !== undefined && !IANAZone.isValidZone(data.timezone)) {
 		return { success: false, error: "Invalid timezone" };
 	}
+
+	const savedTimezone = isOwnEntry
+		? await getUserTimezone(session.user.id)
+		: await getUserTimezone(targetEmployee.userId ?? session.user.id);
 	const timezone = isOwnEntry ? (data.timezone ?? savedTimezone) : savedTimezone;
 	const matchingBrowserTimezone =
 		isOwnEntry && data.browserTimezone === timezone && IANAZone.isValidZone(data.browserTimezone)

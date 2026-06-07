@@ -73,9 +73,6 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 		}
 
-		// Get CASL ability for permission checks
-		const ability = await getAbility();
-
 		// Check access
 		if (feed.feedType === "user" && feed.employeeId !== emp.id) {
 			const error = new ForbiddenError("update", "Calendar");
@@ -84,6 +81,9 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 		}
 
 		if (feed.feedType === "team") {
+			// Get CASL ability for permission checks
+			const ability = await getAbility();
+
 			if (!ability || ability.cannot("manage", "Calendar")) {
 				const error = new ForbiddenError("manage", "Calendar");
 				const httpError = toHttpError(error);

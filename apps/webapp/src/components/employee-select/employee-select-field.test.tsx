@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EmployeeMultiSelect } from "./employee-select-field";
@@ -50,7 +50,10 @@ function ControlledEmployeeMultiSelect() {
 				label="Employees"
 				value={value}
 				onChange={setValue}
-				employees={[makeEmployee("employee-a", "Ada Lovelace"), makeEmployee("employee-b", "Grace Hopper")]}
+				employees={[
+					makeEmployee("employee-a", "Ada Lovelace"),
+					makeEmployee("employee-b", "Grace Hopper"),
+				]}
 			/>
 			<output aria-label="selected employee ids">{value.join(",")}</output>
 		</div>

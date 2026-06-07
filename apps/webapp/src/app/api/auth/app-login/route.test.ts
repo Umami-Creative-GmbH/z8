@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockState = vi.hoisted(() => ({
 	getSession: vi.fn(),
 	createAppAuthCode: vi.fn(),
+	checkRateLimit: vi.fn(),
+	createRateLimitResponse: vi.fn(),
+	getClientIp: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -16,6 +19,12 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/auth/app-auth-code", () => ({
 	createAppAuthCode: mockState.createAppAuthCode,
+}));
+
+vi.mock("@/lib/rate-limit", () => ({
+	checkRateLimit: mockState.checkRateLimit,
+	createRateLimitResponse: mockState.createRateLimitResponse,
+	getClientIp: mockState.getClientIp,
 }));
 
 const { GET } = await import("./route");
@@ -31,6 +40,39 @@ function createRequest(url: string): NextRequest {
 describe("GET /api/auth/app-login", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.checkRateLimit.mockResolvedValue({
+			allowed: true,
+			remaining: 9,
+			resetAt: 1_700_000_000_000,
+			retryAfter: 0,
+		});
+		mockState.createRateLimitResponse.mockReturnValue(
+			new Response("rate limited", { status: 429 }),
+		);
+		mockState.getClientIp.mockReturnValue("127.0.0.1");
+	});
+
+	it("returns the rate-limit response before creating an app auth code", async () => {
+		const rateLimitResult = {
+			allowed: false,
+			remaining: 0,
+			resetAt: 1_700_000_000_000,
+			retryAfter: 30,
+		};
+		mockState.checkRateLimit.mockResolvedValue(rateLimitResult);
+
+		const request = createRequest(
+			"https://app.example.com/api/auth/app-login?redirect=z8mobile://auth/callback&challenge=CODE-CHALLENGE",
+		);
+
+		const response = await GET(request);
+
+		expect(response.status).toBe(429);
+		expect(mockState.getClientIp).toHaveBeenCalledWith(request);
+		expect(mockState.checkRateLimit).toHaveBeenCalledWith("127.0.0.1", "auth");
+		expect(mockState.createRateLimitResponse).toHaveBeenCalledWith(rateLimitResult, request);
+		expect(mockState.getSession).not.toHaveBeenCalled();
+		expect(mockState.createAppAuthCode).not.toHaveBeenCalled();
 	});
 
 	it("redirects authenticated mobile clients with a one-time code instead of a session token", async () => {

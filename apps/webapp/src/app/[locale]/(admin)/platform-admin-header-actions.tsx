@@ -1,53 +1,20 @@
 "use client";
 
-import {
-	IconActivityHeartbeat,
-	IconBuilding,
-	IconChartBar,
-	IconChartLine,
-	IconCreditCard,
-	IconLogout,
-	IconMailCog,
-	IconServer,
-	IconSettings,
-	IconUsers,
-} from "@tabler/icons-react";
-import type { ComponentType } from "react";
+import { IconLogout } from "@tabler/icons-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Link, usePathname } from "@/navigation";
-
-export type PlatformAdminNavItem = {
-	href: string;
-	icon: keyof typeof platformAdminIcons;
-	label: string;
-};
-
-const platformAdminIcons = {
-	analytics: IconChartLine,
-	billing: IconCreditCard,
-	diagnostics: IconActivityHeartbeat,
-	organizations: IconBuilding,
-	overview: IconChartBar,
-	settings: IconSettings,
-	systemEmailTemplates: IconMailCog,
-	users: IconUsers,
-	workerQueue: IconServer,
-} satisfies Record<string, ComponentType<{ className?: string; "aria-hidden"?: "true" }>>;
+import {
+	isActivePlatformAdminItem,
+	platformAdminIcons,
+	type PlatformAdminNavItem,
+} from "./platform-admin-nav";
 
 type PlatformAdminHeaderActionsProps = {
 	navItems: readonly PlatformAdminNavItem[];
 	exitLabel: string;
 	showExit?: boolean;
 };
-
-function isActivePlatformAdminItem(pathname: string, item: PlatformAdminNavItem) {
-	if (item.href === "/platform-admin") {
-		return pathname === item.href;
-	}
-
-	return pathname === item.href || pathname.startsWith(`${item.href}/`);
-}
 
 export function PlatformAdminHeaderActions({
 	navItems,

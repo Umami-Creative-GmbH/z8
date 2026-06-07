@@ -301,10 +301,15 @@ export default function VacationTrendsPage() {
 		async function loadData() {
 			setLoading(true);
 			try {
+				if (!isCurrent) {
+					return;
+				}
+
 				// Organization ID is now derived server-side from authenticated session
 				const result = await getVacationTrendsData(range);
+				const shouldUpdate = isCurrent;
 
-				if (!isCurrent) {
+				if (!shouldUpdate) {
 					return;
 				}
 

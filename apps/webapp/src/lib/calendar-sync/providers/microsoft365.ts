@@ -268,10 +268,10 @@ export class Microsoft365CalendarProvider implements ICalendarProvider {
 				});
 
 				if (!response.ok) {
-					const error = await handleMSGraphError(response);
 					if (response.status === 400) {
 						throw new RefreshTokenInvalidError("microsoft365");
 					}
+					const error = await handleMSGraphError(response);
 					throw error;
 				}
 

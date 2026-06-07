@@ -4,7 +4,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { getAvailableEmployees } from "@/app/[locale]/(app)/settings/locations/actions";
 import { assignSubareaEmployee } from "@/app/[locale]/(app)/settings/locations/assignment-actions";
@@ -44,7 +44,14 @@ interface FormValues {
 	isPrimary: boolean;
 }
 
-export function SubareaEmployeeDialog({
+export function SubareaEmployeeDialog(props: SubareaEmployeeDialogProps) {
+	const { subareaId, open } = props;
+	const formKey = open ? `${subareaId}:open` : `${subareaId}:closed`;
+
+	return <SubareaEmployeeDialogContent key={formKey} {...props} />;
+}
+
+function SubareaEmployeeDialogContent({
 	organizationId,
 	subareaId,
 	subareaName,
@@ -91,12 +98,12 @@ export function SubareaEmployeeDialog({
 		},
 	});
 
-	// Reset form when dialog opens
-	useEffect(() => {
-		if (open) {
+	function handleOpenChange(nextOpen: boolean) {
+		if (nextOpen) {
 			form.reset();
 		}
-	}, [open, form]);
+		onOpenChange(nextOpen);
+	}
 
 	// Fetch available employees
 	const { data: employees, isLoading } = useQuery({
@@ -119,7 +126,7 @@ export function SubareaEmployeeDialog({
 	};
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>

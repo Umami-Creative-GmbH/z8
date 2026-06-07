@@ -626,16 +626,6 @@ export const SkillServiceLive = Layer.effect(
 					// Delete existing requirements and insert new ones
 					const requirements = yield* _(
 						dbService.query("setSubareaSkillRequirements", async () => {
-							// Delete existing
-							await dbService.db
-								.delete(subareaSkillRequirement)
-								.where(eq(subareaSkillRequirement.subareaId, input.targetId));
-
-							if (input.requirements.length === 0) {
-								return [];
-							}
-
-							// Insert new requirements
 							const values = input.requirements.map((req) => ({
 								subareaId: input.targetId,
 								skillId: req.skillId,
@@ -643,6 +633,17 @@ export const SkillServiceLive = Layer.effect(
 								createdBy: input.createdBy,
 							}));
 
+							// Delete existing
+							const deletedRequirements = await dbService.db
+								.delete(subareaSkillRequirement)
+								.where(eq(subareaSkillRequirement.subareaId, input.targetId));
+							void deletedRequirements;
+
+							if (values.length === 0) {
+								return [];
+							}
+
+							// Insert new requirements
 							return await dbService.db.insert(subareaSkillRequirement).values(values).returning();
 						}),
 					);
@@ -695,16 +696,6 @@ export const SkillServiceLive = Layer.effect(
 					// Delete existing requirements and insert new ones
 					const requirements = yield* _(
 						dbService.query("setTemplateSkillRequirements", async () => {
-							// Delete existing
-							await dbService.db
-								.delete(shiftTemplateSkillRequirement)
-								.where(eq(shiftTemplateSkillRequirement.templateId, input.targetId));
-
-							if (input.requirements.length === 0) {
-								return [];
-							}
-
-							// Insert new requirements
 							const values = input.requirements.map((req) => ({
 								templateId: input.targetId,
 								skillId: req.skillId,
@@ -712,6 +703,17 @@ export const SkillServiceLive = Layer.effect(
 								createdBy: input.createdBy,
 							}));
 
+							// Delete existing
+							const deletedRequirements = await dbService.db
+								.delete(shiftTemplateSkillRequirement)
+								.where(eq(shiftTemplateSkillRequirement.templateId, input.targetId));
+							void deletedRequirements;
+
+							if (values.length === 0) {
+								return [];
+							}
+
+							// Insert new requirements
 							return await dbService.db
 								.insert(shiftTemplateSkillRequirement)
 								.values(values)

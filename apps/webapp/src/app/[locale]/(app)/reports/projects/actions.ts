@@ -135,78 +135,79 @@ export async function getProjectsOverview(
 				// Get work period stats for each project
 				const projectSummaries: ProjectSummary[] = yield* _(
 					dbService.query("getProjectStats", async () => {
-						const summaries: ProjectSummary[] = [];
 						const now = new Date();
 
-						for (const p of projects) {
-							// Get total hours and unique employees for this project in the date range
-							const stats = await dbService.db
-								.select({
-									totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
-									uniqueEmployees: sql<number>`COUNT(DISTINCT ${workPeriod.employeeId})`.mapWith(
-										Number,
-									),
-									workPeriodCount: sql<number>`COUNT(*)`.mapWith(Number),
-								})
-								.from(workPeriod)
-								.where(
-									and(
-										eq(workPeriod.projectId, p.id),
-										gte(workPeriod.startTime, startDate),
-										lte(workPeriod.startTime, endDate),
-									),
-								);
+						return await Promise.all(
+							projects.map(async (p) => {
+								// Get total hours and unique employees for this project in the date range
+								const [stats, cumulativeStats] = await Promise.all([
+									dbService.db
+										.select({
+											totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+											uniqueEmployees:
+												sql<number>`COUNT(DISTINCT ${workPeriod.employeeId})`.mapWith(Number),
+											workPeriodCount: sql<number>`COUNT(*)`.mapWith(Number),
+										})
+										.from(workPeriod)
+										.where(
+											and(
+												eq(workPeriod.projectId, p.id),
+												gte(workPeriod.startTime, startDate),
+												lte(workPeriod.startTime, endDate),
+											),
+										),
+									dbService.db
+										.select({
+											totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+										})
+										.from(workPeriod)
+										.where(eq(workPeriod.projectId, p.id)),
+								]);
 
-							const cumulativeStats = await dbService.db
-								.select({
-									totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
-								})
-								.from(workPeriod)
-								.where(eq(workPeriod.projectId, p.id));
+								const totalMinutes = Number(stats[0]?.totalMinutes ?? 0);
+								const totalHours = totalMinutes / 60;
+								const cumulativeHours = Number(cumulativeStats[0]?.totalMinutes ?? 0) / 60;
+								const budgetHours = p.budgetHours ? Number(p.budgetHours) : null;
+								const percentBudgetUsed = budgetHours
+									? (cumulativeHours / budgetHours) * 100
+									: null;
 
-							const totalMinutes = Number(stats[0]?.totalMinutes ?? 0);
-							const totalHours = totalMinutes / 60;
-							const cumulativeHours = Number(cumulativeStats[0]?.totalMinutes ?? 0) / 60;
-							const budgetHours = p.budgetHours ? Number(p.budgetHours) : null;
-							const percentBudgetUsed = budgetHours ? (cumulativeHours / budgetHours) * 100 : null;
+								// Calculate days until deadline
+								let daysUntilDeadline: number | null = null;
+								if (p.deadline) {
+									const diffMs = p.deadline.getTime() - now.getTime();
+									daysUntilDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+								}
 
-							// Calculate days until deadline
-							let daysUntilDeadline: number | null = null;
-							if (p.deadline) {
-								const diffMs = p.deadline.getTime() - now.getTime();
-								daysUntilDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-							}
+								const healthFields = buildProjectHealthFields({
+									projectName: p.name,
+									budgetHours,
+									rangeHours: totalHours,
+									cumulativeHours,
+									deadline: p.deadline,
+									now,
+									rangeStart: startDate,
+									rangeEnd: endDate,
+								});
 
-							const healthFields = buildProjectHealthFields({
-								projectName: p.name,
-								budgetHours,
-								rangeHours: totalHours,
-								cumulativeHours,
-								deadline: p.deadline,
-								now,
-								rangeStart: startDate,
-								rangeEnd: endDate,
-							});
-
-							summaries.push({
-								id: p.id,
-								name: p.name,
-								description: p.description,
-								status: p.status,
-								color: p.color,
-								budgetHours,
-								deadline: p.deadline,
-								...healthFields,
-								totalHours,
-								totalMinutes,
-								percentBudgetUsed,
-								daysUntilDeadline,
-								uniqueEmployees: stats[0]?.uniqueEmployees ?? 0,
-								workPeriodCount: stats[0]?.workPeriodCount ?? 0,
-							});
-						}
-
-						return summaries;
+								return {
+									id: p.id,
+									name: p.name,
+									description: p.description,
+									status: p.status,
+									color: p.color,
+									budgetHours,
+									deadline: p.deadline,
+									...healthFields,
+									totalHours,
+									totalMinutes,
+									percentBudgetUsed,
+									daysUntilDeadline,
+									uniqueEmployees: stats[0]?.uniqueEmployees ?? 0,
+									workPeriodCount: stats[0]?.workPeriodCount ?? 0,
+								};
+							}),
+						);
 					}),
 				);
 

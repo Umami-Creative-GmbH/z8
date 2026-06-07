@@ -15,6 +15,7 @@ export function SWUpdatePrompt() {
 	const [updateAvailable, setUpdateAvailable] = useState(false);
 	const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
 	const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
+	const shouldReloadOnControllerChangeRef = useRef(false);
 
 	// Store t in ref to avoid effect dependency (rerender-dependencies)
 	const tRef = useRef(t);
@@ -71,7 +72,9 @@ export function SWUpdatePrompt() {
 
 		// Also listen for controllerchange (SW took over)
 		const handleControllerChange = () => {
-			// Reload after SW takes over
+			if (!shouldReloadOnControllerChangeRef.current) return;
+
+			shouldReloadOnControllerChangeRef.current = false;
 			window.location.reload();
 		};
 
@@ -111,6 +114,7 @@ export function SWUpdatePrompt() {
 						return;
 					}
 
+					shouldReloadOnControllerChangeRef.current = true;
 					currentRegistration.waiting.postMessage({ type: "SKIP_WAITING" });
 				},
 			},

@@ -9,7 +9,7 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { type Dispatch, type SetStateAction, useState, useTransition } from "react";
+import { useReducer, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,6 +131,72 @@ type SmtpOverrideState = {
 	ipMode: "auto" | "ipv4" | "ipv6";
 };
 
+const initialSmtpOverride: SmtpOverrideState = {
+	host: "",
+	port: "587",
+	username: "",
+	password: "",
+	fromEmail: "",
+	fromName: "",
+	secure: true,
+	requireTls: true,
+	ipMode: "auto",
+};
+
+type DiagnosticsClientState = {
+	snapshot: PlatformDiagnosticsSnapshot;
+	error: string | null;
+	emailRecipient: string;
+	smtpOverride: SmtpOverrideState;
+	emailResult: { recipient: string; messageId?: string } | null;
+	emailError: string | null;
+	encryptionResult: PlatformKeyManagerEncryptionResult | null;
+	encryptionError: string | null;
+};
+
+type DiagnosticsClientAction =
+	| { type: "refreshStarted" }
+	| { type: "refreshSucceeded"; snapshot: PlatformDiagnosticsSnapshot }
+	| { type: "refreshFailed"; error: string }
+	| { type: "emailRecipientChanged"; recipient: string }
+	| { type: "smtpOverrideChanged"; update: (current: SmtpOverrideState) => SmtpOverrideState }
+	| { type: "emailStarted" }
+	| { type: "emailSucceeded"; result: { recipient: string; messageId?: string } }
+	| { type: "emailFailed"; error: string }
+	| { type: "encryptionStarted" }
+	| { type: "encryptionSucceeded"; result: PlatformKeyManagerEncryptionResult }
+	| { type: "encryptionFailed"; error: string };
+
+function diagnosticsClientReducer(
+	state: DiagnosticsClientState,
+	action: DiagnosticsClientAction,
+): DiagnosticsClientState {
+	switch (action.type) {
+		case "refreshStarted":
+			return { ...state, error: null };
+		case "refreshSucceeded":
+			return { ...state, snapshot: action.snapshot };
+		case "refreshFailed":
+			return { ...state, error: action.error };
+		case "emailRecipientChanged":
+			return { ...state, emailRecipient: action.recipient };
+		case "smtpOverrideChanged":
+			return { ...state, smtpOverride: action.update(state.smtpOverride) };
+		case "emailStarted":
+			return { ...state, emailError: null, emailResult: null };
+		case "emailSucceeded":
+			return { ...state, emailResult: action.result };
+		case "emailFailed":
+			return { ...state, emailError: action.error };
+		case "encryptionStarted":
+			return { ...state, encryptionError: null, encryptionResult: null };
+		case "encryptionSucceeded":
+			return { ...state, encryptionResult: action.result };
+		case "encryptionFailed":
+			return { ...state, encryptionError: action.error };
+	}
+}
+
 function DiagnosticsOverviewCard({
 	snapshot,
 	statusLabels,
@@ -164,13 +230,13 @@ function DiagnosticsOverviewCard({
 							{ date: snapshot.fetchedAt },
 						)}
 					</CardDescription>
-					<p className="sr-only" role="status" aria-live="polite">
+					<output className="sr-only" aria-live="polite">
 						{t(
 							"admin:admin.diagnostics.statusAnnouncement",
 							"Diagnostics status {status}. Last refreshed {date}.",
 							{ status: statusLabels[snapshot.overallStatus], date: snapshot.fetchedAt },
 						)}
-					</p>
+					</output>
 				</div>
 				<Button
 					onClick={onRefresh}
@@ -217,7 +283,7 @@ function EmailTestCard({
 	smtpOverride: SmtpOverrideState;
 	isEmailPending: boolean;
 	onRecipientChange: (value: string) => void;
-	onSmtpOverrideChange: Dispatch<SetStateAction<SmtpOverrideState>>;
+	onSmtpOverrideChange: (update: (current: SmtpOverrideState) => SmtpOverrideState) => void;
 	onSend: () => void;
 	t: DiagnosticsTranslate;
 }) {
@@ -424,25 +490,174 @@ function EmailTestCard({
 					</div>
 				) : null}
 				{emailResult ? (
-					<div
+					<output
 						className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400"
-						role="status"
 						aria-live="polite"
 					>
-						<p>
+						<span className="block">
 							{t("admin:admin.diagnostics.emailTest.success", "Test email sent to {recipient}.", {
 								recipient: emailResult.recipient,
 							})}
-						</p>
+						</span>
 						{emailResult.messageId ? (
-							<p className="font-mono">
+							<span className="block font-mono">
 								{t("admin:admin.diagnostics.emailTest.messageId", "Message ID: {messageId}", {
 									messageId: emailResult.messageId,
 								})}
-							</p>
+							</span>
 						) : null}
-					</div>
+					</output>
 				) : null}
+			</CardContent>
+		</Card>
+	);
+}
+
+function KeyManagerEncryptionCard({
+	encryptionResult,
+	encryptionError,
+	encryptionStatusLabel,
+	encryptionLiveStatus,
+	isEncryptionPending,
+	onTestEncryption,
+	t,
+}: {
+	encryptionResult: PlatformKeyManagerEncryptionResult | null;
+	encryptionError: string | null;
+	encryptionStatusLabel: string;
+	encryptionLiveStatus: string;
+	isEncryptionPending: boolean;
+	onTestEncryption: () => void;
+	t: DiagnosticsTranslate;
+}) {
+	return (
+		<Card>
+			<CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+				<div className="space-y-2">
+					<CardTitle className="flex items-center gap-2">
+						<IconKey className="size-5 text-primary" aria-hidden="true" />
+						{t("admin:admin.diagnostics.keyManager.title", "Scaleway Key Manager Encryption")}
+					</CardTitle>
+					<CardDescription>
+						{t(
+							"admin:admin.diagnostics.keyManager.description",
+							"Run an end-to-end platform key encrypt/decrypt test.",
+						)}
+					</CardDescription>
+					<output className="sr-only" aria-live="polite">
+						{encryptionLiveStatus}
+					</output>
+				</div>
+				<Button
+					onClick={onTestEncryption}
+					disabled={isEncryptionPending}
+					aria-label={t("admin:admin.diagnostics.keyManager.actions.test", "Test encryption")}
+				>
+					{isEncryptionPending ? (
+						<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+					) : (
+						<IconKey className="mr-2 size-4" aria-hidden="true" />
+					)}
+					{t("admin:admin.diagnostics.keyManager.actions.test", "Test encryption")}
+				</Button>
+			</CardHeader>
+			{encryptionError ? (
+				<CardContent>
+					<div
+						className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-400"
+						role="alert"
+						aria-live="polite"
+					>
+						{encryptionError}
+					</div>
+				</CardContent>
+			) : null}
+			{encryptionResult ? (
+				<CardContent className="space-y-4">
+					<Badge
+						variant="outline"
+						className={cn(
+							encryptionResult.matches
+								? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
+								: "border-amber-500/40 text-amber-700 dark:text-amber-400",
+						)}
+					>
+						{encryptionStatusLabel}
+					</Badge>
+					<dl className="grid gap-3 text-sm sm:grid-cols-2">
+						<div className="space-y-1 rounded-lg border p-3">
+							<dt className="text-muted-foreground">
+								{t("admin:admin.diagnostics.keyManager.input", "Input")}
+							</dt>
+							<dd className="break-words font-mono">{encryptionResult.input}</dd>
+						</div>
+						<div className="space-y-1 rounded-lg border p-3">
+							<dt className="text-muted-foreground">
+								{t("admin:admin.diagnostics.keyManager.output", "Output")}
+							</dt>
+							<dd className="break-words font-mono">{encryptionResult.output}</dd>
+						</div>
+						<div className="space-y-1 rounded-lg border p-3">
+							<dt className="text-muted-foreground">
+								{t("admin:admin.diagnostics.keyManager.platformKeyId", "Platform key ID")}
+							</dt>
+							<dd className="break-words font-mono">{encryptionResult.platformKeyId}</dd>
+						</div>
+						<div className="space-y-1 rounded-lg border p-3">
+							<dt className="text-muted-foreground">
+								{t("admin:admin.diagnostics.keyManager.keyStatus", "Key status")}
+							</dt>
+							<dd>
+								{encryptionResult.keyStatus === "created"
+									? t(
+											"admin:admin.diagnostics.keyManager.keyStatus.created",
+											"Created new platform key",
+										)
+									: t(
+											"admin:admin.diagnostics.keyManager.keyStatus.reused",
+											"Reused existing platform key",
+										)}
+							</dd>
+						</div>
+						<div className="space-y-1 rounded-lg border p-3 sm:col-span-2">
+							<dt className="text-muted-foreground">
+								{t("admin:admin.diagnostics.keyManager.ciphertextPreview", "Ciphertext preview")}
+							</dt>
+							<dd className="break-words font-mono">{encryptionResult.ciphertextPreview}</dd>
+						</div>
+					</dl>
+				</CardContent>
+			) : null}
+		</Card>
+	);
+}
+
+function RecommendedActionsCard({ actions, t }: { actions: string[]; t: DiagnosticsTranslate }) {
+	return (
+		<Card className="border-amber-500/30 bg-amber-500/5">
+			<CardHeader>
+				<CardTitle>
+					{t("admin:admin.diagnostics.recommendedActions.title", "Recommended Actions")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"admin:admin.diagnostics.recommendedActions.description",
+						"Resolve these items to return diagnostics to a healthy state.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<ul className="space-y-2 text-sm">
+					{actions.map((action) => (
+						<li key={action} className="flex gap-2">
+							<IconAlertTriangle
+								className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
+								aria-hidden="true"
+							/>
+							<span>{action}</span>
+						</li>
+					))}
+				</ul>
 			</CardContent>
 		</Card>
 	);
@@ -456,28 +671,16 @@ export function DiagnosticsClient({
 	adminEmail: string;
 }) {
 	const { t } = useTranslate();
-	const [snapshot, setSnapshot] = useState<PlatformDiagnosticsSnapshot>(() => initialSnapshot);
-	const [error, setError] = useState<string | null>(null);
-	const [emailRecipient, setEmailRecipient] = useState(adminEmail);
-	const [smtpOverride, setSmtpOverride] = useState<SmtpOverrideState>({
-		host: "",
-		port: "587",
-		username: "",
-		password: "",
-		fromEmail: "",
-		fromName: "",
-		secure: true,
-		requireTls: true,
-		ipMode: "auto",
+	const [state, dispatch] = useReducer(diagnosticsClientReducer, {
+		snapshot: initialSnapshot,
+		error: null,
+		emailRecipient: adminEmail,
+		smtpOverride: initialSmtpOverride,
+		emailResult: null,
+		emailError: null,
+		encryptionResult: null,
+		encryptionError: null,
 	});
-	const [emailResult, setEmailResult] = useState<{
-		recipient: string;
-		messageId?: string;
-	} | null>(null);
-	const [emailError, setEmailError] = useState<string | null>(null);
-	const [encryptionResult, setEncryptionResult] =
-		useState<PlatformKeyManagerEncryptionResult | null>(null);
-	const [encryptionError, setEncryptionError] = useState<string | null>(null);
 	const [isRefreshPending, startRefreshTransition] = useTransition();
 	const [isEmailPending, startEmailTransition] = useTransition();
 	const [isEncryptionPending, startEncryptionTransition] = useTransition();
@@ -487,104 +690,102 @@ export function DiagnosticsClient({
 		error: t("admin:admin.diagnostics.status.error", "Error"),
 		disabled: t("admin:admin.diagnostics.status.disabled", "Disabled"),
 	};
-	const encryptionStatusLabel = encryptionResult?.matches
+	const encryptionStatusLabel = state.encryptionResult?.matches
 		? t("admin:admin.diagnostics.keyManager.result.match", "Input and output match")
 		: t("admin:admin.diagnostics.keyManager.result.mismatch", "Input and output differ");
 	const encryptionLiveStatus = isEncryptionPending
 		? t("admin:admin.diagnostics.keyManager.status.pending", "Encryption test is running.")
-		: encryptionResult
+		: state.encryptionResult
 			? encryptionStatusLabel
 			: "";
 
 	function refreshDiagnostics() {
-		setError(null);
+		dispatch({ type: "refreshStarted" });
 		startRefreshTransition(async () => {
 			const result = await refreshPlatformDiagnosticsAction();
 
 			if (result.success) {
-				setSnapshot(result.data);
+				dispatch({ type: "refreshSucceeded", snapshot: result.data });
 				return;
 			}
 
-			setError(result.error);
+			dispatch({ type: "refreshFailed", error: result.error });
 		});
 	}
 
 	function testEncryption() {
-		setEncryptionError(null);
-		setEncryptionResult(null);
+		dispatch({ type: "encryptionStarted" });
 		startEncryptionTransition(async () => {
 			const result = await testPlatformKeyManagerEncryptionAction();
 
 			if (result.success) {
-				setEncryptionResult(result.data);
+				dispatch({ type: "encryptionSucceeded", result: result.data });
 				return;
 			}
 
-			setEncryptionError(result.error);
+			dispatch({ type: "encryptionFailed", error: result.error });
 		});
 	}
 
 	function buildSmtpOverrideInput() {
 		const hasTextOverride =
-			smtpOverride.host.trim().length > 0 ||
-			smtpOverride.username.trim().length > 0 ||
-			smtpOverride.password.length > 0 ||
-			smtpOverride.fromEmail.trim().length > 0 ||
-			smtpOverride.fromName.trim().length > 0;
+			state.smtpOverride.host.trim().length > 0 ||
+			state.smtpOverride.username.trim().length > 0 ||
+			state.smtpOverride.password.length > 0 ||
+			state.smtpOverride.fromEmail.trim().length > 0 ||
+			state.smtpOverride.fromName.trim().length > 0;
 		const hasControlOverride =
-			smtpOverride.port !== "587" ||
-			!smtpOverride.secure ||
-			!smtpOverride.requireTls ||
-			smtpOverride.ipMode !== "auto";
+			state.smtpOverride.port !== "587" ||
+			!state.smtpOverride.secure ||
+			!state.smtpOverride.requireTls ||
+			state.smtpOverride.ipMode !== "auto";
 
 		if (!hasTextOverride && !hasControlOverride) {
 			return undefined;
 		}
 
 		const input = {
-			host: smtpOverride.host.trim(),
-			port: Number.parseInt(smtpOverride.port, 10),
-			username: smtpOverride.username.trim(),
-			password: smtpOverride.password,
-			fromEmail: smtpOverride.fromEmail.trim(),
-			secure: smtpOverride.secure,
-			requireTls: smtpOverride.requireTls,
-			ipMode: smtpOverride.ipMode,
+			host: state.smtpOverride.host.trim(),
+			port: Number.parseInt(state.smtpOverride.port, 10),
+			username: state.smtpOverride.username.trim(),
+			password: state.smtpOverride.password,
+			fromEmail: state.smtpOverride.fromEmail.trim(),
+			secure: state.smtpOverride.secure,
+			requireTls: state.smtpOverride.requireTls,
+			ipMode: state.smtpOverride.ipMode,
 		};
 
-		if (smtpOverride.fromName.trim().length > 0) {
-			return { ...input, fromName: smtpOverride.fromName.trim() };
+		if (state.smtpOverride.fromName.trim().length > 0) {
+			return { ...input, fromName: state.smtpOverride.fromName.trim() };
 		}
 
 		return input;
 	}
 
 	function sendTestEmail() {
-		setEmailError(null);
-		setEmailResult(null);
+		dispatch({ type: "emailStarted" });
 		startEmailTransition(async () => {
 			const result = await sendPlatformDiagnosticsTestEmailAction({
-				to: emailRecipient,
+				to: state.emailRecipient,
 				smtpOverride: buildSmtpOverrideInput(),
 			});
 
 			if (result.success) {
-				setEmailResult(result.data);
+				dispatch({ type: "emailSucceeded", result: result.data });
 				return;
 			}
 
-			setEmailError(result.error);
+			dispatch({ type: "emailFailed", error: result.error });
 		});
 	}
 
 	return (
 		<div className="space-y-6">
 			<DiagnosticsOverviewCard
-				snapshot={snapshot}
+				snapshot={state.snapshot}
 				statusLabels={statusLabels}
 				isRefreshPending={isRefreshPending}
-				error={error}
+				error={state.error}
 				onRefresh={refreshDiagnostics}
 				t={t}
 			/>
@@ -599,7 +800,7 @@ export function DiagnosticsClient({
 						"admin:admin.diagnostics.sections.configuration.description",
 						"Safe deployment configuration states. Secret values are never shown.",
 					)}
-					items={snapshot.configuration}
+					items={state.snapshot.configuration}
 					statusLabels={statusLabels}
 				/>
 				<DiagnosticsSection
@@ -608,154 +809,37 @@ export function DiagnosticsClient({
 						"admin:admin.diagnostics.sections.health.description",
 						"App-only checks for infrastructure dependencies used by the webapp.",
 					)}
-					items={snapshot.health}
+					items={state.snapshot.health}
 					statusLabels={statusLabels}
 				/>
 			</div>
 
 			<EmailTestCard
-				emailRecipient={emailRecipient}
-				emailError={emailError}
-				emailResult={emailResult}
-				smtpOverride={smtpOverride}
+				emailRecipient={state.emailRecipient}
+				emailError={state.emailError}
+				emailResult={state.emailResult}
+				smtpOverride={state.smtpOverride}
 				isEmailPending={isEmailPending}
-				onRecipientChange={setEmailRecipient}
-				onSmtpOverrideChange={setSmtpOverride}
+				onRecipientChange={(recipient) => dispatch({ type: "emailRecipientChanged", recipient })}
+				onSmtpOverrideChange={(update) => dispatch({ type: "smtpOverrideChanged", update })}
 				onSend={sendTestEmail}
 				t={t}
 			/>
 
-			{snapshot.secretStoreProvider === "scaleway" ? (
-				<Card>
-					<CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-						<div className="space-y-2">
-							<CardTitle className="flex items-center gap-2">
-								<IconKey className="size-5 text-primary" aria-hidden="true" />
-								{t("admin:admin.diagnostics.keyManager.title", "Scaleway Key Manager Encryption")}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"admin:admin.diagnostics.keyManager.description",
-									"Run an end-to-end platform key encrypt/decrypt test.",
-								)}
-							</CardDescription>
-							<p className="sr-only" role="status" aria-live="polite">
-								{encryptionLiveStatus}
-							</p>
-						</div>
-						<Button
-							onClick={testEncryption}
-							disabled={isEncryptionPending}
-							aria-label={t("admin:admin.diagnostics.keyManager.actions.test", "Test encryption")}
-						>
-							{isEncryptionPending ? (
-								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-							) : (
-								<IconKey className="mr-2 size-4" aria-hidden="true" />
-							)}
-							{t("admin:admin.diagnostics.keyManager.actions.test", "Test encryption")}
-						</Button>
-					</CardHeader>
-					{encryptionError ? (
-						<CardContent>
-							<div
-								className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-400"
-								role="alert"
-								aria-live="polite"
-							>
-								{encryptionError}
-							</div>
-						</CardContent>
-					) : null}
-					{encryptionResult ? (
-						<CardContent className="space-y-4">
-							<Badge
-								variant="outline"
-								className={cn(
-									encryptionResult.matches
-										? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
-										: "border-amber-500/40 text-amber-700 dark:text-amber-400",
-								)}
-							>
-								{encryptionStatusLabel}
-							</Badge>
-							<dl className="grid gap-3 text-sm sm:grid-cols-2">
-								<div className="space-y-1 rounded-lg border p-3">
-									<dt className="text-muted-foreground">
-										{t("admin:admin.diagnostics.keyManager.input", "Input")}
-									</dt>
-									<dd className="break-words font-mono">{encryptionResult.input}</dd>
-								</div>
-								<div className="space-y-1 rounded-lg border p-3">
-									<dt className="text-muted-foreground">
-										{t("admin:admin.diagnostics.keyManager.output", "Output")}
-									</dt>
-									<dd className="break-words font-mono">{encryptionResult.output}</dd>
-								</div>
-								<div className="space-y-1 rounded-lg border p-3">
-									<dt className="text-muted-foreground">
-										{t("admin:admin.diagnostics.keyManager.platformKeyId", "Platform key ID")}
-									</dt>
-									<dd className="break-words font-mono">{encryptionResult.platformKeyId}</dd>
-								</div>
-								<div className="space-y-1 rounded-lg border p-3">
-									<dt className="text-muted-foreground">
-										{t("admin:admin.diagnostics.keyManager.keyStatus", "Key status")}
-									</dt>
-									<dd>
-										{encryptionResult.keyStatus === "created"
-											? t(
-													"admin:admin.diagnostics.keyManager.keyStatus.created",
-													"Created new platform key",
-												)
-											: t(
-													"admin:admin.diagnostics.keyManager.keyStatus.reused",
-													"Reused existing platform key",
-												)}
-									</dd>
-								</div>
-								<div className="space-y-1 rounded-lg border p-3 sm:col-span-2">
-									<dt className="text-muted-foreground">
-										{t(
-											"admin:admin.diagnostics.keyManager.ciphertextPreview",
-											"Ciphertext preview",
-										)}
-									</dt>
-									<dd className="break-words font-mono">{encryptionResult.ciphertextPreview}</dd>
-								</div>
-							</dl>
-						</CardContent>
-					) : null}
-				</Card>
+			{state.snapshot.secretStoreProvider === "scaleway" ? (
+				<KeyManagerEncryptionCard
+					encryptionResult={state.encryptionResult}
+					encryptionError={state.encryptionError}
+					encryptionStatusLabel={encryptionStatusLabel}
+					encryptionLiveStatus={encryptionLiveStatus}
+					isEncryptionPending={isEncryptionPending}
+					onTestEncryption={testEncryption}
+					t={t}
+				/>
 			) : null}
 
-			{snapshot.recommendedActions.length > 0 ? (
-				<Card className="border-amber-500/30 bg-amber-500/5">
-					<CardHeader>
-						<CardTitle>
-							{t("admin:admin.diagnostics.recommendedActions.title", "Recommended Actions")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"admin:admin.diagnostics.recommendedActions.description",
-								"Resolve these items to return diagnostics to a healthy state.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<ul className="space-y-2 text-sm">
-							{snapshot.recommendedActions.map((action) => (
-								<li key={action} className="flex gap-2">
-									<IconAlertTriangle
-										className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
-										aria-hidden="true"
-									/>
-									<span>{action}</span>
-								</li>
-							))}
-						</ul>
-					</CardContent>
-				</Card>
+			{state.snapshot.recommendedActions.length > 0 ? (
+				<RecommendedActionsCard actions={state.snapshot.recommendedActions} t={t} />
 			) : null}
 		</div>
 	);

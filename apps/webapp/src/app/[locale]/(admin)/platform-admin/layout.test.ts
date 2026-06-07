@@ -105,8 +105,6 @@ describe("platform admin layout", () => {
 		expect(source).toContain("TooltipTrigger asChild");
 		expect(source).toContain("aria-label={item.label}");
 		expect(source).toContain("aria-label={exitLabel}");
-		expect(source).toContain('item.href === "/platform-admin"');
-		expect(source).toContain("pathname === item.href || pathname.startsWith(`${item.href}/`)");
 		expect(source).toContain("bg-accent text-accent-foreground");
 	});
 
@@ -115,5 +113,56 @@ describe("platform admin layout", () => {
 
 		expect(source).toContain('className="flex items-center gap-2"');
 		expect(source).toContain('<LanguageSwitcher variant="compact" />');
+	});
+
+	it("renders a left-side mobile admin menu before the admin identity", () => {
+		const source = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"));
+		const mobileMenuIndex = source.indexOf("<PlatformAdminMobileMenu");
+		const adminHomeLinkIndex = source.indexOf('href="/platform-admin"');
+
+		expect(source).toContain("PlatformAdminMobileMenu");
+		expect(source).toContain("openMenuLabel={t(");
+		expect(source).toContain('"Open admin menu"');
+		expect(mobileMenuIndex).toBeGreaterThanOrEqual(0);
+		expect(adminHomeLinkIndex).toBeGreaterThanOrEqual(0);
+		expect(mobileMenuIndex).toBeLessThan(adminHomeLinkIndex);
+	});
+
+	it("defines the platform admin mobile menu as a left sheet using shared nav state", () => {
+		const source = stripComments(
+			readFileSync(join(PLATFORM_ADMIN_ROOT, "../platform-admin-mobile-menu.tsx"), "utf8"),
+		);
+
+		expect(source).toContain('"use client"');
+		expect(source).toContain("SheetTrigger asChild");
+		expect(source).toContain('side="left"');
+		expect(source).toContain("SheetClose asChild");
+		expect(source).toContain("IconMenu2");
+		expect(source).toContain("platformAdminIcons[item.icon]");
+		expect(source).toContain("isActivePlatformAdminItem(pathname, item)");
+		expect(source).toContain("bg-accent text-accent-foreground");
+	});
+
+	it("keeps shared platform admin nav helpers outside component files", () => {
+		const source = stripComments(
+			readFileSync(join(PLATFORM_ADMIN_ROOT, "../platform-admin-nav.ts"), "utf8"),
+		);
+
+		expect(source).toContain("export const platformAdminIcons");
+		expect(source).toContain("export function isActivePlatformAdminItem");
+		expect(source).toContain('item.href === "/platform-admin"');
+		expect(source).toContain("pathname === item.href || pathname.startsWith(`${item.href}/`)");
+	});
+
+	it("stacks platform settings environment rows on mobile", () => {
+		const source = stripComments(
+			readFileSync(join(PLATFORM_ADMIN_ROOT, "settings/page.tsx"), "utf8"),
+		);
+		const rowClass =
+			"flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between";
+		const codeClass = "break-all text-left text-xs text-muted-foreground sm:text-right";
+
+		expect(source.match(new RegExp(rowClass, "g")) ?? []).toHaveLength(2);
+		expect(source.match(new RegExp(codeClass, "g")) ?? []).toHaveLength(2);
 	});
 });
