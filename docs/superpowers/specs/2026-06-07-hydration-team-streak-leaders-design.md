@@ -11,6 +11,7 @@ The feature should encourage team visibility without creating a separate dashboa
 In scope:
 
 - Add `teamStreakLeaders` to the existing `getHydrationWidgetData` response.
+- Cache the team leaderboard query with organization/team/current-employee scoped keys.
 - Compute team scope from the current employee's active organization.
 - Include employees who share at least one team with the current employee.
 - Support both legacy primary team membership through `employee.teamId` and multi-team membership through `team_membership`.
@@ -61,6 +62,10 @@ The server action will:
 9. Return the first three rows.
 
 All employee and team membership queries must filter by the active `organizationId`.
+
+The leaderboard query must be cached with Next.js query caching, following the repo's current `unstable_cache` pattern. The cache key must include at least the active `organizationId`, the current employee id, and the current employee's sorted team ids so employees with different team scopes cannot share cached results. The cache should use a short revalidation window of 60 seconds and tags for hydration streaks, employees, and teams.
+
+Hydration mutations that can change `hydration_stats.currentStreak` must revalidate the hydration streak cache tag for the active organization. Team membership or employee changes should continue to revalidate their existing team/employee tags so team scope changes refresh the leaderboard.
 
 ## UI Behavior
 
