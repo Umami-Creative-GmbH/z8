@@ -15,6 +15,7 @@ import { MembersTable } from "./members-table";
 import { OrganizationDangerZoneCard } from "./organization-danger-zone-card";
 import { OrganizationDetailsCard } from "./organization-details-card";
 import { OrganizationFeaturesCard } from "./organization-features-card";
+import { OrganizationLanguageCard } from "./organization-language-card";
 import { OrganizationTimezoneCard } from "./organization-timezone-card";
 import type { InvitationWithInviter, MemberWithUserAndEmployee } from "./organizations-page-client";
 import { PendingMembersCard } from "./pending-members-card";
@@ -24,6 +25,7 @@ interface OrganizationTabProps {
 	members: MemberWithUserAndEmployee[];
 	invitations: InvitationWithInviter[];
 	currentMemberRole: "owner" | "admin" | "member";
+	defaultNotificationLanguage: string;
 	currentUserId: string;
 	canCreateOrganizations: boolean;
 }
@@ -33,6 +35,7 @@ export function OrganizationTab({
 	members,
 	invitations,
 	currentMemberRole,
+	defaultNotificationLanguage,
 	currentUserId,
 	canCreateOrganizations,
 }: OrganizationTabProps) {
@@ -57,7 +60,7 @@ export function OrganizationTab({
 			{canCreateOrganizations && (
 				<div className="flex justify-end">
 					<Button onClick={() => setCreateOrgDialogOpen(true)} variant="outline">
-						<IconBuilding className="mr-2 size-4" />
+						<IconBuilding aria-hidden="true" className="mr-2 size-4" />
 						{t("organization.createNew", "Create New Organization")}
 					</Button>
 				</div>
@@ -88,6 +91,13 @@ export function OrganizationTab({
 				currentMemberRole={currentMemberRole}
 			/>
 
+			{/* Organization Language Card */}
+			<OrganizationLanguageCard
+				organizationId={organization.id}
+				defaultLanguage={defaultNotificationLanguage}
+				currentMemberRole={currentMemberRole}
+			/>
+
 			{/* Invite Codes Card (admin/owner only) */}
 			<InviteCodeManagement
 				organizationId={organization.id}
@@ -114,7 +124,7 @@ export function OrganizationTab({
 						</div>
 						{canInvite && (
 							<Button onClick={() => setInviteDialogOpen(true)} className="shrink-0 px-2 sm:px-4">
-								<IconUserPlus className="size-4 sm:mr-2" />
+								<IconUserPlus aria-hidden="true" className="size-4 sm:mr-2" />
 								<span className="sr-only sm:not-sr-only">
 									{t("organization.invite.member", "Invite Member")}
 								</span>

@@ -10,7 +10,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { employee, team } from "@/db/schema";
+import { employee, organizationNotificationSettings, team } from "@/db/schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { getTranslate } from "@/tolgee/server";
@@ -38,40 +38,45 @@ async function OrganizationsPageContent() {
 		redirect("/settings");
 	}
 
-	const [organization, invitations, currentMember, members] = await Promise.all([
-		db.query.organization.findFirst({
-			where: eq(authSchema.organization.id, organizationId),
-		}),
-		db.query.invitation.findMany({
-			where: and(
-				eq(authSchema.invitation.organizationId, organizationId),
-				eq(authSchema.invitation.status, "pending"),
-			),
-			with: {
-				user: true,
-			},
-			orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
-		}),
-		db.query.member.findFirst({
-			where: and(
-				eq(authSchema.member.userId, authContext.user.id),
-				eq(authSchema.member.organizationId, organizationId),
-			),
-		}),
-		db
-			.select({
-				member: authSchema.member,
-				user: authSchema.user,
-				employee: employee,
-			})
-			.from(authSchema.member)
-			.innerJoin(authSchema.user, eq(authSchema.member.userId, authSchema.user.id))
-			.leftJoin(
-				employee,
-				and(eq(employee.userId, authSchema.user.id), eq(employee.organizationId, organizationId)),
-			)
-			.where(eq(authSchema.member.organizationId, organizationId)),
-	]);
+	const [organization, invitations, currentMember, members, organizationNotificationSettingsRecord] =
+		await Promise.all([
+			db.query.organization.findFirst({
+				where: eq(authSchema.organization.id, organizationId),
+			}),
+			db.query.invitation.findMany({
+				where: and(
+					eq(authSchema.invitation.organizationId, organizationId),
+					eq(authSchema.invitation.status, "pending"),
+				),
+				with: {
+					user: true,
+				},
+				orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
+			}),
+			db.query.member.findFirst({
+				where: and(
+					eq(authSchema.member.userId, authContext.user.id),
+					eq(authSchema.member.organizationId, organizationId),
+				),
+			}),
+			db
+				.select({
+					member: authSchema.member,
+					user: authSchema.user,
+					employee: employee,
+				})
+				.from(authSchema.member)
+				.innerJoin(authSchema.user, eq(authSchema.member.userId, authSchema.user.id))
+				.leftJoin(
+					employee,
+					and(eq(employee.userId, authSchema.user.id), eq(employee.organizationId, organizationId)),
+				)
+				.where(eq(authSchema.member.organizationId, organizationId)),
+			db.query.organizationNotificationSettings.findFirst({
+				where: eq(organizationNotificationSettings.organizationId, organizationId),
+				columns: { defaultLanguage: true },
+			}),
+		]);
 
 	if (!organization || !currentMember) {
 		return (
@@ -119,6 +124,7 @@ async function OrganizationsPageContent() {
 			members={typedMembers}
 			invitations={typedInvitations}
 			currentMemberRole={currentMember.role as "owner" | "admin" | "member"}
+			defaultNotificationLanguage={organizationNotificationSettingsRecord?.defaultLanguage ?? "en"}
 			currentUserId={authContext.user.id}
 			canCreateOrganizations={canCreateOrganizationsForDeployment(
 				authContext.user.canCreateOrganizations || authContext.user.role === "admin",

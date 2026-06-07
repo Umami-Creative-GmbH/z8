@@ -69,6 +69,7 @@ import {
 	teamMembership,
 	teamPermissions,
 } from "./organization";
+import { organizationNotificationSettings } from "./organization-notification-settings";
 import { payrollAccessEmployee, payrollAccessGrant, payrollAccessTeam } from "./payroll-access";
 import {
 	payrollExportConfig,
@@ -190,6 +191,7 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	// Notifications
 	notifications: many(notification),
 	notificationPreferences: many(notificationPreference),
+	notificationSettings: one(organizationNotificationSettings),
 	// Enterprise features
 	domains: many(organizationDomain),
 	branding: one(organizationBranding),
@@ -1470,6 +1472,16 @@ export const notificationPreferenceRelations = relations(notificationPreference,
 		references: [organization.id],
 	}),
 }));
+
+export const organizationNotificationSettingsRelations = relations(
+	organizationNotificationSettings,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [organizationNotificationSettings.organizationId],
+			references: [organization.id],
+		}),
+	}),
+);
 
 export const pushSubscriptionRelations = relations(pushSubscription, ({ one }) => ({
 	user: one(user, {

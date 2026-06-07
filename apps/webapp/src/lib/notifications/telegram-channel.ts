@@ -9,6 +9,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import { localizeOutboundNotification } from "./outbound-localization";
 import type { NotificationType } from "./types";
 
 const logger = createLogger("TelegramChannel");
@@ -90,7 +91,14 @@ export async function sendTelegramNotification(params: TelegramNotificationParam
 			return;
 		}
 
-		let text = `*${escapeMarkdownV2(params.title)}*\n\n${escapeMarkdownV2(params.message)}`;
+		const localized = await localizeOutboundNotification({
+			userId: params.userId,
+			organizationId: params.organizationId,
+			title: params.title,
+			message: params.message,
+			metadata: params.metadata,
+		});
+		let text = `*${escapeMarkdownV2(localized.title)}*\n\n${escapeMarkdownV2(localized.message)}`;
 		if (params.actionUrl) {
 			text += `\n\n[View in Z8](${escapeMarkdownV2(params.actionUrl)})`;
 		}
