@@ -5,7 +5,7 @@ import {
 	buildGetHydrationStatsEffect,
 	buildLogWaterIntakeEffect,
 	revalidateHydrationStreaksCache,
-} from "./actions";
+} from "./actions/effects";
 
 const mocks = vi.hoisted(() => ({
 	revalidateTag: vi.fn(),
