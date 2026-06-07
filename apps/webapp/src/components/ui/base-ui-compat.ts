@@ -6,7 +6,7 @@ type NativeButtonElementProps = {
 
 const nativeButtonComponentMarker = Symbol.for("z8.nativeButtonComponent");
 
-type NativeButtonComponent = React.JSXElementConstructor<unknown> & {
+type NativeButtonComponent = React.JSXElementConstructor<never> & {
 	[nativeButtonComponentMarker]?: true;
 };
 
@@ -22,7 +22,7 @@ type DismissEventHandlers = {
 	onPointerDownOutside?: (event: PointerEvent) => void;
 };
 
-function markNativeButtonComponent<Component extends React.JSXElementConstructor<unknown>>(
+function markNativeButtonComponent<Component extends React.JSXElementConstructor<never>>(
 	component: Component,
 ) {
 	(component as NativeButtonComponent)[nativeButtonComponentMarker] = true;
@@ -30,7 +30,7 @@ function markNativeButtonComponent<Component extends React.JSXElementConstructor
 	return component;
 }
 
-function isNativeButtonComponent(type: React.ElementType) {
+function isNativeButtonComponent(type: unknown) {
 	return (
 		(typeof type === "function" || (typeof type === "object" && type !== null)) &&
 		Boolean((type as NativeButtonComponent)[nativeButtonComponentMarker])
