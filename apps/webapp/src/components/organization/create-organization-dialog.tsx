@@ -107,16 +107,7 @@ export function CreateOrganizationDialog({
 	});
 
 	const formValues = useStore(form.store, (state) => state.values);
-	const name = formValues.name;
 	const slug = formValues.slug;
-
-	// Auto-generate slug from name
-	useEffect(() => {
-		if (name && !slugManuallyEdited.current) {
-			const generatedSlug = generateSlug(name);
-			form.setFieldValue("slug", generatedSlug);
-		}
-	}, [name, form]);
 
 	// Validate slug availability (debounced)
 	useEffect(() => {
