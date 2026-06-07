@@ -144,6 +144,8 @@
       "confirm": "Convertir en pause",
       "description": "Cela supprimera définitivement cette période de travail. L'espace apparaîtra comme une pause dans le calendrier.",
       "failed": "Échec de la suppression de la période de travail",
+      "reasonLabel": "Motif de la suppression",
+      "reasonRequired": "Le motif est requis",
       "success": "Période de travail convertie en pause",
       "title": "Convertir en pause ?"
     },
@@ -166,7 +168,7 @@
       "type": "Type"
     },
     "edit": {
-      "convertToBreak": "Convertir en pause",
+      "deleteEntry": "Supprimer l'entrée",
       "notesSaved": "Notes enregistrées",
       "notesSaveFailed": "Échec de l'enregistrement des notes",
       "projectSaved": "Projet mis à jour",

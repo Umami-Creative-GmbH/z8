@@ -102,6 +102,14 @@
       "title": "Inviter un membre"
     },
     "joinOrCreate": "Rejoindre ou créer",
+    "language": {
+      "adminOnly": "Seuls les administrateurs et les propriétaires de l'organisation peuvent modifier le paramètre de langue des notifications.",
+      "default": "Langue de notification par défaut",
+      "description": "Définissez la langue de secours pour les e-mails, Telegram et autres notifications sortantes lorsqu'un utilisateur n'a pas sélectionné de langue d'interface.",
+      "title": "Langue de notification",
+      "updated": "Langue de notification de l'organisation mise à jour",
+      "updateFailed": "Échec de la mise à jour de la langue de notification de l'organisation"
+    },
     "logo": {
       "changeLabel": "Changer le logo de l'organisation",
       "removeLabel": "Supprimer le logo de l'organisation",

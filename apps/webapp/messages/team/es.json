@@ -4,6 +4,22 @@
       "actions": {
         "recordForEmployee": "Registrar ausencia para {name}"
       },
+      "calendar": {
+        "approved": "Aprobado",
+        "description": "Ausencias aprobadas y pendientes para el equipo y año seleccionados.",
+        "error": {
+          "description": "Por favor, inténtelo de nuevo en un momento.",
+          "title": "No se pudo cargar el calendario"
+        },
+        "legend": {
+          "approved": "Aprobado",
+          "pending": "Pendiente"
+        },
+        "pending": "Pendiente",
+        "pendingDays": "{count} pendiente",
+        "title": "Calendario anual",
+        "totalDays": "{count} ausente"
+      },
       "description": "Revise los permisos y registre las ausencias aprobadas de su equipo.",
       "empty": {
         "description": "Intente ajustar los filtros o la búsqueda para encontrar miembros del equipo.",

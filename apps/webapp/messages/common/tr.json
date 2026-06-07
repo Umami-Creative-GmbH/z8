@@ -48,6 +48,10 @@
         "subtitle": "Zaman verilerinin bordro için hazır olup olmadığını kontrol edin",
         "title": "Bordro hazırlığını aç"
       },
+      "openPayroll": {
+        "subtitle": "Kapsamlı bordro çalışma alanını incele",
+        "title": "Bordroyu aç"
+      },
       "openSettings": {
         "subtitle": "Profilinizi, güvenliğinizi ve organizasyon ayarlarınızı yönetin",
         "title": "Ayarları aç"
@@ -301,6 +305,7 @@
     "get-help": "Yardım Al",
     "my-requests": "Taleplerim",
     "org-explorer": "Kuruluş Gezgini",
+    "payroll": "Bordro",
     "platform-admin": "Platform Yöneticisi",
     "reports": "Raporlar",
     "scheduling": "Planlama",

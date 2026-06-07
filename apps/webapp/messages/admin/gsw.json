@@ -139,6 +139,22 @@
         "description": "Sänd en Diagnose-E-Mail über s System-E-Mail-Transport-Protokoll.",
         "messageId": "Nachrichte-ID: {messageId}",
         "recipient": "Empfänger-E-Mail",
+        "smtpOverride": {
+          "description": "Leer lah, zum de konfigurierti System-E-Mail-Transport z'bruche. Wenn usgfüllt, brucht de Test nume die SMTP-Iistellige.",
+          "fromEmail": "Absender-E-Mail",
+          "fromName": "Absender-Name",
+          "host": "SMTP-Host",
+          "ipMode": "IP-Modus",
+          "ipMode.auto": "Auto",
+          "ipMode.ipv4": "Nur IPv4",
+          "ipMode.ipv6": "Nur IPv6",
+          "password": "SMTP-Passwort",
+          "port": "SMTP-Port",
+          "requireTls": "STARTTLS erfordere",
+          "secure": "TLS bruche",
+          "title": "Temporäri SMTP-Überschriibig",
+          "username": "SMTP-Benutzername"
+        },
         "success": "Test-E-Mail isch a {recipient} versändet worde.",
         "title": "E-Mail-Zuestelligstest"
       },
@@ -188,6 +204,7 @@
     },
     "layout": {
       "exitAdmin": "Admin verlah",
+      "menuTitle": "Admin-Menü",
       "nav": {
         "analytics": "Analytik",
         "billing": "Abrechnig",
@@ -199,6 +216,7 @@
         "users": "Benutzer",
         "workerQueue": "Arbeiter-Warteschlange"
       },
+      "openMenu": "Admin-Menü öffne",
       "subtitle": "Plattform-Verwaltig",
       "title": "Admin-Konsole"
     },

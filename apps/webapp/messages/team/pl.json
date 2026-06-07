@@ -4,6 +4,22 @@
       "actions": {
         "recordForEmployee": "Zarejestruj nieobecność dla {name}"
       },
+      "calendar": {
+        "approved": "Zatwierdzone",
+        "description": "Zatwierdzone i oczekujące nieobecności dla wybranego zespołu i roku.",
+        "error": {
+          "description": "Spróbuj ponownie za chwilę.",
+          "title": "Nie można załadować kalendarza"
+        },
+        "legend": {
+          "approved": "Zatwierdzone",
+          "pending": "Oczekujące"
+        },
+        "pending": "Oczekujące",
+        "pendingDays": "{count, plural, one {# oczekujący} few {# oczekujące} many {# oczekujących} other {# oczekującego}}",
+        "title": "Kalendarz roczny",
+        "totalDays": "{count, plural, one {# nieobecny} few {# nieobecnych} many {# nieobecnych} other {# nieobecnego}}"
+      },
       "description": "Przeglądaj limity i rejestruj zatwierdzone nieobecności dla swojego zespołu.",
       "empty": {
         "description": "Spróbuj dostosować filtry lub wyszukiwanie, aby znaleźć członków zespołu.",

@@ -144,6 +144,8 @@
       "confirm": "Konwertuj na przerwę",
       "description": "To działanie trwale usunie ten okres pracy. Luka pojawi się w kalendarzu jako przerwa.",
       "failed": "Nie udało się usunąć okresu pracy",
+      "reasonLabel": "Powód usunięcia",
+      "reasonRequired": "Powód jest wymagany",
       "success": "Okres pracy przekonwertowany na przerwę",
       "title": "Konwertować na przerwę?"
     },
@@ -166,7 +168,7 @@
       "type": "Typ"
     },
     "edit": {
-      "convertToBreak": "Konwertuj na przerwę",
+      "deleteEntry": "Usuń wpis",
       "notesSaved": "Notatki zapisano",
       "notesSaveFailed": "Nie udało się zapisać notatek",
       "projectSaved": "Projekt zaktualizowany",

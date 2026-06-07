@@ -144,6 +144,8 @@
       "confirm": "In Pause umwandle",
       "description": "Das löscht die Arbeitsziit permanent. D Lücke wird im Kaländer als Pause aazeigt.",
       "failed": "Arbeitsziit chönnt nöd glöscht wärde",
+      "reasonLabel": "Grund für s'Lösche",
+      "reasonRequired": "Grund isch erforderlich",
       "success": "Arbeitsziit in Pause umgwandlet",
       "title": "In Pause umwandle?"
     },
@@ -166,7 +168,7 @@
       "type": "Typ"
     },
     "edit": {
-      "convertToBreak": "In Pause umwandle",
+      "deleteEntry": "Iitrag lösche",
       "notesSaved": "Notize gspicheret",
       "notesSaveFailed": "Notize chönd nöd gspicheret werde",
       "projectSaved": "Projekt aktualisiert",

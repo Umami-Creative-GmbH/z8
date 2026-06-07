@@ -139,6 +139,22 @@
         "description": "Αποστολή διαγνωστικού email μέσω του συστήματος μεταφοράς email.",
         "messageId": "Αναγνωριστικό μηνύματος: {messageId}",
         "recipient": "Email παραλήπτη",
+        "smtpOverride": {
+          "description": "Αφήστε το κενό για να χρησιμοποιήσετε τις ρυθμίσεις μεταφοράς email του συστήματος. Αν συμπληρωθεί, η δοκιμή χρησιμοποιεί μόνο αυτές τις ρυθμίσεις SMTP.",
+          "fromEmail": "Email αποστολέα",
+          "fromName": "Όνομα αποστολέα",
+          "host": "Διακομιστής SMTP",
+          "ipMode": "Λειτουργία IP",
+          "ipMode.auto": "Αυτόματο",
+          "ipMode.ipv4": "Μόνο IPv4",
+          "ipMode.ipv6": "Μόνο IPv6",
+          "password": "Κωδικός πρόσβασης SMTP",
+          "port": "Θύρα SMTP",
+          "requireTls": "Απαίτηση STARTTLS",
+          "secure": "Χρήση TLS",
+          "title": "Προσωρινή παράκαμψη SMTP",
+          "username": "Όνομα χρήστη SMTP"
+        },
         "success": "Το δοκιμαστικό email στάλθηκε στο {recipient}.",
         "title": "Δοκιμή παράδοσης email"
       },
@@ -188,6 +204,7 @@
     },
     "layout": {
       "exitAdmin": "Έξοδος από τη Διαχείριση",
+      "menuTitle": "Μενού διαχειριστή",
       "nav": {
         "analytics": "Αναλυτικά Στοιχεία",
         "billing": "Χρέωση",
@@ -199,6 +216,7 @@
         "users": "Χρήστες",
         "workerQueue": "Ουρά εργαζομένων"
       },
+      "openMenu": "Άνοιγμα μενού διαχειριστή",
       "subtitle": "Διαχείριση πλατφόρμας",
       "title": "Κονσόλα διαχείρισης"
     },

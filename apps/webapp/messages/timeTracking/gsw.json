@@ -23,7 +23,9 @@
     },
     "correction": {
       "clockIn": "Iistämple",
+      "clockInDate": "Datum vom Iistämpfle",
       "clockOut": "Usstämple",
+      "clockOutDate": "Datum vom Uusstämpfle",
       "editDescription": "Änderige a dim Ziiteintrag für hüt vorneh.",
       "editEntry": "Ziiteintrag bearbeite",
       "editTitle": "Ziiteintrag bearbeite",

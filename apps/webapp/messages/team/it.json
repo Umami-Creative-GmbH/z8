@@ -4,6 +4,22 @@
       "actions": {
         "recordForEmployee": "Registra assenza per {name}"
       },
+      "calendar": {
+        "approved": "Approvato",
+        "description": "Assenze approvate e in attesa per il team e l'anno selezionati.",
+        "error": {
+          "description": "Riprova tra un momento.",
+          "title": "Impossibile caricare il calendario"
+        },
+        "legend": {
+          "approved": "Approvato",
+          "pending": "In attesa"
+        },
+        "pending": "In attesa",
+        "pendingDays": "{count} in attesa",
+        "title": "Calendario annuale",
+        "totalDays": "{count} assente"
+      },
       "description": "Esamina le indennità e registra le assenze approvate per il tuo team.",
       "empty": {
         "description": "Prova a modificare i filtri o la ricerca per trovare i membri del team.",

@@ -48,6 +48,10 @@
         "subtitle": "Comprobar si los datos de tiempo están listos para la nómina",
         "title": "Abrir preparación de nómina"
       },
+      "openPayroll": {
+        "subtitle": "Revisar espacio de trabajo de nómina con alcance",
+        "title": "Abrir nómina"
+      },
       "openSettings": {
         "subtitle": "Gestionar su perfil, seguridad y ajustes de la organización",
         "title": "Abrir ajustes"
@@ -301,6 +305,7 @@
     "get-help": "Obtener Ayuda",
     "my-requests": "Mis solicitudes",
     "org-explorer": "Explorador de la organización",
+    "payroll": "Nómina",
     "platform-admin": "Administrador de plataforma",
     "reports": "Informes",
     "scheduling": "Programación",

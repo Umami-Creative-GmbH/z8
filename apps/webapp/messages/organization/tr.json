@@ -102,6 +102,14 @@
       "title": "Üye Davet Et"
     },
     "joinOrCreate": "Katıl veya bir tane oluştur",
+    "language": {
+      "adminOnly": "Yalnızca organizasyon yöneticileri ve sahipleri bildirim dili ayarını değiştirebilir.",
+      "default": "Varsayılan bildirim dili",
+      "description": "Bir kullanıcı arayüz dili seçmediğinde e-posta, Telegram ve diğer giden bildirimler için yedek dili ayarlayın.",
+      "title": "Bildirim dili",
+      "updated": "Organizasyon bildirim dili güncellendi",
+      "updateFailed": "Organizasyon bildirim dili güncellenemedi"
+    },
     "logo": {
       "changeLabel": "Kuruluş logosunu değiştir",
       "removeLabel": "Kuruluş logosunu kaldır",

@@ -23,7 +23,9 @@
     },
     "correction": {
       "clockIn": "Clock In",
+      "clockInDate": "Clock In Date",
       "clockOut": "Clock Out",
+      "clockOutDate": "Clock Out Date",
       "editDescription": "Make changes to your time entry for today.",
       "editEntry": "Edit time entry",
       "editTitle": "Edit Time Entry",

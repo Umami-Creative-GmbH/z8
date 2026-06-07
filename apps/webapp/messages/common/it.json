@@ -48,6 +48,10 @@
         "subtitle": "Verifica se i dati temporali sono pronti per le buste paga",
         "title": "Apri la preparazione buste paga"
       },
+      "openPayroll": {
+        "subtitle": "Revisiona area di lavoro paghe con ambito",
+        "title": "Apri paghe"
+      },
       "openSettings": {
         "subtitle": "Gestisci il tuo profilo, la sicurezza e le impostazioni dell'organizzazione",
         "title": "Apri impostazioni"
@@ -301,6 +305,7 @@
     "get-help": "Ottieni Aiuto",
     "my-requests": "Le mie richieste",
     "org-explorer": "Esplora organizzazione",
+    "payroll": "Paghe",
     "platform-admin": "Amministratore piattaforma",
     "reports": "Rapporti",
     "scheduling": "Pianificazione",
