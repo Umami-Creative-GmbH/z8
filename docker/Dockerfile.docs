@@ -43,6 +43,7 @@ COPY --from=docs-pruner /app/out/pnpm-lock.yaml ./
 COPY --from=docs-pruner /app/out/full/apps/docs/source.config.ts ./apps/docs/
 COPY --from=docs-pruner /app/out/full/apps/docs/content ./apps/docs/content
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --lockfile-only && \
     pnpm install --frozen-lockfile
 
 FROM base AS docs-workspace
@@ -62,6 +63,7 @@ COPY --from=docs-pruner /app/out/pnpm-lock.yaml ./
 COPY --from=docs-pruner /app/out/full/apps/docs/source.config.ts ./apps/docs/
 COPY --from=docs-pruner /app/out/full/apps/docs/content ./apps/docs/content
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --lockfile-only && \
     pnpm install --frozen-lockfile --prod
 
 FROM base AS docs
