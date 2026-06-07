@@ -133,12 +133,7 @@ describe("form control wrappers", () => {
 		const handleSubmit = vi.fn();
 
 		render(
-			<form
-				onSubmit={(event) => {
-					event.preventDefault();
-					handleSubmit();
-				}}
-			>
+			<form onSubmit={handleSubmit}>
 				<ToggleGroup type="single" defaultValue="day" aria-label="Payroll cadence">
 					<ToggleGroupItem value="day">Day</ToggleGroupItem>
 					<ToggleGroupItem value="week">Week</ToggleGroupItem>
