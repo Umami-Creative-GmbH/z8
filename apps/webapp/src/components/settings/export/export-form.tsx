@@ -98,7 +98,7 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 							id="select-all"
 							checked={allSelected}
 							onCheckedChange={handleSelectAll}
-							className={someSelected ? "data-[state=checked]:bg-muted" : ""}
+							className={someSelected ? "data-checked:bg-muted" : ""}
 						/>
 						<Label
 							htmlFor="select-all"

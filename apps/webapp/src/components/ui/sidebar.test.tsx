@@ -1,5 +1,7 @@
 /* @vitest-environment jsdom */
 
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -50,5 +52,28 @@ describe("SidebarMenuButton", () => {
 		fireEvent.click(screen.getByRole("link", { name: "Settings" }));
 
 		expect(screen.getByTestId("open-mobile").textContent).toBe("false");
+	});
+});
+
+describe("Sidebar", () => {
+	it("uses CSS motion for synchronized offcanvas content expansion", async () => {
+		const source = await readFile(join(process.cwd(), "src/components/ui/sidebar.tsx"), "utf8");
+		const globalsSource = await readFile(join(process.cwd(), "src/app/globals.css"), "utf8");
+
+		expect(source).toContain("transform-gpu");
+		expect(source).toContain("transition-[transform,opacity]");
+		expect(source).toContain("group-data-[collapsible=offcanvas]:-translate-x-full");
+		expect(source).toContain("group-data-[collapsible=offcanvas]:translate-x-full");
+		expect(source).toContain("peer-data-[state=collapsed]:animate-sidebar-inset-collapse");
+		expect(source).toContain("peer-data-[state=expanded]:animate-sidebar-inset-expand");
+		expect(source).not.toContain("requestAnimationFrame");
+		expect(source).not.toContain("animate(");
+		expect(source).not.toContain("getBoundingClientRect");
+		expect(globalsSource).toContain("--animate-sidebar-inset-collapse");
+		expect(globalsSource).toContain("@keyframes sidebar-inset-collapse");
+		expect(source).not.toContain("transition-[width]");
+		expect(source).not.toContain("transition-[transform,width]");
+		expect(source).not.toContain("will-change-[width]");
+		expect(source).not.toContain("transition-[left,right,width]");
 	});
 });
