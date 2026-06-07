@@ -128,12 +128,10 @@ describe("ActionPanel", () => {
 
 		const dialogClassName = screen.getByRole("dialog", { name: "Animated panel" }).className;
 
-		expect(dialogClassName).toContain("motion-safe:data-[starting-style]:animate-in");
-		expect(dialogClassName).toContain("motion-safe:data-[ending-style]:animate-out");
-		expect(dialogClassName).toContain("data-[starting-style]:slide-in-from-right-full");
-		expect(dialogClassName).toContain("data-[ending-style]:slide-out-to-right-full");
-		expect(dialogClassName).toContain("data-[starting-style]:duration-300");
-		expect(dialogClassName).toContain("data-[ending-style]:duration-200");
+		expect(dialogClassName).toContain("transition-transform");
+		expect(dialogClassName).toContain("data-[sheet-open=true]:translate-x-0");
+		expect(dialogClassName).not.toContain("motion-safe:data-[starting-style]:animate-in");
+		expect(dialogClassName).not.toContain("motion-safe:data-[ending-style]:animate-out");
 	});
 
 	it("can hide the close button", () => {

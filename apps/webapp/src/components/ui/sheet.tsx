@@ -13,7 +13,16 @@ import {
 } from "@/components/ui/base-ui-compat";
 import { cn } from "@/lib/utils";
 
-const SheetDismissContext = React.createContext<React.RefObject<DismissEventHandlers> | null>(null);
+type SheetSide = "top" | "right" | "bottom" | "left";
+
+const SHEET_CLOSE_DURATION_MS = 200;
+
+type SheetContextValue = {
+	dismissHandlersRef: React.RefObject<DismissEventHandlers>;
+	visualOpen: boolean;
+};
+
+const SheetContext = React.createContext<SheetContextValue | null>(null);
 
 type SheetProps = Omit<SheetPrimitive.Root.Props, "children"> & {
 	children?: React.ReactNode;
@@ -24,26 +33,63 @@ type SheetContentProps = SheetPrimitive.Popup.Props & {
 	onEscapeKeyDown?: (event: KeyboardEvent) => void;
 	onInteractOutside?: (event: Event) => void;
 	onPointerDownOutside?: (event: PointerEvent) => void;
-	side?: "top" | "right" | "bottom" | "left";
+	side?: SheetSide;
 	showCloseButton?: boolean;
 };
 
-function Sheet({ children, onOpenChange, ...props }: SheetProps) {
+function Sheet({ children, onOpenChange, open: openProp, defaultOpen, modal = "trap-focus", ...props }: SheetProps) {
 	const dismissHandlersRef = React.useRef<DismissEventHandlers>({});
+	const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen ?? false);
+	const targetOpen = openProp ?? uncontrolledOpen;
+	const [renderedOpen, setRenderedOpen] = React.useState(targetOpen);
+	const [visualOpen, setVisualOpen] = React.useState(targetOpen);
+
+	React.useEffect(() => {
+		if (targetOpen) {
+			setRenderedOpen(true);
+
+			const frame = requestAnimationFrame(() => setVisualOpen(true));
+
+			return () => cancelAnimationFrame(frame);
+		}
+
+		setVisualOpen(false);
+
+		const timeout = window.setTimeout(() => {
+			setRenderedOpen(false);
+		}, SHEET_CLOSE_DURATION_MS);
+
+		return () => window.clearTimeout(timeout);
+	}, [targetOpen]);
+
 	const handleOpenChange: SheetPrimitive.Root.Props["onOpenChange"] = (open, eventDetails) => {
 		if (cancelDismissIfPrevented(open, eventDetails, dismissHandlersRef.current)) {
 			return;
 		}
 
+		if (openProp === undefined) {
+			setUncontrolledOpen(open);
+		}
+
 		onOpenChange?.(open, eventDetails);
 	};
+	const context = React.useMemo(
+		() => ({ dismissHandlersRef, visualOpen }),
+		[visualOpen],
+	);
 
 	return (
-		<SheetDismissContext.Provider value={dismissHandlersRef}>
-			<SheetPrimitive.Root data-slot="sheet" onOpenChange={handleOpenChange} {...props}>
+		<SheetContext.Provider value={context}>
+			<SheetPrimitive.Root
+				data-slot="sheet"
+				modal={modal}
+				onOpenChange={handleOpenChange}
+				open={renderedOpen}
+				{...props}
+			>
 				{children}
 			</SheetPrimitive.Root>
-		</SheetDismissContext.Provider>
+		</SheetContext.Provider>
 	);
 }
 
@@ -90,12 +136,15 @@ function SheetPortal({ ...props }: SheetPrimitive.Portal.Props) {
 }
 
 function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
+	const context = use(SheetContext);
+
 	return (
 		<SheetPrimitive.Backdrop
 			className={cn(
-				"data-[ending-style]:fade-out-0 data-[starting-style]:fade-in-0 fixed inset-0 z-50 bg-black/50 motion-safe:data-[ending-style]:animate-out motion-safe:data-[starting-style]:animate-in",
+				"fixed inset-0 z-50 bg-black/50 opacity-0 transition-opacity duration-200 ease-out data-[sheet-open=false]:pointer-events-none data-[sheet-open=true]:opacity-100 motion-reduce:transition-none",
 				className,
 			)}
+			data-sheet-open={String(context?.visualOpen ?? false)}
 			data-slot="sheet-overlay"
 			{...props}
 		/>
@@ -112,7 +161,8 @@ function SheetContent({
 	showCloseButton = true,
 	...props
 }: SheetContentProps) {
-	const dismissHandlersRef = use(SheetDismissContext);
+	const context = use(SheetContext);
+	const dismissHandlersRef = context?.dismissHandlersRef;
 
 	React.useEffect(() => {
 		if (!dismissHandlersRef) {
@@ -134,17 +184,18 @@ function SheetContent({
 			<SheetOverlay />
 			<SheetPrimitive.Popup
 				className={cn(
-					"fixed z-50 flex flex-col gap-4 bg-muted shadow-lg transition ease-in-out motion-safe:data-[ending-style]:animate-out motion-safe:data-[starting-style]:animate-in data-[ending-style]:duration-200 data-[starting-style]:duration-300 [&_[data-slot=tabs-list]]:bg-border/40",
+					"fixed z-50 flex flex-col gap-4 bg-muted shadow-lg transition-transform duration-200 ease-in-out data-[sheet-open=true]:duration-300 data-[sheet-open=true]:ease-out motion-reduce:transition-none [&_[data-slot=tabs-list]]:bg-border/40",
 					side === "right" &&
-						"data-[ending-style]:slide-out-to-right-full data-[starting-style]:slide-in-from-right-full inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
+						"inset-y-0 right-0 h-full w-3/4 translate-x-full border-l data-[sheet-open=true]:translate-x-0 sm:max-w-sm",
 					side === "left" &&
-						"data-[ending-style]:slide-out-to-left-full data-[starting-style]:slide-in-from-left-full inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
+						"inset-y-0 left-0 h-full w-3/4 -translate-x-full border-r data-[sheet-open=true]:translate-x-0 sm:max-w-sm",
 					side === "top" &&
-						"data-[ending-style]:slide-out-to-top-full data-[starting-style]:slide-in-from-top-full inset-x-0 top-0 h-auto border-b",
+						"inset-x-0 top-0 h-auto -translate-y-full border-b data-[sheet-open=true]:translate-y-0",
 					side === "bottom" &&
-						"data-[ending-style]:slide-out-to-bottom-full data-[starting-style]:slide-in-from-bottom-full inset-x-0 bottom-0 h-auto border-t",
+						"inset-x-0 bottom-0 h-auto translate-y-full border-t data-[sheet-open=true]:translate-y-0",
 					className,
 				)}
+				data-sheet-open={String(context?.visualOpen ?? false)}
 				data-slot="sheet-content"
 				{...props}
 			>

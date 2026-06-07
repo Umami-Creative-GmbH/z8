@@ -4,7 +4,7 @@ import { IconSearch, IconX } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { Command as CommandPrimitive } from "cmdk";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import {
 	ActionPanel,
@@ -130,6 +130,17 @@ export function EmployeeSelectModal({
 	const [selectedEmployeesMap, setSelectedEmployeesMap] = useState<Map<string, SelectableEmployee>>(
 		new Map(),
 	);
+
+	useEffect(() => {
+		if (open) {
+			return;
+		}
+
+		setPendingIds([]);
+		setHasPendingChanges(false);
+		setSelectedEmployeesMap(new Map());
+		setLocalSearch("");
+	}, [open]);
 
 	// Handle selection
 	const handleSelect = (employee: SelectableEmployee) => {
