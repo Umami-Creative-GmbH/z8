@@ -1098,6 +1098,9 @@ export async function addTeamMember(
 					);
 				}
 
+				revalidateTag(CACHE_TAGS.TEAMS(targetTeam.organizationId), "max");
+				revalidateTag(CACHE_TAGS.EMPLOYEES(targetTeam.organizationId), "max");
+
 				// Trigger in-app notification (fire-and-forget)
 				void onTeamMemberAdded({
 					teamId,
@@ -1261,6 +1264,9 @@ export async function removeTeamMember(
 						}),
 					);
 				}
+
+				revalidateTag(CACHE_TAGS.TEAMS(targetTeam.organizationId), "max");
+				revalidateTag(CACHE_TAGS.EMPLOYEES(targetTeam.organizationId), "max");
 
 				// Trigger in-app notification (fire-and-forget)
 				if (targetEmployee) {
