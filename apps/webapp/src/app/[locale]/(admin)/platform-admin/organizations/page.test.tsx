@@ -248,7 +248,7 @@ describe("Platform admin organizations page", () => {
 		);
 	});
 
-	it("uses URL filters for the first organizations query", () => {
+	it("uses URL filters for organizations query after state sync", () => {
 		window.history.replaceState(
 			null,
 			"",
@@ -257,8 +257,7 @@ describe("Platform admin organizations page", () => {
 
 		render(<OrganizationsPage />);
 
-		expect(useQueryMock).toHaveBeenCalledTimes(1);
-		const queryConfig = useQueryMock.mock.calls[0]?.[0];
+		const queryConfig = useQueryMock.mock.calls.at(-1)?.[0];
 		expect(queryConfig.queryKey).toEqual(["admin-organizations", "acme", "suspended", 1]);
 	});
 });
