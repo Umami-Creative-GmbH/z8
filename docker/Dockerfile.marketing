@@ -42,6 +42,7 @@ FROM base AS marketing-deps
 COPY --from=marketing-pruner /app/out/json/ ./
 COPY --from=marketing-pruner /app/out/pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --lockfile-only && \
     pnpm install --frozen-lockfile
 
 FROM base AS marketing-workspace
@@ -60,6 +61,7 @@ FROM base AS marketing-runtime-deps
 COPY --from=marketing-pruner /app/out/json/ ./
 COPY --from=marketing-pruner /app/out/pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --lockfile-only && \
     pnpm install --frozen-lockfile --prod
 
 FROM oven/bun:1.3.11-alpine AS marketing-base
