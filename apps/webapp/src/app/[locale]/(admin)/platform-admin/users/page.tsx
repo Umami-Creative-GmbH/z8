@@ -249,7 +249,11 @@ function UsersPageContent({
 	return (
 		<div className="space-y-8">
 			<PlatformAdminUsersPageHeader />
-			<PlatformAdminUserFilters search={search} status={status} onFilterChange={handleFilterChange} />
+			<PlatformAdminUserFilters
+				search={search}
+				status={status}
+				onFilterChange={handleFilterChange}
+			/>
 			<PlatformAdminUsersTable
 				users={users}
 				isLoading={isLoading}

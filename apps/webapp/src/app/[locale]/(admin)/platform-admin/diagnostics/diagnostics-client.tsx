@@ -12,13 +12,7 @@ import { useTranslate } from "@tolgee/react";
 import { useReducer, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
 	DiagnosticsItem,
 	DiagnosticsStatus,
@@ -69,34 +63,19 @@ function StatusBadge({
 	);
 }
 
-function DiagnosticsItemRow({
-	item,
-	statusLabel,
-}: {
-	item: DiagnosticsItem;
-	statusLabel: string;
-}) {
+function DiagnosticsItemRow({ item, statusLabel }: { item: DiagnosticsItem; statusLabel: string }) {
 	return (
 		<div className="flex flex-col gap-3 border-b py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
 			<div className="min-w-0 space-y-1">
 				<div className="flex flex-wrap items-center gap-2">
 					<h3 className="text-sm font-medium">{item.title}</h3>
-					<StatusBadge
-						status={item.status}
-						label={statusLabel}
-						showLabel={false}
-					/>
+					<StatusBadge status={item.status} label={statusLabel} showLabel={false} />
 				</div>
 				{item.description ? (
-					<p className="wrap-break-words text-sm text-muted-foreground">
-						{item.description}
-					</p>
+					<p className="wrap-break-words text-sm text-muted-foreground">{item.description}</p>
 				) : null}
 				{item.actionHref && item.actionLabel ? (
-					<Link
-						href={item.actionHref}
-						className="text-sm font-medium text-primary hover:underline"
-					>
+					<Link href={item.actionHref} className="text-sm font-medium text-primary hover:underline">
 						{item.actionLabel}
 					</Link>
 				) : null}
@@ -244,9 +223,7 @@ function DiagnosticsOverviewCard({
 			<CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 				<div className="space-y-2">
 					<div className="flex flex-wrap items-center gap-3">
-						<CardTitle>
-							{t("admin:admin.diagnostics.title", "Deployment Diagnostics")}
-						</CardTitle>
+						<CardTitle>{t("admin:admin.diagnostics.title", "Deployment Diagnostics")}</CardTitle>
 						<StatusBadge
 							status={snapshot.overallStatus}
 							label={statusLabels[snapshot.overallStatus]}
@@ -273,16 +250,10 @@ function DiagnosticsOverviewCard({
 				<Button
 					onClick={onRefresh}
 					disabled={isRefreshPending}
-					aria-label={t(
-						"admin:admin.diagnostics.actions.refresh",
-						"Refresh diagnostics",
-					)}
+					aria-label={t("admin:admin.diagnostics.actions.refresh", "Refresh diagnostics")}
 				>
 					{isRefreshPending ? (
-						<IconLoader2
-							className="mr-2 size-4 animate-spin"
-							aria-hidden="true"
-						/>
+						<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 					) : (
 						<IconRefresh className="mr-2 size-4" aria-hidden="true" />
 					)}
@@ -321,18 +292,14 @@ function EmailTestCard({
 	smtpOverride: SmtpOverrideState;
 	isEmailPending: boolean;
 	onRecipientChange: (value: string) => void;
-	onSmtpOverrideChange: (
-		update: (current: SmtpOverrideState) => SmtpOverrideState,
-	) => void;
+	onSmtpOverrideChange: (update: (current: SmtpOverrideState) => SmtpOverrideState) => void;
 	onSend: () => void;
 	t: DiagnosticsTranslate;
 }) {
 	return (
 		<Card>
 			<CardHeader className="space-y-2">
-				<CardTitle>
-					{t("admin:admin.diagnostics.emailTest.title", "Email Delivery Test")}
-				</CardTitle>
+				<CardTitle>{t("admin:admin.diagnostics.emailTest.title", "Email Delivery Test")}</CardTitle>
 				<CardDescription>
 					{t(
 						"admin:admin.diagnostics.emailTest.description",
@@ -343,12 +310,7 @@ function EmailTestCard({
 			<CardContent className="space-y-4">
 				<div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
 					<label className="space-y-2 text-sm font-medium">
-						<span>
-							{t(
-								"admin:admin.diagnostics.emailTest.recipient",
-								"Recipient email",
-							)}
-						</span>
+						<span>{t("admin:admin.diagnostics.emailTest.recipient", "Recipient email")}</span>
 						<input
 							className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
 							type="email"
@@ -357,29 +319,17 @@ function EmailTestCard({
 							disabled={isEmailPending}
 						/>
 					</label>
-					<Button
-						onClick={onSend}
-						disabled={isEmailPending || emailRecipient.trim().length === 0}
-					>
+					<Button onClick={onSend} disabled={isEmailPending || emailRecipient.trim().length === 0}>
 						{isEmailPending ? (
-							<IconLoader2
-								className="mr-2 size-4 animate-spin"
-								aria-hidden="true"
-							/>
+							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 						) : null}
-						{t(
-							"admin:admin.diagnostics.emailTest.actions.send",
-							"Send test email",
-						)}
+						{t("admin:admin.diagnostics.emailTest.actions.send", "Send test email")}
 					</Button>
 				</div>
 				<div className="space-y-4 rounded-lg border bg-muted/20 p-4">
 					<div className="space-y-1">
 						<h3 className="text-sm font-medium">
-							{t(
-								"admin:admin.diagnostics.emailTest.smtpOverride.title",
-								"Temporary SMTP override",
-							)}
+							{t("admin:admin.diagnostics.emailTest.smtpOverride.title", "Temporary SMTP override")}
 						</h3>
 						<p className="text-sm text-muted-foreground">
 							{t(
@@ -390,12 +340,7 @@ function EmailTestCard({
 					</div>
 					<div className="grid gap-3 md:grid-cols-2">
 						<label className="space-y-2 text-sm font-medium">
-							<span>
-								{t(
-									"admin:admin.diagnostics.emailTest.smtpOverride.host",
-									"SMTP host",
-								)}
-							</span>
+							<span>{t("admin:admin.diagnostics.emailTest.smtpOverride.host", "SMTP host")}</span>
 							<input
 								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
 								name="smtp-host"
@@ -412,12 +357,7 @@ function EmailTestCard({
 							/>
 						</label>
 						<label className="space-y-2 text-sm font-medium">
-							<span>
-								{t(
-									"admin:admin.diagnostics.emailTest.smtpOverride.port",
-									"SMTP port",
-								)}
-							</span>
+							<span>{t("admin:admin.diagnostics.emailTest.smtpOverride.port", "SMTP port")}</span>
 							<input
 								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
 								name="smtp-port"
@@ -435,10 +375,7 @@ function EmailTestCard({
 						</label>
 						<label className="space-y-2 text-sm font-medium">
 							<span>
-								{t(
-									"admin:admin.diagnostics.emailTest.smtpOverride.username",
-									"SMTP username",
-								)}
+								{t("admin:admin.diagnostics.emailTest.smtpOverride.username", "SMTP username")}
 							</span>
 							<input
 								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -457,10 +394,7 @@ function EmailTestCard({
 						</label>
 						<label className="space-y-2 text-sm font-medium">
 							<span>
-								{t(
-									"admin:admin.diagnostics.emailTest.smtpOverride.password",
-									"SMTP password",
-								)}
+								{t("admin:admin.diagnostics.emailTest.smtpOverride.password", "SMTP password")}
 							</span>
 							<input
 								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -479,10 +413,7 @@ function EmailTestCard({
 						</label>
 						<label className="space-y-2 text-sm font-medium">
 							<span>
-								{t(
-									"admin:admin.diagnostics.emailTest.smtpOverride.fromEmail",
-									"From email",
-								)}
+								{t("admin:admin.diagnostics.emailTest.smtpOverride.fromEmail", "From email")}
 							</span>
 							<input
 								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -502,10 +433,7 @@ function EmailTestCard({
 						</label>
 						<label className="space-y-2 text-sm font-medium">
 							<span>
-								{t(
-									"admin:admin.diagnostics.emailTest.smtpOverride.fromName",
-									"From name",
-								)}
+								{t("admin:admin.diagnostics.emailTest.smtpOverride.fromName", "From name")}
 							</span>
 							<input
 								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -522,12 +450,7 @@ function EmailTestCard({
 							/>
 						</label>
 						<label className="space-y-2 text-sm font-medium">
-							<span>
-								{t(
-									"admin:admin.diagnostics.emailTest.smtpOverride.ipMode",
-									"IP mode",
-								)}
-							</span>
+							<span>{t("admin:admin.diagnostics.emailTest.smtpOverride.ipMode", "IP mode")}</span>
 							<select
 								className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
 								name="smtp-ip-mode"
@@ -541,22 +464,13 @@ function EmailTestCard({
 								disabled={isEmailPending}
 							>
 								<option value="auto">
-									{t(
-										"admin:admin.diagnostics.emailTest.smtpOverride.ipMode.auto",
-										"Auto",
-									)}
+									{t("admin:admin.diagnostics.emailTest.smtpOverride.ipMode.auto", "Auto")}
 								</option>
 								<option value="ipv4">
-									{t(
-										"admin:admin.diagnostics.emailTest.smtpOverride.ipMode.ipv4",
-										"IPv4 only",
-									)}
+									{t("admin:admin.diagnostics.emailTest.smtpOverride.ipMode.ipv4", "IPv4 only")}
 								</option>
 								<option value="ipv6">
-									{t(
-										"admin:admin.diagnostics.emailTest.smtpOverride.ipMode.ipv6",
-										"IPv6 only",
-									)}
+									{t("admin:admin.diagnostics.emailTest.smtpOverride.ipMode.ipv6", "IPv6 only")}
 								</option>
 							</select>
 						</label>
@@ -575,12 +489,7 @@ function EmailTestCard({
 								}
 								disabled={isEmailPending}
 							/>
-							<span>
-								{t(
-									"admin:admin.diagnostics.emailTest.smtpOverride.secure",
-									"Use TLS",
-								)}
-							</span>
+							<span>{t("admin:admin.diagnostics.emailTest.smtpOverride.secure", "Use TLS")}</span>
 						</label>
 						<label className="flex items-center gap-2 text-sm font-medium">
 							<input
@@ -596,10 +505,7 @@ function EmailTestCard({
 								disabled={isEmailPending}
 							/>
 							<span>
-								{t(
-									"admin:admin.diagnostics.emailTest.smtpOverride.requireTls",
-									"Require STARTTLS",
-								)}
+								{t("admin:admin.diagnostics.emailTest.smtpOverride.requireTls", "Require STARTTLS")}
 							</span>
 						</label>
 					</div>
@@ -619,23 +525,15 @@ function EmailTestCard({
 						aria-live="polite"
 					>
 						<span className="block">
-							{t(
-								"admin:admin.diagnostics.emailTest.success",
-								"Test email sent to {recipient}.",
-								{
-									recipient: emailResult.recipient,
-								},
-							)}
+							{t("admin:admin.diagnostics.emailTest.success", "Test email sent to {recipient}.", {
+								recipient: emailResult.recipient,
+							})}
 						</span>
 						{emailResult.messageId ? (
 							<span className="block font-mono">
-								{t(
-									"admin:admin.diagnostics.emailTest.messageId",
-									"Message ID: {messageId}",
-									{
-										messageId: emailResult.messageId,
-									},
-								)}
+								{t("admin:admin.diagnostics.emailTest.messageId", "Message ID: {messageId}", {
+									messageId: emailResult.messageId,
+								})}
 							</span>
 						) : null}
 					</output>
@@ -668,10 +566,7 @@ function KeyManagerEncryptionCard({
 				<div className="space-y-2">
 					<CardTitle className="flex items-center gap-2">
 						<IconKey className="size-5 text-primary" aria-hidden="true" />
-						{t(
-							"admin:admin.diagnostics.keyManager.title",
-							"Scaleway Key Manager Encryption",
-						)}
+						{t("admin:admin.diagnostics.keyManager.title", "Scaleway Key Manager Encryption")}
 					</CardTitle>
 					<CardDescription>
 						{t(
@@ -686,23 +581,14 @@ function KeyManagerEncryptionCard({
 				<Button
 					onClick={onTestEncryption}
 					disabled={isEncryptionPending}
-					aria-label={t(
-						"admin:admin.diagnostics.keyManager.actions.test",
-						"Test encryption",
-					)}
+					aria-label={t("admin:admin.diagnostics.keyManager.actions.test", "Test encryption")}
 				>
 					{isEncryptionPending ? (
-						<IconLoader2
-							className="mr-2 size-4 animate-spin"
-							aria-hidden="true"
-						/>
+						<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 					) : (
 						<IconKey className="mr-2 size-4" aria-hidden="true" />
 					)}
-					{t(
-						"admin:admin.diagnostics.keyManager.actions.test",
-						"Test encryption",
-					)}
+					{t("admin:admin.diagnostics.keyManager.actions.test", "Test encryption")}
 				</Button>
 			</CardHeader>
 			{encryptionError ? (
@@ -733,35 +619,23 @@ function KeyManagerEncryptionCard({
 							<dt className="text-muted-foreground">
 								{t("admin:admin.diagnostics.keyManager.input", "Input")}
 							</dt>
-							<dd className="wrap-break-words font-mono">
-								{encryptionResult.input}
-							</dd>
+							<dd className="wrap-break-words font-mono">{encryptionResult.input}</dd>
 						</div>
 						<div className="space-y-1 rounded-lg border p-3">
 							<dt className="text-muted-foreground">
 								{t("admin:admin.diagnostics.keyManager.output", "Output")}
 							</dt>
-							<dd className="wrap-break-words font-mono">
-								{encryptionResult.output}
-							</dd>
+							<dd className="wrap-break-words font-mono">{encryptionResult.output}</dd>
 						</div>
 						<div className="space-y-1 rounded-lg border p-3">
 							<dt className="text-muted-foreground">
-								{t(
-									"admin:admin.diagnostics.keyManager.platformKeyId",
-									"Platform key ID",
-								)}
+								{t("admin:admin.diagnostics.keyManager.platformKeyId", "Platform key ID")}
 							</dt>
-							<dd className="wrap-break-words font-mono">
-								{encryptionResult.platformKeyId}
-							</dd>
+							<dd className="wrap-break-words font-mono">{encryptionResult.platformKeyId}</dd>
 						</div>
 						<div className="space-y-1 rounded-lg border p-3">
 							<dt className="text-muted-foreground">
-								{t(
-									"admin:admin.diagnostics.keyManager.keyStatus",
-									"Key status",
-								)}
+								{t("admin:admin.diagnostics.keyManager.keyStatus", "Key status")}
 							</dt>
 							<dd>
 								{encryptionResult.keyStatus === "created"
@@ -777,14 +651,9 @@ function KeyManagerEncryptionCard({
 						</div>
 						<div className="space-y-1 rounded-lg border p-3 sm:col-span-2">
 							<dt className="text-muted-foreground">
-								{t(
-									"admin:admin.diagnostics.keyManager.ciphertextPreview",
-									"Ciphertext preview",
-								)}
+								{t("admin:admin.diagnostics.keyManager.ciphertextPreview", "Ciphertext preview")}
 							</dt>
-							<dd className="wrap-break-words font-mono">
-								{encryptionResult.ciphertextPreview}
-							</dd>
+							<dd className="wrap-break-words font-mono">{encryptionResult.ciphertextPreview}</dd>
 						</div>
 					</dl>
 				</CardContent>
@@ -793,21 +662,12 @@ function KeyManagerEncryptionCard({
 	);
 }
 
-function RecommendedActionsCard({
-	actions,
-	t,
-}: {
-	actions: string[];
-	t: DiagnosticsTranslate;
-}) {
+function RecommendedActionsCard({ actions, t }: { actions: string[]; t: DiagnosticsTranslate }) {
 	return (
 		<Card className="border-amber-500/30 bg-amber-500/5">
 			<CardHeader>
 				<CardTitle>
-					{t(
-						"admin:admin.diagnostics.recommendedActions.title",
-						"Recommended Actions",
-					)}
+					{t("admin:admin.diagnostics.recommendedActions.title", "Recommended Actions")}
 				</CardTitle>
 				<CardDescription>
 					{t(
@@ -861,19 +721,10 @@ export function DiagnosticsClient({
 		disabled: t("admin:admin.diagnostics.status.disabled", "Disabled"),
 	};
 	const encryptionStatusLabel = state.encryptionResult?.matches
-		? t(
-				"admin:admin.diagnostics.keyManager.result.match",
-				"Input and output match",
-			)
-		: t(
-				"admin:admin.diagnostics.keyManager.result.mismatch",
-				"Input and output differ",
-			);
+		? t("admin:admin.diagnostics.keyManager.result.match", "Input and output match")
+		: t("admin:admin.diagnostics.keyManager.result.mismatch", "Input and output differ");
 	const encryptionLiveStatus = isEncryptionPending
-		? t(
-				"admin:admin.diagnostics.keyManager.status.pending",
-				"Encryption test is running.",
-			)
+		? t("admin:admin.diagnostics.keyManager.status.pending", "Encryption test is running.")
 		: state.encryptionResult
 			? encryptionStatusLabel
 			: "";
@@ -983,10 +834,7 @@ export function DiagnosticsClient({
 					statusLabels={statusLabels}
 				/>
 				<DiagnosticsSection
-					title={t(
-						"admin:admin.diagnostics.sections.health.title",
-						"Service Health",
-					)}
+					title={t("admin:admin.diagnostics.sections.health.title", "Service Health")}
 					description={t(
 						"admin:admin.diagnostics.sections.health.description",
 						"App-only checks for infrastructure dependencies used by the webapp.",
@@ -1002,12 +850,8 @@ export function DiagnosticsClient({
 				emailResult={state.emailResult}
 				smtpOverride={state.smtpOverride}
 				isEmailPending={isEmailPending}
-				onRecipientChange={(recipient) =>
-					dispatch({ type: "emailRecipientChanged", recipient })
-				}
-				onSmtpOverrideChange={(update) =>
-					dispatch({ type: "smtpOverrideChanged", update })
-				}
+				onRecipientChange={(recipient) => dispatch({ type: "emailRecipientChanged", recipient })}
+				onSmtpOverrideChange={(update) => dispatch({ type: "smtpOverrideChanged", update })}
 				onSend={sendTestEmail}
 				t={t}
 			/>
@@ -1025,10 +869,7 @@ export function DiagnosticsClient({
 			) : null}
 
 			{state.snapshot.recommendedActions.length > 0 ? (
-				<RecommendedActionsCard
-					actions={state.snapshot.recommendedActions}
-					t={t}
-				/>
+				<RecommendedActionsCard actions={state.snapshot.recommendedActions} t={t} />
 			) : null}
 		</div>
 	);

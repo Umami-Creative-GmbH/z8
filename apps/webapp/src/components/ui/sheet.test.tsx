@@ -111,7 +111,9 @@ describe("Sheet", () => {
 
 		expect(sheetSource).not.toContain("requestAnimationFrame");
 		expect(sheetSource).toContain("data-[sheet-open=true]:animate-sheet-fade-in");
-		expect(sheetSource).toContain("data-[sheet-side=right]:data-[sheet-open=true]:animate-sheet-enter-right");
+		expect(sheetSource).toContain(
+			"data-[sheet-side=right]:data-[sheet-open=true]:animate-sheet-enter-right",
+		);
 		expect(globalsSource).toContain("--animate-sheet-enter-right");
 		expect(globalsSource).toContain("@keyframes sheet-enter-right");
 	});

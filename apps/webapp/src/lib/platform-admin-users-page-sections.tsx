@@ -101,16 +101,19 @@ export function PlatformAdminUserFilters({
 					className="pl-9"
 				/>
 			</div>
-			<Select value={status} onValueChange={(value) => onFilterChange(search, value as UserStatusFilter)}>
+			<Select
+				value={status}
+				onValueChange={(value) => onFilterChange(search, value as UserStatusFilter)}
+			>
 				<SelectTrigger className="w-full sm:w-40">
 					<SelectValue placeholder={t("common.status", "Status")} />
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value="all">{t("admin:admin.users.filters.allUsers", "All Users")}</SelectItem>
-					<SelectItem value="active">{t("common.active", "Active")}</SelectItem>
-					<SelectItem value="banned">
-						{t("admin:admin.users.filters.banned", "Banned")}
+					<SelectItem value="all">
+						{t("admin:admin.users.filters.allUsers", "All Users")}
 					</SelectItem>
+					<SelectItem value="active">{t("common.active", "Active")}</SelectItem>
+					<SelectItem value="banned">{t("admin:admin.users.filters.banned", "Banned")}</SelectItem>
 				</SelectContent>
 			</Select>
 		</div>
@@ -322,7 +325,12 @@ export function PlatformAdminUsersPagination({
 				})}
 			</p>
 			<div className="flex gap-2">
-				<Button variant="outline" size="sm" onClick={() => onPageChange(page - 1)} disabled={page === 1}>
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={() => onPageChange(page - 1)}
+					disabled={page === 1}
+				>
 					{t("common.previous", "Previous")}
 				</Button>
 				<Button
@@ -365,9 +373,13 @@ export function PlatformAdminBanUserDialog({
 				<AlertDialogHeader>
 					<AlertDialogTitle>{t("admin:admin.users.banDialog.title", "Ban User")}</AlertDialogTitle>
 					<AlertDialogDescription>
-						{t("admin:admin.users.banDialog.description", "Ban {email} from accessing the platform.", {
-							email: user?.email ?? "",
-						})}
+						{t(
+							"admin:admin.users.banDialog.description",
+							"Ban {email} from accessing the platform.",
+							{
+								email: user?.email ?? "",
+							},
+						)}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<div className="space-y-4 py-4">
@@ -509,8 +521,8 @@ function PlatformAdminSessionRow({
 						: t("admin:admin.users.sessionsDialog.unknownDevice", "Unknown device")}
 				</div>
 				<div className="text-xs text-muted-foreground">
-					{session.ipAddress ?? t("admin:admin.users.sessionsDialog.unknownIp", "Unknown IP")} • Created{" "}
-					{DateTime.fromJSDate(session.createdAt).toRelative()}
+					{session.ipAddress ?? t("admin:admin.users.sessionsDialog.unknownIp", "Unknown IP")} •
+					Created {DateTime.fromJSDate(session.createdAt).toRelative()}
 				</div>
 			</div>
 			<Button
