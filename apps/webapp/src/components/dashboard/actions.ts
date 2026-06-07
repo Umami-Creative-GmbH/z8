@@ -1467,8 +1467,6 @@ export async function getHydrationWidgetData(): Promise<
 								.select({
 									employeeId: employee.id,
 									userId: employee.userId,
-									firstName: employee.firstName,
-									lastName: employee.lastName,
 									userName: user.name,
 									currentStreak: hydrationStats.currentStreak,
 								})
@@ -1495,19 +1493,12 @@ export async function getHydrationWidgetData(): Promise<
 								);
 
 							return buildTeamStreakLeaders(
-								candidates.map((candidate) => {
-									const displayName = [candidate.firstName, candidate.lastName]
-										.filter(Boolean)
-										.join(" ")
-										.trim();
-
-									return {
-										employeeId: candidate.employeeId,
-										userId: candidate.userId,
-										displayName: displayName || candidate.userName || "Team member",
-										currentStreak: candidate.currentStreak,
-									};
-								}),
+								candidates.map((candidate) => ({
+									employeeId: candidate.employeeId,
+									userId: candidate.userId,
+									displayName: candidate.userName || "Team member",
+									currentStreak: candidate.currentStreak,
+								})),
 								session.user.id,
 							);
 						},
