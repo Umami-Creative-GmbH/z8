@@ -205,9 +205,11 @@ function UsersPageContent({
 
 	// Cleanup timeout on unmount
 	useEffect(() => {
+		const searchTimeout = searchTimeoutRef.current;
+
 		return () => {
-			if (searchTimeoutRef.current) {
-				clearTimeout(searchTimeoutRef.current);
+			if (searchTimeout) {
+				clearTimeout(searchTimeout);
 			}
 		};
 	}, []);
