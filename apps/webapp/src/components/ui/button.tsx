@@ -1,6 +1,7 @@
 import type { VariantProps } from "class-variance-authority";
 import type * as React from "react";
 
+import { markNativeButtonComponent } from "@/components/ui/base-ui-compat";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Slot } from "@/components/ui/slot";
 import { cn } from "@/lib/utils";
@@ -25,5 +26,7 @@ function Button({
 		/>
 	);
 }
+
+markNativeButtonComponent(Button);
 
 export { Button };

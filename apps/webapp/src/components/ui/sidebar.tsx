@@ -3,6 +3,7 @@
 import { IconLayoutSidebar } from "@tabler/icons-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
+import { markNativeButtonComponent } from "@/components/ui/base-ui-compat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -238,7 +239,7 @@ function Sidebar({
 			{/* This is what handles the sidebar gap on desktop */}
 			<div
 				className={cn(
-					"relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
+					"relative w-(--sidebar-width) bg-transparent",
 					"group-data-[collapsible=offcanvas]:w-0",
 					"group-data-[side=right]:rotate-180",
 					variant === "floating" || variant === "inset"
@@ -249,10 +250,10 @@ function Sidebar({
 			/>
 			<div
 				className={cn(
-					"fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+					"fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transform-gpu opacity-100 transition-[transform,opacity] duration-150 ease-out will-change-[transform,opacity] motion-reduce:transition-none md:flex",
 					side === "left"
-						? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-						: "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+						? "left-0 group-data-[collapsible=offcanvas]:-translate-x-full group-data-[collapsible=offcanvas]:opacity-0"
+						: "right-0 group-data-[collapsible=offcanvas]:translate-x-full group-data-[collapsible=offcanvas]:opacity-0",
 					// Adjust the padding for floating and inset variants.
 					variant === "floating" || variant === "inset"
 						? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
@@ -322,15 +323,72 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
 	);
 }
 
-function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
+function SidebarInset({ className, ref, ...props }: React.ComponentProps<"main">) {
+	const { isMobile, state } = useSidebar();
+	const insetRef = React.useRef<HTMLElement | null>(null);
+	const previousRectRef = React.useRef<DOMRect | null>(null);
+	const setInsetRef = React.useCallback(
+		(node: HTMLElement | null) => {
+			insetRef.current = node;
+
+			if (typeof ref === "function") {
+				ref(node);
+			} else if (ref) {
+				ref.current = node;
+			}
+		},
+		[ref],
+	);
+
+	React.useLayoutEffect(() => {
+		const element = insetRef.current;
+		if (!element) {
+			return;
+		}
+
+		const currentRect = element.getBoundingClientRect();
+		const previousRect = previousRectRef.current;
+		previousRectRef.current = currentRect;
+
+		if (
+			!previousRect ||
+			isMobile ||
+			window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+			currentRect.width === 0
+		) {
+			return;
+		}
+
+		const deltaX = previousRect.left - currentRect.left;
+		const scaleX = previousRect.width / currentRect.width;
+
+		if (Math.abs(deltaX) < 0.5 && Math.abs(scaleX - 1) < 0.001) {
+			return;
+		}
+
+		const animation = element.animate(
+			[
+				{
+					transform: `translateX(${deltaX}px) scaleX(${scaleX})`,
+					transformOrigin: "left center",
+				},
+				{ transform: "translateX(0) scaleX(1)", transformOrigin: "left center" },
+			],
+			{ duration: 200, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+		);
+
+		return () => animation.cancel();
+	}, [isMobile, state]);
+
 	return (
 		<main
 			className={cn(
-				"relative flex w-full flex-1 flex-col overflow-hidden bg-background",
+				"relative flex w-full flex-1 flex-col overflow-hidden bg-background will-change-transform",
 				"md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2 md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm",
 				className,
 			)}
 			data-slot="sidebar-inset"
+			ref={setInsetRef}
 			{...props}
 		/>
 	);
@@ -562,6 +620,8 @@ function SidebarMenuButton({
 		</Tooltip>
 	);
 }
+
+markNativeButtonComponent(SidebarMenuButton);
 
 function SidebarMenuAction({
 	className,

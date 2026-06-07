@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Button } from "./button";
 import {
@@ -14,6 +14,7 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuTrigger,
 } from "./dropdown-menu";
+import { SidebarMenuButton, SidebarProvider } from "./sidebar";
 
 async function readComponentSource(fileName: string) {
 	return readFile(new URL(fileName, import.meta.url), "utf8");
@@ -93,6 +94,37 @@ describe("DropdownMenu", () => {
 		});
 
 		expect(await screen.findByRole("menuitem", { name: "Archive" })).toBeTruthy();
+	});
+
+	it("treats SidebarMenuButton as a native button when used as an asChild trigger", () => {
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+		vi.stubGlobal("matchMedia", () => ({
+			addEventListener: vi.fn(),
+			matches: false,
+			removeEventListener: vi.fn(),
+		}));
+
+		try {
+			render(
+				<SidebarProvider>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<SidebarMenuButton>Open organizations</SidebarMenuButton>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem>Acme</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</SidebarProvider>,
+			);
+
+			expect(consoleError).not.toHaveBeenCalledWith(
+				expect.stringContaining("expected a non-<button> because the `nativeButton` prop is false"),
+			);
+		} finally {
+			consoleError.mockRestore();
+			vi.unstubAllGlobals();
+		}
 	});
 
 	it("opens controlled asChild menu items from a Radix-compatible pointer down trigger", async () => {

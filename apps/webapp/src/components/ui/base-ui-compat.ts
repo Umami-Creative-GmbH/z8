@@ -1,9 +1,13 @@
 import * as React from "react";
 
-import { Button } from "@/components/ui/button";
-
 type NativeButtonElementProps = {
 	asChild?: boolean;
+};
+
+const nativeButtonComponentMarker = Symbol.for("z8.nativeButtonComponent");
+
+type NativeButtonComponent = React.JSXElementConstructor<unknown> & {
+	[nativeButtonComponentMarker]?: true;
 };
 
 type DismissEventDetails = {
@@ -18,8 +22,23 @@ type DismissEventHandlers = {
 	onPointerDownOutside?: (event: PointerEvent) => void;
 };
 
+function markNativeButtonComponent<Component extends React.JSXElementConstructor<unknown>>(
+	component: Component,
+) {
+	(component as NativeButtonComponent)[nativeButtonComponentMarker] = true;
+
+	return component;
+}
+
+function isNativeButtonComponent(type: React.ElementType) {
+	return (
+		(typeof type === "function" || (typeof type === "object" && type !== null)) &&
+		Boolean((type as NativeButtonComponent)[nativeButtonComponentMarker])
+	);
+}
+
 function isZ8NativeButtonElement(element: React.ReactElement) {
-	return element.type === Button && !(element.props as NativeButtonElementProps).asChild;
+	return isNativeButtonComponent(element.type) && !(element.props as NativeButtonElementProps).asChild;
 }
 
 function isNativeButtonElement(element: React.ReactElement) {
@@ -92,4 +111,9 @@ function cancelDismissIfPrevented(
 }
 
 export type { DismissEventHandlers };
-export { cancelDismissIfPrevented, getAsChildNativeButton, getAsChildRender };
+export {
+	cancelDismissIfPrevented,
+	getAsChildNativeButton,
+	getAsChildRender,
+	markNativeButtonComponent,
+};
