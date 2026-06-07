@@ -34,11 +34,13 @@ import {
 import { toHydrationStatsValue, toWaterReminderSettings } from "./actions/shared";
 import { validateLogWaterIntake, validateWaterReminderSettings } from "./actions/validation";
 
+type WellnessActionContext = {
+	userId: string;
+	activeOrganizationId: string | null;
+};
+
 function buildWellnessActionEffect<T, E>(
-	operation: (context: {
-		userId: string;
-		activeOrganizationId: string | null;
-	}) => Effect.Effect<T, E, DatabaseService>,
+	operation: (context: WellnessActionContext) => Effect.Effect<T, E, DatabaseService>,
 ) {
 	return Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -57,6 +59,120 @@ export function revalidateHydrationStreaksCache(activeOrganizationId: string | n
 	if (activeOrganizationId) {
 		revalidateTag(CACHE_TAGS.HYDRATION_STREAKS(activeOrganizationId), "max");
 	}
+}
+
+export function buildGetHydrationStatsEffect({
+	userId,
+	activeOrganizationId,
+}: WellnessActionContext) {
+	return Effect.gen(function* (_) {
+		const [settings, statsRecord, todayIntake, activeEmployee] = yield* _(
+			Effect.all([
+				getUserWaterReminderSettings(userId),
+				ensureHydrationStatsRecord(userId),
+				getTodayWaterIntake(userId),
+				getActiveEmployeeForHydration(userId, activeOrganizationId),
+			]),
+		);
+
+		const lastGoalMetDate = statsRecord.lastGoalMetDate
+			? new Date(statsRecord.lastGoalMetDate)
+			: null;
+		const workdayRequirements = yield* _(
+			getHydrationStreakWorkdayRequirements({
+				organizationId: activeOrganizationId,
+				employeeId: activeEmployee?.id ?? null,
+				lastGoalMetDate,
+			}),
+		);
+
+		let currentStreak = statsRecord.currentStreak;
+		if (
+			lastGoalMetDate &&
+			shouldResetStreak(lastGoalMetDate, currentStreak, { workdayRequirements })
+		) {
+			yield* _(resetHydrationStreak(userId));
+			revalidateHydrationStreaksCache(activeOrganizationId);
+			currentStreak = 0;
+		}
+
+		return toHydrationStatsValue({
+			stats: statsRecord,
+			currentStreak,
+			todayIntake,
+			dailyGoal: toWaterReminderSettings(settings).dailyGoal,
+		});
+	});
+}
+
+export function buildLogWaterIntakeEffect(
+	{ userId, activeOrganizationId }: WellnessActionContext,
+	data: LogWaterIntakeFormValues,
+) {
+	return Effect.gen(function* (_) {
+		const { amount, source } = yield* _(validateLogWaterIntake(data));
+		const [settings, statsRecord, currentTodayIntake, activeEmployee] = yield* _(
+			Effect.all([
+				getUserWaterReminderSettings(userId),
+				ensureHydrationStatsRecord(userId),
+				getTodayWaterIntake(userId),
+				getActiveEmployeeForHydration(userId, activeOrganizationId),
+			]),
+		);
+
+		const lastGoalMetDate = statsRecord.lastGoalMetDate
+			? new Date(statsRecord.lastGoalMetDate)
+			: null;
+		const workdayRequirements = yield* _(
+			getHydrationStreakWorkdayRequirements({
+				organizationId: activeOrganizationId,
+				employeeId: activeEmployee?.id ?? null,
+				lastGoalMetDate,
+			}),
+		);
+
+		const dailyGoal = toWaterReminderSettings(settings).dailyGoal;
+		yield* _(createWaterIntakeLog({ userId, amount, source }));
+
+		const streakResult = calculateStreakOnIntake(
+			{
+				currentStreak: statsRecord.currentStreak,
+				longestStreak: statsRecord.longestStreak,
+				lastGoalMetDate,
+				workdayRequirements,
+				todayIntake: currentTodayIntake,
+				dailyGoal,
+			},
+			amount,
+		);
+
+		yield* _(
+			updateHydrationStatsAfterIntake({
+				userId,
+				amount,
+				currentStreak: streakResult.newCurrentStreak,
+				longestStreak: streakResult.newLongestStreak,
+				lastGoalMetDate: streakResult.newLastGoalMetDate,
+			}),
+		);
+
+		revalidateHydrationStreaksCache(activeOrganizationId);
+
+		const newTodayIntake = currentTodayIntake + amount;
+
+		return {
+			todayIntake: newTodayIntake,
+			goalProgress: toHydrationStatsValue({
+				stats: statsRecord,
+				currentStreak: streakResult.newCurrentStreak,
+				todayIntake: newTodayIntake,
+				dailyGoal,
+			}).goalProgress,
+			currentStreak: streakResult.newCurrentStreak,
+			longestStreak: streakResult.newLongestStreak,
+			goalJustMet: streakResult.goalJustMet,
+		};
+	});
 }
 
 /**
@@ -100,46 +216,7 @@ export async function getWaterReminderStatus(): Promise<
  * Get hydration stats for the current user
  */
 export async function getHydrationStats(): Promise<ServerActionResult<HydrationStats>> {
-	const effect = buildWellnessActionEffect(({ userId, activeOrganizationId }) =>
-		Effect.gen(function* (_) {
-			const [settings, statsRecord, todayIntake, activeEmployee] = yield* _(
-				Effect.all([
-					getUserWaterReminderSettings(userId),
-					ensureHydrationStatsRecord(userId),
-					getTodayWaterIntake(userId),
-					getActiveEmployeeForHydration(userId, activeOrganizationId),
-				]),
-			);
-
-			const lastGoalMetDate = statsRecord.lastGoalMetDate
-				? new Date(statsRecord.lastGoalMetDate)
-				: null;
-			const workdayRequirements = yield* _(
-				getHydrationStreakWorkdayRequirements({
-					organizationId: activeOrganizationId,
-					employeeId: activeEmployee?.id ?? null,
-					lastGoalMetDate,
-				}),
-			);
-
-			let currentStreak = statsRecord.currentStreak;
-			if (
-				lastGoalMetDate &&
-				shouldResetStreak(lastGoalMetDate, currentStreak, { workdayRequirements })
-			) {
-				yield* _(resetHydrationStreak(userId));
-				revalidateHydrationStreaksCache(activeOrganizationId);
-				currentStreak = 0;
-			}
-
-			return toHydrationStatsValue({
-				stats: statsRecord,
-				currentStreak,
-				todayIntake,
-				dailyGoal: toWaterReminderSettings(settings).dailyGoal,
-			});
-		}),
-	);
+	const effect = buildWellnessActionEffect(buildGetHydrationStatsEffect);
 
 	return runServerActionSafe(effect);
 }
@@ -156,72 +233,7 @@ export async function logWaterIntake(data: LogWaterIntakeFormValues): Promise<
 		goalJustMet: boolean;
 	}>
 > {
-	const effect = buildWellnessActionEffect(({ userId, activeOrganizationId }) =>
-		Effect.gen(function* (_) {
-			const { amount, source } = yield* _(validateLogWaterIntake(data));
-			const [settings, statsRecord, currentTodayIntake, activeEmployee] = yield* _(
-				Effect.all([
-					getUserWaterReminderSettings(userId),
-					ensureHydrationStatsRecord(userId),
-					getTodayWaterIntake(userId),
-					getActiveEmployeeForHydration(userId, activeOrganizationId),
-				]),
-			);
-
-			const lastGoalMetDate = statsRecord.lastGoalMetDate
-				? new Date(statsRecord.lastGoalMetDate)
-				: null;
-			const workdayRequirements = yield* _(
-				getHydrationStreakWorkdayRequirements({
-					organizationId: activeOrganizationId,
-					employeeId: activeEmployee?.id ?? null,
-					lastGoalMetDate,
-				}),
-			);
-
-			const dailyGoal = toWaterReminderSettings(settings).dailyGoal;
-			yield* _(createWaterIntakeLog({ userId, amount, source }));
-
-			const streakResult = calculateStreakOnIntake(
-				{
-					currentStreak: statsRecord.currentStreak,
-					longestStreak: statsRecord.longestStreak,
-					lastGoalMetDate,
-					workdayRequirements,
-					todayIntake: currentTodayIntake,
-					dailyGoal,
-				},
-				amount,
-			);
-
-			yield* _(
-				updateHydrationStatsAfterIntake({
-					userId,
-					amount,
-					currentStreak: streakResult.newCurrentStreak,
-					longestStreak: streakResult.newLongestStreak,
-					lastGoalMetDate: streakResult.newLastGoalMetDate,
-				}),
-			);
-
-			revalidateHydrationStreaksCache(activeOrganizationId);
-
-			const newTodayIntake = currentTodayIntake + amount;
-
-			return {
-				todayIntake: newTodayIntake,
-				goalProgress: toHydrationStatsValue({
-					stats: statsRecord,
-					currentStreak: streakResult.newCurrentStreak,
-					todayIntake: newTodayIntake,
-					dailyGoal,
-				}).goalProgress,
-				currentStreak: streakResult.newCurrentStreak,
-				longestStreak: streakResult.newLongestStreak,
-				goalJustMet: streakResult.goalJustMet,
-			};
-		}),
-	);
+	const effect = buildWellnessActionEffect((context) => buildLogWaterIntakeEffect(context, data));
 
 	return runServerActionSafe(effect);
 }
