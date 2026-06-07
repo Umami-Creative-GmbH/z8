@@ -12,9 +12,15 @@ import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { sendEmail } from "@/lib/email/email-service";
 import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
 import { createLogger } from "@/lib/logger";
+import { localizeOutboundNotification } from "./outbound-localization";
 import type { NotificationType } from "./types";
 
 const logger = createLogger("EmailNotifications");
+
+interface LocalizedEmailContent {
+	title: string;
+	message: string;
+}
 
 interface EmailNotificationParams {
 	userId: string;
@@ -23,6 +29,85 @@ interface EmailNotificationParams {
 	message: string;
 	metadata?: Record<string, unknown>;
 	organizationId?: string; // Optional org ID to use org-specific email config
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getI18nMetadata(metadata: Record<string, unknown> | undefined): Record<string, unknown> | null {
+	if (!metadata || !isRecord(metadata.i18n)) return null;
+	return metadata.i18n;
+}
+
+function getI18nParamsMetadata(metadata: Record<string, unknown> | undefined): Record<string, unknown> | null {
+	const i18nMetadata = getI18nMetadata(metadata);
+	if (!isRecord(i18nMetadata?.params)) return null;
+	return i18nMetadata.params;
+}
+
+function getMetadataValue(
+	metadata: Record<string, unknown> | undefined,
+	keys: string | string[],
+): unknown {
+	const lookupKeys = Array.isArray(keys) ? keys : [keys];
+
+	for (const key of lookupKeys) {
+		const value = metadata?.[key];
+		if (value !== undefined && value !== null && value !== "") return value;
+	}
+
+	const i18nParams = getI18nParamsMetadata(metadata);
+	for (const key of lookupKeys) {
+		const value = i18nParams?.[key];
+		if (value !== undefined && value !== null && value !== "") return value;
+	}
+
+	return undefined;
+}
+
+function getMetadataString(
+	metadata: Record<string, unknown> | undefined,
+	keys: string | string[],
+	fallback = "",
+): string {
+	const value = getMetadataValue(metadata, keys);
+	if (typeof value === "string") return value;
+	if (typeof value === "number" || typeof value === "boolean") return String(value);
+	return fallback;
+}
+
+function getMetadataNumber(
+	metadata: Record<string, unknown> | undefined,
+	keys: string | string[],
+	fallback = 0,
+): number {
+	const value = getMetadataValue(metadata, keys);
+	if (typeof value === "number" && Number.isFinite(value)) return value;
+	if (typeof value === "string") {
+		const parsed = Number(value);
+		if (Number.isFinite(parsed)) return parsed;
+	}
+	return fallback;
+}
+
+function escapeHtml(value: string): string {
+	return value
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
+}
+
+function renderLocalizedDefaultEmailHtml(content: LocalizedEmailContent, appUrl: string): string {
+	const escapedTitle = escapeHtml(content.title);
+	const escapedMessage = escapeHtml(content.message).replace(/\n/g, "<br />");
+	const actionLink = appUrl
+		? `<p style="margin: 24px 0 0;"><a href="${escapeHtml(appUrl)}">Open Z8</a></p>`
+		: "";
+
+	return `<div><h1>${escapedTitle}</h1><p>${escapedMessage}</p>${actionLink}</div>`;
 }
 
 /**
@@ -61,7 +146,7 @@ async function getUserName(userId: string): Promise<string> {
  * Send email notification based on notification type
  */
 export async function sendEmailNotification(params: EmailNotificationParams): Promise<boolean> {
-	const { userId, type, title, metadata, organizationId } = params;
+	const { userId, type, metadata, organizationId } = params;
 
 	try {
 		const email = await getUserEmail(userId);
@@ -72,24 +157,28 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 
 		const userName = await getUserName(userId);
 		const appUrl = await getOrganizationBaseUrl(organizationId);
+		const i18nMetadata = getI18nMetadata(metadata);
+		const hasI18nTitle = typeof i18nMetadata?.titleKey === "string";
+		const hasI18nMessage = typeof i18nMetadata?.messageKey === "string";
 
 		let templateKey: EmailTemplateKey | null = null;
 		let templateData: Record<string, unknown> | null = null;
-		let subjectOverride = title;
+		let subjectOverride = params.title;
 
 		// Generate email content based on notification type
 		switch (type) {
 			case "absence_request_submitted":
 				if (metadata) {
+					const dateRange = getMetadataString(metadata, "dateRange");
 					templateKey = "absence-request-submitted";
 					subjectOverride = "Absence Request Submitted";
 					templateData = {
 						employeeName: userName,
-						startDate: String(metadata.startDate || ""),
-						endDate: String(metadata.endDate || ""),
-						absenceType: String(metadata.absenceType || ""),
-						days: Number(metadata.days || 0),
-						managerName: String(metadata.managerName || "your manager"),
+						startDate: getMetadataString(metadata, "startDate", dateRange),
+						endDate: getMetadataString(metadata, "endDate", dateRange),
+						absenceType: getMetadataString(metadata, ["absenceType", "categoryName"]),
+						days: getMetadataNumber(metadata, "days"),
+						managerName: getMetadataString(metadata, "managerName", "your manager"),
 						appUrl,
 					};
 				}
@@ -212,13 +301,14 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 
 			case "team_member_added":
 				if (metadata) {
+					const teamName = getMetadataString(metadata, "teamName");
 					templateKey = "team-member-added";
-					subjectOverride = `You've been added to ${metadata.teamName}`;
+					subjectOverride = `You've been added to ${teamName}`;
 					templateData = {
 						memberName: userName,
-						teamName: String(metadata.teamName || ""),
-						addedByName: String(metadata.addedByName || ""),
-						teamUrl: `${appUrl}/settings/teams/${metadata.teamId || ""}`,
+						teamName,
+						addedByName: getMetadataString(metadata, ["addedByName", "performedByName"]),
+						teamUrl: `${appUrl}/settings/teams/${getMetadataString(metadata, "teamId")}`,
 						appUrl,
 					};
 				}
@@ -226,12 +316,13 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 
 			case "team_member_removed":
 				if (metadata) {
+					const teamName = getMetadataString(metadata, "teamName");
 					templateKey = "team-member-removed";
-					subjectOverride = `You've been removed from ${metadata.teamName}`;
+					subjectOverride = `You've been removed from ${teamName}`;
 					templateData = {
 						memberName: userName,
-						teamName: String(metadata.teamName || ""),
-						removedByName: String(metadata.removedByName || ""),
+						teamName,
+						removedByName: getMetadataString(metadata, ["removedByName", "performedByName"]),
 						appUrl,
 					};
 				}
@@ -299,6 +390,22 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 			return false;
 		}
 
+		let localizedEmailContent: LocalizedEmailContent | null = null;
+
+		if (organizationId && (hasI18nTitle || hasI18nMessage)) {
+			const localized = await localizeOutboundNotification({
+				userId,
+				organizationId,
+				title: params.title,
+				message: params.message,
+				metadata,
+			});
+			localizedEmailContent = { title: localized.title, message: localized.message };
+			if (hasI18nTitle) {
+				subjectOverride = localized.title;
+			}
+		}
+
 		const rendered = await renderOrganizationEmailTemplate({
 			organizationId,
 			templateKey,
@@ -306,10 +413,15 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 			subjectOverride,
 		});
 
+		const html =
+			!rendered.usedOverride && localizedEmailContent
+				? renderLocalizedDefaultEmailHtml(localizedEmailContent, appUrl)
+				: rendered.html;
+
 		const result = await sendEmail({
 			to: email,
 			subject: rendered.subject,
-			html: rendered.html,
+			html,
 			organizationId, // Use org-specific email config if available
 		});
 

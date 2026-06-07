@@ -102,6 +102,14 @@
       "title": "Mitglied einladen"
     },
     "joinOrCreate": "Beitreten oder erstellen",
+    "language": {
+      "adminOnly": "Nur Organisationsadmins und Eigentümer können die Benachrichtigungssprache ändern.",
+      "default": "Standard-Benachrichtigungssprache",
+      "description": "Legt die Ausweichsprache für E-Mail-, Telegram- und andere externe Benachrichtigungen fest, wenn ein Benutzer keine UI-Sprache ausgewählt hat.",
+      "title": "Benachrichtigungssprache",
+      "updated": "Benachrichtigungssprache der Organisation aktualisiert",
+      "updateFailed": "Benachrichtigungssprache der Organisation konnte nicht aktualisiert werden"
+    },
     "logo": {
       "changeLabel": "Organisationslogo ändern",
       "removeLabel": "Organisationslogo entfernen",
