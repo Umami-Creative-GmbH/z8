@@ -169,17 +169,21 @@ export function buildManagerAbsenceRowAbsences(
 	const yearStart = `${year}-01-01`;
 	const yearEnd = `${year}-12-31`;
 
-	return absences
-		.filter((absence) => dateRangesOverlap(yearStart, yearEnd, absence.startDate, absence.endDate))
-		.map((absence) => ({
-			id: absence.id,
-			category: {
-				name: absence.category.name,
-				type: absence.category.type,
-				color: absence.category.color,
-			},
-			sickDetail: absence.category.type === "sick" ? absence.sickDetail : null,
-		}));
+	return absences.flatMap((absence) =>
+		dateRangesOverlap(yearStart, yearEnd, absence.startDate, absence.endDate)
+			? [
+					{
+						id: absence.id,
+						category: {
+							name: absence.category.name,
+							type: absence.category.type,
+							color: absence.category.color,
+						},
+						sickDetail: absence.category.type === "sick" ? absence.sickDetail : null,
+					},
+				]
+			: [],
+	);
 }
 
 export function buildCanonicalAbsenceRecordValues(input: ApprovedCanonicalAbsenceInput) {

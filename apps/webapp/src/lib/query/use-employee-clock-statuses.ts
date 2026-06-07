@@ -18,7 +18,7 @@ interface UseEmployeeClockStatusesOptions {
 const EMPTY_STATUSES: EmployeeClockStatusMap = {};
 
 function normalizeEmployeeIds(employeeIds: string[]) {
-	return [...new Set(employeeIds.map((id) => id.trim()).filter(Boolean))].sort();
+	return Array.from(new Set(employeeIds.map((id) => id.trim()).filter(Boolean))).toSorted();
 }
 
 export function useEmployeeClockStatuses(

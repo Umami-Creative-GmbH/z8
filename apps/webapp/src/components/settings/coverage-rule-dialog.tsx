@@ -73,14 +73,18 @@ export function CoverageRuleDialog({
 
 	// Build flat list of subareas with location names
 	const subareaOptions = locations.flatMap((loc) =>
-		loc.subareas
-			.filter((sub) => sub.isActive)
-			.map((sub) => ({
-				id: sub.id,
-				name: sub.name,
-				locationName: loc.name,
-				locationId: loc.id,
-			})),
+		loc.subareas.flatMap((sub) =>
+			sub.isActive
+				? [
+						{
+							id: sub.id,
+							name: sub.name,
+							locationName: loc.name,
+							locationId: loc.id,
+						},
+					]
+				: [],
+		),
 	);
 	const defaultSubareaId = subareaOptions[0]?.id || "";
 

@@ -89,8 +89,7 @@ function calculateActualForRule(rule: CoverageRuleEntity, shifts: ShiftForCovera
 export function calculateCoverage(input: CoverageCalculationInput): CoverageCalculationResult {
 	const dayOfWeek = getDayOfWeek(input.date);
 	const activeRules = input.rules
-		.filter((rule) => rule.subareaId === input.subareaId)
-		.filter((rule) => rule.dayOfWeek === dayOfWeek)
+		.filter((rule) => rule.subareaId === input.subareaId && rule.dayOfWeek === dayOfWeek)
 		.sort((a, b) => {
 			const byStart = timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
 			if (byStart !== 0) return byStart;

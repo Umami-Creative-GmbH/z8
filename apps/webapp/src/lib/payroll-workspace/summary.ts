@@ -178,45 +178,45 @@ export function filterPendingTimeApprovalBlockers(input: {
 }): PayrollBlocker[] {
 	const allowedEmployeeIds = new Set(input.allowedEmployeeIds);
 
-	return input.rows
-		.filter(
-			(row) =>
-				row.organizationId === input.organizationId &&
-				row.recordOrganizationId === input.organizationId &&
-				row.status === "pending" &&
-				row.entityType === "time_entry" &&
-				row.canonicalRecordId !== null &&
-				row.canonicalRecordId === row.recordId &&
-				allowedEmployeeIds.has(row.requestedBy) &&
-				allowedEmployeeIds.has(row.employeeId) &&
-				row.endAt !== null &&
-				intervalsOverlap(
-					row.startAt.toUTC(),
-					row.endAt.toUTC(),
-					input.period.start,
-					input.period.end,
-				),
-		)
-		.map((row) => ({
-			id: row.id,
-			employeeId: row.employeeId,
-			type: "pending_time_correction" as const,
-			label: "Pending time correction",
-		}));
+	return input.rows.flatMap((row) =>
+		row.organizationId === input.organizationId &&
+		row.recordOrganizationId === input.organizationId &&
+		row.status === "pending" &&
+		row.entityType === "time_entry" &&
+		row.canonicalRecordId !== null &&
+		row.canonicalRecordId === row.recordId &&
+		allowedEmployeeIds.has(row.requestedBy) &&
+		allowedEmployeeIds.has(row.employeeId) &&
+		row.endAt !== null &&
+		intervalsOverlap(row.startAt.toUTC(), row.endAt.toUTC(), input.period.start, input.period.end)
+			? [
+					{
+						id: row.id,
+						employeeId: row.employeeId,
+						type: "pending_time_correction" as const,
+						label: "Pending time correction",
+					},
+				]
+			: [],
+	);
 }
 
 export function filterMissingClockOutBlockers(input: {
 	period: PayrollDateTimePeriod;
 	rows: MissingClockOutBlockerRow[];
 }): PayrollBlocker[] {
-	return input.rows
-		.filter((row) => row.startAt.toUTC() <= input.period.end.toUTC())
-		.map((row) => ({
-			id: row.id,
-			employeeId: row.employeeId,
-			type: "missing_clock_out" as const,
-			label: "Missing clock-out",
-		}));
+	return input.rows.flatMap((row) =>
+		row.startAt.toUTC() <= input.period.end.toUTC()
+			? [
+					{
+						id: row.id,
+						employeeId: row.employeeId,
+						type: "missing_clock_out" as const,
+						label: "Missing clock-out",
+					},
+				]
+			: [],
+	);
 }
 
 export async function getPayrollWorkspaceSummary(input: {
@@ -250,7 +250,7 @@ export async function getPayrollWorkspaceSummary(input: {
 		});
 	}
 
-	const allowedEmployeeIds = [...new Set(input.allowedEmployeeIds)].sort();
+	const allowedEmployeeIds = Array.from(new Set(input.allowedEmployeeIds)).toSorted();
 	const [employeeRows, workRows, absenceRows, blockers] = await Promise.all([
 		getEmployeeRows(input.organizationId, allowedEmployeeIds),
 		getWorkRows(input.organizationId, allowedEmployeeIds, input.period),

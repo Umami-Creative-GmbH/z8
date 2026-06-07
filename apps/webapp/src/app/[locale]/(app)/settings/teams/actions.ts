@@ -1042,9 +1042,9 @@ export async function addTeamMember(
 						}),
 					);
 					const manageableTeamIds = new Set(
-						Array.from(scopedPermissions.byTeamId.entries())
-							.filter(([, flags]) => flags.canManageTeamMembers)
-							.map(([managedTeamId]) => managedTeamId),
+						Array.from(scopedPermissions.byTeamId.entries()).flatMap(([managedTeamId, flags]) =>
+							flags.canManageTeamMembers ? [managedTeamId] : [],
+						),
 					);
 					const currentTeamIds = new Set(
 						[
@@ -1249,8 +1249,7 @@ export async function removeTeamMember(
 
 					const nextTeamId =
 						remainingMemberships
-							.map((membership) => membership.teamId)
-							.filter((remainingTeamId) => remainingTeamId !== teamId)
+							.flatMap((membership) => (membership.teamId !== teamId ? [membership.teamId] : []))
 							.toSorted()[0] ?? null;
 
 					yield* _(

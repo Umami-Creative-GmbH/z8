@@ -24,7 +24,7 @@ const briefingCopy = {
 };
 
 export function sortActionItems(items: BriefingActionItem[]): BriefingActionItem[] {
-	return [...items].sort((left, right) => {
+	return items.toSorted((left, right) => {
 		const severityDiff = severityRank[left.severity] - severityRank[right.severity];
 
 		if (severityDiff !== 0) {
@@ -57,18 +57,17 @@ export function detectAttendanceExceptions({
 		const scheduledEnd = getShiftEnd(scheduledStart, shift.endTime);
 		const associationStart = scheduledStart.minus({ hours: 2 });
 		const firstClockIn = records
-			.filter((record) => record.employeeId === shift.employeeId)
-			.filter((record) => {
+			.flatMap((record) => {
+				if (record.employeeId !== shift.employeeId) return [];
 				const startAt = DateTime.fromJSDate(record.startAt).setZone(now.zone);
 				const endAt = record.endAt ? DateTime.fromJSDate(record.endAt).setZone(now.zone) : null;
 
-				return (
-					startAt >= associationStart &&
+				return startAt >= associationStart &&
 					startAt < scheduledEnd &&
 					(endAt === null || endAt > scheduledStart)
-				);
+					? [startAt]
+					: [];
 			})
-			.map((record) => DateTime.fromJSDate(record.startAt).setZone(now.zone))
 			.sort((left, right) => left.toMillis() - right.toMillis())[0];
 
 		if (!firstClockIn) {
@@ -270,7 +269,7 @@ function getLowestStaffedSegmentCount(rule: BriefingCoverageRule, shifts: Briefi
 		}
 	}
 
-	const orderedBoundaries = [...boundaries].sort((left, right) => left - right);
+	const orderedBoundaries = Array.from(boundaries).toSorted((left, right) => left - right);
 	let lowestStaffCount = Number.POSITIVE_INFINITY;
 
 	for (let index = 0; index < orderedBoundaries.length - 1; index++) {
@@ -282,14 +281,12 @@ function getLowestStaffedSegmentCount(rule: BriefingCoverageRule, shifts: Briefi
 		}
 
 		const segmentStaffCount = new Set(
-			assignedShifts
-				.filter((shift) => {
-					const shiftStart = timeToMinutes(shift.startTime);
-					const shiftEnd = timeToMinutes(shift.endTime);
+			assignedShifts.flatMap((shift) => {
+				const shiftStart = timeToMinutes(shift.startTime);
+				const shiftEnd = timeToMinutes(shift.endTime);
 
-					return shiftStart <= segmentStart && shiftEnd >= segmentEnd;
-				})
-				.map((shift) => shift.employeeId),
+				return shiftStart <= segmentStart && shiftEnd >= segmentEnd ? [shift.employeeId] : [];
+			}),
 		).size;
 
 		lowestStaffCount = Math.min(lowestStaffCount, segmentStaffCount);

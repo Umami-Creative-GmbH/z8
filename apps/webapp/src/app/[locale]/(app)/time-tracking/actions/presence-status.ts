@@ -132,9 +132,11 @@ export function getPresenceWorkDays(
 	scheduleDays: Array<{ dayOfWeek: string; isWorkDay: boolean }> | null | undefined,
 ): PresenceDayOfWeek[] {
 	const workDays =
-		scheduleDays
-			?.filter((day) => day.isWorkDay && PRESENCE_DAYS.has(day.dayOfWeek as PresenceDayOfWeek))
-			.map((day) => day.dayOfWeek as PresenceDayOfWeek) ?? [];
+		scheduleDays?.flatMap((day) =>
+			day.isWorkDay && PRESENCE_DAYS.has(day.dayOfWeek as PresenceDayOfWeek)
+				? [day.dayOfWeek as PresenceDayOfWeek]
+				: [],
+		) ?? [];
 
 	return workDays.length ? workDays : DEFAULT_WORK_DAYS;
 }

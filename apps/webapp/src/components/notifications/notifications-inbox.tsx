@@ -160,9 +160,9 @@ export function NotificationsInbox() {
 	const visibleIds = filteredNotifications.map((notification) => notification.id);
 	const hasSearch = deferredSearch.trim().length > 0;
 	const selectedVisibleIds = visibleIds.filter((id) => selectedIds.has(id));
-	const selectedUnreadVisibleIds = filteredNotifications
-		.filter((notification) => selectedIds.has(notification.id) && !notification.isRead)
-		.map((notification) => notification.id);
+	const selectedUnreadVisibleIds = filteredNotifications.flatMap((notification) =>
+		selectedIds.has(notification.id) && !notification.isRead ? [notification.id] : [],
+	);
 	const selectedVisibleCount = selectedVisibleIds.length;
 	const selectedUnreadVisibleCount = selectedUnreadVisibleIds.length;
 	const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;

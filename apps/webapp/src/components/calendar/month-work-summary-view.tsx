@@ -45,7 +45,7 @@ function getShortWeekdayFormatter(locale: string) {
 		return cachedFormatter;
 	}
 
-	const formatter = new Intl.DateTimeFormat(locale, { weekday: "short" });
+	const formatter = Intl.DateTimeFormat(locale, { weekday: "short" });
 	weekdayFormatters.set(locale, formatter);
 	return formatter;
 }

@@ -197,14 +197,18 @@ function isVisibleCommand(
 export function buildStaticAppCommands(input: StaticAppCommandInput): AppSearchResult[] {
 	const { t } = input;
 
-	return STATIC_APP_COMMANDS.filter((command) => isVisibleCommand(command, input)).map(
-		(command) => ({
-			type: "action",
-			id: `action:${command.id}`,
-			title: t(command.titleKey, command.titleDefault),
-			subtitle: t(command.subtitleKey, command.subtitleDefault),
-			keywords: command.keywords.map((keyword) => t(keyword.key, keyword.defaultValue)),
-			href: command.href,
-		}),
+	return STATIC_APP_COMMANDS.flatMap((command) =>
+		isVisibleCommand(command, input)
+			? [
+					{
+						type: "action",
+						id: `action:${command.id}`,
+						title: t(command.titleKey, command.titleDefault),
+						subtitle: t(command.subtitleKey, command.subtitleDefault),
+						keywords: command.keywords.map((keyword) => t(keyword.key, keyword.defaultValue)),
+						href: command.href,
+					},
+				]
+			: [],
 	);
 }

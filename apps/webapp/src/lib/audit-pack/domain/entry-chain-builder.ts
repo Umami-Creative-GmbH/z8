@@ -33,8 +33,9 @@ export function buildEntryChainEvidence(
 	organizationId: string,
 ): EntryChainEvidence[] {
 	return inputs
-		.filter((input) => input.organizationId === organizationId)
-		.map((input) => normalizeEntryChainEvidence(input))
+		.flatMap((input) =>
+			input.organizationId === organizationId ? [normalizeEntryChainEvidence(input)] : [],
+		)
 		.sort((a, b) => {
 			if (a.occurredAt !== b.occurredAt) {
 				return a.occurredAt.localeCompare(b.occurredAt);

@@ -302,7 +302,7 @@ function findUnderstaffedSegments({
 		boundaries.add(clampTime(publishedShift.endTime, evaluationStart, evaluationEnd));
 	}
 
-	const sortedBoundaries = [...boundaries].sort();
+	const sortedBoundaries = Array.from(boundaries).toSorted();
 	const understaffedSegments: Array<{
 		startTime: string;
 		endTime: string;
@@ -317,12 +317,11 @@ function findUnderstaffedSegments({
 		}
 
 		const assignedStaff = new Set(
-			candidateShifts
-				.filter(
-					(publishedShift) =>
-						publishedShift.startTime <= segmentStart && publishedShift.endTime >= segmentEnd,
-				)
-				.map((publishedShift) => publishedShift.employeeId),
+			candidateShifts.flatMap((publishedShift) =>
+				publishedShift.startTime <= segmentStart && publishedShift.endTime >= segmentEnd
+					? [publishedShift.employeeId]
+					: [],
+			),
 		).size;
 
 		if (assignedStaff >= rule.minimumStaffCount) {

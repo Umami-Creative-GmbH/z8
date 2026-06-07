@@ -120,6 +120,7 @@ const DATE_RANGE_PRESETS: { value: DateRangePreset; label: string }[] = [
 	{ value: "last_12_months", label: "Last 12 months" },
 	{ value: "custom", label: "Custom date range" },
 ];
+const mediumDateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 
 function resolveReviewDateRange(dateRange: ImportSelections["dateRange"]) {
 	const now = DateTime.utc();
@@ -155,10 +156,11 @@ function selectedClockodoUserIds(
 	userMappings: UserMappingEntry[],
 	onlyImportMapped: boolean,
 ): string[] {
-	return userMappings
-		.filter((mapping) => mapping.mappingType !== "skipped")
-		.filter((mapping) => !onlyImportMapped || mapping.employeeId != null)
-		.map((mapping) => String(mapping.clockodoUserId));
+	return userMappings.flatMap((mapping) =>
+		mapping.mappingType !== "skipped" && (!onlyImportMapped || mapping.employeeId != null)
+			? [String(mapping.clockodoUserId)]
+			: [],
+	);
 }
 
 function hasSelectedUserScopedEntity(selections: ImportSelections): boolean {
@@ -796,7 +798,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 											>
 												<IconCalendar className="mr-2 size-4" aria-hidden="true" />
 												{selections.dateRange.startDate && selections.dateRange.endDate
-													? `${new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(selections.dateRange.startDate))} \u2013 ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(selections.dateRange.endDate))}`
+													? `${mediumDateFormatter.format(new Date(selections.dateRange.startDate))} \u2013 ${mediumDateFormatter.format(new Date(selections.dateRange.endDate))}`
 													: t(
 															"settings.clockodoImport.selection.selectDateRange",
 															"Select date range",

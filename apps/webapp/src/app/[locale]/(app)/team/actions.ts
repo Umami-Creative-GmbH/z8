@@ -185,7 +185,7 @@ export async function getCalendarManagedEmployees(): Promise<
 			});
 		}
 
-		return [...byId.values()].sort((a, b) =>
+		return Array.from(byId.values()).toSorted((a, b) =>
 			(a.user.name || a.user.email).localeCompare(b.user.name || b.user.email),
 		);
 	});
@@ -276,9 +276,9 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 		const visibleEmployeeIds = [
 			...new Set([
 				currentEmp.id,
-				...typedManagedEmployeeRecords
-					.filter((record) => record.employee.organizationId === currentEmp.organizationId)
-					.map((record) => record.employee.id),
+				...typedManagedEmployeeRecords.flatMap((record) =>
+					record.employee.organizationId === currentEmp.organizationId ? [record.employee.id] : [],
+				),
 			]),
 		];
 		const balances = yield* _(

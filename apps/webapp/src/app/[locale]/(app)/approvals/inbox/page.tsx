@@ -136,7 +136,7 @@ function groupFastLaneItems(items: ApprovalInboxItem[]): ApprovalInboxFastLaneGr
 }
 
 function sortSprintItems(items: ApprovalInboxItem[]): ApprovalInboxItem[] {
-	return [...items].sort((first, second) => {
+	return items.toSorted((first, second) => {
 		const riskDifference = RISK_RANK[second.triage.riskLevel] - RISK_RANK[first.triage.riskLevel];
 		if (riskDifference !== 0) {
 			return riskDifference;
@@ -212,12 +212,12 @@ function ApprovalInboxContent() {
 	const fastLaneGroups = groupFastLaneItems(pendingItems);
 	const sprintItems = sortSprintItems(pendingItems);
 	const selectedItems = items.filter((item) => selectedIds.has(item.id));
-	const selectedBulkApproveIds = selectedItems
-		.filter((item) => item.capabilities.canApprove && item.capabilities.canBulkApprove)
-		.map((item) => item.id);
-	const selectedBulkRejectIds = selectedItems
-		.filter((item) => item.capabilities.canReject)
-		.map((item) => item.id);
+	const selectedBulkApproveIds = selectedItems.flatMap((item) =>
+		item.capabilities.canApprove && item.capabilities.canBulkApprove ? [item.id] : [],
+	);
+	const selectedBulkRejectIds = selectedItems.flatMap((item) =>
+		item.capabilities.canReject ? [item.id] : [],
+	);
 
 	// Selection handlers - use functional setState for stable callbacks
 	const handleSelectAll = (checked: boolean) => {

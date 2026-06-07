@@ -119,12 +119,10 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 				payrollEmployeeId: grant.payrollEmployeeId,
 				scope: grant.scope === "all" ? "all" : "specific",
 				teamIds: grantTeamRows
-					.filter((row) => row.grantId === grant.id)
-					.map((row) => row.teamId)
+					.flatMap((row) => (row.grantId === grant.id ? [row.teamId] : []))
 					.sort(),
 				employeeIds: grantEmployeeRows
-					.filter((row) => row.grantId === grant.id)
-					.map((row) => row.employeeId)
+					.flatMap((row) => (row.grantId === grant.id ? [row.employeeId] : []))
 					.sort(),
 			})),
 		};

@@ -121,21 +121,25 @@ export function normalizeWorkdayTimeline({
 			autoAdjustmentReason:
 				period.autoAdjustmentReason as WorkdayTimelineWorkPeriodItem["autoAdjustmentReason"],
 		})),
-		...pendingRequests
-			.filter((request) => request.status === "pending" && request.sourceType !== "travel_expense")
-			.map<WorkdayTimelinePendingRequestItem>((request) => ({
-				id: `pending-request:${request.id}`,
-				type: "pending-request",
-				title: request.title,
-				subtitle: request.subtitle,
-				startTime: request.submittedAt,
-				startLabel: formatTimeInZone(request.submittedAt, timezone, false, timeFormat),
-				badge: request.status,
-				severity: "info",
-				link: { label: "Review request", href: request.sourceHref },
-				sourceType: request.sourceType,
-				status: request.status,
-			})),
+		...pendingRequests.flatMap<WorkdayTimelinePendingRequestItem>((request) =>
+			request.status === "pending" && request.sourceType !== "travel_expense"
+				? [
+						{
+							id: `pending-request:${request.id}`,
+							type: "pending-request",
+							title: request.title,
+							subtitle: request.subtitle,
+							startTime: request.submittedAt,
+							startLabel: formatTimeInZone(request.submittedAt, timezone, false, timeFormat),
+							badge: request.status,
+							severity: "info",
+							link: { label: "Review request", href: request.sourceHref },
+							sourceType: request.sourceType,
+							status: request.status,
+						},
+					]
+				: [],
+		),
 	].sort((left, right) => compareTimedItems(left, right, timezone));
 
 	return {

@@ -644,9 +644,9 @@ export const CustomRoleServiceLive = Layer.effect(
 						}),
 					);
 
-					const activeRoles = assignments
-						.filter((a) => a.customRole.isActive && a.customRole.organizationId === orgId)
-						.map((a) => a.customRole);
+					const activeRoles = assignments.flatMap((a) =>
+						a.customRole.isActive && a.customRole.organizationId === orgId ? [a.customRole] : [],
+					);
 
 					return yield* _(
 						dbService.query("getEmployeeCustomRolesWithDetails", async () => {

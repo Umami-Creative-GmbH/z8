@@ -133,9 +133,9 @@ export function getLocationSettingsActorContext(options?: {
 			]),
 		);
 
-		const manageableTeamIds = managerTeamPermissions
-			.filter((permission) => permission.canManageTeamSettings && permission.teamId)
-			.map((permission) => permission.teamId as string);
+		const manageableTeamIds = managerTeamPermissions.flatMap((permission) =>
+			permission.canManageTeamSettings && permission.teamId ? [permission.teamId] : [],
+		);
 
 		const teamEmployees =
 			manageableTeamIds.length === 0

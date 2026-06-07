@@ -202,9 +202,9 @@ export async function getManagerDailyBriefingFromSources({
 			)
 		: settledValue(coverageRulesResult, []);
 	const scopedEmployeeIds = new Set(employeeIds);
-	const approvalItems = settledValue(approvalsResult, [])
-		.filter((approval) => scopedEmployeeIds.has(approval.requester.id))
-		.map(approvalToBriefingItem);
+	const approvalItems = settledValue(approvalsResult, []).flatMap((approval) =>
+		scopedEmployeeIds.has(approval.requester.id) ? [approvalToBriefingItem(approval)] : [],
+	);
 	const overtimeItems = settledValue(overtimeResult, []);
 	const payrollItems = settledValue(payrollResult, []);
 

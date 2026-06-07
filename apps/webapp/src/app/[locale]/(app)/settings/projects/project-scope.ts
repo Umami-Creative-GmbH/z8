@@ -223,11 +223,10 @@ export function getManagedCustomerIdsForSettingsActor(actor: ProjectSettingsActo
 			customerProjectIds.set(customerProject.customerId, existingProjectIds);
 		}
 
-		const accessibleCustomerIds = [...customerProjectIds.entries()]
-			.filter(([, projectIds]) =>
-				[...projectIds].every((projectId) => managedProjectIds.has(projectId)),
-			)
-			.map(([customerId]) => customerId);
+		const accessibleCustomerIds = [...customerProjectIds.entries()].flatMap(
+			([customerId, projectIds]) =>
+				[...projectIds].every((projectId) => managedProjectIds.has(projectId)) ? [customerId] : [],
+		);
 
 		return new Set(accessibleCustomerIds);
 	});

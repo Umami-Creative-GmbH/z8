@@ -19,21 +19,25 @@ import { UserAvatar } from "@/components/user-avatar";
 import { queryKeys } from "@/lib/query";
 import { ApprovalActionDialog } from "./approval-action-dialog";
 
+const timeFormatter = new Intl.DateTimeFormat("en-US", {
+	hour: "numeric",
+	minute: "2-digit",
+	hour12: true,
+});
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+	weekday: "short",
+	month: "short",
+	day: "numeric",
+	year: "numeric",
+});
+
 function formatTime(date: Date): string {
-	return new Intl.DateTimeFormat("en-US", {
-		hour: "numeric",
-		minute: "2-digit",
-		hour12: true,
-	}).format(date);
+	return timeFormatter.format(date);
 }
 
 function formatDate(date: Date): string {
-	return new Intl.DateTimeFormat("en-US", {
-		weekday: "short",
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-	}).format(date);
+	return dateFormatter.format(date);
 }
 
 export function TimeCorrectionApprovalsTable() {

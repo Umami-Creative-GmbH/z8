@@ -24,6 +24,20 @@ type NotificationMetadata = {
 	};
 };
 
+const relativeTimeFormatters = new Map<string, Intl.RelativeTimeFormat>();
+const RelativeTimeFormat = Intl.RelativeTimeFormat;
+
+function getRelativeTimeFormatter(locale: string) {
+	const cachedFormatter = relativeTimeFormatters.get(locale);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new RelativeTimeFormat(locale, { numeric: "auto" });
+	relativeTimeFormatters.set(locale, formatter);
+	return formatter;
+}
+
 const titleKeys: Record<string, { key: string; defaultValue: string }> = {
 	"Absence recorded": {
 		key: "common:notifications.content.absenceRecorded.title",
@@ -140,5 +154,5 @@ export function getLocalizedTimeAgo(
 	const unit = units.find((candidate) => Math.floor(absolute.get(candidate)) > 0) || "minutes";
 	const value = -Math.floor(absolute.get(unit));
 
-	return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(value, unit);
+	return getRelativeTimeFormatter(locale).format(value, unit);
 }

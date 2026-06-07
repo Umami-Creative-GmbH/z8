@@ -41,6 +41,22 @@ const statusLabelKeys: Record<SelfServiceRequestStatus, { key: string; fallback:
 };
 
 const RECENT_DECISION_DAYS = 30;
+const travelExpenseAmountFormatters = new Map<string, Intl.NumberFormat>();
+
+function getTravelExpenseAmountFormatter(locale: string, currency: string) {
+	const formatterKey = `${locale}:${currency}`;
+	const cachedFormatter = travelExpenseAmountFormatters.get(formatterKey);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = Intl.NumberFormat(locale, {
+		style: "currency",
+		currency,
+	});
+	travelExpenseAmountFormatters.set(formatterKey, formatter);
+	return formatter;
+}
 
 function sourceErrorMessage(sourceType: SelfServiceRequestSourceType, t: Translate) {
 	if (sourceType === "time_correction") {
@@ -124,10 +140,7 @@ function formatTravelExpenseSubtitle(value: string, locale: string) {
 
 	const amount = Number(amountMatch[1]);
 	const currency = amountMatch[2];
-	const formattedAmount = new Intl.NumberFormat(locale, {
-		style: "currency",
-		currency,
-	}).format(amount);
+	const formattedAmount = getTravelExpenseAmountFormatter(locale, currency).format(amount);
 
 	return prefix ? `${prefix}${separator}${formattedAmount}` : formattedAmount;
 }

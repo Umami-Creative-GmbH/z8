@@ -70,7 +70,7 @@ export function ComplianceAlertBanner({
 	if (alerts.length === 0) return null;
 
 	// Group alerts by severity, showing the most severe first
-	const sortedAlerts = [...alerts].sort((a, b) => {
+	const sortedAlerts = alerts.toSorted((a, b) => {
 		const severityOrder = { violation: 0, critical: 1, warning: 2, info: 3 };
 		return severityOrder[a.severity] - severityOrder[b.severity];
 	});
@@ -148,6 +148,11 @@ interface RestPeriodBlockerProps {
 	hasApprovedExceptions?: boolean;
 }
 
+const restPeriodTimeFormatter = new Intl.DateTimeFormat(undefined, {
+	hour: "2-digit",
+	minute: "2-digit",
+});
+
 export function RestPeriodBlocker({
 	minutesUntilAllowed,
 	nextAllowedClockIn,
@@ -162,10 +167,7 @@ export function RestPeriodBlocker({
 		hoursRemaining > 0 ? `${hoursRemaining}h ${minsRemaining}m` : `${minsRemaining} minutes`;
 
 	// Use Intl.DateTimeFormat for hydration-safe time formatting
-	const formattedNextAllowed = new Intl.DateTimeFormat(undefined, {
-		hour: "2-digit",
-		minute: "2-digit",
-	}).format(new Date(nextAllowedClockIn));
+	const formattedNextAllowed = restPeriodTimeFormatter.format(new Date(nextAllowedClockIn));
 
 	return (
 		<Alert className="border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100">

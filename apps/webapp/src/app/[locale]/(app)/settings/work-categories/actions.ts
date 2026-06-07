@@ -345,9 +345,9 @@ function getScopedWorkCategoryAccessContext(organizationId: string | undefined, 
 			actor,
 			managedEmployeeIds,
 			manageableTeamIds: new Set(
-				teamPermissionRows
-					.filter((permission) => permission.canManageTeamSettings && permission.teamId)
-					.map((permission) => permission.teamId as string),
+				teamPermissionRows.flatMap((permission) =>
+					permission.canManageTeamSettings && permission.teamId ? [permission.teamId] : [],
+				),
 			),
 			manageableLocationIds,
 			manageableSubareaIds,

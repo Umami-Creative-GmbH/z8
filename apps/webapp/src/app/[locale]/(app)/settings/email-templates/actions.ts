@@ -120,9 +120,9 @@ export async function listEmailTemplates(): Promise<EmailTemplateListEntry[]> {
 		),
 	});
 	const overridesByTemplateKey = new Map(
-		overrides
-			.filter((override) => override.isEnabled)
-			.map((override) => [override.templateKey, override]),
+		overrides.flatMap((override) =>
+			override.isEnabled ? [[override.templateKey, override] as const] : [],
+		),
 	);
 
 	return Promise.all(

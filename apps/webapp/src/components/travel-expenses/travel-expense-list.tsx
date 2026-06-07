@@ -37,7 +37,7 @@ function getMediumDateFormatter(locale: string) {
 		return cachedFormatter;
 	}
 
-	const formatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+	const formatter = Intl.DateTimeFormat(locale, { dateStyle: "medium" });
 	mediumDateFormatters.set(locale, formatter);
 	return formatter;
 }

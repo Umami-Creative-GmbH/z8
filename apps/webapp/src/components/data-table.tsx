@@ -433,19 +433,20 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" className="w-56">
-							{table
-								.getAllColumns()
-								.filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())
-								.map((column) => (
-									<DropdownMenuCheckboxItem
-										checked={column.getIsVisible()}
-										className="capitalize"
-										key={column.id}
-										onCheckedChange={(value) => column.toggleVisibility(!!value)}
-									>
-										{column.id}
-									</DropdownMenuCheckboxItem>
-								))}
+							{table.getAllColumns().flatMap((column) =>
+								typeof column.accessorFn !== "undefined" && column.getCanHide()
+									? [
+											<DropdownMenuCheckboxItem
+												checked={column.getIsVisible()}
+												className="capitalize"
+												key={column.id}
+												onCheckedChange={(value) => column.toggleVisibility(!!value)}
+											>
+												{column.id}
+											</DropdownMenuCheckboxItem>,
+										]
+									: [],
+							)}
 						</DropdownMenuContent>
 					</DropdownMenu>
 					<Button size="sm" variant="outline">

@@ -481,7 +481,7 @@ const defaultDependencies: AuditPackOrchestratorDependencies = {
 			})),
 		]);
 
-		const sortedLineageEntries = [...typedExpanded.lineageEntries].sort((a, b) =>
+		const sortedLineageEntries = typedExpanded.lineageEntries.toSorted((a, b) =>
 			a.timestamp.getTime() === b.timestamp.getTime()
 				? a.id.localeCompare(b.id)
 				: a.timestamp.getTime() - b.timestamp.getTime(),

@@ -51,14 +51,13 @@ export function getManagedShiftTemplateSubareaIds(input: {
 	const manageableTeamIds = input.manageableTeamIds;
 
 	return new Set(
-		input.subareaAssignments
-			.filter(
-				(assignment) =>
-					assignment.employeeOrganizationId === input.organizationId &&
-					assignment.employeeTeamId !== null &&
-					manageableTeamIds.has(assignment.employeeTeamId),
-			)
-			.map((assignment) => assignment.subareaId),
+		input.subareaAssignments.flatMap((assignment) =>
+			assignment.employeeOrganizationId === input.organizationId &&
+			assignment.employeeTeamId !== null &&
+			manageableTeamIds.has(assignment.employeeTeamId)
+				? [assignment.subareaId]
+				: [],
+		),
 	);
 }
 
@@ -165,9 +164,9 @@ export async function getSchedulingSettingsAccessContext(): Promise<SchedulingSe
 		(permission) => permission.canManageTeamSettings,
 	);
 	const manageableTeamIds = new Set(
-		managerTeamPermissions
-			.filter((permission) => permission.canManageTeamSettings && permission.teamId)
-			.map((permission) => permission.teamId as string),
+		managerTeamPermissions.flatMap((permission) =>
+			permission.canManageTeamSettings && permission.teamId ? [permission.teamId] : [],
+		),
 	);
 	const manageableSubareaIds = new Set(
 		managerSubareaAssignments.map((assignment) => assignment.subareaId),

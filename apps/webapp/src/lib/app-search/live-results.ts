@@ -137,13 +137,13 @@ export function getSearchableTeamIds({
 		return [];
 	}
 
-	return teams
-		.filter((currentTeam) => {
-			const permission = permissionsByTeamId.get(currentTeam.id);
+	return teams.flatMap((currentTeam) => {
+		const permission = permissionsByTeamId.get(currentTeam.id);
 
-			return Boolean(permission?.canManageTeamMembers || permission?.canManageTeamSettings);
-		})
-		.map((currentTeam) => currentTeam.id);
+		return permission?.canManageTeamMembers || permission?.canManageTeamSettings
+			? [currentTeam.id]
+			: [];
+	});
 }
 
 export async function searchLiveAppResults(
@@ -235,8 +235,10 @@ export async function searchLiveAppResults(
 
 	return {
 		employees: employeeRows.map(mapEmployeeSearchRow),
-		teams: teamRows
-			.filter((row) => input.accessTier === "orgAdmin" || searchableTeamIds.has(row.teamId))
-			.map(mapTeamSearchRow),
+		teams: teamRows.flatMap((row) =>
+			input.accessTier === "orgAdmin" || searchableTeamIds.has(row.teamId)
+				? [mapTeamSearchRow(row)]
+				: [],
+		),
 	};
 }

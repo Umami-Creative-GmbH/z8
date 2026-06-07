@@ -283,9 +283,9 @@ async function getOrganizationSSOProviders(organizationId: string): Promise<SSOP
 			? rawResult.providers
 			: [];
 
-	return providers
-		.filter((provider) => provider.organizationId === organizationId)
-		.map(normalizeSSOProvider);
+	return providers.flatMap((provider) =>
+		provider.organizationId === organizationId ? [normalizeSSOProvider(provider)] : [],
+	);
 }
 
 async function findEnterpriseIdentitySSOProvider(

@@ -110,13 +110,17 @@ export async function ensureDefaultAbsenceCategoriesForOrganization(organization
 		});
 
 		const existingTypes = new Set(existingCategories.map((category) => category.type));
-		const categoriesToCreate = defaultAbsenceCategories
-			.filter((category) => !existingTypes.has(category.type))
-			.map((category) => ({
-				...category,
-				organizationId,
-				isActive: true,
-			}));
+		const categoriesToCreate = defaultAbsenceCategories.flatMap((category) =>
+			!existingTypes.has(category.type)
+				? [
+						{
+							...category,
+							organizationId,
+							isActive: true,
+						},
+					]
+				: [],
+		);
 
 		if (categoriesToCreate.length === 0) {
 			return { created: 0 };

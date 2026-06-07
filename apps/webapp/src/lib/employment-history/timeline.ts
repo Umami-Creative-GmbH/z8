@@ -18,9 +18,12 @@ export function findEffectiveEmploymentHistory<T extends EmploymentTimelineRow>(
 ): T | null {
 	return (
 		rows
-			.filter((row) => row.reviewState === "confirmed")
-			.filter((row) => row.validFrom.getTime() <= at.getTime())
-			.filter((row) => !row.validUntil || row.validUntil.getTime() > at.getTime())
+			.filter(
+				(row) =>
+					row.reviewState === "confirmed" &&
+					row.validFrom.getTime() <= at.getTime() &&
+					(!row.validUntil || row.validUntil.getTime() > at.getTime()),
+			)
 			.sort((a, b) => b.validFrom.getTime() - a.validFrom.getTime())[0] ?? null
 	);
 }

@@ -55,7 +55,7 @@ export function resolvePayrollAccessibleEmployeeIdsFromRows(input: {
 		}
 	}
 
-	return [...accessibleEmployeeIds].sort();
+	return Array.from(accessibleEmployeeIds).toSorted();
 }
 
 export function intersectPayrollScope(input: {
@@ -65,7 +65,7 @@ export function intersectPayrollScope(input: {
 	const allowedEmployeeIds = new Set(input.allowedEmployeeIds);
 
 	if (!input.requestedEmployeeIds) {
-		return [...allowedEmployeeIds].sort();
+		return Array.from(allowedEmployeeIds).toSorted();
 	}
 
 	return input.requestedEmployeeIds
