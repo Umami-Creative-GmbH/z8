@@ -4,7 +4,6 @@ import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
-import { useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	type ChartConfig,
@@ -59,26 +58,21 @@ export function WorkerReliabilityCharts({ reliability }: { reliability: WorkerRe
 	const { t } = useTranslate();
 	const params = useParams<{ locale?: string }>();
 	const locale = params.locale ?? "en";
-	const { decimalFormatter, millisecondFormatter, numberFormatter, secondFormatter } = useMemo(
-		() => ({
-			numberFormatter: Intl.NumberFormat(locale),
-			decimalFormatter: Intl.NumberFormat(locale, {
-				maximumFractionDigits: 1,
-				minimumFractionDigits: 1,
-			}),
-			millisecondFormatter: Intl.NumberFormat(locale, {
-				style: "unit",
-				unit: "millisecond",
-			}),
-			secondFormatter: Intl.NumberFormat(locale, {
-				style: "unit",
-				unit: "second",
-				maximumFractionDigits: 1,
-				minimumFractionDigits: 1,
-			}),
-		}),
-		[locale],
-	);
+	const numberFormatter = Intl.NumberFormat(locale);
+	const decimalFormatter = Intl.NumberFormat(locale, {
+		maximumFractionDigits: 1,
+		minimumFractionDigits: 1,
+	});
+	const millisecondFormatter = Intl.NumberFormat(locale, {
+		style: "unit",
+		unit: "millisecond",
+	});
+	const secondFormatter = Intl.NumberFormat(locale, {
+		style: "unit",
+		unit: "second",
+		maximumFractionDigits: 1,
+		minimumFractionDigits: 1,
+	});
 	const completedLabel = t("settings.workerQueue.reliability.completed", "Completed");
 	const failedLabel = t("settings.workerQueue.reliability.failed", "Failed");
 	const successRateLabel = t("settings.workerQueue.reliability.successRate", "Success rate");
