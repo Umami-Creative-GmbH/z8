@@ -22,7 +22,6 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
-import { ALL_LANGUAGES } from "@/tolgee/shared";
 import {
 	type InvitationData,
 	invitationSchema,
@@ -31,6 +30,7 @@ import {
 	updateMemberRoleSchema,
 	updateOrganizationSchema,
 } from "@/lib/validations/invitation";
+import { ALL_LANGUAGES } from "@/tolgee/shared";
 import { isOrganizationFeature } from "./organization-features";
 
 const logger = createLogger("OrganizationActions");

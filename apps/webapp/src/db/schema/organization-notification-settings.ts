@@ -17,5 +17,7 @@ export const organizationNotificationSettings = pgTable(
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
-	(table) => [index("organizationNotificationSettings_organizationId_idx").on(table.organizationId)],
+	(table) => [
+		index("organizationNotificationSettings_organizationId_idx").on(table.organizationId),
+	],
 );

@@ -3,7 +3,11 @@ import { revalidateTag } from "next/cache";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import type { LogWaterIntakeFormValues } from "@/lib/validations/wellness";
 import { calculateStreakOnIntake, shouldResetStreak } from "@/lib/wellness/streak-calculator";
-import { createWaterIntakeLog, resetHydrationStreak, updateHydrationStatsAfterIntake } from "./mutations";
+import {
+	createWaterIntakeLog,
+	resetHydrationStreak,
+	updateHydrationStatsAfterIntake,
+} from "./mutations";
 import {
 	ensureHydrationStatsRecord,
 	getActiveEmployeeForHydration,

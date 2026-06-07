@@ -100,7 +100,9 @@ function validateTusUploadRequest(request: Request): Response | null {
 		hasValidMimeType = true;
 	}
 
-	return hasValidMimeType ? null : NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+	return hasValidMimeType
+		? null
+		: NextResponse.json({ error: "Invalid file type" }, { status: 400 });
 }
 
 // Wrapper to add authentication before handling TUS requests

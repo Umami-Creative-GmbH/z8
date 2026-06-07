@@ -75,7 +75,9 @@ function sanitizeI18nMetadata(i18n: unknown): NotificationI18nMetadata | undefin
 	return sanitized;
 }
 
-function parseMetadata(metadata: LocalizeOutboundNotificationParams["metadata"]): NotificationMetadata {
+function parseMetadata(
+	metadata: LocalizeOutboundNotificationParams["metadata"],
+): NotificationMetadata {
 	if (!metadata) return {};
 
 	let parsed: unknown = metadata;
@@ -125,14 +127,25 @@ export async function localizeOutboundNotification({
 		return {
 			locale,
 			title: i18n.titleKey
-				? tolgee.t({ key: i18n.titleKey, defaultValue: i18n.titleDefault ?? title, params: i18n.params })
+				? tolgee.t({
+						key: i18n.titleKey,
+						defaultValue: i18n.titleDefault ?? title,
+						params: i18n.params,
+					})
 				: title,
 			message: i18n.messageKey
-				? tolgee.t({ key: i18n.messageKey, defaultValue: i18n.messageDefault ?? message, params: i18n.params })
+				? tolgee.t({
+						key: i18n.messageKey,
+						defaultValue: i18n.messageDefault ?? message,
+						params: i18n.params,
+					})
 				: message,
 		};
 	} catch (error) {
-		logger.warn({ err: error, userId, organizationId, locale }, "Failed to localize outbound notification");
+		logger.warn(
+			{ err: error, userId, organizationId, locale },
+			"Failed to localize outbound notification",
+		);
 		return { locale, title, message };
 	}
 }

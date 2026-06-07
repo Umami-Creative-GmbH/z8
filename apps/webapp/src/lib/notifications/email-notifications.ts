@@ -35,12 +35,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function getI18nMetadata(metadata: Record<string, unknown> | undefined): Record<string, unknown> | null {
+function getI18nMetadata(
+	metadata: Record<string, unknown> | undefined,
+): Record<string, unknown> | null {
 	if (!metadata || !isRecord(metadata.i18n)) return null;
 	return metadata.i18n;
 }
 
-function getI18nParamsMetadata(metadata: Record<string, unknown> | undefined): Record<string, unknown> | null {
+function getI18nParamsMetadata(
+	metadata: Record<string, unknown> | undefined,
+): Record<string, unknown> | null {
 	const i18nMetadata = getI18nMetadata(metadata);
 	if (!isRecord(i18nMetadata?.params)) return null;
 	return i18nMetadata.params;

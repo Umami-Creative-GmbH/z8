@@ -301,7 +301,9 @@ export function HydrationWidget() {
 														{t("dashboard.hydration.you", "You")}
 													</span>
 												) : null}
-												<span className="shrink-0 tabular-nums text-muted-foreground">{streakLabel}</span>
+												<span className="shrink-0 tabular-nums text-muted-foreground">
+													{streakLabel}
+												</span>
 											</div>
 										);
 									})}

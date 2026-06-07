@@ -1,15 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { localizeOutboundNotification } from "./outbound-localization";
 
-const { debugMock, errorMock, getBotConfigMock, getChatIdMock, sendApprovalMessageMock, sendMessageMock } =
-	vi.hoisted(() => ({
-		debugMock: vi.fn(),
-		errorMock: vi.fn(),
-		getBotConfigMock: vi.fn(),
-		getChatIdMock: vi.fn(),
-		sendApprovalMessageMock: vi.fn(),
-		sendMessageMock: vi.fn(),
-	}));
+const {
+	debugMock,
+	errorMock,
+	getBotConfigMock,
+	getChatIdMock,
+	sendApprovalMessageMock,
+	sendMessageMock,
+} = vi.hoisted(() => ({
+	debugMock: vi.fn(),
+	errorMock: vi.fn(),
+	getBotConfigMock: vi.fn(),
+	getChatIdMock: vi.fn(),
+	sendApprovalMessageMock: vi.fn(),
+	sendMessageMock: vi.fn(),
+}));
 
 vi.mock("@/db", () => ({
 	db: {

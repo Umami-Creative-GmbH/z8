@@ -170,7 +170,9 @@ function WorkerQueuePageHeader({
 	return (
 		<div className="flex items-start justify-between">
 			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold">{t("settings.workerQueue.title", "Worker Queue")}</h1>
+				<h1 className="text-2xl font-semibold">
+					{t("settings.workerQueue.title", "Worker Queue")}
+				</h1>
 				<p className="text-muted-foreground">
 					{t(
 						"settings.workerQueue.description",
@@ -203,7 +205,15 @@ function WorkerQueuePageHeader({
 	);
 }
 
-function QueueCountsSection({ t, stats, locale }: { t: Translate; stats: WorkerQueueStats; locale: string }) {
+function QueueCountsSection({
+	t,
+	stats,
+	locale,
+}: {
+	t: Translate;
+	stats: WorkerQueueStats;
+	locale: string;
+}) {
 	return (
 		<section>
 			<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
@@ -215,7 +225,10 @@ function QueueCountsSection({ t, stats, locale }: { t: Translate; stats: WorkerQ
 					title={t("settings.workerQueue.cards.waiting", "Waiting")}
 					value={stats.counts.waiting}
 					locale={locale}
-					description={t("settings.workerQueue.cards.waitingDescription", "Jobs waiting to be processed")}
+					description={t(
+						"settings.workerQueue.cards.waitingDescription",
+						"Jobs waiting to be processed",
+					)}
 					icon={<IconClock className="size-4" />}
 				/>
 				<StatCard
@@ -286,10 +299,14 @@ function ReliabilitySection({
 					title={t("settings.workerQueue.reliability.successRate", "Success Rate")}
 					value={formatPercent(stats.reliability.summary.successRate, unknownLabel, locale)}
 					locale={locale}
-					description={t("settings.workerQueue.reliability.successRateDescription", "Terminal cron executions")}
+					description={t(
+						"settings.workerQueue.reliability.successRateDescription",
+						"Terminal cron executions",
+					)}
 					icon={<IconCheck className="size-4" />}
 					variant={
-						stats.reliability.summary.successRate !== null && stats.reliability.summary.successRate >= 95
+						stats.reliability.summary.successRate !== null &&
+						stats.reliability.summary.successRate >= 95
 							? "success"
 							: "default"
 					}
@@ -306,7 +323,10 @@ function ReliabilitySection({
 					title={t("settings.workerQueue.reliability.staleJobs", "Stale Jobs")}
 					value={stats.reliability.summary.staleJobs}
 					locale={locale}
-					description={t("settings.workerQueue.reliability.staleJobsDescription", "Past expected schedule")}
+					description={t(
+						"settings.workerQueue.reliability.staleJobsDescription",
+						"Past expected schedule",
+					)}
 					icon={<IconAlertCircle className="size-4" />}
 					variant={stats.reliability.summary.staleJobs > 0 ? "warning" : "default"}
 				/>
@@ -314,7 +334,10 @@ function ReliabilitySection({
 					title={t("settings.workerQueue.reliability.avgDuration", "Avg Duration")}
 					value={formatDuration(stats.reliability.summary.averageDurationMs, unknownLabel, locale)}
 					locale={locale}
-					description={t("settings.workerQueue.reliability.avgDurationDescription", "Executions with duration data")}
+					description={t(
+						"settings.workerQueue.reliability.avgDurationDescription",
+						"Executions with duration data",
+					)}
 					icon={<IconActivity className="size-4" />}
 				/>
 			</div>
@@ -456,8 +479,12 @@ function ScheduledJobsSection({
 														{job.effectivePattern}
 													</div>
 												</TableCell>
-												<TableCell className="align-top font-mono text-sm">{job.defaultPattern}</TableCell>
-												<TableCell className="align-top">{formatDateTime(job.next, locale)}</TableCell>
+												<TableCell className="align-top font-mono text-sm">
+													{job.defaultPattern}
+												</TableCell>
+												<TableCell className="align-top">
+													{formatDateTime(job.next, locale)}
+												</TableCell>
 												<TableCell className="min-w-72 align-top">
 													<ScheduleControls
 														job={job}
@@ -526,7 +553,9 @@ function JobMetricsSection({
 									<TableRow key={metric.jobName}>
 										<TableCell className="font-mono text-sm">{metric.jobName}</TableCell>
 										<TableCell className="text-right">{metric.totalRuns}</TableCell>
-										<TableCell className="text-right text-green-600">{metric.successfulRuns}</TableCell>
+										<TableCell className="text-right text-green-600">
+											{metric.successfulRuns}
+										</TableCell>
 										<TableCell className="text-right text-red-600">{metric.failedRuns}</TableCell>
 										<TableCell className="text-right">
 											<span

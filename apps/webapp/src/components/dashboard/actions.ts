@@ -1485,10 +1485,7 @@ export async function getHydrationWidgetData(): Promise<
 									and(
 										eq(employee.organizationId, activeOrganizationId),
 										eq(employee.isActive, true),
-										or(
-											inArray(employee.teamId, sortedTeamIds),
-											isNotNull(teamMembership.id),
-										),
+										or(inArray(employee.teamId, sortedTeamIds), isNotNull(teamMembership.id)),
 									),
 								);
 

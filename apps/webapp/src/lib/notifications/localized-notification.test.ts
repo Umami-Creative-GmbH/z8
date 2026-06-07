@@ -52,7 +52,8 @@ describe("getLocalizedNotificationContent", () => {
 		expect(enCommon.notifications.content).toMatchObject({
 			absenceRequestSubmitted: {
 				title: "Absence request submitted",
-				message: "Your {categoryName} request for {dateRange} has been submitted and is pending approval.",
+				message:
+					"Your {categoryName} request for {dateRange} has been submitted and is pending approval.",
 			},
 			teamMemberAdded: {
 				title: "Added to team",
@@ -77,7 +78,8 @@ describe("getLocalizedNotificationContent", () => {
 		expect(deCommon.notifications.content).toMatchObject({
 			absenceRequestSubmitted: {
 				title: "Abwesenheitsanfrage eingereicht",
-				message: "Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
+				message:
+					"Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
 			},
 			teamMemberAdded: {
 				title: "Zum Team hinzugefügt",

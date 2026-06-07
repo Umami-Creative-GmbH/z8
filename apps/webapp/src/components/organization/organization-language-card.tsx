@@ -90,7 +90,10 @@ export function OrganizationLanguageCard({
 							{t("organization.language.default", "Default notification language")}
 						</Label>
 						{(isPending || isSaving) && (
-							<IconLoader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />
+							<IconLoader2
+								aria-hidden="true"
+								className="size-4 animate-spin text-muted-foreground"
+							/>
 						)}
 					</div>
 					<Select

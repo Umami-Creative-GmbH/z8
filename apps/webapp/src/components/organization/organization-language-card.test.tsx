@@ -33,7 +33,12 @@ vi.mock("@/app/[locale]/(app)/settings/organizations/actions", () => ({
 }));
 
 vi.mock("@/components/ui/select", () => ({
-	Select: ({ children, value, onValueChange, disabled }: {
+	Select: ({
+		children,
+		value,
+		onValueChange,
+		disabled,
+	}: {
 		children: ReactNode;
 		value: string;
 		onValueChange: (value: string) => void;

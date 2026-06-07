@@ -55,8 +55,11 @@ vi.mock("@/db", () => ({
 	},
 }));
 
-const { sendInvitation, updateInvitationTargetTeam, updateOrganizationDefaultNotificationLanguage } =
-	await import("./actions");
+const {
+	sendInvitation,
+	updateInvitationTargetTeam,
+	updateOrganizationDefaultNotificationLanguage,
+} = await import("./actions");
 
 describe("organization feature allowlist", () => {
 	it("allows only supported organization feature flags", () => {
@@ -272,7 +275,7 @@ describe("organization invitation actions", () => {
 		});
 		expect(memberFindFirstMock).not.toHaveBeenCalled();
 		expect(teamFindFirstMock).not.toHaveBeenCalled();
-			expect(updateSetMock).not.toHaveBeenCalled();
+		expect(updateSetMock).not.toHaveBeenCalled();
 	});
 
 	it("allows an admin to update the organization default notification language", async () => {

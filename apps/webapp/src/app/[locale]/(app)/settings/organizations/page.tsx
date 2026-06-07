@@ -38,45 +38,50 @@ async function OrganizationsPageContent() {
 		redirect("/settings");
 	}
 
-	const [organization, invitations, currentMember, members, organizationNotificationSettingsRecord] =
-		await Promise.all([
-			db.query.organization.findFirst({
-				where: eq(authSchema.organization.id, organizationId),
-			}),
-			db.query.invitation.findMany({
-				where: and(
-					eq(authSchema.invitation.organizationId, organizationId),
-					eq(authSchema.invitation.status, "pending"),
-				),
-				with: {
-					user: true,
-				},
-				orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
-			}),
-			db.query.member.findFirst({
-				where: and(
-					eq(authSchema.member.userId, authContext.user.id),
-					eq(authSchema.member.organizationId, organizationId),
-				),
-			}),
-			db
-				.select({
-					member: authSchema.member,
-					user: authSchema.user,
-					employee: employee,
-				})
-				.from(authSchema.member)
-				.innerJoin(authSchema.user, eq(authSchema.member.userId, authSchema.user.id))
-				.leftJoin(
-					employee,
-					and(eq(employee.userId, authSchema.user.id), eq(employee.organizationId, organizationId)),
-				)
-				.where(eq(authSchema.member.organizationId, organizationId)),
-			db.query.organizationNotificationSettings.findFirst({
-				where: eq(organizationNotificationSettings.organizationId, organizationId),
-				columns: { defaultLanguage: true },
-			}),
-		]);
+	const [
+		organization,
+		invitations,
+		currentMember,
+		members,
+		organizationNotificationSettingsRecord,
+	] = await Promise.all([
+		db.query.organization.findFirst({
+			where: eq(authSchema.organization.id, organizationId),
+		}),
+		db.query.invitation.findMany({
+			where: and(
+				eq(authSchema.invitation.organizationId, organizationId),
+				eq(authSchema.invitation.status, "pending"),
+			),
+			with: {
+				user: true,
+			},
+			orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
+		}),
+		db.query.member.findFirst({
+			where: and(
+				eq(authSchema.member.userId, authContext.user.id),
+				eq(authSchema.member.organizationId, organizationId),
+			),
+		}),
+		db
+			.select({
+				member: authSchema.member,
+				user: authSchema.user,
+				employee: employee,
+			})
+			.from(authSchema.member)
+			.innerJoin(authSchema.user, eq(authSchema.member.userId, authSchema.user.id))
+			.leftJoin(
+				employee,
+				and(eq(employee.userId, authSchema.user.id), eq(employee.organizationId, organizationId)),
+			)
+			.where(eq(authSchema.member.organizationId, organizationId)),
+		db.query.organizationNotificationSettings.findFirst({
+			where: eq(organizationNotificationSettings.organizationId, organizationId),
+			columns: { defaultLanguage: true },
+		}),
+	]);
 
 	if (!organization || !currentMember) {
 		return (

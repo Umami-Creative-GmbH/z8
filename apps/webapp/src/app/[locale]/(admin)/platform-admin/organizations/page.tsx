@@ -61,8 +61,8 @@ import {
 import {
 	getInitialOrganizationsState,
 	getOrganizationStatusFilter,
-	organizationsReducer,
 	type OrganizationStatusFilter,
+	organizationsReducer,
 } from "./state";
 
 const PAGE_SIZE = 20;

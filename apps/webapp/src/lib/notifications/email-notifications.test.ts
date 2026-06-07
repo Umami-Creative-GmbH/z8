@@ -11,16 +11,15 @@ const {
 	findUserMock,
 	getOrganizationBaseUrlMock,
 	localizeOutboundNotificationMock,
-} =
-	vi.hoisted(() => ({
-		debugMock: vi.fn(),
-		errorMock: vi.fn(),
-		infoMock: vi.fn(),
-		warnMock: vi.fn(),
-		findUserMock: vi.fn(),
-		getOrganizationBaseUrlMock: vi.fn(),
-		localizeOutboundNotificationMock: vi.fn(),
-	}));
+} = vi.hoisted(() => ({
+	debugMock: vi.fn(),
+	errorMock: vi.fn(),
+	infoMock: vi.fn(),
+	warnMock: vi.fn(),
+	findUserMock: vi.fn(),
+	getOrganizationBaseUrlMock: vi.fn(),
+	localizeOutboundNotificationMock: vi.fn(),
+}));
 
 vi.mock("@/db", () => ({
 	db: {
@@ -267,7 +266,9 @@ describe("sendEmailNotification", () => {
 		expect(sendEmailMock).toHaveBeenCalledWith({
 			to: "alex@example.com",
 			subject: "Abwesenheitsanfrage <genehmigt>",
-			html: expect.stringContaining("Ihre Abwesenheitsanfrage wurde von Morgan &amp; Partner genehmigt."),
+			html: expect.stringContaining(
+				"Ihre Abwesenheitsanfrage wurde von Morgan &amp; Partner genehmigt.",
+			),
 			organizationId: "org_123",
 		});
 		const sentHtml = sendEmailMock.mock.calls[0]?.[0].html;
