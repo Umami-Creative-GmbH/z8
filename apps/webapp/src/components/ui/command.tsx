@@ -9,6 +9,36 @@ import { cn } from "@/lib/utils";
 
 const COMMAND_DIALOG_CLOSE_DURATION_MS = 160;
 
+type CommandDialogAnimationState = {
+	renderedOpen: boolean;
+	visualOpen: boolean;
+};
+
+type CommandDialogAnimationAction =
+	| { type: "open-start" }
+	| { type: "close-start" }
+	| { type: "close-end" };
+
+function getInitialCommandDialogAnimationState(open: boolean): CommandDialogAnimationState {
+	return { renderedOpen: open, visualOpen: open };
+}
+
+function commandDialogAnimationReducer(
+	state: CommandDialogAnimationState,
+	action: CommandDialogAnimationAction,
+): CommandDialogAnimationState {
+	switch (action.type) {
+		case "open-start":
+			return state.renderedOpen && state.visualOpen
+				? state
+				: { renderedOpen: true, visualOpen: true };
+		case "close-start":
+			return state.visualOpen ? { ...state, visualOpen: false } : state;
+		case "close-end":
+			return state.renderedOpen ? { ...state, renderedOpen: false } : state;
+	}
+}
+
 function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
 	return (
 		<CommandPrimitive
@@ -41,20 +71,22 @@ function CommandDialog({
 	const isControlled = open !== undefined;
 	const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen ?? false);
 	const actualOpen = isControlled ? open : uncontrolledOpen;
-	const [renderedOpen, setRenderedOpen] = React.useState(actualOpen);
-	const [visualOpen, setVisualOpen] = React.useState(actualOpen);
+	const [{ renderedOpen, visualOpen }, dispatchAnimation] = React.useReducer(
+		commandDialogAnimationReducer,
+		actualOpen,
+		getInitialCommandDialogAnimationState,
+	);
 
 	// Keep Base UI mounted until the custom backdrop/content fade finishes.
 	React.useEffect(() => {
 		if (actualOpen) {
-			setRenderedOpen(true);
-			const frame = requestAnimationFrame(() => setVisualOpen(true));
-			return () => cancelAnimationFrame(frame);
+			dispatchAnimation({ type: "open-start" });
+			return;
 		}
 
-		setVisualOpen(false);
+		dispatchAnimation({ type: "close-start" });
 		const timeout = window.setTimeout(() => {
-			setRenderedOpen(false);
+			dispatchAnimation({ type: "close-end" });
 		}, COMMAND_DIALOG_CLOSE_DURATION_MS);
 
 		return () => window.clearTimeout(timeout);
@@ -77,13 +109,13 @@ function CommandDialog({
 				<DialogPrimitive.Backdrop
 					data-slot="command-dialog-overlay"
 					data-command-open={visualOpen}
-					className="fixed inset-0 z-50 bg-black/50 opacity-0 transition-opacity duration-150 data-[command-open=true]:opacity-100"
+					className="fixed inset-0 z-50 bg-black/50 opacity-0 transition-opacity duration-150 data-[command-open=true]:animate-command-fade-in data-[command-open=true]:opacity-100 motion-reduce:animate-none motion-reduce:transition-none"
 				/>
 				<DialogPrimitive.Popup
 					data-slot="command-dialog-content"
 					data-command-open={visualOpen}
 					className={cn(
-						"bg-background fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] scale-95 gap-4 overflow-hidden rounded-lg border p-0 opacity-0 shadow-lg transition-[opacity,transform] duration-150 outline-none data-[command-open=true]:scale-100 data-[command-open=true]:opacity-100 sm:max-w-lg",
+						"bg-background fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] scale-95 gap-4 overflow-hidden rounded-lg border p-0 opacity-0 shadow-lg transition-[opacity,transform] duration-150 outline-none data-[command-open=true]:animate-command-dialog-in data-[command-open=true]:scale-100 data-[command-open=true]:opacity-100 motion-reduce:animate-none motion-reduce:transition-none sm:max-w-lg",
 						className,
 					)}
 				>

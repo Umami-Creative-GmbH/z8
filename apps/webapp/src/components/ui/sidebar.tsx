@@ -324,71 +324,15 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
 }
 
 function SidebarInset({ className, ref, ...props }: React.ComponentProps<"main">) {
-	const { isMobile, state } = useSidebar();
-	const insetRef = React.useRef<HTMLElement | null>(null);
-	const previousRectRef = React.useRef<DOMRect | null>(null);
-	const setInsetRef = React.useCallback(
-		(node: HTMLElement | null) => {
-			insetRef.current = node;
-
-			if (typeof ref === "function") {
-				ref(node);
-			} else if (ref) {
-				ref.current = node;
-			}
-		},
-		[ref],
-	);
-
-	React.useLayoutEffect(() => {
-		const element = insetRef.current;
-		if (!element) {
-			return;
-		}
-
-		const currentRect = element.getBoundingClientRect();
-		const previousRect = previousRectRef.current;
-		previousRectRef.current = currentRect;
-
-		if (
-			!previousRect ||
-			isMobile ||
-			window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-			currentRect.width === 0
-		) {
-			return;
-		}
-
-		const deltaX = previousRect.left - currentRect.left;
-		const scaleX = previousRect.width / currentRect.width;
-
-		if (Math.abs(deltaX) < 0.5 && Math.abs(scaleX - 1) < 0.001) {
-			return;
-		}
-
-		const animation = element.animate(
-			[
-				{
-					transform: `translateX(${deltaX}px) scaleX(${scaleX})`,
-					transformOrigin: "left center",
-				},
-				{ transform: "translateX(0) scaleX(1)", transformOrigin: "left center" },
-			],
-			{ duration: 200, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
-		);
-
-		return () => animation.cancel();
-	}, [isMobile, state]);
-
 	return (
 		<main
 			className={cn(
-				"relative flex w-full flex-1 flex-col overflow-hidden bg-background will-change-transform",
+				"relative flex w-full flex-1 flex-col overflow-hidden bg-background will-change-transform motion-reduce:animate-none md:peer-data-[state=collapsed]:animate-sidebar-inset-collapse md:peer-data-[state=expanded]:animate-sidebar-inset-expand",
 				"md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2 md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm",
 				className,
 			)}
 			data-slot="sidebar-inset"
-			ref={setInsetRef}
+			ref={ref}
 			{...props}
 		/>
 	);

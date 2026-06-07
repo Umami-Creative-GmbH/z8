@@ -18,7 +18,7 @@ type SheetSide = "top" | "right" | "bottom" | "left";
 const SHEET_CLOSE_DURATION_MS = 200;
 
 type SheetContextValue = {
-	dismissHandlersRef: React.RefObject<DismissEventHandlers>;
+	setDismissHandlers: (handlers: DismissEventHandlers | null) => void;
 	visualOpen: boolean;
 };
 
@@ -37,6 +37,36 @@ type SheetContentProps = SheetPrimitive.Popup.Props & {
 	showCloseButton?: boolean;
 };
 
+type SheetAnimationState = {
+	renderedOpen: boolean;
+	visualOpen: boolean;
+};
+
+type SheetAnimationAction =
+	| { type: "open-start" }
+	| { type: "close-start" }
+	| { type: "close-end" };
+
+function getInitialSheetAnimationState(open: boolean): SheetAnimationState {
+	return { renderedOpen: open, visualOpen: open };
+}
+
+function sheetAnimationReducer(
+	state: SheetAnimationState,
+	action: SheetAnimationAction,
+): SheetAnimationState {
+	switch (action.type) {
+		case "open-start":
+			return state.renderedOpen && state.visualOpen
+				? state
+				: { renderedOpen: true, visualOpen: true };
+		case "close-start":
+			return state.visualOpen ? { ...state, visualOpen: false } : state;
+		case "close-end":
+			return state.renderedOpen ? { ...state, renderedOpen: false } : state;
+	}
+}
+
 function Sheet({
 	children,
 	onOpenChange,
@@ -48,26 +78,30 @@ function Sheet({
 	const dismissHandlersRef = React.useRef<DismissEventHandlers>({});
 	const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen ?? false);
 	const targetOpen = openProp ?? uncontrolledOpen;
-	const [renderedOpen, setRenderedOpen] = React.useState(targetOpen);
-	const [visualOpen, setVisualOpen] = React.useState(targetOpen);
+	const [{ renderedOpen, visualOpen }, dispatchAnimation] = React.useReducer(
+		sheetAnimationReducer,
+		targetOpen,
+		getInitialSheetAnimationState,
+	);
 
 	React.useEffect(() => {
 		if (targetOpen) {
-			setRenderedOpen(true);
-
-			const frame = requestAnimationFrame(() => setVisualOpen(true));
-
-			return () => cancelAnimationFrame(frame);
+			dispatchAnimation({ type: "open-start" });
+			return;
 		}
 
-		setVisualOpen(false);
+		dispatchAnimation({ type: "close-start" });
 
 		const timeout = window.setTimeout(() => {
-			setRenderedOpen(false);
+			dispatchAnimation({ type: "close-end" });
 		}, SHEET_CLOSE_DURATION_MS);
 
 		return () => window.clearTimeout(timeout);
 	}, [targetOpen]);
+
+	const setDismissHandlers = (handlers: DismissEventHandlers | null) => {
+		dismissHandlersRef.current = handlers ?? {};
+	};
 
 	const handleOpenChange: SheetPrimitive.Root.Props["onOpenChange"] = (open, eventDetails) => {
 		if (cancelDismissIfPrevented(open, eventDetails, dismissHandlersRef.current)) {
@@ -80,7 +114,7 @@ function Sheet({
 
 		onOpenChange?.(open, eventDetails);
 	};
-	const context = React.useMemo(() => ({ dismissHandlersRef, visualOpen }), [visualOpen]);
+	const context = { setDismissHandlers, visualOpen };
 
 	return (
 		<SheetContext.Provider value={context}>
@@ -145,7 +179,7 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
 	return (
 		<SheetPrimitive.Backdrop
 			className={cn(
-				"fixed inset-0 z-50 bg-black/50 opacity-0 transition-opacity duration-200 ease-out data-[sheet-open=false]:pointer-events-none data-[sheet-open=true]:opacity-100 motion-reduce:transition-none",
+				"fixed inset-0 z-50 bg-black/50 opacity-0 transition-opacity duration-200 ease-out data-[sheet-open=false]:pointer-events-none data-[sheet-open=true]:animate-sheet-fade-in data-[sheet-open=true]:opacity-100 motion-reduce:animate-none motion-reduce:transition-none",
 				className,
 			)}
 			data-sheet-open={String(context?.visualOpen ?? false)}
@@ -166,29 +200,27 @@ function SheetContent({
 	...props
 }: SheetContentProps) {
 	const context = use(SheetContext);
-	const dismissHandlersRef = context?.dismissHandlersRef;
+	const setDismissHandlers = context?.setDismissHandlers;
 
 	React.useEffect(() => {
-		if (!dismissHandlersRef) {
+		if (!setDismissHandlers) {
 			return;
 		}
 
 		const handlers = { onEscapeKeyDown, onInteractOutside, onPointerDownOutside };
-		dismissHandlersRef.current = handlers;
+		setDismissHandlers(handlers);
 
 		return () => {
-			if (dismissHandlersRef.current === handlers) {
-				dismissHandlersRef.current = {};
-			}
+			setDismissHandlers(null);
 		};
-	}, [dismissHandlersRef, onEscapeKeyDown, onInteractOutside, onPointerDownOutside]);
+	}, [setDismissHandlers, onEscapeKeyDown, onInteractOutside, onPointerDownOutside]);
 
 	return (
 		<SheetPortal>
 			<SheetOverlay />
 			<SheetPrimitive.Popup
 				className={cn(
-					"fixed z-50 flex flex-col gap-4 bg-muted shadow-lg transition-transform duration-200 ease-in-out data-[sheet-open=true]:duration-300 data-[sheet-open=true]:ease-out motion-reduce:transition-none [&_[data-slot=tabs-list]]:bg-border/40",
+					"fixed z-50 flex flex-col gap-4 bg-muted shadow-lg transition-transform duration-200 ease-in-out data-[sheet-open=true]:duration-300 data-[sheet-open=true]:ease-out data-[sheet-side=bottom]:data-[sheet-open=true]:animate-sheet-enter-bottom data-[sheet-side=left]:data-[sheet-open=true]:animate-sheet-enter-left data-[sheet-side=right]:data-[sheet-open=true]:animate-sheet-enter-right data-[sheet-side=top]:data-[sheet-open=true]:animate-sheet-enter-top motion-reduce:animate-none motion-reduce:transition-none [&_[data-slot=tabs-list]]:bg-border/40",
 					side === "right" &&
 						"inset-y-0 right-0 h-full w-3/4 translate-x-full border-l data-[sheet-open=true]:translate-x-0 sm:max-w-sm",
 					side === "left" &&
@@ -200,6 +232,7 @@ function SheetContent({
 					className,
 				)}
 				data-sheet-open={String(context?.visualOpen ?? false)}
+				data-sheet-side={side}
 				data-slot="sheet-content"
 				{...props}
 			>

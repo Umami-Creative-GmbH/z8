@@ -105,6 +105,17 @@ describe("Sheet", () => {
 		expect(dialog.className).toContain("transition-transform");
 	});
 
+	it("uses CSS keyframes for entry without requestAnimationFrame timing", async () => {
+		const sheetSource = await readFile(join(process.cwd(), "src/components/ui/sheet.tsx"), "utf8");
+		const globalsSource = await readFile(join(process.cwd(), "src/app/globals.css"), "utf8");
+
+		expect(sheetSource).not.toContain("requestAnimationFrame");
+		expect(sheetSource).toContain("data-[sheet-open=true]:animate-sheet-fade-in");
+		expect(sheetSource).toContain("data-[sheet-side=right]:data-[sheet-open=true]:animate-sheet-enter-right");
+		expect(globalsSource).toContain("--animate-sheet-enter-right");
+		expect(globalsSource).toContain("@keyframes sheet-enter-right");
+	});
+
 	it("uses wrapper-owned lifecycle without Web Animations", async () => {
 		const source = await readFile(join(process.cwd(), "src/components/ui/sheet.tsx"), "utf8");
 
