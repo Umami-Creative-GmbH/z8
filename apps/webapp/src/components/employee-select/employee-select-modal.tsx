@@ -4,7 +4,7 @@ import { IconSearch, IconX } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { Command as CommandPrimitive } from "cmdk";
-import { useEffect, useState } from "react";
+import { useEffect, useReducer } from "react";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import {
 	ActionPanel,
@@ -32,6 +32,81 @@ import { useEmployeeSelect } from "./use-employee-select";
 
 const EMPTY_EXCLUDE_IDS: string[] = [];
 
+type EmployeeSelectState = {
+	hasPendingChanges: boolean;
+	localSearch: string;
+	pendingIds: string[];
+	selectedEmployeesMap: Map<string, SelectableEmployee>;
+};
+
+type EmployeeSelectAction =
+	| { type: "reset" }
+	| { type: "set-local-search"; value: string }
+	| { type: "set-selected"; employee: SelectableEmployee; pendingIds: string[] }
+	| { type: "set-deselected"; employeeId: string; pendingIds: string[] }
+	| { type: "select-all"; employees: SelectableEmployee[]; pendingIds: string[] }
+	| { type: "clear-all" };
+
+function getInitialEmployeeSelectState(): EmployeeSelectState {
+	return {
+		hasPendingChanges: false,
+		localSearch: "",
+		pendingIds: [],
+		selectedEmployeesMap: new Map(),
+	};
+}
+
+function employeeSelectReducer(
+	state: EmployeeSelectState,
+	action: EmployeeSelectAction,
+): EmployeeSelectState {
+	switch (action.type) {
+		case "reset":
+			return getInitialEmployeeSelectState();
+		case "set-local-search":
+			return { ...state, localSearch: action.value };
+		case "set-selected":
+			return {
+				...state,
+				hasPendingChanges: true,
+				pendingIds: action.pendingIds,
+				selectedEmployeesMap: new Map(state.selectedEmployeesMap).set(
+					action.employee.id,
+					action.employee,
+				),
+			};
+		case "set-deselected": {
+			const selectedEmployeesMap = new Map(state.selectedEmployeesMap);
+			selectedEmployeesMap.delete(action.employeeId);
+			return {
+				...state,
+				hasPendingChanges: true,
+				pendingIds: action.pendingIds,
+				selectedEmployeesMap,
+			};
+		}
+		case "select-all": {
+			const selectedEmployeesMap = new Map(state.selectedEmployeesMap);
+			for (const employee of action.employees) {
+				selectedEmployeesMap.set(employee.id, employee);
+			}
+			return {
+				...state,
+				hasPendingChanges: true,
+				pendingIds: action.pendingIds,
+				selectedEmployeesMap,
+			};
+		}
+		case "clear-all":
+			return {
+				...state,
+				hasPendingChanges: true,
+				pendingIds: [],
+				selectedEmployeesMap: new Map(),
+			};
+	}
+}
+
 /**
  * Modal dialog for selecting employees with search and filters
  */
@@ -58,12 +133,13 @@ export function EmployeeSelectModal({
 	const usePreFiltered = preFilteredEmployees !== undefined;
 
 	// Track pending selections (for multi-select confirmation)
-	const [pendingIds, setPendingIds] = useState<string[]>([]);
-	const [hasPendingChanges, setHasPendingChanges] = useState(false);
+	const [selectionState, dispatchSelection] = useReducer(
+		employeeSelectReducer,
+		undefined,
+		getInitialEmployeeSelectState,
+	);
+	const { hasPendingChanges, localSearch, pendingIds, selectedEmployeesMap } = selectionState;
 	const activePendingIds = hasPendingChanges ? pendingIds : selectedIds;
-
-	// Local search state for pre-filtered mode
-	const [localSearch, setLocalSearch] = useState("");
 
 	// Use the employee select hook (only when not using pre-filtered list)
 	const serverData = useEmployeeSelect({
@@ -74,7 +150,9 @@ export function EmployeeSelectModal({
 
 	// Determine which data source to use
 	const search = usePreFiltered ? localSearch : serverData.search;
-	const setSearch = usePreFiltered ? setLocalSearch : serverData.setSearch;
+	const setSearch = usePreFiltered
+		? (value: string) => dispatchSelection({ type: "set-local-search", value })
+		: serverData.setSearch;
 
 	// Filter pre-filtered employees by search (client-side)
 	const filteredPreFilteredEmployees = (() => {
@@ -126,20 +204,12 @@ export function EmployeeSelectModal({
 		staleTime: 5 * 60 * 1000,
 	});
 
-	// Track selected employees for display
-	const [selectedEmployeesMap, setSelectedEmployeesMap] = useState<Map<string, SelectableEmployee>>(
-		new Map(),
-	);
-
 	useEffect(() => {
 		if (open) {
 			return;
 		}
 
-		setPendingIds([]);
-		setHasPendingChanges(false);
-		setSelectedEmployeesMap(new Map());
-		setLocalSearch("");
+		dispatchSelection({ type: "reset" });
 	}, [open]);
 
 	// Handle selection
@@ -151,9 +221,11 @@ export function EmployeeSelectModal({
 		} else {
 			// In multi mode, add to pending
 			if (!activePendingIds.includes(employee.id)) {
-				setHasPendingChanges(true);
-				setPendingIds([...activePendingIds, employee.id]);
-				setSelectedEmployeesMap((prev) => new Map(prev).set(employee.id, employee));
+				dispatchSelection({
+					type: "set-selected",
+					employee,
+					pendingIds: [...activePendingIds, employee.id],
+				});
 			}
 		}
 	};
@@ -163,12 +235,10 @@ export function EmployeeSelectModal({
 		if (mode === "single") {
 			onDeselect(employeeId);
 		} else {
-			setHasPendingChanges(true);
-			setPendingIds(activePendingIds.filter((id) => id !== employeeId));
-			setSelectedEmployeesMap((prev) => {
-				const newMap = new Map(prev);
-				newMap.delete(employeeId);
-				return newMap;
+			dispatchSelection({
+				type: "set-deselected",
+				employeeId,
+				pendingIds: activePendingIds.filter((id) => id !== employeeId),
 			});
 		}
 	};
@@ -196,8 +266,7 @@ export function EmployeeSelectModal({
 
 	// Handle cancel
 	const handleCancel = () => {
-		setPendingIds([]);
-		setHasPendingChanges(false);
+		dispatchSelection({ type: "reset" });
 		onOpenChange(false);
 	};
 
@@ -214,7 +283,6 @@ export function EmployeeSelectModal({
 			idsToAdd = availableIds.slice(0, remaining);
 		}
 
-		const newMap = new Map(selectedEmployeesMap);
 		const employeesById = new Map<string, (typeof employees)[number]>();
 		for (const employee of employees) {
 			if (!employeesById.has(employee.id)) {
@@ -222,23 +290,24 @@ export function EmployeeSelectModal({
 			}
 		}
 
+		const employeesToAdd: SelectableEmployee[] = [];
 		for (const id of idsToAdd) {
 			const employee = employeesById.get(id);
 			if (employee) {
-				newMap.set(id, employee);
+				employeesToAdd.push(employee);
 			}
 		}
 
-		setHasPendingChanges(true);
-		setPendingIds([...activePendingIds, ...idsToAdd]);
-		setSelectedEmployeesMap(newMap);
+		dispatchSelection({
+			type: "select-all",
+			employees: employeesToAdd,
+			pendingIds: [...activePendingIds, ...idsToAdd],
+		});
 	};
 
 	// Clear all selections
 	const handleClearAll = () => {
-		setHasPendingChanges(true);
-		setPendingIds([]);
-		setSelectedEmployeesMap(new Map());
+		dispatchSelection({ type: "clear-all" });
 	};
 
 	const effectiveSelectedIds = mode === "multiple" ? activePendingIds : selectedIds;
