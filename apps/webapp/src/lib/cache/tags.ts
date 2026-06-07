@@ -14,6 +14,7 @@ export const CACHE_TAGS = {
 	EMPLOYEES: (orgId: string) => `employees:${orgId}`,
 	TEAMS: (orgId: string) => `teams:${orgId}`,
 	LOCATIONS: (orgId: string) => `locations:${orgId}`,
+	HYDRATION_STREAKS: (orgId: string) => `hydration-streaks:${orgId}`,
 
 	// Vacation policies (public cache, scoped by org)
 	VACATION_POLICY: (orgId: string) => `vacation-policy:${orgId}`,

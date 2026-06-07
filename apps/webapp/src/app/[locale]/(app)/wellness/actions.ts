@@ -1,6 +1,8 @@
 "use server";
 
 import { Effect } from "effect";
+import { revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/cache/tags";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -194,6 +196,10 @@ export async function logWaterIntake(data: LogWaterIntakeFormValues): Promise<
 					lastGoalMetDate: streakResult.newLastGoalMetDate,
 				}),
 			);
+
+			if (activeOrganizationId) {
+				revalidateTag(CACHE_TAGS.HYDRATION_STREAKS(activeOrganizationId), "max");
+			}
 
 			const newTodayIntake = currentTodayIntake + amount;
 
