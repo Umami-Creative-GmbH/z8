@@ -2,6 +2,7 @@
 
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import * as React from "react";
+import { use } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -34,7 +35,7 @@ function TooltipProvider({
 }
 
 function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
-	const hasTooltipProvider = React.useContext(TooltipProviderContext);
+	const hasTooltipProvider = use(TooltipProviderContext);
 	const root = <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
 
 	if (hasTooltipProvider) {

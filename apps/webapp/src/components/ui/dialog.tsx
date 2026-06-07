@@ -3,6 +3,7 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { IconX } from "@tabler/icons-react";
 import * as React from "react";
+import { use } from "react";
 
 import {
 	cancelDismissIfPrevented,
@@ -111,7 +112,7 @@ function DialogContent({
 	showCloseButton = true,
 	...props
 }: DialogContentProps) {
-	const dismissHandlersRef = React.useContext(DialogDismissContext);
+	const dismissHandlersRef = use(DialogDismissContext);
 
 	React.useEffect(() => {
 		if (!dismissHandlersRef) {

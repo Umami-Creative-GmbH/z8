@@ -3,6 +3,7 @@
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
 import { IconX } from "@tabler/icons-react";
 import * as React from "react";
+import { use } from "react";
 
 import {
 	cancelDismissIfPrevented,
@@ -111,7 +112,7 @@ function SheetContent({
 	showCloseButton = true,
 	...props
 }: SheetContentProps) {
-	const dismissHandlersRef = React.useContext(SheetDismissContext);
+	const dismissHandlersRef = use(SheetDismissContext);
 
 	React.useEffect(() => {
 		if (!dismissHandlersRef) {

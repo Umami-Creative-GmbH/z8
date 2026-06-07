@@ -2,6 +2,7 @@ import * as React from "react";
 
 type SlotProps = React.HTMLAttributes<HTMLElement> & {
 	children?: React.ReactNode;
+	ref?: React.Ref<HTMLElement>;
 };
 
 function composeRefs<T>(...refs: Array<React.Ref<T> | undefined>) {
@@ -24,10 +25,7 @@ function isEventHandler(propName: string, propValue: unknown) {
 	return /^on[A-Z]/.test(propName) && typeof propValue === "function";
 }
 
-const Slot = React.forwardRef<HTMLElement, SlotProps>(function Slot(
-	{ children, ...slotProps },
-	forwardedRef,
-) {
+function Slot({ children, ref: forwardedRef, ...slotProps }: SlotProps) {
 	if (!React.isValidElement<Record<string, unknown>>(children)) {
 		return null;
 	}
@@ -58,6 +56,6 @@ const Slot = React.forwardRef<HTMLElement, SlotProps>(function Slot(
 	}
 
 	return React.cloneElement(child, props);
-});
+}
 
 export { Slot };
