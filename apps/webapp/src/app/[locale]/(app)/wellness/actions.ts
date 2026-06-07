@@ -53,6 +53,12 @@ function buildWellnessActionEffect<T, E>(
 	}).pipe(Effect.provide(AppLayer));
 }
 
+export function revalidateHydrationStreaksCache(activeOrganizationId: string | null | undefined) {
+	if (activeOrganizationId) {
+		revalidateTag(CACHE_TAGS.HYDRATION_STREAKS(activeOrganizationId), "max");
+	}
+}
+
 /**
  * Get water reminder status for the current user
  */
@@ -122,6 +128,7 @@ export async function getHydrationStats(): Promise<ServerActionResult<HydrationS
 				shouldResetStreak(lastGoalMetDate, currentStreak, { workdayRequirements })
 			) {
 				yield* _(resetHydrationStreak(userId));
+				revalidateHydrationStreaksCache(activeOrganizationId);
 				currentStreak = 0;
 			}
 
@@ -197,9 +204,7 @@ export async function logWaterIntake(data: LogWaterIntakeFormValues): Promise<
 				}),
 			);
 
-			if (activeOrganizationId) {
-				revalidateTag(CACHE_TAGS.HYDRATION_STREAKS(activeOrganizationId), "max");
-			}
+			revalidateHydrationStreaksCache(activeOrganizationId);
 
 			const newTodayIntake = currentTodayIntake + amount;
 

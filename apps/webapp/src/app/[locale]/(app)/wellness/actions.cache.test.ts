@@ -1,26 +1,43 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { CACHE_TAGS } from "@/lib/cache/tags";
+import { revalidateHydrationStreaksCache } from "./actions";
+
+const mocks = vi.hoisted(() => ({
+	revalidateTag: vi.fn(),
+}));
+
+vi.mock("next/cache", () => ({
+	revalidateTag: mocks.revalidateTag,
+	unstable_cache: (fn: unknown) => fn,
+}));
 
 const actionsSource = readFileSync(fileURLToPath(new URL("./actions.ts", import.meta.url)), "utf8");
 
 describe("wellness action cache invalidation", () => {
-	it("invalidates organization hydration streak leaders after water intake stats update", () => {
-		const logWaterIntakeBody = actionsSource.slice(
-			actionsSource.indexOf("export async function logWaterIntake"),
-			actionsSource.indexOf("export async function snoozeWaterReminder"),
-		);
-		const statsUpdateIndex = logWaterIntakeBody.indexOf("updateHydrationStatsAfterIntake({");
-		const revalidateIndex = logWaterIntakeBody.indexOf(
-			"revalidateTag(CACHE_TAGS.HYDRATION_STREAKS(activeOrganizationId), \"max\")",
-		);
-		const responseIndex = logWaterIntakeBody.indexOf("const newTodayIntake");
+	beforeEach(() => {
+		mocks.revalidateTag.mockClear();
+	});
 
-		expect(actionsSource).toContain('import { revalidateTag } from "next/cache";');
-		expect(actionsSource).toContain('import { CACHE_TAGS } from "@/lib/cache/tags";');
-		expect(logWaterIntakeBody).toContain("if (activeOrganizationId) {");
-		expect(statsUpdateIndex).toBeGreaterThanOrEqual(0);
-		expect(revalidateIndex).toBeGreaterThan(statsUpdateIndex);
-		expect(revalidateIndex).toBeLessThan(responseIndex);
+	it("revalidates hydration streak leaders for the active organization", () => {
+		revalidateHydrationStreaksCache("org-1");
+
+		expect(mocks.revalidateTag).toHaveBeenCalledExactlyOnceWith(
+			CACHE_TAGS.HYDRATION_STREAKS("org-1"),
+			"max",
+		);
+	});
+
+	it.each([null, undefined, ""])("does not revalidate without an organization id", (orgId) => {
+		revalidateHydrationStreaksCache(orgId);
+
+		expect(mocks.revalidateTag).not.toHaveBeenCalled();
+	});
+
+	it("uses the helper for water intake updates and lazy streak resets", () => {
+		expect(actionsSource.match(/revalidateHydrationStreaksCache\(activeOrganizationId\)/g)).toHaveLength(
+			2,
+		);
 	});
 });
