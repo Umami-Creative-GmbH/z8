@@ -272,9 +272,9 @@ export function EmployeeSelectModal({
 
 	// Select all visible employees
 	const handleSelectAll = () => {
-		const availableIds = employees
-			.filter((emp) => !activePendingIds.includes(emp.id))
-			.map((emp) => emp.id);
+		const availableIds = employees.flatMap((emp) =>
+			!activePendingIds.includes(emp.id) ? [emp.id] : [],
+		);
 
 		// Respect max selections
 		let idsToAdd = availableIds;

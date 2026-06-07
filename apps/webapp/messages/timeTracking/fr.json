@@ -23,7 +23,9 @@
     },
     "correction": {
       "clockIn": "Entrée",
+      "clockInDate": "Date d'arrivée",
       "clockOut": "Sortie",
+      "clockOutDate": "Date de départ",
       "editDescription": "Apporter des modifications à votre entrée de temps pour aujourd'hui.",
       "editEntry": "Modifier l'entrée de temps",
       "editTitle": "Modifier l'entrée de temps",

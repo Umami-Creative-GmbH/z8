@@ -101,7 +101,7 @@ export const queryKeys = {
 			[
 				"employee-clock-statuses",
 				orgId,
-				[...new Set(employeeIds.map((id) => id.trim()).filter(Boolean))].sort(),
+				Array.from(new Set(employeeIds.map((id) => id.trim()).filter(Boolean))).toSorted(),
 			] as const,
 	},
 

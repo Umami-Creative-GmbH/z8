@@ -229,7 +229,7 @@ export async function getHolidays(
 		}
 	}
 
-	return [...holidaysByKey.values()].sort(
+	return Array.from(holidaysByKey.values()).toSorted(
 		(left, right) => left.startDate.getTime() - right.startDate.getTime(),
 	);
 }

@@ -144,6 +144,8 @@
       "confirm": "Molaya Dönüştür",
       "description": "Bu işlem çalışma dönemini kalıcı olarak silecektir. Boşluk takvimde mola olarak görünecektir.",
       "failed": "Çalışma dönemi silinemedi",
+      "reasonLabel": "Silme nedeni",
+      "reasonRequired": "Neden belirtilmesi zorunludur",
       "success": "Çalışma dönemi molaya dönüştürüldü",
       "title": "Molaya Dönüştürülsün mü?"
     },
@@ -166,7 +168,7 @@
       "type": "Tür"
     },
     "edit": {
-      "convertToBreak": "Molaya Dönüştür",
+      "deleteEntry": "Girdiyi sil",
       "notesSaved": "Notlar kaydedildi",
       "notesSaveFailed": "Notlar kaydedilemedi",
       "projectSaved": "Proje güncellendi",

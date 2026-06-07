@@ -102,6 +102,14 @@
       "title": "Convidar membro"
     },
     "joinOrCreate": "Juntar-se ou criar",
+    "language": {
+      "adminOnly": "Apenas administradores e proprietários da organização podem alterar a configuração de idioma de notificação.",
+      "default": "Idioma de notificação padrão",
+      "description": "Defina o idioma de fallback para e-mail, Telegram e outras notificações de saída quando um usuário não tiver selecionado um idioma de interface.",
+      "title": "Idioma de notificação",
+      "updated": "Idioma de notificação da organização atualizado",
+      "updateFailed": "Falha ao atualizar o idioma de notificação da organização"
+    },
     "logo": {
       "changeLabel": "Alterar logotipo da organização",
       "removeLabel": "Remover logotipo da organização",

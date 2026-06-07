@@ -35,14 +35,14 @@ export function buildManagerAbsenceCalendarDays(
 		}
 	}
 
-	return [...daysByDate.entries()]
-		.sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+	return Array.from(daysByDate.entries())
+		.toSorted(([dateA], [dateB]) => dateA.localeCompare(dateB))
 		.map(([date, dayEntries]) => ({
 			date,
 			approvedCount: dayEntries.filter((entry) => entry.status === "approved").length,
 			pendingCount: dayEntries.filter((entry) => entry.status === "pending").length,
 			totalCount: dayEntries.length,
-			entries: [...dayEntries].sort((entryA, entryB) =>
+			entries: dayEntries.toSorted((entryA, entryB) =>
 				entryA.employeeName.localeCompare(entryB.employeeName, undefined, {
 					sensitivity: "base",
 				}),

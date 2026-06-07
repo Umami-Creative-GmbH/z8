@@ -9,7 +9,7 @@ export function buildCorrectionClosure(
 	seedNodes: readonly CorrectionLinkNode[],
 	lookupById: Readonly<Record<string, CorrectionLinkNode>>,
 ): CorrectionClosureResult {
-	const seedIds = [...new Set(seedNodes.map((node) => node.id))].sort();
+	const seedIds = Array.from(new Set(seedNodes.map((node) => node.id))).toSorted();
 	const inRangeSeedIds = new Set(seedIds);
 
 	const nodesById = new Map<string, CorrectionLinkNode>(Object.entries(lookupById));
@@ -41,7 +41,7 @@ export function buildCorrectionClosure(
 		}
 	}
 
-	const nodeIds = [...visited].sort();
+	const nodeIds = Array.from(visited).toSorted();
 	return {
 		nodeIds,
 		expandedOutsideRange: nodeIds.filter((id) => !inRangeSeedIds.has(id)),

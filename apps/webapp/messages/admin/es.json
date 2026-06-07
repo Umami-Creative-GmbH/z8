@@ -139,6 +139,22 @@
         "description": "Enviar un correo electrónico de diagnóstico a través del transporte de correo del sistema.",
         "messageId": "ID del mensaje: {messageId}",
         "recipient": "Correo electrónico del destinatario",
+        "smtpOverride": {
+          "description": "Déjelo en blanco para usar el transporte de correo electrónico del sistema configurado. Si se completa, la prueba utilizará solo esta configuración SMTP.",
+          "fromEmail": "Correo electrónico del remitente",
+          "fromName": "Nombre del remitente",
+          "host": "Host SMTP",
+          "ipMode": "Modo IP",
+          "ipMode.auto": "Automático",
+          "ipMode.ipv4": "Solo IPv4",
+          "ipMode.ipv6": "Solo IPv6",
+          "password": "Contraseña SMTP",
+          "port": "Puerto SMTP",
+          "requireTls": "Requerir STARTTLS",
+          "secure": "Usar TLS",
+          "title": "Anulación temporal de SMTP",
+          "username": "Nombre de usuario SMTP"
+        },
         "success": "Correo electrónico de prueba enviado a {recipient}.",
         "title": "Prueba de entrega de correo electrónico"
       },
@@ -188,6 +204,7 @@
     },
     "layout": {
       "exitAdmin": "Salir del modo administrador",
+      "menuTitle": "Menú de administración",
       "nav": {
         "analytics": "Análisis",
         "billing": "Facturación",
@@ -199,6 +216,7 @@
         "users": "Usuarios",
         "workerQueue": "Cola de trabajo"
       },
+      "openMenu": "Abrir menú de administración",
       "subtitle": "Gestión de la plataforma",
       "title": "Consola de administración"
     },

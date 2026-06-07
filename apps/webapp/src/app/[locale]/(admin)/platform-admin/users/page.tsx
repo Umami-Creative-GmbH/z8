@@ -108,15 +108,39 @@ function UsersPageSkeleton() {
 }
 
 function UsersPageBody() {
+	const searchParams = useSearchParams();
+	const initialSearch = searchParams.get("search") ?? "";
+	const initialStatus = getUserStatusFilter(searchParams.get("status"));
+	const initialOrganizationId = searchParams.get("organizationId") ?? "";
+	const stateKey = `${initialSearch}:${initialStatus}:${initialOrganizationId}`;
+
+	return (
+		<UsersPageContent
+			key={stateKey}
+			initialSearch={initialSearch}
+			initialStatus={initialStatus}
+			initialOrganizationId={initialOrganizationId}
+		/>
+	);
+}
+
+function UsersPageContent({
+	initialSearch,
+	initialStatus,
+	initialOrganizationId,
+}: {
+	initialSearch: string;
+	initialStatus: UserStatusFilter;
+	initialOrganizationId: string;
+}) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const searchParams = useSearchParams();
 
 	const [page, setPage] = useState(1);
-	const [search, setSearch] = useState("");
-	const [status, setStatus] = useState<UserStatusFilter>("all");
-	const [organizationId, setOrganizationId] = useState("");
+	const [search, setSearch] = useState(initialSearch);
+	const [status, setStatus] = useState<UserStatusFilter>(initialStatus);
+	const [organizationId] = useState(initialOrganizationId);
 	const [isPending, startTransition] = useTransition();
 	const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -127,13 +151,6 @@ function UsersPageBody() {
 	const [sessionsDialogUser, setSessionsDialogUser] = useState<PlatformUser | null>(null);
 	const [sessions, setSessions] = useState<UserSession[]>([]);
 	const [sessionsLoading, setSessionsLoading] = useState(false);
-
-	useEffect(() => {
-		setSearch(searchParams.get("search") ?? "");
-		setStatus(getUserStatusFilter(searchParams.get("status")));
-		setOrganizationId(searchParams.get("organizationId") ?? "");
-		setPage(1);
-	}, [searchParams]);
 
 	const { data, isLoading } = useQuery({
 		queryKey: ["admin-users", search, status, organizationId, page],
@@ -188,9 +205,11 @@ function UsersPageBody() {
 
 	// Cleanup timeout on unmount
 	useEffect(() => {
+		const searchTimeout = searchTimeoutRef.current;
+
 		return () => {
-			if (searchTimeoutRef.current) {
-				clearTimeout(searchTimeoutRef.current);
+			if (searchTimeout) {
+				clearTimeout(searchTimeout);
 			}
 		};
 	}, []);

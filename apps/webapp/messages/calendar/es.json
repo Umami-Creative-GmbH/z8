@@ -144,6 +144,8 @@
       "confirm": "Convertir en descanso",
       "description": "Esto eliminará permanentemente este período de trabajo. El espacio aparecerá como un descanso en el calendario.",
       "failed": "Falló la eliminación del período de trabajo",
+      "reasonLabel": "Motivo de la eliminación",
+      "reasonRequired": "El motivo es obligatorio",
       "success": "Período de trabajo convertido en descanso",
       "title": "¿Convertir en descanso?"
     },
@@ -166,7 +168,7 @@
       "type": "Tipo"
     },
     "edit": {
-      "convertToBreak": "Convertir en descanso",
+      "deleteEntry": "Eliminar entrada",
       "notesSaved": "Notas guardadas",
       "notesSaveFailed": "Error al guardar notas",
       "projectSaved": "Proyecto actualizado",

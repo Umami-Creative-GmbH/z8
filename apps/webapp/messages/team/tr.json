@@ -4,6 +4,22 @@
       "actions": {
         "recordForEmployee": "{name} için izin kaydı oluştur"
       },
+      "calendar": {
+        "approved": "Onaylandı",
+        "description": "Seçili ekip ve yıl için onaylanmış ve beklemede olan izinler.",
+        "error": {
+          "description": "Lütfen birazdan tekrar deneyin.",
+          "title": "Takvim yüklenemedi"
+        },
+        "legend": {
+          "approved": "Onaylandı",
+          "pending": "Beklemede"
+        },
+        "pending": "Beklemede",
+        "pendingDays": "{count} beklemede",
+        "title": "Yıllık takvim",
+        "totalDays": "{count} devamsız"
+      },
       "description": "Ekibiniz için izin haklarını inceleyin ve onaylanmış izinleri kaydedin.",
       "empty": {
         "description": "Ekip üyelerini bulmak için filtreleri veya aramayı değiştirmeyi deneyin.",

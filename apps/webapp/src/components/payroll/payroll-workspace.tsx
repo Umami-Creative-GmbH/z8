@@ -620,9 +620,9 @@ function buildPeriodRequest(start: DateTime, mode: Exclude<PayrollDateRangeMode,
 }
 
 function getTeamOptions(employees: PayrollWorkspaceSummary["employees"]): string[] {
-	return [
-		...new Set(employees.map((employee) => employee.teamName).filter(Boolean)),
-	].sort() as string[];
+	return Array.from(
+		new Set(employees.map((employee) => employee.teamName).filter(Boolean)),
+	).toSorted() as string[];
 }
 
 function getFilteredEmployeeIds(

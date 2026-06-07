@@ -48,7 +48,7 @@ export function calculateHash(input: HashInput): string {
  */
 export async function validateChain(entries: TimeEntry[]): Promise<boolean> {
 	// Sort by creation order using Luxon for safer date comparison
-	const sorted = [...entries].sort((a, b) => {
+	const sorted = entries.toSorted((a, b) => {
 		const aDT = dateFromDB(a.createdAt);
 		const bDT = dateFromDB(b.createdAt);
 		if (!aDT || !bDT) return 0;
@@ -139,7 +139,7 @@ export function getChainHash(entries: TimeEntry[]): string | null {
 	}
 
 	// Sort by creation order
-	const sorted = [...entries].sort((a, b) => {
+	const sorted = entries.toSorted((a, b) => {
 		const aDT = dateFromDB(a.createdAt);
 		const bDT = dateFromDB(b.createdAt);
 		if (!aDT || !bDT) return 0;
@@ -170,7 +170,7 @@ export function validateChainDetailed(entries: TimeEntry[]): ChainValidationResu
 	let validEntries = 0;
 
 	// Sort by creation order
-	const sorted = [...entries].sort((a, b) => {
+	const sorted = entries.toSorted((a, b) => {
 		const aDT = dateFromDB(a.createdAt);
 		const bDT = dateFromDB(b.createdAt);
 		if (!aDT || !bDT) return 0;

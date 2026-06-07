@@ -74,13 +74,14 @@ function normalizeTranslationMap(value: unknown) {
 		return null;
 	}
 
-	const entries = Object.entries(value)
-		.filter(
-			(entry): entry is [string, string] =>
-				typeof entry[0] === "string" && typeof entry[1] === "string",
-		)
-		.map(([locale, translation]) => [locale.trim(), translation.trim()] as const)
-		.filter(([locale, translation]) => locale && translation && !isUnsafeTranslationKey(locale));
+	const entries = Object.entries(value).flatMap(([locale, translation]) => {
+		if (typeof locale !== "string" || typeof translation !== "string") return [];
+		const trimmedLocale = locale.trim();
+		const trimmedTranslation = translation.trim();
+		return trimmedLocale && trimmedTranslation && !isUnsafeTranslationKey(trimmedLocale)
+			? [[trimmedLocale, trimmedTranslation] as const]
+			: [];
+	});
 
 	return entries.length > 0 ? Object.fromEntries(entries) : null;
 }

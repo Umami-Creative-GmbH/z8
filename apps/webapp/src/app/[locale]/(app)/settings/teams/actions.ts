@@ -1042,9 +1042,9 @@ export async function addTeamMember(
 						}),
 					);
 					const manageableTeamIds = new Set(
-						Array.from(scopedPermissions.byTeamId.entries())
-							.filter(([, flags]) => flags.canManageTeamMembers)
-							.map(([managedTeamId]) => managedTeamId),
+						Array.from(scopedPermissions.byTeamId.entries()).flatMap(([managedTeamId, flags]) =>
+							flags.canManageTeamMembers ? [managedTeamId] : [],
+						),
 					);
 					const currentTeamIds = new Set(
 						[
@@ -1097,6 +1097,9 @@ export async function addTeamMember(
 						}),
 					);
 				}
+
+				revalidateTag(CACHE_TAGS.TEAMS(targetTeam.organizationId), "max");
+				revalidateTag(CACHE_TAGS.EMPLOYEES(targetTeam.organizationId), "max");
 
 				// Trigger in-app notification (fire-and-forget)
 				void onTeamMemberAdded({
@@ -1249,8 +1252,7 @@ export async function removeTeamMember(
 
 					const nextTeamId =
 						remainingMemberships
-							.map((membership) => membership.teamId)
-							.filter((remainingTeamId) => remainingTeamId !== teamId)
+							.flatMap((membership) => (membership.teamId !== teamId ? [membership.teamId] : []))
 							.toSorted()[0] ?? null;
 
 					yield* _(
@@ -1262,6 +1264,9 @@ export async function removeTeamMember(
 						}),
 					);
 				}
+
+				revalidateTag(CACHE_TAGS.TEAMS(targetTeam.organizationId), "max");
+				revalidateTag(CACHE_TAGS.EMPLOYEES(targetTeam.organizationId), "max");
 
 				// Trigger in-app notification (fire-and-forget)
 				if (targetEmployee) {

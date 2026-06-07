@@ -30,6 +30,11 @@ import { cn } from "@/lib/utils";
 import { getTranslate } from "@/tolgee/server";
 import { SyncSeatsButton } from "./sync-seats-button";
 
+const formatDate = (date: Date | null) => {
+	if (!date) return "—";
+	return DateTime.fromJSDate(date).toLocaleString(DateTime.DATE_MED);
+};
+
 export default async function AdminBillingPage() {
 	await connection();
 
@@ -324,11 +329,6 @@ async function SubscriptionsTable() {
 			default:
 				return "—";
 		}
-	};
-
-	const formatDate = (date: Date | null) => {
-		if (!date) return "—";
-		return DateTime.fromJSDate(date).toLocaleString(DateTime.DATE_MED);
 	};
 
 	return (

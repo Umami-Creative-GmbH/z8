@@ -167,9 +167,9 @@ async function getSurchargeScopeContext(
 	]);
 
 	const manageableTeamIds = new Set(
-		teamPermissionRows
-			.filter((permission) => permission.canManageTeamSettings && permission.teamId)
-			.map((permission) => permission.teamId as string),
+		teamPermissionRows.flatMap((permission) =>
+			permission.canManageTeamSettings && permission.teamId ? [permission.teamId] : [],
+		),
 	);
 	const manageableLocationIds = new Set(
 		managerLocationAssignments

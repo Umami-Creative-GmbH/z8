@@ -260,9 +260,9 @@ function getScopedCalendarEmployeeIds(actor: CalendarSettingsActor, queryName: s
 			);
 
 		const manageableTeamIds = new Set(
-			teamPermissionRows
-				.filter((permission) => permission.canManageTeamSettings && permission.teamId)
-				.map((permission) => permission.teamId as string),
+			teamPermissionRows.flatMap((permission) =>
+				permission.canManageTeamSettings && permission.teamId ? [permission.teamId] : [],
+			),
 		);
 		const manageableLocationIds = managerLocationRows
 			.map((assignment) => assignment.locationId)
@@ -378,26 +378,30 @@ function getRelevantCalendarConnections(actor: CalendarSettingsActor, queryName:
 		const typedConnections = connections as unknown as CalendarConnectionWithEmployee[];
 
 		return typedConnections
-			.filter(
-				(connection) => scopedEmployeeIds === null || scopedEmployeeIds.has(connection.employeeId),
+			.flatMap((connection) =>
+				scopedEmployeeIds === null || scopedEmployeeIds.has(connection.employeeId)
+					? [
+							{
+								id: connection.id,
+								employeeId: connection.employeeId,
+								employeeName: connection.employee?.user
+									? buildAuthUserDisplayName(connection.employee.user) ||
+										connection.providerAccountId
+									: connection.providerAccountId,
+								provider: connection.provider,
+								providerLabel: providerLabels.get(connection.provider) ?? connection.provider,
+								providerAccountId: connection.providerAccountId,
+								calendarId: connection.calendarId,
+								pushEnabled: connection.pushEnabled,
+								conflictDetectionEnabled: connection.conflictDetectionEnabled,
+								lastSyncAt: connection.lastSyncAt,
+								lastSyncError: connection.lastSyncError,
+								isActive: connection.isActive,
+								createdAt: connection.createdAt,
+							},
+						]
+					: [],
 			)
-			.map((connection) => ({
-				id: connection.id,
-				employeeId: connection.employeeId,
-				employeeName: connection.employee?.user
-					? buildAuthUserDisplayName(connection.employee.user) || connection.providerAccountId
-					: connection.providerAccountId,
-				provider: connection.provider,
-				providerLabel: providerLabels.get(connection.provider) ?? connection.provider,
-				providerAccountId: connection.providerAccountId,
-				calendarId: connection.calendarId,
-				pushEnabled: connection.pushEnabled,
-				conflictDetectionEnabled: connection.conflictDetectionEnabled,
-				lastSyncAt: connection.lastSyncAt,
-				lastSyncError: connection.lastSyncError,
-				isActive: connection.isActive,
-				createdAt: connection.createdAt,
-			}))
 			.sort((left, right) => {
 				const nameComparison = left.employeeName.localeCompare(right.employeeName);
 				if (nameComparison !== 0) {

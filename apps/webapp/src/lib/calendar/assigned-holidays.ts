@@ -513,7 +513,7 @@ export async function getAssignedHolidaysForEmployee(params: {
 		}
 	}
 
-	return [...holidaysById.values()].sort(
+	return Array.from(holidaysById.values()).toSorted(
 		(left, right) => left.startDate.getTime() - right.startDate.getTime(),
 	);
 }

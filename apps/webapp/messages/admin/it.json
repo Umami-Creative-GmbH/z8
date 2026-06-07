@@ -139,6 +139,22 @@
         "description": "Invia un'email di diagnostica tramite il sistema di trasporto email.",
         "messageId": "ID messaggio: {messageId}",
         "recipient": "Email destinatario",
+        "smtpOverride": {
+          "description": "Lascia vuoto per utilizzare il trasporto email di sistema configurato. Se compilato, il test utilizzerà solo queste impostazioni SMTP.",
+          "fromEmail": "Email mittente",
+          "fromName": "Nome mittente",
+          "host": "Host SMTP",
+          "ipMode": "Modalità IP",
+          "ipMode.auto": "Auto",
+          "ipMode.ipv4": "Solo IPv4",
+          "ipMode.ipv6": "Solo IPv6",
+          "password": "Password SMTP",
+          "port": "Porta SMTP",
+          "requireTls": "Richiedi STARTTLS",
+          "secure": "Usa TLS",
+          "title": "Sovrascrittura temporanea SMTP",
+          "username": "Nome utente SMTP"
+        },
         "success": "Email di test inviata a {recipient}.",
         "title": "Test di recapito email"
       },
@@ -188,6 +204,7 @@
     },
     "layout": {
       "exitAdmin": "Esci da Admin",
+      "menuTitle": "Menu amministratore",
       "nav": {
         "analytics": "Analisi",
         "billing": "Fatturazione",
@@ -199,6 +216,7 @@
         "users": "Utenti",
         "workerQueue": "Coda di lavoro"
       },
+      "openMenu": "Apri menu amministratore",
       "subtitle": "Gestione piattaforma",
       "title": "Console di amministrazione"
     },

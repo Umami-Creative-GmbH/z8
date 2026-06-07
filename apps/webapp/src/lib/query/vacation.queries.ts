@@ -565,15 +565,22 @@ export async function getEmployeesWithExpiringCarryover(
 
 	const allowances = await getAllEmployeeVacationAllowances(organizationId, year);
 
-	return allowances
-		.filter((a) => a.customCarryoverDays && parseFloat(a.customCarryoverDays) > 0)
-		.map((a) => ({
-			employeeId: a.employeeId,
-			employeeName: a.employeeName || "Unknown",
-			carryoverDays: parseFloat(a.customCarryoverDays || "0"),
-			expiresAt,
-			daysUntilExpiry: Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
-		}));
+	return allowances.flatMap((a) => {
+		const carryoverDays = parseFloat(a.customCarryoverDays || "0");
+		return a.customCarryoverDays && carryoverDays > 0
+			? [
+					{
+						employeeId: a.employeeId,
+						employeeName: a.employeeName || "Unknown",
+						carryoverDays,
+						expiresAt,
+						daysUntilExpiry: Math.ceil(
+							(expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+						),
+					},
+				]
+			: [];
+	});
 }
 
 /**

@@ -48,6 +48,10 @@
         "subtitle": "Verificar se os dados de horas estão prontos para a folha de pagamento",
         "title": "Abrir prontidão da folha de pagamento"
       },
+      "openPayroll": {
+        "subtitle": "Revisar espaço de trabalho de folha de pagamento com escopo",
+        "title": "Abrir folha de pagamento"
+      },
       "openSettings": {
         "subtitle": "Gerenciar seu perfil, segurança e configurações da organização",
         "title": "Abrir configurações"
@@ -301,6 +305,7 @@
     "get-help": "Obter Ajuda",
     "my-requests": "Minhas Solicitações",
     "org-explorer": "Explorador da Organização",
+    "payroll": "Folha de pagamento",
     "platform-admin": "Administrador da plataforma",
     "reports": "Relatórios",
     "scheduling": "Agendamento",

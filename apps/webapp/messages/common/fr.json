@@ -48,6 +48,10 @@
         "subtitle": "Vérifier si les données de temps sont prêtes pour la paie",
         "title": "Ouvrir la préparation de la paie"
       },
+      "openPayroll": {
+        "subtitle": "Revoir l'espace de travail de paie délimité",
+        "title": "Ouvrir la paie"
+      },
       "openSettings": {
         "subtitle": "Gérer votre profil, la sécurité et les paramètres de l'organisation",
         "title": "Ouvrir les paramètres"
@@ -301,6 +305,7 @@
     "get-help": "Obtenir de l'aide",
     "my-requests": "Mes demandes",
     "org-explorer": "Explorateur d'organisation",
+    "payroll": "Paie",
     "platform-admin": "Administrateur de la plateforme",
     "reports": "Rapports",
     "scheduling": "Planification",

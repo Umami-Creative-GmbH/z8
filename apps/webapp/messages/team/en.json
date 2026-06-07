@@ -4,6 +4,22 @@
       "actions": {
         "recordForEmployee": "Record absence for {name}"
       },
+      "calendar": {
+        "approved": "Approved",
+        "description": "Approved and pending absences for the selected team and year.",
+        "error": {
+          "description": "Please try again in a moment.",
+          "title": "Unable to load calendar"
+        },
+        "legend": {
+          "approved": "Approved",
+          "pending": "Pending"
+        },
+        "pending": "Pending",
+        "pendingDays": "{count} pending",
+        "title": "Year calendar",
+        "totalDays": "{count} absent"
+      },
       "description": "Review allowances and record approved absences for your team.",
       "empty": {
         "description": "Try adjusting filters or search to find team members.",

@@ -399,16 +399,20 @@ export const ChangePolicyServiceLive = Layer.effect(
 									},
 								});
 
-								return result
-									.filter((r) => r.manager)
-									.map((r) => ({
-										managerId: r.manager.id,
-										userId: r.manager.userId,
-										name:
-											[r.manager.firstName, r.manager.lastName].filter(Boolean).join(" ") ||
-											"Manager",
-										isPrimary: r.isPrimary,
-									}));
+								return result.flatMap((r) =>
+									r.manager
+										? [
+												{
+													managerId: r.manager.id,
+													userId: r.manager.userId,
+													name:
+														[r.manager.firstName, r.manager.lastName].filter(Boolean).join(" ") ||
+														"Manager",
+													isPrimary: r.isPrimary,
+												},
+											]
+										: [],
+								);
 							} else {
 								// Get only primary manager
 								const result = await dbService.db.query.employeeManagers.findFirst({

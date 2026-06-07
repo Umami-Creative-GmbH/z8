@@ -53,21 +53,22 @@ export function buildTeamSettingsSurface(input: {
 		};
 	}
 
-	const teams = input.teams
-		.map((currentTeam) => ({
+	const teams = input.teams.flatMap((currentTeam) => {
+		const scopedTeam = {
 			...currentTeam,
 			...getScopedTeamFlags({
 				accessTier: input.accessTier,
 				permissions: input.permissions,
 				teamId: currentTeam.id,
 			}),
-		}))
-		.filter(
-			(currentTeam) =>
-				canAccessOrganizationAdminSurface ||
-				currentTeam.canManageMembers ||
-				currentTeam.canManageSettings,
-		);
+		};
+
+		return canAccessOrganizationAdminSurface ||
+			scopedTeam.canManageMembers ||
+			scopedTeam.canManageSettings
+			? [scopedTeam]
+			: [];
+	});
 
 	return {
 		canAccessOrganizationAdminSurface,

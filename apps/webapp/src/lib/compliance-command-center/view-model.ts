@@ -27,9 +27,9 @@ function buildRiskSummary(
 	const status = (Object.entries(STATUS_PRIORITY).find(
 		([, value]) => value === highestPriority,
 	)?.[0] ?? "healthy") as ComplianceSectionStatus;
-	const topRiskKeys = sections
-		.filter((section) => STATUS_PRIORITY[section.status] === highestPriority && highestPriority > 0)
-		.map((section) => section.key);
+	const topRiskKeys = sections.flatMap((section) =>
+		STATUS_PRIORITY[section.status] === highestPriority && highestPriority > 0 ? [section.key] : [],
+	);
 
 	return {
 		status,

@@ -144,6 +144,8 @@
       "confirm": "Convert to Break",
       "description": "This will permanently delete this work period. The gap will appear as a break in the calendar.",
       "failed": "Failed to delete work period",
+      "reasonLabel": "Reason for deletion",
+      "reasonRequired": "Reason is required",
       "success": "Work period converted to break",
       "title": "Convert to Break?"
     },
@@ -166,7 +168,7 @@
       "type": "Type"
     },
     "edit": {
-      "convertToBreak": "Convert to Break",
+      "deleteEntry": "Delete entry",
       "notesSaved": "Notes saved",
       "notesSaveFailed": "Failed to save notes",
       "projectSaved": "Project updated",

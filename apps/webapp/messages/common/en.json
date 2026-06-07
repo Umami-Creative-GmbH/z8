@@ -48,6 +48,10 @@
         "subtitle": "Check whether time data is ready for payroll",
         "title": "Open payroll readiness"
       },
+      "openPayroll": {
+        "subtitle": "Review scoped payroll workspace",
+        "title": "Open payroll"
+      },
       "openSettings": {
         "subtitle": "Manage your profile, security, and organization settings",
         "title": "Open settings"
@@ -301,6 +305,7 @@
     "get-help": "Get Help",
     "my-requests": "My Requests",
     "org-explorer": "Org Explorer",
+    "payroll": "Payroll",
     "platform-admin": "Platform Admin",
     "reports": "Reports",
     "scheduling": "Scheduling",

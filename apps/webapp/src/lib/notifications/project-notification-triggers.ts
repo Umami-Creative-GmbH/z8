@@ -397,14 +397,18 @@ export async function getProjectsWithUpcomingDeadlines(): Promise<
 	});
 
 	// Filter to only include projects with deadlines and bookable status
-	return projects
-		.filter((p) => p.deadline !== null && bookableStatuses.includes(p.status))
-		.map((p) => ({
-			id: p.id,
-			name: p.name,
-			organizationId: p.organizationId,
-			deadline: p.deadline!,
-		}));
+	return projects.flatMap((p) =>
+		p.deadline !== null && bookableStatuses.includes(p.status)
+			? [
+					{
+						id: p.id,
+						name: p.name,
+						organizationId: p.organizationId,
+						deadline: p.deadline,
+					},
+				]
+			: [],
+	);
 }
 
 /**

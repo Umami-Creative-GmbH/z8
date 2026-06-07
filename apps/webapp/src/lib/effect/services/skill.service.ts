@@ -634,10 +634,9 @@ export const SkillServiceLive = Layer.effect(
 							}));
 
 							// Delete existing
-							const deletedRequirements = await dbService.db
+							await dbService.db
 								.delete(subareaSkillRequirement)
 								.where(eq(subareaSkillRequirement.subareaId, input.targetId));
-							void deletedRequirements;
 
 							if (values.length === 0) {
 								return [];
@@ -704,10 +703,9 @@ export const SkillServiceLive = Layer.effect(
 							}));
 
 							// Delete existing
-							const deletedRequirements = await dbService.db
+							await dbService.db
 								.delete(shiftTemplateSkillRequirement)
 								.where(eq(shiftTemplateSkillRequirement.templateId, input.targetId));
-							void deletedRequirements;
 
 							if (values.length === 0) {
 								return [];

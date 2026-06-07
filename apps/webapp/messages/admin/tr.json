@@ -139,6 +139,22 @@
         "description": "Sistem e-posta aktarımı aracılığıyla bir tanılama e-postası gönderin.",
         "messageId": "İleti Kimliği: {messageId}",
         "recipient": "Alıcı e-postası",
+        "smtpOverride": {
+          "description": "Yapılandırılmış sistem e-posta aktarımını kullanmak için boş bırakın. Doldurulursa, test yalnızca bu SMTP ayarlarını kullanır.",
+          "fromEmail": "Gönderen e-postası",
+          "fromName": "Gönderen adı",
+          "host": "SMTP sunucusu",
+          "ipMode": "IP modu",
+          "ipMode.auto": "Otomatik",
+          "ipMode.ipv4": "Yalnızca IPv4",
+          "ipMode.ipv6": "Yalnızca IPv6",
+          "password": "SMTP şifresi",
+          "port": "SMTP portu",
+          "requireTls": "STARTTLS zorunlu",
+          "secure": "TLS kullan",
+          "title": "Geçici SMTP geçersiz kılma",
+          "username": "SMTP kullanıcı adı"
+        },
         "success": "Test e-postası {recipient} adresine gönderildi.",
         "title": "E-posta Teslimat Testi"
       },
@@ -188,6 +204,7 @@
     },
     "layout": {
       "exitAdmin": "Yönetici Panelinden Çık",
+      "menuTitle": "Yönetici Menüsü",
       "nav": {
         "analytics": "Analitik",
         "billing": "Faturalandırma",
@@ -199,6 +216,7 @@
         "users": "Kullanıcılar",
         "workerQueue": "Çalışan Kuyruğu"
       },
+      "openMenu": "Yönetici menüsünü aç",
       "subtitle": "Platform Yönetimi",
       "title": "Yönetici Konsolu"
     },

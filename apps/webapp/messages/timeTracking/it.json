@@ -23,7 +23,9 @@
     },
     "correction": {
       "clockIn": "Entrata",
+      "clockInDate": "Data di entrata",
       "clockOut": "Uscita",
+      "clockOutDate": "Data di uscita",
       "editDescription": "Modifica la tua voce oraria per oggi.",
       "editEntry": "Modifica voce oraria",
       "editTitle": "Modifica voce oraria",

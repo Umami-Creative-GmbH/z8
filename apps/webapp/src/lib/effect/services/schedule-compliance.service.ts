@@ -184,13 +184,13 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 						}),
 					);
 
-					const employeeIds = [
-						...new Set(
+					const employeeIds = Array.from(
+						new Set(
 							assignedShifts.flatMap((scheduledShift) =>
 								scheduledShift.employeeId ? [scheduledShift.employeeId] : [],
 							),
 						),
-					].sort();
+					).toSorted();
 
 					const lookbackStart = DateTime.fromJSDate(input.startDate)
 						.setZone(input.timezone)

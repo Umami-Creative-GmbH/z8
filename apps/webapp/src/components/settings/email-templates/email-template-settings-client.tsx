@@ -81,9 +81,7 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 	const [overrideKeys, setOverrideKeys] = useState<Set<EmailTemplateKey>>(
 		() =>
 			new Set(
-				templates
-					.filter((template) => template.override)
-					.map((template) => template.definition.key),
+				templates.flatMap((template) => (template.override ? [template.definition.key] : [])),
 			),
 	);
 

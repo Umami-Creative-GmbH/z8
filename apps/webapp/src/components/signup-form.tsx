@@ -280,16 +280,6 @@ export function SignupForm({
 		}
 	}, [inviteCode]);
 
-	useEffect(() => {
-		if (!initialEmail) {
-			return;
-		}
-
-		if (formData.email !== initialEmail) {
-			form.setFieldValue("email", initialEmail);
-		}
-	}, [form, formData.email, initialEmail]);
-
 	// Determine which auth methods are enabled
 	const showEmailPassword = authConfig?.emailPasswordEnabled ?? true;
 	const allowedSocialProviders = authConfig?.socialProvidersEnabled ?? [];

@@ -399,16 +399,18 @@ export const ShiftServiceLive = Layer.effect(
 								});
 
 								// Check for time overlaps
-								return existingShifts
-									.filter((s) => {
-										return timesOverlap(input.startTime, input.endTime, s.startTime, s.endTime);
-									})
-									.map((s) => ({
-										id: s.id,
-										date: s.date,
-										startTime: s.startTime,
-										endTime: s.endTime,
-									}));
+								return existingShifts.flatMap((s) =>
+									timesOverlap(input.startTime, input.endTime, s.startTime, s.endTime)
+										? [
+												{
+													id: s.id,
+													date: s.date,
+													startTime: s.startTime,
+													endTime: s.endTime,
+												},
+											]
+										: [],
+								);
 							}),
 						);
 					}

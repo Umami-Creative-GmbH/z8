@@ -23,7 +23,9 @@
     },
     "correction": {
       "clockIn": "İşe Giriş",
+      "clockInDate": "Giriş Tarihi",
       "clockOut": "İşten Çıkış",
+      "clockOutDate": "Çıkış Tarihi",
       "editDescription": "Bugünkü zaman kaydınızda değişiklik yapın.",
       "editEntry": "Zaman kaydını düzenle",
       "editTitle": "Zaman Kaydını Düzenle",

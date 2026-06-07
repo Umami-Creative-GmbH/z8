@@ -312,9 +312,9 @@ export const CoverageServiceLive = Layer.effect(
 					},
 				});
 
-				return managed
-					.filter((m) => m.employee.organizationId === organizationId)
-					.map((m) => m.employeeId);
+				return managed.flatMap((m) =>
+					m.employee.organizationId === organizationId ? [m.employeeId] : [],
+				);
 			});
 
 		/**

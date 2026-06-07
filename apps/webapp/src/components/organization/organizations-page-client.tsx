@@ -23,6 +23,7 @@ interface OrganizationsPageClientProps {
 	members: MemberWithUserAndEmployee[];
 	invitations: InvitationWithInviter[];
 	currentMemberRole: "owner" | "admin" | "member";
+	defaultNotificationLanguage: string;
 	currentUserId: string;
 	canCreateOrganizations: boolean;
 }
@@ -32,6 +33,7 @@ export function OrganizationsPageClient({
 	members,
 	invitations,
 	currentMemberRole,
+	defaultNotificationLanguage,
 	currentUserId,
 	canCreateOrganizations,
 }: OrganizationsPageClientProps) {
@@ -55,6 +57,7 @@ export function OrganizationsPageClient({
 					members={members}
 					invitations={invitations}
 					currentMemberRole={currentMemberRole}
+					defaultNotificationLanguage={defaultNotificationLanguage}
 					currentUserId={currentUserId}
 					canCreateOrganizations={canCreateOrganizations}
 				/>

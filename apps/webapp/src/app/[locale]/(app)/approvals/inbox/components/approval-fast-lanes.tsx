@@ -71,12 +71,12 @@ export function ApprovalFastLanes({
 				{groups.map((group) => {
 					const label = getGroupLabel(t, group.key);
 					const actionLabel = label.toLowerCase();
-					const approvableIds = group.items
-						.filter((item) => item.capabilities.canBulkApprove && item.capabilities.canApprove)
-						.map((item) => item.id);
-					const rejectableIds = group.items
-						.filter((item) => item.capabilities.canReject)
-						.map((item) => item.id);
+					const approvableIds = group.items.flatMap((item) =>
+						item.capabilities.canBulkApprove && item.capabilities.canApprove ? [item.id] : [],
+					);
+					const rejectableIds = group.items.flatMap((item) =>
+						item.capabilities.canReject ? [item.id] : [],
+					);
 					const notApprovableCount = group.items.length - approvableIds.length;
 					const notRejectableCount = group.items.length - rejectableIds.length;
 					const explanations = Array.from(

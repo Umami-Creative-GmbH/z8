@@ -9,6 +9,8 @@ const teamFindFirstMock = vi.fn();
 const userFindFirstMock = vi.fn();
 const updateSetMock = vi.fn();
 const updateWhereMock = vi.fn();
+const insertValuesMock = vi.fn();
+const onConflictDoUpdateMock = vi.fn();
 
 vi.mock("next/headers", () => ({
 	headers: vi.fn(async () => new Headers()),
@@ -47,10 +49,17 @@ vi.mock("@/db", () => ({
 		update: vi.fn(() => ({
 			set: updateSetMock.mockReturnValue({ where: updateWhereMock }),
 		})),
+		insert: vi.fn(() => ({
+			values: insertValuesMock.mockReturnValue({ onConflictDoUpdate: onConflictDoUpdateMock }),
+		})),
 	},
 }));
 
-const { sendInvitation, updateInvitationTargetTeam } = await import("./actions");
+const {
+	sendInvitation,
+	updateInvitationTargetTeam,
+	updateOrganizationDefaultNotificationLanguage,
+} = await import("./actions");
 
 describe("organization feature allowlist", () => {
 	it("allows only supported organization feature flags", () => {
@@ -75,6 +84,8 @@ describe("organization invitation actions", () => {
 		userFindFirstMock.mockReset();
 		updateSetMock.mockReset();
 		updateWhereMock.mockReset();
+		insertValuesMock.mockReset();
+		onConflictDoUpdateMock.mockReset();
 		getSessionMock.mockResolvedValue({
 			user: { id: "user-admin" },
 			session: {
@@ -100,6 +111,8 @@ describe("organization invitation actions", () => {
 		createInvitationMock.mockResolvedValue({ id: "invitation-created" });
 		updateSetMock.mockReturnValue({ where: updateWhereMock });
 		updateWhereMock.mockResolvedValue([{ id: "updated" }]);
+		insertValuesMock.mockReturnValue({ onConflictDoUpdate: onConflictDoUpdateMock });
+		onConflictDoUpdateMock.mockResolvedValue({ organizationId: "org-1" });
 	});
 
 	it("rejects a direct invite target team outside the organization", async () => {
@@ -263,5 +276,52 @@ describe("organization invitation actions", () => {
 		expect(memberFindFirstMock).not.toHaveBeenCalled();
 		expect(teamFindFirstMock).not.toHaveBeenCalled();
 		expect(updateSetMock).not.toHaveBeenCalled();
+	});
+
+	it("allows an admin to update the organization default notification language", async () => {
+		const result = await updateOrganizationDefaultNotificationLanguage("org-1", "de");
+
+		expect(result).toMatchObject({ success: true });
+		expect(updateSetMock).not.toHaveBeenCalledWith({ defaultLanguage: "de" });
+		expect(insertValuesMock).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			defaultLanguage: "de",
+		});
+		expect(onConflictDoUpdateMock).toHaveBeenCalledWith(
+			expect.objectContaining({ set: { defaultLanguage: "de" } }),
+		);
+	});
+
+	it("rejects unsupported organization default notification languages", async () => {
+		const result = await updateOrganizationDefaultNotificationLanguage("org-1", "xx");
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "Unsupported language",
+		});
+		expect(memberFindFirstMock).not.toHaveBeenCalled();
+		expect(updateSetMock).not.toHaveBeenCalled();
+		expect(insertValuesMock).not.toHaveBeenCalled();
+		expect(onConflictDoUpdateMock).not.toHaveBeenCalled();
+	});
+
+	it("requires admin or owner role to update organization default notification language", async () => {
+		memberFindFirstMock.mockResolvedValue({
+			id: "member-regular",
+			userId: "user-admin",
+			organizationId: "org-1",
+			role: "member",
+		});
+
+		const result = await updateOrganizationDefaultNotificationLanguage("org-1", "de");
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(updateSetMock).not.toHaveBeenCalled();
+		expect(insertValuesMock).not.toHaveBeenCalled();
+		expect(onConflictDoUpdateMock).not.toHaveBeenCalled();
 	});
 });

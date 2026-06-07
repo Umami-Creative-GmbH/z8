@@ -23,7 +23,9 @@
     },
     "correction": {
       "clockIn": "Einstempeln",
+      "clockInDate": "Datum Arbeitsbeginn",
       "clockOut": "Ausstempeln",
+      "clockOutDate": "Datum Arbeitsende",
       "editDescription": "Änderungen an Ihrem Zeiteintrag für heute vornehmen.",
       "editEntry": "Zeiteintrag bearbeiten",
       "editTitle": "Zeiteintrag bearbeiten",

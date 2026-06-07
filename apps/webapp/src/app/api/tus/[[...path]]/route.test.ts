@@ -162,12 +162,44 @@ describe("TUS route", () => {
 		const response = await POST(
 			new Request("https://app.example.com/api/tus", {
 				method: "POST",
-				headers: { "upload-length": String(10 * 1024 * 1024 + 1) },
+				headers: {
+					"upload-length": String(10 * 1024 * 1024 + 1),
+					"upload-metadata": `content-type ${btoa("image/png")}`,
+				},
 			}),
 		);
 
 		expect(response.status).toBe(413);
 		await expect(response.json()).resolves.toEqual({ error: "File too large" });
+		expect(mockState.handleWeb).not.toHaveBeenCalled();
+	});
+
+	it("rejects POST upload creation requests missing upload metadata", async () => {
+		const response = await POST(
+			new Request("https://app.example.com/api/tus", {
+				method: "POST",
+				headers: { "upload-length": "1024" },
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		await expect(response.json()).resolves.toEqual({ error: "Invalid file type" });
+		expect(mockState.handleWeb).not.toHaveBeenCalled();
+	});
+
+	it("rejects POST upload creation requests without recognized MIME metadata", async () => {
+		const response = await POST(
+			new Request("https://app.example.com/api/tus", {
+				method: "POST",
+				headers: {
+					"upload-length": "1024",
+					"upload-metadata": `filename ${btoa("avatar.png")}`,
+				},
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		await expect(response.json()).resolves.toEqual({ error: "Invalid file type" });
 		expect(mockState.handleWeb).not.toHaveBeenCalled();
 	});
 
@@ -203,6 +235,22 @@ describe("TUS route", () => {
 		expect(mockState.handleWeb).not.toHaveBeenCalled();
 	});
 
+	it("rejects upload metadata when any recognized MIME key is invalid", async () => {
+		const response = await POST(
+			new Request("https://app.example.com/api/tus", {
+				method: "POST",
+				headers: {
+					"upload-length": "1024",
+					"upload-metadata": `content-type ${btoa("image/png")}, type ${btoa("text/plain")}`,
+				},
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		await expect(response.json()).resolves.toEqual({ error: "Invalid file type" });
+		expect(mockState.handleWeb).not.toHaveBeenCalled();
+	});
+
 	it("allows valid non-image metadata through to TUS handling", async () => {
 		const request = new Request("https://app.example.com/api/tus", {
 			method: "POST",
@@ -221,7 +269,10 @@ describe("TUS route", () => {
 	it("allows valid POST upload creation lengths through to TUS handling", async () => {
 		const request = new Request("https://app.example.com/api/tus", {
 			method: "POST",
-			headers: { "upload-length": "1024" },
+			headers: {
+				"upload-length": "1024",
+				"upload-metadata": `content-type ${btoa("image/png")}`,
+			},
 		});
 
 		const response = await POST(request);

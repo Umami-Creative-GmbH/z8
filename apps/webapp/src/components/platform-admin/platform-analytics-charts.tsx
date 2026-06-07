@@ -59,6 +59,13 @@ const metricConfig = {
 	},
 };
 
+const euroCurrencyFormatter = new Intl.NumberFormat("en", {
+	style: "currency",
+	currency: "EUR",
+	maximumFractionDigits: 0,
+});
+const englishNumberFormatter = new Intl.NumberFormat("en");
+
 type MetricKey = keyof typeof metricConfig;
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -400,12 +407,8 @@ function formatValue(value: number | null, kind: "currency" | undefined, t: Tran
 	}
 
 	if (kind === "currency") {
-		return new Intl.NumberFormat("en", {
-			style: "currency",
-			currency: "EUR",
-			maximumFractionDigits: 0,
-		}).format(value);
+		return euroCurrencyFormatter.format(value);
 	}
 
-	return new Intl.NumberFormat("en").format(value);
+	return englishNumberFormatter.format(value);
 }

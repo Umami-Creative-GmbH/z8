@@ -1132,19 +1132,23 @@ export async function getAvailableEmployees(
 				}
 
 				// Filter out assigned employees
-				const available = employees
-					.filter((e) => !assignedIds.includes(e.id))
-					.map((e) => ({
-						id: e.id,
-						firstName: e.user.firstName,
-						lastName: e.user.lastName,
-						user: {
-							firstName: e.user.firstName,
-							lastName: e.user.lastName,
-							name: e.user.name,
-							email: e.user.email,
-						},
-					}));
+				const available = employees.flatMap((e) =>
+					!assignedIds.includes(e.id)
+						? [
+								{
+									id: e.id,
+									firstName: e.user.firstName,
+									lastName: e.user.lastName,
+									user: {
+										firstName: e.user.firstName,
+										lastName: e.user.lastName,
+										name: e.user.name,
+										email: e.user.email,
+									},
+								},
+							]
+						: [],
+				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return available;

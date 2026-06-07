@@ -4,6 +4,22 @@
       "actions": {
         "recordForEmployee": "Absenz für {name} erfasse"
       },
+      "calendar": {
+        "approved": "Gnehmigt",
+        "description": "Gnehmigti und usstehendi Absänze für s'gwählte Team und Jahr.",
+        "error": {
+          "description": "Bitte probier es gli nomal.",
+          "title": "Kaländer chan nöd glade wärde"
+        },
+        "legend": {
+          "approved": "Gnehmigt",
+          "pending": "Usstehend"
+        },
+        "pending": "Usstehend",
+        "pendingDays": "{count} usstehend",
+        "title": "Jahreskaländer",
+        "totalDays": "{count} abwesend"
+      },
       "description": "Überprüef d'Kontingänt und erfass genehmigti Absenze für dis Team.",
       "empty": {
         "description": "Versuech d'Filter oder d'Suech aazpasse, zum Teammitglieder z'finde.",

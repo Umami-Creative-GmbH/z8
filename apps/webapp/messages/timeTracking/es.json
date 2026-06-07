@@ -23,7 +23,9 @@
     },
     "correction": {
       "clockIn": "Entrada",
+      "clockInDate": "Fecha de entrada",
       "clockOut": "Salida",
+      "clockOutDate": "Fecha de salida",
       "editDescription": "Realizar cambios en tu registro de tiempo de hoy.",
       "editEntry": "Editar entrada de tiempo",
       "editTitle": "Editar entrada de tiempo",
