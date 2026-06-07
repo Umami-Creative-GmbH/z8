@@ -26,11 +26,13 @@ import {
 import { CRON_JOBS } from "@/lib/cron/registry";
 import { CRON_SCHEDULE_PRESETS } from "@/lib/cron/schedules";
 import { getTranslate } from "@/tolgee/server";
-import { getWorkerQueueStats } from "./actions";
+import { getWorkerQueueStats, type WorkerQueueStats } from "./actions";
 import { RecentExecutions } from "./recent-executions";
 import type { ReliabilityHealth } from "./reliability";
 import { WorkerReliabilityCharts } from "./reliability-charts";
-import { ScheduleControls } from "./schedule-controls";
+import { ScheduleControls, type ScheduleControlsLabels } from "./schedule-controls";
+
+type Translate = Awaited<ReturnType<typeof getTranslate>>;
 
 interface StatCardProps {
 	title: string;
@@ -156,6 +158,403 @@ function HealthBadge({
 	}
 }
 
+function WorkerQueuePageHeader({
+	t,
+	stats,
+	locale,
+}: {
+	t: Translate;
+	stats: WorkerQueueStats;
+	locale: string;
+}) {
+	return (
+		<div className="flex items-start justify-between">
+			<div className="space-y-1">
+				<h1 className="text-2xl font-semibold">{t("settings.workerQueue.title", "Worker Queue")}</h1>
+				<p className="text-muted-foreground">
+					{t(
+						"settings.workerQueue.description",
+						"Monitor background job processing and cron job executions",
+					)}
+				</p>
+			</div>
+			<div className="flex items-center gap-2">
+				<Badge
+					variant={stats.isConnected ? "outline" : "destructive"}
+					className={stats.isConnected ? "border-green-500 text-green-700 dark:text-green-400" : ""}
+				>
+					{stats.isConnected ? (
+						<>
+							<IconCheck className="size-3 mr-1" aria-hidden="true" />
+							{t("settings.workerQueue.connected", "Connected")}
+						</>
+					) : (
+						<>
+							<IconAlertCircle className="size-3 mr-1" aria-hidden="true" />
+							{t("settings.workerQueue.disconnected", "Disconnected")}
+						</>
+					)}
+				</Badge>
+				<p className="text-xs text-muted-foreground">
+					{`${t("settings.workerQueue.lastUpdated", "Last updated")}: ${formatDateTime(stats.fetchedAt, locale)}`}
+				</p>
+			</div>
+		</div>
+	);
+}
+
+function QueueCountsSection({ t, stats, locale }: { t: Translate; stats: WorkerQueueStats; locale: string }) {
+	return (
+		<section>
+			<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+				<IconServer className="size-5" aria-hidden="true" />
+				{t("settings.workerQueue.sections.queueCounts", "Queue Status")}
+			</h2>
+			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+				<StatCard
+					title={t("settings.workerQueue.cards.waiting", "Waiting")}
+					value={stats.counts.waiting}
+					locale={locale}
+					description={t("settings.workerQueue.cards.waitingDescription", "Jobs waiting to be processed")}
+					icon={<IconClock className="size-4" />}
+				/>
+				<StatCard
+					title={t("settings.workerQueue.cards.active", "Active")}
+					value={stats.counts.active}
+					locale={locale}
+					description={t("settings.workerQueue.cards.activeDescription", "Currently processing")}
+					icon={<IconLoader className="size-4" />}
+					variant={stats.counts.active > 0 ? "success" : "default"}
+				/>
+				<StatCard
+					title={t("settings.workerQueue.cards.completed", "Completed")}
+					value={stats.counts.completed}
+					locale={locale}
+					description={t("settings.workerQueue.cards.completedDescription", "Recently completed")}
+					icon={<IconCheck className="size-4" />}
+					variant="success"
+				/>
+				<StatCard
+					title={t("settings.workerQueue.cards.failed", "Failed")}
+					value={stats.counts.failed}
+					locale={locale}
+					description={t("settings.workerQueue.cards.failedDescription", "Recently failed")}
+					icon={<IconX className="size-4" />}
+					variant={stats.counts.failed > 0 ? "destructive" : "default"}
+				/>
+				<StatCard
+					title={t("settings.workerQueue.cards.delayed", "Delayed")}
+					value={stats.counts.delayed}
+					locale={locale}
+					description={t("settings.workerQueue.cards.delayedDescription", "Scheduled for later")}
+					icon={<IconClock className="size-4" />}
+				/>
+				<StatCard
+					title={t("settings.workerQueue.cards.paused", "Paused")}
+					value={stats.counts.paused}
+					locale={locale}
+					description={t("settings.workerQueue.cards.pausedDescription", "Paused jobs")}
+					icon={<IconPlayerPause className="size-4" />}
+					variant={stats.counts.paused > 0 ? "warning" : "default"}
+				/>
+			</div>
+		</section>
+	);
+}
+
+function ReliabilitySection({
+	t,
+	stats,
+	locale,
+	unknownLabel,
+	healthLabels,
+}: {
+	t: Translate;
+	stats: WorkerQueueStats;
+	locale: string;
+	unknownLabel: string;
+	healthLabels: Record<ReliabilityHealth, string>;
+}) {
+	return (
+		<section>
+			<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+				<IconActivity className="size-5" aria-hidden="true" />
+				{t("settings.workerQueue.reliability.title", "Reliability")}
+			</h2>
+			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+				<StatCard
+					title={t("settings.workerQueue.reliability.successRate", "Success Rate")}
+					value={formatPercent(stats.reliability.summary.successRate, unknownLabel, locale)}
+					locale={locale}
+					description={t("settings.workerQueue.reliability.successRateDescription", "Terminal cron executions")}
+					icon={<IconCheck className="size-4" />}
+					variant={
+						stats.reliability.summary.successRate !== null && stats.reliability.summary.successRate >= 95
+							? "success"
+							: "default"
+					}
+				/>
+				<StatCard
+					title={t("settings.workerQueue.reliability.failedRuns", "Failed Runs")}
+					value={stats.reliability.summary.failedRuns}
+					locale={locale}
+					description={t("settings.workerQueue.reliability.failedRunsDescription", "Last 30 days")}
+					icon={<IconX className="size-4" />}
+					variant={stats.reliability.summary.failedRuns > 0 ? "destructive" : "default"}
+				/>
+				<StatCard
+					title={t("settings.workerQueue.reliability.staleJobs", "Stale Jobs")}
+					value={stats.reliability.summary.staleJobs}
+					locale={locale}
+					description={t("settings.workerQueue.reliability.staleJobsDescription", "Past expected schedule")}
+					icon={<IconAlertCircle className="size-4" />}
+					variant={stats.reliability.summary.staleJobs > 0 ? "warning" : "default"}
+				/>
+				<StatCard
+					title={t("settings.workerQueue.reliability.avgDuration", "Avg Duration")}
+					value={formatDuration(stats.reliability.summary.averageDurationMs, unknownLabel, locale)}
+					locale={locale}
+					description={t("settings.workerQueue.reliability.avgDurationDescription", "Executions with duration data")}
+					icon={<IconActivity className="size-4" />}
+				/>
+			</div>
+			<div className="mt-4">
+				<WorkerReliabilityCharts reliability={stats.reliability} />
+			</div>
+			<Card className="mt-4">
+				<CardHeader>
+					<CardTitle>{t("settings.workerQueue.reliability.jobHealth", "Job Health")}</CardTitle>
+					<CardDescription>
+						{t(
+							"settings.workerQueue.reliability.jobHealthDescription",
+							"Per-job reliability based on recent executions and repeatable schedules.",
+						)}
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					{stats.reliability.jobs.length === 0 ? (
+						<p className="text-muted-foreground text-sm">
+							{t("settings.workerQueue.reliability.noJobs", "No reliability data found")}
+						</p>
+					) : (
+						<div className="overflow-x-auto">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
+										<TableHead>{t("settings.workerQueue.table.health", "Health")}</TableHead>
+										<TableHead>{t("settings.workerQueue.table.lastRun", "Last Run")}</TableHead>
+										<TableHead>{t("settings.workerQueue.table.nextRun", "Next Run")}</TableHead>
+										<TableHead className="text-right">
+											{t("settings.workerQueue.table.successRate", "Success Rate")}
+										</TableHead>
+										<TableHead className="text-right">
+											{t("settings.workerQueue.table.failed", "Failed")}
+										</TableHead>
+										<TableHead className="text-right">
+											{t("settings.workerQueue.table.avgDuration", "Avg Duration")}
+										</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{stats.reliability.jobs.map((job) => (
+										<TableRow key={job.jobName}>
+											<TableCell className="font-mono text-sm">{job.jobName}</TableCell>
+											<TableCell>
+												<HealthBadge health={job.health} labels={healthLabels} />
+											</TableCell>
+											<TableCell>{formatDateTime(job.lastRunAt, locale)}</TableCell>
+											<TableCell>{formatDateTime(job.nextRunAt, locale)}</TableCell>
+											<TableCell className="text-right">
+												{formatPercent(job.successRate, unknownLabel, locale)}
+											</TableCell>
+											<TableCell className="text-right text-red-600">{job.failedRuns}</TableCell>
+											<TableCell className="text-right">
+												{formatDuration(job.averageDurationMs, unknownLabel, locale)}
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+		</section>
+	);
+}
+
+function ScheduledJobsSection({
+	t,
+	stats,
+	locale,
+	unknownLabel,
+	scheduleControlLabels,
+}: {
+	t: Translate;
+	stats: WorkerQueueStats;
+	locale: string;
+	unknownLabel: string;
+	scheduleControlLabels: ScheduleControlsLabels;
+}) {
+	return (
+		<section>
+			<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+				<IconRefresh className="size-5" aria-hidden="true" />
+				{t("settings.workerQueue.sections.scheduledJobs", "Scheduled Cron Jobs")}
+			</h2>
+			<Card>
+				<CardHeader>
+					<CardDescription>
+						{t(
+							"settings.workerQueue.scheduledJobsDescription",
+							"Repeatable jobs configured in the worker. These run automatically on schedule.",
+						)}
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					{stats.scheduledJobs.length === 0 ? (
+						<p className="text-muted-foreground text-sm">
+							{t("settings.workerQueue.noScheduledJobs", "No scheduled jobs found")}
+						</p>
+					) : (
+						<div className="overflow-x-auto">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
+										<TableHead>{t("settings.workerQueue.table.schedule", "Schedule")}</TableHead>
+										<TableHead>{t("settings.workerQueue.table.default", "Default")}</TableHead>
+										<TableHead>{t("settings.workerQueue.table.nextRun", "Next Run")}</TableHead>
+										<TableHead>{t("settings.workerQueue.table.actions", "Actions")}</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{stats.scheduledJobs.map((job) => {
+										const presetLabel =
+											CRON_SCHEDULE_PRESETS.find((preset) => preset.id === job.presetId)?.label ??
+											unknownLabel;
+
+										return (
+											<TableRow key={job.name}>
+												<TableCell className="min-w-64 align-top">
+													<div className="font-mono text-sm">{job.name}</div>
+													<div className="mt-1 max-w-md text-muted-foreground text-xs">
+														{CRON_JOBS[job.jobName].description}
+													</div>
+												</TableCell>
+												<TableCell className="min-w-48 align-top">
+													<div className="flex flex-wrap items-center gap-2">
+														<span>{presetLabel}</span>
+														{job.isOverridden ? (
+															<Badge variant="outline">
+																{t("settings.workerQueue.schedule.overridden", "Overridden")}
+															</Badge>
+														) : null}
+													</div>
+													<div className="mt-1 font-mono text-muted-foreground text-xs">
+														{job.effectivePattern}
+													</div>
+												</TableCell>
+												<TableCell className="align-top font-mono text-sm">{job.defaultPattern}</TableCell>
+												<TableCell className="align-top">{formatDateTime(job.next, locale)}</TableCell>
+												<TableCell className="min-w-72 align-top">
+													<ScheduleControls
+														job={job}
+														labels={scheduleControlLabels}
+														presets={[...CRON_SCHEDULE_PRESETS]}
+													/>
+												</TableCell>
+											</TableRow>
+										);
+									})}
+								</TableBody>
+							</Table>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+		</section>
+	);
+}
+
+function JobMetricsSection({
+	t,
+	stats,
+	locale,
+	unknownLabel,
+}: {
+	t: Translate;
+	stats: WorkerQueueStats;
+	locale: string;
+	unknownLabel: string;
+}) {
+	if (stats.jobMetrics.length === 0) return null;
+
+	return (
+		<section>
+			<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+				<IconServer className="size-5" aria-hidden="true" />
+				{t("settings.workerQueue.sections.jobMetrics", "Job Metrics (Last 30 Days)")}
+			</h2>
+			<Card>
+				<CardContent className="pt-6">
+					<div className="overflow-x-auto">
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
+									<TableHead className="text-right">
+										{t("settings.workerQueue.table.totalRuns", "Total Runs")}
+									</TableHead>
+									<TableHead className="text-right">
+										{t("settings.workerQueue.table.successful", "Successful")}
+									</TableHead>
+									<TableHead className="text-right">
+										{t("settings.workerQueue.table.failed", "Failed")}
+									</TableHead>
+									<TableHead className="text-right">
+										{t("settings.workerQueue.table.successRate", "Success Rate")}
+									</TableHead>
+									<TableHead className="text-right">
+										{t("settings.workerQueue.table.avgDuration", "Avg Duration")}
+									</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{stats.jobMetrics.map((metric) => (
+									<TableRow key={metric.jobName}>
+										<TableCell className="font-mono text-sm">{metric.jobName}</TableCell>
+										<TableCell className="text-right">{metric.totalRuns}</TableCell>
+										<TableCell className="text-right text-green-600">{metric.successfulRuns}</TableCell>
+										<TableCell className="text-right text-red-600">{metric.failedRuns}</TableCell>
+										<TableCell className="text-right">
+											<span
+												className={
+													metric.successRate >= 95
+														? "text-green-600"
+														: metric.successRate >= 80
+															? "text-yellow-600"
+															: "text-red-600"
+												}
+											>
+												{formatPercent(metric.successRate, unknownLabel, locale)}
+											</span>
+										</TableCell>
+										<TableCell className="text-right">
+											{formatDuration(metric.avgDurationMs, unknownLabel, locale)}
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</div>
+				</CardContent>
+			</Card>
+		</section>
+	);
+}
+
 async function WorkerQueueContent({ locale }: { locale: string }) {
 	await connection();
 
@@ -253,374 +652,23 @@ async function WorkerQueueContent({ locale }: { locale: string }) {
 
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<div className="flex items-start justify-between">
-				<div className="space-y-1">
-					<h1 className="text-2xl font-semibold">
-						{t("settings.workerQueue.title", "Worker Queue")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.workerQueue.description",
-							"Monitor background job processing and cron job executions",
-						)}
-					</p>
-				</div>
-				<div className="flex items-center gap-2">
-					<Badge
-						variant={stats.isConnected ? "outline" : "destructive"}
-						className={
-							stats.isConnected ? "border-green-500 text-green-700 dark:text-green-400" : ""
-						}
-					>
-						{stats.isConnected ? (
-							<>
-								<IconCheck className="size-3 mr-1" aria-hidden="true" />
-								{t("settings.workerQueue.connected", "Connected")}
-							</>
-						) : (
-							<>
-								<IconAlertCircle className="size-3 mr-1" aria-hidden="true" />
-								{t("settings.workerQueue.disconnected", "Disconnected")}
-							</>
-						)}
-					</Badge>
-					<p className="text-xs text-muted-foreground">
-						{`${t("settings.workerQueue.lastUpdated", "Last updated")}: ${formatDateTime(stats.fetchedAt, locale)}`}
-					</p>
-				</div>
-			</div>
-
-			<section>
-				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
-					<IconServer className="size-5" aria-hidden="true" />
-					{t("settings.workerQueue.sections.queueCounts", "Queue Status")}
-				</h2>
-				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-					<StatCard
-						title={t("settings.workerQueue.cards.waiting", "Waiting")}
-						value={stats.counts.waiting}
-						locale={locale}
-						description={t(
-							"settings.workerQueue.cards.waitingDescription",
-							"Jobs waiting to be processed",
-						)}
-						icon={<IconClock className="size-4" />}
-					/>
-					<StatCard
-						title={t("settings.workerQueue.cards.active", "Active")}
-						value={stats.counts.active}
-						locale={locale}
-						description={t("settings.workerQueue.cards.activeDescription", "Currently processing")}
-						icon={<IconLoader className="size-4" />}
-						variant={stats.counts.active > 0 ? "success" : "default"}
-					/>
-					<StatCard
-						title={t("settings.workerQueue.cards.completed", "Completed")}
-						value={stats.counts.completed}
-						locale={locale}
-						description={t("settings.workerQueue.cards.completedDescription", "Recently completed")}
-						icon={<IconCheck className="size-4" />}
-						variant="success"
-					/>
-					<StatCard
-						title={t("settings.workerQueue.cards.failed", "Failed")}
-						value={stats.counts.failed}
-						locale={locale}
-						description={t("settings.workerQueue.cards.failedDescription", "Recently failed")}
-						icon={<IconX className="size-4" />}
-						variant={stats.counts.failed > 0 ? "destructive" : "default"}
-					/>
-					<StatCard
-						title={t("settings.workerQueue.cards.delayed", "Delayed")}
-						value={stats.counts.delayed}
-						locale={locale}
-						description={t("settings.workerQueue.cards.delayedDescription", "Scheduled for later")}
-						icon={<IconClock className="size-4" />}
-					/>
-					<StatCard
-						title={t("settings.workerQueue.cards.paused", "Paused")}
-						value={stats.counts.paused}
-						locale={locale}
-						description={t("settings.workerQueue.cards.pausedDescription", "Paused jobs")}
-						icon={<IconPlayerPause className="size-4" />}
-						variant={stats.counts.paused > 0 ? "warning" : "default"}
-					/>
-				</div>
-			</section>
-
-			<section>
-				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
-					<IconActivity className="size-5" aria-hidden="true" />
-					{t("settings.workerQueue.reliability.title", "Reliability")}
-				</h2>
-				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-					<StatCard
-						title={t("settings.workerQueue.reliability.successRate", "Success Rate")}
-						value={formatPercent(stats.reliability.summary.successRate, unknownLabel, locale)}
-						locale={locale}
-						description={t(
-							"settings.workerQueue.reliability.successRateDescription",
-							"Terminal cron executions",
-						)}
-						icon={<IconCheck className="size-4" />}
-						variant={
-							stats.reliability.summary.successRate !== null &&
-							stats.reliability.summary.successRate >= 95
-								? "success"
-								: "default"
-						}
-					/>
-					<StatCard
-						title={t("settings.workerQueue.reliability.failedRuns", "Failed Runs")}
-						value={stats.reliability.summary.failedRuns}
-						locale={locale}
-						description={t(
-							"settings.workerQueue.reliability.failedRunsDescription",
-							"Last 30 days",
-						)}
-						icon={<IconX className="size-4" />}
-						variant={stats.reliability.summary.failedRuns > 0 ? "destructive" : "default"}
-					/>
-					<StatCard
-						title={t("settings.workerQueue.reliability.staleJobs", "Stale Jobs")}
-						value={stats.reliability.summary.staleJobs}
-						locale={locale}
-						description={t(
-							"settings.workerQueue.reliability.staleJobsDescription",
-							"Past expected schedule",
-						)}
-						icon={<IconAlertCircle className="size-4" />}
-						variant={stats.reliability.summary.staleJobs > 0 ? "warning" : "default"}
-					/>
-					<StatCard
-						title={t("settings.workerQueue.reliability.avgDuration", "Avg Duration")}
-						value={formatDuration(
-							stats.reliability.summary.averageDurationMs,
-							unknownLabel,
-							locale,
-						)}
-						locale={locale}
-						description={t(
-							"settings.workerQueue.reliability.avgDurationDescription",
-							"Executions with duration data",
-						)}
-						icon={<IconActivity className="size-4" />}
-					/>
-				</div>
-
-				<div className="mt-4">
-					<WorkerReliabilityCharts reliability={stats.reliability} />
-				</div>
-
-				<Card className="mt-4">
-					<CardHeader>
-						<CardTitle>{t("settings.workerQueue.reliability.jobHealth", "Job Health")}</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.workerQueue.reliability.jobHealthDescription",
-								"Per-job reliability based on recent executions and repeatable schedules.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{stats.reliability.jobs.length === 0 ? (
-							<p className="text-muted-foreground text-sm">
-								{t("settings.workerQueue.reliability.noJobs", "No reliability data found")}
-							</p>
-						) : (
-							<div className="overflow-x-auto">
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
-											<TableHead>{t("settings.workerQueue.table.health", "Health")}</TableHead>
-											<TableHead>{t("settings.workerQueue.table.lastRun", "Last Run")}</TableHead>
-											<TableHead>{t("settings.workerQueue.table.nextRun", "Next Run")}</TableHead>
-											<TableHead className="text-right">
-												{t("settings.workerQueue.table.successRate", "Success Rate")}
-											</TableHead>
-											<TableHead className="text-right">
-												{t("settings.workerQueue.table.failed", "Failed")}
-											</TableHead>
-											<TableHead className="text-right">
-												{t("settings.workerQueue.table.avgDuration", "Avg Duration")}
-											</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{stats.reliability.jobs.map((job) => (
-											<TableRow key={job.jobName}>
-												<TableCell className="font-mono text-sm">{job.jobName}</TableCell>
-												<TableCell>
-													<HealthBadge health={job.health} labels={healthLabels} />
-												</TableCell>
-												<TableCell>{formatDateTime(job.lastRunAt, locale)}</TableCell>
-												<TableCell>{formatDateTime(job.nextRunAt, locale)}</TableCell>
-												<TableCell className="text-right">
-													{formatPercent(job.successRate, unknownLabel, locale)}
-												</TableCell>
-												<TableCell className="text-right text-red-600">{job.failedRuns}</TableCell>
-												<TableCell className="text-right">
-													{formatDuration(job.averageDurationMs, unknownLabel, locale)}
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							</div>
-						)}
-					</CardContent>
-				</Card>
-			</section>
-
-			<section>
-				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
-					<IconRefresh className="size-5" aria-hidden="true" />
-					{t("settings.workerQueue.sections.scheduledJobs", "Scheduled Cron Jobs")}
-				</h2>
-				<Card>
-					<CardHeader>
-						<CardDescription>
-							{t(
-								"settings.workerQueue.scheduledJobsDescription",
-								"Repeatable jobs configured in the worker. These run automatically on schedule.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{stats.scheduledJobs.length === 0 ? (
-							<p className="text-muted-foreground text-sm">
-								{t("settings.workerQueue.noScheduledJobs", "No scheduled jobs found")}
-							</p>
-						) : (
-							<div className="overflow-x-auto">
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
-											<TableHead>{t("settings.workerQueue.table.schedule", "Schedule")}</TableHead>
-											<TableHead>{t("settings.workerQueue.table.default", "Default")}</TableHead>
-											<TableHead>{t("settings.workerQueue.table.nextRun", "Next Run")}</TableHead>
-											<TableHead>{t("settings.workerQueue.table.actions", "Actions")}</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{stats.scheduledJobs.map((job) => {
-											const presetLabel =
-												CRON_SCHEDULE_PRESETS.find((preset) => preset.id === job.presetId)?.label ??
-												unknownLabel;
-
-											return (
-												<TableRow key={job.name}>
-													<TableCell className="min-w-64 align-top">
-														<div className="font-mono text-sm">{job.name}</div>
-														<div className="mt-1 max-w-md text-muted-foreground text-xs">
-															{CRON_JOBS[job.jobName].description}
-														</div>
-													</TableCell>
-													<TableCell className="min-w-48 align-top">
-														<div className="flex flex-wrap items-center gap-2">
-															<span>{presetLabel}</span>
-															{job.isOverridden ? (
-																<Badge variant="outline">
-																	{t("settings.workerQueue.schedule.overridden", "Overridden")}
-																</Badge>
-															) : null}
-														</div>
-														<div className="mt-1 font-mono text-muted-foreground text-xs">
-															{job.effectivePattern}
-														</div>
-													</TableCell>
-													<TableCell className="align-top font-mono text-sm">
-														{job.defaultPattern}
-													</TableCell>
-													<TableCell className="align-top">
-														{formatDateTime(job.next, locale)}
-													</TableCell>
-													<TableCell className="min-w-72 align-top">
-														<ScheduleControls
-															job={job}
-															labels={scheduleControlLabels}
-															presets={[...CRON_SCHEDULE_PRESETS]}
-														/>
-													</TableCell>
-												</TableRow>
-											);
-										})}
-									</TableBody>
-								</Table>
-							</div>
-						)}
-					</CardContent>
-				</Card>
-			</section>
-
-			{stats.jobMetrics.length > 0 && (
-				<section>
-					<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
-						<IconServer className="size-5" aria-hidden="true" />
-						{t("settings.workerQueue.sections.jobMetrics", "Job Metrics (Last 30 Days)")}
-					</h2>
-					<Card>
-						<CardContent className="pt-6">
-							<div className="overflow-x-auto">
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
-											<TableHead className="text-right">
-												{t("settings.workerQueue.table.totalRuns", "Total Runs")}
-											</TableHead>
-											<TableHead className="text-right">
-												{t("settings.workerQueue.table.successful", "Successful")}
-											</TableHead>
-											<TableHead className="text-right">
-												{t("settings.workerQueue.table.failed", "Failed")}
-											</TableHead>
-											<TableHead className="text-right">
-												{t("settings.workerQueue.table.successRate", "Success Rate")}
-											</TableHead>
-											<TableHead className="text-right">
-												{t("settings.workerQueue.table.avgDuration", "Avg Duration")}
-											</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{stats.jobMetrics.map((metric) => (
-											<TableRow key={metric.jobName}>
-												<TableCell className="font-mono text-sm">{metric.jobName}</TableCell>
-												<TableCell className="text-right">{metric.totalRuns}</TableCell>
-												<TableCell className="text-right text-green-600">
-													{metric.successfulRuns}
-												</TableCell>
-												<TableCell className="text-right text-red-600">
-													{metric.failedRuns}
-												</TableCell>
-												<TableCell className="text-right">
-													<span
-														className={
-															metric.successRate >= 95
-																? "text-green-600"
-																: metric.successRate >= 80
-																	? "text-yellow-600"
-																	: "text-red-600"
-														}
-													>
-														{formatPercent(metric.successRate, unknownLabel, locale)}
-													</span>
-												</TableCell>
-												<TableCell className="text-right">
-													{formatDuration(metric.avgDurationMs, unknownLabel, locale)}
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							</div>
-						</CardContent>
-					</Card>
-				</section>
-			)}
+			<WorkerQueuePageHeader t={t} stats={stats} locale={locale} />
+			<QueueCountsSection t={t} stats={stats} locale={locale} />
+			<ReliabilitySection
+				t={t}
+				stats={stats}
+				locale={locale}
+				unknownLabel={unknownLabel}
+				healthLabels={healthLabels}
+			/>
+			<ScheduledJobsSection
+				t={t}
+				stats={stats}
+				locale={locale}
+				unknownLabel={unknownLabel}
+				scheduleControlLabels={scheduleControlLabels}
+			/>
+			<JobMetricsSection t={t} stats={stats} locale={locale} unknownLabel={unknownLabel} />
 
 			<section>
 				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
