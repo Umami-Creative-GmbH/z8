@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -89,5 +92,12 @@ describe("EmployeeMultiSelect", () => {
 				"employee-a,employee-b",
 			),
 		);
+	});
+
+	it("keeps the selection panel mounted across open state changes so it can animate", () => {
+		const source = readFileSync(join(__dirname, "employee-select-field.tsx"), "utf8");
+
+		expect(source).not.toContain('`${modalOpen ? "open" : "closed"}');
+		expect(source).not.toContain("modalOpen ?");
 	});
 });

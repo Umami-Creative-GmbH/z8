@@ -1,9 +1,8 @@
 "use client";
 
-import type * as LabelPrimitive from "@radix-ui/react-label";
-import { Slot } from "@radix-ui/react-slot";
 import * as React from "react";
 import { Label } from "@/components/ui/label";
+import { Slot } from "@/components/ui/slot";
 import { cn } from "@/lib/utils";
 
 // Use a simplified field type for the form components
@@ -81,13 +80,12 @@ function useTFormItem() {
 /**
  * Form label with error state styling
  */
-function TFormLabel({
-	className,
-	hasError,
-	required,
-	children,
-	...props
-}: React.ComponentProps<typeof LabelPrimitive.Root> & { hasError?: boolean; required?: boolean }) {
+type TFormLabelProps = React.ComponentProps<typeof Label> & {
+	hasError?: boolean;
+	required?: boolean;
+};
+
+function TFormLabel({ className, hasError, required, children, ...props }: TFormLabelProps) {
 	const { id } = useTFormItem();
 
 	return (

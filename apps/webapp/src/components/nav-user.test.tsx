@@ -255,7 +255,7 @@ describe("NavUser", () => {
 		fireEvent.click(screen.getByRole("button", { name: /language/i }));
 		const selectedLanguage = screen.getByText("English").closest("div");
 
-		expect(selectedLanguage?.className).toContain("data-[state=checked]:bg-accent");
+		expect(selectedLanguage?.className).toContain("data-checked:bg-accent");
 		expect(selectedLanguage?.className).toContain("pl-2");
 		expect(selectedLanguage?.className).not.toContain("pl-8");
 	});
@@ -266,7 +266,7 @@ describe("NavUser", () => {
 		fireEvent.click(screen.getByRole("button", { name: /font size/i }));
 		const selectedFontSize = screen.getByText("Default").closest("div");
 
-		expect(selectedFontSize?.className).toContain("data-[state=checked]:bg-accent");
+		expect(selectedFontSize?.className).toContain("data-checked:bg-accent");
 		expect(selectedFontSize?.className).toContain("pl-2");
 		expect(selectedFontSize?.className).not.toContain("pl-8");
 	});

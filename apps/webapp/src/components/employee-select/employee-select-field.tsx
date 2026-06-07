@@ -153,8 +153,6 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 
 	// Get maxSelections for multi-select
 	const maxSelections = props.mode === "multiple" ? props.maxSelections : undefined;
-	const modalInstanceKey = `${modalOpen ? "open" : "closed"}:${selectedIds.join(",")}`;
-
 	return (
 		<div className={cn("space-y-2", className)}>
 			{label && <Label>{label}</Label>}
@@ -184,7 +182,6 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 
 			{/* Selection modal */}
 			<EmployeeSelectModal
-				key={modalInstanceKey}
 				open={modalOpen}
 				onOpenChange={setModalOpen}
 				listboxId={employeeListboxId}

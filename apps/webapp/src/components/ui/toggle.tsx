@@ -1,6 +1,6 @@
 "use client";
 
-import * as TogglePrimitive from "@radix-ui/react-toggle";
+import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import type { VariantProps } from "class-variance-authority";
 import type * as React from "react";
 
@@ -12,9 +12,9 @@ function Toggle({
 	variant,
 	size,
 	...props
-}: React.ComponentProps<typeof TogglePrimitive.Root> & VariantProps<typeof toggleVariants>) {
+}: React.ComponentProps<typeof TogglePrimitive> & VariantProps<typeof toggleVariants>) {
 	return (
-		<TogglePrimitive.Root
+		<TogglePrimitive
 			className={cn(toggleVariants({ variant, size, className }))}
 			data-slot="toggle"
 			{...props}
