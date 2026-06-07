@@ -23,14 +23,14 @@ function TooltipProvider({
 	...props
 }: TooltipProviderProps) {
 	return (
-		<TooltipProviderContext value>
+		<TooltipProviderContext.Provider value>
 			<TooltipPrimitive.Provider
 				data-slot="tooltip-provider"
 				delay={delay ?? delayDuration ?? 0}
 				timeout={timeout ?? skipDelayDuration}
 				{...props}
 			/>
-		</TooltipProviderContext>
+		</TooltipProviderContext.Provider>
 	);
 }
 

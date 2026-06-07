@@ -39,11 +39,11 @@ function Sheet({ children, onOpenChange, ...props }: SheetProps) {
 	};
 
 	return (
-		<SheetDismissContext value={dismissHandlersRef}>
+		<SheetDismissContext.Provider value={dismissHandlersRef}>
 			<SheetPrimitive.Root data-slot="sheet" onOpenChange={handleOpenChange} {...props}>
 				{children}
 			</SheetPrimitive.Root>
-		</SheetDismissContext>
+		</SheetDismissContext.Provider>
 	);
 }
 

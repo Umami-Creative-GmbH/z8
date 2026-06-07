@@ -40,11 +40,11 @@ function Dialog({ children, onOpenChange, ...props }: DialogProps) {
 	};
 
 	return (
-		<DialogDismissContext value={dismissHandlersRef}>
+		<DialogDismissContext.Provider value={dismissHandlersRef}>
 			<DialogPrimitive.Root data-slot="dialog" onOpenChange={handleOpenChange} {...props}>
 				{children}
 			</DialogPrimitive.Root>
-		</DialogDismissContext>
+		</DialogDismissContext.Provider>
 	);
 }
 
