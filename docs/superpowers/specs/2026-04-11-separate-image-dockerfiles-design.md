@@ -97,7 +97,7 @@ The old root `Dockerfile` should be removed once all workflows reference the new
 Every Dockerfile should keep the same global defaults where applicable:
 
 - `ARG NODE_VERSION=26`
-- `ARG PNPM_VERSION=11.5.1`
+- `ARG PNPM_VERSION=11.5.2`
 - `ARG TURBO_VERSION=2.9.16`
 
 Each Dockerfile should also keep the same base setup pattern where needed:

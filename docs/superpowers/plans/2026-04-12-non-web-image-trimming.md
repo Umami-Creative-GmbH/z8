@@ -397,7 +397,7 @@ Update `docker/Dockerfile.worker` to:
 ```Dockerfile
 # syntax=docker/dockerfile:1.4
 ARG NODE_VERSION=26
-ARG PNPM_VERSION=11.5.1
+ARG PNPM_VERSION=11.5.2
 
 FROM node:${NODE_VERSION}-alpine AS base
 
@@ -480,7 +480,7 @@ Update `docker/Dockerfile.migration` to:
 ```Dockerfile
 # syntax=docker/dockerfile:1.4
 ARG NODE_VERSION=26
-ARG PNPM_VERSION=11.5.1
+ARG PNPM_VERSION=11.5.2
 
 FROM node:${NODE_VERSION}-alpine AS base
 
@@ -555,7 +555,7 @@ Update `docker/Dockerfile.db-seed` to:
 ```Dockerfile
 # syntax=docker/dockerfile:1.4
 ARG NODE_VERSION=26
-ARG PNPM_VERSION=11.5.1
+ARG PNPM_VERSION=11.5.2
 
 FROM node:${NODE_VERSION}-alpine AS base
 

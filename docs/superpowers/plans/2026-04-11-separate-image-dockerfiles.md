@@ -63,7 +63,7 @@ Copy these stage responsibilities out of the current `Dockerfile` before editing
 ```text
 Shared base/tooling:
 - ARG ARG NODE_VERSION=26
-- ARG PNPM_VERSION=11.5.1
+- ARG PNPM_VERSION=11.5.2
 - ARG TURBO_VERSION=2.9.16
 - base
 - turbo-source
@@ -92,7 +92,7 @@ Use this structure as the implementation skeleton:
 ```Dockerfile
 # syntax=docker/dockerfile:1.4
 ARG ARG NODE_VERSION=26
-ARG PNPM_VERSION=11.5.1
+ARG PNPM_VERSION=11.5.2
 ARG TURBO_VERSION=2.9.16
 ARG NEXT_PUBLIC_BUILD_HASH
 
@@ -245,7 +245,7 @@ Preserve the existing Bun runtime and marketing build pipeline with this shape:
 ```Dockerfile
 # syntax=docker/dockerfile:1.4
 ARG NODE_VERSION=26
-ARG PNPM_VERSION=11.5.1
+ARG PNPM_VERSION=11.5.2
 ARG TURBO_VERSION=2.9.16
 
 FROM node:${NODE_VERSION}-alpine AS base
@@ -317,7 +317,7 @@ Preserve the docs build path with this shape:
 ```Dockerfile
 # syntax=docker/dockerfile:1.4
 ARG NODE_VERSION=26
-ARG PNPM_VERSION=11.5.1
+ARG PNPM_VERSION=11.5.2
 ARG TURBO_VERSION=2.9.16
 
 FROM node:${NODE_VERSION}-alpine AS base
