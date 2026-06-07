@@ -44,7 +44,7 @@ export function NavDocuments({
 						</SidebarMenuButton>
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
-								<SidebarMenuAction className="rounded-sm data-[state=open]:bg-accent" showOnHover>
+								<SidebarMenuAction className="rounded-sm data-[popup-open]:bg-accent" showOnHover>
 									<IconDots />
 									<span className="sr-only">More</span>
 								</SidebarMenuAction>

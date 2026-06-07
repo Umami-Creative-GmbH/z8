@@ -175,7 +175,7 @@ export function ExceptionRequestDialog({
 									return (
 										<label
 											key={type.value}
-											className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5"
+											className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 has-data-checked:border-primary has-data-checked:bg-primary/5"
 										>
 											<RadioGroupItem value={type.value} className="mt-0.5" />
 											<div className="flex-1 space-y-0.5">

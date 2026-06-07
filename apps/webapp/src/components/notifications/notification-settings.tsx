@@ -497,7 +497,7 @@ export function NotificationSettings() {
 															"{channel} notifications for {type}",
 															{ channel: channelLabel, type: typeLabel },
 														)}
-														className="data-[state=checked]:bg-primary"
+												className="data-checked:bg-primary"
 													/>
 												</div>
 											);

@@ -52,14 +52,14 @@
 			opacity: 0;
 		}
 		to {
-			height: var(--radix-accordion-content-height, var(--radix-collapsible-content-height));
+			height: var(--accordion-panel-height, var(--collapsible-panel-height));
 			opacity: 1;
 		}
 	}
 
 	@keyframes accordion-up {
 		from {
-			height: var(--radix-accordion-content-height, var(--radix-collapsible-content-height));
+			height: var(--accordion-panel-height, var(--collapsible-panel-height));
 			opacity: 1;
 		}
 		to {

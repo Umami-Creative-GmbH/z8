@@ -881,7 +881,7 @@ export function WorkPolicyDialog({
 												>
 													<label
 														htmlFor="presence-mode-minimum-count"
-														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
+												className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-checked:border-primary"
 													>
 														<RadioGroupItem
 															id="presence-mode-minimum-count"
@@ -904,7 +904,7 @@ export function WorkPolicyDialog({
 													</label>
 													<label
 														htmlFor="presence-mode-fixed-days"
-														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
+												className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-checked:border-primary"
 													>
 														<RadioGroupItem id="presence-mode-fixed-days" value="fixed_days" />
 														<div className="space-y-0.5">
@@ -1115,7 +1115,7 @@ export function WorkPolicyDialog({
 												>
 													<label
 														htmlFor="presence-enforcement-none"
-														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
+												className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-checked:border-primary"
 													>
 														<RadioGroupItem id="presence-enforcement-none" value="none" />
 														<div className="space-y-0.5">
@@ -1132,7 +1132,7 @@ export function WorkPolicyDialog({
 													</label>
 													<label
 														htmlFor="presence-enforcement-warn"
-														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
+												className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-checked:border-primary"
 													>
 														<RadioGroupItem id="presence-enforcement-warn" value="warn" />
 														<div className="space-y-0.5">
@@ -1149,7 +1149,7 @@ export function WorkPolicyDialog({
 													</label>
 													<label
 														htmlFor="presence-enforcement-block"
-														className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary"
+												className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-checked:border-primary"
 													>
 														<RadioGroupItem id="presence-enforcement-block" value="block" />
 														<div className="space-y-0.5">
