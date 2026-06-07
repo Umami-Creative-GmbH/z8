@@ -77,6 +77,13 @@ describe("Base UI wrapper conventions", () => {
 		expect(source).toContain('data-slot="separator"');
 	});
 
+	it("keeps the reusable Label wrapper out of the raw unlabeled JSX label shape", () => {
+		const source = readFileSync(join(process.cwd(), "src/components/ui/label.tsx"), "utf8");
+
+		expect(source).not.toMatch(/<label\b/);
+		expect(source).toContain('data-slot="label"');
+	});
+
 	it("uses statically discoverable Base UI state selectors and CSS variables", () => {
 		const matches = collectActiveSourceFiles(join(process.cwd(), "src")).flatMap((file) => {
 			if (allowsRadixEraStateHooks(file)) {
