@@ -42,12 +42,12 @@ vi.mock("@/components/user-avatar", () => ({
 		name?: string | null;
 		seed: string;
 	}) => (
-		<span
-			aria-label={name ?? undefined}
+		<img
+			alt={name ?? ""}
 			data-image={image ?? ""}
 			data-seed={seed}
 			data-testid="employee-avatar"
-			role="img"
+			src={image ?? "data:,"}
 		/>
 	),
 }));
@@ -60,12 +60,21 @@ vi.mock("@/app/[locale]/(app)/search/actions", () => ({
 	searchAppRecordsAction: searchAppRecordsActionMock,
 }));
 
+vi.mock("@base-ui/react/dialog", () => ({
+	Dialog: {
+		Backdrop: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+		Close: ({ children }: { children?: ReactNode }) => <button type="button">{children}</button>,
+		Popup: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+	},
+}));
+
 vi.mock("@/components/ui/dialog", () => ({
 	Dialog: ({ children, open }: { children: ReactNode; open?: boolean }) =>
 		open ? <div>{children}</div> : null,
 	DialogContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 	DialogDescription: ({ children }: { children: ReactNode }) => <p>{children}</p>,
 	DialogHeader: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	DialogPortal: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 	DialogTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
 }));
 
@@ -100,6 +109,12 @@ const staticCommands: AppSearchResult[] = [
 ];
 
 const searchPlaceholder = "Search pages, people, teams, settings, or actions…";
+
+async function finishCommandDialogClose() {
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(200);
+	});
+}
 
 function renderAppSearch({
 	commands = staticCommands,
@@ -159,6 +174,7 @@ describe("AppSearch", () => {
 		fireEvent.click(screen.getByText("Dashboard"));
 
 		expect(pushMock).toHaveBeenCalledWith("/dashboard");
+		await finishCommandDialogClose();
 		expect(screen.queryByPlaceholderText(searchPlaceholder)).toBeNull();
 	});
 
@@ -369,13 +385,14 @@ describe("AppSearch", () => {
 		expect(groupHeadings).toEqual(["Actions", "People", "Teams", "Pages", "Settings"]);
 	});
 
-	it("navigates to a selected action and closes the palette", () => {
+	it("navigates to a selected action and closes the palette", async () => {
 		renderAppSearch();
 
 		fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
 		fireEvent.click(screen.getByText("Add manual time entry"));
 
 		expect(pushMock).toHaveBeenCalledWith("/time-tracking");
+		await finishCommandDialogClose();
 		expect(screen.queryByPlaceholderText(searchPlaceholder)).toBeNull();
 	});
 
