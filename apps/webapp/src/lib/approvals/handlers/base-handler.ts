@@ -51,6 +51,7 @@ export interface ApprovalRequestRow {
 	createdAt: Date;
 	approvedAt: Date | null;
 	rejectionReason: string | null;
+	metadata: unknown;
 	requester: {
 		id: string;
 		userId: string;

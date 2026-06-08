@@ -20,7 +20,7 @@ import type {
 	ApprovalTypeHandler,
 } from "../domain/types";
 import type { ApprovalDbService, CurrentApprover } from "../server/types";
-import { buildSLAInfo, fetchApprovals, getApprovalCount } from "./base-handler";
+import { buildSLAInfo, fetchApprovals } from "./base-handler";
 
 function loadCurrentApproverById(dbService: ApprovalDbService, approverId: string) {
 	return dbService
@@ -52,6 +52,7 @@ interface WorkPeriodWithRelations {
 	endTime: Date | null;
 	durationMinutes: number | null;
 	pendingCorrection?: PendingTimeCorrectionReview;
+	correctionReviewEntries?: CorrectionEntryForReview[];
 	employee: {
 		id: string;
 		userId: string;
@@ -78,6 +79,7 @@ interface CorrectionEntryForReview {
 	id: string;
 	timestamp: Date;
 	replacesEntryId: string | null;
+	isSuperseded?: boolean;
 }
 
 type TimeCorrectionAction = "edit" | "delete";
@@ -120,23 +122,43 @@ function correctionMetadataFromRequest(request: { metadata?: unknown }) {
 	return (request.metadata as TimeCorrectionApprovalMetadata | null)?.timeCorrection;
 }
 
-function buildPendingCorrectionReview(
+export function buildPendingCorrectionReview(
 	period: WorkPeriodWithRelations,
 	request: { metadata?: unknown },
 	correctionEntries: CorrectionEntryForReview[],
 ): PendingTimeCorrectionReview {
 	const metadata = correctionMetadataFromRequest(request);
 	const correctionById = new Map(correctionEntries.map((entry) => [entry.id, entry]));
+	const legacyCorrectionEntries = correctionEntries.filter((entry) => !entry.isSuperseded);
+	const clockInCandidates = legacyCorrectionEntries.filter(
+		(entry) => entry.replacesEntryId === period.clockIn.id,
+	);
+	const clockOutCandidates = period.clockOut
+		? legacyCorrectionEntries.filter((entry) => entry.replacesEntryId === period.clockOut?.id)
+		: [];
 	const clockInCorrection = metadata?.clockInCorrectionId
 		? correctionById.get(metadata.clockInCorrectionId)
-		: undefined;
+		: clockInCandidates.length === 1
+			? clockInCandidates[0]
+			: undefined;
 	const clockOutCorrection = metadata?.clockOutCorrectionId
 		? correctionById.get(metadata.clockOutCorrectionId)
-		: undefined;
+		: clockOutCandidates.length === 1
+			? clockOutCandidates[0]
+			: undefined;
 	const matchingClockInCorrection =
 		clockInCorrection?.replacesEntryId === period.clockIn.id ? clockInCorrection : null;
 	const matchingClockOutCorrection =
 		clockOutCorrection?.replacesEntryId === period.clockOut?.id ? clockOutCorrection : null;
+	const hasMetadataCorrectionIds = Boolean(
+		metadata?.clockInCorrectionId || metadata?.clockOutCorrectionId,
+	);
+	const isMetadataOrphaned =
+		Boolean(metadata?.clockInCorrectionId && !matchingClockInCorrection) ||
+		Boolean(metadata?.clockOutCorrectionId && !matchingClockOutCorrection);
+	const isLegacyOrphaned =
+		!hasMetadataCorrectionIds &&
+		(!matchingClockInCorrection || clockInCandidates.length > 1 || clockOutCandidates.length > 1);
 
 	return {
 		action: metadata?.action ?? "edit",
@@ -151,9 +173,7 @@ function buildPendingCorrectionReview(
 						requested: matchingClockOutCorrection?.timestamp ?? null,
 					}
 				: null,
-		isOrphaned:
-			Boolean(metadata?.clockInCorrectionId && !matchingClockInCorrection) ||
-			Boolean(metadata?.clockOutCorrectionId && !matchingClockOutCorrection),
+		isOrphaned: isMetadataOrphaned || isLegacyOrphaned,
 	};
 }
 
@@ -187,9 +207,47 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 						}),
 					);
 
+					const typedPeriods = periods as WorkPeriodWithRelations[];
+					const originalEntryIds = typedPeriods.flatMap((period) =>
+						[period.clockIn.id, period.clockOut?.id].filter((id): id is string => Boolean(id)),
+					);
+					const employeeIds = [...new Set(typedPeriods.map((period) => period.employee.id))];
+					const organizationIds = [
+						...new Set(typedPeriods.map((period) => period.employee.organizationId)),
+					];
+					const correctionEntries =
+						originalEntryIds.length > 0
+							? yield* _(
+								dbService.query("batchGetTimeCorrectionReviewEntries", async () => {
+									return await dbService.db.query.timeEntry.findMany({
+										where: and(
+											eq(timeEntry.type, "correction"),
+											inArray(timeEntry.employeeId, employeeIds),
+											inArray(timeEntry.organizationId, organizationIds),
+											inArray(timeEntry.replacesEntryId, originalEntryIds),
+										),
+									});
+								}),
+							)
+							: [];
+
+					const correctionEntriesByReplacedId = new Map<string, CorrectionEntryForReview[]>();
+					for (const entry of correctionEntries as CorrectionEntryForReview[]) {
+						if (!entry.replacesEntryId) continue;
+						const entries = correctionEntriesByReplacedId.get(entry.replacesEntryId) ?? [];
+						entries.push(entry);
+						correctionEntriesByReplacedId.set(entry.replacesEntryId, entries);
+					}
+
 					const map = new Map<string, WorkPeriodWithRelations>();
-					for (const period of periods) {
-						map.set(period.id, period as WorkPeriodWithRelations);
+					for (const period of typedPeriods) {
+						period.correctionReviewEntries = [
+							...(correctionEntriesByReplacedId.get(period.clockIn.id) ?? []),
+							...(period.clockOut?.id
+								? (correctionEntriesByReplacedId.get(period.clockOut.id) ?? [])
+								: []),
+						];
+						map.set(period.id, period);
 					}
 					return map;
 				}),
@@ -210,6 +268,15 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 				return true;
 			},
 			transformToItem: (request, entity) => {
+				const pendingCorrection = buildPendingCorrectionReview(
+					entity,
+					request,
+					entity.correctionReviewEntries ?? [],
+				);
+				if (pendingCorrection.isOrphaned) {
+					return null;
+				}
+
 				const priority = TimeCorrectionHandler.calculatePriority(entity, request.createdAt);
 				const slaDeadline = TimeCorrectionHandler.calculateSLADeadline(entity, request.createdAt);
 
@@ -239,7 +306,13 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 		}),
 
 	getCount: (approverId, organizationId, visibility) =>
-		getApprovalCount("time_entry", approverId, organizationId, visibility),
+		TimeCorrectionHandler.getApprovals({
+			approverId,
+			organizationId,
+			status: "pending",
+			limit: 1,
+			...visibility,
+		}).pipe(Effect.map((approvals) => approvals.length)),
 
 	getDetail: (entityId, organizationId, context) =>
 		Effect.gen(function* (_) {
@@ -320,18 +393,26 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 				correctionMetadata?.clockInCorrectionId,
 				correctionMetadata?.clockOutCorrectionId,
 			].filter((id): id is string => Boolean(id));
+			const replacesEntryIds = [period.clockIn.id, period.clockOut?.id].filter(
+				(id): id is string => Boolean(id),
+			);
 			const correctionEntries = yield* _(
 				dbService.query("getPendingCorrectionEntriesForReview", async () => {
-					if (correctionIds.length === 0) {
+					if (correctionIds.length === 0 && replacesEntryIds.length === 0) {
 						return [];
 					}
 
 					return await dbService.db.query.timeEntry.findMany({
 						where: and(
-							inArray(timeEntry.id, correctionIds),
 							eq(timeEntry.type, "correction"),
 							eq(timeEntry.employeeId, period.employee.id),
 							eq(timeEntry.organizationId, period.employee.organizationId),
+							correctionIds.length > 0
+								? inArray(timeEntry.id, correctionIds)
+								: and(
+										inArray(timeEntry.replacesEntryId, replacesEntryIds),
+										eq(timeEntry.isSuperseded, false),
+									),
 						),
 					});
 				}),
