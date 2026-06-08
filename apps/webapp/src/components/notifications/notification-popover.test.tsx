@@ -65,10 +65,10 @@ vi.mock("@/components/ui/sheet", async () => {
 			}
 
 			return (
-				<div aria-label="Notifications" className={className} data-side={side} role="dialog">
+				<dialog aria-label="Notifications" className={className} data-side={side} open>
 					{showCloseButton && <button type="button">Close</button>}
 					{children}
-				</div>
+				</dialog>
 			);
 		},
 		SheetDescription: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
