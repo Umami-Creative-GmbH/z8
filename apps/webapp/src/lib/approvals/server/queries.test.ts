@@ -126,6 +126,50 @@ describe("buildPendingApprovalResult", () => {
 		expect(result.absenceApprovals[0]?.absence.sickDetail).toBeNull();
 	});
 
+	it("excludes orphaned legacy time corrections from dashboard pending approvals", () => {
+		const result = buildPendingApprovalResult({
+			pendingRequests: [
+				{
+					id: "approval-1",
+					entityId: "period-1",
+					entityType: "time_entry",
+					status: "pending",
+					createdAt: new Date("2026-05-22T18:28:29.000Z"),
+					requester: {
+						user: {
+							id: "user-1",
+							name: "Kai Hentschel",
+							email: "kai@example.com",
+							image: null,
+						},
+					},
+				},
+			],
+			absencesById: new Map(),
+			periodsById: new Map([
+				[
+					"period-1",
+					{
+						id: "period-1",
+						startTime: new Date("2026-05-22T14:00:00.000Z"),
+						endTime: new Date("2026-05-22T18:00:00.000Z"),
+						clockIn: {
+							id: "clock-in-original",
+							timestamp: new Date("2026-05-22T14:00:00.000Z"),
+						},
+						clockOut: {
+							id: "clock-out-original",
+							timestamp: new Date("2026-05-22T18:00:00.000Z"),
+						},
+						correctionReviewEntries: [],
+					},
+				],
+			]),
+		});
+
+		expect(result.timeCorrectionApprovals).toEqual([]);
+	});
+
 	it("supports travel expense claims in the richer bulk decision contract", () => {
 		const approvalType: ApprovalType = "travel_expense_claim";
 		const decisionActions: ApprovalDecisionAction[] = ["approve", "reject"];
