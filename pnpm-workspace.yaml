@@ -26,7 +26,7 @@ minimumReleaseAgeExclude:
 overrides:
   '@hono/node-server': 1.19.13
   '@xmldom/xmldom': 0.8.13
-  '@types/react': 19.2.16
+  '@types/react': 19.2.17
   '@types/react-dom': 19.2.3
   dompurify: 3.4.0
   esbuild: 0.25.12
