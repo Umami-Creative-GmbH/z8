@@ -1,7 +1,7 @@
 import { and, count, desc, eq, inArray, ne } from "drizzle-orm";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/absences/actions";
 import { db } from "@/db";
-import { absenceEntry, approvalRequest, workPeriod } from "@/db/schema";
+import { absenceEntry, approvalRequest, timeEntry, workPeriod } from "@/db/schema";
 import type { SickDetail } from "@/lib/absences/types";
 import type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "./types";
 
@@ -11,6 +11,7 @@ interface PendingRequestRecord {
 	entityType: "absence_entry" | "time_entry";
 	status: "pending" | "approved" | "rejected";
 	createdAt: Date;
+	metadata?: unknown;
 	requester: {
 		user: {
 			id: string;
@@ -41,12 +42,29 @@ interface WorkPeriodLookupRecord {
 	startTime: Date;
 	endTime: Date | null;
 	clockIn: {
+		id: string;
 		timestamp: Date;
 	};
 	clockOut: {
+		id: string;
 		timestamp: Date;
 	} | null;
+	correctionReviewEntries?: CorrectionEntryForReview[];
 }
+
+interface CorrectionEntryForReview {
+	id: string;
+	timestamp: Date;
+	replacesEntryId: string | null;
+	isSuperseded?: boolean;
+}
+
+type TimeCorrectionApprovalMetadata = {
+	timeCorrection?: {
+		clockInCorrectionId?: string;
+		clockOutCorrectionId?: string;
+	};
+};
 
 function splitPendingApprovalIds(pendingRequests: PendingRequestRecord[]) {
 	const absenceIds: string[] = [];
@@ -62,6 +80,48 @@ function splitPendingApprovalIds(pendingRequests: PendingRequestRecord[]) {
 	}
 
 	return { absenceIds, timeCorrectionIds };
+}
+
+function correctionMetadataFromRequest(request: { metadata?: unknown }) {
+	return (request.metadata as TimeCorrectionApprovalMetadata | null)?.timeCorrection;
+}
+
+function isOrphanedTimeCorrectionApproval(
+	request: PendingRequestRecord,
+	period: WorkPeriodLookupRecord,
+): boolean {
+	const metadata = correctionMetadataFromRequest(request);
+	const correctionEntries = period.correctionReviewEntries ?? [];
+	const correctionById = new Map(correctionEntries.map((entry) => [entry.id, entry]));
+	const legacyCorrectionEntries = correctionEntries.filter((entry) => !entry.isSuperseded);
+	const clockInCandidates = legacyCorrectionEntries.filter(
+		(entry) => entry.replacesEntryId === period.clockIn.id,
+	);
+	const clockOutCandidates = period.clockOut
+		? legacyCorrectionEntries.filter((entry) => entry.replacesEntryId === period.clockOut?.id)
+		: [];
+	const clockInCorrection = metadata?.clockInCorrectionId
+		? correctionById.get(metadata.clockInCorrectionId)
+		: clockInCandidates.length === 1
+			? clockInCandidates[0]
+			: undefined;
+	const clockOutCorrection = metadata?.clockOutCorrectionId
+		? correctionById.get(metadata.clockOutCorrectionId)
+		: clockOutCandidates.length === 1
+			? clockOutCandidates[0]
+			: undefined;
+	const matchingClockInCorrection =
+		clockInCorrection?.replacesEntryId === period.clockIn.id ? clockInCorrection : null;
+	const matchingClockOutCorrection =
+		clockOutCorrection?.replacesEntryId === period.clockOut?.id ? clockOutCorrection : null;
+	const hasMetadataCorrectionIds = Boolean(
+		metadata?.clockInCorrectionId || metadata?.clockOutCorrectionId,
+	);
+
+	return hasMetadataCorrectionIds
+		? Boolean(metadata?.clockInCorrectionId && !matchingClockInCorrection) ||
+				Boolean(metadata?.clockOutCorrectionId && !matchingClockOutCorrection)
+		: !matchingClockInCorrection || clockInCandidates.length > 1 || clockOutCandidates.length > 1;
 }
 
 export function buildPendingApprovalResult({
@@ -109,6 +169,9 @@ export function buildPendingApprovalResult({
 
 		const period = periodsById.get(request.entityId);
 		if (!period?.clockIn) {
+			continue;
+		}
+		if (isOrphanedTimeCorrectionApproval(request, period)) {
 			continue;
 		}
 
@@ -184,6 +247,32 @@ export async function getPendingApprovals(): Promise<{
 	const periodsById = new Map(
 		(periods as WorkPeriodLookupRecord[]).map((period) => [period.id, period] as const),
 	);
+	const originalEntryIds = (periods as WorkPeriodLookupRecord[]).flatMap((period) =>
+		[period.clockIn?.id, period.clockOut?.id].filter((id): id is string => Boolean(id)),
+	);
+	const correctionEntries =
+		originalEntryIds.length > 0
+			? ((await db.query.timeEntry.findMany({
+					where: and(
+						eq(timeEntry.organizationId, currentEmployee.organizationId),
+						eq(timeEntry.type, "correction"),
+						inArray(timeEntry.replacesEntryId, originalEntryIds),
+					),
+				})) as CorrectionEntryForReview[])
+			: [];
+	const correctionEntriesByReplacedId = new Map<string, CorrectionEntryForReview[]>();
+	for (const entry of correctionEntries) {
+		if (!entry.replacesEntryId) continue;
+		const entries = correctionEntriesByReplacedId.get(entry.replacesEntryId) ?? [];
+		entries.push(entry);
+		correctionEntriesByReplacedId.set(entry.replacesEntryId, entries);
+	}
+	for (const period of periods as WorkPeriodLookupRecord[]) {
+		period.correctionReviewEntries = [
+			...(correctionEntriesByReplacedId.get(period.clockIn.id) ?? []),
+			...(period.clockOut?.id ? (correctionEntriesByReplacedId.get(period.clockOut.id) ?? []) : []),
+		];
+	}
 
 	return buildPendingApprovalResult({
 		pendingRequests,

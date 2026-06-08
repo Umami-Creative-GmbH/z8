@@ -218,17 +218,17 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 					const correctionEntries =
 						originalEntryIds.length > 0
 							? yield* _(
-								dbService.query("batchGetTimeCorrectionReviewEntries", async () => {
-									return await dbService.db.query.timeEntry.findMany({
-										where: and(
-											eq(timeEntry.type, "correction"),
-											inArray(timeEntry.employeeId, employeeIds),
-											inArray(timeEntry.organizationId, organizationIds),
-											inArray(timeEntry.replacesEntryId, originalEntryIds),
-										),
-									});
-								}),
-							)
+									dbService.query("batchGetTimeCorrectionReviewEntries", async () => {
+										return await dbService.db.query.timeEntry.findMany({
+											where: and(
+												eq(timeEntry.type, "correction"),
+												inArray(timeEntry.employeeId, employeeIds),
+												inArray(timeEntry.organizationId, organizationIds),
+												inArray(timeEntry.replacesEntryId, originalEntryIds),
+											),
+										});
+									}),
+								)
 							: [];
 
 					const correctionEntriesByReplacedId = new Map<string, CorrectionEntryForReview[]>();
@@ -393,8 +393,8 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 				correctionMetadata?.clockInCorrectionId,
 				correctionMetadata?.clockOutCorrectionId,
 			].filter((id): id is string => Boolean(id));
-			const replacesEntryIds = [period.clockIn.id, period.clockOut?.id].filter(
-				(id): id is string => Boolean(id),
+			const replacesEntryIds = [period.clockIn.id, period.clockOut?.id].filter((id): id is string =>
+				Boolean(id),
 			);
 			const correctionEntries = yield* _(
 				dbService.query("getPendingCorrectionEntriesForReview", async () => {

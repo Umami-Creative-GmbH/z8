@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState, useTransition } from "react";
+import { Suspense, useEffect, useReducer, useRef, useTransition } from "react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,6 +32,67 @@ const LOADING_ROW_KEYS = ["loading-1", "loading-2", "loading-3", "loading-4", "l
 
 function getUserStatusFilter(status: string | null): UserStatusFilter {
 	return status === "active" || status === "banned" ? status : "all";
+}
+
+interface UsersPageState {
+	page: number;
+	search: string;
+	status: UserStatusFilter;
+	banDialogUser: PlatformUser | null;
+	banReason: string;
+	banExpiry: string;
+	sessionsDialogUser: PlatformUser | null;
+	sessions: UserSession[];
+	sessionsLoading: boolean;
+}
+
+type UsersPageAction =
+	| { type: "pageChanged"; page: number }
+	| { type: "filtersChanged"; search: string; status: UserStatusFilter }
+	| { type: "banDialogOpened"; user: PlatformUser }
+	| { type: "banDialogClosed" }
+	| { type: "banReasonChanged"; value: string }
+	| { type: "banExpiryChanged"; value: string }
+	| { type: "banCompleted" }
+	| { type: "sessionsOpened"; user: PlatformUser }
+	| { type: "sessionsLoaded"; sessions: UserSession[] }
+	| { type: "sessionsLoadingFinished" }
+	| { type: "sessionsClosed" }
+	| { type: "sessionRevoked"; sessionId: string }
+	| { type: "allSessionsRevoked" };
+
+function usersPageReducer(state: UsersPageState, action: UsersPageAction): UsersPageState {
+	switch (action.type) {
+		case "pageChanged":
+			return { ...state, page: action.page };
+		case "filtersChanged":
+			return { ...state, page: 1, search: action.search, status: action.status };
+		case "banDialogOpened":
+			return { ...state, banDialogUser: action.user };
+		case "banDialogClosed":
+			return { ...state, banDialogUser: null };
+		case "banReasonChanged":
+			return { ...state, banReason: action.value };
+		case "banExpiryChanged":
+			return { ...state, banExpiry: action.value };
+		case "banCompleted":
+			return { ...state, banDialogUser: null, banReason: "", banExpiry: "" };
+		case "sessionsOpened":
+			return { ...state, sessionsDialogUser: action.user, sessionsLoading: true };
+		case "sessionsLoaded":
+			return { ...state, sessions: action.sessions, sessionsLoading: false };
+		case "sessionsLoadingFinished":
+			return { ...state, sessionsLoading: false };
+		case "sessionsClosed":
+			return { ...state, sessionsDialogUser: null };
+		case "sessionRevoked":
+			return {
+				...state,
+				sessions: state.sessions.filter((session) => session.id !== action.sessionId),
+			};
+		case "allSessionsRevoked":
+			return { ...state, sessions: [] };
+	}
 }
 
 export default function UsersPage() {
@@ -94,19 +155,31 @@ function UsersPageContent({
 	const router = useRouter();
 	const queryClient = useQueryClient();
 
-	const [page, setPage] = useState(1);
-	const [search, setSearch] = useState(initialSearch);
-	const [status, setStatus] = useState<UserStatusFilter>(initialStatus);
-	const [organizationId] = useState(initialOrganizationId);
+	const [state, dispatch] = useReducer(usersPageReducer, {
+		page: 1,
+		search: initialSearch,
+		status: initialStatus,
+		banDialogUser: null,
+		banReason: "",
+		banExpiry: "",
+		sessionsDialogUser: null,
+		sessions: [],
+		sessionsLoading: false,
+	});
+	const {
+		page,
+		search,
+		status,
+		banDialogUser,
+		banReason,
+		banExpiry,
+		sessionsDialogUser,
+		sessions,
+		sessionsLoading,
+	} = state;
+	const organizationId = initialOrganizationId;
 	const [isPending, startTransition] = useTransition();
 	const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-	const [banDialogUser, setBanDialogUser] = useState<PlatformUser | null>(null);
-	const [banReason, setBanReason] = useState("");
-	const [banExpiry, setBanExpiry] = useState("");
-	const [sessionsDialogUser, setSessionsDialogUser] = useState<PlatformUser | null>(null);
-	const [sessions, setSessions] = useState<UserSession[]>([]);
-	const [sessionsLoading, setSessionsLoading] = useState(false);
 
 	const { data, isLoading } = useQuery({
 		queryKey: ["admin-users", search, status, organizationId, page],
@@ -132,11 +205,9 @@ function UsersPageContent({
 			clearTimeout(searchTimeoutRef.current);
 		}
 
-		setSearch(newSearch);
+		dispatch({ type: "filtersChanged", search: newSearch, status: newStatus });
 
 		if (newStatus !== status) {
-			setStatus(newStatus);
-			setPage(1);
 			const params = new URLSearchParams();
 			if (newSearch) params.set("search", newSearch);
 			if (newStatus !== "all") params.set("status", newStatus);
@@ -146,7 +217,6 @@ function UsersPageContent({
 		}
 
 		searchTimeoutRef.current = setTimeout(() => {
-			setPage(1);
 			const params = new URLSearchParams();
 			if (newSearch) params.set("search", newSearch);
 			if (newStatus !== "all") params.set("status", newStatus);
@@ -176,9 +246,7 @@ function UsersPageContent({
 						email: banDialogUser.email,
 					}),
 				);
-				setBanDialogUser(null);
-				setBanReason("");
-				setBanExpiry("");
+				dispatch({ type: "banCompleted" });
 				queryClient.invalidateQueries({ queryKey: ["admin-users"] });
 			} else {
 				toast.error(result.error);
@@ -203,15 +271,14 @@ function UsersPageContent({
 	};
 
 	const handleViewSessions = async (user: PlatformUser) => {
-		setSessionsDialogUser(user);
-		setSessionsLoading(true);
+		dispatch({ type: "sessionsOpened", user });
 		const result = await listUserSessionsAction(user.id);
 		if (result.success) {
-			setSessions(result.data);
+			dispatch({ type: "sessionsLoaded", sessions: result.data });
 		} else {
 			toast.error(result.error);
+			dispatch({ type: "sessionsLoadingFinished" });
 		}
-		setSessionsLoading(false);
 	};
 
 	const handleRevokeSession = async (sessionId: string) => {
@@ -219,7 +286,7 @@ function UsersPageContent({
 			const result = await revokeSessionAction(sessionId);
 			if (result.success) {
 				toast.success(t("admin:admin.users.toasts.sessionRevoked", "Session revoked"));
-				setSessions(sessions.filter((session) => session.id !== sessionId));
+				dispatch({ type: "sessionRevoked", sessionId });
 			} else {
 				toast.error(result.error);
 			}
@@ -237,7 +304,7 @@ function UsersPageContent({
 						count: result.data,
 					}),
 				);
-				setSessions([]);
+				dispatch({ type: "allSessionsRevoked" });
 			} else {
 				toast.error(result.error);
 			}
@@ -260,23 +327,23 @@ function UsersPageContent({
 				isPending={isPending}
 				onViewSessions={handleViewSessions}
 				onUnban={handleUnban}
-				onOpenBan={setBanDialogUser}
+				onOpenBan={(user) => dispatch({ type: "banDialogOpened", user })}
 			/>
 			<PlatformAdminUsersPagination
 				page={page}
 				total={total}
 				totalPages={totalPages}
 				pageSize={PAGE_SIZE}
-				onPageChange={setPage}
+				onPageChange={(nextPage) => dispatch({ type: "pageChanged", page: nextPage })}
 			/>
 			<PlatformAdminBanUserDialog
 				user={banDialogUser}
 				banReason={banReason}
 				banExpiry={banExpiry}
 				isPending={isPending}
-				onReasonChange={setBanReason}
-				onExpiryChange={setBanExpiry}
-				onClose={() => setBanDialogUser(null)}
+				onReasonChange={(value) => dispatch({ type: "banReasonChanged", value })}
+				onExpiryChange={(value) => dispatch({ type: "banExpiryChanged", value })}
+				onClose={() => dispatch({ type: "banDialogClosed" })}
 				onConfirm={handleBan}
 			/>
 			<PlatformAdminUserSessionsPanel
@@ -284,7 +351,7 @@ function UsersPageContent({
 				sessions={sessions}
 				sessionsLoading={sessionsLoading}
 				isPending={isPending}
-				onClose={() => setSessionsDialogUser(null)}
+				onClose={() => dispatch({ type: "sessionsClosed" })}
 				onRevokeSession={handleRevokeSession}
 				onRevokeAllSessions={handleRevokeAllSessions}
 			/>
