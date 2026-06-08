@@ -13,7 +13,7 @@ import {
 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
 import type React from "react";
-import { useState, useTransition } from "react";
+import { useReducer, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	exportPayrollPdfAction,
@@ -56,14 +56,71 @@ interface PayrollPeriodRequest {
 	employeeIds?: string[];
 }
 
+interface PayrollWorkspaceState {
+	summary: PayrollWorkspaceSummary;
+	dateMode: PayrollDateRangeMode;
+	startDate: string;
+	endDate: string;
+	selectedEmployeeIds: string[];
+	selectedTeamNames: string[];
+	formatId: string;
+}
+
+type PayrollWorkspaceAction =
+	| { type: "summaryRefreshed"; summary: PayrollWorkspaceSummary }
+	| { type: "dateModeChanged"; dateMode: PayrollDateRangeMode }
+	| { type: "startDateChanged"; value: string }
+	| { type: "endDateChanged"; value: string }
+	| { type: "employeeFilterChanged"; employeeIds: string[] }
+	| { type: "teamFilterChanged"; teamNames: string[] }
+	| { type: "formatChanged"; formatId: string };
+
+function payrollWorkspaceReducer(
+	state: PayrollWorkspaceState,
+	action: PayrollWorkspaceAction,
+): PayrollWorkspaceState {
+	switch (action.type) {
+		case "summaryRefreshed":
+			return {
+				...state,
+				summary: action.summary,
+				startDate: action.summary.period.start,
+				endDate: action.summary.period.end,
+			};
+		case "dateModeChanged":
+			return { ...state, dateMode: action.dateMode };
+		case "startDateChanged":
+			return { ...state, startDate: action.value };
+		case "endDateChanged":
+			return { ...state, endDate: action.value };
+		case "employeeFilterChanged":
+			return { ...state, selectedEmployeeIds: action.employeeIds };
+		case "teamFilterChanged":
+			return { ...state, selectedTeamNames: action.teamNames };
+		case "formatChanged":
+			return { ...state, formatId: action.formatId };
+	}
+}
+
 export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorkspaceProps) {
-	const [summary, setSummary] = useState(initialSummary);
-	const [dateMode, setDateMode] = useState<PayrollDateRangeMode>("month");
-	const [startDate, setStartDate] = useState(initialSummary.period.start);
-	const [endDate, setEndDate] = useState(initialSummary.period.end);
-	const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
-	const [selectedTeamNames, setSelectedTeamNames] = useState<string[]>([]);
-	const [formatId, setFormatId] = useState(exportFormats[0]?.id ?? "");
+	const [state, dispatch] = useReducer(payrollWorkspaceReducer, {
+		summary: initialSummary,
+		dateMode: "month",
+		startDate: initialSummary.period.start,
+		endDate: initialSummary.period.end,
+		selectedEmployeeIds: [],
+		selectedTeamNames: [],
+		formatId: exportFormats[0]?.id ?? "",
+	});
+	const {
+		summary,
+		dateMode,
+		startDate,
+		endDate,
+		selectedEmployeeIds,
+		selectedTeamNames,
+		formatId,
+	} = state;
 	const [isPending, startTransition] = useTransition();
 
 	const scopedEmployees = initialSummary.employees;
@@ -106,9 +163,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				return;
 			}
 
-			setSummary(result.data);
-			setStartDate(result.data.period.start);
-			setEndDate(result.data.period.end);
+			dispatch({ type: "summaryRefreshed", summary: result.data });
 			onSuccess?.();
 		});
 	}
@@ -123,7 +178,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			selectedTeamNames,
 		);
 
-		setSelectedEmployeeIds(nextEmployeeIds);
+		dispatch({ type: "employeeFilterChanged", employeeIds: nextEmployeeIds });
 		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
 	}
 
@@ -137,20 +192,20 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			nextTeamNames,
 		);
 
-		setSelectedTeamNames(nextTeamNames);
+		dispatch({ type: "teamFilterChanged", teamNames: nextTeamNames });
 		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
 	}
 
 	function applyDateMode(nextMode: PayrollDateRangeMode) {
 		if (nextMode === "custom") {
-			setDateMode(nextMode);
+			dispatch({ type: "dateModeChanged", dateMode: nextMode });
 			return;
 		}
 
 		refreshSummary(
 			buildPeriodRequest(DateTime.utc().startOf(nextMode), nextMode),
 			filteredEmployeeIds,
-			() => setDateMode(nextMode),
+			() => dispatch({ type: "dateModeChanged", dateMode: nextMode }),
 		);
 	}
 
@@ -323,7 +378,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 									type="date"
 									value={startDate}
 									disabled={dateMode !== "custom" || isPending}
-									onChange={(event) => setStartDate(event.target.value)}
+									onChange={(event) =>
+										dispatch({ type: "startDateChanged", value: event.target.value })
+									}
 								/>
 							</div>
 							<div className="space-y-1">
@@ -335,7 +392,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 									type="date"
 									value={endDate}
 									disabled={dateMode !== "custom" || isPending}
-									onChange={(event) => setEndDate(event.target.value)}
+									onChange={(event) =>
+										dispatch({ type: "endDateChanged", value: event.target.value })
+									}
 								/>
 							</div>
 							<Button
@@ -372,7 +431,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 							<Label htmlFor="payroll-export-target">Payroll export target</Label>
 							<Select
 								value={formatId}
-								onValueChange={setFormatId}
+								onValueChange={(formatId) => dispatch({ type: "formatChanged", formatId })}
 								disabled={!hasExportFormats || isPending}
 							>
 								<SelectTrigger id="payroll-export-target" className="w-full">
