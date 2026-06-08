@@ -22,7 +22,7 @@ overrides:
   get-uri>basic-ftp: 5.3.0
   get-uri: 6.0.5
   glob@7.2.3>minimatch: 3.1.5
-  hono: 4.12.18
+  hono: 4.12.21
   kysely: 0.28.17
   lodash: 4.18.1
   lodash-es: 4.18.1
@@ -2214,7 +2214,7 @@ packages:
     resolution: {integrity: sha512-TsQLe4i2gvoTtrHje625ngThGBySOgSK3Xo2XRYOdqGN1teR8+I7vchQC46uLJi8OF62YTYA3AhSpumtkhsaKQ==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
-      hono: 4.12.18
+      hono: 4.12.21
 
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
@@ -7786,8 +7786,8 @@ packages:
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
 
-  hono@4.12.18:
-    resolution: {integrity: sha512-RWzP96k/yv0PQfyXnWjs6zot20TqfpfsNXhOnev8d1InAxubW93L11/oNUc3tQqn2G0bSdAOBpX+2uDFHV7kdQ==}
+  hono@4.12.21:
+    resolution: {integrity: sha512-uV63apnb0kyPtAUwoWgaGh9HyIFcv8lgmzPZSiTBQAFOFGIzka5EZ1dZocmGnn0XdX0+XTqJ6Tqv7selMuGLRQ==}
     engines: {node: '>=16.9.0'}
 
   hosted-git-info@7.0.2:
@@ -13108,9 +13108,9 @@ snapshots:
 
   '@hexagon/base64@1.1.28': {}
 
-  '@hono/node-server@1.19.13(hono@4.12.18)':
+  '@hono/node-server@1.19.13(hono@4.12.21)':
     dependencies:
-      hono: 4.12.18
+      hono: 4.12.21
 
   '@iconify/types@2.0.0': {}
 
@@ -13339,7 +13339,7 @@ snapshots:
 
   '@modelcontextprotocol/sdk@1.29.0(zod@3.25.76)':
     dependencies:
-      '@hono/node-server': 1.19.13(hono@4.12.18)
+      '@hono/node-server': 1.19.13(hono@4.12.21)
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
       content-type: 1.0.5
@@ -13349,7 +13349,7 @@ snapshots:
       eventsource-parser: 3.1.0
       express: 5.2.1
       express-rate-limit: 8.5.2(express@5.2.1)
-      hono: 4.12.18
+      hono: 4.12.21
       jose: 6.2.3
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
@@ -19174,7 +19174,7 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  hono@4.12.18: {}
+  hono@4.12.21: {}
 
   hosted-git-info@7.0.2:
     dependencies:
