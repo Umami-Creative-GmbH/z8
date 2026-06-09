@@ -159,6 +159,9 @@ vi.mock("./schedule-x-wrapper", () => ({
 			<div
 				data-testid="schedule-x-wrapper"
 				data-can-clock-out={String(canClockOutRunningPeriod?.(runningWorkPeriod) ?? false)}
+				data-can-clock-out-completed={String(
+					canClockOutRunningPeriod?.(completedWorkPeriod) ?? false,
+				)}
 				data-view-mode={viewMode}
 				data-time-zone={timeZone}
 				data-summary-loading={String(isSummaryLoading)}
@@ -168,6 +171,12 @@ vi.mock("./schedule-x-wrapper", () => ({
 					onClick={() => onRunningPeriodClockOutRequest?.(runningWorkPeriod)}
 				>
 					Request running stop
+				</button>
+				<button
+					type="button"
+					onClick={() => onRunningPeriodClockOutRequest?.(completedWorkPeriod)}
+				>
+					Request completed stop
 				</button>
 				<button
 					type="button"
@@ -635,5 +644,29 @@ describe("CalendarView", () => {
 		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-can-clock-out")).toBe(
 			"true",
 		);
+	});
+
+	it("denies running work period clock-out requests for non-manager users", () => {
+		mockIsManagerOrAbove.mockReturnValue(false);
+
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-can-clock-out")).toBe(
+			"false",
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
+
+		expect(screen.queryByRole("heading", { name: "Clock out employee?" })).toBeNull();
+	});
+
+	it("denies clock-out requests for non-running work periods", () => {
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		expect(
+			screen.getByTestId("schedule-x-wrapper").getAttribute("data-can-clock-out-completed"),
+		).toBe("false");
+		fireEvent.click(screen.getByRole("button", { name: "Request completed stop" }));
+
+		expect(screen.queryByRole("heading", { name: "Clock out employee?" })).toBeNull();
 	});
 });
