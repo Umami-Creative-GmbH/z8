@@ -206,9 +206,39 @@ describe("work balance helpers", () => {
 		expect(getWorkBalanceStatus(-1)).toBe("negative");
 	});
 
-	it("uses today's UTC date as the batch cutoff", () => {
+	it("uses the last completed UTC date as the batch cutoff", () => {
 		expect(getWorkBalanceBatchCutoffDate(new Date("2026-05-22T23:30:00.000-05:00"))).toBe(
-			"2026-05-23",
+			"2026-05-22",
+		);
+	});
+
+	it("excludes the current UTC day from all-time balance computation", async () => {
+		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
+		mockState.selectFrom
+			.mockReturnValueOnce({ where: mockState.selectWhere })
+			.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere
+			.mockResolvedValueOnce([{ value: new Date("2026-05-10T09:00:00.000Z") }])
+			.mockResolvedValueOnce([{ totalMinutes: 480 }]);
+		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue({
+			"2026-05-10": { requiredMinutes: 480 },
+		});
+
+		const result = await computeEmployeeWorkBalance({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			now: new Date("2026-05-22T12:00:00.000Z"),
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				computedThroughDate: "2026-05-21",
+			}),
+		);
+		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith(
+			expect.objectContaining({
+				endDate: new Date("2026-05-21T23:59:59.999Z"),
+			}),
 		);
 	});
 
@@ -262,8 +292,8 @@ describe("work balance helpers", () => {
 			actualMinutes: 0,
 			requiredMinutes: 0,
 			balanceMinutes: 0,
-			computedFromDate: "2026-05-22",
-			computedThroughDate: "2026-05-22",
+			computedFromDate: "2026-05-21",
+			computedThroughDate: "2026-05-21",
 			computedAt,
 			updatedAt: computedAt,
 			isDirty: false,
@@ -699,7 +729,7 @@ describe("work balance helpers", () => {
 				organizationId: "org-1",
 				periodType: "month",
 				periodStart: "2026-03-01",
-				periodEnd: "2026-05-22",
+				periodEnd: "2026-05-21",
 				actualMinutes: 300,
 				requiredMinutes: 240,
 				balanceMinutes: 60,
@@ -738,7 +768,7 @@ describe("work balance helpers", () => {
 			dbClient: expect.objectContaining({ select: mockState.txSelect }),
 			periodType: "month",
 			periodStart: "2026-03-01",
-			periodEnd: "2026-05-22",
+			periodEnd: "2026-05-21",
 			calculationStartDate: null,
 			isClosed: false,
 			now,
@@ -769,7 +799,7 @@ describe("work balance helpers", () => {
 				requiredMinutes: 480,
 				balanceMinutes: 120,
 				computedFromDate: "2026-02-01",
-				computedThroughDate: "2026-05-22",
+				computedThroughDate: "2026-05-21",
 			}),
 		);
 		expect(eq).toHaveBeenCalledWith(employeeWorkBalancePeriod.organizationId, "org-1");
@@ -811,7 +841,7 @@ describe("work balance helpers", () => {
 				organizationId: "org-1",
 				periodType: "month",
 				periodStart: "2026-03-01",
-				periodEnd: "2026-05-22",
+				periodEnd: "2026-05-21",
 				actualMinutes: 300,
 				requiredMinutes: 240,
 				balanceMinutes: 60,
@@ -866,7 +896,7 @@ describe("work balance helpers", () => {
 			dbClient: expect.objectContaining({ select: mockState.txSelect }),
 			periodType: "month",
 			periodStart: "2026-03-01",
-			periodEnd: "2026-05-22",
+			periodEnd: "2026-05-21",
 			calculationStartDate: "2026-01-15",
 			isClosed: false,
 			now,
@@ -930,7 +960,7 @@ describe("work balance helpers", () => {
 				organizationId: "org-1",
 				periodType: "month",
 				periodStart: "2026-03-01",
-				periodEnd: "2026-05-22",
+				periodEnd: "2026-05-21",
 				actualMinutes: 300,
 				requiredMinutes: 240,
 				balanceMinutes: 60,
@@ -1008,7 +1038,7 @@ describe("work balance helpers", () => {
 				organizationId: "org-1",
 				periodType: "month",
 				periodStart: "2026-03-01",
-				periodEnd: "2026-05-22",
+				periodEnd: "2026-05-21",
 				actualMinutes: 300,
 				requiredMinutes: 240,
 				balanceMinutes: 60,
@@ -1045,7 +1075,7 @@ describe("work balance helpers", () => {
 			dbClient: expect.objectContaining({ select: mockState.txSelect }),
 			periodType: "month",
 			periodStart: "2026-03-01",
-			periodEnd: "2026-05-22",
+			periodEnd: "2026-05-21",
 			calculationStartDate: "2026-02-10",
 			isClosed: false,
 			now,
@@ -1068,7 +1098,7 @@ describe("work balance helpers", () => {
 				requiredMinutes: 320,
 				balanceMinutes: 80,
 				computedFromDate: "2026-02-10",
-				computedThroughDate: "2026-05-22",
+				computedThroughDate: "2026-05-21",
 			}),
 		);
 	});
@@ -1109,8 +1139,8 @@ describe("work balance helpers", () => {
 				actualMinutes: 0,
 				requiredMinutes: 0,
 				balanceMinutes: 0,
-				computedFromDate: "2026-05-22",
-				computedThroughDate: "2026-05-22",
+				computedFromDate: "2026-05-21",
+				computedThroughDate: "2026-05-21",
 				computedAt: now,
 			}),
 		);
@@ -1123,7 +1153,7 @@ describe("work balance helpers", () => {
 			organizationId: "org-1",
 			periodType: "month",
 			periodStart: "2026-03-01",
-			periodEnd: "2026-05-22",
+			periodEnd: "2026-05-21",
 			actualMinutes: 300,
 			requiredMinutes: 240,
 			balanceMinutes: 60,
@@ -1150,7 +1180,7 @@ describe("work balance helpers", () => {
 			dbClient: expect.objectContaining({ select: mockState.txSelect }),
 			periodType: "month",
 			periodStart: "2026-03-01",
-			periodEnd: "2026-05-22",
+			periodEnd: "2026-05-21",
 			calculationStartDate: null,
 			isClosed: false,
 			now,

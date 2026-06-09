@@ -88,7 +88,7 @@ export function buildEmptyWorkBalanceValues(input: {
 }
 
 export function getWorkBalanceBatchCutoffDate(now = new Date()): string {
-	return DateTime.fromJSDate(now, { zone: "utc" }).toISODate()!;
+	return DateTime.fromJSDate(now, { zone: "utc" }).startOf("day").minus({ days: 1 }).toISODate()!;
 }
 
 function toUtcIsoDate(value: Date | string | null | undefined) {
@@ -235,7 +235,9 @@ export async function computeEmployeeWorkBalance(input: {
 	const firstDate = await getFirstRelevantDate(input);
 	if (!firstDate) return null;
 
-	const through = DateTime.fromJSDate(input.now ?? new Date(), { zone: "utc" }).startOf("day");
+	const through = DateTime.fromISO(getWorkBalanceBatchCutoffDate(input.now ?? new Date()), {
+		zone: "utc",
+	}).startOf("day");
 	const start = DateTime.fromISO(firstDate, { zone: "utc" }).startOf("day");
 	if (start > through) {
 		const throughDate = through.toISODate()!;
@@ -351,7 +353,10 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 			dirtyFromDate: currentBalance.dirtyFromDate,
 			refreshRequestedAt: currentBalance.refreshRequestedAt,
 		});
-	const hotWindow = getHotWindowRange(now);
+	const hotWindow = {
+		...getHotWindowRange(now),
+		endDate: getWorkBalanceBatchCutoffDate(now),
+	};
 	const fullRebuildStartDate = forceFullRebuild
 		? await getFirstRelevantDate(input, dbClient)
 		: null;
