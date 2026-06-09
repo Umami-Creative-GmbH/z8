@@ -74,6 +74,8 @@ export async function POST(request: NextRequest) {
 				and(
 					eq(workPeriod.id, workPeriodId),
 					eq(workPeriod.organizationId, organizationId),
+					eq(employee.organizationId, organizationId),
+					eq(employee.isActive, true),
 					isNull(workPeriod.deletedAt),
 				),
 			)

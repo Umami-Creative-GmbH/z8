@@ -172,6 +172,20 @@ function loadedPeriod(period = runningPeriod) {
 	return { period, targetEmployee };
 }
 
+function expectAndPredicateIncludes(
+	predicate: unknown,
+	expected: Array<{ column: string; value: unknown }>,
+) {
+	expect(predicate).toEqual(
+		expect.objectContaining({
+			conditions: expect.arrayContaining(
+				expected.map(({ column, value }) => expect.objectContaining({ column, value })),
+			),
+			type: "and",
+		}),
+	);
+}
+
 describe("POST /api/time-entries/clock-out-on-behalf", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
@@ -271,6 +285,18 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		expect(response.status).toBe(404);
 		expect(await response.json()).toEqual({ error: "Work period not found" });
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+	});
+
+	it("scopes target period lookup to active employees in the active organization", async () => {
+		const response = await POST(createRequest({ workPeriodId: "period-1" }));
+
+		expect(response.status).toBe(201);
+		expectAndPredicateIncludes(mockState.where.mock.calls[1]?.[0], [
+			{ column: "workPeriod.id", value: "period-1" },
+			{ column: "workPeriod.organizationId", value: "org-1" },
+			{ column: "employee.organizationId", value: "org-1" },
+			{ column: "employee.isActive", value: true },
+		]);
 	});
 
 	it("returns 409 when the loaded work period is already stopped", async () => {
