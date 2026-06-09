@@ -323,6 +323,37 @@ describe("employee detail page sections", () => {
 		expect(screen.getByText("pending")).toBeTruthy();
 	});
 
+	it("links accepted drafts to the active employee record", () => {
+		render(
+			<EmployeeOverviewCard
+				employee={
+					{
+						kind: "invitationDraft",
+						id: "draft-1",
+						user: {
+							id: "draft-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+							firstName: "Ada",
+							lastName: "Lovelace",
+						},
+						team: null,
+						role: "manager",
+						pronouns: null,
+						isActive: false,
+						invitationStatus: "accepted",
+						realEmployeeId: "employee-1",
+					} as EmployeeDetail
+				}
+				schedule={null}
+			/>,
+		);
+		expect(screen.getByRole("link", { name: "Edit active employee" }).getAttribute("href")).toBe(
+			"/settings/employees/employee-1",
+		);
+	});
+
 	it("guards real-employee-only sections behind the draft check", () => {
 		const source = readFileSync(
 			join(
@@ -333,6 +364,8 @@ describe("employee detail page sections", () => {
 		);
 		expect(source).toContain("canShowRealEmployeeSections");
 		expect(source).toContain("!isDraft");
+		expect(source).toContain("canEditDraftDetails");
+		expect(source).toContain("!employee.realEmployeeId");
 	});
 
 	it("renders the edit form strings in German", () => {

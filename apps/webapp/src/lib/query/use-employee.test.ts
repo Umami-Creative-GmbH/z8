@@ -127,6 +127,12 @@ describe("useEmployee contracts", () => {
 		expect(source).not.toContain("enabled: enabled && hasEmployee && !isDraft");
 	});
 
+	it("does not submit accepted draft edits to the draft update action", () => {
+		const source = readFileSync("src/lib/query/use-employee.ts", "utf8");
+		expect(source).toContain("isAcceptedDraft");
+		expect(source).toContain("Edit the active employee record");
+	});
+
 	it("exposes a stable employment history query key", () => {
 		expect(queryKeys.employees.employmentHistory("employee-1")).toEqual([
 			"employees",

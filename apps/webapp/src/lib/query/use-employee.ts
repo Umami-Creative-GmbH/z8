@@ -248,10 +248,22 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 	// Update employee mutation
 	const updateMutation = useMutation({
-		mutationFn: (data: UpdateEmployee) =>
-			employeeQuery.data?.kind === "invitationDraft"
+		mutationFn: (data: UpdateEmployee) => {
+			const isAcceptedDraft =
+				employeeQuery.data?.kind === "invitationDraft" && Boolean(employeeQuery.data.realEmployeeId);
+
+			if (isAcceptedDraft) {
+				return {
+					success: false,
+					error: "Edit the active employee record for accepted invitations",
+					code: "ValidationError",
+				} as const;
+			}
+
+			return employeeQuery.data?.kind === "invitationDraft"
 				? updateEmployeeInvitationDraft(employeeId, data)
-				: updateEmployee(employeeId, data),
+				: updateEmployee(employeeId, data);
+		},
 		onSuccess: (result) => {
 			if (result.success) {
 				// Invalidate employee queries to refetch updated data

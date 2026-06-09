@@ -146,7 +146,9 @@ export function EmployeeDetailPageClient({
 	}
 
 	const isDraft = employee.kind === "invitationDraft";
+	const isAcceptedDraft = isDraft && Boolean(employee.realEmployeeId);
 	const canShowRealEmployeeSections = !isDraft;
+	const canEditDraftDetails = !isAcceptedDraft && (!isDraft || !employee.realEmployeeId);
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
@@ -154,14 +156,16 @@ export function EmployeeDetailPageClient({
 
 			<div className="grid gap-4 lg:grid-cols-3">
 				<EmployeeOverviewCard employee={employee} schedule={schedule} t={t} />
-				<EmployeeEditFormCard
-					form={form}
-					canEditManagerFields={canManageEmployeeDetails}
-					canEditOrgAdminFields={accessTier === "orgAdmin"}
-					isUpdating={isUpdating}
-					onCancel={() => push("/settings/employees")}
-					t={t}
-				/>
+				{canEditDraftDetails && (
+					<EmployeeEditFormCard
+						form={form}
+						canEditManagerFields={canManageEmployeeDetails}
+						canEditOrgAdminFields={accessTier === "orgAdmin"}
+						isUpdating={isUpdating}
+						onCancel={() => push("/settings/employees")}
+						t={t}
+					/>
+				)}
 			</div>
 
 			{canShowRealEmployeeSections && canManageManagerAssignments && availableManagers.length > 0 && (
