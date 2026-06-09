@@ -140,7 +140,6 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 			employeeName: string;
 			startTime?: string;
 			endTime?: string;
-			periodCount?: number;
 			// Project fields
 			projectId?: string;
 			projectName?: string;
@@ -248,14 +247,6 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 						<p className="font-medium">
 							{metadata.startTime} - {metadata.endTime}
 						</p>
-					</div>
-				)}
-				{metadata.periodCount && metadata.periodCount > 1 && (
-					<div>
-						<span className="text-sm text-muted-foreground">
-							{t("calendar.details.periods", "Work Periods")}
-						</span>
-						<p className="font-medium">{metadata.periodCount}</p>
 					</div>
 				)}
 			</div>
@@ -370,7 +361,6 @@ function getEventDescription(event: CalendarEvent, t: ReturnType<typeof useTrans
 
 function getEventTranslationParams(event: CalendarEvent) {
 	return {
-		count: Number(event.metadata?.periodCount ?? 0),
 		duration: formatDurationParam(event.metadata?.durationMinutes),
 	};
 }

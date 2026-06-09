@@ -19,6 +19,10 @@ export interface ScheduleXEvent {
 	_eventData: CalendarEvent; // Store original for details panel
 }
 
+export interface ScheduleXAdapterOptions {
+	canClockOutRunningPeriod?: (event: CalendarEvent) => boolean;
+}
+
 /**
  * Color configuration for each calendar type
  * Matches existing legend colors
@@ -276,6 +280,7 @@ export function toTemporalPlainDate(date: Date | string | unknown): Temporal.Pla
 export function calendarEventToScheduleX(
 	event: CalendarEvent,
 	timeZone?: string,
+	options?: ScheduleXAdapterOptions,
 ): ScheduleXEvent | null {
 	try {
 		// Debug: Log raw date values to identify parsing issues
@@ -370,6 +375,11 @@ export function calendarEventToScheduleX(
 				end = start.add({ minutes: 30 });
 			}
 			const timezoneLabel = buildWorkPeriodTimezoneLabel(event);
+			const stopButtonLabelTarget = event.metadata.employeeName || event.title;
+			const runningClockOutButton =
+				event.metadata.isRunning && options?.canClockOutRunningPeriod?.(event)
+					? `<button type="button" data-running-clock-out-button="true" data-work-period-id="${escapeHtml(event.id)}" aria-label="Stop running work period for ${escapeHtml(stopButtonLabelTarget)}" class="ml-auto inline-flex h-5 shrink-0 items-center rounded-sm border border-emerald-700/20 bg-white/80 px-1.5 text-[10px] font-medium text-emerald-900 shadow-sm hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-700">Stop</button>`
+					: "";
 
 			// Determine calendar ID based on approval status
 			// Pending/rejected work periods get different styling
@@ -396,7 +406,7 @@ export function calendarEventToScheduleX(
 				...((event.metadata.isRunning || timezoneLabel) && {
 					_customContent: {
 						timeGrid: event.metadata.isRunning
-							? `<span class="inline-flex items-center gap-1.5"><span class="relative inline-flex size-2 shrink-0" aria-hidden="true"><span class="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75"></span><span class="relative inline-flex size-2 rounded-full bg-red-500"></span></span><span>${escapeHtml(event.title)}</span>${timezoneLabel ? `<span class="text-[10px] opacity-80">${escapeHtml(timezoneLabel)}</span>` : ""}</span>`
+							? `<span class="inline-flex w-full items-center gap-1.5"><span class="relative inline-flex size-2 shrink-0" aria-hidden="true"><span class="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75"></span><span class="relative inline-flex size-2 rounded-full bg-red-500"></span></span><span>${escapeHtml(event.title)}</span>${timezoneLabel ? `<span class="text-[10px] opacity-80">${escapeHtml(timezoneLabel)}</span>` : ""}${runningClockOutButton}</span>`
 							: `<span class="inline-flex flex-col gap-0.5"><span>${escapeHtml(event.title)}</span><span class="text-[10px] opacity-80">${escapeHtml(timezoneLabel ?? "")}</span></span>`,
 					},
 				}),
@@ -451,12 +461,13 @@ export function calendarEventToScheduleX(
 export function calendarEventsToScheduleX(
 	events: CalendarEvent[],
 	timeZone?: string,
+	options?: ScheduleXAdapterOptions,
 ): ScheduleXEvent[] {
 	const validEvents: ScheduleXEvent[] = [];
 	let invalidCount = 0;
 
 	for (const event of events) {
-		const scheduleXEvent = calendarEventToScheduleX(event, timeZone);
+		const scheduleXEvent = calendarEventToScheduleX(event, timeZone, options);
 		if (scheduleXEvent) {
 			validEvents.push(scheduleXEvent);
 		} else {

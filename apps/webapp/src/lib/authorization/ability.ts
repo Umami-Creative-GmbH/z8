@@ -269,7 +269,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can(["read", "update"], "Employee", selfCondition);
 			can("read", "Employee", directReportCondition);
 			can("read", "TimeEntry", selfCondition);
-			can("read", "TimeEntry", directReportCondition);
+			can("manage", "TimeEntry", directReportCondition);
 			can(["read", "create"], "Absence", selfCondition);
 			can(["read", "approve", "reject"], "Absence", directReportCondition);
 

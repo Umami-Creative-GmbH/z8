@@ -903,6 +903,38 @@ describe("Object Subject Conditions", () => {
 		expect(ability.can("read", asAppSubject("TimeEntry", otherOrgTimeEntry))).toBe(false);
 	});
 
+	it("allows managers to manage direct-report time entries", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "manager",
+					teamId: TEAM_1,
+				},
+				managedEmployeeIds: [EMPLOYEE_2],
+			}),
+		);
+
+		expect(ability.can("manage", asAppSubject("TimeEntry", managedTimeEntry))).toBe(true);
+	});
+
+	it("prevents managers from managing unassigned employee time entries", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "manager",
+					teamId: TEAM_1,
+				},
+				managedEmployeeIds: [EMPLOYEE_2],
+			}),
+		);
+
+		expect(ability.can("manage", asAppSubject("TimeEntry", unmanagedTimeEntry))).toBe(false);
+	});
+
 	it("allows managers to approve direct-report absences in their organization only", () => {
 		const ability = defineAbilityFor(
 			createPrincipal({
