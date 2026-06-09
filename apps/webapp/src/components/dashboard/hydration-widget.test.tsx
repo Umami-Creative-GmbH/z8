@@ -5,19 +5,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getHydrationWidgetData } from "./actions";
 import { HydrationWidget } from "./hydration-widget";
 
-const { getHydrationWidgetDataMock, logWaterIntakeMock, toastErrorMock } = vi.hoisted(() => ({
-	getHydrationWidgetDataMock: vi.fn(),
-	logWaterIntakeMock: vi.fn(),
-	toastErrorMock: vi.fn(),
-}));
+const { getHydrationWidgetDataMock, logWaterIntakeMock, toastErrorMock, translateMock } = vi.hoisted(
+	() => ({
+		getHydrationWidgetDataMock: vi.fn(),
+		logWaterIntakeMock: vi.fn(),
+		toastErrorMock: vi.fn(),
+		translateMock: vi.fn(
+			(_key: string, fallback: string, params?: Record<string, string | number>) =>
+				Object.entries(params ?? {}).reduce(
+					(message, [key, value]) => message.replace(`{${key}}`, String(value)),
+					fallback,
+				),
+		),
+	}),
+);
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
-			Object.entries(params ?? {}).reduce(
-				(message, [key, value]) => message.replace(`{${key}}`, String(value)),
-				fallback,
-			),
+		t: translateMock,
 	}),
 }));
 
@@ -68,6 +73,13 @@ const enabledHydrationData = {
 describe("HydrationWidget", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		translateMock.mockImplementation(
+			(_key: string, fallback: string, params?: Record<string, string | number>) =>
+				Object.entries(params ?? {}).reduce(
+					(message, [key, value]) => message.replace(`{${key}}`, String(value)),
+					fallback,
+				),
+		);
 	});
 
 	it("renders team streak leaderboard rows when leaders exist", async () => {
@@ -128,8 +140,51 @@ describe("HydrationWidget", () => {
 
 		render(<HydrationWidget />);
 
-		const blairRow = await screen.findByLabelText("Blair Kim, rank 2, 7 day streak, current user");
+		const blairRow = await screen.findByLabelText(
+			"Blair Kim, rank 2, streak: 7 days, current user",
+		);
 		expect(within(blairRow).getByText("You")).toBeTruthy();
+	});
+
+	it("uses localized labels for the team streak leaderboard", async () => {
+		translateMock.mockImplementation(
+			(key: string, fallback: string, params?: Record<string, string | number>) => {
+				if (key === "dashboard.hydration.team-streaks") return "Team-Serie";
+				if (key === "dashboard.hydration.you") return "Du";
+				if (key === "dashboard.hydration.streak-days") return `${params?.count} Tage`;
+				if (key === "dashboard.hydration.team-streak-current-user-suffix") return ", Du";
+				if (key === "dashboard.hydration.team-streak-row") {
+					return `${params?.name}, Rang ${params?.rank}, ${params?.streakLabel}${params?.currentUserLabel}`;
+				}
+
+				return Object.entries(params ?? {}).reduce(
+					(message, [paramKey, value]) => message.replace(`{${paramKey}}`, String(value)),
+					fallback,
+				);
+			},
+		);
+		getHydrationWidgetDataMock.mockResolvedValue({
+			success: true,
+			data: {
+				...enabledHydrationData,
+				teamStreakLeaders: [
+					{
+						employeeId: "emp-1",
+						displayName: "Blair Kim",
+						currentStreak: 7,
+						isCurrentUser: true,
+					},
+				],
+			},
+		});
+
+		render(<HydrationWidget />);
+
+		const leaders = await screen.findByTestId("hydration-team-streak-leaders");
+		expect(within(leaders).getByText("Team-Serie")).toBeTruthy();
+		expect(within(leaders).getByText("Du")).toBeTruthy();
+		expect(within(leaders).getByText("7 Tage")).toBeTruthy();
+		expect(screen.getByLabelText("Blair Kim, Rang 1, 7 Tage, Du")).toBeTruthy();
 	});
 
 	it("does not render the team streak leaderboard when no leaders exist", async () => {

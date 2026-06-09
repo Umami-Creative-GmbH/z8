@@ -34,10 +34,6 @@ type HydrationWidgetData = {
 	}>;
 };
 
-function formatStreakDays(days: number) {
-	return days === 1 ? "1 day" : `${days} days`;
-}
-
 function WaterGlass({ filled }: { filled: boolean }) {
 	return (
 		<div
@@ -281,8 +277,27 @@ export function HydrationWidget() {
 								</div>
 								<div className="space-y-1">
 									{stats.teamStreakLeaders.map((leader, index) => {
-										const streakLabel = formatStreakDays(leader.currentStreak);
-										const rowLabel = `${leader.displayName}, rank ${index + 1}, ${leader.currentStreak} day streak${leader.isCurrentUser ? ", current user" : ""}`;
+										const streakLabel =
+											leader.currentStreak === 1
+												? t("dashboard.hydration.streak-day", "{count} day", {
+														count: leader.currentStreak,
+													})
+												: t("dashboard.hydration.streak-days", "{count} days", {
+														count: leader.currentStreak,
+													});
+										const currentUserLabel = leader.isCurrentUser
+											? t("dashboard.hydration.team-streak-current-user-suffix", ", current user")
+											: "";
+										const rowLabel = t(
+											"dashboard.hydration.team-streak-row",
+											"{name}, rank {rank}, streak: {streakLabel}{currentUserLabel}",
+											{
+												name: leader.displayName,
+												rank: index + 1,
+												streakLabel,
+												currentUserLabel,
+											},
+										);
 
 										return (
 											<div
