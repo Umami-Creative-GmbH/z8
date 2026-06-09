@@ -160,6 +160,7 @@ function SelectContent({
 				alignOffset={alignOffset}
 				anchor={anchor}
 				arrowPadding={arrowPadding}
+				className="z-50 max-h-(--available-height)"
 				collisionAvoidance={collisionAvoidance}
 				collisionBoundary={collisionBoundary}
 				collisionPadding={collisionPadding}

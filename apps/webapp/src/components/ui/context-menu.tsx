@@ -108,6 +108,7 @@ function ContextMenuSubContent({
 				alignOffset={alignOffset}
 				anchor={anchor}
 				arrowPadding={arrowPadding}
+				className="z-50 max-h-(--available-height)"
 				collisionAvoidance={collisionAvoidance}
 				collisionBoundary={collisionBoundary}
 				collisionPadding={collisionPadding}
@@ -154,6 +155,7 @@ function ContextMenuContent({
 				alignOffset={alignOffset}
 				anchor={anchor}
 				arrowPadding={arrowPadding}
+				className="z-50 max-h-(--available-height)"
 				collisionAvoidance={collisionAvoidance}
 				collisionBoundary={collisionBoundary}
 				collisionPadding={collisionPadding}

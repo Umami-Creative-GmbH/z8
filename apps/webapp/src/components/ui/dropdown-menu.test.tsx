@@ -58,6 +58,25 @@ describe("DropdownMenu", () => {
 		expect(await screen.findByRole("menuitem", { name: "Archive" })).toBeTruthy();
 	});
 
+	it("keeps the portaled positioner above modal overlays", async () => {
+		const user = userEvent.setup();
+
+		render(
+			<DropdownMenu>
+				<DropdownMenuTrigger>Open actions</DropdownMenuTrigger>
+				<DropdownMenuContent>
+					<DropdownMenuItem>Archive</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>,
+		);
+
+		await user.click(screen.getByRole("button", { name: "Open actions" }));
+
+		expect(
+			document.querySelector('[data-slot="dropdown-menu-positioner"]')?.className,
+		).toContain("z-50");
+	});
+
 	it("opens menu items from a Radix-compatible pointer down trigger", async () => {
 		render(
 			<DropdownMenu>
