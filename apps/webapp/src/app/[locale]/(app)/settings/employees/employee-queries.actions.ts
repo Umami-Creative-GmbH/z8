@@ -1,6 +1,7 @@
 "use server";
 
 import { and, asc, count, desc, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { invitation, user } from "@/db/auth-schema";
 import {
@@ -36,6 +37,8 @@ import {
 } from "./employee-action-utils";
 
 const DEFAULT_LIMIT = 20;
+const realEmployee = alias(employee, "realEmployee");
+const realEmployeeUser = alias(user, "realEmployeeUser");
 
 type EmployeeFilterParams = Omit<EmployeeSelectParams, "status"> & {
 	status?: EmployeeDirectoryStatus;
@@ -302,10 +305,23 @@ function loadEmployeePage(params: EmployeeListParams) {
 				draftWhere
 					? dbService.query("listEmployeeInvitationDrafts", async () => {
 							return await dbService.db
-								.select({ draft: employeeInvitationDraft, invitation, team })
+								.select({
+									draft: employeeInvitationDraft,
+									invitation,
+									team,
+									realEmployee: { id: realEmployee.id },
+								})
 								.from(employeeInvitationDraft)
 								.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
 								.leftJoin(team, eq(employeeInvitationDraft.teamId, team.id))
+								.leftJoin(realEmployeeUser, eq(realEmployeeUser.email, invitation.email))
+								.leftJoin(
+									realEmployee,
+									and(
+										eq(realEmployee.userId, realEmployeeUser.id),
+										eq(realEmployee.organizationId, actor.organizationId),
+									),
+								)
 								.where(draftWhere);
 						})
 					: Effect.succeed([]),
@@ -314,7 +330,7 @@ function loadEmployeePage(params: EmployeeListParams) {
 
 		const employees = sortEmployeeDirectoryRows([
 			...employeeRows.map(mapEmployeeRow),
-			...draftRows.map((row) => mapDraftRow({ ...row, realEmployee: null })),
+			...draftRows.map(mapDraftRow),
 		]);
 		const pagedEmployees = employees.slice(offset, offset + limit);
 
@@ -419,10 +435,23 @@ export async function getEmployeeAction(
 			const draftRows = yield* _(
 				dbService.query("getEmployeeInvitationDraft", async () => {
 					return await dbService.db
-						.select({ draft: employeeInvitationDraft, invitation, team })
+						.select({
+							draft: employeeInvitationDraft,
+							invitation,
+							team,
+							realEmployee: { id: realEmployee.id },
+						})
 						.from(employeeInvitationDraft)
 						.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
 						.leftJoin(team, eq(employeeInvitationDraft.teamId, team.id))
+						.leftJoin(realEmployeeUser, eq(realEmployeeUser.email, invitation.email))
+						.leftJoin(
+							realEmployee,
+							and(
+								eq(realEmployee.userId, realEmployeeUser.id),
+								eq(realEmployee.organizationId, actor.organizationId),
+							),
+						)
 						.where(
 							and(
 								eq(employeeInvitationDraft.id, draftId),
@@ -446,7 +475,7 @@ export async function getEmployeeAction(
 				);
 			}
 
-			return mapDraftRow({ ...draftRow, realEmployee: null });
+			return mapDraftRow(draftRow);
 		}
 
 		const rows = yield* _(

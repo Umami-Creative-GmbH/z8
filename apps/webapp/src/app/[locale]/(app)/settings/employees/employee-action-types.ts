@@ -16,7 +16,7 @@ export function decodeEmployeeInvitationDraftId(id: string) {
 }
 
 export type EmployeeWithRelations = typeof employee.$inferSelect & {
-	kind: EmployeeRecordKind;
+	kind: "employee";
 	user: typeof user.$inferSelect;
 	team: typeof team.$inferSelect | null;
 };
