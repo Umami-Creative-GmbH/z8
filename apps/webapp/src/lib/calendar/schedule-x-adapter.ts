@@ -375,9 +375,10 @@ export function calendarEventToScheduleX(
 				end = start.add({ minutes: 30 });
 			}
 			const timezoneLabel = buildWorkPeriodTimezoneLabel(event);
+			const stopButtonLabelTarget = event.metadata.employeeName || event.title;
 			const runningClockOutButton =
 				event.metadata.isRunning && options?.canClockOutRunningPeriod?.(event)
-					? `<button type="button" data-running-clock-out-button="true" data-work-period-id="${escapeHtml(event.id)}" aria-label="Stop running work period" class="ml-auto inline-flex h-5 shrink-0 items-center rounded-sm border border-emerald-700/20 bg-white/80 px-1.5 text-[10px] font-medium text-emerald-900 shadow-sm hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-700">Stop</button>`
+					? `<button type="button" data-running-clock-out-button="true" data-work-period-id="${escapeHtml(event.id)}" aria-label="Stop running work period for ${escapeHtml(stopButtonLabelTarget)}" class="ml-auto inline-flex h-5 shrink-0 items-center rounded-sm border border-emerald-700/20 bg-white/80 px-1.5 text-[10px] font-medium text-emerald-900 shadow-sm hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-700">Stop</button>`
 					: "";
 
 			// Determine calendar ID based on approval status

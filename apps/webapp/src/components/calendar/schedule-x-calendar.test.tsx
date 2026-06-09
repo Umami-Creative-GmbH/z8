@@ -166,6 +166,7 @@ describe("ScheduleXCalendarWrapper running clock-out action", () => {
 		render(
 			<ScheduleXCalendarWrapper
 				events={[runningWorkPeriod, completedWorkPeriod]}
+				canClockOutRunningPeriod={() => true}
 				onRunningPeriodClockOutRequest={onRunningPeriodClockOutRequest}
 				onRefresh={vi.fn()}
 				onViewModeChange={vi.fn()}
@@ -185,6 +186,33 @@ describe("ScheduleXCalendarWrapper running clock-out action", () => {
 
 		expect(onRunningPeriodClockOutRequest).toHaveBeenCalledTimes(1);
 		expect(onRunningPeriodClockOutRequest).toHaveBeenCalledWith(runningWorkPeriod);
+	});
+
+	it("does not delegate running stop button clicks when current authorization denies it", () => {
+		const onRunningPeriodClockOutRequest = vi.fn();
+
+		render(
+			<ScheduleXCalendarWrapper
+				events={[runningWorkPeriod]}
+				canClockOutRunningPeriod={() => false}
+				onRunningPeriodClockOutRequest={onRunningPeriodClockOutRequest}
+				onRefresh={vi.fn()}
+				onViewModeChange={vi.fn()}
+				viewMode="week"
+			/>,
+		);
+
+		const calendarRoot = screen.getByTestId("schedule-x-calendar").parentElement;
+		expect(calendarRoot).not.toBeNull();
+		const button = document.createElement("button");
+		button.type = "button";
+		button.dataset.runningClockOutButton = "true";
+		button.dataset.workPeriodId = runningWorkPeriod.id;
+		calendarRoot?.append(button);
+
+		fireEvent.click(button);
+
+		expect(onRunningPeriodClockOutRequest).not.toHaveBeenCalled();
 	});
 });
 

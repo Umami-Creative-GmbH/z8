@@ -432,14 +432,14 @@ export function ScheduleXCalendarWrapper({
 				(event) =>
 					event.id === workPeriodId && event.type === "work_period" && event.metadata.isRunning,
 			);
-			if (calendarEvent) {
+			if (calendarEvent && canClockOutRunningPeriod?.(calendarEvent)) {
 				onRunningPeriodClockOutRequest(calendarEvent);
 			}
 		};
 
 		container.addEventListener("click", handleClick, { capture: true });
 		return () => container.removeEventListener("click", handleClick, { capture: true });
-	}, [events, onRunningPeriodClockOutRequest]);
+	}, [canClockOutRunningPeriod, events, onRunningPeriodClockOutRequest]);
 
 	useEffect(() => {
 		const container = calendarContainerRef.current;

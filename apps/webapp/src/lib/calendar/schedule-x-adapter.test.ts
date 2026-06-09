@@ -155,7 +155,34 @@ describe("calendarEventToScheduleX", () => {
 		expect(scheduleXEvent?._customContent?.timeGrid).toContain(
 			'data-work-period-id="work-running-action"',
 		);
+		expect(scheduleXEvent?._customContent?.timeGrid).toContain(
+			'aria-label="Stop running work period for Kai Hentschel"',
+		);
 		expect(scheduleXEvent?._customContent?.timeGrid).toContain("Stop");
+	});
+
+	it("escapes the contextual stop button accessible label", () => {
+		const runningPeriod: WorkPeriodEvent = {
+			id: "work-running-action-escaped",
+			type: "work_period",
+			date: new Date("2026-05-18T14:48:00.000Z"),
+			endDate: new Date("2026-05-18T14:51:00.000Z"),
+			title: "Fallback <unsafe>",
+			color: "#10b981",
+			metadata: {
+				durationMinutes: 3,
+				employeeName: 'Ada "The Countess" Lovelace & Team',
+				isRunning: true,
+			},
+		};
+
+		const scheduleXEvent = calendarEventToScheduleX(runningPeriod, "UTC", {
+			canClockOutRunningPeriod: () => true,
+		});
+
+		expect(scheduleXEvent?._customContent?.timeGrid).toContain(
+			'aria-label="Stop running work period for Ada &quot;The Countess&quot; Lovelace &amp; Team"',
+		);
 	});
 
 	it("does not render a stop button for unauthorized running work periods", () => {
