@@ -3,11 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import {
-	type EmployeeWithRelations,
+	type EmployeeDetailRecord,
 	getEmployee,
 	listEmployeesForSelect,
 	requestEmployeeWorkBalanceRecalculation,
 	updateEmployee,
+	updateEmployeeInvitationDraft,
 } from "@/app/[locale]/(app)/settings/employees/actions";
 import {
 	cancelEmployeeEmploymentHistoryAction,
@@ -44,7 +45,7 @@ type ManagerRelation = {
 	manager: Manager;
 };
 
-export type EmployeeDetail = EmployeeWithRelations & {
+export type EmployeeDetail = EmployeeDetailRecord & {
 	managers?: ManagerRelation[];
 };
 
@@ -233,7 +234,10 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 	// Update employee mutation
 	const updateMutation = useMutation({
-		mutationFn: (data: UpdateEmployee) => updateEmployee(employeeId, data),
+		mutationFn: (data: UpdateEmployee) =>
+			employeeQuery.data?.kind === "invitationDraft"
+				? updateEmployeeInvitationDraft(employeeId, data)
+				: updateEmployee(employeeId, data),
 		onSuccess: (result) => {
 			if (result.success) {
 				// Invalidate employee queries to refetch updated data

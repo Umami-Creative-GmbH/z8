@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { readFileSync } from "node:fs";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
@@ -17,6 +18,7 @@ const {
 	listEmployeesForSelectMock,
 	listEmploymentHistoryMock,
 	requestWorkBalanceRecalculationMock,
+	updateEmployeeInvitationDraftMock,
 	updateEmployeeMock,
 	updateRateMock,
 	getScheduleMock,
@@ -30,6 +32,7 @@ const {
 	listEmployeesForSelectMock: vi.fn(),
 	listEmploymentHistoryMock: vi.fn(),
 	requestWorkBalanceRecalculationMock: vi.fn(),
+	updateEmployeeInvitationDraftMock: vi.fn(),
 	updateEmployeeMock: vi.fn(),
 	updateRateMock: vi.fn(),
 	getScheduleMock: vi.fn(),
@@ -44,6 +47,7 @@ vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
 	listEmployeesForSelect: listEmployeesForSelectMock,
 	requestEmployeeWorkBalanceRecalculation: requestWorkBalanceRecalculationMock,
 	updateEmployee: updateEmployeeMock,
+	updateEmployeeInvitationDraft: updateEmployeeInvitationDraftMock,
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/employees/employment-history-client-actions", () => ({
@@ -106,10 +110,17 @@ beforeEach(() => {
 	listEmploymentHistoryMock.mockResolvedValue({ success: true, data: [] });
 	requestWorkBalanceRecalculationMock.mockResolvedValue({ success: true, data: null });
 	updateEmployeeMock.mockResolvedValue({ success: true, data: null });
+	updateEmployeeInvitationDraftMock.mockResolvedValue({ success: true, data: null });
 	updateRateMock.mockResolvedValue({ success: true, data: null });
 });
 
 describe("useEmployee contracts", () => {
+	it("routes invitation draft updates to the draft update server action", () => {
+		const source = readFileSync("src/lib/query/use-employee.ts", "utf8");
+		expect(source).toContain("updateEmployeeInvitationDraft");
+		expect(source).toContain('employeeQuery.data?.kind === "invitationDraft"');
+	});
+
 	it("exposes a stable employment history query key", () => {
 		expect(queryKeys.employees.employmentHistory("employee-1")).toEqual([
 			"employees",
