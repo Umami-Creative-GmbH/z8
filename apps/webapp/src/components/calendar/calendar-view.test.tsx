@@ -5,12 +5,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { CalendarView } from "./calendar-view";
 
-const { capturedCalendarFilters, mockCalendarData, onScheduleXWrapperRender, push, refetch } =
-	vi.hoisted(() => ({
+const {
+	capturedCalendarFilters,
+	mockCalendarData,
+	mockIsManagerOrAbove,
+	onScheduleXWrapperRender,
+	push,
+	refetch,
+	toastError,
+	toastSuccess,
+} = vi.hoisted(() => ({
 		capturedCalendarFilters: [] as unknown[],
+		mockIsManagerOrAbove: vi.fn(() => true),
 		onScheduleXWrapperRender: vi.fn(),
 		push: vi.fn(),
 		refetch: vi.fn(),
+		toastError: vi.fn(),
+		toastSuccess: vi.fn(),
 		mockCalendarData: {
 			events: [] as CalendarEvent[],
 			dailyRequirements: new Map(),
@@ -22,6 +33,13 @@ const { capturedCalendarFilters, mockCalendarData, onScheduleXWrapperRender, pus
 			error: null,
 		},
 	}));
+
+vi.mock("sonner", () => ({
+	toast: {
+		error: toastError,
+		success: toastSuccess,
+	},
+}));
 
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({ push }),
@@ -38,7 +56,7 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 }));
 
 vi.mock("@/hooks/use-organization", () => ({
-	useOrganization: () => ({ isManagerOrAbove: true }),
+	useOrganization: () => ({ isManagerOrAbove: mockIsManagerOrAbove() }),
 }));
 
 vi.mock("@/hooks/use-calendar-data", () => ({
@@ -119,13 +137,17 @@ vi.mock("./year-calendar-view", () => ({
 
 vi.mock("./schedule-x-wrapper", () => ({
 	ScheduleXWrapper: ({
+		canClockOutRunningPeriod,
 		isSummaryLoading,
+		onRunningPeriodClockOutRequest,
 		onTimeRangeSelect,
 		onViewModeChange,
 		timeZone,
 		viewMode,
 	}: {
+		canClockOutRunningPeriod?: (event: CalendarEvent) => boolean;
 		isSummaryLoading?: boolean;
+		onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
 		onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 		onViewModeChange: (mode: "month" | "year") => void;
 		timeZone?: string;
@@ -136,10 +158,17 @@ vi.mock("./schedule-x-wrapper", () => ({
 		return (
 			<div
 				data-testid="schedule-x-wrapper"
+				data-can-clock-out={String(canClockOutRunningPeriod?.(runningWorkPeriod) ?? false)}
 				data-view-mode={viewMode}
 				data-time-zone={timeZone}
 				data-summary-loading={String(isSummaryLoading)}
 			>
+				<button
+					type="button"
+					onClick={() => onRunningPeriodClockOutRequest?.(runningWorkPeriod)}
+				>
+					Request running stop
+				</button>
 				<button
 					type="button"
 					onClick={() =>
@@ -260,9 +289,13 @@ describe("CalendarView", () => {
 		mockCalendarData.events = [];
 		mockCalendarData.calendarTimezone = null;
 		mockCalendarData.isFetching = false;
+		mockIsManagerOrAbove.mockReturnValue(true);
 		onScheduleXWrapperRender.mockReset();
 		push.mockClear();
 		refetch.mockClear();
+		toastError.mockClear();
+		toastSuccess.mockClear();
+		vi.stubGlobal("fetch", vi.fn());
 		setMobileViewport(false);
 	});
 
@@ -540,6 +573,66 @@ describe("CalendarView", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Month" }));
 
 		expect(screen.getByTestId("month-work-summary-view").getAttribute("data-summary-loading")).toBe(
+			"true",
+		);
+	});
+
+	it("confirms employee clock-out, posts only the work period id, refetches, and shows success", async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
+
+		expect(screen.getByRole("heading", { name: "Clock out employee?" })).toBeTruthy();
+		expect(
+			screen.getByText(
+				"This creates an auditable clock-out entry at the current server time. If anything needs adjustment afterward, use corrections.",
+			),
+		).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
+
+		await waitFor(() => {
+			expect(fetch).toHaveBeenCalledWith("/api/time-entries/clock-out-on-behalf", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ workPeriodId: "work-running" }),
+			});
+		});
+		expect(JSON.parse(vi.mocked(fetch).mock.calls[0]?.[1]?.body as string)).toEqual({
+			workPeriodId: "work-running",
+		});
+		await waitFor(() => {
+			expect(refetch).toHaveBeenCalledTimes(1);
+		});
+		expect(toastSuccess).toHaveBeenCalledWith("Employee clocked out successfully");
+	});
+
+	it("shows the server error toast and does not refetch when employee clock-out fails", async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(
+			new Response(JSON.stringify({ error: "Not allowed to clock out this employee" }), {
+				status: 403,
+				headers: { "Content-Type": "application/json" },
+			}),
+		);
+
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
+		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
+
+		await waitFor(() => {
+			expect(toastError).toHaveBeenCalledWith("Not allowed to clock out this employee");
+		});
+		expect(refetch).not.toHaveBeenCalled();
+		expect(screen.getByRole("heading", { name: "Clock out employee?" })).toBeTruthy();
+	});
+
+	it("allows manager-or-above users to request clock-out for running work periods", () => {
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-can-clock-out")).toBe(
 			"true",
 		);
 	});
