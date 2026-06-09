@@ -197,6 +197,9 @@ export function EmployeesPageClient(props: {
 								<SelectItem value="inactive">
 									{t("settings.employees.directory.statuses.inactive", "Inactive")}
 								</SelectItem>
+								<SelectItem value="draft">
+									{t("settings.employees.directory.statuses.draft", "Draft")}
+								</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>

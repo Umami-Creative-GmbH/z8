@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { EmployeeWithRelations } from "./actions";
@@ -77,11 +78,11 @@ function createDraft(overrides: Partial<EmployeeDirectoryRow> = {}): EmployeeDir
 		invitationId: "invite-1",
 		organizationId: "org_1",
 		teamId: null,
-		role: "employee",
+		role: "manager",
 		firstName: "Invited",
-		lastName: "Employee",
-		position: null,
-		employeeNumber: null,
+		lastName: "Manager",
+		position: "Ops Lead",
+		employeeNumber: "D-1",
 		gender: null,
 		pronouns: null,
 		birthday: null,
@@ -109,7 +110,7 @@ function createDraft(overrides: Partial<EmployeeDirectoryRow> = {}): EmployeeDir
 		team: null,
 		user: {
 			id: "draft-1",
-			name: "Invited Employee",
+			name: "Invited Manager",
 			email: "invited@example.com",
 			emailVerified: false,
 			image: null,
@@ -121,7 +122,7 @@ function createDraft(overrides: Partial<EmployeeDirectoryRow> = {}): EmployeeDir
 			banExpires: null,
 			twoFactorEnabled: null,
 			firstName: "Invited",
-			lastName: "Employee",
+			lastName: "Manager",
 			canCreateOrganizations: null,
 			invitedVia: null,
 			pendingInviteCode: null,
@@ -177,5 +178,41 @@ describe("employee directory columns", () => {
 		);
 
 		expect(screen.getByRole("link").getAttribute("href")).toBe("/settings/employees/draft:draft-1");
+	});
+
+	it("renders invitation drafts with draft status and draft detail link", () => {
+		renderEmployeeCell(createDraft());
+		expect(screen.getByText("Invited Manager")).toBeTruthy();
+		expect(screen.getByText("invited@example.com")).toBeTruthy();
+
+		const statusColumn = columns.find(
+			(column) => column.id === "status" || column.accessorKey === "isActive",
+		);
+		const statusCell = statusColumn?.cell;
+		if (typeof statusCell !== "function") throw new Error("Status cell is not renderable");
+		render(
+			statusCell({ row: { original: createDraft() } } as Parameters<typeof statusCell>[0]) as React.ReactElement,
+		);
+		expect(screen.getByText("Draft")).toBeTruthy();
+		expect(screen.getByText("pending")).toBeTruthy();
+
+		const actionsColumn = columns.find((column) => column.id === "actions");
+		const actionsCell = actionsColumn?.cell;
+		if (typeof actionsCell !== "function") throw new Error("Actions cell is not renderable");
+		render(
+			actionsCell({ row: { original: createDraft() } } as Parameters<typeof actionsCell>[0]) as React.ReactElement,
+		);
+		expect(screen.getByRole("link").getAttribute("href")).toBe(
+			"/settings/employees/draft:draft-1",
+		);
+	});
+
+	it("offers draft as an employee status filter", () => {
+		const source = readFileSync(
+			"src/app/[locale]/(app)/settings/employees/employees-page-client.tsx",
+			"utf8",
+		);
+		expect(source).toContain('<SelectItem value="draft">');
+		expect(source).toContain("settings.employees.directory.statuses.draft");
 	});
 });

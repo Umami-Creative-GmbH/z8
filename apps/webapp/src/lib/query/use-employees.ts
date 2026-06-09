@@ -9,6 +9,7 @@ import {
 	listEmployees,
 	type PaginatedEmployeeResponse,
 } from "@/app/[locale]/(app)/settings/employees/actions";
+import type { EmployeeDirectoryStatus } from "@/app/[locale]/(app)/settings/employees/employee-action-types";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { queryKeys } from "./keys";
 
@@ -25,7 +26,7 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 	// Filter state (search, role, status)
 	const [search, setSearchState] = useState("");
 	const [role, setRoleState] = useState<string>("all");
-	const [status, setStatusState] = useState<string>("all");
+	const [status, setStatusState] = useState<EmployeeDirectoryStatus>("all");
 
 	// Pagination state (synced with react-table)
 	const [pagination, setPagination] = useState<PaginationState>({
@@ -37,7 +38,7 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 	const params: EmployeeListParams = {
 		search: search || undefined,
 		role: role === "all" ? undefined : (role as EmployeeListParams["role"]),
-		status: status === "all" ? undefined : (status as EmployeeListParams["status"]),
+		status: status === "all" ? undefined : status,
 		limit: pagination.pageSize,
 		offset: pagination.pageIndex * pagination.pageSize,
 	};
@@ -76,7 +77,7 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
 	};
 
-	const setStatus = (value: string) => {
+	const setStatus = (value: EmployeeDirectoryStatus) => {
 		setStatusState(value);
 		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
 	};
