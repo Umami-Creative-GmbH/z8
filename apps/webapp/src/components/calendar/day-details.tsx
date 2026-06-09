@@ -135,7 +135,6 @@ function getEventDescription(event: CalendarEvent, t: ReturnType<typeof useTrans
 
 function getEventTranslationParams(event: CalendarEvent) {
 	return {
-		count: Number(event.metadata?.periodCount ?? 0),
 		duration: formatDurationParam(event.metadata?.durationMinutes),
 	};
 }

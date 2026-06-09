@@ -82,7 +82,6 @@ export interface WorkPeriodEvent extends CalendarEvent {
 		employeeId: string;
 		employeeName: string;
 		notes?: string;
-		periodCount?: number;
 		// Time fields - formatted time strings (e.g., "2:30 PM")
 		startTime?: string;
 		endTime?: string;
