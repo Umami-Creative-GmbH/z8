@@ -426,6 +426,13 @@ export async function updateEmployeeInvitationDraftAction(
 								eq(employeeInvitationDraft.id, draftId),
 								eq(employeeInvitationDraft.organizationId, actor.organizationId),
 							),
+							with: {
+								invitation: {
+									columns: {
+										status: true,
+									},
+								},
+							},
 						});
 					}),
 				);
@@ -448,7 +455,7 @@ export async function updateEmployeeInvitationDraftAction(
 							.select({ id: realEmployee.id })
 							.from(employeeInvitationDraft)
 							.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
-							.innerJoin(realEmployeeUser, eq(realEmployeeUser.email, invitation.email))
+							.innerJoin(realEmployeeUser, eq(realEmployeeUser.invitedVia, invitation.id))
 							.innerJoin(
 								realEmployee,
 								and(
@@ -468,7 +475,7 @@ export async function updateEmployeeInvitationDraftAction(
 					}),
 				);
 
-				if (existingRealEmployee) {
+				if (targetDraft.invitation?.status === "accepted" || existingRealEmployee) {
 					return yield* _(
 						Effect.fail(
 							new ValidationError({

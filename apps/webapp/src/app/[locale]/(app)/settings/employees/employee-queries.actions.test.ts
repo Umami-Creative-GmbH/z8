@@ -50,7 +50,8 @@ describe("employee query name source", () => {
 	it("resolves real employee ids for accepted invitation drafts", () => {
 		expect(source).toContain("realEmployee");
 		expect(source).toContain("eq(realEmployee.organizationId, actor.organizationId)");
-		expect(source).toContain("eq(realEmployeeUser.email, invitation.email)");
+		expect(source).toContain("eq(realEmployeeUser.invitedVia, invitation.id)");
+		expect(source).not.toContain("eq(realEmployeeUser.email, invitation.email)");
 		expect(source).not.toContain("realEmployee: null");
 	});
 });

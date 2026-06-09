@@ -314,7 +314,7 @@ function loadEmployeePage(params: EmployeeListParams) {
 								.from(employeeInvitationDraft)
 								.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
 								.leftJoin(team, eq(employeeInvitationDraft.teamId, team.id))
-								.leftJoin(realEmployeeUser, eq(realEmployeeUser.email, invitation.email))
+								.leftJoin(realEmployeeUser, eq(realEmployeeUser.invitedVia, invitation.id))
 								.leftJoin(
 									realEmployee,
 									and(
@@ -444,7 +444,7 @@ export async function getEmployeeAction(
 						.from(employeeInvitationDraft)
 						.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
 						.leftJoin(team, eq(employeeInvitationDraft.teamId, team.id))
-						.leftJoin(realEmployeeUser, eq(realEmployeeUser.email, invitation.email))
+						.leftJoin(realEmployeeUser, eq(realEmployeeUser.invitedVia, invitation.id))
 						.leftJoin(
 							realEmployee,
 							and(

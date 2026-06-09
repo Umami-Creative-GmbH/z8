@@ -587,6 +587,7 @@ describe("updateEmployeeInvitationDraftAction", () => {
 			id: "draft-1",
 			organizationId: "org-1",
 			invitationId: "invitation-1",
+			invitation: { status: "pending" },
 		});
 		const updateSet = vi.fn();
 		const update = vi.fn(() => ({ set: updateSet }));
@@ -637,6 +638,63 @@ describe("updateEmployeeInvitationDraftAction", () => {
 		expect(dbService.query).toHaveBeenCalledWith(
 			"getEmployeeInvitationDraftRealEmployee",
 			expect.any(Function),
+		);
+		expect(update).not.toHaveBeenCalled();
+		expect(updateSet).not.toHaveBeenCalled();
+	});
+
+	it("rejects accepted invitation draft updates even before a real employee is resolved", async () => {
+		const draftFindFirst = vi.fn().mockResolvedValue({
+			id: "draft-1",
+			organizationId: "org-1",
+			invitationId: "invitation-1",
+			invitation: { status: "accepted" },
+		});
+		const updateSet = vi.fn(() => ({ where: vi.fn() }));
+		const update = vi.fn(() => ({ set: updateSet }));
+		const selectChain = {
+			from: vi.fn(() => selectChain),
+			innerJoin: vi.fn(() => selectChain),
+			where: vi.fn(() => selectChain),
+			limit: vi.fn().mockResolvedValue([]),
+		};
+		const dbService = {
+			db: {
+				query: {
+					employeeInvitationDraft: { findFirst: draftFindFirst },
+				},
+				select: vi.fn(() => selectChain),
+				update,
+			},
+			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+		};
+
+		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
+			const exit = await Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() }));
+			return toServerActionResult(exit);
+		});
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "orgAdmin",
+				organizationId: "org-1",
+				session: { user: { id: "user-admin-1" } },
+				currentEmployee: { id: validAdminEmployeeId, role: "admin" },
+				dbService,
+			}),
+		);
+		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
+		mocks.validateInput.mockReturnValue(Effect.succeed({ position: "Changed" }));
+
+		const result = await updateEmployeeInvitationDraftAction("draft:draft-1", {
+			position: "Changed",
+		} as Parameters<typeof updateEmployeeInvitationDraftAction>[1]);
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				success: false,
+				error: "Edit the active employee record for accepted invitations",
+				code: "ValidationError",
+			}),
 		);
 		expect(update).not.toHaveBeenCalled();
 		expect(updateSet).not.toHaveBeenCalled();
