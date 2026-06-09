@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -58,6 +59,7 @@ import {
 	createEmployeeAction,
 	requestEmployeeWorkBalanceRecalculationAction,
 	updateEmployeeAction,
+	updateEmployeeInvitationDraftAction,
 } from "./employee-mutations.actions";
 
 const validUserId = "11111111-1111-4111-8111-111111111111";
@@ -66,6 +68,36 @@ const validEmployeeId = "33333333-3333-4333-8333-333333333333";
 const validAdminEmployeeId = "44444444-4444-4444-8444-444444444444";
 
 describe("employee mutation schemas", () => {
+	it("exposes a draft update action guarded by org admin access", () => {
+		const source = readFileSync(
+			new URL("./employee-mutations.actions.ts", import.meta.url),
+			"utf8",
+		);
+		expect(source).toContain("updateEmployeeInvitationDraftAction");
+		expect(source).toContain("requireOrgAdminEmployeeSettingsAccess(actor");
+		expect(source).toContain("employeeInvitationDraft");
+		expect(source).toContain("getEmployeeInvitationDraftForUpdate");
+	});
+
+	it("does not clear draft hourly rates when hourlyRate is omitted", () => {
+		const source = readFileSync(
+			new URL("./employee-mutations.actions.ts", import.meta.url),
+			"utf8",
+		);
+		expect(source).toContain('Object.hasOwn(validatedData, "hourlyRate")');
+		expect(source).toContain("...(hasHourlyRateUpdate");
+	});
+
+	it("blocks draft updates after the invitation has an active employee", () => {
+		const source = readFileSync(
+			new URL("./employee-mutations.actions.ts", import.meta.url),
+			"utf8",
+		);
+		expect(source).toContain("getEmployeeInvitationDraftRealEmployee");
+		expect(source).toContain("Edit the active employee record for accepted invitations");
+		expect(source).toContain("eq(realEmployee.organizationId, actor.organizationId)");
+	});
+
 	it("strips employee-owned names from create employee input", () => {
 		const result = createEmployeeSchema.safeParse({
 			userId: validUserId,
@@ -542,6 +574,130 @@ describe("assignManagersAction", () => {
 		});
 
 		expect(assignManager).toHaveBeenCalledWith("employee-1", "manager-1", true, "user-admin-1");
+	});
+});
+
+describe("updateEmployeeInvitationDraftAction", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("rejects accepted draft updates without writing draft changes", async () => {
+		const draftFindFirst = vi.fn().mockResolvedValue({
+			id: "draft-1",
+			organizationId: "org-1",
+			invitationId: "invitation-1",
+			invitation: { status: "pending" },
+		});
+		const updateSet = vi.fn();
+		const update = vi.fn(() => ({ set: updateSet }));
+		const selectChain = {
+			from: vi.fn(() => selectChain),
+			innerJoin: vi.fn(() => selectChain),
+			where: vi.fn(() => selectChain),
+			limit: vi.fn().mockResolvedValue([{ id: "employee-1" }]),
+		};
+		const dbService = {
+			db: {
+				query: {
+					employeeInvitationDraft: { findFirst: draftFindFirst },
+				},
+				select: vi.fn(() => selectChain),
+				update,
+			},
+			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+		};
+
+		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
+			const exit = await Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() }));
+			return toServerActionResult(exit);
+		});
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "orgAdmin",
+				organizationId: "org-1",
+				session: { user: { id: "user-admin-1" } },
+				currentEmployee: { id: validAdminEmployeeId, role: "admin" },
+				dbService,
+			}),
+		);
+		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
+		mocks.validateInput.mockReturnValue(Effect.succeed({ position: "Changed" }));
+
+		const result = await updateEmployeeInvitationDraftAction("draft:draft-1", {
+			position: "Changed",
+		} as Parameters<typeof updateEmployeeInvitationDraftAction>[1]);
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				success: false,
+				error: "Edit the active employee record for accepted invitations",
+				code: "ValidationError",
+			}),
+		);
+		expect(dbService.query).toHaveBeenCalledWith(
+			"getEmployeeInvitationDraftRealEmployee",
+			expect.any(Function),
+		);
+		expect(update).not.toHaveBeenCalled();
+		expect(updateSet).not.toHaveBeenCalled();
+	});
+
+	it("rejects accepted invitation draft updates even before a real employee is resolved", async () => {
+		const draftFindFirst = vi.fn().mockResolvedValue({
+			id: "draft-1",
+			organizationId: "org-1",
+			invitationId: "invitation-1",
+			invitation: { status: "accepted" },
+		});
+		const updateSet = vi.fn(() => ({ where: vi.fn() }));
+		const update = vi.fn(() => ({ set: updateSet }));
+		const selectChain = {
+			from: vi.fn(() => selectChain),
+			innerJoin: vi.fn(() => selectChain),
+			where: vi.fn(() => selectChain),
+			limit: vi.fn().mockResolvedValue([]),
+		};
+		const dbService = {
+			db: {
+				query: {
+					employeeInvitationDraft: { findFirst: draftFindFirst },
+				},
+				select: vi.fn(() => selectChain),
+				update,
+			},
+			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+		};
+
+		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
+			const exit = await Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() }));
+			return toServerActionResult(exit);
+		});
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "orgAdmin",
+				organizationId: "org-1",
+				session: { user: { id: "user-admin-1" } },
+				currentEmployee: { id: validAdminEmployeeId, role: "admin" },
+				dbService,
+			}),
+		);
+		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
+		mocks.validateInput.mockReturnValue(Effect.succeed({ position: "Changed" }));
+
+		const result = await updateEmployeeInvitationDraftAction("draft:draft-1", {
+			position: "Changed",
+		} as Parameters<typeof updateEmployeeInvitationDraftAction>[1]);
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				success: false,
+				error: "Edit the active employee record for accepted invitations",
+				code: "ValidationError",
+			}),
+		);
+		expect(update).not.toHaveBeenCalled();
+		expect(updateSet).not.toHaveBeenCalled();
 	});
 });
 

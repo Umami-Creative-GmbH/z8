@@ -6,6 +6,10 @@ const source = readFileSync(
 	fileURLToPath(new URL("./employee-queries.actions.ts", import.meta.url)),
 	"utf8",
 );
+const typeSource = readFileSync(
+	fileURLToPath(new URL("./employee-action-types.ts", import.meta.url)),
+	"utf8",
+);
 
 describe("employee query name source", () => {
 	it("uses auth user structured names for employee search and sort", () => {
@@ -22,5 +26,32 @@ describe("employee query name source", () => {
 		expect(source).toContain("lastName: row.user.lastName");
 		expect(source).not.toContain("firstName: row.employee.firstName");
 		expect(source).not.toContain("lastName: row.employee.lastName");
+	});
+
+	it("includes invitation draft rows for org admins", () => {
+		expect(source).toContain("employeeInvitationDraft");
+		expect(source).toContain('kind: "invitationDraft"');
+		expect(source).toContain('actor.accessTier === "orgAdmin"');
+		expect(source).toContain("decodeEmployeeInvitationDraftId(employeeId)");
+	});
+
+	it("searches invitation drafts by prepared names, email, and position", () => {
+		expect(source).toContain("ilike(employeeInvitationDraft.firstName, pattern)");
+		expect(source).toContain("ilike(employeeInvitationDraft.lastName, pattern)");
+		expect(source).toContain("ilike(invitation.email, pattern)");
+		expect(source).toContain("ilike(employeeInvitationDraft.position, pattern)");
+	});
+
+	it("uses literal employee kind for discriminated directory rows", () => {
+		expect(typeSource).toContain('kind: "employee"');
+		expect(typeSource).not.toContain("kind: EmployeeRecordKind");
+	});
+
+	it("resolves real employee ids for accepted invitation drafts", () => {
+		expect(source).toContain("realEmployee");
+		expect(source).toContain("eq(realEmployee.organizationId, actor.organizationId)");
+		expect(source).toContain("eq(realEmployeeUser.invitedVia, invitation.id)");
+		expect(source).not.toContain("eq(realEmployeeUser.email, invitation.email)");
+		expect(source).not.toContain("realEmployee: null");
 	});
 });
