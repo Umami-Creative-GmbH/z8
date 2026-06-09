@@ -159,6 +159,9 @@ vi.mock("./schedule-x-wrapper", () => ({
 			<div
 				data-testid="schedule-x-wrapper"
 				data-can-clock-out={String(canClockOutRunningPeriod?.(runningWorkPeriod) ?? false)}
+				data-can-clock-out-own={String(
+					canClockOutRunningPeriod?.(ownRunningWorkPeriod) ?? false,
+				)}
 				data-can-clock-out-completed={String(
 					canClockOutRunningPeriod?.(completedWorkPeriod) ?? false,
 				)}
@@ -171,6 +174,12 @@ vi.mock("./schedule-x-wrapper", () => ({
 					onClick={() => onRunningPeriodClockOutRequest?.(runningWorkPeriod)}
 				>
 					Request running stop
+				</button>
+				<button
+					type="button"
+					onClick={() => onRunningPeriodClockOutRequest?.(ownRunningWorkPeriod)}
+				>
+					Request own running stop
 				</button>
 				<button
 					type="button"
@@ -273,6 +282,21 @@ const runningWorkPeriod: CalendarEvent = {
 	color: "blue",
 	metadata: {
 		durationMinutes: 120,
+		employeeId: "employee-2",
+		employeeName: "Ada Lovelace",
+		isRunning: true,
+	},
+};
+
+const ownRunningWorkPeriod: CalendarEvent = {
+	id: "work-running-own",
+	type: "work_period",
+	date: new Date("2026-05-04T12:00:00Z"),
+	title: "Own running work period",
+	color: "blue",
+	metadata: {
+		durationMinutes: 120,
+		employeeId: "employee-1",
 		employeeName: "Ada Lovelace",
 		isRunning: true,
 	},
@@ -644,6 +668,17 @@ describe("CalendarView", () => {
 		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-can-clock-out")).toBe(
 			"true",
 		);
+	});
+
+	it("denies clock-out requests for the current employee's own running work period", () => {
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-can-clock-out-own")).toBe(
+			"false",
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Request own running stop" }));
+
+		expect(screen.queryByRole("heading", { name: "Clock out employee?" })).toBeNull();
 	});
 
 	it("denies running work period clock-out requests for non-manager users", () => {

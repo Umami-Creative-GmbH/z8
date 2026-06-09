@@ -228,7 +228,11 @@ export function CalendarView({
 	};
 
 	const canClockOutRunningPeriod = (event: CalendarEvent) => {
-		return isManagerOrAbove && isRunningWorkPeriod(event);
+		return (
+			isManagerOrAbove &&
+			isRunningWorkPeriod(event) &&
+			event.metadata.employeeId !== currentEmployeeId
+		);
 	};
 
 	const handleRunningPeriodClockOutRequest = (event: CalendarEvent) => {

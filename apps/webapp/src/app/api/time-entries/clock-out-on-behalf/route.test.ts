@@ -307,6 +307,9 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		expect(mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[0]).toBeGreaterThan(
 			mockState.transaction.mock.invocationCallOrder[0],
 		);
+		expect(mockState.enforceBreaksAfterClockOut.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[0],
+		);
 	});
 
 	it("keeps a successful clock-out response when work balance dirty marking fails", async () => {
@@ -356,6 +359,20 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 			expect.objectContaining({ employeeId: "target-employee-1", organizationId: "org-1" }),
 		);
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+	});
+
+	it("returns 403 and does not create a time entry when actor targets their own running period", async () => {
+		mockState.limit.mockReset();
+		mockState.limit
+			.mockResolvedValueOnce([actorEmployee])
+			.mockResolvedValueOnce([{ period: runningPeriod, targetEmployee: actorEmployee }]);
+
+		const response = await POST(createRequest({ workPeriodId: "period-1" }));
+
+		expect(response.status).toBe(403);
+		expect(await response.json()).toEqual({ error: "Forbidden" });
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.transaction).not.toHaveBeenCalled();
 	});
 
 	it("returns 404 for a missing or cross-organization work period", async () => {

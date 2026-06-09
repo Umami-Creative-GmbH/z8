@@ -115,6 +115,12 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
+		if (target.targetEmployee.id === actorEmployee.id) {
+			const error = new ForbiddenError("manage", "TimeEntry");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+
 		const ability = await getAbility();
 		if (
 			!ability?.can(
@@ -217,7 +223,6 @@ export async function POST(request: NextRequest) {
 			};
 		});
 
-		await calculateAndPersistSurcharges(result.workPeriodId, organizationId);
 		await checkComplianceAfterClockOut(
 			target.targetEmployee.id,
 			organizationId,
@@ -234,6 +239,9 @@ export async function POST(request: NextRequest) {
 			timezone,
 			workPeriodId: result.workPeriodId,
 		});
+		// Break enforcement may split the original period, but currently does not expose
+		// the inserted second work period id for separate surcharge recalculation.
+		await calculateAndPersistSurcharges(result.workPeriodId, organizationId);
 
 		const dirtyMark = {
 			dirtyFromDate:
