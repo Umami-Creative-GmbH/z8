@@ -129,6 +129,29 @@ export async function sendInvitation(
 				}
 
 				const validatedData = validationResult.data;
+				const upsertEmployeeInvitationDraft = async (invitationId: string) => {
+					const draftRole =
+						validatedData.role === "admin" || validatedData.role === "owner" ? "admin" : "employee";
+
+					await db
+						.insert(employeeInvitationDraft)
+						.values({
+							invitationId,
+							organizationId: data.organizationId,
+							teamId: validatedData.targetTeamId ?? null,
+							role: draftRole,
+							contractType: "fixed",
+							updatedBy: session.user.id,
+						})
+						.onConflictDoUpdate({
+							target: employeeInvitationDraft.invitationId,
+							set: {
+								teamId: validatedData.targetTeamId ?? null,
+								role: draftRole,
+								updatedBy: session.user.id,
+							},
+						});
+				};
 
 				if (validatedData.targetTeamId) {
 					const targetTeam = yield* _(
@@ -186,6 +209,19 @@ export async function sendInvitation(
 				);
 
 				if (existingInvitation) {
+					yield* _(
+						Effect.tryPromise({
+							try: async () => {
+								await upsertEmployeeInvitationDraft(existingInvitation.id);
+							},
+							catch: (error) =>
+								new ValidationError({
+									message: error instanceof Error ? error.message : "Failed to upsert invitation draft",
+									field: "invitation",
+								}),
+						}),
+					);
+
 					yield* _(
 						Effect.fail(
 							new ValidationError({
@@ -253,44 +289,27 @@ export async function sendInvitation(
 								orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
 							});
 
-							if (newInvitation) {
-								await db
-									.update(authSchema.invitation)
-									.set({
-										canCreateOrganizations: validatedData!.canCreateOrganizations ?? false,
-										targetTeamId: validatedData!.targetTeamId ?? null,
-									})
-									.where(
-										and(
-											eq(authSchema.invitation.id, newInvitation.id),
-											eq(authSchema.invitation.organizationId, data.organizationId),
-										),
-									);
-
-								const draftRole =
-									validatedData!.role === "admin" || validatedData!.role === "owner"
-										? "admin"
-										: "employee";
-
-								await db
-									.insert(employeeInvitationDraft)
-									.values({
-										invitationId: newInvitation.id,
-										organizationId: data.organizationId,
-										teamId: validatedData!.targetTeamId ?? null,
-										role: draftRole,
-										contractType: "fixed",
-										updatedBy: session.user.id,
-									})
-									.onConflictDoUpdate({
-										target: employeeInvitationDraft.invitationId,
-										set: {
-											teamId: validatedData!.targetTeamId ?? null,
-											role: draftRole,
-											updatedBy: session.user.id,
-										},
-									});
+							if (!newInvitation) {
+								throw new ValidationError({
+									message: "Failed to load created invitation",
+									field: "invitation",
+								});
 							}
+
+							await db
+								.update(authSchema.invitation)
+								.set({
+									canCreateOrganizations: validatedData!.canCreateOrganizations ?? false,
+									targetTeamId: validatedData!.targetTeamId ?? null,
+								})
+								.where(
+									and(
+										eq(authSchema.invitation.id, newInvitation.id),
+										eq(authSchema.invitation.organizationId, data.organizationId),
+									),
+								);
+
+							await upsertEmployeeInvitationDraft(newInvitation.id);
 						},
 						catch: (error) => {
 							return new ValidationError({
