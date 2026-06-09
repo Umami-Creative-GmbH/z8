@@ -308,6 +308,7 @@ function _aggregateByDay(
 			color: "#6366f1", // Indigo-500
 			metadata: {
 				durationMinutes: group.totalMinutes,
+				employeeId: group.employeeId,
 				employeeName: group.employeeName,
 				periodCount: group.periodCount,
 			},

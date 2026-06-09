@@ -91,6 +91,15 @@ describe("getWorkPeriodsForMonth", () => {
 		expect(body).toContain("isNull(workPeriod.deletedAt)");
 	});
 
+	it("includes employee id metadata when aggregating work period events", () => {
+		const aggregateBody = source.slice(
+			source.indexOf("function _aggregateByDay"),
+			source.indexOf("/**\n * Format duration"),
+		);
+
+		expect(aggregateBody).toContain("employeeId: group.employeeId");
+	});
+
 	it("returns an active work period as a running calendar event ending now", async () => {
 		const startTime = new Date("2026-05-04T08:00:00.000Z");
 		const now = new Date("2026-05-04T10:30:00.000Z");
