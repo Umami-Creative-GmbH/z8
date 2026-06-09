@@ -55,6 +55,11 @@ interface UseEmployeeOptions {
 	accessTier: SettingsAccessTier;
 }
 
+const draftActionResult = {
+	success: false,
+	error: "Invitation drafts do not support this action",
+} as const;
+
 /**
  * Hook for fetching and mutating a single employee
  *
@@ -92,6 +97,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 		enabled: enabled && hasEmployee,
 		staleTime: 30 * 1000, // 30 seconds
 	});
+	const isDraft = employeeQuery.data?.kind === "invitationDraft";
 
 	// Query for work schedule
 	const scheduleQuery = useQuery({
@@ -103,7 +109,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 			}
 			return result.data;
 		},
-		enabled: enabled && hasEmployee,
+		enabled: enabled && hasEmployee && !isDraft,
 		staleTime: 60 * 1000, // 1 minute
 	});
 
@@ -123,7 +129,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 			return result.data?.employees ?? [];
 		},
-		enabled: enabled && accessTier === "orgAdmin",
+		enabled: enabled && hasEmployee && accessTier === "orgAdmin" && !isDraft,
 		staleTime: 60 * 1000, // 1 minute
 	});
 
@@ -137,7 +143,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 			}
 			return result.data;
 		},
-		enabled: enabled && hasEmployee && employeeQuery.data?.contractType === "hourly",
+		enabled: enabled && hasEmployee && !isDraft && employeeQuery.data?.contractType === "hourly",
 		staleTime: 30 * 1000, // 30 seconds
 	});
 
@@ -148,7 +154,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 			if (!result.success) return [];
 			return result.data ?? [];
 		},
-		enabled: enabled && hasEmployee,
+		enabled: enabled && hasEmployee && !isDraft,
 		staleTime: 30 * 1000,
 	});
 
@@ -163,7 +169,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 	const createEmploymentHistoryMutation = useMutation({
 		mutationFn: (data: UpsertEmploymentHistory) =>
-			createEmployeeEmploymentHistoryAction(employeeId, data),
+			isDraft ? draftActionResult : createEmployeeEmploymentHistoryAction(employeeId, data),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({
@@ -178,7 +184,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 	const confirmEmploymentHistoryMutation = useMutation({
 		mutationFn: (historyId: string) =>
-			confirmEmployeeEmploymentHistoryAction(employeeId, historyId),
+			isDraft ? draftActionResult : confirmEmployeeEmploymentHistoryAction(employeeId, historyId),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({
@@ -192,7 +198,8 @@ export function useEmployee(options: UseEmployeeOptions) {
 	});
 
 	const cancelEmploymentHistoryMutation = useMutation({
-		mutationFn: (historyId: string) => cancelEmployeeEmploymentHistoryAction(employeeId, historyId),
+		mutationFn: (historyId: string) =>
+			isDraft ? draftActionResult : cancelEmployeeEmploymentHistoryAction(employeeId, historyId),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({
@@ -206,7 +213,8 @@ export function useEmployee(options: UseEmployeeOptions) {
 	});
 
 	const requestWorkBalanceRecalculationMutation = useMutation({
-		mutationFn: () => requestEmployeeWorkBalanceRecalculation(employeeId),
+		mutationFn: () =>
+			isDraft ? draftActionResult : requestEmployeeWorkBalanceRecalculation(employeeId),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({
@@ -218,7 +226,8 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 	// Update rate mutation
 	const updateRateMutation = useMutation({
-		mutationFn: (data: CreateRateHistory) => createRateHistoryEntry(employeeId, data),
+		mutationFn: (data: CreateRateHistory) =>
+			isDraft ? draftActionResult : createRateHistoryEntry(employeeId, data),
 		onSuccess: (result) => {
 			if (result.success) {
 				// Invalidate rate history and employee queries
