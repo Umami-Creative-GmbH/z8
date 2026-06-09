@@ -7,7 +7,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { employee, organizationNotificationSettings, team } from "@/db/schema";
+import { employee, employeeInvitationDraft, organizationNotificationSettings, team } from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import {
@@ -266,6 +266,30 @@ export async function sendInvitation(
 											eq(authSchema.invitation.organizationId, data.organizationId),
 										),
 									);
+
+								const draftRole =
+									validatedData!.role === "admin" || validatedData!.role === "owner"
+										? "admin"
+										: "employee";
+
+								await db
+									.insert(employeeInvitationDraft)
+									.values({
+										invitationId: newInvitation.id,
+										organizationId: data.organizationId,
+										teamId: validatedData!.targetTeamId ?? null,
+										role: draftRole,
+										contractType: "fixed",
+										updatedBy: session.user.id,
+									})
+									.onConflictDoUpdate({
+										target: employeeInvitationDraft.invitationId,
+										set: {
+											teamId: validatedData!.targetTeamId ?? null,
+											role: draftRole,
+											updatedBy: session.user.id,
+										},
+									});
 							}
 						},
 						catch: (error) => {
