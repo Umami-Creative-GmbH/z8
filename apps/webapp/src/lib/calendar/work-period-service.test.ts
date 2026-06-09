@@ -148,6 +148,7 @@ describe("getWorkPeriodsForMonth", () => {
 			color: "#2563eb",
 			metadata: {
 				durationMinutes: 150,
+				employeeId: "employee-1",
 				employeeName: "Ada Lovelace",
 				startTime: "8:00 AM",
 				isRunning: true,
@@ -216,6 +217,7 @@ describe("getWorkPeriodsForMonth", () => {
 			description: "Wrapped up handoff",
 			metadata: {
 				durationMinutes: 510,
+				employeeId: "employee-1",
 				employeeName: "Ada Lovelace",
 				notes: "Wrapped up handoff",
 				clockInUtcOffsetMinutes: 60,

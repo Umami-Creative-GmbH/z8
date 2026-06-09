@@ -144,6 +144,7 @@ export async function getWorkPeriodsForMonth(
 						color: eventColor,
 						metadata: {
 							durationMinutes,
+							employeeId: period.employeeId,
 							employeeName: user.name,
 							startTime: startTimeFormatted,
 							// Project fields (only included if assigned to a project)
@@ -205,6 +206,7 @@ export async function getWorkPeriodsForMonth(
 					color: eventColor,
 					metadata: {
 						durationMinutes,
+						employeeId: period.employeeId,
 						employeeName: user.name,
 						notes: notes || undefined,
 						startTime: startTimeFormatted,

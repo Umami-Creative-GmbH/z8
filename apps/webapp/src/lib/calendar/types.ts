@@ -79,6 +79,7 @@ export interface WorkPeriodEvent extends CalendarEvent {
 	type: "work_period";
 	metadata: {
 		durationMinutes: number;
+		employeeId: string;
 		employeeName: string;
 		notes?: string;
 		periodCount?: number;
