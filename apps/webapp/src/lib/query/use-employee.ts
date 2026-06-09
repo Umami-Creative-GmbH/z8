@@ -98,6 +98,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 		staleTime: 30 * 1000, // 30 seconds
 	});
 	const isDraft = employeeQuery.data?.kind === "invitationDraft";
+	const hasRealEmployeeDetail = employeeQuery.data?.kind === "employee";
 
 	// Query for work schedule
 	const scheduleQuery = useQuery({
@@ -109,7 +110,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 			}
 			return result.data;
 		},
-		enabled: enabled && hasEmployee && !isDraft,
+		enabled: enabled && hasEmployee && hasRealEmployeeDetail,
 		staleTime: 60 * 1000, // 1 minute
 	});
 
@@ -129,7 +130,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 			return result.data?.employees ?? [];
 		},
-		enabled: enabled && hasEmployee && accessTier === "orgAdmin" && !isDraft,
+		enabled: enabled && hasEmployee && accessTier === "orgAdmin" && hasRealEmployeeDetail,
 		staleTime: 60 * 1000, // 1 minute
 	});
 
@@ -143,7 +144,11 @@ export function useEmployee(options: UseEmployeeOptions) {
 			}
 			return result.data;
 		},
-		enabled: enabled && hasEmployee && !isDraft && employeeQuery.data?.contractType === "hourly",
+		enabled:
+			enabled &&
+			hasEmployee &&
+			hasRealEmployeeDetail &&
+			employeeQuery.data?.contractType === "hourly",
 		staleTime: 30 * 1000, // 30 seconds
 	});
 
@@ -154,7 +159,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 			if (!result.success) return [];
 			return result.data ?? [];
 		},
-		enabled: enabled && hasEmployee && !isDraft,
+		enabled: enabled && hasEmployee && hasRealEmployeeDetail,
 		staleTime: 30 * 1000,
 	});
 

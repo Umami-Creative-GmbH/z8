@@ -121,6 +121,12 @@ describe("useEmployee contracts", () => {
 		expect(source).toContain('employeeQuery.data?.kind === "invitationDraft"');
 	});
 
+	it("enables real-employee-only queries only after a real employee detail loads", () => {
+		const source = readFileSync("src/lib/query/use-employee.ts", "utf8");
+		expect(source).toContain('const hasRealEmployeeDetail = employeeQuery.data?.kind === "employee"');
+		expect(source).not.toContain("enabled: enabled && hasEmployee && !isDraft");
+	});
+
 	it("exposes a stable employment history query key", () => {
 		expect(queryKeys.employees.employmentHistory("employee-1")).toEqual([
 			"employees",
