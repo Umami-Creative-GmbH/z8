@@ -2,13 +2,23 @@
 
 import { and, asc, count, desc, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { user } from "@/db/auth-schema";
-import { employee, employeeManagers, team, workPolicyAssignment } from "@/db/schema";
+import { invitation, user } from "@/db/auth-schema";
+import {
+	employee,
+	employeeInvitationDraft,
+	employeeManagers,
+	team,
+	workPolicyAssignment,
+} from "@/db/schema";
 import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import type {
+	EmployeeDetailRecord,
+	EmployeeDirectoryRow,
+	EmployeeDirectoryStatus,
+	EmployeeInvitationDraftWithRelations,
 	EmployeeListParams,
 	EmployeeSelectParams,
 	EmployeeSelectResponse,
@@ -17,11 +27,19 @@ import type {
 	SelectableEmployee,
 } from "./employee-action-types";
 import {
+	decodeEmployeeInvitationDraftId,
+	encodeEmployeeInvitationDraftId,
+} from "./employee-action-types";
+import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeSettingsActorContext,
 } from "./employee-action-utils";
 
 const DEFAULT_LIMIT = 20;
+
+type EmployeeFilterParams = Omit<EmployeeSelectParams, "status"> & {
+	status?: EmployeeDirectoryStatus;
+};
 
 const employeeSortName = sql<string>`
 	coalesce(
@@ -34,7 +52,7 @@ const employeeSortName = sql<string>`
 function buildEmployeeFilters(
 	organizationId: string,
 	params: Pick<
-		EmployeeSelectParams,
+		EmployeeFilterParams,
 		"search" | "role" | "roles" | "status" | "teamId" | "excludeIds" | "managerId"
 	>,
 ) {
@@ -49,7 +67,11 @@ function buildEmployeeFilters(
 	}
 
 	if (params.status && params.status !== "all") {
-		conditions.push(eq(employee.isActive, params.status === "active"));
+		if (params.status === "draft") {
+			conditions.push(sql<boolean>`false`);
+		} else {
+			conditions.push(eq(employee.isActive, params.status === "active"));
+		}
 	}
 
 	if (params.teamId) {
@@ -95,9 +117,100 @@ function mapEmployeeRow(row: {
 }): EmployeeWithRelations {
 	return {
 		...row.employee,
+		kind: "employee",
 		user: row.user,
 		team: row.team,
 	};
+}
+
+function mapDraftRow(row: {
+	draft: typeof employeeInvitationDraft.$inferSelect;
+	invitation: typeof invitation.$inferSelect;
+	team: typeof team.$inferSelect | null;
+	realEmployee: Pick<typeof employee.$inferSelect, "id"> | null;
+}): EmployeeInvitationDraftWithRelations {
+	const displayName = [row.draft.firstName, row.draft.lastName].filter(Boolean).join(" ").trim();
+	return {
+		...row.draft,
+		kind: "invitationDraft",
+		encodedId: encodeEmployeeInvitationDraftId(row.draft.id),
+		userId: row.draft.id,
+		invitation: row.invitation,
+		team: row.team,
+		isActive: false,
+		invitationStatus: row.invitation.status,
+		realEmployeeId: row.realEmployee?.id ?? null,
+		user: {
+			id: row.draft.id,
+			firstName: row.draft.firstName,
+			lastName: row.draft.lastName,
+			name: displayName || row.invitation.email,
+			email: row.invitation.email,
+			emailVerified: false,
+			image: null,
+			createdAt: row.draft.createdAt,
+			updatedAt: row.draft.updatedAt,
+			role: null,
+			banned: null,
+			banReason: null,
+			banExpires: null,
+			twoFactorEnabled: null,
+			canCreateOrganizations: null,
+			invitedVia: null,
+			pendingInviteCode: null,
+			canUseWebapp: true,
+			canUseDesktop: true,
+			canUseMobile: true,
+		},
+	};
+}
+
+function buildInvitationDraftFilters(
+	organizationId: string,
+	params: Pick<EmployeeFilterParams, "search" | "role" | "roles" | "status" | "teamId">,
+) {
+	if (params.status === "active" || params.status === "inactive") {
+		return null;
+	}
+
+	const conditions = [eq(employeeInvitationDraft.organizationId, organizationId)];
+
+	if (params.role && params.role !== "all") {
+		conditions.push(eq(employeeInvitationDraft.role, params.role));
+	}
+
+	if (params.roles?.length) {
+		conditions.push(inArray(employeeInvitationDraft.role, params.roles));
+	}
+
+	if (params.teamId) {
+		conditions.push(eq(employeeInvitationDraft.teamId, params.teamId));
+	}
+
+	const normalizedSearch = params.search?.trim();
+	if (normalizedSearch) {
+		const pattern = `%${normalizedSearch}%`;
+		conditions.push(
+			or(
+				ilike(employeeInvitationDraft.firstName, pattern),
+				ilike(employeeInvitationDraft.lastName, pattern),
+				ilike(invitation.email, pattern),
+				ilike(employeeInvitationDraft.position, pattern),
+			)!,
+		);
+	}
+
+	return and(...conditions);
+}
+
+function sortEmployeeDirectoryRows(rows: EmployeeDirectoryRow[]) {
+	return [...rows].sort((a, b) => {
+		const nameCompare = (a.user.name || "").localeCompare(b.user.name || "");
+		if (nameCompare !== 0) return nameCompare;
+		const emailCompare = a.user.email.localeCompare(b.user.email);
+		if (emailCompare !== 0) return emailCompare;
+		return a.id.localeCompare(b.id);
+	});
 }
 
 type SelectableEmployeeRow = {
@@ -141,15 +254,42 @@ function loadEmployeePage(params: EmployeeListParams) {
 					: undefined,
 		});
 
-		const [totalResult, rows] = yield* _(
+		const includeInvitationDrafts = actor.accessTier === "orgAdmin";
+		if (!includeInvitationDrafts) {
+			const [totalResult, rows] = yield* _(
+				Effect.all([
+					dbService.query("countEmployees", async () => {
+						return await dbService.db
+							.select({ total: count() })
+							.from(employee)
+							.innerJoin(user, eq(employee.userId, user.id))
+							.where(where);
+					}),
+					dbService.query("listEmployees", async () => {
+						return await dbService.db
+							.select({ employee, user, team })
+							.from(employee)
+							.innerJoin(user, eq(employee.userId, user.id))
+							.leftJoin(team, eq(employee.teamId, team.id))
+							.where(where)
+							.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id))
+							.limit(limit)
+							.offset(offset);
+					}),
+				]),
+			);
+
+			const total = totalResult[0]?.total ?? 0;
+			return {
+				employees: rows.map(mapEmployeeRow),
+				total,
+				hasMore: offset + rows.length < total,
+			};
+		}
+
+		const draftWhere = buildInvitationDraftFilters(actor.organizationId, params);
+		const [employeeRows, draftRows] = yield* _(
 			Effect.all([
-				dbService.query("countEmployees", async () => {
-					return await dbService.db
-						.select({ total: count() })
-						.from(employee)
-						.innerJoin(user, eq(employee.userId, user.id))
-						.where(where);
-				}),
 				dbService.query("listEmployees", async () => {
 					return await dbService.db
 						.select({ employee, user, team })
@@ -157,18 +297,31 @@ function loadEmployeePage(params: EmployeeListParams) {
 						.innerJoin(user, eq(employee.userId, user.id))
 						.leftJoin(team, eq(employee.teamId, team.id))
 						.where(where)
-						.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id))
-						.limit(limit)
-						.offset(offset);
+						.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id));
 				}),
+				draftWhere
+					? dbService.query("listEmployeeInvitationDrafts", async () => {
+							return await dbService.db
+								.select({ draft: employeeInvitationDraft, invitation, team })
+								.from(employeeInvitationDraft)
+								.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
+								.leftJoin(team, eq(employeeInvitationDraft.teamId, team.id))
+								.where(draftWhere);
+						})
+					: Effect.succeed([]),
 			]),
 		);
 
-		const total = totalResult[0]?.total ?? 0;
+		const employees = sortEmployeeDirectoryRows([
+			...employeeRows.map(mapEmployeeRow),
+			...draftRows.map((row) => mapDraftRow({ ...row, realEmployee: null })),
+		]);
+		const pagedEmployees = employees.slice(offset, offset + limit);
+
 		return {
-			employees: rows.map(mapEmployeeRow),
-			total,
-			hasMore: offset + rows.length < total,
+			employees: pagedEmployees,
+			total: employees.length,
+			hasMore: offset + pagedEmployees.length < employees.length,
 		};
 	});
 }
@@ -244,10 +397,57 @@ function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 
 export async function getEmployeeAction(
 	employeeId: string,
-): Promise<ServerActionResult<EmployeeWithRelations>> {
+): Promise<ServerActionResult<EmployeeDetailRecord>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(getEmployeeSettingsActorContext());
 		const { dbService } = actor;
+		const draftId = decodeEmployeeInvitationDraftId(employeeId);
+
+		if (draftId) {
+			if (actor.accessTier !== "orgAdmin") {
+				return yield* _(
+					Effect.fail(
+						new NotFoundError({
+							message: "Employee not found",
+							entityType: "employee",
+							entityId: employeeId,
+						}),
+					),
+				);
+			}
+
+			const draftRows = yield* _(
+				dbService.query("getEmployeeInvitationDraft", async () => {
+					return await dbService.db
+						.select({ draft: employeeInvitationDraft, invitation, team })
+						.from(employeeInvitationDraft)
+						.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
+						.leftJoin(team, eq(employeeInvitationDraft.teamId, team.id))
+						.where(
+							and(
+								eq(employeeInvitationDraft.id, draftId),
+								eq(employeeInvitationDraft.organizationId, actor.organizationId),
+							),
+						)
+						.limit(1);
+				}),
+			);
+
+			const draftRow = draftRows[0];
+			if (!draftRow) {
+				return yield* _(
+					Effect.fail(
+						new NotFoundError({
+							message: "Employee not found",
+							entityType: "employee",
+							entityId: employeeId,
+						}),
+					),
+				);
+			}
+
+			return mapDraftRow({ ...draftRow, realEmployee: null });
+		}
 
 		const rows = yield* _(
 			dbService.query("getTargetEmployee", async () => {
@@ -330,7 +530,7 @@ export async function getEmployeeAction(
 			);
 		}
 
-		return detail as EmployeeWithRelations;
+		return { ...detail, kind: "employee" } as EmployeeWithRelations;
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

@@ -1,24 +1,55 @@
 import type { EmployeeClockStatus } from "@/components/user-avatar";
-import type { user } from "@/db/auth-schema";
-import type { employee, team } from "@/db/schema";
+import type { invitation, user } from "@/db/auth-schema";
+import type { employee, employeeInvitationDraft, team } from "@/db/schema";
 
 export type EmployeeRole = (typeof employee.$inferSelect)["role"];
+export const EMPLOYEE_DRAFT_ID_PREFIX = "draft:";
+export type EmployeeRecordKind = "employee" | "invitationDraft";
+export type EmployeeDirectoryStatus = "active" | "inactive" | "draft" | "all";
+
+export function encodeEmployeeInvitationDraftId(draftId: string) {
+	return `${EMPLOYEE_DRAFT_ID_PREFIX}${draftId}`;
+}
+
+export function decodeEmployeeInvitationDraftId(id: string) {
+	return id.startsWith(EMPLOYEE_DRAFT_ID_PREFIX) ? id.slice(EMPLOYEE_DRAFT_ID_PREFIX.length) : null;
+}
 
 export type EmployeeWithRelations = typeof employee.$inferSelect & {
+	kind: EmployeeRecordKind;
 	user: typeof user.$inferSelect;
 	team: typeof team.$inferSelect | null;
 };
 
+export type EmployeeInvitationDraftWithRelations = typeof employeeInvitationDraft.$inferSelect & {
+	kind: "invitationDraft";
+	encodedId: string;
+	userId: string;
+	invitation: typeof invitation.$inferSelect;
+	team: typeof team.$inferSelect | null;
+	user: typeof user.$inferSelect & {
+		canUseWebapp?: boolean;
+		canUseDesktop?: boolean;
+		canUseMobile?: boolean;
+	};
+	isActive: false;
+	invitationStatus: string;
+	realEmployeeId: string | null;
+};
+
+export type EmployeeDirectoryRow = EmployeeWithRelations | EmployeeInvitationDraftWithRelations;
+export type EmployeeDetailRecord = EmployeeDirectoryRow & { managers?: unknown[] };
+
 export interface EmployeeListParams {
 	search?: string;
 	role?: EmployeeRole | "all";
-	status?: "active" | "inactive" | "all";
+	status?: EmployeeDirectoryStatus;
 	limit?: number;
 	offset?: number;
 }
 
 export interface PaginatedEmployeeResponse {
-	employees: EmployeeWithRelations[];
+	employees: EmployeeDirectoryRow[];
 	total: number;
 	hasMore: boolean;
 }

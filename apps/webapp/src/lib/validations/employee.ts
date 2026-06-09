@@ -93,49 +93,65 @@ export const createEmployeeSchema = z.object({
 });
 
 // Employee update schema (more permissive, all fields optional)
-export const updateEmployeeSchema = z
-	.object({
-		teamId: z.uuid("Invalid team ID").optional().nullable(),
-		role: employeeRoleSchema.optional(),
-		position: z.string().max(100, "Position is too long").optional().nullable(),
-		employeeNumber: z.string().max(50, "Employee number is too long").optional().nullable(),
+const updateEmployeeFieldsSchema = z.object({
+	teamId: z.uuid("Invalid team ID").optional().nullable(),
+	role: employeeRoleSchema.optional(),
+	position: z.string().max(100, "Position is too long").optional().nullable(),
+	employeeNumber: z.string().max(50, "Employee number is too long").optional().nullable(),
 
-		// Personal information owned by the employee record
-		gender: genderSchema.optional().nullable(),
-		pronouns: pronounsSchema,
-		birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
+	// Personal information owned by the employee record
+	gender: genderSchema.optional().nullable(),
+	pronouns: pronounsSchema,
+	birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
 
-		// Dates
-		startDate: z.date().optional().nullable(),
-		endDate: z.date().optional().nullable(),
-		isActive: z.boolean().optional(),
+	// Dates
+	startDate: z.date().optional().nullable(),
+	endDate: z.date().optional().nullable(),
+	isActive: z.boolean().optional(),
 
-		// Contract type and hourly rate
-		contractType: contractTypeSchema.optional(),
-		hourlyRate: hourlyRateSchema,
+	// Contract type and hourly rate
+	contractType: contractTypeSchema.optional(),
+	hourlyRate: hourlyRateSchema,
 
-		// App access permissions (admin-only)
-		canUseWebapp: z.boolean().optional(),
-		canUseDesktop: z.boolean().optional(),
-		canUseMobile: z.boolean().optional(),
+	// App access permissions (admin-only)
+	canUseWebapp: z.boolean().optional(),
+	canUseDesktop: z.boolean().optional(),
+	canUseMobile: z.boolean().optional(),
 
-		// Auth user identity fields (admin-only)
-		firstName: authUserNamePartSchema,
-		lastName: authUserNamePartSchema,
-	})
-	.refine(
-		(data) => {
-			// If both startDate and endDate are provided, endDate must be after startDate
-			if (data.startDate && data.endDate) {
-				return data.endDate > data.startDate;
-			}
-			return true;
-		},
-		{
-			message: "End date must be after start date",
-			path: ["endDate"],
-		},
-	);
+	// Auth user identity fields (admin-only)
+	firstName: authUserNamePartSchema,
+	lastName: authUserNamePartSchema,
+});
+
+export const updateEmployeeSchema = updateEmployeeFieldsSchema.refine(
+	(data) => {
+		// If both startDate and endDate are provided, endDate must be after startDate
+		if (data.startDate && data.endDate) {
+			return data.endDate > data.startDate;
+		}
+		return true;
+	},
+	{
+		message: "End date must be after start date",
+		path: ["endDate"],
+	},
+);
+
+export const updateEmployeeInvitationDraftSchema = updateEmployeeFieldsSchema.pick({
+	teamId: true,
+	role: true,
+	position: true,
+	employeeNumber: true,
+	gender: true,
+	pronouns: true,
+	birthday: true,
+	startDate: true,
+	endDate: true,
+	contractType: true,
+	hourlyRate: true,
+	firstName: true,
+	lastName: true,
+});
 
 // Manager assignment schema
 export const managerAssignmentSchema = z.object({
@@ -179,6 +195,7 @@ export type ContractType = z.infer<typeof contractTypeSchema>;
 export type PersonalInformation = z.infer<typeof personalInformationSchema>;
 export type CreateEmployee = z.infer<typeof createEmployeeSchema>;
 export type UpdateEmployee = z.infer<typeof updateEmployeeSchema>;
+export type UpdateEmployeeInvitationDraft = z.infer<typeof updateEmployeeInvitationDraftSchema>;
 export type ManagerAssignment = z.infer<typeof managerAssignmentSchema>;
 export type AssignManagers = z.infer<typeof assignManagersSchema>;
 export type CreateRateHistory = z.infer<typeof createRateHistorySchema>;

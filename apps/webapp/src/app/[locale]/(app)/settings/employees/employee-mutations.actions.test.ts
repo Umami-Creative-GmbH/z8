@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -66,6 +67,17 @@ const validEmployeeId = "33333333-3333-4333-8333-333333333333";
 const validAdminEmployeeId = "44444444-4444-4444-8444-444444444444";
 
 describe("employee mutation schemas", () => {
+	it("exposes a draft update action guarded by org admin access", () => {
+		const source = readFileSync(
+			new URL("./employee-mutations.actions.ts", import.meta.url),
+			"utf8",
+		);
+		expect(source).toContain("updateEmployeeInvitationDraftAction");
+		expect(source).toContain("requireOrgAdminEmployeeSettingsAccess(actor");
+		expect(source).toContain("employeeInvitationDraft");
+		expect(source).toContain("getEmployeeInvitationDraftForUpdate");
+	});
+
 	it("strips employee-owned names from create employee input", () => {
 		const result = createEmployeeSchema.safeParse({
 			userId: validUserId,

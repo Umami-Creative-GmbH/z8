@@ -23,4 +23,18 @@ describe("employee query name source", () => {
 		expect(source).not.toContain("firstName: row.employee.firstName");
 		expect(source).not.toContain("lastName: row.employee.lastName");
 	});
+
+	it("includes invitation draft rows for org admins", () => {
+		expect(source).toContain("employeeInvitationDraft");
+		expect(source).toContain('kind: "invitationDraft"');
+		expect(source).toContain('actor.accessTier === "orgAdmin"');
+		expect(source).toContain("decodeEmployeeInvitationDraftId(employeeId)");
+	});
+
+	it("searches invitation drafts by prepared names, email, and position", () => {
+		expect(source).toContain("ilike(employeeInvitationDraft.firstName, pattern)");
+		expect(source).toContain("ilike(employeeInvitationDraft.lastName, pattern)");
+		expect(source).toContain("ilike(invitation.email, pattern)");
+		expect(source).toContain("ilike(employeeInvitationDraft.position, pattern)");
+	});
 });

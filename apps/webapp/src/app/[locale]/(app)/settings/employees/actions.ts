@@ -7,8 +7,10 @@ import type {
 	CreateEmployee,
 	PersonalInformation,
 	UpdateEmployee,
+	UpdateEmployeeInvitationDraft,
 } from "@/lib/validations/employee";
 import type {
+	EmployeeDetailRecord,
 	EmployeeListParams,
 	EmployeeSelectParams,
 	EmployeeSelectResponse,
@@ -21,6 +23,7 @@ import {
 	createEmployeeAction,
 	requestEmployeeWorkBalanceRecalculationAction,
 	updateEmployeeAction,
+	updateEmployeeInvitationDraftAction,
 	updateOwnProfileAction,
 } from "./employee-mutations.actions";
 import {
@@ -34,6 +37,7 @@ export type {
 	EmployeeListParams,
 	EmployeeSelectParams,
 	EmployeeSelectResponse,
+	EmployeeDetailRecord,
 	EmployeeWithRelations,
 	PaginatedEmployeeResponse,
 	SelectableEmployee,
@@ -52,6 +56,13 @@ export async function updateEmployee(
 	return updateEmployeeAction(employeeId, data);
 }
 
+export async function updateEmployeeInvitationDraft(
+	draftEmployeeId: string,
+	data: UpdateEmployeeInvitationDraft,
+): Promise<ServerActionResult<void>> {
+	return updateEmployeeInvitationDraftAction(draftEmployeeId, data);
+}
+
 export async function updateOwnProfile(
 	data: PersonalInformation,
 ): Promise<ServerActionResult<void>> {
@@ -60,7 +71,7 @@ export async function updateOwnProfile(
 
 export async function getEmployee(
 	employeeId: string,
-): Promise<ServerActionResult<EmployeeWithRelations>> {
+): Promise<ServerActionResult<EmployeeDetailRecord>> {
 	return getEmployeeAction(employeeId);
 }
 
