@@ -351,6 +351,13 @@
       "when": 1780773132900,
       "tag": "0049_organization_notification_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1780773132901,
+      "tag": "0050_employee_invitation_draft",
+      "breakpoints": true
     }
   ]
 }

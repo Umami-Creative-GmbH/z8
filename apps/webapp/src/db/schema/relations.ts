@@ -29,6 +29,7 @@ import {
 } from "./custom-role";
 import { customer } from "./customer";
 import { employeeEmploymentHistory } from "./employment-history";
+import { employeeInvitationDraft } from "./employee-invitation-draft";
 import {
 	organizationBranding,
 	organizationDomain,
@@ -164,6 +165,7 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	// Business relations
 	teams: many(team),
 	employees: many(employee),
+	employeeInvitationDrafts: many(employeeInvitationDraft),
 	absenceCategories: many(absenceCategory),
 	holidayCategories: many(holidayCategory),
 	holidays: many(holiday),
@@ -501,6 +503,25 @@ export const subareaEmployeeRelations = relations(subareaEmployee, ({ one }) => 
 	}),
 	creator: one(user, {
 		fields: [subareaEmployee.createdBy],
+		references: [user.id],
+	}),
+}));
+
+export const employeeInvitationDraftRelations = relations(employeeInvitationDraft, ({ one }) => ({
+	organization: one(organization, {
+		fields: [employeeInvitationDraft.organizationId],
+		references: [organization.id],
+	}),
+	invitation: one(invitation, {
+		fields: [employeeInvitationDraft.invitationId],
+		references: [invitation.id],
+	}),
+	team: one(team, {
+		fields: [employeeInvitationDraft.teamId],
+		references: [team.id],
+	}),
+	updater: one(user, {
+		fields: [employeeInvitationDraft.updatedBy],
 		references: [user.id],
 	}),
 }));
