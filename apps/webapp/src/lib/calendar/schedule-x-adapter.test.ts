@@ -149,9 +149,7 @@ describe("calendarEventToScheduleX", () => {
 			canClockOutRunningPeriod: () => true,
 		});
 
-		expect(scheduleXEvent?._customContent?.timeGrid).toContain(
-			"data-running-clock-out-button",
-		);
+		expect(scheduleXEvent?._customContent?.timeGrid).toContain("data-running-clock-out-button");
 		expect(scheduleXEvent?._customContent?.timeGrid).toContain(
 			'data-work-period-id="work-running-action"',
 		);
@@ -204,9 +202,7 @@ describe("calendarEventToScheduleX", () => {
 			canClockOutRunningPeriod: () => false,
 		});
 
-		expect(scheduleXEvent?._customContent?.timeGrid).not.toContain(
-			"data-running-clock-out-button",
-		);
+		expect(scheduleXEvent?._customContent?.timeGrid).not.toContain("data-running-clock-out-button");
 		expect(scheduleXEvent?._customContent?.timeGrid).not.toContain("Stop");
 	});
 
