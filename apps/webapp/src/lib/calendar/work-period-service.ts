@@ -6,7 +6,6 @@ import { user } from "@/db/auth-schema";
 import type { SurchargeCalculationDetails } from "@/db/schema";
 import { employee, project, surchargeCalculation, timeEntry, workPeriod } from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { toDateKey } from "@/lib/datetime/luxon-utils";
 import type { SurchargeBreakdown, WorkPeriodEvent } from "./types";
 
 const clockInEntry = alias(timeEntry, "clock_in_entry");
@@ -241,79 +240,6 @@ export async function getWorkPeriodsForMonth(
 		console.error("Error fetching work periods for calendar:", error);
 		return [];
 	}
-}
-
-/**
- * Aggregate work periods by day and employee
- */
-function _aggregateByDay(
-	periods: Array<{
-		period: typeof workPeriod.$inferSelect;
-		employee: typeof employee.$inferSelect;
-		user: typeof user.$inferSelect;
-	}>,
-): WorkPeriodEvent[] {
-	// Group by date (YYYY-MM-DD) and employee ID
-	const grouped = new Map<
-		string,
-		{
-			employeeId: string;
-			employeeName: string;
-			date: Date;
-			totalMinutes: number;
-			periodCount: number;
-		}
-	>();
-
-	for (const { period, user } of periods) {
-		if (!period.durationMinutes) continue; // Skip if no duration
-
-		// Get date key (YYYY-MM-DD) using Luxon
-		const startDT = dateFromDB(period.startTime);
-		if (!startDT) continue;
-
-		const dateKey = toDateKey(startDT);
-		const groupKey = `${dateKey}_${period.employeeId}`;
-
-		if (!grouped.has(groupKey)) {
-			grouped.set(groupKey, {
-				employeeId: period.employeeId,
-				employeeName: user.name,
-				date: period.startTime, // Keep as Date for now (interface compatibility)
-				totalMinutes: 0,
-				periodCount: 0,
-			});
-		}
-
-		const group = grouped.get(groupKey)!;
-		group.totalMinutes += period.durationMinutes;
-		group.periodCount += 1;
-	}
-
-	// Transform to WorkPeriodEvent objects
-	return Array.from(grouped.values()).map((group) => {
-		const dateDT = dateFromDB(group.date);
-		const dateKey = dateDT ? toDateKey(dateDT) : group.date.toISOString().split("T")[0];
-
-		return {
-			id: `${dateKey}_${group.employeeId}`,
-			type: "work_period" as const,
-			date: group.date,
-			title: `${group.employeeName} - ${formatDuration(group.totalMinutes)}`,
-			description: `${group.periodCount} work ${group.periodCount === 1 ? "period" : "periods"}`,
-			descriptionKey:
-				group.periodCount === 1
-					? "calendar.calendar.workPeriod.aggregatedDescriptionOne"
-					: "calendar.calendar.workPeriod.aggregatedDescriptionOther",
-			color: "#6366f1", // Indigo-500
-			metadata: {
-				durationMinutes: group.totalMinutes,
-				employeeId: group.employeeId,
-				employeeName: group.employeeName,
-				periodCount: group.periodCount,
-			},
-		};
-	});
 }
 
 /**
