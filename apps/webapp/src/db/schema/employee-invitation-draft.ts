@@ -1,5 +1,14 @@
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { decimal, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+	decimal,
+	foreignKey,
+	index,
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { invitation, organization, user } from "../auth-schema";
 import { contractTypeEnum, genderEnum, roleEnum } from "./enums";
 import { team } from "./organization";
@@ -32,8 +41,14 @@ export const employeeInvitationDraft = pgTable(
 		updatedAt: timestamp("updated_at").$onUpdate(() => currentTimestamp()).notNull(),
 	},
 	(table) => [
+		foreignKey({
+			columns: [table.invitationId, table.organizationId],
+			foreignColumns: [invitation.id, invitation.organizationId],
+			name: "employee_invitation_draft_invitation_org_fk",
+		}).onDelete("cascade"),
 		uniqueIndex("employeeInvitationDraft_invitationId_unique_idx").on(table.invitationId),
 		index("employeeInvitationDraft_organizationId_idx").on(table.organizationId),
+		// The team/org composite FK is migration-only so team deletion can null only team_id.
 		index("employeeInvitationDraft_teamId_idx").on(table.teamId),
 	],
 );

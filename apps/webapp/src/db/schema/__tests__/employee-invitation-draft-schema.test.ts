@@ -21,6 +21,14 @@ describe("employee invitation draft schema", () => {
 		expect(migration).toContain(
 			'CREATE UNIQUE INDEX IF NOT EXISTS "employeeInvitationDraft_invitationId_unique_idx"',
 		);
+		expect(migration).toContain("employee_invitation_draft_invitation_org_fk");
+		expect(migration).toContain('FOREIGN KEY ("invitation_id","organization_id")');
+		expect(migration).toContain('REFERENCES "public"."invitation"("id","organization_id")');
+		expect(migration).toContain("employee_invitation_draft_team_org_fk");
+		expect(migration).toContain('FOREIGN KEY ("team_id","organization_id")');
+		expect(migration).toContain('ON DELETE SET NULL ("team_id")');
+		const snapshot = JSON.parse(readFileSync("drizzle/meta/0050_snapshot.json", "utf8"));
+		expect(snapshot.tables["public.employee_invitation_draft"]).toBeTruthy();
 		expect(journal.entries.at(-1)).toMatchObject({
 			idx: 50,
 			tag: "0050_employee_invitation_draft",
