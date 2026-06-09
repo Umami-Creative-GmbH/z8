@@ -1,7 +1,14 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
+import {
+	calculateAndPersistSurcharges,
+	checkComplianceAfterClockOut,
+	enforceBreaksAfterClockOut,
+} from "@/app/[locale]/(app)/time-tracking/actions/compliance";
 import { createTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
+import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import { db } from "@/db";
 import { employee, userSettings, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -16,11 +23,27 @@ import {
 	isValidIanaTimezone,
 	resolveFallbackTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 
 class TimeEntryConflictError extends Error {
 	constructor(message: string) {
 		super(message);
 		this.name = "TimeEntryConflictError";
+	}
+}
+
+async function markWorkBalanceDirtyAfterOnBehalfClockOutBestEffort(input: {
+	employeeId: string;
+	organizationId: string;
+	dirtyFromDate?: string;
+}) {
+	try {
+		await markEmployeeWorkBalanceDirty(input);
+	} catch (error) {
+		logger.error(
+			{ error, employeeId: input.employeeId, organizationId: input.organizationId },
+			"Failed to mark work balance dirty after on-behalf clock-out",
+		);
 	}
 }
 
@@ -124,7 +147,7 @@ export async function POST(request: NextRequest) {
 			timezoneSource: "manager_target_user_setting",
 		});
 
-		const entry = await db.transaction(async (tx) => {
+		const result = await db.transaction(async (tx) => {
 			const lockKey = `${organizationId}:${target.targetEmployee.id}`;
 			await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
 
@@ -186,10 +209,45 @@ export async function POST(request: NextRequest) {
 				throw new TimeEntryConflictError("Active work period changed");
 			}
 
-			return createdEntry;
+			return {
+				durationMinutes,
+				entry: createdEntry,
+				startedAt: activePeriod.startTime,
+				workPeriodId: activePeriod.id,
+			};
 		});
 
-		return NextResponse.json({ entry }, { status: 201 });
+		await calculateAndPersistSurcharges(result.workPeriodId, organizationId);
+		await checkComplianceAfterClockOut(
+			target.targetEmployee.id,
+			organizationId,
+			result.workPeriodId,
+			result.durationMinutes,
+			timezone,
+		);
+
+		const breakEnforcementResult = await enforceBreaksAfterClockOut({
+			createdBy: session.user.id,
+			employeeId: target.targetEmployee.id,
+			organizationId,
+			sessionDurationMinutes: result.durationMinutes,
+			timezone,
+			workPeriodId: result.workPeriodId,
+		});
+
+		const dirtyMark = {
+			dirtyFromDate:
+				DateTime.fromJSDate(result.startedAt, { zone: "utc" }).toISODate() ?? undefined,
+			employeeId: target.targetEmployee.id,
+			organizationId,
+		};
+
+		await markWorkBalanceDirtyAfterOnBehalfClockOutBestEffort(dirtyMark);
+		if (breakEnforcementResult.wasAdjusted) {
+			await markWorkBalanceDirtyAfterOnBehalfClockOutBestEffort(dirtyMark);
+		}
+
+		return NextResponse.json({ entry: result.entry }, { status: 201 });
 	} catch (error) {
 		if (error instanceof TimeEntryConflictError) {
 			return NextResponse.json({ error: error.message }, { status: 409 });

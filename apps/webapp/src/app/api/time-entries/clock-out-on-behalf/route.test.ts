@@ -26,6 +26,9 @@ const mockState = vi.hoisted(() => {
 		connection: vi.fn(),
 		createBillingForbiddenResponse: vi.fn(),
 		createTimeEntry: vi.fn(),
+		calculateAndPersistSurcharges: vi.fn(),
+		checkComplianceAfterClockOut: vi.fn(),
+		enforceBreaksAfterClockOut: vi.fn(),
 		findUserSettings: vi.fn(),
 		getAbility: vi.fn(),
 		getSession: vi.fn(),
@@ -33,6 +36,7 @@ const mockState = vi.hoisted(() => {
 		innerJoin,
 		isBillingMutationAllowed: vi.fn(),
 		isValidIanaTimezone: vi.fn(),
+		markEmployeeWorkBalanceDirty: vi.fn(),
 		limit,
 		requireBillingForMutation: vi.fn(),
 		resolveFallbackTimezoneCapture: vi.fn(),
@@ -130,6 +134,16 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/entry-helpers", () => ({
 	createTimeEntry: mockState.createTimeEntry,
 }));
 
+vi.mock("@/app/[locale]/(app)/time-tracking/actions/compliance", () => ({
+	calculateAndPersistSurcharges: mockState.calculateAndPersistSurcharges,
+	checkComplianceAfterClockOut: mockState.checkComplianceAfterClockOut,
+	enforceBreaksAfterClockOut: mockState.enforceBreaksAfterClockOut,
+}));
+
+vi.mock("@/lib/work-balance/service", () => ({
+	markEmployeeWorkBalanceDirty: mockState.markEmployeeWorkBalanceDirty,
+}));
+
 vi.mock("drizzle-orm", () => ({
 	and: (...conditions: unknown[]) => ({ conditions, type: "and" }),
 	eq: (column: unknown, value: unknown) => ({ column, type: "eq", value }),
@@ -219,6 +233,10 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 			utcOffsetMinutes: 120,
 		});
 		mockState.createTimeEntry.mockResolvedValue({ id: "clock-out-entry-1" });
+		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
+		mockState.checkComplianceAfterClockOut.mockResolvedValue([]);
+		mockState.enforceBreaksAfterClockOut.mockResolvedValue({ wasAdjusted: false });
+		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.txExecute.mockResolvedValue(undefined);
 		mockState.updateReturning.mockResolvedValue([{ id: "period-1" }]);
 	});
@@ -259,6 +277,70 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		expect(mockState.txExecute).toHaveBeenCalledWith(
 			expect.objectContaining({ values: ["org-1:target-employee-1"] }),
 		);
+	});
+
+	it("runs clock-out domain side effects after successfully closing the target period", async () => {
+		const response = await POST(createRequest({ workPeriodId: "period-1" }));
+
+		expect(response.status).toBe(201);
+		expect(mockState.calculateAndPersistSurcharges).toHaveBeenCalledWith("period-1", "org-1");
+		expect(mockState.checkComplianceAfterClockOut).toHaveBeenCalledWith(
+			"target-employee-1",
+			"org-1",
+			"period-1",
+			150,
+			"Europe/Berlin",
+		);
+		expect(mockState.enforceBreaksAfterClockOut).toHaveBeenCalledWith({
+			createdBy: "actor-user-1",
+			employeeId: "target-employee-1",
+			organizationId: "org-1",
+			sessionDurationMinutes: 150,
+			timezone: "Europe/Berlin",
+			workPeriodId: "period-1",
+		});
+		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
+			dirtyFromDate: "2026-06-09",
+			employeeId: "target-employee-1",
+			organizationId: "org-1",
+		});
+		expect(mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[0]).toBeGreaterThan(
+			mockState.transaction.mock.invocationCallOrder[0],
+		);
+	});
+
+	it("keeps a successful clock-out response when work balance dirty marking fails", async () => {
+		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(new Error("dirty marker failed"));
+
+		const response = await POST(createRequest({ workPeriodId: "period-1" }));
+
+		expect(response.status).toBe(201);
+		expect(await response.json()).toEqual({ entry: { id: "clock-out-entry-1" } });
+		expect(mockState.calculateAndPersistSurcharges).toHaveBeenCalledWith("period-1", "org-1");
+		expect(mockState.checkComplianceAfterClockOut).toHaveBeenCalledWith(
+			"target-employee-1",
+			"org-1",
+			"period-1",
+			150,
+			"Europe/Berlin",
+		);
+		expect(mockState.enforceBreaksAfterClockOut).toHaveBeenCalledWith(
+			expect.objectContaining({ workPeriodId: "period-1" }),
+		);
+	});
+
+	it("marks work balance dirty again when break enforcement adjusts the closed period", async () => {
+		mockState.enforceBreaksAfterClockOut.mockResolvedValueOnce({ wasAdjusted: true });
+
+		const response = await POST(createRequest({ workPeriodId: "period-1" }));
+
+		expect(response.status).toBe(201);
+		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledTimes(2);
+		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenLastCalledWith({
+			dirtyFromDate: "2026-06-09",
+			employeeId: "target-employee-1",
+			organizationId: "org-1",
+		});
 	});
 
 	it("returns 403 and does not create a time entry when ability denies access", async () => {
