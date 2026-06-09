@@ -9,11 +9,7 @@ import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { normalizePronouns } from "@/lib/employee-identity";
 import { Link } from "@/navigation";
-import type { EmployeeWithRelations } from "./actions";
-
-type EmployeeDirectoryRow = EmployeeWithRelations & {
-	clockStatus?: EmployeeClockStatus;
-};
+import type { EmployeeDirectoryRow } from "./employee-action-types";
 
 function SortIcon({ sort }: { sort: false | SortDirection }) {
 	if (sort === "asc") {
@@ -85,7 +81,7 @@ function ActionsHeader() {
 function ContractTypeCell({
 	contractType,
 }: {
-	contractType: EmployeeWithRelations["contractType"];
+	contractType: EmployeeDirectoryRow["contractType"];
 }) {
 	const { t } = useTranslate();
 
@@ -105,25 +101,40 @@ function ContractTypeCell({
 	);
 }
 
-function StatusCell({ isActive }: { isActive: boolean }) {
+function StatusCell({ employee }: { employee: EmployeeDirectoryRow }) {
 	const { t } = useTranslate();
 
+	if (employee.kind === "invitationDraft") {
+		return (
+			<div className="flex flex-wrap gap-1">
+				<Badge variant="secondary">
+					{t("settings.employees.directory.statuses.draft", "Draft")}
+				</Badge>
+				<Badge variant="outline">{employee.invitationStatus}</Badge>
+			</div>
+		);
+	}
+
 	return (
-		<Badge variant={isActive ? "default" : "secondary"}>
-			{isActive
+		<Badge variant={employee.isActive ? "default" : "secondary"}>
+			{employee.isActive
 				? t("settings.employees.directory.statuses.active", "Active")
 				: t("settings.employees.directory.statuses.inactive", "Inactive")}
 		</Badge>
 	);
 }
 
-function ViewDetailsCell({ employeeId }: { employeeId: string }) {
+function ViewDetailsCell({ employee }: { employee: EmployeeDirectoryRow }) {
 	const { t } = useTranslate();
+	const href =
+		employee.kind === "invitationDraft"
+			? `/settings/employees/${employee.encodedId}`
+			: `/settings/employees/${employee.id}`;
 
 	return (
 		<div className="text-right">
 			<Button variant="ghost" size="sm" asChild>
-				<Link href={`/settings/employees/${employeeId}`}>
+				<Link href={href}>
 					{t("settings.employees.directory.actions.viewDetails", "View Details")}
 				</Link>
 			</Button>
@@ -131,7 +142,7 @@ function ViewDetailsCell({ employeeId }: { employeeId: string }) {
 	);
 }
 
-export const columns: ColumnDef<EmployeeWithRelations>[] = [
+export const columns: ColumnDef<EmployeeDirectoryRow>[] = [
 	{
 		id: "employeeName",
 		accessorFn: (row) => buildAuthUserDisplayName(row.user),
@@ -142,7 +153,7 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 			/>
 		),
 		cell: ({ row }) => {
-			const employee = row.original as EmployeeDirectoryRow;
+			const employee = row.original as EmployeeDirectoryRow & { clockStatus?: EmployeeClockStatus };
 			const name = buildAuthUserDisplayName(row.original.user);
 			const pronouns = normalizePronouns(row.original.pronouns);
 			const displayName = pronouns ? `${name} (${pronouns})` : name;
@@ -204,11 +215,11 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 	{
 		accessorKey: "isActive",
 		header: () => <StatusHeader />,
-		cell: ({ row }) => <StatusCell isActive={row.original.isActive} />,
+		cell: ({ row }) => <StatusCell employee={row.original} />,
 	},
 	{
 		id: "actions",
 		header: () => <ActionsHeader />,
-		cell: ({ row }) => <ViewDetailsCell employeeId={row.original.id} />,
+		cell: ({ row }) => <ViewDetailsCell employee={row.original} />,
 	},
 ];

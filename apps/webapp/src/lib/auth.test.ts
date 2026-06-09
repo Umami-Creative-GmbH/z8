@@ -86,6 +86,15 @@ describe("billing seat sync hooks", () => {
 		expect(acceptInvitationHook).toContain("syncBillingSeats");
 		expect(acceptInvitationHook).toContain('change: "added"');
 	});
+
+	it("passes invitation id into employee provisioning", () => {
+		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
+		const acceptInvitationHook = source.slice(
+			source.indexOf("afterAcceptInvitation"),
+			source.indexOf("// Create employee record when user is added to organization"),
+		);
+		expect(acceptInvitationHook).toContain("invitationId: invitation.id");
+	});
 });
 
 describe("makeEmailLookupCaseInsensitiveAdapter", () => {

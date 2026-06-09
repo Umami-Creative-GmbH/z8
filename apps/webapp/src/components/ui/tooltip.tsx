@@ -86,7 +86,7 @@ function TooltipContent({
 	collisionAvoidance,
 	collisionBoundary,
 	collisionPadding,
-	sideOffset = 0,
+	sideOffset = 4,
 	disableAnchorTracking,
 	positionMethod,
 	side,
@@ -121,7 +121,7 @@ function TooltipContent({
 					{...props}
 				>
 					{children}
-					<TooltipPrimitive.Arrow className="z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] bg-primary fill-primary" />
+					<TooltipPrimitive.Arrow className="z-50 size-2.5 rotate-45 rounded-[2px] bg-primary fill-primary" />
 				</TooltipPrimitive.Popup>
 			</TooltipPrimitive.Positioner>
 		</TooltipPrimitive.Portal>

@@ -34,6 +34,8 @@ interface ScheduleXWrapperProps {
 	viewMode: ViewMode;
 	onViewModeChange: (mode: ViewMode) => void;
 	onEventClick?: (event: CalendarEvent) => void;
+	canClockOutRunningPeriod?: (event: CalendarEvent) => boolean;
+	onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
 	onRangeChange?: (range: { start: Date; end: Date }) => void;
 	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;

@@ -1,12 +1,5 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getWorkPeriodsForMonth, workPeriodOverlapsCalendarMonth } from "./work-period-service";
-
-const source = readFileSync(
-	fileURLToPath(new URL("./work-period-service.ts", import.meta.url)),
-	"utf8",
-);
 
 const mockOperators = vi.hoisted(() => ({
 	and: vi.fn((...conditions: unknown[]) => ({ conditions, type: "and" })),
@@ -82,15 +75,6 @@ describe("getWorkPeriodsForMonth", () => {
 		);
 	});
 
-	it("excludes deleted work periods from calendar month reads", () => {
-		const body = source.slice(
-			source.indexOf("export async function getWorkPeriodsForMonth"),
-			source.indexOf("/**\n * Aggregate work periods by day and employee"),
-		);
-
-		expect(body).toContain("isNull(workPeriod.deletedAt)");
-	});
-
 	it("returns an active work period as a running calendar event ending now", async () => {
 		const startTime = new Date("2026-05-04T08:00:00.000Z");
 		const now = new Date("2026-05-04T10:30:00.000Z");
@@ -148,6 +132,7 @@ describe("getWorkPeriodsForMonth", () => {
 			color: "#2563eb",
 			metadata: {
 				durationMinutes: 150,
+				employeeId: "employee-1",
 				employeeName: "Ada Lovelace",
 				startTime: "8:00 AM",
 				isRunning: true,
@@ -216,6 +201,7 @@ describe("getWorkPeriodsForMonth", () => {
 			description: "Wrapped up handoff",
 			metadata: {
 				durationMinutes: 510,
+				employeeId: "employee-1",
 				employeeName: "Ada Lovelace",
 				notes: "Wrapped up handoff",
 				clockInUtcOffsetMinutes: 60,

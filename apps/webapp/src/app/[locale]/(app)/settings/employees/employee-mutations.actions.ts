@@ -1,11 +1,12 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { z } from "zod";
-import { user } from "@/db/auth-schema";
-import { employee, employeeRateHistory } from "@/db/schema";
+import { invitation, user } from "@/db/auth-schema";
+import { employee, employeeInvitationDraft, employeeRateHistory, team } from "@/db/schema";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -21,7 +22,9 @@ import {
 	type PersonalInformation,
 	personalInformationSchema,
 	type UpdateEmployee,
+	type UpdateEmployeeInvitationDraft,
 	updateEmployeeSchema,
+	updateEmployeeInvitationDraftSchema,
 } from "@/lib/validations/employee";
 import {
 	markEmployeeWorkBalanceDirty,
@@ -40,10 +43,13 @@ import {
 	runTracedEmployeeAction,
 	validateInput,
 } from "./employee-action-utils";
+import { decodeEmployeeInvitationDraftId } from "./employee-action-types";
 import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
 
 const logger = createLogger("EmployeeActions");
 const employeeIdSchema = z.uuid("Invalid employee ID");
+const realEmployee = alias(employee, "realEmployee");
+const realEmployeeUser = alias(user, "realEmployeeUser");
 
 export async function createEmployeeAction(
 	data: CreateEmployee,
@@ -385,6 +391,152 @@ export async function updateEmployeeAction(
 				}
 
 				logger.info({ employeeId }, "Employee updated successfully");
+				revalidateEmployeesCache(actor.organizationId);
+			}),
+	});
+}
+
+export async function updateEmployeeInvitationDraftAction(
+	draftEmployeeId: string,
+	data: UpdateEmployeeInvitationDraft,
+): Promise<ServerActionResult<void>> {
+	return runTracedEmployeeAction({
+		name: "updateEmployeeInvitationDraft",
+		attributes: { "employeeDraft.id": draftEmployeeId },
+		logError: (error) => {
+			logger.error({ error, draftEmployeeId }, "Failed to update employee invitation draft");
+		},
+		execute: () =>
+			Effect.gen(function* (_) {
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				yield* _(
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message: "Only organization admins can update invited employee drafts",
+						resource: "employee_invitation_draft",
+						action: "update",
+					}),
+				);
+
+				const draftId = decodeEmployeeInvitationDraftId(draftEmployeeId) ?? draftEmployeeId;
+				const validatedData = yield* _(validateInput(updateEmployeeInvitationDraftSchema, data));
+				const targetDraft = yield* _(
+					actor.dbService.query("getEmployeeInvitationDraftForUpdate", async () => {
+						return await actor.dbService.db.query.employeeInvitationDraft.findFirst({
+							where: and(
+								eq(employeeInvitationDraft.id, draftId),
+								eq(employeeInvitationDraft.organizationId, actor.organizationId),
+							),
+							with: {
+								invitation: {
+									columns: {
+										status: true,
+									},
+								},
+							},
+						});
+					}),
+				);
+
+				if (!targetDraft) {
+					return yield* _(
+						Effect.fail(
+							new NotFoundError({
+								message: "Employee invitation draft not found",
+								entityType: "employee_invitation_draft",
+								entityId: draftId,
+							}),
+						),
+					);
+				}
+
+				const existingRealEmployee = yield* _(
+					actor.dbService.query("getEmployeeInvitationDraftRealEmployee", async () => {
+						const rows = await actor.dbService.db
+							.select({ id: realEmployee.id })
+							.from(employeeInvitationDraft)
+							.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
+							.innerJoin(realEmployeeUser, eq(realEmployeeUser.invitedVia, invitation.id))
+							.innerJoin(
+								realEmployee,
+								and(
+									eq(realEmployee.userId, realEmployeeUser.id),
+									eq(realEmployee.organizationId, actor.organizationId),
+								),
+							)
+							.where(
+								and(
+									eq(employeeInvitationDraft.id, draftId),
+									eq(employeeInvitationDraft.organizationId, actor.organizationId),
+								),
+							)
+							.limit(1);
+
+						return rows[0] ?? null;
+					}),
+				);
+
+				if (targetDraft.invitation?.status === "accepted" || existingRealEmployee) {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Edit the active employee record for accepted invitations",
+								field: "draftEmployeeId",
+								value: draftEmployeeId,
+							}),
+						),
+					);
+				}
+
+				if (validatedData.teamId) {
+					const targetTeamId = validatedData.teamId;
+					const targetTeam = yield* _(
+						actor.dbService.query("getEmployeeInvitationDraftTeam", async () => {
+							return await actor.dbService.db.query.team.findFirst({
+								where: and(
+									eq(team.id, targetTeamId),
+									eq(team.organizationId, actor.organizationId),
+								),
+							});
+						}),
+					);
+
+					if (!targetTeam) {
+						return yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Target team not found in this organization",
+									field: "teamId",
+									value: targetTeamId,
+								}),
+							),
+						);
+					}
+				}
+
+				const hasHourlyRateUpdate = Object.hasOwn(validatedData, "hourlyRate");
+				const hourlyRate = hasHourlyRateUpdate ? parseHourlyRate(validatedData.hourlyRate) : null;
+				const { hourlyRate: _hourlyRate, ...draftUpdate } = validatedData;
+				yield* _(
+					actor.dbService.query("updateEmployeeInvitationDraft", async () => {
+						await actor.dbService.db
+							.update(employeeInvitationDraft)
+							.set({
+								...draftUpdate,
+								...(hasHourlyRateUpdate
+									? { currentHourlyRate: hourlyRate?.toString() ?? null }
+									: {}),
+								updatedBy: actor.session.user.id,
+								updatedAt: currentTimestamp(),
+							})
+							.where(
+								and(
+									eq(employeeInvitationDraft.id, draftId),
+									eq(employeeInvitationDraft.organizationId, actor.organizationId),
+								),
+							);
+					}),
+				);
+
 				revalidateEmployeesCache(actor.organizationId);
 			}),
 	});

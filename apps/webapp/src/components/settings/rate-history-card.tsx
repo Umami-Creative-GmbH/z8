@@ -289,7 +289,7 @@ export function RateHistoryCard({
 									</div>
 
 									{/* Content */}
-									<div className="flex-1 space-y-1">
+									<div className="ml-4 flex-1 space-y-1">
 										<div className="flex items-center gap-2">
 											<span
 												className={cn(

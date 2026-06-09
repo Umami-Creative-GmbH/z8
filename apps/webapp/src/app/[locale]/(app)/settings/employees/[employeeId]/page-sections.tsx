@@ -136,7 +136,8 @@ export function EmployeeOverviewCard({
 	const employeeDisplayName = employeePronouns
 		? `${displayName} (${employeePronouns})`
 		: displayName;
-	const presence = useEmployeeClockStatuses([employee.id], { polling: false });
+	const isDraft = employee.kind === "invitationDraft";
+	const presence = useEmployeeClockStatuses(isDraft ? [] : [employee.id], { polling: false });
 
 	return (
 		<Card>
@@ -152,7 +153,7 @@ export function EmployeeOverviewCard({
 						seed={employee.user.id}
 						name={employeeDisplayName}
 						size="lg"
-						clockStatus={presence.getStatus(employee.id)}
+						clockStatus={isDraft ? undefined : presence.getStatus(employee.id)}
 					/>
 					<div className="min-w-0">
 						<div className="truncate font-medium">{employeeDisplayName}</div>
@@ -173,12 +174,29 @@ export function EmployeeOverviewCard({
 					<div className="text-sm text-muted-foreground">
 						{t("settings.employees.detailView.status", "Status")}
 					</div>
-					<Badge variant={employee.isActive ? "default" : "secondary"}>
-						{employee.isActive
-							? t("settings.employees.detailView.statusActive", "Active")
-							: t("settings.employees.detailView.statusInactive", "Inactive")}
-					</Badge>
+					{isDraft ? (
+						<div className="flex flex-wrap gap-1">
+							<Badge variant="secondary">
+								{t("settings.employees.detailView.statusDraft", "Draft")}
+							</Badge>
+							<Badge variant="outline">{employee.invitationStatus}</Badge>
+						</div>
+					) : (
+						<Badge variant={employee.isActive ? "default" : "secondary"}>
+							{employee.isActive
+								? t("settings.employees.detailView.statusActive", "Active")
+								: t("settings.employees.detailView.statusInactive", "Inactive")}
+						</Badge>
+					)}
 				</div>
+
+				{isDraft && employee.realEmployeeId && (
+					<Button asChild variant="outline" size="sm">
+						<Link href={`/settings/employees/${employee.realEmployeeId}`}>
+							{t("settings.employees.detailView.editRealEmployee", "Edit active employee")}
+						</Link>
+					</Button>
+				)}
 
 				{employee.employeeNumber && (
 					<div className="space-y-2">

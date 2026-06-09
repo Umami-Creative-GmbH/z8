@@ -1,5 +1,7 @@
 /* @vitest-environment jsdom */
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -50,5 +52,12 @@ describe("Tooltip", () => {
 		});
 
 		expect(screen.queryByText("Delayed by provider.")).toBeNull();
+	});
+
+	it("keeps default spacing between tooltip content and its trigger", () => {
+		const source = readFileSync(join(process.cwd(), "src/components/ui/tooltip.tsx"), "utf8");
+
+		expect(source).toContain("sideOffset = 4");
+		expect(source).not.toContain("translate-y-[calc(-50%_-_2px)]");
 	});
 });

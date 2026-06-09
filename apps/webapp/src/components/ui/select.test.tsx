@@ -60,6 +60,28 @@ describe("Select", () => {
 		expect(trigger.textContent).toContain("Ready");
 	});
 
+	it("keeps the portaled positioner above modal overlays", async () => {
+		const user = userEvent.setup();
+
+		render(
+			<Select defaultValue="draft">
+				<SelectTrigger aria-label="Status">
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value="draft">Draft</SelectItem>
+					<SelectItem value="ready">Ready</SelectItem>
+				</SelectContent>
+			</Select>,
+		);
+
+		await user.click(screen.getByRole("combobox", { name: "Status" }));
+
+		expect(document.querySelector('[data-slot="select-positioner"]')?.className).toContain(
+			"z-50",
+		);
+	});
+
 	it("calls onValueChange when selecting a null value", async () => {
 		const user = userEvent.setup();
 		const onValueChange = vi.fn();

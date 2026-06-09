@@ -41,6 +41,7 @@ import { useEmployees } from "@/lib/query/use-employees";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { Link } from "@/navigation";
 import { columns } from "./columns";
+import type { EmployeeDirectoryRow } from "./employee-action-types";
 
 export function EmployeesPageClient(props: {
 	accessTier: SettingsAccessTier;
@@ -82,7 +83,7 @@ export function EmployeesPageClient(props: {
 		return () => clearTimeout(timer);
 	}, [searchInput, setSearch]);
 
-	const table = useCompilerSafeReactTable({
+	const table = useCompilerSafeReactTable<EmployeeDirectoryRow>({
 		data: employeesWithPresence,
 		columns,
 		state: { sorting, pagination },
@@ -195,6 +196,9 @@ export function EmployeesPageClient(props: {
 								</SelectItem>
 								<SelectItem value="inactive">
 									{t("settings.employees.directory.statuses.inactive", "Inactive")}
+								</SelectItem>
+								<SelectItem value="draft">
+									{t("settings.employees.directory.statuses.draft", "Draft")}
 								</SelectItem>
 							</SelectContent>
 						</Select>

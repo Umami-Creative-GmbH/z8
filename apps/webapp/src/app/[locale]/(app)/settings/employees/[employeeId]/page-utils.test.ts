@@ -49,11 +49,15 @@ describe("employee detail page utilities", () => {
 });
 
 describe("syncEmployeeForm", () => {
-	it("syncs auth user name fields into the detail form", () => {
-		const form = {
+	function createFormMock() {
+		return {
 			reset: vi.fn(),
 			setFieldValue: vi.fn(),
 		};
+	}
+
+	it("syncs auth user name fields into the detail form", () => {
+		const form = createFormMock();
 		const employee = {
 			firstName: "Stale",
 			lastName: "Employee",
@@ -79,5 +83,35 @@ describe("syncEmployeeForm", () => {
 		expect(form.setFieldValue).toHaveBeenCalledWith("firstName", "Ada");
 		expect(form.setFieldValue).toHaveBeenCalledWith("lastName", "Lovelace");
 		expect(form.setFieldValue).toHaveBeenCalledWith("startDate", "2026-05-01");
+	});
+
+	it("syncs invitation draft identity fields into the employee detail form", () => {
+		const form = createFormMock();
+		syncEmployeeForm(form as never, {
+			kind: "invitationDraft",
+			id: "draft-1",
+			user: {
+				firstName: "Ada",
+				lastName: "Lovelace",
+				name: "Ada Lovelace",
+				email: "ada@example.com",
+				image: null,
+				id: "draft-1",
+			},
+			gender: null,
+			pronouns: "they/them",
+			position: "Lead",
+			employeeNumber: "D-100",
+			startDate: new Date("2026-06-01T00:00:00.000Z"),
+			role: "manager",
+			contractType: "hourly",
+			currentHourlyRate: "45.00",
+			team: null,
+		} as EmployeeDetail);
+
+		expect(form.setFieldValue).toHaveBeenCalledWith("firstName", "Ada");
+		expect(form.setFieldValue).toHaveBeenCalledWith("lastName", "Lovelace");
+		expect(form.setFieldValue).toHaveBeenCalledWith("role", "manager");
+		expect(form.setFieldValue).toHaveBeenCalledWith("hourlyRate", "45.00");
 	});
 });

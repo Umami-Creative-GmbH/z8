@@ -145,23 +145,30 @@ export function EmployeeDetailPageClient({
 		);
 	}
 
+	const isDraft = employee.kind === "invitationDraft";
+	const isAcceptedDraft = isDraft && Boolean(employee.realEmployeeId);
+	const canShowRealEmployeeSections = !isDraft;
+	const canEditDraftDetails = !isAcceptedDraft && (!isDraft || !employee.realEmployeeId);
+
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<EmployeeDetailHeader t={t} />
 
 			<div className="grid gap-4 lg:grid-cols-3">
 				<EmployeeOverviewCard employee={employee} schedule={schedule} t={t} />
-				<EmployeeEditFormCard
-					form={form}
-					canEditManagerFields={canManageEmployeeDetails}
-					canEditOrgAdminFields={accessTier === "orgAdmin"}
-					isUpdating={isUpdating}
-					onCancel={() => push("/settings/employees")}
-					t={t}
-				/>
+				{canEditDraftDetails && (
+					<EmployeeEditFormCard
+						form={form}
+						canEditManagerFields={canManageEmployeeDetails}
+						canEditOrgAdminFields={accessTier === "orgAdmin"}
+						isUpdating={isUpdating}
+						onCancel={() => push("/settings/employees")}
+						t={t}
+					/>
+				)}
 			</div>
 
-			{canManageManagerAssignments && availableManagers.length > 0 && (
+			{canShowRealEmployeeSections && canManageManagerAssignments && availableManagers.length > 0 && (
 				<ManagerAssignment
 					employeeId={employeeId}
 					currentManagers={employee.managers || []}
@@ -170,29 +177,35 @@ export function EmployeeDetailPageClient({
 				/>
 			)}
 
-			<EmployeeCustomRolesCard
-				employeeId={employeeId}
-				organizationId={employee.organizationId}
-				isAdmin={canManageCustomRoles}
-			/>
+			{canShowRealEmployeeSections && (
+				<EmployeeCustomRolesCard
+					employeeId={employeeId}
+					organizationId={employee.organizationId}
+					isAdmin={canManageCustomRoles}
+				/>
+			)}
 
-			<EmployeeSkillsCard
-				employeeId={employeeId}
-				organizationId={employee.organizationId}
-				canManageSkills={canManageSkills}
-			/>
+			{canShowRealEmployeeSections && (
+				<EmployeeSkillsCard
+					employeeId={employeeId}
+					organizationId={employee.organizationId}
+					canManageSkills={canManageSkills}
+				/>
+			)}
 
-			<EmployeeEmploymentHistoryCard
-				history={employmentHistory}
-				canManage={canManageEmploymentHistory}
-				onCreate={createEmploymentHistory}
-				onConfirm={confirmEmploymentHistory}
-				onCancel={cancelEmploymentHistory}
-				isCreating={isCreatingEmploymentHistory}
-				isMutating={isMutatingEmploymentHistory}
-			/>
+			{canShowRealEmployeeSections && (
+				<EmployeeEmploymentHistoryCard
+					history={employmentHistory}
+					canManage={canManageEmploymentHistory}
+					onCreate={createEmploymentHistory}
+					onConfirm={confirmEmploymentHistory}
+					onCancel={cancelEmploymentHistory}
+					isCreating={isCreatingEmploymentHistory}
+					isMutating={isMutatingEmploymentHistory}
+				/>
+			)}
 
-			{accessTier === "orgAdmin" && (
+			{canShowRealEmployeeSections && accessTier === "orgAdmin" && (
 				<WorkBalanceRecalculationCard
 					employeeName={buildAuthUserDisplayName(employee.user) || employee.id}
 					isPending={isRequestingWorkBalanceRecalculation}
@@ -201,7 +214,7 @@ export function EmployeeDetailPageClient({
 				/>
 			)}
 
-			{employee.contractType === "hourly" && (
+			{canShowRealEmployeeSections && employee.contractType === "hourly" && (
 				<RateHistoryCard
 					rateHistory={rateHistory}
 					isLoading={isLoadingRateHistory}

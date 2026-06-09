@@ -1,6 +1,8 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
@@ -289,6 +291,81 @@ describe("employee detail page sections", () => {
 
 		expect(screen.getByText("Auth Source")).toBeTruthy();
 		expect(screen.queryByText("Stale Employee")).toBeNull();
+	});
+
+	it("labels draft overview records and shows invitation status", () => {
+		render(
+			<EmployeeOverviewCard
+				employee={
+					{
+						kind: "invitationDraft",
+						id: "draft-1",
+						user: {
+							id: "draft-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+							firstName: "Ada",
+							lastName: "Lovelace",
+						},
+						team: null,
+						role: "manager",
+						pronouns: null,
+						isActive: false,
+						invitationStatus: "pending",
+						realEmployeeId: null,
+					} as EmployeeDetail
+				}
+				schedule={null}
+			/>,
+		);
+		expect(screen.getByText("Draft")).toBeTruthy();
+		expect(screen.getByText("pending")).toBeTruthy();
+	});
+
+	it("links accepted drafts to the active employee record", () => {
+		render(
+			<EmployeeOverviewCard
+				employee={
+					{
+						kind: "invitationDraft",
+						id: "draft-1",
+						user: {
+							id: "draft-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+							firstName: "Ada",
+							lastName: "Lovelace",
+						},
+						team: null,
+						role: "manager",
+						pronouns: null,
+						isActive: false,
+						invitationStatus: "accepted",
+						realEmployeeId: "employee-1",
+					} as EmployeeDetail
+				}
+				schedule={null}
+			/>,
+		);
+		expect(screen.getByRole("link", { name: "Edit active employee" }).getAttribute("href")).toBe(
+			"/settings/employees/employee-1",
+		);
+	});
+
+	it("guards real-employee-only sections behind the draft check", () => {
+		const source = readFileSync(
+			join(
+				process.cwd(),
+				"src/app/[locale]/(app)/settings/employees/[employeeId]/employee-detail-page-client.tsx",
+			),
+			"utf8",
+		);
+		expect(source).toContain("canShowRealEmployeeSections");
+		expect(source).toContain("!isDraft");
+		expect(source).toContain("canEditDraftDetails");
+		expect(source).toContain("!employee.realEmployeeId");
 	});
 
 	it("renders the edit form strings in German", () => {

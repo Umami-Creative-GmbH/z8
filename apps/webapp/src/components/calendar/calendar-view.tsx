@@ -1,12 +1,22 @@
 "use client";
 
-import { IconAdjustmentsHorizontal } from "@tabler/icons-react";
+import { IconAdjustmentsHorizontal, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import type { SelectableEmployee } from "@/components/employee-select/types";
 import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { ManualTimeEntryDialog } from "@/components/time-tracking/manual-time-entry-dialog";
+import {
+	AlertDialog,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Sheet,
@@ -96,6 +106,8 @@ export function CalendarView({
 
 	// Selected event for details panel
 	const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+	const [pendingClockOutEvent, setPendingClockOutEvent] = useState<CalendarEvent | null>(null);
+	const [isClockOutPending, setIsClockOutPending] = useState(false);
 
 	// Dialog states for work period actions
 	const [showSplitDialog, setShowSplitDialog] = useState(false);
@@ -215,6 +227,63 @@ export function CalendarView({
 		setManualEntryOpen(true);
 	};
 
+	const canClockOutRunningPeriod = (event: CalendarEvent) => {
+		return (
+			isManagerOrAbove &&
+			isRunningWorkPeriod(event) &&
+			event.metadata.employeeId !== currentEmployeeId
+		);
+	};
+
+	const handleRunningPeriodClockOutRequest = (event: CalendarEvent) => {
+		if (!canClockOutRunningPeriod(event)) return;
+
+		setPendingClockOutEvent(event);
+	};
+
+	const handleConfirmClockOut = async () => {
+		if (!pendingClockOutEvent || isClockOutPending) return;
+
+		setIsClockOutPending(true);
+
+		try {
+			const response = await fetch("/api/time-entries/clock-out-on-behalf", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ workPeriodId: pendingClockOutEvent.id }),
+			});
+
+			if (!response.ok) {
+				let message = t(
+					"calendar.clockOutOnBehalf.error",
+					"Failed to clock out employee",
+				);
+
+				try {
+					const body = (await response.json()) as { error?: unknown };
+					if (typeof body.error === "string" && body.error.length > 0) {
+						message = body.error;
+					}
+				} catch {
+					// Keep the translated fallback when the server does not return JSON.
+				}
+
+				toast.error(message);
+				return;
+			}
+
+			toast.success(
+				t("calendar.clockOutOnBehalf.success", "Employee clocked out successfully"),
+			);
+			setPendingClockOutEvent(null);
+			refetch();
+		} catch {
+			toast.error(t("calendar.clockOutOnBehalf.error", "Failed to clock out employee"));
+		} finally {
+			setIsClockOutPending(false);
+		}
+	};
+
 	// Handle day click from year view
 	const handleDayClick = (date: Date) => {
 		setCurrentMonth(date);
@@ -275,6 +344,48 @@ export function CalendarView({
 				hideTrigger
 				onSuccess={refetch}
 			/>
+
+			<AlertDialog
+				open={pendingClockOutEvent !== null}
+				onOpenChange={(open) => {
+					if (!open && !isClockOutPending) {
+						setPendingClockOutEvent(null);
+					}
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							{t("calendar.clockOutOnBehalf.title", "Clock out employee?")}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{t(
+								"calendar.clockOutOnBehalf.description",
+								"This creates an auditable clock-out entry at the current server time. If anything needs adjustment afterward, use corrections.",
+							)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={isClockOutPending}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
+						<Button
+							type="button"
+							disabled={isClockOutPending}
+							onClick={() => {
+								void handleConfirmClockOut();
+							}}
+						>
+							{isClockOutPending && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+							)}
+							{isClockOutPending
+								? t("calendar.clockOutOnBehalf.loading", "Clocking out...")
+								: t("calendar.clockOutOnBehalf.confirm", "Clock Out")}
+						</Button>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
 			{/* Main content grid */}
 			<div
@@ -380,6 +491,8 @@ export function CalendarView({
 							viewMode={viewMode}
 							onViewModeChange={setViewMode}
 							onEventClick={handleEventClick}
+							canClockOutRunningPeriod={canClockOutRunningPeriod}
+							onRunningPeriodClockOutRequest={handleRunningPeriodClockOutRequest}
 							onRangeChange={handleRangeChange}
 							onTimeRangeSelect={handleTimeRangeSelect}
 							onRefresh={refetch}

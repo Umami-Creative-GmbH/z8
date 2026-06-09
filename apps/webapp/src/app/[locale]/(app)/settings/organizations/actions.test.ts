@@ -156,6 +156,87 @@ describe("organization invitation actions", () => {
 		});
 	});
 
+	it("creates an employee invitation draft after creating an invitation", async () => {
+		invitationFindFirstMock.mockResolvedValueOnce(null).mockResolvedValueOnce({
+			id: "invite-created",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const result = await sendInvitation({
+			organizationId: "org-1",
+			email: "invitee@example.com",
+			role: "admin",
+			targetTeamId: "11111111-1111-4111-8111-111111111111",
+		});
+
+		expect(result).toMatchObject({ success: true });
+		expect(insertValuesMock).toHaveBeenCalledWith({
+			invitationId: "invite-created",
+			organizationId: "org-1",
+			teamId: "11111111-1111-4111-8111-111111111111",
+			role: "admin",
+			contractType: "fixed",
+			updatedBy: "user-admin",
+		});
+		expect(onConflictDoUpdateMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				target: expect.anything(),
+				set: expect.objectContaining({
+					teamId: "11111111-1111-4111-8111-111111111111",
+					role: "admin",
+					updatedBy: "user-admin",
+				}),
+			}),
+		);
+	});
+
+	it("fails when Better Auth creates an invitation but the created invitation cannot be loaded", async () => {
+		invitationFindFirstMock.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+
+		const result = await sendInvitation({
+			organizationId: "org-1",
+			email: "invitee@example.com",
+			role: "member",
+		});
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "Failed to load created invitation",
+		});
+		expect(insertValuesMock).not.toHaveBeenCalled();
+	});
+
+	it("heals a missing employee draft for an existing pending invitation before returning the pending invitation error", async () => {
+		invitationFindFirstMock.mockResolvedValueOnce({
+			id: "invite-existing",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const result = await sendInvitation({
+			organizationId: "org-1",
+			email: "invitee@example.com",
+			role: "admin",
+			targetTeamId: "11111111-1111-4111-8111-111111111111",
+		});
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "An invitation for this email is already pending",
+		});
+		expect(insertValuesMock).toHaveBeenCalledWith({
+			invitationId: "invite-existing",
+			organizationId: "org-1",
+			teamId: "11111111-1111-4111-8111-111111111111",
+			role: "admin",
+			contractType: "fixed",
+			updatedBy: "user-admin",
+		});
+	});
+
 	it("allows an admin to update the target team for a pending invitation", async () => {
 		invitationFindFirstMock.mockResolvedValue({
 			id: "invite-1",
