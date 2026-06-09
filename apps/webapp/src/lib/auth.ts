@@ -612,6 +612,7 @@ export const auth = betterAuth({
 						organizationId: invitation.organizationId,
 						memberRole: member.role,
 						targetTeamId,
+						invitationId: invitation.id,
 					});
 
 					await syncBillingSeats({

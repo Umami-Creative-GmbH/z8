@@ -199,3 +199,149 @@ describe("ensureEmployeeForOrganizationMember", () => {
 		});
 	});
 });
+
+function createInvitationDraftDbMock({
+	existingEmployee = null,
+	draft = null,
+	validTeam = true,
+} = {}) {
+	const returning = vi.fn().mockResolvedValue([{ id: "employee-created", organizationId: "org-1" }]);
+	const values = vi.fn(() => ({ returning }));
+	const insert = vi.fn(() => ({ values }));
+	const updateReturning = vi
+		.fn()
+		.mockResolvedValue([{ id: "employee-existing", organizationId: "org-1" }]);
+	const updateWhere = vi.fn(() => ({ returning: updateReturning }));
+	const set = vi.fn(() => ({ where: updateWhere }));
+	const update = vi.fn(() => ({ set }));
+
+	return {
+		insert,
+		update,
+		values,
+		set,
+		query: {
+			employee: { findFirst: vi.fn().mockResolvedValue(existingEmployee) },
+			employeeInvitationDraft: { findFirst: vi.fn().mockResolvedValue(draft) },
+			team: { findFirst: vi.fn().mockResolvedValue(validTeam ? { id: "team-1" } : null) },
+			teamPermissions: { findFirst: vi.fn().mockResolvedValue(null) },
+		},
+	};
+}
+
+describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
+	it("applies invitation draft fields when creating an employee", async () => {
+		const db = createInvitationDraftDbMock({
+			draft: {
+				invitationId: "invite-1",
+				organizationId: "org-1",
+				teamId: "team-1",
+				role: "manager",
+				firstName: "Ada",
+				lastName: "Lovelace",
+				gender: "other",
+				pronouns: "they/them",
+				birthday: new Date("1990-01-01T00:00:00.000Z"),
+				position: "Lead",
+				employeeNumber: "E-100",
+				startDate: new Date("2026-01-01T00:00:00.000Z"),
+				endDate: null,
+				contractType: "hourly",
+				currentHourlyRate: "42.50",
+			},
+		});
+
+		await ensureEmployeeForOrganizationMember(db as any, {
+			userId: "user-1",
+			organizationId: "org-1",
+			memberRole: "member",
+			invitationId: "invite-1",
+		});
+
+		expect(db.values).toHaveBeenCalledWith(
+			expect.objectContaining({
+				userId: "user-1",
+				organizationId: "org-1",
+				teamId: "team-1",
+				role: "manager",
+				firstName: "Ada",
+				lastName: "Lovelace",
+				gender: "other",
+				pronouns: "they/them",
+				position: "Lead",
+				employeeNumber: "E-100",
+				contractType: "hourly",
+				currentHourlyRate: "42.50",
+			}),
+		);
+	});
+
+	it("ignores a draft team that no longer belongs to the organization", async () => {
+		const db = createInvitationDraftDbMock({
+			draft: {
+				invitationId: "invite-1",
+				organizationId: "org-1",
+				teamId: "deleted-team",
+				role: "employee",
+				contractType: "fixed",
+			},
+			validTeam: false,
+		});
+
+		await ensureEmployeeForOrganizationMember(db as any, {
+			userId: "user-1",
+			organizationId: "org-1",
+			memberRole: "member",
+			invitationId: "invite-1",
+		});
+
+		expect(db.values).toHaveBeenCalledWith(expect.objectContaining({ teamId: null }));
+	});
+
+	it("keeps current behavior when no draft exists", async () => {
+		const db = createInvitationDraftDbMock();
+
+		await ensureEmployeeForOrganizationMember(db as any, {
+			userId: "user-1",
+			organizationId: "org-1",
+			memberRole: "admin",
+		});
+
+		expect(db.values).toHaveBeenCalledWith(
+			expect.objectContaining({ role: "admin", teamId: null }),
+		);
+	});
+
+	it("applies draft fields when reactivating an inactive placeholder employee", async () => {
+		const db = createInvitationDraftDbMock({
+			existingEmployee: { id: "employee-existing", isActive: false, teamId: null, role: "employee" },
+			draft: {
+				invitationId: "invite-1",
+				organizationId: "org-1",
+				teamId: "team-1",
+				role: "manager",
+				position: "Lead",
+				contractType: "hourly",
+				currentHourlyRate: "42.50",
+			},
+		});
+
+		await ensureEmployeeForOrganizationMember(db as any, {
+			userId: "user-1",
+			organizationId: "org-1",
+			memberRole: "member",
+			invitationId: "invite-1",
+		});
+
+		expect(db.set).toHaveBeenCalledWith(
+			expect.objectContaining({
+				isActive: true,
+				teamId: "team-1",
+				role: "manager",
+				position: "Lead",
+				contractType: "hourly",
+				currentHourlyRate: "42.50",
+			}),
+		);
+	});
+});

@@ -1,7 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { member } from "@/db/auth-schema";
-import { employee, teamPermissions } from "@/db/schema";
+import { employee, employeeInvitationDraft, team, teamPermissions } from "@/db/schema";
 
 type OrganizationMemberRole = string | string[] | null | undefined;
 
@@ -12,6 +12,54 @@ function hasAdminOrganizationRole(memberRole: OrganizationMemberRole) {
 	return roles.includes("owner") || roles.includes("admin");
 }
 
+async function loadInvitationDraft(
+	dbClient: EmployeeProvisioningDb,
+	input: { organizationId: string; invitationId?: string | null },
+) {
+	if (!input.invitationId) return null;
+	return await dbClient.query.employeeInvitationDraft.findFirst({
+		where: and(
+			eq(employeeInvitationDraft.organizationId, input.organizationId),
+			eq(employeeInvitationDraft.invitationId, input.invitationId),
+		),
+	});
+}
+
+async function resolveDraftTeamId(
+	dbClient: EmployeeProvisioningDb,
+	organizationId: string,
+	teamId?: string | null,
+) {
+	if (!teamId) return null;
+	const targetTeam = await dbClient.query.team.findFirst({
+		where: and(eq(team.id, teamId), eq(team.organizationId, organizationId)),
+		columns: { id: true },
+	});
+	return targetTeam?.id ?? null;
+}
+
+function draftEmployeeValues(
+	draft: typeof employeeInvitationDraft.$inferSelect | null,
+	teamId: string | null,
+) {
+	if (!draft) return { teamId };
+	return {
+		teamId,
+		role: draft.role,
+		firstName: draft.firstName,
+		lastName: draft.lastName,
+		gender: draft.gender,
+		pronouns: draft.pronouns,
+		birthday: draft.birthday,
+		position: draft.position,
+		employeeNumber: draft.employeeNumber,
+		startDate: draft.startDate,
+		endDate: draft.endDate,
+		contractType: draft.contractType,
+		currentHourlyRate: draft.currentHourlyRate,
+	};
+}
+
 export async function ensureEmployeeForOrganizationMember(
 	dbClient: EmployeeProvisioningDb,
 	input: {
@@ -19,9 +67,15 @@ export async function ensureEmployeeForOrganizationMember(
 		organizationId: string;
 		memberRole: OrganizationMemberRole;
 		targetTeamId?: string | null;
+		invitationId?: string | null;
 	},
 ) {
 	const isAdminRole = hasAdminOrganizationRole(input.memberRole);
+	const draft = await loadInvitationDraft(dbClient, input);
+	const targetTeamId = draft
+		? await resolveDraftTeamId(dbClient, input.organizationId, draft.teamId)
+		: (input.targetTeamId ?? null);
+	const preparedValues = draftEmployeeValues(draft, targetTeamId);
 	const existingEmployee = await dbClient.query.employee.findFirst({
 		where: and(
 			eq(employee.userId, input.userId),
@@ -35,8 +89,8 @@ export async function ensureEmployeeForOrganizationMember(
 				.update(employee)
 				.set({
 					isActive: true,
-					teamId: input.targetTeamId ?? null,
-					...(isAdminRole ? { role: "admin" as const } : {}),
+					...preparedValues,
+					...(draft ? {} : isAdminRole ? { role: "admin" as const } : {}),
 				})
 				.where(
 					and(
@@ -80,9 +134,9 @@ export async function ensureEmployeeForOrganizationMember(
 	const insertResult = dbClient.insert(employee).values({
 		userId: input.userId,
 		organizationId: input.organizationId,
-		role: isAdminRole ? "admin" : "employee",
+		role: draft?.role ?? (isAdminRole ? "admin" : "employee"),
 		isActive: true,
-		teamId: input.targetTeamId ?? null,
+		...preparedValues,
 	});
 
 	const [newEmployee] = insertResult.returning ? await insertResult.returning() : [];
