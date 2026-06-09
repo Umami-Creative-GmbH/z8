@@ -72,8 +72,9 @@ export async function ensureEmployeeForOrganizationMember(
 ) {
 	const isAdminRole = hasAdminOrganizationRole(input.memberRole);
 	const draft = await loadInvitationDraft(dbClient, input);
+	const draftTeamCandidate = input.targetTeamId ?? draft?.teamId ?? null;
 	const targetTeamId = draft
-		? await resolveDraftTeamId(dbClient, input.organizationId, draft.teamId)
+		? await resolveDraftTeamId(dbClient, input.organizationId, draftTeamCandidate)
 		: (input.targetTeamId ?? null);
 	const preparedValues = draftEmployeeValues(draft, targetTeamId);
 	const existingEmployee = await dbClient.query.employee.findFirst({

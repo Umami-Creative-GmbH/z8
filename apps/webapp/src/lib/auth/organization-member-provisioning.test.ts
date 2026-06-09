@@ -229,6 +229,14 @@ function createInvitationDraftDbMock({
 	};
 }
 
+function objectContainsValue(value: unknown, expected: string, seen = new WeakSet<object>()): boolean {
+	if (value === expected) return true;
+	if (!value || typeof value !== "object") return false;
+	if (seen.has(value)) return false;
+	seen.add(value);
+	return Object.values(value).some((nestedValue) => objectContainsValue(nestedValue, expected, seen));
+}
+
 describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 	it("applies invitation draft fields when creating an employee", async () => {
 		const db = createInvitationDraftDbMock({
@@ -341,6 +349,41 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 				position: "Lead",
 				contractType: "hourly",
 				currentHourlyRate: "42.50",
+			}),
+		);
+	});
+
+	it("prefers the accepted invitation target team over a stale draft team", async () => {
+		const db = createInvitationDraftDbMock({
+			draft: {
+				invitationId: "invite-1",
+				organizationId: "org-1",
+				teamId: "team-from-draft",
+				role: "employee",
+				contractType: "fixed",
+			},
+		});
+		db.query.team.findFirst.mockImplementation(async (options) =>
+			objectContainsValue(options.where, "team-from-invitation") ? { id: "team-1" } : null,
+		);
+
+		await ensureEmployeeForOrganizationMember(db as any, {
+			userId: "user-1",
+			organizationId: "org-1",
+			memberRole: "member",
+			invitationId: "invite-1",
+			targetTeamId: "team-from-invitation",
+		});
+
+		expect(db.query.team.findFirst).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: expect.anything(),
+				columns: { id: true },
+			}),
+		);
+		expect(db.values).toHaveBeenCalledWith(
+			expect.objectContaining({
+				teamId: "team-1",
 			}),
 		);
 	});
