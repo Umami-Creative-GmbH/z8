@@ -173,7 +173,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 	};
 
 	const createEmploymentHistoryMutation = useMutation({
-		mutationFn: (data: UpsertEmploymentHistory) =>
+		mutationFn: async (data: UpsertEmploymentHistory) =>
 			isDraft ? draftActionResult : createEmployeeEmploymentHistoryAction(employeeId, data),
 		onSuccess: (result) => {
 			if (result.success) {
@@ -188,7 +188,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 	});
 
 	const confirmEmploymentHistoryMutation = useMutation({
-		mutationFn: (historyId: string) =>
+		mutationFn: async (historyId: string) =>
 			isDraft ? draftActionResult : confirmEmployeeEmploymentHistoryAction(employeeId, historyId),
 		onSuccess: (result) => {
 			if (result.success) {
@@ -203,7 +203,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 	});
 
 	const cancelEmploymentHistoryMutation = useMutation({
-		mutationFn: (historyId: string) =>
+		mutationFn: async (historyId: string) =>
 			isDraft ? draftActionResult : cancelEmployeeEmploymentHistoryAction(employeeId, historyId),
 		onSuccess: (result) => {
 			if (result.success) {
@@ -218,7 +218,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 	});
 
 	const requestWorkBalanceRecalculationMutation = useMutation({
-		mutationFn: () =>
+		mutationFn: async () =>
 			isDraft ? draftActionResult : requestEmployeeWorkBalanceRecalculation(employeeId),
 		onSuccess: (result) => {
 			if (result.success) {
@@ -231,7 +231,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 	// Update rate mutation
 	const updateRateMutation = useMutation({
-		mutationFn: (data: CreateRateHistory) =>
+		mutationFn: async (data: CreateRateHistory) =>
 			isDraft ? draftActionResult : createRateHistoryEntry(employeeId, data),
 		onSuccess: (result) => {
 			if (result.success) {
@@ -248,7 +248,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 	// Update employee mutation
 	const updateMutation = useMutation({
-		mutationFn: (data: UpdateEmployee) => {
+		mutationFn: async (data: UpdateEmployee) => {
 			const isAcceptedDraft =
 				employeeQuery.data?.kind === "invitationDraft" && Boolean(employeeQuery.data.realEmployeeId);
 

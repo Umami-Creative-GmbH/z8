@@ -133,6 +133,15 @@ describe("useEmployee contracts", () => {
 		expect(source).toContain("Edit the active employee record");
 	});
 
+	it("returns promises from guarded mutation functions", () => {
+		const source = readFileSync("src/lib/query/use-employee.ts", "utf8");
+		expect(source).toContain("mutationFn: async (data: UpsertEmploymentHistory)");
+		expect(source).toContain("mutationFn: async (historyId: string)");
+		expect(source).toContain("mutationFn: async () =>");
+		expect(source).toContain("mutationFn: async (data: CreateRateHistory)");
+		expect(source).toContain("mutationFn: async (data: UpdateEmployee)");
+	});
+
 	it("exposes a stable employment history query key", () => {
 		expect(queryKeys.employees.employmentHistory("employee-1")).toEqual([
 			"employees",
