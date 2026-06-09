@@ -6,6 +6,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { Checkbox } from "./checkbox";
+import { RadioGroup, RadioGroupItem } from "./radio-group";
 import { Switch } from "./switch";
 import { Tabs, TabsList, TabsTrigger } from "./tabs";
 import { ToggleGroup, ToggleGroupItem } from "./toggle-group";
@@ -54,6 +55,26 @@ describe("form control wrappers", () => {
 
 		expect(control.id).toBe("availability-switch");
 		expect(container.querySelectorAll("#availability-switch")).toHaveLength(1);
+	});
+
+	it("renders RadioGroupItem as a non-submit control inside forms", () => {
+		render(
+			<form>
+				<RadioGroup defaultValue="primary" aria-label="Manager type">
+					<RadioGroupItem value="primary" aria-label="Primary manager" />
+				</RadioGroup>
+			</form>,
+		);
+
+		const radio = screen.getByRole("radio", { name: "Primary manager" });
+		expect(radio.getAttribute("type")).toBe("button");
+		expect(radio.className).toContain("inline-flex");
+	});
+
+	it("keeps an explicit button type in the RadioGroupItem render adapter", () => {
+		const source = readFileSync(join(process.cwd(), "src/components/ui/radio-group.tsx"), "utf8");
+
+		expect(source).toContain('<button {...buttonProps} type="button" />');
 	});
 
 	it("renders Switch as a non-submit control inside forms by default", () => {
