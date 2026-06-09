@@ -61,6 +61,8 @@ interface ScheduleXCalendarWrapperProps {
 	viewMode: ViewMode;
 	onViewModeChange: (mode: ViewMode) => void;
 	onEventClick?: (event: CalendarEvent) => void;
+	canClockOutRunningPeriod?: (event: CalendarEvent) => boolean;
+	onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
 	onRangeChange?: (range: { start: Date; end: Date }) => void;
 	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
@@ -149,6 +151,8 @@ export function ScheduleXCalendarWrapper({
 	viewMode,
 	onViewModeChange,
 	onEventClick,
+	canClockOutRunningPeriod,
+	onRunningPeriodClockOutRequest,
 	onRangeChange,
 	onTimeRangeSelect,
 	onRefresh,
@@ -190,6 +194,7 @@ export function ScheduleXCalendarWrapper({
 	const baseScheduleXEvents = calendarEventsToScheduleX(
 		filterEventsForScheduleXView(liveEvents, viewMode),
 		timeZone,
+		{ canClockOutRunningPeriod },
 	);
 
 	// Generate break events only for day/week view
@@ -407,6 +412,34 @@ export function ScheduleXCalendarWrapper({
 			calendar.setTheme(isDark ? "dark" : "light");
 		}
 	}, [calendar, isDark]);
+
+	useEffect(() => {
+		const container = calendarContainerRef.current;
+		if (!container || !onRunningPeriodClockOutRequest) return;
+
+		const handleClick = (event: MouseEvent) => {
+			const target = event.target instanceof Element ? event.target : null;
+			const button = target?.closest<HTMLElement>("[data-running-clock-out-button]");
+			if (!button || !container.contains(button)) return;
+
+			event.preventDefault();
+			event.stopPropagation();
+
+			const workPeriodId = button.dataset.workPeriodId;
+			if (!workPeriodId) return;
+
+			const calendarEvent = events.find(
+				(event) =>
+					event.id === workPeriodId && event.type === "work_period" && event.metadata.isRunning,
+			);
+			if (calendarEvent) {
+				onRunningPeriodClockOutRequest(calendarEvent);
+			}
+		};
+
+		container.addEventListener("click", handleClick, { capture: true });
+		return () => container.removeEventListener("click", handleClick, { capture: true });
+	}, [events, onRunningPeriodClockOutRequest]);
 
 	useEffect(() => {
 		const container = calendarContainerRef.current;

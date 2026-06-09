@@ -130,6 +130,59 @@ describe("calendarEventToScheduleX", () => {
 		expect(timeGrid).not.toContain("animate-pulse");
 	});
 
+	it("renders a stop button for authorized running work periods", () => {
+		const runningPeriod: WorkPeriodEvent = {
+			id: "work-running-action",
+			type: "work_period",
+			date: new Date("2026-05-18T14:48:00.000Z"),
+			endDate: new Date("2026-05-18T14:51:00.000Z"),
+			title: "Kai Hentschel - 3m (running)",
+			color: "#10b981",
+			metadata: {
+				durationMinutes: 3,
+				employeeName: "Kai Hentschel",
+				isRunning: true,
+			},
+		};
+
+		const scheduleXEvent = calendarEventToScheduleX(runningPeriod, "UTC", {
+			canClockOutRunningPeriod: () => true,
+		});
+
+		expect(scheduleXEvent?._customContent?.timeGrid).toContain(
+			"data-running-clock-out-button",
+		);
+		expect(scheduleXEvent?._customContent?.timeGrid).toContain(
+			'data-work-period-id="work-running-action"',
+		);
+		expect(scheduleXEvent?._customContent?.timeGrid).toContain("Stop");
+	});
+
+	it("does not render a stop button for unauthorized running work periods", () => {
+		const runningPeriod: WorkPeriodEvent = {
+			id: "work-running-action-denied",
+			type: "work_period",
+			date: new Date("2026-05-18T14:48:00.000Z"),
+			endDate: new Date("2026-05-18T14:51:00.000Z"),
+			title: "Kai Hentschel - 3m (running)",
+			color: "#10b981",
+			metadata: {
+				durationMinutes: 3,
+				employeeName: "Kai Hentschel",
+				isRunning: true,
+			},
+		};
+
+		const scheduleXEvent = calendarEventToScheduleX(runningPeriod, "UTC", {
+			canClockOutRunningPeriod: () => false,
+		});
+
+		expect(scheduleXEvent?._customContent?.timeGrid).not.toContain(
+			"data-running-clock-out-button",
+		);
+		expect(scheduleXEvent?._customContent?.timeGrid).not.toContain("Stop");
+	});
+
 	it("uses different saved offsets for travel work-period endpoints", () => {
 		const workPeriod: WorkPeriodEvent = {
 			id: "work-travel",

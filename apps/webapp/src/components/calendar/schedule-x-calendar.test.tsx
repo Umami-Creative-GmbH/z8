@@ -1,8 +1,10 @@
 /** @vitest-environment jsdom */
 
+import "temporal-polyfill/global";
+
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkPeriodEvent } from "@/lib/calendar/types";
@@ -132,6 +134,57 @@ describe("ScheduleXCalendarWrapper header", () => {
 
 		expect(calendarConfig.defaultView).toBe("day");
 		expect(calendarConfig.isResponsive).toBe(false);
+	});
+});
+
+describe("ScheduleXCalendarWrapper running clock-out action", () => {
+	it("passes canClockOutRunningPeriod into the Schedule-X event conversion path", () => {
+		const canClockOutRunningPeriod = vi.fn(() => true);
+
+		render(
+			<ScheduleXCalendarWrapper
+				events={[runningWorkPeriod]}
+				canClockOutRunningPeriod={canClockOutRunningPeriod}
+				onRefresh={vi.fn()}
+				onViewModeChange={vi.fn()}
+				viewMode="week"
+			/>,
+		);
+
+		expect(canClockOutRunningPeriod).toHaveBeenCalledWith(
+			expect.objectContaining({
+				id: runningWorkPeriod.id,
+				type: "work_period",
+				metadata: expect.objectContaining({ isRunning: true }),
+			}),
+		);
+	});
+
+	it("delegates running stop button clicks to the matching running event", () => {
+		const onRunningPeriodClockOutRequest = vi.fn();
+
+		render(
+			<ScheduleXCalendarWrapper
+				events={[runningWorkPeriod, completedWorkPeriod]}
+				onRunningPeriodClockOutRequest={onRunningPeriodClockOutRequest}
+				onRefresh={vi.fn()}
+				onViewModeChange={vi.fn()}
+				viewMode="week"
+			/>,
+		);
+
+		const calendarRoot = screen.getByTestId("schedule-x-calendar").parentElement;
+		expect(calendarRoot).not.toBeNull();
+		const button = document.createElement("button");
+		button.type = "button";
+		button.dataset.runningClockOutButton = "true";
+		button.dataset.workPeriodId = runningWorkPeriod.id;
+		calendarRoot?.append(button);
+
+		fireEvent.click(button);
+
+		expect(onRunningPeriodClockOutRequest).toHaveBeenCalledTimes(1);
+		expect(onRunningPeriodClockOutRequest).toHaveBeenCalledWith(runningWorkPeriod);
 	});
 });
 
