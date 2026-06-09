@@ -1,10 +1,11 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { z } from "zod";
-import { user } from "@/db/auth-schema";
+import { invitation, user } from "@/db/auth-schema";
 import { employee, employeeInvitationDraft, employeeRateHistory, team } from "@/db/schema";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -47,6 +48,8 @@ import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
 
 const logger = createLogger("EmployeeActions");
 const employeeIdSchema = z.uuid("Invalid employee ID");
+const realEmployee = alias(employee, "realEmployee");
+const realEmployeeUser = alias(user, "realEmployeeUser");
 
 export async function createEmployeeAction(
 	data: CreateEmployee,
@@ -434,6 +437,44 @@ export async function updateEmployeeInvitationDraftAction(
 								message: "Employee invitation draft not found",
 								entityType: "employee_invitation_draft",
 								entityId: draftId,
+							}),
+						),
+					);
+				}
+
+				const existingRealEmployee = yield* _(
+					actor.dbService.query("getEmployeeInvitationDraftRealEmployee", async () => {
+						const rows = await actor.dbService.db
+							.select({ id: realEmployee.id })
+							.from(employeeInvitationDraft)
+							.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
+							.innerJoin(realEmployeeUser, eq(realEmployeeUser.email, invitation.email))
+							.innerJoin(
+								realEmployee,
+								and(
+									eq(realEmployee.userId, realEmployeeUser.id),
+									eq(realEmployee.organizationId, actor.organizationId),
+								),
+							)
+							.where(
+								and(
+									eq(employeeInvitationDraft.id, draftId),
+									eq(employeeInvitationDraft.organizationId, actor.organizationId),
+								),
+							)
+							.limit(1);
+
+						return rows[0] ?? null;
+					}),
+				);
+
+				if (existingRealEmployee) {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Edit the active employee record for accepted invitations",
+								field: "draftEmployeeId",
+								value: draftEmployeeId,
 							}),
 						),
 					);

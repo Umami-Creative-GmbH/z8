@@ -87,6 +87,16 @@ describe("employee mutation schemas", () => {
 		expect(source).toContain("...(hasHourlyRateUpdate");
 	});
 
+	it("blocks draft updates after the invitation has an active employee", () => {
+		const source = readFileSync(
+			new URL("./employee-mutations.actions.ts", import.meta.url),
+			"utf8",
+		);
+		expect(source).toContain("getEmployeeInvitationDraftRealEmployee");
+		expect(source).toContain("Edit the active employee record for accepted invitations");
+		expect(source).toContain("eq(realEmployee.organizationId, actor.organizationId)");
+	});
+
 	it("strips employee-owned names from create employee input", () => {
 		const result = createEmployeeSchema.safeParse({
 			userId: validUserId,
