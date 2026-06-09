@@ -17,12 +17,14 @@ async function loadInvitationDraft(
 	input: { organizationId: string; invitationId?: string | null },
 ) {
 	if (!input.invitationId) return null;
-	return await dbClient.query.employeeInvitationDraft.findFirst({
-		where: and(
-			eq(employeeInvitationDraft.organizationId, input.organizationId),
-			eq(employeeInvitationDraft.invitationId, input.invitationId),
-		),
-	});
+	return (
+		(await dbClient.query.employeeInvitationDraft.findFirst({
+			where: and(
+				eq(employeeInvitationDraft.organizationId, input.organizationId),
+				eq(employeeInvitationDraft.invitationId, input.invitationId),
+			),
+		})) ?? null
+	);
 }
 
 async function resolveDraftTeamId(

@@ -465,7 +465,8 @@ export async function updateEmployeeInvitationDraftAction(
 					}
 				}
 
-				const hourlyRate = parseHourlyRate(validatedData.hourlyRate);
+				const hasHourlyRateUpdate = Object.hasOwn(validatedData, "hourlyRate");
+				const hourlyRate = hasHourlyRateUpdate ? parseHourlyRate(validatedData.hourlyRate) : null;
 				const { hourlyRate: _hourlyRate, ...draftUpdate } = validatedData;
 				yield* _(
 					actor.dbService.query("updateEmployeeInvitationDraft", async () => {
@@ -473,7 +474,9 @@ export async function updateEmployeeInvitationDraftAction(
 							.update(employeeInvitationDraft)
 							.set({
 								...draftUpdate,
-								currentHourlyRate: hourlyRate?.toString() ?? null,
+								...(hasHourlyRateUpdate
+									? { currentHourlyRate: hourlyRate?.toString() ?? null }
+									: {}),
 								updatedBy: actor.session.user.id,
 								updatedAt: currentTimestamp(),
 							})

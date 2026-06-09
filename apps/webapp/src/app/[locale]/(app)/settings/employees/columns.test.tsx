@@ -6,6 +6,7 @@ import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { EmployeeWithRelations } from "./actions";
 import { columns } from "./columns";
+import type { EmployeeDirectoryRow } from "./employee-action-types";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -68,6 +69,73 @@ function createEmployee(overrides: Partial<EmployeeWithRelations> = {}): Employe
 	} as EmployeeWithRelations;
 }
 
+function createDraft(overrides: Partial<EmployeeDirectoryRow> = {}): EmployeeDirectoryRow {
+	const createdAt = new Date("2024-01-01T00:00:00Z");
+	return {
+		id: "draft-1",
+		encodedId: "draft:draft-1",
+		invitationId: "invite-1",
+		organizationId: "org_1",
+		teamId: null,
+		role: "employee",
+		firstName: "Invited",
+		lastName: "Employee",
+		position: null,
+		employeeNumber: null,
+		gender: null,
+		pronouns: null,
+		birthday: null,
+		startDate: null,
+		endDate: null,
+		contractType: "fixed",
+		currentHourlyRate: null,
+		updatedBy: null,
+		createdAt,
+		updatedAt: createdAt,
+		kind: "invitationDraft",
+		userId: "draft-1",
+		invitation: {
+			id: "invite-1",
+			organizationId: "org_1",
+			email: "invited@example.com",
+			role: "member",
+			status: "pending",
+			expiresAt: createdAt,
+			createdAt,
+			inviterId: "admin-1",
+			canCreateOrganizations: false,
+			targetTeamId: null,
+		},
+		team: null,
+		user: {
+			id: "draft-1",
+			name: "Invited Employee",
+			email: "invited@example.com",
+			emailVerified: false,
+			image: null,
+			createdAt,
+			updatedAt: createdAt,
+			role: null,
+			banned: null,
+			banReason: null,
+			banExpires: null,
+			twoFactorEnabled: null,
+			firstName: "Invited",
+			lastName: "Employee",
+			canCreateOrganizations: null,
+			invitedVia: null,
+			pendingInviteCode: null,
+			canUseWebapp: true,
+			canUseDesktop: true,
+			canUseMobile: true,
+		},
+		isActive: false,
+		invitationStatus: "pending",
+		realEmployeeId: null,
+		...overrides,
+	} as EmployeeDirectoryRow;
+}
+
 describe("employee directory columns", () => {
 	it("preserves the user name when pronouns are absent", () => {
 		renderEmployeeCell(createEmployee());
@@ -95,5 +163,19 @@ describe("employee directory columns", () => {
 		);
 
 		expect(screen.getByText("", { selector: '[data-clock-status="clocked-in"]' })).toBeTruthy();
+	});
+
+	it("links draft rows with encoded draft ids", () => {
+		const actionsColumn = columns.find((column) => column.id === "actions");
+		const cell = actionsColumn?.cell;
+		if (typeof cell !== "function") throw new Error("Actions cell is not renderable");
+
+		render(
+			cell({
+				row: { original: createDraft({ encodedId: "draft:draft-1" }) },
+			} as Parameters<typeof cell>[0]) as React.ReactElement,
+		);
+
+		expect(screen.getByRole("link").getAttribute("href")).toBe("/settings/employees/draft:draft-1");
 	});
 });

@@ -9,9 +9,9 @@ import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { normalizePronouns } from "@/lib/employee-identity";
 import { Link } from "@/navigation";
-import type { EmployeeWithRelations } from "./actions";
+import type { EmployeeDirectoryRow as BaseEmployeeDirectoryRow } from "./employee-action-types";
 
-type EmployeeDirectoryRow = EmployeeWithRelations & {
+type EmployeeDirectoryRow = BaseEmployeeDirectoryRow & {
 	clockStatus?: EmployeeClockStatus;
 };
 
@@ -85,7 +85,7 @@ function ActionsHeader() {
 function ContractTypeCell({
 	contractType,
 }: {
-	contractType: EmployeeWithRelations["contractType"];
+	contractType: EmployeeDirectoryRow["contractType"];
 }) {
 	const { t } = useTranslate();
 
@@ -117,13 +117,17 @@ function StatusCell({ isActive }: { isActive: boolean }) {
 	);
 }
 
-function ViewDetailsCell({ employeeId }: { employeeId: string }) {
+function ViewDetailsCell({ employee }: { employee: BaseEmployeeDirectoryRow }) {
 	const { t } = useTranslate();
+	const href =
+		employee.kind === "invitationDraft"
+			? `/settings/employees/${employee.encodedId}`
+			: `/settings/employees/${employee.id}`;
 
 	return (
 		<div className="text-right">
 			<Button variant="ghost" size="sm" asChild>
-				<Link href={`/settings/employees/${employeeId}`}>
+				<Link href={href}>
 					{t("settings.employees.directory.actions.viewDetails", "View Details")}
 				</Link>
 			</Button>
@@ -131,7 +135,7 @@ function ViewDetailsCell({ employeeId }: { employeeId: string }) {
 	);
 }
 
-export const columns: ColumnDef<EmployeeWithRelations>[] = [
+export const columns: ColumnDef<BaseEmployeeDirectoryRow>[] = [
 	{
 		id: "employeeName",
 		accessorFn: (row) => buildAuthUserDisplayName(row.user),
@@ -209,6 +213,6 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 	{
 		id: "actions",
 		header: () => <ActionsHeader />,
-		cell: ({ row }) => <ViewDetailsCell employeeId={row.original.id} />,
+		cell: ({ row }) => <ViewDetailsCell employee={row.original} />,
 	},
 ];

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
 	ensureEmployeeForOrganizationMember,
@@ -205,7 +206,9 @@ function createInvitationDraftDbMock({
 	draft = null,
 	validTeam = true,
 } = {}) {
-	const returning = vi.fn().mockResolvedValue([{ id: "employee-created", organizationId: "org-1" }]);
+	const returning = vi
+		.fn()
+		.mockResolvedValue([{ id: "employee-created", organizationId: "org-1" }]);
 	const values = vi.fn(() => ({ returning }));
 	const insert = vi.fn(() => ({ values }));
 	const updateReturning = vi
@@ -229,15 +232,29 @@ function createInvitationDraftDbMock({
 	};
 }
 
-function objectContainsValue(value: unknown, expected: string, seen = new WeakSet<object>()): boolean {
+function objectContainsValue(
+	value: unknown,
+	expected: string,
+	seen = new WeakSet<object>(),
+): boolean {
 	if (value === expected) return true;
 	if (!value || typeof value !== "object") return false;
 	if (seen.has(value)) return false;
 	seen.add(value);
-	return Object.values(value).some((nestedValue) => objectContainsValue(nestedValue, expected, seen));
+	return Object.values(value).some((nestedValue) =>
+		objectContainsValue(nestedValue, expected, seen),
+	);
 }
 
 describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
+	it("normalizes missing invitation drafts to null", () => {
+		const source = readFileSync(
+			new URL("./organization-member-provisioning.ts", import.meta.url),
+			"utf8",
+		);
+		expect(source).toContain("?? null");
+	});
+
 	it("applies invitation draft fields when creating an employee", async () => {
 		const db = createInvitationDraftDbMock({
 			draft: {
@@ -322,7 +339,12 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 
 	it("applies draft fields when reactivating an inactive placeholder employee", async () => {
 		const db = createInvitationDraftDbMock({
-			existingEmployee: { id: "employee-existing", isActive: false, teamId: null, role: "employee" },
+			existingEmployee: {
+				id: "employee-existing",
+				isActive: false,
+				teamId: null,
+				role: "employee",
+			},
 			draft: {
 				invitationId: "invite-1",
 				organizationId: "org-1",

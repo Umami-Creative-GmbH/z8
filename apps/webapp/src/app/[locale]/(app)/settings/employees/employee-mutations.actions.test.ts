@@ -78,6 +78,15 @@ describe("employee mutation schemas", () => {
 		expect(source).toContain("getEmployeeInvitationDraftForUpdate");
 	});
 
+	it("does not clear draft hourly rates when hourlyRate is omitted", () => {
+		const source = readFileSync(
+			new URL("./employee-mutations.actions.ts", import.meta.url),
+			"utf8",
+		);
+		expect(source).toContain('Object.hasOwn(validatedData, "hourlyRate")');
+		expect(source).toContain("...(hasHourlyRateUpdate");
+	});
+
 	it("strips employee-owned names from create employee input", () => {
 		const result = createEmployeeSchema.safeParse({
 			userId: validUserId,
