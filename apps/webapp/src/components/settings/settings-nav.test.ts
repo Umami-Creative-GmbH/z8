@@ -25,4 +25,10 @@ describe("settings nav active state", () => {
 	it("marks nested routes under the same settings entry as active", () => {
 		expect(isSettingsNavItemActive("/settings/teams/team-1", "/settings/teams")).toBe(true);
 	});
+
+	it("marks settings entries active when the pathname includes a locale prefix", () => {
+		expect(
+			isSettingsNavItemActive("/de/settings/enterprise/domains", "/settings/enterprise/domains"),
+		).toBe(true);
+	});
 });
