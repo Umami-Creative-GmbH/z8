@@ -12,7 +12,10 @@ export function encodeEmployeeInvitationDraftId(draftId: string) {
 }
 
 export function decodeEmployeeInvitationDraftId(id: string) {
-	return id.startsWith(EMPLOYEE_DRAFT_ID_PREFIX) ? id.slice(EMPLOYEE_DRAFT_ID_PREFIX.length) : null;
+	const normalizedId = decodeURIComponent(id);
+	return normalizedId.startsWith(EMPLOYEE_DRAFT_ID_PREFIX)
+		? normalizedId.slice(EMPLOYEE_DRAFT_ID_PREFIX.length)
+		: null;
 }
 
 export type EmployeeWithRelations = typeof employee.$inferSelect & {
