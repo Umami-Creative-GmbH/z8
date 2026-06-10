@@ -1,7 +1,7 @@
 import { and, eq, gte, isNotNull, lt, lte, min } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { absenceCategory, absenceEntry, employee, workPeriod } from "@/db/schema";
+import { absenceCategory, absenceEntry, employee, shift, workPeriod } from "@/db/schema";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	type EffectiveWorkPolicy,
@@ -42,6 +42,17 @@ interface BuildDailyWorkRequirementsOptions {
 	policy: EffectiveWorkPolicy | null;
 	startDate: Date;
 	endDate: Date;
+	timezone?: string | null;
+}
+
+interface ShiftRequirementSource {
+	date: Date;
+	startTime: string;
+	endTime: string;
+}
+
+interface BuildShiftDailyWorkRequirementsOptions {
+	shifts: ShiftRequirementSource[];
 	timezone?: string | null;
 }
 
@@ -124,6 +135,40 @@ export function buildDailyWorkRequirements({
 	return requirements;
 }
 
+export function buildShiftDailyWorkRequirements({
+	shifts,
+	timezone,
+}: BuildShiftDailyWorkRequirementsOptions): DailyWorkRequirements {
+	const requestedZone = timezone || "utc";
+	const requirements: DailyWorkRequirements = {};
+
+	for (const assignedShift of shifts) {
+		const dateKey = DateTime.fromJSDate(assignedShift.date, { zone: "utc" }).toISODate();
+		if (!dateKey) continue;
+
+		const start = DateTime.fromISO(`${dateKey}T${assignedShift.startTime}`, {
+			zone: requestedZone,
+		});
+		const parsedEnd = DateTime.fromISO(`${dateKey}T${assignedShift.endTime}`, {
+			zone: requestedZone,
+		});
+		if (!start.isValid || !parsedEnd.isValid) continue;
+
+		const end = parsedEnd <= start ? parsedEnd.plus({ days: 1 }) : parsedEnd;
+		const requiredMinutes = Math.round(end.diff(start, "minutes").minutes);
+		if (requiredMinutes <= 0) continue;
+
+		const existing = requirements[dateKey]?.requiredMinutes ?? 0;
+		requirements[dateKey] = {
+			requiredMinutes: existing + requiredMinutes,
+			policyId: "assigned-shift",
+			policyName: "Assigned shift",
+		};
+	}
+
+	return requirements;
+}
+
 export function applyApprovedAbsencesToDailyRequirements(
 	requirements: DailyWorkRequirements,
 	absences: ApprovedAbsenceRange[],
@@ -175,6 +220,41 @@ async function getApprovedAbsenceRanges(params: {
 	);
 }
 
+async function getPublishedShiftRequirementsForEmployee(params: {
+	database: typeof DatabaseService.Service;
+	organizationId: string;
+	employeeId: string;
+	startDate: Date;
+	endDate: Date;
+	timezone?: string | null;
+}): Promise<DailyWorkRequirements> {
+	const assignedShifts = await Effect.runPromise(
+		params.database.query("getPublishedShiftsForCalendarRequirements", async () => {
+			return params.database.db
+				.select({
+					date: shift.date,
+					startTime: shift.startTime,
+					endTime: shift.endTime,
+				})
+				.from(shift)
+				.where(
+					and(
+						eq(shift.employeeId, params.employeeId),
+						eq(shift.organizationId, params.organizationId),
+						eq(shift.status, "published"),
+						gte(shift.date, params.startDate),
+						lte(shift.date, params.endDate),
+					),
+				);
+		}),
+	);
+
+	return buildShiftDailyWorkRequirements({
+		shifts: assignedShifts,
+		timezone: params.timezone,
+	});
+}
+
 async function getFirstCompletedWorkPeriodBeforeAccount(params: {
 	database: typeof DatabaseService.Service;
 	organizationId: string;
@@ -218,7 +298,7 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 							eq(employee.id, params.employeeId),
 							eq(employee.organizationId, params.organizationId),
 						),
-						columns: { id: true, startDate: true },
+						columns: { id: true, startDate: true, contractType: true },
 						with: { user: { columns: { createdAt: true } } },
 					});
 				}),
@@ -252,14 +332,32 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 			const effectiveStartDate = DateTime.max(requestedStartDate, lowerBoundDate).toJSDate();
 			if (effectiveStartDate > params.endDate) return {};
 
-			const service = yield* _(WorkPolicyService);
-			const policy = yield* _(service.getEffectivePolicy(params.employeeId));
-			const requirements = buildDailyWorkRequirements({
-				policy,
-				startDate: effectiveStartDate,
-				endDate: params.endDate,
-				timezone: params.timezone,
-			});
+			const requirements =
+				scopedEmployee.contractType === "hourly"
+					? yield* _(
+							Effect.promise(() =>
+								getPublishedShiftRequirementsForEmployee({
+									database,
+									organizationId: params.organizationId,
+									employeeId: params.employeeId,
+									startDate: effectiveStartDate,
+									endDate: params.endDate,
+									timezone: params.timezone,
+								}),
+							),
+						)
+					: yield* _(
+							Effect.gen(function* (_) {
+								const service = yield* _(WorkPolicyService);
+								const policy = yield* _(service.getEffectivePolicy(params.employeeId));
+								return buildDailyWorkRequirements({
+									policy,
+									startDate: effectiveStartDate,
+									endDate: params.endDate,
+									timezone: params.timezone,
+								});
+							}),
+						);
 			const approvedAbsences = yield* _(
 				Effect.promise(() =>
 					getApprovedAbsenceRanges({

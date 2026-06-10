@@ -5,6 +5,7 @@ import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.serv
 import {
 	applyApprovedAbsencesToDailyRequirements,
 	buildDailyWorkRequirements,
+	buildShiftDailyWorkRequirements,
 } from "./work-policy-requirements";
 
 const source = readFileSync(
@@ -197,6 +198,48 @@ describe("buildDailyWorkRequirements", () => {
 	});
 });
 
+describe("buildShiftDailyWorkRequirements", () => {
+	it("returns no requirements when an hourly worker has no assigned published shifts", () => {
+		const requirements = buildShiftDailyWorkRequirements({
+			shifts: [],
+			timezone: "Europe/Berlin",
+		});
+
+		expect(requirements).toEqual({});
+	});
+
+	it("uses assigned published shift durations as hourly worker requirements", () => {
+		const requirements = buildShiftDailyWorkRequirements({
+			shifts: [
+				{
+					date: new Date("2026-06-01T00:00:00.000Z"),
+					startTime: "09:00",
+					endTime: "13:30",
+				},
+				{
+					date: new Date("2026-06-03T00:00:00.000Z"),
+					startTime: "22:00",
+					endTime: "02:00",
+				},
+			],
+			timezone: "Europe/Berlin",
+		});
+
+		expect(requirements).toEqual({
+			"2026-06-01": {
+				requiredMinutes: 270,
+				policyId: "assigned-shift",
+				policyName: "Assigned shift",
+			},
+			"2026-06-03": {
+				requiredMinutes: 240,
+				policyId: "assigned-shift",
+				policyName: "Assigned shift",
+			},
+		});
+	});
+});
+
 describe("getDailyWorkRequirementsForEmployee", () => {
 	it("applies assigned holiday adjustments after absence adjustments", () => {
 		expect(source).toContain("getAssignedHolidaysForEmployee");
@@ -210,7 +253,7 @@ describe("getDailyWorkRequirementsForEmployee", () => {
 	});
 
 	it("clamps generated requirements to account creation unless imported work predates it", () => {
-		expect(source).toContain("columns: { id: true, startDate: true }");
+		expect(source).toContain("columns: { id: true, startDate: true, contractType: true }");
 		expect(source).toContain("user: { columns: { createdAt: true } }");
 		expect(source).toContain("getFirstCompletedWorkPeriodBeforeAccount");
 		expect(source).toContain("scopedEmployee.user.createdAt");
