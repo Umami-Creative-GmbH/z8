@@ -21,7 +21,7 @@ import { IconChevronLeft, IconChevronRight, IconReload } from "@tabler/icons-rea
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useUserTimezone, useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
@@ -62,7 +62,7 @@ interface ScheduleXCalendarWrapperProps {
 	viewMode: ViewMode;
 	onViewModeChange: (mode: ViewMode) => void;
 	onEventClick?: (event: CalendarEvent) => void;
-	canClockOutRunningPeriod?: (event: CalendarEvent) => boolean;
+	clockOutAllowedWorkPeriodIds?: ReadonlySet<string>;
 	onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
 	onRangeChange?: (range: { start: Date; end: Date }) => void;
 	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
@@ -78,6 +78,8 @@ const viewModeToScheduleX: Record<ViewMode, string> = {
 	month: "month-grid",
 	year: "month-grid", // Year view is handled separately, fallback to month-grid
 };
+
+const EMPTY_CLOCK_OUT_ALLOWED_WORK_PERIOD_IDS = new Set<string>();
 
 function getHeaderCells(container: HTMLDivElement): HTMLElement[] {
 	return Array.from(
@@ -164,7 +166,7 @@ export function ScheduleXCalendarWrapper({
 	viewMode,
 	onViewModeChange,
 	onEventClick,
-	canClockOutRunningPeriod,
+	clockOutAllowedWorkPeriodIds = EMPTY_CLOCK_OUT_ALLOWED_WORK_PERIOD_IDS,
 	onRunningPeriodClockOutRequest,
 	onRangeChange,
 	onTimeRangeSelect,
@@ -203,12 +205,11 @@ export function ScheduleXCalendarWrapper({
 					: event,
 			)
 		: events;
-
 	// Convert events to Schedule-X format
 	const baseScheduleXEvents = calendarEventsToScheduleX(
 		filterEventsForScheduleXView(liveEvents, viewMode),
 		timeZone,
-		{ canClockOutRunningPeriod },
+		{ clockOutAllowedWorkPeriodIds },
 	);
 
 	// Generate break events only for day/week view
@@ -364,6 +365,13 @@ export function ScheduleXCalendarWrapper({
 		});
 	};
 
+	const handleViewModeChange = (mode: ViewMode) => {
+		if (mode !== "year") {
+			calendarControls.setView(viewModeToScheduleX[mode]);
+		}
+		onViewModeChange(mode);
+	};
+
 	// Create calendar instance with controls plugin
 	const calendar = useCalendarApp({
 		views: [createViewDay(), createViewWeek(), createViewMonthGrid(), createViewMonthAgenda()],
@@ -383,14 +391,6 @@ export function ScheduleXCalendarWrapper({
 		},
 	});
 
-	// Update view when viewMode changes using calendar controls plugin
-	useEffect(() => {
-		if (calendar && viewMode !== "year") {
-			const scheduleXView = viewModeToScheduleX[viewMode];
-			calendarControls.setView(scheduleXView);
-		}
-	}, [calendar, viewMode, calendarControls]);
-
 	useEffect(() => {
 		if (!hasVisibleRunningPeriod) return;
 
@@ -401,8 +401,8 @@ export function ScheduleXCalendarWrapper({
 		return () => window.clearInterval(interval);
 	}, [hasVisibleRunningPeriod]);
 
-	// Update events when they change
-	useEffect(() => {
+	// Keep the imperative Schedule-X instance in sync before the stale event list can paint.
+	useLayoutEffect(() => {
 		if (calendar) {
 			try {
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -419,13 +419,6 @@ export function ScheduleXCalendarWrapper({
 			}
 		}
 	}, [calendar, scheduleXEvents]);
-
-	// Update dark mode when theme changes
-	useEffect(() => {
-		if (calendar) {
-			calendar.setTheme(isDark ? "dark" : "light");
-		}
-	}, [calendar, isDark]);
 
 	useEffect(() => {
 		const container = calendarContainerRef.current;
@@ -446,14 +439,14 @@ export function ScheduleXCalendarWrapper({
 				(event) =>
 					event.id === workPeriodId && event.type === "work_period" && event.metadata.isRunning,
 			);
-			if (calendarEvent && canClockOutRunningPeriod?.(calendarEvent)) {
+			if (calendarEvent && clockOutAllowedWorkPeriodIds.has(calendarEvent.id)) {
 				onRunningPeriodClockOutRequest(calendarEvent);
 			}
 		};
 
 		container.addEventListener("click", handleClick, { capture: true });
 		return () => container.removeEventListener("click", handleClick, { capture: true });
-	}, [canClockOutRunningPeriod, events, onRunningPeriodClockOutRequest]);
+	}, [clockOutAllowedWorkPeriodIds, events, onRunningPeriodClockOutRequest]);
 
 	useEffect(() => {
 		const container = calendarContainerRef.current;
@@ -745,7 +738,7 @@ export function ScheduleXCalendarWrapper({
 					)}
 				</div>
 				<h2 className="text-lg font-semibold">{dateRangeDisplay}</h2>
-				<Tabs value={viewMode} onValueChange={(v) => onViewModeChange(v as ViewMode)}>
+				<Tabs value={viewMode} onValueChange={(v) => handleViewModeChange(v as ViewMode)}>
 					<TabsList>
 						<TabsTrigger value="day">{t("calendar.view.day", "Day")}</TabsTrigger>
 						<TabsTrigger value="week">{t("calendar.view.week", "Week")}</TabsTrigger>
@@ -796,7 +789,7 @@ export function ScheduleXCalendarWrapper({
 								<IconReload className="size-4" />
 							</Button>
 						)}
-						<Tabs value={viewMode} onValueChange={(v) => onViewModeChange(v as ViewMode)}>
+						<Tabs value={viewMode} onValueChange={(v) => handleViewModeChange(v as ViewMode)}>
 							<TabsList>
 								<TabsTrigger value="day">{t("calendar.view.day", "Day")}</TabsTrigger>
 								<TabsTrigger value="week">{t("calendar.view.week", "Week")}</TabsTrigger>

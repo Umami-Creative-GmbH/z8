@@ -137,7 +137,7 @@ vi.mock("./year-calendar-view", () => ({
 
 vi.mock("./schedule-x-wrapper", () => ({
 	ScheduleXWrapper: ({
-		canClockOutRunningPeriod,
+		clockOutAllowedWorkPeriodIds,
 		isSummaryLoading,
 		onRunningPeriodClockOutRequest,
 		onTimeRangeSelect,
@@ -145,7 +145,7 @@ vi.mock("./schedule-x-wrapper", () => ({
 		timeZone,
 		viewMode,
 	}: {
-		canClockOutRunningPeriod?: (event: CalendarEvent) => boolean;
+		clockOutAllowedWorkPeriodIds?: ReadonlySet<string>;
 		isSummaryLoading?: boolean;
 		onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
 		onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
@@ -158,10 +158,14 @@ vi.mock("./schedule-x-wrapper", () => ({
 		return (
 			<div
 				data-testid="schedule-x-wrapper"
-				data-can-clock-out={String(canClockOutRunningPeriod?.(runningWorkPeriod) ?? false)}
-				data-can-clock-out-own={String(canClockOutRunningPeriod?.(ownRunningWorkPeriod) ?? false)}
+				data-can-clock-out={String(
+					clockOutAllowedWorkPeriodIds?.has(runningWorkPeriod.id) ?? false,
+				)}
+				data-can-clock-out-own={String(
+					clockOutAllowedWorkPeriodIds?.has(ownRunningWorkPeriod.id) ?? false,
+				)}
 				data-can-clock-out-completed={String(
-					canClockOutRunningPeriod?.(completedWorkPeriod) ?? false,
+					clockOutAllowedWorkPeriodIds?.has(completedWorkPeriod.id) ?? false,
 				)}
 				data-view-mode={viewMode}
 				data-time-zone={timeZone}
@@ -655,6 +659,8 @@ describe("CalendarView", () => {
 	});
 
 	it("allows manager-or-above users to request clock-out for running work periods", () => {
+		mockCalendarData.events = [runningWorkPeriod];
+
 		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
 
 		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-can-clock-out")).toBe(
@@ -663,6 +669,8 @@ describe("CalendarView", () => {
 	});
 
 	it("denies clock-out requests for the current employee's own running work period", () => {
+		mockCalendarData.events = [ownRunningWorkPeriod];
+
 		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
 
 		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-can-clock-out-own")).toBe(
@@ -675,6 +683,7 @@ describe("CalendarView", () => {
 
 	it("denies running work period clock-out requests for non-manager users", () => {
 		mockIsManagerOrAbove.mockReturnValue(false);
+		mockCalendarData.events = [runningWorkPeriod];
 
 		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
 
@@ -687,6 +696,8 @@ describe("CalendarView", () => {
 	});
 
 	it("denies clock-out requests for non-running work periods", () => {
+		mockCalendarData.events = [completedWorkPeriod];
+
 		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
 
 		expect(

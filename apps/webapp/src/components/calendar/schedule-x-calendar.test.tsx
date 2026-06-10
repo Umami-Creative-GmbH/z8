@@ -139,25 +139,20 @@ describe("ScheduleXCalendarWrapper header", () => {
 });
 
 describe("ScheduleXCalendarWrapper running clock-out action", () => {
-	it("passes canClockOutRunningPeriod into the Schedule-X event conversion path", () => {
-		const canClockOutRunningPeriod = vi.fn(() => true);
-
+	it("passes allowed running clock-out ids into the Schedule-X event conversion path", () => {
 		render(
 			<ScheduleXCalendarWrapper
 				events={[runningWorkPeriod]}
-				canClockOutRunningPeriod={canClockOutRunningPeriod}
+				clockOutAllowedWorkPeriodIds={new Set([runningWorkPeriod.id])}
 				onRefresh={vi.fn()}
 				onViewModeChange={vi.fn()}
 				viewMode="week"
 			/>,
 		);
 
-		expect(canClockOutRunningPeriod).toHaveBeenCalledWith(
-			expect.objectContaining({
-				id: runningWorkPeriod.id,
-				type: "work_period",
-				metadata: expect.objectContaining({ isRunning: true }),
-			}),
+		const calendarConfig = useCalendarAppMock.mock.calls[0]?.[0];
+		expect(calendarConfig.events[0]?._customContent?.timeGrid).toContain(
+			"data-running-clock-out-button",
 		);
 	});
 
@@ -167,7 +162,7 @@ describe("ScheduleXCalendarWrapper running clock-out action", () => {
 		render(
 			<ScheduleXCalendarWrapper
 				events={[runningWorkPeriod, completedWorkPeriod]}
-				canClockOutRunningPeriod={() => true}
+				clockOutAllowedWorkPeriodIds={new Set([runningWorkPeriod.id])}
 				onRunningPeriodClockOutRequest={onRunningPeriodClockOutRequest}
 				onRefresh={vi.fn()}
 				onViewModeChange={vi.fn()}
@@ -195,7 +190,7 @@ describe("ScheduleXCalendarWrapper running clock-out action", () => {
 		render(
 			<ScheduleXCalendarWrapper
 				events={[runningWorkPeriod]}
-				canClockOutRunningPeriod={() => false}
+				clockOutAllowedWorkPeriodIds={new Set()}
 				onRunningPeriodClockOutRequest={onRunningPeriodClockOutRequest}
 				onRefresh={vi.fn()}
 				onViewModeChange={vi.fn()}

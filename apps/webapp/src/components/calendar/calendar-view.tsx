@@ -62,6 +62,11 @@ interface ManualEntryDefaults {
 	clockOutTime: string;
 }
 
+interface EmployeeSelectionOverride {
+	id: string | null;
+	name: string | null;
+}
+
 export function CalendarView({
 	organizationId,
 	currentEmployeeId,
@@ -72,7 +77,6 @@ export function CalendarView({
 	const { isManagerOrAbove } = useOrganization();
 	const viewerTimeZone = useUserTimezone();
 	const initialEmployeeId = initialSelectedEmployeeId ?? currentEmployeeId ?? null;
-	const initialFilterEmployeeId = initialEmployeeId ?? undefined;
 	const mobileControlsTitle = t("calendar.mobileControls.title", "Filters & Legend");
 	const mobileControlsDescription = t(
 		"calendar.mobileControls.description",
@@ -94,11 +98,14 @@ export function CalendarView({
 	}, []);
 
 	// Selected employee for calendar view (defaults to current user)
-	const [lastAppliedInitialEmployeeId, setLastAppliedInitialEmployeeId] =
-		useState(initialEmployeeId);
-	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(initialEmployeeId);
-	const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
-	const [pendingSelectedEmployeeId, setPendingSelectedEmployeeId] = useState<string | null>(null);
+	const [employeeSelectionOverride, setEmployeeSelectionOverride] =
+		useState<EmployeeSelectionOverride | null>(null);
+	const activeEmployeeSelectionOverride =
+		employeeSelectionOverride && employeeSelectionOverride.id !== initialEmployeeId
+			? employeeSelectionOverride
+			: null;
+	const selectedEmployeeId = activeEmployeeSelectionOverride?.id ?? initialEmployeeId;
+	const selectedEmployeeName = activeEmployeeSelectionOverride?.name ?? null;
 
 	// Current date range for data fetching
 	const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -121,29 +128,12 @@ export function CalendarView({
 		showAbsences: true,
 		showTimeEntries: false,
 		showWorkPeriods: true,
-		// Calendar pages pass the authenticated employee, keeping this scoped by default.
-		employeeId: initialFilterEmployeeId,
 	});
-
-	if (lastAppliedInitialEmployeeId !== initialEmployeeId) {
-		setLastAppliedInitialEmployeeId(initialEmployeeId);
-
-		if (!pendingSelectedEmployeeId || pendingSelectedEmployeeId === initialEmployeeId) {
-			setPendingSelectedEmployeeId(null);
-			setSelectedEmployeeId(initialEmployeeId);
-			setSelectedEmployeeName(null);
-			setFilters((prev) => {
-				if (prev.employeeId === initialFilterEmployeeId) {
-					return prev;
-				}
-
-				return {
-					...prev,
-					employeeId: initialFilterEmployeeId,
-				};
-			});
-		}
-	}
+	const effectiveFilters: CalendarFilters = {
+		...filters,
+		// Calendar pages pass the authenticated employee, keeping this scoped by default.
+		employeeId: selectedEmployeeId ?? undefined,
+	};
 
 	const getEmployeeDisplayName = (employee?: SelectableEmployee) => {
 		if (!employee) return null;
@@ -154,14 +144,10 @@ export function CalendarView({
 	const handleEmployeeChange = (employeeId: string | null, employee?: SelectableEmployee) => {
 		const nextEmployeeId = employeeId ?? currentEmployeeId ?? null;
 
-		setPendingSelectedEmployeeId(nextEmployeeId);
-		setSelectedEmployeeId(nextEmployeeId);
-		setSelectedEmployeeName(getEmployeeDisplayName(employee));
-		setFilters((prev) => ({
-			...prev,
-			// Always prefer the explicit selection, falling back to the current user.
-			employeeId: nextEmployeeId ?? undefined,
-		}));
+		setEmployeeSelectionOverride({
+			id: nextEmployeeId,
+			name: getEmployeeDisplayName(employee),
+		});
 
 		if (!employeeId || employeeId === currentEmployeeId) {
 			router.push("/calendar");
@@ -187,7 +173,7 @@ export function CalendarView({
 		organizationId,
 		month: currentMonth.getMonth(),
 		year: viewMode === "year" ? currentYear : currentMonth.getFullYear(),
-		filters,
+		filters: effectiveFilters,
 		fullYear: viewMode === "year",
 	});
 	const calendarTimeZone = calendarTimezone ?? viewerTimeZone;
@@ -234,6 +220,12 @@ export function CalendarView({
 			event.metadata.employeeId !== currentEmployeeId
 		);
 	};
+	const clockOutAllowedWorkPeriodIds = new Set<string>();
+	for (const event of events) {
+		if (canClockOutRunningPeriod(event)) {
+			clockOutAllowedWorkPeriodIds.add(event.id);
+		}
+	}
 
 	const handleRunningPeriodClockOutRequest = (event: CalendarEvent) => {
 		if (!canClockOutRunningPeriod(event)) return;
@@ -266,15 +258,16 @@ export function CalendarView({
 				}
 
 				toast.error(message);
+				setIsClockOutPending(false);
 				return;
 			}
 
 			toast.success(t("calendar.clockOutOnBehalf.success", "Employee clocked out successfully"));
 			setPendingClockOutEvent(null);
 			refetch();
+			setIsClockOutPending(false);
 		} catch {
 			toast.error(t("calendar.clockOutOnBehalf.error", "Failed to clock out employee"));
-		} finally {
 			setIsClockOutPending(false);
 		}
 	};
@@ -408,7 +401,7 @@ export function CalendarView({
 						</div>
 						<div data-testid="calendar-desktop-controls" className="hidden space-y-4 md:block">
 							<CalendarFiltersComponent
-								filters={filters}
+								filters={effectiveFilters}
 								onFiltersChange={setFilters}
 								currentEmployeeId={currentEmployeeId}
 								idPrefix="calendar-desktop"
@@ -435,7 +428,7 @@ export function CalendarView({
 									</SheetHeader>
 									<div className="space-y-4 p-4 pt-0">
 										<CalendarFiltersComponent
-											filters={filters}
+											filters={effectiveFilters}
 											onFiltersChange={setFilters}
 											currentEmployeeId={currentEmployeeId}
 											idPrefix="calendar-mobile"
@@ -486,7 +479,7 @@ export function CalendarView({
 							viewMode={viewMode}
 							onViewModeChange={setViewMode}
 							onEventClick={handleEventClick}
-							canClockOutRunningPeriod={canClockOutRunningPeriod}
+							clockOutAllowedWorkPeriodIds={clockOutAllowedWorkPeriodIds}
 							onRunningPeriodClockOutRequest={handleRunningPeriodClockOutRequest}
 							onRangeChange={handleRangeChange}
 							onTimeRangeSelect={handleTimeRangeSelect}
