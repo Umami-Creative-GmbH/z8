@@ -15,7 +15,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useTranslate } from "@tolgee/react";
-import { startTransition, useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/user-avatar";
 import { normalizePronouns } from "@/lib/employee-identity";
@@ -45,6 +45,72 @@ type OrgChartFlowNodeData = {
 
 type OrgChartFlowNode = Node<OrgChartFlowNodeData>;
 
+type OrgChartUiState = {
+	searchQuery: string;
+	searchResults: OrgChartSearchResult[];
+	statusText: string | null;
+	isSearching: boolean;
+	isExpanding: boolean;
+	focusedEmployeeFromSearchId: string | null;
+};
+
+type OrgChartUiAction =
+	| { type: "searchChanged"; value: string }
+	| { type: "searchCleared" }
+	| { type: "searchStarted" }
+	| { type: "searchFinished"; results: OrgChartSearchResult[] }
+	| { type: "searchFailed"; message: string }
+	| { type: "focusStarted" }
+	| { type: "focusFinished"; employeeId: string }
+	| { type: "focusCleared" }
+	| { type: "expandStarted" }
+	| { type: "expandFinished" }
+	| { type: "failureShown"; message: string };
+
+const initialOrgChartUiState: OrgChartUiState = {
+	searchQuery: "",
+	searchResults: [],
+	statusText: null,
+	isSearching: false,
+	isExpanding: false,
+	focusedEmployeeFromSearchId: null,
+};
+
+function orgChartUiReducer(
+	state: OrgChartUiState,
+	action: OrgChartUiAction,
+): OrgChartUiState {
+	switch (action.type) {
+		case "searchChanged":
+			return { ...state, searchQuery: action.value, statusText: null };
+		case "searchCleared":
+			return { ...state, searchResults: [], isSearching: false };
+		case "searchStarted":
+			return { ...state, isSearching: true };
+		case "searchFinished":
+			return { ...state, isSearching: false, searchResults: action.results };
+		case "searchFailed":
+			return { ...state, isSearching: false, statusText: action.message, searchResults: [] };
+		case "focusStarted":
+			return { ...state, statusText: null };
+		case "focusFinished":
+			return {
+				...state,
+				searchQuery: "",
+				searchResults: [],
+				focusedEmployeeFromSearchId: action.employeeId,
+			};
+		case "focusCleared":
+			return { ...state, focusedEmployeeFromSearchId: null };
+		case "expandStarted":
+			return { ...state, statusText: null, isExpanding: true };
+		case "expandFinished":
+			return { ...state, isExpanding: false };
+		case "failureShown":
+			return { ...state, statusText: action.message };
+	}
+}
+
 const NODE_WIDTH = 260;
 const NODE_HEIGHT = 140;
 const COLUMN_GAP = 120;
@@ -73,14 +139,15 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 	const { t } = useTranslate();
 	const reactFlow = useReactFlow();
 	const [graph, setGraph] = useState(initialGraph);
-	const [searchQuery, setSearchQuery] = useState("");
-	const [searchResults, setSearchResults] = useState<OrgChartSearchResult[]>([]);
-	const [statusText, setStatusText] = useState<string | null>(null);
-	const [isSearching, setIsSearching] = useState(false);
-	const [isExpanding, setIsExpanding] = useState(false);
-	const [focusedEmployeeFromSearchId, setFocusedEmployeeFromSearchId] = useState<string | null>(
-		null,
-	);
+	const [uiState, dispatchUi] = useReducer(orgChartUiReducer, initialOrgChartUiState);
+	const {
+		searchQuery,
+		searchResults,
+		statusText,
+		isSearching,
+		isExpanding,
+		focusedEmployeeFromSearchId,
+	} = uiState;
 	const searchRequestSequence = useRef(0);
 	const skipNextFitViewRef = useRef(false);
 
@@ -136,27 +203,25 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 					duration: 240,
 				},
 			);
-			setFocusedEmployeeFromSearchId(null);
+			dispatchUi({ type: "focusCleared" });
 		});
 
 		return () => window.cancelAnimationFrame(frame);
 	}, [focusedEmployeeFromSearchId, flowNodes, reactFlow]);
 
 	async function handleSearchChange(value: string) {
-		setSearchQuery(value);
-		setStatusText(null);
+		dispatchUi({ type: "searchChanged", value });
 
 		const trimmedQuery = value.trim();
 		if (trimmedQuery.length < 2) {
 			searchRequestSequence.current += 1;
-			setSearchResults([]);
-			setIsSearching(false);
+			dispatchUi({ type: "searchCleared" });
 			return;
 		}
 
 		const requestSequence = searchRequestSequence.current + 1;
 		searchRequestSequence.current = requestSequence;
-		setIsSearching(true);
+		dispatchUi({ type: "searchStarted" });
 		const result = await searchOrgEmployees(trimmedQuery);
 		const isLatestRequest = requestSequence === searchRequestSequence.current;
 
@@ -164,21 +229,22 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 			return;
 		}
 
-		setIsSearching(false);
-
 		if (!result.success) {
-			showFailure(
-				result.error || t("organization.orgChart.searchFailed", "Could not search employees."),
-			);
-			setSearchResults([]);
+			const message =
+				result.error || t("organization.orgChart.searchFailed", "Could not search employees.");
+			toast.error(message);
+			dispatchUi({
+				type: "searchFailed",
+				message,
+			});
 			return;
 		}
 
-		setSearchResults(result.data);
+		dispatchUi({ type: "searchFinished", results: result.data });
 	}
 
 	async function focusEmployee(employeeId: string) {
-		setStatusText(null);
+		dispatchUi({ type: "focusStarted" });
 		const result = await getEmployeeNeighborhood(employeeId);
 
 		if (!result.success) {
@@ -191,17 +257,14 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 		startTransition(() => {
 			skipNextFitViewRef.current = true;
 			setGraph((currentGraph) => mergeOrgChartGraphs(currentGraph, result.data, employeeId));
-			setSearchQuery("");
-			setSearchResults([]);
-			setFocusedEmployeeFromSearchId(employeeId);
+			dispatchUi({ type: "focusFinished", employeeId });
 		});
 	}
 
 	async function expandEmployee(employeeId: string) {
-		setStatusText(null);
-		setIsExpanding(true);
+		dispatchUi({ type: "expandStarted" });
 		const result = await getEmployeeNeighborhood(employeeId);
-		setIsExpanding(false);
+		dispatchUi({ type: "expandFinished" });
 
 		if (!result.success) {
 			showFailure(
@@ -217,10 +280,9 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 	}
 
 	async function expandTeam(teamId: string) {
-		setStatusText(null);
-		setIsExpanding(true);
+		dispatchUi({ type: "expandStarted" });
 		const result = await getTeamNeighborhood(teamId);
-		setIsExpanding(false);
+		dispatchUi({ type: "expandFinished" });
 
 		if (!result.success) {
 			showFailure(
@@ -237,7 +299,7 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 	}
 
 	function showFailure(message: string) {
-		setStatusText(message);
+		dispatchUi({ type: "failureShown", message });
 		toast.error(message);
 	}
 
