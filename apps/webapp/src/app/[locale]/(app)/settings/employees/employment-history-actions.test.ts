@@ -19,6 +19,10 @@ vi.mock("@/lib/logger", () => ({
 	}),
 }));
 
+vi.mock("@/lib/work-balance/service", () => ({
+	markEmployeeWorkBalanceDirty: vi.fn(),
+}));
+
 vi.mock("./employee-action-utils", () => ({
 	ensureSettingsActorCanAccessEmployeeTarget: vi.fn(),
 	getEmployeeSettingsActorContext: vi.fn(),

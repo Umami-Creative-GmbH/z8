@@ -39,6 +39,11 @@ type ContractType = UpsertEmploymentHistory["contractType"];
 type ReviewState = UpsertEmploymentHistory["reviewState"];
 type WorkModel = UpsertEmploymentHistory["workModel"];
 
+export type EmploymentHistoryWorkPolicyOption = {
+	id: string;
+	name: string;
+};
+
 export type EmploymentHistoryEntry = {
 	id: string;
 	validFrom: Date | string;
@@ -50,6 +55,7 @@ export type EmploymentHistoryEntry = {
 	probationEndsOn: Date | string | null;
 	workModel: WorkModel;
 	workPolicyId: string | null;
+	workPolicy?: EmploymentHistoryWorkPolicyOption | null;
 	hourlyRate: string | null;
 	currency: string;
 	changeReason: string | null;
@@ -67,7 +73,10 @@ export type EmployeeEmploymentHistoryCardProps = {
 	onCancel: (historyId: string) => Promise<MutationResult>;
 	isCreating: boolean;
 	isMutating: boolean;
+	workPolicies?: EmploymentHistoryWorkPolicyOption[];
 };
+
+const EMPTY_WORK_POLICIES: EmploymentHistoryWorkPolicyOption[] = [];
 
 type FormValues = {
 	validFrom: string;
@@ -75,6 +84,7 @@ type FormValues = {
 	weeklyHours: string;
 	workModel: WorkModel;
 	contractType: ContractType;
+	workPolicyId: string;
 	hourlyRate: string;
 	probationStartsOn: string;
 	probationEndsOn: string;
@@ -102,6 +112,7 @@ const defaultFormValues: FormValues = {
 	weeklyHours: "40",
 	workModel: "onsite",
 	contractType: "fixed",
+	workPolicyId: "__inherit__",
 	hourlyRate: "",
 	probationStartsOn: "",
 	probationEndsOn: "",
@@ -176,6 +187,7 @@ export function EmployeeEmploymentHistoryCard({
 	onCancel,
 	isCreating,
 	isMutating,
+	workPolicies = EMPTY_WORK_POLICIES,
 }: EmployeeEmploymentHistoryCardProps) {
 	const { t } = useTranslate();
 	const [isAdding, setIsAdding] = useState(false);
@@ -185,6 +197,7 @@ export function EmployeeEmploymentHistoryCard({
 		const bDate = toDateTime(b.validFrom)?.toMillis() ?? 0;
 		return bDate - aDate;
 	});
+	const policyNameById = new Map(workPolicies.map((policy) => [policy.id, policy.name]));
 	const current = sortedHistory.find((entry) => isCurrentConfirmed(entry, now));
 	const nextConfirmed = sortedHistory
 		.filter((entry) => isFutureConfirmed(entry, now))
@@ -208,7 +221,7 @@ export function EmployeeEmploymentHistoryCard({
 					: null,
 				probationEndsOn: value.probationEndsOn ? dateInputToDate(value.probationEndsOn) : null,
 				workModel: value.workModel,
-				workPolicyId: null,
+				workPolicyId: value.workPolicyId === "__inherit__" ? null : value.workPolicyId,
 				hourlyRate: value.contractType === "hourly" ? value.hourlyRate : null,
 				currency: "EUR",
 				changeReason: value.changeReason.trim() || null,
@@ -305,6 +318,7 @@ export function EmployeeEmploymentHistoryCard({
 							"No confirmed contract context",
 						)}
 						t={t}
+						policyNameById={policyNameById}
 					/>
 					<ContextPanel
 						label={t(
@@ -317,6 +331,7 @@ export function EmployeeEmploymentHistoryCard({
 							"No confirmed change scheduled",
 						)}
 						t={t}
+						policyNameById={policyNameById}
 					/>
 				</div>
 
@@ -463,6 +478,51 @@ export function EmployeeEmploymentHistoryCard({
 									</TFormItem>
 								)}
 							</form.Field>
+							<form.Field name="workPolicyId">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("settings.employmentHistory.workPolicy", "Work Policy")}
+										</TFormLabel>
+										<Select
+											value={field.state.value}
+											onValueChange={field.handleChange}
+											disabled={isCreating}
+										>
+											<TFormControl hasError={fieldHasError(field)}>
+												<SelectTrigger>
+													<SelectValue
+														placeholder={t(
+															"settings.employmentHistory.selectWorkPolicy",
+															"Select work policy",
+														)}
+													/>
+												</SelectTrigger>
+											</TFormControl>
+											<SelectContent>
+												<SelectItem value="__inherit__">
+													{t(
+														"settings.employmentHistory.inheritWorkPolicy",
+														"Inherit team/org policy",
+													)}
+												</SelectItem>
+												{workPolicies.map((policy) => (
+													<SelectItem key={policy.id} value={policy.id}>
+														{policy.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<TFormDescription>
+											{t(
+												"settings.employmentHistory.workPolicyHelp",
+												"Overrides the selected policy for this employee during this contract period.",
+											)}
+										</TFormDescription>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
 							<TextField
 								form={form}
 								name="hourlyRate"
@@ -550,6 +610,7 @@ export function EmployeeEmploymentHistoryCard({
 									onConfirm={handleConfirm}
 									onCancel={handleCancel}
 									t={t}
+									policyNameById={policyNameById}
 								/>
 							))}
 						</div>
@@ -565,12 +626,17 @@ function ContextPanel({
 	label,
 	empty,
 	t,
+	policyNameById,
 }: {
 	entry?: EmploymentHistoryEntry;
 	label: string;
 	empty: string;
 	t: ReturnType<typeof useTranslate>["t"];
+	policyNameById: Map<string, string>;
 }) {
+	const policyName =
+		entry?.workPolicy?.name ?? (entry?.workPolicyId && policyNameById.get(entry.workPolicyId));
+
 	return (
 		<div className="rounded-lg border p-4">
 			<div className="mb-2 text-sm text-muted-foreground">{label}</div>
@@ -600,6 +666,13 @@ function ContextPanel({
 							})}
 						</div>
 					)}
+					{policyName && (
+						<div className="text-sm text-muted-foreground">
+							{t("settings.employmentHistory.policyValue", "Policy: {policyName}", {
+								policyName,
+							})}
+						</div>
+					)}
 				</div>
 			) : (
 				<div className="text-sm text-muted-foreground">{empty}</div>
@@ -616,6 +689,7 @@ function TimelineRow({
 	onConfirm,
 	onCancel,
 	t,
+	policyNameById,
 }: {
 	entry: EmploymentHistoryEntry;
 	canManage: boolean;
@@ -624,9 +698,12 @@ function TimelineRow({
 	onConfirm: (historyId: string) => void;
 	onCancel: (historyId: string) => void;
 	t: ReturnType<typeof useTranslate>["t"];
+	policyNameById: Map<string, string>;
 }) {
 	const current = isCurrentConfirmed(entry, now);
 	const hourlyRate = formatCurrency(entry.hourlyRate, entry.currency);
+	const policyName =
+		entry.workPolicy?.name ?? (entry.workPolicyId && policyNameById.get(entry.workPolicyId));
 
 	return (
 		<div className="rounded-lg border p-4">
@@ -672,6 +749,13 @@ function TimelineRow({
 					)}
 					{entry.changeReason && (
 						<div className="text-sm text-muted-foreground">{entry.changeReason}</div>
+					)}
+					{policyName && (
+						<div className="text-xs text-muted-foreground">
+							{t("settings.employmentHistory.policyValue", "Policy: {policyName}", {
+								policyName,
+							})}
+						</div>
 					)}
 				</div>
 				{canManage && (canConfirm(entry) || canCancel(entry, now)) && (

@@ -41,6 +41,7 @@ export function EmployeeDetailPageClient({
 		availableManagers,
 		rateHistory,
 		employmentHistory,
+		workPolicies,
 		isLoading,
 		isLoadingRateHistory,
 		hasEmployee,
@@ -168,14 +169,16 @@ export function EmployeeDetailPageClient({
 				)}
 			</div>
 
-			{canShowRealEmployeeSections && canManageManagerAssignments && availableManagers.length > 0 && (
-				<ManagerAssignment
-					employeeId={employeeId}
-					currentManagers={employee.managers || []}
-					availableManagers={availableManagers}
-					onSuccess={refetch}
-				/>
-			)}
+			{canShowRealEmployeeSections &&
+				canManageManagerAssignments &&
+				availableManagers.length > 0 && (
+					<ManagerAssignment
+						employeeId={employeeId}
+						currentManagers={employee.managers || []}
+						availableManagers={availableManagers}
+						onSuccess={refetch}
+					/>
+				)}
 
 			{canShowRealEmployeeSections && (
 				<EmployeeCustomRolesCard
@@ -202,6 +205,7 @@ export function EmployeeDetailPageClient({
 					onCancel={cancelEmploymentHistory}
 					isCreating={isCreatingEmploymentHistory}
 					isMutating={isMutatingEmploymentHistory}
+					workPolicies={workPolicies}
 				/>
 			)}
 

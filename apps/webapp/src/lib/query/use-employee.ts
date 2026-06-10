@@ -21,7 +21,10 @@ import {
 	getEmployeeRateHistory,
 	type RateHistoryEntry,
 } from "@/app/[locale]/(app)/settings/employees/rate-actions";
-import { getEmployeeEffectiveScheduleDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import {
+	getEmployeeEffectiveScheduleDetails,
+	getWorkPolicies,
+} from "@/app/[locale]/(app)/settings/work-policies/actions";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import type { CreateRateHistory, UpdateEmployee } from "@/lib/validations/employee";
 import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
@@ -163,6 +166,22 @@ export function useEmployee(options: UseEmployeeOptions) {
 		staleTime: 30 * 1000,
 	});
 
+	const workPoliciesQuery = useQuery({
+		queryKey: queryKeys.workPolicies.list(employeeQuery.data?.organizationId ?? ""),
+		queryFn: async () => {
+			const organizationId = employeeQuery.data?.organizationId;
+			if (!organizationId) return [];
+
+			const result = await getWorkPolicies(organizationId);
+			if (!result.success) return [];
+
+			return (result.data ?? []).map((policy) => ({ id: policy.id, name: policy.name }));
+		},
+		enabled:
+			enabled && hasEmployee && hasRealEmployeeDetail && !!employeeQuery.data?.organizationId,
+		staleTime: 60 * 1000,
+	});
+
 	const _invalidateEmploymentHistoryQueries = () => {
 		queryClient.invalidateQueries({
 			queryKey: queryKeys.employees.employmentHistory(employeeId),
@@ -250,7 +269,8 @@ export function useEmployee(options: UseEmployeeOptions) {
 	const updateMutation = useMutation({
 		mutationFn: async (data: UpdateEmployee) => {
 			const isAcceptedDraft =
-				employeeQuery.data?.kind === "invitationDraft" && Boolean(employeeQuery.data.realEmployeeId);
+				employeeQuery.data?.kind === "invitationDraft" &&
+				Boolean(employeeQuery.data.realEmployeeId);
 
 			if (isAcceptedDraft) {
 				return {
@@ -291,6 +311,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 		availableManagers: managersQuery.data ?? [],
 		rateHistory: (rateHistoryQuery.data ?? []) as RateHistoryEntry[],
 		employmentHistory: employmentHistoryQuery.data ?? [],
+		workPolicies: workPoliciesQuery.data ?? [],
 
 		// Loading states
 		isLoading: currentEmployeeQuery.isLoading || employeeQuery.isLoading || scheduleQuery.isLoading,

@@ -58,6 +58,28 @@ describe("buildDailyWorkRequirements", () => {
 		expect(requirements["2026-05-10"]).toBeUndefined();
 	});
 
+	it("uses employee contract minutes as an override for simple weekly policy hours", () => {
+		const requirements = buildDailyWorkRequirements({
+			policy: basePolicy({
+				scheduleCycle: "weekly",
+				scheduleType: "simple",
+				workingDaysPreset: "weekdays",
+				hoursPerCycle: "40",
+				homeOfficeDaysPerCycle: 0,
+				days: [],
+			}),
+			startDate: new Date("2026-05-04T00:00:00.000Z"),
+			endDate: new Date("2026-05-08T23:59:59.999Z"),
+			weeklyContractMinutes: 1800,
+		});
+
+		expect(requirements["2026-05-04"]?.requiredMinutes).toBe(360);
+		expect(requirements["2026-05-05"]?.requiredMinutes).toBe(360);
+		expect(requirements["2026-05-06"]?.requiredMinutes).toBe(360);
+		expect(requirements["2026-05-07"]?.requiredMinutes).toBe(360);
+		expect(requirements["2026-05-08"]?.requiredMinutes).toBe(360);
+	});
+
 	it("uses detailed per-day hours and omits non-work days", () => {
 		const requirements = buildDailyWorkRequirements({
 			policy: basePolicy({
@@ -260,5 +282,12 @@ describe("getDailyWorkRequirementsForEmployee", () => {
 		expect(source).toContain("const effectiveStartDate");
 		expect(source).toContain("if (effectiveStartDate > params.endDate) return {};");
 		expect(source).toContain("startDate: effectiveStartDate");
+	});
+
+	it("uses confirmed employment history as the employee-specific requirement override", () => {
+		expect(source).toContain("getConfirmedEmploymentRequirementSlices");
+		expect(source).toContain('eq(employeeEmploymentHistory.reviewState, "confirmed")');
+		expect(source).toContain("weeklyContractMinutes: slice.weeklyContractMinutes");
+		expect(source).toContain('assignedVia: "Contract override"');
 	});
 });
