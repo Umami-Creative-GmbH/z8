@@ -4,6 +4,7 @@ import { setRequestLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
+import { DeploymentRefreshChecker } from "@/components/deployment-refresh";
 import { FontSizeProvider } from "@/components/font-size-preference";
 import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
 import { PostHogProvider } from "@/components/posthog-provider";
@@ -93,6 +94,7 @@ function AppProviders({ children, locale }: { children: ReactNode; locale: strin
 						<TooltipProvider delayDuration={0}>
 							<OfflineBanner />
 							<SWUpdatePrompt />
+							<DeploymentRefreshChecker clientBuildHash={env.NEXT_PUBLIC_BUILD_HASH ?? "development"} />
 							{children}
 							<Toaster position="bottom-right" richColors />
 						</TooltipProvider>
