@@ -40,6 +40,7 @@
 	"devDependencies": {
 		"@esbuild/win32-x64": "^0.28.0",
 		"puppeteer-core": "^25.1.0",
+		"react-doctor": "^0.4.2",
 		"shadcn": "^4.11.0",
 		"turbo": "^2.9.16"
 	},
