@@ -16,6 +16,7 @@ import {
 	hasExceededPointerDragThreshold,
 	isIntentionalRangePointerDown,
 	isScheduleXEventElement,
+	resolveEventModalLeft,
 	resolveClickableCalendarEvent,
 	shouldRetryRequirementHeaderInjection,
 } from "./schedule-x-calendar-utils";
@@ -332,6 +333,34 @@ describe("isScheduleXEventElement", () => {
 		gridCell.className = "sx__time-grid-day";
 
 		expect(isScheduleXEventElement(gridCell)).toBe(false);
+	});
+});
+
+describe("resolveEventModalLeft", () => {
+	it("keeps a small gap from the visible event edge when there is room on the right", () => {
+		expect(
+			resolveEventModalLeft({
+				appLeft: 0,
+				appRight: 1200,
+				eventLeft: 240,
+				eventRight: 454,
+				modalWidth: 400,
+				gap: 10,
+			}),
+		).toBe(464);
+	});
+
+	it("places the modal to the left of the event when the right side has no room", () => {
+		expect(
+			resolveEventModalLeft({
+				appLeft: 0,
+				appRight: 800,
+				eventLeft: 620,
+				eventRight: 760,
+				modalWidth: 400,
+				gap: 10,
+			}),
+		).toBe(210);
 	});
 });
 

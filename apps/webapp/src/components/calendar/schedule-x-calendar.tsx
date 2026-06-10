@@ -42,6 +42,7 @@ import {
 	hasExceededPointerDragThreshold,
 	isIntentionalRangePointerDown,
 	isScheduleXEventElement,
+	resolveEventModalLeft,
 	resolveClickableCalendarEvent,
 	shouldRetryRequirementHeaderInjection,
 } from "./schedule-x-calendar-utils";
@@ -84,6 +85,18 @@ function getHeaderCells(container: HTMLDivElement): HTMLElement[] {
 			".sx__week-header .sx__week-grid__date, .sx__week-header .sx__date-grid__date, .sx__week-header [data-time-grid-date]",
 		),
 	);
+}
+
+function getEventModalAnchorRect(eventElement: HTMLElement) {
+	const eventRect = eventElement.getBoundingClientRect();
+	const cellRect = eventElement
+		.closest<HTMLElement>(".sx__time-grid-day, .sx__date-grid-day, .sx__month-grid-day")
+		?.getBoundingClientRect();
+
+	return {
+		left: cellRect ? Math.max(eventRect.left, cellRect.left) : eventRect.left,
+		right: cellRect ? Math.min(eventRect.right, cellRect.right) : eventRect.right,
+	};
 }
 
 function clearRequirementHeaderContent(container: HTMLDivElement) {
@@ -176,6 +189,7 @@ export function ScheduleXCalendarWrapper({
 	// Create calendar plugins (must be stable references)
 	const [calendarControls] = useState(() => createCalendarControlsPlugin());
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
+	const lastEventModalAnchorRef = useRef<HTMLElement | null>(null);
 	const selectionStartRef = useRef<RangeSelectionStart | null>(null);
 
 	const hasVisibleRunningPeriod =
@@ -440,6 +454,48 @@ export function ScheduleXCalendarWrapper({
 		container.addEventListener("click", handleClick, { capture: true });
 		return () => container.removeEventListener("click", handleClick, { capture: true });
 	}, [canClockOutRunningPeriod, events, onRunningPeriodClockOutRequest]);
+
+	useEffect(() => {
+		const container = calendarContainerRef.current;
+		if (!container) return;
+
+		const rememberEventAnchor = (event: PointerEvent) => {
+			const target = event.target instanceof Element ? event.target : null;
+			lastEventModalAnchorRef.current = target?.closest<HTMLElement>(".sx__event") ?? null;
+		};
+		const repositionEventModal = () => {
+			const eventElement = lastEventModalAnchorRef.current;
+			const modal = container.querySelector<HTMLElement>(".sx__event-modal.is-open");
+			if (!eventElement || !modal) return;
+
+			const appRect = container.getBoundingClientRect();
+			const eventRect = getEventModalAnchorRect(eventElement);
+			const modalWidth = modal.getBoundingClientRect().width || 400;
+			const left = resolveEventModalLeft({
+				appLeft: appRect.left,
+				appRight: appRect.right,
+				eventLeft: eventRect.left,
+				eventRight: eventRect.right,
+				modalWidth,
+			});
+
+			document.documentElement.style.setProperty("--sx-event-modal-left", `${left}px`);
+		};
+		const scheduleReposition = () => window.requestAnimationFrame(repositionEventModal);
+
+		const observer = new MutationObserver(scheduleReposition);
+		observer.observe(container, { childList: true, subtree: true });
+		container.addEventListener("pointerup", rememberEventAnchor, { capture: true });
+		container.addEventListener("scroll", scheduleReposition, { capture: true, passive: true });
+		window.addEventListener("resize", scheduleReposition);
+
+		return () => {
+			observer.disconnect();
+			container.removeEventListener("pointerup", rememberEventAnchor, { capture: true });
+			container.removeEventListener("scroll", scheduleReposition, { capture: true });
+			window.removeEventListener("resize", scheduleReposition);
+		};
+	}, []);
 
 	useEffect(() => {
 		const container = calendarContainerRef.current;
