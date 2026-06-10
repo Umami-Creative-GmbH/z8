@@ -1,146 +1,16 @@
 "use client";
 
-import { IconArrowDown, IconArrowsSort, IconArrowUp } from "@tabler/icons-react";
-import type { ColumnDef, SortDirection } from "@tanstack/react-table";
-import { useTranslate } from "@tolgee/react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { normalizePronouns } from "@/lib/employee-identity";
-import { Link } from "@/navigation";
+import { ContractTypeCell } from "./contract-type-cell";
+import { EmployeeHeader } from "./employee-header";
 import type { EmployeeDirectoryRow } from "./employee-action-types";
-
-function SortIcon({ sort }: { sort: false | SortDirection }) {
-	if (sort === "asc") {
-		return <IconArrowUp className="ml-2 size-4" aria-hidden="true" />;
-	}
-
-	if (sort === "desc") {
-		return <IconArrowDown className="ml-2 size-4" aria-hidden="true" />;
-	}
-
-	return <IconArrowsSort className="ml-2 size-4" aria-hidden="true" />;
-}
-
-function EmployeeHeader({ onClick, sort }: { onClick: () => void; sort: false | SortDirection }) {
-	const { t } = useTranslate();
-
-	return (
-		<Button variant="ghost" onClick={onClick}>
-			{t("settings.employees.directory.table.employee", "Employee")}
-			<SortIcon sort={sort} />
-		</Button>
-	);
-}
-
-function EmployeeNumberHeader() {
-	const { t } = useTranslate();
-
-	return <span>{t("settings.employees.directory.table.employeeNumber", "Employee Number")}</span>;
-}
-
-function PositionHeader() {
-	const { t } = useTranslate();
-
-	return <span>{t("settings.employees.directory.table.position", "Position")}</span>;
-}
-
-function TeamHeader() {
-	const { t } = useTranslate();
-
-	return <span>{t("settings.employees.directory.table.team", "Team")}</span>;
-}
-
-function RoleHeader() {
-	const { t } = useTranslate();
-
-	return <span>{t("settings.employees.directory.table.role", "Role")}</span>;
-}
-
-function ContractHeader() {
-	const { t } = useTranslate();
-
-	return <span>{t("settings.employees.directory.table.contract", "Contract")}</span>;
-}
-
-function StatusHeader() {
-	const { t } = useTranslate();
-
-	return <span>{t("settings.employees.directory.table.status", "Status")}</span>;
-}
-
-function ActionsHeader() {
-	const { t } = useTranslate();
-
-	return (
-		<span className="sr-only">{t("settings.employees.directory.table.actions", "Actions")}</span>
-	);
-}
-
-function ContractTypeCell({
-	contractType,
-}: {
-	contractType: EmployeeDirectoryRow["contractType"];
-}) {
-	const { t } = useTranslate();
-
-	return (
-		<Badge
-			variant="outline"
-			className={
-				contractType === "hourly"
-					? "border-orange-500 text-orange-600 dark:text-orange-400"
-					: "border-purple-500 text-purple-600 dark:text-purple-400"
-			}
-		>
-			{contractType === "hourly"
-				? t("settings.employees.directory.contract.hourly", "Hourly")
-				: t("settings.employees.directory.contract.fixed", "Fixed")}
-		</Badge>
-	);
-}
-
-function StatusCell({ employee }: { employee: EmployeeDirectoryRow }) {
-	const { t } = useTranslate();
-
-	if (employee.kind === "invitationDraft") {
-		return (
-			<div className="flex flex-wrap gap-1">
-				<Badge variant="secondary">
-					{t("settings.employees.directory.statuses.draft", "Draft")}
-				</Badge>
-				<Badge variant="outline">{employee.invitationStatus}</Badge>
-			</div>
-		);
-	}
-
-	return (
-		<Badge variant={employee.isActive ? "default" : "secondary"}>
-			{employee.isActive
-				? t("settings.employees.directory.statuses.active", "Active")
-				: t("settings.employees.directory.statuses.inactive", "Inactive")}
-		</Badge>
-	);
-}
-
-function ViewDetailsCell({ employee }: { employee: EmployeeDirectoryRow }) {
-	const { t } = useTranslate();
-	const href =
-		employee.kind === "invitationDraft"
-			? `/settings/employees/${employee.encodedId}`
-			: `/settings/employees/${employee.id}`;
-
-	return (
-		<div className="text-right">
-			<Button variant="ghost" size="sm" asChild>
-				<Link href={href}>
-					{t("settings.employees.directory.actions.viewDetails", "View Details")}
-				</Link>
-			</Button>
-		</div>
-	);
-}
+import { StatusCell } from "./status-cell";
+import { TranslatedColumnHeader } from "./translated-column-header";
+import { ViewDetailsCell } from "./view-details-cell";
 
 export const columns: ColumnDef<EmployeeDirectoryRow>[] = [
 	{
@@ -177,22 +47,33 @@ export const columns: ColumnDef<EmployeeDirectoryRow>[] = [
 	},
 	{
 		accessorKey: "employeeNumber",
-		header: () => <EmployeeNumberHeader />,
+		header: () => (
+			<TranslatedColumnHeader
+				nameKey="settings.employees.directory.table.employeeNumber"
+				fallback="Employee Number"
+			/>
+		),
 		cell: ({ row }) => row.original.employeeNumber || "—",
 	},
 	{
 		accessorKey: "position",
-		header: () => <PositionHeader />,
+		header: () => (
+			<TranslatedColumnHeader nameKey="settings.employees.directory.table.position" fallback="Position" />
+		),
 		cell: ({ row }) => row.original.position || "—",
 	},
 	{
 		accessorKey: "team.name",
-		header: () => <TeamHeader />,
+		header: () => (
+			<TranslatedColumnHeader nameKey="settings.employees.directory.table.team" fallback="Team" />
+		),
 		cell: ({ row }) => row.original.team?.name || "—",
 	},
 	{
 		accessorKey: "role",
-		header: () => <RoleHeader />,
+		header: () => (
+			<TranslatedColumnHeader nameKey="settings.employees.directory.table.role" fallback="Role" />
+		),
 		cell: ({ row }) => (
 			<Badge
 				variant={
@@ -209,17 +90,30 @@ export const columns: ColumnDef<EmployeeDirectoryRow>[] = [
 	},
 	{
 		accessorKey: "contractType",
-		header: () => <ContractHeader />,
+		header: () => (
+			<TranslatedColumnHeader
+				nameKey="settings.employees.directory.table.contract"
+				fallback="Contract"
+			/>
+		),
 		cell: ({ row }) => <ContractTypeCell contractType={row.original.contractType} />,
 	},
 	{
 		accessorKey: "isActive",
-		header: () => <StatusHeader />,
+		header: () => (
+			<TranslatedColumnHeader nameKey="settings.employees.directory.table.status" fallback="Status" />
+		),
 		cell: ({ row }) => <StatusCell employee={row.original} />,
 	},
 	{
 		id: "actions",
-		header: () => <ActionsHeader />,
+		header: () => (
+			<TranslatedColumnHeader
+				nameKey="settings.employees.directory.table.actions"
+				fallback="Actions"
+				className="sr-only"
+			/>
+		),
 		cell: ({ row }) => <ViewDetailsCell employee={row.original} />,
 	},
 ];
