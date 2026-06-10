@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { startTransition, useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useEffectEvent, useReducer, useRef } from "react";
 import type {
 	NotificationsListResponse,
 	NotificationWithMeta,
@@ -32,7 +32,10 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 	const reconnectAttempts = useRef(0);
 	const reconnectRef = useRef<() => void>(() => {});
 	const disconnectRef = useRef<() => void>(() => {});
-	const [isConnected, setIsConnected] = useState(false);
+	const [isConnected, dispatchConnectionStatus] = useReducer(
+		(_current: boolean, next: boolean) => next,
+		false,
+	);
 
 	// Store callbacks in refs to avoid dependency churn and prevent unnecessary reconnects
 	const onCountUpdateRef = useRef(onCountUpdate);
@@ -43,6 +46,83 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 		onCountUpdateRef.current = onCountUpdate;
 		onNewNotificationRef.current = onNewNotification;
 	}, [onCountUpdate, onNewNotification]);
+
+	const handleCountUpdate = useEffectEvent((event: MessageEvent) => {
+		try {
+			const data = JSON.parse(event.data);
+			if (organizationId && data.organizationId !== organizationId) {
+				return;
+			}
+			// Update the query cache directly
+			queryClient.setQueryData(queryKeys.notifications.unreadCount(organizationId), {
+				count: data.count,
+			});
+			onCountUpdateRef.current?.(data.count);
+			// Reset reconnect attempts on successful message
+			reconnectAttempts.current = 0;
+		} catch {
+			// Ignore parse errors
+		}
+	});
+
+	const handleNewNotification = useEffectEvent((event: MessageEvent) => {
+		try {
+			const notification = JSON.parse(event.data) as NotificationWithMeta;
+			if (organizationId && notification.organizationId !== organizationId) {
+				return;
+			}
+
+			// Update every cached notification list, regardless of list options like limit.
+			queryClient.setQueriesData<NotificationsListResponse>(
+				{
+					predicate: (query) => {
+						const [scope, type, options] = query.queryKey;
+						const listOptions = options as
+							| { unreadOnly?: boolean; organizationId?: string | null }
+							| undefined;
+						if (scope !== "notifications" || type !== "list") {
+							return false;
+						}
+						if (organizationId && listOptions?.organizationId !== organizationId) {
+							return false;
+						}
+
+						return !notification.isRead || !listOptions?.unreadOnly;
+					},
+				},
+				(oldData) => {
+					if (!oldData) return oldData;
+					if (oldData.notifications.some((n) => n.id === notification.id)) {
+						return oldData;
+					}
+
+					return {
+						...oldData,
+						notifications: [notification, ...oldData.notifications],
+						total: oldData.total + 1,
+						unreadCount: notification.isRead ? oldData.unreadCount : oldData.unreadCount + 1,
+					};
+				},
+			);
+
+			if (!notification.isRead) {
+				queryClient.setQueryData<UnreadCountResponse>(
+					queryKeys.notifications.unreadCount(organizationId),
+					(oldData) => ({ count: (oldData?.count ?? 0) + 1 }),
+				);
+			}
+
+			onNewNotificationRef.current?.(notification);
+			reconnectAttempts.current = 0;
+		} catch {
+			// Ignore parse errors
+		}
+	});
+
+	const handleHeartbeat = useEffectEvent(() => {
+		// Reset reconnect attempts on heartbeat
+		reconnectAttempts.current = 0;
+	});
 
 	useEffect(() => {
 		let disposed = false;
@@ -56,7 +136,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 				eventSourceRef.current.close();
 				eventSourceRef.current = null;
 			}
-			setIsConnected(false);
+			dispatchConnectionStatus(false);
 		};
 
 		const connect = () => {
@@ -76,88 +156,15 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 				const eventSource = new EventSource("/api/notifications/stream");
 				eventSourceRef.current = eventSource;
 
-				eventSource.addEventListener("count_update", (event) => {
-					try {
-						const data = JSON.parse(event.data);
-						if (organizationId && data.organizationId !== organizationId) {
-							return;
-						}
-						// Update the query cache directly
-						queryClient.setQueryData(queryKeys.notifications.unreadCount(organizationId), {
-							count: data.count,
-						});
-						onCountUpdateRef.current?.(data.count);
-						// Reset reconnect attempts on successful message
-						reconnectAttempts.current = 0;
-					} catch {
-						// Ignore parse errors
-					}
-				});
-
-				eventSource.addEventListener("new_notification", (event) => {
-					try {
-						const notification = JSON.parse(event.data) as NotificationWithMeta;
-						if (organizationId && notification.organizationId !== organizationId) {
-							return;
-						}
-
-						// Update every cached notification list, regardless of list options like limit.
-						queryClient.setQueriesData<NotificationsListResponse>(
-							{
-								predicate: (query) => {
-									const [scope, type, options] = query.queryKey;
-									const listOptions = options as
-										| { unreadOnly?: boolean; organizationId?: string | null }
-										| undefined;
-									if (scope !== "notifications" || type !== "list") {
-										return false;
-									}
-									if (organizationId && listOptions?.organizationId !== organizationId) {
-										return false;
-									}
-
-									return !notification.isRead || !listOptions?.unreadOnly;
-								},
-							},
-							(oldData) => {
-								if (!oldData) return oldData;
-								if (oldData.notifications.some((n) => n.id === notification.id)) {
-									return oldData;
-								}
-
-								return {
-									...oldData,
-									notifications: [notification, ...oldData.notifications],
-									total: oldData.total + 1,
-									unreadCount: notification.isRead ? oldData.unreadCount : oldData.unreadCount + 1,
-								};
-							},
-						);
-
-						if (!notification.isRead) {
-							queryClient.setQueryData<UnreadCountResponse>(
-								queryKeys.notifications.unreadCount(organizationId),
-								(oldData) => ({ count: (oldData?.count ?? 0) + 1 }),
-							);
-						}
-
-						onNewNotificationRef.current?.(notification);
-						reconnectAttempts.current = 0;
-					} catch {
-						// Ignore parse errors
-					}
-				});
-
-				eventSource.addEventListener("heartbeat", () => {
-					// Reset reconnect attempts on heartbeat
-					reconnectAttempts.current = 0;
-				});
+				eventSource.addEventListener("count_update", handleCountUpdate);
+				eventSource.addEventListener("new_notification", handleNewNotification);
+				eventSource.addEventListener("heartbeat", handleHeartbeat);
 
 				eventSource.onerror = () => {
 					if (disposed) return;
 					eventSource.close();
 					eventSourceRef.current = null;
-					setIsConnected(false);
+					dispatchConnectionStatus(false);
 
 					// Exponential backoff for reconnection
 					reconnectAttempts.current += 1;
@@ -170,11 +177,11 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 
 				eventSource.onopen = () => {
 					reconnectAttempts.current = 0;
-					setIsConnected(true);
+					dispatchConnectionStatus(true);
 				};
 			} catch {
 				// EventSource not supported or connection failed
-				setIsConnected(false);
+				dispatchConnectionStatus(false);
 			}
 		};
 
@@ -189,7 +196,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 			disposed = true;
 			disconnect();
 		};
-	}, [enabled, organizationId, queryClient]);
+	}, [enabled, handleCountUpdate, handleHeartbeat, handleNewNotification]);
 
 	return {
 		isConnected,

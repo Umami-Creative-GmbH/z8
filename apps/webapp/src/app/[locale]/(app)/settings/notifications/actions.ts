@@ -231,7 +231,8 @@ export async function bulkUpdateNotificationPreferences(
 		// Process each update (user-level, not org-specific)
 		yield* _(
 			dbService.query("bulkUpdateNotificationPreferences", async () => {
-				for (const update of preferences) {
+				await Promise.all(
+					preferences.map(async (update) => {
 					const existing = await dbService.db.query.notificationPreference.findFirst({
 						where: (pref, { and, eq }) =>
 							and(
@@ -254,7 +255,8 @@ export async function bulkUpdateNotificationPreferences(
 							enabled: update.enabled,
 						});
 					}
-				}
+				}),
+				);
 			}),
 		);
 

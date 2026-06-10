@@ -299,45 +299,51 @@ export async function upsertApprovalPolicy(input: PolicyInput & { id?: string })
 				})
 				.returning();
 
-			await tx
-				.delete(approvalPolicyCondition)
-				.where(
-					and(
-						eq(approvalPolicyCondition.policyId, savedPolicy.id),
-						eq(approvalPolicyCondition.organizationId, currentEmployee.organizationId),
-					),
-				);
-			await tx
-				.delete(approvalPolicyStage)
-				.where(
-					and(
-						eq(approvalPolicyStage.policyId, savedPolicy.id),
-						eq(approvalPolicyStage.organizationId, currentEmployee.organizationId),
-					),
-				);
+			await Promise.all([
+				(async () => {
+					await tx
+						.delete(approvalPolicyCondition)
+						.where(
+							and(
+								eq(approvalPolicyCondition.policyId, savedPolicy.id),
+								eq(approvalPolicyCondition.organizationId, currentEmployee.organizationId),
+							),
+						);
 
-			if (normalized.data.conditions.length > 0) {
-				await tx
-					.insert(approvalPolicyCondition)
-					.values(
-						normalized.data.conditions.map((condition) =>
-							conditionInsertValue(currentEmployee.organizationId, savedPolicy.id, condition),
-						),
-					);
-			}
+					if (normalized.data.conditions.length > 0) {
+						await tx
+							.insert(approvalPolicyCondition)
+							.values(
+								normalized.data.conditions.map((condition) =>
+									conditionInsertValue(currentEmployee.organizationId, savedPolicy.id, condition),
+								),
+							);
+					}
+				})(),
+				(async () => {
+					await tx
+						.delete(approvalPolicyStage)
+						.where(
+							and(
+								eq(approvalPolicyStage.policyId, savedPolicy.id),
+								eq(approvalPolicyStage.organizationId, currentEmployee.organizationId),
+							),
+						);
 
-			if (normalized.data.stages.length > 0) {
-				await tx.insert(approvalPolicyStage).values(
-					normalized.data.stages.map((stage) => ({
-						organizationId: currentEmployee.organizationId,
-						policyId: savedPolicy.id,
-						stepOrder: stage.stepOrder,
-						label: stage.label,
-						approverType: databaseApproverType(stage.approverType),
-						approverEmployeeId: stage.approverEmployeeId,
-					})),
-				);
-			}
+					if (normalized.data.stages.length > 0) {
+						await tx.insert(approvalPolicyStage).values(
+							normalized.data.stages.map((stage) => ({
+								organizationId: currentEmployee.organizationId,
+								policyId: savedPolicy.id,
+								stepOrder: stage.stepOrder,
+								label: stage.label,
+								approverType: databaseApproverType(stage.approverType),
+								approverEmployeeId: stage.approverEmployeeId,
+							})),
+						);
+					}
+				})(),
+			]);
 		});
 	} catch {
 		return { success: false as const, error: "Approval policy could not be saved." };

@@ -3,13 +3,7 @@
 import { IconDownload, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import {
-	startTransition as startReactTransition,
-	useEffect,
-	useEffectEvent,
-	useState,
-	useTransition,
-} from "react";
+import { useEffect, useEffectEvent, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	type DatevConfigResult,
@@ -240,18 +234,22 @@ export function ExportForm({
 	})();
 
 	const unavailableExportHints = exportFormatOptions
-		.filter((option) => !exportAvailability[option.id]?.configured)
-		.map((option) => {
+		.flatMap((option) => {
+			if (exportAvailability[option.id]?.configured) {
+				return [];
+			}
 			const reason = exportAvailability[option.id]?.reason;
-			return {
-				id: option.id,
-				label: option.label,
-				isMissingCredentials: reason === "missingCredentials",
-				reason:
-					reason === "missingCredentials"
-						? t("settings.payrollExport.export.unavailable.missingCredentials", "credentials")
-						: t("settings.payrollExport.export.unavailable.missingConfiguration", "config"),
-			};
+			return [
+				{
+					id: option.id,
+					label: option.label,
+					isMissingCredentials: reason === "missingCredentials",
+					reason:
+						reason === "missingCredentials"
+							? t("settings.payrollExport.export.unavailable.missingCredentials", "credentials")
+							: t("settings.payrollExport.export.unavailable.missingConfiguration", "config"),
+				},
+			];
 		})
 		.sort((left, right) => {
 			if (left.isMissingCredentials === right.isMissingCredentials) {

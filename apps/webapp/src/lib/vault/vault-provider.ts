@@ -99,18 +99,19 @@ export const vaultSecretProvider: OrganizationSecretProvider = {
 			// List all secrets under the organization path
 			const listPath = metadataPath;
 			const result = await vaultClient.list(listPath);
-			const keys = result?.data?.keys || [];
+			const keys = (result?.data?.keys || []) as string[];
 
-			// Delete each secret
-			for (const key of keys) {
-				const secretPath = `${metadataPath}/${key}`;
-				try {
-					await vaultClient.delete(secretPath);
-				} catch {
-					// Continue deleting other secrets even if one fails
-					logger.warn({ organizationId, key }, "Failed to delete individual secret");
-				}
-			}
+			await Promise.all(
+				keys.map(async (key) => {
+					const secretPath = `${metadataPath}/${key}`;
+					try {
+						await vaultClient.delete(secretPath);
+					} catch {
+						// Continue deleting other secrets even if one fails
+						logger.warn({ organizationId, key }, "Failed to delete individual secret");
+					}
+				}),
+			);
 
 			// Delete the organization folder itself
 			try {

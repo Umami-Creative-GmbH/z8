@@ -134,18 +134,18 @@ export async function cancelAbsenceRequestForEmployee(
 		return { success: false, error: "Absence organization not found" };
 	}
 
-	await db.delete(absenceEntry).where(eq(absenceEntry.id, absenceId));
-
-	await db
-		.delete(approvalRequest)
-		.where(
-			and(eq(approvalRequest.entityType, "absence_entry"), eq(approvalRequest.entityId, absenceId)),
-		);
-
-	await removeCanonicalAbsenceRecord({
-		organizationId,
-		canonicalRecordId: absence.canonicalRecordId,
-	});
+	await Promise.all([
+		db.delete(absenceEntry).where(eq(absenceEntry.id, absenceId)),
+		db
+			.delete(approvalRequest)
+			.where(
+				and(eq(approvalRequest.entityType, "absence_entry"), eq(approvalRequest.entityId, absenceId)),
+			),
+		removeCanonicalAbsenceRecord({
+			organizationId,
+			canonicalRecordId: absence.canonicalRecordId,
+		}),
+	]);
 
 	if (shouldNotifyManagers) {
 		void notifyManagersOfApprovedSelfCancellation(absence, organizationId);

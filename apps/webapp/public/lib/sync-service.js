@@ -134,22 +134,24 @@ async function processQueue() {
 	let successCount = 0;
 	let failureCount = 0;
 	const conflicts = [];
+	const expiredEvents = pending.filter((event) => event.retryCount >= MAX_RETRY_COUNT);
+	const eventsToSync = pending.filter((event) => event.retryCount < MAX_RETRY_COUNT);
+	const expiredConflicts = expiredEvents.map((event) => ({
+		eventId: event.id,
+		error: "Max retry attempts exceeded",
+	}));
+
+	await Promise.all(
+		expiredEvents.map(async (event) => {
+			console.warn("[SyncService] Skipping event", event.id, "- max retries exceeded");
+			await self.OfflineQueueDB.remove(event.id);
+		}),
+	);
+	conflicts.push(...expiredConflicts);
+	failureCount += expiredEvents.length;
 
 	// Process events sequentially (order matters for clock in/out)
-	for (const event of pending) {
-		// Skip events that have exceeded max retries
-		if (event.retryCount >= MAX_RETRY_COUNT) {
-			console.warn("[SyncService] Skipping event", event.id, "- max retries exceeded");
-			conflicts.push({
-				eventId: event.id,
-				error: "Max retry attempts exceeded",
-			});
-			// Remove from queue after max retries
-			await self.OfflineQueueDB.remove(event.id);
-			failureCount++;
-			continue;
-		}
-
+	for (const event of eventsToSync) {
 		const result = await syncEvent(event);
 
 		if (result.success) {

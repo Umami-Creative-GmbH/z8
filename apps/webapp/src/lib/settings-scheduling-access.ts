@@ -234,15 +234,21 @@ export async function getScopedSchedulingLocationsForSettings(input: {
 		orderBy: [desc(location.createdAt)],
 	});
 
-	return locations
-		.map((currentLocation) => ({
-			id: currentLocation.id,
-			name: currentLocation.name,
-			subareas: manageableSubareaIds
-				? currentLocation.subareas.filter((subarea) => manageableSubareaIds.has(subarea.id))
-				: currentLocation.subareas,
-		}))
-		.filter((currentLocation) => currentLocation.subareas.length > 0);
+	return locations.flatMap((currentLocation) => {
+		const subareas = manageableSubareaIds
+			? currentLocation.subareas.filter((subarea) => manageableSubareaIds.has(subarea.id))
+			: currentLocation.subareas;
+
+		return subareas.length > 0
+			? [
+					{
+						id: currentLocation.id,
+						name: currentLocation.name,
+						subareas,
+					},
+				]
+			: [];
+	});
 }
 
 export async function getShiftTemplateScopeTarget(templateId: string) {

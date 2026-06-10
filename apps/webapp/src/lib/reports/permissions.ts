@@ -250,26 +250,32 @@ export async function getAccessibleEmployees(
 			role: currentEmp.role,
 		};
 
-		const otherEmployees = allEmployees
-			.filter((emp) => emp.id !== currentEmployeeId)
-			.filter((emp) =>
-				canReadReportEmployee({
+		const otherEmployees = allEmployees.flatMap((emp) => {
+			if (
+				emp.id === currentEmployeeId ||
+				!canReadReportEmployee({
 					currentEmployee: currentEmp,
 					managedEmployeeIds: [],
 					targetEmployee: emp,
-				}),
-			)
-			.map((emp) => ({
-				id: emp.id,
-				firstName: emp.user.firstName,
-				lastName: emp.user.lastName,
-				name: emp.user.name || emp.user.email,
-				email: emp.user.email,
-				image: emp.user.image,
-				pronouns: emp.pronouns,
-				position: emp.position,
-				role: emp.role,
-			}));
+				})
+			) {
+				return [];
+			}
+
+			return [
+				{
+					id: emp.id,
+					firstName: emp.user.firstName,
+					lastName: emp.user.lastName,
+					name: emp.user.name || emp.user.email,
+					email: emp.user.email,
+					image: emp.user.image,
+					pronouns: emp.pronouns,
+					position: emp.position,
+					role: emp.role,
+				},
+			];
+		});
 
 		return [currentEmployeeData, ...otherEmployees];
 	}

@@ -64,26 +64,25 @@ export class ManifestBuilder implements IManifestBuilder {
 		// Load ZIP
 		const zip = await JSZip.loadAsync(zipContent);
 
-		// Extract and hash all files
-		const fileEntries: AuditFileEntry[] = [];
-		const fileHashes: SHA256Hash[] = [];
-
 		// Get all file entries (excluding directories)
 		const fileNames = Object.keys(zip.files)
 			.filter((name) => !zip.files[name].dir)
 			.sort(); // Sort for deterministic ordering
 
-		let merkleIndex = 0;
+		const entries = await Promise.all(
+			fileNames.map(async (fileName, merkleIndex) => {
+				const file = zip.files[fileName];
+				const content = await file.async("nodebuffer");
+				const hash = this.hash.hashBuffer(content);
 
-		for (const fileName of fileNames) {
-			const file = zip.files[fileName];
-			const content = await file.async("nodebuffer");
-			const hash = this.hash.hashBuffer(content);
-
-			fileEntries.push(new AuditFileEntry(fileName, hash, content.length, merkleIndex));
-			fileHashes.push(hash);
-			merkleIndex++;
-		}
+				return {
+					fileEntry: new AuditFileEntry(fileName, hash, content.length, merkleIndex),
+					hash,
+				};
+			}),
+		);
+		const fileEntries = entries.map((entry) => entry.fileEntry);
+		const fileHashes = entries.map((entry) => entry.hash);
 
 		if (fileEntries.length === 0) {
 			throw new Error("ZIP file contains no files");
@@ -132,27 +131,28 @@ export class ManifestBuilder implements IManifestBuilder {
 		logger.info({ exportId: manifest.exportId }, "Verifying manifest against ZIP");
 
 		const zip = await JSZip.loadAsync(zipContent);
-		const invalidFiles: string[] = [];
-		const fileHashes: SHA256Hash[] = [];
+		const verifiedFiles = await Promise.all(
+			manifest.files.map(async (fileEntry) => {
+				const file = zip.files[fileEntry.path];
 
-		// Verify each file in manifest
-		for (const fileEntry of manifest.files) {
-			const file = zip.files[fileEntry.path];
+				if (!file) {
+					return { invalidFile: `${fileEntry.path} (missing in ZIP)`, hash: null };
+				}
 
-			if (!file) {
-				invalidFiles.push(`${fileEntry.path} (missing in ZIP)`);
-				continue;
-			}
+				const content = await file.async("nodebuffer");
+				const calculatedHash = this.hash.hashBuffer(content);
 
-			const content = await file.async("nodebuffer");
-			const calculatedHash = this.hash.hashBuffer(content);
+				if (!calculatedHash.equals(fileEntry.hash)) {
+					return { invalidFile: `${fileEntry.path} (hash mismatch)`, hash: calculatedHash };
+				}
 
-			if (!calculatedHash.equals(fileEntry.hash)) {
-				invalidFiles.push(`${fileEntry.path} (hash mismatch)`);
-			}
-
-			fileHashes.push(calculatedHash);
-		}
+				return { invalidFile: null, hash: calculatedHash };
+			}),
+		);
+		const invalidFiles = verifiedFiles.flatMap((file) =>
+			file.invalidFile ? [file.invalidFile] : [],
+		);
+		const fileHashes = verifiedFiles.flatMap((file) => (file.hash ? [file.hash] : []));
 
 		// Verify Merkle root
 		let merkleRootMatch = false;

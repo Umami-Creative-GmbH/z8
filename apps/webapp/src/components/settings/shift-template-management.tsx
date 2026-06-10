@@ -181,12 +181,12 @@ export function ShiftTemplateManagement({
 
 	const templates = templatesResult || [];
 	const visibleLocations = manageableSubareaIdSet
-		? locations
-				.map((location) => ({
-					...location,
-					subareas: location.subareas.filter((subarea) => manageableSubareaIdSet.has(subarea.id)),
-				}))
-				.filter((location) => location.subareas.length > 0)
+		? locations.flatMap((location) => {
+				const subareas = location.subareas.filter((subarea) =>
+					manageableSubareaIdSet.has(subarea.id),
+				);
+				return subareas.length > 0 ? [{ ...location, subareas }] : [];
+			})
 		: locations;
 
 	// Create mutation
@@ -737,20 +737,22 @@ function ShiftTemplateDialog({
 												</SelectItem>
 											) : null}
 											{locations.flatMap((location) =>
-												location.subareas
-													.filter((s) => s.isActive)
-													.map((subarea) => (
-														<SelectItem key={subarea.id} value={subarea.id}>
-															{t(
-																"settings.shiftTemplates.form.subareaFormat",
-																"{location} – {subarea}",
-																{
-																	location: location.name,
-																	subarea: subarea.name,
-																},
-															)}
-														</SelectItem>
-													)),
+												location.subareas.flatMap((subarea) =>
+													subarea.isActive
+														? [
+																<SelectItem key={subarea.id} value={subarea.id}>
+																	{t(
+																		"settings.shiftTemplates.form.subareaFormat",
+																		"{location} – {subarea}",
+																		{
+																			location: location.name,
+																			subarea: subarea.name,
+																		},
+																	)}
+																</SelectItem>,
+															]
+														: [],
+												),
 											)}
 										</SelectContent>
 									</Select>

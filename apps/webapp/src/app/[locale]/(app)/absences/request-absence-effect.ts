@@ -285,20 +285,21 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 				.values(canonicalValues.timeRecord)
 				.returning({ id: timeRecord.id });
 
-			await tx.insert(timeRecordAbsence).values({
-				recordId: canonicalRecord.id,
-				...canonicalValues.timeRecordAbsence,
-			});
-
-			await tx
-				.update(absenceEntry)
-				.set({ canonicalRecordId: canonicalRecord.id })
-				.where(
-					and(
-						eq(absenceEntry.id, newAbsence.id),
-						eq(absenceEntry.organizationId, currentEmployee.organizationId),
+			await Promise.all([
+				tx.insert(timeRecordAbsence).values({
+					recordId: canonicalRecord.id,
+					...canonicalValues.timeRecordAbsence,
+				}),
+				tx
+					.update(absenceEntry)
+					.set({ canonicalRecordId: canonicalRecord.id })
+					.where(
+						and(
+							eq(absenceEntry.id, newAbsence.id),
+							eq(absenceEntry.organizationId, currentEmployee.organizationId),
+						),
 					),
-				);
+			]);
 
 			if (params.approvalWorkflow) {
 				const transactionalDbService = {

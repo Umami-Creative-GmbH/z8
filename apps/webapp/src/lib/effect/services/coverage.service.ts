@@ -899,17 +899,19 @@ export const CoverageServiceLive = Layer.effect(
 					for (const date of dates) {
 						for (const [subareaId, subareaInfo] of subareaMap) {
 							const dateStr = date.toISOString().split("T")[0];
-							const subareaShifts: ShiftForCoverage[] = shifts
-								.filter((s) => {
-									const shiftDateStr = new Date(s.date).toISOString().split("T")[0];
-									return s.subareaId === subareaId && shiftDateStr === dateStr;
-								})
-								.map((s) => ({
-									id: s.id,
-									employeeId: s.employeeId,
-									startTime: s.startTime,
-									endTime: s.endTime,
-								}));
+							const subareaShifts: ShiftForCoverage[] = shifts.flatMap((s) => {
+								const shiftDateStr = new Date(s.date).toISOString().split("T")[0];
+								return s.subareaId === subareaId && shiftDateStr === dateStr
+									? [
+											{
+												id: s.id,
+												employeeId: s.employeeId,
+												startTime: s.startTime,
+												endTime: s.endTime,
+											},
+										]
+									: [];
+							});
 
 							const result = calculateCoverage({
 								date,
@@ -1030,17 +1032,19 @@ export const CoverageServiceLive = Layer.effect(
 					for (const date of dates) {
 						for (const [subareaId, subareaInfo] of subareaMap) {
 							const dateStr = date.toISOString().split("T")[0];
-							const subareaShifts: ShiftForCoverage[] = allShifts
-								.filter((s) => {
-									const shiftDateStr = new Date(s.date).toISOString().split("T")[0];
-									return s.subareaId === subareaId && shiftDateStr === dateStr;
-								})
-								.map((s) => ({
-									id: s.id,
-									employeeId: s.employeeId,
-									startTime: s.startTime,
-									endTime: s.endTime,
-								}));
+							const subareaShifts: ShiftForCoverage[] = allShifts.flatMap((s) => {
+								const shiftDateStr = new Date(s.date).toISOString().split("T")[0];
+								return s.subareaId === subareaId && shiftDateStr === dateStr
+									? [
+											{
+												id: s.id,
+												employeeId: s.employeeId,
+												startTime: s.startTime,
+												endTime: s.endTime,
+											},
+										]
+									: [];
+							});
 
 							const result = calculateCoverage({
 								date,

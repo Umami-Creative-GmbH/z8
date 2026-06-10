@@ -2,7 +2,7 @@
 
 import Uppy from "@uppy/core";
 import Tus from "@uppy/tus";
-import { useEffect, useState } from "react";
+import { useEffect, useReducer } from "react";
 import {
 	type ProcessTravelExpenseFileResponse,
 	useTravelExpenseFileProcessMutation,
@@ -27,14 +27,41 @@ interface UseTravelExpenseFileUploadReturn {
 	reset: () => void;
 }
 
+type TravelExpenseUploadState = {
+	progress: number;
+	isUploading: boolean;
+};
+
+type TravelExpenseUploadAction =
+	| { type: "start" }
+	| { type: "progress"; progress: number }
+	| { type: "reset" };
+
+function travelExpenseUploadReducer(
+	state: TravelExpenseUploadState,
+	action: TravelExpenseUploadAction,
+) {
+	switch (action.type) {
+		case "start":
+			return { progress: 1, isUploading: true };
+		case "progress":
+			return { ...state, progress: action.progress };
+		case "reset":
+			return { progress: 0, isUploading: false };
+	}
+}
+
 export function useTravelExpenseFileUpload({
 	claimId,
 	maxFileSize = DEFAULT_MAX_TRAVEL_EXPENSE_FILE_SIZE,
 	onSuccess,
 	onError,
 }: UseTravelExpenseFileUploadOptions): UseTravelExpenseFileUploadReturn {
-	const [progress, setProgress] = useState(0);
-	const [isUploading, setIsUploading] = useState(false);
+	const [uploadState, dispatchUploadState] = useReducer(travelExpenseUploadReducer, {
+		progress: 0,
+		isUploading: false,
+	});
+	const { progress, isUploading } = uploadState;
 	const processMutation = useTravelExpenseFileProcessMutation();
 
 	const uppy = (() => {
@@ -54,8 +81,7 @@ export function useTravelExpenseFileUpload({
 
 	useEffect(() => {
 		const handleUploadStart = () => {
-			setIsUploading(true);
-			setProgress(1);
+			dispatchUploadState({ type: "start" });
 		};
 
 		const handleFileProgress = (
@@ -66,7 +92,7 @@ export function useTravelExpenseFileUpload({
 				const uploadPercent = Math.round(
 					(progressState.bytesUploaded / progressState.bytesTotal) * 85,
 				);
-				setProgress(Math.max(1, uploadPercent));
+				dispatchUploadState({ type: "progress", progress: Math.max(1, uploadPercent) });
 			}
 		};
 
@@ -80,7 +106,7 @@ export function useTravelExpenseFileUpload({
 				const tusFileKey = getTusFileKeyFromUploadUrl(uploadUrl);
 
 				if (tusFileKey) {
-					setProgress(90);
+					dispatchUploadState({ type: "progress", progress: 90 });
 
 					try {
 						const response = await processMutation.mutateAsync({
@@ -89,7 +115,7 @@ export function useTravelExpenseFileUpload({
 							fileName: uploadedFile.name,
 						});
 
-						setProgress(100);
+						dispatchUploadState({ type: "progress", progress: 100 });
 						onSuccess?.(response.attachment);
 					} catch (error) {
 						onError?.(
@@ -103,14 +129,12 @@ export function useTravelExpenseFileUpload({
 				onError?.(new Error("Upload failed"));
 			}
 
-			setIsUploading(false);
-			setProgress(0);
+			dispatchUploadState({ type: "reset" });
 			uppy.cancelAll();
 		};
 
 		const handleError = (_file: unknown, error: { message?: string }) => {
-			setIsUploading(false);
-			setProgress(0);
+			dispatchUploadState({ type: "reset" });
 			onError?.(new Error(error?.message || "Upload failed"));
 			uppy.cancelAll();
 		};
@@ -148,8 +172,7 @@ export function useTravelExpenseFileUpload({
 	};
 
 	const reset = () => {
-		setProgress(0);
-		setIsUploading(false);
+		dispatchUploadState({ type: "reset" });
 		uppy.cancelAll();
 	};
 

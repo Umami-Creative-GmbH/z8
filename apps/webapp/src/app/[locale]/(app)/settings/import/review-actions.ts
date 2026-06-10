@@ -415,14 +415,18 @@ export async function startImportReviewScan(
 			credential: encryptImportCredential(credential, env.BETTER_AUTH_SECRET),
 		});
 
-		const scanJobs: Array<{
+		let scanJobs: Array<{
 			jobId: string;
 			entityType: ImportEntityType;
 			dateRange: ImportDateRange;
 		}> = [];
 
-		for (const entityType of validated.entityTypes) {
-			for (const dateRange of datePartitions) {
+		const scanJobInputs = validated.entityTypes.flatMap((entityType) =>
+			datePartitions.map((dateRange) => ({ entityType, dateRange })),
+		);
+
+		scanJobs = await Promise.all(
+			scanJobInputs.map(async ({ entityType, dateRange }) => {
 				const partitionKey = `${entityType}:${dateRange.startDate}:${dateRange.endDate}`;
 				const job = await createImportBatchJob({
 					batchId: batch.id,
@@ -436,9 +440,10 @@ export async function startImportReviewScan(
 					throw new Error("Failed to create import scan job");
 				}
 
-				scanJobs.push({ jobId: job.id, entityType, dateRange });
-			}
-		}
+
+				return { jobId: job.id, entityType, dateRange };
+			}),
+		);
 
 		await updateImportBatchStatus({
 			batchId: batch.id,
@@ -446,8 +451,9 @@ export async function startImportReviewScan(
 			status: "scanning",
 		});
 
-		for (const job of scanJobs) {
-			await enqueueImportScanJob({
+		await Promise.all(
+			scanJobs.map((job) =>
+				enqueueImportScanJob({
 				type: "import-review-scan",
 				batchId: batch.id,
 				jobId: job.jobId,
@@ -458,8 +464,9 @@ export async function startImportReviewScan(
 				employeeIds: validated.employeeIds,
 				employeeMappings: validated.employeeMappings,
 				secretId: secret.id,
-			});
-		}
+				}),
+			),
+		);
 
 		return { success: true, data: { batchId: batch.id } };
 	} catch (error) {
@@ -619,16 +626,18 @@ export async function startImportCommitAction(
 		});
 		batchContext = validated;
 
-		for (const job of readyCommitJobsFromJobs(jobs)) {
-			await enqueueImportCommitJob({
-				type: "import-review-commit",
-				batchId: validated.batchId,
-				jobId: job.id,
-				organizationId: validated.organizationId,
-				entityType: job.entityType as ImportEntityType,
-				committedBy: authContext.user.id,
-			});
-		}
+		await Promise.all(
+			readyCommitJobsFromJobs(jobs).map((job) =>
+				enqueueImportCommitJob({
+					type: "import-review-commit",
+					batchId: validated.batchId,
+					jobId: job.id,
+					organizationId: validated.organizationId,
+					entityType: job.entityType as ImportEntityType,
+					committedBy: authContext.user.id,
+				}),
+			),
+		);
 
 		return { success: true, data: { queuedCount: jobs.length } };
 	} catch (error) {
