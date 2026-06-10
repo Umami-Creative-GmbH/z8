@@ -52,18 +52,12 @@
         "statuses": {
           "active": "Actif",
           "all": "Tous les statuts",
+          "draft": "Brouillon",
           "inactive": "Inactif"
         },
         "statusFilter": "Filtrer par statut",
         "table": {
-          "actions": "Actions",
-          "contract": "Contrat",
-          "employee": "Employé",
-          "employeeNumber": "Numéro d'employé",
-          "position": "Poste",
-          "role": "Rôle",
-          "status": "Statut",
-          "team": "Équipe"
+          "employee": "Employé"
         },
         "title": "Annuaire des employés"
       },
@@ -92,9 +86,11 @@
       "emptyTimeline": "Aucun historique de contrat ou de modèle de travail pour le moment.",
       "hourlyRate": "Taux horaire",
       "hourlyRateValue": "{rate} / heure",
+      "inheritWorkPolicy": "Hériter de la politique d'équipe/organisation",
       "nextScheduledConfirmed": "Prochaine confirmation programmée",
       "noCurrentContext": "Aucun contexte de contrat confirmé",
       "noScheduledChange": "Aucune modification confirmée programmée",
+      "policyValue": "Politique : {policyName}",
       "probationEnd": "Fin de période d'essai",
       "probationRange": "Période d'essai {startDate} - {endDate}",
       "probationStart": "Début de période d'essai",
@@ -105,6 +101,7 @@
       "selectContractType": "Sélectionner le type de contrat",
       "selectReviewState": "Sélectionner l'état de la révision",
       "selectWorkModel": "Sélectionner le modèle de travail",
+      "selectWorkPolicy": "Sélectionner une politique de travail",
       "states": {
         "confirmed": "confirmé",
         "draft": "brouillon",
@@ -120,7 +117,9 @@
         "hybrid": "hybride",
         "onsite": "sur site",
         "remote": "à distance"
-      }
+      },
+      "workPolicy": "Politique de travail",
+      "workPolicyHelp": "Remplace la politique sélectionnée pour cet employé pendant cette période contractuelle."
     },
     "inviteCodes": {
       "alreadyHaveAccount": "Vous avez déjà un compte ?",

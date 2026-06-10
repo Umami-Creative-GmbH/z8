@@ -31,7 +31,14 @@
       "error": "Fehler beim Laden der Wasseraufnahme-Statistiken",
       "log-error": "Fehler beim Protokollieren der Wasseraufnahme",
       "of-goal": "von {goal}",
-      "title": "Hydratation"
+      "organization-streaks": "Unternehmens-Serien",
+      "streak-day": "{count} Tag",
+      "streak-days": "{count} Tage",
+      "team-streak-current-user-suffix": ", aktueller Benutzer",
+      "team-streak-row": "{name}, Rang {rank}, Serie: {streakLabel}{currentUserLabel}",
+      "team-streaks": "Team-Serien",
+      "title": "Hydratation",
+      "you": "Du"
     },
     "layout": {
       "saved": "Dashboard-Layout gespeichert",

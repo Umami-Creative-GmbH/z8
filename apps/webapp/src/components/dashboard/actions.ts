@@ -1350,6 +1350,7 @@ export async function getHydrationWidgetData(): Promise<
 		dailyGoal: number;
 		goalProgress: number;
 		teamStreakLeaders: TeamStreakLeader[];
+		organizationStreakLeaders: TeamStreakLeader[];
 	}>
 > {
 	const effect = Effect.gen(function* (_) {
@@ -1376,6 +1377,7 @@ export async function getHydrationWidgetData(): Promise<
 				dailyGoal: 8,
 				goalProgress: 0,
 				teamStreakLeaders: [],
+				organizationStreakLeaders: [],
 			};
 		}
 
@@ -1497,6 +1499,7 @@ export async function getHydrationWidgetData(): Promise<
 									currentStreak: candidate.currentStreak,
 								})),
 								session.user.id,
+								{ limit: 5, minimumParticipants: 2 },
 							);
 						},
 						cacheConfig.keyParts,
@@ -1512,6 +1515,62 @@ export async function getHydrationWidgetData(): Promise<
 			}).pipe(Effect.catchAll(() => Effect.succeed([]))),
 		);
 
+		const organizationStreakLeaders = yield* _(
+			Effect.tryPromise({
+				try: async () => {
+					if (!activeOrganizationId) {
+						return [];
+					}
+
+					const currentEmployee = await dbService.db.query.employee.findFirst({
+						where: and(
+							eq(employee.userId, session.user.id),
+							eq(employee.organizationId, activeOrganizationId),
+							eq(employee.isActive, true),
+						),
+						columns: {
+							id: true,
+						},
+					});
+
+					if (!currentEmployee) {
+						return [];
+					}
+
+					const candidates = await dbService.db
+						.select({
+							employeeId: employee.id,
+							userId: employee.userId,
+							userName: user.name,
+							currentStreak: hydrationStats.currentStreak,
+						})
+						.from(employee)
+						.innerJoin(user, eq(employee.userId, user.id))
+						.leftJoin(hydrationStats, eq(hydrationStats.userId, employee.userId))
+						.where(
+							and(eq(employee.organizationId, activeOrganizationId), eq(employee.isActive, true)),
+						);
+
+					return buildTeamStreakLeaders(
+						candidates.map((candidate) => ({
+							employeeId: candidate.employeeId,
+							userId: candidate.userId,
+							displayName: candidate.userName || "Team member",
+							currentStreak: candidate.currentStreak,
+						})),
+						session.user.id,
+						{ limit: 5 },
+					);
+				},
+				catch: (error) =>
+					new DatabaseError({
+						message: "Failed to load hydration organization streak leaders",
+						operation: "getHydrationWidgetData.organizationStreakLeaders",
+						cause: error,
+					}),
+			}).pipe(Effect.catchAll(() => Effect.succeed([]))),
+		);
+
 		return {
 			enabled: true,
 			currentStreak: stats?.currentStreak ?? 0,
@@ -1520,6 +1579,7 @@ export async function getHydrationWidgetData(): Promise<
 			dailyGoal,
 			goalProgress,
 			teamStreakLeaders,
+			organizationStreakLeaders,
 		};
 	}).pipe(Effect.provide(AppLayer));
 

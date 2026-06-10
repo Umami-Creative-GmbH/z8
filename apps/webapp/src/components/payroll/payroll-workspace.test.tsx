@@ -12,8 +12,12 @@ const actionMocks = vi.hoisted(() => ({
 	startScopedPayrollExportAction: vi.fn(),
 }));
 
+let translateOverrides: Record<string, string> = {};
+
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (key: string, fallback: string) => translateOverrides[key] ?? fallback,
+	}),
 }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock("@/app/[locale]/(app)/payroll/actions", () => ({
@@ -82,10 +86,34 @@ const summary = buildSummary();
 describe("PayrollWorkspace", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
+		translateOverrides = {};
 		actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValue({
 			success: true,
 			data: summary,
 		});
+	});
+
+	it("renders payroll workspace labels through Tolgee translations", () => {
+		translateOverrides = {
+			"payroll.title": "Translated payroll",
+			"payroll.description": "Translated payroll description",
+			"payroll.period.selected": "Translated selected period",
+			"payroll.actions.downloadPdf": "Translated download PDF",
+			"payroll.actions.triggerExport": "Translated trigger export",
+		};
+
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		expect(screen.getByText("Translated payroll")).toBeTruthy();
+		expect(screen.getByText("Translated payroll description")).toBeTruthy();
+		expect(screen.getByText("Translated selected period")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Translated download PDF" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Translated trigger export" })).toBeTruthy();
 	});
 
 	it("renders summary cards, employee rows, period controls, and blockers", () => {

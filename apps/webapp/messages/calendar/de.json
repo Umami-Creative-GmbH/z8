@@ -128,6 +128,14 @@
     }
   },
   "calendar": {
+    "clockOutOnBehalf": {
+      "confirm": "Ausstempeln",
+      "description": "Dies erstellt einen prüfbaren Ausstempel-Eintrag zur aktuellen Serverzeit. Falls nachträglich Anpassungen erforderlich sind, verwenden Sie bitte Korrekturen.",
+      "error": "Fehler beim Ausstempeln des Mitarbeiters",
+      "loading": "Stemple aus...",
+      "success": "Mitarbeiter erfolgreich ausgestempelt",
+      "title": "Mitarbeiter ausstempeln?"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Zeiteinträge blockiert",
       "category": "Kategorie",
@@ -158,7 +166,6 @@
       "duration": "Dauer",
       "employee": "Mitarbeiter",
       "notes": "Notizen",
-      "periods": "Arbeitszeiträume",
       "project": "Projekt",
       "recurring": "Jährlich wiederkehrend",
       "status": "Status",

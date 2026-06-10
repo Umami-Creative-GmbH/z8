@@ -128,6 +128,14 @@
     }
   },
   "calendar": {
+    "clockOutOnBehalf": {
+      "confirm": "Clock Out",
+      "description": "This creates an auditable clock-out entry at the current server time. If anything needs adjustment afterward, use corrections.",
+      "error": "Failed to clock out employee",
+      "loading": "Clocking out...",
+      "success": "Employee clocked out successfully",
+      "title": "Clock out employee?"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Time entries blocked",
       "category": "Category",
@@ -158,7 +166,6 @@
       "duration": "Duration",
       "employee": "Employee",
       "notes": "Notes",
-      "periods": "Work Periods",
       "project": "Project",
       "recurring": "Recurring yearly",
       "status": "Status",

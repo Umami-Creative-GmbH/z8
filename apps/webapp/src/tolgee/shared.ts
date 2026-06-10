@@ -21,6 +21,7 @@ export const ALL_NAMESPACES = [
 	"timeTracking",
 	"reports",
 	"myRequests",
+	"payroll",
 	"scheduling",
 	"setup",
 	"settings/generic",
@@ -66,6 +67,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/init": ["common", "setup"],
 	"/approvals": ["common", "approvals"],
 	"/my-requests": ["common", "myRequests"],
+	"/payroll": ["common", "payroll"],
 	// Main app routes
 	"/": ["common", "dashboard"],
 	"/analytics": ["common", "analytics"],

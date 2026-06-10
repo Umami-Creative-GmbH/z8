@@ -42,7 +42,6 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 	const [editingGrantId, setEditingGrantId] = useState<string | null>(null);
 	const [isEditorOpen, setIsEditorOpen] = useState(false);
 	const employeeOptions = employees.map(toSelectableEmployee);
-	const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
 
 	const form = useForm({
 		defaultValues: DEFAULT_FORM_VALUES,
@@ -101,59 +100,16 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 
 	return (
 		<div className="space-y-6">
-			<Card>
-				<CardHeader className="flex justify-end">
-					<Button
-						type="button"
-						onClick={openAddEditor}
-						disabled={employees.length === initialGrants.length}
-					>
-						<IconPlus className="size-4" aria-hidden="true" />
-						{t("settings.payrollAccess.add", "Add payroll officer")}
-					</Button>
-				</CardHeader>
-				<CardContent>
-					{initialGrants.length === 0 ? (
-						<p className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
-							{t("settings.payrollAccess.noGrants", "No payroll officers have been added yet.")}
-						</p>
-					) : (
-						<div className="divide-y rounded-lg border">
-							{initialGrants.map((grant) => (
-								<div
-									key={grant.id}
-									className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
-								>
-									<div className="space-y-1">
-										<p className="font-medium text-sm">
-											{employeeById.get(grant.payrollEmployeeId)?.name ?? grant.payrollEmployeeId}
-										</p>
-										<p className="text-muted-foreground text-sm">{getScopeSummary({ grant, t })}</p>
-									</div>
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										onClick={() => openEditEditor(grant)}
-									>
-										<IconEdit className="size-4" aria-hidden="true" />
-										{t("settings.payrollAccess.edit", "Edit")}
-									</Button>
-								</div>
-							))}
-						</div>
-					)}
-				</CardContent>
-			</Card>
+			<PayrollAccessGrantList
+				employees={employees}
+				grants={initialGrants}
+				onAdd={openAddEditor}
+				onEdit={openEditEditor}
+				t={t}
+			/>
 
 			{isEditorOpen ? (
-				<form
-					className="space-y-6"
-					onSubmit={(event) => {
-						event.preventDefault();
-						form.handleSubmit();
-					}}
-				>
+				<form className="space-y-6" onSubmit={form.handleSubmit}>
 					<Card>
 						<CardHeader>
 							<CardTitle>
@@ -342,6 +298,60 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 				</form>
 			) : null}
 		</div>
+	);
+}
+
+function PayrollAccessGrantList({
+	employees,
+	grants,
+	onAdd,
+	onEdit,
+	t,
+}: {
+	employees: PayrollAccessEmployeeOption[];
+	grants: PayrollAccessGrantData[];
+	onAdd: () => void;
+	onEdit: (grant: PayrollAccessGrantData) => void;
+	t: (key: string, fallback: string, params?: TranslationParams) => string;
+}) {
+	const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
+
+	return (
+		<Card>
+			<CardHeader className="flex justify-end">
+				<Button type="button" onClick={onAdd} disabled={employees.length === grants.length}>
+					<IconPlus className="size-4" aria-hidden="true" />
+					{t("settings.payrollAccess.add", "Add payroll officer")}
+				</Button>
+			</CardHeader>
+			<CardContent>
+				{grants.length === 0 ? (
+					<p className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
+						{t("settings.payrollAccess.noGrants", "No payroll officers have been added yet.")}
+					</p>
+				) : (
+					<div className="divide-y rounded-lg border">
+						{grants.map((grant) => (
+							<div
+								key={grant.id}
+								className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+							>
+								<div className="space-y-1">
+									<p className="font-medium text-sm">
+										{employeeById.get(grant.payrollEmployeeId)?.name ?? grant.payrollEmployeeId}
+									</p>
+									<p className="text-muted-foreground text-sm">{getScopeSummary({ grant, t })}</p>
+								</div>
+								<Button type="button" variant="outline" size="sm" onClick={() => onEdit(grant)}>
+									<IconEdit className="size-4" aria-hidden="true" />
+									{t("settings.payrollAccess.edit", "Edit")}
+								</Button>
+							</div>
+						))}
+					</div>
+				)}
+			</CardContent>
+		</Card>
 	);
 }
 

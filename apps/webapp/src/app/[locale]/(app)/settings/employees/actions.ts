@@ -34,10 +34,10 @@ import {
 } from "./employee-queries.actions";
 
 export type {
+	EmployeeDetailRecord,
 	EmployeeListParams,
 	EmployeeSelectParams,
 	EmployeeSelectResponse,
-	EmployeeDetailRecord,
 	EmployeeWithRelations,
 	PaginatedEmployeeResponse,
 	SelectableEmployee,

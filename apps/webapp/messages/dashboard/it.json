@@ -31,7 +31,14 @@
       "error": "Impossibile caricare le statistiche di idratazione",
       "log-error": "Impossibile registrare l'assunzione di acqua",
       "of-goal": "di {goal}",
-      "title": "Idratazione"
+      "organization-streaks": "Serie dell'organizzazione",
+      "streak-day": "{count} giorno",
+      "streak-days": "{count} giorni",
+      "team-streak-current-user-suffix": ", utente corrente",
+      "team-streak-row": "{name}, posizione {rank}, serie: {streakLabel}{currentUserLabel}",
+      "team-streaks": "Serie del team",
+      "title": "Idratazione",
+      "you": "Tu"
     },
     "layout": {
       "saved": "Layout della dashboard salvato",

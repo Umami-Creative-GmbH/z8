@@ -31,7 +31,14 @@
       "error": "Failed to load hydration stats",
       "log-error": "Failed to log water intake",
       "of-goal": "of {goal}",
-      "title": "Hydration"
+      "organization-streaks": "Org streaks",
+      "streak-day": "{count} day",
+      "streak-days": "{count} days",
+      "team-streak-current-user-suffix": ", current user",
+      "team-streak-row": "{name}, rank {rank}, streak: {streakLabel}{currentUserLabel}",
+      "team-streaks": "Team streaks",
+      "title": "Hydration",
+      "you": "You"
     },
     "layout": {
       "saved": "Dashboard layout saved",

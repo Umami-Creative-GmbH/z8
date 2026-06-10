@@ -128,6 +128,14 @@
     }
   },
   "calendar": {
+    "clockOutOnBehalf": {
+      "confirm": "Registrar saída",
+      "description": "Isso cria uma entrada de registro de saída auditável no horário atual do servidor. Se algo precisar de ajuste posteriormente, use as correções.",
+      "error": "Falha ao registrar a saída do funcionário",
+      "loading": "Registrando saída...",
+      "success": "Saída do funcionário registrada com sucesso",
+      "title": "Registrar saída do funcionário?"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Entradas de tempo bloqueadas",
       "category": "Categoria",
@@ -158,7 +166,6 @@
       "duration": "Duração",
       "employee": "Funcionário",
       "notes": "Notas",
-      "periods": "Períodos de trabalho",
       "project": "Projeto",
       "recurring": "Recorrente anualmente",
       "status": "Estado",

@@ -128,6 +128,14 @@
     }
   },
   "calendar": {
+    "clockOutOnBehalf": {
+      "confirm": "Uscita",
+      "description": "Questo crea una registrazione di uscita verificabile all'orario corrente del server. Se è necessario apportare modifiche in seguito, utilizzare le correzioni.",
+      "error": "Impossibile registrare l'uscita del dipendente",
+      "loading": "Registrazione uscita in corso...",
+      "success": "Uscita del dipendente registrata correttamente",
+      "title": "Registrare l'uscita del dipendente?"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Inserimento orari bloccato",
       "category": "Categoria",
@@ -158,7 +166,6 @@
       "duration": "Durata",
       "employee": "Dipendente",
       "notes": "Note",
-      "periods": "Periodi di lavoro",
       "project": "Progetto",
       "recurring": "Ricorrente annualmente",
       "status": "Stato",

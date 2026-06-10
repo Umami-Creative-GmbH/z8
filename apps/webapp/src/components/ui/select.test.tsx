@@ -77,9 +77,7 @@ describe("Select", () => {
 
 		await user.click(screen.getByRole("combobox", { name: "Status" }));
 
-		expect(document.querySelector('[data-slot="select-positioner"]')?.className).toContain(
-			"z-50",
-		);
+		expect(document.querySelector('[data-slot="select-positioner"]')?.className).toContain("z-50");
 	});
 
 	it("calls onValueChange when selecting a null value", async () => {

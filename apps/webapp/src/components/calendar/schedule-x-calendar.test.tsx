@@ -16,6 +16,7 @@ import {
 	hasExceededPointerDragThreshold,
 	isIntentionalRangePointerDown,
 	isScheduleXEventElement,
+	resolveEventModalLeft,
 	resolveClickableCalendarEvent,
 	shouldRetryRequirementHeaderInjection,
 } from "./schedule-x-calendar-utils";
@@ -138,25 +139,20 @@ describe("ScheduleXCalendarWrapper header", () => {
 });
 
 describe("ScheduleXCalendarWrapper running clock-out action", () => {
-	it("passes canClockOutRunningPeriod into the Schedule-X event conversion path", () => {
-		const canClockOutRunningPeriod = vi.fn(() => true);
-
+	it("passes allowed running clock-out ids into the Schedule-X event conversion path", () => {
 		render(
 			<ScheduleXCalendarWrapper
 				events={[runningWorkPeriod]}
-				canClockOutRunningPeriod={canClockOutRunningPeriod}
+				clockOutAllowedWorkPeriodIds={new Set([runningWorkPeriod.id])}
 				onRefresh={vi.fn()}
 				onViewModeChange={vi.fn()}
 				viewMode="week"
 			/>,
 		);
 
-		expect(canClockOutRunningPeriod).toHaveBeenCalledWith(
-			expect.objectContaining({
-				id: runningWorkPeriod.id,
-				type: "work_period",
-				metadata: expect.objectContaining({ isRunning: true }),
-			}),
+		const calendarConfig = useCalendarAppMock.mock.calls[0]?.[0];
+		expect(calendarConfig.events[0]?._customContent?.timeGrid).toContain(
+			"data-running-clock-out-button",
 		);
 	});
 
@@ -166,7 +162,7 @@ describe("ScheduleXCalendarWrapper running clock-out action", () => {
 		render(
 			<ScheduleXCalendarWrapper
 				events={[runningWorkPeriod, completedWorkPeriod]}
-				canClockOutRunningPeriod={() => true}
+				clockOutAllowedWorkPeriodIds={new Set([runningWorkPeriod.id])}
 				onRunningPeriodClockOutRequest={onRunningPeriodClockOutRequest}
 				onRefresh={vi.fn()}
 				onViewModeChange={vi.fn()}
@@ -194,7 +190,7 @@ describe("ScheduleXCalendarWrapper running clock-out action", () => {
 		render(
 			<ScheduleXCalendarWrapper
 				events={[runningWorkPeriod]}
-				canClockOutRunningPeriod={() => false}
+				clockOutAllowedWorkPeriodIds={new Set()}
 				onRunningPeriodClockOutRequest={onRunningPeriodClockOutRequest}
 				onRefresh={vi.fn()}
 				onViewModeChange={vi.fn()}
@@ -332,6 +328,34 @@ describe("isScheduleXEventElement", () => {
 		gridCell.className = "sx__time-grid-day";
 
 		expect(isScheduleXEventElement(gridCell)).toBe(false);
+	});
+});
+
+describe("resolveEventModalLeft", () => {
+	it("keeps a small gap from the visible event edge when there is room on the right", () => {
+		expect(
+			resolveEventModalLeft({
+				appLeft: 0,
+				appRight: 1200,
+				eventLeft: 240,
+				eventRight: 454,
+				modalWidth: 400,
+				gap: 10,
+			}),
+		).toBe(464);
+	});
+
+	it("places the modal to the left of the event when the right side has no room", () => {
+		expect(
+			resolveEventModalLeft({
+				appLeft: 0,
+				appRight: 800,
+				eventLeft: 620,
+				eventRight: 760,
+				modalWidth: 400,
+				gap: 10,
+			}),
+		).toBe(210);
 	});
 });
 

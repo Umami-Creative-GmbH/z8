@@ -31,7 +31,14 @@
       "error": "Error al cargar estadísticas de hidratación",
       "log-error": "Error al registrar la ingesta de agua",
       "of-goal": "de {goal}",
-      "title": "Hidratación"
+      "organization-streaks": "Rachas de la organización",
+      "streak-day": "{count} día",
+      "streak-days": "{count} días",
+      "team-streak-current-user-suffix": ", usuario actual",
+      "team-streak-row": "{name}, rango {rank}, racha: {streakLabel}{currentUserLabel}",
+      "team-streaks": "Rachas del equipo",
+      "title": "Hidratación",
+      "you": "Tú"
     },
     "layout": {
       "saved": "Diseño del tablero guardado",

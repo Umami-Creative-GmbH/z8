@@ -31,7 +31,14 @@
       "error": "Chonnte d'Hydrations-Statistik nöd lade",
       "log-error": "Chonnte de Wasserkonsum nöd speichere",
       "of-goal": "vo {goal}",
-      "title": "Hydration"
+      "organization-streaks": "Org-Serie",
+      "streak-day": "{count} Tag",
+      "streak-days": "{count} Täg",
+      "team-streak-current-user-suffix": ", aktuelle Benutzer",
+      "team-streak-row": "{name}, Rang {rank}, Serie: {streakLabel}{currentUserLabel}",
+      "team-streaks": "Team-Serie",
+      "title": "Hydration",
+      "you": "Du"
     },
     "layout": {
       "saved": "Dashboard-Layout gspeicheret",

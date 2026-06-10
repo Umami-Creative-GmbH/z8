@@ -111,19 +111,18 @@ export function TravelExpensePolicyManagement({
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.travelExpenses.title", "Travel Expense Policies")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.travelExpenses.description",
-						"Configure reimbursement rates and effective periods for mileage and per diem claims.",
-					)}
-				</p>
-			</div>
-
-			<div className="flex justify-end">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<div className="flex flex-col gap-2">
+					<h1 className="text-2xl font-semibold tracking-tight">
+						{t("settings.travelExpenses.title", "Travel Expense Policies")}
+					</h1>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"settings.travelExpenses.description",
+							"Configure reimbursement rates and effective periods for mileage and per diem claims.",
+						)}
+					</p>
+				</div>
 				<Button onClick={handleCreate}>
 					<IconPlus className="mr-2 size-4" />
 					{t("settings.travelExpenses.addPolicy", "Add Policy")}

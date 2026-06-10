@@ -41,6 +41,30 @@ export function isScheduleXEventElement(target: HTMLElement) {
 	return Boolean(target.closest(".sx__event, .sx__time-grid-event, .sx__date-grid-event"));
 }
 
+export function resolveEventModalLeft({
+	appLeft,
+	appRight,
+	eventLeft,
+	eventRight,
+	modalWidth,
+	gap = 10,
+}: {
+	appLeft: number;
+	appRight: number;
+	eventLeft: number;
+	eventRight: number;
+	modalWidth: number;
+	gap?: number;
+}) {
+	const rightSideLeft = eventRight + gap;
+	if (rightSideLeft + modalWidth <= appRight) return rightSideLeft;
+
+	const leftSideLeft = eventLeft - modalWidth - gap;
+	if (leftSideLeft >= appLeft) return leftSideLeft;
+
+	return appLeft;
+}
+
 export function isIntentionalRangePointerDown({
 	button,
 	pointerType,

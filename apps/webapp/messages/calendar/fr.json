@@ -128,6 +128,14 @@
     }
   },
   "calendar": {
+    "clockOutOnBehalf": {
+      "confirm": "Pointer la sortie",
+      "description": "Ceci crée une entrée de pointage de sortie auditable à l'heure actuelle du serveur. Si un ajustement est nécessaire par la suite, utilisez les corrections.",
+      "error": "Échec du pointage de sortie de l'employé",
+      "loading": "Pointage de sortie en cours...",
+      "success": "Employé pointé en sortie avec succès",
+      "title": "Pointer la sortie de l'employé ?"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Saisies de temps bloquées",
       "category": "Catégorie",
@@ -158,7 +166,6 @@
       "duration": "Durée",
       "employee": "Employé",
       "notes": "Notes",
-      "periods": "Périodes de travail",
       "project": "Projet",
       "recurring": "Récurrent annuellement",
       "status": "Statut",

@@ -31,7 +31,14 @@
       "error": "Hidrasyon istatistikleri yüklenemedi",
       "log-error": "Su tüketimi kaydedilemedi",
       "of-goal": "/ {goal}",
-      "title": "Hidrasyon"
+      "organization-streaks": "Kuruluş serileri",
+      "streak-day": "{count} gün",
+      "streak-days": "{count} gün",
+      "team-streak-current-user-suffix": ", mevcut kullanıcı",
+      "team-streak-row": "{name}, sıra {rank}, seri: {streakLabel}{currentUserLabel}",
+      "team-streaks": "Ekip serileri",
+      "title": "Hidrasyon",
+      "you": "Sen"
     },
     "layout": {
       "saved": "Pano düzeni kaydedildi",

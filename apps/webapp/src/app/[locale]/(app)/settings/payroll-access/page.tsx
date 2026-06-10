@@ -8,9 +8,11 @@ import { getPayrollAccessAdminDataAction } from "./actions";
 export default async function PayrollAccessSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const t = await getTranslate();
-	await requireOrgAdminSettingsAccess();
-	const result = await getPayrollAccessAdminDataAction();
+	const [t, , result] = await Promise.all([
+		getTranslate(),
+		requireOrgAdminSettingsAccess(),
+		getPayrollAccessAdminDataAction(),
+	]);
 
 	if (!result.success) {
 		return (

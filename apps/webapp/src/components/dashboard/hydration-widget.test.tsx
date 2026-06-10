@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getHydrationWidgetData } from "./actions";
 import { HydrationWidget } from "./hydration-widget";
 
-const { getHydrationWidgetDataMock, logWaterIntakeMock, toastErrorMock, translateMock } = vi.hoisted(
-	() => ({
+const { getHydrationWidgetDataMock, logWaterIntakeMock, toastErrorMock, translateMock } =
+	vi.hoisted(() => ({
 		getHydrationWidgetDataMock: vi.fn(),
 		logWaterIntakeMock: vi.fn(),
 		toastErrorMock: vi.fn(),
@@ -17,8 +17,7 @@ const { getHydrationWidgetDataMock, logWaterIntakeMock, toastErrorMock, translat
 					fallback,
 				),
 		),
-	}),
-);
+	}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -68,6 +67,7 @@ const enabledHydrationData = {
 	todayIntake: 3,
 	dailyGoal: 8,
 	goalProgress: 38,
+	organizationStreakLeaders: [],
 };
 
 describe("HydrationWidget", () => {
@@ -200,5 +200,81 @@ describe("HydrationWidget", () => {
 
 		await waitFor(() => expect(getHydrationWidgetDataMock).toHaveBeenCalledTimes(1));
 		expect(screen.queryByTestId("hydration-team-streak-leaders")).toBeNull();
+	});
+
+	it("renders organization streak leaderboard rows below team leaders", async () => {
+		getHydrationWidgetDataMock.mockResolvedValue({
+			success: true,
+			data: {
+				...enabledHydrationData,
+				teamStreakLeaders: [
+					{
+						employeeId: "emp-1",
+						displayName: "Avery Stone",
+						currentStreak: 9,
+						isCurrentUser: false,
+					},
+				],
+				organizationStreakLeaders: [
+					{
+						employeeId: "emp-3",
+						displayName: "Casey Noor",
+						currentStreak: 12,
+						isCurrentUser: false,
+					},
+					{
+						employeeId: "emp-4",
+						displayName: "Dev Reyes",
+						currentStreak: 1,
+						isCurrentUser: true,
+					},
+				],
+			},
+		});
+
+		render(<HydrationWidget />);
+
+		const teamLeaders = await screen.findByTestId("hydration-team-streak-leaders");
+		const organizationLeaders = await screen.findByTestId(
+			"hydration-organization-streak-leaders",
+		);
+
+		expect(
+			teamLeaders.compareDocumentPosition(organizationLeaders) & Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(within(organizationLeaders).getByText("Org streaks")).toBeTruthy();
+		expect(within(organizationLeaders).getByText("Casey Noor")).toBeTruthy();
+		expect(within(organizationLeaders).getByText("Dev Reyes")).toBeTruthy();
+		expect(within(organizationLeaders).getByText("#1")).toBeTruthy();
+		expect(within(organizationLeaders).getByText("#2")).toBeTruthy();
+		expect(within(organizationLeaders).getByText("12 days")).toBeTruthy();
+		expect(within(organizationLeaders).getByText("1 day")).toBeTruthy();
+		expect(within(organizationLeaders).getByText("You")).toBeTruthy();
+	});
+
+	it("renders organization streak leaders when team leaders are empty", async () => {
+		getHydrationWidgetDataMock.mockResolvedValue({
+			success: true,
+			data: {
+				...enabledHydrationData,
+				teamStreakLeaders: [],
+				organizationStreakLeaders: [
+					{
+						employeeId: "emp-3",
+						displayName: "Casey Noor",
+						currentStreak: 12,
+						isCurrentUser: false,
+					},
+				],
+			},
+		});
+
+		render(<HydrationWidget />);
+
+		const organizationLeaders = await screen.findByTestId(
+			"hydration-organization-streak-leaders",
+		);
+		expect(screen.queryByTestId("hydration-team-streak-leaders")).toBeNull();
+		expect(within(organizationLeaders).getByText("Casey Noor")).toBeTruthy();
 	});
 });

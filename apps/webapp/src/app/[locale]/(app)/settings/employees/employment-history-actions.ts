@@ -7,7 +7,6 @@ import {
 	employee,
 	employeeEmploymentHistory,
 	workPolicy,
-	workPolicyAssignment,
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -18,6 +17,7 @@ import {
 	type UpsertEmploymentHistory,
 	upsertEmploymentHistorySchema,
 } from "@/lib/validations/employment-history";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeSettingsActorContext,
@@ -175,6 +175,28 @@ export function buildEmploymentCancellationRestorationPlan({
 	};
 }
 
+async function markContractWorkBalanceDirty(input: {
+	employeeId: string;
+	organizationId: string;
+	fromDate: Date;
+}) {
+	const dirtyFromDate = DateTime.fromJSDate(input.fromDate, { zone: "utc" }).toISODate();
+	if (!dirtyFromDate) return;
+
+	try {
+		await markEmployeeWorkBalanceDirty({
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			dirtyFromDate,
+		});
+	} catch (error) {
+		logger.error(
+			{ error, ...input, dirtyFromDate },
+			"Failed to mark work balance dirty after contract change",
+		);
+	}
+}
+
 export async function listEmployeeEmploymentHistoryAction(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeeEmploymentHistory[]>> {
@@ -324,11 +346,6 @@ export async function createEmployeeEmploymentHistoryAction(
 								updatedAt: now,
 							};
 							const adjusted = adjustConfirmedTimeline({ existing, next: nextRow });
-							const assignmentWindowUpdates = buildEmploymentAssignmentWindowUpdates({
-								updates: adjusted.updates,
-								existing,
-							});
-
 							for (const update of adjusted.updates) {
 								await tx
 									.update(employeeEmploymentHistory)
@@ -342,25 +359,6 @@ export async function createEmployeeEmploymentHistoryAction(
 											eq(employeeEmploymentHistory.id, update.id),
 											eq(employeeEmploymentHistory.employeeId, employeeId),
 											eq(employeeEmploymentHistory.organizationId, actor.organizationId),
-										),
-									);
-							}
-
-							for (const update of assignmentWindowUpdates) {
-								await tx
-									.update(workPolicyAssignment)
-									.set({
-										effectiveUntil: update.effectiveUntil,
-										updatedAt: now,
-									})
-									.where(
-										and(
-											eq(workPolicyAssignment.employeeId, update.employeeId),
-											eq(workPolicyAssignment.organizationId, update.organizationId),
-											eq(workPolicyAssignment.policyId, update.workPolicyId),
-											eq(workPolicyAssignment.assignmentType, "employee"),
-											eq(workPolicyAssignment.isActive, true),
-											eq(workPolicyAssignment.effectiveFrom, update.effectiveFrom),
 										),
 									);
 							}
@@ -390,20 +388,22 @@ export async function createEmployeeEmploymentHistoryAction(
 									);
 							}
 
-							const assignmentPlan = buildEmploymentAssignmentSyncPlan(inserted);
-							if (assignmentPlan) {
-								await tx.insert(workPolicyAssignment).values({
-									...assignmentPlan,
-									createdBy: session.user.id,
-									createdAt: now,
-									updatedAt: now,
-								});
-							}
-
 							return inserted;
 						});
 					}),
 				);
+
+				if (createdHistory.reviewState === "confirmed") {
+					yield* _(
+						Effect.promise(() =>
+							markContractWorkBalanceDirty({
+								employeeId,
+								organizationId: actor.organizationId,
+								fromDate: createdHistory.validFrom,
+							}),
+						),
+					);
+				}
 
 				revalidateEmployeesCache(actor.organizationId);
 
@@ -489,11 +489,6 @@ export async function confirmEmployeeEmploymentHistoryAction(
 								existing,
 								next: { ...targetHistory, reviewState: "confirmed" as const },
 							});
-							const assignmentWindowUpdates = buildEmploymentAssignmentWindowUpdates({
-								updates: adjusted.updates,
-								existing,
-							});
-
 							for (const update of adjusted.updates) {
 								await tx
 									.update(employeeEmploymentHistory)
@@ -507,25 +502,6 @@ export async function confirmEmployeeEmploymentHistoryAction(
 											eq(employeeEmploymentHistory.id, update.id),
 											eq(employeeEmploymentHistory.employeeId, employeeId),
 											eq(employeeEmploymentHistory.organizationId, actor.organizationId),
-										),
-									);
-							}
-
-							for (const update of assignmentWindowUpdates) {
-								await tx
-									.update(workPolicyAssignment)
-									.set({
-										effectiveUntil: update.effectiveUntil,
-										updatedAt: now,
-									})
-									.where(
-										and(
-											eq(workPolicyAssignment.employeeId, update.employeeId),
-											eq(workPolicyAssignment.organizationId, update.organizationId),
-											eq(workPolicyAssignment.policyId, update.workPolicyId),
-											eq(workPolicyAssignment.assignmentType, "employee"),
-											eq(workPolicyAssignment.isActive, true),
-											eq(workPolicyAssignment.effectiveFrom, update.effectiveFrom),
 										),
 									);
 							}
@@ -567,19 +543,19 @@ export async function confirmEmployeeEmploymentHistoryAction(
 									);
 							}
 
-							const assignmentPlan = buildEmploymentAssignmentSyncPlan(updated);
-							if (assignmentPlan) {
-								await tx.insert(workPolicyAssignment).values({
-									...assignmentPlan,
-									createdBy: session.user.id,
-									createdAt: now,
-									updatedAt: now,
-								});
-							}
-
 							return updated;
 						});
 					}),
+				);
+
+				yield* _(
+					Effect.promise(() =>
+						markContractWorkBalanceDirty({
+							employeeId,
+							organizationId: actor.organizationId,
+							fromDate: confirmedHistory.validFrom,
+						}),
+					),
 				);
 
 				revalidateEmployeesCache(actor.organizationId);
@@ -627,9 +603,9 @@ export async function cancelEmployeeEmploymentHistoryAction(
 					}),
 				);
 
-				yield* _(
+				const canceledHistory = yield* _(
 					dbService.query("cancelEmployeeEmploymentHistory", async () => {
-						await dbService.db.transaction(async (tx) => {
+						return await dbService.db.transaction(async (tx) => {
 							await tx.execute(sql`
 								select ${employee.id}
 								from ${employee}
@@ -692,56 +668,24 @@ export async function cancelEmployeeEmploymentHistoryAction(
 											eq(employeeEmploymentHistory.organizationId, actor.organizationId),
 										),
 									);
-
-								if (restorationPlan.assignmentWindowUpdate) {
-									await tx
-										.update(workPolicyAssignment)
-										.set({
-											effectiveUntil: restorationPlan.assignmentWindowUpdate.effectiveUntil,
-											updatedAt: now,
-										})
-										.where(
-											and(
-												eq(
-													workPolicyAssignment.employeeId,
-													restorationPlan.assignmentWindowUpdate.employeeId,
-												),
-												eq(
-													workPolicyAssignment.organizationId,
-													restorationPlan.assignmentWindowUpdate.organizationId,
-												),
-												eq(
-													workPolicyAssignment.policyId,
-													restorationPlan.assignmentWindowUpdate.workPolicyId,
-												),
-												eq(workPolicyAssignment.assignmentType, "employee"),
-												eq(workPolicyAssignment.isActive, true),
-												eq(
-													workPolicyAssignment.effectiveFrom,
-													restorationPlan.assignmentWindowUpdate.effectiveFrom,
-												),
-											),
-										);
-								}
 							}
 
-							if (targetHistory.reviewState === "confirmed" && targetHistory.workPolicyId) {
-								await tx
-									.delete(workPolicyAssignment)
-									.where(
-										and(
-											eq(workPolicyAssignment.employeeId, targetHistory.employeeId),
-											eq(workPolicyAssignment.organizationId, targetHistory.organizationId),
-											eq(workPolicyAssignment.policyId, targetHistory.workPolicyId),
-											eq(workPolicyAssignment.assignmentType, "employee"),
-											eq(workPolicyAssignment.isActive, true),
-											eq(workPolicyAssignment.effectiveFrom, targetHistory.validFrom),
-										),
-									);
-							}
+							return targetHistory;
 						});
 					}),
 				);
+
+				if (canceledHistory.reviewState === "confirmed") {
+					yield* _(
+						Effect.promise(() =>
+							markContractWorkBalanceDirty({
+								employeeId,
+								organizationId: actor.organizationId,
+								fromDate: canceledHistory.validFrom,
+							}),
+						),
+					);
+				}
 
 				revalidateEmployeesCache(actor.organizationId);
 			}),

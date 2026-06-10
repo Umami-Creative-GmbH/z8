@@ -31,7 +31,14 @@
       "error": "Αποτυχία φόρτωσης στατιστικών ενυδάτωσης",
       "log-error": "Αποτυχία καταγραφής κατανάλωσης νερού",
       "of-goal": "από {goal}",
-      "title": "Ενυδάτωση"
+      "organization-streaks": "Σειρές οργανισμού",
+      "streak-day": "{count} ημέρα",
+      "streak-days": "{count} ημέρες",
+      "team-streak-current-user-suffix": ", τρέχων χρήστης",
+      "team-streak-row": "{name}, κατάταξη {rank}, σειρά: {streakLabel}{currentUserLabel}",
+      "team-streaks": "Σειρές ομάδας",
+      "title": "Ενυδάτωση",
+      "you": "Εσείς"
     },
     "layout": {
       "saved": "Η διάταξη του πίνακα ελέγχου αποθηκεύτηκε",

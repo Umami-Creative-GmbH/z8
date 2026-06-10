@@ -77,10 +77,12 @@ function renderCard({
 	canManage = true,
 	onCreate = vi.fn(),
 	onCancel = vi.fn(),
+	workPolicies = [],
 }: {
 	canManage?: boolean;
 	onCreate?: EmployeeEmploymentHistoryCardProps["onCreate"];
 	onCancel?: EmployeeEmploymentHistoryCardProps["onCancel"];
+	workPolicies?: EmployeeEmploymentHistoryCardProps["workPolicies"];
 } = {}) {
 	return render(
 		<EmployeeEmploymentHistoryCard
@@ -91,6 +93,7 @@ function renderCard({
 			onCancel={onCancel}
 			isCreating={false}
 			isMutating={false}
+			workPolicies={workPolicies}
 		/>,
 	);
 }
@@ -125,6 +128,23 @@ describe("EmployeeEmploymentHistoryCard", () => {
 
 		expect(screen.getAllByText(/Jan 1, 2026/).length).toBeGreaterThan(0);
 		expect(screen.queryByText(/Dec 31, 2025/)).toBeNull();
+	});
+
+	it("renders selected work policy names for contract rows", () => {
+		render(
+			<EmployeeEmploymentHistoryCard
+				history={[{ ...baseHistory[0], workPolicyId: "policy-1" }]}
+				canManage={true}
+				onCreate={vi.fn()}
+				onConfirm={vi.fn()}
+				onCancel={vi.fn()}
+				isCreating={false}
+				isMutating={false}
+				workPolicies={[{ id: "policy-1", name: "Thirty hour employee override" }]}
+			/>,
+		);
+
+		expect(screen.getAllByText("Policy: Thirty hour employee override").length).toBeGreaterThan(0);
 	});
 
 	it("requires an effective date before creating an employment change", async () => {

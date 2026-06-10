@@ -146,7 +146,7 @@ describe("calendarEventToScheduleX", () => {
 		};
 
 		const scheduleXEvent = calendarEventToScheduleX(runningPeriod, "UTC", {
-			canClockOutRunningPeriod: () => true,
+			clockOutAllowedWorkPeriodIds: new Set([runningPeriod.id]),
 		});
 
 		expect(scheduleXEvent?._customContent?.timeGrid).toContain("data-running-clock-out-button");
@@ -175,7 +175,7 @@ describe("calendarEventToScheduleX", () => {
 		};
 
 		const scheduleXEvent = calendarEventToScheduleX(runningPeriod, "UTC", {
-			canClockOutRunningPeriod: () => true,
+			clockOutAllowedWorkPeriodIds: new Set([runningPeriod.id]),
 		});
 
 		expect(scheduleXEvent?._customContent?.timeGrid).toContain(
@@ -199,7 +199,7 @@ describe("calendarEventToScheduleX", () => {
 		};
 
 		const scheduleXEvent = calendarEventToScheduleX(runningPeriod, "UTC", {
-			canClockOutRunningPeriod: () => false,
+			clockOutAllowedWorkPeriodIds: new Set(),
 		});
 
 		expect(scheduleXEvent?._customContent?.timeGrid).not.toContain("data-running-clock-out-button");

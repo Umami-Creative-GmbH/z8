@@ -5,6 +5,7 @@ import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.serv
 import {
 	applyApprovedAbsencesToDailyRequirements,
 	buildDailyWorkRequirements,
+	buildShiftDailyWorkRequirements,
 } from "./work-policy-requirements";
 
 const source = readFileSync(
@@ -55,6 +56,28 @@ describe("buildDailyWorkRequirements", () => {
 		expect(requirements["2026-05-08"]?.requiredMinutes).toBe(480);
 		expect(requirements["2026-05-09"]).toBeUndefined();
 		expect(requirements["2026-05-10"]).toBeUndefined();
+	});
+
+	it("uses employee contract minutes as an override for simple weekly policy hours", () => {
+		const requirements = buildDailyWorkRequirements({
+			policy: basePolicy({
+				scheduleCycle: "weekly",
+				scheduleType: "simple",
+				workingDaysPreset: "weekdays",
+				hoursPerCycle: "40",
+				homeOfficeDaysPerCycle: 0,
+				days: [],
+			}),
+			startDate: new Date("2026-05-04T00:00:00.000Z"),
+			endDate: new Date("2026-05-08T23:59:59.999Z"),
+			weeklyContractMinutes: 1800,
+		});
+
+		expect(requirements["2026-05-04"]?.requiredMinutes).toBe(360);
+		expect(requirements["2026-05-05"]?.requiredMinutes).toBe(360);
+		expect(requirements["2026-05-06"]?.requiredMinutes).toBe(360);
+		expect(requirements["2026-05-07"]?.requiredMinutes).toBe(360);
+		expect(requirements["2026-05-08"]?.requiredMinutes).toBe(360);
 	});
 
 	it("uses detailed per-day hours and omits non-work days", () => {
@@ -197,6 +220,48 @@ describe("buildDailyWorkRequirements", () => {
 	});
 });
 
+describe("buildShiftDailyWorkRequirements", () => {
+	it("returns no requirements when an hourly worker has no assigned published shifts", () => {
+		const requirements = buildShiftDailyWorkRequirements({
+			shifts: [],
+			timezone: "Europe/Berlin",
+		});
+
+		expect(requirements).toEqual({});
+	});
+
+	it("uses assigned published shift durations as hourly worker requirements", () => {
+		const requirements = buildShiftDailyWorkRequirements({
+			shifts: [
+				{
+					date: new Date("2026-06-01T00:00:00.000Z"),
+					startTime: "09:00",
+					endTime: "13:30",
+				},
+				{
+					date: new Date("2026-06-03T00:00:00.000Z"),
+					startTime: "22:00",
+					endTime: "02:00",
+				},
+			],
+			timezone: "Europe/Berlin",
+		});
+
+		expect(requirements).toEqual({
+			"2026-06-01": {
+				requiredMinutes: 270,
+				policyId: "assigned-shift",
+				policyName: "Assigned shift",
+			},
+			"2026-06-03": {
+				requiredMinutes: 240,
+				policyId: "assigned-shift",
+				policyName: "Assigned shift",
+			},
+		});
+	});
+});
+
 describe("getDailyWorkRequirementsForEmployee", () => {
 	it("applies assigned holiday adjustments after absence adjustments", () => {
 		expect(source).toContain("getAssignedHolidaysForEmployee");
@@ -210,12 +275,19 @@ describe("getDailyWorkRequirementsForEmployee", () => {
 	});
 
 	it("clamps generated requirements to account creation unless imported work predates it", () => {
-		expect(source).toContain("columns: { id: true, startDate: true }");
+		expect(source).toContain("columns: { id: true, startDate: true, contractType: true }");
 		expect(source).toContain("user: { columns: { createdAt: true } }");
 		expect(source).toContain("getFirstCompletedWorkPeriodBeforeAccount");
 		expect(source).toContain("scopedEmployee.user.createdAt");
 		expect(source).toContain("const effectiveStartDate");
 		expect(source).toContain("if (effectiveStartDate > params.endDate) return {};");
 		expect(source).toContain("startDate: effectiveStartDate");
+	});
+
+	it("uses confirmed employment history as the employee-specific requirement override", () => {
+		expect(source).toContain("getConfirmedEmploymentRequirementSlices");
+		expect(source).toContain('eq(employeeEmploymentHistory.reviewState, "confirmed")');
+		expect(source).toContain("weeklyContractMinutes: slice.weeklyContractMinutes");
+		expect(source).toContain('assignedVia: "Contract override"');
 	});
 });

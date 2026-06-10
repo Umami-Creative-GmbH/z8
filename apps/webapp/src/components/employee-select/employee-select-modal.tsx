@@ -256,7 +256,10 @@ export function EmployeeSelectModal({
 
 			onConfirm(
 				activePendingIds,
-				activePendingIds.map((id) => employeesById.get(id)).filter(Boolean) as SelectableEmployee[],
+				activePendingIds.flatMap((id) => {
+					const employee = employeesById.get(id);
+					return employee ? [employee] : [];
+				}),
 			);
 		} else {
 			onConfirm();
