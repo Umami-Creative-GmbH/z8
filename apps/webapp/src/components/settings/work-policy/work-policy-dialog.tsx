@@ -192,9 +192,10 @@ export function WorkPolicyDialog({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const isEditing = !!editingPolicy;
+	const initialFormValues = buildWorkPolicyFormValues(editingPolicy);
 
 	const form = useForm({
-		defaultValues: formDefaultValues,
+		defaultValues: initialFormValues,
 		onSubmit: async ({ value }) => {
 			const input = {
 				name: value.name,
@@ -251,11 +252,11 @@ export function WorkPolicyDialog({
 		const nextResetScope = open ? `${editingPolicy?.id ?? "new"}` : "";
 		if (open && resetScopeRef.current !== nextResetScope) {
 			resetScopeRef.current = nextResetScope;
-			form.reset(buildWorkPolicyFormValues(editingPolicy));
+			form.reset(initialFormValues);
 		} else if (!open && resetScopeRef.current !== "") {
 			resetScopeRef.current = "";
 		}
-	}, [open, editingPolicy, form]);
+	}, [open, editingPolicy, form, initialFormValues]);
 
 	// Create mutation
 	const createMutation = useMutation({
