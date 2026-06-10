@@ -1982,9 +1982,11 @@ async function sendOrganizationDeletionNotifications(
 	deletedByName: string,
 	deletionDate: Date,
 ): Promise<void> {
-	const { render } = await import("react-email");
-	const { OrganizationDeletion } = await import("@/lib/email/templates/organization-deletion");
-	const { sendEmail } = await import("@/lib/email/email-service");
+	const [{ render }, { OrganizationDeletion }, { sendEmail }] = await Promise.all([
+		import("react-email"),
+		import("@/lib/email/templates/organization-deletion"),
+		import("@/lib/email/email-service"),
+	]);
 
 	// Get all admins and owners
 	const adminMembers = await db.query.member.findMany({
@@ -2007,36 +2009,38 @@ async function sendOrganizationDeletionNotifications(
 	permanentDeletionDate.setDate(permanentDeletionDate.getDate() + 5);
 
 	// Send email to each admin/owner
-	for (const member of adminsAndOwners) {
-		const user = member.user;
-		const userEmail = user?.email;
-		if (!userEmail) continue;
+	await Promise.all(
+		adminsAndOwners.map(async (member) => {
+			const user = member.user;
+			const userEmail = user?.email;
+			if (!userEmail) return;
 
-		try {
-			const html = await render(
-				OrganizationDeletion({
-					userName: user.name || userEmail,
-					organizationName,
-					deletedByName,
-					deletionDate: deletionDate.toLocaleString(),
-					permanentDeletionDate: permanentDeletionDate.toLocaleString(),
-					recoveryUrl,
-					appUrl,
-				}),
-			);
+			try {
+				const html = await render(
+					OrganizationDeletion({
+						userName: user.name || userEmail,
+						organizationName,
+						deletedByName,
+						deletionDate: deletionDate.toLocaleString(),
+						permanentDeletionDate: permanentDeletionDate.toLocaleString(),
+						recoveryUrl,
+						appUrl,
+					}),
+				);
 
-			await sendEmail({
-				to: userEmail,
-				subject: `Organization "${organizationName}" scheduled for deletion`,
-				html,
-				actionUrl: recoveryUrl,
-				organizationId,
-			});
-		} catch (error) {
-			logger.warn(
-				{ error, email: userEmail, organizationId },
-				"Failed to send deletion notification to user",
-			);
-		}
-	}
+				await sendEmail({
+					to: userEmail,
+					subject: `Organization "${organizationName}" scheduled for deletion`,
+					html,
+					actionUrl: recoveryUrl,
+					organizationId,
+				});
+			} catch (error) {
+				logger.warn(
+					{ error, email: userEmail, organizationId },
+					"Failed to send deletion notification to user",
+				);
+			}
+		}),
+	);
 }
