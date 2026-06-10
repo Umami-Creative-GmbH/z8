@@ -87,27 +87,30 @@ describe("syncEmployeeForm", () => {
 
 	it("syncs invitation draft identity fields into the employee detail form", () => {
 		const form = createFormMock();
-		syncEmployeeForm(form as never, {
-			kind: "invitationDraft",
-			id: "draft-1",
-			user: {
-				firstName: "Ada",
-				lastName: "Lovelace",
-				name: "Ada Lovelace",
-				email: "ada@example.com",
-				image: null,
+		syncEmployeeForm(
+			form as never,
+			{
+				kind: "invitationDraft",
 				id: "draft-1",
-			},
-			gender: null,
-			pronouns: "they/them",
-			position: "Lead",
-			employeeNumber: "D-100",
-			startDate: new Date("2026-06-01T00:00:00.000Z"),
-			role: "manager",
-			contractType: "hourly",
-			currentHourlyRate: "45.00",
-			team: null,
-		} as EmployeeDetail);
+				user: {
+					firstName: "Ada",
+					lastName: "Lovelace",
+					name: "Ada Lovelace",
+					email: "ada@example.com",
+					image: null,
+					id: "draft-1",
+				},
+				gender: null,
+				pronouns: "they/them",
+				position: "Lead",
+				employeeNumber: "D-100",
+				startDate: new Date("2026-06-01T00:00:00.000Z"),
+				role: "manager",
+				contractType: "hourly",
+				currentHourlyRate: "45.00",
+				team: null,
+			} as EmployeeDetail,
+		);
 
 		expect(form.setFieldValue).toHaveBeenCalledWith("firstName", "Ada");
 		expect(form.setFieldValue).toHaveBeenCalledWith("lastName", "Lovelace");

@@ -15,24 +15,24 @@ const {
 	toastError,
 	toastSuccess,
 } = vi.hoisted(() => ({
-		capturedCalendarFilters: [] as unknown[],
-		mockIsManagerOrAbove: vi.fn(() => true),
-		onScheduleXWrapperRender: vi.fn(),
-		push: vi.fn(),
-		refetch: vi.fn(),
-		toastError: vi.fn(),
-		toastSuccess: vi.fn(),
-		mockCalendarData: {
-			events: [] as CalendarEvent[],
-			dailyRequirements: new Map(),
-			dailyActualMinutes: new Map(),
-			workBalance: null,
-			calendarTimezone: null as string | null,
-			isLoading: false,
-			isFetching: false,
-			error: null,
-		},
-	}));
+	capturedCalendarFilters: [] as unknown[],
+	mockIsManagerOrAbove: vi.fn(() => true),
+	onScheduleXWrapperRender: vi.fn(),
+	push: vi.fn(),
+	refetch: vi.fn(),
+	toastError: vi.fn(),
+	toastSuccess: vi.fn(),
+	mockCalendarData: {
+		events: [] as CalendarEvent[],
+		dailyRequirements: new Map(),
+		dailyActualMinutes: new Map(),
+		workBalance: null,
+		calendarTimezone: null as string | null,
+		isLoading: false,
+		isFetching: false,
+		error: null,
+	},
+}));
 
 vi.mock("sonner", () => ({
 	toast: {
@@ -159,9 +159,7 @@ vi.mock("./schedule-x-wrapper", () => ({
 			<div
 				data-testid="schedule-x-wrapper"
 				data-can-clock-out={String(canClockOutRunningPeriod?.(runningWorkPeriod) ?? false)}
-				data-can-clock-out-own={String(
-					canClockOutRunningPeriod?.(ownRunningWorkPeriod) ?? false,
-				)}
+				data-can-clock-out-own={String(canClockOutRunningPeriod?.(ownRunningWorkPeriod) ?? false)}
 				data-can-clock-out-completed={String(
 					canClockOutRunningPeriod?.(completedWorkPeriod) ?? false,
 				)}
@@ -169,10 +167,7 @@ vi.mock("./schedule-x-wrapper", () => ({
 				data-time-zone={timeZone}
 				data-summary-loading={String(isSummaryLoading)}
 			>
-				<button
-					type="button"
-					onClick={() => onRunningPeriodClockOutRequest?.(runningWorkPeriod)}
-				>
+				<button type="button" onClick={() => onRunningPeriodClockOutRequest?.(runningWorkPeriod)}>
 					Request running stop
 				</button>
 				<button
@@ -181,10 +176,7 @@ vi.mock("./schedule-x-wrapper", () => ({
 				>
 					Request own running stop
 				</button>
-				<button
-					type="button"
-					onClick={() => onRunningPeriodClockOutRequest?.(completedWorkPeriod)}
-				>
+				<button type="button" onClick={() => onRunningPeriodClockOutRequest?.(completedWorkPeriod)}>
 					Request completed stop
 				</button>
 				<button

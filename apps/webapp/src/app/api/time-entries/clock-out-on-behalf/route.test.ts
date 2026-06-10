@@ -215,9 +215,7 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 			user: { id: "actor-user-1" },
 		});
 		mockState.limit.mockResolvedValue([]);
-		mockState.limit
-			.mockResolvedValueOnce([actorEmployee])
-			.mockResolvedValueOnce([loadedPeriod()]);
+		mockState.limit.mockResolvedValueOnce([actorEmployee]).mockResolvedValueOnce([loadedPeriod()]);
 		mockState.txLimit.mockResolvedValue([runningPeriod]);
 		mockState.getAbility.mockResolvedValue({ can: vi.fn(() => true) });
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
@@ -400,15 +398,13 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 
 	it("returns 409 when the loaded work period is already stopped", async () => {
 		mockState.limit.mockReset();
-		mockState.limit
-			.mockResolvedValueOnce([actorEmployee])
-			.mockResolvedValueOnce([
-				loadedPeriod({
-					...runningPeriod,
-					endTime: new Date("2026-06-09T09:00:00.000Z"),
-					isActive: false,
-				}),
-			]);
+		mockState.limit.mockResolvedValueOnce([actorEmployee]).mockResolvedValueOnce([
+			loadedPeriod({
+				...runningPeriod,
+				endTime: new Date("2026-06-09T09:00:00.000Z"),
+				isActive: false,
+			}),
+		]);
 
 		const response = await POST(createRequest({ workPeriodId: "period-1" }));
 

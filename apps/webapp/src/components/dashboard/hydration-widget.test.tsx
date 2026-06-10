@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getHydrationWidgetData } from "./actions";
 import { HydrationWidget } from "./hydration-widget";
 
-const { getHydrationWidgetDataMock, logWaterIntakeMock, toastErrorMock, translateMock } = vi.hoisted(
-	() => ({
+const { getHydrationWidgetDataMock, logWaterIntakeMock, toastErrorMock, translateMock } =
+	vi.hoisted(() => ({
 		getHydrationWidgetDataMock: vi.fn(),
 		logWaterIntakeMock: vi.fn(),
 		toastErrorMock: vi.fn(),
@@ -17,8 +17,7 @@ const { getHydrationWidgetDataMock, logWaterIntakeMock, toastErrorMock, translat
 					fallback,
 				),
 		),
-	}),
-);
+	}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({

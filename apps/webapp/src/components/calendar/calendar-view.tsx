@@ -254,10 +254,7 @@ export function CalendarView({
 			});
 
 			if (!response.ok) {
-				let message = t(
-					"calendar.clockOutOnBehalf.error",
-					"Failed to clock out employee",
-				);
+				let message = t("calendar.clockOutOnBehalf.error", "Failed to clock out employee");
 
 				try {
 					const body = (await response.json()) as { error?: unknown };
@@ -272,9 +269,7 @@ export function CalendarView({
 				return;
 			}
 
-			toast.success(
-				t("calendar.clockOutOnBehalf.success", "Employee clocked out successfully"),
-			);
+			toast.success(t("calendar.clockOutOnBehalf.success", "Employee clocked out successfully"));
 			setPendingClockOutEvent(null);
 			refetch();
 		} catch {

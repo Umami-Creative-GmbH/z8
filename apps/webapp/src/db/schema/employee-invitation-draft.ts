@@ -1,4 +1,3 @@
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
 	decimal,
 	foreignKey,
@@ -9,6 +8,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { invitation, organization, user } from "../auth-schema";
 import { contractTypeEnum, genderEnum, roleEnum } from "./enums";
 import { team } from "./organization";
@@ -38,7 +38,9 @@ export const employeeInvitationDraft = pgTable(
 		currentHourlyRate: decimal("current_hourly_rate", { precision: 10, scale: 2 }),
 		updatedBy: text("updated_by").references(() => user.id),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at").$onUpdate(() => currentTimestamp()).notNull(),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
 	},
 	(table) => [
 		foreignKey({

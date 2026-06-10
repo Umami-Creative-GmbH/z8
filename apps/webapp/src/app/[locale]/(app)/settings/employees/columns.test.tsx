@@ -1,8 +1,8 @@
 /* @vitest-environment jsdom */
 
+import { readFileSync } from "node:fs";
 import type { ColumnDef } from "@tanstack/react-table";
 import { render, screen } from "@testing-library/react";
-import { readFileSync } from "node:fs";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { EmployeeWithRelations } from "./actions";
@@ -191,7 +191,9 @@ describe("employee directory columns", () => {
 		const statusCell = statusColumn?.cell;
 		if (typeof statusCell !== "function") throw new Error("Status cell is not renderable");
 		render(
-			statusCell({ row: { original: createDraft() } } as Parameters<typeof statusCell>[0]) as React.ReactElement,
+			statusCell({ row: { original: createDraft() } } as Parameters<
+				typeof statusCell
+			>[0]) as React.ReactElement,
 		);
 		expect(screen.getByText("Draft")).toBeTruthy();
 		expect(screen.getByText("pending")).toBeTruthy();
@@ -200,11 +202,11 @@ describe("employee directory columns", () => {
 		const actionsCell = actionsColumn?.cell;
 		if (typeof actionsCell !== "function") throw new Error("Actions cell is not renderable");
 		render(
-			actionsCell({ row: { original: createDraft() } } as Parameters<typeof actionsCell>[0]) as React.ReactElement,
+			actionsCell({ row: { original: createDraft() } } as Parameters<
+				typeof actionsCell
+			>[0]) as React.ReactElement,
 		);
-		expect(screen.getByRole("link").getAttribute("href")).toBe(
-			"/settings/employees/draft:draft-1",
-		);
+		expect(screen.getByRole("link").getAttribute("href")).toBe("/settings/employees/draft:draft-1");
 	});
 
 	it("offers draft as an employee status filter", () => {

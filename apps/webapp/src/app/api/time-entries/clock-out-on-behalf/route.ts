@@ -109,10 +109,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		if (!target.period.isActive || target.period.endTime) {
-			return NextResponse.json(
-				{ error: "Work period is no longer running" },
-				{ status: 409 },
-			);
+			return NextResponse.json({ error: "Work period is no longer running" }, { status: 409 });
 		}
 
 		if (target.targetEmployee.id === actorEmployee.id) {

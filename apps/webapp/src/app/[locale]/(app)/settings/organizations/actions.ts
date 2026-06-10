@@ -7,7 +7,12 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { employee, employeeInvitationDraft, organizationNotificationSettings, team } from "@/db/schema";
+import {
+	employee,
+	employeeInvitationDraft,
+	organizationNotificationSettings,
+	team,
+} from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import {
@@ -216,7 +221,8 @@ export async function sendInvitation(
 							},
 							catch: (error) =>
 								new ValidationError({
-									message: error instanceof Error ? error.message : "Failed to upsert invitation draft",
+									message:
+										error instanceof Error ? error.message : "Failed to upsert invitation draft",
 									field: "invitation",
 								}),
 						}),
