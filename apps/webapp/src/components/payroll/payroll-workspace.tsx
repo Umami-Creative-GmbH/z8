@@ -11,6 +11,7 @@ import {
 	IconRefresh,
 	IconUsers,
 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import type React from "react";
 import { useReducer, useTransition } from "react";
@@ -43,6 +44,8 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
+
+type PayrollTranslate = ReturnType<typeof useTranslate>["t"];
 
 interface PayrollWorkspaceProps {
 	initialSummary: PayrollWorkspaceSummary;
@@ -103,6 +106,7 @@ function payrollWorkspaceReducer(
 }
 
 export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorkspaceProps) {
+	const { t } = useTranslate();
 	const [state, dispatch] = useReducer(payrollWorkspaceReducer, {
 		summary: initialSummary,
 		dateMode: "month",
@@ -151,7 +155,12 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		onSuccess?: () => void,
 	) {
 		if (employeeIds?.length === 0) {
-			toast.error("No employees match the selected payroll filters");
+			toast.error(
+				t(
+					"payroll.filters.noMatchingEmployees",
+					"No employees match the selected payroll filters.",
+				),
+			);
 			return;
 		}
 
@@ -238,7 +247,12 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 
 	function downloadPdf() {
 		if (filtersHaveNoMatches) {
-			toast.error("No employees match the selected payroll filters");
+			toast.error(
+				t(
+					"payroll.filters.noMatchingEmployees",
+					"No employees match the selected payroll filters.",
+				),
+			);
 			return;
 		}
 
@@ -265,7 +279,12 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 	function triggerExport() {
 		if (!formatId) return;
 		if (filtersHaveNoMatches) {
-			toast.error("No employees match the selected payroll filters");
+			toast.error(
+				t(
+					"payroll.filters.noMatchingEmployees",
+					"No employees match the selected payroll filters.",
+				),
+			);
 			return;
 		}
 
@@ -277,7 +296,11 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				return;
 			}
 
-			toast.success(result.data.isAsync ? "Payroll export queued" : "Payroll export completed");
+			toast.success(
+				result.data.isAsync
+					? t("payroll.export.queued", "Payroll export queued")
+					: t("payroll.export.completed", "Payroll export completed"),
+			);
 		});
 	}
 
@@ -285,9 +308,12 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
 			<header className="space-y-1">
 				<div className="space-y-1">
-					<h1 className="text-3xl font-semibold tracking-tight">Payroll</h1>
+					<h1 className="text-3xl font-semibold tracking-tight">{t("payroll.title", "Payroll")}</h1>
 					<p className="text-muted-foreground">
-						Review payroll totals, readiness, and exports for the selected period.
+						{t(
+							"payroll.description",
+							"Review payroll totals, readiness, and exports for the selected period.",
+						)}
 					</p>
 				</div>
 			</header>
@@ -297,27 +323,35 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 					<div className="space-y-2">
 						<div className="flex items-center gap-2 text-muted-foreground text-sm">
 							<IconCalendarWeek aria-hidden="true" className="size-4" />
-							<span>Selected period</span>
+							<span>{t("payroll.period.selected", "Selected period")}</span>
 						</div>
 						<div>
 							<CardTitle aria-level={2} className="text-2xl" role="heading">
 								{summary.period.label}
 							</CardTitle>
 							<CardDescription>
-								{summary.period.start} to {summary.period.end}
+								{t("payroll.period.dateRange", "{start} to {end}", {
+									start: summary.period.start,
+									end: summary.period.end,
+								})}
 							</CardDescription>
 						</div>
 						<p className="text-muted-foreground text-sm">
-							{displayedTotals.employeeCount} employees in scope
+							{t("payroll.period.employeesInScope", "{count} employees in scope", {
+								count: displayedTotals.employeeCount,
+							})}
 						</p>
 						{filtersHaveNoMatches ? (
 							<p className="text-destructive text-sm">
-								No employees match the selected payroll filters.
+								{t(
+									"payroll.filters.noMatchingEmployees",
+									"No employees match the selected payroll filters.",
+								)}
 							</p>
 						) : null}
 					</div>
 
-					<div className="flex flex-wrap gap-2">
+					<div className="flex flex-wrap gap-2 lg:justify-end">
 						<Button
 							type="button"
 							variant="outline"
@@ -326,7 +360,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 							onClick={() => navigatePeriod("previous")}
 						>
 							<IconChevronLeft aria-hidden="true" className="size-4" />
-							Previous period
+							{t("payroll.period.previous", "Previous period")}
 						</Button>
 						<Button
 							type="button"
@@ -335,7 +369,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 							disabled={dateMode === "custom" || isPending}
 							onClick={() => navigatePeriod("next")}
 						>
-							Next period
+							{t("payroll.period.next", "Next period")}
 							<IconChevronRight aria-hidden="true" className="size-4" />
 						</Button>
 						<Button
@@ -346,11 +380,11 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 							onClick={returnToCurrentPeriod}
 						>
 							<IconRefresh aria-hidden="true" className="size-4" />
-							Current period
+							{t("payroll.period.current", "Current period")}
 						</Button>
 					</div>
 				</CardHeader>
-				<CardContent className="grid gap-5 xl:grid-cols-[1fr_auto]">
+				<CardContent className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
 					<div className="flex flex-col gap-4 lg:flex-row lg:items-end">
 						<div className="flex gap-1 rounded-lg bg-muted p-1">
 							{(["month", "week", "custom"] as const).map((mode) => (
@@ -363,14 +397,14 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 									aria-pressed={dateMode === mode}
 									onClick={() => applyDateMode(mode)}
 								>
-									{toTitleCase(mode)}
+									{getDateModeLabel(t, mode)}
 								</Button>
 							))}
 						</div>
 
 						<div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
 							<div className="space-y-1">
-								<Label htmlFor="payroll-start-date">Start</Label>
+								<Label htmlFor="payroll-start-date">{t("payroll.period.start", "Start")}</Label>
 								<Input
 									id="payroll-start-date"
 									name="payroll-start-date"
@@ -384,7 +418,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 								/>
 							</div>
 							<div className="space-y-1">
-								<Label htmlFor="payroll-end-date">End</Label>
+								<Label htmlFor="payroll-end-date">{t("payroll.period.end", "End")}</Label>
 								<Input
 									id="payroll-end-date"
 									name="payroll-end-date"
@@ -407,12 +441,12 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 								) : (
 									<IconCalendarWeek aria-hidden="true" className="size-4" />
 								)}
-								Apply
+								{t("payroll.actions.apply", "Apply")}
 							</Button>
 						</div>
 					</div>
 
-					<div className="flex flex-col gap-3 lg:flex-row lg:items-end xl:justify-end">
+					<div className="grid gap-3 sm:grid-cols-[auto_minmax(14rem,1fr)_auto] sm:items-end xl:justify-end">
 						<Button
 							type="button"
 							variant="outline"
@@ -424,18 +458,20 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 							) : (
 								<IconDownload aria-hidden="true" className="size-4" />
 							)}
-							Download PDF
+							{t("payroll.actions.downloadPdf", "Download PDF")}
 						</Button>
 
-						<div className="flex flex-col gap-2 lg:min-w-56">
-							<Label htmlFor="payroll-export-target">Payroll export target</Label>
+						<div className="flex min-w-0 flex-col gap-2 sm:min-w-56">
+							<Label htmlFor="payroll-export-target">
+								{t("payroll.export.target", "Payroll export target")}
+							</Label>
 							<Select
 								value={formatId}
 								onValueChange={(formatId) => dispatch({ type: "formatChanged", formatId })}
 								disabled={!hasExportFormats || isPending}
 							>
 								<SelectTrigger id="payroll-export-target" className="w-full">
-									<SelectValue placeholder="Select format" />
+									<SelectValue placeholder={t("payroll.export.selectFormat", "Select format")} />
 								</SelectTrigger>
 								<SelectContent>
 									{exportFormats.map((format) => (
@@ -446,7 +482,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 								</SelectContent>
 							</Select>
 							{!hasExportFormats ? (
-								<p className="text-muted-foreground text-sm">No configured payroll export target</p>
+								<p className="text-muted-foreground text-sm">
+									{t("payroll.export.noConfiguredTarget", "No configured payroll export target")}
+								</p>
 							) : null}
 						</div>
 
@@ -460,7 +498,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 							) : (
 								<IconFileExport aria-hidden="true" className="size-4" />
 							)}
-							Trigger export
+							{t("payroll.actions.triggerExport", "Trigger export")}
 						</Button>
 					</div>
 				</CardContent>
@@ -469,13 +507,19 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			<section className="grid gap-4 md:grid-cols-4">
 				<SummaryCard
 					icon={<IconUsers aria-hidden="true" className="size-5" />}
-					label="Employees"
+					label={t("payroll.summary.employees", "Employees")}
 					value={displayedTotals.employeeCount.toString()}
 				/>
-				<SummaryCard label="Worked hours" value={formatHours(displayedTotals.totalWorkedHours)} />
-				<SummaryCard label="Ready" value={readyEmployeeCount.toString()} />
 				<SummaryCard
-					label="Blockers"
+					label={t("payroll.summary.workedHours", "Worked hours")}
+					value={formatHours(displayedTotals.totalWorkedHours)}
+				/>
+				<SummaryCard
+					label={t("payroll.summary.ready", "Ready")}
+					value={readyEmployeeCount.toString()}
+				/>
+				<SummaryCard
+					label={t("payroll.summary.blockers", "Blockers")}
 					value={displayedTotals.blockerCount.toString()}
 					tone={displayedTotals.blockerCount > 0 ? "warning" : "default"}
 				/>
@@ -483,14 +527,19 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Payroll scope</CardTitle>
+					<CardTitle>{t("payroll.scope.title", "Payroll scope")}</CardTitle>
 					<CardDescription>
-						Narrow this payroll workspace by assigned employees or teams.
+						{t(
+							"payroll.scope.description",
+							"Narrow this payroll workspace by assigned employees or teams.",
+						)}
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="grid gap-6 md:grid-cols-2">
 					<div className="space-y-3">
-						<div className="font-medium text-sm">Assigned employees</div>
+						<div className="font-medium text-sm">
+							{t("payroll.scope.assignedEmployees", "Assigned employees")}
+						</div>
 						<div className="grid gap-2">
 							{scopedEmployees.map((employee) => (
 								<label key={employee.id} className="flex items-center gap-2 text-sm">
@@ -508,7 +557,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 					</div>
 
 					<div className="space-y-3">
-						<div className="font-medium text-sm">Assigned teams</div>
+						<div className="font-medium text-sm">
+							{t("payroll.scope.assignedTeams", "Assigned teams")}
+						</div>
 						<div className="grid gap-2">
 							{teamOptions.length > 0 ? (
 								teamOptions.map((teamName) => (
@@ -525,14 +576,17 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 								))
 							) : (
 								<p className="text-muted-foreground text-sm">
-									No assigned teams in this payroll scope.
+									{t("payroll.scope.noAssignedTeams", "No assigned teams in this payroll scope.")}
 								</p>
 							)}
 						</div>
 					</div>
 					{filtersHaveNoMatches ? (
 						<p className="text-destructive text-sm md:col-span-2">
-							No employees match the selected payroll filters.
+							{t(
+								"payroll.filters.noMatchingEmployees",
+								"No employees match the selected payroll filters.",
+							)}
 						</p>
 					) : null}
 				</CardContent>
@@ -541,7 +595,11 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			{displayedBlockers.length > 0 ? (
 				<Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
 					<IconAlertTriangle aria-hidden="true" className="size-4" />
-					<AlertTitle>{displayedBlockers.length} payroll blockers need review</AlertTitle>
+					<AlertTitle>
+						{t("payroll.blockers.needReview", "{count} payroll blockers need review", {
+							count: displayedBlockers.length,
+						})}
+					</AlertTitle>
 					<AlertDescription>
 						<ul className="mt-2 grid gap-1">
 							{displayedBlockers.map((blocker) => (
@@ -554,21 +612,26 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Employee totals</CardTitle>
+					<CardTitle>{t("payroll.employeeTotals.title", "Employee totals")}</CardTitle>
 					<CardDescription>
-						Worked time, absence totals, contract type, and payroll status.
+						{t(
+							"payroll.employeeTotals.description",
+							"Worked time, absence totals, contract type, and payroll status.",
+						)}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>Employee</TableHead>
-								<TableHead>Team</TableHead>
-								<TableHead>Contract</TableHead>
-								<TableHead className="text-right">Hours</TableHead>
-								<TableHead>Absences</TableHead>
-								<TableHead>Status</TableHead>
+								<TableHead>{t("payroll.employeeTotals.employee", "Employee")}</TableHead>
+								<TableHead>{t("payroll.employeeTotals.team", "Team")}</TableHead>
+								<TableHead>{t("payroll.employeeTotals.contract", "Contract")}</TableHead>
+								<TableHead className="text-right">
+									{t("payroll.employeeTotals.hours", "Hours")}
+								</TableHead>
+								<TableHead>{t("payroll.employeeTotals.absences", "Absences")}</TableHead>
+								<TableHead>{t("payroll.employeeTotals.status", "Status")}</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -578,22 +641,29 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 										<TableCell>
 											<div className="font-medium">{employee.name}</div>
 											<div className="text-muted-foreground text-xs">
-												{employee.employeeNumber ?? "No employee number"}
+												{employee.employeeNumber ??
+													t("payroll.employeeTotals.noEmployeeNumber", "No employee number")}
 											</div>
 										</TableCell>
-										<TableCell>{employee.teamName ?? "No team"}</TableCell>
+										<TableCell>
+											{employee.teamName ?? t("payroll.employeeTotals.noTeam", "No team")}
+										</TableCell>
 										<TableCell>
 											<Badge variant={employee.contractType === "hourly" ? "default" : "secondary"}>
-												{employee.contractType === "hourly" ? "Hourly" : "Fixed"}
+												{employee.contractType === "hourly"
+													? t("payroll.employeeTotals.contractHourly", "Hourly")
+													: t("payroll.employeeTotals.contractFixed", "Fixed")}
 											</Badge>
 										</TableCell>
 										<TableCell className="text-right tabular-nums">
 											{formatTableHours(employee.workedHours)}
 										</TableCell>
-										<TableCell>{formatAbsences(employee.absenceDaysByCategory)}</TableCell>
+										<TableCell>{formatAbsences(t, employee.absenceDaysByCategory)}</TableCell>
 										<TableCell>
 											<Badge variant={employee.hasBlockers ? "destructive" : "secondary"}>
-												{employee.hasBlockers ? "Blocked" : "Ready for payroll"}
+												{employee.hasBlockers
+													? t("payroll.employeeTotals.blocked", "Blocked")
+													: t("payroll.employeeTotals.readyForPayroll", "Ready for payroll")}
 											</Badge>
 										</TableCell>
 									</TableRow>
@@ -601,7 +671,10 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 							) : (
 								<TableRow>
 									<TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-										No employees match the selected payroll filters.
+										{t(
+											"payroll.filters.noMatchingEmployees",
+											"No employees match the selected payroll filters.",
+										)}
 									</TableCell>
 								</TableRow>
 							)}
@@ -652,11 +725,19 @@ function formatTableHours(hours: number) {
 }
 
 function formatAbsences(
+	t: PayrollTranslate,
 	absences: PayrollWorkspaceSummary["employees"][number]["absenceDaysByCategory"],
 ) {
-	if (absences.length === 0) return "None";
+	if (absences.length === 0) return t("payroll.employeeTotals.noAbsences", "None");
 
 	return absences.map((absence) => `${absence.categoryName}: ${absence.days}`).join(", ");
+}
+
+function getDateModeLabel(t: PayrollTranslate, mode: PayrollDateRangeMode) {
+	if (mode === "month") return t("payroll.period.mode.month", "Month");
+	if (mode === "week") return t("payroll.period.mode.week", "Week");
+
+	return t("payroll.period.mode.custom", "Custom");
 }
 
 function basePeriodRequest(summary: PayrollWorkspaceSummary): PayrollPeriodRequest {
@@ -711,8 +792,4 @@ function formatPeriodLabel(start: DateTime, end: DateTime, mode: PayrollDateRang
 	if (mode === "week") return `${start.toFormat("LLL d")} - ${end.toFormat("LLL d, yyyy")}`;
 
 	return `${start.toISODate()} - ${end.toISODate()}`;
-}
-
-function toTitleCase(value: string) {
-	return value.charAt(0).toUpperCase() + value.slice(1);
 }

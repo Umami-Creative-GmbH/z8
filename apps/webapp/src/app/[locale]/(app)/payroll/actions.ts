@@ -21,7 +21,10 @@ import {
 } from "@/lib/payroll-workspace/pdf-exporter";
 import { getPayrollWorkspaceSummary } from "@/lib/payroll-workspace/summary";
 import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
+import { getTranslate } from "@/tolgee/server";
 import { resolveScopedPayrollEmployeeIdsForAction } from "./action-helpers";
+
+type PayrollTranslate = Awaited<ReturnType<typeof getTranslate>>;
 
 export interface PayrollWorkspaceRequest {
 	startDate: string;
@@ -42,14 +45,14 @@ type PayrollWorkspaceExportFormatId = (typeof PAYROLL_WORKSPACE_EXPORT_FORMATS)[
 export async function getPayrollWorkspaceSummaryAction(
 	request: PayrollWorkspaceRequest,
 ): Promise<ServerActionResult<PayrollWorkspaceSummary>> {
-	return runPayrollWorkspaceAction(() => buildScopedPayrollWorkspaceSummary(request));
+	return runPayrollWorkspaceAction((t) => buildScopedPayrollWorkspaceSummary(t, request));
 }
 
 export async function exportPayrollPdfAction(
 	request: PayrollWorkspaceRequest,
 ): Promise<ServerActionResult<{ filename: string; data: number[] }>> {
-	return runPayrollWorkspaceAction(async () => {
-		const summary = await buildScopedPayrollWorkspaceSummary(request);
+	return runPayrollWorkspaceAction(async (t) => {
+		const summary = await buildScopedPayrollWorkspaceSummary(t, request);
 		const pdfBytes = await exportPayrollSummaryToPDF(summary);
 
 		return {
@@ -62,10 +65,12 @@ export async function exportPayrollPdfAction(
 export async function startScopedPayrollExportAction(
 	request: PayrollWorkspaceRequest & { formatId: string },
 ): Promise<ServerActionResult<{ jobId: string; isAsync: boolean; fileContent?: string }>> {
-	return runPayrollWorkspaceAction(async () => {
-		const formatId = validateExportFormatId(request.formatId);
-		const { authContext, period, scopedEmployeeIds } =
-			await resolvePayrollWorkspaceActionContext(request);
+	return runPayrollWorkspaceAction(async (t) => {
+		const formatId = validateExportFormatId(t, request.formatId);
+		const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+			t,
+			request,
+		);
 
 		const configuredFormat = await getPayrollExportConfig(
 			authContext.employee.organizationId,
@@ -73,7 +78,10 @@ export async function startScopedPayrollExportAction(
 		);
 		if (!configuredFormat) {
 			throw new ValidationError({
-				message: "Payroll export format is not configured",
+				message: t(
+					"payroll.errors.exportFormatNotConfigured",
+					"Payroll export format is not configured",
+				),
 				field: "formatId",
 			});
 		}
@@ -111,11 +119,11 @@ export async function startScopedPayrollExportAction(
 export async function getConfiguredPayrollExportFormatsAction(): Promise<
 	ServerActionResult<PayrollExportFormatOption[]>
 > {
-	return runPayrollWorkspaceAction(async () => {
-		const { authContext } = await resolvePayrollWorkspaceActionContext({
+	return runPayrollWorkspaceAction(async (t) => {
+		const { authContext } = await resolvePayrollWorkspaceActionContext(t, {
 			startDate: "2000-01-01",
 			endDate: "2000-01-01",
-			label: "Format access check",
+			label: t("payroll.export.formatAccessCheck", "Format access check"),
 		});
 
 		const configuredFormats = await db
@@ -136,10 +144,13 @@ export async function getConfiguredPayrollExportFormatsAction(): Promise<
 }
 
 async function buildScopedPayrollWorkspaceSummary(
+	t: PayrollTranslate,
 	request: PayrollWorkspaceRequest,
 ): Promise<PayrollWorkspaceSummary> {
-	const { authContext, period, scopedEmployeeIds } =
-		await resolvePayrollWorkspaceActionContext(request);
+	const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+		t,
+		request,
+	);
 
 	return getPayrollWorkspaceSummary({
 		organizationId: authContext.employee.organizationId,
@@ -152,14 +163,17 @@ async function buildScopedPayrollWorkspaceSummary(
 	});
 }
 
-async function resolvePayrollWorkspaceActionContext(request: PayrollWorkspaceRequest): Promise<{
+async function resolvePayrollWorkspaceActionContext(
+	t: PayrollTranslate,
+	request: PayrollWorkspaceRequest,
+): Promise<{
 	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> };
 	period: { start: DateTime; end: DateTime; label: string };
 	scopedEmployeeIds: string[];
 }> {
-	const authContext = await requireActiveOrganizationEmployee();
-	const period = validatePayrollWorkspaceRequest(request);
-	const requestedEmployeeIds = validateRequestedEmployeeIds(request.employeeIds);
+	const authContext = await requireActiveOrganizationEmployee(t);
+	const period = validatePayrollWorkspaceRequest(t, request);
+	const requestedEmployeeIds = validateRequestedEmployeeIds(t, request.employeeIds);
 	const allowedEmployeeIds = await resolvePayrollAccessibleEmployeeIds({
 		organizationId: authContext.employee.organizationId,
 		payrollEmployeeId: authContext.employee.id,
@@ -167,7 +181,10 @@ async function resolvePayrollWorkspaceActionContext(request: PayrollWorkspaceReq
 
 	if (allowedEmployeeIds.length === 0) {
 		throw new AuthorizationError({
-			message: "No payroll employees are assigned to your access scope",
+			message: t(
+				"payroll.errors.noAssignedEmployees",
+				"No payroll employees are assigned to your access scope",
+			),
 			userId: authContext.user.id,
 			resource: "payroll_workspace",
 			action: "read",
@@ -182,7 +199,10 @@ async function resolvePayrollWorkspaceActionContext(request: PayrollWorkspaceReq
 
 	if (!scopedResult.hasScope) {
 		throw new AuthorizationError({
-			message: "No payroll employees are available in your access scope",
+			message: t(
+				"payroll.errors.noAvailableEmployees",
+				"No payroll employees are available in your access scope",
+			),
 			userId: authContext.user.id,
 			resource: "payroll_workspace",
 			action: "read",
@@ -196,17 +216,22 @@ async function resolvePayrollWorkspaceActionContext(request: PayrollWorkspaceReq
 	};
 }
 
-async function requireActiveOrganizationEmployee(): Promise<
-	AuthContext & { employee: NonNullable<AuthContext["employee"]> }
-> {
+async function requireActiveOrganizationEmployee(
+	t: PayrollTranslate,
+): Promise<AuthContext & { employee: NonNullable<AuthContext["employee"]> }> {
 	const authContext = await getAuthContext();
 	if (!authContext?.employee || !authContext.session.activeOrganizationId) {
-		throw new AuthenticationError({ message: "Authentication required" });
+		throw new AuthenticationError({
+			message: t("payroll.errors.authenticationRequired", "Authentication required"),
+		});
 	}
 
 	if (authContext.employee.organizationId !== authContext.session.activeOrganizationId) {
 		throw new AuthorizationError({
-			message: "Active organization employee context is required",
+			message: t(
+				"payroll.errors.activeOrganizationEmployeeRequired",
+				"Active organization employee context is required",
+			),
 			userId: authContext.user.id,
 			resource: "payroll_workspace",
 			action: "read",
@@ -216,46 +241,68 @@ async function requireActiveOrganizationEmployee(): Promise<
 	return authContext as AuthContext & { employee: NonNullable<AuthContext["employee"]> };
 }
 
-function validatePayrollWorkspaceRequest(request: PayrollWorkspaceRequest): {
+function validatePayrollWorkspaceRequest(
+	t: PayrollTranslate,
+	request: PayrollWorkspaceRequest,
+): {
 	start: DateTime;
 	end: DateTime;
 	label: string;
 } {
-	const start = parseISODate(request.startDate, "startDate");
-	const end = parseISODate(request.endDate, "endDate");
+	const start = parseISODate(t, request.startDate, "startDate");
+	const end = parseISODate(t, request.endDate, "endDate");
 
 	if (end < start) {
 		throw new ValidationError({
-			message: "End date must be on or after start date",
+			message: t("payroll.errors.endDateAfterStart", "End date must be on or after start date"),
 			field: "endDate",
 			value: request.endDate,
 		});
 	}
 
 	if (typeof request.label !== "string" || request.label.trim().length === 0) {
-		throw new ValidationError({ message: "Payroll period label is required", field: "label" });
+		throw new ValidationError({
+			message: t("payroll.errors.periodLabelRequired", "Payroll period label is required"),
+			field: "label",
+		});
 	}
 
 	return { start, end, label: request.label.trim() };
 }
 
-function parseISODate(value: string, field: string): DateTime {
+function parseISODate(t: PayrollTranslate, value: string, field: string): DateTime {
 	if (typeof value !== "string" || !ISO_DATE_PATTERN.test(value)) {
-		throw new ValidationError({ message: `${field} must be an ISO date`, field, value });
+		throw new ValidationError({
+			message: t("payroll.errors.mustBeIsoDate", "{field} must be an ISO date", { field }),
+			field,
+			value,
+		});
 	}
 
 	const parsed = DateTime.fromISO(value, { zone: "utc" });
 	if (!parsed.isValid || parsed.toISODate() !== value) {
-		throw new ValidationError({ message: `${field} must be a valid ISO date`, field, value });
+		throw new ValidationError({
+			message: t("payroll.errors.mustBeValidIsoDate", "{field} must be a valid ISO date", {
+				field,
+			}),
+			field,
+			value,
+		});
 	}
 
 	return parsed;
 }
 
-function validateRequestedEmployeeIds(employeeIds: string[] | undefined): string[] | undefined {
+function validateRequestedEmployeeIds(
+	t: PayrollTranslate,
+	employeeIds: string[] | undefined,
+): string[] | undefined {
 	if (employeeIds === undefined) return undefined;
 	if (!Array.isArray(employeeIds)) {
-		throw new ValidationError({ message: "employeeIds must be an array", field: "employeeIds" });
+		throw new ValidationError({
+			message: t("payroll.errors.employeeIdsMustBeArray", "employeeIds must be an array"),
+			field: "employeeIds",
+		});
 	}
 
 	const uniqueEmployeeIds = [...new Set(employeeIds)];
@@ -263,7 +310,10 @@ function validateRequestedEmployeeIds(employeeIds: string[] | undefined): string
 		uniqueEmployeeIds.some((employeeId) => typeof employeeId !== "string" || !employeeId.trim())
 	) {
 		throw new ValidationError({
-			message: "employeeIds must contain only strings",
+			message: t(
+				"payroll.errors.employeeIdsMustContainOnlyStrings",
+				"employeeIds must contain only strings",
+			),
 			field: "employeeIds",
 		});
 	}
@@ -271,29 +321,37 @@ function validateRequestedEmployeeIds(employeeIds: string[] | undefined): string
 	return uniqueEmployeeIds;
 }
 
-function validateExportFormatId(formatId: string): PayrollWorkspaceExportFormatId {
+function validateExportFormatId(
+	t: PayrollTranslate,
+	formatId: string,
+): PayrollWorkspaceExportFormatId {
 	if (
 		typeof formatId !== "string" ||
 		!PAYROLL_WORKSPACE_EXPORT_FORMATS.includes(formatId as PayrollWorkspaceExportFormatId) ||
 		!getFormatter(formatId)
 	) {
-		throw new ValidationError({ message: "Unknown payroll export format", field: "formatId" });
+		throw new ValidationError({
+			message: t("payroll.errors.unknownExportFormat", "Unknown payroll export format"),
+			field: "formatId",
+		});
 	}
 
 	return formatId as PayrollWorkspaceExportFormatId;
 }
 
 async function runPayrollWorkspaceAction<T>(
-	action: () => Promise<T>,
+	action: (t: PayrollTranslate) => Promise<T>,
 ): Promise<ServerActionResult<T>> {
+	const t = await getTranslate();
+
 	return runServerActionSafe(
 		Effect.tryPromise({
-			try: action,
+			try: () => action(t),
 			catch: (error) => {
 				if (isAppError(error)) return error;
 
 				return new ValidationError({
-					message: "Payroll workspace action failed",
+					message: t("payroll.errors.actionFailed", "Payroll workspace action failed"),
 				});
 			},
 		}),
