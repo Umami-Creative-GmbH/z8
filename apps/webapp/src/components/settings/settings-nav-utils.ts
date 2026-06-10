@@ -1,5 +1,3 @@
-export function isSettingsNavItemActive(pathname: string | null | undefined, href: string) {
-	const normalizedPathname = pathname?.replace(/^\/[a-z]{2}(\/|$)/, "/");
+import { isNavItemActive } from "@/components/nav-active";
 
-	return normalizedPathname === href || normalizedPathname?.startsWith(`${href}/`) === true;
-}
+export const isSettingsNavItemActive = isNavItemActive;
