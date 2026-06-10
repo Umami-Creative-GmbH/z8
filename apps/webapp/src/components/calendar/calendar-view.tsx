@@ -67,6 +67,11 @@ interface EmployeeSelectionOverride {
 	name: string | null;
 }
 
+const getEmployeeDisplayName = (employee?: SelectableEmployee) => {
+	if (!employee) return null;
+	return buildAuthUserDisplayName(employee.user);
+};
+
 export function CalendarView({
 	organizationId,
 	currentEmployeeId,
@@ -133,11 +138,6 @@ export function CalendarView({
 		...filters,
 		// Calendar pages pass the authenticated employee, keeping this scoped by default.
 		employeeId: selectedEmployeeId ?? undefined,
-	};
-
-	const getEmployeeDisplayName = (employee?: SelectableEmployee) => {
-		if (!employee) return null;
-		return buildAuthUserDisplayName(employee.user);
 	};
 
 	// Handle employee selection change

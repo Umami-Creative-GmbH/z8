@@ -89,37 +89,40 @@ export async function checkProjectBudgetWarnings(params: BudgetWarningParams): P
 			return;
 		}
 
-		// Send notifications for each new threshold
-		for (const threshold of newThresholds) {
-			const notificationType = BUDGET_NOTIFICATION_TYPES[threshold];
-			const title = getBudgetWarningTitle(threshold);
-			const message = getBudgetWarningMessage(
-				threshold,
-				params.projectName,
-				params.usedHours,
-				params.budgetHours,
-			);
+		await Promise.all(
+			newThresholds.map(async (threshold) => {
+				const notificationType = BUDGET_NOTIFICATION_TYPES[threshold];
+				const title = getBudgetWarningTitle(threshold);
+				const message = getBudgetWarningMessage(
+					threshold,
+					params.projectName,
+					params.usedHours,
+					params.budgetHours,
+				);
 
-			for (const manager of managers) {
-				await createNotification({
-					userId: manager.userId,
-					organizationId: params.organizationId,
-					type: notificationType,
-					title,
-					message,
-					entityType: "project",
-					entityId: params.projectId,
-					actionUrl: "/settings/projects",
-					metadata: {
-						projectName: params.projectName,
-						threshold,
-						usedHours: params.usedHours,
-						budgetHours: params.budgetHours,
-						percentUsed: Math.round(percentUsed),
-					},
-				});
-			}
-		}
+				await Promise.all(
+					managers.map((manager) =>
+						createNotification({
+							userId: manager.userId,
+							organizationId: params.organizationId,
+							type: notificationType,
+							title,
+							message,
+							entityType: "project",
+							entityId: params.projectId,
+							actionUrl: "/settings/projects",
+							metadata: {
+								projectName: params.projectName,
+								threshold,
+								usedHours: params.usedHours,
+								budgetHours: params.budgetHours,
+								percentUsed: Math.round(percentUsed),
+							},
+						}),
+					),
+				);
+			}),
+		);
 
 		// Update notification state with newly notified thresholds
 		const updatedThresholds = [...notifiedThresholds, ...newThresholds];
@@ -262,24 +265,26 @@ export async function checkProjectDeadlineWarnings(params: DeadlineWarningParams
 			params.deadline,
 		);
 
-		for (const manager of managers) {
-			await createNotification({
-				userId: manager.userId,
-				organizationId: params.organizationId,
-				type: notificationType,
-				title,
-				message,
-				entityType: "project",
-				entityId: params.projectId,
-				actionUrl: "/settings/projects",
-				metadata: {
-					projectName: params.projectName,
-					deadline: params.deadline.toISOString(),
-					daysUntilDeadline: params.daysUntilDeadline,
-					threshold: matchedThreshold,
-				},
-			});
-		}
+		await Promise.all(
+			managers.map((manager) =>
+				createNotification({
+					userId: manager.userId,
+					organizationId: params.organizationId,
+					type: notificationType,
+					title,
+					message,
+					entityType: "project",
+					entityId: params.projectId,
+					actionUrl: "/settings/projects",
+					metadata: {
+						projectName: params.projectName,
+						deadline: params.deadline.toISOString(),
+						daysUntilDeadline: params.daysUntilDeadline,
+						threshold: matchedThreshold,
+					},
+				}),
+			),
+		);
 
 		// Update notification state
 		const updatedThresholds = [...notifiedThresholds, matchedThreshold];
@@ -448,28 +453,32 @@ export async function checkAndSendDeadlineNotifications(): Promise<{
 
 	const now = new Date();
 
-	for (const project of projects) {
-		try {
-			// Calculate days until deadline
-			const deadlineTime = project.deadline.getTime();
-			const nowTime = now.getTime();
-			const diffMs = deadlineTime - nowTime;
-			const daysUntilDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+	const results = await Promise.all(
+		projects.map(async (project) => {
+			try {
+				// Calculate days until deadline
+				const deadlineTime = project.deadline.getTime();
+				const nowTime = now.getTime();
+				const diffMs = deadlineTime - nowTime;
+				const daysUntilDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-			await checkProjectDeadlineWarnings({
-				projectId: project.id,
-				projectName: project.name,
-				organizationId: project.organizationId,
-				deadline: project.deadline,
-				daysUntilDeadline,
-			});
-			// Note: We don't track exactly how many were sent since checkProjectDeadlineWarnings
-			// is fire-and-forget. We increment optimistically for projects that had deadlines processed.
-			notificationsSent++;
-		} catch (error) {
-			logger.error({ error, projectId: project.id }, "Failed to check deadline for project");
-		}
-	}
+				await checkProjectDeadlineWarnings({
+					projectId: project.id,
+					projectName: project.name,
+					organizationId: project.organizationId,
+					deadline: project.deadline,
+					daysUntilDeadline,
+				});
+				// Note: We don't track exactly how many were sent since checkProjectDeadlineWarnings
+				// is fire-and-forget. We increment optimistically for projects that had deadlines processed.
+				return true;
+			} catch (error) {
+				logger.error({ error, projectId: project.id }, "Failed to check deadline for project");
+				return false;
+			}
+		}),
+	);
+	notificationsSent = results.filter(Boolean).length;
 
 	logger.info(
 		{ checked: projects.length, notificationsSent },

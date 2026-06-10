@@ -3,7 +3,8 @@
 import { IconCalendarOff, IconCheck, IconClock, IconLoader2, IconUsers } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 
@@ -43,10 +44,64 @@ type AnalyticsPageData = {
 	managerDataUnavailable: boolean;
 };
 
+type AnalyticsPageAction =
+	| { type: "loading" }
+	| {
+			type: "loaded";
+			teamData: TeamPerformanceData | null;
+			absenceData: AbsencePatternsData | null;
+			managerData: ManagerEffectivenessData | null;
+			managerDataUnavailable: boolean;
+	  }
+	| { type: "failed" };
+
+const initialAnalyticsData: AnalyticsPageData = {
+	loading: true,
+	teamData: null,
+	absenceData: null,
+	managerData: null,
+	managerDataUnavailable: false,
+};
+
+function analyticsDataReducer(
+	state: AnalyticsPageData,
+	action: AnalyticsPageAction,
+): AnalyticsPageData {
+	switch (action.type) {
+		case "loading":
+			return { ...state, loading: true };
+		case "loaded":
+			return {
+				loading: false,
+				teamData: action.teamData,
+				absenceData: action.absenceData,
+				managerData: action.managerData,
+				managerDataUnavailable: action.managerDataUnavailable,
+			};
+		case "failed":
+			return {
+				loading: false,
+				teamData: null,
+				absenceData: null,
+				managerData: null,
+				managerDataUnavailable: true,
+			};
+	}
+}
+
 type BottleneckListRow = Pick<
 	ApprovalBottleneckRow,
 	"id" | "label" | "pendingCount" | "pendingSlaWarnings" | "avgDecisionTimeHours" | "approvalRate"
 >;
+
+type AnalyticsTranslate = ReturnType<typeof useTranslate>["t"];
+
+type AnalyticsKpiData = {
+	totalEmployees: number;
+	avgWorkHours: number;
+	absenceRate: number;
+	approvalRate: number | null;
+};
 
 function areDateRangesEqual(left: DateRange, right: DateRange) {
 	return (
@@ -64,13 +119,10 @@ export default function AnalyticsOverviewPage() {
 	);
 	const hasUserChangedRange = useRef(false);
 	const [dateRange, setDateRange] = useState<DateRange | null>(null);
-	const [analyticsData, setAnalyticsData] = useState<AnalyticsPageData>({
-		loading: true,
-		teamData: null,
-		absenceData: null,
-		managerData: null,
-		managerDataUnavailable: false,
-	});
+	const [analyticsData, dispatchAnalyticsData] = useReducer(
+		analyticsDataReducer,
+		initialAnalyticsData,
+	);
 	const { loading, teamData, absenceData, managerData, managerDataUnavailable } = analyticsData;
 	const loadAnalyticsError = t(
 		"analytics.overview.errors.loadData",
@@ -107,7 +159,7 @@ export default function AnalyticsOverviewPage() {
 
 		let canceled = false;
 
-		setAnalyticsData((current) => ({ ...current, loading: true }));
+		dispatchAnalyticsData({ type: "loading" });
 		// Organization ID is now derived server-side from authenticated session
 		Promise.allSettled([
 			getTeamPerformanceData(dateRange),
@@ -127,8 +179,8 @@ export default function AnalyticsOverviewPage() {
 					toast.error(loadAnalyticsError);
 				}
 
-				setAnalyticsData({
-					loading: false,
+				dispatchAnalyticsData({
+					type: "loaded",
 					teamData:
 						teamResult.status === "fulfilled" && teamResult.value.success && teamResult.value.data
 							? teamResult.value.data
@@ -158,13 +210,7 @@ export default function AnalyticsOverviewPage() {
 				}
 
 				console.error(`${loadAnalyticsError}:`, error);
-				setAnalyticsData({
-					loading: false,
-					teamData: null,
-					absenceData: null,
-					managerData: null,
-					managerDataUnavailable: true,
-				});
+				dispatchAnalyticsData({ type: "failed" });
 				toast.error(loadAnalyticsError);
 			});
 
@@ -215,266 +261,324 @@ export default function AnalyticsOverviewPage() {
 
 	return (
 		<div className="space-y-6 px-4 lg:px-6">
-			{/* Controls */}
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				{dateRange ? (
-					<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
-				) : (
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"analytics.common.loadingOrganizationSettings",
-							"Loading organization settings before enabling presets.",
-						)}
-					</p>
-				)}
-				<ExportButton
-					data={{
-						data: teamData?.teams || [],
-						headers: [
-							{ key: "teamName", label: t("analytics.common.team", "Team") },
-							{ key: "totalHours", label: t("analytics.common.totalHours", "Total Hours") },
-							{ key: "employeeCount", label: t("analytics.common.employees", "Employees") },
-						],
-						filename: `analytics-overview-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
-					}}
-					disabled={!teamData || !dateRange}
-				/>
-			</div>
+			<AnalyticsControls
+				dateRange={dateRange}
+				teamData={teamData}
+				onDateRangeChange={handleDateRangeChange}
+				t={t}
+			/>
 
-			{/* Loading State */}
-			{loading && (
-				<output
-					className="flex items-center justify-center py-12"
-					aria-label={t("analytics.overview.loadingLabel", "Loading analytics data")}
-				>
-					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
-				</output>
-			)}
+			{loading && <AnalyticsLoading t={t} />}
 
-			{/* KPI Cards */}
 			{!loading && (
 				<>
-					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-						<Card>
-							<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">
-									{t("analytics.overview.kpis.totalEmployees.title", "Total Employees")}
-								</CardTitle>
-								<IconUsers className="size-4 text-muted-foreground" aria-hidden="true" />
-							</CardHeader>
-							<CardContent>
-								<div className="text-2xl font-bold">{kpiData.totalEmployees}</div>
-								<p className="text-xs text-muted-foreground">
-									{t(
-										"analytics.overview.kpis.totalEmployees.description",
-										"Active employees in organization",
-									)}
-								</p>
-							</CardContent>
-						</Card>
-
-						<Card>
-							<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">
-									{t("analytics.overview.kpis.avgWorkHours.title", "Avg Work Hours")}
-								</CardTitle>
-								<IconClock className="size-4 text-muted-foreground" aria-hidden="true" />
-							</CardHeader>
-							<CardContent>
-								<div className="text-2xl font-bold">{kpiData.avgWorkHours.toFixed(1)}h</div>
-								<p className="text-xs text-muted-foreground">
-									{t(
-										"analytics.overview.kpis.avgWorkHours.description",
-										"Per employee in selected period",
-									)}
-								</p>
-							</CardContent>
-						</Card>
-
-						<Card>
-							<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">
-									{t("analytics.overview.kpis.totalAbsenceDays.title", "Total Absence Days")}
-								</CardTitle>
-								<IconCalendarOff className="size-4 text-muted-foreground" aria-hidden="true" />
-							</CardHeader>
-							<CardContent>
-								<div className="text-2xl font-bold">{kpiData.absenceRate.toFixed(0)}</div>
-								<p className="text-xs text-muted-foreground">
-									{t(
-										"analytics.overview.kpis.totalAbsenceDays.description",
-										"Total days in selected period",
-									)}
-								</p>
-							</CardContent>
-						</Card>
-
-						<Card>
-							<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">
-									{t("analytics.overview.kpis.approvalRate.title", "Approval Rate")}
-								</CardTitle>
-								<IconCheck className="size-4 text-muted-foreground" aria-hidden="true" />
-							</CardHeader>
-							<CardContent>
-								<div className="text-2xl font-bold">
-									{kpiData.approvalRate === null
-										? t("analytics.common.unavailable", "Unavailable")
-										: `${kpiData.approvalRate.toFixed(1)}%`}
-								</div>
-								<p className="text-xs text-muted-foreground">
-									{managerDataUnavailable
-										? t(
-												"analytics.overview.kpis.approvalRate.unavailableDescription",
-												"Approval analytics could not be loaded",
-											)
-										: t(
-												"analytics.overview.kpis.approvalRate.description",
-												"Of decided requests approved",
-											)}
-								</p>
-							</CardContent>
-						</Card>
-					</div>
-
-					{/* Charts */}
-					<div className="grid gap-4 md:grid-cols-2">
-						<Card>
-							<CardHeader>
-								<CardTitle>
-									{t("analytics.overview.workHoursByTeam.title", "Work Hours by Team")}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"analytics.overview.workHoursByTeam.description",
-										"Total work hours logged per team",
-									)}
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								{workHoursChartData.length > 0 ? (
-									<ChartContainer
-										config={{
-											hours: {
-												label: t("analytics.common.hours", "Hours"),
-												color: "hsl(var(--primary))",
-											},
-										}}
-										className="h-[300px]"
-									>
-										<BarChart data={workHoursChartData}>
-											<CartesianGrid strokeDasharray="3 3" />
-											<XAxis dataKey="team" tickLine={false} tickMargin={10} axisLine={false} />
-											<YAxis tickLine={false} axisLine={false} />
-											<ChartTooltip content={<ChartTooltipContent />} />
-											<Bar dataKey="hours" fill="var(--color-hours)" radius={4} />
-										</BarChart>
-									</ChartContainer>
-								) : (
-									<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-										{t("analytics.common.noDataAvailable", "No data available")}
-									</div>
-								)}
-							</CardContent>
-						</Card>
-
-						<Card>
-							<CardHeader>
-								<CardTitle>
-									{t("analytics.overview.absencePatterns.title", "Absence Patterns")}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"analytics.overview.absencePatterns.description",
-										"Absence distribution by category",
-									)}
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								{absencePatternsChartData.length > 0 ? (
-									<ChartContainer
-										config={{
-											days: {
-												label: t("analytics.common.days", "Days"),
-												color: "hsl(var(--destructive))",
-											},
-										}}
-										className="h-[300px]"
-									>
-										<BarChart data={absencePatternsChartData}>
-											<CartesianGrid strokeDasharray="3 3" />
-											<XAxis dataKey="category" tickLine={false} tickMargin={10} axisLine={false} />
-											<YAxis tickLine={false} axisLine={false} />
-											<ChartTooltip content={<ChartTooltipContent />} />
-											<Bar dataKey="days" fill="var(--color-days)" radius={4} />
-										</BarChart>
-									</ChartContainer>
-								) : (
-									<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-										{t("analytics.common.noDataAvailable", "No data available")}
-									</div>
-								)}
-							</CardContent>
-						</Card>
-					</div>
-
-					<Card>
-						<CardHeader>
-							<CardTitle>
-								{t("analytics.overview.approvalBottlenecks.title", "Approval Bottlenecks")}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"analytics.overview.approvalBottlenecks.description",
-									"Teams and request types with pending work or SLA warnings",
-								)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{managerDataUnavailable ? (
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"analytics.overview.approvalBottlenecks.unavailable",
-										"Approval bottlenecks could not be loaded",
-									)}
-								</p>
-							) : hasApprovalBottlenecks ? (
-								<div className="grid gap-6 md:grid-cols-3">
-									{managerBottleneckRows.length ? (
-										<BottleneckList
-											title={t("analytics.overview.approvalBottlenecks.byManager", "By Manager")}
-											rows={managerBottleneckRows}
-											t={t}
-										/>
-									) : null}
-									{managerData?.byTeam.length ? (
-										<BottleneckList
-											title={t("analytics.overview.approvalBottlenecks.byTeam", "By Team")}
-											rows={managerData.byTeam}
-											t={t}
-										/>
-									) : null}
-									{managerData?.byType.length ? (
-										<BottleneckList
-											title={t("analytics.overview.approvalBottlenecks.byType", "By Type")}
-											rows={managerData.byType}
-											t={t}
-										/>
-									) : null}
-								</div>
-							) : (
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"analytics.overview.approvalBottlenecks.empty",
-										"No approval bottlenecks found",
-									)}
-								</p>
-							)}
-						</CardContent>
-					</Card>
+					<AnalyticsKpiCards
+						kpiData={kpiData}
+						managerDataUnavailable={managerDataUnavailable}
+						t={t}
+					/>
+					<AnalyticsCharts
+						workHoursChartData={workHoursChartData}
+						absencePatternsChartData={absencePatternsChartData}
+						t={t}
+					/>
+					<ApprovalBottlenecksCard
+						managerData={managerData}
+						managerDataUnavailable={managerDataUnavailable}
+						managerBottleneckRows={managerBottleneckRows}
+						hasApprovalBottlenecks={hasApprovalBottlenecks}
+						t={t}
+					/>
 				</>
 			)}
 		</div>
+	);
+}
+
+function AnalyticsControls({
+	dateRange,
+	teamData,
+	onDateRangeChange,
+	t,
+}: {
+	dateRange: DateRange | null;
+	teamData: TeamPerformanceData | null;
+	onDateRangeChange: (range: DateRange) => void;
+	t: AnalyticsTranslate;
+}) {
+	return (
+		<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			{dateRange ? (
+				<DateRangePicker value={dateRange} onChange={onDateRangeChange} />
+			) : (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"analytics.common.loadingOrganizationSettings",
+						"Loading organization settings before enabling presets.",
+					)}
+				</p>
+			)}
+			<ExportButton
+				data={{
+					data: teamData?.teams || [],
+					headers: [
+						{ key: "teamName", label: t("analytics.common.team", "Team") },
+						{ key: "totalHours", label: t("analytics.common.totalHours", "Total Hours") },
+						{ key: "employeeCount", label: t("analytics.common.employees", "Employees") },
+					],
+					filename: `analytics-overview-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
+				}}
+				disabled={!teamData || !dateRange}
+			/>
+		</div>
+	);
+}
+
+function AnalyticsLoading({ t }: { t: AnalyticsTranslate }) {
+	return (
+		<output
+			className="flex items-center justify-center py-12"
+			aria-label={t("analytics.overview.loadingLabel", "Loading analytics data")}
+		>
+			<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
+		</output>
+	);
+}
+
+function AnalyticsKpiCards({
+	kpiData,
+	managerDataUnavailable,
+	t,
+}: {
+	kpiData: AnalyticsKpiData;
+	managerDataUnavailable: boolean;
+	t: AnalyticsTranslate;
+}) {
+	return (
+		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+			<KpiCard
+				title={t("analytics.overview.kpis.totalEmployees.title", "Total Employees")}
+				value={kpiData.totalEmployees}
+				description={t(
+					"analytics.overview.kpis.totalEmployees.description",
+					"Active employees in organization",
+				)}
+				icon={<IconUsers className="size-4 text-muted-foreground" aria-hidden="true" />}
+			/>
+			<KpiCard
+				title={t("analytics.overview.kpis.avgWorkHours.title", "Avg Work Hours")}
+				value={`${kpiData.avgWorkHours.toFixed(1)}h`}
+				description={t(
+					"analytics.overview.kpis.avgWorkHours.description",
+					"Per employee in selected period",
+				)}
+				icon={<IconClock className="size-4 text-muted-foreground" aria-hidden="true" />}
+			/>
+			<KpiCard
+				title={t("analytics.overview.kpis.totalAbsenceDays.title", "Total Absence Days")}
+				value={kpiData.absenceRate.toFixed(0)}
+				description={t(
+					"analytics.overview.kpis.totalAbsenceDays.description",
+					"Total days in selected period",
+				)}
+				icon={<IconCalendarOff className="size-4 text-muted-foreground" aria-hidden="true" />}
+			/>
+			<KpiCard
+				title={t("analytics.overview.kpis.approvalRate.title", "Approval Rate")}
+				value={
+					kpiData.approvalRate === null
+						? t("analytics.common.unavailable", "Unavailable")
+						: `${kpiData.approvalRate.toFixed(1)}%`
+				}
+				description={
+					managerDataUnavailable
+						? t(
+								"analytics.overview.kpis.approvalRate.unavailableDescription",
+								"Approval analytics could not be loaded",
+							)
+						: t("analytics.overview.kpis.approvalRate.description", "Of decided requests approved")
+				}
+				icon={<IconCheck className="size-4 text-muted-foreground" aria-hidden="true" />}
+			/>
+		</div>
+	);
+}
+
+function KpiCard({
+	title,
+	value,
+	description,
+	icon,
+}: {
+	title: string;
+	value: string | number;
+	description: string;
+	icon: ReactNode;
+}) {
+	return (
+		<Card>
+			<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
+				<CardTitle className="text-sm font-medium">{title}</CardTitle>
+				{icon}
+			</CardHeader>
+			<CardContent>
+				<div className="text-2xl font-bold">{value}</div>
+				<p className="text-xs text-muted-foreground">{description}</p>
+			</CardContent>
+		</Card>
+	);
+}
+
+function AnalyticsCharts({
+	workHoursChartData,
+	absencePatternsChartData,
+	t,
+}: {
+	workHoursChartData: { team: string; hours: number }[];
+	absencePatternsChartData: { category: string; days: number }[];
+	t: AnalyticsTranslate;
+}) {
+	return (
+		<div className="grid gap-4 md:grid-cols-2">
+			<AnalyticsBarChartCard
+				title={t("analytics.overview.workHoursByTeam.title", "Work Hours by Team")}
+				description={t(
+					"analytics.overview.workHoursByTeam.description",
+					"Total work hours logged per team",
+				)}
+				data={workHoursChartData}
+				dataKey="hours"
+				xAxisKey="team"
+				label={t("analytics.common.hours", "Hours")}
+				color="hsl(var(--primary))"
+				t={t}
+			/>
+			<AnalyticsBarChartCard
+				title={t("analytics.overview.absencePatterns.title", "Absence Patterns")}
+				description={t(
+					"analytics.overview.absencePatterns.description",
+					"Absence distribution by category",
+				)}
+				data={absencePatternsChartData}
+				dataKey="days"
+				xAxisKey="category"
+				label={t("analytics.common.days", "Days")}
+				color="hsl(var(--destructive))"
+				t={t}
+			/>
+		</div>
+	);
+}
+
+function AnalyticsBarChartCard({
+	title,
+	description,
+	data,
+	dataKey,
+	xAxisKey,
+	label,
+	color,
+	t,
+}: {
+	title: string;
+	description: string;
+	data: Record<string, string | number>[];
+	dataKey: string;
+	xAxisKey: string;
+	label: string;
+	color: string;
+	t: AnalyticsTranslate;
+}) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>{title}</CardTitle>
+				<CardDescription>{description}</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{data.length > 0 ? (
+					<ChartContainer config={{ [dataKey]: { label, color } }} className="h-[300px]">
+						<BarChart data={data}>
+							<CartesianGrid strokeDasharray="3 3" />
+							<XAxis dataKey={xAxisKey} tickLine={false} tickMargin={10} axisLine={false} />
+							<YAxis tickLine={false} axisLine={false} />
+							<ChartTooltip content={<ChartTooltipContent />} />
+							<Bar dataKey={dataKey} fill={`var(--color-${dataKey})`} radius={4} />
+						</BarChart>
+					</ChartContainer>
+				) : (
+					<div className="h-[300px] flex items-center justify-center text-muted-foreground">
+						{t("analytics.common.noDataAvailable", "No data available")}
+					</div>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+function ApprovalBottlenecksCard({
+	managerData,
+	managerDataUnavailable,
+	managerBottleneckRows,
+	hasApprovalBottlenecks,
+	t,
+}: {
+	managerData: ManagerEffectivenessData | null;
+	managerDataUnavailable: boolean;
+	managerBottleneckRows: BottleneckListRow[];
+	hasApprovalBottlenecks: boolean;
+	t: AnalyticsTranslate;
+}) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>{t("analytics.overview.approvalBottlenecks.title", "Approval Bottlenecks")}</CardTitle>
+				<CardDescription>
+					{t(
+						"analytics.overview.approvalBottlenecks.description",
+						"Teams and request types with pending work or SLA warnings",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{managerDataUnavailable ? (
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"analytics.overview.approvalBottlenecks.unavailable",
+							"Approval bottlenecks could not be loaded",
+						)}
+					</p>
+				) : hasApprovalBottlenecks ? (
+					<div className="grid gap-6 md:grid-cols-3">
+						{managerBottleneckRows.length ? (
+							<BottleneckList
+								title={t("analytics.overview.approvalBottlenecks.byManager", "By Manager")}
+								rows={managerBottleneckRows}
+								t={t}
+							/>
+						) : null}
+						{managerData?.byTeam.length ? (
+							<BottleneckList
+								title={t("analytics.overview.approvalBottlenecks.byTeam", "By Team")}
+								rows={managerData.byTeam}
+								t={t}
+							/>
+						) : null}
+						{managerData?.byType.length ? (
+							<BottleneckList
+								title={t("analytics.overview.approvalBottlenecks.byType", "By Type")}
+								rows={managerData.byType}
+								t={t}
+							/>
+						) : null}
+					</div>
+				) : (
+					<p className="text-sm text-muted-foreground">
+						{t("analytics.overview.approvalBottlenecks.empty", "No approval bottlenecks found")}
+					</p>
+				)}
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -485,7 +589,7 @@ function BottleneckList({
 }: {
 	title: string;
 	rows: BottleneckListRow[];
-	t: ReturnType<typeof useTranslate>["t"];
+	t: AnalyticsTranslate;
 }) {
 	const listId = `approval-bottlenecks-${title.toLowerCase().replaceAll(" ", "-")}`;
 

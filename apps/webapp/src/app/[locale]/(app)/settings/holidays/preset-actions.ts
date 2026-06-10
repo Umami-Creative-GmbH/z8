@@ -155,21 +155,22 @@ export async function getHolidayPresets(
 				// Get holiday counts and assignment counts for each preset
 				const presetsWithCounts = await Promise.all(
 					results.map(async (preset) => {
-						const [holidayCountResult] = await actor.dbService.db
-							.select({ count: sql<number>`count(*)::int` })
-							.from(holidayPresetHoliday)
-							.where(eq(holidayPresetHoliday.presetId, preset.id));
-
-						const [assignmentCountResult] = await actor.dbService.db
-							.select({ count: sql<number>`count(*)::int` })
-							.from(holidayPresetAssignment)
-							.where(
-								and(
-									eq(holidayPresetAssignment.organizationId, actor.organizationId),
-									eq(holidayPresetAssignment.presetId, preset.id),
-									eq(holidayPresetAssignment.isActive, true),
+						const [[holidayCountResult], [assignmentCountResult]] = await Promise.all([
+							actor.dbService.db
+								.select({ count: sql<number>`count(*)::int` })
+								.from(holidayPresetHoliday)
+								.where(eq(holidayPresetHoliday.presetId, preset.id)),
+							actor.dbService.db
+								.select({ count: sql<number>`count(*)::int` })
+								.from(holidayPresetAssignment)
+								.where(
+									and(
+										eq(holidayPresetAssignment.organizationId, actor.organizationId),
+										eq(holidayPresetAssignment.presetId, preset.id),
+										eq(holidayPresetAssignment.isActive, true),
+									),
 								),
-							);
+						]);
 
 						return {
 							...preset,

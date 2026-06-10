@@ -217,24 +217,26 @@ async function getSetupResponse(
 	organizationId: string,
 	userId: string,
 ): Promise<EnterpriseIdentitySetupResponse> {
-	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, userId);
-	const templates = await db
-		.select({
-			id: roleTemplate.id,
-			organizationId: roleTemplate.organizationId,
-			name: roleTemplate.name,
-			description: roleTemplate.description,
-			isGlobal: roleTemplate.isGlobal,
-			employeeRole: roleTemplate.employeeRole,
-		})
-		.from(roleTemplate)
-		.where(
-			and(
-				eq(roleTemplate.isActive, true),
-				or(eq(roleTemplate.organizationId, organizationId), eq(roleTemplate.isGlobal, true)),
+	const [setupRecord, templates, scimConnection] = await Promise.all([
+		getOrCreateEnterpriseIdentitySetupRecord(organizationId, userId),
+		db
+			.select({
+				id: roleTemplate.id,
+				organizationId: roleTemplate.organizationId,
+				name: roleTemplate.name,
+				description: roleTemplate.description,
+				isGlobal: roleTemplate.isGlobal,
+				employeeRole: roleTemplate.employeeRole,
+			})
+			.from(roleTemplate)
+			.where(
+				and(
+					eq(roleTemplate.isActive, true),
+					or(eq(roleTemplate.organizationId, organizationId), eq(roleTemplate.isGlobal, true)),
+				),
 			),
-		);
-	const scimConnection = await getEnterpriseIdentityScimConnection(organizationId);
+		getEnterpriseIdentityScimConnection(organizationId),
+	]);
 
 	return {
 		state: normalizeEnterpriseIdentitySetupRecord(setupRecord),

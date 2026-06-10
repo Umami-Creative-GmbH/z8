@@ -156,11 +156,11 @@ export function SignupForm({
 		turnstileRef.current?.reset();
 	};
 
-	// Invite code state
-	const [organizationName, setOrganizationName] = useState<string | null>(
-		initialOrganizationName ?? null,
-	);
-	const [inviteCodeValid, setInviteCodeValid] = useState<boolean | null>(null);
+	const [inviteCodeState, setInviteCodeState] = useState<{
+		organizationName: string | null;
+		valid: boolean | null;
+	}>({ organizationName: initialOrganizationName ?? null, valid: null });
+	const { organizationName, valid: inviteCodeValid } = inviteCodeState;
 	const isInvitationSignup = Boolean(initialEmail);
 
 	// Domain auth context for custom domains
@@ -268,14 +268,16 @@ export function SignupForm({
 			validateInviteCode(inviteCode)
 				.then((result) => {
 					if (result.success && result.data?.valid) {
-						setInviteCodeValid(true);
-						setOrganizationName(result.data.inviteCode?.organization?.name || null);
+						setInviteCodeState({
+							organizationName: result.data.inviteCode?.organization?.name || null,
+							valid: true,
+						});
 					} else {
-						setInviteCodeValid(false);
+						setInviteCodeState((current) => ({ ...current, valid: false }));
 					}
 				})
 				.catch(() => {
-					setInviteCodeValid(false);
+					setInviteCodeState((current) => ({ ...current, valid: false }));
 				});
 		}
 	}, [inviteCode]);

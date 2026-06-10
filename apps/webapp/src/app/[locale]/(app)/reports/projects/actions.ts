@@ -135,10 +135,10 @@ export async function getProjectsOverview(
 				// Get work period stats for each project
 				const projectSummaries: ProjectSummary[] = yield* _(
 					dbService.query("getProjectStats", async () => {
-						const summaries: ProjectSummary[] = [];
 						const now = new Date();
 
-						for (const p of projects) {
+						return Promise.all(
+							projects.map(async (p): Promise<ProjectSummary> => {
 							// Get total hours and unique employees for this project in the date range
 							const [stats, cumulativeStats] = await Promise.all([
 								dbService.db
@@ -189,7 +189,7 @@ export async function getProjectsOverview(
 								rangeEnd: endDate,
 							});
 
-							summaries.push({
+							return {
 								id: p.id,
 								name: p.name,
 								description: p.description,
@@ -204,10 +204,9 @@ export async function getProjectsOverview(
 								daysUntilDeadline,
 								uniqueEmployees: stats[0]?.uniqueEmployees ?? 0,
 								workPeriodCount: stats[0]?.workPeriodCount ?? 0,
-							});
-						}
-
-						return summaries;
+							};
+						}),
+						);
 					}),
 				);
 

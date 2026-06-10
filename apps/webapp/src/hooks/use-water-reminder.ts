@@ -44,9 +44,12 @@ export interface UseWaterReminderOptions {
 export function useWaterReminder(options: UseWaterReminderOptions = {}) {
 	const { enabled = true, workSessionStart, onReminder } = options;
 	const [dismissed, setDismissed] = useState(false);
-	const [showReminder, setShowReminder] = useState(false);
-	const [lastReminderTime, setLastReminderTime] = useState(0);
-	const [minutesUntilReminder, setMinutesUntilReminder] = useState<number | null>(null);
+	const [reminderState, setReminderState] = useState({
+		showReminder: false,
+		lastReminderTime: 0,
+		minutesUntilReminder: null as number | null,
+	});
+	const { showReminder, lastReminderTime, minutesUntilReminder } = reminderState;
 
 	// Get hydration stats for snooze state and intake
 	const { snoozedUntil, todayIntake } = useHydrationStats({ enabled });
@@ -80,8 +83,11 @@ export function useWaterReminder(options: UseWaterReminderOptions = {}) {
 	useEffect(() => {
 		if (!reminderEnabled || isSnoozed || dismissed || !enabled) {
 			startTransition(() => {
-				setShowReminder(false);
-				setMinutesUntilReminder(null);
+				setReminderState((current) => ({
+					...current,
+					showReminder: false,
+					minutesUntilReminder: null,
+				}));
 			});
 			return;
 		}
@@ -111,12 +117,14 @@ export function useWaterReminder(options: UseWaterReminderOptions = {}) {
 				return intervalMinutes - elapsedMinutes;
 			})();
 
-			setMinutesUntilReminder(minutesUntil);
-
 			if (minutesUntil !== null && minutesUntil <= 0) {
-				setShowReminder(true);
+				const nextLastReminderTime = Date.now();
+				setReminderState({
+					showReminder: true,
+					lastReminderTime: nextLastReminderTime,
+					minutesUntilReminder: minutesUntil,
+				});
 				onReminder?.();
-				setLastReminderTime(Date.now());
 				// Trigger push notification if page is not visible
 				if (typeof document !== "undefined" && document.visibilityState === "hidden") {
 					fetch("/api/wellness/water-reminder", {
@@ -126,6 +134,8 @@ export function useWaterReminder(options: UseWaterReminderOptions = {}) {
 						console.debug("Water reminder push notification failed");
 					});
 				}
+			} else {
+				setReminderState((current) => ({ ...current, minutesUntilReminder: minutesUntil }));
 			}
 		};
 
@@ -151,26 +161,29 @@ export function useWaterReminder(options: UseWaterReminderOptions = {}) {
 	// Reset reminder when water is logged
 	useEffect(() => {
 		if (todayIntake > 0) {
-			startTransition(() => setShowReminder(false));
+			startTransition(() => setReminderState((current) => ({ ...current, showReminder: false })));
 		}
 	}, [todayIntake]);
 
 	// Dismiss reminder
 	const dismiss = () => {
 		setDismissed(true);
-		setShowReminder(false);
+		setReminderState((current) => ({ ...current, showReminder: false }));
 	};
 
 	// Reset dismissed state (e.g., on new clock-in)
 	const resetDismissed = () => {
 		setDismissed(false);
-		setLastReminderTime(0);
+		setReminderState((current) => ({ ...current, lastReminderTime: 0 }));
 	};
 
 	// Mark reminder as handled (after logging water)
 	const handleReminderAction = () => {
-		setShowReminder(false);
-		setLastReminderTime(Date.now());
+		setReminderState((current) => ({
+			...current,
+			showReminder: false,
+			lastReminderTime: Date.now(),
+		}));
 	};
 
 	return {

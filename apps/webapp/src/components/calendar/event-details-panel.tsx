@@ -18,6 +18,18 @@ interface EventDetailsPanelProps {
 	onClose: () => void;
 }
 
+const formatDate = (date: Date) => {
+	return format(date, "PPP"); // e.g., "January 1, 2024"
+};
+
+const formatDuration = (minutes: number) => {
+	const hours = Math.floor(minutes / 60);
+	const mins = minutes % 60;
+	if (hours === 0) return `${mins}m`;
+	if (mins === 0) return `${hours}h`;
+	return `${hours}h ${mins}m`;
+};
+
 export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 	const { t } = useTranslate();
 	const projectsEnabled = useProjectsEnabled();
@@ -35,18 +47,6 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 			default:
 				return event.type;
 		}
-	};
-
-	const formatDate = (date: Date) => {
-		return format(date, "PPP"); // e.g., "January 1, 2024"
-	};
-
-	const formatDuration = (minutes: number) => {
-		const hours = Math.floor(minutes / 60);
-		const mins = minutes % 60;
-		if (hours === 0) return `${mins}m`;
-		if (mins === 0) return `${hours}h`;
-		return `${hours}h ${mins}m`;
 	};
 
 	const renderHolidayDetails = () => {

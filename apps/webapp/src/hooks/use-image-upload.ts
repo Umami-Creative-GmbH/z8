@@ -5,7 +5,7 @@ import German from "@uppy/locales/lib/de_DE";
 import English from "@uppy/locales/lib/en_US";
 import Tus from "@uppy/tus";
 import { useLocale } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useImageProcessMutation } from "@/lib/query/use-image-process";
 import { getTusFileKeyFromUploadUrl } from "@/lib/upload/tus-url";
 
@@ -28,6 +28,31 @@ interface UseImageUploadReturn {
 	reset: () => void;
 }
 
+type ImageUploadState = {
+	progress: number;
+	isUploading: boolean;
+	previewUrl: string | null;
+};
+
+type ImageUploadAction =
+	| { type: "start" }
+	| { type: "progress"; progress: number }
+	| { type: "preview"; previewUrl: string }
+	| { type: "reset" };
+
+function imageUploadReducer(state: ImageUploadState, action: ImageUploadAction): ImageUploadState {
+	switch (action.type) {
+		case "start":
+			return { ...state, progress: 1, isUploading: true };
+		case "progress":
+			return { ...state, progress: action.progress };
+		case "preview":
+			return { ...state, previewUrl: action.previewUrl };
+		case "reset":
+			return { progress: 0, isUploading: false, previewUrl: null };
+	}
+}
+
 export function useImageUpload({
 	uploadType,
 	organizationId,
@@ -36,9 +61,12 @@ export function useImageUpload({
 	onError,
 }: UseImageUploadOptions): UseImageUploadReturn {
 	const locale = useLocale();
-	const [progress, setProgress] = useState(0);
-	const [isUploading, setIsUploading] = useState(false);
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+	const [uploadState, dispatchUploadState] = useReducer(imageUploadReducer, {
+		progress: 0,
+		isUploading: false,
+		previewUrl: null,
+	});
+	const { progress, isUploading, previewUrl } = uploadState;
 
 	const processMutation = useImageProcessMutation();
 
@@ -69,14 +97,13 @@ export function useImageUpload({
 	// Handle upload events
 	useEffect(() => {
 		const handleUploadStart = () => {
-			setIsUploading(true);
-			setProgress(1);
+			dispatchUploadState({ type: "start" });
 		};
 
 		const handleProgress = (progress: number) => {
 			// progress is a percentage 0-100, reserve 15% for processing
 			const uploadPercent = Math.round((progress / 100) * 85);
-			setProgress(Math.max(1, uploadPercent));
+			dispatchUploadState({ type: "progress", progress: Math.max(1, uploadPercent) });
 		};
 
 		const handleFileProgress = (
@@ -85,7 +112,7 @@ export function useImageUpload({
 		) => {
 			if (progress.bytesTotal && progress.bytesTotal > 0) {
 				const uploadPercent = Math.round((progress.bytesUploaded / progress.bytesTotal) * 85);
-				setProgress(Math.max(1, uploadPercent));
+				dispatchUploadState({ type: "progress", progress: Math.max(1, uploadPercent) });
 			}
 		};
 
@@ -100,7 +127,7 @@ export function useImageUpload({
 				const tusFileKey = getTusFileKeyFromUploadUrl(uploadUrl);
 
 				if (tusFileKey) {
-					setProgress(90); // Processing stage
+					dispatchUploadState({ type: "progress", progress: 90 });
 
 					try {
 						// Use TanStack Query mutation for image processing
@@ -110,7 +137,7 @@ export function useImageUpload({
 							organizationId,
 						});
 
-						setProgress(100);
+						dispatchUploadState({ type: "progress", progress: 100 });
 						onSuccess?.(response.url);
 					} catch (err) {
 						onError?.(err instanceof Error ? err : new Error("Processing failed"));
@@ -120,16 +147,12 @@ export function useImageUpload({
 				onError?.(new Error("Upload failed"));
 			}
 
-			setIsUploading(false);
-			setProgress(0);
-			setPreviewUrl(null);
+			dispatchUploadState({ type: "reset" });
 			uppy.cancelAll();
 		};
 
 		const handleError = (_file: unknown, error: { message?: string }) => {
-			setIsUploading(false);
-			setProgress(0);
-			setPreviewUrl(null);
+			dispatchUploadState({ type: "reset" });
 			onError?.(new Error(error?.message || "Upload failed"));
 			uppy.cancelAll();
 		};
@@ -160,7 +183,7 @@ export function useImageUpload({
 		// Create local preview
 		const reader = new FileReader();
 		reader.onloadend = () => {
-			setPreviewUrl(reader.result as string);
+			dispatchUploadState({ type: "preview", previewUrl: reader.result as string });
 		};
 		reader.readAsDataURL(file);
 
@@ -184,9 +207,7 @@ export function useImageUpload({
 	};
 
 	const reset = () => {
-		setProgress(0);
-		setIsUploading(false);
-		setPreviewUrl(null);
+		dispatchUploadState({ type: "reset" });
 		uppy.cancelAll();
 	};
 

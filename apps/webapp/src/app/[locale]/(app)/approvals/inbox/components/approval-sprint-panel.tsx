@@ -2,7 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +26,78 @@ interface ApprovalSprintPanelProps {
 	shortcutsEnabled?: boolean;
 }
 
+type ApprovalSprintState = {
+	currentIndex: number;
+	isRejecting: boolean;
+	rejectReason: string;
+	isSubmitting: boolean;
+	dismissedApprovalIds: string[];
+	previousOpen: boolean;
+};
+
+type ApprovalSprintAction =
+	| { type: "openChanged"; open: boolean }
+	| { type: "advance" }
+	| { type: "rejectModeChanged"; isRejecting: boolean }
+	| { type: "rejectReasonChanged"; rejectReason: string }
+	| { type: "submissionStarted" }
+	| { type: "submissionFinished" }
+	| { type: "approveSucceeded"; approvalId: string }
+	| { type: "rejectSucceeded"; approvalId: string }
+	| { type: "closed" };
+
+function approvalSprintReducer(
+	state: ApprovalSprintState,
+	action: ApprovalSprintAction,
+): ApprovalSprintState {
+	switch (action.type) {
+		case "openChanged":
+			return action.open
+				? {
+						...state,
+						previousOpen: action.open,
+						currentIndex: 0,
+						isRejecting: false,
+						rejectReason: "",
+						dismissedApprovalIds: [],
+					}
+				: { ...state, previousOpen: action.open };
+		case "advance":
+			return {
+				...state,
+				currentIndex: state.currentIndex + 1,
+				isRejecting: false,
+				rejectReason: "",
+			};
+		case "rejectModeChanged":
+			return { ...state, isRejecting: action.isRejecting };
+		case "rejectReasonChanged":
+			return { ...state, rejectReason: action.rejectReason };
+		case "submissionStarted":
+			return { ...state, isSubmitting: true };
+		case "submissionFinished":
+			return { ...state, isSubmitting: false };
+		case "approveSucceeded":
+			return {
+				...state,
+				isRejecting: false,
+				rejectReason: "",
+				isSubmitting: false,
+				dismissedApprovalIds: [...state.dismissedApprovalIds, action.approvalId],
+			};
+		case "rejectSucceeded":
+			return {
+				...state,
+				isRejecting: false,
+				rejectReason: "",
+				isSubmitting: false,
+				dismissedApprovalIds: [...state.dismissedApprovalIds, action.approvalId],
+			};
+		case "closed":
+			return { ...state, isRejecting: false, rejectReason: "" };
+	}
+}
+
 export function ApprovalSprintPanel({
 	open,
 	items,
@@ -37,12 +109,22 @@ export function ApprovalSprintPanel({
 	const { t } = useTranslate();
 	const approveMutation = useApproveApproval();
 	const rejectMutation = useRejectApproval();
-	const [currentIndex, setCurrentIndex] = useState(0);
-	const [isRejecting, setIsRejecting] = useState(false);
-	const [rejectReason, setRejectReason] = useState("");
-	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [dismissedApprovalIds, setDismissedApprovalIds] = useState<string[]>([]);
-	const [previousOpen, setPreviousOpen] = useState(open);
+	const [sprintState, dispatchSprint] = useReducer(approvalSprintReducer, {
+		currentIndex: 0,
+		isRejecting: false,
+		rejectReason: "",
+		isSubmitting: false,
+		dismissedApprovalIds: [],
+		previousOpen: open,
+	});
+	const {
+		currentIndex,
+		isRejecting,
+		rejectReason,
+		isSubmitting,
+		dismissedApprovalIds,
+		previousOpen,
+	} = sprintState;
 	const submittingApprovalRef = useRef<string | null>(null);
 	const shortcutStateRef = useRef({
 		isBusy: false,
@@ -64,19 +146,11 @@ export function ApprovalSprintPanel({
 	const canRejectCurrentItem = currentItem?.capabilities.canReject === true;
 
 	if (previousOpen !== open) {
-		setPreviousOpen(open);
-		if (open) {
-			setCurrentIndex(0);
-			setIsRejecting(false);
-			setRejectReason("");
-			setDismissedApprovalIds([]);
-		}
+		dispatchSprint({ type: "openChanged", open });
 	}
 
 	const advance = () => {
-		setIsRejecting(false);
-		setRejectReason("");
-		setCurrentIndex((index) => index + 1);
+		dispatchSprint({ type: "advance" });
 	};
 
 	const handleApprove = async () => {
@@ -84,16 +158,13 @@ export function ApprovalSprintPanel({
 		if (submittingApprovalRef.current === currentItemId) return;
 
 		submittingApprovalRef.current = currentItemId;
-		setIsSubmitting(true);
+		dispatchSprint({ type: "submissionStarted" });
 		try {
 			const result = await approveMutation.mutateAsync(currentItemId);
 			if (result.success) {
 				toast.success(t("approvals:approvals.approved", "Request approved"));
-				setIsRejecting(false);
-				setRejectReason("");
 				submittingApprovalRef.current = null;
-				setIsSubmitting(false);
-				setDismissedApprovalIds((approvalIds) => [...approvalIds, currentItemId]);
+				dispatchSprint({ type: "approveSucceeded", approvalId: currentItemId });
 				onActioned();
 				return;
 			} else {
@@ -104,7 +175,7 @@ export function ApprovalSprintPanel({
 		}
 
 		submittingApprovalRef.current = null;
-		setIsSubmitting(false);
+		dispatchSprint({ type: "submissionFinished" });
 	};
 
 	const handleReject = async () => {
@@ -113,7 +184,7 @@ export function ApprovalSprintPanel({
 		if (submittingApprovalRef.current === currentItem.id) return;
 
 		submittingApprovalRef.current = currentItem.id;
-		setIsSubmitting(true);
+		dispatchSprint({ type: "submissionStarted" });
 		try {
 			const result = await rejectMutation.mutateAsync({
 				approvalId: currentItem.id,
@@ -121,9 +192,7 @@ export function ApprovalSprintPanel({
 			});
 			if (result.success) {
 				toast.success(t("approvals:approvals.rejected", "Request rejected"));
-				setIsRejecting(false);
-				setRejectReason("");
-				setDismissedApprovalIds((approvalIds) => [...approvalIds, currentItem.id]);
+				dispatchSprint({ type: "rejectSucceeded", approvalId: currentItem.id });
 				onActioned();
 			} else {
 				toast.error(result.error || t("approvals:approvals.rejectFailed", "Failed to reject"));
@@ -133,13 +202,12 @@ export function ApprovalSprintPanel({
 		}
 
 		submittingApprovalRef.current = null;
-		setIsSubmitting(false);
+		dispatchSprint({ type: "submissionFinished" });
 	};
 
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (!nextOpen) {
-			setIsRejecting(false);
-			setRejectReason("");
+			dispatchSprint({ type: "closed" });
 		}
 		onOpenChange(nextOpen);
 	};
@@ -176,7 +244,7 @@ export function ApprovalSprintPanel({
 				if (shortcutState.isRejecting) {
 					void shortcutState.handleReject();
 				} else {
-					setIsRejecting(true);
+					dispatchSprint({ type: "rejectModeChanged", isRejecting: true });
 				}
 			} else if (event.key === "s" || event.key === "n") {
 				event.preventDefault();
@@ -216,9 +284,9 @@ export function ApprovalSprintPanel({
 							isBusy={isBusy}
 							onApprove={handleApprove}
 							onReject={() => {
-								if (currentItem.capabilities.canReject) {
-									setIsRejecting(true);
-								}
+					if (currentItem.capabilities.canReject) {
+						dispatchSprint({ type: "rejectModeChanged", isRejecting: true });
+					}
 							}}
 							onSkip={advance}
 							onOpenDetails={() => onOpenDetails?.(currentItem)}
@@ -233,8 +301,10 @@ export function ApprovalSprintPanel({
 									id="sprint-reject-reason"
 									name="sprint-reject-reason"
 									autoComplete="off"
-									value={rejectReason}
-									onChange={(event) => setRejectReason(event.target.value)}
+					value={rejectReason}
+					onChange={(event) =>
+						dispatchSprint({ type: "rejectReasonChanged", rejectReason: event.target.value })
+					}
 									disabled={isBusy}
 								/>
 								<div className="flex flex-wrap gap-2">
@@ -253,11 +323,10 @@ export function ApprovalSprintPanel({
 									</Button>
 									<Button
 										type="button"
-										variant="outline"
-										onClick={() => {
-											setIsRejecting(false);
-											setRejectReason("");
-										}}
+					variant="outline"
+					onClick={() => {
+						dispatchSprint({ type: "closed" });
+					}}
 										disabled={isBusy}
 									>
 										{t("common.cancel", "Cancel")}

@@ -42,24 +42,24 @@ export function useElapsedTimer(startTime: Date | null): number {
 	});
 
 	useEffect(() => {
-		if (!startTime) {
-			const timeout = setTimeout(() => setElapsedSeconds(0), 0);
-			return () => clearTimeout(timeout);
-		}
-
 		const calculateElapsed = () => {
+			if (!startTime) return 0;
+
 			const start = new Date(startTime);
 			return Math.floor((Date.now() - start.getTime()) / 1000);
 		};
 
-		const timeout = setTimeout(() => setElapsedSeconds(calculateElapsed()), 0);
+		setElapsedSeconds(calculateElapsed());
+
+		if (!startTime) {
+			return;
+		}
 
 		const interval = setInterval(() => {
 			setElapsedSeconds(calculateElapsed());
 		}, 1000);
 
 		return () => {
-			clearTimeout(timeout);
 			clearInterval(interval);
 		};
 	}, [startTime]);

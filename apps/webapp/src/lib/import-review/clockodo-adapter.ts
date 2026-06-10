@@ -501,24 +501,24 @@ async function stageReferenceRows(input: {
 			input.client,
 			"getTargetHours",
 		);
-		return (await getTargetHours())
-			.filter((item) =>
-				overlapsOpenEndedDateRange({
-					startsAt: item.date_since,
-					endsAt: item.date_until,
-					rangeStart: input.rangeStart,
-					rangeEnd: input.rangeEnd,
-				}),
-			)
-			.map((item, index) =>
-				stageReferenceRow({
-					entityType: "target_hours",
-					providerKind: "target_hours",
-					item,
-					index,
-					dateRange: input.dateRange,
-				}),
-			);
+		return (await getTargetHours()).flatMap((item, index) =>
+			overlapsOpenEndedDateRange({
+				startsAt: item.date_since,
+				endsAt: item.date_until,
+				rangeStart: input.rangeStart,
+				rangeEnd: input.rangeEnd,
+			})
+				? [
+						stageReferenceRow({
+							entityType: "target_hours",
+							providerKind: "target_hours",
+							item,
+							index,
+							dateRange: input.dateRange,
+						}),
+					]
+				: [],
+		);
 	}
 
 	if (input.entityType === "holiday_quota") {
@@ -526,23 +526,23 @@ async function stageReferenceRows(input: {
 			input.client,
 			"getHolidayQuotas",
 		);
-		return (await getHolidayQuotas())
-			.filter((item) =>
-				overlapsYearRange({
-					yearSince: item.year_since,
-					yearUntil: item.year_until,
-					rangeYears: input.years,
-				}),
-			)
-			.map((item, index) =>
-				stageReferenceRow({
-					entityType: "holiday_quota",
-					providerKind: "holiday_quota",
-					item,
-					index,
-					dateRange: input.dateRange,
-				}),
-			);
+		return (await getHolidayQuotas()).flatMap((item, index) =>
+			overlapsYearRange({
+				yearSince: item.year_since,
+				yearUntil: item.year_until,
+				rangeYears: input.years,
+			})
+				? [
+						stageReferenceRow({
+							entityType: "holiday_quota",
+							providerKind: "holiday_quota",
+							item,
+							index,
+							dateRange: input.dateRange,
+						}),
+					]
+				: [],
+		);
 	}
 
 	if (input.entityType === "holiday") {
@@ -552,23 +552,23 @@ async function stageReferenceRows(input: {
 		const holidays = (
 			await Promise.all(input.years.map((year) => getNonBusinessDays(year)))
 		).flat();
-		return holidays
-			.filter((item) =>
-				isDateWithinRange({
-					date: item.date,
-					rangeStart: input.rangeStart,
-					rangeEnd: input.rangeEnd,
-				}),
-			)
-			.map((item, index) =>
-				stageReferenceRow({
-					entityType: "holiday",
-					providerKind: "holiday",
-					item,
-					index,
-					dateRange: input.dateRange,
-				}),
-			);
+		return holidays.flatMap((item, index) =>
+			isDateWithinRange({
+				date: item.date,
+				rangeStart: input.rangeStart,
+				rangeEnd: input.rangeEnd,
+			})
+				? [
+						stageReferenceRow({
+							entityType: "holiday",
+							providerKind: "holiday",
+							item,
+							index,
+							dateRange: input.dateRange,
+						}),
+					]
+				: [],
+		);
 	}
 
 	const getSurcharges = assertClientMethod<() => Promise<ClockodoSurcharge[]>>(

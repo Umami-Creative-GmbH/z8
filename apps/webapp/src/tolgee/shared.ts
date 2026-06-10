@@ -264,20 +264,28 @@ function addNamespaceKeyAliases(
  * Load and merge all namespaces for a language
  */
 async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslationsData> {
-	const loaded: { ns: Namespace; data: TreeTranslationsData }[] = [];
-	for (const ns of ALL_NAMESPACES) {
-		const importFn = namespaceImports[ns]?.[lang];
-		if (importFn) {
-			try {
-				const mod = await importFn();
-				const data =
-					(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
-				loaded.push({ ns, data });
-			} catch (error) {
-				console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);
-			}
-		}
-	}
+	const loaded = (
+		await Promise.all(
+			ALL_NAMESPACES.map(async (ns) => {
+				const importFn = namespaceImports[ns]?.[lang];
+				if (!importFn) {
+					return null;
+				}
+
+				try {
+					const mod = await importFn();
+					const data =
+						(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
+					return { ns, data };
+				} catch (error) {
+					console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);
+					return null;
+				}
+			}),
+		)
+	).filter((namespace): namespace is { ns: Namespace; data: TreeTranslationsData } =>
+		Boolean(namespace),
+	);
 	const merged = mergeTreeTranslations(loaded.map(({ data }) => data));
 	for (const { ns, data } of loaded) {
 		addNamespaceKeyAliases(merged, ns, data);

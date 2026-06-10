@@ -346,22 +346,24 @@ export async function createEmployeeEmploymentHistoryAction(
 								updatedAt: now,
 							};
 							const adjusted = adjustConfirmedTimeline({ existing, next: nextRow });
-							for (const update of adjusted.updates) {
-								await tx
-									.update(employeeEmploymentHistory)
-									.set({
-										validUntil: update.validUntil,
-										updatedBy: session.user.id,
-										updatedAt: now,
-									})
-									.where(
-										and(
-											eq(employeeEmploymentHistory.id, update.id),
-											eq(employeeEmploymentHistory.employeeId, employeeId),
-											eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+							await Promise.all(
+								adjusted.updates.map((update) =>
+									tx
+										.update(employeeEmploymentHistory)
+										.set({
+											validUntil: update.validUntil,
+											updatedBy: session.user.id,
+											updatedAt: now,
+										})
+										.where(
+											and(
+												eq(employeeEmploymentHistory.id, update.id),
+												eq(employeeEmploymentHistory.employeeId, employeeId),
+												eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+											),
 										),
-									);
-							}
+								),
+							);
 
 							const [inserted] = await tx
 								.insert(employeeEmploymentHistory)
@@ -489,22 +491,24 @@ export async function confirmEmployeeEmploymentHistoryAction(
 								existing,
 								next: { ...targetHistory, reviewState: "confirmed" as const },
 							});
-							for (const update of adjusted.updates) {
-								await tx
-									.update(employeeEmploymentHistory)
-									.set({
-										validUntil: update.validUntil,
-										updatedBy: session.user.id,
-										updatedAt: now,
-									})
-									.where(
-										and(
-											eq(employeeEmploymentHistory.id, update.id),
-											eq(employeeEmploymentHistory.employeeId, employeeId),
-											eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+							await Promise.all(
+								adjusted.updates.map((update) =>
+									tx
+										.update(employeeEmploymentHistory)
+										.set({
+											validUntil: update.validUntil,
+											updatedBy: session.user.id,
+											updatedAt: now,
+										})
+										.where(
+											and(
+												eq(employeeEmploymentHistory.id, update.id),
+												eq(employeeEmploymentHistory.employeeId, employeeId),
+												eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+											),
 										),
-									);
-							}
+								),
+							);
 
 							const [updated] = await tx
 								.update(employeeEmploymentHistory)

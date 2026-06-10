@@ -8,6 +8,20 @@ import {
 } from "@/lib/works-council/settings";
 import { getTranslate } from "@/tolgee/server";
 
+async function updateWorksCouncilSettings(values: WorksCouncilSettingsFormValues) {
+	"use server";
+
+	const { authContext: actionAuthContext, organizationId: actionOrganizationId } =
+		await requireOrgAdminSettingsAccess();
+	await saveWorksCouncilSettings({
+		...values,
+		organizationId: actionOrganizationId,
+		actorUserId: actionAuthContext.user.id,
+	});
+
+	return { success: true };
+}
+
 export default async function WorksCouncilSettingsPage() {
 	await connection();
 
@@ -16,20 +30,6 @@ export default async function WorksCouncilSettingsPage() {
 		loadWorksCouncilSettings(organizationId),
 	);
 	const [settings, t] = await Promise.all([settingsPromise, getTranslate()]);
-
-	async function updateWorksCouncilSettings(values: WorksCouncilSettingsFormValues) {
-		"use server";
-
-		const { authContext: actionAuthContext, organizationId: actionOrganizationId } =
-			await requireOrgAdminSettingsAccess();
-		await saveWorksCouncilSettings({
-			...values,
-			organizationId: actionOrganizationId,
-			actorUserId: actionAuthContext.user.id,
-		});
-
-		return { success: true };
-	}
 
 	return (
 		<div className="p-6">

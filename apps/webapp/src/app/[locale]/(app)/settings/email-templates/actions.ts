@@ -81,14 +81,18 @@ async function createSystemDraft(definition: EmailTemplateDefinition) {
 	let starterDraftHtml = await definition.renderDefault(definition.previewData as never);
 	const replacements = definition.variables
 		.flatMap((variable) =>
-			getGlobalPreviewReplacementValues(definition.previewData[variable.name]).map(
-				(previewValue) => ({
-					previewValue,
-					token: `{{${variable.name}}}`,
-				}),
+			getGlobalPreviewReplacementValues(definition.previewData[variable.name]).flatMap(
+				(previewValue) =>
+					previewValue
+						? [
+								{
+									previewValue,
+									token: `{{${variable.name}}}`,
+								},
+							]
+						: [],
 			),
 		)
-		.filter((replacement) => replacement.previewValue)
 		.sort((left, right) => right.previewValue.length - left.previewValue.length);
 
 	for (const { previewValue, token } of replacements) {

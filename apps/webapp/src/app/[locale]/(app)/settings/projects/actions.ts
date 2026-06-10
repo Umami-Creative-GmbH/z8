@@ -206,6 +206,29 @@ export async function getProjects(
 
 				const typedManagers = managers as unknown as ProjectManagerWithEmployee[];
 				const typedAssignments = assignments as unknown as ProjectAssignmentWithRelations[];
+				const managersByProject = new Map<string, ProjectWithDetails["managers"]>();
+				for (const manager of typedManagers) {
+					const projectManagers = managersByProject.get(manager.projectId) ?? [];
+					projectManagers.push({
+						id: manager.id,
+						employeeId: manager.employeeId,
+						employeeName: manager.employee?.user?.name || "Unknown",
+					});
+					managersByProject.set(manager.projectId, projectManagers);
+				}
+				const assignmentsByProject = new Map<string, ProjectWithDetails["assignments"]>();
+				for (const assignment of typedAssignments) {
+					const projectAssignments = assignmentsByProject.get(assignment.projectId) ?? [];
+					projectAssignments.push({
+						id: assignment.id,
+						type: assignment.assignmentType as ProjectAssignmentType,
+						teamId: assignment.teamId,
+						teamName: assignment.team?.name || null,
+						employeeId: assignment.employeeId,
+						employeeName: assignment.employee?.user?.name || null,
+					});
+					assignmentsByProject.set(assignment.projectId, projectAssignments);
+				}
 
 				const hoursMap = new Map(
 					hoursBooked.map((h) => [h.projectId, Math.round((h.totalMinutes / 60) * 100) / 100]),
@@ -229,23 +252,8 @@ export async function getProjects(
 					createdBy: p.createdBy,
 					updatedAt: p.updatedAt,
 					updatedBy: p.updatedBy,
-					managers: typedManagers
-						.filter((m) => m.projectId === p.id)
-						.map((m) => ({
-							id: m.id,
-							employeeId: m.employeeId,
-							employeeName: m.employee?.user?.name || "Unknown",
-						})),
-					assignments: typedAssignments
-						.filter((a) => a.projectId === p.id)
-						.map((a) => ({
-							id: a.id,
-							type: a.assignmentType as ProjectAssignmentType,
-							teamId: a.teamId,
-							teamName: a.team?.name || null,
-							employeeId: a.employeeId,
-							employeeName: a.employee?.user?.name || null,
-						})),
+					managers: managersByProject.get(p.id) ?? [],
+					assignments: assignmentsByProject.get(p.id) ?? [],
 					totalHoursBooked: hoursMap.get(p.id) || 0,
 				}));
 

@@ -76,20 +76,24 @@ export async function generateTeamVacationCalendar(
 	const requests = await getPendingVacationRequests(organizationId);
 
 	// Filter requests that fall within the date range
-	return requests
-		.filter((r) => {
-			const reqStart = new Date(r.startDate);
-			const reqEnd = new Date(r.endDate);
-			return reqStart <= endDate && reqEnd >= startDate;
-		})
-		.map((r) => ({
-			employeeId: r.employeeId,
-			employeeName: r.employeeName,
-			startDate: new Date(r.startDate),
-			endDate: new Date(r.endDate),
-			days: r.days,
-			status: "pending" as const,
-		}));
+	return requests.flatMap((r) => {
+		const reqStart = new Date(r.startDate);
+		const reqEnd = new Date(r.endDate);
+		if (reqStart > endDate || reqEnd < startDate) {
+			return [];
+		}
+
+		return [
+			{
+				employeeId: r.employeeId,
+				employeeName: r.employeeName,
+				startDate: reqStart,
+				endDate: reqEnd,
+				days: r.days,
+				status: "pending" as const,
+			},
+		];
+	});
 }
 
 /**

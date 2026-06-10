@@ -180,32 +180,33 @@ export async function getLocations(
 
 				// Map to list items
 				const typedLocations = locations as unknown as LocationListRow[];
-				const result: LocationListItem[] = typedLocations
-					.map((loc) => ({
-						...loc,
-						subareas: getScopedLocationSubareas(
-							loc.id,
-							actor.accessTier,
-							actor.manageableLocationIds,
-							actor.manageableSubareaIds,
-							loc.subareas,
-						),
-					}))
-					.filter(
-						(loc) =>
-							actor.accessTier === "orgAdmin" ||
-							actor.manageableLocationIds?.has(loc.id) ||
-							loc.subareas.length > 0,
-					)
-					.map((loc) => ({
-						id: loc.id,
-						name: loc.name,
-						city: loc.city,
-						country: loc.country,
-						isActive: loc.isActive,
-						subareaCount: loc.subareas.length,
-						employeeCount: loc.employees.length,
-					}));
+				const result: LocationListItem[] = typedLocations.flatMap((loc) => {
+					const subareas = getScopedLocationSubareas(
+						loc.id,
+						actor.accessTier,
+						actor.manageableLocationIds,
+						actor.manageableSubareaIds,
+						loc.subareas,
+					);
+					if (
+						actor.accessTier !== "orgAdmin" &&
+						!actor.manageableLocationIds?.has(loc.id) &&
+						subareas.length === 0
+					) {
+						return [];
+					}
+					return [
+						{
+							id: loc.id,
+							name: loc.name,
+							city: loc.city,
+							country: loc.country,
+							isActive: loc.isActive,
+							subareaCount: subareas.length,
+							employeeCount: loc.employees.length,
+						},
+					];
+				});
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return result;

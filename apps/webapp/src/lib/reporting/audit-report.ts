@@ -176,15 +176,15 @@ export async function generateComplianceReport(
 	const uniqueEntities = new Set(result.logs.map((l) => `${l.entityType}:${l.entityId}`));
 
 	// Generate daily summaries
-	const dailySummaries: DailySummary[] = [];
+	const dailySummaryDates: Date[] = [];
 	const currentDate = new Date(startDate);
 	while (currentDate <= endDate) {
-		const summary = await generateDailySummary(organizationId, new Date(currentDate));
-		if (summary.totalEvents > 0) {
-			dailySummaries.push(summary);
-		}
+		dailySummaryDates.push(new Date(currentDate));
 		currentDate.setDate(currentDate.getDate() + 1);
 	}
+	const dailySummaries = (
+		await Promise.all(dailySummaryDates.map((date) => generateDailySummary(organizationId, date)))
+	).filter((summary) => summary.totalEvents > 0);
 
 	// Get user activity reports
 	const userReports = await generateUserActivityReport(organizationId, startDate, endDate);

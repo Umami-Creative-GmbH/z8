@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useRef, useState, useSyncExternalStore } from "react";
+import { Suspense, useReducer, useRef, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import {
 	ActionPanel,
@@ -44,6 +44,7 @@ import { ApprovalFastLanes } from "./components/approval-fast-lanes";
 import { ApprovalInboxTable } from "./components/approval-inbox-table";
 import { ApprovalInboxToolbar } from "./components/approval-inbox-toolbar";
 import { ApprovalSprintPanel } from "./components/approval-sprint-panel";
+import { approvalInboxUiReducer, createApprovalInboxUiState } from "./approval-inbox-state";
 
 function getBulkFailureMessage(
 	t: ReturnType<typeof useTranslate>["t"],
@@ -100,6 +101,27 @@ function dedupeWarnings(warnings: ApprovalInboxWarning[]): ApprovalInboxWarning[
 type ApprovalInboxFastLaneGroupView = {
 	key: ApprovalInboxFastLaneGroup;
 	items: ApprovalInboxItem[];
+};
+
+type ApprovalInboxHeaderBulkState = {
+	isActionPending: boolean;
+	canApproveSelection: boolean;
+	canRejectSelection: boolean;
+	approvePending: boolean;
+};
+
+type ApprovalInboxRefreshState = {
+	isFetching: boolean;
+};
+
+type ApprovalInboxPaginationState = {
+	hasNextPage: boolean;
+	isFetchingNextPage: boolean;
+};
+
+type ApprovalInboxRequestActivityState = {
+	isBulkActionPending: boolean;
+	isFetching: boolean;
 };
 
 const RISK_RANK: Record<ApprovalInboxItem["triage"]["riskLevel"], number> = {
@@ -163,20 +185,353 @@ export function getInitialApprovalInboxFilters(
 	};
 }
 
+function ApprovalInboxLoadingState() {
+	return (
+		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+			<div className="flex items-center justify-between px-4 lg:px-6">
+				<div className="space-y-2">
+					<Skeleton className="h-8 w-48" />
+					<Skeleton className="h-4 w-96" />
+				</div>
+			</div>
+			<div className="px-4 lg:px-6">
+				<Card>
+					<CardHeader>
+						<Skeleton className="h-6 w-32" />
+					</CardHeader>
+					<CardContent>
+						<div className="space-y-3">
+							<Skeleton className="h-12 w-full" />
+							<Skeleton className="h-12 w-full" />
+							<Skeleton className="h-12 w-full" />
+							<Skeleton className="h-12 w-full" />
+							<Skeleton className="h-12 w-full" />
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+		</div>
+	);
+}
+
+function ApprovalInboxPageHeader({
+	t,
+	bulkState,
+	refreshState,
+	selectedCount,
+	sprintItemCount,
+	onBulkApprove,
+	onOpenBulkReject,
+	onOpenSprint,
+	onRefresh,
+}: {
+	t: ReturnType<typeof useTranslate>["t"];
+	bulkState: ApprovalInboxHeaderBulkState;
+	refreshState: ApprovalInboxRefreshState;
+	selectedCount: number;
+	sprintItemCount: number;
+	onBulkApprove: () => void;
+	onOpenBulkReject: () => void;
+	onOpenSprint: () => void;
+	onRefresh: () => void;
+}) {
+	return (
+		<div className="flex items-center justify-between px-4 lg:px-6">
+			<div>
+				<h1 className="text-2xl font-semibold tracking-tight">
+					{t("approvals:approvals.inbox", "Approval Inbox")}
+				</h1>
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"approvals:approvals.inboxDescription",
+						"Review and approve pending requests from your team",
+					)}
+				</p>
+			</div>
+			<div className="flex items-center gap-2">
+				{selectedCount > 0 && (
+					<>
+						<Button
+							variant="outline"
+							onClick={onOpenBulkReject}
+							disabled={bulkState.isActionPending || !bulkState.canRejectSelection}
+						>
+							<IconX className="mr-2 size-4" aria-hidden="true" />
+							{t("approvals:approvals.rejectSelected", "Reject Selected")} ({selectedCount})
+						</Button>
+						<Button onClick={onBulkApprove} disabled={bulkState.isActionPending || !bulkState.canApproveSelection}>
+							{bulkState.approvePending ? (
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+							) : (
+								<IconCheck className="mr-2 size-4" aria-hidden="true" />
+							)}
+							{t("approvals:approvals.approveSelected", "Approve Selected")} ({selectedCount})
+						</Button>
+					</>
+				)}
+				<Button variant="outline" onClick={onOpenSprint} disabled={sprintItemCount === 0}>
+					<IconInbox className="mr-2 size-4" aria-hidden="true" />
+					{t("approvals:sprint.start", "Start approval sprint")}
+				</Button>
+				<Button variant="ghost" size="icon" onClick={onRefresh} disabled={refreshState.isFetching}>
+					{refreshState.isFetching ? (
+						<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+					) : (
+						<IconRefresh className="size-4" aria-hidden="true" />
+					)}
+					<span className="sr-only">{t("common.refresh", "Refresh")}</span>
+				</Button>
+			</div>
+		</div>
+	);
+}
+
+function ApprovalInboxErrorState({
+	t,
+	error,
+	isFetching,
+	onRefresh,
+}: {
+	t: ReturnType<typeof useTranslate>["t"];
+	error: unknown;
+	isFetching: boolean;
+	onRefresh: () => void;
+}) {
+	return (
+		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+			<ApprovalInboxPageHeader
+				t={t}
+				bulkState={{
+					isActionPending: false,
+					canApproveSelection: false,
+					canRejectSelection: false,
+					approvePending: false,
+				}}
+				refreshState={{ isFetching }}
+				selectedCount={0}
+				sprintItemCount={0}
+				onBulkApprove={() => undefined}
+				onOpenBulkReject={() => undefined}
+				onOpenSprint={() => undefined}
+				onRefresh={onRefresh}
+			/>
+			<div className="px-4 lg:px-6">
+				<Card>
+					<CardContent className="py-12">
+						<div className="flex flex-col items-center justify-center text-center">
+							<IconInbox className="size-12 text-muted-foreground/50" aria-hidden="true" />
+							<h2 className="mt-4 text-lg font-medium">
+								{t("approvals:approvals.inboxErrorTitle", "Unable to load approval inbox")}
+							</h2>
+							<p className="mt-1 max-w-md text-sm text-muted-foreground">
+								{getErrorMessage(
+									error,
+									t("approvals:approvals.inboxErrorDescription", "Failed to fetch approvals"),
+								)}
+							</p>
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+		</div>
+	);
+}
+
+function ApprovalInboxWarnings({ warnings }: { warnings: ApprovalInboxWarning[] }) {
+	if (warnings.length === 0) return null;
+
+	return (
+		<div className="mb-4 space-y-2">
+			{warnings.map((warning) => (
+				<div
+					key={`${warning.source}:${warning.message}`}
+					className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
+				>
+					<IconAlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+					<div>
+						<div className="font-medium">{warning.source}</div>
+						<div>{warning.message}</div>
+					</div>
+				</div>
+			))}
+		</div>
+	);
+}
+
+function ApprovalInboxRequestsCard({
+	t,
+	warnings,
+	totalCount,
+	fastLaneGroups,
+	activityState,
+	filters,
+	selectedCount,
+	items,
+	selectedIds,
+	supportedTypes,
+	paginationState,
+	onBulkApprove,
+	onBulkReject,
+	onFiltersChange,
+	onSelectAll,
+	onSelectItem,
+	onRowClick,
+	onFetchNextPage,
+}: {
+	t: ReturnType<typeof useTranslate>["t"];
+	warnings: ApprovalInboxWarning[];
+	totalCount: number;
+	fastLaneGroups: ApprovalInboxFastLaneGroupView[];
+	activityState: ApprovalInboxRequestActivityState;
+	filters: ApprovalInboxFilters;
+	selectedCount: number;
+	items: ApprovalInboxItem[];
+	selectedIds: Set<string>;
+	supportedTypes: ApprovalInboxType[];
+	paginationState: ApprovalInboxPaginationState;
+	onBulkApprove: (approvalIds: string[]) => Promise<void>;
+	onBulkReject: (approvalIds: string[], reason: string) => Promise<void>;
+	onFiltersChange: (nextFilters: ApprovalInboxFilters) => void;
+	onSelectAll: (checked: boolean) => void;
+	onSelectItem: (id: string, checked: boolean) => void;
+	onRowClick: (approval: ApprovalInboxItem) => void;
+	onFetchNextPage: () => void;
+}) {
+	return (
+		<div className="px-4 lg:px-6">
+			<ApprovalInboxWarnings warnings={warnings} />
+			<Card>
+				<CardHeader className="pb-0">
+					<CardTitle className="flex items-center gap-2">
+						<IconInbox className="size-5" aria-hidden="true" />
+						{t("approvals:approvals.pendingRequests", "Pending Requests")}
+						{totalCount > 0 && (
+							<span className="text-sm font-normal text-muted-foreground">({totalCount})</span>
+						)}
+					</CardTitle>
+					<CardDescription>
+						{t(
+							"approvals:approvals.pendingRequestsDescription",
+							"Select requests to approve in bulk, or click a row for details",
+						)}
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="pt-4">
+					<ApprovalFastLanes
+						groups={fastLaneGroups}
+						isBusy={activityState.isBulkActionPending}
+						onBulkApprove={onBulkApprove}
+						onBulkReject={onBulkReject}
+					/>
+					<div className="mt-4">
+						<ApprovalInboxToolbar
+							filters={filters}
+							onFiltersChange={onFiltersChange}
+							selectedCount={selectedCount}
+							totalCount={totalCount}
+							allSelected={items.length > 0 && selectedCount === items.length}
+							onSelectAll={onSelectAll}
+							supportedTypes={supportedTypes}
+						/>
+					</div>
+					<div className="mt-4">
+						<ApprovalInboxTable
+							items={items}
+							selectedIds={selectedIds}
+							onSelectItem={onSelectItem}
+							onRowClick={onRowClick}
+							isFetching={activityState.isFetching}
+						/>
+					</div>
+					{paginationState.hasNextPage && (
+						<div className="mt-4 flex justify-center">
+							<Button variant="outline" onClick={onFetchNextPage} disabled={paginationState.isFetchingNextPage}>
+								{paginationState.isFetchingNextPage ? (
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+								) : null}
+								{t("common.loadMore", "Load More")}
+							</Button>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
+
+function BulkRejectPanel({
+	t,
+	open,
+	reason,
+	isPending,
+	canBulkRejectSelection,
+	onOpenChange,
+	onReasonChange,
+	onReject,
+}: {
+	t: ReturnType<typeof useTranslate>["t"];
+	open: boolean;
+	reason: string;
+	isPending: boolean;
+	canBulkRejectSelection: boolean;
+	onOpenChange: (open: boolean) => void;
+	onReasonChange: (reason: string) => void;
+	onReject: () => void;
+}) {
+	return (
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{t("approvals:approvals.rejectSelected", "Reject Selected")}</ActionPanelTitle>
+					<ActionPanelDescription>
+						{t(
+							"approvals:approvals.bulkRejectDescription",
+							"Provide a reason that will be applied to each selected request.",
+						)}
+					</ActionPanelDescription>
+				</ActionPanelHeader>
+				<ActionPanelBody className="space-y-2">
+					<label className="text-sm font-medium" htmlFor="bulk-reject-reason">
+						{t("approvals:approvals.rejectionReason", "Reason for rejection")}
+					</label>
+					<Textarea
+						id="bulk-reject-reason"
+						value={reason}
+						onChange={(event) => onReasonChange(event.target.value)}
+						placeholder={t(
+							"approvals:approvals.rejectionReasonPlaceholder",
+							"Please provide a reason for rejecting this request…",
+						)}
+						rows={4}
+					/>
+				</ActionPanelBody>
+				<ActionPanelFooter>
+					<Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+						{t("common.cancel", "Cancel")}
+					</Button>
+					<Button
+						variant="destructive"
+						onClick={onReject}
+						disabled={!reason.trim() || isPending || !canBulkRejectSelection}
+					>
+						{isPending && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
+						<IconX className="mr-2 size-4" aria-hidden="true" />
+						{t("approvals:approvals.confirmReject", "Confirm Rejection")}
+					</Button>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
+	);
+}
+
 function ApprovalInboxContent() {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
-	const [filters, setFilters] = useState<ApprovalInboxFilters>(() =>
-		getInitialApprovalInboxFilters(searchParams),
+	const [uiState, dispatch] = useReducer(
+		approvalInboxUiReducer,
+		searchParams,
+		(params) => createApprovalInboxUiState(getInitialApprovalInboxFilters(params)),
 	);
-	const [selectedIdDraft, setSelectedIdDraft] = useState<{
-		itemIdsKey: string;
-		ids: Set<string>;
-	}>({ itemIdsKey: "", ids: new Set() });
-	const [detailApproval, setDetailApproval] = useState<ApprovalInboxItem | null>(null);
-	const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
-	const [bulkRejectReason, setBulkRejectReason] = useState("");
-	const [sprintOpen, setSprintOpen] = useState(false);
 	const hasHydrated = useSyncExternalStore(
 		subscribeHydrationSnapshot,
 		getClientHydrationSnapshot,
@@ -194,7 +549,7 @@ function ApprovalInboxContent() {
 		hasNextPage,
 		isFetchingNextPage,
 		refetch,
-	} = useApprovalInbox(filters);
+	} = useApprovalInbox(uiState.filters);
 
 	const bulkApproveMutation = useBulkApprove();
 	const bulkRejectMutation = useBulkReject();
@@ -207,7 +562,7 @@ function ApprovalInboxContent() {
 	const supportedTypes = firstPage?.supportedTypes ?? [];
 	const itemIdsKey = items.map((item) => item.id).join("\u001f");
 	const selectedIds =
-		selectedIdDraft.itemIdsKey === itemIdsKey ? selectedIdDraft.ids : new Set<string>();
+		uiState.selectedIdDraft.itemIdsKey === itemIdsKey ? uiState.selectedIdDraft.ids : new Set<string>();
 	const pendingItems = items.filter((item) => item.status === "pending");
 	const fastLaneGroups = groupFastLaneItems(pendingItems);
 	const sprintItems = sortSprintItems(pendingItems);
@@ -219,28 +574,22 @@ function ApprovalInboxContent() {
 		item.capabilities.canReject ? [item.id] : [],
 	);
 
-	// Selection handlers - use functional setState for stable callbacks
 	const handleSelectAll = (checked: boolean) => {
-		if (checked) {
-			// Need items for select all - this is acceptable
-			setSelectedIdDraft({ itemIdsKey, ids: new Set(items.map((item) => item.id)) });
-		} else {
-			setSelectedIdDraft({ itemIdsKey, ids: new Set() });
-		}
+		dispatch({
+			type: "selectionChanged",
+			itemIdsKey,
+			ids: checked ? new Set(items.map((item) => item.id)) : new Set(),
+		});
 	};
 
 	const handleSelectItem = (id: string, checked: boolean) => {
-		setSelectedIdDraft((previousDraft) => {
-			const previousIds =
-				previousDraft.itemIdsKey === itemIdsKey ? previousDraft.ids : new Set<string>();
-			const newSelection = new Set(previousIds);
-			if (checked) {
-				newSelection.add(id);
-			} else {
-				newSelection.delete(id);
-			}
-			return { itemIdsKey, ids: newSelection };
-		});
+		const newSelection = new Set(selectedIds);
+		if (checked) {
+			newSelection.add(id);
+		} else {
+			newSelection.delete(id);
+		}
+		dispatch({ type: "selectionChanged", itemIdsKey, ids: newSelection });
 	};
 
 	const handleBulkApprove = async () => {
@@ -257,7 +606,7 @@ function ApprovalInboxContent() {
 				"approvals:approvals.bulkApproveFailed",
 			);
 
-			setSelectedIdDraft({ itemIdsKey, ids: new Set() });
+			dispatch({ type: "selectionCleared", itemIdsKey });
 			refetch();
 		} catch (error) {
 			bulkActionInFlightRef.current = false;
@@ -274,7 +623,7 @@ function ApprovalInboxContent() {
 	};
 
 	const handleBulkReject = async () => {
-		const reason = bulkRejectReason.trim();
+		const reason = uiState.bulkRejectReason.trim();
 		if (selectedBulkRejectIds.length === 0 || !reason || bulkActionInFlightRef.current) return;
 
 		bulkActionInFlightRef.current = true;
@@ -291,9 +640,8 @@ function ApprovalInboxContent() {
 				"approvals:approvals.bulkRejectFailed",
 			);
 
-			setBulkRejectOpen(false);
-			setBulkRejectReason("");
-			setSelectedIdDraft({ itemIdsKey, ids: new Set() });
+			dispatch({ type: "bulkRejectOpenChanged", open: false });
+			dispatch({ type: "selectionCleared", itemIdsKey });
 			refetch();
 		} catch (error) {
 			bulkActionInFlightRef.current = false;
@@ -323,7 +671,7 @@ function ApprovalInboxContent() {
 				"approvals:approvals.bulkApproveFailed",
 			);
 
-			setSelectedIdDraft({ itemIdsKey, ids: new Set() });
+			dispatch({ type: "selectionCleared", itemIdsKey });
 			refetch();
 		} catch (error) {
 			bulkActionInFlightRef.current = false;
@@ -357,7 +705,7 @@ function ApprovalInboxContent() {
 				"approvals:approvals.bulkRejectFailed",
 			);
 
-			setSelectedIdDraft({ itemIdsKey, ids: new Set() });
+			dispatch({ type: "selectionCleared", itemIdsKey });
 			refetch();
 		} catch (error) {
 			bulkActionInFlightRef.current = false;
@@ -374,16 +722,16 @@ function ApprovalInboxContent() {
 	};
 
 	const handleOpenDetail = (approval: ApprovalInboxItem) => {
-		setDetailApproval(approval);
+		dispatch({ type: "detailApprovalChanged", approval });
 	};
 
 	const handleCloseDetail = () => {
-		setDetailApproval(null);
+		dispatch({ type: "detailApprovalChanged", approval: null });
 	};
 
 	const handleApprovalActioned = () => {
 		refetch();
-		setSelectedIdDraft({ itemIdsKey, ids: new Set() });
+		dispatch({ type: "selectionCleared", itemIdsKey });
 	};
 
 	const isBulkActionPending = bulkApproveMutation.isPending || bulkRejectMutation.isPending;
@@ -391,242 +739,66 @@ function ApprovalInboxContent() {
 	const canBulkRejectSelection = selectedBulkRejectIds.length > 0;
 
 	const handleFiltersChange = (nextFilters: ApprovalInboxFilters) => {
-		setSelectedIdDraft({ itemIdsKey, ids: new Set() });
-		setFilters(nextFilters);
+		dispatch({ type: "filtersChanged", filters: nextFilters, itemIdsKey });
 	};
 
-	// Loading state
 	if (!hasHydrated || (isLoading && !data)) {
-		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-				<div className="flex items-center justify-between px-4 lg:px-6">
-					<div className="space-y-2">
-						<Skeleton className="h-8 w-48" />
-						<Skeleton className="h-4 w-96" />
-					</div>
-				</div>
-				<div className="px-4 lg:px-6">
-					<Card>
-						<CardHeader>
-							<Skeleton className="h-6 w-32" />
-						</CardHeader>
-						<CardContent>
-							<div className="space-y-3">
-								<Skeleton className="h-12 w-full" />
-								<Skeleton className="h-12 w-full" />
-								<Skeleton className="h-12 w-full" />
-								<Skeleton className="h-12 w-full" />
-								<Skeleton className="h-12 w-full" />
-							</div>
-						</CardContent>
-					</Card>
-				</div>
-			</div>
-		);
+		return <ApprovalInboxLoadingState />;
 	}
 
 	if (isError) {
-		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-				<div className="flex items-center justify-between px-4 lg:px-6">
-					<div>
-						<h1 className="text-2xl font-semibold tracking-tight">
-							{t("approvals:approvals.inbox", "Approval Inbox")}
-						</h1>
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"approvals:approvals.inboxDescription",
-								"Review and approve pending requests from your team",
-							)}
-						</p>
-					</div>
-					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-						{isFetching ? (
-							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
-						) : (
-							<IconRefresh className="size-4" aria-hidden="true" />
-						)}
-						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
-					</Button>
-				</div>
-
-				<div className="px-4 lg:px-6">
-					<Card>
-						<CardContent className="py-12">
-							<div className="flex flex-col items-center justify-center text-center">
-								<IconInbox className="size-12 text-muted-foreground/50" aria-hidden="true" />
-								<h2 className="mt-4 text-lg font-medium">
-									{t("approvals:approvals.inboxErrorTitle", "Unable to load approval inbox")}
-								</h2>
-								<p className="mt-1 max-w-md text-sm text-muted-foreground">
-									{getErrorMessage(
-										error,
-										t("approvals:approvals.inboxErrorDescription", "Failed to fetch approvals"),
-									)}
-								</p>
-							</div>
-						</CardContent>
-					</Card>
-				</div>
-			</div>
-		);
+		return <ApprovalInboxErrorState t={t} error={error} isFetching={isFetching} onRefresh={() => refetch()} />;
 	}
 
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			{/* Header */}
-			<div className="flex items-center justify-between px-4 lg:px-6">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("approvals:approvals.inbox", "Approval Inbox")}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"approvals:approvals.inboxDescription",
-							"Review and approve pending requests from your team",
-						)}
-					</p>
-				</div>
-				<div className="flex items-center gap-2">
-					{selectedIds.size > 0 && (
-						<>
-							<Button
-								variant="outline"
-								onClick={() => setBulkRejectOpen(true)}
-								disabled={isBulkActionPending || !canBulkRejectSelection}
-							>
-								<IconX className="mr-2 size-4" aria-hidden="true" />
-								{t("approvals:approvals.rejectSelected", "Reject Selected")} ({selectedIds.size})
-							</Button>
-							<Button
-								onClick={handleBulkApprove}
-								disabled={isBulkActionPending || !canBulkApproveSelection}
-							>
-								{bulkApproveMutation.isPending ? (
-									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-								) : (
-									<IconCheck className="mr-2 size-4" aria-hidden="true" />
-								)}
-								{t("approvals:approvals.approveSelected", "Approve Selected")} ({selectedIds.size})
-							</Button>
-						</>
-					)}
-					<Button
-						variant="outline"
-						onClick={() => setSprintOpen(true)}
-						disabled={sprintItems.length === 0}
-					>
-						<IconInbox className="mr-2 size-4" aria-hidden="true" />
-						{t("approvals:sprint.start", "Start approval sprint")}
-					</Button>
-					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-						{isFetching ? (
-							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
-						) : (
-							<IconRefresh className="size-4" aria-hidden="true" />
-						)}
-						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
-					</Button>
-				</div>
-			</div>
-
-			{/* Main content */}
-			<div className="px-4 lg:px-6">
-				{warnings.length > 0 && (
-					<div className="mb-4 space-y-2">
-						{warnings.map((warning) => (
-							<div
-								key={`${warning.source}:${warning.message}`}
-								className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
-							>
-								<IconAlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-								<div>
-									<div className="font-medium">{warning.source}</div>
-									<div>{warning.message}</div>
-								</div>
-							</div>
-						))}
-					</div>
-				)}
-				<Card>
-					<CardHeader className="pb-0">
-						<CardTitle className="flex items-center gap-2">
-							<IconInbox className="size-5" aria-hidden="true" />
-							{t("approvals:approvals.pendingRequests", "Pending Requests")}
-							{totalCount > 0 && (
-								<span className="text-sm font-normal text-muted-foreground">({totalCount})</span>
-							)}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"approvals:approvals.pendingRequestsDescription",
-								"Select requests to approve in bulk, or click a row for details",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="pt-4">
-						<ApprovalFastLanes
-							groups={fastLaneGroups}
-							isBusy={isBulkActionPending}
-							onBulkApprove={handleFastLaneApprove}
-							onBulkReject={handleFastLaneReject}
-						/>
-
-						{/* Toolbar with filters */}
-						<div className="mt-4">
-							<ApprovalInboxToolbar
-								filters={filters}
-								onFiltersChange={handleFiltersChange}
-								selectedCount={selectedIds.size}
-								totalCount={totalCount}
-								allSelected={items.length > 0 && selectedIds.size === items.length}
-								onSelectAll={handleSelectAll}
-								supportedTypes={supportedTypes}
-							/>
-						</div>
-
-						{/* Table */}
-						<div className="mt-4">
-							<ApprovalInboxTable
-								items={items}
-								selectedIds={selectedIds}
-								onSelectItem={handleSelectItem}
-								onRowClick={handleOpenDetail}
-								isFetching={isFetching}
-							/>
-						</div>
-
-						{/* Load more */}
-						{hasNextPage && (
-							<div className="mt-4 flex justify-center">
-								<Button
-									variant="outline"
-									onClick={() => fetchNextPage()}
-									disabled={isFetchingNextPage}
-								>
-									{isFetchingNextPage ? (
-										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-									) : null}
-									{t("common.loadMore", "Load More")}
-								</Button>
-							</div>
-						)}
-					</CardContent>
-				</Card>
-			</div>
-
-			{/* Detail slide-over panel */}
+			<ApprovalInboxPageHeader
+				t={t}
+				bulkState={{
+					isActionPending: isBulkActionPending,
+					canApproveSelection: canBulkApproveSelection,
+					canRejectSelection: canBulkRejectSelection,
+					approvePending: bulkApproveMutation.isPending,
+				}}
+				refreshState={{ isFetching }}
+				selectedCount={selectedIds.size}
+				sprintItemCount={sprintItems.length}
+				onBulkApprove={handleBulkApprove}
+				onOpenBulkReject={() => dispatch({ type: "bulkRejectOpenChanged", open: true })}
+				onOpenSprint={() => dispatch({ type: "sprintOpenChanged", open: true })}
+				onRefresh={() => refetch()}
+			/>
+			<ApprovalInboxRequestsCard
+				t={t}
+				warnings={warnings}
+				totalCount={totalCount}
+				fastLaneGroups={fastLaneGroups}
+				activityState={{ isBulkActionPending, isFetching }}
+				filters={uiState.filters}
+				selectedCount={selectedIds.size}
+				items={items}
+				selectedIds={selectedIds}
+				supportedTypes={supportedTypes}
+				paginationState={{ hasNextPage: !!hasNextPage, isFetchingNextPage }}
+				onBulkApprove={handleFastLaneApprove}
+				onBulkReject={handleFastLaneReject}
+				onFiltersChange={handleFiltersChange}
+				onSelectAll={handleSelectAll}
+				onSelectItem={handleSelectItem}
+				onRowClick={handleOpenDetail}
+				onFetchNextPage={() => fetchNextPage()}
+			/>
 			<ApprovalDetailPanel
-				approval={detailApproval}
-				open={!!detailApproval}
+				approval={uiState.detailApproval}
+				open={!!uiState.detailApproval}
 				onOpenChange={(open) => !open && handleCloseDetail()}
 				onActioned={handleApprovalActioned}
 			/>
 
 			<ApprovalSprintPanel
-				open={sprintOpen}
+				open={uiState.sprintOpen}
 				items={sprintItems}
-				onOpenChange={setSprintOpen}
+				onOpenChange={(open) => dispatch({ type: "sprintOpenChanged", open })}
 				onActioned={handleApprovalActioned}
 				onOpenDetails={(approval) => {
 					const item = items.find((candidate) => candidate.id === approval.id);
@@ -634,72 +806,18 @@ function ApprovalInboxContent() {
 						handleOpenDetail(item);
 					}
 				}}
-				shortcutsEnabled={detailApproval === null}
+				shortcutsEnabled={uiState.detailApproval === null}
 			/>
-
-			<ActionPanel
-				open={bulkRejectOpen}
-				onOpenChange={(open) => {
-					setBulkRejectOpen(open);
-					if (!open) {
-						setBulkRejectReason("");
-					}
-				}}
-			>
-				<ActionPanelContent>
-					<ActionPanelHeader>
-						<ActionPanelTitle>
-							{t("approvals:approvals.rejectSelected", "Reject Selected")}
-						</ActionPanelTitle>
-						<ActionPanelDescription>
-							{t(
-								"approvals:approvals.bulkRejectDescription",
-								"Provide a reason that will be applied to each selected request.",
-							)}
-						</ActionPanelDescription>
-					</ActionPanelHeader>
-					<ActionPanelBody className="space-y-2">
-						<label className="text-sm font-medium" htmlFor="bulk-reject-reason">
-							{t("approvals:approvals.rejectionReason", "Reason for rejection")}
-						</label>
-						<Textarea
-							id="bulk-reject-reason"
-							value={bulkRejectReason}
-							onChange={(event) => setBulkRejectReason(event.target.value)}
-							placeholder={t(
-								"approvals:approvals.rejectionReasonPlaceholder",
-								"Please provide a reason for rejecting this request…",
-							)}
-							rows={4}
-						/>
-					</ActionPanelBody>
-					<ActionPanelFooter>
-						<Button
-							variant="outline"
-							onClick={() => {
-								setBulkRejectOpen(false);
-								setBulkRejectReason("");
-							}}
-							disabled={bulkRejectMutation.isPending}
-						>
-							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button
-							variant="destructive"
-							onClick={handleBulkReject}
-							disabled={
-								!bulkRejectReason.trim() || bulkRejectMutation.isPending || !canBulkRejectSelection
-							}
-						>
-							{bulkRejectMutation.isPending && (
-								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-							)}
-							<IconX className="mr-2 size-4" aria-hidden="true" />
-							{t("approvals:approvals.confirmReject", "Confirm Rejection")}
-						</Button>
-					</ActionPanelFooter>
-				</ActionPanelContent>
-			</ActionPanel>
+			<BulkRejectPanel
+				t={t}
+				open={uiState.bulkRejectOpen}
+				reason={uiState.bulkRejectReason}
+				isPending={bulkRejectMutation.isPending}
+				canBulkRejectSelection={canBulkRejectSelection}
+				onOpenChange={(open) => dispatch({ type: "bulkRejectOpenChanged", open })}
+				onReasonChange={(reason) => dispatch({ type: "bulkRejectReasonChanged", reason })}
+				onReject={handleBulkReject}
+			/>
 		</div>
 	);
 }

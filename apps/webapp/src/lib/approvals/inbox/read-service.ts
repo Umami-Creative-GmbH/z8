@@ -94,10 +94,15 @@ export async function getApprovalInboxListFromSources({
 		sources.map((source) => [source.type, 0]),
 	) as ApprovalInboxListResult["counts"];
 
-	for (const source of selectedSources) {
-		const approvalsExit = await Effect.runPromiseExit(
-			provideDatabase(source.handler.getApprovals(params)),
-		);
+	const approvalResults = await Promise.all(
+		selectedSources.map(async (source) => ({
+			source,
+			approvalsExit: await Effect.runPromiseExit(
+				provideDatabase(source.handler.getApprovals(params)),
+			),
+		})),
+	);
+	for (const { source, approvalsExit } of approvalResults) {
 		if (Exit.isFailure(approvalsExit)) {
 			warnings.push({
 				source: source.type,
@@ -108,15 +113,20 @@ export async function getApprovalInboxListFromSources({
 		}
 	}
 
-	for (const source of sources) {
-		const countExit = await Effect.runPromiseExit(
-			provideDatabase(
-				source.handler.getCount(params.approverId, params.organizationId, {
-					eligibleApprovalScopes: params.eligibleApprovalScopes,
-					includeAllApprovers: params.includeAllApprovers,
-				}),
+	const countResults = await Promise.all(
+		sources.map(async (source) => ({
+			source,
+			countExit: await Effect.runPromiseExit(
+				provideDatabase(
+					source.handler.getCount(params.approverId, params.organizationId, {
+						eligibleApprovalScopes: params.eligibleApprovalScopes,
+						includeAllApprovers: params.includeAllApprovers,
+					}),
+				),
 			),
-		);
+		})),
+	);
+	for (const { source, countExit } of countResults) {
 		counts[source.type] = Exit.isSuccess(countExit) ? countExit.value : 0;
 	}
 

@@ -183,12 +183,14 @@ export function AppSearch({
 	const { push } = useRouter();
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
-	const [liveResults, setLiveResults] = useState<LiveAppSearchResults>(EMPTY_LIVE_RESULTS);
-	const [liveError, setLiveError] = useState<string | null>(null);
+	const [liveSearchState, setLiveSearchState] = useState<{
+		results: LiveAppSearchResults;
+		error: string | null;
+	}>({ results: EMPTY_LIVE_RESULTS, error: null });
 	const trimmedQuery = query.trim();
 	const shouldSearchLiveRecords = open && trimmedQuery.length >= 2;
-	const visibleLiveResults = shouldSearchLiveRecords ? liveResults : EMPTY_LIVE_RESULTS;
-	const visibleLiveError = shouldSearchLiveRecords ? liveError : null;
+	const visibleLiveResults = shouldSearchLiveRecords ? liveSearchState.results : EMPTY_LIVE_RESULTS;
+	const visibleLiveError = shouldSearchLiveRecords ? liveSearchState.error : null;
 
 	const searchShortcutLabel = useSyncExternalStore(
 		subscribeShortcutLabel,
@@ -213,13 +215,11 @@ export function AppSearch({
 				}
 
 				if (result.success) {
-					setLiveResults(result.data);
-					setLiveError(null);
+					setLiveSearchState({ results: result.data, error: null });
 					return;
 				}
 
-				setLiveResults(EMPTY_LIVE_RESULTS);
-				setLiveError(result.error);
+				setLiveSearchState({ results: EMPTY_LIVE_RESULTS, error: result.error });
 			});
 		}, 250);
 
@@ -244,8 +244,7 @@ export function AppSearch({
 	function handleQueryChange(nextQuery: string) {
 		setQuery(nextQuery);
 		if (nextQuery.trim().length < 2) {
-			setLiveResults(EMPTY_LIVE_RESULTS);
-			setLiveError(null);
+			setLiveSearchState({ results: EMPTY_LIVE_RESULTS, error: null });
 		}
 	}
 

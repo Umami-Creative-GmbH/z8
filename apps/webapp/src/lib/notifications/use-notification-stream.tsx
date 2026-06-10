@@ -17,6 +17,34 @@ export interface NotificationStreamState {
 	error: Error | null;
 }
 
+type NotificationStreamAction =
+	| { type: "connected" }
+	| { type: "disconnected"; error: Error }
+	| { type: "count_update"; count: number }
+	| { type: "new_notification" };
+
+const initialNotificationStreamState: NotificationStreamState = {
+	unreadCount: 0,
+	isConnected: false,
+	error: null,
+};
+
+function notificationStreamReducer(
+	state: NotificationStreamState,
+	action: NotificationStreamAction,
+): NotificationStreamState {
+	switch (action.type) {
+		case "connected":
+			return { ...state, isConnected: true, error: null };
+		case "disconnected":
+			return { ...state, isConnected: false, error: action.error };
+		case "count_update":
+			return { ...state, unreadCount: action.count };
+		case "new_notification":
+			return { ...state, unreadCount: state.unreadCount + 1 };
+	}
+}
+
 /**
  * Hook for subscribing to the notification SSE stream
  * Automatically reconnects on disconnect with exponential backoff
@@ -26,11 +54,10 @@ export function useNotificationStream(
 ): NotificationStreamState {
 	const { enabled = true, onNewNotification } = options;
 
-	const [state, setState] = React.useState<NotificationStreamState>({
-		unreadCount: 0,
-		isConnected: false,
-		error: null,
-	});
+	const [state, dispatch] = React.useReducer(
+		notificationStreamReducer,
+		initialNotificationStreamState,
+	);
 
 	const onNewNotificationRef = React.useRef(onNewNotification);
 
@@ -50,15 +77,11 @@ export function useNotificationStream(
 
 			eventSource.onopen = () => {
 				reconnectAttempts = 0;
-				setState((prev) => ({ ...prev, isConnected: true, error: null }));
+				dispatch({ type: "connected" });
 			};
 
 			eventSource.onerror = () => {
-				setState((prev) => ({
-					...prev,
-					isConnected: false,
-					error: new Error("Connection lost"),
-				}));
+				dispatch({ type: "disconnected", error: new Error("Connection lost") });
 
 				// Exponential backoff for reconnection
 				const delay = Math.min(1000 * 2 ** reconnectAttempts, 30000);
@@ -76,7 +99,7 @@ export function useNotificationStream(
 			eventSource.addEventListener("count_update", (event) => {
 				try {
 					const data = JSON.parse(event.data);
-					setState((prev) => ({ ...prev, unreadCount: data.count }));
+					dispatch({ type: "count_update", count: data.count });
 				} catch {
 					// Ignore parse errors
 				}
@@ -88,10 +111,7 @@ export function useNotificationStream(
 					const data = JSON.parse(event.data);
 					onNewNotificationRef.current?.(data);
 					// Also increment count optimistically
-					setState((prev) => ({
-						...prev,
-						unreadCount: prev.unreadCount + 1,
-					}));
+					dispatch({ type: "new_notification" });
 				} catch {
 					// Ignore parse errors
 				}
