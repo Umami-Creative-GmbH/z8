@@ -128,6 +128,14 @@
     }
   },
   "calendar": {
+    "clockOutOnBehalf": {
+      "confirm": "Çıkış Yap",
+      "description": "Bu işlem, mevcut sunucu saatinde denetlenebilir bir çıkış kaydı oluşturur. Daha sonra herhangi bir düzeltme gerekirse, düzeltmeleri kullanın.",
+      "error": "Çalışan çıkışı yapılamadı",
+      "loading": "Çıkış yapılıyor...",
+      "success": "Çalışan başarıyla çıkış yaptı",
+      "title": "Çalışan çıkışı yapılsın mı?"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Zaman kayıtları engellendi",
       "category": "Kategori",
@@ -158,7 +166,6 @@
       "duration": "Süre",
       "employee": "Çalışan",
       "notes": "Notlar",
-      "periods": "Çalışma Dönemleri",
       "project": "Proje",
       "recurring": "Yıllık yinelenen",
       "status": "Durum",

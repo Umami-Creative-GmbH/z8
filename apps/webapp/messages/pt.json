@@ -1,0 +1,90 @@
+{
+  "payroll": {
+    "accessDenied": {
+      "description": "Você não tem acesso aos dados da folha de pagamento da organização ativa.",
+      "help": "Peça a um administrador da organização para atribuir acesso à folha de pagamento se você precisar deste espaço de trabalho.",
+      "title": "Sem acesso à folha de pagamento"
+    },
+    "actions": {
+      "apply": "Aplicar",
+      "downloadPdf": "Baixar PDF",
+      "triggerExport": "Acionar exportação"
+    },
+    "blockers": {
+      "needReview": "{count} bloqueios de folha de pagamento precisam de revisão"
+    },
+    "description": "Revise os totais da folha de pagamento, prontidão e exportações para o período selecionado.",
+    "employeeTotals": {
+      "absences": "Ausências",
+      "blocked": "Bloqueado",
+      "contract": "Contrato",
+      "contractFixed": "Fixo",
+      "contractHourly": "Horista",
+      "description": "Tempo trabalhado, totais de ausência, tipo de contrato e status da folha de pagamento.",
+      "employee": "Funcionário",
+      "hours": "Horas",
+      "noAbsences": "Nenhum",
+      "noEmployeeNumber": "Sem número de funcionário",
+      "noTeam": "Sem equipe",
+      "readyForPayroll": "Pronto para folha de pagamento",
+      "status": "Status",
+      "team": "Equipe",
+      "title": "Totais do funcionário"
+    },
+    "errors": {
+      "actionFailed": "Ação no espaço de trabalho da folha de pagamento falhou",
+      "activeOrganizationEmployeeRequired": "O contexto de funcionário da organização ativa é necessário",
+      "authenticationRequired": "Autenticação necessária",
+      "employeeIdsMustBeArray": "employeeIds deve ser uma matriz",
+      "employeeIdsMustContainOnlyStrings": "employeeIds deve conter apenas strings",
+      "endDateAfterStart": "A data de término deve ser igual ou posterior à data de início",
+      "exportFormatNotConfigured": "O formato de exportação da folha de pagamento não está configurado",
+      "mustBeIsoDate": "{field} deve ser uma data ISO",
+      "mustBeValidIsoDate": "{field} deve ser uma data ISO válida",
+      "noAssignedEmployees": "Nenhum funcionário da folha de pagamento está atribuído ao seu escopo de acesso",
+      "noAvailableEmployees": "Nenhum funcionário da folha de pagamento está disponível no seu escopo de acesso",
+      "periodLabelRequired": "O rótulo do período da folha de pagamento é obrigatório",
+      "unknownExportFormat": "Formato de exportação da folha de pagamento desconhecido"
+    },
+    "export": {
+      "completed": "Exportação da folha de pagamento concluída",
+      "formatAccessCheck": "Verificação de acesso ao formato",
+      "noConfiguredTarget": "Nenhum destino de exportação da folha de pagamento configurado",
+      "queued": "Exportação da folha de pagamento na fila",
+      "selectFormat": "Selecionar formato",
+      "target": "Destino de exportação da folha de pagamento"
+    },
+    "filters": {
+      "noMatchingEmployees": "Nenhum funcionário corresponde aos filtros de folha de pagamento selecionados."
+    },
+    "period": {
+      "current": "Período atual",
+      "dateRange": "{start} até {end}",
+      "employeesInScope": "{count} funcionários no escopo",
+      "end": "Fim",
+      "mode": {
+        "custom": "Personalizado",
+        "month": "Mês",
+        "week": "Semana"
+      },
+      "next": "Próximo período",
+      "previous": "Período anterior",
+      "selected": "Período selecionado",
+      "start": "Início"
+    },
+    "scope": {
+      "assignedEmployees": "Funcionários atribuídos",
+      "assignedTeams": "Equipes atribuídas",
+      "description": "Filtre este espaço de trabalho de folha de pagamento por funcionários ou equipes atribuídas.",
+      "noAssignedTeams": "Nenhuma equipe atribuída neste escopo de folha de pagamento.",
+      "title": "Escopo da folha de pagamento"
+    },
+    "summary": {
+      "blockers": "Bloqueadores",
+      "employees": "Funcionários",
+      "ready": "Pronto",
+      "workedHours": "Horas trabalhadas"
+    },
+    "title": "Folha de pagamento"
+  }
+}

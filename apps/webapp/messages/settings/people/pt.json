@@ -52,18 +52,12 @@
         "statuses": {
           "active": "Ativo",
           "all": "Todos os status",
+          "draft": "Rascunho",
           "inactive": "Inativo"
         },
         "statusFilter": "Filtrar por status",
         "table": {
-          "actions": "Ações",
-          "contract": "Contrato",
-          "employee": "Funcionário",
-          "employeeNumber": "Número do Funcionário",
-          "position": "Cargo",
-          "role": "Função",
-          "status": "Status",
-          "team": "Equipe"
+          "employee": "Funcionário"
         },
         "title": "Diretório de Funcionários"
       },
@@ -92,9 +86,11 @@
       "emptyTimeline": "Ainda não há histórico de contrato ou modelo de trabalho.",
       "hourlyRate": "Taxa Horária",
       "hourlyRateValue": "{rate} / hora",
+      "inheritWorkPolicy": "Herdar política da equipe/organização",
       "nextScheduledConfirmed": "Próximo agendamento confirmado",
       "noCurrentContext": "Nenhum contexto de contrato confirmado",
       "noScheduledChange": "Nenhuma alteração confirmada agendada",
+      "policyValue": "Política: {policyName}",
       "probationEnd": "Fim do Período de Experiência",
       "probationRange": "Período de Experiência {startDate} - {endDate}",
       "probationStart": "Início do Período de Experiência",
@@ -105,6 +101,7 @@
       "selectContractType": "Selecione o tipo de contrato",
       "selectReviewState": "Selecione o estado da revisão",
       "selectWorkModel": "Selecione o modelo de trabalho",
+      "selectWorkPolicy": "Selecionar política de trabalho",
       "states": {
         "confirmed": "confirmado",
         "draft": "rascunho",
@@ -120,7 +117,9 @@
         "hybrid": "híbrido",
         "onsite": "presencial",
         "remote": "remoto"
-      }
+      },
+      "workPolicy": "Política de trabalho",
+      "workPolicyHelp": "Substitui a política selecionada para este funcionário durante este período de contrato."
     },
     "inviteCodes": {
       "alreadyHaveAccount": "Já possui uma conta?",

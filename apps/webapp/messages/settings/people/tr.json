@@ -52,18 +52,12 @@
         "statuses": {
           "active": "Aktif",
           "all": "Tüm Durumlar",
+          "draft": "Taslak",
           "inactive": "Pasif"
         },
         "statusFilter": "Duruma göre filtrele",
         "table": {
-          "actions": "İşlemler",
-          "contract": "Sözleşme",
-          "employee": "Çalışan",
-          "employeeNumber": "Çalışan Numarası",
-          "position": "Pozisyon",
-          "role": "Rol",
-          "status": "Durum",
-          "team": "Ekip"
+          "employee": "Çalışan"
         },
         "title": "Çalışan Dizini"
       },
@@ -92,9 +86,11 @@
       "emptyTimeline": "Henüz sözleşme veya çalışma modeli geçmişi yok.",
       "hourlyRate": "Saatlik Ücret",
       "hourlyRateValue": "{rate} / saat",
+      "inheritWorkPolicy": "Ekip/kuruluş politikasını devral",
       "nextScheduledConfirmed": "Bir sonraki planlanmış onaylı",
       "noCurrentContext": "Onaylı sözleşme bağlamı yok",
       "noScheduledChange": "Planlanmış onaylı değişiklik yok",
+      "policyValue": "Politika: {policyName}",
       "probationEnd": "Deneme Süresi Bitişi",
       "probationRange": "Deneme Süresi {startDate} - {endDate}",
       "probationStart": "Deneme Süresi Başlangıcı",
@@ -105,6 +101,7 @@
       "selectContractType": "Sözleşme türünü seçin",
       "selectReviewState": "Değerlendirme durumunu seçin",
       "selectWorkModel": "Çalışma modelini seçin",
+      "selectWorkPolicy": "Çalışma politikası seç",
       "states": {
         "confirmed": "onaylı",
         "draft": "taslak",
@@ -120,7 +117,9 @@
         "hybrid": "hibrit",
         "onsite": "yerinde",
         "remote": "uzaktan"
-      }
+      },
+      "workPolicy": "Çalışma Politikası",
+      "workPolicyHelp": "Bu sözleşme dönemi boyunca bu çalışan için seçilen politikayı geçersiz kılar."
     },
     "inviteCodes": {
       "alreadyHaveAccount": "Zaten bir hesabınız var mı?",

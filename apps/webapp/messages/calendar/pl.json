@@ -128,6 +128,14 @@
     }
   },
   "calendar": {
+    "clockOutOnBehalf": {
+      "confirm": "Zakończ pracę",
+      "description": "Spowoduje to utworzenie możliwego do zweryfikowania wpisu o zakończeniu pracy według bieżącego czasu serwera. Jeśli później konieczne będą jakiekolwiek poprawki, użyj funkcji korekty.",
+      "error": "Nie udało się zarejestrować zakończenia pracy pracownika",
+      "loading": "Rejestrowanie zakończenia pracy...",
+      "success": "Pomyślnie zarejestrowano zakończenie pracy pracownika",
+      "title": "Zakończyć pracę pracownika?"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Wpisy czasu zablokowane",
       "category": "Kategoria",
@@ -158,7 +166,6 @@
       "duration": "Czas trwania",
       "employee": "Pracownik",
       "notes": "Notatki",
-      "periods": "Okresy pracy",
       "project": "Projekt",
       "recurring": "Cykliczne corocznie",
       "status": "Status",

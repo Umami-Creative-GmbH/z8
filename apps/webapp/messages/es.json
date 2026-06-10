@@ -1,0 +1,90 @@
+{
+  "payroll": {
+    "accessDenied": {
+      "description": "No tiene acceso a los datos de nómina de la organización activa.",
+      "help": "Solicite a un administrador de la organización que le asigne acceso a la nómina si necesita este espacio de trabajo.",
+      "title": "Sin acceso a nómina"
+    },
+    "actions": {
+      "apply": "Aplicar",
+      "downloadPdf": "Descargar PDF",
+      "triggerExport": "Activar exportación"
+    },
+    "blockers": {
+      "needReview": "{count} bloqueos de nómina requieren revisión"
+    },
+    "description": "Revise los totales de nómina, la preparación y las exportaciones para el periodo seleccionado.",
+    "employeeTotals": {
+      "absences": "Ausencias",
+      "blocked": "Bloqueado",
+      "contract": "Contrato",
+      "contractFixed": "Fijo",
+      "contractHourly": "Por horas",
+      "description": "Tiempo trabajado, totales de ausencias, tipo de contrato y estado de la nómina.",
+      "employee": "Empleado",
+      "hours": "Horas",
+      "noAbsences": "Ninguno",
+      "noEmployeeNumber": "Sin número de empleado",
+      "noTeam": "Sin equipo",
+      "readyForPayroll": "Listo para nómina",
+      "status": "Estado",
+      "team": "Equipo",
+      "title": "Totales del empleado"
+    },
+    "errors": {
+      "actionFailed": "La acción en el espacio de trabajo de nómina falló",
+      "activeOrganizationEmployeeRequired": "Se requiere el contexto de empleado de la organización activa",
+      "authenticationRequired": "Autenticación requerida",
+      "employeeIdsMustBeArray": "employeeIds debe ser una matriz",
+      "employeeIdsMustContainOnlyStrings": "employeeIds solo debe contener cadenas",
+      "endDateAfterStart": "La fecha de finalización debe ser igual o posterior a la fecha de inicio",
+      "exportFormatNotConfigured": "El formato de exportación de nómina no está configurado",
+      "mustBeIsoDate": "{field} debe ser una fecha ISO",
+      "mustBeValidIsoDate": "{field} debe ser una fecha ISO válida",
+      "noAssignedEmployees": "No hay empleados de nómina asignados a su ámbito de acceso",
+      "noAvailableEmployees": "No hay empleados de nómina disponibles en su ámbito de acceso",
+      "periodLabelRequired": "La etiqueta del periodo de nómina es obligatoria",
+      "unknownExportFormat": "Formato de exportación de nómina desconocido"
+    },
+    "export": {
+      "completed": "Exportación de nómina completada",
+      "formatAccessCheck": "Comprobación de acceso al formato",
+      "noConfiguredTarget": "No hay un destino de exportación de nómina configurado",
+      "queued": "Exportación de nómina en cola",
+      "selectFormat": "Seleccionar formato",
+      "target": "Destino de exportación de nómina"
+    },
+    "filters": {
+      "noMatchingEmployees": "No hay empleados que coincidan con los filtros de nómina seleccionados."
+    },
+    "period": {
+      "current": "Periodo actual",
+      "dateRange": "{start} a {end}",
+      "employeesInScope": "{count} empleados en el ámbito",
+      "end": "Fin",
+      "mode": {
+        "custom": "Personalizado",
+        "month": "Mes",
+        "week": "Semana"
+      },
+      "next": "Periodo siguiente",
+      "previous": "Periodo anterior",
+      "selected": "Periodo seleccionado",
+      "start": "Inicio"
+    },
+    "scope": {
+      "assignedEmployees": "Empleados asignados",
+      "assignedTeams": "Equipos asignados",
+      "description": "Filtre este espacio de trabajo de nómina por empleados o equipos asignados.",
+      "noAssignedTeams": "No hay equipos asignados en este ámbito de nómina.",
+      "title": "Ámbito de nómina"
+    },
+    "summary": {
+      "blockers": "Bloqueos",
+      "employees": "Empleados",
+      "ready": "Listo",
+      "workedHours": "Horas trabajadas"
+    },
+    "title": "Nómina"
+  }
+}

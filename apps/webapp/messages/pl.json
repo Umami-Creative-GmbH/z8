@@ -1,0 +1,90 @@
+{
+  "payroll": {
+    "accessDenied": {
+      "description": "Nie masz dostępu do danych płacowych dla aktywnej organizacji.",
+      "help": "Poproś administratora organizacji o przyznanie dostępu do płac, jeśli potrzebujesz tego obszaru roboczego.",
+      "title": "Brak dostępu do płac"
+    },
+    "actions": {
+      "apply": "Zastosuj",
+      "downloadPdf": "Pobierz PDF",
+      "triggerExport": "Uruchom eksport"
+    },
+    "blockers": {
+      "needReview": "{count} blokad płacowych wymaga sprawdzenia"
+    },
+    "description": "Sprawdź sumy płac, gotowość i eksporty dla wybranego okresu.",
+    "employeeTotals": {
+      "absences": "Nieobecności",
+      "blocked": "Zablokowano",
+      "contract": "Umowa",
+      "contractFixed": "Stała",
+      "contractHourly": "Godzinowa",
+      "description": "Przepracowany czas, sumy nieobecności, typ umowy i status płacowy.",
+      "employee": "Pracownik",
+      "hours": "Godziny",
+      "noAbsences": "Brak",
+      "noEmployeeNumber": "Brak numeru pracownika",
+      "noTeam": "Brak zespołu",
+      "readyForPayroll": "Gotowe do wypłaty",
+      "status": "Status",
+      "team": "Zespół",
+      "title": "Sumy pracownicze"
+    },
+    "errors": {
+      "actionFailed": "Akcja w obszarze roboczym płac nie powiodła się",
+      "activeOrganizationEmployeeRequired": "Wymagany jest kontekst aktywnego pracownika organizacji",
+      "authenticationRequired": "Wymagane uwierzytelnienie",
+      "employeeIdsMustBeArray": "employeeIds musi być tablicą",
+      "employeeIdsMustContainOnlyStrings": "employeeIds musi zawierać tylko ciągi znaków",
+      "endDateAfterStart": "Data końcowa musi być późniejsza lub równa dacie początkowej",
+      "exportFormatNotConfigured": "Format eksportu płac nie jest skonfigurowany",
+      "mustBeIsoDate": "{field} musi być datą w formacie ISO",
+      "mustBeValidIsoDate": "{field} musi być poprawną datą w formacie ISO",
+      "noAssignedEmployees": "Brak pracowników płacowych przypisanych do Twojego zakresu dostępu",
+      "noAvailableEmployees": "Brak dostępnych pracowników płacowych w Twoim zakresie dostępu",
+      "periodLabelRequired": "Etykieta okresu płacowego jest wymagana",
+      "unknownExportFormat": "Nieznany format eksportu płac"
+    },
+    "export": {
+      "completed": "Eksport płac zakończony",
+      "formatAccessCheck": "Sprawdzenie dostępu do formatu",
+      "noConfiguredTarget": "Brak skonfigurowanego celu eksportu płac",
+      "queued": "Eksport płac został dodany do kolejki",
+      "selectFormat": "Wybierz format",
+      "target": "Cel eksportu płac"
+    },
+    "filters": {
+      "noMatchingEmployees": "Brak pracowników pasujących do wybranych filtrów płacowych."
+    },
+    "period": {
+      "current": "Bieżący okres",
+      "dateRange": "{start} do {end}",
+      "employeesInScope": "{count} pracowników w zakresie",
+      "end": "Koniec",
+      "mode": {
+        "custom": "Niestandardowy",
+        "month": "Miesiąc",
+        "week": "Tydzień"
+      },
+      "next": "Następny okres",
+      "previous": "Poprzedni okres",
+      "selected": "Wybrany okres",
+      "start": "Start"
+    },
+    "scope": {
+      "assignedEmployees": "Przypisani pracownicy",
+      "assignedTeams": "Przypisane zespoły",
+      "description": "Zawęź ten obszar roboczy płac według przypisanych pracowników lub zespołów.",
+      "noAssignedTeams": "Brak przypisanych zespołów w tym zakresie płac.",
+      "title": "Zakres płac"
+    },
+    "summary": {
+      "blockers": "Blokady",
+      "employees": "Pracownicy",
+      "ready": "Gotowe",
+      "workedHours": "Przepracowane godziny"
+    },
+    "title": "Płace"
+  }
+}

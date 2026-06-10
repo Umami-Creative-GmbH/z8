@@ -52,18 +52,12 @@
         "statuses": {
           "active": "Ενεργός",
           "all": "Όλες οι καταστάσεις",
+          "draft": "Προσχέδιο",
           "inactive": "Ανενεργός"
         },
         "statusFilter": "Φιλτράρισμα κατά κατάσταση",
         "table": {
-          "actions": "Ενέργειες",
-          "contract": "Σύμβαση",
-          "employee": "Εργαζόμενος",
-          "employeeNumber": "Αριθμός υπαλλήλου",
-          "position": "Θέση",
-          "role": "Ρόλος",
-          "status": "Κατάσταση",
-          "team": "Ομάδα"
+          "employee": "Εργαζόμενος"
         },
         "title": "Κατάλογος Εργαζομένων"
       },
@@ -92,9 +86,11 @@
       "emptyTimeline": "Δεν υπάρχει ακόμη ιστορικό σύμβασης ή μοντέλου εργασίας.",
       "hourlyRate": "Ωριαία αμοιβή",
       "hourlyRateValue": "{rate} / ώρα",
+      "inheritWorkPolicy": "Κληρονομιά πολιτικής ομάδας/οργανισμού",
       "nextScheduledConfirmed": "Επόμενη προγραμματισμένη επιβεβαιωμένη",
       "noCurrentContext": "Δεν υπάρχει επιβεβαιωμένο πλαίσιο σύμβασης",
       "noScheduledChange": "Δεν έχει προγραμματιστεί επιβεβαιωμένη αλλαγή",
+      "policyValue": "Πολιτική: {policyName}",
       "probationEnd": "Λήξη δοκιμαστικής περιόδου",
       "probationRange": "Δοκιμαστική περίοδος {startDate} - {endDate}",
       "probationStart": "Έναρξη δοκιμαστικής περιόδου",
@@ -105,6 +101,7 @@
       "selectContractType": "Επιλογή τύπου σύμβασης",
       "selectReviewState": "Επιλογή κατάστασης αξιολόγησης",
       "selectWorkModel": "Επιλογή μοντέλου εργασίας",
+      "selectWorkPolicy": "Επιλογή πολιτικής εργασίας",
       "states": {
         "confirmed": "επιβεβαιωμένο",
         "draft": "προσχέδιο",
@@ -120,7 +117,9 @@
         "hybrid": "υβριδικό",
         "onsite": "δια ζώσης",
         "remote": "απομακρυσμένο"
-      }
+      },
+      "workPolicy": "Πολιτική εργασίας",
+      "workPolicyHelp": "Παρακάμπτει την επιλεγμένη πολιτική για αυτόν τον υπάλληλο κατά τη διάρκεια αυτής της συμβατικής περιόδου."
     },
     "inviteCodes": {
       "alreadyHaveAccount": "Έχετε ήδη λογαριασμό;",

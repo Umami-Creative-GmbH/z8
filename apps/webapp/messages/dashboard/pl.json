@@ -31,7 +31,14 @@
       "error": "Nie udało się załadować statystyk nawodnienia",
       "log-error": "Nie udało się zapisać spożycia wody",
       "of-goal": "z {goal}",
-      "title": "Nawodnienie"
+      "organization-streaks": "Serie organizacji",
+      "streak-day": "{count} dzień",
+      "streak-days": "{count} dni",
+      "team-streak-current-user-suffix": ", bieżący użytkownik",
+      "team-streak-row": "{name}, ranga {rank}, seria: {streakLabel}{currentUserLabel}",
+      "team-streaks": "Serie zespołu",
+      "title": "Nawodnienie",
+      "you": "Ty"
     },
     "layout": {
       "saved": "Układ pulpitu zapisany",

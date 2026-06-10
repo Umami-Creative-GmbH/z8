@@ -52,18 +52,12 @@
         "statuses": {
           "active": "Aktywny",
           "all": "Wszystkie statusy",
+          "draft": "Wersja robocza",
           "inactive": "Nieaktywny"
         },
         "statusFilter": "Filtruj według statusu",
         "table": {
-          "actions": "Akcje",
-          "contract": "Umowa",
-          "employee": "Pracownik",
-          "employeeNumber": "Numer pracownika",
-          "position": "Stanowisko",
-          "role": "Rola",
-          "status": "Status",
-          "team": "Zespół"
+          "employee": "Pracownik"
         },
         "title": "Katalog pracowników"
       },
@@ -92,9 +86,11 @@
       "emptyTimeline": "Brak historii umowy lub modelu pracy.",
       "hourlyRate": "Stawka godzinowa",
       "hourlyRateValue": "{rate} / godz.",
+      "inheritWorkPolicy": "Dziedzicz politykę zespołu/organizacji",
       "nextScheduledConfirmed": "Następne zaplanowane potwierdzone",
       "noCurrentContext": "Brak potwierdzonego kontekstu umowy",
       "noScheduledChange": "Brak zaplanowanej potwierdzonej zmiany",
+      "policyValue": "Polityka: {policyName}",
       "probationEnd": "Koniec okresu próbnego",
       "probationRange": "Okres próbny {startDate} - {endDate}",
       "probationStart": "Początek okresu próbnego",
@@ -105,6 +101,7 @@
       "selectContractType": "Wybierz typ umowy",
       "selectReviewState": "Wybierz stan przeglądu",
       "selectWorkModel": "Wybierz model pracy",
+      "selectWorkPolicy": "Wybierz politykę pracy",
       "states": {
         "confirmed": "potwierdzone",
         "draft": "wersja robocza",
@@ -120,7 +117,9 @@
         "hybrid": "hybrydowy",
         "onsite": "stacjonarny",
         "remote": "zdalny"
-      }
+      },
+      "workPolicy": "Polityka pracy",
+      "workPolicyHelp": "Zastępuje wybraną politykę dla tego pracownika w trakcie tego okresu umowy."
     },
     "inviteCodes": {
       "alreadyHaveAccount": "Masz już konto?",

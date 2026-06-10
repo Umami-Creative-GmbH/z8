@@ -31,7 +31,14 @@
       "error": "Falha ao carregar estatísticas de hidratação",
       "log-error": "Falha ao registar a ingestão de água",
       "of-goal": "de {goal}",
-      "title": "Hidratação"
+      "organization-streaks": "Sequências da organização",
+      "streak-day": "{count} dia",
+      "streak-days": "{count} dias",
+      "team-streak-current-user-suffix": ", usuário atual",
+      "team-streak-row": "{name}, classificação {rank}, sequência: {streakLabel}{currentUserLabel}",
+      "team-streaks": "Sequências da equipe",
+      "title": "Hidratação",
+      "you": "Você"
     },
     "layout": {
       "saved": "Layout do painel salvo",

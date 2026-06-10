@@ -52,18 +52,12 @@
         "statuses": {
           "active": "Active",
           "all": "All Status",
+          "draft": "Draft",
           "inactive": "Inactive"
         },
         "statusFilter": "Filter by status",
         "table": {
-          "actions": "Actions",
-          "contract": "Contract",
-          "employee": "Employee",
-          "employeeNumber": "Employee Number",
-          "position": "Position",
-          "role": "Role",
-          "status": "Status",
-          "team": "Team"
+          "employee": "Employee"
         },
         "title": "Employee Directory"
       },
@@ -92,9 +86,11 @@
       "emptyTimeline": "No contract or work-model history yet.",
       "hourlyRate": "Hourly Rate",
       "hourlyRateValue": "{rate} / hour",
+      "inheritWorkPolicy": "Inherit team/org policy",
       "nextScheduledConfirmed": "Next scheduled confirmed",
       "noCurrentContext": "No confirmed contract context",
       "noScheduledChange": "No confirmed change scheduled",
+      "policyValue": "Policy: {policyName}",
       "probationEnd": "Probation End",
       "probationRange": "Probation {startDate} - {endDate}",
       "probationStart": "Probation Start",
@@ -105,6 +101,7 @@
       "selectContractType": "Select contract type",
       "selectReviewState": "Select review state",
       "selectWorkModel": "Select work model",
+      "selectWorkPolicy": "Select work policy",
       "states": {
         "confirmed": "confirmed",
         "draft": "draft",
@@ -120,7 +117,9 @@
         "hybrid": "hybrid",
         "onsite": "onsite",
         "remote": "remote"
-      }
+      },
+      "workPolicy": "Work Policy",
+      "workPolicyHelp": "Overrides the selected policy for this employee during this contract period."
     },
     "inviteCodes": {
       "alreadyHaveAccount": "Already have an account?",

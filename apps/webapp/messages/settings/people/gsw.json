@@ -52,18 +52,12 @@
         "statuses": {
           "active": "Aktiv",
           "all": "Alli Status",
+          "draft": "Entwurf",
           "inactive": "Inaktiv"
         },
         "statusFilter": "Nach Status filtere",
         "table": {
-          "actions": "Aktionä",
-          "contract": "Vertrag",
-          "employee": "Mitarbeiter",
-          "employeeNumber": "Personalnummer",
-          "position": "Position",
-          "role": "Rolle",
-          "status": "Status",
-          "team": "Team"
+          "employee": "Mitarbeiter"
         },
         "title": "Mitarbeiterverzeichnis"
       },
@@ -92,9 +86,11 @@
       "emptyTimeline": "Noch keine Vertrags- oder Arbeitsmodellhistorie vorhanden.",
       "hourlyRate": "Stundenlohn",
       "hourlyRateValue": "{rate} / Stunde",
+      "inheritWorkPolicy": "Team-/Org-Richtlinie übernäh",
       "nextScheduledConfirmed": "Nächste geplante Bestätigung",
       "noCurrentContext": "Kein bestätigter Vertragskontext",
       "noScheduledChange": "Keine bestätigte Änderung geplant",
+      "policyValue": "Richtlinie: {policyName}",
       "probationEnd": "Ende der Probezeit",
       "probationRange": "Probezeit {startDate} - {endDate}",
       "probationStart": "Beginn der Probezeit",
@@ -105,6 +101,7 @@
       "selectContractType": "Vertragstyp auswählen",
       "selectReviewState": "Überprüfungsstatus auswählen",
       "selectWorkModel": "Arbeitsmodell auswählen",
+      "selectWorkPolicy": "Arbeitsrichtlinie uswähle",
       "states": {
         "confirmed": "bestätigt",
         "draft": "Entwurf",
@@ -120,7 +117,9 @@
         "hybrid": "hybrid",
         "onsite": "vor Ort",
         "remote": "remote"
-      }
+      },
+      "workPolicy": "Arbeitsrichtlinie",
+      "workPolicyHelp": "Überschriibt die gwählti Richtlinie für de Mitarbeiter während dere Vertragsduur."
     },
     "inviteCodes": {
       "alreadyHaveAccount": "Haben Sie bereits ein Konto?",

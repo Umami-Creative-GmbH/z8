@@ -31,7 +31,14 @@
       "error": "Échec du chargement des statistiques d'hydratation",
       "log-error": "Échec de l'enregistrement de la consommation d'eau",
       "of-goal": "sur {goal}",
-      "title": "Hydratation"
+      "organization-streaks": "Séries de l'organisation",
+      "streak-day": "{count} jour",
+      "streak-days": "{count} jours",
+      "team-streak-current-user-suffix": ", utilisateur actuel",
+      "team-streak-row": "{name}, rang {rank}, série : {streakLabel}{currentUserLabel}",
+      "team-streaks": "Séries de l'équipe",
+      "title": "Hydratation",
+      "you": "Vous"
     },
     "layout": {
       "saved": "Disposition du tableau de bord enregistrée",
