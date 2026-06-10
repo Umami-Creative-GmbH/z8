@@ -57,18 +57,22 @@ export function OrganizationLanguageCard({
 				startTransition(() => {
 					router.refresh();
 				});
-			} else {
-				setDefaultLanguage(previousDefaultLanguage);
-				toast.error(
-					result.error ||
-						t(
-							"organization.language.updateFailed",
-							"Failed to update organization notification language",
-						),
-				);
+				setIsSaving(false);
+				return;
 			}
-		} finally {
+
+			setDefaultLanguage(previousDefaultLanguage);
+			toast.error(
+				result.error ||
+					t(
+						"organization.language.updateFailed",
+						"Failed to update organization notification language",
+					),
+			);
 			setIsSaving(false);
+		} catch (error) {
+			setIsSaving(false);
+			throw error;
 		}
 	};
 
