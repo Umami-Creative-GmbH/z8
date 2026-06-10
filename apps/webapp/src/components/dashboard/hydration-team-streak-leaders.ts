@@ -12,6 +12,11 @@ export type TeamStreakLeaderCandidate = {
 	currentStreak: number | null | undefined;
 };
 
+export type BuildTeamStreakLeadersOptions = {
+	limit?: number;
+	minimumParticipants?: number;
+};
+
 export function collectUniqueTeamIds(
 	primaryTeamId: string | null | undefined,
 	memberships: Array<{ teamId: string }>,
@@ -24,13 +29,20 @@ export function collectUniqueTeamIds(
 export function buildTeamStreakLeaders(
 	candidates: TeamStreakLeaderCandidate[],
 	currentUserId: string,
+	options?: BuildTeamStreakLeadersOptions,
 ): TeamStreakLeader[] {
+	const limit = options?.limit ?? 3;
+	const minimumParticipants = options?.minimumParticipants ?? 1;
 	const uniqueCandidates = new Map<string, TeamStreakLeaderCandidate>();
 
 	for (const candidate of candidates) {
 		if (!uniqueCandidates.has(candidate.employeeId)) {
 			uniqueCandidates.set(candidate.employeeId, candidate);
 		}
+	}
+
+	if (uniqueCandidates.size < minimumParticipants) {
+		return [];
 	}
 
 	return Array.from(uniqueCandidates.values())
@@ -47,5 +59,5 @@ export function buildTeamStreakLeaders(
 
 			return left.displayName.localeCompare(right.displayName);
 		})
-		.slice(0, 3);
+		.slice(0, limit);
 }

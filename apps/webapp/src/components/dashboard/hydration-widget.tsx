@@ -26,12 +26,15 @@ type HydrationWidgetData = {
 	todayIntake: number;
 	dailyGoal: number;
 	goalProgress: number;
-	teamStreakLeaders: Array<{
-		employeeId: string;
-		displayName: string;
-		currentStreak: number;
-		isCurrentUser: boolean;
-	}>;
+	teamStreakLeaders: HydrationStreakLeader[];
+	organizationStreakLeaders: HydrationStreakLeader[];
+};
+
+type HydrationStreakLeader = {
+	employeeId: string;
+	displayName: string;
+	currentStreak: number;
+	isCurrentUser: boolean;
 };
 
 function WaterGlass({ filled }: { filled: boolean }) {
@@ -141,6 +144,80 @@ function AddButton({
 				{count}
 			</span>
 		</Button>
+	);
+}
+
+function HydrationStreakLeaderboard({
+	testId,
+	title,
+	leaders,
+	t,
+}: {
+	testId: string;
+	title: string;
+	leaders: HydrationStreakLeader[];
+	t: ReturnType<typeof useTranslate>["t"];
+}) {
+	if (leaders.length === 0) return null;
+
+	return (
+		<div
+			data-testid={testId}
+			className="rounded-lg border border-blue-500/10 bg-blue-500/[0.03] p-2"
+		>
+			<div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+				<IconFlame className="size-3 text-orange-500" aria-hidden="true" />
+				<span>{title}</span>
+			</div>
+			<div className="space-y-1">
+				{leaders.map((leader, index) => {
+					const streakLabel =
+						leader.currentStreak === 1
+							? t("dashboard.hydration.streak-day", "{count} day", {
+									count: leader.currentStreak,
+								})
+							: t("dashboard.hydration.streak-days", "{count} days", {
+									count: leader.currentStreak,
+								});
+					const currentUserLabel = leader.isCurrentUser
+						? t("dashboard.hydration.team-streak-current-user-suffix", ", current user")
+						: "";
+					const rowLabel = t(
+						"dashboard.hydration.team-streak-row",
+						"{name}, rank {rank}, streak: {streakLabel}{currentUserLabel}",
+						{
+							name: leader.displayName,
+							rank: index + 1,
+							streakLabel,
+							currentUserLabel,
+						},
+					);
+
+					return (
+						<div
+							key={leader.employeeId}
+							aria-label={rowLabel}
+							className="flex items-center gap-2 rounded-md px-1.5 py-1 text-xs"
+						>
+							<span className="w-6 shrink-0 font-semibold tabular-nums text-blue-600 dark:text-blue-400">
+								#{index + 1}
+							</span>
+							<span className="min-w-0 flex-1 truncate font-medium text-foreground">
+								{leader.displayName}
+							</span>
+							{leader.isCurrentUser ? (
+								<span className="rounded-full border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-300">
+									{t("dashboard.hydration.you", "You")}
+								</span>
+							) : null}
+							<span className="shrink-0 tabular-nums text-muted-foreground">
+								{streakLabel}
+							</span>
+						</div>
+					);
+				})}
+			</div>
+		</div>
 	);
 }
 
@@ -266,65 +343,18 @@ export function HydrationWidget() {
 							</div>
 						</div>
 
-						{stats.teamStreakLeaders.length > 0 ? (
-							<div
-								data-testid="hydration-team-streak-leaders"
-								className="rounded-lg border border-blue-500/10 bg-blue-500/[0.03] p-2"
-							>
-								<div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-									<IconFlame className="size-3 text-orange-500" aria-hidden="true" />
-									<span>{t("dashboard.hydration.team-streaks", "Team streaks")}</span>
-								</div>
-								<div className="space-y-1">
-									{stats.teamStreakLeaders.map((leader, index) => {
-										const streakLabel =
-											leader.currentStreak === 1
-												? t("dashboard.hydration.streak-day", "{count} day", {
-														count: leader.currentStreak,
-													})
-												: t("dashboard.hydration.streak-days", "{count} days", {
-														count: leader.currentStreak,
-													});
-										const currentUserLabel = leader.isCurrentUser
-											? t("dashboard.hydration.team-streak-current-user-suffix", ", current user")
-											: "";
-										const rowLabel = t(
-											"dashboard.hydration.team-streak-row",
-											"{name}, rank {rank}, streak: {streakLabel}{currentUserLabel}",
-											{
-												name: leader.displayName,
-												rank: index + 1,
-												streakLabel,
-												currentUserLabel,
-											},
-										);
-
-										return (
-											<div
-												key={leader.employeeId}
-												aria-label={rowLabel}
-												className="flex items-center gap-2 rounded-md px-1.5 py-1 text-xs"
-											>
-												<span className="w-6 shrink-0 font-semibold tabular-nums text-blue-600 dark:text-blue-400">
-													#{index + 1}
-												</span>
-												<span className="min-w-0 flex-1 truncate font-medium text-foreground">
-													{leader.displayName}
-												</span>
-												{leader.isCurrentUser ? (
-													<span className="rounded-full border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-300">
-														{t("dashboard.hydration.you", "You")}
-													</span>
-												) : null}
-												<span className="shrink-0 tabular-nums text-muted-foreground">
-													{streakLabel}
-												</span>
-											</div>
-										);
-									})}
-								</div>
-							</div>
-						) : null}
+						<HydrationStreakLeaderboard
+							testId="hydration-team-streak-leaders"
+							title={t("dashboard.hydration.team-streaks", "Team streaks")}
+							leaders={stats.teamStreakLeaders}
+							t={t}
+						/>
+						<HydrationStreakLeaderboard
+							testId="hydration-organization-streak-leaders"
+							title={t("dashboard.hydration.organization-streaks", "Org streaks")}
+							leaders={stats.organizationStreakLeaders}
+							t={t}
+						/>
 					</div>
 				)}
 			</WidgetCard>
