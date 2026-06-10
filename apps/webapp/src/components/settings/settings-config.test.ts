@@ -59,6 +59,20 @@ describe("settings visibility tiers", () => {
 		});
 	});
 
+	it("orders organization settings with employees before teams and email templates last", () => {
+		const entries = getVisibleSettings("orgAdmin", true);
+		const organizationEntries = entries.filter((entry) => entry.group === "organization");
+
+		expect(organizationEntries.map((entry) => entry.id)).toEqual([
+			"organizations",
+			"employees",
+			"teams",
+			"billing",
+			"avv",
+			"email-templates",
+		]);
+	});
+
 	it("shows email templates only for org admins", () => {
 		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
 		const managerEntries = getVisibleSettings("manager", true);
