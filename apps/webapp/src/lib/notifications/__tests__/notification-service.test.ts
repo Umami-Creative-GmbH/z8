@@ -35,6 +35,11 @@ const {
 	mockIsSlackAvailable,
 	mockSendSlackNotification,
 	mockPublishEventAsync,
+	mockAnd,
+	mockCount,
+	mockDesc,
+	mockEq,
+	mockSql,
 } = vi.hoisted(() => {
 	const mockReturning = vi.fn();
 	const mockValues = vi.fn(() => ({ returning: mockReturning }));
@@ -81,6 +86,11 @@ const {
 	const mockIsSlackAvailable = vi.fn(() => Promise.resolve(false));
 	const mockSendSlackNotification = vi.fn(() => Promise.resolve());
 	const mockPublishEventAsync = vi.fn();
+	const mockAnd = vi.fn((...conditions) => ({ conditions, type: "and" }));
+	const mockCount = vi.fn(() => "count");
+	const mockDesc = vi.fn((column) => ({ column, type: "desc" }));
+	const mockEq = vi.fn((column, value) => ({ column, type: "eq", value }));
+	const mockSql = vi.fn((strings, ...values) => ({ strings, type: "sql", values }));
 
 	return {
 		mockReturning,
@@ -113,8 +123,21 @@ const {
 		mockIsSlackAvailable,
 		mockSendSlackNotification,
 		mockPublishEventAsync,
+		mockAnd,
+		mockCount,
+		mockDesc,
+		mockEq,
+		mockSql,
 	};
 });
+
+vi.mock("drizzle-orm", () => ({
+	and: mockAnd,
+	count: mockCount,
+	desc: mockDesc,
+	eq: mockEq,
+	sql: mockSql,
+}));
 
 vi.mock("@/db", () => ({
 	db: {
@@ -328,7 +351,13 @@ describe("Notification Service", () => {
 			expect(markAsRead.length).toBe(3);
 			await markAsRead("notif-1", "user-1", "org-a");
 
-			expect(mockUpdateWhere).toHaveBeenCalled();
+			expect(mockUpdateWhere).toHaveBeenCalledWith(
+				expect.objectContaining({
+					conditions: expect.arrayContaining([
+						expect.objectContaining({ column: "organizationId", value: "org-a" }),
+					]),
+				}),
+			);
 		});
 
 		test("returns null when notification not found", async () => {
@@ -361,7 +390,13 @@ describe("Notification Service", () => {
 			const result = await markAllAsRead("user-1", "org-a");
 
 			expect(result).toBe(1);
-			expect(mockUpdateWhere).toHaveBeenCalled();
+			expect(mockUpdateWhere).toHaveBeenCalledWith(
+				expect.objectContaining({
+					conditions: expect.arrayContaining([
+						expect.objectContaining({ column: "organizationId", value: "org-a" }),
+					]),
+				}),
+			);
 		});
 
 		test("returns 0 on error", async () => {
