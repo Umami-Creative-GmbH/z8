@@ -298,13 +298,12 @@ export function NotificationsInbox() {
 						/>
 					</div>
 
-					<div
+					<fieldset
 						aria-label={t(
 							"common:notifications.filters.ariaLabel",
 							"Filter notifications by read status",
 						)}
-						className="inline-flex h-9 w-fit items-center justify-center rounded-lg bg-muted p-[3px] text-muted-foreground"
-						role="group"
+						className="m-0 inline-flex h-9 w-fit items-center justify-center rounded-lg border-0 bg-muted p-[3px] text-muted-foreground"
 					>
 						{readFilters.map((filter) => (
 							<Button
@@ -323,7 +322,7 @@ export function NotificationsInbox() {
 								{filter.label}
 							</Button>
 						))}
-					</div>
+					</fieldset>
 				</div>
 
 				{isError && (

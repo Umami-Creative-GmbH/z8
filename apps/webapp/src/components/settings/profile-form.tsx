@@ -70,6 +70,10 @@ function subscribeTodaySnapshot() {
 	return () => undefined;
 }
 
+function validatePronouns(value: string) {
+	return value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined;
+}
+
 function getTodaySnapshot() {
 	return TODAY_SNAPSHOT;
 }
@@ -164,9 +168,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			firstName: form.store.state.values.firstName,
 			lastName: value,
 		});
-	const validatePronouns = (value: string) =>
-		value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined;
-
 	const avatarImage = useStore(form.store, (state) => state.values.image);
 	const selectedGender = useStore(form.store, (state) => state.values.gender);
 	const selectedBirthday = useStore(form.store, (state) => state.values.birthday);

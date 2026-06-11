@@ -221,36 +221,35 @@ function DataReportConfig({
 					const selectedCategories = (field.state.value?.categories as string[]) || [];
 
 					const toggleCategory = (categoryId: string) => {
-						const newCategories = selectedCategories.includes(categoryId)
-							? selectedCategories.filter((c: string) => c !== categoryId)
-							: [...selectedCategories, categoryId];
-						field.handleChange({ ...field.state.value, categories: newCategories });
-					};
+					const newCategories = selectedCategories.includes(categoryId)
+						? selectedCategories.filter((c: string) => c !== categoryId)
+						: [...selectedCategories, categoryId];
+					field.handleChange({ ...field.state.value, categories: newCategories });
+				};
 
-					return (
-						<div
-							className="space-y-3"
-							role="group"
-							aria-label={t(
-								"settings.scheduledExports.report.dataCategoriesGroup",
-								"Data categories selection",
-							)}
-						>
-							{categories.map((category) => (
-								<div key={category.id} className="flex items-center gap-x-2">
-									<Checkbox
-										id={`category-${category.id}`}
+				return (
+					<fieldset
+						className="space-y-3"
+						aria-label={t(
+							"settings.scheduledExports.report.dataCategoriesGroup",
+							"Data categories selection",
+						)}
+					>
+						{categories.map((category) => (
+							<div key={category.id} className="flex items-center gap-x-2">
+								<Checkbox
+									id={`category-${category.id}`}
 										checked={selectedCategories.includes(category.id)}
 										onCheckedChange={() => toggleCategory(category.id)}
 									/>
 									<label htmlFor={`category-${category.id}`} className="text-sm cursor-pointer">
 										{category.label}
-									</label>
-								</div>
-							))}
-						</div>
-					);
-				}}
+								</label>
+							</div>
+						))}
+					</fieldset>
+				);
+			}}
 			</form.Field>
 		</div>
 	);

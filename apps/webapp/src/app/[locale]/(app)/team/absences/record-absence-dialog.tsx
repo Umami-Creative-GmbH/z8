@@ -131,10 +131,11 @@ export function RecordAbsenceDialog({
 			<ActionPanelContent>
 				<form
 					className="flex min-h-0 flex-1 flex-col"
-					onSubmit={(event) => {
-						event.preventDefault();
-						event.stopPropagation();
+					action={() => {
 						void form.handleSubmit();
+					}}
+					onSubmit={(event) => {
+						event.stopPropagation();
 					}}
 				>
 					<ActionPanelHeader>

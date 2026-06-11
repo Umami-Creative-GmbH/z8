@@ -149,74 +149,73 @@ export function StepDelivery({ form }: StepDeliveryProps) {
 							</div>
 						)}
 
-						{(deliveryMethod === "s3_and_email" || deliveryMethod === "s3_only") && (
-							<div
-								className="space-y-4 rounded-lg border p-4"
-								role="region"
-								aria-label={t(
-									"settings.scheduledExports.delivery.s3ConfigRegion",
-									"S3 storage configuration",
-								)}
-							>
-								<div className="font-medium">
-									{t("settings.scheduledExports.delivery.s3Config", "S3 Storage Configuration")}
-								</div>
-
-								<form.Field name="useOrgS3Config">
-									{(field: any) => (
-										<div className="flex items-center justify-between">
-											<div className="space-y-0.5">
-												<Label htmlFor="useOrgS3Config" className="text-base">
-													{t(
-														"settings.scheduledExports.delivery.useOrgS3",
-														"Use Organization S3 Config",
-													)}
-												</Label>
-												<p className="text-sm text-muted-foreground">
-													{t(
-														"settings.scheduledExports.delivery.useOrgS3Desc",
-														"Use the default S3 bucket configured for your organization",
-													)}
-												</p>
-											</div>
-											<Switch
-												id="useOrgS3Config"
-												checked={field.state.value}
-												onCheckedChange={field.handleChange}
-												aria-describedby="use-org-s3-desc"
-											/>
-										</div>
-									)}
-								</form.Field>
-
-								<form.Field name="customS3Prefix">
-									{(field: any) => (
-										<div className="space-y-2">
-											<Label htmlFor="customS3Prefix">
-												{t("settings.scheduledExports.delivery.s3Prefix", "Custom S3 Prefix")}
-											</Label>
-											<Input
-												id="customS3Prefix"
-												placeholder={t(
-													"settings.scheduledExports.delivery.s3PrefixPlaceholder",
-													"exports/payroll/",
-												)}
-												value={field.state.value || ""}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-												aria-describedby="s3-prefix-hint"
-											/>
-											<p id="s3-prefix-hint" className="text-xs text-muted-foreground">
-												{t(
-													"settings.scheduledExports.delivery.s3PrefixHint",
-													"Optional prefix for organizing exports in the S3 bucket",
-												)}
-											</p>
-										</div>
-									)}
-								</form.Field>
+					{(deliveryMethod === "s3_and_email" || deliveryMethod === "s3_only") && (
+						<section
+							className="space-y-4 rounded-lg border p-4"
+							aria-label={t(
+								"settings.scheduledExports.delivery.s3ConfigRegion",
+								"S3 storage configuration",
+							)}
+						>
+							<div className="font-medium">
+								{t("settings.scheduledExports.delivery.s3Config", "S3 Storage Configuration")}
 							</div>
-						)}
+
+						<form.Field name="useOrgS3Config">
+							{(field: any) => (
+								<div className="flex items-center justify-between">
+									<div className="space-y-0.5">
+										<Label htmlFor="useOrgS3Config" className="text-base">
+											{t(
+												"settings.scheduledExports.delivery.useOrgS3",
+												"Use Organization S3 Config",
+											)}
+										</Label>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"settings.scheduledExports.delivery.useOrgS3Desc",
+												"Use the default S3 bucket configured for your organization",
+											)}
+										</p>
+									</div>
+									<Switch
+										id="useOrgS3Config"
+										checked={field.state.value}
+										onCheckedChange={field.handleChange}
+										aria-describedby="use-org-s3-desc"
+									/>
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field name="customS3Prefix">
+							{(field: any) => (
+								<div className="space-y-2">
+									<Label htmlFor="customS3Prefix">
+										{t("settings.scheduledExports.delivery.s3Prefix", "Custom S3 Prefix")}
+									</Label>
+									<Input
+										id="customS3Prefix"
+										placeholder={t(
+											"settings.scheduledExports.delivery.s3PrefixPlaceholder",
+											"exports/payroll/",
+										)}
+										value={field.state.value || ""}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										aria-describedby="s3-prefix-hint"
+									/>
+									<p id="s3-prefix-hint" className="text-xs text-muted-foreground">
+										{t(
+											"settings.scheduledExports.delivery.s3PrefixHint",
+											"Optional prefix for organizing exports in the S3 bucket",
+										)}
+									</p>
+								</div>
+							)}
+						</form.Field>
+					</section>
+					)}
 					</>
 				)}
 			</form.Subscribe>

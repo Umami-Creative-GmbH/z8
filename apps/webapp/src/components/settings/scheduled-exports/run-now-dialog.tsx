@@ -136,9 +136,8 @@ export function RunNowDialog({
 				</AlertDialogHeader>
 
 				<div className="space-y-4 py-4">
-					<div
+					<section
 						className="rounded-lg border p-4 space-y-2"
-						role="region"
 						aria-label={t("settings.scheduledExports.runNow.detailsRegion", "Export details")}
 					>
 						<div className="flex justify-between text-sm">
@@ -157,7 +156,7 @@ export function RunNowDialog({
 								{estimatedRange.start} {t("common.to", "to")} {estimatedRange.end}
 							</span>
 						</div>
-					</div>
+					</section>
 
 					{hasExecutionInProgress && (
 						<Alert variant="destructive" role="alert">

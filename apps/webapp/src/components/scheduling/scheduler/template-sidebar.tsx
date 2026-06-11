@@ -46,6 +46,11 @@ function calculateDuration(startTime: string, endTime: string): string {
 	return `${hours}h ${minutes}m`;
 }
 
+function handleDragStart(e: React.DragEvent, template: ShiftTemplate) {
+	e.dataTransfer.setData("application/json", JSON.stringify(template));
+	e.dataTransfer.effectAllowed = "copy";
+}
+
 function TemplateCard({ template, onDragStart }: TemplateCardProps) {
 	const duration = calculateDuration(template.startTime, template.endTime);
 
@@ -84,11 +89,6 @@ export function TemplateSidebar({
 }: TemplateSidebarProps) {
 	const { t } = useTranslate();
 	const activeTemplates = templates.filter((t) => t.isActive);
-
-	const handleDragStart = (e: React.DragEvent, template: ShiftTemplate) => {
-		e.dataTransfer.setData("application/json", JSON.stringify(template));
-		e.dataTransfer.effectAllowed = "copy";
-	};
 
 	// Handle drop on calendar - this needs to be coordinated with Schedule-IconX
 	// For now, we'll use a simpler approach where clicking a template opens the dialog

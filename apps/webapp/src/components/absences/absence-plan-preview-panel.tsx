@@ -41,30 +41,28 @@ export function AbsencePlanPreviewPanel({
 
 	if (isLoading) {
 		return (
-			<div
+			<output
 				aria-live="polite"
 				className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-muted-foreground text-sm"
-				role="status"
 			>
 				<IconLoader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
 				<span>
 					{t("absences.planPreview.loading", "Checking balance, holidays, and coverage…")}
 				</span>
-			</div>
+			</output>
 		);
 	}
 
 	if (error) {
 		return (
-			<div
+			<output
 				className="rounded-lg border bg-muted/30 px-3 py-2 text-muted-foreground text-sm"
-				role="status"
 			>
 				{t(
 					"absences.planPreview.unavailable",
 					"Planning preview unavailable. You can still submit your request.",
 				)}
-			</div>
+			</output>
 		);
 	}
 

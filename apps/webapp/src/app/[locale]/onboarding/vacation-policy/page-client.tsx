@@ -134,9 +134,8 @@ export default function VacationPolicyPage() {
 					</CardHeader>
 					<CardContent>
 						<form
-							onSubmit={(e) => {
-								e.preventDefault();
-								form.handleSubmit();
+							action={() => {
+								void form.handleSubmit();
 							}}
 							className="space-y-6"
 						>

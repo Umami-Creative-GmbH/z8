@@ -70,6 +70,21 @@ interface MembersTableProps {
 	isRefreshing?: boolean;
 }
 
+function getRoleBadgeColor(role: string) {
+	switch (role) {
+		case "owner":
+			return "bg-purple-500/10 text-purple-700 dark:text-purple-300 hover:bg-purple-500/20";
+		case "admin":
+			return "bg-blue-500/10 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20";
+		default:
+			return "bg-gray-500/10 text-gray-700 dark:text-gray-300 hover:bg-gray-500/20";
+	}
+}
+
+function isInvitationExpired(expiresAt: Date) {
+	return new Date(expiresAt) < new Date();
+}
+
 export function MembersTable({
 	organizationId,
 	members: initialMembers,
@@ -348,21 +363,6 @@ export function MembersTable({
 		cancelInvitationMutation.variables === id ||
 		resendInvitationMutation.variables?.id === id ||
 		toggleStatusMutation.variables?.employeeId === id;
-
-	const getRoleBadgeColor = (role: string) => {
-		switch (role) {
-			case "owner":
-				return "bg-purple-500/10 text-purple-700 dark:text-purple-300 hover:bg-purple-500/20";
-			case "admin":
-				return "bg-blue-500/10 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20";
-			default:
-				return "bg-gray-500/10 text-gray-700 dark:text-gray-300 hover:bg-gray-500/20";
-		}
-	};
-
-	const isInvitationExpired = (expiresAt: Date) => {
-		return new Date(expiresAt) < new Date();
-	};
 
 	// Filter members by search
 	const filteredMembers = (() => {

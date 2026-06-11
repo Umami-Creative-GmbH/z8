@@ -53,6 +53,10 @@ function getCurrencyFormatter(currency: string) {
 	return formatter;
 }
 
+function formatCurrency(amount: string, currency: string) {
+	return getCurrencyFormatter(currency).format(parseFloat(amount));
+}
+
 interface RateHistoryCardProps {
 	rateHistory: RateHistoryEntry[];
 	isLoading?: boolean;
@@ -112,10 +116,6 @@ export function RateHistoryCard({
 			month: "short",
 			day: "numeric",
 		});
-	};
-
-	const formatCurrency = (amount: string, currency: string) => {
-		return getCurrencyFormatter(currency).format(parseFloat(amount));
 	};
 
 	const currentRate = rateHistory.find((r) => !r.effectiveTo);

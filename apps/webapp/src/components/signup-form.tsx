@@ -52,6 +52,18 @@ const SOCIAL_SKELETON_KEYS = [
 	"social-6",
 ];
 
+const getFieldErrorId = (field: string) => `${field}-error`;
+
+function getDescribedBy(...ids: Array<string | false | null | undefined>) {
+	const describedBy = ids.filter(Boolean).join(" ");
+	return describedBy.length > 0 ? describedBy : undefined;
+}
+
+function getFieldError(errors: unknown[]) {
+	const error = errors.find((value) => typeof value === "string");
+	return typeof error === "string" ? error : undefined;
+}
+
 type SignupSocialAuthProps = {
 	showEmailPassword: boolean;
 	filteredProviders: SocialProvider[];
@@ -294,18 +306,6 @@ export function SignupForm({
 
 		return enabledProviders.filter((provider) => allowedSocialProviders.includes(provider.id));
 	})();
-	const getFieldErrorId = (field: string) => `${field}-error`;
-
-	const getDescribedBy = (...ids: Array<string | false | null | undefined>) => {
-		const describedBy = ids.filter(Boolean).join(" ");
-		return describedBy.length > 0 ? describedBy : undefined;
-	};
-
-	const getFieldError = (errors: unknown[]) => {
-		const error = errors.find((value) => typeof value === "string");
-		return typeof error === "string" ? error : undefined;
-	};
-
 	const validatePassword = (value: string) => validateStrongPassword(value, t);
 
 	const validateConfirmPassword = (value: string) =>

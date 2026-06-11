@@ -60,6 +60,38 @@ const ApiKeyEditDialog = dynamic(() =>
 	import("./api-key-edit-dialog").then((mod) => mod.ApiKeyEditDialog),
 );
 
+function formatDate(dateStr: string | null | undefined) {
+	if (!dateStr) return "-";
+	return DateTime.fromISO(dateStr).toLocaleString(DateTime.DATE_SHORT);
+}
+
+function formatScopes(scopes: string[]) {
+	if (scopes.length === 0) return "No permissions";
+	if (scopes.length <= 2) return scopes.join(", ");
+	return `${scopes.slice(0, 2).join(", ")} +${scopes.length - 2}`;
+}
+
+function getExpirationStatus(expiresAt: string | null) {
+	if (!expiresAt)
+		return { status: "never", label: "Never expires", variant: "secondary" as const };
+
+	const now = DateTime.now();
+	const expiry = DateTime.fromISO(expiresAt);
+	const daysUntilExpiry = Math.ceil(expiry.diff(now, "days").days);
+
+	if (daysUntilExpiry < 0) {
+		return { status: "expired", label: "Expired", variant: "destructive" as const };
+	}
+	if (daysUntilExpiry <= 7) {
+		return {
+			status: "expiring",
+			label: `Expires in ${daysUntilExpiry}d`,
+			variant: "warning" as const,
+		};
+	}
+	return { status: "active", label: formatDate(expiresAt), variant: "secondary" as const };
+}
+
 interface ApiKeyPageClientProps {
 	organizationId: string;
 	initialApiKeys: ApiKeyResponse[];
@@ -118,38 +150,6 @@ export function ApiKeyPageClient({
 		setNewlyCreatedKey(key);
 		setCreateDialogOpen(false);
 		queryClient.invalidateQueries({ queryKey: ["apiKeys", organizationId] });
-	};
-
-	const formatDate = (dateStr: string | null | undefined) => {
-		if (!dateStr) return "-";
-		return DateTime.fromISO(dateStr).toLocaleString(DateTime.DATE_SHORT);
-	};
-
-	const formatScopes = (scopes: string[]) => {
-		if (scopes.length === 0) return "No permissions";
-		if (scopes.length <= 2) return scopes.join(", ");
-		return `${scopes.slice(0, 2).join(", ")} +${scopes.length - 2}`;
-	};
-
-	const getExpirationStatus = (expiresAt: string | null) => {
-		if (!expiresAt)
-			return { status: "never", label: "Never expires", variant: "secondary" as const };
-
-		const now = DateTime.now();
-		const expiry = DateTime.fromISO(expiresAt);
-		const daysUntilExpiry = Math.ceil(expiry.diff(now, "days").days);
-
-		if (daysUntilExpiry < 0) {
-			return { status: "expired", label: "Expired", variant: "destructive" as const };
-		}
-		if (daysUntilExpiry <= 7) {
-			return {
-				status: "expiring",
-				label: `Expires in ${daysUntilExpiry}d`,
-				variant: "warning" as const,
-			};
-		}
-		return { status: "active", label: formatDate(expiresAt), variant: "secondary" as const };
 	};
 
 	return (

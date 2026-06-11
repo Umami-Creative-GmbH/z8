@@ -106,7 +106,10 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 		}
 
 		// Return in order of selectedIds
-		return selectedIds.map((id) => employeeMap.get(id)).filter(Boolean) as SelectableEmployee[];
+		return selectedIds.flatMap((id) => {
+			const employee = employeeMap.get(id);
+			return employee ? [employee] : [];
+		});
 	})();
 
 	// Handle selection

@@ -25,6 +25,14 @@ const STATUS_COLORS: Record<string, string> = {
 	archived: "bg-gray-100 text-gray-500 dark:bg-gray-900 dark:text-gray-500",
 };
 
+function getBudgetProgressColor(percent: number | null) {
+	if (percent === null) return "bg-gray-200";
+	if (percent >= 100) return "bg-red-500";
+	if (percent >= 90) return "bg-amber-500";
+	if (percent >= 70) return "bg-yellow-500";
+	return "bg-green-500";
+}
+
 export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPortfolioTableProps) {
 	const { t } = useTranslate();
 	const [search, setSearch] = useState("");
@@ -75,14 +83,6 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 			archived: t("reports.projects.status.archived", "Archived"),
 		};
 		return statusLabels[status] || status;
-	};
-
-	const getBudgetProgressColor = (percent: number | null) => {
-		if (percent === null) return "bg-gray-200";
-		if (percent >= 100) return "bg-red-500";
-		if (percent >= 90) return "bg-amber-500";
-		if (percent >= 70) return "bg-yellow-500";
-		return "bg-green-500";
 	};
 
 	// Filter projects by search

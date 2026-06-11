@@ -24,6 +24,24 @@ interface ExportHistoryProps {
 	exports: PayrollExportJobSummary[];
 }
 
+function formatDateRange(filters: PayrollExportJobSummary["filters"]) {
+	const start = DateTime.fromISO(filters.dateRange.start);
+	const end = DateTime.fromISO(filters.dateRange.end);
+
+	if (start.month === end.month && start.year === end.year) {
+		return start.toFormat("LLLL yyyy");
+	}
+
+	return `${start.toFormat("dd.MM.yyyy")} - ${end.toFormat("dd.MM.yyyy")}`;
+}
+
+function formatFileSize(bytes: number | null) {
+	if (!bytes) return "-";
+	if (bytes < 1024) return `${bytes} B`;
+	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
@@ -75,24 +93,6 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 			default:
 				return <Badge variant="outline">{status}</Badge>;
 		}
-	};
-
-	const formatDateRange = (filters: PayrollExportJobSummary["filters"]) => {
-		const start = DateTime.fromISO(filters.dateRange.start);
-		const end = DateTime.fromISO(filters.dateRange.end);
-
-		if (start.month === end.month && start.year === end.year) {
-			return start.toFormat("LLLL yyyy");
-		}
-
-		return `${start.toFormat("dd.MM.yyyy")} - ${end.toFormat("dd.MM.yyyy")}`;
-	};
-
-	const formatFileSize = (bytes: number | null) => {
-		if (!bytes) return "-";
-		if (bytes < 1024) return `${bytes} B`;
-		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 	};
 
 	return (

@@ -62,6 +62,18 @@ const statusColors = {
 	archived: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
 };
 
+function formatDate(date: Date | null | undefined) {
+	if (!date) return "-";
+	return new Date(date).toLocaleDateString();
+}
+
+function formatUsage(code: InviteCodeWithRelations) {
+	if (code.maxUses === null) {
+		return `${code.currentUses} / ∞`;
+	}
+	return `${code.currentUses} / ${code.maxUses}`;
+}
+
 function InviteCodeMobileCard({
 	code,
 	copiedCode,
@@ -251,18 +263,6 @@ export function InviteCodeManagement({
 		setCopiedCode(code);
 		toast.success(t("settings.inviteCodes.codeCopied", "Invite code copied"));
 		setTimeout(() => setCopiedCode(null), 2000);
-	};
-
-	const formatDate = (date: Date | null | undefined) => {
-		if (!date) return "-";
-		return new Date(date).toLocaleDateString();
-	};
-
-	const formatUsage = (code: InviteCodeWithRelations) => {
-		if (code.maxUses === null) {
-			return `${code.currentUses} / ∞`;
-		}
-		return `${code.currentUses} / ${code.maxUses}`;
 	};
 
 	if (!canManage) {

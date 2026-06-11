@@ -164,9 +164,8 @@ export default function HolidaySetupPage() {
 					</CardHeader>
 					<CardContent>
 						<form
-							onSubmit={(e) => {
-								e.preventDefault();
-								form.handleSubmit();
+							action={() => {
+								void form.handleSubmit();
 							}}
 							className="space-y-6"
 						>

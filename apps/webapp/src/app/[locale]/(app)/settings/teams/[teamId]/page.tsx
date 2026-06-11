@@ -205,13 +205,12 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 	if (isLoadingTeam || !team) {
 		return (
 			<div className="flex flex-1 flex-col gap-4 p-4">
-				<div
+				<output
 					className="flex items-center justify-center p-8"
-					role="status"
 					aria-label="Loading team"
 				>
 					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
-				</div>
+				</output>
 			</div>
 		);
 	}

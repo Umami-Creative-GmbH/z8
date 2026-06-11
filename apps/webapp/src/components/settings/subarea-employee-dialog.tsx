@@ -44,6 +44,19 @@ interface FormValues {
 	isPrimary: boolean;
 }
 
+type EmployeeNameFields = {
+	firstName: string | null;
+	lastName: string | null;
+	user: { name: string | null; email: string };
+};
+
+function getEmployeeName(emp: EmployeeNameFields) {
+	if (emp.firstName || emp.lastName) {
+		return `${emp.firstName || ""} ${emp.lastName || ""}`.trim();
+	}
+	return emp.user.name || emp.user.email;
+}
+
 export function SubareaEmployeeDialog(props: SubareaEmployeeDialogProps) {
 	const { subareaId, open } = props;
 	const formKey = open ? `${subareaId}:open` : `${subareaId}:closed`;
@@ -117,13 +130,6 @@ function SubareaEmployeeDialogContent({
 		},
 		enabled: open,
 	});
-
-	const getEmployeeName = (emp: NonNullable<typeof employees>[number]) => {
-		if (emp.firstName || emp.lastName) {
-			return `${emp.firstName || ""} ${emp.lastName || ""}`.trim();
-		}
-		return emp.user.name || emp.user.email;
-	};
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>

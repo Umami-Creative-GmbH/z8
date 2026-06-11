@@ -79,6 +79,14 @@ const viewModeToScheduleX: Record<ViewMode, string> = {
 	year: "month-grid", // Year view is handled separately, fallback to month-grid
 };
 
+function luxonToPlainDate(dt: DateTime): Temporal.PlainDate {
+	return Temporal.PlainDate.from({
+		year: dt.year,
+		month: dt.month,
+		day: dt.day,
+	});
+}
+
 const EMPTY_CLOCK_OUT_ALLOWED_WORK_PERIOD_IDS = new Set<string>();
 
 function getHeaderCells(container: HTMLDivElement): HTMLElement[] {
@@ -220,15 +228,6 @@ export function ScheduleXCalendarWrapper({
 		}
 		return baseScheduleXEvents;
 	})();
-
-	// Helper to convert Luxon DateTime to Temporal.PlainDate
-	const luxonToPlainDate = (dt: DateTime): Temporal.PlainDate => {
-		return Temporal.PlainDate.from({
-			year: dt.year,
-			month: dt.month,
-			day: dt.day,
-		});
-	};
 
 	// Navigation functions
 	const navigatePrevious = () => {

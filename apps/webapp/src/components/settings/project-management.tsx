@@ -51,6 +51,28 @@ const STATUS_LABELS: Record<string, string> = {
 	archived: "Archived",
 };
 
+function formatBudgetProgress(project: ProjectWithDetails) {
+	if (!project.budgetHours) return null;
+	const budgetHours = parseFloat(project.budgetHours);
+	const percentage = Math.min((project.totalHoursBooked / budgetHours) * 100, 100);
+	return {
+		percentage,
+		remaining: Math.max(budgetHours - project.totalHoursBooked, 0),
+	};
+}
+
+function formatDeadline(deadline: Date | null) {
+	if (!deadline) return null;
+	const now = new Date();
+	const diff = deadline.getTime() - now.getTime();
+	const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+	if (days < 0) return { text: `${Math.abs(days)} days overdue`, isOverdue: true };
+	if (days === 0) return { text: "Due today", isOverdue: false };
+	if (days === 1) return { text: "Due tomorrow", isOverdue: false };
+	return { text: `${days} days remaining`, isOverdue: false };
+}
+
 export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -87,28 +109,6 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 		queryClient.invalidateQueries({ queryKey: queryKeys.projects.list(organizationId) });
 		setDialogOpen(false);
 		setEditingProject(null);
-	};
-
-	const formatBudgetProgress = (project: ProjectWithDetails) => {
-		if (!project.budgetHours) return null;
-		const budgetHours = parseFloat(project.budgetHours);
-		const percentage = Math.min((project.totalHoursBooked / budgetHours) * 100, 100);
-		return {
-			percentage,
-			remaining: Math.max(budgetHours - project.totalHoursBooked, 0),
-		};
-	};
-
-	const formatDeadline = (deadline: Date | null) => {
-		if (!deadline) return null;
-		const now = new Date();
-		const diff = deadline.getTime() - now.getTime();
-		const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-
-		if (days < 0) return { text: `${Math.abs(days)} days overdue`, isOverdue: true };
-		if (days === 0) return { text: "Due today", isOverdue: false };
-		if (days === 1) return { text: "Due tomorrow", isOverdue: false };
-		return { text: `${days} days remaining`, isOverdue: false };
 	};
 
 	return (

@@ -73,35 +73,34 @@ export function EmailTagInput({
 
 	return (
 		<div className="space-y-2">
-			<div
-				className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[42px] bg-background"
-				role="listbox"
-				aria-label={
-					ariaLabel || t("settings.scheduledExports.emailInput.listLabel", "Email recipients")
-				}
-			>
-				{value.map((email) => (
-					<Badge
-						key={email}
-						variant="secondary"
-						className="gap-1 pl-2 pr-1"
-						role="option"
-						aria-selected="true"
+			<div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[42px] bg-background">
+				{value.length > 0 && (
+					<ul
+						className="contents"
+						aria-label={
+							ariaLabel || t("settings.scheduledExports.emailInput.listLabel", "Email recipients")
+						}
 					>
-						{email}
-						<button
-							type="button"
-							onClick={() => removeEmail(email)}
-							disabled={disabled}
-							className="ml-1 rounded-full hover:bg-muted p-0.5"
-							aria-label={t("settings.scheduledExports.emailInput.remove", "Remove {email}", {
-								email,
-							})}
-						>
-							<IconX className="size-3" aria-hidden="true" />
-						</button>
-					</Badge>
-				))}
+						{value.map((email) => (
+							<li key={email} className="flex">
+								<Badge variant="secondary" className="gap-1 pl-2 pr-1">
+									{email}
+									<button
+										type="button"
+										onClick={() => removeEmail(email)}
+										disabled={disabled}
+										className="ml-1 rounded-full hover:bg-muted p-0.5"
+										aria-label={t("settings.scheduledExports.emailInput.remove", "Remove {email}", {
+											email,
+										})}
+									>
+										<IconX className="size-3" aria-hidden="true" />
+									</button>
+								</Badge>
+							</li>
+						))}
+					</ul>
+				)}
 				<Input
 					type="email"
 					value={inputValue}
