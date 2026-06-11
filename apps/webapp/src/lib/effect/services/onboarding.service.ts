@@ -931,34 +931,38 @@ export const OnboardingServiceLive = Layer.effect(
 							{ channel: "email" as const, isEnabled: data.enableEmail },
 						];
 
-						for (const { type, enabled } of notificationTypes) {
-							for (const { channel, isEnabled } of channels) {
-								// Upsert notification preferences
-								const existing = await dbService.db.query.notificationPreference.findFirst({
-									where: and(
-										eq(notificationPreference.userId, session.user.id),
-										eq(notificationPreference.notificationType, type),
-										eq(notificationPreference.channel, channel),
-									),
-								});
-
-								if (existing) {
-									await dbService.db
-										.update(notificationPreference)
-										.set({
-											enabled: enabled && isEnabled,
+						await Promise.all(
+							notificationTypes.flatMap(({ type, enabled }) =>
+								channels.map(({ channel, isEnabled }) =>
+									// Upsert notification preferences
+									dbService.db.query.notificationPreference
+										.findFirst({
+											where: and(
+												eq(notificationPreference.userId, session.user.id),
+												eq(notificationPreference.notificationType, type),
+												eq(notificationPreference.channel, channel),
+											),
 										})
-										.where(eq(notificationPreference.id, existing.id));
-								} else {
-									await dbService.db.insert(notificationPreference).values({
-										userId: session.user.id,
-										notificationType: type,
-										channel,
-										enabled: enabled && isEnabled,
-									});
-								}
-							}
-						}
+										.then((existing) => {
+											if (existing) {
+												return dbService.db
+													.update(notificationPreference)
+													.set({
+														enabled: enabled && isEnabled,
+													})
+													.where(eq(notificationPreference.id, existing.id));
+											}
+
+											return dbService.db.insert(notificationPreference).values({
+												userId: session.user.id,
+												notificationType: type,
+												channel,
+												enabled: enabled && isEnabled,
+											});
+										}),
+								),
+							),
+						);
 
 						await dbService.db
 							.insert(userSettings)
@@ -1022,28 +1026,26 @@ export const OnboardingServiceLive = Layer.effect(
 					const activeOrgId = session.session.activeOrganizationId;
 
 					const summary = yield* dbService.query("getOnboardingSummary", async () => {
-						const userRecord = await dbService.db.query.user.findFirst({
-							where: eq(user.id, session.user.id),
-							columns: {
-								invitedVia: true,
-							},
-						});
+						const [userRecord, membership, emp] = await Promise.all([
+							dbService.db.query.user.findFirst({
+								where: eq(user.id, session.user.id),
+								columns: {
+									invitedVia: true,
+								},
+							}),
+							dbService.db.query.member.findFirst({
+								where: activeOrgId
+									? and(eq(member.userId, session.user.id), eq(member.organizationId, activeOrgId))
+									: eq(member.userId, session.user.id),
+								with: {
+									organization: true,
+								},
+							}),
+							dbService.db.query.employee.findFirst({
+								where: eq(employee.userId, session.user.id),
+							}),
+						]);
 						const wasInvited = Boolean(userRecord?.invitedVia);
-
-						// Check if user has an organization (scoped to active org if set)
-						const membership = await dbService.db.query.member.findFirst({
-							where: activeOrgId
-								? and(eq(member.userId, session.user.id), eq(member.organizationId, activeOrgId))
-								: eq(member.userId, session.user.id),
-							with: {
-								organization: true,
-							},
-						});
-
-						// Check if profile is completed
-						const emp = await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
 
 						// Check if user is admin (consistent with isUserAdmin — requires activeOrganizationId)
 						const isAdmin = activeOrgId
@@ -1105,15 +1107,14 @@ export const OnboardingServiceLive = Layer.effect(
 							}
 						}
 
-						// Check if notifications are configured
-						const notifPrefs = await dbService.db.query.notificationPreference.findFirst({
-							where: eq(notificationPreference.userId, session.user.id),
-						});
-
-						// Check wellness configuration (water reminder) from userSettings
-						const userSettingsData = await dbService.db.query.userSettings.findFirst({
-							where: eq(userSettings.userId, session.user.id),
-						});
+						const [notifPrefs, userSettingsData] = await Promise.all([
+							dbService.db.query.notificationPreference.findFirst({
+								where: eq(notificationPreference.userId, session.user.id),
+							}),
+							dbService.db.query.userSettings.findFirst({
+								where: eq(userSettings.userId, session.user.id),
+							}),
+						]);
 						const waterReminderEnabled = userSettingsData?.waterReminderEnabled ?? false;
 
 						const summaryData: OnboardingSummary = {
@@ -1142,31 +1143,31 @@ export const OnboardingServiceLive = Layer.effect(
 					const session = yield* authService.getSession();
 
 					const status = yield* dbService.query("getOnboardingStatus", async () => {
-						const userSettingsData = await dbService.db.query.userSettings.findFirst({
-							where: eq(userSettings.userId, session.user.id),
-							columns: {
-								onboardingComplete: true,
-								onboardingStep: true,
-							},
-						});
-
-						const userRecord = await dbService.db.query.user.findFirst({
-							where: eq(user.id, session.user.id),
-							columns: {
-								invitedVia: true,
-							},
-						});
-						const wasInvited = Boolean(userRecord?.invitedVia);
-
 						const activeOrgId = session.session.activeOrganizationId;
-						const membership = await dbService.db.query.member.findFirst({
-							where: activeOrgId
-								? and(eq(member.userId, session.user.id), eq(member.organizationId, activeOrgId))
-								: eq(member.userId, session.user.id),
-							columns: {
-								organizationId: true,
-							},
-						});
+						const [userSettingsData, userRecord, membership] = await Promise.all([
+							dbService.db.query.userSettings.findFirst({
+								where: eq(userSettings.userId, session.user.id),
+								columns: {
+									onboardingComplete: true,
+									onboardingStep: true,
+								},
+							}),
+							dbService.db.query.user.findFirst({
+								where: eq(user.id, session.user.id),
+								columns: {
+									invitedVia: true,
+								},
+							}),
+							dbService.db.query.member.findFirst({
+								where: activeOrgId
+									? and(eq(member.userId, session.user.id), eq(member.organizationId, activeOrgId))
+									: eq(member.userId, session.user.id),
+								columns: {
+									organizationId: true,
+								},
+							}),
+						]);
+						const wasInvited = Boolean(userRecord?.invitedVia);
 
 						const onboardingStep =
 							userSettingsData?.onboardingStep === "organization" && (membership || wasInvited)

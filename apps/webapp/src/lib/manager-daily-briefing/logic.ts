@@ -56,19 +56,20 @@ export function detectAttendanceExceptions({
 		const scheduledStart = DateTime.fromISO(`${shift.date}T${shift.startTime}`, { zone: now.zone });
 		const scheduledEnd = getShiftEnd(scheduledStart, shift.endTime);
 		const associationStart = scheduledStart.minus({ hours: 2 });
-		const firstClockIn = records
-			.flatMap((record) => {
-				if (record.employeeId !== shift.employeeId) return [];
+		const firstClockIn = records.reduce<DateTime | null>((earliest, record) => {
+				if (record.employeeId !== shift.employeeId) return earliest;
 				const startAt = DateTime.fromJSDate(record.startAt).setZone(now.zone);
 				const endAt = record.endAt ? DateTime.fromJSDate(record.endAt).setZone(now.zone) : null;
 
-				return startAt >= associationStart &&
+				const matchesShift =
+					startAt >= associationStart &&
 					startAt < scheduledEnd &&
-					(endAt === null || endAt > scheduledStart)
-					? [startAt]
-					: [];
-			})
-			.sort((left, right) => left.toMillis() - right.toMillis())[0];
+					(endAt === null || endAt > scheduledStart);
+
+				if (!matchesShift) return earliest;
+
+				return !earliest || startAt.toMillis() < earliest.toMillis() ? startAt : earliest;
+			}, null);
 
 		if (!firstClockIn) {
 			if (now < scheduledStart.plus({ minutes: graceMinutes })) {

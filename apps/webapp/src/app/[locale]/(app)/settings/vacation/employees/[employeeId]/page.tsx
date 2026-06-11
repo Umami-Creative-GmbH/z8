@@ -379,9 +379,8 @@ export default function EmployeeAllowanceEditPage({
 						</div>
 
 						<form
-							onSubmit={(e) => {
-								e.preventDefault();
-								form.handleSubmit();
+							action={() => {
+								void form.handleSubmit();
 							}}
 							className="space-y-6"
 						>

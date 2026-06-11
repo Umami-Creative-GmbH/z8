@@ -810,7 +810,8 @@ export function resolvePolicyAndCreateApproval(
 				firstStage.approverEmployeeId,
 			);
 
-			for (const resolvedStage of resolvedStages) {
+			await Promise.all(
+				resolvedStages.map(async (resolvedStage) => {
 				const isCurrentStage = resolvedStage.stage.stepOrder === firstStage.stage.stepOrder;
 				const stageRows = await writeDbService.db
 					.insert(approvalChainStageInstance)
@@ -846,7 +847,8 @@ export function resolvePolicyAndCreateApproval(
 						}),
 					);
 				}
-			}
+				}),
+			);
 
 			return { chainInstanceId, approvalRequestId };
 		};

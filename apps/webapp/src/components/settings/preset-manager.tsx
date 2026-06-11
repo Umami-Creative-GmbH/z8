@@ -61,6 +61,11 @@ interface PresetData {
 	assignmentCount: number;
 }
 
+function formatLocation(preset: PresetData) {
+	const parts = [preset.countryCode, preset.stateCode, preset.regionCode].filter(Boolean);
+	return parts.length > 0 ? parts.join(" - ") : null;
+}
+
 export function PresetManager({ organizationId, onImportClick, onEditClick }: PresetManagerProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -109,11 +114,6 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 			deleteMutation.mutate(selectedPreset.id);
 		}
 	};
-
-	function formatLocation(preset: PresetData) {
-		const parts = [preset.countryCode, preset.stateCode, preset.regionCode].filter(Boolean);
-		return parts.length > 0 ? parts.join(" - ") : null;
-	}
 
 	function formatPresetYear(year: number) {
 		return t("settings.holidays.presets.yearValue", "Year {year}", { year });

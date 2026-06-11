@@ -394,34 +394,37 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 		.toISODate()!;
 
 	if (affectedStartDate < hotWindow.startDate) {
-		const touchedYears = new Set<string>();
 		const months = getMonthPeriodsBetween(affectedStartDate, closedMonthEnd);
-		for (const month of months) {
-			const values = await computeEmployeePeriodBalance({
-				employeeId: input.employeeId,
-				organizationId: input.organizationId,
-				dbClient,
-				periodType: "month",
-				periodStart: month.periodStart,
-				periodEnd: month.periodEnd,
-				calculationStartDate,
-				isClosed: true,
-				now,
-			});
-			await upsertEmployeeWorkBalancePeriod(values, { dbClient, refreshStartedAt: now });
-			touchedYears.add(month.periodStart.slice(0, 4));
-		}
+		await Promise.all(
+			months.map(async (month) => {
+				const values = await computeEmployeePeriodBalance({
+					employeeId: input.employeeId,
+					organizationId: input.organizationId,
+					dbClient,
+					periodType: "month",
+					periodStart: month.periodStart,
+					periodEnd: month.periodEnd,
+					calculationStartDate,
+					isClosed: true,
+					now,
+				});
+				await upsertEmployeeWorkBalancePeriod(values, { dbClient, refreshStartedAt: now });
+			}),
+		);
 
-		for (const year of touchedYears) {
-			await rebuildEmployeeYearBalanceFromMonths({
-				employeeId: input.employeeId,
-				organizationId: input.organizationId,
-				dbClient,
-				dateInYear: `${year}-01-01`,
-				calculationStartDate,
-				now,
-			});
-		}
+		const touchedYears = new Set(months.map((month) => month.periodStart.slice(0, 4)));
+		await Promise.all(
+			[...touchedYears].map((year) =>
+				rebuildEmployeeYearBalanceFromMonths({
+					employeeId: input.employeeId,
+					organizationId: input.organizationId,
+					dbClient,
+					dateInYear: `${year}-01-01`,
+					calculationStartDate,
+					now,
+				}),
+			),
+		);
 	}
 
 	const [hotWindowValues, closedTotals] = await Promise.all([

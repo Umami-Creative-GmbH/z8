@@ -36,35 +36,37 @@ export async function sendOrganizationDeletionNotifications(
 	const recoveryUrl = `${appUrl}/settings/organizations`;
 	const recipients = adminMembers.filter((m) => m.role === "admin" || m.role === "owner");
 
-	for (const recipient of recipients) {
-		const userEmail = recipient.user?.email;
-		if (!userEmail) continue;
+	await Promise.all(
+		recipients.map(async (recipient) => {
+			const userEmail = recipient.user?.email;
+			if (!userEmail) return;
 
-		try {
-			const html = await render(
-				OrganizationDeletion({
-					userName: recipient.user?.name || userEmail,
-					organizationName: data.organizationName,
-					deletedByName: data.deletedByName,
-					deletionDate: deletionDate.toLocaleString(),
-					permanentDeletionDate: permanentDeletionDate.toLocaleString(),
-					recoveryUrl,
-					appUrl,
-				}),
-			);
+			try {
+				const html = await render(
+					OrganizationDeletion({
+						userName: recipient.user?.name || userEmail,
+						organizationName: data.organizationName,
+						deletedByName: data.deletedByName,
+						deletionDate: deletionDate.toLocaleString(),
+						permanentDeletionDate: permanentDeletionDate.toLocaleString(),
+						recoveryUrl,
+						appUrl,
+					}),
+				);
 
-			await sendEmail({
-				to: userEmail,
-				subject: `Organization "${data.organizationName}" scheduled for deletion`,
-				html,
-				actionUrl: recoveryUrl,
-				organizationId: data.organizationId,
-			});
-		} catch (error) {
-			logger.warn(
-				{ error, organizationId: data.organizationId },
-				"Failed to send deletion notification to user",
-			);
-		}
-	}
+				await sendEmail({
+					to: userEmail,
+					subject: `Organization "${data.organizationName}" scheduled for deletion`,
+					html,
+					actionUrl: recoveryUrl,
+					organizationId: data.organizationId,
+				});
+			} catch (error) {
+				logger.warn(
+					{ error, organizationId: data.organizationId },
+					"Failed to send deletion notification to user",
+				);
+			}
+		}),
+	);
 }

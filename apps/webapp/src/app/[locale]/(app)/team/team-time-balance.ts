@@ -135,48 +135,51 @@ export async function refreshEmployeeTimeBalances(input: {
 		actualRows.map((row) => [row.employeeId, Number(row.totalMinutes ?? 0)]),
 	);
 
-	for (const employeeId of employeeIds) {
-		const expected = await calculateExpectedWorkHoursForEmployee(
-			employeeId,
-			input.organizationId,
-			startDate,
-			endDate,
-		);
-		const absenceAdjustedMinutes = await calculateAbsenceAdjustedMinutes({
-			employeeId,
-			organizationId: input.organizationId,
-			rangeStart: range.start,
-			rangeEnd: range.end,
-		});
-		const values = buildEmployeeTimeBalanceValues({
-			employeeId,
-			organizationId: input.organizationId,
-			year: range.year,
-			actualMinutes: actualByEmployee.get(employeeId) ?? 0,
-			expectedMinutes: expected.totalMinutes,
-			absenceAdjustedMinutes,
-			calculatedAt,
-		});
-
-		await db
-			.insert(employeeTimeBalance)
-			.values(values)
-			.onConflictDoUpdate({
-				target: [
-					employeeTimeBalance.organizationId,
-					employeeTimeBalance.employeeId,
-					employeeTimeBalance.year,
-				],
-				set: {
-					actualMinutes: values.actualMinutes,
-					expectedMinutes: values.expectedMinutes,
-					absenceAdjustedMinutes: values.absenceAdjustedMinutes,
-					balanceMinutes: values.balanceMinutes,
-					calculatedAt: values.calculatedAt,
-					updatedAt: values.calculatedAt,
-				},
+	const balanceRows = await Promise.all(
+		employeeIds.map(async (employeeId) => {
+			const [expected, absenceAdjustedMinutes] = await Promise.all([
+				calculateExpectedWorkHoursForEmployee(employeeId, input.organizationId, startDate, endDate),
+				calculateAbsenceAdjustedMinutes({
+					employeeId,
+					organizationId: input.organizationId,
+					rangeStart: range.start,
+					rangeEnd: range.end,
+				}),
+			]);
+			const values = buildEmployeeTimeBalanceValues({
+				employeeId,
+				organizationId: input.organizationId,
+				year: range.year,
+				actualMinutes: actualByEmployee.get(employeeId) ?? 0,
+				expectedMinutes: expected.totalMinutes,
+				absenceAdjustedMinutes,
+				calculatedAt,
 			});
 
+			await db
+				.insert(employeeTimeBalance)
+				.values(values)
+				.onConflictDoUpdate({
+					target: [
+						employeeTimeBalance.organizationId,
+						employeeTimeBalance.employeeId,
+						employeeTimeBalance.year,
+					],
+					set: {
+						actualMinutes: values.actualMinutes,
+						expectedMinutes: values.expectedMinutes,
+						absenceAdjustedMinutes: values.absenceAdjustedMinutes,
+						balanceMinutes: values.balanceMinutes,
+						calculatedAt: values.calculatedAt,
+						updatedAt: values.calculatedAt,
+					},
+				});
+
+			return [employeeId, values] as const;
+		}),
+	);
+
+	for (const [employeeId, values] of balanceRows) {
 		balances.set(employeeId, values);
 	}
 
@@ -210,32 +213,38 @@ async function calculateAbsenceAdjustedMinutes(input: {
 			),
 		);
 
-	let total = 0;
-	for (const absence of absenceRows) {
+	const adjustments = await Promise.all(absenceRows.map(async (absence) => {
+		const absenceDates: Array<{ isoDate: string; date: Date }> = [];
 		let current = DateTime.fromISO(absence.startDate, { zone: "utc" }).startOf("day");
 		const last = DateTime.fromISO(absence.endDate, { zone: "utc" }).startOf("day");
 		while (current <= last) {
 			if (current >= input.rangeStart.startOf("day") && current <= input.rangeEnd.startOf("day")) {
-				const currentISODate = current.toISODate()!;
-				const currentDate = current.toJSDate();
+				absenceDates.push({ isoDate: current.toISODate()!, date: current.toJSDate() });
+			}
+			current = current.plus({ days: 1 });
+		}
+
+		const dayAdjustments = await Promise.all(
+			absenceDates.map(async ({ isoDate, date }) => {
 				const expected = await calculateExpectedWorkHoursForEmployee(
 					input.employeeId,
 					input.organizationId,
-					currentDate,
-					currentDate,
+					date,
+					date,
 				);
 				const fraction = getAbsenceDayFraction({
-					date: currentISODate,
+					date: isoDate,
 					startDate: absence.startDate,
 					startPeriod: absence.startPeriod,
 					endDate: absence.endDate,
 					endPeriod: absence.endPeriod,
 				});
-				total += Math.round(expected.totalMinutes * fraction);
-			}
-			current = current.plus({ days: 1 });
-		}
-	}
+				return Math.round(expected.totalMinutes * fraction);
+			}),
+		);
 
-	return total;
+		return dayAdjustments.reduce((sum, minutes) => sum + minutes, 0);
+	}));
+
+	return adjustments.reduce((sum, minutes) => sum + minutes, 0);
 }

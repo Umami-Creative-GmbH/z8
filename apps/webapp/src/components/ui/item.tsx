@@ -4,12 +4,11 @@ import { Separator } from "@/components/ui/separator";
 import { Slot } from "@/components/ui/slot";
 import { cn } from "@/lib/utils";
 
-function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
+function ItemGroup({ className, ...props }: React.ComponentProps<"ul">) {
 	return (
-		<div
-			role="list"
+		<ul
 			data-slot="item-group"
-			className={cn("group/item-group flex flex-col", className)}
+			className={cn("group/item-group m-0 flex list-none flex-col p-0", className)}
 			{...props}
 		/>
 	);
@@ -53,8 +52,8 @@ function Item({
 	size = "default",
 	asChild = false,
 	...props
-}: React.ComponentProps<"div"> & VariantProps<typeof itemVariants> & { asChild?: boolean }) {
-	const Comp = asChild ? Slot : "div";
+}: React.ComponentProps<"li"> & VariantProps<typeof itemVariants> & { asChild?: boolean }) {
+	const Comp = asChild ? Slot : "li";
 	return (
 		<Comp
 			data-slot="item"

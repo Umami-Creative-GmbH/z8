@@ -179,7 +179,10 @@ export async function getAuditEvidenceSection(
 	);
 	const latestIncidentAt = [latestFailedRequestAt, latestInvalidVerificationAt]
 		.filter((value): value is Date => value instanceof Date)
-		.sort((left, right) => right.getTime() - left.getTime())[0]
+		.reduce<Date | null>(
+			(latest, value) => (!latest || value.getTime() > latest.getTime() ? value : latest),
+			null,
+		)
 		?.toISOString();
 
 	return deriveAuditEvidenceSection({

@@ -20,6 +20,13 @@ type VacationBalance = {
 	hasCarryover: boolean;
 };
 
+function getUsageColor(percentage: number) {
+	if (percentage >= 90) return "text-red-500";
+	if (percentage >= 75) return "text-orange-500";
+	if (percentage >= 50) return "text-yellow-500";
+	return "text-green-500";
+}
+
 export function VacationBalanceWidget() {
 	const { t } = useTranslate();
 	const {
@@ -37,13 +44,6 @@ export function VacationBalanceWidget() {
 	const usedPercentage = balance?.totalDays
 		? ((balance.usedDays + balance.pendingDays) / balance.totalDays) * 100
 		: 0;
-
-	const getUsageColor = (percentage: number) => {
-		if (percentage >= 90) return "text-red-500";
-		if (percentage >= 75) return "text-orange-500";
-		if (percentage >= 50) return "text-yellow-500";
-		return "text-green-500";
-	};
 
 	// Check if carryover is expiring soon (within 30 days)
 	const carryoverExpiringSoon =

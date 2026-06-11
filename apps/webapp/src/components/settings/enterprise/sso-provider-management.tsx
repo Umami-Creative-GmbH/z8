@@ -54,6 +54,16 @@ interface SSOProviderManagementProps {
 	initialProviders: SSOProvider[];
 }
 
+function getProviderDisplayName(issuer: string) {
+	if (issuer.includes("okta")) return "Okta";
+	if (issuer.includes("azure") || issuer.includes("microsoft")) return "Microsoft Entra ID";
+	if (issuer.includes("google")) return "Google Workspace";
+	if (issuer.includes("auth0")) return "Auth0";
+	if (issuer.includes("onelogin")) return "OneLogin";
+	if (issuer.includes("ping")) return "PingIdentity";
+	return "OIDC Provider";
+}
+
 export function SSOProviderManagement({ initialProviders }: SSOProviderManagementProps) {
 	const { t } = useTranslate();
 	const [providers, setProviders] = useState<SSOProvider[]>(initialProviders);
@@ -160,16 +170,6 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 		}
 
 		setDeleteDialog({ isOpen: false, provider: null });
-	};
-
-	const getProviderDisplayName = (issuer: string) => {
-		if (issuer.includes("okta")) return "Okta";
-		if (issuer.includes("azure") || issuer.includes("microsoft")) return "Microsoft Entra ID";
-		if (issuer.includes("google")) return "Google Workspace";
-		if (issuer.includes("auth0")) return "Auth0";
-		if (issuer.includes("onelogin")) return "OneLogin";
-		if (issuer.includes("ping")) return "PingIdentity";
-		return "OIDC Provider";
 	};
 
 	return (

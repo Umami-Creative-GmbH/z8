@@ -19,6 +19,7 @@ import { createLogger } from "@/lib/logger";
 import { createRedisConnectionOptions } from "@/lib/redis-config";
 
 const logger = createLogger("JobQueue");
+const QUEUE_HEALTH_TIMEOUT_MS = 1_000;
 
 // Connection configuration for Redis-compatible backend
 const connection: ConnectionOptions = {
@@ -150,6 +151,20 @@ const defaultJobOptions: JobsOptions = {
 const globalForQueue = globalThis as unknown as {
 	jobQueue: Queue<JobData, JobResult> | undefined;
 };
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+	let timeout: ReturnType<typeof setTimeout> | undefined;
+	return Promise.race([
+		promise,
+		new Promise<T>((_, reject) => {
+			timeout = setTimeout(() => reject(new Error("Queue health check timed out")), timeoutMs);
+		}),
+	]).finally(() => {
+		if (timeout) {
+			clearTimeout(timeout);
+		}
+	});
+}
 
 /**
  * Get or create the main job queue
@@ -345,7 +360,7 @@ export function createWorker(
 export async function isQueueHealthy(): Promise<boolean> {
 	try {
 		const queue = getJobQueue();
-		await queue.getJobCounts();
+		await withTimeout(queue.getJobCounts(), QUEUE_HEALTH_TIMEOUT_MS);
 		return true;
 	} catch {
 		return false;

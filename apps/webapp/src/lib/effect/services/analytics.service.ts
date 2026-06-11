@@ -329,33 +329,28 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							}),
 						);
 
+						const expected = yield* _(
+							Effect.promise(() =>
+								calculateExpectedWorkHours(organizationId, dateRange.start, dateRange.end),
+							),
+						);
+
 						// Calculate work hours for each employee
-						const employeeHoursPromises = employees.map(async (emp) => {
-							const summary = await calculateWorkHours(
-								emp.id,
-								organizationId,
-								dateRange.start,
-								dateRange.end,
-							);
-
-							const expected = await calculateExpectedWorkHours(
-								organizationId,
-								dateRange.start,
-								dateRange.end,
-							);
-
-							return {
-								employeeId: emp.id,
-								employeeName: emp.user.name || "Unknown",
-								teamId: emp.teamId,
-								teamName: emp.team?.name || "No Team",
-								totalHours: summary.totalHours,
-								expectedHours: expected.totalHours,
-								variance: summary.totalHours - expected.totalHours,
-								percentageOfExpected:
-									expected.totalHours > 0 ? (summary.totalHours / expected.totalHours) * 100 : 0,
-							};
-						});
+						const employeeHoursPromises = employees.map((emp) =>
+							calculateWorkHours(emp.id, organizationId, dateRange.start, dateRange.end).then(
+								(summary) => ({
+									employeeId: emp.id,
+									employeeName: emp.user.name || "Unknown",
+									teamId: emp.teamId,
+									teamName: emp.team?.name || "No Team",
+									totalHours: summary.totalHours,
+									expectedHours: expected.totalHours,
+									variance: summary.totalHours - expected.totalHours,
+									percentageOfExpected:
+										expected.totalHours > 0 ? (summary.totalHours / expected.totalHours) * 100 : 0,
+								}),
+							),
+						);
 
 						const employeeHours = yield* _(
 							Effect.promise(() => Promise.all(employeeHoursPromises)),
@@ -589,40 +584,37 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							}),
 						);
 
+						const expected = yield* _(
+							Effect.promise(() =>
+								calculateExpectedWorkHours(organizationId, dateRange.start, dateRange.end),
+							),
+						);
+
 						// Calculate work hours for each employee
-						const employeeDataPromises = employees.map(async (emp) => {
-							const actual = await calculateWorkHours(
-								emp.id,
-								organizationId,
-								dateRange.start,
-								dateRange.end,
-							);
+						const employeeDataPromises = employees.map((emp) =>
+							calculateWorkHours(emp.id, organizationId, dateRange.start, dateRange.end).then(
+								(actual) => {
+									const overtimeMinutes = computeOvertimeDelta({
+										actualMinutes: actual.totalMinutes,
+										expectedMinutes: expected.totalMinutes,
+									});
+									const undertimeHours = Math.max(0, expected.totalHours - actual.totalHours);
 
-							const expected = await calculateExpectedWorkHours(
-								organizationId,
-								dateRange.start,
-								dateRange.end,
-							);
-
-							const overtimeMinutes = computeOvertimeDelta({
-								actualMinutes: actual.totalMinutes,
-								expectedMinutes: expected.totalMinutes,
-							});
-							const undertimeHours = Math.max(0, expected.totalHours - actual.totalHours);
-
-							return {
-								employeeId: emp.id,
-								employeeName: emp.user.name || "Unknown",
-								totalHours: actual.totalHours,
-								totalMinutes: actual.totalMinutes,
-								expectedHours: expected.totalHours,
-								expectedMinutes: expected.totalMinutes,
-								overtimeMinutes,
-								undertimeHours,
-								avgHoursPerWeek:
-									expected.workDays > 0 ? (actual.totalHours / expected.workDays) * 5 : 0,
-							};
-						});
+									return {
+										employeeId: emp.id,
+										employeeName: emp.user.name || "Unknown",
+										totalHours: actual.totalHours,
+										totalMinutes: actual.totalMinutes,
+										expectedHours: expected.totalHours,
+										expectedMinutes: expected.totalMinutes,
+										overtimeMinutes,
+										undertimeHours,
+										avgHoursPerWeek:
+											expected.workDays > 0 ? (actual.totalHours / expected.workDays) * 5 : 0,
+									};
+								},
+							),
+						);
 
 						const employeeData = yield* _(Effect.promise(() => Promise.all(employeeDataPromises)));
 

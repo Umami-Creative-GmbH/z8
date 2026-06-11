@@ -183,15 +183,20 @@ export async function ensureEmployeeProfilesForOrganizationMembers(
 
 	const existingEmployeeUserIds = new Set(employees.map((employeeRecord) => employeeRecord.userId));
 
+	const provisioningTasks = [];
 	for (const memberRecord of members) {
 		if (existingEmployeeUserIds.has(memberRecord.userId)) {
 			continue;
 		}
 
-		await ensureEmployeeForOrganizationMember(dbClient, {
-			userId: memberRecord.userId,
-			organizationId: memberRecord.organizationId,
-			memberRole: memberRecord.role,
-		});
+		provisioningTasks.push(
+			ensureEmployeeForOrganizationMember(dbClient, {
+				userId: memberRecord.userId,
+				organizationId: memberRecord.organizationId,
+				memberRole: memberRecord.role,
+			}),
+		);
 	}
+
+	await Promise.all(provisioningTasks);
 }

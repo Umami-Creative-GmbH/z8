@@ -54,14 +54,15 @@ export async function createTimeEntry(
 		isSuperseded,
 	} = params;
 
-	const [previousEntry] = await client
-		.select()
-		.from(timeEntry)
-		.where(and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)))
-		.orderBy(desc(timeEntry.createdAt))
-		.limit(1);
-
-	const { ipAddress, userAgent } = await getRequestMetadata();
+	const [[previousEntry], { ipAddress, userAgent }] = await Promise.all([
+		client
+			.select()
+			.from(timeEntry)
+			.where(and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)))
+			.orderBy(desc(timeEntry.createdAt))
+			.limit(1),
+		getRequestMetadata(),
+	]);
 	const previousHash = previousEntry?.hash || null;
 	const hash = calculateHash({
 		employeeId,

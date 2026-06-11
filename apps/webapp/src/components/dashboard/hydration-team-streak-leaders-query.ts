@@ -11,7 +11,7 @@ export function createHydrationTeamStreakLeadersCacheConfig({
 	currentEmployeeId,
 	teamIds,
 }: HydrationTeamStreakLeadersCacheInput) {
-	const sortedTeamIds = [...teamIds].sort();
+	const sortedTeamIds = teamIds.toSorted();
 
 	return {
 		keyParts: [

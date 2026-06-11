@@ -1982,28 +1982,32 @@ async function sendOrganizationDeletionNotifications(
 	deletedByName: string,
 	deletionDate: Date,
 ): Promise<void> {
-	const [{ render }, { OrganizationDeletion }, { sendEmail }] = await Promise.all([
+	const [
+		{ render },
+		{ OrganizationDeletion },
+		{ sendEmail },
+		adminMembers,
+		appUrl,
+	] = await Promise.all([
 		import("react-email"),
 		import("@/lib/email/templates/organization-deletion"),
 		import("@/lib/email/email-service"),
+		db.query.member.findMany({
+			where: and(
+				eq(authSchema.member.organizationId, organizationId),
+				// Include both admin and owner roles
+			),
+			with: {
+				user: true,
+			},
+		}),
+		getOrganizationBaseUrl(organizationId),
 	]);
-
-	// Get all admins and owners
-	const adminMembers = await db.query.member.findMany({
-		where: and(
-			eq(authSchema.member.organizationId, organizationId),
-			// Include both admin and owner roles
-		),
-		with: {
-			user: true,
-		},
-	});
 
 	// Filter to only admins and owners
 	const typedAdminMembers = adminMembers as unknown as MemberWithUser[];
 	const adminsAndOwners = typedAdminMembers.filter((m) => m.role === "admin" || m.role === "owner");
 
-	const appUrl = await getOrganizationBaseUrl(organizationId);
 	const recoveryUrl = `${appUrl}/settings/organizations`;
 	const permanentDeletionDate = new Date(deletionDate);
 	permanentDeletionDate.setDate(permanentDeletionDate.getDate() + 5);

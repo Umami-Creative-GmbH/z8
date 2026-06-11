@@ -328,9 +328,12 @@ export async function updateEmployeeAction(
 							),
 						);
 					} else {
-						const dirtyFromDate = [previousStartDate, nextStartDate]
-							.filter((value): value is string => Boolean(value))
-							.sort()[0];
+						const startDates = [previousStartDate, nextStartDate].filter(
+							(value): value is string => Boolean(value),
+						);
+						const dirtyFromDate = startDates.reduce((earliest, value) =>
+							value < earliest ? value : earliest,
+						);
 						yield* _(
 							Effect.promise(() =>
 								markEmployeeWorkBalanceDirty({

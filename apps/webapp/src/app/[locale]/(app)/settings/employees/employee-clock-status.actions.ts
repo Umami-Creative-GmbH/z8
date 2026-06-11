@@ -15,7 +15,10 @@ import {
 export type EmployeeClockStatusMap = Record<string, EmployeeClockStatus>;
 
 function normalizeEmployeeIds(employeeIds: string[]) {
-	return Array.from(new Set(employeeIds.map((id) => id.trim()).filter(Boolean))).toSorted();
+	return Array.from(new Set(employeeIds.flatMap((id) => {
+		const trimmed = id.trim();
+		return trimmed ? [trimmed] : [];
+	}))).toSorted();
 }
 
 function resolveQueryEffect<T>(

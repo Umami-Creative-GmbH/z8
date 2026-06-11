@@ -56,16 +56,20 @@ export async function validateTimeEntryRange(
 	employeeTimezone: string = "UTC",
 ): Promise<TimeEntryValidationResult> {
 	// Check each day in the range
+	const dates: Date[] = [];
 	const currentDate = new Date(startDate);
 	const end = new Date(endDate);
 
 	while (currentDate <= end) {
-		const result = await validateTimeEntry(organizationId, currentDate, employeeTimezone);
-		if (!result.isValid) {
-			return result;
-		}
+		dates.push(new Date(currentDate));
 		currentDate.setDate(currentDate.getDate() + 1);
 	}
+
+	const results = await Promise.all(
+		dates.map((date) => validateTimeEntry(organizationId, date, employeeTimezone)),
+	);
+	const invalidResult = results.find((result) => !result.isValid);
+	if (invalidResult) return invalidResult;
 
 	return {
 		isValid: true,

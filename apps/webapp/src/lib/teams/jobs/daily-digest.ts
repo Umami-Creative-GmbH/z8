@@ -63,16 +63,19 @@ export async function runDailyDigestJob(): Promise<DailyDigestResult> {
 
 		logger.info({ tenantCount: digestEnabledTenants.length }, "Starting daily digest job");
 
-		for (const tenant of digestEnabledTenants) {
-			try {
-				const sent = await processTenantDigest(tenant);
-				digestsSent += sent;
-			} catch (error) {
-				const errorMsg = `Failed to process digest for tenant ${tenant.tenantId}: ${error instanceof Error ? error.message : String(error)}`;
-				logger.error({ error, tenantId: tenant.tenantId }, errorMsg);
-				errors.push(errorMsg);
-			}
-		}
+		const tenantResults = await Promise.all(
+			digestEnabledTenants.map(async (tenant) => {
+				try {
+					return { sent: await processTenantDigest(tenant), error: undefined };
+				} catch (error) {
+					const errorMsg = `Failed to process digest for tenant ${tenant.tenantId}: ${error instanceof Error ? error.message : String(error)}`;
+					logger.error({ error, tenantId: tenant.tenantId }, errorMsg);
+					return { sent: 0, error: errorMsg };
+				}
+			}),
+		);
+		digestsSent = tenantResults.reduce((total, result) => total + result.sent, 0);
+		errors.push(...tenantResults.flatMap((result) => (result.error ? [result.error] : [])));
 
 		logger.info(
 			{
@@ -425,7 +428,7 @@ export async function buildDigestDataForManager(
 
 		// Count clocked-in employees by the shifts they're assigned to
 		const _scheduledEmployeeIds = [
-			...new Set(scheduledShifts.map((s) => s.employeeId).filter(Boolean)),
+			...new Set(scheduledShifts.flatMap((s) => (s.employeeId ? [s.employeeId] : []))),
 		] as string[];
 		const clockedInEmployeeIds = new Set(activeWorkPeriods?.map((wp) => wp.employeeId) || []);
 

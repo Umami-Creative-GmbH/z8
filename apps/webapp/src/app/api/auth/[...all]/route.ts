@@ -7,7 +7,7 @@ const handlers = toNextJsHandler(auth);
 
 export async function rejectUnsupportedPlatformHost(request: Request) {
 	const hosts = [request.headers.get("x-forwarded-host"), request.headers.get("host")];
-	const resolvedLabels = new Map<string, boolean>();
+	const platformLabels = new Set<string>();
 
 	for (const host of hosts) {
 		const classification = classifyDomainHost(host);
@@ -15,19 +15,17 @@ export async function rejectUnsupportedPlatformHost(request: Request) {
 			return NextResponse.json({ error: "Not found" }, { status: 404 });
 		}
 
-		if (classification?.type !== "platformOrganization") {
-			continue;
+		if (classification?.type === "platformOrganization") {
+			platformLabels.add(classification.label);
 		}
+	}
 
-		let organizationExists = resolvedLabels.get(classification.label);
-		if (organizationExists === undefined) {
-			organizationExists = Boolean(await resolvePlatformOrganization(classification.label));
-			resolvedLabels.set(classification.label, organizationExists);
-		}
+	const resolvedOrganizations = await Promise.all(
+		Array.from(platformLabels).map(async (label) => resolvePlatformOrganization(label)),
+	);
 
-		if (!organizationExists) {
-			return NextResponse.json({ error: "Not found" }, { status: 404 });
-		}
+	if (resolvedOrganizations.some((organization) => !organization)) {
+		return NextResponse.json({ error: "Not found" }, { status: 404 });
 	}
 
 	return null;

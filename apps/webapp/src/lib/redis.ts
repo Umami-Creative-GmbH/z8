@@ -4,6 +4,9 @@ import { createLogger } from "@/lib/logger";
 import { createRedisConnectionOptions } from "@/lib/redis-config";
 
 const logger = createLogger("Redis");
+const REDIS_COMMAND_TIMEOUT_MS = 1_000;
+const REDIS_MAX_RECONNECT_ATTEMPTS = 8;
+const REDIS_LOG_THROTTLE_MS = 30_000;
 const hasRedisConfig = Boolean(env.REDIS_HOST);
 const shouldDisableRedisDuringBuild =
 	(!hasRedisConfig && env.NODE_ENV === "production") ||
@@ -31,7 +34,14 @@ const globalForRedis = globalThis as unknown as {
 
 type RedisStatus = Redis["status"];
 
+let lastErrorLogAt = 0;
+let lastReconnectLogAt = 0;
+
 const activeStatuses = new Set<RedisStatus>(["ready", "connect", "connecting"]);
+
+function shouldLogRedisEvent(lastLogAt: number): boolean {
+	return Date.now() - lastLogAt >= REDIS_LOG_THROTTLE_MS;
+}
 
 function isAlreadyConnectingError(error: unknown): boolean {
 	return (
@@ -45,14 +55,19 @@ function createRedisClient(): Redis {
 
 	const client = new Redis({
 		...redisConnectionOptions,
-		maxRetriesPerRequest: 20,
+		connectTimeout: REDIS_COMMAND_TIMEOUT_MS,
+		commandTimeout: REDIS_COMMAND_TIMEOUT_MS,
+		maxRetriesPerRequest: 1,
 		retryStrategy(times) {
-			// Exponential backoff: 50ms, 100ms, 200ms... capped at 2s
-			return Math.min(times * 50, 2000);
+			if (times > REDIS_MAX_RECONNECT_ATTEMPTS) {
+				return null;
+			}
+
+			return Math.min(100 * 2 ** (times - 1), 2_000);
 		},
 		lazyConnect: true,
 		enableReadyCheck: true,
-		enableOfflineQueue: true,
+		enableOfflineQueue: false,
 		// Reconnect automatically on connection loss
 		reconnectOnError(err) {
 			const targetErrors = ["READONLY", "ECONNRESET", "EPIPE"];
@@ -61,6 +76,11 @@ function createRedisClient(): Redis {
 	});
 
 	client.on("error", (err) => {
+		if (!shouldLogRedisEvent(lastErrorLogAt)) {
+			return;
+		}
+
+		lastErrorLogAt = Date.now();
 		logger.error({ error: err }, "Redis connection error");
 	});
 
@@ -72,6 +92,11 @@ function createRedisClient(): Redis {
 	});
 
 	client.on("reconnecting", (delay: number) => {
+		if (!shouldLogRedisEvent(lastReconnectLogAt)) {
+			return;
+		}
+
+		lastReconnectLogAt = Date.now();
 		logger.warn({ delay }, "Reconnecting to Redis");
 	});
 

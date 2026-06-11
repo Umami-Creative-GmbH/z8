@@ -500,12 +500,13 @@ export async function getEmployeesWithVacationData(
 		allowance: EmployeeVacationAllowanceRecord | null;
 	}>
 > {
-	const employees = await db.query.employee.findMany({
-		where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-		with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
-	});
-
-	const allowances = await getAllEmployeeVacationAllowances(organizationId, year);
+	const [employees, allowances] = await Promise.all([
+		db.query.employee.findMany({
+			where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+			with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
+		}),
+		getAllEmployeeVacationAllowances(organizationId, year),
+	]);
 	const allowanceMap = new Map(allowances.map((a) => [a.employeeId, a]));
 
 	return employees.map((emp) => ({

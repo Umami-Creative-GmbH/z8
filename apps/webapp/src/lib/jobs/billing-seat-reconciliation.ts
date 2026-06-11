@@ -47,9 +47,9 @@ export async function runBillingSeatReconciliation(): Promise<BillingSeatReconci
 		Layer.provide(SubscriptionServiceLive),
 	);
 	const errors: BillingSeatReconciliationResult["errors"] = [];
-	let synced = 0;
 
-	for (const item of subscriptions) {
+	const syncResults = await Promise.all(
+		subscriptions.map(async (item) => {
 		try {
 			await Effect.runPromise(
 				Effect.gen(function* () {
@@ -58,21 +58,30 @@ export async function runBillingSeatReconciliation(): Promise<BillingSeatReconci
 					return yield* seatSyncService.syncSeatsForOrganization(item.organizationId);
 				}).pipe(Effect.provide(layers)),
 			);
-			synced += 1;
+			return { synced: true as const };
 		} catch (error) {
 			logger.error(
 				{ error, organizationId: item.organizationId },
 				"Failed to reconcile billing seats",
 			);
-			errors.push({ organizationId: item.organizationId, error: getErrorMessage(error) });
+			return {
+				synced: false as const,
+				error: { organizationId: item.organizationId, error: getErrorMessage(error) },
+			};
 		}
+		}),
+	);
+
+	for (const result of syncResults) {
+		if (result.synced) continue;
+		errors.push(result.error);
 	}
 
 	return {
 		success: errors.length === 0,
 		billingEnabled: true,
 		processed: subscriptions.length,
-		synced,
+		synced: syncResults.filter((result) => result.synced).length,
 		skipped: 0,
 		errors,
 	};

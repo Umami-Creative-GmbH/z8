@@ -235,26 +235,25 @@ export const PlatformAdminServiceLive = Layer.effect(
 
 						const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-						// Get total count
-						const [{ total }] = await db.select({ total: count() }).from(user).where(whereClause);
-
-						// Get paginated users
-						const users = await db
-							.select({
-								id: user.id,
-								email: user.email,
-								emailVerified: user.emailVerified,
-								role: user.role,
-								banned: user.banned,
-								banReason: user.banReason,
-								banExpires: user.banExpires,
-								createdAt: user.createdAt,
-							})
-							.from(user)
-							.where(whereClause)
-							.orderBy(desc(user.createdAt))
-							.limit(pageSize)
-							.offset(offset);
+						const [[{ total }], users] = await Promise.all([
+							db.select({ total: count() }).from(user).where(whereClause),
+							db
+								.select({
+									id: user.id,
+									email: user.email,
+									emailVerified: user.emailVerified,
+									role: user.role,
+									banned: user.banned,
+									banReason: user.banReason,
+									banExpires: user.banExpires,
+									createdAt: user.createdAt,
+								})
+								.from(user)
+								.where(whereClause)
+								.orderBy(desc(user.createdAt))
+								.limit(pageSize)
+								.offset(offset),
+						]);
 
 						const userIds = users.map((platformUser) => platformUser.id);
 						const memberships =

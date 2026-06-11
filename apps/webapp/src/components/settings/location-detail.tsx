@@ -53,6 +53,13 @@ interface LocationDetailProps {
 	canManageLocations: boolean;
 }
 
+function getEmployeeName(emp: LocationWithDetails["employees"][number]["employee"]) {
+	if (emp.firstName || emp.lastName) {
+		return `${emp.firstName || ""} ${emp.lastName || ""}`.trim();
+	}
+	return emp.user.name || emp.user.email;
+}
+
 export function LocationDetail({
 	locationId,
 	organizationId,
@@ -145,13 +152,6 @@ export function LocationDetail({
 	const handleSuccess = () => {
 		queryClient.invalidateQueries({ queryKey: queryKeys.locations.detail(locationId) });
 		queryClient.invalidateQueries({ queryKey: queryKeys.locations.list(organizationId) });
-	};
-
-	const getEmployeeName = (emp: LocationWithDetails["employees"][number]["employee"]) => {
-		if (emp.firstName || emp.lastName) {
-			return `${emp.firstName || ""} ${emp.lastName || ""}`.trim();
-		}
-		return emp.user.name || emp.user.email;
 	};
 
 	if (isLoading) {

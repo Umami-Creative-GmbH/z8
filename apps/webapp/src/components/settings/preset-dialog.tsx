@@ -44,6 +44,10 @@ const holidayDateFormatter = new Intl.DateTimeFormat(undefined, {
 	timeZone: "UTC",
 });
 
+function formatDate(month: number, day: number) {
+	return holidayDateFormatter.format(new Date(Date.UTC(2000, month - 1, day)));
+}
+
 interface PresetDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -182,10 +186,6 @@ export function PresetDialog({
 			}
 		},
 	});
-
-	const formatDate = (month: number, day: number) => {
-		return holidayDateFormatter.format(new Date(Date.UTC(2000, month - 1, day)));
-	};
 
 	const formatLocation = () => {
 		if (!data?.preset) return null;

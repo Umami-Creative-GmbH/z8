@@ -159,11 +159,19 @@ export class PersonioExporter implements IPayrollExporter {
 			result: PersonioSyncAttemptResult;
 			workPeriod: WorkPeriodData;
 		}> = [];
+		const attendanceBatches: Array<typeof attendanceData> = [];
 		for (let i = 0; i < attendanceData.length; i += personioConfig.batchSize) {
-			const batch = attendanceData.slice(i, i + personioConfig.batchSize);
-			const batchRequests = batch.map((item) => item.request);
-			const batchResults = await client.createAttendances(batchRequests);
+			attendanceBatches.push(attendanceData.slice(i, i + personioConfig.batchSize));
+		}
 
+		const attendanceBatchResults = await Promise.all(
+			attendanceBatches.map((batch) =>
+				client.createAttendances(batch.map((item) => item.request)),
+			),
+		);
+
+		attendanceBatchResults.forEach((batchResults, batchIndex) => {
+			const batch = attendanceBatches[batchIndex];
 			// Pair each result with its corresponding work period
 			batchResults.forEach((result, batchIndex) => {
 				attendanceResults.push({
@@ -171,8 +179,8 @@ export class PersonioExporter implements IPayrollExporter {
 					workPeriod: batch[batchIndex].workPeriod,
 				});
 			});
-			apiCallCount += batch.length;
-		}
+		});
+		apiCallCount += attendanceData.length;
 
 		// Map attendance results back to work periods using tracked references
 		attendanceResults.forEach(({ result, workPeriod }) => {
@@ -194,16 +202,19 @@ export class PersonioExporter implements IPayrollExporter {
 		absenceRequests.forEach((req, idx) => {
 			if (req !== null) validAbsenceIndices.push(idx);
 		});
+		const absenceBatches: PersonioAbsenceRequest[][] = [];
 
 		for (let i = 0; i < validAbsenceRequests.length; i += personioConfig.batchSize) {
-			const batch = validAbsenceRequests.slice(
-				i,
-				i + personioConfig.batchSize,
-			) as PersonioAbsenceRequest[];
-			const batchResults = await client.createAbsences(batch);
-			absenceResults.push(...batchResults);
-			apiCallCount += batch.length;
+			absenceBatches.push(
+				validAbsenceRequests.slice(i, i + personioConfig.batchSize) as PersonioAbsenceRequest[],
+			);
 		}
+
+		const absenceBatchResults = await Promise.all(
+			absenceBatches.map((batch) => client.createAbsences(batch)),
+		);
+		absenceResults.push(...absenceBatchResults.flat());
+		apiCallCount += validAbsenceRequests.length;
 
 		// Map absence results back to absences
 		absenceResults.forEach((result, resultIndex) => {

@@ -82,9 +82,8 @@ export function StepReview({ form, filterOptions, payrollConfigs }: StepReviewPr
 				);
 
 				return (
-					<div
+					<section
 						className="space-y-4"
-						role="region"
 						aria-label={t("settings.scheduledExports.review.region", "Configuration summary")}
 					>
 						<div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
@@ -242,7 +241,7 @@ export function StepReview({ form, filterOptions, payrollConfigs }: StepReviewPr
 								)}
 							</CardContent>
 						</Card>
-					</div>
+					</section>
 				);
 			}}
 		</form.Subscribe>

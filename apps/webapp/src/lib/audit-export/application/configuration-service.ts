@@ -140,13 +140,13 @@ export class ConfigurationService {
 	}> {
 		logger.info({ organizationId }, "Initializing audit export");
 
-		// Check S3 Object Lock support
-		const objectLockSupported = await this.storage.checkObjectLockSupport(organizationId);
-
-		// Create config if not exists
-		const existing = await db.query.auditExportConfig.findFirst({
-			where: eq(auditExportConfig.organizationId, organizationId),
-		});
+		// Check S3 Object Lock support and existing config in parallel
+		const [objectLockSupported, existing] = await Promise.all([
+			this.storage.checkObjectLockSupport(organizationId),
+			db.query.auditExportConfig.findFirst({
+				where: eq(auditExportConfig.organizationId, organizationId),
+			}),
+		]);
 
 		if (!existing) {
 			await db.insert(auditExportConfig).values({
@@ -171,10 +171,11 @@ export class ConfigurationService {
 				.where(eq(auditExportConfig.id, existing.id));
 		}
 
-		// Generate signing key
-		const { keyId, fingerprint } = await this.keys.getOrCreateSigningKey(organizationId);
-
-		const config = await this.getConfig(organizationId);
+		// Generate signing key and reload config
+		const [{ fingerprint }, config] = await Promise.all([
+			this.keys.getOrCreateSigningKey(organizationId),
+			this.getConfig(organizationId),
+		]);
 
 		logger.info(
 			{ organizationId, objectLockSupported, keyFingerprint: fingerprint },

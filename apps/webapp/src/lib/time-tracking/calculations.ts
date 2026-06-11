@@ -111,17 +111,21 @@ export async function calculateWorkHours(
 	const processedDates = new Set<string>();
 	const excludedDates = new Set<string>();
 
+	const periodsWithExclusion = await Promise.all(
+		periods.map(async (period) => ({
+			period,
+			shouldExclude: await shouldExcludeFromCalculations(organizationId, period.startTime),
+		})),
+	);
+
 	// Process each work period
-	for (const period of periods) {
+	for (const { period, shouldExclude } of periodsWithExclusion) {
 		const periodDT = dateFromDB(period.startTime);
 		if (!periodDT) continue;
 		const dateKey = toDateKey(periodDT); // YYYY-MM-DD
 
 		// Track unique work days
 		processedDates.add(dateKey);
-
-		// Check if this date should be excluded from calculations
-		const shouldExclude = await shouldExcludeFromCalculations(organizationId, period.startTime);
 
 		if (shouldExclude) {
 			excludedMinutes += period.durationMinutes || 0;
@@ -152,9 +156,14 @@ export async function calculateWorkHoursByEmployee(
 ): Promise<Map<string, WorkHoursSummary>> {
 	const results = new Map<string, WorkHoursSummary>();
 
-	// Process each employee
-	for (const employeeId of employeeIds) {
-		const summary = await calculateWorkHours(employeeId, organizationId, startDate, endDate);
+	const summaries = await Promise.all(
+		employeeIds.map(async (employeeId) => ({
+			employeeId,
+			summary: await calculateWorkHours(employeeId, organizationId, startDate, endDate),
+		})),
+	);
+
+	for (const { employeeId, summary } of summaries) {
 		results.set(employeeId, summary);
 	}
 

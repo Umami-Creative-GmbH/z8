@@ -330,20 +330,19 @@ export async function getImportReviewSummary(input: { batchId: string; organizat
 		eq(importIssue.organizationId, input.organizationId),
 	);
 
-	const [rowCounts] = await db
-		.select({
-			totalRows: count(),
-			acceptedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'accepted')::int`,
-			rejectedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'rejected')::int`,
-			blockedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'blocked')::int`,
-			committedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'committed')::int`,
-		})
-		.from(importStagedRow)
-		.where(rowBaseWhere);
-	const [issueCounts] = await db
-		.select({ issueCount: count() })
-		.from(importIssue)
-		.where(issueBaseWhere);
+	const [[rowCounts], [issueCounts]] = await Promise.all([
+		db
+			.select({
+				totalRows: count(),
+				acceptedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'accepted')::int`,
+				rejectedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'rejected')::int`,
+				blockedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'blocked')::int`,
+				committedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'committed')::int`,
+			})
+			.from(importStagedRow)
+			.where(rowBaseWhere),
+		db.select({ issueCount: count() }).from(importIssue).where(issueBaseWhere),
+	]);
 
 	return {
 		totalRows: Number(rowCounts?.totalRows ?? 0),
@@ -511,23 +510,22 @@ export async function createCommitJobsForAcceptedRows(input: {
 		)
 		.orderBy(asc(importStagedRow.entityType));
 
-	const jobs = [];
 	const sortedEntityTypes = entityTypes
 		.map((row) => row.entityType as ImportEntityType)
 		.sort((left, right) => commitEntitySortIndex(left) - commitEntitySortIndex(right));
-	for (const entityType of sortedEntityTypes) {
-		const job = await createImportBatchJob({
-			batchId: input.batchId,
-			organizationId: input.organizationId,
-			kind: "commit",
-			entityType,
-			partitionKey: `commit:${entityType}`,
-		});
+	const jobs = await Promise.all(
+		sortedEntityTypes.map((entityType) =>
+			createImportBatchJob({
+				batchId: input.batchId,
+				organizationId: input.organizationId,
+				kind: "commit",
+				entityType,
+				partitionKey: `commit:${entityType}`,
+			}),
+		),
+	);
 
-		if (job) jobs.push(job);
-	}
-
-	return jobs;
+	return jobs.filter((job) => job !== undefined);
 }
 
 export async function recordRejectedExport(input: {

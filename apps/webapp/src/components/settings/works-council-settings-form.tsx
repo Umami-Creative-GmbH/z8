@@ -14,10 +14,10 @@ import type { WorksCouncilAbsenceVisibility, WorksCouncilIdentityVisibility } fr
 import type { WorksCouncilSettingsFormValues } from "@/lib/works-council/settings";
 
 function parseCommaSeparatedIds(value: string) {
-	return value
-		.split(",")
-		.map((item) => item.trim())
-		.filter(Boolean);
+	return value.split(",").flatMap((item) => {
+		const trimmed = item.trim();
+		return trimmed ? [trimmed] : [];
+	});
 }
 
 interface WorksCouncilSettingsFormProps {

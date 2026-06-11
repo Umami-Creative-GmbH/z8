@@ -52,9 +52,9 @@ export function EmployeeGroupManagement({ organizationId }: EmployeeGroupManagem
 						{t("settings.employeeGroups.loading", "Loading employee groups…")}
 					</div>
 				) : isError ? (
-					<div className="py-6 text-sm text-destructive" role="status">
+					<output className="block py-6 text-sm text-destructive">
 						{t("settings.employeeGroups.loadFailed", "Employee groups could not be loaded.")}
-					</div>
+					</output>
 				) : groups.length === 0 ? (
 					<div className="py-6 text-sm text-muted-foreground">
 						{t(

@@ -69,16 +69,15 @@ export function CronPreview({ scheduleType, cronExpression, timezone }: CronPrev
 
 	if (isLoading) {
 		return (
-			<div
+			<output
 				className="flex items-center gap-2 text-sm text-muted-foreground py-2"
-				role="status"
 				aria-live="polite"
 			>
 				<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 				<span>
 					{t("settings.scheduledExports.cronPreview.loading", "Calculating next runs...")}
 				</span>
-			</div>
+			</output>
 		);
 	}
 
@@ -96,9 +95,8 @@ export function CronPreview({ scheduleType, cronExpression, timezone }: CronPrev
 	}
 
 	return (
-		<div
+		<section
 			className="rounded-md border bg-muted/50 p-3 space-y-2"
-			role="region"
 			aria-label={t("settings.scheduledExports.cronPreview.region", "Scheduled runs preview")}
 		>
 			<div className="flex items-center gap-2 text-sm font-medium">
@@ -122,6 +120,6 @@ export function CronPreview({ scheduleType, cronExpression, timezone }: CronPrev
 					);
 				})}
 			</ul>
-		</div>
+		</section>
 	);
 }

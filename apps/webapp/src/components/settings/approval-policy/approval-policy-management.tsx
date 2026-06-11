@@ -122,9 +122,9 @@ export function ApprovalPolicyManagement({ organizationId }: ApprovalPolicyManag
 							{t("settings.approvalPolicies.loading", "Loading policies…")}
 						</div>
 					) : isError ? (
-						<div className="py-6 text-sm text-destructive" role="status">
+						<output className="block py-6 text-sm text-destructive">
 							{t("settings.approvalPolicies.loadFailed", "Approval policies could not be loaded.")}
-						</div>
+						</output>
 					) : policies.length === 0 ? (
 						<div className="py-6 text-sm text-muted-foreground">
 							{t(

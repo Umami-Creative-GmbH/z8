@@ -919,27 +919,28 @@ export async function getWorkCategorySets(
 				const setsWithCounts = await Promise.all(
 					results.map(async (set) => {
 						// Count categories through junction table
-						const [categoryCountResult] = await dbService.db
-							.select({ count: sql<number>`count(*)::int` })
-							.from(workCategorySetCategory)
-							.innerJoin(
-								workCategory,
-								and(
-									eq(workCategorySetCategory.categoryId, workCategory.id),
-									eq(workCategory.isActive, true),
+						const [[categoryCountResult], [assignmentCountResult]] = await Promise.all([
+							dbService.db
+								.select({ count: sql<number>`count(*)::int` })
+								.from(workCategorySetCategory)
+								.innerJoin(
+									workCategory,
+									and(
+										eq(workCategorySetCategory.categoryId, workCategory.id),
+										eq(workCategory.isActive, true),
+									),
+								)
+								.where(eq(workCategorySetCategory.setId, set.id)),
+							dbService.db
+								.select({ count: sql<number>`count(*)::int` })
+								.from(workCategorySetAssignment)
+								.where(
+									and(
+										eq(workCategorySetAssignment.setId, set.id),
+										eq(workCategorySetAssignment.isActive, true),
+									),
 								),
-							)
-							.where(eq(workCategorySetCategory.setId, set.id));
-
-						const [assignmentCountResult] = await dbService.db
-							.select({ count: sql<number>`count(*)::int` })
-							.from(workCategorySetAssignment)
-							.where(
-								and(
-									eq(workCategorySetAssignment.setId, set.id),
-									eq(workCategorySetAssignment.isActive, true),
-								),
-							);
+						]);
 
 						return {
 							...set,
@@ -1566,17 +1567,19 @@ export async function reorderSetCategories(
 		yield* _(
 			Effect.tryPromise({
 				try: async () => {
-					for (let i = 0; i < categoryIds.length; i++) {
-						await dbService.db
+					await Promise.all(
+						categoryIds.map((categoryId, sortOrder) =>
+							dbService.db
 							.update(workCategorySetCategory)
-							.set({ sortOrder: i })
+							.set({ sortOrder })
 							.where(
 								and(
 									eq(workCategorySetCategory.setId, setId),
-									eq(workCategorySetCategory.categoryId, categoryIds[i]),
+									eq(workCategorySetCategory.categoryId, categoryId),
 								),
-							);
-					}
+							),
+						),
+					);
 				},
 				catch: (error) =>
 					new DatabaseError({

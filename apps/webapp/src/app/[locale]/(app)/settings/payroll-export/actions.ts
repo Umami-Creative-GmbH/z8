@@ -681,8 +681,10 @@ export async function getSuccessFactorsConfigAction(
 
 		const hasCredentials = yield* _(
 			Effect.promise(async () => {
-				const clientId = await getOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_ID);
-				const clientSecret = await getOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_SECRET);
+				const [clientId, clientSecret] = await Promise.all([
+					getOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_ID),
+					getOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_SECRET),
+				]);
 				return (
 					clientId !== null &&
 					clientSecret !== null &&
@@ -815,8 +817,10 @@ export async function saveSuccessFactorsConfigAction(
 
 		const hasCredentials = yield* _(
 			Effect.promise(async () => {
-				const clientId = await getOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_ID);
-				const clientSecret = await getOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_SECRET);
+				const [clientId, clientSecret] = await Promise.all([
+					getOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_ID),
+					getOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_SECRET),
+				]);
 				return (
 					clientId !== null &&
 					clientSecret !== null &&
@@ -1051,8 +1055,10 @@ export async function getWorkdayConfigAction(
 
 		const hasCredentials = yield* _(
 			Effect.promise(async () => {
-				const clientId = await getOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_ID);
-				const clientSecret = await getOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET);
+				const [clientId, clientSecret] = await Promise.all([
+					getOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_ID),
+					getOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET),
+				]);
 				return (
 					clientId !== null &&
 					clientSecret !== null &&
@@ -1160,11 +1166,10 @@ export async function saveWorkdayConfigAction(
 
 		const hasCredentials = yield* _(
 			Effect.promise(async () => {
-				const clientId = await getOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_ID);
-				const clientSecret = await getOrgSecret(
-					input.organizationId,
-					WORKDAY_VAULT_KEY_CLIENT_SECRET,
-				);
+				const [clientId, clientSecret] = await Promise.all([
+					getOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_ID),
+					getOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET),
+				]);
 				return (
 					clientId !== null &&
 					clientSecret !== null &&

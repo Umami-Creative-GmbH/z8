@@ -42,6 +42,17 @@ interface ExecutionHistoryDialogProps {
 	scheduleName: string;
 }
 
+function formatDate(date: Date) {
+	return DateTime.fromJSDate(date).toLocaleString(DateTime.DATETIME_SHORT);
+}
+
+function formatDuration(ms: number | null) {
+	if (ms === null) return "-";
+	if (ms < 1000) return `${ms}ms`;
+	if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+	return `${(ms / 60000).toFixed(1)}m`;
+}
+
 export function ExecutionHistoryDialog({
 	open,
 	onOpenChange,
@@ -120,17 +131,6 @@ export function ExecutionHistoryDialog({
 			default:
 				return <Badge variant="outline">{status}</Badge>;
 		}
-	};
-
-	const formatDate = (date: Date) => {
-		return DateTime.fromJSDate(date).toLocaleString(DateTime.DATETIME_SHORT);
-	};
-
-	const formatDuration = (ms: number | null) => {
-		if (ms === null) return "-";
-		if (ms < 1000) return `${ms}ms`;
-		if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-		return `${(ms / 60000).toFixed(1)}m`;
 	};
 
 	return (

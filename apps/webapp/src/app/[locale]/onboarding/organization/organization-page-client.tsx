@@ -185,9 +185,8 @@ export default function OrganizationPageClient({
 
 							<CardContent>
 								<form
-									onSubmit={(e) => {
-										e.preventDefault();
-										form.handleSubmit();
+									action={() => {
+										void form.handleSubmit();
 									}}
 									className="space-y-4"
 								>

@@ -174,41 +174,40 @@ export function NotificationItem({
 
 	return (
 		<div
-			role="button"
-			tabIndex={0}
-			onClick={activateNotification}
-			onKeyDown={(e) => {
-				if (e.key === "Enter" || e.key === " ") {
-					e.preventDefault();
-					activateNotification();
-				}
-			}}
 			className={cn(
-				"group flex items-start gap-3 p-3 transition-colors cursor-pointer",
+				"group flex items-start gap-3 p-3 transition-colors",
 				"hover:bg-muted/50",
 				!notification.isRead && "bg-muted/30",
 			)}
 		>
-			{/* Icon */}
-			<div className={cn("flex shrink-0 items-center justify-center rounded-full p-2", bgColor)}>
-				<span className={iconColor}>{icon}</span>
-			</div>
+			<button
+				type="button"
+				onClick={activateNotification}
+				className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+			>
+				{/* Icon */}
+				<span className={cn("flex shrink-0 items-center justify-center rounded-full p-2", bgColor)}>
+					<span className={iconColor}>{icon}</span>
+				</span>
 
-			{/* Content */}
-			<div className="min-w-0 flex-1">
-				<div className="flex items-start justify-between gap-2">
-					<p className={cn("text-sm line-clamp-1", !notification.isRead && "font-medium")}>
-						{localized.title}
-					</p>
-					{!notification.isRead && (
-						<span className="shrink-0 mt-1.5">
-							<IconCircleFilled className="size-2 text-primary" />
+				{/* Content */}
+				<span className="min-w-0 flex-1">
+					<span className="flex items-start justify-between gap-2">
+						<span className={cn("text-sm line-clamp-1", !notification.isRead && "font-medium")}>
+							{localized.title}
 						</span>
-					)}
-				</div>
-				<p className="text-muted-foreground text-xs line-clamp-2 mt-0.5">{localized.message}</p>
-				<p className="text-muted-foreground text-xs mt-1">{localized.timeAgo}</p>
-			</div>
+						{!notification.isRead && (
+							<span className="shrink-0 mt-1.5">
+								<IconCircleFilled className="size-2 text-primary" />
+							</span>
+						)}
+					</span>
+					<span className="text-muted-foreground text-xs line-clamp-2 mt-0.5 block">
+						{localized.message}
+					</span>
+					<span className="text-muted-foreground text-xs mt-1 block">{localized.timeAgo}</span>
+				</span>
+			</button>
 
 			{/* Actions (visible on hover) */}
 			<div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">

@@ -67,9 +67,7 @@ vi.mock("@/components/ui/card", () => ({
 }));
 
 vi.mock("@/components/ui/progress", () => ({
-	Progress: (props: React.HTMLAttributes<HTMLDivElement> & { value?: number }) => (
-		<div role="progressbar" aria-valuenow={props.value} {...props} />
-	),
+	Progress: ({ value, ...props }: React.ComponentProps<"progress">) => <progress value={value} {...props} />,
 }));
 
 vi.mock("sonner", () => ({

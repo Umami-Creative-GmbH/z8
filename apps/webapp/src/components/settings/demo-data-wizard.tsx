@@ -81,6 +81,18 @@ interface GenerationStep {
 	error?: string;
 }
 
+function handleSelectableCardKeyDown(
+	event: React.KeyboardEvent<HTMLDivElement>,
+	toggle: () => void,
+) {
+	if (event.key !== "Enter" && event.key !== " ") {
+		return;
+	}
+
+	event.preventDefault();
+	toggle();
+}
+
 export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -136,18 +148,6 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 		null,
 	);
 	const [deleteNonAdminConfirmText, setDeleteNonAdminConfirmText] = useState("");
-
-	const handleSelectableCardKeyDown = (
-		event: React.KeyboardEvent<HTMLDivElement>,
-		toggle: () => void,
-	) => {
-		if (event.key !== "Enter" && event.key !== " ") {
-			return;
-		}
-
-		event.preventDefault();
-		toggle();
-	};
 
 	const updateStepStatus = (
 		stepId: string,

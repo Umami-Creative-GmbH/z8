@@ -161,16 +161,17 @@ export async function generateComplianceReport(
 ): Promise<ComplianceReport> {
 	const { organizationId, startDate, endDate } = options;
 
-	// Get all logs in date range
-	const result = await getAuditLogs({
-		organizationId,
-		startDate,
-		endDate,
-		limit: 10000,
-	});
-
-	// Get statistics
-	const stats = await getAuditLogStats(organizationId, startDate, endDate);
+	const [result, stats] = await Promise.all([
+		// Get all logs in date range
+		getAuditLogs({
+			organizationId,
+			startDate,
+			endDate,
+			limit: 10000,
+		}),
+		// Get statistics
+		getAuditLogStats(organizationId, startDate, endDate),
+	]);
 
 	// Calculate unique entities
 	const uniqueEntities = new Set(result.logs.map((l) => `${l.entityType}:${l.entityId}`));

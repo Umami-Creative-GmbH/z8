@@ -1461,7 +1461,7 @@ export async function getHydrationWidgetData(): Promise<
 						currentEmployeeId: currentEmployee.id,
 						teamIds,
 					});
-					const sortedTeamIds = [...teamIds].sort();
+					const sortedTeamIds = teamIds.toSorted();
 
 					return unstable_cache(
 						async () => {

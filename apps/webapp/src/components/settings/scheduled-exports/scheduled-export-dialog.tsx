@@ -271,10 +271,6 @@ export function ScheduledExportDialog({
 					{/* Progress indicator */}
 					<div
 						className="space-y-2"
-						role="progressbar"
-						aria-valuenow={currentStep + 1}
-						aria-valuemin={1}
-						aria-valuemax={STEPS.length}
 					>
 						<Progress
 							value={progress}

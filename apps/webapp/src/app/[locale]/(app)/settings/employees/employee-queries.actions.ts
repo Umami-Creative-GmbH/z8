@@ -207,7 +207,7 @@ function buildInvitationDraftFilters(
 }
 
 function sortEmployeeDirectoryRows(rows: EmployeeDirectoryRow[]) {
-	return [...rows].sort((a, b) => {
+	return rows.toSorted((a, b) => {
 		const nameCompare = (a.user.name || "").localeCompare(b.user.name || "");
 		if (nameCompare !== 0) return nameCompare;
 		const emailCompare = a.user.email.localeCompare(b.user.email);

@@ -315,47 +315,39 @@ async function handleConversationUpdate(context: TurnContext): Promise<void> {
 	const tenantId = activity.conversation?.tenantId;
 
 	// Check if bot was added
-	if (activity.membersAdded) {
-		for (const member of activity.membersAdded) {
-			if (member.id === activity.recipient?.id) {
-				// Bot was added to conversation
-				logger.info(
-					{
-						tenantId,
-						conversationType: activity.conversation?.conversationType,
-					},
-					"Bot added to conversation",
-				);
+	if (activity.membersAdded?.some((member) => member.id === activity.recipient?.id)) {
+		// Bot was added to conversation
+		logger.info(
+			{
+				tenantId,
+				conversationType: activity.conversation?.conversationType,
+			},
+			"Bot added to conversation",
+		);
 
-				if (tenantId) {
-					const tenantResult = await resolveTenant(tenantId);
-					if (tenantResult.status === "not_found") {
-						await sendSetupInstructions(context, tenantId);
-					} else if (tenantResult.status === "configured") {
-						const t = await getBotTranslate(DEFAULT_LANGUAGE);
-						await context.sendActivity(
-							t("bot.static.welcomeTeams", 'Welcome to Z8! Type "help" to see available commands.'),
-						);
-					}
-				}
+		if (tenantId) {
+			const tenantResult = await resolveTenant(tenantId);
+			if (tenantResult.status === "not_found") {
+				await sendSetupInstructions(context, tenantId);
+			} else if (tenantResult.status === "configured") {
+				const t = await getBotTranslate(DEFAULT_LANGUAGE);
+				await context.sendActivity(
+					t("bot.static.welcomeTeams", 'Welcome to Z8! Type "help" to see available commands.'),
+				);
 			}
 		}
 	}
 
 	// Check if bot was removed
-	if (activity.membersRemoved) {
-		for (const member of activity.membersRemoved) {
-			if (member.id === activity.recipient?.id) {
-				// Bot was removed from conversation
-				logger.info({ tenantId }, "Bot removed from conversation");
+	if (activity.membersRemoved?.some((member) => member.id === activity.recipient?.id)) {
+		// Bot was removed from conversation
+		logger.info({ tenantId }, "Bot removed from conversation");
 
-				if (tenantId) {
-					const conversationId = activity.conversation?.id;
-					const tenantResult = await resolveTenant(tenantId);
-					if (tenantResult.status === "configured" && conversationId) {
-						await deactivateConversation(conversationId, tenantResult.tenant.organizationId);
-					}
-				}
+		if (tenantId) {
+			const conversationId = activity.conversation?.id;
+			const tenantResult = await resolveTenant(tenantId);
+			if (tenantResult.status === "configured" && conversationId) {
+				await deactivateConversation(conversationId, tenantResult.tenant.organizationId);
 			}
 		}
 	}

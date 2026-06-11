@@ -35,6 +35,11 @@ interface SurchargeManagementProps {
 	canManage: boolean;
 }
 
+function formatPercentage(percentage: string) {
+	const value = parseFloat(percentage) * 100;
+	return `${value}%`;
+}
+
 export function SurchargeManagement({ organizationId, canManage }: SurchargeManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -97,11 +102,6 @@ export function SurchargeManagement({ organizationId, canManage }: SurchargeMana
 			setDeleteModelId(null);
 		},
 	});
-
-	const formatPercentage = (percentage: string) => {
-		const value = parseFloat(percentage) * 100;
-		return `${value}%`;
-	};
 
 	const getRuleTypeLabel = (ruleType: string) => {
 		switch (ruleType) {

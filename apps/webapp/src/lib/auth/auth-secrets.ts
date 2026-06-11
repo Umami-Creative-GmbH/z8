@@ -37,8 +37,10 @@ export function resolveAuthSecrets({
 
 	const parsed = rotatedSecrets
 		.split(",")
-		.map((entry) => entry.trim())
-		.filter(Boolean)
+		.flatMap((entry) => {
+			const trimmed = entry.trim();
+			return trimmed ? [trimmed] : [];
+		})
 		.map((entry) => {
 			const [versionRaw, ...valueParts] = entry.split(":");
 			const version = Number(versionRaw);

@@ -62,6 +62,19 @@ interface WageTypeMappingsProps {
 	config: DatevConfigResult | null;
 }
 
+function getDisplayName(mapping: WageTypeMapping): string {
+	if (mapping.workCategoryName) return mapping.workCategoryName;
+	if (mapping.absenceCategoryName) return mapping.absenceCategoryName;
+	if (mapping.specialCategory) {
+		// Format special category for display
+		return mapping.specialCategory
+			.split("_")
+			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+			.join(" ");
+	}
+	return "-";
+}
+
 type SourceType = "work_category" | "absence_category" | "special";
 
 interface WorkCategory {
@@ -191,19 +204,6 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 		setLexwareWageTypeName("");
 		setSageWageTypeCode("");
 		setSageWageTypeName("");
-	};
-
-	const getDisplayName = (mapping: WageTypeMapping): string => {
-		if (mapping.workCategoryName) return mapping.workCategoryName;
-		if (mapping.absenceCategoryName) return mapping.absenceCategoryName;
-		if (mapping.specialCategory) {
-			// Format special category for display
-			return mapping.specialCategory
-				.split("_")
-				.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-				.join(" ");
-		}
-		return "-";
 	};
 
 	const getSourceTypeLabel = (mapping: WageTypeMapping): string => {

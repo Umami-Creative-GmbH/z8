@@ -420,8 +420,12 @@ export async function getProjectsWithUpcomingDeadlines(): Promise<
  * Calculate total hours booked to a project
  */
 export async function getProjectTotalHours(projectId: string): Promise<number> {
-	const { workPeriod } = await import("@/db/schema");
-	const { eq, sql } = await import("drizzle-orm");
+	const [schema, drizzle] = await Promise.all([
+		import("@/db/schema"),
+		import("drizzle-orm"),
+	]);
+	const { workPeriod } = schema;
+	const { eq, sql } = drizzle;
 
 	const result = await db
 		.select({

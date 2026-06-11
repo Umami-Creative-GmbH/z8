@@ -53,6 +53,11 @@ interface PendingMembersCardProps {
 
 const NO_TEAM_VALUE = "none";
 
+function formatDate(date: Date | string | null | undefined) {
+	if (!date) return "-";
+	return new Date(date).toLocaleDateString();
+}
+
 export function PendingMembersCard({ organizationId, currentMemberRole }: PendingMembersCardProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -215,11 +220,6 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 
 	const getApproveTeamId = (member: PendingMember) => {
 		return resolveApproveTeamId(member, teamAssignments);
-	};
-
-	const formatDate = (date: Date | string | null | undefined) => {
-		if (!date) return "-";
-		return new Date(date).toLocaleDateString();
 	};
 
 	if (!canManage) {

@@ -41,16 +41,19 @@ export async function runTelegramEscalationCheckerJob(): Promise<TelegramEscalat
 
 		logger.info({ botCount: escalationEnabledBots.length }, "Starting Telegram escalation checker");
 
-		for (const bot of escalationEnabledBots) {
-			try {
-				const escalated = await processBotEscalations(bot);
-				approvalsEscalated += escalated;
-			} catch (error) {
-				const errorMsg = `Failed to process escalations for org ${bot.organizationId}: ${error instanceof Error ? error.message : String(error)}`;
-				logger.error({ error, organizationId: bot.organizationId }, errorMsg);
-				errors.push(errorMsg);
-			}
-		}
+		const botResults = await Promise.all(
+			escalationEnabledBots.map(async (bot) => {
+				try {
+					return { escalated: await processBotEscalations(bot), error: undefined };
+				} catch (error) {
+					const errorMsg = `Failed to process escalations for org ${bot.organizationId}: ${error instanceof Error ? error.message : String(error)}`;
+					logger.error({ error, organizationId: bot.organizationId }, errorMsg);
+					return { escalated: 0, error: errorMsg };
+				}
+			}),
+		);
+		approvalsEscalated = botResults.reduce((total, result) => total + result.escalated, 0);
+		errors.push(...botResults.flatMap((result) => (result.error ? [result.error] : [])));
 
 		logger.info(
 			{
@@ -110,46 +113,47 @@ async function processBotEscalations(bot: {
 	});
 	const alreadyEscalated = new Set(existingEscalations.map((e) => e.approvalRequestId));
 
-	let escalated = 0;
+	const escalationResults = await Promise.all(
+		staleApprovals.map(async (approval) => {
+			if (alreadyEscalated.has(approval.id)) return 0;
 
-	for (const approval of staleApprovals) {
-		if (alreadyEscalated.has(approval.id)) continue;
-
-		try {
+			try {
 			// Find a backup manager (next manager up the chain)
 			const managers = await db.query.employeeManagers.findMany({
 				where: eq(employeeManagers.employeeId, approval.approverId),
 			});
 
-			// Find a backup manager who is not the original approver
-			// and who has a Telegram account linked
-			let backupManagerId: string | null = null;
+			// Find the first backup manager in manager order who has Telegram linked.
+			const candidateManagerIds = managers
+				.map((mgr) => mgr.managerId)
+				.filter((managerId) => managerId !== approval.approverId);
+			const managerEmployees =
+				candidateManagerIds.length > 0
+					? await db.query.employee.findMany({
+							where: inArray(employee.id, candidateManagerIds),
+							columns: { id: true, userId: true },
+						})
+					: [];
+			const userIds = managerEmployees.flatMap((emp) => (emp.userId ? [emp.userId] : []));
+			const telegramMappings =
+				userIds.length > 0
+					? await db.query.telegramUserMapping.findMany({
+							where: and(
+								inArray(telegramUserMapping.userId, userIds),
+								eq(telegramUserMapping.organizationId, bot.organizationId),
+								eq(telegramUserMapping.isActive, true),
+							),
+						})
+					: [];
+			const employeesById = new Map(managerEmployees.map((emp) => [emp.id, emp]));
+			const mappedUserIds = new Set(telegramMappings.map((mapping) => mapping.userId));
+			const backupManagerId =
+				candidateManagerIds.find((managerId) => {
+					const userId = employeesById.get(managerId)?.userId;
+					return userId ? mappedUserIds.has(userId) : false;
+				}) ?? null;
 
-			for (const mgr of managers) {
-				if (mgr.managerId === approval.approverId) continue;
-
-				// Check if this manager has Telegram linked
-				const emp = await db.query.employee.findFirst({
-					where: eq(employee.id, mgr.managerId),
-					columns: { userId: true },
-				});
-				if (!emp?.userId) continue;
-
-				const telegramMapping = await db.query.telegramUserMapping.findFirst({
-					where: and(
-						eq(telegramUserMapping.userId, emp.userId),
-						eq(telegramUserMapping.organizationId, bot.organizationId),
-						eq(telegramUserMapping.isActive, true),
-					),
-				});
-
-				if (telegramMapping) {
-					backupManagerId = mgr.managerId;
-					break;
-				}
-			}
-
-			if (!backupManagerId) continue;
+			if (!backupManagerId) return 0;
 
 			// Record the escalation
 			const _ageHours = DateTime.now().diff(DateTime.fromJSDate(approval.createdAt), "hours").hours;
@@ -170,8 +174,6 @@ async function processBotEscalations(bot: {
 				bot.botToken,
 			);
 
-			escalated++;
-
 			logger.info(
 				{
 					approvalId: approval.id,
@@ -180,10 +182,14 @@ async function processBotEscalations(bot: {
 				},
 				"Escalated approval via Telegram",
 			);
+
+			return 1;
 		} catch (error) {
 			logger.warn({ error, approvalId: approval.id }, "Failed to escalate approval");
+			return 0;
 		}
-	}
+		}),
+	);
 
-	return escalated;
+	return escalationResults.reduce<number>((total, result) => total + result, 0);
 }

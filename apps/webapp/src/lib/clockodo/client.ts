@@ -177,19 +177,22 @@ export class ClockodoClient {
 		const startYear = year ?? currentYear - 10;
 		const endYear = year ?? currentYear;
 
-		for (let y = startYear; y <= endYear; y++) {
-			try {
-				const data = await this.request<{ absences: ClockodoAbsence[] }>("/absences", {
-					year: String(y),
-				});
-				if (data.absences) {
-					allAbsences.push(...data.absences);
+		const absencesByYear = await Promise.all(
+			Array.from({ length: endYear - startYear + 1 }, async (_, index) => {
+				const y = startYear + index;
+				try {
+					const data = await this.request<{ absences: ClockodoAbsence[] }>("/absences", {
+						year: String(y),
+					});
+					return data.absences ?? [];
+				} catch (error) {
+					// Some years may have no data, continue
+					logger.debug({ year: y, error }, "No absences for year");
+					return [];
 				}
-			} catch (error) {
-				// Some years may have no data, continue
-				logger.debug({ year: y, error }, "No absences for year");
-			}
-		}
+			}),
+		);
+		allAbsences.push(...absencesByYear.flat());
 
 		return allAbsences;
 	}
