@@ -34,7 +34,7 @@
 		"docker:build:worker": "docker build -f docker/Dockerfile.worker -t z8-worker:latest .",
 		"docker:build:migration": "docker build -f docker/Dockerfile.migration -t z8-migration:latest .",
 		"docker:build:seed": "docker build -f docker/Dockerfile.db-seed -t z8-db-seed:latest .",
-		"docker:build:all": "docker build -f docker/Dockerfile.webapp -t z8-webapp:latest . && docker build -f docker/Dockerfile.worker -t z8-worker:latest . && docker build -f docker/Dockerfile.migration -t z8-migration:latest . && docker build -f docker/Dockerfile.db-seed -t z8-db-seed:latest .",
+		"docker:build:all": "docker build -f docker/Dockerfile.webapp -t z8-webapp:latest . && docker build -f docker/Dockerfile.notify-server -t z8-notify-server:latest . && docker build -f docker/Dockerfile.worker -t z8-worker:latest . && docker build -f docker/Dockerfile.migration -t z8-migration:latest . && docker build -f docker/Dockerfile.db-seed -t z8-db-seed:latest .",
 		"docker:sync:non-web-targets": "pnpm node docker/scripts/prepare-target-runtime.mjs manifest worker && pnpm node docker/scripts/prepare-target-runtime.mjs manifest migration && pnpm node docker/scripts/prepare-target-runtime.mjs manifest db-seed && pnpm --dir docker/targets/worker install --lockfile-only && pnpm --dir docker/targets/migration install --lockfile-only && pnpm --dir docker/targets/db-seed install --lockfile-only",
 		"docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
 		"docker:prod:down": "docker compose -f docker-compose.prod.yml down",

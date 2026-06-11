@@ -5,6 +5,7 @@ FROM oven/bun:${BUN_VERSION}-alpine AS notify-server
 
 RUN apk add --no-cache ca-certificates curl nodejs npm tini
 RUN npm install --global pnpm@${PNPM_VERSION}
+RUN addgroup -S -g 1001 nodejs && adduser -S -D -H -u 1001 -G nodejs app
 
 WORKDIR /repo
 ENV NODE_ENV=production
@@ -14,12 +15,15 @@ COPY apps/webapp/package.json ./apps/webapp/package.json
 COPY apps/notify-server/package.json ./apps/notify-server/package.json
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 
-COPY apps/webapp ./apps/webapp
-COPY apps/notify-server ./apps/notify-server
+COPY --chown=app:nodejs apps/webapp ./apps/webapp
+COPY --chown=app:nodejs apps/notify-server ./apps/notify-server
+
+WORKDIR /repo/apps/notify-server
 
 EXPOSE 3002
+USER app
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["pnpm", "--filter", "notify-server", "start:bun"]
+CMD ["bun", "src/bun.ts"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD curl -f http://localhost:3002/health || exit 1
