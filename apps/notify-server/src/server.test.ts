@@ -77,4 +77,26 @@ describe("createNotifyServerHandler", () => {
 
 		expect(unregister).toHaveBeenCalledTimes(1);
 	});
+
+	it("unregisters the client when startup fails after registration", async () => {
+		vi.useFakeTimers();
+		try {
+			const unregister = vi.fn();
+			const handler = createNotifyServerHandler({
+				validate: vi.fn(async () => ({ ok: true, userId: "user-1", organizationId: "org-auth" }) as const),
+				getUnreadCount: vi.fn(async () => {
+					throw new Error("count failed");
+				}),
+				registerClient: vi.fn(() => unregister),
+			});
+
+			const response = await handler(new Request("http://local/api/notifications/stream"));
+			const reader = response.body!.getReader();
+
+			await expect(reader.read()).rejects.toThrow("count failed");
+			expect(unregister).toHaveBeenCalledTimes(1);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
 });

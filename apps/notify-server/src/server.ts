@@ -49,8 +49,13 @@ export function createNotifyServerHandler(deps: NotifyServerDependencies) {
 					unregister();
 				};
 
-				const count = await deps.getUnreadCount(auth.userId, auth.organizationId);
-				sendFrame("count_update", { count, organizationId: auth.organizationId });
+				try {
+					const count = await deps.getUnreadCount(auth.userId, auth.organizationId);
+					sendFrame("count_update", { count, organizationId: auth.organizationId });
+				} catch (error) {
+					cleanup();
+					throw error;
+				}
 			},
 			cancel() {
 				cleanup();
