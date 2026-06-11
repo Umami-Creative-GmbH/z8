@@ -28,24 +28,45 @@ export interface NotifyRuntimeDependencies extends Pick<NotifyServerDependencies
 export function createNotifyRuntime(deps: NotifyRuntimeDependencies) {
 	const registry = new ClientRegistry();
 	let fanoutPromise: Promise<() => Promise<void>> | null = null;
+	let fanoutUnavailable = false;
+
+	const markFanoutUnavailable = () => {
+		fanoutUnavailable = true;
+		fanoutPromise = null;
+		registry.closeAll();
+	};
+
+	const startFanout = () => {
+		if (fanoutPromise && !fanoutUnavailable) return fanoutPromise;
+
+		fanoutUnavailable = false;
+		fanoutPromise = deps
+			.startRedisFanout({
+				subscriber: deps.createRedisSubscriber(),
+				fanout: (userId, event, data) => registry.fanout(userId, event, data),
+				onUnavailable: markFanoutUnavailable,
+			})
+			.catch((error: unknown) => {
+				markFanoutUnavailable();
+				throw error;
+			});
+
+		return fanoutPromise;
+	};
 
 	return {
 		handler: createNotifyServerHandler({
 			validate: deps.validate,
+			ensureFanout: async () => {
+				await startFanout();
+			},
 			getUnreadCount: deps.getUnreadCount,
 			registerClient: (client) => {
 				registry.add(client);
 				return () => registry.remove(client.id);
 			},
 		}),
-		startFanout: () => {
-			fanoutPromise ??= deps.startRedisFanout({
-				subscriber: deps.createRedisSubscriber(),
-				fanout: (userId, event, data) => registry.fanout(userId, event, data),
-				onUnavailable: () => registry.closeAll(),
-			});
-			return fanoutPromise;
-		},
+		startFanout,
 	};
 }
 

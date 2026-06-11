@@ -62,6 +62,46 @@ describe("createNotifyServerHandler", () => {
 		await reader!.cancel();
 	});
 
+	it("returns 503 without registering when fanout cannot start", async () => {
+		const registerClient = vi.fn();
+		const handler = createNotifyServerHandler({
+			validate: vi.fn(async () => ({ ok: true, userId: "user-1", organizationId: "org-auth" }) as const),
+			ensureFanout: vi.fn(async () => {
+				throw new Error("fanout unavailable");
+			}),
+			getUnreadCount: vi.fn(),
+			registerClient,
+		});
+
+		const response = await handler(new Request("http://local/api/notifications/stream"));
+
+		expect(response.status).toBe(503);
+		await expect(response.text()).resolves.toBe("Notification stream unavailable");
+		expect(registerClient).not.toHaveBeenCalled();
+	});
+
+	it("starts fanout before accepting authenticated streams", async () => {
+		const unregister = vi.fn();
+		const ensureFanout = vi.fn(async () => {});
+		const registerClient = vi.fn(() => unregister);
+		const handler = createNotifyServerHandler({
+			validate: vi.fn(async () => ({ ok: true, userId: "user-1", organizationId: "org-auth" }) as const),
+			ensureFanout,
+			getUnreadCount: vi.fn(async () => 7),
+			registerClient,
+		});
+
+		const response = await handler(new Request("http://local/api/notifications/stream"));
+
+		expect(response.status).toBe(200);
+		expect(ensureFanout).toHaveBeenCalledTimes(1);
+		expect(registerClient).toHaveBeenCalledTimes(1);
+
+		const reader = response.body!.getReader();
+		await reader.read();
+		await reader.cancel();
+	});
+
 	it("unregisters the client when the stream is cancelled", async () => {
 		const unregister = vi.fn();
 		const handler = createNotifyServerHandler({

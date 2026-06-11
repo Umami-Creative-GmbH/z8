@@ -6,6 +6,7 @@ import { createSseHeaders, encodeSseEvent } from "./sse.js";
 
 export interface NotifyServerDependencies {
 	validate: (headers: Headers) => Promise<StreamAuthResult>;
+	ensureFanout?: () => Promise<void>;
 	getUnreadCount: (userId: string, organizationId: string) => Promise<number>;
 	registerClient: (client: {
 		id: string;
@@ -24,6 +25,12 @@ export function createNotifyServerHandler(deps: NotifyServerDependencies) {
 
 		const auth = await deps.validate(request.headers);
 		if (!auth.ok) return new Response(auth.message, { status: auth.status });
+
+		try {
+			await deps.ensureFanout?.();
+		} catch {
+			return new Response("Notification stream unavailable", { status: 503 });
+		}
 
 		const encoder = new TextEncoder();
 		const id = randomUUID();
