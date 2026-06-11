@@ -5,6 +5,8 @@ import { fetchApi } from "@/lib/fetch";
 import type { NotificationsListResponse, UnreadCountResponse } from "@/lib/notifications/types";
 import { queryKeys } from "@/lib/query/keys";
 
+const NOTIFICATION_POLL_INTERVAL_MS = 20 * 60 * 1000;
+
 interface UseNotificationsOptions {
 	limit?: number;
 	unreadOnly?: boolean;
@@ -39,19 +41,20 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 			return fetchApi<NotificationsListResponse>(`/api/notifications?${params}`);
 		},
 		enabled,
-		staleTime: 30 * 1000, // 30 seconds
+		staleTime: NOTIFICATION_POLL_INTERVAL_MS,
+		refetchInterval: NOTIFICATION_POLL_INTERVAL_MS,
 		refetchOnWindowFocus: true,
 	});
 
 	// Query for unread count (separate for badge updates)
-	// Note: Real-time updates come via SSE (useNotificationStream hook)
 	const unreadCountQuery = useQuery({
 		queryKey: queryKeys.notifications.unreadCount(organizationId),
 		queryFn: async (): Promise<UnreadCountResponse> => {
 			return fetchApi<UnreadCountResponse>("/api/notifications/count");
 		},
 		enabled,
-		staleTime: 30 * 1000, // 30 seconds - SSE handles real-time updates
+		staleTime: NOTIFICATION_POLL_INTERVAL_MS,
+		refetchInterval: NOTIFICATION_POLL_INTERVAL_MS,
 		refetchOnWindowFocus: true,
 	});
 
