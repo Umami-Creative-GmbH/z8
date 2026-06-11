@@ -86,4 +86,57 @@ describe("startRedisFanout", () => {
 		expect(subscriber.punsubscribe).toHaveBeenCalledWith("notifications:*");
 		expect(subscriber.disconnect).toHaveBeenCalled();
 	});
+
+	it("notifies once when Redis emits terminal availability events", async () => {
+		const handlers = new Map<string, Set<(...args: unknown[]) => void>>();
+		const subscriber = {
+			on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+				const eventHandlers = handlers.get(event) ?? new Set<(...args: unknown[]) => void>();
+				eventHandlers.add(handler);
+				handlers.set(event, eventHandlers);
+			}),
+			off: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+				handlers.get(event)?.delete(handler);
+			}),
+			psubscribe: vi.fn(async () => undefined),
+			punsubscribe: vi.fn(async () => undefined),
+			disconnect: vi.fn(),
+		};
+		const onUnavailable = vi.fn();
+
+		await startRedisFanout({ subscriber: subscriber as unknown as Redis, fanout: vi.fn(), onUnavailable });
+
+		for (const handler of handlers.get("close") ?? []) handler();
+		for (const handler of handlers.get("end") ?? []) handler();
+
+		expect(onUnavailable).toHaveBeenCalledTimes(1);
+	});
+
+	it("removes terminal availability listeners during cleanup", async () => {
+		const handlers = new Map<string, Set<(...args: unknown[]) => void>>();
+		const subscriber = {
+			on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+				const eventHandlers = handlers.get(event) ?? new Set<(...args: unknown[]) => void>();
+				eventHandlers.add(handler);
+				handlers.set(event, eventHandlers);
+			}),
+			off: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+				handlers.get(event)?.delete(handler);
+			}),
+			psubscribe: vi.fn(async () => undefined),
+			punsubscribe: vi.fn(async () => undefined),
+			disconnect: vi.fn(),
+		};
+		const onUnavailable = vi.fn();
+
+		const cleanup = await startRedisFanout({ subscriber: subscriber as unknown as Redis, fanout: vi.fn(), onUnavailable });
+		await cleanup();
+
+		for (const handler of handlers.get("close") ?? []) handler();
+		for (const handler of handlers.get("end") ?? []) handler();
+
+		expect(onUnavailable).not.toHaveBeenCalled();
+		expect(subscriber.off).toHaveBeenCalledWith("close", expect.any(Function));
+		expect(subscriber.off).toHaveBeenCalledWith("end", expect.any(Function));
+	});
 });

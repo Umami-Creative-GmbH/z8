@@ -42,6 +42,7 @@ export function createNotifyRuntime(deps: NotifyRuntimeDependencies) {
 			fanoutPromise ??= deps.startRedisFanout({
 				subscriber: deps.createRedisSubscriber(),
 				fanout: (userId, event, data) => registry.fanout(userId, event, data),
+				onUnavailable: () => registry.closeAll(),
 			});
 			return fanoutPromise;
 		},

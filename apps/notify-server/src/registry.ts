@@ -5,6 +5,7 @@ export interface RegisteredClient {
   userId: string;
   organizationId: string;
   send: (event: NotificationStreamEvent, data: unknown) => void;
+  close: () => void;
 }
 
 export class ClientRegistry {
@@ -26,6 +27,15 @@ export class ClientRegistry {
     const ids = this.byUser.get(client.userId);
     ids?.delete(id);
     if (ids?.size === 0) this.byUser.delete(client.userId);
+  }
+
+  closeAll(): void {
+    const clients = [...this.clients.values()];
+    this.clients.clear();
+    this.byUser.clear();
+    for (const client of clients) {
+      client.close();
+    }
   }
 
   fanout(userId: string, event: NotificationStreamEvent, data: unknown): number {

@@ -99,4 +99,27 @@ describe("createNotifyServerHandler", () => {
 			vi.useRealTimers();
 		}
 	});
+
+	it("registers a close callback that unregisters and terminates the stream", async () => {
+		const unregister = vi.fn();
+		let closeClient: (() => void) | undefined;
+		const handler = createNotifyServerHandler({
+			validate: vi.fn(async () => ({ ok: true, userId: "user-1", organizationId: "org-auth" }) as const),
+			getUnreadCount: vi.fn(async () => 1),
+			registerClient: vi.fn((client) => {
+				closeClient = client.close;
+				return unregister;
+			}),
+		});
+
+		const response = await handler(new Request("http://local/api/notifications/stream"));
+		const reader = response.body!.getReader();
+		await reader.read();
+
+		closeClient?.();
+		closeClient?.();
+
+		await expect(reader.read()).rejects.toThrow("Notification stream closed");
+		expect(unregister).toHaveBeenCalledTimes(1);
+	});
 });

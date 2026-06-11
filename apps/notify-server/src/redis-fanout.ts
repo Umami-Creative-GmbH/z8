@@ -18,13 +18,27 @@ export function handleRedisMessage(channel: string, message: string, fanout: Fan
 	}
 }
 
-export async function startRedisFanout(params: { subscriber: Redis; fanout: FanoutFunction }): Promise<() => Promise<void>> {
+export async function startRedisFanout(params: {
+	subscriber: Redis;
+	fanout: FanoutFunction;
+	onUnavailable?: () => void;
+}): Promise<() => Promise<void>> {
 	const onMessage = (_pattern: string, channel: string, message: string) => handleRedisMessage(channel, message, params.fanout);
+	let unavailableNotified = false;
+	const onUnavailable = () => {
+		if (unavailableNotified) return;
+		unavailableNotified = true;
+		params.onUnavailable?.();
+	};
 	params.subscriber.on("pmessage", onMessage);
+	params.subscriber.on("end", onUnavailable);
+	params.subscriber.on("close", onUnavailable);
 	await params.subscriber.psubscribe("notifications:*");
 
 	return async () => {
 		params.subscriber.off("pmessage", onMessage);
+		params.subscriber.off("end", onUnavailable);
+		params.subscriber.off("close", onUnavailable);
 		await params.subscriber.punsubscribe("notifications:*");
 		params.subscriber.disconnect();
 	};

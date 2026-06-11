@@ -12,6 +12,7 @@ export interface NotifyServerDependencies {
 		userId: string;
 		organizationId: string;
 		send: (event: NotificationStreamEvent, data: unknown) => void;
+		close: () => void;
 	}) => () => void;
 }
 
@@ -31,6 +32,11 @@ export function createNotifyServerHandler(deps: NotifyServerDependencies) {
 
 		const stream = new ReadableStream<Uint8Array>({
 			async start(controller) {
+				const closeStream = () => {
+					if (closed) return;
+					cleanup();
+					controller.error(new Error("Notification stream closed"));
+				};
 				const sendFrame = (event: NotificationStreamEvent | "heartbeat", data: unknown) => {
 					if (closed) return;
 					controller.enqueue(encoder.encode(encodeSseEvent(event, data)));
@@ -40,6 +46,7 @@ export function createNotifyServerHandler(deps: NotifyServerDependencies) {
 					userId: auth.userId,
 					organizationId: auth.organizationId,
 					send: sendFrame,
+					close: closeStream,
 				});
 				const heartbeat = setInterval(() => sendFrame("heartbeat", { timestamp: Date.now() }), 30_000);
 				cleanup = () => {
