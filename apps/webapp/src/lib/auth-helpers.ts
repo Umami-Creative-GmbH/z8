@@ -701,25 +701,26 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 		};
 	}
 
-	// Load organization membership
-	const [memberRecord] = await db
-		.select()
-		.from(member)
-		.where(and(eq(member.userId, userId), eq(member.organizationId, activeOrganizationId)))
-		.limit(1);
-
-	// Load employee record
-	const [employeeRecord] = await db
-		.select()
-		.from(employee)
-		.where(
-			and(
-				eq(employee.userId, userId),
-				eq(employee.organizationId, activeOrganizationId),
-				eq(employee.isActive, true),
-			),
-		)
-		.limit(1);
+	const [[memberRecord], [employeeRecord]] = await Promise.all([
+		// Load organization membership
+		db
+			.select()
+			.from(member)
+			.where(and(eq(member.userId, userId), eq(member.organizationId, activeOrganizationId)))
+			.limit(1),
+		// Load employee record
+		db
+			.select()
+			.from(employee)
+			.where(
+				and(
+					eq(employee.userId, userId),
+					eq(employee.organizationId, activeOrganizationId),
+					eq(employee.isActive, true),
+				),
+			)
+			.limit(1),
+	]);
 
 	// Load permissions if employee exists
 	const permissions: TeamPermissions = {

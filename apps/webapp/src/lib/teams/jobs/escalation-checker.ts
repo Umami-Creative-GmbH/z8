@@ -44,16 +44,19 @@ export async function runEscalationCheckerJob(): Promise<EscalationCheckerResult
 			"Starting escalation checker job",
 		);
 
-		for (const tenant of escalationEnabledTenants) {
-			try {
-				const escalated = await processTenantEscalations(tenant);
-				approvalsEscalated += escalated;
-			} catch (error) {
-				const errorMsg = `Failed to process escalations for tenant ${tenant.tenantId}: ${error instanceof Error ? error.message : String(error)}`;
-				logger.error({ error, tenantId: tenant.tenantId }, errorMsg);
-				errors.push(errorMsg);
-			}
-		}
+		const tenantResults = await Promise.all(
+			escalationEnabledTenants.map(async (tenant) => {
+				try {
+					return { escalated: await processTenantEscalations(tenant), error: undefined };
+				} catch (error) {
+					const errorMsg = `Failed to process escalations for tenant ${tenant.tenantId}: ${error instanceof Error ? error.message : String(error)}`;
+					logger.error({ error, tenantId: tenant.tenantId }, errorMsg);
+					return { escalated: 0, error: errorMsg };
+				}
+			}),
+		);
+		approvalsEscalated = tenantResults.reduce((total, result) => total + result.escalated, 0);
+		errors.push(...tenantResults.flatMap((result) => (result.error ? [result.error] : [])));
 
 		logger.info(
 			{
@@ -114,28 +117,36 @@ async function processTenantEscalations(tenant: {
 
 	let escalated = 0;
 
-	for (const approval of pendingApprovals) {
-		try {
-			const result = await escalateApproval(
-				approval.id,
-				approval.approverId,
-				approval.requestedBy,
-				tenant.organizationId,
-				tenant.escalationTimeoutHours,
-			);
-
-			if (result.success) {
-				escalated++;
-			} else if (result.error) {
-				logger.warn(
-					{ approvalId: approval.id, error: result.error },
-					"Could not escalate approval",
+	const approvalResults = await Promise.all(
+		pendingApprovals.map(async (approval) => {
+			try {
+				const result = await escalateApproval(
+					approval.id,
+					approval.approverId,
+					approval.requestedBy,
+					tenant.organizationId,
+					tenant.escalationTimeoutHours,
 				);
+
+				if (result.success) {
+					return true;
+				}
+
+				if (result.error) {
+					logger.warn(
+						{ approvalId: approval.id, error: result.error },
+						"Could not escalate approval",
+					);
+				}
+			} catch (error) {
+				logger.error({ error, approvalId: approval.id }, "Failed to escalate approval");
 			}
-		} catch (error) {
-			logger.error({ error, approvalId: approval.id }, "Failed to escalate approval");
-		}
-	}
+
+			return false;
+		}),
+	);
+
+	escalated = approvalResults.filter(Boolean).length;
 
 	if (escalated > 0) {
 		logger.info({ organizationId: tenant.organizationId, escalated }, "Escalated approvals");

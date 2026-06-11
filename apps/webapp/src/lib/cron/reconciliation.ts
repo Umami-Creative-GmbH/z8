@@ -56,9 +56,7 @@ export async function reconcileCronJobSchedule({
 			);
 		}
 
-		for (const job of staleRepeatables) {
-			await queue.removeRepeatableByKey(job.key);
-		}
+		await Promise.all(staleRepeatables.map((job) => queue.removeRepeatableByKey(job.key)));
 
 		return { success: true, removedCount: staleRepeatables.length };
 	} catch (error) {
@@ -83,11 +81,16 @@ export async function reconcileCronSchedules({
 	const reconciled: Array<{ jobName: CronJobName; removedCount: number }> = [];
 	const failed: Array<{ jobName: CronJobName; error: string }> = [];
 
-	for (const [jobName, schedule] of Object.entries(schedules) as Array<
-		[CronJobName, CronScheduleInput]
-	>) {
-		const result = await reconcileCronJobSchedule({ queue, jobName, pattern: schedule.pattern });
+	const results = await Promise.all(
+		(Object.entries(schedules) as Array<[CronJobName, CronScheduleInput]>).map(
+			async ([jobName, schedule]) => ({
+				jobName,
+				result: await reconcileCronJobSchedule({ queue, jobName, pattern: schedule.pattern }),
+			}),
+		),
+	);
 
+	for (const { jobName, result } of results) {
 		if (result.success) {
 			reconciled.push({ jobName, removedCount: result.removedCount });
 		} else {

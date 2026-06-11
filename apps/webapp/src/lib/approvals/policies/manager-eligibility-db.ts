@@ -100,17 +100,17 @@ export async function getEligibleManagerIdsForRequester(input: {
 	requesterEmployeeId: string;
 	organizationId: string;
 }) {
-	const [employees, managerLinks] = await Promise.all([
+	const [employees, managerLinks, { memberships, teams }] = await Promise.all([
 		input.db.query.employee.findMany({ where: eq(employee.organizationId, input.organizationId) }),
 		input.db.query.employeeManagers.findMany({
 			where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
 		}),
+		getTeamEligibilityInputs({
+			db: input.db,
+			organizationId: input.organizationId,
+			requesterEmployeeIds: [input.requesterEmployeeId],
+		}),
 	]);
-	const { memberships, teams } = await getTeamEligibilityInputs({
-		db: input.db,
-		organizationId: input.organizationId,
-		requesterEmployeeIds: [input.requesterEmployeeId],
-	});
 
 	return getEligibleManagerIds({
 		organizationId: input.organizationId,
@@ -127,17 +127,17 @@ export async function getPrimaryEligibleManagerIdForRequester(input: {
 	requesterEmployeeId: string;
 	organizationId: string;
 }): Promise<string | null> {
-	const [employees, managerLinks] = await Promise.all([
+	const [employees, managerLinks, { memberships, teams }] = await Promise.all([
 		input.db.query.employee.findMany({ where: eq(employee.organizationId, input.organizationId) }),
 		input.db.query.employeeManagers.findMany({
 			where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
 		}),
+		getTeamEligibilityInputs({
+			db: input.db,
+			organizationId: input.organizationId,
+			requesterEmployeeIds: [input.requesterEmployeeId],
+		}),
 	]);
-	const { memberships, teams } = await getTeamEligibilityInputs({
-		db: input.db,
-		organizationId: input.organizationId,
-		requesterEmployeeIds: [input.requesterEmployeeId],
-	});
 
 	const result = resolvePrimaryEligibleManager({
 		organizationId: input.organizationId,
@@ -195,13 +195,15 @@ export async function getEligibleApprovalScopesForManager(input: {
 		return [];
 	}
 
-	const managerLinks = await input.db.query.employeeManagers.findMany({
-		where: inArray(employeeManagers.employeeId, requesterIds),
-	});
-	const { memberships, teams } = await getTeamEligibilityInputs({
-		db: input.db,
-		organizationId: input.organizationId,
-	});
+	const [managerLinks, { memberships, teams }] = await Promise.all([
+		input.db.query.employeeManagers.findMany({
+			where: inArray(employeeManagers.employeeId, requesterIds),
+		}),
+		getTeamEligibilityInputs({
+			db: input.db,
+			organizationId: input.organizationId,
+		}),
+	]);
 
 	return typedEmployees.flatMap((requester: { id: string }) => {
 		const eligibleManagerIds = getEligibleManagerIds({

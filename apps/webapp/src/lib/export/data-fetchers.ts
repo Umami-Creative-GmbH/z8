@@ -121,14 +121,14 @@ export async function fetchEmployees(organizationId: string) {
 export async function fetchTeams(organizationId: string) {
 	logger.info({ organizationId }, "Fetching teams for export");
 
-	const teams = await db.query.team.findMany({
-		where: eq(team.organizationId, organizationId),
-	});
-
-	// Fetch team permissions
-	const permissions = await db.query.teamPermissions.findMany({
-		where: eq(teamPermissions.organizationId, organizationId),
-	});
+	const [teams, permissions] = await Promise.all([
+		db.query.team.findMany({
+			where: eq(team.organizationId, organizationId),
+		}),
+		db.query.teamPermissions.findMany({
+			where: eq(teamPermissions.organizationId, organizationId),
+		}),
+	]);
 
 	logger.info({ count: teams.length }, "Fetched teams");
 
@@ -305,17 +305,23 @@ export async function fetchAbsences(organizationId: string) {
 export async function fetchHolidays(organizationId: string) {
 	logger.info({ organizationId }, "Fetching holidays for export");
 
-	const categories = await db.query.holidayCategory.findMany({
-		where: eq(holidayCategory.organizationId, organizationId),
-	});
-
-	const holidays = await db.query.holiday.findMany({
-		where: eq(holiday.organizationId, organizationId),
-	});
-
-	const presets = await db.query.holidayPreset.findMany({
-		where: eq(holidayPreset.organizationId, organizationId),
-	});
+	const [categories, holidays, presets, presetAssignments, holidayAssignments] = await Promise.all([
+		db.query.holidayCategory.findMany({
+			where: eq(holidayCategory.organizationId, organizationId),
+		}),
+		db.query.holiday.findMany({
+			where: eq(holiday.organizationId, organizationId),
+		}),
+		db.query.holidayPreset.findMany({
+			where: eq(holidayPreset.organizationId, organizationId),
+		}),
+		db.query.holidayPresetAssignment.findMany({
+			where: eq(holidayPresetAssignment.organizationId, organizationId),
+		}),
+		db.query.holidayAssignment.findMany({
+			where: eq(holidayAssignment.organizationId, organizationId),
+		}),
+	]);
 
 	const presetIds = presets.map((p) => p.id);
 	const filteredPresetHolidays =
@@ -324,14 +330,6 @@ export async function fetchHolidays(organizationId: string) {
 					where: inArray(holidayPresetHoliday.presetId, presetIds),
 				})
 			: [];
-
-	const presetAssignments = await db.query.holidayPresetAssignment.findMany({
-		where: eq(holidayPresetAssignment.organizationId, organizationId),
-	});
-
-	const holidayAssignments = await db.query.holidayAssignment.findMany({
-		where: eq(holidayAssignment.organizationId, organizationId),
-	});
 
 	logger.info({ holidaysCount: holidays.length, presetsCount: presets.length }, "Fetched holidays");
 
@@ -399,15 +397,18 @@ export async function fetchHolidays(organizationId: string) {
 export async function fetchVacation(organizationId: string) {
 	logger.info({ organizationId }, "Fetching vacation data for export");
 
-	const allowances = await db.query.vacationAllowance.findMany({
-		where: eq(vacationAllowance.organizationId, organizationId),
-	});
-
-	// Get employee IDs for this org
-	const orgEmployees = await db.query.employee.findMany({
-		where: eq(employee.organizationId, organizationId),
-		columns: { id: true },
-	});
+	const [allowances, orgEmployees, policyAssignments] = await Promise.all([
+		db.query.vacationAllowance.findMany({
+			where: eq(vacationAllowance.organizationId, organizationId),
+		}),
+		db.query.employee.findMany({
+			where: eq(employee.organizationId, organizationId),
+			columns: { id: true },
+		}),
+		db.query.vacationPolicyAssignment.findMany({
+			where: eq(vacationPolicyAssignment.organizationId, organizationId),
+		}),
+	]);
 	const employeeIds = orgEmployees.map((e) => e.id);
 
 	const filteredEmployeeAllowances =
@@ -416,10 +417,6 @@ export async function fetchVacation(organizationId: string) {
 					where: inArray(employeeVacationAllowance.employeeId, employeeIds),
 				})
 			: [];
-
-	const policyAssignments = await db.query.vacationPolicyAssignment.findMany({
-		where: eq(vacationPolicyAssignment.organizationId, organizationId),
-	});
 
 	logger.info(
 		{
@@ -582,23 +579,24 @@ export async function fetchSchedules(organizationId: string) {
 export async function fetchShifts(organizationId: string) {
 	logger.info({ organizationId }, "Fetching shifts for export");
 
-	const templates = await db.query.shiftTemplate.findMany({
-		where: eq(shiftTemplate.organizationId, organizationId),
-	});
-
-	const shifts = await db.query.shift.findMany({
-		where: eq(shift.organizationId, organizationId),
-		with: {
-			employee: {
-				columns: {
-					id: true,
-					employeeNumber: true,
+	const [templates, shifts] = await Promise.all([
+		db.query.shiftTemplate.findMany({
+			where: eq(shiftTemplate.organizationId, organizationId),
+		}),
+		db.query.shift.findMany({
+			where: eq(shift.organizationId, organizationId),
+			with: {
+				employee: {
+					columns: {
+						id: true,
+						employeeNumber: true,
+					},
+					with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
 				},
-				with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
+				template: true,
 			},
-			template: true,
-		},
-	});
+		}),
+	]);
 
 	const shiftIds = shifts.map((s) => s.id);
 	const filteredRequests =
@@ -662,15 +660,16 @@ export async function fetchAuditLogs(organizationId: string) {
 	logger.info({ organizationId }, "Fetching audit logs for export");
 
 	// Get all employee IDs and team IDs for this org to filter audit logs
-	const orgEmployees = await db.query.employee.findMany({
-		where: eq(employee.organizationId, organizationId),
-		columns: { id: true, userId: true },
-	});
-
-	const orgTeams = await db.query.team.findMany({
-		where: eq(team.organizationId, organizationId),
-		columns: { id: true },
-	});
+	const [orgEmployees, orgTeams] = await Promise.all([
+		db.query.employee.findMany({
+			where: eq(employee.organizationId, organizationId),
+			columns: { id: true, userId: true },
+		}),
+		db.query.team.findMany({
+			where: eq(team.organizationId, organizationId),
+			columns: { id: true },
+		}),
+	]);
 
 	const employeeIds = new Set(orgEmployees.map((e) => e.id));
 	const userIds = new Set(orgEmployees.map((e) => e.userId));
@@ -742,10 +741,9 @@ export async function fetchExportData(
 	};
 
 	// Fetch all requested categories in parallel
-	const fetchPromises = categories.map(async (category) => ({
-		category,
-		data: await categoryFetchers[category](),
-	}));
+	const fetchPromises = categories.map((category) =>
+		categoryFetchers[category]().then((data) => ({ category, data })),
+	);
 
 	const results = await Promise.all(fetchPromises);
 

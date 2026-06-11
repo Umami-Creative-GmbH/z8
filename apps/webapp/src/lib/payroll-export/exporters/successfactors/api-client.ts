@@ -125,15 +125,8 @@ export class SuccessFactorsApiClient {
 
 		await this.authenticate();
 
-		const results: SFSyncAttemptResult[] = [];
-
 		// Process records individually (SAP SF doesn't have great batch support for time entries)
-		for (const record of records) {
-			const result = await this.createSingleTimeRecord(record);
-			results.push(result);
-		}
-
-		return results;
+		return Promise.all(records.map((record) => this.createSingleTimeRecord(record)));
 	}
 
 	/**
@@ -218,14 +211,7 @@ export class SuccessFactorsApiClient {
 
 		await this.authenticate();
 
-		const results: SFSyncAttemptResult[] = [];
-
-		for (const absence of absences) {
-			const result = await this.createSingleAbsence(absence);
-			results.push(result);
-		}
-
-		return results;
+		return Promise.all(absences.map((absence) => this.createSingleAbsence(absence)));
 	}
 
 	/**

@@ -812,12 +812,14 @@ async function importSurcharges(
 					.returning({ id: surchargeModel.id });
 
 				// Insert rules
-				for (const rule of mapped.rules) {
-					await db.insert(surchargeRule).values({
-						modelId: insertedModel.id,
-						...rule,
-					});
-				}
+				await Promise.all(
+					mapped.rules.map((rule) =>
+						db.insert(surchargeRule).values({
+							modelId: insertedModel.id,
+							...rule,
+						}),
+					),
+				);
 
 				result.imported++;
 			} catch (error) {
@@ -852,11 +854,11 @@ async function importAbsences(
 
 		if (dateRange && dateRange.preset !== "all_data") {
 			const { startYear, endYear } = resolveYearRange(dateRange);
-			const allAbsences = [];
-			for (let y = startYear; y <= endYear; y++) {
-				const yearAbsences = await client.getAbsences(y);
-				allAbsences.push(...yearAbsences);
-			}
+			const years = Array.from(
+				{ length: endYear - startYear + 1 },
+				(_, index) => startYear + index,
+			);
+			const allAbsences = (await Promise.all(years.map((year) => client.getAbsences(year)))).flat();
 
 			// Filter by exact date range if custom or preset
 			const resolved = resolveDateRange(dateRange);

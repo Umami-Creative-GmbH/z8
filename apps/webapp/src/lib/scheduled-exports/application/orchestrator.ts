@@ -55,23 +55,31 @@ export class ScheduledExportOrchestrator {
 
 			logger.info({ count: dueSchedules.length }, "Found due scheduled exports");
 
-			for (const schedule of dueSchedules) {
-				result.processed++;
+			const scheduleResults = await Promise.all(
+				dueSchedules.map(async (schedule) => {
+					try {
+						await this.executeSchedule(schedule, now);
+						return { scheduleId: schedule.id, success: true as const };
+					} catch (error) {
+						const errorMessage = error instanceof Error ? error.message : "Unknown error";
+						logger.error(
+							{ scheduleId: schedule.id, error: errorMessage },
+							"Schedule execution failed",
+						);
+						return { scheduleId: schedule.id, success: false as const, error: errorMessage };
+					}
+				}),
+			);
 
-				try {
-					await this.executeSchedule(schedule, now);
-					result.succeeded++;
-				} catch (error) {
-					result.failed++;
-					result.success = false;
-					const errorMessage = error instanceof Error ? error.message : "Unknown error";
-					result.errors.push({ scheduleId: schedule.id, error: errorMessage });
-					logger.error(
-						{ scheduleId: schedule.id, error: errorMessage },
-						"Schedule execution failed",
-					);
-				}
-			}
+			result.processed = scheduleResults.length;
+			result.succeeded = scheduleResults.filter((scheduleResult) => scheduleResult.success).length;
+			result.failed = scheduleResults.length - result.succeeded;
+			result.success = result.failed === 0;
+			result.errors = scheduleResults.flatMap((scheduleResult) =>
+				scheduleResult.success
+					? []
+					: [{ scheduleId: scheduleResult.scheduleId, error: scheduleResult.error }],
+			);
 
 			logger.info(
 				{ processed: result.processed, succeeded: result.succeeded, failed: result.failed },

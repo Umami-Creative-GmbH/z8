@@ -864,7 +864,7 @@ export async function registerSSOProviderAction(data: OIDCProviderInput) {
 
 export async function deleteSSOProviderAction(providerId: string) {
 	const { organizationId } = await requireEnterpriseOrgAdmin();
-	const providers = await listSSOProvidersAction();
+	const providers = await getOrganizationSSOProviders(organizationId);
 	const provider = providers.find(
 		(entry) => entry.id === providerId || entry.providerId === providerId,
 	);

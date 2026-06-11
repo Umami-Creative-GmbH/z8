@@ -124,19 +124,21 @@ export async function editSameDayTimeEntry(
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	const timezone = await getUserTimezone(session.user.id);
-	const [selectedWorkPeriod] = await db
-		.select()
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.id, data.workPeriodId),
-				eq(workPeriod.employeeId, currentEmployee.id),
-				eq(workPeriod.organizationId, currentEmployee.organizationId),
-				isNull(workPeriod.deletedAt),
-			),
-		)
-		.limit(1);
+	const [timezone, [selectedWorkPeriod]] = await Promise.all([
+		getUserTimezone(session.user.id),
+		db
+			.select()
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.id, data.workPeriodId),
+					eq(workPeriod.employeeId, currentEmployee.id),
+					eq(workPeriod.organizationId, currentEmployee.organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
+			.limit(1),
+	]);
 
 	if (!selectedWorkPeriod) {
 		return { success: false, error: "Work period not found" };

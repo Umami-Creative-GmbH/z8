@@ -169,20 +169,21 @@ export async function loadNamespaces(
 	const lang = ALL_LANGUAGES.includes(locale) ? locale : DEFAULT_LANGUAGE;
 
 	// Load all requested namespaces in parallel
-	const loadPromises = namespaces.map(async (ns) => {
+	const loadPromises = namespaces.map((ns) => {
 		const importFn = namespaceImports[ns]?.[lang];
 		if (importFn) {
-			try {
-				const mod = await importFn();
-				const data =
-					(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
-				return { ns, data };
-			} catch (error) {
-				console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);
-				return { ns, data: {} as TreeTranslationsData };
-			}
+			return importFn()
+				.then((mod) => {
+					const data =
+						(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
+					return { ns, data };
+				})
+				.catch((error) => {
+					console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);
+					return { ns, data: {} as TreeTranslationsData };
+				});
 		}
-		return { ns, data: {} as TreeTranslationsData };
+		return Promise.resolve({ ns, data: {} as TreeTranslationsData });
 	});
 
 	const loaded = await Promise.all(loadPromises);

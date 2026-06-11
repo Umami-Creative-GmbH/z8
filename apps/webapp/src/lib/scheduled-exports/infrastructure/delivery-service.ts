@@ -138,12 +138,6 @@ export class DeliveryService {
 			subjectTemplate,
 		} = params;
 
-		const result = {
-			sent: 0,
-			failed: 0,
-			errors: [] as Array<{ recipient: string; error: string; timestamp: string }>,
-		};
-
 		// Generate email content
 		const subject = this.renderSubject(subjectTemplate, {
 			scheduleName,
@@ -163,26 +157,47 @@ export class DeliveryService {
 
 		const html = this.renderEmailHtml(templateData);
 
-		// Send to each recipient
-		for (const recipient of recipients) {
-			try {
-				await sendEmail({
-					to: recipient,
-					subject,
-					html,
-					organizationId,
-				});
-				result.sent++;
-				logger.info({ recipient, scheduleName }, "Notification email sent");
-			} catch (error) {
-				result.failed++;
-				const errorMessage = error instanceof Error ? error.message : "Unknown error";
-				result.errors.push({ recipient, error: errorMessage, timestamp: DateTime.utc().toISO()! });
-				logger.error({ recipient, error: errorMessage, scheduleName }, "Email sending failed");
-			}
-		}
+		const deliveryResults = await Promise.all(
+			recipients.map(async (recipient) => {
+				try {
+					await sendEmail({
+						to: recipient,
+						subject,
+						html,
+						organizationId,
+					});
+					logger.info({ recipient, scheduleName }, "Notification email sent");
+					return { recipient, success: true as const };
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : "Unknown error";
+					logger.error({ recipient, error: errorMessage, scheduleName }, "Email sending failed");
+					return {
+						recipient,
+						success: false as const,
+						error: errorMessage,
+						timestamp: DateTime.utc().toISO()!,
+					};
+				}
+			}),
+		);
 
-		return result;
+		const errors = deliveryResults.flatMap((deliveryResult) =>
+			deliveryResult.success
+				? []
+				: [
+						{
+							recipient: deliveryResult.recipient,
+							error: deliveryResult.error,
+							timestamp: deliveryResult.timestamp,
+						},
+					],
+		);
+
+		return {
+			sent: deliveryResults.length - errors.length,
+			failed: errors.length,
+			errors,
+		};
 	}
 
 	/**

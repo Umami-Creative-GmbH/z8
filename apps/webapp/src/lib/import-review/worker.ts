@@ -76,16 +76,18 @@ async function enqueueReadyCommitJobs(data: ImportCommitJobData) {
 		kind: "commit",
 	});
 
-	for (const job of readyCommitJobsFromJobs(jobs)) {
-		await enqueueImportCommitJob({
-			type: "import-review-commit",
-			batchId: data.batchId,
-			jobId: job.id,
-			organizationId: data.organizationId,
-			entityType: job.entityType as ImportCommitJobData["entityType"],
-			committedBy: data.committedBy,
-		});
-	}
+	await Promise.all(
+		readyCommitJobsFromJobs(jobs).map((job) =>
+			enqueueImportCommitJob({
+				type: "import-review-commit",
+				batchId: data.batchId,
+				jobId: job.id,
+				organizationId: data.organizationId,
+				entityType: job.entityType as ImportCommitJobData["entityType"],
+				committedBy: data.committedBy,
+			}),
+		),
+	);
 }
 
 export async function processImportReviewJob(job: Job<ImportReviewJobData>): Promise<JobResult> {

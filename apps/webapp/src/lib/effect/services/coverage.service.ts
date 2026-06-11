@@ -628,7 +628,9 @@ export const CoverageServiceLive = Layer.effect(
 						if (!subarea) continue;
 
 						// Get unique scheduled employee IDs
-						const scheduledEmployeeIds = new Set(shifts.map((s) => s.employeeId).filter(Boolean));
+						const scheduledEmployeeIds = new Set(
+							shifts.flatMap((s) => (s.employeeId ? [s.employeeId] : [])),
+						);
 						const scheduled = scheduledEmployeeIds.size;
 
 						// Get clocked-in employees for this date

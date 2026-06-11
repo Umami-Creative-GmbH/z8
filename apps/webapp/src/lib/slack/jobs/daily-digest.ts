@@ -40,16 +40,19 @@ export async function runSlackDailyDigestJob(): Promise<SlackDailyDigestResult> 
 
 		logger.info({ botCount: digestEnabledBots.length }, "Starting Slack daily digest job");
 
-		for (const bot of digestEnabledBots) {
-			try {
-				const sent = await processBotDigest(bot);
-				digestsSent += sent;
-			} catch (error) {
-				const errorMsg = `Failed to process digest for org ${bot.organizationId}: ${error instanceof Error ? error.message : String(error)}`;
-				logger.error({ error, organizationId: bot.organizationId }, errorMsg);
-				errors.push(errorMsg);
-			}
-		}
+		const botResults = await Promise.all(
+			digestEnabledBots.map(async (bot) => {
+				try {
+					return { sent: await processBotDigest(bot), error: undefined };
+				} catch (error) {
+					const errorMsg = `Failed to process digest for org ${bot.organizationId}: ${error instanceof Error ? error.message : String(error)}`;
+					logger.error({ error, organizationId: bot.organizationId }, errorMsg);
+					return { sent: 0, error: errorMsg };
+				}
+			}),
+		);
+		digestsSent = botResults.reduce((total, result) => total + result.sent, 0);
+		errors.push(...botResults.flatMap((result) => (result.error ? [result.error] : [])));
 
 		logger.info(
 			{

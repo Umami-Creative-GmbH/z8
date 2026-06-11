@@ -198,9 +198,15 @@ function calculateBreakRequirementsInternal(params: {
 }): BreakRequirementResult {
 	const { regulation, workedMinutes, breaksTakenMinutes } = params;
 
-	const applicableRule = regulation.breakRules
-		.filter((rule) => workedMinutes > rule.workingMinutesThreshold)
-		.sort((a, b) => b.workingMinutesThreshold - a.workingMinutesThreshold)[0];
+	const applicableRule = regulation.breakRules.reduce<
+		(typeof regulation.breakRules)[number] | undefined
+	>((best, rule) => {
+		if (workedMinutes <= rule.workingMinutesThreshold) {
+			return best;
+		}
+
+		return !best || rule.workingMinutesThreshold > best.workingMinutesThreshold ? rule : best;
+	}, undefined);
 
 	if (!applicableRule) {
 		return {

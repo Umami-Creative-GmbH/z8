@@ -168,8 +168,10 @@ export async function clockIn(
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	const timezone = await getUserTimezone(session.user.id);
-	const activeWorkPeriod = await getActiveWorkPeriod(currentEmployee.id);
+	const [timezone, activeWorkPeriod] = await Promise.all([
+		getUserTimezone(session.user.id),
+		getActiveWorkPeriod(currentEmployee.id),
+	]);
 	if (activeWorkPeriod) {
 		return { success: false, error: "You are already clocked in" };
 	}
@@ -246,8 +248,10 @@ export async function clockOut(
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	const timezone = await getUserTimezone(session.user.id);
-	const activeWorkPeriod = await getActiveWorkPeriod(currentEmployee.id);
+	const [timezone, activeWorkPeriod] = await Promise.all([
+		getUserTimezone(session.user.id),
+		getActiveWorkPeriod(currentEmployee.id),
+	]);
 	if (!activeWorkPeriod) {
 		return { success: false, error: "You are not currently clocked in" };
 	}
@@ -599,8 +603,10 @@ export async function getBreakReminderStatus(): Promise<
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	const timezone = await getUserTimezone(session.user.id);
-	const activeWorkPeriod = await getActiveWorkPeriod(currentEmployee.id);
+	const [timezone, activeWorkPeriod] = await Promise.all([
+		getUserTimezone(session.user.id),
+		getActiveWorkPeriod(currentEmployee.id),
+	]);
 	if (!activeWorkPeriod) {
 		return { success: true, data: EMPTY_BREAK_REMINDER_STATUS };
 	}

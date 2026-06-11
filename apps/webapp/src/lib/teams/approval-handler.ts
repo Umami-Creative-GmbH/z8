@@ -250,9 +250,12 @@ export async function sendApprovalCardToManager(
 	approverId: string,
 	organizationId: string,
 ): Promise<void> {
-	const { sendAdaptiveCard } = await import("./bot-adapter");
-	const { getConversationReferenceForUser } = await import("./conversation-manager");
-	const { buildApprovalCardWithInvoke } = await import("./cards");
+	const [{ sendAdaptiveCard }, { getConversationReferenceForUser }, { buildApprovalCardWithInvoke }] =
+		await Promise.all([
+			import("./bot-adapter"),
+			import("./conversation-manager"),
+			import("./cards"),
+		]);
 
 	try {
 		// Get approver's user ID

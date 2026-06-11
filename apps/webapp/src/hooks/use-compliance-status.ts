@@ -44,6 +44,14 @@ export interface UseComplianceStatusOptions {
 	pollingInterval?: number;
 }
 
+async function checkException(exceptionType: string) {
+	const result = await hasValidException(exceptionType);
+	if (!result.success) {
+		return { hasException: false };
+	}
+	return result.data;
+}
+
 /**
  * Hook for ArbZG compliance status monitoring
  *
@@ -158,15 +166,6 @@ export function useComplianceStatus(options: UseComplianceStatusOptions = {}) {
 			});
 		},
 	});
-
-	// Check for valid exception (for clock-in flow)
-	const checkException = async (exceptionType: string) => {
-		const result = await hasValidException(exceptionType);
-		if (!result.success) {
-			return { hasException: false };
-		}
-		return result.data;
-	};
 
 	// Refresh all compliance data
 	const refreshAll = () => {

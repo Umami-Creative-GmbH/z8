@@ -262,23 +262,26 @@ export async function cleanupExpiredExports(): Promise<number> {
 
 	const actuallyExpired = expiredExports.filter((e) => e.expiresAt && e.expiresAt < now);
 
-	let deletedCount = 0;
+	const cleanupResults = await Promise.all(
+		actuallyExpired.map(async (exportRecord) => {
+			try {
+				// Delete from S3
+				if (exportRecord.s3Key) {
+					await deleteExport(exportRecord.organizationId, exportRecord.s3Key);
+				}
 
-	for (const exportRecord of actuallyExpired) {
-		try {
-			// Delete from S3
-			if (exportRecord.s3Key) {
-				await deleteExport(exportRecord.organizationId, exportRecord.s3Key);
+				// Delete from database
+				await db.delete(dataExport).where(eq(dataExport.id, exportRecord.id));
+
+				return true;
+			} catch (error) {
+				logger.error({ exportId: exportRecord.id, error }, "Failed to cleanup expired export");
+				return false;
 			}
+		}),
+	);
 
-			// Delete from database
-			await db.delete(dataExport).where(eq(dataExport.id, exportRecord.id));
-
-			deletedCount++;
-		} catch (error) {
-			logger.error({ exportId: exportRecord.id, error }, "Failed to cleanup expired export");
-		}
-	}
+	const deletedCount = cleanupResults.filter(Boolean).length;
 
 	if (deletedCount > 0) {
 		logger.info({ deletedCount }, "Cleaned up expired exports");

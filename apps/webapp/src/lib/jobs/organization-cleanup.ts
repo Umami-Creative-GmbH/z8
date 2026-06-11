@@ -100,23 +100,31 @@ export async function runOrganizationCleanup(): Promise<OrganizationCleanupResul
 			"Found organizations ready for permanent deletion",
 		);
 
-		for (const org of organizationsToDelete) {
-			try {
-				await permanentlyDeleteOrganization(org.id);
-				result.organizationsDeleted++;
-				logger.info(
-					{ organizationId: org.id, organizationName: org.name },
-					"Organization permanently deleted",
-				);
-			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : "Unknown error";
-				result.errors.push(`Failed to delete org ${org.id}: ${errorMessage}`);
-				logger.error(
-					{ error: errorMessage, organizationId: org.id },
-					"Failed to permanently delete organization",
-				);
-			}
-		}
+		const deletionResults = await Promise.all(
+			organizationsToDelete.map(async (org) => {
+				try {
+					await permanentlyDeleteOrganization(org.id);
+					logger.info(
+						{ organizationId: org.id, organizationName: org.name },
+						"Organization permanently deleted",
+					);
+					return { success: true as const };
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : "Unknown error";
+					logger.error(
+						{ error: errorMessage, organizationId: org.id },
+						"Failed to permanently delete organization",
+					);
+					return {
+						success: false as const,
+						error: `Failed to delete org ${org.id}: ${errorMessage}`,
+					};
+				}
+			}),
+		);
+
+		result.organizationsDeleted = deletionResults.filter((item) => item.success).length;
+		result.errors.push(...deletionResults.flatMap((item) => (item.success ? [] : [item.error])));
 
 		if (result.errors.length > 0) {
 			result.success = false;
@@ -146,23 +154,22 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 			where: eq(employee.organizationId, organizationId),
 		});
 		const employeeIds = employees.map((e) => e.id);
+		const employeeUserIds = employees.flatMap((e) => (e.userId ? [e.userId] : []));
 
 		// Delete in order (most dependent first)
 
 		// 1. Time tracking data
-		if (employees.length > 0) {
-			for (const emp of employees) {
-				await tx.delete(timeEntry).where(eq(timeEntry.employeeId, emp.id));
-				await tx.delete(workPeriod).where(eq(workPeriod.employeeId, emp.id));
-				await tx.delete(waterIntakeLog).where(eq(waterIntakeLog.userId, emp.userId));
-			}
+		if (employeeIds.length > 0) {
+			await tx.delete(timeEntry).where(inArray(timeEntry.employeeId, employeeIds));
+			await tx.delete(workPeriod).where(inArray(workPeriod.employeeId, employeeIds));
+		}
+		if (employeeUserIds.length > 0) {
+			await tx.delete(waterIntakeLog).where(inArray(waterIntakeLog.userId, employeeUserIds));
 		}
 
 		// 2. Absence data
 		if (employeeIds.length > 0) {
-			for (const empId of employeeIds) {
-				await tx.delete(absenceEntry).where(eq(absenceEntry.employeeId, empId));
-			}
+			await tx.delete(absenceEntry).where(inArray(absenceEntry.employeeId, employeeIds));
 		}
 		await tx.delete(absenceCategory).where(eq(absenceCategory.organizationId, organizationId));
 
@@ -173,11 +180,9 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 
 		// 4. Vacation data
 		if (employeeIds.length > 0) {
-			for (const empId of employeeIds) {
-				await tx
-					.delete(employeeVacationAllowance)
-					.where(eq(employeeVacationAllowance.employeeId, empId));
-			}
+			await tx
+				.delete(employeeVacationAllowance)
+				.where(inArray(employeeVacationAllowance.employeeId, employeeIds));
 		}
 		await tx.delete(vacationAllowance).where(eq(vacationAllowance.organizationId, organizationId));
 
@@ -190,8 +195,11 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 		const presets = await tx.query.holidayPreset.findMany({
 			where: eq(holidayPreset.organizationId, organizationId),
 		});
-		for (const preset of presets) {
-			await tx.delete(holidayPresetHoliday).where(eq(holidayPresetHoliday.presetId, preset.id));
+		const presetIds = presets.map((preset) => preset.id);
+		if (presetIds.length > 0) {
+			await tx
+				.delete(holidayPresetHoliday)
+				.where(inArray(holidayPresetHoliday.presetId, presetIds));
 		}
 		await tx.delete(holidayPreset).where(eq(holidayPreset.organizationId, organizationId));
 		await tx.delete(holiday).where(eq(holiday.organizationId, organizationId));
@@ -201,9 +209,10 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 		const projects = await tx.query.project.findMany({
 			where: eq(project.organizationId, organizationId),
 		});
-		for (const proj of projects) {
-			await tx.delete(projectManager).where(eq(projectManager.projectId, proj.id));
-			await tx.delete(projectAssignment).where(eq(projectAssignment.projectId, proj.id));
+		const projectIds = projects.map((proj) => proj.id);
+		if (projectIds.length > 0) {
+			await tx.delete(projectManager).where(inArray(projectManager.projectId, projectIds));
+			await tx.delete(projectAssignment).where(inArray(projectAssignment.projectId, projectIds));
 		}
 		await tx.delete(project).where(eq(project.organizationId, organizationId));
 
@@ -211,8 +220,9 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 		const shifts = await tx.query.shift.findMany({
 			where: eq(shift.organizationId, organizationId),
 		});
-		for (const s of shifts) {
-			await tx.delete(shiftRequest).where(eq(shiftRequest.shiftId, s.id));
+		const shiftIds = shifts.map((s) => s.id);
+		if (shiftIds.length > 0) {
+			await tx.delete(shiftRequest).where(inArray(shiftRequest.shiftId, shiftIds));
 		}
 		await tx.delete(shift).where(eq(shift.organizationId, organizationId));
 		await tx.delete(shiftTemplate).where(eq(shiftTemplate.organizationId, organizationId));
@@ -221,11 +231,12 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 		const surchargeModels = await tx.query.surchargeModel.findMany({
 			where: eq(surchargeModel.organizationId, organizationId),
 		});
-		for (const model of surchargeModels) {
-			await tx.delete(surchargeRule).where(eq(surchargeRule.modelId, model.id));
+		const surchargeModelIds = surchargeModels.map((model) => model.id);
+		if (surchargeModelIds.length > 0) {
+			await tx.delete(surchargeRule).where(inArray(surchargeRule.modelId, surchargeModelIds));
 			await tx
 				.delete(surchargeModelAssignment)
-				.where(eq(surchargeModelAssignment.modelId, model.id));
+				.where(inArray(surchargeModelAssignment.modelId, surchargeModelIds));
 		}
 		await tx.delete(surchargeModel).where(eq(surchargeModel.organizationId, organizationId));
 
@@ -233,39 +244,47 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 		const policies = await tx.query.workPolicy.findMany({
 			where: eq(workPolicy.organizationId, organizationId),
 		});
-		for (const policy of policies) {
+		const policyIds = policies.map((policy) => policy.id);
+		if (policyIds.length > 0) {
 			// Delete schedule data
-			const schedule = await tx.query.workPolicySchedule.findFirst({
-				where: eq(workPolicySchedule.policyId, policy.id),
+			const schedules = await tx.query.workPolicySchedule.findMany({
+				where: inArray(workPolicySchedule.policyId, policyIds),
 			});
-			if (schedule) {
+			const scheduleIds = schedules.map((schedule) => schedule.id);
+			if (scheduleIds.length > 0) {
 				await tx
 					.delete(workPolicyScheduleDay)
-					.where(eq(workPolicyScheduleDay.scheduleId, schedule.id));
-				await tx.delete(workPolicySchedule).where(eq(workPolicySchedule.id, schedule.id));
+					.where(inArray(workPolicyScheduleDay.scheduleId, scheduleIds));
+				await tx.delete(workPolicySchedule).where(inArray(workPolicySchedule.id, scheduleIds));
 			}
 
 			// Delete regulation data
-			const regulation = await tx.query.workPolicyRegulation.findFirst({
-				where: eq(workPolicyRegulation.policyId, policy.id),
+			const regulations = await tx.query.workPolicyRegulation.findMany({
+				where: inArray(workPolicyRegulation.policyId, policyIds),
 			});
-			if (regulation) {
+			const regulationIds = regulations.map((regulation) => regulation.id);
+			if (regulationIds.length > 0) {
 				const breakRules = await tx.query.workPolicyBreakRule.findMany({
-					where: eq(workPolicyBreakRule.regulationId, regulation.id),
+					where: inArray(workPolicyBreakRule.regulationId, regulationIds),
 				});
-				for (const rule of breakRules) {
+				const breakRuleIds = breakRules.map((rule) => rule.id);
+				if (breakRuleIds.length > 0) {
 					await tx
 						.delete(workPolicyBreakOption)
-						.where(eq(workPolicyBreakOption.breakRuleId, rule.id));
+						.where(inArray(workPolicyBreakOption.breakRuleId, breakRuleIds));
 				}
 				await tx
 					.delete(workPolicyBreakRule)
-					.where(eq(workPolicyBreakRule.regulationId, regulation.id));
-				await tx.delete(workPolicyRegulation).where(eq(workPolicyRegulation.id, regulation.id));
+					.where(inArray(workPolicyBreakRule.regulationId, regulationIds));
+				await tx
+					.delete(workPolicyRegulation)
+					.where(inArray(workPolicyRegulation.id, regulationIds));
 			}
 
 			// Delete assignments
-			await tx.delete(workPolicyAssignment).where(eq(workPolicyAssignment.policyId, policy.id));
+			await tx
+				.delete(workPolicyAssignment)
+				.where(inArray(workPolicyAssignment.policyId, policyIds));
 		}
 		await tx
 			.delete(workPolicyViolation)
@@ -276,18 +295,17 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 		const locations = await tx.query.location.findMany({
 			where: eq(location.organizationId, organizationId),
 		});
-		for (const loc of locations) {
-			await tx.delete(locationEmployee).where(eq(locationEmployee.locationId, loc.id));
-			await tx.delete(locationSubarea).where(eq(locationSubarea.locationId, loc.id));
+		const locationIds = locations.map((loc) => loc.id);
+		if (locationIds.length > 0) {
+			await tx.delete(locationEmployee).where(inArray(locationEmployee.locationId, locationIds));
+			await tx.delete(locationSubarea).where(inArray(locationSubarea.locationId, locationIds));
 		}
 		await tx.delete(location).where(eq(location.organizationId, organizationId));
 
 		// 12. Employee manager assignments
 		if (employeeIds.length > 0) {
-			for (const empId of employeeIds) {
-				await tx.delete(employeeManagers).where(eq(employeeManagers.employeeId, empId));
-				await tx.delete(employeeManagers).where(eq(employeeManagers.managerId, empId));
-			}
+			await tx.delete(employeeManagers).where(inArray(employeeManagers.employeeId, employeeIds));
+			await tx.delete(employeeManagers).where(inArray(employeeManagers.managerId, employeeIds));
 		}
 
 		// 13. Notification data
@@ -319,10 +337,8 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 			.where(eq(organizationEmailConfig.organizationId, organizationId));
 
 		// 17. Push subscriptions
-		for (const emp of employees) {
-			if (emp.userId) {
-				await tx.delete(pushSubscription).where(eq(pushSubscription.userId, emp.userId));
-			}
+		if (employeeUserIds.length > 0) {
+			await tx.delete(pushSubscription).where(inArray(pushSubscription.userId, employeeUserIds));
 		}
 
 		// 18. Teams

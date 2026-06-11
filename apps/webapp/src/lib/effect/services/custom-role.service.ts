@@ -155,14 +155,15 @@ export const CustomRoleServiceLive = Layer.effect(
 		const loadRoleWithDetails = async (
 			roleRecord: typeof customRole.$inferSelect,
 		): Promise<CustomRoleWithPermissions> => {
-			const perms = await dbService.db.query.customRolePermission.findMany({
-				where: eq(customRolePermission.customRoleId, roleRecord.id),
-			});
-
-			const assignedCountResult = await dbService.db
-				.select({ count: sql<number>`count(*)::int` })
-				.from(employeeCustomRole)
-				.where(eq(employeeCustomRole.customRoleId, roleRecord.id));
+			const [perms, assignedCountResult] = await Promise.all([
+				dbService.db.query.customRolePermission.findMany({
+					where: eq(customRolePermission.customRoleId, roleRecord.id),
+				}),
+				dbService.db
+					.select({ count: sql<number>`count(*)::int` })
+					.from(employeeCustomRole)
+					.where(eq(employeeCustomRole.customRoleId, roleRecord.id)),
+			]);
 
 			return {
 				id: roleRecord.id,

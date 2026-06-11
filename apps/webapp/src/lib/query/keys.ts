@@ -95,15 +95,18 @@ export const queryKeys = {
 	},
 
 	// Employee clock statuses
-	employeeClockStatuses: {
-		all: ["employee-clock-statuses"] as const,
-		list: (orgId: string, employeeIds: string[]) =>
-			[
-				"employee-clock-statuses",
-				orgId,
-				Array.from(new Set(employeeIds.map((id) => id.trim()).filter(Boolean))).toSorted(),
-			] as const,
-	},
+		employeeClockStatuses: {
+			all: ["employee-clock-statuses"] as const,
+			list: (orgId: string, employeeIds: string[]) =>
+				[
+					"employee-clock-statuses",
+					orgId,
+					Array.from(new Set(employeeIds.flatMap((id) => {
+						const trimmed = id.trim();
+						return trimmed ? [trimmed] : [];
+					}))).toSorted(),
+				] as const,
+		},
 
 	// Employee Select (for unified employee selection component)
 	employeeSelect: {

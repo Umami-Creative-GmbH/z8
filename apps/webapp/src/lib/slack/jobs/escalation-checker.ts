@@ -41,16 +41,19 @@ export async function runSlackEscalationCheckerJob(): Promise<SlackEscalationRes
 
 		logger.info({ botCount: escalationEnabledBots.length }, "Starting Slack escalation checker");
 
-		for (const bot of escalationEnabledBots) {
-			try {
-				const escalated = await processBotEscalations(bot);
-				approvalsEscalated += escalated;
-			} catch (error) {
-				const errorMsg = `Failed to process escalations for org ${bot.organizationId}: ${error instanceof Error ? error.message : String(error)}`;
-				logger.error({ error, organizationId: bot.organizationId }, errorMsg);
-				errors.push(errorMsg);
-			}
-		}
+		const botResults = await Promise.all(
+			escalationEnabledBots.map(async (bot) => {
+				try {
+					return { escalated: await processBotEscalations(bot), error: undefined };
+				} catch (error) {
+					const errorMsg = `Failed to process escalations for org ${bot.organizationId}: ${error instanceof Error ? error.message : String(error)}`;
+					logger.error({ error, organizationId: bot.organizationId }, errorMsg);
+					return { escalated: 0, error: errorMsg };
+				}
+			}),
+		);
+		approvalsEscalated = botResults.reduce((total, result) => total + result.escalated, 0);
+		errors.push(...botResults.flatMap((result) => (result.error ? [result.error] : [])));
 
 		logger.info(
 			{
@@ -110,49 +113,50 @@ async function processBotEscalations(bot: {
 	});
 	const alreadyEscalated = new Set(existingEscalations.map((e) => e.approvalRequestId));
 
-	let escalated = 0;
+	const escalationResults = await Promise.all(
+		staleApprovals.map(async (approval) => {
+			if (alreadyEscalated.has(approval.id)) return 0;
 
-	for (const approval of staleApprovals) {
-		if (alreadyEscalated.has(approval.id)) continue;
-
-		try {
+			try {
 			// Find a backup manager (next manager up the chain)
 			const managers = await db.query.employeeManagers.findMany({
 				where: eq(employeeManagers.employeeId, approval.approverId),
 			});
 
-			// Find a backup manager who is not the original approver
-			// and who has a Slack account linked
-			let backupManagerId: string | null = null;
+			// Find the first backup manager in manager order who has Slack linked.
+			const candidateManagerIds = managers
+				.map((mgr) => mgr.managerId)
+				.filter((managerId) => managerId !== approval.approverId);
+			const managerEmployees =
+				candidateManagerIds.length > 0
+					? await db.query.employee.findMany({
+							where: and(
+								inArray(employee.id, candidateManagerIds),
+								eq(employee.organizationId, bot.organizationId),
+							),
+							columns: { id: true, userId: true },
+						})
+					: [];
+			const userIds = managerEmployees.flatMap((emp) => (emp.userId ? [emp.userId] : []));
+			const mappings =
+				userIds.length > 0
+					? await db.query.slackUserMapping.findMany({
+							where: and(
+								inArray(slackUserMapping.userId, userIds),
+								eq(slackUserMapping.organizationId, bot.organizationId),
+								eq(slackUserMapping.isActive, true),
+							),
+						})
+					: [];
+			const employeesById = new Map(managerEmployees.map((emp) => [emp.id, emp]));
+			const mappedUserIds = new Set(mappings.map((mapping) => mapping.userId));
+			const backupManagerId =
+				candidateManagerIds.find((managerId) => {
+					const userId = employeesById.get(managerId)?.userId;
+					return userId ? mappedUserIds.has(userId) : false;
+				}) ?? null;
 
-			for (const mgr of managers) {
-				if (mgr.managerId === approval.approverId) continue;
-
-				// Check if this manager has Slack linked
-				const emp = await db.query.employee.findFirst({
-					where: and(
-						eq(employee.id, mgr.managerId),
-						eq(employee.organizationId, bot.organizationId),
-					),
-					columns: { userId: true },
-				});
-				if (!emp?.userId) continue;
-
-				const mapping = await db.query.slackUserMapping.findFirst({
-					where: and(
-						eq(slackUserMapping.userId, emp.userId),
-						eq(slackUserMapping.organizationId, bot.organizationId),
-						eq(slackUserMapping.isActive, true),
-					),
-				});
-
-				if (mapping) {
-					backupManagerId = mgr.managerId;
-					break;
-				}
-			}
-
-			if (!backupManagerId) continue;
+			if (!backupManagerId) return 0;
 
 			// Record the escalation
 			await db.insert(slackEscalation).values({
@@ -171,8 +175,6 @@ async function processBotEscalations(bot: {
 				bot.botAccessToken,
 			);
 
-			escalated++;
-
 			logger.info(
 				{
 					approvalId: approval.id,
@@ -181,10 +183,14 @@ async function processBotEscalations(bot: {
 				},
 				"Escalated approval via Slack",
 			);
+
+			return 1;
 		} catch (error) {
 			logger.warn({ error, approvalId: approval.id }, "Failed to escalate approval");
+			return 0;
 		}
-	}
+		}),
+	);
 
-	return escalated;
+	return escalationResults.reduce<number>((total, result) => total + result, 0);
 }

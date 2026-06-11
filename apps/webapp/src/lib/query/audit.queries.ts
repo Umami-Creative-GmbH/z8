@@ -211,61 +211,52 @@ export async function getAuditLogStats(
 	const dateFilter = and(gte(auditLog.timestamp, startDate), lte(auditLog.timestamp, endDate));
 	const whereClause = and(orgFilter, dateFilter);
 
-	// Total events
-	const totalResult = await db
-		.select({ count: sql<number>`count(*)::int` })
-		.from(auditLog)
-		.where(whereClause);
+	const [totalResult, byActionResult, byEntityTypeResult, byUserResult, topIpResult] =
+		await Promise.all([
+			db.select({ count: sql<number>`count(*)::int` }).from(auditLog).where(whereClause),
+			db
+				.select({
+					action: auditLog.action,
+					count: sql<number>`count(*)::int`,
+				})
+				.from(auditLog)
+				.where(whereClause)
+				.groupBy(auditLog.action)
+				.orderBy(desc(sql`count(*)`))
+				.limit(10),
+			db
+				.select({
+					entityType: auditLog.entityType,
+					count: sql<number>`count(*)::int`,
+				})
+				.from(auditLog)
+				.where(whereClause)
+				.groupBy(auditLog.entityType)
+				.orderBy(desc(sql`count(*)`)),
+			db
+				.select({
+					userId: auditLog.performedBy,
+					userName: user.name,
+					count: sql<number>`count(*)::int`,
+				})
+				.from(auditLog)
+				.leftJoin(user, eq(auditLog.performedBy, user.id))
+				.where(whereClause)
+				.groupBy(auditLog.performedBy, user.name)
+				.orderBy(desc(sql`count(*)`))
+				.limit(10),
+			db
+				.select({
+					ipAddress: auditLog.ipAddress,
+					count: sql<number>`count(*)::int`,
+				})
+				.from(auditLog)
+				.where(and(whereClause, sql`${auditLog.ipAddress} IS NOT NULL`))
+				.groupBy(auditLog.ipAddress)
+				.orderBy(desc(sql`count(*)`))
+				.limit(10),
+		]);
 	const totalEvents = totalResult[0]?.count || 0;
-
-	// By action
-	const byActionResult = await db
-		.select({
-			action: auditLog.action,
-			count: sql<number>`count(*)::int`,
-		})
-		.from(auditLog)
-		.where(whereClause)
-		.groupBy(auditLog.action)
-		.orderBy(desc(sql`count(*)`))
-		.limit(10);
-
-	// By entity type
-	const byEntityTypeResult = await db
-		.select({
-			entityType: auditLog.entityType,
-			count: sql<number>`count(*)::int`,
-		})
-		.from(auditLog)
-		.where(whereClause)
-		.groupBy(auditLog.entityType)
-		.orderBy(desc(sql`count(*)`));
-
-	// By user
-	const byUserResult = await db
-		.select({
-			userId: auditLog.performedBy,
-			userName: user.name,
-			count: sql<number>`count(*)::int`,
-		})
-		.from(auditLog)
-		.leftJoin(user, eq(auditLog.performedBy, user.id))
-		.where(whereClause)
-		.groupBy(auditLog.performedBy, user.name)
-		.orderBy(desc(sql`count(*)`))
-		.limit(10);
-
-	// Top IP addresses
-	const topIpResult = await db
-		.select({
-			ipAddress: auditLog.ipAddress,
-			count: sql<number>`count(*)::int`,
-		})
-		.from(auditLog)
-		.where(and(whereClause, sql`${auditLog.ipAddress} IS NOT NULL`))
-		.groupBy(auditLog.ipAddress)
-		.orderBy(desc(sql`count(*)`))
-		.limit(10);
 
 	return {
 		totalEvents,

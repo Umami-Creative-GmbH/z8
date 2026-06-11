@@ -29,6 +29,9 @@ type DecisionVisibilityInput = {
 	includeAllApprovers?: boolean;
 	eligibleApprovalScopes?: EligibleApprovalScope[];
 };
+type BulkDecisionOutcome =
+	| { status: "succeeded"; success: ApprovalInboxDecisionSuccess }
+	| { status: "failed"; failure: ApprovalInboxDecisionFailure };
 
 const defaultDecisionEffectRunner: DecisionEffectRunner = (effect) =>
 	runtime.runPromiseExit(effect.pipe(Effect.provide(ApprovalAuditLoggerLive)));
@@ -120,7 +123,8 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 }): Promise<ApprovalInboxBulkDecisionResult> {
 	const result: ApprovalInboxBulkDecisionResult = { succeeded: [], failed: [] };
 
-	for (const request of requests) {
+	const decisions = await Promise.all(
+		requests.map(async (request): Promise<BulkDecisionOutcome> => {
 		const handler = resolveHandler(request.entityType);
 
 		if (
@@ -128,21 +132,25 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 			!isSupportedInboxType(request.entityType) ||
 			handler.type !== request.entityType
 		) {
-			result.failed.push({
+			return {
+				status: "failed" as const,
+				failure: {
 				id: request.id,
 				code: "unsupported",
 				message: `Unsupported approval type: ${request.entityType}`,
-			});
-			continue;
+				},
+			};
 		}
 
 		if (request.status !== "pending") {
-			result.failed.push({
+			return {
+				status: "failed" as const,
+				failure: {
 				id: request.id,
 				code: "stale",
 				message: `Request is already ${request.status}`,
-			});
-			continue;
+				},
+			};
 		}
 
 		if (
@@ -153,17 +161,20 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 				eligibleApprovalScopes,
 			})
 		) {
-			result.failed.push({
+			return {
+				status: "failed" as const,
+				failure: {
 				id: request.id,
 				code: "forbidden",
 				message: "You are not authorized to decide this request",
-			});
-			continue;
+				},
+			};
 		}
 
 		try {
-			result.succeeded.push(
-				await decideApprovalInboxItemFromRequest({
+			return {
+				status: "succeeded" as const,
+				success: await decideApprovalInboxItemFromRequest({
 					request,
 					actorEmployeeId,
 					action,
@@ -171,9 +182,21 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 					handler,
 					runEffect,
 				}),
-			);
+			};
 		} catch (error) {
-			result.failed.push(mapDecisionFailure(request.id, error));
+			return {
+				status: "failed" as const,
+				failure: mapDecisionFailure(request.id, error),
+			};
+		}
+		}),
+	);
+
+	for (const decision of decisions) {
+		if (decision.status === "succeeded") {
+			result.succeeded.push(decision.success);
+		} else {
+			result.failed.push(decision.failure);
 		}
 	}
 

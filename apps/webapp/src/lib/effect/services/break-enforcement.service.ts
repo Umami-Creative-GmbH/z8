@@ -256,9 +256,15 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				const { regulation } = policy;
 
 				// Find the applicable break rule (highest threshold that applies)
-				const applicableRule = regulation.breakRules
-					.filter((rule) => params.sessionDurationMinutes > rule.workingMinutesThreshold)
-					.sort((a, b) => b.workingMinutesThreshold - a.workingMinutesThreshold)[0];
+				const applicableRule = regulation.breakRules.reduce<
+					(typeof regulation.breakRules)[number] | undefined
+				>((best, rule) => {
+					if (params.sessionDurationMinutes <= rule.workingMinutesThreshold) {
+						return best;
+					}
+
+					return !best || rule.workingMinutesThreshold > best.workingMinutesThreshold ? rule : best;
+				}, undefined);
 
 				if (!applicableRule) {
 					return {
@@ -685,9 +691,15 @@ export const calculateBreakDeficitForTesting = (
 		const { regulation } = policy;
 
 		// Find the applicable break rule (highest threshold that applies)
-		const applicableRule = regulation.breakRules
-			.filter((rule) => params.sessionDurationMinutes > rule.workingMinutesThreshold)
-			.sort((a, b) => b.workingMinutesThreshold - a.workingMinutesThreshold)[0];
+		const applicableRule = regulation.breakRules.reduce<
+			(typeof regulation.breakRules)[number] | undefined
+		>((best, rule) => {
+			if (params.sessionDurationMinutes <= rule.workingMinutesThreshold) {
+				return best;
+			}
+
+			return !best || rule.workingMinutesThreshold > best.workingMinutesThreshold ? rule : best;
+		}, undefined);
 
 		if (!applicableRule) {
 			return {

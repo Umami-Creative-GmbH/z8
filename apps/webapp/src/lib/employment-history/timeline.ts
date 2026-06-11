@@ -16,16 +16,21 @@ export function findEffectiveEmploymentHistory<T extends EmploymentTimelineRow>(
 	rows: T[],
 	at: Date,
 ): T | null {
-	return (
-		rows
-			.filter(
-				(row) =>
-					row.reviewState === "confirmed" &&
-					row.validFrom.getTime() <= at.getTime() &&
-					(!row.validUntil || row.validUntil.getTime() > at.getTime()),
-			)
-			.sort((a, b) => b.validFrom.getTime() - a.validFrom.getTime())[0] ?? null
-	);
+	return rows.reduce<T | null>((latest, row) => {
+		if (
+			row.reviewState !== "confirmed" ||
+			row.validFrom.getTime() > at.getTime() ||
+			(row.validUntil && row.validUntil.getTime() <= at.getTime())
+		) {
+			return latest;
+		}
+
+		if (!latest || row.validFrom.getTime() > latest.validFrom.getTime()) {
+			return row;
+		}
+
+		return latest;
+	}, null);
 }
 
 export function adjustConfirmedTimeline<T extends EmploymentTimelineRow>({

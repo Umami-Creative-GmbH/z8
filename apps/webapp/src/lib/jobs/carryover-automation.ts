@@ -68,7 +68,8 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 		// Get all organizations
 		const organizations = await db.query.organization.findMany();
 
-		for (const org of organizations) {
+		const organizationResults = await Promise.all(
+			organizations.map(async (org) => {
 			try {
 				const timezone = org.timezone || "UTC";
 				const zonedCurrentDate = currentDate.setZone(timezone);
@@ -81,7 +82,7 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 
 				if (!fromYear && !isCalendarYearStart) {
 					logger.info({ organizationId: org.id }, "Carryover not due for organization");
-					continue;
+					return null;
 				}
 
 				// Check if organization has a vacation policy
@@ -89,22 +90,24 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 
 				if (!policy) {
 					logger.info({ organizationId: org.id }, "No vacation policy found, skipping");
-					results.push({
-						organizationId: org.id,
-						organizationName: org.name,
-						error: "No vacation policy found",
-					});
-					continue;
+					return {
+						result: {
+							organizationId: org.id,
+							organizationName: org.name,
+							error: "No vacation policy found",
+						},
+					};
 				}
 
 				if (!policy.allowCarryover) {
 					logger.info({ organizationId: org.id }, "Carryover not allowed by policy, skipping");
-					results.push({
-						organizationId: org.id,
-						organizationName: org.name,
-						error: "Carryover not allowed by policy",
-					});
-					continue;
+					return {
+						result: {
+							organizationId: org.id,
+							organizationName: org.name,
+							error: "Carryover not allowed by policy",
+						},
+					};
 				}
 
 				// Run carryover calculation
@@ -115,24 +118,37 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 					timezone,
 				);
 
-				results.push({
-					organizationId: org.id,
-					organizationName: org.name,
-					carryover: carryoverResult,
-				});
+				return {
+					result: {
+						organizationId: org.id,
+						organizationName: org.name,
+						carryover: carryoverResult,
+					},
+				};
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : "Unknown error";
 				logger.error(
 					{ organizationId: org.id, error: errorMessage },
 					"Failed to process organization",
 				);
-				errors.push(`${org.name}: ${errorMessage}`);
-				results.push({
-					organizationId: org.id,
-					organizationName: org.name,
-					error: errorMessage,
-				});
+				return {
+					error: `${org.name}: ${errorMessage}`,
+					result: {
+						organizationId: org.id,
+						organizationName: org.name,
+						error: errorMessage,
+					},
+				};
 			}
+			}),
+		);
+
+		for (const organizationResult of organizationResults) {
+			if (!organizationResult) continue;
+			if (organizationResult.error) {
+				errors.push(organizationResult.error);
+			}
+			results.push(organizationResult.result);
 		}
 
 		const completedAt = new Date();
@@ -192,7 +208,8 @@ export async function runCarryoverExpiry(): Promise<CarryoverJobResult> {
 	try {
 		const organizations = await db.query.organization.findMany();
 
-		for (const org of organizations) {
+		const organizationResults = await Promise.all(
+			organizations.map(async (org) => {
 			try {
 				const timezone = org.timezone || "UTC";
 				const orgCurrentDate = DateTime.fromJSDate(currentDate).setZone(timezone).toJSDate();
@@ -204,16 +221,31 @@ export async function runCarryoverExpiry(): Promise<CarryoverJobResult> {
 				);
 
 				if (expiryResult.employeesAffected > 0) {
-					results.push({
-						organizationId: org.id,
-						organizationName: org.name,
-						expiry: expiryResult,
-					});
+					return {
+						result: {
+							organizationId: org.id,
+							organizationName: org.name,
+							expiry: expiryResult,
+						},
+					};
 				}
+
+				return null;
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : "Unknown error";
 				logger.error({ organizationId: org.id, error: errorMessage }, "Failed to process expiry");
-				errors.push(`${org.name}: ${errorMessage}`);
+				return { error: `${org.name}: ${errorMessage}` };
+			}
+			}),
+		);
+
+		for (const organizationResult of organizationResults) {
+			if (!organizationResult) continue;
+			if (organizationResult.error) {
+				errors.push(organizationResult.error);
+			}
+			if (organizationResult.result) {
+				results.push(organizationResult.result);
 			}
 		}
 

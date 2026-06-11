@@ -366,8 +366,12 @@ const databaseSources: ManagerDailyBriefingSources = {
 			return [];
 		}
 
-		const { db, employee, shift, team, user } = await import("@/db");
-		const { locationSubarea } = await import("@/db/schema");
+		const [dbModule, schema] = await Promise.all([
+			import("@/db"),
+			import("@/db/schema"),
+		]);
+		const { db, employee, shift, team, user } = dbModule;
+		const { locationSubarea } = schema;
 
 		const rows = await db
 			.select({
@@ -498,8 +502,10 @@ const databaseSources: ManagerDailyBriefingSources = {
 	},
 
 	async getCoverageRules({ organizationId, subareaIds }) {
-		const { db } = await import("@/db");
-		const { coverageRule, locationSubarea } = await import("@/db/schema");
+		const [{ db }, { coverageRule, locationSubarea }] = await Promise.all([
+			import("@/db"),
+			import("@/db/schema"),
+		]);
 		const conditions = [eq(coverageRule.organizationId, organizationId)];
 
 		if (subareaIds) {

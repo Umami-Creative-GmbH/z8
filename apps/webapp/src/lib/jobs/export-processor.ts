@@ -247,12 +247,16 @@ export async function runExportProcessor(): Promise<ExportJobResult> {
 
 		logger.info({ count: pendingExports.length }, "Found pending exports");
 
-		// Process each export
-		for (const exportRecord of pendingExports) {
+		// Process each independent export concurrently, then aggregate the outcomes.
+		const processResults = await Promise.all(
+			pendingExports.map(async (exportRecord) => ({
+				exportRecord,
+				processResult: await processSingleExport(exportRecord),
+			})),
+		);
+
+		for (const { exportRecord, processResult } of processResults) {
 			result.exportsProcessed++;
-
-			const processResult = await processSingleExport(exportRecord);
-
 			if (processResult.success) {
 				result.exportsSucceeded++;
 			} else {

@@ -154,13 +154,25 @@ export class SuccessFactorsExporter implements IPayrollExporter {
 		// Export time records in batches
 		const timeRecordRequests = timeRecords.map((t) => t.request);
 		let syncedTimeRecords = 0;
+		const timeRecordBatches: Array<{
+			batch: typeof timeRecordRequests;
+			sourceIds: string[];
+		}> = [];
 
 		for (let i = 0; i < timeRecordRequests.length; i += sfConfig.batchSize) {
-			const batch = timeRecordRequests.slice(i, i + sfConfig.batchSize);
-			const batchSourceIds = timeRecords.slice(i, i + sfConfig.batchSize).map((t) => t.sourceId);
+			timeRecordBatches.push({
+				batch: timeRecordRequests.slice(i, i + sfConfig.batchSize),
+				sourceIds: timeRecords.slice(i, i + sfConfig.batchSize).map((t) => t.sourceId),
+			});
+		}
 
-			const batchResults = await client.createTimeRecords(batch);
-			apiCallCount += batch.length;
+		const timeRecordBatchResults = await Promise.all(
+			timeRecordBatches.map(({ batch }) => client.createTimeRecords(batch)),
+		);
+		apiCallCount += timeRecordRequests.length;
+
+		timeRecordBatchResults.forEach((batchResults, batchIndex) => {
+			const batchSourceIds = timeRecordBatches[batchIndex].sourceIds;
 
 			batchResults.forEach((result, index) => {
 				if (result.success) {
@@ -177,21 +189,31 @@ export class SuccessFactorsExporter implements IPayrollExporter {
 					});
 				}
 			});
-		}
+		});
 
 		// Export absences in batches
 		const validAbsenceData = absenceData.filter((a): a is NonNullable<typeof a> => a !== null);
 		const absenceRequests = validAbsenceData.map((a) => a.request);
 		let syncedAbsences = 0;
+		const absenceBatches: Array<{
+			batch: typeof absenceRequests;
+			sourceIds: string[];
+		}> = [];
 
 		for (let i = 0; i < absenceRequests.length; i += sfConfig.batchSize) {
-			const batch = absenceRequests.slice(i, i + sfConfig.batchSize);
-			const batchSourceIds = validAbsenceData
-				.slice(i, i + sfConfig.batchSize)
-				.map((a) => a.sourceId);
+			absenceBatches.push({
+				batch: absenceRequests.slice(i, i + sfConfig.batchSize),
+				sourceIds: validAbsenceData.slice(i, i + sfConfig.batchSize).map((a) => a.sourceId),
+			});
+		}
 
-			const batchResults = await client.createAbsences(batch);
-			apiCallCount += batch.length;
+		const absenceBatchResults = await Promise.all(
+			absenceBatches.map(({ batch }) => client.createAbsences(batch)),
+		);
+		apiCallCount += absenceRequests.length;
+
+		absenceBatchResults.forEach((batchResults, batchIndex) => {
+			const batchSourceIds = absenceBatches[batchIndex].sourceIds;
 
 			batchResults.forEach((result, index) => {
 				if (result.success) {
@@ -208,7 +230,7 @@ export class SuccessFactorsExporter implements IPayrollExporter {
 					});
 				}
 			});
-		}
+		});
 
 		// Count skipped absences (those without mappings)
 		const skippedAbsences = absenceData.filter((a) => a === null).length;
