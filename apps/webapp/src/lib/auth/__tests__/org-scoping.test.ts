@@ -216,21 +216,6 @@ describe("Notification Service Org Isolation", () => {
 });
 
 describe("Route Security Fix Verification", () => {
-	describe("notifications/stream route", () => {
-		test("requires activeOrganizationId check before employee query", () => {
-			// This test documents the expected security pattern
-			const securityPattern = {
-				step1: "Check session.session?.activeOrganizationId exists",
-				step2: "Return 400 if no activeOrganizationId",
-				step3: "Query employee with organizationId = activeOrgId filter",
-			};
-
-			expect(securityPattern.step1).toBe("Check session.session?.activeOrganizationId exists");
-			expect(securityPattern.step2).toBe("Return 400 if no activeOrganizationId");
-			expect(securityPattern.step3).toBe("Query employee with organizationId = activeOrgId filter");
-		});
-	});
-
 	describe("notifications/count route", () => {
 		test("filters employee by activeOrganizationId", () => {
 			const session = createMockSession({
