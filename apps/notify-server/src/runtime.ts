@@ -4,7 +4,7 @@ import type { StreamSession } from "./auth.js";
 import { validateStreamRequest } from "./auth.js";
 import { ClientRegistry } from "./registry.js";
 import { startRedisFanout } from "./redis-fanout.js";
-import { createNotifyServerHandler } from "./server.js";
+import { createNotifyServerHandler, type NotifyServerDependencies } from "./server.js";
 
 type WebappModules = {
 	db: {
@@ -19,6 +19,34 @@ type WebappModules = {
 	getUnreadCount: (userId: string, organizationId: string) => Promise<number>;
 	createRedisSubscriber: () => Parameters<typeof startRedisFanout>[0]["subscriber"];
 };
+
+export interface NotifyRuntimeDependencies extends Pick<NotifyServerDependencies, "validate" | "getUnreadCount"> {
+	createRedisSubscriber: () => Parameters<typeof startRedisFanout>[0]["subscriber"];
+	startRedisFanout: typeof startRedisFanout;
+}
+
+export function createNotifyRuntime(deps: NotifyRuntimeDependencies) {
+	const registry = new ClientRegistry();
+	let fanoutPromise: Promise<() => Promise<void>> | null = null;
+
+	return {
+		handler: createNotifyServerHandler({
+			validate: deps.validate,
+			getUnreadCount: deps.getUnreadCount,
+			registerClient: (client) => {
+				registry.add(client);
+				return () => registry.remove(client.id);
+			},
+		}),
+		startFanout: () => {
+			fanoutPromise ??= deps.startRedisFanout({
+				subscriber: deps.createRedisSubscriber(),
+				fanout: (userId, event, data) => registry.fanout(userId, event, data),
+			});
+			return fanoutPromise;
+		},
+	};
+}
 
 async function loadWebappModules(): Promise<WebappModules> {
 	const importModule = (specifier: string) => import(specifier) as Promise<Record<string, unknown>>;
@@ -39,42 +67,45 @@ async function loadWebappModules(): Promise<WebappModules> {
 	};
 }
 
-const { db, employee, auth, getUnreadCount, createRedisSubscriber } = await loadWebappModules();
 const eqColumn = eq as (left: unknown, right: unknown) => unknown;
 const andConditions = and as (...conditions: unknown[]) => unknown;
 
-const registry = new ClientRegistry();
+let defaultRuntimePromise: Promise<ReturnType<typeof createNotifyRuntime>> | null = null;
 
-export const handler = createNotifyServerHandler({
-	validate: (headers) =>
-		validateStreamRequest(headers, {
-			getSession: (requestHeaders) => auth.api.getSession({ headers: requestHeaders }),
-			findActiveEmployee: async ({ userId, organizationId }) => {
-				const [record] = await db
-					.select({ organizationId: employee.organizationId })
-					.from(employee)
-					.where(
-						andConditions(
-							eqColumn(employee.userId, userId),
-							eqColumn(employee.organizationId, organizationId),
-							eqColumn(employee.isActive, true),
-						),
-					)
-					.limit(1);
+async function getDefaultRuntime(): Promise<ReturnType<typeof createNotifyRuntime>> {
+	defaultRuntimePromise ??= loadWebappModules().then(({ db, employee, auth, getUnreadCount, createRedisSubscriber }) =>
+		createNotifyRuntime({
+			validate: (headers) =>
+				validateStreamRequest(headers, {
+					getSession: (requestHeaders) => auth.api.getSession({ headers: requestHeaders }),
+					findActiveEmployee: async ({ userId, organizationId }) => {
+						const [record] = await db
+							.select({ organizationId: employee.organizationId })
+							.from(employee)
+							.where(
+								andConditions(
+									eqColumn(employee.userId, userId),
+									eqColumn(employee.organizationId, organizationId),
+									eqColumn(employee.isActive, true),
+								),
+							)
+							.limit(1);
 
-				return record ?? null;
-			},
+						return record ?? null;
+					},
+				}),
+			getUnreadCount,
+			createRedisSubscriber,
+			startRedisFanout,
 		}),
-	getUnreadCount,
-	registerClient: (client) => {
-		registry.add(client);
-		return () => registry.remove(client.id);
-	},
-});
+	);
+	return defaultRuntimePromise;
+}
+
+export async function handler(request: Request): Promise<Response> {
+	return (await getDefaultRuntime()).handler(request);
+}
 
 export async function startFanout(): Promise<() => Promise<void>> {
-	return startRedisFanout({
-		subscriber: createRedisSubscriber(),
-		fanout: (userId, event, data) => registry.fanout(userId, event, data),
-	});
+	return (await getDefaultRuntime()).startFanout();
 }
