@@ -28,30 +28,47 @@ export interface NotifyRuntimeDependencies extends Pick<NotifyServerDependencies
 export function createNotifyRuntime(deps: NotifyRuntimeDependencies) {
 	const registry = new ClientRegistry();
 	let fanoutPromise: Promise<() => Promise<void>> | null = null;
-	let fanoutUnavailable = false;
+	let fanoutAvailable = false;
+	let fanoutTerminal = false;
 
 	const markFanoutUnavailable = () => {
-		fanoutUnavailable = true;
-		fanoutPromise = null;
+		fanoutAvailable = false;
 		registry.closeAll();
 	};
 
-	const startFanout = () => {
-		if (fanoutPromise && !fanoutUnavailable) return fanoutPromise;
+	const markFanoutAvailable = () => {
+		fanoutAvailable = true;
+		fanoutTerminal = false;
+	};
 
-		fanoutUnavailable = false;
-		fanoutPromise = deps
-			.startRedisFanout({
-				subscriber: deps.createRedisSubscriber(),
-				fanout: (userId, event, data) => registry.fanout(userId, event, data),
-				onUnavailable: markFanoutUnavailable,
-			})
-			.catch((error: unknown) => {
-				markFanoutUnavailable();
-				throw error;
-			});
+	const markFanoutTerminal = () => {
+		fanoutTerminal = true;
+		fanoutPromise = null;
+	};
 
-		return fanoutPromise;
+	const startFanout = async () => {
+		if (!fanoutPromise || fanoutTerminal) {
+			fanoutAvailable = false;
+			fanoutTerminal = false;
+			fanoutPromise = deps
+				.startRedisFanout({
+					subscriber: deps.createRedisSubscriber(),
+					fanout: (userId, event, data) => registry.fanout(userId, event, data),
+					onUnavailable: markFanoutUnavailable,
+					onAvailable: markFanoutAvailable,
+					onTerminal: markFanoutTerminal,
+				})
+				.catch((error: unknown) => {
+					markFanoutUnavailable();
+					markFanoutTerminal();
+					throw error;
+				});
+		}
+
+		const cleanup = await fanoutPromise;
+		if (!fanoutAvailable) throw new Error("Notification stream unavailable");
+
+		return cleanup;
 	};
 
 	return {

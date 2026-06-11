@@ -87,7 +87,7 @@ describe("startRedisFanout", () => {
 		expect(subscriber.disconnect).toHaveBeenCalled();
 	});
 
-	it("notifies every time Redis emits terminal availability events", async () => {
+	it("treats close as transient unavailable without terminal restart", async () => {
 		const handlers = new Map<string, Set<(...args: unknown[]) => void>>();
 		const subscriber = {
 			on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
@@ -103,13 +103,62 @@ describe("startRedisFanout", () => {
 			disconnect: vi.fn(),
 		};
 		const onUnavailable = vi.fn();
+		const onTerminal = vi.fn();
 
-		await startRedisFanout({ subscriber: subscriber as unknown as Redis, fanout: vi.fn(), onUnavailable });
+		await startRedisFanout({ subscriber: subscriber as unknown as Redis, fanout: vi.fn(), onUnavailable, onTerminal });
 
 		for (const handler of handlers.get("close") ?? []) handler();
+
+		expect(onUnavailable).toHaveBeenCalledTimes(1);
+		expect(onTerminal).not.toHaveBeenCalled();
+	});
+
+	it("treats end as unavailable and terminal", async () => {
+		const handlers = new Map<string, Set<(...args: unknown[]) => void>>();
+		const subscriber = {
+			on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+				const eventHandlers = handlers.get(event) ?? new Set<(...args: unknown[]) => void>();
+				eventHandlers.add(handler);
+				handlers.set(event, eventHandlers);
+			}),
+			off: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+				handlers.get(event)?.delete(handler);
+			}),
+			psubscribe: vi.fn(async () => undefined),
+			punsubscribe: vi.fn(async () => undefined),
+			disconnect: vi.fn(),
+		};
+		const onUnavailable = vi.fn();
+		const onTerminal = vi.fn();
+
+		await startRedisFanout({ subscriber: subscriber as unknown as Redis, fanout: vi.fn(), onUnavailable, onTerminal });
+
 		for (const handler of handlers.get("end") ?? []) handler();
 
-		expect(onUnavailable).toHaveBeenCalledTimes(2);
+		expect(onUnavailable).toHaveBeenCalledTimes(1);
+		expect(onTerminal).toHaveBeenCalledTimes(1);
+	});
+
+	it("marks fanout available after subscribe and ready", async () => {
+		const handlers = new Map<string, Set<(...args: unknown[]) => void>>();
+		const subscriber = {
+			on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+				const eventHandlers = handlers.get(event) ?? new Set<(...args: unknown[]) => void>();
+				eventHandlers.add(handler);
+				handlers.set(event, eventHandlers);
+			}),
+			off: vi.fn(),
+			psubscribe: vi.fn(async () => undefined),
+			punsubscribe: vi.fn(async () => undefined),
+			disconnect: vi.fn(),
+		};
+		const onAvailable = vi.fn();
+
+		await startRedisFanout({ subscriber: subscriber as unknown as Redis, fanout: vi.fn(), onAvailable });
+
+		expect(onAvailable).toHaveBeenCalledTimes(1);
+		for (const handler of handlers.get("ready") ?? []) handler();
+		expect(onAvailable).toHaveBeenCalledTimes(2);
 	});
 
 	it("removes terminal availability listeners during cleanup", async () => {
@@ -133,10 +182,12 @@ describe("startRedisFanout", () => {
 		await cleanup();
 
 		for (const handler of handlers.get("close") ?? []) handler();
+		for (const handler of handlers.get("ready") ?? []) handler();
 		for (const handler of handlers.get("end") ?? []) handler();
 
 		expect(onUnavailable).not.toHaveBeenCalled();
 		expect(subscriber.off).toHaveBeenCalledWith("close", expect.any(Function));
+		expect(subscriber.off).toHaveBeenCalledWith("ready", expect.any(Function));
 		expect(subscriber.off).toHaveBeenCalledWith("end", expect.any(Function));
 	});
 });
