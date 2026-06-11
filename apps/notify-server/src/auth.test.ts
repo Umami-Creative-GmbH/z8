@@ -21,12 +21,23 @@ describe("validateStreamRequest", () => {
 		expect(result).toEqual({ ok: false, status: 400, message: "No active organization" });
 	});
 
-	it("accepts an active employee in the active organization", async () => {
+	it("rejects missing active employee", async () => {
 		const result = await validateStreamRequest(new Headers(), {
 			getSession: vi.fn(async () => ({ user: { id: "u1" }, session: { activeOrganizationId: "o1" } })),
-			findActiveEmployee: vi.fn(async () => ({ organizationId: "o1" })),
+			findActiveEmployee: vi.fn(async () => null),
 		});
 
+		expect(result).toEqual({ ok: false, status: 400, message: "No active employee record in this organization" });
+	});
+
+	it("accepts an active employee in the active organization", async () => {
+		const findActiveEmployee = vi.fn(async () => ({ organizationId: "o1" }));
+		const result = await validateStreamRequest(new Headers(), {
+			getSession: vi.fn(async () => ({ user: { id: "u1" }, session: { activeOrganizationId: "o1" } })),
+			findActiveEmployee,
+		});
+
+		expect(findActiveEmployee).toHaveBeenCalledWith({ userId: "u1", organizationId: "o1" });
 		expect(result).toEqual({ ok: true, userId: "u1", organizationId: "o1" });
 	});
 });

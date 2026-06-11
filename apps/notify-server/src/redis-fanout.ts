@@ -5,11 +5,8 @@ import type { NotificationStreamEvent } from "./registry.js";
 export type FanoutFunction = (userId: string, event: NotificationStreamEvent, data: unknown) => number;
 
 export function handleRedisMessage(channel: string, message: string, fanout: FanoutFunction): number {
-	const prefix = "notifications:";
-	if (!channel.startsWith(prefix)) return 0;
-
-	const userId = channel.slice(prefix.length);
-	if (!userId) return 0;
+	const [prefix, userId, extra] = channel.split(":");
+	if (prefix !== "notifications" || !userId || extra !== undefined) return 0;
 
 	try {
 		const parsed = JSON.parse(message) as { event?: unknown; data?: unknown };
@@ -22,12 +19,12 @@ export function handleRedisMessage(channel: string, message: string, fanout: Fan
 }
 
 export async function startRedisFanout(params: { subscriber: Redis; fanout: FanoutFunction }): Promise<() => Promise<void>> {
-	const onMessage = (channel: string, message: string) => handleRedisMessage(channel, message, params.fanout);
-	params.subscriber.on("message", onMessage);
+	const onMessage = (_pattern: string, channel: string, message: string) => handleRedisMessage(channel, message, params.fanout);
+	params.subscriber.on("pmessage", onMessage);
 	await params.subscriber.psubscribe("notifications:*");
 
 	return async () => {
-		params.subscriber.off("message", onMessage);
+		params.subscriber.off("pmessage", onMessage);
 		await params.subscriber.punsubscribe("notifications:*");
 		params.subscriber.disconnect();
 	};
