@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"target": "ES2024",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"strict": true,
+		"skipLibCheck": true,
+		"noEmit": true,
+		"ignoreDeprecations": "6.0",
+		"types": ["node"],
+		"baseUrl": ".",
+		"paths": { "@/*": ["../webapp/src/*"] }
+	},
+	"include": ["src/**/*.ts", "vitest.config.ts"]
+}
