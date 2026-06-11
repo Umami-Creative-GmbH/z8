@@ -302,6 +302,44 @@ services:
           cpus: "0.5"
           memory: 512M
 
+  notify-server:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.notify-server
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: pgbouncer
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-z8}
+      POSTGRES_USER: ${POSTGRES_USER:-z8}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      REDIS_HOST: ${REDIS_HOST:-valkey}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_TLS: ${REDIS_TLS:-false}
+      REDIS_CA_CERT: ${REDIS_CA_CERT:-}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL is required}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?NEXT_PUBLIC_APP_URL is required}
+      NOTIFY_SERVER_PORT: 3002
+      NODE_ENV: production
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    expose:
+      - "3002"
+    depends_on:
+      pgbouncer:
+        condition: service_started
+      valkey:
+        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
   docs:
     build:
       context: ../..
@@ -404,6 +442,8 @@ services:
       - caddy_config:/config
     depends_on:
       webapp:
+        condition: service_started
+      notify-server:
         condition: service_started
       docs:
         condition: service_started

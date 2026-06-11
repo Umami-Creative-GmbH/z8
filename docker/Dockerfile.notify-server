@@ -1,0 +1,25 @@
+# syntax=docker/dockerfile:1.4
+ARG BUN_VERSION=1.3.4
+ARG PNPM_VERSION=11.5.2
+FROM oven/bun:${BUN_VERSION}-alpine AS notify-server
+
+RUN apk add --no-cache ca-certificates curl nodejs npm tini
+RUN npm install --global pnpm@${PNPM_VERSION}
+
+WORKDIR /repo
+ENV NODE_ENV=production
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/webapp/package.json ./apps/webapp/package.json
+COPY apps/notify-server/package.json ./apps/notify-server/package.json
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
+
+COPY apps/webapp ./apps/webapp
+COPY apps/notify-server ./apps/notify-server
+
+EXPOSE 3002
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["pnpm", "--filter", "notify-server", "start:bun"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl -f http://localhost:3002/health || exit 1

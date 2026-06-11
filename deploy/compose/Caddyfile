@@ -4,6 +4,10 @@
 {$APP_DOMAIN:localhost} {
 	encode zstd gzip
 
+	handle /api/notifications/stream {
+		reverse_proxy notify-server:3002
+	}
+
 	reverse_proxy webapp:3000
 }
 
