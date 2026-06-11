@@ -1,5 +1,7 @@
 # Notify Server Implementation Plan
 
+> **Superseded:** This implementation plan is superseded by `docs/superpowers/specs/2026-06-12-polling-notifications-design.md` and should not be executed unless realtime in-app notification delivery is reapproved in a new spec.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a separate Bun-first `apps/notify-server` service that serves notification SSE streams outside the Next.js webapp runtime.

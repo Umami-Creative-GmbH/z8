@@ -60,7 +60,7 @@ Z8 is designed to help organizations operate with confidence in compliance-sensi
 
 - **Multi-Channel Notifications**: Stay informed via In-app alerts, Desktop Push notifications (Web Push), and Email templates.
 - **Dark Mode Support**: Fully responsive UI with automated and manual theme toggling.
-- **Real-Time Updates**: Notification center powered by Server-Sent Events (SSE) for instant feedback on approvals.
+- **Periodic Updates**: Notification center refreshes in the background and on focus without long-lived realtime streams.
 
 ---
 

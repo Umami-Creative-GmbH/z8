@@ -60,7 +60,7 @@ Z8 ist darauf ausgelegt, Organisationen in compliance-sensiblen Umgebungen ein s
 
 - **Benachrichtigungen über mehrere Kanäle**: Bleibe über In-App-Hinweise, Desktop-Push-Benachrichtigungen (Web Push) und E-Mail-Templates informiert.
 - **Dark-Mode-Unterstützung**: Voll responsives UI mit automatischem und manuellem Theme-Wechsel.
-- **Echtzeit-Updates**: Notification Center auf Basis von Server-Sent Events (SSE) für unmittelbares Feedback bei Freigaben.
+- **Regelmäßige Updates**: Das Notification Center aktualisiert sich im Hintergrund und beim Fokuswechsel ohne langlebige Echtzeit-Streams.
 
 ---
 

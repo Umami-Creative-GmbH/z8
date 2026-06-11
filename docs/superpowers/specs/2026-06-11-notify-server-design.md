@@ -1,5 +1,7 @@
 # Notify Server Design
 
+> **Superseded:** This realtime notify-server design is superseded by `docs/superpowers/specs/2026-06-12-polling-notifications-design.md`. Do not implement this service unless a future spec explicitly reintroduces realtime in-app notification delivery.
+
 ## Summary
 
 Move notification SSE streaming out of the Next.js webapp into a separate `apps/notify-server` service. The service will be Bun-first, Node-compatible, and deployed behind the same public origin so browsers continue to connect to `/api/notifications/stream` with existing cookies.
