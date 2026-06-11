@@ -39,7 +39,6 @@ describe("Redis client configuration", () => {
 		vi.clearAllMocks();
 		vi.resetModules();
 		Reflect.deleteProperty(globalThis, "redis");
-		Reflect.deleteProperty(globalThis, "redisPub");
 	});
 
 	test("keeps the offline queue enabled for lazy Redis clients", async () => {
