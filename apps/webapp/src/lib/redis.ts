@@ -67,7 +67,7 @@ function createRedisClient(): Redis {
 		},
 		lazyConnect: true,
 		enableReadyCheck: true,
-		enableOfflineQueue: false,
+		enableOfflineQueue: true,
 		// Reconnect automatically on connection loss
 		reconnectOnError(err) {
 			const targetErrors = ["READONLY", "ECONNRESET", "EPIPE"];

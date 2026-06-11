@@ -78,6 +78,8 @@ export async function GET() {
 		// Check if Redis is available
 		const redisAvailable = redis.status === "ready" || redis.status === "connecting";
 
+		let cleanupStream = () => {};
+
 		// Create a readable stream for SSE
 		const stream = new ReadableStream({
 			async start(controller) {
@@ -114,6 +116,7 @@ export async function GET() {
 						subscriber.disconnect();
 					}
 				};
+				cleanupStream = cleanup;
 
 				try {
 					// Send initial count
@@ -172,9 +175,9 @@ export async function GET() {
 					console.error("Error setting up notification stream:", error);
 					cleanup();
 				}
-
-				// Return cleanup function for when stream is closed
-				return cleanup;
+			},
+			cancel() {
+				cleanupStream();
 			},
 		});
 

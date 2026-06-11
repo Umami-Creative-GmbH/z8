@@ -150,6 +150,17 @@ describe("GET /api/notifications/stream", () => {
 		await reader.cancel();
 	});
 
+	it("cleans up Redis subscriptions when the stream is cancelled", async () => {
+		const response = await GET();
+		const reader = response.body?.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+		await readEvent(reader);
+
+		await reader.cancel();
+
+		expect(mockState.subscriber.unsubscribe).toHaveBeenCalledWith("notifications:user-1");
+		expect(mockState.subscriber.disconnect).toHaveBeenCalled();
+	});
+
 	it("scopes polling fallback count updates to the active organization", async () => {
 		vi.useFakeTimers();
 		mockState.redis.status = "end";
