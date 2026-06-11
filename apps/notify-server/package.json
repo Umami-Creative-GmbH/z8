@@ -9,7 +9,7 @@
 		"start:node": "tsx src/node.ts",
 		"build": "tsc --noEmit",
 		"check-types": "tsc --noEmit",
-		"test": "vitest run",
+		"test": "vitest run --passWithNoTests",
 		"test:watch": "vitest"
 	},
 	"dependencies": {
