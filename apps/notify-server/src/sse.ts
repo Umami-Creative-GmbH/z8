@@ -1,4 +1,7 @@
 export function encodeSseEvent(type: string, data: unknown): string {
+  if (type.includes("\n") || type.includes("\r")) {
+    throw new Error("Invalid SSE event type");
+  }
   return `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 

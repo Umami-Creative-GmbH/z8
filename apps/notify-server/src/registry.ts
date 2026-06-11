@@ -12,6 +12,7 @@ export class ClientRegistry {
   private readonly byUser = new Map<string, Set<string>>();
 
   add(client: RegisteredClient): void {
+    this.remove(client.id);
     this.clients.set(client.id, client);
     const ids = this.byUser.get(client.userId) ?? new Set<string>();
     ids.add(client.id);

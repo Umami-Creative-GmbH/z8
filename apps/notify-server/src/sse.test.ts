@@ -8,6 +8,10 @@ describe("sse helpers", () => {
     );
   });
 
+  it("rejects event types containing line breaks", () => {
+    expect(() => encodeSseEvent("count_update\nevent: hacked", {})).toThrow("Invalid SSE event type");
+  });
+
   it("sets streaming headers", () => {
     const headers = createSseHeaders();
     expect(headers.get("Content-Type")).toBe("text/event-stream");

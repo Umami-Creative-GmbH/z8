@@ -21,4 +21,17 @@ describe("ClientRegistry", () => {
     registry.remove("c1");
     expect(registry.fanout("u1", "count_update", { count: 1, organizationId: "o1" })).toBe(0);
   });
+
+  it("moves replaced client ids to the new user index", () => {
+    const registry = new ClientRegistry();
+    const first = vi.fn();
+    const second = vi.fn();
+    registry.add({ id: "c1", userId: "u1", organizationId: "o1", send: first });
+    registry.add({ id: "c1", userId: "u2", organizationId: "o1", send: second });
+
+    expect(registry.fanout("u1", "count_update", { count: 1, organizationId: "o1" })).toBe(0);
+    expect(registry.fanout("u2", "count_update", { count: 1, organizationId: "o1" })).toBe(1);
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledWith("count_update", { count: 1, organizationId: "o1" });
+  });
 });
