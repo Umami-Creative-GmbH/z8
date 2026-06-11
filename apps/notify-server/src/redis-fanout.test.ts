@@ -87,7 +87,7 @@ describe("startRedisFanout", () => {
 		expect(subscriber.disconnect).toHaveBeenCalled();
 	});
 
-	it("notifies once when Redis emits terminal availability events", async () => {
+	it("notifies every time Redis emits terminal availability events", async () => {
 		const handlers = new Map<string, Set<(...args: unknown[]) => void>>();
 		const subscriber = {
 			on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
@@ -109,7 +109,7 @@ describe("startRedisFanout", () => {
 		for (const handler of handlers.get("close") ?? []) handler();
 		for (const handler of handlers.get("end") ?? []) handler();
 
-		expect(onUnavailable).toHaveBeenCalledTimes(1);
+		expect(onUnavailable).toHaveBeenCalledTimes(2);
 	});
 
 	it("removes terminal availability listeners during cleanup", async () => {

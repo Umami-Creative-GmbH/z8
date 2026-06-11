@@ -24,12 +24,7 @@ export async function startRedisFanout(params: {
 	onUnavailable?: () => void;
 }): Promise<() => Promise<void>> {
 	const onMessage = (_pattern: string, channel: string, message: string) => handleRedisMessage(channel, message, params.fanout);
-	let unavailableNotified = false;
-	const onUnavailable = () => {
-		if (unavailableNotified) return;
-		unavailableNotified = true;
-		params.onUnavailable?.();
-	};
+	const onUnavailable = () => params.onUnavailable?.();
 	params.subscriber.on("pmessage", onMessage);
 	params.subscriber.on("end", onUnavailable);
 	params.subscriber.on("close", onUnavailable);
