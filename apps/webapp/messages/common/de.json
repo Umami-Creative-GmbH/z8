@@ -327,6 +327,14 @@
       "viewAll": "Alle Benachrichtigungen anzeigen"
     },
     "content": {
+      "passwordChanged": {
+        "message": "Ihr Passwort wurde erfolgreich geändert. Falls Sie diese Änderung nicht vorgenommen haben, kontaktieren Sie bitte umgehend den Support.",
+        "title": "Passwort geändert"
+      },
+      "shiftAssigned": {
+        "message": "Ihnen wurde von {assignedByName} eine Schicht am {shiftDate} von {startTime} bis {endTime} zugewiesen.",
+        "title": "Schicht zugewiesen"
+      },
       "teamMemberAdded": {
         "message": "Du wurdest von {performedByName} zum Team {teamName} hinzugefügt.",
         "title": "Zum Team hinzugefügt"

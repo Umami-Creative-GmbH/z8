@@ -327,6 +327,14 @@
       "viewAll": "Wyświetl wszystkie powiadomienia"
     },
     "content": {
+      "passwordChanged": {
+        "message": "Twoje hasło zostało pomyślnie zmienione. Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z działem wsparcia.",
+        "title": "Hasło zmienione"
+      },
+      "shiftAssigned": {
+        "message": "Przydzielono Ci zmianę w dniu {shiftDate} od {startTime} do {endTime} przez {assignedByName}.",
+        "title": "Zmiana przydzielona"
+      },
       "teamMemberAdded": {
         "message": "Zostałeś dodany do zespołu {teamName} przez {performedByName}.",
         "title": "Dodano do zespołu"

@@ -1,66 +1,90 @@
 {
-	"payroll": {
-		"accessDenied": {
-			"description": "You do not have access to payroll data for the active organization.",
-			"help": "Ask an organization administrator to assign payroll access if you need this workspace.",
-			"title": "No payroll access"
-		},
-		"actions": {
-			"apply": "Apply",
-			"downloadPdf": "Download PDF",
-			"triggerExport": "Trigger export"
-		},
-		"blockers": { "needReview": "{count} payroll blockers need review" },
-		"description": "Review payroll totals, readiness, and exports for the selected period.",
-		"employeeTotals": {
-			"absences": "Absences",
-			"blocked": "Blocked",
-			"contract": "Contract",
-			"contractFixed": "Fixed",
-			"contractHourly": "Hourly",
-			"description": "Worked time, absence totals, contract type, and payroll status.",
-			"employee": "Employee",
-			"hours": "Hours",
-			"noAbsences": "None",
-			"noEmployeeNumber": "No employee number",
-			"noTeam": "No team",
-			"readyForPayroll": "Ready for payroll",
-			"status": "Status",
-			"team": "Team",
-			"title": "Employee totals"
-		},
-		"export": {
-			"completed": "Payroll export completed",
-			"noConfiguredTarget": "No configured payroll export target",
-			"queued": "Payroll export queued",
-			"selectFormat": "Select format",
-			"target": "Payroll export target"
-		},
-		"filters": { "noMatchingEmployees": "No employees match the selected payroll filters." },
-		"period": {
-			"current": "Current period",
-			"dateRange": "{start} to {end}",
-			"employeesInScope": "{count} employees in scope",
-			"end": "End",
-			"mode": { "custom": "Custom", "month": "Month", "week": "Week" },
-			"next": "Next period",
-			"previous": "Previous period",
-			"selected": "Selected period",
-			"start": "Start"
-		},
-		"scope": {
-			"assignedEmployees": "Assigned employees",
-			"assignedTeams": "Assigned teams",
-			"description": "Narrow this payroll workspace by assigned employees or teams.",
-			"noAssignedTeams": "No assigned teams in this payroll scope.",
-			"title": "Payroll scope"
-		},
-		"summary": {
-			"blockers": "Blockers",
-			"employees": "Employees",
-			"ready": "Ready",
-			"workedHours": "Worked hours"
-		},
-		"title": "Payroll"
-	}
+  "payroll": {
+    "accessDenied": {
+      "description": "Vous n'avez pas accès aux données de paie pour l'organisation active.",
+      "help": "Demandez à un administrateur de l'organisation de vous accorder l'accès à la paie si vous avez besoin de cet espace de travail.",
+      "title": "Aucun accès à la paie"
+    },
+    "actions": {
+      "apply": "Appliquer",
+      "downloadPdf": "Télécharger le PDF",
+      "triggerExport": "Déclencher l'exportation"
+    },
+    "blockers": {
+      "needReview": "{count} blocages de paie nécessitent une vérification"
+    },
+    "description": "Vérifiez les totaux de paie, l'état de préparation et les exportations pour la période sélectionnée.",
+    "employeeTotals": {
+      "absences": "Absences",
+      "blocked": "Bloqué",
+      "contract": "Contrat",
+      "contractFixed": "Fixe",
+      "contractHourly": "Horaire",
+      "description": "Temps travaillé, totaux des absences, type de contrat et statut de la paie.",
+      "employee": "Employé",
+      "hours": "Heures",
+      "noAbsences": "Aucun",
+      "noEmployeeNumber": "Aucun numéro d'employé",
+      "noTeam": "Aucune équipe",
+      "readyForPayroll": "Prêt pour la paie",
+      "status": "Statut",
+      "team": "Équipe",
+      "title": "Totaux des employés"
+    },
+    "errors": {
+      "actionFailed": "L'action de l'espace de travail de paie a échoué",
+      "activeOrganizationEmployeeRequired": "Le contexte de l'employé de l'organisation active est requis",
+      "authenticationRequired": "Authentification requise",
+      "employeeIdsMustBeArray": "employeeIds doit être un tableau",
+      "employeeIdsMustContainOnlyStrings": "employeeIds ne doit contenir que des chaînes de caractères",
+      "endDateAfterStart": "La date de fin doit être postérieure ou égale à la date de début",
+      "exportFormatNotConfigured": "Le format d'exportation de la paie n'est pas configuré",
+      "mustBeIsoDate": "{field} doit être une date ISO",
+      "mustBeValidIsoDate": "{field} doit être une date ISO valide",
+      "noAssignedEmployees": "Aucun employé de paie n'est assigné à votre périmètre d'accès",
+      "noAvailableEmployees": "Aucun employé de paie n'est disponible dans votre périmètre d'accès",
+      "periodLabelRequired": "L'étiquette de la période de paie est requise",
+      "unknownExportFormat": "Format d'exportation de paie inconnu"
+    },
+    "export": {
+      "completed": "Exportation de la paie terminée",
+      "formatAccessCheck": "Vérification de l'accès au format",
+      "noConfiguredTarget": "Aucune cible d'exportation de paie configurée",
+      "queued": "Exportation de la paie mise en file d'attente",
+      "selectFormat": "Sélectionner le format",
+      "target": "Cible d'exportation de la paie"
+    },
+    "filters": {
+      "noMatchingEmployees": "Aucun employé ne correspond aux filtres de paie sélectionnés."
+    },
+    "period": {
+      "current": "Période actuelle",
+      "dateRange": "Du {start} au {end}",
+      "employeesInScope": "{count} employés dans le périmètre",
+      "end": "Fin",
+      "mode": {
+        "custom": "Personnalisé",
+        "month": "Mois",
+        "week": "Semaine"
+      },
+      "next": "Période suivante",
+      "previous": "Période précédente",
+      "selected": "Période sélectionnée",
+      "start": "Début"
+    },
+    "scope": {
+      "assignedEmployees": "Employés assignés",
+      "assignedTeams": "Équipes assignées",
+      "description": "Restreignez cet espace de travail de paie aux employés ou équipes assignés.",
+      "noAssignedTeams": "Aucune équipe assignée dans ce périmètre de paie.",
+      "title": "Périmètre de paie"
+    },
+    "summary": {
+      "blockers": "Bloquants",
+      "employees": "Employés",
+      "ready": "Prêt",
+      "workedHours": "Heures travaillées"
+    },
+    "title": "Paie"
+  }
 }

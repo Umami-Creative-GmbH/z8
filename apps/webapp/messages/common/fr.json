@@ -327,6 +327,14 @@
       "viewAll": "Voir toutes les notifications"
     },
     "content": {
+      "passwordChanged": {
+        "message": "Votre mot de passe a été modifié avec succès. Si vous n'êtes pas à l'origine de ce changement, veuillez contacter immédiatement le support.",
+        "title": "Mot de passe modifié"
+      },
+      "shiftAssigned": {
+        "message": "Un quart de travail vous a été attribué le {shiftDate} de {startTime} à {endTime} par {assignedByName}.",
+        "title": "Quart de travail attribué"
+      },
       "teamMemberAdded": {
         "message": "Vous avez été ajouté à l'équipe {teamName} par {performedByName}.",
         "title": "Ajouté à l'équipe"

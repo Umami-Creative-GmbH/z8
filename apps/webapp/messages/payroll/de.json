@@ -1,66 +1,90 @@
 {
-	"payroll": {
-		"accessDenied": {
-			"description": "You do not have access to payroll data for the active organization.",
-			"help": "Ask an organization administrator to assign payroll access if you need this workspace.",
-			"title": "No payroll access"
-		},
-		"actions": {
-			"apply": "Apply",
-			"downloadPdf": "Download PDF",
-			"triggerExport": "Trigger export"
-		},
-		"blockers": { "needReview": "{count} payroll blockers need review" },
-		"description": "Review payroll totals, readiness, and exports for the selected period.",
-		"employeeTotals": {
-			"absences": "Absences",
-			"blocked": "Blocked",
-			"contract": "Contract",
-			"contractFixed": "Fixed",
-			"contractHourly": "Hourly",
-			"description": "Worked time, absence totals, contract type, and payroll status.",
-			"employee": "Employee",
-			"hours": "Hours",
-			"noAbsences": "None",
-			"noEmployeeNumber": "No employee number",
-			"noTeam": "No team",
-			"readyForPayroll": "Ready for payroll",
-			"status": "Status",
-			"team": "Team",
-			"title": "Employee totals"
-		},
-		"export": {
-			"completed": "Payroll export completed",
-			"noConfiguredTarget": "No configured payroll export target",
-			"queued": "Payroll export queued",
-			"selectFormat": "Select format",
-			"target": "Payroll export target"
-		},
-		"filters": { "noMatchingEmployees": "No employees match the selected payroll filters." },
-		"period": {
-			"current": "Current period",
-			"dateRange": "{start} to {end}",
-			"employeesInScope": "{count} employees in scope",
-			"end": "End",
-			"mode": { "custom": "Custom", "month": "Month", "week": "Week" },
-			"next": "Next period",
-			"previous": "Previous period",
-			"selected": "Selected period",
-			"start": "Start"
-		},
-		"scope": {
-			"assignedEmployees": "Assigned employees",
-			"assignedTeams": "Assigned teams",
-			"description": "Narrow this payroll workspace by assigned employees or teams.",
-			"noAssignedTeams": "No assigned teams in this payroll scope.",
-			"title": "Payroll scope"
-		},
-		"summary": {
-			"blockers": "Blockers",
-			"employees": "Employees",
-			"ready": "Ready",
-			"workedHours": "Worked hours"
-		},
-		"title": "Payroll"
-	}
+  "payroll": {
+    "accessDenied": {
+      "description": "Sie haben keinen Zugriff auf die Lohnabrechnungsdaten für die aktive Organisation.",
+      "help": "Bitten Sie einen Organisationsadministrator, Ihnen Zugriff auf die Lohnabrechnung zu gewähren, falls Sie diesen Arbeitsbereich benötigen.",
+      "title": "Kein Zugriff auf Lohnabrechnung"
+    },
+    "actions": {
+      "apply": "Anwenden",
+      "downloadPdf": "PDF herunterladen",
+      "triggerExport": "Export auslösen"
+    },
+    "blockers": {
+      "needReview": "{count} Lohnabrechnungsblocker müssen überprüft werden"
+    },
+    "description": "Überprüfen Sie die Lohnabrechnungssummen, die Bereitschaft und die Exporte für den ausgewählten Zeitraum.",
+    "employeeTotals": {
+      "absences": "Abwesenheiten",
+      "blocked": "Blockiert",
+      "contract": "Vertrag",
+      "contractFixed": "Festgehalt",
+      "contractHourly": "Stundenlohn",
+      "description": "Arbeitszeit, Abwesenheitssummen, Vertragstyp und Lohnabrechnungsstatus.",
+      "employee": "Mitarbeiter",
+      "hours": "Stunden",
+      "noAbsences": "Keine",
+      "noEmployeeNumber": "Keine Mitarbeiternummer",
+      "noTeam": "Kein Team",
+      "readyForPayroll": "Bereit für die Lohnabrechnung",
+      "status": "Status",
+      "team": "Team",
+      "title": "Mitarbeitersummen"
+    },
+    "errors": {
+      "actionFailed": "Aktion im Lohnabrechnungs-Arbeitsbereich fehlgeschlagen",
+      "activeOrganizationEmployeeRequired": "Aktiver Organisations-Mitarbeiterkontext ist erforderlich",
+      "authenticationRequired": "Authentifizierung erforderlich",
+      "employeeIdsMustBeArray": "employeeIds muss ein Array sein",
+      "employeeIdsMustContainOnlyStrings": "employeeIds darf nur Strings enthalten",
+      "endDateAfterStart": "Das Enddatum muss nach oder am Startdatum liegen",
+      "exportFormatNotConfigured": "Das Lohnabrechnungs-Exportformat ist nicht konfiguriert",
+      "mustBeIsoDate": "{field} muss ein ISO-Datum sein",
+      "mustBeValidIsoDate": "{field} muss ein gültiges ISO-Datum sein",
+      "noAssignedEmployees": "Ihrem Zugriffsbereich sind keine Lohnabrechnungs-Mitarbeiter zugewiesen",
+      "noAvailableEmployees": "In Ihrem Zugriffsbereich sind keine Lohnabrechnungs-Mitarbeiter verfügbar",
+      "periodLabelRequired": "Bezeichnung für den Lohnabrechnungszeitraum ist erforderlich",
+      "unknownExportFormat": "Unbekanntes Lohnabrechnungs-Exportformat"
+    },
+    "export": {
+      "completed": "Lohnabrechnungs-Export abgeschlossen",
+      "formatAccessCheck": "Format-Zugriffsprüfung",
+      "noConfiguredTarget": "Kein konfiguriertes Lohnabrechnungs-Exportziel",
+      "queued": "Lohnabrechnungs-Export in die Warteschlange eingereiht",
+      "selectFormat": "Format auswählen",
+      "target": "Lohnabrechnungs-Exportziel"
+    },
+    "filters": {
+      "noMatchingEmployees": "Keine Mitarbeiter entsprechen den ausgewählten Lohnabrechnungsfiltern."
+    },
+    "period": {
+      "current": "Aktueller Zeitraum",
+      "dateRange": "{start} bis {end}",
+      "employeesInScope": "{count} Mitarbeiter im Bereich",
+      "end": "Ende",
+      "mode": {
+        "custom": "Benutzerdefiniert",
+        "month": "Monat",
+        "week": "Woche"
+      },
+      "next": "Nächster Zeitraum",
+      "previous": "Vorheriger Zeitraum",
+      "selected": "Ausgewählter Zeitraum",
+      "start": "Start"
+    },
+    "scope": {
+      "assignedEmployees": "Zugewiesene Mitarbeiter",
+      "assignedTeams": "Zugewiesene Teams",
+      "description": "Grenzen Sie diesen Lohnabrechnungsbereich nach zugewiesenen Mitarbeitern oder Teams ein.",
+      "noAssignedTeams": "Keine zugewiesenen Teams in diesem Lohnabrechnungsbereich.",
+      "title": "Lohnabrechnungsbereich"
+    },
+    "summary": {
+      "blockers": "Blocker",
+      "employees": "Mitarbeiter",
+      "ready": "Bereit",
+      "workedHours": "Geleistete Stunden"
+    },
+    "title": "Lohnabrechnung"
+  }
 }

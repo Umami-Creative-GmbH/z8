@@ -327,6 +327,14 @@
       "viewAll": "Alli Benachrichtigunge aaluege"
     },
     "content": {
+      "passwordChanged": {
+        "message": "Dis Passwort isch erfolgrych gänderet worde. Falls du die Änderig nid sälber gmacht häsch, bitte mäld di sofort bim Support.",
+        "title": "Passwort gänderet"
+      },
+      "shiftAssigned": {
+        "message": "Du bisch für en Schicht am {shiftDate} vo {startTime} bis {endTime} vom {assignedByName} yteilt worde.",
+        "title": "Schicht yteilt"
+      },
       "teamMemberAdded": {
         "message": "Du bisch vo {performedByName} zum Team {teamName} hinzugefügt worde.",
         "title": "Zum Team hinzugefügt"

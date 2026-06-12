@@ -1,66 +1,90 @@
 {
-	"payroll": {
-		"accessDenied": {
-			"description": "You do not have access to payroll data for the active organization.",
-			"help": "Ask an organization administrator to assign payroll access if you need this workspace.",
-			"title": "No payroll access"
-		},
-		"actions": {
-			"apply": "Apply",
-			"downloadPdf": "Download PDF",
-			"triggerExport": "Trigger export"
-		},
-		"blockers": { "needReview": "{count} payroll blockers need review" },
-		"description": "Review payroll totals, readiness, and exports for the selected period.",
-		"employeeTotals": {
-			"absences": "Absences",
-			"blocked": "Blocked",
-			"contract": "Contract",
-			"contractFixed": "Fixed",
-			"contractHourly": "Hourly",
-			"description": "Worked time, absence totals, contract type, and payroll status.",
-			"employee": "Employee",
-			"hours": "Hours",
-			"noAbsences": "None",
-			"noEmployeeNumber": "No employee number",
-			"noTeam": "No team",
-			"readyForPayroll": "Ready for payroll",
-			"status": "Status",
-			"team": "Team",
-			"title": "Employee totals"
-		},
-		"export": {
-			"completed": "Payroll export completed",
-			"noConfiguredTarget": "No configured payroll export target",
-			"queued": "Payroll export queued",
-			"selectFormat": "Select format",
-			"target": "Payroll export target"
-		},
-		"filters": { "noMatchingEmployees": "No employees match the selected payroll filters." },
-		"period": {
-			"current": "Current period",
-			"dateRange": "{start} to {end}",
-			"employeesInScope": "{count} employees in scope",
-			"end": "End",
-			"mode": { "custom": "Custom", "month": "Month", "week": "Week" },
-			"next": "Next period",
-			"previous": "Previous period",
-			"selected": "Selected period",
-			"start": "Start"
-		},
-		"scope": {
-			"assignedEmployees": "Assigned employees",
-			"assignedTeams": "Assigned teams",
-			"description": "Narrow this payroll workspace by assigned employees or teams.",
-			"noAssignedTeams": "No assigned teams in this payroll scope.",
-			"title": "Payroll scope"
-		},
-		"summary": {
-			"blockers": "Blockers",
-			"employees": "Employees",
-			"ready": "Ready",
-			"workedHours": "Worked hours"
-		},
-		"title": "Payroll"
-	}
+  "payroll": {
+    "accessDenied": {
+      "description": "Non hai accesso ai dati delle buste paga per l'organizzazione attiva.",
+      "help": "Chiedi a un amministratore dell'organizzazione di assegnarti l'accesso alle buste paga se hai bisogno di questo spazio di lavoro.",
+      "title": "Nessun accesso alle buste paga"
+    },
+    "actions": {
+      "apply": "Applica",
+      "downloadPdf": "Scarica PDF",
+      "triggerExport": "Avvia esportazione"
+    },
+    "blockers": {
+      "needReview": "{count} blocchi delle buste paga richiedono una revisione"
+    },
+    "description": "Revisiona i totali delle buste paga, la preparazione e le esportazioni per il periodo selezionato.",
+    "employeeTotals": {
+      "absences": "Assenze",
+      "blocked": "Bloccato",
+      "contract": "Contratto",
+      "contractFixed": "Fisso",
+      "contractHourly": "Orario",
+      "description": "Ore lavorate, totali delle assenze, tipo di contratto e stato delle buste paga.",
+      "employee": "Dipendente",
+      "hours": "Ore",
+      "noAbsences": "Nessuno",
+      "noEmployeeNumber": "Nessun numero dipendente",
+      "noTeam": "Nessun team",
+      "readyForPayroll": "Pronto per le buste paga",
+      "status": "Stato",
+      "team": "Team",
+      "title": "Totali dipendenti"
+    },
+    "errors": {
+      "actionFailed": "Azione nell'area di lavoro buste paga non riuscita",
+      "activeOrganizationEmployeeRequired": "È richiesto il contesto del dipendente dell'organizzazione attiva",
+      "authenticationRequired": "Autenticazione richiesta",
+      "employeeIdsMustBeArray": "employeeIds deve essere un array",
+      "employeeIdsMustContainOnlyStrings": "employeeIds deve contenere solo stringhe",
+      "endDateAfterStart": "La data di fine deve essere uguale o successiva alla data di inizio",
+      "exportFormatNotConfigured": "Il formato di esportazione buste paga non è configurato",
+      "mustBeIsoDate": "{field} deve essere una data ISO",
+      "mustBeValidIsoDate": "{field} deve essere una data ISO valida",
+      "noAssignedEmployees": "Nessun dipendente buste paga è assegnato al tuo ambito di accesso",
+      "noAvailableEmployees": "Nessun dipendente buste paga è disponibile nel tuo ambito di accesso",
+      "periodLabelRequired": "L'etichetta del periodo buste paga è richiesta",
+      "unknownExportFormat": "Formato di esportazione buste paga sconosciuto"
+    },
+    "export": {
+      "completed": "Esportazione buste paga completata",
+      "formatAccessCheck": "Controllo accesso formato",
+      "noConfiguredTarget": "Nessuna destinazione di esportazione buste paga configurata",
+      "queued": "Esportazione buste paga in coda",
+      "selectFormat": "Seleziona formato",
+      "target": "Destinazione esportazione buste paga"
+    },
+    "filters": {
+      "noMatchingEmployees": "Nessun dipendente corrisponde ai filtri buste paga selezionati."
+    },
+    "period": {
+      "current": "Periodo corrente",
+      "dateRange": "Da {start} a {end}",
+      "employeesInScope": "{count} dipendenti nell'ambito",
+      "end": "Fine",
+      "mode": {
+        "custom": "Personalizzato",
+        "month": "Mese",
+        "week": "Settimana"
+      },
+      "next": "Periodo successivo",
+      "previous": "Periodo precedente",
+      "selected": "Periodo selezionato",
+      "start": "Inizio"
+    },
+    "scope": {
+      "assignedEmployees": "Dipendenti assegnati",
+      "assignedTeams": "Team assegnati",
+      "description": "Filtra quest'area di lavoro buste paga per dipendenti o team assegnati.",
+      "noAssignedTeams": "Nessun team assegnato in questo ambito buste paga.",
+      "title": "Ambito buste paga"
+    },
+    "summary": {
+      "blockers": "Blocchi",
+      "employees": "Dipendenti",
+      "ready": "Pronto",
+      "workedHours": "Ore lavorate"
+    },
+    "title": "Buste paga"
+  }
 }

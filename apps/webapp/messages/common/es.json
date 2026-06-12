@@ -327,6 +327,14 @@
       "viewAll": "Ver todas las notificaciones"
     },
     "content": {
+      "passwordChanged": {
+        "message": "Tu contraseña se ha cambiado correctamente. Si no has realizado este cambio, contacta con el servicio de asistencia inmediatamente.",
+        "title": "Contraseña cambiada"
+      },
+      "shiftAssigned": {
+        "message": "Se te ha asignado un turno el {shiftDate} de {startTime} a {endTime} por {assignedByName}.",
+        "title": "Turno asignado"
+      },
       "teamMemberAdded": {
         "message": "Has sido añadido al equipo {teamName} por {performedByName}.",
         "title": "Añadido al equipo"

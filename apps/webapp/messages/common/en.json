@@ -327,6 +327,14 @@
       "viewAll": "View all notifications"
     },
     "content": {
+      "passwordChanged": {
+        "message": "Your password was successfully changed. If you didn't make this change, please contact support immediately.",
+        "title": "Password changed"
+      },
+      "shiftAssigned": {
+        "message": "You have been assigned a shift on {shiftDate} from {startTime} to {endTime} by {assignedByName}.",
+        "title": "Shift assigned"
+      },
       "teamMemberAdded": {
         "message": "You have been added to the {teamName} team by {performedByName}.",
         "title": "Added to team"
