@@ -326,20 +326,28 @@
       "settings": "Paramètres de notification",
       "viewAll": "Voir toutes les notifications"
     },
-    "content": {
-      "passwordChanged": {
-        "message": "Votre mot de passe a été modifié avec succès. Si vous n'êtes pas à l'origine de ce changement, veuillez contacter immédiatement le support.",
-        "title": "Mot de passe modifié"
-      },
+		"content": {
+			"absenceRequestSubmitted": {
+				"message": "Votre demande {categoryName} pour {dateRange} a été envoyée et est en attente d'approbation.",
+				"title": "Demande d'absence envoyée"
+			},
+			"passwordChanged": {
+				"message": "Votre mot de passe a été modifié avec succès. Si vous n'êtes pas à l'origine de ce changement, veuillez contacter immédiatement le support.",
+				"title": "Mot de passe modifié"
+			},
       "shiftAssigned": {
         "message": "Un quart de travail vous a été attribué le {shiftDate} de {startTime} à {endTime} par {assignedByName}.",
         "title": "Quart de travail attribué"
       },
-      "teamMemberAdded": {
-        "message": "Vous avez été ajouté à l'équipe {teamName} par {performedByName}.",
-        "title": "Ajouté à l'équipe"
-      }
-    },
+			"teamMemberAdded": {
+				"message": "Vous avez été ajouté à l'équipe {teamName} par {performedByName}.",
+				"title": "Ajouté à l'équipe"
+			},
+			"teamMemberRemoved": {
+				"message": "Vous avez été retiré de l'équipe {teamName} par {performedByName}.",
+				"title": "Retiré de l'équipe"
+			}
+		},
     "description": "Consultez les mises à jour, les approbations et les alertes système dans une seule chronologie.",
     "empty": {
       "description": "Vous êtes à jour ! Les nouvelles notifications apparaîtront ici.",

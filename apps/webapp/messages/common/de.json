@@ -326,20 +326,28 @@
       "settings": "Benachrichtigungseinstellungen",
       "viewAll": "Alle Benachrichtigungen anzeigen"
     },
-    "content": {
-      "passwordChanged": {
-        "message": "Ihr Passwort wurde erfolgreich geändert. Falls Sie diese Änderung nicht vorgenommen haben, kontaktieren Sie bitte umgehend den Support.",
-        "title": "Passwort geändert"
-      },
-      "shiftAssigned": {
-        "message": "Ihnen wurde von {assignedByName} eine Schicht am {shiftDate} von {startTime} bis {endTime} zugewiesen.",
-        "title": "Schicht zugewiesen"
-      },
-      "teamMemberAdded": {
-        "message": "Du wurdest von {performedByName} zum Team {teamName} hinzugefügt.",
-        "title": "Zum Team hinzugefügt"
-      }
-    },
+		"content": {
+			"absenceRequestSubmitted": {
+				"message": "Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
+				"title": "Abwesenheitsanfrage eingereicht"
+			},
+			"passwordChanged": {
+				"message": "Ihr Passwort wurde erfolgreich geändert. Wenn Sie diese Änderung nicht vorgenommen haben, wenden Sie sich bitte sofort an den Support.",
+				"title": "Passwort geändert"
+			},
+			"shiftAssigned": {
+				"message": "Ihnen wurde eine Schicht am {shiftDate} von {startTime} bis {endTime} von {assignedByName} zugewiesen.",
+				"title": "Schicht zugewiesen"
+			},
+			"teamMemberAdded": {
+				"message": "Sie wurden von {performedByName} zum Team {teamName} hinzugefügt.",
+				"title": "Zum Team hinzugefügt"
+			},
+			"teamMemberRemoved": {
+				"message": "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
+				"title": "Aus dem Team entfernt"
+			}
+		},
     "description": "Überprüfen Sie Updates, Genehmigungen und Systemmeldungen in einer Zeitleiste.",
     "empty": {
       "description": "Sie sind auf dem neuesten Stand! Neue Benachrichtigungen erscheinen hier.",

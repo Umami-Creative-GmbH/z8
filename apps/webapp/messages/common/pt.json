@@ -326,20 +326,28 @@
       "settings": "Configurações de notificação",
       "viewAll": "Ver todas as notificações"
     },
-    "content": {
-      "passwordChanged": {
-        "message": "Sua senha foi alterada com sucesso. Se você não realizou essa alteração, entre em contato com o suporte imediatamente.",
-        "title": "Senha alterada"
-      },
+		"content": {
+			"absenceRequestSubmitted": {
+				"message": "Sua solicitação de {categoryName} para {dateRange} foi enviada e está aguardando aprovação.",
+				"title": "Solicitação de ausência enviada"
+			},
+			"passwordChanged": {
+				"message": "Sua senha foi alterada com sucesso. Se você não realizou essa alteração, entre em contato com o suporte imediatamente.",
+				"title": "Senha alterada"
+			},
       "shiftAssigned": {
         "message": "Você foi designado para um turno em {shiftDate} das {startTime} às {endTime} por {assignedByName}.",
         "title": "Turno designado"
       },
-      "teamMemberAdded": {
-        "message": "Você foi adicionado à equipe {teamName} por {performedByName}.",
-        "title": "Adicionado à equipe"
-      }
-    },
+			"teamMemberAdded": {
+				"message": "Você foi adicionado à equipe {teamName} por {performedByName}.",
+				"title": "Adicionado à equipe"
+			},
+			"teamMemberRemoved": {
+				"message": "Você foi removido da equipe {teamName} por {performedByName}.",
+				"title": "Removido da equipe"
+			}
+		},
     "description": "Revise atualizações, aprovações e alertas do sistema em uma única linha do tempo.",
     "empty": {
       "description": "Você está em dia! Novas notificações aparecerão aqui.",

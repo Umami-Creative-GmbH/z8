@@ -326,20 +326,28 @@
       "settings": "Benachrichtigungseistellige",
       "viewAll": "Alli Benachrichtigunge aaluege"
     },
-    "content": {
-      "passwordChanged": {
-        "message": "Dis Passwort isch erfolgrych gänderet worde. Falls du die Änderig nid sälber gmacht häsch, bitte mäld di sofort bim Support.",
-        "title": "Passwort gänderet"
-      },
+		"content": {
+			"absenceRequestSubmitted": {
+				"message": "Dii {categoryName}-Aafrag für {dateRange} isch ygreicht worde und wartet uf Freigab.",
+				"title": "Abwäseheitsaafrag ygreicht"
+			},
+			"passwordChanged": {
+				"message": "Dis Passwort isch erfolgrych gänderet worde. Falls du die Änderig nid sälber gmacht häsch, bitte mäld di sofort bim Support.",
+				"title": "Passwort gänderet"
+			},
       "shiftAssigned": {
         "message": "Du bisch für en Schicht am {shiftDate} vo {startTime} bis {endTime} vom {assignedByName} yteilt worde.",
         "title": "Schicht yteilt"
       },
-      "teamMemberAdded": {
-        "message": "Du bisch vo {performedByName} zum Team {teamName} hinzugefügt worde.",
-        "title": "Zum Team hinzugefügt"
-      }
-    },
+			"teamMemberAdded": {
+				"message": "Du bisch vo {performedByName} zum Team {teamName} hinzugefügt worde.",
+				"title": "Zum Team hinzugefügt"
+			},
+			"teamMemberRemoved": {
+				"message": "Du bisch vo {performedByName} us em Team {teamName} entfernt worde.",
+				"title": "Us em Team entfernt"
+			}
+		},
     "description": "Updates, Freigabe und System-Mäldige uf eim Blick gseh.",
     "empty": {
       "description": "Du bisch uf em neuste Stand! Neui Benachrichtigunge erschined do.",

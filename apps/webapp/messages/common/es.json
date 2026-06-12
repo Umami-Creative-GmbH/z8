@@ -326,20 +326,28 @@
       "settings": "Configuración de notificaciones",
       "viewAll": "Ver todas las notificaciones"
     },
-    "content": {
-      "passwordChanged": {
-        "message": "Tu contraseña se ha cambiado correctamente. Si no has realizado este cambio, contacta con el servicio de asistencia inmediatamente.",
-        "title": "Contraseña cambiada"
-      },
+		"content": {
+			"absenceRequestSubmitted": {
+				"message": "Tu solicitud de {categoryName} para {dateRange} se ha enviado y está pendiente de aprobación.",
+				"title": "Solicitud de ausencia enviada"
+			},
+			"passwordChanged": {
+				"message": "Tu contraseña se ha cambiado correctamente. Si no has realizado este cambio, contacta con el servicio de asistencia inmediatamente.",
+				"title": "Contraseña cambiada"
+			},
       "shiftAssigned": {
         "message": "Se te ha asignado un turno el {shiftDate} de {startTime} a {endTime} por {assignedByName}.",
         "title": "Turno asignado"
       },
-      "teamMemberAdded": {
-        "message": "Has sido añadido al equipo {teamName} por {performedByName}.",
-        "title": "Añadido al equipo"
-      }
-    },
+			"teamMemberAdded": {
+				"message": "Has sido añadido al equipo {teamName} por {performedByName}.",
+				"title": "Añadido al equipo"
+			},
+			"teamMemberRemoved": {
+				"message": "Has sido eliminado del equipo {teamName} por {performedByName}.",
+				"title": "Eliminado del equipo"
+			}
+		},
     "description": "Revisa actualizaciones, aprobaciones y alertas del sistema en una sola línea de tiempo.",
     "empty": {
       "description": "¡Estás al día! Las nuevas notificaciones aparecerán aquí.",
