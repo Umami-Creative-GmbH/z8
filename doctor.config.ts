@@ -1,6 +1,9 @@
 import type { ReactDoctorConfig } from "react-doctor/api";
 
 export default {
+	supplyChain: {
+		minScore: 0.46,
+	},
 	ignore: {
 		rules: [
 			"react-doctor/nextjs-no-img-element",
