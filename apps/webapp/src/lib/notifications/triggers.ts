@@ -13,19 +13,37 @@ const logger = createLogger("NotificationTriggers");
 
 const notificationCopy = {
 	absenceRequestSubmitted: {
+		titleKey: "common:notifications.content.absenceRequestSubmitted.title",
 		titleDefault: "Absence request submitted",
+		messageKey: "common:notifications.content.absenceRequestSubmitted.message",
 		messageDefault:
 			"Your {categoryName} request for {dateRange} has been submitted and is pending approval.",
 	},
 	passwordChanged: {
+		titleKey: "common:notifications.content.passwordChanged.title",
 		titleDefault: "Password changed",
+		messageKey: "common:notifications.content.passwordChanged.message",
 		messageDefault:
 			"Your password was successfully changed. If you didn't make this change, please contact support immediately.",
 	},
 	shiftAssigned: {
+		titleKey: "common:notifications.content.shiftAssigned.title",
 		titleDefault: "Shift assigned",
+		messageKey: "common:notifications.content.shiftAssigned.message",
 		messageDefault:
 			"You have been assigned a shift on {shiftDate} from {startTime} to {endTime} by {assignedByName}.",
+	},
+	teamMemberAdded: {
+		titleKey: "common:notifications.content.teamMemberAdded.title",
+		titleDefault: "Added to team",
+		messageKey: "common:notifications.content.teamMemberAdded.message",
+		messageDefault: "You have been added to the {teamName} team by {performedByName}.",
+	},
+	teamMemberRemoved: {
+		titleKey: "common:notifications.content.teamMemberRemoved.title",
+		titleDefault: "Removed from team",
+		messageKey: "common:notifications.content.teamMemberRemoved.message",
+		messageDefault: "You have been removed from the {teamName} team by {performedByName}.",
 	},
 } as const;
 
@@ -115,9 +133,9 @@ export async function onAbsenceRequestSubmitted(params: AbsenceRequestParams): P
 			entityId: params.absenceId,
 			actionUrl: "/absences",
 			metadata: i18nMetadata(
-				"common:notifications.content.absenceRequestSubmitted.title",
+				copy.titleKey,
 				copy.titleDefault,
-				"common:notifications.content.absenceRequestSubmitted.message",
+				copy.messageKey,
 				copy.messageDefault,
 				{ categoryName: params.categoryName, dateRange },
 			),
@@ -564,20 +582,24 @@ interface TeamMemberParams {
  */
 export async function onTeamMemberAdded(params: TeamMemberParams): Promise<void> {
 	try {
+		const copy = notificationCopy.teamMemberAdded;
+
 		await createNotification({
 			userId: params.memberUserId,
 			organizationId: params.organizationId,
 			type: "team_member_added",
-			title: "Added to team",
-			message: `You have been added to the ${params.teamName} team by ${params.performedByName}.`,
+			title: copy.titleDefault,
+			message: copy.messageDefault
+				.replace("{teamName}", params.teamName)
+				.replace("{performedByName}", params.performedByName),
 			entityType: "team",
 			entityId: params.teamId,
 			actionUrl: "/team",
 			metadata: i18nMetadata(
-				"common:notifications.content.teamMemberAdded.title",
-				"Added to team",
-				"common:notifications.content.teamMemberAdded.message",
-				"You have been added to the {teamName} team by {performedByName}.",
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
 				{
 					teamName: params.teamName,
 					performedByName: params.performedByName,
@@ -594,20 +616,24 @@ export async function onTeamMemberAdded(params: TeamMemberParams): Promise<void>
  */
 export async function onTeamMemberRemoved(params: TeamMemberParams): Promise<void> {
 	try {
+		const copy = notificationCopy.teamMemberRemoved;
+
 		await createNotification({
 			userId: params.memberUserId,
 			organizationId: params.organizationId,
 			type: "team_member_removed",
-			title: "Removed from team",
-			message: `You have been removed from the ${params.teamName} team by ${params.performedByName}.`,
+			title: copy.titleDefault,
+			message: copy.messageDefault
+				.replace("{teamName}", params.teamName)
+				.replace("{performedByName}", params.performedByName),
 			entityType: "team",
 			entityId: params.teamId,
 			actionUrl: "/team",
 			metadata: i18nMetadata(
-				"common:notifications.content.teamMemberRemoved.title",
-				"Removed from team",
-				"common:notifications.content.teamMemberRemoved.message",
-				"You have been removed from the {teamName} team by {performedByName}.",
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
 				{
 					teamName: params.teamName,
 					performedByName: params.performedByName,
@@ -643,9 +669,9 @@ export async function onPasswordChanged(params: SecurityParams): Promise<void> {
 			message: copy.messageDefault,
 			actionUrl: "/settings/security",
 			metadata: i18nMetadata(
-				"common:notifications.content.passwordChanged.title",
+				copy.titleKey,
 				copy.titleDefault,
-				"common:notifications.content.passwordChanged.message",
+				copy.messageKey,
 				copy.messageDefault,
 			),
 		});
@@ -876,9 +902,9 @@ export async function onShiftAssigned(params: ShiftAssignedParams): Promise<void
 			entityId: params.shiftId,
 			actionUrl: "/scheduling",
 			metadata: i18nMetadata(
-				"common:notifications.content.shiftAssigned.title",
+				copy.titleKey,
 				copy.titleDefault,
-				"common:notifications.content.shiftAssigned.message",
+				copy.messageKey,
 				copy.messageDefault,
 				{
 					shiftDate,
