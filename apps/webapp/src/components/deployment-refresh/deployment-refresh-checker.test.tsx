@@ -1,13 +1,14 @@
 /* @vitest-environment jsdom */
 
 import { act, render } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { CHECK_INTERVAL_MS, DeploymentRefreshChecker } from "./deployment-refresh-checker";
 import {
-	CHECK_INTERVAL_MS,
-	DeploymentRefreshChecker,
 	shouldCheckDeploymentVersion,
 	shouldReloadForBuildHash,
-} from "./deployment-refresh-checker";
+} from "./deployment-refresh-checker-utils";
 
 const originalFetch = globalThis.fetch;
 const originalLocationDescriptor = Object.getOwnPropertyDescriptor(window, "location");
@@ -68,6 +69,12 @@ function mockLocationReload() {
 	}
 
 	return vi.spyOn(window.location, "reload").mockImplementation(reloadMock);
+}
+
+function renderWithQueryClient(children: ReactNode) {
+	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+	return render(<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>);
 }
 
 beforeEach(() => {
@@ -141,7 +148,7 @@ describe("DeploymentRefreshChecker", () => {
 	it("does not fetch while a visible page is active after an activity event", async () => {
 		const fetchMock = mockFetchBuildHash("server-b");
 
-		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		renderWithQueryClient(<DeploymentRefreshChecker clientBuildHash="client-a" />);
 
 		await act(async () => {
 			await vi.advanceTimersByTimeAsync(1_000);
@@ -157,7 +164,7 @@ describe("DeploymentRefreshChecker", () => {
 		const fetchMock = mockFetchBuildHash("server-b");
 		const reloadMock = mockLocationReload();
 
-		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		renderWithQueryClient(<DeploymentRefreshChecker clientBuildHash="client-a" />);
 
 		await act(async () => {
 			await vi.advanceTimersByTimeAsync(CHECK_INTERVAL_MS);
@@ -177,7 +184,7 @@ describe("DeploymentRefreshChecker", () => {
 		mockFetchBuildHash("client-a");
 		const reloadMock = mockLocationReload();
 
-		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		renderWithQueryClient(<DeploymentRefreshChecker clientBuildHash="client-a" />);
 
 		await act(async () => {
 			await vi.advanceTimersByTimeAsync(CHECK_INTERVAL_MS);
@@ -192,7 +199,7 @@ describe("DeploymentRefreshChecker", () => {
 		const fetchMock = vi.fn().mockReturnValue(pendingResponse.promise);
 		vi.stubGlobal("fetch", fetchMock);
 
-		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		renderWithQueryClient(<DeploymentRefreshChecker clientBuildHash="client-a" />);
 
 		await act(async () => {
 			await vi.advanceTimersByTimeAsync(CHECK_INTERVAL_MS);
@@ -209,7 +216,7 @@ describe("DeploymentRefreshChecker", () => {
 		vi.stubGlobal("fetch", fetchMock);
 		const reloadMock = mockLocationReload();
 
-		const { unmount } = render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		const { unmount } = renderWithQueryClient(<DeploymentRefreshChecker clientBuildHash="client-a" />);
 
 		await act(async () => {
 			await vi.advanceTimersByTimeAsync(CHECK_INTERVAL_MS);
