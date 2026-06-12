@@ -48,8 +48,10 @@ function DayButtonWithEvents({
 
 	// Get unique colors for this day's events (max 3 shown)
 	const eventColors: string[] = [];
+	const eventColorSet = new Set<string>();
 	for (const event of events) {
-		if (!eventColors.includes(event.color)) {
+		if (!eventColorSet.has(event.color)) {
+			eventColorSet.add(event.color);
 			eventColors.push(event.color);
 		}
 		if (eventColors.length === 3) {
