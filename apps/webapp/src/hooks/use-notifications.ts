@@ -43,7 +43,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 		enabled,
 		staleTime: NOTIFICATION_POLL_INTERVAL_MS,
 		refetchInterval: NOTIFICATION_POLL_INTERVAL_MS,
-		refetchOnWindowFocus: true,
+		refetchOnWindowFocus: "always",
 	});
 
 	// Query for unread count (separate for badge updates)
@@ -55,7 +55,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 		enabled,
 		staleTime: NOTIFICATION_POLL_INTERVAL_MS,
 		refetchInterval: NOTIFICATION_POLL_INTERVAL_MS,
-		refetchOnWindowFocus: true,
+		refetchOnWindowFocus: "always",
 	});
 
 	// Mark single notification as read

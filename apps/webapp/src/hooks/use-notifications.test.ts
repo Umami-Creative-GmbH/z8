@@ -67,7 +67,7 @@ describe("useNotifications", () => {
 		);
 	});
 
-	it("polls the notification list every 20 minutes", async () => {
+	it("polls the notification list every 20 minutes and always refetches on focus", async () => {
 		const { useNotifications } = await import("./use-notifications");
 
 		useNotifications({ organizationId: "org-a" });
@@ -76,12 +76,12 @@ describe("useNotifications", () => {
 			1,
 			expect.objectContaining({
 				refetchInterval: 20 * 60 * 1000,
-				refetchOnWindowFocus: true,
+				refetchOnWindowFocus: "always",
 			}),
 		);
 	});
 
-	it("polls the unread count every 20 minutes", async () => {
+	it("polls the unread count every 20 minutes and always refetches on focus", async () => {
 		const { useNotifications } = await import("./use-notifications");
 
 		useNotifications({ organizationId: "org-a" });
@@ -90,7 +90,7 @@ describe("useNotifications", () => {
 			2,
 			expect.objectContaining({
 				refetchInterval: 20 * 60 * 1000,
-				refetchOnWindowFocus: true,
+				refetchOnWindowFocus: "always",
 			}),
 		);
 	});
