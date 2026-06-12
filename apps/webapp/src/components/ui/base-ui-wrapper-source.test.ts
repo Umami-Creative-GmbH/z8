@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const wrappersThatShouldUseBaseUi = [
@@ -59,12 +59,23 @@ function allowsRadixEraStateHooks(file: string) {
 	return relative(process.cwd(), file) === "src/components/ui/drawer.tsx";
 }
 
+function sourceOrLocalReExportsUseBaseUi(file: string) {
+	const source = readFileSync(file, "utf8");
+
+	if (source.includes("@base-ui/react")) {
+		return true;
+	}
+
+	return [...source.matchAll(/export\s+\{[^}]+\}\s+from\s+"(\.\/[^".]+)";/g)].some(
+		([, importPath]) =>
+			readFileSync(join(dirname(file), `${importPath}.tsx`), "utf8").includes("@base-ui/react"),
+	);
+}
+
 describe("Base UI wrapper conventions", () => {
 	it("uses Base UI for migrated primitive wrappers", () => {
 		const missing = wrappersThatShouldUseBaseUi.filter((file) => {
-			const source = readFileSync(join(process.cwd(), "src/components/ui", file), "utf8");
-
-			return !source.includes("@base-ui/react");
+			return !sourceOrLocalReExportsUseBaseUi(join(process.cwd(), "src/components/ui", file));
 		});
 
 		expect(missing).toEqual([]);
