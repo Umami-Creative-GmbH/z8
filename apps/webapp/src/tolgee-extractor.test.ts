@@ -29,6 +29,35 @@ describe("tolgee extractor", () => {
 		]);
 	});
 
+	it("uses adjacent fallback values for namespaced notification metadata keys", () => {
+		const result = extractor(
+			`
+			const notificationCopy = {
+				passwordChanged: {
+					titleKey: "common:notifications.content.passwordChanged.title",
+					titleDefault: "Password changed",
+					messageKey: "common:notifications.content.passwordChanged.message",
+					messageDefault: "Your password was successfully changed.",
+				},
+			};
+		`,
+			"triggers.ts",
+		);
+
+		expect(result.keys).toEqual([
+			expect.objectContaining({
+				defaultValue: "Password changed",
+				keyName: "notifications.content.passwordChanged.title",
+				namespace: "common",
+			}),
+			expect.objectContaining({
+				defaultValue: "Your password was successfully changed.",
+				keyName: "notifications.content.passwordChanged.message",
+				namespace: "common",
+			}),
+		]);
+	});
+
 	it("infers namespaces for module translation prefixes that should not be ungrouped", () => {
 		const result = extractor(
 			`
@@ -270,6 +299,28 @@ describe("tolgee extractor", () => {
 				defaultValue: "Travel Expenses",
 				keyName: "travelExpenses.title",
 				namespace: "travelExpenses",
+			}),
+		]);
+	});
+
+	it("extracts payroll workspace keys into the payroll namespace", () => {
+		const result = extractor(
+			`
+			import { useTranslate } from "@tolgee/react";
+
+			export function PayrollHeader() {
+				const { t } = useTranslate();
+				return t("payroll.title", "Payroll");
+			}
+		`,
+			"payroll-workspace.tsx",
+		);
+
+		expect(result.keys).toEqual([
+			expect.objectContaining({
+				defaultValue: "Payroll",
+				keyName: "payroll.title",
+				namespace: "payroll",
 			}),
 		]);
 	});

@@ -65,6 +65,7 @@ const NAMESPACE_PREFIXES = {
 	// settings namespace
 	settings: "settings/generic",
 	organization: "organization",
+	payroll: "payroll",
 	travelExpenses: "travelExpenses",
 	vacation: "settings/generic",
 	team: "team",

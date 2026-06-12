@@ -326,12 +326,28 @@
       "settings": "Ustawienia powiadomień",
       "viewAll": "Wyświetl wszystkie powiadomienia"
     },
-    "content": {
-      "teamMemberAdded": {
-        "message": "Zostałeś dodany do zespołu {teamName} przez {performedByName}.",
-        "title": "Dodano do zespołu"
-      }
-    },
+		"content": {
+			"absenceRequestSubmitted": {
+				"message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
+				"title": "Wniosek o nieobecność wysłany"
+			},
+			"passwordChanged": {
+				"message": "Twoje hasło zostało pomyślnie zmienione. Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z działem wsparcia.",
+				"title": "Hasło zmienione"
+			},
+      "shiftAssigned": {
+        "message": "Przydzielono Ci zmianę w dniu {shiftDate} od {startTime} do {endTime} przez {assignedByName}.",
+        "title": "Zmiana przydzielona"
+      },
+			"teamMemberAdded": {
+				"message": "Zostałeś dodany do zespołu {teamName} przez {performedByName}.",
+				"title": "Dodano do zespołu"
+			},
+			"teamMemberRemoved": {
+				"message": "Zostałeś usunięty z zespołu {teamName} przez {performedByName}.",
+				"title": "Usunięto z zespołu"
+			}
+		},
     "description": "Przeglądaj aktualizacje, zatwierdzenia i alerty systemowe na jednej osi czasu.",
     "empty": {
       "description": "Jesteś na bieżąco! Nowe powiadomienia pojawią się tutaj.",

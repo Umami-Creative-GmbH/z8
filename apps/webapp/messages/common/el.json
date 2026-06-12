@@ -326,12 +326,28 @@
       "settings": "Ρυθμίσεις ειδοποιήσεων",
       "viewAll": "Προβολή όλων των ειδοποιήσεων"
     },
-    "content": {
-      "teamMemberAdded": {
-        "message": "Προστέθηκατε στην ομάδα {teamName} από τον/την {performedByName}.",
-        "title": "Προσθήκη στην ομάδα"
-      }
-    },
+		"content": {
+			"absenceRequestSubmitted": {
+				"message": "Το αίτημά σας για {categoryName} για {dateRange} υποβλήθηκε και εκκρεμεί έγκριση.",
+				"title": "Το αίτημα απουσίας υποβλήθηκε"
+			},
+			"passwordChanged": {
+				"message": "Ο κωδικός πρόσβασής σας άλλαξε με επιτυχία. Εάν δεν πραγματοποιήσατε εσείς αυτήν την αλλαγή, επικοινωνήστε αμέσως με την υποστήριξη.",
+				"title": "Ο κωδικός πρόσβασης άλλαξε"
+			},
+      "shiftAssigned": {
+        "message": "Σας έχει ανατεθεί μια βάρδια στις {shiftDate} από τις {startTime} έως τις {endTime} από τον/την {assignedByName}.",
+        "title": "Η βάρδια ανατέθηκε"
+      },
+			"teamMemberAdded": {
+				"message": "Προστέθηκατε στην ομάδα {teamName} από τον/την {performedByName}.",
+				"title": "Προσθήκη στην ομάδα"
+			},
+			"teamMemberRemoved": {
+				"message": "Αφαιρεθήκατε από την ομάδα {teamName} από τον/την {performedByName}.",
+				"title": "Αφαίρεση από την ομάδα"
+			}
+		},
     "description": "Ελέγξτε ενημερώσεις, εγκρίσεις και ειδοποιήσεις συστήματος σε ένα χρονολόγιο.",
     "empty": {
       "description": "Είστε πλήρως ενημερωμένοι! Οι νέες ειδοποιήσεις θα εμφανίζονται εδώ.",

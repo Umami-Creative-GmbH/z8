@@ -1,66 +1,90 @@
 {
-	"payroll": {
-		"accessDenied": {
-			"description": "You do not have access to payroll data for the active organization.",
-			"help": "Ask an organization administrator to assign payroll access if you need this workspace.",
-			"title": "No payroll access"
-		},
-		"actions": {
-			"apply": "Apply",
-			"downloadPdf": "Download PDF",
-			"triggerExport": "Trigger export"
-		},
-		"blockers": { "needReview": "{count} payroll blockers need review" },
-		"description": "Review payroll totals, readiness, and exports for the selected period.",
-		"employeeTotals": {
-			"absences": "Absences",
-			"blocked": "Blocked",
-			"contract": "Contract",
-			"contractFixed": "Fixed",
-			"contractHourly": "Hourly",
-			"description": "Worked time, absence totals, contract type, and payroll status.",
-			"employee": "Employee",
-			"hours": "Hours",
-			"noAbsences": "None",
-			"noEmployeeNumber": "No employee number",
-			"noTeam": "No team",
-			"readyForPayroll": "Ready for payroll",
-			"status": "Status",
-			"team": "Team",
-			"title": "Employee totals"
-		},
-		"export": {
-			"completed": "Payroll export completed",
-			"noConfiguredTarget": "No configured payroll export target",
-			"queued": "Payroll export queued",
-			"selectFormat": "Select format",
-			"target": "Payroll export target"
-		},
-		"filters": { "noMatchingEmployees": "No employees match the selected payroll filters." },
-		"period": {
-			"current": "Current period",
-			"dateRange": "{start} to {end}",
-			"employeesInScope": "{count} employees in scope",
-			"end": "End",
-			"mode": { "custom": "Custom", "month": "Month", "week": "Week" },
-			"next": "Next period",
-			"previous": "Previous period",
-			"selected": "Selected period",
-			"start": "Start"
-		},
-		"scope": {
-			"assignedEmployees": "Assigned employees",
-			"assignedTeams": "Assigned teams",
-			"description": "Narrow this payroll workspace by assigned employees or teams.",
-			"noAssignedTeams": "No assigned teams in this payroll scope.",
-			"title": "Payroll scope"
-		},
-		"summary": {
-			"blockers": "Blockers",
-			"employees": "Employees",
-			"ready": "Ready",
-			"workedHours": "Worked hours"
-		},
-		"title": "Payroll"
-	}
+  "payroll": {
+    "accessDenied": {
+      "description": "Δεν έχετε πρόσβαση στα δεδομένα μισθοδοσίας για τον ενεργό οργανισμό.",
+      "help": "Ζητήστε από έναν διαχειριστή του οργανισμού να σας εκχωρήσει πρόσβαση στη μισθοδοσία εάν χρειάζεστε αυτόν τον χώρο εργασίας.",
+      "title": "Καμία πρόσβαση στη μισθοδοσία"
+    },
+    "actions": {
+      "apply": "Εφαρμογή",
+      "downloadPdf": "Λήψη PDF",
+      "triggerExport": "Ενεργοποίηση εξαγωγής"
+    },
+    "blockers": {
+      "needReview": "{count} εμπόδια μισθοδοσίας χρειάζονται έλεγχο"
+    },
+    "description": "Ελέγξτε τα σύνολα μισθοδοσίας, την ετοιμότητα και τις εξαγωγές για την επιλεγμένη περίοδο.",
+    "employeeTotals": {
+      "absences": "Απουσίες",
+      "blocked": "Μπλοκαρισμένο",
+      "contract": "Σύμβαση",
+      "contractFixed": "Σταθερό",
+      "contractHourly": "Ωριαίο",
+      "description": "Χρόνος εργασίας, σύνολα απουσιών, τύπος σύμβασης και κατάσταση μισθοδοσίας.",
+      "employee": "Εργαζόμενος",
+      "hours": "Ώρες",
+      "noAbsences": "Κανένα",
+      "noEmployeeNumber": "Δεν υπάρχει αριθμός εργαζομένου",
+      "noTeam": "Καμία ομάδα",
+      "readyForPayroll": "Έτοιμο για μισθοδοσία",
+      "status": "Κατάσταση",
+      "team": "Ομάδα",
+      "title": "Σύνολα εργαζομένων"
+    },
+    "errors": {
+      "actionFailed": "Η ενέργεια του χώρου εργασίας μισθοδοσίας απέτυχε",
+      "activeOrganizationEmployeeRequired": "Απαιτείται ενεργό πλαίσιο εργαζομένου οργανισμού",
+      "authenticationRequired": "Απαιτείται έλεγχος ταυτότητας",
+      "employeeIdsMustBeArray": "Τα employeeIds πρέπει να είναι πίνακας",
+      "employeeIdsMustContainOnlyStrings": "Τα employeeIds πρέπει να περιέχουν μόνο συμβολοσειρές",
+      "endDateAfterStart": "Η ημερομηνία λήξης πρέπει να είναι μεταγενέστερη ή ίση με την ημερομηνία έναρξης",
+      "exportFormatNotConfigured": "Η μορφή εξαγωγής μισθοδοσίας δεν έχει ρυθμιστεί",
+      "mustBeIsoDate": "Το πεδίο {field} πρέπει να είναι ημερομηνία ISO",
+      "mustBeValidIsoDate": "Το πεδίο {field} πρέπει να είναι έγκυρη ημερομηνία ISO",
+      "noAssignedEmployees": "Δεν έχουν ανατεθεί υπάλληλοι μισθοδοσίας στο πεδίο πρόσβασής σας",
+      "noAvailableEmployees": "Δεν υπάρχουν διαθέσιμοι υπάλληλοι μισθοδοσίας στο πεδίο πρόσβασής σας",
+      "periodLabelRequired": "Απαιτείται ετικέτα περιόδου μισθοδοσίας",
+      "unknownExportFormat": "Άγνωστη μορφή εξαγωγής μισθοδοσίας"
+    },
+    "export": {
+      "completed": "Η εξαγωγή μισθοδοσίας ολοκληρώθηκε",
+      "formatAccessCheck": "Έλεγχος πρόσβασης μορφής",
+      "noConfiguredTarget": "Δεν έχει ρυθμιστεί προορισμός εξαγωγής μισθοδοσίας",
+      "queued": "Η εξαγωγή μισθοδοσίας μπήκε στην ουρά",
+      "selectFormat": "Επιλογή μορφής",
+      "target": "Προορισμός εξαγωγής μισθοδοσίας"
+    },
+    "filters": {
+      "noMatchingEmployees": "Δεν υπάρχουν υπάλληλοι που να αντιστοιχούν στα επιλεγμένα φίλτρα μισθοδοσίας."
+    },
+    "period": {
+      "current": "Τρέχουσα περίοδος",
+      "dateRange": "{start} έως {end}",
+      "employeesInScope": "{count} υπάλληλοι στο πεδίο εφαρμογής",
+      "end": "Τέλος",
+      "mode": {
+        "custom": "Προσαρμοσμένο",
+        "month": "Μήνας",
+        "week": "Εβδομάδα"
+      },
+      "next": "Επόμενη περίοδος",
+      "previous": "Προηγούμενη περίοδος",
+      "selected": "Επιλεγμένη περίοδος",
+      "start": "Έναρξη"
+    },
+    "scope": {
+      "assignedEmployees": "Ανατεθειμένοι υπάλληλοι",
+      "assignedTeams": "Ανατεθειμένες ομάδες",
+      "description": "Περιορίστε αυτόν τον χώρο εργασίας μισθοδοσίας ανά ανατεθειμένους υπαλλήλους ή ομάδες.",
+      "noAssignedTeams": "Δεν υπάρχουν ανατεθειμένες ομάδες σε αυτό το πεδίο μισθοδοσίας.",
+      "title": "Πεδίο μισθοδοσίας"
+    },
+    "summary": {
+      "blockers": "Εμπόδια",
+      "employees": "Υπάλληλοι",
+      "ready": "Έτοιμο",
+      "workedHours": "Ώρες εργασίας"
+    },
+    "title": "Μισθοδοσία"
+  }
 }

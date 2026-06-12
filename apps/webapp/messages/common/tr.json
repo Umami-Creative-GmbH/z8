@@ -326,12 +326,28 @@
       "settings": "Bildirim ayarları",
       "viewAll": "Tüm bildirimleri görüntüle"
     },
-    "content": {
-      "teamMemberAdded": {
-        "message": "{performedByName} tarafından {teamName} ekibine eklendiniz.",
-        "title": "Ekibe eklendi"
-      }
-    },
+		"content": {
+			"absenceRequestSubmitted": {
+				"message": "{dateRange} için {categoryName} talebiniz gönderildi ve onay bekliyor.",
+				"title": "Devamsızlık talebi gönderildi"
+			},
+			"passwordChanged": {
+				"message": "Parolanız başarıyla değiştirildi. Bu değişikliği siz yapmadıysanız, lütfen derhal destek ekibiyle iletişime geçin.",
+				"title": "Parola değiştirildi"
+			},
+      "shiftAssigned": {
+        "message": "{assignedByName} tarafından {shiftDate} tarihinde {startTime} ile {endTime} saatleri arasında bir vardiya atandı.",
+        "title": "Vardiya atandı"
+      },
+			"teamMemberAdded": {
+				"message": "{performedByName} tarafından {teamName} ekibine eklendiniz.",
+				"title": "Ekibe eklendi"
+			},
+			"teamMemberRemoved": {
+				"message": "{performedByName} tarafından {teamName} ekibinden çıkarıldınız.",
+				"title": "Ekipten çıkarıldı"
+			}
+		},
     "description": "Güncellemeleri, onayları ve sistem uyarılarını tek bir zaman çizelgesinde inceleyin.",
     "empty": {
       "description": "Her şey güncel! Yeni bildirimler burada görünecektir.",

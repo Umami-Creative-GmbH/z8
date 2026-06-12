@@ -328,11 +328,14 @@ describe("org-admin settings route access", () => {
 
 	it("wraps employee app access switch fields in a TanStack form item", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "employees/[employeeId]/page-sections.tsx"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "employees/[employeeId]/employee-app-access-fields.tsx"),
+				"utf8",
+			),
 		);
 		const accessSwitchFieldSource = source.slice(
 			source.indexOf("function AccessSwitchField"),
-			source.indexOf("function TextField"),
+			source.length,
 		);
 
 		expect(accessSwitchFieldSource).toContain("<TFormItem>");
@@ -575,7 +578,7 @@ describe("org-admin settings route access", () => {
 
 	it("narrows manager employee editing away from org-admin-only form controls", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "employees/[employeeId]/page-sections.tsx"), "utf8"),
+			readFileSync(join(SETTINGS_ROOT, "employees/[employeeId]/employee-edit-form-card.tsx"), "utf8"),
 		);
 
 		expect(source.includes("canEditOrgAdminFields")).toBe(true);

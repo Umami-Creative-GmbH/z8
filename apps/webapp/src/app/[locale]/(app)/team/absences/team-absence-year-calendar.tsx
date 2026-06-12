@@ -36,14 +36,20 @@ function formatDateLabel(date: DateTime): string {
 	return date.toLocaleString({ month: "long", day: "numeric", year: "numeric" });
 }
 
-function buildDayLabel(day: ManagerAbsenceCalendarDay | undefined, date: DateTime): string {
+function buildDayLabel(
+	day: ManagerAbsenceCalendarDay | undefined,
+	date: DateTime,
+	isToday = false,
+): string {
+	const dateLabel = `${isToday ? "Today, " : ""}${formatDateLabel(date)}`;
+
 	if (!day) {
-		return formatDateLabel(date);
+		return dateLabel;
 	}
 
 	const pendingPart = day.pendingCount > 0 ? `, ${day.pendingCount} pending` : "";
 
-	return `${formatDateLabel(date)}: ${day.totalCount} absent${pendingPart}`;
+	return `${dateLabel}: ${day.totalCount} absent${pendingPart}`;
 }
 
 function TeamAbsenceDayDetails({
@@ -86,6 +92,7 @@ function TeamAbsenceMonth({
 	weekdays,
 	weekStartDay,
 	daysByDate,
+	todayDateKey,
 }: {
 	month: number;
 	year: number;
@@ -93,6 +100,7 @@ function TeamAbsenceMonth({
 	weekdays: string[];
 	weekStartDay: WeekStartDay;
 	daysByDate: Map<string, ManagerAbsenceCalendarDay>;
+	todayDateKey: string | null;
 }) {
 	const days = getMonthDays(year, month);
 	const paddingDays = Array.from(
@@ -119,15 +127,17 @@ function TeamAbsenceMonth({
 					const day = daysByDate.get(dateKey);
 					const hasApproved = (day?.approvedCount ?? 0) > 0;
 					const hasPending = (day?.pendingCount ?? 0) > 0;
+					const isToday = todayDateKey === dateKey;
 					const dayButton = (
 						<button
 							type="button"
 							className={cn(
 								"relative flex aspect-square w-full flex-col items-center justify-center rounded-sm text-[10px] transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 								hasApproved && "bg-blue-100 text-blue-950 dark:bg-blue-900/30 dark:text-blue-100",
+								isToday && "bg-primary/10 font-semibold outline outline-2 outline-primary outline-offset-1",
 								hasPending && "ring-1 ring-yellow-500",
 							)}
-							aria-label={buildDayLabel(day, date)}
+							aria-label={buildDayLabel(day, date, isToday)}
 						>
 							<span>{date.day}</span>
 							{day ? <span className="font-semibold leading-none">{day.totalCount}</span> : null}
@@ -194,6 +204,8 @@ export function TeamAbsenceYearCalendar({ data }: TeamAbsenceYearCalendarProps) 
 			: sundayFirstWeekdays;
 	const totalAbsenceDays = calendarDays.reduce((sum, day) => sum + day.totalCount, 0);
 	const pendingAbsenceDays = calendarDays.reduce((sum, day) => sum + day.pendingCount, 0);
+	const today = DateTime.utc();
+	const todayDateKey = today.year === data.year ? today.toISODate() : null;
 
 	return (
 		<section
@@ -254,6 +266,7 @@ export function TeamAbsenceYearCalendar({ data }: TeamAbsenceYearCalendarProps) 
 							weekdays={weekdays}
 							weekStartDay={weekStartDay}
 							daysByDate={daysByDate}
+							todayDateKey={todayDateKey}
 						/>
 					))}
 				</div>

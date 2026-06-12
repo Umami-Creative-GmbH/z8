@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { Settings } from "luxon";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { TeamAbsenceYearCalendar } from "./team-absence-year-calendar";
 
 vi.mock("@tolgee/react", () => ({
@@ -17,6 +18,10 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("@/components/providers/user-preferences-provider", () => ({
 	useWeekStartDay: () => "monday",
 }));
+
+afterEach(() => {
+	Settings.now = () => Date.now();
+});
 
 describe("TeamAbsenceYearCalendar", () => {
 	it("renders a year calendar with aggregate absence counts", () => {
@@ -88,5 +93,38 @@ describe("TeamAbsenceYearCalendar", () => {
 		expect(within(details).getByText("Ada Lovelace")).toBeTruthy();
 		expect(within(details).getByText("Vacation")).toBeTruthy();
 		expect(within(details).getByText("Approved")).toBeTruthy();
+	});
+
+	it("labels the current day when the selected year contains today", () => {
+		Settings.now = () => new Date("2026-06-12T10:00:00.000Z").valueOf();
+
+		render(
+			<TeamAbsenceYearCalendar
+				data={{
+					year: 2026,
+					teamId: null,
+					entries: [],
+				}}
+			/>,
+		);
+
+		expect(screen.getByRole("button", { name: "Today, June 12, 2026" })).toBeTruthy();
+	});
+
+	it("does not label the same month and day as today in other selected years", () => {
+		Settings.now = () => new Date("2026-06-12T10:00:00.000Z").valueOf();
+
+		render(
+			<TeamAbsenceYearCalendar
+				data={{
+					year: 2025,
+					teamId: null,
+					entries: [],
+				}}
+			/>,
+		);
+
+		expect(screen.queryByRole("button", { name: /Today,/ })).toBeNull();
+		expect(screen.getByRole("button", { name: "June 12, 2025" })).toBeTruthy();
 	});
 });
