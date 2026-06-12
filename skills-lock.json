@@ -53,7 +53,7 @@
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/stripe-best-practices/SKILL.md",
-      "computedHash": "1d40561cf073332f1c22d6d85f45db3680e727bd28288c0913923ab29133133a"
+      "computedHash": "641e088bc0bd5b8a593e33c87b66a02a2063026398f4f5d13861690575f38ae8"
     },
     "stripe-projects": {
       "source": "stripe/ai",
