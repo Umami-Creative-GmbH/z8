@@ -35,7 +35,11 @@ const {
 	mockIsSlackAvailable,
 	mockSendSlackNotification,
 	mockPublishEventAsync,
-	mockPublishNotificationEvent,
+	mockAnd,
+	mockCount,
+	mockDesc,
+	mockEq,
+	mockSql,
 } = vi.hoisted(() => {
 	const mockReturning = vi.fn();
 	const mockValues = vi.fn(() => ({ returning: mockReturning }));
@@ -82,7 +86,11 @@ const {
 	const mockIsSlackAvailable = vi.fn(() => Promise.resolve(false));
 	const mockSendSlackNotification = vi.fn(() => Promise.resolve());
 	const mockPublishEventAsync = vi.fn();
-	const mockPublishNotificationEvent = vi.fn(() => Promise.resolve());
+	const mockAnd = vi.fn((...conditions) => ({ conditions, type: "and" }));
+	const mockCount = vi.fn(() => "count");
+	const mockDesc = vi.fn((column) => ({ column, type: "desc" }));
+	const mockEq = vi.fn((column, value) => ({ column, type: "eq", value }));
+	const mockSql = vi.fn((strings, ...values) => ({ strings, type: "sql", values }));
 
 	return {
 		mockReturning,
@@ -115,9 +123,21 @@ const {
 		mockIsSlackAvailable,
 		mockSendSlackNotification,
 		mockPublishEventAsync,
-		mockPublishNotificationEvent,
+		mockAnd,
+		mockCount,
+		mockDesc,
+		mockEq,
+		mockSql,
 	};
 });
+
+vi.mock("drizzle-orm", () => ({
+	and: mockAnd,
+	count: mockCount,
+	desc: mockDesc,
+	eq: mockEq,
+	sql: mockSql,
+}));
 
 vi.mock("@/db", () => ({
 	db: {
@@ -191,10 +211,6 @@ vi.mock("../slack-channel", () => ({
 
 vi.mock("@/lib/events", () => ({
 	publishEventAsync: mockPublishEventAsync,
-}));
-
-vi.mock("@/lib/redis", () => ({
-	publishNotificationEvent: mockPublishNotificationEvent,
 }));
 
 describe("Notification Service", () => {
@@ -322,7 +338,7 @@ describe("Notification Service", () => {
 			expect(mockUpdate).toHaveBeenCalled();
 		});
 
-		test("requires organizationId and publishes scoped count updates", async () => {
+		test("requires organizationId and keeps updates scoped", async () => {
 			const mockNotification = createMockNotification({
 				isRead: true,
 				organizationId: "org-a",
@@ -335,10 +351,12 @@ describe("Notification Service", () => {
 			expect(markAsRead.length).toBe(3);
 			await markAsRead("notif-1", "user-1", "org-a");
 
-			expect(mockPublishNotificationEvent).toHaveBeenCalledWith(
-				"user-1",
-				"count_update",
-				expect.objectContaining({ organizationId: "org-a" }),
+			expect(mockUpdateWhere).toHaveBeenCalledWith(
+				expect.objectContaining({
+					conditions: expect.arrayContaining([
+						expect.objectContaining({ column: "organizationId", value: "org-a" }),
+					]),
+				}),
 			);
 		});
 
@@ -364,17 +382,21 @@ describe("Notification Service", () => {
 			expect(result).toBeGreaterThanOrEqual(0);
 		});
 
-		test("publishes scoped count updates", async () => {
+		test("marks all unread notifications in the scoped organization", async () => {
 			mockReturning.mockImplementation(() => Promise.resolve([{ id: "notif-1" }]));
 
 			const { markAllAsRead } = await import("../notification-service");
 
-			await markAllAsRead("user-1", "org-a");
+			const result = await markAllAsRead("user-1", "org-a");
 
-			expect(mockPublishNotificationEvent).toHaveBeenCalledWith("user-1", "count_update", {
-				count: 0,
-				organizationId: "org-a",
-			});
+			expect(result).toBe(1);
+			expect(mockUpdateWhere).toHaveBeenCalledWith(
+				expect.objectContaining({
+					conditions: expect.arrayContaining([
+						expect.objectContaining({ column: "organizationId", value: "org-a" }),
+					]),
+				}),
+			);
 		});
 
 		test("returns 0 on error", async () => {

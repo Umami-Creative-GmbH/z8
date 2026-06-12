@@ -66,4 +66,32 @@ describe("useNotifications", () => {
 			}),
 		);
 	});
+
+	it("polls the notification list every 20 minutes and always refetches on focus", async () => {
+		const { useNotifications } = await import("./use-notifications");
+
+		useNotifications({ organizationId: "org-a" });
+
+		expect(useQueryMock).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({
+				refetchInterval: 20 * 60 * 1000,
+				refetchOnWindowFocus: "always",
+			}),
+		);
+	});
+
+	it("polls the unread count every 20 minutes and always refetches on focus", async () => {
+		const { useNotifications } = await import("./use-notifications");
+
+		useNotifications({ organizationId: "org-a" });
+
+		expect(useQueryMock).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({
+				refetchInterval: 20 * 60 * 1000,
+				refetchOnWindowFocus: "always",
+			}),
+		);
+	});
 });

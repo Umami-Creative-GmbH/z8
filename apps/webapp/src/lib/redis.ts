@@ -29,7 +29,6 @@ const noopRedisClient = {
 // Singleton pattern for Redis connection
 const globalForRedis = globalThis as unknown as {
 	redis: Redis | undefined;
-	redisPub: Redis | undefined;
 };
 
 type RedisStatus = Redis["status"];
@@ -113,17 +112,6 @@ export const redis = shouldDisableRedisDuringBuild
 			return globalForRedis.redis;
 		})();
 
-// Dedicated publisher client for pub/sub (pub/sub clients can't be used for regular commands)
-export const redisPub = shouldDisableRedisDuringBuild
-	? noopRedisClient
-	: (() => {
-			if (!globalForRedis.redisPub) {
-				globalForRedis.redisPub = createRedisClient();
-			}
-
-			return globalForRedis.redisPub;
-		})();
-
 export async function ensureRedisReady(): Promise<boolean> {
 	if (shouldDisableRedisDuringBuild) {
 		return false;
@@ -149,38 +137,6 @@ export async function ensureRedisReady(): Promise<boolean> {
 	} catch (error) {
 		logger.warn({ error, status: redis.status }, "Redis readiness check failed");
 		return false;
-	}
-}
-
-/**
- * Create a new subscriber client for pub/sub
- * Each SSE connection needs its own subscriber client
- */
-export function createRedisSubscriber(): Redis {
-	if (shouldDisableRedisDuringBuild) {
-		return noopRedisClient;
-	}
-
-	return createRedisClient();
-}
-
-/**
- * Publish a notification event to a user's notification channel
- * @param userId - The user ID to publish to
- * @param event - The event type (new_notification, count_update)
- * @param data - The event data
- */
-export async function publishNotificationEvent(
-	userId: string,
-	event: "new_notification" | "count_update",
-	data: unknown,
-): Promise<void> {
-	try {
-		const channel = `notifications:${userId}`;
-		const message = JSON.stringify({ event, data });
-		await redisPub.publish(channel, message);
-	} catch (error) {
-		logger.error({ error, userId, event }, "Failed to publish notification event");
 	}
 }
 

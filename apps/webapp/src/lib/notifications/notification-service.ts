@@ -9,7 +9,6 @@ import { db } from "@/db";
 import { notification, notificationPreference } from "@/db/schema";
 import { publishEventAsync } from "@/lib/events";
 import { createLogger } from "@/lib/logger";
-import { publishNotificationEvent } from "@/lib/redis";
 import { isDiscordAvailable, sendDiscordNotification } from "./discord-channel";
 import { sendEmailNotification } from "./email-notifications";
 import { isPushAvailable, type PushPayload, sendPushToUser } from "./push-service";
@@ -131,16 +130,6 @@ export async function createNotification(
 				"Notification created",
 			);
 
-			// Publish to Redis for real-time SSE updates
-			const notifWithMeta = {
-				...created,
-				timeAgo: getTimeAgo(created.createdAt),
-			};
-			void publishNotificationEvent(params.userId, "new_notification", notifWithMeta).catch(
-				(error) => {
-					logger.error({ error, userId: params.userId }, "Failed to publish notification event");
-				},
-			);
 		} else {
 			logger.debug(
 				{ userId: params.userId, type: params.type },
@@ -416,16 +405,6 @@ export async function markAsRead(
 
 		if (updated) {
 			logger.debug({ notificationId }, "Notification marked as read");
-
-			// Publish count update to Redis for real-time SSE updates
-			// Get organizationId from the updated notification
-			const newCount = await getUnreadCount(userId, organizationId);
-			void publishNotificationEvent(userId, "count_update", {
-				count: newCount,
-				organizationId,
-			}).catch((error) => {
-				logger.error({ error, userId }, "Failed to publish count update event");
-			});
 		}
 
 		return updated || null;
@@ -457,15 +436,6 @@ export async function markAllAsRead(userId: string, organizationId: string): Pro
 
 		const updatedCount = result.length;
 		logger.info({ userId, updatedCount }, "All notifications marked as read");
-
-		// Publish count update to Redis for real-time SSE updates (count is now 0)
-		if (updatedCount > 0) {
-			void publishNotificationEvent(userId, "count_update", { count: 0, organizationId }).catch(
-				(error) => {
-					logger.error({ error, userId }, "Failed to publish count update event");
-				},
-			);
-		}
 
 		return updatedCount;
 	} catch (error) {
