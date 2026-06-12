@@ -203,6 +203,7 @@ export function SignupForm({
 		},
 		onSubmit: async ({ value }) => {
 			setIsLoading(true);
+			let shouldStopLoading = true;
 
 			try {
 				if (turnstileConfig?.enabled && turnstileToken) {
@@ -256,6 +257,7 @@ export function SignupForm({
 							sanitizedCallbackUrl,
 						),
 					);
+					shouldStopLoading = false;
 				}
 			} catch (err) {
 				setError(
@@ -265,7 +267,9 @@ export function SignupForm({
 					setTurnstileToken(null);
 					turnstileRef.current?.reset();
 				}
-			} finally {
+			}
+
+			if (shouldStopLoading) {
 				setIsLoading(false);
 			}
 		},
