@@ -1,6 +1,6 @@
 ---
 title: Notifications
-description: Notification center, push notifications, and real-time updates
+description: Notification center, push notifications, and periodic updates
 icon: Bell
 ---
 
@@ -84,53 +84,33 @@ Enable browser push notifications for real-time alerts:
 
 ---
 
-## Real-Time Updates
+## Notification Refresh
 
-The system uses Server-Sent Events (SSE) to deliver real-time updates:
-- Instant notification delivery
-- Live status updates
-- No need to refresh the page
+The in-app notification center refreshes automatically while you use Z8:
+- It checks periodically for new notifications
+- It refreshes when you return focus to the app
+- You can open the notification center to review the latest loaded notifications
 
 ---
 
-## Connection Status
+## Refresh Status
 
-The notification system shows your connection status in real-time.
+The notification bell and notification center show the latest notifications loaded by the app.
 
-### Status Indicators
+### Staying Up To Date
 
-Look for the connection indicator near the notification bell:
+To make sure you are seeing current in-app notifications:
 
-| Indicator | Meaning |
-|-----------|---------|
-| **Green dot** | Connected - receiving live updates |
-| **Yellow dot** | Reconnecting - temporarily disconnected |
-| **Red dot** | Disconnected - not receiving live updates |
-
-### Automatic Reconnection
-
-When connection is lost, the system automatically:
-
-1. Attempts to reconnect immediately
-2. Retries with increasing delays if unsuccessful
-3. Shows "Reconnecting..." status
-4. Restores live updates when connection is back
-5. Fetches any missed notifications
-
-### Troubleshooting Connection Issues
-
-If you see persistent connection issues:
-
-- **Check your internet connection**
-- **Refresh the page** - This reestablishes the SSE connection
-- **Check for VPN issues** - Some VPNs block SSE connections
-- **Try a different browser** - Rule out browser-specific issues
-- **Contact your admin** - There may be server-side issues
+- **Keep the app open** - Z8 refreshes notifications periodically while active
+- **Return to the tab** - Notifications refresh when the app regains focus
+- **Refresh the page** - Use a browser refresh if content appears stale
+- **Check your internet connection** - New notifications require network access
+- **Contact your admin** - There may be server-side issues if notifications do not update
 
 ### Offline Behavior
 
 When disconnected:
 - You can still browse previously loaded content
-- New notifications won't appear until reconnection
-- Actions may be queued and sync when reconnected
+- New notifications won't appear until the app can refresh again
+- Actions may be queued and sync when your connection returns
 - A banner may appear indicating offline status

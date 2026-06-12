@@ -2,7 +2,6 @@
 
 import { IconBell } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { useNotificationStream } from "@/hooks/use-notification-stream";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOrganization } from "@/hooks/use-organization";
 import { cn } from "@/lib/utils";
@@ -13,9 +12,6 @@ export function NotificationBell() {
 	const hasOrganization = Boolean(organizationId);
 
 	const { unreadCount } = useNotifications({ enabled: hasOrganization, organizationId });
-
-	// Connect to SSE for real-time updates
-	useNotificationStream({ enabled: hasOrganization, organizationId });
 
 	return (
 		<NotificationPopover>

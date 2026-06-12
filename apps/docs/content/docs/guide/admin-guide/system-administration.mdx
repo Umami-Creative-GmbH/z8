@@ -95,7 +95,7 @@ Set up organization-wide notification preferences:
 2. Configure channels:
    - **Email**: SMTP settings for email notifications
    - **Push**: Browser push notification settings
-   - **In-App**: Real-time notification center
+   - **In-App**: Periodic in-app notification center
 
 ### Email Configuration
 
@@ -127,13 +127,12 @@ Configure which events trigger notifications:
 | Birthday Announcement | Yes | - | Yes |
 | System Alerts | Yes | Yes | Yes |
 
-### SSE Real-Time Updates
+### In-App Notification Refresh
 
-The system uses Server-Sent Events for real-time notification delivery:
-- No polling required
-- Instant delivery
-- Low bandwidth usage
-- Automatic reconnection
+The in-app notification center uses periodic refreshes instead of a streaming connection:
+- Checks for new notifications in the background while the app is active
+- Refreshes when users return focus to the app
+- Updates the notification center with the latest loaded items
 
 ---
 

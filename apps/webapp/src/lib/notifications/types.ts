@@ -139,12 +139,6 @@ export interface SecurityNotificationPayload {
 	userAgent?: string;
 }
 
-// SSE event types
-export interface NotificationSSEEvent {
-	type: "notification" | "count_update" | "heartbeat";
-	data: Notification | { count: number } | { timestamp: number };
-}
-
 // Preference update params
 export interface UpdatePreferenceParams {
 	userId: string;
