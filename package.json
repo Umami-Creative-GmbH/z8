@@ -44,5 +44,5 @@
 		"shadcn": "^4.11.0",
 		"turbo": "^2.9.16"
 	},
-	"packageManager": "pnpm@11.5.2"
+	"packageManager": "pnpm@11.6.0"
 }
