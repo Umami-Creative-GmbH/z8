@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.4
 ARG NODE_VERSION=26
-ARG PNPM_VERSION=11.6.0
+ARG PNPM_VERSION=11.8.0
 ARG TURBO_VERSION=2.9.16
 ARG NEXT_DEPLOYMENT_ID
 ARG BUILD_HASH
@@ -47,6 +47,13 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --lockfile-only && \
     pnpm install --frozen-lockfile
 
+FROM base AS prod-deps
+COPY --from=pruner /app/out/json/ ./
+COPY --from=pruner /app/out/pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --lockfile-only && \
+    pnpm install --frozen-lockfile --prod
+
 FROM base AS workspace
 ENV SKIP_ENV_VALIDATION=1
 COPY --from=deps /app/node_modules ./node_modules
@@ -74,13 +81,12 @@ ENV NEXT_DEPLOYMENT_ID=${NEXT_DEPLOYMENT_ID} \
     BUILD_HASH=${BUILD_HASH} \
     NEXT_PUBLIC_BUILD_HASH=${NEXT_PUBLIC_BUILD_HASH}
 
-RUN pnpm add -g tsx
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 app
-RUN chown -R app:nodejs /app /pnpm
+    adduser --system --uid 1001 app && \
+    chown -R app:nodejs /app /pnpm
 
-COPY --from=deps --chown=app:nodejs /app/node_modules ./node_modules
-COPY --from=deps --chown=app:nodejs /app/apps/webapp/node_modules ./apps/webapp/node_modules
+COPY --from=prod-deps --chown=app:nodejs /app/node_modules ./node_modules
+COPY --from=prod-deps --chown=app:nodejs /app/apps/webapp/node_modules ./apps/webapp/node_modules
 
 COPY --from=webapp-builder --chown=app:nodejs /app/apps/webapp/.next ./apps/webapp/.next
 COPY --from=workspace --chown=app:nodejs /app/apps/webapp/public ./apps/webapp/public

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.4
 ARG NODE_VERSION=26
-ARG PNPM_VERSION=11.6.0
+ARG PNPM_VERSION=11.8.0
 ARG TSX_VERSION=4.22.3
 
 FROM node:${NODE_VERSION}-alpine AS base
@@ -46,4 +46,4 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 COPY --from=assembler /runtime/ ./
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["pnpm", "exec", "tsx", "src/db/seed/do-seed.ts"]
+CMD ["tsx", "src/db/seed/do-seed.ts"]
