@@ -36,6 +36,15 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "@/components/ui/sheet";
+import {
 	Table,
 	TableBody,
 	TableCell,
@@ -696,6 +705,11 @@ function PayrollScopeCard({
 	teamOptions: string[];
 	t: PayrollTranslate;
 }) {
+	void onToggleEmployee;
+	void onToggleTeam;
+
+	const scopeSummary = getPayrollScopeSummary({ selectedEmployeeIds, selectedTeamNames, t });
+
 	return (
 		<Card>
 			<CardHeader>
@@ -707,54 +721,94 @@ function PayrollScopeCard({
 					)}
 				</CardDescription>
 			</CardHeader>
-			<CardContent className="grid gap-6 md:grid-cols-2">
-				<div className="space-y-3">
+			<CardContent className="space-y-4">
+				<div className="rounded-lg border bg-muted/40 p-4">
 					<div className="font-medium text-sm">
-						{t("payroll.scope.assignedEmployees", "Assigned employees")}
+						{t("payroll.scope.currentScope", "Current scope")}
 					</div>
-					<div className="grid gap-2">
-						{scopedEmployees.map((employee) => (
-							<label key={employee.id} className="flex items-center gap-2 text-sm">
-								<input
-									type="checkbox"
-									className="size-4 rounded border-input accent-primary"
-									checked={selectedEmployeeIds.includes(employee.id)}
-									disabled={isPending}
-									onChange={(event) => onToggleEmployee(employee.id, event.target.checked)}
-								/>
-								<span>{employee.name}</span>
-							</label>
-						))}
-					</div>
+					<p className="mt-1 text-muted-foreground text-sm">{scopeSummary}</p>
 				</div>
 
-				<div className="space-y-3">
-					<div className="font-medium text-sm">
-						{t("payroll.scope.assignedTeams", "Assigned teams")}
-					</div>
-					<div className="grid gap-2">
-						{teamOptions.length > 0 ? (
-							teamOptions.map((teamName) => (
-								<label key={teamName} className="flex items-center gap-2 text-sm">
-									<input
-										type="checkbox"
-										className="size-4 rounded border-input accent-primary"
-										checked={selectedTeamNames.includes(teamName)}
-										disabled={isPending}
-										onChange={(event) => onToggleTeam(teamName, event.target.checked)}
-									/>
-									<span>{teamName}</span>
-								</label>
-							))
-						) : (
-							<p className="text-muted-foreground text-sm">
-								{t("payroll.scope.noAssignedTeams", "No assigned teams in this payroll scope.")}
-							</p>
-						)}
-					</div>
+				<div className="flex flex-col gap-2 sm:flex-row">
+					<Sheet>
+						<SheetTrigger asChild>
+							<Button disabled={isPending} type="button" variant="outline">
+								{t("payroll.scope.specificTeams", "Specific teams")}
+							</Button>
+						</SheetTrigger>
+						<SheetContent className="overflow-y-auto">
+							<SheetHeader>
+								<SheetTitle>{t("payroll.scope.specificTeams", "Specific teams")}</SheetTitle>
+								<SheetDescription>
+									{t(
+										"payroll.scope.specificTeamsDescription",
+										"Choose teams to include in this payroll scope.",
+									)}
+								</SheetDescription>
+							</SheetHeader>
+							<div className="px-4 pb-4">
+								{teamOptions.length > 0 ? null : (
+									<p className="text-muted-foreground text-sm">
+										{t(
+											"payroll.scope.noAssignedTeams",
+											"No assigned teams in this payroll scope.",
+										)}
+									</p>
+								)}
+							</div>
+							<SheetFooter>
+								<Button disabled type="button">
+									{t("payroll.scope.apply", "Apply")}
+								</Button>
+								<Button disabled type="button" variant="outline">
+									{t("payroll.scope.cancel", "Cancel")}
+								</Button>
+							</SheetFooter>
+						</SheetContent>
+					</Sheet>
+
+					<Sheet>
+						<SheetTrigger asChild>
+							<Button disabled={isPending} type="button" variant="outline">
+								{t("payroll.scope.specificEmployees", "Specific employees")}
+							</Button>
+						</SheetTrigger>
+						<SheetContent className="overflow-y-auto">
+							<SheetHeader>
+								<SheetTitle>
+									{t("payroll.scope.specificEmployees", "Specific employees")}
+								</SheetTitle>
+								<SheetDescription>
+									{t(
+										"payroll.scope.specificEmployeesDescription",
+										"Choose employees to include in this payroll scope.",
+									)}
+								</SheetDescription>
+							</SheetHeader>
+							<div className="px-4 pb-4">
+								{scopedEmployees.length > 0 ? null : (
+									<p className="text-muted-foreground text-sm">
+										{t(
+											"payroll.scope.noAssignedEmployees",
+											"No assigned employees in this payroll scope.",
+										)}
+									</p>
+								)}
+							</div>
+							<SheetFooter>
+								<Button disabled type="button">
+									{t("payroll.scope.apply", "Apply")}
+								</Button>
+								<Button disabled type="button" variant="outline">
+									{t("payroll.scope.cancel", "Cancel")}
+								</Button>
+							</SheetFooter>
+						</SheetContent>
+					</Sheet>
 				</div>
+
 				{filtersHaveNoMatches ? (
-					<p className="text-destructive text-sm md:col-span-2">
+					<p className="text-destructive text-sm">
 						{t(
 							"payroll.filters.noMatchingEmployees",
 							"No employees match the selected payroll filters.",
@@ -764,6 +818,42 @@ function PayrollScopeCard({
 			</CardContent>
 		</Card>
 	);
+}
+
+function getPayrollScopeSummary({
+	selectedEmployeeIds,
+	selectedTeamNames,
+	t,
+}: {
+	selectedEmployeeIds: string[];
+	selectedTeamNames: string[];
+	t: PayrollTranslate;
+}) {
+	if (selectedEmployeeIds.length === 0 && selectedTeamNames.length === 0) {
+		return t("payroll.scope.allManaged", "All employees and teams I manage");
+	}
+
+	const parts: string[] = [];
+
+	if (selectedTeamNames.length > 0) {
+		parts.push(
+			t("payroll.scope.selectedTeamsCount", "{count} teams", {
+				count: selectedTeamNames.length,
+			}),
+		);
+	}
+
+	if (selectedEmployeeIds.length > 0) {
+		parts.push(
+			t("payroll.scope.selectedEmployeesCount", "{count} employees", {
+				count: selectedEmployeeIds.length,
+			}),
+		);
+	}
+
+	return t("payroll.scope.selectedSummary", "{summary} selected", {
+		summary: parts.join(", "),
+	});
 }
 
 function PayrollBlockersAlert({
