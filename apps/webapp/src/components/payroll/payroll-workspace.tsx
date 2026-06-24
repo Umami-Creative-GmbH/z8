@@ -14,7 +14,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import type React from "react";
-import { useReducer, useTransition } from "react";
+import { useReducer, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	exportPayrollPdfAction,
@@ -26,6 +26,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -35,6 +36,16 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Sheet,
+	SheetClose,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "@/components/ui/sheet";
 import {
 	Table,
 	TableBody,
@@ -177,32 +188,44 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		});
 	}
 
-	function toggleEmployeeFilter(employeeId: string, checked: boolean) {
-		const nextEmployeeIds = checked
-			? [...selectedEmployeeIds, employeeId]
-			: selectedEmployeeIds.filter((selectedEmployeeId) => selectedEmployeeId !== employeeId);
+	function applyEmployeeFilter(nextEmployeeIds: string[], onSuccess?: () => void) {
 		const nextFilteredEmployeeIds = getFilteredEmployeeIds(
 			scopedEmployees,
 			nextEmployeeIds,
 			selectedTeamNames,
 		);
 
-		dispatch({ type: "employeeFilterChanged", employeeIds: nextEmployeeIds });
-		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
+		if (nextFilteredEmployeeIds?.length === 0) {
+			dispatch({ type: "employeeFilterChanged", employeeIds: nextEmployeeIds });
+			refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
+			onSuccess?.();
+			return;
+		}
+
+		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds, () => {
+			dispatch({ type: "employeeFilterChanged", employeeIds: nextEmployeeIds });
+			onSuccess?.();
+		});
 	}
 
-	function toggleTeamFilter(teamName: string, checked: boolean) {
-		const nextTeamNames = checked
-			? [...selectedTeamNames, teamName]
-			: selectedTeamNames.filter((selectedTeamName) => selectedTeamName !== teamName);
+	function applyTeamFilter(nextTeamNames: string[], onSuccess?: () => void) {
 		const nextFilteredEmployeeIds = getFilteredEmployeeIds(
 			scopedEmployees,
 			selectedEmployeeIds,
 			nextTeamNames,
 		);
 
-		dispatch({ type: "teamFilterChanged", teamNames: nextTeamNames });
-		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
+		if (nextFilteredEmployeeIds?.length === 0) {
+			dispatch({ type: "teamFilterChanged", teamNames: nextTeamNames });
+			refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
+			onSuccess?.();
+			return;
+		}
+
+		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds, () => {
+			dispatch({ type: "teamFilterChanged", teamNames: nextTeamNames });
+			onSuccess?.();
+		});
 	}
 
 	function applyDateMode(nextMode: PayrollDateRangeMode) {
@@ -352,8 +375,8 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			<PayrollScopeCard
 				filtersHaveNoMatches={filtersHaveNoMatches}
 				isPending={isPending}
-				onToggleEmployee={toggleEmployeeFilter}
-				onToggleTeam={toggleTeamFilter}
+				onApplyEmployees={applyEmployeeFilter}
+				onApplyTeams={applyTeamFilter}
 				scopedEmployees={scopedEmployees}
 				selectedEmployeeIds={selectedEmployeeIds}
 				selectedTeamNames={selectedTeamNames}
@@ -692,8 +715,8 @@ function PayrollExportControls({
 function PayrollScopeCard({
 	filtersHaveNoMatches,
 	isPending,
-	onToggleEmployee,
-	onToggleTeam,
+	onApplyEmployees,
+	onApplyTeams,
 	scopedEmployees,
 	selectedEmployeeIds,
 	selectedTeamNames,
@@ -702,14 +725,76 @@ function PayrollScopeCard({
 }: {
 	filtersHaveNoMatches: boolean;
 	isPending: boolean;
-	onToggleEmployee: (employeeId: string, checked: boolean) => void;
-	onToggleTeam: (teamName: string, checked: boolean) => void;
+	onApplyEmployees: (employeeIds: string[], onSuccess?: () => void) => void;
+	onApplyTeams: (teamNames: string[], onSuccess?: () => void) => void;
 	scopedEmployees: PayrollWorkspaceSummary["employees"];
 	selectedEmployeeIds: string[];
 	selectedTeamNames: string[];
 	teamOptions: string[];
 	t: PayrollTranslate;
 }) {
+	const [employeeSheetOpen, setEmployeeSheetOpen] = useState(false);
+	const [draftEmployeeIds, setDraftEmployeeIds] = useState(selectedEmployeeIds);
+	const [teamSheetOpen, setTeamSheetOpen] = useState(false);
+	const [draftTeamNames, setDraftTeamNames] = useState(selectedTeamNames);
+	const scopeSummary = getPayrollScopeSummary({ selectedEmployeeIds, selectedTeamNames, t });
+
+	function openTeamSheet(open: boolean) {
+		setTeamSheetOpen(open);
+		if (open) {
+			setDraftTeamNames(selectedTeamNames);
+		}
+	}
+
+	function openEmployeeSheet(open: boolean) {
+		setEmployeeSheetOpen(open);
+		if (open) {
+			setDraftEmployeeIds(selectedEmployeeIds);
+		}
+	}
+
+	function toggleDraftTeam(teamName: string, checked: boolean) {
+		setDraftTeamNames((currentTeamNames) =>
+			checked
+				? [...currentTeamNames, teamName]
+				: currentTeamNames.filter((currentTeamName) => currentTeamName !== teamName),
+		);
+	}
+
+	function toggleDraftEmployee(employeeId: string, checked: boolean) {
+		setDraftEmployeeIds((currentIds) =>
+			checked
+				? [...currentIds, employeeId]
+				: currentIds.filter((currentId) => currentId !== employeeId),
+		);
+	}
+
+	function applyTeamDraft() {
+		const teamDraftChanged =
+			draftTeamNames.length !== selectedTeamNames.length ||
+			draftTeamNames.some((teamName) => !selectedTeamNames.includes(teamName));
+
+		if (teamDraftChanged) {
+			onApplyTeams(draftTeamNames, () => setTeamSheetOpen(false));
+			return;
+		}
+
+		setTeamSheetOpen(false);
+	}
+
+	function applyEmployeeDraft() {
+		const employeeDraftChanged =
+			draftEmployeeIds.length !== selectedEmployeeIds.length ||
+			draftEmployeeIds.some((employeeId) => !selectedEmployeeIds.includes(employeeId));
+
+		if (employeeDraftChanged) {
+			onApplyEmployees(draftEmployeeIds, () => setEmployeeSheetOpen(false));
+			return;
+		}
+
+		setEmployeeSheetOpen(false);
+	}
+
 	return (
 		<Card>
 			<CardHeader>
@@ -721,54 +806,134 @@ function PayrollScopeCard({
 					)}
 				</CardDescription>
 			</CardHeader>
-			<CardContent className="grid gap-6 md:grid-cols-2">
-				<div className="space-y-3">
+			<CardContent className="space-y-4">
+				<div className="rounded-lg border bg-muted/40 p-4">
 					<div className="font-medium text-sm">
-						{t("payroll.scope.assignedEmployees", "Assigned employees")}
+						{t("payroll.scope.currentScope", "Current scope")}
 					</div>
-					<div className="grid gap-2">
-						{scopedEmployees.map((employee) => (
-							<label key={employee.id} className="flex items-center gap-2 text-sm">
-								<input
-									type="checkbox"
-									className="size-4 rounded border-input accent-primary"
-									checked={selectedEmployeeIds.includes(employee.id)}
-									disabled={isPending}
-									onChange={(event) => onToggleEmployee(employee.id, event.target.checked)}
-								/>
-								<span>{employee.name}</span>
-							</label>
-						))}
-					</div>
+					<p className="mt-1 text-muted-foreground text-sm">{scopeSummary}</p>
 				</div>
 
-				<div className="space-y-3">
-					<div className="font-medium text-sm">
-						{t("payroll.scope.assignedTeams", "Assigned teams")}
-					</div>
-					<div className="grid gap-2">
-						{teamOptions.length > 0 ? (
-							teamOptions.map((teamName) => (
-								<label key={teamName} className="flex items-center gap-2 text-sm">
-									<input
-										type="checkbox"
-										className="size-4 rounded border-input accent-primary"
-										checked={selectedTeamNames.includes(teamName)}
-										disabled={isPending}
-										onChange={(event) => onToggleTeam(teamName, event.target.checked)}
-									/>
-									<span>{teamName}</span>
-								</label>
-							))
-						) : (
-							<p className="text-muted-foreground text-sm">
-								{t("payroll.scope.noAssignedTeams", "No assigned teams in this payroll scope.")}
-							</p>
-						)}
-					</div>
+				<div className="flex flex-col gap-2 sm:flex-row">
+					<Sheet onOpenChange={openTeamSheet} open={teamSheetOpen}>
+						<SheetTrigger asChild>
+							<Button disabled={isPending} type="button" variant="outline">
+								{t("payroll.scope.specificTeams", "Specific teams")}
+							</Button>
+						</SheetTrigger>
+						<SheetContent className="overflow-y-auto">
+							<SheetHeader>
+								<SheetTitle>{t("payroll.scope.specificTeams", "Specific teams")}</SheetTitle>
+								<SheetDescription>
+									{t(
+										"payroll.scope.specificTeamsDescription",
+										"Choose teams to include in this payroll scope.",
+									)}
+								</SheetDescription>
+							</SheetHeader>
+							<div className="space-y-3 px-4 pb-4">
+								{teamOptions.map((teamName, index) => {
+									const checkboxId = `payroll-scope-team-${index}`;
+
+									return (
+										<div key={teamName} className="flex items-center gap-2">
+											<Checkbox
+												checked={draftTeamNames.includes(teamName)}
+												disabled={isPending}
+												id={checkboxId}
+												onCheckedChange={(checked) => toggleDraftTeam(teamName, checked === true)}
+											/>
+											<label className="cursor-pointer font-medium text-sm" htmlFor={checkboxId}>
+												{teamName}
+											</label>
+										</div>
+									);
+								})}
+								{teamOptions.length > 0 ? null : (
+									<p className="text-muted-foreground text-sm">
+										{t(
+											"payroll.scope.noAssignedTeams",
+											"No assigned teams in this payroll scope.",
+										)}
+									</p>
+								)}
+							</div>
+							<SheetFooter>
+								<Button disabled={isPending} type="button" onClick={applyTeamDraft}>
+									{t("payroll.scope.apply", "Apply")}
+								</Button>
+								<SheetClose asChild>
+									<Button disabled={isPending} type="button" variant="outline">
+										{t("payroll.scope.cancel", "Cancel")}
+									</Button>
+								</SheetClose>
+							</SheetFooter>
+						</SheetContent>
+					</Sheet>
+
+					<Sheet onOpenChange={openEmployeeSheet} open={employeeSheetOpen}>
+						<SheetTrigger asChild>
+							<Button disabled={isPending} type="button" variant="outline">
+								{t("payroll.scope.specificEmployees", "Specific employees")}
+							</Button>
+						</SheetTrigger>
+						<SheetContent className="overflow-y-auto">
+							<SheetHeader>
+								<SheetTitle>
+									{t("payroll.scope.specificEmployees", "Specific employees")}
+								</SheetTitle>
+								<SheetDescription>
+									{t(
+										"payroll.scope.specificEmployeesDescription",
+										"Choose employees to include in this payroll scope.",
+									)}
+								</SheetDescription>
+							</SheetHeader>
+							<div className="space-y-3 px-4 pb-4">
+								{scopedEmployees.map((employee) => {
+									const checkboxId = `payroll-scope-employee-${employee.id}`;
+
+									return (
+										<div key={employee.id} className="flex items-center gap-2">
+											<Checkbox
+												checked={draftEmployeeIds.includes(employee.id)}
+												disabled={isPending}
+												id={checkboxId}
+												onCheckedChange={(checked) =>
+													toggleDraftEmployee(employee.id, checked === true)
+												}
+											/>
+											<label className="cursor-pointer font-medium text-sm" htmlFor={checkboxId}>
+												{employee.name}
+											</label>
+										</div>
+									);
+								})}
+								{scopedEmployees.length > 0 ? null : (
+									<p className="text-muted-foreground text-sm">
+										{t(
+											"payroll.scope.noAssignedEmployees",
+											"No assigned employees in this payroll scope.",
+										)}
+									</p>
+								)}
+							</div>
+							<SheetFooter>
+								<Button disabled={isPending} type="button" onClick={applyEmployeeDraft}>
+									{t("payroll.scope.apply", "Apply")}
+								</Button>
+								<SheetClose asChild>
+									<Button disabled={isPending} type="button" variant="outline">
+										{t("payroll.scope.cancel", "Cancel")}
+									</Button>
+								</SheetClose>
+							</SheetFooter>
+						</SheetContent>
+					</Sheet>
 				</div>
+
 				{filtersHaveNoMatches ? (
-					<p className="text-destructive text-sm md:col-span-2">
+					<p className="text-destructive text-sm">
 						{t(
 							"payroll.filters.noMatchingEmployees",
 							"No employees match the selected payroll filters.",
@@ -778,6 +943,42 @@ function PayrollScopeCard({
 			</CardContent>
 		</Card>
 	);
+}
+
+function getPayrollScopeSummary({
+	selectedEmployeeIds,
+	selectedTeamNames,
+	t,
+}: {
+	selectedEmployeeIds: string[];
+	selectedTeamNames: string[];
+	t: PayrollTranslate;
+}) {
+	if (selectedEmployeeIds.length === 0 && selectedTeamNames.length === 0) {
+		return t("payroll.scope.allManaged", "All employees and teams I manage");
+	}
+
+	const parts: string[] = [];
+
+	if (selectedTeamNames.length > 0) {
+		parts.push(
+			t("payroll.scope.selectedTeamsCount", "{count} teams", {
+				count: selectedTeamNames.length,
+			}),
+		);
+	}
+
+	if (selectedEmployeeIds.length > 0) {
+		parts.push(
+			t("payroll.scope.selectedEmployeesCount", "{count} employees", {
+				count: selectedEmployeeIds.length,
+			}),
+		);
+	}
+
+	return t("payroll.scope.selectedSummary", "{summary} selected", {
+		summary: parts.join(", "),
+	});
 }
 
 function PayrollBlockersAlert({
