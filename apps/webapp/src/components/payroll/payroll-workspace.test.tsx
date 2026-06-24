@@ -176,7 +176,7 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("No configured payroll export target")).toBeTruthy();
 	});
 
-	it("disables PDF and export actions when filters produce no matches", () => {
+	it("keeps payroll actions available at the default managed scope", () => {
 		render(
 			<PayrollWorkspace
 				initialSummary={summary}
