@@ -160,6 +160,7 @@ export function EmployeesPageClient(props: {
 						organizationId={props.organizationId}
 						members={[]}
 						invitations={people.invitations}
+						defaultTab="invitations"
 						currentMemberRole={people.currentMemberRole}
 						currentUserId={people.currentUserId}
 						onRefresh={handlePeopleRefresh}

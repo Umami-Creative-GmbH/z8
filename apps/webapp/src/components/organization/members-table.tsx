@@ -64,6 +64,7 @@ interface MembersTableProps {
 	organizationId: string;
 	members: MemberWithUserAndEmployee[];
 	invitations: InvitationWithInviter[];
+	defaultTab?: "members" | "invitations";
 	currentMemberRole: "owner" | "admin" | "member";
 	currentUserId: string;
 	onRefresh?: () => void;
@@ -89,6 +90,7 @@ export function MembersTable({
 	organizationId,
 	members: initialMembers,
 	invitations: initialInvitations,
+	defaultTab = "members",
 	currentMemberRole,
 	currentUserId,
 	onRefresh,
@@ -653,7 +655,7 @@ export function MembersTable({
 
 	return (
 		<div className="space-y-6">
-			<Tabs defaultValue="members" className="space-y-4">
+			<Tabs defaultValue={defaultTab} className="space-y-4">
 				<TabsList className="grid w-full grid-cols-2">
 					<TabsTrigger value="members">
 						{t("organization.members.activeMembers", "Active Members")} ({members.length})

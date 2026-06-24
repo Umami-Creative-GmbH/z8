@@ -7,6 +7,14 @@ const componentSource = () =>
 	readFileSync(join(process.cwd(), "src/components/organization/members-table.tsx"), "utf8");
 
 describe("MembersTable invitation target teams", () => {
+	it("allows callers to open pending invitations by default", () => {
+		const file = componentSource();
+
+		expect(file).toContain('defaultTab = "members"');
+		expect(file).toContain('defaultTab?: "members" | "invitations"');
+		expect(file).toContain("<Tabs defaultValue={defaultTab}");
+	});
+
 	it("resolves local target team updates from the submitted id", () => {
 		const update = resolveInvitationTargetTeamUpdate("team-a", [
 			{ id: "team-a", name: "Submitted Team" },

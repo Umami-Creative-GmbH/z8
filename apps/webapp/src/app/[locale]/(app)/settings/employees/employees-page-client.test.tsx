@@ -23,6 +23,7 @@ describe("EmployeesPageClient people-management tabs", () => {
 		expect(source).toContain("<PendingMembersCard");
 		expect(source).toContain("<InviteCodeManagement");
 		expect(source).toContain("<InviteMemberDialog");
+		expect(source).toContain('defaultTab="invitations"');
 	});
 
 	it("does not send invite actions back to organization settings", () => {
