@@ -2,46 +2,28 @@
 
 import { useTranslate } from "@tolgee/react";
 import type * as authSchema from "@/db/auth-schema";
-import type { employee } from "@/db/schema";
 import { OrganizationTab } from "./organization-tab";
-
-// Type definitions for the component props
-export interface MemberWithUserAndEmployee {
-	member: typeof authSchema.member.$inferSelect;
-	user: typeof authSchema.user.$inferSelect;
-	employee: typeof employee.$inferSelect | null;
-	teamMemberships?: Array<{ teamId: string }>;
-}
-
-export type InvitationWithInviter = typeof authSchema.invitation.$inferSelect & {
-	user: typeof authSchema.user.$inferSelect; // The inviter - relation named "user" in auth-schema
-	targetTeam?: { id: string; name: string } | null;
-};
 
 interface OrganizationsPageClientProps {
 	organization: typeof authSchema.organization.$inferSelect;
-	members: MemberWithUserAndEmployee[];
-	invitations: InvitationWithInviter[];
+	memberCount: number;
 	currentMemberRole: "owner" | "admin" | "member";
 	defaultNotificationLanguage: string;
-	currentUserId: string;
 	canCreateOrganizations: boolean;
 }
 
 export function OrganizationsPageClient({
 	organization,
-	members,
-	invitations,
+	memberCount,
 	currentMemberRole,
 	defaultNotificationLanguage,
-	currentUserId,
 	canCreateOrganizations,
 }: OrganizationsPageClientProps) {
 	const { t } = useTranslate();
 	const organizationTitle = t("settings.organizations.title", "Organization");
 	const organizationDescription = t(
 		"settings.organizations.description",
-		"Manage organization members, invitations, and details",
+		"Manage organization details and configuration",
 	);
 
 	return (
@@ -54,11 +36,9 @@ export function OrganizationsPageClient({
 
 				<OrganizationTab
 					organization={organization}
-					members={members}
-					invitations={invitations}
+					memberCount={memberCount}
 					currentMemberRole={currentMemberRole}
 					defaultNotificationLanguage={defaultNotificationLanguage}
-					currentUserId={currentUserId}
 					canCreateOrganizations={canCreateOrganizations}
 				/>
 			</div>

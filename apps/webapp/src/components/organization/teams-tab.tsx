@@ -24,7 +24,7 @@ import { queryKeys } from "@/lib/query";
 import { useRouter } from "@/navigation";
 import { CreateTeamDialog, type TeamManagerOption } from "./create-team-dialog";
 import { EditTeamDialog } from "./edit-team-dialog";
-import type { MemberWithUserAndEmployee } from "./organizations-page-client";
+import type { MemberWithUserAndEmployee } from "./people-management-types";
 import { TeamCard } from "./team-card";
 import { TeamMembersDialog } from "./team-members-dialog";
 

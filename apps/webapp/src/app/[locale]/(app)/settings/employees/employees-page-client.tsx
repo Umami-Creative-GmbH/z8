@@ -14,9 +14,14 @@ import {
 	getSortedRowModel,
 	type SortingState,
 } from "@tanstack/react-table";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { InviteCodeManagement } from "@/components/organization/invite-code-management";
+import { InviteMemberDialog } from "@/components/organization/invite-member-dialog";
+import { MembersTable } from "@/components/organization/members-table";
+import { PendingMembersCard } from "@/components/organization/pending-members-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -35,17 +40,161 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
-import { useEmployeeClockStatuses } from "@/lib/query";
+import type {
+	InvitationWithInviter,
+	MemberWithUserAndEmployee,
+} from "@/components/organization/people-management-types";
+import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { useEmployees } from "@/lib/query/use-employees";
 import type { SettingsAccessTier } from "@/lib/settings-access";
-import { Link } from "@/navigation";
 import { columns } from "./columns";
 import type { EmployeeDirectoryRow } from "./employee-action-types";
+
+export interface EmployeesPagePeopleProps {
+	organizationName: string;
+	members: MemberWithUserAndEmployee[];
+	invitations: InvitationWithInviter[];
+	currentMemberRole: "owner" | "admin" | "member";
+	currentUserId: string;
+}
 
 export function EmployeesPageClient(props: {
 	accessTier: SettingsAccessTier;
 	organizationId: string;
+	people?: EmployeesPagePeopleProps;
+}) {
+	const { t } = useTranslate();
+	const queryClient = useQueryClient();
+	const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+	const [isRefreshingPeople, startPeopleRefresh] = useTransition();
+
+	const people = props.people;
+	const shouldShowPeopleTabs = props.accessTier === "orgAdmin" && people;
+
+	if (!shouldShowPeopleTabs) {
+		return (
+			<div className="flex flex-1 flex-col gap-4 p-4">
+				<EmployeeDirectoryTab
+					accessTier={props.accessTier}
+					organizationId={props.organizationId}
+					showHeader
+				/>
+			</div>
+		);
+	}
+
+	const handlePeopleRefresh = () => {
+		startPeopleRefresh(() => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.members.list(props.organizationId) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(props.organizationId) });
+		});
+	};
+
+	return (
+		<div className="flex flex-1 flex-col gap-4 p-4">
+			<div>
+				<h1 className="text-2xl font-semibold tracking-tight">
+					{t("settings.employees.title", "Employees")}
+				</h1>
+				<p className="text-sm text-muted-foreground">
+					{t("settings.employees.description", "Manage employees, members, and invites")}
+				</p>
+			</div>
+
+			<Tabs defaultValue="employees" className="space-y-4">
+				<TabsList className="flex h-auto flex-wrap justify-start">
+					<TabsTrigger value="employees">
+						{t("settings.employees.tabs.employees", "Employees")}
+					</TabsTrigger>
+					<TabsTrigger value="members">{t("settings.employees.tabs.members", "Members")}</TabsTrigger>
+					<TabsTrigger value="invitations">
+						{t("settings.employees.tabs.invitations", "Invitations")}
+					</TabsTrigger>
+					<TabsTrigger value="invite-codes">
+						{t("settings.employees.tabs.inviteCodes", "Invite Codes")}
+					</TabsTrigger>
+				</TabsList>
+
+				<TabsContent value="employees" className="space-y-4">
+					<EmployeeDirectoryTab
+						accessTier={props.accessTier}
+						organizationId={props.organizationId}
+						showHeader={false}
+					/>
+				</TabsContent>
+
+				<TabsContent value="members" className="space-y-4">
+					<MembersTable
+						organizationId={props.organizationId}
+						members={people.members}
+						invitations={[]}
+						currentMemberRole={people.currentMemberRole}
+						currentUserId={people.currentUserId}
+						onRefresh={handlePeopleRefresh}
+						isRefreshing={isRefreshingPeople}
+					/>
+				</TabsContent>
+
+				<TabsContent value="invitations" className="space-y-4">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+						<div>
+							<h2 className="text-lg font-semibold">
+								{t("settings.employees.invitations.title", "Invitations")}
+							</h2>
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"settings.employees.invitations.description",
+									"Invite members and review pending join requests",
+								)}
+							</p>
+						</div>
+						<Button onClick={() => setInviteDialogOpen(true)}>
+							<IconPlus className="mr-2 size-4" />
+							{t("organization.invite.title", "Invite Member")}
+						</Button>
+					</div>
+
+					<MembersTable
+						organizationId={props.organizationId}
+						members={[]}
+						invitations={people.invitations}
+						defaultTab="invitations"
+						currentMemberRole={people.currentMemberRole}
+						currentUserId={people.currentUserId}
+						onRefresh={handlePeopleRefresh}
+						isRefreshing={isRefreshingPeople}
+					/>
+					<PendingMembersCard
+						organizationId={props.organizationId}
+						currentMemberRole={people.currentMemberRole}
+					/>
+				</TabsContent>
+
+				<TabsContent value="invite-codes" className="space-y-4">
+					<InviteCodeManagement
+						organizationId={props.organizationId}
+						currentMemberRole={people.currentMemberRole}
+					/>
+				</TabsContent>
+			</Tabs>
+
+			<InviteMemberDialog
+				organizationId={props.organizationId}
+				organizationName={people.organizationName}
+				currentMemberRole={people.currentMemberRole}
+				open={inviteDialogOpen}
+				onOpenChange={setInviteDialogOpen}
+			/>
+		</div>
+	);
+}
+
+function EmployeeDirectoryTab(props: {
+	accessTier: SettingsAccessTier;
+	organizationId: string;
+	showHeader: boolean;
 }) {
 	const { t } = useTranslate();
 	const {
@@ -107,43 +256,47 @@ export function EmployeesPageClient(props: {
 	}
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.employees.title", "Employees")}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.employees.description",
-							"Manage employee profiles, teams, and permissions",
-						)}
-					</p>
-				</div>
-				<div className="flex items-center gap-2">
+		<>
+			{props.showHeader && (
+				<div className="flex items-center justify-between">
+					<div>
+						<h1 className="text-2xl font-semibold tracking-tight">
+							{t("settings.employees.title", "Employees")}
+						</h1>
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"settings.employees.description",
+								"Manage employees, members, and invites",
+							)}
+						</p>
+					</div>
 					<Button variant="ghost" size="icon" onClick={refresh} disabled={isFetching}>
 						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-						<span className="sr-only">{t("settings.employees.directory.refresh", "Refresh")}</span>
+						<span className="sr-only">
+							{t("settings.employees.directory.refresh", "Refresh")}
+						</span>
 					</Button>
-					{props.accessTier === "orgAdmin" && (
-						<Button asChild>
-							<Link href="/settings/organizations">
-								<IconPlus className="mr-2 size-4" />
-								{t("settings.employees.directory.inviteEmployee", "Invite Employee")}
-							</Link>
-						</Button>
-					)}
 				</div>
-			</div>
+			)}
 
 			<Card>
-				<CardHeader>
-					<CardTitle>{t("settings.employees.directory.title", "Employee Directory")}</CardTitle>
-					<CardDescription>
-						{t("settings.employees.directory.countFound", "{count} employee(s) found", {
-							count: total,
-						})}
-					</CardDescription>
+				<CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+					<div>
+						<CardTitle>{t("settings.employees.directory.title", "Employee Directory")}</CardTitle>
+						<CardDescription>
+							{t("settings.employees.directory.countFound", "{count} employee(s) found", {
+								count: total,
+							})}
+						</CardDescription>
+					</div>
+					{!props.showHeader && (
+						<Button variant="ghost" size="icon" onClick={refresh} disabled={isFetching}>
+							<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
+							<span className="sr-only">
+								{t("settings.employees.directory.refresh", "Refresh")}
+							</span>
+						</Button>
+					)}
 				</CardHeader>
 				<CardContent>
 					<div className="mb-4 flex flex-col gap-4 sm:flex-row">
@@ -288,6 +441,6 @@ export function EmployeesPageClient(props: {
 					)}
 				</CardContent>
 			</Card>
-		</div>
+		</>
 	);
 }
