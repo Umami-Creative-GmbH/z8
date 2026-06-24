@@ -59,6 +59,20 @@ describe("settings visibility tiers", () => {
 		});
 	});
 
+	it("uses people-management copy for employees and configuration copy for organization", () => {
+		const entries = getVisibleSettings("orgAdmin", true);
+		const organizationEntry = entries.find((entry) => entry.id === "organizations");
+		const employeesEntry = entries.find((entry) => entry.id === "employees");
+
+		expect(organizationEntry).toMatchObject({
+			descriptionDefault: "Manage organization details and configuration",
+		});
+		expect(organizationEntry?.descriptionDefault).not.toMatch(/member|invitation|invite/i);
+		expect(employeesEntry).toMatchObject({
+			descriptionDefault: "Manage employees, members, and invites",
+		});
+	});
+
 	it("orders organization settings with employees before teams and email templates last", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 		const organizationEntries = entries.filter((entry) => entry.group === "organization");
