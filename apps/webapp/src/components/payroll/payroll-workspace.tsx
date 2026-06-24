@@ -188,26 +188,44 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		});
 	}
 
-	function applyEmployeeFilter(nextEmployeeIds: string[]) {
+	function applyEmployeeFilter(nextEmployeeIds: string[], onSuccess?: () => void) {
 		const nextFilteredEmployeeIds = getFilteredEmployeeIds(
 			scopedEmployees,
 			nextEmployeeIds,
 			selectedTeamNames,
 		);
 
-		dispatch({ type: "employeeFilterChanged", employeeIds: nextEmployeeIds });
-		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
+		if (nextFilteredEmployeeIds?.length === 0) {
+			dispatch({ type: "employeeFilterChanged", employeeIds: nextEmployeeIds });
+			refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
+			onSuccess?.();
+			return;
+		}
+
+		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds, () => {
+			dispatch({ type: "employeeFilterChanged", employeeIds: nextEmployeeIds });
+			onSuccess?.();
+		});
 	}
 
-	function applyTeamFilter(nextTeamNames: string[]) {
+	function applyTeamFilter(nextTeamNames: string[], onSuccess?: () => void) {
 		const nextFilteredEmployeeIds = getFilteredEmployeeIds(
 			scopedEmployees,
 			selectedEmployeeIds,
 			nextTeamNames,
 		);
 
-		dispatch({ type: "teamFilterChanged", teamNames: nextTeamNames });
-		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
+		if (nextFilteredEmployeeIds?.length === 0) {
+			dispatch({ type: "teamFilterChanged", teamNames: nextTeamNames });
+			refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
+			onSuccess?.();
+			return;
+		}
+
+		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds, () => {
+			dispatch({ type: "teamFilterChanged", teamNames: nextTeamNames });
+			onSuccess?.();
+		});
 	}
 
 	function applyDateMode(nextMode: PayrollDateRangeMode) {
@@ -693,8 +711,8 @@ function PayrollScopeCard({
 }: {
 	filtersHaveNoMatches: boolean;
 	isPending: boolean;
-	onApplyEmployees: (employeeIds: string[]) => void;
-	onApplyTeams: (teamNames: string[]) => void;
+	onApplyEmployees: (employeeIds: string[], onSuccess?: () => void) => void;
+	onApplyTeams: (teamNames: string[], onSuccess?: () => void) => void;
 	scopedEmployees: PayrollWorkspaceSummary["employees"];
 	selectedEmployeeIds: string[];
 	selectedTeamNames: string[];
@@ -743,7 +761,8 @@ function PayrollScopeCard({
 			draftTeamNames.some((teamName) => !selectedTeamNames.includes(teamName));
 
 		if (teamDraftChanged) {
-			onApplyTeams(draftTeamNames);
+			onApplyTeams(draftTeamNames, () => setTeamSheetOpen(false));
+			return;
 		}
 
 		setTeamSheetOpen(false);
@@ -755,7 +774,8 @@ function PayrollScopeCard({
 			draftEmployeeIds.some((employeeId) => !selectedEmployeeIds.includes(employeeId));
 
 		if (employeeDraftChanged) {
-			onApplyEmployees(draftEmployeeIds);
+			onApplyEmployees(draftEmployeeIds, () => setEmployeeSheetOpen(false));
+			return;
 		}
 
 		setEmployeeSheetOpen(false);
@@ -798,10 +818,8 @@ function PayrollScopeCard({
 								</SheetDescription>
 							</SheetHeader>
 							<div className="space-y-3 px-4 pb-4">
-								{teamOptions.map((teamName) => {
-									const checkboxId = `payroll-scope-team-${teamName
-										.toLowerCase()
-										.replace(/\s+/g, "-")}`;
+								{teamOptions.map((teamName, index) => {
+									const checkboxId = `payroll-scope-team-${index}`;
 
 									return (
 										<div key={teamName} className="flex items-center gap-2">

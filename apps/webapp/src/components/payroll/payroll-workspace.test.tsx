@@ -310,6 +310,35 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("All employees and teams I manage")).toBeTruthy();
 	});
 
+	it("keeps the committed scope when applying a team filter fails", async () => {
+		actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValueOnce({
+			success: false,
+			error: "Unable to refresh",
+		});
+
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Specific teams" }));
+
+		const sheet = await screen.findByRole("dialog");
+		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ops" }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+
+		await waitFor(() => {
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
+				expect.objectContaining({ employeeIds: ["employee-1"] }),
+			);
+		});
+		expect(screen.getByText("All employees and teams I manage")).toBeTruthy();
+		expect(screen.queryByText("1 teams selected")).toBeNull();
+		expect(screen.getByRole("dialog")).toBeTruthy();
+	});
+
 	it("opens employee scope selection without refreshing until apply", async () => {
 		render(
 			<PayrollWorkspace
@@ -380,6 +409,48 @@ describe("PayrollWorkspace", () => {
 		});
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 		expect(screen.getByText("All employees and teams I manage")).toBeTruthy();
+	});
+
+	it("shows no-match scope when selected employees and teams do not overlap", async () => {
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
+
+		let sheet = await screen.findByRole("dialog");
+		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+
+		await waitFor(() => {
+			expect(screen.getByText("1 employees selected")).toBeTruthy();
+		});
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog")).toBeNull();
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Specific teams" }));
+
+		sheet = await screen.findByRole("dialog");
+		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Engineering" }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog")).toBeNull();
+		});
+		expect(screen.getAllByText("No employees match the selected payroll filters.").length).toBeGreaterThan(
+			0,
+		);
+		expect(screen.queryByText("E-1")).toBeNull();
+		expect((screen.getByRole("button", { name: "Download PDF" }) as HTMLButtonElement).disabled).toBe(
+			true,
+		);
+		expect((screen.getByRole("button", { name: "Trigger export" }) as HTMLButtonElement).disabled).toBe(
+			true,
+		);
 	});
 
 	it("moves to the previous month from the selected month", async () => {
