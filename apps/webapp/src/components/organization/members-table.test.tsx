@@ -64,18 +64,31 @@ describe("MembersTable invitation target teams", () => {
 		expect(table).toContain("targetTeam: update.targetTeam");
 		expect(table).toContain("onUpdated={handleInvitationTargetTeamUpdated}");
 	});
-});
 
-describe("Organizations settings page invitation target teams", () => {
-	it("maps fetched team display data onto pending invitations", () => {
-		const file = readFileSync(
+	it("keeps people-management components off the organization settings page", () => {
+		const pageSource = readFileSync(
 			join(process.cwd(), "src/app/[locale]/(app)/settings/organizations/page.tsx"),
 			"utf8",
 		);
+		const tabSource = readFileSync(
+			join(process.cwd(), "src/components/organization/organization-tab.tsx"),
+			"utf8",
+		);
+		const clientSource = readFileSync(
+			join(process.cwd(), "src/components/organization/organizations-page-client.tsx"),
+			"utf8",
+		);
 
-		expect(file).toContain("targetTeamIds");
-		expect(file).toContain("targetTeamsById");
-		expect(file).toContain("targetTeam: invitation.targetTeamId");
-		expect(file).toContain("name: team.name");
+		expect(pageSource).not.toContain("type InvitationWithInviter");
+		expect(pageSource).not.toContain("type MemberWithUserAndEmployee");
+		expect(pageSource).not.toContain("db.query.invitation.findMany");
+		expect(pageSource).not.toContain("db.query.member.findFirst");
+		expect(pageSource).not.toContain(".from(authSchema.member)");
+		expect(tabSource).not.toContain("InviteCodeManagement");
+		expect(tabSource).not.toContain("PendingMembersCard");
+		expect(tabSource).not.toContain("MembersTable");
+		expect(tabSource).not.toContain("InviteMemberDialog");
+		expect(clientSource).not.toContain("members:");
+		expect(clientSource).not.toContain("invitations:");
 	});
 });
