@@ -188,10 +188,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		});
 	}
 
-	function toggleEmployeeFilter(employeeId: string, checked: boolean) {
-		const nextEmployeeIds = checked
-			? [...selectedEmployeeIds, employeeId]
-			: selectedEmployeeIds.filter((selectedEmployeeId) => selectedEmployeeId !== employeeId);
+	function applyEmployeeFilter(nextEmployeeIds: string[]) {
 		const nextFilteredEmployeeIds = getFilteredEmployeeIds(
 			scopedEmployees,
 			nextEmployeeIds,
@@ -363,7 +360,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			<PayrollScopeCard
 				filtersHaveNoMatches={filtersHaveNoMatches}
 				isPending={isPending}
-				onToggleEmployee={toggleEmployeeFilter}
+				onApplyEmployees={applyEmployeeFilter}
 				onToggleTeam={toggleTeamFilter}
 				scopedEmployees={scopedEmployees}
 				selectedEmployeeIds={selectedEmployeeIds}
@@ -689,7 +686,7 @@ function PayrollExportControls({
 function PayrollScopeCard({
 	filtersHaveNoMatches,
 	isPending,
-	onToggleEmployee,
+	onApplyEmployees,
 	onToggleTeam,
 	scopedEmployees,
 	selectedEmployeeIds,
@@ -699,7 +696,7 @@ function PayrollScopeCard({
 }: {
 	filtersHaveNoMatches: boolean;
 	isPending: boolean;
-	onToggleEmployee: (employeeId: string, checked: boolean) => void;
+	onApplyEmployees: (employeeIds: string[]) => void;
 	onToggleTeam: (teamName: string, checked: boolean) => void;
 	scopedEmployees: PayrollWorkspaceSummary["employees"];
 	selectedEmployeeIds: string[];
@@ -729,16 +726,12 @@ function PayrollScopeCard({
 	}
 
 	function applyEmployeeDraft() {
-		const addedEmployeeId = draftEmployeeIds.find(
-			(employeeId) => !selectedEmployeeIds.includes(employeeId),
-		);
-		const removedEmployeeId = selectedEmployeeIds.find(
-			(employeeId) => !draftEmployeeIds.includes(employeeId),
-		);
-		const changedEmployeeId = addedEmployeeId ?? removedEmployeeId;
+		const employeeDraftChanged =
+			draftEmployeeIds.length !== selectedEmployeeIds.length ||
+			draftEmployeeIds.some((employeeId) => !selectedEmployeeIds.includes(employeeId));
 
-		if (changedEmployeeId) {
-			onToggleEmployee(changedEmployeeId, Boolean(addedEmployeeId));
+		if (employeeDraftChanged) {
+			onApplyEmployees(draftEmployeeIds);
 		}
 
 		setEmployeeSheetOpen(false);
@@ -828,16 +821,16 @@ function PayrollScopeCard({
 									return (
 										<div key={employee.id} className="flex items-center gap-2">
 											<Checkbox
-												aria-label={employee.name}
 												checked={draftEmployeeIds.includes(employee.id)}
 												disabled={isPending}
+												id={checkboxId}
 												onCheckedChange={(checked) =>
 													toggleDraftEmployee(employee.id, checked === true)
 												}
 											/>
-											<span className="font-medium text-sm" id={checkboxId}>
+											<label className="cursor-pointer font-medium text-sm" htmlFor={checkboxId}>
 												{employee.name}
-											</span>
+											</label>
 										</div>
 									);
 								})}

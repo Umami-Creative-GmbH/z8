@@ -251,7 +251,7 @@ describe("PayrollWorkspace", () => {
 
 		const sheet = await screen.findByRole("dialog");
 		expect(within(sheet).getByRole("heading", { name: "Specific employees" })).toBeTruthy();
-		fireEvent.click(within(sheet).getByLabelText("Ada Lovelace"));
+		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
 
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 
@@ -265,6 +265,31 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("1 employees selected")).toBeTruthy();
 	});
 
+	it("applies multiple employee draft selections at once", async () => {
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
+
+		const sheet = await screen.findByRole("dialog");
+		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
+		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Grace Hopper" }));
+
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
+
+		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+
+		await waitFor(() => {
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
+				expect.objectContaining({ employeeIds: ["employee-1", "employee-2"] }),
+			);
+		});
+	});
+
 	it("discards employee draft selections when cancelled", async () => {
 		render(
 			<PayrollWorkspace
@@ -276,7 +301,7 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 
 		const sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByLabelText("Ada Lovelace"));
+		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
 		fireEvent.click(within(sheet).getByRole("button", { name: "Cancel" }));
 
 		await waitFor(() => {
