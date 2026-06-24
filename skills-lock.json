@@ -53,7 +53,7 @@
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/stripe-best-practices/SKILL.md",
-      "computedHash": "641e088bc0bd5b8a593e33c87b66a02a2063026398f4f5d13861690575f38ae8"
+      "computedHash": "742352fa4f1d3305157cf03d9c7b74bb8a389f5875215bcc7651632ba45408e9"
     },
     "stripe-projects": {
       "source": "stripe/ai",
@@ -71,7 +71,7 @@
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/upgrade-stripe/SKILL.md",
-      "computedHash": "a0f0bf709f65ba8d7aa8d55322d030e6b3f16756cb6f0be80463395306305ef3"
+      "computedHash": "3c8e84384380ba9d90ed0d9f323495baedcaf0a44d8445b51381f821cb9dcaf3"
     }
   }
 }

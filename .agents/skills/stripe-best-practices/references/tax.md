@@ -14,7 +14,7 @@ Use Stripe Tax for any subscription, invoice, or Checkout Session where the merc
 ## Two-step setup
 
 1. Add a registration for each jurisdiction where the merchant is obligated to collect tax. Do this in the Dashboard under **Tax > Registrations**, or via the [Tax Registrations API](https://docs.stripe.com/api/tax/registrations.md).
-1. Pass `automatic_tax: { enabled: true }` on the [Subscription](https://docs.stripe.com/api/subscriptions.md), [Invoice](https://docs.stripe.com/api/invoices.md), or [Checkout Session](https://docs.stripe.com/api/checkout/sessions.md) object.
+2. Pass `automatic_tax: { enabled: true }` on the [Subscription](https://docs.stripe.com/api/subscriptions.md), [Invoice](https://docs.stripe.com/api/invoices.md), or [Checkout Session](https://docs.stripe.com/api/checkout/sessions.md) object.
 
 It’s safe to enable `automatic_tax` before any registrations exist — Stripe won’t collect tax until at least one registration is active.
 

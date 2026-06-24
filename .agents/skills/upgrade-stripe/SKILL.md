@@ -118,9 +118,9 @@ You can’t override this association.
 ### Migrating from v3
 
 1. Identify your current API version in code
-1. Review the changelog for relevant changes
-1. Consider gradually updating your API version before switching Stripe.js versions
-1. Stripe continues supporting v3 indefinitely
+2. Review the changelog for relevant changes
+3. Consider gradually updating your API version before switching Stripe.js versions
+4. Stripe continues supporting v3 indefinitely
 
 ## Mobile SDK Versioning
 
@@ -150,14 +150,14 @@ All mobile SDKs work with any Stripe API version you use on your backend unless 
 ## Upgrade Checklist
 
 1. Review the [API Changelog](https://docs.stripe.com/changelog.md) for changes between your current and target versions
-1. Check [Upgrades Guide](https://docs.stripe.com/upgrades.md) for migration guidance
-1. Update server-side SDK package version (e.g., `npm update stripe`, `pip install --upgrade stripe`)
-1. Update the `apiVersion` parameter in your Stripe client initialization
-1. Test your integration against the new API version using the `Stripe-Version` header
-1. Update webhook handlers to handle new event structures
-1. Update Stripe.js script tag or npm package version if needed
-1. Update mobile SDK versions in your package manager if needed
-1. Store Stripe object IDs in databases that accommodate up to 255 characters (case-sensitive collation)
+2. Check [Upgrades Guide](https://docs.stripe.com/upgrades.md) for migration guidance
+3. Update server-side SDK package version (e.g., `npm update stripe`, `pip install --upgrade stripe`)
+4. Update the `apiVersion` parameter in your Stripe client initialization
+5. Test your integration against the new API version using the `Stripe-Version` header
+6. Update webhook handlers to handle new event structures
+7. Update Stripe.js script tag or npm package version if needed
+8. Update mobile SDK versions in your package manager if needed
+9. Store Stripe object IDs in databases that accommodate up to 255 characters (case-sensitive collation)
 
 ## Testing API Version Changes
 
