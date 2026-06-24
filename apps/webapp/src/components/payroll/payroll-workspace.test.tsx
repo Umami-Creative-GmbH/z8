@@ -411,7 +411,7 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("All employees and teams I manage")).toBeTruthy();
 	});
 
-	it("shows no-match scope when selected employees and teams do not overlap", async () => {
+	it("filters produce no matches when selected employees and teams do not overlap", async () => {
 		render(
 			<PayrollWorkspace
 				initialSummary={summary}
@@ -444,6 +444,9 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getAllByText("No employees match the selected payroll filters.").length).toBeGreaterThan(
 			0,
 		);
+		const employeeSummaryCard = screen.getByText("Employees").closest('[data-slot="card"]');
+		expect(employeeSummaryCard).toBeTruthy();
+		expect(within(employeeSummaryCard as HTMLElement).getByText("0")).toBeTruthy();
 		expect(screen.queryByText("E-1")).toBeNull();
 		expect((screen.getByRole("button", { name: "Download PDF" }) as HTMLButtonElement).disabled).toBe(
 			true,
@@ -451,6 +454,34 @@ describe("PayrollWorkspace", () => {
 		expect((screen.getByRole("button", { name: "Trigger export" }) as HTMLButtonElement).disabled).toBe(
 			true,
 		);
+	});
+
+	it("shows empty states when no teams or employees are assigned", async () => {
+		const emptySummary = buildSummary({
+			totals: { employeeCount: 0, totalWorkedHours: 0, blockerCount: 0 },
+			employees: [],
+			blockers: [],
+		});
+
+		render(<PayrollWorkspace initialSummary={emptySummary} exportFormats={[]} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Specific teams" }));
+		let sheet = await screen.findByRole("dialog");
+		expect(within(sheet).getByText("No assigned teams in this payroll scope.")).toBeTruthy();
+		fireEvent.click(within(sheet).getByRole("button", { name: "Cancel" }));
+
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog")).toBeNull();
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
+		sheet = await screen.findByRole("dialog");
+		expect(within(sheet).getByText("No assigned employees in this payroll scope.")).toBeTruthy();
+		fireEvent.click(within(sheet).getByRole("button", { name: "Cancel" }));
+
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog")).toBeNull();
+		});
 	});
 
 	it("moves to the previous month from the selected month", async () => {
