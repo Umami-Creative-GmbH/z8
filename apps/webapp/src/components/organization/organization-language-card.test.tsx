@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -54,9 +54,26 @@ vi.mock("@/components/ui/select", () => ({
 		</select>
 	),
 	SelectContent: ({ children }: { children: ReactNode }) => <>{children}</>,
-	SelectItem: ({ children, value }: { children: ReactNode; value: string }) => (
-		<option value={value}>{children}</option>
-	),
+	SelectItem: ({ children, value }: { children: ReactNode; value: string }) => {
+		const childArray = Array.isArray(children) ? children : [children];
+		const onlyChild = childArray.length === 1 ? childArray[0] : null;
+		const isGroupedContent =
+			typeof onlyChild === "object" &&
+			onlyChild !== null &&
+			"props" in onlyChild &&
+			typeof onlyChild.props === "object" &&
+			onlyChild.props !== null &&
+			"className" in onlyChild.props &&
+			typeof onlyChild.props.className === "string" &&
+			onlyChild.props.className.includes("flex") &&
+			onlyChild.props.className.includes("items-center");
+
+		return (
+			<option data-grouped-content={isGroupedContent ? "true" : "false"} value={value}>
+				{value}
+			</option>
+		);
+	},
 	SelectTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
 	SelectValue: () => null,
 }));
@@ -155,6 +172,20 @@ describe("OrganizationLanguageCard", () => {
 		expect(updateLanguageMock).not.toHaveBeenCalled();
 	});
 
+	it("keeps flag and language label grouped in each select option", () => {
+		render(
+			<OrganizationLanguageCard
+				organizationId="org-1"
+				defaultLanguage="en"
+				currentMemberRole="admin"
+			/>,
+		);
+
+		for (const option of screen.getAllByRole("option")) {
+			expect(option.getAttribute("data-grouped-content")).toBe("true");
+		}
+	});
+
 	it("does not submit a second update while the first save is in flight", async () => {
 		let resolveUpdate: (value: { success: true; data: undefined }) => void = () => undefined;
 		updateLanguageMock.mockReturnValue(
@@ -183,6 +214,8 @@ describe("OrganizationLanguageCard", () => {
 
 		expect(updateLanguageMock).toHaveBeenCalledOnce();
 
-		resolveUpdate({ success: true, data: undefined });
+		await act(async () => {
+			resolveUpdate({ success: true, data: undefined });
+		});
 	});
 });
