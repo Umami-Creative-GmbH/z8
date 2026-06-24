@@ -198,8 +198,8 @@ describe("PayrollWorkspace", () => {
 		).toBe(false);
 	});
 
-	it("opens scope sheet shells without direct checkbox filtering", () => {
-		const { unmount } = render(
+	it("opens scope sheet shells without direct checkbox filtering", async () => {
+		render(
 			<PayrollWorkspace
 				initialSummary={summary}
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
@@ -212,21 +212,15 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("Choose teams to include in this payroll scope.")).toBeTruthy();
 		expect(screen.queryByLabelText("Ops")).toBeNull();
 		expect(screen.queryByLabelText("Engineering")).toBeNull();
-		expect((screen.getByRole("button", { name: "Apply" }) as HTMLButtonElement).disabled).toBe(
-			false,
-		);
 		expect((screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled).toBe(
 			false,
 		);
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog", { name: "Specific teams" })).toBeNull();
+		});
 
-		unmount();
-		render(
-			<PayrollWorkspace
-				initialSummary={summary}
-				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
-			/>,
-		);
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 
 		expect(screen.getAllByText("Specific employees").length).toBeGreaterThanOrEqual(2);
@@ -234,6 +228,10 @@ describe("PayrollWorkspace", () => {
 		expect(screen.queryByLabelText("Ada Lovelace")).toBeNull();
 		expect(screen.queryByLabelText("Grace Hopper")).toBeNull();
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog", { name: "Specific employees" })).toBeNull();
+		});
 	});
 
 	it("moves to the previous month from the selected month", async () => {

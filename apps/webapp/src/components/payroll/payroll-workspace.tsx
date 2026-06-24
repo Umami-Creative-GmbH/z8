@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/select";
 import {
 	Sheet,
+	SheetClose,
 	SheetContent,
 	SheetDescription,
 	SheetFooter,
@@ -760,9 +761,11 @@ function PayrollScopeCard({
 								<Button disabled={isPending} type="button">
 									{t("payroll.scope.apply", "Apply")}
 								</Button>
-								<Button disabled={isPending} type="button" variant="outline">
-									{t("payroll.scope.cancel", "Cancel")}
-								</Button>
+								<SheetClose asChild>
+									<Button disabled={isPending} type="button" variant="outline">
+										{t("payroll.scope.cancel", "Cancel")}
+									</Button>
+								</SheetClose>
 							</SheetFooter>
 						</SheetContent>
 					</Sheet>
@@ -799,9 +802,11 @@ function PayrollScopeCard({
 								<Button disabled={isPending} type="button">
 									{t("payroll.scope.apply", "Apply")}
 								</Button>
-								<Button disabled={isPending} type="button" variant="outline">
-									{t("payroll.scope.cancel", "Cancel")}
-								</Button>
+								<SheetClose asChild>
+									<Button disabled={isPending} type="button" variant="outline">
+										{t("payroll.scope.cancel", "Cancel")}
+									</Button>
+								</SheetClose>
 							</SheetFooter>
 						</SheetContent>
 					</Sheet>
