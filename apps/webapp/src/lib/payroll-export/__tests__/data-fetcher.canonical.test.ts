@@ -70,6 +70,7 @@ vi.mock("@/db/schema", () => ({
 		employeeId: "timeRecord.employeeId",
 		recordKind: "timeRecord.recordKind",
 		startAt: "timeRecord.startAt",
+		endAt: "timeRecord.endAt",
 		approvalState: "timeRecord.approvalState",
 	},
 }));
@@ -153,8 +154,8 @@ describe("payroll export canonical data fetching", () => {
 				firstName: "Ada",
 				lastName: "Lovelace",
 				email: "ada@example.com",
-				startTime: DateTime.fromISO("2026-01-10T08:00:00.000Z"),
-				endTime: DateTime.fromISO("2026-01-10T16:00:00.000Z"),
+				startTime: DateTime.fromISO("2026-01-10T08:00:00.000Z", { zone: "utc" }),
+				endTime: DateTime.fromISO("2026-01-10T16:00:00.000Z", { zone: "utc" }),
 				durationMinutes: 480,
 				workCategoryId: "wc-1",
 				workCategoryName: "Regular",
@@ -163,6 +164,47 @@ describe("payroll export canonical data fetching", () => {
 				projectName: "Apollo",
 			},
 		]);
+	});
+
+	it("includes and clips work records that overlap the payroll export range", async () => {
+		mockState.timeRecordFindMany.mockResolvedValue([
+			{
+				id: "record-1",
+				employeeId: "emp-1",
+				startAt: new Date("2026-01-31T22:00:00.000Z"),
+				endAt: new Date("2026-02-01T02:00:00.000Z"),
+				durationMinutes: 240,
+				employee: {
+					employeeNumber: "E-001",
+					user: {
+						firstName: "Ada",
+						lastName: "Lovelace",
+						email: "ada@example.com",
+					},
+					teamId: "team-1",
+				},
+				work: null,
+				allocations: [],
+			},
+		]);
+
+		const results = await dataFetcher.fetchWorkPeriodsForExport("org-1", {
+			dateRange: {
+				start: DateTime.fromISO("2026-02-01T00:00:00.000Z", { zone: "utc" }),
+				end: DateTime.fromISO("2026-02-28T23:59:59.999Z", { zone: "utc" }),
+			},
+			employeeIds: ["emp-1"],
+		});
+
+		expect(JSON.stringify(mockState.timeRecordFindMany.mock.calls[0]?.[0].where)).toContain(
+			"timeRecord.endAt",
+		);
+		expect(results[0]).toMatchObject({
+			id: "record-1",
+			startTime: DateTime.fromISO("2026-02-01T00:00:00.000Z", { zone: "utc" }),
+			endTime: DateTime.fromISO("2026-02-01T02:00:00.000Z", { zone: "utc" }),
+			durationMinutes: 120,
+		});
 	});
 
 	it("returns no work export rows for an explicit empty employee scope", async () => {

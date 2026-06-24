@@ -2,7 +2,7 @@
  * Data fetcher for payroll export
  * Fetches work periods, absences, and configuration from database
  */
-import { and, asc, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import {
 	absenceCategory,
@@ -39,13 +39,17 @@ export async function fetchWorkPeriodsForExport(
 		"Fetching work periods for payroll export",
 	);
 
+	const rangeStart = filters.dateRange.start.toUTC();
+	const rangeEnd = filters.dateRange.end.toUTC().endOf("day");
+
 	// Build where conditions
 	const whereConditions = [
 		eq(timeRecord.organizationId, organizationId),
 		eq(timeRecord.recordKind, "work"),
 		eq(timeRecord.approvalState, "approved"),
-		gte(timeRecord.startAt, filters.dateRange.start.toJSDate()),
-		lte(timeRecord.startAt, filters.dateRange.end.endOf("day").toJSDate()),
+		isNotNull(timeRecord.endAt),
+		lte(timeRecord.startAt, rangeEnd.toJSDate()),
+		gte(timeRecord.endAt, rangeStart.toJSDate()),
 	];
 
 	// Add employee filter if specified
@@ -123,30 +127,46 @@ export async function fetchWorkPeriodsForExport(
 
 	logger.info({ count: filteredPeriods.length }, "Fetched work periods for payroll export");
 
-	return filteredPeriods.map((p) => ({
-		id: p.id,
-		employeeId: p.employeeId,
-		employeeNumber: p.employee?.employeeNumber || null,
-		email: p.employee?.user?.email || null,
-		firstName: p.employee?.user?.firstName || null,
-		lastName: p.employee?.user?.lastName || null,
-		startTime: DateTime.fromJSDate(p.startAt),
-		endTime: p.endAt ? DateTime.fromJSDate(p.endAt) : null,
-		durationMinutes: p.durationMinutes,
-		workCategoryId: p.work?.workCategoryId || null,
-		workCategoryName: p.work?.workCategory?.name || null,
-		workCategoryFactor: p.work?.workCategory?.factor || null,
-		projectId:
-			p.allocations
-				?.slice()
-				.sort((a, b) => b.weightPercent - a.weightPercent)
-				.find((allocation) => allocation.projectId)?.projectId || null,
-		projectName:
-			p.allocations
-				?.slice()
-				.sort((a, b) => b.weightPercent - a.weightPercent)
-				.find((allocation) => allocation.projectId)?.project?.name || null,
-	}));
+	return filteredPeriods.flatMap((p) => {
+		if (!p.endAt) return [];
+
+		const startTime = DateTime.fromJSDate(p.startAt, { zone: "utc" });
+		const endTime = DateTime.fromJSDate(p.endAt, { zone: "utc" });
+		const clippedStartTime = DateTime.max(startTime, rangeStart);
+		const clippedEndTime = DateTime.min(endTime, rangeEnd);
+		const durationMinutes = Math.max(
+			0,
+			Math.round(clippedEndTime.diff(clippedStartTime, "minutes").minutes),
+		);
+		if (durationMinutes <= 0) return [];
+
+		return [
+			{
+				id: p.id,
+				employeeId: p.employeeId,
+				employeeNumber: p.employee?.employeeNumber || null,
+				email: p.employee?.user?.email || null,
+				firstName: p.employee?.user?.firstName || null,
+				lastName: p.employee?.user?.lastName || null,
+				startTime: clippedStartTime,
+				endTime: clippedEndTime,
+				durationMinutes,
+				workCategoryId: p.work?.workCategoryId || null,
+				workCategoryName: p.work?.workCategory?.name || null,
+				workCategoryFactor: p.work?.workCategory?.factor || null,
+				projectId:
+					p.allocations
+						?.slice()
+						.sort((a, b) => b.weightPercent - a.weightPercent)
+						.find((allocation) => allocation.projectId)?.projectId || null,
+				projectName:
+					p.allocations
+						?.slice()
+						.sort((a, b) => b.weightPercent - a.weightPercent)
+						.find((allocation) => allocation.projectId)?.project?.name || null,
+			},
+		];
+	});
 }
 
 /**
@@ -431,12 +451,16 @@ export async function countWorkPeriods(
 
 	await assertCanonicalCutoverReady(organizationId);
 
+	const rangeStart = filters.dateRange.start.toUTC();
+	const rangeEnd = filters.dateRange.end.toUTC().endOf("day");
+
 	const whereConditions = [
 		eq(timeRecord.organizationId, organizationId),
 		eq(timeRecord.recordKind, "work"),
 		eq(timeRecord.approvalState, "approved"),
-		gte(timeRecord.startAt, filters.dateRange.start.toJSDate()),
-		lte(timeRecord.startAt, filters.dateRange.end.endOf("day").toJSDate()),
+		isNotNull(timeRecord.endAt),
+		lte(timeRecord.startAt, rangeEnd.toJSDate()),
+		gte(timeRecord.endAt, rangeStart.toJSDate()),
 	];
 
 	if (filters.employeeIds && filters.employeeIds.length > 0) {
