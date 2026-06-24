@@ -58,7 +58,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
 import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { EditInvitationTargetTeamDialog } from "./edit-invitation-target-team-dialog";
-import type { InvitationWithInviter, MemberWithUserAndEmployee } from "./organizations-page-client";
+import type { InvitationWithInviter, MemberWithUserAndEmployee } from "./people-management-types";
 
 interface MembersTableProps {
 	organizationId: string;

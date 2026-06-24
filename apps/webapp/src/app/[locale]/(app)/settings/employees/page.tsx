@@ -1,14 +1,14 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import type {
+	InvitationWithInviter,
+	MemberWithUserAndEmployee,
+} from "@/components/organization/people-management-types";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
-import {
-	EmployeesPageClient,
-	type InvitationWithInviter,
-	type MemberWithUserAndEmployee,
-} from "./employees-page-client";
+import { EmployeesPageClient } from "./employees-page-client";
 
 async function loadPeopleManagementData(input: {
 	organizationId: string;

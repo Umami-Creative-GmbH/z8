@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { queryKeys } from "@/lib/query";
 import { resolveInvitationTargetTeamUpdate } from "./edit-invitation-target-team-dialog.utils";
-import type { InvitationWithInviter } from "./organizations-page-client";
+import type { InvitationWithInviter } from "./people-management-types";
 
 interface EditInvitationTargetTeamDialogProps {
 	organizationId: string;
