@@ -199,10 +199,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
 	}
 
-	function toggleTeamFilter(teamName: string, checked: boolean) {
-		const nextTeamNames = checked
-			? [...selectedTeamNames, teamName]
-			: selectedTeamNames.filter((selectedTeamName) => selectedTeamName !== teamName);
+	function applyTeamFilter(nextTeamNames: string[]) {
 		const nextFilteredEmployeeIds = getFilteredEmployeeIds(
 			scopedEmployees,
 			selectedEmployeeIds,
@@ -361,7 +358,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				filtersHaveNoMatches={filtersHaveNoMatches}
 				isPending={isPending}
 				onApplyEmployees={applyEmployeeFilter}
-				onToggleTeam={toggleTeamFilter}
+				onApplyTeams={applyTeamFilter}
 				scopedEmployees={scopedEmployees}
 				selectedEmployeeIds={selectedEmployeeIds}
 				selectedTeamNames={selectedTeamNames}
@@ -687,7 +684,7 @@ function PayrollScopeCard({
 	filtersHaveNoMatches,
 	isPending,
 	onApplyEmployees,
-	onToggleTeam,
+	onApplyTeams,
 	scopedEmployees,
 	selectedEmployeeIds,
 	selectedTeamNames,
@@ -697,18 +694,25 @@ function PayrollScopeCard({
 	filtersHaveNoMatches: boolean;
 	isPending: boolean;
 	onApplyEmployees: (employeeIds: string[]) => void;
-	onToggleTeam: (teamName: string, checked: boolean) => void;
+	onApplyTeams: (teamNames: string[]) => void;
 	scopedEmployees: PayrollWorkspaceSummary["employees"];
 	selectedEmployeeIds: string[];
 	selectedTeamNames: string[];
 	teamOptions: string[];
 	t: PayrollTranslate;
 }) {
-	void onToggleTeam;
-
 	const [employeeSheetOpen, setEmployeeSheetOpen] = useState(false);
 	const [draftEmployeeIds, setDraftEmployeeIds] = useState(selectedEmployeeIds);
+	const [teamSheetOpen, setTeamSheetOpen] = useState(false);
+	const [draftTeamNames, setDraftTeamNames] = useState(selectedTeamNames);
 	const scopeSummary = getPayrollScopeSummary({ selectedEmployeeIds, selectedTeamNames, t });
+
+	function openTeamSheet(open: boolean) {
+		setTeamSheetOpen(open);
+		if (open) {
+			setDraftTeamNames(selectedTeamNames);
+		}
+	}
 
 	function openEmployeeSheet(open: boolean) {
 		setEmployeeSheetOpen(open);
@@ -717,12 +721,32 @@ function PayrollScopeCard({
 		}
 	}
 
+	function toggleDraftTeam(teamName: string, checked: boolean) {
+		setDraftTeamNames((currentTeamNames) =>
+			checked
+				? [...currentTeamNames, teamName]
+				: currentTeamNames.filter((currentTeamName) => currentTeamName !== teamName),
+		);
+	}
+
 	function toggleDraftEmployee(employeeId: string, checked: boolean) {
 		setDraftEmployeeIds((currentIds) =>
 			checked
 				? [...currentIds, employeeId]
 				: currentIds.filter((currentId) => currentId !== employeeId),
 		);
+	}
+
+	function applyTeamDraft() {
+		const teamDraftChanged =
+			draftTeamNames.length !== selectedTeamNames.length ||
+			draftTeamNames.some((teamName) => !selectedTeamNames.includes(teamName));
+
+		if (teamDraftChanged) {
+			onApplyTeams(draftTeamNames);
+		}
+
+		setTeamSheetOpen(false);
 	}
 
 	function applyEmployeeDraft() {
@@ -757,7 +781,7 @@ function PayrollScopeCard({
 				</div>
 
 				<div className="flex flex-col gap-2 sm:flex-row">
-					<Sheet>
+					<Sheet onOpenChange={openTeamSheet} open={teamSheetOpen}>
 						<SheetTrigger asChild>
 							<Button disabled={isPending} type="button" variant="outline">
 								{t("payroll.scope.specificTeams", "Specific teams")}
@@ -773,7 +797,26 @@ function PayrollScopeCard({
 									)}
 								</SheetDescription>
 							</SheetHeader>
-							<div className="px-4 pb-4">
+							<div className="space-y-3 px-4 pb-4">
+								{teamOptions.map((teamName) => {
+									const checkboxId = `payroll-scope-team-${teamName
+										.toLowerCase()
+										.replace(/\s+/g, "-")}`;
+
+									return (
+										<div key={teamName} className="flex items-center gap-2">
+											<Checkbox
+												checked={draftTeamNames.includes(teamName)}
+												disabled={isPending}
+												id={checkboxId}
+												onCheckedChange={(checked) => toggleDraftTeam(teamName, checked === true)}
+											/>
+											<label className="cursor-pointer font-medium text-sm" htmlFor={checkboxId}>
+												{teamName}
+											</label>
+										</div>
+									);
+								})}
 								{teamOptions.length > 0 ? null : (
 									<p className="text-muted-foreground text-sm">
 										{t(
@@ -784,7 +827,7 @@ function PayrollScopeCard({
 								)}
 							</div>
 							<SheetFooter>
-								<Button disabled={isPending} type="button">
+								<Button disabled={isPending} type="button" onClick={applyTeamDraft}>
 									{t("payroll.scope.apply", "Apply")}
 								</Button>
 								<SheetClose asChild>

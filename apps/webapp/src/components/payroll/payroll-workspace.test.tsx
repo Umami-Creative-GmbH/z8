@@ -205,7 +205,7 @@ describe("PayrollWorkspace", () => {
 		).toBe(false);
 	});
 
-	it("opens scope sheet shells without direct checkbox filtering", async () => {
+	it("opens scope sheets with visible checkbox labels", async () => {
 		render(
 			<PayrollWorkspace
 				initialSummary={summary}
@@ -217,8 +217,8 @@ describe("PayrollWorkspace", () => {
 
 		expect(screen.getAllByText("Specific teams").length).toBeGreaterThanOrEqual(2);
 		expect(screen.getByText("Choose teams to include in this payroll scope.")).toBeTruthy();
-		expect(screen.queryByLabelText("Ops")).toBeNull();
-		expect(screen.queryByLabelText("Engineering")).toBeNull();
+		expect(screen.getByRole("checkbox", { name: "Ops" })).toBeTruthy();
+		expect(screen.getByRole("checkbox", { name: "Engineering" })).toBeTruthy();
 		expect((screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled).toBe(
 			false,
 		);
@@ -237,6 +237,77 @@ describe("PayrollWorkspace", () => {
 		await waitFor(() => {
 			expect(screen.queryByRole("dialog", { name: "Specific employees" })).toBeNull();
 		});
+	});
+
+	it("applies team scope selections from the team sheet", async () => {
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Specific teams" }));
+
+		const sheet = await screen.findByRole("dialog");
+		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ops" }));
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
+
+		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+
+		await waitFor(() => {
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
+				expect.objectContaining({ employeeIds: ["employee-1"] }),
+			);
+		});
+		expect(screen.getByText("1 teams selected")).toBeTruthy();
+	});
+
+	it("applies multiple team scope selections at once", async () => {
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Specific teams" }));
+
+		const sheet = await screen.findByRole("dialog");
+		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ops" }));
+		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Engineering" }));
+
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
+
+		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+
+		await waitFor(() => {
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
+				expect.objectContaining({ employeeIds: ["employee-1", "employee-2"] }),
+			);
+		});
+		expect(screen.getByText("2 teams selected")).toBeTruthy();
+	});
+
+	it("discards team draft selections when cancelled", async () => {
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Specific teams" }));
+
+		const sheet = await screen.findByRole("dialog");
+		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ops" }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Cancel" }));
+
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog")).toBeNull();
+		});
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
+		expect(screen.getByText("All employees and teams I manage")).toBeTruthy();
 	});
 
 	it("opens employee scope selection without refreshing until apply", async () => {
