@@ -36,6 +36,8 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
+import type * as authSchema from "@/db/auth-schema";
+import type { employee } from "@/db/schema";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { useEmployees } from "@/lib/query/use-employees";
 import type { SettingsAccessTier } from "@/lib/settings-access";
@@ -43,9 +45,30 @@ import { Link } from "@/navigation";
 import { columns } from "./columns";
 import type { EmployeeDirectoryRow } from "./employee-action-types";
 
+export interface MemberWithUserAndEmployee {
+	member: typeof authSchema.member.$inferSelect;
+	user: typeof authSchema.user.$inferSelect;
+	employee: typeof employee.$inferSelect | null;
+	teamMemberships?: Array<{ teamId: string }>;
+}
+
+export type InvitationWithInviter = typeof authSchema.invitation.$inferSelect & {
+	user: typeof authSchema.user.$inferSelect;
+	targetTeam?: { id: string; name: string } | null;
+};
+
+export interface EmployeesPagePeopleProps {
+	organizationName: string;
+	members: MemberWithUserAndEmployee[];
+	invitations: InvitationWithInviter[];
+	currentMemberRole: "owner" | "admin" | "member";
+	currentUserId: string;
+}
+
 export function EmployeesPageClient(props: {
 	accessTier: SettingsAccessTier;
 	organizationId: string;
+	people?: EmployeesPagePeopleProps;
 }) {
 	const { t } = useTranslate();
 	const {
