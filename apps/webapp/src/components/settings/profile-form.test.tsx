@@ -183,7 +183,7 @@ describe("ProfileForm", () => {
 				lastName: "Lovelace",
 				gender: "female",
 				pronouns: "she/her",
-				birthday: new Date("2020-01-02T00:00:00.000Z"),
+				birthday: "2020-01-02",
 				image: "/avatar.png",
 				helpImproveProduct: true,
 			});

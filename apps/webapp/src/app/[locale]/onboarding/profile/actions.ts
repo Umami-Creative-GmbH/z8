@@ -4,12 +4,12 @@ import { Effect } from "effect";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { OnboardingService } from "@/lib/effect/services/onboarding.service";
 import {
-	type OnboardingProfileFormValues,
+	type OnboardingProfileFormInput,
 	onboardingProfileSchema,
 } from "@/lib/validations/onboarding";
 
 export async function updateProfileOnboarding(
-	data: OnboardingProfileFormValues,
+	data: OnboardingProfileFormInput,
 ): Promise<ServerActionResult<{ nextStep: string }>> {
 	return runServerActionSafe(
 		Effect.gen(function* () {

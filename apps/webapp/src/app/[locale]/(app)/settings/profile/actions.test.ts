@@ -287,6 +287,28 @@ describe("profile actions", () => {
 		expect(mockState.employeeUpdateWhere).toHaveBeenCalledTimes(1);
 	});
 
+	it("persists birthday date strings as the selected calendar day in UTC", async () => {
+		mockState.employeeFindFirst.mockResolvedValue({
+			id: "employee-1",
+		});
+
+		const result = await updateProfileDetails({
+			firstName: "Grace",
+			lastName: "Hopper",
+			gender: "female",
+			pronouns: "she/her",
+			birthday: "1906-12-09" as unknown as Date,
+			image: "/avatars/grace.png",
+		});
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mockState.employeeUpdateSet).toHaveBeenCalledWith({
+			gender: "female",
+			pronouns: "she/her",
+			birthday: new Date("1906-12-09T00:00:00.000Z"),
+		});
+	});
+
 	it("rejects a structured-name save when both name fields are blank", async () => {
 		const result = await updateProfileDetails({
 			firstName: "   ",

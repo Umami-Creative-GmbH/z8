@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { employee, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
+import type { BirthdayInput } from "@/lib/datetime/birthday";
 import { ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -189,7 +190,7 @@ export async function updateProfileDetails(data: {
 	lastName: string;
 	gender?: "male" | "female" | "other" | null;
 	pronouns?: string | null;
-	birthday?: Date | null;
+	birthday?: BirthdayInput;
 	image?: string | null;
 	helpImproveProduct?: boolean;
 }): Promise<ServerActionResult<void>> {
