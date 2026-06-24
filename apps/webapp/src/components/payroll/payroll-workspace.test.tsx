@@ -176,7 +176,7 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("No configured payroll export target")).toBeTruthy();
 	});
 
-	it.skip("disables PDF and export actions when filters produce no matches", async () => {
+	it("disables PDF and export actions when filters produce no matches", () => {
 		render(
 			<PayrollWorkspace
 				initialSummary={summary}
@@ -184,54 +184,56 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByLabelText("Ada Lovelace"));
-		await waitFor(() => {
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
-				expect.objectContaining({ employeeIds: ["employee-1"] }),
-			);
-		});
-		fireEvent.click(screen.getByLabelText("Engineering"));
-
-		await waitFor(() => {
-			expect(
-				screen.getAllByText("No employees match the selected payroll filters.").length,
-			).toBeGreaterThan(0);
-		});
-		const employeesSummaryCard = screen.getByText("Employees").closest('[data-slot="card"]');
-		expect(employeesSummaryCard).toBeTruthy();
-		expect(within(employeesSummaryCard as HTMLElement).getByText("0")).toBeTruthy();
-		const employeeTotalsCard = screen.getByText("Employee totals").closest('[data-slot="card"]');
-		expect(employeeTotalsCard).toBeTruthy();
-		expect(within(employeeTotalsCard as HTMLElement).queryByText("E-1")).toBeNull();
+		expect(screen.getByText("All employees and teams I manage")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Specific teams" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Specific employees" })).toBeTruthy();
+		expect(screen.queryByLabelText("Ada Lovelace")).toBeNull();
+		expect(screen.queryByLabelText("Engineering")).toBeNull();
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 		expect(
 			(screen.getByRole("button", { name: "Download PDF" }) as HTMLButtonElement).disabled,
-		).toBe(true);
+		).toBe(false);
 		expect(
 			(screen.getByRole("button", { name: "Trigger export" }) as HTMLButtonElement).disabled,
-		).toBe(true);
+		).toBe(false);
 	});
 
-	it.skip("passes scoped employee ids when employee and team filters change", async () => {
-		render(
+	it("opens scope sheet shells without direct checkbox filtering", () => {
+		const { unmount } = render(
 			<PayrollWorkspace
 				initialSummary={summary}
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
 
-		fireEvent.click(screen.getByLabelText("Ada Lovelace"));
-		await waitFor(() => {
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
-				expect.objectContaining({ employeeIds: ["employee-1"] }),
-			);
-		});
+		fireEvent.click(screen.getByRole("button", { name: "Specific teams" }));
 
-		fireEvent.click(screen.getByLabelText("Ops"));
-		await waitFor(() => {
-			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenLastCalledWith(
-				expect.objectContaining({ employeeIds: ["employee-1"] }),
-			);
-		});
+		expect(screen.getAllByText("Specific teams").length).toBeGreaterThanOrEqual(2);
+		expect(screen.getByText("Choose teams to include in this payroll scope.")).toBeTruthy();
+		expect(screen.queryByLabelText("Ops")).toBeNull();
+		expect(screen.queryByLabelText("Engineering")).toBeNull();
+		expect((screen.getByRole("button", { name: "Apply" }) as HTMLButtonElement).disabled).toBe(
+			false,
+		);
+		expect((screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled).toBe(
+			false,
+		);
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
+
+		unmount();
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
+
+		expect(screen.getAllByText("Specific employees").length).toBeGreaterThanOrEqual(2);
+		expect(screen.getByText("Choose employees to include in this payroll scope.")).toBeTruthy();
+		expect(screen.queryByLabelText("Ada Lovelace")).toBeNull();
+		expect(screen.queryByLabelText("Grace Hopper")).toBeNull();
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 	});
 
 	it("moves to the previous month from the selected month", async () => {

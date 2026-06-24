@@ -757,10 +757,10 @@ function PayrollScopeCard({
 								)}
 							</div>
 							<SheetFooter>
-								<Button disabled type="button">
+								<Button disabled={isPending} type="button">
 									{t("payroll.scope.apply", "Apply")}
 								</Button>
-								<Button disabled type="button" variant="outline">
+								<Button disabled={isPending} type="button" variant="outline">
 									{t("payroll.scope.cancel", "Cancel")}
 								</Button>
 							</SheetFooter>
@@ -796,10 +796,10 @@ function PayrollScopeCard({
 								)}
 							</div>
 							<SheetFooter>
-								<Button disabled type="button">
+								<Button disabled={isPending} type="button">
 									{t("payroll.scope.apply", "Apply")}
 								</Button>
-								<Button disabled type="button" variant="outline">
+								<Button disabled={isPending} type="button" variant="outline">
 									{t("payroll.scope.cancel", "Cancel")}
 								</Button>
 							</SheetFooter>
