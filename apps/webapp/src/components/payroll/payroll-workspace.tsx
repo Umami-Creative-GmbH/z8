@@ -328,7 +328,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				t={t}
 			/>
 
-			<section className="grid gap-4 md:grid-cols-4">
+			<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				<SummaryCard
 					icon={<IconUsers aria-hidden="true" className="size-5" />}
 					label={t("payroll.summary.employees", "Employees")}
@@ -456,7 +456,7 @@ function PayrollPeriodCard({
 					) : null}
 				</div>
 
-				<div className="flex flex-wrap gap-2 lg:justify-end">
+				<div className="grid gap-2 sm:grid-cols-3 lg:min-w-[28rem] lg:justify-end">
 					<Button
 						type="button"
 						variant="outline"
@@ -489,7 +489,10 @@ function PayrollPeriodCard({
 					</Button>
 				</div>
 			</CardHeader>
-			<CardContent className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+			<CardContent
+				data-payroll-period-controls=""
+				className="grid gap-5 border-t pt-6 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,auto)] lg:items-end"
+			>
 				<PayrollDateControls
 					dateMode={dateMode}
 					dispatch={dispatch}
@@ -536,8 +539,11 @@ function PayrollDateControls({
 	t: PayrollTranslate;
 }) {
 	return (
-		<div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-			<div className="flex gap-1 rounded-lg bg-muted p-1">
+		<div
+			data-payroll-date-controls=""
+			className="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-end"
+		>
+			<div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1 lg:w-fit">
 				{(["month", "week", "custom"] as const).map((mode) => (
 					<Button
 						key={mode}
@@ -553,7 +559,7 @@ function PayrollDateControls({
 				))}
 			</div>
 
-			<div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+			<div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
 				<div className="space-y-1">
 					<Label htmlFor="payroll-start-date">{t("payroll.period.start", "Start")}</Label>
 					<Input
@@ -580,6 +586,7 @@ function PayrollDateControls({
 				</div>
 				<Button
 					type="button"
+					className="sm:self-end"
 					disabled={dateMode !== "custom" || isPending}
 					onClick={onApplyCustomRange}
 				>
@@ -617,21 +624,10 @@ function PayrollExportControls({
 	t: PayrollTranslate;
 }) {
 	return (
-		<div className="grid gap-3 sm:grid-cols-[auto_minmax(14rem,1fr)_auto] sm:items-end xl:justify-end">
-			<Button
-				type="button"
-				variant="outline"
-				disabled={isPending || filtersHaveNoMatches}
-				onClick={onDownloadPdf}
-			>
-				{isPending ? (
-					<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
-				) : (
-					<IconDownload aria-hidden="true" className="size-4" />
-				)}
-				{t("payroll.actions.downloadPdf", "Download PDF")}
-			</Button>
-
+		<div
+			data-payroll-export-controls=""
+			className="grid gap-3 sm:grid-cols-[minmax(0,1fr)] lg:w-88 lg:justify-self-end"
+		>
 			<div className="flex min-w-0 flex-col gap-2 sm:min-w-56">
 				<Label htmlFor="payroll-export-target">
 					{t("payroll.export.target", "Payroll export target")}
@@ -659,18 +655,36 @@ function PayrollExportControls({
 				) : null}
 			</div>
 
-			<Button
-				type="button"
-				disabled={!hasExportFormats || isPending || filtersHaveNoMatches}
-				onClick={onTriggerExport}
-			>
-				{isPending ? (
-					<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
-				) : (
-					<IconFileExport aria-hidden="true" className="size-4" />
-				)}
-				{t("payroll.actions.triggerExport", "Trigger export")}
-			</Button>
+			<div className="grid gap-2 sm:grid-cols-2">
+				<Button
+					type="button"
+					variant="outline"
+					className="w-full justify-center"
+					disabled={isPending || filtersHaveNoMatches}
+					onClick={onDownloadPdf}
+				>
+					{isPending ? (
+						<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+					) : (
+						<IconDownload aria-hidden="true" className="size-4" />
+					)}
+					{t("payroll.actions.downloadPdf", "Download PDF")}
+				</Button>
+
+				<Button
+					type="button"
+					className="w-full justify-center"
+					disabled={!hasExportFormats || isPending || filtersHaveNoMatches}
+					onClick={onTriggerExport}
+				>
+					{isPending ? (
+						<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+					) : (
+						<IconFileExport aria-hidden="true" className="size-4" />
+					)}
+					{t("payroll.actions.triggerExport", "Trigger export")}
+				</Button>
+			</div>
 		</div>
 	);
 }
@@ -813,65 +827,67 @@ function EmployeeTotalsCard({
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<Table>
-					<TableHeader>
-						<TableRow>
-							<TableHead>{t("payroll.employeeTotals.employee", "Employee")}</TableHead>
-							<TableHead>{t("payroll.employeeTotals.team", "Team")}</TableHead>
-							<TableHead>{t("payroll.employeeTotals.contract", "Contract")}</TableHead>
-							<TableHead className="text-right">
-								{t("payroll.employeeTotals.hours", "Hours")}
-							</TableHead>
-							<TableHead>{t("payroll.employeeTotals.absences", "Absences")}</TableHead>
-							<TableHead>{t("payroll.employeeTotals.status", "Status")}</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{employees.length > 0 ? (
-							employees.map((employee) => (
-								<TableRow key={employee.id}>
-									<TableCell>
-										<div className="font-medium">{employee.name}</div>
-										<div className="text-muted-foreground text-xs">
-											{employee.employeeNumber ??
-												t("payroll.employeeTotals.noEmployeeNumber", "No employee number")}
-										</div>
-									</TableCell>
-									<TableCell>
-										{employee.teamName ?? t("payroll.employeeTotals.noTeam", "No team")}
-									</TableCell>
-									<TableCell>
-										<Badge variant={employee.contractType === "hourly" ? "default" : "secondary"}>
-											{employee.contractType === "hourly"
-												? t("payroll.employeeTotals.contractHourly", "Hourly")
-												: t("payroll.employeeTotals.contractFixed", "Fixed")}
-										</Badge>
-									</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{formatTableHours(employee.workedHours)}
-									</TableCell>
-									<TableCell>{formatAbsences(t, employee.absenceDaysByCategory)}</TableCell>
-									<TableCell>
-										<Badge variant={employee.hasBlockers ? "destructive" : "secondary"}>
-											{employee.hasBlockers
-												? t("payroll.employeeTotals.blocked", "Blocked")
-												: t("payroll.employeeTotals.readyForPayroll", "Ready for payroll")}
-										</Badge>
+				<div className="overflow-x-auto">
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>{t("payroll.employeeTotals.employee", "Employee")}</TableHead>
+								<TableHead>{t("payroll.employeeTotals.team", "Team")}</TableHead>
+								<TableHead>{t("payroll.employeeTotals.contract", "Contract")}</TableHead>
+								<TableHead className="text-right">
+									{t("payroll.employeeTotals.hours", "Hours")}
+								</TableHead>
+								<TableHead>{t("payroll.employeeTotals.absences", "Absences")}</TableHead>
+								<TableHead>{t("payroll.employeeTotals.status", "Status")}</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{employees.length > 0 ? (
+								employees.map((employee) => (
+									<TableRow key={employee.id}>
+										<TableCell>
+											<div className="font-medium">{employee.name}</div>
+											<div className="text-muted-foreground text-xs">
+												{employee.employeeNumber ??
+													t("payroll.employeeTotals.noEmployeeNumber", "No employee number")}
+											</div>
+										</TableCell>
+										<TableCell>
+											{employee.teamName ?? t("payroll.employeeTotals.noTeam", "No team")}
+										</TableCell>
+										<TableCell>
+											<Badge variant={employee.contractType === "hourly" ? "default" : "secondary"}>
+												{employee.contractType === "hourly"
+													? t("payroll.employeeTotals.contractHourly", "Hourly")
+													: t("payroll.employeeTotals.contractFixed", "Fixed")}
+											</Badge>
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{formatTableHours(employee.workedHours)}
+										</TableCell>
+										<TableCell>{formatAbsences(t, employee.absenceDaysByCategory)}</TableCell>
+										<TableCell>
+											<Badge variant={employee.hasBlockers ? "destructive" : "secondary"}>
+												{employee.hasBlockers
+													? t("payroll.employeeTotals.blocked", "Blocked")
+													: t("payroll.employeeTotals.readyForPayroll", "Ready for payroll")}
+											</Badge>
+										</TableCell>
+									</TableRow>
+								))
+							) : (
+								<TableRow>
+									<TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+										{t(
+											"payroll.filters.noMatchingEmployees",
+											"No employees match the selected payroll filters.",
+										)}
 									</TableCell>
 								</TableRow>
-							))
-						) : (
-							<TableRow>
-								<TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-									{t(
-										"payroll.filters.noMatchingEmployees",
-										"No employees match the selected payroll filters.",
-									)}
-								</TableCell>
-							</TableRow>
-						)}
-					</TableBody>
-				</Table>
+							)}
+						</TableBody>
+					</Table>
+				</div>
 			</CardContent>
 		</Card>
 	);

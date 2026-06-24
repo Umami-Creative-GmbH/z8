@@ -63,7 +63,7 @@ export interface PayrollEmployeeSummary extends PayrollSummaryEmployeeSource {
 export interface PayrollWorkspaceSummary {
 	organizationName: string;
 	period: PayrollPeriod;
-	generatedAt: DateTime;
+	generatedAt: string;
 	generatedBy: { id: string; name: string };
 	totals: {
 		employeeCount: number;

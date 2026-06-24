@@ -100,7 +100,7 @@ export function buildPayrollSummaryFromRows(input: {
 	return {
 		organizationName: input.organizationName,
 		period: input.period,
-		generatedAt: input.generatedAt,
+		generatedAt: input.generatedAt.toUTC().toISO() ?? input.generatedAt.toISO() ?? "",
 		generatedBy: input.generatedBy,
 		totals: {
 			employeeCount: employees.length,

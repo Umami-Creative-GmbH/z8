@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { PayrollWorkspace } from "./payroll-workspace";
@@ -29,7 +28,7 @@ vi.mock("@/app/[locale]/(app)/payroll/actions", () => ({
 const baseSummary: PayrollWorkspaceSummary = {
 	organizationName: "Acme GmbH",
 	period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
-	generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+	generatedAt: "2026-06-30T12:00:00.000Z",
 	generatedBy: { id: "payroll-1", name: "Payroll User" },
 	totals: { employeeCount: 2, totalWorkedHours: 8, blockerCount: 2 },
 	employees: [
@@ -155,6 +154,34 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("Missing clock-out")).toBeTruthy();
 		expect(screen.getByText("Download PDF")).toBeTruthy();
 		expect(screen.getByText("Trigger export")).toBeTruthy();
+	});
+
+	it("keeps payroll period controls on aligned grid rails", () => {
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		const periodCard = screen.getByText("Selected period").closest('[data-slot="card"]');
+		expect(periodCard).toBeTruthy();
+
+		const controlsRail = (periodCard as HTMLElement).querySelector(
+			"[data-payroll-period-controls]",
+		);
+		expect(controlsRail).toBeTruthy();
+		expect(controlsRail?.className).toContain("lg:grid-cols-[minmax(0,1fr)_minmax(22rem,auto)]");
+
+		const dateControls = (periodCard as HTMLElement).querySelector("[data-payroll-date-controls]");
+		expect(dateControls).toBeTruthy();
+		expect(dateControls?.className).toContain("lg:grid-cols-[auto_minmax(0,1fr)]");
+
+		const exportControls = (periodCard as HTMLElement).querySelector(
+			"[data-payroll-export-controls]",
+		);
+		expect(exportControls).toBeTruthy();
+		expect(exportControls?.className).toContain("sm:grid-cols-[minmax(0,1fr)]");
 	});
 
 	it("disables export controls when no export formats are configured", () => {
