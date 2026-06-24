@@ -16,7 +16,14 @@ let translateOverrides: Record<string, string> = {};
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (key: string, fallback: string) => translateOverrides[key] ?? fallback,
+		t: (key: string, fallback: string, params?: Record<string, string | number>) => {
+			const template = translateOverrides[key] ?? fallback;
+
+			return Object.entries(params ?? {}).reduce(
+				(message, [paramKey, value]) => message.replaceAll(`{${paramKey}}`, String(value)),
+				template,
+			);
+		},
 	}),
 }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
@@ -225,13 +232,58 @@ describe("PayrollWorkspace", () => {
 
 		expect(screen.getAllByText("Specific employees").length).toBeGreaterThanOrEqual(2);
 		expect(screen.getByText("Choose employees to include in this payroll scope.")).toBeTruthy();
-		expect(screen.queryByLabelText("Ada Lovelace")).toBeNull();
-		expect(screen.queryByLabelText("Grace Hopper")).toBeNull();
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 		await waitFor(() => {
 			expect(screen.queryByRole("dialog", { name: "Specific employees" })).toBeNull();
 		});
+	});
+
+	it("opens employee scope selection without refreshing until apply", async () => {
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
+
+		const sheet = await screen.findByRole("dialog");
+		expect(within(sheet).getByRole("heading", { name: "Specific employees" })).toBeTruthy();
+		fireEvent.click(within(sheet).getByLabelText("Ada Lovelace"));
+
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
+
+		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+
+		await waitFor(() => {
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
+				expect.objectContaining({ employeeIds: ["employee-1"] }),
+			);
+		});
+		expect(screen.getByText("1 employees selected")).toBeTruthy();
+	});
+
+	it("discards employee draft selections when cancelled", async () => {
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
+
+		const sheet = await screen.findByRole("dialog");
+		fireEvent.click(within(sheet).getByLabelText("Ada Lovelace"));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Cancel" }));
+
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog")).toBeNull();
+		});
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
+		expect(screen.getByText("All employees and teams I manage")).toBeTruthy();
 	});
 
 	it("moves to the previous month from the selected month", async () => {

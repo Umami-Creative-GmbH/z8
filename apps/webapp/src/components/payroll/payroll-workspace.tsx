@@ -14,7 +14,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import type React from "react";
-import { useReducer, useTransition } from "react";
+import { useReducer, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	exportPayrollPdfAction,
@@ -26,6 +26,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -706,10 +707,42 @@ function PayrollScopeCard({
 	teamOptions: string[];
 	t: PayrollTranslate;
 }) {
-	void onToggleEmployee;
 	void onToggleTeam;
 
+	const [employeeSheetOpen, setEmployeeSheetOpen] = useState(false);
+	const [draftEmployeeIds, setDraftEmployeeIds] = useState(selectedEmployeeIds);
 	const scopeSummary = getPayrollScopeSummary({ selectedEmployeeIds, selectedTeamNames, t });
+
+	function openEmployeeSheet(open: boolean) {
+		setEmployeeSheetOpen(open);
+		if (open) {
+			setDraftEmployeeIds(selectedEmployeeIds);
+		}
+	}
+
+	function toggleDraftEmployee(employeeId: string, checked: boolean) {
+		setDraftEmployeeIds((currentIds) =>
+			checked
+				? [...currentIds, employeeId]
+				: currentIds.filter((currentId) => currentId !== employeeId),
+		);
+	}
+
+	function applyEmployeeDraft() {
+		const addedEmployeeId = draftEmployeeIds.find(
+			(employeeId) => !selectedEmployeeIds.includes(employeeId),
+		);
+		const removedEmployeeId = selectedEmployeeIds.find(
+			(employeeId) => !draftEmployeeIds.includes(employeeId),
+		);
+		const changedEmployeeId = addedEmployeeId ?? removedEmployeeId;
+
+		if (changedEmployeeId) {
+			onToggleEmployee(changedEmployeeId, Boolean(addedEmployeeId));
+		}
+
+		setEmployeeSheetOpen(false);
+	}
 
 	return (
 		<Card>
@@ -770,7 +803,7 @@ function PayrollScopeCard({
 						</SheetContent>
 					</Sheet>
 
-					<Sheet>
+					<Sheet onOpenChange={openEmployeeSheet} open={employeeSheetOpen}>
 						<SheetTrigger asChild>
 							<Button disabled={isPending} type="button" variant="outline">
 								{t("payroll.scope.specificEmployees", "Specific employees")}
@@ -788,7 +821,26 @@ function PayrollScopeCard({
 									)}
 								</SheetDescription>
 							</SheetHeader>
-							<div className="px-4 pb-4">
+							<div className="space-y-3 px-4 pb-4">
+								{scopedEmployees.map((employee) => {
+									const checkboxId = `payroll-scope-employee-${employee.id}`;
+
+									return (
+										<div key={employee.id} className="flex items-center gap-2">
+											<Checkbox
+												aria-label={employee.name}
+												checked={draftEmployeeIds.includes(employee.id)}
+												disabled={isPending}
+												onCheckedChange={(checked) =>
+													toggleDraftEmployee(employee.id, checked === true)
+												}
+											/>
+											<span className="font-medium text-sm" id={checkboxId}>
+												{employee.name}
+											</span>
+										</div>
+									);
+								})}
 								{scopedEmployees.length > 0 ? null : (
 									<p className="text-muted-foreground text-sm">
 										{t(
@@ -799,7 +851,7 @@ function PayrollScopeCard({
 								)}
 							</div>
 							<SheetFooter>
-								<Button disabled={isPending} type="button">
+								<Button disabled={isPending} type="button" onClick={applyEmployeeDraft}>
 									{t("payroll.scope.apply", "Apply")}
 								</Button>
 								<SheetClose asChild>
