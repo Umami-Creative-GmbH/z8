@@ -1,12 +1,135 @@
+/* @vitest-environment jsdom */
+
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, within } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { describe, expect, it, vi } from "vitest";
+import { MembersTable } from "./members-table";
 import { resolveInvitationTargetTeamUpdate } from "./edit-invitation-target-team-dialog.utils";
+
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, defaultValue?: string, values?: Record<string, unknown>) =>
+			defaultValue?.replace("{count}", String(values?.count ?? "")) ?? _key,
+	}),
+}));
+
+vi.mock("sonner", () => ({
+	toast: {
+		error: vi.fn(),
+		success: vi.fn(),
+	},
+}));
+
+vi.mock("@/app/[locale]/(app)/settings/organizations/actions", () => ({
+	cancelInvitation: vi.fn(),
+	removeMember: vi.fn(),
+	sendInvitation: vi.fn(),
+	toggleEmployeeStatus: vi.fn(),
+	updateMemberRole: vi.fn(),
+}));
+
+vi.mock("./edit-invitation-target-team-dialog", () => ({
+	EditInvitationTargetTeamDialog: () => null,
+}));
+
+vi.mock("@/lib/query", async () => {
+	const actual = await vi.importActual<typeof import("@/lib/query")>("@/lib/query");
+
+	return {
+		...actual,
+		useEmployeeClockStatuses: () => ({
+			getStatus: () => "unknown",
+		}),
+	};
+});
 
 const componentSource = () =>
 	readFileSync(join(process.cwd(), "src/components/organization/members-table.tsx"), "utf8");
 
+function renderWithQueryClient(children: ReactNode) {
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: { retry: false },
+			mutations: { retry: false },
+		},
+	});
+
+	return render(<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>);
+}
+
+const member = {
+	member: {
+		id: "member-1",
+		role: "member",
+		createdAt: new Date("2026-01-01T00:00:00.000Z"),
+		organizationId: "org-1",
+		teamId: null,
+		userId: "user-1",
+	},
+	user: {
+		id: "user-1",
+		name: "Active Alice",
+		email: "alice@example.com",
+		emailVerified: true,
+		image: null,
+		createdAt: new Date("2026-01-01T00:00:00.000Z"),
+		updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+	},
+	employee: {
+		id: "employee-1",
+		isActive: true,
+	},
+};
+
+const invitation = {
+	id: "invitation-1",
+	organizationId: "org-1",
+	email: "pending@example.com",
+	role: "member",
+	status: "pending",
+	expiresAt: new Date("2027-01-01T00:00:00.000Z"),
+	createdAt: new Date("2026-01-01T00:00:00.000Z"),
+	updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+	inviterId: "user-1",
+	user: member.user,
+	targetTeamId: null,
+	targetTeam: null,
+};
+
+function renderMembersTable(defaultTab?: "members" | "invitations") {
+	return renderWithQueryClient(
+		<MembersTable
+			organizationId="org-1"
+			members={[member as never]}
+			invitations={[invitation as never]}
+			defaultTab={defaultTab}
+			currentMemberRole="admin"
+			currentUserId="user-1"
+		/>,
+	);
+}
+
 describe("MembersTable invitation target teams", () => {
+	it("opens active members by default and pending invitations when requested", () => {
+		const { unmount } = renderMembersTable();
+
+		expect(screen.getByRole("tab", { selected: true }).textContent).toContain(
+			"Active Members",
+		);
+		expect(screen.getByRole("tabpanel").textContent).toContain("Active Alice");
+		unmount();
+
+		renderMembersTable("invitations");
+
+		expect(screen.getByRole("tab", { selected: true }).textContent).toContain(
+			"Pending Invitations",
+		);
+		expect(within(screen.getByRole("tabpanel")).getByText("pending@example.com")).toBeTruthy();
+	});
+
 	it("allows callers to open pending invitations by default", () => {
 		const file = componentSource();
 
