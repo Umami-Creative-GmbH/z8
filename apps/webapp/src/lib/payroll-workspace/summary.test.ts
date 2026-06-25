@@ -34,6 +34,7 @@ describe("buildPayrollSummaryFromRows", () => {
 
 		expect(summary.totals.totalWorkedHours).toBe(2.75);
 		expect(summary.employees[0]?.workedHours).toBe(2.75);
+		expect(summary.generatedAt).toBe("2026-06-30T12:00:00.000Z");
 	});
 
 	it("groups absence days by employee and category", () => {

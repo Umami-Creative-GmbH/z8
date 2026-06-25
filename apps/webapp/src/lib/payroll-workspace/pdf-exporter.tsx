@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import type { PayrollEmployeeSummary, PayrollWorkspaceSummary } from "./types";
 
 const styleDefinitions = {
@@ -178,7 +179,7 @@ function formatHours(hours: number): string {
 }
 
 function formatGeneratedAt(summary: PayrollWorkspaceSummary): string {
-	return summary.generatedAt.toUTC().toFormat("yyyy-LL-dd HH:mm 'UTC'");
+	return DateTime.fromISO(summary.generatedAt, { zone: "utc" }).toFormat("yyyy-LL-dd HH:mm 'UTC'");
 }
 
 function formatContractType(contractType: PayrollEmployeeSummary["contractType"]): string {

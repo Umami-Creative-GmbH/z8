@@ -246,7 +246,7 @@ async function writeTargetPackage(target) {
   };
 
   const outputPath = path.join(TARGETS_ROOT, target, "package.json");
-  await fs.writeFile(outputPath, `${JSON.stringify(targetPackage, null, 2)}\n`);
+  await fs.writeFile(outputPath, `${JSON.stringify(targetPackage, null, "\t")}\n`);
   await fs.writeFile(
     path.join(TARGETS_ROOT, target, "pnpm-workspace.yaml"),
     stringifyTargetPnpmWorkspaceConfig(buildTargetPnpmConfig(rootPnpmWorkspaceConfig)),

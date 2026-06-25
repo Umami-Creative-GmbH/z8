@@ -40,7 +40,11 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { UserAvatar } from "@/components/user-avatar";
 import { useImageUpload } from "@/hooks/use-image-upload";
-import { format } from "@/lib/datetime/luxon-utils";
+import {
+	birthdayValueToCalendarDate,
+	calendarDateToBirthdayString,
+	formatBirthdayDate,
+} from "@/lib/datetime/birthday";
 import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { cn } from "@/lib/utils";
 import { validateStructuredProfileNameField } from "@/lib/validations/profile";
@@ -133,7 +137,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 					lastName: value.lastName,
 					gender: value.gender || null,
 					pronouns: value.pronouns || null,
-					birthday: value.birthday,
+					birthday: calendarDateToBirthdayString(value.birthday),
 					image: value.image || null,
 					helpImproveProduct: value.helpImproveProduct,
 				});
@@ -236,7 +240,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			form.setFieldValue("lastName", user.lastName || "");
 			form.setFieldValue("gender", (emp?.gender as ProfileFormValues["gender"] | null) || "");
 			form.setFieldValue("pronouns", emp?.pronouns || "");
-			form.setFieldValue("birthday", emp?.birthday ? new Date(emp.birthday) : null);
+			form.setFieldValue("birthday", birthdayValueToCalendarDate(emp?.birthday));
 			form.setFieldValue("helpImproveProduct", user.helpImproveProduct ?? true);
 			setCurrentEmployeeId(emp?.id ?? null);
 			setIsInitialLoading(false);
@@ -687,7 +691,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 											>
 												<IconCalendar className="mr-2 size-4" aria-hidden="true" />
 												{selectedBirthday ? (
-													format(selectedBirthday, "PPP")
+													formatBirthdayDate(selectedBirthday)
 												) : (
 													<span>
 														{t("settings.profile.birthday.placeholder", "Pick your birthday")}

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import settingsGenericEn from "../../../messages/settings/generic/en.json";
+import settingsPeopleEn from "../../../messages/settings/people/en.json";
 import {
 	filterSettingsByFeatureFlags,
 	getResolvedSettingsVisibility,
@@ -57,6 +59,33 @@ describe("settings visibility tiers", () => {
 			href: "/settings/teams",
 			minimumTier: "manager",
 		});
+	});
+
+	it("uses people-management copy for employees and configuration copy for organization", () => {
+		const entries = getVisibleSettings("orgAdmin", true);
+		const organizationEntry = entries.find((entry) => entry.id === "organizations");
+		const employeesEntry = entries.find((entry) => entry.id === "employees");
+
+		expect(organizationEntry).toMatchObject({
+			descriptionDefault: "Manage organization details and configuration",
+		});
+		expect(organizationEntry?.descriptionDefault).not.toMatch(/member|invitation|invite/i);
+		expect(employeesEntry).toMatchObject({
+			descriptionDefault: "Manage employees, members, and invites",
+		});
+	});
+
+	it("keeps English settings translations aligned with people-management defaults", () => {
+		const entries = getVisibleSettings("orgAdmin", true);
+		const organizationEntry = entries.find((entry) => entry.id === "organizations");
+		const employeesEntry = entries.find((entry) => entry.id === "employees");
+
+		expect(settingsGenericEn.settings.organizations.description).toBe(
+			organizationEntry?.descriptionDefault,
+		);
+		expect(settingsPeopleEn.settings.employees.description).toBe(
+			employeesEntry?.descriptionDefault,
+		);
 	});
 
 	it("orders organization settings with employees before teams and email templates last", () => {

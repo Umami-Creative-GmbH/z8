@@ -1,4 +1,3 @@
-import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 import { exportPayrollSummaryToPDF, generatePayrollPDFFilename } from "./pdf-exporter";
 import type { PayrollWorkspaceSummary } from "./types";
@@ -6,7 +5,7 @@ import type { PayrollWorkspaceSummary } from "./types";
 const summary: PayrollWorkspaceSummary = {
 	organizationName: "Acme GmbH",
 	period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
-	generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+	generatedAt: "2026-06-30T12:00:00.000Z",
 	generatedBy: { id: "payroll-1", name: "Payroll User" },
 	totals: { employeeCount: 1, totalWorkedHours: 12.5, blockerCount: 1 },
 	employees: [

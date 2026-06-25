@@ -80,7 +80,7 @@ test("non-root runtime Dockerfiles can run without root-owned pnpm or workspace 
 		assert.match(contents, /RUN mkdir -p "\$\{PNPM_HOME\}"/, `${dockerfile} must create the pnpm home path`);
 		assert.match(
 			contents,
-			/RUN chown [^\n]+ \/app \/pnpm/,
+			/(?:^|\n)\s*(?:RUN\s+)?chown(?:\s+-\S+)* [^\n]+ \/app \/pnpm/m,
 			`${dockerfile} must make the workspace root and pnpm home writable for its runtime user`,
 		);
 	}

@@ -28,7 +28,7 @@ import { Separator } from "@/components/ui/separator";
 import { UserAvatar } from "@/components/user-avatar";
 import type { team } from "@/db/schema";
 import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
-import type { MemberWithUserAndEmployee } from "./organizations-page-client";
+import type { MemberWithUserAndEmployee } from "./people-management-types";
 
 interface TeamMembersDialogProps {
 	team: typeof team.$inferSelect | null;

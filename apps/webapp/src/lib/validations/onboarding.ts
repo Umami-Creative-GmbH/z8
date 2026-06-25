@@ -1,10 +1,14 @@
 import { z } from "zod";
+import { birthdayInputToUTCDate } from "@/lib/datetime/birthday";
 
 export const onboardingProfileSchema = z.object({
 	firstName: z.string().min(1, "First name is required").max(50),
 	lastName: z.string().min(1, "Last name is required").max(50),
 	gender: z.enum(["male", "female", "other"]).optional(),
-	birthday: z.date().optional(),
+	birthday: z.preprocess(
+		(value) => birthdayInputToUTCDate(value as Date | string | null | undefined),
+		z.date().optional(),
+	),
 	weekStartDay: z.enum(["sunday", "monday"]).default("sunday"),
 	timeFormat: z.enum(["24h", "12h"]).default("24h"),
 	helpImproveProduct: z.boolean().default(true),
@@ -49,6 +53,7 @@ export const onboardingNotificationsSchema = z.object({
 });
 
 export type OnboardingProfileFormValues = z.infer<typeof onboardingProfileSchema>;
+export type OnboardingProfileFormInput = z.input<typeof onboardingProfileSchema>;
 export type OnboardingWorkScheduleFormValues = z.infer<typeof onboardingWorkScheduleSchema>;
 export type OnboardingVacationPolicyFormValues = z.infer<typeof onboardingVacationPolicySchema>;
 export type OnboardingHolidaySetupFormValues = z.infer<typeof onboardingHolidaySetupSchema>;

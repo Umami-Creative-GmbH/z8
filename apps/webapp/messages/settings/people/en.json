@@ -12,7 +12,7 @@
       "title": "Employee Groups"
     },
     "employees": {
-      "description": "Manage employee profiles, teams, and permissions",
+      "description": "Manage employees, members, and invites",
       "details": "Employee Details",
       "detailView": {
         "loadingEmployeeData": "Loading employee data",

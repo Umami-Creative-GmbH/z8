@@ -14,6 +14,7 @@ describe("employee invitation draft schema", () => {
 
 	it("registers the migration after the latest journal entry", () => {
 		const migration = readFileSync("drizzle/0050_employee_invitation_draft.sql", "utf8");
+		const schema = readFileSync("src/db/schema/employee-invitation-draft.ts", "utf8");
 		const journal = JSON.parse(readFileSync("drizzle/meta/_journal.json", "utf8"));
 		expect(migration).toContain('CREATE TABLE IF NOT EXISTS "employee_invitation_draft"');
 		expect(migration).toContain('"invitation_id" text NOT NULL');
@@ -24,6 +25,7 @@ describe("employee invitation draft schema", () => {
 		expect(migration).toContain("employee_invitation_draft_invitation_org_fk");
 		expect(migration).toContain('FOREIGN KEY ("invitation_id","organization_id")');
 		expect(migration).toContain('REFERENCES "public"."invitation"("id","organization_id")');
+		expect(schema).not.toContain("employee_invitation_draft_invitation_org_fk");
 		expect(migration).toContain("employee_invitation_draft_team_org_fk");
 		expect(migration).toContain('FOREIGN KEY ("team_id","organization_id")');
 		expect(migration).toContain('ON DELETE SET NULL ("team_id")');

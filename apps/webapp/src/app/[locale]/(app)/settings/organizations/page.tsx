@@ -1,16 +1,12 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, count } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import {
-	type InvitationWithInviter,
-	type MemberWithUserAndEmployee,
-	OrganizationsPageClient,
-} from "@/components/organization/organizations-page-client";
+import { OrganizationsPageClient } from "@/components/organization/organizations-page-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { employee, organizationNotificationSettings, team } from "@/db/schema";
+import { organizationNotificationSettings } from "@/db/schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { getTranslate } from "@/tolgee/server";
@@ -38,52 +34,35 @@ async function OrganizationsPageContent() {
 		redirect("/settings");
 	}
 
-	const [
-		organization,
-		invitations,
-		currentMember,
-		members,
-		organizationNotificationSettingsRecord,
-	] = await Promise.all([
-		db.query.organization.findFirst({
-			where: eq(authSchema.organization.id, organizationId),
-		}),
-		db.query.invitation.findMany({
-			where: and(
-				eq(authSchema.invitation.organizationId, organizationId),
-				eq(authSchema.invitation.status, "pending"),
-			),
-			with: {
-				user: true,
-			},
-			orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
-		}),
-		db.query.member.findFirst({
-			where: and(
-				eq(authSchema.member.userId, authContext.user.id),
-				eq(authSchema.member.organizationId, organizationId),
-			),
-		}),
-		db
-			.select({
-				member: authSchema.member,
-				user: authSchema.user,
-				employee: employee,
-			})
-			.from(authSchema.member)
-			.innerJoin(authSchema.user, eq(authSchema.member.userId, authSchema.user.id))
-			.leftJoin(
-				employee,
-				and(eq(employee.userId, authSchema.user.id), eq(employee.organizationId, organizationId)),
-			)
-			.where(eq(authSchema.member.organizationId, organizationId)),
-		db.query.organizationNotificationSettings.findFirst({
-			where: eq(organizationNotificationSettings.organizationId, organizationId),
-			columns: { defaultLanguage: true },
-		}),
-	]);
+	const memberTable = authSchema.member;
+	const [organization, currentMember, memberCountRows, organizationNotificationSettingsRecord] =
+		await Promise.all([
+			db.query.organization.findFirst({
+				where: eq(authSchema.organization.id, organizationId),
+			}),
+			db
+				.select({ role: memberTable.role })
+				.from(memberTable)
+				.where(
+					and(
+						eq(memberTable.userId, authContext.user.id),
+						eq(memberTable.organizationId, organizationId),
+					),
+				)
+				.limit(1),
+			db
+				.select({ value: count() })
+				.from(memberTable)
+				.where(eq(memberTable.organizationId, organizationId)),
+			db.query.organizationNotificationSettings.findFirst({
+				where: eq(organizationNotificationSettings.organizationId, organizationId),
+				columns: { defaultLanguage: true },
+			}),
+		]);
 
-	if (!organization || !currentMember) {
+	const [currentMemberRecord] = currentMember;
+
+	if (!organization || !currentMemberRecord) {
 		return (
 			<div className="flex-1 p-6">
 				<div className="mx-auto max-w-4xl">
@@ -101,36 +80,12 @@ async function OrganizationsPageContent() {
 		);
 	}
 
-	const targetTeamIds = Array.from(
-		new Set(
-			invitations.map((invitation) => invitation.targetTeamId).filter((id): id is string => !!id),
-		),
-	);
-	const targetTeams = targetTeamIds.length
-		? await db
-				.select({ id: team.id, name: team.name })
-				.from(team)
-				.where(and(eq(team.organizationId, organizationId), inArray(team.id, targetTeamIds)))
-		: [];
-	const targetTeamsById = new Map(
-		targetTeams.map((team) => [team.id, { id: team.id, name: team.name }]),
-	);
-	const typedInvitations = invitations.map((invitation) => ({
-		...invitation,
-		targetTeam: invitation.targetTeamId
-			? (targetTeamsById.get(invitation.targetTeamId) ?? null)
-			: null,
-	})) as unknown as InvitationWithInviter[];
-	const typedMembers = members as unknown as MemberWithUserAndEmployee[];
-
 	return (
 		<OrganizationsPageClient
 			organization={organization}
-			members={typedMembers}
-			invitations={typedInvitations}
-			currentMemberRole={currentMember.role as "owner" | "admin" | "member"}
+			memberCount={memberCountRows[0]?.value ?? 0}
+			currentMemberRole={currentMemberRecord.role as "owner" | "admin" | "member"}
 			defaultNotificationLanguage={organizationNotificationSettingsRecord?.defaultLanguage ?? "en"}
-			currentUserId={authContext.user.id}
 			canCreateOrganizations={canCreateOrganizationsForDeployment(
 				authContext.user.canCreateOrganizations || authContext.user.role === "admin",
 			)}

@@ -28,7 +28,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { format } from "@/lib/datetime/luxon-utils";
+import { calendarDateToBirthdayString, formatBirthdayDate } from "@/lib/datetime/birthday";
 import { TIME_FORMAT_OPTIONS, type TimeFormat } from "@/lib/user-preferences/time-format";
 import { WEEK_START_OPTIONS, type WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
@@ -76,7 +76,10 @@ export default function ProfilePage() {
 		onSubmit: async ({ value }) => {
 			setLoading(true);
 
-			const result = await updateProfileOnboarding(value);
+			const result = await updateProfileOnboarding({
+				...value,
+				birthday: calendarDateToBirthdayString(value.birthday) ?? undefined,
+			});
 
 			if (result.success) {
 				toast.success(t("onboarding.profile.success", "Profile updated successfully!"));
@@ -255,7 +258,7 @@ export default function ProfilePage() {
 													disabled={loading}
 												>
 													{field.state.value ? (
-														format(field.state.value, "PPP")
+														formatBirthdayDate(field.state.value)
 													) : (
 														<span>{t("onboarding.profile.pickDate", "Pick a date")}</span>
 													)}

@@ -1,6 +1,5 @@
 import {
 	decimal,
-	foreignKey,
 	index,
 	pgTable,
 	text,
@@ -43,13 +42,10 @@ export const employeeInvitationDraft = pgTable(
 			.notNull(),
 	},
 	(table) => [
-		foreignKey({
-			columns: [table.invitationId, table.organizationId],
-			foreignColumns: [invitation.id, invitation.organizationId],
-			name: "employee_invitation_draft_invitation_org_fk",
-		}).onDelete("cascade"),
 		uniqueIndex("employeeInvitationDraft_invitationId_unique_idx").on(table.invitationId),
 		index("employeeInvitationDraft_organizationId_idx").on(table.organizationId),
+		// The invitation/org composite FK is migration-only because invitation is generated
+		// by Better Auth and drizzle push cannot see the required generated-table index.
 		// The team/org composite FK is migration-only so team deletion can null only team_id.
 		index("employeeInvitationDraft_teamId_idx").on(table.teamId),
 	],

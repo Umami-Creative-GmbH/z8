@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.4
 ARG NODE_VERSION=26
-ARG PNPM_VERSION=11.6.0
+ARG PNPM_VERSION=11.8.0
 FROM node:${NODE_VERSION}-alpine AS base
 
 RUN apk add --no-cache \
@@ -31,8 +31,8 @@ RUN node docker/scripts/prepare-target-runtime.mjs copy worker /runtime
 
 FROM base AS worker
 
-RUN pnpm add -g tsx@4.22.3
-RUN addgroup --system --gid 1001 nodejs && \
+RUN pnpm add -g tsx@4.22.3 && \
+    addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 app
 
 WORKDIR /app

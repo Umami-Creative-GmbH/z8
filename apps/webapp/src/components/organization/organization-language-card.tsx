@@ -115,8 +115,10 @@ export function OrganizationLanguageCard({
 
 								return (
 									<SelectItem key={language} value={language}>
-										{Flag && <Flag aria-hidden="true" className="size-4 rounded-xs" />}
-										<span>{config?.name ?? language}</span>
+										<span className="flex items-center gap-2">
+											{Flag && <Flag aria-hidden="true" className="size-4 rounded-xs" />}
+											<span>{config?.name ?? language}</span>
+										</span>
 									</SelectItem>
 								);
 							})}
