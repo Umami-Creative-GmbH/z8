@@ -6,15 +6,16 @@
  * but without requiring an HTTP session.
  */
 
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { employee, timeEntry, userSettings, workPeriod } from "@/db/schema";
+import { employee, userSettings, workPeriod } from "@/db/schema";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { fmtTime, getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
-import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntry } from "@/lib/time-tracking/validation";
 
@@ -96,53 +97,27 @@ export const clockInCommand: BotCommand = {
 				};
 			}
 
-			// Get previous entry for blockchain linking
-			const [previousEntry] = await db
-				.select()
-				.from(timeEntry)
-				.where(
-					and(eq(timeEntry.employeeId, emp.id), eq(timeEntry.organizationId, emp.organizationId)),
-				)
-				.orderBy(desc(timeEntry.createdAt))
-				.limit(1);
-
-			// Calculate blockchain hash
-			const hash = calculateHash({
-				employeeId: emp.id,
-				type: "clock_in",
-				timestamp: now.toISOString(),
-				previousHash: previousEntry?.hash || null,
-			});
 			const timezoneCapture = resolveFallbackTimezoneCapture({
 				timestamp: now,
 				timezone,
 				timezoneSource: "user_setting",
 			});
 
-			// Create clock-in time entry
-			const [entry] = await db
-				.insert(timeEntry)
-				.values({
+			try {
+				await clockingService.clockIn({
 					employeeId: emp.id,
 					organizationId: emp.organizationId,
-					type: "clock_in",
-					timestamp: now,
-					hash,
-					previousHash: previousEntry?.hash || null,
-					ipAddress: "bot",
-					deviceInfo: `${ctx.platform}-bot`,
 					createdBy: ctx.userId,
-					...timezoneCapture,
-				})
-				.returning();
-
-			// Create work period
-			await db.insert(workPeriod).values({
-				employeeId: emp.id,
-				organizationId: emp.organizationId,
-				clockInId: entry.id,
-				startTime: now,
-			});
+					action: { instant: instantFromDate(now), ...timezoneCapture },
+					source: { ipAddress: "bot", deviceInfo: `${ctx.platform}-bot` },
+					workLocationType: "office",
+				});
+			} catch (error) {
+				if (error instanceof ClockingConflictError) {
+					return { type: "text", text: t("bot.cmd.clockin.alreadyIn", "You are already clocked in.") };
+				}
+				throw error;
+			}
 
 			const clockInTime = DateTime.fromJSDate(now).setZone(timezone);
 

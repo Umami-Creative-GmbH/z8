@@ -31,6 +31,8 @@ const mockState = vi.hoisted(() => ({
 	updateReturning: vi.fn(),
 	updateSet: vi.fn(),
 	updateWhere: vi.fn(),
+	clockingClockIn: vi.fn(),
+	clockingClockOut: vi.fn(),
 	logger: {
 		info: vi.fn(),
 		warn: vi.fn(),
@@ -96,6 +98,14 @@ vi.mock("@/lib/billing/guard", () => ({
 
 vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mockState.markEmployeeWorkBalanceDirty,
+}));
+
+vi.mock("@/lib/time-tracking/clocking-service", () => ({
+	ClockingConflictError: class ClockingConflictError extends Error {},
+	clockingService: {
+		clockIn: (...args: unknown[]) => mockState.clockingClockIn(...args),
+		clockOut: (...args: unknown[]) => mockState.clockingClockOut(...args),
+	},
 }));
 
 vi.mock("./approvals", () => ({
@@ -173,6 +183,18 @@ describe("clockIn", () => {
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
 		mockState.insertValues.mockResolvedValue(undefined);
+		mockState.clockingClockIn.mockImplementation(async (input) => {
+			const entry = await mockState.createTimeEntry({
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+				type: "clock_in",
+				timestamp: new Date("2026-05-04T09:00:00.000Z"),
+				createdBy: input.createdBy,
+				...input.action,
+			});
+			await mockState.insertValues({ workLocationType: input.workLocationType });
+			return { entry };
+		});
 	});
 
 	it("rejects suspended organizations before creating a clock-in entry", async () => {
@@ -300,6 +322,18 @@ describe("clockOut", () => {
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
 		mockState.createClockOutApprovalRequest.mockResolvedValue(undefined);
+		mockState.clockingClockOut.mockImplementation(async (input) => {
+			const entry = await mockState.createTimeEntry({
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+				type: "clock_out",
+				timestamp: new Date("2026-05-04T10:00:00.000Z"),
+				createdBy: input.createdBy,
+				...input.action,
+			});
+			mockState.updateSet({ approvalStatus: input.approvalStatus, pendingChanges: input.pendingChanges });
+			return { entry, durationMinutes: 60, period: { id: "period-1" }, activePeriod: { id: "period-1", startTime: new Date("2026-05-04T09:00:00.000Z") } };
+		});
 	});
 
 	it("rejects suspended organizations before creating a clock-out entry", async () => {
@@ -403,7 +437,7 @@ describe("clockOut", () => {
 			organizationId: "org-1",
 			dirtyFromDate: "2026-05-04",
 		});
-		expect(mockState.updateReturning.mock.invocationCallOrder[0]).toBeLessThan(
+		expect(mockState.clockingClockOut.mock.invocationCallOrder[0]).toBeLessThan(
 			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
 		);
 	});
@@ -439,20 +473,17 @@ describe("clockOut", () => {
 		);
 	});
 
-	it("closes the active period in the same transaction as the clock-out entry", async () => {
+	it("routes the clock-out entry and period close through the transactional service", async () => {
 		const result = await clockOut();
 
 		expect(result.success).toBe(true);
-		expect(mockState.transaction).toHaveBeenCalledTimes(1);
-		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
+		expect(mockState.clockingClockOut).toHaveBeenCalledWith(
 			expect.objectContaining({
 				employeeId: "employee-1",
 				organizationId: "org-1",
-				type: "clock_out",
-				timestamp: new Date("2026-05-04T10:00:00.000Z"),
 				createdBy: "user-1",
+				action: expect.objectContaining({ timezone: "UTC" }),
 			}),
-			expect.anything(),
 		);
 	});
 
@@ -460,19 +491,19 @@ describe("clockOut", () => {
 		const result = await clockOut(undefined, undefined, { browserTimezone: "America/New_York" });
 
 		expect(result.success).toBe(true);
-		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
+		expect(mockState.clockingClockOut).toHaveBeenCalledWith(
 			expect.objectContaining({
-				type: "clock_out",
-				timezone: "America/New_York",
-				timezoneSource: "browser",
-				utcOffsetMinutes: -240,
+				action: expect.objectContaining({
+					timezone: "America/New_York",
+					timezoneSource: "browser",
+					utcOffsetMinutes: -240,
+				}),
 			}),
-			expect.anything(),
 		);
 	});
 
 	it("returns a failure when the active period update affects no rows", async () => {
-		mockState.updateReturning.mockResolvedValueOnce([]);
+		mockState.clockingClockOut.mockRejectedValueOnce(new Error("Active work period changed"));
 
 		const result = await clockOut();
 

@@ -9,7 +9,7 @@ function readClockOutSource() {
 describe("Teams clock-out command work balance invalidation", () => {
 	it("marks the employee work balance dirty after closing the active period", () => {
 		const source = readClockOutSource();
-		const updateIndex = source.indexOf(".update(workPeriod)");
+		const updateIndex = source.indexOf("clockingService.clockOut");
 		const dirtyIndex = source.indexOf("await markEmployeeWorkBalanceDirty");
 
 		expect(source).toContain(
@@ -53,8 +53,8 @@ describe("Teams clock-out command approvals", () => {
 		const unsupportedIndex = source.indexOf(
 			"Time changes requiring approval are not supported for this action yet",
 		);
-		const insertIndex = source.indexOf(".insert(timeEntry)");
-		const updateIndex = source.indexOf(".update(workPeriod)");
+		const insertIndex = source.indexOf("clockingService.clockOut");
+		const updateIndex = source.indexOf("clockingService.clockOut");
 
 		expect(approvalIndex).toBeGreaterThanOrEqual(0);
 		expect(unsupportedIndex).toBeGreaterThan(approvalIndex);
@@ -65,8 +65,8 @@ describe("Teams clock-out command approvals", () => {
 	it("fails closed when approval policy lookup fails before mutating", () => {
 		const source = readClockOutSource();
 		const failureIndex = source.indexOf("Could not verify time approval policy. Please try again.");
-		const insertIndex = source.indexOf(".insert(timeEntry)");
-		const updateIndex = source.indexOf(".update(workPeriod)");
+		const insertIndex = source.indexOf("clockingService.clockOut");
+		const updateIndex = source.indexOf("clockingService.clockOut");
 
 		expect(failureIndex).toBeGreaterThanOrEqual(0);
 		expect(insertIndex).toBeGreaterThan(failureIndex);

@@ -1,13 +1,10 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
-import {
-	createTimeEntry,
-	validateProjectAssignment,
-} from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
+import { validateProjectAssignment } from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
 import { db } from "@/db";
-import { employee, project, timeEntry, userSettings, workCategory, workPeriod } from "@/db/schema";
+import { employee, project, timeEntry, userSettings, workCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
@@ -30,6 +27,8 @@ import {
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import { isWorkLocationType } from "@/lib/time-tracking/work-location";
+import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 
 class TimeEntryConflictError extends Error {
 	constructor(message: string) {
@@ -320,90 +319,23 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		const entry = await db.transaction(async (tx) => {
-			const lockKey = `${requestedOrgId}:${currentEmployee.id}`;
-			await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
-
-			const [activePeriod] = await tx
-				.select()
-				.from(workPeriod)
-				.where(
-					and(
-						eq(workPeriod.employeeId, currentEmployee.id),
-						eq(workPeriod.organizationId, requestedOrgId),
-						eq(workPeriod.isActive, true),
-						isNull(workPeriod.endTime),
-					),
-				)
-				.limit(1);
-
-			if (type === "clock_in" && activePeriod) {
-				throw new TimeEntryConflictError("Active work period already exists");
-			}
-
-			if (type === "clock_out" && !activePeriod) {
-				throw new Error("No active work period found");
-			}
-
-			const createdEntry = await createTimeEntry(
-				{
-					employeeId: currentEmployee.id,
-					organizationId: requestedOrgId,
-					type,
-					timestamp: entryTime,
-					createdBy: session.user.id,
-					notes,
-					location,
-					...timezoneCapture,
-				},
-				tx,
-			);
-
-			if (type === "clock_in") {
-				await tx.insert(workPeriod).values({
-					employeeId: currentEmployee.id,
-					organizationId: requestedOrgId,
-					clockInId: createdEntry.id,
-					startTime: entryTime,
-					isActive: true,
-					workLocationType: resolvedWorkLocationType,
-				});
-			} else if (activePeriod) {
-				const durationMs = entryTime.getTime() - activePeriod.startTime.getTime();
-				const durationMinutes = Math.round(durationMs / 60000);
-
-				const updatedPeriods = await tx
-					.update(workPeriod)
-					.set({
-						clockOutId: createdEntry.id,
-						endTime: entryTime,
-						durationMinutes,
-						isActive: false,
-						...(projectId && { projectId }),
-						...(workCategoryId && { workCategoryId }),
-					})
-					.where(
-						and(
-							eq(workPeriod.id, activePeriod.id),
-							eq(workPeriod.employeeId, currentEmployee.id),
-							eq(workPeriod.organizationId, requestedOrgId),
-							eq(workPeriod.isActive, true),
-							isNull(workPeriod.endTime),
-						),
-					)
-					.returning({ id: workPeriod.id });
-
-				if (updatedPeriods.length === 0) {
-					throw new TimeEntryConflictError("Active work period changed");
-				}
-			}
-
-			return createdEntry;
-		});
+		const input = {
+			employeeId: currentEmployee.id,
+			organizationId: requestedOrgId,
+			createdBy: session.user.id,
+			action: { instant: instantFromDate(entryTime), ...timezoneCapture },
+			source: { ipAddress: null, deviceInfo: "api" },
+			notes,
+			location,
+		};
+		const result = type === "clock_in"
+			? await clockingService.clockIn({ ...input, workLocationType: resolvedWorkLocationType! })
+			: await clockingService.clockOut({ ...input, projectId, workCategoryId });
+		const entry = result.entry;
 
 		return NextResponse.json({ entry }, { status: 201 });
 	} catch (error) {
-		if (error instanceof TimeEntryConflictError) {
+		if (error instanceof TimeEntryConflictError || error instanceof ClockingConflictError) {
 			return NextResponse.json({ error: error.message }, { status: 409 });
 		}
 

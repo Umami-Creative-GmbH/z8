@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
@@ -7,7 +7,6 @@ import {
 	checkComplianceAfterClockOut,
 	enforceBreaksAfterClockOut,
 } from "@/app/[locale]/(app)/time-tracking/actions/compliance";
-import { createTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
 import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import { db } from "@/db";
 import { employee, userSettings, workPeriod } from "@/db/schema";
@@ -23,6 +22,8 @@ import {
 	isValidIanaTimezone,
 	resolveFallbackTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
+import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 
 class TimeEntryConflictError extends Error {
@@ -150,80 +151,19 @@ export async function POST(request: NextRequest) {
 			timezoneSource: "manager_target_user_setting",
 		});
 
-		const result = await db.transaction(async (tx) => {
-			const lockKey = `${organizationId}:${target.targetEmployee.id}`;
-			await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
-
-			const [activePeriod] = await tx
-				.select()
-				.from(workPeriod)
-				.where(
-					and(
-						eq(workPeriod.id, target.period.id),
-						eq(workPeriod.employeeId, target.targetEmployee.id),
-						eq(workPeriod.organizationId, organizationId),
-						eq(workPeriod.isActive, true),
-						isNull(workPeriod.endTime),
-						isNull(workPeriod.deletedAt),
-					),
-				)
-				.limit(1);
-
-			if (!activePeriod) {
-				throw new TimeEntryConflictError("Active work period changed");
-			}
-
-			const createdEntry = await createTimeEntry(
-				{
-					createdBy: session.user.id,
-					employeeId: target.targetEmployee.id,
-					organizationId,
-					timestamp: entryTime,
-					type: "clock_out",
-					...timezoneCapture,
-				},
-				tx,
-			);
-
-			const durationMs = entryTime.getTime() - activePeriod.startTime.getTime();
-			const durationMinutes = Math.round(durationMs / 60000);
-
-			const updatedPeriods = await tx
-				.update(workPeriod)
-				.set({
-					clockOutId: createdEntry.id,
-					durationMinutes,
-					endTime: entryTime,
-					isActive: false,
-				})
-				.where(
-					and(
-						eq(workPeriod.id, activePeriod.id),
-						eq(workPeriod.employeeId, target.targetEmployee.id),
-						eq(workPeriod.organizationId, organizationId),
-						eq(workPeriod.isActive, true),
-						isNull(workPeriod.endTime),
-						isNull(workPeriod.deletedAt),
-					),
-				)
-				.returning({ id: workPeriod.id });
-
-			if (updatedPeriods.length === 0) {
-				throw new TimeEntryConflictError("Active work period changed");
-			}
-
-			return {
-				durationMinutes,
-				entry: createdEntry,
-				startedAt: activePeriod.startTime,
-				workPeriodId: activePeriod.id,
-			};
+		const result = await clockingService.clockOut({
+			createdBy: session.user.id,
+			employeeId: target.targetEmployee.id,
+			organizationId,
+			workPeriodId: target.period.id,
+			action: { instant: instantFromDate(entryTime), ...timezoneCapture },
+			source: { ipAddress: null, deviceInfo: "web-on-behalf" },
 		});
 
 		await checkComplianceAfterClockOut(
 			target.targetEmployee.id,
 			organizationId,
-			result.workPeriodId,
+			result.period.id,
 			result.durationMinutes,
 			timezone,
 		);
@@ -234,15 +174,15 @@ export async function POST(request: NextRequest) {
 			organizationId,
 			sessionDurationMinutes: result.durationMinutes,
 			timezone,
-			workPeriodId: result.workPeriodId,
+			workPeriodId: result.period.id,
 		});
 		// Break enforcement may split the original period, but currently does not expose
 		// the inserted second work period id for separate surcharge recalculation.
-		await calculateAndPersistSurcharges(result.workPeriodId, organizationId);
+		await calculateAndPersistSurcharges(result.period.id, organizationId);
 
 		const dirtyMark = {
 			dirtyFromDate:
-				DateTime.fromJSDate(result.startedAt, { zone: "utc" }).toISODate() ?? undefined,
+				DateTime.fromJSDate(result.activePeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
 			employeeId: target.targetEmployee.id,
 			organizationId,
 		};
@@ -254,7 +194,11 @@ export async function POST(request: NextRequest) {
 
 		return NextResponse.json({ entry: result.entry }, { status: 201 });
 	} catch (error) {
-		if (error instanceof TimeEntryConflictError) {
+		if (
+			error instanceof TimeEntryConflictError ||
+			error instanceof ClockingConflictError ||
+			(error instanceof Error && error.name === "ClockingConflictError")
+		) {
 			return NextResponse.json({ error: error.message }, { status: 409 });
 		}
 

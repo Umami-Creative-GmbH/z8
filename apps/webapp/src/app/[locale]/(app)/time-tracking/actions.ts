@@ -29,6 +29,7 @@ import { auth } from "@/lib/auth";
 import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -73,6 +74,7 @@ import {
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/work-location";
+import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
@@ -1254,26 +1256,20 @@ export async function clockIn(
 			browserSource: "browser",
 			fallbackSource: "user_setting",
 		});
-		const entry = await createTimeEntry({
+		const { entry } = await clockingService.clockIn({
 			employeeId: emp.id,
 			organizationId: emp.organizationId,
-			type: "clock_in",
-			timestamp: now,
 			createdBy: session.user.id,
-			...timezoneCapture,
-		});
-
-		// Create work period with organizationId
-		await db.insert(workPeriod).values({
-			employeeId: emp.id,
-			organizationId: emp.organizationId,
-			clockInId: entry.id,
-			startTime: now,
+			action: { instant: instantFromDate(now), ...timezoneCapture },
+			source: { ipAddress: null, deviceInfo: "web" },
 			workLocationType: resolvedWorkLocationType,
 		});
 
-		return { success: true, data: entry };
+		return { success: true, data: entry as typeof timeEntry.$inferSelect };
 	} catch (error) {
+		if (error instanceof ClockingConflictError) {
+			return { success: false, error: "You are already clocked in" };
+		}
 		logger.error({ error }, "Clock in error");
 		return { success: false, error: "Failed to clock in. Please try again." };
 	}
@@ -1403,16 +1399,6 @@ export async function clockOut(
 			browserSource: "browser",
 			fallbackSource: "user_setting",
 		});
-		const entry = await createTimeEntry({
-			employeeId: emp.id,
-			organizationId: emp.organizationId,
-			type: "clock_out",
-			timestamp: now,
-			createdBy: session.user.id,
-			...timezoneCapture,
-		});
-
-		// Update work period
 		const durationMs = now.getTime() - activePeriod.startTime.getTime();
 		const durationMinutes = Math.floor(durationMs / 60000);
 
@@ -1430,32 +1416,28 @@ export async function clockOut(
 			origin: "clock",
 		});
 
-		await db
-			.update(workPeriod)
-			.set({
-				clockOutId: entry.id,
-				endTime: now,
-				durationMinutes,
-				projectId: projectId || null,
-				workCategoryId: workCategoryId || null,
-				canonicalRecordId: canonicalRecord.id,
-				isActive: false,
-				approvalStatus: needsClockOutApproval ? "pending" : "approved",
-				pendingChanges: needsClockOutApproval
-					? {
-							originalStartTime: activePeriod.startTime.toISOString(),
-							originalEndTime: now.toISOString(),
-							originalDurationMinutes: durationMinutes,
-							requestedAt: now.toISOString(),
-							requestedBy: session.user.id,
-							isNewClockOut: true,
-						}
-					: null,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(eq(workPeriod.id, activePeriod.id), eq(workPeriod.organizationId, emp.organizationId)),
-			);
+		const result = await clockingService.clockOut({
+			employeeId: emp.id,
+			organizationId: emp.organizationId,
+			createdBy: session.user.id,
+			action: { instant: instantFromDate(now), ...timezoneCapture },
+			source: { ipAddress: null, deviceInfo: "web" },
+			projectId,
+			workCategoryId,
+			canonicalRecordId: canonicalRecord.id,
+			approvalStatus: needsClockOutApproval ? "pending" : "approved",
+			pendingChanges: needsClockOutApproval
+				? {
+						originalStartTime: activePeriod.startTime.toISOString(),
+						originalEndTime: now.toISOString(),
+						originalDurationMinutes: durationMinutes,
+						requestedAt: now.toISOString(),
+						requestedBy: session.user.id,
+						isNewClockOut: true,
+					}
+				: null,
+		});
+		const entry = result.entry as typeof timeEntry.$inferSelect;
 
 		if (needsClockOutApproval && managerId) {
 			await createClockOutApprovalRequest({
@@ -1520,6 +1502,9 @@ export async function clockOut(
 			},
 		};
 	} catch (error) {
+		if (error instanceof ClockingConflictError) {
+			return { success: false, error: "You are not currently clocked in" };
+		}
 		logger.error({ error }, "Clock out error");
 		return { success: false, error: "Failed to clock out. Please try again." };
 	}
