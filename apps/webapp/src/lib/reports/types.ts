@@ -14,9 +14,9 @@ export type PeriodPreset =
 	| "ytd"
 	| "custom";
 
-export interface DateRange {
-	start: Date;
-	end: Date;
+export interface ReportDateRange {
+	startDate: string;
+	endDate: string;
 }
 
 export interface EmployeeInfo {
@@ -30,8 +30,8 @@ export interface EmployeeInfo {
 }
 
 export interface PeriodInfo {
-	startDate: Date;
-	endDate: Date;
+	startDate: string;
+	endDate: string;
 	label: string;
 }
 
@@ -54,7 +54,7 @@ export interface AbsenceSummary {
 }
 
 export interface HomeOfficeDetail {
-	date: Date;
+	date: string;
 	hours: number;
 }
 
@@ -95,8 +95,8 @@ export interface ComplianceMetrics {
 export interface RatePeriodEarnings {
 	rate: number;
 	currency: string;
-	periodStart: Date;
-	periodEnd: Date;
+	periodStart: string;
+	periodEnd: string;
 	hours: number;
 	earnings: number;
 }
@@ -121,8 +121,8 @@ export interface ReportData {
 
 export interface ReportFilters {
 	employeeId: string;
-	startDate: Date;
-	endDate: Date;
+	startDate: string;
+	endDate: string;
 	preset?: PeriodPreset;
 }
 

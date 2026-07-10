@@ -3,7 +3,6 @@
  * Simple text-based export suitable for spreadsheet import
  */
 
-import { format } from "@/lib/datetime/luxon-utils";
 import type { ReportData } from "../types";
 
 /**
@@ -15,7 +14,7 @@ export function exportToCSV(reportData: ReportData): string {
 	const lines: string[] = [];
 
 	// Helper function to escape CSV fields
-	const escape = (value: string | number | undefined): string => {
+	const escapeCsv = (value: string | number | undefined): string => {
 		if (value === undefined || value === null) return "";
 		const str = String(value);
 		// Escape quotes and wrap in quotes if contains comma, quote, or newline
@@ -31,17 +30,17 @@ export function exportToCSV(reportData: ReportData): string {
 
 	// Employee Information
 	lines.push("Employee Information");
-	lines.push(`Name,${escape(reportData.employee.name)}`);
+	lines.push(`Name,${escapeCsv(reportData.employee.name)}`);
 	if (reportData.employee.employeeNumber) {
-		lines.push(`Employee Number,${escape(reportData.employee.employeeNumber)}`);
+		lines.push(`Employee Number,${escapeCsv(reportData.employee.employeeNumber)}`);
 	}
 	if (reportData.employee.position) {
-		lines.push(`Position,${escape(reportData.employee.position)}`);
+		lines.push(`Position,${escapeCsv(reportData.employee.position)}`);
 	}
 	if (reportData.employee.email) {
-		lines.push(`Email,${escape(reportData.employee.email)}`);
+		lines.push(`Email,${escapeCsv(reportData.employee.email)}`);
 	}
-	lines.push(`Report Period,${escape(reportData.period.label)}`);
+	lines.push(`Report Period,${escapeCsv(reportData.period.label)}`);
 	lines.push(`Generated On,${format(new Date(), "yyyy-MM-dd HH:mm:ss")}`);
 	lines.push("");
 
@@ -88,7 +87,7 @@ export function exportToCSV(reportData: ReportData): string {
 		lines.push("Absences by Category");
 		lines.push("Category,Days");
 		for (const [category, data] of reportData.absences.byCategory) {
-			lines.push(`${escape(category)},${data.days}`);
+			lines.push(`${escapeCsv(category)},${data.days}`);
 		}
 		lines.push("");
 	}
@@ -105,7 +104,7 @@ export function exportToCSV(reportData: ReportData): string {
 		lines.push("Home Office Details by Date");
 		lines.push("Date,Hours Worked");
 		for (const detail of reportData.absences.homeOffice.dateDetails) {
-			lines.push(`${format(detail.date, "yyyy-MM-dd")},${detail.hours}`);
+			lines.push(`${detail.date},${detail.hours}`);
 		}
 		lines.push("");
 	}
@@ -135,3 +134,5 @@ export function generateCSVFilename(reportData: ReportData): string {
 	const timestamp = Date.now();
 	return `report-${employeeName}-${timestamp}.csv`;
 }
+
+import { format } from "@/lib/datetime/luxon-utils";

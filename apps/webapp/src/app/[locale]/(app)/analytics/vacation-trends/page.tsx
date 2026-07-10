@@ -18,8 +18,8 @@ const LineChart = dynamic(() => import("recharts").then((mod) => mod.LineChart),
 const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
 const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
 
+import { AnalyticsDateRangePicker } from "@/components/analytics/date-range-picker";
 import { ExportButton } from "@/components/analytics/export-button";
-import { DateRangePicker } from "@/components/reports/date-range-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Progress } from "@/components/ui/progress";
@@ -31,9 +31,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import type { VacationTrendsData } from "@/lib/analytics/types";
-import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
-import type { DateRange } from "@/lib/reports/types";
+import { getAnalyticsDateRangeForPreset } from "@/lib/analytics/date-ranges";
+import type { DateRange, VacationTrendsData } from "@/lib/analytics/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { getVacationTrendsData } from "../actions";
 
@@ -273,7 +272,7 @@ export default function VacationTrendsPage() {
 			return;
 		}
 
-		const nextDateRange = getDateRangeForPreset("current_year", { timezone });
+		const nextDateRange = getAnalyticsDateRangeForPreset("current_year", { timezone });
 		setDateRange((currentDateRange) =>
 			currentDateRange && areDateRangesEqual(currentDateRange, nextDateRange)
 				? currentDateRange
@@ -291,7 +290,7 @@ export default function VacationTrendsPage() {
 			return;
 		}
 
-		const expectedDefaultDateRange = getDateRangeForPreset("current_year", { timezone });
+		const expectedDefaultDateRange = getAnalyticsDateRangeForPreset("current_year", { timezone });
 		if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
 			return;
 		}
@@ -357,7 +356,7 @@ export default function VacationTrendsPage() {
 			{/* Controls */}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				{dateRange ? (
-					<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+					<AnalyticsDateRangePicker value={dateRange} onChange={handleDateRangeChange} />
 				) : (
 					<p className="text-sm text-muted-foreground">
 						{t(

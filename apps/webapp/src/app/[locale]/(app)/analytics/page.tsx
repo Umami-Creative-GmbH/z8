@@ -17,18 +17,18 @@ const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.Cartesi
 const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
 const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
 
+import { AnalyticsDateRangePicker } from "@/components/analytics/date-range-picker";
 import { ExportButton } from "@/components/analytics/export-button";
-import { DateRangePicker } from "@/components/reports/date-range-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { getAnalyticsDateRangeForPreset } from "@/lib/analytics/date-ranges";
 import type {
 	AbsencePatternsData,
 	ApprovalBottleneckRow,
+	DateRange,
 	ManagerEffectivenessData,
 	TeamPerformanceData,
 } from "@/lib/analytics/types";
-import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
-import type { DateRange } from "@/lib/reports/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import {
 	getAbsencePatternsData,
@@ -134,7 +134,7 @@ export default function AnalyticsOverviewPage() {
 			return;
 		}
 
-		const nextDateRange = getDateRangeForPreset("current_month", { timezone });
+		const nextDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
 		setDateRange((currentDateRange) =>
 			currentDateRange && areDateRangesEqual(currentDateRange, nextDateRange)
 				? currentDateRange
@@ -152,7 +152,7 @@ export default function AnalyticsOverviewPage() {
 			return;
 		}
 
-		const expectedDefaultDateRange = getDateRangeForPreset("current_month", { timezone });
+		const expectedDefaultDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
 		if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
 			return;
 		}
@@ -309,7 +309,7 @@ function AnalyticsControls({
 	return (
 		<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 			{dateRange ? (
-				<DateRangePicker value={dateRange} onChange={onDateRangeChange} />
+				<AnalyticsDateRangePicker value={dateRange} onChange={onDateRangeChange} />
 			) : (
 				<p className="text-sm text-muted-foreground">
 					{t(
@@ -532,7 +532,9 @@ function ApprovalBottlenecksCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("analytics.overview.approvalBottlenecks.title", "Approval Bottlenecks")}</CardTitle>
+				<CardTitle>
+					{t("analytics.overview.approvalBottlenecks.title", "Approval Bottlenecks")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"analytics.overview.approvalBottlenecks.description",

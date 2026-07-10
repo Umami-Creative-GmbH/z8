@@ -45,8 +45,8 @@ vi.mock("@/components/analytics/export-button", () => ({
 	ExportButton: () => <button type="button">Export</button>,
 }));
 
-vi.mock("@/components/reports/date-range-picker", () => ({
-	DateRangePicker: ({
+vi.mock("@/components/analytics/date-range-picker", () => ({
+	AnalyticsDateRangePicker: ({
 		onChange,
 	}: {
 		onChange: (dateRange: { start: Date; end: Date }) => void;

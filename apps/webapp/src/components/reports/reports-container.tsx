@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { generateReport } from "@/app/[locale]/(app)/reports/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
-import type { DateRange, ReportData } from "@/lib/reports/types";
+import type { ReportData, ReportDateRange } from "@/lib/reports/types";
 import { ExportButtons } from "./export-buttons";
 import { ReportFilters } from "./report-filters";
 import { ReportPreviewTable } from "./report-preview-table";
@@ -23,11 +23,11 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const handleGenerateReport = async (employeeId: string, dateRange: DateRange) => {
+	const handleGenerateReport = async (employeeId: string, dateRange: ReportDateRange) => {
 		setIsGenerating(true);
 		setError(null);
 
-		const result = await generateReport(employeeId, dateRange.start, dateRange.end).catch(
+		const result = await generateReport(employeeId, dateRange.startDate, dateRange.endDate).catch(
 			(error) => ({
 				success: false,
 				error:

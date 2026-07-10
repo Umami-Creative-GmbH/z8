@@ -2,7 +2,6 @@
 
 import { IconCalendar } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useId, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
@@ -15,15 +14,20 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { format } from "@/lib/datetime/luxon-utils";
-import { formatDateRangeLabel, getDateRangeForPreset } from "@/lib/reports/date-ranges";
-import type { DateRange, PeriodPreset } from "@/lib/reports/types";
+import { parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import {
+	dateToCalendarString,
+	formatDateRangeLabel,
+	getDateRangeForPreset,
+} from "@/lib/reports/date-ranges";
+import type { PeriodPreset, ReportDateRange } from "@/lib/reports/types";
 import { cn } from "@/lib/utils";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 interface DateRangePickerProps {
-	value: DateRange;
-	onChange: (range: DateRange) => void;
+	value: ReportDateRange;
+	onChange: (range: ReportDateRange) => void;
 }
 
 export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
@@ -57,13 +61,16 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 	const handleDateSelect = (range: { from?: Date; to?: Date } | undefined) => {
 		if (range?.from && range?.to) {
 			onChange({
-				start: range.from,
-				end: range.to,
+				startDate: dateToCalendarString(range.from),
+				endDate: dateToCalendarString(range.to),
 			});
 		}
 	};
 
-	const currentYear = DateTime.now().setZone(timezone).year;
+	const currentYear = systemClock.nowInstant().toZonedDateTimeISO(timezone).year;
+	const { startDate, endDate } = value;
+	const start = parsePlainDate(startDate);
+	const end = parsePlainDate(endDate);
 
 	return (
 		<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -118,13 +125,14 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 							)}
 						>
 							<IconCalendar className="mr-2 size-4" />
-							{value?.start ? (
-								value.end ? (
+							{startDate ? (
+								endDate ? (
 									<>
-										{format(value.start, "LLL dd, y")} - {format(value.end, "LLL dd, y")}
+										{formatPlainDate(start, "en-US", "dateMedium")} -{" "}
+										{formatPlainDate(end, "en-US", "dateMedium")}
 									</>
 								) : (
-									format(value.start, "LLL dd, y")
+									formatPlainDate(start, "en-US", "dateMedium")
 								)
 							) : (
 								<span>{t("reports.period.pickDateRange", "Pick a date range")}</span>
@@ -135,10 +143,10 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 						<Calendar
 							autoFocus
 							mode="range"
-							defaultMonth={value?.start}
+							defaultMonth={new Date(start.year, start.month - 1, start.day)}
 							selected={{
-								from: value?.start,
-								to: value?.end,
+								from: new Date(start.year, start.month - 1, start.day),
+								to: new Date(end.year, end.month - 1, end.day),
 							}}
 							onSelect={handleDateSelect}
 							numberOfMonths={2}
@@ -151,7 +159,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 			{preset !== "custom" && (
 				<div className="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground">
 					<IconCalendar className="mr-2 size-4" />
-					{formatDateRangeLabel(value.start, value.end, timezone)}
+					{formatDateRangeLabel(startDate, endDate)}
 				</div>
 			)}
 		</div>

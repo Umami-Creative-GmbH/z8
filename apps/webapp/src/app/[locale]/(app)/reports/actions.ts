@@ -1,19 +1,27 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
+import { dateFromInstant } from "@/lib/datetime/temporal-core";
+import {
+	type AnyAppError,
+	AuthorizationError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { canGenerateReport, getAccessibleEmployees } from "@/lib/reports/permissions";
+import { resolveReportDateRange } from "@/lib/reports/report-date-range";
 import { generateEmployeeReport } from "@/lib/reports/report-generator";
 import type { AccessibleEmployee, ReportData } from "@/lib/reports/types";
 
@@ -27,8 +35,8 @@ const logger = createLogger("ReportsActionsEffect");
  */
 export async function generateReport(
 	targetEmployeeId: string,
-	startDate: Date,
-	endDate: Date,
+	startDate: string,
+	endDate: string,
 ): Promise<ServerActionResult<ReportData>> {
 	const tracer = trace.getTracer("reports");
 
@@ -37,8 +45,8 @@ export async function generateReport(
 		{
 			attributes: {
 				"report.target_employee_id": targetEmployeeId,
-				"report.start_date": startDate.toISOString(),
-				"report.end_date": endDate.toISOString(),
+				"report.start_date": startDate,
+				"report.end_date": endDate,
 			},
 		},
 		(span) => {
@@ -54,7 +62,10 @@ export async function generateReport(
 				const currentEmployee = yield* _(
 					dbService.query("getEmployeeByUserId", async () => {
 						const emp = await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
+							where: and(
+								eq(employee.userId, session.user.id),
+								eq(employee.organizationId, session.session.activeOrganizationId ?? ""),
+							),
 							with: { user: true },
 						});
 
@@ -75,6 +86,27 @@ export async function generateReport(
 
 				span.setAttribute("current_employee.id", currentEmployee.id);
 				span.setAttribute("current_employee.role", currentEmployee.role);
+
+				const org = yield* _(
+					dbService.query("getReportOrganization", async () =>
+						dbService.db.query.organization.findFirst({
+							where: eq(organization.id, currentEmployee.organizationId),
+						}),
+					),
+				);
+				if (!org) {
+					return yield* _(
+						Effect.fail(
+							new NotFoundError({ message: "Organization not found", entityType: "organization" }),
+						),
+					);
+				}
+				const range = yield* _(
+					Effect.try({
+						try: () => resolveReportDateRange(startDate, endDate, org.timezone ?? "UTC"),
+						catch: () => new ValidationError({ message: "Enter a valid report date range" }),
+					}),
+				);
 
 				// Step 3: Permission check
 				const hasAccess = yield* _(
@@ -113,8 +145,8 @@ export async function generateReport(
 					{
 						currentEmployeeId: currentEmployee.id,
 						targetEmployeeId,
-						startDate: startDate.toISOString(),
-						endDate: endDate.toISOString(),
+						startDate,
+						endDate,
 					},
 					"Generating report",
 				);
@@ -124,8 +156,9 @@ export async function generateReport(
 						return await generateEmployeeReport(
 							targetEmployeeId,
 							currentEmployee.organizationId,
-							startDate,
-							endDate,
+							dateFromInstant(range.start),
+							dateFromInstant(range.endExclusive.subtract({ milliseconds: 1 })),
+							{ startDate, endDate, timezone: range.timezone },
 						);
 					}),
 				);
@@ -204,7 +237,10 @@ export async function getAccessibleEmployeesAction(): Promise<
 				const currentEmployee = yield* _(
 					dbService.query("getEmployeeByUserId", async () => {
 						const emp = await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
+							where: and(
+								eq(employee.userId, session.user.id),
+								eq(employee.organizationId, session.session.activeOrganizationId ?? ""),
+							),
 						});
 
 						if (!emp) {
@@ -280,7 +316,10 @@ export async function getCurrentEmployee(): Promise<typeof employee.$inferSelect
 	}
 
 	const emp = await db.query.employee.findFirst({
-		where: eq(employee.userId, session.user.id),
+		where: and(
+			eq(employee.userId, session.user.id),
+			eq(employee.organizationId, session.session.activeOrganizationId ?? ""),
+		),
 		with: {
 			user: true,
 		},

@@ -32,4 +32,12 @@ describe("time tracking read queries", () => {
 	it("excludes deleted work periods from modular getPresenceStatus", () => {
 		expect(functionBody(source, "getPresenceStatus")).toContain("isNull(workPeriod.deletedAt)");
 	});
+
+	it("requires the current employee and organization for period and summary reads", () => {
+		for (const name of ["getWorkPeriods", "getTimeSummary"]) {
+			const body = functionBody(source, name);
+			expect(body).toContain("const currentEmployee = await getCurrentEmployee()");
+			expect(body).toContain("eq(workPeriod.organizationId, currentEmployee.organizationId)");
+		}
+	});
 });

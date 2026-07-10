@@ -3,12 +3,15 @@
  * Provides preset date ranges for common reporting periods
  */
 
-import { DateTime } from "luxon";
-import type { DateRange, PeriodPreset } from "./types";
+import { type Instant, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { parseTimeZone } from "@/lib/timezone/validation";
+import type { PeriodPreset, ReportDateRange } from "./types";
 
 type DateRangePresetOptions = {
 	year?: number;
 	timezone?: string;
+	now?: Instant;
 };
 
 /**
@@ -20,90 +23,80 @@ type DateRangePresetOptions = {
 export function getDateRangeForPreset(
 	preset: PeriodPreset,
 	options?: number | DateRangePresetOptions,
-): DateRange {
-	const timezone = typeof options === "number" ? undefined : options?.timezone;
-	const now = timezone ? DateTime.now().setZone(timezone) : DateTime.now();
+): ReportDateRange {
+	const timezone = parseTimeZone(
+		typeof options === "number" ? "UTC" : (options?.timezone ?? "UTC"),
+	);
+	const now = (
+		typeof options === "number"
+			? systemClock.nowInstant()
+			: (options?.now ?? systemClock.nowInstant())
+	)
+		.toZonedDateTimeISO(timezone)
+		.toPlainDate();
 	const year = typeof options === "number" ? options : options?.year;
 	const targetYear = year ?? now.year;
-	const dateInZone = (month: number) =>
-		timezone
-			? DateTime.fromObject({ year: targetYear, month, day: 1 }, { zone: timezone })
-			: DateTime.local(targetYear, month, 1);
+	const range = (
+		start: ReturnType<typeof parsePlainDate>,
+		end: ReturnType<typeof parsePlainDate>,
+	): ReportDateRange => ({
+		startDate: start.toString(),
+		endDate: end.toString(),
+	});
+	const monthStart = (month: number) =>
+		parsePlainDate(`${targetYear}-${String(month).padStart(2, "0")}-01`);
 
 	switch (preset) {
 		case "last_month": {
-			const lastMonth = now.minus({ months: 1 });
-			return {
-				start: lastMonth.startOf("month").toJSDate(),
-				end: lastMonth.endOf("month").toJSDate(),
-			};
+			const lastMonth = now.subtract({ months: 1 }).with({ day: 1 });
+			return range(lastMonth, lastMonth.add({ months: 1 }).subtract({ days: 1 }));
 		}
 
 		case "current_month":
-			return {
-				start: now.startOf("month").toJSDate(),
-				end: now.endOf("month").toJSDate(),
-			};
+			return range(
+				now.with({ day: 1 }),
+				now.with({ day: 1 }).add({ months: 1 }).subtract({ days: 1 }),
+			);
 
 		case "last_year": {
-			const lastYear = now.minus({ years: 1 });
-			return {
-				start: lastYear.startOf("year").toJSDate(),
-				end: lastYear.endOf("year").toJSDate(),
-			};
+			const lastYear = now.subtract({ years: 1 }).with({ month: 1, day: 1 });
+			return range(lastYear, lastYear.add({ years: 1 }).subtract({ days: 1 }));
 		}
 
 		case "current_year": {
-			return {
-				start: now.startOf("year").toJSDate(),
-				end: now.endOf("year").toJSDate(),
-			};
+			const start = now.with({ month: 1, day: 1 });
+			return range(start, start.add({ years: 1 }).subtract({ days: 1 }));
 		}
 
 		case "ytd": {
-			return {
-				start: now.startOf("year").toJSDate(),
-				end: now.toJSDate(),
-			};
+			return range(now.with({ month: 1, day: 1 }), now);
 		}
 
 		case "q1": {
-			const qStart = dateInZone(1);
-			return {
-				start: qStart.startOf("quarter").toJSDate(),
-				end: qStart.endOf("quarter").toJSDate(),
-			};
+			const qStart = monthStart(1);
+			return range(qStart, qStart.add({ months: 3 }).subtract({ days: 1 }));
 		}
 
 		case "q2": {
-			const qStart = dateInZone(4);
-			return {
-				start: qStart.startOf("quarter").toJSDate(),
-				end: qStart.endOf("quarter").toJSDate(),
-			};
+			const qStart = monthStart(4);
+			return range(qStart, qStart.add({ months: 3 }).subtract({ days: 1 }));
 		}
 
 		case "q3": {
-			const qStart = dateInZone(7);
-			return {
-				start: qStart.startOf("quarter").toJSDate(),
-				end: qStart.endOf("quarter").toJSDate(),
-			};
+			const qStart = monthStart(7);
+			return range(qStart, qStart.add({ months: 3 }).subtract({ days: 1 }));
 		}
 
 		case "q4": {
-			const qStart = dateInZone(10);
-			return {
-				start: qStart.startOf("quarter").toJSDate(),
-				end: qStart.endOf("quarter").toJSDate(),
-			};
+			const qStart = monthStart(10);
+			return range(qStart, qStart.add({ months: 3 }).subtract({ days: 1 }));
 		}
 		default:
 			// For custom, return current month as default
-			return {
-				start: now.startOf("month").toJSDate(),
-				end: now.endOf("month").toJSDate(),
-			};
+			return range(
+				now.with({ day: 1 }),
+				now.with({ day: 1 }).add({ months: 1 }).subtract({ days: 1 }),
+			);
 	}
 }
 
@@ -114,7 +107,7 @@ export function getDateRangeForPreset(
  * @returns Human-readable label
  */
 export function getPresetLabel(preset: PeriodPreset, year?: number): string {
-	const targetYear = year ?? DateTime.now().year;
+	const targetYear = year ?? systemClock.nowInstant().toZonedDateTimeISO("UTC").year;
 
 	switch (preset) {
 		case "last_month":
@@ -148,21 +141,10 @@ export function getPresetLabel(preset: PeriodPreset, year?: number): string {
  * @param end - End date (Date or DateTime)
  * @returns Formatted date range string
  */
-export function formatDateRangeLabel(
-	start: Date | DateTime,
-	end: Date | DateTime,
-	timezone?: string,
-): string {
-	// Convert to DateTime if needed
-	const startDT = (start instanceof Date ? DateTime.fromJSDate(start) : start).setZone(timezone);
-	const endDT = (end instanceof Date ? DateTime.fromJSDate(end) : end).setZone(timezone);
+export function formatDateRangeLabel(startDate: string, endDate: string): string {
+	return `${formatPlainDate(parsePlainDate(startDate), "en-US", "dateMedium")} - ${formatPlainDate(parsePlainDate(endDate), "en-US", "dateMedium")}`;
+}
 
-	const startStr = startDT
-		.setLocale("en-US")
-		.toLocaleString({ year: "numeric", month: "short", day: "numeric" });
-	const endStr = endDT
-		.setLocale("en-US")
-		.toLocaleString({ year: "numeric", month: "short", day: "numeric" });
-
-	return `${startStr} - ${endStr}`;
+export function dateToCalendarString(date: Date): string {
+	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }

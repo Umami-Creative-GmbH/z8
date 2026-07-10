@@ -11,11 +11,8 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type {
-	DateRange,
-	ProjectDetailedReport,
-	ProjectPortfolioData,
-} from "@/lib/reports/project-types";
+import type { ProjectDetailedReport, ProjectPortfolioData } from "@/lib/reports/project-types";
+import type { ReportDateRange } from "@/lib/reports/types";
 import { ProjectBudgetProgress } from "./project-budget-progress";
 import { ProjectBudgetUtilizationSummary } from "./project-budget-utilization-summary";
 import { ProjectFilters } from "./project-filters";
@@ -31,16 +28,16 @@ export function ProjectReportsContainer() {
 	const [detailedReport, setDetailedReport] = useState<ProjectDetailedReport | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const dateRangeRef = useRef<DateRange | null>(null);
+	const dateRangeRef = useRef<ReportDateRange | null>(null);
 	const [activeTab, setActiveTab] = useState<"portfolio" | "project">("portfolio");
 
-	const handleGeneratePortfolio = async (range: DateRange, statusFilter?: string[]) => {
+	const handleGeneratePortfolio = async (range: ReportDateRange, statusFilter?: string[]) => {
 		setIsLoading(true);
 		setError(null);
 		dateRangeRef.current = range;
 
 		try {
-			const result = await getProjectsOverview(range.start, range.end, statusFilter);
+			const result = await getProjectsOverview(range.startDate, range.endDate, statusFilter);
 
 			if (!result.success) {
 				setError(
@@ -79,7 +76,11 @@ export function ProjectReportsContainer() {
 		setError(null);
 
 		try {
-			const result = await getProjectDetailedReport(projectId, dateRange.start, dateRange.end);
+			const result = await getProjectDetailedReport(
+				projectId,
+				dateRange.startDate,
+				dateRange.endDate,
+			);
 
 			if (!result.success) {
 				setError(

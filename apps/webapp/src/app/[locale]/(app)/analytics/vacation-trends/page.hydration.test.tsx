@@ -3,7 +3,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Settings } from "luxon";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { DateRange } from "@/lib/reports/types";
+import type { DateRange } from "@/lib/analytics/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 const { getVacationTrendsDataMock } = vi.hoisted(() => ({
@@ -27,8 +27,8 @@ type MockDateRangePickerProps = {
 	onChange: (range: DateRange) => void;
 };
 
-vi.mock("@/components/reports/date-range-picker", () => ({
-	DateRangePicker: ({ value, onChange }: MockDateRangePickerProps) => (
+vi.mock("@/components/analytics/date-range-picker", () => ({
+	AnalyticsDateRangePicker: ({ value, onChange }: MockDateRangePickerProps) => (
 		<div>
 			<span data-testid="date-range-start">{value.start.toISOString()}</span>
 			<button
@@ -152,7 +152,9 @@ describe("VacationTrendsPage range hydration", () => {
 		await screen.findByTestId("date-range-start");
 
 		fireEvent.click(screen.getByRole("button", { name: "Choose Custom Range" }));
-		expect(screen.getByTestId("date-range-start").textContent).toBe("2026-06-01T00:00:00.000Z");
+		await waitFor(() => {
+			expect(screen.getByTestId("date-range-start").textContent).toBe("2026-06-01T00:00:00.000Z");
+		});
 
 		hydrateOrganizationSettings("Europe/Berlin");
 

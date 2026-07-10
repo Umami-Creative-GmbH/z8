@@ -200,9 +200,10 @@ export async function calculateExpectedWorkHours(
 	startDate: Date,
 	endDate: Date,
 	hoursPerDay: number = 8,
+	timezone?: string,
 ): Promise<WorkHoursSummary> {
-	let currentDT = fromJSDate(startDate);
-	const endDT = fromJSDate(endDate);
+	let currentDT = fromJSDate(startDate, timezone);
+	const endDT = fromJSDate(endDate, timezone);
 
 	let totalMinutes = 0;
 	let excludedMinutes = 0;
@@ -252,12 +253,13 @@ export async function calculateExpectedWorkHoursForEmployee(
 	organizationId: string,
 	startDate: Date,
 	endDate: Date,
+	timezone?: string,
 ): Promise<WorkHoursSummary & { scheduleInfo: { name: string; source: string } | null }> {
 	// Get employee's effective policy
 	const policy = await getEmployeePolicy(employeeId);
 
-	let currentDT = fromJSDate(startDate);
-	const endDT = fromJSDate(endDate);
+	let currentDT = fromJSDate(startDate, timezone);
+	const endDT = fromJSDate(endDate, timezone);
 
 	let totalMinutes = 0;
 	let excludedMinutes = 0;

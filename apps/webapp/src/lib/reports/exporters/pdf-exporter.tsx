@@ -4,7 +4,6 @@
  * NOTE: The library is dynamically imported to reduce initial bundle size (bundle-dynamic-imports)
  */
 
-import { format } from "@/lib/datetime/luxon-utils";
 import type { ReportData } from "../types";
 
 const currencyFormatters = new Map<string, Intl.NumberFormat>();
@@ -248,11 +247,13 @@ export async function exportToPDF(reportData: ReportData): Promise<Uint8Array> {
 										<Text style={styles.tableCell}>Hours</Text>
 										<Text style={styles.tableCell}>Earnings</Text>
 									</View>
-									{reportData.hourlyEarnings.byRatePeriod.map((period, index) => (
-										<View key={index} style={styles.tableRow}>
+									{reportData.hourlyEarnings.byRatePeriod.map((period) => (
+										<View
+											key={`${period.periodStart}-${period.periodEnd}-${period.rate}`}
+											style={styles.tableRow}
+										>
 											<Text style={styles.tableCell}>
-												{format(period.periodStart, "MMM dd")} -{" "}
-												{format(period.periodEnd, "MMM dd")}
+												{period.periodStart} - {period.periodEnd}
 											</Text>
 											<Text style={styles.tableCell}>
 												{formatCurrency(period.rate, period.currency)}/h
@@ -316,8 +317,8 @@ export async function exportToPDF(reportData: ReportData): Promise<Uint8Array> {
 									<Text style={styles.tableCell}>Hours Worked</Text>
 								</View>
 								{reportData.absences.homeOffice.dateDetails.map((detail) => (
-									<View key={detail.date.toISOString()} style={styles.tableRow}>
-										<Text style={styles.tableCellLabel}>{format(detail.date, "yyyy-MM-dd")}</Text>
+									<View key={detail.date} style={styles.tableRow}>
+										<Text style={styles.tableCellLabel}>{detail.date}</Text>
 										<Text style={styles.tableCell}>{detail.hours}h</Text>
 									</View>
 								))}
@@ -367,3 +368,5 @@ export function generatePDFFilename(reportData: ReportData): string {
 	const timestamp = Date.now();
 	return `report-${employeeName}-${timestamp}.pdf`;
 }
+
+import { format } from "@/lib/datetime/luxon-utils";

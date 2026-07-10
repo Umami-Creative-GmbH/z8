@@ -11,7 +11,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { format } from "@/lib/datetime/luxon-utils";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import type { ReportData } from "@/lib/reports/types";
 
 interface ReportPreviewTableProps {
@@ -135,9 +136,9 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 								</TableHeader>
 								<TableBody>
 									{reportData.absences.homeOffice.dateDetails.map((detail) => (
-										<TableRow key={detail.date.toISOString()}>
+										<TableRow key={detail.date}>
 											<TableCell className="font-medium">
-												{format(detail.date, "MMMM d, yyyy")}
+												{formatPlainDate(parsePlainDate(detail.date), "en-US", "dateMedium")}
 											</TableCell>
 											<TableCell className="text-right">{detail.hours}h</TableCell>
 										</TableRow>

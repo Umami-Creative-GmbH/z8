@@ -23,7 +23,7 @@ describe("project report portfolio scope", () => {
 	it("uses selected-range hours for report totals and cumulative hours for budget health", () => {
 		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
 
-		expect(source).toContain("const [stats, cumulativeStats] = await Promise.all");
+		expect(source).toContain("const [periods, cumulativeStats] = await Promise.all");
 		expect(source).toContain(
 			"const cumulativeHours = Number(cumulativeStats[0]?.totalMinutes ?? 0) / 60",
 		);
@@ -31,5 +31,31 @@ describe("project report portfolio scope", () => {
 		expect(source).toContain("? (cumulativeHours / budgetHours) * 100");
 		expect(source).toContain("rangeHours: totalHours");
 		expect(source).toContain("cumulativeHours");
+	});
+
+	it("uses organization-local half-open overlap boundaries and split segments", () => {
+		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
+
+		expect(source).toContain("lt(workPeriod.startTime, rangeEndExclusive)");
+		expect(source).toContain("gt(workPeriod.endTime, rangeStart)");
+		expect(source).toContain("reportRange.splitPeriod");
+		expect(source).toContain("reportRange.dayCount");
+	});
+
+	it("selects the current employee in the active organization", () => {
+		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
+
+		expect(source).toContain(
+			'eq(employee.organizationId, session.session.activeOrganizationId ?? "")',
+		);
+	});
+
+	it("scopes the page-gate employee lookup to the active organization", () => {
+		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
+
+		expect(source).toContain("getCurrentEmployeeForReports");
+		expect(source).toContain(
+			'eq(employee.organizationId, session.session.activeOrganizationId ?? "")',
+		);
 	});
 });
