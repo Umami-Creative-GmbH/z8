@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useMobileSession, type MobileSession } from "@/src/features/session/use-mobile-session";
 import { createMobileApiClient } from "@/src/lib/api/client";
+import { createTimeClockPayload } from "./time-clock-payload";
 
 export type WorkLocationType = "office" | "home" | "field" | "other";
 
@@ -67,7 +68,7 @@ export function useHomeQuery(sessionOverride?: MobileSession | null) {
         throw new Error("No mobile session token");
       }
 
-      return createMobileApiClient(token).post("/api/mobile/time-clock", action);
+      return createMobileApiClient(token).post("/api/mobile/time-clock", createTimeClockPayload(action));
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({

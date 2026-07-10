@@ -103,6 +103,49 @@ describe("POST /api/mobile/time-clock", () => {
 		expect(mockState.clockIn).toHaveBeenCalledWith("remote", { browserTimezone: "Europe/Berlin" });
 	});
 
+	it("rejects mobile timezone evidence with an offset that does not match its instant", async () => {
+		const response = await POST(
+			new Request("https://app.example.com/api/mobile/time-clock", {
+				method: "POST",
+				body: JSON.stringify({
+					action: "clock_in",
+					workLocationType: "remote",
+					instant: new Date().toISOString(),
+					timezone: "America/New_York",
+					utcOffsetMinutes: 120,
+				}),
+				headers: {
+					"content-type": "application/json",
+				},
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({ error: "Timezone offset does not match instant" });
+		expect(mockState.clockIn).not.toHaveBeenCalled();
+	});
+
+	it("rejects mobile timezone evidence older than five minutes", async () => {
+		const response = await POST(
+			new Request("https://app.example.com/api/mobile/time-clock", {
+				method: "POST",
+				body: JSON.stringify({
+					action: "clock_out",
+					instant: new Date(Date.now() - 5 * 60_000 - 1).toISOString(),
+					timezone: "Europe/Berlin",
+					utcOffsetMinutes: 120,
+				}),
+				headers: {
+					"content-type": "application/json",
+				},
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({ error: "Clock instant must be within five minutes" });
+		expect(mockState.clockOut).not.toHaveBeenCalled();
+	});
+
 	it("does not treat generic timezone as browser provenance", async () => {
 		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
 

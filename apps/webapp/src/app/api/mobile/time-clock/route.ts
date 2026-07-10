@@ -6,13 +6,20 @@ import {
 	requireMobileEmployee,
 	requireMobileSessionContext,
 } from "@/app/api/mobile/shared";
-import { isValidIanaTimezone } from "@/lib/time-tracking/timezone-capture";
+import {
+	getUtcOffsetMinutesForZone,
+	isValidIanaTimezone,
+} from "@/lib/time-tracking/timezone-capture";
 import { WORK_LOCATION_TYPES } from "@/lib/time-tracking/work-location";
 
 const timezoneFields = {
 	browserTimezone: z.string().optional(),
 	timezone: z.string().optional(),
+	instant: z.iso.datetime({ offset: true }).optional(),
+	utcOffsetMinutes: z.number().int().min(-840).max(840).optional(),
 };
+
+const MAX_CLOCK_EVIDENCE_AGE_MS = 5 * 60_000;
 
 const mobileTimeClockSchema = z.discriminatedUnion("action", [
 	z.object({
@@ -52,9 +59,41 @@ export async function POST(request: Request) {
 		}
 
 		await requireMobileEmployee(session.user.id, activeOrganizationId);
-		const browserTimezone = isValidIanaTimezone(parsedBody.data.browserTimezone)
+		const { instant, timezone, utcOffsetMinutes } = parsedBody.data;
+		const hasTimezoneEvidence = instant !== undefined || utcOffsetMinutes !== undefined;
+		if (
+			hasTimezoneEvidence &&
+			(instant === undefined || timezone === undefined || utcOffsetMinutes === undefined)
+		) {
+			return NextResponse.json(
+				{ error: "Clock timezone evidence is incomplete" },
+				{ status: 400 },
+			);
+		}
+
+		let browserTimezone = isValidIanaTimezone(parsedBody.data.browserTimezone)
 			? parsedBody.data.browserTimezone
 			: undefined;
+		if (instant !== undefined && timezone !== undefined && utcOffsetMinutes !== undefined) {
+			const clientInstant = new Date(instant);
+			if (Math.abs(Date.now() - clientInstant.getTime()) > MAX_CLOCK_EVIDENCE_AGE_MS) {
+				return NextResponse.json(
+					{ error: "Clock instant must be within five minutes" },
+					{ status: 400 },
+				);
+			}
+			if (!isValidIanaTimezone(timezone)) {
+				return NextResponse.json({ error: "Invalid timezone" }, { status: 400 });
+			}
+			if (getUtcOffsetMinutesForZone(clientInstant, timezone) !== utcOffsetMinutes) {
+				return NextResponse.json(
+					{ error: "Timezone offset does not match instant" },
+					{ status: 400 },
+				);
+			}
+
+			browserTimezone = timezone;
+		}
 
 		const result =
 			parsedBody.data.action === "clock_in"
