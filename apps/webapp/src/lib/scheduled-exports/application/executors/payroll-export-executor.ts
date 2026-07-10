@@ -86,7 +86,7 @@ export class PayrollExportExecutor implements IReportExecutor {
 			logger.info({ jobId, isAsync }, "Payroll export job created");
 
 			// Process the job (handles both sync and async)
-			const result = await processExportJob(jobId);
+			const result = await processExportJob({ jobId, organizationId });
 
 			// Determine S3 key from result
 			let s3Key: string | undefined;

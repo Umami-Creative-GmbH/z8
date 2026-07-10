@@ -1853,7 +1853,9 @@ export async function startExportAction(input: StartExportInput): Promise<
 
 		// If sync, process immediately and return result
 		if (!isAsync) {
-			const { result, downloadUrl } = yield* _(Effect.promise(() => processExportJob(jobId)));
+			const { result, downloadUrl } = yield* _(
+				Effect.promise(() => processExportJob({ jobId, organizationId: input.organizationId })),
+			);
 
 			revalidatePath("/settings/payroll-export");
 

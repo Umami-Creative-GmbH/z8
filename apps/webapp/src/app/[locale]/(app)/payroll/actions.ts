@@ -105,7 +105,10 @@ export async function startScopedPayrollExportAction(
 			return { jobId, isAsync };
 		}
 
-		const { result } = await processExportJob(jobId);
+		const { result } = await processExportJob({
+			jobId,
+			organizationId: authContext.employee.organizationId,
+		});
 		const fileContent = result?.content
 			? typeof result.content === "string"
 				? result.content

@@ -18,6 +18,7 @@ export {
 	getWageTypeMappings,
 	getWorkCategories,
 } from "./data-fetcher";
+export type { ProcessPayrollExportJobInput } from "./export-service";
 // Export service
 export {
 	createExportJob,
@@ -29,6 +30,7 @@ export {
 	getFormatter,
 	getPendingExportJobs,
 	isApiBasedExport,
+	markPayrollExportJobFailed,
 	processExportJob,
 } from "./export-service";
 export type {
