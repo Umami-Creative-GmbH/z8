@@ -1,5 +1,6 @@
 import { Cause, Context, Effect, Exit, Option } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ApprovalActionOptions } from "@/lib/approvals/domain/types";
 import { ConflictError, DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 
 vi.mock("@/env", () => ({
@@ -39,7 +40,22 @@ beforeEach(() => {
 	);
 });
 
-function createSharedApprovalTestContext(action: "approve" | "reject" = "approve") {
+function collectColumnNames(value: unknown): string[] {
+	if (!value || typeof value !== "object") return [];
+
+	const objectValue = value as { config?: { name?: unknown }; queryChunks?: unknown[] };
+	const ownName = typeof objectValue.config?.name === "string" ? [objectValue.config.name] : [];
+	const chunkNames = Array.isArray(objectValue.queryChunks)
+		? objectValue.queryChunks.flatMap(collectColumnNames)
+		: [];
+
+	return [...ownName, ...chunkNames];
+}
+
+function createSharedApprovalTestContext(
+	action: "approve" | "reject" = "approve",
+	options?: ApprovalActionOptions,
+) {
 	const approvalFindFirst = vi.fn().mockResolvedValue({
 		id: "approval-1",
 		entityId: "claim-1",
@@ -97,10 +113,11 @@ function createSharedApprovalTestContext(action: "approve" | "reject" = "approve
 				action === "reject" ? "missing details" : undefined,
 				updateEntity,
 				undefined,
+				options,
 			).pipe(Effect.provideService(ApprovalAuditLogger, auditLogger)),
 		);
 
-	return { dbService, updateEntity, run };
+	return { approvalFindFirst, dbService, updateEntity, run };
 }
 
 describe("getApprovalStatusUpdate", () => {
@@ -624,6 +641,26 @@ describe("getApprovalStatusUpdate", () => {
 		await run();
 
 		expect(updateEntity).toHaveBeenCalledTimes(1);
+	});
+
+	it("loads the exact assigned approval request when an id is supplied", async () => {
+		const { approvalFindFirst, run } = createSharedApprovalTestContext("approve", {
+			approvalRequestId: "approval-1",
+		});
+
+		await run();
+
+		const query = approvalFindFirst.mock.calls[0]?.[0]?.where;
+		expect(collectColumnNames(query)).toEqual(
+			expect.arrayContaining([
+				"id",
+				"organization_id",
+				"entity_type",
+				"entity_id",
+				"approver_id",
+				"status",
+			]),
+		);
 	});
 
 	it("does not run final approve side effects for intermediate chain stages", async () => {

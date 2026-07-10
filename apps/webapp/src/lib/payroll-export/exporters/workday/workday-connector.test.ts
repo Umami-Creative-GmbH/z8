@@ -6,7 +6,7 @@ import { WorkdayConnector } from "./workday-connector";
 
 vi.mock("node:dns", () => ({
 	promises: {
-		lookup: vi.fn(async () => ({ address: "203.0.113.10", family: 4 })),
+		lookup: vi.fn(async () => [{ address: "203.0.113.10", family: 4 }]),
 	},
 }));
 
@@ -15,7 +15,7 @@ const mockLookup = vi.mocked(dns.lookup);
 
 describe("WorkdayConnector", () => {
 	beforeEach(() => {
-		mockLookup.mockResolvedValue({ address: "203.0.113.10", family: 4 });
+		mockLookup.mockResolvedValue([{ address: "203.0.113.10", family: 4 }] as never);
 	});
 
 	it("validates required config fields and ranges", async () => {
@@ -60,7 +60,7 @@ describe("WorkdayConnector", () => {
 	});
 
 	it("rejects Workday instance URLs that resolve to private addresses", async () => {
-		mockLookup.mockResolvedValue({ address: "10.0.0.5", family: 4 });
+		mockLookup.mockResolvedValue([{ address: "10.0.0.5", family: 4 }] as never);
 		const connector = new WorkdayConnector();
 
 		await expect(

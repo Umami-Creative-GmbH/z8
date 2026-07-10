@@ -8,6 +8,7 @@ import type { TurnContext } from "botbuilder";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { absenceEntry, approvalRequest, employee, teamsApprovalCard, timeEntry } from "@/db/schema";
+import { decideBotApproval } from "@/lib/bot-platform/approval-decision";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { updateMessage } from "./bot-adapter";
@@ -56,28 +57,13 @@ export async function handleApprovalAction(
 			throw new TeamsError("Not authorized to approve", "NOT_AUTHORIZED");
 		}
 
-		const newStatus = action === "approve" ? "approved" : "rejected";
-
-		// Update approval request
-		await db
-			.update(approvalRequest)
-			.set({
-				status: newStatus,
-				approvedAt: new Date(),
-				...(newStatus === "rejected" ? { rejectionReason: "Rejected via Teams" } : {}),
-			})
-			.where(eq(approvalRequest.id, approvalId));
-
-		// Update the underlying entity status
-		if (approval.entityType === "absence_entry") {
-			await db
-				.update(absenceEntry)
-				.set({ status: newStatus })
-				.where(eq(absenceEntry.id, approval.entityId));
-		}
-		// Note: Time entries use the blockchain-style pattern and corrections are handled
-		// via supersededBy/replacesEntryId. The approval status is tracked in the
-		// approvalRequest table itself.
+		await decideBotApproval({
+			approvalId,
+			actorEmployeeId: resolvedUser.employeeId,
+			organizationId: tenant.organizationId,
+			action,
+			platform: "teams",
+		});
 
 		logger.info(
 			{
@@ -250,12 +236,15 @@ export async function sendApprovalCardToManager(
 	approverId: string,
 	organizationId: string,
 ): Promise<void> {
-	const [{ sendAdaptiveCard }, { getConversationReferenceForUser }, { buildApprovalCardWithInvoke }] =
-		await Promise.all([
-			import("./bot-adapter"),
-			import("./conversation-manager"),
-			import("./cards"),
-		]);
+	const [
+		{ sendAdaptiveCard },
+		{ getConversationReferenceForUser },
+		{ buildApprovalCardWithInvoke },
+	] = await Promise.all([
+		import("./bot-adapter"),
+		import("./conversation-manager"),
+		import("./cards"),
+	]);
 
 	try {
 		// Get approver's user ID

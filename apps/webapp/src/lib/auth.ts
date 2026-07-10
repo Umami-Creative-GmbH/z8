@@ -73,41 +73,45 @@ function getAuthSecrets() {
 	return resolved.secrets;
 }
 
-async function getSSOTrustedOrigins(request: Request, pathname: string): Promise<string[]> {
-	if (!pathname.includes("/sso/")) {
-		return [];
-	}
-
+export async function getSSOTrustedOrigins(
+	_request: Request,
+	_pathname: string,
+	dependencies: {
+		loadConfiguredOrigins: () => string[];
+	} = {
+		loadConfiguredOrigins: () => env.SSO_TRUSTED_ORIGINS?.split(",") ?? [],
+	},
+): Promise<string[]> {
 	const origins = new Set<string>();
 
-	const providers = await db.query.ssoProvider.findMany({
-		columns: { issuer: true },
-	});
-
-	for (const provider of providers) {
-		if (!provider.issuer) {
+	for (const configuredOrigin of dependencies.loadConfiguredOrigins()) {
+		const value = configuredOrigin.trim();
+		if (!value) {
 			continue;
 		}
 
 		try {
-			origins.add(new URL(provider.issuer).origin);
+			origins.add(new URL(value).origin);
 		} catch {
-			logger.warn({ issuer: provider.issuer }, "Invalid SSO issuer URL in provider table");
-		}
-	}
-
-	if (pathname.endsWith("/sso/register")) {
-		try {
-			const body = (await request.clone().json()) as { issuer?: string };
-			if (body.issuer) {
-				origins.add(new URL(body.issuer).origin);
-			}
-		} catch {
-			// Ignore non-JSON or unreadable request bodies.
+			logger.warn({ origin: value }, "Invalid origin in SSO_TRUSTED_ORIGINS");
 		}
 	}
 
 	return [...origins];
+}
+
+function isSCIMAdministrator(member: { role: string } | null): member is { role: string } {
+	if (!member) return false;
+	const roles = member.role.split(",").map((role) => role.trim());
+	return roles.includes("admin") || roles.includes("owner");
+}
+
+export function assertSCIMAdministrator(
+	member: { role: string } | null,
+): asserts member is { role: string } {
+	if (!isSCIMAdministrator(member)) {
+		throw new Error("Only organization admins can generate SCIM tokens");
+	}
 }
 
 /**
@@ -746,14 +750,13 @@ export const auth = betterAuth({
 		scim({
 			// Store SCIM tokens encrypted for security
 			storeSCIMToken: "encrypted",
+			// Runs before Better Auth looks up or rotates an existing connection.
+			canGenerateToken: ({ member }) => isSCIMAdministrator(member),
 			// Token generation hooks for security and audit
 			beforeSCIMTokenGenerated: async ({ user, member }) => {
-				// Only org admins/owners can generate SCIM tokens
-				if (member && member.role !== "admin" && member.role !== "owner") {
-					throw new Error("Only organization admins can generate SCIM tokens");
-				}
+				assertSCIMAdministrator(member);
 				logger.info(
-					{ userId: user.id, memberRole: member?.role },
+					{ userId: user.id, memberRole: member.role },
 					"SCIM token generation requested",
 				);
 			},
