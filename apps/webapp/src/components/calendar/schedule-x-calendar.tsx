@@ -26,6 +26,7 @@ import { useUserTimezone, useWeekStartDay } from "@/components/providers/user-pr
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { addCalendarDateKey, todayCalendarDateKey } from "@/lib/calendar/date-keys";
 import {
 	calendarEventsToScheduleX,
 	generateBreakEvents,
@@ -42,8 +43,8 @@ import {
 	hasExceededPointerDragThreshold,
 	isIntentionalRangePointerDown,
 	isScheduleXEventElement,
-	resolveEventModalLeft,
 	resolveClickableCalendarEvent,
+	resolveEventModalLeft,
 	shouldRetryRequirementHeaderInjection,
 } from "./schedule-x-calendar-utils";
 
@@ -60,11 +61,12 @@ interface ScheduleXCalendarWrapperProps {
 	timeZone?: string;
 	isLoading?: boolean;
 	viewMode: ViewMode;
+	initialDateKey?: string;
 	onViewModeChange: (mode: ViewMode) => void;
 	onEventClick?: (event: CalendarEvent) => void;
 	clockOutAllowedWorkPeriodIds?: ReadonlySet<string>;
 	onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
-	onRangeChange?: (range: { start: Date; end: Date }) => void;
+	onRangeChange?: (range: { startDateKey: string; endDateKey: string }) => void;
 	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
 	workHoursData?: DailyWorkHoursSummaries;
@@ -78,14 +80,6 @@ const viewModeToScheduleX: Record<ViewMode, string> = {
 	month: "month-grid",
 	year: "month-grid", // Year view is handled separately, fallback to month-grid
 };
-
-function luxonToPlainDate(dt: DateTime): Temporal.PlainDate {
-	return Temporal.PlainDate.from({
-		year: dt.year,
-		month: dt.month,
-		day: dt.day,
-	});
-}
 
 const EMPTY_CLOCK_OUT_ALLOWED_WORK_PERIOD_IDS = new Set<string>();
 
@@ -172,6 +166,7 @@ export function ScheduleXCalendarWrapper({
 	timeZone: explicitTimeZone,
 	isLoading = false,
 	viewMode,
+	initialDateKey,
 	onViewModeChange,
 	onEventClick,
 	clockOutAllowedWorkPeriodIds = EMPTY_CLOCK_OUT_ALLOWED_WORK_PERIOD_IDS,
@@ -192,8 +187,10 @@ export function ScheduleXCalendarWrapper({
 	const timeZone = explicitTimeZone ?? viewerTimeZone;
 	const isDark = resolvedTheme === "dark";
 
-	// Track current date for display
-	const [currentDate, setCurrentDate] = useState<DateTime>(() => DateTime.now());
+	const [currentDateKey, setCurrentDateKey] = useState(
+		() => initialDateKey ?? todayCalendarDateKey(timeZone),
+	);
+	const currentDate = DateTime.fromISO(currentDateKey, { zone: timeZone });
 	const [runningPeriodNow, setRunningPeriodNow] = useState<Date>(() => new Date());
 
 	// Create calendar plugins (must be stable references)
@@ -231,47 +228,49 @@ export function ScheduleXCalendarWrapper({
 
 	// Navigation functions
 	const navigatePrevious = () => {
-		let newDate: DateTime;
+		let duration: Temporal.DurationLike;
 		switch (viewMode) {
 			case "day":
-				newDate = currentDate.minus({ days: 1 });
+				duration = { days: -1 };
 				break;
 			case "week":
-				newDate = currentDate.minus({ weeks: 1 });
+				duration = { weeks: -1 };
 				break;
 			case "month":
-				newDate = currentDate.minus({ months: 1 });
+				duration = { months: -1 };
 				break;
 			default:
-				newDate = currentDate.minus({ days: 1 });
+				duration = { days: -1 };
 		}
-		setCurrentDate(newDate);
-		calendarControls.setDate(luxonToPlainDate(newDate));
+		const newDateKey = addCalendarDateKey(currentDateKey, duration);
+		setCurrentDateKey(newDateKey);
+		calendarControls.setDate(Temporal.PlainDate.from(newDateKey));
 	};
 
 	const navigateNext = () => {
-		let newDate: DateTime;
+		let duration: Temporal.DurationLike;
 		switch (viewMode) {
 			case "day":
-				newDate = currentDate.plus({ days: 1 });
+				duration = { days: 1 };
 				break;
 			case "week":
-				newDate = currentDate.plus({ weeks: 1 });
+				duration = { weeks: 1 };
 				break;
 			case "month":
-				newDate = currentDate.plus({ months: 1 });
+				duration = { months: 1 };
 				break;
 			default:
-				newDate = currentDate.plus({ days: 1 });
+				duration = { days: 1 };
 		}
-		setCurrentDate(newDate);
-		calendarControls.setDate(luxonToPlainDate(newDate));
+		const newDateKey = addCalendarDateKey(currentDateKey, duration);
+		setCurrentDateKey(newDateKey);
+		calendarControls.setDate(Temporal.PlainDate.from(newDateKey));
 	};
 
 	const navigateToday = () => {
-		const today = DateTime.now();
-		setCurrentDate(today);
-		calendarControls.setDate(luxonToPlainDate(today));
+		const today = todayCalendarDateKey(timeZone);
+		setCurrentDateKey(today);
+		calendarControls.setDate(Temporal.PlainDate.from(today));
 	};
 
 	// Format the date range display based on view mode
@@ -345,24 +344,17 @@ export function ScheduleXCalendarWrapper({
 	const handleRangeChange = (range: { start: unknown; end: unknown }) => {
 		if (!onRangeChange) return;
 
-		// Convert to Date using Luxon for robust parsing
-		const toDate = (value: unknown): Date => {
-			if (value instanceof Date) return value;
-			// Use Luxon to parse any string/Temporal format
-			const str = String(value);
-			const dt = DateTime.fromISO(str).isValid
-				? DateTime.fromISO(str)
-				: DateTime.fromSQL(str).isValid
-					? DateTime.fromSQL(str)
-					: DateTime.fromJSDate(new Date(str));
-			return dt.toJSDate();
-		};
-
 		onRangeChange({
-			start: toDate(range.start),
-			end: toDate(range.end),
+			startDateKey: String(range.start).slice(0, 10),
+			endDateKey: String(range.end).slice(0, 10),
 		});
 	};
+
+	useEffect(() => {
+		const nextDateKey = initialDateKey ?? todayCalendarDateKey(timeZone);
+		setCurrentDateKey(nextDateKey);
+		calendarControls.setDate(Temporal.PlainDate.from(nextDateKey));
+	}, [calendarControls, initialDateKey, timeZone]);
 
 	const handleViewModeChange = (mode: ViewMode) => {
 		if (mode !== "year") {

@@ -1,15 +1,12 @@
-import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { connection, type NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { employee, employeeManagers, userSettings } from "@/db/schema";
 import { getVerifiedOrgContext } from "@/lib/auth-helpers";
-import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 import { getAbsencesForMonth } from "@/lib/calendar/absence-service";
 import {
 	assignedHolidayToCalendarEvent,
 	getAssignedHolidaysForEmployee,
 } from "@/lib/calendar/assigned-holidays";
+import { resolveAuthorizedCalendarEmployeeContext } from "@/lib/calendar/calendar-employee-context";
 import { getHolidaysForMonth } from "@/lib/calendar/holiday-service";
 import { getTimeEntriesForMonth } from "@/lib/calendar/time-entry-service";
 import type {
@@ -23,86 +20,6 @@ import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-
 import { superJsonResponse } from "@/lib/superjson";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
-
-type VerifiedCalendarContext = NonNullable<Awaited<ReturnType<typeof getVerifiedOrgContext>>>;
-
-async function resolveAuthorizedCalendarEmployeeId(
-	orgContext: VerifiedCalendarContext,
-	requestedEmployeeId: string | undefined,
-): Promise<{ id: string; userId: string } | undefined> {
-	if (!orgContext.employeeId || !orgContext.role) {
-		return undefined;
-	}
-
-	const currentEmployee = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.id, orgContext.employeeId),
-			eq(employee.organizationId, orgContext.organizationId),
-			eq(employee.isActive, true),
-		),
-	});
-	if (!currentEmployee) {
-		return undefined;
-	}
-
-	const targetEmployeeId = requestedEmployeeId ?? currentEmployee.id;
-	const targetEmployee = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.id, targetEmployeeId),
-			eq(employee.organizationId, orgContext.organizationId),
-			eq(employee.isActive, true),
-		),
-	});
-	if (!targetEmployee) {
-		return undefined;
-	}
-
-	const managedRecords = await db.query.employeeManagers.findMany({
-		where: eq(employeeManagers.managerId, currentEmployee.id),
-		columns: { employeeId: true },
-	});
-	const principal: PrincipalContext = {
-		userId: orgContext.user.id,
-		isPlatformAdmin: orgContext.user.role === "admin",
-		activeOrganizationId: orgContext.organizationId,
-		orgMembership: null,
-		employee: {
-			id: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			role: currentEmployee.role,
-			teamId: currentEmployee.teamId,
-		},
-		permissions: { orgWide: null, byTeamId: new Map() },
-		managedEmployeeIds: managedRecords.map((record) => record.employeeId),
-		customRoles: [],
-	};
-
-	const ability = defineAbilityFor(principal);
-	return ability.can(
-		"read",
-		asAppSubject("Employee", {
-			id: targetEmployee.id,
-			employeeId: targetEmployee.id,
-			organizationId: targetEmployee.organizationId,
-			teamId: targetEmployee.teamId,
-		}),
-	)
-		? { id: targetEmployee.id, userId: targetEmployee.userId }
-		: undefined;
-}
-
-async function fetchCalendarTimezoneForEmployee(
-	employeeContext: { userId: string } | undefined,
-): Promise<string | null> {
-	if (!employeeContext) return null;
-
-	const settings = await db.query.userSettings.findFirst({
-		where: eq(userSettings.userId, employeeContext.userId),
-		columns: { timezone: true },
-	});
-
-	return settings?.timezone ?? "UTC";
-}
 
 async function fetchHolidayEvents(params: {
 	organizationId: string;
@@ -269,8 +186,17 @@ export async function GET(request: NextRequest) {
 		const showsEmployeeScopedEvents = showAbsences || showTimeEntries || showWorkPeriods;
 		const holidaysRequestedForEmployee =
 			showHolidays && Boolean(employeeId || showsEmployeeScopedEvents);
-		const scopedEmployee = await resolveAuthorizedCalendarEmployeeId(orgContext, employeeId);
-		const scopedEmployeeId = scopedEmployee?.id;
+		const scopedEmployee =
+			orgContext.employeeId && orgContext.role
+				? await resolveAuthorizedCalendarEmployeeContext({
+						userId: orgContext.user.id,
+						isPlatformAdmin: orgContext.user.role === "admin",
+						organizationId,
+						currentEmployeeId: orgContext.employeeId,
+						requestedEmployeeId: employeeId,
+					})
+				: undefined;
+		const scopedEmployeeId = scopedEmployee?.employeeId;
 
 		if ((showsEmployeeScopedEvents || holidaysRequestedForEmployee) && !scopedEmployeeId) {
 			return NextResponse.json({ error: "Forbidden: Employee profile required" }, { status: 403 });
@@ -287,7 +213,7 @@ export async function GET(request: NextRequest) {
 
 		const yearNum = parseInt(year, 10);
 		const monthNum = month === null ? null : parseInt(month, 10);
-		const calendarTimezone = await fetchCalendarTimezoneForEmployee(scopedEmployee);
+		const calendarTimezone = scopedEmployee?.timezone ?? null;
 		const { startDate, endDate } = getRequestDateRange(
 			yearNum,
 			monthNum,
@@ -321,9 +247,9 @@ export async function GET(request: NextRequest) {
 
 			const monthResults = await Promise.all(monthPromises);
 			events = monthResults.flatMap((result) => result.events);
-			dailyActualMinutes = monthResults.reduce<DailyWorkActualMinutes>(
-				(acc, result) => ({ ...acc, ...result.dailyActualMinutes }),
+			dailyActualMinutes = Object.assign(
 				{},
+				...monthResults.map((result) => result.dailyActualMinutes),
 			);
 		} else {
 			// Fetch single month

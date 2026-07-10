@@ -2,12 +2,12 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
+import { allDayDateKeyForDate, calendarDateKeyForDate } from "@/lib/calendar/date-keys";
 import type {
 	CalendarEvent,
 	DailyWorkActualMinutes,
 	DailyWorkRequirements,
 } from "@/lib/calendar/types";
-import { format } from "@/lib/datetime/luxon-utils";
 import { queryKeys } from "@/lib/query/keys";
 import { parseSuperJsonResponse } from "@/lib/superjson";
 import {
@@ -170,7 +170,10 @@ export function useCalendarData({
 	// Group events by date for easy lookup (memoized)
 	const eventsByDate = (() => {
 		return calendarData.events.reduce((acc, event) => {
-			const dateKey = format(event.date, "yyyy-MM-dd");
+			const dateKey =
+				event.type === "absence" || event.type === "holiday"
+					? allDayDateKeyForDate(event.date)
+					: calendarDateKeyForDate(event.date, calendarData.calendarTimezone ?? "UTC");
 			if (!acc.has(dateKey)) {
 				acc.set(dateKey, []);
 			}

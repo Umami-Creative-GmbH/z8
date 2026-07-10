@@ -7,6 +7,7 @@ import { CalendarView } from "./calendar-view";
 
 const {
 	capturedCalendarFilters,
+	capturedCalendarQueries,
 	mockCalendarData,
 	mockIsManagerOrAbove,
 	onScheduleXWrapperRender,
@@ -16,6 +17,7 @@ const {
 	toastSuccess,
 } = vi.hoisted(() => ({
 	capturedCalendarFilters: [] as unknown[],
+	capturedCalendarQueries: [] as unknown[],
 	mockIsManagerOrAbove: vi.fn(() => true),
 	onScheduleXWrapperRender: vi.fn(),
 	push: vi.fn(),
@@ -60,8 +62,9 @@ vi.mock("@/hooks/use-organization", () => ({
 }));
 
 vi.mock("@/hooks/use-calendar-data", () => ({
-	useCalendarData: ({ filters }: { filters: unknown }) => {
-		capturedCalendarFilters.push(filters);
+	useCalendarData: (options: { filters: unknown; month: number; year: number }) => {
+		capturedCalendarQueries.push(options);
+		capturedCalendarFilters.push(options.filters);
 
 		return {
 			...mockCalendarData,
@@ -238,11 +241,13 @@ vi.mock("./month-work-summary-view", () => ({
 		events,
 		isSummaryLoading,
 		onRefresh,
+		onMonthChange,
 		viewMode,
 	}: {
 		events: CalendarEvent[];
 		isSummaryLoading?: boolean;
 		onRefresh: () => void;
+		onMonthChange: (dateKey: string) => void;
 		viewMode: string;
 	}) => (
 		<div
@@ -253,6 +258,9 @@ vi.mock("./month-work-summary-view", () => ({
 		>
 			<button type="button" onClick={onRefresh}>
 				Refresh month
+			</button>
+			<button type="button" onClick={() => onMonthChange("2026-08-01")}>
+				Next month
 			</button>
 		</div>
 	),
@@ -315,6 +323,7 @@ function setMobileViewport(isMobile: boolean) {
 describe("CalendarView", () => {
 	beforeEach(() => {
 		capturedCalendarFilters.length = 0;
+		capturedCalendarQueries.length = 0;
 		mockCalendarData.events = [];
 		mockCalendarData.calendarTimezone = null;
 		mockCalendarData.isFetching = false;
@@ -545,6 +554,22 @@ describe("CalendarView", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Refresh month" }));
 
 		expect(refetch).toHaveBeenCalledTimes(1);
+	});
+
+	it("keeps New York month navigation on the intended August date key", () => {
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialDateKey="2026-07-15"
+				initialTimezone="America/New_York"
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Month" }));
+		fireEvent.click(screen.getByRole("button", { name: "Next month" }));
+
+		expect(capturedCalendarQueries.at(-1)).toMatchObject({ year: 2026, month: 7 });
 	});
 
 	it("opens manual entry dialog with normalized range for the selected employee", () => {

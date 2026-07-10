@@ -5,8 +5,8 @@ import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import type { SelectableEmployee } from "@/components/employee-select/types";
-import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { ManualTimeEntryDialog } from "@/components/time-tracking/manual-time-entry-dialog";
 import {
 	AlertDialog,
@@ -31,6 +31,7 @@ import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useOrganization } from "@/hooks/use-organization";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { todayCalendarDateKey } from "@/lib/calendar/date-keys";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
 import { useRouter } from "@/navigation";
@@ -50,6 +51,8 @@ interface CalendarViewProps {
 	organizationId: string;
 	currentEmployeeId?: string;
 	initialSelectedEmployeeId?: string;
+	initialDateKey?: string;
+	initialTimezone?: string;
 }
 
 function isRunningWorkPeriod(event: CalendarEvent): boolean {
@@ -76,12 +79,14 @@ export function CalendarView({
 	organizationId,
 	currentEmployeeId,
 	initialSelectedEmployeeId,
+	initialDateKey,
+	initialTimezone,
 }: CalendarViewProps) {
 	const router = useRouter();
 	const { t } = useTranslate();
 	const { isManagerOrAbove } = useOrganization();
-	const viewerTimeZone = useUserTimezone();
 	const initialEmployeeId = initialSelectedEmployeeId ?? currentEmployeeId ?? null;
+	const initialCalendarTimezone = initialTimezone ?? "UTC";
 	const mobileControlsTitle = t("calendar.mobileControls.title", "Filters & Legend");
 	const mobileControlsDescription = t(
 		"calendar.mobileControls.description",
@@ -113,8 +118,11 @@ export function CalendarView({
 	const selectedEmployeeName = activeEmployeeSelectionOverride?.name ?? null;
 
 	// Current date range for data fetching
-	const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-	const [currentYear, setCurrentYear] = useState<number>(() => new Date().getFullYear());
+	const [currentDateKey, setCurrentDateKey] = useState(
+		() => initialDateKey ?? todayCalendarDateKey(initialCalendarTimezone),
+	);
+	const currentCalendarDate = Temporal.PlainDate.from(currentDateKey);
+	const currentYear = currentCalendarDate.year;
 
 	// Selected event for details panel
 	const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -171,13 +179,17 @@ export function CalendarView({
 		refetch,
 	} = useCalendarData({
 		organizationId,
-		month: currentMonth.getMonth(),
-		year: viewMode === "year" ? currentYear : currentMonth.getFullYear(),
+		month: currentCalendarDate.month - 1,
+		year: currentYear,
 		filters: effectiveFilters,
 		fullYear: viewMode === "year",
 	});
-	const calendarTimeZone = calendarTimezone ?? viewerTimeZone;
+	const calendarTimeZone = calendarTimezone ?? initialCalendarTimezone;
 	const completedEvents = events.filter((event) => !isRunningWorkPeriod(event));
+
+	useEffect(() => {
+		setCurrentDateKey(initialDateKey ?? todayCalendarDateKey(initialCalendarTimezone));
+	}, [initialDateKey, initialCalendarTimezone]);
 
 	const workHoursData = buildDailyWorkHoursSummaries({
 		events: completedEvents,
@@ -191,10 +203,11 @@ export function CalendarView({
 	};
 
 	// Handle date range change from schedule-x
-	const handleRangeChange = (range: { start: Date; end: Date }) => {
-		// Update current month based on range midpoint
-		const midpoint = new Date((range.start.getTime() + range.end.getTime()) / 2);
-		setCurrentMonth(midpoint);
+	const handleRangeChange = (range: { startDateKey: string; endDateKey: string }) => {
+		const start = Temporal.PlainDate.from(range.startDateKey);
+		const end = Temporal.PlainDate.from(range.endDateKey);
+		const midpoint = start.add({ days: Math.floor(start.until(end).days / 2) });
+		setCurrentDateKey(midpoint.toString());
 	};
 
 	const handleTimeRangeSelect = (range: { start: Date; end: Date }) => {
@@ -273,8 +286,8 @@ export function CalendarView({
 	};
 
 	// Handle day click from year view
-	const handleDayClick = (date: Date) => {
-		setCurrentMonth(date);
+	const handleDayClick = (dateKey: string) => {
+		setCurrentDateKey(dateKey);
 		setViewMode("day");
 	};
 
@@ -454,19 +467,23 @@ export function CalendarView({
 							events={completedEvents}
 							year={currentYear}
 							viewMode={viewMode}
-							onYearChange={setCurrentYear}
+							onYearChange={(year) =>
+								setCurrentDateKey(currentCalendarDate.with({ year }).toString())
+							}
 							onViewModeChange={setViewMode}
 							onDayClick={handleDayClick}
 							workHoursData={workHoursData}
+							timeZone={calendarTimeZone}
 						/>
 					) : viewMode === "month" ? (
 						<MonthWorkSummaryView
-							monthDate={currentMonth}
+							monthDateKey={currentDateKey}
+							timeZone={calendarTimeZone}
 							events={completedEvents}
 							workHoursData={workHoursData}
 							viewMode={viewMode}
 							onViewModeChange={setViewMode}
-							onMonthChange={setCurrentMonth}
+							onMonthChange={setCurrentDateKey}
 							onDayClick={handleDayClick}
 							onRefresh={refetch}
 							isSummaryLoading={isFetching}
@@ -477,6 +494,7 @@ export function CalendarView({
 							timeZone={calendarTimeZone}
 							isLoading={isLoading}
 							viewMode={viewMode}
+							initialDateKey={currentDateKey}
 							onViewModeChange={setViewMode}
 							onEventClick={handleEventClick}
 							clockOutAllowedWorkPeriodIds={clockOutAllowedWorkPeriodIds}

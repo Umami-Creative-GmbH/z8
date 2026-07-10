@@ -1,4 +1,12 @@
 import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
+import {
+	addCalendarDateKey,
+	allDayDateKeyForDate,
+	calendarDateKeyForDate,
+	todayCalendarDateKey,
+} from "@/lib/calendar/date-keys";
+import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import type {
 	CalendarEvent,
@@ -43,6 +51,8 @@ interface BuildMonthWorkSummaryOptions {
 	weekStartDay: WeekStartDay;
 	workHoursData: DailyWorkHoursSummaries;
 	events?: CalendarEvent[];
+	timezone?: string;
+	now?: Instant;
 }
 
 function getTotalStatus(deltaMinutes: number): WorkPeriodTotalStatus {
@@ -81,26 +91,37 @@ export function totalWorkSummaries(summaries: DailyWorkHoursSummary[]): WorkPeri
 	};
 }
 
-export function groupCalendarEventsByDate(events: CalendarEvent[]): Map<string, CalendarEvent[]> {
+export function groupCalendarEventsByDate(
+	events: CalendarEvent[],
+	timezone: string = "UTC",
+): Map<string, CalendarEvent[]> {
 	const grouped = new Map<string, CalendarEvent[]>();
 
 	for (const event of events) {
-		const startDate = DateTime.fromJSDate(event.date, { zone: "utc" }).startOf("day");
-		const endDate = event.endDate
-			? DateTime.fromJSDate(event.endDate, { zone: "utc" }).startOf("day")
-			: startDate;
-		const lastDate = endDate < startDate ? startDate : endDate;
+		const isAllDay = event.type === "absence" || event.type === "holiday";
+		const dateKeyForEventDate = (date: Date) =>
+			isAllDay ? allDayDateKeyForDate(date) : calendarDateKeyForDate(date, timezone);
+		const startDateKey = dateKeyForEventDate(event.date);
+		const endDateKey = event.endDate ? dateKeyForEventDate(event.endDate) : startDateKey;
+		const lastDateKey =
+			Temporal.PlainDate.compare(
+				Temporal.PlainDate.from(endDateKey),
+				Temporal.PlainDate.from(startDateKey),
+			) < 0
+				? startDateKey
+				: endDateKey;
 
-		let current = startDate;
-		while (current <= lastDate) {
-			const dateKey = current.toISODate();
-			if (dateKey) {
-				const existing = grouped.get(dateKey) ?? [];
-				existing.push(event);
-				grouped.set(dateKey, existing);
-			}
-
-			current = current.plus({ days: 1 });
+		for (
+			let dateKey = startDateKey;
+			Temporal.PlainDate.compare(
+				Temporal.PlainDate.from(dateKey),
+				Temporal.PlainDate.from(lastDateKey),
+			) <= 0;
+			dateKey = addCalendarDateKey(dateKey, { days: 1 })
+		) {
+			const existing = grouped.get(dateKey) ?? [];
+			existing.push(event);
+			grouped.set(dateKey, existing);
 		}
 	}
 
@@ -113,12 +134,17 @@ export function buildMonthWorkSummary({
 	weekStartDay,
 	workHoursData,
 	events = [],
+	timezone = "UTC",
+	now = systemClock.nowInstant(),
 }: BuildMonthWorkSummaryOptions): MonthWorkSummary {
-	const monthStart = DateTime.local(year, monthIndex + 1, 1).startOf("day");
-	const today = DateTime.local().startOf("day");
+	const monthStart = DateTime.fromObject(
+		{ year, month: monthIndex + 1, day: 1 },
+		{ zone: timezone },
+	).startOf("day");
+	const todayDateKey = todayCalendarDateKey(timezone, now);
 	const gridStart = getGridStart(monthStart, weekStartDay);
 	const gridEnd = getGridEnd(monthStart, weekStartDay);
-	const eventsByDate = groupCalendarEventsByDate(events);
+	const eventsByDate = groupCalendarEventsByDate(events, timezone);
 	const weeks: MonthWorkWeek[] = [];
 	const monthSummaries: DailyWorkHoursSummary[] = [];
 
@@ -131,7 +157,9 @@ export function buildMonthWorkSummary({
 			const dateKey = current.toISODate()!;
 			const isActiveMonth = current.month === monthStart.month;
 			const isFutureCurrentMonthDay =
-				monthStart.hasSame(today, "month") && monthStart.hasSame(today, "year") && current > today;
+				monthStart.year === Number(todayDateKey.slice(0, 4)) &&
+				monthStart.month === Number(todayDateKey.slice(5, 7)) &&
+				dateKey > todayDateKey;
 			const workHoursSummary = workHoursData.get(dateKey) ?? null;
 
 			if (isActiveMonth && !isFutureCurrentMonthDay && workHoursSummary) {

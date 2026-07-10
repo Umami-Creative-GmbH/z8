@@ -4,6 +4,7 @@ import { CalendarView } from "@/components/calendar/calendar-view";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthContext } from "@/lib/auth-helpers";
+import { resolveAuthorizedCalendarEmployeeContext } from "@/lib/calendar/calendar-employee-context";
 
 export async function CalendarPageContent({
 	selectedEmployeeId,
@@ -21,12 +22,29 @@ export async function CalendarPageContent({
 			</div>
 		);
 	}
+	const calendarEmployeeContext = await resolveAuthorizedCalendarEmployeeContext({
+		userId: authContext.user.id,
+		isPlatformAdmin: authContext.user.role === "admin",
+		organizationId: authContext.employee.organizationId,
+		currentEmployeeId: authContext.employee.id,
+		requestedEmployeeId: selectedEmployeeId,
+	});
+
+	if (!calendarEmployeeContext) {
+		return (
+			<div className="flex flex-1 items-center justify-center p-6">
+				<NoEmployeeError feature="view the calendar" />
+			</div>
+		);
+	}
 
 	return (
 		<CalendarView
 			organizationId={authContext.employee.organizationId}
 			currentEmployeeId={authContext.employee.id}
-			initialSelectedEmployeeId={selectedEmployeeId}
+			initialSelectedEmployeeId={calendarEmployeeContext.employeeId}
+			initialDateKey={calendarEmployeeContext.initialDateKey}
+			initialTimezone={calendarEmployeeContext.timezone}
 		/>
 	);
 }
