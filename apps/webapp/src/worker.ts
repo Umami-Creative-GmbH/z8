@@ -189,6 +189,15 @@ export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 				return processImportReviewJob(job as Job<typeof job.data>);
 			}
 
+			case "payroll-export": {
+				const { processExportJob } = await import("@/lib/payroll-export");
+				await processExportJob({
+					jobId: job.data.jobId,
+					organizationId: job.data.organizationId,
+				});
+				return { success: true, message: "Payroll export processed" };
+			}
+
 			default:
 				throw new Error(`Unknown job type: ${(job.data as JobData).type}`);
 		}

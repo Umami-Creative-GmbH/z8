@@ -57,5 +57,6 @@ export { WorkdayConnector, workdayConnector } from "./exporters/workday";
 export { DatevLohnFormatter, datevLohnFormatter } from "./formatters/datev-lohn-formatter";
 export { LexwareLohnFormatter, lexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
 export { SageLohnFormatter, sageLohnFormatter } from "./formatters/sage-lohn-formatter";
+export { enqueuePayrollExportJob } from "./queue";
 // Types
 export * from "./types";
