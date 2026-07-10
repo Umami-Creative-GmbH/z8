@@ -99,6 +99,7 @@ describe("enqueueVacationOverrideCalendarSyncJobs", () => {
 	it("queues calendar sync for updated, created, and deleted vacation overrides", () => {
 		enqueueVacationOverrideCalendarSyncJobs({
 			employeeId: "employee-1",
+			organizationId: "org-1",
 			summary: {
 				updatedAbsenceIds: ["updated-1"],
 				createdAbsenceIds: ["created-1"],
@@ -110,16 +111,19 @@ describe("enqueueVacationOverrideCalendarSyncJobs", () => {
 		expect(addCalendarSyncJobMock).toHaveBeenNthCalledWith(1, {
 			absenceId: "updated-1",
 			employeeId: "employee-1",
+			organizationId: "org-1",
 			action: "update",
 		});
 		expect(addCalendarSyncJobMock).toHaveBeenNthCalledWith(2, {
 			absenceId: "created-1",
 			employeeId: "employee-1",
+			organizationId: "org-1",
 			action: "create",
 		});
 		expect(addCalendarSyncJobMock).toHaveBeenNthCalledWith(3, {
 			absenceId: "deleted-1",
 			employeeId: "employee-1",
+			organizationId: "org-1",
 			action: "delete",
 		});
 	});

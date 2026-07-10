@@ -127,6 +127,7 @@ export async function cancelAbsenceRequestForEmployee(
 	void addCalendarSyncJob({
 		absenceId,
 		employeeId: absence.employeeId,
+		organizationId,
 		action: "delete",
 	});
 

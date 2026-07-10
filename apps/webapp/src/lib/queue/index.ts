@@ -88,6 +88,7 @@ export interface CalendarSyncJobData {
 	type: "calendar-sync";
 	absenceId: string;
 	employeeId: string;
+	organizationId: string;
 	action: "create" | "update" | "delete";
 }
 
