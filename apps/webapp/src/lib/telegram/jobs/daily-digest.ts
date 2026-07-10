@@ -6,7 +6,7 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { env } from "@/env";
@@ -14,6 +14,11 @@ import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
+import {
+	claimDailyDigestDelivery,
+	markDailyDigestDeliveryFailed,
+	markDailyDigestDeliverySent,
+} from "@/lib/notifications/daily-digest-delivery";
 import { sendMessage } from "../api";
 import { getAllActiveBotConfigs } from "../bot-config";
 import { getOrganizationPrivateConversations } from "../conversation-manager";
@@ -83,14 +88,17 @@ async function processBotDigest(bot: {
 	digestTimezone: string;
 }): Promise<number> {
 	// Check if it's time to send
-	const now = DateTime.now().setZone(bot.digestTimezone);
+	const now = Temporal.Now.instant().toZonedDateTimeISO(bot.digestTimezone);
 	const [digestHour, digestMinute] = bot.digestTime.split(":").map(Number);
-	const digestTime = now.set({
+	const digestTime = now.with({
 		hour: digestHour,
 		minute: digestMinute,
 		second: 0,
+		millisecond: 0,
+		microsecond: 0,
+		nanosecond: 0,
 	});
-	const minutesSinceDigestTime = now.diff(digestTime, "minutes").minutes;
+	const minutesSinceDigestTime = now.since(digestTime).total({ unit: "minutes" });
 
 	if (minutesSinceDigestTime < 0 || minutesSinceDigestTime >= 15) {
 		return 0;
@@ -104,6 +112,7 @@ async function processBotDigest(bot: {
 
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {
+			let deliveryId: string | null = null;
 			try {
 				// Get employee record
 				const emp = await db.query.employee.findFirst({
@@ -128,6 +137,17 @@ async function processBotDigest(bot: {
 					organizationId: bot.organizationId,
 				});
 				if (!temporal) return false;
+				deliveryId = await claimDailyDigestDelivery({
+					organizationId: bot.organizationId,
+					recipientUserId: conv.userId,
+					platform: "telegram",
+					type: "daily_digest",
+					recipientLocalDate: Temporal.Now.instant()
+						.toZonedDateTimeISO(temporal.effectiveTimezone)
+						.toPlainDate()
+						.toString(),
+				});
+				if (!deliveryId) return false;
 
 				// Digest delivery is scheduled in the bot timezone, but content uses the recipient's context.
 				const digestData: DailyDigestData = await buildDigestDataForManager(
@@ -145,9 +165,19 @@ async function processBotDigest(bot: {
 					text: messageText,
 					parse_mode: "MarkdownV2",
 				});
+				await markDailyDigestDeliverySent({
+					id: deliveryId,
+					organizationId: bot.organizationId,
+				});
 
 				return true;
 			} catch (error) {
+				if (deliveryId) {
+					await markDailyDigestDeliveryFailed(
+						{ id: deliveryId, organizationId: bot.organizationId },
+						error,
+					);
+				}
 				logger.warn({ error, userId: conv.userId }, "Failed to send digest");
 				return false;
 			}

@@ -31,10 +31,14 @@ describe("employee invitation draft schema", () => {
 		expect(migration).toContain('ON DELETE SET NULL ("team_id")');
 		const snapshot = JSON.parse(readFileSync("drizzle/meta/0050_snapshot.json", "utf8"));
 		expect(snapshot.tables["public.employee_invitation_draft"]).toBeTruthy();
-		expect(journal.entries.at(-1)).toMatchObject({
+		expect(journal.entries).toContainEqual(
+			expect.objectContaining({
 			idx: 50,
 			tag: "0050_employee_invitation_draft",
-		});
-		expect(journal.entries.at(-1).when).toBeGreaterThan(1780773132900);
+			}),
+		);
+		expect(journal.entries.find((entry: { idx: number }) => entry.idx === 50)?.when).toBeGreaterThan(
+			1780773132900,
+		);
 	});
 });

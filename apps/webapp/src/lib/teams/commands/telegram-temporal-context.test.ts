@@ -61,7 +61,7 @@ describe("Telegram command temporal contexts", () => {
 	] as const)("schedules %s digests in the digest timezone and renders each recipient in their timezone", (platform) => {
 		const source = readDailyDigestSource(platform);
 
-		expect(source).toContain("setZone(");
+		expect(source).toMatch(/setZone\(|toZonedDateTimeISO\(/);
 		expect(source).toContain("digestTimezone");
 		expect(source).toContain("resolveBotTemporalContext");
 		expect(source).toContain("effectiveTimezone");
