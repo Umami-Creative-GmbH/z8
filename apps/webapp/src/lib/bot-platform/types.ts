@@ -48,6 +48,8 @@ export interface BotCommandContext {
 	args: string[];
 	/** User's preferred locale (e.g., "en", "de") */
 	locale: string;
+	/** Explicit temporal context resolved by integrations that support it. */
+	temporal?: import("./temporal-context").BotTemporalContext;
 	/** Registry-provided command listing for commands like help. */
 	listCommands?: () => BotCommand[];
 }

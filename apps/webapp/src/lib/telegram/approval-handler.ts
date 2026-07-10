@@ -9,6 +9,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { absenceEntry, approvalRequest, employee, telegramApprovalMessage } from "@/db/schema";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
+import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import { createLogger } from "@/lib/logger";
 import { editMessageText, sendMessage } from "./api";
 import { getChatIdForUser } from "./conversation-manager";
@@ -43,6 +44,13 @@ export async function handleApprovalCallback(
 	}
 
 	try {
+		const temporal = await resolveBotTemporalContext({
+			userId: userResult.user.userId,
+			employeeId: userResult.user.employeeId,
+			organizationId: bot.organizationId,
+		});
+		if (!temporal) return;
+
 		// Get approval request
 		const approval = await db.query.approvalRequest.findFirst({
 			where: and(
@@ -124,8 +132,7 @@ export async function handleApprovalCallback(
 
 		// Update the message to show resolved status
 		if (query.message && cardData) {
-			const locale = await getUserLocale(userResult.user.userId);
-			const t = await getBotTranslate(locale);
+			const t = await getBotTranslate(temporal.locale);
 			const resolvedText = buildResolvedApprovalMessage(
 				cardData,
 				{
@@ -133,8 +140,8 @@ export async function handleApprovalCallback(
 					approverName,
 					resolvedAt: new Date(),
 				},
+				temporal,
 				t,
-				locale,
 			);
 
 			await editMessageText(bot.botToken, {
@@ -210,10 +217,15 @@ export async function sendApprovalMessageToManager(
 			return;
 		}
 
-		// Build message with inline keyboard (use recipient's locale)
-		const recipientLocale = await getUserLocale(approverEmployee.userId);
-		const t = await getBotTranslate(recipientLocale);
-		const { text, keyboard } = buildApprovalMessage(cardData, t, recipientLocale);
+		// Build the message in the recipient's explicit display context.
+		const temporal = await resolveBotTemporalContext({
+			userId: approverEmployee.userId,
+			employeeId: approverId,
+			organizationId,
+		});
+		if (!temporal) return;
+		const t = await getBotTranslate(temporal.locale);
+		const { text, keyboard } = buildApprovalMessage(cardData, temporal, t);
 
 		// Send message
 		const sentMessage = await sendMessage(botToken, {

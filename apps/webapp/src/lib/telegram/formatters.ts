@@ -7,7 +7,13 @@
 
 import { DateTime } from "luxon";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
-import { fmtFullDate, fmtShortDate, fmtShortDateTime } from "@/lib/bot-platform/i18n";
+import { fmtFullDate } from "@/lib/bot-platform/i18n";
+import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	type DisplayContext,
+	formatInstant,
+	formatPlainDate,
+} from "@/lib/datetime/temporal-format";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import type {
 	ApprovalCallbackData,
@@ -102,8 +108,8 @@ export function markdownToHtml(text: string): string {
  */
 export function buildApprovalMessage(
 	data: ApprovalCardData,
+	context: DisplayContext,
 	t?: BotTranslateFn,
-	locale: string = DEFAULT_LANGUAGE,
 ): {
 	text: string;
 	keyboard: TelegramInlineKeyboardMarkup;
@@ -120,8 +126,8 @@ export function buildApprovalMessage(
 		const category = data.absenceCategory || (t ? t("bot.approval.leave", "Leave") : "Leave");
 		lines.push(`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(category)}`);
 		if (data.startDate && data.endDate) {
-			const start = fmtShortDate(DateTime.fromISO(data.startDate), locale);
-			const end = fmtShortDate(DateTime.fromISO(data.endDate), locale);
+			const start = formatPlainDate(parsePlainDate(data.startDate), context.locale, "dateMedium");
+			const end = formatPlainDate(parsePlainDate(data.endDate), context.locale, "dateMedium");
 			lines.push(
 				`${t ? t("bot.approval.period", "Period") : "Period"}: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`,
 			);
@@ -138,7 +144,7 @@ export function buildApprovalMessage(
 		);
 	}
 
-	const submitted = fmtShortDateTime(DateTime.fromJSDate(data.createdAt), locale);
+	const submitted = formatInstant(instantFromDate(data.createdAt), context, "dateTimeMedium");
 	lines.push(
 		`${t ? t("bot.approval.submitted", "Submitted") : "Submitted"}: ${escapeMarkdownV2(submitted)}`,
 	);
@@ -175,8 +181,8 @@ export function buildApprovalMessage(
 export function buildResolvedApprovalMessage(
 	data: ApprovalCardData,
 	resolved: ApprovalResolvedData,
+	context: DisplayContext,
 	t?: BotTranslateFn,
-	locale: string = DEFAULT_LANGUAGE,
 ): string {
 	const lines: string[] = [];
 	const icon = resolved.action === "approved" ? "\u2705" : "\u274C";
@@ -199,8 +205,8 @@ export function buildResolvedApprovalMessage(
 		const category = data.absenceCategory || (t ? t("bot.approval.leave", "Leave") : "Leave");
 		lines.push(`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(category)}`);
 		if (data.startDate && data.endDate) {
-			const start = fmtShortDate(DateTime.fromISO(data.startDate), locale);
-			const end = fmtShortDate(DateTime.fromISO(data.endDate), locale);
+			const start = formatPlainDate(parsePlainDate(data.startDate), context.locale, "dateMedium");
+			const end = formatPlainDate(parsePlainDate(data.endDate), context.locale, "dateMedium");
 			lines.push(
 				`${t ? t("bot.approval.period", "Period") : "Period"}: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`,
 			);
@@ -211,7 +217,7 @@ export function buildResolvedApprovalMessage(
 	lines.push(
 		`${bold(status)} ${t ? t("bot.approval.by", "by") : "by"} ${escapeMarkdownV2(resolved.approverName)}`,
 	);
-	const resolvedAt = fmtShortDateTime(DateTime.fromJSDate(resolved.resolvedAt), locale);
+	const resolvedAt = formatInstant(instantFromDate(resolved.resolvedAt), context, "dateTimeMedium");
 	lines.push(`${t ? t("bot.approval.at", "at") : "at"} ${escapeMarkdownV2(resolvedAt)}`);
 
 	return lines.join("\n");
