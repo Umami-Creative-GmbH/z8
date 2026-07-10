@@ -10,7 +10,8 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { env } from "@/env";
-import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
+import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { sendMessage } from "../api";
@@ -121,17 +122,23 @@ async function processBotDigest(bot: {
 
 				if (!manages) return false;
 
-				// Build Telegram-formatted message (use recipient's locale)
-				const userLocale = await getUserLocale(conv.userId);
+				const temporal = await resolveBotTemporalContext({
+					userId: conv.userId,
+					employeeId: emp.id,
+					organizationId: bot.organizationId,
+				});
+				if (!temporal) return false;
+
+				// Digest delivery is scheduled in the bot timezone, but content uses the recipient's context.
 				const digestData: DailyDigestData = await buildDigestDataForManager(
 					emp.id,
 					bot.organizationId,
-					bot.digestTimezone,
-					userLocale,
+					temporal.effectiveTimezone,
+					temporal.locale,
 				);
 
-				const t = await getBotTranslate(userLocale);
-				const messageText = buildDailyDigestMessage(digestData, appUrl, t, userLocale);
+				const t = await getBotTranslate(temporal.locale);
+				const messageText = buildDailyDigestMessage(digestData, appUrl, t, temporal.locale);
 
 				await sendMessage(bot.botToken, {
 					chat_id: conv.chatId,

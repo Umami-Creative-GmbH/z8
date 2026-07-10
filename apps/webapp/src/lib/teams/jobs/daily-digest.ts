@@ -22,12 +22,8 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { env } from "@/env";
-import {
-	fmtTime,
-	fmtWeekdayShortDate,
-	getBotTranslate,
-	getUserLocale,
-} from "@/lib/bot-platform/i18n";
+import { fmtTime, fmtWeekdayShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
+import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import { createLogger } from "@/lib/logger";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import { sendAdaptiveCard } from "../bot-adapter";
@@ -163,18 +159,24 @@ async function processTenantDigest(tenant: {
 
 				if (!manages) return false;
 
-				// Build digest data for this manager
-				const userLocale = await getUserLocale(conv.userId);
+				const temporal = await resolveBotTemporalContext({
+					userId: conv.userId,
+					employeeId: emp.id,
+					organizationId: tenant.organizationId,
+				});
+				if (!temporal) return false;
+
+				// Digest delivery is scheduled in the tenant timezone, but content uses the recipient's context.
 				const digestData = await buildDigestDataForManager(
 					emp.id,
 					tenant.organizationId,
-					tenant.digestTimezone,
-					userLocale,
+					temporal.effectiveTimezone,
+					temporal.locale,
 				);
 
 				// Build and send card
-				const t = await getBotTranslate(userLocale);
-				const card = buildDailyDigestCard(digestData, appUrl, userLocale, t);
+				const t = await getBotTranslate(temporal.locale);
+				const card = buildDailyDigestCard(digestData, appUrl, temporal.locale, t);
 
 				await sendAdaptiveCard(
 					conv.conversationReference,

@@ -13,6 +13,13 @@ function readTelegramFormatterSource() {
 	);
 }
 
+function readDailyDigestSource(platform: "teams" | "telegram" | "discord" | "slack") {
+	return readFileSync(
+		fileURLToPath(new URL(`../../${platform}/jobs/daily-digest.ts`, import.meta.url)),
+		"utf8",
+	);
+}
+
 describe("Telegram command temporal contexts", () => {
 	it.each([
 		"clock-in",
@@ -44,5 +51,19 @@ describe("Telegram command temporal contexts", () => {
 
 	it("formats Telegram approval audit endpoints with their captured offset", () => {
 		expect(readTelegramFormatterSource()).toContain("formatCapturedOffsetInstant");
+	});
+
+	it.each([
+		"teams",
+		"telegram",
+		"discord",
+		"slack",
+	] as const)("schedules %s digests in the digest timezone and renders each recipient in their timezone", (platform) => {
+		const source = readDailyDigestSource(platform);
+
+		expect(source).toContain("setZone(");
+		expect(source).toContain("digestTimezone");
+		expect(source).toContain("resolveBotTemporalContext");
+		expect(source).toContain("effectiveTimezone");
 	});
 });

@@ -10,7 +10,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { env } from "@/env";
-import { getUserLocale } from "@/lib/bot-platform/i18n";
+import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { postMessage } from "../api";
@@ -121,16 +121,23 @@ async function processBotDigest(bot: {
 
 				if (!manages) return false;
 
-				const userLocale = await getUserLocale(conv.userId);
+				const temporal = await resolveBotTemporalContext({
+					userId: conv.userId,
+					employeeId: emp.id,
+					organizationId: bot.organizationId,
+				});
+				if (!temporal) return false;
+
+				// Digest delivery is scheduled in the bot timezone, but content uses the recipient's context.
 				const digestData: DailyDigestData = await buildDigestDataForManager(
 					emp.id,
 					bot.organizationId,
-					bot.digestTimezone,
-					userLocale,
+					temporal.effectiveTimezone,
+					temporal.locale,
 				);
 
 				// Build Block Kit message
-				const { blocks, text } = buildDailyDigestBlocks(digestData, appUrl, userLocale);
+				const { blocks, text } = buildDailyDigestBlocks(digestData, appUrl, temporal.locale);
 
 				await postMessage(bot.botAccessToken, {
 					channel: conv.channelId,
