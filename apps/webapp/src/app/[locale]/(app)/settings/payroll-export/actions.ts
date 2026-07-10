@@ -22,6 +22,7 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	createExportJob,
 	type DatevLohnConfig,
+	enqueuePayrollExportJob,
 	getAbsenceCategories,
 	getEmployeesForFilter,
 	getExportDownloadUrl,
@@ -1871,7 +1872,12 @@ export async function startExportAction(input: StartExportInput): Promise<
 			};
 		}
 
-		// For async, just return job ID
+		yield* _(
+			Effect.promise(() =>
+				enqueuePayrollExportJob({ jobId, organizationId: input.organizationId }),
+			),
+		);
+
 		revalidatePath("/settings/payroll-export");
 
 		return { jobId, isAsync: true };

@@ -10,6 +10,7 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
 import {
 	createExportJob,
+	enqueuePayrollExportJob,
 	getFormatter,
 	getPayrollExportConfig,
 	type PayrollExportFilters,
@@ -102,6 +103,10 @@ export async function startScopedPayrollExportAction(
 		});
 
 		if (isAsync) {
+			await enqueuePayrollExportJob({
+				jobId,
+				organizationId: authContext.employee.organizationId,
+			});
 			return { jobId, isAsync };
 		}
 
