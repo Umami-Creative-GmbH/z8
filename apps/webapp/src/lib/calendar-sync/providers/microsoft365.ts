@@ -45,6 +45,7 @@ const CALENDAR_SCOPES = ["openid", "email", "profile", "offline_access", "Calend
 
 interface MSGraphEvent {
 	id: string;
+	transactionId?: string;
 	subject?: string;
 	body?: { content: string; contentType: string };
 	start: { dateTime: string; timeZone: string };
@@ -367,6 +368,7 @@ export class Microsoft365CalendarProvider implements ICalendarProvider {
 						: `/me/calendars/${encodeURIComponent(calendarId)}/events`;
 
 				const msEvent: Partial<MSGraphEvent> = {
+					transactionId: event.idempotencyKey,
 					subject: event.title,
 					body: event.description ? { content: event.description, contentType: "text" } : undefined,
 					isAllDay: event.isAllDay,
