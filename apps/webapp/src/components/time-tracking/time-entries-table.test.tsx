@@ -31,6 +31,10 @@ vi.mock("@/navigation", () => ({
 	}),
 }));
 
+vi.mock("next-intl", () => ({
+	useLocale: () => "en-US",
+}));
+
 vi.mock("@/components/data-table-server", () => ({
 	DataTable: () => <div data-testid="data-table" />,
 }));

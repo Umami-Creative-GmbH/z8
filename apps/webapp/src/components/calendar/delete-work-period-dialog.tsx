@@ -17,7 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { CalendarEvent } from "@/lib/calendar/types";
-import { format } from "@/lib/datetime/luxon-utils";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { type DisplayContext, formatInstant } from "@/lib/datetime/temporal-format";
 import { formatDuration, getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";
 
 interface DeleteWorkPeriodDialogProps {
@@ -25,6 +26,7 @@ interface DeleteWorkPeriodDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onDeleteComplete?: () => void;
+	displayContext: DisplayContext;
 }
 
 export function DeleteWorkPeriodDialog({
@@ -32,6 +34,7 @@ export function DeleteWorkPeriodDialog({
 	open,
 	onOpenChange,
 	onDeleteComplete,
+	displayContext,
 }: DeleteWorkPeriodDialogProps) {
 	const { t } = useTranslate();
 	const reasonId = useId();
@@ -97,10 +100,13 @@ export function DeleteWorkPeriodDialog({
 					<div className="space-y-3 text-sm">
 						<div className="rounded-lg bg-muted p-3 space-y-1">
 							<div className="font-medium">
-								{format(event.date, "PPP")} {/* e.g., "January 1, 2024" */}
+								{formatInstant(instantFromDate(event.date), displayContext, "dateMedium")}
 							</div>
 							<div className="text-sm">
-								{format(event.date, "p")} - {event.endDate ? format(event.endDate, "p") : "—"}
+								{formatInstant(instantFromDate(event.date), displayContext, "time")} -{" "}
+								{event.endDate
+									? formatInstant(instantFromDate(event.endDate), displayContext, "time")
+									: "—"}
 								<span className="ml-2 text-muted-foreground">
 									({formatDuration(metadata.durationMinutes)})
 								</span>

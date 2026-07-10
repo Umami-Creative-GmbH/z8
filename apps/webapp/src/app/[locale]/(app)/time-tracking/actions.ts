@@ -59,6 +59,7 @@ import {
 	getProjectTotalHours,
 } from "@/lib/notifications/project-notification-triggers";
 import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
+import { resolveWorkPeriodSplit } from "@/lib/time-tracking/split-work-period";
 import {
 	resolveFallbackTimezoneCapture,
 	resolveTimeEntryTimezoneCapture,
@@ -2104,9 +2105,11 @@ export async function deleteWorkPeriod(
  */
 export async function splitWorkPeriod(
 	workPeriodId: string,
+	splitDateKey: string,
 	splitTime: string, // HH:mm format
 	beforeNotes?: string,
 	afterNotes?: string,
+	disambiguation?: "earlier" | "later",
 ): Promise<ServerActionResult<{ firstPeriodId: string; secondPeriodId: string }>> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
@@ -2155,25 +2158,26 @@ export async function splitWorkPeriod(
 			return { success: false, error: "Cannot split an active work period" };
 		}
 
-		// Calculate the split timestamp
-		const startDT = dateFromDB(period.startTime);
-		const endDT = dateFromDB(period.endTime);
-		if (!startDT || !endDT) {
-			return { success: false, error: "Invalid work period times" };
-		}
-
-		const [splitHours, splitMinutes] = splitTime.split(":");
-		const splitDT = startDT.set({
-			hour: parseInt(splitHours, 10),
-			minute: parseInt(splitMinutes, 10),
-			second: 0,
-			millisecond: 0,
+		const resolvedSplit = resolveWorkPeriodSplit({
+			startTime: period.startTime,
+			endTime: period.endTime,
+			splitDate: splitDateKey,
+			splitTime,
+			timezone,
+			disambiguation,
 		});
-		const splitDate = dateToDB(splitDT);
-
-		if (!splitDate) {
-			return { success: false, error: "Invalid split time" };
+		if (!resolvedSplit.success) {
+			return {
+				success: false,
+				error:
+					resolvedSplit.code === "ambiguous"
+						? "Split time is ambiguous"
+						: resolvedSplit.code === "nonexistent"
+							? "Split time does not exist on this date"
+							: "Split time must be between work period start and end times",
+			};
 		}
+		const splitDate = resolvedSplit.splitTime;
 		const splitTimezoneCapture = resolveFallbackTimezoneCapture({
 			timestamp: splitDate,
 			timezone,
@@ -2181,13 +2185,6 @@ export async function splitWorkPeriod(
 		});
 
 		// Validate split time is between start and end
-		if (splitDate <= period.startTime || splitDate >= period.endTime) {
-			return {
-				success: false,
-				error: "Split time must be between work period start and end times",
-			};
-		}
-
 		// Validate the split times (check for holidays)
 		const validation = await validateTimeEntryRange(
 			emp.organizationId,
@@ -2247,11 +2244,7 @@ export async function splitWorkPeriod(
 		}
 
 		// Calculate durations
-		const firstDurationMs = splitDate.getTime() - period.startTime.getTime();
-		const firstDurationMinutes = Math.floor(firstDurationMs / 60000);
-
-		const secondDurationMs = period.endTime.getTime() - splitDate.getTime();
-		const secondDurationMinutes = Math.floor(secondDurationMs / 60000);
+		const { firstDurationMinutes, secondDurationMinutes } = resolvedSplit;
 
 		// Update the original work period to end at split time
 		await db

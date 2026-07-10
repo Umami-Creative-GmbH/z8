@@ -1,5 +1,6 @@
 import type { CalendarEvent } from "@/lib/calendar/types";
-import { format } from "@/lib/datetime/luxon-utils";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { type DisplayContext, formatInstant } from "@/lib/datetime/temporal-format";
 
 export interface WorkPeriodDialogMetadata {
 	durationMinutes: number;
@@ -39,13 +40,11 @@ export function formatDuration(minutes: number): string {
 	return `${hours}h ${mins}m`;
 }
 
-export function formatEventTimeRange(event: CalendarEvent): string {
-	return `${format(event.date, "p")} - ${event.endDate ? format(event.endDate, "p") : "—"}`;
+export function formatEventTimeRange(event: CalendarEvent, context: DisplayContext): string {
+	return `${formatInstant(instantFromDate(event.date), context, "time")} - ${event.endDate ? formatInstant(instantFromDate(event.endDate), context, "time") : "—"}`;
 }
 
-export function formatTimeToHHMM(date: Date): string {
-	const hours = date.getHours().toString().padStart(2, "0");
-	const minutes = date.getMinutes().toString().padStart(2, "0");
-
-	return `${hours}:${minutes}`;
+export function formatTimeToHHMM(date: Date, timezone: string): string {
+	const time = instantFromDate(date).toZonedDateTimeISO(timezone).toPlainTime();
+	return `${String(time.hour).padStart(2, "0")}:${String(time.minute).padStart(2, "0")}`;
 }

@@ -3,12 +3,9 @@ import type { TFnType } from "@tolgee/react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatCapturedOffsetInstant } from "@/lib/datetime/temporal-format";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
-import {
-	formatDateInZone,
-	formatTimeInZone,
-	getTimezoneAbbreviation,
-} from "@/lib/time-tracking/timezone-utils";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import { DurationCell } from "./time-entries-table-duration-cell";
 
@@ -16,6 +13,7 @@ interface TimeEntry {
 	id: string;
 	isSuperseded: boolean | null;
 	notes: string | null;
+	utcOffsetMinutes: number;
 }
 
 export interface WorkPeriodData {
@@ -34,6 +32,7 @@ export interface WorkPeriodData {
 
 export function getTimeEntriesColumns({
 	t,
+	locale,
 	employeeTimezone,
 	timeFormat,
 	hasManager,
@@ -41,32 +40,44 @@ export function getTimeEntriesColumns({
 	renderAdminAction,
 }: {
 	t: TFnType;
+	locale: string;
 	employeeTimezone: string;
 	timeFormat: TimeFormat;
 	hasManager: boolean;
 	renderEditAction: (period: WorkPeriodData, isSameDay: boolean) => ReactNode;
 	renderAdminAction?: (period: WorkPeriodData) => ReactNode;
 }): ColumnDef<WorkPeriodData>[] {
-	const timezoneAbbreviation = getTimezoneAbbreviation(employeeTimezone);
-
 	return [
 		{
 			accessorKey: "startTime",
 			header: t("timeTracking.table.date", "Date"),
-			cell: ({ row }) => formatDateInZone(row.original.startTime, employeeTimezone),
+			cell: ({ row }) =>
+				formatCapturedOffsetInstant(instantFromDate(row.original.startTime), {
+					locale,
+					timeFormat,
+					offsetMinutes: row.original.clockIn.utcOffsetMinutes,
+					preset: "dateShort",
+				}),
 		},
 		{
 			id: "clockIn",
 			header: () => (
-				<div className="flex items-baseline gap-1">
+				<div className="flex flex-col">
 					<span>{t("timeTracking.table.clockIn", "Clock In")}</span>
-					<span className="text-xs text-muted-foreground">({timezoneAbbreviation})</span>
+					<span className="text-xs text-muted-foreground">
+						{t("timeTracking.table.recordedLocalTime", "Recorded local time")}
+					</span>
 				</div>
 			),
 			cell: ({ row }) => (
 				<div className="flex flex-col gap-1">
 					<span>
-						{formatTimeInZone(row.original.startTime, employeeTimezone, false, timeFormat)}
+						{formatCapturedOffsetInstant(instantFromDate(row.original.startTime), {
+							locale,
+							timeFormat,
+							offsetMinutes: row.original.clockIn.utcOffsetMinutes,
+							preset: "time",
+						})}
 					</span>
 					{row.original.clockIn?.isSuperseded ? (
 						<Badge variant="outline" className="w-fit text-xs">
@@ -79,9 +90,11 @@ export function getTimeEntriesColumns({
 		{
 			id: "clockOut",
 			header: () => (
-				<div className="flex items-baseline gap-1">
+				<div className="flex flex-col">
 					<span>{t("timeTracking.table.clockOut", "Clock Out")}</span>
-					<span className="text-xs text-muted-foreground">({timezoneAbbreviation})</span>
+					<span className="text-xs text-muted-foreground">
+						{t("timeTracking.table.recordedLocalTime", "Recorded local time")}
+					</span>
 				</div>
 			),
 			cell: ({ row }) => {
@@ -92,7 +105,12 @@ export function getTimeEntriesColumns({
 				return (
 					<div className="flex flex-col gap-1">
 						<span>
-							{formatTimeInZone(row.original.endTime, employeeTimezone, false, timeFormat)}
+							{formatCapturedOffsetInstant(instantFromDate(row.original.endTime), {
+								locale,
+								timeFormat,
+								offsetMinutes: row.original.clockOut!.utcOffsetMinutes,
+								preset: "time",
+							})}
 						</span>
 						{row.original.clockOut?.isSuperseded ? (
 							<Badge variant="outline" className="w-fit text-xs">

@@ -15,6 +15,7 @@ const {
 	refetch,
 	toastError,
 	toastSuccess,
+	preferences,
 } = vi.hoisted(() => ({
 	capturedCalendarFilters: [] as unknown[],
 	capturedCalendarQueries: [] as unknown[],
@@ -24,6 +25,7 @@ const {
 	refetch: vi.fn(),
 	toastError: vi.fn(),
 	toastSuccess: vi.fn(),
+	preferences: { timeFormat: "24h" as "12h" | "24h", locale: "en-US" },
 	mockCalendarData: {
 		events: [] as CalendarEvent[],
 		dailyRequirements: new Map(),
@@ -47,6 +49,10 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ push }),
 }));
 
+vi.mock("next-intl", () => ({
+	useLocale: () => preferences.locale,
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string) => fallback,
@@ -55,6 +61,7 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("@/components/providers/user-preferences-provider", () => ({
 	useUserTimezone: () => "Europe/Berlin",
+	useTimeFormat: () => preferences.timeFormat,
 }));
 
 vi.mock("@/hooks/use-organization", () => ({
@@ -118,7 +125,17 @@ vi.mock("./event-details-panel", () => ({
 }));
 
 vi.mock("./work-period-edit-dialog", () => ({
-	WorkPeriodEditDialog: () => <div data-testid="work-period-edit" />,
+	WorkPeriodEditDialog: ({
+		displayContext,
+	}: {
+		displayContext: { locale: string; timeFormat: string };
+	}) => (
+		<div
+			data-testid="work-period-edit"
+			data-display-locale={displayContext.locale}
+			data-display-time-format={displayContext.timeFormat}
+		/>
+	),
 }));
 
 vi.mock("./split-work-period-dialog", () => ({
@@ -143,6 +160,7 @@ vi.mock("./schedule-x-wrapper", () => ({
 		clockOutAllowedWorkPeriodIds,
 		isSummaryLoading,
 		onRunningPeriodClockOutRequest,
+		onEventClick,
 		onTimeRangeSelect,
 		onViewModeChange,
 		timeZone,
@@ -151,6 +169,7 @@ vi.mock("./schedule-x-wrapper", () => ({
 		clockOutAllowedWorkPeriodIds?: ReadonlySet<string>;
 		isSummaryLoading?: boolean;
 		onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
+		onEventClick?: (event: CalendarEvent) => void;
 		onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 		onViewModeChange: (mode: "month" | "year") => void;
 		timeZone?: string;
@@ -186,6 +205,9 @@ vi.mock("./schedule-x-wrapper", () => ({
 				<button type="button" onClick={() => onRunningPeriodClockOutRequest?.(completedWorkPeriod)}>
 					Request completed stop
 				</button>
+				<button type="button" onClick={() => onEventClick?.(completedWorkPeriod)}>
+					Select completed period
+				</button>
 				<button
 					type="button"
 					onClick={() =>
@@ -214,6 +236,7 @@ vi.mock("@/components/time-tracking/manual-time-entry-dialog", () => ({
 		defaultClockOutTime,
 		defaultDate,
 		employeeTimezone,
+		displayContext,
 		open,
 		targetEmployeeId,
 	}: {
@@ -221,6 +244,7 @@ vi.mock("@/components/time-tracking/manual-time-entry-dialog", () => ({
 		defaultClockOutTime?: string;
 		defaultDate?: string;
 		employeeTimezone?: string;
+		displayContext?: { locale: string; timezone: string; timeFormat: string };
 		open?: boolean;
 		targetEmployeeId?: string;
 	}) => (
@@ -231,6 +255,8 @@ vi.mock("@/components/time-tracking/manual-time-entry-dialog", () => ({
 			data-clock-in={defaultClockInTime}
 			data-clock-out={defaultClockOutTime}
 			data-employee-timezone={employeeTimezone}
+			data-display-locale={displayContext?.locale}
+			data-display-time-format={displayContext?.timeFormat}
 			data-target-employee-id={targetEmployeeId}
 		/>
 	),
@@ -328,6 +354,8 @@ describe("CalendarView", () => {
 		mockCalendarData.calendarTimezone = null;
 		mockCalendarData.isFetching = false;
 		mockIsManagerOrAbove.mockReturnValue(true);
+		preferences.timeFormat = "24h";
+		preferences.locale = "en-US";
 		onScheduleXWrapperRender.mockReset();
 		push.mockClear();
 		refetch.mockClear();
@@ -594,6 +622,22 @@ describe("CalendarView", () => {
 		expect(dialog.getAttribute("data-target-employee-id")).toBe("employee-2");
 	});
 
+	it("omits the target employee after switching from another employee back to self", () => {
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId="employee-2"
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select employee 1" }));
+
+		expect(
+			screen.getByTestId("manual-entry-dialog").getAttribute("data-target-employee-id"),
+		).toBeNull();
+	});
+
 	it("passes the selected employee calendar timezone to Schedule-X", () => {
 		mockCalendarData.calendarTimezone = "America/New_York";
 
@@ -608,6 +652,19 @@ describe("CalendarView", () => {
 		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-time-zone")).toBe(
 			"America/New_York",
 		);
+	});
+
+	it("passes the active locale and time-format preference to calendar dialogs", () => {
+		preferences.timeFormat = "12h";
+		preferences.locale = "fr-FR";
+
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select completed period" }));
+
+		const dialog = screen.getByTestId("work-period-edit");
+		expect(dialog.getAttribute("data-display-locale")).toBe("fr-FR");
+		expect(dialog.getAttribute("data-display-time-format")).toBe("12h");
 	});
 
 	it("passes background fetch state to Schedule-X summaries", () => {

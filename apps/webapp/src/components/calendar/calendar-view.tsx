@@ -3,10 +3,12 @@
 import { IconAdjustmentsHorizontal, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import type { SelectableEmployee } from "@/components/employee-select/types";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { ManualTimeEntryDialog } from "@/components/time-tracking/manual-time-entry-dialog";
 import {
 	AlertDialog,
@@ -83,6 +85,8 @@ export function CalendarView({
 	initialTimezone,
 }: CalendarViewProps) {
 	const router = useRouter();
+	const locale = useLocale();
+	const timeFormat = useTimeFormat();
 	const { t } = useTranslate();
 	const { isManagerOrAbove } = useOrganization();
 	const initialEmployeeId = initialSelectedEmployeeId ?? currentEmployeeId ?? null;
@@ -185,6 +189,11 @@ export function CalendarView({
 		fullYear: viewMode === "year",
 	});
 	const calendarTimeZone = calendarTimezone ?? initialCalendarTimezone;
+	const calendarDisplayContext = {
+		locale,
+		timezone: calendarTimeZone,
+		timeFormat,
+	};
 	const completedEvents = events.filter((event) => !isRunningWorkPeriod(event));
 
 	useEffect(() => {
@@ -335,7 +344,11 @@ export function CalendarView({
 				employeeId={selectedEmployeeId ?? currentEmployeeId ?? ""}
 				employeeTimezone={calendarTimeZone}
 				hasManager={false}
-				targetEmployeeId={selectedEmployeeId ?? undefined}
+				targetEmployeeId={
+					selectedEmployeeId && selectedEmployeeId !== currentEmployeeId
+						? selectedEmployeeId
+						: undefined
+				}
 				targetEmployeeName={selectedEmployeeName ?? undefined}
 				defaultDate={manualEntryDefaults?.date}
 				defaultClockInTime={manualEntryDefaults?.clockInTime}
@@ -526,6 +539,7 @@ export function CalendarView({
 						onNotesUpdated={refetch}
 						onSplitClick={handleSplitClick}
 						onDeleteClick={handleDeleteClick}
+						displayContext={calendarDisplayContext}
 					/>
 				)}
 
@@ -534,6 +548,7 @@ export function CalendarView({
 				<SplitWorkPeriodDialog
 					event={selectedEvent}
 					open={showSplitDialog}
+					displayContext={calendarDisplayContext}
 					onOpenChange={(open) => !open && setShowSplitDialog(false)}
 					onSplitComplete={handleSplitComplete}
 				/>
@@ -544,6 +559,7 @@ export function CalendarView({
 				<DeleteWorkPeriodDialog
 					event={selectedEvent}
 					open={showDeleteDialog}
+					displayContext={calendarDisplayContext}
 					onOpenChange={(open) => !open && setShowDeleteDialog(false)}
 					onDeleteComplete={handleDeleteComplete}
 				/>

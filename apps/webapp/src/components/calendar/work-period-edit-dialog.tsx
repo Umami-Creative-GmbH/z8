@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import type { CalendarEvent } from "@/lib/calendar/types";
+import type { DisplayContext } from "@/lib/datetime/temporal-format";
 import { useProjectsEnabled } from "@/stores/organization-settings-store";
 import { getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";
 import {
@@ -37,6 +38,7 @@ interface WorkPeriodEditDialogProps {
 	onNotesUpdated?: () => void;
 	onSplitClick?: () => void;
 	onDeleteClick?: () => void;
+	displayContext: DisplayContext;
 }
 
 interface WorkPeriodEditState {
@@ -108,6 +110,7 @@ export function WorkPeriodEditDialog({
 	onNotesUpdated,
 	onSplitClick,
 	onDeleteClick,
+	displayContext,
 }: WorkPeriodEditDialogProps) {
 	const { t } = useTranslate();
 	const projectsEnabled = useProjectsEnabled();
@@ -156,14 +159,24 @@ export function WorkPeriodEditDialog({
 			<ActionPanelContent size="compact">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
-						<WorkPeriodHeader event={event} status={approvalStatus} t={t} />
+						<WorkPeriodHeader
+							event={event}
+							status={approvalStatus}
+							t={t}
+							displayContext={displayContext}
+						/>
 					</ActionPanelTitle>
 					<ActionPanelDescription />
 				</ActionPanelHeader>
 
 				<ActionPanelBody className="space-y-4">
 					<ApprovalStatusBanner status={approvalStatus} t={t} />
-					<WorkPeriodSummaryBlock event={event} metadata={metadata} t={t} />
+					<WorkPeriodSummaryBlock
+						event={event}
+						metadata={metadata}
+						t={t}
+						displayContext={displayContext}
+					/>
 					<WorkPeriodDurationSection metadata={metadata} t={t} />
 					<ProjectEditSection
 						projectsEnabled={projectsEnabled}
