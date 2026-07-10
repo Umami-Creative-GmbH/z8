@@ -5,7 +5,7 @@ const mockOperators = vi.hoisted(() => ({
 	and: vi.fn((...conditions: unknown[]) => ({ conditions, type: "and" })),
 	eq: vi.fn((column: unknown, value: unknown) => ({ column, type: "eq", value })),
 	gte: vi.fn((column: unknown, value: unknown) => ({ column, type: "gte", value })),
-	lte: vi.fn((column: unknown, value: unknown) => ({ column, type: "lte", value })),
+	lt: vi.fn((column: unknown, value: unknown) => ({ column, type: "lt", value })),
 }));
 
 const mockDb = vi.hoisted(() => ({
@@ -22,7 +22,7 @@ vi.mock("drizzle-orm", async (importOriginal) => ({
 	and: mockOperators.and,
 	eq: mockOperators.eq,
 	gte: mockOperators.gte,
-	lte: mockOperators.lte,
+	lt: mockOperators.lt,
 }));
 
 vi.mock("@/db", () => ({
@@ -55,10 +55,12 @@ describe("getTimeEntriesForMonth", () => {
 			expect.anything(),
 			new Date("2026-05-01T04:00:00.000Z"),
 		);
-		expect(mockOperators.lte).toHaveBeenCalledWith(
+		expect(mockOperators.lt).toHaveBeenCalledWith(
 			expect.anything(),
-			new Date("2026-06-01T03:59:59.999Z"),
+			new Date("2026-06-01T04:00:00.000Z"),
 		);
+		expect(mockOperators.eq).toHaveBeenCalledWith(expect.anything(), "org-1");
+		expect(mockOperators.eq).toHaveBeenCalledWith(expect.anything(), "employee-1");
 	});
 
 	it("returns offset metadata for time-entry calendar markers", async () => {

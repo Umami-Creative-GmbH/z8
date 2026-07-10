@@ -17,6 +17,8 @@ import type {
 import { buildDailyActualMinutes } from "@/lib/calendar/work-hours-summary";
 import { getWorkPeriodsForMonth } from "@/lib/calendar/work-period-service";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
+import { localMonthRange } from "@/lib/datetime/temporal-boundaries";
+import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import { superJsonResponse } from "@/lib/superjson";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
@@ -85,11 +87,18 @@ async function fetchMonthEvents(
 			: [],
 	]);
 	const completedWorkPeriods = workPeriods.filter((event) => !event.metadata.isRunning);
+	const monthRange = localMonthRange(
+		`${year}-${String(month + 1).padStart(2, "0")}-01`,
+		calendarTimezone || "UTC",
+	);
 
 	return {
 		events: [...holidays, ...absences, ...timeEntries, ...(showWorkPeriods ? workPeriods : [])],
 		dailyActualMinutes: includeWorkPeriodActuals
-			? buildDailyActualMinutes(completedWorkPeriods, calendarTimezone)
+			? buildDailyActualMinutes(completedWorkPeriods, calendarTimezone, {
+					start: dateFromInstant(monthRange.start),
+					endExclusive: dateFromInstant(monthRange.endExclusive),
+				})
 			: {},
 	};
 }
@@ -246,7 +255,11 @@ export async function GET(request: NextRequest) {
 			);
 
 			const monthResults = await Promise.all(monthPromises);
-			events = monthResults.flatMap((result) => result.events);
+			const eventsById = new Map<string, CalendarEvent>();
+			for (const event of monthResults.flatMap((result) => result.events)) {
+				if (!eventsById.has(event.id)) eventsById.set(event.id, event);
+			}
+			events = [...eventsById.values()];
 			dailyActualMinutes = Object.assign(
 				{},
 				...monthResults.map((result) => result.dailyActualMinutes),
