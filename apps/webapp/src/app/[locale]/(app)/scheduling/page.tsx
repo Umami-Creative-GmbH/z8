@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { ShiftScheduler } from "@/components/scheduling/scheduler/shift-scheduler";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getTranslate } from "@/tolgee/server";
@@ -28,6 +29,10 @@ async function SchedulingPageContent() {
 	if (!emp) {
 		redirect("/onboarding/welcome");
 	}
+	const org = await db.query.organization.findFirst({
+		where: eq(organization.id, emp.organizationId),
+		columns: { timezone: true },
+	});
 
 	const isManager = emp.role === "manager" || emp.role === "admin";
 
@@ -55,6 +60,7 @@ async function SchedulingPageContent() {
 
 				<ShiftScheduler
 					organizationId={emp.organizationId}
+					organizationTimezone={org?.timezone ?? "UTC"}
 					employeeId={emp.id}
 					isManager={isManager}
 				/>

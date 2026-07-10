@@ -224,7 +224,7 @@ export const queryKeys = {
 	// Shifts (actual shift instances)
 	shifts: {
 		all: ["shifts"] as const,
-		list: (orgId: string, dateRange?: { start: Date; end: Date }) =>
+		list: (orgId: string, dateRange?: { startDate: string; endDateExclusive: string }) =>
 			["shifts", orgId, dateRange] as const,
 		detail: (shiftId: string) => ["shifts", "detail", shiftId] as const,
 		incomplete: (orgId: string, dateRange: { start: Date; end: Date }) =>
@@ -408,7 +408,7 @@ export const queryKeys = {
 	compliance: {
 		all: ["compliance"] as const,
 		// Schedule compliance warnings for scheduler publish flow
-		scheduleWarnings: (orgId: string, dateRange: { start: Date; end: Date }) =>
+		scheduleWarnings: (orgId: string, dateRange: { startDate: string; endDateExclusive: string }) =>
 			["compliance", "schedule-warnings", orgId, dateRange] as const,
 		// Rest period check for clock-in
 		restPeriod: (employeeId: string) => ["compliance", "rest-period", employeeId] as const,
@@ -436,7 +436,7 @@ export const queryKeys = {
 		all: ["coverage"] as const,
 		rules: (orgId: string, subareaId?: string) => ["coverage", "rules", orgId, subareaId] as const,
 		ruleDetail: (ruleId: string) => ["coverage", "rules", "detail", ruleId] as const,
-		heatmap: (orgId: string, dateRange: { start: Date; end: Date }) =>
+		heatmap: (orgId: string, dateRange: { startDate: string; endDateExclusive: string }) =>
 			["coverage", "heatmap", orgId, dateRange] as const,
 		validation: (orgId: string, dateRange: { start: Date; end: Date }) =>
 			["coverage", "validation", orgId, dateRange] as const,

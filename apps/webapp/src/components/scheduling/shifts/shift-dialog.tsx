@@ -24,8 +24,9 @@ interface ShiftDialogProps {
 	shift: ShiftWithRelations | null;
 	templates: ShiftTemplate[];
 	isManager: boolean;
-	defaultDate: Date | null;
+	defaultDate: string | null;
 	organizationId: string;
+	organizationTimezone: string;
 }
 
 export function ShiftDialog({
@@ -36,6 +37,7 @@ export function ShiftDialog({
 	isManager,
 	defaultDate,
 	organizationId,
+	organizationTimezone,
 }: ShiftDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -114,6 +116,7 @@ export function ShiftDialog({
 		shift,
 		templates,
 		defaultDate,
+		organizationTimezone,
 		onSubmit: (values) => {
 			upsertMutation.mutate(values);
 		},

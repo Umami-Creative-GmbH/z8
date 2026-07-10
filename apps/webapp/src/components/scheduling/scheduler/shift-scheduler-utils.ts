@@ -1,32 +1,22 @@
+import { Temporal } from "temporal-polyfill";
 import type { DateRange, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
+import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { parseIanaTimeZone } from "@/lib/timezone/validation";
 
-export function dateToPlainDateTime(date: Date): Temporal.PlainDateTime {
-	return Temporal.PlainDateTime.from({
-		year: date.getFullYear(),
-		month: date.getMonth() + 1,
-		day: date.getDate(),
-		hour: date.getHours(),
-		minute: date.getMinutes(),
-	});
-}
-
-export function plainDateTimeToDate(dateTime: Temporal.PlainDateTime): Date {
-	return new Date(dateTime.year, dateTime.month - 1, dateTime.day);
+export function plainDateTimeToDateKey(dateTime: Temporal.PlainDateTime): string {
+	return dateTime.toPlainDate().toString();
 }
 
 export function plainDateTimeToTimeString(dateTime: Temporal.PlainDateTime): string {
 	return `${String(dateTime.hour).padStart(2, "0")}:${String(dateTime.minute).padStart(2, "0")}`;
 }
 
-export function shiftToEvent(shift: ShiftWithRelations) {
-	const startDate = new Date(shift.date);
-	const [startHours, startMinutes] = shift.startTime.split(":").map(Number);
-	startDate.setHours(startHours, startMinutes, 0, 0);
-
-	const endDate = new Date(shift.date);
-	const [endHours, endMinutes] = shift.endTime.split(":").map(Number);
-	endDate.setHours(endHours, endMinutes, 0, 0);
-
+export function shiftToEvent(shift: ShiftWithRelations, organizationTimezone = "Europe/Berlin") {
+	const date = instantFromDate(shift.date)
+		.toZonedDateTimeISO(parseIanaTimeZone(organizationTimezone))
+		.toPlainDate();
+	const start = date.toPlainDateTime(Temporal.PlainTime.from(shift.startTime));
+	const end = date.toPlainDateTime(Temporal.PlainTime.from(shift.endTime));
 	const isOpenShift = !shift.employeeId;
 	const isDraft = shift.status === "draft";
 
@@ -41,22 +31,16 @@ export function shiftToEvent(shift: ShiftWithRelations) {
 	return {
 		id: shift.id,
 		title,
-		start: dateToPlainDateTime(startDate),
-		end: dateToPlainDateTime(endDate),
+		start,
+		end,
 		calendarId: isOpenShift ? "open" : isDraft ? "draft" : "published",
 		_shiftData: shift,
 	};
 }
 
-export function getWeekDateRange(referenceDate = new Date()): DateRange {
-	const dayOfWeek = referenceDate.getDay();
-	const start = new Date(referenceDate);
-	start.setDate(referenceDate.getDate() - dayOfWeek);
-	start.setHours(0, 0, 0, 0);
+export function getWeekDateRange(referenceDate = Temporal.Now.plainDateISO()): DateRange {
+	const date = typeof referenceDate === "string" ? parsePlainDate(referenceDate) : referenceDate;
+	const start = date.subtract({ days: date.dayOfWeek % 7 });
 
-	const end = new Date(start);
-	end.setDate(start.getDate() + 6);
-	end.setHours(23, 59, 59, 999);
-
-	return { start, end };
+	return { startDate: start.toString(), endDateExclusive: start.add({ days: 7 }).toString() };
 }

@@ -27,7 +27,7 @@ import { PublishFab } from "./publish-fab";
 import { ScheduleComplianceBanner } from "./schedule-compliance-banner";
 import {
 	getWeekDateRange,
-	plainDateTimeToDate,
+	plainDateTimeToDateKey,
 	plainDateTimeToTimeString,
 } from "./shift-scheduler-utils";
 import { TemplateSidebar } from "./template-sidebar";
@@ -36,12 +36,14 @@ import { useShiftSchedulerData } from "./use-shift-scheduler-data";
 
 interface ShiftSchedulerProps {
 	organizationId: string;
+	organizationTimezone: string;
 	employeeId: string;
 	isManager: boolean;
 }
 
 export function ShiftScheduler({
 	organizationId,
+	organizationTimezone,
 	employeeId: _employeeId,
 	isManager,
 }: ShiftSchedulerProps) {
@@ -50,7 +52,7 @@ export function ShiftScheduler({
 	const [dateRange, setDateRange] = useState<DateRange>(getWeekDateRange);
 	const [selectedShift, setSelectedShift] = useState<ShiftWithRelations | null>(null);
 	const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
-	const [newShiftDate, setNewShiftDate] = useState<Date | null>(null);
+	const [newShiftDate, setNewShiftDate] = useState<string | null>(null);
 	const [showCoverageOverlay, setShowCoverageOverlay] = useState(true);
 	const isDark = resolvedTheme === "dark";
 
@@ -64,7 +66,7 @@ export function ShiftScheduler({
 		complianceFindingsCount,
 		hasComplianceWarnings,
 		updateShift,
-	} = useShiftSchedulerData({ organizationId, dateRange, isManager });
+	} = useShiftSchedulerData({ organizationId, organizationTimezone, dateRange, isManager });
 	const {
 		pendingAcknowledgment,
 		isComplianceDialogOpen,
@@ -110,7 +112,7 @@ export function ShiftScheduler({
 			id: shift.id,
 			employeeId: shift.employeeId,
 			subareaId: shift.subareaId,
-			date: plainDateTimeToDate(eventStart),
+			date: plainDateTimeToDateKey(eventStart),
 			startTime: plainDateTimeToTimeString(eventStart),
 			endTime: plainDateTimeToTimeString(eventEnd),
 		});
@@ -122,14 +124,19 @@ export function ShiftScheduler({
 		end: Temporal.ZonedDateTime;
 	}) => {
 		setDateRange({
-			start: new Date(range.start.epochMilliseconds),
-			end: new Date(range.end.epochMilliseconds),
+			startDate: range.start.toPlainDate().toString(),
+			endDateExclusive: range.end.toPlainDate().toString(),
 		});
 	};
 
 	// Handle template drop (create new shift)
 	const handleTemplateDrop = (_template: ShiftTemplate, date: Date) => {
-		setNewShiftDate(date);
+		setNewShiftDate(
+			Temporal.Instant.fromEpochMilliseconds(date.getTime())
+				.toZonedDateTimeISO("UTC")
+				.toPlainDate()
+				.toString(),
+		);
 		setSelectedShift(null);
 		setIsShiftDialogOpen(true);
 	};
@@ -264,6 +271,7 @@ export function ShiftScheduler({
 				isManager={isManager}
 				defaultDate={newShiftDate}
 				organizationId={organizationId}
+				organizationTimezone={organizationTimezone}
 			/>
 
 			<PublishComplianceDialog
