@@ -44,6 +44,7 @@ const DEFAULT_THEMES = ["light", "dark"];
 const TIME_THEME = "time";
 const GEOLOCATION_TIMEOUT_MS = 10_000;
 const MAX_TIMEOUT_MS = 2_147_483_647;
+const DAY_MS = 86_400_000;
 const ThemeContext = createContext<ThemeContextValue>({
 	clearThemeError: () => {},
 	setTheme: () => {},
@@ -110,8 +111,41 @@ function writeStoredLocation(storageKey: string, location: ThemeLocation) {
 	}
 }
 
-function isValidDate(value: Date | undefined) {
+function isValidDate(value: Date | null | undefined): value is Date {
 	return value instanceof Date && Number.isFinite(value.getTime());
+}
+
+function getSurroundingSunBoundaries(location: ThemeLocation, date: Date) {
+	const boundaries: Array<{ at: Date; theme: ResolvedTheme }> = [];
+	const candidates = [-1, 0, 1].map((dayOffset) => {
+		const candidateDate = new Date(date.getTime() + dayOffset * DAY_MS);
+		return SunCalc.getTimes(candidateDate, location.latitude, location.longitude);
+	});
+	const currentTimes = candidates.reduce((closest, times) =>
+		Math.abs(times.solarNoon.getTime() - date.getTime()) <
+		Math.abs(closest.solarNoon.getTime() - date.getTime())
+			? times
+			: closest,
+	);
+	if (!isValidDate(currentTimes.sunrise) || !isValidDate(currentTimes.sunset)) {
+		return {};
+	}
+	const currentTheme: ResolvedTheme =
+		date >= currentTimes.sunrise && date < currentTimes.sunset ? "light" : "dark";
+
+	for (const times of candidates) {
+		if (isValidDate(times.sunrise)) {
+			boundaries.push({ at: times.sunrise, theme: "light" });
+		}
+		if (isValidDate(times.sunset)) {
+			boundaries.push({ at: times.sunset, theme: "dark" });
+		}
+	}
+
+	boundaries.sort((a, b) => a.at.getTime() - b.at.getTime());
+	const next = boundaries.find((boundary) => boundary.at > date && boundary.theme !== currentTheme);
+
+	return { currentTheme, next };
 }
 
 function resolveTimeTheme(
@@ -119,64 +153,23 @@ function resolveTimeTheme(
 	systemTheme: ResolvedTheme,
 	now = new Date(),
 ): ResolvedTheme {
-	const times = SunCalc.getTimes(now, location.latitude, location.longitude);
-	if (!isValidDate(times.sunrise) || !isValidDate(times.sunset)) {
-		return systemTheme;
-	}
-
-	return now >= times.sunrise && now < times.sunset ? "light" : "dark";
+	return getSurroundingSunBoundaries(location, now).currentTheme ?? systemTheme;
 }
 
 function getNextSunBoundary(location: ThemeLocation, now = new Date()) {
-	const times = SunCalc.getTimes(now, location.latitude, location.longitude);
-	if (!isValidDate(times.sunrise) || !isValidDate(times.sunset)) {
-		return undefined;
-	}
-
-	if (now < times.sunrise) {
-		return times.sunrise;
-	}
-
-	if (now < times.sunset) {
-		return times.sunset;
-	}
-
-	const tomorrow = new Date(now);
-	tomorrow.setDate(tomorrow.getDate() + 1);
-	const tomorrowTimes = SunCalc.getTimes(tomorrow, location.latitude, location.longitude);
-	return isValidDate(tomorrowTimes.sunrise) ? tomorrowTimes.sunrise : undefined;
+	return getSurroundingSunBoundaries(location, now).next?.at;
 }
 
-function getTimeThemeInfo(
-	location: ThemeLocation,
-	systemTheme: ResolvedTheme,
-	now = new Date(),
-): TimeThemeInfo | undefined {
-	const times = SunCalc.getTimes(now, location.latitude, location.longitude);
-	if (!isValidDate(times.sunrise) || !isValidDate(times.sunset)) {
-		return undefined;
-	}
-
-	const currentTheme = resolveTimeTheme(location, systemTheme, now);
-	if (now < times.sunrise) {
-		return { currentTheme, nextSwitchAt: times.sunrise, nextTheme: "light" };
-	}
-
-	if (now < times.sunset) {
-		return { currentTheme, nextSwitchAt: times.sunset, nextTheme: "dark" };
-	}
-
-	const tomorrow = new Date(now);
-	tomorrow.setDate(tomorrow.getDate() + 1);
-	const tomorrowTimes = SunCalc.getTimes(tomorrow, location.latitude, location.longitude);
-	if (!isValidDate(tomorrowTimes.sunrise)) {
+function getTimeThemeInfo(location: ThemeLocation, now = new Date()): TimeThemeInfo | undefined {
+	const { currentTheme, next } = getSurroundingSunBoundaries(location, now);
+	if (!currentTheme || !next) {
 		return undefined;
 	}
 
 	return {
 		currentTheme,
-		nextSwitchAt: tomorrowTimes.sunrise,
-		nextTheme: "light",
+		nextSwitchAt: next.at,
+		nextTheme: next.theme,
 	};
 }
 
@@ -311,8 +304,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 	const locationRef = useRef(location);
 	const themeRef = useRef(theme);
 	const resolvedTheme = resolveTheme(theme, enableSystem, systemTheme, location);
-	const timeThemeInfo =
-		theme === TIME_THEME && location ? getTimeThemeInfo(location, systemTheme) : undefined;
+	const timeThemeInfo = theme === TIME_THEME && location ? getTimeThemeInfo(location) : undefined;
 
 	useEffect(() => {
 		isMountedRef.current = true;
