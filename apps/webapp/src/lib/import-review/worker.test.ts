@@ -90,6 +90,28 @@ function commitJob(overrides: Record<string, unknown> = {}) {
 	} as Parameters<typeof processImportReviewJob>[0];
 }
 
+function commitResult(overrides: Record<string, unknown> = {}) {
+	return {
+		committedRows: 0,
+		failedRows: 0,
+		errors: [],
+		summary: {
+			remainingRows: 0,
+			totalCommittedRows: 0,
+			terminalFailedRows: 0,
+		},
+		...overrides,
+	};
+}
+
+function deferred<T>() {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>((resolvePromise) => {
+		resolve = resolvePromise;
+	});
+	return { promise, resolve };
+}
+
 describe("processImportReviewJob", () => {
 	it("routes clockin scan jobs and marks them completed with staged row count", async () => {
 		scanClockinImportPartitionMock.mockResolvedValue({ stagedRows: 7, issues: 2 });
@@ -144,11 +166,16 @@ describe("processImportReviewJob", () => {
 	});
 
 	it("routes commit jobs and marks them completed with committed row count", async () => {
-		commitAcceptedRowsForEntityMock.mockResolvedValue({
-			committedRows: 5,
-			failedRows: 0,
-			errors: [],
-		});
+		commitAcceptedRowsForEntityMock.mockResolvedValue(
+			commitResult({
+				committedRows: 2,
+				summary: {
+					remainingRows: 0,
+					totalCommittedRows: 5,
+					terminalFailedRows: 0,
+				},
+			}),
+		);
 
 		const result = await processImportReviewJob(commitJob());
 
@@ -175,12 +202,82 @@ describe("processImportReviewJob", () => {
 		});
 	});
 
-	it("marks commit jobs failed and rejects when committed rows report row failures", async () => {
-		commitAcceptedRowsForEntityMock.mockResolvedValue({
-			committedRows: 2,
-			failedRows: 1,
-			errors: [{ rowId: "row_3", message: "Employee emp_2 does not belong to organization org_1" }],
+	it("does not complete from a partial local count while another worker owns rows", async () => {
+		const firstCommit = deferred<ReturnType<typeof commitResult>>();
+		const secondCommit = deferred<ReturnType<typeof commitResult>>();
+		const bothWorkersStarted = deferred<void>();
+		let calls = 0;
+		commitAcceptedRowsForEntityMock.mockImplementation(() => {
+			calls++;
+			if (calls === 2) bothWorkersStarted.resolve();
+			return calls === 1 ? firstCommit.promise : secondCommit.promise;
 		});
+
+		const firstWorker = processImportReviewJob(commitJob());
+		const secondWorker = processImportReviewJob(commitJob());
+		await bothWorkersStarted.promise;
+		firstCommit.resolve(
+			commitResult({
+				committedRows: 1,
+				summary: {
+					remainingRows: 1,
+					totalCommittedRows: 1,
+					terminalFailedRows: 0,
+				},
+			}),
+		);
+
+		const firstResult = await firstWorker;
+
+		expect(firstResult).toEqual({
+			success: true,
+			message: "Import review commit still in progress",
+			data: { committedRows: 1, remainingRows: 1 },
+		});
+		expect(updateImportBatchJobMock).not.toHaveBeenCalledWith(
+			expect.objectContaining({ status: "completed" }),
+		);
+		expect(advanceImportBatchAfterJobMock).not.toHaveBeenCalled();
+		expect(enqueueImportCommitJobMock).not.toHaveBeenCalled();
+
+		secondCommit.resolve(
+			commitResult({
+				committedRows: 1,
+				summary: {
+					remainingRows: 0,
+					totalCommittedRows: 2,
+					terminalFailedRows: 0,
+				},
+			}),
+		);
+		const secondResult = await secondWorker;
+
+		expect(secondResult).toEqual({
+			success: true,
+			message: "Import review commit completed",
+			data: { committedRows: 2 },
+		});
+		expect(updateImportBatchJobMock).toHaveBeenCalledWith({
+			jobId: "job_3",
+			organizationId: "org_1",
+			status: "completed",
+			processedRows: 2,
+			errorMessage: null,
+		});
+		expect(advanceImportBatchAfterJobMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("marks commit jobs failed and rejects when committed rows report row failures", async () => {
+		commitAcceptedRowsForEntityMock.mockResolvedValue(
+			commitResult({
+				committedRows: 2,
+				failedRows: 1,
+				errors: [
+					{ rowId: "row_3", message: "Employee emp_2 does not belong to organization org_1" },
+				],
+				summary: { remainingRows: 0, totalCommittedRows: 2, terminalFailedRows: 1 },
+			}),
+		);
 
 		await expect(processImportReviewJob(commitJob({ attemptsMade: 2 }))).rejects.toThrow(
 			"Import review commit failed for 1 row(s): row_3: Employee emp_2 does not belong to organization org_1",
@@ -204,11 +301,14 @@ describe("processImportReviewJob", () => {
 	});
 
 	it("passes finalAttempt false and rejects row failures so retries cannot complete by skipping failed rows", async () => {
-		commitAcceptedRowsForEntityMock.mockResolvedValue({
-			committedRows: 0,
-			failedRows: 1,
-			errors: [{ rowId: "row_1", message: "temporary database failure" }],
-		});
+		commitAcceptedRowsForEntityMock.mockResolvedValue(
+			commitResult({
+				committedRows: 0,
+				failedRows: 1,
+				errors: [{ rowId: "row_1", message: "temporary database failure" }],
+				summary: { remainingRows: 1, totalCommittedRows: 0, terminalFailedRows: 0 },
+			}),
+		);
 
 		await expect(processImportReviewJob(commitJob())).rejects.toThrow(
 			"Import review commit failed for 1 row(s): row_1: temporary database failure",
@@ -224,16 +324,19 @@ describe("processImportReviewJob", () => {
 	});
 
 	it("rejects non-final setup blockers so retry path cannot complete by skipping blocked rows", async () => {
-		commitAcceptedRowsForEntityMock.mockResolvedValue({
-			committedRows: 0,
-			failedRows: 1,
-			errors: [
-				{
-					rowId: "row_1",
-					message: "employee import rows require mapping confirmation before commit",
-				},
-			],
-		});
+		commitAcceptedRowsForEntityMock.mockResolvedValue(
+			commitResult({
+				committedRows: 0,
+				failedRows: 1,
+				errors: [
+					{
+						rowId: "row_1",
+						message: "employee import rows require mapping confirmation before commit",
+					},
+				],
+				summary: { remainingRows: 1, totalCommittedRows: 0, terminalFailedRows: 0 },
+			}),
+		);
 
 		await expect(processImportReviewJob(commitJob({ entityType: "employee" }))).rejects.toThrow(
 			"Import review commit failed for 1 row(s): row_1: employee import rows require mapping confirmation before commit",
@@ -249,11 +352,14 @@ describe("processImportReviewJob", () => {
 	});
 
 	it("passes finalAttempt true to committers on exhausted commit attempts", async () => {
-		commitAcceptedRowsForEntityMock.mockResolvedValue({
-			committedRows: 0,
-			failedRows: 1,
-			errors: [{ rowId: "row_1", message: "permanent validation failure" }],
-		});
+		commitAcceptedRowsForEntityMock.mockResolvedValue(
+			commitResult({
+				committedRows: 0,
+				failedRows: 1,
+				errors: [{ rowId: "row_1", message: "permanent validation failure" }],
+				summary: { remainingRows: 0, totalCommittedRows: 0, terminalFailedRows: 1 },
+			}),
+		);
 
 		await expect(processImportReviewJob(commitJob({ attemptsMade: 2 }))).rejects.toThrow(
 			"Import review commit failed for 1 row(s): row_1: permanent validation failure",

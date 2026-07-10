@@ -123,16 +123,31 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 			case "import-review-commit": {
 				const finalAttempt = isFinalAttempt(job);
 				const commitResult = await commitAcceptedRowsForEntity(data, { finalAttempt });
-				if (commitResult.failedRows > 0) {
+				if (commitResult.failedRows > 0 && !finalAttempt) {
 					const errorMessage = formatCommitRowFailure(commitResult);
-					if (finalAttempt) {
-						await markFailed(data, errorMessage);
-						await advanceBatchAfterJob(data);
-						failureAlreadyMarked = true;
-					}
 					throw new Error(errorMessage);
 				}
-				const { committedRows } = commitResult;
+				if (commitResult.summary.remainingRows > 0) {
+					return {
+						success: true,
+						message: "Import review commit still in progress",
+						data: {
+							committedRows: commitResult.summary.totalCommittedRows,
+							remainingRows: commitResult.summary.remainingRows,
+						},
+					};
+				}
+				if (commitResult.summary.terminalFailedRows > 0) {
+					const errorMessage = formatCommitRowFailure({
+						failedRows: commitResult.summary.terminalFailedRows,
+						errors: commitResult.errors,
+					});
+					await markFailed(data, errorMessage);
+					await advanceBatchAfterJob(data);
+					failureAlreadyMarked = true;
+					throw new Error(errorMessage);
+				}
+				const committedRows = commitResult.summary.totalCommittedRows;
 				await markCompleted(data, committedRows);
 				await advanceBatchAfterJob(data);
 				await enqueueReadyCommitJobs(data);
