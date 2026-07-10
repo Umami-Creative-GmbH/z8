@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import {
@@ -6,6 +6,7 @@ import {
 	type ComplianceStatus,
 	complianceException,
 	employee,
+	employeeManagers,
 	type OvertimeStats,
 	type RestPeriodCheckResult,
 	workPeriod,
@@ -138,6 +139,7 @@ export class ComplianceGuardrailService extends Context.Tag("ComplianceGuardrail
 		readonly approveException: (params: {
 			exceptionId: string;
 			approverId: string;
+			organizationId: string;
 		}) => Effect.Effect<void, NotFoundError | DatabaseError>;
 
 		/**
@@ -146,6 +148,7 @@ export class ComplianceGuardrailService extends Context.Tag("ComplianceGuardrail
 		readonly rejectException: (params: {
 			exceptionId: string;
 			approverId: string;
+			organizationId: string;
 			reason?: string;
 		}) => Effect.Effect<void, NotFoundError | DatabaseError>;
 
@@ -753,6 +756,8 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 								.where(
 									and(
 										eq(complianceException.id, params.exceptionId),
+										eq(complianceException.organizationId, params.organizationId),
+										ne(complianceException.employeeId, params.approverId),
 										eq(complianceException.status, "pending"),
 									),
 								)
@@ -790,6 +795,8 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 								.where(
 									and(
 										eq(complianceException.id, params.exceptionId),
+										eq(complianceException.organizationId, params.organizationId),
+										ne(complianceException.employeeId, params.approverId),
 										eq(complianceException.status, "pending"),
 									),
 								)
@@ -814,10 +821,25 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 
 			getPendingExceptions: (params) =>
 				dbService.query("getPendingExceptions", async () => {
+					const managedEmployeeIds = params.managerId
+						? (
+								await dbService.db.query.employeeManagers.findMany({
+									where: eq(employeeManagers.managerId, params.managerId),
+									columns: { employeeId: true },
+								})
+							).map((row) => row.employeeId)
+						: null;
+					if (managedEmployeeIds?.length === 0) {
+						return [];
+					}
+
 					const exceptions = await dbService.db.query.complianceException.findMany({
 						where: and(
 							eq(complianceException.organizationId, params.organizationId),
 							eq(complianceException.status, "pending"),
+							...(managedEmployeeIds
+								? [inArray(complianceException.employeeId, managedEmployeeIds)]
+								: []),
 						),
 						with: {
 							employee: {

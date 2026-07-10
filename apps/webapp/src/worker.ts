@@ -28,7 +28,8 @@ import {
 	type CronJobData,
 	type CronJobName,
 	type CronScheduleOverrideLike,
-	createJobExecution,
+	getJobExecutionByBullmqJobId,
+	getOrCreateSchedulerJobExecution,
 	isCronJobName,
 	listCronScheduleOverrides,
 	markJobCompleted,
@@ -57,64 +58,74 @@ async function processCronJob(job: Job<CronJobData>): Promise<JobResult> {
 	const startTime = Date.now();
 
 	// Ensure executionId exists (create one for repeatable jobs)
-	let executionId = providedExecutionId;
+	let executionId: string | undefined = providedExecutionId;
 	if (!executionId) {
-		// This is a repeatable job triggered by BullMQ scheduler
-		executionId = await createJobExecution({
+		if (!job.id) {
+			throw new Error("Cron scheduler job is missing its BullMQ job ID");
+		}
+		executionId = await getOrCreateSchedulerJobExecution({
 			jobName: type,
 			bullmqJobId: job.id,
-			metadata: {
-				source: "scheduler",
-			},
 		});
-		logger.debug(
-			{ jobId: job.id, type, executionId },
-			"Created execution record for repeatable job",
-		);
+		await job.updateData({ ...job.data, executionId });
 	}
 
 	logger.info({ jobId: job.id, type, executionId }, "Processing cron job");
 
-	try {
-		// Mark job as running
-		await markJobRunning(executionId);
+	// Mark job as running before executing business logic.
+	await markJobRunning(executionId);
 
-		// Get processor from registry and execute
+	let result: unknown;
+	try {
 		const jobDef = CRON_JOBS[type];
-		const result = await jobDef.processor({
+		result = await jobDef.processor({
 			triggeredAt: job.data.triggeredAt,
 			manualParams,
 		});
-
+	} catch (error) {
+		const jobError = error instanceof Error ? error : new Error(String(error));
 		const duration = Date.now() - startTime;
+		const isFinalAttempt = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
 
-		// Mark job as completed with result
-		await markJobCompleted(executionId, result, duration);
+		if (isFinalAttempt) {
+			try {
+				await markJobFailed(executionId, jobError.message, duration);
+			} catch (trackingError) {
+				logger.error(
+					{ error: trackingError, jobId: job.id, type, executionId },
+					"Failed to mark cron job failed",
+				);
+			}
+		}
 
-		logger.info(
-			{ jobId: job.id, type, executionId, durationMs: duration },
-			"Cron job completed successfully",
+		logger.error(
+			{ error: jobError.message, jobId: job.id, type, executionId, isFinalAttempt },
+			"Cron job failed",
 		);
 
-		return {
-			success: true,
-			message: `${type} completed`,
-			data: result,
-		};
-	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : String(error);
-		const duration = Date.now() - startTime;
-
-		// Mark job as failed with error
-		await markJobFailed(executionId, errorMessage, duration);
-
-		logger.error({ error: errorMessage, jobId: job.id, type, executionId }, "Cron job failed");
-
-		return {
-			success: false,
-			error: errorMessage,
-		};
+		throw jobError;
 	}
+
+	const duration = Date.now() - startTime;
+	try {
+		await markJobCompleted(executionId, result, duration);
+	} catch (trackingError) {
+		logger.error(
+			{ error: trackingError, jobId: job.id, type, executionId },
+			"Failed to mark cron job completed",
+		);
+	}
+
+	logger.info(
+		{ jobId: job.id, type, executionId, durationMs: duration },
+		"Cron job completed successfully",
+	);
+
+	return {
+		success: true,
+		message: `${type} completed`,
+		data: result,
+	};
 }
 
 /**
@@ -155,12 +166,12 @@ export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 				const { processWebhookJob } = await import("@/lib/webhooks/webhook-worker");
 				// Type assertion needed: job.data is WebhookJobData (queue type)
 				// processWebhookJob expects the specific webhook type, which is structurally compatible
-				return processWebhookJob(job as unknown as Parameters<typeof processWebhookJob>[0]);
+				return await processWebhookJob(job as unknown as Parameters<typeof processWebhookJob>[0]);
 			}
 
 			case "calendar-sync": {
 				const { processCalendarSyncJob } = await import("@/lib/calendar-sync/jobs");
-				return processCalendarSyncJob(job.data);
+				return await processCalendarSyncJob(job.data);
 			}
 
 			case "organization-deletion-notification": {
@@ -181,24 +192,30 @@ export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 
 			case "import-review-scan": {
 				const { processImportReviewJob } = await import("@/lib/import-review/worker");
-				return processImportReviewJob(job as Job<typeof job.data>);
+				return await processImportReviewJob(job as Job<typeof job.data>);
 			}
 
 			case "import-review-commit": {
 				const { processImportReviewJob } = await import("@/lib/import-review/worker");
-				return processImportReviewJob(job as Job<typeof job.data>);
+				return await processImportReviewJob(job as Job<typeof job.data>);
+			}
+
+			case "payroll-export": {
+				const { processExportJob } = await import("@/lib/payroll-export");
+				await processExportJob({
+					jobId: job.data.jobId,
+					organizationId: job.data.organizationId,
+				});
+				return { success: true, message: "Payroll export processed" };
 			}
 
 			default:
 				throw new Error(`Unknown job type: ${(job.data as JobData).type}`);
 		}
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : String(error);
-		logger.error({ error: errorMessage, jobId: job.id }, "Job failed");
-		return {
-			success: false,
-			error: errorMessage,
-		};
+		const jobError = error instanceof Error ? error : new Error(String(error));
+		logger.error({ error: jobError.message, jobId: job.id }, "Job failed");
+		throw jobError;
 	}
 }
 
@@ -214,6 +231,92 @@ export async function processJob(job: Job<AllJobData>): Promise<JobResult> {
 		return processCronJob(job as Job<CronJobData>);
 	}
 	return processOneOffJob(job as Job<JobData>);
+}
+
+async function resolveCronExecutionId(job: Job<JobData, JobResult>): Promise<string | undefined> {
+	const executionId = (job.data as CronJobData).executionId;
+	if (executionId) {
+		return executionId;
+	}
+	if (!job.id) {
+		return undefined;
+	}
+	return (await getJobExecutionByBullmqJobId(job.id))?.id;
+}
+
+function isCronJob(job: Job<JobData, JobResult>): boolean {
+	const type = job.data.type;
+	return typeof type === "string" && (type.startsWith("cron:") || isCronJobName(type));
+}
+
+function getJobDuration(job: Job<JobData, JobResult>): number {
+	if (job.processedOn === undefined || job.finishedOn === undefined) {
+		return 0;
+	}
+	return Math.max(0, job.finishedOn - job.processedOn);
+}
+
+export async function reconcileCronJobCompletion(
+	job: Job<JobData, JobResult>,
+	result: JobResult,
+): Promise<void> {
+	if (!isCronJob(job)) {
+		return;
+	}
+
+	try {
+		const executionId = await resolveCronExecutionId(job);
+		if (!executionId) {
+			logger.warn(
+				{ jobId: job.id, type: job.data.type },
+				"Cron execution not found for completion",
+			);
+			return;
+		}
+		await markJobCompleted(executionId, result.data, getJobDuration(job));
+	} catch (error) {
+		logger.error(
+			{ error, jobId: job.id, type: job.data.type },
+			"Failed to reconcile completed cron job",
+		);
+	}
+}
+
+export async function reconcileCronJobFailure(
+	job: Job<JobData, JobResult>,
+	error: Error,
+): Promise<void> {
+	if (!isCronJob(job)) {
+		return;
+	}
+
+	try {
+		if ((await job.getState()) !== "failed") {
+			return;
+		}
+		const executionId = await resolveCronExecutionId(job);
+		if (!executionId) {
+			logger.warn({ jobId: job.id, type: job.data.type }, "Cron execution not found for failure");
+			return;
+		}
+		await markJobFailed(executionId, error.message, getJobDuration(job));
+	} catch (trackingError) {
+		logger.error(
+			{ error: trackingError, jobId: job.id, type: job.data.type },
+			"Failed to reconcile failed cron job",
+		);
+	}
+}
+
+export function registerCronTrackingListeners(worker: ReturnType<typeof createWorker>): void {
+	worker.on("completed", (job, result) => {
+		void reconcileCronJobCompletion(job, result);
+	});
+	worker.on("failed", (job, error) => {
+		if (job) {
+			void reconcileCronJobFailure(job, error);
+		}
+	});
 }
 
 /**
@@ -324,6 +427,7 @@ async function main(): Promise<void> {
 
 	// Create the worker
 	const worker = createWorker(processJob as (job: Job<JobData, JobResult>) => Promise<JobResult>);
+	registerCronTrackingListeners(worker);
 
 	// Graceful shutdown handlers
 	const shutdown = async (signal: string) => {

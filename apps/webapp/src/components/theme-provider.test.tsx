@@ -252,6 +252,72 @@ describe("ThemeProvider", () => {
 		expect(screen.getByText("Time switch: 2026-05-27T18:00:00.000Z")).toBeTruthy();
 	});
 
+	it("uses the observer's solar day across a UTC date boundary", async () => {
+		useControlledTime("2026-05-27T20:00:00.000Z");
+		window.localStorage.setItem("theme", "time");
+		window.localStorage.setItem(
+			"theme-location",
+			JSON.stringify({ latitude: 35.6762, longitude: 139.6503 }),
+		);
+		mockSunCalc.getTimes.mockImplementation((date: Date) => {
+			const isoDay = date.toISOString().slice(0, 10);
+			const isCurrentSolarDay = date.getUTCDate() === 28;
+			return {
+				...daylightTimes,
+				solarNoon: new Date(`${isoDay}T02:38:30.000Z`),
+				sunrise: new Date(
+					isCurrentSolarDay ? "2026-05-27T19:28:39.819Z" : "2026-05-26T19:29:07.716Z",
+				),
+				sunset: new Date(
+					isCurrentSolarDay ? "2026-05-28T09:49:00.143Z" : "2026-05-27T09:48:18.581Z",
+				),
+			};
+		});
+
+		render(
+			<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+				<Consumer />
+			</ThemeProvider>,
+		);
+
+		expect(await screen.findByText("Resolved: light")).toBeTruthy();
+		expect(screen.getByText("Time next: dark")).toBeTruthy();
+		expect(screen.getByText("Time switch: 2026-05-28T09:49:00.143Z")).toBeTruthy();
+	});
+
+	it("uses the surrounding boundaries near the western antimeridian", async () => {
+		useControlledTime("2026-03-20T00:00:00.000Z");
+		window.localStorage.setItem("theme", "time");
+		window.localStorage.setItem(
+			"theme-location",
+			JSON.stringify({ latitude: 0, longitude: -179.68 }),
+		);
+		mockSunCalc.getTimes.mockImplementation((date: Date) => {
+			const isoDay = date.toISOString().slice(0, 10);
+			const isCurrentSolarDay = date.getUTCDate() === 20;
+			return {
+				...daylightTimes,
+				solarNoon: new Date(`${isoDay}T00:06:00.000Z`),
+				sunrise: new Date(
+					isCurrentSolarDay ? "2026-03-19T18:03:04.525Z" : "2026-03-18T18:03:22.068Z",
+				),
+				sunset: new Date(
+					isCurrentSolarDay ? "2026-03-20T06:09:35.456Z" : "2026-03-19T06:09:53.093Z",
+				),
+			};
+		});
+
+		render(
+			<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+				<Consumer />
+			</ThemeProvider>,
+		);
+
+		expect(await screen.findByText("Resolved: light")).toBeTruthy();
+		expect(screen.getByText("Time next: dark")).toBeTruthy();
+		expect(screen.getByText("Time switch: 2026-03-20T06:09:35.456Z")).toBeTruthy();
+	});
+
 	it("ignores a stale time geolocation success after selecting another theme", async () => {
 		useControlledTime();
 		const { resolvePosition } = mockGeolocationDeferred(52.52, 13.405);
@@ -347,7 +413,7 @@ describe("ThemeProvider", () => {
 		expect(document.documentElement.classList.contains("dark")).toBe(true);
 	});
 
-	it("falls back to system theme when sunrise and sunset calculations are invalid", async () => {
+	it("falls back to system theme when sunrise and sunset do not occur", async () => {
 		useControlledTime();
 		window.localStorage.setItem("theme", "time");
 		window.localStorage.setItem(
@@ -356,8 +422,8 @@ describe("ThemeProvider", () => {
 		);
 		mockSunCalc.getTimes.mockReturnValue({
 			...daylightTimes,
-			sunrise: new Date(Number.NaN),
-			sunset: new Date(Number.NaN),
+			sunrise: null,
+			sunset: null,
 		});
 		Object.defineProperty(window, "matchMedia", {
 			configurable: true,
@@ -376,5 +442,120 @@ describe("ThemeProvider", () => {
 
 		expect(await screen.findByText("Theme: time")).toBeTruthy();
 		expect(screen.getByText("Resolved: dark")).toBeTruthy();
+	});
+
+	it("falls back on the first polar day when the adjacent day had events", async () => {
+		useControlledTime("2026-04-19T12:00:00.000Z");
+		window.localStorage.setItem("theme", "time");
+		window.localStorage.setItem(
+			"theme-location",
+			JSON.stringify({ latitude: 78.2232, longitude: 15.6469 }),
+		);
+		mockSunCalc.getTimes.mockImplementation((date: Date) => {
+			const isoDay = date.toISOString().slice(0, 10);
+			if (isoDay === "2026-04-18") {
+				return {
+					...daylightTimes,
+					solarNoon: new Date("2026-04-18T10:17:00.000Z"),
+					sunrise: new Date("2026-04-17T23:42:32.649Z"),
+					sunset: new Date("2026-04-18T22:52:17.693Z"),
+				};
+			}
+
+			return {
+				...daylightTimes,
+				solarNoon: new Date(`${isoDay}T10:13:00.000Z`),
+				sunrise: null,
+				sunset: null,
+			};
+		});
+
+		render(
+			<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+				<Consumer />
+			</ThemeProvider>,
+		);
+
+		expect(await screen.findByText("Resolved: light")).toBeTruthy();
+		expect(screen.getByText("Time current: none")).toBeTruthy();
+	});
+
+	it("resolves dark before the first sunrise after polar night", async () => {
+		useControlledTime("2026-08-09T13:00:00.000Z");
+		window.localStorage.setItem("theme", "time");
+		window.localStorage.setItem(
+			"theme-location",
+			JSON.stringify({ latitude: -75, longitude: -180 }),
+		);
+		mockSunCalc.getTimes.mockImplementation((date: Date) => {
+			const isoDay = date.toISOString().slice(0, 10);
+			if (isoDay === "2026-08-10") {
+				return {
+					...daylightTimes,
+					solarNoon: new Date("2026-08-10T00:05:28.290Z"),
+					sunrise: new Date("2026-08-09T23:26:03.407Z"),
+					sunset: new Date("2026-08-10T00:46:22.864Z"),
+				};
+			}
+
+			return {
+				...daylightTimes,
+				solarNoon: new Date(`${isoDay}T00:05:36.902Z`),
+				sunrise: null,
+				sunset: null,
+			};
+		});
+
+		render(
+			<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+				<Consumer />
+			</ThemeProvider>,
+		);
+
+		expect(await screen.findByText("Resolved: dark")).toBeTruthy();
+		expect(screen.getByText("Time next: light")).toBeTruthy();
+		expect(screen.getByText("Time switch: 2026-08-09T23:26:03.407Z")).toBeTruthy();
+	});
+
+	it("skips adjacent boundaries that do not change the theme", async () => {
+		useControlledTime("2026-09-22T03:00:00.000Z");
+		window.localStorage.setItem("theme", "time");
+		window.localStorage.setItem("theme-location", JSON.stringify({ latitude: -89, longitude: 24 }));
+		const timesByDay = {
+			"2026-09-21": {
+				solarNoon: "2026-09-21T10:17:06.261Z",
+				sunrise: "2026-09-21T03:50:36.462Z",
+				sunset: "2026-09-21T17:35:52.686Z",
+			},
+			"2026-09-22": {
+				solarNoon: "2026-09-22T10:16:45.047Z",
+				sunrise: "2026-09-22T02:21:47.765Z",
+				sunset: "2026-09-22T19:33:13.073Z",
+			},
+			"2026-09-23": {
+				solarNoon: "2026-09-23T10:16:23.941Z",
+				sunrise: "2026-09-22T15:44:58.115Z",
+				sunset: "2026-09-23T16:55:20.200Z",
+			},
+		};
+		mockSunCalc.getTimes.mockImplementation((date: Date) => {
+			const times = timesByDay[date.toISOString().slice(0, 10) as keyof typeof timesByDay];
+			return {
+				...daylightTimes,
+				solarNoon: new Date(times.solarNoon),
+				sunrise: new Date(times.sunrise),
+				sunset: new Date(times.sunset),
+			};
+		});
+
+		render(
+			<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+				<Consumer />
+			</ThemeProvider>,
+		);
+
+		expect(await screen.findByText("Resolved: light")).toBeTruthy();
+		expect(screen.getByText("Time next: dark")).toBeTruthy();
+		expect(screen.getByText("Time switch: 2026-09-22T19:33:13.073Z")).toBeTruthy();
 	});
 });

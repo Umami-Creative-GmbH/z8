@@ -271,6 +271,7 @@ export async function clockOut(
 			projectId,
 			currentEmployee.id,
 			currentEmployee.teamId,
+			currentEmployee.organizationId,
 		);
 
 		if (!projectValidation.isValid) {
@@ -794,6 +795,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			data.projectId,
 			targetEmployee.id,
 			targetEmployee.teamId,
+			targetEmployee.organizationId,
 		);
 
 		if (!projectValidation.isValid) {

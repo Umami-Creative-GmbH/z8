@@ -371,6 +371,7 @@ export class GoogleCalendarProvider implements ICalendarProvider {
 		return Effect.tryPromise({
 			try: async () => {
 				const googleEvent: Partial<GoogleEvent> = {
+					id: event.idempotencyKey,
 					summary: event.title,
 					description: event.description,
 					status: event.status ?? "confirmed",
@@ -406,6 +407,10 @@ export class GoogleCalendarProvider implements ICalendarProvider {
 						body: JSON.stringify(googleEvent),
 					},
 				);
+
+				if (response.status === 409 && event.idempotencyKey) {
+					return { id: event.idempotencyKey };
+				}
 
 				if (!response.ok) {
 					throw await handleGoogleApiError(response);

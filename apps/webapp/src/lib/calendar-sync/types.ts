@@ -68,6 +68,8 @@ export interface CalendarEventToCreate {
 	status?: "confirmed" | "tentative";
 	visibility?: "public" | "private";
 	location?: string;
+	/** Stable key for provider-side create idempotency. */
+	idempotencyKey?: string;
 	/** Custom ID to correlate with Z8 absence */
 	extendedProperties?: Record<string, string>;
 }

@@ -10,4 +10,15 @@ describe("settings layout sidebar", () => {
 			'className="w-64 border-r bg-card p-4 hidden md:block overflow-auto"',
 		);
 	});
+
+	it("renders route children once outside the navigation fallback", () => {
+		const source = readFileSync("src/app/[locale]/(app)/settings/layout.tsx", "utf8");
+
+		expect(
+			source.match(
+				/<div className="min-w-0 flex-1 overflow-auto overflow-x-hidden">\{children\}<\/div>/g,
+			),
+		).toHaveLength(1);
+		expect(source).not.toContain("SettingsLayoutLoading({ children }");
+	});
 });

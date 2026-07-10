@@ -7,7 +7,8 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { absenceEntry, approvalRequest, employee, telegramApprovalMessage } from "@/db/schema";
+import { approvalRequest, employee, telegramApprovalMessage } from "@/db/schema";
+import { decideBotApproval } from "@/lib/bot-platform/approval-decision";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { editMessageText, sendMessage } from "./api";
@@ -84,23 +85,13 @@ export async function handleApprovalCallback(
 
 		const newStatus = action === "approve" ? "approved" : "rejected";
 
-		// Update approval request
-		await db
-			.update(approvalRequest)
-			.set({
-				status: newStatus,
-				approvedAt: new Date(),
-				...(newStatus === "rejected" ? { rejectionReason: "Rejected via Telegram" } : {}),
-			})
-			.where(eq(approvalRequest.id, approvalId));
-
-		// Update the underlying entity status
-		if (approval.entityType === "absence_entry") {
-			await db
-				.update(absenceEntry)
-				.set({ status: newStatus })
-				.where(eq(absenceEntry.id, approval.entityId));
-		}
+		await decideBotApproval({
+			approvalId,
+			actorEmployeeId: userResult.user.employeeId,
+			organizationId: bot.organizationId,
+			action,
+			platform: "telegram",
+		});
 
 		logger.info(
 			{

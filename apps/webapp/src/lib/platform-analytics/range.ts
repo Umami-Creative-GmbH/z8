@@ -52,9 +52,9 @@ export function getPlatformAnalyticsBucketOptions(range: PlatformAnalyticsRange)
 export function buildPlatformAnalyticsBuckets(
 	params: ParsedPlatformAnalyticsParams,
 ): PlatformAnalyticsBucketInfo[] {
-	const end = DateTime.fromISO(params.endIso, { zone: "utc" });
+	const end: DateTime<boolean> = DateTime.fromISO(params.endIso, { zone: "utc" });
 	const buckets: PlatformAnalyticsBucketInfo[] = [];
-	let start = DateTime.fromISO(params.startIso, { zone: "utc" });
+	let start: DateTime<boolean> = DateTime.fromISO(params.startIso, { zone: "utc" });
 
 	while (start < end) {
 		const next = getNextBucketStart(start, params.bucket);
@@ -111,7 +111,10 @@ function getRangeStart(range: PlatformAnalyticsRange, today: DateTime) {
 	}
 }
 
-function getNextBucketStart(start: DateTime, bucket: PlatformAnalyticsBucket) {
+function getNextBucketStart(
+	start: DateTime<boolean>,
+	bucket: PlatformAnalyticsBucket,
+): DateTime<boolean> {
 	switch (bucket) {
 		case "day":
 			return start.plus({ days: 1 });
@@ -122,14 +125,14 @@ function getNextBucketStart(start: DateTime, bucket: PlatformAnalyticsBucket) {
 	}
 }
 
-function formatBucketKey(start: DateTime, bucket: PlatformAnalyticsBucket) {
+function formatBucketKey(start: DateTime<boolean>, bucket: PlatformAnalyticsBucket) {
 	return bucket === "month" ? start.toFormat("yyyy-MM") : (start.toISODate() ?? "");
 }
 
-function formatBucketLabel(start: DateTime, bucket: PlatformAnalyticsBucket) {
+function formatBucketLabel(start: DateTime<boolean>, bucket: PlatformAnalyticsBucket) {
 	return bucket === "month" ? start.toFormat("LLL yyyy") : start.toFormat("LLL d");
 }
 
-function toIso(value: DateTime) {
+function toIso(value: DateTime<boolean>) {
 	return value.toUTC().toISO() ?? "";
 }

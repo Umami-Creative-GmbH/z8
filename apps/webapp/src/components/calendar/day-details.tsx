@@ -1,6 +1,9 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { DateTime } from "luxon";
+import { useLocale } from "next-intl";
+import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CalendarEvent } from "@/lib/calendar/types";
@@ -8,10 +11,14 @@ import type { CalendarEvent } from "@/lib/calendar/types";
 interface DayDetailsProps {
 	selectedDate: Date | null;
 	events: CalendarEvent[];
+	timezone?: string;
 }
 
-export function DayDetails({ selectedDate, events }: DayDetailsProps) {
+export function DayDetails({ selectedDate, events, timezone: selectedTimezone }: DayDetailsProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const userTimezone = useUserTimezone();
+	const timezone = selectedTimezone ?? userTimezone;
 
 	if (!selectedDate) {
 		return (
@@ -31,12 +38,10 @@ export function DayDetails({ selectedDate, events }: DayDetailsProps) {
 	const dateKey = selectedDate.toISOString().split("T")[0];
 	const dayEvents = events.filter((event) => event.date.toISOString().split("T")[0] === dateKey);
 
-	const formattedDate = selectedDate.toLocaleDateString("default", {
-		weekday: "long",
-		year: "numeric",
-		month: "long",
-		day: "numeric",
-	});
+	const formattedDate = DateTime.fromJSDate(selectedDate, { zone: "utc" })
+		.setZone(timezone)
+		.setLocale(locale)
+		.toLocaleString(DateTime.DATE_HUGE);
 
 	return (
 		<Card>

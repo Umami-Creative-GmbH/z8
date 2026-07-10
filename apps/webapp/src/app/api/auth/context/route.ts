@@ -1,8 +1,6 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { organization } from "@/db/auth-schema";
 import { getAuthContext } from "@/lib/auth-helpers";
+import { getOrganizationSettings } from "@/lib/organization-settings";
 
 /**
  * GET /api/auth/context
@@ -17,38 +15,8 @@ export async function GET() {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		// Fetch organization settings if there's an active organization
-		let organizationSettings = null;
 		const orgId = context.session.activeOrganizationId || context.employee?.organizationId;
-
-		if (orgId) {
-			const org = await db.query.organization.findFirst({
-				where: eq(organization.id, orgId),
-				columns: {
-					id: true,
-					shiftsEnabled: true,
-					projectsEnabled: true,
-					surchargesEnabled: true,
-					demoDataEnabled: true,
-					worksCouncilEnabled: true,
-					timezone: true,
-					deletedAt: true,
-				},
-			});
-
-			if (org) {
-				organizationSettings = {
-					organizationId: org.id,
-					shiftsEnabled: org.shiftsEnabled ?? false,
-					projectsEnabled: org.projectsEnabled ?? false,
-					surchargesEnabled: org.surchargesEnabled ?? false,
-					demoDataEnabled: org.demoDataEnabled ?? true,
-					worksCouncilEnabled: org.worksCouncilEnabled ?? false,
-					timezone: org.timezone ?? "UTC",
-					deletedAt: org.deletedAt?.toISOString() ?? null,
-				};
-			}
-		}
+		const organizationSettings = await getOrganizationSettings(orgId, context.user.id);
 
 		return NextResponse.json({
 			user: {

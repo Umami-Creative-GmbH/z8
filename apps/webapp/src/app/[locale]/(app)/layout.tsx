@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
 import { OrganizationDeletionBanner } from "@/components/organization/organization-deletion-banner";
+import { PostHogProvider } from "@/components/posthog-provider";
 import { OrganizationSettingsProvider } from "@/components/providers/organization-settings-provider";
 import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
 import { ServerAppSidebar } from "@/components/server-app-sidebar";
@@ -14,6 +15,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
+import { userSettings } from "@/db/schema";
 import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { getUserLocaleRaw } from "@/lib/bot-platform/i18n";
@@ -23,6 +25,7 @@ import {
 	BillingEnforcementServiceLive,
 } from "@/lib/effect/services/billing/billing-enforcement.service";
 import { createLogger } from "@/lib/logger";
+import { getOrganizationSettings } from "@/lib/organization-settings";
 import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
 import { getUserTimezone } from "@/lib/user-preferences/timezone-server";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
@@ -60,13 +63,20 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 		redirect(sessionExpiredUrl);
 	}
 
+	const activeOrganizationId = session.session?.activeOrganizationId;
 	// Sync DB locale preference on load (null = user hasn't set preference, respect browser/cookie)
-	const [dbLocale, weekStartDay, timeFormat, timezone] = await Promise.all([
-		getUserLocaleRaw(session.user.id),
-		getUserWeekStartDay(session.user.id),
-		getUserTimeFormat(session.user.id),
-		getUserTimezone(session.user.id),
-	]);
+	const [dbLocale, weekStartDay, timeFormat, timezone, analyticsSettings, organizationSettings] =
+		await Promise.all([
+			getUserLocaleRaw(session.user.id),
+			getUserWeekStartDay(session.user.id),
+			getUserTimeFormat(session.user.id),
+			getUserTimezone(session.user.id),
+			db.query.userSettings.findFirst({
+				where: eq(userSettings.userId, session.user.id),
+				columns: { helpImproveProduct: true },
+			}),
+			getOrganizationSettings(activeOrganizationId, session.user.id),
+		]);
 	if (dbLocale && dbLocale !== locale) {
 		// User has a saved locale preference that differs from current URL — redirect
 		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
@@ -75,7 +85,6 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 	}
 
 	const billingEnabled = env.BILLING_ENABLED === "true";
-	const activeOrganizationId = session.session?.activeOrganizationId;
 	const billingAccess =
 		activeOrganizationId && billingEnabled
 			? await Effect.runPromise(
@@ -128,39 +137,48 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 		billingAccess.state === "trialing" &&
 		trialDaysRemaining !== null &&
 		!hasPreparedTrialSubscription;
+	const helpImproveProduct = analyticsSettings?.helpImproveProduct ?? true;
 
 	return (
-		<PushPermissionProvider>
-			<UserPreferencesProvider
-				weekStartDay={weekStartDay}
-				timeFormat={timeFormat}
-				timezone={timezone}
-			>
-				<OrganizationSettingsProvider>
-					<SidebarProvider
-						style={
-							{
-								"--sidebar-width": "calc(var(--spacing) * 72)",
-								"--header-height": "calc(var(--spacing) * 12)",
-							} as React.CSSProperties
-						}
-					>
-						<ServerAppSidebar variant="inset" showWorksCouncilNav={Boolean(activeOrganizationId)} />
-						<SidebarInset>
-							<SiteHeader />
-							{showTrialBanner ? (
-								<TrialBanner
-									daysRemaining={trialDaysRemaining}
-									billingHref="/settings/billing"
-									showUpgradeButton={canManageBilling}
-								/>
-							) : null}
-							<OrganizationDeletionBanner />
-							<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">{children}</div>
-						</SidebarInset>
-					</SidebarProvider>
-				</OrganizationSettingsProvider>
-			</UserPreferencesProvider>
-		</PushPermissionProvider>
+		<PostHogProvider
+			disabled={env.NODE_ENV === "development"}
+			helpImproveProduct={helpImproveProduct}
+		>
+			<PushPermissionProvider>
+				<UserPreferencesProvider
+					weekStartDay={weekStartDay}
+					timeFormat={timeFormat}
+					timezone={timezone}
+				>
+					<OrganizationSettingsProvider initialSettings={organizationSettings}>
+						<SidebarProvider
+							style={
+								{
+									"--sidebar-width": "calc(var(--spacing) * 72)",
+									"--header-height": "calc(var(--spacing) * 12)",
+								} as React.CSSProperties
+							}
+						>
+							<ServerAppSidebar
+								variant="inset"
+								showWorksCouncilNav={Boolean(activeOrganizationId)}
+							/>
+							<SidebarInset>
+								<SiteHeader />
+								{showTrialBanner ? (
+									<TrialBanner
+										daysRemaining={trialDaysRemaining}
+										billingHref="/settings/billing"
+										showUpgradeButton={canManageBilling}
+									/>
+								) : null}
+								<OrganizationDeletionBanner />
+								<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">{children}</div>
+							</SidebarInset>
+						</SidebarProvider>
+					</OrganizationSettingsProvider>
+				</UserPreferencesProvider>
+			</PushPermissionProvider>
+		</PostHogProvider>
 	);
 }

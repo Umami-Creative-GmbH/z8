@@ -449,21 +449,25 @@ describe("absence requester decision notifications", () => {
 						expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
 							absenceId: "absence-1",
 							employeeId: "emp-requester",
+							organizationId: "org-1",
 							action: "create",
 						});
 						expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
 							absenceId: "vacation-updated",
 							employeeId: "emp-requester",
+							organizationId: "org-1",
 							action: "update",
 						});
 						expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
 							absenceId: "vacation-created",
 							employeeId: "emp-requester",
+							organizationId: "org-1",
 							action: "create",
 						});
 						expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
 							absenceId: "vacation-deleted",
 							employeeId: "emp-requester",
+							organizationId: "org-1",
 							action: "delete",
 						});
 						return result;
@@ -501,21 +505,25 @@ describe("absence requester decision notifications", () => {
 		expect(addCalendarSyncJob).toHaveBeenCalledWith({
 			absenceId: "absence-1",
 			employeeId: "emp-requester",
+			organizationId: "org-1",
 			action: "create",
 		});
 		expect(addCalendarSyncJob).toHaveBeenCalledWith({
 			absenceId: "vacation-updated",
 			employeeId: "emp-requester",
+			organizationId: "org-1",
 			action: "update",
 		});
 		expect(addCalendarSyncJob).toHaveBeenCalledWith({
 			absenceId: "vacation-created",
 			employeeId: "emp-requester",
+			organizationId: "org-1",
 			action: "create",
 		});
 		expect(addCalendarSyncJob).toHaveBeenCalledWith({
 			absenceId: "vacation-deleted",
 			employeeId: "emp-requester",
+			organizationId: "org-1",
 			action: "delete",
 		});
 		vi.doUnmock("@/app/[locale]/(app)/absences/actions.canonical");

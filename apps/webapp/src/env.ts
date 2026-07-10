@@ -14,6 +14,7 @@ const parsedEnv = createEnv({
 		BETTER_AUTH_SECRET: z.string().min(32),
 		BETTER_AUTH_SECRETS: z.string().optional(),
 		BETTER_AUTH_URL: z.url().optional(),
+		SSO_TRUSTED_ORIGINS: z.string().optional(),
 
 		// Secret store provider
 		SECRET_STORE_PROVIDER: z.enum(["vault", "scaleway"]).default("vault"),
@@ -193,6 +194,7 @@ const parsedEnv = createEnv({
 		BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 		BETTER_AUTH_SECRETS: process.env.BETTER_AUTH_SECRETS,
 		BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
+		SSO_TRUSTED_ORIGINS: process.env.SSO_TRUSTED_ORIGINS,
 		SECRET_STORE_PROVIDER: process.env.SECRET_STORE_PROVIDER ?? "vault",
 		REDIS_HOST: process.env.REDIS_HOST,
 		REDIS_PORT: process.env.REDIS_PORT,

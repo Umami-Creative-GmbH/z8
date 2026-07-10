@@ -285,6 +285,7 @@ export async function POST(request: NextRequest) {
 				projectId,
 				currentEmployee.id,
 				currentEmployee.teamId,
+				requestedOrgId,
 			);
 			if (!projectValidation.isValid) {
 				return NextResponse.json(

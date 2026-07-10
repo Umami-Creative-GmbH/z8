@@ -12,7 +12,7 @@ describe("employee invitation draft schema", () => {
 		expect(employeeInvitationDraft.currentHourlyRate.name).toBe("current_hourly_rate");
 	});
 
-	it("registers the migration after the latest journal entry", () => {
+	it("registers the migration after its predecessor", () => {
 		const migration = readFileSync("drizzle/0050_employee_invitation_draft.sql", "utf8");
 		const schema = readFileSync("src/db/schema/employee-invitation-draft.ts", "utf8");
 		const journal = JSON.parse(readFileSync("drizzle/meta/_journal.json", "utf8"));
@@ -31,10 +31,13 @@ describe("employee invitation draft schema", () => {
 		expect(migration).toContain('ON DELETE SET NULL ("team_id")');
 		const snapshot = JSON.parse(readFileSync("drizzle/meta/0050_snapshot.json", "utf8"));
 		expect(snapshot.tables["public.employee_invitation_draft"]).toBeTruthy();
-		expect(journal.entries.at(-1)).toMatchObject({
+		const migrationEntry = journal.entries.find(
+			(entry: { tag: string }) => entry.tag === "0050_employee_invitation_draft",
+		);
+		expect(migrationEntry).toMatchObject({
 			idx: 50,
 			tag: "0050_employee_invitation_draft",
 		});
-		expect(journal.entries.at(-1).when).toBeGreaterThan(1780773132900);
+		expect(migrationEntry?.when).toBeGreaterThan(1780773132900);
 	});
 });

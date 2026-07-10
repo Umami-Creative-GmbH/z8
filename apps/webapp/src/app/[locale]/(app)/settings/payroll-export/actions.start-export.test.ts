@@ -20,6 +20,7 @@ const mockState = vi.hoisted(() => {
 		isOrgAdminCasl: vi.fn(async () => true),
 		findEmployee: vi.fn(async () => ({ id: "emp-1" })),
 		createExportJob: vi.fn(async () => ({ jobId: "job-1", isAsync: true })),
+		enqueuePayrollExportJob: vi.fn(async () => undefined),
 		processExportJob: vi.fn(),
 		getExportJobHistory: vi.fn(),
 		getExportDownloadUrl: vi.fn(),
@@ -79,6 +80,7 @@ vi.mock("next/cache", () => ({
 
 vi.mock("@/lib/payroll-export", () => ({
 	createExportJob: mockState.createExportJob,
+	enqueuePayrollExportJob: mockState.enqueuePayrollExportJob,
 	processExportJob: mockState.processExportJob,
 	getExportJobHistory: mockState.getExportJobHistory,
 	getExportDownloadUrl: mockState.getExportDownloadUrl,
@@ -200,7 +202,7 @@ describe("startExportAction", () => {
 		mockState.createExportJob.mockResolvedValue({ jobId: "job-1", isAsync: true });
 	});
 
-	it("passes input formatId through to createExportJob", async () => {
+	it("queues async exports with the organization scope", async () => {
 		const result = await startExportAction({
 			organizationId: "org-1",
 			formatId: "workday_api",
@@ -224,5 +226,40 @@ describe("startExportAction", () => {
 		expect(mockState.createExportJob).not.toHaveBeenCalledWith(
 			expect.objectContaining({ formatId: "datev_lohn" }),
 		);
+		expect(mockState.enqueuePayrollExportJob).toHaveBeenCalledExactlyOnceWith({
+			jobId: "job-1",
+			organizationId: "org-1",
+		});
+		expect(mockState.processExportJob).not.toHaveBeenCalled();
+	});
+
+	it("processes synchronous exports inline with the organization scope", async () => {
+		mockState.createExportJob.mockResolvedValueOnce({ jobId: "job-sync", isAsync: false });
+		mockState.processExportJob.mockResolvedValueOnce({
+			result: { content: "sync-content" },
+			downloadUrl: "https://example.com/export.csv",
+		});
+
+		const result = await startExportAction({
+			organizationId: "org-1",
+			formatId: "workday_api",
+			startDate: "2026-01-01",
+			endDate: "2026-01-31",
+		});
+
+		expect(result).toEqual({
+			success: true,
+			data: {
+				jobId: "job-sync",
+				isAsync: false,
+				downloadUrl: "https://example.com/export.csv",
+				fileContent: "sync-content",
+			},
+		});
+		expect(mockState.processExportJob).toHaveBeenCalledExactlyOnceWith({
+			jobId: "job-sync",
+			organizationId: "org-1",
+		});
+		expect(mockState.enqueuePayrollExportJob).not.toHaveBeenCalled();
 	});
 });

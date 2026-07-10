@@ -110,11 +110,12 @@ function pendingTimeCorrectionConflict(workPeriodId: string) {
 function loadWorkPeriod(
 	dbService: ApprovalDbService,
 	entityId: string,
+	organizationId: string,
 ): Effect.Effect<WorkPeriodRecord, AnyAppError, never> {
 	return dbService
 		.query("getWorkPeriod", async () => {
 			return await dbService.db.query.workPeriod.findFirst({
-				where: eq(workPeriod.id, entityId),
+				where: and(eq(workPeriod.id, entityId), eq(workPeriod.organizationId, organizationId)),
 				with: {
 					employee: {
 						with: { user: true },
@@ -224,21 +225,51 @@ function resolveCorrectionEntryForApproval(
 	);
 }
 
-function ensureClockInCorrection(
-	clockInCorrection: CorrectionEntry | undefined,
-): Effect.Effect<CorrectionEntry, NotFoundError> {
-	return clockInCorrection
-		? Effect.succeed(clockInCorrection)
-		: Effect.fail(
-				new NotFoundError({
-					message: "Clock in correction not found",
-					entityType: "time_entry",
-				}),
-			);
+function ensureOriginalEntryStillActive(
+	dbService: ApprovalDbService,
+	period: WorkPeriodRecord,
+	originalEntryId: string | null,
+	endpoint: "clock-in" | "clock-out",
+) {
+	return dbService
+		.query("lockActiveCorrectionOriginal", async () => {
+			if (!originalEntryId) {
+				return null;
+			}
+
+			const [originalEntry] = await dbService.db
+				.select({ id: timeEntry.id })
+				.from(timeEntry)
+				.where(
+					and(
+						eq(timeEntry.id, originalEntryId),
+						eq(timeEntry.employeeId, period.employeeId),
+						eq(timeEntry.organizationId, period.organizationId),
+						eq(timeEntry.isSuperseded, false),
+					),
+				)
+				.for("update");
+			return originalEntry ?? null;
+		})
+		.pipe(
+			Effect.flatMap((originalEntry) =>
+				originalEntry
+					? Effect.void
+					: Effect.fail(
+							new ConflictError({
+								message: `Original ${endpoint} entry is no longer active`,
+								conflictType: "time_correction_original_superseded",
+								details: { workPeriodId: period.id, originalEntryId },
+							}),
+						),
+			),
+		);
 }
 
 export function calculateCorrectedDurationMinutes(startTime: Date, endTime: Date) {
-	return Math.floor((endTime.getTime() - startTime.getTime()) / 60000);
+	const start = DateTime.fromJSDate(startTime, { zone: "utc" });
+	const end = DateTime.fromJSDate(endTime, { zone: "utc" });
+	return Math.floor(end.diff(start, "minutes").minutes);
 }
 
 export function buildTimeCorrectionApprovalPolicyContext(input: {
@@ -275,17 +306,75 @@ export function createTimeCorrectionApprovalWorkflow(
 		overtimeRisk: ApprovalPolicyOvertimeRisk;
 		correctionAction?: TimeCorrectionAction;
 		correctionEntryIds?: {
-			clockInCorrectionId: string;
+			clockInCorrectionId?: string;
 			clockOutCorrectionId?: string;
 		};
 	},
 ): Effect.Effect<ResolvePolicyAndCreateApprovalResult, AnyAppError, never> {
+	const correctionAction = input.correctionAction ?? "edit";
+	const correctionEntryIds = input.correctionEntryIds;
+	if (
+		correctionEntryIds &&
+		Object.hasOwn(correctionEntryIds, "clockInCorrectionId") &&
+		correctionEntryIds.clockInCorrectionId !== undefined &&
+		(typeof correctionEntryIds.clockInCorrectionId !== "string" ||
+			correctionEntryIds.clockInCorrectionId.trim().length === 0)
+	) {
+		return Effect.fail(
+			new ValidationError({
+				message: "Correction entry IDs must not be blank",
+				field: "correctionEntryIds.clockInCorrectionId",
+			}),
+		);
+	}
+	if (
+		correctionEntryIds &&
+		Object.hasOwn(correctionEntryIds, "clockOutCorrectionId") &&
+		correctionEntryIds.clockOutCorrectionId !== undefined &&
+		(typeof correctionEntryIds.clockOutCorrectionId !== "string" ||
+			correctionEntryIds.clockOutCorrectionId.trim().length === 0)
+	) {
+		return Effect.fail(
+			new ValidationError({
+				message: "Correction entry IDs must not be blank",
+				field: "correctionEntryIds.clockOutCorrectionId",
+			}),
+		);
+	}
+	if (
+		correctionEntryIds &&
+		!correctionEntryIds.clockInCorrectionId &&
+		!correctionEntryIds.clockOutCorrectionId
+	) {
+		return Effect.fail(
+			new ValidationError({
+				message: "Time correction approval must link at least one correction entry",
+				field: "correctionEntryIds",
+			}),
+		);
+	}
+	if (
+		correctionAction === "delete" &&
+		(!correctionEntryIds?.clockInCorrectionId || !correctionEntryIds.clockOutCorrectionId)
+	) {
+		return Effect.fail(
+			new ValidationError({
+				message: "Deletion approval requires clock-in and clock-out correction entries",
+				field: "correctionEntryIds",
+			}),
+		);
+	}
+
 	const metadata: Record<string, unknown> | undefined = input.correctionEntryIds
 		? {
 				timeCorrection: {
-					action: input.correctionAction ?? "edit",
-					clockInCorrectionId: input.correctionEntryIds.clockInCorrectionId,
-					clockOutCorrectionId: input.correctionEntryIds.clockOutCorrectionId,
+					action: correctionAction,
+					...(input.correctionEntryIds.clockInCorrectionId
+						? { clockInCorrectionId: input.correctionEntryIds.clockInCorrectionId }
+						: {}),
+					...(input.correctionEntryIds.clockOutCorrectionId
+						? { clockOutCorrectionId: input.correctionEntryIds.clockOutCorrectionId }
+						: {}),
 				},
 			}
 		: undefined;
@@ -336,19 +425,22 @@ function ensureNoPendingTimeCorrectionApproval(
 		);
 }
 
-export async function syncCanonicalWorkCorrection(input: {
-	organizationId: string;
-	canonicalRecordId: string | null;
-	startAt: Date;
-	endAt: Date | null;
-	durationMinutes: number | null;
-	updatedBy: string;
-}): Promise<void> {
+export async function syncCanonicalWorkCorrection(
+	input: {
+		organizationId: string;
+		canonicalRecordId: string | null;
+		startAt: Date;
+		endAt: Date | null;
+		durationMinutes: number | null;
+		updatedBy: string;
+	},
+	client: ApprovalDbService["db"] = db,
+): Promise<void> {
 	if (!input.canonicalRecordId) {
 		return;
 	}
 
-	await db
+	await client
 		.update(timeRecord)
 		.set({
 			startAt: input.startAt,
@@ -408,38 +500,37 @@ export function rejectTimeCorrectionWithCurrentApproverEffect(
 
 function calculateCorrectedPeriod(
 	period: WorkPeriodRecord,
-	clockIn: CorrectionEntry,
+	clockIn: CorrectionEntry | null,
 	clockOut: CorrectionEntry | null,
 ) {
-	if (clockOut) {
-		return {
-			endTime: clockOut.timestamp,
-			durationMinutes: calculateCorrectedDurationMinutes(clockIn.timestamp, clockOut.timestamp),
-			clockOutId: clockOut.id,
-		};
-	}
-
-	if (period.endTime) {
-		return {
-			endTime: period.endTime,
-			durationMinutes: calculateCorrectedDurationMinutes(clockIn.timestamp, period.endTime),
-			clockOutId: period.clockOutId,
-		};
-	}
+	const startTime = clockIn?.timestamp ?? period.startTime;
+	const endTime = clockOut?.timestamp ?? period.endTime;
 
 	return {
-		endTime: period.endTime,
-		durationMinutes: null,
-		clockOutId: period.clockOutId,
+		clockInId: clockIn?.id ?? period.clockInId,
+		clockOutId: clockOut?.id ?? period.clockOutId,
+		startTime,
+		endTime,
+		durationMinutes: endTime ? calculateCorrectedDurationMinutes(startTime, endTime) : null,
 	};
 }
 
-function calculateDeletedPeriod(_clockIn: CorrectionEntry, clockOut: CorrectionEntry) {
-	return { endTime: clockOut.timestamp, durationMinutes: 0, clockOutId: clockOut.id };
+function calculateDeletedPeriod(clockIn: CorrectionEntry, clockOut: CorrectionEntry) {
+	return {
+		clockInId: clockIn.id,
+		clockOutId: clockOut.id,
+		startTime: clockIn.timestamp,
+		endTime: clockOut.timestamp,
+		durationMinutes: 0,
+	};
 }
 
-function validateCorrectedPeriodRange(clockIn: CorrectionEntry, effectiveClockOut: Date | null) {
-	if (effectiveClockOut && effectiveClockOut <= clockIn.timestamp) {
+function validateCorrectedPeriodRange(effectiveClockIn: Date, effectiveClockOut: Date | null) {
+	const clockIn = DateTime.fromJSDate(effectiveClockIn, { zone: "utc" });
+	const clockOut = effectiveClockOut
+		? DateTime.fromJSDate(effectiveClockOut, { zone: "utc" })
+		: null;
+	if (clockOut && clockOut <= clockIn) {
 		return Effect.fail(
 			new ValidationError({
 				message: "Clock out time must be after clock in time",
@@ -452,7 +543,9 @@ function validateCorrectedPeriodRange(clockIn: CorrectionEntry, effectiveClockOu
 }
 
 function validateDeletedPeriodRange(clockIn: CorrectionEntry, clockOut: CorrectionEntry) {
-	if (clockIn.timestamp.getTime() !== clockOut.timestamp.getTime()) {
+	const clockInInstant = DateTime.fromJSDate(clockIn.timestamp, { zone: "utc" });
+	const clockOutInstant = DateTime.fromJSDate(clockOut.timestamp, { zone: "utc" });
+	if (clockInInstant.toMillis() !== clockOutInstant.toMillis()) {
 		return Effect.fail(
 			new ValidationError({
 				message: "Deletion approval requires matching correction timestamps",
@@ -482,7 +575,6 @@ function applyTimeCorrection(
 	approval: PendingApprovalRequest,
 	currentEmployee: CurrentApprover,
 	correctionAction: TimeCorrectionAction,
-	clockInCorrection: CorrectionEntry,
 	correctedPeriod: ReturnType<typeof calculateCorrectedPeriod>,
 ) {
 	return dbService.query("applyTimeCorrection", async () => {
@@ -499,9 +591,9 @@ function applyTimeCorrection(
 		await dbService.db
 			.update(workPeriod)
 			.set({
-				clockInId: clockInCorrection.id,
+				clockInId: correctedPeriod.clockInId,
 				clockOutId: correctedPeriod.clockOutId,
-				startTime: clockInCorrection.timestamp,
+				startTime: correctedPeriod.startTime,
 				endTime: correctedPeriod.endTime,
 				durationMinutes: correctedPeriod.durationMinutes,
 				updatedAt: new Date(),
@@ -516,11 +608,11 @@ function applyTimeCorrection(
 function activateApprovedTimeCorrectionEntries(
 	dbService: ApprovalDbService,
 	period: WorkPeriodRecord,
-	clockInCorrection: CorrectionEntry,
+	clockInCorrection: CorrectionEntry | null,
 	clockOutCorrection: CorrectionEntry | null,
 ) {
 	return dbService.query("activateApprovedTimeCorrectionEntries", async () => {
-		const correctionEntryIds = [clockInCorrection.id, clockOutCorrection?.id].filter(
+		const correctionEntryIds = [clockInCorrection?.id, clockOutCorrection?.id].filter(
 			(id): id is string => Boolean(id),
 		);
 
@@ -536,16 +628,18 @@ function activateApprovedTimeCorrectionEntries(
 				),
 			);
 
-		await dbService.db
-			.update(timeEntry)
-			.set({ isSuperseded: true, supersededById: clockInCorrection.id })
-			.where(
-				and(
-					eq(timeEntry.employeeId, period.employeeId),
-					eq(timeEntry.organizationId, period.organizationId),
-					eq(timeEntry.id, period.clockInId),
-				),
-			);
+		if (clockInCorrection) {
+			await dbService.db
+				.update(timeEntry)
+				.set({ isSuperseded: true, supersededById: clockInCorrection.id })
+				.where(
+					and(
+						eq(timeEntry.employeeId, period.employeeId),
+						eq(timeEntry.organizationId, period.organizationId),
+						eq(timeEntry.id, period.clockInId),
+					),
+				);
+		}
 
 		if (period.clockOutId && clockOutCorrection) {
 			await dbService.db
@@ -562,15 +656,12 @@ function activateApprovedTimeCorrectionEntries(
 	});
 }
 
-function getDirtyFromDateForCorrection(
-	period: WorkPeriodRecord,
-	clockInCorrection: CorrectionEntry,
-) {
+function getDirtyFromDateForCorrection(period: WorkPeriodRecord, effectiveStartTime: Date) {
+	const originalStart = DateTime.fromJSDate(period.startTime, { zone: "utc" });
+	const correctedStart = DateTime.fromJSDate(effectiveStartTime, { zone: "utc" });
 	const dirtyFromDateSource =
-		period.startTime.getTime() <= clockInCorrection.timestamp.getTime()
-			? period.startTime
-			: clockInCorrection.timestamp;
-	return DateTime.fromJSDate(dirtyFromDateSource, { zone: "utc" }).toISODate() ?? undefined;
+		originalStart.toMillis() <= correctedStart.toMillis() ? originalStart : correctedStart;
+	return dirtyFromDateSource.toISODate() ?? undefined;
 }
 
 function markWorkBalanceDirtyAfterCommit(mark?: WorkBalanceDirtyMark) {
@@ -590,15 +681,16 @@ function notifyApprovedCorrection(
 	period: WorkPeriodRecord,
 	entityId: string,
 	currentEmployee: CurrentApprover,
-	clockInCorrection: CorrectionEntry,
+	originalTime: Date,
+	correctedTime: Date,
 ) {
 	void onTimeCorrectionApproved({
 		workPeriodId: entityId,
 		employeeUserId: period.employee.userId,
 		employeeName: period.employee.user.name,
 		organizationId: period.employee.organizationId,
-		originalTime: period.startTime,
-		correctedTime: clockInCorrection.timestamp,
+		originalTime,
+		correctedTime,
 		approverName: currentEmployee.user.name,
 	});
 }
@@ -608,14 +700,16 @@ function notifyRejectedCorrection(
 	entityId: string,
 	currentEmployee: CurrentApprover,
 	reason: string,
+	originalTime: Date,
+	correctedTime: Date,
 ) {
 	void onTimeCorrectionRejected({
 		workPeriodId: entityId,
 		employeeUserId: period.employee.userId,
 		employeeName: period.employee.user.name,
 		organizationId: period.employee.organizationId,
-		originalTime: period.startTime,
-		correctedTime: period.startTime,
+		originalTime,
+		correctedTime,
 		approverName: currentEmployee.user.name,
 		rejectionReason: reason,
 	});
@@ -669,7 +763,7 @@ function handleApprovedTimeCorrection(
 	approval: PendingApprovalRequest,
 ) {
 	return Effect.gen(function* (_) {
-		const period = yield* _(loadWorkPeriod(dbService, entityId));
+		const period = yield* _(loadWorkPeriod(dbService, entityId, approval.organizationId));
 		yield* _(ensureWorkPeriodNotDeleted(period));
 		const correctionEntryIds = correctionEntryIdsFromApproval(approval);
 		const correctionAction = correctionActionFromApproval(approval);
@@ -682,9 +776,7 @@ function handleApprovedTimeCorrection(
 				!correctionEntryIds,
 			),
 		);
-		const clockInCorrection = yield* _(
-			ensureClockInCorrection(linkedClockInCorrection as CorrectionEntry | undefined),
-		);
+		const clockInCorrection = linkedClockInCorrection as CorrectionEntry | null;
 		const linkedClockOutCorrection = yield* _(
 			resolveCorrectionEntryForApproval(
 				dbService,
@@ -695,29 +787,66 @@ function handleApprovedTimeCorrection(
 			),
 		);
 		const clockOutCorrection = linkedClockOutCorrection as CorrectionEntry | null;
-		if (correctionAction === "edit") {
-			yield* _(
-				validateCorrectedPeriodRange(
-					clockInCorrection,
-					clockOutCorrection?.timestamp ?? period.endTime,
-				),
-			);
-		}
-		if (correctionAction === "delete" && !clockOutCorrection) {
+		if (correctionEntryIds?.clockInCorrectionId && !clockInCorrection) {
 			yield* _(
 				Effect.fail(
 					new ValidationError({
-						message: "Deletion approval requires clock-in and clock-out correction entries",
+						message: "Declared clock-in correction could not be resolved",
+						field: "timeCorrection.clockInCorrectionId",
+					}),
+				),
+			);
+		}
+		if (correctionEntryIds?.clockOutCorrectionId && !clockOutCorrection) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Declared clock-out correction could not be resolved",
 						field: "timeCorrection.clockOutCorrectionId",
 					}),
 				),
 			);
 		}
-		if (correctionAction === "delete" && clockOutCorrection) {
+		if (correctionEntryIds?.clockInCorrectionId && clockInCorrection) {
+			yield* _(ensureOriginalEntryStillActive(dbService, period, period.clockInId, "clock-in"));
+		}
+		if (correctionEntryIds?.clockOutCorrectionId && clockOutCorrection) {
+			yield* _(ensureOriginalEntryStillActive(dbService, period, period.clockOutId, "clock-out"));
+		}
+		if (!clockInCorrection && !clockOutCorrection) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Time correction approval must link at least one correction entry",
+						field: "timeCorrection",
+					}),
+				),
+			);
+		}
+		if (correctionAction === "edit") {
+			const effectiveStartTime = clockInCorrection?.timestamp ?? period.startTime;
+			yield* _(
+				validateCorrectedPeriodRange(
+					effectiveStartTime,
+					clockOutCorrection?.timestamp ?? period.endTime,
+				),
+			);
+		}
+		if (correctionAction === "delete" && (!clockInCorrection || !clockOutCorrection)) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Deletion approval requires clock-in and clock-out correction entries",
+						field: "timeCorrection",
+					}),
+				),
+			);
+		}
+		if (correctionAction === "delete" && clockInCorrection && clockOutCorrection) {
 			yield* _(validateDeletedPeriodRange(clockInCorrection, clockOutCorrection));
 		}
 		const correctedPeriod =
-			correctionAction === "delete" && clockOutCorrection
+			correctionAction === "delete" && clockInCorrection && clockOutCorrection
 				? calculateDeletedPeriod(clockInCorrection, clockOutCorrection)
 				: calculateCorrectedPeriod(period, clockInCorrection, clockOutCorrection);
 
@@ -736,28 +865,42 @@ function handleApprovedTimeCorrection(
 				approval,
 				currentEmployee,
 				correctionAction,
-				clockInCorrection,
 				correctedPeriod,
 			),
 		);
 		const workBalanceDirtyMark = {
 			employeeId: period.employeeId,
 			organizationId: period.organizationId,
-			dirtyFromDate: getDirtyFromDateForCorrection(period, clockInCorrection),
+			dirtyFromDate: getDirtyFromDateForCorrection(period, correctedPeriod.startTime),
 		};
 		yield* _(
-			Effect.promise(() =>
-				syncCanonicalWorkCorrection({
-					organizationId: period.organizationId,
-					canonicalRecordId: period.canonicalRecordId,
-					startAt: clockInCorrection.timestamp,
-					endAt: correctedPeriod.endTime,
-					durationMinutes: correctedPeriod.durationMinutes,
-					updatedBy: currentEmployee.userId,
-				}),
+			dbService.query("syncCanonicalWorkCorrection", () =>
+				syncCanonicalWorkCorrection(
+					{
+						organizationId: period.organizationId,
+						canonicalRecordId: period.canonicalRecordId,
+						startAt: correctedPeriod.startTime,
+						endAt: correctedPeriod.endTime,
+						durationMinutes: correctedPeriod.durationMinutes,
+						updatedBy: currentEmployee.userId,
+					},
+					dbService.db,
+				),
 			),
 		);
-		notifyApprovedCorrection(period, entityId, currentEmployee, clockInCorrection);
+		const originalNotificationTime = clockInCorrection
+			? period.startTime
+			: (period.endTime ?? period.startTime);
+		const correctedNotificationTime = clockInCorrection
+			? correctedPeriod.startTime
+			: (correctedPeriod.endTime ?? correctedPeriod.startTime);
+		notifyApprovedCorrection(
+			period,
+			entityId,
+			currentEmployee,
+			originalNotificationTime,
+			correctedNotificationTime,
+		);
 
 		return { period, workBalanceDirtyMark } satisfies TimeCorrectionApprovalResult;
 	});
@@ -771,7 +914,7 @@ function handleRejectedTimeCorrection(
 	approval: PendingApprovalRequest,
 ) {
 	return Effect.gen(function* (_) {
-		const period = yield* _(loadWorkPeriod(dbService, entityId));
+		const period = yield* _(loadWorkPeriod(dbService, entityId, approval.organizationId));
 		const correctionEntryIds = correctionEntryIdsFromApproval(approval);
 		const clockInCorrection = yield* _(
 			resolveCorrectionEntryForApproval(
@@ -803,7 +946,19 @@ function handleRejectedTimeCorrection(
 				!correctionEntryIds,
 			),
 		);
-		notifyRejectedCorrection(period, entityId, currentEmployee, reason);
+		const originalNotificationTime = clockInCorrection
+			? period.startTime
+			: (period.endTime ?? period.startTime);
+		const correctedNotificationTime =
+			clockInCorrection?.timestamp ?? clockOutCorrection?.timestamp ?? originalNotificationTime;
+		notifyRejectedCorrection(
+			period,
+			entityId,
+			currentEmployee,
+			reason,
+			originalNotificationTime,
+			correctedNotificationTime,
+		);
 		return { period } satisfies TimeCorrectionApprovalResult;
 	});
 }

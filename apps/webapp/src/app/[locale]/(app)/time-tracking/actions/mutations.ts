@@ -373,6 +373,7 @@ export async function updateWorkPeriodProject(
 				projectId,
 				currentEmployee.id,
 				currentEmployee.teamId,
+				currentEmployee.organizationId,
 			);
 			if (!projectValidation.isValid) {
 				return {

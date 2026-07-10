@@ -4,12 +4,65 @@ import { getManagerDailyBriefingFromSources } from "../get-manager-daily-briefin
 import type { BriefingApproval } from "../types";
 
 describe("getManagerDailyBriefingFromSources", () => {
+	it("uses the supplied business timezone for the local briefing day and record window", async () => {
+		const sources = createSources();
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: DateTime.fromISO("2026-04-27T22:30:00.000Z", { setZone: true }),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.date).toBe("2026-04-28");
+		expect(sources.getPublishedShifts).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeIds: ["emp-1"],
+			date: "2026-04-28",
+		});
+		expect(sources.getOpenTimeRecords).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeIds: ["emp-1"],
+			from: DateTime.fromISO("2026-04-27T20:00:00.000Z", { setZone: true }).toJSDate(),
+			to: DateTime.fromISO("2026-04-29T21:59:59.999Z", { setZone: true }).toJSDate(),
+		});
+	});
+
+	it("uses the supplied business timezone to evaluate daily coverage", async () => {
+		const sources = createSources({
+			getCoverageRules: vi.fn().mockResolvedValue([
+				{
+					id: "rule-1",
+					subareaId: "subarea-1",
+					subareaName: "Front desk",
+					dayOfWeek: "tuesday",
+					startTime: "09:00",
+					endTime: "17:00",
+					minimumStaffCount: 2,
+				},
+			]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: DateTime.fromISO("2026-04-27T22:30:00.000Z", { setZone: true }),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.sections.coverage.items).toEqual([
+			expect.objectContaining({ id: "coverage:rule-1" }),
+		]);
+	});
+
 	it("uses all active organization employees for admins", async () => {
 		const sources = createSources();
 		const briefing = await getManagerDailyBriefingFromSources({
 			organizationId: "org-1",
 			currentEmployee: { id: "admin-1", role: "admin" },
-			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00"),
+			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true }),
+			timezone: "Europe/Berlin",
 			sources,
 		});
 
@@ -26,7 +79,8 @@ describe("getManagerDailyBriefingFromSources", () => {
 		await getManagerDailyBriefingFromSources({
 			organizationId: "org-1",
 			currentEmployee: { id: "manager-1", role: "manager" },
-			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00"),
+			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true }),
+			timezone: "Europe/Berlin",
 			sources,
 		});
 
@@ -42,7 +96,8 @@ describe("getManagerDailyBriefingFromSources", () => {
 		await getManagerDailyBriefingFromSources({
 			organizationId: "org-1",
 			currentEmployee: { id: "manager-1", role: "manager" },
-			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00"),
+			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true }),
+			timezone: "Europe/Berlin",
 			sources,
 		});
 
@@ -74,7 +129,8 @@ describe("getManagerDailyBriefingFromSources", () => {
 		await getManagerDailyBriefingFromSources({
 			organizationId: "org-1",
 			currentEmployee: { id: "admin-1", role: "admin" },
-			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00"),
+			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true }),
+			timezone: "Europe/Berlin",
 			sources,
 		});
 
@@ -113,7 +169,8 @@ describe("getManagerDailyBriefingFromSources", () => {
 		const briefing = await getManagerDailyBriefingFromSources({
 			organizationId: "org-1",
 			currentEmployee: { id: "manager-1", role: "manager" },
-			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00"),
+			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true }),
+			timezone: "Europe/Berlin",
 			sources,
 		});
 
@@ -144,7 +201,8 @@ describe("getManagerDailyBriefingFromSources", () => {
 		const briefing = await getManagerDailyBriefingFromSources({
 			organizationId: "org-1",
 			currentEmployee: { id: "manager-1", role: "manager" },
-			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00"),
+			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true }),
+			timezone: "Europe/Berlin",
 			sources,
 		});
 
@@ -164,7 +222,8 @@ describe("getManagerDailyBriefingFromSources", () => {
 		const briefing = await getManagerDailyBriefingFromSources({
 			organizationId: "org-1",
 			currentEmployee: { id: "manager-1", role: "manager" },
-			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00"),
+			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true }),
+			timezone: "Europe/Berlin",
 			sources,
 		});
 
@@ -186,7 +245,8 @@ describe("getManagerDailyBriefingFromSources", () => {
 		const briefing = await getManagerDailyBriefingFromSources({
 			organizationId: "org-1",
 			currentEmployee: { id: "manager-1", role: "manager" },
-			now: DateTime.fromISO("2026-04-28T08:20:00.000+02:00"),
+			now: DateTime.fromISO("2026-04-28T08:20:00.000+02:00", { setZone: true }),
+			timezone: "Europe/Berlin",
 			sources,
 		});
 
@@ -204,7 +264,8 @@ describe("getManagerDailyBriefingFromSources", () => {
 		const briefing = await getManagerDailyBriefingFromSources({
 			organizationId: "org-1",
 			currentEmployee: { id: "manager-1", role: "manager" },
-			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00"),
+			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true }),
+			timezone: "Europe/Berlin",
 			sources,
 		});
 

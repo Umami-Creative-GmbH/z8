@@ -11,6 +11,7 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -37,7 +38,9 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { VerificationResult } from "@/lib/audit-export";
+import { formatDateOnly, formatDateTime, formatTimeOnly } from "@/lib/datetime/format";
 import { useRouter } from "@/navigation";
+import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 
 function formatFileSize(bytes: number): string {
 	if (bytes < 1024) return `${bytes} B`;
@@ -53,6 +56,8 @@ interface AuditPackagesTableProps {
 
 export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTableProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const timezone = useOrganizationTimezone();
 	const router = useRouter();
 	const [verifying, setVerifying] = useState<string | null>(null);
 	const [verificationResult, setVerificationResult] = useState<{
@@ -146,10 +151,10 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 									<TableCell>
 										<div className="flex flex-col">
 											<span className="font-medium">
-												{new Date(pkg.createdAt).toLocaleDateString()}
+												{formatDateOnly(new Date(pkg.createdAt), { locale, timezone })}
 											</span>
 											<span className="text-xs text-muted-foreground">
-												{new Date(pkg.createdAt).toLocaleTimeString()}
+												{formatTimeOnly(new Date(pkg.createdAt), { locale, timezone })}
 											</span>
 										</div>
 									</TableCell>
@@ -252,7 +257,10 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 								</div>
 								<p className="text-xs text-muted-foreground text-center">
 									{t("settings.auditExport.verification.verifiedAt", "Verified at {time}", {
-										time: new Date(verificationResult.result.verifiedAt).toLocaleString(),
+										time: formatDateTime(verificationResult.result.verifiedAt, {
+											locale,
+											timezone,
+										}),
 									})}
 								</p>
 							</>

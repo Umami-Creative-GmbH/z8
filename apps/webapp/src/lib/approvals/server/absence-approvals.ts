@@ -105,11 +105,13 @@ function queueApprovedAbsenceCalendarSync(result: ApprovedAbsenceResult) {
 	void addCalendarSyncJob({
 		absenceId: result.absence.id,
 		employeeId: result.absence.employeeId,
+		organizationId: result.absence.organizationId,
 		action: "create",
 	});
 
 	enqueueVacationOverrideCalendarSyncJobs({
 		employeeId: result.absence.employeeId,
+		organizationId: result.absence.organizationId,
 		summary: result.vacationOverrideSummary,
 	});
 }

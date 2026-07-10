@@ -19,8 +19,8 @@ import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { AuthService, AuthServiceLive } from "@/lib/effect/services/auth.service";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { AuthServiceLive } from "@/lib/effect/services/auth.service";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import {
 	ensureSettingsActorCanAccessCustomerTarget,
@@ -74,20 +74,46 @@ type ProjectWithCustomer = typeof project.$inferSelect & {
 
 type ProjectManagerWithEmployee = typeof projectManager.$inferSelect & {
 	employee:
-		| (Pick<typeof employee.$inferSelect, "id"> & {
+		| (Pick<typeof employee.$inferSelect, "id" | "organizationId"> & {
 				user: { name: string | null } | null;
 		  })
 		| null;
 };
 
 type ProjectAssignmentWithRelations = typeof projectAssignment.$inferSelect & {
-	team: Pick<typeof team.$inferSelect, "name"> | null;
+	team: Pick<typeof team.$inferSelect, "name" | "organizationId"> | null;
 	employee:
-		| (Pick<typeof employee.$inferSelect, "id"> & {
+		| (Pick<typeof employee.$inferSelect, "id" | "organizationId"> & {
 				user: { name: string | null } | null;
 		  })
 		| null;
 };
+
+async function getProjectRelationshipEmployee(employeeId: string, organizationId: string) {
+	return db.query.employee.findFirst({
+		where: and(
+			eq(employee.id, employeeId),
+			eq(employee.organizationId, organizationId),
+			eq(employee.isActive, true),
+		),
+		columns: { id: true },
+	});
+}
+
+async function getProjectAssignmentTarget(
+	type: ProjectAssignmentType,
+	targetId: string,
+	organizationId: string,
+) {
+	if (type === "team") {
+		return db.query.team.findFirst({
+			where: and(eq(team.id, targetId), eq(team.organizationId, organizationId)),
+			columns: { id: true },
+		});
+	}
+
+	return getProjectRelationshipEmployee(targetId, organizationId);
+}
 
 export interface CreateProjectInput {
 	organizationId: string;
@@ -174,7 +200,10 @@ export async function getProjects(
 					dbService.query("getProjectAssignments", async () => {
 						return projectIds.length > 0
 							? await db.query.projectAssignment.findMany({
-									where: inArray(projectAssignment.projectId, projectIds),
+									where: and(
+										inArray(projectAssignment.projectId, projectIds),
+										eq(projectAssignment.organizationId, organizationId),
+									),
 									with: {
 										team: true,
 										employee: {
@@ -198,7 +227,12 @@ export async function getProjects(
 										totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
 									})
 									.from(workPeriod)
-									.where(inArray(workPeriod.projectId, projectIds))
+									.where(
+										and(
+											inArray(workPeriod.projectId, projectIds),
+											eq(workPeriod.organizationId, organizationId),
+										),
+									)
 									.groupBy(workPeriod.projectId)
 							: [];
 					}),
@@ -208,6 +242,9 @@ export async function getProjects(
 				const typedAssignments = assignments as unknown as ProjectAssignmentWithRelations[];
 				const managersByProject = new Map<string, ProjectWithDetails["managers"]>();
 				for (const manager of typedManagers) {
+					if (manager.employee?.organizationId !== organizationId) {
+						continue;
+					}
 					const projectManagers = managersByProject.get(manager.projectId) ?? [];
 					projectManagers.push({
 						id: manager.id,
@@ -218,6 +255,14 @@ export async function getProjects(
 				}
 				const assignmentsByProject = new Map<string, ProjectWithDetails["assignments"]>();
 				for (const assignment of typedAssignments) {
+					if (
+						(assignment.assignmentType === "team" &&
+							assignment.team?.organizationId !== organizationId) ||
+						(assignment.assignmentType === "employee" &&
+							assignment.employee?.organizationId !== organizationId)
+					) {
+						continue;
+					}
 					const projectAssignments = assignmentsByProject.get(assignment.projectId) ?? [];
 					projectAssignments.push({
 						id: assignment.id,
@@ -659,6 +704,29 @@ export async function addProjectManager(
 					}),
 				);
 
+				const targetEmployee = yield* _(
+					Effect.tryPromise({
+						try: async () =>
+							await getProjectRelationshipEmployee(employeeId, existingProject.organizationId),
+						catch: (error) =>
+							new DatabaseError({
+								message: error instanceof Error ? error.message : "Failed to validate employee",
+								operation: "select",
+								table: "employee",
+							}),
+					}),
+				);
+				if (!targetEmployee) {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Employee not found in this organization",
+								field: "employeeId",
+							}),
+						),
+					);
+				}
+
 				// Check if already a manager
 				const existing = yield* _(
 					dbService.query("checkExisting", async () => {
@@ -872,15 +940,41 @@ export async function addProjectAssignment(
 					}),
 				);
 
+				const assignmentTarget = yield* _(
+					Effect.tryPromise({
+						try: async () =>
+							await getProjectAssignmentTarget(type, targetId, existingProject.organizationId),
+						catch: (error) =>
+							new DatabaseError({
+								message:
+									error instanceof Error ? error.message : "Failed to validate assignment target",
+								operation: "select",
+								table: type,
+							}),
+					}),
+				);
+				if (!assignmentTarget) {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: `${type === "team" ? "Team" : "Employee"} not found in this organization`,
+								field: type === "team" ? "teamId" : "employeeId",
+							}),
+						),
+					);
+				}
+
 				// Check if already assigned
 				const existingCondition =
 					type === "team"
 						? and(
 								eq(projectAssignment.projectId, projectId),
+								eq(projectAssignment.organizationId, existingProject.organizationId),
 								eq(projectAssignment.teamId, targetId),
 							)
 						: and(
 								eq(projectAssignment.projectId, projectId),
+								eq(projectAssignment.organizationId, existingProject.organizationId),
 								eq(projectAssignment.employeeId, targetId),
 							);
 
@@ -1087,9 +1181,13 @@ export async function getTeamsForSelection(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const actor = yield* _(
+					getProjectSettingsActorContext({
+						organizationId,
+						queryName: "getTeamsForSelection:actor",
+					}),
+				);
+				const dbService = actor.dbService;
 
 				const teams = yield* _(
 					dbService.query("getTeams", async () => {
@@ -1142,9 +1240,13 @@ export async function getEmployeesForSelection(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const actor = yield* _(
+					getProjectSettingsActorContext({
+						organizationId,
+						queryName: "getEmployeesForSelection:actor",
+					}),
+				);
+				const dbService = actor.dbService;
 
 				const employees = yield* _(
 					dbService.query("getEmployees", async () => {

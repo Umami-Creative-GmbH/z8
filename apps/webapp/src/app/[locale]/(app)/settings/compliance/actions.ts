@@ -1,8 +1,9 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { db } from "@/db";
 import type {
 	ComplianceAlert,
 	ComplianceStatus,
@@ -12,10 +13,11 @@ import type {
 import { complianceException, employee, userSettings } from "@/db/schema";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
+import { requireAbility, requireAuth } from "@/lib/auth-helpers";
+import { asAppSubject } from "@/lib/authorization";
+import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import {
 	ComplianceGuardrailService,
 	ComplianceGuardrailServiceLive,
@@ -62,48 +64,40 @@ import { Layer } from "effect";
 // =============================================================================
 
 async function getCurrentEmployeeWithTimezone() {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	const authContext = await requireAuth();
+	if (!authContext.employee) {
+		throw new NotFoundError({
+			message: "Employee profile not found",
+			entityType: "employee",
+		});
+	}
 
-		const emp = yield* _(
-			dbService.query("getEmployeeByUserId", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-					with: { user: true },
-				});
-			}),
-			Effect.flatMap((emp) =>
-				emp
-					? Effect.succeed(emp)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-						),
+	const [emp, settings] = await Promise.all([
+		db.query.employee.findFirst({
+			where: and(
+				eq(employee.id, authContext.employee.id),
+				eq(employee.organizationId, authContext.employee.organizationId),
+				eq(employee.isActive, true),
 			),
-		);
+			with: { user: true },
+		}),
+		db.query.userSettings.findFirst({
+			where: eq(userSettings.userId, authContext.user.id),
+			columns: { timezone: true },
+		}),
+	]);
+	if (!emp) {
+		throw new NotFoundError({
+			message: "Employee profile not found",
+			entityType: "employee",
+		});
+	}
 
-		// Get user timezone
-		const settings = yield* _(
-			dbService.query("getUserSettings", async () => {
-				return await dbService.db.query.userSettings.findFirst({
-					where: eq(userSettings.userId, session.user.id),
-					columns: { timezone: true },
-				});
-			}),
-		);
-
-		return {
-			employee: emp as EmployeeWithUser,
-			timezone: settings?.timezone || "UTC",
-			userId: session.user.id,
-		};
-	}).pipe(Effect.provide(AppLayer));
-
-	return Effect.runPromise(effect);
+	return {
+		employee: emp as EmployeeWithUser,
+		timezone: settings?.timezone || "UTC",
+		userId: authContext.user.id,
+	};
 }
 
 function typeEmployeeWithUser<T>(employeeRecord: T) {
@@ -112,6 +106,82 @@ function typeEmployeeWithUser<T>(employeeRecord: T) {
 
 function typeComplianceExceptionWithEmployee(exception: unknown) {
 	return exception as ComplianceExceptionWithEmployee | undefined;
+}
+
+async function authorizeComplianceExceptionDecision(input: {
+	exceptionId: string;
+	action: "approve" | "reject";
+}) {
+	const [authContext, ability] = await Promise.all([requireAuth(), requireAbility()]);
+	const organizationId = authContext.session.activeOrganizationId;
+	if (!organizationId || !authContext.employee) {
+		throw new AuthorizationError({
+			message: "Active organization employee required",
+			userId: authContext.user.id,
+			action: input.action,
+			resource: "ComplianceException",
+		});
+	}
+
+	const [approverRecord, exceptionRecord] = await Promise.all([
+		db.query.employee.findFirst({
+			where: and(
+				eq(employee.id, authContext.employee.id),
+				eq(employee.userId, authContext.user.id),
+				eq(employee.organizationId, organizationId),
+				eq(employee.isActive, true),
+			),
+			with: { user: true },
+		}),
+		db.query.complianceException.findFirst({
+			where: and(
+				eq(complianceException.id, input.exceptionId),
+				eq(complianceException.organizationId, organizationId),
+				eq(complianceException.status, "pending"),
+			),
+			with: { employee: { with: { user: true } } },
+		}),
+	]);
+
+	const approver = approverRecord ? typeEmployeeWithUser(approverRecord) : null;
+	const exception = typeComplianceExceptionWithEmployee(exceptionRecord);
+	if (!approver || !exception) {
+		throw new NotFoundError({
+			message: "Exception not found or already processed",
+			entityType: "complianceException",
+			entityId: input.exceptionId,
+		});
+	}
+
+	if (exception.employeeId === approver.id) {
+		throw new AuthorizationError({
+			message: "You cannot process your own compliance exception",
+			userId: authContext.user.id,
+			action: input.action,
+			resource: "ComplianceException",
+		});
+	}
+
+	if (
+		!ability.can(
+			input.action,
+			asAppSubject("Approval", {
+				organizationId,
+				requestedBy: exception.employeeId,
+				approverId: approver.id,
+				status: "pending",
+			}),
+		)
+	) {
+		throw new AuthorizationError({
+			message: `Not authorized to ${input.action} this compliance exception`,
+			userId: authContext.user.id,
+			action: input.action,
+			resource: "ComplianceException",
+		});
+	}
+
+	return { approver, exception, organizationId };
 }
 
 // =============================================================================
@@ -416,33 +486,41 @@ export async function getMyExceptions(
  */
 export async function getPendingExceptions(): Promise<ServerActionResult<ExceptionWithDetails[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
-
-		const emp = yield* _(
-			dbService.query("getEmployeeByUserId", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
+		const { employee: emp } = yield* _(
+			Effect.tryPromise({
+				try: async () => await getCurrentEmployeeWithTimezone(),
+				catch: (error) => error as AnyAppError,
 			}),
-			Effect.flatMap((emp) =>
-				emp
-					? Effect.succeed(emp)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-						),
-			),
 		);
+		const ability = yield* _(
+			Effect.tryPromise({
+				try: async () => await requireAbility(),
+				catch: () =>
+					new AuthorizationError({
+						message: "Unable to verify compliance exception permission",
+						action: "read",
+						resource: "ComplianceException",
+					}),
+			}),
+		);
+		const canManageAll = ability.can("manage", "Compliance");
+		if (!canManageAll && emp.role !== "manager") {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Not authorized to view pending compliance exceptions",
+						action: "read",
+						resource: "ComplianceException",
+					}),
+				),
+			);
+		}
 
 		const complianceService = yield* _(ComplianceGuardrailService);
 		return yield* _(
 			complianceService.getPendingExceptions({
 				organizationId: emp.organizationId,
-				managerId: emp.id, // Filter by team manager
+				managerId: canManageAll ? undefined : emp.id,
 			}),
 		);
 	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
@@ -467,27 +545,15 @@ export async function approveComplianceException(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				const approver = yield* _(
-					dbService.query("getApproverEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-							with: { user: true },
-						});
+				const { approver, exception, organizationId } = yield* _(
+					Effect.tryPromise({
+						try: async () =>
+							await authorizeComplianceExceptionDecision({
+								exceptionId,
+								action: "approve",
+							}),
+						catch: (error) => error as AnyAppError,
 					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(typeEmployeeWithUser(emp))
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
-					),
 				);
 
 				span.setAttribute("approver.id", approver.id);
@@ -497,34 +563,20 @@ export async function approveComplianceException(
 					complianceService.approveException({
 						exceptionId,
 						approverId: approver.id,
+						organizationId,
 					}),
 				);
-
-				// Get exception details for notification
-				const exceptionResult = yield* _(
-					dbService.query("getExceptionDetails", async () => {
-						return await dbService.db.query.complianceException.findFirst({
-							where: eq(complianceException.id, exceptionId),
-							with: {
-								employee: { with: { user: true } },
-							},
-						});
-					}),
-				);
-				const exception = typeComplianceExceptionWithEmployee(exceptionResult);
 
 				// Trigger notification (fire-and-forget)
-				if (exception) {
-					void onComplianceExceptionApproved({
-						exceptionId,
-						employeeUserId: exception.employee.userId,
-						employeeName: buildAuthUserDisplayName(exception.employee.user),
-						organizationId: exception.organizationId,
-						exceptionType: exception.exceptionType,
-						approverName: buildAuthUserDisplayName(approver.user),
-						validUntil: exception.validUntil,
-					});
-				}
+				void onComplianceExceptionApproved({
+					exceptionId,
+					employeeUserId: exception.employee.userId,
+					employeeName: buildAuthUserDisplayName(exception.employee.user),
+					organizationId: exception.organizationId,
+					exceptionType: exception.exceptionType,
+					approverName: buildAuthUserDisplayName(approver.user),
+					validUntil: exception.validUntil,
+				});
 
 				logger.info(
 					{
@@ -575,65 +627,39 @@ export async function rejectComplianceException(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				const approver = yield* _(
-					dbService.query("getApproverEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-							with: { user: true },
-						});
+				const { approver, exception, organizationId } = yield* _(
+					Effect.tryPromise({
+						try: async () =>
+							await authorizeComplianceExceptionDecision({
+								exceptionId,
+								action: "reject",
+							}),
+						catch: (error) => error as AnyAppError,
 					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(typeEmployeeWithUser(emp))
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
-					),
 				);
 
 				span.setAttribute("approver.id", approver.id);
-
-				// Get exception details before rejection for notification
-				const exceptionResult = yield* _(
-					dbService.query("getExceptionDetails", async () => {
-						return await dbService.db.query.complianceException.findFirst({
-							where: eq(complianceException.id, exceptionId),
-							with: {
-								employee: { with: { user: true } },
-							},
-						});
-					}),
-				);
-				const exception = typeComplianceExceptionWithEmployee(exceptionResult);
 
 				const complianceService = yield* _(ComplianceGuardrailService);
 				yield* _(
 					complianceService.rejectException({
 						exceptionId,
 						approverId: approver.id,
+						organizationId,
 						reason,
 					}),
 				);
 
 				// Trigger notification (fire-and-forget)
-				if (exception) {
-					void onComplianceExceptionRejected({
-						exceptionId,
-						employeeUserId: exception.employee.userId,
-						employeeName: buildAuthUserDisplayName(exception.employee.user),
-						organizationId: exception.organizationId,
-						exceptionType: exception.exceptionType,
-						approverName: buildAuthUserDisplayName(approver.user),
-						reason,
-					});
-				}
+				void onComplianceExceptionRejected({
+					exceptionId,
+					employeeUserId: exception.employee.userId,
+					employeeName: buildAuthUserDisplayName(exception.employee.user),
+					organizationId: exception.organizationId,
+					exceptionType: exception.exceptionType,
+					approverName: buildAuthUserDisplayName(approver.user),
+					reason,
+				});
 
 				logger.info(
 					{
@@ -676,31 +702,38 @@ export async function rejectComplianceException(
  */
 export async function expireOldExceptions(): Promise<ServerActionResult<{ expiredCount: number }>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
-
-		// Get admin's organization
-		const emp = yield* _(
-			dbService.query("getEmployeeByUserId", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
+		const { employee: emp } = yield* _(
+			Effect.tryPromise({
+				try: async () => await getCurrentEmployeeWithTimezone(),
+				catch: (error) => error as AnyAppError,
 			}),
-			Effect.flatMap((emp) =>
-				emp
-					? Effect.succeed(emp)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-						),
-			),
 		);
+		const organizationId = emp.organizationId;
+		const ability = yield* _(
+			Effect.tryPromise({
+				try: async () => await requireAbility(),
+				catch: () =>
+					new AuthorizationError({
+						message: "Unable to verify compliance administration permission",
+						action: "manage",
+						resource: "Compliance",
+					}),
+			}),
+		);
+		if (!ability.can("manage", "Compliance")) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Not authorized to expire compliance exceptions",
+						action: "manage",
+						resource: "Compliance",
+					}),
+				),
+			);
+		}
 
 		const complianceService = yield* _(ComplianceGuardrailService);
-		return yield* _(complianceService.expireOldExceptions(emp.organizationId));
+		return yield* _(complianceService.expireOldExceptions(organizationId));
 	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

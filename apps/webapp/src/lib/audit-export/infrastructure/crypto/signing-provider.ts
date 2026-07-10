@@ -119,10 +119,10 @@ export class Ed25519SigningProvider implements ISigningProvider {
 			key: privateKeyPem,
 			format: "pem",
 		});
+		const normalizedPrivateKey = privateKey.export({ type: "pkcs8", format: "pem" });
+		const publicKey = crypto.createPublicKey({ key: normalizedPrivateKey, format: "pem" });
 
-		const publicKey = crypto.createPublicKey(privateKey);
-
-		return publicKey.export({ type: "spki", format: "pem" }) as string;
+		return publicKey.export({ type: "spki", format: "pem" });
 	}
 
 	/**

@@ -81,6 +81,21 @@ describe("PostHogProvider", () => {
 		);
 	});
 
+	it("stops tracking when the authenticated provider unmounts", () => {
+		const { unmount } = render(
+			<PostHogProvider disabled={false} helpImproveProduct>
+				<div>App</div>
+			</PostHogProvider>,
+		);
+		optOutMock.mockClear();
+		resetMock.mockClear();
+
+		unmount();
+
+		expect(optOutMock).toHaveBeenCalledOnce();
+		expect(resetMock).toHaveBeenCalledOnce();
+	});
+
 	it("does not initialize tracking when disabled", () => {
 		render(
 			<PostHogProvider disabled helpImproveProduct>

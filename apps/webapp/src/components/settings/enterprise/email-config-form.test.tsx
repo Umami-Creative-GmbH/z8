@@ -9,6 +9,10 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 
+vi.mock("next-intl", () => ({
+	useLocale: () => "en",
+}));
+
 vi.mock("sonner", () => ({
 	toast: {
 		error: vi.fn(),

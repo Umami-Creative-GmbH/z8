@@ -49,18 +49,34 @@ export function getMissingAbsenceApproverMessage(input: {
 
 export function enqueueVacationOverrideCalendarSyncJobs(input: {
 	employeeId: string;
+	organizationId: string;
 	summary: VacationOverrideSummary;
 }) {
 	for (const absenceId of input.summary.updatedAbsenceIds) {
-		void addCalendarSyncJob({ absenceId, employeeId: input.employeeId, action: "update" });
+		void addCalendarSyncJob({
+			absenceId,
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			action: "update",
+		});
 	}
 
 	for (const absenceId of input.summary.createdAbsenceIds) {
-		void addCalendarSyncJob({ absenceId, employeeId: input.employeeId, action: "create" });
+		void addCalendarSyncJob({
+			absenceId,
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			action: "create",
+		});
 	}
 
 	for (const absenceId of input.summary.deletedAbsenceIds) {
-		void addCalendarSyncJob({ absenceId, employeeId: input.employeeId, action: "delete" });
+		void addCalendarSyncJob({
+			absenceId,
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			action: "delete",
+		});
 	}
 }
 

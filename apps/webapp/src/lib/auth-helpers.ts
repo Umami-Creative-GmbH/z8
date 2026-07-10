@@ -9,7 +9,6 @@ import { db } from "@/db";
 import { user as authUser, invitation, member, organization } from "@/db/auth-schema";
 import { employee, employeeManagers, teamPermissions, userSettings } from "@/db/schema";
 import { customRole, customRolePermission, employeeCustomRole } from "@/db/schema/custom-role";
-import type { AppType } from "@/lib/audit-logger";
 import { auth } from "@/lib/auth";
 import {
 	type AuthContextUser,
@@ -24,7 +23,6 @@ import {
 	type Subject,
 	type TeamPermissions,
 } from "@/lib/authorization";
-import { detectAppType } from "@/lib/effect/services/app-access.service";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
 import type { PermissionFlags } from "@/lib/effect/services/permissions.service";
@@ -82,20 +80,34 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
 	// Fetch employee record for the active organization ONLY
 	// SECURITY: We intentionally do NOT fall back to any employee record
 	// if no activeOrganizationId is set. This ensures org-scoped data isolation.
+	let memberRecord = null;
 	let employeeRecord = null;
 
 	if (activeOrganizationId) {
-		[employeeRecord] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrganizationId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
+		[[memberRecord], [employeeRecord]] = await Promise.all([
+			db
+				.select({ id: member.id })
+				.from(member)
+				.where(
+					and(
+						eq(member.userId, session.user.id),
+						eq(member.organizationId, activeOrganizationId),
+						eq(member.status, "approved"),
+					),
+				)
+				.limit(1),
+			db
+				.select()
+				.from(employee)
+				.where(
+					and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, activeOrganizationId),
+						eq(employee.isActive, true),
+					),
+				)
+				.limit(1),
+		]);
 	}
 	// No fallback - if no active org, employee stays null
 
@@ -104,14 +116,15 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
 		session: {
 			activeOrganizationId,
 		},
-		employee: employeeRecord
-			? {
-					id: employeeRecord.id,
-					organizationId: employeeRecord.organizationId,
-					role: employeeRecord.role,
-					teamId: employeeRecord.teamId,
-				}
-			: null,
+		employee:
+			memberRecord && employeeRecord
+				? {
+						id: employeeRecord.id,
+						organizationId: employeeRecord.organizationId,
+						role: employeeRecord.role,
+						teamId: employeeRecord.teamId,
+					}
+				: null,
 	};
 });
 
@@ -437,7 +450,13 @@ export async function verifyOrgMembership(
 			memberRole: member.role,
 		})
 		.from(member)
-		.where(and(eq(member.userId, session.user.id), eq(member.organizationId, requestedOrgId)))
+		.where(
+			and(
+				eq(member.userId, session.user.id),
+				eq(member.organizationId, requestedOrgId),
+				eq(member.status, "approved"),
+			),
+		)
 		.limit(1);
 
 	if (!memberRecord) {
@@ -554,92 +573,11 @@ export async function getVerifiedOrgContext(requestedOrgId: string | null): Prom
 	};
 }
 
-// ============================================
-// APP ACCESS VALIDATION
-// ============================================
-
-export interface AppAccessValidationResult {
-	allowed: boolean;
-	appType: AppType;
-	reason?: string;
-}
-
-/**
- * Validate if the current user has access to the app type being used.
- * Detects app type from request headers (Bearer token = desktop/mobile, cookie = webapp).
- *
- * @param user - User object with app permissions
- * @param requestHeaders - Request headers for app type detection
- * @returns Validation result with allowed flag and reason if denied
- *
- * @example
- * ```typescript
- * const session = await auth.api.getSession({ headers: await headers() });
- * const accessCheck = await validateAppAccess(session.user, await headers());
- * if (!accessCheck.allowed) {
- *   redirect(`/access-denied?app=${accessCheck.appType}`);
- * }
- * ```
- */
-export async function validateAppAccess(
-	user: {
-		canUseWebapp?: boolean | null;
-		canUseDesktop?: boolean | null;
-		canUseMobile?: boolean | null;
-	},
-	requestHeaders: Headers,
-): Promise<AppAccessValidationResult> {
-	const appType = detectAppType(requestHeaders);
-
-	const canUseWebapp = user.canUseWebapp ?? true;
-	const canUseDesktop = user.canUseDesktop ?? true;
-	const canUseMobile = user.canUseMobile ?? true;
-
-	let allowed = true;
-	let reason: string | undefined;
-
-	if (appType === "webapp" && !canUseWebapp) {
-		allowed = false;
-		reason =
-			"Your account does not have access to the web application. Please contact your administrator.";
-	} else if (appType === "desktop" && !canUseDesktop) {
-		allowed = false;
-		reason =
-			"Your account does not have access to the desktop application. Please contact your administrator.";
-	} else if (appType === "mobile" && !canUseMobile) {
-		allowed = false;
-		reason =
-			"Your account does not have access to the mobile application. Please contact your administrator.";
-	}
-
-	return { allowed, appType, reason };
-}
-
-/**
- * Require app access - throws error if user doesn't have access to the current app type.
- * Use this in API routes and server actions for cleaner error handling.
- *
- * @param user - User object with app permissions
- * @param requestHeaders - Request headers for app type detection
- * @throws Error if user doesn't have access
- * @returns The detected app type if access is allowed
- */
-export async function requireAppAccess(
-	user: {
-		canUseWebapp?: boolean | null;
-		canUseDesktop?: boolean | null;
-		canUseMobile?: boolean | null;
-	},
-	requestHeaders: Headers,
-): Promise<AppType> {
-	const result = await validateAppAccess(user, requestHeaders);
-
-	if (!result.allowed) {
-		throw new Error(result.reason || "Access denied");
-	}
-
-	return result.appType;
-}
+export {
+	type AppAccessValidationResult,
+	requireAppAccess,
+	validateAppAccess,
+} from "@/lib/app-access";
 
 // ============================================
 // CASL AUTHORIZATION
@@ -706,7 +644,13 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 		db
 			.select()
 			.from(member)
-			.where(and(eq(member.userId, userId), eq(member.organizationId, activeOrganizationId)))
+			.where(
+				and(
+					eq(member.userId, userId),
+					eq(member.organizationId, activeOrganizationId),
+					eq(member.status, "approved"),
+				),
+			)
 			.limit(1),
 		// Load employee record
 		db
@@ -722,17 +666,19 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 			.limit(1),
 	]);
 
+	const authorizedEmployeeRecord = memberRecord ? employeeRecord : null;
+
 	// Load permissions if employee exists
 	const permissions: TeamPermissions = {
 		orgWide: null,
 		byTeamId: new Map(),
 	};
 
-	if (employeeRecord) {
+	if (authorizedEmployeeRecord) {
 		const permRecords = await db
 			.select()
 			.from(teamPermissions)
-			.where(eq(teamPermissions.employeeId, employeeRecord.id));
+			.where(eq(teamPermissions.employeeId, authorizedEmployeeRecord.id));
 
 		for (const perm of permRecords) {
 			const flags: PermissionFlags = {
@@ -753,7 +699,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 	}
 
 	let customRoles: CustomRoleInfo[] = [];
-	if (employeeRecord) {
+	if (authorizedEmployeeRecord) {
 		const customRoleRows = await db
 			.select({
 				roleId: customRole.id,
@@ -767,7 +713,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 			.innerJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id))
 			.where(
 				and(
-					eq(employeeCustomRole.employeeId, employeeRecord.id),
+					eq(employeeCustomRole.employeeId, authorizedEmployeeRecord.id),
 					eq(customRole.organizationId, activeOrganizationId),
 					eq(customRole.isActive, true),
 				),
@@ -794,11 +740,14 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 	// Load managed employee IDs
 	let managedEmployeeIds: string[] = [];
 
-	if (employeeRecord && (employeeRecord.role === "manager" || employeeRecord.role === "admin")) {
+	if (
+		authorizedEmployeeRecord &&
+		(authorizedEmployeeRecord.role === "manager" || authorizedEmployeeRecord.role === "admin")
+	) {
 		const managedRecords = await db
 			.select({ employeeId: employeeManagers.employeeId })
 			.from(employeeManagers)
-			.where(eq(employeeManagers.managerId, employeeRecord.id));
+			.where(eq(employeeManagers.managerId, authorizedEmployeeRecord.id));
 
 		managedEmployeeIds = managedRecords.map((r) => r.employeeId);
 	}
@@ -814,12 +763,12 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 					status: "active",
 				}
 			: null,
-		employee: employeeRecord
+		employee: authorizedEmployeeRecord
 			? {
-					id: employeeRecord.id,
-					organizationId: employeeRecord.organizationId,
-					role: employeeRecord.role,
-					teamId: employeeRecord.teamId,
+					id: authorizedEmployeeRecord.id,
+					organizationId: authorizedEmployeeRecord.organizationId,
+					role: authorizedEmployeeRecord.role,
+					teamId: authorizedEmployeeRecord.teamId,
 				}
 			: null,
 		permissions,
@@ -844,7 +793,13 @@ export async function getSettingsAccessInputForUser(
 		db
 			.select({ role: member.role })
 			.from(member)
-			.where(and(eq(member.userId, userId), eq(member.organizationId, activeOrganizationId)))
+			.where(
+				and(
+					eq(member.userId, userId),
+					eq(member.organizationId, activeOrganizationId),
+					eq(member.status, "approved"),
+				),
+			)
 			.limit(1)
 			.then((records) => records[0] ?? null),
 		db
@@ -866,7 +821,7 @@ export async function getSettingsAccessInputForUser(
 		membershipRole: isSettingsAccessMembershipRole(membershipRecord?.role)
 			? membershipRecord.role
 			: null,
-		employeeRole: employeeRecord?.role ?? null,
+		employeeRole: membershipRecord ? (employeeRecord?.role ?? null) : null,
 	};
 }
 
@@ -1012,7 +967,13 @@ export async function isOrgAdminCasl(organizationId: string): Promise<boolean> {
 		const [memberRecord] = await db
 			.select()
 			.from(member)
-			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
+			.where(
+				and(
+					eq(member.userId, session.user.id),
+					eq(member.organizationId, organizationId),
+					eq(member.status, "approved"),
+				),
+			)
 			.limit(1);
 
 		return memberRecord?.role === "admin" || memberRecord?.role === "owner";

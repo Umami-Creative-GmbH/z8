@@ -2,8 +2,11 @@ import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { user } from "@/db/auth-schema";
 import { type AppType, logAppAccessChange, logAppAccessDenied } from "@/lib/audit-logger";
+import { detectAppType } from "@/lib/app-access";
 import { AppAccessDeniedError, type DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService } from "./database.service";
+
+export { detectAppType } from "@/lib/app-access";
 
 /**
  * App access permissions for a user
@@ -21,37 +24,6 @@ export interface AppAccessCheckResult {
 	allowed: boolean;
 	appType: AppType;
 	permissions: AppPermissions;
-}
-
-/**
- * Detect app type from request headers
- * Bearer token = desktop/mobile, Cookie = webapp
- */
-export function detectAppType(headers: Headers): AppType {
-	const authHeader = headers.get("authorization");
-
-	// Bearer token = desktop or mobile app
-	if (authHeader?.toLowerCase().startsWith("bearer ")) {
-		const appTypeHeader = headers.get("x-z8-app-type")?.toLowerCase();
-		if (appTypeHeader === "mobile" || appTypeHeader === "desktop") {
-			return appTypeHeader;
-		}
-
-		// Distinguish by user-agent
-		const userAgent = headers.get("user-agent")?.toLowerCase() || "";
-		if (
-			userAgent.includes("mobile") ||
-			userAgent.includes("android") ||
-			userAgent.includes("ios") ||
-			userAgent.includes("react native")
-		) {
-			return "mobile";
-		}
-		return "desktop";
-	}
-
-	// Cookie auth = webapp
-	return "webapp";
 }
 
 /**

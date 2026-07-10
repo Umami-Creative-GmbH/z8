@@ -58,7 +58,9 @@ export async function createTimeEntry(
 		client
 			.select()
 			.from(timeEntry)
-			.where(and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)))
+			.where(
+				and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)),
+			)
 			.orderBy(desc(timeEntry.createdAt))
 			.limit(1),
 		getRequestMetadata(),
@@ -80,6 +82,7 @@ export async function createTimeEntry(
 			timestamp,
 			hash,
 			previousHash,
+			previousEntryId: previousEntry?.id ?? null,
 			ipAddress,
 			deviceInfo: userAgent,
 			createdBy,
@@ -114,9 +117,10 @@ export async function validateProjectAssignment(
 	projectId: string,
 	employeeId: string,
 	teamId: string | null,
+	organizationId: string,
 ): Promise<{ isValid: boolean; error?: string }> {
 	const assignedProject = await db.query.project.findFirst({
-		where: eq(project.id, projectId),
+		where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
 	});
 
 	if (!assignedProject) {
@@ -139,12 +143,18 @@ export async function validateProjectAssignment(
 			? or(
 					and(
 						eq(projectAssignment.projectId, projectId),
+						eq(projectAssignment.organizationId, organizationId),
 						eq(projectAssignment.employeeId, employeeId),
 					),
-					and(eq(projectAssignment.projectId, projectId), eq(projectAssignment.teamId, teamId)),
+					and(
+						eq(projectAssignment.projectId, projectId),
+						eq(projectAssignment.organizationId, organizationId),
+						eq(projectAssignment.teamId, teamId),
+					),
 				)
 			: and(
 					eq(projectAssignment.projectId, projectId),
+					eq(projectAssignment.organizationId, organizationId),
 					eq(projectAssignment.employeeId, employeeId),
 				),
 	});
@@ -166,12 +176,18 @@ export async function getAssignedProjectsWithHours(
 ) {
 	const [directAssignments, teamAssignments] = await Promise.all([
 		db.query.projectAssignment.findMany({
-			where: eq(projectAssignment.employeeId, employeeId),
+			where: and(
+				eq(projectAssignment.employeeId, employeeId),
+				eq(projectAssignment.organizationId, organizationId),
+			),
 			with: { project: true },
 		}),
 		teamId
 			? db.query.projectAssignment.findMany({
-					where: eq(projectAssignment.teamId, teamId),
+					where: and(
+						eq(projectAssignment.teamId, teamId),
+						eq(projectAssignment.organizationId, organizationId),
+					),
 					with: { project: true },
 				})
 			: Promise.resolve([]),
@@ -247,7 +263,7 @@ export async function checkProjectBudgetAfterClockOut(
 	organizationId: string,
 ): Promise<void> {
 	const assignedProject = await db.query.project.findFirst({
-		where: eq(project.id, projectId),
+		where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
 		columns: {
 			id: true,
 			name: true,
@@ -264,7 +280,7 @@ export async function checkProjectBudgetAfterClockOut(
 		return;
 	}
 
-	const totalHours = await getProjectTotalHours(projectId);
+	const totalHours = await getProjectTotalHours(projectId, organizationId);
 
 	await checkProjectBudgetWarnings({
 		projectId,

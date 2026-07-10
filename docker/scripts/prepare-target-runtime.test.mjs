@@ -71,6 +71,29 @@ test("Dockerfiles install pnpm without relying on Corepack", async () => {
 	}
 });
 
+test("Dockerfiles pin the workspace pnpm version", async () => {
+	const packageJson = JSON.parse(
+		await fs.readFile(new URL("../../package.json", import.meta.url), "utf8"),
+	);
+	const dockerfiles = [
+		"Dockerfile.db-seed",
+		"Dockerfile.docs",
+		"Dockerfile.marketing",
+		"Dockerfile.migration",
+		"Dockerfile.webapp",
+		"Dockerfile.worker",
+	];
+
+	for (const dockerfile of dockerfiles) {
+		const contents = await fs.readFile(new URL(`../${dockerfile}`, import.meta.url), "utf8");
+		assert.match(
+			contents,
+			new RegExp(`^ARG PNPM_VERSION=${packageJson.packageManager.slice("pnpm@".length)}$`, "m"),
+			`${dockerfile} must pin the workspace pnpm version`,
+		);
+	}
+});
+
 test("non-root runtime Dockerfiles can run without root-owned pnpm or workspace paths", async () => {
 	const dockerfiles = ["Dockerfile.docs", "Dockerfile.webapp"];
 

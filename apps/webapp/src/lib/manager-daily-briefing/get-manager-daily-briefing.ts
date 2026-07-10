@@ -72,6 +72,7 @@ type GetManagerDailyBriefingFromSourcesInput = {
 	organizationId: string;
 	currentEmployee: CurrentEmployee;
 	now: DateTime;
+	timezone: string;
 	sources: ManagerDailyBriefingSources;
 };
 
@@ -148,9 +149,11 @@ export async function getManagerDailyBriefingFromSources({
 	organizationId,
 	currentEmployee,
 	now,
+	timezone,
 	sources,
 }: GetManagerDailyBriefingFromSourcesInput): Promise<ManagerDailyBriefing> {
-	const date = now.toISODate() ?? "";
+	const businessNow = now.setZone(timezone);
+	const date = businessNow.toISODate() ?? "";
 	const scopedEmployees = await sources.getScopedEmployees({
 		organizationId,
 		currentEmployeeId: currentEmployee.id,
@@ -159,8 +162,8 @@ export async function getManagerDailyBriefingFromSources({
 	const employeeIds = scopedEmployees.map((employee) => employee.id);
 	const sourceScope = { organizationId, employeeIds };
 	const timeRecordWindow = {
-		from: now.startOf("day").minus({ hours: 2 }).toJSDate(),
-		to: now.endOf("day").plus({ days: 1 }).toJSDate(),
+		from: businessNow.startOf("day").minus({ hours: 2 }).toJSDate(),
+		to: businessNow.endOf("day").plus({ days: 1 }).toJSDate(),
 	};
 
 	const shiftsPromise = sources.getPublishedShifts({ ...sourceScope, date });
@@ -210,14 +213,21 @@ export async function getManagerDailyBriefingFromSources({
 
 	const attendanceItems =
 		shiftsResult.status === "fulfilled" && timeRecordsResult.status === "fulfilled"
-			? detectAttendanceExceptions({ now, shifts, records: timeRecords, graceMinutes: 5 })
+			? detectAttendanceExceptions({
+				now: businessNow,
+				shifts,
+				records: timeRecords,
+				graceMinutes: 5,
+			})
 			: [];
 	const absenceItems =
-		absencesResult.status === "fulfilled" ? detectAbsencesToday({ today: now, absences }) : [];
+		absencesResult.status === "fulfilled"
+			? detectAbsencesToday({ today: businessNow, absences })
+			: [];
 	const coverageItems =
 		coverageRulesResult.status === "fulfilled" && shiftsResult.status === "fulfilled"
 			? detectCoverageRisks({
-					dayOfWeek: now.toFormat("cccc").toLowerCase(),
+					dayOfWeek: businessNow.toFormat("cccc").toLowerCase(),
 					coverageRules,
 					publishedShifts: shifts,
 				})
@@ -274,10 +284,20 @@ export async function getManagerDailyBriefing({
 	currentEmployee,
 	now = DateTime.now(),
 }: GetManagerDailyBriefingInput): Promise<ManagerDailyBriefing> {
+	const [{ db, organization }, { resolveEffectiveTimezone }] = await Promise.all([
+		import("@/db"),
+		import("@/lib/timezone/effective-timezone"),
+	]);
+	const persistedOrganization = await db.query.organization.findFirst({
+		where: eq(organization.id, currentEmployee.organizationId),
+		columns: { timezone: true },
+	});
+
 	return getManagerDailyBriefingFromSources({
 		organizationId: currentEmployee.organizationId,
 		currentEmployee,
 		now,
+		timezone: resolveEffectiveTimezone(undefined, persistedOrganization?.timezone),
 		sources: databaseSources,
 	});
 }
@@ -366,10 +386,7 @@ const databaseSources: ManagerDailyBriefingSources = {
 			return [];
 		}
 
-		const [dbModule, schema] = await Promise.all([
-			import("@/db"),
-			import("@/db/schema"),
-		]);
+		const [dbModule, schema] = await Promise.all([import("@/db"), import("@/db/schema")]);
 		const { db, employee, shift, team, user } = dbModule;
 		const { locationSubarea } = schema;
 
@@ -397,7 +414,7 @@ const databaseSources: ManagerDailyBriefingSources = {
 				and(
 					eq(shift.organizationId, organizationId),
 					eq(shift.status, "published"),
-					eq(shift.date, DateTime.fromISO(date).toJSDate()),
+					eq(shift.date, DateTime.fromISO(date, { zone: "UTC" }).toJSDate()),
 					inArray(shift.employeeId, employeeIds),
 				),
 			);
@@ -410,7 +427,7 @@ const databaseSources: ManagerDailyBriefingSources = {
 							employeeId: row.employeeId,
 							employeeName: employeeDisplayName(row),
 							teamName: row.teamName,
-							date: DateTime.fromJSDate(row.date).toISODate() ?? date,
+							date: DateTime.fromJSDate(row.date, { zone: "UTC" }).toISODate() ?? date,
 							startTime: row.startTime,
 							endTime: row.endTime,
 							status: row.status,

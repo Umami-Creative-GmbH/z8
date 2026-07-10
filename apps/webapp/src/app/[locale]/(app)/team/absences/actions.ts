@@ -448,6 +448,7 @@ export async function recordAbsenceForEmployee(
 		void addCalendarSyncJob({
 			absenceId: transactionResult.absenceId,
 			employeeId: target.id,
+			organizationId: actor.organizationId,
 			action: "create",
 		}).catch((error) =>
 			logger.error(
@@ -457,23 +458,35 @@ export async function recordAbsenceForEmployee(
 		);
 
 		for (const absenceId of transactionResult.vacationOverrideSummary.updatedAbsenceIds) {
-			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "update" }).catch(
-				(error) =>
-					logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			void addCalendarSyncJob({
+				absenceId,
+				employeeId: target.id,
+				organizationId: actor.organizationId,
+				action: "update",
+			}).catch((error) =>
+				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
 			);
 		}
 
 		for (const absenceId of transactionResult.vacationOverrideSummary.createdAbsenceIds) {
-			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "create" }).catch(
-				(error) =>
-					logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			void addCalendarSyncJob({
+				absenceId,
+				employeeId: target.id,
+				organizationId: actor.organizationId,
+				action: "create",
+			}).catch((error) =>
+				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
 			);
 		}
 
 		for (const absenceId of transactionResult.vacationOverrideSummary.deletedAbsenceIds) {
-			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "delete" }).catch(
-				(error) =>
-					logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			void addCalendarSyncJob({
+				absenceId,
+				employeeId: target.id,
+				organizationId: actor.organizationId,
+				action: "delete",
+			}).catch((error) =>
+				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
 			);
 		}
 

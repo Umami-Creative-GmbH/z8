@@ -446,10 +446,13 @@ export function EmployeeSelectModal({
 													<span className="truncate max-w-[60px]">{name}</span>
 													<button
 														type="button"
+														aria-label={t("common:employeeSelect.removeSelected", "Remove {name}", {
+															name,
+														})}
 														onClick={() => handleDeselect(id)}
 														className="hover:bg-muted rounded-full p-0.5"
 													>
-														<IconX className="size-3" />
+														<IconX className="size-3" aria-hidden="true" />
 													</button>
 												</Badge>
 											);

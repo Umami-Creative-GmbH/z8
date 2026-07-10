@@ -7,7 +7,8 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { absenceEntry, approvalRequest, discordApprovalMessage, employee } from "@/db/schema";
+import { approvalRequest, discordApprovalMessage, employee } from "@/db/schema";
+import { decideBotApproval } from "@/lib/bot-platform/approval-decision";
 import { createLogger } from "@/lib/logger";
 import { createInteractionResponse, sendMessage } from "./api";
 import { getChannelIdForUser } from "./conversation-manager";
@@ -96,23 +97,13 @@ export async function handleApprovalButtonClick(
 
 		const newStatus = action === "approve" ? "approved" : "rejected";
 
-		// Update approval request
-		await db
-			.update(approvalRequest)
-			.set({
-				status: newStatus,
-				approvedAt: new Date(),
-				...(newStatus === "rejected" ? { rejectionReason: "Rejected via Discord" } : {}),
-			})
-			.where(eq(approvalRequest.id, approvalId));
-
-		// Update the underlying entity status
-		if (approval.entityType === "absence_entry") {
-			await db
-				.update(absenceEntry)
-				.set({ status: newStatus })
-				.where(eq(absenceEntry.id, approval.entityId));
-		}
+		await decideBotApproval({
+			approvalId,
+			actorEmployeeId: userResult.user.employeeId,
+			organizationId: bot.organizationId,
+			action,
+			platform: "discord",
+		});
 
 		logger.info(
 			{
