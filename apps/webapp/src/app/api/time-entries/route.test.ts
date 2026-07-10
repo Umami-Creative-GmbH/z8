@@ -27,6 +27,7 @@ const mockState = vi.hoisted(() => {
 		getAbility: vi.fn(),
 		getSession: vi.fn(),
 		headers: vi.fn(),
+		findMembership: vi.fn(),
 		isBillingMutationAllowed: vi.fn(),
 		limit,
 		requireBillingForMutation: vi.fn(),
@@ -52,6 +53,7 @@ vi.mock("next/server", async () => {
 vi.mock("@/db", () => ({
 	db: {
 		query: {
+			member: { findFirst: mockState.findMembership },
 			userSettings: { findFirst: vi.fn(async () => ({ timezone: "Europe/Berlin" })) },
 		},
 		select: mockState.select,
@@ -79,6 +81,14 @@ vi.mock("@/db/schema", () => ({
 		organizationId: "workCategory.organizationId",
 	},
 	userSettings: { userId: "userSettings.userId" },
+}));
+
+vi.mock("@/db/auth-schema", () => ({
+	member: {
+		id: "member.id",
+		organizationId: "member.organizationId",
+		userId: "member.userId",
+	},
 }));
 
 vi.mock("@/lib/query/work-category.queries", () => ({
@@ -166,6 +176,7 @@ describe("GET /api/time-entries", () => {
 		mockState.asAppSubject.mockReset();
 		mockState.getAbility.mockReset();
 		mockState.getSession.mockReset();
+		mockState.findMembership.mockReset();
 		mockState.headers.mockReset();
 		mockState.limit.mockReset();
 		mockState.runPromise.mockReset();
@@ -174,6 +185,7 @@ describe("GET /api/time-entries", () => {
 			session: { activeOrganizationId: "org-1" },
 			user: { id: "user-1" },
 		});
+		mockState.findMembership.mockResolvedValue({ id: "membership-1" });
 		mockState.accessibleByDrizzle.mockReturnValue({ type: "sql" });
 		mockState.asAppSubject.mockImplementation((subject, data) => ({
 			...data,
@@ -291,6 +303,7 @@ describe("POST /api/time-entries", () => {
 		mockState.asAppSubject.mockReset();
 		mockState.getAbility.mockReset();
 		mockState.getSession.mockReset();
+		mockState.findMembership.mockReset();
 		mockState.headers.mockReset();
 		mockState.limit.mockReset();
 		mockState.runPromise.mockReset();
@@ -306,6 +319,7 @@ describe("POST /api/time-entries", () => {
 			session: { activeOrganizationId: "org-1" },
 			user: { id: "user-1" },
 		});
+		mockState.findMembership.mockResolvedValue({ id: "membership-1" });
 		mockState.limit
 			.mockResolvedValueOnce([
 				{
@@ -368,12 +382,7 @@ describe("POST /api/time-entries", () => {
 		);
 	});
 
-	it("uses the captured organization for offline sync requests", async () => {
-		mockState.limit.mockReset();
-		mockState.limit.mockResolvedValueOnce([
-			{ id: "employee-2", organizationId: "org-2", teamId: "team-2" },
-		]);
-
+	it("derives the time-entry organization from the active membership", async () => {
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
 				body: JSON.stringify({
@@ -386,10 +395,25 @@ describe("POST /api/time-entries", () => {
 		);
 
 		expect(response.status).toBe(201);
-		expect(mockState.requireBillingForMutation).toHaveBeenCalledWith("org-2");
+		expect(mockState.requireBillingForMutation).toHaveBeenCalledWith("org-1");
 		expect(mockState.clockingClockIn).toHaveBeenCalledWith(
-			expect.objectContaining({ employeeId: "employee-2", organizationId: "org-2" }),
+			expect.objectContaining({ employeeId: "employee-1", organizationId: "org-1" }),
 		);
+	});
+
+	it("rejects time entry writes when the active organization membership is missing", async () => {
+		mockState.findMembership.mockResolvedValue(undefined);
+
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({ type: "clock_in" }),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(403);
+		expect(await response.json()).toEqual({ error: "Active organization membership required" });
+		expect(mockState.clockingClockIn).not.toHaveBeenCalled();
 	});
 
 	it("delegates clock-in to the transactional clocking service", async () => {

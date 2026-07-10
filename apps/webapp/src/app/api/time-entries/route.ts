@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { validateProjectAssignment } from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
 import { db } from "@/db";
+import { member } from "@/db/auth-schema";
 import { employee, project, timeEntry, userSettings, workCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
@@ -19,16 +20,16 @@ import {
 	isBillingMutationAllowed,
 	requireBillingForMutation,
 } from "@/lib/billing/guard";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
+import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
 import {
 	isValidIanaTimezone,
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import { isWorkLocationType } from "@/lib/time-tracking/work-location";
-import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
 
 class TimeEntryConflictError extends Error {
 	constructor(message: string) {
@@ -202,7 +203,6 @@ export async function POST(request: NextRequest) {
 			type,
 			timestamp,
 			notes,
-			organizationId,
 			location,
 			projectId,
 			workCategoryId,
@@ -225,14 +225,21 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Invalid work location type" }, { status: 400 });
 		}
 
-		// Offline sync sends the organization captured when the event happened.
 		const activeOrgId = session.session.activeOrganizationId;
-		const requestedOrgId =
-			typeof organizationId === "string" && organizationId ? organizationId : activeOrgId;
-
-		if (!requestedOrgId) {
+		if (!activeOrgId) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
+		const activeMembership = await db.query.member.findFirst({
+			where: and(eq(member.userId, session.user.id), eq(member.organizationId, activeOrgId)),
+			columns: { id: true },
+		});
+		if (!activeMembership) {
+			return NextResponse.json(
+				{ error: "Active organization membership required" },
+				{ status: 403 },
+			);
+		}
+		const requestedOrgId = activeOrgId;
 
 		const [currentEmployee] = await db
 			.select()
@@ -328,9 +335,10 @@ export async function POST(request: NextRequest) {
 			notes,
 			location,
 		};
-		const result = type === "clock_in"
-			? await clockingService.clockIn({ ...input, workLocationType: resolvedWorkLocationType! })
-			: await clockingService.clockOut({ ...input, projectId, workCategoryId });
+		const result =
+			type === "clock_in"
+				? await clockingService.clockIn({ ...input, workLocationType: resolvedWorkLocationType! })
+				: await clockingService.clockOut({ ...input, projectId, workCategoryId });
 		const entry = result.entry;
 
 		return NextResponse.json({ entry }, { status: 201 });

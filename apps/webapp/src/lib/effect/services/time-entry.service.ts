@@ -81,6 +81,7 @@ export class TimeEntryService extends Context.Tag("TimeEntryService")<
 
 		readonly verifyEntry: (
 			entryId: string,
+			organizationId: string,
 		) => Effect.Effect<
 			{ isValid: boolean; calculatedHash: string; storedHash: string },
 			NotFoundError | DatabaseError
@@ -409,14 +410,14 @@ export const TimeEntryServiceLive = Layer.effect(
 					return validateChainDetailed(entries);
 				}),
 
-			verifyEntry: (entryId) =>
+			verifyEntry: (entryId, organizationId) =>
 				Effect.gen(function* (_) {
 					const entry = yield* _(
 						dbService.query("getEntryForVerification", async () => {
 							const [result] = await dbService.db
 								.select()
 								.from(timeEntry)
-								.where(eq(timeEntry.id, entryId))
+								.where(and(eq(timeEntry.id, entryId), eq(timeEntry.organizationId, organizationId)))
 								.limit(1);
 							return result ?? null;
 						}),
