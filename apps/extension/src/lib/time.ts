@@ -23,7 +23,7 @@ export function formatElapsedTime(totalSeconds: number): string {
 }
 
 export function formatClockTime(timestamp: string): string {
-  const dateTime = DateTime.fromISO(timestamp);
+	const dateTime = DateTime.fromISO(timestamp, { zone: "utc" });
   if (!dateTime.isValid) {
     return "Unknown time";
   }
@@ -32,7 +32,7 @@ export function formatClockTime(timestamp: string): string {
 }
 
 export function formatActionTime(timestamp: string): string {
-  const dateTime = DateTime.fromISO(timestamp);
+	const dateTime = DateTime.fromISO(timestamp, { zone: "utc" });
   if (!dateTime.isValid) {
     return "Unknown time";
   }

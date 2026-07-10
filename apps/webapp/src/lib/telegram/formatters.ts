@@ -260,7 +260,10 @@ export function buildDailyDigestMessage(
 	locale: string = DEFAULT_LANGUAGE,
 ): string {
 	const lines: string[] = [];
-	const dateFormatted = fmtFullDate(DateTime.fromJSDate(data.date).setZone(data.timezone), locale);
+	const dateFormatted = fmtFullDate(
+		DateTime.fromJSDate(data.date, { zone: "utc" }).setZone(data.timezone),
+		locale,
+	);
 
 	lines.push(
 		bold(
