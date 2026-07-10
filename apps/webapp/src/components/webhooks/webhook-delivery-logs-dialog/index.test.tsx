@@ -3,7 +3,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { WebhookDeliveryLogsDialog } from "./webhook-delivery-logs-dialog";
+import { WebhookDeliveryLogsDialog } from "./index";
 
 const mocks = vi.hoisted(() => ({
 	getWebhookDeliveryLogs: vi.fn(),

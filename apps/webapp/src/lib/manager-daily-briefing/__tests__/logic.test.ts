@@ -11,7 +11,7 @@ import type { BriefingActionItem } from "../types";
 
 describe("manager daily briefing logic", () => {
 	it("detects missing and late clock-ins from published shifts only", () => {
-		const now = DateTime.fromISO("2026-04-28T09:20:00.000+02:00");
+		const now = DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true });
 		const shifts = [
 			{
 				id: "shift-1",
@@ -58,13 +58,13 @@ describe("manager daily briefing logic", () => {
 			{
 				id: "record-1",
 				employeeId: "emp-2",
-				startAt: DateTime.fromISO("2026-04-28T09:55:00.000+02:00").toJSDate(),
+				startAt: DateTime.fromISO("2026-04-28T09:55:00.000+02:00", { setZone: true }).toJSDate(),
 				endAt: null,
 			},
 			{
 				id: "record-2",
 				employeeId: "emp-4",
-				startAt: DateTime.fromISO("2026-04-28T08:40:00.000+02:00").toJSDate(),
+				startAt: DateTime.fromISO("2026-04-28T08:40:00.000+02:00", { setZone: true }).toJSDate(),
 				endAt: null,
 			},
 		];
@@ -85,7 +85,7 @@ describe("manager daily briefing logic", () => {
 	});
 
 	it("matches attendance records to the shift window before suppressing exceptions", () => {
-		const now = DateTime.fromISO("2026-04-28T14:20:00.000+02:00");
+		const now = DateTime.fromISO("2026-04-28T14:20:00.000+02:00", { setZone: true });
 		const shifts = [
 			{
 				id: "shift-1",
@@ -112,8 +112,8 @@ describe("manager daily briefing logic", () => {
 			{
 				id: "record-1",
 				employeeId: "emp-1",
-				startAt: DateTime.fromISO("2026-04-28T09:03:00.000+02:00").toJSDate(),
-				endAt: DateTime.fromISO("2026-04-28T12:00:00.000+02:00").toJSDate(),
+				startAt: DateTime.fromISO("2026-04-28T09:03:00.000+02:00", { setZone: true }).toJSDate(),
+				endAt: DateTime.fromISO("2026-04-28T12:00:00.000+02:00", { setZone: true }).toJSDate(),
 			},
 		];
 
@@ -128,7 +128,7 @@ describe("manager daily briefing logic", () => {
 	});
 
 	it("does not let earlier closed records suppress later split-shift exceptions", () => {
-		const now = DateTime.fromISO("2026-04-28T14:20:00.000+02:00");
+		const now = DateTime.fromISO("2026-04-28T14:20:00.000+02:00", { setZone: true });
 		const shifts = [
 			{
 				id: "shift-1",
@@ -145,8 +145,8 @@ describe("manager daily briefing logic", () => {
 			{
 				id: "record-1",
 				employeeId: "emp-1",
-				startAt: DateTime.fromISO("2026-04-28T12:00:00.000+02:00").toJSDate(),
-				endAt: DateTime.fromISO("2026-04-28T13:00:00.000+02:00").toJSDate(),
+				startAt: DateTime.fromISO("2026-04-28T12:00:00.000+02:00", { setZone: true }).toJSDate(),
+				endAt: DateTime.fromISO("2026-04-28T13:00:00.000+02:00", { setZone: true }).toJSDate(),
 			},
 		];
 
@@ -161,7 +161,7 @@ describe("manager daily briefing logic", () => {
 	});
 
 	it("allows early clock-ins within two hours before shift start", () => {
-		const now = DateTime.fromISO("2026-04-28T09:20:00.000+02:00");
+		const now = DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true });
 		const shifts = [
 			{
 				id: "shift-1",
@@ -178,7 +178,7 @@ describe("manager daily briefing logic", () => {
 			{
 				id: "record-1",
 				employeeId: "emp-1",
-				startAt: DateTime.fromISO("2026-04-28T08:55:00.000+02:00").toJSDate(),
+				startAt: DateTime.fromISO("2026-04-28T08:55:00.000+02:00", { setZone: true }).toJSDate(),
 				endAt: null,
 			},
 		];
@@ -213,14 +213,14 @@ describe("manager daily briefing logic", () => {
 			{
 				id: "record-1",
 				employeeId: "emp-1",
-				startAt: DateTime.fromISO("2026-04-28T22:03:00.000+02:00").toJSDate(),
+				startAt: DateTime.fromISO("2026-04-28T22:03:00.000+02:00", { setZone: true }).toJSDate(),
 				endAt: null,
 			},
 		];
 
 		expect(
 			detectAttendanceExceptions({
-				now: DateTime.fromISO("2026-04-28T22:20:00.000+02:00"),
+				now: DateTime.fromISO("2026-04-28T22:20:00.000+02:00", { setZone: true }),
 				shifts,
 				records,
 				graceMinutes: 5,
@@ -236,7 +236,7 @@ describe("manager daily briefing logic", () => {
 	});
 
 	it("returns approved absences overlapping today", () => {
-		const today = DateTime.fromISO("2026-04-28T12:00:00.000+02:00");
+		const today = DateTime.fromISO("2026-04-28T12:00:00.000+02:00", { setZone: true });
 		const result = detectAbsencesToday({
 			today,
 			absences: [

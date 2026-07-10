@@ -80,7 +80,7 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it("guards clock-in before creating time entries", () => {
-		expectBillingGuardBeforeWrite("clockIn", "createTimeEntry({");
+		expectBillingGuardBeforeWrite("clockIn", "createTimeEntry(");
 	});
 
 	it("captures browser timezone context in live clock-in entries", () => {
@@ -94,7 +94,7 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it("guards clock-out before creating time entries", () => {
-		expectBillingGuardBeforeWrite("clockOut", "createTimeEntry({");
+		expectBillingGuardBeforeWrite("clockOut", "createTimeEntry(");
 	});
 
 	it("captures browser timezone context in live clock-out entries", () => {
@@ -172,7 +172,7 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it.each([
-		["clockOut", "createTimeEntry({"],
+		["clockOut", "createTimeEntry("],
 	])("rejects approval-required %s without a manager before writing", (name, writeMarker) => {
 		expectNoManagerApprovalGuardBeforeWrite(name, writeMarker);
 	});
@@ -201,7 +201,7 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it.each([
-		["clockOut", "createTimeEntry({"],
+		["clockOut", "createTimeEntry("],
 		["createManualTimeEntry", "createTimeEntry({"],
 	])("fails closed when %s policy checks fail before writing", (name, writeMarker) => {
 		expectPolicyCheckFailureBeforeWrite(name, writeMarker);
