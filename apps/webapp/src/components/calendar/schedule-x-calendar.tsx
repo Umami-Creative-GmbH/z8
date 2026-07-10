@@ -542,7 +542,7 @@ export function ScheduleXCalendarWrapper({
 					timeIndicator.scrollIntoView({ behavior: "smooth", block: "center" });
 				} else {
 					// Fallback: scroll to approximate current hour position
-					const now = DateTime.now();
+					const now = DateTime.now().setZone(timeZone);
 					const hoursFromStart = now.hour + now.minute / 60;
 					const scrollContainer = calendarContainerRef.current?.querySelector(".sx__time-grid-day");
 					if (scrollContainer) {
@@ -554,7 +554,7 @@ export function ScheduleXCalendarWrapper({
 			}, 100);
 			return () => clearTimeout(timer);
 		}
-	}, [viewMode, isLoading]);
+	}, [timeZone, viewMode, isLoading]);
 
 	useEffect(() => {
 		const container = calendarContainerRef.current;
