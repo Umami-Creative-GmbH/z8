@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 import type { timeEntry } from "@/db/schema";
-import { dateFromDB } from "@/lib/datetime/drizzle-adapter";
+import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
+import { compareInstants } from "@/lib/datetime/temporal-core";
+import { serializeInstant } from "@/lib/datetime/temporal-wire";
 
 type TimeEntry = typeof timeEntry.$inferSelect;
 
@@ -28,11 +30,54 @@ export interface ChainValidationIssue {
 	actualValue?: string;
 }
 
+function instantFromStoredDate(date: Date | null | undefined) {
+	try {
+		return instantFromDB(date);
+	} catch {
+		return null;
+	}
+}
+
+function compareCreationTime(left: TimeEntry, right: TimeEntry): number {
+	const leftInstant = instantFromStoredDate(left.createdAt);
+	const rightInstant = instantFromStoredDate(right.createdAt);
+	if (!leftInstant || !rightInstant) return 0;
+	return compareInstants(leftInstant, rightInstant);
+}
+
+function serializeInstantForDateContract(
+	instant: NonNullable<ReturnType<typeof instantFromDB>>,
+	date: Date,
+) {
+	const dateTimestamp = date.toISOString();
+
+	try {
+		const serialized = serializeInstant(instant);
+		return serialized === dateTimestamp ? serialized : dateTimestamp;
+	} catch {
+		// The strict external instant wire format excludes extended years. Persisted Date hash bytes do not.
+		return dateTimestamp;
+	}
+}
+
+function serializeStoredTimestamp(timestamp: Date | null | undefined): string | null {
+	if (!timestamp) return null;
+
+	const instant = instantFromStoredDate(timestamp);
+	if (!instant) return null;
+
+	try {
+		return serializeInstantForDateContract(instant, timestamp);
+	} catch {
+		return null;
+	}
+}
+
 /**
  * Calculate SHA-256 hash for a time entry to ensure blockchain integrity
  *
  * CRITICAL: The timestamp format must remain identical to maintain hash integrity.
- * We use Luxon's toISO() which produces the same ISO 8601 format as Date.toISOString()
+ * We use fixed-millisecond UTC serialization, matching Date.toISOString().
  */
 export function calculateHash(input: HashInput): string {
 	const data = `${input.employeeId}|${input.type}|${input.timestamp}|${input.previousHash || "genesis"}`;
@@ -44,34 +89,25 @@ export function calculateHash(input: HashInput): string {
  * Ensures no entries have been tampered with and all links are valid
  *
  * CRITICAL: Hash calculation must use identical timestamp format to maintain integrity.
- * Luxon's toISO() produces the same format as Date.toISOString() (ISO 8601 with milliseconds)
+ * Fixed-millisecond UTC serialization reproduces Date.toISOString() hash bytes.
  */
 export async function validateChain(entries: TimeEntry[]): Promise<boolean> {
-	// Sort by creation order using Luxon for safer date comparison
-	const sorted = entries.toSorted((a, b) => {
-		const aDT = dateFromDB(a.createdAt);
-		const bDT = dateFromDB(b.createdAt);
-		if (!aDT || !bDT) return 0;
-		return aDT < bDT ? -1 : aDT > bDT ? 1 : 0;
-	});
+	const sorted = entries.toSorted(compareCreationTime);
 
 	for (let i = 0; i < sorted.length; i++) {
 		const entry = sorted[i];
 
-		// Convert timestamp to DateTime and then to ISO string
-		// CRITICAL: toISO() must produce identical output to toISOString()
-		const timestampDT = dateFromDB(entry.timestamp);
-		if (!timestampDT) {
+		const timestamp = serializeStoredTimestamp(entry.timestamp);
+		if (!timestamp) {
 			console.error(`Invalid timestamp at entry ${entry.id}`);
 			return false;
 		}
 
-		// Recalculate hash with ISO string format
-		// Luxon's toISO() produces the same format as Date.toISOString()
+		// Fixed millisecond UTC serialization must reproduce the historical Date ISO bytes.
 		const calculatedHash = calculateHash({
 			employeeId: entry.employeeId,
 			type: entry.type,
-			timestamp: timestampDT.toISO()!,
+			timestamp,
 			previousHash: entry.previousHash,
 		});
 
@@ -106,8 +142,8 @@ export function verifyHash(entry: TimeEntry): {
 	calculatedHash: string;
 	storedHash: string;
 } {
-	const timestampDT = dateFromDB(entry.timestamp);
-	if (!timestampDT) {
+	const timestamp = serializeStoredTimestamp(entry.timestamp);
+	if (!timestamp) {
 		return {
 			isValid: false,
 			calculatedHash: "",
@@ -118,7 +154,7 @@ export function verifyHash(entry: TimeEntry): {
 	const calculatedHash = calculateHash({
 		employeeId: entry.employeeId,
 		type: entry.type,
-		timestamp: timestampDT.toISO()!,
+		timestamp,
 		previousHash: entry.previousHash,
 	});
 
@@ -138,13 +174,7 @@ export function getChainHash(entries: TimeEntry[]): string | null {
 		return null;
 	}
 
-	// Sort by creation order
-	const sorted = entries.toSorted((a, b) => {
-		const aDT = dateFromDB(a.createdAt);
-		const bDT = dateFromDB(b.createdAt);
-		if (!aDT || !bDT) return 0;
-		return aDT < bDT ? -1 : aDT > bDT ? 1 : 0;
-	});
+	const sorted = entries.toSorted(compareCreationTime);
 
 	// Concatenate all hashes and compute a final hash
 	const allHashes = sorted.map((e) => e.hash).join("|");
@@ -169,20 +199,14 @@ export function validateChainDetailed(entries: TimeEntry[]): ChainValidationResu
 	const issues: ChainValidationIssue[] = [];
 	let validEntries = 0;
 
-	// Sort by creation order
-	const sorted = entries.toSorted((a, b) => {
-		const aDT = dateFromDB(a.createdAt);
-		const bDT = dateFromDB(b.createdAt);
-		if (!aDT || !bDT) return 0;
-		return aDT < bDT ? -1 : aDT > bDT ? 1 : 0;
-	});
+	const sorted = entries.toSorted(compareCreationTime);
 
 	for (let i = 0; i < sorted.length; i++) {
 		const entry = sorted[i];
 		let entryValid = true;
 
-		const timestampDT = dateFromDB(entry.timestamp);
-		if (!timestampDT) {
+		const timestamp = serializeStoredTimestamp(entry.timestamp);
+		if (!timestamp) {
 			issues.push({
 				entryId: entry.id,
 				entryIndex: i,
@@ -197,7 +221,7 @@ export function validateChainDetailed(entries: TimeEntry[]): ChainValidationResu
 		const calculatedHash = calculateHash({
 			employeeId: entry.employeeId,
 			type: entry.type,
-			timestamp: timestampDT.toISO()!,
+			timestamp,
 			previousHash: entry.previousHash,
 		});
 

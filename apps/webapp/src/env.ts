@@ -32,6 +32,7 @@ const parsedEnv = createEnv({
 		POSTGRES_SSL_ROOT_CERT_PATH: z.string().optional(),
 		POSTGRES_POOL_MAX: z.string().optional(),
 		POSTGRES_POOL_MIN: z.string().optional(),
+		PGOPTIONS: z.string().optional(),
 
 		// Redis-compatible cache and queue backend
 		REDIS_HOST: z.string().optional(),
@@ -189,6 +190,7 @@ const parsedEnv = createEnv({
 		POSTGRES_SSL_ROOT_CERT_PATH: process.env.POSTGRES_SSL_ROOT_CERT_PATH,
 		POSTGRES_POOL_MAX: process.env.POSTGRES_POOL_MAX,
 		POSTGRES_POOL_MIN: process.env.POSTGRES_POOL_MIN,
+		PGOPTIONS: process.env.PGOPTIONS,
 
 		BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 		BETTER_AUTH_SECRETS: process.env.BETTER_AUTH_SECRETS,

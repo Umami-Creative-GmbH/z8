@@ -27,6 +27,7 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
+import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import {
 	type InvitationData,
 	invitationSchema,
@@ -1316,6 +1317,18 @@ export async function updateOrganizationTimezone(
 								userId: session.user.id,
 								resource: "organization",
 								action: "update",
+							}),
+						),
+					);
+				}
+
+				if (!isValidIanaTimeZone(timezone)) {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Timezone must be a valid timezone",
+								field: "timezone",
+								value: timezone,
 							}),
 						),
 					);

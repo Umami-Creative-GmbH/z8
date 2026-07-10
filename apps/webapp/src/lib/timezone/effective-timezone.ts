@@ -1,51 +1,47 @@
 import { eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { userSettings } from "@/db/schema";
+import { type InvalidTimezoneCandidate, resolvePersonalTimezone } from "./resolve-timezone";
+import { isValidIanaTimeZone } from "./validation";
+
+function warnInvalidTimezoneCandidates(invalidCandidates: InvalidTimezoneCandidate[]): void {
+	if (invalidCandidates.length > 0) {
+		console.warn("Invalid persisted timezone candidates", { invalidCandidates });
+	}
+}
 
 /**
  * Check if a timezone string is valid
  */
 export function isValidTimezone(timezone: string): boolean {
-	try {
-		const dt = DateTime.now().setZone(timezone);
-		return dt.isValid && dt.zone.type !== "invalid";
-	} catch {
-		return false;
-	}
+	return isValidIanaTimeZone(timezone);
 }
 
 /**
  * Synchronous version for when user and org data is already loaded.
  *
  * Resolution order:
- * 1. User's personal timezone (if set and not "UTC" or empty)
- * 2. Organization's timezone (if set and not "UTC" or empty)
+ * 1. User's personal timezone (if valid and set)
+ * 2. Organization's timezone (if valid and set)
  * 3. Fallback to "UTC"
  */
 export function resolveEffectiveTimezone(
 	userTimezone: string | null | undefined,
 	orgTimezone: string | null | undefined,
 ): string {
-	// User timezone takes precedence if explicitly set to non-UTC value
-	if (userTimezone && userTimezone !== "UTC" && isValidTimezone(userTimezone)) {
-		return userTimezone;
-	}
-	// Fall back to organization timezone
-	if (orgTimezone && orgTimezone !== "UTC" && isValidTimezone(orgTimezone)) {
-		return orgTimezone;
-	}
-	// Default fallback
-	return "UTC";
+	return resolvePersonalTimezone({
+		userTimezone,
+		organizationTimezone: orgTimezone,
+	}).timezone;
 }
 
 /**
  * Async version that fetches user and org data from database.
  *
  * Resolution order:
- * 1. User's personal timezone (if set and not "UTC" or empty)
- * 2. Organization's timezone (if set and not "UTC" or empty)
+ * 1. User's personal timezone (if valid and set)
+ * 2. Organization's timezone (if valid and set)
  * 3. Fallback to "UTC"
  */
 export async function getEffectiveTimezone(
@@ -58,11 +54,9 @@ export async function getEffectiveTimezone(
 		columns: { timezone: true },
 	});
 
-	// User timezone takes precedence if explicitly set
-	if (settingsData?.timezone && settingsData.timezone !== "UTC") {
-		if (isValidTimezone(settingsData.timezone)) {
-			return settingsData.timezone;
-		}
+	const userResolution = resolvePersonalTimezone({ userTimezone: settingsData?.timezone });
+	if (userResolution.source === "user") {
+		return userResolution.timezone;
 	}
 
 	// Fall back to organization timezone
@@ -71,14 +65,12 @@ export async function getEffectiveTimezone(
 		columns: { timezone: true },
 	});
 
-	if (orgData?.timezone && orgData.timezone !== "UTC") {
-		if (isValidTimezone(orgData.timezone)) {
-			return orgData.timezone;
-		}
-	}
-
-	// Default fallback
-	return "UTC";
+	const resolution = resolvePersonalTimezone({
+		userTimezone: settingsData?.timezone,
+		organizationTimezone: orgData?.timezone,
+	});
+	warnInvalidTimezoneCandidates(resolution.invalidCandidates);
+	return resolution.timezone;
 }
 
 /**
@@ -109,31 +101,16 @@ export async function getEffectiveTimezoneWithContext(
 	const userTimezone = settingsData?.timezone ?? null;
 	const orgTimezone = orgData?.timezone ?? null;
 
-	// User timezone takes precedence
-	if (userTimezone && userTimezone !== "UTC" && isValidTimezone(userTimezone)) {
-		return {
-			effectiveTimezone: userTimezone,
-			userTimezone,
-			orgTimezone,
-			source: "user",
-		};
-	}
+	const resolution = resolvePersonalTimezone({
+		userTimezone: settingsData?.timezone,
+		organizationTimezone: orgData?.timezone,
+	});
+	warnInvalidTimezoneCandidates(resolution.invalidCandidates);
 
-	// Fall back to organization timezone
-	if (orgTimezone && orgTimezone !== "UTC" && isValidTimezone(orgTimezone)) {
-		return {
-			effectiveTimezone: orgTimezone,
-			userTimezone,
-			orgTimezone,
-			source: "organization",
-		};
-	}
-
-	// Default fallback
 	return {
-		effectiveTimezone: "UTC",
+		effectiveTimezone: resolution.timezone,
 		userTimezone,
 		orgTimezone,
-		source: "default",
+		source: resolution.source,
 	};
 }

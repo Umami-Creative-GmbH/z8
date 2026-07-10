@@ -14,6 +14,7 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { deleteOwnedAvatarObject } from "@/lib/storage/avatar-storage";
+import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import {
 	isTimeFormat,
 	normalizeTimeFormat,
@@ -421,13 +422,25 @@ export async function updateTimezone(timezone: string): Promise<ServerActionResu
 		const session = yield* _(authService.getSession());
 		const dbService = yield* _(DatabaseService);
 
-		// Validate timezone (basic check)
+		// Preserve the existing required-field error before validating the zone identifier.
 		if (!timezone || timezone.length === 0) {
 			yield* _(
 				Effect.fail(
 					new ValidationError({
 						message: "Timezone is required",
 						field: "timezone",
+					}),
+				),
+			);
+		}
+
+		if (!isValidIanaTimeZone(timezone)) {
+			return yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Timezone must be a valid timezone",
+						field: "timezone",
+						value: timezone,
 					}),
 				),
 			);

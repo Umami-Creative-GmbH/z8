@@ -41,6 +41,10 @@ spec:
           env:
             - name: NODE_ENV
               value: "production"
+            - name: TZ
+              value: "UTC"
+            - name: PGOPTIONS
+              value: "-c timezone=UTC"
             # Database
             - name: POSTGRES_HOST
               valueFrom:

@@ -166,7 +166,9 @@ vi.mock("@/lib/effect/result", async () => {
 	};
 });
 
-const { updateProfile, updateProfileDetails, updateProfileImage } = await import("./actions");
+const { updateProfile, updateProfileDetails, updateProfileImage, updateTimezone } = await import(
+	"./actions"
+);
 
 describe("profile actions", () => {
 	beforeEach(() => {
@@ -406,5 +408,36 @@ describe("profile actions", () => {
 			code: "ValidationError",
 		});
 		expect(mockState.updateUser).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		"",
+		" Europe/Berlin",
+		"Europe/Berlin ",
+		"+05:45",
+		"Not/A_Zone",
+	])("rejects invalid timezone %j before upserting user settings", async (timezone) => {
+		const result = await updateTimezone(timezone);
+
+		expect(result).toEqual({
+			success: false,
+			error: timezone === "" ? "Timezone is required" : "Timezone must be a valid timezone",
+			code: "ValidationError",
+		});
+		expect(mockState.dbInsert).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		"UTC",
+		"Europe/Berlin",
+		"America/New_York",
+	])("upserts valid timezone %s", async (timezone) => {
+		const result = await updateTimezone(timezone);
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mockState.userSettingsValues).toHaveBeenCalledWith({
+			userId: "user-1",
+			timezone,
+		});
 	});
 });

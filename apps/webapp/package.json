@@ -3,17 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "dev:webpack": "next dev",
-    "build": "pnpm run generate-licenses && next build",
-    "start": "next start",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "auth:generate": "NODE_OPTIONS='--require=./scripts/register-auth-generate-alias.cjs' pnpm dlx auth@latest generate --config ./src/lib/auth.ts --output ./src/db/auth-schema.ts",
-    "auth:migrate": "pnpm run auth:generate && pnpm drizzle-kit push",
+    "dev": "TZ=UTC next dev --turbopack",
+    "dev:webpack": "TZ=UTC next dev",
+    "build": "TZ=UTC pnpm run generate-licenses && TZ=UTC next build",
+    "start": "TZ=UTC next start",
+    "test": "TZ=UTC vitest run",
+    "test:watch": "TZ=UTC vitest",
+    "test:coverage": "TZ=UTC vitest run --coverage",
+    "auth:generate": "TZ=UTC NODE_OPTIONS='--require=./scripts/register-auth-generate-alias.cjs' pnpm dlx auth@latest generate --config ./src/lib/auth.ts --output ./src/db/auth-schema.ts",
+    "auth:migrate": "TZ=UTC pnpm run auth:generate && TZ=UTC pnpm drizzle-kit push",
     "generate-licenses": "mkdir -p ./src/data && pnpm dlx license-report --only=prod --output=json --config license-report-config.json > ./src/data/licenses.json",
-    "db:seed": "tsx src/db/seed/do-seed.ts"
+    "db:seed": "TZ=UTC tsx src/db/seed/do-seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1083.0",

@@ -143,6 +143,19 @@ describe("notification channel settings actions", () => {
 		expect(mocks.update).not.toHaveBeenCalled();
 	});
 
+	it("rejects fixed-offset digest timezones before updating", async () => {
+		const result = await updateSlackNotificationChannelSettings({
+			...settings,
+			digestTimezone: "+05:45",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Digest timezone must be a valid timezone",
+		});
+		expect(mocks.update).not.toHaveBeenCalled();
+	});
+
 	it("rejects malformed serialized settings without throwing", async () => {
 		const result = await updateSlackNotificationChannelSettings({
 			...settings,

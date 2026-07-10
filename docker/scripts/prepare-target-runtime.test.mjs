@@ -127,6 +127,23 @@ test("generated worker manifest includes React for TSX email templates", async (
 	assert.ok(packageJson.dependencies.react);
 });
 
+test("generated migrated runtime manifests include temporal-polyfill without the champion polyfill", async () => {
+	const targets = ["worker", "migration", "db-seed"];
+
+	for (const target of targets) {
+		const [packageJsonText, lockfile] = await Promise.all([
+			fs.readFile(new URL(`../targets/${target}/package.json`, import.meta.url), "utf8"),
+			fs.readFile(new URL(`../targets/${target}/pnpm-lock.yaml`, import.meta.url), "utf8"),
+		]);
+		const packageJson = JSON.parse(packageJsonText);
+
+		assert.equal(packageJson.dependencies["temporal-polyfill"], "1.0.1");
+		assert.match(lockfile, /temporal-polyfill@1\.0\.1:/);
+		assert.doesNotMatch(packageJsonText, /@js-temporal\/polyfill/);
+		assert.doesNotMatch(lockfile, /@js-temporal\/polyfill/);
+	}
+});
+
 test("collectTarget lists traced migration runtime files and packages", async () => {
   const result = await collectTarget("migration");
 

@@ -1,9 +1,11 @@
-import { DateTime, IANAZone } from "luxon";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 
 export type TimeEntryTimezoneSource =
 	| "browser"
 	| "user_setting"
 	| "manager_target_user_setting"
+	| "historical_inference"
 	| "backfill";
 
 export interface TimeEntryTimezoneCapture {
@@ -13,17 +15,21 @@ export interface TimeEntryTimezoneCapture {
 }
 
 export function isValidIanaTimezone(timezone: string | null | undefined): timezone is string {
-	return typeof timezone === "string" && timezone.length > 0 && IANAZone.isValidZone(timezone);
+	return isValidIanaTimeZone(timezone);
 }
 
 export function getUtcOffsetMinutesForZone(timestamp: Date, timezone: string): number {
-	const zonedDateTime = DateTime.fromJSDate(timestamp, { zone: "utc" }).setZone(timezone);
-
-	if (!zonedDateTime.isValid) {
+	if (!isValidIanaTimezone(timezone)) {
 		return 0;
 	}
 
-	return zonedDateTime.offset;
+	try {
+		return (
+			instantFromDate(timestamp).toZonedDateTimeISO(timezone).offsetNanoseconds / 60_000_000_000
+		);
+	} catch {
+		return 0;
+	}
 }
 
 export function formatUtcOffset(offsetMinutes: number): string {
