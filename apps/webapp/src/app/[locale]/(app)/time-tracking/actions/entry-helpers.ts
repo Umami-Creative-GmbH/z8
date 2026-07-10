@@ -58,7 +58,9 @@ export async function createTimeEntry(
 		client
 			.select()
 			.from(timeEntry)
-			.where(and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)))
+			.where(
+				and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)),
+			)
 			.orderBy(desc(timeEntry.createdAt))
 			.limit(1),
 		getRequestMetadata(),
@@ -80,6 +82,7 @@ export async function createTimeEntry(
 			timestamp,
 			hash,
 			previousHash,
+			previousEntryId: previousEntry?.id ?? null,
 			ipAddress,
 			deviceInfo: userAgent,
 			createdBy,

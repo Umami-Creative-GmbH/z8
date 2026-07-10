@@ -92,11 +92,19 @@ export function useJobStatus(
 
 	const onSuccessRef = useRef(onSuccess);
 	const onErrorRef = useRef(onError);
+	const terminalNotificationsRef = useRef<{
+		jobId: string | null | undefined;
+		outcomes: Set<"success" | "failure">;
+	}>({ jobId, outcomes: new Set() });
 
 	useEffect(() => {
 		onSuccessRef.current = onSuccess;
 		onErrorRef.current = onError;
 	}, [onSuccess, onError]);
+
+	useEffect(() => {
+		terminalNotificationsRef.current = { jobId, outcomes: new Set() };
+	}, [jobId]);
 
 	const shouldFetch = enabled && !!jobId;
 
@@ -118,10 +126,26 @@ export function useJobStatus(
 			revalidateOnFocus: true,
 			// Handle completion/failure callbacks
 			onSuccess: (data: JobStatus) => {
+				if (terminalNotificationsRef.current.jobId !== jobId) {
+					terminalNotificationsRef.current = { jobId, outcomes: new Set() };
+				}
 				if (data.state === "completed" && data.result) {
-					onSuccessRef.current?.(data.result);
-				} else if (data.state === "failed" && data.error) {
-					onErrorRef.current?.(data.error);
+					if (data.result.success === false) {
+						if (!terminalNotificationsRef.current.outcomes.has("failure")) {
+							terminalNotificationsRef.current.outcomes.add("failure");
+							onErrorRef.current?.("Job failed");
+						}
+					} else {
+						if (!terminalNotificationsRef.current.outcomes.has("success")) {
+							terminalNotificationsRef.current.outcomes.add("success");
+							onSuccessRef.current?.(data.result);
+						}
+					}
+				} else if (data.state === "failed") {
+					if (!terminalNotificationsRef.current.outcomes.has("failure")) {
+						terminalNotificationsRef.current.outcomes.add("failure");
+						onErrorRef.current?.("Job failed");
+					}
 				}
 			},
 		},
@@ -186,19 +210,20 @@ export function useJobStatuses(
 	const { statuses, completedCount, failedCount, pendingCount } = results.reduce(
 		(accumulator, [jobId, status]) => {
 			accumulator.statuses.set(jobId, status);
+			if (status.state === "completed" && status.result?.success === false) {
+				accumulator.failedCount += 1;
+				accumulator.pendingCount -= 1;
+				return accumulator;
+			}
 			if (status.state === "completed") {
-				return {
-					...accumulator,
-					completedCount: accumulator.completedCount + 1,
-					pendingCount: accumulator.pendingCount - 1,
-				};
+				accumulator.completedCount += 1;
+				accumulator.pendingCount -= 1;
+				return accumulator;
 			}
 			if (status.state === "failed") {
-				return {
-					...accumulator,
-					failedCount: accumulator.failedCount + 1,
-					pendingCount: accumulator.pendingCount - 1,
-				};
+				accumulator.failedCount += 1;
+				accumulator.pendingCount -= 1;
+				return accumulator;
 			}
 			return accumulator;
 		},

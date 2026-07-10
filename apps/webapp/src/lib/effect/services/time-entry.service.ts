@@ -1,6 +1,7 @@
-import { and, desc, eq, gte, lte, type SQL } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, type SQL } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { employee, timeEntry } from "@/db/schema";
+import { DateTime } from "luxon";
+import { employee, timeEntry, timeRecord, workPeriod } from "@/db/schema";
 import {
 	type ChainValidationResult,
 	calculateHash,
@@ -9,7 +10,7 @@ import {
 	verifyHash,
 } from "@/lib/time-tracking/blockchain";
 import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
-import { type DatabaseError, NotFoundError, ValidationError } from "../errors";
+import { ConflictError, type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
 type TimeEntry = typeof timeEntry.$inferSelect;
@@ -43,6 +44,7 @@ export interface CreateCorrectionInput {
 	utcOffsetMinutes: number;
 	timezone: string;
 	timezoneSource: TimeEntryTimezoneSource;
+	workPeriodId?: string;
 }
 
 export interface GetTimeEntriesInput {
@@ -63,7 +65,7 @@ export class TimeEntryService extends Context.Tag("TimeEntryService")<
 
 		readonly createCorrectionEntry: (
 			input: CreateCorrectionInput,
-		) => Effect.Effect<TimeEntry, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<TimeEntry, NotFoundError | ValidationError | ConflictError | DatabaseError>;
 
 		readonly getTimeEntries: (
 			input: GetTimeEntriesInput,
@@ -290,42 +292,168 @@ export const TimeEntryServiceLive = Layer.effect(
 
 					// Create correction entry and optionally keep it inactive while approval is pending.
 					const correctionEntry = yield* _(
-						dbService.query("createCorrectionEntry", async () => {
-							// Insert the correction entry with organizationId
-							const [newEntry] = await dbService.db
-								.insert(timeEntry)
-								.values({
-									employeeId: input.employeeId,
-									organizationId: input.organizationId,
-									type: "correction",
-									timestamp: input.timestamp,
-									hash,
-									previousHash: previousEntry?.hash ?? null,
-									previousEntryId: previousEntry?.id ?? null,
-									replacesEntryId: input.replacesEntryId,
-									notes: input.notes,
-									ipAddress: input.ipAddress,
-									deviceInfo: input.deviceInfo,
-									createdBy: input.createdBy,
-									utcOffsetMinutes: input.utcOffsetMinutes,
-									timezone: input.timezone,
-									timezoneSource: input.timezoneSource,
-									...(input.isSuperseded === undefined ? {} : { isSuperseded: input.isSuperseded }),
-								})
-								.returning();
+						Effect.catchTag(
+							dbService.query("createCorrectionEntry", async () => {
+								return await dbService.db.transaction(async (tx) => {
+									const [newEntry] = await tx
+										.insert(timeEntry)
+										.values({
+											employeeId: input.employeeId,
+											organizationId: input.organizationId,
+											type: "correction",
+											timestamp: input.timestamp,
+											hash,
+											previousHash: previousEntry?.hash ?? null,
+											previousEntryId: previousEntry?.id ?? null,
+											replacesEntryId: input.replacesEntryId,
+											notes: input.notes,
+											ipAddress: input.ipAddress,
+											deviceInfo: input.deviceInfo,
+											createdBy: input.createdBy,
+											utcOffsetMinutes: input.utcOffsetMinutes,
+											timezone: input.timezone,
+											timezoneSource: input.timezoneSource,
+											...(input.isSuperseded === undefined
+												? {}
+												: { isSuperseded: input.isSuperseded }),
+										})
+										.returning();
 
-							if (!input.isSuperseded) {
-								await dbService.db
-									.update(timeEntry)
-									.set({
-										isSuperseded: true,
-										supersededById: newEntry.id,
-									})
-									.where(eq(timeEntry.id, input.replacesEntryId));
-							}
+									if (!input.isSuperseded) {
+										const supersededEntries = await tx
+											.update(timeEntry)
+											.set({
+												isSuperseded: true,
+												supersededById: newEntry.id,
+											})
+											.where(
+												and(
+													eq(timeEntry.id, input.replacesEntryId),
+													eq(timeEntry.employeeId, input.employeeId),
+													eq(timeEntry.organizationId, input.organizationId),
+													eq(timeEntry.isSuperseded, false),
+												),
+											)
+											.returning({ id: timeEntry.id });
 
-							return newEntry;
-						}),
+										if (supersededEntries.length === 0) {
+											throw new ConflictError({
+												message: "Time entry was already corrected by another process",
+												conflictType: "time_entry_already_corrected",
+											});
+										}
+
+										if (input.workPeriodId) {
+											const [period] = await tx
+												.select()
+												.from(workPeriod)
+												.where(
+													and(
+														eq(workPeriod.id, input.workPeriodId),
+														eq(workPeriod.employeeId, input.employeeId),
+														eq(workPeriod.organizationId, input.organizationId),
+														isNull(workPeriod.deletedAt),
+													),
+												)
+												.for("update");
+
+											if (!period) {
+												throw new NotFoundError({
+													message: "Work period not found",
+													entityType: "workPeriod",
+													entityId: input.workPeriodId,
+												});
+											}
+
+											const correctsClockIn = period.clockInId === input.replacesEntryId;
+											const correctsClockOut = period.clockOutId === input.replacesEntryId;
+											if (!correctsClockIn && !correctsClockOut) {
+												throw new ConflictError({
+													message: "Work period no longer contains the corrected time entry",
+													conflictType: "time_correction_work_period_stale",
+													details: { workPeriodId: period.id },
+												});
+											}
+
+											const startTime = correctsClockIn ? input.timestamp : period.startTime;
+											const endTime = correctsClockOut ? input.timestamp : period.endTime;
+											const start = DateTime.fromJSDate(startTime, { zone: "utc" });
+											const end = endTime ? DateTime.fromJSDate(endTime, { zone: "utc" }) : null;
+											if (end && end <= start) {
+												throw new ValidationError({
+													message: "Clock out time must be after clock in time",
+													field: "workPeriodId",
+													value: input.workPeriodId,
+												});
+											}
+											const durationMinutes = end
+												? Math.floor(end.diff(start, "minutes").minutes)
+												: null;
+											const endpointCondition = correctsClockIn
+												? eq(workPeriod.clockInId, input.replacesEntryId)
+												: eq(workPeriod.clockOutId, input.replacesEntryId);
+											const updatedPeriods = await tx
+												.update(workPeriod)
+												.set({
+													...(correctsClockIn
+														? { clockInId: newEntry.id, startTime }
+														: { clockOutId: newEntry.id, endTime }),
+													durationMinutes,
+													updatedAt: new Date(),
+												})
+												.where(
+													and(
+														eq(workPeriod.id, input.workPeriodId),
+														eq(workPeriod.employeeId, input.employeeId),
+														eq(workPeriod.organizationId, input.organizationId),
+														isNull(workPeriod.deletedAt),
+														endpointCondition,
+													),
+												)
+												.returning({ id: workPeriod.id });
+
+											if (updatedPeriods.length === 0) {
+												throw new ConflictError({
+													message: "Work period changed while applying the correction",
+													conflictType: "time_correction_work_period_stale",
+													details: { workPeriodId: period.id },
+												});
+											}
+
+											if (period.canonicalRecordId) {
+												await tx
+													.update(timeRecord)
+													.set({
+														startAt: startTime,
+														endAt: endTime,
+														durationMinutes,
+														updatedBy: input.createdBy,
+													})
+													.where(
+														and(
+															eq(timeRecord.id, period.canonicalRecordId),
+															eq(timeRecord.employeeId, input.employeeId),
+															eq(timeRecord.organizationId, input.organizationId),
+															eq(timeRecord.recordKind, "work"),
+														),
+													);
+											}
+										}
+									}
+
+									return newEntry;
+								});
+							}),
+							"DatabaseError",
+							(error) =>
+								Effect.fail(
+									error.cause instanceof ConflictError ||
+										error.cause instanceof NotFoundError ||
+										error.cause instanceof ValidationError
+										? error.cause
+										: error,
+								),
+						),
 					);
 
 					return correctionEntry;

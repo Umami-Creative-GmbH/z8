@@ -38,6 +38,8 @@ vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty,
 }));
 
+import { db as globalDb } from "@/db";
+import { timeRecord } from "@/db/schema";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
 import {
@@ -164,6 +166,14 @@ const clockOutCorrection = {
 
 function createTimeCorrectionDecisionDbService() {
 	const updateSets: Record<string, unknown>[] = [];
+	const selectForUpdate = vi.fn().mockResolvedValue([{ id: "entry-active-original" }]);
+	const selectWhere = vi.fn(() => {
+		const result = Promise.resolve([correction]) as Promise<unknown[]> & {
+			for: typeof selectForUpdate;
+		};
+		result.for = selectForUpdate;
+		return result;
+	});
 	const db = {
 		query: {
 			approvalRequest: {
@@ -183,7 +193,7 @@ function createTimeCorrectionDecisionDbService() {
 			timeEntry: { findFirst: vi.fn().mockResolvedValue(correction) },
 		},
 		select: vi.fn().mockReturnValue({
-			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([correction]) }),
+			from: vi.fn().mockReturnValue({ where: selectWhere }),
 		}),
 		update: vi.fn().mockReturnValue({
 			set: vi.fn((values: Record<string, unknown>) => {
@@ -198,8 +208,12 @@ function createTimeCorrectionDecisionDbService() {
 	return {
 		db,
 		updateSets,
+		selectForUpdate,
 		query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
-	} as unknown as ApprovalDbService & { updateSets: Record<string, unknown>[] };
+	} as unknown as ApprovalDbService & {
+		updateSets: Record<string, unknown>[];
+		selectForUpdate: typeof selectForUpdate;
+	};
 }
 
 function runTimeCorrectionDecisionEffect(effect: Effect.Effect<unknown, unknown, unknown>) {
@@ -353,6 +367,240 @@ describe("time correction requester decision notifications", () => {
 		);
 	});
 
+	it("updates the canonical work record through the transactional approval database", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		vi.mocked(dbService.db.query.workPeriod.findFirst).mockResolvedValueOnce({
+			...period,
+			canonicalRecordId: "record-1",
+		});
+		const globalWhere = vi.fn().mockResolvedValue(undefined);
+		const globalUpdate = vi.spyOn(globalDb, "update").mockReturnValue({
+			set: vi.fn(() => ({ where: globalWhere })),
+		} as never);
+
+		try {
+			await runTimeCorrectionDecisionEffect(
+				approveTimeCorrectionWithCurrentApproverEffect(
+					dbService,
+					timeCorrectionCurrentApprover,
+					"period-1",
+				),
+			);
+
+			expect(globalUpdate).not.toHaveBeenCalled();
+			expect(dbService.db.update).toHaveBeenCalledWith(timeRecord);
+			expect(dbService.updateSets).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						startAt: correction.timestamp,
+						endAt: period.endTime,
+						durationMinutes: 465,
+						updatedBy: timeCorrectionCurrentApprover.userId,
+					}),
+				]),
+			);
+		} finally {
+			globalUpdate.mockRestore();
+		}
+	});
+
+	it("approves a clock-out-only correction while preserving the original clock-in", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		const periodWithClockOut = {
+			...period,
+			clockOutId: "entry-clock-out-original",
+		};
+		vi.mocked(dbService.db.query.workPeriod.findFirst).mockResolvedValueOnce(periodWithClockOut);
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: {
+				timeCorrection: { clockOutCorrectionId: clockOutCorrection.id },
+			},
+		});
+		vi.mocked(dbService.db.query.timeEntry.findFirst).mockResolvedValueOnce({
+			...clockOutCorrection,
+			isSuperseded: true,
+		});
+
+		await runTimeCorrectionDecisionEffect(
+			approveTimeCorrectionWithCurrentApproverEffect(
+				dbService,
+				timeCorrectionCurrentApprover,
+				"period-1",
+			),
+		);
+
+		expect(dbService.updateSets).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					clockInId: period.clockInId,
+					clockOutId: clockOutCorrection.id,
+					startTime: period.startTime,
+					endTime: clockOutCorrection.timestamp,
+					durationMinutes: 495,
+				}),
+				{ isSuperseded: false, supersededById: null },
+				{ isSuperseded: true, supersededById: clockOutCorrection.id },
+			]),
+		);
+		expect(onTimeCorrectionApproved).toHaveBeenCalledWith(
+			expect.objectContaining({
+				originalTime: period.endTime,
+				correctedTime: clockOutCorrection.timestamp,
+			}),
+		);
+	});
+
+	it("rejects declared two-endpoint metadata when the clock-in correction cannot be resolved", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		vi.mocked(dbService.db.query.workPeriod.findFirst).mockResolvedValueOnce({
+			...period,
+			clockOutId: "entry-clock-out-original",
+		});
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: {
+				timeCorrection: {
+					clockInCorrectionId: correction.id,
+					clockOutCorrectionId: clockOutCorrection.id,
+				},
+			},
+		});
+		vi.mocked(dbService.db.query.timeEntry.findFirst)
+			.mockResolvedValueOnce(null)
+			.mockResolvedValueOnce(clockOutCorrection);
+
+		await expect(
+			runTimeCorrectionDecisionEffect(
+				approveTimeCorrectionWithCurrentApproverEffect(
+					dbService,
+					timeCorrectionCurrentApprover,
+					"period-1",
+				),
+			),
+		).rejects.toThrow("Declared clock-in correction could not be resolved");
+		expect(dbService.updateSets).not.toEqual(
+			expect.arrayContaining([expect.objectContaining({ clockOutId: clockOutCorrection.id })]),
+		);
+	});
+
+	it("rejects declared two-endpoint metadata when the clock-out correction cannot be resolved", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		vi.mocked(dbService.db.query.workPeriod.findFirst).mockResolvedValueOnce({
+			...period,
+			clockOutId: "entry-clock-out-original",
+		});
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: {
+				timeCorrection: {
+					clockInCorrectionId: correction.id,
+					clockOutCorrectionId: clockOutCorrection.id,
+				},
+			},
+		});
+		vi.mocked(dbService.db.query.timeEntry.findFirst)
+			.mockResolvedValueOnce(correction)
+			.mockResolvedValueOnce(null);
+
+		await expect(
+			runTimeCorrectionDecisionEffect(
+				approveTimeCorrectionWithCurrentApproverEffect(
+					dbService,
+					timeCorrectionCurrentApprover,
+					"period-1",
+				),
+			),
+		).rejects.toThrow("Declared clock-out correction could not be resolved");
+		expect(dbService.updateSets).not.toEqual(
+			expect.arrayContaining([expect.objectContaining({ clockInId: correction.id })]),
+		);
+	});
+
+	it("rejects a linked clock-in correction when its original entry is no longer active", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		vi.mocked(dbService.db.query.timeEntry.findFirst).mockResolvedValueOnce({
+			...correction,
+			isSuperseded: true,
+		});
+		dbService.selectForUpdate.mockResolvedValueOnce([]);
+
+		await expect(
+			runTimeCorrectionDecisionEffect(
+				approveTimeCorrectionWithCurrentApproverEffect(
+					dbService,
+					timeCorrectionCurrentApprover,
+					"period-1",
+				),
+			),
+		).rejects.toThrow("Original clock-in entry is no longer active");
+		expect(dbService.updateSets).not.toEqual(
+			expect.arrayContaining([
+				{ isSuperseded: false, supersededById: null },
+				expect.objectContaining({ clockInId: correction.id }),
+			]),
+		);
+	});
+
+	it("rejects a linked clock-out correction when its original entry is no longer active", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		vi.mocked(dbService.db.query.workPeriod.findFirst).mockResolvedValueOnce({
+			...period,
+			clockOutId: "entry-clock-out-original",
+		});
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: {
+				timeCorrection: { clockOutCorrectionId: clockOutCorrection.id },
+			},
+		});
+		vi.mocked(dbService.db.query.timeEntry.findFirst).mockResolvedValueOnce({
+			...clockOutCorrection,
+			isSuperseded: true,
+		});
+		dbService.selectForUpdate.mockResolvedValueOnce([]);
+
+		await expect(
+			runTimeCorrectionDecisionEffect(
+				approveTimeCorrectionWithCurrentApproverEffect(
+					dbService,
+					timeCorrectionCurrentApprover,
+					"period-1",
+				),
+			),
+		).rejects.toThrow("Original clock-out entry is no longer active");
+		expect(dbService.updateSets).not.toEqual(
+			expect.arrayContaining([
+				{ isSuperseded: false, supersededById: null },
+				expect.objectContaining({ clockOutId: clockOutCorrection.id }),
+			]),
+		);
+	});
+
 	it("applies deletion approvals as a zero-duration deleted work period", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 		const deletionTimestamp = new Date("2026-05-11T08:00:00.000Z");
@@ -498,11 +746,6 @@ describe("time correction requester decision notifications", () => {
 
 	it("approves the active correction instead of an older rejected correction for the same period", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
-		vi.mocked(dbService.db.select).mockReturnValueOnce({
-			from: vi
-				.fn()
-				.mockReturnValue({ where: vi.fn().mockResolvedValue([rejectedCorrection, correction]) }),
-		} as never);
 
 		await runTimeCorrectionDecisionEffect(
 			approveTimeCorrectionWithCurrentApproverEffect(
@@ -543,9 +786,6 @@ describe("time correction requester decision notifications", () => {
 			status: "pending",
 			metadata: { timeCorrection: { clockInCorrectionId: linkedCorrection.id } },
 		});
-		vi.mocked(dbService.db.select).mockReturnValueOnce({
-			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([correction]) }),
-		} as never);
 		vi.mocked(dbService.db.query.timeEntry.findFirst).mockResolvedValueOnce(linkedCorrection);
 
 		await runTimeCorrectionDecisionEffect(
@@ -742,6 +982,55 @@ describe("time correction requester decision notifications", () => {
 		);
 		expect(dbService.updateSets).not.toEqual(
 			expect.arrayContaining([{ isSuperseded: false, supersededById: null }]),
+		);
+	});
+
+	it("rejects a clock-out-only correction without changing the original endpoints", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		vi.mocked(dbService.db.query.workPeriod.findFirst).mockResolvedValueOnce({
+			...period,
+			clockOutId: "entry-clock-out-original",
+		});
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: {
+				timeCorrection: { clockOutCorrectionId: clockOutCorrection.id },
+			},
+		});
+		vi.mocked(dbService.db.query.timeEntry.findFirst).mockResolvedValueOnce({
+			...clockOutCorrection,
+			isSuperseded: true,
+		});
+
+		await runTimeCorrectionDecisionEffect(
+			rejectTimeCorrectionWithCurrentApproverEffect(
+				dbService,
+				timeCorrectionCurrentApprover,
+				"period-1",
+				"Incorrect clock-out",
+			),
+		);
+
+		expect(dbService.updateSets).toEqual(
+			expect.arrayContaining([{ isSuperseded: true, supersededById: null }]),
+		);
+		expect(dbService.updateSets).not.toEqual(
+			expect.arrayContaining([{ isSuperseded: false, supersededById: null }]),
+		);
+		expect(dbService.updateSets).not.toEqual(
+			expect.arrayContaining([expect.objectContaining({ clockOutId: expect.any(String) })]),
+		);
+		expect(onTimeCorrectionRejected).toHaveBeenCalledWith(
+			expect.objectContaining({
+				originalTime: period.endTime,
+				correctedTime: clockOutCorrection.timestamp,
+			}),
 		);
 	});
 
@@ -1039,6 +1328,175 @@ describe("time correction approval policy resolution", () => {
 				},
 			},
 		});
+	});
+
+	it("stores clock-out-only correction approval metadata without an empty clock-in ID", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([]);
+
+		await Effect.runPromise(
+			createTimeCorrectionApprovalWorkflow(dbService, {
+				organizationId: "org-1",
+				requesterEmployeeId: "emp-requester",
+				teamId: "team-1",
+				workPeriodId: "period-1",
+				defaultApproverId: "emp-manager",
+				reason: "Correct missed clock-out",
+				overtimeRisk: "warning",
+				correctionEntryIds: {
+					clockOutCorrectionId: "entry-clock-out-correction",
+				},
+			}),
+		);
+
+		expect(inserts[0].values.metadata).toEqual({
+			timeCorrection: {
+				action: "edit",
+				clockOutCorrectionId: "entry-clock-out-correction",
+			},
+		});
+	});
+
+	it("rejects explicitly empty correction entry metadata", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([]);
+
+		await expect(
+			Effect.runPromise(
+				createTimeCorrectionApprovalWorkflow(dbService, {
+					organizationId: "org-1",
+					requesterEmployeeId: "emp-requester",
+					teamId: "team-1",
+					workPeriodId: "period-1",
+					defaultApproverId: "emp-manager",
+					reason: "Invalid empty correction",
+					overtimeRisk: "warning",
+					correctionEntryIds: {},
+				}),
+			),
+		).rejects.toThrow("Time correction approval must link at least one correction entry");
+		expect(inserts).toHaveLength(0);
+	});
+
+	it("rejects a present blank clock-in correction ID when clock-out is valid", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([]);
+
+		await expect(
+			Effect.runPromise(
+				createTimeCorrectionApprovalWorkflow(dbService, {
+					organizationId: "org-1",
+					requesterEmployeeId: "emp-requester",
+					teamId: "team-1",
+					workPeriodId: "period-1",
+					defaultApproverId: "emp-manager",
+					reason: "Invalid blank clock-in ID",
+					overtimeRisk: "warning",
+					correctionEntryIds: {
+						clockInCorrectionId: "",
+						clockOutCorrectionId: "entry-clock-out-correction",
+					},
+				}),
+			),
+		).rejects.toThrow("Correction entry IDs must not be blank");
+		expect(inserts).toHaveLength(0);
+	});
+
+	it("rejects a present blank clock-out correction ID when clock-in is valid", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([]);
+
+		await expect(
+			Effect.runPromise(
+				createTimeCorrectionApprovalWorkflow(dbService, {
+					organizationId: "org-1",
+					requesterEmployeeId: "emp-requester",
+					teamId: "team-1",
+					workPeriodId: "period-1",
+					defaultApproverId: "emp-manager",
+					reason: "Invalid blank clock-out ID",
+					overtimeRisk: "warning",
+					correctionEntryIds: {
+						clockInCorrectionId: "entry-correction",
+						clockOutCorrectionId: "",
+					},
+				}),
+			),
+		).rejects.toThrow("Correction entry IDs must not be blank");
+		expect(inserts).toHaveLength(0);
+	});
+
+	it("treats an explicitly undefined clock-out correction ID as omitted", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([]);
+
+		await expect(
+			Effect.runPromise(
+				createTimeCorrectionApprovalWorkflow(dbService, {
+					organizationId: "org-1",
+					requesterEmployeeId: "emp-requester",
+					teamId: "team-1",
+					workPeriodId: "period-1",
+					defaultApproverId: "emp-manager",
+					reason: "Correct clock-in",
+					overtimeRisk: "warning",
+					correctionEntryIds: {
+						clockInCorrectionId: "entry-correction",
+						clockOutCorrectionId: undefined,
+					},
+				}),
+			),
+		).resolves.toEqual({ kind: "default_created", approvalRequestId: "insert-1" });
+		expect(inserts[0].values.metadata).toEqual({
+			timeCorrection: {
+				action: "edit",
+				clockInCorrectionId: "entry-correction",
+			},
+		});
+	});
+
+	it("treats an explicitly undefined clock-in correction ID as omitted", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([]);
+
+		await expect(
+			Effect.runPromise(
+				createTimeCorrectionApprovalWorkflow(dbService, {
+					organizationId: "org-1",
+					requesterEmployeeId: "emp-requester",
+					teamId: "team-1",
+					workPeriodId: "period-1",
+					defaultApproverId: "emp-manager",
+					reason: "Correct clock-out",
+					overtimeRisk: "warning",
+					correctionEntryIds: {
+						clockInCorrectionId: undefined,
+						clockOutCorrectionId: "entry-clock-out-correction",
+					},
+				}),
+			),
+		).resolves.toEqual({ kind: "default_created", approvalRequestId: "insert-1" });
+		expect(inserts[0].values.metadata).toEqual({
+			timeCorrection: {
+				action: "edit",
+				clockOutCorrectionId: "entry-clock-out-correction",
+			},
+		});
+	});
+
+	it("rejects deletion approval metadata unless both correction entries are linked", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([]);
+
+		await expect(
+			Effect.runPromise(
+				createTimeCorrectionApprovalWorkflow(dbService, {
+					organizationId: "org-1",
+					requesterEmployeeId: "emp-requester",
+					teamId: "team-1",
+					workPeriodId: "period-1",
+					defaultApproverId: "emp-manager",
+					reason: "Delete period",
+					overtimeRisk: "warning",
+					correctionAction: "delete",
+					correctionEntryIds: { clockInCorrectionId: "entry-correction" },
+				}),
+			),
+		).rejects.toThrow("Deletion approval requires clock-in and clock-out correction entries");
+		expect(inserts).toHaveLength(0);
 	});
 
 	it("rejects a new time correction approval when the work period already has one pending", async () => {

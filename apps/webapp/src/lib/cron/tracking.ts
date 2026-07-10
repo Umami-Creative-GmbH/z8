@@ -53,6 +53,44 @@ export async function createJobExecution(params: {
 }
 
 /**
+ * Atomically get or create the execution record for a BullMQ scheduler job.
+ */
+export async function getOrCreateSchedulerJobExecution(params: {
+	jobName: CronJobName;
+	bullmqJobId: string;
+}): Promise<string> {
+	const lockKey = `cron-job-execution:${params.bullmqJobId}`;
+
+	return db.transaction(async (tx) => {
+		await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+
+		const existing = await tx.query.cronJobExecution.findFirst({
+			where: eq(cronJobExecution.bullmqJobId, params.bullmqJobId),
+		});
+		if (existing) {
+			return existing.id;
+		}
+
+		const [record] = await tx
+			.insert(cronJobExecution)
+			.values({
+				jobName: params.jobName,
+				bullmqJobId: params.bullmqJobId,
+				status: "pending",
+				startedAt: new Date(),
+				metadata: { source: "scheduler" },
+			})
+			.returning({ id: cronJobExecution.id });
+
+		logger.debug(
+			{ executionId: record.id, jobName: params.jobName, bullmqJobId: params.bullmqJobId },
+			"Created scheduler job execution record",
+		);
+		return record.id;
+	});
+}
+
+/**
  * Update job execution status and optionally the BullMQ job ID
  */
 export async function updateJobExecution(
@@ -125,6 +163,18 @@ export async function markJobFailed(id: string, error: string, durationMs: numbe
 export async function getJobExecution(id: string): Promise<CronJobExecution | undefined> {
 	const result = await db.query.cronJobExecution.findFirst({
 		where: eq(cronJobExecution.id, id),
+	});
+	return result ?? undefined;
+}
+
+/**
+ * Get a job execution by its BullMQ job ID.
+ */
+export async function getJobExecutionByBullmqJobId(
+	bullmqJobId: string,
+): Promise<CronJobExecution | undefined> {
+	const result = await db.query.cronJobExecution.findFirst({
+		where: eq(cronJobExecution.bullmqJobId, bullmqJobId),
 	});
 	return result ?? undefined;
 }
