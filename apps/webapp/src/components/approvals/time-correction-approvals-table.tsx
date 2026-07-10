@@ -3,7 +3,7 @@
 import { IconArrowRight, IconCheck, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -13,35 +13,23 @@ import {
 	rejectTimeCorrection,
 } from "@/app/[locale]/(app)/approvals/actions";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { queryKeys } from "@/lib/query";
 import { ApprovalActionDialog } from "./approval-action-dialog";
-
-const timeFormatter = new Intl.DateTimeFormat("en-US", {
-	hour: "numeric",
-	minute: "2-digit",
-	hour12: true,
-});
-
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-	weekday: "short",
-	month: "short",
-	day: "numeric",
-	year: "numeric",
-});
-
-function formatTime(date: Date): string {
-	return timeFormatter.format(date);
-}
-
-function formatDate(date: Date): string {
-	return dateFormatter.format(date);
-}
+import {
+	formatCorrectionApprovalDate,
+	formatCorrectionAuditEndpoint,
+} from "./time-correction-approval-format";
 
 export function TimeCorrectionApprovalsTable() {
 	const { t } = useTranslate();
+	const tolgee = useTolgee(["language"]);
+	const locale = tolgee.getLanguage() || "en";
+	const timeFormat = useTimeFormat();
+	const correctionQueryKey = queryKeys.approvals.timeCorrections({ locale, timeFormat });
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
 	const [dialogOpen, setDialogOpen] = useState(false);
@@ -56,9 +44,9 @@ export function TimeCorrectionApprovalsTable() {
 		isError,
 		refetch,
 	} = useQuery({
-		queryKey: queryKeys.approvals.timeCorrections(),
+		queryKey: correctionQueryKey,
 		queryFn: async () => {
-			const result = await getPendingApprovals();
+			const result = await getPendingApprovals(locale);
 			return result.timeCorrectionApprovals;
 		},
 	});
@@ -67,20 +55,18 @@ export function TimeCorrectionApprovalsTable() {
 	const approveMutation = useMutation({
 		mutationFn: (workPeriodId: string) => approveTimeCorrection(workPeriodId),
 		onMutate: async (workPeriodId) => {
-			await queryClient.cancelQueries({ queryKey: queryKeys.approvals.timeCorrections() });
-			const previousApprovals = queryClient.getQueryData<ApprovalWithTimeCorrection[]>(
-				queryKeys.approvals.timeCorrections(),
-			);
-			queryClient.setQueryData<ApprovalWithTimeCorrection[]>(
-				queryKeys.approvals.timeCorrections(),
-				(old) => old?.filter((a) => a.workPeriod.id !== workPeriodId),
+			await queryClient.cancelQueries({ queryKey: correctionQueryKey });
+			const previousApprovals =
+				queryClient.getQueryData<ApprovalWithTimeCorrection[]>(correctionQueryKey);
+			queryClient.setQueryData<ApprovalWithTimeCorrection[]>(correctionQueryKey, (old) =>
+				old?.filter((a) => a.workPeriod.id !== workPeriodId),
 			);
 			return { previousApprovals };
 		},
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("approvals:approvals.timeCorrectionApproved", "Time correction approved"));
-				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.timeCorrections() });
+				queryClient.invalidateQueries({ queryKey: correctionQueryKey });
 			} else {
 				toast.error(
 					result.error ||
@@ -90,7 +76,7 @@ export function TimeCorrectionApprovalsTable() {
 		},
 		onError: (_error, _workPeriodId, context) => {
 			if (context?.previousApprovals) {
-				queryClient.setQueryData(queryKeys.approvals.timeCorrections(), context.previousApprovals);
+				queryClient.setQueryData(correctionQueryKey, context.previousApprovals);
 			}
 			toast.error(t("approvals:approvals.approveFailed", "Failed to approve time correction"));
 		},
@@ -101,20 +87,18 @@ export function TimeCorrectionApprovalsTable() {
 		mutationFn: ({ workPeriodId, reason }: { workPeriodId: string; reason: string }) =>
 			rejectTimeCorrection(workPeriodId, reason),
 		onMutate: async ({ workPeriodId }) => {
-			await queryClient.cancelQueries({ queryKey: queryKeys.approvals.timeCorrections() });
-			const previousApprovals = queryClient.getQueryData<ApprovalWithTimeCorrection[]>(
-				queryKeys.approvals.timeCorrections(),
-			);
-			queryClient.setQueryData<ApprovalWithTimeCorrection[]>(
-				queryKeys.approvals.timeCorrections(),
-				(old) => old?.filter((a) => a.workPeriod.id !== workPeriodId),
+			await queryClient.cancelQueries({ queryKey: correctionQueryKey });
+			const previousApprovals =
+				queryClient.getQueryData<ApprovalWithTimeCorrection[]>(correctionQueryKey);
+			queryClient.setQueryData<ApprovalWithTimeCorrection[]>(correctionQueryKey, (old) =>
+				old?.filter((a) => a.workPeriod.id !== workPeriodId),
 			);
 			return { previousApprovals };
 		},
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("approvals:approvals.timeCorrectionRejected", "Time correction rejected"));
-				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.timeCorrections() });
+				queryClient.invalidateQueries({ queryKey: correctionQueryKey });
 			} else {
 				toast.error(
 					result.error || t("approvals:approvals.rejectFailed", "Failed to reject time correction"),
@@ -123,7 +107,7 @@ export function TimeCorrectionApprovalsTable() {
 		},
 		onError: (_error, _variables, context) => {
 			if (context?.previousApprovals) {
-				queryClient.setQueryData(queryKeys.approvals.timeCorrections(), context.previousApprovals);
+				queryClient.setQueryData(correctionQueryKey, context.previousApprovals);
 			}
 			toast.error(t("approvals:approvals.rejectFailed", "Failed to reject time correction"));
 		},
@@ -191,16 +175,29 @@ export function TimeCorrectionApprovalsTable() {
 			accessorKey: "date",
 			header: t("approvals:approvals.date", "Date"),
 			cell: ({ row }) => (
-				<span className="font-medium">{formatDate(row.original.workPeriod.startTime)}</span>
+				<span className="font-medium">
+					{formatCorrectionApprovalDate(
+						row.original.workPeriod.startTime,
+						row.original.displayContext!,
+					)}
+				</span>
 			),
 		},
 		{
 			accessorKey: "originalTimes",
 			header: t("approvals:approvals.originalTimes", "Original Times"),
 			cell: ({ row }) => {
-				const originalClockIn = formatTime(row.original.workPeriod.clockInEntry.timestamp);
+				const originalClockIn = formatCorrectionAuditEndpoint(
+					row.original.workPeriod.clockInEntry.timestamp,
+					row.original.workPeriod.clockInEntry.utcOffsetMinutes,
+					row.original.displayContext!,
+				);
 				const originalClockOut = row.original.workPeriod.clockOutEntry
-					? formatTime(row.original.workPeriod.clockOutEntry.timestamp)
+					? formatCorrectionAuditEndpoint(
+							row.original.workPeriod.clockOutEntry.timestamp,
+							row.original.workPeriod.clockOutEntry.utcOffsetMinutes,
+							row.original.displayContext!,
+						)
 					: "—";
 				return (
 					<div className="flex items-center gap-2 font-mono text-sm">
@@ -215,13 +212,31 @@ export function TimeCorrectionApprovalsTable() {
 			accessorKey: "correctedTimes",
 			header: t("approvals:approvals.correctedTimes", "Corrected Times"),
 			cell: ({ row }) => {
-				const originalClockIn = formatTime(row.original.workPeriod.clockInEntry.timestamp);
+				const originalClockIn = formatCorrectionAuditEndpoint(
+					row.original.workPeriod.clockInEntry.timestamp,
+					row.original.workPeriod.clockInEntry.utcOffsetMinutes,
+					row.original.displayContext!,
+				);
 				const originalClockOut = row.original.workPeriod.clockOutEntry
-					? formatTime(row.original.workPeriod.clockOutEntry.timestamp)
+					? formatCorrectionAuditEndpoint(
+							row.original.workPeriod.clockOutEntry.timestamp,
+							row.original.workPeriod.clockOutEntry.utcOffsetMinutes,
+							row.original.displayContext!,
+						)
 					: "—";
-				const correctedClockIn = formatTime(row.original.workPeriod.startTime);
-				const correctedClockOut = row.original.workPeriod.endTime
-					? formatTime(row.original.workPeriod.endTime)
+				const correctedClockIn = row.original.workPeriod.clockInCorrectionEntry
+					? formatCorrectionAuditEndpoint(
+							row.original.workPeriod.clockInCorrectionEntry.timestamp,
+							row.original.workPeriod.clockInCorrectionEntry.utcOffsetMinutes,
+							row.original.displayContext!,
+						)
+					: "—";
+				const correctedClockOut = row.original.workPeriod.clockOutCorrectionEntry
+					? formatCorrectionAuditEndpoint(
+							row.original.workPeriod.clockOutCorrectionEntry.timestamp,
+							row.original.workPeriod.clockOutCorrectionEntry.utcOffsetMinutes,
+							row.original.displayContext!,
+						)
 					: "—";
 				const hasChanges =
 					originalClockIn !== correctedClockIn || originalClockOut !== correctedClockOut;
@@ -347,7 +362,7 @@ export function TimeCorrectionApprovalsTable() {
 							? t("approvals:approvals.approveTimeCorrectionTitle", "Approve Time Correction")
 							: t("approvals:approvals.rejectTimeCorrectionTitle", "Reject Time Correction")
 					}
-					description={`${selectedApproval.requester.user.name} ${t("approvals:approvals.requestingCorrection", "is requesting a time correction for")} ${formatDate(selectedApproval.workPeriod.startTime)}.`}
+					description={`${selectedApproval.requester.user.name} ${t("approvals:approvals.requestingCorrection", "is requesting a time correction for")} ${formatCorrectionApprovalDate(selectedApproval.workPeriod.startTime, selectedApproval.displayContext!)}.`}
 					onConfirm={handleConfirm}
 				/>
 			)}

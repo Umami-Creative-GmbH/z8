@@ -84,6 +84,8 @@ describe("buildPendingApprovalResult", () => {
 		});
 
 		expect(result.absenceApprovals[0]?.absence.sickDetail).toBe("child_sick");
+		expect(result.absenceApprovals[0]?.absence.startDate).toBe("2026-05-18");
+		expect(result.absenceApprovals[0]?.absence.endDate).toBe("2026-05-18");
 	});
 
 	it("redacts stale sick detail from non-sick absence approval payloads", () => {
