@@ -28,10 +28,18 @@ describe("Telegram command temporal contexts", () => {
 		expect(source).not.toContain("DateTime.fromISO(");
 	});
 
-	it("does not migrate availability commands owned by Task 4", () => {
-		for (const name of ["whos-out", "coverage", "open-shifts", "compliance"]) {
-			expect(readCommandSource(name)).not.toContain("command-temporal");
-		}
+	it.each([
+		"whos-out",
+		"coverage",
+		"open-shifts",
+	])("resolves %s availability dates from the explicit temporal context", (name) => {
+		const source = readCommandSource(name);
+
+		expect(source).toContain("getCommandTemporalContext");
+		expect(source).toContain("organizationTimezone");
+		expect(source).toContain("toPlainDate()");
+		expect(source).not.toContain("DateTime.now()");
+		expect(source).not.toContain("DateTime.fromISO(");
 	});
 
 	it("formats Telegram approval audit endpoints with their captured offset", () => {

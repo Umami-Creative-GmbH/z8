@@ -6,16 +6,17 @@
  */
 
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
+import { dateFromInstant, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
 	OpenShiftsService,
 	OpenShiftsServiceFullLive,
 } from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
 import { buildOpenShiftsCard } from "../cards/open-shifts-card";
+import { getCommandTemporalContext } from "./command-temporal";
 import { withRateLimit } from "./middleware/rate-limit.middleware";
 
 const logger = createLogger("TeamsCommand:OpenShifts");
@@ -25,56 +26,53 @@ const logger = createLogger("TeamsCommand:OpenShifts");
 // ============================================
 
 interface DateRange {
-	startDate: Date;
-	endDate: Date;
+	startDate: PlainDate;
+	endDate: PlainDate;
 }
 
-function parseDateRangeArgument(arg: string | undefined, timezone: string): DateRange {
-	const now = DateTime.now().setZone(timezone);
-
+function parseDateRangeArgument(arg: string | undefined, today: PlainDate): DateRange {
 	if (!arg || arg.toLowerCase() === "week") {
 		return {
-			startDate: now.startOf("day").toJSDate(),
-			endDate: now.plus({ days: 7 }).endOf("day").toJSDate(),
+			startDate: today,
+			endDate: today.add({ days: 7 }),
 		};
 	}
 
 	if (arg.toLowerCase() === "today") {
 		return {
-			startDate: now.startOf("day").toJSDate(),
-			endDate: now.endOf("day").toJSDate(),
+			startDate: today,
+			endDate: today,
 		};
 	}
 
 	if (arg.toLowerCase() === "tomorrow") {
-		const tomorrow = now.plus({ days: 1 });
+		const tomorrow = today.add({ days: 1 });
 		return {
-			startDate: tomorrow.startOf("day").toJSDate(),
-			endDate: tomorrow.endOf("day").toJSDate(),
+			startDate: tomorrow,
+			endDate: tomorrow,
 		};
 	}
 
 	if (arg.toLowerCase() === "month") {
 		return {
-			startDate: now.startOf("day").toJSDate(),
-			endDate: now.plus({ days: 30 }).endOf("day").toJSDate(),
+			startDate: today,
+			endDate: today.add({ days: 30 }),
 		};
 	}
 
 	// Try to parse ISO date (YYYY-MM-DD) - show that specific day
-	const parsed = DateTime.fromISO(arg, { zone: timezone });
-	if (parsed.isValid) {
+	try {
+		const parsed = parsePlainDate(arg);
 		return {
-			startDate: parsed.startOf("day").toJSDate(),
-			endDate: parsed.endOf("day").toJSDate(),
+			startDate: parsed,
+			endDate: parsed,
+		};
+	} catch {
+		return {
+			startDate: today,
+			endDate: today.add({ days: 7 }),
 		};
 	}
-
-	// Default to next 7 days
-	return {
-		startDate: now.startOf("day").toJSDate(),
-		endDate: now.plus({ days: 7 }).endOf("day").toJSDate(),
-	};
 }
 
 // ============================================
@@ -84,15 +82,26 @@ function parseDateRangeArgument(arg: string | undefined, timezone: string): Date
 async function openShiftsHandler(ctx: BotCommandContext): Promise<BotCommandResponse> {
 	try {
 		const t = await getBotTranslate(ctx.locale);
+		const temporal = getCommandTemporalContext(ctx);
+		const timezone = temporal.organizationTimezone;
 		const rangeArg = ctx.args[0];
-		const { startDate, endDate } = parseDateRangeArgument(rangeArg, ctx.config.digestTimezone);
+		const { startDate, endDate } = parseDateRangeArgument(
+			rangeArg,
+			temporal.now.toZonedDateTimeISO(timezone).toPlainDate(),
+		);
+		const startInstant = startDate.toZonedDateTime(timezone).toInstant();
+		const endInstant = endDate
+			.add({ days: 1 })
+			.toZonedDateTime(timezone)
+			.toInstant()
+			.subtract({ milliseconds: 1 });
 
 		logger.debug(
 			{
 				userId: ctx.userId,
 				organizationId: ctx.organizationId,
-				startDate,
-				endDate,
+				startDate: startDate.toString(),
+				endDate: endDate.toString(),
 			},
 			"Executing open shifts command",
 		);
@@ -103,8 +112,8 @@ async function openShiftsHandler(ctx: BotCommandContext): Promise<BotCommandResp
 			return yield* _(
 				openShiftsService.getOpenShifts({
 					organizationId: ctx.organizationId,
-					startDate,
-					endDate,
+					startDate: dateFromInstant(startInstant),
+					endDate: dateFromInstant(endInstant),
 					limit: 10,
 				}),
 			);
@@ -134,7 +143,7 @@ async function openShiftsHandler(ctx: BotCommandContext): Promise<BotCommandResp
 		const appUrl = env.APP_URL || "https://z8-time.app";
 		const card = buildOpenShiftsCard({
 			shifts,
-			timezone: ctx.config.digestTimezone,
+			timezone,
 			appUrl,
 			requesterId: ctx.employeeId,
 			locale: ctx.locale,

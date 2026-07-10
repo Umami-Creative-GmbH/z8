@@ -6,13 +6,15 @@
  */
 
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry, employee, employeeManagers } from "@/db/schema";
-import { fmtWeekdayShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
+import { getCommandTemporalContext } from "./command-temporal";
 
 const logger = createLogger("TeamsCommand:WhosOut");
 
@@ -25,6 +27,8 @@ export const whosOutCommand: BotCommand = {
 	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		try {
 			const t = await getBotTranslate(ctx.locale);
+			const temporal = getCommandTemporalContext(ctx);
+			const timezone = temporal.organizationTimezone;
 			// Get employees this user manages (join through employee to filter by org)
 			const managedEmployees = await db.query.employeeManagers.findMany({
 				where: eq(employeeManagers.managerId, ctx.employeeId),
@@ -53,7 +57,7 @@ export const whosOutCommand: BotCommand = {
 			}
 
 			const managedEmployeeIds = orgManagedEmployees.map((m) => m.employeeId);
-			const today = DateTime.now().setZone(ctx.config.digestTimezone).toISODate();
+			const today = temporal.now.toZonedDateTimeISO(timezone).toPlainDate();
 
 			// Get approved absence entries that cover today for managed employees
 			const absences = await db
@@ -71,8 +75,8 @@ export const whosOutCommand: BotCommand = {
 				.where(
 					and(
 						eq(absenceEntry.status, "approved"),
-						lte(absenceEntry.startDate, today!),
-						gte(absenceEntry.endDate, today!),
+						lte(absenceEntry.startDate, today.toString()),
+						gte(absenceEntry.endDate, today.toString()),
 						inArray(absenceEntry.employeeId, managedEmployeeIds),
 					),
 				);
@@ -90,8 +94,11 @@ export const whosOutCommand: BotCommand = {
 
 			// Build response with details
 			const lines = absences.map((absence) => {
-				const endDate = DateTime.fromISO(absence.endDate).setZone(ctx.config.digestTimezone);
-				const returnDate = fmtWeekdayShortDate(endDate.plus({ days: 1 }), ctx.locale);
+				const returnDate = formatPlainDate(
+					parsePlainDate(absence.endDate).add({ days: 1 }),
+					temporal.locale,
+					"dateMedium",
+				);
 				const category = absence.categoryName || "Leave";
 
 				return `• **${absence.employeeName}** - ${category} (returns ${returnDate})`;
