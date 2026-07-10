@@ -140,7 +140,10 @@ export async function cancelAbsenceRequestForEmployee(
 		db
 			.delete(approvalRequest)
 			.where(
-				and(eq(approvalRequest.entityType, "absence_entry"), eq(approvalRequest.entityId, absenceId)),
+				and(
+					eq(approvalRequest.entityType, "absence_entry"),
+					eq(approvalRequest.entityId, absenceId),
+				),
 			),
 		removeCanonicalAbsenceRecord({
 			organizationId,
