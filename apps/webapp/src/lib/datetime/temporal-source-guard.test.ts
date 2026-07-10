@@ -33,6 +33,10 @@ const CORE_LUXON_ENTRY_POINTS = [
 	"lib/reports/report-date-range.ts",
 	"lib/scheduling/schedule-local-input.ts",
 ] as const;
+const TELEGRAM_LUXON_ENTRY_POINTS = [
+	"lib/telegram/formatters.ts",
+	"lib/telegram/jobs/escalation-checker.ts",
+] as const;
 const MIGRATED_CALENDAR_DIALOGS = [
 	"components/calendar/delete-work-period-dialog.tsx",
 	"components/calendar/split-work-period-dialog.tsx",
@@ -127,6 +131,18 @@ describe("Temporal source guard", () => {
 		expect(unzonedNowOffenders).toEqual([]);
 		expect(unzonedFromIsoOffenders).toEqual([]);
 		expect(schedulingHourMathOffenders).toEqual([]);
+	});
+
+	it("keeps Telegram instant origins explicitly in UTC", () => {
+		const unzonedNowOffenders = TELEGRAM_LUXON_ENTRY_POINTS.filter((filePath) =>
+			UNZONED_LUXON_NOW.test(source(filePath)),
+		);
+		const unzonedFromJsDateOffenders = TELEGRAM_LUXON_ENTRY_POINTS.filter((filePath) =>
+			/\bDateTime\.fromJSDate\(\s*[^,)]*\)/.test(source(filePath)),
+		);
+
+		expect(unzonedNowOffenders).toEqual([]);
+		expect(unzonedFromJsDateOffenders).toEqual([]);
 	});
 
 	it("keeps migrated calendar dialogs off date-fns P-format tokens", () => {
