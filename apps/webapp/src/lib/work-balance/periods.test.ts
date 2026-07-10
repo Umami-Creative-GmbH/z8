@@ -14,6 +14,13 @@ describe("work balance period helpers", () => {
 		});
 	});
 
+	it("derives the hot window from the employee-local date", () => {
+		expect(getHotWindowRange(new Date("2026-06-01T01:00:00.000Z"), "America/New_York")).toEqual({
+			startDate: "2026-03-01",
+			endDate: "2026-05-31",
+		});
+	});
+
 	it("throws for an invalid hot window date", () => {
 		expect(() => getHotWindowRange(new Date(Number.NaN))).toThrow(RangeError);
 	});

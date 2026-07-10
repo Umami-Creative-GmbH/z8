@@ -29,8 +29,8 @@ function toIsoDate(date: DateTime) {
 	return isoDate;
 }
 
-export function getHotWindowRange(now = new Date()): DateRangeIso {
-	const today = DateTime.fromJSDate(now, { zone: "utc" }).startOf("day");
+export function getHotWindowRange(now = new Date(), timezone = "UTC"): DateRangeIso {
+	const today = DateTime.fromJSDate(now, { zone: "utc" }).setZone(timezone).startOf("day");
 	return {
 		startDate: toIsoDate(today.startOf("month").minus({ months: 2 })),
 		endDate: toIsoDate(today),

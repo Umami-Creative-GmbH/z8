@@ -6,6 +6,7 @@ const mockAssertCanonicalCutoverReady = vi.fn();
 const mockState = vi.hoisted(() => ({
 	timeRecordFindMany: vi.fn(),
 	employeeFindMany: vi.fn(),
+	organizationFindFirst: vi.fn(),
 	workPeriodFindMany: vi.fn(),
 	absenceEntryFindMany: vi.fn(),
 }));
@@ -23,6 +24,9 @@ vi.mock("@/lib/time-record/migration/cutover-state", () => ({
 vi.mock("@/db", () => ({
 	db: {
 		query: {
+			organization: {
+				findFirst: mockState.organizationFindFirst,
+			},
 			timeRecord: {
 				findMany: mockState.timeRecordFindMany,
 			},
@@ -40,6 +44,9 @@ vi.mock("@/db", () => ({
 	employee: {
 		organizationId: "employee.organizationId",
 		teamId: "employee.teamId",
+	},
+	organization: {
+		id: "organization.id",
 	},
 	payrollExportConfig: {},
 	payrollExportFormat: {},
@@ -81,6 +88,7 @@ describe("payroll export canonical data fetching", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockAssertCanonicalCutoverReady.mockResolvedValue(undefined);
+		mockState.organizationFindFirst.mockResolvedValue({ timezone: "UTC" });
 	});
 
 	it("rejects payroll export reads when canonical cutover is incomplete", async () => {
@@ -207,6 +215,103 @@ describe("payroll export canonical data fetching", () => {
 		});
 	});
 
+	it("filters and clips work records by each employee's local payroll month", async () => {
+		mockState.timeRecordFindMany.mockResolvedValue([
+			{
+				id: "new-york-april",
+				employeeId: "emp-ny",
+				startAt: new Date("2026-05-01T02:00:00.000Z"),
+				endAt: new Date("2026-05-01T03:00:00.000Z"),
+				employee: {
+					employeeNumber: "NY-1",
+					teamId: null,
+					user: { firstName: "New", lastName: "York", email: "ny@example.com" },
+					userSettings: { timezone: "America/New_York" },
+				},
+				work: null,
+				allocations: [],
+			},
+			{
+				id: "new-york-may",
+				employeeId: "emp-ny",
+				startAt: new Date("2026-05-31T22:00:00.000Z"),
+				endAt: new Date("2026-06-01T02:00:00.000Z"),
+				employee: {
+					employeeNumber: "NY-1",
+					teamId: null,
+					user: { firstName: "New", lastName: "York", email: "ny@example.com" },
+					userSettings: { timezone: "America/New_York" },
+				},
+				work: null,
+				allocations: [],
+			},
+			{
+				id: "berlin-may",
+				employeeId: "emp-berlin",
+				startAt: new Date("2026-04-30T22:30:00.000Z"),
+				endAt: new Date("2026-04-30T23:30:00.000Z"),
+				employee: {
+					employeeNumber: "BER-1",
+					teamId: null,
+					user: { firstName: "Berlin", lastName: "Worker", email: "berlin@example.com" },
+					userSettings: { timezone: "Europe/Berlin" },
+				},
+				work: null,
+				allocations: [],
+			},
+			{
+				id: "zero-boundary",
+				employeeId: "emp-utc",
+				startAt: new Date("2026-04-30T23:00:00.000Z"),
+				endAt: new Date("2026-05-01T00:00:00.000Z"),
+				employee: {
+					employeeNumber: "UTC-1",
+					teamId: null,
+					user: { firstName: "UTC", lastName: "Worker", email: "utc@example.com" },
+					userSettings: { timezone: "UTC" },
+				},
+				work: null,
+				allocations: [],
+			},
+			{
+				id: "sub-minute-overlap",
+				employeeId: "emp-utc",
+				startAt: new Date("2026-05-01T00:00:00.000Z"),
+				endAt: new Date("2026-05-01T00:00:20.000Z"),
+				employee: {
+					employeeNumber: "UTC-1",
+					teamId: null,
+					user: { firstName: "UTC", lastName: "Worker", email: "utc@example.com" },
+					userSettings: { timezone: "UTC" },
+				},
+				work: null,
+				allocations: [],
+			},
+		]);
+
+		const filters = {
+			dateRange: {
+				start: DateTime.fromISO("2026-05-01", { zone: "utc" }),
+				end: DateTime.fromISO("2026-05-31", { zone: "utc" }),
+			},
+		};
+		const results = await dataFetcher.fetchWorkPeriodsForExport("org-1", filters);
+
+		expect(results.map((result) => result.id)).toEqual(["new-york-may", "berlin-may"]);
+		expect(results.find((result) => result.id === "berlin-may")).toMatchObject({
+			startTime: DateTime.fromISO("2026-04-30T22:30:00.000Z", { zone: "utc" }),
+			endTime: DateTime.fromISO("2026-04-30T23:30:00.000Z", { zone: "utc" }),
+			durationMinutes: 60,
+		});
+		expect(results.find((result) => result.id === "new-york-may")).toMatchObject({
+			startTime: DateTime.fromISO("2026-05-31T22:00:00.000Z", { zone: "utc" }),
+			endTime: DateTime.fromISO("2026-06-01T02:00:00.000Z", { zone: "utc" }),
+			durationMinutes: 240,
+		});
+
+		await expect(dataFetcher.countWorkPeriods("org-1", filters)).resolves.toBe(2);
+	});
+
 	it("returns no work export rows for an explicit empty employee scope", async () => {
 		mockState.timeRecordFindMany.mockResolvedValue([
 			{
@@ -318,12 +423,18 @@ describe("payroll export canonical data fetching", () => {
 		mockState.timeRecordFindMany.mockResolvedValue([
 			{
 				id: "record-1",
-				employee: { teamId: "team-1" },
+				employeeId: "emp-1",
+				startAt: new Date("2026-01-10T08:00:00.000Z"),
+				endAt: new Date("2026-01-10T16:00:00.000Z"),
+				employee: { teamId: "team-1", userSettings: { timezone: "UTC" } },
 				allocations: [{ projectId: "project-1" }],
 			},
 			{
 				id: "record-2",
-				employee: { teamId: "team-2" },
+				employeeId: "emp-2",
+				startAt: new Date("2026-01-10T08:00:00.000Z"),
+				endAt: new Date("2026-01-10T16:00:00.000Z"),
+				employee: { teamId: "team-2", userSettings: { timezone: "UTC" } },
 				allocations: [{ projectId: "project-2" }],
 			},
 		]);

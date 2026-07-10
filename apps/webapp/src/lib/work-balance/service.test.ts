@@ -1,4 +1,4 @@
-import { and, eq, gte, isNotNull } from "drizzle-orm";
+import { and, eq, gte, isNotNull, lt } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { employee, employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "./format";
@@ -8,6 +8,7 @@ const mockState = vi.hoisted(() => ({
 		query: {
 			employee: {
 				findFirst: vi.fn(),
+				findMany: vi.fn(),
 			},
 			employeeWorkBalance: {
 				findFirst: vi.fn(),
@@ -29,6 +30,9 @@ const mockState = vi.hoisted(() => ({
 	txInsertValues: vi.fn(),
 	txOnConflictDoUpdate: vi.fn(),
 	txSelect: vi.fn(),
+	txUpdate: vi.fn(),
+	txUpdateSet: vi.fn(),
+	txUpdateWhere: vi.fn(),
 	insertValues: vi.fn(),
 	onConflictDoUpdate: vi.fn(),
 	updateSet: vi.fn(),
@@ -86,6 +90,8 @@ import {
 	markOrganizationWorkBalancesDirty,
 	refreshEmployeeWorkBalanceFromPeriods,
 	requestEmployeeWorkBalanceFullRebuild,
+	requestOrganizationWorkBalanceFullRebuild,
+	requestUserWorkBalanceFullRebuild,
 	shouldIncludeWorkBalanceInBatch,
 	upsertEmployeeWorkBalance,
 } from "./service";
@@ -119,6 +125,12 @@ describe("work balance helpers", () => {
 		mockState.txOnConflictDoUpdate.mockReset();
 		mockState.txSelect.mockReset();
 		mockState.txSelect.mockReturnValue({ from: mockState.selectFrom });
+		mockState.txUpdate.mockReset();
+		mockState.txUpdate.mockReturnValue({ set: mockState.txUpdateSet });
+		mockState.txUpdateSet.mockReset();
+		mockState.txUpdateSet.mockReturnValue({ where: mockState.txUpdateWhere });
+		mockState.txUpdateWhere.mockReset();
+		mockState.txUpdateWhere.mockResolvedValue(undefined);
 		mockState.db.transaction.mockReset();
 		mockState.db.transaction.mockImplementation(async (callback) =>
 			callback({
@@ -127,6 +139,7 @@ describe("work balance helpers", () => {
 				insert: mockState.txInsert,
 				query: mockState.db.query,
 				select: mockState.txSelect,
+				update: mockState.txUpdate,
 			}),
 		);
 		mockState.insertValues.mockReset();
@@ -145,6 +158,8 @@ describe("work balance helpers", () => {
 			startDate: null,
 			user: { createdAt: new Date("2026-05-01T00:00:00.000Z") },
 		});
+		mockState.db.query.employee.findMany.mockReset();
+		mockState.db.query.employee.findMany.mockResolvedValue([]);
 		mockState.db.query.employeeWorkBalance.findFirst.mockReset();
 		mockState.db.query.employeeWorkBalance.findFirst.mockResolvedValue({
 			id: "balance-1",
@@ -206,10 +221,16 @@ describe("work balance helpers", () => {
 		expect(getWorkBalanceStatus(-1)).toBe("negative");
 	});
 
-	it("uses the last completed UTC date as the batch cutoff", () => {
+	it("uses the last completed UTC date as the default batch cutoff", () => {
 		expect(getWorkBalanceBatchCutoffDate(new Date("2026-05-22T23:30:00.000-05:00"))).toBe(
 			"2026-05-22",
 		);
+	});
+
+	it("uses the last completed employee-local date as the batch cutoff", () => {
+		expect(
+			getWorkBalanceBatchCutoffDate(new Date("2026-05-02T02:00:00.000Z"), "America/New_York"),
+		).toBe("2026-04-30");
 	});
 
 	it("excludes the current UTC day from all-time balance computation", async () => {
@@ -477,6 +498,58 @@ describe("work balance helpers", () => {
 		});
 	});
 
+	it("resets every cached balance when an organization timezone changes", async () => {
+		const requestedAt = new Date("2026-05-22T12:00:00.000Z");
+		mockState.db.query.employee.findMany.mockResolvedValue([
+			{ id: "employee-1", organizationId: "org-1" },
+			{ id: "employee-2", organizationId: "org-1" },
+		]);
+		vi.useFakeTimers();
+		vi.setSystemTime(requestedAt);
+
+		try {
+			await requestOrganizationWorkBalanceFullRebuild({ organizationId: "org-1" });
+		} finally {
+			vi.useRealTimers();
+		}
+
+		expect(mockState.db.query.employee.findMany).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: { eq: [employee.organizationId, "org-1"] },
+				columns: { id: true, organizationId: true },
+				orderBy: expect.any(Function),
+			}),
+		);
+		expect(mockState.txExecute).toHaveBeenCalledTimes(2);
+		expect(mockState.txDelete).toHaveBeenCalledTimes(2);
+		expect(mockState.txInsert).toHaveBeenCalledTimes(2);
+		expect(mockState.txInsertValues).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				employeeId: "employee-2",
+				organizationId: "org-1",
+				computedFromDate: "0001-01-01",
+				computedThroughDate: "0001-01-01",
+				refreshRequestedAt: requestedAt,
+			}),
+		);
+	});
+
+	it("requests rebuilds for every employee profile linked to a user", async () => {
+		mockState.db.query.employee.findMany.mockResolvedValue([
+			{ id: "employee-1", organizationId: "org-1" },
+			{ id: "employee-2", organizationId: "org-2" },
+		]);
+
+		await requestUserWorkBalanceFullRebuild({ userId: "user-1" });
+
+		expect(mockState.db.query.employee.findMany).toHaveBeenCalledWith({
+			where: { eq: [employee.userId, "user-1"] },
+			columns: { id: true, organizationId: true },
+		});
+		expect(mockState.db.transaction).toHaveBeenCalledTimes(1);
+		expect(mockState.txExecute).toHaveBeenCalledTimes(2);
+	});
+
 	it("preserves dirty state when a newer refresh request arrives during computation", async () => {
 		const values = buildWorkBalanceValues({
 			employeeId: "employee-1",
@@ -678,6 +751,7 @@ describe("work balance helpers", () => {
 	});
 
 	it("includes dirty metadata in employees selected for work balance refresh", async () => {
+		const now = new Date("2026-05-22T12:00:00.000Z");
 		const rows = [
 			{
 				id: "employee-1",
@@ -695,9 +769,7 @@ describe("work balance helpers", () => {
 		mockState.selectOrderBy.mockReturnValueOnce({ limit: mockState.selectLimit });
 		mockState.selectLimit.mockResolvedValueOnce(rows);
 
-		await expect(
-			listEmployeesForWorkBalanceBatch(10, new Date("2026-05-22T12:00:00.000Z")),
-		).resolves.toBe(rows);
+		await expect(listEmployeesForWorkBalanceBatch(10, now)).resolves.toBe(rows);
 
 		expect(mockState.db.select).toHaveBeenCalledWith({
 			id: employee.id,
@@ -707,10 +779,20 @@ describe("work balance helpers", () => {
 			dirtyFromDate: employeeWorkBalance.dirtyFromDate,
 			refreshRequestedAt: employeeWorkBalance.refreshRequestedAt,
 		});
+		expect(lt).toHaveBeenCalledWith(
+			employeeWorkBalance.computedThroughDate,
+			expect.objectContaining({ values: expect.arrayContaining([now]) }),
+		);
 	});
 
 	it("refreshes old dirty months rebuilds years and upserts read model from closed plus hot totals", async () => {
 		const now = new Date("2026-05-22T12:00:00.000Z");
+		mockState.db.query.employee.findFirst.mockResolvedValue({
+			id: "employee-1",
+			startDate: null,
+			userSettings: { timezone: "America/New_York" },
+			organization: { timezone: "UTC" },
+		});
 		mockState.computeEmployeePeriodBalance
 			.mockResolvedValueOnce({
 				employeeId: "employee-1",
@@ -759,6 +841,7 @@ describe("work balance helpers", () => {
 			periodStart: "2026-02-01",
 			periodEnd: "2026-02-28",
 			calculationStartDate: null,
+			timezone: "America/New_York",
 			isClosed: true,
 			now,
 		});
@@ -770,6 +853,7 @@ describe("work balance helpers", () => {
 			periodStart: "2026-03-01",
 			periodEnd: "2026-05-21",
 			calculationStartDate: null,
+			timezone: "America/New_York",
 			isClosed: false,
 			now,
 		});
@@ -806,6 +890,94 @@ describe("work balance helpers", () => {
 		expect(eq).toHaveBeenCalledWith(employeeWorkBalancePeriod.employeeId, "employee-1");
 		expect(eq).toHaveBeenCalledWith(employeeWorkBalancePeriod.periodType, "month");
 		expect(eq).toHaveBeenCalledWith(employeeWorkBalancePeriod.isClosed, true);
+	});
+
+	it("rebuilds the prior month when a UTC dirty date may belong to the prior local day", async () => {
+		const now = new Date("2026-07-10T12:00:00.000Z");
+		mockState.db.query.employee.findFirst.mockResolvedValue({
+			id: "employee-1",
+			startDate: null,
+			userSettings: { timezone: "America/New_York" },
+			organization: { timezone: "UTC" },
+		});
+		mockState.computeEmployeePeriodBalance.mockResolvedValue({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			periodType: "month",
+			periodStart: "2026-04-01",
+			periodEnd: "2026-04-30",
+			actualMinutes: 60,
+			requiredMinutes: 0,
+			balanceMinutes: 60,
+			computedAt: now,
+			isClosed: true,
+		});
+		mockState.selectFrom.mockReturnValue({ where: mockState.selectWhere });
+		mockState.selectWhere.mockResolvedValue([
+			{ actualMinutes: 0, requiredMinutes: 0, firstPeriodStart: null },
+		]);
+
+		await refreshEmployeeWorkBalanceFromPeriods({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dirtyFromDate: "2026-05-01",
+			now,
+		});
+
+		expect(mockState.computeEmployeePeriodBalance).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({
+				periodStart: "2026-04-01",
+				periodEnd: "2026-04-30",
+				calculationStartDate: null,
+				timezone: "America/New_York",
+				isClosed: true,
+			}),
+		);
+	});
+
+	it("derives full rebuild start dates in the employee timezone", async () => {
+		const now = new Date("2026-05-22T12:00:00.000Z");
+		mockState.db.query.employee.findFirst.mockResolvedValue({
+			id: "employee-1",
+			startDate: null,
+			userSettings: { timezone: "America/New_York" },
+			organization: { timezone: "UTC" },
+		});
+		mockState.computeEmployeePeriodBalance.mockResolvedValue({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			periodType: "month",
+			periodStart: "2026-02-01",
+			periodEnd: "2026-02-28",
+			actualMinutes: 60,
+			requiredMinutes: 0,
+			balanceMinutes: 60,
+			computedAt: now,
+			isClosed: true,
+		});
+		mockState.selectFrom.mockReturnValue({ where: mockState.selectWhere });
+		mockState.selectWhere
+			.mockResolvedValueOnce([{ value: new Date("2026-03-01T02:00:00.000Z") }])
+			.mockResolvedValueOnce([{ actualMinutes: 0, requiredMinutes: 0, firstPeriodStart: null }]);
+
+		await refreshEmployeeWorkBalanceFromPeriods({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			forceFullRebuild: true,
+			now,
+		});
+
+		expect(mockState.computeEmployeePeriodBalance).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({
+				periodStart: "2026-02-01",
+				periodEnd: "2026-02-28",
+				calculationStartDate: "2026-02-28",
+				timezone: "America/New_York",
+				isClosed: true,
+			}),
+		);
 	});
 
 	it("uses the first relevant date for force full rebuilds with null dirty date", async () => {

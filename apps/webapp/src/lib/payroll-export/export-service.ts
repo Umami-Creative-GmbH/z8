@@ -8,6 +8,7 @@ import { DateTime } from "luxon";
 import { db, payrollExportJob, payrollExportSyncRecord } from "@/db";
 import { createLogger } from "@/lib/logger";
 import { getPresignedUrl, uploadExport } from "@/lib/storage/export-s3-client";
+import { parsePayrollLogicalDate, serializePayrollLogicalDate } from "./calendar-boundaries";
 import { personioConnector } from "./connectors/personio-connector";
 import { PayrollConnectorRegistry } from "./connectors/registry";
 import { successFactorsConnector } from "./connectors/successfactors-connector";
@@ -147,8 +148,8 @@ export async function createExportJob(params: {
 	// Serialize filters for storage
 	const serializedFilters: SerializedPayrollExportFilters = {
 		dateRange: {
-			start: params.filters.dateRange.start.toISO()!,
-			end: params.filters.dateRange.end.toISO()!,
+			start: serializePayrollLogicalDate(params.filters.dateRange.start),
+			end: serializePayrollLogicalDate(params.filters.dateRange.end),
 		},
 		employeeIds: params.filters.employeeIds,
 		teamIds: params.filters.teamIds,
@@ -219,8 +220,8 @@ export async function processExportJob(jobId: string): Promise<{
 		// Parse filters
 		const filters: PayrollExportFilters = {
 			dateRange: {
-				start: DateTime.fromISO(job.filters.dateRange.start),
-				end: DateTime.fromISO(job.filters.dateRange.end),
+				start: parsePayrollLogicalDate(job.filters.dateRange.start),
+				end: parsePayrollLogicalDate(job.filters.dateRange.end),
 			},
 			employeeIds: job.filters.employeeIds,
 			teamIds: job.filters.teamIds,

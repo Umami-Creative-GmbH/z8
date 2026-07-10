@@ -125,6 +125,7 @@ describe("work balance period aggregation", () => {
 			organizationId: "org-1",
 			startDate: new Date("2026-05-01T00:00:00.000Z"),
 			endDate: new Date("2026-05-31T23:59:59.999Z"),
+			timezone: "UTC",
 		});
 		expect(eq).toHaveBeenCalledWith(workPeriod.employeeId, "employee-1");
 		expect(eq).toHaveBeenCalledWith(workPeriod.organizationId, "org-1");
@@ -132,6 +133,32 @@ describe("work balance period aggregation", () => {
 		expect(isNotNull).toHaveBeenCalledWith(workPeriod.durationMinutes);
 		expect(gte).toHaveBeenCalledWith(workPeriod.startTime, new Date("2026-05-01T00:00:00.000Z"));
 		expect(lte).toHaveBeenCalledWith(workPeriod.startTime, new Date("2026-05-31T23:59:59.999Z"));
+	});
+
+	it("uses employee-local calendar boundaries for period aggregation", async () => {
+		await Reflect.apply(computeEmployeePeriodBalance, null, [
+			{
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				periodType: "month",
+				periodStart: "2026-05-01",
+				periodEnd: "2026-05-31",
+				calculationStartDate: "2026-05-10",
+				timezone: "America/New_York",
+				isClosed: true,
+				now: new Date("2026-06-01T08:00:00.000Z"),
+			},
+		]);
+
+		expect(gte).toHaveBeenCalledWith(workPeriod.startTime, new Date("2026-05-10T04:00:00.000Z"));
+		expect(lte).toHaveBeenCalledWith(workPeriod.startTime, new Date("2026-06-01T03:59:59.999Z"));
+		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			startDate: new Date("2026-05-10T04:00:00.000Z"),
+			endDate: new Date("2026-06-01T03:59:59.999Z"),
+			timezone: "America/New_York",
+		});
 	});
 
 	it("clips period source queries to the employee calculation start date", async () => {
@@ -165,6 +192,7 @@ describe("work balance period aggregation", () => {
 			organizationId: "org-1",
 			startDate: new Date("2026-05-10T00:00:00.000Z"),
 			endDate: new Date("2026-05-31T23:59:59.999Z"),
+			timezone: "UTC",
 		});
 	});
 
