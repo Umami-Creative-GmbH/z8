@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
+import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import {
 	computeEmployeePeriodBalance,
 	rebuildEmployeeYearBalanceFromMonths,
@@ -87,8 +88,12 @@ export function buildEmptyWorkBalanceValues(input: {
 	});
 }
 
-export function getWorkBalanceBatchCutoffDate(now = new Date()): string {
-	return DateTime.fromJSDate(now, { zone: "utc" }).startOf("day").minus({ days: 1 }).toISODate()!;
+export function getWorkBalanceBatchCutoffDate(now = new Date(), timezone = "UTC"): string {
+	return DateTime.fromJSDate(now, { zone: "utc" })
+		.setZone(timezone)
+		.startOf("day")
+		.minus({ days: 1 })
+		.toISODate()!;
 }
 
 function toUtcIsoDate(value: Date | string | null | undefined) {
@@ -153,14 +158,18 @@ async function getFirstRelevantDate(
 		organizationId: string;
 	},
 	dbClient: WorkBalanceDbClient = db,
+	knownEmployee?: { id: string; startDate: Date | string | null },
+	timezone = "UTC",
 ): Promise<string | null> {
-	const scopedEmployee = await dbClient.query.employee.findFirst({
-		where: and(
-			eq(employee.id, input.employeeId),
-			eq(employee.organizationId, input.organizationId),
-		),
-		columns: { id: true, startDate: true },
-	});
+	const scopedEmployee =
+		knownEmployee ??
+		(await dbClient.query.employee.findFirst({
+			where: and(
+				eq(employee.id, input.employeeId),
+				eq(employee.organizationId, input.organizationId),
+			),
+			columns: { id: true, startDate: true },
+		}));
 	if (!scopedEmployee) return null;
 
 	const employeeStartDate = toUtcIsoDate(scopedEmployee.startDate);
@@ -179,29 +188,10 @@ async function getFirstRelevantDate(
 		);
 
 	const workDate = firstWorkPeriod?.value
-		? DateTime.fromJSDate(firstWorkPeriod.value, { zone: "utc" }).toISODate()
+		? DateTime.fromJSDate(firstWorkPeriod.value, { zone: "utc" }).setZone(timezone).toISODate()
 		: null;
 
 	return workDate;
-}
-
-async function getEmployeeStartDate(
-	input: {
-		employeeId: string;
-		organizationId: string;
-	},
-	dbClient: WorkBalanceDbClient = db,
-): Promise<string | null> {
-	const scopedEmployee = await dbClient.query.employee.findFirst({
-		where: and(
-			eq(employee.id, input.employeeId),
-			eq(employee.organizationId, input.organizationId),
-		),
-		columns: { id: true, startDate: true },
-	});
-	if (!scopedEmployee) return null;
-
-	return toUtcIsoDate(scopedEmployee.startDate);
 }
 
 async function getActualMinutes(input: {
@@ -337,6 +327,24 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 	dbClient: WorkBalanceDbClient,
 ) {
 	const now = input.now ?? new Date();
+	const scopedEmployee = await dbClient.query.employee.findFirst({
+		where: and(
+			eq(employee.id, input.employeeId),
+			eq(employee.organizationId, input.organizationId),
+		),
+		columns: { id: true, startDate: true },
+		with: {
+			userSettings: { columns: { timezone: true } },
+			organization: { columns: { timezone: true } },
+		},
+	});
+	if (!scopedEmployee) return { updated: false };
+
+	const timezone = resolveEffectiveTimezone(
+		scopedEmployee.userSettings?.timezone,
+		scopedEmployee.organization?.timezone,
+	);
+	const timezoneInput = timezone === "UTC" ? {} : { timezone };
 	const currentBalance = await dbClient.query.employeeWorkBalance.findFirst({
 		where: and(
 			eq(employeeWorkBalance.employeeId, input.employeeId),
@@ -354,13 +362,13 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 			refreshRequestedAt: currentBalance.refreshRequestedAt,
 		});
 	const hotWindow = {
-		...getHotWindowRange(now),
-		endDate: getWorkBalanceBatchCutoffDate(now),
+		...getHotWindowRange(now, timezone),
+		endDate: getWorkBalanceBatchCutoffDate(now, timezone),
 	};
 	const fullRebuildStartDate = forceFullRebuild
-		? await getFirstRelevantDate(input, dbClient)
+		? await getFirstRelevantDate(input, dbClient, scopedEmployee, timezone)
 		: null;
-	const employeeStartDate = forceFullRebuild ? null : await getEmployeeStartDate(input, dbClient);
+	const employeeStartDate = forceFullRebuild ? null : toUtcIsoDate(scopedEmployee.startDate);
 	const calculationStartDate = employeeStartDate ?? fullRebuildStartDate;
 	if (calculationStartDate && calculationStartDate > hotWindow.endDate) {
 		await dbClient
@@ -385,7 +393,11 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 		);
 		return { updated: true };
 	}
-	const requestedStartDate = fullRebuildStartDate ?? input.dirtyFromDate ?? hotWindow.startDate;
+	const conservativeDirtyFromDate = input.dirtyFromDate
+		? DateTime.fromISO(input.dirtyFromDate, { zone: "utc" }).minus({ days: 1 }).toISODate()
+		: null;
+	const requestedStartDate =
+		fullRebuildStartDate ?? conservativeDirtyFromDate ?? hotWindow.startDate;
 	const affectedStartDate = calculationStartDate
 		? maxIsoDate(requestedStartDate, calculationStartDate)
 		: requestedStartDate;
@@ -405,6 +417,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 					periodStart: month.periodStart,
 					periodEnd: month.periodEnd,
 					calculationStartDate,
+					...timezoneInput,
 					isClosed: true,
 					now,
 				});
@@ -436,6 +449,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 			periodStart: hotWindow.startDate,
 			periodEnd: hotWindow.endDate,
 			calculationStartDate,
+			...timezoneInput,
 			isClosed: false,
 			now,
 		}),
@@ -558,12 +572,15 @@ export async function markEmployeeWorkBalanceFailed(input: {
 		);
 }
 
-export async function requestEmployeeWorkBalanceFullRebuild(input: {
-	employeeId: string;
-	organizationId: string;
-}) {
-	await withEmployeeWorkBalanceLock(input, async (tx) => {
-		const requestedAt = new Date();
+export async function requestEmployeeWorkBalanceFullRebuild(
+	input: {
+		employeeId: string;
+		organizationId: string;
+	},
+	options?: { dbClient?: WorkBalanceDbClient; requestedAt?: Date },
+) {
+	const requestedAt = options?.requestedAt ?? new Date();
+	const resetBalance = async (tx: WorkBalanceDbClient) => {
 		const markerValues = {
 			employeeId: input.employeeId,
 			organizationId: input.organizationId,
@@ -608,7 +625,79 @@ export async function requestEmployeeWorkBalanceFullRebuild(input: {
 					updatedAt: markerValues.updatedAt,
 				},
 			});
-	});
+	};
+
+	if (options?.dbClient) {
+		const lockKey = `work-balance:${input.organizationId}:${input.employeeId}`;
+		await options.dbClient.execute(
+			sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
+		);
+		await resetBalance(options.dbClient);
+		return;
+	}
+
+	await withEmployeeWorkBalanceLock(input, resetBalance);
+}
+
+export async function requestOrganizationWorkBalanceFullRebuild(
+	input: { organizationId: string },
+	options?: { dbClient?: WorkBalanceDbClient; requestedAt?: Date },
+) {
+	const requestedAt = options?.requestedAt ?? new Date();
+	const resetBalances = async (dbClient: WorkBalanceDbClient) => {
+		const organizationEmployees = await dbClient.query.employee.findMany({
+			where: eq(employee.organizationId, input.organizationId),
+			columns: { id: true, organizationId: true },
+			orderBy: (employeeRow, { asc }) => [asc(employeeRow.id)],
+		});
+
+		for (const organizationEmployee of organizationEmployees) {
+			await requestEmployeeWorkBalanceFullRebuild(
+				{
+					employeeId: organizationEmployee.id,
+					organizationId: organizationEmployee.organizationId,
+				},
+				{ dbClient, requestedAt },
+			);
+		}
+	};
+
+	if (options?.dbClient) {
+		await resetBalances(options.dbClient);
+		return;
+	}
+
+	await db.transaction((tx) => resetBalances(tx as WorkBalanceDbClient));
+}
+
+export async function requestUserWorkBalanceFullRebuild(
+	input: { userId: string },
+	options?: { dbClient?: WorkBalanceDbClient; requestedAt?: Date },
+) {
+	const requestedAt = options?.requestedAt ?? new Date();
+	const resetBalances = async (dbClient: WorkBalanceDbClient) => {
+		const linkedEmployees = await dbClient.query.employee.findMany({
+			where: eq(employee.userId, input.userId),
+			columns: { id: true, organizationId: true },
+		});
+
+		for (const linkedEmployee of linkedEmployees) {
+			await requestEmployeeWorkBalanceFullRebuild(
+				{
+					employeeId: linkedEmployee.id,
+					organizationId: linkedEmployee.organizationId,
+				},
+				{ dbClient, requestedAt },
+			);
+		}
+	};
+
+	if (options?.dbClient) {
+		await resetBalances(options.dbClient);
+		return;
+	}
+
+	await db.transaction((tx) => resetBalances(tx as WorkBalanceDbClient));
 }
 
 export async function deleteEmployeeWorkBalance(input: {
@@ -626,7 +715,31 @@ export async function deleteEmployeeWorkBalance(input: {
 }
 
 export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new Date()) {
-	const todayDate = getWorkBalanceBatchCutoffDate(now);
+	const employeeLocalCutoffDate = sql<string>`(
+		(
+			${now}::timestamptz AT TIME ZONE COALESCE(
+				(
+					SELECT NULLIF("work_balance_user_settings"."timezone", 'UTC')
+					FROM "user_settings" AS "work_balance_user_settings"
+					WHERE "work_balance_user_settings"."user_id" = ${employee.userId}
+						AND EXISTS (
+							SELECT 1 FROM pg_timezone_names
+							WHERE pg_timezone_names.name = "work_balance_user_settings"."timezone"
+						)
+				),
+				(
+					SELECT NULLIF("work_balance_organization"."timezone", 'UTC')
+					FROM "organization" AS "work_balance_organization"
+					WHERE "work_balance_organization"."id" = ${employee.organizationId}
+						AND EXISTS (
+							SELECT 1 FROM pg_timezone_names
+							WHERE pg_timezone_names.name = "work_balance_organization"."timezone"
+						)
+				),
+				'UTC'
+			)
+		)::date - 1
+	)`;
 
 	return db
 		.select({
@@ -652,7 +765,7 @@ export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new D
 				or(
 					isNull(employeeWorkBalance.id),
 					eq(employeeWorkBalance.isDirty, true),
-					lt(employeeWorkBalance.computedThroughDate, todayDate),
+					lt(employeeWorkBalance.computedThroughDate, employeeLocalCutoffDate),
 				),
 			),
 		)

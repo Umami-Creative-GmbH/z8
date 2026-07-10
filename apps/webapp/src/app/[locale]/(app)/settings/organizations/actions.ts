@@ -35,6 +35,7 @@ import {
 	updateMemberRoleSchema,
 	updateOrganizationSchema,
 } from "@/lib/validations/invitation";
+import { requestOrganizationWorkBalanceFullRebuild } from "@/lib/work-balance/service";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import { isOrganizationFeature } from "./organization-features";
 
@@ -325,7 +326,6 @@ export async function sendInvitation(
 						},
 					}),
 				);
-
 				logger.info(
 					{
 						organizationId: data.organizationId,
@@ -608,7 +608,6 @@ export async function cancelInvitation(invitationId: string): Promise<ServerActi
 						},
 					}),
 				);
-
 				logger.info(
 					{
 						invitationId,
@@ -1325,10 +1324,16 @@ export async function updateOrganizationTimezone(
 				yield* _(
 					Effect.tryPromise({
 						try: async () => {
-							await db
-								.update(authSchema.organization)
-								.set({ timezone })
-								.where(eq(authSchema.organization.id, organizationId));
+							await db.transaction(async (tx) => {
+								await tx
+									.update(authSchema.organization)
+									.set({ timezone })
+									.where(eq(authSchema.organization.id, organizationId));
+								await requestOrganizationWorkBalanceFullRebuild(
+									{ organizationId },
+									{ dbClient: tx },
+								);
+							});
 						},
 						catch: (error) => {
 							return new ValidationError({
@@ -1982,27 +1987,22 @@ async function sendOrganizationDeletionNotifications(
 	deletedByName: string,
 	deletionDate: Date,
 ): Promise<void> {
-	const [
-		{ render },
-		{ OrganizationDeletion },
-		{ sendEmail },
-		adminMembers,
-		appUrl,
-	] = await Promise.all([
-		import("react-email"),
-		import("@/lib/email/templates/organization-deletion"),
-		import("@/lib/email/email-service"),
-		db.query.member.findMany({
-			where: and(
-				eq(authSchema.member.organizationId, organizationId),
-				// Include both admin and owner roles
-			),
-			with: {
-				user: true,
-			},
-		}),
-		getOrganizationBaseUrl(organizationId),
-	]);
+	const [{ render }, { OrganizationDeletion }, { sendEmail }, adminMembers, appUrl] =
+		await Promise.all([
+			import("react-email"),
+			import("@/lib/email/templates/organization-deletion"),
+			import("@/lib/email/email-service"),
+			db.query.member.findMany({
+				where: and(
+					eq(authSchema.member.organizationId, organizationId),
+					// Include both admin and owner roles
+				),
+				with: {
+					user: true,
+				},
+			}),
+			getOrganizationBaseUrl(organizationId),
+		]);
 
 	// Filter to only admins and owners
 	const typedAdminMembers = adminMembers as unknown as MemberWithUser[];

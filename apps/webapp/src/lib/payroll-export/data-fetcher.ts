@@ -8,6 +8,7 @@ import {
 	absenceCategory,
 	db,
 	employee,
+	organization,
 	payrollExportConfig,
 	type payrollExportFormat,
 	payrollWageTypeMapping,
@@ -17,6 +18,12 @@ import {
 import { timeRecord } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
+import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import {
+	buildEmployeePayrollRange,
+	buildPayrollQueryEnvelope,
+	clipPayrollInterval,
+} from "./calendar-boundaries";
 import type { AbsenceData, PayrollExportFilters, WageTypeMapping, WorkPeriodData } from "./types";
 
 const logger = createLogger("PayrollExportDataFetcher");
@@ -39,8 +46,9 @@ export async function fetchWorkPeriodsForExport(
 		"Fetching work periods for payroll export",
 	);
 
-	const rangeStart = filters.dateRange.start.toUTC();
-	const rangeEnd = filters.dateRange.end.toUTC().endOf("day");
+	const { startDate, endDate } = getLogicalDateRange(filters);
+	const queryEnvelope = buildPayrollQueryEnvelope(startDate, endDate);
+	const organizationTimezone = await getOrganizationTimezone(organizationId);
 
 	// Build where conditions
 	const whereConditions = [
@@ -48,8 +56,8 @@ export async function fetchWorkPeriodsForExport(
 		eq(timeRecord.recordKind, "work"),
 		eq(timeRecord.approvalState, "approved"),
 		isNotNull(timeRecord.endAt),
-		lte(timeRecord.startAt, rangeEnd.toJSDate()),
-		gte(timeRecord.endAt, rangeStart.toJSDate()),
+		lte(timeRecord.startAt, queryEnvelope.end.toJSDate()),
+		gte(timeRecord.endAt, queryEnvelope.start.toJSDate()),
 	];
 
 	// Add employee filter if specified
@@ -74,6 +82,9 @@ export async function fetchWorkPeriodsForExport(
 							lastName: true,
 							email: true,
 						},
+					},
+					userSettings: {
+						columns: { timezone: true },
 					},
 				},
 			},
@@ -128,17 +139,17 @@ export async function fetchWorkPeriodsForExport(
 	logger.info({ count: filteredPeriods.length }, "Fetched work periods for payroll export");
 
 	return filteredPeriods.flatMap((p) => {
-		if (!p.endAt) return [];
+		if (!p.endAt || !p.employee) return [];
 
 		const startTime = DateTime.fromJSDate(p.startAt, { zone: "utc" });
 		const endTime = DateTime.fromJSDate(p.endAt, { zone: "utc" });
-		const clippedStartTime = DateTime.max(startTime, rangeStart);
-		const clippedEndTime = DateTime.min(endTime, rangeEnd);
-		const durationMinutes = Math.max(
-			0,
-			Math.round(clippedEndTime.diff(clippedStartTime, "minutes").minutes),
+		const timezone = resolveEffectiveTimezone(
+			p.employee.userSettings?.timezone,
+			organizationTimezone,
 		);
-		if (durationMinutes <= 0) return [];
+		const employeeRange = buildEmployeePayrollRange(startDate, endDate, timezone);
+		const clippedInterval = clipPayrollInterval(startTime, endTime, employeeRange);
+		if (!clippedInterval) return [];
 
 		return [
 			{
@@ -148,9 +159,9 @@ export async function fetchWorkPeriodsForExport(
 				email: p.employee?.user?.email || null,
 				firstName: p.employee?.user?.firstName || null,
 				lastName: p.employee?.user?.lastName || null,
-				startTime: clippedStartTime,
-				endTime: clippedEndTime,
-				durationMinutes,
+				startTime: clippedInterval.start,
+				endTime: clippedInterval.end,
+				durationMinutes: clippedInterval.durationMinutes,
 				workCategoryId: p.work?.workCategoryId || null,
 				workCategoryName: p.work?.workCategory?.name || null,
 				workCategoryFactor: p.work?.workCategory?.factor || null,
@@ -181,6 +192,9 @@ export async function fetchAbsencesForExport(
 	}
 
 	await assertCanonicalCutoverReady(organizationId);
+	const { startDate, endDate } = getLogicalDateRange(filters);
+	const logicalStart = DateTime.fromISO(startDate, { zone: "utc" }).startOf("day");
+	const logicalEnd = DateTime.fromISO(endDate, { zone: "utc" }).endOf("day");
 
 	logger.info(
 		{ organizationId, filters: serializeFilters(filters) },
@@ -221,11 +235,8 @@ export async function fetchAbsencesForExport(
 			eq(timeRecord.recordKind, "absence"),
 			eq(timeRecord.approvalState, "approved"),
 			inArray(timeRecord.employeeId, employeeIds),
-			lte(timeRecord.startAt, filters.dateRange.end.endOf("day").toJSDate()),
-			or(
-				gte(timeRecord.endAt, filters.dateRange.start.startOf("day").toJSDate()),
-				isNull(timeRecord.endAt),
-			),
+			lte(timeRecord.startAt, logicalEnd.toJSDate()),
+			or(gte(timeRecord.endAt, logicalStart.toJSDate()), isNull(timeRecord.endAt)),
 		),
 		with: {
 			employee: {
@@ -451,16 +462,17 @@ export async function countWorkPeriods(
 
 	await assertCanonicalCutoverReady(organizationId);
 
-	const rangeStart = filters.dateRange.start.toUTC();
-	const rangeEnd = filters.dateRange.end.toUTC().endOf("day");
+	const { startDate, endDate } = getLogicalDateRange(filters);
+	const queryEnvelope = buildPayrollQueryEnvelope(startDate, endDate);
+	const organizationTimezone = await getOrganizationTimezone(organizationId);
 
 	const whereConditions = [
 		eq(timeRecord.organizationId, organizationId),
 		eq(timeRecord.recordKind, "work"),
 		eq(timeRecord.approvalState, "approved"),
 		isNotNull(timeRecord.endAt),
-		lte(timeRecord.startAt, rangeEnd.toJSDate()),
-		gte(timeRecord.endAt, rangeStart.toJSDate()),
+		lte(timeRecord.startAt, queryEnvelope.end.toJSDate()),
+		gte(timeRecord.endAt, queryEnvelope.start.toJSDate()),
 	];
 
 	if (filters.employeeIds && filters.employeeIds.length > 0) {
@@ -469,11 +481,14 @@ export async function countWorkPeriods(
 
 	const result = await db.query.timeRecord.findMany({
 		where: and(...whereConditions),
-		columns: { id: true },
+		columns: { id: true, employeeId: true, startAt: true, endAt: true },
 		with: {
 			employee: {
 				columns: {
 					teamId: true,
+				},
+				with: {
+					userSettings: { columns: { timezone: true } },
 				},
 			},
 			allocations: {
@@ -502,6 +517,22 @@ export async function countWorkPeriods(
 		);
 	}
 
+	filteredRecords = filteredRecords.filter((record) => {
+		if (!record.endAt || !record.employee) return false;
+		const timezone = resolveEffectiveTimezone(
+			record.employee.userSettings?.timezone,
+			organizationTimezone,
+		);
+		const employeeRange = buildEmployeePayrollRange(startDate, endDate, timezone);
+		return Boolean(
+			clipPayrollInterval(
+				DateTime.fromJSDate(record.startAt, { zone: "utc" }),
+				DateTime.fromJSDate(record.endAt, { zone: "utc" }),
+				employeeRange,
+			),
+		);
+	});
+
 	return filteredRecords.length;
 }
 
@@ -522,4 +553,21 @@ function serializeFilters(filters: PayrollExportFilters) {
 
 function hasEmptyEmployeeScope(filters: PayrollExportFilters) {
 	return filters.employeeIds !== undefined && filters.employeeIds.length === 0;
+}
+
+function getLogicalDateRange(filters: PayrollExportFilters) {
+	const startDate = filters.dateRange.start.toISODate();
+	const endDate = filters.dateRange.end.toISODate();
+	if (!startDate || !endDate) {
+		throw new Error("Invalid payroll export date range");
+	}
+	return { startDate, endDate };
+}
+
+async function getOrganizationTimezone(organizationId: string) {
+	const scopedOrganization = await db.query.organization.findFirst({
+		where: eq(organization.id, organizationId),
+		columns: { timezone: true },
+	});
+	return scopedOrganization?.timezone ?? "UTC";
 }

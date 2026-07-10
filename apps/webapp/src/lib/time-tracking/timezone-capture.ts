@@ -4,7 +4,8 @@ export type TimeEntryTimezoneSource =
 	| "browser"
 	| "user_setting"
 	| "manager_target_user_setting"
-	| "backfill";
+	| "backfill"
+	| "historical_inference";
 
 export interface TimeEntryTimezoneCapture {
 	utcOffsetMinutes: number;
@@ -69,7 +70,7 @@ export function resolveTimeEntryTimezoneCapture({
 	browserTimezone?: string | null;
 	fallbackTimezone: string;
 	browserSource: Extract<TimeEntryTimezoneSource, "browser">;
-	fallbackSource: Exclude<TimeEntryTimezoneSource, "browser" | "backfill">;
+	fallbackSource: Exclude<TimeEntryTimezoneSource, "browser" | "backfill" | "historical_inference">;
 }): TimeEntryTimezoneCapture {
 	const timezone = isValidIanaTimezone(browserTimezone)
 		? browserTimezone
@@ -92,7 +93,7 @@ export function resolveFallbackTimezoneCapture({
 }: {
 	timestamp: Date;
 	timezone: string;
-	timezoneSource: Exclude<TimeEntryTimezoneSource, "browser">;
+	timezoneSource: Exclude<TimeEntryTimezoneSource, "browser" | "historical_inference">;
 }): TimeEntryTimezoneCapture {
 	const validTimezone = isValidIanaTimezone(timezone) ? timezone : "UTC";
 
