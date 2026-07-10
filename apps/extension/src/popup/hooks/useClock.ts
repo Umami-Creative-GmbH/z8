@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { DateTime } from "luxon";
 import { api, NetworkError, AuthError } from "@/lib/api";
+import { createClockAction, type ClockAction } from "@/lib/clock-action";
 import { storage, type LastAction, type QueuedAction } from "@/lib/storage";
 import type { ClockStatus } from "@/types";
 
@@ -110,22 +110,22 @@ export function useClock() {
     setLastActionState(action);
   };
 
-  const queueClockIn = async (timestamp: string) => {
-    const optimisticState = { isClockedIn: true, startTime: timestamp };
-    await storage.addToQueue({ type: "clock_in", timestamp });
+  const queueClockIn = async (action: ClockAction) => {
+    const optimisticState = { isClockedIn: true, startTime: action.timestamp };
+    await storage.addToQueue(action);
     await storage.setOptimisticState(optimisticState);
-    await storeLastAction({ type: "clock_in", timestamp, syncState: "queued" });
+    await storeLastAction({ type: "clock_in", timestamp: action.timestamp, syncState: "queued" });
     queryClient.setQueryData(["clock-status"], optimisticStateToStatus(optimisticState));
-    return { entry: { id: "queued", type: "clock_in" as const, timestamp, employeeId: "" } };
+    return { entry: { id: "queued", type: "clock_in" as const, timestamp: action.timestamp, employeeId: "" } };
   };
 
-  const queueClockOut = async (projectId: string | undefined, timestamp: string) => {
+  const queueClockOut = async (projectId: string | undefined, action: ClockAction) => {
     const optimisticState = { isClockedIn: false, startTime: null };
-    await storage.addToQueue({ type: "clock_out", projectId, timestamp });
+    await storage.addToQueue({ ...action, projectId });
     await storage.setOptimisticState(optimisticState);
-    await storeLastAction({ type: "clock_out", timestamp, syncState: "queued" });
+    await storeLastAction({ type: "clock_out", timestamp: action.timestamp, syncState: "queued" });
     queryClient.setQueryData(["clock-status"], optimisticStateToStatus(optimisticState));
-    return { entry: { id: "queued", type: "clock_out" as const, timestamp, employeeId: "" } };
+    return { entry: { id: "queued", type: "clock_out" as const, timestamp: action.timestamp, employeeId: "" } };
   };
 
   const statusQuery = useQuery({
@@ -170,14 +170,14 @@ export function useClock() {
 
   const clockInMutation = useMutation({
     mutationFn: async () => {
-      const timestamp = DateTime.utc().toISO();
+      const action = createClockAction({ type: "clock_in" });
 
       if (!navigator.onLine) {
-        return queueClockIn(timestamp);
+        return queueClockIn(action);
       }
 
-      const result = await api.clockIn();
-      await storeLastAction({ type: "clock_in", timestamp, syncState: "synced" });
+      const result = await api.clockIn(action);
+      await storeLastAction({ type: "clock_in", timestamp: action.timestamp, syncState: "synced" });
 
       // Show notification
       chrome.runtime.sendMessage({
@@ -197,14 +197,14 @@ export function useClock() {
 
   const clockOutMutation = useMutation({
     mutationFn: async (projectId?: string) => {
-      const timestamp = DateTime.utc().toISO();
+      const action = createClockAction({ type: "clock_out" });
 
       if (!navigator.onLine) {
-        return queueClockOut(projectId, timestamp);
+        return queueClockOut(projectId, action);
       }
 
-      const result = await api.clockOut(projectId);
-      await storeLastAction({ type: "clock_out", timestamp, syncState: "synced" });
+      const result = await api.clockOut(action, projectId);
+      await storeLastAction({ type: "clock_out", timestamp: action.timestamp, syncState: "synced" });
 
       // Show notification
       chrome.runtime.sendMessage({
