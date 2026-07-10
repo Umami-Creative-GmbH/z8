@@ -2608,7 +2608,7 @@ async function checkProjectBudgetAfterClockOut(
 ): Promise<void> {
 	// Get project details
 	const proj = await db.query.project.findFirst({
-		where: eq(project.id, projectId),
+		where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
 		columns: {
 			id: true,
 			name: true,
@@ -2627,7 +2627,7 @@ async function checkProjectBudgetAfterClockOut(
 	}
 
 	// Get total hours booked to this project
-	const totalHours = await getProjectTotalHours(projectId);
+	const totalHours = await getProjectTotalHours(projectId, organizationId);
 
 	// Trigger budget warning check
 	await checkProjectBudgetWarnings({

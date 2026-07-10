@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
+import * as authModule from "./auth";
 import { makeEmailLookupCaseInsensitiveAdapter, resolveInvitationTargetTeamId } from "./auth";
 
 describe("resolveInvitationTargetTeamId", () => {
@@ -94,6 +95,65 @@ describe("billing seat sync hooks", () => {
 			source.indexOf("// Create employee record when user is added to organization"),
 		);
 		expect(acceptInvitationHook).toContain("invitationId: invitation.id");
+	});
+});
+
+describe("organization member removal", () => {
+	it("revokes organization-scoped employee and session access", async () => {
+		const revokeRemovedMemberAccess = (
+			authModule as typeof authModule & {
+				revokeRemovedMemberAccess?: (
+					userId: string,
+					organizationId: string,
+					dependencies: {
+						db: unknown;
+						secondaryStorage: { delete: (key: string) => Promise<void> };
+					},
+				) => Promise<void>;
+			}
+		).revokeRemovedMemberAccess;
+		expect(revokeRemovedMemberAccess).toBeTypeOf("function");
+
+		const sessionRows = [{ token: "session-1" }, { token: "session-2" }];
+		const selectBuilder = {
+			from: vi.fn(),
+			where: vi.fn(),
+		};
+		selectBuilder.from.mockReturnValue(selectBuilder);
+		selectBuilder.where.mockResolvedValue(sessionRows);
+		const updateWhere = vi.fn().mockResolvedValue(undefined);
+		const updateSet = vi.fn().mockReturnValue({ where: updateWhere });
+		const deleteWhere = vi.fn().mockResolvedValue(undefined);
+		const db = {
+			select: vi.fn(() => selectBuilder),
+			update: vi.fn(() => ({ set: updateSet })),
+			delete: vi.fn(() => ({ where: deleteWhere })),
+		};
+		const deleteStorage = vi.fn().mockResolvedValue(undefined);
+
+		await revokeRemovedMemberAccess?.("user-1", "org-1", {
+			db,
+			secondaryStorage: { delete: deleteStorage },
+		});
+
+		expect(updateSet).toHaveBeenCalledWith({ isActive: false });
+		expect(deleteWhere).toHaveBeenCalledOnce();
+		expect(deleteStorage).toHaveBeenCalledWith("session-1");
+		expect(deleteStorage).toHaveBeenCalledWith("session-2");
+	});
+
+	it("invokes access revocation from the removal hook and disables cookie-only sessions", () => {
+		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
+		const redisSource = readFileSync(join(process.cwd(), "src/lib/redis.ts"), "utf8");
+		const removalHook = source.slice(
+			source.indexOf("afterRemoveMember"),
+			source.indexOf("},", source.indexOf("afterRemoveMember")) + 2,
+		);
+
+		expect(removalHook).toContain("revokeRemovedMemberAccess");
+		expect(source).toContain("deleteOrThrow");
+		expect(redisSource).toContain("deleteOrThrow");
+		expect(source).not.toContain("cookieCache: {");
 	});
 });
 

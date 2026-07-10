@@ -82,20 +82,34 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
 	// Fetch employee record for the active organization ONLY
 	// SECURITY: We intentionally do NOT fall back to any employee record
 	// if no activeOrganizationId is set. This ensures org-scoped data isolation.
+	let memberRecord = null;
 	let employeeRecord = null;
 
 	if (activeOrganizationId) {
-		[employeeRecord] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrganizationId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
+		[[memberRecord], [employeeRecord]] = await Promise.all([
+			db
+				.select({ id: member.id })
+				.from(member)
+				.where(
+					and(
+						eq(member.userId, session.user.id),
+						eq(member.organizationId, activeOrganizationId),
+						eq(member.status, "approved"),
+					),
+				)
+				.limit(1),
+			db
+				.select()
+				.from(employee)
+				.where(
+					and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, activeOrganizationId),
+						eq(employee.isActive, true),
+					),
+				)
+				.limit(1),
+		]);
 	}
 	// No fallback - if no active org, employee stays null
 
@@ -104,14 +118,15 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
 		session: {
 			activeOrganizationId,
 		},
-		employee: employeeRecord
-			? {
-					id: employeeRecord.id,
-					organizationId: employeeRecord.organizationId,
-					role: employeeRecord.role,
-					teamId: employeeRecord.teamId,
-				}
-			: null,
+		employee:
+			memberRecord && employeeRecord
+				? {
+						id: employeeRecord.id,
+						organizationId: employeeRecord.organizationId,
+						role: employeeRecord.role,
+						teamId: employeeRecord.teamId,
+					}
+				: null,
 	};
 });
 
@@ -437,7 +452,13 @@ export async function verifyOrgMembership(
 			memberRole: member.role,
 		})
 		.from(member)
-		.where(and(eq(member.userId, session.user.id), eq(member.organizationId, requestedOrgId)))
+		.where(
+			and(
+				eq(member.userId, session.user.id),
+				eq(member.organizationId, requestedOrgId),
+				eq(member.status, "approved"),
+			),
+		)
 		.limit(1);
 
 	if (!memberRecord) {
@@ -706,7 +727,13 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 		db
 			.select()
 			.from(member)
-			.where(and(eq(member.userId, userId), eq(member.organizationId, activeOrganizationId)))
+			.where(
+				and(
+					eq(member.userId, userId),
+					eq(member.organizationId, activeOrganizationId),
+					eq(member.status, "approved"),
+				),
+			)
 			.limit(1),
 		// Load employee record
 		db
@@ -722,17 +749,19 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 			.limit(1),
 	]);
 
+	const authorizedEmployeeRecord = memberRecord ? employeeRecord : null;
+
 	// Load permissions if employee exists
 	const permissions: TeamPermissions = {
 		orgWide: null,
 		byTeamId: new Map(),
 	};
 
-	if (employeeRecord) {
+	if (authorizedEmployeeRecord) {
 		const permRecords = await db
 			.select()
 			.from(teamPermissions)
-			.where(eq(teamPermissions.employeeId, employeeRecord.id));
+			.where(eq(teamPermissions.employeeId, authorizedEmployeeRecord.id));
 
 		for (const perm of permRecords) {
 			const flags: PermissionFlags = {
@@ -753,7 +782,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 	}
 
 	let customRoles: CustomRoleInfo[] = [];
-	if (employeeRecord) {
+	if (authorizedEmployeeRecord) {
 		const customRoleRows = await db
 			.select({
 				roleId: customRole.id,
@@ -767,7 +796,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 			.innerJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id))
 			.where(
 				and(
-					eq(employeeCustomRole.employeeId, employeeRecord.id),
+					eq(employeeCustomRole.employeeId, authorizedEmployeeRecord.id),
 					eq(customRole.organizationId, activeOrganizationId),
 					eq(customRole.isActive, true),
 				),
@@ -794,11 +823,14 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 	// Load managed employee IDs
 	let managedEmployeeIds: string[] = [];
 
-	if (employeeRecord && (employeeRecord.role === "manager" || employeeRecord.role === "admin")) {
+	if (
+		authorizedEmployeeRecord &&
+		(authorizedEmployeeRecord.role === "manager" || authorizedEmployeeRecord.role === "admin")
+	) {
 		const managedRecords = await db
 			.select({ employeeId: employeeManagers.employeeId })
 			.from(employeeManagers)
-			.where(eq(employeeManagers.managerId, employeeRecord.id));
+			.where(eq(employeeManagers.managerId, authorizedEmployeeRecord.id));
 
 		managedEmployeeIds = managedRecords.map((r) => r.employeeId);
 	}
@@ -814,12 +846,12 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 					status: "active",
 				}
 			: null,
-		employee: employeeRecord
+		employee: authorizedEmployeeRecord
 			? {
-					id: employeeRecord.id,
-					organizationId: employeeRecord.organizationId,
-					role: employeeRecord.role,
-					teamId: employeeRecord.teamId,
+					id: authorizedEmployeeRecord.id,
+					organizationId: authorizedEmployeeRecord.organizationId,
+					role: authorizedEmployeeRecord.role,
+					teamId: authorizedEmployeeRecord.teamId,
 				}
 			: null,
 		permissions,
@@ -844,7 +876,13 @@ export async function getSettingsAccessInputForUser(
 		db
 			.select({ role: member.role })
 			.from(member)
-			.where(and(eq(member.userId, userId), eq(member.organizationId, activeOrganizationId)))
+			.where(
+				and(
+					eq(member.userId, userId),
+					eq(member.organizationId, activeOrganizationId),
+					eq(member.status, "approved"),
+				),
+			)
 			.limit(1)
 			.then((records) => records[0] ?? null),
 		db
@@ -866,7 +904,7 @@ export async function getSettingsAccessInputForUser(
 		membershipRole: isSettingsAccessMembershipRole(membershipRecord?.role)
 			? membershipRecord.role
 			: null,
-		employeeRole: employeeRecord?.role ?? null,
+		employeeRole: membershipRecord ? (employeeRecord?.role ?? null) : null,
 	};
 }
 
@@ -1012,7 +1050,13 @@ export async function isOrgAdminCasl(organizationId: string): Promise<boolean> {
 		const [memberRecord] = await db
 			.select()
 			.from(member)
-			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
+			.where(
+				and(
+					eq(member.userId, session.user.id),
+					eq(member.organizationId, organizationId),
+					eq(member.status, "approved"),
+				),
+			)
 			.limit(1);
 
 		return memberRecord?.role === "admin" || memberRecord?.role === "owner";

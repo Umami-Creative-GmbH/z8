@@ -419,20 +419,20 @@ export async function getProjectsWithUpcomingDeadlines(): Promise<
 /**
  * Calculate total hours booked to a project
  */
-export async function getProjectTotalHours(projectId: string): Promise<number> {
-	const [schema, drizzle] = await Promise.all([
-		import("@/db/schema"),
-		import("drizzle-orm"),
-	]);
+export async function getProjectTotalHours(
+	projectId: string,
+	organizationId: string,
+): Promise<number> {
+	const [schema, drizzle] = await Promise.all([import("@/db/schema"), import("drizzle-orm")]);
 	const { workPeriod } = schema;
-	const { eq, sql } = drizzle;
+	const { and, eq, sql } = drizzle;
 
 	const result = await db
 		.select({
 			totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
 		})
 		.from(workPeriod)
-		.where(eq(workPeriod.projectId, projectId));
+		.where(and(eq(workPeriod.projectId, projectId), eq(workPeriod.organizationId, organizationId)));
 
 	const totalMinutes = result[0]?.totalMinutes ?? 0;
 	return totalMinutes / 60;

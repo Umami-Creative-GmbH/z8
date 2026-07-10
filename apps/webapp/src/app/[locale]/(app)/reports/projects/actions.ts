@@ -3,14 +3,12 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { headers } from "next/headers";
 import { db } from "@/db";
 import { employee, project, projectManager, workPeriod } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth-helpers";
 import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { buildProjectHealthFields, buildProjectHealthTotals } from "@/lib/reports/project-health";
@@ -52,29 +50,29 @@ export async function getProjectsOverview(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				span.setAttribute("user.id", session.user.id);
-
-				// Get current employee and verify admin/manager role
-				const currentEmployee = yield* _(
-					dbService.query("getEmployeeByUserId", async () => {
-						const emp = await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
-						if (!emp) throw new Error("Employee not found");
-						return emp;
-					}),
-					Effect.mapError(
-						() =>
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
+				const authContext = yield* _(
+					Effect.tryPromise({
+						try: async () => await requireAuth(),
+						catch: () =>
+							new AuthorizationError({
+								message: "Approved organization membership required",
 							}),
-					),
+					}),
 				);
+				const dbService = yield* _(DatabaseService);
+				const organizationId = authContext.session.activeOrganizationId;
+				const currentEmployee = authContext.employee;
+				if (!organizationId || !currentEmployee) {
+					return yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Active organization required",
+							}),
+						),
+					);
+				}
+
+				span.setAttribute("user.id", authContext.user.id);
 
 				const managedProjectRows = yield* _(
 					dbService.query("getManagedProjectIdsForProjectReports", async () => {
@@ -102,8 +100,6 @@ export async function getProjectsOverview(
 
 				span.setAttribute("current_employee.id", currentEmployee.id);
 				span.setAttribute("current_employee.role", currentEmployee.role);
-
-				const organizationId = currentEmployee.organizationId;
 
 				// Get all projects in the organization
 				const projects = yield* _(
@@ -139,73 +135,80 @@ export async function getProjectsOverview(
 
 						return Promise.all(
 							projects.map(async (p): Promise<ProjectSummary> => {
-							// Get total hours and unique employees for this project in the date range
-							const [stats, cumulativeStats] = await Promise.all([
-								dbService.db
-									.select({
-										totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
-										uniqueEmployees: sql<number>`COUNT(DISTINCT ${workPeriod.employeeId})`.mapWith(
-											Number,
+								// Get total hours and unique employees for this project in the date range
+								const [stats, cumulativeStats] = await Promise.all([
+									dbService.db
+										.select({
+											totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+											uniqueEmployees:
+												sql<number>`COUNT(DISTINCT ${workPeriod.employeeId})`.mapWith(Number),
+											workPeriodCount: sql<number>`COUNT(*)`.mapWith(Number),
+										})
+										.from(workPeriod)
+										.where(
+											and(
+												eq(workPeriod.projectId, p.id),
+												eq(workPeriod.organizationId, organizationId),
+												gte(workPeriod.startTime, startDate),
+												lte(workPeriod.startTime, endDate),
+											),
 										),
-										workPeriodCount: sql<number>`COUNT(*)`.mapWith(Number),
-									})
-									.from(workPeriod)
-									.where(
-										and(
-											eq(workPeriod.projectId, p.id),
-											gte(workPeriod.startTime, startDate),
-											lte(workPeriod.startTime, endDate),
+									dbService.db
+										.select({
+											totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+										})
+										.from(workPeriod)
+										.where(
+											and(
+												eq(workPeriod.projectId, p.id),
+												eq(workPeriod.organizationId, organizationId),
+											),
 										),
-									),
-								dbService.db
-									.select({
-										totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
-									})
-									.from(workPeriod)
-									.where(eq(workPeriod.projectId, p.id)),
-							]);
+								]);
 
-							const totalMinutes = Number(stats[0]?.totalMinutes ?? 0);
-							const totalHours = totalMinutes / 60;
-							const cumulativeHours = Number(cumulativeStats[0]?.totalMinutes ?? 0) / 60;
-							const budgetHours = p.budgetHours ? Number(p.budgetHours) : null;
-							const percentBudgetUsed = budgetHours ? (cumulativeHours / budgetHours) * 100 : null;
+								const totalMinutes = Number(stats[0]?.totalMinutes ?? 0);
+								const totalHours = totalMinutes / 60;
+								const cumulativeHours = Number(cumulativeStats[0]?.totalMinutes ?? 0) / 60;
+								const budgetHours = p.budgetHours ? Number(p.budgetHours) : null;
+								const percentBudgetUsed = budgetHours
+									? (cumulativeHours / budgetHours) * 100
+									: null;
 
-							// Calculate days until deadline
-							let daysUntilDeadline: number | null = null;
-							if (p.deadline) {
-								const diffMs = p.deadline.getTime() - now.getTime();
-								daysUntilDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-							}
+								// Calculate days until deadline
+								let daysUntilDeadline: number | null = null;
+								if (p.deadline) {
+									const diffMs = p.deadline.getTime() - now.getTime();
+									daysUntilDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+								}
 
-							const healthFields = buildProjectHealthFields({
-								projectName: p.name,
-								budgetHours,
-								rangeHours: totalHours,
-								cumulativeHours,
-								deadline: p.deadline,
-								now,
-								rangeStart: startDate,
-								rangeEnd: endDate,
-							});
+								const healthFields = buildProjectHealthFields({
+									projectName: p.name,
+									budgetHours,
+									rangeHours: totalHours,
+									cumulativeHours,
+									deadline: p.deadline,
+									now,
+									rangeStart: startDate,
+									rangeEnd: endDate,
+								});
 
-							return {
-								id: p.id,
-								name: p.name,
-								description: p.description,
-								status: p.status,
-								color: p.color,
-								budgetHours,
-								deadline: p.deadline,
-								...healthFields,
-								totalHours,
-								totalMinutes,
-								percentBudgetUsed,
-								daysUntilDeadline,
-								uniqueEmployees: stats[0]?.uniqueEmployees ?? 0,
-								workPeriodCount: stats[0]?.workPeriodCount ?? 0,
-							};
-						}),
+								return {
+									id: p.id,
+									name: p.name,
+									description: p.description,
+									status: p.status,
+									color: p.color,
+									budgetHours,
+									deadline: p.deadline,
+									...healthFields,
+									totalHours,
+									totalMinutes,
+									percentBudgetUsed,
+									daysUntilDeadline,
+									uniqueEmployees: stats[0]?.uniqueEmployees ?? 0,
+									workPeriodCount: stats[0]?.workPeriodCount ?? 0,
+								};
+							}),
 						);
 					}),
 				);
@@ -269,29 +272,29 @@ export async function getProjectDetailedReport(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				span.setAttribute("user.id", session.user.id);
-
-				// Get current employee
-				const currentEmployee = yield* _(
-					dbService.query("getEmployeeByUserId", async () => {
-						const emp = await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
-						if (!emp) throw new Error("Employee not found");
-						return emp;
-					}),
-					Effect.mapError(
-						() =>
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
+				const authContext = yield* _(
+					Effect.tryPromise({
+						try: async () => await requireAuth(),
+						catch: () =>
+							new AuthorizationError({
+								message: "Approved organization membership required",
 							}),
-					),
+					}),
 				);
+				const dbService = yield* _(DatabaseService);
+				const organizationId = authContext.session.activeOrganizationId;
+				const currentEmployee = authContext.employee;
+				if (!organizationId || !currentEmployee) {
+					return yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Active organization required",
+							}),
+						),
+					);
+				}
+
+				span.setAttribute("user.id", authContext.user.id);
 
 				// Check permissions (admin, manager, or project manager)
 				const isProjectManager = yield* _(
@@ -324,10 +327,7 @@ export async function getProjectDetailedReport(
 				const projectData = yield* _(
 					dbService.query("getProject", async () => {
 						const p = await dbService.db.query.project.findFirst({
-							where: and(
-								eq(project.id, projectId),
-								eq(project.organizationId, currentEmployee.organizationId),
-							),
+							where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
 						});
 						if (!p) throw new Error("Project not found");
 						return p;
@@ -347,6 +347,7 @@ export async function getProjectDetailedReport(
 						return await dbService.db.query.workPeriod.findMany({
 							where: and(
 								eq(workPeriod.projectId, projectId),
+								eq(workPeriod.organizationId, organizationId),
 								gte(workPeriod.startTime, startDate),
 								lte(workPeriod.startTime, endDate),
 							),
@@ -538,13 +539,19 @@ export async function getProjectDetailedReport(
 export async function getProjectsForFilter(): Promise<
 	ServerActionResult<Array<{ id: string; name: string; status: string; color: string | null }>>
 > {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
+	let authContext;
+	try {
+		authContext = await requireAuth();
+	} catch {
 		return { success: false, error: "Not authenticated" };
 	}
 
 	const emp = await db.query.employee.findFirst({
-		where: eq(employee.userId, session.user.id),
+		where: and(
+			eq(employee.id, authContext.employee?.id ?? ""),
+			eq(employee.organizationId, authContext.session.activeOrganizationId ?? ""),
+			eq(employee.isActive, true),
+		),
 	});
 
 	if (!emp) {
@@ -574,13 +581,19 @@ export async function getProjectsForFilter(): Promise<
  * Get current employee for server components
  */
 export async function getCurrentEmployeeForReports(): Promise<typeof employee.$inferSelect | null> {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
+	let authContext;
+	try {
+		authContext = await requireAuth();
+	} catch {
 		return null;
 	}
 
 	const emp = await db.query.employee.findFirst({
-		where: eq(employee.userId, session.user.id),
+		where: and(
+			eq(employee.id, authContext.employee?.id ?? ""),
+			eq(employee.organizationId, authContext.session.activeOrganizationId ?? ""),
+			eq(employee.isActive, true),
+		),
 	});
 
 	return emp || null;

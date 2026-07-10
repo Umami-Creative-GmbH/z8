@@ -36,6 +36,49 @@ const logger = createLogger("Auth");
 const targetTeamIdSchema = z.string().uuid();
 
 type InvitationTargetTeamLookupDb = Pick<typeof db, "query">;
+type MemberRemovalDb = Pick<typeof db, "delete" | "select" | "update">;
+type MemberRemovalSecondaryStorage = Pick<typeof secondaryStorage, "delete">;
+
+const memberRemovalSecondaryStorage: MemberRemovalSecondaryStorage = {
+	delete: secondaryStorage.deleteOrThrow,
+};
+
+export async function revokeRemovedMemberAccess(
+	userId: string,
+	organizationId: string,
+	dependencies: {
+		db: MemberRemovalDb;
+		secondaryStorage: MemberRemovalSecondaryStorage;
+	} = { db, secondaryStorage: memberRemovalSecondaryStorage },
+) {
+	const removedSessions = await dependencies.db
+		.select({ token: schema.session.token })
+		.from(schema.session)
+		.where(
+			and(
+				eq(schema.session.userId, userId),
+				eq(schema.session.activeOrganizationId, organizationId),
+			),
+		);
+
+	await dependencies.db
+		.update(employee)
+		.set({ isActive: false })
+		.where(and(eq(employee.userId, userId), eq(employee.organizationId, organizationId)));
+
+	await dependencies.db
+		.delete(schema.session)
+		.where(
+			and(
+				eq(schema.session.userId, userId),
+				eq(schema.session.activeOrganizationId, organizationId),
+			),
+		);
+
+	await Promise.all(
+		removedSessions.map(({ token }) => dependencies.secondaryStorage.delete(token)),
+	);
+}
 
 export async function resolveInvitationTargetTeamId(
 	dbClient: InvitationTargetTeamLookupDb,
@@ -397,11 +440,6 @@ export const auth = betterAuth({
 	session: {
 		expiresIn: 60 * 60 * 24 * 30, // 30 days
 		updateAge: 60 * 60 * 24, // Extend session expiry on daily activity (sliding window)
-		cookieCache: {
-			enabled: true,
-			maxAge: 15 * 60, // 15 min cache before re-validating from Redis/DB
-			strategy: "compact",
-		},
 		storeSessionInDatabase: true, // Keep DB as source of truth for revocation
 	},
 	// Use secondary storage for rate limiting as well
@@ -645,6 +683,8 @@ export const auth = betterAuth({
 
 				// Sync seat count when member is removed
 				afterRemoveMember: async ({ member, organization }) => {
+					await revokeRemovedMemberAccess(member.userId, organization.id);
+
 					await syncBillingSeats({
 						organizationId: organization.id,
 						memberId: member.id,
