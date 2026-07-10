@@ -181,7 +181,8 @@ export async function createExportJob(params: {
 
 /**
  * Process an export job
- * Called immediately for sync jobs, or by cron for async jobs
+ * Called inline for synchronous and scheduled execution.
+ * Interactive asynchronous execution is handled by the dedicated worker.
  * Supports both file-based formatters (DATEV) and API-based exporters (Personio)
  */
 export async function processExportJob({

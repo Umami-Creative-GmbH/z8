@@ -83,12 +83,11 @@ Action tests verify:
 - synchronous jobs process inline and do not enqueue;
 - returned job IDs remain payroll database IDs.
 
-Worker and service tests verify:
+Coverage is split by responsibility:
 
-- `payroll-export` routes to payroll processing and never the general export processor;
-- job lookup and every status/result update use both job and organization IDs;
-- a mismatched organization cannot process another tenant's payroll job;
-- scheduled payroll execution still processes inline with its organization.
+- service tests verify representative processing and failure transitions use both job and organization IDs;
+- action and worker tests verify synchronous and interactive asynchronous routing, including dedicated payroll worker dispatch;
+- implementation review confirms every completion update uses the same job and organization scope, and scheduled payroll execution remains inline with its organization.
 
 Focused tests, changed-file Biome checks, `git diff --check`, and the full webapp test suite run before integration.
 
