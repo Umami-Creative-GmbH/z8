@@ -8,20 +8,23 @@ const input = {
 };
 
 describe("generateZ8EventId", () => {
-	it("returns the same key for the same input", () => {
-		expect(generateZ8EventId(input)).toBe(generateZ8EventId(input));
+	it("returns the stable key for the same input", () => {
+		expect(generateZ8EventId(input)).toBe(
+			"bb5323ac962552e35caf982cccd1aed26bb041c9c0f2e53bece6f50c06525bf0",
+		);
 	});
 
 	it("returns a 64-character lowercase hexadecimal key", () => {
 		expect(generateZ8EventId(input)).toMatch(/^[a-f0-9]{64}$/);
 	});
 
-	it.each(["organizationId", "calendarConnectionId", "absenceId"] as const)(
-		"changes when %s changes",
-		(field) => {
-			expect(generateZ8EventId({ ...input, [field]: "different" })).not.toBe(
-				generateZ8EventId(input),
-			);
-		},
-	);
+	it.each([
+		"organizationId",
+		"calendarConnectionId",
+		"absenceId",
+	] as const)("changes when %s changes", (field) => {
+		expect(generateZ8EventId({ ...input, [field]: "different" })).not.toBe(
+			generateZ8EventId(input),
+		);
+	});
 });
