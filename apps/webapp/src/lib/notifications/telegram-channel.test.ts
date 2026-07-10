@@ -4,24 +4,30 @@ import { localizeOutboundNotification } from "./outbound-localization";
 const {
 	debugMock,
 	errorMock,
+	findEmployeeMock,
+	warnMock,
 	getBotConfigMock,
 	getChatIdMock,
 	sendApprovalMessageMock,
 	sendMessageMock,
+	resolveBotTemporalContextMock,
 } = vi.hoisted(() => ({
 	debugMock: vi.fn(),
 	errorMock: vi.fn(),
+	findEmployeeMock: vi.fn(),
+	warnMock: vi.fn(),
 	getBotConfigMock: vi.fn(),
 	getChatIdMock: vi.fn(),
 	sendApprovalMessageMock: vi.fn(),
 	sendMessageMock: vi.fn(),
+	resolveBotTemporalContextMock: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
 	db: {
 		query: {
 			approvalRequest: { findFirst: vi.fn() },
-			employee: { findFirst: vi.fn() },
+			employee: { findFirst: findEmployeeMock },
 		},
 	},
 }));
@@ -35,7 +41,12 @@ vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
 		debug: debugMock,
 		error: errorMock,
+		warn: warnMock,
 	}),
+}));
+
+vi.mock("@/lib/bot-platform/temporal-context", () => ({
+	resolveBotTemporalContext: resolveBotTemporalContextMock,
 }));
 
 vi.mock("@/lib/telegram", () => ({
@@ -61,6 +72,12 @@ describe("sendTelegramNotification", () => {
 		getBotConfigMock.mockResolvedValue({ botToken: "bot-token" });
 		getChatIdMock.mockResolvedValue("chat-123");
 		sendMessageMock.mockResolvedValue({ ok: true });
+		findEmployeeMock.mockResolvedValue({ id: "employee-123", userId: "user-123" });
+		resolveBotTemporalContextMock.mockResolvedValue({
+			locale: "de",
+			timezone: "Europe/Berlin",
+			timeFormat: "24h",
+		});
 		localizeOutboundNotificationMock.mockResolvedValue({
 			locale: "de",
 			title: "Zum Team *hinzugefügt*",
@@ -94,11 +111,42 @@ describe("sendTelegramNotification", () => {
 			title: "Added to team",
 			message: "You were added to the Ops (EU) team.",
 			metadata,
+			locale: "de",
+		});
+		expect(resolveBotTemporalContextMock).toHaveBeenCalledWith({
+			userId: "user-123",
+			employeeId: "employee-123",
+			organizationId: "org-123",
 		});
 		expect(sendMessageMock).toHaveBeenCalledWith("bot-token", {
 			chat_id: "chat-123",
 			text: "*Zum Team \\*hinzugefügt\\**\n\nSie wurden zum Team Ops \\(EU\\) hinzugefügt\\.\n\n[View in Z8](https://z8\\.test/teams/ops?tab\\=members)",
 			parse_mode: "MarkdownV2",
+		});
+	});
+
+	it("rejects a recipient without an organization-scoped temporal context", async () => {
+		const { sendTelegramNotification } = await import("./telegram-channel");
+		resolveBotTemporalContextMock.mockResolvedValue(null);
+		findEmployeeMock.mockResolvedValue({
+			id: "employee-from-another-organization",
+			userId: "user-from-another-organization",
+		});
+
+		await sendTelegramNotification({
+			userId: "user-from-another-organization",
+			organizationId: "org-123",
+			type: "team_member_added",
+			title: "Added to team",
+			message: "You were added to the team.",
+		});
+
+		expect(localizeOutboundNotificationMock).not.toHaveBeenCalled();
+		expect(sendMessageMock).not.toHaveBeenCalled();
+		expect(resolveBotTemporalContextMock).toHaveBeenCalledWith({
+			userId: "user-from-another-organization",
+			employeeId: "employee-from-another-organization",
+			organizationId: "org-123",
 		});
 	});
 });

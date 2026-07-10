@@ -19,6 +19,7 @@ interface NotificationMetadata {
 interface LocalizeOutboundNotificationParams {
 	userId: string;
 	organizationId: string;
+	locale?: string;
 	title: string;
 	message: string;
 	metadata?: Record<string, unknown> | string | null;
@@ -102,30 +103,32 @@ export async function localizeOutboundNotification({
 	message,
 	metadata,
 }: LocalizeOutboundNotificationParams): Promise<LocalizedOutboundNotification> {
-	let locale = FALLBACK_LOCALE;
-	try {
-		locale = await resolveRecipientNotificationLocale({ userId, organizationId });
-	} catch (error) {
-		logger.warn(
-			{ err: error, userId, organizationId, locale: FALLBACK_LOCALE },
-			"Failed to resolve recipient notification locale",
-		);
-		return { locale: FALLBACK_LOCALE, title, message };
+	let resolvedLocale = locale;
+	if (!resolvedLocale) {
+		try {
+			resolvedLocale = await resolveRecipientNotificationLocale({ userId, organizationId });
+		} catch (error) {
+			logger.warn(
+				{ err: error, userId, organizationId, locale: FALLBACK_LOCALE },
+				"Failed to resolve recipient notification locale",
+			);
+			return { locale: FALLBACK_LOCALE, title, message };
+		}
 	}
 
 	const i18n = parseMetadata(metadata).i18n;
 
 	if (!i18n?.titleKey && !i18n?.messageKey) {
-		return { locale, title, message };
+		return { locale: resolvedLocale, title, message };
 	}
 
 	try {
-		const staticData = await loadNamespaces(locale, NOTIFICATION_NAMESPACES);
-		const tolgee = TolgeeBase().init({ language: locale, staticData });
+		const staticData = await loadNamespaces(resolvedLocale, NOTIFICATION_NAMESPACES);
+		const tolgee = TolgeeBase().init({ language: resolvedLocale, staticData });
 		await tolgee.run();
 
 		return {
-			locale,
+			locale: resolvedLocale,
 			title: i18n.titleKey
 				? tolgee.t({
 						key: i18n.titleKey,
@@ -143,9 +146,9 @@ export async function localizeOutboundNotification({
 		};
 	} catch (error) {
 		logger.warn(
-			{ err: error, userId, organizationId, locale },
+			{ err: error, userId, organizationId, locale: resolvedLocale },
 			"Failed to localize outbound notification",
 		);
-		return { locale, title, message };
+		return { locale: resolvedLocale, title, message };
 	}
 }

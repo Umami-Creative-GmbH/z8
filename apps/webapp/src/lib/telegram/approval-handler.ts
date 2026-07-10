@@ -208,7 +208,10 @@ export async function sendApprovalMessageToManager(
 
 		// Get approval details
 		const approval = await db.query.approvalRequest.findFirst({
-			where: eq(approvalRequest.id, approvalId),
+			where: and(
+				eq(approvalRequest.id, approvalId),
+				eq(approvalRequest.organizationId, organizationId),
+			),
 		});
 
 		if (!approval) {
@@ -269,7 +272,10 @@ async function buildApprovalCardData(
 	approval: typeof approvalRequest.$inferSelect,
 ): Promise<ApprovalCardData | null> {
 	const requester = await db.query.employee.findFirst({
-		where: eq(employee.id, approval.requestedBy),
+		where: and(
+			eq(employee.id, approval.requestedBy),
+			eq(employee.organizationId, approval.organizationId),
+		),
 		with: { user: { columns: { name: true, email: true } } },
 	});
 
@@ -286,7 +292,10 @@ async function buildApprovalCardData(
 	if (approval.entityType === "absence_entry") {
 		const { absenceEntry } = await import("@/db/schema");
 		const absence = await db.query.absenceEntry.findFirst({
-			where: eq(absenceEntry.id, approval.entityId),
+			where: and(
+				eq(absenceEntry.id, approval.entityId),
+				eq(absenceEntry.organizationId, approval.organizationId),
+			),
 			with: { category: { columns: { name: true } } },
 		});
 

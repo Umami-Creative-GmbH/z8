@@ -52,6 +52,35 @@ describe("Telegram approval temporal formatting", () => {
 				},
 			},
 		);
+	}, 15_000);
+
+	it("keeps logical absence dates unchanged across recipient and host timezones", () => {
+		const data = {
+			approvalId: "approval-1",
+			entityType: "absence_entry" as const,
+			requesterName: "Ada",
+			createdAt: new Date("2026-07-10T12:30:00.000Z"),
+			startDate: "2026-01-01",
+			endDate: "2026-01-02",
+		};
+
+		const newYork = normalizeWhitespace(
+			buildApprovalMessage(data, {
+				locale: "en-US",
+				timezone: "America/New_York",
+				timeFormat: "12h",
+			}).text,
+		);
+		const berlin = normalizeWhitespace(
+			buildApprovalMessage(data, {
+				locale: "en-US",
+				timezone: "Europe/Berlin",
+				timeFormat: "24h",
+			}).text,
+		);
+
+		expect(newYork).toContain("Jan 1, 2026 \\- Jan 2, 2026");
+		expect(berlin).toContain("Jan 1, 2026 \\- Jan 2, 2026");
 	});
 
 	it("keeps the captured audit endpoint after an approval is resolved", () => {
