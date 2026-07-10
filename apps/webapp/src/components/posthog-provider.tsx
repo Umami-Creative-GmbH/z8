@@ -34,6 +34,11 @@ export function PostHogProvider({ children, disabled, helpImproveProduct }: Post
 			capture_pageleave: true,
 		});
 		posthog.opt_in_capturing();
+
+		return () => {
+			posthog.opt_out_capturing();
+			posthog.reset();
+		};
 	}, [helpImproveProduct, isPostHogEnabled, projectToken]);
 
 	if (!(isPostHogEnabled && helpImproveProduct)) {

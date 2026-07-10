@@ -6,13 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
-async function SettingsLayoutContent({
-	children,
-	params: _params,
-}: {
-	children: React.ReactNode;
-	params: Promise<{ locale: string }>;
-}) {
+async function SettingsNavigation() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
@@ -20,52 +14,40 @@ async function SettingsLayoutContent({
 	const billingEnabled = env.BILLING_ENABLED === "true";
 
 	return (
-		<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
-			{/* Settings navigation sidebar */}
-			<aside className="w-64 border-r bg-card hidden md:block overflow-auto">
-				<SettingsNav accessTier={accessTier} billingEnabled={billingEnabled} />
-			</aside>
-
-			{/* Main content area */}
-			<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-				<SettingsBreadcrumbs />
-				<div className="min-w-0 flex-1 overflow-auto overflow-x-hidden">{children}</div>
-			</main>
-		</div>
+		<aside className="w-64 border-r bg-card hidden md:block overflow-auto">
+			<SettingsNav accessTier={accessTier} billingEnabled={billingEnabled} />
+		</aside>
 	);
 }
 
-function SettingsLayoutLoading({ children }: { children: React.ReactNode }) {
+function SettingsNavigationLoading() {
 	return (
-		<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
-			<aside className="w-64 border-r bg-card hidden md:block overflow-auto">
-				<div className="space-y-3 p-4">
-					<Skeleton className="h-6 w-28" />
-					<Skeleton className="h-5 w-full" />
-					<Skeleton className="h-5 w-11/12" />
-					<Skeleton className="h-5 w-10/12" />
-				</div>
-			</aside>
-			<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-				<div className="border-b p-4">
-					<Skeleton className="h-5 w-64" />
-				</div>
-				<div className="min-w-0 flex-1 overflow-auto overflow-x-hidden">{children}</div>
-			</main>
-		</div>
+		<aside className="w-64 border-r bg-card hidden md:block overflow-auto">
+			<div className="space-y-3 p-4">
+				<Skeleton className="h-6 w-28" />
+				<Skeleton className="h-5 w-full" />
+				<Skeleton className="h-5 w-11/12" />
+				<Skeleton className="h-5 w-10/12" />
+			</div>
+		</aside>
 	);
 }
 
 export default function SettingsLayout({
 	children,
-	params,
 }: {
 	children: React.ReactNode;
 	params: Promise<{ locale: string }>;
 }) {
 	return (
-		<Suspense fallback={<SettingsLayoutLoading>{children}</SettingsLayoutLoading>}>
-			<SettingsLayoutContent params={params}>{children}</SettingsLayoutContent>
-		</Suspense>
+		<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+			<Suspense fallback={<SettingsNavigationLoading />}>
+				<SettingsNavigation />
+			</Suspense>
+			<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+				<SettingsBreadcrumbs />
+				<div className="min-w-0 flex-1 overflow-auto overflow-x-hidden">{children}</div>
+			</main>
+		</div>
 	);
 }

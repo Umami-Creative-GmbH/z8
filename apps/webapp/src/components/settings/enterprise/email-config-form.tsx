@@ -13,6 +13,7 @@ import {
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import type {
@@ -40,7 +41,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import { formatDateTime } from "@/lib/datetime/format";
 import type { SecretStoreStatus } from "@/lib/vault";
+import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 
 interface EmailConfigFormProps {
 	organizationId: string;
@@ -154,6 +157,8 @@ export function EmailConfigForm({
 	secretStoreStatus,
 }: EmailConfigFormProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const timezone = useOrganizationTimezone();
 	const [isPending, startTransition] = useTransition();
 	const [testEmail, setTestEmail] = useState("");
 	const [isTesting, setIsTesting] = useState(false);
@@ -592,7 +597,7 @@ export function EmailConfigForm({
 									</>
 								)}
 								<span className="text-muted-foreground">
-									{new Date(initialConfig.lastTestAt).toLocaleString()}
+									{formatDateTime(new Date(initialConfig.lastTestAt), { locale, timezone })}
 								</span>
 							</div>
 							{initialConfig.lastTestError && (

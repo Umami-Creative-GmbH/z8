@@ -10,6 +10,7 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -38,8 +39,10 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { formatDateOnly, formatTimeOnly } from "@/lib/datetime/format";
 import { type ExportRecord, formatFileSize } from "@/lib/export/utils";
 import { useRouter } from "@/navigation";
+import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 
 interface ExportHistoryProps {
 	exports: ExportRecord[];
@@ -48,6 +51,8 @@ interface ExportHistoryProps {
 
 export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const timezone = useOrganizationTimezone();
 	const router = useRouter();
 	const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
@@ -165,10 +170,10 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 								<TableCell>
 									<div className="flex flex-col">
 										<span className="font-medium">
-											{new Date(exp.createdAt).toLocaleDateString()}
+											{formatDateOnly(new Date(exp.createdAt), { locale, timezone })}
 										</span>
 										<span className="text-xs text-muted-foreground">
-											{new Date(exp.createdAt).toLocaleTimeString()}
+											{formatTimeOnly(new Date(exp.createdAt), { locale, timezone })}
 										</span>
 									</div>
 								</TableCell>

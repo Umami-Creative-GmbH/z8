@@ -4,6 +4,27 @@
 
 import { DateTime } from "luxon";
 
+export interface DateTimeFormatOptions {
+	locale: string;
+	timezone: string;
+}
+
+function prepareForDisplay(
+	date: Date | DateTime | string,
+	options?: DateTimeFormatOptions,
+): DateTime<boolean> {
+	let dateTime: DateTime<boolean> =
+		typeof date === "string"
+			? DateTime.fromISO(date, { setZone: true })
+			: date instanceof Date
+				? DateTime.fromJSDate(date)
+				: date;
+	if (options) {
+		dateTime = dateTime.setZone(options.timezone).setLocale(options.locale);
+	}
+	return dateTime;
+}
+
 /**
  * Format a date as a relative distance from now (e.g., "2 hours ago", "in 3 days")
  * @param date Date or DateTime to format
@@ -50,8 +71,12 @@ export function formatDuration(minutes: number): string {
  * @param date Date or DateTime to format
  * @returns Formatted date/time string (e.g., "Jan 15, 2:30 PM")
  */
-export function formatDateTime(date: Date | DateTime): string {
-	const dt = date instanceof Date ? DateTime.fromJSDate(date) : date;
+export function formatDateTime(
+	date: Date | DateTime | string,
+	options?: DateTimeFormatOptions,
+): string {
+	const dt = prepareForDisplay(date, options);
+	if (!dt.isValid) return "-";
 	return dt.toLocaleString({
 		month: "short",
 		day: "numeric",
@@ -65,8 +90,12 @@ export function formatDateTime(date: Date | DateTime): string {
  * @param date Date or DateTime to format
  * @returns Formatted date string (e.g., "Jan 15, 2024")
  */
-export function formatDateOnly(date: Date | DateTime): string {
-	const dt = date instanceof Date ? DateTime.fromJSDate(date) : date;
+export function formatDateOnly(
+	date: Date | DateTime | string,
+	options?: DateTimeFormatOptions,
+): string {
+	const dt = prepareForDisplay(date, options);
+	if (!dt.isValid) return "-";
 	return dt.toLocaleString({
 		month: "short",
 		day: "numeric",
@@ -79,8 +108,12 @@ export function formatDateOnly(date: Date | DateTime): string {
  * @param date Date or DateTime to format
  * @returns Formatted time string (e.g., "2:30 PM")
  */
-export function formatTimeOnly(date: Date | DateTime): string {
-	const dt = date instanceof Date ? DateTime.fromJSDate(date) : date;
+export function formatTimeOnly(
+	date: Date | DateTime | string,
+	options?: DateTimeFormatOptions,
+): string {
+	const dt = prepareForDisplay(date, options);
+	if (!dt.isValid) return "-";
 	return dt.toLocaleString({
 		hour: "2-digit",
 		minute: "2-digit",

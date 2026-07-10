@@ -79,21 +79,21 @@ export async function register() {
 
 		sdk.start();
 
-		// Initialize S3 storage (validates config, tests connection, creates bucket if needed)
-		const { initializeStorage } = await import("@/lib/storage/storage-init");
-		const storageResult = await initializeStorage();
-
-		if (!storageResult.success) {
-			console.error("[FATAL] S3 storage initialization failed:", storageResult.error?.message);
-			if (storageResult.error?.remedy) {
-				console.error("[HINT]", storageResult.error.remedy);
-			}
-			if (process.env.NODE_ENV === "production") {
-				process.exit(1);
-			}
-		}
-
 		if (!isBuildTime) {
+			// Initialize S3 storage only for a running server, never while compiling the app.
+			const { initializeStorage } = await import("@/lib/storage/storage-init");
+			const storageResult = await initializeStorage();
+
+			if (!storageResult.success) {
+				console.error("[FATAL] S3 storage initialization failed:", storageResult.error?.message);
+				if (storageResult.error?.remedy) {
+					console.error("[HINT]", storageResult.error.remedy);
+				}
+				if (process.env.NODE_ENV === "production") {
+					process.exit(1);
+				}
+			}
+
 			// Run startup health checks after OpenTelemetry and storage are initialized
 			const { runStartupChecks } = await import("@/lib/health");
 			const healthy = await runStartupChecks();

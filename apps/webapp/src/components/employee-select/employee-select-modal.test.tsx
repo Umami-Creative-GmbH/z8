@@ -9,4 +9,11 @@ describe("EmployeeSelectModal layout", () => {
 		expect(source).not.toContain("max-h-[320px]");
 		expect(source).toContain("flex-1 min-h-0 overflow-y-auto");
 	});
+
+	it("names the control that removes a selected employee", () => {
+		const source = readFileSync(resolve(__dirname, "employee-select-modal.tsx"), "utf8");
+
+		expect(source).toContain("common:employeeSelect.removeSelected");
+		expect(source).toContain("aria-label=");
+	});
 });

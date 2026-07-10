@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockState = vi.hoisted(() => ({
 	findFirst: vi.fn(async () => null),
 	getAuthContext: vi.fn(async () => null),
+	getOrganizationSettings: vi.fn(async () => null),
 }));
 
 vi.mock("@/db", () => ({
@@ -23,6 +24,10 @@ vi.mock("@/db/auth-schema", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getAuthContext: mockState.getAuthContext,
+}));
+
+vi.mock("@/lib/organization-settings", () => ({
+	getOrganizationSettings: mockState.getOrganizationSettings,
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -51,10 +56,10 @@ describe("GET /api/auth/context", () => {
 	});
 
 	it("returns organization settings for hydration", async () => {
-		mockState.findFirst.mockResolvedValue({
+		mockState.getOrganizationSettings.mockResolvedValue({
 			deletedAt: null,
 			demoDataEnabled: true,
-			id: "org_1",
+			organizationId: "org_1",
 			projectsEnabled: false,
 			shiftsEnabled: false,
 			surchargesEnabled: false,

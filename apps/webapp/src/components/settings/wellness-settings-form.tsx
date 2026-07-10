@@ -195,6 +195,7 @@ export function WellnessSettingsForm({ initialSettings }: WellnessSettingsFormPr
 								<div className="flex items-center gap-3">
 									<Button
 										type="button"
+										aria-label={t("settings.wellness.decreaseDailyGoal", "Decrease daily goal")}
 										variant="outline"
 										size="icon"
 										className="size-9 shrink-0 rounded-full"
@@ -203,7 +204,7 @@ export function WellnessSettingsForm({ initialSettings }: WellnessSettingsFormPr
 										}
 										disabled={loading || !isEnabled || field.state.value <= DAILY_GOAL_RANGE.min}
 									>
-										<IconMinus className="size-4" />
+										<IconMinus className="size-4" aria-hidden="true" />
 									</Button>
 									<div className="flex flex-wrap gap-1 flex-1 justify-center">
 										{Array.from({ length: field.state.value }, (_, i) => (
@@ -212,6 +213,7 @@ export function WellnessSettingsForm({ initialSettings }: WellnessSettingsFormPr
 									</div>
 									<Button
 										type="button"
+										aria-label={t("settings.wellness.increaseDailyGoal", "Increase daily goal")}
 										variant="outline"
 										size="icon"
 										className="size-9 shrink-0 rounded-full"
@@ -220,7 +222,7 @@ export function WellnessSettingsForm({ initialSettings }: WellnessSettingsFormPr
 										}
 										disabled={loading || !isEnabled || field.state.value >= DAILY_GOAL_RANGE.max}
 									>
-										<IconPlus className="size-4" />
+										<IconPlus className="size-4" aria-hidden="true" />
 									</Button>
 								</div>
 							</div>

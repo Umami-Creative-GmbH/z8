@@ -1,5 +1,6 @@
 /* @vitest-environment jsdom */
 
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import LocaleLayout from "./layout";
 
@@ -150,5 +151,12 @@ describe("LocaleLayout", () => {
 		expect(mockState.setRequestLocale).toHaveBeenCalledWith("en");
 		expect(mockState.getSession).not.toHaveBeenCalled();
 		expect(mockState.findUserSettings).not.toHaveBeenCalled();
+	});
+
+	it("keeps route content outside an async analytics-consent boundary", () => {
+		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
+
+		expect(source).not.toContain("PostHogConsentProvider");
+		expect(source).not.toContain('minHeight: "100vh"');
 	});
 });

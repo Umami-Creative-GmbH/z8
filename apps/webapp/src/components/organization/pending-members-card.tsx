@@ -3,6 +3,7 @@
 import { IconCheck, IconLoader2, IconUserCheck, IconUserX, IconX } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -42,8 +43,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatDateOnly } from "@/lib/datetime/format";
 import type { PendingMember } from "@/lib/effect/services/pending-member.service";
 import { queryKeys } from "@/lib/query";
+import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 import { buildBulkApproveRequests, resolveApproveTeamId } from "./pending-members-card.utils";
 
 interface PendingMembersCardProps {
@@ -53,13 +56,15 @@ interface PendingMembersCardProps {
 
 const NO_TEAM_VALUE = "none";
 
-function formatDate(date: Date | string | null | undefined) {
+function formatDate(date: Date | string | null | undefined, locale: string, timezone: string) {
 	if (!date) return "-";
-	return new Date(date).toLocaleDateString();
+	return formatDateOnly(new Date(date), { locale, timezone });
 }
 
 export function PendingMembersCard({ organizationId, currentMemberRole }: PendingMembersCardProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const timezone = useOrganizationTimezone();
 	const queryClient = useQueryClient();
 	const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
 	const [rejectDialogMember, setRejectDialogMember] = useState<PendingMember | null>(null);
@@ -334,7 +339,7 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 											<Badge variant="secondary">{t("settings.pendingMembers.sso", "SSO")}</Badge>
 										)}
 									</TableCell>
-									<TableCell>{formatDate(member.createdAt)}</TableCell>
+									<TableCell>{formatDate(member.createdAt, locale, timezone)}</TableCell>
 									<TableCell>
 										<Select
 											value={getTeamSelectValue(member)}

@@ -1,23 +1,18 @@
 import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
-import { type ReactNode, Suspense } from "react";
+import type { ReactNode } from "react";
 import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
 import { DeploymentRefreshChecker } from "@/components/deployment-refresh";
 import { FontSizeProvider } from "@/components/font-size-preference";
 import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
-import { PostHogProvider } from "@/components/posthog-provider";
 import { ThemeProvider } from "@/components/theme-provider";
-import { db } from "@/db";
-import { userSettings } from "@/db/schema";
 import { env } from "@/env";
-import { auth } from "@/lib/auth";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { TolgeeNextProvider } from "@/tolgee/client";
 import { ALL_LANGUAGES, loadRouteTranslations } from "@/tolgee/shared";
 import "../globals.css";
-import { eq } from "drizzle-orm";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query";
 
@@ -70,20 +65,6 @@ function TranslatedMeta() {
 	);
 }
 
-async function getHelpImproveProduct(): Promise<boolean> {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		return false;
-	}
-
-	const settings = await db.query.userSettings.findFirst({
-		where: eq(userSettings.userId, session.user.id),
-		columns: { helpImproveProduct: true },
-	});
-
-	return settings?.helpImproveProduct ?? true;
-}
-
 function AppProviders({ children, locale }: { children: ReactNode; locale: string }) {
 	return (
 		<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
@@ -94,7 +75,9 @@ function AppProviders({ children, locale }: { children: ReactNode; locale: strin
 						<TooltipProvider delayDuration={0}>
 							<OfflineBanner />
 							<SWUpdatePrompt />
-							<DeploymentRefreshChecker clientBuildHash={env.NEXT_PUBLIC_BUILD_HASH ?? "development"} />
+							<DeploymentRefreshChecker
+								clientBuildHash={env.NEXT_PUBLIC_BUILD_HASH ?? "development"}
+							/>
 							{children}
 							<Toaster position="bottom-right" richColors />
 						</TooltipProvider>
@@ -102,17 +85,6 @@ function AppProviders({ children, locale }: { children: ReactNode; locale: strin
 				</TranslationProvider>
 			</FontSizeProvider>
 		</ThemeProvider>
-	);
-}
-
-async function PostHogConsentProvider({ children }: { children: ReactNode }) {
-	const helpImproveProduct = await getHelpImproveProduct();
-	const disabled = env.NODE_ENV === "development";
-
-	return (
-		<PostHogProvider disabled={disabled} helpImproveProduct={helpImproveProduct}>
-			{children}
-		</PostHogProvider>
 	);
 }
 
@@ -142,24 +114,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<TranslatedMeta />
 			</head>
 			<body>
-				<Suspense
-					fallback={
-						<div
-							style={{
-								display: "flex",
-								justifyContent: "center",
-								alignItems: "center",
-								minHeight: "100vh",
-							}}
-						>
-							<div>Loading…</div>
-						</div>
-					}
-				>
-					<PostHogConsentProvider>
-						<AppProviders locale={locale}>{children}</AppProviders>
-					</PostHogConsentProvider>
-				</Suspense>
+				<AppProviders locale={locale}>{children}</AppProviders>
 			</body>
 		</html>
 	);

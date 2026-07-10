@@ -3,7 +3,8 @@
 import { IconCheck, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useLocale } from "next-intl";
+import { useEffect, useRef, useState } from "react";
 import { getWebhookDeliveryLogs } from "@/app/[locale]/(app)/settings/webhooks/actions";
 import {
 	ActionPanel,
@@ -25,6 +26,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { WebhookDelivery } from "@/lib/webhooks/types";
+import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 
 interface WebhookDeliveryLogsDialogProps {
 	webhookId: string;
@@ -40,47 +42,93 @@ export function WebhookDeliveryLogsDialog({
 	onOpenChange,
 }: WebhookDeliveryLogsDialogProps) {
 	const { t } = useTranslate();
-	const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
-	const [total, setTotal] = useState(0);
+	const locale = useLocale();
+	const timezone = useOrganizationTimezone();
 	const [isLoading, setIsLoading] = useState(false);
-	const [offset, setOffset] = useState(0);
+	const [page, setPage] = useState({ webhookId, offset: 0 });
+	const [deliveryPage, setDeliveryPage] = useState<{
+		requestKey: string;
+		deliveries: WebhookDelivery[];
+		total: number;
+	}>({ requestKey: "", deliveries: [], total: 0 });
 	const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 	const [loadedRequestKey, setLoadedRequestKey] = useState<string | null>(null);
+	const [requestError, setRequestError] = useState<{ requestKey: string; message: string } | null>(
+		null,
+	);
+	const [retryToken, setRetryToken] = useState(0);
+	const requestSequence = useRef(0);
+	const latestLoadKey = useRef("");
+	if (page.webhookId !== webhookId) {
+		setPage({ webhookId, offset: 0 });
+		setExpandedRows(new Set());
+	}
 
 	const limit = 20;
+	const offset = page.webhookId === webhookId ? page.offset : 0;
 	const requestKey = `${webhookId}:${offset}`;
+	const loadKey = `${requestKey}:${retryToken}`;
+	const deliveries = deliveryPage.requestKey === requestKey ? deliveryPage.deliveries : [];
+	const total = deliveryPage.requestKey === requestKey ? deliveryPage.total : 0;
+	const hasRequestError = requestError?.requestKey === requestKey;
+	const errorMessage =
+		requestError?.message || t("webhooks:webhooks.logs.loadError", "Failed to load delivery logs");
 	const shouldShowInitialLoading =
 		open && deliveries.length === 0 && loadedRequestKey !== requestKey;
 
-	const loadDeliveries = async (showLoading = true) => {
-		if (showLoading) {
-			setIsLoading(true);
-		}
-		try {
-			const result = await getWebhookDeliveryLogs(webhookId, { limit, offset });
-			if (result.success && result.data) {
-				setDeliveries(result.data.deliveries);
-				setTotal(result.data.total);
-			}
-		} catch (error) {
-			setLoadedRequestKey(requestKey);
-			setIsLoading(false);
-			throw error;
-		}
-
-		setLoadedRequestKey(requestKey);
-		setIsLoading(false);
+	const setOffset = (update: number | ((currentOffset: number) => number)) => {
+		setPage((currentPage) => {
+			const currentOffset = currentPage.webhookId === webhookId ? currentPage.offset : 0;
+			return {
+				webhookId,
+				offset: typeof update === "function" ? update(currentOffset) : update,
+			};
+		});
 	};
 
-	const loadDeliveriesForEffect = useEffectEvent(async () => {
-		await loadDeliveries();
-	});
-
 	useEffect(() => {
-		if (open) {
-			void Promise.resolve().then(loadDeliveriesForEffect);
+		if (!open) {
+			return;
 		}
-	}, [open]);
+
+		const requestId = ++requestSequence.current;
+		latestLoadKey.current = loadKey;
+		let cancelled = false;
+
+		void Promise.resolve().then(async () => {
+			if (cancelled) {
+				return;
+			}
+
+			setRequestError(null);
+			setIsLoading(true);
+			const result = await getWebhookDeliveryLogs(webhookId, { limit, offset }).catch(() => null);
+			if (cancelled || requestId !== requestSequence.current || loadKey !== latestLoadKey.current) {
+				return;
+			}
+			if (result?.success && result.data) {
+				setDeliveryPage({
+					requestKey,
+					deliveries: result.data.deliveries,
+					total: result.data.total,
+				});
+			} else {
+				setRequestError({
+					requestKey,
+					message: result && !result.success ? result.error : "",
+				});
+			}
+			setLoadedRequestKey(requestKey);
+			setIsLoading(false);
+		});
+
+		return () => {
+			cancelled = true;
+			if (requestId === requestSequence.current) {
+				requestSequence.current += 1;
+			}
+		};
+	}, [loadKey, offset, open, requestKey, webhookId]);
 
 	const toggleRow = (id: string) => {
 		setExpandedRows((prev) => {
@@ -151,6 +199,17 @@ export function WebhookDeliveryLogsDialog({
 							/>
 							<span className="sr-only">{t("common.loading", "Loading...")}</span>
 						</div>
+					) : hasRequestError ? (
+						<div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+							<p className="text-destructive">{errorMessage}</p>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => setRetryToken((value) => value + 1)}
+							>
+								{t("common.retry", "Retry")}
+							</Button>
+						</div>
 					) : deliveries.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-12 text-center">
 							<p className="text-muted-foreground">
@@ -192,7 +251,10 @@ export function WebhookDeliveryLogsDialog({
 										<CollapsibleTrigger asChild>
 											<TableRow className="cursor-pointer hover:bg-muted/50">
 												<TableCell className="font-mono text-xs">
-													{DateTime.fromJSDate(delivery.createdAt).toFormat("MMM d, HH:mm:ss")}
+													{DateTime.fromJSDate(delivery.createdAt, { zone: "utc" })
+														.setZone(timezone)
+														.setLocale(locale)
+														.toFormat("MMM d, HH:mm:ss")}
 												</TableCell>
 												<TableCell className="font-mono text-xs">{delivery.eventType}</TableCell>
 												<TableCell>{getStatusBadge(delivery.status)}</TableCell>
