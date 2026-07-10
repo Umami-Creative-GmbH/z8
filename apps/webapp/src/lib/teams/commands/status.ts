@@ -6,12 +6,14 @@
  */
 
 import { and, eq, isNull } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
-import { employee, userSettings, workPeriod } from "@/db/schema";
-import { fmtTime, getBotTranslate } from "@/lib/bot-platform/i18n";
+import { employee, workPeriod } from "@/db/schema";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
+import { elapsedHoursAndMinutes, getCommandTemporalContext } from "./command-temporal";
 
 const logger = createLogger("BotCommand:Status");
 
@@ -24,6 +26,7 @@ export const statusCommand: BotCommand = {
 	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		try {
 			const t = await getBotTranslate(ctx.locale);
+			const temporal = ctx.temporal ?? getCommandTemporalContext(ctx);
 
 			const emp = await db.query.employee.findFirst({
 				where: and(
@@ -35,13 +38,6 @@ export const statusCommand: BotCommand = {
 			if (!emp) {
 				return { type: "text", text: t("bot.cmd.status.noProfile", "Employee profile not found.") };
 			}
-
-			// Get user timezone
-			const settingsData = await db.query.userSettings.findFirst({
-				where: eq(userSettings.userId, ctx.userId),
-				columns: { timezone: true },
-			});
-			const timezone = settingsData?.timezone || "UTC";
 
 			// Check for active work period
 			const activePeriod = await db.query.workPeriod.findFirst({
@@ -55,11 +51,8 @@ export const statusCommand: BotCommand = {
 				};
 			}
 
-			const clockInTime = DateTime.fromJSDate(activePeriod.startTime).setZone(timezone);
-			const now = DateTime.now().setZone(timezone);
-			const duration = now.diff(clockInTime, ["hours", "minutes"]);
-			const hours = Math.floor(duration.hours);
-			const minutes = Math.floor(duration.minutes % 60);
+			const clockInTime = instantFromDate(activePeriod.startTime);
+			const { hours, minutes } = elapsedHoursAndMinutes(clockInTime, temporal.now);
 
 			return {
 				type: "text",
@@ -67,7 +60,7 @@ export const statusCommand: BotCommand = {
 					"bot.cmd.status.clockedIn",
 					"You are clocked in since {time} ({hours}h {minutes}m).",
 					{
-						time: fmtTime(clockInTime, ctx.locale),
+						time: formatInstant(clockInTime, temporal, "time"),
 						hours,
 						minutes,
 					},

@@ -113,6 +113,7 @@ export interface ApprovalCardData {
 	days?: number;
 	// Time correction-specific
 	originalTime?: string;
+	originalTimeOffsetMinutes?: number;
 	correctedTime?: string;
 }
 

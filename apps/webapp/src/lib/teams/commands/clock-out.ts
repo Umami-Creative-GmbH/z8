@@ -15,21 +15,23 @@ import {
 	enforceBreaksAfterClockOut,
 } from "@/app/[locale]/(app)/time-tracking/actions";
 import { db } from "@/db";
-import { employee, userSettings, workPeriod } from "@/db/schema";
+import { employee, workPeriod } from "@/db/schema";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
-import { fmtTime, getBotTranslate } from "@/lib/bot-platform/i18n";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
+import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import {
 	ChangePolicyService,
 	ChangePolicyServiceLive,
 } from "@/lib/effect/services/change-policy.service";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntry } from "@/lib/time-tracking/validation";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { getCommandTemporalContext } from "./command-temporal";
 
 const logger = createLogger("BotCommand:ClockOut");
 
@@ -42,6 +44,7 @@ export const clockOutCommand: BotCommand = {
 	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		try {
 			const t = await getBotTranslate(ctx.locale);
+			const temporal = ctx.temporal ?? getCommandTemporalContext(ctx);
 
 			// Look up employee record for org verification
 			const emp = await db.query.employee.findFirst({
@@ -69,12 +72,7 @@ export const clockOutCommand: BotCommand = {
 				};
 			}
 
-			// Get user timezone from userSettings
-			const settingsData = await db.query.userSettings.findFirst({
-				where: eq(userSettings.userId, ctx.userId),
-				columns: { timezone: true },
-			});
-			const timezone = settingsData?.timezone || "UTC";
+			const timezone = temporal.effectiveTimezone;
 
 			// Check for active work period
 			const activePeriod = await db.query.workPeriod.findFirst({
@@ -88,7 +86,7 @@ export const clockOutCommand: BotCommand = {
 				};
 			}
 
-			const now = new Date();
+			const now = dateFromInstant(temporal.now);
 
 			// Validate the time entry (holiday check)
 			const validation = await validateTimeEntry(emp.organizationId, now, timezone);
@@ -148,7 +146,10 @@ export const clockOutCommand: BotCommand = {
 				durationMinutes = result.durationMinutes;
 			} catch (error) {
 				if (error instanceof ClockingConflictError) {
-					return { type: "text", text: t("bot.cmd.clockout.notClockedIn", "You are not currently clocked in.") };
+					return {
+						type: "text",
+						text: t("bot.cmd.clockout.notClockedIn", "You are not currently clocked in."),
+					};
 				}
 				throw error;
 			}
@@ -225,7 +226,6 @@ export const clockOutCommand: BotCommand = {
 				});
 
 			// Format response
-			const clockOutTime = DateTime.fromJSDate(now).setZone(timezone);
 			const hours = Math.floor(durationMinutes / 60);
 			const mins = durationMinutes % 60;
 
@@ -234,7 +234,7 @@ export const clockOutCommand: BotCommand = {
 				text: t(
 					"bot.cmd.clockout.success",
 					"Clocked out at {time}. Duration: {hours}h {minutes}m.",
-					{ time: fmtTime(clockOutTime, ctx.locale), hours, minutes: mins },
+					{ time: formatInstant(temporal.now, temporal, "time"), hours, minutes: mins },
 				),
 			};
 		} catch (error) {

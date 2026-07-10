@@ -8,9 +8,10 @@
 import { DateTime } from "luxon";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
 import { fmtFullDate } from "@/lib/bot-platform/i18n";
-import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { instantFromDate, parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
 	type DisplayContext,
+	formatCapturedOffsetInstant,
 	formatInstant,
 	formatPlainDate,
 } from "@/lib/datetime/temporal-format";
@@ -136,6 +137,15 @@ export function buildApprovalMessage(
 		lines.push(
 			`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(t ? t("bot.approval.timeCorrection", "Time entry correction") : "Time entry correction")}`,
 		);
+		if (data.originalTime && data.originalTimeOffsetMinutes !== undefined) {
+			const original = formatCapturedOffsetInstant(parseInstant(data.originalTime), {
+				locale: context.locale,
+				timeFormat: context.timeFormat,
+				offsetMinutes: data.originalTimeOffsetMinutes,
+				preset: "dateTimeMedium",
+			});
+			lines.push(`Original event: ${escapeMarkdownV2(original)}`);
+		}
 	}
 
 	if (data.reason) {
@@ -211,6 +221,18 @@ export function buildResolvedApprovalMessage(
 				`${t ? t("bot.approval.period", "Period") : "Period"}: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`,
 			);
 		}
+	} else if (
+		data.entityType === "time_entry" &&
+		data.originalTime &&
+		data.originalTimeOffsetMinutes !== undefined
+	) {
+		const original = formatCapturedOffsetInstant(parseInstant(data.originalTime), {
+			locale: context.locale,
+			timeFormat: context.timeFormat,
+			offsetMinutes: data.originalTimeOffsetMinutes,
+			preset: "dateTimeMedium",
+		});
+		lines.push(`Original event: ${escapeMarkdownV2(original)}`);
 	}
 
 	lines.push("");

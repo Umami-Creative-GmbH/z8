@@ -6,13 +6,15 @@
  */
 
 import { and, eq, inArray } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, workPeriod } from "@/db/schema";
-import { fmtTime, getBotTranslate } from "@/lib/bot-platform/i18n";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
+import { elapsedHoursAndMinutes, getCommandTemporalContext } from "./command-temporal";
 
 const logger = createLogger("TeamsCommand:ClockedIn");
 
@@ -25,6 +27,7 @@ export const clockedInCommand: BotCommand = {
 	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		try {
 			const t = await getBotTranslate(ctx.locale);
+			const temporal = ctx.temporal ?? getCommandTemporalContext(ctx);
 
 			// Get employees this user manages (join through employee to filter by org)
 			const managedEmployees = await db.query.employeeManagers.findMany({
@@ -85,14 +88,11 @@ export const clockedInCommand: BotCommand = {
 			}
 
 			// Build response with details
-			const now = DateTime.now().setZone(ctx.config.digestTimezone);
 			const lines = activeWorkPeriods.map((entry) => {
-				const clockInTime = DateTime.fromJSDate(entry.startTime).setZone(ctx.config.digestTimezone);
-				const duration = now.diff(clockInTime, ["hours", "minutes"]);
-				const hours = Math.floor(duration.hours);
-				const minutes = Math.floor(duration.minutes % 60);
+				const clockInTime = instantFromDate(entry.startTime);
+				const { hours, minutes } = elapsedHoursAndMinutes(clockInTime, temporal.now);
 
-				return `• **${entry.employeeName}** - Clocked in at ${fmtTime(clockInTime, ctx.locale)} (${hours}h ${minutes}m)`;
+				return `• **${entry.employeeName}** - Clocked in at ${formatInstant(clockInTime, temporal, "time")} (${hours}h ${minutes}m)`;
 			});
 
 			const response = [

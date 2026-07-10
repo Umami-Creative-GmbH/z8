@@ -7,7 +7,13 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { absenceEntry, approvalRequest, employee, telegramApprovalMessage } from "@/db/schema";
+import {
+	absenceEntry,
+	approvalRequest,
+	employee,
+	telegramApprovalMessage,
+	timeEntry,
+} from "@/db/schema";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import { createLogger } from "@/lib/logger";
@@ -291,6 +297,22 @@ async function buildApprovalCardData(
 				startDate: absence.startDate,
 				endDate: absence.endDate,
 				reason: absence.notes || undefined,
+			};
+		}
+	} else if (approval.entityType === "time_entry") {
+		const entry = await db.query.timeEntry.findFirst({
+			where: and(
+				eq(timeEntry.id, approval.entityId),
+				eq(timeEntry.organizationId, approval.organizationId),
+			),
+		});
+
+		if (entry) {
+			return {
+				...baseData,
+				originalTime: entry.timestamp.toISOString(),
+				originalTimeOffsetMinutes: entry.utcOffsetMinutes,
+				correctedTime: entry.notes || undefined,
 			};
 		}
 	}

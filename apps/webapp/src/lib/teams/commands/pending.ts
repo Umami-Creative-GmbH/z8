@@ -5,12 +5,14 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { absenceEntry, approvalRequest, employee } from "@/db/schema";
-import { fmtShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
+import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
+import { getCommandTemporalContext } from "./command-temporal";
 
 const logger = createLogger("TeamsCommand:Pending");
 
@@ -23,6 +25,7 @@ export const pendingCommand: BotCommand = {
 	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		try {
 			const t = await getBotTranslate(ctx.locale);
+			const temporal = ctx.temporal ?? getCommandTemporalContext(ctx);
 
 			// Get pending approval requests assigned to this employee
 			const pendingRequests = await db.query.approvalRequest.findMany({
@@ -58,12 +61,13 @@ export const pendingCommand: BotCommand = {
 					});
 
 					const requesterName = requesterEmployee?.user?.name || "Unknown";
-					const createdAt = DateTime.fromJSDate(request.createdAt).setZone(
-						ctx.config.digestTimezone,
+					const ageMinutes = Math.max(
+						0,
+						Math.floor(
+							instantFromDate(request.createdAt).until(temporal.now, { largestUnit: "minute" })
+								.minutes,
+						),
 					);
-					const age = DateTime.now()
-						.setZone(ctx.config.digestTimezone)
-						.diff(createdAt, ["days", "hours"]);
 
 					let description = "";
 
@@ -80,8 +84,16 @@ export const pendingCommand: BotCommand = {
 
 						if (absence) {
 							const categoryName = absence.category?.name || "Leave";
-							const startDate = fmtShortDate(DateTime.fromISO(absence.startDate), ctx.locale);
-							const endDate = fmtShortDate(DateTime.fromISO(absence.endDate), ctx.locale);
+							const startDate = formatPlainDate(
+								parsePlainDate(absence.startDate),
+								temporal.locale,
+								"dateShort",
+							);
+							const endDate = formatPlainDate(
+								parsePlainDate(absence.endDate),
+								temporal.locale,
+								"dateShort",
+							);
 							description = `${categoryName}: ${startDate} - ${endDate}`;
 						}
 					} else if (request.entityType === "time_entry") {
@@ -90,10 +102,10 @@ export const pendingCommand: BotCommand = {
 
 					// Format age
 					let ageText = "";
-					if (age.days >= 1) {
-						ageText = `${Math.floor(age.days)}d ago`;
+					if (ageMinutes >= 24 * 60) {
+						ageText = `${Math.floor(ageMinutes / (24 * 60))}d ago`;
 					} else {
-						ageText = `${Math.floor(age.hours)}h ago`;
+						ageText = `${Math.floor(ageMinutes / 60)}h ago`;
 					}
 
 					return {
