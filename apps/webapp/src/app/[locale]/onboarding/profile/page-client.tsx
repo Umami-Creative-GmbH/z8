@@ -61,6 +61,18 @@ function getServerTodaySnapshot() {
 	return null;
 }
 
+function ProfileHeader({ t }: { t: (key: string, defaultValue: string) => string }) {
+	return <div className="mb-8 text-center"><div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10"><IconUser className="size-8 text-primary" /></div><h1 className="mb-4 text-3xl font-bold tracking-tight">{t("onboarding.profile.title", "Complete your profile")}</h1><p className="text-muted-foreground">{t("onboarding.profile.subtitle", "Help your team recognize you by adding some personal information.")}</p></div>;
+}
+
+function ProfileActions({ loading, onSkip, t }: { loading: boolean; onSkip: () => void; t: (key: string, defaultValue: string) => string }) {
+	return <div className="flex gap-3 pt-4"><Button type="button" variant="outline" onClick={onSkip} disabled={loading} className="flex-1">{t("onboarding.profile.skip", "Skip for now")}</Button><Button type="submit" disabled={loading} className="flex-1">{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}{t("onboarding.profile.continue", "Continue")}</Button></div>;
+}
+
+function ProfileGenderField({ form, genderOptions, loading, t }: { form: any; genderOptions: any[]; loading: boolean; t: (key: string, defaultValue: string) => string }) {
+	return <form.Field name="gender">{(field: any) => <div className="gap-y-2"><Label>{t("onboarding.profile.genderOptional", "Gender (Optional)")}</Label><div className="grid grid-cols-3 gap-3">{genderOptions.map((option) => { const Icon = option.icon; return <Button key={option.value} type="button" variant={field.state.value === option.value ? "default" : "outline"} className="h-auto flex-col gap-2 py-4" onClick={() => field.handleChange(option.value)} disabled={loading}><Icon className="size-6" /><span className="text-sm">{option.label}</span></Button>; })}</div><p className="text-sm text-muted-foreground">{t("onboarding.profile.genderDesc", "This helps personalize your experience.")}</p></div>}</form.Field>;
+}
+
 export default function ProfilePage() {
 	const { t } = useTranslate();
 	const { push } = useRouter();
@@ -121,20 +133,7 @@ export default function ProfilePage() {
 			<ProgressIndicator currentStep="profile" />
 
 			<div className="mx-auto max-w-2xl">
-				<div className="mb-8 text-center">
-					<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
-						<IconUser className="size-8 text-primary" />
-					</div>
-					<h1 className="mb-4 text-3xl font-bold tracking-tight">
-						{t("onboarding.profile.title", "Complete your profile")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"onboarding.profile.subtitle",
-							"Help your team recognize you by adding some personal information.",
-						)}
-					</p>
-				</div>
+				<ProfileHeader t={t} />
 
 				<Card>
 					<CardHeader>
@@ -209,38 +208,7 @@ export default function ProfilePage() {
 								)}
 							</form.Field>
 
-							{/* Gender (Optional) */}
-							<form.Field name="gender">
-								{(field) => (
-									<div className="gap-y-2">
-										<Label>{t("onboarding.profile.genderOptional", "Gender (Optional)")}</Label>
-										<div className="grid grid-cols-3 gap-3">
-											{genderOptions.map((option) => {
-												const Icon = option.icon;
-												return (
-													<Button
-														key={option.value}
-														type="button"
-														variant={field.state.value === option.value ? "default" : "outline"}
-														className="h-auto flex-col gap-2 py-4"
-														onClick={() => field.handleChange(option.value)}
-														disabled={loading}
-													>
-														<Icon className="size-6" />
-														<span className="text-sm">{option.label}</span>
-													</Button>
-												);
-											})}
-										</div>
-										<p className="text-sm text-muted-foreground">
-											{t(
-												"onboarding.profile.genderDesc",
-												"This helps personalize your experience.",
-											)}
-										</p>
-									</div>
-								)}
-							</form.Field>
+							<ProfileGenderField form={form} genderOptions={genderOptions} loading={loading} t={t} />
 
 							{/* Birthday (Optional) */}
 							<form.Field name="birthday">
@@ -387,22 +355,7 @@ export default function ProfilePage() {
 								)}
 							</form.Field>
 
-							{/* Action Buttons */}
-							<div className="flex gap-3 pt-4">
-								<Button
-									type="button"
-									variant="outline"
-									onClick={handleSkip}
-									disabled={loading}
-									className="flex-1"
-								>
-									{t("onboarding.profile.skip", "Skip for now")}
-								</Button>
-								<Button type="submit" disabled={loading} className="flex-1">
-									{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-									{t("onboarding.profile.continue", "Continue")}
-								</Button>
-							</div>
+							<ProfileActions loading={loading} onSkip={handleSkip} t={t} />
 						</form>
 					</CardContent>
 				</Card>
