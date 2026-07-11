@@ -99,6 +99,7 @@ function parseMetadata(
 export async function localizeOutboundNotification({
 	userId,
 	organizationId,
+	locale,
 	title,
 	message,
 	metadata,
