@@ -9,7 +9,7 @@ import {
 	IconPercentage,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState, useTransition } from "react";
+import { useReducer, useTransition } from "react";
 import { toast } from "sonner";
 import { toggleOrganizationFeature } from "@/app/[locale]/(app)/settings/organizations/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
+import {
+	organizationFeatureReducer,
+	type OrganizationFeature,
+	type OrganizationFeatureState,
+} from "./organization-feature-state";
 
 interface OrganizationFeaturesCardProps {
 	organizationId: string;
@@ -29,156 +34,66 @@ interface OrganizationFeaturesCardProps {
 }
 
 export function OrganizationFeaturesCard({
-	organizationId,
 	shiftsEnabled,
 	projectsEnabled,
 	surchargesEnabled,
 	demoDataEnabled,
 	worksCouncilEnabled,
-	currentMemberRole,
+	...props
 }: OrganizationFeaturesCardProps) {
+	const initialFeatures = {
+		shiftsEnabled,
+		projectsEnabled,
+		surchargesEnabled,
+		demoDataEnabled,
+		worksCouncilEnabled,
+	};
+
+	return (
+		<OrganizationFeaturesCardContent
+			key={Object.values(initialFeatures).join(":")}
+			{...props}
+			initialFeatures={initialFeatures}
+		/>
+	);
+}
+
+function OrganizationFeaturesCardContent({
+	organizationId,
+	currentMemberRole,
+	initialFeatures,
+}: Omit<OrganizationFeaturesCardProps, OrganizationFeature> & {
+	initialFeatures: OrganizationFeatureState;
+}) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
 	const [isPending, startTransition] = useTransition();
-	const [isShiftsEnabled, setIsShiftsEnabled] = useState(shiftsEnabled);
-	const [isProjectsEnabled, setIsProjectsEnabled] = useState(projectsEnabled);
-	const [isSurchargesEnabled, setIsSurchargesEnabled] = useState(surchargesEnabled);
-	const [isDemoDataEnabled, setIsDemoDataEnabled] = useState(demoDataEnabled);
-	const [isWorksCouncilEnabled, setIsWorksCouncilEnabled] = useState(worksCouncilEnabled);
+	const [features, dispatch] = useReducer(organizationFeatureReducer, initialFeatures);
 	const setOrgSettings = useOrganizationSettings((state) => state.setSettings);
 
 	const canEdit = currentMemberRole === "owner";
 
-	const handleToggleShifts = async (enabled: boolean) => {
+	const handleToggleFeature = async (feature: OrganizationFeature, enabled: boolean) => {
 		if (!canEdit) return;
 
-		// Optimistic update
-		setIsShiftsEnabled(enabled);
-		setOrgSettings({ shiftsEnabled: enabled });
+		dispatch({ type: "set", feature, enabled });
+		setOrgSettings({ [feature]: enabled });
 
-		const result = await toggleOrganizationFeature(organizationId, "shiftsEnabled", enabled);
+		const result = await toggleOrganizationFeature(organizationId, feature, enabled);
 
 		if (result.success) {
 			toast.success(
-				enabled
-					? t("organization.features.shifts-enabled", "Work Shifts enabled")
-					: t("organization.features.shifts-disabled", "Work Shifts disabled"),
+				t(
+					enabled ? `organization.features.${feature}-enabled` : `organization.features.${feature}-disabled`,
+					enabled ? "Feature enabled" : "Feature disabled",
+				),
 			);
 			startTransition(() => {
 				refresh();
 			});
 		} else {
-			// Revert optimistic update
-			setIsShiftsEnabled(!enabled);
-			setOrgSettings({ shiftsEnabled: !enabled });
-			toast.error(
-				result.error || t("organization.features.update-failed", "Failed to update feature"),
-			);
-		}
-	};
-
-	const handleToggleProjects = async (enabled: boolean) => {
-		if (!canEdit) return;
-
-		// Optimistic update
-		setIsProjectsEnabled(enabled);
-		setOrgSettings({ projectsEnabled: enabled });
-
-		const result = await toggleOrganizationFeature(organizationId, "projectsEnabled", enabled);
-
-		if (result.success) {
-			toast.success(
-				enabled
-					? t("organization.features.projects-enabled", "Projects enabled")
-					: t("organization.features.projects-disabled", "Projects disabled"),
-			);
-			startTransition(() => {
-				refresh();
-			});
-		} else {
-			// Revert optimistic update
-			setIsProjectsEnabled(!enabled);
-			setOrgSettings({ projectsEnabled: !enabled });
-			toast.error(
-				result.error || t("organization.features.update-failed", "Failed to update feature"),
-			);
-		}
-	};
-
-	const handleToggleSurcharges = async (enabled: boolean) => {
-		if (!canEdit) return;
-
-		// Optimistic update
-		setIsSurchargesEnabled(enabled);
-		setOrgSettings({ surchargesEnabled: enabled });
-
-		const result = await toggleOrganizationFeature(organizationId, "surchargesEnabled", enabled);
-
-		if (result.success) {
-			toast.success(
-				enabled
-					? t("organization.features.surcharges-enabled", "Surcharges enabled")
-					: t("organization.features.surcharges-disabled", "Surcharges disabled"),
-			);
-			startTransition(() => {
-				refresh();
-			});
-		} else {
-			// Revert optimistic update
-			setIsSurchargesEnabled(!enabled);
-			setOrgSettings({ surchargesEnabled: !enabled });
-			toast.error(
-				result.error || t("organization.features.update-failed", "Failed to update feature"),
-			);
-		}
-	};
-
-	const handleToggleWorksCouncil = async (enabled: boolean) => {
-		if (!canEdit) return;
-
-		setIsWorksCouncilEnabled(enabled);
-		setOrgSettings({ worksCouncilEnabled: enabled });
-
-		const result = await toggleOrganizationFeature(organizationId, "worksCouncilEnabled", enabled);
-
-		if (result.success) {
-			toast.success(
-				enabled
-					? t("organization.features.works-council-enabled", "Works Council enabled")
-					: t("organization.features.works-council-disabled", "Works Council disabled"),
-			);
-			startTransition(() => {
-				refresh();
-			});
-		} else {
-			setIsWorksCouncilEnabled(!enabled);
-			setOrgSettings({ worksCouncilEnabled: !enabled });
-			toast.error(
-				result.error || t("organization.features.update-failed", "Failed to update feature"),
-			);
-		}
-	};
-
-	const handleToggleDemoData = async (enabled: boolean) => {
-		if (!canEdit) return;
-
-		setIsDemoDataEnabled(enabled);
-		setOrgSettings({ demoDataEnabled: enabled });
-
-		const result = await toggleOrganizationFeature(organizationId, "demoDataEnabled", enabled);
-
-		if (result.success) {
-			toast.success(
-				enabled
-					? t("organization.features.demo-data-enabled", "Demo Data enabled")
-					: t("organization.features.demo-data-disabled", "Demo Data disabled"),
-			);
-			startTransition(() => {
-				refresh();
-			});
-		} else {
-			setIsDemoDataEnabled(!enabled);
-			setOrgSettings({ demoDataEnabled: !enabled });
+			dispatch({ type: "set", feature, enabled: !enabled });
+			setOrgSettings({ [feature]: !enabled });
 			toast.error(
 				result.error || t("organization.features.update-failed", "Failed to update feature"),
 			);
@@ -222,8 +137,8 @@ export function OrganizationFeaturesCard({
 						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
 						<Switch
 							id="shifts-toggle"
-							checked={isShiftsEnabled}
-							onCheckedChange={handleToggleShifts}
+							checked={features.shiftsEnabled}
+							onCheckedChange={(enabled) => handleToggleFeature("shiftsEnabled", enabled)}
 							disabled={!canEdit || isPending}
 							aria-label={t("organization.features.toggle-work-shifts", "Toggle work shifts")}
 						/>
@@ -255,8 +170,8 @@ export function OrganizationFeaturesCard({
 						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
 						<Switch
 							id="projects-toggle"
-							checked={isProjectsEnabled}
-							onCheckedChange={handleToggleProjects}
+							checked={features.projectsEnabled}
+							onCheckedChange={(enabled) => handleToggleFeature("projectsEnabled", enabled)}
 							disabled={!canEdit || isPending}
 							aria-label={t("organization.features.toggle-projects", "Toggle projects")}
 						/>
@@ -288,8 +203,8 @@ export function OrganizationFeaturesCard({
 						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
 						<Switch
 							id="surcharges-toggle"
-							checked={isSurchargesEnabled}
-							onCheckedChange={handleToggleSurcharges}
+							checked={features.surchargesEnabled}
+							onCheckedChange={(enabled) => handleToggleFeature("surchargesEnabled", enabled)}
 							disabled={!canEdit || isPending}
 							aria-label={t("organization.features.toggle-surcharges", "Toggle surcharges")}
 						/>
@@ -321,8 +236,8 @@ export function OrganizationFeaturesCard({
 						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
 						<Switch
 							id="works-council-toggle"
-							checked={isWorksCouncilEnabled}
-							onCheckedChange={handleToggleWorksCouncil}
+							checked={features.worksCouncilEnabled}
+							onCheckedChange={(enabled) => handleToggleFeature("worksCouncilEnabled", enabled)}
 							disabled={!canEdit || isPending}
 							aria-label={t("organization.features.toggle-works-council", "Toggle Works Council")}
 						/>
@@ -354,8 +269,8 @@ export function OrganizationFeaturesCard({
 						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
 						<Switch
 							id="demo-data-toggle"
-							checked={isDemoDataEnabled}
-							onCheckedChange={handleToggleDemoData}
+							checked={features.demoDataEnabled}
+							onCheckedChange={(enabled) => handleToggleFeature("demoDataEnabled", enabled)}
 							disabled={!canEdit || isPending}
 							aria-label={t("organization.features.toggle-demo-data", "Toggle demo data")}
 						/>
