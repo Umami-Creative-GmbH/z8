@@ -37,15 +37,19 @@ import { useSession } from "@/lib/auth-client";
 import type { UserOrganization } from "@/lib/auth-helpers";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 
+export interface NavigationCapabilities {
+	scheduling: boolean;
+	compliance: boolean;
+	payroll: boolean;
+	worksCouncil: boolean;
+	platformAdmin: boolean;
+}
+
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	organizations?: UserOrganization[];
 	currentOrganization?: UserOrganization | null;
 	employeeRole?: "admin" | "manager" | "employee" | null;
-	shiftsEnabled?: boolean;
-	showComplianceNav?: boolean;
-	showPayrollNav?: boolean;
-	showWorksCouncilNav?: boolean;
-	showPlatformAdminNav?: boolean;
+	navigationCapabilities?: NavigationCapabilities;
 	settingsAccessTier?: SettingsAccessTier;
 	billingEnabled?: boolean;
 	featureFlags?: FeatureFlagState;
@@ -57,16 +61,19 @@ const isManagerOrAbove = (role: "admin" | "manager" | "employee" | null | undefi
 };
 
 const EMPTY_ORGANIZATIONS: UserOrganization[] = [];
+const DEFAULT_NAVIGATION_CAPABILITIES: NavigationCapabilities = {
+	scheduling: false,
+	compliance: false,
+	payroll: false,
+	worksCouncil: false,
+	platformAdmin: false,
+};
 
 export function AppSidebar({
 	organizations = EMPTY_ORGANIZATIONS,
 	currentOrganization = null,
 	employeeRole = null,
-	shiftsEnabled = false,
-	showComplianceNav = false,
-	showPayrollNav = false,
-	showWorksCouncilNav = false,
-	showPlatformAdminNav = false,
+	navigationCapabilities = DEFAULT_NAVIGATION_CAPABILITIES,
 	settingsAccessTier = "member",
 	billingEnabled = false,
 	featureFlags,
@@ -80,8 +87,8 @@ export function AppSidebar({
 		employeeRole,
 		settingsAccessTier,
 		billingEnabled,
-		showComplianceNav,
-		showPayrollNav,
+		showComplianceNav: navigationCapabilities.compliance,
+		showPayrollNav: navigationCapabilities.payroll,
 		featureFlags,
 	};
 	const staticCommands = buildStaticAppCommands(staticSearchInput);
@@ -129,7 +136,7 @@ export function AppSidebar({
 			url: "/organization",
 			icon: IconHierarchy,
 		},
-		...(showPayrollNav
+		...(navigationCapabilities.payroll
 			? [
 					{
 						title: t("nav.payroll", "Payroll"),
@@ -153,7 +160,7 @@ export function AppSidebar({
 			icon: IconBeach,
 		},
 		// Only show Scheduling when shifts are enabled for the organization
-		...(shiftsEnabled
+		...(navigationCapabilities.scheduling
 			? [
 					{
 						title: t("nav.scheduling", "Scheduling"),
@@ -170,7 +177,7 @@ export function AppSidebar({
 	];
 
 	const navSecondary = [
-		...(showComplianceNav
+		...(navigationCapabilities.compliance
 			? [
 					{
 						title: t("nav.compliance", "Compliance"),
@@ -179,7 +186,7 @@ export function AppSidebar({
 					},
 				]
 			: []),
-		...(showWorksCouncilNav
+		...(navigationCapabilities.worksCouncil
 			? [
 					{
 						title: t("nav.worksCouncil", "Works Council"),
@@ -205,7 +212,7 @@ export function AppSidebar({
 			icon: IconMessageCircle,
 			external: true,
 		},
-		...(showPlatformAdminNav
+		...(navigationCapabilities.platformAdmin
 			? [
 					{
 						title: t("nav.platform-admin", "Platform Admin"),

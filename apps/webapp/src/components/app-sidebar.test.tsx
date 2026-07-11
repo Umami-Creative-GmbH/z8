@@ -196,7 +196,18 @@ describe("app sidebar compliance navigation", () => {
 	});
 
 	it("renders Payroll navigation when payroll access is enabled", () => {
-		render(<AppSidebar employeeRole="employee" showPayrollNav />);
+		render(
+			<AppSidebar
+				employeeRole="employee"
+				navigationCapabilities={{
+					scheduling: false,
+					compliance: false,
+					payroll: true,
+					worksCouncil: false,
+					platformAdmin: false,
+				}}
+			/>,
+		);
 		expect(screen.getByText("Payroll")).toBeTruthy();
 		expect(appSearchSpy).toHaveBeenLastCalledWith(
 			expect.objectContaining({
@@ -532,7 +543,17 @@ describe("app sidebar compliance navigation", () => {
 	});
 
 	it("renders platform admin navigation below feedback when enabled", () => {
-		render(<AppSidebar showPlatformAdminNav />);
+		render(
+			<AppSidebar
+				navigationCapabilities={{
+					scheduling: false,
+					compliance: false,
+					payroll: false,
+					worksCouncil: false,
+					platformAdmin: true,
+				}}
+			/>,
+		);
 
 		expect(screen.getByRole("link", { name: "Platform Admin" }).getAttribute("href")).toBe(
 			"/platform-admin",
@@ -555,7 +576,17 @@ describe("app sidebar compliance navigation", () => {
 	});
 
 	it("renders the compliance entry in secondary nav only when enabled", () => {
-		const { rerender } = render(<AppSidebar showComplianceNav />);
+		const { rerender } = render(
+			<AppSidebar
+				navigationCapabilities={{
+					scheduling: false,
+					compliance: true,
+					payroll: false,
+					worksCouncil: false,
+					platformAdmin: false,
+				}}
+			/>,
+		);
 
 		expect(screen.getByRole("link", { name: "Compliance" }).getAttribute("href")).toBe(
 			"/compliance",
@@ -570,7 +601,7 @@ describe("app sidebar compliance navigation", () => {
 			]),
 		);
 
-		rerender(<AppSidebar showComplianceNav={false} />);
+		rerender(<AppSidebar />);
 
 		expect(screen.queryByRole("link", { name: "Compliance" })).toBeNull();
 		expect(navSecondarySpy).toHaveBeenLastCalledWith(
@@ -596,7 +627,17 @@ describe("app sidebar compliance navigation", () => {
 			]),
 		);
 
-		rerender(<AppSidebar showWorksCouncilNav />);
+		rerender(
+			<AppSidebar
+				navigationCapabilities={{
+					scheduling: false,
+					compliance: false,
+					payroll: false,
+					worksCouncil: true,
+					platformAdmin: false,
+				}}
+			/>,
+		);
 
 		expect(screen.getByRole("link", { name: "Works Council" }).getAttribute("href")).toBe(
 			"/works-council",
@@ -669,11 +710,13 @@ describe("app sidebar compliance navigation", () => {
 		expect(screen.getByTestId("server-sidebar-proxy")).toBeTruthy();
 		expect(appSidebarSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
-				showComplianceNav: true,
-				showPayrollNav: false,
-				showPlatformAdminNav: false,
+				navigationCapabilities: expect.objectContaining({
+					compliance: true,
+					payroll: false,
+					platformAdmin: false,
+					scheduling: true,
+				}),
 				employeeRole: "admin",
-				shiftsEnabled: true,
 				settingsAccessTier: "orgAdmin",
 				billingEnabled: false,
 				canCreateOrganizations: false,
@@ -698,9 +741,12 @@ describe("app sidebar compliance navigation", () => {
 
 		expect(appSidebarSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
-				showComplianceNav: false,
-				showPayrollNav: false,
-				showPlatformAdminNav: false,
+				navigationCapabilities: expect.objectContaining({
+					compliance: false,
+					payroll: false,
+					platformAdmin: false,
+					scheduling: true,
+				}),
 				settingsAccessTier: "member",
 				billingEnabled: false,
 				canCreateOrganizations: false,
@@ -762,7 +808,10 @@ describe("app sidebar compliance navigation", () => {
 		render(await ServerAppSidebar({}));
 
 		expect(appSidebarSpy).toHaveBeenCalledWith(
-			expect.objectContaining({ showPayrollNav: true, employeeRole: "employee" }),
+			expect.objectContaining({
+				navigationCapabilities: expect.objectContaining({ payroll: true }),
+				employeeRole: "employee",
+			}),
 		);
 		expect(hasActivePayrollAccessGrantMock).toHaveBeenCalledWith({
 			organizationId: "org_1",
@@ -815,7 +864,10 @@ describe("app sidebar compliance navigation", () => {
 		render(await ServerAppSidebar({}));
 
 		expect(appSidebarSpy).toHaveBeenCalledWith(
-			expect.objectContaining({ showPayrollNav: false, employeeRole: "admin" }),
+			expect.objectContaining({
+				navigationCapabilities: expect.objectContaining({ payroll: false }),
+				employeeRole: "admin",
+			}),
 		);
 		expect(hasActivePayrollAccessGrantMock).toHaveBeenCalledWith({
 			organizationId: "org_1",
@@ -868,7 +920,10 @@ describe("app sidebar compliance navigation", () => {
 		render(await ServerAppSidebar({}));
 
 		expect(appSidebarSpy).toHaveBeenCalledWith(
-			expect.objectContaining({ showPayrollNav: true, employeeRole: "admin" }),
+			expect.objectContaining({
+				navigationCapabilities: expect.objectContaining({ payroll: true }),
+				employeeRole: "admin",
+			}),
 		);
 		expect(hasActivePayrollAccessGrantMock).toHaveBeenCalledWith({
 			organizationId: "org_1",
@@ -923,7 +978,10 @@ describe("app sidebar compliance navigation", () => {
 		render(await ServerAppSidebar({}));
 
 		expect(appSidebarSpy).toHaveBeenCalledWith(
-			expect.objectContaining({ showPayrollNav: false, employeeRole: "employee" }),
+			expect.objectContaining({
+				navigationCapabilities: expect.objectContaining({ payroll: false }),
+				employeeRole: "employee",
+			}),
 		);
 	});
 
@@ -976,7 +1034,7 @@ describe("app sidebar compliance navigation", () => {
 		expect(screen.getByTestId("server-sidebar-proxy")).toBeTruthy();
 		expect(appSidebarSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
-				showPlatformAdminNav: true,
+				navigationCapabilities: expect.objectContaining({ platformAdmin: true }),
 				employeeRole: "employee",
 				settingsAccessTier: "member",
 				canCreateOrganizations: true,
