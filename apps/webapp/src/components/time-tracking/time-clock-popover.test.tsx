@@ -51,6 +51,14 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
+vi.mock("next-intl", () => ({
+	useLocale: () => "en-US",
+}));
+
+vi.mock("@/components/providers/user-preferences-provider", () => ({
+	useUserTimezone: () => "Europe/Berlin",
+}));
+
 vi.mock("sonner", () => ({
 	toast: {
 		success: toastMocks.success,

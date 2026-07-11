@@ -9,6 +9,7 @@ import {
 	IconLoader2,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { DateTime } from "luxon";
 import { startTransition, useEffect, useEffectEvent, useState } from "react";
 import { toast } from "sonner";
@@ -85,13 +86,10 @@ const HOLIDAY_TYPES: { value: HolidayType; label: string }[] = [
 	{ value: "bank", label: "Bank Holidays" },
 ];
 
-const holidayPreviewDateFormatter = new Intl.DateTimeFormat(undefined, {
-	dateStyle: "medium",
-	timeZone: "UTC",
-});
-
-function formatHolidayPreviewDate(date: string) {
-	return holidayPreviewDateFormatter.format(DateTime.fromISO(date, { zone: "utc" }).toJSDate());
+function formatHolidayPreviewDate(date: string, locale: string) {
+	return Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(
+		DateTime.fromISO(date, { zone: "utc" }).toJSDate(),
+	);
 }
 
 function getPresetNameWithYear(baseName: string, year: number) {
@@ -113,6 +111,7 @@ export function HolidayImportDialog({
 	onSuccess,
 }: HolidayImportDialogProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 
 	// Step state
 	const [step, setStep] = useState(1);
@@ -712,7 +711,7 @@ export function HolidayImportDialog({
 														/>
 													</TableCell>
 													<TableCell className="font-medium">{holiday.name}</TableCell>
-													<TableCell>{formatHolidayPreviewDate(holiday.startDate)}</TableCell>
+													<TableCell>{formatHolidayPreviewDate(holiday.startDate, locale)}</TableCell>
 													<TableCell>
 														<Badge variant="outline" className="capitalize">
 															{holiday.type}

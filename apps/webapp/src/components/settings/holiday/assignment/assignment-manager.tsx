@@ -13,6 +13,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -42,14 +43,6 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryKeys } from "@/lib/query";
-
-const assignmentDateFormatter = new Intl.DateTimeFormat(undefined, {
-	dateStyle: "medium",
-});
-const holidayDateFormatter = new Intl.DateTimeFormat(undefined, {
-	month: "short",
-	day: "numeric",
-});
 
 interface AssignmentManagerProps {
 	organizationId: string;
@@ -147,6 +140,13 @@ export function AssignmentManager({
 	onHolidayAssignClick,
 }: AssignmentManagerProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const assignmentDateFormatter = Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" });
+	const holidayDateFormatter = Intl.DateTimeFormat(locale, {
+		month: "short",
+		day: "numeric",
+		timeZone: "UTC",
+	});
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [selectedPresetAssignment, setSelectedPresetAssignment] =

@@ -19,6 +19,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -120,8 +121,6 @@ const DATE_RANGE_PRESETS: { value: DateRangePreset; label: string }[] = [
 	{ value: "last_12_months", label: "Last 12 months" },
 	{ value: "custom", label: "Custom date range" },
 ];
-const mediumDateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
-
 function resolveReviewDateRange(dateRange: ImportSelections["dateRange"]) {
 	const now = DateTime.utc();
 
@@ -175,6 +174,8 @@ function hasSelectedUserScopedEntity(selections: ImportSelections): boolean {
 
 export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const mediumDateFormatter = Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" });
 	const queryClient = useQueryClient();
 	const router = useRouter();
 
