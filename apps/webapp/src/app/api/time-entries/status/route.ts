@@ -4,6 +4,7 @@ import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
 
 /**
  * GET /api/time-entries/status
@@ -44,13 +45,9 @@ export async function GET() {
 		// Get employee record for the active organization
 		const activeOrgId = session.session.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({
-				hasEmployee: false,
-				employeeId: null,
-				isClockedIn: false,
-				activeWorkPeriod: null,
-			});
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
+		await clockingService.requireActor({ userId: session.user.id, activeOrganizationId: activeOrgId });
 
 		const emp = await db.query.employee.findFirst({
 			where: and(
@@ -91,7 +88,10 @@ export async function GET() {
 		};
 
 		return NextResponse.json(response);
-	} catch (_error) {
+	} catch (error) {
+		if (error instanceof ClockingAccessError) {
+			return NextResponse.json({ error: error.message }, { status: 403 });
+		}
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

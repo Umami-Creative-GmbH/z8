@@ -28,6 +28,7 @@ const mockState = vi.hoisted(() => {
 		markEmployeeWorkBalanceDirty: vi.fn(),
 		resolveCorrectionApprovalManager: vi.fn(),
 		runPromise: vi.fn(),
+		requireActor: vi.fn(),
 		select,
 		transaction: vi.fn(),
 		where,
@@ -133,6 +134,11 @@ vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mockState.markEmployeeWorkBalanceDirty,
 }));
 
+vi.mock("@/lib/time-tracking/clocking-service", () => ({
+	ClockingAccessError: class ClockingAccessError extends Error {},
+	clockingService: { requireActor: mockState.requireActor },
+}));
+
 vi.mock("drizzle-orm", () => ({
 	and: (...conditions: unknown[]) => ({ conditions, type: "and" }),
 	eq: (column: unknown, value: unknown) => ({ column, type: "eq", value }),
@@ -229,6 +235,11 @@ describe("GET /api/time-entries/corrections", () => {
 			session: { activeOrganizationId: "org-1" },
 			user: { id: "user-1" },
 		});
+		mockState.requireActor.mockResolvedValue({
+			employee: { id: "employee-1", organizationId: "org-1" },
+			organizationId: "org-1",
+			userId: "user-1",
+		});
 		mockState.limit.mockResolvedValue([
 			{
 				id: "employee-1",
@@ -304,6 +315,11 @@ describe("POST /api/time-entries/corrections", () => {
 		mockState.getSession.mockResolvedValue({
 			session: { activeOrganizationId: "org-1" },
 			user: { id: "user-1" },
+		});
+		mockState.requireActor.mockResolvedValue({
+			employee: { id: "employee-1", organizationId: "org-1" },
+			organizationId: "org-1",
+			userId: "user-1",
 		});
 		mockState.canApproveFor.mockResolvedValue(false);
 		mockState.getUserTimezone.mockResolvedValue("Europe/Berlin");

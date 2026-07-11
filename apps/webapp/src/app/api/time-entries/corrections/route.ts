@@ -23,6 +23,7 @@ import {
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
 
 const RFC3339_WITH_OFFSET = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
@@ -108,6 +109,7 @@ export async function POST(request: NextRequest) {
 		if (!activeOrgId) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
+		await clockingService.requireActor({ userId: session.user.id, activeOrganizationId: activeOrgId });
 
 		const body = await request.json();
 		const { replacesEntryId, timestamp, notes, timezone } = body;
@@ -365,6 +367,9 @@ export async function POST(request: NextRequest) {
 			{ status: 201 },
 		);
 	} catch (error) {
+		if (error instanceof ClockingAccessError) {
+			return NextResponse.json({ error: error.message }, { status: 403 });
+		}
 		const domainError = getCorrectionDomainError(error);
 		if (domainError instanceof ConflictError) {
 			return NextResponse.json(
@@ -411,6 +416,7 @@ export async function GET(request: NextRequest) {
 		if (!activeOrgId) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
+		await clockingService.requireActor({ userId: session.user.id, activeOrganizationId: activeOrgId });
 
 		const searchParams = request.nextUrl.searchParams;
 		const employeeId = searchParams.get("employeeId");
@@ -507,6 +513,9 @@ export async function GET(request: NextRequest) {
 
 		return NextResponse.json({ corrections });
 	} catch (error) {
+		if (error instanceof ClockingAccessError) {
+			return NextResponse.json({ error: error.message }, { status: 403 });
+		}
 		console.error("Error fetching corrections:", error);
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}

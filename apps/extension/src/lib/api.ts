@@ -1,4 +1,5 @@
 import { storage, type QueuedAction } from "./storage";
+import type { ClockAction } from "./clock-action";
 import type { ClockStatus, Project, TimeEntry } from "@/types";
 
 export class NetworkError extends Error {
@@ -69,23 +70,19 @@ class ApiClient {
     return this.fetch<ClockStatus>("/api/time-entries/status");
   }
 
-  async clockIn(timestamp?: string): Promise<{ entry: TimeEntry }> {
+  async clockIn(action: ClockAction): Promise<{ entry: TimeEntry }> {
     return this.fetch<{ entry: TimeEntry }>("/api/time-entries", {
       method: "POST",
-      body: JSON.stringify({
-        type: "clock_in",
-        ...(timestamp && { timestamp }),
-      }),
+      body: JSON.stringify(action),
     });
   }
 
-  async clockOut(projectId?: string, timestamp?: string): Promise<{ entry: TimeEntry }> {
+  async clockOut(action: ClockAction, projectId?: string): Promise<{ entry: TimeEntry }> {
     return this.fetch<{ entry: TimeEntry }>("/api/time-entries", {
       method: "POST",
       body: JSON.stringify({
-        type: "clock_out",
+        ...action,
         ...(projectId && { projectId }),
-        ...(timestamp && { timestamp }),
       }),
     });
   }
@@ -98,9 +95,9 @@ class ApiClient {
   async processQueuedAction(action: QueuedAction): Promise<boolean> {
     try {
       if (action.type === "clock_in") {
-        await this.clockIn(action.timestamp);
+        await this.clockIn(action);
       } else {
-        await this.clockOut(action.projectId, action.timestamp);
+        await this.clockOut(action, action.projectId);
       }
       return true;
     } catch (error) {

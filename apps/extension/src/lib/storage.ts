@@ -1,13 +1,11 @@
 import { DateTime } from "luxon";
 import { normalizeWebappUrl } from "./settings";
+import type { ClockAction } from "./clock-action";
 
 const DEFAULT_WEBAPP_URL = "http://localhost:3000";
 
-export interface QueuedAction {
-  id: string;
-  type: "clock_in" | "clock_out";
+export interface QueuedAction extends ClockAction {
   projectId?: string;
-  timestamp: string;
   createdAt: string;
 }
 
@@ -90,11 +88,10 @@ export const storage = {
     }
   },
 
-  async addToQueue(action: Omit<QueuedAction, "id" | "createdAt">): Promise<QueuedAction> {
+  async addToQueue(action: Omit<QueuedAction, "createdAt">): Promise<QueuedAction> {
     const queue = await this.getQueuedActions();
     const newAction: QueuedAction = {
       ...action,
-      id: crypto.randomUUID(),
       createdAt: DateTime.utc().toISO(),
     };
     queue.push(newAction);

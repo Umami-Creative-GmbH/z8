@@ -372,6 +372,13 @@
       "when": 1780773132903,
       "tag": "0052_time_entry_timezone_recovery",
       "breakpoints": true
+	},
+	{
+		"idx": 53,
+		"version": "7",
+		"when": 1781096400000,
+		"tag": "0053_telegram_digest_delivery",
+		"breakpoints": true
     }
   ]
 }

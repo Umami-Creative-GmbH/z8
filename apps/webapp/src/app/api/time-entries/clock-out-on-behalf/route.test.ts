@@ -39,6 +39,7 @@ const mockState = vi.hoisted(() => {
 		markEmployeeWorkBalanceDirty: vi.fn(),
 		limit,
 		requireBillingForMutation: vi.fn(),
+		requireActor: vi.fn(),
 		resolveFallbackTimezoneCapture: vi.fn(),
 		select,
 		transaction,
@@ -130,6 +131,11 @@ vi.mock("@/lib/time-tracking/timezone-capture", () => ({
 	resolveFallbackTimezoneCapture: mockState.resolveFallbackTimezoneCapture,
 }));
 
+vi.mock("@/lib/time-tracking/clocking-service", () => ({
+	ClockingAccessError: class ClockingAccessError extends Error {},
+	clockingService: { requireActor: mockState.requireActor },
+}));
+
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/entry-helpers", () => ({
 	createTimeEntry: mockState.createTimeEntry,
 }));
@@ -219,6 +225,11 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		mockState.txLimit.mockResolvedValue([runningPeriod]);
 		mockState.getAbility.mockResolvedValue({ can: vi.fn(() => true) });
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
+		mockState.requireActor.mockResolvedValue({
+			employee: actorEmployee,
+			organizationId: "org-1",
+			userId: "actor-user-1",
+		});
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
 		mockState.createBillingForbiddenResponse.mockImplementation((access) =>
 			Response.json({ error: "billing_required", reason: access.reason }, { status: 402 }),

@@ -9,6 +9,7 @@ import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
+import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
 
 /**
  * POST /api/time-entries/verify
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest) {
 		if (!activeOrgId) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
+		await clockingService.requireActor({ userId: session.user.id, activeOrganizationId: activeOrgId });
 
 		const body = await request.json();
 		const { employeeId } = body;
@@ -95,6 +97,9 @@ export async function POST(request: NextRequest) {
 			verifiedAt: new Date().toISOString(),
 		});
 	} catch (error) {
+		if (error instanceof ClockingAccessError) {
+			return NextResponse.json({ error: error.message }, { status: 403 });
+		}
 		console.error("Error verifying time entry chain:", error);
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
@@ -117,6 +122,7 @@ export async function GET(request: NextRequest) {
 		if (!activeOrgId) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
+		await clockingService.requireActor({ userId: session.user.id, activeOrganizationId: activeOrgId });
 
 		const searchParams = request.nextUrl.searchParams;
 		const employeeId = searchParams.get("employeeId");
@@ -169,6 +175,9 @@ export async function GET(request: NextRequest) {
 			generatedAt: new Date().toISOString(),
 		});
 	} catch (error) {
+		if (error instanceof ClockingAccessError) {
+			return NextResponse.json({ error: error.message }, { status: 403 });
+		}
 		console.error("Error getting chain hash:", error);
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}

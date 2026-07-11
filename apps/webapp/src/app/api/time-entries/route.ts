@@ -30,6 +30,7 @@ import {
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import { isWorkLocationType } from "@/lib/time-tracking/work-location";
+import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
 
 class TimeEntryConflictError extends Error {
 	constructor(message: string) {
@@ -81,6 +82,10 @@ export async function GET(request: NextRequest) {
 		if (!activeOrgId) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
+		await clockingService.requireActor({
+			userId: session.user.id,
+			activeOrganizationId: activeOrgId,
+		});
 
 		const [currentEmployee] = await db
 			.select()
@@ -198,6 +203,9 @@ export async function POST(request: NextRequest) {
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
+		if (body && typeof body === "object" && "employeeId" in body) {
+			return NextResponse.json({ error: "employeeId is server-derived" }, { status: 400 });
+		}
 
 		const {
 			type,
@@ -226,14 +234,19 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Invalid work location type" }, { status: 400 });
 		}
 
-		// Offline sync sends the organization captured when the event happened.
 		const activeOrgId = session.session.activeOrganizationId;
-		const requestedOrgId =
-			typeof organizationId === "string" && organizationId ? organizationId : activeOrgId;
+		if (organizationId !== undefined) {
+			return NextResponse.json({ error: "organizationId is server-derived" }, { status: 400 });
+		}
+		const requestedOrgId = activeOrgId;
 
 		if (!requestedOrgId) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
+		await clockingService.requireActor({
+			userId: session.user.id,
+			activeOrganizationId: requestedOrgId,
+		});
 
 		const [currentEmployee] = await db
 			.select()
@@ -404,6 +417,9 @@ export async function POST(request: NextRequest) {
 
 		return NextResponse.json({ entry }, { status: 201 });
 	} catch (error) {
+		if (error instanceof ClockingAccessError) {
+			return NextResponse.json({ error: error.message }, { status: 403 });
+		}
 		if (error instanceof TimeEntryConflictError) {
 			return NextResponse.json({ error: error.message }, { status: 409 });
 		}

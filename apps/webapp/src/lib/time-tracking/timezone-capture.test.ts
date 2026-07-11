@@ -10,6 +10,10 @@ import {
 
 describe("timezone capture utilities", () => {
 	it("derives offsets for the exact timestamp", () => {
+		expect(getUtcOffsetMinutesForZone(new Date("2026-05-29T12:00:00.000Z"), "UTC")).toBe(0);
+		expect(
+			getUtcOffsetMinutesForZone(new Date("2026-05-29T12:00:00.000Z"), "Pacific/Honolulu"),
+		).toBe(-600);
 		expect(getUtcOffsetMinutesForZone(new Date("2026-05-29T08:00:00.000Z"), "Europe/Berlin")).toBe(
 			120,
 		);

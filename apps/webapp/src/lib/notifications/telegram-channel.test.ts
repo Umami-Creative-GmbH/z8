@@ -6,6 +6,7 @@ const {
 	errorMock,
 	getBotConfigMock,
 	getChatIdMock,
+	resolveRecipientDisplayContextMock,
 	sendApprovalMessageMock,
 	sendMessageMock,
 } = vi.hoisted(() => ({
@@ -13,6 +14,7 @@ const {
 	errorMock: vi.fn(),
 	getBotConfigMock: vi.fn(),
 	getChatIdMock: vi.fn(),
+	resolveRecipientDisplayContextMock: vi.fn(),
 	sendApprovalMessageMock: vi.fn(),
 	sendMessageMock: vi.fn(),
 }));
@@ -53,6 +55,10 @@ vi.mock("./outbound-localization", () => ({
 	localizeOutboundNotification: vi.fn(),
 }));
 
+vi.mock("./recipient-display-context", () => ({
+	resolveRecipientDisplayContext: resolveRecipientDisplayContextMock,
+}));
+
 const localizeOutboundNotificationMock = vi.mocked(localizeOutboundNotification);
 
 describe("sendTelegramNotification", () => {
@@ -60,6 +66,11 @@ describe("sendTelegramNotification", () => {
 		vi.clearAllMocks();
 		getBotConfigMock.mockResolvedValue({ botToken: "bot-token" });
 		getChatIdMock.mockResolvedValue("chat-123");
+		resolveRecipientDisplayContextMock.mockResolvedValue({
+			locale: "de",
+			timeFormat: "24h",
+			timezone: "Europe/Berlin",
+		});
 		sendMessageMock.mockResolvedValue({ ok: true });
 		localizeOutboundNotificationMock.mockResolvedValue({
 			locale: "de",
@@ -94,6 +105,7 @@ describe("sendTelegramNotification", () => {
 			title: "Added to team",
 			message: "You were added to the Ops (EU) team.",
 			metadata,
+			locale: "de",
 		});
 		expect(sendMessageMock).toHaveBeenCalledWith("bot-token", {
 			chat_id: "chat-123",

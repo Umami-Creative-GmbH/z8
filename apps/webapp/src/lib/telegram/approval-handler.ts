@@ -11,6 +11,7 @@ import { approvalRequest, employee, telegramApprovalMessage } from "@/db/schema"
 import { decideBotApproval } from "@/lib/bot-platform/approval-decision";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
+import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { editMessageText, sendMessage } from "./api";
 import { getChatIdForUser } from "./conversation-manager";
 import { buildApprovalMessage, buildResolvedApprovalMessage, escapeMarkdownV2 } from "./formatters";
@@ -105,40 +106,52 @@ export async function handleApprovalCallback(
 
 		// Get approver name
 		const approverEmployee = await db.query.employee.findFirst({
-			where: eq(employee.id, userResult.user.employeeId),
+			where: and(
+				eq(employee.id, userResult.user.employeeId),
+				eq(employee.organizationId, bot.organizationId),
+			),
 			with: { user: { columns: { name: true } } },
 		});
+		if (!approverEmployee) return;
 		const approverName = approverEmployee?.user?.name || "Unknown";
 
 		// Build original card data for resolved message
-		const cardData = await buildApprovalCardData(approval);
+		const cardData = await buildApprovalCardData(approval, bot.organizationId);
 
 		// Update the message to show resolved status
 		if (query.message && cardData) {
-			const locale = await getUserLocale(userResult.user.userId);
-			const t = await getBotTranslate(locale);
-			const resolvedText = buildResolvedApprovalMessage(
-				cardData,
-				{
-					action: newStatus,
-					approverName,
-					resolvedAt: new Date(),
-				},
-				t,
-				locale,
-			);
-
-			await editMessageText(bot.botToken, {
-				chat_id: query.message.chat.id,
-				message_id: query.message.message_id,
-				text: resolvedText,
-				parse_mode: "MarkdownV2",
+			const display = await resolveRecipientDisplayContext({
+				userId: userResult.user.userId,
+				organizationId: bot.organizationId,
 			});
+			if (display) {
+				const t = await getBotTranslate(display.locale);
+				const resolvedText = buildResolvedApprovalMessage(
+					cardData,
+					{
+						action: newStatus,
+						approverName,
+						resolvedAt: new Date(),
+					},
+					t,
+					display,
+				);
+
+				await editMessageText(bot.botToken, {
+					chat_id: query.message.chat.id,
+					message_id: query.message.message_id,
+					text: resolvedText,
+					parse_mode: "MarkdownV2",
+				});
+			}
 		}
 
 		// Update approval message record
 		const msgRecord = await db.query.telegramApprovalMessage.findFirst({
-			where: eq(telegramApprovalMessage.approvalRequestId, approvalId),
+			where: and(
+				eq(telegramApprovalMessage.approvalRequestId, approvalId),
+				eq(telegramApprovalMessage.organizationId, bot.organizationId),
+			),
 		});
 
 		if (msgRecord) {
@@ -148,7 +161,12 @@ export async function handleApprovalCallback(
 					respondedAt: new Date(),
 					status: newStatus,
 				})
-				.where(eq(telegramApprovalMessage.id, msgRecord.id));
+				.where(
+					and(
+						eq(telegramApprovalMessage.id, msgRecord.id),
+						eq(telegramApprovalMessage.organizationId, bot.organizationId),
+					),
+				);
 		}
 	} catch (error) {
 		logger.error({ error, approvalId, action }, "Failed to process approval action");
@@ -177,16 +195,12 @@ export async function sendApprovalMessageToManager(
 			return;
 		}
 
-		// Get chat ID for the approver
-		const chatId = await getChatIdForUser(approverEmployee.userId, organizationId);
-		if (!chatId) {
-			logger.debug({ approverId, organizationId }, "No Telegram chat for approver");
-			return;
-		}
-
 		// Get approval details
 		const approval = await db.query.approvalRequest.findFirst({
-			where: eq(approvalRequest.id, approvalId),
+			where: and(
+				eq(approvalRequest.id, approvalId),
+				eq(approvalRequest.organizationId, organizationId),
+			),
 		});
 
 		if (!approval) {
@@ -194,17 +208,28 @@ export async function sendApprovalMessageToManager(
 			return;
 		}
 
+		// Resolve the recipient only after proving this approval belongs to the organization.
+		const chatId = await getChatIdForUser(approverEmployee.userId, organizationId);
+		if (!chatId) {
+			logger.debug({ approverId, organizationId }, "No Telegram chat for approver");
+			return;
+		}
+
 		// Build card data
-		const cardData = await buildApprovalCardData(approval);
+		const cardData = await buildApprovalCardData(approval, organizationId);
 		if (!cardData) {
 			logger.warn({ approvalId }, "Could not build card data");
 			return;
 		}
 
 		// Build message with inline keyboard (use recipient's locale)
-		const recipientLocale = await getUserLocale(approverEmployee.userId);
-		const t = await getBotTranslate(recipientLocale);
-		const { text, keyboard } = buildApprovalMessage(cardData, t, recipientLocale);
+		const display = await resolveRecipientDisplayContext({
+			userId: approverEmployee.userId,
+			organizationId,
+		});
+		if (!display) return;
+		const t = await getBotTranslate(display.locale);
+		const { text, keyboard } = buildApprovalMessage(cardData, t, display);
 
 		// Send message
 		const sentMessage = await sendMessage(botToken, {
@@ -240,9 +265,10 @@ export async function sendApprovalMessageToManager(
  */
 async function buildApprovalCardData(
 	approval: typeof approvalRequest.$inferSelect,
+	organizationId: string,
 ): Promise<ApprovalCardData | null> {
 	const requester = await db.query.employee.findFirst({
-		where: eq(employee.id, approval.requestedBy),
+		where: and(eq(employee.id, approval.requestedBy), eq(employee.organizationId, organizationId)),
 		with: { user: { columns: { name: true, email: true } } },
 	});
 
@@ -259,7 +285,10 @@ async function buildApprovalCardData(
 	if (approval.entityType === "absence_entry") {
 		const { absenceEntry } = await import("@/db/schema");
 		const absence = await db.query.absenceEntry.findFirst({
-			where: eq(absenceEntry.id, approval.entityId),
+			where: and(
+				eq(absenceEntry.id, approval.entityId),
+				eq(absenceEntry.organizationId, organizationId),
+			),
 			with: { category: { columns: { name: true } } },
 		});
 

@@ -23,12 +23,7 @@ import {
 	workPolicyAssignment,
 } from "@/db/schema";
 import { env } from "@/env";
-import {
-	fmtTime,
-	fmtWeekdayShortDate,
-	getBotTranslate,
-	getUserLocale,
-} from "@/lib/bot-platform/i18n";
+import { fmtWeekdayShortDate, getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import { sendAdaptiveCard } from "../bot-adapter";
@@ -80,7 +75,7 @@ export async function shouldSkipDigestForManager(
 	organizationId: string,
 	timezone: string,
 ): Promise<boolean> {
-	const now = DateTime.now().setZone(timezone);
+	const now = DateTime.utc().setZone(timezone);
 	const todayStr = now.toISODate();
 	if (!todayStr) return false;
 
@@ -203,6 +198,14 @@ export interface DailyDigestResult {
 	errors: string[];
 }
 
+export interface DailyDigestBuildInput {
+	managerId: string;
+	organizationId: string;
+	logicalDate: string;
+	display: { timezone: string; locale: string; timeFormat: "12h" | "24h" };
+	now: string;
+}
+
 /**
  * Run the daily digest job
  *
@@ -267,7 +270,7 @@ async function processTenantDigest(tenant: {
 	digestTimezone: string;
 }): Promise<number> {
 	// Check if it's time to send the digest
-	const now = DateTime.now().setZone(tenant.digestTimezone);
+	const now = DateTime.utc().setZone(tenant.digestTimezone);
 	const [digestHour, digestMinute] = tenant.digestTime.split(":").map(Number);
 
 	// Only send if within the 15-minute window of the digest time
@@ -344,7 +347,10 @@ async function processTenantDigest(tenant: {
 				await sendAdaptiveCard(
 					conv.conversationReference,
 					card,
-					`Daily Digest - ${digestData.date.toLocaleDateString()}`,
+					`Daily Digest - ${DateTime.fromJSDate(digestData.date, { zone: "utc" })
+						.setZone(tenant.digestTimezone)
+						.setLocale(userLocale)
+						.toLocaleString(DateTime.DATE_MED)}`,
 				);
 
 				return true;
@@ -368,15 +374,41 @@ async function processTenantDigest(tenant: {
 /**
  * Build digest data for a specific manager
  */
-export async function buildDigestDataForManager(
+export function buildDigestDataForManager(input: DailyDigestBuildInput): Promise<DailyDigestData>;
+export function buildDigestDataForManager(
 	managerId: string,
 	organizationId: string,
 	timezone: string,
-	locale: string = DEFAULT_LANGUAGE,
+	locale?: string,
+): Promise<DailyDigestData>;
+export async function buildDigestDataForManager(
+	inputOrManagerId: DailyDigestBuildInput | string,
+	legacyOrganizationId?: string,
+	legacyTimezone?: string,
+	legacyLocale: string = DEFAULT_LANGUAGE,
 ): Promise<DailyDigestData> {
-	const now = DateTime.now().setZone(timezone);
-	const todayStr = now.toISODate();
-	const tomorrowStr = now.plus({ days: 1 }).toISODate();
+	const input: DailyDigestBuildInput =
+		typeof inputOrManagerId === "string"
+			? {
+					display: {
+						locale: legacyLocale,
+						timeFormat: "24h",
+						timezone: legacyTimezone!,
+					},
+					logicalDate: DateTime.utc().setZone(legacyTimezone).toISODate()!,
+					managerId: inputOrManagerId,
+					now: new Date().toISOString(),
+					organizationId: legacyOrganizationId!,
+				}
+			: inputOrManagerId;
+	const timezone = input.display.timezone;
+	const locale = input.display.locale;
+	const managerId = input.managerId;
+	const organizationId = input.organizationId;
+	const now = DateTime.fromISO(input.now, { zone: "utc" }).setZone(timezone);
+	const today = DateTime.fromISO(input.logicalDate, { zone: timezone });
+	const todayStr = today.toISODate();
+	const tomorrowStr = today.plus({ days: 1 }).toISODate();
 
 	// =========================================
 	// Phase 1: All independent queries in parallel
@@ -536,17 +568,27 @@ export async function buildDigestDataForManager(
 		employeesOut = absences.map((a) => ({
 			name: a.employeeName || "Unknown",
 			category: a.categoryName || "Leave",
-			returnDate: fmtWeekdayShortDate(DateTime.fromISO(a.endDate).plus({ days: 1 }), locale),
+			returnDate: fmtWeekdayShortDate(
+				DateTime.fromISO(a.endDate, { zone: "utc" }).plus({ days: 1 }),
+				locale,
+			),
 		}));
 
 		activeWorkPeriods = activeWorkPeriodsResult;
 		employeesClockedIn = activeWorkPeriods.map((e) => {
-			const clockInTime = DateTime.fromJSDate(e.startTime).setZone(timezone);
+			const clockInTime = DateTime.fromJSDate(e.startTime, { zone: "utc" }).setZone(timezone);
 			const duration = now.diff(clockInTime, ["hours", "minutes"]);
 
 			return {
 				name: e.employeeName || "Unknown",
-				clockedInAt: fmtTime(clockInTime, locale),
+				clockedInAt: clockInTime.toLocaleString(
+					{
+						hour: "2-digit",
+						minute: "2-digit",
+						hourCycle: input.display.timeFormat === "12h" ? "h12" : "h23",
+					},
+					{ locale },
+				),
 				durationSoFar: `${Math.floor(duration.hours)}h ${Math.floor(duration.minutes % 60)}m`,
 			};
 		});
@@ -642,7 +684,7 @@ export async function buildDigestDataForManager(
 	}
 
 	return {
-		date: now.toJSDate(),
+		date: today.toJSDate(),
 		timezone,
 		pendingApprovals: pendingApprovals.length,
 		employeesOut,

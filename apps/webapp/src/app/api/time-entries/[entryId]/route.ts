@@ -9,6 +9,7 @@ import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
+import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
 
 interface RouteParams {
 	params: Promise<{ entryId: string }>;
@@ -33,6 +34,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 		if (!activeOrgId) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
+		await clockingService.requireActor({ userId: session.user.id, activeOrganizationId: activeOrgId });
 
 		// Get current user's employee record for the active organization ONLY
 		const [currentEmployee] = await db
@@ -100,6 +102,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 			},
 		});
 	} catch (error) {
+		if (error instanceof ClockingAccessError) {
+			return NextResponse.json({ error: error.message }, { status: 403 });
+		}
 		console.error("Error fetching time entry:", error);
 
 		if (error instanceof Error && error.message.includes("NotFoundError")) {
