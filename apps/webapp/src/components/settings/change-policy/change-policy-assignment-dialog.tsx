@@ -334,7 +334,7 @@ export function ChangePolicyAssignmentDialog({
 							>
 								{t("common.cancel", "Cancel")}
 							</Button>
-							<form.Subscribe
+							<form.Subscribe<boolean>
 								selector={(state) => {
 									const hasPolicy = !!state.values.policyId;
 									const hasTeam = assignmentType !== "team" || !!state.values.teamId;
@@ -342,7 +342,7 @@ export function ChangePolicyAssignmentDialog({
 									return hasPolicy && hasTeam && hasEmployee;
 								}}
 							>
-								{(isValid) => (
+								{(isValid: boolean) => (
 									<Button type="submit" disabled={!isValid || isPending}>
 										{isPending && <IconLoader2 className="size-4 mr-2 animate-spin" />}
 										{t("settings.changePolicies.assign", "Assign Policy")}

@@ -53,6 +53,8 @@ type RecordAbsenceDialogProps = {
 	categories: AbsenceCategoryOption[];
 };
 
+type RecordAbsenceFormValues = ReturnType<typeof getDefaultRecordAbsenceFormValues>;
+
 export function RecordAbsenceDialog({
 	open,
 	onOpenChange,
@@ -204,8 +206,10 @@ export function RecordAbsenceDialog({
 							)}
 						</form.Field>
 
-						<form.Subscribe selector={(state) => state.values.categoryId}>
-							{(categoryId) => {
+						<form.Subscribe<RecordAbsenceFormValues["categoryId"]>
+							selector={(state) => state.values.categoryId}
+						>
+							{(categoryId: RecordAbsenceFormValues["categoryId"]) => {
 								const selectedCategory = categories.find((category) => category.id === categoryId);
 								if (selectedCategory?.type !== "sick") return null;
 
@@ -344,8 +348,10 @@ export function RecordAbsenceDialog({
 							)}
 						</form.Field>
 
-						<form.Subscribe selector={(state) => state.values.durationKind}>
-							{(durationKind) =>
+						<form.Subscribe<RecordAbsenceFormValues["durationKind"]>
+							selector={(state) => state.values.durationKind}
+						>
+							{(durationKind: RecordAbsenceFormValues["durationKind"]) =>
 								durationKind === "partial_day" ? (
 									<div className="grid gap-4 sm:grid-cols-2">
 										<form.Field name="startTime">
@@ -434,8 +440,8 @@ export function RecordAbsenceDialog({
 						<Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<form.Subscribe selector={(state) => state.isSubmitting}>
-							{(isSubmitting) => (
+						<form.Subscribe<boolean> selector={(state) => state.isSubmitting}>
+							{(isSubmitting: boolean) => (
 								<Button type="submit" disabled={isSubmitting || !employee}>
 									{isSubmitting ? (
 										<>

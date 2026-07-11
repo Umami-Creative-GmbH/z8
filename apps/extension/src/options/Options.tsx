@@ -15,6 +15,12 @@ interface OptionsFormValues {
   notifyOnClockOut: boolean;
 }
 
+function handleTest(webappUrl: string) {
+  if (validateWebappUrl(webappUrl)) {
+    window.open(webappUrl, "_blank", "noopener,noreferrer");
+  }
+}
+
 export function Options() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -64,12 +70,6 @@ export function Options() {
       setIsLoading(false);
     });
   }, [form]);
-
-  const handleTest = (webappUrl: string) => {
-    if (validateWebappUrl(webappUrl)) {
-      window.open(webappUrl, "_blank", "noopener,noreferrer");
-    }
-  };
 
   const handleTestNotification = () => {
     chrome.runtime.sendMessage({
@@ -151,8 +151,8 @@ export function Options() {
             {/* Notifications Section */}
             <div className="border-t border-slate-100 pt-6">
               <div className="flex items-center gap-2 mb-4">
-                <form.Subscribe selector={(state) => state.values.notificationsEnabled}>
-                  {(notificationsEnabled) =>
+                <form.Subscribe<boolean> selector={(state) => state.values.notificationsEnabled}>
+                  {(notificationsEnabled: boolean) =>
                     notificationsEnabled ? (
                       <IconBell className="w-4 h-4 text-blue-600" aria-hidden="true" />
                     ) : (
@@ -170,6 +170,7 @@ export function Options() {
                       <input
                         name={field.name}
                         type="checkbox"
+                        aria-label="Enable notifications"
                         checked={field.state.value}
                         onChange={(e) => field.handleChange(e.target.checked)}
                         className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
@@ -181,8 +182,8 @@ export function Options() {
                   </span>
                 </label>
 
-                <form.Subscribe selector={(state) => state.values.notificationsEnabled}>
-                  {(notificationsEnabled) =>
+                <form.Subscribe<boolean> selector={(state) => state.values.notificationsEnabled}>
+                  {(notificationsEnabled: boolean) =>
                     notificationsEnabled && (
                       <div className="ml-7 space-y-2">
                         <label className="flex items-center gap-3 cursor-pointer">
@@ -191,6 +192,7 @@ export function Options() {
                               <input
                                 name={field.name}
                                 type="checkbox"
+                                aria-label="Notify on clock in"
                                 checked={field.state.value}
                                 onChange={(e) => field.handleChange(e.target.checked)}
                                 className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
@@ -208,6 +210,7 @@ export function Options() {
                               <input
                                 name={field.name}
                                 type="checkbox"
+                                aria-label="Notify on clock out"
                                 checked={field.state.value}
                                 onChange={(e) => field.handleChange(e.target.checked)}
                                 className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
@@ -247,8 +250,8 @@ export function Options() {
                 ) : null}
                 <span>{saved ? "Saved!" : "Save Settings"}</span>
               </button>
-              <form.Subscribe selector={(state) => state.values.webappUrl}>
-                {(webappUrl) => (
+              <form.Subscribe<string> selector={(state) => state.values.webappUrl}>
+                {(webappUrl: string) => (
                   <button
                     type="button"
                     onClick={() => handleTest(webappUrl)}

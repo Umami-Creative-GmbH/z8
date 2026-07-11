@@ -455,8 +455,8 @@ export function ManualTimeEntryDialog({
 									{t("common.cancel", "Cancel")}
 								</Button>
 							</ActionPanelClose>
-							<form.Subscribe selector={(state) => state.isSubmitting}>
-								{(isSubmitting) => (
+							<form.Subscribe<boolean> selector={(state) => state.isSubmitting}>
+								{(isSubmitting: boolean) => (
 									<Button type="submit" disabled={isSubmitting || isTimezoneContinuationPending}>
 										{isSubmitting ? (
 											<>

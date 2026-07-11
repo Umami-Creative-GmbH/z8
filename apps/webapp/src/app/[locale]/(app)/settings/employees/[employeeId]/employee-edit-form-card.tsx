@@ -263,8 +263,8 @@ export function EmployeeEditFormCard({
 						)}
 					</form.Field>
 
-					<form.Subscribe selector={(state) => state.values.contractType}>
-						{(contractType) =>
+					<form.Subscribe<EmployeeDetailFormValues["contractType"]> selector={(state) => state.values.contractType}>
+						{(contractType: EmployeeDetailFormValues["contractType"]) =>
 							contractType === "hourly" && (
 								<form.Field name="hourlyRate">
 									{(field) => (
@@ -348,8 +348,8 @@ function EmployeeEditFormActions({
 			<Button type="button" variant="outline" onClick={onCancel} disabled={isUpdating}>
 				{t("settings.employees.detailView.cancel", "Cancel")}
 			</Button>
-			<form.Subscribe selector={(state) => [state.isDirty, state.isSubmitting] as const}>
-				{([isDirty, isSubmitting]) => (
+			<form.Subscribe<readonly [boolean, boolean]> selector={(state) => [state.isDirty, state.isSubmitting] as const}>
+				{([isDirty, isSubmitting]: readonly [boolean, boolean]) => (
 					<Button type="submit" disabled={!isDirty || isSubmitting || isUpdating}>
 						{(isSubmitting || isUpdating) && (
 							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />

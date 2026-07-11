@@ -344,8 +344,8 @@ export function EmailConfigForm({
 					</div>
 
 					{/* Resend Configuration */}
-					<form.Subscribe selector={(state) => state.values.transportType}>
-						{(transportType) =>
+					<form.Subscribe<EmailConfigInput["transportType"]> selector={(state) => state.values.transportType}>
+						{(transportType: EmailConfigInput["transportType"]) =>
 							transportType === "resend" && (
 								<div className="space-y-4 rounded-lg border p-4">
 									<h4 className="font-medium flex items-center gap-2">
@@ -387,8 +387,8 @@ export function EmailConfigForm({
 					</form.Subscribe>
 
 					{/* SMTP Configuration */}
-					<form.Subscribe selector={(state) => state.values.transportType}>
-						{(transportType) =>
+					<form.Subscribe<EmailConfigInput["transportType"]> selector={(state) => state.values.transportType}>
+						{(transportType: EmailConfigInput["transportType"]) =>
 							transportType === "smtp" && (
 								<div className="space-y-4 rounded-lg border p-4">
 									<h4 className="font-medium flex items-center gap-2">
@@ -647,8 +647,8 @@ export function EmailConfigForm({
 						</Button>
 					)}
 					<div className="flex-1" />
-					<form.Subscribe selector={(state) => [state.isDirty, state.isSubmitting]}>
-						{([isDirty, isSubmitting]) => (
+					<form.Subscribe<[boolean, boolean]> selector={(state) => [state.isDirty, state.isSubmitting]}>
+						{([isDirty, isSubmitting]: [boolean, boolean]) => (
 							<Button
 								type="submit"
 								disabled={isPending || isSubmitting || (!isDirty && !!initialConfig)}

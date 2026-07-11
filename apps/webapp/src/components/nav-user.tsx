@@ -18,7 +18,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useLocale } from "next-intl";
-import { useEffect, useState, useTransition } from "react";
+import { type ComponentType, type SVGProps, useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useFontSizePreference } from "@/components/font-size-preference";
@@ -263,7 +263,7 @@ export function NavUser({
 											<DropdownMenuRadioGroup value={locale} onValueChange={handleLanguageChange}>
 												{ALL_LANGUAGES.map((lang) => {
 													const config = LANGUAGE_CONFIG[lang];
-													const FlagIcon = config?.Flag;
+														const FlagIcon = config?.Flag as ComponentType<SVGProps<SVGSVGElement>> | undefined;
 													const name = config?.name ?? lang;
 													return (
 														<DropdownMenuRadioItem
@@ -273,7 +273,7 @@ export function NavUser({
 															disabled={isPending}
 														>
 															<span className="flex items-center gap-2">
-																{FlagIcon && <FlagIcon className="h-4 w-auto" title={name} />}
+																{FlagIcon && <FlagIcon className="h-4 w-auto" />}
 																{name}
 															</span>
 														</DropdownMenuRadioItem>
@@ -372,12 +372,12 @@ export function NavUser({
 											<DropdownMenuRadioGroup value={locale} onValueChange={handleLanguageChange}>
 												{ALL_LANGUAGES.map((lang) => {
 													const config = LANGUAGE_CONFIG[lang];
-													const FlagIcon = config?.Flag;
+														const FlagIcon = config?.Flag as ComponentType<SVGProps<SVGSVGElement>> | undefined;
 													const name = config?.name ?? lang;
 													return (
 														<DropdownMenuRadioItem key={lang} value={lang}>
 															<span className="flex items-center gap-2">
-																{FlagIcon && <FlagIcon className="h-4 w-auto" title={name} />}
+																{FlagIcon && <FlagIcon className="h-4 w-auto" />}
 																{name}
 															</span>
 														</DropdownMenuRadioItem>

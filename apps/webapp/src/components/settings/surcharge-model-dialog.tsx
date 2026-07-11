@@ -327,8 +327,8 @@ export function SurchargeModelDialog({
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<form.Subscribe selector={(state) => [state.isSubmitting, state.canSubmit]}>
-							{([isSubmitting, canSubmit]) => (
+						<form.Subscribe<[boolean, boolean]> selector={(state) => [state.isSubmitting, state.canSubmit]}>
+							{([isSubmitting, canSubmit]: [boolean, boolean]) => (
 								<Button type="submit" disabled={isPending || isSubmitting || !canSubmit}>
 									{(isPending || isSubmitting) && (
 										<IconLoader2 className="mr-2 size-4 animate-spin" />

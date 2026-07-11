@@ -767,8 +767,8 @@ function ShiftTemplateDialog({
 						</form.Field>
 
 						{/* Preview */}
-						<form.Subscribe selector={(state) => state.values}>
-							{(values) => (
+						<form.Subscribe<typeof form.state.values> selector={(state) => state.values}>
+							{(values: typeof form.state.values) => (
 								<div className="rounded-lg border p-3 bg-muted/50">
 									<p className="text-xs text-muted-foreground mb-2">
 										{t("settings.shiftTemplates.form.preview", "Preview")}

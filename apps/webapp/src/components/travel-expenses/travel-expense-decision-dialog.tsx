@@ -181,8 +181,8 @@ export function TravelExpenseDecisionDialog({
 						)}
 					</ActionPanelBody>
 
-					<form.Subscribe selector={(state) => state.isSubmitting}>
-						{(isSubmitting) => (
+					<form.Subscribe<boolean> selector={(state) => state.isSubmitting}>
+						{(isSubmitting: boolean) => (
 							<ActionPanelFooter>
 								<Button
 									type="button"

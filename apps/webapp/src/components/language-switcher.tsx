@@ -2,7 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useTransition } from "react";
+import { type ComponentType, type SVGProps, useTransition } from "react";
 import {
 	Select,
 	SelectContent,
@@ -37,7 +37,7 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
 	};
 
 	const currentConfig = LANGUAGE_CONFIG[locale];
-	const CurrentFlag = currentConfig?.Flag;
+	const CurrentFlag = currentConfig?.Flag as ComponentType<SVGProps<SVGSVGElement>> | undefined;
 
 	return (
 		<Select value={locale} onValueChange={handleLanguageChange} disabled={isPending}>
@@ -47,12 +47,7 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
 			>
 				<SelectValue placeholder={t("common.select-language", "Select language")}>
 					<span className="flex items-center gap-2">
-						{CurrentFlag && (
-							<CurrentFlag
-								className="h-4 w-auto"
-								title={isCompact ? undefined : currentConfig.name}
-							/>
-						)}
+						{CurrentFlag && <CurrentFlag className="h-4 w-auto" />}
 						{isCompact ? (
 							<span className="font-medium text-foreground text-xs tracking-wide">
 								{locale.toUpperCase()}
@@ -66,12 +61,12 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
 			<SelectContent>
 				{ALL_LANGUAGES.map((lang) => {
 					const config = LANGUAGE_CONFIG[lang];
-					const FlagIcon = config?.Flag;
+					const FlagIcon = config?.Flag as ComponentType<SVGProps<SVGSVGElement>> | undefined;
 					const name = config?.name ?? lang;
 					return (
 						<SelectItem key={lang} value={lang}>
 							<span className="flex items-center gap-2">
-								{FlagIcon && <FlagIcon className="h-4 w-auto" title={name} />}
+								{FlagIcon && <FlagIcon className="h-4 w-auto" />}
 								{name}
 							</span>
 						</SelectItem>

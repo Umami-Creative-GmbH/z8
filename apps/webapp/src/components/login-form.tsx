@@ -760,7 +760,7 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 							<InputOTP
 								maxLength={6}
 								value={otpValue}
-								onChange={(value) => dispatch({ type: "SET_OTP", value })}
+								onChange={(value: string) => dispatch({ type: "SET_OTP", value })}
 							>
 								<InputOTPGroup>
 									<InputOTPSlot index={0} />

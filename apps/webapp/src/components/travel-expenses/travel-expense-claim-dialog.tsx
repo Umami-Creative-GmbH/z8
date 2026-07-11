@@ -244,8 +244,8 @@ export function TravelExpenseClaimDialog({
 							)}
 						</form.Field>
 
-						<form.Subscribe selector={(state) => state.values.type}>
-							{(type) =>
+						<form.Subscribe<TravelExpenseClaimType> selector={(state) => state.values.type}>
+							{(type: TravelExpenseClaimType) =>
 								type === "receipt" ? (
 									<p className="text-sm text-muted-foreground">
 										{t(
@@ -436,8 +436,8 @@ export function TravelExpenseClaimDialog({
 						</form.Field>
 					</ActionPanelBody>
 
-					<form.Subscribe selector={(state) => state.isSubmitting}>
-						{(isSubmitting) => (
+					<form.Subscribe<boolean> selector={(state) => state.isSubmitting}>
+						{(isSubmitting: boolean) => (
 							<ActionPanelFooter>
 								<Button
 									type="button"

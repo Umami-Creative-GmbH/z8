@@ -145,8 +145,8 @@ function ChangePolicyDialogFields({
 				)}
 			</form.Field>
 
-			<form.Subscribe selector={(state) => state.values.noApprovalRequired}>
-				{(noApprovalRequired) =>
+			<form.Subscribe<ChangePolicyFormValues["noApprovalRequired"]> selector={(state) => state.values.noApprovalRequired}>
+				{(noApprovalRequired: ChangePolicyFormValues["noApprovalRequired"]) =>
 					!noApprovalRequired && (
 						<>
 							<form.Field name="selfServiceDays">
@@ -204,10 +204,18 @@ function ChangePolicyDialogFields({
 								)}
 							</form.Field>
 
-							<form.Subscribe
+							<form.Subscribe<
+								[ChangePolicyFormValues["selfServiceDays"], ChangePolicyFormValues["approvalDays"]]
+							>
 								selector={(state) => [state.values.selfServiceDays, state.values.approvalDays]}
 							>
-								{([selfServiceDays, approvalDays]) => (
+								{([
+									selfServiceDays,
+									approvalDays,
+								]: [
+									ChangePolicyFormValues["selfServiceDays"],
+									ChangePolicyFormValues["approvalDays"],
+								]) => (
 									<div className="rounded-lg bg-muted p-3 text-sm">
 										<p className="font-medium mb-1">
 											{t("settings.changePolicies.policySummary", "Policy Summary:")}
@@ -402,8 +410,8 @@ export function ChangePolicyDialog({
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<form.Subscribe selector={(state) => [state.isDirty, state.isSubmitting]}>
-							{([isDirty, _isSubmitting]) => (
+						<form.Subscribe<[boolean, boolean]> selector={(state) => [state.isDirty, state.isSubmitting]}>
+							{([isDirty, _isSubmitting]: [boolean, boolean]) => (
 								<Button type="submit" disabled={(!isDirty && isEditing) || isPending}>
 									{isPending && <IconLoader2 className="size-4 mr-2 animate-spin" />}
 									{isEditing

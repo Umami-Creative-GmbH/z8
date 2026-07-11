@@ -283,8 +283,8 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 					) : null}
 
 					<div className="flex items-center gap-2">
-						<form.Subscribe selector={(state) => state.values.confirmation}>
-							{(confirmation) => (
+						<form.Subscribe<string> selector={(state) => state.values.confirmation}>
+							{(confirmation: string) => (
 								<Button
 									type="submit"
 									size="sm"

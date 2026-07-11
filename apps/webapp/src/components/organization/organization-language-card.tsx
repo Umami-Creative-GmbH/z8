@@ -2,7 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState, useTransition } from "react";
+import { type ComponentType, type SVGProps, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { updateOrganizationDefaultNotificationLanguage } from "@/app/[locale]/(app)/settings/organizations/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -111,7 +111,7 @@ export function OrganizationLanguageCard({
 						<SelectContent>
 							{ALL_LANGUAGES.map((language) => {
 								const config = LANGUAGE_CONFIG[language];
-								const Flag = config?.Flag;
+								const Flag = config?.Flag as ComponentType<SVGProps<SVGSVGElement>> | undefined;
 
 								return (
 									<SelectItem key={language} value={language}>
