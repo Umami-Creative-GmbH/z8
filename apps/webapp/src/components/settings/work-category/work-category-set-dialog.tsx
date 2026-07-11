@@ -294,6 +294,7 @@ export function WorkCategorySetDialog({
 	const orgCategories = orgCategoriesResult || [];
 	const isLoading = isLoadingOrgCategories || (isEditing && isLoadingDetail);
 	const isMutating = createSetMutation.isPending || updateSetMutation.isPending;
+	const selectedCategoryIdSet = new Set(selectedCategoryIds);
 
 	// Get selected categories in order with their data
 	const selectedCategories = selectedCategoryIds
@@ -301,7 +302,7 @@ export function WorkCategorySetDialog({
 		.filter((c): c is OrgCategory => c !== undefined);
 
 	// Get unselected categories
-	const unselectedCategories = orgCategories.filter((c) => !selectedCategoryIds.includes(c.id));
+	const unselectedCategories = orgCategories.filter((c) => !selectedCategoryIdSet.has(c.id));
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
@@ -487,7 +488,7 @@ export function WorkCategorySetDialog({
 															onClick={() => handleToggleCategory(category.id)}
 														>
 															<Checkbox
-																checked={selectedCategoryIds.includes(category.id)}
+														checked={selectedCategoryIdSet.has(category.id)}
 																onCheckedChange={() => handleToggleCategory(category.id)}
 																tabIndex={-1}
 															/>

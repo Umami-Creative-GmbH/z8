@@ -770,9 +770,10 @@ function PayrollScopeCard({
 	}
 
 	function applyTeamDraft() {
+		const selectedTeamNameSet = new Set(selectedTeamNames);
 		const teamDraftChanged =
 			draftTeamNames.length !== selectedTeamNames.length ||
-			draftTeamNames.some((teamName) => !selectedTeamNames.includes(teamName));
+			draftTeamNames.some((teamName) => !selectedTeamNameSet.has(teamName));
 
 		if (teamDraftChanged) {
 			onApplyTeams(draftTeamNames, () => setTeamSheetOpen(false));
@@ -783,9 +784,10 @@ function PayrollScopeCard({
 	}
 
 	function applyEmployeeDraft() {
+		const selectedEmployeeIdSet = new Set(selectedEmployeeIds);
 		const employeeDraftChanged =
 			draftEmployeeIds.length !== selectedEmployeeIds.length ||
-			draftEmployeeIds.some((employeeId) => !selectedEmployeeIds.includes(employeeId));
+			draftEmployeeIds.some((employeeId) => !selectedEmployeeIdSet.has(employeeId));
 
 		if (employeeDraftChanged) {
 			onApplyEmployees(draftEmployeeIds, () => setEmployeeSheetOpen(false));
@@ -794,6 +796,9 @@ function PayrollScopeCard({
 
 		setEmployeeSheetOpen(false);
 	}
+
+	const draftTeamNameSet = new Set(draftTeamNames);
+	const draftEmployeeIdSet = new Set(draftEmployeeIds);
 
 	return (
 		<Card>
@@ -838,7 +843,7 @@ function PayrollScopeCard({
 									return (
 										<div key={teamName} className="flex items-center gap-2">
 											<Checkbox
-												checked={draftTeamNames.includes(teamName)}
+												checked={draftTeamNameSet.has(teamName)}
 												disabled={isPending}
 												id={checkboxId}
 												onCheckedChange={(checked) => toggleDraftTeam(teamName, checked === true)}
@@ -896,7 +901,7 @@ function PayrollScopeCard({
 									return (
 										<div key={employee.id} className="flex items-center gap-2">
 											<Checkbox
-												checked={draftEmployeeIds.includes(employee.id)}
+												checked={draftEmployeeIdSet.has(employee.id)}
 												disabled={isPending}
 												id={checkboxId}
 												onCheckedChange={(checked) =>
