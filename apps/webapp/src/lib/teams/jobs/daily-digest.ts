@@ -75,7 +75,7 @@ export async function shouldSkipDigestForManager(
 	organizationId: string,
 	timezone: string,
 ): Promise<boolean> {
-	const now = DateTime.now().setZone(timezone);
+	const now = DateTime.utc().setZone(timezone);
 	const todayStr = now.toISODate();
 	if (!todayStr) return false;
 
