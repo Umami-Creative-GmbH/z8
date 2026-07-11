@@ -11,6 +11,7 @@ import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
+import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { shouldSkipDigestForManager } from "@/lib/teams/jobs/daily-digest";
