@@ -189,9 +189,9 @@ export function ScheduleXCalendarWrapper({
 
 	const nextInitialDateKey = initialDateKey ?? todayCalendarDateKey(timeZone);
 	const [currentDateKey, setCurrentDateKey] = useState(() => nextInitialDateKey);
-	const previousInitialDateKeyRef = useRef(nextInitialDateKey);
-	if (nextInitialDateKey !== previousInitialDateKeyRef.current) {
-		previousInitialDateKeyRef.current = nextInitialDateKey;
+	const [previousInitialDateKey, setPreviousInitialDateKey] = useState(() => nextInitialDateKey);
+	if (nextInitialDateKey !== previousInitialDateKey) {
+		setPreviousInitialDateKey(nextInitialDateKey);
 		setCurrentDateKey(nextInitialDateKey);
 	}
 	const currentDate = DateTime.fromISO(currentDateKey, { zone: timeZone });
