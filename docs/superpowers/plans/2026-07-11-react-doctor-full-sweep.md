@@ -14,12 +14,11 @@
 
 **Files:**
 - Modify: `apps/webapp/src/components/calendar/calendar-view.tsx:80-201`
-- Modify: `apps/webapp/src/app/[locale]/(app)/calendar/page.tsx`
 - Test: `apps/webapp/src/components/calendar/calendar-view.test.tsx`
 
 - [ ] **Step 1: Write a failing calendar reset test**
 
-Render the calendar through a keyed wrapper with `initialDateKey="2026-01-01"`, rerender with `initialDateKey="2026-02-01"`, and assert the `useCalendarData` mock receives February. This test records the required reset behavior when server calendar context changes.
+Render `CalendarView` with `initialDateKey="2026-01-01"`, rerender with `initialDateKey="2026-02-01"`, and assert `useCalendarData` receives February exactly once after the rerender. This records the reset behavior without the current effect's intermediate old-month render.
 
 - [ ] **Step 2: Run the focused test and verify the intended failure**
 
@@ -29,7 +28,7 @@ Expected: the new test fails before the keyed reset implementation is present.
 
 - [ ] **Step 3: Replace the effect reset with a keyed calendar instance**
 
-At the sole page caller, compute the same normalized initial date/timezone inputs currently passed to `CalendarView` and pass a `key` containing both. Delete the `useEffect` at `calendar-view.tsx:199-201`; retain the lazy `useState` initializer so interactive range navigation still owns `currentDateKey`.
+Make exported `CalendarView` render an internal `CalendarViewContent`, keyed by normalized initial date/timezone inputs. Move the existing implementation into `CalendarViewContent`, delete the `useEffect` at `calendar-view.tsx:199-201`, and retain the lazy `useState` initializer so interactive range navigation still owns `currentDateKey`. This keeps reset behavior for every direct component consumer.
 
 - [ ] **Step 4: Verify the test, typecheck, and both reports**
 
@@ -40,7 +39,7 @@ Expected: the test and typecheck pass; both `react-doctor/no-derived-state` and 
 - [ ] **Step 5: Commit the root-cause fix**
 
 ```bash
-git add apps/webapp/src/components/calendar/calendar-view.tsx 'apps/webapp/src/app/[locale]/(app)/calendar/page.tsx' apps/webapp/src/components/calendar/calendar-view.test.tsx
+git add apps/webapp/src/components/calendar/calendar-view.tsx apps/webapp/src/components/calendar/calendar-view.test.tsx
 git commit -m "fix(calendar): remove derived date reset state"
 ```
 
