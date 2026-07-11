@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getTemplateAutofillValues } from "@/components/scheduling/shifts/use-shift-dialog-form";
+import {
+	getDefaultShiftDialogValues,
+	getTemplateAutofillValues,
+} from "@/components/scheduling/shifts/use-shift-dialog-form";
 
 describe("getTemplateAutofillValues", () => {
 	it("applies template defaults without overriding an existing subarea", () => {
@@ -25,5 +28,13 @@ describe("getTemplateAutofillValues", () => {
 			endTime: "16:00",
 			color: "#123456",
 		});
+	});
+});
+
+describe("getDefaultShiftDialogValues", () => {
+	it("uses the organization date rather than the browser timezone", () => {
+		expect(
+			getDefaultShiftDialogValues(null, "Pacific/Kiritimati", "2026-07-08T12:00:00Z").date,
+		).toBe("2026-07-09");
 	});
 });

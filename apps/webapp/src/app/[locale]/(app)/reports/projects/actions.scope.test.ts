@@ -32,4 +32,36 @@ describe("project report portfolio scope", () => {
 		expect(source).toContain("rangeHours: totalHours");
 		expect(source).toContain("cumulativeHours");
 	});
+
+	it("scopes project and work-period queries to the active organization", () => {
+		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
+
+		expect(source).toContain("const organizationId = authContext.session.activeOrganizationId");
+		expect(source).toContain("const currentEmployee = authContext.employee");
+		expect(source).toContain("eq(project.organizationId, organizationId)");
+		expect(source).toContain("eq(workPeriod.organizationId, organizationId)");
+	});
+
+	it("uses the active-organization employee supplied by requireAuth", () => {
+		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
+
+		expect(source).toContain("const currentEmployee = authContext.employee");
+		expect(source).toContain("if (!organizationId || !currentEmployee)");
+	});
+
+	it("scopes the page-gate employee lookup to the active organization", () => {
+		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
+
+		expect(source).toContain("getCurrentEmployeeForReports");
+		expect(source).toContain(
+			'eq(employee.organizationId, authContext.session.activeOrganizationId ?? "")',
+		);
+	});
+
+	it("serializes detailed report period boundaries as ISO strings", () => {
+		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
+
+		expect(source).toContain("startDate: startDate.toISOString()");
+		expect(source).toContain("endDate: endDate.toISOString()");
+	});
 });

@@ -1,8 +1,9 @@
-import { and, desc, eq, gt, gte, isNull, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
 	employee,
 	employeeSkill,
+	locationSubarea,
 	type shift as ShiftTable,
 	type shiftTemplate as ShiftTemplateTable,
 	shift,
@@ -11,6 +12,8 @@ import {
 	type skill,
 	subareaSkillRequirement,
 } from "@/db/schema";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { AuthorizationError, type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
@@ -45,6 +48,7 @@ export interface UpsertShiftInput {
 	templateId?: string | null;
 	subareaId: string; // Required - every shift must be assigned to a subarea
 	date: Date;
+	timezone: string;
 	startTime: string;
 	endTime: string;
 	notes?: string;
@@ -55,7 +59,7 @@ export interface UpsertShiftInput {
 export interface ShiftQuery {
 	organizationId: string;
 	startDate?: Date;
-	endDate?: Date;
+	endDateExclusive?: Date;
 	employeeId?: string;
 	subareaId?: string; // Filter by subarea
 	status?: ShiftStatus;
@@ -64,7 +68,7 @@ export interface ShiftQuery {
 
 export interface DateRange {
 	start: Date;
-	end: Date;
+	endExclusive: Date;
 }
 
 export interface SkillWarning {
@@ -166,6 +170,7 @@ export class ShiftService extends Context.Tag("ShiftService")<
 		readonly getIncompleteDays: (
 			organizationId: string,
 			dateRange: DateRange,
+			timezone: string,
 		) => Effect.Effect<IncompleteDayInfo[], DatabaseError>;
 	}
 >() {}
@@ -350,6 +355,49 @@ export const ShiftServiceLive = Layer.effect(
 						);
 					}
 
+					const subareaRecord = yield* _(
+						dbService.query("verifyShiftSubareaScope", async () => {
+							return await dbService.db.query.locationSubarea.findFirst({
+								where: eq(locationSubarea.id, input.subareaId),
+								with: { location: { columns: { organizationId: true } } },
+							});
+						}),
+					);
+					if (!subareaRecord || subareaRecord.location.organizationId !== input.organizationId) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Subarea is outside the active organization",
+									field: "subareaId",
+								}),
+							),
+						);
+					}
+
+					if (input.templateId) {
+						const templateRecord = yield* _(
+							dbService.query("verifyShiftTemplateScope", async () => {
+								return await dbService.db.query.shiftTemplate.findFirst({
+									where: and(
+										eq(shiftTemplate.id, input.templateId as string),
+										eq(shiftTemplate.organizationId, input.organizationId),
+									),
+								});
+							}),
+						);
+						if (!templateRecord) {
+							yield* _(
+								Effect.fail(
+									new NotFoundError({
+										message: "Shift template not found",
+										entityType: "shiftTemplate",
+										entityId: input.templateId,
+									}),
+								),
+							);
+						}
+					}
+
 					// Check for overlapping shifts if employee is assigned
 					let overlappingShifts: Array<{
 						id: string;
@@ -364,7 +412,10 @@ export const ShiftServiceLive = Layer.effect(
 						const employeeRecord = yield* _(
 							dbService.query("verifyEmployeeExists", async () => {
 								return await dbService.db.query.employee.findFirst({
-									where: eq(employee.id, employeeId),
+									where: and(
+										eq(employee.id, employeeId),
+										eq(employee.organizationId, input.organizationId),
+									),
 								});
 							}),
 						);
@@ -384,16 +435,19 @@ export const ShiftServiceLive = Layer.effect(
 						// Check for overlapping shifts
 						overlappingShifts = yield* _(
 							dbService.query("checkOverlappingShifts", async () => {
-								const dayStart = new Date(input.date);
-								dayStart.setHours(0, 0, 0, 0);
-								const dayEnd = new Date(input.date);
-								dayEnd.setHours(23, 59, 59, 999);
+								const dateKey = instantFromDate(input.date)
+									.toZonedDateTimeISO(input.timezone)
+									.toPlainDate()
+									.toString();
+								const dayRange = localDayRange(dateKey, input.timezone);
+								const dayStart = new Date(dayRange.start.epochMilliseconds);
+								const dayEndExclusive = new Date(dayRange.endExclusive.epochMilliseconds);
 
 								const existingShifts = await dbService.db.query.shift.findMany({
 									where: and(
 										eq(shift.employeeId, employeeId),
 										gte(shift.date, dayStart),
-										lte(shift.date, dayEnd),
+										lt(shift.date, dayEndExclusive),
 										input.id ? sql`${shift.id} != ${input.id}` : undefined,
 									),
 								});
@@ -540,7 +594,7 @@ export const ShiftServiceLive = Layer.effect(
 						const existing = yield* _(
 							dbService.query("getShiftById", async () => {
 								return await dbService.db.query.shift.findFirst({
-									where: eq(shift.id, shiftId),
+									where: and(eq(shift.id, shiftId), eq(shift.organizationId, input.organizationId)),
 								});
 							}),
 						);
@@ -571,7 +625,7 @@ export const ShiftServiceLive = Layer.effect(
 										notes: input.notes,
 										color: input.color,
 									})
-									.where(eq(shift.id, shiftId))
+									.where(and(eq(shift.id, shiftId), eq(shift.organizationId, input.organizationId)))
 									.returning();
 								return s;
 							}),
@@ -704,8 +758,8 @@ export const ShiftServiceLive = Layer.effect(
 							if (query.startDate) {
 								conditions.push(gte(shift.date, query.startDate));
 							}
-							if (query.endDate) {
-								conditions.push(lte(shift.date, query.endDate));
+							if (query.endDateExclusive) {
+								conditions.push(lt(shift.date, query.endDateExclusive));
 							}
 							if (query.employeeId) {
 								conditions.push(eq(shift.employeeId, query.employeeId));
@@ -803,7 +857,7 @@ export const ShiftServiceLive = Layer.effect(
 									eq(shift.organizationId, organizationId),
 									eq(shift.status, "draft"),
 									gte(shift.date, dateRange.start),
-									lte(shift.date, dateRange.end),
+									lt(shift.date, dateRange.endExclusive),
 								),
 							});
 						}),
@@ -846,7 +900,7 @@ export const ShiftServiceLive = Layer.effect(
 					};
 				}),
 
-			getIncompleteDays: (organizationId, dateRange) =>
+			getIncompleteDays: (organizationId, dateRange, timezone) =>
 				Effect.gen(function* (_) {
 					const result = yield* _(
 						dbService.query("getIncompleteDays", async () => {
@@ -856,14 +910,17 @@ export const ShiftServiceLive = Layer.effect(
 									eq(shift.organizationId, organizationId),
 									isNull(shift.employeeId),
 									gte(shift.date, dateRange.start),
-									lte(shift.date, dateRange.end),
+									lt(shift.date, dateRange.endExclusive),
 								),
 							});
 
 							// Group by date
 							const dayMap = new Map<string, number>();
 							for (const s of openShifts) {
-								const dateKey = s.date.toISOString().split("T")[0];
+								const dateKey = instantFromDate(s.date)
+									.toZonedDateTimeISO(timezone)
+									.toPlainDate()
+									.toString();
 								dayMap.set(dateKey, (dayMap.get(dateKey) || 0) + 1);
 							}
 

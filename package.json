@@ -9,6 +9,7 @@
 		"dev": "turbo dev",
 		"build": "node scripts/build.mjs",
 		"test": "pnpm node --test docker/scripts/prepare-target-runtime.test.mjs && turbo test",
+		"test:temporal-timezone-smoke": "pnpm node scripts/test-temporal-timezone-smoke.mjs",
 		"test:watch": "turbo test:watch",
 		"dev:webapp": "turbo dev --filter=webapp",
 		"dev:desktop": "turbo dev --filter=desktop",

@@ -86,6 +86,17 @@ describe("shift template manager scope", () => {
 		expect(result).toEqual({ success: false, error: "Unauthorized" });
 	});
 
+	it("rejects template creation for a subarea outside the active organization", async () => {
+		const result = await createShiftTemplate({
+			name: "Other Organization",
+			startTime: "09:00",
+			endTime: "17:00",
+			subareaId: "subarea-org-2",
+		});
+
+		expect(result).toEqual({ success: false, error: "Unauthorized" });
+	});
+
 	it("rejects manager template updates when the target leaves own-team scope", async () => {
 		const result = await updateShiftTemplate("template-1", { subareaId: "subarea-team-2" });
 
@@ -100,6 +111,18 @@ describe("shift template manager scope", () => {
 		};
 
 		const result = await deleteShiftTemplate("template-1");
+
+		expect(result).toEqual({ success: false, error: "Unauthorized" });
+	});
+
+	it("rejects template updates for targets outside the active organization", async () => {
+		mockState.templateTarget = {
+			id: "template-1",
+			organizationId: "org-2",
+			subareaId: "subarea-team-1",
+		};
+
+		const result = await updateShiftTemplate("template-1", { name: "Other Organization" });
 
 		expect(result).toEqual({ success: false, error: "Unauthorized" });
 	});

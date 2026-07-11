@@ -29,6 +29,7 @@ export * from "./cron-job";
 // Custom roles (configurable permissions)
 export * from "./custom-role";
 export * from "./customer";
+export * from "./daily-digest-delivery";
 // Discord integration
 export * from "./discord-integration";
 export * from "./email-template";

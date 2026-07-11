@@ -7,7 +7,7 @@ Employee time tracking and workforce management SaaS.
 - Treat concurrent work as normal. Never revert, overwrite, discard, or clean up changes you did not make unless explicitly asked.
 - Use **pnpm** only.
 - Keep all tenant data organization-scoped. Always filter by `organizationId` and enforce org-level permissions.
-- Use Luxon (`DateTime`) for date/time work, not native `Date` for business logic.
+- Use Temporal for new or migrated date/time business logic with explicit zones. Native `Date` is only for external and database boundaries; Luxon (`DateTime`) is legacy/unmigrated code only.
 - Use `@tanstack/react-form` for forms. Migrate legacy `react-hook-form` when modifying existing forms.
 - Never edit `src/db/auth-schema.ts` directly; it is generated.
 - Use `@tabler/icons-react` exclusively. Icon components are prefixed with `Icon`.
@@ -40,5 +40,5 @@ These references keep this file concise; open them when deeper implementation de
 - [Database Schema](docs/refs/database-schema.md) - File structure, relations, adding tables.
 - [Forms](docs/refs/forms.md) - TanStack Form patterns and UI components.
 - [i18n](docs/refs/i18n.md) - Tolgee namespaces and translation workflow.
-- [Date/Time](docs/refs/dates.md) - Luxon usage patterns.
+- [Date/Time](docs/refs/dates.md) - Temporal, timezone, and date-boundary rules.
 - [Billing & Stripe](docs/refs/billing-stripe.md) - Stripe setup, webhooks, per-seat billing.

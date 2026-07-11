@@ -8,6 +8,7 @@ const mockState = vi.hoisted(() => {
 			this.name = "UnsupportedAuthorizationConditionError";
 		}
 	}
+	class ClockingConflictError extends Error {}
 
 	const limit = vi.fn();
 	const where = vi.fn(() => ({ limit }));
@@ -31,13 +32,17 @@ const mockState = vi.hoisted(() => {
 
 	return {
 		UnsupportedAuthorizationConditionError,
+		ClockingConflictError,
 		accessibleByDrizzle: vi.fn(),
 		asAppSubject: vi.fn((subject, data) => ({ ...data, __caslSubjectType__: subject })),
 		connection: vi.fn(),
 		createBillingForbiddenResponse: vi.fn(),
 		createTimeEntry: vi.fn(),
+		clockingClockIn: vi.fn(),
+		clockingClockOut: vi.fn(),
 		employeeHasAccessToCategory: vi.fn(),
 		getAbility: vi.fn(),
+		getUtcOffsetMinutesForZone: vi.fn(),
 		getSession: vi.fn(),
 		headers: vi.fn(),
 		insert,
@@ -45,6 +50,7 @@ const mockState = vi.hoisted(() => {
 		limit,
 		requireBillingForMutation: vi.fn(),
 		requireActor: vi.fn(),
+		resolveTimeEntryTimezoneCapture: vi.fn(),
 		runPromise: vi.fn(),
 		select,
 		transaction,
@@ -79,6 +85,7 @@ vi.mock("@/db", () => ({
 	db: {
 		insert: mockState.insert,
 		query: {
+			member: { findFirst: vi.fn(async () => ({ id: "member-1" })) },
 			userSettings: { findFirst: vi.fn(async () => ({ timezone: "Europe/Berlin" })) },
 		},
 		select: mockState.select,
@@ -165,7 +172,12 @@ vi.mock("@/lib/effect/services/time-entry.service", () => ({
 
 vi.mock("@/lib/time-tracking/clocking-service", () => ({
 	ClockingAccessError: class ClockingAccessError extends Error {},
-	clockingService: { requireActor: mockState.requireActor },
+	ClockingConflictError: mockState.ClockingConflictError,
+	clockingService: {
+		clockIn: mockState.clockingClockIn,
+		clockOut: mockState.clockingClockOut,
+		requireActor: mockState.requireActor,
+	},
 }));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/entry-helpers", () => ({
@@ -173,10 +185,17 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/entry-helpers", () => ({
 	validateProjectAssignment: mockState.validateProjectAssignment,
 }));
 
+vi.mock("@/lib/time-tracking/timezone-capture", () => ({
+	getUtcOffsetMinutesForZone: mockState.getUtcOffsetMinutesForZone,
+	isValidIanaTimezone: (timezone: string | null | undefined) => Boolean(timezone),
+	resolveTimeEntryTimezoneCapture: mockState.resolveTimeEntryTimezoneCapture,
+}));
+
 vi.mock("drizzle-orm", () => ({
 	and: (...conditions: unknown[]) => ({ conditions, type: "and" }),
 	eq: (column: unknown, value: unknown) => ({ column, type: "eq", value }),
 	isNull: (column: unknown) => ({ column, type: "isNull" }),
+	relations: () => ({}),
 	sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, type: "sql", values }),
 }));
 
@@ -207,6 +226,8 @@ describe("GET /api/time-entries", () => {
 		mockState.accessibleByDrizzle.mockReset();
 		mockState.asAppSubject.mockReset();
 		mockState.createTimeEntry.mockReset();
+		mockState.clockingClockIn.mockReset();
+		mockState.clockingClockOut.mockReset();
 		mockState.getAbility.mockReset();
 		mockState.getSession.mockReset();
 		mockState.headers.mockReset();
@@ -378,6 +399,14 @@ describe("POST /api/time-entries", () => {
 		mockState.txLimit.mockResolvedValue([]);
 		mockState.txExecute.mockResolvedValue(undefined);
 		mockState.createTimeEntry.mockResolvedValue({ id: "entry-1" });
+		mockState.clockingClockIn.mockResolvedValue({ entry: { id: "entry-1" } });
+		mockState.clockingClockOut.mockResolvedValue({ entry: { id: "entry-1" } });
+		mockState.getUtcOffsetMinutesForZone.mockReturnValue(120);
+		mockState.resolveTimeEntryTimezoneCapture.mockReturnValue({
+			timezone: "Europe/Berlin",
+			timezoneSource: "user_setting",
+			utcOffsetMinutes: 120,
+		});
 		mockState.runPromise.mockResolvedValue({ id: "entry-1" });
 		mockState.values.mockResolvedValue(undefined);
 		mockState.updateReturning.mockResolvedValue([{ id: "period-1" }]);
@@ -398,14 +427,10 @@ describe("POST /api/time-entries", () => {
 		mockState.employeeHasAccessToCategory.mockResolvedValue(true);
 	});
 
-	it("checks duplicate clock-in state inside the transaction before inserting", async () => {
-		mockState.limit.mockReset();
-		mockState.limit.mockResolvedValueOnce([
-			{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
-		]);
-		mockState.txLimit.mockResolvedValueOnce([
-			{ id: "period-1", startTime: new Date("2026-05-04T08:00:00.000Z") },
-		]);
+	it("returns a conflict reported by the clocking service", async () => {
+		mockState.clockingClockIn.mockRejectedValueOnce(
+			new mockState.ClockingConflictError("Active work period already exists"),
+		);
 
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
@@ -419,12 +444,10 @@ describe("POST /api/time-entries", () => {
 
 		expect(response.status).toBe(409);
 		expect(await response.json()).toEqual({ error: "Active work period already exists" });
-		expect(mockState.transaction).toHaveBeenCalledTimes(1);
-		expect(mockState.txSelect).toHaveBeenCalled();
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.clockingClockIn).toHaveBeenCalledTimes(1);
 	});
 
-	it("passes offline location into the transactional time entry insert", async () => {
+	it("passes offline location to the clocking service", async () => {
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
 				body: JSON.stringify({
@@ -437,9 +460,8 @@ describe("POST /api/time-entries", () => {
 		);
 
 		expect(response.status).toBe(201);
-		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
+		expect(mockState.clockingClockIn).toHaveBeenCalledWith(
 			expect.objectContaining({ location: "48.137,11.575" }),
-			expect.anything(),
 		);
 	});
 
@@ -477,7 +499,7 @@ describe("POST /api/time-entries", () => {
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
 
-	it("acquires a per-employee transaction lock before active period lookup", async () => {
+	it("delegates clock-in writes to the clocking service", async () => {
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
 				body: JSON.stringify({
@@ -489,17 +511,8 @@ describe("POST /api/time-entries", () => {
 		);
 
 		expect(response.status).toBe(201);
-		expect(mockState.txExecute).toHaveBeenCalledWith(
-			expect.objectContaining({
-				strings: expect.arrayContaining([
-					"select pg_advisory_xact_lock(hashtextextended(",
-					", 0))",
-				]),
-				values: ["org-1:employee-1"],
-			}),
-		);
-		expect(mockState.txExecute.mock.invocationCallOrder[0]).toBeLessThan(
-			mockState.txSelect.mock.invocationCallOrder[0],
+		expect(mockState.clockingClockIn).toHaveBeenCalledWith(
+			expect.objectContaining({ employeeId: "employee-1", organizationId: "org-1" }),
 		);
 	});
 
@@ -530,7 +543,7 @@ describe("POST /api/time-entries", () => {
 		expect(mockState.values).not.toHaveBeenCalled();
 	});
 
-	it("persists workLocationType from offline clock-in requests", async () => {
+	it("passes workLocationType from offline clock-in requests", async () => {
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
 				body: JSON.stringify({
@@ -543,7 +556,7 @@ describe("POST /api/time-entries", () => {
 		);
 
 		expect(response.status).toBe(201);
-		expect(mockState.values).toHaveBeenCalledWith(
+		expect(mockState.clockingClockIn).toHaveBeenCalledWith(
 			expect.objectContaining({
 				workLocationType: "remote",
 			}),
@@ -562,14 +575,14 @@ describe("POST /api/time-entries", () => {
 		);
 
 		expect(response.status).toBe(201);
-		expect(mockState.values).toHaveBeenCalledWith(
+		expect(mockState.clockingClockIn).toHaveBeenCalledWith(
 			expect.objectContaining({
 				workLocationType: "office",
 			}),
 		);
 	});
 
-	it("inserts the time entry with the transaction client before creating the work period", async () => {
+	it("passes clock-in writes through the transactional clocking service", async () => {
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
 				body: JSON.stringify({
@@ -581,18 +594,13 @@ describe("POST /api/time-entries", () => {
 		);
 
 		expect(response.status).toBe(201);
-		expect(mockState.transaction).toHaveBeenCalledTimes(1);
-		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
-			expect.objectContaining({ type: "clock_in" }),
-			mockState.txClient,
-		);
-		expect(mockState.createTimeEntry.mock.invocationCallOrder[0]).toBeLessThan(
-			mockState.values.mock.invocationCallOrder[0],
+		expect(mockState.clockingClockIn).toHaveBeenCalledWith(
+			expect.objectContaining({ action: expect.any(Object), workLocationType: "office" }),
 		);
 	});
 
-	it("returns an error when the transactional work period insert fails", async () => {
-		mockState.values.mockRejectedValueOnce(new Error("insert failed"));
+	it("returns an error when the clocking service fails", async () => {
+		mockState.clockingClockIn.mockRejectedValueOnce(new Error("insert failed"));
 
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
@@ -605,7 +613,7 @@ describe("POST /api/time-entries", () => {
 		);
 
 		expect(response.status).toBe(500);
-		expect(mockState.createTimeEntry).toHaveBeenCalledWith(expect.anything(), mockState.txClient);
+		expect(mockState.clockingClockIn).toHaveBeenCalledTimes(1);
 	});
 
 	it("ignores generic timezone for capture fallback and uses saved user timezone", async () => {
@@ -621,16 +629,20 @@ describe("POST /api/time-entries", () => {
 		);
 
 		expect(response.status).toBe(201);
-		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
+		expect(mockState.clockingClockIn).toHaveBeenCalledWith(
 			expect.objectContaining({
-				timezone: "Europe/Berlin",
-				timezoneSource: "user_setting",
+				action: expect.objectContaining({
+					timezone: "Europe/Berlin",
+					timezoneSource: "user_setting",
+				}),
 			}),
-			expect.anything(),
 		);
 	});
 
-	it("rejects clock-out without an active work period before inserting a time entry", async () => {
+	it("returns the clocking service conflict when no active work period exists", async () => {
+		mockState.clockingClockOut.mockRejectedValueOnce(
+			new mockState.ClockingConflictError("No active work period found"),
+		);
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
 				body: JSON.stringify({
@@ -641,20 +653,15 @@ describe("POST /api/time-entries", () => {
 			}) as never,
 		);
 
-		expect(response.status).toBe(400);
+		expect(response.status).toBe(409);
 		expect(await response.json()).toEqual({ error: "No active work period found" });
-		expect(mockState.runPromise).not.toHaveBeenCalled();
-		expect(mockState.values).not.toHaveBeenCalled();
+		expect(mockState.clockingClockOut).toHaveBeenCalledTimes(1);
 	});
 
 	it("rejects duplicate clock-in when an active work period already exists", async () => {
-		mockState.limit.mockReset();
-		mockState.limit.mockResolvedValueOnce([
-			{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
-		]);
-		mockState.txLimit.mockResolvedValueOnce([
-			{ id: "period-1", startTime: new Date("2026-05-04T08:00:00.000Z") },
-		]);
+		mockState.clockingClockIn.mockRejectedValueOnce(
+			new mockState.ClockingConflictError("Active work period already exists"),
+		);
 
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
@@ -668,8 +675,7 @@ describe("POST /api/time-entries", () => {
 
 		expect(response.status).toBe(409);
 		expect(await response.json()).toEqual({ error: "Active work period already exists" });
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
-		expect(mockState.values).not.toHaveBeenCalled();
+		expect(mockState.clockingClockIn).toHaveBeenCalledTimes(1);
 	});
 
 	it("rejects cross-organization work categories before inserting a clock-out entry", async () => {
@@ -718,15 +724,10 @@ describe("POST /api/time-entries", () => {
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
 
-	it("rolls back clock-out time entry when the active period update loses the race", async () => {
-		mockState.limit.mockReset();
-		mockState.limit.mockResolvedValueOnce([
-			{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
-		]);
-		mockState.txLimit.mockResolvedValueOnce([
-			{ id: "period-1", startTime: new Date("2026-05-04T08:00:00.000Z") },
-		]);
-		mockState.updateReturning.mockResolvedValueOnce([]);
+	it("returns a clock-out race conflict from the clocking service", async () => {
+		mockState.clockingClockOut.mockRejectedValueOnce(
+			new mockState.ClockingConflictError("Active work period changed"),
+		);
 
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
@@ -740,8 +741,7 @@ describe("POST /api/time-entries", () => {
 
 		expect(response.status).toBe(409);
 		expect(await response.json()).toEqual({ error: "Active work period changed" });
-		expect(mockState.createTimeEntry).toHaveBeenCalledWith(expect.anything(), mockState.txClient);
-		expect(mockState.transaction).toHaveBeenCalledTimes(1);
+		expect(mockState.clockingClockOut).toHaveBeenCalledTimes(1);
 	});
 
 	it("rejects cross-organization project ids on clock-out before inserting a time entry", async () => {
@@ -805,7 +805,7 @@ describe("POST /api/time-entries", () => {
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
 
-	it("persists project and work category when closing an active work period", async () => {
+	it("passes project and work category when closing an active work period", async () => {
 		mockState.limit.mockReset();
 		mockState.limit
 			.mockResolvedValueOnce([{ id: "employee-1", organizationId: "org-1", teamId: "team-1" }])
@@ -828,7 +828,7 @@ describe("POST /api/time-entries", () => {
 		);
 
 		expect(response.status).toBe(201);
-		expect(mockState.updateSet).toHaveBeenCalledWith(
+		expect(mockState.clockingClockOut).toHaveBeenCalledWith(
 			expect.objectContaining({
 				projectId: "project-1",
 				workCategoryId: "category-1",

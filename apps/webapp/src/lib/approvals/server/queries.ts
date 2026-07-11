@@ -44,10 +44,12 @@ interface WorkPeriodLookupRecord {
 	clockIn: {
 		id: string;
 		timestamp: Date;
+		utcOffsetMinutes: number;
 	};
 	clockOut: {
 		id: string;
 		timestamp: Date;
+		utcOffsetMinutes: number;
 	} | null;
 	correctionReviewEntries?: CorrectionEntryForReview[];
 }
@@ -57,6 +59,7 @@ interface CorrectionEntryForReview {
 	timestamp: Date;
 	replacesEntryId: string | null;
 	isSuperseded?: boolean;
+	utcOffsetMinutes: number;
 }
 
 type TimeCorrectionApprovalMetadata = {
@@ -184,11 +187,34 @@ export function buildPendingApprovalResult({
 				endTime: period.endTime,
 				clockInEntry: period.clockIn,
 				clockOutEntry: period.clockOut ?? null,
+				clockInCorrectionEntry: findCorrectionEntry(request, period, period.clockIn.id),
+				clockOutCorrectionEntry: period.clockOut
+					? findCorrectionEntry(request, period, period.clockOut.id)
+					: null,
 			},
 		});
 	}
 
 	return { absenceApprovals, timeCorrectionApprovals };
+}
+
+function findCorrectionEntry(
+	request: PendingRequestRecord,
+	period: WorkPeriodLookupRecord,
+	replacesEntryId: string,
+): CorrectionEntryForReview | null {
+	const correctionId =
+		replacesEntryId === period.clockIn.id
+			? correctionMetadataFromRequest(request)?.clockInCorrectionId
+			: correctionMetadataFromRequest(request)?.clockOutCorrectionId;
+	const entries = (period.correctionReviewEntries ?? []).filter(
+		(entry) => !entry.isSuperseded && entry.replacesEntryId === replacesEntryId,
+	);
+	return correctionId
+		? (entries.find((entry) => entry.id === correctionId) ?? null)
+		: entries.length === 1
+			? entries[0]
+			: null;
 }
 
 export async function getPendingApprovals(): Promise<{

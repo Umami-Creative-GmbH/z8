@@ -5,7 +5,30 @@
 
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
-import { calculateHash } from "../blockchain";
+import type { timeEntry } from "@/db/schema";
+import { calculateHash, validateChain, validateChainDetailed, verifyHash } from "../blockchain";
+
+type TimeEntry = typeof timeEntry.$inferSelect;
+
+function createEntry(
+	overrides: Pick<TimeEntry, "id" | "employeeId" | "type" | "timestamp" | "hash">,
+): TimeEntry {
+	return {
+		...overrides,
+		organizationId: "test-organization",
+		previousHash: null,
+		previousEntryId: null,
+		replacesEntryId: null,
+		isSuperseded: false,
+		supersededById: null,
+		notes: null,
+		location: null,
+		ipAddress: null,
+		deviceInfo: null,
+		createdAt: overrides.timestamp,
+		createdBy: "test-user",
+	};
+}
 
 describe("Blockchain Hash Compatibility", () => {
 	it("should produce identical hash with Date.toISOString() and DateTime.toISO()", () => {
@@ -54,6 +77,76 @@ describe("Blockchain Hash Compatibility", () => {
 
 			expect(luxonISO).toBe(dateISO);
 		});
+	});
+
+	it("should preserve the timestamp hash byte contract", () => {
+		const timestampHashPairs = [
+			[
+				"2024-01-15T10:30:00.000Z",
+				"a73279cdaf64f2ab3bfc90ad8a142c33cbf5c2fc6de1496a77cd459e399d63ed",
+			],
+			[
+				"2024-01-15T10:30:00.123Z",
+				"165d9523f6703999733e2dcd2550b880c0bdff7121e123d654406aaee5302b16",
+			],
+			[
+				"2024-01-15T10:30:00.999Z",
+				"5aa2ee833dede15711d4ef4c1d7ccbb99ec470bbbd0c42f4bdcd92dcfd31a2de",
+			],
+		] as const;
+
+		for (const [timestamp, expectedHash] of timestampHashPairs) {
+			expect(
+				calculateHash({
+					employeeId: "test-employee",
+					type: "clock_in",
+					timestamp,
+					previousHash: null,
+				}),
+			).toBe(expectedHash);
+		}
+	});
+
+	it("preserves extended-year Date ISO bytes when validating persisted hashes", async () => {
+		const timestamp = new Date("+010000-01-01T00:00:00.000Z");
+		const timestampText = timestamp.toISOString();
+		const hash = calculateHash({
+			employeeId: "test-employee",
+			type: "clock_in",
+			timestamp: timestampText,
+			previousHash: null,
+		});
+		const entry = createEntry({
+			id: "extended-year-entry",
+			employeeId: "test-employee",
+			type: "clock_in",
+			timestamp,
+			hash,
+		});
+
+		expect(timestampText).toBe("+010000-01-01T00:00:00.000Z");
+		expect(verifyHash(entry)).toEqual({ isValid: true, calculatedHash: hash, storedHash: hash });
+		await expect(validateChain([entry])).resolves.toBe(true);
+	});
+
+	it("reports invalid persisted timestamps without throwing", async () => {
+		const entry = createEntry({
+			id: "invalid-timestamp-entry",
+			employeeId: "test-employee",
+			type: "clock_in",
+			timestamp: new Date(Number.NaN),
+			hash: "stored-hash",
+		});
+
+		expect(verifyHash(entry)).toEqual({
+			isValid: false,
+			calculatedHash: "",
+			storedHash: "stored-hash",
+		});
+		await expect(validateChain([entry])).resolves.toBe(false);
+		expect(validateChainDetailed([entry]).issues).toMatchObject([
+			{ entryId: "invalid-timestamp-entry", type: "invalid_timestamp" },
+		]);
 	});
 
 	it("should maintain hash chain integrity with mixed Date/DateTime operations", () => {

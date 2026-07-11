@@ -1,44 +1,126 @@
 import { describe, expect, it } from "vitest";
-import { createClockingService } from "./clocking-service";
+import { parseInstant } from "@/lib/datetime/temporal-core";
+import { ClockingConflictError, createClockingService } from "./clocking-service";
+
+function createHarness(options?: { member?: boolean; failPeriodInsert?: boolean }) {
+	let active = false;
+	let entries = 0;
+	const actions = new Map<string, { id: string }>();
+	let previous = Promise.resolve();
+	const service = createClockingService({
+		transaction: async (callback) => {
+			const wait = previous;
+			let release!: () => void;
+			previous = new Promise((resolve) => {
+				release = resolve;
+			});
+			await wait;
+			try {
+				return await callback({
+					lockEmployee: async () => undefined,
+					isOrganizationMember: async () => options?.member ?? true,
+					getEntryByActionId: async (_employeeId, _organizationId, actionId) =>
+						actionId ? (actions.get(actionId) ?? null) : null,
+					getActivePeriod: async () =>
+						active ? { id: "period-1", startTime: new Date("2026-07-10T08:00:00Z") } : null,
+					getLatestHash: async () => null,
+					insertEntry: async (entry) => {
+						const inserted = { id: `entry-${++entries}`, ...entry };
+						if (typeof entry.id === "string") actions.set(entry.id, inserted);
+						return inserted;
+					},
+					insertActivePeriod: async () => {
+						if (options?.failPeriodInsert) throw new Error("period insert failed");
+						active = true;
+						return { id: "period-1" };
+					},
+					closeActivePeriod: async () => {
+						active = false;
+						return { id: "period-1" };
+					},
+				});
+			} finally {
+				release();
+			}
+		},
+	});
+	return { service, entries: () => entries };
+}
+
+const clockIn = {
+	employeeId: "employee-1",
+	organizationId: "organization-1",
+	createdBy: "user-1",
+	action: {
+		instant: parseInstant("2026-07-10T09:00:00Z"),
+		utcOffsetMinutes: -600,
+		timezone: "Pacific/Honolulu",
+		timezoneSource: "user_setting" as const,
+	},
+	source: { ipAddress: "bot", deviceInfo: "telegram-bot" },
+};
 
 describe("clocking service", () => {
-	it("derives the employee and organization from an approved active membership", async () => {
-		const service = createClockingService({
-			findActiveEmployee: async (userId, organizationId) =>
-				userId === "user-1" && organizationId === "org-1"
-					? { id: "employee-1", organizationId: "org-1" }
-					: null,
-			findApprovedMembership: async (userId, organizationId) =>
-				userId === "user-1" && organizationId === "org-1",
-		});
+	it("serializes simultaneous clock-ins so exactly one creates an active period", async () => {
+		const { service, entries } = createHarness();
+		const results = await Promise.allSettled([service.clockIn(clockIn), service.clockIn(clockIn)]);
 
-		await expect(service.requireActor({ userId: "user-1", activeOrganizationId: "org-1" })).resolves.toEqual({
-			employee: { id: "employee-1", organizationId: "org-1" },
-			organizationId: "org-1",
-			userId: "user-1",
-		});
+		expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+		expect(results.filter((result) => result.status === "rejected")).toHaveLength(1);
+		expect(entries()).toBe(1);
+		const rejected = results.find((result) => result.status === "rejected");
+		expect(rejected).toMatchObject({ reason: expect.any(ClockingConflictError) });
 	});
 
-	it("rejects a session without an approved membership before resolving an employee", async () => {
-		const findActiveEmployee = async () => ({ id: "employee-1", organizationId: "org-1" });
-		const service = createClockingService({
-			findActiveEmployee,
-			findApprovedMembership: async () => false,
-		});
+	it("returns the original entry for a repeated extension action id without another write", async () => {
+		const { service, entries } = createHarness();
+		const action = { ...clockIn, actionId: "f47ac10b-58cc-4372-a567-0e02b2c3d479" };
 
-		await expect(service.requireActor({ userId: "user-1", activeOrganizationId: "org-1" })).rejects.toMatchObject({
-			code: "active_membership_required",
-		});
+		const first = await service.clockIn(action);
+		const duplicate = await service.clockIn(action);
+
+		expect(duplicate.entry).toEqual(first.entry);
+		expect(entries()).toBe(1);
 	});
 
-	it("does not accept a membership or employee from a different organization", async () => {
+	it("rejects an employee outside the requested organization before writing", async () => {
+		const { service, entries } = createHarness({ member: false });
+
+		await expect(service.clockIn(clockIn)).rejects.toThrow(
+			"Employee does not belong to organization",
+		);
+		expect(entries()).toBe(0);
+	});
+
+	it("rolls back the entry when creating its work period fails", async () => {
+		const inserted: string[] = [];
 		const service = createClockingService({
-			findActiveEmployee: async () => ({ id: "employee-org-2", organizationId: "org-2" }),
-			findApprovedMembership: async () => true,
+			transaction: async (callback) => {
+				const snapshot = [...inserted];
+				try {
+					return await callback({
+						lockEmployee: async () => undefined,
+						isOrganizationMember: async () => true,
+						getEntryByActionId: async () => null,
+						getActivePeriod: async () => null,
+						getLatestHash: async () => null,
+						insertEntry: async () => {
+							inserted.push("entry");
+							return { id: "entry-1" };
+						},
+						insertActivePeriod: async () => {
+							throw new Error("period insert failed");
+						},
+						closeActivePeriod: async () => ({ id: "period-1" }),
+					});
+				} catch (error) {
+					inserted.splice(0, inserted.length, ...snapshot);
+					throw error;
+				}
+			},
 		});
 
-		await expect(service.requireActor({ userId: "user-1", activeOrganizationId: "org-1" })).rejects.toMatchObject({
-			code: "employee_required",
-		});
+		await expect(service.clockIn(clockIn)).rejects.toThrow("period insert failed");
+		expect(inserted).toEqual([]);
 	});
 });

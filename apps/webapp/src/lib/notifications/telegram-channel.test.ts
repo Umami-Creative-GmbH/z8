@@ -7,16 +7,20 @@ const {
 	getBotConfigMock,
 	getChatIdMock,
 	resolveRecipientDisplayContextMock,
+	resolveBotTemporalContextMock,
 	sendApprovalMessageMock,
 	sendMessageMock,
+	warnMock,
 } = vi.hoisted(() => ({
 	debugMock: vi.fn(),
 	errorMock: vi.fn(),
 	getBotConfigMock: vi.fn(),
 	getChatIdMock: vi.fn(),
 	resolveRecipientDisplayContextMock: vi.fn(),
+	resolveBotTemporalContextMock: vi.fn(),
 	sendApprovalMessageMock: vi.fn(),
 	sendMessageMock: vi.fn(),
+	warnMock: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -37,6 +41,7 @@ vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
 		debug: debugMock,
 		error: errorMock,
+		warn: warnMock,
 	}),
 }));
 
@@ -59,10 +64,14 @@ vi.mock("./recipient-display-context", () => ({
 	resolveRecipientDisplayContext: resolveRecipientDisplayContextMock,
 }));
 
+vi.mock("@/lib/bot-platform/temporal-context", () => ({
+	resolveBotTemporalContext: resolveBotTemporalContextMock,
+}));
+
 const localizeOutboundNotificationMock = vi.mocked(localizeOutboundNotification);
 
 describe("sendTelegramNotification", () => {
-	beforeEach(() => {
+	beforeEach(async () => {
 		vi.clearAllMocks();
 		getBotConfigMock.mockResolvedValue({ botToken: "bot-token" });
 		getChatIdMock.mockResolvedValue("chat-123");
@@ -70,6 +79,15 @@ describe("sendTelegramNotification", () => {
 			locale: "de",
 			timeFormat: "24h",
 			timezone: "Europe/Berlin",
+		});
+		resolveBotTemporalContextMock.mockResolvedValue({
+			effectiveTimezone: "Europe/Berlin",
+			locale: "de",
+		});
+		const { db } = await import("@/db");
+		vi.mocked(db.query.employee.findFirst).mockResolvedValue({
+			id: "employee-123",
+			userId: "user-123",
 		});
 		sendMessageMock.mockResolvedValue({ ok: true });
 		localizeOutboundNotificationMock.mockResolvedValue({

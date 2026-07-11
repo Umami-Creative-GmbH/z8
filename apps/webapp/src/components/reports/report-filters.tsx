@@ -7,14 +7,14 @@ import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
-import type { DateRange } from "@/lib/reports/types";
+import type { ReportDateRange } from "@/lib/reports/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { DateRangePicker } from "./date-range-picker";
 import { ReportEmployeeSelector } from "./report-employee-selector";
 
 interface ReportFiltersProps {
 	currentEmployeeId: string;
-	onGenerate: (employeeId: string, dateRange: DateRange) => void;
+	onGenerate: (employeeId: string, dateRange: ReportDateRange) => void;
 	isGenerating?: boolean;
 }
 
@@ -32,7 +32,7 @@ export function ReportFilters({
 	);
 	const hasUserChangedRange = useRef(false);
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(currentEmployeeId);
-	const [dateRange, setDateRange] = useState<DateRange | null>(null);
+	const [dateRange, setDateRange] = useState<ReportDateRange | null>(null);
 
 	useEffect(() => {
 		if (!isHydrated || hasUserChangedRange.current) {
@@ -42,7 +42,7 @@ export function ReportFilters({
 		setDateRange(getDateRangeForPreset("current_month", { timezone }));
 	}, [isHydrated, timezone]);
 
-	const handleDateRangeChange = (range: DateRange) => {
+	const handleDateRangeChange = (range: ReportDateRange) => {
 		hasUserChangedRange.current = true;
 		setDateRange(range);
 	};

@@ -48,10 +48,17 @@ export async function requireMobileSessionContext(request: Request): Promise<Mob
 		},
 		where: eq(member.userId, session.user.id),
 	});
+	const activeOrganizationId = session.session.activeOrganizationId ?? null;
+	if (
+		activeOrganizationId &&
+		!memberships.some((membership) => membership.organizationId === activeOrganizationId)
+	) {
+		throw new MobileApiError(403, "Active organization membership required");
+	}
 
 	return {
 		session,
-		activeOrganizationId: session.session.activeOrganizationId ?? null,
+		activeOrganizationId,
 		memberships,
 	};
 }

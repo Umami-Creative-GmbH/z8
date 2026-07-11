@@ -5,9 +5,10 @@
  * scheduled shifts vs actual clocked-in employees.
  */
 
-import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import {
 	coverageRule,
 	coverageSettings,
@@ -30,6 +31,8 @@ import {
 } from "@/lib/coverage/domain/entities/coverage-rule";
 import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
 import { snapshotToHeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
+import { dateFromInstant, instantFromDate, type PlainDate } from "@/lib/datetime/temporal-core";
+import { parseIanaTimeZone } from "@/lib/timezone/validation";
 import type { DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
 
@@ -202,6 +205,7 @@ export class CoverageService extends Context.Tag("CoverageService")<
 			organizationId: string;
 			startDate: Date;
 			endDate: Date;
+			timezone: string;
 			subareaIds?: string[];
 		}) => Effect.Effect<HeatmapDataPoint[], DatabaseError>;
 
@@ -210,6 +214,7 @@ export class CoverageService extends Context.Tag("CoverageService")<
 			organizationId: string;
 			startDate: Date;
 			endDate: Date;
+			timezone: string;
 		}) => Effect.Effect<{ canPublish: boolean; gaps: TargetCoverageGap[] }, DatabaseError>;
 
 		// ============================================
@@ -268,22 +273,41 @@ function generateTimeSlots(startTime: string, endTime: string, intervalMinutes =
 	return slots;
 }
 
-/**
- * Get all dates in a range (inclusive).
- */
-function getDatesInRange(startDate: Date, endDate: Date): Date[] {
-	const dates: Date[] = [];
-	const current = new Date(startDate);
-	current.setHours(0, 0, 0, 0);
-	const end = new Date(endDate);
-	end.setHours(23, 59, 59, 999);
+export function resolveCoveragePlainDates(
+	startDate: Date,
+	endDateExclusive: Date,
+	timezone: string,
+): PlainDate[] {
+	const resolvedTimezone = parseIanaTimeZone(timezone);
+	let date = instantFromDate(startDate).toZonedDateTimeISO(resolvedTimezone).toPlainDate();
+	const endExclusive = instantFromDate(endDateExclusive)
+		.toZonedDateTimeISO(resolvedTimezone)
+		.toPlainDate();
+	const dates: PlainDate[] = [];
 
-	while (current <= end) {
-		dates.push(new Date(current));
-		current.setDate(current.getDate() + 1);
+	while (Temporal.PlainDate.compare(date, endExclusive) < 0) {
+		dates.push(date);
+		date = date.add({ days: 1 });
 	}
 
 	return dates;
+}
+
+function dayOfWeekForDate(date: PlainDate): DayOfWeek {
+	const days: Record<number, DayOfWeek> = {
+		1: "monday",
+		2: "tuesday",
+		3: "wednesday",
+		4: "thursday",
+		5: "friday",
+		6: "saturday",
+		7: "sunday",
+	};
+	return days[date.dayOfWeek];
+}
+
+function coverageDateToDate(date: PlainDate, timezone: string): Date {
+	return dateFromInstant(date.toZonedDateTime(parseIanaTimeZone(timezone)).toInstant());
 }
 
 // ============================================
@@ -817,7 +841,7 @@ export const CoverageServiceLive = Layer.effect(
 
 			getTargetHeatmapData: (params) =>
 				Effect.gen(function* (_) {
-					const { organizationId, startDate, endDate, subareaIds } = params;
+					const { organizationId, startDate, endDate, timezone, subareaIds } = params;
 
 					// Fetch rules
 					const rulesConditions = [eq(coverageRule.organizationId, organizationId)];
@@ -846,7 +870,7 @@ export const CoverageServiceLive = Layer.effect(
 						eq(shift.organizationId, organizationId),
 						eq(shift.status, "published"),
 						gte(shift.date, startDate),
-						lte(shift.date, endDate),
+						lt(shift.date, endDate),
 					];
 					if (subareaIds && subareaIds.length > 0) {
 						shiftConditions.push(inArray(shift.subareaId, subareaIds));
@@ -895,14 +919,17 @@ export const CoverageServiceLive = Layer.effect(
 					);
 
 					// Calculate coverage for each day and subarea
-					const dates = getDatesInRange(startDate, endDate);
+					const dates = resolveCoveragePlainDates(startDate, endDate, timezone);
 					const heatmapData: HeatmapDataPoint[] = [];
 
 					for (const date of dates) {
 						for (const [subareaId, subareaInfo] of subareaMap) {
-							const dateStr = date.toISOString().split("T")[0];
+							const dateStr = date.toString();
 							const subareaShifts: ShiftForCoverage[] = shifts.flatMap((s) => {
-								const shiftDateStr = new Date(s.date).toISOString().split("T")[0];
+								const shiftDateStr = instantFromDate(s.date)
+									.toZonedDateTimeISO(parseIanaTimeZone(timezone))
+									.toPlainDate()
+									.toString();
 								return s.subareaId === subareaId && shiftDateStr === dateStr
 									? [
 											{
@@ -916,7 +943,8 @@ export const CoverageServiceLive = Layer.effect(
 							});
 
 							const result = calculateCoverage({
-								date,
+								date: coverageDateToDate(date, timezone),
+								dayOfWeek: dayOfWeekForDate(date),
 								subareaId,
 								subareaName: subareaInfo.name,
 								locationName: subareaInfo.locationName,
@@ -935,7 +963,7 @@ export const CoverageServiceLive = Layer.effect(
 
 			validateScheduleCanPublish: (params) =>
 				Effect.gen(function* (_) {
-					const { organizationId, startDate, endDate } = params;
+					const { organizationId, startDate, endDate, timezone } = params;
 
 					// Fetch all rules
 					const rules = yield* _(
@@ -962,7 +990,7 @@ export const CoverageServiceLive = Layer.effect(
 									eq(shift.organizationId, organizationId),
 									eq(shift.status, "draft"),
 									gte(shift.date, startDate),
-									lte(shift.date, endDate),
+									lt(shift.date, endDate),
 								),
 								columns: {
 									id: true,
@@ -984,7 +1012,7 @@ export const CoverageServiceLive = Layer.effect(
 									eq(shift.organizationId, organizationId),
 									eq(shift.status, "published"),
 									gte(shift.date, startDate),
-									lte(shift.date, endDate),
+									lt(shift.date, endDate),
 								),
 								columns: {
 									id: true,
@@ -1028,14 +1056,17 @@ export const CoverageServiceLive = Layer.effect(
 					);
 
 					// Calculate coverage and extract gaps
-					const dates = getDatesInRange(startDate, endDate);
+					const dates = resolveCoveragePlainDates(startDate, endDate, timezone);
 					const allResults: CoverageCalculationResult[] = [];
 
 					for (const date of dates) {
 						for (const [subareaId, subareaInfo] of subareaMap) {
-							const dateStr = date.toISOString().split("T")[0];
+							const dateStr = date.toString();
 							const subareaShifts: ShiftForCoverage[] = allShifts.flatMap((s) => {
-								const shiftDateStr = new Date(s.date).toISOString().split("T")[0];
+								const shiftDateStr = instantFromDate(s.date)
+									.toZonedDateTimeISO(parseIanaTimeZone(timezone))
+									.toPlainDate()
+									.toString();
 								return s.subareaId === subareaId && shiftDateStr === dateStr
 									? [
 											{
@@ -1049,7 +1080,8 @@ export const CoverageServiceLive = Layer.effect(
 							});
 
 							const result = calculateCoverage({
-								date,
+								date: coverageDateToDate(date, timezone),
+								dayOfWeek: dayOfWeekForDate(date),
 								subareaId,
 								subareaName: subareaInfo.name,
 								locationName: subareaInfo.locationName,

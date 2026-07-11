@@ -42,7 +42,7 @@ describe("bot time-tracking command billing guards", () => {
 		expectBillingGuardBeforeWrite(
 			readCommandSource("clock-in.ts"),
 			"clock-in",
-			".insert(timeEntry)",
+			"clockingService.clockIn({",
 		);
 	});
 
@@ -50,7 +50,7 @@ describe("bot time-tracking command billing guards", () => {
 		expectBillingGuardBeforeWrite(
 			readCommandSource("clock-out.ts"),
 			"clock-out",
-			".insert(timeEntry)",
+			"clockingService.clockOut({",
 		);
 	});
 });

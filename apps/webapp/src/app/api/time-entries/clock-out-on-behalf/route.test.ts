@@ -26,6 +26,7 @@ const mockState = vi.hoisted(() => {
 		connection: vi.fn(),
 		createBillingForbiddenResponse: vi.fn(),
 		createTimeEntry: vi.fn(),
+		clockingClockOut: vi.fn(),
 		calculateAndPersistSurcharges: vi.fn(),
 		checkComplianceAfterClockOut: vi.fn(),
 		enforceBreaksAfterClockOut: vi.fn(),
@@ -133,7 +134,11 @@ vi.mock("@/lib/time-tracking/timezone-capture", () => ({
 
 vi.mock("@/lib/time-tracking/clocking-service", () => ({
 	ClockingAccessError: class ClockingAccessError extends Error {},
-	clockingService: { requireActor: mockState.requireActor },
+	ClockingConflictError: class ClockingConflictError extends Error {},
+	clockingService: {
+		clockOut: (...args: unknown[]) => mockState.clockingClockOut(...args),
+		requireActor: mockState.requireActor,
+	},
 }));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/entry-helpers", () => ({
@@ -242,6 +247,12 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 			utcOffsetMinutes: 120,
 		});
 		mockState.createTimeEntry.mockResolvedValue({ id: "clock-out-entry-1" });
+		mockState.clockingClockOut.mockResolvedValue({
+			activePeriod: { id: "period-1", startTime: runningPeriod.startTime },
+			durationMinutes: 150,
+			entry: { id: "clock-out-entry-1" },
+			period: { id: "period-1" },
+		});
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 		mockState.checkComplianceAfterClockOut.mockResolvedValue([]);
 		mockState.enforceBreaksAfterClockOut.mockResolvedValue({ wasAdjusted: false });
@@ -255,17 +266,17 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 
 		expect(response.status).toBe(201);
 		expect(await response.json()).toEqual({ entry: { id: "clock-out-entry-1" } });
-		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
+		expect(mockState.clockingClockOut).toHaveBeenCalledWith(
 			expect.objectContaining({
 				createdBy: "actor-user-1",
 				employeeId: "target-employee-1",
 				organizationId: "org-1",
-				timestamp: now,
-				timezone: "Europe/Berlin",
-				timezoneSource: "manager_target_user_setting",
-				type: "clock_out",
+				workPeriodId: "period-1",
+				action: expect.objectContaining({
+					timezone: "Europe/Berlin",
+					timezoneSource: "manager_target_user_setting",
+				}),
 			}),
-			mockState.txClient,
 		);
 		expect(mockState.findUserSettings).toHaveBeenCalledWith(
 			expect.objectContaining({ columns: { timezone: true } }),
@@ -275,17 +286,6 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 			timezone: "Europe/Berlin",
 			timezoneSource: "manager_target_user_setting",
 		});
-		expect(mockState.updateSet).toHaveBeenCalledWith(
-			expect.objectContaining({
-				clockOutId: "clock-out-entry-1",
-				durationMinutes: 150,
-				endTime: now,
-				isActive: false,
-			}),
-		);
-		expect(mockState.txExecute).toHaveBeenCalledWith(
-			expect.objectContaining({ values: ["org-1:target-employee-1"] }),
-		);
 	});
 
 	it("runs clock-out domain side effects after successfully closing the target period", async () => {
@@ -314,7 +314,7 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 			organizationId: "org-1",
 		});
 		expect(mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[0]).toBeGreaterThan(
-			mockState.transaction.mock.invocationCallOrder[0],
+			mockState.clockingClockOut.mock.invocationCallOrder[0],
 		);
 		expect(mockState.enforceBreaksAfterClockOut.mock.invocationCallOrder[0]).toBeLessThan(
 			mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[0],
@@ -425,13 +425,15 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 	});
 
 	it("returns 409 when the guarded update loses a race", async () => {
-		mockState.updateReturning.mockResolvedValueOnce([]);
+		const conflict = new Error("Active work period changed");
+		conflict.name = "ClockingConflictError";
+		mockState.clockingClockOut.mockRejectedValueOnce(conflict);
 
 		const response = await POST(createRequest({ workPeriodId: "period-1" }));
 
 		expect(response.status).toBe(409);
 		expect(await response.json()).toEqual({ error: "Active work period changed" });
-		expect(mockState.createTimeEntry).toHaveBeenCalledWith(expect.anything(), mockState.txClient);
+		expect(mockState.clockingClockOut).toHaveBeenCalledWith(expect.anything());
 	});
 
 	it("requires a workPeriodId string", async () => {

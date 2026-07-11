@@ -20,6 +20,8 @@ import {
 } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/work-location";
+import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { createClockOutApprovalRequest, createManualEntryApprovalRequest } from "./approvals";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
@@ -209,25 +211,20 @@ export async function clockIn(
 			browserSource: "browser",
 			fallbackSource: "user_setting",
 		});
-		const entry = await createTimeEntry({
+		const { entry } = await clockingService.clockIn({
 			employeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
-			type: "clock_in",
-			timestamp: now,
 			createdBy: session.user.id,
-			...timezoneCapture,
-		});
-
-		await db.insert(workPeriod).values({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			clockInId: entry.id,
-			startTime: now,
+			action: { instant: instantFromDate(now), ...timezoneCapture },
+			source: { ipAddress: null, deviceInfo: "web" },
 			workLocationType: resolvedWorkLocationType,
 		});
 
-		return { success: true, data: entry };
+		return { success: true, data: entry as Awaited<ReturnType<typeof createTimeEntry>> };
 	} catch (error) {
+		if (error instanceof ClockingConflictError) {
+			return { success: false, error: "You are already clocked in" };
+		}
 		logger.error({ error }, "Clock in error");
 		return { success: false, error: "Failed to clock in. Please try again." };
 	}
@@ -318,62 +315,30 @@ export async function clockOut(
 			return { success: false, error: "No manager assigned to approve time changes" };
 		}
 
-		const { entry, durationMinutes } = await db.transaction(async (tx) => {
-			const clockOutEntry = await createTimeEntry(
-				{
-					employeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-					type: "clock_out",
-					timestamp: now,
-					createdBy: session.user.id,
-					...timezoneCapture,
-				},
-				tx,
-			);
-
-			const sessionDurationMinutes = calculateDurationMinutes(activeWorkPeriod.startTime, now);
-			const approvalStatus = needsClockOutApproval ? "pending" : "approved";
-			const pendingChanges = needsClockOutApproval
-				? {
-						originalStartTime: activeWorkPeriod.startTime.toISOString(),
-						originalEndTime: now.toISOString(),
-						originalDurationMinutes: sessionDurationMinutes,
-						requestedAt: now.toISOString(),
-						requestedBy: session.user.id,
-						isNewClockOut: true,
-					}
-				: null;
-
-			const [closedWorkPeriod] = await tx
-				.update(workPeriod)
-				.set({
-					clockOutId: clockOutEntry.id,
-					endTime: now,
-					durationMinutes: sessionDurationMinutes,
-					projectId: projectId || null,
-					workCategoryId: workCategoryId || null,
-					isActive: false,
-					approvalStatus,
-					pendingChanges,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(workPeriod.id, activeWorkPeriod.id),
-						eq(workPeriod.employeeId, currentEmployee.id),
-						eq(workPeriod.organizationId, currentEmployee.organizationId),
-						eq(workPeriod.isActive, true),
-						isNull(workPeriod.endTime),
-					),
-				)
-				.returning({ id: workPeriod.id });
-
-			if (!closedWorkPeriod) {
-				throw new Error("Active work period was not updated");
-			}
-
-			return { entry: clockOutEntry, durationMinutes: sessionDurationMinutes };
+		const sessionDurationMinutes = calculateDurationMinutes(activeWorkPeriod.startTime, now);
+		const pendingChanges = needsClockOutApproval
+			? {
+					originalStartTime: activeWorkPeriod.startTime.toISOString(),
+					originalEndTime: now.toISOString(),
+					originalDurationMinutes: sessionDurationMinutes,
+					requestedAt: now.toISOString(),
+					requestedBy: session.user.id,
+					isNewClockOut: true,
+				}
+			: null;
+		const result = await clockingService.clockOut({
+			employeeId: currentEmployee.id,
+			organizationId: currentEmployee.organizationId,
+			createdBy: session.user.id,
+			action: { instant: instantFromDate(now), ...timezoneCapture },
+			source: { ipAddress: null, deviceInfo: "web" },
+			projectId,
+			workCategoryId,
+			approvalStatus: needsClockOutApproval ? "pending" : "approved",
+			pendingChanges,
 		});
+		const entry = result.entry as Awaited<ReturnType<typeof createTimeEntry>>;
+		const { durationMinutes } = result;
 
 		await calculateAndPersistSurcharges(activeWorkPeriod.id, currentEmployee.organizationId);
 		if (needsClockOutApproval && managerId) {
@@ -439,6 +404,9 @@ export async function clockOut(
 			},
 		};
 	} catch (error) {
+		if (error instanceof ClockingConflictError) {
+			return { success: false, error: "You are not currently clocked in" };
+		}
 		logger.error({ error }, "Clock out error");
 		return { success: false, error: "Failed to clock out. Please try again." };
 	}

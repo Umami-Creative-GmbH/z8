@@ -2,7 +2,7 @@
  * Project Report types and interfaces
  */
 
-import type { DateRange, PeriodPreset } from "./types";
+import type { PeriodPreset, ReportDateRange } from "./types";
 
 export type ProjectHealthSeverity = "none" | "warning" | "critical";
 
@@ -77,8 +77,8 @@ export interface ProjectTeamBreakdown {
 export interface ProjectDetailedReport {
 	project: ProjectInfo;
 	period: {
-		startDate: Date;
-		endDate: Date;
+		startDate: string;
+		endDate: string;
 		label: string;
 	};
 	summary: {
@@ -109,12 +109,12 @@ export interface ProjectPortfolioData {
 }
 
 export interface ProjectReportFilters {
-	startDate: Date;
-	endDate: Date;
+	startDate: string;
+	endDate: string;
 	preset?: PeriodPreset;
 	statusFilter?: ("planned" | "active" | "paused" | "completed" | "archived")[];
 	teamId?: string;
 	managerId?: string;
 }
 
-export type { DateRange, PeriodPreset };
+export type { PeriodPreset, ReportDateRange };

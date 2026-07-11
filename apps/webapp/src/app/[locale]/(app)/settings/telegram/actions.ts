@@ -8,6 +8,7 @@ import { telegramBotConfig, telegramUserMapping } from "@/db/schema";
 import { env } from "@/env";
 import { requireUser } from "@/lib/auth-helpers";
 import { createLogger } from "@/lib/logger";
+import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import { deleteOrgSecret, getOrgSecret, storeOrgSecret } from "@/lib/vault";
 
 const logger = createLogger("TelegramSettings");
@@ -47,6 +48,55 @@ export interface TelegramSettingsFormValues {
 }
 
 type ActionResult<T = void> = { success: true; data: T } | { success: false; error: string };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === "object";
+}
+
+function validateTelegramSettings(settings: unknown): string | null {
+	if (!isRecord(settings)) {
+		return "Settings are required";
+	}
+
+	const values = settings;
+
+	if (typeof values.enableApprovals !== "boolean") {
+		return "Enable approvals must be a boolean";
+	}
+
+	if (typeof values.enableCommands !== "boolean") {
+		return "Enable commands must be a boolean";
+	}
+
+	if (typeof values.enableDailyDigest !== "boolean") {
+		return "Enable daily digest must be a boolean";
+	}
+
+	if (typeof values.enableEscalations !== "boolean") {
+		return "Enable escalations must be a boolean";
+	}
+
+	if (
+		typeof values.digestTime !== "string" ||
+		!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(values.digestTime)
+	) {
+		return "Digest time must use HH:mm format";
+	}
+
+	if (typeof values.digestTimezone !== "string" || !isValidIanaTimeZone(values.digestTimezone)) {
+		return "Digest timezone must be a valid timezone";
+	}
+
+	if (
+		typeof values.escalationTimeoutHours !== "number" ||
+		!Number.isInteger(values.escalationTimeoutHours) ||
+		values.escalationTimeoutHours < 1
+	) {
+		return "Escalation timeout must be at least 1 hour";
+	}
+
+	return null;
+}
 
 // ============================================
 // HELPERS
@@ -213,6 +263,10 @@ export async function updateTelegramSettings(
 ): Promise<ActionResult> {
 	try {
 		await requireAdmin(organizationId);
+		const validationError = validateTelegramSettings(settings);
+		if (validationError) {
+			return { success: false, error: validationError };
+		}
 
 		await db
 			.update(telegramBotConfig)

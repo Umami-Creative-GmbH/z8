@@ -11,7 +11,7 @@ export function useTimer(startTime: string | null) {
       return;
     }
 
-    const startDate = DateTime.fromISO(startTime);
+		const startDate = DateTime.fromISO(startTime, { zone: "utc" });
     if (!startDate.isValid) {
       setElapsedSeconds(0);
       return;

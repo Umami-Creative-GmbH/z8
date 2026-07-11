@@ -8,11 +8,12 @@ import {
 } from "./work-hours-summary";
 
 function workPeriod(date: string, durationMinutes: number): CalendarEvent {
+	const start = new Date(`${date}T08:00:00.000Z`);
 	return {
 		id: `${date}-${durationMinutes}`,
 		type: "work_period",
-		date: new Date(`${date}T08:00:00.000Z`),
-		endDate: new Date(`${date}T16:00:00.000Z`),
+		date: start,
+		endDate: new Date(start.getTime() + durationMinutes * 60_000),
 		title: "Work",
 		color: "#10b981",
 		metadata: { durationMinutes, employeeName: "Ada" },
@@ -32,13 +33,35 @@ function workPeriodAt(date: Date, durationMinutes: number): CalendarEvent {
 
 describe("buildDailyActualMinutes", () => {
 	it("groups work period dates by the selected calendar timezone", () => {
-		expect(
-			buildDailyActualMinutes(
-				[workPeriodAt(new Date("2026-06-01T02:00:00.000Z"), 120)],
-				"America/New_York",
-			),
-		).toEqual({
+		const event = workPeriodAt(new Date("2026-06-01T02:00:00.000Z"), 120);
+		event.endDate = new Date("2026-06-01T04:00:00.000Z");
+
+		expect(buildDailyActualMinutes([event], "America/New_York")).toEqual({
 			"2026-05-31": 120,
+		});
+	});
+
+	it("splits a New York period across employee-local days after clipping", () => {
+		const event = workPeriodAt(new Date("2026-05-02T03:30:00.000Z"), 120);
+		event.endDate = new Date("2026-05-02T05:30:00.000Z");
+
+		expect(
+			buildDailyActualMinutes([event], "America/New_York", {
+				start: new Date("2026-05-02T00:00:00.000Z"),
+				endExclusive: new Date("2026-05-03T00:00:00.000Z"),
+			}),
+		).toEqual({
+			"2026-05-01": 30,
+			"2026-05-02": 90,
+		});
+	});
+
+	it("uses elapsed minutes across Berlin DST boundaries", () => {
+		const event = workPeriodAt(new Date("2026-03-28T23:30:00.000Z"), 120);
+		event.endDate = new Date("2026-03-29T01:30:00.000Z");
+
+		expect(buildDailyActualMinutes([event], "Europe/Berlin")).toEqual({
+			"2026-03-29": 120,
 		});
 	});
 });

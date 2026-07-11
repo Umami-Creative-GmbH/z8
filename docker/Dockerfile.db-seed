@@ -18,7 +18,9 @@ RUN npm install --global pnpm@${PNPM_VERSION}
 ENV PNPM_HOME=/pnpm
 ENV PATH=${PNPM_HOME}/bin:${PNPM_HOME}:${PATH}
 ENV NODE_ENV=production \
-    NEXT_TELEMETRY_DISABLED=1
+    NEXT_TELEMETRY_DISABLED=1 \
+    TZ=UTC \
+    PGOPTIONS="-c timezone=UTC"
 
 RUN mkdir -p "${PNPM_HOME}"
 

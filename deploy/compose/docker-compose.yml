@@ -36,6 +36,7 @@ services:
     image: postgres:18-alpine
     restart: unless-stopped
     environment:
+      TZ: UTC
       POSTGRES_USER: ${POSTGRES_USER:-z8}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${POSTGRES_DB:-z8}
@@ -190,6 +191,8 @@ services:
       context: ../..
       dockerfile: docker/Dockerfile.migration
     environment:
+      TZ: UTC
+      PGOPTIONS: "-c timezone=UTC"
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:-z8}
@@ -210,6 +213,8 @@ services:
       context: ../..
       dockerfile: docker/Dockerfile.db-seed
     environment:
+      TZ: UTC
+      PGOPTIONS: "-c timezone=UTC"
       POSTGRES_HOST: pgbouncer
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:-z8}
@@ -228,6 +233,8 @@ services:
       dockerfile: docker/Dockerfile.webapp
     restart: unless-stopped
     environment:
+      TZ: UTC
+      PGOPTIONS: "-c timezone=UTC"
       POSTGRES_HOST: pgbouncer
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:-z8}
@@ -331,6 +338,8 @@ services:
       dockerfile: docker/Dockerfile.worker
     restart: unless-stopped
     environment:
+      TZ: UTC
+      PGOPTIONS: "-c timezone=UTC"
       POSTGRES_HOST: pgbouncer
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:-z8}

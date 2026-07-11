@@ -4,7 +4,6 @@
  */
 
 import ExcelJS from "exceljs";
-import { format } from "@/lib/datetime/luxon-utils";
 import type { ReportData } from "../types";
 
 /**
@@ -296,7 +295,7 @@ async function createHomeOfficeSheet(
 
 	// Add date details
 	for (const detail of reportData.absences.homeOffice.dateDetails) {
-		sheet.addRow([format(detail.date, "yyyy-MM-dd"), detail.hours]);
+		sheet.addRow([detail.date, detail.hours]);
 	}
 
 	// Add total
@@ -335,3 +334,5 @@ export function generateExcelFilename(reportData: ReportData): string {
 	const timestamp = Date.now();
 	return `report-${employeeName}-${timestamp}.xlsx`;
 }
+
+import { format } from "@/lib/datetime/luxon-utils";

@@ -1,11 +1,13 @@
 import "server-only";
 
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lt } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, timeEntry } from "@/db/schema";
-import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { dateFromDB } from "@/lib/datetime/drizzle-adapter";
+import { localMonthRange } from "@/lib/datetime/temporal-boundaries";
+import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import type { TimeEntryEvent } from "./types";
 
 interface TimeEntryFilters {
@@ -23,21 +25,12 @@ export async function getTimeEntriesForMonth(
 	filters: TimeEntryFilters,
 	timezone?: string | null,
 ): Promise<TimeEntryEvent[]> {
-	// Calculate date range for the month (month is 0-indexed in JavaScript, 1-indexed in Luxon)
-	const zonedStart = DateTime.fromObject(
-		{ year, month: month + 1, day: 1 },
-		{ zone: timezone || "UTC" },
+	const range = localMonthRange(
+		`${year}-${String(month + 1).padStart(2, "0")}-01`,
+		timezone || "UTC",
 	);
-	const startDT = (zonedStart.isValid ? zonedStart : DateTime.utc(year, month + 1, 1))
-		.startOf("month")
-		.toUTC();
-	const endDT = (zonedStart.isValid ? zonedStart : DateTime.utc(year, month + 1, 1))
-		.endOf("month")
-		.toUTC();
-
-	// Convert to Date objects for Drizzle query
-	const startDate = dateToDB(startDT)!;
-	const endDate = dateToDB(endDT)!;
+	const startDate = dateFromInstant(range.start);
+	const endExclusiveDate = dateFromInstant(range.endExclusive);
 
 	try {
 		// Prepare conditions
@@ -46,7 +39,7 @@ export async function getTimeEntriesForMonth(
 			eq(timeEntry.organizationId, filters.organizationId),
 			// Date range filter
 			gte(timeEntry.timestamp, startDate),
-			lte(timeEntry.timestamp, endDate),
+			lt(timeEntry.timestamp, endExclusiveDate),
 			// Only show non-superseded entries
 			eq(timeEntry.isSuperseded, false),
 		];

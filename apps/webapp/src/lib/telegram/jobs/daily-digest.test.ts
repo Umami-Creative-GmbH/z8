@@ -228,19 +228,17 @@ describe("processTelegramBotDigest", () => {
 		);
 
 		expect(sent).toBe(2);
-		expect(buildDigestDataForManagerMock).toHaveBeenCalledWith({
-			display: { locale: "de", timeFormat: "24h", timezone: "Europe/Berlin" },
-			logicalDate: "2026-07-10",
-			managerId: "employee-berlin",
-			now: "2026-07-10T00:05:00.000Z",
-			organizationId: "org-a",
-		});
-		expect(buildDigestDataForManagerMock).toHaveBeenCalledWith({
-			display: { locale: "en-US", timeFormat: "12h", timezone: "America/New_York" },
-			logicalDate: "2026-07-09",
-			managerId: "employee-new-york",
-			now: "2026-07-10T00:05:00.000Z",
-			organizationId: "org-a",
-		});
+		expect(buildDigestDataForManagerMock).toHaveBeenCalledWith(
+			"employee-berlin",
+			"org-a",
+			"Europe/Berlin",
+			"de",
+		);
+		expect(buildDigestDataForManagerMock).toHaveBeenCalledWith(
+			"employee-new-york",
+			"org-a",
+			"America/New_York",
+			"en-US",
+		);
 	});
 });

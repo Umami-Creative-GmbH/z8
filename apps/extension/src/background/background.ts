@@ -1,5 +1,6 @@
 import { storage } from "@/lib/storage";
 import { showNotification } from "@/lib/notifications";
+import { toReplayClockAction } from "@/lib/clock-action";
 
 const DEFAULT_WEBAPP_URL = "http://localhost:3000";
 let isProcessingQueue = false;
@@ -97,13 +98,11 @@ async function processQueue(): Promise<void> {
 
     for (const action of queue) {
       try {
-        const body: Record<string, string | undefined> = {
-          type: action.type,
-          timestamp: action.timestamp,
+        const { createdAt: _createdAt, projectId, ...capturedAction } = action;
+        const body = {
+          ...toReplayClockAction(capturedAction),
+          ...(projectId ? { projectId } : {}),
         };
-        if (action.projectId) {
-          body.projectId = action.projectId;
-        }
 
         const response = await fetch(`${webappUrl}/api/time-entries`, {
           method: "POST",

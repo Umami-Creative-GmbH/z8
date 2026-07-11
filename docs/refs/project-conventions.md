@@ -12,7 +12,7 @@ Use `@tanstack/react-form` for forms. When modifying an existing legacy `react-h
 
 ## Dates
 
-Use Luxon (`DateTime`) for date/time business logic. Do not use native `Date` for calendar math, timezone conversion, policy windows, reports, payroll exports, or compliance calculations.
+Use Temporal for new or migrated date/time business logic. Keep IANA or fixed-offset zones explicit; do not use the viewer timezone for domain meaning. Native `Date` is permitted only at external and database boundaries, never for calendar math, timezone conversion, policy windows, reports, payroll exports, or compliance calculations. Luxon (`DateTime`) is limited to legacy or unmigrated modules.
 
 For time tracking specifics, read [Timekeeping Reference](timekeeping.md).
 

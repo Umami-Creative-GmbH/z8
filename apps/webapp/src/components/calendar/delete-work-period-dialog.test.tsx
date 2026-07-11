@@ -41,6 +41,7 @@ const workPeriodEvent: CalendarEvent = {
 		notes: "Front desk shift",
 	},
 };
+const displayContext = { locale: "en-US", timezone: "UTC", timeFormat: "24h" as const };
 
 describe("DeleteWorkPeriodDialog", () => {
 	beforeEach(() => {
@@ -53,7 +54,14 @@ describe("DeleteWorkPeriodDialog", () => {
 	});
 
 	it("renders deletion request copy and reason field", () => {
-		render(<DeleteWorkPeriodDialog event={workPeriodEvent} open={true} onOpenChange={vi.fn()} />);
+		render(
+			<DeleteWorkPeriodDialog
+				event={workPeriodEvent}
+				open={true}
+				onOpenChange={vi.fn()}
+				displayContext={displayContext}
+			/>,
+		);
 
 		expect(screen.getByRole("heading", { name: "Request deletion?" })).toBeTruthy();
 		expect(
@@ -76,6 +84,7 @@ describe("DeleteWorkPeriodDialog", () => {
 				open={true}
 				onDeleteComplete={onDeleteComplete}
 				onOpenChange={onOpenChange}
+				displayContext={displayContext}
 			/>,
 		);
 
@@ -95,7 +104,14 @@ describe("DeleteWorkPeriodDialog", () => {
 	it("requires a non-empty deletion reason", async () => {
 		const user = userEvent.setup();
 
-		render(<DeleteWorkPeriodDialog event={workPeriodEvent} open={true} onOpenChange={vi.fn()} />);
+		render(
+			<DeleteWorkPeriodDialog
+				event={workPeriodEvent}
+				open={true}
+				onOpenChange={vi.fn()}
+				displayContext={displayContext}
+			/>,
+		);
 
 		await user.type(screen.getByLabelText("Reason for deletion"), "   ");
 		await user.click(screen.getByRole("button", { name: /Delete entry/i }));

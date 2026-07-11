@@ -1,6 +1,8 @@
 "use server";
 
 import { Effect } from "effect";
+import { db } from "@/db";
+import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import { AuthorizationError } from "@/lib/effect/errors";
 import { CoverageService } from "@/lib/effect/services/coverage.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -15,7 +17,11 @@ import {
 	type ShiftWithRelations,
 } from "@/lib/effect/services/shift.service";
 import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
-import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import {
+	resolveScheduleDateRange,
+	resolveScheduleWallTime,
+} from "@/lib/scheduling/schedule-local-input";
+import { parseIanaTimeZone } from "@/lib/timezone/validation";
 import { buildPublishDecision } from "../publish-decision";
 import type {
 	DateRange,
@@ -34,12 +40,38 @@ import {
 	type SchedulingActionResult,
 } from "./shared";
 
+function toServiceDateRange(dateRange: DateRange, timezone: string) {
+	const range = resolveScheduleDateRange(dateRange, timezone);
+	return {
+		start: dateFromInstant(range.start),
+		endExclusive: dateFromInstant(range.endExclusive),
+	};
+}
+
+async function getOrganizationTimezone(organizationId: string) {
+	const currentOrganization = await db.query.organization.findFirst({
+		where: (table, { eq }) => eq(table.id, organizationId),
+		columns: { timezone: true },
+	});
+	return parseIanaTimeZone(currentOrganization?.timezone ?? "UTC");
+}
+
 function getEffectiveShiftQuery(
 	query: ShiftQuery,
 	currentEmployee: Pick<CurrentEmployee, "id" | "organizationId" | "role">,
 	userId: string,
+	timezone: string,
 ) {
-	const effectiveQuery = { ...query, organizationId: currentEmployee.organizationId };
+	const { startDate, endDateExclusive, ...filters } = query;
+	const range =
+		startDate && endDateExclusive
+			? toServiceDateRange({ startDate, endDateExclusive }, timezone)
+			: undefined;
+	const effectiveQuery = {
+		...filters,
+		...range,
+		organizationId: currentEmployee.organizationId,
+	};
 
 	if (currentEmployee.role !== "employee") {
 		return Effect.succeed(effectiveQuery);
@@ -72,16 +104,17 @@ function getScheduleComplianceEvaluation(
 		const scheduleComplianceService = yield* _(ScheduleComplianceService);
 
 		const timezone = yield* _(
-			dbService.query("getEffectiveTimezoneForScheduleCompliance", async () => {
-				return await getEffectiveTimezone(context.session.user.id, context.organizationId);
-			}),
+			dbService.query("getOrganizationTimezoneForScheduleCompliance", async () =>
+				getOrganizationTimezone(context.organizationId),
+			),
 		);
+		const range = toServiceDateRange(dateRange, timezone);
 
 		const evaluation = yield* _(
 			scheduleComplianceService.evaluateScheduleWindow({
 				organizationId: context.organizationId,
-				startDate: dateRange.start,
-				endDate: dateRange.end,
+				startDate: range.start,
+				endDate: range.endExclusive,
 				timezone,
 			}),
 		);
@@ -95,6 +128,7 @@ export async function upsertShift(
 ): Promise<SchedulingActionResult<{ shift: Shift; metadata: ShiftMetadata }>> {
 	const effect = Effect.gen(function* (_) {
 		const shiftService = yield* _(ShiftService);
+		const dbService = yield* _(DatabaseService);
 		const { currentEmployee, session } = yield* _(
 			requireManagerEmployee({
 				resource: "shift",
@@ -102,6 +136,16 @@ export async function upsertShift(
 				message: "Only managers and admins can manage shifts",
 			}),
 		);
+		const timezone = yield* _(
+			dbService.query("getOrganizationTimezoneForUpsertShift", async () =>
+				getOrganizationTimezone(currentEmployee.organizationId),
+			),
+		);
+		const shiftDate = dateFromInstant(
+			resolveScheduleWallTime({ date: input.date, time: "00:00" }, timezone).toInstant(),
+		);
+		resolveScheduleWallTime({ date: input.date, time: input.startTime }, timezone);
+		resolveScheduleWallTime({ date: input.date, time: input.endTime }, timezone);
 
 		return yield* _(
 			shiftService.upsertShift({
@@ -110,7 +154,8 @@ export async function upsertShift(
 				employeeId: input.employeeId,
 				templateId: input.templateId,
 				subareaId: input.subareaId,
-				date: input.date,
+				date: shiftDate,
+				timezone,
 				startTime: input.startTime,
 				endTime: input.endTime,
 				notes: input.notes,
@@ -139,9 +184,15 @@ export async function getShifts(
 ): Promise<SchedulingActionResult<ShiftWithRelations[]>> {
 	const effect = Effect.gen(function* (_) {
 		const shiftService = yield* _(ShiftService);
+		const dbService = yield* _(DatabaseService);
 		const { currentEmployee, session } = yield* _(requireCurrentEmployee());
+		const timezone = yield* _(
+			dbService.query("getOrganizationTimezoneForShifts", async () =>
+				getOrganizationTimezone(currentEmployee.organizationId),
+			),
+		);
 		const effectiveQuery = yield* _(
-			getEffectiveShiftQuery(query, currentEmployee, session.user.id),
+			getEffectiveShiftQuery(query, currentEmployee, session.user.id, timezone),
 		);
 
 		return yield* _(shiftService.getShifts(effectiveQuery));
@@ -158,6 +209,7 @@ export async function publishShifts(
 		const coverageService = yield* _(CoverageService);
 		const scheduleComplianceService = yield* _(ScheduleComplianceService);
 		const shiftService = yield* _(ShiftService);
+		const dbService = yield* _(DatabaseService);
 		const { currentEmployee, session } = yield* _(
 			requireManagerEmployee({
 				resource: "shift",
@@ -165,6 +217,12 @@ export async function publishShifts(
 				message: "Only managers and admins can publish shifts",
 			}),
 		);
+		const timezone = yield* _(
+			dbService.query("getOrganizationTimezoneForPublish", async () =>
+				getOrganizationTimezone(currentEmployee.organizationId),
+			),
+		);
+		const serviceDateRange = toServiceDateRange(dateRange, timezone);
 
 		const settings = yield* _(coverageService.getCoverageSettings(currentEmployee.organizationId));
 
@@ -172,8 +230,9 @@ export async function publishShifts(
 			const validation = yield* _(
 				coverageService.validateScheduleCanPublish({
 					organizationId: currentEmployee.organizationId,
-					startDate: dateRange.start,
-					endDate: dateRange.end,
+					startDate: serviceDateRange.start,
+					endDate: serviceDateRange.endExclusive,
+					timezone,
 				}),
 			);
 
@@ -211,7 +270,7 @@ export async function publishShifts(
 		}
 
 		const result = yield* _(
-			shiftService.publishShifts(currentEmployee.organizationId, dateRange, session.user.id),
+			shiftService.publishShifts(currentEmployee.organizationId, serviceDateRange, session.user.id),
 		);
 
 		if (evaluation.summary.totalFindings > 0) {
@@ -219,8 +278,8 @@ export async function publishShifts(
 				scheduleComplianceService.recordPublishAcknowledgment({
 					organizationId: currentEmployee.organizationId,
 					actorEmployeeId: currentEmployee.id,
-					publishedRangeStart: dateRange.start,
-					publishedRangeEnd: dateRange.end,
+					publishedRangeStart: serviceDateRange.start,
+					publishedRangeEnd: serviceDateRange.endExclusive,
 					warningCountTotal: evaluation.summary.totalFindings,
 					warningCountsByType: evaluation.summary.byType,
 					evaluationFingerprint: evaluation.fingerprint,
@@ -248,9 +307,21 @@ export async function getIncompleteDays(
 ): Promise<SchedulingActionResult<IncompleteDayInfo[]>> {
 	const effect = Effect.gen(function* (_) {
 		const shiftService = yield* _(ShiftService);
+		const dbService = yield* _(DatabaseService);
 		const { currentEmployee } = yield* _(requireCurrentEmployee());
 
-		return yield* _(shiftService.getIncompleteDays(currentEmployee.organizationId, dateRange));
+		const timezone = yield* _(
+			dbService.query("getOrganizationTimezoneForIncompleteDays", async () =>
+				getOrganizationTimezone(currentEmployee.organizationId),
+			),
+		);
+		return yield* _(
+			shiftService.getIncompleteDays(
+				currentEmployee.organizationId,
+				toServiceDateRange(dateRange, timezone),
+				timezone,
+			),
+		);
 	});
 
 	return runSchedulingAction("getIncompleteDays", effect);
@@ -292,13 +363,20 @@ export async function getOpenShifts(
 ): Promise<SchedulingActionResult<ShiftWithRelations[]>> {
 	const effect = Effect.gen(function* (_) {
 		const shiftService = yield* _(ShiftService);
+		const dbService = yield* _(DatabaseService);
 		const { currentEmployee } = yield* _(requireCurrentEmployee());
+		const timezone = yield* _(
+			dbService.query("getOrganizationTimezoneForOpenShifts", async () =>
+				getOrganizationTimezone(currentEmployee.organizationId),
+			),
+		);
+		const range = toServiceDateRange(dateRange, timezone);
 
 		const shifts = yield* _(
 			shiftService.getShifts({
 				organizationId: currentEmployee.organizationId,
-				startDate: dateRange.start,
-				endDate: dateRange.end,
+				startDate: range.start,
+				endDateExclusive: range.endExclusive,
 				status: "published",
 				includeOpenShifts: true,
 			}),

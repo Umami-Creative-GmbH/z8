@@ -2,7 +2,9 @@
 
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
+import { db } from "@/db";
 import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
+import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import { safeAction } from "@/lib/effect/runtime";
 import {
 	type CoverageRuleWithRelations,
@@ -10,6 +12,7 @@ import {
 	type CoverageSettingsData,
 	type TargetCoverageGap,
 } from "@/lib/effect/services/coverage.service";
+import { resolveScheduleDateRange } from "@/lib/scheduling/schedule-local-input";
 import {
 	canManageScopedSchedulingSubarea,
 	filterItemsToManageableSubareas,
@@ -258,14 +261,22 @@ export async function deleteCoverageRule(ruleId: string): Promise<ServerActionRe
  * Get heatmap data for coverage visualization in the scheduler.
  */
 export async function getTargetHeatmapData(params: {
-	startDate: Date;
-	endDate: Date;
+	startDate: string;
+	endDateExclusive: string;
 	subareaIds?: string[];
 }): Promise<ServerActionResult<HeatmapDataPoint[]>> {
 	const accessContext = await getSchedulingSettingsAccessContext();
 	if (!accessContext?.canAccessCoverageRules) {
 		return { success: false, error: "Unauthorized" };
 	}
+	const currentOrganization = await db.query.organization.findFirst({
+		where: (table, { eq }) => eq(table.id, accessContext.organizationId),
+		columns: { timezone: true },
+	});
+	const range = resolveScheduleDateRange(
+		{ startDate: params.startDate, endDateExclusive: params.endDateExclusive },
+		currentOrganization?.timezone ?? "UTC",
+	);
 
 	const scopedSubareaIds = accessContext.manageableSubareaIds
 		? (params.subareaIds?.filter((subareaId) =>
@@ -278,8 +289,9 @@ export async function getTargetHeatmapData(params: {
 		return yield* _(
 			coverageService.getTargetHeatmapData({
 				organizationId: accessContext.organizationId,
-				startDate: params.startDate,
-				endDate: params.endDate,
+				startDate: dateFromInstant(range.start),
+				endDate: dateFromInstant(range.endExclusive),
+				timezone: currentOrganization?.timezone ?? "UTC",
 				subareaIds: scopedSubareaIds,
 			}),
 		);
@@ -299,6 +311,10 @@ export async function validateScheduleForPublish(params: {
 	if (!accessContext?.canAccessCoverageRules || accessContext.accessTier !== "orgAdmin") {
 		return { success: false, error: "Unauthorized" };
 	}
+	const currentOrganization = await db.query.organization.findFirst({
+		where: (table, { eq }) => eq(table.id, accessContext.organizationId),
+		columns: { timezone: true },
+	});
 
 	const effect = Effect.gen(function* (_) {
 		const coverageService = yield* _(CoverageService);
@@ -307,6 +323,7 @@ export async function validateScheduleForPublish(params: {
 				organizationId: accessContext.organizationId,
 				startDate: params.startDate,
 				endDate: params.endDate,
+				timezone: currentOrganization?.timezone ?? "UTC",
 			}),
 		);
 	});

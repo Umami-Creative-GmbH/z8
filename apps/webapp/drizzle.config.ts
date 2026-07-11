@@ -1,5 +1,10 @@
 import { defineConfig } from "drizzle-kit";
 import { getPostgresSslConfig } from "./src/db/postgres-ssl";
+import { withUtcPostgresSession } from "./src/db/postgres-utc";
+
+process.env.TZ = "UTC";
+const postgresOptions = withUtcPostgresSession({ options: process.env.PGOPTIONS }).options;
+process.env.PGOPTIONS = postgresOptions;
 
 export default defineConfig({
 	out: "./drizzle",

@@ -1,11 +1,11 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { discordBotConfig, slackWorkspaceConfig, teamsTenantConfig } from "@/db/schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 
 export interface NotificationChannelSettingsFormValues {
 	enableApprovals: boolean;
@@ -84,7 +84,7 @@ function validateSettings(settings: unknown): ActionResult<NotificationChannelSe
 		return { success: false, error: "Digest timezone is required" };
 	}
 
-	if (!DateTime.local().setZone(parsedSettings.digestTimezone).isValid) {
+	if (!isValidIanaTimeZone(parsedSettings.digestTimezone)) {
 		return { success: false, error: "Digest timezone must be a valid timezone" };
 	}
 

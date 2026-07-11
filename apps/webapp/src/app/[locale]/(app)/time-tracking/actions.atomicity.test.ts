@@ -12,50 +12,43 @@ function functionBody(name: string) {
 	return source.slice(start, nextExport === -1 ? undefined : nextExport);
 }
 
-describe("legacy clocking transaction boundaries", () => {
+describe("clocking service delegation", () => {
 	it.each([
 		"clockIn",
 		"clockOut",
-	])("serializes %s by organization and employee before checking active periods", (name) => {
+	])("delegates %s writes to the shared clocking service", (name) => {
 		const body = functionBody(name);
-		const transactionIndex = body.indexOf("await db.transaction(async (tx)");
-		const lockIndex = body.indexOf("pg_advisory_xact_lock");
-		const activePeriodIndex = body.indexOf(".from(workPeriod)", lockIndex);
 
-		expect(transactionIndex).toBeGreaterThanOrEqual(0);
-		expect(lockIndex).toBeGreaterThan(transactionIndex);
-		expect(body).toMatch(/const lockKey = `\$\{emp\.organizationId\}:\$\{emp\.id\}`/);
-		expect(activePeriodIndex).toBeGreaterThan(lockIndex);
-		expect(body).not.toContain("getActiveWorkPeriod(emp.id)");
+		expect(body).toContain(`clockingService.${name}({`);
+		expect(body).not.toContain("await db.transaction(async (tx)");
+		expect(body).not.toContain("pg_advisory_xact_lock");
 	});
 
-	it("creates clock-in entries and work periods on the locked transaction", () => {
+	it("captures browser evidence before delegating clock-in", () => {
 		const body = functionBody("clockIn");
 
-		expect(body).toContain("createTimeEntry(");
-		expect(body).toContain("timezoneCapture,\n\t\t\t\t},\n\t\t\t\ttx,");
-		expect(body).toContain("await tx.insert(workPeriod)");
+		const captureIndex = body.indexOf("resolveTimeEntryTimezoneCapture(");
+		const delegateIndex = body.indexOf("clockingService.clockIn({");
+
+		expect(captureIndex).toBeGreaterThanOrEqual(0);
+		expect(delegateIndex).toBeGreaterThan(captureIndex);
+		expect(body).toContain("action: { instant: instantFromDate(now), ...timezoneCapture }");
 	});
 
-	it("atomically creates clock-out entries, canonical records, periods, and approvals", () => {
+	it("checks clock-out guards before shared writes", () => {
 		const body = functionBody("clockOut");
+		const projectValidationIndex = body.indexOf("await validateProjectAssignment(");
+		const approvalPolicyIndex = body.indexOf("policyService.checkClockOutNeedsApproval(emp.id)");
+		const billingIndex = body.indexOf("await requireBillingForMutation(emp.organizationId)");
+		const managerIndex = body.indexOf("await resolveTimeApprovalManagerId(");
+		const delegateIndex = body.indexOf("clockingService.clockOut({");
 
+		expect(projectValidationIndex).toBeGreaterThanOrEqual(0);
+		expect(approvalPolicyIndex).toBeGreaterThan(projectValidationIndex);
+		expect(billingIndex).toBeGreaterThan(approvalPolicyIndex);
+		expect(managerIndex).toBeGreaterThan(billingIndex);
+		expect(delegateIndex).toBeGreaterThan(managerIndex);
 		expect(body).toContain("canonicalWorkRecordClient.createForCompletedPeriod(");
 		expect(body).toContain("createClockOutApprovalRequest(");
-		expect(body).toContain("db: tx");
-		expect(body).toContain("notify: false");
-		expect(body).toContain("eq(workPeriod.isActive, true)");
-		expect(body).toContain("isNull(workPeriod.endTime)");
-		expect(body).toContain("isNull(workPeriod.deletedAt)");
-		expect(body).toContain(".returning({ id: workPeriod.id })");
-	});
-
-	it("validates work-category tenant access before clock-out writes", () => {
-		const body = functionBody("clockOut");
-		const categoryValidationIndex = body.indexOf("await validateWorkCategoryAssignment(");
-		const transactionIndex = body.indexOf("await db.transaction(async (tx)");
-
-		expect(categoryValidationIndex).toBeGreaterThanOrEqual(0);
-		expect(categoryValidationIndex).toBeLessThan(transactionIndex);
 	});
 });

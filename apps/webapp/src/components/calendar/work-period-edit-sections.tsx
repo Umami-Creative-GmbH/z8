@@ -16,7 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { CalendarEvent } from "@/lib/calendar/types";
-import { format } from "@/lib/datetime/luxon-utils";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { type DisplayContext, formatInstant } from "@/lib/datetime/temporal-format";
 import {
 	formatDuration,
 	formatEventTimeRange,
@@ -69,10 +70,12 @@ export function WorkPeriodHeader({
 	event,
 	status,
 	t,
+	displayContext,
 }: {
 	event: CalendarEvent;
 	status: "approved" | "pending" | "rejected";
 	t: TFnType;
+	displayContext: DisplayContext;
 }) {
 	return (
 		<>
@@ -91,7 +94,9 @@ export function WorkPeriodHeader({
 					<Badge variant="destructive">{t("calendar.status.rejected", "Rejected")}</Badge>
 				) : null}
 			</div>
-			<div className="text-sm text-muted-foreground">{format(event.date, "PPP")}</div>
+			<div className="text-sm text-muted-foreground">
+				{formatInstant(instantFromDate(event.date), displayContext, "dateMedium")}
+			</div>
 		</>
 	);
 }
@@ -316,10 +321,12 @@ export function WorkPeriodSummaryBlock({
 	event,
 	metadata,
 	t,
+	displayContext,
 }: {
 	event: CalendarEvent;
 	metadata: WorkPeriodDialogMetadata;
 	t: TFnType;
+	displayContext: DisplayContext;
 }) {
 	return (
 		<>
@@ -331,7 +338,7 @@ export function WorkPeriodSummaryBlock({
 			</div>
 			<div>
 				<span className="text-sm text-muted-foreground">{t("calendar.details.time", "Time")}</span>
-				<p className="font-medium">{formatEventTimeRange(event)}</p>
+				<p className="font-medium">{formatEventTimeRange(event, displayContext)}</p>
 			</div>
 		</>
 	);

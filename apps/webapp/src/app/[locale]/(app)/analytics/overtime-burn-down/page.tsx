@@ -7,8 +7,8 @@ import dynamic from "next/dynamic";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
+import { AnalyticsDateRangePicker } from "@/components/analytics/date-range-picker";
 import { ExportButton, type ExportData } from "@/components/analytics/export-button";
-import { DateRangePicker } from "@/components/reports/date-range-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import {
@@ -26,9 +26,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import type { OvertimeBurnDownData, TrendDirection } from "@/lib/analytics/types";
-import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
-import type { DateRange } from "@/lib/reports/types";
+import { getAnalyticsDateRangeForPreset } from "@/lib/analytics/date-ranges";
+import type { DateRange, OvertimeBurnDownData, TrendDirection } from "@/lib/analytics/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { getOvertimeBurnDownData } from "../actions";
 import {
@@ -117,7 +116,7 @@ function AnalyticsToolbar({
 	return (
 		<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 			{dateRange ? (
-				<DateRangePicker value={dateRange} onChange={onDateRangeChange} />
+				<AnalyticsDateRangePicker value={dateRange} onChange={onDateRangeChange} />
 			) : (
 				<p className="text-sm text-muted-foreground">
 					{t(
@@ -443,7 +442,7 @@ export default function OvertimeBurnDownPage() {
 			return;
 		}
 
-		const nextDateRange = getDateRangeForPreset("current_month", { timezone });
+		const nextDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
 		setDateRange((currentDateRange) =>
 			currentDateRange && areDateRangesEqual(currentDateRange, nextDateRange)
 				? currentDateRange
@@ -465,7 +464,7 @@ export default function OvertimeBurnDownPage() {
 			return;
 		}
 
-		const expectedDefaultDateRange = getDateRangeForPreset("current_month", { timezone });
+		const expectedDefaultDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
 		if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
 			return;
 		}

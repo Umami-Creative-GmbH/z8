@@ -4,9 +4,9 @@ import { getWorkPeriodsForMonth, workPeriodOverlapsCalendarMonth } from "./work-
 const mockOperators = vi.hoisted(() => ({
 	and: vi.fn((...conditions: unknown[]) => ({ conditions, type: "and" })),
 	eq: vi.fn((column: unknown, value: unknown) => ({ column, type: "eq", value })),
-	gte: vi.fn((column: unknown, value: unknown) => ({ column, type: "gte", value })),
+	gt: vi.fn((column: unknown, value: unknown) => ({ column, type: "gt", value })),
 	isNull: vi.fn((column: unknown) => ({ column, type: "isNull" })),
-	lte: vi.fn((column: unknown, value: unknown) => ({ column, type: "lte", value })),
+	lt: vi.fn((column: unknown, value: unknown) => ({ column, type: "lt", value })),
 	not: vi.fn((condition: unknown) => ({ condition, type: "not" })),
 	or: vi.fn((...conditions: unknown[]) => ({ conditions, type: "or" })),
 }));
@@ -23,9 +23,9 @@ vi.mock("drizzle-orm", async (importOriginal) => ({
 	...(await importOriginal<typeof import("drizzle-orm")>()),
 	and: mockOperators.and,
 	eq: mockOperators.eq,
-	gte: mockOperators.gte,
+	gt: mockOperators.gt,
 	isNull: mockOperators.isNull,
-	lte: mockOperators.lte,
+	lt: mockOperators.lt,
 	not: mockOperators.not,
 	or: mockOperators.or,
 }));
@@ -65,14 +65,16 @@ describe("getWorkPeriodsForMonth", () => {
 			"America/New_York",
 		);
 
-		expect(mockOperators.gte).toHaveBeenCalledWith(
+		expect(mockOperators.gt).toHaveBeenCalledWith(
 			expect.anything(),
 			new Date("2026-05-01T04:00:00.000Z"),
 		);
-		expect(mockOperators.lte).toHaveBeenCalledWith(
+		expect(mockOperators.lt).toHaveBeenCalledWith(
 			expect.anything(),
-			new Date("2026-06-01T03:59:59.999Z"),
+			new Date("2026-06-01T04:00:00.000Z"),
 		);
+		expect(mockOperators.eq).toHaveBeenCalledWith(expect.anything(), "org-1");
+		expect(mockOperators.eq).toHaveBeenCalledWith(expect.anything(), "employee-1");
 	});
 
 	it("returns an active work period as a running calendar event ending now", async () => {
@@ -215,7 +217,7 @@ describe("getWorkPeriodsForMonth", () => {
 
 describe("workPeriodOverlapsCalendarMonth", () => {
 	const monthStart = new Date("2026-05-01T00:00:00.000Z");
-	const monthEnd = new Date("2026-05-31T23:59:59.999Z");
+	const monthEnd = new Date("2026-06-01T00:00:00.000Z");
 	const now = new Date("2026-05-04T10:30:00.000Z");
 
 	it("includes active running periods that started before the month and overlap now", () => {
@@ -233,7 +235,7 @@ describe("workPeriodOverlapsCalendarMonth", () => {
 		).toBe(true);
 	});
 
-	it("keeps completed periods constrained to starts within the month", () => {
+	it("includes completed periods that cross into the month", () => {
 		expect(
 			workPeriodOverlapsCalendarMonth(
 				{
@@ -244,6 +246,48 @@ describe("workPeriodOverlapsCalendarMonth", () => {
 				monthStart,
 				monthEnd,
 				now,
+			),
+		).toBe(true);
+	});
+
+	it("uses half-open boundaries for completed periods", () => {
+		expect(
+			workPeriodOverlapsCalendarMonth(
+				{
+					startTime: new Date("2026-04-30T20:00:00.000Z"),
+					endTime: monthStart,
+					isActive: false,
+				},
+				monthStart,
+				monthEnd,
+				now,
+			),
+		).toBe(false);
+		expect(
+			workPeriodOverlapsCalendarMonth(
+				{
+					startTime: monthEnd,
+					endTime: new Date("2026-06-01T01:00:00.000Z"),
+					isActive: false,
+				},
+				monthStart,
+				monthEnd,
+				now,
+			),
+		).toBe(false);
+	});
+
+	it("excludes active periods before a future range", () => {
+		expect(
+			workPeriodOverlapsCalendarMonth(
+				{
+					startTime: new Date("2026-04-30T20:00:00.000Z"),
+					endTime: null,
+					isActive: true,
+				},
+				monthStart,
+				monthEnd,
+				new Date("2026-04-30T23:59:59.999Z"),
 			),
 		).toBe(false);
 	});

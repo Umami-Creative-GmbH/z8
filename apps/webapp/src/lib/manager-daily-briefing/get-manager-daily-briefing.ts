@@ -214,11 +214,11 @@ export async function getManagerDailyBriefingFromSources({
 	const attendanceItems =
 		shiftsResult.status === "fulfilled" && timeRecordsResult.status === "fulfilled"
 			? detectAttendanceExceptions({
-				now: businessNow,
-				shifts,
-				records: timeRecords,
-				graceMinutes: 5,
-			})
+					now: businessNow,
+					shifts,
+					records: timeRecords,
+					graceMinutes: 5,
+				})
 			: [];
 	const absenceItems =
 		absencesResult.status === "fulfilled"

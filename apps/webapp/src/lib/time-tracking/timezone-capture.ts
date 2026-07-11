@@ -1,11 +1,12 @@
-import { DateTime, IANAZone } from "luxon";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 
 export type TimeEntryTimezoneSource =
 	| "browser"
 	| "user_setting"
 	| "manager_target_user_setting"
-	| "backfill"
-	| "historical_inference";
+	| "historical_inference"
+	| "backfill";
 
 export interface TimeEntryTimezoneCapture {
 	utcOffsetMinutes: number;
@@ -14,17 +15,21 @@ export interface TimeEntryTimezoneCapture {
 }
 
 export function isValidIanaTimezone(timezone: string | null | undefined): timezone is string {
-	return typeof timezone === "string" && timezone.length > 0 && IANAZone.isValidZone(timezone);
+	return isValidIanaTimeZone(timezone);
 }
 
 export function getUtcOffsetMinutesForZone(timestamp: Date, timezone: string): number {
-	const zonedDateTime = DateTime.fromJSDate(timestamp, { zone: "utc" }).setZone(timezone);
-
-	if (!zonedDateTime.isValid) {
+	if (!isValidIanaTimezone(timezone)) {
 		return 0;
 	}
 
-	return zonedDateTime.offset;
+	try {
+		return (
+			instantFromDate(timestamp).toZonedDateTimeISO(timezone).offsetNanoseconds / 60_000_000_000
+		);
+	} catch {
+		return 0;
+	}
 }
 
 export function formatUtcOffset(offsetMinutes: number): string {
@@ -70,7 +75,7 @@ export function resolveTimeEntryTimezoneCapture({
 	browserTimezone?: string | null;
 	fallbackTimezone: string;
 	browserSource: Extract<TimeEntryTimezoneSource, "browser">;
-	fallbackSource: Exclude<TimeEntryTimezoneSource, "browser" | "backfill" | "historical_inference">;
+	fallbackSource: Exclude<TimeEntryTimezoneSource, "browser" | "backfill">;
 }): TimeEntryTimezoneCapture {
 	const timezone = isValidIanaTimezone(browserTimezone)
 		? browserTimezone
@@ -93,7 +98,7 @@ export function resolveFallbackTimezoneCapture({
 }: {
 	timestamp: Date;
 	timezone: string;
-	timezoneSource: Exclude<TimeEntryTimezoneSource, "browser" | "historical_inference">;
+	timezoneSource: Exclude<TimeEntryTimezoneSource, "browser">;
 }): TimeEntryTimezoneCapture {
 	const validTimezone = isValidIanaTimezone(timezone) ? timezone : "UTC";
 
