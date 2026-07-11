@@ -17,6 +17,10 @@ export interface ClockAction {
   utcOffsetMinutes: number;
 }
 
+export function toReplayClockAction(action: ClockAction): ClockAction & { replay: true } {
+  return { ...action, replay: true };
+}
+
 export function getActionTimezone(intlApi: IntlApi = Intl): string | null {
   try {
     const timezone = intlApi?.DateTimeFormat().resolvedOptions().timeZone;

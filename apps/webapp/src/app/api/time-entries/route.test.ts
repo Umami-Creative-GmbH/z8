@@ -516,6 +516,82 @@ describe("POST /api/time-entries", () => {
 		);
 	});
 
+	it("accepts a bounded extension replay without changing its captured evidence", async () => {
+		const capturedAt = new Date(Date.now() - 60 * 60_000).toISOString();
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+					type: "clock_in",
+					timestamp: capturedAt,
+					browserTimezone: "America/New_York",
+					utcOffsetMinutes: -240,
+					replay: true,
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(201);
+		expect(mockState.clockingClockIn).toHaveBeenCalledWith(
+			expect.objectContaining({
+				action: expect.objectContaining({
+					timezone: "America/New_York",
+					utcOffsetMinutes: -240,
+				}),
+				actionId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+			}),
+		);
+	});
+
+	it("rejects tampered extension replay evidence before writing", async () => {
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+					type: "clock_in",
+					timestamp: new Date(Date.now() - 60 * 60_000).toISOString(),
+					browserTimezone: "America/New_York",
+					utcOffsetMinutes: 120,
+					replay: true,
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({ error: "Timezone offset does not match instant" });
+		expect(mockState.clockingClockIn).not.toHaveBeenCalled();
+	});
+
+	it("does not let replay payloads choose another employee identity", async () => {
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+					type: "clock_in",
+					timestamp: new Date(Date.now() - 60 * 60_000).toISOString(),
+					browserTimezone: "America/New_York",
+					utcOffsetMinutes: -240,
+					replay: true,
+					employeeId: "employee-2",
+					organizationId: "org-2",
+					createdBy: "user-2",
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(201);
+		expect(mockState.clockingClockIn).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				createdBy: "user-1",
+			}),
+		);
+	});
+
 	it("returns an error when the clocking service fails", async () => {
 		mockState.clockingClockIn.mockRejectedValueOnce(new Error("insert failed"));
 

@@ -5,29 +5,43 @@ import { ClockingConflictError, createClockingService } from "./clocking-service
 function createHarness(options?: { member?: boolean; failPeriodInsert?: boolean }) {
 	let active = false;
 	let entries = 0;
+	const actions = new Map<string, { id: string }>();
 	let previous = Promise.resolve();
 	const service = createClockingService({
 		transaction: async (callback) => {
 			const wait = previous;
 			let release!: () => void;
-			previous = new Promise((resolve) => { release = resolve; });
+			previous = new Promise((resolve) => {
+				release = resolve;
+			});
 			await wait;
-			try { return await callback({
-			lockEmployee: async () => undefined,
-			isOrganizationMember: async () => options?.member ?? true,
-			getActivePeriod: async () => (active ? { id: "period-1", startTime: new Date("2026-07-10T08:00:00Z") } : null),
-			getLatestHash: async () => null,
-			insertEntry: async (entry) => ({ id: `entry-${++entries}`, ...entry }),
-			insertActivePeriod: async () => {
-			if (options?.failPeriodInsert) throw new Error("period insert failed");
-			active = true;
-			return { id: "period-1" };
-			},
-			closeActivePeriod: async () => {
-			active = false;
-			return { id: "period-1" };
-			},
-			}); } finally { release(); }
+			try {
+				return await callback({
+					lockEmployee: async () => undefined,
+					isOrganizationMember: async () => options?.member ?? true,
+					getEntryByActionId: async (_employeeId, _organizationId, actionId) =>
+						actionId ? (actions.get(actionId) ?? null) : null,
+					getActivePeriod: async () =>
+						active ? { id: "period-1", startTime: new Date("2026-07-10T08:00:00Z") } : null,
+					getLatestHash: async () => null,
+					insertEntry: async (entry) => {
+						const inserted = { id: `entry-${++entries}`, ...entry };
+						if (typeof entry.id === "string") actions.set(entry.id, inserted);
+						return inserted;
+					},
+					insertActivePeriod: async () => {
+						if (options?.failPeriodInsert) throw new Error("period insert failed");
+						active = true;
+						return { id: "period-1" };
+					},
+					closeActivePeriod: async () => {
+						active = false;
+						return { id: "period-1" };
+					},
+				});
+			} finally {
+				release();
+			}
 		},
 	});
 	return { service, entries: () => entries };
@@ -58,10 +72,23 @@ describe("clocking service", () => {
 		expect(rejected).toMatchObject({ reason: expect.any(ClockingConflictError) });
 	});
 
+	it("returns the original entry for a repeated extension action id without another write", async () => {
+		const { service, entries } = createHarness();
+		const action = { ...clockIn, actionId: "f47ac10b-58cc-4372-a567-0e02b2c3d479" };
+
+		const first = await service.clockIn(action);
+		const duplicate = await service.clockIn(action);
+
+		expect(duplicate.entry).toEqual(first.entry);
+		expect(entries()).toBe(1);
+	});
+
 	it("rejects an employee outside the requested organization before writing", async () => {
 		const { service, entries } = createHarness({ member: false });
 
-		await expect(service.clockIn(clockIn)).rejects.toThrow("Employee does not belong to organization");
+		await expect(service.clockIn(clockIn)).rejects.toThrow(
+			"Employee does not belong to organization",
+		);
 		expect(entries()).toBe(0);
 	});
 
@@ -70,7 +97,26 @@ describe("clocking service", () => {
 		const service = createClockingService({
 			transaction: async (callback) => {
 				const snapshot = [...inserted];
-				try { return await callback({ lockEmployee: async () => undefined, isOrganizationMember: async () => true, getActivePeriod: async () => null, getLatestHash: async () => null, insertEntry: async () => { inserted.push("entry"); return { id: "entry-1" }; }, insertActivePeriod: async () => { throw new Error("period insert failed"); }, closeActivePeriod: async () => ({ id: "period-1" }) }); } catch (error) { inserted.splice(0, inserted.length, ...snapshot); throw error; }
+				try {
+					return await callback({
+						lockEmployee: async () => undefined,
+						isOrganizationMember: async () => true,
+						getEntryByActionId: async () => null,
+						getActivePeriod: async () => null,
+						getLatestHash: async () => null,
+						insertEntry: async () => {
+							inserted.push("entry");
+							return { id: "entry-1" };
+						},
+						insertActivePeriod: async () => {
+							throw new Error("period insert failed");
+						},
+						closeActivePeriod: async () => ({ id: "period-1" }),
+					});
+				} catch (error) {
+					inserted.splice(0, inserted.length, ...snapshot);
+					throw error;
+				}
 			},
 		});
 

@@ -26,6 +26,7 @@ import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
 import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
 import {
+	getUtcOffsetMinutesForZone,
 	isValidIanaTimezone,
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
@@ -200,6 +201,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		const {
+			id,
 			type,
 			timestamp,
 			notes,
@@ -208,6 +210,8 @@ export async function POST(request: NextRequest) {
 			workCategoryId,
 			workLocationType,
 			browserTimezone,
+			utcOffsetMinutes,
+			replay,
 		} = body;
 
 		// Validate required fields
@@ -265,16 +269,55 @@ export async function POST(request: NextRequest) {
 			return createBillingForbiddenResponse(billingAccess);
 		}
 
-		const entryTime = timestamp ? new Date(timestamp) : new Date();
-		const savedTimezone = (await getSavedUserTimezone(session.user.id)) ?? "UTC";
+		const isReplay = replay === true;
+		const actionId =
+			typeof id === "string" && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id)
+				? id
+				: undefined;
 		const requestBrowserTimezone = isValidIanaTimezone(browserTimezone) ? browserTimezone : null;
-		const timezoneCapture = resolveTimeEntryTimezoneCapture({
-			timestamp: entryTime,
-			browserTimezone: requestBrowserTimezone,
-			fallbackTimezone: savedTimezone,
-			browserSource: "browser",
-			fallbackSource: "user_setting",
-		});
+		const hasCapturedEvidence = actionId !== undefined || utcOffsetMinutes !== undefined;
+		if (isReplay && !actionId) {
+			return NextResponse.json(
+				{ error: "Replay requires an extension action id" },
+				{ status: 400 },
+			);
+		}
+		if (
+			hasCapturedEvidence &&
+			(!timestamp || !requestBrowserTimezone || !Number.isInteger(utcOffsetMinutes))
+		) {
+			return NextResponse.json({ error: "Clock timezone evidence is incomplete" }, { status: 400 });
+		}
+		const entryTime = timestamp ? new Date(timestamp) : new Date();
+		if (Number.isNaN(entryTime.getTime())) {
+			return NextResponse.json({ error: "Invalid clock instant" }, { status: 400 });
+		}
+		if (hasCapturedEvidence) {
+			const ageMs = Date.now() - entryTime.getTime();
+			const maxAgeMs = isReplay ? 7 * 24 * 60 * 60_000 : 5 * 60_000;
+			if (ageMs < -5 * 60_000 || ageMs > maxAgeMs) {
+				return NextResponse.json(
+					{ error: "Clock instant is outside the allowed capture window" },
+					{ status: 400 },
+				);
+			}
+			if (getUtcOffsetMinutesForZone(entryTime, requestBrowserTimezone!) !== utcOffsetMinutes) {
+				return NextResponse.json(
+					{ error: "Timezone offset does not match instant" },
+					{ status: 400 },
+				);
+			}
+		}
+		const savedTimezone = (await getSavedUserTimezone(session.user.id)) ?? "UTC";
+		const timezoneCapture = hasCapturedEvidence
+			? { timezone: requestBrowserTimezone!, timezoneSource: "browser" as const, utcOffsetMinutes }
+			: resolveTimeEntryTimezoneCapture({
+					timestamp: entryTime,
+					browserTimezone: requestBrowserTimezone,
+					fallbackTimezone: savedTimezone,
+					browserSource: "browser",
+					fallbackSource: "user_setting",
+				});
 
 		if (projectId) {
 			const [assignedProject] = await db
@@ -330,8 +373,9 @@ export async function POST(request: NextRequest) {
 			employeeId: currentEmployee.id,
 			organizationId: requestedOrgId,
 			createdBy: session.user.id,
+			actionId,
 			action: { instant: instantFromDate(entryTime), ...timezoneCapture },
-			source: { ipAddress: null, deviceInfo: "api" },
+			source: { ipAddress: null, deviceInfo: isReplay ? "extension-replay" : "api" },
 			notes,
 			location,
 		};
