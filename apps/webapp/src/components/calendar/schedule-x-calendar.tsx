@@ -187,9 +187,13 @@ export function ScheduleXCalendarWrapper({
 	const timeZone = explicitTimeZone ?? viewerTimeZone;
 	const isDark = resolvedTheme === "dark";
 
-	const [currentDateKey, setCurrentDateKey] = useState(
-		() => initialDateKey ?? todayCalendarDateKey(timeZone),
-	);
+	const nextInitialDateKey = initialDateKey ?? todayCalendarDateKey(timeZone);
+	const [currentDateKey, setCurrentDateKey] = useState(() => nextInitialDateKey);
+	const previousInitialDateKeyRef = useRef(nextInitialDateKey);
+	if (nextInitialDateKey !== previousInitialDateKeyRef.current) {
+		previousInitialDateKeyRef.current = nextInitialDateKey;
+		setCurrentDateKey(nextInitialDateKey);
+	}
 	const currentDate = DateTime.fromISO(currentDateKey, { zone: timeZone });
 	const [runningPeriodNow, setRunningPeriodNow] = useState<Date>(() => new Date());
 
@@ -351,10 +355,8 @@ export function ScheduleXCalendarWrapper({
 	};
 
 	useEffect(() => {
-		const nextDateKey = initialDateKey ?? todayCalendarDateKey(timeZone);
-		setCurrentDateKey(nextDateKey);
-		calendarControls.setDate(Temporal.PlainDate.from(nextDateKey));
-	}, [calendarControls, initialDateKey, timeZone]);
+		calendarControls.setDate(Temporal.PlainDate.from(currentDateKey));
+	}, [calendarControls, currentDateKey]);
 
 	const handleViewModeChange = (mode: ViewMode) => {
 		if (mode !== "year") {

@@ -96,6 +96,33 @@ beforeEach(() => {
 });
 
 describe("ScheduleXCalendarWrapper header", () => {
+	it("updates the calendar control when the parent changes its date", () => {
+		const { rerender } = render(
+			<ScheduleXCalendarWrapper
+				events={[]}
+				initialDateKey="2026-05-18"
+				onRefresh={vi.fn()}
+				onViewModeChange={vi.fn()}
+				viewMode="day"
+			/>,
+		);
+
+		const calendarControls = useCalendarAppMock.mock.calls[0]?.[0].plugins[1];
+		calendarControls.setDate.mockClear();
+
+		rerender(
+			<ScheduleXCalendarWrapper
+				events={[]}
+				initialDateKey="2026-05-19"
+				onRefresh={vi.fn()}
+				onViewModeChange={vi.fn()}
+				viewMode="day"
+			/>,
+		);
+
+		expect(calendarControls.setDate).toHaveBeenCalledWith(Temporal.PlainDate.from("2026-05-19"));
+	});
+
 	it("renders separate desktop and mobile headers with compact mobile week text", () => {
 		render(
 			<ScheduleXCalendarWrapper

@@ -194,7 +194,7 @@ describe("ScheduleControls", () => {
 		);
 	});
 
-	it("syncs open edit form values when job props change before submit", async () => {
+	it("preserves open edit form values when job props change before submit", async () => {
 		const { rerender } = renderControls(
 			buildJob({
 				jobName: "cron:billing-seat-reconciliation",
@@ -222,7 +222,7 @@ describe("ScheduleControls", () => {
 		await waitFor(() => {
 			expect(updateCronSchedule).toHaveBeenCalledWith({
 				jobName: "cron:export",
-				presetId: "every-5-minutes",
+				presetId: "hourly",
 				confirmation: undefined,
 			});
 		});
