@@ -22,6 +22,7 @@ interface LocalizeOutboundNotificationParams {
 	title: string;
 	message: string;
 	metadata?: Record<string, unknown> | string | null;
+	locale?: string;
 }
 
 interface LocalizedOutboundNotification {
@@ -101,10 +102,13 @@ export async function localizeOutboundNotification({
 	title,
 	message,
 	metadata,
+	locale: explicitLocale,
 }: LocalizeOutboundNotificationParams): Promise<LocalizedOutboundNotification> {
-	let locale = FALLBACK_LOCALE;
+	let locale = explicitLocale ?? FALLBACK_LOCALE;
 	try {
-		locale = await resolveRecipientNotificationLocale({ userId, organizationId });
+		if (!explicitLocale) {
+			locale = await resolveRecipientNotificationLocale({ userId, organizationId });
+		}
 	} catch (error) {
 		logger.warn(
 			{ err: error, userId, organizationId, locale: FALLBACK_LOCALE },

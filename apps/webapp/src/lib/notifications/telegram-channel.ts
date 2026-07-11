@@ -10,6 +10,7 @@ import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { localizeOutboundNotification } from "./outbound-localization";
+import { resolveRecipientDisplayContext } from "./recipient-display-context";
 import type { NotificationType } from "./types";
 
 const logger = createLogger("TelegramChannel");
@@ -54,6 +55,17 @@ export async function sendTelegramNotification(params: TelegramNotificationParam
 
 		const botConfig = await getBotConfigByOrganization(params.organizationId);
 		if (!botConfig) return;
+		const display = await resolveRecipientDisplayContext({
+			userId: params.userId,
+			organizationId: params.organizationId,
+		});
+		if (!display) {
+			logger.warn(
+				{ userId: params.userId, organizationId: params.organizationId },
+				"Telegram notification recipient has no scoped display context",
+			);
+			return;
+		}
 
 		// Handle approval-related notifications specially
 		if (params.type === "approval_request_submitted" && params.entityType === "approval_request") {
@@ -97,6 +109,7 @@ export async function sendTelegramNotification(params: TelegramNotificationParam
 			title: params.title,
 			message: params.message,
 			metadata: params.metadata,
+			locale: display.locale,
 		});
 		let text = `*${escapeMarkdownV2(localized.title)}*\n\n${escapeMarkdownV2(localized.message)}`;
 		if (params.actionUrl) {

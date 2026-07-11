@@ -2842,6 +2842,7 @@ import {
 	telegramApprovalMessage,
 	telegramBotConfig,
 	telegramConversation,
+	telegramDigestDelivery,
 	telegramEscalation,
 	telegramLinkCode,
 	telegramUserMapping,
@@ -2876,6 +2877,21 @@ export const telegramConversationRelations = relations(telegramConversation, ({ 
 	}),
 	user: one(user, {
 		fields: [telegramConversation.userId],
+		references: [user.id],
+	}),
+}));
+
+export const telegramDigestDeliveryRelations = relations(telegramDigestDelivery, ({ one }) => ({
+	organization: one(organization, {
+		fields: [telegramDigestDelivery.organizationId],
+		references: [organization.id],
+	}),
+	recipientEmployee: one(employee, {
+		fields: [telegramDigestDelivery.recipientEmployeeId],
+		references: [employee.id],
+	}),
+	recipientUser: one(user, {
+		fields: [telegramDigestDelivery.recipientUserId],
 		references: [user.id],
 	}),
 }));

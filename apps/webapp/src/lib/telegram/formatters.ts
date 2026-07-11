@@ -7,7 +7,8 @@
 
 import { DateTime } from "luxon";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
-import { fmtFullDate, fmtShortDate, fmtShortDateTime } from "@/lib/bot-platform/i18n";
+import { fmtFullDate, fmtShortDate } from "@/lib/bot-platform/i18n";
+import type { RecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import type {
 	ApprovalCallbackData,
@@ -102,8 +103,8 @@ export function markdownToHtml(text: string): string {
  */
 export function buildApprovalMessage(
 	data: ApprovalCardData,
-	t?: BotTranslateFn,
-	locale: string = DEFAULT_LANGUAGE,
+	t: BotTranslateFn | undefined,
+	display: RecipientDisplayContext,
 ): {
 	text: string;
 	keyboard: TelegramInlineKeyboardMarkup;
@@ -120,8 +121,8 @@ export function buildApprovalMessage(
 		const category = data.absenceCategory || (t ? t("bot.approval.leave", "Leave") : "Leave");
 		lines.push(`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(category)}`);
 		if (data.startDate && data.endDate) {
-			const start = fmtShortDate(DateTime.fromISO(data.startDate), locale);
-			const end = fmtShortDate(DateTime.fromISO(data.endDate), locale);
+			const start = fmtShortDate(DateTime.fromISO(data.startDate, { zone: "utc" }), display.locale);
+			const end = fmtShortDate(DateTime.fromISO(data.endDate, { zone: "utc" }), display.locale);
 			lines.push(
 				`${t ? t("bot.approval.period", "Period") : "Period"}: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`,
 			);
@@ -138,7 +139,7 @@ export function buildApprovalMessage(
 		);
 	}
 
-	const submitted = fmtShortDateTime(DateTime.fromJSDate(data.createdAt), locale);
+	const submitted = formatInstant(data.createdAt, display);
 	lines.push(
 		`${t ? t("bot.approval.submitted", "Submitted") : "Submitted"}: ${escapeMarkdownV2(submitted)}`,
 	);
@@ -175,8 +176,8 @@ export function buildApprovalMessage(
 export function buildResolvedApprovalMessage(
 	data: ApprovalCardData,
 	resolved: ApprovalResolvedData,
-	t?: BotTranslateFn,
-	locale: string = DEFAULT_LANGUAGE,
+	t: BotTranslateFn | undefined,
+	display: RecipientDisplayContext,
 ): string {
 	const lines: string[] = [];
 	const icon = resolved.action === "approved" ? "\u2705" : "\u274C";
@@ -199,8 +200,8 @@ export function buildResolvedApprovalMessage(
 		const category = data.absenceCategory || (t ? t("bot.approval.leave", "Leave") : "Leave");
 		lines.push(`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(category)}`);
 		if (data.startDate && data.endDate) {
-			const start = fmtShortDate(DateTime.fromISO(data.startDate), locale);
-			const end = fmtShortDate(DateTime.fromISO(data.endDate), locale);
+			const start = fmtShortDate(DateTime.fromISO(data.startDate, { zone: "utc" }), display.locale);
+			const end = fmtShortDate(DateTime.fromISO(data.endDate, { zone: "utc" }), display.locale);
 			lines.push(
 				`${t ? t("bot.approval.period", "Period") : "Period"}: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`,
 			);
@@ -211,10 +212,23 @@ export function buildResolvedApprovalMessage(
 	lines.push(
 		`${bold(status)} ${t ? t("bot.approval.by", "by") : "by"} ${escapeMarkdownV2(resolved.approverName)}`,
 	);
-	const resolvedAt = fmtShortDateTime(DateTime.fromJSDate(resolved.resolvedAt), locale);
+	const resolvedAt = formatInstant(resolved.resolvedAt, display);
 	lines.push(`${t ? t("bot.approval.at", "at") : "at"} ${escapeMarkdownV2(resolvedAt)}`);
 
 	return lines.join("\n");
+}
+
+function formatInstant(instant: Date, display: RecipientDisplayContext): string {
+	return DateTime.fromJSDate(instant, { zone: "utc" })
+		.setZone(display.timezone)
+		.setLocale(display.locale)
+		.toLocaleString({
+			month: "short",
+			day: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+			hourCycle: display.timeFormat === "12h" ? "h12" : "h23",
+		});
 }
 
 // ============================================
@@ -232,7 +246,10 @@ export function buildDailyDigestMessage(
 	locale: string = DEFAULT_LANGUAGE,
 ): string {
 	const lines: string[] = [];
-	const dateFormatted = fmtFullDate(DateTime.fromJSDate(data.date).setZone(data.timezone), locale);
+	const dateFormatted = fmtFullDate(
+		DateTime.fromJSDate(data.date, { zone: "utc" }).setZone(data.timezone),
+		locale,
+	);
 
 	lines.push(
 		bold(
