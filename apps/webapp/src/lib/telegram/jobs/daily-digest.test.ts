@@ -9,6 +9,7 @@ const {
 	markTelegramDigestDeliverySentMock,
 	resolveRecipientDisplayContextMock,
 	sendMessageMock,
+	shouldSkipDigestForManagerMock,
 } = vi.hoisted(() => ({
 	buildDigestDataForManagerMock: vi.fn(),
 	getBotTranslateMock: vi.fn(),
@@ -18,6 +19,7 @@ const {
 	markTelegramDigestDeliverySentMock: vi.fn(),
 	resolveRecipientDisplayContextMock: vi.fn(),
 	sendMessageMock: vi.fn(),
+	shouldSkipDigestForManagerMock: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -37,6 +39,7 @@ vi.mock("@/lib/notifications/recipient-display-context", () => ({
 }));
 vi.mock("@/lib/teams/jobs/daily-digest", () => ({
 	buildDigestDataForManager: buildDigestDataForManagerMock,
+	shouldSkipDigestForManager: shouldSkipDigestForManagerMock,
 }));
 vi.mock("../api", () => ({ sendMessage: sendMessageMock }));
 vi.mock("../bot-config", () => ({ getAllActiveBotConfigs: vi.fn() }));
@@ -70,6 +73,7 @@ describe("processTelegramBotDigest", () => {
 		claimTelegramDigestDeliveryMock.mockResolvedValue(true);
 		markTelegramDigestDeliverySentMock.mockResolvedValue(undefined);
 		markTelegramDigestDeliveryFailedMock.mockResolvedValue(undefined);
+		shouldSkipDigestForManagerMock.mockResolvedValue(false);
 	});
 
 	it("sends once when concurrent runs compete for the same recipient digest", async () => {

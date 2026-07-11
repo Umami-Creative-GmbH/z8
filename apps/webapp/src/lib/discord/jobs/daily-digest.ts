@@ -13,6 +13,7 @@ import { env } from "@/env";
 import { getUserLocale } from "@/lib/bot-platform/i18n";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
+import { shouldSkipDigestForManager } from "@/lib/teams/jobs/daily-digest";
 import { sendMessage } from "../api";
 import { getAllActiveBotConfigs } from "../bot-config";
 import { getOrganizationConversations } from "../conversation-manager";
@@ -120,6 +121,11 @@ async function processBotDigest(bot: {
 				});
 
 				if (!manages) return false;
+
+				// Skip if today is not a work day or manager is on absence
+				if (await shouldSkipDigestForManager(emp.id, bot.organizationId, bot.digestTimezone)) {
+					return false;
+				}
 
 				const userLocale = await getUserLocale(conv.userId);
 				const digestData: DailyDigestData = await buildDigestDataForManager(

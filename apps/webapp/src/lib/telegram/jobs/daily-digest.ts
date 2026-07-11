@@ -11,9 +11,9 @@ import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
-import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
+import { shouldSkipDigestForManager } from "@/lib/teams/jobs/daily-digest";
 import { sendMessage } from "../api";
 import { getAllActiveBotConfigs } from "../bot-config";
 import { getOrganizationPrivateConversations } from "../conversation-manager";
@@ -126,6 +126,11 @@ export async function processTelegramBotDigest(
 				});
 
 				if (!manages) return false;
+
+				// Skip managers who are not scheduled to work or are absent.
+				if (await shouldSkipDigestForManager(emp.id, bot.organizationId, bot.digestTimezone)) {
+					return false;
+				}
 
 				const display = await resolveRecipientDisplayContext({
 					userId: conv.userId,
