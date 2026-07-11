@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
 import { DeploymentRefreshChecker } from "@/components/deployment-refresh";
@@ -26,6 +26,26 @@ export async function generateStaticParams() {
 	return ALL_LANGUAGES.map((locale) => ({ locale }));
 }
 
+type TranslationRecords = Awaited<ReturnType<typeof loadRouteTranslations>>;
+
+function TranslationProviders({
+	children,
+	locale,
+	records,
+}: {
+	children: ReactNode;
+	locale: string;
+	records: TranslationRecords;
+}) {
+	return (
+		<TolgeeNextProvider language={locale} staticData={records}>
+			<NextIntlClientProvider locale={locale} messages={{ locale }}>
+				{children}
+			</NextIntlClientProvider>
+		</TolgeeNextProvider>
+	);
+}
+
 // Separate component for loading translations to wrap in Suspense
 async function TranslationProvider({ locale, children }: { locale: string; children: ReactNode }) {
 	// Get the current pathname to determine which namespaces to load
@@ -40,11 +60,9 @@ async function TranslationProvider({ locale, children }: { locale: string; child
 	});
 
 	return (
-		<TolgeeNextProvider language={locale} staticData={records}>
-			<NextIntlClientProvider locale={locale} messages={{ locale }}>
-				{children}
-			</NextIntlClientProvider>
-		</TolgeeNextProvider>
+		<TranslationProviders locale={locale} records={records}>
+			{children}
+		</TranslationProviders>
 	);
 }
 
@@ -65,24 +83,36 @@ function TranslatedMeta() {
 	);
 }
 
+function ApplicationContent({ children }: { children: ReactNode }) {
+	return (
+		<QueryProvider>
+			<BProgressBar />
+			<TooltipProvider delayDuration={0}>
+				<OfflineBanner />
+				<SWUpdatePrompt />
+				<DeploymentRefreshChecker clientBuildHash={env.NEXT_PUBLIC_BUILD_HASH ?? "development"} />
+				{children}
+				<Toaster position="bottom-right" richColors />
+			</TooltipProvider>
+		</QueryProvider>
+	);
+}
+
 function AppProviders({ children, locale }: { children: ReactNode; locale: string }) {
 	return (
 		<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
 			<FontSizeProvider>
-				<TranslationProvider locale={locale}>
-					<QueryProvider>
-						<BProgressBar />
-						<TooltipProvider delayDuration={0}>
-							<OfflineBanner />
-							<SWUpdatePrompt />
-							<DeploymentRefreshChecker
-								clientBuildHash={env.NEXT_PUBLIC_BUILD_HASH ?? "development"}
-							/>
-							{children}
-							<Toaster position="bottom-right" richColors />
-						</TooltipProvider>
-					</QueryProvider>
-				</TranslationProvider>
+				<Suspense
+					fallback={
+						<TranslationProviders locale={locale} records={{}}>
+							<ApplicationContent>{children}</ApplicationContent>
+						</TranslationProviders>
+					}
+				>
+					<TranslationProvider locale={locale}>
+						<ApplicationContent>{children}</ApplicationContent>
+					</TranslationProvider>
+				</Suspense>
 			</FontSizeProvider>
 		</ThemeProvider>
 	);

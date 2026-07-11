@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { readFileSync } from "node:fs";
+import { renderToReadableStream } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import LocaleLayout from "./layout";
 
@@ -51,7 +52,19 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("next-intl", () => ({
-	NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	NextIntlClientProvider: ({
+	children,
+	locale,
+	messages,
+}: {
+	children: React.ReactNode;
+	locale: string;
+	messages: Record<string, string>;
+}) => (
+		<div data-next-intl-locale={locale} data-next-intl-messages={JSON.stringify(messages)}>
+			{children}
+		</div>
+	),
 }));
 
 vi.mock("next-intl/server", () => ({
@@ -63,7 +76,11 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/components/bprogress/bprogress", () => ({
-	BProgressBar: () => null,
+	BProgressBar: () => <div data-testid="application-shell" />,
+}));
+
+vi.mock("@/components/deployment-refresh", () => ({
+	DeploymentRefreshChecker: () => <div data-testid="deployment-refresh-checker" />,
 }));
 
 vi.mock("@/components/offline", () => ({
@@ -118,7 +135,19 @@ vi.mock("@/proxy", () => ({
 }));
 
 vi.mock("@/tolgee/client", () => ({
-	TolgeeNextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	TolgeeNextProvider: ({
+	children,
+	language,
+	staticData,
+}: {
+	children: React.ReactNode;
+	language: string;
+	staticData: Record<string, unknown>;
+}) => (
+		<div data-tolgee-language={language} data-tolgee-static-data={JSON.stringify(staticData)}>
+			{children}
+		</div>
+	),
 }));
 
 vi.mock("@/tolgee/shared", () => ({
@@ -158,5 +187,45 @@ describe("LocaleLayout", () => {
 
 		expect(source).not.toContain("PostHogConsentProvider");
 		expect(source).not.toContain('minHeight: "100vh"');
+	});
+
+	it("renders the translation-context fallback while route translations are pending", async () => {
+		let resolveHeaders: (headers: Headers) => void = () => {};
+		mockState.headers.mockImplementation(
+			() =>
+				new Promise<Headers>((resolve) => {
+					resolveHeaders = resolve;
+				}),
+		);
+
+		try {
+			const layout = await LocaleLayout({
+				children: <main data-testid="application-child">Auth content</main>,
+				params: Promise.resolve({ locale: "en" }),
+			});
+			const stream = await renderToReadableStream(layout);
+			const reader = stream.getReader();
+			const { value } = await reader.read();
+			resolveHeaders(new Headers({ "x-pathname": "/en/sign-in" }));
+			while (!(await reader.read()).done) {
+				// Consume the resolved translation branch so the stream ends without an abort.
+			}
+			const container = document.createElement("div");
+			container.innerHTML = new TextDecoder().decode(value);
+
+			const tolgeeProvider = container.querySelector('[data-tolgee-language="en"]');
+			const intlProvider = tolgeeProvider?.querySelector('[data-next-intl-locale="en"]');
+
+			expect(tolgeeProvider).not.toBeNull();
+			expect(tolgeeProvider?.getAttribute("data-tolgee-static-data")).toBe("{}");
+			expect(intlProvider).not.toBeNull();
+			expect(intlProvider?.getAttribute("data-next-intl-messages")).toBe('{"locale":"en"}');
+			expect(intlProvider?.querySelector('[data-testid="application-shell"]')).not.toBeNull();
+			expect(intlProvider?.querySelector('[data-testid="application-child"]')?.textContent).toBe(
+				"Auth content",
+			);
+		} finally {
+			mockState.headers.mockImplementation(async () => new Headers({ "x-pathname": "/en/sign-in" }));
+		}
 	});
 });
