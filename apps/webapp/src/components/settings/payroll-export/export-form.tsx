@@ -1,9 +1,10 @@
 "use client";
 
 import { IconDownload, IconLoader2 } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useEffect, useEffectEvent, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	type DatevConfigResult,
@@ -63,7 +64,13 @@ export function ExportForm({
 }: ExportFormProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
-	const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
+	const { data: filterOptions } = useQuery({
+		queryKey: ["payroll-export-filter-options", organizationId],
+		queryFn: async () => {
+			const result = await getFilterOptionsAction(organizationId);
+			return result.success ? result.data : null;
+		},
+	});
 	const exportFormatOptions = [
 		{
 			id: "datev_lohn",
@@ -134,20 +141,6 @@ export function ExportForm({
 		fileContent?: string;
 		fileName?: string;
 	} | null>(null);
-
-	const loadFilterOptions = useEffectEvent(async () => {
-		startTransition(async () => {
-			const result = await getFilterOptionsAction(organizationId);
-			if (result.success) {
-				setFilterOptions(result.data);
-			}
-		});
-	});
-
-	// Load filter options on mount
-	useEffect(() => {
-		loadFilterOptions();
-	}, []);
 
 	const getDateRange = () => {
 		if (dateMode === "month") {
