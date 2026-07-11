@@ -64,6 +64,11 @@ export function InviteMemberDialog({
 			canCreateOrganizations: boolean;
 			targetTeamId: string | null;
 		}) => sendInvitation(data),
+		onSuccess: (result) => {
+			if (result.success) {
+				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
+			}
+		},
 		onError: () => {
 			toast.error(t("organization.invite.error", "Failed to send invitation"));
 		},
@@ -95,7 +100,6 @@ export function InviteMemberDialog({
 				toast.success(t("organization.invite.success", "Invitation sent successfully"));
 				form.reset();
 				onOpenChange(false);
-				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
 				refresh();
 			} else {
 				toast.error(result.error || t("organization.invite.error", "Failed to send invitation"));

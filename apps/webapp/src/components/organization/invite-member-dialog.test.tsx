@@ -28,6 +28,13 @@ describe("InviteMemberDialog target team form", () => {
 		expect(file).toContain("form.reset()");
 	});
 
+	it("invalidates only the active organization invitation list from mutation success", () => {
+		const file = source();
+
+		expect(file).toContain("onSuccess: (result) => {");
+		expect(file).toContain("queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) })");
+	});
+
 	it("renders an accessible target team select below role", () => {
 		const file = source();
 
