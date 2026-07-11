@@ -1,16 +1,11 @@
 "use client";
 
-import { IconFingerprint, IconKey, IconLoader2 } from "@tabler/icons-react";
+import { IconFingerprint } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useReducer, useRef } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	getPostSignInRedirectUrl,
 	sanitizeCallbackUrl,
@@ -20,166 +15,17 @@ import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
-import type { SocialProvider, SocialProviderId } from "@/lib/social-providers";
+import type { SocialProviderId } from "@/lib/social-providers";
 import { verifyTurnstileWithServer } from "@/lib/turnstile/verify";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
-import { Link, useRouter } from "@/navigation";
+import { useRouter } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
+import { LoginActions } from "./login/login-actions";
+import { LoginAlternativeAuth } from "./login/alternative-auth";
+import { LoginCredentialsFields } from "./login/credentials-fields";
 import { initialLoginState, loginReducer, loginSchema } from "./login/login-state";
-import { type TurnstileRef, TurnstileWidget } from "./turnstile-widget";
-
-const SOCIAL_SKELETON_KEYS = [
-	"social-1",
-	"social-2",
-	"social-3",
-	"social-4",
-	"social-5",
-	"social-6",
-];
-
-type LoginCredentialsFieldsProps = {
-	email: string;
-	password: string;
-	fieldErrors: Record<string, string>;
-	requires2FA: boolean;
-	onEmailBlur: (value: string) => void;
-	onEmailChange: (value: string) => void;
-	onPasswordBlur: (value: string) => void;
-	onPasswordChange: (value: string) => void;
-};
-
-const LoginCredentialsFields = function LoginCredentialsFields({
-	email,
-	password,
-	fieldErrors,
-	requires2FA,
-	onEmailBlur,
-	onEmailChange,
-	onPasswordBlur,
-	onPasswordChange,
-}: LoginCredentialsFieldsProps) {
-	const { t } = useTranslate();
-
-	return (
-		<>
-			<div className="grid gap-3">
-				<Label htmlFor="email">{t("auth.email", "Email")}</Label>
-				<Input
-					id="email"
-					name="email"
-					autoComplete="email"
-					onBlur={(e) => onEmailBlur(e.target.value)}
-					onChange={(e) => onEmailChange(e.target.value)}
-					placeholder={t("auth.email-placeholder", "m@example.com")}
-					required
-					type="email"
-					value={email}
-					disabled={requires2FA}
-				/>
-				{fieldErrors.email ? <p className="text-destructive text-sm">{fieldErrors.email}</p> : null}
-			</div>
-			<div className="grid gap-3">
-				<Label htmlFor="password">{t("auth.password", "Password")}</Label>
-				<Input
-					id="password"
-					name="password"
-					autoComplete="current-password"
-					onBlur={(e) => onPasswordBlur(e.target.value)}
-					onChange={(e) => onPasswordChange(e.target.value)}
-					required
-					type="password"
-					value={password}
-					disabled={requires2FA}
-				/>
-				{fieldErrors.password ? (
-					<p className="text-destructive text-sm">{fieldErrors.password}</p>
-				) : null}
-			</div>
-		</>
-	);
-};
-
-type LoginAlternativeAuthProps = {
-	requires2FA: boolean;
-	showPasskey: boolean;
-	filteredProviders: SocialProvider[];
-	providersLoading: boolean;
-	isLoading: boolean;
-	onPasskeyLogin: () => void;
-	onSocialLogin: (provider: SocialProviderId) => void;
-};
-
-const LoginAlternativeAuth = function LoginAlternativeAuth({
-	requires2FA,
-	showPasskey,
-	filteredProviders,
-	providersLoading,
-	isLoading,
-	onPasskeyLogin,
-	onSocialLogin,
-}: LoginAlternativeAuthProps) {
-	const { t } = useTranslate();
-
-	if (requires2FA || (!showPasskey && filteredProviders.length === 0)) {
-		return null;
-	}
-
-	const skeletonCount = Math.max(filteredProviders.length, 4);
-
-	return (
-		<>
-			<div className="text-center text-sm">
-				<span className="relative z-10 px-2 text-muted-foreground">
-					{t("auth.or-continue-with", "Or continue with")}
-				</span>
-			</div>
-			<div className="flex flex-wrap justify-center gap-2 *:w-1/4">
-				{showPasskey && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button type="button" variant="outline" onClick={onPasskeyLogin} disabled={isLoading}>
-								<IconKey className="size-4" />
-								<span className="sr-only">
-									{t("auth.login-with.passkey", "Login with Passkey")}
-								</span>
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							<span className="text-sm">{t("auth.login-with.passkey", "Login with Passkey")}</span>
-						</TooltipContent>
-					</Tooltip>
-				)}
-
-				{providersLoading
-					? SOCIAL_SKELETON_KEYS.slice(0, skeletonCount).map((key) => (
-							<div key={key} className="h-10 animate-pulse rounded-md bg-muted" />
-						))
-					: filteredProviders.map((provider) => (
-							<Tooltip key={provider.id}>
-								<TooltipTrigger asChild>
-									<Button
-										type="button"
-										variant="outline"
-										onClick={() => onSocialLogin(provider.id)}
-										disabled={isLoading}
-									>
-										<provider.icon className="size-4" />
-										<span className="sr-only">
-											{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
-										</span>
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>
-									<span className="text-sm">
-										{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
-									</span>
-								</TooltipContent>
-							</Tooltip>
-						))}
-			</div>
-		</>
-	);
-};
+import { TwoFactorForm } from "./login/two-factor-form";
+import type { TurnstileRef } from "./turnstile-widget";
 
 function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
@@ -668,114 +514,41 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 				/>
 			)}
 			{requires2FA ? (
-				<>
-					<div className="grid gap-3">
-						<Label htmlFor="otp">{t("auth.2fa-code", "Two-Factor Authentication Code")}</Label>
-						<div className="flex justify-center">
-							<InputOTP
-								maxLength={6}
-								value={otpValue}
-								onChange={(value: string) => dispatch({ type: "SET_OTP", value })}
-							>
-								<InputOTPGroup>
-									<InputOTPSlot index={0} />
-									<InputOTPSlot index={1} />
-									<InputOTPSlot index={2} />
-									<InputOTPSlot index={3} />
-									<InputOTPSlot index={4} />
-									<InputOTPSlot index={5} />
-								</InputOTPGroup>
-							</InputOTP>
-						</div>
-						<p className="text-sm text-muted-foreground text-center">
-							{t("auth.2fa-enter-code", "Enter the 6-digit code from your authenticator app")}
-						</p>
-					</div>
-					<div className="flex items-center justify-center gap-x-2">
-						<Switch
-							id="trustDevice"
-							checked={trustDevice}
-							onCheckedChange={(checked) =>
-								dispatch({ type: "SET_TRUST_DEVICE", trustDevice: checked })
-							}
-						/>
-						<Label htmlFor="trustDevice" className="cursor-pointer">
-							{t("auth.remember-device", "Remember this device for 30 days")}
-						</Label>
-					</div>
-					<Button
-						className="w-full"
-						disabled={isLoading || otpValue.length !== 6}
-						onClick={handleVerify2FA}
-					>
-						{isLoading ? (
-							<>
-								<IconLoader2 className="size-4 animate-spin" />
-								{t("auth.verifying", "Verifying...")}
-							</>
-						) : (
-							t("auth.verify-and-login", "Verify and Login")
-						)}
-					</Button>
-				</>
-			) : showEmailPassword ? (
-				<>
-					{/* Turnstile widget */}
-					{turnstileConfig?.enabled && turnstileConfig.siteKey && (
-						<TurnstileWidget
-							ref={turnstileRef}
-							siteKey={turnstileConfig.siteKey}
-							onVerify={handleTurnstileVerify}
-							onError={handleTurnstileError}
-							onExpire={handleTurnstileExpire}
-							onTimeout={handleTurnstileTimeout}
-							className="!absolute !overflow-hidden !size-0"
-						/>
-					)}
-
-					<Button
-						className="w-full"
-						disabled={isLoading || (turnstileConfig?.enabled && !turnstileToken)}
-						type="submit"
-					>
-						{isLoading ? (
-							<>
-								<IconLoader2 className="size-4 animate-spin" />
-								{t("auth.logging-in", "Logging in...")}
-							</>
-						) : (
-							t("auth.login", "Login")
-						)}
-					</Button>
-				</>
+				<TwoFactorForm
+					otpValue={otpValue}
+					trustDevice={trustDevice}
+					isLoading={isLoading}
+					onOtpChange={(value) => dispatch({ type: "SET_OTP", value })}
+					onTrustDeviceChange={(checked) =>
+						dispatch({ type: "SET_TRUST_DEVICE", trustDevice: checked })
+					}
+					onVerify={handleVerify2FA}
+				/>
 			) : null}
-			{!requires2FA && showEmailPassword && (
-				<div className="-mt-6 text-center">
-					<Link className="text-xs underline-offset-2 hover:underline" href="/forgot-password">
-						{t("auth.forgot-password", "Forgot your password?")}
-					</Link>
-				</div>
-			)}
-			<LoginAlternativeAuth
+			<LoginActions
 				requires2FA={requires2FA}
-				showPasskey={showPasskey}
-				filteredProviders={filteredProviders}
-				providersLoading={providersLoading}
+				showEmailPassword={showEmailPassword}
 				isLoading={isLoading}
-				onPasskeyLogin={handlePasskeyLogin}
-				onSocialLogin={handleSocialLogin}
-			/>
-			{!requires2FA && showEmailPassword && (
-				<div className="text-center text-sm">
-					{t("auth.dont-have-account", "Don't have an account?")}{" "}
-					<Link
-						className="underline underline-offset-4"
-						href={withCallbackUrl("/sign-up", callbackUrl)}
-					>
-						{t("auth.sign-up", "Sign up")}
-					</Link>
-				</div>
-			)}
+				turnstileConfig={turnstileConfig}
+				turnstileToken={turnstileToken}
+				turnstileRef={turnstileRef}
+				onTurnstileVerify={handleTurnstileVerify}
+				onTurnstileError={handleTurnstileError}
+				onTurnstileExpire={handleTurnstileExpire}
+				onTurnstileTimeout={handleTurnstileTimeout}
+				forgotPasswordHref="/forgot-password"
+				signUpHref={withCallbackUrl("/sign-up", callbackUrl)}
+			>
+				<LoginAlternativeAuth
+					requires2FA={requires2FA}
+					showPasskey={showPasskey}
+					filteredProviders={filteredProviders}
+					providersLoading={providersLoading}
+					isLoading={isLoading}
+					onPasskeyLogin={handlePasskeyLogin}
+					onSocialLogin={handleSocialLogin}
+				/>
+			</LoginActions>
 		</AuthFormWrapper>
 	);
 }
