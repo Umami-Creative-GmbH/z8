@@ -3,7 +3,8 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { CalendarEvent } from "@/lib/calendar/types";
-import { groupYearCalendarEventsByDate, YearCalendarView } from "./year-calendar-view";
+import { groupYearCalendarEventsByDate } from "./year-calendar-events";
+import { YearCalendarView } from "./year-calendar-view";
 
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en" }),

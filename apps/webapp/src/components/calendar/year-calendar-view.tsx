@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	addCalendarDateKey,
-	allDayDateKeyForDate,
-	calendarDateKeyForDate,
 	todayCalendarDateKey,
 } from "@/lib/calendar/date-keys";
 import type {
@@ -20,6 +18,7 @@ import type {
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
 import type { ViewMode } from "./schedule-x-calendar";
+import { groupYearCalendarEventsByDate } from "./year-calendar-events";
 
 interface YearCalendarViewProps {
 	events: CalendarEvent[];
@@ -342,21 +341,4 @@ export function YearCalendarView({
 			</div>
 		</div>
 	);
-}
-
-export function groupYearCalendarEventsByDate(
-	events: CalendarEvent[],
-	timeZone: string,
-): Map<string, CalendarEvent[]> {
-	const eventsByDate = new Map<string, CalendarEvent[]>();
-	for (const event of events) {
-		const dateKey =
-			event.type === "absence" || event.type === "holiday"
-				? allDayDateKeyForDate(event.date)
-				: calendarDateKeyForDate(event.date, timeZone);
-		const existing = eventsByDate.get(dateKey) ?? [];
-		existing.push(event);
-		eventsByDate.set(dateKey, existing);
-	}
-	return eventsByDate;
 }

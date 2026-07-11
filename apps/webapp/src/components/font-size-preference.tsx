@@ -71,6 +71,14 @@ function getServerFontSizePreference(): FontSizePreference {
 	return "default";
 }
 
+function setFontSize(value: FontSizePreference) {
+	inMemoryFontSize = value;
+	const storage = getLocalStorage();
+	usesInMemoryFontSize = !writeStoredFontSize(storage, value);
+	window.dispatchEvent(new Event(FONT_SIZE_CHANGE_EVENT));
+	applyFontSizePreference(value);
+}
+
 export function FontSizeProvider({ children }: { children: React.ReactNode }) {
 	const fontSize = useSyncExternalStore(
 		subscribeToFontSizePreference,
@@ -81,14 +89,6 @@ export function FontSizeProvider({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
 		applyFontSizePreference(fontSize);
 	}, [fontSize]);
-
-	const setFontSize = (value: FontSizePreference) => {
-		inMemoryFontSize = value;
-		const storage = getLocalStorage();
-		usesInMemoryFontSize = !writeStoredFontSize(storage, value);
-		window.dispatchEvent(new Event(FONT_SIZE_CHANGE_EVENT));
-		applyFontSizePreference(value);
-	};
 
 	const value = {
 		fontSize,
