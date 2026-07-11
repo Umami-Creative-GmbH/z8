@@ -347,6 +347,7 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 															</Label>
 															<select
 																id={`approval-stage-approver-${stage.localId}`}
+																aria-label={t("settings.approvalPolicies.approver", "Approver")}
 																name={`approval-stage-approver-${index + 1}`}
 																className="h-9 rounded-md border border-input px-3 py-1 text-sm text-foreground shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
 																value={stage.approverType}

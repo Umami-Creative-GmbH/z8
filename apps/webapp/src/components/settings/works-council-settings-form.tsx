@@ -96,6 +96,7 @@ export function WorksCouncilSettingsForm({
 									</Label>
 									<select
 										id="works-council-identity-visibility"
+										aria-label={t("settings.worksCouncil.identityVisibility", "Identity visibility")}
 										name="identityVisibility"
 										className="flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm text-foreground"
 										value={field.state.value}
@@ -126,6 +127,7 @@ export function WorksCouncilSettingsForm({
 									</Label>
 									<select
 										id="works-council-absence-visibility"
+										aria-label={t("settings.worksCouncil.absenceVisibility", "Absence visibility")}
 										name="absenceVisibility"
 										className="flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm text-foreground"
 										value={field.state.value}

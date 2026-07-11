@@ -177,6 +177,7 @@ export function SplitWorkPeriodDialog({
 						<Label htmlFor="splitDate">{t("calendar.split.splitDate", "Split date")}</Label>
 						<select
 							id="splitDate"
+							aria-label={t("calendar.split.splitDate", "Split date")}
 							value={splitDate}
 							onChange={(event) => {
 								setSplitDate(event.target.value);
