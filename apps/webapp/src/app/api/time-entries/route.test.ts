@@ -44,6 +44,7 @@ const mockState = vi.hoisted(() => {
 		isBillingMutationAllowed: vi.fn(),
 		limit,
 		requireBillingForMutation: vi.fn(),
+		requireActor: vi.fn(),
 		runPromise: vi.fn(),
 		select,
 		transaction,
@@ -162,6 +163,11 @@ vi.mock("@/lib/effect/services/time-entry.service", () => ({
 	TimeEntryService: Symbol("TimeEntryService"),
 }));
 
+vi.mock("@/lib/time-tracking/clocking-service", () => ({
+	ClockingAccessError: class ClockingAccessError extends Error {},
+	clockingService: { requireActor: mockState.requireActor },
+}));
+
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/entry-helpers", () => ({
 	createTimeEntry: mockState.createTimeEntry,
 	validateProjectAssignment: mockState.validateProjectAssignment,
@@ -218,6 +224,11 @@ describe("GET /api/time-entries", () => {
 		}));
 		mockState.getAbility.mockResolvedValue({
 			can: vi.fn(() => true),
+		});
+		mockState.requireActor.mockResolvedValue({
+			employee: { id: "employee-1", organizationId: "org-1" },
+			organizationId: "org-1",
+			userId: "user-1",
 		});
 		mockState.limit.mockResolvedValue([
 			{
@@ -344,6 +355,7 @@ describe("POST /api/time-entries", () => {
 		mockState.values.mockReset();
 		mockState.validateProjectAssignment.mockReset();
 		mockState.requireBillingForMutation.mockReset();
+		mockState.requireActor.mockReset();
 		mockState.isBillingMutationAllowed.mockReset();
 		mockState.createBillingForbiddenResponse.mockReset();
 		mockState.employeeHasAccessToCategory.mockReset();
@@ -371,6 +383,11 @@ describe("POST /api/time-entries", () => {
 		mockState.updateReturning.mockResolvedValue([{ id: "period-1" }]);
 		mockState.validateProjectAssignment.mockResolvedValue({ isValid: true });
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
+		mockState.requireActor.mockResolvedValue({
+			employee: { id: "employee-1", organizationId: "org-1" },
+			organizationId: "org-1",
+			userId: "user-1",
+		});
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
 		mockState.createBillingForbiddenResponse.mockImplementation((access) =>
 			Response.json(
@@ -426,12 +443,7 @@ describe("POST /api/time-entries", () => {
 		);
 	});
 
-	it("uses the captured organization for offline sync requests", async () => {
-		mockState.limit.mockReset();
-		mockState.limit.mockResolvedValueOnce([
-			{ id: "employee-2", organizationId: "org-2", teamId: "team-2" },
-		]);
-
+	it("rejects client-supplied organization ids instead of switching the active organization", async () => {
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
 				body: JSON.stringify({
@@ -443,18 +455,26 @@ describe("POST /api/time-entries", () => {
 			}) as never,
 		);
 
-		expect(response.status).toBe(201);
-		expect(mockState.requireBillingForMutation).toHaveBeenCalledWith("org-2");
-		expect(mockState.txExecute).toHaveBeenCalledWith(
-			expect.objectContaining({ values: ["org-2:employee-2"] }),
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({ error: "organizationId is server-derived" });
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+	});
+
+	it("rejects client-supplied employee ids instead of allowing on-behalf clocking", async () => {
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					employeeId: "employee-foreign",
+					type: "clock_in",
+					timestamp: "2026-05-04T09:00:00.000Z",
+				}),
+				method: "POST",
+			}) as never,
 		);
-		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
-			expect.objectContaining({ employeeId: "employee-2", organizationId: "org-2" }),
-			expect.anything(),
-		);
-		expect(mockState.values).toHaveBeenCalledWith(
-			expect.objectContaining({ employeeId: "employee-2", organizationId: "org-2" }),
-		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({ error: "employeeId is server-derived" });
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
 
 	it("acquires a per-employee transaction lock before active period lookup", async () => {

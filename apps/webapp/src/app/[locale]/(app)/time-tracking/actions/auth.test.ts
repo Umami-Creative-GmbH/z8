@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const dbState = vi.hoisted(() => ({
 	findFirst: vi.fn(),
+	findMember: vi.fn(),
 	findUserSettings: vi.fn(),
 }));
 
@@ -14,6 +15,9 @@ vi.mock("@/db", () => ({
 		query: {
 			employee: {
 				findFirst: dbState.findFirst,
+			},
+			member: {
+				findFirst: dbState.findMember,
 			},
 			userSettings: {
 				findFirst: dbState.findUserSettings,
@@ -33,6 +37,14 @@ vi.mock("@/db/schema", () => ({
 	},
 }));
 
+vi.mock("@/db/auth-schema", () => ({
+	member: {
+		organizationId: "member.organizationId",
+		status: "member.status",
+		userId: "member.userId",
+	},
+}));
+
 vi.mock("@/lib/auth", () => ({
 	auth: {
 		api: {
@@ -48,6 +60,7 @@ vi.mock("next/headers", () => ({
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...conditions: unknown[]) => ({ type: "and", conditions })),
 	eq: vi.fn((column: unknown, value: unknown) => ({ type: "eq", column, value })),
+	relations: vi.fn(() => ({})),
 }));
 
 import { getCurrentEmployee } from "./auth";
@@ -62,6 +75,7 @@ describe("getCurrentEmployee", () => {
 			user: { id: "user-1" },
 			session: { activeOrganizationId: "org-1" },
 		});
+		dbState.findMember.mockResolvedValue({ id: "member-1" });
 		dbState.findFirst
 			.mockResolvedValueOnce(undefined)
 			.mockResolvedValueOnce({ id: "employee-in-other-org", organizationId: "org-2" });
