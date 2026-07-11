@@ -21,10 +21,6 @@ vi.mock("@/navigation", () => ({
 	Link: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
 }));
 
-vi.mock("../turnstile-widget", () => ({
-	TurnstileWidget: ({ siteKey }: { siteKey: string }) => <div data-testid="turnstile-widget">{siteKey}</div>,
-}));
-
 import { LoginAlternativeAuth } from "./alternative-auth";
 import { LoginCredentialsFields } from "./credentials-fields";
 import { LoginActions } from "./login-actions";
@@ -85,7 +81,7 @@ describe("login UI sections", () => {
 		expect(screen.getByRole("button", { name: "Verify and Login" })).toHaveProperty("disabled", false);
 	});
 
-	it("renders Turnstile from its grouped props", () => {
+	it("disables email login until Turnstile has a token", () => {
 		render(
 			<LoginActions
 				requires2FA={false}
@@ -93,12 +89,7 @@ describe("login UI sections", () => {
 				isLoading={false}
 				turnstile={{
 					config: { enabled: true, siteKey: "site-key" },
-					token: "token",
-					ref: { current: null },
-					onVerify: vi.fn(),
-					onError: vi.fn(),
-					onExpire: vi.fn(),
-					onTimeout: vi.fn(),
+					token: null,
 				}}
 				forgotPasswordHref="/forgot-password"
 				signUpHref="/sign-up"
@@ -107,6 +98,6 @@ describe("login UI sections", () => {
 			</LoginActions>,
 		);
 
-		expect(screen.getByTestId("turnstile-widget").textContent).toBe("site-key");
+		expect(screen.getByRole("button", { name: "Login" })).toHaveProperty("disabled", true);
 	});
 });

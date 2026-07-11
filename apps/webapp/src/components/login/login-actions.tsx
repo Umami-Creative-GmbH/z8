@@ -2,20 +2,14 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import type { ReactNode, Ref } from "react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import type { TurnstileConfig } from "@/lib/domain";
 import { Link } from "@/navigation";
-import { type TurnstileRef, TurnstileWidget } from "../turnstile-widget";
 
 export type LoginActionsTurnstileProps = {
 	config: TurnstileConfig | null;
 	token: string | null;
-	ref: Ref<TurnstileRef>;
-	onVerify: (token: string) => void;
-	onError: () => void;
-	onExpire: () => void;
-	onTimeout: () => void;
 };
 
 export type LoginActionsProps = {
@@ -43,17 +37,6 @@ export function LoginActions({
 		<>
 			{!requires2FA && showEmailPassword && (
 				<>
-					{turnstile.config?.enabled && turnstile.config.siteKey && (
-						<TurnstileWidget
-							ref={turnstile.ref}
-							siteKey={turnstile.config.siteKey}
-							onVerify={turnstile.onVerify}
-							onError={turnstile.onError}
-							onExpire={turnstile.onExpire}
-							onTimeout={turnstile.onTimeout}
-							className="!absolute !overflow-hidden !size-0"
-						/>
-					)}
 					<Button
 						className="w-full"
 						disabled={isLoading || (turnstile.config?.enabled && !turnstile.token)}
