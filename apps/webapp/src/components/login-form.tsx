@@ -529,13 +529,15 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 				requires2FA={requires2FA}
 				showEmailPassword={showEmailPassword}
 				isLoading={isLoading}
-				turnstileConfig={turnstileConfig}
-				turnstileToken={turnstileToken}
-				turnstileRef={turnstileRef}
-				onTurnstileVerify={handleTurnstileVerify}
-				onTurnstileError={handleTurnstileError}
-				onTurnstileExpire={handleTurnstileExpire}
-				onTurnstileTimeout={handleTurnstileTimeout}
+				turnstile={{
+					config: turnstileConfig,
+					token: turnstileToken,
+					ref: turnstileRef,
+					onVerify: handleTurnstileVerify,
+					onError: handleTurnstileError,
+					onExpire: handleTurnstileExpire,
+					onTimeout: handleTurnstileTimeout,
+				}}
 				forgotPasswordHref="/forgot-password"
 				signUpHref={withCallbackUrl("/sign-up", callbackUrl)}
 			>

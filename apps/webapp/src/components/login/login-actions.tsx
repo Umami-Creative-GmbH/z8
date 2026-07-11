@@ -8,17 +8,21 @@ import type { TurnstileConfig } from "@/lib/domain";
 import { Link } from "@/navigation";
 import { type TurnstileRef, TurnstileWidget } from "../turnstile-widget";
 
+export type LoginActionsTurnstileProps = {
+	config: TurnstileConfig | null;
+	token: string | null;
+	ref: Ref<TurnstileRef>;
+	onVerify: (token: string) => void;
+	onError: () => void;
+	onExpire: () => void;
+	onTimeout: () => void;
+};
+
 export type LoginActionsProps = {
 	requires2FA: boolean;
 	showEmailPassword: boolean;
 	isLoading: boolean;
-	turnstileConfig: TurnstileConfig | null;
-	turnstileToken: string | null;
-	turnstileRef: Ref<TurnstileRef>;
-	onTurnstileVerify: (token: string) => void;
-	onTurnstileError: () => void;
-	onTurnstileExpire: () => void;
-	onTurnstileTimeout: () => void;
+	turnstile: LoginActionsTurnstileProps;
 	forgotPasswordHref: string;
 	signUpHref: string;
 	children: ReactNode;
@@ -28,13 +32,7 @@ export function LoginActions({
 	requires2FA,
 	showEmailPassword,
 	isLoading,
-	turnstileConfig,
-	turnstileToken,
-	turnstileRef,
-	onTurnstileVerify,
-	onTurnstileError,
-	onTurnstileExpire,
-	onTurnstileTimeout,
+	turnstile,
 	forgotPasswordHref,
 	signUpHref,
 	children,
@@ -45,20 +43,20 @@ export function LoginActions({
 		<>
 			{!requires2FA && showEmailPassword && (
 				<>
-					{turnstileConfig?.enabled && turnstileConfig.siteKey && (
+					{turnstile.config?.enabled && turnstile.config.siteKey && (
 						<TurnstileWidget
-							ref={turnstileRef}
-							siteKey={turnstileConfig.siteKey}
-							onVerify={onTurnstileVerify}
-							onError={onTurnstileError}
-							onExpire={onTurnstileExpire}
-							onTimeout={onTurnstileTimeout}
+							ref={turnstile.ref}
+							siteKey={turnstile.config.siteKey}
+							onVerify={turnstile.onVerify}
+							onError={turnstile.onError}
+							onExpire={turnstile.onExpire}
+							onTimeout={turnstile.onTimeout}
 							className="!absolute !overflow-hidden !size-0"
 						/>
 					)}
 					<Button
 						className="w-full"
-						disabled={isLoading || (turnstileConfig?.enabled && !turnstileToken)}
+						disabled={isLoading || (turnstile.config?.enabled && !turnstile.token)}
 						type="submit"
 					>
 						{isLoading ? (
