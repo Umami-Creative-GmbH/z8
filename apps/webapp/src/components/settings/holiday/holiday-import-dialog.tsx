@@ -11,7 +11,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { DateTime } from "luxon";
-import { startTransition, useEffect, useEffectEvent, useState } from "react";
+import { startTransition, useEffect, useEffectEvent, useReducer, useState } from "react";
 import { toast } from "sonner";
 import {
 	bulkAddHolidaysToPreset,
@@ -81,6 +81,23 @@ interface HolidayPreview {
 
 type HolidayType = "public" | "bank" | "optional" | "school" | "observance";
 
+type HolidayImportState = {
+	step: number; countries: CountryOption[]; states: StateOption[]; regions: StateOption[];
+	selectedCountry: string; selectedState: string; selectedRegion: string; selectedYear: number;
+	selectedTypes: HolidayType[]; holidays: HolidayPreview[]; selectedHolidays: Set<string>;
+	presetName: string; presetColor: string; setAsOrgDefault: boolean;
+	countriesLoading: boolean; statesLoading: boolean; regionsLoading: boolean; previewLoading: boolean; importLoading: boolean;
+};
+
+const initialHolidayImportState = (): HolidayImportState => ({
+	step: 1, countries: [], states: [], regions: [], selectedCountry: "", selectedState: "", selectedRegion: "", selectedYear: new Date().getFullYear(), selectedTypes: ["public"], holidays: [], selectedHolidays: new Set(), presetName: "", presetColor: "#4F46E5", setAsOrgDefault: false, countriesLoading: false, statesLoading: false, regionsLoading: false, previewLoading: false, importLoading: false,
+});
+
+function holidayImportReducer(state: HolidayImportState, action: { key: keyof HolidayImportState; value: any }): HolidayImportState {
+	const value = typeof action.value === "function" ? action.value(state[action.key]) : action.value;
+	return { ...state, [action.key]: value };
+}
+
 const HOLIDAY_TYPES: { value: HolidayType; label: string }[] = [
 	{ value: "public", label: "Public Holidays" },
 	{ value: "bank", label: "Bank Holidays" },
@@ -113,34 +130,10 @@ export function HolidayImportDialog({
 	const { t } = useTranslate();
 	const locale = useLocale();
 
-	// Step state
-	const [step, setStep] = useState(1);
-
-	// Location selection state
-	const [countries, setCountries] = useState<CountryOption[]>([]);
-	const [states, setStates] = useState<StateOption[]>([]);
-	const [regions, setRegions] = useState<StateOption[]>([]);
-	const [selectedCountry, setSelectedCountry] = useState<string>("");
-	const [selectedState, setSelectedState] = useState<string>("");
-	const [selectedRegion, setSelectedRegion] = useState<string>("");
-	const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
-	const [selectedTypes, setSelectedTypes] = useState<HolidayType[]>(["public"]);
-
-	// Preview state
-	const [holidays, setHolidays] = useState<HolidayPreview[]>([]);
-	const [selectedHolidays, setSelectedHolidays] = useState<Set<string>>(new Set());
-
-	// Preset options
-	const [presetName, setPresetName] = useState("");
-	const [presetColor, setPresetColor] = useState("#4F46E5");
-	const [setAsOrgDefault, setSetAsOrgDefault] = useState(false);
-
-	// Loading states
-	const [countriesLoading, setCountriesLoading] = useState(false);
-	const [statesLoading, setStatesLoading] = useState(false);
-	const [regionsLoading, setRegionsLoading] = useState(false);
-	const [previewLoading, setPreviewLoading] = useState(false);
-	const [importLoading, setImportLoading] = useState(false);
+	const [state, dispatch] = useReducer(holidayImportReducer, undefined, initialHolidayImportState);
+	const set = (key: keyof HolidayImportState) => (value: any) => dispatch({ key, value });
+	const { step, countries, states, regions, selectedCountry, selectedState, selectedRegion, selectedYear, selectedTypes, holidays, selectedHolidays, presetName, presetColor, setAsOrgDefault, countriesLoading, statesLoading, regionsLoading, previewLoading, importLoading } = state;
+	const setStep = set("step"), setCountries = set("countries"), setStates = set("states"), setRegions = set("regions"), setSelectedCountry = set("selectedCountry"), setSelectedState = set("selectedState"), setSelectedRegion = set("selectedRegion"), setSelectedYear = set("selectedYear"), setSelectedTypes = set("selectedTypes"), setHolidays = set("holidays"), setSelectedHolidays = set("selectedHolidays"), setPresetName = set("presetName"), setPresetColor = set("presetColor"), setSetAsOrgDefault = set("setAsOrgDefault"), setCountriesLoading = set("countriesLoading"), setStatesLoading = set("statesLoading"), setRegionsLoading = set("regionsLoading"), setPreviewLoading = set("previewLoading"), setImportLoading = set("importLoading");
 
 	// Generate year options (current year +/- 2)
 	const currentYear = new Date().getFullYear();
@@ -441,7 +434,7 @@ export function HolidayImportDialog({
 	}
 
 	function toggleHoliday(name: string) {
-		setSelectedHolidays((prev) => {
+		setSelectedHolidays((prev: Set<string>) => {
 			const next = new Set(prev);
 			if (next.has(name)) {
 				next.delete(name);
@@ -461,9 +454,9 @@ export function HolidayImportDialog({
 	}
 
 	function toggleType(type: HolidayType) {
-		setSelectedTypes((prev) => {
+		setSelectedTypes((prev: HolidayType[]) => {
 			if (prev.includes(type)) {
-				return prev.filter((t) => t !== type);
+				return prev.filter((t: HolidayType) => t !== type);
 			}
 			return [...prev, type];
 		});
@@ -825,7 +818,7 @@ export function HolidayImportDialog({
 					{step > 1 && (
 						<Button
 							variant="outline"
-							onClick={() => setStep((prev) => prev - 1)}
+							onClick={() => setStep((prev: number) => prev - 1)}
 							disabled={previewLoading || importLoading}
 						>
 							<IconChevronLeft className="mr-1 size-4" />
