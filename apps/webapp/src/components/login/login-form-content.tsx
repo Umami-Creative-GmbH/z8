@@ -2,10 +2,11 @@
 
 import { IconFingerprint } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { withCallbackUrl } from "@/lib/auth/callback-url";
 import { AuthFormWrapper } from "../auth-form-wrapper";
-import { TurnstileWidget } from "../turnstile-widget";
+import { type TurnstileRef, TurnstileWidget } from "../turnstile-widget";
 import { LoginActions } from "./login-actions";
 import { LoginAlternativeAuth } from "./alternative-auth";
 import { LoginCredentialsFields } from "./credentials-fields";
@@ -14,7 +15,8 @@ import { useLoginAuth } from "./use-login-auth";
 
 export function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
-	const auth = useLoginAuth();
+	const turnstileRef = useRef<TurnstileRef>(null);
+	const auth = useLoginAuth(turnstileRef);
 
 	return (
 		<AuthFormWrapper
@@ -76,7 +78,7 @@ export function LoginFormContent({ className, ...props }: React.ComponentProps<"
 			>
 				{auth.turnstileConfig?.enabled && auth.turnstileConfig.siteKey ? (
 					<TurnstileWidget
-						ref={auth.setTurnstileRef}
+						ref={turnstileRef}
 						siteKey={auth.turnstileConfig.siteKey}
 						onVerify={auth.handleTurnstileVerify}
 						onError={auth.handleTurnstileError}

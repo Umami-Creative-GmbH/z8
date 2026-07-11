@@ -82,9 +82,13 @@ vi.mock("../turnstile-widget", () => ({
 		ref,
 	}: {
 		onVerify: (token: string) => void;
-		ref?: (instance: { reset: () => void } | null) => void;
+		ref?: ((instance: { reset: () => void } | null) => void) | { current: { reset: () => void } | null };
 	}) => {
-		ref?.({ reset: resetTurnstileMock });
+		if (typeof ref === "function") {
+			ref({ reset: resetTurnstileMock });
+		} else if (ref) {
+			ref.current = { reset: resetTurnstileMock };
+		}
 		return <button type="button" onClick={() => onVerify("turnstile-token")}>Complete verification</button>;
 	},
 }));

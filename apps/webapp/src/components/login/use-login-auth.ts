@@ -2,7 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useReducer, useRef } from "react";
+import { useEffect, useReducer } from "react";
 import { z } from "zod";
 import {
 	getPostSignInRedirectUrl,
@@ -17,10 +17,9 @@ import type { SocialProviderId } from "@/lib/social-providers";
 import { verifyTurnstileWithServer } from "@/lib/turnstile/verify";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 import { useRouter } from "@/navigation";
-import type { TurnstileRef } from "../turnstile-widget";
 import { initialLoginState, loginReducer, loginSchema } from "./login-state";
 
-export function useLoginAuth() {
+export function useLoginAuth(turnstileRef: React.RefObject<{ reset: () => void } | null>) {
 	const { t } = useTranslate();
 	const { push } = useRouter();
 	const searchParams = useSearchParams();
@@ -38,7 +37,6 @@ export function useLoginAuth() {
 	const socialOAuthConfigured = domainAuth?.socialOAuthConfigured;
 	const ssoProviderId = authConfig?.ssoProviderId;
 	const turnstileConfig = useTurnstile();
-	const turnstileRef = useRef<TurnstileRef>(null);
 
 	const showEmailPassword = authConfig?.emailPasswordEnabled ?? true;
 	const showPasskey = authConfig?.passkeyEnabled ?? true;
@@ -333,9 +331,6 @@ export function useLoginAuth() {
 		showEmailPassword,
 		showPasskey,
 		showSSO,
-		setTurnstileRef: (instance: TurnstileRef | null) => {
-			turnstileRef.current = instance;
-		},
 		turnstileConfig,
 	};
 }
