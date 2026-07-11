@@ -426,6 +426,32 @@ describe("CalendarView", () => {
 		expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-2" });
 	});
 
+	it("resets the calendar month in one render when the initial date changes", async () => {
+		const { rerender } = render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialDateKey="2026-01-01"
+				initialTimezone="Europe/Berlin"
+			/>,
+		);
+		const queryCountBeforeRerender = capturedCalendarQueries.length;
+
+		rerender(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialDateKey="2026-02-01"
+				initialTimezone="Europe/Berlin"
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(capturedCalendarQueries.at(-1)).toMatchObject({ year: 2026, month: 1 });
+		});
+		expect(capturedCalendarQueries.length - queryCountBeforeRerender).toBe(1);
+	});
+
 	it("updates filters when the route selected employee changes", async () => {
 		const { rerender } = render(
 			<CalendarView

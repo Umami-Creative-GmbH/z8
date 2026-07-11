@@ -84,6 +84,28 @@ export function CalendarView({
 	initialDateKey,
 	initialTimezone,
 }: CalendarViewProps) {
+	const calendarTimezone = initialTimezone ?? "UTC";
+	const calendarDateKey = initialDateKey ?? todayCalendarDateKey(calendarTimezone);
+
+	return (
+		<CalendarViewContent
+			key={`${calendarDateKey}:${calendarTimezone}`}
+			organizationId={organizationId}
+			currentEmployeeId={currentEmployeeId}
+			initialSelectedEmployeeId={initialSelectedEmployeeId}
+			initialDateKey={calendarDateKey}
+			initialTimezone={calendarTimezone}
+		/>
+	);
+}
+
+function CalendarViewContent({
+	organizationId,
+	currentEmployeeId,
+	initialSelectedEmployeeId,
+	initialDateKey,
+	initialTimezone,
+}: CalendarViewProps) {
 	const router = useRouter();
 	const locale = useLocale();
 	const timeFormat = useTimeFormat();
@@ -195,10 +217,6 @@ export function CalendarView({
 		timeFormat,
 	};
 	const completedEvents = events.filter((event) => !isRunningWorkPeriod(event));
-
-	useEffect(() => {
-		setCurrentDateKey(initialDateKey ?? todayCalendarDateKey(initialCalendarTimezone));
-	}, [initialDateKey, initialCalendarTimezone]);
 
 	const workHoursData = buildDailyWorkHoursSummaries({
 		events: completedEvents,
