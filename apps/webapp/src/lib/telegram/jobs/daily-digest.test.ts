@@ -1,120 +1,244 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
-	buildDigestDataMock,
-	claimDailyDigestDeliveryMock,
-	findEmployeeManagersMock,
-	findEmployeeMock,
-	getAllActiveBotConfigsMock,
+	buildDigestDataForManagerMock,
 	getBotTranslateMock,
 	getOrganizationPrivateConversationsMock,
-	markDailyDigestDeliveryFailedMock,
-	markDailyDigestDeliverySentMock,
-	resolveBotTemporalContextMock,
+	claimTelegramDigestDeliveryMock,
+	markTelegramDigestDeliveryFailedMock,
+	markTelegramDigestDeliverySentMock,
+	resolveRecipientDisplayContextMock,
 	sendMessageMock,
+	shouldSkipDigestForManagerMock,
 } = vi.hoisted(() => ({
-	buildDigestDataMock: vi.fn(),
-	claimDailyDigestDeliveryMock: vi.fn(),
-	findEmployeeManagersMock: vi.fn(),
-	findEmployeeMock: vi.fn(),
-	getAllActiveBotConfigsMock: vi.fn(),
+	buildDigestDataForManagerMock: vi.fn(),
 	getBotTranslateMock: vi.fn(),
 	getOrganizationPrivateConversationsMock: vi.fn(),
-	markDailyDigestDeliveryFailedMock: vi.fn(),
-	markDailyDigestDeliverySentMock: vi.fn(),
-	resolveBotTemporalContextMock: vi.fn(),
+	claimTelegramDigestDeliveryMock: vi.fn(),
+	markTelegramDigestDeliveryFailedMock: vi.fn(),
+	markTelegramDigestDeliverySentMock: vi.fn(),
+	resolveRecipientDisplayContextMock: vi.fn(),
 	sendMessageMock: vi.fn(),
+	shouldSkipDigestForManagerMock: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
 	db: {
 		query: {
-			employee: { findFirst: findEmployeeMock },
-			employeeManagers: { findFirst: findEmployeeManagersMock },
+			employee: { findFirst: vi.fn() },
+			employeeManagers: { findFirst: vi.fn() },
 		},
 	},
 }));
-vi.mock("@/db/schema", () => ({
-	employee: { organizationId: "employee.organizationId", userId: "employee.userId" },
-	employeeManagers: { managerId: "employeeManagers.managerId" },
-}));
-vi.mock("@/env", () => ({ env: { APP_URL: "https://z8.test" } }));
+vi.mock("@/db/schema", () => ({ employee: {}, employeeManagers: {} }));
+vi.mock("@/env", () => ({ env: {} }));
 vi.mock("@/lib/bot-platform/i18n", () => ({ getBotTranslate: getBotTranslateMock }));
-vi.mock("@/lib/bot-platform/temporal-context", () => ({
-	resolveBotTemporalContext: resolveBotTemporalContextMock,
+vi.mock("@/lib/logger", () => ({ createLogger: () => ({ info: vi.fn(), warn: vi.fn() }) }));
+vi.mock("@/lib/notifications/recipient-display-context", () => ({
+	resolveRecipientDisplayContext: resolveRecipientDisplayContextMock,
 }));
-vi.mock("@/lib/logger", () => ({ createLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() }) }));
-vi.mock("@/lib/notifications/daily-digest-delivery", () => ({
-	claimDailyDigestDelivery: claimDailyDigestDeliveryMock,
-	markDailyDigestDeliveryFailed: markDailyDigestDeliveryFailedMock,
-	markDailyDigestDeliverySent: markDailyDigestDeliverySentMock,
+vi.mock("@/lib/teams/jobs/daily-digest", () => ({
+	buildDigestDataForManager: buildDigestDataForManagerMock,
+	shouldSkipDigestForManager: shouldSkipDigestForManagerMock,
 }));
-vi.mock("@/lib/teams/jobs/daily-digest", () => ({ buildDigestDataForManager: buildDigestDataMock }));
 vi.mock("../api", () => ({ sendMessage: sendMessageMock }));
-vi.mock("../bot-config", () => ({ getAllActiveBotConfigs: getAllActiveBotConfigsMock }));
+vi.mock("../bot-config", () => ({ getAllActiveBotConfigs: vi.fn() }));
 vi.mock("../conversation-manager", () => ({
 	getOrganizationPrivateConversations: getOrganizationPrivateConversationsMock,
 }));
 vi.mock("../formatters", () => ({ buildDailyDigestMessage: vi.fn(() => "digest") }));
+vi.mock("./digest-delivery-ledger", () => ({
+	claimTelegramDigestDelivery: claimTelegramDigestDeliveryMock,
+	markTelegramDigestDeliveryFailed: markTelegramDigestDeliveryFailedMock,
+	markTelegramDigestDeliverySent: markTelegramDigestDeliverySentMock,
+}));
 
-describe("runTelegramDailyDigestJob", () => {
+describe("processTelegramBotDigest", () => {
 	beforeEach(() => {
-		vi.useFakeTimers();
-		vi.setSystemTime(new Date("2026-07-10T09:05:00Z"));
-		vi.clearAllMocks();
-		getAllActiveBotConfigsMock.mockResolvedValue([
-			{ organizationId: "org-1", botToken: "token", enableDailyDigest: true, digestTime: "09:00", digestTimezone: "UTC" },
+		vi.resetAllMocks();
+		getOrganizationPrivateConversationsMock.mockResolvedValue([
+			{ chatId: "chat-berlin", userId: "manager-berlin" },
+			{ chatId: "chat-new-york", userId: "manager-new-york" },
 		]);
-		getOrganizationPrivateConversationsMock.mockResolvedValue([{ userId: "user-1", chatId: "chat-1" }]);
-		findEmployeeMock.mockResolvedValue({ id: "employee-1" });
-		findEmployeeManagersMock.mockResolvedValue({ id: "manager-link-1" });
-		resolveBotTemporalContextMock.mockResolvedValue({ effectiveTimezone: "America/New_York", locale: "en" });
-		claimDailyDigestDeliveryMock.mockResolvedValue("delivery-1");
-		buildDigestDataMock.mockResolvedValue({});
-		getBotTranslateMock.mockResolvedValue(vi.fn());
-		sendMessageMock.mockResolvedValue({ ok: true });
-		markDailyDigestDeliverySentMock.mockResolvedValue(undefined);
+		resolveRecipientDisplayContextMock
+			.mockResolvedValueOnce({ locale: "de", timeFormat: "24h", timezone: "Europe/Berlin" })
+			.mockResolvedValueOnce({
+				locale: "en-US",
+				timeFormat: "12h",
+				timezone: "America/New_York",
+			});
+		buildDigestDataForManagerMock.mockResolvedValue({});
+		getBotTranslateMock.mockResolvedValue(() => "digest");
+		sendMessageMock.mockResolvedValue({});
+		claimTelegramDigestDeliveryMock.mockResolvedValue(true);
+		markTelegramDigestDeliverySentMock.mockResolvedValue(undefined);
+		markTelegramDigestDeliveryFailedMock.mockResolvedValue(undefined);
+		shouldSkipDigestForManagerMock.mockResolvedValue(false);
 	});
 
-	afterEach(() => vi.useRealTimers());
-
-	it("claims, sends, and records a digest using the recipient local date", async () => {
-		const { runTelegramDailyDigestJob } = await import("./daily-digest");
-
-		await expect(runTelegramDailyDigestJob()).resolves.toMatchObject({ digestsSent: 1 });
-
-		expect(claimDailyDigestDeliveryMock).toHaveBeenCalledWith({
-			organizationId: "org-1",
-			recipientUserId: "user-1",
-			platform: "telegram",
-			type: "daily_digest",
-			recipientLocalDate: "2026-07-10",
+	it("sends once when concurrent runs compete for the same recipient digest", async () => {
+		const { db } = await import("@/db");
+		vi.mocked(db.query.employee.findFirst).mockResolvedValue({ id: "employee-berlin" });
+		vi.mocked(db.query.employeeManagers.findFirst).mockResolvedValue({ id: "managed-employee" });
+		getOrganizationPrivateConversationsMock.mockResolvedValue([
+			{ chatId: "chat-berlin", userId: "manager-berlin" },
+		]);
+		resolveRecipientDisplayContextMock.mockResolvedValue({
+			locale: "de",
+			timeFormat: "24h",
+			timezone: "Europe/Berlin",
 		});
-		expect(markDailyDigestDeliverySentMock).toHaveBeenCalledWith({
-			id: "delivery-1",
-			organizationId: "org-1",
+		claimTelegramDigestDeliveryMock.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+		const { processTelegramBotDigest } = await import("./daily-digest");
+		const bot = {
+			botToken: "token",
+			digestTime: "02:00",
+			digestTimezone: "Europe/Berlin",
+			organizationId: "org-a",
+		};
+
+		const [first, second] = await Promise.all([
+			processTelegramBotDigest(bot, new Date("2026-07-10T00:05:00.000Z")),
+			processTelegramBotDigest(bot, new Date("2026-07-10T00:05:00.000Z")),
+		]);
+
+		expect(first + second).toBe(1);
+		expect(sendMessageMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("retries a failed delivery claim", async () => {
+		const { db } = await import("@/db");
+		vi.mocked(db.query.employee.findFirst).mockResolvedValue({ id: "employee-berlin" });
+		vi.mocked(db.query.employeeManagers.findFirst).mockResolvedValue({ id: "managed-employee" });
+		getOrganizationPrivateConversationsMock.mockResolvedValue([
+			{ chatId: "chat-berlin", userId: "manager-berlin" },
+		]);
+		resolveRecipientDisplayContextMock.mockResolvedValue({
+			locale: "de",
+			timeFormat: "24h",
+			timezone: "Europe/Berlin",
 		});
+		const { processTelegramBotDigest } = await import("./daily-digest");
+		const bot = {
+			botToken: "token",
+			digestTime: "02:00",
+			digestTimezone: "Europe/Berlin",
+			organizationId: "org-a",
+		};
+
+		sendMessageMock.mockRejectedValueOnce(new Error("network"));
+		expect(await processTelegramBotDigest(bot, new Date("2026-07-10T00:05:00.000Z"))).toBe(0);
+		expect(markTelegramDigestDeliveryFailedMock).toHaveBeenCalledTimes(1);
+
+		sendMessageMock.mockResolvedValueOnce({});
+		expect(await processTelegramBotDigest(bot, new Date("2026-07-10T00:05:00.000Z"))).toBe(1);
+		expect(sendMessageMock).toHaveBeenCalledTimes(2);
 	});
 
-	it("does not send when the recipient's daily delivery was already claimed", async () => {
-		claimDailyDigestDeliveryMock.mockResolvedValue(null);
-		const { runTelegramDailyDigestJob } = await import("./daily-digest");
+	it("uses separate delivery keys for recipient-local UTC and Honolulu dates", async () => {
+		const { db } = await import("@/db");
+		vi.mocked(db.query.employee.findFirst)
+			.mockResolvedValueOnce({ id: "employee-utc" })
+			.mockResolvedValueOnce({ id: "employee-honolulu" });
+		vi.mocked(db.query.employeeManagers.findFirst).mockResolvedValue({ id: "managed-employee" });
+		getOrganizationPrivateConversationsMock.mockResolvedValue([
+			{ chatId: "chat-utc", userId: "manager-utc" },
+			{ chatId: "chat-honolulu", userId: "manager-honolulu" },
+		]);
+		resolveRecipientDisplayContextMock
+			.mockResolvedValueOnce({ locale: "en", timeFormat: "24h", timezone: "UTC" })
+			.mockResolvedValueOnce({ locale: "en", timeFormat: "24h", timezone: "Pacific/Honolulu" });
+		const { processTelegramBotDigest } = await import("./daily-digest");
 
-		await expect(runTelegramDailyDigestJob()).resolves.toMatchObject({ digestsSent: 0 });
+		await processTelegramBotDigest(
+			{
+				botToken: "token",
+				digestTime: "02:00",
+				digestTimezone: "Europe/Berlin",
+				organizationId: "org-a",
+			},
+			new Date("2026-07-10T00:05:00.000Z"),
+		);
 
-		expect(sendMessageMock).not.toHaveBeenCalled();
+		expect(claimTelegramDigestDeliveryMock).toHaveBeenCalledWith(
+			expect.objectContaining({ logicalDate: "2026-07-10", organizationId: "org-a" }),
+		);
+		expect(claimTelegramDigestDeliveryMock).toHaveBeenCalledWith(
+			expect.objectContaining({ logicalDate: "2026-07-09", organizationId: "org-a" }),
+		);
 	});
 
-	it("marks a claimed delivery failed when Telegram rejects it", async () => {
-		const failure = new Error("Telegram unavailable");
-		sendMessageMock.mockRejectedValue(failure);
-		const { runTelegramDailyDigestJob } = await import("./daily-digest");
+	it("keeps otherwise matching delivery keys scoped to their organization", async () => {
+		const { db } = await import("@/db");
+		vi.mocked(db.query.employee.findFirst).mockResolvedValue({ id: "employee-manager" });
+		vi.mocked(db.query.employeeManagers.findFirst).mockResolvedValue({ id: "managed-employee" });
+		getOrganizationPrivateConversationsMock.mockResolvedValue([
+			{ chatId: "chat-manager", userId: "manager-user" },
+		]);
+		resolveRecipientDisplayContextMock.mockResolvedValue({
+			locale: "en",
+			timeFormat: "24h",
+			timezone: "UTC",
+		});
+		const { processTelegramBotDigest } = await import("./daily-digest");
 
-		await expect(runTelegramDailyDigestJob()).resolves.toMatchObject({ digestsSent: 0 });
+		await processTelegramBotDigest(
+			{
+				botToken: "token",
+				digestTime: "02:00",
+				digestTimezone: "Europe/Berlin",
+				organizationId: "org-a",
+			},
+			new Date("2026-07-10T00:05:00.000Z"),
+		);
+		await processTelegramBotDigest(
+			{
+				botToken: "token",
+				digestTime: "02:00",
+				digestTimezone: "Europe/Berlin",
+				organizationId: "org-b",
+			},
+			new Date("2026-07-10T00:05:00.000Z"),
+		);
 
-		expect(markDailyDigestDeliveryFailedMock).toHaveBeenCalledWith(
-			{ id: "delivery-1", organizationId: "org-1" },
-			failure,
+		expect(claimTelegramDigestDeliveryMock).toHaveBeenCalledWith(
+			expect.objectContaining({ organizationId: "org-a" }),
+		);
+		expect(claimTelegramDigestDeliveryMock).toHaveBeenCalledWith(
+			expect.objectContaining({ organizationId: "org-b" }),
+		);
+	});
+
+	it("uses one schedule occurrence while building recipient-specific content", async () => {
+		const { db } = await import("@/db");
+		vi.mocked(db.query.employee.findFirst)
+			.mockResolvedValueOnce({ id: "employee-berlin" })
+			.mockResolvedValueOnce({ id: "employee-new-york" });
+		vi.mocked(db.query.employeeManagers.findFirst).mockResolvedValue({ id: "managed-employee" });
+		const { processTelegramBotDigest } = await import("./daily-digest");
+
+		const sent = await processTelegramBotDigest(
+			{
+				botToken: "token",
+				digestTime: "02:00",
+				digestTimezone: "Europe/Berlin",
+				organizationId: "org-a",
+			},
+			new Date("2026-07-10T00:05:00.000Z"),
+		);
+
+		expect(sent).toBe(2);
+		expect(buildDigestDataForManagerMock).toHaveBeenCalledWith(
+			"employee-berlin",
+			"org-a",
+			"Europe/Berlin",
+			"de",
+		);
+		expect(buildDigestDataForManagerMock).toHaveBeenCalledWith(
+			"employee-new-york",
+			"org-a",
+			"America/New_York",
+			"en-US",
 		);
 	});
 });

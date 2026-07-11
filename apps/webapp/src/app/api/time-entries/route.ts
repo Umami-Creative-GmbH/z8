@@ -24,7 +24,11 @@ import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
-import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
+import {
+  ClockingAccessError,
+  ClockingConflictError,
+  clockingService,
+} from "@/lib/time-tracking/clocking-service";
 import {
 	getUtcOffsetMinutesForZone,
 	isValidIanaTimezone,
@@ -82,6 +86,10 @@ export async function GET(request: NextRequest) {
 		if (!activeOrgId) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
+		await clockingService.requireActor({
+			userId: session.user.id,
+			activeOrganizationId: activeOrgId,
+		});
 
 		const [currentEmployee] = await db
 			.select()
@@ -199,6 +207,9 @@ export async function POST(request: NextRequest) {
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
+		if (body && typeof body === "object" && "employeeId" in body) {
+			return NextResponse.json({ error: "employeeId is server-derived" }, { status: 400 });
+		}
 
 		const {
 			id,
@@ -212,6 +223,7 @@ export async function POST(request: NextRequest) {
 			browserTimezone,
 			utcOffsetMinutes,
 			replay,
+			organizationId,
 		} = body;
 
 		// Validate required fields
@@ -243,7 +255,18 @@ export async function POST(request: NextRequest) {
 				{ status: 403 },
 			);
 		}
+		if (organizationId !== undefined) {
+			return NextResponse.json({ error: "organizationId is server-derived" }, { status: 400 });
+		}
 		const requestedOrgId = activeOrgId;
+
+		if (!requestedOrgId) {
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		}
+		await clockingService.requireActor({
+			userId: session.user.id,
+			activeOrganizationId: requestedOrgId,
+		});
 
 		const [currentEmployee] = await db
 			.select()
@@ -334,6 +357,7 @@ export async function POST(request: NextRequest) {
 				projectId,
 				currentEmployee.id,
 				currentEmployee.teamId,
+				requestedOrgId,
 			);
 			if (!projectValidation.isValid) {
 				return NextResponse.json(
@@ -387,6 +411,9 @@ export async function POST(request: NextRequest) {
 
 		return NextResponse.json({ entry }, { status: 201 });
 	} catch (error) {
+		if (error instanceof ClockingAccessError) {
+			return NextResponse.json({ error: error.message }, { status: 403 });
+		}
 		if (error instanceof TimeEntryConflictError || error instanceof ClockingConflictError) {
 			return NextResponse.json({ error: error.message }, { status: 409 });
 		}

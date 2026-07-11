@@ -13,6 +13,7 @@ import { env } from "@/env";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
+import { shouldSkipDigestForManager } from "@/lib/teams/jobs/daily-digest";
 import { sendMessage } from "../api";
 import { getAllActiveBotConfigs } from "../bot-config";
 import { getOrganizationConversations } from "../conversation-manager";
@@ -120,6 +121,9 @@ async function processBotDigest(bot: {
 				});
 
 				if (!manages) return false;
+				if (await shouldSkipDigestForManager(emp.id, bot.organizationId, bot.digestTimezone)) {
+					return false;
+				}
 
 				const temporal = await resolveBotTemporalContext({
 					userId: conv.userId,

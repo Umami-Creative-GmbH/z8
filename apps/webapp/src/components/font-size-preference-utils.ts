@@ -30,10 +30,15 @@ function readStoredFontSize(storage: Storage | undefined): FontSizePreference {
 }
 
 function writeStoredFontSize(storage: Storage | undefined, value: FontSizePreference) {
+	if (!storage) {
+		return false;
+	}
+
 	try {
-		storage?.setItem(FONT_SIZE_STORAGE_KEY, value);
+		storage.setItem(FONT_SIZE_STORAGE_KEY, value);
+		return true;
 	} catch {
-		// Keep the current session updated even when persistence is blocked.
+		return false;
 	}
 }
 

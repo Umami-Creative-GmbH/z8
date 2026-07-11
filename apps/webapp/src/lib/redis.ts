@@ -183,4 +183,16 @@ export const secondaryStorage = {
 			logger.error({ error, key }, "Failed to delete from Redis");
 		}
 	},
+	deleteOrThrow: async (key: string): Promise<void> => {
+		if (shouldDisableRedisDuringBuild) {
+			return;
+		}
+
+		try {
+			await redis.del(key);
+		} catch (error) {
+			logger.error({ error, key }, "Failed to strictly delete from Redis");
+			throw error;
+		}
+	},
 };

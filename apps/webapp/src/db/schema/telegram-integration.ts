@@ -165,6 +165,49 @@ export const telegramConversation = pgTable(
 );
 
 /**
+ * Durable idempotency ledger for Telegram daily digest deliveries.
+ * A recipient-local logical date is used so a scheduled bot timezone never
+ * changes which daily digest a recipient receives.
+ */
+export const telegramDigestDelivery = pgTable(
+	"telegram_digest_delivery",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		recipientEmployeeId: uuid("recipient_employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		recipientUserId: text("recipient_user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		platform: text("platform").notNull(),
+		digestType: text("digest_type").notNull(),
+		logicalDate: text("logical_date").notNull(),
+		status: text("status").default("sending").notNull(),
+		attemptedAt: timestamp("attempted_at").defaultNow().notNull(),
+		sentAt: timestamp("sent_at"),
+		failedAt: timestamp("failed_at"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("telegramDigestDelivery_idempotency_unique_idx").on(
+			table.organizationId,
+			table.recipientEmployeeId,
+			table.recipientUserId,
+			table.platform,
+			table.digestType,
+			table.logicalDate,
+		),
+		index("telegramDigestDelivery_organizationId_idx").on(table.organizationId),
+	],
+);
+
+/**
  * Link codes for connecting Telegram accounts to Z8.
  * User generates a code in Z8 settings, sends /link CODE to the bot.
  */

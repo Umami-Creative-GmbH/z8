@@ -65,7 +65,9 @@ describe("approval inbox decision service", () => {
 				handler: { type: "absence_entry", approve, reject: vi.fn() } as never,
 			}),
 		).resolves.toEqual({ id: "approval-1", type: "absence_entry", status: "approved" });
-		expect(approve).toHaveBeenCalledWith("absence-1", "manager-1", undefined);
+		expect(approve).toHaveBeenCalledWith("absence-1", "manager-1", {
+			approvalRequestId: "approval-1",
+		});
 	});
 
 	it("passes approval request options when approving as a non-assigned actor", async () => {
@@ -134,12 +136,9 @@ describe("approval inbox decision service", () => {
 				handler: { type: "absence_entry", approve: vi.fn(), reject } as never,
 			}),
 		).resolves.toEqual({ id: "approval-1", type: "absence_entry", status: "rejected" });
-		expect(reject).toHaveBeenCalledWith(
-			"absence-1",
-			"manager-1",
-			"Missing documentation",
-			undefined,
-		);
+		expect(reject).toHaveBeenCalledWith("absence-1", "manager-1", "Missing documentation", {
+			approvalRequestId: "approval-1",
+		});
 	});
 
 	it("passes approval request options when rejecting as a non-assigned actor", async () => {

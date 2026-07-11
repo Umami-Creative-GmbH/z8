@@ -87,7 +87,7 @@ function loadPendingApprovalRequest(
 ): Effect.Effect<PendingApprovalRequest, AnyAppError, never> {
 	return dbService
 		.query("getApprovalRequest", async () => {
-			const approvalRequestId = options?.allowAnyApprover ? options.approvalRequestId : null;
+			const approvalRequestId = options?.approvalRequestId;
 
 			return await dbService.db.query.approvalRequest.findFirst({
 				where: approvalRequestId
@@ -96,6 +96,7 @@ function loadPendingApprovalRequest(
 							eq(approvalRequest.organizationId, actorOrganizationId),
 							eq(approvalRequest.entityType, entityType),
 							eq(approvalRequest.entityId, entityId),
+							...(options?.allowAnyApprover ? [] : [eq(approvalRequest.approverId, approverId)]),
 							eq(approvalRequest.status, "pending"),
 						)
 					: and(

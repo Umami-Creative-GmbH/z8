@@ -72,6 +72,11 @@ const migration0038SnapshotUrl = new URL(
 );
 const drizzleDirUrl = new URL("../../../drizzle/", import.meta.url);
 const migration0048Url = new URL("../../../drizzle/0048_payroll_access_scope.sql", import.meta.url);
+const migration0051Url = new URL("../../../drizzle/0051_sick_detail_recovery.sql", import.meta.url);
+const migration0052Url = new URL(
+	"../../../drizzle/0052_time_entry_timezone_recovery.sql",
+	import.meta.url,
+);
 
 const migration0004Statements = migration0004
 	.split("--> statement-breakpoint")
@@ -263,7 +268,7 @@ describe("drizzle follow-up migrations", () => {
 		expect(timezoneCaptureIndex).toBeGreaterThan(recoveryIndex);
 	});
 
-	it("backfills time entry timezone capture columns without overwriting existing values", () => {
+	it("infers historical time entry timezone capture without fixed location values", () => {
 		expect(existsSync(migration0036Url)).toBe(true);
 
 		const migration0036 = readFileSync(migration0036Url, "utf8");
@@ -271,14 +276,11 @@ describe("drizzle follow-up migrations", () => {
 		expect(migration0036).toContain('ADD COLUMN IF NOT EXISTS "utc_offset_minutes" integer');
 		expect(migration0036).toContain('ADD COLUMN IF NOT EXISTS "timezone" text');
 		expect(migration0036).toContain('ADD COLUMN IF NOT EXISTS "timezone_source" text');
-		expect(migration0036).toContain('"utc_offset_minutes" = COALESCE("utc_offset_minutes", 120)');
-		expect(migration0036).toContain('"timezone" = COALESCE("timezone", \'Europe/Berlin\')');
-		expect(migration0036).toContain(
-			'"timezone_source" = COALESCE("timezone_source", \'backfill\')',
-		);
-		expect(migration0036).toContain(
-			'WHERE "utc_offset_minutes" IS NULL OR "timezone" IS NULL OR "timezone_source" IS NULL;',
-		);
+		expect(migration0036).not.toContain('COALESCE("utc_offset_minutes", 120)');
+		expect(migration0036).not.toContain("COALESCE(\"timezone\", 'Europe/Berlin')");
+		expect(migration0036).toContain("pg_timezone_names");
+		expect(migration0036).toContain("historical_inference");
+		expect(migration0036).toContain('"time_entry"."timestamp" AT TIME ZONE \'UTC\'');
 	});
 
 	it("snapshots the time entry timezone capture columns", () => {
@@ -358,5 +360,50 @@ describe("drizzle follow-up migrations", () => {
 		expect(migration0048).toContain("WHEN duplicate_object THEN null");
 		expect(migration0048).not.toContain("CREATE TABLE");
 		expect(migration0048).not.toContain("ALTER TYPE");
+	});
+
+	it("registers a later idempotent sick detail recovery migration", () => {
+		const recoveryIndex = migrationJournal.entries.findIndex(
+			(entry) => entry.tag === "0051_sick_detail_recovery",
+		);
+		const recoveryEntry = migrationJournal.entries[recoveryIndex];
+		const latestPriorWhen = Math.max(
+			...migrationJournal.entries.slice(0, recoveryIndex).map((entry) => entry.when),
+		);
+
+		expect(recoveryIndex).toBeGreaterThanOrEqual(0);
+		expect(recoveryEntry?.when).toBeGreaterThan(latestPriorWhen);
+		expect(existsSync(migration0051Url)).toBe(true);
+
+		const migration0051 = readFileSync(migration0051Url, "utf8");
+		expect(migration0051).toContain("WHEN duplicate_object THEN null");
+		expect(migration0051).toContain(
+			'ALTER TABLE "absence_entry" ADD COLUMN IF NOT EXISTS "sick_detail" "sick_detail";',
+		);
+	});
+
+	it("registers a targeted historical timezone recovery after sick detail recovery", () => {
+		const sickRecoveryIndex = migrationJournal.entries.findIndex(
+			(entry) => entry.tag === "0051_sick_detail_recovery",
+		);
+		const timezoneRecoveryIndex = migrationJournal.entries.findIndex(
+			(entry) => entry.tag === "0052_time_entry_timezone_recovery",
+		);
+		const timezoneRecoveryEntry = migrationJournal.entries[timezoneRecoveryIndex];
+
+		expect(timezoneRecoveryIndex).toBeGreaterThan(sickRecoveryIndex);
+		expect(timezoneRecoveryEntry?.when).toBeGreaterThan(
+			migrationJournal.entries[sickRecoveryIndex]?.when ?? 0,
+		);
+		expect(existsSync(migration0052Url)).toBe(true);
+
+		const migration0052 = readFileSync(migration0052Url, "utf8");
+		expect(migration0052).toContain("\"timezone_source\" = 'backfill'");
+		expect(migration0052).toContain("\"timezone\" = 'Europe/Berlin'");
+		expect(migration0052).toContain('"utc_offset_minutes" = 120');
+		expect(migration0052).toContain("\"created_at\" <= TIMESTAMP '2026-05-31 00:00:00'");
+		expect(migration0052).toContain("pg_timezone_names");
+		expect(migration0052).toContain("historical_inference");
+		expect(migration0052).toContain('"time_entry"."timestamp" AT TIME ZONE \'UTC\'');
 	});
 });

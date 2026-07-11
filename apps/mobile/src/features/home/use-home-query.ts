@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useMobileSession, type MobileSession } from "@/src/features/session/use-mobile-session";
 import { createMobileApiClient } from "@/src/lib/api/client";
-import { createTimeClockPayload } from "./time-clock-payload";
+import { createMobileClockInAction, createMobileClockOutAction } from "./clock-action";
 
 export type WorkLocationType = "office" | "home" | "field" | "other";
 
@@ -60,15 +60,13 @@ export function useHomeQuery(sessionOverride?: MobileSession | null) {
 
   const clockMutation = useMutation({
     mutationFn: async (
-      action:
-        | { action: "clock_in"; workLocationType: WorkLocationType }
-        | { action: "clock_out" },
+      action: ReturnType<typeof createMobileClockInAction> | ReturnType<typeof createMobileClockOutAction>,
     ) => {
       if (!token) {
         throw new Error("No mobile session token");
       }
 
-      return createMobileApiClient(token).post("/api/mobile/time-clock", createTimeClockPayload(action));
+      return createMobileApiClient(token).post("/api/mobile/time-clock", action);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -81,8 +79,8 @@ export function useHomeQuery(sessionOverride?: MobileSession | null) {
     ...homeQuery,
     session,
     clockIn: (workLocationType: WorkLocationType) =>
-      clockMutation.mutateAsync({ action: "clock_in", workLocationType }),
-    clockOut: () => clockMutation.mutateAsync({ action: "clock_out" }),
+      clockMutation.mutateAsync(createMobileClockInAction({ workLocationType })),
+    clockOut: () => clockMutation.mutateAsync(createMobileClockOutAction()),
     isClockSubmitting: clockMutation.isPending,
   };
 }

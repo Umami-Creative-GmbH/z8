@@ -7,6 +7,11 @@ const mockState = vi.hoisted(() => {
 	const userSettingsOnConflictDoUpdate = vi.fn();
 	const userSettingsValues = vi.fn(() => ({ onConflictDoUpdate: userSettingsOnConflictDoUpdate }));
 	const dbInsert = vi.fn(() => ({ values: userSettingsValues }));
+	const transactionClient = { insert: dbInsert };
+	const dbTransaction = vi.fn(
+		async (callback: (tx: typeof transactionClient) => Promise<unknown>) =>
+			callback(transactionClient),
+	);
 
 	return {
 		headers: new Headers(),
@@ -31,10 +36,13 @@ const mockState = vi.hoisted(() => {
 		employeeFindFirst,
 		dbUpdate: vi.fn(() => ({ set: employeeUpdateSet })),
 		dbInsert,
+		dbTransaction,
+		transactionClient,
 		employeeUpdateSet,
 		employeeUpdateWhere,
 		userSettingsValues,
 		userSettingsOnConflictDoUpdate,
+		requestUserWorkBalanceFullRebuild: vi.fn(),
 	};
 });
 
@@ -50,6 +58,10 @@ vi.mock("@/lib/auth", () => ({
 			getSession: vi.fn(),
 		},
 	},
+}));
+
+vi.mock("@/lib/work-balance/service", () => ({
+	requestUserWorkBalanceFullRebuild: mockState.requestUserWorkBalanceFullRebuild,
 }));
 
 vi.mock("@/db/schema", async () => {
@@ -110,6 +122,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 					},
 					update: mockState.dbUpdate,
 					insert: mockState.dbInsert,
+					transaction: mockState.dbTransaction,
 				} as unknown as InstanceType<typeof DatabaseService>["Type"]["db"],
 				query: (_name: string, fn: () => Promise<unknown>) =>
 					Effect.tryPromise({
@@ -181,6 +194,24 @@ describe("profile actions", () => {
 		mockState.employeeFindFirst.mockResolvedValue(null);
 		mockState.employeeUpdateWhere.mockResolvedValue(undefined);
 		mockState.userSettingsOnConflictDoUpdate.mockResolvedValue(undefined);
+		mockState.requestUserWorkBalanceFullRebuild.mockResolvedValue(undefined);
+		mockState.dbTransaction.mockClear();
+	});
+
+	it("requests balance rebuilds after changing the user timezone", async () => {
+		await expect(updateTimezone("America/New_York")).resolves.toEqual({
+			success: true,
+			data: undefined,
+		});
+		expect(mockState.requestUserWorkBalanceFullRebuild).toHaveBeenCalledWith(
+			{
+				userId: "user-1",
+			},
+			{
+				dbClient: mockState.transactionClient,
+			},
+		);
+		expect(mockState.dbTransaction).toHaveBeenCalledTimes(1);
 	});
 
 	it("derives the Better Auth name from structured profile details", async () => {

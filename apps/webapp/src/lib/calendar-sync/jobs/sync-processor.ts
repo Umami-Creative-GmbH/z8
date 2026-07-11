@@ -19,7 +19,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import type { CalendarSyncJobData, JobResult } from "@/lib/queue";
 import { mapAbsenceToCalendarEvent } from "../domain/event-mapper";
-import { getCalendarProvider, isTokenExpired } from "../providers";
+import { generateZ8EventId, getCalendarProvider, isTokenExpired } from "../providers";
 import { getCalendarTokens, storeCalendarTokens } from "../token-store";
 
 const logger = createLogger("CalendarSyncProcessor");
@@ -32,14 +32,15 @@ const logger = createLogger("CalendarSyncProcessor");
  * Process a calendar sync job
  */
 export async function processCalendarSyncJob(data: CalendarSyncJobData): Promise<JobResult> {
-	const { absenceId, employeeId, action } = data;
+	const { organizationId, absenceId, employeeId, action } = data;
 
-	logger.info({ absenceId, employeeId, action }, "Processing calendar sync job");
+	logger.info({ organizationId, absenceId, employeeId, action }, "Processing calendar sync job");
 
 	try {
 		// Get calendar connection for the employee
 		const connection = await db.query.calendarConnection.findFirst({
 			where: and(
+				eq(calendarConnection.organizationId, organizationId),
 				eq(calendarConnection.employeeId, employeeId),
 				eq(calendarConnection.isActive, true),
 				eq(calendarConnection.pushEnabled, true),
@@ -56,9 +57,9 @@ export async function processCalendarSyncJob(data: CalendarSyncJobData): Promise
 		// Handle different actions
 		switch (action) {
 			case "create":
-				return await handleCreate(absenceId, connection);
+				return await handleCreate(organizationId, employeeId, absenceId, connection);
 			case "update":
-				return await handleUpdate(absenceId, connection);
+				return await handleUpdate(organizationId, employeeId, absenceId, connection);
 			case "delete":
 				return await handleDelete(absenceId, connection);
 			default:
@@ -68,7 +69,10 @@ export async function processCalendarSyncJob(data: CalendarSyncJobData): Promise
 				};
 		}
 	} catch (error) {
-		logger.error({ absenceId, employeeId, action, error }, "Calendar sync job failed");
+		logger.error(
+			{ organizationId, absenceId, employeeId, action, error },
+			"Calendar sync job failed",
+		);
 		return {
 			success: false,
 			error: error instanceof Error ? error.message : "Unknown error",
@@ -81,6 +85,8 @@ export async function processCalendarSyncJob(data: CalendarSyncJobData): Promise
 // ============================================
 
 async function handleCreate(
+	organizationId: string,
+	employeeId: string,
 	absenceId: string,
 	connection: typeof calendarConnection.$inferSelect,
 ): Promise<JobResult> {
@@ -96,7 +102,15 @@ async function handleCreate(
 		.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
 		.innerJoin(employee, eq(absenceEntry.employeeId, employee.id))
 		.innerJoin(user, eq(employee.userId, user.id))
-		.where(eq(absenceEntry.id, absenceId))
+		.where(
+			and(
+				eq(absenceEntry.id, absenceId),
+				eq(absenceEntry.organizationId, organizationId),
+				eq(absenceEntry.employeeId, employeeId),
+				eq(absenceCategory.organizationId, organizationId),
+				eq(employee.organizationId, organizationId),
+			),
+		)
 		.limit(1)
 		.then((rows) => rows[0]);
 
@@ -156,10 +170,15 @@ async function handleCreate(
 			createdAt: absence.absence.createdAt,
 		},
 		{
-			organizationId: connection.organizationId,
+			organizationId,
 			employeeName: absence.user.name,
 		},
 	);
+	eventToCreate.idempotencyKey = generateZ8EventId({
+		organizationId,
+		calendarConnectionId: connection.id,
+		absenceId,
+	});
 
 	// Create event in external calendar
 	const provider = getCalendarProvider(connection.provider);
@@ -168,21 +187,10 @@ async function handleCreate(
 	const result = await Effect.runPromise(createEffect);
 
 	// Record sync in database
-	if (existingSync) {
-		await db
-			.update(syncedAbsence)
-			.set({
-				externalEventId: result.id,
-				externalEventEtag: result.etag,
-				syncStatus: "synced",
-				lastAction: "create",
-				lastSyncedAt: new Date(),
-				syncError: null,
-				updatedAt: new Date(),
-			})
-			.where(eq(syncedAbsence.id, existingSync.id));
-	} else {
-		await db.insert(syncedAbsence).values({
+	const syncedAt = new Date();
+	await db
+		.insert(syncedAbsence)
+		.values({
 			absenceEntryId: absenceId,
 			calendarConnectionId: connection.id,
 			externalEventId: result.id,
@@ -190,10 +198,23 @@ async function handleCreate(
 			externalEventEtag: result.etag,
 			syncStatus: "synced",
 			lastAction: "create",
-			lastSyncedAt: new Date(),
-			updatedAt: new Date(),
+			lastSyncedAt: syncedAt,
+			syncError: null,
+			updatedAt: syncedAt,
+		})
+		.onConflictDoUpdate({
+			target: [syncedAbsence.absenceEntryId, syncedAbsence.calendarConnectionId],
+			set: {
+				externalEventId: result.id,
+				externalCalendarId: connection.calendarId,
+				externalEventEtag: result.etag,
+				syncStatus: "synced",
+				lastAction: "create",
+				lastSyncedAt: syncedAt,
+				syncError: null,
+				updatedAt: syncedAt,
+			},
 		});
-	}
 
 	// Update connection last sync time
 	await db
@@ -218,6 +239,8 @@ async function handleCreate(
 }
 
 async function handleUpdate(
+	organizationId: string,
+	employeeId: string,
 	absenceId: string,
 	connection: typeof calendarConnection.$inferSelect,
 ): Promise<JobResult> {
@@ -231,7 +254,7 @@ async function handleUpdate(
 
 	if (!syncRecord || syncRecord.syncStatus === "deleted") {
 		// No existing sync, create instead
-		return handleCreate(absenceId, connection);
+		return handleCreate(organizationId, employeeId, absenceId, connection);
 	}
 
 	// Get updated absence
@@ -242,7 +265,14 @@ async function handleUpdate(
 		})
 		.from(absenceEntry)
 		.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
-		.where(eq(absenceEntry.id, absenceId))
+		.where(
+			and(
+				eq(absenceEntry.id, absenceId),
+				eq(absenceEntry.organizationId, organizationId),
+				eq(absenceEntry.employeeId, employeeId),
+				eq(absenceCategory.organizationId, organizationId),
+			),
+		)
 		.limit(1)
 		.then((rows) => rows[0]);
 

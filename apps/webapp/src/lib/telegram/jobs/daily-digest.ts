@@ -11,18 +11,20 @@ import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
-import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
-import {
-	claimDailyDigestDelivery,
-	markDailyDigestDeliveryFailed,
-	markDailyDigestDeliverySent,
-} from "@/lib/notifications/daily-digest-delivery";
+import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
+import { shouldSkipDigestForManager } from "@/lib/teams/jobs/daily-digest";
 import { sendMessage } from "../api";
 import { getAllActiveBotConfigs } from "../bot-config";
 import { getOrganizationPrivateConversations } from "../conversation-manager";
 import { buildDailyDigestMessage } from "../formatters";
+import {
+	claimTelegramDigestDelivery,
+	markTelegramDigestDeliveryFailed,
+	markTelegramDigestDeliverySent,
+} from "./digest-delivery-ledger";
+import { evaluateDigestOccurrence } from "./digest-schedule";
 
 const logger = createLogger("TelegramDailyDigest");
 
@@ -49,7 +51,7 @@ export async function runTelegramDailyDigestJob(): Promise<TelegramDailyDigestRe
 		const botResults = await Promise.all(
 			digestEnabledBots.map(async (bot) => {
 				try {
-					return { sent: await processBotDigest(bot), error: undefined };
+					return { sent: await processTelegramBotDigest(bot), error: undefined };
 				} catch (error) {
 					const errorMsg = `Failed to process digest for org ${bot.organizationId}: ${error instanceof Error ? error.message : String(error)}`;
 					logger.error({ error, organizationId: bot.organizationId }, errorMsg);
@@ -81,26 +83,22 @@ export async function runTelegramDailyDigestJob(): Promise<TelegramDailyDigestRe
 	}
 }
 
-async function processBotDigest(bot: {
-	organizationId: string;
-	botToken: string;
-	digestTime: string;
-	digestTimezone: string;
-}): Promise<number> {
-	// Check if it's time to send
-	const now = Temporal.Now.instant().toZonedDateTimeISO(bot.digestTimezone);
-	const [digestHour, digestMinute] = bot.digestTime.split(":").map(Number);
-	const digestTime = now.with({
-		hour: digestHour,
-		minute: digestMinute,
-		second: 0,
-		millisecond: 0,
-		microsecond: 0,
-		nanosecond: 0,
+export async function processTelegramBotDigest(
+	bot: {
+		organizationId: string;
+		botToken: string;
+		digestTime: string;
+		digestTimezone: string;
+	},
+	now: Date = new Date(),
+): Promise<number> {
+	const occurrence = evaluateDigestOccurrence({
+		now,
+		time: bot.digestTime,
+		timezone: bot.digestTimezone,
+		windowMinutes: 15,
 	});
-	const minutesSinceDigestTime = now.since(digestTime).total({ unit: "minutes" });
-
-	if (minutesSinceDigestTime < 0 || minutesSinceDigestTime >= 15) {
+	if (!occurrence.due) {
 		return 0;
 	}
 
@@ -112,7 +110,6 @@ async function processBotDigest(bot: {
 
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {
-			let deliveryId: string | null = null;
 			try {
 				// Get employee record
 				const emp = await db.query.employee.findFirst({
@@ -131,53 +128,54 @@ async function processBotDigest(bot: {
 
 				if (!manages) return false;
 
-				const temporal = await resolveBotTemporalContext({
+				// Skip managers who are not scheduled to work or are absent.
+				if (await shouldSkipDigestForManager(emp.id, bot.organizationId, bot.digestTimezone)) {
+					return false;
+				}
+
+				const display = await resolveRecipientDisplayContext({
 					userId: conv.userId,
-					employeeId: emp.id,
 					organizationId: bot.organizationId,
 				});
-				if (!temporal) return false;
-				deliveryId = await claimDailyDigestDelivery({
+				if (!display) return false;
+
+				const recipientDate = Temporal.Instant.from(now.toISOString())
+					.toZonedDateTimeISO(display.timezone)
+					.toPlainDate()
+					.toString();
+				const delivery = {
 					organizationId: bot.organizationId,
+					recipientEmployeeId: emp.id,
 					recipientUserId: conv.userId,
-					platform: "telegram",
-					type: "daily_digest",
-					recipientLocalDate: Temporal.Now.instant()
-						.toZonedDateTimeISO(temporal.effectiveTimezone)
-						.toPlainDate()
-						.toString(),
-				});
-				if (!deliveryId) return false;
+					logicalDate: recipientDate,
+				};
+				if (!(await claimTelegramDigestDelivery(delivery))) return false;
 
-				// Digest delivery is scheduled in the bot timezone, but content uses the recipient's context.
-				const digestData: DailyDigestData = await buildDigestDataForManager(
-					emp.id,
-					bot.organizationId,
-					temporal.effectiveTimezone,
-					temporal.locale,
-				);
+				try {
+					const digestData: DailyDigestData = await buildDigestDataForManager(
+						emp.id,
+						bot.organizationId,
+						display.timezone,
+						display.locale,
+					);
 
-				const t = await getBotTranslate(temporal.locale);
-				const messageText = buildDailyDigestMessage(digestData, appUrl, t, temporal.locale);
+					const t = await getBotTranslate(display.locale);
+					const messageText = buildDailyDigestMessage(digestData, appUrl, t, display.locale);
 
-				await sendMessage(bot.botToken, {
-					chat_id: conv.chatId,
-					text: messageText,
-					parse_mode: "MarkdownV2",
-				});
-				await markDailyDigestDeliverySent({
-					id: deliveryId,
-					organizationId: bot.organizationId,
-				});
+					await sendMessage(bot.botToken, {
+						chat_id: conv.chatId,
+						text: messageText,
+						parse_mode: "MarkdownV2",
+					});
+				} catch (error) {
+					await markTelegramDigestDeliveryFailed(delivery);
+					throw error;
+				}
+
+				await markTelegramDigestDeliverySent(delivery);
 
 				return true;
 			} catch (error) {
-				if (deliveryId) {
-					await markDailyDigestDeliveryFailed(
-						{ id: deliveryId, organizationId: bot.organizationId },
-						error,
-					);
-				}
 				logger.warn({ error, userId: conv.userId }, "Failed to send digest");
 				return false;
 			}

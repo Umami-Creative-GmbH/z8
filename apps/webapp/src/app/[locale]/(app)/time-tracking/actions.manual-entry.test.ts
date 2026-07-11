@@ -54,6 +54,7 @@ vi.mock("drizzle-orm", () => ({
 	isNull: vi.fn((column: unknown) => ({ type: "isNull", column })),
 	lte: vi.fn((column: unknown, value: unknown) => ({ type: "lte", column, value })),
 	or: vi.fn((...conditions: unknown[]) => ({ type: "or", conditions })),
+	relations: vi.fn(() => ({})),
 	sql: vi.fn(),
 }));
 

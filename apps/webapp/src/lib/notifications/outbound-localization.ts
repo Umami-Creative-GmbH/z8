@@ -19,10 +19,10 @@ interface NotificationMetadata {
 interface LocalizeOutboundNotificationParams {
 	userId: string;
 	organizationId: string;
-	locale?: string;
 	title: string;
 	message: string;
 	metadata?: Record<string, unknown> | string | null;
+	locale?: string;
 }
 
 interface LocalizedOutboundNotification {
@@ -104,23 +104,23 @@ export async function localizeOutboundNotification({
 	message,
 	metadata,
 }: LocalizeOutboundNotificationParams): Promise<LocalizedOutboundNotification> {
-	let resolvedLocale = locale;
-	if (!resolvedLocale) {
-		try {
+	let resolvedLocale = locale ?? FALLBACK_LOCALE;
+	try {
+		if (!locale) {
 			resolvedLocale = await resolveRecipientNotificationLocale({ userId, organizationId });
-		} catch (error) {
-			logger.warn(
-				{ err: error, userId, organizationId, locale: FALLBACK_LOCALE },
-				"Failed to resolve recipient notification locale",
-			);
-			return { locale: FALLBACK_LOCALE, title, message };
 		}
+	} catch (error) {
+		logger.warn(
+			{ err: error, userId, organizationId, locale: FALLBACK_LOCALE },
+			"Failed to resolve recipient notification locale",
+		);
+		return { locale: FALLBACK_LOCALE, title, message };
 	}
 
 	const i18n = parseMetadata(metadata).i18n;
 
 	if (!i18n?.titleKey && !i18n?.messageKey) {
-		return { locale: resolvedLocale, title, message };
+    return { locale: resolvedLocale, title, message };
 	}
 
 	try {

@@ -2605,7 +2605,7 @@ async function checkProjectBudgetAfterClockOut(
 	}
 
 	// Get total hours booked to this project
-	const totalHours = await getProjectTotalHours(projectId);
+	const totalHours = await getProjectTotalHours(projectId, organizationId);
 
 	// Trigger budget warning check
 	await checkProjectBudgetWarnings({

@@ -37,6 +37,7 @@ export type JobType =
 	| "calendar-sync"
 	| "organization-deletion-notification"
 	| "audit-pack"
+	| "payroll-export"
 	| "import-review-scan"
 	| "import-review-commit";
 
@@ -53,6 +54,12 @@ export interface ReportJobData {
 export interface ExportJobData {
 	type: "export";
 	exportId: string;
+	organizationId: string;
+}
+
+export interface PayrollExportJobData {
+	type: "payroll-export";
+	jobId: string;
 	organizationId: string;
 }
 
@@ -88,6 +95,7 @@ export interface CalendarSyncJobData {
 	type: "calendar-sync";
 	absenceId: string;
 	employeeId: string;
+	organizationId: string;
 	action: "create" | "update" | "delete";
 }
 
@@ -112,6 +120,7 @@ export type ImportReviewCommitQueueJobData = ImportCommitJobData;
 export type JobData =
 	| ReportJobData
 	| ExportJobData
+	| PayrollExportJobData
 	| EmailJobData
 	| CleanupJobData
 	| CronJobData

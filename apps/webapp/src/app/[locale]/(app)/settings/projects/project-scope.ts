@@ -70,6 +70,7 @@ export function getProjectSettingsActorContext(options?: {
 							where: and(
 								eq(member.userId, session.user.id),
 								eq(member.organizationId, organizationId),
+								eq(member.status, "approved"),
 							),
 							columns: { role: true },
 						});
@@ -86,13 +87,14 @@ export function getProjectSettingsActorContext(options?: {
 				}),
 			]),
 		);
+		const authorizedEmployeeRecord = membershipRecord ? employeeRecord : null;
 
 		const accessTier = resolveSettingsAccessTier({
 			activeOrganizationId: organizationId,
 			membershipRole: isSettingsAccessMembershipRole(membershipRecord?.role)
 				? membershipRecord.role
 				: null,
-			employeeRole: employeeRecord?.role ?? null,
+			employeeRole: authorizedEmployeeRecord?.role ?? null,
 		});
 
 		if (accessTier === "member") {
@@ -113,7 +115,7 @@ export function getProjectSettingsActorContext(options?: {
 			dbService,
 			organizationId,
 			accessTier,
-			currentEmployee: employeeRecord ?? null,
+			currentEmployee: authorizedEmployeeRecord ?? null,
 		};
 	});
 }

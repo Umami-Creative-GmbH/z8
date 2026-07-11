@@ -22,7 +22,11 @@ import {
 	isValidIanaTimezone,
 	resolveFallbackTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
-import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
+import {
+  ClockingAccessError,
+  ClockingConflictError,
+  clockingService,
+} from "@/lib/time-tracking/clocking-service";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 
@@ -70,6 +74,7 @@ export async function POST(request: NextRequest) {
 		if (!organizationId) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
+		await clockingService.requireActor({ userId: session.user.id, activeOrganizationId: organizationId });
 
 		const [actorEmployee] = await db
 			.select()
@@ -194,6 +199,9 @@ export async function POST(request: NextRequest) {
 
 		return NextResponse.json({ entry: result.entry }, { status: 201 });
 	} catch (error) {
+		if (error instanceof ClockingAccessError) {
+			return NextResponse.json({ error: error.message }, { status: 403 });
+		}
 		if (
 			error instanceof TimeEntryConflictError ||
 			error instanceof ClockingConflictError ||

@@ -25,4 +25,11 @@ describe("app layout user preferences", () => {
 		expect(source).toContain("getUserTimezone(session.user.id)");
 		expect(source).toContain("timezone={timezone}");
 	});
+
+	it("passes server-loaded organization settings to the client provider", () => {
+		const source = stripComments(readFileSync(join(APP_ROUTE_ROOT, "layout.tsx"), "utf8"));
+
+		expect(source).toContain("getOrganizationSettings(activeOrganizationId, session.user.id)");
+		expect(source).toContain("initialSettings={organizationSettings}");
+	});
 });

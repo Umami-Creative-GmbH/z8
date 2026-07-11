@@ -47,14 +47,16 @@ export async function computeEmployeePeriodBalance(input: {
 	periodStart: string;
 	periodEnd: string;
 	calculationStartDate?: string | null;
+	timezone?: string;
 	isClosed: boolean;
 	now?: Date;
 }) {
 	const dbClient = input.dbClient ?? db;
-	const periodStart = DateTime.fromISO(input.periodStart, { zone: "utc" }).startOf("day");
-	const periodEnd = DateTime.fromISO(input.periodEnd, { zone: "utc" }).endOf("day");
+	const timezone = input.timezone ?? "UTC";
+	const periodStart = DateTime.fromISO(input.periodStart, { zone: timezone }).startOf("day");
+	const periodEnd = DateTime.fromISO(input.periodEnd, { zone: timezone }).endOf("day");
 	const calculationStart = input.calculationStartDate
-		? DateTime.fromISO(input.calculationStartDate, { zone: "utc" }).startOf("day")
+		? DateTime.fromISO(input.calculationStartDate, { zone: timezone }).startOf("day")
 		: null;
 	const effectiveStart =
 		calculationStart && calculationStart > periodStart ? calculationStart : periodStart;
@@ -95,6 +97,7 @@ export async function computeEmployeePeriodBalance(input: {
 			organizationId: input.organizationId,
 			startDate,
 			endDate,
+			timezone,
 		}),
 	]);
 

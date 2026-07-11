@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
@@ -13,14 +13,18 @@ import {
 } from "@/lib/notifications/triggers";
 import { logger } from "./shared";
 
-async function getApprovalNotificationParticipants(employeeId: string, managerId: string) {
+async function getApprovalNotificationParticipants(
+	employeeId: string,
+	managerId: string,
+	organizationId: string,
+) {
 	const [employeeData, managerData] = await Promise.all([
 		db.query.employee.findFirst({
-			where: eq(employee.id, employeeId),
+			where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 			with: { user: { columns: { id: true, name: true } } },
 		}),
 		db.query.employee.findFirst({
-			where: eq(employee.id, managerId),
+			where: and(eq(employee.id, managerId), eq(employee.organizationId, organizationId)),
 			columns: { userId: true },
 		}),
 	]);
@@ -46,6 +50,7 @@ async function sendPendingApprovalNotifications(params: {
 	const { employeeUserId, employeeName, managerUserId } = await getApprovalNotificationParticipants(
 		params.employeeId,
 		params.managerId,
+		params.organizationId,
 	);
 
 	if (employeeUserId) {
@@ -124,7 +129,10 @@ export async function createTimeEntryApprovalRequest(
 ) {
 	const requestDbService = options?.dbService ?? approvalDbService;
 	const requester = await requestDbService.db.query.employee.findFirst({
-		where: eq(employee.id, params.employeeId),
+		where: and(
+			eq(employee.id, params.employeeId),
+			eq(employee.organizationId, params.organizationId),
+		),
 		columns: { teamId: true, organizationId: true },
 	});
 

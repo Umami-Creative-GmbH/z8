@@ -11,6 +11,14 @@ const updateSetMock = vi.fn();
 const updateWhereMock = vi.fn();
 const insertValuesMock = vi.fn();
 const onConflictDoUpdateMock = vi.fn();
+const requestOrganizationWorkBalanceFullRebuildMock = vi.fn();
+const transactionClient = {
+	update: vi.fn(() => ({ set: updateSetMock.mockReturnValue({ where: updateWhereMock }) })),
+};
+const transactionMock = vi.fn(
+	async (callback: (tx: typeof transactionClient) => Promise<unknown>) =>
+		callback(transactionClient),
+);
 
 vi.mock("next/headers", () => ({
 	headers: vi.fn(async () => new Headers()),
@@ -38,6 +46,10 @@ vi.mock("@/lib/enterprise-identity/enforcement", () => ({
 	assertEnterpriseIdentityInvitationAllowed: vi.fn(async () => undefined),
 }));
 
+vi.mock("@/lib/work-balance/service", () => ({
+	requestOrganizationWorkBalanceFullRebuild: requestOrganizationWorkBalanceFullRebuildMock,
+}));
+
 vi.mock("@/db", () => ({
 	db: {
 		query: {
@@ -52,6 +64,7 @@ vi.mock("@/db", () => ({
 		insert: vi.fn(() => ({
 			values: insertValuesMock.mockReturnValue({ onConflictDoUpdate: onConflictDoUpdateMock }),
 		})),
+		transaction: transactionMock,
 	},
 }));
 
@@ -87,6 +100,8 @@ describe("organization invitation actions", () => {
 		updateWhereMock.mockReset();
 		insertValuesMock.mockReset();
 		onConflictDoUpdateMock.mockReset();
+		requestOrganizationWorkBalanceFullRebuildMock.mockReset();
+		transactionMock.mockClear();
 		getSessionMock.mockResolvedValue({
 			user: { id: "user-admin" },
 			session: {
@@ -114,6 +129,25 @@ describe("organization invitation actions", () => {
 		updateWhereMock.mockResolvedValue([{ id: "updated" }]);
 		insertValuesMock.mockReturnValue({ onConflictDoUpdate: onConflictDoUpdateMock });
 		onConflictDoUpdateMock.mockResolvedValue({ organizationId: "org-1" });
+		requestOrganizationWorkBalanceFullRebuildMock.mockResolvedValue(undefined);
+	});
+
+	it("requests balance rebuilds after changing the organization timezone", async () => {
+		memberFindFirstMock.mockResolvedValue({
+			id: "member-owner",
+			userId: "user-admin",
+			organizationId: "org-1",
+			role: "owner",
+		});
+
+		const result = await updateOrganizationTimezone("org-1", "America/New_York");
+
+		expect(result).toMatchObject({ success: true });
+		expect(requestOrganizationWorkBalanceFullRebuildMock).toHaveBeenCalledWith(
+			{ organizationId: "org-1" },
+			{ dbClient: transactionClient },
+		);
+		expect(transactionMock).toHaveBeenCalledTimes(1);
 	});
 
 	it("rejects a direct invite target team outside the organization", async () => {

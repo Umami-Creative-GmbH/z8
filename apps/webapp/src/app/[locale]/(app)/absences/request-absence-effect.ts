@@ -666,6 +666,7 @@ function requestAbsenceWithResolverEffect(
 				const canonicalRecordId = newAbsence.canonicalRecordId;
 				enqueueVacationOverrideCalendarSyncJobs({
 					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
 					summary: newAbsence.vacationOverrideSummary,
 				});
 
@@ -755,6 +756,7 @@ function requestAbsenceWithResolverEffect(
 					void addCalendarSyncJob({
 						absenceId: newAbsence.id,
 						employeeId: currentEmployee.id,
+						organizationId: currentEmployee.organizationId,
 						action: "create",
 					});
 
@@ -789,6 +791,7 @@ function requestAbsenceWithResolverEffect(
 					void addCalendarSyncJob({
 						absenceId: newAbsence.id,
 						employeeId: currentEmployee.id,
+						organizationId: currentEmployee.organizationId,
 						action: "create",
 					});
 

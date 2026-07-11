@@ -3,11 +3,12 @@
  * Orchestrates the export process: data fetching, transformation, and file generation
  */
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db, payrollExportJob, payrollExportSyncRecord } from "@/db";
 import { createLogger } from "@/lib/logger";
 import { getPresignedUrl, uploadExport } from "@/lib/storage/export-s3-client";
+import { parsePayrollLogicalDate, serializePayrollLogicalDate } from "./calendar-boundaries";
 import { personioConnector } from "./connectors/personio-connector";
 import { PayrollConnectorRegistry } from "./connectors/registry";
 import { successFactorsConnector } from "./connectors/successfactors-connector";
@@ -106,6 +107,11 @@ export function isApiBasedExport(formatId: string): boolean {
 	return connectorRegistry.has(formatId);
 }
 
+export interface ProcessPayrollExportJobInput {
+	jobId: string;
+	organizationId: string;
+}
+
 /**
  * Create a payroll export job
  * Determines sync vs async based on data volume
@@ -147,8 +153,8 @@ export async function createExportJob(params: {
 	// Serialize filters for storage
 	const serializedFilters: SerializedPayrollExportFilters = {
 		dateRange: {
-			start: params.filters.dateRange.start.toISO()!,
-			end: params.filters.dateRange.end.toISO()!,
+			start: serializePayrollLogicalDate(params.filters.dateRange.start),
+			end: serializePayrollLogicalDate(params.filters.dateRange.end),
 		},
 		employeeIds: params.filters.employeeIds,
 		teamIds: params.filters.teamIds,
@@ -175,26 +181,35 @@ export async function createExportJob(params: {
 
 /**
  * Process an export job
- * Called immediately for sync jobs, or by cron for async jobs
+ * Called inline for synchronous and scheduled execution.
+ * Interactive asynchronous execution is handled by the dedicated worker.
  * Supports both file-based formatters (DATEV) and API-based exporters (Personio)
  */
-export async function processExportJob(jobId: string): Promise<{
+export async function processExportJob({
+	jobId,
+	organizationId,
+}: ProcessPayrollExportJobInput): Promise<{
 	result?: ExportResult;
 	apiResult?: ApiExportResult;
 	downloadUrl?: string;
 }> {
-	logger.info({ jobId }, "Processing payroll export job");
+	logger.info({ jobId, organizationId }, "Processing payroll export job");
 
 	// Update status to processing
 	await db
 		.update(payrollExportJob)
 		.set({ status: "processing", startedAt: new Date() })
-		.where(eq(payrollExportJob.id, jobId));
+		.where(
+			and(eq(payrollExportJob.id, jobId), eq(payrollExportJob.organizationId, organizationId)),
+		);
 
 	try {
 		// Fetch job with config
 		const job = await db.query.payrollExportJob.findFirst({
-			where: eq(payrollExportJob.id, jobId),
+			where: and(
+				eq(payrollExportJob.id, jobId),
+				eq(payrollExportJob.organizationId, organizationId),
+			),
 			with: {
 				config: {
 					with: {
@@ -219,8 +234,8 @@ export async function processExportJob(jobId: string): Promise<{
 		// Parse filters
 		const filters: PayrollExportFilters = {
 			dateRange: {
-				start: DateTime.fromISO(job.filters.dateRange.start),
-				end: DateTime.fromISO(job.filters.dateRange.end),
+				start: parsePayrollLogicalDate(job.filters.dateRange.start),
+				end: parsePayrollLogicalDate(job.filters.dateRange.end),
 			},
 			employeeIds: job.filters.employeeIds,
 			teamIds: job.filters.teamIds,
@@ -261,11 +276,14 @@ export async function processExportJob(jobId: string): Promise<{
 						? null
 						: `${apiResult.failedRecords} of ${apiResult.totalRecords} records failed to sync`,
 				})
-				.where(eq(payrollExportJob.id, jobId));
+				.where(
+					and(eq(payrollExportJob.id, jobId), eq(payrollExportJob.organizationId, organizationId)),
+				);
 
 			logger.info(
 				{
 					jobId,
+					organizationId,
 					totalRecords: apiResult.totalRecords,
 					syncedRecords: apiResult.syncedRecords,
 					failedRecords: apiResult.failedRecords,
@@ -313,9 +331,14 @@ export async function processExportJob(jobId: string): Promise<{
 						completedAt: new Date(),
 						expiresAt: DateTime.now().plus({ days: 30 }).toJSDate(),
 					})
-					.where(eq(payrollExportJob.id, jobId));
+					.where(
+						and(
+							eq(payrollExportJob.id, jobId),
+							eq(payrollExportJob.organizationId, organizationId),
+						),
+					);
 
-				logger.info({ jobId, s3Key }, "Async file export completed");
+				logger.info({ jobId, organizationId, s3Key }, "Async file export completed");
 
 				return { downloadUrl };
 			} else {
@@ -335,9 +358,14 @@ export async function processExportJob(jobId: string): Promise<{
 						employeeCount: exportResult.metadata.employeeCount,
 						completedAt: new Date(),
 					})
-					.where(eq(payrollExportJob.id, jobId));
+					.where(
+						and(
+							eq(payrollExportJob.id, jobId),
+							eq(payrollExportJob.organizationId, organizationId),
+						),
+					);
 
-				logger.info({ jobId }, "Sync file export completed");
+				logger.info({ jobId, organizationId }, "Sync file export completed");
 
 				return { result: exportResult };
 			}
@@ -346,19 +374,29 @@ export async function processExportJob(jobId: string): Promise<{
 		throw new Error("Neither formatter nor exporter available");
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : "Unknown error";
-		logger.error({ jobId, error: errorMessage }, "Payroll export job failed");
+		logger.error({ jobId, organizationId, error: errorMessage }, "Payroll export job failed");
 
-		await db
-			.update(payrollExportJob)
-			.set({
-				status: "failed",
-				errorMessage,
-				completedAt: new Date(),
-			})
-			.where(eq(payrollExportJob.id, jobId));
+		await markPayrollExportJobFailed({ jobId, organizationId, errorMessage });
 
 		throw error;
 	}
+}
+
+export async function markPayrollExportJobFailed({
+	jobId,
+	organizationId,
+	errorMessage,
+}: ProcessPayrollExportJobInput & { errorMessage: string }): Promise<void> {
+	await db
+		.update(payrollExportJob)
+		.set({
+			status: "failed",
+			errorMessage,
+			completedAt: new Date(),
+		})
+		.where(
+			and(eq(payrollExportJob.id, jobId), eq(payrollExportJob.organizationId, organizationId)),
+		);
 }
 
 /**

@@ -5,6 +5,7 @@
  * Provides common utilities and base functionality.
  */
 
+import { createHash } from "node:crypto";
 import type { Effect } from "effect";
 import type {
 	CalendarEventToCreate,
@@ -205,8 +206,18 @@ export function addOneDay(date: Date): Date {
 }
 
 /**
- * Generate a unique event ID for extended properties
+ * Generate a stable provider-safe event idempotency key
  */
-export function generateZ8EventId(absenceId: string): string {
-	return `z8-absence-${absenceId}`;
+export function generateZ8EventId(input: {
+	organizationId: string;
+	calendarConnectionId: string;
+	absenceId: string;
+}): string {
+	const serializedInput = JSON.stringify([
+		input.organizationId,
+		input.calendarConnectionId,
+		input.absenceId,
+	]);
+
+	return createHash("sha256").update(serializedInput).digest("hex");
 }

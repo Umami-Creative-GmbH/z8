@@ -53,17 +53,26 @@ describe("Telegram command temporal contexts", () => {
 		expect(readTelegramFormatterSource()).toContain("formatCapturedOffsetInstant");
 	});
 
-	it.each([
-		"teams",
-		"telegram",
-		"discord",
-		"slack",
-	] as const)("schedules %s digests in the digest timezone and renders each recipient in their timezone", (platform) => {
+	it.each(["teams", "discord", "slack"] as const)(
+		"schedules %s digests in the digest timezone and renders each recipient in their timezone",
+		(platform) => {
 		const source = readDailyDigestSource(platform);
 
 		expect(source).toMatch(/setZone\(|toZonedDateTimeISO\(/);
 		expect(source).toContain("digestTimezone");
 		expect(source).toContain("resolveBotTemporalContext");
 		expect(source).toContain("effectiveTimezone");
+		},
+	);
+
+	it("schedules Telegram digests with the digest timezone while rendering per-recipient Temporal content", () => {
+		const source = readDailyDigestSource("telegram");
+
+		expect(source).toContain("evaluateDigestOccurrence({");
+		expect(source).toContain("timezone: bot.digestTimezone");
+		expect(source).toContain("resolveRecipientDisplayContext");
+		expect(source).toContain("toZonedDateTimeISO(display.timezone)");
+		expect(source).toContain("claimTelegramDigestDelivery");
+		expect(source).toContain("shouldSkipDigestForManager");
 	});
 });

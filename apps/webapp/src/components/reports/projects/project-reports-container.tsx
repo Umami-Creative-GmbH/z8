@@ -37,7 +37,11 @@ export function ProjectReportsContainer() {
 		dateRangeRef.current = range;
 
 		try {
-			const result = await getProjectsOverview(range.startDate, range.endDate, statusFilter);
+			const result = await getProjectsOverview(
+				new Date(range.startDate),
+				new Date(range.endDate),
+				statusFilter,
+			);
 
 			if (!result.success) {
 				setError(
@@ -78,8 +82,8 @@ export function ProjectReportsContainer() {
 		try {
 			const result = await getProjectDetailedReport(
 				projectId,
-				dateRange.startDate,
-				dateRange.endDate,
+				new Date(dateRange.startDate),
+				new Date(dateRange.endDate),
 			);
 
 			if (!result.success) {

@@ -7,16 +7,11 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import {
-	absenceEntry,
-	approvalRequest,
-	employee,
-	telegramApprovalMessage,
-	timeEntry,
-} from "@/db/schema";
+import { approvalRequest, employee, telegramApprovalMessage } from "@/db/schema";
+import { decideBotApproval } from "@/lib/bot-platform/approval-decision";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
-import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import { createLogger } from "@/lib/logger";
+import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { editMessageText, sendMessage } from "./api";
 import { getChatIdForUser } from "./conversation-manager";
 import { buildApprovalMessage, buildResolvedApprovalMessage, escapeMarkdownV2 } from "./formatters";
@@ -50,13 +45,6 @@ export async function handleApprovalCallback(
 	}
 
 	try {
-		const temporal = await resolveBotTemporalContext({
-			userId: userResult.user.userId,
-			employeeId: userResult.user.employeeId,
-			organizationId: bot.organizationId,
-		});
-		if (!temporal) return;
-
 		// Get approval request
 		const approval = await db.query.approvalRequest.findFirst({
 			where: and(
@@ -98,23 +86,13 @@ export async function handleApprovalCallback(
 
 		const newStatus = action === "approve" ? "approved" : "rejected";
 
-		// Update approval request
-		await db
-			.update(approvalRequest)
-			.set({
-				status: newStatus,
-				approvedAt: new Date(),
-				...(newStatus === "rejected" ? { rejectionReason: "Rejected via Telegram" } : {}),
-			})
-			.where(eq(approvalRequest.id, approvalId));
-
-		// Update the underlying entity status
-		if (approval.entityType === "absence_entry") {
-			await db
-				.update(absenceEntry)
-				.set({ status: newStatus })
-				.where(eq(absenceEntry.id, approval.entityId));
-		}
+		await decideBotApproval({
+			approvalId,
+			actorEmployeeId: userResult.user.employeeId,
+			organizationId: bot.organizationId,
+			action,
+			platform: "telegram",
+		});
 
 		logger.info(
 			{
@@ -128,39 +106,52 @@ export async function handleApprovalCallback(
 
 		// Get approver name
 		const approverEmployee = await db.query.employee.findFirst({
-			where: eq(employee.id, userResult.user.employeeId),
+			where: and(
+				eq(employee.id, userResult.user.employeeId),
+				eq(employee.organizationId, bot.organizationId),
+			),
 			with: { user: { columns: { name: true } } },
 		});
+		if (!approverEmployee) return;
 		const approverName = approverEmployee?.user?.name || "Unknown";
 
 		// Build original card data for resolved message
-		const cardData = await buildApprovalCardData(approval);
+		const cardData = await buildApprovalCardData(approval, bot.organizationId);
 
 		// Update the message to show resolved status
 		if (query.message && cardData) {
-			const t = await getBotTranslate(temporal.locale);
-			const resolvedText = buildResolvedApprovalMessage(
-				cardData,
-				{
-					action: newStatus,
-					approverName,
-					resolvedAt: new Date(),
-				},
-				temporal,
-				t,
-			);
-
-			await editMessageText(bot.botToken, {
-				chat_id: query.message.chat.id,
-				message_id: query.message.message_id,
-				text: resolvedText,
-				parse_mode: "MarkdownV2",
+			const display = await resolveRecipientDisplayContext({
+				userId: userResult.user.userId,
+				organizationId: bot.organizationId,
 			});
+			if (display) {
+				const t = await getBotTranslate(display.locale);
+				const resolvedText = buildResolvedApprovalMessage(
+					cardData,
+					{
+						action: newStatus,
+						approverName,
+						resolvedAt: new Date(),
+					},
+					t,
+					display,
+				);
+
+				await editMessageText(bot.botToken, {
+					chat_id: query.message.chat.id,
+					message_id: query.message.message_id,
+					text: resolvedText,
+					parse_mode: "MarkdownV2",
+				});
+			}
 		}
 
 		// Update approval message record
 		const msgRecord = await db.query.telegramApprovalMessage.findFirst({
-			where: eq(telegramApprovalMessage.approvalRequestId, approvalId),
+			where: and(
+				eq(telegramApprovalMessage.approvalRequestId, approvalId),
+				eq(telegramApprovalMessage.organizationId, bot.organizationId),
+			),
 		});
 
 		if (msgRecord) {
@@ -170,7 +161,12 @@ export async function handleApprovalCallback(
 					respondedAt: new Date(),
 					status: newStatus,
 				})
-				.where(eq(telegramApprovalMessage.id, msgRecord.id));
+				.where(
+					and(
+						eq(telegramApprovalMessage.id, msgRecord.id),
+						eq(telegramApprovalMessage.organizationId, bot.organizationId),
+					),
+				);
 		}
 	} catch (error) {
 		logger.error({ error, approvalId, action }, "Failed to process approval action");
@@ -199,13 +195,6 @@ export async function sendApprovalMessageToManager(
 			return;
 		}
 
-		// Get chat ID for the approver
-		const chatId = await getChatIdForUser(approverEmployee.userId, organizationId);
-		if (!chatId) {
-			logger.debug({ approverId, organizationId }, "No Telegram chat for approver");
-			return;
-		}
-
 		// Get approval details
 		const approval = await db.query.approvalRequest.findFirst({
 			where: and(
@@ -219,22 +208,28 @@ export async function sendApprovalMessageToManager(
 			return;
 		}
 
+		// Resolve the recipient only after proving this approval belongs to the organization.
+		const chatId = await getChatIdForUser(approverEmployee.userId, organizationId);
+		if (!chatId) {
+			logger.debug({ approverId, organizationId }, "No Telegram chat for approver");
+			return;
+		}
+
 		// Build card data
-		const cardData = await buildApprovalCardData(approval);
+		const cardData = await buildApprovalCardData(approval, organizationId);
 		if (!cardData) {
 			logger.warn({ approvalId }, "Could not build card data");
 			return;
 		}
 
-		// Build the message in the recipient's explicit display context.
-		const temporal = await resolveBotTemporalContext({
+		// Build message with inline keyboard (use recipient's locale)
+		const display = await resolveRecipientDisplayContext({
 			userId: approverEmployee.userId,
-			employeeId: approverId,
 			organizationId,
 		});
-		if (!temporal) return;
-		const t = await getBotTranslate(temporal.locale);
-		const { text, keyboard } = buildApprovalMessage(cardData, temporal, t);
+		if (!display) return;
+		const t = await getBotTranslate(display.locale);
+		const { text, keyboard } = buildApprovalMessage(cardData, t, display);
 
 		// Send message
 		const sentMessage = await sendMessage(botToken, {
@@ -270,12 +265,10 @@ export async function sendApprovalMessageToManager(
  */
 async function buildApprovalCardData(
 	approval: typeof approvalRequest.$inferSelect,
+	organizationId: string,
 ): Promise<ApprovalCardData | null> {
 	const requester = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.id, approval.requestedBy),
-			eq(employee.organizationId, approval.organizationId),
-		),
+		where: and(eq(employee.id, approval.requestedBy), eq(employee.organizationId, organizationId)),
 		with: { user: { columns: { name: true, email: true } } },
 	});
 
@@ -294,7 +287,7 @@ async function buildApprovalCardData(
 		const absence = await db.query.absenceEntry.findFirst({
 			where: and(
 				eq(absenceEntry.id, approval.entityId),
-				eq(absenceEntry.organizationId, approval.organizationId),
+				eq(absenceEntry.organizationId, organizationId),
 			),
 			with: { category: { columns: { name: true } } },
 		});
@@ -306,22 +299,6 @@ async function buildApprovalCardData(
 				startDate: absence.startDate,
 				endDate: absence.endDate,
 				reason: absence.notes || undefined,
-			};
-		}
-	} else if (approval.entityType === "time_entry") {
-		const entry = await db.query.timeEntry.findFirst({
-			where: and(
-				eq(timeEntry.id, approval.entityId),
-				eq(timeEntry.organizationId, approval.organizationId),
-			),
-		});
-
-		if (entry) {
-			return {
-				...baseData,
-				originalTime: entry.timestamp.toISOString(),
-				originalTimeOffsetMinutes: entry.utcOffsetMinutes,
-				correctedTime: entry.notes || undefined,
 			};
 		}
 	}

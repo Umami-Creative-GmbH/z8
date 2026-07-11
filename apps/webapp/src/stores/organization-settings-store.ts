@@ -1,6 +1,8 @@
 "use client";
 
-import { create } from "zustand";
+import { createContext, createElement, type ReactNode, use, useRef } from "react";
+import { useStore } from "zustand";
+import { createStore, type StoreApi } from "zustand/vanilla";
 
 export interface OrganizationSettings {
 	organizationId: string | null;
@@ -14,13 +16,15 @@ export interface OrganizationSettings {
 	isHydrated: boolean;
 }
 
+export type OrganizationSettingsBootstrap = Omit<OrganizationSettings, "isHydrated">;
+
 interface OrganizationSettingsActions {
 	setSettings: (settings: Partial<Omit<OrganizationSettings, "isHydrated">>) => void;
 	hydrate: (settings: Omit<OrganizationSettings, "isHydrated">) => void;
 	reset: () => void;
 }
 
-type OrganizationSettingsStore = OrganizationSettings & OrganizationSettingsActions;
+export type OrganizationSettingsStore = OrganizationSettings & OrganizationSettingsActions;
 
 const initialState: OrganizationSettings = {
 	organizationId: null,
@@ -34,23 +38,68 @@ const initialState: OrganizationSettings = {
 	isHydrated: false,
 };
 
-export const useOrganizationSettings = create<OrganizationSettingsStore>((set) => ({
-	...initialState,
+function createOrganizationSettingsStore(initialSettings?: OrganizationSettingsBootstrap | null) {
+	return createStore<OrganizationSettingsStore>((set) => ({
+		...initialState,
+		...(initialSettings ?? {}),
+		isHydrated: Boolean(initialSettings),
 
-	setSettings: (settings) =>
-		set((state) => ({
-			...state,
-			...settings,
-		})),
+		setSettings: (settings) =>
+			set((state) => ({
+				...state,
+				...settings,
+			})),
 
-	hydrate: (settings) =>
-		set({
-			...settings,
-			isHydrated: true,
-		}),
+		hydrate: (settings) =>
+			set({
+				...settings,
+				isHydrated: true,
+			}),
 
-	reset: () => set(initialState),
-}));
+		reset: () => set(initialState),
+	}));
+}
+
+const defaultStore = createOrganizationSettingsStore();
+const OrganizationSettingsStoreContext = createContext<
+	StoreApi<OrganizationSettingsStore> | undefined
+>(undefined);
+
+export function OrganizationSettingsStoreProvider({
+	children,
+	initialSettings,
+}: {
+	children: ReactNode;
+	initialSettings?: OrganizationSettingsBootstrap | null;
+}) {
+	const storeRef = useRef<StoreApi<OrganizationSettingsStore> | null>(null);
+	if (!storeRef.current) {
+		storeRef.current = createOrganizationSettingsStore(initialSettings);
+	}
+
+	return createElement(
+		OrganizationSettingsStoreContext.Provider,
+		{ value: storeRef.current },
+		children,
+	);
+}
+
+function useOrganizationSettingsStore(): OrganizationSettingsStore;
+function useOrganizationSettingsStore<T>(selector: (state: OrganizationSettingsStore) => T): T;
+function useOrganizationSettingsStore<T>(
+	selector?: (state: OrganizationSettingsStore) => T,
+): T | OrganizationSettingsStore {
+	const store = use(OrganizationSettingsStoreContext) ?? defaultStore;
+	const resolvedSelector: (state: OrganizationSettingsStore) => T | OrganizationSettingsStore =
+		selector ?? ((state) => state);
+	return useStore(store, resolvedSelector);
+}
+
+export const useOrganizationSettings = Object.assign(useOrganizationSettingsStore, {
+	getState: defaultStore.getState,
+	setState: defaultStore.setState,
+	subscribe: defaultStore.subscribe,
+});
 
 // Selector hooks for specific settings
 export const useProjectsEnabled = () => useOrganizationSettings((state) => state.projectsEnabled);

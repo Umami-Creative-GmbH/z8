@@ -18,6 +18,7 @@ export {
 	getWageTypeMappings,
 	getWorkCategories,
 } from "./data-fetcher";
+export type { ProcessPayrollExportJobInput } from "./export-service";
 // Export service
 export {
 	createExportJob,
@@ -29,6 +30,7 @@ export {
 	getFormatter,
 	getPendingExportJobs,
 	isApiBasedExport,
+	markPayrollExportJobFailed,
 	processExportJob,
 } from "./export-service";
 export type {
@@ -55,5 +57,6 @@ export { WorkdayConnector, workdayConnector } from "./exporters/workday";
 export { DatevLohnFormatter, datevLohnFormatter } from "./formatters/datev-lohn-formatter";
 export { LexwareLohnFormatter, lexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
 export { SageLohnFormatter, sageLohnFormatter } from "./formatters/sage-lohn-formatter";
+export { enqueuePayrollExportJob } from "./queue";
 // Types
 export * from "./types";

@@ -1,18 +1,14 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { and, eq, gt, inArray, lt, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { headers } from "next/headers";
 import { db } from "@/db";
-import { organization } from "@/db/auth-schema";
 import { employee, project, projectManager, workPeriod } from "@/db/schema";
-import { auth } from "@/lib/auth";
-import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { requireAuth } from "@/lib/auth-helpers";
 import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { buildProjectHealthFields, buildProjectHealthTotals } from "@/lib/reports/project-health";
@@ -24,7 +20,6 @@ import type {
 	ProjectTeamMember,
 	ProjectTimeSeriesPoint,
 } from "@/lib/reports/project-types";
-import { resolveReportDateRange } from "@/lib/reports/report-date-range";
 
 const logger = createLogger("ProjectReportsActions");
 
@@ -39,8 +34,8 @@ type WorkPeriodWithEmployee = typeof workPeriod.$inferSelect & {
  * Get portfolio overview of all projects in the organization
  */
 export async function getProjectsOverview(
-	startDate: string,
-	endDate: string,
+	startDate: Date,
+	endDate: Date,
 	statusFilter?: string[],
 ): Promise<ServerActionResult<ProjectPortfolioData>> {
 	const tracer = trace.getTracer("project-reports");
@@ -49,38 +44,35 @@ export async function getProjectsOverview(
 		"getProjectsOverview",
 		{
 			attributes: {
-				"report.start_date": startDate,
-				"report.end_date": endDate,
+				"report.start_date": startDate.toISOString(),
+				"report.end_date": endDate.toISOString(),
 			},
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				span.setAttribute("user.id", session.user.id);
-
-				// Get current employee and verify admin/manager role
-				const currentEmployee = yield* _(
-					dbService.query("getEmployeeByUserId", async () => {
-						const emp = await dbService.db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, session.session.activeOrganizationId ?? ""),
-							),
-						});
-						if (!emp) throw new Error("Employee not found");
-						return emp;
-					}),
-					Effect.mapError(
-						() =>
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
+				const authContext = yield* _(
+					Effect.tryPromise({
+						try: async () => await requireAuth(),
+						catch: () =>
+							new AuthorizationError({
+								message: "Approved organization membership required",
 							}),
-					),
+					}),
 				);
+				const dbService = yield* _(DatabaseService);
+				const organizationId = authContext.session.activeOrganizationId;
+				const currentEmployee = authContext.employee;
+				if (!organizationId || !currentEmployee) {
+					return yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Active organization required",
+							}),
+						),
+					);
+				}
+
+				span.setAttribute("user.id", authContext.user.id);
 
 				const managedProjectRows = yield* _(
 					dbService.query("getManagedProjectIdsForProjectReports", async () => {
@@ -108,29 +100,6 @@ export async function getProjectsOverview(
 
 				span.setAttribute("current_employee.id", currentEmployee.id);
 				span.setAttribute("current_employee.role", currentEmployee.role);
-
-				const organizationId = currentEmployee.organizationId;
-				const organizationSettings = yield* _(
-					dbService.query("getProjectReportOrganization", async () =>
-						dbService.db.query.organization.findFirst({
-							where: eq(organization.id, organizationId),
-						}),
-					),
-				);
-				if (!organizationSettings) {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({ message: "Organization not found", entityType: "organization" }),
-						),
-					);
-				}
-				const reportRange = resolveReportDateRange(
-					startDate,
-					endDate,
-					organizationSettings.timezone ?? "UTC",
-				);
-				const rangeStart = dateFromInstant(reportRange.start);
-				const rangeEndExclusive = dateFromInstant(reportRange.endExclusive);
 
 				// Get all projects in the organization
 				const projects = yield* _(
@@ -167,35 +136,37 @@ export async function getProjectsOverview(
 						return Promise.all(
 							projects.map(async (p): Promise<ProjectSummary> => {
 								// Get total hours and unique employees for this project in the date range
-								const [periods, cumulativeStats] = await Promise.all([
-									dbService.db.query.workPeriod.findMany({
-										where: and(
-											eq(workPeriod.projectId, p.id),
-											lt(workPeriod.startTime, rangeEndExclusive),
-											gt(workPeriod.endTime, rangeStart),
+								const [stats, cumulativeStats] = await Promise.all([
+									dbService.db
+										.select({
+											totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+											uniqueEmployees:
+												sql<number>`COUNT(DISTINCT ${workPeriod.employeeId})`.mapWith(Number),
+											workPeriodCount: sql<number>`COUNT(*)`.mapWith(Number),
+										})
+										.from(workPeriod)
+										.where(
+											and(
+												eq(workPeriod.projectId, p.id),
+												eq(workPeriod.organizationId, organizationId),
+												gte(workPeriod.startTime, startDate),
+												lte(workPeriod.startTime, endDate),
+											),
 										),
-										columns: { employeeId: true, startTime: true, endTime: true },
-									}),
 									dbService.db
 										.select({
 											totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
 										})
 										.from(workPeriod)
-										.where(eq(workPeriod.projectId, p.id)),
+										.where(
+											and(
+												eq(workPeriod.projectId, p.id),
+												eq(workPeriod.organizationId, organizationId),
+											),
+										),
 								]);
 
-								const periodPieces = periods.flatMap((period) =>
-									period.endTime
-										? reportRange.splitPeriod(
-												instantFromDate(period.startTime),
-												instantFromDate(period.endTime),
-											)
-										: [],
-								);
-								const totalMinutes = periodPieces.reduce(
-									(total, piece) => total + piece.minutes,
-									0,
-								);
+								const totalMinutes = Number(stats[0]?.totalMinutes ?? 0);
 								const totalHours = totalMinutes / 60;
 								const cumulativeHours = Number(cumulativeStats[0]?.totalMinutes ?? 0) / 60;
 								const budgetHours = p.budgetHours ? Number(p.budgetHours) : null;
@@ -217,8 +188,8 @@ export async function getProjectsOverview(
 									cumulativeHours,
 									deadline: p.deadline,
 									now,
-									rangeStart,
-									rangeEnd: dateFromInstant(reportRange.endExclusive.subtract({ milliseconds: 1 })),
+									rangeStart: startDate,
+									rangeEnd: endDate,
 								});
 
 								return {
@@ -234,8 +205,8 @@ export async function getProjectsOverview(
 									totalMinutes,
 									percentBudgetUsed,
 									daysUntilDeadline,
-									uniqueEmployees: new Set(periods.map((period) => period.employeeId)).size,
-									workPeriodCount: periods.length,
+									uniqueEmployees: stats[0]?.uniqueEmployees ?? 0,
+									workPeriodCount: stats[0]?.workPeriodCount ?? 0,
 								};
 							}),
 						);
@@ -285,8 +256,8 @@ export async function getProjectsOverview(
  */
 export async function getProjectDetailedReport(
 	projectId: string,
-	startDate: string,
-	endDate: string,
+	startDate: Date,
+	endDate: Date,
 ): Promise<ServerActionResult<ProjectDetailedReport>> {
 	const tracer = trace.getTracer("project-reports");
 
@@ -295,38 +266,35 @@ export async function getProjectDetailedReport(
 		{
 			attributes: {
 				"project.id": projectId,
-				"report.start_date": startDate,
-				"report.end_date": endDate,
+				"report.start_date": startDate.toISOString(),
+				"report.end_date": endDate.toISOString(),
 			},
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				span.setAttribute("user.id", session.user.id);
-
-				// Get current employee
-				const currentEmployee = yield* _(
-					dbService.query("getEmployeeByUserId", async () => {
-						const emp = await dbService.db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, session.session.activeOrganizationId ?? ""),
-							),
-						});
-						if (!emp) throw new Error("Employee not found");
-						return emp;
-					}),
-					Effect.mapError(
-						() =>
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
+				const authContext = yield* _(
+					Effect.tryPromise({
+						try: async () => await requireAuth(),
+						catch: () =>
+							new AuthorizationError({
+								message: "Approved organization membership required",
 							}),
-					),
+					}),
 				);
+				const dbService = yield* _(DatabaseService);
+				const organizationId = authContext.session.activeOrganizationId;
+				const currentEmployee = authContext.employee;
+				if (!organizationId || !currentEmployee) {
+					return yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Active organization required",
+							}),
+						),
+					);
+				}
+
+				span.setAttribute("user.id", authContext.user.id);
 
 				// Check permissions (admin, manager, or project manager)
 				const isProjectManager = yield* _(
@@ -354,36 +322,12 @@ export async function getProjectDetailedReport(
 						),
 					);
 				}
-				const organizationSettings = yield* _(
-					dbService.query("getProjectDetailReportOrganization", async () =>
-						dbService.db.query.organization.findFirst({
-							where: eq(organization.id, currentEmployee.organizationId),
-						}),
-					),
-				);
-				if (!organizationSettings) {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({ message: "Organization not found", entityType: "organization" }),
-						),
-					);
-				}
-				const reportRange = resolveReportDateRange(
-					startDate,
-					endDate,
-					organizationSettings.timezone ?? "UTC",
-				);
-				const rangeStart = dateFromInstant(reportRange.start);
-				const rangeEndExclusive = dateFromInstant(reportRange.endExclusive);
 
 				// Get project details
 				const projectData = yield* _(
 					dbService.query("getProject", async () => {
 						const p = await dbService.db.query.project.findFirst({
-							where: and(
-								eq(project.id, projectId),
-								eq(project.organizationId, currentEmployee.organizationId),
-							),
+							where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
 						});
 						if (!p) throw new Error("Project not found");
 						return p;
@@ -403,8 +347,9 @@ export async function getProjectDetailedReport(
 						return await dbService.db.query.workPeriod.findMany({
 							where: and(
 								eq(workPeriod.projectId, projectId),
-								lt(workPeriod.startTime, rangeEndExclusive),
-								gt(workPeriod.endTime, rangeStart),
+								eq(workPeriod.organizationId, organizationId),
+								gte(workPeriod.startTime, startDate),
+								lte(workPeriod.startTime, endDate),
 							),
 							with: {
 								employee: {
@@ -422,18 +367,8 @@ export async function getProjectDetailedReport(
 				const typedWorkPeriods = workPeriods as unknown as WorkPeriodWithEmployee[];
 
 				// Calculate summary
-				const periodPieces = typedWorkPeriods.map((period) => ({
-					period,
-					pieces: period.endTime
-						? reportRange.splitPeriod(
-								instantFromDate(period.startTime),
-								instantFromDate(period.endTime),
-							)
-						: [],
-				}));
-				const totalMinutes = periodPieces.reduce(
-					(total, { pieces }) =>
-						total + pieces.reduce((pieceTotal, piece) => pieceTotal + piece.minutes, 0),
+				const totalMinutes = typedWorkPeriods.reduce(
+					(sum, wp) => sum + (wp.durationMinutes ?? 0),
 					0,
 				);
 				const totalHours = totalMinutes / 60;
@@ -445,15 +380,17 @@ export async function getProjectDetailedReport(
 				const uniqueEmployeeIds = new Set(typedWorkPeriods.map((wp) => wp.employeeId));
 
 				// Days in period for average calculation
-				const averageHoursPerDay = totalHours / reportRange.dayCount;
+				const daysDiff = Math.ceil(
+					(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+				);
+				const averageHoursPerDay = daysDiff > 0 ? totalHours / daysDiff : 0;
 
 				// Build time series (by day)
 				const timeSeriesMap = new Map<string, number>();
-				for (const { pieces } of periodPieces) {
-					for (const piece of pieces) {
-						const existing = timeSeriesMap.get(piece.date) ?? 0;
-						timeSeriesMap.set(piece.date, existing + piece.minutes / 60);
-					}
+				for (const wp of typedWorkPeriods) {
+					const dateKey = wp.startTime.toISOString().split("T")[0];
+					const existing = timeSeriesMap.get(dateKey) ?? 0;
+					timeSeriesMap.set(dateKey, existing + (wp.durationMinutes ?? 0) / 60);
 				}
 
 				// Sort and build cumulative
@@ -470,16 +407,14 @@ export async function getProjectDetailedReport(
 					string,
 					{ name: string; minutes: number; count: number }
 				>();
-				for (const { period, pieces } of periodPieces) {
-					const minutes = pieces.reduce((total, piece) => total + piece.minutes, 0);
-					if (minutes === 0) continue;
-					const key = period.employeeId;
+				for (const wp of typedWorkPeriods) {
+					const key = wp.employeeId;
 					const existing = employeeStatsMap.get(key) ?? {
-						name: period.employee.user?.name ?? "Unknown",
+						name: wp.employee.user?.name ?? "Unknown",
 						minutes: 0,
 						count: 0,
 					};
-					existing.minutes += minutes;
+					existing.minutes += wp.durationMinutes ?? 0;
 					existing.count += 1;
 					employeeStatsMap.set(key, existing);
 				}
@@ -504,25 +439,23 @@ export async function getProjectDetailedReport(
 						members: Map<string, { name: string; minutes: number; count: number }>;
 					}
 				>();
-				for (const { period, pieces } of periodPieces) {
-					const minutes = pieces.reduce((total, piece) => total + piece.minutes, 0);
-					if (minutes === 0) continue;
-					const teamId = period.employee.teamId ?? "unassigned";
-					const teamName = period.employee.team?.name ?? "Unassigned";
+				for (const wp of typedWorkPeriods) {
+					const teamId = wp.employee.teamId ?? "unassigned";
+					const teamName = wp.employee.team?.name ?? "Unassigned";
 					const existing = teamStatsMap.get(teamId) ?? {
 						name: teamName,
 						minutes: 0,
 						members: new Map(),
 					};
-					existing.minutes += minutes;
+					existing.minutes += wp.durationMinutes ?? 0;
 
-					const memberKey = period.employeeId;
+					const memberKey = wp.employeeId;
 					const memberExisting = existing.members.get(memberKey) ?? {
-						name: period.employee.user?.name ?? "Unknown",
+						name: wp.employee.user?.name ?? "Unknown",
 						minutes: 0,
 						count: 0,
 					};
-					memberExisting.minutes += minutes;
+					memberExisting.minutes += wp.durationMinutes ?? 0;
 					memberExisting.count += 1;
 					existing.members.set(memberKey, memberExisting);
 
@@ -558,8 +491,8 @@ export async function getProjectDetailedReport(
 						deadline: projectData.deadline,
 					},
 					period: {
-						startDate,
-						endDate,
+						startDate: startDate.toISOString(),
+						endDate: endDate.toISOString(),
 						label: `${startDate} - ${endDate}`,
 					},
 					summary: {
@@ -606,15 +539,18 @@ export async function getProjectDetailedReport(
 export async function getProjectsForFilter(): Promise<
 	ServerActionResult<Array<{ id: string; name: string; status: string; color: string | null }>>
 > {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
+	let authContext;
+	try {
+		authContext = await requireAuth();
+	} catch {
 		return { success: false, error: "Not authenticated" };
 	}
 
 	const emp = await db.query.employee.findFirst({
 		where: and(
-			eq(employee.userId, session.user.id),
-			eq(employee.organizationId, session.session.activeOrganizationId ?? ""),
+			eq(employee.id, authContext.employee?.id ?? ""),
+			eq(employee.organizationId, authContext.session.activeOrganizationId ?? ""),
+			eq(employee.isActive, true),
 		),
 	});
 
@@ -645,15 +581,18 @@ export async function getProjectsForFilter(): Promise<
  * Get current employee for server components
  */
 export async function getCurrentEmployeeForReports(): Promise<typeof employee.$inferSelect | null> {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
+	let authContext;
+	try {
+		authContext = await requireAuth();
+	} catch {
 		return null;
 	}
 
 	const emp = await db.query.employee.findFirst({
 		where: and(
-			eq(employee.userId, session.user.id),
-			eq(employee.organizationId, session.session.activeOrganizationId ?? ""),
+			eq(employee.id, authContext.employee?.id ?? ""),
+			eq(employee.organizationId, authContext.session.activeOrganizationId ?? ""),
+			eq(employee.isActive, true),
 		),
 	});
 

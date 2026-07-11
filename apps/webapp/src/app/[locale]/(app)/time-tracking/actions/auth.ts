@@ -3,6 +3,7 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db";
+import { member } from "@/db/auth-schema";
 import { employee, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { DEFAULT_TIMEZONE } from "./shared";
@@ -24,15 +25,25 @@ async function getEmployeeForUser(
 		return null;
 	}
 
-	const employeeForActiveOrg = await db.query.employee.findFirst({
+	const [approvedMembership, employeeForActiveOrg] = await Promise.all([
+		db.query.member.findFirst({
+			columns: { id: true },
+			where: and(
+				eq(member.userId, userId),
+				eq(member.organizationId, activeOrganizationId),
+				eq(member.status, "approved"),
+			),
+		}),
+		db.query.employee.findFirst({
 		where: and(
 			eq(employee.userId, userId),
 			eq(employee.organizationId, activeOrganizationId),
 			eq(employee.isActive, true),
 		),
-	});
+		}),
+	]);
 
-	return employeeForActiveOrg ?? null;
+	return approvedMembership ? (employeeForActiveOrg ?? null) : null;
 }
 
 export async function getCurrentEmployee(): Promise<CurrentEmployee | null> {

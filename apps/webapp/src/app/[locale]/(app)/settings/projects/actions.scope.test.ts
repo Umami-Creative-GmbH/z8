@@ -66,7 +66,12 @@ vi.mock("@/db/schema", () => ({
 }));
 
 vi.mock("@/db/auth-schema", () => ({
-	member: { userId: "userId", organizationId: "organizationId", role: "role" },
+	member: {
+		userId: "userId",
+		organizationId: "organizationId",
+		role: "role",
+		status: "status",
+	},
 }));
 
 vi.mock("@/lib/audit-logger", () => ({
@@ -260,7 +265,7 @@ describe("project settings manager scope", () => {
 				id: "pm-1",
 				projectId: "project-1",
 				employeeId: "employee-1",
-				employee: { user: { name: "Manager" } },
+				employee: { organizationId: "org-1", user: { name: "Manager" } },
 			},
 		];
 		mockState.projectAssignments = [];

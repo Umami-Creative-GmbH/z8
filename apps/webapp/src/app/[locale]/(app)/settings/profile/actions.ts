@@ -28,6 +28,7 @@ import {
 	profileDetailsUpdateSchema,
 	profileImageUpdateSchema,
 } from "@/lib/validations/profile";
+import { requestUserWorkBalanceFullRebuild } from "@/lib/work-balance/service";
 
 type AuthProfileUpdate = {
 	firstName: string | undefined;
@@ -449,16 +450,19 @@ export async function updateTimezone(timezone: string): Promise<ServerActionResu
 		// Update timezone in userSettings with upsert
 		yield* _(
 			dbService.query("updateTimezone", async () => {
-				await dbService.db
-					.insert(userSettings)
-					.values({
-						userId: session.user.id,
-						timezone,
-					})
-					.onConflictDoUpdate({
-						target: userSettings.userId,
-						set: { timezone },
-					});
+				await dbService.db.transaction(async (tx) => {
+					await tx
+						.insert(userSettings)
+						.values({
+							userId: session.user.id,
+							timezone,
+						})
+						.onConflictDoUpdate({
+							target: userSettings.userId,
+							set: { timezone },
+						});
+					await requestUserWorkBalanceFullRebuild({ userId: session.user.id }, { dbClient: tx });
+				});
 			}),
 		);
 	}).pipe(Effect.provide(AppLayer));

@@ -97,7 +97,7 @@ describe("Select", () => {
 		);
 
 		await user.click(screen.getByRole("combobox", { name: "Status" }));
-		await user.click(screen.getByRole("option", { name: "No status" }));
+		await user.click(await screen.findByRole("option", { name: "No status" }));
 
 		expect(onValueChange).toHaveBeenCalledWith(null, expect.any(Object));
 	});

@@ -79,9 +79,9 @@ export async function decideApprovalInboxItemFromRequest({
 	if (action === "reject" && !trimmedReason) {
 		throw new Error("Rejection reason is required");
 	}
-	const actionOptions: ApprovalActionOptions | undefined =
+	const actionOptions: ApprovalActionOptions =
 		actorEmployeeId === request.approverId
-			? undefined
+			? { approvalRequestId: request.id }
 			: { approvalRequestId: request.id, allowAnyApprover: true };
 
 	const effect =
@@ -125,70 +125,70 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 
 	const decisions = await Promise.all(
 		requests.map(async (request): Promise<BulkDecisionOutcome> => {
-		const handler = resolveHandler(request.entityType);
+			const handler = resolveHandler(request.entityType);
 
-		if (
-			!handler ||
-			!isSupportedInboxType(request.entityType) ||
-			handler.type !== request.entityType
-		) {
-			return {
-				status: "failed" as const,
-				failure: {
-				id: request.id,
-				code: "unsupported",
-				message: `Unsupported approval type: ${request.entityType}`,
-				},
-			};
-		}
+			if (
+				!handler ||
+				!isSupportedInboxType(request.entityType) ||
+				handler.type !== request.entityType
+			) {
+				return {
+					status: "failed" as const,
+					failure: {
+						id: request.id,
+						code: "unsupported",
+						message: `Unsupported approval type: ${request.entityType}`,
+					},
+				};
+			}
 
-		if (request.status !== "pending") {
-			return {
-				status: "failed" as const,
-				failure: {
-				id: request.id,
-				code: "stale",
-				message: `Request is already ${request.status}`,
-				},
-			};
-		}
+			if (request.status !== "pending") {
+				return {
+					status: "failed" as const,
+					failure: {
+						id: request.id,
+						code: "stale",
+						message: `Request is already ${request.status}`,
+					},
+				};
+			}
 
-		if (
-			!canDecideRequest({
-				request,
-				actorEmployeeId,
-				includeAllApprovers,
-				eligibleApprovalScopes,
-			})
-		) {
-			return {
-				status: "failed" as const,
-				failure: {
-				id: request.id,
-				code: "forbidden",
-				message: "You are not authorized to decide this request",
-				},
-			};
-		}
-
-		try {
-			return {
-				status: "succeeded" as const,
-				success: await decideApprovalInboxItemFromRequest({
+			if (
+				!canDecideRequest({
 					request,
 					actorEmployeeId,
-					action,
-					reason,
-					handler,
-					runEffect,
-				}),
-			};
-		} catch (error) {
-			return {
-				status: "failed" as const,
-				failure: mapDecisionFailure(request.id, error),
-			};
-		}
+					includeAllApprovers,
+					eligibleApprovalScopes,
+				})
+			) {
+				return {
+					status: "failed" as const,
+					failure: {
+						id: request.id,
+						code: "forbidden",
+						message: "You are not authorized to decide this request",
+					},
+				};
+			}
+
+			try {
+				return {
+					status: "succeeded" as const,
+					success: await decideApprovalInboxItemFromRequest({
+						request,
+						actorEmployeeId,
+						action,
+						reason,
+						handler,
+						runEffect,
+					}),
+				};
+			} catch (error) {
+				return {
+					status: "failed" as const,
+					failure: mapDecisionFailure(request.id, error),
+				};
+			}
 		}),
 	);
 

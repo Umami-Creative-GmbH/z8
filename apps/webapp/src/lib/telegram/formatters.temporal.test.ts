@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { buildApprovalMessage, buildResolvedApprovalMessage } from "./formatters";
 
 const execFileAsync = promisify(execFile);
+const translate = (_key: string, defaultValue: string) => defaultValue;
 
 function normalizeWhitespace(value: string): string {
 	return value.replace(/\s/gu, " ").replace(/ +/gu, " ");
@@ -19,6 +20,7 @@ function approvalText(timezone: string, timeFormat: "12h" | "24h"): string {
 			originalTime: "2026-07-10T12:30:00.000Z",
 			originalTimeOffsetMinutes: -240,
 		},
+		translate,
 		{ locale: "en-US", timezone, timeFormat },
 	).text;
 }
@@ -65,14 +67,14 @@ describe("Telegram approval temporal formatting", () => {
 		};
 
 		const newYork = normalizeWhitespace(
-			buildApprovalMessage(data, {
+			buildApprovalMessage(data, translate, {
 				locale: "en-US",
 				timezone: "America/New_York",
 				timeFormat: "12h",
 			}).text,
 		);
 		const berlin = normalizeWhitespace(
-			buildApprovalMessage(data, {
+			buildApprovalMessage(data, translate, {
 				locale: "en-US",
 				timezone: "Europe/Berlin",
 				timeFormat: "24h",
@@ -99,6 +101,7 @@ describe("Telegram approval temporal formatting", () => {
 					approverName: "Lin",
 					resolvedAt: new Date("2026-07-10T13:30:00.000Z"),
 				},
+				translate,
 				{ locale: "en-US", timezone: "Europe/Berlin", timeFormat: "24h" },
 			),
 		);

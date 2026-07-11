@@ -23,7 +23,7 @@ describe("project report portfolio scope", () => {
 	it("uses selected-range hours for report totals and cumulative hours for budget health", () => {
 		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
 
-		expect(source).toContain("const [periods, cumulativeStats] = await Promise.all");
+		expect(source).toContain("const [stats, cumulativeStats] = await Promise.all");
 		expect(source).toContain(
 			"const cumulativeHours = Number(cumulativeStats[0]?.totalMinutes ?? 0) / 60",
 		);
@@ -33,21 +33,20 @@ describe("project report portfolio scope", () => {
 		expect(source).toContain("cumulativeHours");
 	});
 
-	it("uses organization-local half-open overlap boundaries and split segments", () => {
+	it("scopes project and work-period queries to the active organization", () => {
 		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
 
-		expect(source).toContain("lt(workPeriod.startTime, rangeEndExclusive)");
-		expect(source).toContain("gt(workPeriod.endTime, rangeStart)");
-		expect(source).toContain("reportRange.splitPeriod");
-		expect(source).toContain("reportRange.dayCount");
+		expect(source).toContain("const organizationId = authContext.session.activeOrganizationId");
+		expect(source).toContain("const currentEmployee = authContext.employee");
+		expect(source).toContain("eq(project.organizationId, organizationId)");
+		expect(source).toContain("eq(workPeriod.organizationId, organizationId)");
 	});
 
-	it("selects the current employee in the active organization", () => {
+	it("uses the active-organization employee supplied by requireAuth", () => {
 		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
 
-		expect(source).toContain(
-			'eq(employee.organizationId, session.session.activeOrganizationId ?? "")',
-		);
+		expect(source).toContain("const currentEmployee = authContext.employee");
+		expect(source).toContain("if (!organizationId || !currentEmployee)");
 	});
 
 	it("scopes the page-gate employee lookup to the active organization", () => {
@@ -55,7 +54,14 @@ describe("project report portfolio scope", () => {
 
 		expect(source).toContain("getCurrentEmployeeForReports");
 		expect(source).toContain(
-			'eq(employee.organizationId, session.session.activeOrganizationId ?? "")',
+			'eq(employee.organizationId, authContext.session.activeOrganizationId ?? "")',
 		);
+	});
+
+	it("serializes detailed report period boundaries as ISO strings", () => {
+		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
+
+		expect(source).toContain("startDate: startDate.toISOString()");
+		expect(source).toContain("endDate: endDate.toISOString()");
 	});
 });

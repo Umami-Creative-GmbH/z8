@@ -71,6 +71,29 @@ test("Dockerfiles install pnpm without relying on Corepack", async () => {
 	}
 });
 
+test("Dockerfiles pin the workspace pnpm version", async () => {
+	const packageJson = JSON.parse(
+		await fs.readFile(new URL("../../package.json", import.meta.url), "utf8"),
+	);
+	const dockerfiles = [
+		"Dockerfile.db-seed",
+		"Dockerfile.docs",
+		"Dockerfile.marketing",
+		"Dockerfile.migration",
+		"Dockerfile.webapp",
+		"Dockerfile.worker",
+	];
+
+	for (const dockerfile of dockerfiles) {
+		const contents = await fs.readFile(new URL(`../${dockerfile}`, import.meta.url), "utf8");
+		assert.match(
+			contents,
+			new RegExp(`^ARG PNPM_VERSION=${packageJson.packageManager.slice("pnpm@".length)}$`, "m"),
+			`${dockerfile} must pin the workspace pnpm version`,
+		);
+	}
+});
+
 test("non-root runtime Dockerfiles can run without root-owned pnpm or workspace paths", async () => {
 	const dockerfiles = ["Dockerfile.docs", "Dockerfile.webapp"];
 
@@ -100,10 +123,51 @@ test("Next.js runtime Dockerfiles start without pnpm dependency status checks", 
 	}
 });
 
+test("font size preferences provide a static server snapshot", async () => {
+  const contents = await fs.readFile(
+    new URL("../../apps/webapp/src/components/font-size-preference.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    contents,
+    /(?:function\s+getServerFontSizePreference\s*\([^)]*\)(?:\s*:\s*[^{}=]+)?|(?:const|let|var)\s+getServerFontSizePreference\s*=\s*\([^)]*\)(?:\s*:\s*[^{}=]+)?\s*=>)\s*\{\s*return "default";\s*\}/s,
+  );
+  assert.match(
+    contents,
+    /useSyncExternalStore\(\s*[^,]+\s*,\s*[^,]+\s*,\s*getServerFontSizePreference\s*,?\s*\)/s,
+  );
+});
+
 test("docs runtime Dockerfile starts Next.js on the Kubernetes service port", async () => {
 	const contents = await fs.readFile(new URL("../Dockerfile.docs", import.meta.url), "utf8");
 
 	assert.match(contents, /CMD \["node", "node_modules\/next\/dist\/bin\/next", "start", "-p", "3001"\]/);
+});
+
+test("docs uses a TypeScript version compatible with its Next.js build", async () => {
+	const packageJson = JSON.parse(
+		await fs.readFile(new URL("../../apps/docs/package.json", import.meta.url), "utf8"),
+	);
+
+	assert.ok(
+		Number.parseInt(packageJson.devDependencies.typescript.replace(/^[~^]/, ""), 10) < 7,
+		"Next.js 16.2 resolves typescript/lib/typescript.js, which TypeScript 7 no longer ships",
+	);
+});
+
+test("marketing and webapp use TypeScript versions compatible with their Next.js builds", async () => {
+	for (const app of ["marketing", "webapp"]) {
+		const packageJson = JSON.parse(
+			await fs.readFile(new URL(`../../apps/${app}/package.json`, import.meta.url), "utf8"),
+		);
+		const typescript = packageJson.dependencies.typescript ?? packageJson.devDependencies.typescript;
+
+		assert.ok(
+			Number.parseInt(typescript.replace(/^[~^]/, ""), 10) < 7,
+			`${app} must use TypeScript 6.x until its Next.js version supports TypeScript 7`,
+		);
+	}
 });
 
 test("collectTarget lists traced worker runtime files and packages", async () => {
