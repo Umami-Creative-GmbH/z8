@@ -201,6 +201,11 @@ test("generated migrated runtime manifests include temporal-polyfill without the
 		]);
 		const packageJson = JSON.parse(packageJsonText);
 
+		assert.equal(
+			packageJson.type,
+			"module",
+			`${target} must execute traced TypeScript as ESM for import-only packages`,
+		);
 		assert.equal(packageJson.dependencies["temporal-polyfill"], "1.0.1");
 		assert.match(lockfile, /temporal-polyfill@1\.0\.1:/);
 		assert.doesNotMatch(packageJsonText, /@js-temporal\/polyfill/);
