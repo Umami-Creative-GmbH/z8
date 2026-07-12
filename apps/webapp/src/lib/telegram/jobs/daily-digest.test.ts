@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { db } from "@/db";
+import { processTelegramBotDigest } from "./daily-digest";
 
 const {
 	buildDigestDataForManagerMock,
@@ -77,7 +79,6 @@ describe("processTelegramBotDigest", () => {
 	});
 
 	it("sends once when concurrent runs compete for the same recipient digest", async () => {
-		const { db } = await import("@/db");
 		vi.mocked(db.query.employee.findFirst).mockResolvedValue({ id: "employee-berlin" });
 		vi.mocked(db.query.employeeManagers.findFirst).mockResolvedValue({ id: "managed-employee" });
 		getOrganizationPrivateConversationsMock.mockResolvedValue([
@@ -89,7 +90,6 @@ describe("processTelegramBotDigest", () => {
 			timezone: "Europe/Berlin",
 		});
 		claimTelegramDigestDeliveryMock.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
-		const { processTelegramBotDigest } = await import("./daily-digest");
 		const bot = {
 			botToken: "token",
 			digestTime: "02:00",
@@ -107,7 +107,6 @@ describe("processTelegramBotDigest", () => {
 	});
 
 	it("retries a failed delivery claim", async () => {
-		const { db } = await import("@/db");
 		vi.mocked(db.query.employee.findFirst).mockResolvedValue({ id: "employee-berlin" });
 		vi.mocked(db.query.employeeManagers.findFirst).mockResolvedValue({ id: "managed-employee" });
 		getOrganizationPrivateConversationsMock.mockResolvedValue([
@@ -118,7 +117,6 @@ describe("processTelegramBotDigest", () => {
 			timeFormat: "24h",
 			timezone: "Europe/Berlin",
 		});
-		const { processTelegramBotDigest } = await import("./daily-digest");
 		const bot = {
 			botToken: "token",
 			digestTime: "02:00",
@@ -136,7 +134,6 @@ describe("processTelegramBotDigest", () => {
 	});
 
 	it("uses separate delivery keys for recipient-local UTC and Honolulu dates", async () => {
-		const { db } = await import("@/db");
 		vi.mocked(db.query.employee.findFirst)
 			.mockResolvedValueOnce({ id: "employee-utc" })
 			.mockResolvedValueOnce({ id: "employee-honolulu" });
@@ -148,7 +145,6 @@ describe("processTelegramBotDigest", () => {
 		resolveRecipientDisplayContextMock
 			.mockResolvedValueOnce({ locale: "en", timeFormat: "24h", timezone: "UTC" })
 			.mockResolvedValueOnce({ locale: "en", timeFormat: "24h", timezone: "Pacific/Honolulu" });
-		const { processTelegramBotDigest } = await import("./daily-digest");
 
 		await processTelegramBotDigest(
 			{
@@ -169,7 +165,6 @@ describe("processTelegramBotDigest", () => {
 	});
 
 	it("keeps otherwise matching delivery keys scoped to their organization", async () => {
-		const { db } = await import("@/db");
 		vi.mocked(db.query.employee.findFirst).mockResolvedValue({ id: "employee-manager" });
 		vi.mocked(db.query.employeeManagers.findFirst).mockResolvedValue({ id: "managed-employee" });
 		getOrganizationPrivateConversationsMock.mockResolvedValue([
@@ -180,7 +175,6 @@ describe("processTelegramBotDigest", () => {
 			timeFormat: "24h",
 			timezone: "UTC",
 		});
-		const { processTelegramBotDigest } = await import("./daily-digest");
 
 		await processTelegramBotDigest(
 			{
@@ -210,12 +204,10 @@ describe("processTelegramBotDigest", () => {
 	});
 
 	it("uses one schedule occurrence while building recipient-specific content", async () => {
-		const { db } = await import("@/db");
 		vi.mocked(db.query.employee.findFirst)
 			.mockResolvedValueOnce({ id: "employee-berlin" })
 			.mockResolvedValueOnce({ id: "employee-new-york" });
 		vi.mocked(db.query.employeeManagers.findFirst).mockResolvedValue({ id: "managed-employee" });
-		const { processTelegramBotDigest } = await import("./daily-digest");
 
 		const sent = await processTelegramBotDigest(
 			{
