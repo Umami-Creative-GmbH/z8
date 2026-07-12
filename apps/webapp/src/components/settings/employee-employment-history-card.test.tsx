@@ -7,6 +7,7 @@ import {
 	EmployeeEmploymentHistoryCard,
 	type EmployeeEmploymentHistoryCardProps,
 } from "./employee-employment-history-card";
+import { toEmploymentHistoryPayload } from "./employee-employment-history/utils";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -99,6 +100,23 @@ function renderCard({
 }
 
 describe("EmployeeEmploymentHistoryCard", () => {
+	it("converts the inherit work policy option to null in create payloads", () => {
+		const payload = toEmploymentHistoryPayload({
+			validFrom: "2026-01-01",
+			reviewState: "draft",
+			weeklyHours: "40",
+			workModel: "onsite",
+			contractType: "fixed",
+			workPolicyId: "__inherit__",
+			hourlyRate: "",
+			probationStartsOn: "",
+			probationEndsOn: "",
+			changeReason: "",
+		});
+
+		expect(payload.workPolicyId).toBeNull();
+	});
+
 	it("renders current contract context", () => {
 		renderCard();
 
