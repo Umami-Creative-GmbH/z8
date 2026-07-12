@@ -13,6 +13,7 @@ const mockFontSizeState = vi.hoisted(() => ({
 const mockNavigation = vi.hoisted(() => ({
 	push: vi.fn(),
 	replace: vi.fn(),
+	usePathname: vi.fn(() => "/settings/profile"),
 }));
 
 const mockLanguageActions = vi.hoisted(() => ({
@@ -61,7 +62,7 @@ vi.mock("@/components/theme-provider", () => ({
 }));
 
 vi.mock("@/navigation", () => ({
-	usePathname: () => "/settings/profile",
+	usePathname: () => mockNavigation.usePathname(),
 	useRouter: () => mockNavigation,
 }));
 
@@ -156,15 +157,22 @@ vi.mock("sonner", () => ({
 const toastErrorMock = vi.mocked(toast.error);
 
 import { NavUser } from "./nav-user";
+import { NavUserPreferences } from "./nav-user-preferences";
 
 describe("NavUser", () => {
 	beforeEach(() => {
-		mockThemeState.clearThemeError.mockClear();
+		mockLanguageActions.setLanguage.mockClear();
+	mockLanguageActions.persistLocaleToDb.mockClear();
+	mockNavigation.push.mockClear();
+	mockNavigation.replace.mockClear();
+	mockNavigation.usePathname.mockClear();
+	mockThemeState.clearThemeError.mockClear();
 		mockThemeState.setTheme.mockClear();
 		toastErrorMock.mockClear();
-		mockThemeState.theme = "system";
-		mockThemeState.themeError = undefined;
-		mockThemeState.timeThemeInfo = undefined;
+	mockThemeState.theme = "system";
+	mockThemeState.themeError = undefined;
+	mockThemeState.timeThemeInfo = undefined;
+	window.history.replaceState({}, "", "/en/settings/profile");
 	});
 
 	it("persists language changes before navigating to the localized route", async () => {
@@ -178,6 +186,23 @@ describe("NavUser", () => {
 			expect(mockLanguageActions.persistLocaleToDb).toHaveBeenCalledWith("de");
 			expect(mockNavigation.replace).toHaveBeenCalledWith("/settings/profile", { locale: "de" });
 		});
+	});
+
+	it("reads the current browser pathname when changing language from preferences", async () => {
+		render(<NavUserPreferences />);
+		expect(mockNavigation.usePathname).not.toHaveBeenCalled();
+
+		fireEvent.click(screen.getByRole("button", { name: /language/i }));
+		fireEvent.click(screen.getByText("Deutsch"));
+
+		await waitFor(() => {
+			expect(mockLanguageActions.persistLocaleToDb).toHaveBeenCalledWith("de");
+			expect(mockNavigation.replace).toHaveBeenCalledWith("/settings/profile", { locale: "de" });
+		});
+
+		expect(mockLanguageActions.persistLocaleToDb.mock.invocationCallOrder[0]).toBeLessThan(
+			mockNavigation.replace.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+		);
 	});
 
 	it("collapses mobile language, font size, and theme options until their sections are opened", () => {
