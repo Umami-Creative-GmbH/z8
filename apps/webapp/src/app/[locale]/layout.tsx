@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
-import { NextIntlClientProvider } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
-import { Suspense, type ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
 import { DeploymentRefreshChecker } from "@/components/deployment-refresh";
@@ -10,11 +9,11 @@ import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
 import { ThemeProvider } from "@/components/theme-provider";
 import { env } from "@/env";
 import { DOMAIN_HEADERS } from "@/proxy";
-import { TolgeeNextProvider } from "@/tolgee/client";
 import { ALL_LANGUAGES, loadRouteTranslations } from "@/tolgee/shared";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query";
+import { TranslationProviders } from "./translation-providers";
 
 type Props = {
 	children: ReactNode;
@@ -24,26 +23,6 @@ type Props = {
 // Generate static params for all locales to enable static generation
 export async function generateStaticParams() {
 	return ALL_LANGUAGES.map((locale) => ({ locale }));
-}
-
-type TranslationRecords = Awaited<ReturnType<typeof loadRouteTranslations>>;
-
-function TranslationProviders({
-	children,
-	locale,
-	records,
-}: {
-	children: ReactNode;
-	locale: string;
-	records: TranslationRecords;
-}) {
-	return (
-		<TolgeeNextProvider language={locale} staticData={records}>
-			<NextIntlClientProvider locale={locale} messages={{ locale }}>
-				{children}
-			</NextIntlClientProvider>
-		</TolgeeNextProvider>
-	);
 }
 
 // Separate component for loading translations to wrap in Suspense
@@ -107,7 +86,9 @@ function AppProviders({ children, locale }: { children: ReactNode; locale: strin
 				<Suspense
 					fallback={
 						<TranslationProviders locale={locale} records={{}}>
-							<ApplicationContent>{children}</ApplicationContent>
+							<Suspense fallback={null}>
+								<ApplicationContent>{children}</ApplicationContent>
+							</Suspense>
 						</TranslationProviders>
 					}
 				>
