@@ -262,6 +262,71 @@ vi.mock("@/components/time-tracking/manual-time-entry-dialog", () => ({
 	),
 }));
 
+vi.mock("./calendar-event-dialogs", () => ({
+	CalendarEventDialogs: ({
+		calendarTimezone,
+		currentEmployeeId,
+		isClockOutPending,
+		manualEntryDefaults,
+		manualEntryOpen,
+		onConfirmClockOut,
+		pendingClockOut,
+		selectedEmployeeId,
+		selectedEvent,
+		showDeleteDialog,
+		showSplitDialog,
+		displayContext,
+	}: {
+		calendarTimezone: string;
+		currentEmployeeId?: string;
+		isClockOutPending: boolean;
+		manualEntryDefaults: { date: string; clockInTime: string; clockOutTime: string } | null;
+		manualEntryOpen: boolean;
+		onConfirmClockOut: () => void;
+		pendingClockOut: boolean;
+		selectedEmployeeId: string | null;
+		selectedEvent: CalendarEvent | null;
+		showDeleteDialog: boolean;
+		showSplitDialog: boolean;
+		displayContext: { locale: string; timeFormat: string };
+	}) => (
+		<div data-testid="calendar-event-dialogs" data-calendar-timezone={calendarTimezone}>
+			<div
+				data-testid="manual-entry-dialog"
+				data-open={String(manualEntryOpen)}
+				data-default-date={manualEntryDefaults?.date}
+				data-clock-in={manualEntryDefaults?.clockInTime}
+				data-clock-out={manualEntryDefaults?.clockOutTime}
+				data-employee-timezone={calendarTimezone}
+				data-target-employee-id={
+					selectedEmployeeId && selectedEmployeeId !== currentEmployeeId
+						? selectedEmployeeId
+						: undefined
+				}
+			/>
+			{pendingClockOut && (
+				<>
+					<h2>Clock out employee?</h2>
+					<p>
+						This creates an auditable clock-out entry at the current server time. If anything needs
+						adjustment afterward, use corrections.
+					</p>
+					<button type="button" disabled={isClockOutPending} onClick={onConfirmClockOut}>
+						Clock Out
+					</button>
+				</>
+			)}
+			{selectedEvent?.type === "work_period" && !showSplitDialog && !showDeleteDialog && (
+				<div
+					data-testid="work-period-edit"
+					data-display-locale={displayContext.locale}
+					data-display-time-format={displayContext.timeFormat}
+				/>
+			)}
+		</div>
+	),
+}));
+
 vi.mock("./month-work-summary-view", () => ({
 	MonthWorkSummaryView: ({
 		events,
@@ -678,6 +743,22 @@ describe("CalendarView", () => {
 		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-time-zone")).toBe(
 			"America/New_York",
 		);
+	});
+
+	it("passes the selected employee calendar timezone through the event dialogs seam", () => {
+		mockCalendarData.calendarTimezone = "America/New_York";
+
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId="employee-2"
+			/>,
+		);
+
+		expect(
+			screen.getByTestId("calendar-event-dialogs").getAttribute("data-calendar-timezone"),
+		).toBe("America/New_York");
 	});
 
 	it("passes the active locale and time-format preference to calendar dialogs", () => {

@@ -6,9 +6,14 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { DateTime } from "luxon";
+import { useRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkPeriodEvent } from "@/lib/calendar/types";
 import { ScheduleXCalendarWrapper } from "./schedule-x-calendar";
+import {
+	useScheduleXClockOutDelegation,
+	useScheduleXDomLifecycle,
+} from "./use-schedule-x-dom-lifecycle";
 import {
 	buildCalendarTimeZoneDate,
 	buildCurrentTimeIndicatorPosition,
@@ -91,6 +96,49 @@ const runningWorkPeriod: WorkPeriodEvent = {
 	},
 };
 
+function ClockOutDelegationHarness({
+	events,
+	clockOutAllowedWorkPeriodIds,
+	onRunningPeriodClockOutRequest,
+}: {
+	events: WorkPeriodEvent[];
+	clockOutAllowedWorkPeriodIds: ReadonlySet<string>;
+	onRunningPeriodClockOutRequest: (event: WorkPeriodEvent) => void;
+}) {
+	const containerRef = useRef<HTMLDivElement>(null);
+	useScheduleXClockOutDelegation({
+		calendarContainerRef: containerRef,
+		events,
+		clockOutAllowedWorkPeriodIds,
+		onRunningPeriodClockOutRequest,
+	});
+
+	return <div ref={containerRef} data-testid="clock-out-delegation-container" />;
+}
+
+function DomLifecycleHarness() {
+	const containerRef = useRef<HTMLDivElement>(null);
+	useScheduleXDomLifecycle({
+		calendarContainerRef: containerRef,
+		events: [],
+		clockOutAllowedWorkPeriodIds: new Set(),
+		isLoading: false,
+		viewMode: "month",
+		timeZone: "Europe/Berlin",
+		visibleRequirementDates: [],
+		workHoursData: new Map(),
+		isSummaryLoading: false,
+		t: (_key, fallback) => fallback,
+	});
+
+	return (
+		<div ref={containerRef} data-testid="dom-lifecycle-container">
+			<div className="sx__event" data-testid="dom-lifecycle-event" />
+			<div className="sx__event-modal is-open" />
+		</div>
+	);
+}
+
 beforeEach(() => {
 	useCalendarAppMock.mockClear();
 });
@@ -166,6 +214,27 @@ describe("ScheduleXCalendarWrapper header", () => {
 });
 
 describe("ScheduleXCalendarWrapper running clock-out action", () => {
+	it("delegates an allowed running clock-out click through the DOM lifecycle hook", () => {
+		const onRunningPeriodClockOutRequest = vi.fn();
+
+		render(
+			<ClockOutDelegationHarness
+				events={[runningWorkPeriod]}
+				clockOutAllowedWorkPeriodIds={new Set([runningWorkPeriod.id])}
+				onRunningPeriodClockOutRequest={onRunningPeriodClockOutRequest}
+			/>,
+		);
+
+		const button = document.createElement("button");
+		button.dataset.runningClockOutButton = "true";
+		button.dataset.workPeriodId = runningWorkPeriod.id;
+		screen.getByTestId("clock-out-delegation-container").append(button);
+
+		fireEvent.click(button);
+
+		expect(onRunningPeriodClockOutRequest).toHaveBeenCalledWith(runningWorkPeriod);
+	});
+
 	it("passes allowed running clock-out ids into the Schedule-X event conversion path", () => {
 		render(
 			<ScheduleXCalendarWrapper
@@ -236,6 +305,24 @@ describe("ScheduleXCalendarWrapper running clock-out action", () => {
 		fireEvent.click(button);
 
 		expect(onRunningPeriodClockOutRequest).not.toHaveBeenCalled();
+	});
+});
+
+describe("Schedule-X DOM lifecycle cleanup", () => {
+	it("cancels a pending modal reposition animation frame on unmount", () => {
+		const requestAnimationFrame = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(321);
+		const cancelAnimationFrame = vi.spyOn(window, "cancelAnimationFrame");
+		const { unmount } = render(<DomLifecycleHarness />);
+
+		fireEvent.pointerUp(screen.getByTestId("dom-lifecycle-event"));
+		fireEvent.scroll(screen.getByTestId("dom-lifecycle-container"));
+		expect(requestAnimationFrame).toHaveBeenCalledTimes(1);
+
+		unmount();
+
+		expect(cancelAnimationFrame).toHaveBeenCalledWith(321);
+		requestAnimationFrame.mockRestore();
+		cancelAnimationFrame.mockRestore();
 	});
 });
 
