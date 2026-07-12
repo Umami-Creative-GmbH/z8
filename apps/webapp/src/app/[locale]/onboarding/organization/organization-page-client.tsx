@@ -174,6 +174,7 @@ export default function OrganizationPageClient({
 		}, 500);
 
 		return () => clearTimeout(timeoutId);
+		// oxlint-disable-next-line react-hooks/exhaustive-deps -- slug is the reactive formValues.slug value used by this effect.
 	}, [canCreateOrganizations, slug, t]);
 
 	async function handleSkip() {

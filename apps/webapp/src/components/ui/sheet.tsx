@@ -97,6 +97,7 @@ function Sheet({
 		}, SHEET_CLOSE_DURATION_MS);
 
 		return () => window.clearTimeout(timeout);
+		// oxlint-disable-next-line react-hooks/exhaustive-deps -- targetOpen is the resolved controlled/uncontrolled open state used by this effect.
 	}, [targetOpen]);
 
 	const setDismissHandlers = (handlers: DismissEventHandlers | null) => {
@@ -213,6 +214,7 @@ function SheetContent({
 		return () => {
 			setDismissHandlers(null);
 		};
+		// oxlint-disable-next-line react-hooks/exhaustive-deps -- setDismissHandlers is the context callback used by this effect.
 	}, [setDismissHandlers, onEscapeKeyDown, onInteractOutside, onPointerDownOutside]);
 
 	return (

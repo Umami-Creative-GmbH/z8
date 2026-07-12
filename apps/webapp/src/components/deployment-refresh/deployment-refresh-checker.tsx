@@ -93,6 +93,7 @@ export function DeploymentRefreshChecker({ clientBuildHash }: DeploymentRefreshC
 				window.removeEventListener(eventName, recordActivity);
 			}
 		};
+		// oxlint-disable-next-line react-doctor/effect-needs-cleanup -- cleanup below removes every listener registered by this effect.
 	}, []);
 
 	return null;
