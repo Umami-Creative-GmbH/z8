@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
-import { collectTarget } from "./prepare-target-runtime.mjs";
+import { checkTargetPackage, collectTarget } from "./prepare-target-runtime.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -170,6 +170,16 @@ test("marketing and webapp use TypeScript versions compatible with their Next.js
 	}
 });
 
+test("app Biome configurations extend the repository project", async () => {
+	for (const app of ["marketing", "webapp"]) {
+		const config = JSON.parse(
+			await fs.readFile(new URL(`../../apps/${app}/biome.jsonc`, import.meta.url), "utf8"),
+		);
+
+		assert.equal(config.root, false, `${app} Biome configuration must not define a nested root`);
+	}
+});
+
 test("collectTarget lists traced worker runtime files and packages", async () => {
 	const result = await collectTarget("worker");
 
@@ -211,6 +221,18 @@ test("generated migrated runtime manifests include temporal-polyfill without the
 		assert.doesNotMatch(packageJsonText, /@js-temporal\/polyfill/);
 		assert.doesNotMatch(lockfile, /@js-temporal\/polyfill/);
 	}
+});
+
+test("migration runner uses ESM syntax required by its runtime manifest", async () => {
+	const runner = await fs.readFile(
+		new URL("../../apps/webapp/scripts/migrate-with-lock.js", import.meta.url),
+		"utf8",
+	);
+
+	assert.match(runner, /import \{ spawnSync \} from "node:child_process";/);
+	assert.match(runner, /import \{ readFileSync \} from "node:fs";/);
+	assert.match(runner, /import \{ Client \} from "pg";/);
+	assert.doesNotMatch(runner, /\brequire\s*\(/);
 });
 
 test("collectTarget lists traced migration runtime files and packages", async () => {
@@ -266,12 +288,10 @@ test("target manifest check fails when generated dependencies drift", async () =
 	try {
 		await fs.writeFile(manifestUrl, `${JSON.stringify(staleManifest, null, 2)}\n`);
 		await assert.rejects(
-			execFileAsync(process.execPath, ["docker/scripts/prepare-target-runtime.mjs", "check", "migration"], {
-				cwd: new URL("../../", import.meta.url),
-			}),
+			checkTargetPackage("migration"),
 			(error) => {
-				assert.match(`${error.stderr}${error.stdout}${error.message}`, /docker\/targets\/migration\/package\.json/);
-				assert.match(`${error.stderr}${error.stdout}${error.message}`, /pnpm docker:sync:non-web-targets/);
+				assert.match(error.message, /docker\/targets\/migration\/package\.json/);
+				assert.match(error.message, /pnpm docker:sync:non-web-targets/);
 				return true;
 			},
 		);

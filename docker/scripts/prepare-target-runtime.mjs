@@ -255,7 +255,7 @@ async function writeTargetPackage(target) {
   console.log(`wrote ${path.relative(REPO_ROOT, outputPath)}`);
 }
 
-async function checkTargetPackage(target) {
+export async function checkTargetPackage(target) {
   const checkedFiles = [
     path.join(TARGETS_ROOT, target, "package.json"),
     path.join(TARGETS_ROOT, target, "pnpm-workspace.yaml"),
