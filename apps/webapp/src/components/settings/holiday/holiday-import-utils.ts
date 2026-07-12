@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 
 type HolidayPreviewForImport = {
 	name: string;
@@ -8,13 +8,19 @@ type HolidayPreviewForImport = {
 	type: string;
 };
 
+const holidayTypes = ["optional", "public", "bank", "school", "observance"] as const;
+type HolidayType = (typeof holidayTypes)[number];
+
+export function isHolidayType(type: string): type is HolidayType {
+	return holidayTypes.some((holidayType) => holidayType === type);
+}
+
 export function buildPresetHolidayImportValue(holiday: HolidayPreviewForImport) {
-	const calendarDate = DateTime.fromFormat(holiday.date.slice(0, 10), "yyyy-MM-dd", {
-		zone: "utc",
-	});
-	const startDate = DateTime.fromISO(holiday.startDate, { zone: "utc" });
-	const endDate = DateTime.fromISO(holiday.endDate, { zone: "utc" });
-	const durationDays = Math.max(1, Math.ceil(endDate.diff(startDate, "days").days));
+	if (!isHolidayType(holiday.type)) return null;
+	const calendarDate = Temporal.PlainDate.from(holiday.date.slice(0, 10));
+	const startDate = Temporal.Instant.from(holiday.startDate);
+	const endDate = Temporal.Instant.from(holiday.endDate);
+	const durationDays = Math.max(1, Math.ceil(endDate.since(startDate).total({ unit: "days" })));
 
 	return {
 		name: holiday.name,
@@ -22,7 +28,7 @@ export function buildPresetHolidayImportValue(holiday: HolidayPreviewForImport) 
 		month: calendarDate.month,
 		day: calendarDate.day,
 		durationDays,
-		holidayType: holiday.type as "optional" | "public" | "bank" | "school" | "observance",
+		holidayType: holiday.type,
 		isFloating: false,
 		isActive: true,
 	};
