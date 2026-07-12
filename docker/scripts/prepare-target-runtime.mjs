@@ -241,6 +241,7 @@ async function writeTargetPackage(target) {
   const targetPackage = {
     name: `@z8-target/${target}`,
     private: true,
+    type: "module",
     packageManager: rootPackage.packageManager,
     dependencies: Object.fromEntries(dependencyEntries),
   };
