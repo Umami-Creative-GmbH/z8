@@ -420,8 +420,8 @@ function FeatureSettingsCard({
 							</form.Field>
 						</div>
 
-						<form.Subscribe selector={(state) => state.values.enableDailyDigest}>
-							{(digestEnabled) =>
+						<form.Subscribe<boolean> selector={(state) => state.values.enableDailyDigest}>
+							{(digestEnabled: typeof form.state.values.enableDailyDigest) =>
 								digestEnabled && (
 									<div className="ml-0 grid grid-cols-2 gap-3 rounded-lg border bg-muted/30 p-3">
 										<form.Field name="digestTime">
@@ -492,8 +492,8 @@ function FeatureSettingsCard({
 							</form.Field>
 						</div>
 
-						<form.Subscribe selector={(state) => state.values.enableEscalations}>
-							{(escalationsEnabled) =>
+						<form.Subscribe<boolean> selector={(state) => state.values.enableEscalations}>
+							{(escalationsEnabled: typeof form.state.values.enableEscalations) =>
 								escalationsEnabled && (
 									<div className="rounded-lg border bg-muted/30 p-3">
 										<form.Field name="escalationTimeoutHours">

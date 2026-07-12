@@ -2,6 +2,16 @@ const { spawnSync } = require("node:child_process");
 const { readFileSync } = require("node:fs");
 const { Client } = require("pg");
 
+const utcPostgresOption = "-c timezone=UTC";
+
+function withUtcPostgresOptions(options) {
+  const existingOptions = options?.trim();
+  return existingOptions ? `${existingOptions} ${utcPostgresOption}` : utcPostgresOption;
+}
+
+process.env.TZ = "UTC";
+process.env.PGOPTIONS = withUtcPostgresOptions(process.env.PGOPTIONS);
+
 const sslModes = new Set([
   "disable",
   "prefer",
@@ -84,6 +94,7 @@ const hasExplicitSslConfig =
 const run = async () => {
   const client = new Client({
     connectionString: databaseUrl,
+    options: process.env.PGOPTIONS,
     ...(hasExplicitSslConfig ? { ssl: getPostgresSslConfig() } : {}),
   });
   await client.connect();

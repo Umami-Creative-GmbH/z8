@@ -8,6 +8,8 @@ import {
 	IconShield,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
+import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import type { ComplianceAlert } from "@/db/schema";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
@@ -148,11 +150,6 @@ interface RestPeriodBlockerProps {
 	hasApprovedExceptions?: boolean;
 }
 
-const restPeriodTimeFormatter = new Intl.DateTimeFormat(undefined, {
-	hour: "2-digit",
-	minute: "2-digit",
-});
-
 export function RestPeriodBlocker({
 	minutesUntilAllowed,
 	nextAllowedClockIn,
@@ -160,6 +157,8 @@ export function RestPeriodBlocker({
 	hasApprovedExceptions = false,
 }: RestPeriodBlockerProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const timezone = useUserTimezone();
 
 	const hoursRemaining = Math.floor(minutesUntilAllowed / 60);
 	const minsRemaining = minutesUntilAllowed % 60;
@@ -167,7 +166,11 @@ export function RestPeriodBlocker({
 		hoursRemaining > 0 ? `${hoursRemaining}h ${minsRemaining}m` : `${minsRemaining} minutes`;
 
 	// Use Intl.DateTimeFormat for hydration-safe time formatting
-	const formattedNextAllowed = restPeriodTimeFormatter.format(new Date(nextAllowedClockIn));
+	const formattedNextAllowed = Intl.DateTimeFormat(locale, {
+		hour: "2-digit",
+		minute: "2-digit",
+		timeZone: timezone,
+	}).format(nextAllowedClockIn);
 
 	return (
 		<Alert className="border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100">

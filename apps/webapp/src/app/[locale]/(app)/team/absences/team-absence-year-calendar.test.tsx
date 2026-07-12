@@ -5,7 +5,12 @@ import { Settings } from "luxon";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TeamAbsenceYearCalendar } from "./team-absence-year-calendar";
 
+let applicationLocale = "en";
+
 vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({
+		getLanguage: () => applicationLocale,
+	}),
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
 			Object.entries(params ?? {}).reduce(
@@ -21,6 +26,8 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 
 afterEach(() => {
 	Settings.now = () => Date.now();
+	Settings.defaultLocale = null;
+	applicationLocale = "en";
 });
 
 describe("TeamAbsenceYearCalendar", () => {
@@ -64,6 +71,23 @@ describe("TeamAbsenceYearCalendar", () => {
 		expect(screen.getByRole("button", { name: "June 10, 2026: 2 absent, 1 pending" })).toBeTruthy();
 		expect(screen.getByText("2 absent")).toBeTruthy();
 		expect(screen.getByText("1 pending")).toBeTruthy();
+	});
+
+	it("formats day labels with the application locale instead of the runtime default", () => {
+		Settings.defaultLocale = "en-US";
+		applicationLocale = "de";
+
+		render(
+			<TeamAbsenceYearCalendar
+				data={{
+					year: 2026,
+					teamId: null,
+					entries: [],
+				}}
+			/>,
+		);
+
+		expect(screen.getByRole("button", { name: "12. Juni 2026" })).toBeTruthy();
 	});
 
 	it("renders accessible hidden details for employee names, categories, and statuses", () => {

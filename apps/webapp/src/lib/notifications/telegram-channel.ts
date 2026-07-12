@@ -8,6 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
+import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import { createLogger } from "@/lib/logger";
 import { localizeOutboundNotification } from "./outbound-localization";
 import { resolveRecipientDisplayContext } from "./recipient-display-context";
@@ -94,6 +95,34 @@ export async function sendTelegramNotification(params: TelegramNotificationParam
 		}
 
 		// For other notifications, send a simple message
+		const recipient = await db.query.employee.findFirst({
+			where: and(
+				eq(employee.userId, params.userId),
+				eq(employee.organizationId, params.organizationId),
+			),
+			columns: { id: true, userId: true },
+		});
+		if (!recipient?.userId) {
+			logger.warn(
+				{ userId: params.userId, organizationId: params.organizationId },
+				"Rejecting Telegram notification for a recipient outside the organization",
+			);
+			return;
+		}
+
+		const temporal = await resolveBotTemporalContext({
+			userId: recipient.userId,
+			employeeId: recipient.id,
+			organizationId: params.organizationId,
+		});
+		if (!temporal) {
+			logger.warn(
+				{ userId: params.userId, organizationId: params.organizationId },
+				"Rejecting Telegram notification without recipient display context",
+			);
+			return;
+		}
+
 		const chatId = await getChatIdForUser(params.userId, params.organizationId);
 		if (!chatId) {
 			logger.debug(

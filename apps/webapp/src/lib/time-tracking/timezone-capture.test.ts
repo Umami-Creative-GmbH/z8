@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import {
 	formatUtcOffset,
 	getBrowserTimezone,
@@ -6,9 +6,20 @@ import {
 	isValidIanaTimezone,
 	resolveFallbackTimezoneCapture,
 	resolveTimeEntryTimezoneCapture,
+	type TimeEntryTimezoneCapture,
 } from "./timezone-capture";
 
 describe("timezone capture utilities", () => {
+	it("accepts historical inference only for non-browser fallback sources", () => {
+		expectTypeOf(
+			resolveFallbackTimezoneCapture({
+				timestamp: new Date("2026-05-29T12:00:00.000Z"),
+				timezone: "Europe/Berlin",
+				timezoneSource: "historical_inference",
+			}),
+		).toEqualTypeOf<TimeEntryTimezoneCapture>();
+	});
+
 	it("derives offsets for the exact timestamp", () => {
 		expect(getUtcOffsetMinutesForZone(new Date("2026-05-29T12:00:00.000Z"), "UTC")).toBe(0);
 		expect(
@@ -26,6 +37,22 @@ describe("timezone capture utilities", () => {
 		expect(
 			getUtcOffsetMinutesForZone(new Date("2026-01-29T12:00:00.000Z"), "America/New_York"),
 		).toBe(-300);
+		expect(getUtcOffsetMinutesForZone(new Date("2026-05-29T12:00:00.000Z"), "Asia/Kathmandu")).toBe(
+			345,
+		);
+		expect(getUtcOffsetMinutesForZone(new Date("1985-01-01T12:00:00.000Z"), "Asia/Kathmandu")).toBe(
+			330,
+		);
+	});
+
+	it("uses UTC for an invalid fallback zone without host timezone dependence", () => {
+		expect(
+			resolveFallbackTimezoneCapture({
+				timestamp: new Date("2026-05-29T12:00:00.000Z"),
+				timezone: "Invalid/Timezone",
+				timezoneSource: "backfill",
+			}),
+		).toEqual({ timezone: "UTC", timezoneSource: "backfill", utcOffsetMinutes: 0 });
 	});
 
 	it("rejects invalid IANA timezone names", () => {

@@ -88,7 +88,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 		// Verify the entry hash
 		const effect = Effect.gen(function* (_) {
 			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(timeEntryService.verifyEntry(entryId));
+			return yield* _(timeEntryService.verifyEntry(entryId, activeOrgId));
 		});
 
 		const verification = await runtime.runPromise(effect);

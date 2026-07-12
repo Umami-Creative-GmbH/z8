@@ -1,6 +1,8 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render as testingLibraryRender, screen, waitFor, within } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getFilterOptionsActionMock, startExportActionMock } = vi.hoisted(() => ({
@@ -121,6 +123,13 @@ vi.mock("@/components/ui/alert", () => ({
 }));
 
 import { ExportForm } from "./export-form";
+
+function render(ui: ReactNode) {
+	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	return testingLibraryRender(ui, {
+		wrapper: ({ children }) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>,
+	});
+}
 
 const fullyConfiguredAvailability = {
 	datev_lohn: { configured: true, reason: null },

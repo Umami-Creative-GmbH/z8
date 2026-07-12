@@ -17,15 +17,13 @@ import "@schedule-x/theme-default/dist/index.css";
 
 // Schedule-X CSS customizations must load after the default theme.
 import "./schedule-x-calendar.css";
-import { IconChevronLeft, IconChevronRight, IconReload } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useUserTimezone, useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { addCalendarDateKey, todayCalendarDateKey } from "@/lib/calendar/date-keys";
 import {
 	calendarEventsToScheduleX,
 	generateBreakEvents,
@@ -34,37 +32,26 @@ import {
 import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
 import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
-import { buildRequirementHeaderContent } from "./daily-requirement-strip";
+import { ScheduleXCalendarHeader } from "./schedule-x-calendar-header";
 import {
-	buildCalendarTimeZoneDate,
-	buildCurrentTimeIndicatorPosition,
 	filterEventsForScheduleXView,
-	hasExceededPointerDragThreshold,
-	isIntentionalRangePointerDown,
-	isScheduleXEventElement,
-	resolveEventModalLeft,
 	resolveClickableCalendarEvent,
-	shouldRetryRequirementHeaderInjection,
 } from "./schedule-x-calendar-utils";
+import { useScheduleXDomLifecycle } from "./use-schedule-x-dom-lifecycle";
 
 export type ViewMode = "day" | "week" | "month" | "year";
-
-interface RangeSelectionStart {
-	date: Date;
-	clientX: number;
-	clientY: number;
-}
 
 interface ScheduleXCalendarWrapperProps {
 	events: CalendarEvent[];
 	timeZone?: string;
 	isLoading?: boolean;
 	viewMode: ViewMode;
+	initialDateKey?: string;
 	onViewModeChange: (mode: ViewMode) => void;
 	onEventClick?: (event: CalendarEvent) => void;
 	clockOutAllowedWorkPeriodIds?: ReadonlySet<string>;
 	onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
-	onRangeChange?: (range: { start: Date; end: Date }) => void;
+	onRangeChange?: (range: { startDateKey: string; endDateKey: string }) => void;
 	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
 	workHoursData?: DailyWorkHoursSummaries;
@@ -79,99 +66,14 @@ const viewModeToScheduleX: Record<ViewMode, string> = {
 	year: "month-grid", // Year view is handled separately, fallback to month-grid
 };
 
-function luxonToPlainDate(dt: DateTime): Temporal.PlainDate {
-	return Temporal.PlainDate.from({
-		year: dt.year,
-		month: dt.month,
-		day: dt.day,
-	});
-}
-
 const EMPTY_CLOCK_OUT_ALLOWED_WORK_PERIOD_IDS = new Set<string>();
-
-function getHeaderCells(container: HTMLDivElement): HTMLElement[] {
-	return Array.from(
-		container.querySelectorAll<HTMLElement>(
-			".sx__week-header .sx__week-grid__date, .sx__week-header .sx__date-grid__date, .sx__week-header [data-time-grid-date]",
-		),
-	);
-}
-
-function getEventModalAnchorRect(eventElement: HTMLElement) {
-	const eventRect = eventElement.getBoundingClientRect();
-	const cellRect = eventElement
-		.closest<HTMLElement>(".sx__time-grid-day, .sx__date-grid-day, .sx__month-grid-day")
-		?.getBoundingClientRect();
-
-	return {
-		left: cellRect ? Math.max(eventRect.left, cellRect.left) : eventRect.left,
-		right: cellRect ? Math.min(eventRect.right, cellRect.right) : eventRect.right,
-	};
-}
-
-function clearRequirementHeaderContent(container: HTMLDivElement) {
-	for (const node of container.querySelectorAll(".z8-requirement-header-summary")) {
-		node.remove();
-	}
-}
-
-function roundToQuarterHour(minutes: number) {
-	return Math.max(0, Math.min(23 * 60 + 45, Math.round(minutes / 15) * 15));
-}
-
-function getPointerDateTime(
-	container: HTMLDivElement,
-	event: PointerEvent,
-	visibleDates: DateTime[],
-	timeZone: string,
-) {
-	if (visibleDates.length === 0) return null;
-
-	const target = event.target instanceof Element ? event.target : null;
-	const dateAttributeElement = target?.closest<HTMLElement>(
-		"[data-time-grid-date], [data-date], [data-date-time]",
-	);
-	const dateAttribute =
-		dateAttributeElement?.dataset.timeGridDate ??
-		dateAttributeElement?.dataset.date ??
-		dateAttributeElement?.dataset.dateTime;
-	const attributeDate = dateAttribute
-		? DateTime.fromISO(dateAttribute.slice(0, 10), { zone: timeZone })
-		: null;
-
-	const dayCells = Array.from(container.querySelectorAll<HTMLElement>(".sx__time-grid-day"));
-	const matchingDayCell = dayCells.find((cell) => {
-		const rect = cell.getBoundingClientRect();
-		return (
-			event.clientX >= rect.left &&
-			event.clientX <= rect.right &&
-			event.clientY >= rect.top &&
-			event.clientY <= rect.bottom
-		);
-	});
-	const timeGrid =
-		matchingDayCell ?? container.querySelector<HTMLElement>(".sx__time-grid-wrapper");
-	if (!timeGrid) return null;
-
-	const timeGridRect = timeGrid.getBoundingClientRect();
-	if (timeGridRect.height <= 0) return null;
-
-	const dayIndex = matchingDayCell ? Math.max(0, dayCells.indexOf(matchingDayCell)) : 0;
-	const date = attributeDate?.isValid
-		? attributeDate
-		: visibleDates[Math.min(dayIndex, visibleDates.length - 1)];
-	const minutes = roundToQuarterHour(
-		((event.clientY - timeGridRect.top) / timeGridRect.height) * 24 * 60,
-	);
-
-	return buildCalendarTimeZoneDate(date.toISODate() ?? "", minutes, timeZone);
-}
 
 export function ScheduleXCalendarWrapper({
 	events,
 	timeZone: explicitTimeZone,
 	isLoading = false,
 	viewMode,
+	initialDateKey,
 	onViewModeChange,
 	onEventClick,
 	clockOutAllowedWorkPeriodIds = EMPTY_CLOCK_OUT_ALLOWED_WORK_PERIOD_IDS,
@@ -192,15 +94,19 @@ export function ScheduleXCalendarWrapper({
 	const timeZone = explicitTimeZone ?? viewerTimeZone;
 	const isDark = resolvedTheme === "dark";
 
-	// Track current date for display
-	const [currentDate, setCurrentDate] = useState<DateTime>(() => DateTime.now());
+	const nextInitialDateKey = initialDateKey ?? todayCalendarDateKey(timeZone);
+	const [currentDateKey, setCurrentDateKey] = useState(() => nextInitialDateKey);
+	const [previousInitialDateKey, setPreviousInitialDateKey] = useState(() => nextInitialDateKey);
+	if (nextInitialDateKey !== previousInitialDateKey) {
+		setPreviousInitialDateKey(nextInitialDateKey);
+		setCurrentDateKey(nextInitialDateKey);
+	}
+	const currentDate = DateTime.fromISO(currentDateKey, { zone: timeZone });
 	const [runningPeriodNow, setRunningPeriodNow] = useState<Date>(() => new Date());
 
 	// Create calendar plugins (must be stable references)
 	const [calendarControls] = useState(() => createCalendarControlsPlugin());
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
-	const lastEventModalAnchorRef = useRef<HTMLElement | null>(null);
-	const selectionStartRef = useRef<RangeSelectionStart | null>(null);
 
 	const hasVisibleRunningPeriod =
 		(viewMode === "day" || viewMode === "week") &&
@@ -231,47 +137,49 @@ export function ScheduleXCalendarWrapper({
 
 	// Navigation functions
 	const navigatePrevious = () => {
-		let newDate: DateTime;
+		let duration: Temporal.DurationLike;
 		switch (viewMode) {
 			case "day":
-				newDate = currentDate.minus({ days: 1 });
+				duration = { days: -1 };
 				break;
 			case "week":
-				newDate = currentDate.minus({ weeks: 1 });
+				duration = { weeks: -1 };
 				break;
 			case "month":
-				newDate = currentDate.minus({ months: 1 });
+				duration = { months: -1 };
 				break;
 			default:
-				newDate = currentDate.minus({ days: 1 });
+				duration = { days: -1 };
 		}
-		setCurrentDate(newDate);
-		calendarControls.setDate(luxonToPlainDate(newDate));
+		const newDateKey = addCalendarDateKey(currentDateKey, duration);
+		setCurrentDateKey(newDateKey);
+		calendarControls.setDate(Temporal.PlainDate.from(newDateKey));
 	};
 
 	const navigateNext = () => {
-		let newDate: DateTime;
+		let duration: Temporal.DurationLike;
 		switch (viewMode) {
 			case "day":
-				newDate = currentDate.plus({ days: 1 });
+				duration = { days: 1 };
 				break;
 			case "week":
-				newDate = currentDate.plus({ weeks: 1 });
+				duration = { weeks: 1 };
 				break;
 			case "month":
-				newDate = currentDate.plus({ months: 1 });
+				duration = { months: 1 };
 				break;
 			default:
-				newDate = currentDate.plus({ days: 1 });
+				duration = { days: 1 };
 		}
-		setCurrentDate(newDate);
-		calendarControls.setDate(luxonToPlainDate(newDate));
+		const newDateKey = addCalendarDateKey(currentDateKey, duration);
+		setCurrentDateKey(newDateKey);
+		calendarControls.setDate(Temporal.PlainDate.from(newDateKey));
 	};
 
 	const navigateToday = () => {
-		const today = DateTime.now();
-		setCurrentDate(today);
-		calendarControls.setDate(luxonToPlainDate(today));
+		const today = todayCalendarDateKey(timeZone);
+		setCurrentDateKey(today);
+		calendarControls.setDate(Temporal.PlainDate.from(today));
 	};
 
 	// Format the date range display based on view mode
@@ -345,22 +253,9 @@ export function ScheduleXCalendarWrapper({
 	const handleRangeChange = (range: { start: unknown; end: unknown }) => {
 		if (!onRangeChange) return;
 
-		// Convert to Date using Luxon for robust parsing
-		const toDate = (value: unknown): Date => {
-			if (value instanceof Date) return value;
-			// Use Luxon to parse any string/Temporal format
-			const str = String(value);
-			const dt = DateTime.fromISO(str).isValid
-				? DateTime.fromISO(str)
-				: DateTime.fromSQL(str).isValid
-					? DateTime.fromSQL(str)
-					: DateTime.fromJSDate(new Date(str));
-			return dt.toJSDate();
-		};
-
 		onRangeChange({
-			start: toDate(range.start),
-			end: toDate(range.end),
+			startDateKey: String(range.start).slice(0, 10),
+			endDateKey: String(range.end).slice(0, 10),
 		});
 	};
 
@@ -375,6 +270,7 @@ export function ScheduleXCalendarWrapper({
 	const calendar = useCalendarApp({
 		views: [createViewDay(), createViewWeek(), createViewMonthGrid(), createViewMonthAgenda()],
 		defaultView: viewModeToScheduleX[viewMode],
+		selectedDate: Temporal.PlainDate.from(currentDateKey),
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		events: scheduleXEvents as any,
 		isDark,
@@ -389,6 +285,11 @@ export function ScheduleXCalendarWrapper({
 			onRangeUpdate: handleRangeChange as any,
 		},
 	});
+
+	useEffect(() => {
+		if (!calendar) return;
+		calendarControls.setDate(Temporal.PlainDate.from(currentDateKey));
+	}, [calendar, calendarControls, currentDateKey]);
 
 	useEffect(() => {
 		if (!hasVisibleRunningPeriod) return;
@@ -419,273 +320,20 @@ export function ScheduleXCalendarWrapper({
 		}
 	}, [calendar, scheduleXEvents]);
 
-	useEffect(() => {
-		const container = calendarContainerRef.current;
-		if (!container || !onRunningPeriodClockOutRequest) return;
-
-		const handleClick = (event: MouseEvent) => {
-			const target = event.target instanceof Element ? event.target : null;
-			const button = target?.closest<HTMLElement>("[data-running-clock-out-button]");
-			if (!button || !container.contains(button)) return;
-
-			event.preventDefault();
-			event.stopPropagation();
-
-			const workPeriodId = button.dataset.workPeriodId;
-			if (!workPeriodId) return;
-
-			const calendarEvent = events.find(
-				(event) =>
-					event.id === workPeriodId && event.type === "work_period" && event.metadata.isRunning,
-			);
-			if (calendarEvent && clockOutAllowedWorkPeriodIds.has(calendarEvent.id)) {
-				onRunningPeriodClockOutRequest(calendarEvent);
-			}
-		};
-
-		container.addEventListener("click", handleClick, { capture: true });
-		return () => container.removeEventListener("click", handleClick, { capture: true });
-	}, [clockOutAllowedWorkPeriodIds, events, onRunningPeriodClockOutRequest]);
-
-	useEffect(() => {
-		const container = calendarContainerRef.current;
-		if (!container) return;
-
-		const rememberEventAnchor = (event: PointerEvent) => {
-			const target = event.target instanceof Element ? event.target : null;
-			lastEventModalAnchorRef.current = target?.closest<HTMLElement>(".sx__event") ?? null;
-		};
-		const repositionEventModal = () => {
-			const eventElement = lastEventModalAnchorRef.current;
-			const modal = container.querySelector<HTMLElement>(".sx__event-modal.is-open");
-			if (!eventElement || !modal) return;
-
-			const appRect = container.getBoundingClientRect();
-			const eventRect = getEventModalAnchorRect(eventElement);
-			const modalWidth = modal.getBoundingClientRect().width || 400;
-			const left = resolveEventModalLeft({
-				appLeft: appRect.left,
-				appRight: appRect.right,
-				eventLeft: eventRect.left,
-				eventRight: eventRect.right,
-				modalWidth,
-			});
-
-			document.documentElement.style.setProperty("--sx-event-modal-left", `${left}px`);
-		};
-		const scheduleReposition = () => window.requestAnimationFrame(repositionEventModal);
-
-		const observer = new MutationObserver(scheduleReposition);
-		observer.observe(container, { childList: true, subtree: true });
-		container.addEventListener("pointerup", rememberEventAnchor, { capture: true });
-		container.addEventListener("scroll", scheduleReposition, { capture: true, passive: true });
-		window.addEventListener("resize", scheduleReposition);
-
-		return () => {
-			observer.disconnect();
-			container.removeEventListener("pointerup", rememberEventAnchor, { capture: true });
-			container.removeEventListener("scroll", scheduleReposition, { capture: true });
-			window.removeEventListener("resize", scheduleReposition);
-		};
-	}, []);
-
-	useEffect(() => {
-		const container = calendarContainerRef.current;
-		if (!container || isLoading || (viewMode !== "day" && viewMode !== "week")) return;
-
-		let frame = 0;
-		let timeout: number | null = null;
-		const clearIndicators = () => {
-			for (const indicator of container.querySelectorAll(".z8-current-time-indicator")) {
-				indicator.remove();
-			}
-		};
-		const renderIndicator = () => {
-			clearIndicators();
-			const position = buildCurrentTimeIndicatorPosition(new Date(), timeZone);
-			if (!position) return;
-
-			const todayElement = container.querySelector<HTMLElement>(
-				`[data-time-grid-date="${position.dateKey}"]`,
-			);
-			if (!todayElement) return;
-
-			const indicator = document.createElement("div");
-			indicator.className = "sx__current-time-indicator z8-current-time-indicator";
-			indicator.style.top = `${position.topPercent}%`;
-			indicator.setAttribute("aria-hidden", "true");
-			todayElement.append(indicator);
-		};
-		const scheduleIndicator = () => {
-			frame = window.requestAnimationFrame(renderIndicator);
-			timeout = window.setTimeout(scheduleIndicator, 60_000 - (Date.now() % 60_000));
-		};
-
-		scheduleIndicator();
-		const observer = new MutationObserver(() => {
-			if (container.querySelector(".z8-current-time-indicator")) return;
-			window.cancelAnimationFrame(frame);
-			frame = window.requestAnimationFrame(renderIndicator);
-		});
-		observer.observe(container, { childList: true, subtree: true });
-
-		return () => {
-			observer.disconnect();
-			window.cancelAnimationFrame(frame);
-			if (timeout !== null) window.clearTimeout(timeout);
-			clearIndicators();
-		};
-	}, [timeZone, viewMode, isLoading]);
-
-	// Scroll to current time on mount and when switching to day/week view
-	useEffect(() => {
-		if (isLoading) return;
-		if (viewMode === "day" || viewMode === "week") {
-			// Wait for calendar to render, then scroll to current time indicator
-			const timer = setTimeout(() => {
-				const timeIndicator = calendarContainerRef.current?.querySelector(
-					".sx__current-time-indicator",
-				);
-				if (timeIndicator) {
-					timeIndicator.scrollIntoView({ behavior: "smooth", block: "center" });
-				} else {
-					// Fallback: scroll to approximate current hour position
-					const now = DateTime.now();
-					const hoursFromStart = now.hour + now.minute / 60;
-					const scrollContainer = calendarContainerRef.current?.querySelector(".sx__time-grid-day");
-					if (scrollContainer) {
-						const hourHeight = scrollContainer.scrollHeight / 24;
-						const scrollPosition = hoursFromStart * hourHeight - 200; // Center roughly
-						scrollContainer.parentElement?.scrollTo({ top: scrollPosition, behavior: "smooth" });
-					}
-				}
-			}, 100);
-			return () => clearTimeout(timer);
-		}
-	}, [viewMode, isLoading]);
-
-	useEffect(() => {
-		const container = calendarContainerRef.current;
-		if (!container || (viewMode !== "day" && viewMode !== "week")) return;
-
-		let frame = 0;
-		let retryTimeout: number | null = null;
-		let disposed = false;
-		const maxAttempts = 40;
-		const retryDelayMs = 50;
-
-		const renderHeaderContent = (attempt = 0) => {
-			if (disposed) return;
-
-			clearRequirementHeaderContent(container);
-			const headerCells = getHeaderCells(container);
-			const shouldRetry = shouldRetryRequirementHeaderInjection({
-				headerCellCount: headerCells.length,
-				visibleDateCount: visibleRequirementDates.length,
-			});
-
-			for (const [index, date] of visibleRequirementDates.entries()) {
-				const headerCell = headerCells[index];
-				if (!headerCell) continue;
-
-				if (isSummaryLoading) {
-					const skeleton = document.createElement("div");
-					skeleton.className =
-						"z8-requirement-header-summary z8-requirement-header-summary--skeleton";
-					skeleton.setAttribute("aria-hidden", "true");
-					headerCell.append(skeleton);
-					continue;
-				}
-
-				const summary = workHoursData.get(date.toFormat("yyyy-MM-dd"));
-				if (!summary) continue;
-
-				const content = buildRequirementHeaderContent(summary, date.toFormat("cccc, LLLL d"), t);
-				const wrapper = document.createElement("div");
-				wrapper.className = `z8-requirement-header-summary z8-requirement-header-summary--${content.status}`;
-				wrapper.setAttribute("aria-label", content.accessibleLabel);
-
-				const screenReaderLabel = document.createElement("span");
-				screenReaderLabel.className = "sr-only";
-				screenReaderLabel.textContent = content.accessibleLabel;
-				wrapper.append(screenReaderLabel);
-
-				const required = document.createElement("span");
-				required.className = "z8-requirement-header-summary__required";
-				required.textContent = content.requiredHours;
-				wrapper.append(required);
-
-				if (content.deltaHours !== null) {
-					const delta = document.createElement("span");
-					delta.className = "z8-requirement-header-summary__delta";
-					delta.textContent = content.deltaHours;
-					wrapper.append(delta);
-				}
-
-				headerCell.append(wrapper);
-			}
-
-			if (shouldRetry && attempt < maxAttempts) {
-				retryTimeout = window.setTimeout(() => {
-					frame = window.requestAnimationFrame(() => renderHeaderContent(attempt + 1));
-				}, retryDelayMs);
-			}
-		};
-
-		frame = window.requestAnimationFrame(() => renderHeaderContent());
-
-		return () => {
-			disposed = true;
-			window.cancelAnimationFrame(frame);
-			if (retryTimeout !== null) window.clearTimeout(retryTimeout);
-			clearRequirementHeaderContent(container);
-		};
-	}, [t, viewMode, visibleRequirementDates, workHoursData, isSummaryLoading]);
-
-	useEffect(() => {
-		const container = calendarContainerRef.current;
-		if (!container || !onTimeRangeSelect || (viewMode !== "day" && viewMode !== "week")) return;
-
-		const handlePointerDown = (event: PointerEvent) => {
-			const target = event.target instanceof Element ? event.target : null;
-			if (
-				!(target instanceof HTMLElement) ||
-				isScheduleXEventElement(target) ||
-				!isIntentionalRangePointerDown(event)
-			) {
-				return;
-			}
-
-			const date = getPointerDateTime(container, event, visibleRequirementDates, timeZone);
-			selectionStartRef.current = date
-				? { date, clientX: event.clientX, clientY: event.clientY }
-				: null;
-		};
-
-		const handlePointerUp = (event: PointerEvent) => {
-			const start = selectionStartRef.current;
-			selectionStartRef.current = null;
-			if (!start) return;
-			if (!hasExceededPointerDragThreshold(start, event)) return;
-
-			const target = event.target instanceof Element ? event.target : null;
-			if (target instanceof HTMLElement && isScheduleXEventElement(target)) return;
-
-			const end = getPointerDateTime(container, event, visibleRequirementDates, timeZone);
-			if (!end || start.date.getTime() === end.getTime()) return;
-
-			onTimeRangeSelect({ start: start.date, end });
-		};
-
-		container.addEventListener("pointerdown", handlePointerDown);
-		window.addEventListener("pointerup", handlePointerUp);
-
-		return () => {
-			selectionStartRef.current = null;
-			container.removeEventListener("pointerdown", handlePointerDown);
-			window.removeEventListener("pointerup", handlePointerUp);
-		};
-	}, [onTimeRangeSelect, timeZone, viewMode, visibleRequirementDates]);
+	useScheduleXDomLifecycle({
+		calendarContainerRef,
+		events,
+		clockOutAllowedWorkPeriodIds,
+		onRunningPeriodClockOutRequest,
+		isLoading,
+		viewMode,
+		timeZone,
+		visibleRequirementDates,
+		workHoursData,
+		isSummaryLoading,
+		t,
+		onTimeRangeSelect,
+	});
 
 	if (isLoading) {
 		return (
@@ -699,106 +347,17 @@ export function ScheduleXCalendarWrapper({
 
 	return (
 		<div className="flex flex-col h-full min-h-[500px]">
-			{/* Custom navigation header */}
-			<div
-				data-testid="calendar-desktop-header"
-				className="hidden items-center justify-between gap-4 pb-3 mb-3 lg:flex"
-			>
-				<div className="flex items-center gap-2">
-					<Button
-						variant="outline"
-						size="icon"
-						onClick={navigatePrevious}
-						aria-label={t("calendar.view.previous", "Previous")}
-					>
-						<IconChevronLeft className="size-4" />
-					</Button>
-					<Button
-						variant="outline"
-						size="icon"
-						onClick={navigateNext}
-						aria-label={t("calendar.view.next", "Next")}
-					>
-						<IconChevronRight className="size-4" />
-					</Button>
-					<Button variant="outline" size="sm" onClick={navigateToday}>
-						{t("calendar.view.today", "Today")}
-					</Button>
-					{onRefresh && (
-						<Button
-							variant="outline"
-							size="icon"
-							onClick={onRefresh}
-							aria-label={t("calendar.view.refresh", "Refresh")}
-							title={t("calendar.view.refresh", "Refresh")}
-						>
-							<IconReload className="size-4" />
-						</Button>
-					)}
-				</div>
-				<h2 className="text-lg font-semibold">{dateRangeDisplay}</h2>
-				<Tabs value={viewMode} onValueChange={(v) => handleViewModeChange(v as ViewMode)}>
-					<TabsList>
-						<TabsTrigger value="day">{t("calendar.view.day", "Day")}</TabsTrigger>
-						<TabsTrigger value="week">{t("calendar.view.week", "Week")}</TabsTrigger>
-						<TabsTrigger value="month">{t("calendar.view.month", "Month")}</TabsTrigger>
-						<TabsTrigger value="year">{t("calendar.view.year", "Year")}</TabsTrigger>
-					</TabsList>
-				</Tabs>
-			</div>
-			<div data-testid="calendar-mobile-header" className="pb-3 mb-3 lg:hidden">
-				<h2
-					data-testid="calendar-mobile-date-range"
-					className="mb-2 truncate whitespace-nowrap text-lg font-semibold"
-				>
-					{mobileDateRangeDisplay}
-				</h2>
-				<div
-					data-testid="calendar-mobile-header-controls"
-					className="overflow-x-auto whitespace-nowrap"
-				>
-					<div className="flex w-max items-center gap-2">
-						<Button
-							variant="outline"
-							size="icon"
-							onClick={navigatePrevious}
-							aria-label={t("calendar.view.previous", "Previous")}
-						>
-							<IconChevronLeft className="size-4" />
-						</Button>
-						<Button
-							variant="outline"
-							size="icon"
-							onClick={navigateNext}
-							aria-label={t("calendar.view.next", "Next")}
-						>
-							<IconChevronRight className="size-4" />
-						</Button>
-						<Button variant="outline" size="sm" onClick={navigateToday}>
-							{t("calendar.view.today", "Today")}
-						</Button>
-						{onRefresh && (
-							<Button
-								variant="outline"
-								size="icon"
-								onClick={onRefresh}
-								aria-label={t("calendar.view.refresh", "Refresh")}
-								title={t("calendar.view.refresh", "Refresh")}
-							>
-								<IconReload className="size-4" />
-							</Button>
-						)}
-						<Tabs value={viewMode} onValueChange={(v) => handleViewModeChange(v as ViewMode)}>
-							<TabsList>
-								<TabsTrigger value="day">{t("calendar.view.day", "Day")}</TabsTrigger>
-								<TabsTrigger value="week">{t("calendar.view.week", "Week")}</TabsTrigger>
-								<TabsTrigger value="month">{t("calendar.view.month", "Month")}</TabsTrigger>
-								<TabsTrigger value="year">{t("calendar.view.year", "Year")}</TabsTrigger>
-							</TabsList>
-						</Tabs>
-					</div>
-				</div>
-			</div>
+			<ScheduleXCalendarHeader
+				dateRangeDisplay={dateRangeDisplay}
+				mobileDateRangeDisplay={mobileDateRangeDisplay}
+				viewMode={viewMode}
+				onNavigatePrevious={navigatePrevious}
+				onNavigateNext={navigateNext}
+				onNavigateToday={navigateToday}
+				onViewModeChange={handleViewModeChange}
+				onRefresh={onRefresh}
+				t={t}
+			/>
 
 			{/* Calendar with internal scroll - styles applied via style tag above */}
 			<div

@@ -99,15 +99,15 @@ function parseMetadata(
 export async function localizeOutboundNotification({
 	userId,
 	organizationId,
+	locale,
 	title,
 	message,
 	metadata,
-	locale: explicitLocale,
 }: LocalizeOutboundNotificationParams): Promise<LocalizedOutboundNotification> {
-	let locale = explicitLocale ?? FALLBACK_LOCALE;
+	let resolvedLocale = locale ?? FALLBACK_LOCALE;
 	try {
-		if (!explicitLocale) {
-			locale = await resolveRecipientNotificationLocale({ userId, organizationId });
+		if (!locale) {
+			resolvedLocale = await resolveRecipientNotificationLocale({ userId, organizationId });
 		}
 	} catch (error) {
 		logger.warn(
@@ -120,16 +120,16 @@ export async function localizeOutboundNotification({
 	const i18n = parseMetadata(metadata).i18n;
 
 	if (!i18n?.titleKey && !i18n?.messageKey) {
-		return { locale, title, message };
+    return { locale: resolvedLocale, title, message };
 	}
 
 	try {
-		const staticData = await loadNamespaces(locale, NOTIFICATION_NAMESPACES);
-		const tolgee = TolgeeBase().init({ language: locale, staticData });
+		const staticData = await loadNamespaces(resolvedLocale, NOTIFICATION_NAMESPACES);
+		const tolgee = TolgeeBase().init({ language: resolvedLocale, staticData });
 		await tolgee.run();
 
 		return {
-			locale,
+			locale: resolvedLocale,
 			title: i18n.titleKey
 				? tolgee.t({
 						key: i18n.titleKey,
@@ -147,9 +147,9 @@ export async function localizeOutboundNotification({
 		};
 	} catch (error) {
 		logger.warn(
-			{ err: error, userId, organizationId, locale },
+			{ err: error, userId, organizationId, locale: resolvedLocale },
 			"Failed to localize outbound notification",
 		);
-		return { locale, title, message };
+		return { locale: resolvedLocale, title, message };
 	}
 }

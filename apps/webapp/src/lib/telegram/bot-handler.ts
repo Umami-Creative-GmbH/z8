@@ -7,6 +7,7 @@
 
 import { executeCommand, getAllCommands, parseCommand } from "@/lib/bot-platform/command-registry";
 import { getBotTranslate, getUserLocale, setUserLocale } from "@/lib/bot-platform/i18n";
+import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import type { BotCommandContext } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
@@ -144,6 +145,13 @@ async function handleMessage(
 	}
 
 	// Build shared command context
+	const temporal = await resolveBotTemporalContext({
+		userId: userResult.user.userId,
+		employeeId: userResult.user.employeeId,
+		organizationId: bot.organizationId,
+	});
+	if (!temporal) return;
+
 	const commandContext: BotCommandContext = {
 		platform: "telegram",
 		organizationId: bot.organizationId,
@@ -161,7 +169,8 @@ async function handleMessage(
 			escalationTimeoutHours: bot.escalationTimeoutHours,
 		},
 		args: parsed.args,
-		locale,
+		locale: temporal.locale,
+		temporal,
 	};
 
 	// Execute command (shared with Teams)
@@ -333,7 +342,12 @@ async function handleCommandCallback(
 
 	if (userResult.status !== "found") return;
 
-	const locale = await getUserLocale(userResult.user.userId);
+	const temporal = await resolveBotTemporalContext({
+		userId: userResult.user.userId,
+		employeeId: userResult.user.employeeId,
+		organizationId: bot.organizationId,
+	});
+	if (!temporal) return;
 
 	const commandContext: BotCommandContext = {
 		platform: "telegram",
@@ -352,7 +366,8 @@ async function handleCommandCallback(
 			escalationTimeoutHours: bot.escalationTimeoutHours,
 		},
 		args: [],
-		locale,
+		locale: temporal.locale,
+		temporal,
 	};
 
 	const response = await executeCommand(data.c, commandContext);

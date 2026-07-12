@@ -24,6 +24,10 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
+vi.mock("next-intl", () => ({
+	useLocale: () => "en-US",
+}));
+
 vi.mock("sonner", () => ({
 	toast: {
 		error: mocks.toastError,

@@ -15,6 +15,7 @@ import { shiftToEvent } from "./shift-scheduler-utils";
 
 interface UseShiftSchedulerDataOptions {
 	organizationId: string;
+	organizationTimezone: string;
 	dateRange: DateRange;
 	isManager: boolean;
 }
@@ -23,13 +24,14 @@ export interface ShiftSchedulerUpdateInput {
 	id: string;
 	employeeId?: string | null;
 	subareaId: string;
-	date: Date;
+	date: string;
 	startTime: string;
 	endTime: string;
 }
 
 export function useShiftSchedulerData({
 	organizationId,
+	organizationTimezone,
 	dateRange,
 	isManager,
 }: UseShiftSchedulerDataOptions) {
@@ -40,8 +42,8 @@ export function useShiftSchedulerData({
 		queryKey: queryKeys.shifts.list(organizationId, dateRange),
 		queryFn: async () => {
 			const result = await getShifts({
-				startDate: dateRange.start,
-				endDate: dateRange.end,
+				startDate: dateRange.startDate,
+				endDateExclusive: dateRange.endDateExclusive,
 				includeOpenShifts: true,
 			});
 			if (!result.success) throw new Error(result.error);
@@ -116,7 +118,7 @@ export function useShiftSchedulerData({
 	const complianceFindingsCount = complianceSummary?.totalFindings ?? 0;
 	const hasComplianceWarnings = complianceFindingsCount > 0;
 
-	const events = shifts.map(shiftToEvent) as any[];
+	const events = shifts.map((shift) => shiftToEvent(shift, organizationTimezone)) as any[];
 
 	return {
 		shifts,

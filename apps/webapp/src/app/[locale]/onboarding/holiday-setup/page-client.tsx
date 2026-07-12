@@ -31,6 +31,49 @@ interface CountryOption {
 	name: string;
 }
 
+function HolidaySetupHeader({ t }: { t: (key: string, defaultValue: string) => string }) {
+	return (
+		<div className="mb-8 text-center">
+			<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
+				<IconCalendarEvent className="size-8 text-primary" />
+			</div>
+			<h1 className="mb-4 text-3xl font-bold tracking-tight">
+				{t("onboarding.holidaySetup.title", "Set up holidays")}
+			</h1>
+			<p className="text-muted-foreground">
+				{t(
+					"onboarding.holidaySetup.subtitle",
+					"Select your country to import public holidays. This helps track time off accurately.",
+				)}
+			</p>
+		</div>
+	);
+}
+
+function HolidaySetupActions({
+	loading,
+	selectedCountry,
+	onSkip,
+	t,
+}: {
+	loading: boolean;
+	selectedCountry: string;
+	onSkip: () => void;
+	t: (key: string, defaultValue: string) => string;
+}) {
+	return (
+		<div className="flex gap-3 pt-4">
+			<Button type="button" variant="outline" onClick={onSkip} disabled={loading} className="flex-1">
+				{t("onboarding.holidaySetup.skip", "Skip for now")}
+			</Button>
+			<Button type="submit" disabled={loading || !selectedCountry} className="flex-1">
+				{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+				{t("onboarding.holidaySetup.continue", "Continue")}
+			</Button>
+		</div>
+	);
+}
+
 export default function HolidaySetupPage() {
 	const { t } = useTranslate();
 	const { push } = useRouter();
@@ -137,20 +180,7 @@ export default function HolidaySetupPage() {
 			<ProgressIndicator currentStep="holiday_setup" />
 
 			<div className="mx-auto max-w-2xl">
-				<div className="mb-8 text-center">
-					<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
-						<IconCalendarEvent className="size-8 text-primary" />
-					</div>
-					<h1 className="mb-4 text-3xl font-bold tracking-tight">
-						{t("onboarding.holidaySetup.title", "Set up holidays")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"onboarding.holidaySetup.subtitle",
-							"Select your country to import public holidays. This helps track time off accurately.",
-						)}
-					</p>
-				</div>
+				<HolidaySetupHeader t={t} />
 
 				<Card>
 					<CardHeader>
@@ -309,22 +339,12 @@ export default function HolidaySetupPage() {
 								)}
 							</form.Field>
 
-							{/* Action Buttons */}
-							<div className="flex gap-3 pt-4">
-								<Button
-									type="button"
-									variant="outline"
-									onClick={handleSkip}
-									disabled={loading}
-									className="flex-1"
-								>
-									{t("onboarding.holidaySetup.skip", "Skip for now")}
-								</Button>
-								<Button type="submit" disabled={loading || !selectedCountry} className="flex-1">
-									{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-									{t("onboarding.holidaySetup.continue", "Continue")}
-								</Button>
-							</div>
+							<HolidaySetupActions
+								loading={loading}
+								selectedCountry={selectedCountry}
+								onSkip={handleSkip}
+								t={t}
+							/>
 						</form>
 					</CardContent>
 				</Card>

@@ -71,8 +71,8 @@ vi.mock("@/db", () => ({
 const {
 	sendInvitation,
 	updateInvitationTargetTeam,
-	updateOrganizationDefaultNotificationLanguage,
 	updateOrganizationTimezone,
+	updateOrganizationDefaultNotificationLanguage,
 } = await import("./actions");
 
 describe("organization feature allowlist", () => {
@@ -439,5 +439,45 @@ describe("organization invitation actions", () => {
 		expect(updateSetMock).not.toHaveBeenCalled();
 		expect(insertValuesMock).not.toHaveBeenCalled();
 		expect(onConflictDoUpdateMock).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		"",
+		" Europe/Berlin",
+		"Europe/Berlin ",
+		"+05:45",
+		"Not/A_Zone",
+	])("rejects invalid organization timezone %j before updating", async (timezone) => {
+		memberFindFirstMock.mockResolvedValue({
+			id: "member-owner",
+			userId: "user-admin",
+			organizationId: "org-1",
+			role: "owner",
+		});
+		const result = await updateOrganizationTimezone("org-1", timezone);
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error: "Timezone must be a valid timezone",
+		});
+		expect(updateSetMock).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		"UTC",
+		"Europe/Berlin",
+		"America/New_York",
+	])("updates organization timezone %s for an owner", async (timezone) => {
+		memberFindFirstMock.mockResolvedValue({
+			id: "member-owner",
+			userId: "user-admin",
+			organizationId: "org-1",
+			role: "owner",
+		});
+		const result = await updateOrganizationTimezone("org-1", timezone);
+
+		expect(result).toMatchObject({ success: true });
+		expect(updateSetMock).toHaveBeenCalledWith({ timezone });
 	});
 });

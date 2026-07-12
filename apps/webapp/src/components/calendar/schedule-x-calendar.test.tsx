@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { DateTime } from "luxon";
+import { useEffect, useRef, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkPeriodEvent } from "@/lib/calendar/types";
 import { ScheduleXCalendarWrapper } from "./schedule-x-calendar";
@@ -16,17 +17,39 @@ import {
 	hasExceededPointerDragThreshold,
 	isIntentionalRangePointerDown,
 	isScheduleXEventElement,
-	resolveEventModalLeft,
 	resolveClickableCalendarEvent,
+	resolveEventModalLeft,
 	shouldRetryRequirementHeaderInjection,
 } from "./schedule-x-calendar-utils";
+import {
+	useScheduleXClockOutDelegation,
+	useScheduleXDomLifecycle,
+} from "./use-schedule-x-dom-lifecycle";
 
-const useCalendarAppMock = vi.hoisted(() =>
-	vi.fn(() => ({
-		events: { set: vi.fn() },
-		setTheme: vi.fn(),
-	})),
-);
+const useCalendarAppMock = vi.hoisted(() => vi.fn());
+
+type ScheduleXPluginTestDouble = {
+	beforeRender?: () => void;
+	setDate?: ReturnType<typeof vi.fn>;
+};
+
+function useCalendarAppTestDouble(config: { plugins: ScheduleXPluginTestDouble[] }) {
+	const initialPlugins = useRef(config.plugins);
+	const [calendar, setCalendar] = useState<{
+		events: { set: ReturnType<typeof vi.fn> };
+		setTheme: ReturnType<typeof vi.fn>;
+	} | null>(null);
+
+	useEffect(() => {
+		for (const plugin of initialPlugins.current) plugin.beforeRender?.();
+		setCalendar({
+			events: { set: vi.fn() },
+			setTheme: vi.fn(),
+		});
+	}, []);
+
+	return calendar;
+}
 
 vi.mock("@schedule-x/calendar", () => ({
 	createViewDay: () => "day",
@@ -36,10 +59,20 @@ vi.mock("@schedule-x/calendar", () => ({
 }));
 
 vi.mock("@schedule-x/calendar-controls", () => ({
-	createCalendarControlsPlugin: () => ({
-		setDate: vi.fn(),
-		setView: vi.fn(),
-	}),
+	createCalendarControlsPlugin: () => {
+		let isInitialized = false;
+		return {
+			beforeRender: () => {
+				isInitialized = true;
+			},
+			setDate: vi.fn(() => {
+				if (!isInitialized) {
+					throw new TypeError("Cannot read properties of undefined (reading 'datePickerState')");
+				}
+			}),
+			setView: vi.fn(),
+		};
+	},
 }));
 
 vi.mock("@schedule-x/event-modal", () => ({
@@ -91,11 +124,111 @@ const runningWorkPeriod: WorkPeriodEvent = {
 	},
 };
 
+function ClockOutDelegationHarness({
+	events,
+	clockOutAllowedWorkPeriodIds,
+	onRunningPeriodClockOutRequest,
+}: {
+	events: WorkPeriodEvent[];
+	clockOutAllowedWorkPeriodIds: ReadonlySet<string>;
+	onRunningPeriodClockOutRequest: (event: WorkPeriodEvent) => void;
+}) {
+	const containerRef = useRef<HTMLDivElement>(null);
+	useScheduleXClockOutDelegation({
+		calendarContainerRef: containerRef,
+		events,
+		clockOutAllowedWorkPeriodIds,
+		onRunningPeriodClockOutRequest,
+	});
+
+	return <div ref={containerRef} data-testid="clock-out-delegation-container" />;
+}
+
+function DomLifecycleHarness() {
+	const containerRef = useRef<HTMLDivElement>(null);
+	useScheduleXDomLifecycle({
+		calendarContainerRef: containerRef,
+		events: [],
+		clockOutAllowedWorkPeriodIds: new Set(),
+		isLoading: false,
+		viewMode: "month",
+		timeZone: "Europe/Berlin",
+		visibleRequirementDates: [],
+		workHoursData: new Map(),
+		isSummaryLoading: false,
+		t: (_key, fallback) => fallback,
+	});
+
+	return (
+		<div ref={containerRef} data-testid="dom-lifecycle-container">
+			<div className="sx__event" data-testid="dom-lifecycle-event" />
+			<div className="sx__event-modal is-open" />
+		</div>
+	);
+}
+
 beforeEach(() => {
-	useCalendarAppMock.mockClear();
+	useCalendarAppMock.mockReset();
+	useCalendarAppMock.mockImplementation(useCalendarAppTestDouble);
 });
 
 describe("ScheduleXCalendarWrapper header", () => {
+	it("waits for the calendar app before synchronizing the selected date", () => {
+		expect(() =>
+			render(
+				<ScheduleXCalendarWrapper
+					events={[]}
+					initialDateKey="2026-05-18"
+					isLoading
+					onViewModeChange={vi.fn()}
+					viewMode="day"
+				/>,
+			),
+		).not.toThrow();
+	});
+
+	it("provides the initial date to Schedule-X configuration", () => {
+		render(
+			<ScheduleXCalendarWrapper
+				events={[]}
+				initialDateKey="2026-05-18"
+				onViewModeChange={vi.fn()}
+				viewMode="day"
+			/>,
+		);
+
+		expect(useCalendarAppMock.mock.calls[0]?.[0].selectedDate).toEqual(
+			Temporal.PlainDate.from("2026-05-18"),
+		);
+	});
+
+	it("updates the calendar control when the parent changes its date", () => {
+		const { rerender } = render(
+			<ScheduleXCalendarWrapper
+				events={[]}
+				initialDateKey="2026-05-18"
+				onRefresh={vi.fn()}
+				onViewModeChange={vi.fn()}
+				viewMode="day"
+			/>,
+		);
+
+		const calendarControls = useCalendarAppMock.mock.calls[0]?.[0].plugins[1];
+		calendarControls.setDate.mockClear();
+
+		rerender(
+			<ScheduleXCalendarWrapper
+				events={[]}
+				initialDateKey="2026-05-19"
+				onRefresh={vi.fn()}
+				onViewModeChange={vi.fn()}
+				viewMode="day"
+			/>,
+		);
+
+		expect(calendarControls.setDate).toHaveBeenCalledWith(Temporal.PlainDate.from("2026-05-19"));
+	});
+
 	it("renders separate desktop and mobile headers with compact mobile week text", () => {
 		render(
 			<ScheduleXCalendarWrapper
@@ -139,6 +272,27 @@ describe("ScheduleXCalendarWrapper header", () => {
 });
 
 describe("ScheduleXCalendarWrapper running clock-out action", () => {
+	it("delegates an allowed running clock-out click through the DOM lifecycle hook", () => {
+		const onRunningPeriodClockOutRequest = vi.fn();
+
+		render(
+			<ClockOutDelegationHarness
+				events={[runningWorkPeriod]}
+				clockOutAllowedWorkPeriodIds={new Set([runningWorkPeriod.id])}
+				onRunningPeriodClockOutRequest={onRunningPeriodClockOutRequest}
+			/>,
+		);
+
+		const button = document.createElement("button");
+		button.dataset.runningClockOutButton = "true";
+		button.dataset.workPeriodId = runningWorkPeriod.id;
+		screen.getByTestId("clock-out-delegation-container").append(button);
+
+		fireEvent.click(button);
+
+		expect(onRunningPeriodClockOutRequest).toHaveBeenCalledWith(runningWorkPeriod);
+	});
+
 	it("passes allowed running clock-out ids into the Schedule-X event conversion path", () => {
 		render(
 			<ScheduleXCalendarWrapper
@@ -209,6 +363,24 @@ describe("ScheduleXCalendarWrapper running clock-out action", () => {
 		fireEvent.click(button);
 
 		expect(onRunningPeriodClockOutRequest).not.toHaveBeenCalled();
+	});
+});
+
+describe("Schedule-X DOM lifecycle cleanup", () => {
+	it("cancels a pending modal reposition animation frame on unmount", () => {
+		const requestAnimationFrame = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(321);
+		const cancelAnimationFrame = vi.spyOn(window, "cancelAnimationFrame");
+		const { unmount } = render(<DomLifecycleHarness />);
+
+		fireEvent.pointerUp(screen.getByTestId("dom-lifecycle-event"));
+		fireEvent.scroll(screen.getByTestId("dom-lifecycle-container"));
+		expect(requestAnimationFrame).toHaveBeenCalledTimes(1);
+
+		unmount();
+
+		expect(cancelAnimationFrame).toHaveBeenCalledWith(321);
+		requestAnimationFrame.mockRestore();
+		cancelAnimationFrame.mockRestore();
 	});
 });
 

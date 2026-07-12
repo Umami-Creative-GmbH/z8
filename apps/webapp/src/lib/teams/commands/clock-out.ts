@@ -6,7 +6,7 @@
  * processing (compliance, surcharges, break enforcement).
  */
 
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import {
@@ -15,20 +15,23 @@ import {
 	enforceBreaksAfterClockOut,
 } from "@/app/[locale]/(app)/time-tracking/actions";
 import { db } from "@/db";
-import { employee, timeEntry, userSettings, workPeriod } from "@/db/schema";
+import { employee, workPeriod } from "@/db/schema";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
-import { fmtTime, getBotTranslate } from "@/lib/bot-platform/i18n";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
+import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import {
 	ChangePolicyService,
 	ChangePolicyServiceLive,
 } from "@/lib/effect/services/change-policy.service";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
-import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntry } from "@/lib/time-tracking/validation";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { getCommandTemporalContext } from "./command-temporal";
 
 const logger = createLogger("BotCommand:ClockOut");
 
@@ -41,6 +44,7 @@ export const clockOutCommand: BotCommand = {
 	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		try {
 			const t = await getBotTranslate(ctx.locale);
+			const temporal = ctx.temporal ?? getCommandTemporalContext(ctx);
 
 			// Look up employee record for org verification
 			const emp = await db.query.employee.findFirst({
@@ -68,12 +72,7 @@ export const clockOutCommand: BotCommand = {
 				};
 			}
 
-			// Get user timezone from userSettings
-			const settingsData = await db.query.userSettings.findFirst({
-				where: eq(userSettings.userId, ctx.userId),
-				columns: { timezone: true },
-			});
-			const timezone = settingsData?.timezone || "UTC";
+			const timezone = temporal.effectiveTimezone;
 
 			// Check for active work period
 			const activePeriod = await db.query.workPeriod.findFirst({
@@ -87,7 +86,7 @@ export const clockOutCommand: BotCommand = {
 				};
 			}
 
-			const now = new Date();
+			const now = dateFromInstant(temporal.now);
 
 			// Validate the time entry (holiday check)
 			const validation = await validateTimeEntry(emp.organizationId, now, timezone);
@@ -129,69 +128,31 @@ export const clockOutCommand: BotCommand = {
 				};
 			}
 
-			// Get previous entry for blockchain linking
-			const [previousEntry] = await db
-				.select()
-				.from(timeEntry)
-				.where(
-					and(eq(timeEntry.employeeId, emp.id), eq(timeEntry.organizationId, emp.organizationId)),
-				)
-				.orderBy(desc(timeEntry.createdAt))
-				.limit(1);
-
-			// Calculate blockchain hash
-			const hash = calculateHash({
-				employeeId: emp.id,
-				type: "clock_out",
-				timestamp: now.toISOString(),
-				previousHash: previousEntry?.hash || null,
-			});
 			const timezoneCapture = resolveFallbackTimezoneCapture({
 				timestamp: now,
 				timezone,
 				timezoneSource: "user_setting",
 			});
 
-			// Update work period
-			const durationMs = now.getTime() - activePeriod.startTime.getTime();
-			const durationMinutes = Math.floor(durationMs / 60000);
-			const _entry = await db.transaction(async (tx) => {
-				// Create clock-out time entry
-				const [createdEntry] = await tx
-					.insert(timeEntry)
-					.values({
-						employeeId: emp.id,
-						organizationId: emp.organizationId,
-						type: "clock_out",
-						timestamp: now,
-						hash,
-						previousHash: previousEntry?.hash || null,
-						ipAddress: "bot",
-						deviceInfo: `${ctx.platform}-bot`,
-						createdBy: ctx.userId,
-						...timezoneCapture,
-					})
-					.returning();
-
-				if (!createdEntry) {
-					throw new Error("Failed to create clock-out entry");
+			let durationMinutes: number;
+			try {
+				const result = await clockingService.clockOut({
+					employeeId: emp.id,
+					organizationId: emp.organizationId,
+					createdBy: ctx.userId,
+					action: { instant: instantFromDate(now), ...timezoneCapture },
+					source: { ipAddress: "bot", deviceInfo: `${ctx.platform}-bot` },
+				});
+				durationMinutes = result.durationMinutes;
+			} catch (error) {
+				if (error instanceof ClockingConflictError) {
+					return {
+						type: "text",
+						text: t("bot.cmd.clockout.notClockedIn", "You are not currently clocked in."),
+					};
 				}
-
-				await tx
-					.update(workPeriod)
-					.set({
-						clockOutId: createdEntry.id,
-						endTime: now,
-						durationMinutes,
-						isActive: false,
-						approvalStatus: "approved",
-						pendingChanges: null,
-						updatedAt: new Date(),
-					})
-					.where(eq(workPeriod.id, activePeriod.id));
-
-				return createdEntry;
-			});
+				throw error;
+			}
 
 			try {
 				await markEmployeeWorkBalanceDirty({
@@ -265,7 +226,6 @@ export const clockOutCommand: BotCommand = {
 				});
 
 			// Format response
-			const clockOutTime = DateTime.fromJSDate(now).setZone(timezone);
 			const hours = Math.floor(durationMinutes / 60);
 			const mins = durationMinutes % 60;
 
@@ -274,7 +234,7 @@ export const clockOutCommand: BotCommand = {
 				text: t(
 					"bot.cmd.clockout.success",
 					"Clocked out at {time}. Duration: {hours}h {minutes}m.",
-					{ time: fmtTime(clockOutTime, ctx.locale), hours, minutes: mins },
+					{ time: formatInstant(temporal.now, temporal, "time"), hours, minutes: mins },
 				),
 			};
 		} catch (error) {

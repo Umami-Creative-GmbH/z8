@@ -305,8 +305,8 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 							{t("common.cancel", "Cancel")}
 						</Button>
 					</ActionPanelClose>
-					<form.Subscribe selector={(state) => state.isSubmitting}>
-						{(isSubmitting) => (
+					<form.Subscribe<boolean> selector={(state) => state.isSubmitting}>
+						{(isSubmitting: boolean) => (
 							<Button type="button" onClick={() => form.handleSubmit()} disabled={isSubmitting}>
 								{isSubmitting ? (
 									<>

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import type {
 	ApprovalDecisionAction as DomainApprovalDecisionAction,
@@ -123,5 +124,14 @@ describe("approvals canonical sync", () => {
 		expectTypeOf<ActionBulkDecisionSuccess>().toEqualTypeOf<DomainBulkDecisionSuccess>();
 		expectTypeOf<ActionBulkDecisionFailure>().toEqualTypeOf<DomainBulkDecisionFailure>();
 		expectTypeOf<ActionBulkDecisionResult>().toEqualTypeOf<DomainBulkDecisionResult>();
+	});
+
+	it("resolves the current recipient profile inside the active organization before formatting rows", () => {
+		const source = readFileSync("src/app/[locale]/(app)/approvals/actions.ts", "utf8");
+
+		expect(source).toContain(
+			"getEffectiveTimezone(currentEmployee.userId, currentEmployee.organizationId)",
+		);
+		expect(source).toContain("getUserTimeFormat(currentEmployee.userId)");
 	});
 });

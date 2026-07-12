@@ -508,8 +508,8 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 						</form.Field>
 
 						{/* Custom Category Name (conditional) */}
-						<form.Subscribe selector={(state) => state.values.category}>
-							{(category) =>
+						<form.Subscribe<SkillFormValues["category"]> selector={(state) => state.values.category}>
+							{(category: SkillFormValues["category"]) =>
 								category === "custom" && (
 									<form.Field name="customCategoryName">
 										{(field) => (

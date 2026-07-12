@@ -136,4 +136,10 @@ describe("env", () => {
 		expect(env.REDIS_TLS).toBe("true");
 		expect(env.REDIS_CA_CERT).toBe(redisCaCert);
 	});
+
+	test("exposes PostgreSQL startup options through the validated environment", async () => {
+		const { env } = await importEnv({ PGOPTIONS: "-c statement_timeout=5000" });
+
+		expect(env.PGOPTIONS).toBe("-c statement_timeout=5000");
+	});
 });

@@ -14,12 +14,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
-import type { DateRange } from "@/lib/reports/types";
+import type { ReportDateRange } from "@/lib/reports/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { DateRangePicker } from "../date-range-picker";
 
 interface ProjectFiltersProps {
-	onGenerate: (dateRange: DateRange, statusFilter?: string[]) => void;
+	onGenerate: (dateRange: ReportDateRange, statusFilter?: string[]) => void;
 	isGenerating?: boolean;
 }
 
@@ -32,7 +32,7 @@ export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFilt
 		})),
 	);
 	const hasUserChangedRange = useRef(false);
-	const [dateRange, setDateRange] = useState<DateRange | null>(null);
+	const [dateRange, setDateRange] = useState<ReportDateRange | null>(null);
 	const [statusFilter, setStatusFilter] = useState<string>("all");
 
 	useEffect(() => {
@@ -43,7 +43,7 @@ export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFilt
 		setDateRange(getDateRangeForPreset("current_month", { timezone }));
 	}, [isHydrated, timezone]);
 
-	const handleDateRangeChange = (range: DateRange) => {
+	const handleDateRangeChange = (range: ReportDateRange) => {
 		hasUserChangedRange.current = true;
 		setDateRange(range);
 	};

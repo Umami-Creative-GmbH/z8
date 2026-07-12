@@ -30,6 +30,10 @@ spec:
           image: z8-db-seed:latest
           imagePullPolicy: Always
           env:
+            - name: TZ
+              value: "UTC"
+            - name: PGOPTIONS
+              value: "-c timezone=UTC"
             - name: POSTGRES_HOST
               valueFrom:
                 configMapKeyRef:

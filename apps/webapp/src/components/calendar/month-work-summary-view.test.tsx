@@ -1,7 +1,6 @@
 /** @vitest-environment jsdom */
 
 import { fireEvent, render, screen } from "@testing-library/react";
-import { DateTime } from "luxon";
 import { describe, expect, it, vi } from "vitest";
 import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import { MonthWorkSummaryView } from "./month-work-summary-view";
@@ -65,7 +64,8 @@ function multiDayEvent(
 
 function renderView(overrides: Partial<Parameters<typeof MonthWorkSummaryView>[0]> = {}) {
 	const props = {
-		monthDate: new Date("2026-05-01T00:00:00.000Z"),
+		monthDateKey: "2026-05-01",
+		timeZone: "UTC",
 		events: [event("2026-05-04", "holiday", "Holiday")],
 		workHoursData: new Map([
 			["2026-05-04", workSummary(480, 606)],
@@ -108,8 +108,7 @@ describe("MonthWorkSummaryView", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: /Monday, May 4, 2026/ }));
 
-		const clickedDate = DateTime.fromJSDate(props.onDayClick.mock.calls[0][0]);
-		expect(clickedDate.toObject()).toMatchObject({ year: 2026, month: 5, day: 4 });
+		expect(props.onDayClick).toHaveBeenCalledWith("2026-05-04");
 	});
 
 	it("handles month navigation and view mode changes", () => {
@@ -121,8 +120,7 @@ describe("MonthWorkSummaryView", () => {
 			ctrlKey: false,
 		});
 
-		const previousMonth = DateTime.fromJSDate(props.onMonthChange.mock.calls[0][0]);
-		expect(previousMonth.toObject()).toMatchObject({ year: 2026, month: 4, day: 1 });
+		expect(props.onMonthChange).toHaveBeenCalledWith("2026-04-01");
 		expect(props.onViewModeChange).toHaveBeenCalledWith("week");
 	});
 

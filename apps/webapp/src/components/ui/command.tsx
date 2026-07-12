@@ -90,6 +90,7 @@ function CommandDialog({
 		}, COMMAND_DIALOG_CLOSE_DURATION_MS);
 
 		return () => window.clearTimeout(timeout);
+		// oxlint-disable-next-line react-hooks/exhaustive-deps -- actualOpen is the resolved controlled/uncontrolled open state used by this effect.
 	}, [actualOpen]);
 
 	const handleOpenChange: React.ComponentProps<typeof Dialog>["onOpenChange"] = (

@@ -3,13 +3,14 @@
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useEffect } from "react";
+import { Temporal } from "temporal-polyfill";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
 
 export interface ShiftDialogFormValues {
 	employeeId: string | null;
 	templateId: string | null;
 	subareaId: string;
-	date: Date;
+	date: string;
 	startTime: string;
 	endTime: string;
 	notes: string;
@@ -20,19 +21,26 @@ interface UseShiftDialogFormOptions {
 	open: boolean;
 	shift: ShiftWithRelations | null;
 	templates: ShiftTemplate[];
-	defaultDate: Date | null;
+	defaultDate: string | null;
+	organizationTimezone: string;
 	onSubmit: (values: ShiftDialogFormValues) => void;
 }
 
 const DEFAULT_START_TIME = "09:00";
 const DEFAULT_END_TIME = "17:00";
 
-export function getDefaultShiftDialogValues(defaultDate: Date | null): ShiftDialogFormValues {
+export function getDefaultShiftDialogValues(
+	defaultDate: string | null,
+	organizationTimezone = "UTC",
+	now = Temporal.Now.instant().toString(),
+): ShiftDialogFormValues {
 	return {
 		employeeId: null,
 		templateId: null,
 		subareaId: "",
-		date: defaultDate || new Date(),
+		date:
+			defaultDate ||
+			Temporal.Instant.from(now).toZonedDateTimeISO(organizationTimezone).toPlainDate().toString(),
 		startTime: DEFAULT_START_TIME,
 		endTime: DEFAULT_END_TIME,
 		notes: "",
@@ -40,12 +48,18 @@ export function getDefaultShiftDialogValues(defaultDate: Date | null): ShiftDial
 	};
 }
 
-export function getShiftDialogValues(shift: ShiftWithRelations): ShiftDialogFormValues {
+export function getShiftDialogValues(
+	shift: ShiftWithRelations,
+	organizationTimezone: string,
+): ShiftDialogFormValues {
 	return {
 		employeeId: shift.employeeId,
 		templateId: shift.templateId,
 		subareaId: shift.subareaId || "",
-		date: new Date(shift.date),
+		date: Temporal.Instant.fromEpochMilliseconds(shift.date.getTime())
+			.toZonedDateTimeISO(organizationTimezone)
+			.toPlainDate()
+			.toString(),
 		startTime: shift.startTime,
 		endTime: shift.endTime,
 		notes: shift.notes || "",
@@ -74,10 +88,11 @@ export function useShiftDialogForm({
 	shift,
 	templates,
 	defaultDate,
+	organizationTimezone,
 	onSubmit,
 }: UseShiftDialogFormOptions) {
 	const form = useForm({
-		defaultValues: getDefaultShiftDialogValues(defaultDate),
+		defaultValues: getDefaultShiftDialogValues(defaultDate, organizationTimezone),
 		onSubmit: async ({ value }) => {
 			onSubmit(value);
 		},
@@ -91,8 +106,8 @@ export function useShiftDialogForm({
 		}
 
 		const nextValues = shift
-			? getShiftDialogValues(shift)
-			: getDefaultShiftDialogValues(defaultDate);
+			? getShiftDialogValues(shift, organizationTimezone)
+			: getDefaultShiftDialogValues(defaultDate, organizationTimezone);
 
 		form.setFieldValue("employeeId", nextValues.employeeId);
 		form.setFieldValue("templateId", nextValues.templateId);
@@ -102,7 +117,7 @@ export function useShiftDialogForm({
 		form.setFieldValue("endTime", nextValues.endTime);
 		form.setFieldValue("notes", nextValues.notes);
 		form.setFieldValue("color", nextValues.color);
-	}, [defaultDate, form, open, shift]);
+	}, [defaultDate, form, open, organizationTimezone, shift]);
 
 	useEffect(() => {
 		const selectedTemplateId = formValues.templateId;

@@ -2,8 +2,10 @@
 
 import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -42,6 +44,8 @@ export function DomainVerificationDialog({
 	isVerifying,
 }: DomainVerificationDialogProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const timezone = useUserTimezone();
 	const [copiedField, setCopiedField] = useState<string | null>(null);
 	const [isRegenerating, setIsRegenerating] = useState(false);
 
@@ -163,7 +167,10 @@ export function DomainVerificationDialog({
 						{domain.verificationTokenExpiresAt && !isExpired && (
 							<p className="text-sm text-muted-foreground">
 								{t("settings.enterprise.domains.tokenExpires", "Token expires: {date}", {
-									date: new Date(domain.verificationTokenExpiresAt).toLocaleDateString(),
+									date: Intl.DateTimeFormat(locale, {
+										dateStyle: "medium",
+										timeZone: timezone,
+									}).format(domain.verificationTokenExpiresAt),
 								})}
 							</p>
 						)}

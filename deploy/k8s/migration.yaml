@@ -35,6 +35,10 @@ spec:
             - node
             - ./scripts/migrate-with-lock.js
           env:
+            - name: TZ
+              value: "UTC"
+            - name: PGOPTIONS
+              value: "-c timezone=UTC"
             - name: POSTGRES_HOST
               valueFrom:
                 configMapKeyRef:

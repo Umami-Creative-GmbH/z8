@@ -59,6 +59,7 @@ export function ApprovalInboxToolbar({
 	const visibleTypes = APPROVAL_TYPES.filter((type) => supportedTypes.includes(type.value));
 
 	const activeFilterCount = (filters.types?.length ? 1 : 0) + (filters.search ? 1 : 0);
+	const selectedTypeSet = new Set(filters.types);
 
 	const handleTypeToggle = (type: ApprovalInboxType) => {
 		const currentTypes = filters.types || [];
@@ -149,7 +150,7 @@ export function ApprovalInboxToolbar({
 						{visibleTypes.map((type) => (
 							<DropdownMenuCheckboxItem
 								key={type.value}
-								checked={filters.types?.includes(type.value) || false}
+								checked={selectedTypeSet.has(type.value)}
 								onCheckedChange={() => handleTypeToggle(type.value)}
 							>
 								{t(`approvals:approvals.types.${type.value}`, TYPE_LABELS[type.value])}

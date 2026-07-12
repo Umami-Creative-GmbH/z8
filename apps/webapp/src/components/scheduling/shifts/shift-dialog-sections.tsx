@@ -2,8 +2,8 @@
 
 import { IconCalendar, IconLoader2, IconMapPin, IconTrash, IconUsers } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { type ComponentProps, useState } from "react";
+import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
 import { SkillWarningAlert, SkillWarningBadge } from "@/components/scheduling/skill-warning-alert";
@@ -93,12 +93,7 @@ export function ShiftDialogSections({
 
 	return (
 		<>
-			<form.Field
-				name="date"
-				validators={{
-					onChange: z.date(),
-				}}
-			>
+			<form.Field name="date" validators={{ onChange: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }}>
 				{(field) => (
 					<div className="flex flex-col gap-y-2">
 						<Label>{t("scheduling:scheduling.shiftDialog.date", "Date")}</Label>
@@ -113,7 +108,7 @@ export function ShiftDialogSections({
 									disabled={!isManager}
 								>
 									{field.state.value ? (
-										DateTime.fromJSDate(field.state.value).toLocaleString(DateTime.DATE_MED)
+										Temporal.PlainDate.from(field.state.value).toLocaleString()
 									) : (
 										<span>{t("scheduling:scheduling.shiftDialog.pickDate", "Pick a date")}</span>
 									)}
@@ -123,8 +118,16 @@ export function ShiftDialogSections({
 							<PopoverContent className="w-auto p-0" align="start">
 								<Calendar
 									mode="single"
-									selected={field.state.value}
-									onSelect={(date) => date && field.handleChange(date)}
+									selected={new Date(`${field.state.value}T00:00:00Z`)}
+									onSelect={(date) =>
+										date &&
+										field.handleChange(
+											Temporal.Instant.fromEpochMilliseconds(date.getTime())
+												.toZonedDateTimeISO("UTC")
+												.toPlainDate()
+												.toString(),
+										)
+									}
 									autoFocus
 								/>
 							</PopoverContent>

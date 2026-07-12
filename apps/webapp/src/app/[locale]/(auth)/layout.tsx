@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Script from "next/script";
 import { connection } from "next/server";
+import { Suspense } from "react";
 import { AuthBackgroundImage } from "@/components/auth-background-image";
 import { selectRandomAuthBackgroundImage } from "@/components/auth-background-images";
 import { FontSizeToggle } from "@/components/font-size-toggle";
@@ -25,7 +26,15 @@ export async function generateStaticParams() {
 	return ALL_LANGUAGES.map((locale) => ({ locale }));
 }
 
-export default async function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+	return (
+		<Suspense fallback={null}>
+			<AuthLayoutContent>{children}</AuthLayoutContent>
+		</Suspense>
+	);
+}
+
+export async function AuthLayoutContent({ children }: { children: React.ReactNode }) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	// Derive custom domains from the trusted request Host header.

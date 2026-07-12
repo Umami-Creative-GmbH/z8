@@ -32,11 +32,12 @@ interface ScheduleXWrapperProps {
 	timeZone?: string;
 	isLoading?: boolean;
 	viewMode: ViewMode;
+	initialDateKey?: string;
 	onViewModeChange: (mode: ViewMode) => void;
 	onEventClick?: (event: CalendarEvent) => void;
 	clockOutAllowedWorkPeriodIds?: ReadonlySet<string>;
 	onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
-	onRangeChange?: (range: { start: Date; end: Date }) => void;
+	onRangeChange?: (range: { startDateKey: string; endDateKey: string }) => void;
 	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
 	workHoursData?: DailyWorkHoursSummaries;

@@ -180,4 +180,29 @@ describe("GET /api/mobile/session", () => {
 		});
 		expect(payload.organizations[1]).toEqual(expect.objectContaining({ hasEmployeeRecord: false }));
 	});
+
+	it("rejects a session whose active organization membership was revoked", async () => {
+		mockState.getSession.mockResolvedValue({
+			user: {
+				id: "user-1",
+				name: "Pat Example",
+				email: "pat@example.com",
+				canUseMobile: true,
+			},
+			session: { activeOrganizationId: "org-1" },
+		});
+		mockState.findManyMembers.mockResolvedValue([{ organizationId: "org-2" }]);
+
+		const response = await GET(
+			new Request("https://app.example.com/api/mobile/session", {
+				headers: {
+					Authorization: "Bearer session-token",
+					"X-Z8-App-Type": "mobile",
+				},
+			}),
+		);
+
+		expect(response.status).toBe(403);
+		expect(await response.json()).toEqual({ error: "Active organization membership required" });
+	});
 });

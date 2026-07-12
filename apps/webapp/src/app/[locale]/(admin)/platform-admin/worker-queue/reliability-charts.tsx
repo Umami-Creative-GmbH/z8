@@ -150,7 +150,7 @@ export function WorkerReliabilityCharts({ reliability }: { reliability: WorkerRe
 									tickLine={false}
 									axisLine={false}
 									tickMargin={8}
-									tickFormatter={(value) => `${numberFormatter.format(Number(value))}%`}
+									tickFormatter={(value: number | string) => `${numberFormatter.format(Number(value))}%`}
 								/>
 								<ChartTooltip
 									content={
@@ -218,7 +218,7 @@ export function WorkerReliabilityCharts({ reliability }: { reliability: WorkerRe
 									tickLine={false}
 									axisLine={false}
 									tickMargin={8}
-									tickFormatter={(value) =>
+									tickFormatter={(value: number | string) =>
 										formatDuration(Number(value), millisecondFormatter, secondFormatter)
 									}
 								/>

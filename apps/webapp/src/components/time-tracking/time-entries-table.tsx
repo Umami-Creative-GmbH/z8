@@ -3,6 +3,7 @@
 import { IconCalendarEvent, IconCheck, IconDotsVertical } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
+import { useLocale } from "next-intl";
 import { startTransition, useState } from "react";
 import { toast } from "sonner";
 import { approveWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions/mutations";
@@ -50,6 +51,7 @@ export function TimeEntriesTable({
 	employeeId,
 }: Props) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const { refresh } = useRouter();
 	const [approvingWorkPeriodId, setApprovingWorkPeriodId] = useState<string | null>(null);
 
@@ -69,6 +71,7 @@ export function TimeEntriesTable({
 
 	const columns = getTimeEntriesColumns({
 		t,
+		locale,
 		employeeTimezone,
 		timeFormat,
 		hasManager,

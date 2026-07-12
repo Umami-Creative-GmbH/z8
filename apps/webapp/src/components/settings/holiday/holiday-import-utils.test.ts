@@ -18,4 +18,16 @@ describe("holiday preset import helpers", () => {
 			durationDays: 1,
 		});
 	});
+
+	it("rejects an unsupported holiday type instead of casting it into the import payload", () => {
+		const imported = buildPresetHolidayImportValue({
+			name: "Unknown Holiday",
+			date: "2026-05-01 00:00:00",
+			startDate: "2026-05-01T00:00:00.000Z",
+			endDate: "2026-05-02T00:00:00.000Z",
+			type: "regional",
+		});
+
+		expect(imported).toBeNull();
+	});
 });

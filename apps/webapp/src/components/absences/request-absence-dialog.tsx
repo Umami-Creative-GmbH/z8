@@ -75,6 +75,8 @@ const createDefaultValues = (initialDate?: string) => ({
 	sickDetail: "" as SickDetail | "",
 });
 
+type RequestAbsenceFormValues = ReturnType<typeof createDefaultValues>;
+
 const EMPTY_HOLIDAYS: Holiday[] = [];
 const PARTIAL_DAY_TIME_ERRORS = new Set([
 	"Enter a start time and end time for a partial-day absence.",
@@ -359,8 +361,10 @@ export function RequestAbsenceDialog({
 								)}
 							</form.Field>
 
-							<form.Subscribe selector={(state) => state.values.startDate}>
-								{(startDate) => (
+							<form.Subscribe<RequestAbsenceFormValues["startDate"]>
+								selector={(state) => state.values.startDate}
+							>
+								{(startDate: RequestAbsenceFormValues["startDate"]) => (
 									<form.Field name="endDate">
 										{(field) => (
 											<TFormItem>
@@ -413,8 +417,10 @@ export function RequestAbsenceDialog({
 							)}
 						</form.Field>
 
-						<form.Subscribe selector={(state) => state.values.durationKind}>
-							{(durationKind) =>
+						<form.Subscribe<RequestAbsenceFormValues["durationKind"]>
+							selector={(state) => state.values.durationKind}
+						>
+							{(durationKind: RequestAbsenceFormValues["durationKind"]) =>
 								durationKind === "partial_day" ? (
 									<div className="grid gap-4 sm:grid-cols-2">
 										<form.Field name="startTime">
@@ -462,8 +468,8 @@ export function RequestAbsenceDialog({
 							}
 						</form.Subscribe>
 
-						<form.Subscribe selector={(state) => state.values}>
-							{(values) => {
+						<form.Subscribe<RequestAbsenceFormValues> selector={(state) => state.values}>
+							{(values: RequestAbsenceFormValues) => {
 								const validationError = validateAbsenceDurationInput(values);
 
 								if (
@@ -486,8 +492,8 @@ export function RequestAbsenceDialog({
 							}}
 						</form.Subscribe>
 
-						<form.Subscribe selector={(state) => state.values}>
-							{(values) => {
+						<form.Subscribe<RequestAbsenceFormValues> selector={(state) => state.values}>
+							{(values: RequestAbsenceFormValues) => {
 								const normalizedValues = normalizeAbsenceDurationInput(values);
 								const validationError = validateAbsenceDurationInput(values);
 								const requestedDays =
@@ -581,13 +587,22 @@ export function RequestAbsenceDialog({
 						</form.Field>
 					</ActionPanelBody>
 
-					<form.Subscribe
+					<form.Subscribe<{
+						isSubmitting: boolean;
+						values: RequestAbsenceFormValues;
+					}>
 						selector={(state) => ({
 							isSubmitting: state.isSubmitting,
 							values: state.values,
 						})}
 					>
-						{({ isSubmitting, values }) => {
+						{({
+							isSubmitting,
+							values,
+						}: {
+							isSubmitting: boolean;
+							values: RequestAbsenceFormValues;
+						}) => {
 							const normalizedValues = normalizeAbsenceDurationInput(values);
 							const validationError = validateAbsenceDurationInput(values);
 							const requestedDays =

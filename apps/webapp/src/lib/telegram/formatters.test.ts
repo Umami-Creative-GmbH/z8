@@ -27,8 +27,8 @@ describe("buildApprovalMessage", () => {
 			timezone: "America/New_York",
 		});
 
-		expect(berlin.text).toContain("Jul 10, 16:00");
-		expect(newYork.text).toContain("Jul 10, 10:00 AM");
+		expect(berlin.text).toContain("Jul 10, 2026, 16:00");
+		expect(newYork.text).toContain("Jul 10, 2026, 10:00 AM");
 	});
 
 	it("does not use the host timezone when recipient context is explicit", () => {
@@ -55,6 +55,6 @@ describe("buildApprovalMessage", () => {
 			timezone: "America/New_York",
 		});
 
-		expect(message.text).toContain("Jul 10 \\- Jul 11");
+		expect(message.text).toContain("Jul 10, 2026 \\- Jul 11, 2026");
 	});
 });

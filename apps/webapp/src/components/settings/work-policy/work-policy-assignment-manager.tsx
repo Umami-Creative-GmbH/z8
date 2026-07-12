@@ -1,14 +1,6 @@
 "use client";
 
-import {
-	IconBuilding,
-	IconFileText,
-	IconLoader2,
-	IconPlus,
-	IconTrash,
-	IconUser,
-	IconUsers,
-} from "@tabler/icons-react";
+import { IconLoader2 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
@@ -28,21 +20,11 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { queryKeys } from "@/lib/query";
-
-function formatAssignmentEmployeeName(
-	employeeRecord: { firstName?: string | null; lastName?: string | null } | null | undefined,
-	fallback: string,
-) {
-	return employeeRecord ? buildAuthUserDisplayName(employeeRecord) || fallback : fallback;
-}
-
 import { getWorkPolicyAssignmentSectionVisibility } from "../policy-assignment-surface";
+import { WorkPolicyAssignmentSections } from "./work-policy-assignment-sections";
 
 interface WorkPolicyAssignmentManagerProps {
 	organizationId: string;
@@ -162,219 +144,21 @@ export function WorkPolicyAssignmentManager({
 	return (
 		<>
 			<div className="space-y-6">
-				{/* Organization Level */}
-				{showOrgSection ? (
-					<Card>
-						<CardHeader>
-							<div className="flex items-center gap-2">
-								<IconBuilding className="size-5 text-muted-foreground" />
-								<div>
-									<CardTitle className="text-base">
-										{t("settings.workPolicies.orgLevel", "Organization Default")}
-									</CardTitle>
-									<CardDescription>
-										{t(
-											"settings.workPolicies.orgLevelDescription",
-											"Default work policy applied to all employees unless overridden",
-										)}
-									</CardDescription>
-								</div>
-							</div>
-						</CardHeader>
-						<CardContent>
-							{orgAssignment ? (
-								<div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-									<div className="flex items-center gap-3">
-										<IconFileText className="size-5 text-muted-foreground" />
-										<div>
-											<p className="font-medium">
-												{orgAssignment.policy?.name || t("common.unknown", "Unknown")}
-											</p>
-										</div>
-									</div>
-									{canManageOrgAssignments ? (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="text-destructive hover:text-destructive"
-											onClick={() => handleDeleteClick(orgAssignment)}
-										>
-											<IconTrash className="size-4" />
-										</Button>
-									) : null}
-								</div>
-							) : (
-								<div className="flex items-center justify-between p-3 rounded-lg border border-dashed">
-									<p className="text-sm text-muted-foreground">
-										{t("settings.workPolicies.noOrgAssignment", "No organization default set")}
-									</p>
-									{canManageOrgAssignments ? (
-										<Button
-											onClick={() => onAssignClick("organization")}
-											size="sm"
-											variant="outline"
-										>
-											<IconPlus className="mr-2 size-4" />
-											{t("settings.workPolicies.assignPolicy", "Assign Policy")}
-										</Button>
-									) : null}
-								</div>
-							)}
-						</CardContent>
-					</Card>
-				) : null}
-
-				{/* Team Level */}
-				{showTeamSection ? (
-					<Card>
-						<CardHeader>
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-2">
-									<IconUsers className="size-5 text-muted-foreground" />
-									<div>
-										<CardTitle className="text-base">
-											{t("settings.workPolicies.teamLevel", "Team Overrides")}
-											{teamAssignments.length > 0 && (
-												<Badge variant="secondary" className="ml-2">
-													{teamAssignments.length}
-												</Badge>
-											)}
-										</CardTitle>
-										<CardDescription>
-											{t(
-												"settings.workPolicies.teamLevelDescription",
-												"Override the organization default for specific teams",
-											)}
-										</CardDescription>
-									</div>
-								</div>
-								{canManageTeamAssignments ? (
-									<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-										<IconPlus className="mr-2 size-4" />
-										{t("settings.workPolicies.addTeam", "Add Team")}
-									</Button>
-								) : null}
-							</div>
-						</CardHeader>
-						<CardContent>
-							{teamAssignments.length === 0 ? (
-								<p className="text-sm text-muted-foreground text-center py-4">
-									{t("settings.workPolicies.noTeamAssignments", "No team-specific policies")}
-								</p>
-							) : (
-								<div className="space-y-2">
-									{teamAssignments.map((assignment) => (
-										<div
-											key={assignment.id}
-											className="flex items-center justify-between p-3 rounded-lg border"
-										>
-											<div className="flex items-center gap-3">
-												<IconUsers className="size-4 text-muted-foreground" />
-												<div>
-													<p className="font-medium">
-														{assignment.team?.name || t("common.unknownTeam", "Unknown Team")}
-													</p>
-													<p className="text-xs text-muted-foreground">
-														{assignment.policy?.name || t("common.unknown", "Unknown")}
-													</p>
-												</div>
-											</div>
-											{canManageTeamAssignments ? (
-												<Button
-													variant="ghost"
-													size="icon"
-													className="text-destructive hover:text-destructive"
-													onClick={() => handleDeleteClick(assignment)}
-												>
-													<IconTrash className="size-4" />
-												</Button>
-											) : null}
-										</div>
-									))}
-								</div>
-							)}
-						</CardContent>
-					</Card>
-				) : null}
-
-				{/* Employee Level */}
-				{showEmployeeSection ? (
-					<Card>
-						<CardHeader>
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-2">
-									<IconUser className="size-5 text-muted-foreground" />
-									<div>
-										<CardTitle className="text-base">
-											{t("settings.workPolicies.employeeLevel", "Employee Overrides")}
-											{employeeAssignments.length > 0 && (
-												<Badge variant="secondary" className="ml-2">
-													{employeeAssignments.length}
-												</Badge>
-											)}
-										</CardTitle>
-										<CardDescription>
-											{t(
-												"settings.workPolicies.employeeLevelDescription",
-												"Override policies for specific employees",
-											)}
-										</CardDescription>
-									</div>
-								</div>
-								{canManageEmployeeAssignments ? (
-									<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-										<IconPlus className="mr-2 size-4" />
-										{t("settings.workPolicies.addEmployee", "Add Employee")}
-									</Button>
-								) : null}
-							</div>
-						</CardHeader>
-						<CardContent>
-							{employeeAssignments.length === 0 ? (
-								<p className="text-sm text-muted-foreground text-center py-4">
-									{t(
-										"settings.workPolicies.noEmployeeAssignments",
-										"No employee-specific policies",
-									)}
-								</p>
-							) : (
-								<div className="space-y-2">
-									{employeeAssignments.map((assignment) => (
-										<div
-											key={assignment.id}
-											className="flex items-center justify-between p-3 rounded-lg border"
-										>
-											<div className="flex items-center gap-3">
-												<IconUser className="size-4 text-muted-foreground" />
-												<div>
-													<p className="font-medium">
-														{formatAssignmentEmployeeName(
-															assignment.employee,
-															t("common.unknownEmployee", "Unknown Employee"),
-														)}
-													</p>
-													<p className="text-xs text-muted-foreground">
-														{assignment.policy?.name || t("common.unknown", "Unknown")}
-													</p>
-												</div>
-											</div>
-											{canManageEmployeeAssignments ? (
-												<Button
-													variant="ghost"
-													size="icon"
-													className="text-destructive hover:text-destructive"
-													onClick={() => handleDeleteClick(assignment)}
-												>
-													<IconTrash className="size-4" />
-												</Button>
-											) : null}
-										</div>
-									))}
-								</div>
-							)}
-						</CardContent>
-					</Card>
-				) : null}
+				<WorkPolicyAssignmentSections
+					sections={{
+						organization: showOrgSection
+							? { assignment: orgAssignment, canManage: canManageOrgAssignments }
+							: undefined,
+						team: showTeamSection
+							? { assignments: teamAssignments, canManage: canManageTeamAssignments }
+							: undefined,
+						employee: showEmployeeSection
+							? { assignments: employeeAssignments, canManage: canManageEmployeeAssignments }
+							: undefined,
+					}}
+					onAssignClick={onAssignClick}
+					onDeleteClick={handleDeleteClick}
+				/>
 			</div>
 
 			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

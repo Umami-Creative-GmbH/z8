@@ -1,3 +1,4 @@
+import { Temporal } from "temporal-polyfill";
 import { describe, expect, it, vi } from "vitest";
 import {
 	buildMonthWorkSummary,
@@ -48,6 +49,18 @@ function multiDayEvent(
 }
 
 describe("buildMonthWorkSummary", () => {
+	it("uses the selected timezone for the current date near midnight UTC", () => {
+		const month = buildMonthWorkSummary({
+			year: 2026,
+			monthIndex: 4,
+			weekStartDay: "monday",
+			timezone: "America/New_York",
+			now: Temporal.Instant.from("2026-06-01T00:30:00Z"),
+			workHoursData: new Map([["2026-05-31", summary(480, 480)]]),
+		});
+
+		expect(month.monthTotal).toMatchObject({ actualMinutes: 480, requiredMinutes: 480 });
+	});
 	it("builds Monday-start weeks with active-month days and week totals", () => {
 		const workHoursData: DailyWorkHoursSummaries = new Map([
 			["2026-05-04", summary(480, 606)],
@@ -204,6 +217,17 @@ describe("totalWorkSummaries", () => {
 });
 
 describe("groupCalendarEventsByDate", () => {
+	it("uses the employee timezone for timed events and logical keys for all-day events", () => {
+		const timed = event("2026-06-01", "work_period");
+		timed.date = new Date("2026-06-01T02:00:00.000Z");
+		const holiday = event("2026-06-01", "holiday");
+
+		const grouped = groupCalendarEventsByDate([timed, holiday], "America/New_York");
+
+		expect(grouped.get("2026-05-31")).toEqual([timed]);
+		expect(grouped.get("2026-06-01")).toEqual([holiday]);
+	});
+
 	it("groups calendar events by date key", () => {
 		const grouped = groupCalendarEventsByDate([
 			event("2026-05-04", "holiday"),

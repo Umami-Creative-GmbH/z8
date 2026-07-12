@@ -6,6 +6,7 @@ import { DateTime } from "luxon";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { todayCalendarDateKey } from "@/lib/calendar/date-keys";
 import {
 	buildMonthWorkSummary,
 	type MonthWorkDay,
@@ -23,13 +24,14 @@ import { cn } from "@/lib/utils";
 import type { ViewMode } from "./schedule-x-calendar";
 
 interface MonthWorkSummaryViewProps {
-	monthDate: Date;
+	monthDateKey: string;
+	timeZone: string;
 	events: CalendarEvent[];
 	workHoursData: DailyWorkHoursSummaries;
 	viewMode: ViewMode;
 	onViewModeChange: (mode: ViewMode) => void;
-	onMonthChange: (date: Date) => void;
-	onDayClick: (date: Date) => void;
+	onMonthChange: (dateKey: string) => void;
+	onDayClick: (dateKey: string) => void;
 	onRefresh: () => void;
 	isSummaryLoading?: boolean;
 }
@@ -228,7 +230,7 @@ function DayCell({
 	day: MonthWorkDay;
 	locale: string;
 	t: Translate;
-	onDayClick: (date: Date) => void;
+	onDayClick: (dateKey: string) => void;
 }) {
 	const summary = day.isActiveMonth ? day.workHoursSummary : null;
 	const label = getDayLabel(day, locale, t);
@@ -237,7 +239,7 @@ function DayCell({
 		<button
 			type="button"
 			aria-label={label}
-			onClick={() => onDayClick(day.date.toJSDate())}
+			onClick={() => onDayClick(day.dateKey)}
 			className={cn(
 				"min-h-32 rounded-md border bg-background p-2 text-left outline-none transition-colors",
 				"hover:bg-accent/60 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
@@ -278,7 +280,7 @@ function WeekRow({
 	week: MonthWorkWeek;
 	locale: string;
 	t: Translate;
-	onDayClick: (date: Date) => void;
+	onDayClick: (dateKey: string) => void;
 }) {
 	return (
 		<div className="grid grid-cols-[48px_repeat(7,minmax(112px,1fr))_112px] gap-2">
@@ -296,7 +298,8 @@ function WeekRow({
 }
 
 export function MonthWorkSummaryView({
-	monthDate,
+	monthDateKey,
+	timeZone,
 	events,
 	workHoursData,
 	viewMode,
@@ -310,13 +313,14 @@ export function MonthWorkSummaryView({
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() ?? "en";
 	const weekStartDay = useWeekStartDay();
-	const activeMonth = DateTime.fromJSDate(monthDate).startOf("month");
+	const activeMonth = DateTime.fromISO(monthDateKey, { zone: "utc" }).startOf("month");
 	const monthTitle = activeMonth.setLocale(locale).toFormat("LLLL yyyy");
 	const weekdays = getWeekdayNames(locale, weekStartDay);
 	const monthSummary = buildMonthWorkSummary({
 		year: activeMonth.year,
 		monthIndex: activeMonth.month - 1,
 		weekStartDay,
+		timezone: timeZone,
 		workHoursData,
 		events,
 	});
@@ -329,7 +333,7 @@ export function MonthWorkSummaryView({
 						type="button"
 						variant="outline"
 						size="icon"
-						onClick={() => onMonthChange(activeMonth.minus({ months: 1 }).toJSDate())}
+						onClick={() => onMonthChange(activeMonth.minus({ months: 1 }).toISODate()!)}
 						aria-label={t("calendar.monthSummary.previousMonth", "Previous month")}
 					>
 						<IconChevronLeft className="size-4" aria-hidden="true" />
@@ -338,7 +342,7 @@ export function MonthWorkSummaryView({
 						type="button"
 						variant="outline"
 						size="icon"
-						onClick={() => onMonthChange(activeMonth.plus({ months: 1 }).toJSDate())}
+						onClick={() => onMonthChange(activeMonth.plus({ months: 1 }).toISODate()!)}
 						aria-label={t("calendar.monthSummary.nextMonth", "Next month")}
 					>
 						<IconChevronRight className="size-4" aria-hidden="true" />
@@ -347,7 +351,7 @@ export function MonthWorkSummaryView({
 						type="button"
 						variant="outline"
 						size="sm"
-						onClick={() => onMonthChange(DateTime.local().startOf("month").toJSDate())}
+						onClick={() => onMonthChange(`${todayCalendarDateKey(timeZone).slice(0, 8)}01`)}
 					>
 						{t("calendar.view.today", "Today")}
 					</Button>

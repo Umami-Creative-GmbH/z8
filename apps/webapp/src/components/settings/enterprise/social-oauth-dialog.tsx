@@ -289,8 +289,8 @@ export function SocialOAuthDialog({
 						</form.Field>
 
 						{/* Subscribe to provider changes for client secret field */}
-						<form.Subscribe selector={(state) => state.values.provider}>
-							{(selectedProvider) => (
+						<form.Subscribe<typeof form.state.values.provider> selector={(state) => state.values.provider}>
+							{(selectedProvider: typeof form.state.values.provider) => (
 								<form.Field
 									name="clientSecret"
 									validators={{
@@ -358,8 +358,8 @@ export function SocialOAuthDialog({
 						</form.Subscribe>
 
 						{/* Apple-specific fields - subscribe to provider changes */}
-						<form.Subscribe selector={(state) => state.values.provider}>
-							{(selectedProvider) =>
+						<form.Subscribe<typeof form.state.values.provider> selector={(state) => state.values.provider}>
+							{(selectedProvider: typeof form.state.values.provider) =>
 								selectedProvider === "apple" && (
 									<>
 										<form.Field

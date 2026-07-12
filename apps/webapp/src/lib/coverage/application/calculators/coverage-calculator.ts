@@ -1,5 +1,6 @@
 import {
 	type CoverageRuleEntity,
+	type DayOfWeek,
 	getDayOfWeek,
 } from "@/lib/coverage/domain/entities/coverage-rule";
 import type {
@@ -17,6 +18,7 @@ export interface ShiftForCoverage {
 
 export interface CoverageCalculationInput {
 	date: Date;
+	dayOfWeek?: DayOfWeek;
 	subareaId: string;
 	subareaName: string;
 	locationName?: string;
@@ -87,7 +89,7 @@ function calculateActualForRule(rule: CoverageRuleEntity, shifts: ShiftForCovera
 }
 
 export function calculateCoverage(input: CoverageCalculationInput): CoverageCalculationResult {
-	const dayOfWeek = getDayOfWeek(input.date);
+	const dayOfWeek = input.dayOfWeek ?? getDayOfWeek(input.date);
 	const activeRules = input.rules
 		.filter((rule) => rule.subareaId === input.subareaId && rule.dayOfWeek === dayOfWeek)
 		.sort((a, b) => {

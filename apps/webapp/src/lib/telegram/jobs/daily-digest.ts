@@ -6,11 +6,12 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
+import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { shouldSkipDigestForManager } from "@/lib/teams/jobs/daily-digest";
@@ -138,9 +139,10 @@ export async function processTelegramBotDigest(
 				});
 				if (!display) return false;
 
-				const recipientDate = DateTime.fromJSDate(now, { zone: "utc" })
-					.setZone(display.timezone)
-					.toISODate()!;
+				const recipientDate = Temporal.Instant.from(now.toISOString())
+					.toZonedDateTimeISO(display.timezone)
+					.toPlainDate()
+					.toString();
 				const delivery = {
 					organizationId: bot.organizationId,
 					recipientEmployeeId: emp.id,
@@ -150,13 +152,12 @@ export async function processTelegramBotDigest(
 				if (!(await claimTelegramDigestDelivery(delivery))) return false;
 
 				try {
-					const digestData: DailyDigestData = await buildDigestDataForManager({
-						display,
-						logicalDate: recipientDate,
-						managerId: emp.id,
-						now: now.toISOString(),
-						organizationId: bot.organizationId,
-					});
+					const digestData: DailyDigestData = await buildDigestDataForManager(
+						emp.id,
+						bot.organizationId,
+						display.timezone,
+						display.locale,
+					);
 
 					const t = await getBotTranslate(display.locale);
 					const messageText = buildDailyDigestMessage(digestData, appUrl, t, display.locale);

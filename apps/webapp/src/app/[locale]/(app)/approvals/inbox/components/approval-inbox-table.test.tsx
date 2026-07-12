@@ -3,6 +3,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ApprovalInboxItem } from "@/lib/approvals/inbox/types";
+import { ALL_LANGUAGES, loadNamespaces, TolgeeBase } from "@/tolgee/shared";
 import { ApprovalInboxTable } from "./approval-inbox-table";
 
 vi.mock("@tolgee/react", () => ({
@@ -85,6 +86,21 @@ function makeApprovalInboxItem(): ApprovalInboxItem {
 }
 
 describe("ApprovalInboxTable", () => {
+	it("formats the details label with the request title in every locale", async () => {
+		for (const locale of ALL_LANGUAGES) {
+			const staticData = await loadNamespaces(locale, ["approvals"]);
+			const tolgee = TolgeeBase().init({ language: locale, staticData });
+			await tolgee.run();
+
+			expect(
+				tolgee.t("approvals:approvals.openDetailsFor", "Open details for Vacation request", {
+					title: "Vacation request",
+				}),
+				locale,
+			).toContain("Vacation request");
+		}
+	});
+
 	it("keeps selection and details as separate controls", () => {
 		const item = makeApprovalInboxItem();
 		const onSelectItem = vi.fn();

@@ -10,7 +10,12 @@ import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { AppSidebar } from "./app-sidebar";
 
-export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSidebar>) {
+interface ServerAppSidebarProps
+	extends Omit<React.ComponentProps<typeof AppSidebar>, "navigationCapabilities"> {
+	showWorksCouncilNav?: boolean;
+}
+
+export async function ServerAppSidebar({ showWorksCouncilNav = false, ...props }: ServerAppSidebarProps) {
 	const [organizations, authContext, settingsAccessTier] = await Promise.all([
 		getUserOrganizations(),
 		getAuthContext(),
@@ -32,14 +37,14 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 		demoDataEnabled: currentOrganization?.demoDataEnabled ?? true,
 		worksCouncilEnabled: currentOrganization?.worksCouncilEnabled ?? false,
 	};
-	let showWorksCouncilNav = false;
+	let canShowWorksCouncilNav = false;
 	if (
-		props.showWorksCouncilNav &&
+		showWorksCouncilNav &&
 		currentOrganization?.worksCouncilEnabled &&
 		activeOrganizationId
 	) {
 		const ability = await requireAbility();
-		showWorksCouncilNav = canViewWorksCouncilPortal(
+		canShowWorksCouncilNav = canViewWorksCouncilPortal(
 			ability,
 			activeOrganizationId,
 			activeOrganizationId,
@@ -63,15 +68,17 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 			organizations={organizations}
 			currentOrganization={currentOrganization}
 			employeeRole={activeEmployee?.role ?? null}
-			shiftsEnabled={currentOrganization?.shiftsEnabled ?? false}
-			showComplianceNav={settingsAccessTier === "orgAdmin"}
-			showPayrollNav={showPayrollNav}
-			showPlatformAdminNav={authContext?.user.role === "admin"}
+			navigationCapabilities={{
+				scheduling: currentOrganization?.shiftsEnabled ?? false,
+				compliance: settingsAccessTier === "orgAdmin",
+				payroll: Boolean(showPayrollNav),
+				worksCouncil: canShowWorksCouncilNav,
+				platformAdmin: authContext?.user.role === "admin",
+			}}
 			settingsAccessTier={settingsAccessTier ?? "member"}
 			billingEnabled={env.BILLING_ENABLED === "true"}
 			featureFlags={featureFlags}
 			canCreateOrganizations={canCreateOrganizations}
-			showWorksCouncilNav={showWorksCouncilNav}
 		/>
 	);
 }

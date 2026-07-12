@@ -110,9 +110,14 @@ export async function getWorkPeriods(
 	startDate: Date,
 	endDate: Date,
 ): Promise<WorkPeriodWithEntries[]> {
+	const currentEmployee = await getCurrentEmployee();
+	if (!currentEmployee || currentEmployee.id !== employeeId) {
+		return [];
+	}
 	const workPeriods = await db.query.workPeriod.findMany({
 		where: and(
 			eq(workPeriod.employeeId, employeeId),
+			eq(workPeriod.organizationId, currentEmployee.organizationId),
 			isNull(workPeriod.deletedAt),
 			gte(workPeriod.startTime, startDate),
 			lte(workPeriod.startTime, endDate),
@@ -134,6 +139,10 @@ export async function getTimeSummary(
 	timezone: string = "UTC",
 	weekStartDay: WeekStartDay = "sunday",
 ): Promise<TimeSummary> {
+	const currentEmployee = await getCurrentEmployee();
+	if (!currentEmployee || currentEmployee.id !== employeeId) {
+		return { todayMinutes: 0, weekMinutes: 0, monthMinutes: 0 };
+	}
 	const { start: todayStartDateTime, end: todayEndDateTime } = getTodayRangeInTimezone(timezone);
 	const { start: weekStartDateTime, end: weekEndDateTime } = getWeekRangeInTimezone(
 		new Date(),
@@ -163,6 +172,7 @@ export async function getTimeSummary(
 		.where(
 			and(
 				eq(workPeriod.employeeId, employeeId),
+				eq(workPeriod.organizationId, currentEmployee.organizationId),
 				isNull(workPeriod.deletedAt),
 				gte(workPeriod.startTime, monthStart),
 				lte(workPeriod.startTime, monthEnd),

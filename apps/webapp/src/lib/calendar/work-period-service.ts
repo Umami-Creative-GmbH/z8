@@ -1,11 +1,19 @@
-import { and, eq, gte, isNull, lte, not, or } from "drizzle-orm";
+import { and, eq, gt, isNull, lt, not, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import type { SurchargeCalculationDetails } from "@/db/schema";
 import { employee, project, surchargeCalculation, timeEntry, workPeriod } from "@/db/schema";
-import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { dateFromDB } from "@/lib/datetime/drizzle-adapter";
+import { localMonthRange } from "@/lib/datetime/temporal-boundaries";
+import {
+	type Clock,
+	compareInstants,
+	dateFromInstant,
+	instantFromDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import type { SurchargeBreakdown, WorkPeriodEvent } from "./types";
 
 const clockInEntry = alias(timeEntry, "clock_in_entry");
@@ -19,14 +27,25 @@ interface WorkPeriodFilters {
 export function workPeriodOverlapsCalendarMonth(
 	period: { startTime: Date; endTime: Date | null; isActive: boolean },
 	monthStart: Date,
-	monthEnd: Date,
+	monthEndExclusive: Date,
 	now: Date,
 ): boolean {
+	const start = instantFromDate(period.startTime);
+	const rangeStart = instantFromDate(monthStart);
+	const rangeEndExclusive = instantFromDate(monthEndExclusive);
+
 	if (period.endTime) {
-		return period.startTime >= monthStart && period.startTime <= monthEnd;
+		return (
+			compareInstants(start, rangeEndExclusive) < 0 &&
+			compareInstants(instantFromDate(period.endTime), rangeStart) > 0
+		);
 	}
 
-	return period.isActive && period.startTime <= monthEnd && now >= monthStart;
+	return (
+		period.isActive &&
+		compareInstants(start, rangeEndExclusive) < 0 &&
+		compareInstants(instantFromDate(now), rangeStart) > 0
+	);
 }
 
 /**
@@ -39,38 +58,30 @@ export async function getWorkPeriodsForMonth(
 	year: number,
 	filters: WorkPeriodFilters,
 	timezone?: string | null,
+	clock: Clock = systemClock,
 ): Promise<WorkPeriodEvent[]> {
-	// Calculate date range for the month (month is 0-indexed in JavaScript, 1-indexed in Luxon)
-	const zonedStart = DateTime.fromObject(
-		{ year, month: month + 1, day: 1 },
-		{ zone: timezone || "UTC" },
+	const range = localMonthRange(
+		`${year}-${String(month + 1).padStart(2, "0")}-01`,
+		timezone || "UTC",
 	);
-	const startDT = (zonedStart.isValid ? zonedStart : DateTime.utc(year, month + 1, 1))
-		.startOf("month")
-		.toUTC();
-	const endDT = (zonedStart.isValid ? zonedStart : DateTime.utc(year, month + 1, 1))
-		.endOf("month")
-		.toUTC();
-
-	// Convert to Date objects for Drizzle query
-	const startDate = dateToDB(startDT)!;
-	const endDate = dateToDB(endDT)!;
-	const nowDT = DateTime.utc();
-	const now = nowDT.toJSDate();
+	const startDate = dateFromInstant(range.start);
+	const endExclusiveDate = dateFromInstant(range.endExclusive);
+	const nowInstant = clock.nowInstant();
+	const now = dateFromInstant(nowInstant);
 
 	try {
 		const completedPeriodDateCondition = and(
 			not(isNull(workPeriod.endTime)),
-			gte(workPeriod.startTime, startDate),
-			lte(workPeriod.startTime, endDate),
+			lt(workPeriod.startTime, endExclusiveDate),
+			gt(workPeriod.endTime, startDate),
 		);
 		const runningPeriodDateCondition = and(
 			eq(workPeriod.isActive, true),
 			isNull(workPeriod.endTime),
-			lte(workPeriod.startTime, endDate),
+			lt(workPeriod.startTime, endExclusiveDate),
 		);
 		const periodDateCondition =
-			now >= startDate
+			compareInstants(nowInstant, range.start) > 0
 				? or(completedPeriodDateCondition, runningPeriodDateCondition)
 				: completedPeriodDateCondition;
 
@@ -127,9 +138,10 @@ export async function getWorkPeriodsForMonth(
 				const isRunning = period.isActive && !period.endTime;
 
 				if (isRunning) {
+					const startInstant = instantFromDate(period.startTime);
 					const durationMinutes = Math.max(
 						0,
-						Math.floor(nowDT.diff(startDT ?? nowDT, "minutes").minutes),
+						Math.floor(nowInstant.since(startInstant).total({ unit: "minutes" })),
 					);
 
 					return {

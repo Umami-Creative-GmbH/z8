@@ -7,13 +7,15 @@
  */
 
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import { env } from "@/env";
-import { fmtFullDate, fmtLongDate, getBotTranslate } from "@/lib/bot-platform/i18n";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
+import { dateFromInstant, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { CoverageService, CoverageServiceFullLive } from "@/lib/effect/services/coverage.service";
 import { createLogger } from "@/lib/logger";
 import { buildCoverageCard } from "../cards/coverage-card";
+import { getCommandTemporalContext } from "./command-temporal";
 import { compose, withPermission } from "./middleware/permissions.middleware";
 import { withRateLimit } from "./middleware/rate-limit.middleware";
 
@@ -23,29 +25,25 @@ const logger = createLogger("TeamsCommand:Coverage");
 // HELPER FUNCTIONS
 // ============================================
 
-function parseDateArgument(arg: string | undefined, timezone: string): DateTime {
-	const now = DateTime.now().setZone(timezone);
-
+function parseDateArgument(arg: string | undefined, today: PlainDate): PlainDate {
 	if (!arg || arg.toLowerCase() === "today") {
-		return now;
+		return today;
 	}
 
 	if (arg.toLowerCase() === "tomorrow") {
-		return now.plus({ days: 1 });
+		return today.add({ days: 1 });
 	}
 
 	if (arg.toLowerCase() === "yesterday") {
-		return now.minus({ days: 1 });
+		return today.subtract({ days: 1 });
 	}
 
 	// Try to parse ISO date (YYYY-MM-DD)
-	const parsed = DateTime.fromISO(arg, { zone: timezone });
-	if (parsed.isValid) {
-		return parsed;
+	try {
+		return parsePlainDate(arg);
+	} catch {
+		return today;
 	}
-
-	// Default to today if parsing fails
-	return now;
 }
 
 // ============================================
@@ -55,14 +53,19 @@ function parseDateArgument(arg: string | undefined, timezone: string): DateTime 
 async function coverageHandler(ctx: BotCommandContext): Promise<BotCommandResponse> {
 	try {
 		const t = await getBotTranslate(ctx.locale);
+		const temporal = getCommandTemporalContext(ctx);
+		const timezone = temporal.organizationTimezone;
 		const dateArg = ctx.args[0];
-		const date = parseDateArgument(dateArg, ctx.config.digestTimezone);
+		const date = parseDateArgument(
+			dateArg,
+			temporal.now.toZonedDateTimeISO(timezone).toPlainDate(),
+		);
 
 		logger.debug(
 			{
 				userId: ctx.userId,
 				organizationId: ctx.organizationId,
-				date: date.toISODate(),
+				date: date.toString(),
 			},
 			"Executing coverage command",
 		);
@@ -73,8 +76,8 @@ async function coverageHandler(ctx: BotCommandContext): Promise<BotCommandRespon
 			return yield* _(
 				coverageService.getCoverageForDate({
 					organizationId: ctx.organizationId,
-					date: date.toJSDate(),
-					timezone: ctx.config.digestTimezone,
+					date: dateFromInstant(date.toZonedDateTime(timezone).toInstant()),
+					timezone,
 					managerId: ctx.employeeId,
 				}),
 			);
@@ -87,7 +90,7 @@ async function coverageHandler(ctx: BotCommandContext): Promise<BotCommandRespon
 			return {
 				type: "text",
 				text: t("bot.cmd.coverage.noData", "No scheduled coverage data found for {date}.", {
-					date: fmtFullDate(date, ctx.locale),
+					date: formatPlainDate(date, temporal.locale, "dateMedium"),
 				}),
 			};
 		}
@@ -103,7 +106,7 @@ async function coverageHandler(ctx: BotCommandContext): Promise<BotCommandRespon
 
 		return {
 			type: "card",
-			text: `Coverage report for ${fmtLongDate(date, ctx.locale)}`,
+			text: `Coverage report for ${formatPlainDate(date, temporal.locale, "dateMedium")}`,
 			card,
 		};
 	} catch (error) {

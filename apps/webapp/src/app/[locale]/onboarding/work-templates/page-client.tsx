@@ -29,6 +29,49 @@ const DAYS_OF_WEEK = [
 
 type DayOfWeek = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
 
+function WorkTemplateHeader({ t }: { t: (key: string, defaultValue: string) => string }) {
+	return (
+		<div className="mb-8 text-center">
+			<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
+				<IconClock className="size-8 text-primary" />
+			</div>
+			<h1 className="mb-4 text-3xl font-bold tracking-tight">
+				{t("onboarding.workTemplates.title", "Create work schedule template")}
+			</h1>
+			<p className="text-muted-foreground">
+				{t(
+					"onboarding.workTemplates.subtitle",
+					"Set up a work schedule template for your organization. This defines working hours for your team.",
+				)}
+			</p>
+		</div>
+	);
+}
+
+function WorkTemplateActions({
+	loading,
+	workingDays,
+	onSkip,
+	t,
+}: {
+	loading: boolean;
+	workingDays: DayOfWeek[];
+	onSkip: () => void;
+	t: (key: string, defaultValue: string) => string;
+}) {
+	return (
+		<div className="flex gap-3 pt-4">
+			<Button type="button" variant="outline" onClick={onSkip} disabled={loading} className="flex-1">
+				{t("onboarding.workTemplates.skip", "Skip for now")}
+			</Button>
+			<Button type="submit" disabled={loading || workingDays.length === 0} className="flex-1">
+				{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+				{t("onboarding.workTemplates.continue", "Continue")}
+			</Button>
+		</div>
+	);
+}
+
 export default function WorkTemplatesPage() {
 	const { t } = useTranslate();
 	const { push } = useRouter();
@@ -116,20 +159,7 @@ export default function WorkTemplatesPage() {
 			<ProgressIndicator currentStep="work_templates" />
 
 			<div className="mx-auto max-w-2xl">
-				<div className="mb-8 text-center">
-					<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
-						<IconClock className="size-8 text-primary" />
-					</div>
-					<h1 className="mb-4 text-3xl font-bold tracking-tight">
-						{t("onboarding.workTemplates.title", "Create work schedule template")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"onboarding.workTemplates.subtitle",
-							"Set up a work schedule template for your organization. This defines working hours for your team.",
-						)}
-					</p>
-				</div>
+				<WorkTemplateHeader t={t} />
 
 				<Card>
 					<CardHeader>
@@ -304,26 +334,12 @@ export default function WorkTemplatesPage() {
 								)}
 							</form.Field>
 
-							{/* Action Buttons */}
-							<div className="flex gap-3 pt-4">
-								<Button
-									type="button"
-									variant="outline"
-									onClick={handleSkip}
-									disabled={loading}
-									className="flex-1"
-								>
-									{t("onboarding.workTemplates.skip", "Skip for now")}
-								</Button>
-								<Button
-									type="submit"
-									disabled={loading || workingDays.length === 0}
-									className="flex-1"
-								>
-									{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-									{t("onboarding.workTemplates.continue", "Continue")}
-								</Button>
-							</div>
+							<WorkTemplateActions
+								loading={loading}
+								workingDays={workingDays}
+								onSkip={handleSkip}
+								t={t}
+							/>
 						</form>
 					</CardContent>
 				</Card>

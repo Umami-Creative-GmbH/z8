@@ -2,8 +2,7 @@
 
 import { IconClock } from "@tabler/icons-react";
 import type * as React from "react";
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import { startTransition, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { TimepickerUI } from "timepicker-ui";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
@@ -228,7 +227,7 @@ function TimeInput({
 						return;
 					}
 
-					flushSync(() => {
+					startTransition(() => {
 						setDisplayValue(formatTimeForMaskedInput(nextValue, pickerFormat));
 						setPeriod(getPeriodFromTime(nextValue));
 					});

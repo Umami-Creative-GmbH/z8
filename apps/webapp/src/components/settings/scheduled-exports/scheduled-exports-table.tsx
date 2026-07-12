@@ -514,7 +514,7 @@ export function ScheduledExportsTable({
 			{/* Create/Edit Dialog */}
 			<ScheduledExportDialog
 				open={isCreateDialogOpen}
-				onOpenChange={(open) => {
+				onOpenChange={(open: boolean) => {
 					setIsCreateDialogOpen(open);
 					if (!open) {
 						setEditScheduleId(null);
@@ -533,7 +533,7 @@ export function ScheduledExportsTable({
 			{historySchedule && (
 				<ExecutionHistoryDialog
 					open={Boolean(historySchedule)}
-					onOpenChange={(open) => !open && setHistorySchedule(null)}
+					onOpenChange={(open: boolean) => !open && setHistorySchedule(null)}
 					organizationId={organizationId}
 					scheduleId={historySchedule.id}
 					scheduleName={historySchedule.name}
@@ -544,7 +544,7 @@ export function ScheduledExportsTable({
 			{runNowSchedule && (
 				<RunNowDialog
 					open={Boolean(runNowSchedule)}
-					onOpenChange={(open) => !open && setRunNowSchedule(null)}
+					onOpenChange={(open: boolean) => !open && setRunNowSchedule(null)}
 					organizationId={organizationId}
 					scheduleId={runNowSchedule.id}
 					scheduleName={runNowSchedule.name}
@@ -556,7 +556,7 @@ export function ScheduledExportsTable({
 			{/* Delete Confirmation Dialog */}
 			<AlertDialog
 				open={Boolean(deleteSchedule)}
-				onOpenChange={(open) => !open && setDeleteSchedule(null)}
+				onOpenChange={(open: boolean) => !open && setDeleteSchedule(null)}
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>

@@ -3,7 +3,7 @@
 import { IconAlertCircle } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useReducer, useRef, useState } from "react";
 import { getSurchargeCalculationsForPeriod } from "@/app/[locale]/(app)/settings/surcharges/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -17,17 +17,90 @@ import { SurchargeResultsTable } from "./results-table";
 import { SurchargeSummaryCards } from "./summary-cards";
 import type { FilterValues, SurchargeReportsProps } from "./types";
 
+interface SurchargeReportState {
+	activeFilters: FilterValues;
+	dateError: string | null;
+	error: string | null;
+	expandedId: string | null;
+	isLoading: boolean;
+	isShowingPreviousResults: boolean;
+	loadedRowsOrganizationId: string | null;
+	rows: SurchargeCalculationWithDetails[];
+}
+
+type SurchargeReportAction =
+	| { type: "invalidRange"; message: string }
+	| { type: "requestFailed"; message: string; retainRows: boolean }
+	| { type: "requestStarted"; organizationId: string; shouldClearRows: boolean }
+	| { type: "requestSucceeded"; organizationId: string; rows: SurchargeCalculationWithDetails[] }
+	| { type: "setActiveFilters"; filters: FilterValues }
+	| { type: "setExpandedId"; id: string | null };
+
+function surchargeReportReducer(
+	state: SurchargeReportState,
+	action: SurchargeReportAction,
+): SurchargeReportState {
+	switch (action.type) {
+		case "invalidRange":
+			return {
+				...state,
+				dateError: action.message,
+				error: null,
+				expandedId: null,
+				isLoading: false,
+				isShowingPreviousResults: false,
+				loadedRowsOrganizationId: null,
+				rows: [],
+			};
+		case "requestStarted":
+			return {
+				...state,
+				dateError: null,
+				error: null,
+				expandedId: action.shouldClearRows ? null : state.expandedId,
+				isLoading: true,
+				isShowingPreviousResults: false,
+				rows: action.shouldClearRows ? [] : state.rows,
+			};
+		case "requestSucceeded":
+			return {
+				...state,
+				expandedId: action.rows.some((row) => row.id === state.expandedId)
+					? state.expandedId
+					: null,
+				isLoading: false,
+				loadedRowsOrganizationId: action.organizationId,
+				rows: action.rows,
+			};
+		case "requestFailed":
+			return {
+				...state,
+				error: action.message,
+				expandedId: action.retainRows ? state.expandedId : null,
+				isLoading: false,
+				isShowingPreviousResults: action.retainRows,
+				rows: action.retainRows ? state.rows : [],
+			};
+		case "setActiveFilters":
+			return { ...state, activeFilters: action.filters };
+		case "setExpandedId":
+			return { ...state, expandedId: action.id };
+	}
+}
+
 export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 	const { t } = useTranslate();
 	const [defaultFilters] = useState(getDefaultFilters);
-	const [rows, setRows] = useState<SurchargeCalculationWithDetails[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-	const [dateError, setDateError] = useState<string | null>(null);
-	const [isShowingPreviousResults, setIsShowingPreviousResults] = useState(false);
-	const [expandedId, setExpandedId] = useState<string | null>(null);
-	const [activeFilters, setActiveFilters] = useState(defaultFilters);
-	const [loadedRowsOrganizationId, setLoadedRowsOrganizationId] = useState<string | null>(null);
+	const [state, dispatch] = useReducer(surchargeReportReducer, defaultFilters, (activeFilters) => ({
+		activeFilters,
+		dateError: null,
+		error: null,
+		expandedId: null,
+		isLoading: true,
+		isShowingPreviousResults: false,
+		loadedRowsOrganizationId: null,
+		rows: [],
+	}));
 	const loadedRowsOrganizationIdRef = useRef<string | null>(null);
 	const latestRequestId = useRef(0);
 
@@ -38,30 +111,22 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 		const endDate = parseFilterDate(filters.endDate, "end");
 
 		if (!startDate.isValid || !endDate.isValid || startDate > endDate) {
-			setRows([]);
-			setExpandedId(null);
 			loadedRowsOrganizationIdRef.current = null;
-			setLoadedRowsOrganizationId(null);
-			setError(null);
-			setIsShowingPreviousResults(false);
-			setDateError(
-				t(
+			dispatch({
+				type: "invalidRange",
+				message: t(
 					"settings.surcharges.reports.errors.invalidDateRange",
 					"Start date must be on or before end date.",
 				),
-			);
-			setIsLoading(false);
+			});
 			return;
 		}
 
-		setDateError(null);
-		setError(null);
-		setIsShowingPreviousResults(false);
-		if (loadedRowsOrganizationIdRef.current !== organizationId) {
-			setRows([]);
-			setExpandedId(null);
-		}
-		setIsLoading(true);
+		dispatch({
+			type: "requestStarted",
+			organizationId,
+			shouldClearRows: loadedRowsOrganizationIdRef.current !== organizationId,
+		});
 
 		const employeeId = filters.employeeId.trim() || undefined;
 		const result = await getSurchargeCalculationsForPeriod(
@@ -80,33 +145,26 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 		}
 
 		if (result.success) {
-			setRows(result.data);
 			loadedRowsOrganizationIdRef.current = organizationId;
-			setLoadedRowsOrganizationId(organizationId);
-			setExpandedId((current) => (result.data.some((row) => row.id === current) ? current : null));
+			dispatch({ type: "requestSucceeded", organizationId, rows: result.data });
 		} else {
-			if (loadedRowsOrganizationIdRef.current === organizationId) {
-				setIsShowingPreviousResults(true);
-			} else {
-				setRows([]);
-				setExpandedId(null);
-			}
-			setError(
-				result.error ||
+			dispatch({
+				type: "requestFailed",
+				retainRows: loadedRowsOrganizationIdRef.current === organizationId,
+				message:
+					result.error ||
 					t(
 						"settings.surcharges.reports.errors.loadFailed",
 						"Failed to load surcharge calculations.",
 					),
-			);
+			});
 		}
-
-		setIsLoading(false);
 	});
 
 	const form = useForm({
 		defaultValues: defaultFilters,
 		onSubmit: async ({ value }) => {
-			setActiveFilters({ ...value });
+			dispatch({ type: "setActiveFilters", filters: { ...value } });
 		},
 	});
 
@@ -115,13 +173,13 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			return;
 		}
 
-		const nextFilters = activeFilters;
+		const nextFilters = state.activeFilters;
 		queueMicrotask(() => {
 			void loadCalculations(nextFilters);
 		});
-	}, [activeFilters, organizationId]);
+	}, [organizationId, state.activeFilters]);
 
-	const displayRows = loadedRowsOrganizationId === organizationId ? rows : [];
+	const displayRows = state.loadedRowsOrganizationId === organizationId ? state.rows : [];
 	const totals = displayRows.reduce(
 		(accumulator, row) => ({
 			baseMinutes: accumulator.baseMinutes + row.baseMinutes,
@@ -201,29 +259,29 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 						</form.Field>
 
 						<div className="flex items-end">
-							<Button type="submit" disabled={isLoading}>
+							<Button type="submit" disabled={state.isLoading}>
 								{t("settings.surcharges.reports.filters.apply", "Apply filters")}
 							</Button>
 						</div>
-						{dateError ? (
+						{state.dateError ? (
 							<p role="alert" className="text-destructive text-sm md:col-span-4">
-								{dateError}
+								{state.dateError}
 							</p>
 						) : null}
 					</form>
 				</CardContent>
 			</Card>
 
-			{error ? (
+			{state.error ? (
 				<Alert variant="destructive">
 					<IconAlertCircle aria-hidden="true" />
 					<AlertTitle>
 						{t("settings.surcharges.reports.errors.loadTitle", "Unable to load calculations")}
 					</AlertTitle>
-					<AlertDescription>{error}</AlertDescription>
+					<AlertDescription>{state.error}</AlertDescription>
 				</Alert>
 			) : null}
-			{isShowingPreviousResults ? (
+			{state.isShowingPreviousResults ? (
 				<Alert>
 					<AlertTitle>
 						{t("settings.surcharges.reports.previousResults.title", "Showing previous results.")}
@@ -246,7 +304,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 					</AlertDescription>
 				</Alert>
 			) : null}
-			{isLoading && displayRows.length > 0 ? (
+			{state.isLoading && displayRows.length > 0 ? (
 				<output aria-live="polite" className="sr-only">
 					{t("settings.surcharges.reports.loading", "Loading calculations…")}
 				</output>
@@ -257,10 +315,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			<Card>
 				<CardContent>
 					<SurchargeResultsTable
-						isLoading={isLoading}
+						isLoading={state.isLoading}
 						rows={displayRows}
-						expandedId={expandedId}
-						onExpandedChange={setExpandedId}
+						expandedId={state.expandedId}
+						onExpandedChange={(id) => dispatch({ type: "setExpandedId", id })}
 					/>
 				</CardContent>
 			</Card>

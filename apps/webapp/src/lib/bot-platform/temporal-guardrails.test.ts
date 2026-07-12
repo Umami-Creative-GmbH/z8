@@ -11,7 +11,6 @@ const migratedSources = [
 	"../telegram/jobs/digest-schedule.ts",
 	"../notifications/recipient-display-context.ts",
 	"../notifications/telegram-channel.ts",
-	"../teams/jobs/daily-digest.ts",
 ];
 
 async function readMigratedSources(): Promise<string> {
@@ -35,5 +34,13 @@ describe("migrated bot temporal guardrails", () => {
 		expect(source).not.toMatch(/DateTime\.(?:local|now)\s*\(/);
 		expectLuxonConstructorsToSpecifyZone(source);
 		expect(source).not.toMatch(/new Date\(\s*["'`]\d{4}-\d{2}-\d{2}["'`]\s*\)/);
+	});
+
+	it("uses Temporal for Telegram digest recipient calendar dates", async () => {
+		const source = await readFile(path.resolve(directory, "../telegram/jobs/daily-digest.ts"), "utf8");
+
+		expect(source).toContain("Temporal.Instant.from(now.toISOString())");
+		expect(source).toContain("toZonedDateTimeISO(display.timezone)");
+		expect(source).not.toContain("DateTime.fromJSDate(now");
 	});
 });

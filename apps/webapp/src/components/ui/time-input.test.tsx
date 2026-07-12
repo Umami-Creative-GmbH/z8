@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { createMock, destroyMock, instances } = vi.hoisted(() => ({
@@ -75,7 +75,9 @@ describe("TimeInput", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Switch to AM" }));
 		expect(instances[0]?.input.value).toBe("02:05 AM");
 
-		instances[0]?.options.callbacks?.onConfirm?.({ hour: "9", minutes: "30", type: "AM" });
+		act(() => {
+			instances[0]?.options.callbacks?.onConfirm?.({ hour: "9", minutes: "30", type: "AM" });
+		});
 		expect(instances[0]?.input.value).toBe("09:30 AM");
 
 		fireEvent.change(screen.getByLabelText("Start time"), { target: { value: "10:45" } });
@@ -148,7 +150,9 @@ describe("TimeInput", () => {
 		const handleChange = vi.fn();
 		render(<TimeInput aria-label="Start time" value="09:00" onChange={handleChange} />);
 
-		instances[0]?.options.callbacks?.onConfirm?.({ hour: "14", minutes: "30" });
+		act(() => {
+			instances[0]?.options.callbacks?.onConfirm?.({ hour: "14", minutes: "30" });
+		});
 
 		expect(handleChange).toHaveBeenCalledTimes(1);
 		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("14:30");
@@ -162,7 +166,9 @@ describe("TimeInput", () => {
 			<TimeInput aria-label="Start time" timeFormat="12h" value="09:00" onChange={handleChange} />,
 		);
 
-		instances[0]?.options.callbacks?.onConfirm?.({ hour: "2", minutes: "05", type: "PM" });
+		act(() => {
+			instances[0]?.options.callbacks?.onConfirm?.({ hour: "2", minutes: "05", type: "PM" });
+		});
 
 		expect(handleChange).toHaveBeenCalledTimes(1);
 		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("14:05");
@@ -178,7 +184,9 @@ describe("TimeInput", () => {
 			<TimeInput aria-label="Start time" timeFormat="12h" value="09:00" onChange={handleChange} />,
 		);
 
-		instances[0]?.options.callbacks?.onConfirm?.({ hour: "12", minutes: "00", type: "AM" });
+		act(() => {
+			instances[0]?.options.callbacks?.onConfirm?.({ hour: "12", minutes: "00", type: "AM" });
+		});
 
 		expect(handleChange).toHaveBeenCalledTimes(1);
 		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("00:00");
@@ -190,7 +198,9 @@ describe("TimeInput", () => {
 			<TimeInput aria-label="Start time" timeFormat="12h" value="09:00" onChange={handleChange} />,
 		);
 
-		instances[0]?.options.callbacks?.onConfirm?.({ hour: "12", minutes: "00", type: "unknown" });
+		act(() => {
+			instances[0]?.options.callbacks?.onConfirm?.({ hour: "12", minutes: "00", type: "unknown" });
+		});
 
 		expect(handleChange).toHaveBeenCalledTimes(1);
 		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("12:00");

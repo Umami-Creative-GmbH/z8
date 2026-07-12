@@ -5,9 +5,13 @@
  * and inline keyboard layouts.
  */
 
-import { DateTime } from "luxon";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
-import { fmtFullDate, fmtShortDate } from "@/lib/bot-platform/i18n";
+import { instantFromDate, parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	formatCapturedOffsetInstant,
+	formatInstant,
+	formatPlainDate,
+} from "@/lib/datetime/temporal-format";
 import type { RecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import type {
@@ -121,8 +125,8 @@ export function buildApprovalMessage(
 		const category = data.absenceCategory || (t ? t("bot.approval.leave", "Leave") : "Leave");
 		lines.push(`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(category)}`);
 		if (data.startDate && data.endDate) {
-			const start = fmtShortDate(DateTime.fromISO(data.startDate, { zone: "utc" }), display.locale);
-			const end = fmtShortDate(DateTime.fromISO(data.endDate, { zone: "utc" }), display.locale);
+			const start = formatPlainDate(parsePlainDate(data.startDate), display.locale, "dateMedium");
+			const end = formatPlainDate(parsePlainDate(data.endDate), display.locale, "dateMedium");
 			lines.push(
 				`${t ? t("bot.approval.period", "Period") : "Period"}: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`,
 			);
@@ -131,6 +135,15 @@ export function buildApprovalMessage(
 		lines.push(
 			`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(t ? t("bot.approval.timeCorrection", "Time entry correction") : "Time entry correction")}`,
 		);
+		if (data.originalTime && data.originalTimeOffsetMinutes !== undefined) {
+			const original = formatCapturedOffsetInstant(parseInstant(data.originalTime), {
+				locale: display.locale,
+				timeFormat: display.timeFormat,
+				offsetMinutes: data.originalTimeOffsetMinutes,
+				preset: "dateTimeMedium",
+			});
+			lines.push(`Original event: ${escapeMarkdownV2(original)}`);
+		}
 	}
 
 	if (data.reason) {
@@ -139,7 +152,7 @@ export function buildApprovalMessage(
 		);
 	}
 
-	const submitted = formatInstant(data.createdAt, display);
+	const submitted = formatInstant(instantFromDate(data.createdAt), display, "dateTimeMedium");
 	lines.push(
 		`${t ? t("bot.approval.submitted", "Submitted") : "Submitted"}: ${escapeMarkdownV2(submitted)}`,
 	);
@@ -200,35 +213,34 @@ export function buildResolvedApprovalMessage(
 		const category = data.absenceCategory || (t ? t("bot.approval.leave", "Leave") : "Leave");
 		lines.push(`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(category)}`);
 		if (data.startDate && data.endDate) {
-			const start = fmtShortDate(DateTime.fromISO(data.startDate, { zone: "utc" }), display.locale);
-			const end = fmtShortDate(DateTime.fromISO(data.endDate, { zone: "utc" }), display.locale);
+			const start = formatPlainDate(parsePlainDate(data.startDate), display.locale, "dateMedium");
+			const end = formatPlainDate(parsePlainDate(data.endDate), display.locale, "dateMedium");
 			lines.push(
 				`${t ? t("bot.approval.period", "Period") : "Period"}: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`,
 			);
 		}
+	} else if (
+		data.entityType === "time_entry" &&
+		data.originalTime &&
+		data.originalTimeOffsetMinutes !== undefined
+	) {
+		const original = formatCapturedOffsetInstant(parseInstant(data.originalTime), {
+			locale: display.locale,
+			timeFormat: display.timeFormat,
+			offsetMinutes: data.originalTimeOffsetMinutes,
+			preset: "dateTimeMedium",
+		});
+		lines.push(`Original event: ${escapeMarkdownV2(original)}`);
 	}
 
 	lines.push("");
 	lines.push(
 		`${bold(status)} ${t ? t("bot.approval.by", "by") : "by"} ${escapeMarkdownV2(resolved.approverName)}`,
 	);
-	const resolvedAt = formatInstant(resolved.resolvedAt, display);
+	const resolvedAt = formatInstant(instantFromDate(resolved.resolvedAt), display, "dateTimeMedium");
 	lines.push(`${t ? t("bot.approval.at", "at") : "at"} ${escapeMarkdownV2(resolvedAt)}`);
 
 	return lines.join("\n");
-}
-
-function formatInstant(instant: Date, display: RecipientDisplayContext): string {
-	return DateTime.fromJSDate(instant, { zone: "utc" })
-		.setZone(display.timezone)
-		.setLocale(display.locale)
-		.toLocaleString({
-			month: "short",
-			day: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
-			hourCycle: display.timeFormat === "12h" ? "h12" : "h23",
-		});
 }
 
 // ============================================
@@ -246,9 +258,10 @@ export function buildDailyDigestMessage(
 	locale: string = DEFAULT_LANGUAGE,
 ): string {
 	const lines: string[] = [];
-	const dateFormatted = fmtFullDate(
-		DateTime.fromJSDate(data.date, { zone: "utc" }).setZone(data.timezone),
-		locale,
+	const dateFormatted = formatInstant(
+		instantFromDate(data.date),
+		{ locale, timezone: data.timezone, timeFormat: "24h" },
+		"dateMedium",
 	);
 
 	lines.push(

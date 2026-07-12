@@ -1,8 +1,9 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
+import { isValidElement, Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import AuthLayout from "./layout";
+import AuthLayout, { AuthLayoutContent } from "./layout";
 
 const mockState = vi.hoisted(() => ({
 	headers: vi.fn(async () => new Headers()),
@@ -100,9 +101,18 @@ describe("AuthLayout", () => {
 		mockState.env.TURNSTILE_SITE_KEY = undefined;
 	});
 
+	it("places request-dependent auth content behind Suspense", () => {
+		const layout = AuthLayout({ children: <div>Auth content</div> });
+
+		expect(layout).not.toBeInstanceOf(Promise);
+		expect(isValidElement(layout)).toBe(true);
+		if (!isValidElement(layout)) throw new Error("Expected AuthLayout to return a React element");
+		expect(layout.type).toBe(Suspense);
+	});
+
 	it("uses a full-page background image behind the auth content", async () => {
 		render(
-			await AuthLayout({
+			await AuthLayoutContent({
 				children: <div>Auth content</div>,
 			}),
 		);
@@ -154,7 +164,7 @@ describe("AuthLayout", () => {
 			},
 		});
 
-		render(await AuthLayout({ children: <div>Auth content</div> }));
+		render(await AuthLayoutContent({ children: <div>Auth content</div> }));
 
 		expect(mockState.getDomainConfig).toHaveBeenCalledWith("login.acme.test");
 		expect(mockState.getCookieConsentScript).not.toHaveBeenCalled();
@@ -197,7 +207,7 @@ describe("AuthLayout", () => {
 			},
 		});
 
-		render(await AuthLayout({ children: <div>Auth content</div> }));
+		render(await AuthLayoutContent({ children: <div>Auth content</div> }));
 
 		expect(mockState.getPlatformDomainConfig).toHaveBeenCalledWith("acme.ui.z8-time.app");
 		expect(mockState.getDomainConfig).not.toHaveBeenCalled();
@@ -220,7 +230,7 @@ describe("AuthLayout", () => {
 			rootDomain: "ui.z8-time.app",
 		});
 
-		await expect(AuthLayout({ children: <div>Auth content</div> })).rejects.toThrow(
+		await expect(AuthLayoutContent({ children: <div>Auth content</div> })).rejects.toThrow(
 			"NEXT_NOT_FOUND",
 		);
 
@@ -239,7 +249,7 @@ describe("AuthLayout", () => {
 		});
 		mockState.getPlatformDomainConfig.mockResolvedValue(null);
 
-		await expect(AuthLayout({ children: <div>Auth content</div> })).rejects.toThrow(
+		await expect(AuthLayoutContent({ children: <div>Auth content</div> })).rejects.toThrow(
 			"NEXT_NOT_FOUND",
 		);
 
@@ -256,7 +266,7 @@ describe("AuthLayout", () => {
 			'<script id="Cookiebot" src="https://consent.example/uc.js" data-cbid="abc" async></script>',
 		);
 
-		render(await AuthLayout({ children: <div>Auth content</div> }));
+		render(await AuthLayoutContent({ children: <div>Auth content</div> }));
 
 		const script = screen.getByTestId("Cookiebot");
 		expect(script.getAttribute("src")).toBe("https://consent.example/uc.js");

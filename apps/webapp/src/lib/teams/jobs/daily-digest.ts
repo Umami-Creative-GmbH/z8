@@ -23,7 +23,8 @@ import {
 	workPolicyAssignment,
 } from "@/db/schema";
 import { env } from "@/env";
-import { fmtWeekdayShortDate, getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
+import { fmtTime, fmtWeekdayShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
+import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import { createLogger } from "@/lib/logger";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import { sendAdaptiveCard } from "../bot-adapter";
@@ -34,7 +35,6 @@ import type { DailyDigestData } from "../types";
 
 const logger = createLogger("TeamsDailyDigest");
 
-// Maps Luxon weekday numbers (1=Monday … 7=Sunday) to schema day names
 const WEEKDAY_BY_NUMBER: Record<number, string> = {
 	1: "monday",
 	2: "tuesday",
@@ -45,14 +45,12 @@ const WEEKDAY_BY_NUMBER: Record<number, string> = {
 	7: "sunday",
 };
 
-// Work days per preset (mirrors work-policy-requirements.ts PRESET_DAYS)
 const PRESET_WORK_DAYS: Record<string, readonly string[]> = {
 	weekdays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
 	weekends: ["saturday", "sunday"],
 	all_days: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
 };
 
-// Drizzle `with` config for loading a policy's schedule + days
 const policyWithConfig = {
 	policy: {
 		with: {
@@ -63,13 +61,7 @@ const policyWithConfig = {
 	},
 } as const;
 
-/**
- * Returns true when the daily digest should be skipped for this manager today.
- *
- * Skips when:
- * - The manager has an approved absence today whose category does not require work time
- * - Today is not a scheduled work day according to the manager's effective work policy
- */
+/** Returns whether a manager should not receive a digest on their local day. */
 export async function shouldSkipDigestForManager(
 	employeeId: string,
 	organizationId: string,
@@ -79,7 +71,6 @@ export async function shouldSkipDigestForManager(
 	const todayStr = now.toISODate();
 	if (!todayStr) return false;
 
-	// --- 1. Absence check ---
 	const absence = await db.query.absenceEntry.findFirst({
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
@@ -96,8 +87,6 @@ export async function shouldSkipDigestForManager(
 		return true;
 	}
 
-	// --- 2. Work day check ---
-	// Determine effective work policy (employee > team > org priority)
 	const nowDate = new Date();
 	const dateConditions = and(
 		eq(workPolicyAssignment.isActive, true),
@@ -107,13 +96,10 @@ export async function shouldSkipDigestForManager(
 			gte(workPolicyAssignment.effectiveUntil, nowDate),
 		),
 	);
-
-	// Get employee's team for team-level fallback
 	const emp = await db.query.employee.findFirst({
 		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 		columns: { teamId: true },
 	});
-
 	const employeeAssignment = await db.query.workPolicyAssignment.findFirst({
 		where: and(
 			eq(workPolicyAssignment.organizationId, organizationId),
@@ -129,7 +115,6 @@ export async function shouldSkipDigestForManager(
 		workingDaysPreset: string;
 		days: Array<{ dayOfWeek: string; isWorkDay: boolean }>;
 	};
-
 	let scheduleInfo: ScheduleInfo | null = null;
 
 	if (employeeAssignment?.policy?.isActive && employeeAssignment.policy.scheduleEnabled) {
@@ -163,29 +148,20 @@ export async function shouldSkipDigestForManager(
 		}
 	}
 
-	if (scheduleInfo) {
-		const { scheduleType, workingDaysPreset, days } = scheduleInfo;
-		const todayDayName = WEEKDAY_BY_NUMBER[now.weekday];
+	if (!scheduleInfo) return false;
 
-		let isTodayWorkDay: boolean;
+	const todayDayName = WEEKDAY_BY_NUMBER[now.weekday];
+	const isTodayWorkDay =
+		scheduleInfo.scheduleType === "detailed" || scheduleInfo.workingDaysPreset === "custom"
+			? (scheduleInfo.days.find((day) => day.dayOfWeek === todayDayName)?.isWorkDay ?? false)
+			: (PRESET_WORK_DAYS[scheduleInfo.workingDaysPreset] ?? []).includes(todayDayName ?? "");
 
-		if (scheduleType === "detailed" || workingDaysPreset === "custom") {
-			// Explicit per-day configuration
-			const dayConfig = days.find((d) => d.dayOfWeek === todayDayName);
-			isTodayWorkDay = dayConfig?.isWorkDay ?? false;
-		} else {
-			// Preset-based simple schedule
-			const workDays = PRESET_WORK_DAYS[workingDaysPreset] ?? [];
-			isTodayWorkDay = workDays.includes(todayDayName ?? "");
-		}
-
-		if (!isTodayWorkDay) {
-			logger.debug(
-				{ employeeId, todayStr, todayDayName },
-				"Skipping digest: today is not a work day for manager",
-			);
-			return true;
-		}
+	if (!isTodayWorkDay) {
+		logger.debug(
+			{ employeeId, todayStr, todayDayName },
+			"Skipping digest: today is not a work day for manager",
+		);
+		return true;
 	}
 
 	return false;
@@ -196,14 +172,6 @@ export interface DailyDigestResult {
 	tenantsProcessed: number;
 	digestsSent: number;
 	errors: string[];
-}
-
-export interface DailyDigestBuildInput {
-	managerId: string;
-	organizationId: string;
-	logicalDate: string;
-	display: { timezone: string; locale: string; timeFormat: "12h" | "24h" };
-	now: string;
 }
 
 /**
@@ -270,7 +238,7 @@ async function processTenantDigest(tenant: {
 	digestTimezone: string;
 }): Promise<number> {
 	// Check if it's time to send the digest
-	const now = DateTime.utc().setZone(tenant.digestTimezone);
+	const now = DateTime.now().setZone(tenant.digestTimezone);
 	const [digestHour, digestMinute] = tenant.digestTime.split(":").map(Number);
 
 	// Only send if within the 15-minute window of the digest time
@@ -323,34 +291,33 @@ async function processTenantDigest(tenant: {
 				});
 
 				if (!manages) return false;
-
-				// Skip if today is not a work day or manager is on absence
-				if (
-					await shouldSkipDigestForManager(emp.id, tenant.organizationId, tenant.digestTimezone)
-				) {
+				if (await shouldSkipDigestForManager(emp.id, tenant.organizationId, tenant.digestTimezone)) {
 					return false;
 				}
 
-				// Build digest data for this manager
-				const userLocale = await getUserLocale(conv.userId);
+				const temporal = await resolveBotTemporalContext({
+					userId: conv.userId,
+					employeeId: emp.id,
+					organizationId: tenant.organizationId,
+				});
+				if (!temporal) return false;
+
+				// Digest delivery is scheduled in the tenant timezone, but content uses the recipient's context.
 				const digestData = await buildDigestDataForManager(
 					emp.id,
 					tenant.organizationId,
-					tenant.digestTimezone,
-					userLocale,
+					temporal.effectiveTimezone,
+					temporal.locale,
 				);
 
 				// Build and send card
-				const t = await getBotTranslate(userLocale);
-				const card = buildDailyDigestCard(digestData, appUrl, userLocale, t);
+				const t = await getBotTranslate(temporal.locale);
+				const card = buildDailyDigestCard(digestData, appUrl, temporal.locale, t);
 
 				await sendAdaptiveCard(
 					conv.conversationReference,
 					card,
-					`Daily Digest - ${DateTime.fromJSDate(digestData.date, { zone: "utc" })
-						.setZone(tenant.digestTimezone)
-						.setLocale(userLocale)
-						.toLocaleString(DateTime.DATE_MED)}`,
+					`Daily Digest - ${digestData.date.toLocaleDateString()}`,
 				);
 
 				return true;
@@ -374,41 +341,15 @@ async function processTenantDigest(tenant: {
 /**
  * Build digest data for a specific manager
  */
-export function buildDigestDataForManager(input: DailyDigestBuildInput): Promise<DailyDigestData>;
-export function buildDigestDataForManager(
+export async function buildDigestDataForManager(
 	managerId: string,
 	organizationId: string,
 	timezone: string,
-	locale?: string,
-): Promise<DailyDigestData>;
-export async function buildDigestDataForManager(
-	inputOrManagerId: DailyDigestBuildInput | string,
-	legacyOrganizationId?: string,
-	legacyTimezone?: string,
-	legacyLocale: string = DEFAULT_LANGUAGE,
+	locale: string = DEFAULT_LANGUAGE,
 ): Promise<DailyDigestData> {
-	const input: DailyDigestBuildInput =
-		typeof inputOrManagerId === "string"
-			? {
-					display: {
-						locale: legacyLocale,
-						timeFormat: "24h",
-						timezone: legacyTimezone!,
-					},
-					logicalDate: DateTime.utc().setZone(legacyTimezone).toISODate()!,
-					managerId: inputOrManagerId,
-					now: new Date().toISOString(),
-					organizationId: legacyOrganizationId!,
-				}
-			: inputOrManagerId;
-	const timezone = input.display.timezone;
-	const locale = input.display.locale;
-	const managerId = input.managerId;
-	const organizationId = input.organizationId;
-	const now = DateTime.fromISO(input.now, { zone: "utc" }).setZone(timezone);
-	const today = DateTime.fromISO(input.logicalDate, { zone: timezone });
-	const todayStr = today.toISODate();
-	const tomorrowStr = today.plus({ days: 1 }).toISODate();
+	const now = DateTime.now().setZone(timezone);
+	const todayStr = now.toISODate();
+	const tomorrowStr = now.plus({ days: 1 }).toISODate();
 
 	// =========================================
 	// Phase 1: All independent queries in parallel
@@ -568,27 +509,17 @@ export async function buildDigestDataForManager(
 		employeesOut = absences.map((a) => ({
 			name: a.employeeName || "Unknown",
 			category: a.categoryName || "Leave",
-			returnDate: fmtWeekdayShortDate(
-				DateTime.fromISO(a.endDate, { zone: "utc" }).plus({ days: 1 }),
-				locale,
-			),
+			returnDate: fmtWeekdayShortDate(DateTime.fromISO(a.endDate).plus({ days: 1 }), locale),
 		}));
 
 		activeWorkPeriods = activeWorkPeriodsResult;
 		employeesClockedIn = activeWorkPeriods.map((e) => {
-			const clockInTime = DateTime.fromJSDate(e.startTime, { zone: "utc" }).setZone(timezone);
+			const clockInTime = DateTime.fromJSDate(e.startTime).setZone(timezone);
 			const duration = now.diff(clockInTime, ["hours", "minutes"]);
 
 			return {
 				name: e.employeeName || "Unknown",
-				clockedInAt: clockInTime.toLocaleString(
-					{
-						hour: "2-digit",
-						minute: "2-digit",
-						hourCycle: input.display.timeFormat === "12h" ? "h12" : "h23",
-					},
-					{ locale },
-				),
+				clockedInAt: fmtTime(clockInTime, locale),
 				durationSoFar: `${Math.floor(duration.hours)}h ${Math.floor(duration.minutes % 60)}m`,
 			};
 		});
@@ -684,7 +615,7 @@ export async function buildDigestDataForManager(
 	}
 
 	return {
-		date: today.toJSDate(),
+		date: now.toJSDate(),
 		timezone,
 		pendingApprovals: pendingApprovals.length,
 		employeesOut,

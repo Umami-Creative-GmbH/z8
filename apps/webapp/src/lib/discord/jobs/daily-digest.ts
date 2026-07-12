@@ -10,7 +10,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { env } from "@/env";
-import { getUserLocale } from "@/lib/bot-platform/i18n";
+import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { shouldSkipDigestForManager } from "@/lib/teams/jobs/daily-digest";
@@ -121,22 +121,27 @@ async function processBotDigest(bot: {
 				});
 
 				if (!manages) return false;
-
-				// Skip if today is not a work day or manager is on absence
 				if (await shouldSkipDigestForManager(emp.id, bot.organizationId, bot.digestTimezone)) {
 					return false;
 				}
 
-				const userLocale = await getUserLocale(conv.userId);
+				const temporal = await resolveBotTemporalContext({
+					userId: conv.userId,
+					employeeId: emp.id,
+					organizationId: bot.organizationId,
+				});
+				if (!temporal) return false;
+
+				// Digest delivery is scheduled in the bot timezone, but content uses the recipient's context.
 				const digestData: DailyDigestData = await buildDigestDataForManager(
 					emp.id,
 					bot.organizationId,
-					bot.digestTimezone,
-					userLocale,
+					temporal.effectiveTimezone,
+					temporal.locale,
 				);
 
 				// Build Discord embed
-				const embeds = buildDailyDigestEmbed(digestData, appUrl, userLocale);
+				const embeds = buildDailyDigestEmbed(digestData, appUrl, temporal.locale);
 
 				await sendMessage(bot.botToken, conv.channelId, { embeds });
 

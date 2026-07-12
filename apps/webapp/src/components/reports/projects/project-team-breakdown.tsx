@@ -4,6 +4,7 @@ import { IconUsers } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import { useState } from "react";
+import type { PieLabelRenderProps } from "recharts";
 import { Badge } from "@/components/ui/badge";
 
 // Dynamic imports for recharts to reduce initial bundle size
@@ -156,7 +157,9 @@ export function ProjectTeamBreakdown({
 										cx="50%"
 										cy="50%"
 										outerRadius={100}
-										label={({ name, percent }) => `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`}
+										label={({ name, percent }: PieLabelRenderProps) =>
+											`${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
+										}
 										labelLine={false}
 									>
 										{employeeChartData.map((entry) => (
@@ -228,7 +231,7 @@ export function ProjectTeamBreakdown({
 										type="number"
 										tickLine={false}
 										axisLine={false}
-										tickFormatter={(value) => `${value}h`}
+										tickFormatter={(value: number) => `${value}h`}
 									/>
 									<ChartTooltip
 										content={

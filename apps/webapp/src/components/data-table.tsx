@@ -630,7 +630,7 @@ function ChartSection({
 						axisLine={false}
 						dataKey="month"
 						hide
-						tickFormatter={(value) => value.slice(0, 3)}
+						tickFormatter={(value: string) => value.slice(0, 3)}
 						tickLine={false}
 						tickMargin={8}
 					/>

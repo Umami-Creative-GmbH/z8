@@ -356,7 +356,7 @@ export function ApiKeyPageClient({
 			<ApiKeyShowDialog
 				apiKey={newlyCreatedKey}
 				open={!!newlyCreatedKey}
-				onOpenChange={(open) => !open && setNewlyCreatedKey(null)}
+				onOpenChange={(open: boolean) => !open && setNewlyCreatedKey(null)}
 			/>
 
 			{/* Edit Dialog */}
@@ -364,7 +364,7 @@ export function ApiKeyPageClient({
 				organizationId={organizationId}
 				apiKey={editingKey}
 				open={!!editingKey}
-				onOpenChange={(open) => !open && setEditingKey(null)}
+				onOpenChange={(open: boolean) => !open && setEditingKey(null)}
 			/>
 
 			{/* Delete Confirmation Dialog */}

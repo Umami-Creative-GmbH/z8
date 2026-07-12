@@ -30,6 +30,7 @@ export interface SearchableSelectProps {
 	allowEmpty?: boolean;
 	emptyLabel?: string;
 	className?: string;
+	id?: string;
 }
 
 export function SearchableSelect({
@@ -43,6 +44,7 @@ export function SearchableSelect({
 	allowEmpty,
 	emptyLabel,
 	className,
+	id,
 }: SearchableSelectProps) {
 	const [open, setOpen] = useState(false);
 	const listboxId = useId();
@@ -52,6 +54,7 @@ export function SearchableSelect({
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button
+					id={id}
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}

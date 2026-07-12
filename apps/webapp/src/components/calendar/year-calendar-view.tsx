@@ -2,18 +2,23 @@
 
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
+import { Temporal } from "temporal-polyfill";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	addCalendarDateKey,
+	todayCalendarDateKey,
+} from "@/lib/calendar/date-keys";
 import type {
 	CalendarEvent,
 	DailyWorkHoursStatus,
 	DailyWorkHoursSummaries,
 } from "@/lib/calendar/types";
-import { format } from "@/lib/datetime/luxon-utils";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
 import type { ViewMode } from "./schedule-x-calendar";
+import { groupYearCalendarEventsByDate } from "./year-calendar-events";
 
 interface YearCalendarViewProps {
 	events: CalendarEvent[];
@@ -21,8 +26,9 @@ interface YearCalendarViewProps {
 	viewMode: ViewMode;
 	onYearChange: (year: number) => void;
 	onViewModeChange: (mode: ViewMode) => void;
-	onDayClick?: (date: Date) => void;
+	onDayClick?: (dateKey: string) => void;
 	workHoursData?: DailyWorkHoursSummaries;
+	timeZone: string;
 }
 
 const MONTH_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
@@ -62,6 +68,7 @@ function getDayLabelFormatter(locale: string) {
 		month: "long",
 		day: "numeric",
 		year: "numeric",
+		timeZone: "UTC",
 	});
 	dayLabelFormatters.set(locale, formatter);
 	return formatter;
@@ -78,19 +85,18 @@ function getWeekdayNames(locale: string): string[] {
 	return Array.from({ length: 7 }, (_, i) => formatter.format(new Date(2000, 0, 2 + i)));
 }
 
-function getDaysInMonth(year: number, month: number): Date[] {
-	const days: Date[] = [];
-	const date = new Date(year, month, 1);
-	while (date.getMonth() === month) {
-		days.push(new Date(date));
-		date.setDate(date.getDate() + 1);
+function getDaysInMonth(year: number, month: number): string[] {
+	const start = Temporal.PlainDate.from({ year, month: month + 1, day: 1 });
+	const days: string[] = [];
+	for (let date = start; date.month === start.month; date = date.add({ days: 1 })) {
+		days.push(date.toString());
 	}
 	return days;
 }
 
 function getFirstDayOfMonth(year: number, month: number, weekStartDay: WeekStartDay): number {
-	const day = new Date(year, month, 1).getDay();
-	return weekStartDay === "monday" ? (day + 6) % 7 : day;
+	const dayOfWeek = Temporal.PlainDate.from({ year, month: month + 1, day: 1 }).dayOfWeek;
+	return weekStartDay === "monday" ? dayOfWeek - 1 : dayOfWeek % 7;
 }
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -116,9 +122,10 @@ interface MiniMonthProps {
 	weekdays: string[];
 	weekStartDay: WeekStartDay;
 	locale: string;
+	timeZone: string;
 	t: Translate;
 	workHoursData?: DailyWorkHoursSummaries;
-	onDayClick?: (date: Date) => void;
+	onDayClick?: (dateKey: string) => void;
 }
 
 const MiniMonth = function MiniMonth({
@@ -132,16 +139,20 @@ const MiniMonth = function MiniMonth({
 	t,
 	workHoursData,
 	onDayClick,
+	timeZone,
 }: MiniMonthProps) {
 	const days = getDaysInMonth(year, month);
 	const firstDay = getFirstDayOfMonth(year, month, weekStartDay);
 	const dayLabelFormatter = getDayLabelFormatter(locale);
-	const today = new Date();
-	const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+	const todayDateKey = todayCalendarDateKey(timeZone);
+	const isCurrentMonth =
+		todayDateKey.slice(0, 7) === `${year}-${String(month + 1).padStart(2, "0")}`;
 
 	// Create padding for days before the first day of the month
 	const paddingDays = Array.from({ length: firstDay }, (_, dayOffset) =>
-		format(new Date(year, month, dayOffset - firstDay + 1), "yyyy-MM-dd"),
+		addCalendarDateKey(`${year}-${String(month + 1).padStart(2, "0")}-01`, {
+			days: dayOffset - firstDay,
+		}),
 	);
 
 	return (
@@ -165,13 +176,13 @@ const MiniMonth = function MiniMonth({
 				))}
 
 				{/* Actual days */}
-				{days.map((date) => {
-					const dateKey = format(date, "yyyy-MM-dd");
-					const dateLabel = dayLabelFormatter.format(date);
+				{days.map((dateKey) => {
+					const date = Temporal.PlainDate.from(dateKey);
+					const dateLabel = dayLabelFormatter.format(new Date(`${dateKey}T00:00:00.000Z`));
 					const dayEvents = eventsByDate.get(dateKey) || [];
 					const workHours = workHoursData?.get(dateKey);
-					const isToday = isCurrentMonth && date.getDate() === today.getDate();
-					const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+					const isToday = isCurrentMonth && dateKey === todayDateKey;
+					const isWeekend = date.dayOfWeek === 6 || date.dayOfWeek === 7;
 
 					const workStatus: DailyWorkHoursStatus | "none" = workHours?.status ?? "none";
 					const dayLabel =
@@ -188,10 +199,10 @@ const MiniMonth = function MiniMonth({
 
 					return (
 						<button
-							key={date.getTime()}
+							key={dateKey}
 							type="button"
 							aria-label={dayLabel}
-							onClick={() => onDayClick?.(date)}
+							onClick={() => onDayClick?.(dateKey)}
 							className={cn(
 								"aspect-square flex flex-col items-center justify-center text-[10px] rounded-sm relative",
 								"hover:bg-accent transition-colors",
@@ -201,7 +212,7 @@ const MiniMonth = function MiniMonth({
 								hasAbsence && !hasHoliday && "bg-blue-100 dark:bg-blue-900/30",
 							)}
 						>
-							<span>{date.getDate()}</span>
+							<span>{date.day}</span>
 
 							{/* Work hours status indicator */}
 							{workStatus !== "none" && (
@@ -231,13 +242,14 @@ export function YearCalendarView({
 	onViewModeChange,
 	onDayClick,
 	workHoursData,
+	timeZone,
 }: YearCalendarViewProps) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() ?? "en";
 	const weekStartDay = useWeekStartDay();
 	function handleCurrentYearClick() {
-		onYearChange(new Date().getFullYear());
+		onYearChange(Temporal.PlainDate.from(todayCalendarDateKey(timeZone)).year);
 	}
 	const monthNames = getMonthNames(locale);
 	const weekdays = (() => {
@@ -246,17 +258,7 @@ export function YearCalendarView({
 	})();
 
 	// Group events by date
-	const eventsByDate = (() => {
-		const map = new Map<string, CalendarEvent[]>();
-		for (const event of events) {
-			const dateKey = format(event.date, "yyyy-MM-dd");
-			if (!map.has(dateKey)) {
-				map.set(dateKey, []);
-			}
-			map.get(dateKey)?.push(event);
-		}
-		return map;
-	})();
+	const eventsByDate = groupYearCalendarEventsByDate(events, timeZone);
 
 	return (
 		<div className="flex flex-col h-full">
@@ -333,6 +335,7 @@ export function YearCalendarView({
 						t={t}
 						workHoursData={workHoursData}
 						onDayClick={onDayClick}
+						timeZone={timeZone}
 					/>
 				))}
 			</div>

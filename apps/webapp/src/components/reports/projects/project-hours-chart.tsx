@@ -96,13 +96,13 @@ export function ProjectHoursChart({ data }: ProjectHoursChartProps) {
 								tickLine={false}
 								axisLine={false}
 								tickMargin={8}
-								tickFormatter={(value) => value}
+								tickFormatter={(value: string) => value}
 							/>
 							<YAxis
 								tickLine={false}
 								axisLine={false}
 								tickMargin={8}
-								tickFormatter={(value) => `${value}h`}
+								tickFormatter={(value: number) => `${value}h`}
 							/>
 							<ChartTooltip
 								content={
@@ -144,13 +144,13 @@ export function ProjectHoursChart({ data }: ProjectHoursChartProps) {
 								tickLine={false}
 								axisLine={false}
 								tickMargin={8}
-								tickFormatter={(value) => value}
+								tickFormatter={(value: string) => value}
 							/>
 							<YAxis
 								tickLine={false}
 								axisLine={false}
 								tickMargin={8}
-								tickFormatter={(value) => `${value}h`}
+								tickFormatter={(value: number) => `${value}h`}
 							/>
 							<ChartTooltip
 								content={

@@ -53,14 +53,14 @@ vi.mock("next/headers", () => ({
 
 vi.mock("next-intl", () => ({
 	NextIntlClientProvider: ({
-	children,
-	locale,
-	messages,
-}: {
-	children: React.ReactNode;
-	locale: string;
-	messages: Record<string, string>;
-}) => (
+		children,
+		locale,
+		messages,
+	}: {
+		children: React.ReactNode;
+		locale: string;
+		messages: Record<string, string>;
+	}) => (
 		<div data-next-intl-locale={locale} data-next-intl-messages={JSON.stringify(messages)}>
 			{children}
 		</div>
@@ -136,14 +136,14 @@ vi.mock("@/proxy", () => ({
 
 vi.mock("@/tolgee/client", () => ({
 	TolgeeNextProvider: ({
-	children,
-	language,
-	staticData,
-}: {
-	children: React.ReactNode;
-	language: string;
-	staticData: Record<string, unknown>;
-}) => (
+		children,
+		language,
+		staticData,
+	}: {
+		children: React.ReactNode;
+		language: string;
+		staticData: Record<string, unknown>;
+	}) => (
 		<div data-tolgee-language={language} data-tolgee-static-data={JSON.stringify(staticData)}>
 			{children}
 		</div>
@@ -189,6 +189,31 @@ describe("LocaleLayout", () => {
 		expect(source).not.toContain('minHeight: "100vh"');
 	});
 
+	it("isolates the deployment refresh checker behind a Suspense boundary", () => {
+		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
+
+		expect(source).toMatch(
+			/<Suspense fallback=\{null\}>\s*<DeploymentRefreshChecker[^>]+\/>\s*<\/Suspense>/,
+		);
+	});
+
+	it("renders next-intl through a client boundary without inheriting request config", () => {
+		const providerSource = readFileSync("src/app/[locale]/translation-providers.tsx", "utf8");
+		const layoutSource = readFileSync("src/app/[locale]/layout.tsx", "utf8");
+
+		expect(providerSource).toMatch(/^"use client";/);
+		expect(providerSource).toContain('import { NextIntlClientProvider } from "next-intl";');
+		expect(layoutSource).not.toContain('from "next-intl"');
+	});
+
+	it("isolates route content when the translation fallback is rendered", () => {
+		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
+
+		expect(source).toMatch(
+			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<Suspense fallback=\{null\}>\s*<ApplicationContent>\{children\}<\/ApplicationContent>\s*<\/Suspense>\s*<\/TranslationProviders>/,
+		);
+	});
+
 	it("renders the translation-context fallback while route translations are pending", async () => {
 		let resolveHeaders: (headers: Headers) => void = () => {};
 		mockState.headers.mockImplementation(
@@ -225,7 +250,9 @@ describe("LocaleLayout", () => {
 				"Auth content",
 			);
 		} finally {
-			mockState.headers.mockImplementation(async () => new Headers({ "x-pathname": "/en/sign-in" }));
+			mockState.headers.mockImplementation(
+				async () => new Headers({ "x-pathname": "/en/sign-in" }),
+			);
 		}
 	});
 });

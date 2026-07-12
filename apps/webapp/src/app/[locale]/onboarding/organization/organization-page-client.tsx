@@ -30,6 +30,69 @@ type OrganizationPageClientProps = {
 	canCreateOrganizations: boolean;
 };
 
+function OrganizationSetupHeader({
+	canCreateOrganizations,
+	t,
+}: {
+	canCreateOrganizations: boolean;
+	t: (key: string, defaultValue: string) => string;
+}) {
+	return (
+		<div className="mb-8 text-center">
+			<h1 className="mb-4 text-3xl font-bold tracking-tight">
+				{t("onboarding.organization.title", "Set up your organization")}
+			</h1>
+			<p className="text-muted-foreground">
+				{canCreateOrganizations
+					? t(
+							"onboarding.organization.subtitle",
+							"Create your organization to unlock all features, or skip if you're waiting for an invitation.",
+						)
+					: t(
+							"onboarding.organization.disabledSubtitle",
+							"Organization creation is disabled for this deployment.",
+						)}
+			</p>
+		</div>
+	);
+}
+
+function OrganizationSkipCard({
+	canCreateOrganizations,
+	loading,
+	onSkip,
+	t,
+}: {
+	canCreateOrganizations: boolean;
+	loading: boolean;
+	onSkip: () => void;
+	t: (key: string, defaultValue: string) => string;
+}) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>{t("onboarding.organization.skipTitle", "Waiting for an Invitation?")}</CardTitle>
+				<CardDescription>
+					{canCreateOrganizations
+						? t(
+								"onboarding.organization.skipDescription",
+								"If your administrator will invite you to an organization, you can skip this step for now.",
+							)
+						: t(
+								"onboarding.organization.disabledSkipDescription",
+								"You can continue by skipping this step while you wait for an invitation to an existing organization.",
+							)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<Button variant="outline" onClick={onSkip} disabled={loading} className="w-full">
+					{t("onboarding.organization.skip", "Skip for now")}
+				</Button>
+			</CardContent>
+		</Card>
+	);
+}
+
 export default function OrganizationPageClient({
 	canCreateOrganizations,
 }: OrganizationPageClientProps) {
@@ -111,6 +174,7 @@ export default function OrganizationPageClient({
 		}, 500);
 
 		return () => clearTimeout(timeoutId);
+		// oxlint-disable-next-line react-hooks/exhaustive-deps -- slug is the reactive formValues.slug value used by this effect.
 	}, [canCreateOrganizations, slug, t]);
 
 	async function handleSkip() {
@@ -144,22 +208,7 @@ export default function OrganizationPageClient({
 			<ProgressIndicator currentStep="organization" />
 
 			<div className="mx-auto max-w-2xl">
-				<div className="mb-8 text-center">
-					<h1 className="mb-4 text-3xl font-bold tracking-tight">
-						{t("onboarding.organization.title", "Set up your organization")}
-					</h1>
-					<p className="text-muted-foreground">
-						{canCreateOrganizations
-							? t(
-									"onboarding.organization.subtitle",
-									"Create your organization to unlock all features, or skip if you're waiting for an invitation.",
-								)
-							: t(
-									"onboarding.organization.disabledSubtitle",
-									"Organization creation is disabled for this deployment.",
-								)}
-					</p>
-				</div>
+				<OrganizationSetupHeader canCreateOrganizations={canCreateOrganizations} t={t} />
 
 				<div className="space-y-6">
 					{canCreateOrganizations && (
@@ -310,29 +359,12 @@ export default function OrganizationPageClient({
 						</Card>
 					)}
 
-					<Card>
-						<CardHeader>
-							<CardTitle>
-								{t("onboarding.organization.skipTitle", "Waiting for an Invitation?")}
-							</CardTitle>
-							<CardDescription>
-								{canCreateOrganizations
-									? t(
-											"onboarding.organization.skipDescription",
-											"If your administrator will invite you to an organization, you can skip this step for now.",
-										)
-									: t(
-											"onboarding.organization.disabledSkipDescription",
-											"You can continue by skipping this step while you wait for an invitation to an existing organization.",
-										)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<Button variant="outline" onClick={handleSkip} disabled={loading} className="w-full">
-								{t("onboarding.organization.skip", "Skip for now")}
-							</Button>
-						</CardContent>
-					</Card>
+					<OrganizationSkipCard
+						canCreateOrganizations={canCreateOrganizations}
+						loading={loading}
+						onSkip={handleSkip}
+						t={t}
+					/>
 				</div>
 			</div>
 		</>

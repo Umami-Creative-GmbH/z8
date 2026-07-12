@@ -2,7 +2,7 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -131,15 +131,6 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 		},
 	});
 
-	useEffect(() => {
-		if (!isEditing) return;
-
-		form.reset({
-			presetId: defaultPresetId,
-			confirmation: "",
-		});
-	}, [defaultPresetId, form, isEditing]);
-
 	function getDefaultFormValues(): ScheduleFormValues {
 		return {
 			presetId: defaultPresetId,
@@ -246,6 +237,7 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 								<Label htmlFor={`cron-preset-${job.jobName}`}>{labels.presetLabel}</Label>
 								<select
 									id={`cron-preset-${job.jobName}`}
+									aria-label={labels.presetLabel}
 									className="flex h-9 w-full rounded-md border border-input bg-card px-3 py-1 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
 									value={field.state.value}
 									onBlur={field.handleBlur}
@@ -283,8 +275,8 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 					) : null}
 
 					<div className="flex items-center gap-2">
-						<form.Subscribe selector={(state) => state.values.confirmation}>
-							{(confirmation) => (
+						<form.Subscribe<string> selector={(state) => state.values.confirmation}>
+							{(confirmation: string) => (
 								<Button
 									type="submit"
 									size="sm"

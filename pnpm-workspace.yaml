@@ -60,3 +60,10 @@ overrides:
   undici: 7.24.0
   uuid: 14.0.0
   ws@8.18.3: 8.21.0
+
+packageExtensions:
+  react-native-worklets@0.8.3:
+    dependencies:
+      '@babel/generator': ^7.25.2
+      '@babel/traverse': ^7.25.2
+      '@babel/types': ^7.25.2

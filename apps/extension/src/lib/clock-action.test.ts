@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
-import { createClockAction, getActionTimezone } from "./clock-action";
+import { createClockAction, getActionTimezone, toReplayClockAction } from "./clock-action";
 
 const fixedNow = DateTime.fromISO("2026-07-10T12:30:00.123Z", { zone: "utc" });
 
@@ -28,7 +28,7 @@ describe("extension clock action capture", () => {
     });
   });
 
-  it("falls back to UTC evidence for an invalid device timezone without using the host timezone", () => {
+	it("falls back to UTC evidence for an invalid device timezone without using the host timezone", () => {
     expect(
       createClockAction({
         type: "clock_out",
@@ -43,6 +43,24 @@ describe("extension clock action capture", () => {
       browserTimezone: "UTC",
       utcOffsetMinutes: 0,
     });
-    expect(getActionTimezone(fakeIntl("Not/AZone"))).toBeNull();
-  });
+		expect(getActionTimezone(fakeIntl("Not/AZone"))).toBeNull();
+	});
+
+	it("marks only queued actions as replay while preserving all captured evidence", () => {
+		const action = createClockAction({
+			type: "clock_in",
+			now: fixedNow,
+			intlApi: fakeIntl("Asia/Kathmandu"),
+			actionId: "action-789",
+		});
+
+		expect(toReplayClockAction(action)).toEqual({
+			id: "action-789",
+			type: "clock_in",
+			timestamp: "2026-07-10T12:30:00.123Z",
+			browserTimezone: "Asia/Kathmandu",
+			utcOffsetMinutes: 345,
+			replay: true,
+		});
+	});
 });

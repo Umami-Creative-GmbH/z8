@@ -14,6 +14,8 @@ import {
 	rejectTimeCorrectionEffect as rejectTimeCorrectionAction,
 	syncCanonicalWorkCorrection,
 } from "@/lib/approvals/server/time-correction-approvals";
+import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
 
 export type {
 	ApprovalDecisionAction,
@@ -47,8 +49,24 @@ export async function getPendingApprovalCounts() {
 	return getPendingApprovalCountsAction();
 }
 
-export async function getPendingApprovals() {
-	return getPendingApprovalsAction();
+export async function getPendingApprovals(locale = "en") {
+	const currentEmployee = await getCurrentEmployeeAction();
+	if (!currentEmployee) return getPendingApprovalsAction();
+
+	const [result, timezone, timeFormat] = await Promise.all([
+		getPendingApprovalsAction(),
+		getEffectiveTimezone(currentEmployee.userId, currentEmployee.organizationId),
+		getUserTimeFormat(currentEmployee.userId),
+	]);
+	const displayContext = { locale, timezone, timeFormat } as const;
+
+	return {
+		...result,
+		timeCorrectionApprovals: result.timeCorrectionApprovals.map((approval) => ({
+			...approval,
+			displayContext,
+		})),
+	};
 }
 
 export async function getCurrentEmployee() {

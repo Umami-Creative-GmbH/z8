@@ -10,6 +10,7 @@
 
 import { DateTime } from "luxon";
 import { fromJSDate, toJSDate, toUTC } from "./luxon-utils";
+import { dateFromInstant, type Instant, instantFromDate, systemClock } from "./temporal-core";
 
 // ============================================================================
 // READING FROM DATABASE
@@ -28,6 +29,14 @@ export function dateFromDB(date: Date | null | undefined): DateTime | null {
 }
 
 /**
+ * Convert a Date from database to an exact UTC instant.
+ */
+export function instantFromDB(date: Date | null | undefined): Instant | null {
+	if (!date) return null;
+	return instantFromDate(date);
+}
+
+/**
  * Convert multiple dates from database to UTC DateTimes
  * Useful for batch conversions when mapping query results
  *
@@ -36,6 +45,13 @@ export function dateFromDB(date: Date | null | undefined): DateTime | null {
  */
 export function datesFromDB(dates: (Date | null)[]): (DateTime | null)[] {
 	return dates.map((date) => dateFromDB(date));
+}
+
+/**
+ * Convert multiple database dates to exact UTC instants.
+ */
+export function instantsFromDB(dates: (Date | null)[]): (Instant | null)[] {
+	return dates.map((date) => instantFromDB(date));
 }
 
 /**
@@ -100,6 +116,14 @@ export function dateToDB(dt: DateTime | null | undefined): Date | null {
 }
 
 /**
+ * Convert an exact instant to a Date for database insertion.
+ */
+export function instantToDB(instant: Instant | null | undefined): Date | null {
+	if (!instant) return null;
+	return dateFromInstant(instant);
+}
+
+/**
  * Convert multiple DateTimes to Dates for database insertion
  *
  * @param dts Array of DateTimes
@@ -153,7 +177,7 @@ export function prepareRecordForDB<T extends Record<string, any>>(
  * updatedAt: timestamp("updated_at").$onUpdate(() => currentTimestamp()).notNull()
  */
 export function currentTimestamp(): Date {
-	return DateTime.utc().toJSDate();
+	return dateFromInstant(systemClock.nowInstant());
 }
 
 /**
@@ -164,7 +188,7 @@ export function currentTimestamp(): Date {
  * createdAt: timestamp("created_at").$default(() => defaultTimestamp()).notNull()
  */
 export function defaultTimestamp(): Date {
-	return DateTime.utc().toJSDate();
+	return dateFromInstant(systemClock.nowInstant());
 }
 
 // ============================================================================

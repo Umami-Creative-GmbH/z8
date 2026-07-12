@@ -3,6 +3,7 @@
 import { IconAlertTriangle, IconCheck, IconTarget, IconTrendingUp } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import type { DateRange } from "@/app/[locale]/(app)/scheduling/types";
 import { getTargetHeatmapData } from "@/app/[locale]/(app)/settings/coverage-rules/actions";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -12,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 interface CoverageHeatmapOverlayProps {
 	organizationId: string;
-	dateRange: { start: Date; end: Date };
+	dateRange: DateRange;
 	visible: boolean;
 	onToggle: () => void;
 }
@@ -176,17 +177,13 @@ export function CoverageDayIndicator({ dataPoints }: { dataPoints: HeatmapDataPo
 /**
  * Hook to fetch and organize coverage heatmap data.
  */
-export function useCoverageHeatmap(
-	organizationId: string,
-	dateRange: { start: Date; end: Date },
-	enabled: boolean,
-) {
+export function useCoverageHeatmap(organizationId: string, dateRange: DateRange, enabled: boolean) {
 	const { data, isLoading, error } = useQuery({
 		queryKey: queryKeys.coverage.heatmap(organizationId, dateRange),
 		queryFn: async () => {
 			const result = await getTargetHeatmapData({
-				startDate: dateRange.start,
-				endDate: dateRange.end,
+				startDate: dateRange.startDate,
+				endDateExclusive: dateRange.endDateExclusive,
 			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
@@ -305,11 +302,7 @@ export function CoverageHeatmapOverlay({
 	visible,
 	onToggle,
 }: CoverageHeatmapOverlayProps) {
-	const { data, dataByDate, hasGaps, isLoading } = useCoverageHeatmap(
-		organizationId,
-		dateRange,
-		visible,
-	);
+	const { data, hasGaps, isLoading } = useCoverageHeatmap(organizationId, dateRange, visible);
 
 	return (
 		<>

@@ -2,7 +2,11 @@
 
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
+import {
+	dateToCalendarString,
+	formatDateRangeLabel,
+	getDateRangeForPreset,
+} from "@/lib/reports/date-ranges";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { DateRangePicker } from "./date-range-picker";
 
@@ -22,5 +26,13 @@ describe("DateRangePicker", () => {
 			true,
 		);
 		expect(screen.getByText("Loading organization settings before enabling presets.")).toBeTruthy();
+	});
+
+	it("keeps picker selections as local calendar strings", () => {
+		expect(dateToCalendarString(new Date(2026, 4, 1))).toBe("2026-05-01");
+	});
+
+	it("formats calendar labels without converting through the host timezone", () => {
+		expect(formatDateRangeLabel("2026-05-01", "2026-05-31")).toBe("May 1, 2026 - May 31, 2026");
 	});
 });

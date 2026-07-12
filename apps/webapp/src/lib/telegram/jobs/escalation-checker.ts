@@ -81,7 +81,10 @@ async function processBotEscalations(bot: {
 	botToken: string;
 	escalationTimeoutHours: number;
 }): Promise<number> {
-	const cutoffTime = DateTime.now().minus({ hours: bot.escalationTimeoutHours }).toJSDate();
+	const cutoffTime = DateTime.now()
+		.setZone("utc")
+		.minus({ hours: bot.escalationTimeoutHours })
+		.toJSDate();
 
 	// Find pending approvals older than the timeout that haven't been escalated via Telegram
 	const staleApprovals = await db
@@ -156,7 +159,9 @@ async function processBotEscalations(bot: {
 			if (!backupManagerId) return 0;
 
 			// Record the escalation
-			const _ageHours = DateTime.now().diff(DateTime.fromJSDate(approval.createdAt), "hours").hours;
+			const _ageHours = DateTime.now()
+				.setZone("utc")
+				.diff(DateTime.fromJSDate(approval.createdAt, { zone: "utc" }), "hours").hours;
 
 			await db.insert(telegramEscalation).values({
 				organizationId: bot.organizationId,

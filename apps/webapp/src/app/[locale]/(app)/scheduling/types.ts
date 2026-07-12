@@ -10,8 +10,8 @@ export type ShiftRequestType = "swap" | "assignment" | "pickup";
 export type ShiftRecurrenceType = "daily" | "weekly" | "biweekly" | "monthly" | "custom";
 
 export interface DateRange {
-	start: Date;
-	end: Date;
+	startDate: string;
+	endDateExclusive: string;
 }
 
 export interface PublishAcknowledgmentInput {
@@ -125,7 +125,7 @@ export interface UpsertShiftInput {
 	employeeId?: string | null;
 	templateId?: string | null;
 	subareaId: string; // Required - every shift must be assigned to a subarea
-	date: Date;
+	date: string;
 	startTime: string;
 	endTime: string;
 	notes?: string;
@@ -133,8 +133,8 @@ export interface UpsertShiftInput {
 }
 
 export interface ShiftQuery {
-	startDate?: Date;
-	endDate?: Date;
+	startDate?: string;
+	endDateExclusive?: string;
 	employeeId?: string;
 	subareaId?: string; // Filter by subarea
 	status?: ShiftStatus;

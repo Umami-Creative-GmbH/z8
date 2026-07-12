@@ -1,6 +1,7 @@
 import type { Effect } from "effect";
 import type { db } from "@/db";
 import type { SickDetail } from "@/lib/absences/types";
+import type { DisplayContext } from "@/lib/datetime/temporal-format";
 import type { AnyAppError } from "@/lib/effect/errors";
 
 export type ApprovalDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -41,6 +42,7 @@ export interface ApprovalWithTimeCorrection {
 	entityType: string;
 	status: "pending" | "approved" | "rejected";
 	createdAt: Date;
+	displayContext?: DisplayContext;
 	requester: {
 		user: {
 			id: string;
@@ -55,10 +57,14 @@ export interface ApprovalWithTimeCorrection {
 		endTime: Date | null;
 		clockInEntry: {
 			timestamp: Date;
+			utcOffsetMinutes: number;
 		};
 		clockOutEntry: {
 			timestamp: Date;
+			utcOffsetMinutes: number;
 		} | null;
+		clockInCorrectionEntry: { timestamp: Date; utcOffsetMinutes: number } | null;
+		clockOutCorrectionEntry: { timestamp: Date; utcOffsetMinutes: number } | null;
 	};
 }
 

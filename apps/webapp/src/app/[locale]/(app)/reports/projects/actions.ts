@@ -491,9 +491,9 @@ export async function getProjectDetailedReport(
 						deadline: projectData.deadline,
 					},
 					period: {
-						startDate,
-						endDate,
-						label: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
+						startDate: startDate.toISOString(),
+						endDate: endDate.toISOString(),
+						label: `${startDate} - ${endDate}`,
 					},
 					summary: {
 						totalHours,

@@ -278,6 +278,7 @@ describe("GET /api/calendar/events", () => {
 				id: "work-period-late-utc",
 				type: "work_period",
 				date: new Date("2026-06-01T02:00:00.000Z"),
+				endDate: new Date("2026-06-01T04:00:00.000Z"),
 				title: "Work period",
 				color: "#10b981",
 				metadata: { durationMinutes: 120, employeeName: "Ada" },
@@ -404,6 +405,7 @@ describe("GET /api/calendar/events", () => {
 				id: "work-period-1",
 				type: "work_period",
 				date: new Date("2026-05-04T08:00:00.000Z"),
+				endDate: new Date("2026-05-04T16:00:00.000Z"),
 				title: "Work period",
 				color: "#10b981",
 				metadata: { durationMinutes: 480, employeeName: "Ada" },
@@ -429,6 +431,7 @@ describe("GET /api/calendar/events", () => {
 			id: "work-period-completed",
 			type: "work_period",
 			date: new Date("2026-05-04T08:00:00.000Z"),
+			endDate: new Date("2026-05-04T14:00:00.000Z"),
 			title: "Work period",
 			color: "#10b981",
 			metadata: { durationMinutes: 360, employeeName: "Ada" },
@@ -458,6 +461,7 @@ describe("GET /api/calendar/events", () => {
 			{
 				...completedWorkPeriod,
 				date: "2026-05-04T08:00:00.000Z",
+				endDate: "2026-05-04T14:00:00.000Z",
 			},
 			{
 				...runningWorkPeriod,
@@ -467,5 +471,39 @@ describe("GET /api/calendar/events", () => {
 		expect(body.dailyActualMinutes).toEqual({
 			"2026-05-04": 360,
 		});
+	});
+
+	it("deduplicates a Dec31-Jan1 work period in a full-year response without double-counting actuals", async () => {
+		mockState.findUserSettings.mockResolvedValueOnce({ timezone: "UTC" });
+		const spanningPeriod = {
+			id: "work-period-dec31-jan1",
+			type: "work_period" as const,
+			date: new Date("2026-12-31T23:00:00.000Z"),
+			endDate: new Date("2027-01-01T01:00:00.000Z"),
+			title: "Year-end work",
+			color: "#10b981",
+			metadata: { durationMinutes: 120, employeeName: "Ada" },
+		};
+		mockState.getWorkPeriodsForMonth.mockImplementation(async (month: number) =>
+			month === 0 || month === 11 ? [spanningPeriod] : [],
+		);
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&fullYear=true&showWorkPeriods=true",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(body.total).toBe(1);
+		expect(body.events).toEqual([
+			{
+				...spanningPeriod,
+				date: "2026-12-31T23:00:00.000Z",
+				endDate: "2027-01-01T01:00:00.000Z",
+			},
+		]);
+		expect(body.dailyActualMinutes).toEqual({ "2026-12-31": 60 });
 	});
 });

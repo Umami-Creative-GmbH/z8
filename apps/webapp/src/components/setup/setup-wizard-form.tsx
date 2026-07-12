@@ -319,8 +319,8 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 						)}
 					</form.Field>
 
-					<form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-						{([canSubmit, isSubmitting]) => (
+					<form.Subscribe<[boolean, boolean]> selector={(state) => [state.canSubmit, state.isSubmitting]}>
+						{([canSubmit, isSubmitting]: [boolean, boolean]) => (
 							<Button
 								type="submit"
 								className="w-full gap-2"

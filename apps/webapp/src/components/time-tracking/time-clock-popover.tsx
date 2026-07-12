@@ -2,9 +2,11 @@
 
 import { IconCheck, IconClock, IconClockPause, IconLoader2, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useReducer, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { useElapsedTimer, useTimeClock } from "@/lib/query";
@@ -86,9 +88,14 @@ function timeClockPopoverReducer(
 
 export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeFormat }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const timezone = useUserTimezone();
 	const [open, setOpen] = useState(false);
 	const [uiState, dispatch] = useReducer(timeClockPopoverReducer, undefined, createInitialState);
-	const timeFormatter = Intl.DateTimeFormat(undefined, getTimeFormatDateTimeOptions(timeFormat));
+	const timeFormatter = Intl.DateTimeFormat(locale, {
+		...getTimeFormatDateTimeOptions(timeFormat),
+		timeZone: timezone,
+	});
 
 	const {
 		hasEmployee,

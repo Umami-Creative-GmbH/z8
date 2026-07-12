@@ -23,6 +23,47 @@ import { Switch } from "@/components/ui/switch";
 import { useRouter } from "@/navigation";
 import { checkIsAdmin, createVacationPolicyOnboarding, skipVacationPolicySetup } from "./actions";
 
+function VacationPolicyHeader({ t }: { t: (key: string, defaultValue: string) => string }) {
+	return (
+		<div className="mb-8 text-center">
+			<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
+				<IconBeach className="size-8 text-primary" />
+			</div>
+			<h1 className="mb-4 text-3xl font-bold tracking-tight">
+				{t("onboarding.vacationPolicy.title", "Set up vacation policy")}
+			</h1>
+			<p className="text-muted-foreground">
+				{t(
+					"onboarding.vacationPolicy.subtitle",
+					"Create a vacation policy for your organization. This determines how many days off employees get.",
+				)}
+			</p>
+		</div>
+	);
+}
+
+function VacationPolicyActions({
+	loading,
+	onSkip,
+	t,
+}: {
+	loading: boolean;
+	onSkip: () => void;
+	t: (key: string, defaultValue: string) => string;
+}) {
+	return (
+		<div className="flex gap-3 pt-4">
+			<Button type="button" variant="outline" onClick={onSkip} disabled={loading} className="flex-1">
+				{t("onboarding.vacationPolicy.skip", "Skip for now")}
+			</Button>
+			<Button type="submit" disabled={loading} className="flex-1">
+				{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+				{t("onboarding.vacationPolicy.continue", "Continue")}
+			</Button>
+		</div>
+	);
+}
+
 export default function VacationPolicyPage() {
 	const { t } = useTranslate();
 	const { push } = useRouter();
@@ -107,20 +148,7 @@ export default function VacationPolicyPage() {
 			<ProgressIndicator currentStep="vacation_policy" />
 
 			<div className="mx-auto max-w-2xl">
-				<div className="mb-8 text-center">
-					<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
-						<IconBeach className="size-8 text-primary" />
-					</div>
-					<h1 className="mb-4 text-3xl font-bold tracking-tight">
-						{t("onboarding.vacationPolicy.title", "Set up vacation policy")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"onboarding.vacationPolicy.subtitle",
-							"Create a vacation policy for your organization. This determines how many days off employees get.",
-						)}
-					</p>
-				</div>
+				<VacationPolicyHeader t={t} />
 
 				<Card>
 					<CardHeader>
@@ -319,22 +347,7 @@ export default function VacationPolicyPage() {
 								</form.Field>
 							)}
 
-							{/* Action Buttons */}
-							<div className="flex gap-3 pt-4">
-								<Button
-									type="button"
-									variant="outline"
-									onClick={handleSkip}
-									disabled={loading}
-									className="flex-1"
-								>
-									{t("onboarding.vacationPolicy.skip", "Skip for now")}
-								</Button>
-								<Button type="submit" disabled={loading} className="flex-1">
-									{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-									{t("onboarding.vacationPolicy.continue", "Continue")}
-								</Button>
-							</div>
+							<VacationPolicyActions loading={loading} onSkip={handleSkip} t={t} />
 						</form>
 					</CardContent>
 				</Card>

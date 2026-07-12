@@ -134,7 +134,8 @@ export function ApprovalSprintPanel({
 		isRejecting: false,
 		advance: () => {},
 	});
-	const visibleItems = items.filter((item) => !dismissedApprovalIds.includes(item.id));
+	const dismissedApprovalIdSet = new Set(dismissedApprovalIds);
+	const visibleItems = items.filter((item) => !dismissedApprovalIdSet.has(item.id));
 	const visibleItemCount = visibleItems.length;
 	const boundedCurrentIndex =
 		visibleItemCount === 0 ? 0 : Math.min(currentIndex, visibleItemCount - 1);

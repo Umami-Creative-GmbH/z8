@@ -1,13 +1,11 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
-import {
-	createTimeEntry,
-	validateProjectAssignment,
-} from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
+import { validateProjectAssignment } from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
 import { db } from "@/db";
-import { employee, project, timeEntry, userSettings, workCategory, workPeriod } from "@/db/schema";
+import { member } from "@/db/auth-schema";
+import { employee, project, timeEntry, userSettings, workCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
@@ -22,15 +20,21 @@ import {
 	isBillingMutationAllowed,
 	requireBillingForMutation,
 } from "@/lib/billing/guard";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
 import {
+  ClockingAccessError,
+  ClockingConflictError,
+  clockingService,
+} from "@/lib/time-tracking/clocking-service";
+import {
+	getUtcOffsetMinutesForZone,
 	isValidIanaTimezone,
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import { isWorkLocationType } from "@/lib/time-tracking/work-location";
-import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
 
 class TimeEntryConflictError extends Error {
 	constructor(message: string) {
@@ -208,15 +212,18 @@ export async function POST(request: NextRequest) {
 		}
 
 		const {
+			id,
 			type,
 			timestamp,
 			notes,
-			organizationId,
 			location,
 			projectId,
 			workCategoryId,
 			workLocationType,
 			browserTimezone,
+			utcOffsetMinutes,
+			replay,
+			organizationId,
 		} = body;
 
 		// Validate required fields
@@ -235,6 +242,19 @@ export async function POST(request: NextRequest) {
 		}
 
 		const activeOrgId = session.session.activeOrganizationId;
+		if (!activeOrgId) {
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		}
+		const activeMembership = await db.query.member.findFirst({
+			where: and(eq(member.userId, session.user.id), eq(member.organizationId, activeOrgId)),
+			columns: { id: true },
+		});
+		if (!activeMembership) {
+			return NextResponse.json(
+				{ error: "Active organization membership required" },
+				{ status: 403 },
+			);
+		}
 		if (organizationId !== undefined) {
 			return NextResponse.json({ error: "organizationId is server-derived" }, { status: 400 });
 		}
@@ -272,16 +292,55 @@ export async function POST(request: NextRequest) {
 			return createBillingForbiddenResponse(billingAccess);
 		}
 
-		const entryTime = timestamp ? new Date(timestamp) : new Date();
-		const savedTimezone = (await getSavedUserTimezone(session.user.id)) ?? "UTC";
+		const isReplay = replay === true;
+		const actionId =
+			typeof id === "string" && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id)
+				? id
+				: undefined;
 		const requestBrowserTimezone = isValidIanaTimezone(browserTimezone) ? browserTimezone : null;
-		const timezoneCapture = resolveTimeEntryTimezoneCapture({
-			timestamp: entryTime,
-			browserTimezone: requestBrowserTimezone,
-			fallbackTimezone: savedTimezone,
-			browserSource: "browser",
-			fallbackSource: "user_setting",
-		});
+		const hasCapturedEvidence = actionId !== undefined || utcOffsetMinutes !== undefined;
+		if (isReplay && !actionId) {
+			return NextResponse.json(
+				{ error: "Replay requires an extension action id" },
+				{ status: 400 },
+			);
+		}
+		if (
+			hasCapturedEvidence &&
+			(!timestamp || !requestBrowserTimezone || !Number.isInteger(utcOffsetMinutes))
+		) {
+			return NextResponse.json({ error: "Clock timezone evidence is incomplete" }, { status: 400 });
+		}
+		const entryTime = timestamp ? new Date(timestamp) : new Date();
+		if (Number.isNaN(entryTime.getTime())) {
+			return NextResponse.json({ error: "Invalid clock instant" }, { status: 400 });
+		}
+		if (hasCapturedEvidence) {
+			const ageMs = Date.now() - entryTime.getTime();
+			const maxAgeMs = isReplay ? 7 * 24 * 60 * 60_000 : 5 * 60_000;
+			if (ageMs < -5 * 60_000 || ageMs > maxAgeMs) {
+				return NextResponse.json(
+					{ error: "Clock instant is outside the allowed capture window" },
+					{ status: 400 },
+				);
+			}
+			if (getUtcOffsetMinutesForZone(entryTime, requestBrowserTimezone!) !== utcOffsetMinutes) {
+				return NextResponse.json(
+					{ error: "Timezone offset does not match instant" },
+					{ status: 400 },
+				);
+			}
+		}
+		const savedTimezone = (await getSavedUserTimezone(session.user.id)) ?? "UTC";
+		const timezoneCapture = hasCapturedEvidence
+			? { timezone: requestBrowserTimezone!, timezoneSource: "browser" as const, utcOffsetMinutes }
+			: resolveTimeEntryTimezoneCapture({
+					timestamp: entryTime,
+					browserTimezone: requestBrowserTimezone,
+					fallbackTimezone: savedTimezone,
+					browserSource: "browser",
+					fallbackSource: "user_setting",
+				});
 
 		if (projectId) {
 			const [assignedProject] = await db
@@ -334,93 +393,28 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		const entry = await db.transaction(async (tx) => {
-			const lockKey = `${requestedOrgId}:${currentEmployee.id}`;
-			await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
-
-			const [activePeriod] = await tx
-				.select()
-				.from(workPeriod)
-				.where(
-					and(
-						eq(workPeriod.employeeId, currentEmployee.id),
-						eq(workPeriod.organizationId, requestedOrgId),
-						eq(workPeriod.isActive, true),
-						isNull(workPeriod.endTime),
-					),
-				)
-				.limit(1);
-
-			if (type === "clock_in" && activePeriod) {
-				throw new TimeEntryConflictError("Active work period already exists");
-			}
-
-			if (type === "clock_out" && !activePeriod) {
-				throw new Error("No active work period found");
-			}
-
-			const createdEntry = await createTimeEntry(
-				{
-					employeeId: currentEmployee.id,
-					organizationId: requestedOrgId,
-					type,
-					timestamp: entryTime,
-					createdBy: session.user.id,
-					notes,
-					location,
-					...timezoneCapture,
-				},
-				tx,
-			);
-
-			if (type === "clock_in") {
-				await tx.insert(workPeriod).values({
-					employeeId: currentEmployee.id,
-					organizationId: requestedOrgId,
-					clockInId: createdEntry.id,
-					startTime: entryTime,
-					isActive: true,
-					workLocationType: resolvedWorkLocationType,
-				});
-			} else if (activePeriod) {
-				const durationMs = entryTime.getTime() - activePeriod.startTime.getTime();
-				const durationMinutes = Math.round(durationMs / 60000);
-
-				const updatedPeriods = await tx
-					.update(workPeriod)
-					.set({
-						clockOutId: createdEntry.id,
-						endTime: entryTime,
-						durationMinutes,
-						isActive: false,
-						...(projectId && { projectId }),
-						...(workCategoryId && { workCategoryId }),
-					})
-					.where(
-						and(
-							eq(workPeriod.id, activePeriod.id),
-							eq(workPeriod.employeeId, currentEmployee.id),
-							eq(workPeriod.organizationId, requestedOrgId),
-							eq(workPeriod.isActive, true),
-							isNull(workPeriod.endTime),
-						),
-					)
-					.returning({ id: workPeriod.id });
-
-				if (updatedPeriods.length === 0) {
-					throw new TimeEntryConflictError("Active work period changed");
-				}
-			}
-
-			return createdEntry;
-		});
+		const input = {
+			employeeId: currentEmployee.id,
+			organizationId: requestedOrgId,
+			createdBy: session.user.id,
+			actionId,
+			action: { instant: instantFromDate(entryTime), ...timezoneCapture },
+			source: { ipAddress: null, deviceInfo: isReplay ? "extension-replay" : "api" },
+			notes,
+			location,
+		};
+		const result =
+			type === "clock_in"
+				? await clockingService.clockIn({ ...input, workLocationType: resolvedWorkLocationType! })
+				: await clockingService.clockOut({ ...input, projectId, workCategoryId });
+		const entry = result.entry;
 
 		return NextResponse.json({ entry }, { status: 201 });
 	} catch (error) {
 		if (error instanceof ClockingAccessError) {
 			return NextResponse.json({ error: error.message }, { status: 403 });
 		}
-		if (error instanceof TimeEntryConflictError) {
+		if (error instanceof TimeEntryConflictError || error instanceof ClockingConflictError) {
 			return NextResponse.json({ error: error.message }, { status: 409 });
 		}
 

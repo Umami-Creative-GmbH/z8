@@ -274,7 +274,7 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 									<CommandItem
 										key={timezone}
 										value={timezone}
-										onSelect={(currentValue) => {
+										onSelect={(currentValue: string) => {
 											onChange(currentValue);
 											setOpen(false);
 										}}
