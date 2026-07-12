@@ -1,11 +1,45 @@
+/* @vitest-environment jsdom */
+
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import {
+	type ApprovalPolicyFormValues,
 	approvalTypeOptions,
 	buildApprovalPolicyPayload,
 	defaultApprovalPolicyFormValues,
 } from "./approval-policy-dialog-utils";
+import { ApprovalPolicyStagesField } from "./approval-policy-stages-field";
 
 describe("approval policy dialog helpers", () => {
+	it("clears a stale specific employee ID when the approver changes", () => {
+		const handleChange = (stages: ApprovalPolicyFormValues["stages"]) => {
+			renderedStages = stages;
+		};
+		let renderedStages: ApprovalPolicyFormValues["stages"] = [
+			{
+				localId: "stage-1",
+				label: "Operations",
+				approverType: "specific_employee",
+				approverEmployeeId: "employee_1",
+			},
+		];
+
+		render(
+			<ApprovalPolicyStagesField
+				stages={renderedStages}
+				onChange={handleChange}
+				onAddStage={() => {}}
+				t={(key, defaultValue) => defaultValue ?? key}
+			/>,
+		);
+
+		fireEvent.change(screen.getByLabelText("Approver"), {
+			target: { value: "direct_manager" },
+		});
+
+		expect(renderedStages[0]?.approverEmployeeId).toBe("");
+	});
+
 	it("builds a valid payload for one sequential stage", () => {
 		const payload = buildApprovalPolicyPayload({
 			...defaultApprovalPolicyFormValues,

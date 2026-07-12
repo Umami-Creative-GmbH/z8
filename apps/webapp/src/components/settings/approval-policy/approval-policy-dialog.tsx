@@ -1,6 +1,6 @@
 "use client";
 
-import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
@@ -21,25 +21,18 @@ import { Switch } from "@/components/ui/switch";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import {
-	type ApprovalPolicyApproverType,
 	type ApprovalPolicyFormValues,
 	approvalTypeOptions,
 	buildApprovalPolicyPayload,
 	defaultApprovalPolicyFormValues,
 } from "./approval-policy-dialog-utils";
+import { ApprovalPolicyStagesField } from "./approval-policy-stages-field";
 
 interface ApprovalPolicyDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onSubmit: (payload: ReturnType<typeof buildApprovalPolicyPayload>) => Promise<void>;
 }
-
-const approverTypeOptions = [
-	{ value: "direct_manager" },
-	{ value: "manager_manager" },
-	{ value: "org_admin" },
-	{ value: "specific_employee" },
-] as const;
 
 function newStage(label: string): ApprovalPolicyFormValues["stages"][number] {
 	return {
@@ -60,18 +53,6 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 				return t("settings.approvalPolicies.approvalType.timeEntryChanges", "Time entry changes");
 			case "travel_expense_claim":
 				return t("settings.approvalPolicies.approvalType.travelExpenses", "Travel expenses");
-		}
-	}
-	function approverTypeLabel(value: (typeof approverTypeOptions)[number]["value"]) {
-		switch (value) {
-			case "direct_manager":
-				return t("settings.approvalPolicies.approverType.directManager", "Direct manager");
-			case "manager_manager":
-				return t("settings.approvalPolicies.approverType.managerManager", "Manager's manager");
-			case "org_admin":
-				return t("settings.approvalPolicies.approverType.organizationAdmin", "Organization admin");
-			case "specific_employee":
-				return t("settings.approvalPolicies.approverType.specificEmployee", "Specific employee");
 		}
 	}
 	const form = useForm({
@@ -237,13 +218,13 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 													type="checkbox"
 													aria-label={approvalTypeLabel(option.value)}
 													checked={field.state.value.includes(option.value)}
-													onChange={(event) => {
+													onChange={(event) =>
 														field.handleChange(
 															event.target.checked
 																? [...field.state.value, option.value]
 																: field.state.value.filter((value) => value !== option.value),
-														);
-													}}
+														)
+													}
 												/>
 												{approvalTypeLabel(option.value)}
 											</label>
@@ -255,160 +236,17 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 
 						<form.Field name="stages">
 							{(field) => (
-								<section className="space-y-3" aria-labelledby="approval-stages-heading">
-									<div className="flex items-center justify-between gap-3">
-										<div>
-											<h3 id="approval-stages-heading" className="text-sm font-medium">
-												{t("settings.approvalPolicies.stages", "Approval stages")}
-											</h3>
-											<p className="text-sm text-muted-foreground">
-												{t(
-													"settings.approvalPolicies.stagesDescription",
-													"Stages run in order; each request advances only after the current approver accepts it.",
-												)}
-											</p>
-										</div>
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={() =>
-												field.handleChange([
-													...field.state.value,
-													newStage(
-														t("settings.approvalPolicies.defaultStageLabel", "Manager review"),
-													),
-												])
-											}
-										>
-											<IconPlus className="mr-2 size-4" aria-hidden="true" />
-											{t("settings.approvalPolicies.addStage", "Add stage")}
-										</Button>
-									</div>
-									{field.state.value.length === 0 ? (
-										<div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-											{t(
-												"settings.approvalPolicies.noStages",
-												"No approval stages configured yet.",
-											)}
-										</div>
-									) : (
-										<div className="space-y-3">
-											{field.state.value.map((stage, index) => (
-												<div key={stage.localId} className="rounded-lg border p-4">
-													<div className="mb-3 flex items-center justify-between gap-3">
-														<h4 className="text-sm font-medium">
-															{t("settings.approvalPolicies.stageNumber", "Stage {number}", {
-																number: index + 1,
-															})}
-														</h4>
-														<Button
-															type="button"
-															variant="ghost"
-															size="icon"
-															onClick={() =>
-																field.handleChange(
-																	field.state.value.filter(
-																		(item) => item.localId !== stage.localId,
-																	),
-																)
-															}
-															aria-label={t(
-																"settings.approvalPolicies.removeStage",
-																"Remove stage",
-															)}
-														>
-															<IconTrash className="size-4" aria-hidden="true" />
-														</Button>
-													</div>
-													<div className="grid gap-3 sm:grid-cols-2">
-														<div className="grid gap-2">
-															<Label htmlFor={`approval-stage-label-${stage.localId}`}>
-																{t("common.label", "Label")}
-															</Label>
-															<Input
-																id={`approval-stage-label-${stage.localId}`}
-																name={`approval-stage-label-${index + 1}`}
-																autoComplete="off"
-																value={stage.label}
-																onChange={(event) => {
-																	const stages = field.state.value.map((item) =>
-																		item.localId === stage.localId
-																			? { ...item, label: event.target.value }
-																			: item,
-																	);
-																	field.handleChange(stages);
-																}}
-															/>
-														</div>
-														<div className="grid gap-2">
-															<Label htmlFor={`approval-stage-approver-${stage.localId}`}>
-																{t("settings.approvalPolicies.approver", "Approver")}
-															</Label>
-															<select
-																id={`approval-stage-approver-${stage.localId}`}
-																aria-label={t("settings.approvalPolicies.approver", "Approver")}
-																name={`approval-stage-approver-${index + 1}`}
-																className="h-9 rounded-md border border-input px-3 py-1 text-sm text-foreground shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-																value={stage.approverType}
-																onChange={(event) => {
-																	const stages = field.state.value.map((item) =>
-																		item.localId === stage.localId
-																			? {
-																					...item,
-																					approverType: event.target
-																						.value as ApprovalPolicyApproverType,
-																					approverEmployeeId:
-																						event.target.value === "specific_employee"
-																							? item.approverEmployeeId
-																							: "",
-																				}
-																			: item,
-																	);
-																	field.handleChange(stages);
-																}}
-															>
-																{approverTypeOptions.map((option) => (
-																	<option key={option.value} value={option.value}>
-																		{approverTypeLabel(option.value)}
-																	</option>
-																))}
-															</select>
-														</div>
-														{stage.approverType === "specific_employee" ? (
-															<div className="grid gap-2 sm:col-span-2">
-																<Label htmlFor={`approval-stage-employee-${stage.localId}`}>
-																	{t(
-																		"settings.approvalPolicies.approverEmployeeId",
-																		"Approver Employee ID",
-																	)}
-																</Label>
-																<Input
-																	id={`approval-stage-employee-${stage.localId}`}
-																	name={`approval-stage-employee-${index + 1}`}
-																	autoComplete="off"
-																	value={stage.approverEmployeeId}
-																	onChange={(event) => {
-																		const stages = field.state.value.map((item) =>
-																			item.localId === stage.localId
-																				? { ...item, approverEmployeeId: event.target.value }
-																				: item,
-																		);
-																		field.handleChange(stages);
-																	}}
-																	placeholder={t(
-																		"settings.approvalPolicies.approverEmployeeIdPlaceholder",
-																		"Example: employee_123…",
-																	)}
-																/>
-															</div>
-														) : null}
-													</div>
-												</div>
-											))}
-										</div>
-									)}
-								</section>
+								<ApprovalPolicyStagesField
+									stages={field.state.value}
+									onChange={field.handleChange}
+									onAddStage={() =>
+										field.handleChange([
+											...field.state.value,
+											newStage(t("settings.approvalPolicies.defaultStageLabel", "Manager review")),
+										])
+									}
+									t={t}
+								/>
 							)}
 						</form.Field>
 					</ActionPanelBody>
