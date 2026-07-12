@@ -29,6 +29,7 @@ export function LocationStep({
 }) {
 	const { t } = useTranslate();
 	const yearOptions = Array.from({ length: 5 }, (_, index) => state.selectedYear - 2 + index);
+	const selectedTypes = new Set(state.selectedTypes);
 
 	return (
 		<div className="space-y-4">
@@ -109,7 +110,7 @@ export function LocationStep({
 							<div key={type.value} className="flex items-center gap-2">
 								<Checkbox
 									id={id}
-									checked={state.selectedTypes.includes(type.value)}
+									checked={selectedTypes.has(type.value)}
 									onCheckedChange={() => toggleType(type.value)}
 								/>
 								<Label htmlFor={id} className="cursor-pointer text-sm font-normal">

@@ -9,7 +9,6 @@ import {
 
 export const CHECK_INTERVAL_MS = 5 * 60 * 1000;
 const IDLE_THRESHOLD_MS = CHECK_INTERVAL_MS;
-const ACTIVITY_EVENTS = ["focus", "keydown", "mousedown", "pointerdown", "touchstart", "wheel"];
 
 type AppVersionResponse = {
 	buildHash?: unknown;
@@ -82,18 +81,23 @@ export function DeploymentRefreshChecker({ clientBuildHash }: DeploymentRefreshC
 			lastActivityAtRef.current = Date.now();
 		};
 
-		for (const eventName of ACTIVITY_EVENTS) {
-			window.addEventListener(eventName, recordActivity, { passive: true });
-		}
+		window.addEventListener("focus", recordActivity, { passive: true });
+		window.addEventListener("keydown", recordActivity, { passive: true });
+		window.addEventListener("mousedown", recordActivity, { passive: true });
+		window.addEventListener("pointerdown", recordActivity, { passive: true });
+		window.addEventListener("touchstart", recordActivity, { passive: true });
+		window.addEventListener("wheel", recordActivity, { passive: true });
 
 		return () => {
 			mountedRef.current = false;
 
-			for (const eventName of ACTIVITY_EVENTS) {
-				window.removeEventListener(eventName, recordActivity);
-			}
+			window.removeEventListener("focus", recordActivity);
+			window.removeEventListener("keydown", recordActivity);
+			window.removeEventListener("mousedown", recordActivity);
+			window.removeEventListener("pointerdown", recordActivity);
+			window.removeEventListener("touchstart", recordActivity);
+			window.removeEventListener("wheel", recordActivity);
 		};
-		// oxlint-disable-next-line react-doctor/effect-needs-cleanup -- cleanup below removes every listener registered by this effect.
 	}, []);
 
 	return null;
