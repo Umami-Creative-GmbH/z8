@@ -35,7 +35,7 @@
     "notes": "Notlar",
     "noTimeCorrectionApprovals": "İncelenecek bekleyen zaman düzeltme talebi yok.",
     "offFrom": "başlangıç tarihi",
-    "openDetailsFor": "${item.summary.title} için detayları aç",
+    "openDetailsFor": "{title} için detayları aç",
     "openInbox": "Gelen Kutusunu Aç",
     "originalTimes": "Orijinal Zamanlar",
     "pendingRequests": "Bekleyen Talepler",
