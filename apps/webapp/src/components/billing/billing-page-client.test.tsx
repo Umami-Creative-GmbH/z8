@@ -2,9 +2,13 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { useBillingActions } from "./billing-page/use-billing-actions";
 import { BillingPageClient } from "./billing-page-client";
+
+const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -24,7 +28,36 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({}),
 }));
 
+vi.mock("sonner", () => ({
+	toast: { error: toastError },
+}));
+
+function CheckoutActionHarness() {
+	const { isCheckoutLoading, startCheckout } = useBillingActions();
+
+	return (
+		<button disabled={isCheckoutLoading} onClick={() => startCheckout("month")} type="button">
+			{isCheckoutLoading ? "Starting checkout" : "Upgrade monthly"}
+		</button>
+	);
+}
+
 describe("BillingPageClient", () => {
+	it("keeps checkout actionable after a failed request", async () => {
+		const user = userEvent.setup();
+		vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new Error("Network error")));
+
+		render(<CheckoutActionHarness />);
+		await user.click(screen.getByRole("button", { name: "Upgrade monthly" }));
+
+		await waitFor(() => {
+			expect(toastError).toHaveBeenCalledWith("Failed to start checkout");
+		});
+		expect(screen.getByRole("button", { name: "Upgrade monthly" })).toHaveProperty("disabled", false);
+
+		vi.unstubAllGlobals();
+	});
+
 	it("shows trial checkout clarification copy for trialing subscriptions", () => {
 		render(
 			<BillingPageClient
@@ -149,11 +182,10 @@ describe("BillingPageClient", () => {
 
 	it("uses localized checkout keys and fallbacks", () => {
 		const source = readFileSync(
-			join(process.cwd(), "src/components/billing/billing-page-client.tsx"),
+			join(process.cwd(), "src/components/billing/billing-page/billing-alerts.tsx"),
 			"utf8",
 		);
 
-		expect(source).toContain("useTranslate");
 		expect(source).toContain("billing.checkout.trialContinuesTitle");
 		expect(source).toContain("billing.checkout.trialContinuesDescription");
 	});
