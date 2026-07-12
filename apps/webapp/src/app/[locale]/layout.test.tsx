@@ -189,6 +189,14 @@ describe("LocaleLayout", () => {
 		expect(source).not.toContain('minHeight: "100vh"');
 	});
 
+	it("isolates the deployment refresh checker behind a Suspense boundary", () => {
+		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
+
+		expect(source).toMatch(
+			/<Suspense fallback=\{null\}>\s*<DeploymentRefreshChecker[^>]+\/>\s*<\/Suspense>/,
+		);
+	});
+
 	it("renders the translation-context fallback while route translations are pending", async () => {
 		let resolveHeaders: (headers: Headers) => void = () => {};
 		mockState.headers.mockImplementation(

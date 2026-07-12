@@ -90,7 +90,9 @@ function ApplicationContent({ children }: { children: ReactNode }) {
 			<TooltipProvider delayDuration={0}>
 				<OfflineBanner />
 				<SWUpdatePrompt />
-				<DeploymentRefreshChecker clientBuildHash={env.NEXT_PUBLIC_BUILD_HASH ?? "development"} />
+				<Suspense fallback={null}>
+					<DeploymentRefreshChecker clientBuildHash={env.NEXT_PUBLIC_BUILD_HASH ?? "development"} />
+				</Suspense>
 				{children}
 				<Toaster position="bottom-right" richColors />
 			</TooltipProvider>
