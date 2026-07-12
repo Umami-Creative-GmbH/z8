@@ -32,11 +32,11 @@ import {
 import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
 import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
+import { ScheduleXCalendarHeader } from "./schedule-x-calendar-header";
 import {
 	filterEventsForScheduleXView,
 	resolveClickableCalendarEvent,
 } from "./schedule-x-calendar-utils";
-import { ScheduleXCalendarHeader } from "./schedule-x-calendar-header";
 import { useScheduleXDomLifecycle } from "./use-schedule-x-dom-lifecycle";
 
 export type ViewMode = "day" | "week" | "month" | "year";
@@ -259,10 +259,6 @@ export function ScheduleXCalendarWrapper({
 		});
 	};
 
-	useEffect(() => {
-		calendarControls.setDate(Temporal.PlainDate.from(currentDateKey));
-	}, [calendarControls, currentDateKey]);
-
 	const handleViewModeChange = (mode: ViewMode) => {
 		if (mode !== "year") {
 			calendarControls.setView(viewModeToScheduleX[mode]);
@@ -274,6 +270,7 @@ export function ScheduleXCalendarWrapper({
 	const calendar = useCalendarApp({
 		views: [createViewDay(), createViewWeek(), createViewMonthGrid(), createViewMonthAgenda()],
 		defaultView: viewModeToScheduleX[viewMode],
+		selectedDate: Temporal.PlainDate.from(currentDateKey),
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		events: scheduleXEvents as any,
 		isDark,
@@ -288,6 +285,11 @@ export function ScheduleXCalendarWrapper({
 			onRangeUpdate: handleRangeChange as any,
 		},
 	});
+
+	useEffect(() => {
+		if (!calendar) return;
+		calendarControls.setDate(Temporal.PlainDate.from(currentDateKey));
+	}, [calendar, calendarControls, currentDateKey]);
 
 	useEffect(() => {
 		if (!hasVisibleRunningPeriod) return;

@@ -6,14 +6,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { DateTime } from "luxon";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkPeriodEvent } from "@/lib/calendar/types";
 import { ScheduleXCalendarWrapper } from "./schedule-x-calendar";
-import {
-	useScheduleXClockOutDelegation,
-	useScheduleXDomLifecycle,
-} from "./use-schedule-x-dom-lifecycle";
 import {
 	buildCalendarTimeZoneDate,
 	buildCurrentTimeIndicatorPosition,
@@ -21,17 +17,39 @@ import {
 	hasExceededPointerDragThreshold,
 	isIntentionalRangePointerDown,
 	isScheduleXEventElement,
-	resolveEventModalLeft,
 	resolveClickableCalendarEvent,
+	resolveEventModalLeft,
 	shouldRetryRequirementHeaderInjection,
 } from "./schedule-x-calendar-utils";
+import {
+	useScheduleXClockOutDelegation,
+	useScheduleXDomLifecycle,
+} from "./use-schedule-x-dom-lifecycle";
 
-const useCalendarAppMock = vi.hoisted(() =>
-	vi.fn(() => ({
-		events: { set: vi.fn() },
-		setTheme: vi.fn(),
-	})),
-);
+const useCalendarAppMock = vi.hoisted(() => vi.fn());
+
+type ScheduleXPluginTestDouble = {
+	beforeRender?: () => void;
+	setDate?: ReturnType<typeof vi.fn>;
+};
+
+function useCalendarAppTestDouble(config: { plugins: ScheduleXPluginTestDouble[] }) {
+	const initialPlugins = useRef(config.plugins);
+	const [calendar, setCalendar] = useState<{
+		events: { set: ReturnType<typeof vi.fn> };
+		setTheme: ReturnType<typeof vi.fn>;
+	} | null>(null);
+
+	useEffect(() => {
+		for (const plugin of initialPlugins.current) plugin.beforeRender?.();
+		setCalendar({
+			events: { set: vi.fn() },
+			setTheme: vi.fn(),
+		});
+	}, []);
+
+	return calendar;
+}
 
 vi.mock("@schedule-x/calendar", () => ({
 	createViewDay: () => "day",
@@ -41,10 +59,20 @@ vi.mock("@schedule-x/calendar", () => ({
 }));
 
 vi.mock("@schedule-x/calendar-controls", () => ({
-	createCalendarControlsPlugin: () => ({
-		setDate: vi.fn(),
-		setView: vi.fn(),
-	}),
+	createCalendarControlsPlugin: () => {
+		let isInitialized = false;
+		return {
+			beforeRender: () => {
+				isInitialized = true;
+			},
+			setDate: vi.fn(() => {
+				if (!isInitialized) {
+					throw new TypeError("Cannot read properties of undefined (reading 'datePickerState')");
+				}
+			}),
+			setView: vi.fn(),
+		};
+	},
 }));
 
 vi.mock("@schedule-x/event-modal", () => ({
@@ -140,10 +168,40 @@ function DomLifecycleHarness() {
 }
 
 beforeEach(() => {
-	useCalendarAppMock.mockClear();
+	useCalendarAppMock.mockReset();
+	useCalendarAppMock.mockImplementation(useCalendarAppTestDouble);
 });
 
 describe("ScheduleXCalendarWrapper header", () => {
+	it("waits for the calendar app before synchronizing the selected date", () => {
+		expect(() =>
+			render(
+				<ScheduleXCalendarWrapper
+					events={[]}
+					initialDateKey="2026-05-18"
+					isLoading
+					onViewModeChange={vi.fn()}
+					viewMode="day"
+				/>,
+			),
+		).not.toThrow();
+	});
+
+	it("provides the initial date to Schedule-X configuration", () => {
+		render(
+			<ScheduleXCalendarWrapper
+				events={[]}
+				initialDateKey="2026-05-18"
+				onViewModeChange={vi.fn()}
+				viewMode="day"
+			/>,
+		);
+
+		expect(useCalendarAppMock.mock.calls[0]?.[0].selectedDate).toEqual(
+			Temporal.PlainDate.from("2026-05-18"),
+		);
+	});
+
 	it("updates the calendar control when the parent changes its date", () => {
 		const { rerender } = render(
 			<ScheduleXCalendarWrapper
