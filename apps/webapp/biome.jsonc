@@ -1,5 +1,6 @@
 {
 	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"root": false,
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab",
@@ -8,7 +9,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
+			"preset": "recommended",
 			"a11y": {
 				"useValidAnchor": "warn",
 				"useFocusableInteractive": "off",
