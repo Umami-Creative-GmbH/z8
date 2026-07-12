@@ -1,14 +1,7 @@
 "use client";
 
 import {
-	IconCheck,
 	IconExternalLink,
-	IconPlus,
-	IconRefresh,
-	IconSettings,
-	IconTrash,
-	IconWorld,
-	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -30,24 +23,15 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AuthConfig } from "@/lib/domain";
+import { CustomDomainSummary, type CustomDomain } from "./custom-domain-summary";
 import { DomainAddDialog } from "./domain-add-dialog";
 import { DomainAuthConfigDialog } from "./domain-auth-config-dialog";
 import { DomainVerificationDialog } from "./domain-verification-dialog";
 
-interface Domain {
-	id: string;
-	domain: string;
-	domainVerified: boolean;
-	isPrimary: boolean;
-	verificationToken: string | null;
-	verificationTokenExpiresAt: Date | null;
-	authConfig: AuthConfig;
-	createdAt: Date;
-}
+type Domain = CustomDomain;
 
 interface DomainManagementProps {
 	initialDomains: Domain[];
@@ -79,8 +63,6 @@ export function DomainManagement({
 		domain: Domain | null;
 	}>({ isOpen: false, domain: null });
 	const [isVerifying, setIsVerifying] = useState(false);
-	const hasTurnstileSiteKey = Boolean(domain?.authConfig.turnstileSiteKey?.trim());
-	const hasCookieConsentScript = Boolean(domain?.authConfig.cookieConsentScript?.trim());
 
 	const handleDomainAdded = (newDomain: Domain) => {
 		setDomain(newDomain);
@@ -232,144 +214,19 @@ export function DomainManagement({
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					{!domain ? (
-						<div className="text-center py-8">
-							<div className="mx-auto size-12 rounded-full bg-muted flex items-center justify-center mb-4">
-								<IconWorld className="size-6 text-muted-foreground" />
-							</div>
-							<p className="text-muted-foreground mb-4">
-								{t("settings.enterprise.domains.empty", "No custom domain configured yet.")}
-							</p>
-							<Button onClick={() => setIsAddDialogOpen(true)}>
-								<IconPlus className="mr-2 size-4" />
-								{t("settings.enterprise.domains.add", "Add Custom Domain")}
-							</Button>
-						</div>
-					) : (
-						<div className="space-y-4">
-							{/* Domain Info */}
-							<div className="flex items-center justify-between p-4 border rounded-lg">
-								<div className="flex items-center gap-4">
-									<div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
-										<IconWorld className="size-5 text-primary" />
-									</div>
-									<div>
-										<p className="font-medium">{domain.domain}</p>
-										<div className="flex items-center gap-2 mt-1">
-											{domain.domainVerified ? (
-												<Badge variant="default" className="bg-green-600">
-													<IconCheck className="mr-1 size-3" />
-													{t("settings.enterprise.domains.status.verified", "Verified")}
-												</Badge>
-											) : (
-												<Badge variant="destructive">
-													<IconX className="mr-1 size-3" />
-													{t("settings.enterprise.domains.status.pending", "Pending Verification")}
-												</Badge>
-											)}
-										</div>
-									</div>
-								</div>
-								<div className="flex gap-2">
-									{!domain.domainVerified && (
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => setVerificationDialog({ isOpen: true, domain })}
-										>
-											<IconRefresh className="mr-1 size-4" />
-											{t("settings.enterprise.domains.verify", "Verify")}
-										</Button>
-									)}
-									<Button
-										aria-label={t(
-											"settings.enterprise.domains.editAuthSettingsAria",
-											"Edit authentication settings for {domain}",
-											{ domain: domain.domain },
-										)}
-										variant="outline"
-										size="sm"
-										onClick={() => setAuthConfigDialog({ isOpen: true, domain })}
-									>
-										<IconSettings className="size-4" aria-hidden="true" />
-									</Button>
-									<Button
-										aria-label={t(
-											"settings.enterprise.domains.deleteAria",
-											"Delete custom domain {domain}",
-											{ domain: domain.domain },
-										)}
-										variant="outline"
-										size="sm"
-										onClick={() => setDeleteDialog({ isOpen: true, domain })}
-									>
-										<IconTrash className="size-4 text-destructive" aria-hidden="true" />
-									</Button>
-								</div>
-							</div>
-
-							{/* Auth Methods Summary */}
-							<div className="p-4 bg-muted/50 rounded-lg">
-								<p className="text-sm font-medium mb-2">
-									{t("settings.enterprise.domains.enabledAuthMethods", "Enabled Auth Methods")}
-								</p>
-								<div className="flex flex-wrap gap-2">
-									{domain.authConfig.emailPasswordEnabled && (
-										<Badge variant="outline">
-											{t("settings.enterprise.domains.authMethod.emailPassword", "Email/Password")}
-										</Badge>
-									)}
-									{domain.authConfig.ssoEnabled && (
-										<Badge variant="outline">
-											{t("settings.enterprise.domains.authMethod.sso", "SSO")}
-										</Badge>
-									)}
-									{domain.authConfig.socialProvidersEnabled.length > 0 && (
-										<Badge variant="outline">
-											{t("settings.enterprise.domains.authMethod.social", "Social ({providers})", {
-												providers: domain.authConfig.socialProvidersEnabled.join(", "),
-											})}
-										</Badge>
-									)}
-									{domain.authConfig.passkeyEnabled && (
-										<Badge variant="outline">
-											{t("settings.enterprise.domains.authMethod.passkey", "Passkey")}
-										</Badge>
-									)}
-								</div>
-							</div>
-
-							<div className="p-4 bg-muted/50 rounded-lg">
-								<p className="text-sm font-medium mb-2">
-									{t("settings.enterprise.domains.domainPageSettings", "Domain Page Settings")}
-								</p>
-								<div className="flex flex-wrap gap-2">
-									<Badge variant={hasTurnstileSiteKey ? "outline" : "secondary"}>
-										{t(
-											"settings.enterprise.domains.turnstileSiteKeyStatus",
-											"Turnstile site key {status}",
-											{
-												status: hasTurnstileSiteKey
-													? t("settings.enterprise.domains.configured", "configured")
-													: t("settings.enterprise.domains.notConfigured", "not configured"),
-											},
-										)}
-									</Badge>
-									<Badge variant={hasCookieConsentScript ? "outline" : "secondary"}>
-										{t(
-											"settings.enterprise.domains.cookieConsentStatus",
-											"Cookie consent {status}",
-											{
-												status: hasCookieConsentScript
-													? t("settings.enterprise.domains.configured", "configured")
-													: t("settings.enterprise.domains.notConfigured", "not configured"),
-											},
-										)}
-									</Badge>
-								</div>
-							</div>
-						</div>
-					)}
+					<CustomDomainSummary
+						domain={domain}
+						onAdd={() => setIsAddDialogOpen(true)}
+						onConfigure={(selectedDomain) =>
+							setAuthConfigDialog({ isOpen: true, domain: selectedDomain })
+						}
+						onDelete={(selectedDomain) =>
+							setDeleteDialog({ isOpen: true, domain: selectedDomain })
+						}
+						onVerify={(selectedDomain) =>
+							setVerificationDialog({ isOpen: true, domain: selectedDomain })
+						}
+					/>
 				</CardContent>
 			</Card>
 
