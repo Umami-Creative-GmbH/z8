@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -32,16 +32,17 @@ function getFirstDayOffset(year: number, month: number, weekStartDay: WeekStartD
 	return weekStartDay === "monday" ? weekday - 1 : weekday % 7;
 }
 
-function formatDateLabel(date: DateTime): string {
-	return date.toLocaleString({ month: "long", day: "numeric", year: "numeric" });
+function formatDateLabel(date: DateTime, locale: string): string {
+	return date.setLocale(locale).toLocaleString({ month: "long", day: "numeric", year: "numeric" });
 }
 
 function buildDayLabel(
 	day: ManagerAbsenceCalendarDay | undefined,
 	date: DateTime,
+	locale: string,
 	isToday = false,
 ): string {
-	const dateLabel = `${isToday ? "Today, " : ""}${formatDateLabel(date)}`;
+	const dateLabel = `${isToday ? "Today, " : ""}${formatDateLabel(date, locale)}`;
 
 	if (!day) {
 		return dateLabel;
@@ -56,16 +57,18 @@ function TeamAbsenceDayDetails({
 	dateKey,
 	day,
 	date,
+	locale,
 }: {
 	dateKey: string;
 	day: ManagerAbsenceCalendarDay;
 	date: DateTime;
+	locale: string;
 }) {
 	const { t } = useTranslate();
 
 	return (
 		<div className="space-y-2" data-testid={`team-absence-calendar-details-${dateKey}`}>
-			<p className="font-medium">{buildDayLabel(day, date)}</p>
+			<p className="font-medium">{buildDayLabel(day, date, locale)}</p>
 			{day.entries.map((entry) => (
 				<div key={`${entry.id}-${dateKey}`} className="text-sm">
 					<p className="font-medium">{entry.employeeName}</p>
@@ -93,6 +96,7 @@ function TeamAbsenceMonth({
 	weekStartDay,
 	daysByDate,
 	todayDateKey,
+	locale,
 }: {
 	month: number;
 	year: number;
@@ -101,6 +105,7 @@ function TeamAbsenceMonth({
 	weekStartDay: WeekStartDay;
 	daysByDate: Map<string, ManagerAbsenceCalendarDay>;
 	todayDateKey: string | null;
+	locale: string;
 }) {
 	const days = getMonthDays(year, month);
 	const paddingDays = Array.from(
@@ -134,10 +139,11 @@ function TeamAbsenceMonth({
 							className={cn(
 								"relative flex aspect-square w-full flex-col items-center justify-center rounded-sm text-[10px] transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 								hasApproved && "bg-blue-100 text-blue-950 dark:bg-blue-900/30 dark:text-blue-100",
-								isToday && "bg-primary/10 font-semibold outline outline-2 outline-primary outline-offset-1",
+								isToday &&
+									"bg-primary/10 font-semibold outline outline-2 outline-primary outline-offset-1",
 								hasPending && "ring-1 ring-yellow-500",
 							)}
-							aria-label={buildDayLabel(day, date, isToday)}
+							aria-label={buildDayLabel(day, date, locale, isToday)}
 						>
 							<span>{date.day}</span>
 							{day ? <span className="font-semibold leading-none">{day.totalCount}</span> : null}
@@ -156,11 +162,11 @@ function TeamAbsenceMonth({
 							<Tooltip>
 								<TooltipTrigger asChild>{dayButton}</TooltipTrigger>
 								<TooltipContent className="max-w-xs">
-									<TeamAbsenceDayDetails dateKey={dateKey} day={day} date={date} />
+									<TeamAbsenceDayDetails dateKey={dateKey} day={day} date={date} locale={locale} />
 								</TooltipContent>
 							</Tooltip>
 							<div className="sr-only">
-								<TeamAbsenceDayDetails dateKey={dateKey} day={day} date={date} />
+								<TeamAbsenceDayDetails dateKey={dateKey} day={day} date={date} locale={locale} />
 							</div>
 						</div>
 					);
@@ -172,6 +178,8 @@ function TeamAbsenceMonth({
 
 export function TeamAbsenceYearCalendar({ data }: TeamAbsenceYearCalendarProps) {
 	const { t } = useTranslate();
+	const tolgee = useTolgee(["language"]);
+	const locale = tolgee.getLanguage() ?? "en";
 	const weekStartDay = useWeekStartDay();
 	const calendarDays = buildManagerAbsenceCalendarDays(data.entries, data.year);
 	const daysByDate = new Map(calendarDays.map((day) => [day.date, day]));
@@ -267,6 +275,7 @@ export function TeamAbsenceYearCalendar({ data }: TeamAbsenceYearCalendarProps) 
 							weekStartDay={weekStartDay}
 							daysByDate={daysByDate}
 							todayDateKey={todayDateKey}
+							locale={locale}
 						/>
 					))}
 				</div>
