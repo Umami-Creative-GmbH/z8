@@ -1,4 +1,4 @@
-import { and, eq, gte, isNotNull, lt } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lt } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { employee, employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "./format";
@@ -12,6 +12,7 @@ const mockState = vi.hoisted(() => ({
 			},
 			employeeWorkBalance: {
 				findFirst: vi.fn(),
+				findMany: vi.fn(),
 			},
 		},
 		select: vi.fn(),
@@ -53,6 +54,7 @@ vi.mock("drizzle-orm", async (importOriginal) => ({
 	asc: vi.fn((value: unknown) => value),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 	gte: vi.fn((left: unknown, right: unknown) => ({ gte: [left, right] })),
+	inArray: vi.fn((left: unknown, right: unknown) => ({ inArray: [left, right] })),
 	isNotNull: vi.fn((value: unknown) => ({ isNotNull: value })),
 	isNull: vi.fn((value: unknown) => ({ isNull: value })),
 	lt: vi.fn((left: unknown, right: unknown) => ({ lt: [left, right] })),
@@ -84,6 +86,7 @@ import {
 	buildWorkBalanceValues,
 	computeEmployeeWorkBalance,
 	getEmployeeWorkBalance,
+	getEmployeeWorkBalances,
 	getWorkBalanceBatchCutoffDate,
 	listEmployeesForWorkBalanceBatch,
 	markEmployeeWorkBalanceDirty,
@@ -177,6 +180,8 @@ describe("work balance helpers", () => {
 			lastError: null,
 			updatedAt: new Date("2026-05-22T12:00:00.000Z"),
 		});
+		mockState.db.query.employeeWorkBalance.findMany.mockReset();
+		mockState.db.query.employeeWorkBalance.findMany.mockResolvedValue([]);
 	});
 
 	it("builds all-time work balance values", () => {
@@ -355,6 +360,76 @@ describe("work balance helpers", () => {
 			computedThroughDate: "2026-05-22",
 			computedAt,
 		});
+	});
+
+	it("returns organization-scoped work balances for multiple employees", async () => {
+		const computedAt = new Date("2026-05-22T12:00:00.000Z");
+		mockState.db.query.employeeWorkBalance.findMany.mockResolvedValueOnce([
+			{
+				id: "balance-1",
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				actualMinutes: 2520,
+				requiredMinutes: 2400,
+				balanceMinutes: 120,
+				computedFromDate: "2026-05-01",
+				computedThroughDate: "2026-05-22",
+				computedAt,
+				isDirty: false,
+				dirtyFromDate: null,
+				refreshRequestedAt: null,
+				lastError: null,
+				updatedAt: computedAt,
+			},
+		]);
+
+		const balances = await getEmployeeWorkBalances({
+			employeeIds: ["employee-1", "employee-1", "employee-2"],
+			organizationId: "org-1",
+		});
+
+		expect(balances.get("employee-1")).toEqual({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			actualMinutes: 2520,
+			requiredMinutes: 2400,
+			balanceMinutes: 120,
+			computedFromDate: "2026-05-01",
+			computedThroughDate: "2026-05-22",
+			computedAt,
+		});
+		expect(balances.has("employee-2")).toBe(false);
+		expect(eq).toHaveBeenCalledWith(employeeWorkBalance.organizationId, "org-1");
+		expect(inArray).toHaveBeenCalledWith(employeeWorkBalance.employeeId, [
+			"employee-1",
+			"employee-2",
+		]);
+	});
+
+	it("omits hidden full-rebuild markers from bulk work balances", async () => {
+		const requestedAt = new Date("2026-05-22T12:00:00.000Z");
+		mockState.db.query.employeeWorkBalance.findMany.mockResolvedValueOnce([
+			{
+				id: "balance-1",
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				actualMinutes: 0,
+				requiredMinutes: 0,
+				balanceMinutes: 0,
+				computedFromDate: "0001-01-01",
+				computedThroughDate: "0001-01-01",
+				computedAt: requestedAt,
+				isDirty: true,
+				dirtyFromDate: null,
+				refreshRequestedAt: requestedAt,
+				lastError: null,
+				updatedAt: requestedAt,
+			},
+		]);
+
+		await expect(
+			getEmployeeWorkBalances({ employeeIds: ["employee-1"], organizationId: "org-1" }),
+		).resolves.toEqual(new Map());
 	});
 
 	it("returns null for hidden full-rebuild marker rows", async () => {
