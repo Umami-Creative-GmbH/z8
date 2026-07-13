@@ -12,6 +12,7 @@ import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { getEmployeeWorkBalances } from "@/lib/work-balance/service";
 import {
 	buildVisibleManagedEmployees,
 	type CurrentTeamEmployee,
@@ -19,7 +20,6 @@ import {
 	type ManagedEmployee,
 	type ManagedEmployeeRecord,
 } from "./team-members-data";
-import { refreshEmployeeTimeBalances } from "./team-time-balance";
 
 export type { CurrentTeamEmployee, ManagedEmployee } from "./team-members-data";
 
@@ -283,7 +283,7 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 		];
 		const balances = yield* _(
 			Effect.promise(() =>
-				refreshEmployeeTimeBalances({
+				getEmployeeWorkBalances({
 					employeeIds: visibleEmployeeIds,
 					organizationId: currentEmp.organizationId,
 				}),

@@ -38,6 +38,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
+import { formatSignedWorkBalance } from "@/lib/work-balance/format";
 import { Link } from "@/navigation";
 import type { ManagedEmployee } from "./team-members-data";
 
@@ -49,15 +50,6 @@ interface TeamMembersListProps {
 	employees: ManagedEmployee[];
 }
 
-function formatSignedBalance(balanceMinutes: number) {
-	if (balanceMinutes === 0) return "0h";
-	const sign = balanceMinutes > 0 ? "+" : "-";
-	const absoluteMinutes = Math.abs(balanceMinutes);
-	const hours = Math.floor(absoluteMinutes / 60);
-	const minutes = absoluteMinutes % 60;
-	return minutes === 0 ? `${sign}${hours}h` : `${sign}${hours}h ${minutes}m`;
-}
-
 function getBalanceVariant(balanceMinutes: number | null | undefined) {
 	if (balanceMinutes == null || balanceMinutes === 0) return "outline" as const;
 	return balanceMinutes > 0 ? ("default" as const) : ("secondary" as const);
@@ -66,15 +58,15 @@ function getBalanceVariant(balanceMinutes: number | null | undefined) {
 function TimeBalanceBadge({
 	employee,
 	noBalanceLabel,
-	yearBalanceLabel,
+	workBalanceLabel,
 }: {
 	employee: ManagedEmployee;
 	noBalanceLabel: string;
-	yearBalanceLabel: string;
+	workBalanceLabel: string;
 }) {
 	const balance = employee.timeBalance;
-	const label = balance ? formatSignedBalance(balance.balanceMinutes) : noBalanceLabel;
-	const accessibleLabel = `${yearBalanceLabel}: ${label}`;
+	const label = balance ? formatSignedWorkBalance(balance.balanceMinutes) : noBalanceLabel;
+	const accessibleLabel = `${workBalanceLabel}: ${label}`;
 	if (!balance) {
 		return (
 			<Badge variant="outline" aria-label={accessibleLabel} title={accessibleLabel}>
@@ -110,7 +102,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const youLabel = t("team.member.you", "You");
 	const noBalanceLabel = t("team.balance.noBalance", "No balance");
-	const yearBalanceLabel = t("team.table.timeBalance", "Year balance");
+	const workBalanceLabel = t("workBalance.label", "All-time balance");
 	const primaryManagerLabel = t("team.primaryManager", "You are the primary manager");
 	const presence = useEmployeeClockStatuses(
 		employees.map((employee) => employee.id),
@@ -201,17 +193,11 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 						onClick={column.getToggleSortingHandler()}
 						aria-label={
 							directionLabel
-								? t(
-										"team.table.sortByTimeBalanceWithDirection",
-										"Sort by Year balance ({direction})",
-										{
-											direction: directionLabel,
-										},
-									)
-								: t("team.table.sortByTimeBalance", "Sort by Year balance")
+								? `${workBalanceLabel} (${directionLabel})`
+								: workBalanceLabel
 						}
 					>
-						<span>{yearBalanceLabel}</span>
+						<span>{workBalanceLabel}</span>
 						<SortIcon className="size-4 text-muted-foreground" aria-hidden="true" />
 					</Button>
 				);
@@ -222,7 +208,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 				<TimeBalanceBadge
 					employee={row.original}
 					noBalanceLabel={noBalanceLabel}
-					yearBalanceLabel={yearBalanceLabel}
+					workBalanceLabel={workBalanceLabel}
 				/>
 			),
 		},
@@ -373,7 +359,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 												<TimeBalanceBadge
 													employee={emp}
 													noBalanceLabel={noBalanceLabel}
-													yearBalanceLabel={yearBalanceLabel}
+													workBalanceLabel={workBalanceLabel}
 												/>
 												{!emp.isActive && (
 													<Badge variant="outline" className="text-xs font-normal">
