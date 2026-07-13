@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { DateTime } from "luxon";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useSyncExternalStore } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkPeriodEvent } from "@/lib/calendar/types";
 import { ScheduleXCalendarWrapper } from "./schedule-x-calendar";
@@ -33,22 +33,31 @@ type ScheduleXPluginTestDouble = {
 	setDate?: ReturnType<typeof vi.fn>;
 };
 
+type CalendarAppTestDouble = {
+	events: { set: ReturnType<typeof vi.fn> };
+	setTheme: ReturnType<typeof vi.fn>;
+};
+
 function useCalendarAppTestDouble(config: { plugins: ScheduleXPluginTestDouble[] }) {
 	const initialPlugins = useRef(config.plugins);
-	const [calendar, setCalendar] = useState<{
-		events: { set: ReturnType<typeof vi.fn> };
-		setTheme: ReturnType<typeof vi.fn>;
-	} | null>(null);
+	const calendar = useRef<CalendarAppTestDouble | null>(null);
 
-	useEffect(() => {
-		for (const plugin of initialPlugins.current) plugin.beforeRender?.();
-		setCalendar({
-			events: { set: vi.fn() },
-			setTheme: vi.fn(),
-		});
-	}, []);
+	return useSyncExternalStore(
+		(onCalendarReady) => {
+			if (!calendar.current) {
+				for (const plugin of initialPlugins.current) plugin.beforeRender?.();
+				calendar.current = {
+					events: { set: vi.fn() },
+					setTheme: vi.fn(),
+				};
+				onCalendarReady();
+			}
 
-	return calendar;
+			return () => {};
+		},
+		() => calendar.current,
+		() => null,
+	);
 }
 
 vi.mock("@schedule-x/calendar", () => ({
