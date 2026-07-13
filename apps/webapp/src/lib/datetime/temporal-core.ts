@@ -10,7 +10,11 @@ export interface Clock {
 }
 
 export const systemClock: Readonly<Clock> = Object.freeze({
-	nowInstant: () => Temporal.Now.instant(),
+	nowInstant: () =>
+		Temporal.Now.instant().round({
+			smallestUnit: "millisecond",
+			roundingMode: "trunc",
+		}),
 });
 
 const INSTANT_WITH_OFFSET =
@@ -22,7 +26,9 @@ const NANOSECONDS_PER_MILLISECOND = BigInt(1_000_000);
 
 export function parseInstant(value: string): Instant {
 	if (typeof value !== "string" || !INSTANT_WITH_OFFSET.test(value)) {
-		throw new RangeError("Instant must use a four-digit date and an explicit Z or +/-HH:mm offset");
+		throw new RangeError(
+			"Instant must use a four-digit date and an explicit Z or +/-HH:mm offset",
+		);
 	}
 
 	return Temporal.Instant.from(value);
@@ -59,7 +65,10 @@ export function dateFromInstant(value: Instant): Date {
 	}
 
 	const epochMilliseconds = value.epochMilliseconds;
-	if (!Number.isFinite(epochMilliseconds) || Math.abs(epochMilliseconds) > JS_DATE_LIMIT_MS) {
+	if (
+		!Number.isFinite(epochMilliseconds) ||
+		Math.abs(epochMilliseconds) > JS_DATE_LIMIT_MS
+	) {
 		throw new RangeError("Instant is outside the JavaScript Date range");
 	}
 

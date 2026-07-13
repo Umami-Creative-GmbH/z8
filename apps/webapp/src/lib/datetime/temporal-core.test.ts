@@ -1,5 +1,5 @@
 import { Temporal } from "temporal-polyfill";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
 	type Clock,
 	compareInstants,
@@ -18,7 +18,9 @@ describe("temporal core", () => {
 
 		expect(instant).toBeInstanceOf(Temporal.Instant);
 		expect(instant.toString()).toBe("2024-01-15T10:30:00.123Z");
-		expect(parseInstant("2024-01-15T10:30Z").toString()).toBe("2024-01-15T10:30:00Z");
+		expect(parseInstant("2024-01-15T10:30Z").toString()).toBe(
+			"2024-01-15T10:30:00Z",
+		);
 	});
 
 	it("normalizes instants with explicit offsets", () => {
@@ -93,9 +95,25 @@ describe("temporal core", () => {
 
 		const readCurrentInstant = (clock: Clock) => clock.nowInstant();
 
-		expect(readCurrentInstant(new FixedClock()).toString()).toBe("2024-03-31T00:30:00Z");
+		expect(readCurrentInstant(new FixedClock()).toString()).toBe(
+			"2024-03-31T00:30:00Z",
+		);
 		expect(Object.isFrozen(systemClock)).toBe(true);
 		expect(systemClock.nowInstant()).toBeInstanceOf(Temporal.Instant);
+	});
+
+	it("normalizes the system clock to millisecond precision", () => {
+		const nativeNow = vi
+			.spyOn(Temporal.Now, "instant")
+			.mockReturnValue(Temporal.Instant.from("2026-07-13T08:15:30.123456789Z"));
+
+		try {
+			expect(systemClock.nowInstant().toString()).toBe(
+				"2026-07-13T08:15:30.123Z",
+			);
+		} finally {
+			nativeNow.mockRestore();
+		}
 	});
 
 	it("compares instants", () => {
