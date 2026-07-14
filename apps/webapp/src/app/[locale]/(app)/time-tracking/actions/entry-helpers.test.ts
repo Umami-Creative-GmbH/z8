@@ -48,4 +48,63 @@ describe("createTimeEntry", () => {
 			}),
 		);
 	});
+
+	it("uses an explicit chain predecessor without querying for it again", async () => {
+		const select = vi.fn();
+		const returning = vi.fn().mockResolvedValue([{ id: "entry-new" }]);
+		const values = vi.fn(() => ({ returning }));
+		const insert = vi.fn(() => ({ values }));
+
+		await createTimeEntry(
+			{
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				type: "correction",
+				timestamp: new Date("2026-07-01T08:15:00.000Z"),
+				createdBy: "user-1",
+				utcOffsetMinutes: 120,
+				timezone: "Europe/Berlin",
+				timezoneSource: "user_setting",
+				chainAfter: {
+					id: "entry-first",
+					hash: "first-hash",
+					employeeId: "employee-1",
+					organizationId: "org-1",
+				},
+			},
+			{ select, insert } as never,
+		);
+
+		expect(select).not.toHaveBeenCalled();
+		expect(values).toHaveBeenCalledWith(
+			expect.objectContaining({
+				previousHash: "first-hash",
+				previousEntryId: "entry-first",
+			}),
+		);
+	});
+
+	it("rejects a chain predecessor from another employee or organization", async () => {
+		await expect(
+			createTimeEntry(
+				{
+					employeeId: "employee-1",
+					organizationId: "org-1",
+					type: "correction",
+					timestamp: new Date("2026-07-01T08:15:00.000Z"),
+					createdBy: "user-1",
+					utcOffsetMinutes: 120,
+					timezone: "Europe/Berlin",
+					timezoneSource: "user_setting",
+					chainAfter: {
+						id: "entry-other",
+						hash: "other-hash",
+						employeeId: "employee-2",
+						organizationId: "org-1",
+					},
+				},
+				{ select: vi.fn(), insert: vi.fn() } as never,
+			),
+		).rejects.toThrow("same employee and organization");
+	});
 });

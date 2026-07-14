@@ -36,6 +36,10 @@ export async function createTimeEntry(
 		notes?: string;
 		location?: string;
 		isSuperseded?: boolean;
+		chainAfter?: Pick<
+			typeof timeEntry.$inferSelect,
+			"id" | "hash" | "employeeId" | "organizationId"
+		>;
 	},
 	client: TimeEntryDbClient = db,
 ): Promise<typeof timeEntry.$inferSelect> {
@@ -52,17 +56,29 @@ export async function createTimeEntry(
 		notes,
 		location,
 		isSuperseded,
+		chainAfter,
 	} = params;
 
-	const [[previousEntry], { ipAddress, userAgent }] = await Promise.all([
-		client
-			.select()
-			.from(timeEntry)
-			.where(
-				and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)),
-			)
-			.orderBy(desc(timeEntry.createdAt))
-			.limit(1),
+	if (
+		chainAfter &&
+		(chainAfter.employeeId !== employeeId || chainAfter.organizationId !== organizationId)
+	) {
+		throw new Error(
+			"Time entry chain predecessor must belong to the same employee and organization",
+		);
+	}
+
+	const [previousEntry, { ipAddress, userAgent }] = await Promise.all([
+		chainAfter ??
+			client
+				.select()
+				.from(timeEntry)
+				.where(
+					and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)),
+				)
+				.orderBy(desc(timeEntry.createdAt))
+				.limit(1)
+				.then(([entry]) => entry),
 		getRequestMetadata(),
 	]);
 	const previousHash = previousEntry?.hash || null;

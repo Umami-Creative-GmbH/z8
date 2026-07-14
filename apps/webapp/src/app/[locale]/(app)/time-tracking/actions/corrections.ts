@@ -976,6 +976,7 @@ export async function requestTimeEntryDeletion(
 							replacesEntryId: selectedWorkPeriod.clockOutId!,
 							notes: data.reason,
 							isSuperseded: true,
+							chainAfter: clockInCorrection,
 						},
 						tx,
 					);
