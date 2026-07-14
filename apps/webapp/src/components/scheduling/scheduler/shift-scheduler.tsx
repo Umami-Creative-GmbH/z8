@@ -20,7 +20,6 @@ import { ShiftDialog } from "../shifts/shift-dialog";
 import {
 	CoverageHeatmapOverlay,
 	CoverageSummaryBar,
-	useCoverageHeatmap,
 } from "./coverage-heatmap-overlay";
 import { PublishComplianceDialog } from "./publish-compliance-dialog";
 import { PublishFab } from "./publish-fab";
@@ -31,6 +30,7 @@ import {
 	plainDateTimeToTimeString,
 } from "./shift-scheduler-utils";
 import { TemplateSidebar } from "./template-sidebar";
+import { useCoverageHeatmap } from "./use-coverage-heatmap";
 import { useShiftPublishFlow } from "./use-shift-publish-flow";
 import { useShiftSchedulerData } from "./use-shift-scheduler-data";
 
