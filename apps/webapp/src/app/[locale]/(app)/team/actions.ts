@@ -156,31 +156,32 @@ export async function getCalendarManagedEmployees(): Promise<
 		const byId = new Map<string, ManagedEmployee>();
 
 		for (const record of typedRecords) {
-			if (record.employee.organizationId !== currentEmp.organizationId) continue;
-			if (record.employee.id === currentEmp.id) continue;
+			const recordEmployee = record.employee;
+			if (recordEmployee.organizationId !== currentEmp.organizationId) continue;
+			if (recordEmployee.id === currentEmp.id) continue;
 
-			byId.set(record.employee.id, {
-				id: record.employee.id,
-				userId: record.employee.userId,
-				firstName: record.employee.user.firstName,
-				lastName: record.employee.user.lastName,
-				pronouns: record.employee.pronouns,
-				position: record.employee.position,
-				role: record.employee.role,
-				isActive: record.employee.isActive,
+			byId.set(recordEmployee.id, {
+				id: recordEmployee.id,
+				userId: recordEmployee.userId,
+				firstName: recordEmployee.user.firstName,
+				lastName: recordEmployee.user.lastName,
+				pronouns: recordEmployee.pronouns,
+				position: recordEmployee.position,
+				role: recordEmployee.role,
+				isActive: recordEmployee.isActive,
 				isPrimaryManager: record.isPrimary,
 				isCurrentUser: false,
 				timeBalance: null,
 				user: {
-					id: record.employee.user.id,
-					firstName: record.employee.user.firstName,
-					lastName: record.employee.user.lastName,
-					name: record.employee.user.name,
-					email: record.employee.user.email,
-					image: record.employee.user.image,
+					id: recordEmployee.user.id,
+					firstName: recordEmployee.user.firstName,
+					lastName: recordEmployee.user.lastName,
+					name: recordEmployee.user.name,
+					email: recordEmployee.user.email,
+					image: recordEmployee.user.image,
 				},
-				team: record.employee.team
-					? { id: record.employee.team.id, name: record.employee.team.name }
+				team: recordEmployee.team
+					? { id: recordEmployee.team.id, name: recordEmployee.team.name }
 					: null,
 			});
 		}
