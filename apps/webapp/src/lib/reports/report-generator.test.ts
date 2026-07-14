@@ -63,6 +63,7 @@ vi.mock("@/db/schema", () => ({
 		categoryId: "categoryId",
 		employeeId: "employeeId",
 		endDate: "endDate",
+		organizationId: "organizationId",
 		startDate: "startDate",
 		status: "status",
 	},
@@ -99,12 +100,18 @@ describe("report generator", () => {
 
 		expect(mockState.absenceCategoryFindMany).toHaveBeenCalledTimes(1);
 		expect(mockState.homeOfficeCategoryWhere).toEqual({
-			and: [{ eq: ["type", "home_office"] }, { eq: ["organizationId", "org-1"] }],
+			and: [
+				{ eq: ["type", "home_office"] },
+				{ eq: ["organizationId", "org-1"] },
+			],
 		});
 	});
 
 	it("aggregates home office days across active and inactive home office categories", async () => {
-		mockState.homeOfficeCategories = [{ id: "home-office-1" }, { id: "home-office-2" }];
+		mockState.homeOfficeCategories = [
+			{ id: "home-office-1" },
+			{ id: "home-office-2" },
+		];
 		mockState.absences = [
 			{
 				categoryId: "home-office-1",
@@ -134,7 +141,13 @@ describe("report generator", () => {
 		expect(mockState.absenceEntryWhere).toEqual({
 			and: [
 				{ eq: ["employeeId", "employee-1"] },
-				{ or: [{ eq: ["categoryId", "home-office-1"] }, { eq: ["categoryId", "home-office-2"] }] },
+				{ eq: ["organizationId", "org-1"] },
+				{
+					or: [
+						{ eq: ["categoryId", "home-office-1"] },
+						{ eq: ["categoryId", "home-office-2"] },
+					],
+				},
 				{ eq: ["status", "approved"] },
 				{ lte: ["startDate", "2026-01-31"] },
 				{ gte: ["endDate", "2026-01-01"] },
@@ -156,9 +169,14 @@ describe("report generator", () => {
 
 		const result = await aggregateAbsences(
 			"employee-1",
+			"org-1",
 			new Date("2026-04-30T22:00:00.000Z"),
 			new Date("2026-05-31T21:59:59.999Z"),
-			{ startDate: "2026-05-01", endDate: "2026-05-31", timezone: "Europe/Berlin" },
+			{
+				startDate: "2026-05-01",
+				endDate: "2026-05-31",
+				timezone: "Europe/Berlin",
+			},
 		);
 
 		expect(result.vacation.approved).toBe(1);

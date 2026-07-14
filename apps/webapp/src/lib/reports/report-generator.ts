@@ -13,7 +13,12 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { endOfDay, format, fromJSDate, startOfDay } from "@/lib/datetime/luxon-utils";
+import {
+	endOfDay,
+	format,
+	fromJSDate,
+	startOfDay,
+} from "@/lib/datetime/luxon-utils";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	comparePlainDates,
@@ -23,7 +28,11 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
 import { formatDateRangeLabel } from "./date-ranges";
-import { resolveReportDateRange } from "./report-date-range";
+import { calculateHourlyEarningsFromIntervals } from "./hourly-earnings";
+import {
+	type ReportDateRange,
+	resolveReportDateRange,
+} from "./report-date-range";
 import type {
 	AbsenceSummary,
 	AbsencesData,
@@ -31,7 +40,6 @@ import type {
 	HomeOfficeData,
 	HomeOfficeDetail,
 	HourlyEarningsData,
-	RatePeriodEarnings,
 	ReportData,
 	WorkHoursData,
 	WorkHoursSummary,
@@ -41,6 +49,52 @@ interface ReportCalendarRange {
 	startDate: string;
 	endDate: string;
 	timezone: string;
+}
+
+type CompletedWorkPeriod = typeof workPeriod.$inferSelect;
+
+function getReportRange(
+	startDate: Date,
+	endDate: Date,
+	calendarRange?: ReportCalendarRange,
+): ReportDateRange {
+	if (calendarRange) {
+		return resolveReportDateRange(
+			calendarRange.startDate,
+			calendarRange.endDate,
+			calendarRange.timezone,
+		);
+	}
+
+	return resolveReportDateRange(
+		instantFromDate(startDate)
+			.toZonedDateTimeISO("UTC")
+			.toPlainDate()
+			.toString(),
+		instantFromDate(endDate).toZonedDateTimeISO("UTC").toPlainDate().toString(),
+		"UTC",
+	);
+}
+
+async function loadCompletedWorkPeriods(
+	employeeId: string,
+	organizationId: string,
+	reportRange: ReportDateRange,
+): Promise<CompletedWorkPeriod[]> {
+	return db
+		.select()
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.employeeId, employeeId),
+				eq(workPeriod.organizationId, organizationId),
+				eq(workPeriod.isActive, false),
+				isNotNull(workPeriod.durationMinutes),
+				lt(workPeriod.startTime, dateFromInstant(reportRange.endExclusive)),
+				gt(workPeriod.endTime, dateFromInstant(reportRange.start)),
+			),
+		)
+		.orderBy(workPeriod.startTime);
 }
 
 function clippedBusinessDays(
@@ -82,7 +136,10 @@ export async function generateEmployeeReport(
 ): Promise<ReportData> {
 	// Fetch employee info
 	const emp = await db.query.employee.findFirst({
-		where: eq(employee.id, employeeId),
+		where: and(
+			eq(employee.id, employeeId),
+			eq(employee.organizationId, organizationId),
+		),
 		with: {
 			user: true,
 		},
@@ -93,10 +150,23 @@ export async function generateEmployeeReport(
 	}
 
 	// Aggregate data in parallel
-	const [workHours, absences, homeOffice, expectedHours] = await Promise.all([
-		aggregateWorkHours(employeeId, organizationId, startDate, endDate, calendarRange),
-		aggregateAbsences(employeeId, startDate, endDate, calendarRange),
-		aggregateHomeOfficeDays(employeeId, organizationId, startDate, endDate, calendarRange),
+	const reportRange = getReportRange(startDate, endDate, calendarRange);
+	const [periods, absences, homeOffice, expectedHours] = await Promise.all([
+		loadCompletedWorkPeriods(employeeId, organizationId, reportRange),
+		aggregateAbsences(
+			employeeId,
+			organizationId,
+			startDate,
+			endDate,
+			calendarRange,
+		),
+		aggregateHomeOfficeDays(
+			employeeId,
+			organizationId,
+			startDate,
+			endDate,
+			calendarRange,
+		),
 		calculateExpectedWorkHoursForEmployee(
 			employeeId,
 			organizationId,
@@ -105,9 +175,14 @@ export async function generateEmployeeReport(
 			calendarRange?.timezone,
 		),
 	]);
+	const workHours = aggregateWorkHoursFromPeriods(periods, reportRange);
 
 	// Calculate compliance metrics using schedule-based expected hours
-	const complianceMetrics = calculateComplianceMetrics(workHours, absences, expectedHours);
+	const complianceMetrics = calculateComplianceMetrics(
+		workHours,
+		absences,
+		expectedHours,
+	);
 
 	// Calculate earnings for hourly employees
 	let hourlyEarnings: HourlyEarningsData | undefined;
@@ -115,10 +190,8 @@ export async function generateEmployeeReport(
 		hourlyEarnings = await calculateHourlyEarnings(
 			employeeId,
 			organizationId,
-			startDate,
-			endDate,
-			workHours.totalHours,
-			calendarRange?.timezone ?? "UTC",
+			periods,
+			reportRange,
 		);
 	}
 
@@ -165,50 +238,55 @@ export async function aggregateWorkHours(
 	endDate: Date,
 	calendarRange?: ReportCalendarRange,
 ): Promise<WorkHoursData> {
-	const reportRange = calendarRange
-		? resolveReportDateRange(calendarRange.startDate, calendarRange.endDate, calendarRange.timezone)
-		: undefined;
-	const rangeStart = reportRange
-		? dateToDB(fromJSDate(dateFromInstant(reportRange.start)))!
-		: dateToDB(startOfDay(fromJSDate(startDate)))!;
-	const rangeEndExclusive = reportRange
-		? dateToDB(fromJSDate(dateFromInstant(reportRange.endExclusive)))!
-		: dateToDB(endOfDay(fromJSDate(endDate)).plus({ milliseconds: 1 }))!;
+	const reportRange = getReportRange(startDate, endDate, calendarRange);
+	const periods = await loadCompletedWorkPeriods(
+		employeeId,
+		organizationId,
+		reportRange,
+	);
+	return aggregateWorkHoursFromPeriods(periods, reportRange);
+}
 
-	const periods = await db
-		.select()
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.employeeId, employeeId),
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.isActive, false),
-				isNotNull(workPeriod.durationMinutes),
-				lt(workPeriod.startTime, rangeEndExclusive),
-				gt(workPeriod.endTime, rangeStart),
-			),
-		)
-		.orderBy(workPeriod.startTime);
-
+function aggregateWorkHoursFromPeriods(
+	periods: CompletedWorkPeriod[],
+	reportRange: ReportDateRange,
+): WorkHoursData {
 	const byMonth = new Map<string, WorkHoursSummary>();
 	const workDays = new Set<string>();
 	let totalMinutes = 0;
 	for (const period of periods) {
-		if (!period.endTime) continue;
-		const pieces = reportRange
-			? reportRange.splitPeriod(instantFromDate(period.startTime), instantFromDate(period.endTime))
-			: [{ date: format(period.startTime, "yyyy-MM-dd"), minutes: period.durationMinutes || 0 }];
+		if (!period.endTime || !period.durationMinutes) continue;
+		const periodStart = instantFromDate(period.startTime);
+		const periodEnd = instantFromDate(period.endTime);
+		const pieces = reportRange.splitPeriod(periodStart, periodEnd);
+		const fullElapsedMinutes =
+			Number(periodEnd.epochNanoseconds - periodStart.epochNanoseconds) /
+			60_000_000_000;
+		const includedElapsedMinutes = pieces.reduce(
+			(sum, piece) => sum + piece.minutes,
+			0,
+		);
+		const includedDurationMinutes =
+			fullElapsedMinutes > 0
+				? period.durationMinutes * (includedElapsedMinutes / fullElapsedMinutes)
+				: 0;
 		for (const piece of pieces) {
+			const allocatedMinutes =
+				includedElapsedMinutes > 0
+					? includedDurationMinutes * (piece.minutes / includedElapsedMinutes)
+					: 0;
 			const monthKey = piece.date.slice(0, 7);
 			const monthData = byMonth.get(monthKey) ?? { hours: 0, days: 0 };
-			monthData.hours += piece.minutes / 60;
+			monthData.hours += allocatedMinutes / 60;
 			byMonth.set(monthKey, monthData);
 			workDays.add(piece.date);
-			totalMinutes += piece.minutes;
+			totalMinutes += allocatedMinutes;
 		}
 	}
 	for (const [monthKey, monthData] of byMonth) {
-		monthData.days = [...workDays].filter((date) => date.startsWith(monthKey)).length;
+		monthData.days = [...workDays].filter((date) =>
+			date.startsWith(monthKey),
+		).length;
 	}
 
 	// Round hours to 2 decimals
@@ -219,18 +297,27 @@ export async function aggregateWorkHours(
 	return {
 		totalHours:
 			Math.round(
-				((totalMinutes || [...byMonth.values()].reduce((sum, month) => sum + month.hours * 60, 0)) /
+				((totalMinutes ||
+					[...byMonth.values()].reduce(
+						(sum, month) => sum + month.hours * 60,
+						0,
+					)) /
 					60) *
 					100,
 			) / 100,
-		totalMinutes:
-			totalMinutes || [...byMonth.values()].reduce((sum, month) => sum + month.hours * 60, 0),
+		totalMinutes: Math.round(
+			totalMinutes ||
+				[...byMonth.values()].reduce((sum, month) => sum + month.hours * 60, 0),
+		),
 		workDays: workDays.size,
 		averagePerDay:
 			workDays.size > 0
 				? Math.round(
 						((totalMinutes ||
-							[...byMonth.values()].reduce((sum, month) => sum + month.hours * 60, 0)) /
+							[...byMonth.values()].reduce(
+								(sum, month) => sum + month.hours * 60,
+								0,
+							)) /
 							60 /
 							workDays.size) *
 							100,
@@ -249,19 +336,24 @@ export async function aggregateWorkHours(
  */
 export async function aggregateAbsences(
 	employeeId: string,
+	organizationId: string,
 	startDate: Date,
 	endDate: Date,
 	calendarRange?: ReportCalendarRange,
 ): Promise<Omit<AbsencesData, "homeOffice">> {
 	// Convert dates to YYYY-MM-DD strings for date column comparison
 	const rangeStartStr =
-		calendarRange?.startDate ?? format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
-	const rangeEndStr = calendarRange?.endDate ?? format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
+		calendarRange?.startDate ??
+		format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
+	const rangeEndStr =
+		calendarRange?.endDate ??
+		format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
 
 	// Fetch all absences in date range
 	const absences = await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
+			eq(absenceEntry.organizationId, organizationId),
 			lte(absenceEntry.startDate, rangeEndStr),
 			gte(absenceEntry.endDate, rangeStartStr),
 		),
@@ -361,8 +453,11 @@ export async function aggregateHomeOfficeDays(
 ): Promise<HomeOfficeData> {
 	// Convert dates to YYYY-MM-DD strings for date column comparison
 	const rangeStartStr =
-		calendarRange?.startDate ?? format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
-	const rangeEndStr = calendarRange?.endDate ?? format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
+		calendarRange?.startDate ??
+		format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
+	const rangeEndStr =
+		calendarRange?.endDate ??
+		format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
 
 	// Step 1: Get approved home office absences
 	const homeOfficeCategories = await db.query.absenceCategory.findMany({
@@ -383,7 +478,12 @@ export async function aggregateHomeOfficeDays(
 	const homeOfficeAbsences = await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
-			or(...homeOfficeCategories.map((category) => eq(absenceEntry.categoryId, category.id))),
+			eq(absenceEntry.organizationId, organizationId),
+			or(
+				...homeOfficeCategories.map((category) =>
+					eq(absenceEntry.categoryId, category.id),
+				),
+			),
 			eq(absenceEntry.status, "approved"),
 			lte(absenceEntry.startDate, rangeEndStr),
 			gte(absenceEntry.endDate, rangeStartStr),
@@ -396,11 +496,17 @@ export async function aggregateHomeOfficeDays(
 	const homeOfficeDates = new Set<string>();
 	for (const absence of homeOfficeAbsences) {
 		let day =
-			comparePlainDates(parsePlainDate(absence.startDate), parsePlainDate(rangeStartStr)) < 0
+			comparePlainDates(
+				parsePlainDate(absence.startDate),
+				parsePlainDate(rangeStartStr),
+			) < 0
 				? parsePlainDate(rangeStartStr)
 				: parsePlainDate(absence.startDate);
 		const lastDay =
-			comparePlainDates(parsePlainDate(absence.endDate), parsePlainDate(rangeEndStr)) > 0
+			comparePlainDates(
+				parsePlainDate(absence.endDate),
+				parsePlainDate(rangeEndStr),
+			) > 0
 				? parsePlainDate(rangeEndStr)
 				: parsePlainDate(absence.endDate);
 		while (comparePlainDates(day, lastDay) <= 0) {
@@ -416,13 +522,17 @@ export async function aggregateHomeOfficeDays(
 	const reportTimezone = calendarRange?.timezone;
 	const periodResults = await Promise.all(
 		sortedDates.map(async (dateStr) => {
-			const dayRange = reportTimezone ? localDayRange(dateStr, reportTimezone) : undefined;
+			const dayRange = reportTimezone
+				? localDayRange(dateStr, reportTimezone)
+				: undefined;
 			const dayStart = dayRange
 				? dateToDB(fromJSDate(dateFromInstant(dayRange.start)))!
 				: dateToDB(startOfDay(fromJSDate(new Date(dateStr))))!;
 			const dayEndExclusive = dayRange
 				? dateToDB(fromJSDate(dateFromInstant(dayRange.endExclusive)))!
-				: dateToDB(endOfDay(fromJSDate(new Date(dateStr))).plus({ milliseconds: 1 }))!;
+				: dateToDB(
+						endOfDay(fromJSDate(new Date(dateStr))).plus({ milliseconds: 1 }),
+					)!;
 
 			const dayPeriods = await db
 				.select()
@@ -445,11 +555,17 @@ export async function aggregateHomeOfficeDays(
 						return (
 							sum +
 							resolveReportDateRange(dateStr, dateStr, reportTimezone!)
-								.splitPeriod(instantFromDate(period.startTime), instantFromDate(period.endTime))
+								.splitPeriod(
+									instantFromDate(period.startTime),
+									instantFromDate(period.endTime),
+								)
 								.reduce((minutes, piece) => minutes + piece.minutes, 0)
 						);
 					}, 0)
-				: dayPeriods.reduce((sum, period) => sum + (period.durationMinutes || 0), 0);
+				: dayPeriods.reduce(
+						(sum, period) => sum + (period.durationMinutes || 0),
+						0,
+					);
 			const dayHours = Math.round((dayMinutes / 60) * 100) / 100;
 
 			return { date: dateStr, hours: dayHours };
@@ -458,7 +574,10 @@ export async function aggregateHomeOfficeDays(
 
 	// Aggregate results
 	const dateDetails: HomeOfficeDetail[] = periodResults;
-	const totalHoursWorked = periodResults.reduce((sum, result) => sum + result.hours, 0);
+	const totalHoursWorked = periodResults.reduce(
+		(sum, result) => sum + result.hours,
+		0,
+	);
 
 	return {
 		days: homeOfficeDates.size,
@@ -487,12 +606,17 @@ function calculateComplianceMetrics(
 	// Simple attendance percentage based on expected vs actual work days
 	const totalPossibleDays = workHours.workDays + absences.totalDays;
 	const attendancePercentage =
-		totalPossibleDays > 0 ? Math.round((workHours.workDays / totalPossibleDays) * 100) : 100;
+		totalPossibleDays > 0
+			? Math.round((workHours.workDays / totalPossibleDays) * 100)
+			: 100;
 
 	// Overtime/undertime calculation using schedule-based expected hours
 	const expectedMinutes = expectedHoursData.totalMinutes;
 	const overtimeMinutes = Math.max(0, workHours.totalMinutes - expectedMinutes);
-	const underTimeMinutes = Math.max(0, expectedMinutes - workHours.totalMinutes);
+	const underTimeMinutes = Math.max(
+		0,
+		expectedMinutes - workHours.totalMinutes,
+	);
 
 	return {
 		attendancePercentage,
@@ -509,134 +633,59 @@ function calculateComplianceMetrics(
  * Handles rate changes during the period by breaking down earnings by rate period
  * @param employeeId - ID of the employee
  * @param organizationId - ID of the organization
- * @param startDate - Report start date
- * @param endDate - Report end date
- * @param totalHours - Total hours worked in the period
  * @returns Earnings data with breakdown by rate period
  */
 async function calculateHourlyEarnings(
 	employeeId: string,
-	_organizationId: string,
-	startDate: Date,
-	endDate: Date,
-	totalHours: number,
-	timezone: string,
+	organizationId: string,
+	workPeriods: CompletedWorkPeriod[],
+	reportRange: ReportDateRange,
 ): Promise<HourlyEarningsData> {
-	const calendarDate = (date: Date) =>
-		instantFromDate(date).toZonedDateTimeISO(timezone).toPlainDate().toString();
-	// Get rate history for the period
-	// A rate applies if: effectiveFrom <= endDate AND (effectiveTo > startDate OR effectiveTo is null)
 	const rateHistory = await db
 		.select()
 		.from(employeeRateHistory)
 		.where(
 			and(
 				eq(employeeRateHistory.employeeId, employeeId),
-				lte(employeeRateHistory.effectiveFrom, endDate),
+				eq(employeeRateHistory.organizationId, organizationId),
+				lt(
+					employeeRateHistory.effectiveFrom,
+					dateFromInstant(reportRange.endExclusive),
+				),
 				or(
 					isNull(employeeRateHistory.effectiveTo),
-					gte(employeeRateHistory.effectiveTo, startDate),
+					gt(
+						employeeRateHistory.effectiveTo,
+						dateFromInstant(reportRange.start),
+					),
 				),
 			),
 		)
 		.orderBy(employeeRateHistory.effectiveFrom);
 
-	// If no rate history, use current rate from employee record
-	if (rateHistory.length === 0) {
-		const emp = await db.query.employee.findFirst({
-			where: eq(employee.id, employeeId),
-		});
-
-		if (!emp?.currentHourlyRate) {
-			return {
-				totalHours,
-				totalEarnings: 0,
-				currency: "EUR",
-				byRatePeriod: [],
-			};
-		}
-
-		const rate = parseFloat(emp.currentHourlyRate);
-		return {
-			totalHours,
-			totalEarnings: Math.round(totalHours * rate * 100) / 100,
-			currency: "EUR",
-			byRatePeriod: [
-				{
-					rate,
-					currency: "EUR",
-					periodStart: calendarDate(startDate),
-					periodEnd: calendarDate(endDate),
-					hours: totalHours,
-					earnings: Math.round(totalHours * rate * 100) / 100,
-				},
-			],
-		};
-	}
-
-	// Calculate earnings for each rate period
-	const byRatePeriod: RatePeriodEarnings[] = [];
-	let totalEarnings = 0;
-	const currency = rateHistory[0]?.currency || "EUR";
-
-	// For simple case with single rate, just use it
-	if (rateHistory.length === 1) {
-		const rate = parseFloat(rateHistory[0].hourlyRate);
-		const earnings = Math.round(totalHours * rate * 100) / 100;
-		totalEarnings = earnings;
-
-		byRatePeriod.push({
-			rate,
-			currency: rateHistory[0].currency,
-			periodStart: calendarDate(startDate),
-			periodEnd: calendarDate(endDate),
-			hours: totalHours,
-			earnings,
-		});
-	} else {
-		// Multiple rate periods - need to calculate hours per period
-		// This is an approximation based on the proportion of days in each period
-		const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-
-		for (let i = 0; i < rateHistory.length; i++) {
-			const rateEntry = rateHistory[i];
-			const rate = parseFloat(rateEntry.hourlyRate);
-
-			// Calculate the effective period for this rate within our report range
-			const periodStart = new Date(
-				Math.max(new Date(rateEntry.effectiveFrom).getTime(), startDate.getTime()),
-			);
-			const periodEnd = rateEntry.effectiveTo
-				? new Date(Math.min(new Date(rateEntry.effectiveTo).getTime(), endDate.getTime()))
-				: endDate;
-
-			// Calculate days in this period
-			const periodDays = Math.ceil(
-				(periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24),
-			);
-
-			// Estimate hours for this period based on proportion of days
-			const periodHours =
-				totalDays > 0 ? Math.round((periodDays / totalDays) * totalHours * 100) / 100 : 0;
-			const earnings = Math.round(periodHours * rate * 100) / 100;
-
-			totalEarnings += earnings;
-
-			byRatePeriod.push({
-				rate,
-				currency: rateEntry.currency,
-				periodStart: calendarDate(periodStart),
-				periodEnd: calendarDate(periodEnd),
-				hours: periodHours,
-				earnings,
-			});
-		}
-	}
-
-	return {
-		totalHours,
-		totalEarnings: Math.round(totalEarnings * 100) / 100,
-		currency,
-		byRatePeriod,
-	};
+	return calculateHourlyEarningsFromIntervals({
+		workPeriods: workPeriods.flatMap((period) =>
+			period.endTime && period.durationMinutes !== null
+				? [
+						{
+							start: instantFromDate(period.startTime),
+							end: instantFromDate(period.endTime),
+							durationMinutes: period.durationMinutes,
+						},
+					]
+				: [],
+		),
+		ratePeriods: rateHistory.map((ratePeriod) => ({
+			id: ratePeriod.id,
+			rate: Number(ratePeriod.hourlyRate),
+			currency: ratePeriod.currency,
+			effectiveFrom: instantFromDate(ratePeriod.effectiveFrom),
+			effectiveTo: ratePeriod.effectiveTo
+				? instantFromDate(ratePeriod.effectiveTo)
+				: null,
+		})),
+		rangeStart: reportRange.start,
+		rangeEndExclusive: reportRange.endExclusive,
+		timezone: reportRange.timezone,
+	});
 }
