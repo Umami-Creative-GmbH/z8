@@ -9,7 +9,7 @@
  * Returns: { hasConflicts: boolean, conflicts: ConflictWarning[] }
  */
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
@@ -23,8 +23,14 @@ import {
 	getConflictSummary,
 	hasBlockingConflicts,
 } from "@/lib/calendar-sync/domain";
-import { getCalendarProvider, isTokenExpired } from "@/lib/calendar-sync/providers";
-import { getCalendarTokens, storeCalendarTokens } from "@/lib/calendar-sync/token-store";
+import {
+	getCalendarProvider,
+	isTokenExpired,
+} from "@/lib/calendar-sync/providers";
+import {
+	getCalendarTokens,
+	storeCalendarTokens,
+} from "@/lib/calendar-sync/token-store";
 import type { ConflictWarning } from "@/lib/calendar-sync/types";
 
 // ============================================
@@ -56,7 +62,10 @@ export async function POST(request: NextRequest) {
 
 		const activeOrgId = session.session.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		// Validate request body
@@ -73,16 +82,25 @@ export async function POST(request: NextRequest) {
 
 		// Get employee record
 		const emp = await db.query.employee.findFirst({
-			where: eq(employee.userId, session.user.id),
+			where: and(
+				eq(employee.userId, session.user.id),
+				eq(employee.organizationId, activeOrgId),
+			),
 		});
 
 		if (!emp) {
-			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Employee not found" },
+				{ status: 404 },
+			);
 		}
 
 		// Get calendar connection
 		const connection = await db.query.calendarConnection.findFirst({
-			where: eq(calendarConnection.employeeId, emp.id),
+			where: and(
+				eq(calendarConnection.employeeId, emp.id),
+				eq(calendarConnection.organizationId, activeOrgId),
+			),
 		});
 
 		// If no connection or conflict detection disabled, return empty
@@ -150,7 +168,12 @@ export async function POST(request: NextRequest) {
 						refreshToken: "vault:managed",
 						updatedAt: new Date(),
 					})
-					.where(eq(calendarConnection.id, connection.id));
+					.where(
+						and(
+							eq(calendarConnection.id, connection.id),
+							eq(calendarConnection.organizationId, activeOrgId),
+						),
+					);
 
 				currentAccessToken = refreshResult.accessToken;
 			} catch {
@@ -217,6 +240,9 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		console.error("Error checking calendar conflicts:", error);
-		return NextResponse.json({ error: "Failed to check calendar conflicts" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Failed to check calendar conflicts" },
+			{ status: 500 },
+		);
 	}
 }

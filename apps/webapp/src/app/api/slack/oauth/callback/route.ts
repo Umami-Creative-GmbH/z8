@@ -32,7 +32,9 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 	// Handle user cancellation
 	if (error) {
 		logger.info({ error }, "Slack OAuth flow cancelled by user");
-		return NextResponse.redirect(`${settingsUrl}?slack_error=${encodeURIComponent(error)}`);
+		return NextResponse.redirect(
+			`${settingsUrl}?slack_error=${encodeURIComponent(error)}`,
+		);
 	}
 
 	if (!code || !state) {
@@ -42,7 +44,10 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 	try {
 		// Validate state token
 		const stateRecord = await db.query.slackOAuthState.findFirst({
-			where: and(eq(slackOAuthState.stateToken, state), eq(slackOAuthState.status, "pending")),
+			where: and(
+				eq(slackOAuthState.stateToken, state),
+				eq(slackOAuthState.status, "pending"),
+			),
 		});
 
 		if (!stateRecord) {
@@ -54,7 +59,12 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 			await db
 				.update(slackOAuthState)
 				.set({ status: "expired" })
-				.where(eq(slackOAuthState.id, stateRecord.id));
+				.where(
+					and(
+						eq(slackOAuthState.id, stateRecord.id),
+						eq(slackOAuthState.organizationId, stateRecord.organizationId),
+					),
+				);
 			return NextResponse.redirect(`${settingsUrl}?slack_error=expired_state`);
 		}
 
@@ -62,14 +72,21 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 		await db
 			.update(slackOAuthState)
 			.set({ status: "used", usedAt: new Date() })
-			.where(eq(slackOAuthState.id, stateRecord.id));
+			.where(
+				and(
+					eq(slackOAuthState.id, stateRecord.id),
+					eq(slackOAuthState.organizationId, stateRecord.organizationId),
+				),
+			);
 
 		// Exchange code for token
 		const redirectUri = `${appUrl}/api/slack/oauth/callback`;
 		const tokenResult = await exchangeOAuthCode(code, redirectUri);
 
 		if (!tokenResult) {
-			return NextResponse.redirect(`${settingsUrl}?slack_error=token_exchange_failed`);
+			return NextResponse.redirect(
+				`${settingsUrl}?slack_error=token_exchange_failed`,
+			);
 		}
 
 		// Store bot access token in Vault
@@ -81,7 +98,10 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 
 		// Check if workspace config already exists
 		const existing = await db.query.slackWorkspaceConfig.findFirst({
-			where: eq(slackWorkspaceConfig.organizationId, stateRecord.organizationId),
+			where: eq(
+				slackWorkspaceConfig.organizationId,
+				stateRecord.organizationId,
+			),
 		});
 
 		if (existing) {
@@ -97,7 +117,12 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 					configuredByUserId: stateRecord.userId,
 					configuredAt: new Date(),
 				})
-				.where(eq(slackWorkspaceConfig.id, existing.id));
+				.where(
+					and(
+						eq(slackWorkspaceConfig.id, existing.id),
+						eq(slackWorkspaceConfig.organizationId, stateRecord.organizationId),
+					),
+				);
 		} else {
 			// Create new config
 			await db.insert(slackWorkspaceConfig).values({
