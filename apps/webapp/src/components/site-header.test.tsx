@@ -38,7 +38,9 @@ vi.mock("@/components/ui/sidebar", () => ({
 }));
 
 vi.mock("@/components/dashboard/dashboard-header-customize", () => ({
-	DashboardHeaderCustomize: () => <button type="button">Customize dashboard</button>,
+	DashboardHeaderCustomize: () => (
+		<button type="button">Customize dashboard</button>
+	),
 }));
 
 describe("SiteHeader", () => {
@@ -47,7 +49,9 @@ describe("SiteHeader", () => {
 
 		render(<SiteHeader />);
 
-		const buttons = screen.getAllByRole("button").map((button) => button.textContent);
+		const buttons = screen
+			.getAllByRole("button")
+			.map((button) => button.textContent);
 		expect(buttons).toEqual([
 			"Toggle sidebar",
 			"Customize dashboard",
@@ -62,8 +66,19 @@ describe("SiteHeader", () => {
 
 		render(<SiteHeader />);
 
-		expect(screen.queryByRole("button", { name: "Customize dashboard" })).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: "Customize dashboard" }),
+		).toBeNull();
 		expect(screen.getByRole("button", { name: "Notifications" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Timezone" })).toBeTruthy();
+	});
+
+	it("shows the most specific route title instead of falling back to Dashboard", () => {
+		pathname = "/en/settings/employees/employee-1";
+
+		render(<SiteHeader />);
+
+		expect(screen.getByRole("heading", { name: "Employees" })).toBeTruthy();
+		expect(screen.queryByRole("heading", { name: "Dashboard" })).toBeNull();
 	});
 });

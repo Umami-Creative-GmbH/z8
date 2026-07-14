@@ -1,4 +1,8 @@
 import { getResolvedSettingsVisibility } from "@/components/settings/settings-config";
+import {
+	APP_ROUTE_METADATA,
+	type AppRouteMetadata,
+} from "@/lib/navigation/route-metadata";
 import type { AppSearchResult, StaticAppSearchInput } from "./types";
 
 type SearchKeywordDefinition = {
@@ -6,56 +10,22 @@ type SearchKeywordDefinition = {
 	defaultValue: string;
 };
 
+function routeMetadata(id: string): AppRouteMetadata {
+	const route = APP_ROUTE_METADATA.find((entry) => entry.id === id);
+	if (!route) throw new Error(`Missing route metadata for ${id}`);
+	return route;
+}
+
 const PERSONAL_PAGE_DESTINATIONS = [
-	{
-		id: "dashboard",
-		titleKey: "nav.dashboard",
-		titleDefault: "Dashboard",
-		href: "/",
-	},
-	{
-		id: "time-tracking",
-		titleKey: "nav.time-tracking",
-		titleDefault: "Time Tracking",
-		href: "/time-tracking",
-	},
-	{
-		id: "my-requests",
-		titleKey: "nav.my-requests",
-		titleDefault: "My Requests",
-		href: "/my-requests",
-	},
-	{
-		id: "calendar",
-		titleKey: "nav.calendar",
-		titleDefault: "Calendar",
-		href: "/calendar",
-	},
-	{
-		id: "org-explorer",
-		titleKey: "nav.org-explorer",
-		titleDefault: "Org Explorer",
-		href: "/organization",
-	},
-	{
-		id: "absences",
-		titleKey: "nav.absences",
-		titleDefault: "Absences",
-		href: "/absences",
-	},
-	{
-		id: "travel-expenses",
-		titleKey: "nav.travel-expenses",
-		titleDefault: "Travel Expenses",
-		href: "/travel-expenses",
-	},
-	{
-		id: "reports",
-		titleKey: "nav.reports",
-		titleDefault: "Reports",
-		href: "/reports",
-	},
-] as const;
+	"dashboard",
+	"time-tracking",
+	"my-requests",
+	"calendar",
+	"org-explorer",
+	"absences",
+	"travel-expenses",
+	"reports",
+].map(routeMetadata);
 
 const TEAM_PAGE_DESTINATIONS = [
 	{
@@ -73,10 +43,19 @@ const TEAM_PAGE_DESTINATIONS = [
 		descriptionDefault: "Review employee absence metrics and record absences",
 		keywords: [
 			{ key: "appSearch.teamAbsences.keywords.team", defaultValue: "team" },
-			{ key: "appSearch.teamAbsences.keywords.absence", defaultValue: "absence" },
+			{
+				key: "appSearch.teamAbsences.keywords.absence",
+				defaultValue: "absence",
+			},
 			{ key: "appSearch.teamAbsences.keywords.sick", defaultValue: "sick" },
-			{ key: "appSearch.teamAbsences.keywords.vacation", defaultValue: "vacation" },
-			{ key: "appSearch.teamAbsences.keywords.manager", defaultValue: "manager" },
+			{
+				key: "appSearch.teamAbsences.keywords.vacation",
+				defaultValue: "vacation",
+			},
+			{
+				key: "appSearch.teamAbsences.keywords.manager",
+				defaultValue: "manager",
+			},
 		] satisfies SearchKeywordDefinition[],
 	},
 	{
@@ -87,21 +66,13 @@ const TEAM_PAGE_DESTINATIONS = [
 	},
 ] as const;
 
-const PAYROLL_PAGE_DESTINATION = {
-	id: "payroll",
-	titleKey: "nav.payroll",
-	titleDefault: "Payroll",
-	href: "/payroll",
-} as const;
+const PAYROLL_PAGE_DESTINATION = routeMetadata("payroll");
 
-const SETTINGS_PAGE_DESTINATION = {
-	id: "settings",
-	titleKey: "nav.settings",
-	titleDefault: "Settings",
-	href: "/settings",
-} as const;
+const SETTINGS_PAGE_DESTINATION = routeMetadata("settings");
 
-function isManagerOrAdmin(employeeRole: StaticAppSearchInput["employeeRole"]): boolean {
+function isManagerOrAdmin(
+	employeeRole: StaticAppSearchInput["employeeRole"],
+): boolean {
 	return employeeRole === "admin" || employeeRole === "manager";
 }
 
@@ -135,12 +106,14 @@ export function buildStaticAppSearchResults({
 	showPayrollNav,
 	featureFlags,
 }: StaticAppSearchInput): AppSearchResult[] {
-	const pageResults: AppSearchResult[] = PERSONAL_PAGE_DESTINATIONS.map((destination) => ({
-		type: "page",
-		id: `page:${destination.id}`,
-		title: t(destination.titleKey, destination.titleDefault),
-		href: destination.href,
-	}));
+	const pageResults: AppSearchResult[] = PERSONAL_PAGE_DESTINATIONS.map(
+		(destination) => ({
+			type: "page",
+			id: `page:${destination.id}`,
+			title: t(destination.titleKey, destination.titleDefault),
+			href: destination.href,
+		}),
+	);
 
 	if (isManagerOrAdmin(employeeRole)) {
 		pageResults.push(
@@ -158,7 +131,10 @@ export function buildStaticAppSearchResults({
 
 				return {
 					...result,
-					subtitle: t(destination.descriptionKey, destination.descriptionDefault),
+					subtitle: t(
+						destination.descriptionKey,
+						destination.descriptionDefault,
+					),
 					keywords: translateKeywords(destination.keywords, t),
 				};
 			}),
@@ -187,7 +163,10 @@ export function buildStaticAppSearchResults({
 		pageResults.push({
 			type: "page",
 			id: `page:${PAYROLL_PAGE_DESTINATION.id}`,
-			title: t(PAYROLL_PAGE_DESTINATION.titleKey, PAYROLL_PAGE_DESTINATION.titleDefault),
+			title: t(
+				PAYROLL_PAGE_DESTINATION.titleKey,
+				PAYROLL_PAGE_DESTINATION.titleDefault,
+			),
 			href: PAYROLL_PAGE_DESTINATION.href,
 		});
 	}
@@ -195,7 +174,10 @@ export function buildStaticAppSearchResults({
 	pageResults.push({
 		type: "page",
 		id: `page:${SETTINGS_PAGE_DESTINATION.id}`,
-		title: t(SETTINGS_PAGE_DESTINATION.titleKey, SETTINGS_PAGE_DESTINATION.titleDefault),
+		title: t(
+			SETTINGS_PAGE_DESTINATION.titleKey,
+			SETTINGS_PAGE_DESTINATION.titleDefault,
+		),
 		href: SETTINGS_PAGE_DESTINATION.href,
 	});
 
