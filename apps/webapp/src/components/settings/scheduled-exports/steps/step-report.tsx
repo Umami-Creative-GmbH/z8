@@ -219,9 +219,10 @@ function DataReportConfig({
 			<form.Field name="reportConfig">
 				{(field: any) => {
 					const selectedCategories = (field.state.value?.categories as string[]) || [];
+					const selectedCategorySet = new Set(selectedCategories);
 
 					const toggleCategory = (categoryId: string) => {
-					const newCategories = selectedCategories.includes(categoryId)
+					const newCategories = selectedCategorySet.has(categoryId)
 						? selectedCategories.filter((c: string) => c !== categoryId)
 						: [...selectedCategories, categoryId];
 					field.handleChange({ ...field.state.value, categories: newCategories });
@@ -237,9 +238,9 @@ function DataReportConfig({
 					>
 						{categories.map((category) => (
 							<div key={category.id} className="flex items-center gap-x-2">
-								<Checkbox
-									id={`category-${category.id}`}
-										checked={selectedCategories.includes(category.id)}
+							<Checkbox
+								id={`category-${category.id}`}
+									checked={selectedCategorySet.has(category.id)}
 										onCheckedChange={() => toggleCategory(category.id)}
 									/>
 									<label htmlFor={`category-${category.id}`} className="text-sm cursor-pointer">

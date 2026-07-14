@@ -75,6 +75,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 		}
 		return props.value || [];
 	})();
+	const selectedIdSet = new Set(selectedIds);
 
 	// Fetch selected employees for display (skip if pre-filtered list provided)
 	const { employees: fetchedEmployees } = useSelectedEmployees(
@@ -88,7 +89,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 		// If pre-filtered list provided, use it as the source
 		if (preFilteredEmployees) {
 			for (const emp of preFilteredEmployees) {
-				if (selectedIds.includes(emp.id)) {
+				if (selectedIdSet.has(emp.id)) {
 					employeeMap.set(emp.id, emp);
 				}
 			}
@@ -101,7 +102,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 
 		// Add locally tracked employees (takes precedence)
 		for (const [id, emp] of localSelectedEmployees) {
-			if (selectedIds.includes(id)) {
+			if (selectedIdSet.has(id)) {
 				employeeMap.set(id, emp);
 			}
 		}

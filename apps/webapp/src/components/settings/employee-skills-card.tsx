@@ -301,7 +301,8 @@ function AssignSkillDialog({
 	});
 
 	// Filter out already assigned skills
-	const availableSkills = (allSkills ?? []).filter((s) => !existingSkillIds.includes(s.id));
+	const existingSkillIdSet = new Set(existingSkillIds);
+	const availableSkills = (allSkills ?? []).filter((s) => !existingSkillIdSet.has(s.id));
 
 	const defaultValues: AssignSkillFormValues = {
 		skillId: "",

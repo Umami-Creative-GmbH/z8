@@ -229,7 +229,7 @@ export class PresenceRequirementRule implements ComplianceRule {
 			}
 		} else if (presenceConfig.presenceMode === "fixed_days") {
 			// Check each required day of week
-			const missedDays: string[] = [];
+			const missedDays = new Set<string>();
 
 			for (const requiredWeekday of presenceConfig.requiredOnsiteFixedDays) {
 				// Find all dates in the period matching this weekday
@@ -243,9 +243,7 @@ export class PresenceRequirementRule implements ComplianceRule {
 							// Check if there's an on-site work period on this date
 							if (!onsiteDateSet.has(dateKey)) {
 								const dayName = WEEKDAY_NAMES[requiredWeekday] ?? `day_${requiredWeekday}`;
-								if (!missedDays.includes(dayName)) {
-									missedDays.push(dayName);
-								}
+								missedDays.add(dayName);
 							}
 						}
 					}
@@ -253,9 +251,9 @@ export class PresenceRequirementRule implements ComplianceRule {
 				}
 			}
 
-			if (missedDays.length > 0) {
+			if (missedDays.size > 0) {
 				const requiredCount = presenceConfig.requiredOnsiteFixedDays.length;
-				const metCount = requiredCount - missedDays.length;
+				const metCount = requiredCount - missedDays.size;
 				const severity = calculatePresenceSeverity(metCount, requiredCount);
 
 				const evidence: PresenceRequirementEvidence = {
@@ -265,7 +263,7 @@ export class PresenceRequirementRule implements ComplianceRule {
 					evaluationEnd: periodEnd.toISODate()!,
 					requiredDays: requiredCount,
 					actualOnsiteDays,
-					missedDays,
+					missedDays: Array.from(missedDays),
 					excludedDays: Array.from(excludedDates),
 					excludedReasons,
 					onsiteWorkPeriodIds,

@@ -85,8 +85,9 @@ export async function getApprovalInboxListFromSources({
 	params,
 	now,
 }: GetApprovalInboxListFromSourcesInput): Promise<ApprovalInboxListResult> {
+	const requestedTypeSet = params.types ? new Set(params.types) : null;
 	const selectedSources = sources.filter(
-		(source) => !params.types || params.types.includes(source.type),
+		(source) => !requestedTypeSet || requestedTypeSet.has(source.type),
 	);
 	const warnings: ApprovalInboxWarning[] = [];
 	const items: ApprovalInboxItem[] = [];

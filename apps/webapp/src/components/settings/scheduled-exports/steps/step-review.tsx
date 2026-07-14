@@ -71,14 +71,17 @@ export function StepReview({ form, filterOptions, payrollConfigs }: StepReviewPr
 		<form.Subscribe selector={(state: any) => state.values}>
 			{(values: any) => {
 				const payrollConfig = payrollConfigs.find((c) => c.id === values.payrollConfigId);
+				const selectedEmployeeIdSet = new Set(values.filters?.employeeIds ?? []);
+				const selectedTeamIdSet = new Set(values.filters?.teamIds ?? []);
+				const selectedProjectIdSet = new Set(values.filters?.projectIds ?? []);
 				const selectedEmployees = filterOptions?.employees.filter((e) =>
-					values.filters?.employeeIds?.includes(e.id),
+					selectedEmployeeIdSet.has(e.id),
 				);
 				const selectedTeams = filterOptions?.teams.filter((t) =>
-					values.filters?.teamIds?.includes(t.id),
+					selectedTeamIdSet.has(t.id),
 				);
 				const selectedProjects = filterOptions?.projects.filter((p) =>
-					values.filters?.projectIds?.includes(p.id),
+					selectedProjectIdSet.has(p.id),
 				);
 
 				return (

@@ -89,9 +89,10 @@ export function getHolidaysForYear(
 	const holidays = hd.getHolidays(targetYear);
 
 	// Filter by type if specified
+	const typeSet = types ? new Set(types) : null;
 	const filteredHolidays =
-		types && types.length > 0
-			? holidays.filter((h) => types.includes(h.type as HolidayType))
+		typeSet && typeSet.size > 0
+			? holidays.filter((h) => typeSet.has(h.type as HolidayType))
 			: holidays;
 
 	return filteredHolidays.map((h) => ({

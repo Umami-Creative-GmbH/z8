@@ -67,9 +67,9 @@ export function SocialOAuthManagement({
 	}>({ isOpen: false, config: null });
 
 	// Determine which providers are already configured
-	const configuredProviders = configs.map((c) => c.provider);
+	const configuredProviders = new Set(configs.map((c) => c.provider));
 	const availableProviders = (Object.keys(PROVIDER_INFO) as SocialOAuthProvider[]).filter(
-		(p) => !configuredProviders.includes(p),
+		(p) => !configuredProviders.has(p),
 	);
 
 	const handleConfigAdded = (newConfig: SocialOAuthConfigResponse) => {

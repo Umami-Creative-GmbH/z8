@@ -316,10 +316,11 @@ export function EmployeeSelectModal({
 
 	const effectiveSelectedIds = mode === "multiple" ? activePendingIds : selectedIds;
 	const selectionCount = effectiveSelectedIds.length;
+	const selectedIdSet = new Set(selectedIds);
 	const hasChanges =
 		mode === "multiple" &&
 		(effectiveSelectedIds.length !== selectedIds.length ||
-			!effectiveSelectedIds.every((id) => selectedIds.includes(id)));
+			!effectiveSelectedIds.every((id) => selectedIdSet.has(id)));
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleCancel}>

@@ -138,14 +138,15 @@ export const ApprovalQueryServiceLive = Layer.effect(
 	ApprovalQueryService,
 	Effect.gen(function* (_) {
 		return ApprovalQueryService.of({
-			getApprovals: (params) =>
-				Effect.gen(function* (_) {
-					const handlers = getAllApprovalHandlers();
+				getApprovals: (params) =>
+					Effect.gen(function* (_) {
+						const handlers = getAllApprovalHandlers();
+						const requestedTypeSet = params.types ? new Set(params.types) : null;
 
-					// Filter handlers by type if specified
-					const activeHandlers = params.types
-						? handlers.filter((h) => params.types?.includes(h.type))
-						: handlers;
+						// Filter handlers by type if specified
+						const activeHandlers = requestedTypeSet
+							? handlers.filter((h) => requestedTypeSet.has(h.type))
+							: handlers;
 
 					// Fetch approvals from all active handlers in parallel
 					const allItems: UnifiedApprovalItem[] = [];
@@ -158,8 +159,11 @@ export const ApprovalQueryServiceLive = Layer.effect(
 					}
 
 					const requesterEmployeeIds = params.requesterEmployeeIds;
-					const filteredItems = requesterEmployeeIds
-						? allItems.filter((item) => requesterEmployeeIds.includes(item.requester.id))
+					const requesterEmployeeIdSet = requesterEmployeeIds
+						? new Set(requesterEmployeeIds)
+						: null;
+					const filteredItems = requesterEmployeeIdSet
+						? allItems.filter((item) => requesterEmployeeIdSet.has(item.requester.id))
 						: allItems;
 
 					// Sort by priority (ascending: urgent first) then by createdAt (descending: newest first)
