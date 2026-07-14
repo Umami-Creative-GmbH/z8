@@ -24,7 +24,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import {
+	TFormControl,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { sickDetailOptions } from "@/lib/absences/sick-details";
@@ -53,32 +58,20 @@ type RecordAbsenceDialogProps = {
 	categories: AbsenceCategoryOption[];
 };
 
-type RecordAbsenceFormValues = ReturnType<typeof getDefaultRecordAbsenceFormValues>;
+type RecordAbsenceFormValues = ReturnType<
+	typeof getDefaultRecordAbsenceFormValues
+>;
 
-export function RecordAbsenceDialog({
-	open,
-	onOpenChange,
+function useRecordAbsenceDialogForm({
 	employee,
-	categories,
-}: RecordAbsenceDialogProps) {
+	onOpenChange,
+}: Pick<RecordAbsenceDialogProps, "employee" | "onOpenChange">) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
 	const [dateRangeError, setDateRangeError] = useState<string | null>(null);
-	function requiredMessage(label: string) {
-		return t("team.absences.recordDialog.required", "{label} is required", { label });
-	}
-
-	const title = employee
-		? t("team.absences.recordDialog.titleForEmployee", "Record absence for {name}", {
-				name: employee.name,
-			})
-		: t("team.absences.recordDialog.title", "Record absence");
-	const durationOptions: Array<{ value: AbsenceDurationKind; label: string }> = [
-		{ value: "full_day", label: t("absences.form.duration.fullDay", "Full day") },
-		{ value: "partial_day", label: t("absences.form.duration.partialDay", "Partial day") },
-	];
 	const formDefaultValues = getDefaultRecordAbsenceFormValues();
-
+	const requiredMessage = (label: string) =>
+		t("team.absences.recordDialog.required", "{label} is required", { label });
 	const form = useForm({
 		defaultValues: formDefaultValues,
 		onSubmit: async ({ value }) => {
@@ -90,7 +83,6 @@ export function RecordAbsenceDialog({
 			}
 
 			setDateRangeError(null);
-
 			if (!employee) {
 				toast.error(
 					t(
@@ -104,9 +96,10 @@ export function RecordAbsenceDialog({
 			const result = await recordAbsenceForEmployee(
 				buildRecordAbsenceForEmployeeInput(employee.id, value),
 			);
-
 			if (result.success) {
-				toast.success(t("team.absences.recordDialog.success", "Absence recorded"));
+				toast.success(
+					t("team.absences.recordDialog.success", "Absence recorded"),
+				);
 				form.reset(formDefaultValues);
 				setDateRangeError(null);
 				onOpenChange(false);
@@ -115,7 +108,8 @@ export function RecordAbsenceDialog({
 			}
 
 			toast.error(
-				result.error ?? t("team.absences.recordDialog.failure", "Failed to record absence"),
+				result.error ??
+					t("team.absences.recordDialog.failure", "Failed to record absence"),
 			);
 		},
 	});
@@ -128,6 +122,43 @@ export function RecordAbsenceDialog({
 		onOpenChange(nextOpen);
 	}
 
+	return { dateRangeError, form, handleOpenChange, requiredMessage };
+}
+
+type RecordAbsenceFormApi = ReturnType<
+	typeof useRecordAbsenceDialogForm
+>["form"];
+
+export function RecordAbsenceDialog({
+	open,
+	onOpenChange,
+	employee,
+	categories,
+}: RecordAbsenceDialogProps) {
+	const { t } = useTranslate();
+	const { dateRangeError, form, handleOpenChange, requiredMessage } =
+		useRecordAbsenceDialogForm({ employee, onOpenChange });
+
+	const title = employee
+		? t(
+				"team.absences.recordDialog.titleForEmployee",
+				"Record absence for {name}",
+				{
+					name: employee.name,
+				},
+			)
+		: t("team.absences.recordDialog.title", "Record absence");
+	const durationOptions: Array<{ value: AbsenceDurationKind; label: string }> =
+		[
+			{
+				value: "full_day",
+				label: t("absences.form.duration.fullDay", "Full day"),
+			},
+			{
+				value: "partial_day",
+				label: t("absences.form.duration.partialDay", "Partial day"),
+			},
+		];
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelContent>
@@ -157,7 +188,9 @@ export function RecordAbsenceDialog({
 								onChange: ({ value }) =>
 									value
 										? undefined
-										: requiredMessage(t("team.absences.recordDialog.category", "Category")),
+										: requiredMessage(
+												t("team.absences.recordDialog.category", "Category"),
+											),
 							}}
 						>
 							{(field) => (
@@ -170,7 +203,9 @@ export function RecordAbsenceDialog({
 										value={field.state.value}
 										onValueChange={(value) => {
 											field.handleChange(value);
-											const nextCategory = categories.find((category) => category.id === value);
+											const nextCategory = categories.find(
+												(category) => category.id === value,
+											);
 											if (nextCategory?.type !== "sick") {
 												form.setFieldValue("sickDetail", "");
 											}
@@ -178,7 +213,10 @@ export function RecordAbsenceDialog({
 										disabled={categories.length === 0}
 									>
 										<TFormControl hasError={fieldHasError(field)}>
-											<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+											<SelectTrigger
+												className="w-full"
+												onBlur={field.handleBlur}
+											>
 												<SelectValue
 													placeholder={t(
 														"team.absences.recordDialog.categoryPlaceholder",
@@ -190,7 +228,10 @@ export function RecordAbsenceDialog({
 										<SelectContent>
 											{categories.length === 0 ? (
 												<SelectItem value="__no-categories" disabled>
-													{t("team.absences.recordDialog.noCategories", "No categories available")}
+													{t(
+														"team.absences.recordDialog.noCategories",
+														"No categories available",
+													)}
 												</SelectItem>
 											) : (
 												categories.map((category) => (
@@ -210,7 +251,9 @@ export function RecordAbsenceDialog({
 							selector={(state) => state.values.categoryId}
 						>
 							{(categoryId: RecordAbsenceFormValues["categoryId"]) => {
-								const selectedCategory = categories.find((category) => category.id === categoryId);
+								const selectedCategory = categories.find(
+									(category) => category.id === categoryId,
+								);
 								if (selectedCategory?.type !== "sick") return null;
 
 								return (
@@ -221,22 +264,33 @@ export function RecordAbsenceDialog({
 												value
 													? undefined
 													: requiredMessage(
-															t("team.absences.recordDialog.sickDetail", "Sick detail"),
+															t(
+																"team.absences.recordDialog.sickDetail",
+																"Sick detail",
+															),
 														),
 										}}
 									>
 										{(field) => (
 											<TFormItem>
 												<TFormLabel hasError={fieldHasError(field)} required>
-													{t("team.absences.recordDialog.sickDetail", "Sick detail")}
+													{t(
+														"team.absences.recordDialog.sickDetail",
+														"Sick detail",
+													)}
 												</TFormLabel>
 												<Select
 													name="sickDetail"
 													value={field.state.value}
-													onValueChange={(value) => field.handleChange(value as SickDetail)}
+													onValueChange={(value) =>
+														field.handleChange(value as SickDetail)
+													}
 												>
 													<TFormControl hasError={fieldHasError(field)}>
-														<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+														<SelectTrigger
+															className="w-full"
+															onBlur={field.handleBlur}
+														>
 															<SelectValue
 																placeholder={t(
 																	"team.absences.recordDialog.sickDetailPlaceholder",
@@ -247,7 +301,10 @@ export function RecordAbsenceDialog({
 													</TFormControl>
 													<SelectContent>
 														{sickDetailOptions.map((option) => (
-															<SelectItem key={option.value} value={option.value}>
+															<SelectItem
+																key={option.value}
+																value={option.value}
+															>
 																{t(option.labelKey, option.label)}
 															</SelectItem>
 														))}
@@ -261,144 +318,15 @@ export function RecordAbsenceDialog({
 							}}
 						</form.Subscribe>
 
-						<div className="grid gap-4 sm:grid-cols-2">
-							<form.Field
-								name="startDate"
-								validators={{
-									onChange: ({ value }) =>
-										value
-											? undefined
-											: requiredMessage(t("team.absences.recordDialog.startDate", "Start date")),
-								}}
-							>
-								{(field) => (
-									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)} required>
-											{t("team.absences.recordDialog.startDate", "Start date")}
-										</TFormLabel>
-										<TFormControl hasError={fieldHasError(field)}>
-											<DatePicker
-												name="startDate"
-												value={field.state.value}
-												onChange={(value) => field.handleChange(value)}
-												onBlur={field.handleBlur}
-												placeholder={t(
-													"team.absences.recordDialog.pickStartDate",
-													"Pick start date…",
-												)}
-												required
-											/>
-										</TFormControl>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
-							</form.Field>
+						<RecordAbsenceDateFields
+							form={form}
+							requiredMessage={requiredMessage}
+						/>
 
-							<form.Field name="endDate">
-								{(field) => (
-									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)}>
-											{t("team.absences.recordDialog.endDate", "End date")}
-										</TFormLabel>
-										<TFormControl hasError={fieldHasError(field)}>
-											<DatePicker
-												name="endDate"
-												value={field.state.value}
-												onChange={(value) => field.handleChange(value)}
-												onBlur={field.handleBlur}
-												placeholder={t("team.absences.recordDialog.pickEndDate", "Pick end date…")}
-											/>
-										</TFormControl>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
-							</form.Field>
-							<p className="-mt-2 text-muted-foreground text-xs sm:col-start-2">
-								{t(
-									"team.absences.recordDialog.endDateHelper",
-									"Leave empty for a same-day absence.",
-								)}
-							</p>
-						</div>
-
-						<form.Field name="durationKind">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel>{t("absences.form.duration", "Absence duration")}</TFormLabel>
-									<Select
-										name="durationKind"
-										value={field.state.value}
-										onValueChange={(value) => field.handleChange(value as AbsenceDurationKind)}
-									>
-										<TFormControl>
-											<SelectTrigger className="w-full" onBlur={field.handleBlur}>
-												<SelectValue />
-											</SelectTrigger>
-										</TFormControl>
-										<SelectContent>
-											{durationOptions.map((option) => (
-												<SelectItem key={option.value} value={option.value}>
-													{option.label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-
-						<form.Subscribe<RecordAbsenceFormValues["durationKind"]>
-							selector={(state) => state.values.durationKind}
-						>
-							{(durationKind: RecordAbsenceFormValues["durationKind"]) =>
-								durationKind === "partial_day" ? (
-									<div className="grid gap-4 sm:grid-cols-2">
-										<form.Field name="startTime">
-											{(field) => (
-												<TFormItem>
-													<TFormLabel hasError={fieldHasError(field)} required>
-														{t("absences.form.startTime", "Start time")}
-													</TFormLabel>
-													<TFormControl hasError={fieldHasError(field)}>
-														<Input
-															name="startTime"
-															type="time"
-															value={field.state.value}
-															onChange={(event) => field.handleChange(event.target.value)}
-															onBlur={field.handleBlur}
-															required
-														/>
-													</TFormControl>
-													<TFormMessage field={field} />
-												</TFormItem>
-											)}
-										</form.Field>
-
-										<form.Field name="endTime">
-											{(field) => (
-												<TFormItem>
-													<TFormLabel hasError={fieldHasError(field)} required>
-														{t("absences.form.endTime", "End time")}
-													</TFormLabel>
-													<TFormControl hasError={fieldHasError(field)}>
-														<Input
-															name="endTime"
-															type="time"
-															value={field.state.value}
-															onChange={(event) => field.handleChange(event.target.value)}
-															onBlur={field.handleBlur}
-															required
-														/>
-													</TFormControl>
-													<TFormMessage field={field} />
-												</TFormItem>
-											)}
-										</form.Field>
-									</div>
-								) : null
-							}
-						</form.Subscribe>
+						<RecordAbsenceDurationFields
+							form={form}
+							options={durationOptions}
+						/>
 
 						<form.Field name="notes">
 							{(field) => (
@@ -411,7 +339,9 @@ export function RecordAbsenceDialog({
 											name="notes"
 											autoComplete="off"
 											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
+											onChange={(event) =>
+												field.handleChange(event.target.value)
+											}
 											onBlur={field.handleBlur}
 											placeholder={t(
 												"team.absences.recordDialog.notesPlaceholder",
@@ -437,7 +367,11 @@ export function RecordAbsenceDialog({
 					</ActionPanelBody>
 
 					<ActionPanelFooter>
-						<Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => handleOpenChange(false)}
+						>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<form.Subscribe<boolean> selector={(state) => state.isSubmitting}>
@@ -445,7 +379,10 @@ export function RecordAbsenceDialog({
 								<Button type="submit" disabled={isSubmitting || !employee}>
 									{isSubmitting ? (
 										<>
-											<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+											<IconLoader2
+												className="size-4 animate-spin"
+												aria-hidden="true"
+											/>
 											{t("team.absences.recordDialog.recording", "Recording…")}
 										</>
 									) : (
@@ -458,5 +395,181 @@ export function RecordAbsenceDialog({
 				</form>
 			</ActionPanelContent>
 		</ActionPanel>
+	);
+}
+
+function RecordAbsenceDateFields({
+	form,
+	requiredMessage,
+}: {
+	form: RecordAbsenceFormApi;
+	requiredMessage: (label: string) => string;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="grid gap-4 sm:grid-cols-2">
+			<form.Field
+				name="startDate"
+				validators={{
+					onChange: ({ value }) =>
+						value
+							? undefined
+							: requiredMessage(
+									t("team.absences.recordDialog.startDate", "Start date"),
+								),
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)} required>
+							{t("team.absences.recordDialog.startDate", "Start date")}
+						</TFormLabel>
+						<TFormControl hasError={fieldHasError(field)}>
+							<DatePicker
+								name="startDate"
+								value={field.state.value}
+								onChange={(value) => field.handleChange(value)}
+								onBlur={field.handleBlur}
+								placeholder={t(
+									"team.absences.recordDialog.pickStartDate",
+									"Pick start date…",
+								)}
+								required
+							/>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+
+			<form.Field name="endDate">
+				{(field) => (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)}>
+							{t("team.absences.recordDialog.endDate", "End date")}
+						</TFormLabel>
+						<TFormControl hasError={fieldHasError(field)}>
+							<DatePicker
+								name="endDate"
+								value={field.state.value}
+								onChange={(value) => field.handleChange(value)}
+								onBlur={field.handleBlur}
+								placeholder={t(
+									"team.absences.recordDialog.pickEndDate",
+									"Pick end date…",
+								)}
+							/>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+			<p className="-mt-2 text-muted-foreground text-xs sm:col-start-2">
+				{t(
+					"team.absences.recordDialog.endDateHelper",
+					"Leave empty for a same-day absence.",
+				)}
+			</p>
+		</div>
+	);
+}
+
+function RecordAbsenceDurationFields({
+	form,
+	options,
+}: {
+	form: RecordAbsenceFormApi;
+	options: Array<{ value: AbsenceDurationKind; label: string }>;
+}) {
+	const { t } = useTranslate();
+	return (
+		<>
+			<form.Field name="durationKind">
+				{(field) => (
+					<TFormItem>
+						<TFormLabel>
+							{t("absences.form.duration", "Absence duration")}
+						</TFormLabel>
+						<Select
+							name="durationKind"
+							value={field.state.value}
+							onValueChange={(value) =>
+								field.handleChange(value as AbsenceDurationKind)
+							}
+						>
+							<TFormControl>
+								<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+									<SelectValue />
+								</SelectTrigger>
+							</TFormControl>
+							<SelectContent>
+								{options.map((option) => (
+									<SelectItem key={option.value} value={option.value}>
+										{option.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+
+			<form.Subscribe<RecordAbsenceFormValues["durationKind"]>
+				selector={(state) => state.values.durationKind}
+			>
+				{(durationKind: RecordAbsenceFormValues["durationKind"]) =>
+					durationKind === "partial_day" ? (
+						<div className="grid gap-4 sm:grid-cols-2">
+							<form.Field name="startTime">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)} required>
+											{t("absences.form.startTime", "Start time")}
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field)}>
+											<Input
+												name="startTime"
+												type="time"
+												value={field.state.value}
+												onChange={(event) =>
+													field.handleChange(event.target.value)
+												}
+												onBlur={field.handleBlur}
+												required
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+
+							<form.Field name="endTime">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)} required>
+											{t("absences.form.endTime", "End time")}
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field)}>
+											<Input
+												name="endTime"
+												type="time"
+												value={field.state.value}
+												onChange={(event) =>
+													field.handleChange(event.target.value)
+												}
+												onBlur={field.handleBlur}
+												required
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+						</div>
+					) : null
+				}
+			</form.Subscribe>
+		</>
 	);
 }

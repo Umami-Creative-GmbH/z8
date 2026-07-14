@@ -9,7 +9,13 @@ import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -46,37 +52,55 @@ const defaultValues = {
 
 const DEFAULT_POLICY_VALUE = "__default__";
 
-export default function EmployeeAllowanceEditPage({
-	params,
-}: {
-	params: Promise<{ employeeId: string }>;
-}) {
-	const { employeeId } = use(params);
+type EmployeeAllowanceView = {
+	user: { name: string; email: string; image: string | null };
+	team: { name: string } | null;
+	position: string | null;
+	role: string;
+	vacationAllowances: Array<{
+		customAnnualDays: string | null;
+		customCarryoverDays: string | null;
+	}>;
+	managers?: Array<{
+		id: string;
+		isPrimary: boolean;
+		manager: { user: { name: string } };
+	}>;
+};
+
+type VacationPolicyOption = {
+	id: string;
+	name: string;
+	defaultAnnualDays: string;
+	isActive: boolean;
+	isCompanyDefault?: boolean;
+};
+
+type EmployeePolicyAssignment = {
+	policyId: string;
+	policy?: { name: string } | null;
+};
+
+function useEmployeeAllowanceEditor(employeeId: string) {
 	const { t } = useTranslate();
 	const router = useRouter();
-	const assignedPolicyId = useId();
-	const customAnnualDaysId = useId();
-	const carryoverDaysId = useId();
-	const adjustmentDaysId = useId();
-	const adjustmentReasonId = useId();
 	const [loading, setLoading] = useState(false);
-	const [employee, setEmployee] = useState<any>(null);
-	const [orgPolicy, setOrgPolicy] = useState<any>(null);
-	const [policies, setPolicies] = useState<any[]>([]);
-	const [currentAssignment, setCurrentAssignment] = useState<any>(null);
+	const [employee, setEmployee] = useState<EmployeeAllowanceView | null>(null);
+	const [orgPolicy, setOrgPolicy] = useState<VacationPolicyOption | null>(null);
+	const [policies, setPolicies] = useState<VacationPolicyOption[]>([]);
+	const [currentAssignment, setCurrentAssignment] =
+		useState<EmployeePolicyAssignment | null>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
 	const [currentYear] = useState(() => new Date().getFullYear());
 	const [adjustmentTotal, setAdjustmentTotal] = useState(0);
-
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
 			setLoading(true);
-
 			try {
-				// Update policy assignment if changed
 				const currentPolicyId = currentAssignment?.policyId || "";
-				const newPolicyId = value.policyId === DEFAULT_POLICY_VALUE ? "" : value.policyId || "";
+				const newPolicyId =
+					value.policyId === DEFAULT_POLICY_VALUE ? "" : value.policyId || "";
 
 				if (currentPolicyId !== newPolicyId) {
 					const assignmentResult = await setEmployeePolicyAssignment(
@@ -96,13 +120,15 @@ export default function EmployeeAllowanceEditPage({
 					}
 				}
 
-				// Update base allowance if customAnnualDays or customCarryoverDays changed
 				if (value.customAnnualDays || value.customCarryoverDays) {
-					const result = await updateEmployeeAllowance(employeeId, currentYear, {
-						customAnnualDays: value.customAnnualDays || undefined,
-						customCarryoverDays: value.customCarryoverDays || undefined,
-					});
-
+					const result = await updateEmployeeAllowance(
+						employeeId,
+						currentYear,
+						{
+							customAnnualDays: value.customAnnualDays || undefined,
+							customCarryoverDays: value.customCarryoverDays || undefined,
+						},
+					);
 					if (!result.success) {
 						toast.error(
 							result.error ||
@@ -116,13 +142,15 @@ export default function EmployeeAllowanceEditPage({
 					}
 				}
 
-				// Create adjustment event if adjustment provided
 				if (value.adjustmentDays && value.adjustmentReason) {
-					const adjustmentResult = await createVacationAdjustmentAction(employeeId, currentYear, {
-						days: value.adjustmentDays,
-						reason: value.adjustmentReason,
-					});
-
+					const adjustmentResult = await createVacationAdjustmentAction(
+						employeeId,
+						currentYear,
+						{
+							days: value.adjustmentDays,
+							reason: value.adjustmentReason,
+						},
+					);
 					if (!adjustmentResult.success) {
 						toast.error(
 							adjustmentResult.error ||
@@ -145,7 +173,10 @@ export default function EmployeeAllowanceEditPage({
 				router.push("/settings/vacation/employees");
 			} catch (_error) {
 				toast.error(
-					t("settings.vacation.employees.detail.errors.unexpected", "An unexpected error occurred"),
+					t(
+						"settings.vacation.employees.detail.errors.unexpected",
+						"An unexpected error occurred",
+					),
 				);
 			}
 			setLoading(false);
@@ -160,53 +191,104 @@ export default function EmployeeAllowanceEditPage({
 				return;
 			}
 
-			const [empResult, policyResult, policiesResult, assignmentResult, adjustmentTotalResult] =
-				await Promise.all([
-					getEmployeeAllowance(employeeId, currentYear),
-					getVacationPolicies(current.organizationId),
-					getAssignmentPolicies(current.organizationId),
-					getEmployeePolicyAssignment(employeeId),
-					getEmployeeAdjustmentTotal(employeeId, currentYear),
-				]);
+			const [
+				empResult,
+				policyResult,
+				policiesResult,
+				assignmentResult,
+				adjustmentTotalResult,
+			] = await Promise.all([
+				getEmployeeAllowance(employeeId, currentYear),
+				getVacationPolicies(current.organizationId),
+				getAssignmentPolicies(current.organizationId),
+				getEmployeePolicyAssignment(employeeId),
+				getEmployeeAdjustmentTotal(employeeId, currentYear),
+			]);
 
 			if (empResult.success && empResult.data) {
-				setEmployee(empResult.data);
+				setEmployee(empResult.data as EmployeeAllowanceView);
 				const allowance = empResult.data.vacationAllowances[0];
 				const policyId = assignmentResult.success
 					? assignmentResult.data?.policyId || DEFAULT_POLICY_VALUE
 					: DEFAULT_POLICY_VALUE;
-
 				form.setFieldValue("policyId", policyId);
-				form.setFieldValue("customAnnualDays", allowance?.customAnnualDays || "");
-				form.setFieldValue("customCarryoverDays", allowance?.customCarryoverDays || "");
-				// Don't set adjustment fields - they are for new adjustments only
+				form.setFieldValue(
+					"customAnnualDays",
+					allowance?.customAnnualDays || "",
+				);
+				form.setFieldValue(
+					"customCarryoverDays",
+					allowance?.customCarryoverDays || "",
+				);
 				form.setFieldValue("adjustmentDays", "");
 				form.setFieldValue("adjustmentReason", "");
 			}
 
 			if (policyResult.success && policyResult.data) {
-				// Get the company default policy
-				const defaultPolicy = policyResult.data.find((p: any) => p.isCompanyDefault && p.isActive);
+				const defaultPolicy = policyResult.data.find((policy) =>
+					Boolean(policy.isCompanyDefault && policy.isActive),
+				);
 				setOrgPolicy(defaultPolicy || policyResult.data[0] || null);
 			}
-
 			if (policiesResult.success && policiesResult.data) {
-				// Filter to active policies only
-				const activePolicies = policiesResult.data.filter((p: any) => p.isActive);
-				setPolicies(activePolicies);
+				setPolicies(
+					policiesResult.data.filter(
+						(policy) => policy.isActive,
+					) as VacationPolicyOption[],
+				);
 			}
-
 			if (assignmentResult.success) {
-				setCurrentAssignment(assignmentResult.data);
+				setCurrentAssignment(
+					assignmentResult.data as EmployeePolicyAssignment | null,
+				);
 			}
-
-			if (adjustmentTotalResult.success) {
+			if (adjustmentTotalResult.success)
 				setAdjustmentTotal(adjustmentTotalResult.data);
-			}
 		}
 
-		loadData();
+		void loadData();
 	}, [employeeId, currentYear, form]);
+
+	return {
+		adjustmentTotal,
+		currentAssignment,
+		currentYear,
+		employee,
+		form,
+		loading,
+		noEmployee,
+		orgPolicy,
+		policies,
+	};
+}
+
+type EmployeeAllowanceEditorState = ReturnType<
+	typeof useEmployeeAllowanceEditor
+>;
+type EmployeeAllowanceFormApi = EmployeeAllowanceEditorState["form"];
+
+export default function EmployeeAllowanceEditPage({
+	params,
+}: {
+	params: Promise<{ employeeId: string }>;
+}) {
+	const { employeeId } = use(params);
+	const { t } = useTranslate();
+	const router = useRouter();
+	const assignedPolicyId = useId();
+	const customAnnualDaysId = useId();
+	const carryoverDaysId = useId();
+	const {
+		adjustmentTotal,
+		currentAssignment,
+		currentYear,
+		employee,
+		form,
+		loading,
+		noEmployee,
+		orgPolicy,
+		policies,
+	} = useEmployeeAllowanceEditor(employeeId);
 
 	if (noEmployee) {
 		return (
@@ -233,9 +315,13 @@ export default function EmployeeAllowanceEditPage({
 
 	const allowance = employee.vacationAllowances[0];
 	const defaultDays = orgPolicy?.defaultAnnualDays || "0";
-	const customDays = allowance?.customAnnualDays ? parseFloat(allowance.customAnnualDays) : null;
+	const customDays = allowance?.customAnnualDays
+		? parseFloat(allowance.customAnnualDays)
+		: null;
 	const annualDays = customDays !== null ? customDays : parseFloat(defaultDays);
-	const carryover = allowance?.customCarryoverDays ? parseFloat(allowance.customCarryoverDays) : 0;
+	const carryover = allowance?.customCarryoverDays
+		? parseFloat(allowance.customCarryoverDays)
+		: 0;
 	const adjustments = adjustmentTotal;
 	const total = annualDays + carryover + adjustments;
 
@@ -244,7 +330,10 @@ export default function EmployeeAllowanceEditPage({
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.vacation.employees.edit.title", "Edit Vacation Allowance")}
+						{t(
+							"settings.vacation.employees.edit.title",
+							"Edit Vacation Allowance",
+						)}
 					</h1>
 					<p className="text-sm text-muted-foreground">
 						{t(
@@ -257,74 +346,7 @@ export default function EmployeeAllowanceEditPage({
 			</div>
 
 			<div className="grid gap-4 lg:grid-cols-3">
-				<Card>
-					<CardHeader>
-						<CardTitle>
-							{t("settings.vacation.employees.detail.employeeInformation", "Employee Information")}
-						</CardTitle>
-					</CardHeader>
-					<CardContent className="space-y-4">
-						<div className="flex items-center gap-3">
-							<UserAvatar
-								image={employee.user.image}
-								seed={employeeId}
-								name={employee.user.name}
-								size="lg"
-								clockStatus="unknown"
-							/>
-							<div>
-								<div className="font-medium">{employee.user.name}</div>
-								<div className="text-sm text-muted-foreground">{employee.user.email}</div>
-							</div>
-						</div>
-
-						<Separator />
-
-						<div className="space-y-2">
-							<div className="text-sm text-muted-foreground">
-								{t("settings.vacation.employees.detail.team", "Team")}
-							</div>
-							<div>{employee.team?.name || "—"}</div>
-						</div>
-
-						<div className="space-y-2">
-							<div className="text-sm text-muted-foreground">
-								{t("settings.vacation.employees.detail.position", "Position")}
-							</div>
-							<div>{employee.position || "—"}</div>
-						</div>
-
-						<div className="space-y-2">
-							<div className="text-sm text-muted-foreground">
-								{t("settings.vacation.employees.detail.role", "Role")}
-							</div>
-							<Badge>{employee.role}</Badge>
-						</div>
-
-						{employee.managers && employee.managers.length > 0 && (
-							<>
-								<Separator />
-								<div className="space-y-2">
-									<div className="text-sm text-muted-foreground">
-										{t("settings.vacation.employees.detail.managers", "Managers")}
-									</div>
-									<div className="space-y-1">
-										{employee.managers.map((m: any) => (
-											<div key={m.id} className="flex items-center gap-2">
-												<span className="text-sm">{m.manager.user.name}</span>
-												{m.isPrimary && (
-													<Badge variant="secondary" className="text-xs">
-														{t("settings.vacation.employees.detail.primary", "Primary")}
-													</Badge>
-												)}
-											</div>
-										))}
-									</div>
-								</div>
-							</>
-						)}
-					</CardContent>
-				</Card>
+				<EmployeeInformationCard employee={employee} employeeId={employeeId} />
 
 				<Card className="lg:col-span-2">
 					<CardHeader>
@@ -344,39 +366,12 @@ export default function EmployeeAllowanceEditPage({
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="mb-6 grid gap-4 rounded-lg border p-4 md:grid-cols-4">
-							<div className="space-y-1">
-								<div className="text-sm text-muted-foreground">
-									{t("settings.vacation.employees.detail.annualDays", "Annual Days")}
-								</div>
-								<div className="text-2xl font-bold">{annualDays}</div>
-							</div>
-							<div className="space-y-1">
-								<div className="text-sm text-muted-foreground">
-									{t("settings.vacation.employees.detail.carryover", "Carryover")}
-								</div>
-								<div className="text-2xl font-bold text-green-600">+{carryover}</div>
-							</div>
-							<div className="space-y-1">
-								<div className="text-sm text-muted-foreground">
-									{t("settings.vacation.employees.detail.adjustments", "Adjustments")}
-								</div>
-								<div
-									className={`text-2xl font-bold ${
-										adjustments > 0 ? "text-green-600" : adjustments < 0 ? "text-red-600" : ""
-									}`}
-								>
-									{adjustments > 0 ? "+" : ""}
-									{adjustments}
-								</div>
-							</div>
-							<div className="space-y-1">
-								<div className="text-sm text-muted-foreground">
-									{t("settings.vacation.employees.detail.totalAvailable", "Total Available")}
-								</div>
-								<div className="text-2xl font-bold">{total}</div>
-							</div>
-						</div>
+						<AllowanceBalanceSummary
+							annualDays={annualDays}
+							carryover={carryover}
+							adjustments={adjustments}
+							total={total}
+						/>
 
 						<form
 							action={() => {
@@ -388,9 +383,15 @@ export default function EmployeeAllowanceEditPage({
 								{(field) => (
 									<div className="space-y-2">
 										<Label htmlFor={assignedPolicyId}>
-											{t("settings.vacation.employees.detail.assignedPolicy", "Assigned Policy")}
+											{t(
+												"settings.vacation.employees.detail.assignedPolicy",
+												"Assigned Policy",
+											)}
 										</Label>
-										<Select onValueChange={field.handleChange} value={field.state.value}>
+										<Select
+											onValueChange={field.handleChange}
+											value={field.state.value}
+										>
 											<SelectTrigger id={assignedPolicyId}>
 												<SelectValue
 													placeholder={t(
@@ -401,7 +402,10 @@ export default function EmployeeAllowanceEditPage({
 											</SelectTrigger>
 											<SelectContent>
 												<SelectItem value={DEFAULT_POLICY_VALUE}>
-													{t("settings.vacation.employees.detail.useDefault", "Use default")}
+													{t(
+														"settings.vacation.employees.detail.useDefault",
+														"Use default",
+													)}
 												</SelectItem>
 												{policies.map((policy) => (
 													<SelectItem key={policy.id} value={policy.id}>
@@ -467,7 +471,9 @@ export default function EmployeeAllowanceEditPage({
 											)}
 										</p>
 										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+											<p className="text-sm text-destructive">
+												{field.state.meta.errors[0]}
+											</p>
 										)}
 									</div>
 								)}
@@ -498,7 +504,9 @@ export default function EmployeeAllowanceEditPage({
 											)}
 										</p>
 										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+											<p className="text-sm text-destructive">
+												{field.state.meta.errors[0]}
+											</p>
 										)}
 									</div>
 								)}
@@ -506,83 +514,7 @@ export default function EmployeeAllowanceEditPage({
 
 							<Separator />
 
-							<div className="space-y-4">
-								<h3 className="text-lg font-semibold">
-									{t(
-										"settings.vacation.employees.detail.addManualAdjustment",
-										"Add Manual Adjustment",
-									)}
-								</h3>
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"settings.vacation.employees.detail.addManualAdjustmentDescription",
-										"Create a new adjustment entry for special circumstances (e.g., bonus days, corrections). Each adjustment is recorded in the audit log.",
-									)}
-								</p>
-
-								<form.Field name="adjustmentDays">
-									{(field) => (
-										<div className="space-y-2">
-											<Label htmlFor={adjustmentDaysId}>
-												{t("settings.vacation.employees.detail.adjustmentDays", "Adjustment Days")}
-											</Label>
-											<Input
-												id={adjustmentDaysId}
-												type="number"
-												step="0.5"
-												placeholder={t(
-													"settings.vacation.employees.detail.adjustmentDaysPlaceholder",
-													"e.g., +5 or -2",
-												)}
-												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-											/>
-											<p className="text-sm text-muted-foreground">
-												{t(
-													"settings.vacation.employees.detail.adjustmentDaysDescription",
-													"Use positive numbers to add days, negative to subtract",
-												)}
-											</p>
-											{field.state.meta.errors.length > 0 && (
-												<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-											)}
-										</div>
-									)}
-								</form.Field>
-
-								<form.Field name="adjustmentReason">
-									{(field) => (
-										<div className="space-y-2">
-											<Label htmlFor={adjustmentReasonId}>
-												{t(
-													"settings.vacation.employees.detail.reasonForAdjustment",
-													"Reason for Adjustment",
-												)}
-											</Label>
-											<Textarea
-												id={adjustmentReasonId}
-												placeholder={t(
-													"settings.vacation.employees.detail.adjustmentReasonPlaceholder",
-													"Explain why this adjustment is being made...",
-												)}
-												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-											/>
-											<p className="text-sm text-muted-foreground">
-												{t(
-													"settings.vacation.employees.detail.adjustmentReasonDescription",
-													"Required when making adjustments (for audit trail)",
-												)}
-											</p>
-											{field.state.meta.errors.length > 0 && (
-												<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-											)}
-										</div>
-									)}
-								</form.Field>
-							</div>
+							<ManualAdjustmentFields form={form} />
 
 							<div className="flex justify-end gap-2">
 								<Button
@@ -594,15 +526,254 @@ export default function EmployeeAllowanceEditPage({
 									{t("settings.vacation.employees.detail.cancel", "Cancel")}
 								</Button>
 								<Button type="submit" disabled={loading}>
-									{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+									{loading && (
+										<IconLoader2 className="mr-2 size-4 animate-spin" />
+									)}
 									<IconDeviceFloppy className="mr-2 size-4" />
-									{t("settings.vacation.employees.detail.saveChanges", "Save Changes")}
+									{t(
+										"settings.vacation.employees.detail.saveChanges",
+										"Save Changes",
+									)}
 								</Button>
 							</div>
 						</form>
 					</CardContent>
 				</Card>
 			</div>
+		</div>
+	);
+}
+
+function EmployeeInformationCard({
+	employee,
+	employeeId,
+}: {
+	employee: EmployeeAllowanceView;
+	employeeId: string;
+}) {
+	const { t } = useTranslate();
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					{t(
+						"settings.vacation.employees.detail.employeeInformation",
+						"Employee Information",
+					)}
+				</CardTitle>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<div className="flex items-center gap-3">
+					<UserAvatar
+						image={employee.user.image}
+						seed={employeeId}
+						name={employee.user.name}
+						size="lg"
+						clockStatus="unknown"
+					/>
+					<div>
+						<div className="font-medium">{employee.user.name}</div>
+						<div className="text-sm text-muted-foreground">
+							{employee.user.email}
+						</div>
+					</div>
+				</div>
+
+				<Separator />
+
+				<div className="space-y-2">
+					<div className="text-sm text-muted-foreground">
+						{t("settings.vacation.employees.detail.team", "Team")}
+					</div>
+					<div>{employee.team?.name || "—"}</div>
+				</div>
+				<div className="space-y-2">
+					<div className="text-sm text-muted-foreground">
+						{t("settings.vacation.employees.detail.position", "Position")}
+					</div>
+					<div>{employee.position || "—"}</div>
+				</div>
+				<div className="space-y-2">
+					<div className="text-sm text-muted-foreground">
+						{t("settings.vacation.employees.detail.role", "Role")}
+					</div>
+					<Badge>{employee.role}</Badge>
+				</div>
+
+				{employee.managers && employee.managers.length > 0 && (
+					<>
+						<Separator />
+						<div className="space-y-2">
+							<div className="text-sm text-muted-foreground">
+								{t("settings.vacation.employees.detail.managers", "Managers")}
+							</div>
+							<div className="space-y-1">
+								{employee.managers.map((manager) => (
+									<div key={manager.id} className="flex items-center gap-2">
+										<span className="text-sm">{manager.manager.user.name}</span>
+										{manager.isPrimary && (
+											<Badge variant="secondary" className="text-xs">
+												{t(
+													"settings.vacation.employees.detail.primary",
+													"Primary",
+												)}
+											</Badge>
+										)}
+									</div>
+								))}
+							</div>
+						</div>
+					</>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+function AllowanceBalanceSummary({
+	annualDays,
+	carryover,
+	adjustments,
+	total,
+}: {
+	annualDays: number;
+	carryover: number;
+	adjustments: number;
+	total: number;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="mb-6 grid gap-4 rounded-lg border p-4 md:grid-cols-4">
+			<div className="space-y-1">
+				<div className="text-sm text-muted-foreground">
+					{t("settings.vacation.employees.detail.annualDays", "Annual Days")}
+				</div>
+				<div className="text-2xl font-bold">{annualDays}</div>
+			</div>
+			<div className="space-y-1">
+				<div className="text-sm text-muted-foreground">
+					{t("settings.vacation.employees.detail.carryover", "Carryover")}
+				</div>
+				<div className="text-2xl font-bold text-green-600">+{carryover}</div>
+			</div>
+			<div className="space-y-1">
+				<div className="text-sm text-muted-foreground">
+					{t("settings.vacation.employees.detail.adjustments", "Adjustments")}
+				</div>
+				<div
+					className={`text-2xl font-bold ${
+						adjustments > 0
+							? "text-green-600"
+							: adjustments < 0
+								? "text-red-600"
+								: ""
+					}`}
+				>
+					{adjustments > 0 ? "+" : ""}
+					{adjustments}
+				</div>
+			</div>
+			<div className="space-y-1">
+				<div className="text-sm text-muted-foreground">
+					{t(
+						"settings.vacation.employees.detail.totalAvailable",
+						"Total Available",
+					)}
+				</div>
+				<div className="text-2xl font-bold">{total}</div>
+			</div>
+		</div>
+	);
+}
+
+function ManualAdjustmentFields({ form }: { form: EmployeeAllowanceFormApi }) {
+	const { t } = useTranslate();
+	const adjustmentDaysId = useId();
+	const adjustmentReasonId = useId();
+	return (
+		<div className="space-y-4">
+			<h3 className="text-lg font-semibold">
+				{t(
+					"settings.vacation.employees.detail.addManualAdjustment",
+					"Add Manual Adjustment",
+				)}
+			</h3>
+			<p className="text-sm text-muted-foreground">
+				{t(
+					"settings.vacation.employees.detail.addManualAdjustmentDescription",
+					"Create a new adjustment entry for special circumstances (e.g., bonus days, corrections). Each adjustment is recorded in the audit log.",
+				)}
+			</p>
+
+			<form.Field name="adjustmentDays">
+				{(field) => (
+					<div className="space-y-2">
+						<Label htmlFor={adjustmentDaysId}>
+							{t(
+								"settings.vacation.employees.detail.adjustmentDays",
+								"Adjustment Days",
+							)}
+						</Label>
+						<Input
+							id={adjustmentDaysId}
+							type="number"
+							step="0.5"
+							placeholder={t(
+								"settings.vacation.employees.detail.adjustmentDaysPlaceholder",
+								"e.g., +5 or -2",
+							)}
+							value={field.state.value}
+							onChange={(event) => field.handleChange(event.target.value)}
+							onBlur={field.handleBlur}
+						/>
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"settings.vacation.employees.detail.adjustmentDaysDescription",
+								"Use positive numbers to add days, negative to subtract",
+							)}
+						</p>
+						{field.state.meta.errors.length > 0 && (
+							<p className="text-sm text-destructive">
+								{field.state.meta.errors[0]}
+							</p>
+						)}
+					</div>
+				)}
+			</form.Field>
+
+			<form.Field name="adjustmentReason">
+				{(field) => (
+					<div className="space-y-2">
+						<Label htmlFor={adjustmentReasonId}>
+							{t(
+								"settings.vacation.employees.detail.reasonForAdjustment",
+								"Reason for Adjustment",
+							)}
+						</Label>
+						<Textarea
+							id={adjustmentReasonId}
+							placeholder={t(
+								"settings.vacation.employees.detail.adjustmentReasonPlaceholder",
+								"Explain why this adjustment is being made...",
+							)}
+							value={field.state.value}
+							onChange={(event) => field.handleChange(event.target.value)}
+							onBlur={field.handleBlur}
+						/>
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"settings.vacation.employees.detail.adjustmentReasonDescription",
+								"Required when making adjustments (for audit trail)",
+							)}
+						</p>
+						{field.state.meta.errors.length > 0 && (
+							<p className="text-sm text-destructive">
+								{field.state.meta.errors[0]}
+							</p>
+						)}
+					</div>
+				)}
+			</form.Field>
 		</div>
 	);
 }
