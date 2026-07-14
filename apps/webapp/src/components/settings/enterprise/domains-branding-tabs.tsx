@@ -101,11 +101,17 @@ export function DomainsAndBrandingTabs({
 						</Button>
 					</div>
 				</div>
-				<SSOProviderManagement initialProviders={initialProviders} />
+				<SSOProviderManagement
+					initialProviders={initialProviders}
+					callbackBaseUrl={defaultUrls.canonical}
+				/>
 			</TabsContent>
 
 			<TabsContent value="social-oauth" className="space-y-4">
-				<SocialOAuthManagement initialConfigs={initialSocialOAuthConfigs} />
+				<SocialOAuthManagement
+					initialConfigs={initialSocialOAuthConfigs}
+					callbackBaseUrl={defaultUrls.canonical}
+				/>
 			</TabsContent>
 		</Tabs>
 	);

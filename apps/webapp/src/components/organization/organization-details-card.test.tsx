@@ -22,6 +22,10 @@ vi.mock("sonner", () => ({
 	},
 }));
 
+vi.mock("@/navigation", () => ({
+	useRouter: () => ({ refresh: vi.fn() }),
+}));
+
 vi.mock("@/hooks/use-image-upload", () => ({
 	useImageUpload: () => ({
 		addFile: vi.fn(),
@@ -51,7 +55,10 @@ const organization = {
 
 describe("OrganizationDetailsCard", () => {
 	it("lets owners clear the organization logo without deleting storage objects", async () => {
-		removeOrganizationLogoMock.mockResolvedValue({ success: true, data: undefined });
+		removeOrganizationLogoMock.mockResolvedValue({
+			success: true,
+			data: undefined,
+		});
 
 		render(
 			<OrganizationDetailsCard
@@ -63,7 +70,9 @@ describe("OrganizationDetailsCard", () => {
 
 		expect(screen.getByRole("img", { name: "Acme" })).toBeTruthy();
 
-		const removeButton = screen.getByRole("button", { name: "Remove organization logo" });
+		const removeButton = screen.getByRole("button", {
+			name: "Remove organization logo",
+		});
 		const trashIcon = removeButton.querySelector("svg");
 
 		expect(trashIcon?.getAttribute("class")).toContain("text-white");

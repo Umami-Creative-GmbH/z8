@@ -1,8 +1,6 @@
 "use client";
 
-import {
-	IconPlus,
-} from "@tabler/icons-react";
+import { IconPlus } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -24,15 +22,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SSOProviderDialog } from "./sso-provider-dialog";
-import { SsoProviderListCard, type SsoProvider } from "./sso-provider-list-card";
+import { type SsoProvider, SsoProviderListCard } from "./sso-provider-list-card";
 
 type SSOProvider = SsoProvider;
 
 interface SSOProviderManagementProps {
 	initialProviders: SSOProvider[];
+	callbackBaseUrl: string;
 }
 
-export function SSOProviderManagement({ initialProviders }: SSOProviderManagementProps) {
+export function SSOProviderManagement({
+	initialProviders,
+	callbackBaseUrl,
+}: SSOProviderManagementProps) {
 	const { t } = useTranslate();
 	const [providers, setProviders] = useState<SSOProvider[]>(initialProviders);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -49,6 +51,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 		isOpen: boolean;
 		provider: SSOProvider | null;
 	}>({ isOpen: false, provider: null });
+	const callbackUrl = `${callbackBaseUrl.replace(/\/$/, "")}/api/auth/sso/callback`;
 
 	const handleProviderAdded = (newProvider: SSOProvider) => {
 		setProviders((prev) => [...prev, newProvider]);
@@ -195,11 +198,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 					</li>
 					<li>
 						{t("settings.enterprise.configureCallbackUrl", "Configure the callback URL:")}{" "}
-						<code className="bg-background px-1 rounded">
-							{typeof window !== "undefined"
-								? `${window.location.origin}/api/auth/sso/callback`
-								: "/api/auth/sso/callback"}
-						</code>
+						<code className="bg-background px-1 rounded">{callbackUrl}</code>
 					</li>
 					<li>
 						{t(

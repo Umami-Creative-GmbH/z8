@@ -8,13 +8,13 @@ import {
 	IconSearch,
 	IconUser,
 } from "@tabler/icons-react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
 	flexRender,
 	getCoreRowModel,
 	getSortedRowModel,
 	type SortingState,
 } from "@tanstack/react-table";
-import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState, useTransition } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
@@ -22,6 +22,10 @@ import { InviteCodeManagement } from "@/components/organization/invite-code-mana
 import { InviteMemberDialog } from "@/components/organization/invite-member-dialog";
 import { MembersTable } from "@/components/organization/members-table";
 import { PendingMembersCard } from "@/components/organization/pending-members-card";
+import type {
+	InvitationWithInviter,
+	MemberWithUserAndEmployee,
+} from "@/components/organization/people-management-types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,10 +46,6 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
-import type {
-	InvitationWithInviter,
-	MemberWithUserAndEmployee,
-} from "@/components/organization/people-management-types";
 import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { useEmployees } from "@/lib/query/use-employees";
 import type { SettingsAccessTier } from "@/lib/settings-access";
@@ -54,6 +54,7 @@ import type { EmployeeDirectoryRow } from "./employee-action-types";
 
 export interface EmployeesPagePeopleProps {
 	organizationName: string;
+	organizationToday: string;
 	members: MemberWithUserAndEmployee[];
 	invitations: InvitationWithInviter[];
 	currentMemberRole: "owner" | "admin" | "member";
@@ -87,8 +88,12 @@ export function EmployeesPageClient(props: {
 
 	const handlePeopleRefresh = () => {
 		startPeopleRefresh(() => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.members.list(props.organizationId) });
-			queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(props.organizationId) });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.members.list(props.organizationId),
+			});
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.invitations.list(props.organizationId),
+			});
 		});
 	};
 
@@ -108,7 +113,9 @@ export function EmployeesPageClient(props: {
 					<TabsTrigger value="employees">
 						{t("settings.employees.tabs.employees", "Employees")}
 					</TabsTrigger>
-					<TabsTrigger value="members">{t("settings.employees.tabs.members", "Members")}</TabsTrigger>
+					<TabsTrigger value="members">
+						{t("settings.employees.tabs.members", "Members")}
+					</TabsTrigger>
 					<TabsTrigger value="invitations">
 						{t("settings.employees.tabs.invitations", "Invitations")}
 					</TabsTrigger>
@@ -175,6 +182,7 @@ export function EmployeesPageClient(props: {
 				<TabsContent value="invite-codes" className="space-y-4">
 					<InviteCodeManagement
 						organizationId={props.organizationId}
+						organizationToday={people.organizationToday}
 						currentMemberRole={people.currentMemberRole}
 					/>
 				</TabsContent>
@@ -212,7 +220,10 @@ function EmployeeDirectoryTab(props: {
 		setPagination,
 		pageCount,
 		refresh,
-	} = useEmployees({ accessTier: props.accessTier, organizationId: props.organizationId });
+	} = useEmployees({
+		accessTier: props.accessTier,
+		organizationId: props.organizationId,
+	});
 	const presence = useEmployeeClockStatuses(
 		employees.map((employee) => employee.id),
 		{ polling: true },
@@ -264,17 +275,12 @@ function EmployeeDirectoryTab(props: {
 							{t("settings.employees.title", "Employees")}
 						</h1>
 						<p className="text-sm text-muted-foreground">
-							{t(
-								"settings.employees.description",
-								"Manage employees, members, and invites",
-							)}
+							{t("settings.employees.description", "Manage employees, members, and invites")}
 						</p>
 					</div>
 					<Button variant="ghost" size="icon" onClick={refresh} disabled={isFetching}>
 						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-						<span className="sr-only">
-							{t("settings.employees.directory.refresh", "Refresh")}
-						</span>
+						<span className="sr-only">{t("settings.employees.directory.refresh", "Refresh")}</span>
 					</Button>
 				</div>
 			)}

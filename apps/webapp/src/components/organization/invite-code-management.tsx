@@ -46,12 +46,16 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useDisplayContext } from "@/hooks/use-display-context";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import { queryKeys } from "@/lib/query";
 import { InviteCodeDialog } from "./invite-code-dialog";
 import { InviteCodeQRDialog } from "./invite-code-qr-dialog";
 
 interface InviteCodeManagementProps {
 	organizationId: string;
+	organizationToday: string;
 	currentMemberRole: "owner" | "admin" | "member";
 }
 
@@ -61,11 +65,6 @@ const statusColors = {
 	expired: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
 	archived: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
 };
-
-function formatDate(date: Date | null | undefined) {
-	if (!date) return "-";
-	return new Date(date).toLocaleDateString();
-}
 
 function formatUsage(code: InviteCodeWithRelations) {
 	if (code.maxUses === null) {
@@ -82,6 +81,7 @@ function InviteCodeMobileCard({
 	onOpenQr,
 	onEdit,
 	onDelete,
+	urlActionsDisabled,
 	formatDate,
 	formatUsage,
 	t,
@@ -93,6 +93,7 @@ function InviteCodeMobileCard({
 	onOpenQr: (code: InviteCodeWithRelations) => void;
 	onEdit: (code: InviteCodeWithRelations) => void;
 	onDelete: (code: InviteCodeWithRelations) => void;
+	urlActionsDisabled: boolean;
 	formatDate: (date: Date | null | undefined) => string;
 	formatUsage: (code: InviteCodeWithRelations) => string;
 	t: ReturnType<typeof useTranslate>["t"];
@@ -182,6 +183,7 @@ function InviteCodeMobileCard({
 					variant="outline"
 					className="min-w-0 whitespace-normal text-center"
 					onClick={() => onCopyUrl(code.code)}
+					disabled={urlActionsDisabled}
 				>
 					<IconCopy className="mr-2 size-4" aria-hidden="true" />
 					{t("settings.inviteCodes.copyUrl", "Copy invite URL")}
@@ -190,6 +192,7 @@ function InviteCodeMobileCard({
 					variant="outline"
 					className="min-w-0 whitespace-normal text-center"
 					onClick={() => onOpenQr(code)}
+					disabled={urlActionsDisabled}
 				>
 					<IconQrcode className="mr-2 size-4" aria-hidden="true" />
 					{t("settings.inviteCodes.qrCode", "QR Code")}
@@ -201,9 +204,11 @@ function InviteCodeMobileCard({
 
 export function InviteCodeManagement({
 	organizationId,
+	organizationToday,
 	currentMemberRole,
 }: InviteCodeManagementProps) {
 	const { t } = useTranslate();
+	const displayContext = useDisplayContext();
 	const queryClient = useQueryClient();
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 	const [editingCode, setEditingCode] = useState<InviteCodeWithRelations | null>(null);
@@ -228,11 +233,10 @@ export function InviteCodeManagement({
 	});
 
 	const inviteBaseUrl =
-		inviteBaseUrlResult?.success && inviteBaseUrlResult.data
-			? inviteBaseUrlResult.data
-			: typeof window !== "undefined"
-				? window.location.origin
-				: "";
+		inviteBaseUrlResult?.success && inviteBaseUrlResult.data ? inviteBaseUrlResult.data : "";
+	const urlActionsDisabled = !inviteBaseUrl;
+	const formatDate = (date: Date | null | undefined) =>
+		date ? formatInstant(instantFromDate(date), displayContext, "dateMedium") : "-";
 
 	// Delete mutation
 	const deleteMutation = useMutation({
@@ -241,7 +245,9 @@ export function InviteCodeManagement({
 			if (!result.success) throw new Error(result.error || "Failed to delete");
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.inviteCodes.list(organizationId) });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.inviteCodes.list(organizationId),
+			});
 			toast.success(t("settings.inviteCodes.deleted", "Invite code deleted"));
 			setDeleteDialogCode(null);
 		},
@@ -251,6 +257,7 @@ export function InviteCodeManagement({
 	});
 
 	const handleCopyCode = async (code: string) => {
+		if (!inviteBaseUrl) return;
 		const joinUrl = `${inviteBaseUrl}/join/${code}`;
 		await navigator.clipboard.writeText(joinUrl);
 		setCopiedCode(code);
@@ -378,6 +385,7 @@ export function InviteCodeManagement({
 																variant="ghost"
 																size="sm"
 																onClick={() => handleCopyCode(code.code)}
+																disabled={urlActionsDisabled}
 																aria-label={t("settings.inviteCodes.copyUrl", "Copy invite URL")}
 															>
 																<IconCopy className="size-4" />
@@ -393,6 +401,7 @@ export function InviteCodeManagement({
 																variant="ghost"
 																size="sm"
 																onClick={() => setQrDialogCode(code)}
+																disabled={urlActionsDisabled}
 																aria-label={t("settings.inviteCodes.qrCode", "QR Code")}
 															>
 																<IconQrcode className="size-4" />
@@ -442,6 +451,7 @@ export function InviteCodeManagement({
 									onOpenQr={setQrDialogCode}
 									onEdit={setEditingCode}
 									onDelete={setDeleteDialogCode}
+									urlActionsDisabled={urlActionsDisabled}
 									formatDate={formatDate}
 									formatUsage={formatUsage}
 									t={t}
@@ -455,6 +465,7 @@ export function InviteCodeManagement({
 			{/* Create/Edit Dialog */}
 			<InviteCodeDialog
 				organizationId={organizationId}
+				minExpiryDate={organizationToday}
 				inviteCode={editingCode}
 				open={createDialogOpen || !!editingCode}
 				onOpenChange={(open) => {

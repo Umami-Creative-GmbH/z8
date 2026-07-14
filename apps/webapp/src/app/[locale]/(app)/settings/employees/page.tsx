@@ -8,16 +8,14 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { EmployeesPageClient } from "./employees-page-client";
 
-async function loadPeopleManagementData(input: {
-	organizationId: string;
-	currentUserId: string;
-}) {
+async function loadPeopleManagementData(input: { organizationId: string; currentUserId: string }) {
 	const [organization, currentMember, members, invitations] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(authSchema.organization.id, input.organizationId),
-			columns: { name: true },
+			columns: { name: true, timezone: true },
 		}),
 		db.query.member.findFirst({
 			where: and(
@@ -35,7 +33,10 @@ async function loadPeopleManagementData(input: {
 			.innerJoin(authSchema.user, eq(authSchema.member.userId, authSchema.user.id))
 			.leftJoin(
 				employee,
-				and(eq(employee.userId, authSchema.user.id), eq(employee.organizationId, input.organizationId)),
+				and(
+					eq(employee.userId, authSchema.user.id),
+					eq(employee.organizationId, input.organizationId),
+				),
 			)
 			.where(eq(authSchema.member.organizationId, input.organizationId)),
 		db.query.invitation.findMany({
@@ -55,7 +56,9 @@ async function loadPeopleManagementData(input: {
 	}
 
 	const targetTeamIds = Array.from(
-		new Set(invitations.map((invitation) => invitation.targetTeamId).filter((id): id is string => !!id)),
+		new Set(
+			invitations.map((invitation) => invitation.targetTeamId).filter((id): id is string => !!id),
+		),
 	);
 	const targetTeams = targetTeamIds.length
 		? await db
@@ -63,14 +66,23 @@ async function loadPeopleManagementData(input: {
 				.from(team)
 				.where(and(eq(team.organizationId, input.organizationId), inArray(team.id, targetTeamIds)))
 		: [];
-	const targetTeamsById = new Map(targetTeams.map((team) => [team.id, { id: team.id, name: team.name }]));
+	const targetTeamsById = new Map(
+		targetTeams.map((team) => [team.id, { id: team.id, name: team.name }]),
+	);
 
 	return {
 		organizationName: organization.name,
+		organizationToday: systemClock
+			.nowInstant()
+			.toZonedDateTimeISO(organization.timezone || "UTC")
+			.toPlainDate()
+			.toString(),
 		members: members as unknown as MemberWithUserAndEmployee[],
 		invitations: invitations.map((invitation) => ({
 			...invitation,
-			targetTeam: invitation.targetTeamId ? (targetTeamsById.get(invitation.targetTeamId) ?? null) : null,
+			targetTeam: invitation.targetTeamId
+				? (targetTeamsById.get(invitation.targetTeamId) ?? null)
+				: null,
 		})) as unknown as InvitationWithInviter[],
 		currentMemberRole: currentMember.role as "owner" | "admin" | "member",
 		currentUserId: input.currentUserId,

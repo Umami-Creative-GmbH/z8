@@ -35,10 +35,14 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { SocialOAuthProvider } from "@/db/schema";
+import { useDisplayContext } from "@/hooks/use-display-context";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import { SocialOAuthDialog } from "./social-oauth-dialog";
 
 interface SocialOAuthManagementProps {
 	initialConfigs: SocialOAuthConfigResponse[];
+	callbackBaseUrl: string;
 }
 
 const PROVIDER_INFO: Record<SocialOAuthProvider, { name: string; icon: typeof Google }> = {
@@ -48,8 +52,12 @@ const PROVIDER_INFO: Record<SocialOAuthProvider, { name: string; icon: typeof Go
 	apple: { name: "Apple", icon: Apple },
 };
 
-export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementProps) {
+export function SocialOAuthManagement({
+	initialConfigs,
+	callbackBaseUrl,
+}: SocialOAuthManagementProps) {
 	const { t } = useTranslate();
+	const displayContext = useDisplayContext();
 	const [configs, setConfigs] = useState<SocialOAuthConfigResponse[]>(initialConfigs);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [editConfig, setEditConfig] = useState<SocialOAuthConfigResponse | null>(null);
@@ -108,13 +116,9 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 
 	const formatDate = (date: Date | null) => {
 		if (!date) return t("common.never", "Never");
-		return new Date(date).toLocaleDateString(undefined, {
-			month: "short",
-			day: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
-		});
+		return formatInstant(instantFromDate(date), displayContext, "dateTimeMedium");
 	};
+	const callbackUrl = `${callbackBaseUrl.replace(/\/$/, "")}/api/auth/callback/social-org/[provider]`;
 
 	return (
 		<>
@@ -251,11 +255,7 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 					</li>
 					<li>
 						{t("settings.enterprise.configureCallbackUrl", "Configure the callback URL:")}{" "}
-						<code className="bg-background px-1 rounded">
-							{typeof window !== "undefined"
-								? `${window.location.origin}/api/auth/callback/social-org/[provider]`
-								: "/api/auth/callback/social-org/[provider]"}
-						</code>
+						<code className="bg-background px-1 rounded">{callbackUrl}</code>
 					</li>
 					<li>
 						{t(

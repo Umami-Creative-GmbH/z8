@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, createElement, type ReactNode, use, useRef } from "react";
+import { createContext, createElement, type ReactNode, use, useState } from "react";
 import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
 
@@ -72,16 +72,9 @@ export function OrganizationSettingsStoreProvider({
 	children: ReactNode;
 	initialSettings?: OrganizationSettingsBootstrap | null;
 }) {
-	const storeRef = useRef<StoreApi<OrganizationSettingsStore> | null>(null);
-	if (!storeRef.current) {
-		storeRef.current = createOrganizationSettingsStore(initialSettings);
-	}
+	const [store] = useState(() => createOrganizationSettingsStore(initialSettings));
 
-	return createElement(
-		OrganizationSettingsStoreContext.Provider,
-		{ value: storeRef.current },
-		children,
-	);
+	return createElement(OrganizationSettingsStoreContext.Provider, { value: store }, children);
 }
 
 function useOrganizationSettingsStore(): OrganizationSettingsStore;

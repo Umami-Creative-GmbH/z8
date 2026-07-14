@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import {
 	addBreakToActiveSession,
 	clockIn,
@@ -11,6 +11,7 @@ import {
 } from "@/app/[locale]/(app)/time-tracking/actions";
 import { useOfflineClock } from "@/hooks/use-offline-clock";
 import { useSession } from "@/lib/auth-client";
+import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { queryKeys } from "./keys";
@@ -20,6 +21,19 @@ export interface TimeClockState {
 	employeeId: string | null;
 	isClockedIn: boolean;
 	activeWorkPeriod: { id: string; startTime: Date } | null;
+}
+
+function subscribeToSecondTick(onStoreChange: () => void) {
+	const interval = window.setInterval(onStoreChange, 1000);
+	return () => window.clearInterval(interval);
+}
+
+function getCurrentEpochSecond() {
+	return Math.floor(systemClock.nowInstant().epochMilliseconds / 1000);
+}
+
+function getServerEpochSecond() {
+	return 0;
 }
 
 function resolveBrowserTimezone(params?: { browserTimezone?: string | null }) {
@@ -36,35 +50,15 @@ function resolveBrowserTimezone(params?: { browserTimezone?: string | null }) {
  * @returns The elapsed seconds since startTime, updating every second
  */
 export function useElapsedTimer(startTime: Date | null): number {
-	const [elapsedSeconds, setElapsedSeconds] = useState(() => {
-		if (!startTime) return 0;
-		return Math.floor((Date.now() - new Date(startTime).getTime()) / 1000);
-	});
+	const currentEpochSecond = useSyncExternalStore(
+		subscribeToSecondTick,
+		getCurrentEpochSecond,
+		getServerEpochSecond,
+	);
+	if (!startTime || currentEpochSecond === 0) return 0;
 
-	useEffect(() => {
-		const calculateElapsed = () => {
-			if (!startTime) return 0;
-
-			const start = new Date(startTime);
-			return Math.floor((Date.now() - start.getTime()) / 1000);
-		};
-
-		setElapsedSeconds(calculateElapsed());
-
-		if (!startTime) {
-			return;
-		}
-
-		const interval = setInterval(() => {
-			setElapsedSeconds(calculateElapsed());
-		}, 1000);
-
-		return () => {
-			clearInterval(interval);
-		};
-	}, [startTime]);
-
-	return elapsedSeconds;
+	const startEpochSecond = Math.floor(instantFromDate(startTime).epochMilliseconds / 1000);
+	return Math.max(0, currentEpochSecond - startEpochSecond);
 }
 
 interface UseTimeClockOptions {
@@ -168,8 +162,12 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		onSuccess: (result) => {
 			if (result.success && !("queued" in result)) {
 				// Only invalidate for non-queued success (server confirmed)
-				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
-				queryClient.invalidateQueries({ queryKey: queryKeys.employeeClockStatuses.all });
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.timeClock.status(),
+				});
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employeeClockStatuses.all,
+				});
 				if (status?.employeeId) {
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
@@ -233,8 +231,12 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		onSuccess: (result) => {
 			if (result.success && !("queued" in result)) {
 				// Only invalidate for non-queued success (server confirmed)
-				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
-				queryClient.invalidateQueries({ queryKey: queryKeys.employeeClockStatuses.all });
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.timeClock.status(),
+				});
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employeeClockStatuses.all,
+				});
 				if (status?.employeeId) {
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
@@ -250,7 +252,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			updateTimeEntryNotes(entryId, notes),
 		onSuccess: (result) => {
 			if (result.success) {
-				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.timeClock.status(),
+				});
 			}
 		},
 	});
@@ -269,16 +273,24 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		},
 		onSuccess: (result) => {
 			if (result.success) {
-				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
-				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.breakStatus() });
-				queryClient.invalidateQueries({ queryKey: queryKeys.employeeClockStatuses.all });
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.timeClock.status(),
+				});
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.timeClock.breakStatus(),
+				});
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employeeClockStatuses.all,
+				});
 			}
 		},
 	});
 
 	// Refetch status manually
 	const refetchStatus = () => {
-		return queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
+		return queryClient.invalidateQueries({
+			queryKey: queryKeys.timeClock.status(),
+		});
 	};
 
 	return {
