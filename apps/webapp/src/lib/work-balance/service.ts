@@ -686,15 +686,17 @@ export async function requestOrganizationWorkBalanceFullRebuild(
 			orderBy: (employeeRow, { asc }) => [asc(employeeRow.id)],
 		});
 
-		for (const organizationEmployee of organizationEmployees) {
-			await requestEmployeeWorkBalanceFullRebuild(
-				{
-					employeeId: organizationEmployee.id,
-					organizationId: organizationEmployee.organizationId,
-				},
-				{ dbClient, requestedAt },
-			);
-		}
+		await Promise.all(
+			organizationEmployees.map((organizationEmployee) =>
+				requestEmployeeWorkBalanceFullRebuild(
+					{
+						employeeId: organizationEmployee.id,
+						organizationId: organizationEmployee.organizationId,
+					},
+					{ dbClient, requestedAt },
+				),
+			),
+		);
 	};
 
 	if (options?.dbClient) {
@@ -716,15 +718,17 @@ export async function requestUserWorkBalanceFullRebuild(
 			columns: { id: true, organizationId: true },
 		});
 
-		for (const linkedEmployee of linkedEmployees) {
-			await requestEmployeeWorkBalanceFullRebuild(
-				{
-					employeeId: linkedEmployee.id,
-					organizationId: linkedEmployee.organizationId,
-				},
-				{ dbClient, requestedAt },
-			);
-		}
+		await Promise.all(
+			linkedEmployees.map((linkedEmployee) =>
+				requestEmployeeWorkBalanceFullRebuild(
+					{
+						employeeId: linkedEmployee.id,
+						organizationId: linkedEmployee.organizationId,
+					},
+					{ dbClient, requestedAt },
+				),
+			),
+		);
 	};
 
 	if (options?.dbClient) {
