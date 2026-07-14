@@ -314,7 +314,7 @@ export function SocialOAuthDialog({
 											{selectedProvider === "apple" ? (
 												<Textarea
 													id="clientSecret"
-													placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
+													placeholder="Paste your .p8 private key contents"
 													value={field.state.value}
 													onChange={(e) => field.handleChange(e.target.value)}
 													onBlur={field.handleBlur}

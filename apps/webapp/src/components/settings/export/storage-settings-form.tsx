@@ -423,7 +423,7 @@ export function StorageSettingsForm({
 									<Input
 										id="accessKeyId"
 										type="password"
-										placeholder={config ? "••••••••••••" : "AKIAIOSFODNN7EXAMPLE"}
+										placeholder={config ? "••••••••••••" : "Enter your AWS access key ID"}
 										value={field.state.value}
 										onChange={(e) => {
 											field.handleChange(e.target.value);
@@ -455,7 +455,7 @@ export function StorageSettingsForm({
 										id="secretAccessKey"
 										type="password"
 										placeholder={
-											config ? "••••••••••••" : "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+											config ? "••••••••••••" : "Enter your AWS secret access key"
 										}
 										value={field.state.value}
 										onChange={(e) => {
