@@ -36,25 +36,29 @@ import {
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
+import { useDisplayContext } from "@/hooks/use-display-context";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import { cn } from "@/lib/utils";
 import type { CreateRateHistory } from "@/lib/validations/employee";
 import { HourlyRateInput } from "./hourly-rate-input";
 
 const currencyFormatters = new Map<string, Intl.NumberFormat>();
 
-function getCurrencyFormatter(currency: string) {
-	const cachedFormatter = currencyFormatters.get(currency);
+function getCurrencyFormatter(locale: string, currency: string) {
+	const cacheKey = `${locale}:${currency}`;
+	const cachedFormatter = currencyFormatters.get(cacheKey);
 	if (cachedFormatter) {
 		return cachedFormatter;
 	}
 
-	const formatter = Intl.NumberFormat(undefined, { style: "currency", currency });
-	currencyFormatters.set(currency, formatter);
+	const formatter = Intl.NumberFormat(locale, { style: "currency", currency });
+	currencyFormatters.set(cacheKey, formatter);
 	return formatter;
 }
 
-function formatCurrency(amount: string, currency: string) {
-	return getCurrencyFormatter(currency).format(parseFloat(amount));
+function formatCurrency(amount: string, currency: string, locale: string) {
+	return getCurrencyFormatter(locale, currency).format(parseFloat(amount));
 }
 
 interface RateHistoryCardProps {
@@ -79,6 +83,7 @@ export function RateHistoryCard({
 	isAddingRate,
 }: RateHistoryCardProps) {
 	const { t } = useTranslate();
+	const displayContext = useDisplayContext();
 	const [dialogOpen, setDialogOpen] = useState(false);
 
 	const form = useForm({
@@ -111,11 +116,7 @@ export function RateHistoryCard({
 
 	const formatDate = (date: Date | null | undefined) => {
 		if (!date) return t("common.present", "Present");
-		return new Date(date).toLocaleDateString(undefined, {
-			year: "numeric",
-			month: "short",
-			day: "numeric",
-		});
+		return formatInstant(instantFromDate(date), displayContext, "dateMedium");
 	};
 
 	const currentRate = rateHistory.find((r) => !r.effectiveTo);
@@ -179,7 +180,11 @@ export function RateHistoryCard({
 												{currentRate && (
 													<TFormDescription>
 														{t("settings.rateHistory.currentRate", "Current rate: {rate}", {
-															rate: formatCurrency(currentRate.hourlyRate, currentRate.currency),
+															rate: formatCurrency(
+																currentRate.hourlyRate,
+																currentRate.currency,
+																displayContext.locale,
+															),
 														})}
 													</TFormDescription>
 												)}
@@ -297,7 +302,7 @@ export function RateHistoryCard({
 													isCurrent ? "text-primary" : "text-foreground",
 												)}
 											>
-												{formatCurrency(entry.hourlyRate, entry.currency)}
+												{formatCurrency(entry.hourlyRate, entry.currency, displayContext.locale)}
 											</span>
 											{isCurrent && (
 												<Badge variant="default">{t("common.current", "Current")}</Badge>

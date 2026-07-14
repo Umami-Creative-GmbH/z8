@@ -38,6 +38,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useDisplayContext } from "@/hooks/use-display-context";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 
 const storageConfigSchema = z.object({
 	bucket: z.string().min(1, "Bucket name is required"),
@@ -61,9 +64,13 @@ export function StorageSettingsForm({
 	onConfigChange,
 }: StorageSettingsFormProps) {
 	const { t } = useTranslate();
+	const displayContext = useDisplayContext();
 	const [isPending, startTransition] = useTransition();
 	const [isTesting, setIsTesting] = useState(false);
-	const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+	const [testResult, setTestResult] = useState<{
+		success: boolean;
+		message: string;
+	} | null>(null);
 	const [config, setConfig] = useState<StorageConfigResult | null>(initialConfig ?? null);
 
 	const form = useForm({
@@ -124,6 +131,9 @@ export function StorageSettingsForm({
 			formValues.region &&
 			(config || (formValues.accessKeyId && formValues.secretAccessKey)),
 	);
+	const lastVerifiedLabel = config?.lastVerifiedAt
+		? formatInstant(instantFromDate(config.lastVerifiedAt), displayContext, "dateTimeMedium")
+		: null;
 
 	// Load config on mount if not provided
 	useEffect(() => {
@@ -469,15 +479,11 @@ export function StorageSettingsForm({
 						</form.Field>
 					</div>
 
-					{config?.lastVerifiedAt && (
+					{lastVerifiedLabel && (
 						<p className="text-muted-foreground text-sm">
-							{t(
-								"settings.dataExport.storage.lastVerified",
-								`Last verified: ${new Date(config.lastVerifiedAt).toLocaleString()}`,
-								{
-									date: new Date(config.lastVerifiedAt).toLocaleString(),
-								},
-							)}
+							{t("settings.dataExport.storage.lastVerified", "Last verified: {date}", {
+								date: lastVerifiedLabel,
+							})}
 						</p>
 					)}
 				</CardContent>

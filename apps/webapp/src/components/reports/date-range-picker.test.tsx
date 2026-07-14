@@ -14,6 +14,14 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 
+vi.mock("@/hooks/use-display-context", () => ({
+	useDisplayContext: () => ({
+		locale: "en-US",
+		timezone: "UTC",
+		timeFormat: "24h",
+	}),
+}));
+
 describe("DateRangePicker", () => {
 	beforeEach(() => {
 		useOrganizationSettings.getState().reset();

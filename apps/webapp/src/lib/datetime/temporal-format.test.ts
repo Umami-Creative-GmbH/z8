@@ -69,7 +69,11 @@ describe("formatInstant", () => {
 	});
 
 	it("supports each date and time preset with named fields", () => {
-		const context = { locale: "en-US", timezone: "America/New_York", timeFormat: "12h" } as const;
+		const context = {
+			locale: "en-US",
+			timezone: "America/New_York",
+			timeFormat: "12h",
+		} as const;
 		const instantWithSeconds = parseInstant("2026-07-10T12:30:45Z");
 		const dateShort = formatInstant(instant, context, "dateShort");
 		const dateMedium = formatInstant(instant, context, "dateMedium");
@@ -127,13 +131,19 @@ describe("formatPlainDate", () => {
 		);
 	});
 
-	it("supports medium date, month-year, and short-weekday presets", () => {
+	it("supports medium date, month-day, month-year, and short-weekday presets", () => {
 		const dateMedium = formatPlainDate(date, "en-US", "dateMedium");
+		const monthDay = formatPlainDate(date, "en-US", "monthDay");
+		const monthDayLong = formatPlainDate(date, "en-US", "monthDayLong");
 		const monthYear = formatPlainDate(date, "en-US", "monthYear");
 		const weekday = formatPlainDate(date, "en-US", "weekdayShort");
 
 		expect(dateMedium).toContain("Jul");
 		expect(numericParts(dateMedium)).toEqual([10, 2026]);
+		expect(monthDay).toContain("Jul");
+		expect(numericParts(monthDay)).toEqual([10]);
+		expect(monthDayLong).toContain("July");
+		expect(numericParts(monthDayLong)).toEqual([10]);
 		expect(monthYear).toContain("July");
 		expect(numericParts(monthYear)).toEqual([2026]);
 		expect(weekday).toContain("Fri");

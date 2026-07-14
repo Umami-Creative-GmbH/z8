@@ -14,6 +14,14 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
+vi.mock("@/hooks/use-display-context", () => ({
+	useDisplayContext: () => ({
+		locale: "en-US",
+		timezone: "UTC",
+		timeFormat: "24h",
+	}),
+}));
+
 describe("RateHistoryCard", () => {
 	it("keeps the timeline dot from overlapping the rate text", () => {
 		render(

@@ -3,17 +3,28 @@
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDisplayContext } from "@/hooks/use-display-context";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 
 // Dynamic imports for recharts to reduce initial bundle size
-const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
+const Area = dynamic(() => import("recharts").then((mod) => mod.Area), {
+	ssr: false,
+});
 const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
 const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), {
 	ssr: false,
 });
-const Line = dynamic(() => import("recharts").then((mod) => mod.Line), { ssr: false });
+const Line = dynamic(() => import("recharts").then((mod) => mod.Line), {
+	ssr: false,
+});
 const LineChart = dynamic(() => import("recharts").then((mod) => mod.LineChart), { ssr: false });
-const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), {
+	ssr: false,
+});
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), {
+	ssr: false,
+});
 
 import {
 	type ChartConfig,
@@ -29,6 +40,7 @@ interface ProjectHoursChartProps {
 
 export function ProjectHoursChart({ data }: ProjectHoursChartProps) {
 	const { t } = useTranslate();
+	const { locale } = useDisplayContext();
 
 	const chartConfig = {
 		hours: {
@@ -68,10 +80,7 @@ export function ProjectHoursChart({ data }: ProjectHoursChartProps) {
 	// Format dates for display
 	const formattedData = data.map((point) => ({
 		...point,
-		dateLabel: new Date(point.date).toLocaleDateString("en-US", {
-			month: "short",
-			day: "numeric",
-		}),
+		dateLabel: formatPlainDate(parsePlainDate(point.date), locale, "monthDay"),
 	}));
 
 	return (

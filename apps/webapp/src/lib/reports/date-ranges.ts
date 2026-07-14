@@ -3,6 +3,7 @@
  * Provides preset date ranges for common reporting periods
  */
 
+import { plainDateFromCalendarDate } from "@/lib/datetime/calendar-date";
 import { type Instant, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { parseTimeZone } from "@/lib/timezone/validation";
@@ -141,10 +142,10 @@ export function getPresetLabel(preset: PeriodPreset, year?: number): string {
  * @param end - End date (Date or DateTime)
  * @returns Formatted date range string
  */
-export function formatDateRangeLabel(startDate: string, endDate: string): string {
-	return `${formatPlainDate(parsePlainDate(startDate), "en-US", "dateMedium")} - ${formatPlainDate(parsePlainDate(endDate), "en-US", "dateMedium")}`;
+export function formatDateRangeLabel(startDate: string, endDate: string, locale = "en-US"): string {
+	return `${formatPlainDate(parsePlainDate(startDate), locale, "dateMedium")} - ${formatPlainDate(parsePlainDate(endDate), locale, "dateMedium")}`;
 }
 
 export function dateToCalendarString(date: Date): string {
-	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+	return plainDateFromCalendarDate(date).toString();
 }

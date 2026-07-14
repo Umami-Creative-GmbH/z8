@@ -14,6 +14,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useDisplayContext } from "@/hooks/use-display-context";
 import { parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import {
@@ -32,6 +33,7 @@ interface DateRangePickerProps {
 
 export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 	const { t } = useTranslate();
+	const { locale } = useDisplayContext();
 	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
 			isHydrated: state.isHydrated,
@@ -128,11 +130,11 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 							{startDate ? (
 								endDate ? (
 									<>
-										{formatPlainDate(start, "en-US", "dateMedium")} -{" "}
-										{formatPlainDate(end, "en-US", "dateMedium")}
+										{formatPlainDate(start, locale, "dateMedium")} -{" "}
+										{formatPlainDate(end, locale, "dateMedium")}
 									</>
 								) : (
-									formatPlainDate(start, "en-US", "dateMedium")
+									formatPlainDate(start, locale, "dateMedium")
 								)
 							) : (
 								<span>{t("reports.period.pickDateRange", "Pick a date range")}</span>
@@ -159,7 +161,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 			{preset !== "custom" && (
 				<div className="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground">
 					<IconCalendar className="mr-2 size-4" />
-					{formatDateRangeLabel(startDate, endDate)}
+					{formatDateRangeLabel(startDate, endDate, locale)}
 				</div>
 			)}
 		</div>

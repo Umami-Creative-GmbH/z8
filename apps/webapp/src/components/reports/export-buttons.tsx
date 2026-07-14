@@ -5,6 +5,8 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useDisplayContext } from "@/hooks/use-display-context";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { exportToCSV, generateCSVFilename } from "@/lib/reports/exporters/csv-exporter";
 import { exportToExcel, generateExcelFilename } from "@/lib/reports/exporters/excel-exporter";
 import { exportToPDF, generatePDFFilename } from "@/lib/reports/exporters/pdf-exporter";
@@ -18,15 +20,20 @@ type ExportFormat = "pdf" | "excel" | "csv";
 
 export function ExportButtons({ reportData }: ExportButtonsProps) {
 	const { t } = useTranslate();
+	const displayContext = useDisplayContext();
 	const [loading, setLoading] = useState<ExportFormat | null>(null);
 
 	const handleExport = async (format: ExportFormat) => {
 		setLoading(format);
+		const generatedAt = systemClock.nowInstant().toString();
 
 		const exportResult = await (async () => {
 			if (format === "pdf") {
 				return {
-					data: await exportToPDF(reportData),
+					data: await exportToPDF(reportData, {
+						...displayContext,
+						generatedAt,
+					}),
 					filename: generatePDFFilename(reportData),
 					mimeType: "application/pdf",
 				};
@@ -74,7 +81,9 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 		URL.revokeObjectURL(url);
 
 		toast.success(t("reports.export.success", "Export successful"), {
-			description: t("reports.export.downloaded", "Downloaded {filename}", { filename }),
+			description: t("reports.export.downloaded", "Downloaded {filename}", {
+				filename,
+			}),
 		});
 		setLoading(null);
 	};
