@@ -34,6 +34,23 @@ export function SWUpdatePrompt() {
 		}
 
 		let mounted = true;
+		let observedRegistration: ServiceWorkerRegistration | null = null;
+		let observedWorker: ServiceWorker | null = null;
+
+		const handleWorkerStateChange = () => {
+			if (observedWorker?.state === "installed" && navigator.serviceWorker.controller && mounted) {
+				setUpdateAvailable(true);
+			}
+		};
+
+		const handleUpdateFound = () => {
+			const newWorker = observedRegistration?.installing;
+			if (!newWorker) return;
+
+			observedWorker?.removeEventListener("statechange", handleWorkerStateChange);
+			observedWorker = newWorker;
+			observedWorker.addEventListener("statechange", handleWorkerStateChange);
+		};
 
 		const checkForUpdates = async () => {
 			try {
@@ -42,6 +59,7 @@ export function SWUpdatePrompt() {
 				if (!mounted) return;
 
 				setRegistration(reg);
+				observedRegistration = reg;
 
 				// Check if there's already a waiting worker
 				if (reg.waiting) {
@@ -49,20 +67,7 @@ export function SWUpdatePrompt() {
 				}
 
 				// Listen for new service workers
-				reg.addEventListener("updatefound", () => {
-					const newWorker = reg.installing;
-
-					if (!newWorker) return;
-
-					newWorker.addEventListener("statechange", () => {
-						if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-							// New SW installed, waiting to activate
-							if (mounted) {
-								setUpdateAvailable(true);
-							}
-						}
-					});
-				});
+				reg.addEventListener("updatefound", handleUpdateFound);
 			} catch (error) {
 				console.warn("[SWUpdate] Failed to check for updates:", error);
 			}
@@ -91,6 +96,8 @@ export function SWUpdatePrompt() {
 
 		return () => {
 			mounted = false;
+			observedRegistration?.removeEventListener("updatefound", handleUpdateFound);
+			observedWorker?.removeEventListener("statechange", handleWorkerStateChange);
 			navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
 			navigator.serviceWorker.removeEventListener("message", handleMessage);
 		};

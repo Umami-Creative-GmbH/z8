@@ -1,6 +1,8 @@
 /* @vitest-environment jsdom */
 
-import { renderHook, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePushNotifications } from "./use-push-notifications";
 
@@ -9,9 +11,20 @@ const originalNotification = globalThis.Notification;
 const originalPushManager = globalThis.PushManager;
 const originalServiceWorker = navigator.serviceWorker;
 
+function createWrapper() {
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	return ({ children }: { children: ReactNode }) => (
+		<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+	);
+}
+
 describe("usePushNotifications", () => {
 	const registerMock = vi.fn();
 	const requestPermissionMock = vi.fn();
+	const getSubscriptionMock = vi.fn();
+	const subscribeMock = vi.fn();
 
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -41,10 +54,11 @@ describe("usePushNotifications", () => {
 			},
 		});
 
+		getSubscriptionMock.mockResolvedValue(null);
 		registerMock.mockResolvedValue({
 			pushManager: {
-				getSubscription: vi.fn().mockResolvedValue(null),
-				subscribe: vi.fn(),
+				getSubscription: getSubscriptionMock,
+				subscribe: subscribeMock,
 			},
 		});
 	});
@@ -70,12 +84,12 @@ describe("usePushNotifications", () => {
 
 	it("does not offer browser push when the server VAPID key is unavailable", async () => {
 		vi.mocked(fetch).mockResolvedValue(
-			new Response(JSON.stringify({ error: "Push notifications not configured" }), {
-				status: 503,
-			}),
+			new Response(JSON.stringify({ error: "Push notifications not configured" }), { status: 503 }),
 		);
 
-		const { result } = renderHook(() => usePushNotifications());
+		const { result } = renderHook(() => usePushNotifications(), {
+			wrapper: createWrapper(),
+		});
 
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -89,7 +103,9 @@ describe("usePushNotifications", () => {
 		const onError = vi.fn();
 		vi.mocked(fetch).mockRejectedValue(new Error("network unavailable"));
 
-		const { result } = renderHook(() => usePushNotifications({ onError }));
+		const { result } = renderHook(() => usePushNotifications({ onError }), {
+			wrapper: createWrapper(),
+		});
 
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -104,6 +120,7 @@ describe("usePushNotifications", () => {
 
 		const { rerender, result } = renderHook(({ onError }) => usePushNotifications({ onError }), {
 			initialProps: { onError: vi.fn() },
+			wrapper: createWrapper(),
 		});
 
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -111,5 +128,80 @@ describe("usePushNotifications", () => {
 
 		expect(fetch).toHaveBeenCalledTimes(1);
 		expect(registerMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("rolls back the browser subscription when the server rejects it", async () => {
+		const onError = vi.fn();
+		const browserUnsubscribe = vi.fn().mockResolvedValue(true);
+		Object.defineProperty(globalThis, "Notification", {
+			configurable: true,
+			value: {
+				permission: "granted",
+				requestPermission: requestPermissionMock,
+			},
+		});
+		subscribeMock.mockResolvedValue({
+			toJSON: () => ({ endpoint: "https://push.test/subscription" }),
+			unsubscribe: browserUnsubscribe,
+		});
+		vi.mocked(fetch).mockImplementation(async (input) => {
+			if (String(input).endsWith("/vapid-key")) {
+				return new Response(JSON.stringify({ publicKey: "test-key" }));
+			}
+			return new Response(null, { status: 500 });
+		});
+
+		const { result } = renderHook(() => usePushNotifications({ onError }), {
+			wrapper: createWrapper(),
+		});
+		await waitFor(() => expect(result.current.isSupported).toBe(true));
+
+		let subscribed = true;
+		await act(async () => {
+			subscribed = await result.current.subscribe("Work laptop");
+		});
+
+		expect(subscribed).toBe(false);
+		expect(browserUnsubscribe).toHaveBeenCalledOnce();
+		expect(result.current.isSubscribed).toBe(false);
+		expect(onError).toHaveBeenCalledWith(
+			expect.objectContaining({
+				message: "Failed to save subscription on server",
+			}),
+		);
+	});
+
+	it("keeps the browser subscription when server removal fails", async () => {
+		const onError = vi.fn();
+		const browserUnsubscribe = vi.fn().mockResolvedValue(true);
+		getSubscriptionMock.mockResolvedValue({
+			endpoint: "https://push.test/subscription",
+			unsubscribe: browserUnsubscribe,
+		});
+		vi.mocked(fetch).mockImplementation(async (input) => {
+			if (String(input).endsWith("/vapid-key")) {
+				return new Response(JSON.stringify({ publicKey: "test-key" }));
+			}
+			return new Response(null, { status: 500 });
+		});
+
+		const { result } = renderHook(() => usePushNotifications({ onError }), {
+			wrapper: createWrapper(),
+		});
+		await waitFor(() => expect(result.current.isSubscribed).toBe(true));
+
+		let unsubscribed = true;
+		await act(async () => {
+			unsubscribed = await result.current.unsubscribe();
+		});
+
+		expect(unsubscribed).toBe(false);
+		expect(browserUnsubscribe).not.toHaveBeenCalled();
+		expect(result.current.isSubscribed).toBe(true);
+		expect(onError).toHaveBeenCalledWith(
+			expect.objectContaining({
+				message: "Failed to remove subscription from server",
+			}),
+		);
 	});
 });

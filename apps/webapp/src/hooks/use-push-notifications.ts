@@ -1,6 +1,8 @@
 "use client";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useEffectEvent, useState } from "react";
+import { queryKeys } from "@/lib/query/keys";
 
 type PushPermission = "default" | "granted" | "denied" | "unsupported";
 
@@ -24,6 +26,53 @@ interface UsePushNotificationsResult {
 
 	// Service worker
 	registration: ServiceWorkerRegistration | null;
+}
+
+interface PushBootstrapState {
+	isSupported: boolean;
+	permission: PushPermission;
+	isSubscribed: boolean;
+	registration: ServiceWorkerRegistration | null;
+	vapidPublicKey: string | null;
+}
+
+const UNSUPPORTED_PUSH_STATE: PushBootstrapState = {
+	isSupported: false,
+	permission: "unsupported",
+	isSubscribed: false,
+	registration: null,
+	vapidPublicKey: null,
+};
+
+async function loadPushBootstrap(signal: AbortSignal): Promise<PushBootstrapState> {
+	if (
+		!("serviceWorker" in navigator) ||
+		!("PushManager" in window) ||
+		!("Notification" in window)
+	) {
+		return UNSUPPORTED_PUSH_STATE;
+	}
+
+	const vapidResponse = await fetch("/api/notifications/push/vapid-key", {
+		signal,
+	});
+	if (!vapidResponse.ok) return UNSUPPORTED_PUSH_STATE;
+
+	const { publicKey } = (await vapidResponse.json()) as { publicKey?: string };
+	if (!publicKey) return UNSUPPORTED_PUSH_STATE;
+
+	const registration = await navigator.serviceWorker.register("/sw.js", {
+		scope: "/",
+	});
+	const subscription = await registration.pushManager.getSubscription();
+
+	return {
+		isSupported: true,
+		permission: Notification.permission,
+		isSubscribed: Boolean(subscription),
+		registration,
+		vapidPublicKey: publicKey,
+	};
 }
 
 /**
@@ -59,74 +108,30 @@ export function usePushNotifications(
 	const handleError = useEffectEvent((error: Error) => {
 		onError?.(error);
 	});
+	const queryClient = useQueryClient();
+	const [isActionPending, setIsActionPending] = useState(false);
+	const bootstrapQuery = useQuery({
+		queryKey: queryKeys.notifications.pushBootstrap(),
+		queryFn: ({ signal }) => loadPushBootstrap(signal),
+		staleTime: 60 * 1000,
+		refetchOnWindowFocus: true,
+		retry: false,
+	});
+	const bootstrap = bootstrapQuery.data ?? UNSUPPORTED_PUSH_STATE;
+	const { isSupported, permission, isSubscribed, registration, vapidPublicKey } = bootstrap;
 
-	const [isSupported, setIsSupported] = useState(false);
-	const [permission, setPermission] = useState<PushPermission>("default");
-	const [isSubscribed, setIsSubscribed] = useState(false);
-	const [isLoading, setIsLoading] = useState(true);
-	const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
-	const [vapidPublicKey, setVapidPublicKey] = useState<string | null>(null);
-
-	// Check browser support and current state
 	useEffect(() => {
-		const checkSupport = async () => {
-			try {
-				// Check if push notifications are supported
-				if (
-					!("serviceWorker" in navigator) ||
-					!("PushManager" in window) ||
-					!("Notification" in window)
-				) {
-					setIsSupported(false);
-					setPermission("unsupported");
-					setIsLoading(false);
-					return;
-				}
+		if (bootstrapQuery.error instanceof Error) {
+			handleError(bootstrapQuery.error);
+		}
+	}, [bootstrapQuery.error]);
 
-				const vapidResponse = await fetch("/api/notifications/push/vapid-key");
-				if (!vapidResponse.ok) {
-					setIsSupported(false);
-					setPermission("unsupported");
-					setIsLoading(false);
-					return;
-				}
-
-				const { publicKey } = await vapidResponse.json();
-				if (!publicKey) {
-					setIsSupported(false);
-					setPermission("unsupported");
-					setIsLoading(false);
-					return;
-				}
-
-				setIsSupported(true);
-				setVapidPublicKey(publicKey);
-
-				// Check current permission
-				const currentPermission = Notification.permission;
-				setPermission(currentPermission);
-
-				// Register or get existing service worker
-				const reg = await navigator.serviceWorker.register("/sw.js", {
-					scope: "/",
-				});
-				setRegistration(reg);
-
-				// Check if already subscribed
-				const subscription = await reg.pushManager.getSubscription();
-				setIsSubscribed(!!subscription);
-				setIsLoading(false);
-			} catch (error) {
-				console.error("Failed to initialize push notifications:", error);
-				setIsSupported(false);
-				setPermission("unsupported");
-				handleError(error as Error);
-				setIsLoading(false);
-			}
-		};
-
-		checkSupport();
-	}, []);
+	const updateBootstrap = (updates: Partial<PushBootstrapState>) => {
+		queryClient.setQueryData<PushBootstrapState>(
+			queryKeys.notifications.pushBootstrap(),
+			(current) => (current ? { ...current, ...updates } : current),
+		);
+	};
 
 	// Request notification permission
 	const requestPermission = async (): Promise<NotificationPermission> => {
@@ -136,7 +141,7 @@ export function usePushNotifications(
 
 		try {
 			const result = await Notification.requestPermission();
-			setPermission(result);
+			updateBootstrap({ permission: result });
 			return result;
 		} catch (error) {
 			console.error("Failed to request notification permission:", error);
@@ -151,7 +156,7 @@ export function usePushNotifications(
 			return false;
 		}
 
-		setIsLoading(true);
+		setIsActionPending(true);
 
 		try {
 			// Request permission if not granted
@@ -161,7 +166,6 @@ export function usePushNotifications(
 			}
 
 			if (currentPermission !== "granted") {
-				setIsLoading(false);
 				return false;
 			}
 
@@ -182,20 +186,20 @@ export function usePushNotifications(
 			});
 
 			if (!subscribeResponse.ok) {
+				await subscription.unsubscribe().catch(() => false);
 				onError?.(new Error("Failed to save subscription on server"));
-				setIsLoading(false);
 				return false;
 			}
 
-			setIsSubscribed(true);
+			updateBootstrap({ isSubscribed: true, permission: currentPermission });
 			onSubscribe?.();
-			setIsLoading(false);
 			return true;
 		} catch (error) {
 			console.error("Failed to subscribe to push notifications:", error);
 			onError?.(error as Error);
-			setIsLoading(false);
 			return false;
+		} finally {
+			setIsActionPending(false);
 		}
 	};
 
@@ -205,34 +209,36 @@ export function usePushNotifications(
 			return false;
 		}
 
-		setIsLoading(true);
+		setIsActionPending(true);
 
 		try {
 			const subscription = await registration.pushManager.getSubscription();
 
 			if (subscription) {
-				// Unsubscribe from browser
-				await subscription.unsubscribe();
-
-				// Remove from server
-				await fetch("/api/notifications/push/unsubscribe", {
+				const unsubscribeResponse = await fetch("/api/notifications/push/unsubscribe", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
 						endpoint: subscription.endpoint,
 					}),
 				});
+				if (!unsubscribeResponse.ok) {
+					throw new Error("Failed to remove subscription from server");
+				}
+				if (!(await subscription.unsubscribe())) {
+					throw new Error("Failed to unsubscribe this browser");
+				}
 			}
 
-			setIsSubscribed(false);
+			updateBootstrap({ isSubscribed: false });
 			onUnsubscribe?.();
-			setIsLoading(false);
 			return true;
 		} catch (error) {
 			console.error("Failed to unsubscribe from push notifications:", error);
 			onError?.(error as Error);
-			setIsLoading(false);
 			return false;
+		} finally {
+			setIsActionPending(false);
 		}
 	};
 
@@ -240,7 +246,7 @@ export function usePushNotifications(
 		isSupported,
 		permission,
 		isSubscribed,
-		isLoading,
+		isLoading: bootstrapQuery.isLoading || isActionPending,
 		subscribe,
 		unsubscribe,
 		requestPermission,
