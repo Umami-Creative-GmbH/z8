@@ -61,7 +61,7 @@ describe("resolveAuthorizedCalendarEmployeeContext", () => {
 			timezone: "America/New_York",
 			initialDateKey: "2026-05-31",
 		});
-		expect(JSON.parse(JSON.stringify(context))).toEqual(context);
+		expect(structuredClone(context)).toEqual(context);
 		expect(mockState.getEffectiveTimezone).toHaveBeenCalledWith("user-2", "org-1");
 	});
 
