@@ -50,7 +50,6 @@
 		"@react-pdf/renderer": "^4.5.1",
 		"@schedule-x/calendar": "^4.6.1",
 		"@schedule-x/calendar-controls": "^4.6.1",
-		"@schedule-x/current-time": "^4.6.1",
 		"@schedule-x/drag-and-drop": "^3.7.3",
 		"@schedule-x/event-modal": "^4.6.1",
 		"@schedule-x/react": "^4.1.0",
