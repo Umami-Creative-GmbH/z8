@@ -90,25 +90,30 @@ export async function shouldSkipDigestForManager(
 	const nowDate = new Date();
 	const dateConditions = and(
 		eq(workPolicyAssignment.isActive, true),
-		or(isNull(workPolicyAssignment.effectiveFrom), lte(workPolicyAssignment.effectiveFrom, nowDate)),
+		or(
+			isNull(workPolicyAssignment.effectiveFrom),
+			lte(workPolicyAssignment.effectiveFrom, nowDate),
+		),
 		or(
 			isNull(workPolicyAssignment.effectiveUntil),
 			gte(workPolicyAssignment.effectiveUntil, nowDate),
 		),
 	);
-	const emp = await db.query.employee.findFirst({
-		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
-		columns: { teamId: true },
-	});
-	const employeeAssignment = await db.query.workPolicyAssignment.findFirst({
-		where: and(
-			eq(workPolicyAssignment.organizationId, organizationId),
-			eq(workPolicyAssignment.employeeId, employeeId),
-			eq(workPolicyAssignment.assignmentType, "employee"),
-			dateConditions,
-		),
-		with: policyWithConfig,
-	});
+	const [emp, employeeAssignment] = await Promise.all([
+		db.query.employee.findFirst({
+			where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
+			columns: { teamId: true },
+		}),
+		db.query.workPolicyAssignment.findFirst({
+			where: and(
+				eq(workPolicyAssignment.organizationId, organizationId),
+				eq(workPolicyAssignment.employeeId, employeeId),
+				eq(workPolicyAssignment.assignmentType, "employee"),
+				dateConditions,
+			),
+			with: policyWithConfig,
+		}),
+	]);
 
 	type ScheduleInfo = {
 		scheduleType: string;
@@ -291,7 +296,9 @@ async function processTenantDigest(tenant: {
 				});
 
 				if (!manages) return false;
-				if (await shouldSkipDigestForManager(emp.id, tenant.organizationId, tenant.digestTimezone)) {
+				if (
+					await shouldSkipDigestForManager(emp.id, tenant.organizationId, tenant.digestTimezone)
+				) {
 					return false;
 				}
 
