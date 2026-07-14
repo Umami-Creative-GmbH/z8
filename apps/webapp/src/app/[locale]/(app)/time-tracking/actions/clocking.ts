@@ -1,13 +1,25 @@
-"use server";
+import "server-only";
 
-import { and, eq, gte, isNull, lte } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime, IANAZone } from "luxon";
 import { db } from "@/db";
 import { employee, employeeManagers, workPeriod } from "@/db/schema";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
-import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
-import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
+import {
+	asAppSubject,
+	defineAbilityFor,
+	type PrincipalContext,
+} from "@/lib/authorization";
+import {
+	isBillingMutationAllowed,
+	requireBillingForMutation,
+} from "@/lib/billing/guard";
+import {
+	dateFromInstant,
+	type Instant,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
@@ -15,15 +27,27 @@ import {
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
 import {
+	ClockingConflictError,
+	clockingService,
+} from "@/lib/time-tracking/clocking-service";
+import {
 	resolveFallbackTimezoneCapture,
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
-import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
-import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/work-location";
-import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import {
+	validateTimeEntry,
+	validateTimeEntryRange,
+} from "@/lib/time-tracking/validation";
+import {
+	isWorkLocationType,
+	type WorkLocationType,
+} from "@/lib/time-tracking/work-location";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import { createClockOutApprovalRequest, createManualEntryApprovalRequest } from "./approvals";
+import { canonicalWorkRecordClient } from "../actions.canonical";
+import {
+	createClockOutApprovalRequest,
+	createManualEntryApprovalRequest,
+} from "./approvals";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import {
 	calculateAndPersistSurcharges,
@@ -36,7 +60,10 @@ import {
 	createTimeEntry,
 	validateProjectAssignment,
 } from "./entry-helpers";
-import { checkClockOutNeedsApproval, getEditCapabilityForPeriod } from "./policy-helpers";
+import {
+	checkClockOutNeedsApproval,
+	getEditCapabilityForPeriod,
+} from "./policy-helpers";
 import { getActiveWorkPeriod, getTimeSummary } from "./queries";
 import {
 	BREAK_WARNING_THRESHOLD_MINUTES,
@@ -45,7 +72,11 @@ import {
 	ONE_MINUTE_MS,
 } from "./shared";
 import { calculateDurationMinutes, createUtcDateTime } from "./time-utils";
-import type { BrowserTimezoneContext, ClockOutResult, ManualTimeEntryInput } from "./types";
+import type {
+	BrowserTimezoneContext,
+	ClockOutResult,
+	ManualTimeEntryInput,
+} from "./types";
 
 type ManualEntryOverlapResult =
 	| {
@@ -59,15 +90,26 @@ type ManualEntryOverlapResult =
 
 type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
 
-const APPROVAL_POLICY_CHECK_ERROR = "Could not verify time approval policy. Please try again.";
-const MANUAL_ENTRY_TARGET_AUTH_ERROR = "Not authorized to create time entries for this employee";
+const APPROVAL_POLICY_CHECK_ERROR =
+	"Could not verify time approval policy. Please try again.";
+const MANUAL_ENTRY_TARGET_AUTH_ERROR =
+	"Not authorized to create time entries for this employee";
+
+export type ClockActionContext = BrowserTimezoneContext & {
+	instant?: Instant;
+	deviceInfo?: "web" | "mobile";
+};
 
 async function resolveManualTimeEntryTarget(params: {
 	currentEmployee: typeof employee.$inferSelect;
 	requestedEmployeeId?: string;
 	sessionUser: { id: string; role?: string | null };
 }): Promise<
-	| { success: true; targetEmployee: typeof employee.$inferSelect; isOwnEntry: boolean }
+	| {
+			success: true;
+			targetEmployee: typeof employee.$inferSelect;
+			isOwnEntry: boolean;
+	  }
 	| { success: false; error: string }
 > {
 	const { currentEmployee, requestedEmployeeId, sessionUser } = params;
@@ -77,7 +119,9 @@ async function resolveManualTimeEntryTarget(params: {
 
 	const requesterRole = currentEmployee.role;
 	const canTargetOtherEmployees =
-		requesterRole === "admin" || requesterRole === "manager" || sessionUser.role === "admin";
+		requesterRole === "admin" ||
+		requesterRole === "manager" ||
+		sessionUser.role === "admin";
 	if (!canTargetOtherEmployees) {
 		return { success: false, error: MANUAL_ENTRY_TARGET_AUTH_ERROR };
 	}
@@ -138,7 +182,10 @@ async function markWorkBalanceDirtyAfterClockOutBestEffort(
 	try {
 		await markEmployeeWorkBalanceDirty(input);
 	} catch (error) {
-		logger.error({ error, ...context }, "Failed to mark work balance dirty after clock-out");
+		logger.error(
+			{ error, ...context },
+			"Failed to mark work balance dirty after clock-out",
+		);
 	}
 }
 
@@ -158,7 +205,7 @@ async function markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
 
 export async function clockIn(
 	workLocationType?: WorkLocationType,
-	timezoneContext: BrowserTimezoneContext = {},
+	actionContext: ClockActionContext = {},
 ): Promise<ServerActionResult<Awaited<ReturnType<typeof createTimeEntry>>>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -178,8 +225,13 @@ export async function clockIn(
 		return { success: false, error: "You are already clocked in" };
 	}
 
-	const now = new Date();
-	const validation = await validateTimeEntry(currentEmployee.organizationId, now, timezone);
+	const actionInstant = actionContext.instant ?? systemClock.nowInstant();
+	const now = dateFromInstant(actionInstant);
+	const validation = await validateTimeEntry(
+		currentEmployee.organizationId,
+		now,
+		timezone,
+	);
 	if (!validation.isValid) {
 		return {
 			success: false,
@@ -194,7 +246,9 @@ export async function clockIn(
 		return { success: false, error: "Invalid work location type" };
 	}
 
-	const billingAccess = await requireBillingForMutation(currentEmployee.organizationId);
+	const billingAccess = await requireBillingForMutation(
+		currentEmployee.organizationId,
+	);
 	if (!isBillingMutationAllowed(billingAccess)) {
 		return {
 			success: false,
@@ -206,7 +260,7 @@ export async function clockIn(
 	try {
 		const timezoneCapture = resolveTimeEntryTimezoneCapture({
 			timestamp: now,
-			browserTimezone: timezoneContext.browserTimezone,
+			browserTimezone: actionContext.browserTimezone,
 			fallbackTimezone: timezone,
 			browserSource: "browser",
 			fallbackSource: "user_setting",
@@ -215,12 +269,18 @@ export async function clockIn(
 			employeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
 			createdBy: session.user.id,
-			action: { instant: instantFromDate(now), ...timezoneCapture },
-			source: { ipAddress: null, deviceInfo: "web" },
+			action: { instant: actionInstant, ...timezoneCapture },
+			source: {
+				ipAddress: null,
+				deviceInfo: actionContext.deviceInfo ?? "web",
+			},
 			workLocationType: resolvedWorkLocationType,
 		});
 
-		return { success: true, data: entry as Awaited<ReturnType<typeof createTimeEntry>> };
+		return {
+			success: true,
+			data: entry as Awaited<ReturnType<typeof createTimeEntry>>,
+		};
 	} catch (error) {
 		if (error instanceof ClockingConflictError) {
 			return { success: false, error: "You are already clocked in" };
@@ -233,7 +293,7 @@ export async function clockIn(
 export async function clockOut(
 	projectId?: string,
 	workCategoryId?: string,
-	timezoneContext: BrowserTimezoneContext = {},
+	actionContext: ClockActionContext = {},
 ): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -253,8 +313,13 @@ export async function clockOut(
 		return { success: false, error: "You are not currently clocked in" };
 	}
 
-	const now = new Date();
-	const validation = await validateTimeEntry(currentEmployee.organizationId, now, timezone);
+	const actionInstant = actionContext.instant ?? systemClock.nowInstant();
+	const now = dateFromInstant(actionInstant);
+	const validation = await validateTimeEntry(
+		currentEmployee.organizationId,
+		now,
+		timezone,
+	);
 	if (!validation.isValid) {
 		return {
 			success: false,
@@ -279,7 +344,9 @@ export async function clockOut(
 		}
 	}
 
-	const billingAccess = await requireBillingForMutation(currentEmployee.organizationId);
+	const billingAccess = await requireBillingForMutation(
+		currentEmployee.organizationId,
+	);
 	if (!isBillingMutationAllowed(billingAccess)) {
 		return {
 			success: false,
@@ -290,7 +357,9 @@ export async function clockOut(
 
 	let needsClockOutApproval = false;
 	try {
-		needsClockOutApproval = await checkClockOutNeedsApproval(currentEmployee.id);
+		needsClockOutApproval = await checkClockOutNeedsApproval(
+			currentEmployee.id,
+		);
 	} catch (error) {
 		logger.warn({ error }, "Failed to check clock-out approval requirement");
 		return { success: false, error: APPROVAL_POLICY_CHECK_ERROR };
@@ -299,7 +368,7 @@ export async function clockOut(
 	try {
 		const timezoneCapture = resolveTimeEntryTimezoneCapture({
 			timestamp: now,
-			browserTimezone: timezoneContext.browserTimezone,
+			browserTimezone: actionContext.browserTimezone,
 			fallbackTimezone: timezone,
 			browserSource: "browser",
 			fallbackSource: "user_setting",
@@ -312,10 +381,16 @@ export async function clockOut(
 				})
 			: null;
 		if (needsClockOutApproval && !managerId) {
-			return { success: false, error: "No manager assigned to approve time changes" };
+			return {
+				success: false,
+				error: "No manager assigned to approve time changes",
+			};
 		}
 
-		const sessionDurationMinutes = calculateDurationMinutes(activeWorkPeriod.startTime, now);
+		const sessionDurationMinutes = calculateDurationMinutes(
+			activeWorkPeriod.startTime,
+			now,
+		);
 		const pendingChanges = needsClockOutApproval
 			? {
 					originalStartTime: activeWorkPeriod.startTime.toISOString(),
@@ -326,21 +401,42 @@ export async function clockOut(
 					isNewClockOut: true,
 				}
 			: null;
+		const canonicalRecord =
+			await canonicalWorkRecordClient.createForCompletedPeriod({
+				organizationId: currentEmployee.organizationId,
+				employeeId: currentEmployee.id,
+				startAt: activeWorkPeriod.startTime,
+				endAt: now,
+				durationMinutes: sessionDurationMinutes,
+				approvalState: needsClockOutApproval ? "pending" : "approved",
+				createdBy: session.user.id,
+				workCategoryId: workCategoryId ?? null,
+				workLocationType: activeWorkPeriod.workLocationType ?? null,
+				projectId: projectId ?? null,
+				origin: "clock",
+			});
 		const result = await clockingService.clockOut({
 			employeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
 			createdBy: session.user.id,
-			action: { instant: instantFromDate(now), ...timezoneCapture },
-			source: { ipAddress: null, deviceInfo: "web" },
+			action: { instant: actionInstant, ...timezoneCapture },
+			source: {
+				ipAddress: null,
+				deviceInfo: actionContext.deviceInfo ?? "web",
+			},
 			projectId,
 			workCategoryId,
+			canonicalRecordId: canonicalRecord.id,
 			approvalStatus: needsClockOutApproval ? "pending" : "approved",
 			pendingChanges,
 		});
 		const entry = result.entry as Awaited<ReturnType<typeof createTimeEntry>>;
 		const { durationMinutes } = result;
 
-		await calculateAndPersistSurcharges(activeWorkPeriod.id, currentEmployee.organizationId);
+		await calculateAndPersistSurcharges(
+			activeWorkPeriod.id,
+			currentEmployee.organizationId,
+		);
 		if (needsClockOutApproval && managerId) {
 			await createClockOutApprovalRequest({
 				workPeriodId: activeWorkPeriod.id,
@@ -375,7 +471,9 @@ export async function clockOut(
 				employeeId: currentEmployee.id,
 				organizationId: currentEmployee.organizationId,
 				dirtyFromDate:
-					DateTime.fromJSDate(activeWorkPeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
+					DateTime.fromJSDate(activeWorkPeriod.startTime, {
+						zone: "utc",
+					}).toISODate() ?? undefined,
 			},
 			{
 				employeeId: currentEmployee.id,
@@ -385,11 +483,15 @@ export async function clockOut(
 		);
 
 		if (projectId) {
-			void checkProjectBudgetAfterClockOut(projectId, currentEmployee.organizationId).catch(
-				(error) => {
-					logger.error({ error, projectId }, "Failed to check project budget warnings");
-				},
-			);
+			void checkProjectBudgetAfterClockOut(
+				projectId,
+				currentEmployee.organizationId,
+			).catch((error) => {
+				logger.error(
+					{ error, projectId },
+					"Failed to check project budget warnings",
+				);
+			});
 		}
 
 		return {
@@ -397,7 +499,8 @@ export async function clockOut(
 			data: {
 				...entry,
 				pendingApproval: needsClockOutApproval || undefined,
-				complianceWarnings: complianceWarnings.length > 0 ? complianceWarnings : undefined,
+				complianceWarnings:
+					complianceWarnings.length > 0 ? complianceWarnings : undefined,
 				breakAdjustment: breakEnforcementResult.wasAdjusted
 					? breakEnforcementResult.adjustment
 					: undefined,
@@ -426,7 +529,10 @@ export async function addBreakToActiveSession(
 	}
 
 	if (!Number.isInteger(breakMinutes) || breakMinutes < 1) {
-		return { success: false, error: "Enter a break duration of at least 1 minute." };
+		return {
+			success: false,
+			error: "Enter a break duration of at least 1 minute.",
+		};
 	}
 
 	const activeWorkPeriod = await getActiveWorkPeriod(currentEmployee.id);
@@ -435,7 +541,10 @@ export async function addBreakToActiveSession(
 	}
 
 	if (activeWorkPeriod.organizationId !== currentEmployee.organizationId) {
-		return { success: false, error: "You are not allowed to edit this time entry" };
+		return {
+			success: false,
+			error: "You are not allowed to edit this time entry",
+		};
 	}
 
 	const timezone = await getUserTimezone(session.user.id);
@@ -443,7 +552,10 @@ export async function addBreakToActiveSession(
 	const now = new Date();
 	const breakStart = new Date(now.getTime() - breakMinutes * ONE_MINUTE_MS);
 	if (breakStart <= activeWorkPeriod.startTime) {
-		return { success: false, error: "Break duration must be shorter than your current session." };
+		return {
+			success: false,
+			error: "Break duration must be shorter than your current session.",
+		};
 	}
 
 	try {
@@ -470,7 +582,10 @@ export async function addBreakToActiveSession(
 				tx,
 			);
 
-			const durationMinutes = calculateDurationMinutes(activeWorkPeriod.startTime, breakStart);
+			const durationMinutes = calculateDurationMinutes(
+				activeWorkPeriod.startTime,
+				breakStart,
+			);
 
 			const [closedWorkPeriod] = await tx
 				.update(workPeriod)
@@ -532,7 +647,9 @@ export async function addBreakToActiveSession(
 				employeeId: currentEmployee.id,
 				organizationId: currentEmployee.organizationId,
 				dirtyFromDate:
-					DateTime.fromJSDate(activeWorkPeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
+					DateTime.fromJSDate(activeWorkPeriod.startTime, {
+						zone: "utc",
+					}).toISODate() ?? undefined,
 			},
 			{
 				employeeId: currentEmployee.id,
@@ -581,7 +698,10 @@ export async function getBreakReminderStatus(): Promise<
 	}
 
 	try {
-		const currentSessionMinutes = calculateDurationMinutes(activeWorkPeriod.startTime, new Date());
+		const currentSessionMinutes = calculateDurationMinutes(
+			activeWorkPeriod.startTime,
+			new Date(),
+		);
 		const [timeSummary, breaksTaken] = await Promise.all([
 			getTimeSummary(currentEmployee.id, timezone),
 			calculateBreaksTakenToday(currentEmployee.id, timezone),
@@ -589,7 +709,9 @@ export async function getBreakReminderStatus(): Promise<
 
 		const breakStatusEffect = Effect.gen(function* (_) {
 			const workPolicyService = yield* _(WorkPolicyService);
-			const policy = yield* _(workPolicyService.getEffectivePolicy(currentEmployee.id));
+			const policy = yield* _(
+				workPolicyService.getEffectivePolicy(currentEmployee.id),
+			);
 
 			if (!policy?.regulation) {
 				return {
@@ -612,7 +734,8 @@ export async function getBreakReminderStatus(): Promise<
 				minutesUntilBreakRequired !== null &&
 				minutesUntilBreakRequired <= BREAK_WARNING_THRESHOLD_MINUTES;
 			const needsBreakSoon =
-				isBreakThresholdReached || (breakRequirement.isRequired && breakRequirement.remaining > 0);
+				isBreakThresholdReached ||
+				(breakRequirement.isRequired && breakRequirement.remaining > 0);
 
 			return {
 				needsBreakSoon,
@@ -628,7 +751,10 @@ export async function getBreakReminderStatus(): Promise<
 						}
 					: null,
 			};
-		}).pipe(Effect.provide(WorkPolicyServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(WorkPolicyServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		return { success: true, data: await Effect.runPromise(breakStatusEffect) };
 	} catch (error) {
@@ -648,7 +774,9 @@ function adjustManualEntryForOverlaps(
 
 	const sortedWorkPeriods = existingWorkPeriods
 		.filter((workPeriod) => workPeriod.endTime !== null)
-		.sort((left, right) => left.startTime.getTime() - right.startTime.getTime());
+		.sort(
+			(left, right) => left.startTime.getTime() - right.startTime.getTime(),
+		);
 
 	for (const existingWorkPeriod of sortedWorkPeriods) {
 		const periodStart = existingWorkPeriod.startTime.getTime();
@@ -659,15 +787,24 @@ function adjustManualEntryForOverlaps(
 		if (newStart < periodEnd && newEnd > periodStart) {
 			wasAdjusted = true;
 
-			if (newStart < periodStart && newEnd > periodStart && newEnd <= periodEnd) {
+			if (
+				newStart < periodStart &&
+				newEnd > periodStart &&
+				newEnd <= periodEnd
+			) {
 				adjustedClockOut = new Date(periodStart - ONE_MINUTE_MS);
-			} else if (newStart >= periodStart && newStart < periodEnd && newEnd > periodEnd) {
+			} else if (
+				newStart >= periodStart &&
+				newStart < periodEnd &&
+				newEnd > periodEnd
+			) {
 				adjustedClockIn = new Date(periodEnd + ONE_MINUTE_MS);
 			} else if (newStart < periodStart && newEnd > periodEnd) {
 				adjustedClockOut = new Date(periodStart - ONE_MINUTE_MS);
 			} else if (newStart >= periodStart && newEnd <= periodEnd) {
 				return {
-					error: "The selected time range is completely covered by an existing work period.",
+					error:
+						"The selected time range is completely covered by an existing work period.",
 				} as const;
 			}
 		}
@@ -683,7 +820,9 @@ function adjustManualEntryForOverlaps(
 	return { adjustedClockIn, adjustedClockOut, wasAdjusted } as const;
 }
 
-export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise<
+export async function createManualTimeEntry(
+	data: ManualTimeEntryInput,
+): Promise<
 	ServerActionResult<{
 		workPeriodId: string;
 		requiresApproval: boolean;
@@ -717,20 +856,32 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 	const { targetEmployee, isOwnEntry } = targetResolution;
 
-	if (isOwnEntry && data.timezone !== undefined && !IANAZone.isValidZone(data.timezone)) {
+	if (
+		isOwnEntry &&
+		data.timezone !== undefined &&
+		!IANAZone.isValidZone(data.timezone)
+	) {
 		return { success: false, error: "Invalid timezone" };
 	}
 
 	const savedTimezone = isOwnEntry
 		? await getUserTimezone(session.user.id)
 		: await getUserTimezone(targetEmployee.userId ?? session.user.id);
-	const timezone = isOwnEntry ? (data.timezone ?? savedTimezone) : savedTimezone;
+	const timezone = isOwnEntry
+		? (data.timezone ?? savedTimezone)
+		: savedTimezone;
 	const matchingBrowserTimezone =
-		isOwnEntry && data.browserTimezone === timezone && IANAZone.isValidZone(data.browserTimezone)
+		isOwnEntry &&
+		data.browserTimezone === timezone &&
+		IANAZone.isValidZone(data.browserTimezone)
 			? data.browserTimezone
 			: null;
 	const clockInDate = createUtcDateTime(data.date, data.clockInTime, timezone);
-	const clockOutDate = createUtcDateTime(data.date, data.clockOutTime, timezone);
+	const clockOutDate = createUtcDateTime(
+		data.date,
+		data.clockOutTime,
+		timezone,
+	);
 
 	if (!clockInDate || !clockOutDate) {
 		return { success: false, error: "Invalid time values" };
@@ -742,7 +893,10 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 
 	if (clockOutDate <= clockInDate) {
-		return { success: false, error: "Clock out time must be after clock in time" };
+		return {
+			success: false,
+			error: "Clock out time must be after clock in time",
+		};
 	}
 
 	const validation = await validateTimeEntryRange(
@@ -784,7 +938,10 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				timezone,
 			});
 		} catch (error) {
-			logger.error({ error }, "Failed to check edit capability for manual entry");
+			logger.error(
+				{ error },
+				"Failed to check edit capability for manual entry",
+			);
 			return { success: false, error: APPROVAL_POLICY_CHECK_ERROR };
 		}
 
@@ -864,7 +1021,10 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				})
 			: null;
 		const requiresManagerApproval = requiresApproval && Boolean(managerId);
-		const durationMinutes = calculateDurationMinutes(adjustedClockIn, adjustedClockOut);
+		const durationMinutes = calculateDurationMinutes(
+			adjustedClockIn,
+			adjustedClockOut,
+		);
 		const createdWorkPeriod = await db.transaction(async (tx) => {
 			const clockInEntry = await createTimeEntry(
 				{
@@ -935,7 +1095,10 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		}
 
 		if (!requiresManagerApproval) {
-			await calculateAndPersistSurcharges(createdWorkPeriod.id, targetEmployee.organizationId);
+			await calculateAndPersistSurcharges(
+				createdWorkPeriod.id,
+				targetEmployee.organizationId,
+			);
 		}
 
 		await markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
@@ -943,7 +1106,8 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				employeeId: targetEmployee.id,
 				organizationId: targetEmployee.organizationId,
 				dirtyFromDate:
-					DateTime.fromJSDate(adjustedClockIn, { zone: "utc" }).toISODate() ?? undefined,
+					DateTime.fromJSDate(adjustedClockIn, { zone: "utc" }).toISODate() ??
+					undefined,
 			},
 			{
 				employeeId: targetEmployee.id,
@@ -960,8 +1124,12 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				clockInTime: data.clockInTime,
 				clockOutTime: data.clockOutTime,
 				wasAdjusted,
-				adjustedClockIn: wasAdjusted ? adjustedClockIn.toISOString() : undefined,
-				adjustedClockOut: wasAdjusted ? adjustedClockOut.toISOString() : undefined,
+				adjustedClockIn: wasAdjusted
+					? adjustedClockIn.toISOString()
+					: undefined,
+				adjustedClockOut: wasAdjusted
+					? adjustedClockOut.toISOString()
+					: undefined,
 				requiresApproval: requiresManagerApproval,
 			},
 			"Manual time entry created successfully",
@@ -984,6 +1152,9 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		};
 	} catch (error) {
 		logger.error({ error }, "Failed to create manual time entry");
-		return { success: false, error: "Failed to create time entry. Please try again." };
+		return {
+			success: false,
+			error: "Failed to create time entry. Please try again.",
+		};
 	}
 }
