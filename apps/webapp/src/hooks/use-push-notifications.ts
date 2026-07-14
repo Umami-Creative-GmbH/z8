@@ -166,6 +166,7 @@ export function usePushNotifications(
 			}
 
 			if (currentPermission !== "granted") {
+				setIsActionPending(false);
 				return false;
 			}
 
@@ -187,19 +188,20 @@ export function usePushNotifications(
 
 			if (!subscribeResponse.ok) {
 				await subscription.unsubscribe().catch(() => false);
+				setIsActionPending(false);
 				onError?.(new Error("Failed to save subscription on server"));
 				return false;
 			}
 
 			updateBootstrap({ isSubscribed: true, permission: currentPermission });
+			setIsActionPending(false);
 			onSubscribe?.();
 			return true;
 		} catch (error) {
 			console.error("Failed to subscribe to push notifications:", error);
+			setIsActionPending(false);
 			onError?.(error as Error);
 			return false;
-		} finally {
-			setIsActionPending(false);
 		}
 	};
 
@@ -223,22 +225,30 @@ export function usePushNotifications(
 					}),
 				});
 				if (!unsubscribeResponse.ok) {
-					throw new Error("Failed to remove subscription from server");
+					const error = new Error("Failed to remove subscription from server");
+					console.error("Failed to unsubscribe from push notifications:", error);
+					setIsActionPending(false);
+					onError?.(error);
+					return false;
 				}
 				if (!(await subscription.unsubscribe())) {
-					throw new Error("Failed to unsubscribe this browser");
+					const error = new Error("Failed to unsubscribe this browser");
+					console.error("Failed to unsubscribe from push notifications:", error);
+					setIsActionPending(false);
+					onError?.(error);
+					return false;
 				}
 			}
 
 			updateBootstrap({ isSubscribed: false });
+			setIsActionPending(false);
 			onUnsubscribe?.();
 			return true;
 		} catch (error) {
 			console.error("Failed to unsubscribe from push notifications:", error);
+			setIsActionPending(false);
 			onError?.(error as Error);
 			return false;
-		} finally {
-			setIsActionPending(false);
 		}
 	};
 
