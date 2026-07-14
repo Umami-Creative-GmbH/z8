@@ -16,27 +16,23 @@ import { WORK_LOCATION_TYPES } from "@/lib/time-tracking/work-location";
 const MAX_ACTION_SKEW_MILLISECONDS = 5 * 60 * 1000;
 
 const actionEvidenceFields = {
-	timestamp: z.string().datetime({ offset: true }),
+	timestamp: z.iso.datetime({ offset: true }),
 	browserTimezone: z.string(),
 	utcOffsetMinutes: z.number().int(),
 };
 
 const mobileTimeClockSchema = z.discriminatedUnion("action", [
-	z
-		.object({
-			action: z.literal("clock_in"),
-			workLocationType: z.enum(WORK_LOCATION_TYPES, {
-				error: "workLocationType is required for clock_in",
-			}),
-			...actionEvidenceFields,
-		})
-		.strict(),
-	z
-		.object({
-			action: z.literal("clock_out"),
-			...actionEvidenceFields,
-		})
-		.strict(),
+	z.strictObject({
+		action: z.literal("clock_in"),
+		workLocationType: z.enum(WORK_LOCATION_TYPES, {
+			error: "workLocationType is required for clock_in",
+		}),
+		...actionEvidenceFields,
+	}),
+	z.strictObject({
+		action: z.literal("clock_out"),
+		...actionEvidenceFields,
+	}),
 ]);
 
 export async function POST(request: Request) {
