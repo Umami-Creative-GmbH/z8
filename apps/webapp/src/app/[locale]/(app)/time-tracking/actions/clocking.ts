@@ -930,7 +930,7 @@ export async function createManualTimeEntry(
 
 	let requiresApproval = false;
 	if (isOwnEntry) {
-		let editCapability;
+		let editCapability: Awaited<ReturnType<typeof getEditCapabilityForPeriod>>;
 		try {
 			editCapability = await getEditCapabilityForPeriod({
 				employeeId: targetEmployee.id,
@@ -1047,6 +1047,7 @@ export async function createManualTimeEntry(
 					createdBy: session.user.id,
 					notes: data.reason,
 					...clockOutTimezoneCapture,
+					chainAfter: clockInEntry,
 				},
 				tx,
 			);
