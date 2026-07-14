@@ -2,22 +2,10 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createAppAuthCode } from "@/lib/auth/app-auth-code";
-
-const DESKTOP_CALLBACK_URL = "z8://auth/callback";
-
-function isAllowedDesktopRedirect(redirectUrl: string): boolean {
-	try {
-		const requested = new URL(redirectUrl);
-		const allowed = new URL(DESKTOP_CALLBACK_URL);
-		return (
-			requested.protocol === allowed.protocol &&
-			requested.hostname === allowed.hostname &&
-			requested.pathname === allowed.pathname
-		);
-	} catch {
-		return false;
-	}
-}
+import {
+	getAllowedAppRedirect,
+	getValidatedAppRedirectUrl,
+} from "@/lib/auth/app-redirect";
 
 /**
  * GET /api/auth/desktop-login
@@ -32,7 +20,10 @@ export async function GET(request: NextRequest) {
 	const codeChallenge = searchParams.get("challenge");
 
 	if (!redirectUrl) {
-		return NextResponse.json({ error: "Missing redirect parameter" }, { status: 400 });
+		return NextResponse.json(
+			{ error: "Missing redirect parameter" },
+			{ status: 400 },
+		);
 	}
 
 	// Validate the redirect URL is the expected desktop callback.
@@ -43,15 +34,21 @@ export async function GET(request: NextRequest) {
 		);
 	}
 
-	if (!isAllowedDesktopRedirect(redirectUrl)) {
+	const safeCallbackUrl = getValidatedAppRedirectUrl(redirectUrl, "desktop");
+	if (!safeCallbackUrl) {
 		return NextResponse.json(
-			{ error: `Invalid redirect URL. Must be ${DESKTOP_CALLBACK_URL}` },
+			{
+				error: `Invalid redirect URL. Must be ${getAllowedAppRedirect("desktop")}`,
+			},
 			{ status: 400 },
 		);
 	}
 
 	if (!codeChallenge) {
-		return NextResponse.json({ error: "Missing challenge parameter" }, { status: 400 });
+		return NextResponse.json(
+			{ error: "Missing challenge parameter" },
+			{ status: 400 },
+		);
 	}
 
 	// Check if user is already authenticated
@@ -62,13 +59,12 @@ export async function GET(request: NextRequest) {
 		const canUseDesktop = session.user.canUseDesktop ?? true;
 		if (!canUseDesktop) {
 			// Redirect to desktop app with error
-			const callbackUrl = new URL(redirectUrl);
-			callbackUrl.searchParams.set("error", "access_denied");
-			callbackUrl.searchParams.set(
+			safeCallbackUrl.searchParams.set("error", "access_denied");
+			safeCallbackUrl.searchParams.set(
 				"error_description",
 				"Your account does not have access to the desktop application. Please contact your administrator.",
 			);
-			return NextResponse.redirect(callbackUrl.toString());
+			return NextResponse.redirect(safeCallbackUrl.toString());
 		}
 
 		const authCode = await createAppAuthCode({
@@ -79,10 +75,9 @@ export async function GET(request: NextRequest) {
 		});
 
 		// Redirect back to desktop app with a one-time code.
-		const callbackUrl = new URL(redirectUrl);
-		callbackUrl.searchParams.set("code", authCode.code);
+		safeCallbackUrl.searchParams.set("code", authCode.code);
 
-		return NextResponse.redirect(callbackUrl.toString());
+		return NextResponse.redirect(safeCallbackUrl.toString());
 	}
 
 	// User not logged in, continue through sign-in and then resume this auth route.
