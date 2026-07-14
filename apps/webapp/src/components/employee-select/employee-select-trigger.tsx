@@ -20,6 +20,7 @@ function getEmployeeName(employee: SelectableEmployee): string {
  * Trigger button that displays current selection and opens the modal
  */
 export function EmployeeSelectTrigger({
+	id,
 	mode,
 	selectedEmployees,
 	placeholder,
@@ -45,6 +46,7 @@ export function EmployeeSelectTrigger({
 
 		return (
 			<Button
+				id={id}
 				type="button"
 				variant="outline"
 				role="combobox"
@@ -84,6 +86,7 @@ export function EmployeeSelectTrigger({
 	if (count === 0) {
 		return (
 			<Button
+				id={id}
 				type="button"
 				variant="outline"
 				role="combobox"
@@ -112,6 +115,7 @@ export function EmployeeSelectTrigger({
 
 	return (
 		<Button
+			id={id}
 			type="button"
 			variant="outline"
 			role="combobox"

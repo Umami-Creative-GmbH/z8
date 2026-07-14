@@ -117,6 +117,7 @@ export type EmployeeSelectFieldProps = EmployeeSelectCommonProps &
  * Props for the trigger button component
  */
 export interface EmployeeSelectTriggerProps {
+	id?: string;
 	mode: "single" | "multiple";
 	selectedEmployees: SelectableEmployee[];
 	placeholder?: string;

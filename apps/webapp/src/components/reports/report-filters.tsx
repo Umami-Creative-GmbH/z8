@@ -67,10 +67,10 @@ export function ReportFilters({
 						/>
 
 						{/* Date Range Picker */}
-						<div className="space-y-2">
-							<label className="text-sm font-medium leading-none">
+						<fieldset className="space-y-2">
+							<legend className="text-sm font-medium leading-none">
 								{t("reports.filter.period", "Period")}
-							</label>
+							</legend>
 							{dateRange ? (
 								<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
 							) : (
@@ -81,7 +81,7 @@ export function ReportFilters({
 									)}
 								</p>
 							)}
-						</div>
+						</fieldset>
 					</div>
 
 					{/* Generate Button */}

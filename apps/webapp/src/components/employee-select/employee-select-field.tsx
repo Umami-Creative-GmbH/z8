@@ -60,6 +60,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 	} = props;
 
 	const [modalOpen, setModalOpen] = useState(false);
+	const triggerId = useId();
 	const employeeListboxId = useId();
 
 	// Track selected employees locally for immediate UI updates
@@ -158,9 +159,10 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 	const maxSelections = props.mode === "multiple" ? props.maxSelections : undefined;
 	return (
 		<div className={cn("space-y-2", className)}>
-			{label && <Label>{label}</Label>}
+			{label && <Label htmlFor={triggerId}>{label}</Label>}
 
 			<EmployeeSelectTrigger
+				id={triggerId}
 				mode={props.mode}
 				selectedEmployees={selectedEmployees}
 				placeholder={placeholder}

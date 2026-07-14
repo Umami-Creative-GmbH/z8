@@ -2,10 +2,11 @@
 
 import { IconChartBar } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -25,6 +26,7 @@ interface ProjectFiltersProps {
 
 export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFiltersProps) {
 	const { t } = useTranslate();
+	const statusFilterId = useId();
 	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
 			isHydrated: state.isHydrated,
@@ -49,14 +51,26 @@ export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFilt
 	};
 
 	const STATUS_OPTIONS = [
-		{ value: "all", label: t("reports.projects.filter.allStatuses", "All Statuses") },
-		{ value: "active", label: t("reports.projects.filter.activeOnly", "Active Only") },
+		{
+			value: "all",
+			label: t("reports.projects.filter.allStatuses", "All Statuses"),
+		},
+		{
+			value: "active",
+			label: t("reports.projects.filter.activeOnly", "Active Only"),
+		},
 		{
 			value: "active,planned",
 			label: t("reports.projects.filter.activePlanned", "Active & Planned"),
 		},
-		{ value: "completed", label: t("reports.projects.filter.completed", "Completed") },
-		{ value: "archived", label: t("reports.projects.filter.archived", "Archived") },
+		{
+			value: "completed",
+			label: t("reports.projects.filter.completed", "Completed"),
+		},
+		{
+			value: "archived",
+			label: t("reports.projects.filter.archived", "Archived"),
+		},
 	];
 
 	const handleGenerate = () => {
@@ -74,10 +88,10 @@ export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFilt
 				<div className="flex flex-col gap-4">
 					<div className="grid gap-4 md:grid-cols-2">
 						{/* Date Range Picker */}
-						<div className="space-y-2">
-							<label className="text-sm font-medium leading-none">
+						<fieldset className="space-y-2">
+							<legend className="text-sm font-medium leading-none">
 								{t("reports.projects.filter.period", "Period")}
-							</label>
+							</legend>
 							{dateRange ? (
 								<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
 							) : (
@@ -85,15 +99,15 @@ export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFilt
 									Loading organization settings before enabling presets.
 								</p>
 							)}
-						</div>
+						</fieldset>
 
 						{/* Status Filter */}
 						<div className="space-y-2">
-							<label className="text-sm font-medium leading-none">
+							<Label htmlFor={statusFilterId} className="text-sm font-medium leading-none">
 								{t("reports.projects.filter.status", "Status")}
-							</label>
+							</Label>
 							<Select value={statusFilter} onValueChange={setStatusFilter} disabled={isGenerating}>
-								<SelectTrigger>
+								<SelectTrigger id={statusFilterId}>
 									<SelectValue
 										placeholder={t("reports.projects.filter.selectStatus", "Select status filter")}
 									/>
