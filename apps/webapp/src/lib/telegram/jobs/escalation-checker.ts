@@ -127,9 +127,9 @@ async function processBotEscalations(bot: {
 			});
 
 			// Find the first backup manager in manager order who has Telegram linked.
-			const candidateManagerIds = managers
-				.map((mgr) => mgr.managerId)
-				.filter((managerId) => managerId !== approval.approverId);
+			const candidateManagerIds = managers.flatMap((manager) =>
+				manager.managerId !== approval.approverId ? [manager.managerId] : [],
+			);
 			const managerEmployees =
 				candidateManagerIds.length > 0
 					? await db.query.employee.findMany({
