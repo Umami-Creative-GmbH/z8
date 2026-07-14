@@ -45,7 +45,7 @@ const logger = createLogger("OrganizationActions");
 const updateInvitationTargetTeamSchema = z.object({
 	invitationId: z.string().min(1),
 	organizationId: z.string().min(1),
-	targetTeamId: z.string().uuid("Invalid target team").nullable().optional(),
+	targetTeamId: z.uuid({ message: "Invalid target team" }).nullable().optional(),
 });
 
 type UpdateInvitationTargetTeamData = z.infer<typeof updateInvitationTargetTeamSchema>;
