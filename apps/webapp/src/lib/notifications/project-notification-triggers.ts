@@ -70,9 +70,10 @@ export async function checkProjectBudgetWarnings(params: BudgetWarningParams): P
 		}
 
 		const notifiedThresholds = (state.budgetThresholdsNotified as number[]) || [];
+		const notifiedThresholdSet = new Set(notifiedThresholds);
 
 		// Find thresholds that haven't been notified yet
-		const newThresholds = crossedThresholds.filter((t) => !notifiedThresholds.includes(t));
+		const newThresholds = crossedThresholds.filter((t) => !notifiedThresholdSet.has(t));
 
 		if (newThresholds.length === 0) {
 			return; // All crossed thresholds already notified

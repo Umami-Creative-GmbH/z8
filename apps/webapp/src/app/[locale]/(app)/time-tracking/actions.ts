@@ -26,12 +26,26 @@ import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
 import { auth } from "@/lib/auth";
-import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
-import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
+import {
+	asAppSubject,
+	defineAbilityFor,
+	type PrincipalContext,
+} from "@/lib/authorization";
+import {
+	isBillingMutationAllowed,
+	requireBillingForMutation,
+} from "@/lib/billing/guard";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	AuthorizationError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import {
@@ -44,10 +58,19 @@ import {
 	ChangePolicyServiceLive,
 	type EditCapability,
 } from "@/lib/effect/services/change-policy.service";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import {
+	DatabaseService,
+	DatabaseServiceLive,
+} from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
-import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
-import { TimeEntryService, TimeEntryServiceLive } from "@/lib/effect/services/time-entry.service";
+import {
+	SurchargeService,
+	SurchargeServiceLive,
+} from "@/lib/effect/services/surcharge.service";
+import {
+	TimeEntryService,
+	TimeEntryServiceLive,
+} from "@/lib/effect/services/time-entry.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import {
 	WorkPolicyService,
@@ -60,6 +83,10 @@ import {
 	getProjectTotalHours,
 } from "@/lib/notifications/project-notification-triggers";
 import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
+import {
+	ClockingConflictError,
+	clockingService,
+} from "@/lib/time-tracking/clocking-service";
 import { resolveWorkPeriodSplit } from "@/lib/time-tracking/split-work-period";
 import {
 	resolveFallbackTimezoneCapture,
@@ -72,9 +99,14 @@ import {
 	getWeekRangeInTimezone,
 } from "@/lib/time-tracking/timezone-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
-import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
-import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/work-location";
-import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
+import {
+	validateTimeEntry,
+	validateTimeEntryRange,
+} from "@/lib/time-tracking/validation";
+import {
+	isWorkLocationType,
+	type WorkLocationType,
+} from "@/lib/time-tracking/work-location";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
@@ -82,7 +114,11 @@ import {
 	createClockOutApprovalRequest,
 	createManualEntryApprovalRequest,
 } from "./actions/approvals";
-import { addBreakToActiveSession as addBreakToActiveSessionAction } from "./actions/clocking";
+import {
+	addBreakToActiveSession as addBreakToActiveSessionAction,
+	clockIn as clockInAction,
+	clockOut as clockOutAction,
+} from "./actions/clocking";
 import {
 	calculatePresenceStatusSummary,
 	expandApprovedHomeOfficeDates,
@@ -94,7 +130,10 @@ import {
 	validatePresenceFixedDaysConfig,
 } from "./actions/presence-status";
 import type { BrowserTimezoneContext } from "./actions/types";
-import { canonicalTimeEntryClient, canonicalWorkRecordClient } from "./actions.canonical";
+import {
+	canonicalTimeEntryClient,
+	canonicalWorkRecordClient,
+} from "./actions.canonical";
 import type { WorkPeriodWithEntries } from "./types";
 
 export async function addBreakToActiveSession(breakMinutes: number) {
@@ -135,7 +174,9 @@ async function markWorkBalanceDirtyBestEffort(
 	}
 }
 
-type ManagerResolverDb = Parameters<typeof getPrimaryEligibleManagerIdForRequester>[0]["db"];
+type ManagerResolverDb = Parameters<
+	typeof getPrimaryEligibleManagerIdForRequester
+>[0]["db"];
 
 export async function resolveTimeApprovalManagerId(input: {
 	db: ManagerResolverDb;
@@ -186,7 +227,9 @@ interface SameDayEditRequest {
  */
 export async function editSameDayTimeEntry(
 	data: SameDayEditRequest,
-): Promise<ServerActionResult<{ workPeriodId: string; requiresApproval?: boolean }>> {
+): Promise<
+	ServerActionResult<{ workPeriodId: string; requiresApproval?: boolean }>
+> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -236,19 +279,21 @@ export async function editSameDayTimeEntry(
 		};
 	}
 
-	const pendingTimeCorrectionApproval = await db.query.approvalRequest.findFirst({
-		where: and(
-			eq(approvalRequest.organizationId, emp.organizationId),
-			eq(approvalRequest.entityType, "time_entry"),
-			eq(approvalRequest.entityId, period.id),
-			eq(approvalRequest.status, "pending"),
-		),
-	});
+	const pendingTimeCorrectionApproval =
+		await db.query.approvalRequest.findFirst({
+			where: and(
+				eq(approvalRequest.organizationId, emp.organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.entityId, period.id),
+				eq(approvalRequest.status, "pending"),
+			),
+		});
 
 	if (pendingTimeCorrectionApproval) {
 		return {
 			success: false,
-			error: "A time correction approval is already pending for this work period",
+			error:
+				"A time correction approval is already pending for this work period",
 			code: "pending_time_correction_approval",
 		};
 	}
@@ -265,12 +310,18 @@ export async function editSameDayTimeEntry(
 					timezone,
 				}),
 			);
-		}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(ChangePolicyServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		editCapability = await Effect.runPromise(capabilityEffect);
 	} catch (error) {
 		logger.error({ error }, "Failed to check edit capability");
-		return { success: false, error: "Failed to verify edit policy. Please try again." };
+		return {
+			success: false,
+			error: "Failed to verify edit policy. Please try again.",
+		};
 	}
 
 	// Handle different capabilities
@@ -285,7 +336,8 @@ export async function editSameDayTimeEntry(
 		// For approval_required, redirect to correction request flow
 		return {
 			success: false,
-			error: "This edit requires manager approval. Please use the correction request.",
+			error:
+				"This edit requires manager approval. Please use the correction request.",
 			requiresApproval: true,
 		} as ServerActionResult<{
 			workPeriodId: string;
@@ -482,9 +534,15 @@ export async function editSameDayTimeEntry(
 				employeeId: emp.id,
 				organizationId: emp.organizationId,
 				dirtyFromDate:
-					DateTime.fromJSDate(dirtyFromDateSource, { zone: "utc" }).toISODate() ?? undefined,
+					DateTime.fromJSDate(dirtyFromDateSource, {
+						zone: "utc",
+					}).toISODate() ?? undefined,
 			},
-			{ employeeId: emp.id, organizationId: emp.organizationId, workPeriodId: period.id },
+			{
+				employeeId: emp.id,
+				organizationId: emp.organizationId,
+				workPeriodId: period.id,
+			},
 		);
 
 		logger.info(
@@ -557,7 +615,12 @@ export async function requestTimeCorrectionEffect(
 		);
 
 		yield* _(Effect.annotateCurrentSpan("employee.id", currentEmployee.id));
-		yield* _(Effect.annotateCurrentSpan("organization.id", currentEmployee.organizationId));
+		yield* _(
+			Effect.annotateCurrentSpan(
+				"organization.id",
+				currentEmployee.organizationId,
+			),
+		);
 
 		// Step 3: Resolve the employee's active approver from manager links
 		const managerId = yield* _(
@@ -638,11 +701,17 @@ export async function requestTimeCorrectionEffect(
 		);
 
 		yield* _(
-			Effect.annotateCurrentSpan("correction.original_clock_in", period.startTime.toISOString()),
+			Effect.annotateCurrentSpan(
+				"correction.original_clock_in",
+				period.startTime.toISOString(),
+			),
 		);
 		if (period.endTime) {
 			yield* _(
-				Effect.annotateCurrentSpan("correction.original_clock_out", period.endTime.toISOString()),
+				Effect.annotateCurrentSpan(
+					"correction.original_clock_out",
+					period.endTime.toISOString(),
+				),
 			);
 		}
 
@@ -762,7 +831,9 @@ export async function requestTimeCorrectionEffect(
 			yield* _(
 				Effect.fail(
 					new ValidationError({
-						message: validation.error || "Cannot create time correction for this period",
+						message:
+							validation.error ||
+							"Cannot create time correction for this period",
 						field: "timestamp",
 						value: validation.holidayName,
 					}),
@@ -777,7 +848,10 @@ export async function requestTimeCorrectionEffect(
 					const transactionalDbService = { db: tx, query: dbService.query };
 					const transactionalEffectDbService =
 						transactionalDbService as unknown as typeof DatabaseService.Service;
-					const createCorrectionEntry = (input: { replacesEntryId: string; timestamp: Date }) =>
+					const createCorrectionEntry = (input: {
+						replacesEntryId: string;
+						timestamp: Date;
+					}) =>
 						Effect.runPromise(
 							Effect.gen(function* (resume) {
 								const timezoneCapture = resolveFallbackTimezoneCapture({
@@ -800,7 +874,10 @@ export async function requestTimeCorrectionEffect(
 								);
 							}).pipe(
 								Effect.provide(TimeEntryServiceLive),
-								Effect.provideService(DatabaseService, transactionalEffectDbService),
+								Effect.provideService(
+									DatabaseService,
+									transactionalEffectDbService,
+								),
 							),
 						);
 
@@ -810,7 +887,11 @@ export async function requestTimeCorrectionEffect(
 					});
 
 					let clockOutCorrectionId: string | undefined;
-					if (data.newClockOutTime && period.clockOutId && correctedClockOutDate) {
+					if (
+						data.newClockOutTime &&
+						period.clockOutId &&
+						correctedClockOutDate
+					) {
 						const clockOutCorrection = await createCorrectionEntry({
 							replacesEntryId: period.clockOutId,
 							timestamp: correctedClockOutDate,
@@ -839,10 +920,18 @@ export async function requestTimeCorrectionEffect(
 			}),
 		);
 
-		yield* _(Effect.annotateCurrentSpan("correction.clock_in_correction_id", clockInCorrection.id));
+		yield* _(
+			Effect.annotateCurrentSpan(
+				"correction.clock_in_correction_id",
+				clockInCorrection.id,
+			),
+		);
 		if (clockOutCorrectionId) {
 			yield* _(
-				Effect.annotateCurrentSpan("correction.clock_out_correction_id", clockOutCorrectionId),
+				Effect.annotateCurrentSpan(
+					"correction.clock_out_correction_id",
+					clockOutCorrectionId,
+				),
 			);
 		}
 
@@ -854,7 +943,12 @@ export async function requestTimeCorrectionEffect(
 			},
 			"Time correction entries created",
 		);
-		yield* _(Effect.annotateCurrentSpan("correction.approval_id", approval.approvalRequestId));
+		yield* _(
+			Effect.annotateCurrentSpan(
+				"correction.approval_id",
+				approval.approvalRequestId,
+			),
+		);
 
 		// Step 11: Fetch manager and employee details for email
 		const [manager, empWithUser] = yield* _(
@@ -887,7 +981,9 @@ export async function requestTimeCorrectionEffect(
 		);
 
 		const appUrl = yield* _(
-			Effect.promise(() => getOrganizationBaseUrl(currentEmployee.organizationId)),
+			Effect.promise(() =>
+				getOrganizationBaseUrl(currentEmployee.organizationId),
+			),
 		);
 		const formatDate = (date: Date) =>
 			date.toLocaleDateString("en-US", {
@@ -912,7 +1008,9 @@ export async function requestTimeCorrectionEffect(
 					originalClockIn: formatTime(period.startTime),
 					originalClockOut: period.endTime ? formatTime(period.endTime) : "—",
 					correctedClockIn: formatTime(correctedClockInDate),
-					correctedClockOut: correctedClockOutDate ? formatTime(correctedClockOutDate) : "—",
+					correctedClockOut: correctedClockOutDate
+						? formatTime(correctedClockOutDate)
+						: "—",
 					reason: data.reason,
 					approvalUrl: `${appUrl}/approvals/inbox`,
 				}),
@@ -967,7 +1065,9 @@ export async function requestTimeCorrectionEffect(
 /**
  * Get current employee from session
  */
-export async function getCurrentEmployee(): Promise<typeof employee.$inferSelect | null> {
+export async function getCurrentEmployee(): Promise<
+	typeof employee.$inferSelect | null
+> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return null;
@@ -1050,7 +1150,9 @@ export async function getTimeClockStatus(): Promise<{
 		hasEmployee: true,
 		employeeId: emp.id,
 		isClockedIn: !!period,
-		activeWorkPeriod: period ? { id: period.id, startTime: period.startTime } : null,
+		activeWorkPeriod: period
+			? { id: period.id, startTime: period.startTime }
+			: null,
 	};
 }
 
@@ -1061,7 +1163,10 @@ export async function getActiveWorkPeriod(
 	employeeId: string,
 ): Promise<WorkPeriodWithEntries | null> {
 	const period = await db.query.workPeriod.findFirst({
-		where: and(eq(workPeriod.employeeId, employeeId), isNull(workPeriod.endTime)),
+		where: and(
+			eq(workPeriod.employeeId, employeeId),
+			isNull(workPeriod.endTime),
+		),
 		with: {
 			clockIn: true,
 			clockOut: true,
@@ -1119,13 +1224,17 @@ export async function getTimeSummary(
 	weekStartDay: WeekStartDay = "sunday",
 ): Promise<TimeSummary> {
 	// Use timezone-aware boundaries for accurate day/week/month calculations
-	const { start: todayStartDT, end: todayEndDT } = getTodayRangeInTimezone(timezone);
+	const { start: todayStartDT, end: todayEndDT } =
+		getTodayRangeInTimezone(timezone);
 	const { start: weekStartDT, end: weekEndDT } = getWeekRangeInTimezone(
 		new Date(),
 		timezone,
 		weekStartDay,
 	);
-	const { start: monthStartDT, end: monthEndDT } = getMonthRangeInTimezone(new Date(), timezone);
+	const { start: monthStartDT, end: monthEndDT } = getMonthRangeInTimezone(
+		new Date(),
+		timezone,
+	);
 
 	const todayStart = dateToDB(todayStartDT)!;
 	const todayEnd = dateToDB(todayEndDT)!;
@@ -1143,7 +1252,10 @@ export async function getTimeSummary(
 			surchargeMinutes: surchargeCalculation.surchargeMinutes,
 		})
 		.from(workPeriod)
-		.leftJoin(surchargeCalculation, eq(surchargeCalculation.workPeriodId, workPeriod.id))
+		.leftJoin(
+			surchargeCalculation,
+			eq(surchargeCalculation.workPeriodId, workPeriod.id),
+		)
 		.where(
 			and(
 				eq(workPeriod.employeeId, employeeId),
@@ -1162,7 +1274,10 @@ export async function getTimeSummary(
 		.filter((p) => p.startTime >= weekStart && p.startTime <= weekEnd)
 		.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
 
-	const monthMinutes = periodsWithSurcharges.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
+	const monthMinutes = periodsWithSurcharges.reduce(
+		(sum, p) => sum + (p.durationMinutes || 0),
+		0,
+	);
 
 	// Calculate surcharge minutes for each time range
 	const todaySurchargeMinutes = periodsWithSurcharges
@@ -1198,81 +1313,9 @@ export async function clockIn(
 	workLocationType?: WorkLocationType,
 	timezoneContext: BrowserTimezoneContext = {},
 ): Promise<ServerActionResult<typeof timeEntry.$inferSelect>> {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
-
-	const emp = await getCurrentEmployee();
-	if (!emp) {
-		return { success: false, error: "Employee profile not found" };
-	}
-
-	// Get user's timezone for holiday validation from userSettings
-	const settingsData = await db.query.userSettings.findFirst({
-		where: eq(userSettings.userId, session.user.id),
-		columns: { timezone: true },
-	});
-	const timezone = settingsData?.timezone || "UTC";
-
-	// Check for active work period
-	const activePeriod = await getActiveWorkPeriod(emp.id);
-	if (activePeriod) {
-		return { success: false, error: "You are already clocked in" };
-	}
-
-	const now = new Date();
-
-	// Validate the time entry (pass timezone for holiday checks)
-	const validation = await validateTimeEntry(emp.organizationId, now, timezone);
-	if (!validation.isValid) {
-		return {
-			success: false,
-			error: validation.error || "Cannot clock in at this time",
-			holidayName: validation.holidayName,
-		};
-	}
-
-	const resolvedWorkLocationType = workLocationType ?? "office";
-
-	if (!isWorkLocationType(resolvedWorkLocationType)) {
-		return { success: false, error: "Invalid work location type" };
-	}
-
-	const billingAccess = await requireBillingForMutation(emp.organizationId);
-	if (!isBillingMutationAllowed(billingAccess)) {
-		return {
-			success: false,
-			error: "billing_required",
-			code: billingAccess.reason ?? "subscription_required",
-		};
-	}
-
-	try {
-		const timezoneCapture = resolveTimeEntryTimezoneCapture({
-			timestamp: now,
-			browserTimezone: timezoneContext.browserTimezone,
-			fallbackTimezone: timezone,
-			browserSource: "browser",
-			fallbackSource: "user_setting",
-		});
-		const { entry } = await clockingService.clockIn({
-			employeeId: emp.id,
-			organizationId: emp.organizationId,
-			createdBy: session.user.id,
-			action: { instant: instantFromDate(now), ...timezoneCapture },
-			source: { ipAddress: null, deviceInfo: "web" },
-			workLocationType: resolvedWorkLocationType,
-		});
-
-		return { success: true, data: entry as typeof timeEntry.$inferSelect };
-	} catch (error) {
-		if (error instanceof ClockingConflictError) {
-			return { success: false, error: "You are already clocked in" };
-		}
-		logger.error({ error }, "Clock in error");
-		return { success: false, error: "Failed to clock in. Please try again." };
-	}
+	return clockInAction(workLocationType, timezoneContext) as Promise<
+		ServerActionResult<typeof timeEntry.$inferSelect>
+	>;
 }
 
 /**
@@ -1306,210 +1349,8 @@ export async function clockOut(
 	workCategoryId?: string,
 	timezoneContext: BrowserTimezoneContext = {},
 ): Promise<ServerActionResult<ClockOutResult>> {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
-
-	const emp = await getCurrentEmployee();
-	if (!emp) {
-		return { success: false, error: "Employee profile not found" };
-	}
-
-	// Get user's timezone for compliance calculations from userSettings
-	const settingsData = await db.query.userSettings.findFirst({
-		where: eq(userSettings.userId, session.user.id),
-		columns: { timezone: true },
-	});
-	const timezone = settingsData?.timezone || "UTC";
-
-	// Check for active work period
-	const activePeriod = await getActiveWorkPeriod(emp.id);
-	if (!activePeriod) {
-		return { success: false, error: "You are not currently clocked in" };
-	}
-
-	const now = new Date();
-
-	// Validate the time entry (pass timezone for holiday checks)
-	const validation = await validateTimeEntry(emp.organizationId, now, timezone);
-	if (!validation.isValid) {
-		return {
-			success: false,
-			error: validation.error || "Cannot clock out at this time",
-			holidayName: validation.holidayName,
-		};
-	}
-
-	// Validate project if provided
-	if (projectId) {
-		const projectValidation = await validateProjectAssignment(
-			projectId,
-			emp.id,
-			emp.teamId,
-			emp.organizationId,
-		);
-		if (!projectValidation.isValid) {
-			return {
-				success: false,
-				error: projectValidation.error || "Cannot assign to this project",
-			};
-		}
-	}
-
-	// Check if clock-out needs approval (0-day policy)
-	let needsClockOutApproval = false;
-	try {
-		const checkEffect = Effect.gen(function* (_) {
-			const policyService = yield* _(ChangePolicyService);
-			return yield* _(policyService.checkClockOutNeedsApproval(emp.id));
-		}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
-
-		needsClockOutApproval = await Effect.runPromise(checkEffect);
-	} catch (error) {
-		logger.warn({ error }, "Failed to check clock-out approval requirement");
-		return { success: false, error: "Could not verify time approval policy. Please try again." };
-	}
-	const billingAccess = await requireBillingForMutation(emp.organizationId);
-	if (!isBillingMutationAllowed(billingAccess)) {
-		return {
-			success: false,
-			error: "billing_required",
-			code: billingAccess.reason ?? "subscription_required",
-		};
-	}
-
-	let managerId: string | null = null;
-	try {
-		managerId = await resolveTimeApprovalManagerId({
-			db,
-			requiresApproval: needsClockOutApproval,
-			requesterEmployeeId: emp.id,
-			organizationId: emp.organizationId,
-		});
-	} catch {
-		return { success: false, error: "No manager assigned to approve time changes" };
-	}
-
-	try {
-		const timezoneCapture = resolveTimeEntryTimezoneCapture({
-			timestamp: now,
-			browserTimezone: timezoneContext.browserTimezone,
-			fallbackTimezone: timezone,
-			browserSource: "browser",
-			fallbackSource: "user_setting",
-		});
-		const durationMs = now.getTime() - activePeriod.startTime.getTime();
-		const durationMinutes = Math.floor(durationMs / 60000);
-
-		const canonicalRecord = await canonicalWorkRecordClient.createForCompletedPeriod({
-			organizationId: emp.organizationId,
-			employeeId: emp.id,
-			startAt: activePeriod.startTime,
-			endAt: now,
-			durationMinutes,
-			approvalState: needsClockOutApproval ? "pending" : "approved",
-			createdBy: session.user.id,
-			workCategoryId: workCategoryId || null,
-			workLocationType: activePeriod.workLocationType ?? null,
-			projectId: projectId || null,
-			origin: "clock",
-		});
-
-		const result = await clockingService.clockOut({
-			employeeId: emp.id,
-			organizationId: emp.organizationId,
-			createdBy: session.user.id,
-			action: { instant: instantFromDate(now), ...timezoneCapture },
-			source: { ipAddress: null, deviceInfo: "web" },
-			projectId,
-			workCategoryId,
-			canonicalRecordId: canonicalRecord.id,
-			approvalStatus: needsClockOutApproval ? "pending" : "approved",
-			pendingChanges: needsClockOutApproval
-				? {
-						originalStartTime: activePeriod.startTime.toISOString(),
-						originalEndTime: now.toISOString(),
-						originalDurationMinutes: durationMinutes,
-						requestedAt: now.toISOString(),
-						requestedBy: session.user.id,
-						isNewClockOut: true,
-					}
-				: null,
-		});
-		const entry = result.entry as typeof timeEntry.$inferSelect;
-
-		if (needsClockOutApproval && managerId) {
-			await createClockOutApprovalRequest({
-				workPeriodId: activePeriod.id,
-				employeeId: emp.id,
-				managerId,
-				organizationId: emp.organizationId,
-				startTime: activePeriod.startTime,
-				endTime: now,
-				durationMinutes,
-			});
-		}
-
-		// Calculate and persist surcharge credits if feature is enabled
-		await calculateAndPersistSurcharges(activePeriod.id, emp.organizationId);
-
-		// Check compliance against time regulations
-		const complianceWarnings = await checkComplianceAfterClockOut(
-			emp.id,
-			emp.organizationId,
-			activePeriod.id,
-			durationMinutes,
-			timezone,
-		);
-
-		// Check and enforce breaks if needed (auto-adjust for break violations)
-		const breakEnforcementResult = await enforceBreaksAfterClockOut({
-			employeeId: emp.id,
-			organizationId: emp.organizationId,
-			workPeriodId: activePeriod.id,
-			sessionDurationMinutes: durationMinutes,
-			timezone,
-			createdBy: session.user.id,
-		});
-
-		await markWorkBalanceDirtyBestEffort(
-			{
-				employeeId: emp.id,
-				organizationId: emp.organizationId,
-				dirtyFromDate:
-					DateTime.fromJSDate(activePeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
-			},
-			{ employeeId: emp.id, organizationId: emp.organizationId, workPeriodId: activePeriod.id },
-		);
-
-		// Fire-and-forget: Check project budget warnings if project was assigned
-		if (projectId) {
-			checkProjectBudgetAfterClockOut(projectId, emp.organizationId).catch((err) => {
-				logger.error({ error: err, projectId }, "Failed to check project budget warnings");
-			});
-		}
-
-		return {
-			success: true,
-			data: {
-				...entry,
-				complianceWarnings: complianceWarnings.length > 0 ? complianceWarnings : undefined,
-				breakAdjustment: breakEnforcementResult.wasAdjusted
-					? breakEnforcementResult.adjustment
-					: undefined,
-				pendingApproval: needsClockOutApproval || undefined,
-			},
-		};
-	} catch (error) {
-		if (error instanceof ClockingConflictError) {
-			return { success: false, error: "You are not currently clocked in" };
-		}
-		logger.error({ error }, "Clock out error");
-		return { success: false, error: "Failed to clock out. Please try again." };
-	}
+	return clockOutAction(projectId, workCategoryId, timezoneContext);
 }
-
 /**
  * Validate that an employee can assign time to a project
  * Checks: project exists, is bookable (planned/active/paused), employee has access
@@ -1522,7 +1363,10 @@ async function validateProjectAssignment(
 ): Promise<{ isValid: boolean; error?: string }> {
 	// Get the project
 	const proj = await db.query.project.findFirst({
-		where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
+		where: and(
+			eq(project.id, projectId),
+			eq(project.organizationId, organizationId),
+		),
 	});
 
 	if (!proj) {
@@ -1567,7 +1411,8 @@ async function validateProjectAssignment(
 	if (!assignment) {
 		return {
 			isValid: false,
-			error: "You are not assigned to this project. Contact your administrator.",
+			error:
+				"You are not assigned to this project. Contact your administrator.",
 		};
 	}
 
@@ -1591,7 +1436,10 @@ async function validateWorkCategoryAssignment(
 		return { isValid: false, error: "Work category not found" };
 	}
 
-	const hasCategoryAccess = await employeeHasAccessToCategory(employeeId, workCategoryId);
+	const hasCategoryAccess = await employeeHasAccessToCategory(
+		employeeId,
+		workCategoryId,
+	);
 	if (!hasCategoryAccess) {
 		return { isValid: false, error: "Cannot assign to this work category" };
 	}
@@ -1633,7 +1481,9 @@ export async function checkComplianceAfterClockOut(
 
 			// Log violations if any
 			if (result.warnings.length > 0) {
-				const effectivePolicy = yield* _(workPolicyService.getEffectivePolicy(employeeId));
+				const effectivePolicy = yield* _(
+					workPolicyService.getEffectivePolicy(employeeId),
+				);
 
 				if (effectivePolicy?.regulation) {
 					for (const warning of result.warnings) {
@@ -1659,7 +1509,10 @@ export async function checkComplianceAfterClockOut(
 			}
 
 			return result.warnings;
-		}).pipe(Effect.provide(WorkPolicyServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(WorkPolicyServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		const warnings = await Effect.runPromise(complianceEffect);
 		return warnings;
@@ -1678,7 +1531,8 @@ async function calculateBreaksTakenToday(
 	employeeId: string,
 	timezone: string = "UTC",
 ): Promise<number> {
-	const { start: todayStartDT, end: todayEndDT } = getTodayRangeInTimezone(timezone);
+	const { start: todayStartDT, end: todayEndDT } =
+		getTodayRangeInTimezone(timezone);
 	const todayStart = dateToDB(todayStartDT)!;
 	const todayEnd = dateToDB(todayEndDT)!;
 
@@ -1726,19 +1580,27 @@ export async function calculateAndPersistSurcharges(
 			const surchargeService = yield* _(SurchargeService);
 
 			// Check if surcharges are enabled for this organization
-			const isEnabled = yield* _(surchargeService.isSurchargesEnabled(organizationId));
+			const isEnabled = yield* _(
+				surchargeService.isSurchargesEnabled(organizationId),
+			);
 			if (!isEnabled) {
 				return;
 			}
 
 			// Persist the surcharge calculation
 			yield* _(surchargeService.persistSurchargeCalculation(workPeriodId));
-		}).pipe(Effect.provide(SurchargeServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(SurchargeServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		await Effect.runPromise(surchargeEffect);
 	} catch (error) {
 		// Log the error but don't fail the clock-out
-		logger.error({ error, workPeriodId }, "Failed to calculate surcharges after clock-out");
+		logger.error(
+			{ error, workPeriodId },
+			"Failed to calculate surcharges after clock-out",
+		);
 	}
 }
 
@@ -1808,7 +1670,10 @@ export async function createTimeEntry(params: {
 
 	// Get request metadata
 	const headersList = await headers();
-	const ipAddress = headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
+	const ipAddress =
+		headersList.get("x-forwarded-for") ||
+		headersList.get("x-real-ip") ||
+		"unknown";
 	const userAgent = headersList.get("user-agent") || "unknown";
 
 	if (type === "correction" && replacesEntryId) {
@@ -1988,7 +1853,10 @@ export async function getBreakReminderStatus(): Promise<
 						}
 					: null,
 			};
-		}).pipe(Effect.provide(WorkPolicyServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(WorkPolicyServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		const breakStatus = await Effect.runPromise(breakStatusEffect);
 		return { success: true, data: breakStatus };
@@ -2060,7 +1928,10 @@ export async function updateWorkPeriodNotes(
 		}
 
 		// Update the clock-out entry's notes
-		await db.update(timeEntry).set({ notes }).where(eq(timeEntry.id, period.clockOutId));
+		await db
+			.update(timeEntry)
+			.set({ notes })
+			.where(eq(timeEntry.id, period.clockOutId));
 
 		return { success: true, data: { workPeriodId } };
 	} catch (error) {
@@ -2095,7 +1966,9 @@ export async function splitWorkPeriod(
 	beforeNotes?: string,
 	afterNotes?: string,
 	disambiguation?: "earlier" | "later",
-): Promise<ServerActionResult<{ firstPeriodId: string; secondPeriodId: string }>> {
+): Promise<
+	ServerActionResult<{ firstPeriodId: string; secondPeriodId: string }>
+> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -2314,7 +2187,11 @@ export async function updateTimeEntryNotes(
 
 	try {
 		// Get the time entry
-		const [entry] = await db.select().from(timeEntry).where(eq(timeEntry.id, entryId)).limit(1);
+		const [entry] = await db
+			.select()
+			.from(timeEntry)
+			.where(eq(timeEntry.id, entryId))
+			.limit(1);
 
 		if (!entry) {
 			return { success: false, error: "Time entry not found" };
@@ -2366,7 +2243,9 @@ export interface AssignedProject {
  * - Are in bookable status (planned, active, paused)
  * - The employee is assigned to (directly or via team)
  */
-export async function getAssignedProjects(): Promise<ServerActionResult<AssignedProject[]>> {
+export async function getAssignedProjects(): Promise<
+	ServerActionResult<AssignedProject[]>
+> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -2419,7 +2298,11 @@ export async function getAssignedProjects(): Promise<ServerActionResult<Assigned
 
 		for (const assignment of typedAssignments) {
 			const proj = assignment.project;
-			if (proj && bookableStatuses.includes(proj.status) && !bookableProjects.has(proj.id)) {
+			if (
+				proj &&
+				bookableStatuses.includes(proj.status) &&
+				!bookableProjects.has(proj.id)
+			) {
 				bookableProjects.set(proj.id, {
 					id: proj.id,
 					name: proj.name,
@@ -2472,7 +2355,9 @@ export async function getAssignedProjects(): Promise<ServerActionResult<Assigned
 		}
 
 		// Sort by name
-		const projects = Array.from(projectsMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+		const projects = Array.from(projectsMap.values()).sort((a, b) =>
+			a.name.localeCompare(b.name),
+		);
 
 		return { success: true, data: projects };
 	} catch (error) {
@@ -2488,7 +2373,9 @@ export async function getAssignedProjects(): Promise<ServerActionResult<Assigned
 export async function updateWorkPeriodProject(
 	workPeriodId: string,
 	projectId: string | null,
-): Promise<ServerActionResult<{ workPeriodId: string; projectId: string | null }>> {
+): Promise<
+	ServerActionResult<{ workPeriodId: string; projectId: string | null }>
+> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -2621,7 +2508,9 @@ async function checkProjectBudgetAfterClockOut(
  * Get the edit capability for a work period based on change policy
  * Returns information about what kind of edits are allowed
  */
-export async function getWorkPeriodEditCapability(workPeriodId: string): Promise<
+export async function getWorkPeriodEditCapability(
+	workPeriodId: string,
+): Promise<
 	ServerActionResult<{
 		capability: EditCapability;
 		policyName: string | null;
@@ -2699,7 +2588,10 @@ export async function getWorkPeriodEditCapability(workPeriodId: string): Promise
 					capability,
 					policyName: policy?.policyName || null,
 				};
-			}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive)),
+			}).pipe(
+				Effect.provide(ChangePolicyServiceLive),
+				Effect.provide(DatabaseServiceLive),
+			),
 		);
 
 		return { success: true, data: result };
@@ -2729,7 +2621,11 @@ async function resolveManualTimeEntryTarget(params: {
 	requestedEmployeeId?: string;
 	sessionUser: { id: string; role?: string | null };
 }): Promise<
-	| { success: true; targetEmployee: typeof employee.$inferSelect; isOwnEntry: boolean }
+	| {
+			success: true;
+			targetEmployee: typeof employee.$inferSelect;
+			isOwnEntry: boolean;
+	  }
 	| { success: false; error: string }
 > {
 	const { currentEmployee, requestedEmployeeId, sessionUser } = params;
@@ -2745,7 +2641,10 @@ async function resolveManualTimeEntryTarget(params: {
 		),
 	});
 	if (!targetEmployee) {
-		return { success: false, error: "Not authorized to create time entries for this employee" };
+		return {
+			success: false,
+			error: "Not authorized to create time entries for this employee",
+		};
 	}
 
 	const managedRecords = await db.query.employeeManagers.findMany({
@@ -2781,14 +2680,19 @@ async function resolveManualTimeEntryTarget(params: {
 
 	return canCreateForTarget
 		? { success: true, targetEmployee, isOwnEntry: false }
-		: { success: false, error: "Not authorized to create time entries for this employee" };
+		: {
+				success: false,
+				error: "Not authorized to create time entries for this employee",
+			};
 }
 
 /**
  * Create a manual time entry for a past date
  * Respects the organization's change policy for approval requirements
  */
-export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise<
+export async function createManualTimeEntry(
+	data: ManualTimeEntryInput,
+): Promise<
 	ServerActionResult<{
 		workPeriodId: string;
 		requiresApproval: boolean;
@@ -2823,7 +2727,11 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 	const { targetEmployee, isOwnEntry } = targetResolution;
 
-	if (isOwnEntry && data.timezone !== undefined && !IANAZone.isValidZone(data.timezone)) {
+	if (
+		isOwnEntry &&
+		data.timezone !== undefined &&
+		!IANAZone.isValidZone(data.timezone)
+	) {
 		return { success: false, error: "Invalid timezone" };
 	}
 
@@ -2833,9 +2741,13 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		columns: { timezone: true },
 	});
 	const savedTimezone = settingsData?.timezone || "UTC";
-	const timezone = isOwnEntry ? (data.timezone ?? savedTimezone) : savedTimezone;
+	const timezone = isOwnEntry
+		? (data.timezone ?? savedTimezone)
+		: savedTimezone;
 	const matchingBrowserTimezone =
-		isOwnEntry && data.browserTimezone === timezone && IANAZone.isValidZone(data.browserTimezone)
+		isOwnEntry &&
+		data.browserTimezone === timezone &&
+		IANAZone.isValidZone(data.browserTimezone)
 			? data.browserTimezone
 			: null;
 
@@ -2952,7 +2864,8 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		if (!categoryValidation.isValid) {
 			return {
 				success: false,
-				error: categoryValidation.error || "Cannot assign to this work category",
+				error:
+					categoryValidation.error || "Cannot assign to this work category",
 			};
 		}
 	}
@@ -2972,12 +2885,21 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 						timezone,
 					}),
 				);
-			}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
+			}).pipe(
+				Effect.provide(ChangePolicyServiceLive),
+				Effect.provide(DatabaseServiceLive),
+			);
 
 			editCapability = await Effect.runPromise(capabilityEffect);
 		} catch (error) {
-			logger.error({ error }, "Failed to check edit capability for manual entry");
-			return { success: false, error: "Could not verify time approval policy. Please try again." };
+			logger.error(
+				{ error },
+				"Failed to check edit capability for manual entry",
+			);
+			return {
+				success: false,
+				error: "Could not verify time approval policy. Please try again.",
+			};
 		}
 
 		// Handle forbidden case
@@ -2990,7 +2912,9 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 
 		requiresApproval = editCapability.type === "approval_required";
 	}
-	const billingAccess = await requireBillingForMutation(targetEmployee.organizationId);
+	const billingAccess = await requireBillingForMutation(
+		targetEmployee.organizationId,
+	);
 	if (!isBillingMutationAllowed(billingAccess)) {
 		return {
 			success: false,
@@ -3051,11 +2975,19 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				wasAdjusted = true;
 
 				// Case 1: Manual entry starts before existing period - clip the end
-				if (newStart < periodStart && newEnd > periodStart && newEnd <= periodEnd) {
+				if (
+					newStart < periodStart &&
+					newEnd > periodStart &&
+					newEnd <= periodEnd
+				) {
 					adjustedClockOut = new Date(periodStart - 60000); // 1 minute before
 				}
 				// Case 2: Manual entry ends after existing period - clip the start
-				else if (newStart >= periodStart && newStart < periodEnd && newEnd > periodEnd) {
+				else if (
+					newStart >= periodStart &&
+					newStart < periodEnd &&
+					newEnd > periodEnd
+				) {
 					adjustedClockIn = new Date(periodEnd + 60000); // 1 minute after
 				}
 				// Case 3: Manual entry spans the existing period - clip to before it
@@ -3066,14 +2998,16 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				else if (newStart >= periodStart && newEnd <= periodEnd) {
 					return {
 						success: false,
-						error: "The selected time range is completely covered by an existing work period.",
+						error:
+							"The selected time range is completely covered by an existing work period.",
 					};
 				}
 			}
 		}
 
 		// Validate adjusted times are still valid (at least 1 minute duration)
-		const adjustedDurationMs = adjustedClockOut.getTime() - adjustedClockIn.getTime();
+		const adjustedDurationMs =
+			adjustedClockOut.getTime() - adjustedClockIn.getTime();
 		if (adjustedDurationMs < 60000) {
 			return {
 				success: false,
@@ -3153,18 +3087,19 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				}
 			: null;
 
-		const canonicalRecord = await canonicalWorkRecordClient.createForCompletedPeriod({
-			organizationId: targetEmployee.organizationId,
-			employeeId: targetEmployee.id,
-			startAt: finalClockIn,
-			endAt: finalClockOut,
-			durationMinutes,
-			approvalState: approvalStatus,
-			createdBy: session.user.id,
-			workCategoryId: data.workCategoryId || null,
-			projectId: data.projectId || null,
-			origin: "manual",
-		});
+		const canonicalRecord =
+			await canonicalWorkRecordClient.createForCompletedPeriod({
+				organizationId: targetEmployee.organizationId,
+				employeeId: targetEmployee.id,
+				startAt: finalClockIn,
+				endAt: finalClockOut,
+				durationMinutes,
+				approvalState: approvalStatus,
+				createdBy: session.user.id,
+				workCategoryId: data.workCategoryId || null,
+				projectId: data.projectId || null,
+				origin: "manual",
+			});
 
 		// Create work period with adjusted times
 		const [period] = await db
@@ -3204,7 +3139,9 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			{
 				employeeId: targetEmployee.id,
 				organizationId: targetEmployee.organizationId,
-				dirtyFromDate: DateTime.fromJSDate(clockInDate, { zone: "utc" }).toISODate() ?? undefined,
+				dirtyFromDate:
+					DateTime.fromJSDate(clockInDate, { zone: "utc" }).toISODate() ??
+					undefined,
 			},
 			{
 				employeeId: targetEmployee.id,
@@ -3215,7 +3152,10 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 
 		// Calculate and persist surcharge credits if feature is enabled
 		if (!requiresApproval) {
-			await calculateAndPersistSurcharges(period.id, targetEmployee.organizationId);
+			await calculateAndPersistSurcharges(
+				period.id,
+				targetEmployee.organizationId,
+			);
 		}
 
 		logger.info(
@@ -3264,7 +3204,9 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 export async function getPresenceStatus(
 	employeeId: string,
 ): Promise<ServerActionResult<PresenceStatusSummary>> {
-	const parsed = z.object({ employeeId: z.uuid("Invalid employee ID") }).safeParse({ employeeId });
+	const parsed = z
+		.object({ employeeId: z.uuid("Invalid employee ID") })
+		.safeParse({ employeeId });
 	if (!parsed.success) {
 		return {
 			success: false as const,
@@ -3336,7 +3278,9 @@ export async function getPresenceStatus(
 
 		// Get employee's effective work policy
 		const workPolicyService = yield* _(WorkPolicyService);
-		const effectivePolicy = yield* _(workPolicyService.getEffectivePolicy(validatedEmployeeId));
+		const effectivePolicy = yield* _(
+			workPolicyService.getEffectivePolicy(validatedEmployeeId),
+		);
 
 		if (!effectivePolicy) {
 			return disabledPresenceStatus("No effective work policy found.");
@@ -3348,7 +3292,10 @@ export async function getPresenceStatus(
 				return await dbService.db.query.workPolicy.findFirst({
 					where: and(
 						eq(workPolicy.id, effectivePolicy.policyId),
-						eq(workPolicy.organizationId, session.session.activeOrganizationId!),
+						eq(
+							workPolicy.organizationId,
+							session.session.activeOrganizationId!,
+						),
 					),
 					columns: { presenceEnabled: true },
 				});
@@ -3369,11 +3316,15 @@ export async function getPresenceStatus(
 		);
 
 		if (!presenceConfig) {
-			return disabledPresenceStatus("Presence policy configuration is missing.");
+			return disabledPresenceStatus(
+				"Presence policy configuration is missing.",
+			);
 		}
 
 		const now = DateTime.now();
-		const weekStartDay = yield* _(Effect.promise(() => getUserWeekStartDay(session.user.id)));
+		const weekStartDay = yield* _(
+			Effect.promise(() => getUserWeekStartDay(session.user.id)),
+		);
 		const settingsData = yield* _(
 			dbService.query("getUserTimezone", async () => {
 				return await dbService.db.query.userSettings.findFirst({
@@ -3441,7 +3392,10 @@ export async function getPresenceStatus(
 				return await dbService.db.query.workPeriod.findMany({
 					where: and(
 						eq(workPeriod.employeeId, validatedEmployeeId),
-						eq(workPeriod.organizationId, session.session.activeOrganizationId!),
+						eq(
+							workPeriod.organizationId,
+							session.session.activeOrganizationId!,
+						),
 						gte(workPeriod.startTime, periodStart.toJSDate()),
 						lte(workPeriod.startTime, periodEnd.toJSDate()),
 					),
@@ -3460,13 +3414,22 @@ export async function getPresenceStatus(
 						endDate: absenceEntry.endDate,
 					})
 					.from(absenceEntry)
-					.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
+					.innerJoin(
+						absenceCategory,
+						eq(absenceEntry.categoryId, absenceCategory.id),
+					)
 					.where(
 						and(
 							eq(absenceEntry.employeeId, validatedEmployeeId),
-							eq(absenceEntry.organizationId, session.session.activeOrganizationId!),
+							eq(
+								absenceEntry.organizationId,
+								session.session.activeOrganizationId!,
+							),
 							eq(absenceEntry.status, "approved"),
-							eq(absenceCategory.organizationId, session.session.activeOrganizationId!),
+							eq(
+								absenceCategory.organizationId,
+								session.session.activeOrganizationId!,
+							),
 							eq(absenceCategory.type, "home_office"),
 							lte(absenceEntry.startDate, periodEndDate),
 							gte(absenceEntry.endDate, periodStartDate),

@@ -1133,8 +1133,9 @@ export async function getAvailableEmployees(
 				}
 
 				// Filter out assigned employees
+				const assignedIdSet = new Set(assignedIds);
 				const available = employees.flatMap((e) =>
-					!assignedIds.includes(e.id)
+					!assignedIdSet.has(e.id)
 						? [
 								{
 									id: e.id,

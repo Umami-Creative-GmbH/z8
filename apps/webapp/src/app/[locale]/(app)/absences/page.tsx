@@ -34,6 +34,10 @@ export default async function AbsencesPage() {
 	});
 	const timezone = org?.timezone || "UTC";
 	const now = DateTime.now().setZone(timezone);
+	const nowIso = now.toUTC().toISO();
+	if (!nowIso) {
+		throw new RangeError("Could not resolve the current instant");
+	}
 	const calendarYear = now.year;
 	const currentDate = now.toISODate() ?? DateTime.utc().toISODate() ?? "9999-12-31";
 
@@ -91,7 +95,7 @@ export default async function AbsencesPage() {
 						</p>
 					</div>
 				</div>
-				<VacationBalanceCard balance={vacationBalance} />
+				<VacationBalanceCard balance={vacationBalance} now={nowIso} timezone={timezone} />
 			</div>
 
 			{/* Calendar/Table View Container with Toggle */}

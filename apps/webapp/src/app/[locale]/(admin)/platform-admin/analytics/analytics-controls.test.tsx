@@ -24,12 +24,14 @@ vi.mock("@/components/ui/select", () => ({
 	SelectItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	SelectTrigger: ({
 		children,
+		id,
 		"aria-label": ariaLabel,
 	}: {
 		children: React.ReactNode;
+		id?: string;
 		"aria-label"?: string;
 	}) => (
-		<button aria-label={ariaLabel} type="button">
+		<button id={id} aria-label={ariaLabel} type="button">
 			{children}
 		</button>
 	),
@@ -44,6 +46,8 @@ describe("PlatformAnalyticsControls", () => {
 
 		expect(screen.getByText("Range")).toBeTruthy();
 		expect(screen.getByText("Bucket")).toBeTruthy();
+		expect(screen.getByLabelText("Range")).toBeTruthy();
+		expect(screen.getByLabelText("Bucket")).toBeTruthy();
 		expect(tMock).toHaveBeenCalledWith("admin:admin.analytics.controls.range.label", "Range");
 		expect(tMock).toHaveBeenCalledWith("admin:admin.analytics.controls.range.30d", "Last 30 days");
 		expect(tMock).toHaveBeenCalledWith("admin:admin.analytics.controls.bucket.day", "Daily");

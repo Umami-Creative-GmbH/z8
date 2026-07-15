@@ -4,8 +4,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { CustomDomainSummary } from "./custom-domain-summary";
 import { DomainManagement } from "./domain-management";
-import { SSOProviderManagement } from "./sso-provider-management";
 import { SsoProviderListCard } from "./sso-provider-list-card";
+import { SSOProviderManagement } from "./sso-provider-management";
 
 const { deleteDomainActionMock, deleteSSOProviderActionMock } = vi.hoisted(() => ({
 	deleteDomainActionMock: vi.fn(),
@@ -38,8 +38,12 @@ vi.mock("@/app/[locale]/(app)/settings/enterprise/actions", () => ({
 }));
 
 vi.mock("./domain-add-dialog", () => ({ DomainAddDialog: () => null }));
-vi.mock("./domain-auth-config-dialog", () => ({ DomainAuthConfigDialog: () => null }));
-vi.mock("./domain-verification-dialog", () => ({ DomainVerificationDialog: () => null }));
+vi.mock("./domain-auth-config-dialog", () => ({
+	DomainAuthConfigDialog: () => null,
+}));
+vi.mock("./domain-verification-dialog", () => ({
+	DomainVerificationDialog: () => null,
+}));
 vi.mock("./sso-provider-dialog", () => ({ SSOProviderDialog: () => null }));
 
 const domain = {
@@ -112,9 +116,16 @@ describe("enterprise management deletion", () => {
 				organizationId="org_123"
 			/>,
 		);
-
-		fireEvent.click(screen.getByRole("button", { name: "Delete custom domain login.acme.test" }));
-		expect(screen.getByText('Are you sure you want to delete "login.acme.test"? This action cannot be undone. Users will no longer be able to sign in via this custom domain.')).toBeTruthy();
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Delete custom domain login.acme.test",
+			}),
+		);
+		expect(
+			screen.getByText(
+				'Are you sure you want to delete "login.acme.test"? This action cannot be undone. Users will no longer be able to sign in via this custom domain.',
+			),
+		).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
 		await waitFor(() => expect(deleteDomainActionMock).toHaveBeenCalledWith("domain_123"));
@@ -123,10 +134,20 @@ describe("enterprise management deletion", () => {
 
 	it("confirms provider deletion before removing the provider and its token locally", async () => {
 		deleteSSOProviderActionMock.mockResolvedValue(undefined);
-		render(<SSOProviderManagement initialProviders={[provider]} />);
+		render(
+			<SSOProviderManagement
+				initialProviders={[provider]}
+				callbackBaseUrl="https://acme.z8.test"
+			/>,
+		);
+		expect(screen.getByText("https://acme.z8.test/api/auth/sso/callback")).toBeTruthy();
 
 		fireEvent.click(screen.getByRole("button", { name: "Delete SSO provider acme-okta" }));
-		expect(screen.getByText("Are you sure you want to delete this SSO provider? Users will no longer be able to sign in using this identity provider.")).toBeTruthy();
+		expect(
+			screen.getByText(
+				"Are you sure you want to delete this SSO provider? Users will no longer be able to sign in using this identity provider.",
+			),
+		).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
 		await waitFor(() => expect(deleteSSOProviderActionMock).toHaveBeenCalledWith("provider_123"));

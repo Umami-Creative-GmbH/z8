@@ -7,15 +7,16 @@ function source(relativePath: string) {
 }
 
 describe("live clocking writers", () => {
-	it("routes API, web actions, and bot commands through the transactional service", () => {
+	it("routes API, web actions, and bot commands through the canonical transactional writer", () => {
 		const api = source("../../app/api/time-entries/route.ts");
+		const mobileApi = source("../../app/api/mobile/time-clock/route.ts");
 		const web = source("../../app/[locale]/(app)/time-tracking/actions/clocking.ts");
 		const legacyWeb = source("../../app/[locale]/(app)/time-tracking/actions.ts");
 		const onBehalf = source("../../app/api/time-entries/clock-out-on-behalf/route.ts");
 		const clockInBot = source("../teams/commands/clock-in.ts");
 		const clockOutBot = source("../teams/commands/clock-out.ts");
 
-		for (const writer of [api, web, legacyWeb, onBehalf, clockInBot, clockOutBot]) {
+		for (const writer of [api, web, onBehalf, clockInBot, clockOutBot]) {
 			expect(writer).toContain("clockingService");
 		}
 		expect(api).not.toContain(".insert(timeEntry)");
@@ -31,10 +32,16 @@ describe("live clocking writers", () => {
 
 		const legacyClockIn = legacyWeb.slice(legacyWeb.indexOf("export async function clockIn"), legacyWeb.indexOf("export interface BreakAdjustmentInfo"));
 		const legacyClockOut = legacyWeb.slice(legacyWeb.indexOf("export async function clockOut"), legacyWeb.indexOf("async function validateProjectAssignment"));
-		expect(legacyClockIn).toContain("clockingService.clockIn");
+		expect(legacyClockIn).toContain("clockInAction(");
+		expect(legacyClockIn).not.toContain("clockingService.clockIn");
 		expect(legacyClockIn).not.toContain("createTimeEntry(");
-		expect(legacyClockOut).toContain("clockingService.clockOut");
+		expect(legacyClockOut).toContain("clockOutAction(");
+		expect(legacyClockOut).not.toContain("clockingService.clockOut");
 		expect(legacyClockOut).not.toContain("createTimeEntry(");
+		expect(mobileApi).toContain('time-tracking/actions/clocking"');
+		expect(mobileApi).toContain("await clockIn(");
+		expect(mobileApi).toContain("await clockOut(");
+		expect(mobileApi).not.toContain("clockingService");
 		expect(onBehalf).toContain("clockingService.clockOut");
 		expect(onBehalf).not.toContain("createTimeEntry(");
 	});

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query/keys";
 import {
 	SOCIAL_PROVIDERS,
 	type SocialProvider,
@@ -19,9 +20,8 @@ interface UseEnabledProvidersReturn {
 /**
  * React hook to fetch and cache enabled social OAuth providers
  *
- * Fetches the list of enabled providers from the API endpoint and caches
- * the result in sessionStorage for performance. The cache is cleared when
- * the browser session ends.
+ * Fetches the list of enabled providers from the API endpoint and keeps a
+ * short-lived shared query cache so login and signup stay in sync.
  *
  * @returns Object with enabledProviders array, loading state, and error state
  *
@@ -45,59 +45,28 @@ interface UseEnabledProvidersReturn {
  * ```
  */
 export function useEnabledProviders(): UseEnabledProvidersReturn {
-	const [enabledProviders, setEnabledProviders] = useState<SocialProvider[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
-	const [error, setError] = useState<Error | null>(null);
-
-	useEffect(() => {
-		const fetchEnabledProviders = async () => {
-			let shouldFinish = true;
-			try {
-				// Check sessionStorage cache first
-				const cached = sessionStorage.getItem("enabled-providers");
-				if (cached) {
-					try {
-						const ids = JSON.parse(cached) as SocialProviderId[];
-						setEnabledProviders(SOCIAL_PROVIDERS.filter((p) => ids.includes(p.id)));
-						setIsLoading(false);
-						shouldFinish = false;
-						return;
-					} catch (_e) {
-						// Invalid cache, continue to fetch
-						sessionStorage.removeItem("enabled-providers");
-					}
-				}
-
-				// Fetch from API
-				const response = await fetch("/api/auth/providers");
-
-				if (!response.ok) {
-					setError(new Error(`Failed to fetch providers: ${response.statusText}`));
-					setEnabledProviders([]);
-					return;
-				}
-
-				const data = await response.json();
-				const ids = data.providers as SocialProviderId[];
-
-				// Cache the provider IDs
-				sessionStorage.setItem("enabled-providers", JSON.stringify(ids));
-
-				// Filter SOCIAL_PROVIDERS to only include enabled ones
-				setEnabledProviders(SOCIAL_PROVIDERS.filter((p) => ids.includes(p.id)));
-			} catch (err) {
-				console.error("Error fetching enabled providers:", err);
-				setError(err instanceof Error ? err : new Error("Unknown error"));
-				// Fallback to empty array on error
-				setEnabledProviders([]);
+	const providersQuery = useQuery({
+		queryKey: queryKeys.auth.providers(),
+		queryFn: async ({ signal }) => {
+			const response = await fetch("/api/auth/providers", { signal });
+			if (!response.ok) {
+				throw new Error(`Failed to fetch providers: ${response.statusText}`);
 			}
-			if (shouldFinish) {
-				setIsLoading(false);
-			}
-		};
 
-		fetchEnabledProviders();
-	}, []);
+			const data = (await response.json()) as {
+				providers?: SocialProviderId[];
+			};
+			const enabledIds = new Set(data.providers ?? []);
+			return SOCIAL_PROVIDERS.filter((provider) => enabledIds.has(provider.id));
+		},
+		staleTime: 5 * 60 * 1000,
+		gcTime: 30 * 60 * 1000,
+		refetchOnWindowFocus: true,
+	});
 
-	return { enabledProviders, isLoading, error };
+	return {
+		enabledProviders: providersQuery.data ?? [],
+		isLoading: providersQuery.isLoading,
+		error: providersQuery.error instanceof Error ? providersQuery.error : null,
+	};
 }

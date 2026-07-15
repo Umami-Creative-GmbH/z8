@@ -52,7 +52,8 @@ describe("analytics service date boundaries", () => {
 	it("filters vacation rows to the requested organization before aggregation", () => {
 		const source = readFileSync(`${SERVICES_ROOT}/analytics.service.ts`, "utf8");
 
-		expect(source).toContain(".filter((row) => row.employee.organizationId === organizationId)");
+		expect(source).toContain("return rows.flatMap((row) =>");
+		expect(source).toContain("row.employee.organizationId === organizationId");
 	});
 
 	it("uses the same clipped pieces for summary, employees, and chart rows", () => {

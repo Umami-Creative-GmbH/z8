@@ -2,7 +2,8 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useId } from "react";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -56,6 +57,8 @@ function PlatformAnalyticsControlsContent({
 	const { t } = useTranslate();
 	const { push } = useRouter();
 	const searchParams = useSearchParams();
+	const rangeId = useId();
+	const bucketId = useId();
 	const bucketOptions = getPlatformAnalyticsBucketOptions(range);
 
 	function pushParams(nextRange: PlatformAnalyticsRange, nextBucket: PlatformAnalyticsBucket) {
@@ -80,11 +83,15 @@ function PlatformAnalyticsControlsContent({
 	return (
 		<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
 			<div className="grid gap-1.5">
-				<label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+				<Label
+					htmlFor={rangeId}
+					className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+				>
 					{t("admin:admin.analytics.controls.range.label", "Range")}
-				</label>
+				</Label>
 				<Select value={range} onValueChange={handleRangeChange}>
 					<SelectTrigger
+						id={rangeId}
 						className="w-full sm:w-[180px]"
 						aria-label={t("admin:admin.analytics.controls.range.ariaLabel", "Analytics range")}
 					>
@@ -101,11 +108,15 @@ function PlatformAnalyticsControlsContent({
 			</div>
 
 			<div className="grid gap-1.5">
-				<label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+				<Label
+					htmlFor={bucketId}
+					className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+				>
 					{t("admin:admin.analytics.controls.bucket.label", "Bucket")}
-				</label>
+				</Label>
 				<Select value={bucket} onValueChange={handleBucketChange}>
 					<SelectTrigger
+						id={bucketId}
 						className="w-full sm:w-[160px]"
 						aria-label={t("admin:admin.analytics.controls.bucket.ariaLabel", "Analytics bucket")}
 					>

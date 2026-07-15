@@ -6,6 +6,7 @@ import * as React from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { plainDateFromCalendarDate } from "@/lib/datetime/calendar-date";
 import { weekStartDayToDayPickerValue } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
 
@@ -161,7 +162,7 @@ function CalendarDayButton({
 			ref={ref}
 			variant="ghost"
 			size="icon"
-			data-day={day.date.toLocaleDateString()}
+			data-day={plainDateFromCalendarDate(day.date).toString()}
 			data-selected-single={
 				modifiers.selected &&
 				!modifiers.range_start &&

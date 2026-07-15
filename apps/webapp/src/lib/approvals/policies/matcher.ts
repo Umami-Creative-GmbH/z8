@@ -30,7 +30,8 @@ function matchesStringList(values: string[], condition: ApprovalPolicyConditionD
 	}
 
 	if (condition.operator === "in") {
-		return stringList(condition).some((value) => values.includes(value));
+		const valueSet = new Set(values);
+		return stringList(condition).some((value) => valueSet.has(value));
 	}
 
 	return false;

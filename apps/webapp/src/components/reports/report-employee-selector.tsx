@@ -63,19 +63,15 @@ export function ReportEmployeeSelector({
 	}
 
 	return (
-		<div className="space-y-2">
-			<label className="text-sm font-medium leading-none">
-				{t("reports.employeeSelector.label", "Employee")}
-			</label>
-			<EmployeeSingleSelect
-				value={selectedEmployeeId}
-				onChange={onEmployeeChange}
-				employees={employees}
-				showFilters={false}
-				placeholder={t("reports.employeeSelector.placeholder", "Select employee...")}
-				disabled={disabled}
-				className="space-y-0"
-			/>
-		</div>
+		<EmployeeSingleSelect
+			value={selectedEmployeeId}
+			onChange={onEmployeeChange}
+			employees={employees}
+			showFilters={false}
+			placeholder={t("reports.employeeSelector.placeholder", "Select employee...")}
+			disabled={disabled}
+			className="space-y-0"
+			label={t("reports.employeeSelector.label", "Employee")}
+		/>
 	);
 }

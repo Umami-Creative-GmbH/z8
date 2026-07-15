@@ -33,6 +33,7 @@ const mockState = vi.hoisted(() => ({
 	updateWhere: vi.fn(),
 	clockingClockIn: vi.fn(),
 	clockingClockOut: vi.fn(),
+	createCanonicalWorkRecord: vi.fn(),
 	logger: {
 		info: vi.fn(),
 		warn: vi.fn(),
@@ -108,6 +109,12 @@ vi.mock("@/lib/time-tracking/clocking-service", () => ({
 	},
 }));
 
+vi.mock("../actions.canonical", () => ({
+	canonicalWorkRecordClient: {
+		createForCompletedPeriod: mockState.createCanonicalWorkRecord,
+	},
+}));
+
 vi.mock("./approvals", () => ({
 	createClockOutApprovalRequest: mockState.createClockOutApprovalRequest,
 	createManualEntryApprovalRequest: mockState.createManualEntryApprovalRequest,
@@ -155,9 +162,8 @@ vi.mock("./shared", () => ({
 	ONE_MINUTE_MS: 60_000,
 }));
 
-const { addBreakToActiveSession, clockIn, clockOut, createManualTimeEntry } = await import(
-	"./clocking"
-);
+const { addBreakToActiveSession, clockIn, clockOut, createManualTimeEntry } =
+	await import("./clocking");
 
 describe("clockIn", () => {
 	beforeEach(() => {
@@ -183,6 +189,9 @@ describe("clockIn", () => {
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
 		mockState.insertValues.mockResolvedValue(undefined);
+		mockState.createCanonicalWorkRecord.mockResolvedValue({
+			id: "canonical-1",
+		});
 		mockState.clockingClockIn.mockImplementation(async (input) => {
 			const entry = await mockState.createTimeEntry({
 				employeeId: input.employeeId,
@@ -192,7 +201,9 @@ describe("clockIn", () => {
 				createdBy: input.createdBy,
 				...input.action,
 			});
-			await mockState.insertValues({ workLocationType: input.workLocationType });
+			await mockState.insertValues({
+				workLocationType: input.workLocationType,
+			});
 			return { entry };
 		});
 	});
@@ -207,7 +218,11 @@ describe("clockIn", () => {
 		const result = await clockIn("remote");
 
 		expect(mockState.requireBillingForMutation).toHaveBeenCalledWith("org-1");
-		expect(result).toEqual({ success: false, error: "billing_required", code: "trial_expired" });
+		expect(result).toEqual({
+			success: false,
+			error: "billing_required",
+			code: "trial_expired",
+		});
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 		expect(mockState.insertValues).not.toHaveBeenCalled();
 	});
@@ -224,7 +239,9 @@ describe("clockIn", () => {
 	});
 
 	it("stores browser-derived timezone capture when clocking in with a valid browser timezone", async () => {
-		const result = await clockIn("office", { browserTimezone: "America/New_York" });
+		const result = await clockIn("office", {
+			browserTimezone: "America/New_York",
+		});
 
 		expect(result.success).toBe(true);
 		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
@@ -265,7 +282,10 @@ describe("clockIn", () => {
 	it("rejects invalid work location before creating a time entry", async () => {
 		const result = await clockIn("field" as never);
 
-		expect(result).toEqual({ success: false, error: "Invalid work location type" });
+		expect(result).toEqual({
+			success: false,
+			error: "Invalid work location type",
+		});
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 		expect(mockState.insertValues).not.toHaveBeenCalled();
 	});
@@ -279,7 +299,9 @@ describe("clockOut", () => {
 		vi.setSystemTime(new Date("2026-05-04T10:00:00.000Z"));
 
 		mockState.updateSet.mockReturnValue({ where: mockState.updateWhere });
-		mockState.updateWhere.mockReturnValue({ returning: mockState.updateReturning });
+		mockState.updateWhere.mockReturnValue({
+			returning: mockState.updateReturning,
+		});
 		mockState.updateReturning.mockResolvedValue([{ id: "period-1" }]);
 		mockState.transaction.mockImplementation(async (callback) =>
 			callback({
@@ -295,8 +317,18 @@ describe("clockOut", () => {
 			teamId: null,
 		});
 		mockState.findEmployees.mockResolvedValue([
-			{ id: "employee-1", organizationId: "org-1", isActive: true, role: "employee" },
-			{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
+			{
+				id: "employee-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "employee",
+			},
+			{
+				id: "manager-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "manager",
+			},
 		]);
 		mockState.findManagerLinks.mockResolvedValue([
 			{ employeeId: "employee-1", managerId: "manager-1", isPrimary: true },
@@ -317,7 +349,12 @@ describe("clockOut", () => {
 		mockState.checkClockOutNeedsApproval.mockResolvedValue(false);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 		mockState.checkComplianceAfterClockOut.mockResolvedValue([]);
-		mockState.enforceBreaksAfterClockOut.mockResolvedValue({ wasAdjusted: false });
+		mockState.enforceBreaksAfterClockOut.mockResolvedValue({
+			wasAdjusted: false,
+		});
+		mockState.createCanonicalWorkRecord.mockResolvedValue({
+			id: "canonical-1",
+		});
 		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
@@ -331,8 +368,19 @@ describe("clockOut", () => {
 				createdBy: input.createdBy,
 				...input.action,
 			});
-			mockState.updateSet({ approvalStatus: input.approvalStatus, pendingChanges: input.pendingChanges });
-			return { entry, durationMinutes: 60, period: { id: "period-1" }, activePeriod: { id: "period-1", startTime: new Date("2026-05-04T09:00:00.000Z") } };
+			mockState.updateSet({
+				approvalStatus: input.approvalStatus,
+				pendingChanges: input.pendingChanges,
+			});
+			return {
+				entry,
+				durationMinutes: 60,
+				period: { id: "period-1" },
+				activePeriod: {
+					id: "period-1",
+					startTime: new Date("2026-05-04T09:00:00.000Z"),
+				},
+			};
 		});
 	});
 
@@ -346,7 +394,11 @@ describe("clockOut", () => {
 		const result = await clockOut();
 
 		expect(mockState.requireBillingForMutation).toHaveBeenCalledWith("org-1");
-		expect(result).toEqual({ success: false, error: "billing_required", code: "payment_failed" });
+		expect(result).toEqual({
+			success: false,
+			error: "billing_required",
+			code: "payment_failed",
+		});
 		expect(mockState.transaction).not.toHaveBeenCalled();
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
@@ -357,7 +409,9 @@ describe("clockOut", () => {
 		const result = await clockOut();
 
 		expect(result.success).toBe(true);
-		expect(mockState.checkClockOutNeedsApproval).toHaveBeenCalledWith("employee-1");
+		expect(mockState.checkClockOutNeedsApproval).toHaveBeenCalledWith(
+			"employee-1",
+		);
 		expect(result.success && result.data.pendingApproval).toBe(true);
 		expect(mockState.updateSet).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -415,7 +469,9 @@ describe("clockOut", () => {
 	});
 
 	it("fails closed when the clock-out approval check fails before mutating", async () => {
-		mockState.checkClockOutNeedsApproval.mockRejectedValueOnce(new Error("policy unavailable"));
+		mockState.checkClockOutNeedsApproval.mockRejectedValueOnce(
+			new Error("policy unavailable"),
+		);
 
 		const result = await clockOut();
 
@@ -452,13 +508,17 @@ describe("clockOut", () => {
 
 		expect(result.success).toBe(true);
 		expect(mockState.enforceBreaksAfterClockOut).toHaveBeenCalled();
-		expect(mockState.enforceBreaksAfterClockOut.mock.invocationCallOrder[0]).toBeLessThan(
+		expect(
+			mockState.enforceBreaksAfterClockOut.mock.invocationCallOrder[0],
+		).toBeLessThan(
 			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
 		);
 	});
 
 	it("keeps clock-out successful when dirty marking fails", async () => {
-		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(new Error("dirty marker failed"));
+		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(
+			new Error("dirty marker failed"),
+		);
 
 		const result = await clockOut();
 
@@ -488,7 +548,9 @@ describe("clockOut", () => {
 	});
 
 	it("stores browser-derived timezone capture when clocking out with a valid browser timezone", async () => {
-		const result = await clockOut(undefined, undefined, { browserTimezone: "America/New_York" });
+		const result = await clockOut(undefined, undefined, {
+			browserTimezone: "America/New_York",
+		});
 
 		expect(result.success).toBe(true);
 		expect(mockState.clockingClockOut).toHaveBeenCalledWith(
@@ -503,7 +565,9 @@ describe("clockOut", () => {
 	});
 
 	it("returns a failure when the active period update affects no rows", async () => {
-		mockState.clockingClockOut.mockRejectedValueOnce(new Error("Active work period changed"));
+		mockState.clockingClockOut.mockRejectedValueOnce(
+			new Error("Active work period changed"),
+		);
 
 		const result = await clockOut();
 
@@ -557,8 +621,18 @@ describe("createManualTimeEntry", () => {
 		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.findWorkPeriods.mockResolvedValue([]);
 		mockState.findEmployees.mockResolvedValue([
-			{ id: "employee-1", organizationId: "org-1", isActive: true, role: "employee" },
-			{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
+			{
+				id: "employee-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "employee",
+			},
+			{
+				id: "manager-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "manager",
+			},
 		]);
 		mockState.findManagerLinks.mockResolvedValue([]);
 		mockState.findTeamMemberships.mockResolvedValue([]);
@@ -576,7 +650,9 @@ describe("createManualTimeEntry", () => {
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1", type: "clock_in" })
 			.mockResolvedValueOnce({ id: "clock-out-1", type: "clock_out" });
-		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertValues.mockReturnValueOnce({
+			returning: mockState.insertReturning,
+		});
 		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 
@@ -601,7 +677,9 @@ describe("createManualTimeEntry", () => {
 	});
 
 	it("fails closed when the manual-entry edit capability check fails before mutating", async () => {
-		mockState.getEditCapabilityForPeriod.mockRejectedValueOnce(new Error("policy unavailable"));
+		mockState.getEditCapabilityForPeriod.mockRejectedValueOnce(
+			new Error("policy unavailable"),
+		);
 
 		const result = await createManualTimeEntry({
 			date: "2026-05-04",
@@ -627,7 +705,9 @@ describe("createManualTimeEntry", () => {
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1" })
 			.mockResolvedValueOnce({ id: "clock-out-1" });
-		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertValues.mockReturnValueOnce({
+			returning: mockState.insertReturning,
+		});
 		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 
@@ -658,7 +738,9 @@ describe("createManualTimeEntry", () => {
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1" })
 			.mockResolvedValueOnce({ id: "clock-out-1" });
-		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertValues.mockReturnValueOnce({
+			returning: mockState.insertReturning,
+		});
 		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 
@@ -711,7 +793,9 @@ describe("createManualTimeEntry", () => {
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1" })
 			.mockResolvedValueOnce({ id: "clock-out-1" });
-		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertValues.mockReturnValueOnce({
+			returning: mockState.insertReturning,
+		});
 		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 
@@ -739,7 +823,9 @@ describe("createManualTimeEntry", () => {
 	});
 
 	it("uses target employee identity and saved timezone for manager manual entries", async () => {
-		mockState.getCurrentSession.mockResolvedValue({ user: { id: "manager-user" } });
+		mockState.getCurrentSession.mockResolvedValue({
+			user: { id: "manager-user" },
+		});
 		mockState.getCurrentEmployee.mockResolvedValue({
 			id: "manager-1",
 			userId: "manager-user",
@@ -773,7 +859,9 @@ describe("createManualTimeEntry", () => {
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1" })
 			.mockResolvedValueOnce({ id: "clock-out-1" });
-		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertValues.mockReturnValueOnce({
+			returning: mockState.insertReturning,
+		});
 		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 
@@ -818,15 +906,23 @@ describe("createManualTimeEntry", () => {
 			expect.anything(),
 		);
 		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({ employeeId: "staff-1", organizationId: "org-1" }),
+			expect.objectContaining({
+				employeeId: "staff-1",
+				organizationId: "org-1",
+			}),
 		);
 		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith(
-			expect.objectContaining({ employeeId: "staff-1", organizationId: "org-1" }),
+			expect.objectContaining({
+				employeeId: "staff-1",
+				organizationId: "org-1",
+			}),
 		);
 	});
 
 	it("rejects same-organization manual entries for unauthorized target employees before writing", async () => {
-		mockState.getCurrentSession.mockResolvedValue({ user: { id: "employee-user" } });
+		mockState.getCurrentSession.mockResolvedValue({
+			user: { id: "employee-user" },
+		});
 		mockState.getCurrentEmployee.mockResolvedValue({
 			id: "employee-1",
 			userId: "employee-user",
@@ -874,10 +970,14 @@ describe("createManualTimeEntry", () => {
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1" })
 			.mockResolvedValueOnce({ id: "clock-out-1" });
-		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertValues.mockReturnValueOnce({
+			returning: mockState.insertReturning,
+		});
 		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
-		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(new Error("dirty marker failed"));
+		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(
+			new Error("dirty marker failed"),
+		);
 
 		const result = await createManualTimeEntry({
 			date: "2026-05-04",
@@ -919,8 +1019,18 @@ describe("createManualTimeEntry", () => {
 		});
 		mockState.findWorkPeriods.mockResolvedValue([]);
 		mockState.findEmployees.mockResolvedValue([
-			{ id: "employee-1", organizationId: "org-1", isActive: true, role: "employee" },
-			{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
+			{
+				id: "employee-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "employee",
+			},
+			{
+				id: "manager-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "manager",
+			},
 		]);
 		mockState.findManagerLinks.mockResolvedValue([
 			{ employeeId: "employee-1", managerId: "manager-1", isPrimary: true },
@@ -1023,7 +1133,9 @@ describe("addBreakToActiveSession", () => {
 		);
 		mockState.updateReturning.mockResolvedValue([{ id: "period-1" }]);
 		mockState.updateSet.mockReturnValue({ where: mockState.updateWhere });
-		mockState.updateWhere.mockReturnValue({ returning: mockState.updateReturning });
+		mockState.updateWhere.mockReturnValue({
+			returning: mockState.updateReturning,
+		});
 		mockState.getCurrentSession.mockResolvedValue({ user: { id: "user-1" } });
 		mockState.getCurrentEmployee.mockResolvedValue({
 			id: "employee-1",
@@ -1052,7 +1164,9 @@ describe("addBreakToActiveSession", () => {
 	});
 
 	it("splits the active session into a closed period and a new active period", async () => {
-		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertValues.mockReturnValueOnce({
+			returning: mockState.insertReturning,
+		});
 
 		const result = await addBreakToActiveSession(15);
 
@@ -1107,7 +1221,9 @@ describe("addBreakToActiveSession", () => {
 	});
 
 	it("marks the work balance dirty from the closed period start date after adding a break", async () => {
-		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertValues.mockReturnValueOnce({
+			returning: mockState.insertReturning,
+		});
 
 		const result = await addBreakToActiveSession(15);
 
@@ -1130,7 +1246,9 @@ describe("addBreakToActiveSession", () => {
 			startTime: new Date("2026-05-04T09:45:30.000Z"),
 			workLocationType: "office",
 		});
-		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertValues.mockReturnValueOnce({
+			returning: mockState.insertReturning,
+		});
 
 		const result = await addBreakToActiveSession(14);
 
@@ -1147,7 +1265,9 @@ describe("addBreakToActiveSession", () => {
 
 	it("returns a failure when the active period update affects no rows", async () => {
 		mockState.updateReturning.mockResolvedValueOnce([]);
-		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertValues.mockReturnValueOnce({
+			returning: mockState.insertReturning,
+		});
 
 		const result = await addBreakToActiveSession(15);
 

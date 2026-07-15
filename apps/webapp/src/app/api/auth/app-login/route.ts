@@ -1,39 +1,27 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createAppAuthCode, type SupportedApp } from "@/lib/auth/app-auth-code";
-import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
+import {
+	getAllowedAppRedirect,
+	getValidatedAppRedirectUrl,
+} from "@/lib/auth/app-redirect";
+import {
+	checkRateLimit,
+	createRateLimitResponse,
+	getClientIp,
+} from "@/lib/rate-limit";
 
 function resolveApp(searchParams: URLSearchParams): SupportedApp {
 	return searchParams.get("app") === "desktop" ? "desktop" : "mobile";
-}
-
-function _getAllowedScheme(app: SupportedApp): string {
-	return app === "desktop" ? "z8://" : "z8mobile://";
-}
-
-function getAllowedRedirect(app: SupportedApp): string {
-	return app === "desktop" ? "z8://auth/callback" : "z8mobile://auth/callback";
-}
-
-function isAllowedRedirect(redirectUrl: string, app: SupportedApp): boolean {
-	try {
-		const requested = new URL(redirectUrl);
-		const allowed = new URL(getAllowedRedirect(app));
-		return (
-			requested.protocol === allowed.protocol &&
-			requested.hostname === allowed.hostname &&
-			requested.pathname === allowed.pathname
-		);
-	} catch {
-		return false;
-	}
 }
 
 function canUseRequestedApp(
 	user: { canUseDesktop?: boolean | null; canUseMobile?: boolean | null },
 	app: SupportedApp,
 ): boolean {
-	return app === "desktop" ? (user.canUseDesktop ?? true) : (user.canUseMobile ?? true);
+	return app === "desktop"
+		? (user.canUseDesktop ?? true)
+		: (user.canUseMobile ?? true);
 }
 
 export async function GET(request: NextRequest) {
@@ -48,18 +36,25 @@ export async function GET(request: NextRequest) {
 	const codeChallenge = request.nextUrl.searchParams.get("challenge");
 
 	if (!redirectUrl) {
-		return NextResponse.json({ error: "Missing redirect parameter" }, { status: 400 });
+		return NextResponse.json(
+			{ error: "Missing redirect parameter" },
+			{ status: 400 },
+		);
 	}
 
-	if (!isAllowedRedirect(redirectUrl, app)) {
+	const safeCallbackUrl = getValidatedAppRedirectUrl(redirectUrl, app);
+	if (!safeCallbackUrl) {
 		return NextResponse.json(
-			{ error: `Invalid redirect URL. Must be ${getAllowedRedirect(app)}` },
+			{ error: `Invalid redirect URL. Must be ${getAllowedAppRedirect(app)}` },
 			{ status: 400 },
 		);
 	}
 
 	if (!codeChallenge) {
-		return NextResponse.json({ error: "Missing challenge parameter" }, { status: 400 });
+		return NextResponse.json(
+			{ error: "Missing challenge parameter" },
+			{ status: 400 },
+		);
 	}
 
 	const session = await auth.api.getSession({ headers: request.headers });
@@ -70,10 +65,9 @@ export async function GET(request: NextRequest) {
 		return NextResponse.redirect(signInUrl.toString());
 	}
 
-	const callbackUrl = new URL(redirectUrl);
 	if (!canUseRequestedApp(session.user, app)) {
-		callbackUrl.searchParams.set("error", "access_denied");
-		return NextResponse.redirect(callbackUrl.toString());
+		safeCallbackUrl.searchParams.set("error", "access_denied");
+		return NextResponse.redirect(safeCallbackUrl.toString());
 	}
 
 	const authCode = await createAppAuthCode({
@@ -83,6 +77,6 @@ export async function GET(request: NextRequest) {
 		userId: session.user.id,
 	});
 
-	callbackUrl.searchParams.set("code", authCode.code);
-	return NextResponse.redirect(callbackUrl.toString());
+	safeCallbackUrl.searchParams.set("code", authCode.code);
+	return NextResponse.redirect(safeCallbackUrl.toString());
 }

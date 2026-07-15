@@ -2,10 +2,15 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const source = readFileSync(fileURLToPath(new URL("./actions.ts", import.meta.url)), "utf8");
+const source = readFileSync(
+	fileURLToPath(new URL("./actions/clocking.ts", import.meta.url)),
+	"utf8",
+);
 
 function functionBody(name: string) {
-	const match = new RegExp(`export\\s+async function ${name}\\s*\\(`).exec(source);
+	const match = new RegExp(`export\\s+async function ${name}\\s*\\(`).exec(
+		source,
+	);
 	const start = match?.index ?? -1;
 	expect(start, `${name} should exist`).toBeGreaterThanOrEqual(0);
 	const nextExport = source.indexOf("export async function", start + 1);
@@ -32,23 +37,32 @@ describe("clocking service delegation", () => {
 
 		expect(captureIndex).toBeGreaterThanOrEqual(0);
 		expect(delegateIndex).toBeGreaterThan(captureIndex);
-		expect(body).toContain("action: { instant: instantFromDate(now), ...timezoneCapture }");
+		expect(body).toContain(
+			"action: { instant: actionInstant, ...timezoneCapture }",
+		);
 	});
 
 	it("checks clock-out guards before shared writes", () => {
 		const body = functionBody("clockOut");
-		const projectValidationIndex = body.indexOf("await validateProjectAssignment(");
-		const approvalPolicyIndex = body.indexOf("policyService.checkClockOutNeedsApproval(emp.id)");
-		const billingIndex = body.indexOf("await requireBillingForMutation(emp.organizationId)");
-		const managerIndex = body.indexOf("await resolveTimeApprovalManagerId(");
+		const projectValidationIndex = body.indexOf(
+			"await validateProjectAssignment(",
+		);
+		const billingIndex = body.indexOf("requireBillingForMutation(");
+		const approvalPolicyIndex = body.indexOf("checkClockOutNeedsApproval(");
+		const managerIndex = body.indexOf(
+			"await getPrimaryEligibleManagerIdForRequester({",
+		);
+		const canonicalIndex = body.indexOf(
+			"canonicalWorkRecordClient.createForCompletedPeriod(",
+		);
 		const delegateIndex = body.indexOf("clockingService.clockOut({");
 
 		expect(projectValidationIndex).toBeGreaterThanOrEqual(0);
-		expect(approvalPolicyIndex).toBeGreaterThan(projectValidationIndex);
-		expect(billingIndex).toBeGreaterThan(approvalPolicyIndex);
-		expect(managerIndex).toBeGreaterThan(billingIndex);
-		expect(delegateIndex).toBeGreaterThan(managerIndex);
-		expect(body).toContain("canonicalWorkRecordClient.createForCompletedPeriod(");
+		expect(billingIndex).toBeGreaterThan(projectValidationIndex);
+		expect(approvalPolicyIndex).toBeGreaterThan(billingIndex);
+		expect(managerIndex).toBeGreaterThan(approvalPolicyIndex);
+		expect(canonicalIndex).toBeGreaterThan(managerIndex);
+		expect(delegateIndex).toBeGreaterThan(canonicalIndex);
 		expect(body).toContain("createClockOutApprovalRequest(");
 	});
 });

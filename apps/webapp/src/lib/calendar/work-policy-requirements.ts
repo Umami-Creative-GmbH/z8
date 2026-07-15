@@ -414,44 +414,42 @@ async function buildEmploymentHistoryDailyRequirements(params: {
 	if (slices.length === 0) return null;
 
 	const requirements: DailyWorkRequirements = {};
+	const sliceRequirements = await Promise.all(
+		slices.map(async (slice) => {
+			const { start, end } = getSliceDateRange(slice, params.startDate, params.endDate);
+			if (start > end) return null;
 
-	for (const slice of slices) {
-		const { start, end } = getSliceDateRange(slice, params.startDate, params.endDate);
-		if (start > end) continue;
-
-		if (slice.contractType === "hourly") {
-			mergeDailyWorkRequirements(
-				requirements,
-				await getPublishedShiftRequirementsForEmployee({
+			if (slice.contractType === "hourly") {
+				return getPublishedShiftRequirementsForEmployee({
 					database: params.database,
 					organizationId: params.organizationId,
 					employeeId: params.employeeId,
 					startDate: start,
 					endDate: end,
 					timezone: params.timezone,
-				}),
-			);
-			continue;
-		}
+				});
+			}
 
-		const policy = slice.workPolicyId
-			? await getEmploymentHistoryWorkPolicy({
-					database: params.database,
-					organizationId: params.organizationId,
-					policyId: slice.workPolicyId,
-				})
-			: params.fallbackPolicy;
+			const policy = slice.workPolicyId
+				? await getEmploymentHistoryWorkPolicy({
+						database: params.database,
+						organizationId: params.organizationId,
+						policyId: slice.workPolicyId,
+					})
+				: params.fallbackPolicy;
 
-		mergeDailyWorkRequirements(
-			requirements,
-			buildDailyWorkRequirements({
+			return buildDailyWorkRequirements({
 				policy,
 				startDate: start,
 				endDate: end,
 				timezone: params.timezone,
 				weeklyContractMinutes: slice.weeklyContractMinutes,
-			}),
-		);
+			});
+		}),
+	);
+
+	for (const sliceRequirement of sliceRequirements) {
+		if (sliceRequirement) mergeDailyWorkRequirements(requirements, sliceRequirement);
 	}
 
 	return requirements;

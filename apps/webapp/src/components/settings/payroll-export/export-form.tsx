@@ -134,6 +134,9 @@ export function ExportForm({
 	const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
 	const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
 	const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+	const selectedEmployeeIdSet = new Set(selectedEmployeeIds);
+	const selectedTeamIdSet = new Set(selectedTeamIds);
+	const selectedProjectIdSet = new Set(selectedProjectIds);
 
 	// Export result
 	const [_exportResult, _setExportResult] = useState<{
@@ -419,7 +422,7 @@ export function ExportForm({
 											<div key={emp.id} className="flex items-center gap-x-2 py-1">
 												<Checkbox
 													id={`emp-${emp.id}`}
-													checked={selectedEmployeeIds.includes(emp.id)}
+												checked={selectedEmployeeIdSet.has(emp.id)}
 													onCheckedChange={() => toggleEmployee(emp.id)}
 												/>
 												<label htmlFor={`emp-${emp.id}`} className="text-sm cursor-pointer">
@@ -468,7 +471,7 @@ export function ExportForm({
 											<div key={team.id} className="flex items-center gap-x-2 py-1">
 												<Checkbox
 													id={`team-${team.id}`}
-													checked={selectedTeamIds.includes(team.id)}
+												checked={selectedTeamIdSet.has(team.id)}
 													onCheckedChange={() => toggleTeam(team.id)}
 												/>
 												<label htmlFor={`team-${team.id}`} className="text-sm cursor-pointer">
@@ -514,7 +517,7 @@ export function ExportForm({
 											<div key={project.id} className="flex items-center gap-x-2 py-1">
 												<Checkbox
 													id={`project-${project.id}`}
-													checked={selectedProjectIds.includes(project.id)}
+												checked={selectedProjectIdSet.has(project.id)}
 													onCheckedChange={() => toggleProject(project.id)}
 												/>
 												<label htmlFor={`project-${project.id}`} className="text-sm cursor-pointer">

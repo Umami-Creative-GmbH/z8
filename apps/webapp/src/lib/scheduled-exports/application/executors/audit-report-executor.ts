@@ -56,9 +56,12 @@ export class AuditReportExecutor implements IReportExecutor {
 			});
 
 			// Filter by event types if specified
+			const auditEventTypeSet = config.auditEventTypes
+				? new Set(config.auditEventTypes)
+				: null;
 			const filteredLogs =
-				config.auditEventTypes && config.auditEventTypes.length > 0
-					? logs.filter((log) => config.auditEventTypes!.includes(log.action))
+				auditEventTypeSet && auditEventTypeSet.size > 0
+					? logs.filter((log) => auditEventTypeSet.has(log.action))
 					: logs;
 
 			logger.info({ count: filteredLogs.length }, "Audit logs fetched");

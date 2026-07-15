@@ -4,29 +4,36 @@ import { IconAlertTriangle, IconBeach, IconCalendarCheck, IconClock } from "@tab
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { VacationBalance } from "@/lib/absences/types";
+import { instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 
 interface VacationBalanceCardProps {
 	balance: VacationBalance;
+	now: string;
+	timezone: string;
 }
 
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const NOW_TIMESTAMP = Date.now();
-
-export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
+export function VacationBalanceCard({ balance, now, timezone }: VacationBalanceCardProps) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() || "en";
 	const hasCarryover = balance.carryoverDays && balance.carryoverDays > 0;
+	const nowInstant = parseInstant(now);
+	const carryoverExpiryInstant = balance.carryoverExpiryDate
+		? instantFromDate(balance.carryoverExpiryDate)
+		: null;
 	const carryoverExpiringSoon =
 		hasCarryover &&
-		balance.carryoverExpiryDate &&
-		balance.carryoverExpiryDate.getTime() - NOW_TIMESTAMP < THIRTY_DAYS_MS;
+		carryoverExpiryInstant &&
+		carryoverExpiryInstant.epochNanoseconds < nowInstant.add({ hours: 30 * 24 }).epochNanoseconds;
 
 	return (
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					{t("absences.balance.title", "Vacation Balance {year}", { year: balance.year })}
+					{t("absences.balance.title", "Vacation Balance {year}", {
+						year: balance.year,
+					})}
 				</CardTitle>
 				<CardDescription>
 					{t("absences.balance.description", "Your vacation days for the current year")}
@@ -92,16 +99,16 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 										{t("absences.balance.carryoverDays", "You have {count} days carried over", {
 											count: balance.carryoverDays,
 										})}
-										{balance.carryoverExpiryDate && (
+										{carryoverExpiryInstant && (
 											<>
 												{" "}
 												{t("absences.balance.carryoverExpiry", "that will expire on")}{" "}
 												<span className={carryoverExpiringSoon ? "text-destructive" : ""}>
-													{balance.carryoverExpiryDate.toLocaleDateString(locale, {
-														month: "long",
-														day: "numeric",
-														year: "numeric",
-													})}
+													{formatPlainDate(
+														carryoverExpiryInstant.toZonedDateTimeISO(timezone).toPlainDate(),
+														locale,
+														"dateMedium",
+													)}
 												</span>
 											</>
 										)}

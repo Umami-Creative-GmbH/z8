@@ -7,7 +7,10 @@ import { and, desc, eq } from "drizzle-orm";
 import { auditSigningKey, db } from "@/db";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret, storeOrgSecret } from "@/lib/vault";
-import { type ISigningProvider, signingProvider } from "../crypto/signing-provider";
+import {
+	type ISigningProvider,
+	signingProvider,
+} from "../crypto/signing-provider";
 
 const logger = createLogger("AuditKeyManager");
 
@@ -35,7 +38,10 @@ export interface IKeyManager {
 	/**
 	 * Get private key for signing (from Vault)
 	 */
-	getPrivateKey(organizationId: string): Promise<string | null>;
+	getPrivateKey(
+		organizationId: string,
+		expectedKeyId?: string,
+	): Promise<string | null>;
 
 	/**
 	 * Get public key by key ID (from database)
@@ -100,7 +106,11 @@ export class VaultKeyManager implements IKeyManager {
 		const existingKey = await this.getActiveKey(organizationId);
 		if (existingKey) {
 			logger.info(
-				{ organizationId, keyId: existingKey.keyId, fingerprint: existingKey.fingerprint },
+				{
+					organizationId,
+					keyId: existingKey.keyId,
+					fingerprint: existingKey.fingerprint,
+				},
 				"Using existing signing key",
 			);
 			return existingKey;
@@ -108,7 +118,8 @@ export class VaultKeyManager implements IKeyManager {
 
 		// Generate new key pair
 		logger.info({ organizationId }, "Generating new Ed25519 signing key");
-		const { privateKeyPem, publicKeyPem, fingerprint } = await this.signing.generateKeyPair();
+		const { privateKeyPem, publicKeyPem, fingerprint } =
+			await this.signing.generateKeyPair();
 
 		// Store private key in Vault
 		await storeOrgSecret(organizationId, VAULT_PATHS.privateKey, privateKeyPem);
@@ -129,7 +140,10 @@ export class VaultKeyManager implements IKeyManager {
 			})
 			.returning();
 
-		logger.info({ organizationId, keyId: keyRecord.id, fingerprint }, "Created new signing key");
+		logger.info(
+			{ organizationId, keyId: keyRecord.id, fingerprint },
+			"Created new signing key",
+		);
 
 		return {
 			keyId: keyRecord.id,
@@ -141,7 +155,20 @@ export class VaultKeyManager implements IKeyManager {
 	/**
 	 * Get private key from Vault
 	 */
-	async getPrivateKey(organizationId: string): Promise<string | null> {
+	async getPrivateKey(
+		organizationId: string,
+		expectedKeyId?: string,
+	): Promise<string | null> {
+		if (expectedKeyId) {
+			const activeKey = await this.getActiveKey(organizationId);
+			if (activeKey?.keyId !== expectedKeyId) {
+				logger.warn(
+					{ organizationId, expectedKeyId, activeKeyId: activeKey?.keyId },
+					"Active signing key changed before private key lookup",
+				);
+				return null;
+			}
+		}
 		return getOrgSecret(organizationId, VAULT_PATHS.privateKey);
 	}
 
@@ -208,11 +235,15 @@ export class VaultKeyManager implements IKeyManager {
 				})
 				.where(eq(auditSigningKey.id, currentKey.keyId));
 
-			logger.info({ organizationId, oldKeyId: currentKey.keyId }, "Archived previous signing key");
+			logger.info(
+				{ organizationId, oldKeyId: currentKey.keyId },
+				"Archived previous signing key",
+			);
 		}
 
 		// Generate new key pair
-		const { privateKeyPem, publicKeyPem, fingerprint } = await this.signing.generateKeyPair();
+		const { privateKeyPem, publicKeyPem, fingerprint } =
+			await this.signing.generateKeyPair();
 
 		// Store in Vault (overwrites old keys)
 		await storeOrgSecret(organizationId, VAULT_PATHS.privateKey, privateKeyPem);

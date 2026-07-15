@@ -15,7 +15,10 @@ import { db } from "@/db";
 import { calendarConnection, employee, syncedAbsence } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getCalendarProvider } from "@/lib/calendar-sync/providers";
-import { deleteCalendarTokens, getCalendarTokens } from "@/lib/calendar-sync/token-store";
+import {
+	deleteCalendarTokens,
+	getCalendarTokens,
+} from "@/lib/calendar-sync/token-store";
 
 // ============================================
 // VALIDATION
@@ -37,13 +40,19 @@ async function verifyConnectionAccess(
 	organizationId: string,
 ): Promise<typeof calendarConnection.$inferSelect | null> {
 	const conn = await db.query.calendarConnection.findFirst({
-		where: eq(calendarConnection.id, connectionId),
+		where: and(
+			eq(calendarConnection.id, connectionId),
+			eq(calendarConnection.organizationId, organizationId),
+		),
 	});
 
 	if (!conn) return null;
 
 	const emp = await db.query.employee.findFirst({
-		where: and(eq(employee.userId, userId), eq(employee.organizationId, organizationId)),
+		where: and(
+			eq(employee.userId, userId),
+			eq(employee.organizationId, organizationId),
+		),
 	});
 
 	if (!emp || emp.id !== conn.employeeId) return null;
@@ -55,7 +64,10 @@ async function verifyConnectionAccess(
 // GET - Get connection details
 // ============================================
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+	_request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
 	await connection();
 
 	try {
@@ -68,12 +80,18 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
 		const activeOrgId = session.session.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		const conn = await verifyConnectionAccess(id, session.user.id, activeOrgId);
 		if (!conn) {
-			return NextResponse.json({ error: "Connection not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Connection not found" },
+				{ status: 404 },
+			);
 		}
 
 		// Get sync stats
@@ -104,7 +122,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 		});
 	} catch (error) {
 		console.error("Error fetching calendar connection:", error);
-		return NextResponse.json({ error: "Failed to fetch connection" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Failed to fetch connection" },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -112,7 +133,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 // PATCH - Update connection settings
 // ============================================
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+	request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
 	await connection();
 
 	try {
@@ -125,12 +149,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
 		const activeOrgId = session.session.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		const conn = await verifyConnectionAccess(id, session.user.id, activeOrgId);
 		if (!conn) {
-			return NextResponse.json({ error: "Connection not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Connection not found" },
+				{ status: 404 },
+			);
 		}
 
 		// Parse and validate request
@@ -153,8 +183,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 				...updates,
 				updatedAt: new Date(),
 			})
-			.where(eq(calendarConnection.id, id))
+			.where(
+				and(
+					eq(calendarConnection.id, id),
+					eq(calendarConnection.organizationId, activeOrgId),
+				),
+			)
 			.returning();
+		if (!updated) {
+			return NextResponse.json(
+				{ error: "Connection not found" },
+				{ status: 404 },
+			);
+		}
 
 		return NextResponse.json({
 			id: updated.id,
@@ -167,7 +208,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 		});
 	} catch (error) {
 		console.error("Error updating calendar connection:", error);
-		return NextResponse.json({ error: "Failed to update connection" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Failed to update connection" },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -191,12 +235,18 @@ export async function DELETE(
 
 		const activeOrgId = session.session.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		const conn = await verifyConnectionAccess(id, session.user.id, activeOrgId);
 		if (!conn) {
-			return NextResponse.json({ error: "Connection not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Connection not found" },
+				{ status: 404 },
+			);
 		}
 
 		// Read tokens from Vault for revocation (best effort)
@@ -219,13 +269,25 @@ export async function DELETE(
 		await deleteCalendarTokens(conn.organizationId, conn.id);
 
 		// Soft delete: set isActive to false
-		await db
+		const [disconnected] = await db
 			.update(calendarConnection)
 			.set({
 				isActive: false,
 				updatedAt: new Date(),
 			})
-			.where(eq(calendarConnection.id, id));
+			.where(
+				and(
+					eq(calendarConnection.id, id),
+					eq(calendarConnection.organizationId, activeOrgId),
+				),
+			)
+			.returning({ id: calendarConnection.id });
+		if (!disconnected) {
+			return NextResponse.json(
+				{ error: "Connection not found" },
+				{ status: 404 },
+			);
+		}
 
 		return NextResponse.json({
 			success: true,
@@ -233,6 +295,9 @@ export async function DELETE(
 		});
 	} catch (error) {
 		console.error("Error disconnecting calendar:", error);
-		return NextResponse.json({ error: "Failed to disconnect calendar" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Failed to disconnect calendar" },
+			{ status: 500 },
+		);
 	}
 }

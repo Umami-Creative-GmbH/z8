@@ -376,7 +376,8 @@ export async function getChangePolicies(
 			return policies;
 		}
 
-		return policies.filter((policy) => visiblePolicyIds.includes(policy.id));
+		const visiblePolicyIdSet = new Set(visiblePolicyIds);
+		return policies.filter((policy) => visiblePolicyIdSet.has(policy.id));
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

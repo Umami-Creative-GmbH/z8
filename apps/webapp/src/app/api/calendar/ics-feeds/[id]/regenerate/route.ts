@@ -34,7 +34,10 @@ function buildFeedUrl(secret: string): string {
 // POST - Regenerate secret
 // ============================================
 
-export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+	_request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
 	await connection();
 
 	try {
@@ -48,7 +51,10 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 
 		const activeOrgId = session.session.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		// Get feed
@@ -66,11 +72,17 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 
 		// Get employee
 		const emp = await db.query.employee.findFirst({
-			where: and(eq(employee.userId, session.user.id), eq(employee.organizationId, activeOrgId)),
+			where: and(
+				eq(employee.userId, session.user.id),
+				eq(employee.organizationId, activeOrgId),
+			),
 		});
 
 		if (!emp) {
-			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Employee not found" },
+				{ status: 404 },
+			);
 		}
 
 		// Check access
@@ -101,16 +113,23 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 				secret: newSecret,
 				updatedAt: new Date(),
 			})
-			.where(eq(icsFeed.id, id))
+			.where(and(eq(icsFeed.id, id), eq(icsFeed.organizationId, activeOrgId)))
 			.returning();
+		if (!updated) {
+			return NextResponse.json({ error: "Feed not found" }, { status: 404 });
+		}
 
 		return NextResponse.json({
 			id: updated.id,
 			url: buildFeedUrl(updated.secret),
-			message: "Feed URL has been regenerated. The old URL will no longer work.",
+			message:
+				"Feed URL has been regenerated. The old URL will no longer work.",
 		});
 	} catch (error) {
 		console.error("Error regenerating ICS feed secret:", error);
-		return NextResponse.json({ error: "Failed to regenerate feed secret" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Failed to regenerate feed secret" },
+			{ status: 500 },
+		);
 	}
 }

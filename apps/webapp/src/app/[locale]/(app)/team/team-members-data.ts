@@ -1,4 +1,4 @@
-import type { EmployeeTimeBalancePayload } from "./team-time-balance-types";
+import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 
 type TeamMemberUser = {
 	id: string;
@@ -53,7 +53,7 @@ export interface ManagedEmployee {
 	isActive: boolean;
 	isPrimaryManager: boolean;
 	isCurrentUser: boolean;
-	timeBalance: EmployeeTimeBalancePayload | null;
+	timeBalance: EmployeeWorkBalancePayload | null;
 	user: TeamMemberUser;
 	team: TeamMemberTeam;
 }
@@ -61,7 +61,7 @@ export interface ManagedEmployee {
 export function buildVisibleManagedEmployees(input: {
 	currentEmployee: CurrentTeamEmployee;
 	managedRecords: ManagedEmployeeRecord[];
-	balances: Map<string, EmployeeTimeBalancePayload>;
+	balances: Map<string, EmployeeWorkBalancePayload>;
 }): ManagedEmployee[] {
 	const byId = new Map<string, ManagedEmployee>();
 	const toManagedEmployee = (

@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, isNotNull, isNull, lt, lte, min, or, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, lte, min, or, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
@@ -140,6 +140,12 @@ export async function getEmployeeWorkBalance(input: {
 		return null;
 	}
 
+	return toEmployeeWorkBalancePayload(row);
+}
+
+function toEmployeeWorkBalancePayload(
+	row: typeof employeeWorkBalance.$inferSelect,
+): EmployeeWorkBalancePayload {
 	return {
 		employeeId: row.employeeId,
 		organizationId: row.organizationId,
@@ -150,6 +156,35 @@ export async function getEmployeeWorkBalance(input: {
 		computedThroughDate: row.computedThroughDate,
 		computedAt: row.computedAt,
 	};
+}
+
+export async function getEmployeeWorkBalances(input: {
+	employeeIds: string[];
+	organizationId: string;
+}): Promise<Map<string, EmployeeWorkBalancePayload>> {
+	const employeeIds = [...new Set(input.employeeIds)];
+	if (employeeIds.length === 0) return new Map();
+
+	const rows = await db.query.employeeWorkBalance.findMany({
+		where: and(
+			eq(employeeWorkBalance.organizationId, input.organizationId),
+			inArray(employeeWorkBalance.employeeId, employeeIds),
+		),
+	});
+
+	return new Map(
+		rows.flatMap((row) =>
+			isEmployeeWorkBalanceResetMarker({
+				computedFromDate: row.computedFromDate,
+				computedThroughDate: row.computedThroughDate,
+				isDirty: row.isDirty,
+				dirtyFromDate: row.dirtyFromDate,
+				refreshRequestedAt: row.refreshRequestedAt,
+			})
+				? []
+				: [[row.employeeId, toEmployeeWorkBalancePayload(row)] as const],
+		),
+	);
 }
 
 async function getFirstRelevantDate(
@@ -651,15 +686,17 @@ export async function requestOrganizationWorkBalanceFullRebuild(
 			orderBy: (employeeRow, { asc }) => [asc(employeeRow.id)],
 		});
 
-		for (const organizationEmployee of organizationEmployees) {
-			await requestEmployeeWorkBalanceFullRebuild(
-				{
-					employeeId: organizationEmployee.id,
-					organizationId: organizationEmployee.organizationId,
-				},
-				{ dbClient, requestedAt },
-			);
-		}
+		await Promise.all(
+			organizationEmployees.map((organizationEmployee) =>
+				requestEmployeeWorkBalanceFullRebuild(
+					{
+						employeeId: organizationEmployee.id,
+						organizationId: organizationEmployee.organizationId,
+					},
+					{ dbClient, requestedAt },
+				),
+			),
+		);
 	};
 
 	if (options?.dbClient) {
@@ -681,15 +718,17 @@ export async function requestUserWorkBalanceFullRebuild(
 			columns: { id: true, organizationId: true },
 		});
 
-		for (const linkedEmployee of linkedEmployees) {
-			await requestEmployeeWorkBalanceFullRebuild(
-				{
-					employeeId: linkedEmployee.id,
-					organizationId: linkedEmployee.organizationId,
-				},
-				{ dbClient, requestedAt },
-			);
-		}
+		await Promise.all(
+			linkedEmployees.map((linkedEmployee) =>
+				requestEmployeeWorkBalanceFullRebuild(
+					{
+						employeeId: linkedEmployee.id,
+						organizationId: linkedEmployee.organizationId,
+					},
+					{ dbClient, requestedAt },
+				),
+			),
+		);
 	};
 
 	if (options?.dbClient) {

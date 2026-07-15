@@ -54,7 +54,10 @@ async function verifyFeedAccess(
 	if (!feed) return null;
 
 	const emp = await db.query.employee.findFirst({
-		where: and(eq(employee.userId, userId), eq(employee.organizationId, organizationId)),
+		where: and(
+			eq(employee.userId, userId),
+			eq(employee.organizationId, organizationId),
+		),
 	});
 
 	if (!emp) return null;
@@ -79,7 +82,10 @@ async function verifyFeedAccess(
 // GET - Get feed details
 // ============================================
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+	_request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
 	await connection();
 
 	try {
@@ -93,7 +99,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
 		const activeOrgId = session.session.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		const access = await verifyFeedAccess(id, session.user.id, activeOrgId);
@@ -114,7 +123,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 		});
 	} catch (error) {
 		console.error("Error fetching ICS feed:", error);
-		return NextResponse.json({ error: "Failed to fetch feed" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Failed to fetch feed" },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -122,7 +134,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 // PATCH - Update feed settings
 // ============================================
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+	request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
 	await connection();
 
 	try {
@@ -136,7 +151,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
 		const activeOrgId = session.session.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		const access = await verifyFeedAccess(id, session.user.id, activeOrgId);
@@ -164,8 +182,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 				...updates,
 				updatedAt: new Date(),
 			})
-			.where(eq(icsFeed.id, id))
+			.where(and(eq(icsFeed.id, id), eq(icsFeed.organizationId, activeOrgId)))
 			.returning();
+		if (!updated) {
+			return NextResponse.json({ error: "Feed not found" }, { status: 404 });
+		}
 
 		return NextResponse.json({
 			id: updated.id,
@@ -178,7 +199,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 		});
 	} catch (error) {
 		console.error("Error updating ICS feed:", error);
-		return NextResponse.json({ error: "Failed to update feed" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Failed to update feed" },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -203,7 +227,10 @@ export async function DELETE(
 
 		const activeOrgId = session.session.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		const access = await verifyFeedAccess(id, session.user.id, activeOrgId);
@@ -212,17 +239,24 @@ export async function DELETE(
 		}
 
 		// Soft delete: set isActive to false
-		await db
+		const [deleted] = await db
 			.update(icsFeed)
 			.set({
 				isActive: false,
 				updatedAt: new Date(),
 			})
-			.where(eq(icsFeed.id, id));
+			.where(and(eq(icsFeed.id, id), eq(icsFeed.organizationId, activeOrgId)))
+			.returning({ id: icsFeed.id });
+		if (!deleted) {
+			return NextResponse.json({ error: "Feed not found" }, { status: 404 });
+		}
 
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		console.error("Error deleting ICS feed:", error);
-		return NextResponse.json({ error: "Failed to delete feed" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Failed to delete feed" },
+			{ status: 500 },
+		);
 	}
 }

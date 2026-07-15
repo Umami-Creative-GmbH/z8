@@ -42,10 +42,11 @@ export function useLoginAuth(turnstileRef: React.RefObject<{ reset: () => void }
 	const showPasskey = authConfig?.passkeyEnabled ?? true;
 	const showSSO = authConfig?.ssoEnabled ?? false;
 	const allowedSocialProviders = authConfig?.socialProvidersEnabled ?? [];
-	const filteredProviders =
-		allowedSocialProviders.length === 0
-			? enabledProviders
-			: enabledProviders.filter((provider) => allowedSocialProviders.includes(provider.id));
+	const allowedSocialProviderSet =
+		allowedSocialProviders.length > 0 ? new Set(allowedSocialProviders) : null;
+	const filteredProviders = allowedSocialProviderSet
+		? enabledProviders.filter((provider) => allowedSocialProviderSet.has(provider.id))
+		: enabledProviders;
 
 	useEffect(() => {
 		dispatch({ type: "RESET_LOADING" });

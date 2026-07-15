@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type * as authSchema from "@/db/auth-schema";
 import { useImageUpload } from "@/hooks/use-image-upload";
+import { useRouter } from "@/navigation";
 import { EditOrganizationDialog } from "./edit-organization-dialog";
 import { OrganizationLogo } from "./organization-logo";
 
@@ -24,10 +25,20 @@ export function OrganizationDetailsCard({
 	currentMemberRole,
 }: OrganizationDetailsCardProps) {
 	const { t } = useTranslate();
+	const router = useRouter();
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
-	const [logoUrl, setLogoUrl] = useState(organization.logo);
+	const [logoOverride, setLogoOverride] = useState<{
+		organizationId: string;
+		serverLogo: string | null;
+		value: string | null;
+	} | null>(null);
 	const [isRemovingLogo, setIsRemovingLogo] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const logoUrl =
+		logoOverride?.organizationId === organization.id &&
+		logoOverride.serverLogo === organization.logo
+			? logoOverride.value
+			: organization.logo;
 
 	const canEdit = currentMemberRole === "owner";
 	const metadata = organization.metadata as Record<string, unknown> | null;
@@ -46,7 +57,12 @@ export function OrganizationDetailsCard({
 		uploadType: "org-logo",
 		organizationId: organization.id,
 		onSuccess: (url) => {
-			setLogoUrl(url); // Update local state with new logo URL
+			setLogoOverride({
+				organizationId: organization.id,
+				serverLogo: organization.logo,
+				value: url,
+			});
+			router.refresh();
 			toast.success(t("organization.logo-uploaded", "Logo uploaded successfully"));
 			// Cache invalidation is handled by useImageProcessMutation
 		},
@@ -74,7 +90,12 @@ export function OrganizationDetailsCard({
 			return;
 		}
 
-		setLogoUrl(null);
+		setLogoOverride({
+			organizationId: organization.id,
+			serverLogo: organization.logo,
+			value: null,
+		});
+		router.refresh();
 		toast.success(t("organization.logo-removed", "Organization logo removed"));
 	};
 

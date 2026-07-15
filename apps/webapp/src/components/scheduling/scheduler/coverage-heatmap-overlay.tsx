@@ -1,15 +1,13 @@
 "use client";
 
 import { IconAlertTriangle, IconCheck, IconTarget, IconTrendingUp } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import type { DateRange } from "@/app/[locale]/(app)/scheduling/types";
-import { getTargetHeatmapData } from "@/app/[locale]/(app)/settings/coverage-rules/actions";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
-import { queryKeys } from "@/lib/query/keys";
 import { cn } from "@/lib/utils";
+import { useCoverageHeatmap } from "./use-coverage-heatmap";
 
 interface CoverageHeatmapOverlayProps {
 	organizationId: string;
@@ -44,13 +42,6 @@ function getStatusIcon(status: "under" | "met" | "over") {
 		case "over":
 			return <IconTrendingUp className="size-4 text-blue-600 dark:text-blue-400" />;
 	}
-}
-
-/**
- * Format date for comparison (YYYY-MM-DD).
- */
-function formatDateKey(date: Date): string {
-	return date.toISOString().split("T")[0];
 }
 
 /**
@@ -172,51 +163,6 @@ export function CoverageDayIndicator({ dataPoints }: { dataPoints: HeatmapDataPo
 			</Tooltip>
 		</TooltipProvider>
 	);
-}
-
-/**
- * Hook to fetch and organize coverage heatmap data.
- */
-export function useCoverageHeatmap(organizationId: string, dateRange: DateRange, enabled: boolean) {
-	const { data, isLoading, error } = useQuery({
-		queryKey: queryKeys.coverage.heatmap(organizationId, dateRange),
-		queryFn: async () => {
-			const result = await getTargetHeatmapData({
-				startDate: dateRange.startDate,
-				endDateExclusive: dateRange.endDateExclusive,
-			});
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
-		enabled,
-	});
-
-	// Group data points by date
-	const dataByDate = (() => {
-		if (!data) return new Map<string, HeatmapDataPoint[]>();
-
-		const map = new Map<string, HeatmapDataPoint[]>();
-		for (const point of data) {
-			const key = formatDateKey(point.date);
-			const existing = map.get(key) || [];
-			existing.push(point);
-			map.set(key, existing);
-		}
-		return map;
-	})();
-
-	// Check if there are any gaps
-	const hasGaps = (() => {
-		return data?.some((dp) => dp.status === "under") ?? false;
-	})();
-
-	return {
-		data: data || [],
-		dataByDate,
-		hasGaps,
-		isLoading,
-		error,
-	};
 }
 
 /**

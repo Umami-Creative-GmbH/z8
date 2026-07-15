@@ -33,7 +33,7 @@ import { createLogger } from "./logger";
 import { secondaryStorage } from "./redis";
 
 const logger = createLogger("Auth");
-const targetTeamIdSchema = z.string().uuid();
+const targetTeamIdSchema = z.uuid();
 
 type InvitationTargetTeamLookupDb = Pick<typeof db, "query">;
 type MemberRemovalDb = Pick<typeof db, "delete" | "select" | "update">;

@@ -32,17 +32,28 @@ export async function DELETE(request: NextRequest) {
 		const organizationId = searchParams.get("organizationId");
 
 		if (!organizationId) {
-			return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "organizationId is required" },
+				{ status: 400 },
+			);
 		}
 
 		// Verify user is an admin member of this organization
 		const [membership] = await db
 			.select()
 			.from(member)
-			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
+			.where(
+				and(
+					eq(member.userId, session.user.id),
+					eq(member.organizationId, organizationId),
+				),
+			)
 			.limit(1);
 
-		if (!membership || (membership.role !== "admin" && membership.role !== "owner")) {
+		if (
+			!membership ||
+			(membership.role !== "admin" && membership.role !== "owner")
+		) {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
@@ -58,7 +69,12 @@ export async function DELETE(request: NextRequest) {
 			await db
 				.update(slackWorkspaceConfig)
 				.set({ setupStatus: "disconnected" })
-				.where(eq(slackWorkspaceConfig.id, config.id));
+				.where(
+					and(
+						eq(slackWorkspaceConfig.id, config.id),
+						eq(slackWorkspaceConfig.organizationId, organizationId),
+					),
+				);
 		}
 
 		logger.info({ organizationId }, "Slack integration disconnected");
@@ -66,6 +82,9 @@ export async function DELETE(request: NextRequest) {
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		logger.error({ error }, "Slack disconnect failed");
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }

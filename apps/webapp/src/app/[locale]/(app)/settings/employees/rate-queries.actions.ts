@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { employeeRateHistory } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
@@ -43,7 +43,13 @@ export async function getEmployeeRateHistoryAction(
 				const history = yield* _(
 					dbService.query("getRateHistory", async () => {
 						return await dbService.db.query.employeeRateHistory.findMany({
-							where: eq(employeeRateHistory.employeeId, employeeId),
+							where: and(
+								eq(employeeRateHistory.employeeId, employeeId),
+								eq(
+									employeeRateHistory.organizationId,
+									targetEmployee.organizationId,
+								),
+							),
 							with: {
 								creator: true,
 							},
@@ -90,10 +96,14 @@ export async function getRateAtDateAction(
 						return await dbService.db.query.employeeRateHistory.findFirst({
 							where: and(
 								eq(employeeRateHistory.employeeId, employeeId),
+								eq(
+									employeeRateHistory.organizationId,
+									targetEmployee.organizationId,
+								),
 								lte(employeeRateHistory.effectiveFrom, date),
 								or(
 									isNull(employeeRateHistory.effectiveTo),
-									gte(employeeRateHistory.effectiveTo, date),
+									gt(employeeRateHistory.effectiveTo, date),
 								),
 							),
 							with: {

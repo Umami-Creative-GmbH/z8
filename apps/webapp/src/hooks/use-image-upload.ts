@@ -5,7 +5,7 @@ import German from "@uppy/locales/lib/de_DE";
 import English from "@uppy/locales/lib/en_US";
 import Tus from "@uppy/tus";
 import { useLocale } from "next-intl";
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useEffectEvent, useReducer, useState } from "react";
 import { useImageProcessMutation } from "@/lib/query/use-image-process";
 import { getTusFileKeyFromUploadUrl } from "@/lib/upload/tus-url";
 
@@ -69,6 +69,12 @@ export function useImageUpload({
 	const { progress, isUploading, previewUrl } = uploadState;
 
 	const processMutation = useImageProcessMutation();
+	const notifySuccess = useEffectEvent((url: string) => {
+		onSuccess?.(url);
+	});
+	const notifyError = useEffectEvent((error: Error) => {
+		onError?.(error);
+	});
 
 	const uppyLocale = locale === "de" ? German : English;
 
@@ -138,13 +144,13 @@ export function useImageUpload({
 						});
 
 						dispatchUploadState({ type: "progress", progress: 100 });
-						onSuccess?.(response.url);
+						notifySuccess(response.url);
 					} catch (err) {
-						onError?.(err instanceof Error ? err : new Error("Processing failed"));
+						notifyError(err instanceof Error ? err : new Error("Processing failed"));
 					}
 				}
 			} else if (result.failed && result.failed.length > 0) {
-				onError?.(new Error("Upload failed"));
+				notifyError(new Error("Upload failed"));
 			}
 
 			dispatchUploadState({ type: "reset" });
@@ -153,7 +159,7 @@ export function useImageUpload({
 
 		const handleError = (_file: unknown, error: { message?: string }) => {
 			dispatchUploadState({ type: "reset" });
-			onError?.(new Error(error?.message || "Upload failed"));
+			notifyError(new Error(error?.message || "Upload failed"));
 			uppy.cancelAll();
 		};
 
@@ -170,7 +176,7 @@ export function useImageUpload({
 			uppy.off("complete", handleComplete);
 			uppy.off("upload-error", handleError);
 		};
-	}, [uppy, uploadType, organizationId, onSuccess, onError, processMutation]);
+	}, [uppy, uploadType, organizationId, processMutation]);
 
 	// Cleanup on unmount
 	useEffect(() => {

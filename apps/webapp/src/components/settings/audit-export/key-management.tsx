@@ -48,6 +48,9 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useDisplayContext } from "@/hooks/use-display-context";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import { useRouter } from "@/navigation";
 
 interface KeyInfo {
@@ -70,6 +73,7 @@ export function KeyManagement({
 	activeKeyVersion,
 }: KeyManagementProps) {
 	const { t } = useTranslate();
+	const displayContext = useDisplayContext();
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [historyLoading, setHistoryLoading] = useState(false);
@@ -166,7 +170,9 @@ export function KeyManagement({
 
 	const handleDownloadPublicKey = () => {
 		if (publicKey?.publicKeyPem) {
-			const blob = new Blob([publicKey.publicKeyPem], { type: "application/x-pem-file" });
+			const blob = new Blob([publicKey.publicKeyPem], {
+				type: "application/x-pem-file",
+			});
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement("a");
 			a.href = url;
@@ -350,7 +356,13 @@ export function KeyManagement({
 													<TableCell className="font-mono text-xs">
 														{key.fingerprint.substring(0, 16)}…
 													</TableCell>
-													<TableCell>{new Date(key.createdAt).toLocaleDateString()}</TableCell>
+													<TableCell>
+														{formatInstant(
+															instantFromDate(key.createdAt),
+															displayContext,
+															"dateMedium",
+														)}
+													</TableCell>
 													<TableCell>
 														{key.isActive ? (
 															<Badge>{t("settings.auditExport.keys.active", "Active")}</Badge>

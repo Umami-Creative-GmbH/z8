@@ -538,9 +538,11 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 										category: true,
 									},
 								});
-								return rows
-									.filter((row) => row.employee.organizationId === organizationId)
-									.map((row) => clipAbsenceToCalendarRange(row, calendarRange));
+								return rows.flatMap((row) =>
+									row.employee.organizationId === organizationId
+										? [clipAbsenceToCalendarRange(row, calendarRange)]
+										: [],
+								);
 							}),
 						);
 
@@ -828,9 +830,11 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						);
 
 						// Filter absences to only those belonging to employees in this organization
-						const orgAbsences = absences
-							.filter((absence) => absence.employee.organizationId === organizationId)
-							.map((absence) => clipAbsenceToCalendarRange(absence, calendarRange));
+						const orgAbsences = absences.flatMap((absence) =>
+							absence.employee.organizationId === organizationId
+								? [clipAbsenceToCalendarRange(absence, calendarRange)]
+								: [],
+						);
 
 						// Calculate summary stats
 						const totalAbsences = orgAbsences.length;

@@ -100,9 +100,9 @@ export function WebhookSecretDialog({ secret, open, onOpenChange }: WebhookSecre
 					</div>
 
 					<div className="space-y-2">
-						<label className="text-sm font-medium">
+						<h3 className="text-sm font-medium">
 							{t("webhooks:webhooks.secret-dialog.verification", "Signature Verification")}
-						</label>
+						</h3>
 						<p className="text-sm text-muted-foreground">
 							{t(
 								"webhooks:webhooks.secret-dialog.verification-hint",

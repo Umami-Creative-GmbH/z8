@@ -2,7 +2,11 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { holidayPreset, holidayPresetAssignment, holidayPresetHoliday } from "@/db/schema";
+import {
+	holidayPreset,
+	holidayPresetAssignment,
+	holidayPresetHoliday,
+} from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
@@ -29,7 +33,10 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		// Check CASL permissions
@@ -44,7 +51,12 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 		const [preset] = await db
 			.select()
 			.from(holidayPreset)
-			.where(and(eq(holidayPreset.id, id), eq(holidayPreset.organizationId, activeOrgId)))
+			.where(
+				and(
+					eq(holidayPreset.id, id),
+					eq(holidayPreset.organizationId, activeOrgId),
+				),
+			)
 			.limit(1);
 
 		if (!preset) {
@@ -61,11 +73,17 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 		// Get assignment count
 		const [assignmentCount] = await db
 			.select({
-				count: db.$count(holidayPresetAssignment, eq(holidayPresetAssignment.presetId, id)),
+				count: db.$count(
+					holidayPresetAssignment,
+					eq(holidayPresetAssignment.presetId, id),
+				),
 			})
 			.from(holidayPresetAssignment)
 			.where(
-				and(eq(holidayPresetAssignment.presetId, id), eq(holidayPresetAssignment.isActive, true)),
+				and(
+					eq(holidayPresetAssignment.presetId, id),
+					eq(holidayPresetAssignment.isActive, true),
+				),
 			);
 
 		return NextResponse.json({
@@ -75,7 +93,10 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 		});
 	} catch (error) {
 		console.error("Error fetching holiday preset:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -96,7 +117,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		// Check CASL permissions
@@ -111,7 +135,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 		const [existingPreset] = await db
 			.select()
 			.from(holidayPreset)
-			.where(and(eq(holidayPreset.id, id), eq(holidayPreset.organizationId, activeOrgId)))
+			.where(
+				and(
+					eq(holidayPreset.id, id),
+					eq(holidayPreset.organizationId, activeOrgId),
+				),
+			)
 			.limit(1);
 
 		if (!existingPreset) {
@@ -123,13 +152,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 		if (!validationResult.success) {
 			return NextResponse.json(
-				{ error: "Invalid request body", details: validationResult.error.issues },
+				{
+					error: "Invalid request body",
+					details: validationResult.error.issues,
+				},
 				{ status: 400 },
 			);
 		}
 
-		const { name, description, countryCode, stateCode, regionCode, color, isActive } =
-			validationResult.data;
+		const {
+			name,
+			description,
+			countryCode,
+			stateCode,
+			regionCode,
+			color,
+			isActive,
+		} = validationResult.data;
 
 		// Update preset
 		const [updatedPreset] = await db
@@ -144,13 +183,24 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 				isActive: isActive ?? true,
 				updatedBy: session.user.id,
 			})
-			.where(eq(holidayPreset.id, id))
+			.where(
+				and(
+					eq(holidayPreset.id, id),
+					eq(holidayPreset.organizationId, activeOrgId),
+				),
+			)
 			.returning();
+		if (!updatedPreset) {
+			return NextResponse.json({ error: "Preset not found" }, { status: 404 });
+		}
 
 		return NextResponse.json({ preset: updatedPreset });
 	} catch (error) {
 		console.error("Error updating holiday preset:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -171,7 +221,10 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		// Check CASL permissions
@@ -186,7 +239,12 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 		const [existingPreset] = await db
 			.select()
 			.from(holidayPreset)
-			.where(and(eq(holidayPreset.id, id), eq(holidayPreset.organizationId, activeOrgId)))
+			.where(
+				and(
+					eq(holidayPreset.id, id),
+					eq(holidayPreset.organizationId, activeOrgId),
+				),
+			)
 			.limit(1);
 
 		if (!existingPreset) {
@@ -196,11 +254,17 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 		// Check if preset has active assignments
 		const [assignmentCount] = await db
 			.select({
-				count: db.$count(holidayPresetAssignment, eq(holidayPresetAssignment.presetId, id)),
+				count: db.$count(
+					holidayPresetAssignment,
+					eq(holidayPresetAssignment.presetId, id),
+				),
 			})
 			.from(holidayPresetAssignment)
 			.where(
-				and(eq(holidayPresetAssignment.presetId, id), eq(holidayPresetAssignment.isActive, true)),
+				and(
+					eq(holidayPresetAssignment.presetId, id),
+					eq(holidayPresetAssignment.isActive, true),
+				),
 			);
 
 		if (assignmentCount && assignmentCount.count > 0) {
@@ -214,17 +278,29 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 		}
 
 		// Soft delete by setting isActive to false
-		await db
+		const [deletedPreset] = await db
 			.update(holidayPreset)
 			.set({
 				isActive: false,
 				updatedBy: session.user.id,
 			})
-			.where(eq(holidayPreset.id, id));
+			.where(
+				and(
+					eq(holidayPreset.id, id),
+					eq(holidayPreset.organizationId, activeOrgId),
+				),
+			)
+			.returning({ id: holidayPreset.id });
+		if (!deletedPreset) {
+			return NextResponse.json({ error: "Preset not found" }, { status: 404 });
+		}
 
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		console.error("Error deleting holiday preset:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }

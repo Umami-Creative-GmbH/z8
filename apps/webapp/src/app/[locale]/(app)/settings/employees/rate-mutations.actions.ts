@@ -7,7 +7,10 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
-import { type CreateRateHistory, createRateHistorySchema } from "@/lib/validations/employee";
+import {
+	type CreateRateHistory,
+	createRateHistorySchema,
+} from "@/lib/validations/employee";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeSettingsActorContext,
@@ -30,14 +33,19 @@ export async function createRateHistoryEntryAction(
 			"employee.id": employeeId,
 		},
 		logError: (error) => {
-			logger.error({ error, employeeId }, "Failed to create rate history entry");
+			logger.error(
+				{ error, employeeId },
+				"Failed to create rate history entry",
+			);
 		},
 		execute: () =>
 			Effect.gen(function* (_) {
 				const actor = yield* _(getEmployeeSettingsActorContext());
 				const { session, dbService } = actor;
 
-				const validatedData = yield* _(validateInput(createRateHistorySchema, data));
+				const validatedData = yield* _(
+					validateInput(createRateHistorySchema, data),
+				);
 				const targetEmployee = yield* _(getTargetEmployee(employeeId));
 
 				yield* _(
@@ -52,7 +60,8 @@ export async function createRateHistoryEntryAction(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: "Rate history can only be created for hourly employees",
+								message:
+									"Rate history can only be created for hourly employees",
 								field: "contractType",
 							}),
 						),
@@ -79,6 +88,10 @@ export async function createRateHistoryEntryAction(
 							.where(
 								and(
 									eq(employeeRateHistory.employeeId, employeeId),
+									eq(
+										employeeRateHistory.organizationId,
+										targetEmployee.organizationId,
+									),
 									isNull(employeeRateHistory.effectiveTo),
 								),
 							);
@@ -108,7 +121,12 @@ export async function createRateHistoryEntryAction(
 								currentHourlyRate: newRate.toString(),
 								updatedAt: currentTimestamp(),
 							})
-							.where(eq(employee.id, employeeId));
+							.where(
+								and(
+									eq(employee.id, employeeId),
+									eq(employee.organizationId, targetEmployee.organizationId),
+								),
+							);
 					}),
 				);
 

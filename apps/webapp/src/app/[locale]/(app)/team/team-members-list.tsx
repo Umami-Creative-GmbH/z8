@@ -38,6 +38,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
+import { formatSignedWorkBalance } from "@/lib/work-balance/format";
 import { Link } from "@/navigation";
 import type { ManagedEmployee } from "./team-members-data";
 
@@ -49,15 +50,6 @@ interface TeamMembersListProps {
 	employees: ManagedEmployee[];
 }
 
-function formatSignedBalance(balanceMinutes: number) {
-	if (balanceMinutes === 0) return "0h";
-	const sign = balanceMinutes > 0 ? "+" : "-";
-	const absoluteMinutes = Math.abs(balanceMinutes);
-	const hours = Math.floor(absoluteMinutes / 60);
-	const minutes = absoluteMinutes % 60;
-	return minutes === 0 ? `${sign}${hours}h` : `${sign}${hours}h ${minutes}m`;
-}
-
 function getBalanceVariant(balanceMinutes: number | null | undefined) {
 	if (balanceMinutes == null || balanceMinutes === 0) return "outline" as const;
 	return balanceMinutes > 0 ? ("default" as const) : ("secondary" as const);
@@ -66,18 +58,24 @@ function getBalanceVariant(balanceMinutes: number | null | undefined) {
 function TimeBalanceBadge({
 	employee,
 	noBalanceLabel,
-	yearBalanceLabel,
+	workBalanceLabel,
 }: {
 	employee: ManagedEmployee;
 	noBalanceLabel: string;
-	yearBalanceLabel: string;
+	workBalanceLabel: string;
 }) {
 	const balance = employee.timeBalance;
-	const label = balance ? formatSignedBalance(balance.balanceMinutes) : noBalanceLabel;
-	const accessibleLabel = `${yearBalanceLabel}: ${label}`;
+	const label = balance
+		? formatSignedWorkBalance(balance.balanceMinutes)
+		: noBalanceLabel;
+	const accessibleLabel = `${workBalanceLabel}: ${label}`;
 	if (!balance) {
 		return (
-			<Badge variant="outline" aria-label={accessibleLabel} title={accessibleLabel}>
+			<Badge
+				variant="outline"
+				aria-label={accessibleLabel}
+				title={accessibleLabel}
+			>
 				{noBalanceLabel}
 			</Badge>
 		);
@@ -107,11 +105,13 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 	const { t } = useTranslate();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
-	const [sorting, setSorting] = useState<SortingState>([]);
 	const youLabel = t("team.member.you", "You");
 	const noBalanceLabel = t("team.balance.noBalance", "No balance");
-	const yearBalanceLabel = t("team.table.timeBalance", "Year balance");
-	const primaryManagerLabel = t("team.primaryManager", "You are the primary manager");
+	const workBalanceLabel = t("workBalance.label", "All-time balance");
+	const primaryManagerLabel = t(
+		"team.primaryManager",
+		"You are the primary manager",
+	);
 	const presence = useEmployeeClockStatuses(
 		employees.map((employee) => employee.id),
 		{ polling: true },
@@ -135,13 +135,247 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 		);
 	});
 
-	function getSortLabel(sorted: false | "asc" | "desc") {
-		if (sorted === "asc") return t("team.table.sort.ascending", "ascending");
-		if (sorted === "desc") return t("team.table.sort.descending", "descending");
-		return null;
+	if (employees.length === 0) {
+		return (
+			<EmptyTeamMembers
+				title={t("team.empty.title", "No team members yet")}
+				description={t(
+					"team.empty.description",
+					"Employees assigned to you as their manager will appear here. You can manage team assignments in the employee settings.",
+				)}
+				actionLabel={t("team.empty.action", "Go to Employee Settings")}
+			/>
+		);
 	}
 
-	// Table columns
+	return (
+		<div className="space-y-4">
+			<TeamMembersToolbar
+				searchQuery={searchQuery}
+				onSearchQueryChange={setSearchQuery}
+				viewMode={viewMode}
+				onViewModeChange={setViewMode}
+				searchPlaceholder={t(
+					"team.search.placeholder",
+					"Search by name, email, position, or team...",
+				)}
+				searchLabel={t("team.search.ariaLabel", "Search team members")}
+				cardsLabel={t("team.view.cards", "Card view")}
+				tableLabel={t("team.view.table", "Table view")}
+			/>
+
+			{filteredEmployees.length > 0 ? (
+				viewMode === "cards" ? (
+					<TeamMemberCards
+						employees={filteredEmployees}
+						youLabel={youLabel}
+						noBalanceLabel={noBalanceLabel}
+						workBalanceLabel={workBalanceLabel}
+						primaryManagerLabel={primaryManagerLabel}
+						inactiveLabel={t("team.status.inactive", "Inactive")}
+					/>
+				) : (
+					<TeamMembersTable
+						employees={filteredEmployees}
+						youLabel={youLabel}
+						noBalanceLabel={noBalanceLabel}
+						workBalanceLabel={workBalanceLabel}
+						primaryManagerLabel={primaryManagerLabel}
+					/>
+				)
+			) : (
+				<NoTeamMemberResults
+					description={t(
+						"team.noResults.description",
+						'No team members match "{query}"',
+						{
+							query: searchQuery,
+						},
+					)}
+					title={t("team.noResults.title", "No results found")}
+					clearLabel={t("team.noResults.action", "Clear search")}
+					onClear={() => setSearchQuery("")}
+				/>
+			)}
+		</div>
+	);
+}
+
+function EmptyTeamMembers({
+	title,
+	description,
+	actionLabel,
+}: {
+	title: string;
+	description: string;
+	actionLabel: string;
+}) {
+	return (
+		<Card className="border-dashed">
+			<CardContent className="flex flex-col items-center justify-center py-16 text-center">
+				<div className="rounded-full bg-muted p-4">
+					<IconUsers className="size-10 text-muted-foreground" />
+				</div>
+				<h3 className="mt-6 text-xl font-semibold">{title}</h3>
+				<p className="mt-2 max-w-sm text-muted-foreground">{description}</p>
+				<Button className="mt-6" variant="outline" asChild>
+					<Link href="/settings/employees">{actionLabel}</Link>
+				</Button>
+			</CardContent>
+		</Card>
+	);
+}
+
+function TeamMembersToolbar({
+	searchQuery,
+	onSearchQueryChange,
+	viewMode,
+	onViewModeChange,
+	searchPlaceholder,
+	searchLabel,
+	cardsLabel,
+	tableLabel,
+}: {
+	searchQuery: string;
+	onSearchQueryChange: (value: string) => void;
+	viewMode: "cards" | "table";
+	onViewModeChange: (value: "cards" | "table") => void;
+	searchPlaceholder: string;
+	searchLabel: string;
+	cardsLabel: string;
+	tableLabel: string;
+}) {
+	return (
+		<div className="flex items-center justify-between gap-4">
+			<div className="relative max-w-md flex-1">
+				<IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+				<Input
+					placeholder={searchPlaceholder}
+					aria-label={searchLabel}
+					value={searchQuery}
+					onChange={(event) => onSearchQueryChange(event.target.value)}
+					className="pl-10"
+				/>
+			</div>
+			<ToggleGroup
+				type="single"
+				value={viewMode}
+				onValueChange={(value) =>
+					value && onViewModeChange(value as "cards" | "table")
+				}
+				className="hidden sm:flex"
+			>
+				<ToggleGroupItem value="cards" aria-label={cardsLabel}>
+					<IconLayoutGrid className="size-4" />
+				</ToggleGroupItem>
+				<ToggleGroupItem value="table" aria-label={tableLabel}>
+					<IconLayoutList className="size-4" />
+				</ToggleGroupItem>
+			</ToggleGroup>
+		</div>
+	);
+}
+
+type TeamMemberPresentationProps = {
+	employees: ManagedEmployeeWithPresence[];
+	youLabel: string;
+	noBalanceLabel: string;
+	workBalanceLabel: string;
+	primaryManagerLabel: string;
+};
+
+function TeamMemberCards({
+	employees,
+	youLabel,
+	noBalanceLabel,
+	workBalanceLabel,
+	primaryManagerLabel,
+	inactiveLabel,
+}: TeamMemberPresentationProps & { inactiveLabel: string }) {
+	return (
+		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+			{employees.map((employee) => (
+				<Link key={employee.id} href={`/settings/employees/${employee.id}`}>
+					<Card className="group relative h-full overflow-hidden py-0 transition-shadow hover:shadow-md">
+						<CardContent className="p-3">
+							<div className="flex items-center gap-3">
+								<UserAvatar
+									image={employee.user.image}
+									seed={employee.user.id}
+									name={employee.user.name}
+									clockStatus={employee.clockStatus ?? "unknown"}
+									size="md"
+								/>
+								<div className="min-w-0 flex-1">
+									<div className="flex items-center gap-1.5">
+										<h3 className="truncate text-sm font-medium">
+											{employee.user.name}
+										</h3>
+										{employee.isPrimaryManager && (
+											<IconUserCheck
+												className="size-3.5 shrink-0 text-primary"
+												title={primaryManagerLabel}
+											/>
+										)}
+										<YouBadge show={employee.isCurrentUser} label={youLabel} />
+									</div>
+									<p className="truncate text-xs text-muted-foreground">
+										{employee.user.email}
+									</p>
+									{employee.position && (
+										<p className="truncate text-xs text-muted-foreground">
+											{employee.position}
+										</p>
+									)}
+								</div>
+							</div>
+							<div className="mt-2 flex items-center justify-between">
+								<div className="flex flex-wrap gap-1">
+									{employee.team && (
+										<Badge variant="secondary" className="text-xs font-normal">
+											{employee.team.name}
+										</Badge>
+									)}
+									<TimeBalanceBadge
+										employee={employee}
+										noBalanceLabel={noBalanceLabel}
+										workBalanceLabel={workBalanceLabel}
+									/>
+									{!employee.isActive && (
+										<Badge variant="outline" className="text-xs font-normal">
+											{inactiveLabel}
+										</Badge>
+									)}
+									{employee.role !== "employee" && (
+										<Badge
+											variant={
+												employee.role === "admin" ? "default" : "secondary"
+											}
+											className="text-xs font-normal"
+										>
+											{employee.role}
+										</Badge>
+									)}
+								</div>
+								<IconArrowRight className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+							</div>
+						</CardContent>
+					</Card>
+				</Link>
+			))}
+		</div>
+	);
+}
+
+function TeamMembersTable({
+	employees,
+	youLabel,
+	noBalanceLabel,
+	workBalanceLabel,
+	primaryManagerLabel,
+}: TeamMemberPresentationProps) {
+	const { t } = useTranslate();
+	const [sorting, setSorting] = useState<SortingState>([]);
 	const columns: ColumnDef<ManagedEmployeeWithPresence>[] = [
 		{
 			accessorKey: "user.name",
@@ -163,11 +397,16 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 						<div className="flex items-center gap-1.5 font-medium">
 							{row.original.user.name}
 							{row.original.isPrimaryManager && (
-								<IconUserCheck className="size-4 text-primary" title={primaryManagerLabel} />
+								<IconUserCheck
+									className="size-4 text-primary"
+									title={primaryManagerLabel}
+								/>
 							)}
 							<YouBadge show={row.original.isCurrentUser} label={youLabel} />
 						</div>
-						<div className="text-sm text-muted-foreground">{row.original.user.email}</div>
+						<div className="text-sm text-muted-foreground">
+							{row.original.user.email}
+						</div>
 					</div>
 				</Link>
 			),
@@ -183,15 +422,28 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 			header: t("team.table.team", "Team"),
 			enableSorting: false,
 			cell: ({ row }) =>
-				row.original.team ? <Badge variant="secondary">{row.original.team.name}</Badge> : "—",
+				row.original.team ? (
+					<Badge variant="secondary">{row.original.team.name}</Badge>
+				) : (
+					"—"
+				),
 		},
 		{
 			id: "timeBalance",
 			header: ({ column }) => {
 				const sorted = column.getIsSorted();
-				const directionLabel = getSortLabel(sorted);
+				const directionLabel =
+					sorted === "asc"
+						? t("team.table.sort.ascending", "ascending")
+						: sorted === "desc"
+							? t("team.table.sort.descending", "descending")
+							: null;
 				const SortIcon =
-					sorted === "asc" ? IconArrowUp : sorted === "desc" ? IconArrowDown : IconArrowsSort;
+					sorted === "asc"
+						? IconArrowUp
+						: sorted === "desc"
+							? IconArrowDown
+							: IconArrowsSort;
 				return (
 					<Button
 						type="button"
@@ -201,18 +453,15 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 						onClick={column.getToggleSortingHandler()}
 						aria-label={
 							directionLabel
-								? t(
-										"team.table.sortByTimeBalanceWithDirection",
-										"Sort by Year balance ({direction})",
-										{
-											direction: directionLabel,
-										},
-									)
-								: t("team.table.sortByTimeBalance", "Sort by Year balance")
+								? `${workBalanceLabel} (${directionLabel})`
+								: workBalanceLabel
 						}
 					>
-						<span>{yearBalanceLabel}</span>
-						<SortIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+						<span>{workBalanceLabel}</span>
+						<SortIcon
+							className="size-4 text-muted-foreground"
+							aria-hidden="true"
+						/>
 					</Button>
 				);
 			},
@@ -222,7 +471,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 				<TimeBalanceBadge
 					employee={row.original}
 					noBalanceLabel={noBalanceLabel}
-					yearBalanceLabel={yearBalanceLabel}
+					workBalanceLabel={workBalanceLabel}
 				/>
 			),
 		},
@@ -257,9 +506,8 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 			),
 		},
 	];
-
 	const table = useCompilerSafeReactTable({
-		data: filteredEmployees,
+		data: employees,
 		columns,
 		getCoreRowModel: getCoreRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
@@ -267,230 +515,115 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 		getFilteredRowModel: getFilteredRowModel(),
 		onSortingChange: setSorting,
 		state: { sorting },
-		initialState: {
-			pagination: { pageSize: 10 },
-		},
+		initialState: { pagination: { pageSize: 10 } },
 	});
-
-	if (employees.length === 0) {
-		return (
-			<Card className="border-dashed">
-				<CardContent className="flex flex-col items-center justify-center py-16 text-center">
-					<div className="rounded-full bg-muted p-4">
-						<IconUsers className="size-10 text-muted-foreground" />
-					</div>
-					<h3 className="mt-6 text-xl font-semibold">
-						{t("team.empty.title", "No team members yet")}
-					</h3>
-					<p className="mt-2 max-w-sm text-muted-foreground">
-						{t(
-							"team.empty.description",
-							"Employees assigned to you as their manager will appear here. You can manage team assignments in the employee settings.",
-						)}
-					</p>
-					<Button className="mt-6" variant="outline" asChild>
-						<Link href="/settings/employees">
-							{t("team.empty.action", "Go to Employee Settings")}
-						</Link>
-					</Button>
-				</CardContent>
-			</Card>
-		);
-	}
 
 	return (
 		<div className="space-y-4">
-			{/* Search and View Toggle */}
-			<div className="flex items-center justify-between gap-4">
-				<div className="relative max-w-md flex-1">
-					<IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						placeholder={t(
-							"team.search.placeholder",
-							"Search by name, email, position, or team...",
-						)}
-						aria-label={t("team.search.ariaLabel", "Search team members")}
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-						className="pl-10"
-					/>
-				</div>
-				<ToggleGroup
-					type="single"
-					value={viewMode}
-					onValueChange={(value) => value && setViewMode(value as "cards" | "table")}
-					className="hidden sm:flex"
-				>
-					<ToggleGroupItem value="cards" aria-label={t("team.view.cards", "Card view")}>
-						<IconLayoutGrid className="size-4" />
-					</ToggleGroupItem>
-					<ToggleGroupItem value="table" aria-label={t("team.view.table", "Table view")}>
-						<IconLayoutList className="size-4" />
-					</ToggleGroupItem>
-				</ToggleGroup>
+			<div className="overflow-x-auto rounded-md border">
+				<Table className="min-w-[760px]">
+					<TableHeader>
+						{table.getHeaderGroups().map((headerGroup) => (
+							<TableRow key={headerGroup.id}>
+								{headerGroup.headers.map((header) => (
+									<TableHead
+										key={header.id}
+										aria-sort={
+											header.column.getCanSort()
+												? header.column.getIsSorted() === "asc"
+													? "ascending"
+													: header.column.getIsSorted() === "desc"
+														? "descending"
+														: "none"
+												: undefined
+										}
+									>
+										{header.isPlaceholder
+											? null
+											: flexRender(
+													header.column.columnDef.header,
+													header.getContext(),
+												)}
+									</TableHead>
+								))}
+							</TableRow>
+						))}
+					</TableHeader>
+					<TableBody>
+						{table.getRowModel().rows.map((row) => (
+							<TableRow key={row.id}>
+								{row.getVisibleCells().map((cell) => (
+									<TableCell key={cell.id}>
+										{flexRender(cell.column.columnDef.cell, cell.getContext())}
+									</TableCell>
+								))}
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
 			</div>
 
-			{/* Content */}
-			{filteredEmployees.length > 0 ? (
-				viewMode === "cards" ? (
-					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-						{filteredEmployees.map((emp) => (
-							<Link key={emp.id} href={`/settings/employees/${emp.id}`}>
-								<Card className="group relative h-full overflow-hidden py-0 transition-shadow hover:shadow-md">
-									<CardContent className="p-3">
-										<div className="flex items-center gap-3">
-											<UserAvatar
-												image={emp.user.image}
-												seed={emp.user.id}
-												name={emp.user.name}
-												clockStatus={emp.clockStatus ?? "unknown"}
-												size="md"
-											/>
-											<div className="min-w-0 flex-1">
-												<div className="flex items-center gap-1.5">
-													<h3 className="truncate text-sm font-medium">{emp.user.name}</h3>
-													{emp.isPrimaryManager && (
-														<IconUserCheck
-															className="size-3.5 shrink-0 text-primary"
-															title={primaryManagerLabel}
-														/>
-													)}
-													<YouBadge show={emp.isCurrentUser} label={youLabel} />
-												</div>
-												<p className="truncate text-xs text-muted-foreground">{emp.user.email}</p>
-												{emp.position && (
-													<p className="truncate text-xs text-muted-foreground">{emp.position}</p>
-												)}
-											</div>
-										</div>
-										<div className="mt-2 flex items-center justify-between">
-											<div className="flex flex-wrap gap-1">
-												{emp.team && (
-													<Badge variant="secondary" className="text-xs font-normal">
-														{emp.team.name}
-													</Badge>
-												)}
-												<TimeBalanceBadge
-													employee={emp}
-													noBalanceLabel={noBalanceLabel}
-													yearBalanceLabel={yearBalanceLabel}
-												/>
-												{!emp.isActive && (
-													<Badge variant="outline" className="text-xs font-normal">
-														{t("team.status.inactive", "Inactive")}
-													</Badge>
-												)}
-												{emp.role !== "employee" && (
-													<Badge
-														variant={emp.role === "admin" ? "default" : "secondary"}
-														className="text-xs font-normal"
-													>
-														{emp.role}
-													</Badge>
-												)}
-											</div>
-											<IconArrowRight className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-										</div>
-									</CardContent>
-								</Card>
-							</Link>
-						))}
-					</div>
-				) : (
-					<div className="space-y-4">
-						<div className="overflow-x-auto rounded-md border">
-							<Table className="min-w-[760px]">
-								<TableHeader>
-									{table.getHeaderGroups().map((headerGroup) => (
-										<TableRow key={headerGroup.id}>
-											{headerGroup.headers.map((header) => (
-												<TableHead
-													key={header.id}
-													aria-sort={
-														header.column.getCanSort()
-															? header.column.getIsSorted() === "asc"
-																? "ascending"
-																: header.column.getIsSorted() === "desc"
-																	? "descending"
-																	: "none"
-															: undefined
-													}
-												>
-													{header.isPlaceholder
-														? null
-														: flexRender(header.column.columnDef.header, header.getContext())}
-												</TableHead>
-											))}
-										</TableRow>
-									))}
-								</TableHeader>
-								<TableBody>
-									{table.getRowModel().rows.map((row) => (
-										<TableRow key={row.id}>
-											{row.getVisibleCells().map((cell) => (
-												<TableCell key={cell.id}>
-													{flexRender(cell.column.columnDef.cell, cell.getContext())}
-												</TableCell>
-											))}
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						</div>
-
-						{table.getPageCount() > 1 && (
-							<div className="flex items-center justify-between">
-								<p className="text-sm text-muted-foreground">
-									{t("team.pagination.showing", "Showing {from} to {to} of {total}", {
-										from:
-											table.getState().pagination.pageIndex * table.getState().pagination.pageSize +
-											1,
-										to: Math.min(
-											(table.getState().pagination.pageIndex + 1) *
-												table.getState().pagination.pageSize,
-											filteredEmployees.length,
-										),
-										total: filteredEmployees.length,
-									})}
-								</p>
-								<div className="flex items-center gap-2">
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => table.previousPage()}
-										disabled={!table.getCanPreviousPage()}
-									>
-										{t("team.pagination.previous", "Previous")}
-									</Button>
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => table.nextPage()}
-										disabled={!table.getCanNextPage()}
-									>
-										{t("team.pagination.next", "Next")}
-									</Button>
-								</div>
-							</div>
-						)}
-					</div>
-				)
-			) : (
-				<Card className="border-dashed">
-					<CardContent className="flex flex-col items-center justify-center py-12 text-center">
-						<IconSearch className="size-8 text-muted-foreground" />
-						<h3 className="mt-4 font-semibold">{t("team.noResults.title", "No results found")}</h3>
-						<p className="mt-1 text-sm text-muted-foreground">
-							{t("team.noResults.description", 'No team members match "{query}"', {
-								query: searchQuery,
-							})}
-						</p>
-						<Button variant="ghost" size="sm" className="mt-4" onClick={() => setSearchQuery("")}>
-							{t("team.noResults.action", "Clear search")}
+			{table.getPageCount() > 1 && (
+				<div className="flex items-center justify-between">
+					<p className="text-sm text-muted-foreground">
+						{t("team.pagination.showing", "Showing {from} to {to} of {total}", {
+							from:
+								table.getState().pagination.pageIndex *
+									table.getState().pagination.pageSize +
+								1,
+							to: Math.min(
+								(table.getState().pagination.pageIndex + 1) *
+									table.getState().pagination.pageSize,
+								employees.length,
+							),
+							total: employees.length,
+						})}
+					</p>
+					<div className="flex items-center gap-2">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => table.previousPage()}
+							disabled={!table.getCanPreviousPage()}
+						>
+							{t("team.pagination.previous", "Previous")}
 						</Button>
-					</CardContent>
-				</Card>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => table.nextPage()}
+							disabled={!table.getCanNextPage()}
+						>
+							{t("team.pagination.next", "Next")}
+						</Button>
+					</div>
+				</div>
 			)}
 		</div>
+	);
+}
+
+function NoTeamMemberResults({
+	title,
+	description,
+	clearLabel,
+	onClear,
+}: {
+	title: string;
+	description: string;
+	clearLabel: string;
+	onClear: () => void;
+}) {
+	return (
+		<Card className="border-dashed">
+			<CardContent className="flex flex-col items-center justify-center py-12 text-center">
+				<IconSearch className="size-8 text-muted-foreground" />
+				<h3 className="mt-4 font-semibold">{title}</h3>
+				<p className="mt-1 text-sm text-muted-foreground">{description}</p>
+				<Button variant="ghost" size="sm" className="mt-4" onClick={onClear}>
+					{clearLabel}
+				</Button>
+			</CardContent>
+		</Card>
 	);
 }

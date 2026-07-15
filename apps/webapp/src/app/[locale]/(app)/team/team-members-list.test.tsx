@@ -50,6 +50,17 @@ const employee = (overrides: Partial<ManagedEmployee>): ManagedEmployee => ({
 	...overrides,
 });
 
+const timeBalance = (employeeId: string, actualMinutes: number, requiredMinutes: number) => ({
+	employeeId,
+	organizationId: "org-1",
+	actualMinutes,
+	requiredMinutes,
+	balanceMinutes: actualMinutes - requiredMinutes,
+	computedFromDate: "2026-01-01",
+	computedThroughDate: "2026-05-17",
+	computedAt: new Date("2026-05-18T00:00:00.000Z"),
+});
+
 describe("TeamMembersList", () => {
 	it("labels the search input for assistive technology", () => {
 		render(<TeamMembersList employees={[employee({})]} />);
@@ -68,14 +79,7 @@ describe("TeamMembersList", () => {
 				employees={[
 					employee({
 						id: "employee-1",
-						timeBalance: {
-							year: 2026,
-							actualMinutes: 600,
-							expectedMinutes: 480,
-							absenceAdjustedMinutes: 0,
-							balanceMinutes: 120,
-							calculatedAt: new Date("2026-05-18T00:00:00.000Z"),
-						},
+						timeBalance: timeBalance("employee-1", 600, 480),
 					}),
 					employee({
 						id: "employee-2",
@@ -87,14 +91,7 @@ describe("TeamMembersList", () => {
 							email: "grace@example.com",
 							image: null,
 						},
-						timeBalance: {
-							year: 2026,
-							actualMinutes: 300,
-							expectedMinutes: 480,
-							absenceAdjustedMinutes: 0,
-							balanceMinutes: -180,
-							calculatedAt: new Date("2026-05-18T00:00:00.000Z"),
-						},
+						timeBalance: timeBalance("employee-2", 479, 1080),
 					}),
 					employee({
 						id: "employee-3",
@@ -106,14 +103,7 @@ describe("TeamMembersList", () => {
 							email: "katherine@example.com",
 							image: null,
 						},
-						timeBalance: {
-							year: 2026,
-							actualMinutes: 480,
-							expectedMinutes: 480,
-							absenceAdjustedMinutes: 0,
-							balanceMinutes: 0,
-							calculatedAt: new Date("2026-05-18T00:00:00.000Z"),
-						},
+						timeBalance: timeBalance("employee-3", 480, 480),
 					}),
 					employee({
 						id: "employee-4",
@@ -130,13 +120,13 @@ describe("TeamMembersList", () => {
 			/>,
 		);
 
-		expect(screen.getByText("+2h")).toBeTruthy();
-		expect(screen.getByText("-3h")).toBeTruthy();
-		expect(screen.getByText("0h")).toBeTruthy();
-		expect(screen.getByLabelText("Year balance: +2h")).toBeTruthy();
-		expect(screen.getByLabelText("Year balance: -3h")).toBeTruthy();
-		expect(screen.getByLabelText("Year balance: 0h")).toBeTruthy();
-		expect(screen.getByLabelText("Year balance: No balance")).toBeTruthy();
+		expect(screen.getByText("+2:00h")).toBeTruthy();
+		expect(screen.getByText("-10:01h")).toBeTruthy();
+		expect(screen.getByText("0:00h")).toBeTruthy();
+		expect(screen.getByLabelText("All-time balance: +2:00h")).toBeTruthy();
+		expect(screen.getByLabelText("All-time balance: -10:01h")).toBeTruthy();
+		expect(screen.getByLabelText("All-time balance: 0:00h")).toBeTruthy();
+		expect(screen.getByLabelText("All-time balance: No balance")).toBeTruthy();
 	});
 
 	it("renders You and balance badges in table mode", () => {
@@ -146,14 +136,7 @@ describe("TeamMembersList", () => {
 					employee({
 						isCurrentUser: true,
 						isPrimaryManager: true,
-						timeBalance: {
-							year: 2026,
-							actualMinutes: 600,
-							expectedMinutes: 480,
-							absenceAdjustedMinutes: 0,
-							balanceMinutes: 120,
-							calculatedAt: new Date("2026-05-18T00:00:00.000Z"),
-						},
+						timeBalance: timeBalance("employee-1", 600, 480),
 					}),
 				]}
 			/>,
@@ -162,24 +145,17 @@ describe("TeamMembersList", () => {
 		fireEvent.click(screen.getByRole("radio", { name: "Table view" }));
 
 		expect(screen.getByText("You")).toBeTruthy();
-		expect(screen.getByText("+2h")).toBeTruthy();
+		expect(screen.getByText("+2:00h")).toBeTruthy();
 		expect(screen.getByTitle("You are the primary manager")).toBeTruthy();
 	});
 
-	it("renders and toggles an accessible sortable yearly balance table header", () => {
+	it("renders and toggles an accessible sortable all-time balance table header", () => {
 		render(
 			<TeamMembersList
 				employees={[
 					employee({
 						id: "employee-1",
-						timeBalance: {
-							year: 2026,
-							actualMinutes: 600,
-							expectedMinutes: 480,
-							absenceAdjustedMinutes: 0,
-							balanceMinutes: 120,
-							calculatedAt: new Date("2026-05-18T00:00:00.000Z"),
-						},
+						timeBalance: timeBalance("employee-1", 600, 480),
 					}),
 					employee({
 						id: "employee-2",
@@ -191,14 +167,7 @@ describe("TeamMembersList", () => {
 							email: "grace@example.com",
 							image: null,
 						},
-						timeBalance: {
-							year: 2026,
-							actualMinutes: 300,
-							expectedMinutes: 480,
-							absenceAdjustedMinutes: 0,
-							balanceMinutes: -180,
-							calculatedAt: new Date("2026-05-18T00:00:00.000Z"),
-						},
+						timeBalance: timeBalance("employee-2", 479, 1080),
 					}),
 					employee({
 						id: "employee-3",
@@ -210,14 +179,7 @@ describe("TeamMembersList", () => {
 							email: "katherine@example.com",
 							image: null,
 						},
-						timeBalance: {
-							year: 2026,
-							actualMinutes: 480,
-							expectedMinutes: 480,
-							absenceAdjustedMinutes: 0,
-							balanceMinutes: 0,
-							calculatedAt: new Date("2026-05-18T00:00:00.000Z"),
-						},
+						timeBalance: timeBalance("employee-3", 480, 480),
 					}),
 				]}
 			/>,
@@ -225,15 +187,15 @@ describe("TeamMembersList", () => {
 
 		fireEvent.click(screen.getByRole("radio", { name: "Table view" }));
 
-		const balanceHeader = screen.getByRole("columnheader", { name: /Year balance/ });
-		const sortButton = screen.getByRole("button", { name: "Sort by Year balance" });
+		const balanceHeader = screen.getByRole("columnheader", { name: /All-time balance/ });
+		const sortButton = screen.getByRole("button", { name: "All-time balance" });
 		expect(balanceHeader.getAttribute("aria-sort")).toBe("none");
 		expect(sortButton.querySelector("svg")).toBeTruthy();
 
 		fireEvent.click(sortButton);
 
 		expect(balanceHeader.getAttribute("aria-sort")).toBe("ascending");
-		expect(screen.getByRole("button", { name: "Sort by Year balance (ascending)" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "All-time balance (ascending)" })).toBeTruthy();
 		const bodyRows = screen.getAllByRole("row").slice(1);
 		expect(bodyRows[0]?.textContent).toContain("Grace Hopper");
 		expect(bodyRows[1]?.textContent).toContain("Katherine Johnson");

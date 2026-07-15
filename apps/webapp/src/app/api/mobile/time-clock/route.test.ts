@@ -20,8 +20,7 @@ const mockState = vi.hoisted(() => ({
 	requireMobileSessionContext: vi.fn(),
 	requireMobileEmployee: vi.fn(),
 	clockIn: vi.fn(),
-		clockOut: vi.fn(),
-		requireActor: vi.fn(),
+	clockOut: vi.fn(),
 }));
 
 vi.mock("@/app/api/mobile/shared", () => ({
@@ -33,11 +32,6 @@ vi.mock("@/app/api/mobile/shared", () => ({
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/clocking", () => ({
 	clockIn: mockState.clockIn,
 	clockOut: mockState.clockOut,
-}));
-
-vi.mock("@/lib/time-tracking/clocking-service", () => ({
-	ClockingAccessError: class ClockingAccessError extends Error {},
-	clockingService: { requireActor: mockState.requireActor },
 }));
 
 const { POST } = await import("./route");
@@ -56,11 +50,6 @@ describe("POST /api/mobile/time-clock", () => {
 		mockState.requireMobileEmployee.mockResolvedValue({
 			id: "emp-1",
 			organizationId: "org-1",
-		});
-		mockState.requireActor.mockResolvedValue({
-			employee: { id: "emp-1", organizationId: "org-1" },
-			organizationId: "org-1",
-			userId: "user-1",
 		});
 	});
 
@@ -83,12 +72,19 @@ describe("POST /api/mobile/time-clock", () => {
 	});
 
 	it("accepts remote work location when clocking in", async () => {
-		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+		mockState.clockIn.mockResolvedValue({
+			success: true,
+			data: { id: "entry-1" },
+		});
 
 		const response = await POST(
 			new Request("https://app.example.com/api/mobile/time-clock", {
 				method: "POST",
-				body: JSON.stringify({ action: "clock_in", workLocationType: "remote", ...utcActionEvidence() }),
+				body: JSON.stringify({
+					action: "clock_in",
+					workLocationType: "remote",
+					...utcActionEvidence(),
+				}),
 				headers: {
 					"content-type": "application/json",
 				},
@@ -96,13 +92,22 @@ describe("POST /api/mobile/time-clock", () => {
 		);
 
 		expect(response.status).toBe(200);
-		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith("user-1", "org-1");
-		expect(mockState.clockIn).toHaveBeenCalledWith("remote", { browserTimezone: "UTC" });
+		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith(
+			"user-1",
+			"org-1",
+		);
+		expect(mockState.clockIn).toHaveBeenCalledWith(
+			"remote",
+			expect.objectContaining({ browserTimezone: "UTC", deviceInfo: "mobile" }),
+		);
 		expect(mockState.clockOut).not.toHaveBeenCalled();
 	});
 
 	it("passes explicit browser timezone to clock-in context", async () => {
-		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+		mockState.clockIn.mockResolvedValue({
+			success: true,
+			data: { id: "entry-1" },
+		});
 		const timestamp = new Date().toISOString();
 		const utcOffsetMinutes = 120;
 
@@ -123,13 +128,22 @@ describe("POST /api/mobile/time-clock", () => {
 		);
 
 		expect(response.status).toBe(200);
-		expect(mockState.clockIn).toHaveBeenCalledWith("remote", { browserTimezone: "Europe/Berlin" });
+		expect(mockState.clockIn).toHaveBeenCalledWith(
+			"remote",
+			expect.objectContaining({
+				browserTimezone: "Europe/Berlin",
+				deviceInfo: "mobile",
+			}),
+		);
 	});
 
-	it("accepts current UTC action evidence and keeps the server clock authoritative", async () => {
+	it("passes the validated mobile instant to the clocking implementation", async () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-07-10T12:30:00.000Z"));
-		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+		mockState.clockIn.mockResolvedValue({
+			success: true,
+			data: { id: "entry-1" },
+		});
 
 		const response = await POST(
 			new Request("https://app.example.com/api/mobile/time-clock", {
@@ -146,7 +160,11 @@ describe("POST /api/mobile/time-clock", () => {
 		);
 
 		expect(response.status).toBe(200);
-		expect(mockState.clockIn).toHaveBeenCalledWith("remote", { browserTimezone: "UTC" });
+		const context = mockState.clockIn.mock.calls[0]?.[1];
+		expect(context).toEqual(
+			expect.objectContaining({ browserTimezone: "UTC", deviceInfo: "mobile" }),
+		);
+		expect(context.instant.toString()).toBe("2026-07-10T12:30:00Z");
 		vi.useRealTimers();
 	});
 
@@ -229,7 +247,10 @@ describe("POST /api/mobile/time-clock", () => {
 	});
 
 	it("rejects a generic timezone field that is not action evidence", async () => {
-		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+		mockState.clockIn.mockResolvedValue({
+			success: true,
+			data: { id: "entry-1" },
+		});
 
 		const response = await POST(
 			new Request("https://app.example.com/api/mobile/time-clock", {
@@ -280,13 +301,15 @@ describe("POST /api/mobile/time-clock", () => {
 		);
 
 		expect(response.status).toBe(400);
-		expect(mockState.requireActor).not.toHaveBeenCalled();
 		expect(mockState.clockIn).not.toHaveBeenCalled();
 	});
 
 	it("returns 403 when the user has no employee record in the active organization", async () => {
 		mockState.requireMobileEmployee.mockRejectedValue(
-			new mockState.MobileApiError(403, "Employee record required for the active organization"),
+			new mockState.MobileApiError(
+				403,
+				"Employee record required for the active organization",
+			),
 		);
 
 		const response = await POST(
@@ -324,7 +347,10 @@ describe("POST /api/mobile/time-clock", () => {
 	});
 
 	it("calls clockOut for clock_out actions after verifying the active-org employee", async () => {
-		mockState.clockOut.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+		mockState.clockOut.mockResolvedValue({
+			success: true,
+			data: { id: "entry-1" },
+		});
 
 		const response = await POST(
 			new Request("https://app.example.com/api/mobile/time-clock", {
@@ -337,10 +363,15 @@ describe("POST /api/mobile/time-clock", () => {
 		);
 
 		expect(response.status).toBe(200);
-		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith("user-1", "org-1");
-		expect(mockState.clockOut).toHaveBeenCalledWith(undefined, undefined, {
-			browserTimezone: "UTC",
-		});
+		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith(
+			"user-1",
+			"org-1",
+		);
+		expect(mockState.clockOut).toHaveBeenCalledWith(
+			undefined,
+			undefined,
+			expect.objectContaining({ browserTimezone: "UTC", deviceInfo: "mobile" }),
+		);
 		expect(mockState.clockIn).not.toHaveBeenCalled();
 	});
 });

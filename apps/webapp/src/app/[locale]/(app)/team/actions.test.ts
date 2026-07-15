@@ -46,12 +46,14 @@ describe("team action helpers", () => {
 			[
 				"employee-1",
 				{
-					year: 2026,
+					employeeId: "employee-1",
+					organizationId: "org-1",
 					actualMinutes: 600,
-					expectedMinutes: 480,
-					absenceAdjustedMinutes: 0,
+					requiredMinutes: 480,
 					balanceMinutes: 120,
-					calculatedAt: new Date("2026-05-18T00:00:00.000Z"),
+					computedFromDate: "2026-01-01",
+					computedThroughDate: "2026-05-17",
+					computedAt: new Date("2026-05-18T00:00:00.000Z"),
 				},
 			],
 		]);

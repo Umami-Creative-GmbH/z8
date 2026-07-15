@@ -21,9 +21,10 @@ export function EmployeeSelectList({
 	maxSelections,
 }: EmployeeSelectListProps) {
 	const { t } = useTranslate();
+	const selectedIdSet = new Set(selectedIds);
 
 	const handleItemClick = (employee: SelectableEmployee) => {
-		const isSelected = selectedIds.includes(employee.id);
+		const isSelected = selectedIdSet.has(employee.id);
 
 		if (isSelected) {
 			onDeselect(employee.id);
@@ -66,7 +67,7 @@ export function EmployeeSelectList({
 	return (
 		<div role="listbox">
 			{employees.map((employee) => {
-				const isSelected = selectedIds.includes(employee.id);
+				const isSelected = selectedIdSet.has(employee.id);
 				const isDisabled = !isSelected && isAtMaxSelections;
 
 				return (

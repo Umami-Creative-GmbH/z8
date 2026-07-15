@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { AcceptInvitationForm } from "@/components/accept-invitation-form";
 import { db, invitation as invitationTable } from "@/db";
+import { compareInstants, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 
 interface AcceptInvitationPageProps {
 	params: Promise<{ invitationId: string }>;
@@ -38,7 +39,11 @@ export default async function AcceptInvitationPage({ params }: AcceptInvitationP
 					? {
 							email: typedInvitation.email,
 							inviterName: typedInvitation.user?.name ?? null,
-							isExpired: typedInvitation.expiresAt < new Date(),
+							isExpired:
+								compareInstants(
+									instantFromDate(typedInvitation.expiresAt),
+									systemClock.nowInstant(),
+								) < 0,
 							organizationName: typedInvitation.organization?.name ?? null,
 							role: typedInvitation.role ?? null,
 							status: typedInvitation.status,

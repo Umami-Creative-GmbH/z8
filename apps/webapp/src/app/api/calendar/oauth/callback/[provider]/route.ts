@@ -16,7 +16,10 @@ import { db } from "@/db";
 import { calendarConnection, employee } from "@/db/schema";
 import { env } from "@/env";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
-import { getCalendarProvider, isProviderSupported } from "@/lib/calendar-sync/providers";
+import {
+	getCalendarProvider,
+	isProviderSupported,
+} from "@/lib/calendar-sync/providers";
 import { storeCalendarTokens } from "@/lib/calendar-sync/token-store";
 import type { CalendarProvider } from "@/lib/calendar-sync/types";
 
@@ -81,12 +84,16 @@ async function handleCalendarOAuthCallback(
 		// Parse and verify signed state
 		let statePayload: StatePayload;
 		try {
-			const signedState = JSON.parse(Buffer.from(state, "base64url").toString()) as SignedState;
+			const signedState = JSON.parse(
+				Buffer.from(state, "base64url").toString(),
+			) as SignedState;
 
 			// Verify HMAC signature
 			const secret = env.BETTER_AUTH_SECRET;
 			if (!secret) {
-				throw new Error("BETTER_AUTH_SECRET is required for OAuth state verification");
+				throw new Error(
+					"BETTER_AUTH_SECRET is required for OAuth state verification",
+				);
 			}
 
 			const expectedSignature = crypto
@@ -130,7 +137,9 @@ async function handleCalendarOAuthCallback(
 					eq(employee.organizationId, statePayload.organizationId),
 				),
 			}),
-			Effect.runPromise(calendarProvider.exchangeCodeForTokens({ code, state }, redirectUri)),
+			Effect.runPromise(
+				calendarProvider.exchangeCodeForTokens({ code, state }, redirectUri),
+			),
 		]);
 
 		if (!emp) {
@@ -147,10 +156,14 @@ async function handleCalendarOAuthCallback(
 
 		if (existingConnection) {
 			// Store tokens in Vault
-			await storeCalendarTokens(statePayload.organizationId, existingConnection.id, {
-				accessToken: tokens.accessToken,
-				refreshToken: tokens.refreshToken,
-			});
+			await storeCalendarTokens(
+				statePayload.organizationId,
+				existingConnection.id,
+				{
+					accessToken: tokens.accessToken,
+					refreshToken: tokens.refreshToken,
+				},
+			);
 
 			// Update existing connection (sentinel values in DB)
 			await db
@@ -166,7 +179,12 @@ async function handleCalendarOAuthCallback(
 					consecutiveFailures: 0,
 					updatedAt: new Date(),
 				})
-				.where(eq(calendarConnection.id, existingConnection.id));
+				.where(
+					and(
+						eq(calendarConnection.id, existingConnection.id),
+						eq(calendarConnection.organizationId, statePayload.organizationId),
+					),
+				);
 		} else {
 			// Create new connection first to get the ID
 			const [newConnection] = await db
@@ -196,7 +214,9 @@ async function handleCalendarOAuthCallback(
 		}
 
 		// Redirect to settings page with success message
-		return NextResponse.redirect(`${baseUrl}/settings/calendar?connected=${provider}`);
+		return NextResponse.redirect(
+			`${baseUrl}/settings/calendar?connected=${provider}`,
+		);
 	} catch (error) {
 		console.error("Error completing calendar OAuth:", error);
 		return redirectWithError("Failed to connect calendar");
@@ -212,5 +232,7 @@ export { handleCalendarOAuthCallback as GET };
 function redirectWithError(message: string): NextResponse {
 	const baseUrl = getDefaultAppBaseUrl();
 	const encodedMessage = encodeURIComponent(message);
-	return NextResponse.redirect(`${baseUrl}/settings/calendar?error=${encodedMessage}`);
+	return NextResponse.redirect(
+		`${baseUrl}/settings/calendar?error=${encodedMessage}`,
+	);
 }

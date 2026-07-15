@@ -15,12 +15,19 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
-import { canGenerateReport, getAccessibleEmployees } from "@/lib/reports/permissions";
+import { HourlyEarningsIntegrityError } from "@/lib/reports/hourly-earnings";
+import {
+	canGenerateReport,
+	getAccessibleEmployees,
+} from "@/lib/reports/permissions";
 import { resolveReportDateRange } from "@/lib/reports/report-date-range";
 import { generateEmployeeReport } from "@/lib/reports/report-generator";
 import type { AccessibleEmployee, ReportData } from "@/lib/reports/types";
@@ -64,7 +71,10 @@ export async function generateReport(
 						const emp = await dbService.db.query.employee.findFirst({
 							where: and(
 								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, session.session.activeOrganizationId ?? ""),
+								eq(
+									employee.organizationId,
+									session.session.activeOrganizationId ?? "",
+								),
 							),
 							with: { user: true },
 						});
@@ -97,21 +107,31 @@ export async function generateReport(
 				if (!org) {
 					return yield* _(
 						Effect.fail(
-							new NotFoundError({ message: "Organization not found", entityType: "organization" }),
+							new NotFoundError({
+								message: "Organization not found",
+								entityType: "organization",
+							}),
 						),
 					);
 				}
 				const range = yield* _(
 					Effect.try({
-						try: () => resolveReportDateRange(startDate, endDate, org.timezone ?? "UTC"),
-						catch: () => new ValidationError({ message: "Enter a valid report date range" }),
+						try: () =>
+							resolveReportDateRange(startDate, endDate, org.timezone ?? "UTC"),
+						catch: () =>
+							new ValidationError({
+								message: "Enter a valid report date range",
+							}),
 					}),
 				);
 
 				// Step 3: Permission check
 				const hasAccess = yield* _(
 					dbService.query("checkReportPermissions", async () => {
-						return await canGenerateReport(currentEmployee.id, targetEmployeeId);
+						return await canGenerateReport(
+							currentEmployee.id,
+							targetEmployeeId,
+						);
 					}),
 				);
 
@@ -152,20 +172,33 @@ export async function generateReport(
 				);
 
 				const reportData = yield* _(
-					dbService.query("generateEmployeeReport", async () => {
-						return await generateEmployeeReport(
-							targetEmployeeId,
-							currentEmployee.organizationId,
-							dateFromInstant(range.start),
-							dateFromInstant(range.endExclusive.subtract({ milliseconds: 1 })),
-							{ startDate, endDate, timezone: range.timezone },
-						);
-					}),
+					dbService
+						.query("generateEmployeeReport", async () => {
+							return await generateEmployeeReport(
+								targetEmployeeId,
+								currentEmployee.organizationId,
+								dateFromInstant(range.start),
+								dateFromInstant(
+									range.endExclusive.subtract({ milliseconds: 1 }),
+								),
+								{ startDate, endDate, timezone: range.timezone },
+							);
+						})
+						.pipe(
+							Effect.mapError((error) =>
+								error.cause instanceof HourlyEarningsIntegrityError
+									? new ValidationError({ message: error.cause.message })
+									: error,
+							),
+						),
 				);
 
 				span.setAttribute("report.work_hours", reportData.workHours.totalHours);
 				span.setAttribute("report.work_days", reportData.workHours.workDays);
-				span.setAttribute("report.home_office_days", reportData.absences.homeOffice.days);
+				span.setAttribute(
+					"report.home_office_days",
+					reportData.absences.homeOffice.days,
+				);
 				span.setStatus({ code: SpanStatusCode.OK });
 
 				logger.info(
@@ -217,14 +250,17 @@ export async function getAccessibleEmployeesAction(): Promise<
 	// Early session check for prerender safety - prevents AuthenticationError during build
 	const preSession = await auth.api.getSession({ headers: await headers() });
 	if (!preSession?.user) {
-		return { success: false, error: "Not authenticated", code: "AuthenticationError" };
+		return {
+			success: false,
+			error: "Not authenticated",
+			code: "AuthenticationError",
+		};
 	}
 
 	const tracer = trace.getTracer("reports");
 
-	const effect: Effect.Effect<AccessibleEmployee[], AnyAppError> = tracer.startActiveSpan(
-		"getAccessibleEmployees",
-		(span) => {
+	const effect: Effect.Effect<AccessibleEmployee[], AnyAppError> =
+		tracer.startActiveSpan("getAccessibleEmployees", (span) => {
 			return Effect.gen(function* (_) {
 				// Step 1: Authenticate and get current employee
 				const authService = yield* _(AuthService);
@@ -239,7 +275,10 @@ export async function getAccessibleEmployeesAction(): Promise<
 						const emp = await dbService.db.query.employee.findFirst({
 							where: and(
 								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, session.session.activeOrganizationId ?? ""),
+								eq(
+									employee.organizationId,
+									session.session.activeOrganizationId ?? "",
+								),
 							),
 						});
 
@@ -268,7 +307,10 @@ export async function getAccessibleEmployeesAction(): Promise<
 					}),
 				);
 
-				span.setAttribute("accessible_employees.count", accessibleEmployees.length);
+				span.setAttribute(
+					"accessible_employees.count",
+					accessibleEmployees.length,
+				);
 				span.setStatus({ code: SpanStatusCode.OK });
 
 				logger.info(
@@ -299,8 +341,7 @@ export async function getAccessibleEmployeesAction(): Promise<
 				}),
 				Effect.provide(AppLayer),
 			);
-		},
-	);
+		});
 
 	return runServerActionSafe(effect);
 }
@@ -309,7 +350,9 @@ export async function getAccessibleEmployeesAction(): Promise<
  * Get current employee from session
  * Helper function for server components
  */
-export async function getCurrentEmployee(): Promise<typeof employee.$inferSelect | null> {
+export async function getCurrentEmployee(): Promise<
+	typeof employee.$inferSelect | null
+> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return null;

@@ -11,7 +11,10 @@ import { ForbiddenError, toHttpError } from "@/lib/authorization";
  * PATCH /api/org-admin/holidays/[id]
  * Update a holiday
  */
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+	request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
 	await connection();
 	try {
 		const { id } = await params;
@@ -24,7 +27,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		// Check CASL permissions
@@ -64,12 +70,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 				.select()
 				.from(holidayCategory)
 				.where(
-					and(eq(holidayCategory.id, categoryId), eq(holidayCategory.organizationId, activeOrgId)),
+					and(
+						eq(holidayCategory.id, categoryId),
+						eq(holidayCategory.organizationId, activeOrgId),
+					),
 				)
 				.limit(1);
 
 			if (!existingCategory) {
-				return NextResponse.json({ error: "Invalid holiday category" }, { status: 400 });
+				return NextResponse.json(
+					{ error: "Invalid holiday category" },
+					{ status: 400 },
+				);
 			}
 		}
 
@@ -85,7 +97,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 				...(recurrenceType && { recurrenceType }),
 				...(recurrenceRule !== undefined && { recurrenceRule }),
 				...(recurrenceEndDate !== undefined && {
-					recurrenceEndDate: recurrenceEndDate ? new Date(recurrenceEndDate) : null,
+					recurrenceEndDate: recurrenceEndDate
+						? new Date(recurrenceEndDate)
+						: null,
 				}),
 				...(isActive !== undefined && { isActive }),
 				updatedBy: session.user.id,
@@ -96,7 +110,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 		return NextResponse.json({ holiday: updatedHoliday });
 	} catch (error) {
 		console.error("Error updating holiday:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -120,7 +137,10 @@ export async function DELETE(
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		// Check CASL permissions
@@ -143,14 +163,21 @@ export async function DELETE(
 		}
 
 		// Soft delete by setting isActive to false
-		await db
+		const [deletedHoliday] = await db
 			.update(holiday)
 			.set({ isActive: false, updatedBy: session.user.id })
-			.where(eq(holiday.id, id));
+			.where(and(eq(holiday.id, id), eq(holiday.organizationId, activeOrgId)))
+			.returning({ id: holiday.id });
+		if (!deletedHoliday) {
+			return NextResponse.json({ error: "Holiday not found" }, { status: 404 });
+		}
 
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		console.error("Error deleting holiday:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }

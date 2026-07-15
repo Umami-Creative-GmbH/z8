@@ -199,9 +199,10 @@ export async function getManagerDailyBriefingFromSources({
 
 	const timeRecords = settledValue(timeRecordsResult, []);
 	const absences = settledValue(absencesResult, []);
+	const managerCoverageSubareaIdSet = new Set(managerCoverageSubareaIds);
 	const coverageRules = managerCoverageSubareaIds
 		? settledValue(coverageRulesResult, []).filter((rule) =>
-				managerCoverageSubareaIds.includes(rule.subareaId),
+				managerCoverageSubareaIdSet.has(rule.subareaId),
 			)
 		: settledValue(coverageRulesResult, []);
 	const scopedEmployeeIds = new Set(employeeIds);

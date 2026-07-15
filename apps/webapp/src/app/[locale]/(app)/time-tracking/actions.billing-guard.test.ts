@@ -2,37 +2,64 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const source = readFileSync(fileURLToPath(new URL("./actions.ts", import.meta.url)), "utf8");
+const source = readFileSync(
+	fileURLToPath(new URL("./actions.ts", import.meta.url)),
+	"utf8",
+);
+const clockingSource = readFileSync(
+	fileURLToPath(new URL("./actions/clocking.ts", import.meta.url)),
+	"utf8",
+);
 const correctionsSource = readFileSync(
 	fileURLToPath(new URL("./actions/corrections.ts", import.meta.url)),
 	"utf8",
 );
 
 function functionBody(name: string, targetSource = source) {
-	const match = new RegExp(`(?:export\\s+)?async function ${name}\\s*\\(`).exec(targetSource);
+	const match = new RegExp(`(?:export\\s+)?async function ${name}\\s*\\(`).exec(
+		targetSource,
+	);
 	const start = match?.index ?? -1;
 	expect(start, `${name} should exist`).toBeGreaterThanOrEqual(0);
 	const nextExport = targetSource.indexOf("export async function", start + 1);
 	return targetSource.slice(start, nextExport === -1 ? undefined : nextExport);
 }
 
-function expectBillingGuardBeforeWrite(name: string, writeMarker: string, targetSource = source) {
+function expectBillingGuardBeforeWrite(
+	name: string,
+	writeMarker: string,
+	targetSource = source,
+) {
 	const body = functionBody(name, targetSource);
 	const guardIndex = body.indexOf("requireBillingForMutation");
 	const writeIndex = body.indexOf(writeMarker);
 
-	expect(guardIndex, `${name} should require billing before mutating`).toBeGreaterThanOrEqual(0);
+	expect(
+		guardIndex,
+		`${name} should require billing before mutating`,
+	).toBeGreaterThanOrEqual(0);
 	expect(body).toContain("isBillingMutationAllowed");
 	expect(body).toContain('error: "billing_required"');
-	expect(body).toContain('code: billingAccess.reason ?? "subscription_required"');
-	expect(writeIndex, `${name} should include expected write marker`).toBeGreaterThanOrEqual(0);
-	expect(guardIndex, `${name} should guard before database writes`).toBeLessThan(writeIndex);
+	expect(body).toContain(
+		'code: billingAccess.reason ?? "subscription_required"',
+	);
+	expect(
+		writeIndex,
+		`${name} should include expected write marker`,
+	).toBeGreaterThanOrEqual(0);
+	expect(
+		guardIndex,
+		`${name} should guard before database writes`,
+	).toBeLessThan(writeIndex);
 }
 
-function expectNoManagerApprovalGuardBeforeWrite(name: string, writeMarker: string) {
-	const body = functionBody(name);
+function expectNoManagerApprovalGuardBeforeWrite(
+	name: string,
+	writeMarker: string,
+) {
+	const body = functionBody(name, clockingSource);
 	const guardIndex = body.indexOf(
-		'return { success: false, error: "No manager assigned to approve time changes" }',
+		'error: "No manager assigned to approve time changes"',
 	);
 	const writeIndex = body.indexOf(writeMarker);
 
@@ -40,37 +67,54 @@ function expectNoManagerApprovalGuardBeforeWrite(name: string, writeMarker: stri
 		guardIndex,
 		`${name} should reject unapprovable approval-required changes`,
 	).toBeGreaterThanOrEqual(0);
-	expect(writeIndex, `${name} should include expected write marker`).toBeGreaterThanOrEqual(0);
-	expect(guardIndex, `${name} should reject missing managers before database writes`).toBeLessThan(
+	expect(
 		writeIndex,
-	);
+		`${name} should include expected write marker`,
+	).toBeGreaterThanOrEqual(0);
+	expect(
+		guardIndex,
+		`${name} should reject missing managers before database writes`,
+	).toBeLessThan(writeIndex);
 }
 
-function expectPolicyCheckFailureBeforeWrite(name: string, writeMarker: string) {
-	const body = functionBody(name);
-	const guardIndex = body.indexOf(
-		'error: "Could not verify time approval policy. Please try again."',
+function expectPolicyCheckFailureBeforeWrite(
+	name: string,
+	writeMarker: string,
+	targetSource = source,
+) {
+	const body = functionBody(name, targetSource);
+	const guardIndex = Math.max(
+		body.indexOf(
+			'error: "Could not verify time approval policy. Please try again."',
+		),
+		body.indexOf("error: APPROVAL_POLICY_CHECK_ERROR"),
 	);
 	const writeIndex = body.indexOf(writeMarker);
 
-	expect(guardIndex, `${name} should fail closed when policy checks fail`).toBeGreaterThanOrEqual(
-		0,
-	);
-	expect(writeIndex, `${name} should include expected write marker`).toBeGreaterThanOrEqual(0);
-	expect(guardIndex, `${name} should fail closed before database writes`).toBeLessThan(writeIndex);
+	expect(
+		guardIndex,
+		`${name} should fail closed when policy checks fail`,
+	).toBeGreaterThanOrEqual(0);
+	expect(
+		writeIndex,
+		`${name} should include expected write marker`,
+	).toBeGreaterThanOrEqual(0);
+	expect(
+		guardIndex,
+		`${name} should fail closed before database writes`,
+	).toBeLessThan(writeIndex);
 }
 
 describe("legacy time-tracking action billing guards", () => {
 	it("imports the shared billing mutation guard helpers", () => {
-		expect(source).toContain(
-			'import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard"',
-		);
+		expect(source).toContain("isBillingMutationAllowed");
+		expect(source).toContain("requireBillingForMutation");
+		expect(source).toContain('from "@/lib/billing/guard"');
 	});
 
 	it("imports the work balance dirty marker", () => {
-		expect(source).toContain(
-			'import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service"',
-		);
+		expect(source).toContain("markEmployeeWorkBalanceDirty");
+		expect(source).toContain('from "@/lib/work-balance/service"');
 	});
 
 	it("wraps work balance dirty marking as best effort", () => {
@@ -80,29 +124,37 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it("guards clock-in before creating time entries", () => {
-		expectBillingGuardBeforeWrite("clockIn", "clockingService.clockIn({");
+		expectBillingGuardBeforeWrite(
+			"clockIn",
+			"clockingService.clockIn({",
+			clockingSource,
+		);
 	});
 
 	it("captures browser timezone context in live clock-in entries", () => {
-		const body = functionBody("clockIn");
+		const body = functionBody("clockIn", clockingSource);
 
-		expect(body).toContain("timezoneContext: BrowserTimezoneContext = {}");
+		expect(body).toContain("actionContext: ClockActionContext = {}");
 		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
-		expect(body).toContain("browserTimezone: timezoneContext.browserTimezone");
+		expect(body).toContain("browserTimezone: actionContext.browserTimezone");
 		expect(body).toContain('browserSource: "browser"');
 		expect(body).toContain('fallbackSource: "user_setting"');
 	});
 
 	it("guards clock-out before creating time entries", () => {
-		expectBillingGuardBeforeWrite("clockOut", "clockingService.clockOut({");
+		expectBillingGuardBeforeWrite(
+			"clockOut",
+			"clockingService.clockOut({",
+			clockingSource,
+		);
 	});
 
 	it("captures browser timezone context in live clock-out entries", () => {
-		const body = functionBody("clockOut");
+		const body = functionBody("clockOut", clockingSource);
 
-		expect(body).toContain("timezoneContext: BrowserTimezoneContext = {}");
+		expect(body).toContain("actionContext: ClockActionContext = {}");
 		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
-		expect(body).toContain("browserTimezone: timezoneContext.browserTimezone");
+		expect(body).toContain("browserTimezone: actionContext.browserTimezone");
 		expect(body).toContain('browserSource: "browser"');
 		expect(body).toContain('fallbackSource: "user_setting"');
 	});
@@ -121,21 +173,28 @@ describe("legacy time-tracking action billing guards", () => {
 	it.each([
 		["editSameDayTimeEntry", "createTimeEntry({"],
 		["requestTimeCorrection", "requestTimeCorrectionEffect(data)"],
-		["updateWorkPeriodNotes", "await db.update"],
+		["updateWorkPeriodNotes", ".update(timeEntry)"],
 		["splitWorkPeriod", "createTimeEntry({"],
-		["updateTimeEntryNotes", "await db.update"],
+		["updateTimeEntryNotes", ".update(timeEntry)"],
 		["updateWorkPeriodProject", ".update(workPeriod)"],
 	])("guards %s before writing time data", (name, writeMarker) => {
 		expectBillingGuardBeforeWrite(name, writeMarker);
 	});
 
 	it.each([
-		"clockOut",
 		"createManualTimeEntry",
 		"editSameDayTimeEntry",
 	])("marks work balances dirty after %s changes payable time", (name) => {
 		const body = functionBody(name);
 		expect(body).toContain("await markWorkBalanceDirtyBestEffort(");
+		expect(body).toContain("dirtyFromDate:");
+	});
+
+	it("marks work balances dirty after clockOut changes payable time", () => {
+		const body = functionBody("clockOut", clockingSource);
+		expect(body).toContain(
+			"await markWorkBalanceDirtyAfterClockOutBestEffort(",
+		);
 		expect(body).toContain("dirtyFromDate:");
 	});
 
@@ -165,7 +224,9 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(guardIndex).toBeGreaterThanOrEqual(0);
 		expect(body).toContain("isBillingMutationAllowed");
 		expect(body).toContain('message: "billing_required"');
-		expect(body).toContain('value: billingAccess.reason ?? "subscription_required"');
+		expect(body).toContain(
+			'value: billingAccess.reason ?? "subscription_required"',
+		);
 		expect(body).toContain('error: "billing_required"');
 		expect(writeIndex).toBeGreaterThanOrEqual(0);
 		expect(guardIndex).toBeLessThan(writeIndex);
@@ -186,7 +247,9 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(body).toContain(
 			'const approvalStatus = requiresManagerApproval ? "pending" : "approved"',
 		);
-		expect(body).toContain("const pendingChangesData = requiresManagerApproval");
+		expect(body).toContain(
+			"const pendingChangesData = requiresManagerApproval",
+		);
 		expect(body).toContain("if (requiresManagerApproval && managerId)");
 	});
 
@@ -194,16 +257,26 @@ describe("legacy time-tracking action billing guards", () => {
 		["clockOut", "createClockOutApprovalRequest"],
 		["createManualTimeEntry", "createManualEntryApprovalRequest"],
 	])("creates approval requests from approval-required %s", (name, approvalMarker) => {
-		const body = functionBody(name);
+		const body = functionBody(
+			name,
+			name === "clockOut" ? clockingSource : source,
+		);
 		const approvalIndex = body.indexOf(approvalMarker);
 
-		expect(approvalIndex, `${name} should create approval requests`).toBeGreaterThanOrEqual(0);
+		expect(
+			approvalIndex,
+			`${name} should create approval requests`,
+		).toBeGreaterThanOrEqual(0);
 	});
 
 	it.each([
 		["clockOut", "clockingService.clockOut({"],
 		["createManualTimeEntry", "createTimeEntry({"],
 	])("fails closed when %s policy checks fail before writing", (name, writeMarker) => {
-		expectPolicyCheckFailureBeforeWrite(name, writeMarker);
+		expectPolicyCheckFailureBeforeWrite(
+			name,
+			writeMarker,
+			name === "clockOut" ? clockingSource : source,
+		);
 	});
 });

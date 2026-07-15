@@ -60,6 +60,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 	} = props;
 
 	const [modalOpen, setModalOpen] = useState(false);
+	const triggerId = useId();
 	const employeeListboxId = useId();
 
 	// Track selected employees locally for immediate UI updates
@@ -74,6 +75,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 		}
 		return props.value || [];
 	})();
+	const selectedIdSet = new Set(selectedIds);
 
 	// Fetch selected employees for display (skip if pre-filtered list provided)
 	const { employees: fetchedEmployees } = useSelectedEmployees(
@@ -87,7 +89,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 		// If pre-filtered list provided, use it as the source
 		if (preFilteredEmployees) {
 			for (const emp of preFilteredEmployees) {
-				if (selectedIds.includes(emp.id)) {
+				if (selectedIdSet.has(emp.id)) {
 					employeeMap.set(emp.id, emp);
 				}
 			}
@@ -100,7 +102,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 
 		// Add locally tracked employees (takes precedence)
 		for (const [id, emp] of localSelectedEmployees) {
-			if (selectedIds.includes(id)) {
+			if (selectedIdSet.has(id)) {
 				employeeMap.set(id, emp);
 			}
 		}
@@ -158,9 +160,10 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 	const maxSelections = props.mode === "multiple" ? props.maxSelections : undefined;
 	return (
 		<div className={cn("space-y-2", className)}>
-			{label && <Label>{label}</Label>}
+			{label && <Label htmlFor={triggerId}>{label}</Label>}
 
 			<EmployeeSelectTrigger
+				id={triggerId}
 				mode={props.mode}
 				selectedEmployees={selectedEmployees}
 				placeholder={placeholder}

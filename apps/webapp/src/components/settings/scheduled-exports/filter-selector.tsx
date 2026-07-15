@@ -36,6 +36,8 @@ export function FilterSelector({
 	clearLabel,
 	ariaLabel,
 }: FilterSelectorProps) {
+	const selectedIdSet = new Set(selectedIds);
+
 	const handleToggle = (id: string, checked: boolean) => {
 		if (checked) {
 			onSelectionChange([...selectedIds, id]);
@@ -67,7 +69,7 @@ export function FilterSelector({
 							<div key={item.id} className="flex items-center gap-x-2 py-1">
 								<Checkbox
 									id={`filter-${item.id}`}
-									checked={selectedIds.includes(item.id)}
+									checked={selectedIdSet.has(item.id)}
 									onCheckedChange={(checked) => handleToggle(item.id, checked === true)}
 									aria-describedby={item.sublabel ? `filter-${item.id}-sublabel` : undefined}
 								/>

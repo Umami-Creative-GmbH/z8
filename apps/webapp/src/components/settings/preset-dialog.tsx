@@ -4,6 +4,7 @@ import { IconCalendar, IconLoader2, IconMapPin, IconTrash } from "@tabler/icons-
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import {
@@ -36,16 +37,16 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { queryKeys } from "@/lib/query";
 
-const holidayDateFormatter = new Intl.DateTimeFormat(undefined, {
-	month: "long",
-	day: "numeric",
-	timeZone: "UTC",
-});
-
-function formatDate(month: number, day: number) {
-	return holidayDateFormatter.format(new Date(Date.UTC(2000, month - 1, day)));
+function formatDate(month: number, day: number, locale: string) {
+	return formatPlainDate(
+		parsePlainDate(`2000-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`),
+		locale,
+		"monthDayLong",
+	);
 }
 
 interface PresetDialogProps {
@@ -95,6 +96,7 @@ export function PresetDialog({
 	onSuccess,
 }: PresetDialogProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const queryClient = useQueryClient();
 
 	const form = useForm({
@@ -156,8 +158,12 @@ export function PresetDialog({
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.holidays.presets.updated", "Preset updated successfully"));
-				queryClient.invalidateQueries({ queryKey: queryKeys.holidayPresets.list(organizationId) });
-				queryClient.invalidateQueries({ queryKey: queryKeys.holidayPresets.detail(presetId!) });
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.holidayPresets.list(organizationId),
+				});
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.holidayPresets.detail(presetId!),
+				});
 				onSuccess();
 				onOpenChange(false);
 			} else {
@@ -177,7 +183,9 @@ export function PresetDialog({
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.holidays.presets.holidayDeleted", "Holiday removed"));
-				queryClient.invalidateQueries({ queryKey: queryKeys.holidayPresets.detail(presetId!) });
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.holidayPresets.detail(presetId!),
+				});
 			} else {
 				toast.error(
 					result.error ||
@@ -354,7 +362,7 @@ export function PresetDialog({
 													<TableRow key={holiday.id}>
 														<TableCell className="font-medium">{holiday.name}</TableCell>
 														<TableCell>
-															{formatDate(holiday.month, holiday.day)}
+															{formatDate(holiday.month, holiday.day, locale)}
 															{holiday.durationDays > 1 && (
 																<span className="text-muted-foreground ml-1">
 																	(+{holiday.durationDays - 1}d)

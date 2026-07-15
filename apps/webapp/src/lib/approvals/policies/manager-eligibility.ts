@@ -133,11 +133,12 @@ export function resolvePrimaryEligibleManager(
 		return result;
 	}
 
+	const eligibleManagerIds = new Set(result.managerIds);
 	const primaryDirect = input.managerLinks
 		.flatMap((link) =>
 			link.employeeId === input.requesterEmployeeId &&
 			link.isPrimary &&
-			result.managerIds.includes(link.managerId)
+			eligibleManagerIds.has(link.managerId)
 				? [link.managerId]
 				: [],
 		)

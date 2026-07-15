@@ -3,10 +3,23 @@
  * Signs audit manifests with Ed25519
  */
 import { createLogger } from "@/lib/logger";
-import { hashProvider, type IHashProvider } from "../infrastructure/crypto/hash-provider";
-import { type ISigningProvider, signingProvider } from "../infrastructure/crypto/signing-provider";
-import { type IKeyManager, keyManager } from "../infrastructure/vault/key-manager";
-import { type AuditManifest, Ed25519Signature, type SHA256Hash } from "./models";
+import {
+	hashProvider,
+	type IHashProvider,
+} from "../infrastructure/crypto/hash-provider";
+import {
+	type ISigningProvider,
+	signingProvider,
+} from "../infrastructure/crypto/signing-provider";
+import {
+	type IKeyManager,
+	keyManager,
+} from "../infrastructure/vault/key-manager";
+import {
+	type AuditManifest,
+	Ed25519Signature,
+	type SHA256Hash,
+} from "./models";
 
 const logger = createLogger("SigningService");
 
@@ -73,11 +86,11 @@ export class SigningService implements ISigningService {
 		);
 
 		// Get or create signing key
-		const { keyId, publicKeyPem, fingerprint } =
+		const { keyId, fingerprint } =
 			await this.keys.getOrCreateSigningKey(organizationId);
 
 		// Get private key from Vault
-		const privateKeyPem = await this.keys.getPrivateKey(organizationId);
+		const privateKeyPem = await this.keys.getPrivateKey(organizationId, keyId);
 		if (!privateKeyPem) {
 			throw new Error("Private key not found in Vault");
 		}
@@ -119,7 +132,10 @@ export class SigningService implements ISigningService {
 		signature: Ed25519Signature,
 		publicKeyPem?: string,
 	): Promise<boolean> {
-		logger.info({ exportId: manifest.exportId }, "Verifying manifest signature");
+		logger.info(
+			{ exportId: manifest.exportId },
+			"Verifying manifest signature",
+		);
 
 		// Use provided public key or extract from signature
 		let keyToUse = publicKeyPem;
@@ -141,7 +157,10 @@ export class SigningService implements ISigningService {
 			this.pemToBase64(keyToUse),
 		);
 
-		const isValid = await this.signing.verify(dataToVerify, signatureForVerification);
+		const isValid = await this.signing.verify(
+			dataToVerify,
+			signatureForVerification,
+		);
 
 		logger.info(
 			{
@@ -180,7 +199,10 @@ export class SigningService implements ISigningService {
 	/**
 	 * Helper: Convert base64 to PEM format
 	 */
-	private base64ToPem(base64: string, type: "PUBLIC KEY" | "PRIVATE KEY"): string {
+	private base64ToPem(
+		base64: string,
+		type: "PUBLIC KEY" | "PRIVATE KEY",
+	): string {
 		const lines = base64.match(/.{1,64}/g) || [];
 		return `-----BEGIN ${type}-----\n${lines.join("\n")}\n-----END ${type}-----\n`;
 	}

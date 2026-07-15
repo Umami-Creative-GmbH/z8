@@ -9,7 +9,10 @@ import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
-import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
+import {
+	ClockingAccessError,
+	clockingService,
+} from "@/lib/time-tracking/clocking-service";
 
 interface RouteParams {
 	params: Promise<{ entryId: string }>;
@@ -32,9 +35,15 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
-		await clockingService.requireActor({ userId: session.user.id, activeOrganizationId: activeOrgId });
+		await clockingService.requireActor({
+			userId: session.user.id,
+			activeOrganizationId: activeOrgId,
+		});
 
 		// Get current user's employee record for the active organization ONLY
 		const [currentEmployee] = await db
@@ -57,22 +66,41 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 		}
 
 		// Get the time entry
-		const [entry] = await db.select().from(timeEntry).where(eq(timeEntry.id, entryId)).limit(1);
+		const [entry] = await db
+			.select()
+			.from(timeEntry)
+			.where(
+				and(
+					eq(timeEntry.id, entryId),
+					eq(timeEntry.organizationId, activeOrgId),
+				),
+			)
+			.limit(1);
 
 		if (!entry) {
-			return NextResponse.json({ error: "Time entry not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Time entry not found" },
+				{ status: 404 },
+			);
 		}
 
 		// Get the entry owner
 		const [entryOwner] = await db
 			.select()
 			.from(employee)
-			.where(eq(employee.id, entry.employeeId))
+			.where(
+				and(
+					eq(employee.id, entry.employeeId),
+					eq(employee.organizationId, activeOrgId),
+				),
+			)
 			.limit(1);
 
-		// Check authorization - must be same organization
-		if (entryOwner?.organizationId !== currentEmployee.organizationId) {
-			return NextResponse.json({ error: "Not authorized to view this entry" }, { status: 403 });
+		if (!entryOwner) {
+			return NextResponse.json(
+				{ error: "Time entry not found" },
+				{ status: 404 },
+			);
 		}
 
 		// Only allow viewing own entries unless user can manage time entries
@@ -108,9 +136,15 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 		console.error("Error fetching time entry:", error);
 
 		if (error instanceof Error && error.message.includes("NotFoundError")) {
-			return NextResponse.json({ error: "Time entry not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Time entry not found" },
+				{ status: 404 },
+			);
 		}
 
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }

@@ -38,6 +38,7 @@ import { queryKeys } from "@/lib/query";
 
 interface InviteCodeDialogProps {
 	organizationId: string;
+	minExpiryDate: string;
 	inviteCode?: InviteCodeWithRelations | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -56,6 +57,7 @@ interface InviteCodeFormValues {
 
 export function InviteCodeDialog({
 	organizationId,
+	minExpiryDate,
 	inviteCode,
 	open,
 	onOpenChange,
@@ -144,7 +146,9 @@ export function InviteCodeDialog({
 			return result.data;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.inviteCodes.list(organizationId) });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.inviteCodes.list(organizationId),
+			});
 			toast.success(t("settings.inviteCodes.created", "Invite code created"));
 			onOpenChange(false);
 		},
@@ -169,7 +173,9 @@ export function InviteCodeDialog({
 			return result.data;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.inviteCodes.list(organizationId) });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.inviteCodes.list(organizationId),
+			});
 			toast.success(t("settings.inviteCodes.updated", "Invite code updated"));
 			onOpenChange(false);
 		},
@@ -302,7 +308,7 @@ export function InviteCodeDialog({
 								id="expiresAt"
 								value={values.expiresAt}
 								onChange={(value) => updateDraft({ expiresAt: value })}
-								min={new Date().toISOString().split("T")[0]}
+								min={minExpiryDate}
 							/>
 							<p className="text-sm text-muted-foreground">
 								{t("settings.inviteCodes.expiresAtHelp", "Leave empty for no expiration")}

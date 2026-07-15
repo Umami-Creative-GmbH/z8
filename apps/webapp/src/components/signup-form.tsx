@@ -301,6 +301,7 @@ export function SignupForm({
 	// Determine which auth methods are enabled
 	const showEmailPassword = authConfig?.emailPasswordEnabled ?? true;
 	const allowedSocialProviders = authConfig?.socialProvidersEnabled ?? [];
+	const allowedSocialProviderSet = new Set(allowedSocialProviders);
 
 	// Filter social providers based on auth config
 	const filteredProviders = (() => {
@@ -308,7 +309,7 @@ export function SignupForm({
 			return enabledProviders;
 		}
 
-		return enabledProviders.filter((provider) => allowedSocialProviders.includes(provider.id));
+		return enabledProviders.filter((provider) => allowedSocialProviderSet.has(provider.id));
 	})();
 	const validatePassword = (value: string) => validateStrongPassword(value, t);
 

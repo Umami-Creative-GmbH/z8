@@ -1,9 +1,10 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import type React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderToString } from "react-dom/server";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	clockIn: vi.fn(),
@@ -37,13 +38,37 @@ vi.mock("@/lib/time-tracking/timezone-capture", () => ({
 }));
 
 import { queryKeys } from "./keys";
-import { useTimeClock } from "./use-time-clock";
+import { useElapsedTimer, useTimeClock } from "./use-time-clock";
 
 function wrapper(client: QueryClient) {
 	return function TestWrapper({ children }: { children: React.ReactNode }) {
 		return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 	};
 }
+
+afterEach(() => {
+	vi.useRealTimers();
+});
+
+describe("useElapsedTimer", () => {
+	it("uses a stable zero snapshot during server rendering", () => {
+		function Timer() {
+			return <span>{useElapsedTimer(new Date("2026-07-14T10:00:00Z"))}</span>;
+		}
+
+		expect(renderToString(<Timer />)).toBe("<span>0</span>");
+	});
+
+	it("updates from the current instant once per second in the browser", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-07-14T10:00:05Z"));
+		const { result } = renderHook(() => useElapsedTimer(new Date("2026-07-14T10:00:00Z")));
+
+		expect(result.current).toBe(5);
+		act(() => vi.advanceTimersByTime(1000));
+		expect(result.current).toBe(6);
+	});
+});
 
 describe("useTimeClock presence invalidation", () => {
 	beforeEach(() => {
@@ -70,11 +95,15 @@ describe("useTimeClock presence invalidation", () => {
 	});
 
 	it("invalidates employee clock statuses after clock in", async () => {
-		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
 		const invalidateSpy = vi.spyOn(client, "invalidateQueries");
 		mocks.clockIn.mockResolvedValue({ success: true });
 
-		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		const { result } = renderHook(() => useTimeClock(), {
+			wrapper: wrapper(client),
+		});
 		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
 		await result.current.clockIn({ browserTimezone: "America/New_York" });
 
@@ -83,7 +112,9 @@ describe("useTimeClock presence invalidation", () => {
 		});
 
 		await waitFor(() => {
-			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.employeeClockStatuses.all });
+			expect(invalidateSpy).toHaveBeenCalledWith({
+				queryKey: queryKeys.employeeClockStatuses.all,
+			});
 			expect(invalidateSpy).toHaveBeenCalledWith({
 				queryKey: queryKeys.workPolicies.presence.status("emp-1"),
 			});
@@ -91,11 +122,15 @@ describe("useTimeClock presence invalidation", () => {
 	});
 
 	it("invalidates employee clock statuses after clock out", async () => {
-		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
 		const invalidateSpy = vi.spyOn(client, "invalidateQueries");
 		mocks.clockOut.mockResolvedValue({ success: true });
 
-		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		const { result } = renderHook(() => useTimeClock(), {
+			wrapper: wrapper(client),
+		});
 		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
 		await result.current.clockOut({ browserTimezone: "America/New_York" });
 
@@ -104,7 +139,9 @@ describe("useTimeClock presence invalidation", () => {
 		});
 
 		await waitFor(() => {
-			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.employeeClockStatuses.all });
+			expect(invalidateSpy).toHaveBeenCalledWith({
+				queryKey: queryKeys.employeeClockStatuses.all,
+			});
 			expect(invalidateSpy).toHaveBeenCalledWith({
 				queryKey: queryKeys.workPolicies.presence.status("emp-1"),
 			});
@@ -112,10 +149,14 @@ describe("useTimeClock presence invalidation", () => {
 	});
 
 	it("preserves explicit null browser timezone for clock in", async () => {
-		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
 		mocks.clockIn.mockResolvedValue({ success: true });
 
-		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		const { result } = renderHook(() => useTimeClock(), {
+			wrapper: wrapper(client),
+		});
 		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
 		await result.current.clockIn({ browserTimezone: null });
 
@@ -126,10 +167,14 @@ describe("useTimeClock presence invalidation", () => {
 	});
 
 	it("preserves explicit null browser timezone for clock out", async () => {
-		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
 		mocks.clockOut.mockResolvedValue({ success: true });
 
-		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		const { result } = renderHook(() => useTimeClock(), {
+			wrapper: wrapper(client),
+		});
 		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
 		await result.current.clockOut({ browserTimezone: null });
 
@@ -140,23 +185,38 @@ describe("useTimeClock presence invalidation", () => {
 	});
 
 	it("invalidates time clock status, employee clock statuses, and break status after adding a break", async () => {
-		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
 		const invalidateSpy = vi.spyOn(client, "invalidateQueries");
 		mocks.addBreakToActiveSession.mockResolvedValue({ success: true });
 
-		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		const { result } = renderHook(() => useTimeClock(), {
+			wrapper: wrapper(client),
+		});
 		await result.current.addBreak({ breakMinutes: 30 });
 
 		await waitFor(() => {
-			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.timeClock.status() });
-			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.employeeClockStatuses.all });
-			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.timeClock.breakStatus() });
+			expect(invalidateSpy).toHaveBeenCalledWith({
+				queryKey: queryKeys.timeClock.status(),
+			});
+			expect(invalidateSpy).toHaveBeenCalledWith({
+				queryKey: queryKeys.employeeClockStatuses.all,
+			});
+			expect(invalidateSpy).toHaveBeenCalledWith({
+				queryKey: queryKeys.timeClock.breakStatus(),
+			});
 		});
 	});
 
 	it("stores browser timezone at click time when queuing offline clock-in", async () => {
-		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-		const queueClockEvent = vi.fn(async () => ({ success: true, eventId: "queued-1" }));
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const queueClockEvent = vi.fn(async () => ({
+			success: true,
+			eventId: "queued-1",
+		}));
 		mocks.useOfflineClock.mockReturnValue({
 			isOnline: false,
 			isOffline: true,
@@ -165,7 +225,9 @@ describe("useTimeClock presence invalidation", () => {
 			queueClockEvent,
 		});
 
-		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		const { result } = renderHook(() => useTimeClock(), {
+			wrapper: wrapper(client),
+		});
 		await result.current.clockIn({ workLocationType: "remote" });
 
 		expect(queueClockEvent).toHaveBeenCalledWith(
@@ -179,8 +241,13 @@ describe("useTimeClock presence invalidation", () => {
 	});
 
 	it("uses explicit browser timezone when queuing offline clock-out", async () => {
-		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-		const queueClockEvent = vi.fn(async () => ({ success: true, eventId: "queued-1" }));
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const queueClockEvent = vi.fn(async () => ({
+			success: true,
+			eventId: "queued-1",
+		}));
 		mocks.useOfflineClock.mockReturnValue({
 			isOnline: false,
 			isOffline: true,
@@ -189,7 +256,9 @@ describe("useTimeClock presence invalidation", () => {
 			queueClockEvent,
 		});
 
-		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		const { result } = renderHook(() => useTimeClock(), {
+			wrapper: wrapper(client),
+		});
 		await result.current.clockOut({ browserTimezone: "America/New_York" });
 
 		expect(queueClockEvent).toHaveBeenCalledWith(

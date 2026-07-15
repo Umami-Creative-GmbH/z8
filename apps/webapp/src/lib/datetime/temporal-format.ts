@@ -9,7 +9,13 @@ export type DateTimeFormatPreset =
 	| "time"
 	| "timeWithSeconds";
 
-export type PlainDateFormatPreset = "dateShort" | "dateMedium" | "monthYear" | "weekdayShort";
+export type PlainDateFormatPreset =
+	| "dateShort"
+	| "dateMedium"
+	| "monthDay"
+	| "monthDayLong"
+	| "monthYear"
+	| "weekdayShort";
 
 export interface DisplayContext {
 	locale: string;
@@ -49,6 +55,8 @@ const PLAIN_DATE_FORMAT_OPTIONS: Readonly<
 > = {
 	dateShort: { year: "numeric", month: "numeric", day: "numeric" },
 	dateMedium: { year: "numeric", month: "short", day: "numeric" },
+	monthDay: { month: "short", day: "numeric" },
+	monthDayLong: { month: "long", day: "numeric" },
 	monthYear: { year: "numeric", month: "long" },
 	weekdayShort: { weekday: "short" },
 };

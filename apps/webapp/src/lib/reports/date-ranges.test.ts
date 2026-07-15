@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
-import { getDateRangeForPreset } from "./date-ranges";
+import { formatDateRangeLabel, getDateRangeForPreset } from "./date-ranges";
 
 describe("getDateRangeForPreset", () => {
 	it("resolves the current month from the organization-local current instant", () => {
@@ -19,5 +19,16 @@ describe("getDateRangeForPreset", () => {
 				now: parseInstant("2026-05-01T01:00:00Z"),
 			}),
 		).toMatchObject({ startDate: "2026-03-01", endDate: "2026-03-31" });
+	});
+});
+
+describe("formatDateRangeLabel", () => {
+	it("formats calendar dates in the requested locale", () => {
+		const english = formatDateRangeLabel("2026-07-01", "2026-07-31", "en-US");
+		const german = formatDateRangeLabel("2026-07-01", "2026-07-31", "de-DE");
+
+		expect(english).toContain("Jul");
+		expect(german).toContain("Juli");
+		expect(german).not.toBe(english);
 	});
 });

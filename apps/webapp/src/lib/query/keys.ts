@@ -95,18 +95,22 @@ export const queryKeys = {
 	},
 
 	// Employee clock statuses
-		employeeClockStatuses: {
-			all: ["employee-clock-statuses"] as const,
-			list: (orgId: string, employeeIds: string[]) =>
-				[
-					"employee-clock-statuses",
-					orgId,
-					Array.from(new Set(employeeIds.flatMap((id) => {
-						const trimmed = id.trim();
-						return trimmed ? [trimmed] : [];
-					}))).toSorted(),
-				] as const,
-		},
+	employeeClockStatuses: {
+		all: ["employee-clock-statuses"] as const,
+		list: (orgId: string, employeeIds: string[]) =>
+			[
+				"employee-clock-statuses",
+				orgId,
+				Array.from(
+					new Set(
+						employeeIds.flatMap((id) => {
+							const trimmed = id.trim();
+							return trimmed ? [trimmed] : [];
+						}),
+					),
+				).toSorted(),
+			] as const,
+	},
 
 	// Employee Select (for unified employee selection component)
 	employeeSelect: {
@@ -160,6 +164,7 @@ export const queryKeys = {
 			organizationId
 				? (["notifications", "preferences", organizationId] as const)
 				: (["notifications", "preferences"] as const),
+		pushBootstrap: () => ["notifications", "push", "bootstrap"] as const,
 	},
 
 	// Holiday presets
@@ -283,6 +288,7 @@ export const queryKeys = {
 	// Auth / Security settings
 	auth: {
 		all: ["auth"] as const,
+		providers: () => ["auth", "providers"] as const,
 		sessions: () => ["auth", "sessions"] as const,
 		accounts: () => ["auth", "accounts"] as const,
 		passkeys: () => ["auth", "passkeys"] as const,

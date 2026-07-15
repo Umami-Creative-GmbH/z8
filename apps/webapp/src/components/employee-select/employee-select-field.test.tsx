@@ -74,7 +74,9 @@ describe("EmployeeMultiSelect", () => {
 
 	it("applies every pending employee selected before confirm", async () => {
 		const user = userEvent.setup();
-		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
 
 		render(
 			<QueryClientProvider client={queryClient}>
@@ -82,6 +84,7 @@ describe("EmployeeMultiSelect", () => {
 			</QueryClientProvider>,
 		);
 
+		expect(screen.getByLabelText("Employees")).toBe(screen.getByRole("combobox"));
 		await user.click(screen.getByRole("combobox"));
 		await user.click(screen.getByRole("option", { name: /Ada Lovelace/i }));
 		await user.click(screen.getByRole("option", { name: /Grace Hopper/i }));

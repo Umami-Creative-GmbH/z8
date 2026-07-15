@@ -1,5 +1,7 @@
-import { Avatar } from "@dicebear/core";
+import { Avatar, Style } from "@dicebear/core";
 import lorelei from "@dicebear/styles/lorelei.json" with { type: "json" };
+
+const loreleiStyle = new Style(lorelei);
 
 export interface DiceBearAvatarOptions {
 	seed: string;
@@ -11,7 +13,7 @@ export interface DiceBearAvatarOptions {
  * Uses deterministic seed (user.id recommended) for consistent avatars
  */
 export function generateAvatarDataUri({ seed, size = 128 }: DiceBearAvatarOptions): string {
-	const avatar = new Avatar(lorelei, {
+	const avatar = new Avatar(loreleiStyle, {
 		seed,
 		size,
 		backgroundColor: ["b6e3f4", "c0aede", "d1d4f9", "ffd5dc", "ffdfbf"],

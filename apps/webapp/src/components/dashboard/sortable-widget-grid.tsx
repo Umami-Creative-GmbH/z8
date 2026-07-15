@@ -39,9 +39,10 @@ export function SortableWidgetGrid({ widgetOrder, onReorder, children }: Sortabl
 
 	// Get only the widgets that are actually visible/rendered
 	const visibleWidgets = useVisibleWidgets();
+	const visibleWidgetSet = new Set(visibleWidgets);
 
 	// Filter widgetOrder to only include visible widgets, maintaining order
-	const sortableItems = widgetOrder.filter((id) => visibleWidgets.includes(id));
+	const sortableItems = widgetOrder.filter((id) => visibleWidgetSet.has(id));
 
 	const sensors = useSensors(
 		useSensor(MouseSensor, {
@@ -75,7 +76,7 @@ export function SortableWidgetGrid({ widgetOrder, onReorder, children }: Sortabl
 				const newVisibleOrder = arrayMove(sortableItems, oldIndex, newIndex);
 
 				// Merge back with hidden widgets, preserving their relative positions
-				const hiddenWidgets = widgetOrder.filter((id) => !visibleWidgets.includes(id));
+				const hiddenWidgets = widgetOrder.filter((id) => !visibleWidgetSet.has(id));
 
 				// Create final order: visible widgets in new order + hidden widgets at the end
 				const newOrder = [...newVisibleOrder, ...hiddenWidgets];
