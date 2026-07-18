@@ -1,4 +1,11 @@
-import { createHash } from "node:crypto";
+import {
+	createHash,
+	createPrivateKey,
+	createPublicKey,
+	generateKeyPairSync,
+	randomBytes,
+	sign,
+} from "node:crypto";
 
 import {
 	compareInstants,
@@ -33,6 +40,12 @@ export interface PreparedTelemetryReport {
 	bodyHash: string;
 }
 
+export interface TelemetrySigningKey {
+	version: 1;
+	private_key_pkcs8_pem: string;
+	public_key_spki_base64: string;
+}
+
 export class TelemetryProtocolError extends Error {
 	override name = "TelemetryProtocolError";
 }
@@ -41,6 +54,12 @@ const LOWERCASE_UUID_V4 =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const RFC3339_TIMESTAMP =
 	/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:[0-5]\d(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
+const RFC3339_UTC_TIMESTAMP =
+	/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:[0-5]\d(?:\.\d{1,9})?Z$/;
+const LOWERCASE_NONCE = /^[0-9a-f]{32}$/;
+const LOWERCASE_SHA256 = /^[0-9a-f]{64}$/;
+const STANDARD_BASE64 =
+	/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 const MAX_METRIC_VALUE = 2_147_483_647;
 const PAYLOAD_KEYS = ["version", "deployment_id", "timestamp", "metrics"];
 const REQUIRED_METRIC_KEYS = [
@@ -51,6 +70,11 @@ const REQUIRED_METRIC_KEYS = [
 	"license_type",
 ];
 const OPTIONAL_METRIC_KEY = "api_requests_24h";
+const SIGNING_KEY_KEYS = [
+	"version",
+	"private_key_pkcs8_pem",
+	"public_key_spki_base64",
+];
 
 export function isLowercaseUuidV4(value: unknown): value is string {
 	return typeof value === "string" && LOWERCASE_UUID_V4.test(value);
@@ -100,6 +124,190 @@ function validateMetric(value: unknown, key: string): number {
 
 function protocolError(message: string): never {
 	throw new TelemetryProtocolError(message);
+}
+
+function decodeCanonicalBase64(value: string): Buffer {
+	if (!value || !STANDARD_BASE64.test(value)) {
+		protocolError("Telemetry public key must use canonical standard base64");
+	}
+
+	const decoded = Buffer.from(value, "base64");
+	if (decoded.toString("base64") !== value) {
+		protocolError("Telemetry public key must use canonical standard base64");
+	}
+
+	return decoded;
+}
+
+function validateTelemetrySigningKey(value: unknown): TelemetrySigningKey {
+	if (!isRecord(value) || !hasExactKeys(value, SIGNING_KEY_KEYS)) {
+		protocolError("Telemetry signing key must contain exactly the v1 fields");
+	}
+
+	const {
+		version,
+		private_key_pkcs8_pem: privateKeyPem,
+		public_key_spki_base64: publicKeyBase64,
+	} = value;
+	if (
+		version !== 1 ||
+		typeof privateKeyPem !== "string" ||
+		!privateKeyPem.startsWith("-----BEGIN PRIVATE KEY-----\n") ||
+		!privateKeyPem.endsWith("\n-----END PRIVATE KEY-----\n") ||
+		typeof publicKeyBase64 !== "string"
+	) {
+		protocolError("Telemetry signing key fields are invalid");
+	}
+
+	const publicKeyDer = decodeCanonicalBase64(publicKeyBase64);
+	try {
+		const privateKey = createPrivateKey(privateKeyPem);
+		const publicKey = createPublicKey({
+			key: publicKeyDer,
+			format: "der",
+			type: "spki",
+		});
+		if (
+			privateKey.asymmetricKeyType !== "ed25519" ||
+			publicKey.asymmetricKeyType !== "ed25519"
+		) {
+			protocolError("Telemetry signing keys must use Ed25519");
+		}
+
+		const derivedPublicKeyDer = createPublicKey(privateKeyPem).export({
+			format: "der",
+			type: "spki",
+		});
+		if (!derivedPublicKeyDer.equals(publicKeyDer)) {
+			protocolError(
+				"Telemetry signing key public and private keys do not match",
+			);
+		}
+	} catch (error) {
+		if (error instanceof TelemetryProtocolError) {
+			throw error;
+		}
+		protocolError("Telemetry signing key could not be parsed");
+	}
+
+	return {
+		version,
+		private_key_pkcs8_pem: privateKeyPem,
+		public_key_spki_base64: publicKeyBase64,
+	};
+}
+
+export function generateTelemetrySigningKey(): TelemetrySigningKey {
+	const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+
+	return {
+		version: 1,
+		private_key_pkcs8_pem: privateKey
+			.export({ format: "pem", type: "pkcs8" })
+			.toString(),
+		public_key_spki_base64: publicKey
+			.export({ format: "der", type: "spki" })
+			.toString("base64"),
+	};
+}
+
+export function parseTelemetrySigningKey(value: string): TelemetrySigningKey {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(value);
+	} catch {
+		protocolError("Telemetry signing key must be valid JSON");
+	}
+
+	return validateTelemetrySigningKey(parsed);
+}
+
+export function generateTelemetryNonce(): string {
+	return randomBytes(16).toString("hex");
+}
+
+export function buildTelemetrySignedContent({
+	deploymentId,
+	signedAt,
+	nonce,
+	bodyHash,
+}: {
+	deploymentId: string;
+	signedAt: string;
+	nonce: string;
+	bodyHash: string;
+}): string {
+	if (!isLowercaseUuidV4(deploymentId)) {
+		protocolError("Telemetry deployment ID must be a lowercase UUID v4");
+	}
+	if (!RFC3339_UTC_TIMESTAMP.test(signedAt)) {
+		protocolError("Telemetry signed-at timestamp must be RFC3339 UTC");
+	}
+	try {
+		parseInstant(signedAt);
+	} catch {
+		protocolError("Telemetry signed-at timestamp must be valid");
+	}
+	if (!LOWERCASE_NONCE.test(nonce)) {
+		protocolError(
+			"Telemetry nonce must be 32 lowercase hexadecimal characters",
+		);
+	}
+	if (!LOWERCASE_SHA256.test(bodyHash)) {
+		protocolError(
+			"Telemetry body hash must be 64 lowercase hexadecimal characters",
+		);
+	}
+
+	return [
+		"POST",
+		"/api/telemetry",
+		deploymentId,
+		signedAt,
+		nonce,
+		bodyHash,
+	].join("\n");
+}
+
+export function createTelemetryAuthHeaders({
+	report,
+	signingKey,
+	now,
+	nonce = generateTelemetryNonce(),
+}: {
+	report: PreparedTelemetryReport;
+	signingKey: TelemetrySigningKey;
+	now: Instant;
+	nonce?: string;
+}) {
+	const validatedSigningKey = validateTelemetrySigningKey(signingKey);
+	const signedAt = now.toString();
+	const content = buildTelemetrySignedContent({
+		deploymentId: report.deploymentId,
+		signedAt,
+		nonce,
+		bodyHash: report.bodyHash,
+	});
+	let signature: Buffer;
+	try {
+		signature = sign(
+			null,
+			Buffer.from(content, "utf8"),
+			validatedSigningKey.private_key_pkcs8_pem,
+		);
+	} catch {
+		protocolError("Telemetry content could not be signed");
+	}
+	if (signature.byteLength !== 64) {
+		protocolError("Telemetry Ed25519 signature must be 64 bytes");
+	}
+
+	return {
+		"X-Z8-Deployment-Id": report.deploymentId,
+		"X-Z8-Signed-At": signedAt,
+		"X-Z8-Nonce": nonce,
+		"X-Z8-Signature": signature.toString("base64"),
+	};
 }
 
 function serializeTelemetryPayload(payload: TelemetryPayloadV2): Buffer {

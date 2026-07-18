@@ -1,10 +1,22 @@
+import {
+	createPrivateKey,
+	createPublicKey,
+	generateKeyPairSync,
+	verify,
+} from "node:crypto";
+
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it, vi } from "vitest";
 
 import * as telemetryProtocol from "@/lib/telemetry-protocol";
 import {
+	buildTelemetrySignedContent,
+	createTelemetryAuthHeaders,
+	generateTelemetryNonce,
+	generateTelemetrySigningKey,
 	isLowercaseUuidV4,
 	MAX_TELEMETRY_BODY_BYTES,
+	parseTelemetrySigningKey,
 	prepareTelemetryReport,
 	type TelemetryPayloadV2,
 	TelemetryProtocolError,
@@ -32,6 +44,14 @@ function expectProtocolError(payload: unknown) {
 	expect(() => prepareTelemetryReport(payload, NOW)).toThrow(
 		TelemetryProtocolError,
 	);
+}
+
+function preparedReport() {
+	return prepareTelemetryReport(validPayload(), NOW);
+}
+
+function expectSigningKeyError(value: string) {
+	expect(() => parseTelemetrySigningKey(value)).toThrow(TelemetryProtocolError);
 }
 
 describe("isLowercaseUuidV4", () => {
@@ -244,6 +264,187 @@ describe("prepareTelemetryReport", () => {
 				MAX_TELEMETRY_BODY_BYTES + 1,
 			);
 			expect(stringify).toHaveBeenCalledTimes(1);
+		} finally {
+			stringify.mockRestore();
+		}
+	});
+});
+
+describe("telemetry signing keys", () => {
+	it("generates canonical Ed25519 key material that roundtrips exactly", () => {
+		const signingKey = generateTelemetrySigningKey();
+		const publicDer = Buffer.from(signingKey.public_key_spki_base64, "base64");
+
+		expect(signingKey).toEqual({
+			version: 1,
+			private_key_pkcs8_pem: expect.stringMatching(
+				/^-----BEGIN PRIVATE KEY-----\n[\s\S]+\n-----END PRIVATE KEY-----\n$/,
+			),
+			public_key_spki_base64: expect.any(String),
+		});
+		expect(publicDer.toString("base64")).toBe(
+			signingKey.public_key_spki_base64,
+		);
+		expect(
+			createPrivateKey(signingKey.private_key_pkcs8_pem).asymmetricKeyType,
+		).toBe("ed25519");
+		expect(
+			createPublicKey({ key: publicDer, format: "der", type: "spki" })
+				.asymmetricKeyType,
+		).toBe("ed25519");
+		expect(parseTelemetrySigningKey(JSON.stringify(signingKey))).toEqual(
+			signingKey,
+		);
+	});
+
+	it("rejects malformed JSON and non-exact persisted key shapes", () => {
+		const signingKey = generateTelemetrySigningKey();
+
+		expectSigningKeyError("not-json");
+		expectSigningKeyError(JSON.stringify({ ...signingKey, unexpected: true }));
+		expectSigningKeyError(
+			JSON.stringify({
+				...signingKey,
+				public_key_spki_base64: `${signingKey.public_key_spki_base64}=`,
+			}),
+		);
+	});
+
+	it("rejects non-Ed25519 private and public keys", () => {
+		const ed25519 = generateTelemetrySigningKey();
+		const rsa = generateKeyPairSync("rsa", { modulusLength: 2048 });
+		const rsaPrivatePem = rsa.privateKey.export({
+			format: "pem",
+			type: "pkcs8",
+		});
+		const rsaPublicBase64 = rsa.publicKey
+			.export({ format: "der", type: "spki" })
+			.toString("base64");
+
+		expectSigningKeyError(
+			JSON.stringify({
+				...ed25519,
+				private_key_pkcs8_pem: rsaPrivatePem,
+			}),
+		);
+		expectSigningKeyError(
+			JSON.stringify({
+				...ed25519,
+				public_key_spki_base64: rsaPublicBase64,
+			}),
+		);
+	});
+
+	it("rejects mismatched Ed25519 private and public keys", () => {
+		const first = generateTelemetrySigningKey();
+		const second = generateTelemetrySigningKey();
+
+		expectSigningKeyError(
+			JSON.stringify({
+				...first,
+				public_key_spki_base64: second.public_key_spki_base64,
+			}),
+		);
+	});
+});
+
+describe("generateTelemetryNonce", () => {
+	it("returns fresh 128-bit lowercase hexadecimal nonces", () => {
+		const first = generateTelemetryNonce();
+		const second = generateTelemetryNonce();
+
+		expect(first).toMatch(/^[0-9a-f]{32}$/);
+		expect(second).toMatch(/^[0-9a-f]{32}$/);
+		expect(first).not.toBe(second);
+	});
+});
+
+describe("buildTelemetrySignedContent", () => {
+	it("returns exactly six LF-separated lines without a trailing LF", () => {
+		const content = buildTelemetrySignedContent({
+			deploymentId: DEPLOYMENT_ID,
+			signedAt: "2026-07-18T12:00:00.123456789Z",
+			nonce: "0123456789abcdef0123456789abcdef",
+			bodyHash: "a".repeat(64),
+		});
+
+		expect(content).toBe(
+			`POST\n/api/telemetry\n${DEPLOYMENT_ID}\n2026-07-18T12:00:00.123456789Z\n0123456789abcdef0123456789abcdef\n${"a".repeat(64)}`,
+		);
+		expect(content.split("\n")).toHaveLength(6);
+		expect(content.endsWith("\n")).toBe(false);
+	});
+
+	it.each([
+		["deploymentId", DEPLOYMENT_ID.toUpperCase()],
+		["deploymentId", "123e4567-e89b-12d3-a456-426614174000"],
+		["signedAt", "2026-07-18T12:00:00+00:00"],
+		["signedAt", "2026-07-18T12:00Z"],
+		["signedAt", "2026-02-30T12:00:00Z"],
+		["nonce", "A".repeat(32)],
+		["nonce", "a".repeat(31)],
+		["bodyHash", "A".repeat(64)],
+		["bodyHash", "a".repeat(63)],
+	] as const)("rejects malformed %s values", (field, value) => {
+		expect(() =>
+			buildTelemetrySignedContent({
+				deploymentId: DEPLOYMENT_ID,
+				signedAt: "2026-07-18T12:00:00Z",
+				nonce: "a".repeat(32),
+				bodyHash: "b".repeat(64),
+				[field]: value,
+			}),
+		).toThrow(TelemetryProtocolError);
+	});
+});
+
+describe("createTelemetryAuthHeaders", () => {
+	it("signs the exact content and returns only the required matching headers", () => {
+		const report = preparedReport();
+		const signingKey = generateTelemetrySigningKey();
+		const nonce = "0123456789abcdef0123456789abcdef";
+		const headers = createTelemetryAuthHeaders({
+			report,
+			signingKey,
+			now: NOW,
+			nonce,
+		});
+		const signedContent = buildTelemetrySignedContent({
+			deploymentId: report.deploymentId,
+			signedAt: "2026-07-18T12:00:00Z",
+			nonce,
+			bodyHash: report.bodyHash,
+		});
+		const signature = Buffer.from(headers["X-Z8-Signature"], "base64");
+		const publicKey = createPublicKey({
+			key: Buffer.from(signingKey.public_key_spki_base64, "base64"),
+			format: "der",
+			type: "spki",
+		});
+
+		expect(headers).toEqual({
+			"X-Z8-Deployment-Id": DEPLOYMENT_ID,
+			"X-Z8-Signed-At": "2026-07-18T12:00:00Z",
+			"X-Z8-Nonce": nonce,
+			"X-Z8-Signature": expect.any(String),
+		});
+		expect(signature).toHaveLength(64);
+		expect(signature.toString("base64")).toBe(headers["X-Z8-Signature"]);
+		expect(
+			verify(null, Buffer.from(signedContent, "utf8"), publicKey, signature),
+		).toBe(true);
+	});
+
+	it("does not mutate or reserialize the prepared report body", () => {
+		const report = preparedReport();
+		const signingKey = generateTelemetrySigningKey();
+		const originalBody = Buffer.from(report.body);
+		const stringify = vi.spyOn(JSON, "stringify");
+		try {
+			createTelemetryAuthHeaders({ report, signingKey, now: NOW });
+
+			expect(stringify).not.toHaveBeenCalled();
+			expect(report.body).toEqual(originalBody);
 		} finally {
 			stringify.mockRestore();
 		}
