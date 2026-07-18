@@ -1,11 +1,11 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it, vi } from "vitest";
 
+import * as telemetryProtocol from "@/lib/telemetry-protocol";
 import {
 	isLowercaseUuidV4,
 	MAX_TELEMETRY_BODY_BYTES,
 	prepareTelemetryReport,
-	serializeTelemetryPayload,
 	type TelemetryPayloadV2,
 	TelemetryProtocolError,
 } from "@/lib/telemetry-protocol";
@@ -52,6 +52,10 @@ describe("isLowercaseUuidV4", () => {
 });
 
 describe("prepareTelemetryReport", () => {
+	it("does not expose the internal serializer", () => {
+		expect(telemetryProtocol).not.toHaveProperty("serializeTelemetryPayload");
+	});
+
 	it("retains the exact JSON.stringify bytes and hashes those bytes", () => {
 		const payload = validPayload();
 		const expectedBody = Buffer.from(JSON.stringify(payload), "utf8");
@@ -215,12 +219,33 @@ describe("prepareTelemetryReport", () => {
 		});
 	});
 
-	it("enforces the UTF-8 byte limit on the raw serialized body", () => {
-		expect(() =>
-			serializeTelemetryPayload({
-				...validPayload(),
-				timestamp: "é".repeat(MAX_TELEMETRY_BODY_BYTES / 2),
-			}),
-		).toThrow(TelemetryProtocolError);
+	it("accepts a raw serialized body at the UTF-8 byte limit", () => {
+		const serialized = "é".repeat(MAX_TELEMETRY_BODY_BYTES / 2);
+		const stringify = vi.spyOn(JSON, "stringify").mockReturnValue(serialized);
+		try {
+			const prepared = prepareTelemetryReport(validPayload(), NOW);
+
+			expect(prepared.body).toEqual(Buffer.from(serialized, "utf8"));
+			expect(prepared.body.byteLength).toBe(MAX_TELEMETRY_BODY_BYTES);
+			expect(stringify).toHaveBeenCalledTimes(1);
+		} finally {
+			stringify.mockRestore();
+		}
+	});
+
+	it("rejects a raw serialized body above the UTF-8 byte limit", () => {
+		const serialized = `${"é".repeat(MAX_TELEMETRY_BODY_BYTES / 2)}a`;
+		const stringify = vi.spyOn(JSON, "stringify").mockReturnValue(serialized);
+		try {
+			expect(() => prepareTelemetryReport(validPayload(), NOW)).toThrow(
+				TelemetryProtocolError,
+			);
+			expect(Buffer.byteLength(serialized, "utf8")).toBe(
+				MAX_TELEMETRY_BODY_BYTES + 1,
+			);
+			expect(stringify).toHaveBeenCalledTimes(1);
+		} finally {
+			stringify.mockRestore();
+		}
 	});
 });

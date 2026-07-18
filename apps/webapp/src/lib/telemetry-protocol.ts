@@ -102,7 +102,7 @@ function protocolError(message: string): never {
 	throw new TelemetryProtocolError(message);
 }
 
-export function serializeTelemetryPayload(payload: TelemetryPayloadV2): Buffer {
+function serializeTelemetryPayload(payload: TelemetryPayloadV2): Buffer {
 	let serialized: string;
 	try {
 		serialized = JSON.stringify(payload);
