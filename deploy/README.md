@@ -210,7 +210,7 @@ The worker container handles both one-off jobs and scheduled cron tasks using Bu
 | `cron:organization-cleanup` | Daily 1 AM | Delete soft-deleted organizations |
 | `cron:break-enforcement` | Every minute | Check break compliance |
 | `cron:project-deadlines` | Hourly | Project deadline notifications |
-| `cron:telemetry` | Every 15 minutes | Telemetry collection |
+| `cron:telemetry` | Daily at 00:00 UTC | Telemetry collection |
 
 Monitor jobs via Bull Board at http://localhost:3100 (admin/admin by default).
 

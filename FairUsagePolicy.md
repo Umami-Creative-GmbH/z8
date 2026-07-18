@@ -87,7 +87,7 @@ The daily telemetry payload includes **only** the following aggregated, anonymiz
 
 ```json
 {
-  "version": "1.0",
+  "version": "2.0",
   "deployment_id": "unique-uuid-for-this-instance",
   "timestamp": "2026-01-13T00:00:00Z",
   "metrics": {
@@ -95,7 +95,6 @@ The daily telemetry payload includes **only** the following aggregated, anonymiz
     "total_organizations": 2,
     "total_employees": 156,
     "sessions_created_24h": 42,
-    "api_requests_24h": 8945,
     "license_type": "community"
   }
 }
@@ -111,8 +110,9 @@ The daily telemetry payload includes **only** the following aggregated, anonymiz
 
 ### Transmission & Security
 
-- Telemetry is sent via **HTTPS POST** to `https://telemetry.z8-time.app/`
+- Telemetry is sent via a **signed HTTPS POST** to `https://telemetry.z8-time.app/api/telemetry`
 - Each payload is **encrypted in transit** using TLS 1.3+
+- Each request uses a fresh nonce and is signed with the deployment's Ed25519 signing key
 - The `deployment_id` (a random UUID) is the only persistent identifier across reports
 - Data is sent **once per day** (UTC midnight) via a scheduled cron job
 - Failed transmissions are retried up to 3 times with exponential backoff

@@ -307,11 +307,21 @@ export const CRON_JOBS = {
 	},
 
 	"cron:telemetry": {
-		schedule: "*/15 * * * *", // Every 15 minutes
+		schedule: "0 0 * * *", // Daily at UTC midnight
 		description: "Collect and export telemetry data",
 		processor: async (): Promise<TelemetryResult> => {
-			// Telemetry collection - placeholder for actual implementation
-			return { success: true, message: "Telemetry collected" };
+			const {
+				calculateTelemetryMetrics,
+				getOrCreateDeploymentId,
+				sendTelemetryReport,
+			} = await import("@/lib/telemetry");
+			const deploymentId = await getOrCreateDeploymentId();
+			const metrics = await calculateTelemetryMetrics();
+			const success = await sendTelemetryReport(deploymentId, metrics);
+
+			return success
+				? { success: true, message: "Telemetry sent" }
+				: { success: false, message: "Telemetry send failed" };
 		},
 		defaultJobOptions: { attempts: 1, priority: 9 },
 	},
