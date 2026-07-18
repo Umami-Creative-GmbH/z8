@@ -485,6 +485,26 @@ describe("signed telemetry v2 sender", () => {
 		expect(harness.sleep.mock.calls).toEqual([[1000], [2000]]);
 	});
 
+	it("classifies a fetch TimeoutError as a retryable timeout", async () => {
+		const harness = senderHarness([
+			Object.assign(new Error("timed out"), { name: "TimeoutError" }),
+			jsonResponse(200, successBody()),
+		]);
+
+		await expect(
+			sendTelemetryReportWithDependencies(
+				DEPLOYMENT_ID,
+				METRICS,
+				harness.dependencies,
+			),
+		).resolves.toBe(true);
+		expect(harness.error).toHaveBeenCalledWith(
+			expect.objectContaining({ category: "timeout" }),
+			"Telemetry request failed",
+		);
+		expect(harness.fetch).toHaveBeenCalledTimes(2);
+	});
+
 	it("retries an AbortError while reading the response body", async () => {
 		const abortedResponse = jsonResponse(200, successBody());
 		vi.spyOn(abortedResponse, "json").mockRejectedValue(
@@ -504,6 +524,32 @@ describe("signed telemetry v2 sender", () => {
 		).resolves.toBe(true);
 		expect(harness.fetch).toHaveBeenCalledTimes(2);
 		expect(harness.sleep).toHaveBeenCalledWith(1000);
+	});
+
+	it("retries a status 200 body TimeoutError with the exact retained body", async () => {
+		const timedOutResponse = jsonResponse(200, successBody());
+		vi.spyOn(timedOutResponse, "json").mockRejectedValue(
+			Object.assign(new Error("timed out"), { name: "TimeoutError" }),
+		);
+		const harness = senderHarness([
+			timedOutResponse,
+			jsonResponse(200, successBody()),
+		]);
+
+		await expect(
+			sendTelemetryReportWithDependencies(
+				DEPLOYMENT_ID,
+				METRICS,
+				harness.dependencies,
+			),
+		).resolves.toBe(true);
+		expect(harness.fetch).toHaveBeenCalledTimes(2);
+		expect(harness.sleep).toHaveBeenCalledWith(1000);
+		const [firstBody, secondBody] = harness.requests.map(
+			({ init }) => init.body as Buffer,
+		);
+		expect(secondBody).toBe(firstBody);
+		expect(secondBody?.equals(firstBody ?? Buffer.alloc(0))).toBe(true);
 	});
 
 	it("does not retry a terminal status when reading its body aborts", async () => {

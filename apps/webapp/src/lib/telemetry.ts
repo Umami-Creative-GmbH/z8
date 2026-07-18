@@ -309,6 +309,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function isTimeoutError(error: unknown): error is Error {
+	return (
+		error instanceof Error &&
+		(error.name === "AbortError" || error.name === "TimeoutError")
+	);
+}
+
 function receiverIdentifiers(response: Response, body: unknown) {
 	const record = isRecord(body) ? body : undefined;
 	return {
@@ -424,10 +431,7 @@ export async function sendTelemetryReportWithDependencies(
 				dependencies.error(
 					{
 						attempt,
-						category:
-							error instanceof Error && error.name === "AbortError"
-								? "timeout"
-								: "network",
+						category: isTimeoutError(error) ? "timeout" : "network",
 						deploymentId,
 					},
 					"Telemetry request failed",
@@ -443,16 +447,12 @@ export async function sendTelemetryReportWithDependencies(
 			} catch (error) {
 				if (
 					response.status === 200 &&
-					(error instanceof TypeError ||
-						(error instanceof Error && error.name === "AbortError"))
+					(error instanceof TypeError || isTimeoutError(error))
 				) {
 					dependencies.error(
 						{
 							attempt,
-							category:
-								error instanceof Error && error.name === "AbortError"
-									? "timeout"
-									: "network",
+							category: isTimeoutError(error) ? "timeout" : "network",
 							deploymentId,
 						},
 						"Telemetry response body failed",
