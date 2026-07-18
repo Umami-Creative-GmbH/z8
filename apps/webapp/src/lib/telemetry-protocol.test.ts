@@ -68,6 +68,22 @@ describe("prepareTelemetryReport", () => {
 		expect(prepared.bodyHash).toMatch(/^[0-9a-f]{64}$/);
 	});
 
+	it("serializes the validated payload exactly once", () => {
+		const payload = validPayload();
+		let versionReads = 0;
+		Object.defineProperty(payload, "version", {
+			enumerable: true,
+			get: () => {
+				versionReads += 1;
+				return "2.0";
+			},
+		});
+
+		prepareTelemetryReport(payload, NOW);
+
+		expect(versionReads).toBe(2);
+	});
+
 	it("requires an object payload with only v2 wire fields", () => {
 		expectProtocolError(null);
 		expectProtocolError("payload");
@@ -159,6 +175,13 @@ describe("prepareTelemetryReport", () => {
 				NOW,
 			).timestamp,
 		).toBe("2026-07-18T14:00:00+02:00");
+	});
+
+	it("rejects RFC3339 timestamps without seconds", () => {
+		expectProtocolError({
+			...validPayload(),
+			timestamp: "2026-07-18T12:00Z",
+		});
 	});
 
 	it("rejects unsupported license types", () => {

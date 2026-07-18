@@ -39,6 +39,8 @@ export class TelemetryProtocolError extends Error {
 
 const LOWERCASE_UUID_V4 =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const RFC3339_TIMESTAMP =
+	/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:[0-5]\d(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
 const MAX_METRIC_VALUE = 2_147_483_647;
 const PAYLOAD_KEYS = ["version", "deployment_id", "timestamp", "metrics"];
 const REQUIRED_METRIC_KEYS = [
@@ -111,8 +113,8 @@ export function prepareTelemetryReport(
 	if (!isLowercaseUuidV4(deploymentId)) {
 		protocolError("Telemetry deployment_id must be a lowercase UUID v4");
 	}
-	if (typeof timestamp !== "string") {
-		protocolError("Telemetry timestamp must be an RFC3339 string");
+	if (typeof timestamp !== "string" || !RFC3339_TIMESTAMP.test(timestamp)) {
+		protocolError("Telemetry timestamp must use RFC3339 full-time syntax");
 	}
 
 	let timestampInstant: Instant;
