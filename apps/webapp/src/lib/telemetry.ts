@@ -280,6 +280,17 @@ const RFC3339_EXPLICIT_OFFSET =
 const HTTP_DATE =
 	/^(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT|(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), \d{2}-(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{2} \d{2}:\d{2}:\d{2} GMT|(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) [ \d]\d \d{2}:\d{2}:\d{2} \d{4})$/;
 
+function createTelemetryTimeoutSignal(): AbortSignal {
+	const controller = new AbortController();
+	const timeout = setTimeout(() => {
+		controller.abort(
+			new DOMException("Telemetry request timed out", "TimeoutError"),
+		);
+	}, 10_000);
+	timeout.unref();
+	return controller.signal;
+}
+
 const defaultSenderDependencies: TelemetrySenderDependencies = {
 	createAuthHeaders: createTelemetryAuthHeaders,
 	fetch: (input, init) => fetch(input, init),
@@ -407,7 +418,7 @@ export async function sendTelemetryReportWithDependencies(
 					method: "POST",
 					headers: { "Content-Type": "application/json", ...authHeaders },
 					body: report.body as unknown as BodyInit,
-					signal: AbortSignal.timeout(10_000),
+					signal: createTelemetryTimeoutSignal(),
 				});
 			} catch (error) {
 				dependencies.error(
@@ -431,8 +442,9 @@ export async function sendTelemetryReportWithDependencies(
 				responseBody = await response.json();
 			} catch (error) {
 				if (
-					error instanceof TypeError ||
-					(error instanceof Error && error.name === "AbortError")
+					response.status === 200 &&
+					(error instanceof TypeError ||
+						(error instanceof Error && error.name === "AbortError"))
 				) {
 					dependencies.error(
 						{
@@ -459,6 +471,7 @@ export async function sendTelemetryReportWithDependencies(
 							attempt,
 							category: "invalid_success_response",
 							deploymentId,
+							status: response.status,
 							...receiverIdentifiers(response, responseBody),
 						},
 						"Telemetry receiver response validation failed",
@@ -494,7 +507,9 @@ export async function sendTelemetryReportWithDependencies(
 				response.status === 429
 					? (retryAfterMilliseconds(
 							response.headers.get("Retry-After"),
-							attemptInstant,
+							HTTP_DATE.test(response.headers.get("Retry-After") ?? "")
+								? dependencies.now()
+								: attemptInstant,
 						) ?? fallback)
 					: fallback;
 			await dependencies.sleep(delay);

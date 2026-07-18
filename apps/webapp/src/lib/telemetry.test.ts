@@ -404,12 +404,6 @@ describe("signed telemetry v2 sender", () => {
 
 	it.each([
 		["delta seconds", "5", "2026-07-18T10:00:00Z", 5000],
-		[
-			"HTTP date",
-			"Sat, 18 Jul 2026 10:00:07 GMT",
-			"2026-07-18T10:00:00Z",
-			7000,
-		],
 		["invalid", "tomorrow-ish", "2026-07-18T10:00:00Z", 1000],
 		["non-HTTP date", "2026-07-18T10:00:07Z", "2026-07-18T10:00:00Z", 1000],
 		["missing", null, "2026-07-18T10:00:00Z", 1000],
@@ -432,6 +426,38 @@ describe("signed telemetry v2 sender", () => {
 		);
 
 		expect(harness.sleep).toHaveBeenCalledWith(expectedDelay);
+	});
+
+	it("calculates an HTTP-date Retry-After from the response processing instant", async () => {
+		const harness = senderHarness(
+			[
+				jsonResponse(
+					429,
+					{ code: "rate_limited" },
+					{ "Retry-After": "Sat, 18 Jul 2026 10:00:07 GMT" },
+				),
+				jsonResponse(200, successBody()),
+			],
+			[
+				"2026-07-18T09:59:59Z",
+				"2026-07-18T10:00:00Z",
+				"2026-07-18T10:00:03Z",
+				"2026-07-18T10:00:08Z",
+			],
+		);
+
+		await sendTelemetryReportWithDependencies(
+			DEPLOYMENT_ID,
+			METRICS,
+			harness.dependencies,
+		);
+
+		expect(harness.sleep).toHaveBeenCalledWith(4000);
+		const sentHeaders = harness.requests.map(
+			({ init }) => new Headers(init.headers),
+		);
+		expect(sentHeaders[0]?.get("x-z8-signed-at")).toBe("2026-07-18T10:00:00Z");
+		expect(sentHeaders[1]?.get("x-z8-signed-at")).toBe("2026-07-18T10:00:08Z");
 	});
 
 	it.each([
@@ -478,6 +504,27 @@ describe("signed telemetry v2 sender", () => {
 		).resolves.toBe(true);
 		expect(harness.fetch).toHaveBeenCalledTimes(2);
 		expect(harness.sleep).toHaveBeenCalledWith(1000);
+	});
+
+	it("does not retry a terminal status when reading its body aborts", async () => {
+		const abortedResponse = jsonResponse(401, { code: "unauthorized" });
+		vi.spyOn(abortedResponse, "json").mockRejectedValue(
+			Object.assign(new Error("timed out"), { name: "AbortError" }),
+		);
+		const harness = senderHarness([
+			abortedResponse,
+			jsonResponse(200, successBody()),
+		]);
+
+		await expect(
+			sendTelemetryReportWithDependencies(
+				DEPLOYMENT_ID,
+				METRICS,
+				harness.dependencies,
+			),
+		).resolves.toBe(false);
+		expect(harness.fetch).toHaveBeenCalledOnce();
+		expect(harness.sleep).not.toHaveBeenCalled();
 	});
 
 	it.each([
@@ -543,6 +590,53 @@ describe("signed telemetry v2 sender", () => {
 				harness.dependencies,
 			),
 		).resolves.toBe(false);
+	});
+
+	it("logs status 200 for a malformed success response", async () => {
+		const harness = senderHarness([new Response("not-json", { status: 200 })]);
+
+		await sendTelemetryReportWithDependencies(
+			DEPLOYMENT_ID,
+			METRICS,
+			harness.dependencies,
+		);
+
+		expect(harness.error).toHaveBeenCalledWith(
+			expect.objectContaining({
+				category: "invalid_success_response",
+				status: 200,
+			}),
+			"Telemetry receiver response validation failed",
+		);
+	});
+
+	it("passes a fresh signal per attempt that aborts at exactly ten seconds", async () => {
+		vi.useFakeTimers();
+		try {
+			const harness = senderHarness([
+				jsonResponse(503, { code: "unavailable" }),
+				jsonResponse(200, successBody()),
+			]);
+
+			await sendTelemetryReportWithDependencies(
+				DEPLOYMENT_ID,
+				METRICS,
+				harness.dependencies,
+			);
+
+			const signals = harness.requests.map(({ init }) => init.signal);
+			expect(signals).toHaveLength(2);
+			for (const signal of signals) {
+				expect(signal).toBeInstanceOf(AbortSignal);
+				expect(signal?.aborted).toBe(false);
+			}
+			await vi.advanceTimersByTimeAsync(9999);
+			for (const signal of signals) expect(signal?.aborted).toBe(false);
+			await vi.advanceTimersByTimeAsync(1);
+			for (const signal of signals) expect(signal?.aborted).toBe(true);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("logs stable receiver identifiers without free-form errors or secret material", async () => {
