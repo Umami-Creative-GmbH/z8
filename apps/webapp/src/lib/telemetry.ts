@@ -5,6 +5,12 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee, systemConfig } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import {
+	generateTelemetrySigningKey,
+	isLowercaseUuidV4,
+	parseTelemetrySigningKey,
+	type TelemetrySigningKey,
+} from "@/lib/telemetry-protocol";
 
 const logger = createLogger("telemetry");
 
@@ -44,45 +50,155 @@ export class TelemetryValidationError extends Error {
 	}
 }
 
-/**
- * Get or create a persistent deployment ID
- */
-export async function getOrCreateDeploymentId(): Promise<string> {
-	try {
+export interface TelemetryConfigStore {
+	read(key: string): Promise<string | undefined>;
+	insertIfAbsent(input: {
+		key: string;
+		value: string;
+		description: string;
+	}): Promise<boolean>;
+}
+
+export interface TelemetryIdentity {
+	deploymentId: string;
+	signingKey: TelemetrySigningKey;
+}
+
+interface TelemetryIdentityOptions {
+	store?: TelemetryConfigStore;
+	info?: (context: Record<string, string>, message: string) => void;
+}
+
+const DEPLOYMENT_ID_KEY = "deployment_id";
+const SIGNING_KEY_KEY = "telemetry_signing_key";
+
+const databaseTelemetryConfigStore: TelemetryConfigStore = {
+	async read(key) {
 		const existing = await db
 			.select({ value: systemConfig.value })
 			.from(systemConfig)
-			.where(eq(systemConfig.key, "deployment_id"))
+			.where(eq(systemConfig.key, key))
 			.limit(1);
 
-		if (existing.length > 0 && existing[0].value) {
-			logger.debug("Using existing deployment ID");
-			return existing[0].value;
-		}
-
-		const newId = crypto.randomUUID();
-		logger.info({ deploymentId: newId }, "Generated new deployment ID");
-
-		await db
+		return existing[0]?.value ?? undefined;
+	},
+	async insertIfAbsent({ key, value, description }) {
+		const inserted = await db
 			.insert(systemConfig)
-			.values({
-				key: "deployment_id",
-				value: newId,
-				description: "Unique identifier for this deployment, used for telemetry reporting",
-			})
-			.onConflictDoUpdate({
-				target: systemConfig.key,
-				set: {
-					value: newId,
-					updatedAt: new Date(),
-				},
-			});
+			.values({ key, value, description })
+			.onConflictDoNothing({ target: systemConfig.key })
+			.returning({ key: systemConfig.key });
 
-		return newId;
-	} catch (err) {
-		logger.error({ error: err }, "Failed to get or create deployment ID");
-		throw new TelemetryValidationError("Failed to get or create deployment ID");
+		return inserted.length > 0;
+	},
+};
+
+function storageFailure(operation: string, error: unknown): never {
+	logger.error(
+		{
+			operation,
+			errorType: error instanceof Error ? error.name : typeof error,
+		},
+		"Failed to persist telemetry identity",
+	);
+	throw new TelemetryValidationError(`Failed to ${operation}`);
+}
+
+async function readConfig(
+	store: TelemetryConfigStore,
+	key: string,
+): Promise<string | undefined> {
+	try {
+		return await store.read(key);
+	} catch (error) {
+		storageFailure(`read ${key}`, error);
 	}
+}
+
+async function insertConfig(
+	store: TelemetryConfigStore,
+	input: { key: string; value: string; description: string },
+): Promise<boolean> {
+	try {
+		return await store.insertIfAbsent(input);
+	} catch (error) {
+		storageFailure(`insert ${input.key}`, error);
+	}
+}
+
+async function getOrCreateDeploymentIdFromStore(
+	store: TelemetryConfigStore,
+): Promise<string> {
+	const existing = await readConfig(store, DEPLOYMENT_ID_KEY);
+	if (existing !== undefined) {
+		if (!isLowercaseUuidV4(existing)) {
+			throw new TelemetryValidationError(
+				"Stored deployment ID must be a lowercase UUID v4",
+			);
+		}
+		return existing;
+	}
+
+	const candidate = crypto.randomUUID().toLowerCase();
+	await insertConfig(store, {
+		key: DEPLOYMENT_ID_KEY,
+		value: candidate,
+		description:
+			"Unique identifier for this deployment, used for telemetry reporting",
+	});
+	const winner = await readConfig(store, DEPLOYMENT_ID_KEY);
+	if (!isLowercaseUuidV4(winner)) {
+		throw new TelemetryValidationError(
+			"Stored deployment ID must be a lowercase UUID v4",
+		);
+	}
+
+	return winner;
+}
+
+/** Get or create the persistent deployment ID used by telemetry and diagnostics. */
+export async function getOrCreateDeploymentId(): Promise<string> {
+	return getOrCreateDeploymentIdFromStore(databaseTelemetryConfigStore);
+}
+
+export async function getOrCreateTelemetryIdentity(
+	options: TelemetryIdentityOptions = {},
+): Promise<TelemetryIdentity> {
+	const store = options.store ?? databaseTelemetryConfigStore;
+	const info = options.info ?? logger.info.bind(logger);
+	const deploymentId = await getOrCreateDeploymentIdFromStore(store);
+	const existing = await readConfig(store, SIGNING_KEY_KEY);
+	if (existing !== undefined) {
+		return { deploymentId, signingKey: parseTelemetrySigningKey(existing) };
+	}
+
+	const candidate = generateTelemetrySigningKey();
+	const serializedCandidate = JSON.stringify(candidate);
+	const inserted = await insertConfig(store, {
+		key: SIGNING_KEY_KEY,
+		value: serializedCandidate,
+		description:
+			"Ed25519 signing identity for authenticated telemetry reporting",
+	});
+	const winner = await readConfig(store, SIGNING_KEY_KEY);
+	if (winner === undefined) {
+		throw new TelemetryValidationError(
+			"Telemetry signing key was not persisted",
+		);
+	}
+	const signingKey = parseTelemetrySigningKey(winner);
+
+	if (inserted) {
+		info(
+			{
+				deploymentId,
+				publicKeySpkiBase64: signingKey.public_key_spki_base64,
+			},
+			"Generated telemetry signing identity",
+		);
+	}
+
+	return { deploymentId, signingKey };
 }
 
 /**
