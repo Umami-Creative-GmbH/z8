@@ -113,9 +113,10 @@ The daily telemetry payload includes **only** the following aggregated, anonymiz
 - Telemetry is sent via a **signed HTTPS POST** to `https://telemetry.z8-time.app/api/telemetry`
 - Each payload is **encrypted in transit** using TLS 1.3+
 - Each request uses a fresh nonce and is signed with the deployment's Ed25519 signing key
+- The private signing key remains on the deployment and is never transmitted
 - The `deployment_id` (a random UUID) is the only persistent identifier across reports
 - Data is sent **once per day** (UTC midnight) via a scheduled cron job
-- Failed transmissions are retried up to 3 times with exponential backoff
+- A transmission is attempted up to 3 times total with exponential backoff between attempts
 
 ### Opting Out of Telemetry
 
