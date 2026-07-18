@@ -1,10 +1,11 @@
 import { Temporal } from "temporal-polyfill";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
 	isLowercaseUuidV4,
 	MAX_TELEMETRY_BODY_BYTES,
 	prepareTelemetryReport,
+	serializeTelemetryPayload,
 	type TelemetryPayloadV2,
 	TelemetryProtocolError,
 } from "@/lib/telemetry-protocol";
@@ -68,20 +69,37 @@ describe("prepareTelemetryReport", () => {
 		expect(prepared.bodyHash).toMatch(/^[0-9a-f]{64}$/);
 	});
 
-	it("serializes the validated payload exactly once", () => {
+	it("captures accessor values once before validation and serialization", () => {
 		const payload = validPayload();
-		let versionReads = 0;
-		Object.defineProperty(payload, "version", {
+		let deploymentIdReads = 0;
+		Object.defineProperty(payload, "deployment_id", {
 			enumerable: true,
 			get: () => {
-				versionReads += 1;
-				return "2.0";
+				deploymentIdReads += 1;
+				return deploymentIdReads === 1
+					? DEPLOYMENT_ID
+					: DEPLOYMENT_ID.toUpperCase();
 			},
 		});
 
-		prepareTelemetryReport(payload, NOW);
+		const prepared = prepareTelemetryReport(payload, NOW);
 
-		expect(versionReads).toBe(2);
+		expect(deploymentIdReads).toBe(1);
+		expect(prepared.deploymentId).toBe(DEPLOYMENT_ID);
+		expect(JSON.parse(prepared.body.toString("utf8"))).toMatchObject({
+			deployment_id: DEPLOYMENT_ID,
+		});
+	});
+
+	it("serializes the validated payload exactly once", () => {
+		const stringify = vi.spyOn(JSON, "stringify");
+		try {
+			prepareTelemetryReport(validPayload(), NOW);
+
+			expect(stringify).toHaveBeenCalledTimes(1);
+		} finally {
+			stringify.mockRestore();
+		}
 	});
 
 	it("requires an object payload with only v2 wire fields", () => {
@@ -136,13 +154,19 @@ describe("prepareTelemetryReport", () => {
 		}
 	});
 
-	it("accepts the maximum optional API request count", () => {
+	it("omits an absent API request count and includes its maximum", () => {
+		const withoutApiRequests = prepareTelemetryReport(validPayload(), NOW);
+		expect(
+			JSON.parse(withoutApiRequests.body.toString("utf8")).metrics,
+		).not.toHaveProperty("api_requests_24h");
+
 		const payload = validPayload();
 		payload.metrics.api_requests_24h = 2_147_483_647;
 
-		expect(prepareTelemetryReport(payload, NOW).body).toEqual(
-			Buffer.from(JSON.stringify(payload), "utf8"),
-		);
+		expect(
+			JSON.parse(prepareTelemetryReport(payload, NOW).body.toString("utf8"))
+				.metrics.api_requests_24h,
+		).toBe(2_147_483_647);
 	});
 
 	it("rejects timestamps outside the age and future windows", () => {
@@ -192,18 +216,11 @@ describe("prepareTelemetryReport", () => {
 	});
 
 	it("enforces the UTF-8 byte limit on the raw serialized body", () => {
-		const payload = validPayload();
-		let timestampReads = 0;
-		Object.defineProperty(payload, "timestamp", {
-			enumerable: true,
-			get: () => {
-				timestampReads += 1;
-				return timestampReads === 1
-					? "2026-07-18T12:00:00Z"
-					: "é".repeat(MAX_TELEMETRY_BODY_BYTES / 2);
-			},
-		});
-
-		expectProtocolError(payload);
+		expect(() =>
+			serializeTelemetryPayload({
+				...validPayload(),
+				timestamp: "é".repeat(MAX_TELEMETRY_BODY_BYTES / 2),
+			}),
+		).toThrow(TelemetryProtocolError);
 	});
 });

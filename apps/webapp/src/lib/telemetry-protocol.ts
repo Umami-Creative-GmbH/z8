@@ -85,17 +85,36 @@ function hasExactKeys(
 	);
 }
 
-function isMetric(value: unknown): value is number {
-	return (
-		Number.isInteger(value) &&
-		typeof value === "number" &&
-		value >= 0 &&
-		value <= MAX_METRIC_VALUE
-	);
+function validateMetric(value: unknown, key: string): number {
+	if (
+		typeof value !== "number" ||
+		!Number.isInteger(value) ||
+		value < 0 ||
+		value > MAX_METRIC_VALUE
+	) {
+		protocolError(`Telemetry metric ${key} must be a non-negative integer`);
+	}
+
+	return value;
 }
 
 function protocolError(message: string): never {
 	throw new TelemetryProtocolError(message);
+}
+
+export function serializeTelemetryPayload(payload: TelemetryPayloadV2): Buffer {
+	let serialized: string;
+	try {
+		serialized = JSON.stringify(payload);
+	} catch {
+		protocolError("Telemetry payload could not be serialized");
+	}
+	const body = Buffer.from(serialized, "utf8");
+	if (body.byteLength > MAX_TELEMETRY_BODY_BYTES) {
+		protocolError("Telemetry payload exceeds the maximum body size");
+	}
+
+	return body;
 }
 
 export function prepareTelemetryReport(
@@ -138,41 +157,54 @@ export function prepareTelemetryReport(
 	) {
 		protocolError("Telemetry metrics must contain exactly the v2 wire fields");
 	}
-	for (const key of [
+	const {
+		active_users_24h: activeUsers24h,
+		total_organizations: totalOrganizations,
+		total_employees: totalEmployees,
+		sessions_created_24h: sessionsCreated24h,
+		api_requests_24h: apiRequests24h,
+		license_type: licenseType,
+	} = metrics;
+	const hasApiRequests24h = Object.hasOwn(metrics, OPTIONAL_METRIC_KEY);
+	const validatedActiveUsers24h = validateMetric(
+		activeUsers24h,
 		"active_users_24h",
+	);
+	const validatedTotalOrganizations = validateMetric(
+		totalOrganizations,
 		"total_organizations",
+	);
+	const validatedTotalEmployees = validateMetric(
+		totalEmployees,
 		"total_employees",
+	);
+	const validatedSessionsCreated24h = validateMetric(
+		sessionsCreated24h,
 		"sessions_created_24h",
-	] as const) {
-		if (!isMetric(metrics[key])) {
-			protocolError(`Telemetry metric ${key} must be a non-negative integer`);
-		}
-	}
-	if (
-		OPTIONAL_METRIC_KEY in metrics &&
-		!isMetric(metrics[OPTIONAL_METRIC_KEY])
-	) {
-		protocolError(
-			`Telemetry metric ${OPTIONAL_METRIC_KEY} must be a non-negative integer`,
-		);
-	}
-	if (
-		metrics.license_type !== "community" &&
-		metrics.license_type !== "enterprise"
-	) {
+	);
+	const validatedApiRequests24h = hasApiRequests24h
+		? validateMetric(apiRequests24h, OPTIONAL_METRIC_KEY)
+		: undefined;
+	if (licenseType !== "community" && licenseType !== "enterprise") {
 		protocolError("Telemetry license_type is unsupported");
 	}
 
-	let serialized: string;
-	try {
-		serialized = JSON.stringify(payload);
-	} catch {
-		protocolError("Telemetry payload could not be serialized");
-	}
-	const body = Buffer.from(serialized, "utf8");
-	if (body.byteLength > MAX_TELEMETRY_BODY_BYTES) {
-		protocolError("Telemetry payload exceeds the maximum body size");
-	}
+	const normalizedPayload: TelemetryPayloadV2 = {
+		version,
+		deployment_id: deploymentId,
+		timestamp,
+		metrics: {
+			active_users_24h: validatedActiveUsers24h,
+			total_organizations: validatedTotalOrganizations,
+			total_employees: validatedTotalEmployees,
+			sessions_created_24h: validatedSessionsCreated24h,
+			...(hasApiRequests24h
+				? { api_requests_24h: validatedApiRequests24h }
+				: {}),
+			license_type: licenseType,
+		},
+	};
+	const body = serializeTelemetryPayload(normalizedPayload);
 
 	return {
 		deploymentId,
