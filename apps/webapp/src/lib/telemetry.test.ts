@@ -17,6 +17,7 @@ import {
 	type TelemetryConfigStore,
 	TelemetryValidationError,
 } from "@/lib/telemetry";
+import * as telemetryProtocol from "@/lib/telemetry-protocol";
 import {
 	generateTelemetrySigningKey,
 	isLowercaseUuidV4,
@@ -76,6 +77,30 @@ describe("getOrCreateTelemetryIdentity", () => {
 		expect(store.insertAttempts.map(({ key }) => key)).toEqual([
 			"telemetry_signing_key",
 		]);
+	});
+
+	it("returns an existing identity without inserting, generating, or logging", async () => {
+		const signingKey = generateTelemetrySigningKey();
+		const serializedSigningKey = JSON.stringify(signingKey);
+		const initialValues = {
+			deployment_id: DEPLOYMENT_ID,
+			telemetry_signing_key: serializedSigningKey,
+		};
+		const store = new MemoryTelemetryConfigStore(initialValues);
+		const insertIfAbsent = vi.spyOn(store, "insertIfAbsent");
+		const generateSigningKey = vi.spyOn(
+			telemetryProtocol,
+			"generateTelemetrySigningKey",
+		);
+		const info = vi.fn();
+
+		const identity = await getOrCreateTelemetryIdentity({ store, info });
+
+		expect(identity).toEqual({ deploymentId: DEPLOYMENT_ID, signingKey });
+		expect(insertIfAbsent).not.toHaveBeenCalled();
+		expect(generateSigningKey).not.toHaveBeenCalled();
+		expect(info).not.toHaveBeenCalled();
+		expect(Object.fromEntries(store.values)).toEqual(initialValues);
 	});
 
 	it("generates and validates an absent identity", async () => {
