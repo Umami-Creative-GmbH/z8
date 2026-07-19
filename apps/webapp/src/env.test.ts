@@ -65,7 +65,9 @@ describe("env", () => {
 			throw new Error(`process.exit:${code}`);
 		});
 
-		await expect(importEnv({ TELEMETRY_ENABLED: "0" })).rejects.toThrow("process.exit:1");
+		await expect(importEnv({ TELEMETRY_ENABLED: "0" })).rejects.toThrow(
+			"process.exit:1",
+		);
 	});
 
 	test("fails validation when the Scaleway provider is missing credentials", async () => {
