@@ -4,6 +4,20 @@ import { fileURLToPath } from "node:url";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const { countDistinctSpy } = vi.hoisted(() => ({
+	countDistinctSpy: vi.fn(),
+}));
+
+vi.mock("drizzle-orm", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("drizzle-orm")>();
+	return {
+		...actual,
+		countDistinct: (column: Parameters<typeof actual.countDistinct>[0]) => {
+			countDistinctSpy(column);
+			return actual.countDistinct(column);
+		},
+	};
+});
 vi.mock("@/db", () => ({ db: {} }));
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
@@ -14,8 +28,10 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 import { db } from "@/db";
+import * as authSchema from "@/db/auth-schema";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
+	calculateTelemetryMetrics,
 	getOrCreateTelemetryIdentity,
 	sendTelemetryReport,
 	sendTelemetryReportWithDependencies,
@@ -43,6 +59,36 @@ const METRICS: TelemetryMetrics = {
 	sessionsCreated24h: 6,
 	licenseType: "community",
 };
+
+describe("calculateTelemetryMetrics", () => {
+	it("counts distinct active users while retaining the session creation count", async () => {
+		const select = vi
+			.fn()
+			.mockReturnValueOnce({
+				from: () => ({ where: async () => [{ count: 2 }] }),
+			})
+			.mockReturnValueOnce({ from: async () => [{ count: 3 }] })
+			.mockReturnValueOnce({
+				from: () => ({ where: async () => [{ count: 11 }] }),
+			})
+			.mockReturnValueOnce({
+				from: () => ({ where: async () => [{ count: 5 }] }),
+			});
+		Object.assign(db, { select });
+
+		await expect(calculateTelemetryMetrics()).resolves.toEqual({
+			activeUsers24h: 2,
+			totalOrganizations: 3,
+			totalEmployees: 11,
+			sessionsCreated24h: 5,
+			licenseType: "community",
+		});
+		expect(countDistinctSpy).toHaveBeenCalledExactlyOnceWith(
+			authSchema.session.userId,
+		);
+		expect(select).toHaveBeenCalledTimes(4);
+	});
+});
 
 class MemoryTelemetryConfigStore implements TelemetryConfigStore {
 	readonly insertAttempts: Array<{

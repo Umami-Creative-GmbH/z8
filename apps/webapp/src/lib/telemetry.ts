@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { count, eq, gte } from "drizzle-orm";
+import { count, countDistinct, eq, gte } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee, systemConfig } from "@/db/schema";
@@ -229,7 +229,7 @@ export async function calculateTelemetryMetrics(): Promise<TelemetryMetrics> {
 		const [activeUsersResult, orgsResult, employeesResult, newSessionsResult] =
 			await Promise.all([
 				db
-					.select({ count: count() })
+					.select({ count: countDistinct(authSchema.session.userId) })
 					.from(authSchema.session)
 					.where(gte(authSchema.session.updatedAt, twentyFourHoursAgo)),
 
