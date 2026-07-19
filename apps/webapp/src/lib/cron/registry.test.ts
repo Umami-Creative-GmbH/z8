@@ -3,13 +3,13 @@ import { CRON_JOBS } from "./registry";
 
 const {
 	calculateTelemetryMetrics,
-	getOrCreateDeploymentId,
+	getOrCreateTelemetryIdentity,
 	mockEnv,
 	runBillingSeatReconciliation,
 	sendTelemetryReport,
 } = vi.hoisted(() => ({
 	calculateTelemetryMetrics: vi.fn(),
-	getOrCreateDeploymentId: vi.fn(),
+	getOrCreateTelemetryIdentity: vi.fn(),
 	mockEnv: { TELEMETRY_ENABLED: "true" },
 	runBillingSeatReconciliation: vi.fn(async () => ({
 		success: true,
@@ -30,7 +30,7 @@ vi.mock("@/env", () => ({ env: mockEnv }));
 
 vi.mock("@/lib/telemetry", () => ({
 	calculateTelemetryMetrics,
-	getOrCreateDeploymentId,
+	getOrCreateTelemetryIdentity,
 	sendTelemetryReport,
 }));
 
@@ -86,7 +86,7 @@ describe("CRON_JOBS telemetry", () => {
 	});
 
 	it("defaults to enabled and sends telemetry", async () => {
-		getOrCreateDeploymentId.mockResolvedValue(deploymentId);
+		getOrCreateTelemetryIdentity.mockResolvedValue({ deploymentId });
 		calculateTelemetryMetrics.mockResolvedValue(metrics);
 		sendTelemetryReport.mockResolvedValue(true);
 
@@ -94,8 +94,11 @@ describe("CRON_JOBS telemetry", () => {
 			triggeredAt: "2026-06-01T00:00:00.000Z",
 		});
 
-		expect(getOrCreateDeploymentId).toHaveBeenCalledExactlyOnceWith();
+		expect(getOrCreateTelemetryIdentity).toHaveBeenCalledExactlyOnceWith();
 		expect(calculateTelemetryMetrics).toHaveBeenCalledExactlyOnceWith();
+		expect(
+			getOrCreateTelemetryIdentity.mock.invocationCallOrder[0],
+		).toBeLessThan(calculateTelemetryMetrics.mock.invocationCallOrder[0] ?? 0);
 		expect(sendTelemetryReport).toHaveBeenCalledExactlyOnceWith(
 			deploymentId,
 			metrics,
@@ -104,7 +107,7 @@ describe("CRON_JOBS telemetry", () => {
 	});
 
 	it("throws when the sender reports failure", async () => {
-		getOrCreateDeploymentId.mockResolvedValue(deploymentId);
+		getOrCreateTelemetryIdentity.mockResolvedValue({ deploymentId });
 		calculateTelemetryMetrics.mockResolvedValue(metrics);
 		sendTelemetryReport.mockResolvedValue(false);
 
@@ -114,7 +117,7 @@ describe("CRON_JOBS telemetry", () => {
 			}),
 		).rejects.toThrow(new Error("Telemetry send failed"));
 
-		expect(getOrCreateDeploymentId).toHaveBeenCalledExactlyOnceWith();
+		expect(getOrCreateTelemetryIdentity).toHaveBeenCalledExactlyOnceWith();
 		expect(calculateTelemetryMetrics).toHaveBeenCalledExactlyOnceWith();
 		expect(sendTelemetryReport).toHaveBeenCalledExactlyOnceWith(
 			deploymentId,
@@ -134,7 +137,7 @@ describe("CRON_JOBS telemetry", () => {
 		});
 
 		expect(result).toEqual({ success: true, message: "Telemetry disabled" });
-		expect(getOrCreateDeploymentId).not.toHaveBeenCalled();
+		expect(getOrCreateTelemetryIdentity).not.toHaveBeenCalled();
 		expect(calculateTelemetryMetrics).not.toHaveBeenCalled();
 		expect(sendTelemetryReport).not.toHaveBeenCalled();
 	});

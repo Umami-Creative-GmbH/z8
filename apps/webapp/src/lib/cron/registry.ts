@@ -317,10 +317,10 @@ export const CRON_JOBS = {
 
 			const {
 				calculateTelemetryMetrics,
-				getOrCreateDeploymentId,
+				getOrCreateTelemetryIdentity,
 				sendTelemetryReport,
 			} = await import("@/lib/telemetry");
-			const deploymentId = await getOrCreateDeploymentId();
+			const { deploymentId } = await getOrCreateTelemetryIdentity();
 			const metrics = await calculateTelemetryMetrics();
 			const success = await sendTelemetryReport(deploymentId, metrics);
 			if (!success) {
