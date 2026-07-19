@@ -87,7 +87,7 @@ The daily telemetry payload includes **only** the following aggregated, anonymiz
 
 ```json
 {
-  "version": "1.0",
+  "version": "2.0",
   "deployment_id": "unique-uuid-for-this-instance",
   "timestamp": "2026-01-13T00:00:00Z",
   "metrics": {
@@ -95,7 +95,6 @@ The daily telemetry payload includes **only** the following aggregated, anonymiz
     "total_organizations": 2,
     "total_employees": 156,
     "sessions_created_24h": 42,
-    "api_requests_24h": 8945,
     "license_type": "community"
   }
 }
@@ -111,11 +110,14 @@ The daily telemetry payload includes **only** the following aggregated, anonymiz
 
 ### Transmission & Security
 
-- Telemetry is sent via **HTTPS POST** to `https://telemetry.z8-time.app/`
+- Telemetry is sent via a **signed HTTPS POST** to `https://telemetry.z8-time.app/api/telemetry`
 - Each payload is **encrypted in transit** using TLS 1.3+
+- Each request uses a fresh nonce and is signed with the deployment's Ed25519 signing key
+- On first use, the deployment generates an Ed25519 keypair. The private signing key remains on the deployment and is never transmitted
+- The structured log field `publicKeySpkiBase64` is the canonical base64 SPKI public key. Register it through the telemetry receiver administrator or Z8 support registration process; reports fail authentication until it is registered
 - The `deployment_id` (a random UUID) is the only persistent identifier across reports
 - Data is sent **once per day** (UTC midnight) via a scheduled cron job
-- Failed transmissions are retried up to 3 times with exponential backoff
+- A transmission is attempted up to 3 times total. HTTP 429 responses honor a valid `Retry-After`; an absent or invalid value uses the fallback exponential delay. Other transient retries use exponential delay
 
 ### Opting Out of Telemetry
 

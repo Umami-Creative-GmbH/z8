@@ -48,6 +48,28 @@ describe("env", () => {
 		expect(env.DISABLE_ORGANIZATION_CREATION).toBe("true");
 	});
 
+	test("defaults telemetry reporting to enabled", async () => {
+		const { env } = await importEnv({ TELEMETRY_ENABLED: undefined });
+
+		expect(env.TELEMETRY_ENABLED).toBe("true");
+	});
+
+	test("accepts disabling telemetry reporting", async () => {
+		const { env } = await importEnv({ TELEMETRY_ENABLED: "false" });
+
+		expect(env.TELEMETRY_ENABLED).toBe("false");
+	});
+
+	test("rejects invalid telemetry reporting values", async () => {
+		vi.spyOn(process, "exit").mockImplementation((code) => {
+			throw new Error(`process.exit:${code}`);
+		});
+
+		await expect(importEnv({ TELEMETRY_ENABLED: "0" })).rejects.toThrow(
+			"process.exit:1",
+		);
+	});
+
 	test("fails validation when the Scaleway provider is missing credentials", async () => {
 		vi.spyOn(process, "exit").mockImplementation((code) => {
 			throw new Error(`process.exit:${code}`);
