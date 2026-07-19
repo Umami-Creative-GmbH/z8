@@ -310,6 +310,11 @@ export const CRON_JOBS = {
 		schedule: "0 0 * * *", // Daily at UTC midnight
 		description: "Collect and export telemetry data",
 		processor: async (): Promise<TelemetryResult> => {
+			const { env } = await import("@/env");
+			if (env.TELEMETRY_ENABLED === "false") {
+				return { success: true, message: "Telemetry disabled" };
+			}
+
 			const {
 				calculateTelemetryMetrics,
 				getOrCreateDeploymentId,
@@ -318,10 +323,11 @@ export const CRON_JOBS = {
 			const deploymentId = await getOrCreateDeploymentId();
 			const metrics = await calculateTelemetryMetrics();
 			const success = await sendTelemetryReport(deploymentId, metrics);
+			if (!success) {
+				throw new Error("Telemetry send failed");
+			}
 
-			return success
-				? { success: true, message: "Telemetry sent" }
-				: { success: false, message: "Telemetry send failed" };
+			return { success: true, message: "Telemetry sent" };
 		},
 		defaultJobOptions: { attempts: 1, priority: 9 },
 	},

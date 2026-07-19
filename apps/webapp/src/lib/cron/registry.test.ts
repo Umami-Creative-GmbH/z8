@@ -4,11 +4,13 @@ import { CRON_JOBS } from "./registry";
 const {
 	calculateTelemetryMetrics,
 	getOrCreateDeploymentId,
+	mockEnv,
 	runBillingSeatReconciliation,
 	sendTelemetryReport,
 } = vi.hoisted(() => ({
 	calculateTelemetryMetrics: vi.fn(),
 	getOrCreateDeploymentId: vi.fn(),
+	mockEnv: { TELEMETRY_ENABLED: "true" },
 	runBillingSeatReconciliation: vi.fn(async () => ({
 		success: true,
 		billingEnabled: true,
@@ -24,6 +26,8 @@ vi.mock("@/lib/jobs/billing-seat-reconciliation", () => ({
 	runBillingSeatReconciliation,
 }));
 
+vi.mock("@/env", () => ({ env: mockEnv }));
+
 vi.mock("@/lib/telemetry", () => ({
 	calculateTelemetryMetrics,
 	getOrCreateDeploymentId,
@@ -32,6 +36,7 @@ vi.mock("@/lib/telemetry", () => ({
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	mockEnv.TELEMETRY_ENABLED = "true";
 });
 
 describe("CRON_JOBS execution cleanup", () => {
@@ -80,7 +85,7 @@ describe("CRON_JOBS telemetry", () => {
 		});
 	});
 
-	it("obtains the deployment ID, calculates metrics, and sends telemetry", async () => {
+	it("defaults to enabled and sends telemetry", async () => {
 		getOrCreateDeploymentId.mockResolvedValue(deploymentId);
 		calculateTelemetryMetrics.mockResolvedValue(metrics);
 		sendTelemetryReport.mockResolvedValue(true);
@@ -98,14 +103,16 @@ describe("CRON_JOBS telemetry", () => {
 		expect(result).toEqual({ success: true, message: "Telemetry sent" });
 	});
 
-	it("returns a failed result when the sender reports failure", async () => {
+	it("throws when the sender reports failure", async () => {
 		getOrCreateDeploymentId.mockResolvedValue(deploymentId);
 		calculateTelemetryMetrics.mockResolvedValue(metrics);
 		sendTelemetryReport.mockResolvedValue(false);
 
-		const result = await CRON_JOBS["cron:telemetry"].processor({
-			triggeredAt: "2026-06-01T00:00:00.000Z",
-		});
+		await expect(
+			CRON_JOBS["cron:telemetry"].processor({
+				triggeredAt: "2026-06-01T00:00:00.000Z",
+			}),
+		).rejects.toThrow(new Error("Telemetry send failed"));
 
 		expect(getOrCreateDeploymentId).toHaveBeenCalledExactlyOnceWith();
 		expect(calculateTelemetryMetrics).toHaveBeenCalledExactlyOnceWith();
@@ -113,9 +120,22 @@ describe("CRON_JOBS telemetry", () => {
 			deploymentId,
 			metrics,
 		);
-		expect(result).toEqual({
-			success: false,
-			message: "Telemetry send failed",
+		expect(CRON_JOBS["cron:telemetry"].defaultJobOptions).toEqual({
+			attempts: 1,
+			priority: 9,
 		});
+	});
+
+	it("completes without telemetry work when disabled", async () => {
+		mockEnv.TELEMETRY_ENABLED = "false";
+
+		const result = await CRON_JOBS["cron:telemetry"].processor({
+			triggeredAt: "2026-06-01T00:00:00.000Z",
+		});
+
+		expect(result).toEqual({ success: true, message: "Telemetry disabled" });
+		expect(getOrCreateDeploymentId).not.toHaveBeenCalled();
+		expect(calculateTelemetryMetrics).not.toHaveBeenCalled();
+		expect(sendTelemetryReport).not.toHaveBeenCalled();
 	});
 });

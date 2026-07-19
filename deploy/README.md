@@ -212,6 +212,8 @@ The worker container handles both one-off jobs and scheduled cron tasks using Bu
 | `cron:project-deadlines` | Hourly | Project deadline notifications |
 | `cron:telemetry` | Daily at 00:00 UTC | Telemetry collection |
 
+On first telemetry use, Z8 generates an Ed25519 keypair. The private signing key remains on the deployment and is never transmitted. The structured log field `publicKeySpkiBase64` is the canonical base64 SPKI public key; register it through the telemetry receiver administrator or Z8 support registration process. Reports fail authentication until this public key is registered.
+
 Monitor jobs via Bull Board at http://localhost:3100 (admin/admin by default).
 
 To disable cron jobs on a worker instance:
@@ -259,6 +261,7 @@ See `deploy/.env.template` for the full list. Key variables:
 | `REDIS_CA_CERT` | No | Inline PEM CA certificate for managed Redis TLS |
 | `WORKER_CONCURRENCY` | No | Worker parallel jobs (default: 5) |
 | `ENABLE_CRON_JOBS` | No | Enable repeatable cron (default: true) |
+| `TELEMETRY_ENABLED` | No | Enable daily telemetry reporting (`true` or `false`, default: `true`) |
 
 For managed PostgreSQL providers that document `sslmode=verify-full sslrootcert=/path/to/provider-ca.pem`, keep the individual Z8 variables and configure:
 
