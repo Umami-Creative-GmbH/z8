@@ -111,6 +111,11 @@ spec:
                 configMapKeyRef:
                   name: z8-config
                   key: enable-cron-jobs
+            - name: TELEMETRY_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: z8-config
+                  key: telemetry-enabled
             # Email (optional - for email jobs)
             - name: EMAIL_PROVIDER
               valueFrom:

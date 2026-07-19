@@ -261,7 +261,7 @@ See `deploy/.env.template` for the full list. Key variables:
 | `REDIS_CA_CERT` | No | Inline PEM CA certificate for managed Redis TLS |
 | `WORKER_CONCURRENCY` | No | Worker parallel jobs (default: 5) |
 | `ENABLE_CRON_JOBS` | No | Enable repeatable cron (default: true) |
-| `TELEMETRY_ENABLED` | No | Enable daily telemetry reporting (`true` or `false`, default: `true`) |
+| `TELEMETRY_ENABLED` | No | Enable daily telemetry reporting (`true` or `false`, default: `true`); `false` disables telemetry before identity/key generation or network access |
 
 For managed PostgreSQL providers that document `sslmode=verify-full sslrootcert=/path/to/provider-ca.pem`, keep the individual Z8 variables and configure:
 
