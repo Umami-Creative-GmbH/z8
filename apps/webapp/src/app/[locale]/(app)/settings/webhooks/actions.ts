@@ -7,12 +7,24 @@ import { Effect } from "effect";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { env } from "@/env";
-import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import {
+	AuthorizationError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
-import { NOTIFICATION_TYPES, type NotificationType } from "@/lib/notifications/types";
+import {
+	NOTIFICATION_TYPES,
+	type NotificationType,
+} from "@/lib/notifications/types";
 import {
 	createDeliveryRecord,
 	createWebhookEndpoint,
@@ -41,9 +53,12 @@ const logger = createLogger("WebhookActions");
 /**
  * Verify the current user is an organization owner
  */
-function verifyOwnerRole(memberRecord: { role: string } | null | undefined, userId: string) {
+function verifyOwnerRole(
+	memberRecord: { role: string } | null | undefined,
+	userId: string,
+) {
 	return Effect.gen(function* (_) {
-		if (memberRecord?.role !== "owner") {
+		if (!hasOrganizationRole(memberRecord?.role, "owner")) {
 			yield* _(
 				Effect.fail(
 					new AuthorizationError({
@@ -56,6 +71,24 @@ function verifyOwnerRole(memberRecord: { role: string } | null | undefined, user
 			);
 		}
 	});
+}
+
+function requireSessionOrganizationId(session: {
+	session: { activeOrganizationId?: string | null };
+	user: { id: string };
+}) {
+	if (session.session.activeOrganizationId) {
+		return Effect.succeed(session.session.activeOrganizationId);
+	}
+
+	return Effect.fail(
+		new AuthorizationError({
+			message: "An active organization is required",
+			userId: session.user.id,
+			resource: "webhook",
+			action: "read",
+		}),
+	);
 }
 
 /**
@@ -96,7 +129,9 @@ function validateWebhookUrl(url: string): { valid: boolean; reason?: string } {
  * Validate subscribed events
  */
 function validateEvents(events: string[]): events is NotificationType[] {
-	return events.every((e) => NOTIFICATION_TYPES.includes(e as NotificationType));
+	return events.every((e) =>
+		NOTIFICATION_TYPES.includes(e as NotificationType),
+	);
 }
 
 // ============================================
@@ -125,6 +160,16 @@ export async function createWebhook(data: {
 
 				span.setAttribute("organization.id", data.organizationId);
 				span.setAttribute("webhook.name", data.name);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId: data.organizationId,
+						requiredRole: "owner",
+						message: "Only active approved owners can manage webhooks",
+						resource: "webhook",
+						action: "create",
+					}),
+				);
 
 				// Get current user's member record
 				const memberRecord = yield* _(
@@ -193,7 +238,10 @@ export async function createWebhook(data: {
 				);
 
 				logger.info(
-					{ webhookId: result.endpoint.id, organizationId: data.organizationId },
+					{
+						webhookId: result.endpoint.id,
+						organizationId: data.organizationId,
+					},
 					"Webhook created",
 				);
 
@@ -226,12 +274,13 @@ export async function updateWebhook(
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
+				const organizationId = yield* _(requireSessionOrganizationId(session));
 
 				span.setAttribute("webhook.id", webhookId);
 
 				// Get webhook to verify ownership
 				const webhook = yield* _(
-					Effect.promise(() => getWebhookEndpoint(webhookId)),
+					Effect.promise(() => getWebhookEndpoint(webhookId, organizationId)),
 					Effect.flatMap((w) =>
 						w
 							? Effect.succeed(w)
@@ -243,6 +292,16 @@ export async function updateWebhook(
 									}),
 								),
 					),
+				);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId: webhook.organizationId,
+						requiredRole: "owner",
+						message: "Only active approved owners can manage webhooks",
+						resource: "webhook",
+						action: "update",
+					}),
 				);
 
 				// Get member record
@@ -307,7 +366,9 @@ export async function updateWebhook(
 						updateWebhookEndpoint(webhookId, {
 							name: data.name?.trim(),
 							url: data.url?.trim(),
-							subscribedEvents: data.subscribedEvents as NotificationType[] | undefined,
+							subscribedEvents: data.subscribedEvents as
+								| NotificationType[]
+								| undefined,
 							description: data.description?.trim(),
 							isActive: data.isActive,
 						}),
@@ -336,7 +397,9 @@ export async function updateWebhook(
 /**
  * Delete a webhook endpoint
  */
-export async function deleteWebhook(webhookId: string): Promise<ServerActionResult<void>> {
+export async function deleteWebhook(
+	webhookId: string,
+): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("webhooks");
 
 	return runServerActionSafe(
@@ -345,12 +408,13 @@ export async function deleteWebhook(webhookId: string): Promise<ServerActionResu
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
+				const organizationId = yield* _(requireSessionOrganizationId(session));
 
 				span.setAttribute("webhook.id", webhookId);
 
 				// Get webhook to verify ownership
 				const webhook = yield* _(
-					Effect.promise(() => getWebhookEndpoint(webhookId)),
+					Effect.promise(() => getWebhookEndpoint(webhookId, organizationId)),
 					Effect.flatMap((w) =>
 						w
 							? Effect.succeed(w)
@@ -362,6 +426,16 @@ export async function deleteWebhook(webhookId: string): Promise<ServerActionResu
 									}),
 								),
 					),
+				);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId: webhook.organizationId,
+						requiredRole: "owner",
+						message: "Only active approved owners can manage webhooks",
+						resource: "webhook",
+						action: "delete",
+					}),
 				);
 
 				// Get member record
@@ -380,7 +454,9 @@ export async function deleteWebhook(webhookId: string): Promise<ServerActionResu
 				yield* _(verifyOwnerRole(memberRecord, session.user.id));
 
 				// Delete webhook
-				const deleted = yield* _(Effect.promise(() => deleteWebhookEndpoint(webhookId)));
+				const deleted = yield* _(
+					Effect.promise(() => deleteWebhookEndpoint(webhookId)),
+				);
 
 				if (!deleted) {
 					yield* _(
@@ -415,12 +491,13 @@ export async function regenerateSecret(
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
+				const organizationId = yield* _(requireSessionOrganizationId(session));
 
 				span.setAttribute("webhook.id", webhookId);
 
 				// Get webhook to verify ownership
 				const webhook = yield* _(
-					Effect.promise(() => getWebhookEndpoint(webhookId)),
+					Effect.promise(() => getWebhookEndpoint(webhookId, organizationId)),
 					Effect.flatMap((w) =>
 						w
 							? Effect.succeed(w)
@@ -432,6 +509,16 @@ export async function regenerateSecret(
 									}),
 								),
 					),
+				);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId: webhook.organizationId,
+						requiredRole: "owner",
+						message: "Only active approved owners can manage webhooks",
+						resource: "webhook",
+						action: "regenerateSecret",
+					}),
 				);
 
 				// Get member record
@@ -491,12 +578,13 @@ export async function testWebhook(
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
+				const organizationId = yield* _(requireSessionOrganizationId(session));
 
 				span.setAttribute("webhook.id", webhookId);
 
 				// Get webhook to verify ownership
 				const webhook = yield* _(
-					Effect.promise(() => getWebhookEndpoint(webhookId)),
+					Effect.promise(() => getWebhookEndpoint(webhookId, organizationId)),
 					Effect.flatMap((w) =>
 						w
 							? Effect.succeed(w)
@@ -508,6 +596,16 @@ export async function testWebhook(
 									}),
 								),
 					),
+				);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId: webhook.organizationId,
+						requiredRole: "owner",
+						message: "Only active approved owners can manage webhooks",
+						resource: "webhook",
+						action: "test",
+					}),
 				);
 
 				// Get member record
@@ -590,22 +688,16 @@ export async function getWebhooks(
 		Effect.gen(function* (_) {
 			const authService = yield* _(AuthService);
 			const session = yield* _(authService.getSession());
-			const dbService = yield* _(DatabaseService);
-
-			// Get member record to verify access
-			const memberRecord = yield* _(
-				dbService.query("getCurrentMember", async () => {
-					return await db.query.member.findFirst({
-						where: and(
-							eq(authSchema.member.userId, session.user.id),
-							eq(authSchema.member.organizationId, organizationId),
-						),
-					});
+			yield* _(
+				requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId,
+					requiredRole: "owner",
+					message: "Only active approved owners can view webhooks",
+					resource: "webhook",
+					action: "read",
 				}),
 			);
-
-			// Verify owner role (only owners can view webhooks)
-			yield* _(verifyOwnerRole(memberRecord, session.user.id));
 
 			// Get webhooks
 			const webhooks = yield* _(
@@ -623,16 +715,32 @@ export async function getWebhooks(
 export async function getWebhookDeliveryLogs(
 	webhookId: string,
 	options: { limit?: number; offset?: number } = {},
-): Promise<ServerActionResult<{ deliveries: WebhookDelivery[]; total: number; hasMore: boolean }>> {
+): Promise<
+	ServerActionResult<{
+		deliveries: WebhookDelivery[];
+		total: number;
+		hasMore: boolean;
+	}>
+> {
 	return runServerActionSafe(
 		Effect.gen(function* (_) {
 			const authService = yield* _(AuthService);
 			const session = yield* _(authService.getSession());
-			const dbService = yield* _(DatabaseService);
+			const organizationId = yield* _(requireSessionOrganizationId(session));
+			yield* _(
+				requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId,
+					requiredRole: "owner",
+					message: "Only active approved owners can view webhook delivery logs",
+					resource: "webhook",
+					action: "read",
+				}),
+			);
 
 			// Get webhook to verify ownership
-			const webhook = yield* _(
-				Effect.promise(() => getWebhookEndpoint(webhookId)),
+			yield* _(
+				Effect.promise(() => getWebhookEndpoint(webhookId, organizationId)),
 				Effect.flatMap((w) =>
 					w
 						? Effect.succeed(w)
@@ -646,25 +754,12 @@ export async function getWebhookDeliveryLogs(
 				),
 			);
 
-			// Get member record
-			const memberRecord = yield* _(
-				dbService.query("getCurrentMember", async () => {
-					return await db.query.member.findFirst({
-						where: and(
-							eq(authSchema.member.userId, session.user.id),
-							eq(authSchema.member.organizationId, webhook.organizationId),
-						),
-					});
-				}),
-			);
-
-			// Verify owner role
-			yield* _(verifyOwnerRole(memberRecord, session.user.id));
-
 			// Get delivery logs
 			const { limit = 50, offset = 0 } = options;
 			const { deliveries, total } = yield* _(
-				Effect.promise(() => getDeliveryLogs(webhookId, { limit, offset })),
+				Effect.promise(() =>
+					getDeliveryLogs(webhookId, organizationId, { limit, offset }),
+				),
 			);
 
 			return {

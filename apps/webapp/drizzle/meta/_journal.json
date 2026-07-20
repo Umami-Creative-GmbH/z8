@@ -379,6 +379,13 @@
 		"when": 1781096400000,
 		"tag": "0053_telegram_digest_delivery",
 		"breakpoints": true
+	},
+	{
+		"idx": 54,
+		"version": "7",
+		"when": 1784400735730,
+		"tag": "0054_employee_invitation_draft_identity",
+		"breakpoints": true
     }
   ]
 }

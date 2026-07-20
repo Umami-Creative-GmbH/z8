@@ -10,6 +10,10 @@ const typeSource = readFileSync(
 	fileURLToPath(new URL("./employee-action-types.ts", import.meta.url)),
 	"utf8",
 );
+const eligibilitySource = readFileSync(
+	fileURLToPath(new URL("./employee-invitation-draft-eligibility.ts", import.meta.url)),
+	"utf8",
+);
 
 describe("employee query name source", () => {
 	it("uses auth user structured names for employee search and sort", () => {
@@ -47,11 +51,56 @@ describe("employee query name source", () => {
 		expect(typeSource).not.toContain("kind: EmployeeRecordKind");
 	});
 
-	it("resolves real employee ids for accepted invitation drafts", () => {
-		expect(source).toContain("realEmployee");
-		expect(source).toContain("eq(realEmployee.organizationId, actor.organizationId)");
-		expect(source).toContain("eq(realEmployeeUser.invitedVia, invitation.id)");
-		expect(source).not.toContain("eq(realEmployeeUser.email, invitation.email)");
-		expect(source).not.toContain("realEmployee: null");
+	it("uses the shared pending-future eligibility predicate for draft list and detail queries", () => {
+		expect(source).toContain("buildEligibleInvitationDraftPredicate");
+		expect(source).toContain("buildInvitationDraftFilters(actor.organizationId, now, params)");
+		expect(source).toContain("draftId,");
+		expect(source.match(/buildEligibleInvitationDraftPredicate\(\{/g)).toHaveLength(2);
+		expect(source.match(/dateFromInstant\(systemClock\.nowInstant\(\)\)/g)).toHaveLength(2);
+	});
+
+	it("keeps managers on the real-employee-only path", () => {
+		expect(source).toContain('const includeInvitationDrafts = actor.accessTier === "orgAdmin"');
+		expect(source).toContain("if (!includeInvitationDrafts)");
+	});
+
+	it("suppresses only same-organization employee identities by normalized email", () => {
+		expect(eligibilitySource).toContain("lower(btrim($" + "{user.email}))");
+		expect(eligibilitySource).toContain("$" + "{employeeInvitationDraft.normalizedEmail}");
+		expect(eligibilitySource).toContain("$" + "{employee.organizationId} = $" + "{organizationId}");
+		expect(eligibilitySource).not.toContain("invitedVia");
+	});
+
+	it("does not use invitedVia joins or detection for draft eligibility", () => {
+		expect(source).not.toContain("realEmployeeUser");
+		expect(source).not.toContain("const realEmployee");
+		expect(source).not.toContain("realEmployee:");
+		expect(source).not.toContain(".invitedVia");
+	});
+
+	it("organization-scopes the final invitation draft detail predicate", () => {
+		expect(source).toContain("organizationId: actor.organizationId");
+		expect(source).toContain("draftId,");
+	});
+
+	it("selects one deterministic approved membership without filtering out employees", () => {
+		expect(source).toContain("leftJoinLateral");
+		expect(source).toContain('eq(member.status, "approved")');
+		expect(source).toContain("eq(member.userId, employee.userId)");
+		expect(source).toContain("eq(member.organizationId, actor.organizationId)");
+		expect(source).toContain("desc(member.createdAt)");
+		expect(source).toContain("desc(member.id)");
+		expect(source).toContain(".limit(1)");
+	});
+
+	it("normalizes nullable joined memberships and keeps drafts membership-free", () => {
+		expect(source).toContain("membership: row.membership?.id ? row.membership : null");
+		expect(source).toContain("membership: null");
+	});
+
+	it("organization-scopes the final real employee detail lookup", () => {
+		expect(source).toContain(
+			"where: and(eq(employee.id, employeeId), eq(employee.organizationId, actor.organizationId))",
+		);
 	});
 });

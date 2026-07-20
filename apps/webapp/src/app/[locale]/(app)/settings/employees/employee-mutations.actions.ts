@@ -1,14 +1,24 @@
 "use server";
 
-import { and, eq, isNull } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
+import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { z } from "zod";
 import { invitation, user } from "@/db/auth-schema";
-import { employee, employeeInvitationDraft, employeeRateHistory, team } from "@/db/schema";
+import {
+	employee,
+	employeeInvitationDraft,
+	employeeRateHistory,
+	team,
+} from "@/db/schema";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
+import {
+	acquireEmployeeIdentityLock,
+	isEmployeeIdentityConflict,
+} from "@/lib/auth/employee-identity-lock";
+import { isInvitationActionable } from "@/lib/auth/employee-invitation-draft";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { AppAccessService } from "@/lib/effect/services/app-access.service";
@@ -44,12 +54,13 @@ import {
 	runTracedEmployeeAction,
 	validateInput,
 } from "./employee-action-utils";
+import { buildEligibleInvitationDraftPredicate } from "./employee-invitation-draft-eligibility";
 import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
 
 const logger = createLogger("EmployeeActions");
 const employeeIdSchema = z.uuid("Invalid employee ID");
-const realEmployee = alias(employee, "realEmployee");
-const realEmployeeUser = alias(user, "realEmployeeUser");
+const invitationCancellationFailureMessage =
+	"The pending invitation could not be canceled. The employee draft was kept.";
 
 export async function createEmployeeAction(
 	data: CreateEmployee,
@@ -66,7 +77,9 @@ export async function createEmployeeAction(
 		execute: (span) =>
 			Effect.gen(function* (_) {
 				const actor = yield* _(
-					getEmployeeSettingsActorContext({ organizationId: data.organizationId }),
+					getEmployeeSettingsActorContext({
+						organizationId: data.organizationId,
+					}),
 				);
 				const { session, dbService } = actor;
 
@@ -82,7 +95,9 @@ export async function createEmployeeAction(
 					span.setAttribute("currentEmployee.id", actor.currentEmployee.id);
 				}
 
-				const validatedData = yield* _(validateInput(createEmployeeSchema, data));
+				const validatedData = yield* _(
+					validateInput(createEmployeeSchema, data),
+				);
 
 				yield* _(getTargetUser(validatedData.userId));
 
@@ -101,9 +116,9 @@ export async function createEmployeeAction(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: "Employee already exists for this user in this organization",
+								message:
+									"Employee already exists for this user in this organization",
 								field: "userId",
-								value: validatedData.userId,
 							}),
 						),
 					);
@@ -112,26 +127,38 @@ export async function createEmployeeAction(
 				const hourlyRateValue = parseHourlyRate(validatedData.hourlyRate);
 
 				const [newEmployee] = yield* _(
-					dbService.query("createEmployee", async () => {
-						return await dbService.db
-							.insert(employee)
-							.values({
-								userId: validatedData.userId,
-								organizationId: validatedData.organizationId,
-								teamId: validatedData.teamId || null,
-								role: validatedData.role,
-								position: validatedData.position || null,
-								gender: validatedData.gender || null,
-								pronouns: validatedData.pronouns || null,
-								birthday: validatedData.birthday || null,
-								startDate: validatedData.startDate || null,
-								endDate: validatedData.endDate || null,
-								isActive: true,
-								contractType: validatedData.contractType || "fixed",
-								currentHourlyRate: hourlyRateValue?.toString() || null,
-							})
-							.returning();
-					}),
+					dbService
+						.query("createEmployee", async () => {
+							return await dbService.db
+								.insert(employee)
+								.values({
+									userId: validatedData.userId,
+									organizationId: validatedData.organizationId,
+									teamId: validatedData.teamId || null,
+									role: validatedData.role,
+									position: validatedData.position || null,
+									gender: validatedData.gender || null,
+									pronouns: validatedData.pronouns || null,
+									birthday: validatedData.birthday || null,
+									startDate: validatedData.startDate || null,
+									endDate: validatedData.endDate || null,
+									isActive: true,
+									contractType: validatedData.contractType || "fixed",
+									currentHourlyRate: hourlyRateValue?.toString() || null,
+								})
+								.returning();
+						})
+						.pipe(
+							Effect.mapError((error) =>
+								isEmployeeIdentityConflict(error)
+									? new ValidationError({
+											message:
+												"Employee already exists for this user in this organization",
+											field: "userId",
+										})
+									: error,
+							),
+						),
 				);
 
 				if (
@@ -193,7 +220,9 @@ export async function updateEmployeeAction(
 					actor.accessTier === "manager"
 						? (filterEmployeeUpdateForScopedManager(data) as UpdateEmployee)
 						: data;
-				const validatedData = yield* _(validateInput(updateEmployeeSchema, inputData));
+				const validatedData = yield* _(
+					validateInput(updateEmployeeSchema, inputData),
+				);
 				const targetEmployee = yield* _(getTargetEmployee(employeeId));
 
 				yield* _(
@@ -245,7 +274,8 @@ export async function updateEmployeeAction(
 					actor.accessTier === "orgAdmin" &&
 					(firstName !== undefined || lastName !== undefined)
 				) {
-					const nextFirstName = firstName ?? targetEmployee.user?.firstName ?? "";
+					const nextFirstName =
+						firstName ?? targetEmployee.user?.firstName ?? "";
 					const nextLastName = lastName ?? targetEmployee.user?.lastName ?? "";
 					const authName = toAuthStructuredName({
 						firstName: nextFirstName,
@@ -313,7 +343,8 @@ export async function updateEmployeeAction(
 
 				const previousStartDate = dateToUtcIsoDate(targetEmployee.startDate);
 				const hasStartDateUpdate =
-					Object.hasOwn(scopedData, "startDate") && scopedData.startDate !== undefined;
+					Object.hasOwn(scopedData, "startDate") &&
+					scopedData.startDate !== undefined;
 				const nextStartDate = hasStartDateUpdate
 					? dateToUtcIsoDate(scopedData.startDate)
 					: previousStartDate;
@@ -347,8 +378,9 @@ export async function updateEmployeeAction(
 				}
 
 				const effectiveContractType =
-					("contractType" in scopedData ? scopedData.contractType : undefined) ??
-					targetEmployee.contractType;
+					("contractType" in scopedData
+						? scopedData.contractType
+						: undefined) ?? targetEmployee.contractType;
 				if (
 					effectiveContractType === "hourly" &&
 					newHourlyRate !== null &&
@@ -407,82 +439,59 @@ export async function updateEmployeeInvitationDraftAction(
 		name: "updateEmployeeInvitationDraft",
 		attributes: { "employeeDraft.id": draftEmployeeId },
 		logError: (error) => {
-			logger.error({ error, draftEmployeeId }, "Failed to update employee invitation draft");
+			logger.error(
+				{ error, draftEmployeeId },
+				"Failed to update employee invitation draft",
+			);
 		},
 		execute: () =>
 			Effect.gen(function* (_) {
 				const actor = yield* _(getEmployeeSettingsActorContext());
 				yield* _(
 					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only organization admins can update invited employee drafts",
+						message:
+							"Only organization admins can update invited employee drafts",
 						resource: "employee_invitation_draft",
 						action: "update",
 					}),
 				);
 
-				const draftId = decodeEmployeeInvitationDraftId(draftEmployeeId) ?? draftEmployeeId;
-				const validatedData = yield* _(validateInput(updateEmployeeInvitationDraftSchema, data));
+				const draftId =
+					decodeEmployeeInvitationDraftId(draftEmployeeId) ?? draftEmployeeId;
+				const validatedData = yield* _(
+					validateInput(updateEmployeeInvitationDraftSchema, data),
+				);
 				const targetDraft = yield* _(
-					actor.dbService.query("getEmployeeInvitationDraftForUpdate", async () => {
-						return await actor.dbService.db.query.employeeInvitationDraft.findFirst({
-							where: and(
-								eq(employeeInvitationDraft.id, draftId),
-								eq(employeeInvitationDraft.organizationId, actor.organizationId),
-							),
-							with: {
-								invitation: {
-									columns: {
-										status: true,
-									},
-								},
-							},
-						});
-					}),
+					actor.dbService.query(
+						"getEmployeeInvitationDraftForUpdate",
+						async () => {
+							const rows = await actor.dbService.db
+								.select({
+									id: employeeInvitationDraft.id,
+									normalizedEmail: employeeInvitationDraft.normalizedEmail,
+								})
+								.from(employeeInvitationDraft)
+								.where(
+									and(
+										eq(employeeInvitationDraft.id, draftId),
+										eq(
+											employeeInvitationDraft.organizationId,
+											actor.organizationId,
+										),
+									),
+								)
+								.limit(1);
+
+							return rows[0] ?? null;
+						},
+					),
 				);
 
 				if (!targetDraft) {
 					return yield* _(
 						Effect.fail(
-							new NotFoundError({
-								message: "Employee invitation draft not found",
-								entityType: "employee_invitation_draft",
-								entityId: draftId,
-							}),
-						),
-					);
-				}
-
-				const existingRealEmployee = yield* _(
-					actor.dbService.query("getEmployeeInvitationDraftRealEmployee", async () => {
-						const rows = await actor.dbService.db
-							.select({ id: realEmployee.id })
-							.from(employeeInvitationDraft)
-							.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
-							.innerJoin(realEmployeeUser, eq(realEmployeeUser.invitedVia, invitation.id))
-							.innerJoin(
-								realEmployee,
-								and(
-									eq(realEmployee.userId, realEmployeeUser.id),
-									eq(realEmployee.organizationId, actor.organizationId),
-								),
-							)
-							.where(
-								and(
-									eq(employeeInvitationDraft.id, draftId),
-									eq(employeeInvitationDraft.organizationId, actor.organizationId),
-								),
-							)
-							.limit(1);
-
-						return rows[0] ?? null;
-					}),
-				);
-
-				if (targetDraft.invitation?.status === "accepted" || existingRealEmployee) {
-					return yield* _(
-						Effect.fail(
 							new ValidationError({
-								message: "Edit the active employee record for accepted invitations",
+								message: "This invitation draft can no longer be edited",
 								field: "draftEmployeeId",
 								value: draftEmployeeId,
 							}),
@@ -493,14 +502,17 @@ export async function updateEmployeeInvitationDraftAction(
 				if (validatedData.teamId) {
 					const targetTeamId = validatedData.teamId;
 					const targetTeam = yield* _(
-						actor.dbService.query("getEmployeeInvitationDraftTeam", async () => {
-							return await actor.dbService.db.query.team.findFirst({
-								where: and(
-									eq(team.id, targetTeamId),
-									eq(team.organizationId, actor.organizationId),
-								),
-							});
-						}),
+						actor.dbService.query(
+							"getEmployeeInvitationDraftTeam",
+							async () => {
+								return await actor.dbService.db.query.team.findFirst({
+									where: and(
+										eq(team.id, targetTeamId),
+										eq(team.organizationId, actor.organizationId),
+									),
+								});
+							},
+						),
 					);
 
 					if (!targetTeam) {
@@ -517,28 +529,388 @@ export async function updateEmployeeInvitationDraftAction(
 				}
 
 				const hasHourlyRateUpdate = Object.hasOwn(validatedData, "hourlyRate");
-				const hourlyRate = hasHourlyRateUpdate ? parseHourlyRate(validatedData.hourlyRate) : null;
+				const hasTeamIdUpdate = Object.hasOwn(validatedData, "teamId");
+				const hourlyRate = hasHourlyRateUpdate
+					? parseHourlyRate(validatedData.hourlyRate)
+					: null;
 				const { hourlyRate: _hourlyRate, ...draftUpdate } = validatedData;
-				yield* _(
+				const updatedDrafts = yield* _(
 					actor.dbService.query("updateEmployeeInvitationDraft", async () => {
-						await actor.dbService.db
-							.update(employeeInvitationDraft)
-							.set({
-								...draftUpdate,
-								...(hasHourlyRateUpdate
-									? { currentHourlyRate: hourlyRate?.toString() ?? null }
-									: {}),
-								updatedBy: actor.session.user.id,
-								updatedAt: currentTimestamp(),
-							})
-							.where(
-								and(
-									eq(employeeInvitationDraft.id, draftId),
-									eq(employeeInvitationDraft.organizationId, actor.organizationId),
-								),
-							);
+						return await actor.dbService.db.transaction(
+							async (tx) => {
+								await acquireEmployeeIdentityLock(tx, {
+									organizationId: actor.organizationId,
+									normalizedEmail: targetDraft.normalizedEmail,
+								});
+
+								const [lockedDraft] = await tx
+									.select({
+										id: employeeInvitationDraft.id,
+										invitationId: employeeInvitationDraft.invitationId,
+									})
+									.from(employeeInvitationDraft)
+									.where(
+										and(
+											eq(employeeInvitationDraft.id, draftId),
+											eq(
+												employeeInvitationDraft.organizationId,
+												actor.organizationId,
+											),
+										),
+									)
+									.for("update");
+
+								if (!lockedDraft) return [];
+
+								const [lockedInvitation] = await tx
+									.select({ id: invitation.id })
+									.from(invitation)
+									.where(
+										and(
+											eq(invitation.id, lockedDraft.invitationId),
+											eq(invitation.organizationId, actor.organizationId),
+										),
+									)
+									.for("update");
+
+								if (!lockedInvitation) return [];
+
+								const now = dateFromInstant(systemClock.nowInstant());
+								const [eligibleDraft] = await tx
+									.select({ id: employeeInvitationDraft.id })
+									.from(employeeInvitationDraft)
+									.innerJoin(
+										invitation,
+										eq(employeeInvitationDraft.invitationId, invitation.id),
+									)
+									.where(
+										and(
+											buildEligibleInvitationDraftPredicate({
+												organizationId: actor.organizationId,
+												now,
+												draftId,
+											}),
+											eq(
+												employeeInvitationDraft.invitationId,
+												lockedDraft.invitationId,
+											),
+											eq(invitation.id, lockedDraft.invitationId),
+										),
+									)
+									.limit(1);
+
+								if (!eligibleDraft) return [];
+
+								const updatedDrafts = await tx
+									.update(employeeInvitationDraft)
+									.set({
+										...draftUpdate,
+										...(hasHourlyRateUpdate
+											? { currentHourlyRate: hourlyRate?.toString() ?? null }
+											: {}),
+										updatedBy: actor.session.user.id,
+										updatedAt: currentTimestamp(),
+									})
+									.where(
+										and(
+											eq(employeeInvitationDraft.id, draftId),
+											eq(
+												employeeInvitationDraft.organizationId,
+												actor.organizationId,
+											),
+										),
+									)
+									.returning({ id: employeeInvitationDraft.id });
+								if (updatedDrafts.length === 0 || !hasTeamIdUpdate) {
+									return updatedDrafts;
+								}
+
+								await tx
+									.update(invitation)
+									.set({ targetTeamId: validatedData.teamId ?? null })
+									.where(
+										and(
+											eq(invitation.id, lockedInvitation.id),
+											eq(invitation.organizationId, actor.organizationId),
+											eq(invitation.status, "pending"),
+										),
+									);
+
+								return updatedDrafts;
+							},
+							{ isolationLevel: "serializable" },
+						);
 					}),
 				);
+
+				if (updatedDrafts.length === 0) {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "This invitation draft can no longer be edited",
+								field: "draftEmployeeId",
+								value: draftEmployeeId,
+							}),
+						),
+					);
+				}
+
+				revalidateEmployeesCache(actor.organizationId);
+			}),
+	});
+}
+
+export async function deleteEmployeeInvitationDraftAction(
+	draftEmployeeId: string,
+): Promise<ServerActionResult<void>> {
+	return runTracedEmployeeAction({
+		name: "deleteEmployeeInvitationDraft",
+		attributes: { "employeeDraft.id": draftEmployeeId },
+		logError: (error) => {
+			logger.error(
+				{ error, draftEmployeeId },
+				"Failed to delete employee invitation draft",
+			);
+		},
+		execute: () =>
+			Effect.gen(function* (_) {
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				yield* _(
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message:
+							"Only organization admins can delete invited employee drafts",
+						resource: "employee_invitation_draft",
+						action: "delete",
+					}),
+				);
+
+				const draftId =
+					decodeEmployeeInvitationDraftId(draftEmployeeId) ?? draftEmployeeId;
+				const outcome = yield* _(
+					actor.dbService.query("deleteEmployeeInvitationDraft", async () => {
+						return await actor.dbService.db.transaction(async (tx) => {
+							const [draftIdentity] = await tx
+								.select({
+									normalizedEmail: employeeInvitationDraft.normalizedEmail,
+								})
+								.from(employeeInvitationDraft)
+								.where(
+									and(
+										eq(employeeInvitationDraft.id, draftId),
+										eq(
+											employeeInvitationDraft.organizationId,
+											actor.organizationId,
+										),
+									),
+								)
+								.limit(1);
+
+							if (!draftIdentity) return "notFound" as const;
+
+							await acquireEmployeeIdentityLock(tx, {
+								organizationId: actor.organizationId,
+								normalizedEmail: draftIdentity.normalizedEmail,
+							});
+
+							const [lockedDraft] = await tx
+								.select({
+									id: employeeInvitationDraft.id,
+									invitationId: employeeInvitationDraft.invitationId,
+									normalizedEmail: employeeInvitationDraft.normalizedEmail,
+									invitationStatus: invitation.status,
+									invitationExpiresAt: invitation.expiresAt,
+								})
+								.from(employeeInvitationDraft)
+								.innerJoin(
+									invitation,
+									eq(employeeInvitationDraft.invitationId, invitation.id),
+								)
+								.where(
+									and(
+										eq(employeeInvitationDraft.id, draftId),
+										eq(
+											employeeInvitationDraft.organizationId,
+											actor.organizationId,
+										),
+										eq(invitation.organizationId, actor.organizationId),
+									),
+								)
+								.limit(1)
+								.for("update", { of: employeeInvitationDraft });
+
+							if (
+								!lockedDraft ||
+								lockedDraft.normalizedEmail !== draftIdentity.normalizedEmail
+							) {
+								return "notFound" as const;
+							}
+
+							const [existingEmployee] = await tx
+								.select({ id: employee.id })
+								.from(employee)
+								.innerJoin(user, eq(employee.userId, user.id))
+								.where(
+									and(
+										eq(employee.organizationId, actor.organizationId),
+										sql`lower(btrim(${user.email})) = ${lockedDraft.normalizedEmail}`,
+									),
+								)
+								.limit(1);
+
+							if (existingEmployee) return "employeeExists" as const;
+							if (lockedDraft.invitationStatus === "accepted")
+								return "accepted" as const;
+
+							const actionable = isInvitationActionable({
+								status: lockedDraft.invitationStatus,
+								expiresAt: lockedDraft.invitationExpiresAt,
+							});
+							if (actionable) {
+								const cancellationNow = dateFromInstant(
+									systemClock.nowInstant(),
+								);
+								const canceledInvitations = await tx
+									.update(invitation)
+									.set({ status: "canceled" })
+									.where(
+										and(
+											eq(invitation.id, lockedDraft.invitationId),
+											eq(invitation.organizationId, actor.organizationId),
+											eq(invitation.status, "pending"),
+											gt(invitation.expiresAt, cancellationNow),
+										),
+									)
+									.returning({ id: invitation.id });
+
+								if (canceledInvitations.length === 0) {
+									const [currentDraft] = await tx
+										.select({
+											invitationId: employeeInvitationDraft.invitationId,
+										})
+										.from(employeeInvitationDraft)
+										.where(
+											and(
+												eq(employeeInvitationDraft.id, draftId),
+												eq(
+													employeeInvitationDraft.organizationId,
+													actor.organizationId,
+												),
+											),
+										)
+										.limit(1);
+
+									if (currentDraft?.invitationId !== lockedDraft.invitationId) {
+										return "cancellationFailed" as const;
+									}
+
+									const [currentInvitation] = await tx
+										.select({
+											status: invitation.status,
+											expiresAt: invitation.expiresAt,
+										})
+										.from(invitation)
+										.where(
+											and(
+												eq(invitation.id, lockedDraft.invitationId),
+												eq(invitation.organizationId, actor.organizationId),
+											),
+										)
+										.for("update");
+
+									if (
+										!currentInvitation ||
+										currentInvitation.status === "accepted"
+									) {
+										return "cancellationFailed" as const;
+									}
+
+									const becameStale =
+										currentInvitation.status === "canceled" ||
+										currentInvitation.status === "rejected" ||
+										(currentInvitation.status === "pending" &&
+											!isInvitationActionable(currentInvitation));
+									if (!becameStale) return "cancellationFailed" as const;
+								}
+							} else {
+								const [currentInvitation] = await tx
+									.select({
+										status: invitation.status,
+										expiresAt: invitation.expiresAt,
+									})
+									.from(invitation)
+									.where(
+										and(
+											eq(invitation.id, lockedDraft.invitationId),
+											eq(invitation.organizationId, actor.organizationId),
+										),
+									)
+									.for("update");
+
+								if (!currentInvitation) return "raceLost" as const;
+
+								const isStillStale =
+									currentInvitation.status === "canceled" ||
+									currentInvitation.status === "rejected" ||
+									(currentInvitation.status === "pending" &&
+										!isInvitationActionable(currentInvitation));
+								if (!isStillStale) return "raceLost" as const;
+							}
+
+							const deletedDrafts = await tx
+								.delete(employeeInvitationDraft)
+								.where(
+									and(
+										eq(employeeInvitationDraft.id, draftId),
+										eq(
+											employeeInvitationDraft.organizationId,
+											actor.organizationId,
+										),
+										eq(
+											employeeInvitationDraft.invitationId,
+											lockedDraft.invitationId,
+										),
+									),
+								)
+								.returning({ id: employeeInvitationDraft.id });
+
+							return deletedDrafts.length === 1
+								? ("deleted" as const)
+								: ("raceLost" as const);
+						});
+					}),
+				);
+
+				if (outcome === "cancellationFailed") {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: invitationCancellationFailureMessage,
+								field: "draftEmployeeId",
+							}),
+						),
+					);
+				}
+				if (outcome === "employeeExists") {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message:
+									"This invitation draft is already associated with an employee",
+								field: "draftEmployeeId",
+							}),
+						),
+					);
+				}
+				if (outcome !== "deleted") {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "This invitation draft can no longer be deleted",
+								field: "draftEmployeeId",
+							}),
+						),
+					);
+				}
 
 				revalidateEmployeesCache(actor.organizationId);
 			}),
@@ -551,7 +923,10 @@ export async function requestEmployeeWorkBalanceRecalculationAction(
 	return runTracedEmployeeAction({
 		name: "requestEmployeeWorkBalanceRecalculation",
 		logError: (error) => {
-			logger.error({ error }, "Failed to request employee work balance recalculation");
+			logger.error(
+				{ error },
+				"Failed to request employee work balance recalculation",
+			);
 		},
 		execute: (span) =>
 			Effect.gen(function* (_) {
@@ -563,25 +938,29 @@ export async function requestEmployeeWorkBalanceRecalculationAction(
 
 				yield* _(
 					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only organization admins can recalculate employee work balances",
+						message:
+							"Only organization admins can recalculate employee work balances",
 						resource: "employee_work_balance",
 						action: "recalculate_work_balance",
 					}),
 				);
 
 				const targetEmployee = yield* _(
-					dbService.query("getEmployeeForWorkBalanceRecalculation", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: and(
-								eq(employee.id, validatedEmployeeId),
-								eq(employee.organizationId, actor.organizationId),
-							),
-							columns: {
-								id: true,
-								organizationId: true,
-							},
-						});
-					}),
+					dbService.query(
+						"getEmployeeForWorkBalanceRecalculation",
+						async () => {
+							return await dbService.db.query.employee.findFirst({
+								where: and(
+									eq(employee.id, validatedEmployeeId),
+									eq(employee.organizationId, actor.organizationId),
+								),
+								columns: {
+									id: true,
+									organizationId: true,
+								},
+							});
+						},
+					),
 				);
 
 				if (!targetEmployee) {
@@ -597,7 +976,10 @@ export async function requestEmployeeWorkBalanceRecalculationAction(
 				}
 
 				span.setAttribute("employee.id", targetEmployee.id);
-				span.setAttribute("employee.organizationId", targetEmployee.organizationId);
+				span.setAttribute(
+					"employee.organizationId",
+					targetEmployee.organizationId,
+				);
 				span.setAttribute("requestedBy.userId", actor.session.user.id);
 
 				yield* _(
@@ -621,7 +1003,9 @@ export async function requestEmployeeWorkBalanceRecalculationAction(
 	});
 }
 
-function dateToUtcIsoDate(value: Date | string | null | undefined): string | null {
+function dateToUtcIsoDate(
+	value: Date | string | null | undefined,
+): string | null {
 	if (!value) return null;
 	return (
 		typeof value === "string"
@@ -643,7 +1027,9 @@ export async function updateOwnProfileAction(
 				const { dbService, currentEmployee } = yield* _(getEmployeeContext());
 				span.setAttribute("employee.id", currentEmployee.id);
 
-				const validatedData = yield* _(validateInput(personalInformationSchema, data, "profile"));
+				const validatedData = yield* _(
+					validateInput(personalInformationSchema, data, "profile"),
+				);
 				const {
 					firstName: _firstName,
 					lastName: _lastName,
@@ -662,7 +1048,10 @@ export async function updateOwnProfileAction(
 					}),
 				);
 
-				logger.info({ employeeId: currentEmployee.id }, "Profile updated successfully");
+				logger.info(
+					{ employeeId: currentEmployee.id },
+					"Profile updated successfully",
+				);
 			}),
 	});
 }
@@ -702,16 +1091,26 @@ export async function assignManagersAction(
 					}),
 				);
 
-				const validatedData = yield* _(validateInput(assignManagersSchema, data));
-				const existingManagers = yield* _(managerService.getManagers(employeeId));
+				const validatedData = yield* _(
+					validateInput(assignManagersSchema, data),
+				);
+				const existingManagers = yield* _(
+					managerService.getManagers(employeeId),
+				);
 
 				for (const existingManager of existingManagers) {
-					if (validatedData.managers.some((manager) => manager.managerId === existingManager.id)) {
+					if (
+						validatedData.managers.some(
+							(manager) => manager.managerId === existingManager.id,
+						)
+					) {
 						continue;
 					}
 
 					if (existingManagers.length > 1) {
-						yield* _(managerService.removeManager(employeeId, existingManager.id));
+						yield* _(
+							managerService.removeManager(employeeId, existingManager.id),
+						);
 					}
 				}
 

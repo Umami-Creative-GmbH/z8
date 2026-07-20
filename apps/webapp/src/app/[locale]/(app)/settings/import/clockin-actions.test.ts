@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
 	requireUser: vi.fn(),
+	requireActiveActor: vi.fn(),
 	findFirst: vi.fn(),
 	clockinTestConnection: vi.fn(),
 	clockinGetEmployees: vi.fn(),
@@ -22,6 +23,10 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 
 vi.mock("@/lib/auth-helpers", () => ({
 	requireUser: mockState.requireUser,
+}));
+
+vi.mock("@/lib/auth/organization-action-authorization", () => ({
+	runActiveOrganizationActionActorCheck: mockState.requireActiveActor,
 }));
 
 vi.mock("@/db", () => ({
@@ -72,9 +77,8 @@ vi.mock("@/lib/clockin/client", () => ({
 	},
 }));
 
-const { fetchClockinEmployees, importClockinData, validateClockinCredentials } = await import(
-	"./clockin-actions"
-);
+const { fetchClockinEmployees, importClockinData, validateClockinCredentials } =
+	await import("./clockin-actions");
 
 describe("Clockin actions", () => {
 	beforeEach(() => {
@@ -84,6 +88,7 @@ describe("Clockin actions", () => {
 			session: { activeOrganizationId: "org_123" },
 		});
 		mockState.findFirst.mockResolvedValue({ role: "admin" });
+		mockState.requireActiveActor.mockResolvedValue({});
 		mockState.clockinTestConnection.mockResolvedValue({ success: true });
 		mockState.clockinGetEmployees.mockResolvedValue([]);
 		mockState.clockinSearchWorkdays.mockResolvedValue([]);
@@ -92,7 +97,7 @@ describe("Clockin actions", () => {
 	});
 
 	it("returns unauthorized when the current user is not an admin", async () => {
-		mockState.findFirst.mockResolvedValue({ role: "employee" });
+		mockState.requireActiveActor.mockRejectedValue(new Error("Unauthorized"));
 
 		const result = await validateClockinCredentials("token", "org_123");
 
@@ -102,7 +107,12 @@ describe("Clockin actions", () => {
 
 	it("fetches provider employees for authorized admins", async () => {
 		mockState.clockinGetEmployees.mockResolvedValue([
-			{ id: 1, first_name: "Ada", last_name: "Lovelace", email: "ada@example.com" },
+			{
+				id: 1,
+				first_name: "Ada",
+				last_name: "Lovelace",
+				email: "ada@example.com",
+			},
 		]);
 
 		const result = await fetchClockinEmployees("token", "org_123");
@@ -128,7 +138,8 @@ describe("Clockin actions", () => {
 
 		expect(result).toEqual({
 			success: false,
-			error: "Direct Clockin imports are disabled. Start an import review scan instead.",
+			error:
+				"Direct Clockin imports are disabled. Start an import review scan instead.",
 		});
 		expect(mockState.requireUser).not.toHaveBeenCalled();
 	});

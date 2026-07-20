@@ -35,14 +35,27 @@ export function getEmployeeContext(options?: { organizationId?: string; queryNam
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 		const dbService = yield* _(DatabaseService);
+		const organizationId =
+			options?.organizationId ?? session.session.activeOrganizationId;
 
-		const where = options?.organizationId
-			? and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, options.organizationId),
-					eq(employee.isActive, true),
-				)
-			: and(eq(employee.userId, session.user.id), eq(employee.isActive, true));
+		if (!organizationId) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "No active organization selected",
+						userId: session.user.id,
+						resource: "employee_profile",
+						action: "update",
+					}),
+				),
+			);
+		}
+
+		const where = and(
+			eq(employee.userId, session.user.id),
+			eq(employee.organizationId, organizationId),
+			eq(employee.isActive, true),
+		);
 
 		const currentEmployee = yield* _(
 			dbService.query(options?.queryName ?? "getCurrentEmployee", async () => {
@@ -89,6 +102,7 @@ export function getEmployeeSettingsActorContext(options?: {
 							where: and(
 								eq(member.userId, session.user.id),
 								eq(member.organizationId, organizationId),
+								eq(member.status, "approved"),
 							),
 							columns: { role: true },
 						});
@@ -101,13 +115,38 @@ export function getEmployeeSettingsActorContext(options?: {
 							where: and(
 								eq(employee.userId, session.user.id),
 								eq(employee.organizationId, organizationId),
-								eq(employee.isActive, true),
 							),
 						});
 					},
 				),
 			]),
 		);
+
+		if (!membershipRecord) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "You do not have access to employee settings",
+						userId: session.user.id,
+						resource: "employee_settings",
+						action: "access",
+					}),
+				),
+			);
+		}
+
+		if (employeeRecord?.isActive === false) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Organization access is inactive",
+						userId: session.user.id,
+						resource: "employee_settings",
+						action: "access",
+					}),
+				),
+			);
+		}
 
 		const accessTier = resolveSettingsAccessTier({
 			activeOrganizationId: organizationId,

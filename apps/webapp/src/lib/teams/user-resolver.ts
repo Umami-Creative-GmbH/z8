@@ -9,6 +9,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, teamsUserMapping } from "@/db/schema";
+import { resolveCommandActorEmployee } from "@/lib/integrations/resolve-command-actor";
 import { createLogger } from "@/lib/logger";
 import type { UserResolutionResult } from "./types";
 
@@ -43,13 +44,10 @@ export async function resolveTeamsUser(
 
 		if (existing) {
 			// Get employee ID for this user in this org
-			const emp = await db.query.employee.findFirst({
-				where: and(
-					eq(employee.userId, existing.userId),
-					eq(employee.organizationId, existing.organizationId),
-				),
-				columns: { id: true },
-			});
+			const emp = await resolveCommandActorEmployee(
+				existing.userId,
+				existing.organizationId,
+			);
 
 			if (!emp) {
 				logger.warn(
@@ -94,7 +92,10 @@ export async function resolveTeamsUser(
 		});
 
 		if (!matchedUser) {
-			logger.debug({ teamsEmail: normalizedEmail }, "No Z8 user found with this email");
+			logger.debug(
+				{ teamsEmail: normalizedEmail },
+				"No Z8 user found with this email",
+			);
 			return { status: "not_linked", teamsUserId, teamsEmail: normalizedEmail };
 		}
 
@@ -105,6 +106,13 @@ export async function resolveTeamsUser(
 
 		if (!emp) {
 			logger.debug({ userId: matchedUser.id }, "User has no employee record");
+			return { status: "no_employee", userId: matchedUser.id };
+		}
+		const activeEmployee = await resolveCommandActorEmployee(
+			matchedUser.id,
+			emp.organizationId,
+		);
+		if (!activeEmployee) {
 			return { status: "no_employee", userId: matchedUser.id };
 		}
 
@@ -133,7 +141,7 @@ export async function resolveTeamsUser(
 			status: "found",
 			user: {
 				userId: matchedUser.id,
-				employeeId: emp.id,
+				employeeId: activeEmployee.id,
 				organizationId: emp.organizationId,
 				teamsUserId,
 				teamsEmail: normalizedEmail,
@@ -142,7 +150,10 @@ export async function resolveTeamsUser(
 			},
 		};
 	} catch (error) {
-		logger.error({ error, teamsUserId, teamsEmail }, "Failed to resolve Teams user");
+		logger.error(
+			{ error, teamsUserId, teamsEmail },
+			"Failed to resolve Teams user",
+		);
 		throw error;
 	}
 }
@@ -181,7 +192,10 @@ export async function getTeamsMapping(
 			teamsTenantId: mapping.teamsTenantId,
 		};
 	} catch (error) {
-		logger.error({ error, userId, organizationId }, "Failed to get Teams mapping");
+		logger.error(
+			{ error, userId, organizationId },
+			"Failed to get Teams mapping",
+		);
 		return null;
 	}
 }
@@ -209,7 +223,10 @@ export async function deactivateTeamsMapping(
 
 		logger.info({ userId, organizationId }, "Deactivated Teams user mapping");
 	} catch (error) {
-		logger.error({ error, userId, organizationId }, "Failed to deactivate Teams mapping");
+		logger.error(
+			{ error, userId, organizationId },
+			"Failed to deactivate Teams mapping",
+		);
 	}
 }
 
@@ -219,7 +236,9 @@ export async function deactivateTeamsMapping(
  * @param organizationId - Z8 organization ID
  * @returns Array of user mappings
  */
-export async function getOrganizationTeamsMappings(organizationId: string): Promise<
+export async function getOrganizationTeamsMappings(
+	organizationId: string,
+): Promise<
 	Array<{
 		userId: string;
 		teamsUserId: string;
@@ -244,7 +263,10 @@ export async function getOrganizationTeamsMappings(organizationId: string): Prom
 			lastSeenAt: m.lastSeenAt,
 		}));
 	} catch (error) {
-		logger.error({ error, organizationId }, "Failed to get organization Teams mappings");
+		logger.error(
+			{ error, organizationId },
+			"Failed to get organization Teams mappings",
+		);
 		return [];
 	}
 }

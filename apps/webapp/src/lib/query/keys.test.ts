@@ -22,3 +22,19 @@ describe("queryKeys.notifications", () => {
 		);
 	});
 });
+
+describe("queryKeys.employees", () => {
+	it("provides an organization prefix for employee queries", () => {
+		expect(queryKeys.employees.organization("org-1")).toEqual(["employees", "org-1"]);
+		expect(queryKeys.employees.list("org-1", { page: 2 }).slice(0, 2)).toEqual(
+			queryKeys.employees.organization("org-1"),
+		);
+	});
+});
+
+describe("queryKeys.members", () => {
+	it("provides an organization prefix without changing the list key shape", () => {
+		expect(queryKeys.members.organization("org-1")).toEqual(["members", "org-1"]);
+		expect(queryKeys.members.list("org-1")).toEqual(["members", "org-1", undefined]);
+	});
+});

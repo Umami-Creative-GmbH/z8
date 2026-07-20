@@ -1,3 +1,8 @@
+import {
+	hasOrganizationRole,
+	type OrganizationRoleValue,
+} from "@/lib/auth/organization-role";
+
 export type SettingsAccessTier = "member" | "manager" | "orgAdmin";
 
 export const ORG_ADMIN_SETTINGS_ROUTES = [
@@ -29,9 +34,13 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/implementation-checklist",
 ] as const;
 
-export type SettingsAccessMembershipRole = "owner" | "admin" | "member" | null;
+export type SettingsAccessMembershipRole = OrganizationRoleValue;
 
-export type SettingsAccessEmployeeRole = "admin" | "manager" | "employee" | null;
+export type SettingsAccessEmployeeRole =
+	| "admin"
+	| "manager"
+	| "employee"
+	| null;
 
 export interface ResolveSettingsAccessTierInput {
 	activeOrganizationId: string | null;
@@ -40,9 +49,13 @@ export interface ResolveSettingsAccessTierInput {
 }
 
 export function isSettingsAccessMembershipRole(
-	role: string | null | undefined,
-): role is Exclude<SettingsAccessMembershipRole, null> {
-	return role === "owner" || role === "admin" || role === "member";
+	role: unknown,
+): role is Exclude<OrganizationRoleValue, null | undefined> {
+	return (
+		hasOrganizationRole(role, "owner") ||
+		hasOrganizationRole(role, "admin") ||
+		hasOrganizationRole(role, "member")
+	);
 }
 
 const SETTINGS_ACCESS_RANK: Record<SettingsAccessTier, number> = {
@@ -60,7 +73,10 @@ export function resolveSettingsAccessTier({
 		return "member";
 	}
 
-	if (membershipRole === "owner" || membershipRole === "admin") {
+	if (
+		hasOrganizationRole(membershipRole, "owner") ||
+		hasOrganizationRole(membershipRole, "admin")
+	) {
 		return "orgAdmin";
 	}
 
@@ -75,11 +91,20 @@ export function hasSettingsAccessTier(
 	currentTier: SettingsAccessTier,
 	requiredTier: SettingsAccessTier,
 ): boolean {
-	return SETTINGS_ACCESS_RANK[currentTier] >= SETTINGS_ACCESS_RANK[requiredTier];
+	return (
+		SETTINGS_ACCESS_RANK[currentTier] >= SETTINGS_ACCESS_RANK[requiredTier]
+	);
 }
 
-export function canResolvedTierAccessRoute(accessTier: SettingsAccessTier, route: string): boolean {
-	if (!ORG_ADMIN_SETTINGS_ROUTES.includes(route as (typeof ORG_ADMIN_SETTINGS_ROUTES)[number])) {
+export function canResolvedTierAccessRoute(
+	accessTier: SettingsAccessTier,
+	route: string,
+): boolean {
+	if (
+		!ORG_ADMIN_SETTINGS_ROUTES.includes(
+			route as (typeof ORG_ADMIN_SETTINGS_ROUTES)[number],
+		)
+	) {
 		return true;
 	}
 

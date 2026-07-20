@@ -7,16 +7,24 @@ import { z } from "zod";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
+import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	type AnyAppError,
 	AuthorizationError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import {
+	DatabaseService,
+	DatabaseServiceLive,
+} from "@/lib/effect/services/database.service";
 import type {
 	InviteCodeWithRelations as InviteCodeWithRelationsType,
 	ValidateInviteCodeResult,
@@ -25,13 +33,22 @@ import {
 	InviteCodeService,
 	InviteCodeServiceLive,
 } from "@/lib/effect/services/invite-code.service";
-import type { ApprovalResult, PendingMember } from "@/lib/effect/services/pending-member.service";
+import type {
+	ApprovalResult,
+	PendingMember,
+} from "@/lib/effect/services/pending-member.service";
 import {
 	PendingMemberService,
 	PendingMemberServiceLive,
 } from "@/lib/effect/services/pending-member.service";
-import type { QRCodeFormat, QRCodeResult } from "@/lib/effect/services/qrcode.service";
-import { QRCodeService, QRCodeServiceLive } from "@/lib/effect/services/qrcode.service";
+import type {
+	QRCodeFormat,
+	QRCodeResult,
+} from "@/lib/effect/services/qrcode.service";
+import {
+	QRCodeService,
+	QRCodeServiceLive,
+} from "@/lib/effect/services/qrcode.service";
 
 // Note: Types are NOT re-exported from server action files due to Turbopack bundling issues.
 // Import types directly from the service files:
@@ -53,7 +70,10 @@ const createInviteCodeSchema = z.object({
 		.string()
 		.min(4)
 		.max(20)
-		.regex(/^[A-Z0-9][A-Z0-9-]*[A-Z0-9]$/, "Code must be alphanumeric with optional hyphens")
+		.regex(
+			/^[A-Z0-9][A-Z0-9-]*[A-Z0-9]$/,
+			"Code must be alphanumeric with optional hyphens",
+		)
 		.optional(),
 	label: z.string().min(1).max(100),
 	description: z.string().max(500).optional(),
@@ -119,33 +139,19 @@ export async function createInviteCode(
 			return Effect.gen(function* (_) {
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
 				const inviteCodeService = yield* _(InviteCodeService);
 
-				// Verify admin/owner role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, data.organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId: data.organizationId,
+						requiredRole: "admin",
+						message:
+							"Only active approved admins and owners can create invite codes",
+						resource: "inviteCode",
+						action: "create",
 					}),
 				);
-
-				if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and owners can create invite codes",
-								userId: session.user.id,
-								resource: "inviteCode",
-								action: "create",
-							}),
-						),
-					);
-				}
 
 				// Validate input
 				const validationResult = createInviteCodeSchema.safeParse(data);
@@ -153,8 +159,10 @@ export async function createInviteCode(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error.issues[0]?.message || "Invalid input",
-								field: validationResult.error.issues[0]?.path?.join(".") || "data",
+								message:
+									validationResult.error.issues[0]?.message || "Invalid input",
+								field:
+									validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
@@ -178,14 +186,30 @@ export async function createInviteCode(
 				);
 
 				// Get the full record with relations
-				const fullCode = yield* _(inviteCodeService.getById(inviteCode.id));
+				const fullCode = yield* _(
+					inviteCodeService.getById(inviteCode.id, data.organizationId),
+				);
+				if (!fullCode) {
+					return yield* _(
+						Effect.fail(
+							new NotFoundError({
+								message: "Invite code not found",
+								entityType: "inviteCode",
+								entityId: inviteCode.id,
+							}),
+						),
+					);
+				}
 
 				span.setStatus({ code: SpanStatusCode.OK });
-				return fullCode!;
+				return fullCode;
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -224,33 +248,18 @@ export async function updateInviteCode(
 			return Effect.gen(function* (_) {
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
 				const inviteCodeService = yield* _(InviteCodeService);
-
-				// Verify admin/owner role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "admin",
+						message:
+							"Only active approved admins and owners can update invite codes",
+						resource: "inviteCode",
+						action: "update",
 					}),
 				);
-
-				if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and owners can update invite codes",
-								userId: session.user.id,
-								resource: "inviteCode",
-								action: "update",
-							}),
-						),
-					);
-				}
 
 				// Validate input
 				const validationResult = updateInviteCodeSchema.safeParse(data);
@@ -258,8 +267,10 @@ export async function updateInviteCode(
 					yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error.issues[0]?.message || "Invalid input",
-								field: validationResult.error.issues[0]?.path?.join(".") || "data",
+								message:
+									validationResult.error.issues[0]?.message || "Invalid input",
+								field:
+									validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
@@ -267,21 +278,37 @@ export async function updateInviteCode(
 
 				// Update the invite code
 				yield* _(
-					inviteCodeService.update(inviteCodeId, {
+					inviteCodeService.update(inviteCodeId, organizationId, {
 						...validationResult.data,
 						updatedBy: session.user.id,
 					}),
 				);
 
 				// Get the full record with relations
-				const fullCode = yield* _(inviteCodeService.getById(inviteCodeId));
+				const fullCode = yield* _(
+					inviteCodeService.getById(inviteCodeId, organizationId),
+				);
+				if (!fullCode) {
+					return yield* _(
+						Effect.fail(
+							new NotFoundError({
+								message: "Invite code not found",
+								entityType: "inviteCode",
+								entityId: inviteCodeId,
+							}),
+						),
+					);
+				}
 
 				span.setStatus({ code: SpanStatusCode.OK });
-				return fullCode!;
+				return fullCode;
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -319,41 +346,35 @@ export async function deleteInviteCode(
 			return Effect.gen(function* (_) {
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
 				const inviteCodeService = yield* _(InviteCodeService);
-
-				// Verify admin/owner role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "admin",
+						message:
+							"Only active approved admins and owners can delete invite codes",
+						resource: "inviteCode",
+						action: "delete",
 					}),
 				);
 
-				if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and owners can delete invite codes",
-								userId: session.user.id,
-								resource: "inviteCode",
-								action: "delete",
-							}),
-						),
-					);
-				}
-
-				yield* _(inviteCodeService.delete(inviteCodeId, session.user.id));
+				yield* _(
+					inviteCodeService.delete(
+						inviteCodeId,
+						organizationId,
+						session.user.id,
+					),
+				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -392,6 +413,17 @@ export async function listInviteCodes(
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
 				const inviteCodeService = yield* _(InviteCodeService);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "admin",
+						message:
+							"Only active approved admins and owners can view invite codes",
+						resource: "inviteCode",
+						action: "read",
+					}),
+				);
 
 				// Verify admin/owner role
 				const memberRecord = yield* _(
@@ -405,7 +437,11 @@ export async function listInviteCodes(
 					}),
 				);
 
-				if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
+				if (
+					!memberRecord ||
+					(!hasOrganizationRole(memberRecord.role, "admin") &&
+						!hasOrganizationRole(memberRecord.role, "owner"))
+				) {
 					yield* _(
 						Effect.fail(
 							new AuthorizationError({
@@ -430,7 +466,10 @@ export async function listInviteCodes(
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -454,7 +493,12 @@ export async function getInviteCodeStats(
 	inviteCodeId: string,
 	organizationId: string,
 ): Promise<
-	ServerActionResult<{ total: number; pending: number; approved: number; rejected: number }>
+	ServerActionResult<{
+		total: number;
+		pending: number;
+		approved: number;
+		rejected: number;
+	}>
 > {
 	const tracer = trace.getTracer("invite-codes");
 
@@ -472,6 +516,17 @@ export async function getInviteCodeStats(
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
 				const inviteCodeService = yield* _(InviteCodeService);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "admin",
+						message:
+							"Only active approved admins and owners can view invite code stats",
+						resource: "inviteCode",
+						action: "read",
+					}),
+				);
 
 				// Verify admin/owner role
 				const memberRecord = yield* _(
@@ -485,7 +540,11 @@ export async function getInviteCodeStats(
 					}),
 				);
 
-				if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
+				if (
+					!memberRecord ||
+					(!hasOrganizationRole(memberRecord.role, "admin") &&
+						!hasOrganizationRole(memberRecord.role, "owner"))
+				) {
 					yield* _(
 						Effect.fail(
 							new AuthorizationError({
@@ -498,14 +557,19 @@ export async function getInviteCodeStats(
 					);
 				}
 
-				const stats = yield* _(inviteCodeService.getUsageStats(inviteCodeId));
+				const stats = yield* _(
+					inviteCodeService.getUsageStats(inviteCodeId, organizationId),
+				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return stats;
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -548,6 +612,17 @@ export async function generateInviteQRCode(
 				const dbService = yield* _(DatabaseService);
 				const inviteCodeService = yield* _(InviteCodeService);
 				const qrCodeService = yield* _(QRCodeService);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "admin",
+						message:
+							"Only active approved admins and owners can generate QR codes",
+						resource: "inviteCode",
+						action: "read",
+					}),
+				);
 
 				// Verify admin/owner role
 				const memberRecord = yield* _(
@@ -561,7 +636,11 @@ export async function generateInviteQRCode(
 					}),
 				);
 
-				if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
+				if (
+					!memberRecord ||
+					(!hasOrganizationRole(memberRecord.role, "admin") &&
+						!hasOrganizationRole(memberRecord.role, "owner"))
+				) {
 					yield* _(
 						Effect.fail(
 							new AuthorizationError({
@@ -575,10 +654,12 @@ export async function generateInviteQRCode(
 				}
 
 				// Get the invite code
-				const inviteCode = yield* _(inviteCodeService.getById(inviteCodeId));
+				const inviteCode = yield* _(
+					inviteCodeService.getById(inviteCodeId, organizationId),
+				);
 
 				if (!inviteCode) {
-					yield* _(
+					return yield* _(
 						Effect.fail(
 							new NotFoundError({
 								message: "Invite code not found",
@@ -590,9 +671,11 @@ export async function generateInviteQRCode(
 				}
 
 				// Generate QR code
-				const baseUrl = yield* _(Effect.promise(() => getOrganizationBaseUrl(organizationId)));
+				const baseUrl = yield* _(
+					Effect.promise(() => getOrganizationBaseUrl(organizationId)),
+				);
 				const qrResult = yield* _(
-					qrCodeService.generateInviteQR(inviteCode!.code, baseUrl, format).pipe(
+					qrCodeService.generateInviteQR(inviteCode.code, baseUrl, format).pipe(
 						Effect.mapError(
 							(err) =>
 								new ValidationError({
@@ -608,7 +691,10 @@ export async function generateInviteQRCode(
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -627,7 +713,9 @@ export async function generateInviteQRCode(
 /**
  * Generate a random invite code
  */
-export async function generateRandomCode(): Promise<ServerActionResult<string>> {
+export async function generateRandomCode(): Promise<
+	ServerActionResult<string>
+> {
 	const effect = Effect.gen(function* (_) {
 		const inviteCodeService = yield* _(InviteCodeService);
 		return yield* _(inviteCodeService.generateCode());
@@ -647,6 +735,17 @@ export async function getInviteBaseUrl(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 		const dbService = yield* _(DatabaseService);
+		yield* _(
+			requireActiveOrganizationActionActor({
+				userId: session.user.id,
+				organizationId,
+				requiredRole: "admin",
+				message:
+					"Only active approved admins and owners can access invite links",
+				resource: "inviteCode",
+				action: "read",
+			}),
+		);
 
 		const memberRecord = yield* _(
 			dbService.query("getCurrentMember", async () => {
@@ -659,7 +758,11 @@ export async function getInviteBaseUrl(
 			}),
 		);
 
-		if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
+		if (
+			!memberRecord ||
+			(!hasOrganizationRole(memberRecord.role, "admin") &&
+				!hasOrganizationRole(memberRecord.role, "owner"))
+		) {
 			yield* _(
 				Effect.fail(
 					new AuthorizationError({
@@ -672,7 +775,9 @@ export async function getInviteBaseUrl(
 			);
 		}
 
-		return yield* _(Effect.promise(() => getOrganizationBaseUrl(organizationId)));
+		return yield* _(
+			Effect.promise(() => getOrganizationBaseUrl(organizationId)),
+		);
 	});
 
 	return runServerActionSafe(effect.pipe(Effect.provide(InviteCodeLayer)));
@@ -704,6 +809,17 @@ export async function listPendingMembers(
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
 				const pendingMemberService = yield* _(PendingMemberService);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "admin",
+						message:
+							"Only active approved admins and owners can view pending members",
+						resource: "pendingMember",
+						action: "read",
+					}),
+				);
 
 				// Verify admin/owner role
 				const memberRecord = yield* _(
@@ -717,7 +833,11 @@ export async function listPendingMembers(
 					}),
 				);
 
-				if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
+				if (
+					!memberRecord ||
+					(!hasOrganizationRole(memberRecord.role, "admin") &&
+						!hasOrganizationRole(memberRecord.role, "owner"))
+				) {
 					yield* _(
 						Effect.fail(
 							new AuthorizationError({
@@ -730,14 +850,19 @@ export async function listPendingMembers(
 					);
 				}
 
-				const pendingMembers = yield* _(pendingMemberService.listPending({ organizationId }));
+				const pendingMembers = yield* _(
+					pendingMemberService.listPending({ organizationId }),
+				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return pendingMembers;
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -775,6 +900,17 @@ export async function getPendingMemberCount(
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
 				const pendingMemberService = yield* _(PendingMemberService);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "admin",
+						message:
+							"Only active approved admins and owners can view pending member count",
+						resource: "pendingMember",
+						action: "read",
+					}),
+				);
 
 				// Verify admin/owner role
 				const memberRecord = yield* _(
@@ -788,7 +924,11 @@ export async function getPendingMemberCount(
 					}),
 				);
 
-				if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
+				if (
+					!memberRecord ||
+					(!hasOrganizationRole(memberRecord.role, "admin") &&
+						!hasOrganizationRole(memberRecord.role, "owner"))
+				) {
 					yield* _(
 						Effect.fail(
 							new AuthorizationError({
@@ -801,14 +941,19 @@ export async function getPendingMemberCount(
 					);
 				}
 
-				const count = yield* _(pendingMemberService.countPending(organizationId));
+				const count = yield* _(
+					pendingMemberService.countPending(organizationId),
+				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return count;
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -845,33 +990,18 @@ export async function approvePendingMember(
 			return Effect.gen(function* (_) {
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
 				const pendingMemberService = yield* _(PendingMemberService);
-
-				// Verify admin/owner role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, data.organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId: data.organizationId,
+						requiredRole: "admin",
+						message:
+							"Only active approved admins and owners can approve members",
+						resource: "pendingMember",
+						action: "approve",
 					}),
 				);
-
-				if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and owners can approve members",
-								userId: session.user.id,
-								resource: "pendingMember",
-								action: "approve",
-							}),
-						),
-					);
-				}
 
 				// Validate input
 				const validationResult = approveMemberSchema.safeParse(data);
@@ -879,8 +1009,10 @@ export async function approvePendingMember(
 					yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error.issues[0]?.message || "Invalid input",
-								field: validationResult.error.issues[0]?.path?.join(".") || "data",
+								message:
+									validationResult.error.issues[0]?.message || "Invalid input",
+								field:
+									validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
@@ -901,7 +1033,10 @@ export async function approvePendingMember(
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -938,33 +1073,18 @@ export async function rejectPendingMember(
 			return Effect.gen(function* (_) {
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
 				const pendingMemberService = yield* _(PendingMemberService);
-
-				// Verify admin/owner role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, data.organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId: data.organizationId,
+						requiredRole: "admin",
+						message:
+							"Only active approved admins and owners can reject members",
+						resource: "pendingMember",
+						action: "reject",
 					}),
 				);
-
-				if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and owners can reject members",
-								userId: session.user.id,
-								resource: "pendingMember",
-								action: "reject",
-							}),
-						),
-					);
-				}
 
 				// Validate input
 				const validationResult = rejectMemberSchema.safeParse(data);
@@ -972,8 +1092,10 @@ export async function rejectPendingMember(
 					yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error.issues[0]?.message || "Invalid input",
-								field: validationResult.error.issues[0]?.path?.join(".") || "data",
+								message:
+									validationResult.error.issues[0]?.message || "Invalid input",
+								field:
+									validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
@@ -993,7 +1115,10 @@ export async function rejectPendingMember(
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -1032,33 +1157,18 @@ export async function bulkApprovePendingMembers(
 			return Effect.gen(function* (_) {
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
 				const pendingMemberService = yield* _(PendingMemberService);
-
-				// Verify admin/owner role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "admin",
+						message:
+							"Only active approved admins and owners can approve members",
+						resource: "pendingMember",
+						action: "approve",
 					}),
 				);
-
-				if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and owners can approve members",
-								userId: session.user.id,
-								resource: "pendingMember",
-								action: "approve",
-							}),
-						),
-					);
-				}
 
 				const result = yield* _(
 					pendingMemberService.bulkApprove(
@@ -1074,7 +1184,10 @@ export async function bulkApprovePendingMembers(
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -1113,36 +1226,26 @@ export async function bulkRejectPendingMembers(
 			return Effect.gen(function* (_) {
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
 				const pendingMemberService = yield* _(PendingMemberService);
-
-				// Verify admin/owner role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "admin",
+						message:
+							"Only active approved admins and owners can reject members",
+						resource: "pendingMember",
+						action: "reject",
 					}),
 				);
 
-				if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and owners can reject members",
-								userId: session.user.id,
-								resource: "pendingMember",
-								action: "reject",
-							}),
-						),
-					);
-				}
-
 				const result = yield* _(
-					pendingMemberService.bulkReject(memberIds, organizationId, session.user.id, notes),
+					pendingMemberService.bulkReject(
+						memberIds,
+						organizationId,
+						session.user.id,
+						notes,
+					),
 				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -1150,7 +1253,10 @@ export async function bulkRejectPendingMembers(
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -1195,7 +1301,10 @@ export async function validateInviteCode(
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -1216,7 +1325,9 @@ export async function validateInviteCode(
  * This is called after signup when the user registered via /join/{code}
  * The code will be processed after email verification
  */
-export async function storePendingInviteCode(code: string): Promise<ServerActionResult<void>> {
+export async function storePendingInviteCode(
+	code: string,
+): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("invite-codes");
 
 	const effect = tracer.startActiveSpan(
@@ -1234,12 +1345,18 @@ export async function storePendingInviteCode(code: string): Promise<ServerAction
 
 				yield* _(inviteCodeService.setPendingInviteCode(session.user.id, code));
 
-				logger.info({ userId: session.user.id, code }, "Stored pending invite code for user");
+				logger.info(
+					{ userId: session.user.id, code },
+					"Stored pending invite code for user",
+				);
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),
@@ -1268,43 +1385,56 @@ export async function processPendingInviteCode(): Promise<
 > {
 	const tracer = trace.getTracer("invite-codes");
 
-	const effect = tracer.startActiveSpan("processPendingInviteCode", {}, (span) => {
-		return Effect.gen(function* (_) {
-			const authService = yield* _(AuthService);
-			const session = yield* _(authService.getSession());
-			const inviteCodeService = yield* _(InviteCodeService);
+	const effect = tracer.startActiveSpan(
+		"processPendingInviteCode",
+		{},
+		(span) => {
+			return Effect.gen(function* (_) {
+				const authService = yield* _(AuthService);
+				const session = yield* _(authService.getSession());
+				const inviteCodeService = yield* _(InviteCodeService);
 
-			const result = yield* _(inviteCodeService.processPendingInviteCode(session.user.id));
-
-			if (result) {
-				logger.info(
-					{ userId: session.user.id, organizationId: result.organizationId, status: result.status },
-					"Processed pending invite code",
+				const result = yield* _(
+					inviteCodeService.processPendingInviteCode(session.user.id),
 				);
-			}
 
-			span.setStatus({ code: SpanStatusCode.OK });
-			return result
-				? {
-						success: result.success,
-						status: result.status,
-						organizationName: result.organizationName,
-					}
-				: null;
-		}).pipe(
-			Effect.tapError((error) =>
-				Effect.sync(() => {
-					span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
-					span.end();
-				}),
-			),
-			Effect.tap(() =>
-				Effect.sync(() => {
-					span.end();
-				}),
-			),
-		);
-	});
+				if (result) {
+					logger.info(
+						{
+							userId: session.user.id,
+							organizationId: result.organizationId,
+							status: result.status,
+						},
+						"Processed pending invite code",
+					);
+				}
+
+				span.setStatus({ code: SpanStatusCode.OK });
+				return result
+					? {
+							success: result.success,
+							status: result.status,
+							organizationName: result.organizationName,
+						}
+					: null;
+			}).pipe(
+				Effect.tapError((error) =>
+					Effect.sync(() => {
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
+						span.end();
+					}),
+				),
+				Effect.tap(() =>
+					Effect.sync(() => {
+						span.end();
+					}),
+				),
+			);
+		},
+	);
 
 	return runServerActionSafe(effect.pipe(Effect.provide(InviteCodeLayer)));
 }
@@ -1312,7 +1442,9 @@ export async function processPendingInviteCode(): Promise<
 /**
  * Get a user's pending invite code (if any)
  */
-export async function getPendingInviteCode(): Promise<ServerActionResult<string | null>> {
+export async function getPendingInviteCode(): Promise<
+	ServerActionResult<string | null>
+> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -1332,7 +1464,11 @@ export async function redeemInviteCode(
 	ipAddress?: string,
 	userAgent?: string,
 ): Promise<
-	ServerActionResult<{ success: boolean; status: "pending" | "approved"; organizationName: string }>
+	ServerActionResult<{
+		success: boolean;
+		status: "pending" | "approved";
+		organizationName: string;
+	}>
 > {
 	const tracer = trace.getTracer("invite-codes");
 
@@ -1367,7 +1503,10 @@ export async function redeemInviteCode(
 			}).pipe(
 				Effect.tapError((error) =>
 					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: (error as AnyAppError).message,
+						});
 						span.end();
 					}),
 				),

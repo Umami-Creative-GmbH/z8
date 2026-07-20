@@ -14,8 +14,9 @@ import type { NextRequest } from "next/server";
 import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { employee, teamsTenantConfig } from "@/db/schema";
+import { teamsTenantConfig } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { runActiveOrganizationActionActorCheck as requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { createLogger } from "@/lib/logger";
@@ -94,17 +95,16 @@ export async function POST(request: NextRequest) {
 		if (session.session.activeOrganizationId !== organizationId) {
 			return NextResponse.json({ error: "Access denied" }, { status: 403 });
 		}
-
-		// Verify user has admin access using CASL
-		// First check they're a member of the organization
-		const emp = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.userId, session.user.id),
-				eq(employee.organizationId, organizationId),
-			),
-		});
-
-		if (!emp) {
+		try {
+			await requireActiveOrganizationActionActor({
+				userId: session.user.id,
+				organizationId,
+				requiredRole: "admin",
+				message: "Only active approved admins and owners can configure Teams",
+				resource: "teamsIntegration",
+				action: "create",
+			});
+		} catch {
 			return NextResponse.json({ error: "Access denied" }, { status: 403 });
 		}
 
@@ -239,16 +239,16 @@ export async function DELETE(request: NextRequest) {
 		if (session.session.activeOrganizationId !== organizationId) {
 			return NextResponse.json({ error: "Access denied" }, { status: 403 });
 		}
-
-		// Verify user has admin access using CASL
-		const emp = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.userId, session.user.id),
-				eq(employee.organizationId, organizationId),
-			),
-		});
-
-		if (!emp) {
+		try {
+			await requireActiveOrganizationActionActor({
+				userId: session.user.id,
+				organizationId,
+				requiredRole: "admin",
+				message: "Only active approved admins and owners can disconnect Teams",
+				resource: "teamsIntegration",
+				action: "delete",
+			});
+		} catch {
 			return NextResponse.json({ error: "Access denied" }, { status: 403 });
 		}
 

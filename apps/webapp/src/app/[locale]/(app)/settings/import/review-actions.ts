@@ -3,13 +3,16 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { env } from "@/env";
+import { runActiveOrganizationActionActorCheck } from "@/lib/auth/organization-action-authorization";
 import { requireUser } from "@/lib/auth-helpers";
 import { encryptImportCredential } from "@/lib/import-review/credential-secret";
 import { partitionDateRangeByMonth } from "@/lib/import-review/partitioning";
-import { enqueueImportCommitJob, enqueueImportScanJob } from "@/lib/import-review/queue";
+import {
+	enqueueImportCommitJob,
+	enqueueImportScanJob,
+} from "@/lib/import-review/queue";
 import {
 	applyImportRowDecision,
 	createCommitJobsForAcceptedRows,
@@ -31,7 +34,9 @@ import type {
 	ImportRowStatus,
 } from "@/lib/import-review/types";
 
-type ActionResult<T> = { success: true; data: T } | { success: false; error: string };
+type ActionResult<T> =
+	| { success: true; data: T }
+	| { success: false; error: string };
 
 const MAX_EMPLOYEE_IDS = 500;
 const MAX_EMPLOYEE_ID_LENGTH = 128;
@@ -89,7 +94,8 @@ export interface StartImportReviewScanInput {
 	entityTypes: ImportEntityType[];
 }
 
-interface ValidatedStartImportReviewScanInput extends StartImportReviewScanInput {
+interface ValidatedStartImportReviewScanInput
+	extends StartImportReviewScanInput {
 	credential: string;
 	employeeMappings: ImportEmployeeMapping[];
 }
@@ -142,7 +148,9 @@ function validateSafeId(value: unknown, label: string): string {
 	return value.trim();
 }
 
-function validateImportReviewBatchInput(input: unknown): ImportReviewBatchInput {
+function validateImportReviewBatchInput(
+	input: unknown,
+): ImportReviewBatchInput {
 	if (!isRecord(input)) throw new Error("Invalid import review input");
 
 	return {
@@ -151,7 +159,9 @@ function validateImportReviewBatchInput(input: unknown): ImportReviewBatchInput 
 	};
 }
 
-function validateListImportReviewRowsInput(input: unknown): ListImportReviewRowsInput {
+function validateListImportReviewRowsInput(
+	input: unknown,
+): ListImportReviewRowsInput {
 	const batchInput = validateImportReviewBatchInput(input);
 	if (!isRecord(input)) throw new Error("Invalid import review row list input");
 
@@ -188,7 +198,9 @@ function validateListImportReviewRowsInput(input: unknown): ListImportReviewRows
 	};
 }
 
-function validateApplyImportDecisionInput(input: unknown): ApplyImportDecisionInput {
+function validateApplyImportDecisionInput(
+	input: unknown,
+): ApplyImportDecisionInput {
 	const batchInput = validateImportReviewBatchInput(input);
 	if (!isRecord(input)) throw new Error("Invalid import review decision input");
 
@@ -200,7 +212,9 @@ function validateApplyImportDecisionInput(input: unknown): ApplyImportDecisionIn
 		throw new Error("Too many import review rows requested");
 	}
 
-	const rowIds = input.rowIds.map((rowId) => validateSafeId(rowId, "Import review row ID"));
+	const rowIds = input.rowIds.map((rowId) =>
+		validateSafeId(rowId, "Import review row ID"),
+	);
 	if (new Set(rowIds).size !== rowIds.length) {
 		throw new Error("Duplicate import review row IDs are not allowed");
 	}
@@ -211,7 +225,8 @@ function validateApplyImportDecisionInput(input: unknown): ApplyImportDecisionIn
 
 	let reason: string | null | undefined;
 	if (input.reason !== undefined && input.reason !== null) {
-		if (typeof input.reason !== "string") throw new Error("Invalid import review decision reason");
+		if (typeof input.reason !== "string")
+			throw new Error("Invalid import review decision reason");
 		reason = input.reason.trim();
 		if (reason.length > MAX_DECISION_REASON_LENGTH)
 			throw new Error("Import review decision reason is too long");
@@ -226,12 +241,17 @@ function validateApplyImportDecisionInput(input: unknown): ApplyImportDecisionIn
 	};
 }
 
-function validateStartImportReviewScanInput(input: unknown): ValidatedStartImportReviewScanInput {
+function validateStartImportReviewScanInput(
+	input: unknown,
+): ValidatedStartImportReviewScanInput {
 	if (!isRecord(input)) {
 		throw new Error("Invalid import review scan input");
 	}
 
-	if (typeof input.organizationId !== "string" || input.organizationId.trim().length === 0) {
+	if (
+		typeof input.organizationId !== "string" ||
+		input.organizationId.trim().length === 0
+	) {
 		throw new Error("Organization ID is required");
 	}
 
@@ -239,7 +259,8 @@ function validateStartImportReviewScanInput(input: unknown): ValidatedStartImpor
 		throw new Error("Invalid import provider");
 	}
 
-	const credential = typeof input.credential === "string" ? input.credential.trim() : "";
+	const credential =
+		typeof input.credential === "string" ? input.credential.trim() : "";
 	if (!credential) {
 		throw new Error("Import credential is required");
 	}
@@ -288,11 +309,17 @@ function validateStartImportReviewScanInput(input: unknown): ValidatedStartImpor
 		}
 
 		employeeMappings = input.employeeMappings.map((mapping) => {
-			if (!isRecord(mapping)) throw new Error("Invalid import employee mapping");
+			if (!isRecord(mapping))
+				throw new Error("Invalid import employee mapping");
 
 			const providerEmployeeId =
-				typeof mapping.providerEmployeeId === "string" ? mapping.providerEmployeeId.trim() : "";
-			if (!providerEmployeeId || providerEmployeeId.length > MAX_EMPLOYEE_ID_LENGTH) {
+				typeof mapping.providerEmployeeId === "string"
+					? mapping.providerEmployeeId.trim()
+					: "";
+			if (
+				!providerEmployeeId ||
+				providerEmployeeId.length > MAX_EMPLOYEE_ID_LENGTH
+			) {
 				throw new Error("Invalid import provider employee ID");
 			}
 
@@ -317,7 +344,8 @@ function validateStartImportReviewScanInput(input: unknown): ValidatedStartImpor
 
 	if (
 		input.entityTypes.some(
-			(entityType) => typeof entityType !== "string" || !isImportEntityType(entityType),
+			(entityType) =>
+				typeof entityType !== "string" || !isImportEntityType(entityType),
 		)
 	) {
 		throw new Error("Invalid import entity type");
@@ -341,18 +369,25 @@ async function validateMappedEmployeeOwnership(
 ): Promise<void> {
 	if (employeeMappings.length === 0) return;
 
-	const mappedEmployeeIds = [...new Set(employeeMappings.map((mapping) => mapping.employeeId))];
+	const mappedEmployeeIds = [
+		...new Set(employeeMappings.map((mapping) => mapping.employeeId)),
+	];
 	const validEmployees = await db
 		.select({ id: employee.id })
 		.from(employee)
 		.where(
-			and(eq(employee.organizationId, organizationId), inArray(employee.id, mappedEmployeeIds)),
+			and(
+				eq(employee.organizationId, organizationId),
+				inArray(employee.id, mappedEmployeeIds),
+			),
 		);
 
 	const validIds = new Set(validEmployees.map((entry) => entry.id));
 	const invalidIds = mappedEmployeeIds.filter((id) => !validIds.has(id));
 	if (invalidIds.length > 0) {
-		throw new Error("One or more mapped employee IDs do not belong to this organization");
+		throw new Error(
+			"One or more mapped employee IDs do not belong to this organization",
+		);
 	}
 }
 
@@ -370,16 +405,14 @@ function sanitizeErrorMessage(
 
 export async function requireImportAdmin(organizationId: string) {
 	const authContext = await requireUser();
-	const memberRecord = await db.query.member.findFirst({
-		where: and(
-			eq(authSchema.member.userId, authContext.user.id),
-			eq(authSchema.member.organizationId, organizationId),
-		),
+	await runActiveOrganizationActionActorCheck({
+		userId: authContext.user.id,
+		organizationId,
+		requiredRole: "admin",
+		message: "Only active approved admins and owners can manage imports",
+		resource: "importReview",
+		action: "manage",
 	});
-
-	if (!memberRecord || (memberRecord.role !== "owner" && memberRecord.role !== "admin")) {
-		throw new Error("Unauthorized");
-	}
 
 	return authContext;
 }
@@ -394,7 +427,10 @@ export async function startImportReviewScan(
 		const validated = validateStartImportReviewScanInput(input);
 		credential = validated.credential;
 		const authContext = await requireImportAdmin(validated.organizationId);
-		await validateMappedEmployeeOwnership(validated.employeeMappings, validated.organizationId);
+		await validateMappedEmployeeOwnership(
+			validated.employeeMappings,
+			validated.organizationId,
+		);
 
 		const datePartitions = partitionDateRangeByMonth(
 			validated.dateRange.startDate,
@@ -440,7 +476,6 @@ export async function startImportReviewScan(
 					throw new Error("Failed to create import scan job");
 				}
 
-
 				return { jobId: job.id, entityType, dateRange };
 			}),
 		);
@@ -454,16 +489,16 @@ export async function startImportReviewScan(
 		await Promise.all(
 			scanJobs.map((job) =>
 				enqueueImportScanJob({
-				type: "import-review-scan",
-				batchId: batch.id,
-				jobId: job.jobId,
-				organizationId: validated.organizationId,
-				provider: validated.provider,
-				entityType: job.entityType,
-				dateRange: job.dateRange,
-				employeeIds: validated.employeeIds,
-				employeeMappings: validated.employeeMappings,
-				secretId: secret.id,
+					type: "import-review-scan",
+					batchId: batch.id,
+					jobId: job.jobId,
+					organizationId: validated.organizationId,
+					provider: validated.provider,
+					entityType: job.entityType,
+					dateRange: job.dateRange,
+					employeeIds: validated.employeeIds,
+					employeeMappings: validated.employeeMappings,
+					secretId: secret.id,
 				}),
 			),
 		);
@@ -536,7 +571,9 @@ export async function applyImportDecisionAction(
 
 export async function exportRejectedRowsAction(
 	input: unknown,
-): Promise<ActionResult<{ exportId: string; fileName: string; content: string }>> {
+): Promise<
+	ActionResult<{ exportId: string; fileName: string; content: string }>
+> {
 	try {
 		const validated = validateImportReviewBatchInput(input);
 		const authContext = await requireImportAdmin(validated.organizationId);
@@ -552,7 +589,11 @@ export async function exportRejectedRowsAction(
 
 		return {
 			success: true,
-			data: { exportId: rejectedExport.id, fileName: rejectedExport.fileName, content },
+			data: {
+				exportId: rejectedExport.id,
+				fileName: rejectedExport.fileName,
+				content,
+			},
 		};
 	} catch (error) {
 		return { success: false, error: sanitizeErrorMessage(error) };
@@ -641,7 +682,11 @@ export async function startImportCommitAction(
 
 		return { success: true, data: { queuedCount: jobs.length } };
 	} catch (error) {
-		const errorMessage = sanitizeErrorMessage(error, undefined, GENERIC_COMMIT_START_ERROR);
+		const errorMessage = sanitizeErrorMessage(
+			error,
+			undefined,
+			GENERIC_COMMIT_START_ERROR,
+		);
 
 		if (batchContext) {
 			await updateImportBatchStatus({

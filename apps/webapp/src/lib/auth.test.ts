@@ -2,14 +2,19 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import * as authModule from "./auth";
-import { makeEmailLookupCaseInsensitiveAdapter, resolveInvitationTargetTeamId } from "./auth";
+import {
+	makeEmailLookupCaseInsensitiveAdapter,
+	resolveInvitationTargetTeamId,
+} from "./auth";
 
 describe("resolveInvitationTargetTeamId", () => {
 	it("returns valid stored target team ids that still exist in the invitation organization", async () => {
 		const db = {
 			query: {
 				team: {
-					findFirst: async () => ({ id: "11111111-1111-4111-8111-111111111111" }),
+					findFirst: async () => ({
+						id: "11111111-1111-4111-8111-111111111111",
+					}),
 				},
 			},
 		};
@@ -81,7 +86,9 @@ describe("billing seat sync hooks", () => {
 		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
 		const acceptInvitationHook = source.slice(
 			source.indexOf("afterAcceptInvitation"),
-			source.indexOf("// Create employee record when user is added to organization"),
+			source.indexOf(
+				"// Create employee record when user is added to organization",
+			),
 		);
 
 		expect(acceptInvitationHook).toContain("syncBillingSeats");
@@ -92,67 +99,147 @@ describe("billing seat sync hooks", () => {
 		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
 		const acceptInvitationHook = source.slice(
 			source.indexOf("afterAcceptInvitation"),
-			source.indexOf("// Create employee record when user is added to organization"),
+			source.indexOf(
+				"// Create employee record when user is added to organization",
+			),
 		);
 		expect(acceptInvitationHook).toContain("invitationId: invitation.id");
+		expect(acceptInvitationHook).toContain('mode: "membershipAccepted"');
+	});
+
+	it("resolves organization creation permission through the stable invitation draft fallback", () => {
+		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
+		const acceptInvitationHook = source.slice(
+			source.indexOf("afterAcceptInvitation"),
+			source.indexOf(
+				"// Create employee record when user is added to organization",
+			),
+		);
+
+		expect(acceptInvitationHook).toContain(
+			"resolveAcceptedInvitationCanCreateOrganizations",
+		);
+		expect(acceptInvitationHook).toContain(
+			"normalizeInvitationEmail(invitation.email)",
+		);
+	});
+
+	it("resolves independent invitation acceptance fields in parallel", () => {
+		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
+		const acceptInvitationHook = source.slice(
+			source.indexOf("afterAcceptInvitation"),
+			source.indexOf(
+				"// Create employee record when user is added to organization",
+			),
+		);
+
+		expect(acceptInvitationHook).toContain(
+			"const [targetTeamId, canCreateOrganizations] = await Promise.all([",
+		);
+		expect(acceptInvitationHook).toContain("resolveInvitationTargetTeamId(");
+		expect(acceptInvitationHook).toContain(
+			"resolveAcceptedInvitationCanCreateOrganizations(db,",
+		);
+	});
+
+	it("uses explicit membership acceptance provisioning after directly adding a member", () => {
+		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
+		const addMemberHook = source.slice(
+			source.indexOf("afterAddMember"),
+			source.indexOf("// Sync seat count when member is removed"),
+		);
+
+		expect(addMemberHook).toContain('mode: "membershipAccepted"');
 	});
 });
 
 describe("organization member removal", () => {
-	it("revokes organization-scoped employee and session access", async () => {
-		const revokeRemovedMemberAccess = (
+	it("runs idempotent access cleanup before removed-seat reconciliation", async () => {
+		const completeRemovedMemberCleanup = (
 			authModule as typeof authModule & {
-				revokeRemovedMemberAccess?: (
-					userId: string,
-					organizationId: string,
+				completeRemovedMemberCleanup?: (
+					input: {
+						organizationId: string;
+						userId: string;
+					},
 					dependencies: {
-						db: unknown;
-						secondaryStorage: { delete: (key: string) => Promise<void> };
+						revokeRemovedMemberAccess: (
+							userId: string,
+							organizationId: string,
+						) => Promise<void>;
+						reconcileBillingSeatsForOrganization: (
+							organizationId: string,
+						) => Promise<void>;
 					},
 				) => Promise<void>;
 			}
-		).revokeRemovedMemberAccess;
-		expect(revokeRemovedMemberAccess).toBeTypeOf("function");
-
-		const sessionRows = [{ token: "session-1" }, { token: "session-2" }];
-		const selectBuilder = {
-			from: vi.fn(),
-			where: vi.fn(),
-		};
-		selectBuilder.from.mockReturnValue(selectBuilder);
-		selectBuilder.where.mockResolvedValue(sessionRows);
-		const updateWhere = vi.fn().mockResolvedValue(undefined);
-		const updateSet = vi.fn().mockReturnValue({ where: updateWhere });
-		const deleteWhere = vi.fn().mockResolvedValue(undefined);
-		const db = {
-			select: vi.fn(() => selectBuilder),
-			update: vi.fn(() => ({ set: updateSet })),
-			delete: vi.fn(() => ({ where: deleteWhere })),
-		};
-		const deleteStorage = vi.fn().mockResolvedValue(undefined);
-
-		await revokeRemovedMemberAccess?.("user-1", "org-1", {
-			db,
-			secondaryStorage: { delete: deleteStorage },
+		).completeRemovedMemberCleanup;
+		expect(completeRemovedMemberCleanup).toBeTypeOf("function");
+		const events: string[] = [];
+		const revokeRemovedMemberAccess = vi.fn().mockImplementation(async () => {
+			events.push("access-revoked");
 		});
+		const reconcileBillingSeatsForOrganization = vi
+			.fn()
+			.mockImplementation(async () => {
+				events.push("billing-reconciled");
+			});
 
-		expect(updateSet).toHaveBeenCalledWith({ isActive: false });
-		expect(deleteWhere).toHaveBeenCalledOnce();
-		expect(deleteStorage).toHaveBeenCalledWith("session-1");
-		expect(deleteStorage).toHaveBeenCalledWith("session-2");
+		await completeRemovedMemberCleanup?.(
+			{
+				organizationId: "org-1",
+				userId: "user-1",
+			},
+			{ revokeRemovedMemberAccess, reconcileBillingSeatsForOrganization },
+		);
+
+		expect(revokeRemovedMemberAccess).toHaveBeenCalledExactlyOnceWith(
+			"user-1",
+			"org-1",
+		);
+		expect(
+			reconcileBillingSeatsForOrganization,
+		).toHaveBeenCalledExactlyOnceWith("org-1", { strict: true });
+		expect(events).toEqual(["access-revoked", "billing-reconciled"]);
 	});
 
-	it("invokes access revocation from the removal hook and disables cookie-only sessions", () => {
+	it("stops post-removal cleanup before billing when access revocation fails", async () => {
+		const cleanupError = new Error("secondary session storage unavailable");
+		const revokeRemovedMemberAccess = vi.fn().mockRejectedValue(cleanupError);
+		const reconcileBillingSeatsForOrganization = vi.fn();
+
+		await expect(
+			authModule.completeRemovedMemberCleanup(
+				{
+					organizationId: "org-1",
+					userId: "user-1",
+				},
+				{ revokeRemovedMemberAccess, reconcileBillingSeatsForOrganization },
+			),
+		).rejects.toBe(cleanupError);
+		expect(reconcileBillingSeatsForOrganization).not.toHaveBeenCalled();
+	});
+
+	it("runs access revocation and billing only after membership removal", () => {
 		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
-		const redisSource = readFileSync(join(process.cwd(), "src/lib/redis.ts"), "utf8");
-		const removalHook = source.slice(
+		const revocationSource = readFileSync(
+			join(process.cwd(), "src/lib/auth/organization-session-revocation.ts"),
+			"utf8",
+		);
+		const beforeRemovalHook = source.slice(
+			source.indexOf("beforeRemoveMember"),
+			source.indexOf("afterRemoveMember"),
+		);
+		const afterRemovalHook = source.slice(
 			source.indexOf("afterRemoveMember"),
 			source.indexOf("},", source.indexOf("afterRemoveMember")) + 2,
 		);
 
-		expect(removalHook).toContain("revokeRemovedMemberAccess");
-		expect(source).toContain("deleteOrThrow");
-		expect(redisSource).toContain("deleteOrThrow");
+		expect(beforeRemovalHook).not.toContain("revokeRemovedMemberAccess");
+		expect(beforeRemovalHook).not.toContain("completeRemovedMemberCleanup");
+		expect(beforeRemovalHook).not.toContain("syncBillingSeats");
+		expect(afterRemovalHook).toContain("completeRemovedMemberCleanup");
+		expect(revocationSource).toContain("secondaryStorage.deleteOrThrow(token)");
 		expect(source).not.toContain("cookieCache: {");
 	});
 });
@@ -173,7 +260,9 @@ describe("makeEmailLookupCaseInsensitiveAdapter", () => {
 
 		expect(findOne).toHaveBeenCalledWith({
 			model: "user",
-			where: [{ field: "email", value: "USER@Example.com", mode: "insensitive" }],
+			where: [
+				{ field: "email", value: "USER@Example.com", mode: "insensitive" },
+			],
 		});
 	});
 

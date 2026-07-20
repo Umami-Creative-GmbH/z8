@@ -1,9 +1,8 @@
 "use server";
 
 import { and, asc, count, desc, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
-import { invitation, user } from "@/db/auth-schema";
+import { invitation, member, user } from "@/db/auth-schema";
 import {
 	employee,
 	employeeInvitationDraft,
@@ -12,6 +11,7 @@ import {
 	workPolicyAssignment,
 } from "@/db/schema";
 import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -21,6 +21,7 @@ import type {
 	EmployeeDirectoryStatus,
 	EmployeeInvitationDraftWithRelations,
 	EmployeeListParams,
+	EmployeeMembershipSummary,
 	EmployeeSelectParams,
 	EmployeeSelectResponse,
 	EmployeeWithRelations,
@@ -35,10 +36,9 @@ import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeSettingsActorContext,
 } from "./employee-action-utils";
+import { buildEligibleInvitationDraftPredicate } from "./employee-invitation-draft-eligibility";
 
 const DEFAULT_LIMIT = 20;
-const realEmployee = alias(employee, "realEmployee");
-const realEmployeeUser = alias(user, "realEmployeeUser");
 
 type EmployeeFilterParams = Omit<EmployeeSelectParams, "status"> & {
 	status?: EmployeeDirectoryStatus;
@@ -117,12 +117,14 @@ function mapEmployeeRow(row: {
 	employee: typeof employee.$inferSelect;
 	user: typeof user.$inferSelect;
 	team: typeof team.$inferSelect | null;
+	membership: EmployeeMembershipSummary | null;
 }): EmployeeWithRelations {
 	return {
 		...row.employee,
 		kind: "employee",
 		user: row.user,
 		team: row.team,
+		membership: row.membership?.id ? row.membership : null,
 	};
 }
 
@@ -130,7 +132,6 @@ function mapDraftRow(row: {
 	draft: typeof employeeInvitationDraft.$inferSelect;
 	invitation: typeof invitation.$inferSelect;
 	team: typeof team.$inferSelect | null;
-	realEmployee: Pick<typeof employee.$inferSelect, "id"> | null;
 }): EmployeeInvitationDraftWithRelations {
 	const displayName = [row.draft.firstName, row.draft.lastName].filter(Boolean).join(" ").trim();
 	return {
@@ -140,9 +141,10 @@ function mapDraftRow(row: {
 		userId: row.draft.id,
 		invitation: row.invitation,
 		team: row.team,
+		membership: null,
 		isActive: false,
 		invitationStatus: row.invitation.status,
-		realEmployeeId: row.realEmployee?.id ?? null,
+		realEmployeeId: null,
 		user: {
 			id: row.draft.id,
 			firstName: row.draft.firstName,
@@ -170,13 +172,14 @@ function mapDraftRow(row: {
 
 function buildInvitationDraftFilters(
 	organizationId: string,
+	now: Date,
 	params: Pick<EmployeeFilterParams, "search" | "role" | "roles" | "status" | "teamId">,
 ) {
 	if (params.status === "active" || params.status === "inactive") {
 		return null;
 	}
 
-	const conditions = [eq(employeeInvitationDraft.organizationId, organizationId)];
+	const conditions = [buildEligibleInvitationDraftPredicate({ organizationId, now })];
 
 	if (params.role && params.role !== "all") {
 		conditions.push(eq(employeeInvitationDraft.role, params.role));
@@ -242,6 +245,19 @@ function loadEmployeePage(params: EmployeeListParams) {
 	return Effect.gen(function* (_) {
 		const actor = yield* _(getEmployeeSettingsActorContext());
 		const { dbService } = actor;
+		const approvedMembership = dbService.db
+			.select({ id: member.id, role: member.role, status: member.status })
+			.from(member)
+			.where(
+				and(
+					eq(member.userId, employee.userId),
+					eq(member.organizationId, actor.organizationId),
+					eq(member.status, "approved"),
+				),
+			)
+			.orderBy(desc(member.createdAt), desc(member.id))
+			.limit(1)
+			.as("approved_employee_membership");
 		yield* _(
 			dbService.query("reconcileOrganizationEmployeeProfiles", async () => {
 				await ensureEmployeeProfilesForOrganizationMembers(dbService.db, actor.organizationId);
@@ -270,10 +286,20 @@ function loadEmployeePage(params: EmployeeListParams) {
 					}),
 					dbService.query("listEmployees", async () => {
 						return await dbService.db
-							.select({ employee, user, team })
+							.select({
+								employee,
+								user,
+								team,
+								membership: {
+									id: approvedMembership.id,
+									role: approvedMembership.role,
+									status: approvedMembership.status,
+								},
+							})
 							.from(employee)
 							.innerJoin(user, eq(employee.userId, user.id))
 							.leftJoin(team, eq(employee.teamId, team.id))
+							.leftJoinLateral(approvedMembership, sql`true`)
 							.where(where)
 							.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id))
 							.limit(limit)
@@ -290,15 +316,26 @@ function loadEmployeePage(params: EmployeeListParams) {
 			};
 		}
 
-		const draftWhere = buildInvitationDraftFilters(actor.organizationId, params);
+		const now = dateFromInstant(systemClock.nowInstant());
+		const draftWhere = buildInvitationDraftFilters(actor.organizationId, now, params);
 		const [employeeRows, draftRows] = yield* _(
 			Effect.all([
 				dbService.query("listEmployees", async () => {
 					return await dbService.db
-						.select({ employee, user, team })
+						.select({
+							employee,
+							user,
+							team,
+							membership: {
+								id: approvedMembership.id,
+								role: approvedMembership.role,
+								status: approvedMembership.status,
+							},
+						})
 						.from(employee)
 						.innerJoin(user, eq(employee.userId, user.id))
 						.leftJoin(team, eq(employee.teamId, team.id))
+						.leftJoinLateral(approvedMembership, sql`true`)
 						.where(where)
 						.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id));
 				}),
@@ -309,19 +346,10 @@ function loadEmployeePage(params: EmployeeListParams) {
 									draft: employeeInvitationDraft,
 									invitation,
 									team,
-									realEmployee: { id: realEmployee.id },
 								})
 								.from(employeeInvitationDraft)
 								.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
 								.leftJoin(team, eq(employeeInvitationDraft.teamId, team.id))
-								.leftJoin(realEmployeeUser, eq(realEmployeeUser.invitedVia, invitation.id))
-								.leftJoin(
-									realEmployee,
-									and(
-										eq(realEmployee.userId, realEmployeeUser.id),
-										eq(realEmployee.organizationId, actor.organizationId),
-									),
-								)
 								.where(draftWhere);
 						})
 					: Effect.succeed([]),
@@ -431,6 +459,7 @@ export async function getEmployeeAction(
 					),
 				);
 			}
+			const now = dateFromInstant(systemClock.nowInstant());
 
 			const draftRows = yield* _(
 				dbService.query("getEmployeeInvitationDraft", async () => {
@@ -439,24 +468,16 @@ export async function getEmployeeAction(
 							draft: employeeInvitationDraft,
 							invitation,
 							team,
-							realEmployee: { id: realEmployee.id },
 						})
 						.from(employeeInvitationDraft)
 						.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
 						.leftJoin(team, eq(employeeInvitationDraft.teamId, team.id))
-						.leftJoin(realEmployeeUser, eq(realEmployeeUser.invitedVia, invitation.id))
-						.leftJoin(
-							realEmployee,
-							and(
-								eq(realEmployee.userId, realEmployeeUser.id),
-								eq(realEmployee.organizationId, actor.organizationId),
-							),
-						)
 						.where(
-							and(
-								eq(employeeInvitationDraft.id, draftId),
-								eq(employeeInvitationDraft.organizationId, actor.organizationId),
-							),
+							buildEligibleInvitationDraftPredicate({
+								organizationId: actor.organizationId,
+								now,
+								draftId,
+							}),
 						)
 						.limit(1);
 				}),
@@ -478,14 +499,43 @@ export async function getEmployeeAction(
 			return mapDraftRow(draftRow);
 		}
 
+		const approvedMembership = dbService.db
+			.select({ id: member.id, role: member.role, status: member.status })
+			.from(member)
+			.where(
+				and(
+					eq(member.userId, employee.userId),
+					eq(member.organizationId, actor.organizationId),
+					eq(member.status, "approved"),
+				),
+			)
+			.orderBy(desc(member.createdAt), desc(member.id))
+			.limit(1)
+			.as("approved_employee_membership");
+
 		const rows = yield* _(
 			dbService.query("getTargetEmployee", async () => {
 				return await dbService.db
-					.select({ employee, user, team })
+					.select({
+						employee,
+						user,
+						team,
+						membership: {
+							id: approvedMembership.id,
+							role: approvedMembership.role,
+							status: approvedMembership.status,
+						},
+					})
 					.from(employee)
 					.innerJoin(user, eq(employee.userId, user.id))
 					.leftJoin(team, eq(employee.teamId, team.id))
-					.where(eq(employee.id, employeeId))
+					.leftJoinLateral(approvedMembership, sql`true`)
+					.where(
+						and(
+							eq(employee.id, employeeId),
+							eq(employee.organizationId, actor.organizationId),
+						),
+					)
 					.limit(1);
 			}),
 		);
@@ -514,7 +564,7 @@ export async function getEmployeeAction(
 		const detail = yield* _(
 			dbService.query("getEmployeeRelations", async () => {
 				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.id, employeeId),
+					where: and(eq(employee.id, employeeId), eq(employee.organizationId, actor.organizationId)),
 					with: {
 						user: true,
 						team: true,
@@ -559,7 +609,11 @@ export async function getEmployeeAction(
 			);
 		}
 
-		return { ...detail, kind: "employee" } as EmployeeWithRelations;
+		return {
+			...detail,
+			kind: "employee",
+			membership: targetEmployee.membership?.id ? targetEmployee.membership : null,
+		} as EmployeeWithRelations;
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
