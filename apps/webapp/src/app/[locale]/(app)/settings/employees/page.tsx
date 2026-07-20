@@ -9,19 +9,18 @@ import * as authSchema from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
+import { getCurrentApprovedMembership } from "./current-approved-membership";
 import { EmployeesPageClient } from "./employees-page-client";
 
-async function loadPeopleManagementData(input: { organizationId: string; currentUserId: string }) {
-	const [organization, currentMember, members, invitations] = await Promise.all([
+async function loadPeopleManagementData(input: {
+	organizationId: string;
+	currentUserId: string;
+	currentMemberRole: string;
+}) {
+	const [organization, members, invitations] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(authSchema.organization.id, input.organizationId),
 			columns: { name: true, timezone: true },
-		}),
-		db.query.member.findFirst({
-			where: and(
-				eq(authSchema.member.userId, input.currentUserId),
-				eq(authSchema.member.organizationId, input.organizationId),
-			),
 		}),
 		db
 			.select({
@@ -30,7 +29,10 @@ async function loadPeopleManagementData(input: { organizationId: string; current
 				employee: employee,
 			})
 			.from(authSchema.member)
-			.innerJoin(authSchema.user, eq(authSchema.member.userId, authSchema.user.id))
+			.innerJoin(
+				authSchema.user,
+				eq(authSchema.member.userId, authSchema.user.id),
+			)
 			.leftJoin(
 				employee,
 				and(
@@ -51,20 +53,27 @@ async function loadPeopleManagementData(input: { organizationId: string; current
 		}),
 	]);
 
-	if (!organization || !currentMember) {
+	if (!organization) {
 		redirect("/settings");
 	}
 
 	const targetTeamIds = Array.from(
 		new Set(
-			invitations.map((invitation) => invitation.targetTeamId).filter((id): id is string => !!id),
+			invitations
+				.map((invitation) => invitation.targetTeamId)
+				.filter((id): id is string => !!id),
 		),
 	);
 	const targetTeams = targetTeamIds.length
 		? await db
 				.select({ id: team.id, name: team.name })
 				.from(team)
-				.where(and(eq(team.organizationId, input.organizationId), inArray(team.id, targetTeamIds)))
+				.where(
+					and(
+						eq(team.organizationId, input.organizationId),
+						inArray(team.id, targetTeamIds),
+					),
+				)
 		: [];
 	const targetTeamsById = new Map(
 		targetTeams.map((team) => [team.id, { id: team.id, name: team.name }]),
@@ -84,7 +93,7 @@ async function loadPeopleManagementData(input: { organizationId: string; current
 				? (targetTeamsById.get(invitation.targetTeamId) ?? null)
 				: null,
 		})) as unknown as InvitationWithInviter[],
-		currentMemberRole: currentMember.role as "owner" | "admin" | "member",
+		currentMemberRole: input.currentMemberRole as "owner" | "admin" | "member",
 		currentUserId: input.currentUserId,
 	};
 }
@@ -96,9 +105,19 @@ export default async function EmployeesPage() {
 		redirect("/settings");
 	}
 
-	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
+	const organizationId =
+		settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
+		redirect("/settings");
+	}
+	const currentUserId = settingsRouteContext.authContext.user.id;
+	const currentMember = await getCurrentApprovedMembership({
+		userId: currentUserId,
+		organizationId,
+	});
+
+	if (!currentMember) {
 		redirect("/settings");
 	}
 
@@ -106,7 +125,8 @@ export default async function EmployeesPage() {
 		settingsRouteContext.accessTier === "orgAdmin"
 			? await loadPeopleManagementData({
 					organizationId,
-					currentUserId: settingsRouteContext.authContext.user.id,
+					currentUserId,
+					currentMemberRole: currentMember.role,
 				})
 			: undefined;
 
@@ -114,6 +134,8 @@ export default async function EmployeesPage() {
 		<EmployeesPageClient
 			accessTier={settingsRouteContext.accessTier}
 			organizationId={organizationId}
+			currentUserId={currentUserId}
+			currentMemberRole={currentMember.role}
 			people={people}
 		/>
 	);

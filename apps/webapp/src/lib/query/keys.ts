@@ -18,6 +18,7 @@ export const queryKeys = {
 	// Organization members
 	members: {
 		all: ["members"] as const,
+		organization: (orgId: string) => ["members", orgId] as const,
 		list: <T extends object>(orgId: string, params?: T) => ["members", orgId, params] as const,
 	},
 
@@ -86,6 +87,7 @@ export const queryKeys = {
 	// Employees
 	employees: {
 		all: ["employees"] as const,
+		organization: (orgId: string) => ["employees", orgId] as const,
 		list: <T extends object>(orgId: string, params?: T) => ["employees", orgId, params] as const,
 		detail: (employeeId: string) => ["employees", "detail", employeeId] as const,
 		rateHistory: (employeeId: string) =>

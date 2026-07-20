@@ -6,7 +6,11 @@ import { render, screen } from "@testing-library/react";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
-import { EmployeeEditFormCard, EmployeeOverviewCard } from "./page-sections";
+import {
+	EmployeeDetailHeader,
+	EmployeeEditFormCard,
+	EmployeeOverviewCard,
+} from "./page-sections";
 import { focusFirstInvalidEmployeeDetailField } from "./page-utils";
 
 const userAvatarMock = vi.hoisted(() =>
@@ -36,23 +40,35 @@ global.ResizeObserver = class ResizeObserver {
 };
 
 const translations = new Map([
-	["settings.employees.detailView.employeeInformation", "Mitarbeiterinformationen"],
+	[
+		"settings.employees.detailView.employeeInformation",
+		"Mitarbeiterinformationen",
+	],
 	["settings.employees.detailView.team", "Team"],
 	["settings.employees.detailView.status", "Status"],
 	["settings.employees.detailView.statusActive", "Aktiv"],
 	["settings.employees.detailView.workSchedule", "Arbeitszeitmodell"],
 	["settings.employees.detailView.assignedVia", "Zugewiesen über: {source}"],
 	["settings.employees.detailView.editTitle", "Mitarbeiter bearbeiten"],
-	["settings.employees.detailView.editDescription", "Freigegebene Mitarbeiterdaten aktualisieren"],
+	[
+		"settings.employees.detailView.editDescription",
+		"Freigegebene Mitarbeiterdaten aktualisieren",
+	],
 	["settings.employees.detailView.gender", "Geschlecht"],
 	["settings.employees.detailView.genderMale", "Männlich"],
 	["settings.employees.detailView.pronouns", "Pronomen"],
 	["settings.employees.detailView.pronounsPlaceholder", "Pronomen auswählen"],
 	["settings.employees.detailView.pronounsCustom", "Eigene Pronomen"],
-	["settings.employees.detailView.pronounsCustomPlaceholder", "Pronomen eingeben"],
+	[
+		"settings.employees.detailView.pronounsCustomPlaceholder",
+		"Pronomen eingeben",
+	],
 	["settings.employees.detailView.position", "Position"],
 	["settings.employees.detailView.positionPlaceholder", "Position eingeben"],
-	["settings.employees.detailView.positionDescription", "Stellenbezeichnung oder Rolle"],
+	[
+		"settings.employees.detailView.positionDescription",
+		"Stellenbezeichnung oder Rolle",
+	],
 	["settings.employees.detailView.employeeNumber", "Personalnummer"],
 	["settings.employees.detailView.employeeNumberPlaceholder", "z. B. EMP-001"],
 	[
@@ -65,9 +81,15 @@ const translations = new Map([
 		"Arbeitszeitsaldo wird ab diesem Datum verfolgt",
 	],
 	["settings.employees.detailView.systemRole", "Systemrolle"],
-	["settings.employees.detailView.systemRoleDescription", "Legt die Zugriffsebene im System fest"],
+	[
+		"settings.employees.detailView.systemRoleDescription",
+		"Legt die Zugriffsebene im System fest",
+	],
 	["settings.employees.detailView.roleAdmin", "Admin"],
-	["settings.employees.detailView.roleAdminDescription", "Voller Systemzugriff"],
+	[
+		"settings.employees.detailView.roleAdminDescription",
+		"Voller Systemzugriff",
+	],
 	["settings.employees.detailView.roleManager", "Manager"],
 	["settings.employees.detailView.roleManagerDescription", "Teamübersicht"],
 	["settings.employees.detailView.roleEmployee", "Mitarbeiter"],
@@ -78,10 +100,19 @@ const translations = new Map([
 		"Legt fest, wie die Vergütung berechnet wird",
 	],
 	["settings.employees.detailView.contractFixed", "Festgehalt"],
-	["settings.employees.detailView.contractFixedDescription", "Vergütung auf Gehaltsbasis"],
+	[
+		"settings.employees.detailView.contractFixedDescription",
+		"Vergütung auf Gehaltsbasis",
+	],
 	["settings.employees.detailView.contractHourly", "Stundenlohn"],
-	["settings.employees.detailView.contractHourlyDescription", "Bezahlung nach geleisteten Stunden"],
-	["settings.employees.detailView.appAccessPermissions", "App-Zugriffsberechtigungen"],
+	[
+		"settings.employees.detailView.contractHourlyDescription",
+		"Bezahlung nach geleisteten Stunden",
+	],
+	[
+		"settings.employees.detailView.appAccessPermissions",
+		"App-Zugriffsberechtigungen",
+	],
 	[
 		"settings.employees.detailView.appAccessDescription",
 		"Steuern Sie, auf welche Anwendungen dieser Mitarbeiter zugreifen kann",
@@ -105,7 +136,11 @@ const translations = new Map([
 	["settings.employees.detailView.saveChanges", "Änderungen speichern"],
 ]);
 
-const t = (key: string, defaultValue: string, values?: Record<string, string | number>) => {
+const t = (
+	key: string,
+	defaultValue: string,
+	values?: Record<string, string | number>,
+) => {
 	let value = translations.get(key) ?? defaultValue;
 	for (const [name, replacement] of Object.entries(values ?? {})) {
 		value = value.replace(`{${name}}`, String(replacement));
@@ -161,7 +196,9 @@ function createForm(overrides: Partial<typeof formValues> = {}) {
 				onSubmit?: (props: { value: string }) => string | undefined;
 			};
 		}) => {
-			const error = validators?.onSubmit?.({ value: String(values[name] ?? "") });
+			const error = validators?.onSubmit?.({
+				value: String(values[name] ?? ""),
+			});
 
 			return children({
 				name,
@@ -228,7 +265,13 @@ describe("employee detail page sections", () => {
 			},
 		} as EmployeeDetail;
 
-		render(<EmployeeOverviewCard employee={employeeWithStaleRootName} schedule={null} t={t} />);
+		render(
+			<EmployeeOverviewCard
+				employee={employeeWithStaleRootName}
+				schedule={null}
+				t={t}
+			/>,
+		);
 
 		expect(screen.getByText("Auth Source (he/him)")).toBeTruthy();
 		expect(screen.queryByText("Stale Employee")).toBeNull();
@@ -267,7 +310,13 @@ describe("employee detail page sections", () => {
 			],
 		} as EmployeeDetail;
 
-		render(<EmployeeOverviewCard employee={employeeWithManager} schedule={null} t={t} />);
+		render(
+			<EmployeeOverviewCard
+				employee={employeeWithManager}
+				schedule={null}
+				t={t}
+			/>,
+		);
 
 		expect(screen.getByText("Auth Manager")).toBeTruthy();
 		expect(screen.queryByText("Stale Manager")).toBeNull();
@@ -282,7 +331,12 @@ describe("employee detail page sections", () => {
 					firstName: "Stale",
 					lastName: "Employee",
 					pronouns: null,
-					user: { ...employee.user, firstName: "Auth", lastName: "Source", name: "Jo Glier" },
+					user: {
+						...employee.user,
+						firstName: "Auth",
+						lastName: "Source",
+						name: "Jo Glier",
+					},
 				}}
 				schedule={null}
 				t={t}
@@ -349,9 +403,11 @@ describe("employee detail page sections", () => {
 				schedule={null}
 			/>,
 		);
-		expect(screen.getByRole("link", { name: "Edit active employee" }).getAttribute("href")).toBe(
-			"/settings/employees/employee-1",
-		);
+		expect(
+			screen
+				.getByRole("link", { name: "Edit active employee" })
+				.getAttribute("href"),
+		).toBe("/settings/employees/employee-1");
 	});
 
 	it("guards real-employee-only sections behind the draft check", () => {
@@ -368,6 +424,51 @@ describe("employee detail page sections", () => {
 		expect(source).toContain("!employee.realEmployeeId");
 	});
 
+	it("renders invitation actions only for an invitation draft detail record", () => {
+		const source = readFileSync(
+			join(
+				process.cwd(),
+				"src/app/[locale]/(app)/settings/employees/[employeeId]/employee-detail-page-client.tsx",
+			),
+			"utf8",
+		);
+
+		expect(source).toContain(
+			'import { EmployeeDraftActions } from "./employee-draft-actions"',
+		);
+		expect(source).toContain("canManageDraftActions");
+		expect(source).toContain("<EmployeeDraftActions");
+		expect(source).toContain("organizationId={employee.organizationId}");
+		expect(source).toContain("encodedDraftEmployeeId={employee.encodedId}");
+		expect(source).toContain("invitationId={employee.invitation.id}");
+		expect(source).toContain("invitationStatus={employee.invitationStatus}");
+		expect(source).not.toContain("email={employee.invitation.email}");
+		expect(source).not.toContain("displayName={");
+	});
+
+	it("stacks header actions on mobile and right-aligns them from the small breakpoint", () => {
+		render(
+			<EmployeeDetailHeader
+				t={t}
+				actions={<button type="button">Employee actions</button>}
+			/>,
+		);
+
+		const heading = screen.getByRole("heading", { name: "Employee Details" });
+		const header = heading.parentElement?.parentElement?.parentElement;
+		const actions = screen.getByRole("button", {
+			name: "Employee actions",
+		}).parentElement;
+
+		expect(header?.className).toContain("flex-col");
+		expect(header?.className).toContain("items-start");
+		expect(header?.className).toContain("sm:flex-row");
+		expect(header?.className).toContain("sm:items-center");
+		expect(actions?.className).toContain("w-full");
+		expect(actions?.className).toContain("sm:w-auto");
+		expect(actions?.className).toContain("sm:justify-end");
+	});
+
 	it("renders the edit form strings in German", () => {
 		render(
 			<EmployeeEditFormCard
@@ -381,7 +482,9 @@ describe("employee detail page sections", () => {
 		);
 
 		expect(screen.getByText("Mitarbeiter bearbeiten")).toBeTruthy();
-		expect(screen.getByText("Freigegebene Mitarbeiterdaten aktualisieren")).toBeTruthy();
+		expect(
+			screen.getByText("Freigegebene Mitarbeiterdaten aktualisieren"),
+		).toBeTruthy();
 		expect(screen.queryByText("Vorname")).toBeNull();
 		expect(screen.queryByText("Nachname")).toBeNull();
 		expect(screen.getByText("Pronomen")).toBeTruthy();
@@ -415,7 +518,9 @@ describe("employee detail page sections", () => {
 		expect(startDateInput.getAttribute("name")).toBe("startDate");
 		expect(startDateInput.getAttribute("autocomplete")).toBe("off");
 		expect((startDateInput as HTMLInputElement).value).toBe("2024-05-01");
-		expect(screen.getByText("Arbeitszeitsaldo wird ab diesem Datum verfolgt")).toBeTruthy();
+		expect(
+			screen.getByText("Arbeitszeitsaldo wird ab diesem Datum verfolgt"),
+		).toBeTruthy();
 	});
 
 	it("shows an inline error when employee pronouns are longer than 50 characters", () => {
@@ -430,7 +535,9 @@ describe("employee detail page sections", () => {
 			/>,
 		);
 
-		expect(screen.getByText("Pronouns must be 50 characters or less")).toBeTruthy();
+		expect(
+			screen.getByText("Pronouns must be 50 characters or less"),
+		).toBeTruthy();
 	});
 
 	it("uses an example-style custom pronouns placeholder by default", () => {
@@ -444,10 +551,12 @@ describe("employee detail page sections", () => {
 			/>,
 		);
 
-		expect(screen.getByLabelText("Custom pronouns").getAttribute("placeholder")).toBe(
-			"e.g., xe/xem…",
+		expect(
+			screen.getByLabelText("Custom pronouns").getAttribute("placeholder"),
+		).toBe("e.g., xe/xem…");
+		expect(screen.getByLabelText("Custom pronouns").getAttribute("name")).toBe(
+			"pronouns",
 		);
-		expect(screen.getByLabelText("Custom pronouns").getAttribute("name")).toBe("pronouns");
 	});
 
 	it("focuses custom pronouns when it is the first invalid employee detail field", () => {
@@ -456,7 +565,10 @@ describe("employee detail page sections", () => {
 
 		focusFirstInvalidEmployeeDetailField({
 			getFieldMeta: (fieldName: string) => ({
-				errors: fieldName === "pronouns" ? ["Pronouns must be 50 characters or less"] : [],
+				errors:
+					fieldName === "pronouns"
+						? ["Pronouns must be 50 characters or less"]
+						: [],
 			}),
 		} as never);
 

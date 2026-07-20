@@ -1,14 +1,12 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { db } from "@/db";
-import * as authSchema from "@/db/auth-schema";
 import { auth } from "@/lib/auth";
+import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -18,7 +16,6 @@ import {
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import {
 	type ApiKeyResponse,
@@ -97,43 +94,16 @@ function verifyApiKeyPermission(
 	return Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
-
-		// Check user's role in the organization
-		const memberRecord = yield* _(
-			dbService.query("getCurrentMember", async () => {
-				return await db.query.member.findFirst({
-					where: and(
-						eq(authSchema.member.userId, session.user.id),
-						eq(authSchema.member.organizationId, organizationId),
-					),
-				});
+		const { membership: memberRecord } = yield* _(
+			requireActiveOrganizationActionActor({
+				userId: session.user.id,
+				organizationId,
+				requiredRole: "admin",
+				message: `Only active approved admins and owners can ${action} API keys`,
+				resource: "apiKey",
+				action,
 			}),
-			Effect.flatMap((member) =>
-				member
-					? Effect.succeed(member)
-					: Effect.fail(
-							new NotFoundError({
-								message: "You are not a member of this organization",
-								entityType: "member",
-							}),
-						),
-			),
 		);
-
-		// Verify admin/owner role
-		if (memberRecord.role !== "admin" && memberRecord.role !== "owner") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: `Only admins and owners can ${action} API keys`,
-						userId: session.user.id,
-						resource: "apiKey",
-						action,
-					}),
-				),
-			);
-		}
 
 		return { session, memberRecord };
 	});

@@ -17,6 +17,8 @@ import { member } from "@/db/auth-schema";
 import { telegramBotConfig } from "@/db/schema";
 import { env } from "@/env";
 import { auth } from "@/lib/auth";
+import { runActiveOrganizationActionActorCheck as requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { createLogger } from "@/lib/logger";
 import {
 	checkRateLimit,
@@ -53,6 +55,19 @@ export async function POST(request: NextRequest) {
 				{ status: 400 },
 			);
 		}
+		try {
+			await requireActiveOrganizationActionActor({
+				userId: session.user.id,
+				organizationId,
+				requiredRole: "admin",
+				message:
+					"Only active approved admins and owners can configure Telegram",
+				resource: "telegramIntegration",
+				action: "create",
+			});
+		} catch {
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+		}
 
 		// Verify user is an admin member of this organization
 		const [membership] = await db
@@ -66,7 +81,11 @@ export async function POST(request: NextRequest) {
 			)
 			.limit(1);
 
-		if (membership?.role !== "admin") {
+		if (
+			!membership ||
+			(!hasOrganizationRole(membership.role, "admin") &&
+				!hasOrganizationRole(membership.role, "owner"))
+		) {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
@@ -208,6 +227,19 @@ export async function DELETE(request: NextRequest) {
 				{ status: 400 },
 			);
 		}
+		try {
+			await requireActiveOrganizationActionActor({
+				userId: session.user.id,
+				organizationId,
+				requiredRole: "admin",
+				message:
+					"Only active approved admins and owners can disconnect Telegram",
+				resource: "telegramIntegration",
+				action: "delete",
+			});
+		} catch {
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+		}
 
 		// Verify user is an admin member of this organization
 		const [membership] = await db
@@ -221,7 +253,11 @@ export async function DELETE(request: NextRequest) {
 			)
 			.limit(1);
 
-		if (membership?.role !== "admin") {
+		if (
+			!membership ||
+			(!hasOrganizationRole(membership.role, "admin") &&
+				!hasOrganizationRole(membership.role, "owner"))
+		) {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 

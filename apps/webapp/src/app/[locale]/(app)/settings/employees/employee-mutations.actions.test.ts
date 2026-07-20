@@ -3,7 +3,11 @@ import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { user } from "@/db/auth-schema";
-import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
+import {
+	AuthorizationError,
+	DatabaseError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import { toServerActionResult } from "@/lib/effect/result";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 
@@ -31,14 +35,16 @@ vi.mock("@/lib/logger", () => ({
 
 vi.mock("./employee-action-utils", () => ({
 	ensureCanAccessEmployeeSettingsTarget: vi.fn(),
-	ensureSettingsActorCanAccessEmployeeTarget: mocks.ensureSettingsActorCanAccessEmployeeTarget,
+	ensureSettingsActorCanAccessEmployeeTarget:
+		mocks.ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeContext: vi.fn(),
 	getEmployeeSettingsActorContext: mocks.getEmployeeSettingsActorContext,
 	getTargetEmployee: mocks.getTargetEmployee,
 	getTargetUser: mocks.getTargetUser,
 	hasAppAccessChanges: mocks.hasAppAccessChanges,
 	parseHourlyRate: mocks.parseHourlyRate,
-	requireOrgAdminEmployeeSettingsAccess: mocks.requireOrgAdminEmployeeSettingsAccess,
+	requireOrgAdminEmployeeSettingsAccess:
+		mocks.requireOrgAdminEmployeeSettingsAccess,
 	revalidateEmployeesCache: mocks.revalidateEmployeesCache,
 	runTracedEmployeeAction: mocks.runTracedEmployeeAction,
 	validateInput: mocks.validateInput,
@@ -46,7 +52,8 @@ vi.mock("./employee-action-utils", () => ({
 
 vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mocks.markEmployeeWorkBalanceDirty,
-	requestEmployeeWorkBalanceFullRebuild: mocks.requestEmployeeWorkBalanceFullRebuild,
+	requestEmployeeWorkBalanceFullRebuild:
+		mocks.requestEmployeeWorkBalanceFullRebuild,
 }));
 
 import {
@@ -59,7 +66,6 @@ import {
 	createEmployeeAction,
 	requestEmployeeWorkBalanceRecalculationAction,
 	updateEmployeeAction,
-	updateEmployeeInvitationDraftAction,
 } from "./employee-mutations.actions";
 
 const validUserId = "11111111-1111-4111-8111-111111111111";
@@ -88,14 +94,20 @@ describe("employee mutation schemas", () => {
 		expect(source).toContain("...(hasHourlyRateUpdate");
 	});
 
-	it("blocks draft updates after the invitation has an active employee", () => {
+	it("uses the shared pending-future predicate for the locked eligibility recheck", () => {
 		const source = readFileSync(
 			new URL("./employee-mutations.actions.ts", import.meta.url),
 			"utf8",
 		);
-		expect(source).toContain("getEmployeeInvitationDraftRealEmployee");
-		expect(source).toContain("Edit the active employee record for accepted invitations");
-		expect(source).toContain("eq(realEmployee.organizationId, actor.organizationId)");
+		expect(
+			source.match(/buildEligibleInvitationDraftPredicate\(\{/g),
+		).toHaveLength(1);
+		expect(source).toContain("dateFromInstant(systemClock.nowInstant())");
+		expect(source).toContain("organizationId: actor.organizationId");
+		expect(source).toContain("draftId,");
+		expect(source).not.toContain("realEmployeeUser");
+		expect(source).not.toContain("realEmployee");
+		expect(source).not.toContain("invitedVia");
 	});
 
 	it("strips employee-owned names from create employee input", () => {
@@ -156,6 +168,19 @@ describe("createEmployeeAction", () => {
 		vi.clearAllMocks();
 	});
 
+	it("does not expose employee identity values through the generic validation result", () => {
+		const source = readFileSync(
+			new URL("./employee-mutations.actions.ts", import.meta.url),
+			"utf8",
+		);
+		const createAction = source.slice(
+			source.indexOf("export async function createEmployeeAction"),
+			source.indexOf("export async function updateEmployeeAction"),
+		);
+
+		expect(createAction).not.toContain("value: validatedData.userId");
+	});
+
 	it("does not write employee-owned names into the employee insert payload", async () => {
 		const returning = vi.fn().mockResolvedValue([
 			{
@@ -175,7 +200,9 @@ describe("createEmployeeAction", () => {
 					},
 				},
 			},
-			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
+				Effect.promise(run),
+			),
 		};
 
 		mocks.runTracedEmployeeAction.mockImplementation((options) =>
@@ -220,6 +247,68 @@ describe("createEmployeeAction", () => {
 			}),
 		);
 	});
+
+	it("translates the serialized employee identity conflict without leaking database details", async () => {
+		const triggerError = Object.assign(
+			new Error("Employee identity already exists in organization"),
+			{ code: "23505", detail: "private-row-detail" },
+		);
+		const dbService = {
+			db: {
+				query: { employee: { findFirst: vi.fn().mockResolvedValue(null) } },
+				insert: vi.fn(() => ({
+					values: vi.fn(() => ({ returning: vi.fn() })),
+				})),
+			},
+			query: vi.fn((name: string, run: () => Promise<unknown>) =>
+				name === "createEmployee"
+					? Effect.fail(
+							new DatabaseError({
+								message: "Database query failed: createEmployee",
+								operation: "createEmployee",
+								cause: triggerError,
+							}),
+						)
+					: Effect.promise(run),
+			),
+		};
+		mocks.runTracedEmployeeAction.mockImplementation((options) =>
+			Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })).then(
+				toServerActionResult,
+			),
+		);
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "orgAdmin",
+				organizationId: "org-1",
+				session: { user: { id: "user-admin-1" } },
+				currentEmployee: null,
+				dbService,
+			}),
+		);
+		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
+		mocks.getTargetUser.mockReturnValue(Effect.succeed({ id: validUserId }));
+		mocks.validateInput.mockReturnValue(
+			Effect.succeed({
+				userId: validUserId,
+				organizationId: "org-1",
+				role: "employee",
+			}),
+		);
+
+		const result = await createEmployeeAction({
+			userId: validUserId,
+			organizationId: "org-1",
+			role: "employee",
+		} as Parameters<typeof createEmployeeAction>[0]);
+
+		expect(result).toEqual({
+			success: false,
+			code: "ValidationError",
+			error: "Employee already exists for this user in this organization",
+		});
+		expect(JSON.stringify(result)).not.toContain("private-row-detail");
+	});
 });
 
 describe("updateEmployeeAction", () => {
@@ -240,7 +329,9 @@ describe("updateEmployeeAction", () => {
 			db: {
 				update,
 			},
-			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
+				Effect.promise(run),
+			),
 		};
 
 		mocks.runTracedEmployeeAction.mockImplementation((options) =>
@@ -268,7 +359,9 @@ describe("updateEmployeeAction", () => {
 				},
 			}),
 		);
-		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(Effect.void);
+		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
+			Effect.void,
+		);
 		mocks.hasAppAccessChanges.mockReturnValue(false);
 		mocks.validateInput.mockReturnValue(
 			Effect.succeed({
@@ -312,7 +405,9 @@ describe("updateEmployeeAction", () => {
 			.mockReturnValueOnce({ set: userSet });
 		const dbService = {
 			db: { update },
-			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
+				Effect.promise(run),
+			),
 		};
 
 		mocks.runTracedEmployeeAction.mockImplementation((options) =>
@@ -340,7 +435,9 @@ describe("updateEmployeeAction", () => {
 				},
 			}),
 		);
-		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(Effect.void);
+		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
+			Effect.void,
+		);
 		mocks.hasAppAccessChanges.mockReturnValue(false);
 		mocks.validateInput.mockReturnValue(
 			Effect.succeed({
@@ -372,12 +469,20 @@ describe("updateEmployeeAction", () => {
 	});
 
 	it("does not allow manager-scoped updates to change auth names", async () => {
-		const employeeSet = vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }));
-		const userSet = vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }));
-		const update = vi.fn((table) => ({ set: table === user ? userSet : employeeSet }));
+		const employeeSet = vi.fn(() => ({
+			where: vi.fn().mockResolvedValue(undefined),
+		}));
+		const userSet = vi.fn(() => ({
+			where: vi.fn().mockResolvedValue(undefined),
+		}));
+		const update = vi.fn((table) => ({
+			set: table === user ? userSet : employeeSet,
+		}));
 		const dbService = {
 			db: { update },
-			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
+				Effect.promise(run),
+			),
 		};
 
 		mocks.runTracedEmployeeAction.mockImplementation((options) =>
@@ -387,7 +492,9 @@ describe("updateEmployeeAction", () => {
 			Effect.succeed({
 				accessTier: "manager",
 				organizationId: "org-1",
-				session: { user: { id: "user-manager-1", email: "manager@example.com" } },
+				session: {
+					user: { id: "user-manager-1", email: "manager@example.com" },
+				},
 				dbService,
 			}),
 		);
@@ -400,7 +507,9 @@ describe("updateEmployeeAction", () => {
 				contractType: "fixed",
 			}),
 		);
-		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(Effect.void);
+		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
+			Effect.void,
+		);
 		mocks.hasAppAccessChanges.mockReturnValue(false);
 		mocks.validateInput.mockReturnValue(
 			Effect.succeed({
@@ -428,7 +537,9 @@ describe("updateEmployeeAction", () => {
 		const update = vi.fn(() => ({ set }));
 		const dbService = {
 			db: { update },
-			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
+				Effect.promise(run),
+			),
 		};
 
 		mocks.runTracedEmployeeAction.mockImplementation((options) =>
@@ -452,7 +563,9 @@ describe("updateEmployeeAction", () => {
 				startDate: new Date("2026-05-10T00:00:00.000Z"),
 			}),
 		);
-		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(Effect.void);
+		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
+			Effect.void,
+		);
 		mocks.hasAppAccessChanges.mockReturnValue(false);
 		mocks.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mocks.validateInput.mockReturnValue(
@@ -481,7 +594,9 @@ describe("updateEmployeeAction", () => {
 		const update = vi.fn(() => ({ set }));
 		const dbService = {
 			db: { update },
-			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
+				Effect.promise(run),
+			),
 		};
 
 		mocks.runTracedEmployeeAction.mockImplementation((options) =>
@@ -505,7 +620,9 @@ describe("updateEmployeeAction", () => {
 				startDate: new Date("2026-05-10T00:00:00.000Z"),
 			}),
 		);
-		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(Effect.void);
+		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
+			Effect.void,
+		);
 		mocks.hasAppAccessChanges.mockReturnValue(false);
 		mocks.requestEmployeeWorkBalanceFullRebuild.mockResolvedValue(undefined);
 		mocks.validateInput.mockReturnValue(
@@ -564,172 +681,65 @@ describe("assignManagersAction", () => {
 			Effect.succeed({ id: "employee-1", organizationId: "org-1" }),
 		);
 		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
-		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(Effect.void);
+		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
+			Effect.void,
+		);
 		mocks.validateInput.mockReturnValue(
-			Effect.succeed({ managers: [{ managerId: "manager-1", isPrimary: true }] }),
+			Effect.succeed({
+				managers: [{ managerId: "manager-1", isPrimary: true }],
+			}),
 		);
 
 		await assignManagersAction("employee-1", {
 			managers: [{ managerId: "manager-1", isPrimary: true }],
 		});
 
-		expect(assignManager).toHaveBeenCalledWith("employee-1", "manager-1", true, "user-admin-1");
-	});
-});
-
-describe("updateEmployeeInvitationDraftAction", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
-
-	it("rejects accepted draft updates without writing draft changes", async () => {
-		const draftFindFirst = vi.fn().mockResolvedValue({
-			id: "draft-1",
-			organizationId: "org-1",
-			invitationId: "invitation-1",
-			invitation: { status: "pending" },
-		});
-		const updateSet = vi.fn();
-		const update = vi.fn(() => ({ set: updateSet }));
-		const selectChain = {
-			from: vi.fn(() => selectChain),
-			innerJoin: vi.fn(() => selectChain),
-			where: vi.fn(() => selectChain),
-			limit: vi.fn().mockResolvedValue([{ id: "employee-1" }]),
-		};
-		const dbService = {
-			db: {
-				query: {
-					employeeInvitationDraft: { findFirst: draftFindFirst },
-				},
-				select: vi.fn(() => selectChain),
-				update,
-			},
-			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
-		};
-
-		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
-			const exit = await Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() }));
-			return toServerActionResult(exit);
-		});
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "orgAdmin",
-				organizationId: "org-1",
-				session: { user: { id: "user-admin-1" } },
-				currentEmployee: { id: validAdminEmployeeId, role: "admin" },
-				dbService,
-			}),
+		expect(assignManager).toHaveBeenCalledWith(
+			"employee-1",
+			"manager-1",
+			true,
+			"user-admin-1",
 		);
-		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
-		mocks.validateInput.mockReturnValue(Effect.succeed({ position: "Changed" }));
-
-		const result = await updateEmployeeInvitationDraftAction("draft:draft-1", {
-			position: "Changed",
-		} as Parameters<typeof updateEmployeeInvitationDraftAction>[1]);
-
-		expect(result).toEqual(
-			expect.objectContaining({
-				success: false,
-				error: "Edit the active employee record for accepted invitations",
-				code: "ValidationError",
-			}),
-		);
-		expect(dbService.query).toHaveBeenCalledWith(
-			"getEmployeeInvitationDraftRealEmployee",
-			expect.any(Function),
-		);
-		expect(update).not.toHaveBeenCalled();
-		expect(updateSet).not.toHaveBeenCalled();
-	});
-
-	it("rejects accepted invitation draft updates even before a real employee is resolved", async () => {
-		const draftFindFirst = vi.fn().mockResolvedValue({
-			id: "draft-1",
-			organizationId: "org-1",
-			invitationId: "invitation-1",
-			invitation: { status: "accepted" },
-		});
-		const updateSet = vi.fn(() => ({ where: vi.fn() }));
-		const update = vi.fn(() => ({ set: updateSet }));
-		const selectChain = {
-			from: vi.fn(() => selectChain),
-			innerJoin: vi.fn(() => selectChain),
-			where: vi.fn(() => selectChain),
-			limit: vi.fn().mockResolvedValue([]),
-		};
-		const dbService = {
-			db: {
-				query: {
-					employeeInvitationDraft: { findFirst: draftFindFirst },
-				},
-				select: vi.fn(() => selectChain),
-				update,
-			},
-			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
-		};
-
-		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
-			const exit = await Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() }));
-			return toServerActionResult(exit);
-		});
-		mocks.getEmployeeSettingsActorContext.mockReturnValue(
-			Effect.succeed({
-				accessTier: "orgAdmin",
-				organizationId: "org-1",
-				session: { user: { id: "user-admin-1" } },
-				currentEmployee: { id: validAdminEmployeeId, role: "admin" },
-				dbService,
-			}),
-		);
-		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
-		mocks.validateInput.mockReturnValue(Effect.succeed({ position: "Changed" }));
-
-		const result = await updateEmployeeInvitationDraftAction("draft:draft-1", {
-			position: "Changed",
-		} as Parameters<typeof updateEmployeeInvitationDraftAction>[1]);
-
-		expect(result).toEqual(
-			expect.objectContaining({
-				success: false,
-				error: "Edit the active employee record for accepted invitations",
-				code: "ValidationError",
-			}),
-		);
-		expect(update).not.toHaveBeenCalled();
-		expect(updateSet).not.toHaveBeenCalled();
 	});
 });
 
 describe("requestEmployeeWorkBalanceRecalculationAction", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.validateInput.mockImplementation((schema, data, fallbackField = "data") => {
-			const result = schema.safeParse(data);
-			if (result.success) {
-				return Effect.succeed(result.data);
-			}
+		mocks.validateInput.mockImplementation(
+			(schema, data, fallbackField = "data") => {
+				const result = schema.safeParse(data);
+				if (result.success) {
+					return Effect.succeed(result.data);
+				}
 
-			const issue = result.error.issues[0];
-			return Effect.fail(
-				new ValidationError({
-					message: issue?.message ?? "Invalid input",
-					field: issue?.path?.join(".") || fallbackField,
-				}),
-			);
-		});
+				const issue = result.error.issues[0];
+				return Effect.fail(
+					new ValidationError({
+						message: issue?.message ?? "Invalid input",
+						field: issue?.path?.join(".") || fallbackField,
+					}),
+				);
+			},
+		);
 	});
 
 	it("requires org admin access and requests a full work balance rebuild", async () => {
 		const setAttribute = vi.fn();
-		const findFirst = vi.fn().mockResolvedValue({ id: validEmployeeId, organizationId: "org-1" });
+		const findFirst = vi
+			.fn()
+			.mockResolvedValue({ id: validEmployeeId, organizationId: "org-1" });
 		const dbService = {
 			db: { query: { employee: { findFirst } } },
-			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
+				Effect.promise(run),
+			),
 		};
 		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
 			expect(options.attributes).toBeUndefined();
-			const exit = await Effect.runPromiseExit(options.execute({ setAttribute }));
+			const exit = await Effect.runPromiseExit(
+				options.execute({ setAttribute }),
+			);
 			return toServerActionResult(exit);
 		});
 		mocks.getEmployeeSettingsActorContext.mockReturnValue(
@@ -744,13 +754,18 @@ describe("requestEmployeeWorkBalanceRecalculationAction", () => {
 		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
 		mocks.requestEmployeeWorkBalanceFullRebuild.mockResolvedValue(undefined);
 
-		const result = await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
+		const result =
+			await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
 
 		expect(result).toEqual({ success: true, data: undefined });
 		expect(mocks.requireOrgAdminEmployeeSettingsAccess).toHaveBeenCalledWith(
-			expect.objectContaining({ organizationId: "org-1", accessTier: "orgAdmin" }),
+			expect.objectContaining({
+				organizationId: "org-1",
+				accessTier: "orgAdmin",
+			}),
 			{
-				message: "Only organization admins can recalculate employee work balances",
+				message:
+					"Only organization admins can recalculate employee work balances",
 				resource: "employee_work_balance",
 				action: "recalculate_work_balance",
 			},
@@ -760,10 +775,18 @@ describe("requestEmployeeWorkBalanceRecalculationAction", () => {
 			"getEmployeeForWorkBalanceRecalculation",
 			expect.any(Function),
 		);
-		expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: expect.anything() }));
+		expect(findFirst).toHaveBeenCalledWith(
+			expect.objectContaining({ where: expect.anything() }),
+		);
 		expect(setAttribute).toHaveBeenCalledWith("employee.id", validEmployeeId);
-		expect(setAttribute).toHaveBeenCalledWith("employee.organizationId", "org-1");
-		expect(setAttribute).toHaveBeenCalledWith("requestedBy.userId", "user-admin-1");
+		expect(setAttribute).toHaveBeenCalledWith(
+			"employee.organizationId",
+			"org-1",
+		);
+		expect(setAttribute).toHaveBeenCalledWith(
+			"requestedBy.userId",
+			"user-admin-1",
+		);
 		expect(mocks.requestEmployeeWorkBalanceFullRebuild).toHaveBeenCalledWith({
 			employeeId: validEmployeeId,
 			organizationId: "org-1",
@@ -774,10 +797,14 @@ describe("requestEmployeeWorkBalanceRecalculationAction", () => {
 		const findFirst = vi.fn().mockResolvedValue(null);
 		const dbService = {
 			db: { query: { employee: { findFirst } } },
-			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+			query: vi.fn((_name: string, run: () => Promise<unknown>) =>
+				Effect.promise(run),
+			),
 		};
 		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
-			const exit = await Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() }));
+			const exit = await Effect.runPromiseExit(
+				options.execute({ setAttribute: vi.fn() }),
+			);
 			return toServerActionResult(exit);
 		});
 		mocks.getEmployeeSettingsActorContext.mockReturnValue(
@@ -791,7 +818,8 @@ describe("requestEmployeeWorkBalanceRecalculationAction", () => {
 		);
 		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
 
-		const result = await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
+		const result =
+			await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
 
 		expect(result).toEqual({
 			success: false,
@@ -799,18 +827,23 @@ describe("requestEmployeeWorkBalanceRecalculationAction", () => {
 			code: "NotFoundError",
 		});
 		expect(mocks.getTargetEmployee).not.toHaveBeenCalled();
-		expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: expect.anything() }));
+		expect(findFirst).toHaveBeenCalledWith(
+			expect.objectContaining({ where: expect.anything() }),
+		);
 		expect(mocks.requestEmployeeWorkBalanceFullRebuild).not.toHaveBeenCalled();
 	});
 
 	it("rejects invalid employee IDs before target lookup or rebuild", async () => {
 		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
 			expect(options.attributes).toBeUndefined();
-			const exit = await Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() }));
+			const exit = await Effect.runPromiseExit(
+				options.execute({ setAttribute: vi.fn() }),
+			);
 			return toServerActionResult(exit);
 		});
 
-		const result = await requestEmployeeWorkBalanceRecalculationAction("not-a-uuid");
+		const result =
+			await requestEmployeeWorkBalanceRecalculationAction("not-a-uuid");
 
 		expect(result).toEqual({
 			success: false,
@@ -825,7 +858,9 @@ describe("requestEmployeeWorkBalanceRecalculationAction", () => {
 
 	it("does not lookup or rebuild when org admin access is denied", async () => {
 		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
-			const exit = await Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() }));
+			const exit = await Effect.runPromiseExit(
+				options.execute({ setAttribute: vi.fn() }),
+			);
 			return toServerActionResult(exit);
 		});
 		mocks.getEmployeeSettingsActorContext.mockReturnValue(
@@ -833,13 +868,17 @@ describe("requestEmployeeWorkBalanceRecalculationAction", () => {
 				accessTier: "manager",
 				organizationId: "org-1",
 				session: { user: { id: "user-manager-1" } },
-				currentEmployee: { id: "55555555-5555-4555-8555-555555555555", role: "manager" },
+				currentEmployee: {
+					id: "55555555-5555-4555-8555-555555555555",
+					role: "manager",
+				},
 			}),
 		);
 		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(
 			Effect.fail(
 				new AuthorizationError({
-					message: "Only organization admins can recalculate employee work balances",
+					message:
+						"Only organization admins can recalculate employee work balances",
 					userId: "user-manager-1",
 					resource: "employee_work_balance",
 					action: "recalculate_work_balance",
@@ -847,7 +886,8 @@ describe("requestEmployeeWorkBalanceRecalculationAction", () => {
 			),
 		);
 
-		const result = await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
+		const result =
+			await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
 
 		expect(result).toEqual({
 			success: false,
@@ -855,9 +895,13 @@ describe("requestEmployeeWorkBalanceRecalculationAction", () => {
 			code: "AuthorizationError",
 		});
 		expect(mocks.requireOrgAdminEmployeeSettingsAccess).toHaveBeenCalledWith(
-			expect.objectContaining({ organizationId: "org-1", accessTier: "manager" }),
+			expect.objectContaining({
+				organizationId: "org-1",
+				accessTier: "manager",
+			}),
 			{
-				message: "Only organization admins can recalculate employee work balances",
+				message:
+					"Only organization admins can recalculate employee work balances",
 				resource: "employee_work_balance",
 				action: "recalculate_work_balance",
 			},

@@ -29,6 +29,20 @@ describe("resolveSettingsAccessTier", () => {
 		).toBe("orgAdmin");
 	});
 
+	it.each([
+		"owner,admin",
+		" member , admin ",
+		["member", "owner"],
+	])("resolves compound membership %j to orgAdmin", (membershipRole) => {
+		expect(
+			resolveSettingsAccessTier({
+				activeOrganizationId: "org-a",
+				membershipRole,
+				employeeRole: null,
+			}),
+		).toBe("orgAdmin");
+	});
+
 	it("resolves active-org employee manager and admin roles to manager tier", () => {
 		expect(
 			resolveSettingsAccessTier({
@@ -94,11 +108,21 @@ describe("statistics route access", () => {
 	});
 
 	it("allows managers into statistics while preserving org-admin-only routes", () => {
-		expect(canResolvedTierAccessRoute("manager", "/settings/statistics")).toBe(true);
-		expect(canResolvedTierAccessRoute("manager", "/settings/export")).toBe(false);
-		expect(canResolvedTierAccessRoute("manager", "/settings/scheduled-exports")).toBe(false);
-		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/statistics")).toBe(true);
-		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/scheduled-exports")).toBe(true);
+		expect(canResolvedTierAccessRoute("manager", "/settings/statistics")).toBe(
+			true,
+		);
+		expect(canResolvedTierAccessRoute("manager", "/settings/export")).toBe(
+			false,
+		);
+		expect(
+			canResolvedTierAccessRoute("manager", "/settings/scheduled-exports"),
+		).toBe(false);
+		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/statistics")).toBe(
+			true,
+		);
+		expect(
+			canResolvedTierAccessRoute("orgAdmin", "/settings/scheduled-exports"),
+		).toBe(true);
 	});
 });
 
@@ -109,5 +133,12 @@ describe("isSettingsAccessMembershipRole", () => {
 		expect(isSettingsAccessMembershipRole("member")).toBe(true);
 		expect(isSettingsAccessMembershipRole("manager")).toBe(false);
 		expect(isSettingsAccessMembershipRole(null)).toBe(false);
+	});
+
+	it("accepts compound and array membership roles by complete token", () => {
+		expect(isSettingsAccessMembershipRole("owner,admin")).toBe(true);
+		expect(isSettingsAccessMembershipRole(" member , admin ")).toBe(true);
+		expect(isSettingsAccessMembershipRole(["member", "owner"])).toBe(true);
+		expect(isSettingsAccessMembershipRole("homeowner")).toBe(false);
 	});
 });

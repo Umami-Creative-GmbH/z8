@@ -1,7 +1,16 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { member, user } from "@/db/auth-schema";
-import { employee, inviteCodeUsage, memberApproval, team } from "@/db/schema";
+import {
+	employee,
+	inviteCode,
+	inviteCodeUsage,
+	memberApproval,
+	team,
+} from "@/db/schema";
+import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
+import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
+import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import {
 	type AuthorizationError,
 	type DatabaseError,
@@ -113,7 +122,9 @@ export class PendingMemberService extends Context.Tag("PendingMemberService")<
 		) => Effect.Effect<MemberApproval[], DatabaseError>;
 
 		// Count pending members for an organization
-		readonly countPending: (organizationId: string) => Effect.Effect<number, DatabaseError>;
+		readonly countPending: (
+			organizationId: string,
+		) => Effect.Effect<number, DatabaseError>;
 	}
 >() {}
 
@@ -122,17 +133,26 @@ export const PendingMemberServiceLive = Layer.effect(
 	Effect.gen(function* (_) {
 		const dbService = yield* _(DatabaseService);
 
-		// Helper to check if member is pending (based on invite code usage without approval)
+		// Member status is the source of truth for the approval lifecycle.
 		const getPendingMemberDetails = async (
 			memberId: string,
 			organizationId: string,
 		): Promise<PendingMember | null> => {
 			// Get the member with user details
 			const memberRecord = await dbService.db.query.member.findFirst({
-				where: and(eq(member.id, memberId), eq(member.organizationId, organizationId)),
+				where: and(
+					eq(member.id, memberId),
+					eq(member.organizationId, organizationId),
+					eq(member.status, "pending"),
+				),
 			});
 
-			if (!memberRecord) return null;
+			if (
+				!memberRecord ||
+				memberRecord.organizationId !== organizationId ||
+				memberRecord.status !== "pending"
+			)
+				return null;
 
 			// Get user details
 			const userRecord = await dbService.db.query.user.findFirst({
@@ -178,78 +198,249 @@ export const PendingMemberServiceLive = Layer.effect(
 			};
 		};
 
+		const approvePendingMemberAtomically = async (
+			pendingMember: PendingMember,
+			input: ApproveMemberInput,
+		) =>
+			dbService.db.transaction(async (tx) => {
+				const targetUser = await tx.query.user.findFirst({
+					where: eq(user.id, pendingMember.userId),
+					columns: { email: true },
+				});
+				if (!targetUser) throw new Error("Pending member user not found");
+
+				await acquireEmployeeIdentityLock(tx, {
+					organizationId: input.organizationId,
+					normalizedEmail: normalizeInvitationEmail(targetUser.email),
+				});
+
+				if (input.assignedTeamId) {
+					const assignedTeam = await tx.query.team.findFirst({
+						where: and(
+							eq(team.id, input.assignedTeamId),
+							eq(team.organizationId, input.organizationId),
+						),
+					});
+					if (!assignedTeam)
+						throw new Error("Assigned team not found in organization");
+				}
+
+				const [approvedMember] = await tx
+					.update(member)
+					.set({ status: "approved" })
+					.where(
+						and(
+							eq(member.id, input.memberId),
+							eq(member.organizationId, input.organizationId),
+							eq(member.status, "pending"),
+						),
+					)
+					.returning();
+				if (!approvedMember) return null;
+
+				const [approval] = await tx
+					.insert(memberApproval)
+					.values({
+						memberId: input.memberId,
+						organizationId: input.organizationId,
+						status: "approved",
+						assignedTeamId: input.assignedTeamId,
+						approvedBy: input.approvedBy,
+						notes: input.notes,
+					})
+					.returning();
+
+				const existingEmployee = await tx.query.employee.findFirst({
+					where: and(
+						eq(employee.userId, approvedMember.userId),
+						eq(employee.organizationId, input.organizationId),
+					),
+				});
+
+				if (!existingEmployee) {
+					await tx.insert(employee).values({
+						userId: approvedMember.userId,
+						organizationId: input.organizationId,
+						teamId: input.assignedTeamId,
+						role: "employee",
+						isActive: true,
+					});
+				} else if (!existingEmployee.isActive) {
+					await tx
+						.update(employee)
+						.set({
+							isActive: true,
+							teamId: input.assignedTeamId ?? existingEmployee.teamId,
+						})
+						.where(
+							and(
+								eq(employee.id, existingEmployee.id),
+								eq(employee.organizationId, input.organizationId),
+							),
+						);
+				}
+
+				return approval;
+			});
+
+		const rejectPendingMemberAtomically = async (input: RejectMemberInput) =>
+			dbService.db.transaction(async (tx) => {
+				await tx.execute(sql`
+					SELECT ${member.id}
+					FROM ${member}
+					WHERE ${member.id} = ${input.memberId}
+						AND ${member.organizationId} = ${input.organizationId}
+						AND ${member.status} = 'pending'
+					FOR UPDATE
+				`);
+
+				const memberRecord = await tx.query.member.findFirst({
+					where: and(
+						eq(member.id, input.memberId),
+						eq(member.organizationId, input.organizationId),
+						eq(member.status, "pending"),
+					),
+				});
+				if (
+					!memberRecord ||
+					memberRecord.id !== input.memberId ||
+					memberRecord.organizationId !== input.organizationId ||
+					memberRecord.status !== "pending"
+				)
+					return null;
+
+				const existingApproval = await tx.query.memberApproval.findFirst({
+					where: and(
+						eq(memberApproval.memberId, input.memberId),
+						eq(memberApproval.organizationId, input.organizationId),
+					),
+				});
+				if (existingApproval) return null;
+
+				const userRecord = await tx.query.user.findFirst({
+					where: eq(user.id, memberRecord.userId),
+				});
+				if (!userRecord) throw new Error("Pending member user not found");
+
+				const usage = await tx.query.inviteCodeUsage.findFirst({
+					where: eq(inviteCodeUsage.memberId, input.memberId),
+					with: {
+						inviteCode: {
+							columns: { id: true, code: true, label: true },
+						},
+					},
+				});
+
+				const pendingMember: PendingMember = {
+					id: memberRecord.id,
+					userId: memberRecord.userId,
+					organizationId: memberRecord.organizationId,
+					role: memberRecord.role,
+					createdAt: memberRecord.createdAt,
+					user: {
+						id: userRecord.id,
+						name: userRecord.name,
+						email: userRecord.email,
+						image: userRecord.image,
+					},
+					inviteCode: usage?.inviteCode
+						? {
+								id: usage.inviteCode.id,
+								code: usage.inviteCode.code,
+								label: usage.inviteCode.label,
+							}
+						: null,
+					usedAt: usage?.usedAt,
+				};
+
+				const [rejection] = await tx
+					.insert(memberApproval)
+					.values({
+						memberId: input.memberId,
+						organizationId: input.organizationId,
+						status: "rejected",
+						approvedBy: input.rejectedBy,
+						notes: input.notes,
+					})
+					.returning();
+
+				const [removedMember] = await tx
+					.delete(member)
+					.where(
+						and(
+							eq(member.id, input.memberId),
+							eq(member.organizationId, input.organizationId),
+							eq(member.status, "pending"),
+						),
+					)
+					.returning({ id: member.id });
+				if (!removedMember) {
+					throw new Error("Pending member changed before rejection");
+				}
+
+				return { pendingMember, rejection };
+			});
+
 		return PendingMemberService.of({
 			listPending: (query) =>
 				Effect.gen(function* (_) {
 					const pendingMembers = yield* _(
 						dbService.query("listPendingMembers", async () => {
-							// Get all members who joined via invite code and don't have an approval yet
-							const usages = await dbService.db.query.inviteCodeUsage.findMany({
-								with: {
-									inviteCode: {
-										columns: {
-											id: true,
-											code: true,
-											label: true,
-											organizationId: true,
-											defaultTeamId: true,
-										},
+							if (query.status !== undefined && query.status !== "pending")
+								return [];
+
+							const pendingUsages = await dbService.db
+								.select({
+									memberId: inviteCodeUsage.memberId,
+									userId: inviteCodeUsage.userId,
+									usedAt: inviteCodeUsage.usedAt,
+									member: {
+										organizationId: member.organizationId,
+										role: member.role,
+										createdAt: member.createdAt,
 									},
-									member: true,
 									user: {
-										columns: {
-											id: true,
-											name: true,
-											email: true,
-											image: true,
-										},
+										id: user.id,
+										name: user.name,
+										email: user.email,
+										image: user.image,
 									},
-								},
-								orderBy: [desc(inviteCodeUsage.usedAt)],
-							});
-
-							// Filter by organization
-							const orgUsages = usages.filter(
-								(u) => u.inviteCode?.organizationId === query.organizationId,
-							);
-
-							// Get all approvals for these members
-							const memberIds = orgUsages.map((u) => u.memberId);
-							const approvals =
-								memberIds.length > 0
-									? await dbService.db.query.memberApproval.findMany({
-											where: sql`${memberApproval.memberId} = ANY(${memberIds})`,
-										})
-									: [];
-
-							const approvalMap = new Map(approvals.map((a) => [a.memberId, a]));
-
-							// Filter to only pending (no approval record yet)
-							const pendingUsages =
-								query.status === undefined || query.status === "pending"
-									? orgUsages.filter((u) => !approvalMap.has(u.memberId))
-									: [];
+									inviteCode: {
+										id: inviteCode.id,
+										code: inviteCode.code,
+										label: inviteCode.label,
+										defaultTeamId: inviteCode.defaultTeamId,
+									},
+								})
+								.from(inviteCodeUsage)
+								.innerJoin(member, eq(member.id, inviteCodeUsage.memberId))
+								.innerJoin(user, eq(user.id, inviteCodeUsage.userId))
+								.innerJoin(
+									inviteCode,
+									eq(inviteCode.id, inviteCodeUsage.inviteCodeId),
+								)
+								.where(
+									and(
+										eq(member.organizationId, query.organizationId),
+										eq(member.status, "pending"),
+										eq(inviteCode.organizationId, query.organizationId),
+									),
+								)
+								.orderBy(desc(inviteCodeUsage.usedAt));
 
 							return pendingUsages.map((usage) => ({
 								id: usage.memberId,
 								userId: usage.userId,
-								organizationId: query.organizationId,
-								role: usage.member?.role || "member",
-								createdAt: usage.member?.createdAt || usage.usedAt,
+								organizationId: usage.member.organizationId,
+								role: usage.member.role,
+								createdAt: usage.member.createdAt,
 								user: {
-									id: usage.user?.id || usage.userId,
-									name: usage.user?.name || "Unknown",
-									email: usage.user?.email || "",
-									image: usage.user?.image || null,
+									id: usage.user.id,
+									name: usage.user.name,
+									email: usage.user.email,
+									image: usage.user.image,
 								},
-								inviteCode: usage.inviteCode
-									? {
-											id: usage.inviteCode.id,
-											code: usage.inviteCode.code,
-											label: usage.inviteCode.label,
-											defaultTeamId: usage.inviteCode.defaultTeamId,
-										}
-									: null,
+								inviteCode: usage.inviteCode,
 								usedAt: usage.usedAt,
 							}));
 						}),
@@ -274,7 +465,10 @@ export const PendingMemberServiceLive = Layer.effect(
 					// Get member details
 					const pendingMember = yield* _(
 						dbService.query("getMemberForApproval", async () => {
-							return await getPendingMemberDetails(input.memberId, input.organizationId);
+							return await getPendingMemberDetails(
+								input.memberId,
+								input.organizationId,
+							);
 						}),
 						Effect.flatMap((memberDetails) =>
 							memberDetails
@@ -289,109 +483,32 @@ export const PendingMemberServiceLive = Layer.effect(
 						),
 					);
 
-					// Check if already approved
-					const existingApproval = yield* _(
-						dbService.query("checkExistingApproval", async () => {
-							return await dbService.db.query.memberApproval.findFirst({
-								where: eq(memberApproval.memberId, input.memberId),
-							});
-						}),
+					const approval = yield* _(
+						dbService.query("approvePendingMember", () =>
+							approvePendingMemberAtomically(pendingMember, input),
+						),
 					);
 
-					if (existingApproval) {
-						yield* _(
+					if (!approval) {
+						return yield* _(
 							Effect.fail(
 								new ValidationError({
-									message: `Member has already been ${existingApproval.status}`,
+									message: "Member is no longer pending approval",
 									field: "memberId",
 								}),
 							),
 						);
 					}
 
-					// Validate team if provided
-					if (input.assignedTeamId) {
-						const assignedTeamId = input.assignedTeamId;
-						const teamRecord = yield* _(
-							dbService.query("validateTeam", async () => {
-								return await dbService.db.query.team.findFirst({
-									where: and(
-										eq(team.id, assignedTeamId),
-										eq(team.organizationId, input.organizationId),
-									),
-								});
-							}),
-						);
-
-						if (!teamRecord) {
-							yield* _(
-								Effect.fail(
-									new ValidationError({
-										message: "Invalid team. Team not found in this organization.",
-										field: "assignedTeamId",
-									}),
-								),
-							);
-						}
-					}
-
-					// Create approval record
-					const approval = yield* _(
-						dbService.query("createApproval", async () => {
-							const [result] = await dbService.db
-								.insert(memberApproval)
-								.values({
-									memberId: input.memberId,
-									organizationId: input.organizationId,
-									status: "approved",
-									assignedTeamId: input.assignedTeamId,
-									approvedBy: input.approvedBy,
-									notes: input.notes,
-								})
-								.returning();
-							return result;
-						}),
-					);
-
-					// Create employee record for the approved member
 					yield* _(
-						dbService.query("createEmployeeRecord", async () => {
-							// Check if employee already exists
-							const existingEmployee = await dbService.db.query.employee.findFirst({
-								where: and(
-									eq(employee.userId, pendingMember.userId),
-									eq(employee.organizationId, input.organizationId),
-								),
-							});
-
-							if (!existingEmployee) {
-								const [newEmployee] = await dbService.db
-									.insert(employee)
-									.values({
-										userId: pendingMember.userId,
-										organizationId: input.organizationId,
-										teamId: input.assignedTeamId,
-										role: "employee",
-										isActive: true,
-									})
-									.returning();
-
-								return newEmployee;
-							}
-
-							// Update existing employee if needed
-							if (existingEmployee && !existingEmployee.isActive) {
-								await dbService.db
-									.update(employee)
-									.set({
-										isActive: true,
-										teamId: input.assignedTeamId || existingEmployee.teamId,
-									})
-									.where(eq(employee.id, existingEmployee.id));
-							}
-
-							return existingEmployee;
-						}),
+						Effect.promise(() =>
+							syncBillingSeatsAfterMemberChange({
+								organizationId: input.organizationId,
+								memberId: input.memberId,
+								userId: pendingMember.userId,
+								change: "added",
+							}),
+						),
 					);
 
 					return {
@@ -403,72 +520,27 @@ export const PendingMemberServiceLive = Layer.effect(
 
 			reject: (input) =>
 				Effect.gen(function* (_) {
-					// Get member details
-					const pendingMember = yield* _(
-						dbService.query("getMemberForRejection", async () => {
-							return await getPendingMemberDetails(input.memberId, input.organizationId);
-						}),
-						Effect.flatMap((memberDetails) =>
-							memberDetails
-								? Effect.succeed(memberDetails)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Pending member not found",
-											entityType: "member",
-											entityId: input.memberId,
-										}),
-									),
+					const result = yield* _(
+						dbService.query("rejectPendingMember", () =>
+							rejectPendingMemberAtomically(input),
 						),
 					);
-
-					// Check if already processed
-					const existingApproval = yield* _(
-						dbService.query("checkExistingApproval", async () => {
-							return await dbService.db.query.memberApproval.findFirst({
-								where: eq(memberApproval.memberId, input.memberId),
-							});
-						}),
-					);
-
-					if (existingApproval) {
-						yield* _(
+					if (!result) {
+						return yield* _(
 							Effect.fail(
-								new ValidationError({
-									message: `Member has already been ${existingApproval.status}`,
-									field: "memberId",
+								new NotFoundError({
+									message: "Pending member not found",
+									entityType: "member",
+									entityId: input.memberId,
 								}),
 							),
 						);
 					}
 
-					// Create rejection record
-					const rejection = yield* _(
-						dbService.query("createRejection", async () => {
-							const [result] = await dbService.db
-								.insert(memberApproval)
-								.values({
-									memberId: input.memberId,
-									organizationId: input.organizationId,
-									status: "rejected",
-									approvedBy: input.rejectedBy,
-									notes: input.notes,
-								})
-								.returning();
-							return result;
-						}),
-					);
-
-					// Remove the member record
-					yield* _(
-						dbService.query("removeMember", async () => {
-							await dbService.db.delete(member).where(eq(member.id, input.memberId));
-						}),
-					);
-
 					return {
 						success: true,
-						member: pendingMember,
-						approval: rejection,
+						member: result.pendingMember,
+						approval: result.rejection,
 					};
 				}),
 
@@ -478,62 +550,50 @@ export const PendingMemberServiceLive = Layer.effect(
 					let failed = 0;
 
 					for (const memberId of memberIds) {
-						try {
-							yield* _(
-								dbService.query(`bulkApprove_${memberId}`, async () => {
-									// Check if already approved
-									const existing = await dbService.db.query.memberApproval.findFirst({
-										where: eq(memberApproval.memberId, memberId),
-									});
+						const pendingMemberResult = yield* _(
+							dbService
+								.query(`getBulkMember_${memberId}`, () =>
+									getPendingMemberDetails(memberId, organizationId),
+								)
+								.pipe(Effect.either),
+						);
+						if (
+							pendingMemberResult._tag === "Left" ||
+							!pendingMemberResult.right
+						) {
+							failed++;
+							continue;
+						}
+						const pendingMember = pendingMemberResult.right;
 
-									if (existing) {
-										failed++;
-										return;
-									}
-
-									// Get member details
-									const memberRecord = await dbService.db.query.member.findFirst({
-										where: and(eq(member.id, memberId), eq(member.organizationId, organizationId)),
-									});
-
-									if (!memberRecord) {
-										failed++;
-										return;
-									}
-
-									// Create approval
-									await dbService.db.insert(memberApproval).values({
+						const approvalResult = yield* _(
+							dbService
+								.query(`bulkApprove_${memberId}`, () =>
+									approvePendingMemberAtomically(pendingMember, {
 										memberId,
 										organizationId,
-										status: "approved",
-										assignedTeamId,
 										approvedBy,
-									});
-
-									// Create employee record
-									const existingEmployee = await dbService.db.query.employee.findFirst({
-										where: and(
-											eq(employee.userId, memberRecord.userId),
-											eq(employee.organizationId, organizationId),
-										),
-									});
-
-									if (!existingEmployee) {
-										await dbService.db.insert(employee).values({
-											userId: memberRecord.userId,
-											organizationId,
-											teamId: assignedTeamId,
-											role: "employee",
-											isActive: true,
-										});
-									}
-
-									approved++;
-								}),
-							);
-						} catch {
+										assignedTeamId,
+									}),
+								)
+								.pipe(Effect.either),
+						);
+						if (approvalResult._tag === "Left" || !approvalResult.right) {
 							failed++;
+							continue;
 						}
+
+						yield* _(
+							Effect.promise(() =>
+								syncBillingSeatsAfterMemberChange({
+									organizationId,
+									memberId,
+									userId: pendingMember.userId,
+									change: "added",
+								}),
+							),
+						);
+						approved++;
 					}
 
 					return { approved, failed };
@@ -544,38 +604,24 @@ export const PendingMemberServiceLive = Layer.effect(
 					let rejected = 0;
 					let failed = 0;
 
-					for (const memberId of memberIds) {
-						try {
-							yield* _(
-								dbService.query(`bulkReject_${memberId}`, async () => {
-									// Check if already processed
-									const existing = await dbService.db.query.memberApproval.findFirst({
-										where: eq(memberApproval.memberId, memberId),
-									});
-
-									if (existing) {
-										failed++;
-										return;
-									}
-
-									// Create rejection
-									await dbService.db.insert(memberApproval).values({
+					for (const memberId of new Set(memberIds)) {
+						const result = yield* _(
+							dbService
+								.query(`bulkReject_${memberId}`, () =>
+									rejectPendingMemberAtomically({
 										memberId,
 										organizationId,
-										status: "rejected",
-										approvedBy: rejectedBy,
+										rejectedBy,
 										notes,
-									});
-
-									// Remove member
-									await dbService.db.delete(member).where(eq(member.id, memberId));
-
-									rejected++;
-								}),
-							);
-						} catch {
+									}),
+								)
+								.pipe(Effect.either),
+						);
+						if (result._tag === "Left" || !result.right) {
 							failed++;
+							continue;
 						}
+						rejected++;
 					}
 
 					return { rejected, failed };
@@ -597,37 +643,30 @@ export const PendingMemberServiceLive = Layer.effect(
 
 			countPending: (organizationId) =>
 				Effect.gen(function* (_) {
-					const count = yield* _(
+					const pendingCount = yield* _(
 						dbService.query("countPendingMembers", async () => {
-							// Get all usages for this org
-							const usages = await dbService.db.query.inviteCodeUsage.findMany({
-								with: {
-									inviteCode: {
-										columns: {
-											organizationId: true,
-										},
-									},
-								},
-							});
-
-							const orgUsages = usages.filter(
-								(u) => u.inviteCode?.organizationId === organizationId,
-							);
-
-							if (orgUsages.length === 0) return 0;
-
-							// Get approvals
-							const memberIds = orgUsages.map((u) => u.memberId);
-							const approvals = await dbService.db.query.memberApproval.findMany({
-								where: sql`${memberApproval.memberId} = ANY(${memberIds})`,
-							});
-
-							const approvedIds = new Set(approvals.map((a) => a.memberId));
-							return orgUsages.filter((u) => !approvedIds.has(u.memberId)).length;
+							const [result] = await dbService.db
+								.select({ count: count() })
+								.from(inviteCodeUsage)
+								.innerJoin(member, eq(member.id, inviteCodeUsage.memberId))
+								.innerJoin(user, eq(user.id, inviteCodeUsage.userId))
+								.innerJoin(
+									inviteCode,
+									eq(inviteCode.id, inviteCodeUsage.inviteCodeId),
+								)
+								.where(
+									and(
+										eq(member.organizationId, organizationId),
+										eq(member.status, "pending"),
+										eq(inviteCode.organizationId, organizationId),
+									),
+								)
+								.execute();
+							return result?.count ?? 0;
 						}),
 					);
 
-					return count;
+					return pendingCount;
 				}),
 		});
 	}),

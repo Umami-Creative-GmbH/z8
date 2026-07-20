@@ -1,14 +1,13 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import {
-	employee,
 	employeeInvitationDraft,
 	organizationNotificationSettings,
 	team,
@@ -16,12 +15,22 @@ import {
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import {
+	isInvitationActionable,
+	normalizeInvitationEmail,
+	persistEmployeeInvitationDraft,
+	syncInvitationTargetTeam,
+} from "@/lib/auth/employee-invitation-draft";
+import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import {
 	type AnyAppError,
-	AuthorizationError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -45,10 +54,15 @@ const logger = createLogger("OrganizationActions");
 const updateInvitationTargetTeamSchema = z.object({
 	invitationId: z.string().min(1),
 	organizationId: z.string().min(1),
-	targetTeamId: z.uuid({ message: "Invalid target team" }).nullable().optional(),
+	targetTeamId: z
+		.uuid({ message: "Invalid target team" })
+		.nullable()
+		.optional(),
 });
 
-type UpdateInvitationTargetTeamData = z.infer<typeof updateInvitationTargetTeamSchema>;
+type UpdateInvitationTargetTeamData = z.infer<
+	typeof updateInvitationTargetTeamSchema
+>;
 
 type MemberWithUser = typeof authSchema.member.$inferSelect & {
 	user: Pick<typeof authSchema.user.$inferSelect, "name" | "email"> | null;
@@ -68,104 +82,63 @@ export async function sendInvitation(
 	},
 ): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("organizations");
+	let authoritativeInvitationId: string | undefined;
+	let failurePhase = "precondition";
 
 	const effect = tracer.startActiveSpan(
 		"sendInvitation",
 		{
 			attributes: {
 				"organization.id": data.organizationId,
-				"invitation.email": data.email,
 				"invitation.role": data.role,
 			},
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
+				const normalizedEmail = normalizeInvitationEmail(data.email);
+				const now = systemClock.nowInstant();
+				const databaseNow = dateFromInstant(now);
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
 
-				// Get current user's member record to check role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, data.organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId: data.organizationId,
+						requiredRole: "admin",
+						message: "Only admins and owners can send invitations",
+						resource: "invitation",
+						action: "create",
 					}),
-					Effect.flatMap((member) =>
-						member
-							? Effect.succeed(member)
-							: Effect.fail(
-									new NotFoundError({
-										message: "You are not a member of this organization",
-										entityType: "member",
-									}),
-								),
-					),
 				);
 
-				// Verify admin/owner role
-				if (memberRecord.role !== "admin" && memberRecord.role !== "owner") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and owners can send invitations",
-								userId: session.user.id,
-								resource: "invitation",
-								action: "create",
-							}),
-						),
-					);
-				}
-
-				span.setAttribute("currentMember.role", memberRecord.role);
-
 				// Validate input
-				const validationResult = invitationSchema.safeParse(data);
+				const validationResult = invitationSchema.safeParse({
+					...data,
+					email: normalizedEmail,
+				});
 				if (!validationResult.success) {
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error.issues[0]?.message || "Invalid input",
-								field: validationResult.error.issues[0]?.path?.join(".") || "data",
+								message:
+									validationResult.error.issues[0]?.message || "Invalid input",
+								field:
+									validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
 				}
 
 				const validatedData = validationResult.data;
-				const upsertEmployeeInvitationDraft = async (invitationId: string) => {
-					const draftRole =
-						validatedData.role === "admin" || validatedData.role === "owner" ? "admin" : "employee";
-
-					await db
-						.insert(employeeInvitationDraft)
-						.values({
-							invitationId,
-							organizationId: data.organizationId,
-							teamId: validatedData.targetTeamId ?? null,
-							role: draftRole,
-							contractType: "fixed",
-							updatedBy: session.user.id,
-						})
-						.onConflictDoUpdate({
-							target: employeeInvitationDraft.invitationId,
-							set: {
-								teamId: validatedData.targetTeamId ?? null,
-								role: draftRole,
-								updatedBy: session.user.id,
-							},
-						});
-				};
-
 				if (validatedData.targetTeamId) {
+					const targetTeamId = validatedData.targetTeamId;
 					const targetTeam = yield* _(
 						dbService.query("getInvitationTargetTeam", async () => {
 							return await db.query.team.findFirst({
 								where: and(
-									eq(team.id, validatedData.targetTeamId!),
+									eq(team.id, targetTeamId),
 									eq(team.organizationId, data.organizationId),
 								),
 							});
@@ -195,7 +168,10 @@ export async function sendInvitation(
 						},
 						catch: (error) =>
 							new ValidationError({
-								message: error instanceof Error ? error.message : "Invitation is not allowed",
+								message:
+									error instanceof Error
+										? error.message
+										: "Invitation is not allowed",
 								field: "email",
 								value: validatedData.email,
 							}),
@@ -210,26 +186,46 @@ export async function sendInvitation(
 								eq(authSchema.invitation.organizationId, data.organizationId),
 								eq(authSchema.invitation.email, validatedData.email),
 								eq(authSchema.invitation.status, "pending"),
+								gt(authSchema.invitation.expiresAt, databaseNow),
 							),
 						});
 					}),
 				);
 
-				if (existingInvitation) {
-					yield* _(
+				if (
+					existingInvitation?.organizationId === data.organizationId &&
+					isInvitationActionable(existingInvitation, now)
+				) {
+					authoritativeInvitationId = existingInvitation.id;
+					failurePhase = "persistInvitationState";
+					const persistence = yield* _(
 						Effect.tryPromise({
-							try: async () => {
-								await upsertEmployeeInvitationDraft(existingInvitation.id);
-							},
-							catch: (error) =>
+							try: () =>
+								persistEmployeeInvitationDraft(db, {
+									organizationId: data.organizationId,
+									normalizedEmail,
+									invitationId: existingInvitation.id,
+									canCreateOrganizations:
+										validatedData.canCreateOrganizations ?? false,
+									targetTeamId: validatedData.targetTeamId ?? null,
+									initialRole:
+										validatedData.role === "admin" ||
+										validatedData.role === "owner"
+											? "admin"
+											: "employee",
+									updatedBy: session.user.id,
+								}),
+							catch: () =>
 								new ValidationError({
-									message:
-										error instanceof Error ? error.message : "Failed to upsert invitation draft",
+									message: "Failed to send invitation",
 									field: "invitation",
 								}),
 						}),
 					);
-
+					if (persistence.outcome === "consumed") {
+						span.setStatus({ code: SpanStatusCode.OK });
+						return;
+					}
 					yield* _(
 						Effect.fail(
 							new ValidationError({
@@ -275,53 +271,41 @@ export async function sendInvitation(
 					}
 				}
 
-				// Use Better Auth organization.createInvitation API
+				// Better Auth may deliver email before app persistence. The actionable-invite
+				// branch above is the idempotent repair boundary for a failed persistence step.
+				failurePhase = "createInvitation";
 				yield* _(
 					Effect.tryPromise({
 						try: async () => {
-							await auth.api.createInvitation({
+							const newInvitation = await auth.api.createInvitation({
 								body: {
 									organizationId: data.organizationId,
-									email: validatedData!.email,
-									role: validatedData!.role,
+									email: validatedData.email,
+									role: validatedData.role,
+									resend: false,
 								},
 								headers: await headers(),
 							});
-
-							const newInvitation = await db.query.invitation.findFirst({
-								where: and(
-									eq(authSchema.invitation.email, validatedData!.email),
-									eq(authSchema.invitation.organizationId, data.organizationId),
-									eq(authSchema.invitation.status, "pending"),
-								),
-								orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
+							authoritativeInvitationId = newInvitation.id;
+							failurePhase = "persistInvitationState";
+							await persistEmployeeInvitationDraft(db, {
+								organizationId: data.organizationId,
+								normalizedEmail,
+								invitationId: newInvitation.id,
+								canCreateOrganizations:
+									validatedData.canCreateOrganizations ?? false,
+								targetTeamId: validatedData.targetTeamId ?? null,
+								initialRole:
+									validatedData.role === "admin" ||
+									validatedData.role === "owner"
+										? "admin"
+										: "employee",
+								updatedBy: session.user.id,
 							});
-
-							if (!newInvitation) {
-								throw new ValidationError({
-									message: "Failed to load created invitation",
-									field: "invitation",
-								});
-							}
-
-							await db
-								.update(authSchema.invitation)
-								.set({
-									canCreateOrganizations: validatedData!.canCreateOrganizations ?? false,
-									targetTeamId: validatedData!.targetTeamId ?? null,
-								})
-								.where(
-									and(
-										eq(authSchema.invitation.id, newInvitation.id),
-										eq(authSchema.invitation.organizationId, data.organizationId),
-									),
-								);
-
-							await upsertEmployeeInvitationDraft(newInvitation.id);
 						},
-						catch: (error) => {
+						catch: () => {
 							return new ValidationError({
-								message: error instanceof Error ? error.message : "Failed to send invitation",
+								message: "Failed to send invitation",
 								field: "invitation",
 							});
 						},
@@ -330,8 +314,7 @@ export async function sendInvitation(
 				logger.info(
 					{
 						organizationId: data.organizationId,
-						email: validatedData!.email,
-						role: validatedData!.role,
+						role: validatedData.role,
 					},
 					"Invitation sent successfully",
 				);
@@ -340,12 +323,207 @@ export async function sendInvitation(
 			}).pipe(
 				Effect.catchAll((error) =>
 					Effect.gen(function* (_) {
-						span.recordException(error as Error);
+						span.recordException(new Error("Invitation send failed"));
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
-							message: String(error),
+							message: "Invitation send failed",
 						});
-						logger.error({ error }, "Failed to send invitation");
+						logger.error(
+							{
+								operation: "sendInvitation",
+								failurePhase,
+								organizationId: data.organizationId,
+								...(authoritativeInvitationId
+									? { invitationId: authoritativeInvitationId }
+									: {}),
+							},
+							"Failed to send invitation",
+						);
+						return yield* _(Effect.fail(error as AnyAppError));
+					}),
+				),
+				Effect.onExit(() => Effect.sync(() => span.end())),
+				Effect.provide(AppLayer),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect);
+}
+
+export async function resendInvitation(
+	organizationId: string,
+	invitationId: string,
+): Promise<ServerActionResult<void>> {
+	const tracer = trace.getTracer("organizations");
+	let authoritativeInvitationId = invitationId;
+	let failurePhase = "precondition";
+
+	const effect = tracer.startActiveSpan(
+		"resendInvitation",
+		{
+			attributes: {
+				"organization.id": organizationId,
+				"invitation.id": invitationId,
+			},
+		},
+		(span) => {
+			return Effect.gen(function* (_) {
+				const authService = yield* _(AuthService);
+				const session = yield* _(authService.getSession());
+				const dbService = yield* _(DatabaseService);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "admin",
+						message: "Only admins and owners can resend invitations",
+						resource: "invitation",
+						action: "create",
+					}),
+				);
+
+				const invitation = yield* _(
+					dbService.query("getInvitationForResend", async () => {
+						return await db.query.invitation.findFirst({
+							where: and(
+								eq(authSchema.invitation.id, invitationId),
+								eq(authSchema.invitation.organizationId, organizationId),
+							),
+						});
+					}),
+					Effect.flatMap((record) =>
+						record
+							? Effect.succeed(record)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Invitation not found",
+										entityType: "invitation",
+										entityId: invitationId,
+									}),
+								),
+					),
+				);
+
+				const normalizedEmail = normalizeInvitationEmail(invitation.email);
+				const stableDraft = yield* _(
+					dbService.query("getCurrentEmployeeInvitationDraft", async () => {
+						return await db.query.employeeInvitationDraft.findFirst({
+							where: and(
+								eq(employeeInvitationDraft.organizationId, organizationId),
+								eq(employeeInvitationDraft.normalizedEmail, normalizedEmail),
+							),
+						});
+					}),
+				);
+
+				if (
+					invitation.status !== "pending" ||
+					stableDraft?.invitationId !== invitationId
+				) {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Invitation cannot be resent",
+								field: "invitation",
+							}),
+						),
+					);
+				}
+
+				if (
+					invitation.role !== "member" &&
+					invitation.role !== "admin" &&
+					invitation.role !== "owner"
+				) {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Invitation cannot be resent",
+								field: "invitation",
+							}),
+						),
+					);
+				}
+
+				const invitationRole = invitation.role;
+				failurePhase = "createInvitation";
+				const resentInvitation = yield* _(
+					Effect.tryPromise({
+						try: async () =>
+							await auth.api.createInvitation({
+								body: {
+									organizationId,
+									email: normalizedEmail,
+									role: invitationRole,
+									resend: true,
+								},
+								headers: await headers(),
+							}),
+						catch: () =>
+							new ValidationError({
+								message: "Failed to resend invitation",
+								field: "invitation",
+							}),
+					}),
+				);
+
+				authoritativeInvitationId = resentInvitation.id;
+				failurePhase = "persistInvitationState";
+				yield* _(
+					Effect.promise(async () => {
+						try {
+							await persistEmployeeInvitationDraft(db, {
+								organizationId,
+								normalizedEmail,
+								invitationId: resentInvitation.id,
+								canCreateOrganizations:
+									invitation.canCreateOrganizations ?? false,
+								targetTeamId: invitation.targetTeamId,
+								initialRole:
+									invitationRole === "admin" || invitationRole === "owner"
+										? "admin"
+										: "employee",
+								updatedBy: session.user.id,
+							});
+						} catch {
+							// Better Auth has already delivered the email. Reporting failure here
+							// would invite a retry and duplicate delivery; acceptance can recover
+							// prepared fields from the stable identity-scoped draft.
+							logger.warn(
+								{
+									operation: "repairResentInvitationPersistence",
+									organizationId,
+									invitationId: resentInvitation.id,
+								},
+								"Resent invitation requires app-state repair",
+							);
+						}
+					}),
+				);
+
+				logger.info(
+					{ organizationId, invitationId },
+					"Invitation resent successfully",
+				);
+				span.setStatus({ code: SpanStatusCode.OK });
+			}).pipe(
+				Effect.catchAll((error) =>
+					Effect.gen(function* (_) {
+						span.recordException(new Error("Invitation resend failed"));
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: "Invitation resend failed",
+						});
+						logger.error(
+							{
+								operation: "resendInvitation",
+								failurePhase,
+								organizationId,
+								invitationId: authoritativeInvitationId,
+							},
+							"Failed to resend invitation",
+						);
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
@@ -387,13 +565,26 @@ export async function updateInvitationTargetTeam(
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId: validatedData.organizationId,
+						requiredRole: "admin",
+						message: "Only admins and owners can update invitations",
+						resource: "invitation",
+						action: "update",
+					}),
+				);
 
 				const invitation = yield* _(
 					dbService.query("getPendingInvitation", async () => {
 						return await db.query.invitation.findFirst({
 							where: and(
 								eq(authSchema.invitation.id, validatedData.invitationId),
-								eq(authSchema.invitation.organizationId, validatedData.organizationId),
+								eq(
+									authSchema.invitation.organizationId,
+									validatedData.organizationId,
+								),
 								eq(authSchema.invitation.status, "pending"),
 							),
 						});
@@ -411,46 +602,13 @@ export async function updateInvitationTargetTeam(
 					),
 				);
 
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, invitation.organizationId),
-							),
-						});
-					}),
-					Effect.flatMap((member) =>
-						member
-							? Effect.succeed(member)
-							: Effect.fail(
-									new NotFoundError({
-										message: "You are not a member of this organization",
-										entityType: "member",
-									}),
-								),
-					),
-				);
-
-				if (memberRecord.role !== "admin" && memberRecord.role !== "owner") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and owners can update invitations",
-								userId: session.user.id,
-								resource: "invitation",
-								action: "update",
-							}),
-						),
-					);
-				}
-
 				if (validatedData.targetTeamId) {
+					const targetTeamId = validatedData.targetTeamId;
 					const targetTeam = yield* _(
 						dbService.query("getInvitationTargetTeam", async () => {
 							return await db.query.team.findFirst({
 								where: and(
-									eq(team.id, validatedData.targetTeamId!),
+									eq(team.id, targetTeamId),
 									eq(team.organizationId, invitation.organizationId),
 								),
 							});
@@ -472,21 +630,16 @@ export async function updateInvitationTargetTeam(
 
 				yield* _(
 					Effect.tryPromise({
-						try: async () => {
-							await db
-								.update(authSchema.invitation)
-								.set({ targetTeamId: validatedData.targetTeamId ?? null })
-								.where(
-									and(
-										eq(authSchema.invitation.id, invitation.id),
-										eq(authSchema.invitation.organizationId, invitation.organizationId),
-										eq(authSchema.invitation.status, "pending"),
-									),
-								);
-						},
-						catch: (error) =>
+						try: () =>
+							syncInvitationTargetTeam(db, {
+								organizationId: invitation.organizationId,
+								invitationId: invitation.id,
+								email: invitation.email,
+								targetTeamId: validatedData.targetTeamId ?? null,
+							}),
+						catch: () =>
 							new ValidationError({
-								message: error instanceof Error ? error.message : "Failed to update invitation",
+								message: "Failed to update invitation",
 								field: "invitation",
 							}),
 					}),
@@ -518,8 +671,11 @@ export async function updateInvitationTargetTeam(
  * Cancel a pending invitation
  * Requires admin or owner role
  */
-export async function cancelInvitation(invitationId: string): Promise<ServerActionResult<void>> {
+export async function cancelInvitation(
+	invitationId: string,
+): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("organizations");
+	let authoritativeOrganizationId: string | undefined;
 
 	const effect = tracer.startActiveSpan(
 		"cancelInvitation",
@@ -553,42 +709,17 @@ export async function cancelInvitation(invitationId: string): Promise<ServerActi
 								),
 					),
 				);
-
-				// Check user's role in the organization
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, invitation.organizationId),
-							),
-						});
+				authoritativeOrganizationId = invitation.organizationId;
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId: invitation.organizationId,
+						requiredRole: "admin",
+						message: "Only admins and owners can cancel invitations",
+						resource: "invitation",
+						action: "delete",
 					}),
-					Effect.flatMap((member) =>
-						member
-							? Effect.succeed(member)
-							: Effect.fail(
-									new NotFoundError({
-										message: "You are not a member of this organization",
-										entityType: "member",
-									}),
-								),
-					),
 				);
-
-				// Verify admin/owner role
-				if (memberRecord.role !== "admin" && memberRecord.role !== "owner") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and owners can cancel invitations",
-								userId: session.user.id,
-								resource: "invitation",
-								action: "delete",
-							}),
-						),
-					);
-				}
 
 				// Use Better Auth organization.cancelInvitation API
 				yield* _(
@@ -601,9 +732,9 @@ export async function cancelInvitation(invitationId: string): Promise<ServerActi
 								headers: await headers(),
 							});
 						},
-						catch: (error) => {
+						catch: () => {
 							return new ValidationError({
-								message: error instanceof Error ? error.message : "Failed to cancel invitation",
+								message: "Failed to cancel invitation",
 								field: "invitation",
 							});
 						},
@@ -621,12 +752,21 @@ export async function cancelInvitation(invitationId: string): Promise<ServerActi
 			}).pipe(
 				Effect.catchAll((error) =>
 					Effect.gen(function* (_) {
-						span.recordException(error as Error);
+						span.recordException(new Error("Invitation cancellation failed"));
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
-							message: String(error),
+							message: "Invitation cancellation failed",
 						});
-						logger.error({ error, invitationId }, "Failed to cancel invitation");
+						logger.error(
+							{
+								operation: "cancelInvitation",
+								invitationId,
+								...(authoritativeOrganizationId
+									? { organizationId: authoritativeOrganizationId }
+									: {}),
+							},
+							"Failed to cancel invitation",
+						);
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
@@ -644,136 +784,12 @@ export async function cancelInvitation(invitationId: string): Promise<ServerActi
 // =============================================================================
 
 /**
- * Remove a member from the organization
- * Requires owner role
- */
-export async function removeMember(
-	organizationId: string,
-	userId: string,
-): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("organizations");
-
-	const effect = tracer.startActiveSpan(
-		"removeMember",
-		{
-			attributes: {
-				"organization.id": organizationId,
-				"user.id": userId,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Check current user's role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
-					}),
-					Effect.flatMap((member) =>
-						member
-							? Effect.succeed(member)
-							: Effect.fail(
-									new NotFoundError({
-										message: "You are not a member of this organization",
-										entityType: "member",
-									}),
-								),
-					),
-				);
-
-				// Verify owner role (only owners can remove members)
-				if (memberRecord.role !== "owner") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only owners can remove members",
-								userId: session.user.id,
-								resource: "member",
-								action: "delete",
-							}),
-						),
-					);
-				}
-
-				// Prevent removing self
-				if (userId === session.user.id) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "You cannot remove yourself from the organization",
-								field: "userId",
-								value: userId,
-							}),
-						),
-					);
-				}
-
-				// Use Better Auth organization.removeMember API
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await auth.api.removeMember({
-								body: {
-									organizationId,
-									memberIdOrEmail: userId,
-								},
-								headers: await headers(),
-							});
-						},
-						catch: (error) => {
-							return new ValidationError({
-								message: error instanceof Error ? error.message : "Failed to remove member",
-								field: "member",
-							});
-						},
-					}),
-				);
-
-				logger.info(
-					{
-						organizationId,
-						userId,
-					},
-					"Member removed successfully",
-				);
-
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error, organizationId, userId }, "Failed to remove member");
-						return yield* _(Effect.fail(error as AnyAppError));
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
-			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
-
-/**
  * Update a member's role in the organization
  * Requires owner role
  */
 export async function updateMemberRole(
 	organizationId: string,
-	userId: string,
+	memberId: string,
 	data: UpdateMemberRoleData,
 ): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("organizations");
@@ -783,7 +799,7 @@ export async function updateMemberRole(
 		{
 			attributes: {
 				"organization.id": organizationId,
-				"user.id": userId,
+				"member.id": memberId,
 				role: data.role,
 			},
 		},
@@ -793,41 +809,16 @@ export async function updateMemberRole(
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
 
-				// Check current user's role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "owner",
+						message: "Only owners can change member roles",
+						resource: "member",
+						action: "update",
 					}),
-					Effect.flatMap((member) =>
-						member
-							? Effect.succeed(member)
-							: Effect.fail(
-									new NotFoundError({
-										message: "You are not a member of this organization",
-										entityType: "member",
-									}),
-								),
-					),
 				);
-
-				// Verify owner role (only owners can change roles)
-				if (memberRecord.role !== "owner") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only owners can change member roles",
-								userId: session.user.id,
-								resource: "member",
-								action: "update",
-							}),
-						),
-					);
-				}
 
 				// Validate input
 				const validationResult = updateMemberRoleSchema.safeParse(data);
@@ -835,14 +826,52 @@ export async function updateMemberRole(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error.issues[0]?.message || "Invalid input",
-								field: validationResult.error.issues[0]?.path?.join(".") || "data",
+								message:
+									validationResult.error.issues[0]?.message || "Invalid input",
+								field:
+									validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
 				}
 
 				const validatedData = validationResult.data;
+				const targetMember = yield* _(
+					dbService.query("getTargetMemberForRoleUpdate", async () => {
+						return await db.query.member.findFirst({
+							where: and(
+								eq(authSchema.member.id, memberId),
+								eq(authSchema.member.organizationId, organizationId),
+								eq(authSchema.member.status, "approved"),
+							),
+							columns: { id: true, userId: true, status: true },
+						});
+					}),
+				);
+
+				if (targetMember?.status !== "approved") {
+					return yield* _(
+						Effect.fail(
+							new NotFoundError({
+								message: "Member not found",
+								entityType: "member",
+								entityId: memberId,
+							}),
+						),
+					);
+				}
+
+				if (targetMember.userId === session.user.id) {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "You cannot change your own organization role",
+								field: "memberId",
+								value: memberId,
+							}),
+						),
+					);
+				}
 
 				// Use Better Auth organization.updateMemberRole API
 				yield* _(
@@ -851,15 +880,15 @@ export async function updateMemberRole(
 							await auth.api.updateMemberRole({
 								body: {
 									organizationId,
-									memberId: userId,
+									memberId,
 									role: validatedData.role,
 								},
 								headers: await headers(),
 							});
 						},
-						catch: (error) => {
+						catch: () => {
 							return new ValidationError({
-								message: error instanceof Error ? error.message : "Failed to update member role",
+								message: "Failed to update member role",
 								field: "role",
 							});
 						},
@@ -869,7 +898,7 @@ export async function updateMemberRole(
 				logger.info(
 					{
 						organizationId,
-						userId,
+						memberId,
 						newRole: validatedData.role,
 					},
 					"Member role updated successfully",
@@ -884,7 +913,10 @@ export async function updateMemberRole(
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
-						logger.error({ error, organizationId, userId }, "Failed to update member role");
+						logger.error(
+							{ error, organizationId, memberId },
+							"Failed to update member role",
+						);
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
@@ -922,43 +954,16 @@ export async function updateOrganizationDetails(
 			return Effect.gen(function* (_) {
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Check current user's role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "owner",
+						message: "Only owners can update organization details",
+						resource: "organization",
+						action: "update",
 					}),
-					Effect.flatMap((member) =>
-						member
-							? Effect.succeed(member)
-							: Effect.fail(
-									new NotFoundError({
-										message: "You are not a member of this organization",
-										entityType: "member",
-									}),
-								),
-					),
 				);
-
-				// Verify owner role (only owners can update organization details)
-				if (memberRecord.role !== "owner") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only owners can update organization details",
-								userId: session.user.id,
-								resource: "organization",
-								action: "update",
-							}),
-						),
-					);
-				}
 
 				// Validate input
 				const validationResult = updateOrganizationSchema.safeParse(data);
@@ -966,14 +971,16 @@ export async function updateOrganizationDetails(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error.issues[0]?.message || "Invalid input",
-								field: validationResult.error.issues[0]?.path?.join(".") || "data",
+								message:
+									validationResult.error.issues[0]?.message || "Invalid input",
+								field:
+									validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
 				}
 
-				const validatedData = validationResult.data!;
+				const validatedData = validationResult.data;
 
 				// Build the update data object, only including defined fields
 				const updateData: {
@@ -981,11 +988,16 @@ export async function updateOrganizationDetails(
 					slug?: string;
 					metadata?: Record<string, unknown>;
 				} = {};
-				if (validatedData.name !== undefined) updateData.name = validatedData.name;
-				if (validatedData.slug !== undefined) updateData.slug = validatedData.slug;
+				if (validatedData.name !== undefined)
+					updateData.name = validatedData.name;
+				if (validatedData.slug !== undefined)
+					updateData.slug = validatedData.slug;
 				if (validatedData.metadata !== undefined) {
 					try {
-						updateData.metadata = JSON.parse(validatedData.metadata) as Record<string, unknown>;
+						updateData.metadata = JSON.parse(validatedData.metadata) as Record<
+							string,
+							unknown
+						>;
 					} catch {
 						// If metadata is not valid JSON, skip it
 					}
@@ -1005,7 +1017,10 @@ export async function updateOrganizationDetails(
 						},
 						catch: (error) => {
 							return new ValidationError({
-								message: error instanceof Error ? error.message : "Failed to update organization",
+								message:
+									error instanceof Error
+										? error.message
+										: "Failed to update organization",
 								field: "organization",
 							});
 						},
@@ -1029,7 +1044,10 @@ export async function updateOrganizationDetails(
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
-						logger.error({ error, organizationId }, "Failed to update organization");
+						logger.error(
+							{ error, organizationId },
+							"Failed to update organization",
+						);
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
@@ -1063,40 +1081,16 @@ export async function removeOrganizationLogo(
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
-
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMemberForLogoRemoval", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "owner",
+						message: "Only owners can update organization details",
+						resource: "organization",
+						action: "update",
 					}),
-					Effect.flatMap((member) =>
-						member
-							? Effect.succeed(member)
-							: Effect.fail(
-									new NotFoundError({
-										message: "You are not a member of this organization",
-										entityType: "member",
-									}),
-								),
-					),
 				);
-
-				if (memberRecord.role !== "owner") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only owners can update organization details",
-								userId: session.user.id,
-								resource: "organization",
-								action: "update",
-							}),
-						),
-					);
-				}
 
 				yield* _(
 					dbService.query("removeOrganizationLogo", async () => {
@@ -1107,7 +1101,10 @@ export async function removeOrganizationLogo(
 					}),
 				);
 
-				logger.info({ organizationId }, "Organization logo removed successfully");
+				logger.info(
+					{ organizationId },
+					"Organization logo removed successfully",
+				);
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
 				Effect.catchAll((error) =>
@@ -1117,7 +1114,10 @@ export async function removeOrganizationLogo(
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
-						logger.error({ error, organizationId }, "Failed to remove organization logo");
+						logger.error(
+							{ error, organizationId },
+							"Failed to remove organization logo",
+						);
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
@@ -1170,43 +1170,16 @@ export async function toggleOrganizationFeature(
 
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Check current user's role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "owner",
+						message: "Only owners can change organization features",
+						resource: "organization",
+						action: "update",
 					}),
-					Effect.flatMap((member) =>
-						member
-							? Effect.succeed(member)
-							: Effect.fail(
-									new NotFoundError({
-										message: "You are not a member of this organization",
-										entityType: "member",
-									}),
-								),
-					),
 				);
-
-				// Verify owner role (only owners can toggle features)
-				if (memberRecord.role !== "owner") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only owners can change organization features",
-								userId: session.user.id,
-								resource: "organization",
-								action: "update",
-							}),
-						),
-					);
-				}
 
 				// Update the organization feature directly
 				yield* _(
@@ -1220,7 +1193,9 @@ export async function toggleOrganizationFeature(
 						catch: (error) => {
 							return new ValidationError({
 								message:
-									error instanceof Error ? error.message : "Failed to update organization feature",
+									error instanceof Error
+										? error.message
+										: "Failed to update organization feature",
 								field: feature,
 							});
 						},
@@ -1283,43 +1258,16 @@ export async function updateOrganizationTimezone(
 			return Effect.gen(function* (_) {
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Check current user's role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "owner",
+						message: "Only owners can change organization timezone",
+						resource: "organization",
+						action: "update",
 					}),
-					Effect.flatMap((member) =>
-						member
-							? Effect.succeed(member)
-							: Effect.fail(
-									new NotFoundError({
-										message: "You are not a member of this organization",
-										entityType: "member",
-									}),
-								),
-					),
 				);
-
-				// Verify owner role (only owners can update timezone)
-				if (memberRecord.role !== "owner") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only owners can change organization timezone",
-								userId: session.user.id,
-								resource: "organization",
-								action: "update",
-							}),
-						),
-					);
-				}
 
 				if (!isValidIanaTimeZone(timezone)) {
 					return yield* _(
@@ -1351,7 +1299,9 @@ export async function updateOrganizationTimezone(
 						catch: (error) => {
 							return new ValidationError({
 								message:
-									error instanceof Error ? error.message : "Failed to update organization timezone",
+									error instanceof Error
+										? error.message
+										: "Failed to update organization timezone",
 								field: "timezone",
 							});
 						},
@@ -1425,41 +1375,18 @@ export async function updateOrganizationDefaultNotificationLanguage(
 
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
 
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "admin",
+						message:
+							"Only admins and owners can change organization notification language",
+						resource: "organization",
+						action: "update",
 					}),
-					Effect.flatMap((member) =>
-						member
-							? Effect.succeed(member)
-							: Effect.fail(
-									new NotFoundError({
-										message: "You are not a member of this organization",
-										entityType: "member",
-									}),
-								),
-					),
 				);
-
-				if (memberRecord.role !== "admin" && memberRecord.role !== "owner") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and owners can change organization notification language",
-								userId: session.user.id,
-								resource: "organization",
-								action: "update",
-							}),
-						),
-					);
-				}
 
 				yield* _(
 					Effect.tryPromise({
@@ -1518,152 +1445,6 @@ export async function updateOrganizationDefaultNotificationLanguage(
 }
 
 // =============================================================================
-// Employee Management Actions
-// =============================================================================
-
-/**
- * Toggle employee active status (activate/deactivate)
- * Requires admin or owner role
- */
-export async function toggleEmployeeStatus(
-	organizationId: string,
-	employeeId: string,
-	isActive: boolean,
-): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("organizations");
-
-	const effect = tracer.startActiveSpan(
-		"toggleEmployeeStatus",
-		{
-			attributes: {
-				"organization.id": organizationId,
-				"employee.id": employeeId,
-				"employee.isActive": isActive,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Check current user's role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
-					}),
-					Effect.flatMap((member) =>
-						member
-							? Effect.succeed(member)
-							: Effect.fail(
-									new NotFoundError({
-										message: "You are not a member of this organization",
-										entityType: "member",
-									}),
-								),
-					),
-				);
-
-				// Verify admin/owner role
-				if (memberRecord.role !== "admin" && memberRecord.role !== "owner") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and owners can change employee status",
-								userId: session.user.id,
-								resource: "employee",
-								action: "update",
-							}),
-						),
-					);
-				}
-
-				// Get the employee record
-				const employeeRecord = yield* _(
-					dbService.query("getEmployee", async () => {
-						return await db.query.employee.findFirst({
-							where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
-						});
-					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee not found",
-										entityType: "employee",
-										entityId: employeeId,
-									}),
-								),
-					),
-				);
-
-				// Prevent deactivating yourself
-				if (employeeRecord.userId === session.user.id && !isActive) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "You cannot deactivate yourself",
-								field: "employeeId",
-								value: employeeId,
-							}),
-						),
-					);
-				}
-
-				// Update the employee status
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await db.update(employee).set({ isActive }).where(eq(employee.id, employeeId));
-						},
-						catch: (error) => {
-							return new ValidationError({
-								message:
-									error instanceof Error ? error.message : "Failed to update employee status",
-								field: "employee",
-							});
-						},
-					}),
-				);
-
-				logger.info(
-					{
-						organizationId,
-						employeeId,
-						isActive,
-					},
-					`Employee ${isActive ? "activated" : "deactivated"} successfully`,
-				);
-
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error, organizationId, employeeId }, "Failed to toggle employee status");
-						return yield* _(Effect.fail(error as AnyAppError));
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
-			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
-
-// =============================================================================
 // Organization Deletion Actions (Soft Delete with 5-Day Recovery)
 // =============================================================================
 
@@ -1690,6 +1471,16 @@ export async function deleteOrganization(
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "admin",
+						message: "Only owners and admins can delete an organization",
+						resource: "organization",
+						action: "delete",
+					}),
+				);
 
 				// Get organization details
 				const organization = yield* _(
@@ -1737,42 +1528,6 @@ export async function deleteOrganization(
 					);
 				}
 
-				// Check current user's role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
-					}),
-					Effect.flatMap((member) =>
-						member
-							? Effect.succeed(member)
-							: Effect.fail(
-									new NotFoundError({
-										message: "You are not a member of this organization",
-										entityType: "member",
-									}),
-								),
-					),
-				);
-
-				// Verify admin or owner role
-				if (memberRecord.role !== "owner" && memberRecord.role !== "admin") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only owners and admins can delete an organization",
-								userId: session.user.id,
-								resource: "organization",
-								action: "delete",
-							}),
-						),
-					);
-				}
-
 				const deletionDate = new Date();
 
 				// Soft delete: Set deletedAt and deletedBy
@@ -1812,7 +1567,10 @@ export async function deleteOrganization(
 						},
 						catch: (error) => {
 							// Log but don't fail the action if email sending fails
-							logger.warn({ error, organizationId }, "Failed to send deletion notification emails");
+							logger.warn(
+								{ error, organizationId },
+								"Failed to send deletion notification emails",
+							);
 						},
 					}),
 				);
@@ -1836,7 +1594,10 @@ export async function deleteOrganization(
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
-						logger.error({ error, organizationId }, "Failed to delete organization");
+						logger.error(
+							{ error, organizationId },
+							"Failed to delete organization",
+						);
 						return yield* _(Effect.fail(error as unknown as AnyAppError));
 					}),
 				),
@@ -1870,6 +1631,16 @@ export async function recoverOrganization(
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
+				yield* _(
+					requireActiveOrganizationActionActor({
+						userId: session.user.id,
+						organizationId,
+						requiredRole: "admin",
+						message: "Only owners and admins can recover an organization",
+						resource: "organization",
+						action: "update",
+					}),
+				);
 
 				// Get organization details
 				const organization = yield* _(
@@ -1903,42 +1674,6 @@ export async function recoverOrganization(
 					);
 				}
 
-				// Check current user's role
-				const memberRecord = yield* _(
-					dbService.query("getCurrentMember", async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(authSchema.member.userId, session.user.id),
-								eq(authSchema.member.organizationId, organizationId),
-							),
-						});
-					}),
-					Effect.flatMap((member) =>
-						member
-							? Effect.succeed(member)
-							: Effect.fail(
-									new NotFoundError({
-										message: "You are not a member of this organization",
-										entityType: "member",
-									}),
-								),
-					),
-				);
-
-				// Verify admin or owner role
-				if (memberRecord.role !== "owner" && memberRecord.role !== "admin") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only owners and admins can recover an organization",
-								userId: session.user.id,
-								resource: "organization",
-								action: "update",
-							}),
-						),
-					);
-				}
-
 				// Clear deletion fields to recover
 				yield* _(
 					Effect.tryPromise({
@@ -1953,7 +1688,10 @@ export async function recoverOrganization(
 						},
 						catch: (error) => {
 							return new ValidationError({
-								message: error instanceof Error ? error.message : "Failed to recover organization",
+								message:
+									error instanceof Error
+										? error.message
+										: "Failed to recover organization",
 								field: "organization",
 							});
 						},
@@ -1978,7 +1716,10 @@ export async function recoverOrganization(
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
-						logger.error({ error, organizationId }, "Failed to recover organization");
+						logger.error(
+							{ error, organizationId },
+							"Failed to recover organization",
+						);
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
@@ -2000,26 +1741,33 @@ async function sendOrganizationDeletionNotifications(
 	deletedByName: string,
 	deletionDate: Date,
 ): Promise<void> {
-	const [{ render }, { OrganizationDeletion }, { sendEmail }, adminMembers, appUrl] =
-		await Promise.all([
-			import("react-email"),
-			import("@/lib/email/templates/organization-deletion"),
-			import("@/lib/email/email-service"),
-			db.query.member.findMany({
-				where: and(
-					eq(authSchema.member.organizationId, organizationId),
-					// Include both admin and owner roles
-				),
-				with: {
-					user: true,
-				},
-			}),
-			getOrganizationBaseUrl(organizationId),
-		]);
+	const [
+		{ render },
+		{ OrganizationDeletion },
+		{ sendEmail },
+		adminMembers,
+		appUrl,
+	] = await Promise.all([
+		import("react-email"),
+		import("@/lib/email/templates/organization-deletion"),
+		import("@/lib/email/email-service"),
+		db.query.member.findMany({
+			where: and(
+				eq(authSchema.member.organizationId, organizationId),
+				// Include both admin and owner roles
+			),
+			with: {
+				user: true,
+			},
+		}),
+		getOrganizationBaseUrl(organizationId),
+	]);
 
 	// Filter to only admins and owners
 	const typedAdminMembers = adminMembers as unknown as MemberWithUser[];
-	const adminsAndOwners = typedAdminMembers.filter((m) => m.role === "admin" || m.role === "owner");
+	const adminsAndOwners = typedAdminMembers.filter(
+		(m) => m.role === "admin" || m.role === "owner",
+	);
 
 	const recoveryUrl = `${appUrl}/settings/organizations`;
 	const permanentDeletionDate = new Date(deletionDate);

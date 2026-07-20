@@ -19,8 +19,14 @@ import type {
 	SelectableEmployee,
 } from "./employee-action-types";
 import {
+	deactivateEmployeeAction,
+	reactivateEmployeeAction,
+	removeEmployeeAccessAction,
+} from "./employee-lifecycle.actions";
+import {
 	assignManagersAction,
 	createEmployeeAction,
+	deleteEmployeeInvitationDraftAction,
 	requestEmployeeWorkBalanceRecalculationAction,
 	updateEmployeeAction,
 	updateEmployeeInvitationDraftAction,
@@ -56,11 +62,35 @@ export async function updateEmployee(
 	return updateEmployeeAction(employeeId, data);
 }
 
+export async function deactivateEmployee(
+	employeeId: string,
+): Promise<ServerActionResult<void>> {
+	return deactivateEmployeeAction(employeeId);
+}
+
+export async function reactivateEmployee(
+	employeeId: string,
+): Promise<ServerActionResult<void>> {
+	return reactivateEmployeeAction(employeeId);
+}
+
+export async function removeEmployeeAccess(
+	employeeId: string,
+): Promise<ServerActionResult<void>> {
+	return removeEmployeeAccessAction(employeeId);
+}
+
 export async function updateEmployeeInvitationDraft(
 	draftEmployeeId: string,
 	data: UpdateEmployeeInvitationDraft,
 ): Promise<ServerActionResult<void>> {
 	return updateEmployeeInvitationDraftAction(draftEmployeeId, data);
+}
+
+export async function deleteEmployeeInvitationDraft(
+	draftEmployeeId: string,
+): Promise<ServerActionResult<void>> {
+	return deleteEmployeeInvitationDraftAction(draftEmployeeId);
 }
 
 export async function updateOwnProfile(

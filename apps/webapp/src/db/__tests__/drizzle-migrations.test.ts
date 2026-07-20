@@ -77,6 +77,10 @@ const migration0052Url = new URL(
 	"../../../drizzle/0052_time_entry_timezone_recovery.sql",
 	import.meta.url,
 );
+const migration0054Url = new URL(
+	"../../../drizzle/0054_employee_invitation_draft_identity.sql",
+	import.meta.url,
+);
 
 const migration0004Statements = migration0004
 	.split("--> statement-breakpoint")
@@ -405,5 +409,135 @@ describe("drizzle follow-up migrations", () => {
 		expect(migration0052).toContain("pg_timezone_names");
 		expect(migration0052).toContain("historical_inference");
 		expect(migration0052).toContain('"time_entry"."timestamp" AT TIME ZONE \'UTC\'');
+	});
+
+	it("deterministically repairs employee invitation draft identity", () => {
+		expect(existsSync(migration0054Url)).toBe(true);
+
+		const migration0054 = readFileSync(migration0054Url, "utf8");
+		const addColumnPosition = migration0054.indexOf(
+			'ADD COLUMN IF NOT EXISTS "normalized_email" text',
+		);
+		const addPermissionColumnPosition = migration0054.indexOf(
+			'ADD COLUMN IF NOT EXISTS "can_create_organizations" boolean DEFAULT false NOT NULL',
+		);
+		const permissionBackfillPosition = migration0054.indexOf(
+			'UPDATE "employee_invitation_draft" AS "draft"\nSET "can_create_organizations"',
+		);
+		const permissionBackfillEnd = migration0054.indexOf(
+			"--> statement-breakpoint",
+			permissionBackfillPosition,
+		);
+		const permissionBackfill = migration0054.slice(
+			permissionBackfillPosition,
+			permissionBackfillEnd,
+		);
+		const backfillPosition = migration0054.indexOf('UPDATE "employee_invitation_draft" AS "draft"');
+		const employeeDeletePosition = migration0054.indexOf(
+			'DELETE FROM "employee_invitation_draft" AS "draft"\nUSING "employee"',
+		);
+		const inactiveDeletePosition = migration0054.indexOf(
+			'DELETE FROM "employee_invitation_draft" AS "draft"\nWHERE NOT EXISTS',
+		);
+		const repairTablePosition = migration0054.indexOf(
+			'CREATE TEMP TABLE "employee_invitation_draft_identity_repair"',
+		);
+		const duplicateDeletePosition = migration0054.indexOf(
+			'DELETE FROM "employee_invitation_draft" AS "draft"\nUSING "employee_invitation_draft_identity_repair"',
+		);
+		const relinkPosition = migration0054.indexOf(
+			'UPDATE "employee_invitation_draft" AS "draft"\nSET "invitation_id"',
+		);
+		const notNullPosition = migration0054.indexOf(
+			'ALTER COLUMN "normalized_email" SET NOT NULL',
+		);
+		const uniqueIndexPosition = migration0054.indexOf(
+			'CREATE UNIQUE INDEX IF NOT EXISTS "employeeInvitationDraft_organizationNormalizedEmail_unique_idx"',
+		);
+
+		const repairPhasePositions = [
+			addColumnPosition,
+			addPermissionColumnPosition,
+			permissionBackfillPosition,
+			backfillPosition,
+			employeeDeletePosition,
+			inactiveDeletePosition,
+			repairTablePosition,
+			duplicateDeletePosition,
+			relinkPosition,
+			notNullPosition,
+			uniqueIndexPosition,
+		];
+
+		expect(Math.min(...repairPhasePositions)).toBeGreaterThanOrEqual(0);
+		expect(addColumnPosition).toBeLessThan(backfillPosition);
+		expect(addPermissionColumnPosition).toBeLessThan(permissionBackfillPosition);
+		expect(permissionBackfillPosition).toBeLessThan(repairTablePosition);
+		expect(permissionBackfillPosition).toBeLessThan(duplicateDeletePosition);
+		expect(permissionBackfillPosition).toBeLessThan(relinkPosition);
+		expect(permissionBackfill).toContain(
+			'SET "can_create_organizations" = COALESCE("invitation"."can_create_organizations", false)',
+		);
+		expect(permissionBackfill).toContain('FROM "invitation" AS "invitation"');
+		expect(permissionBackfill).toContain(
+			'WHERE "invitation"."id" = "draft"."invitation_id"',
+		);
+		expect(permissionBackfill).toContain(
+			'AND "invitation"."organization_id" = "draft"."organization_id"',
+		);
+		expect(backfillPosition).toBeLessThan(employeeDeletePosition);
+		expect(employeeDeletePosition).toBeLessThan(inactiveDeletePosition);
+		expect(inactiveDeletePosition).toBeLessThan(repairTablePosition);
+		expect(repairTablePosition).toBeLessThan(duplicateDeletePosition);
+		expect(duplicateDeletePosition).toBeLessThan(relinkPosition);
+		expect(relinkPosition).toBeLessThan(notNullPosition);
+		expect(notNullPosition).toBeLessThan(uniqueIndexPosition);
+		expect(migration0054).toContain('lower(btrim("invitation"."email"))');
+		expect(migration0054).toContain('"invitation"."organization_id" = "draft"."organization_id"');
+		expect(migration0054).toContain('lower(btrim("user"."email")) = "draft"."normalized_email"');
+		expect(migration0054).toContain('"employee"."organization_id" = "draft"."organization_id"');
+		expect(migration0054).toContain('"invitation"."status" = \'pending\'');
+		expect(migration0054).toContain('"invitation"."expires_at" > CURRENT_TIMESTAMP');
+		expect(migration0054).toContain(
+			'PARTITION BY "draft"."organization_id", "draft"."normalized_email"\n\t\t\tORDER BY "draft"."updated_at" DESC, "draft"."created_at" DESC, "draft"."id" DESC',
+		);
+		expect(migration0054).toContain(
+			'PARTITION BY "invitation"."organization_id", lower(btrim("invitation"."email"))\n\t\t\tORDER BY "invitation"."created_at" DESC, "invitation"."id" DESC',
+		);
+		expect(migration0054).not.toContain('CREATE TABLE "daily_digest_delivery"');
+		expect(migration0054).not.toContain('CREATE TABLE "telegram_digest_delivery"');
+		expect(migration0054).not.toContain("DROP CONSTRAINT");
+	});
+
+	it("serializes every employee writer by organization and normalized user email", () => {
+		const migration0054 = readFileSync(migration0054Url, "utf8");
+		const replaceFunctionPosition = migration0054.indexOf(
+			'CREATE OR REPLACE FUNCTION "employee_identity_advisory_lock"()',
+		);
+		const dropTriggerPosition = migration0054.indexOf(
+			'DROP TRIGGER IF EXISTS "employee_identity_advisory_lock_trigger" ON "employee"',
+		);
+		const createTriggerPosition = migration0054.indexOf(
+			'CREATE TRIGGER "employee_identity_advisory_lock_trigger"',
+		);
+
+		expect(replaceFunctionPosition).toBeGreaterThanOrEqual(0);
+		expect(dropTriggerPosition).toBeGreaterThan(replaceFunctionPosition);
+		expect(createTriggerPosition).toBeGreaterThan(dropTriggerPosition);
+		expect(migration0054).toContain(
+			'SELECT lower(btrim("user"."email"))\n\tINTO normalized_email',
+		);
+		expect(migration0054).toContain('WHERE "user"."id" = NEW.user_id');
+		expect(migration0054).toContain("IF normalized_email IS NULL THEN");
+		expect(migration0054).toContain("RAISE EXCEPTION");
+		expect(migration0054).toContain(
+			"pg_advisory_xact_lock(hashtextextended(jsonb_build_array(NEW.organization_id, normalized_email)::text, 0))",
+		);
+		expect(migration0054).toContain(
+			'BEFORE INSERT OR UPDATE OF "user_id", "organization_id" ON "employee"',
+		);
+		expect(migration0054).toContain(
+			'FOR EACH ROW EXECUTE FUNCTION "employee_identity_advisory_lock"()',
+		);
 	});
 });

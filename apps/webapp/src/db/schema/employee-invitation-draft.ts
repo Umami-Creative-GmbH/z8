@@ -1,4 +1,5 @@
 import {
+	boolean,
 	decimal,
 	index,
 	pgTable,
@@ -22,6 +23,8 @@ export const employeeInvitationDraft = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		normalizedEmail: text("normalized_email").notNull(),
+		canCreateOrganizations: boolean("can_create_organizations").default(false).notNull(),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "set null" }),
 		role: roleEnum("role").default("employee").notNull(),
 		firstName: text("first_name"),
@@ -43,6 +46,10 @@ export const employeeInvitationDraft = pgTable(
 	},
 	(table) => [
 		uniqueIndex("employeeInvitationDraft_invitationId_unique_idx").on(table.invitationId),
+		uniqueIndex("employeeInvitationDraft_organizationNormalizedEmail_unique_idx").on(
+			table.organizationId,
+			table.normalizedEmail,
+		),
 		index("employeeInvitationDraft_organizationId_idx").on(table.organizationId),
 		// The invitation/org composite FK is migration-only because invitation is generated
 		// by Better Auth and drizzle push cannot see the required generated-table index.

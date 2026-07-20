@@ -1,12 +1,13 @@
 /* @vitest-environment jsdom */
 
 import { readFileSync } from "node:fs";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { EmployeeWithRelations } from "./actions";
-import { columns } from "./columns";
+import { createEmployeeColumns } from "./columns";
 import type { EmployeeDirectoryRow } from "./employee-action-types";
 
 vi.mock("@tolgee/react", () => ({
@@ -20,7 +21,12 @@ vi.mock("@/components/user-avatar", () => ({
 	}: {
 		name?: string | null;
 		clockStatus?: "clocked-in" | "clocked-out" | "unknown";
-	}) => <span data-avatar-name={name ?? ""} data-clock-status={clockStatus ?? "unknown"} />,
+	}) => (
+		<span
+			data-avatar-name={name ?? ""}
+			data-clock-status={clockStatus ?? "unknown"}
+		/>
+	),
 }));
 
 vi.mock("@/navigation", () => ({
@@ -29,16 +35,67 @@ vi.mock("@/navigation", () => ({
 	),
 }));
 
+vi.mock("./actions", async (importOriginal) => ({
+	...(await importOriginal<typeof import("./actions")>()),
+	deactivateEmployee: vi.fn(),
+	reactivateEmployee: vi.fn(),
+	removeEmployeeAccess: vi.fn(),
+}));
+
+const defaultColumnOptions = {
+	organizationId: "org_1",
+	currentUserId: "owner-user",
+	currentMemberRole: "owner",
+	onOptimisticStatusChange: vi.fn(),
+	onRemoved: vi.fn(),
+};
+
+function getColumns(overrides: Partial<typeof defaultColumnOptions> = {}) {
+	return createEmployeeColumns({ ...defaultColumnOptions, ...overrides });
+}
+
 function renderEmployeeCell(employee: EmployeeWithRelations) {
+	const columns = getColumns();
 	const employeeColumn = columns[0] as ColumnDef<EmployeeWithRelations>;
 	const cell = employeeColumn.cell;
 
-	if (typeof cell !== "function") throw new Error("Employee cell is not renderable");
+	if (typeof cell !== "function")
+		throw new Error("Employee cell is not renderable");
 
-	render(cell({ row: { original: employee } } as Parameters<typeof cell>[0]) as React.ReactElement);
+	render(
+		cell({ row: { original: employee } } as Parameters<
+			typeof cell
+		>[0]) as React.ReactElement,
+	);
 }
 
-function createEmployee(overrides: Partial<EmployeeWithRelations> = {}): EmployeeWithRelations {
+function renderActionsCell(
+	employee: EmployeeDirectoryRow,
+	overrides: Partial<typeof defaultColumnOptions> = {},
+) {
+	const columns = getColumns(overrides);
+	const actionsColumn = columns.find((column) => column.id === "actions");
+	const cell = actionsColumn?.cell;
+	if (typeof cell !== "function")
+		throw new Error("Actions cell is not renderable");
+
+	const queryClient = new QueryClient({
+		defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
+	});
+	render(
+		<QueryClientProvider client={queryClient}>
+			{
+				cell({ row: { original: employee } } as Parameters<
+					typeof cell
+				>[0]) as React.ReactElement
+			}
+		</QueryClientProvider>,
+	);
+}
+
+function createEmployee(
+	overrides: Partial<EmployeeWithRelations> = {},
+): EmployeeWithRelations {
 	return {
 		id: "emp_1",
 		userId: "user_1",
@@ -49,6 +106,8 @@ function createEmployee(overrides: Partial<EmployeeWithRelations> = {}): Employe
 		position: null,
 		role: "employee",
 		isActive: true,
+		kind: "employee",
+		membership: { id: "member-1", role: "member", status: "approved" },
 		teamId: null,
 		contractType: "fixed",
 		gender: null,
@@ -70,7 +129,9 @@ function createEmployee(overrides: Partial<EmployeeWithRelations> = {}): Employe
 	} as EmployeeWithRelations;
 }
 
-function createDraft(overrides: Partial<EmployeeDirectoryRow> = {}): EmployeeDirectoryRow {
+function createDraft(
+	overrides: Partial<EmployeeDirectoryRow> = {},
+): EmployeeDirectoryRow {
 	const createdAt = new Date("2024-01-01T00:00:00Z");
 	return {
 		id: "draft-1",
@@ -143,7 +204,9 @@ describe("employee directory columns", () => {
 
 		expect(screen.getByText("Directory Name")).toBeTruthy();
 		expect(screen.queryByText("Structured Name")).toBeNull();
-		expect(screen.getByText("", { selector: '[data-avatar-name="Directory Name"]' })).toBeTruthy();
+		expect(
+			screen.getByText("", { selector: '[data-avatar-name="Directory Name"]' }),
+		).toBeTruthy();
 	});
 
 	it("appends pronouns to the user name when present", () => {
@@ -154,22 +217,30 @@ describe("employee directory columns", () => {
 		expect(displayName.className).toContain("truncate");
 		expect(displayName.parentElement?.className).toContain("min-w-0");
 		expect(
-			screen.getByText("", { selector: '[data-avatar-name="Directory Name (they/them)"]' }),
+			screen.getByText("", {
+				selector: '[data-avatar-name="Directory Name (they/them)"]',
+			}),
 		).toBeTruthy();
 	});
 
 	it("passes clock status to the directory avatar", () => {
 		renderEmployeeCell(
-			createEmployee({ clockStatus: "clocked-in" } as Partial<EmployeeWithRelations>),
+			createEmployee({
+				clockStatus: "clocked-in",
+			} as Partial<EmployeeWithRelations>),
 		);
 
-		expect(screen.getByText("", { selector: '[data-clock-status="clocked-in"]' })).toBeTruthy();
+		expect(
+			screen.getByText("", { selector: '[data-clock-status="clocked-in"]' }),
+		).toBeTruthy();
 	});
 
 	it("links draft rows with encoded draft ids", () => {
+		const columns = getColumns();
 		const actionsColumn = columns.find((column) => column.id === "actions");
 		const cell = actionsColumn?.cell;
-		if (typeof cell !== "function") throw new Error("Actions cell is not renderable");
+		if (typeof cell !== "function")
+			throw new Error("Actions cell is not renderable");
 
 		render(
 			cell({
@@ -177,7 +248,9 @@ describe("employee directory columns", () => {
 			} as Parameters<typeof cell>[0]) as React.ReactElement,
 		);
 
-		expect(screen.getByRole("link").getAttribute("href")).toBe("/settings/employees/draft:draft-1");
+		expect(screen.getByRole("link").getAttribute("href")).toBe(
+			"/settings/employees/draft:draft-1",
+		);
 	});
 
 	it("renders invitation drafts with draft status and draft detail link", () => {
@@ -185,11 +258,13 @@ describe("employee directory columns", () => {
 		expect(screen.getByText("Invited Manager")).toBeTruthy();
 		expect(screen.getByText("invited@example.com")).toBeTruthy();
 
+		const columns = getColumns();
 		const statusColumn = columns.find(
 			(column) => column.id === "status" || column.accessorKey === "isActive",
 		);
 		const statusCell = statusColumn?.cell;
-		if (typeof statusCell !== "function") throw new Error("Status cell is not renderable");
+		if (typeof statusCell !== "function")
+			throw new Error("Status cell is not renderable");
 		render(
 			statusCell({ row: { original: createDraft() } } as Parameters<
 				typeof statusCell
@@ -200,13 +275,119 @@ describe("employee directory columns", () => {
 
 		const actionsColumn = columns.find((column) => column.id === "actions");
 		const actionsCell = actionsColumn?.cell;
-		if (typeof actionsCell !== "function") throw new Error("Actions cell is not renderable");
+		if (typeof actionsCell !== "function")
+			throw new Error("Actions cell is not renderable");
 		render(
 			actionsCell({ row: { original: createDraft() } } as Parameters<
 				typeof actionsCell
 			>[0]) as React.ReactElement,
 		);
-		expect(screen.getByRole("link").getAttribute("href")).toBe("/settings/employees/draft:draft-1");
+		expect(screen.getByRole("link").getAttribute("href")).toBe(
+			"/settings/employees/draft:draft-1",
+		);
+	});
+
+	it.each([
+		[true, "Deactivate"],
+		[false, "Reactivate"],
+	] as const)("renders owner lifecycle controls for a real employee with active=%s", async (isActive, action) => {
+		renderActionsCell(createEmployee({ isActive }));
+
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Employee actions for Directory Name",
+			}),
+		);
+		const menu = await screen.findByRole("menu");
+
+		expect(within(menu).getByRole("menuitem", { name: action })).toBeTruthy();
+		expect(
+			within(menu).getByRole("menuitem", { name: "Remove access" }),
+		).toBeTruthy();
+		expect(screen.getByRole("link", { name: "View Details" })).toBeTruthy();
+	});
+
+	it("renders no lifecycle controls for a manager actor", () => {
+		renderActionsCell(createEmployee(), { currentMemberRole: "member" });
+
+		expect(
+			screen.queryByRole("button", { name: /Employee actions for/ }),
+		).toBeNull();
+		expect(screen.getByRole("link", { name: "View Details" })).toBeTruthy();
+	});
+
+	it.each([
+		"owner",
+		"member,owner",
+	])("hides lifecycle controls from admins for target owner role %s", (targetRole) => {
+		renderActionsCell(
+			createEmployee({
+				membership: {
+					id: "member-1",
+					role: targetRole,
+					status: "approved",
+				},
+			}),
+			{ currentMemberRole: "admin" },
+		);
+
+		expect(
+			screen.queryByRole("button", { name: /Employee actions for/ }),
+		).toBeNull();
+	});
+
+	it.each([
+		"owner",
+		"member,owner",
+	])("shows lifecycle controls to another owner for target owner role %s", async (targetRole) => {
+		renderActionsCell(
+			createEmployee({
+				membership: {
+					id: "member-1",
+					role: targetRole,
+					status: "approved",
+				},
+			}),
+		);
+
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Employee actions for Directory Name",
+			}),
+		);
+		expect(
+			await screen.findByRole("menuitem", { name: "Deactivate" }),
+		).toBeTruthy();
+	});
+
+	it("keeps draft actions limited to draft status and View Details", () => {
+		const draft = createDraft();
+		renderActionsCell(draft);
+
+		expect(
+			screen.queryByRole("button", { name: /Employee actions for/ }),
+		).toBeNull();
+		expect(screen.getByRole("link", { name: "View Details" })).toBeTruthy();
+	});
+
+	it("passes employee ids through lifecycle callbacks", async () => {
+		const onOptimisticStatusChange = vi.fn();
+		const onRemoved = vi.fn();
+		renderActionsCell(createEmployee(), {
+			onOptimisticStatusChange,
+			onRemoved,
+		});
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Employee actions for Directory Name",
+			}),
+		);
+		fireEvent.click(
+			await screen.findByRole("menuitem", { name: "Deactivate" }),
+		);
+		fireEvent.click(await screen.findByRole("button", { name: "Deactivate" }));
+
+		expect(onOptimisticStatusChange).toHaveBeenCalledWith("emp_1", false);
 	});
 
 	it("offers draft as an employee status filter", () => {
