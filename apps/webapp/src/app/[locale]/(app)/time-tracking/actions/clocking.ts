@@ -6,6 +6,7 @@ import { DateTime, IANAZone } from "luxon";
 import { db } from "@/db";
 import { employee, employeeManagers, workPeriod } from "@/db/schema";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import {
 	asAppSubject,
 	defineAbilityFor,
@@ -21,6 +22,7 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { ValidationError } from "@/lib/effect/errors";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	WorkPolicyService,
@@ -47,6 +49,10 @@ import { canonicalWorkRecordClient } from "../actions.canonical";
 import {
 	createClockOutApprovalRequest,
 	createManualEntryApprovalRequest,
+	sendClockOutApprovalNotifications,
+	sendClockOutApprovedNotification,
+	sendManualEntryApprovalNotifications,
+	sendManualEntryApprovedNotification,
 } from "./approvals";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import {
@@ -401,23 +407,10 @@ export async function clockOut(
 					isNewClockOut: true,
 				}
 			: null;
-		const canonicalRecord =
-			await canonicalWorkRecordClient.createForCompletedPeriod({
-				organizationId: currentEmployee.organizationId,
-				employeeId: currentEmployee.id,
-				startAt: activeWorkPeriod.startTime,
-				endAt: now,
-				durationMinutes: sessionDurationMinutes,
-				approvalState: needsClockOutApproval ? "pending" : "approved",
-				createdBy: session.user.id,
-				workCategoryId: workCategoryId ?? null,
-				workLocationType: activeWorkPeriod.workLocationType ?? null,
-				projectId: projectId ?? null,
-				origin: "clock",
-			});
 		const result = await clockingService.clockOut({
 			employeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
+			workPeriodId: activeWorkPeriod.id,
 			createdBy: session.user.id,
 			action: { instant: actionInstant, ...timezoneCapture },
 			source: {
@@ -426,9 +419,50 @@ export async function clockOut(
 			},
 			projectId,
 			workCategoryId,
-			canonicalRecordId: canonicalRecord.id,
 			approvalStatus: needsClockOutApproval ? "pending" : "approved",
 			pendingChanges,
+			beforePeriodClose: async ({ transaction }) => {
+				const canonicalRecord =
+					await canonicalWorkRecordClient.createForCompletedPeriod(
+						{
+							organizationId: currentEmployee.organizationId,
+							employeeId: currentEmployee.id,
+							startAt: activeWorkPeriod.startTime,
+							endAt: now,
+							durationMinutes: sessionDurationMinutes,
+							approvalState: needsClockOutApproval ? "pending" : "approved",
+							createdBy: session.user.id,
+							workCategoryId: workCategoryId ?? null,
+							workLocationType: activeWorkPeriod.workLocationType ?? null,
+							projectId: projectId ?? null,
+							origin: "clock",
+						},
+						transaction as Parameters<Parameters<typeof db.transaction>[0]>[0],
+					);
+				return { canonicalRecordId: canonicalRecord.id };
+			},
+			afterPeriodClose:
+				needsClockOutApproval && managerId
+					? async ({ transaction, durationMinutes }) => {
+							const transactionalDbService = {
+								db: transaction as ApprovalDbService["db"],
+								query: <T>(_name: string, fn: () => Promise<T>) =>
+									Effect.promise(fn),
+							} satisfies ApprovalDbService;
+							return await createClockOutApprovalRequest(
+								{
+									workPeriodId: activeWorkPeriod.id,
+									employeeId: currentEmployee.id,
+									managerId,
+									organizationId: currentEmployee.organizationId,
+									startTime: activeWorkPeriod.startTime,
+									endTime: now,
+									durationMinutes,
+								},
+								{ dbService: transactionalDbService, notify: false },
+							);
+						}
+					: undefined,
 		});
 		const entry = result.entry as Awaited<ReturnType<typeof createTimeEntry>>;
 		const { durationMinutes } = result;
@@ -437,8 +471,12 @@ export async function clockOut(
 			activeWorkPeriod.id,
 			currentEmployee.organizationId,
 		);
+		const approvalResult = result.transactionResult as
+			| { kind: string }
+			| undefined;
+		const approvalAutoCompleted = approvalResult?.kind === "auto_completed";
 		if (needsClockOutApproval && managerId) {
-			await createClockOutApprovalRequest({
+			const notificationParams = {
 				workPeriodId: activeWorkPeriod.id,
 				employeeId: currentEmployee.id,
 				managerId,
@@ -446,7 +484,12 @@ export async function clockOut(
 				startTime: activeWorkPeriod.startTime,
 				endTime: now,
 				durationMinutes,
-			});
+			};
+			if (approvalAutoCompleted) {
+				await sendClockOutApprovedNotification(notificationParams);
+			} else {
+				await sendClockOutApprovalNotifications(notificationParams);
+			}
 		}
 
 		const complianceWarnings = await checkComplianceAfterClockOut(
@@ -498,7 +541,9 @@ export async function clockOut(
 			success: true,
 			data: {
 				...entry,
-				pendingApproval: needsClockOutApproval || undefined,
+				pendingApproval: needsClockOutApproval
+					? !approvalAutoCompleted
+					: undefined,
 				complianceWarnings:
 					complianceWarnings.length > 0 ? complianceWarnings : undefined,
 				breakAdjustment: breakEnforcementResult.wasAdjusted
@@ -1020,70 +1065,109 @@ export async function createManualTimeEntry(
 					organizationId: targetEmployee.organizationId,
 				})
 			: null;
-		const requiresManagerApproval = requiresApproval && Boolean(managerId);
 		const durationMinutes = calculateDurationMinutes(
 			adjustedClockIn,
 			adjustedClockOut,
 		);
-		const createdWorkPeriod = await db.transaction(async (tx) => {
-			const clockInEntry = await createTimeEntry(
-				{
-					employeeId: targetEmployee.id,
-					organizationId: targetEmployee.organizationId,
-					type: "clock_in",
-					timestamp: adjustedClockIn,
-					createdBy: session.user.id,
-					notes: `Manual entry: ${data.reason}`,
-					...clockInTimezoneCapture,
-				},
-				tx,
-			);
-			const clockOutEntry = await createTimeEntry(
-				{
-					employeeId: targetEmployee.id,
-					organizationId: targetEmployee.organizationId,
-					type: "clock_out",
-					timestamp: adjustedClockOut,
-					createdBy: session.user.id,
-					notes: data.reason,
-					...clockOutTimezoneCapture,
-					chainAfter: clockInEntry,
-				},
-				tx,
-			);
+		const { period: createdWorkPeriod, approvalResult } = await db.transaction(
+			async (tx) => {
+				const clockInEntry = await createTimeEntry(
+					{
+						employeeId: targetEmployee.id,
+						organizationId: targetEmployee.organizationId,
+						type: "clock_in",
+						timestamp: adjustedClockIn,
+						createdBy: session.user.id,
+						notes: `Manual entry: ${data.reason}`,
+						...clockInTimezoneCapture,
+					},
+					tx,
+				);
+				const clockOutEntry = await createTimeEntry(
+					{
+						employeeId: targetEmployee.id,
+						organizationId: targetEmployee.organizationId,
+						type: "clock_out",
+						timestamp: adjustedClockOut,
+						createdBy: session.user.id,
+						notes: data.reason,
+						...clockOutTimezoneCapture,
+						chainAfter: clockInEntry,
+					},
+					tx,
+				);
+				const canonicalRecord =
+					await canonicalWorkRecordClient.createForCompletedPeriod(
+						{
+							organizationId: targetEmployee.organizationId,
+							employeeId: targetEmployee.id,
+							startAt: adjustedClockIn,
+							endAt: adjustedClockOut,
+							durationMinutes,
+							approvalState: requiresApproval ? "pending" : "approved",
+							createdBy: session.user.id,
+							workCategoryId: data.workCategoryId || null,
+							projectId: data.projectId || null,
+							origin: "manual",
+						},
+						tx,
+					);
 
-			const [period] = await tx
-				.insert(workPeriod)
-				.values({
-					employeeId: targetEmployee.id,
-					organizationId: targetEmployee.organizationId,
-					clockInId: clockInEntry.id,
-					clockOutId: clockOutEntry.id,
-					startTime: adjustedClockIn,
-					endTime: adjustedClockOut,
-					durationMinutes,
-					projectId: data.projectId || null,
-					workCategoryId: data.workCategoryId || null,
-					isActive: false,
-					approvalStatus: requiresManagerApproval ? "pending" : "approved",
-					pendingChanges: requiresManagerApproval
-						? {
-								originalStartTime: adjustedClockIn.toISOString(),
-								originalEndTime: adjustedClockOut.toISOString(),
-								originalDurationMinutes: durationMinutes,
-								requestedAt: now.toISOString(),
-								requestedBy: session.user.id,
+				const [period] = await tx
+					.insert(workPeriod)
+					.values({
+						employeeId: targetEmployee.id,
+						organizationId: targetEmployee.organizationId,
+						clockInId: clockInEntry.id,
+						clockOutId: clockOutEntry.id,
+						startTime: adjustedClockIn,
+						endTime: adjustedClockOut,
+						durationMinutes,
+						projectId: data.projectId || null,
+						workCategoryId: data.workCategoryId || null,
+						canonicalRecordId: canonicalRecord.id,
+						isActive: false,
+						approvalStatus: requiresApproval ? "pending" : "approved",
+						pendingChanges: requiresApproval
+							? {
+									originalStartTime: adjustedClockIn.toISOString(),
+									originalEndTime: adjustedClockOut.toISOString(),
+									originalDurationMinutes: durationMinutes,
+									requestedAt: now.toISOString(),
+									requestedBy: session.user.id,
+									reason: data.reason,
+									isManualEntry: true,
+								}
+							: null,
+					})
+					.returning();
+
+				const transactionalDbService = {
+					db: tx,
+					query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+				} satisfies ApprovalDbService;
+				const approvalResult = requiresApproval
+					? await createManualEntryApprovalRequest(
+							{
+								workPeriodId: period.id,
+								employeeId: targetEmployee.id,
+								managerId,
+								organizationId: targetEmployee.organizationId,
+								startTime: adjustedClockIn,
+								endTime: adjustedClockOut,
+								durationMinutes,
 								reason: data.reason,
-							}
-						: null,
-				})
-				.returning();
+							},
+							{ dbService: transactionalDbService, notify: false },
+						)
+					: null;
 
-			return period;
-		});
+				return { period, approvalResult };
+			},
+		);
 
-		if (requiresManagerApproval && managerId) {
-			await createManualEntryApprovalRequest({
+		if (requiresApproval && managerId) {
+			const notificationParams = {
 				workPeriodId: createdWorkPeriod.id,
 				employeeId: targetEmployee.id,
 				managerId,
@@ -1092,10 +1176,16 @@ export async function createManualTimeEntry(
 				endTime: adjustedClockOut,
 				durationMinutes,
 				reason: data.reason,
-			});
+			};
+			if (approvalResult?.kind === "auto_completed") {
+				await sendManualEntryApprovedNotification(notificationParams);
+			} else {
+				await sendManualEntryApprovalNotifications(notificationParams);
+			}
 		}
 
-		if (!requiresManagerApproval) {
+		const approvalAutoCompleted = approvalResult?.kind === "auto_completed";
+		if (!requiresApproval || approvalAutoCompleted) {
 			await calculateAndPersistSurcharges(
 				createdWorkPeriod.id,
 				targetEmployee.organizationId,
@@ -1131,7 +1221,7 @@ export async function createManualTimeEntry(
 				adjustedClockOut: wasAdjusted
 					? adjustedClockOut.toISOString()
 					: undefined,
-				requiresApproval: requiresManagerApproval,
+				requiresApproval: requiresApproval && !approvalAutoCompleted,
 			},
 			"Manual time entry created successfully",
 		);
@@ -1140,7 +1230,7 @@ export async function createManualTimeEntry(
 			success: true,
 			data: {
 				workPeriodId: createdWorkPeriod.id,
-				requiresApproval: requiresManagerApproval,
+				requiresApproval: requiresApproval && !approvalAutoCompleted,
 				wasAdjusted,
 				adjustedTimes: wasAdjusted
 					? {
@@ -1152,6 +1242,9 @@ export async function createManualTimeEntry(
 			},
 		};
 	} catch (error) {
+		if (error instanceof ValidationError && error.field === "managerId") {
+			return { success: false, error: error.message };
+		}
 		logger.error({ error }, "Failed to create manual time entry");
 		return {
 			success: false,

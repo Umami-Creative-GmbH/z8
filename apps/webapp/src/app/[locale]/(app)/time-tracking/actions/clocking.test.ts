@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ValidationError } from "@/lib/effect/errors";
 
 const mockState = vi.hoisted(() => ({
 	getCurrentSession: vi.fn(),
@@ -12,7 +13,12 @@ const mockState = vi.hoisted(() => ({
 	checkClockOutNeedsApproval: vi.fn(),
 	getEditCapabilityForPeriod: vi.fn(),
 	createClockOutApprovalRequest: vi.fn(),
+	sendClockOutApprovalNotifications: vi.fn(),
+	sendClockOutApprovedNotification: vi.fn(),
 	createManualEntryApprovalRequest: vi.fn(),
+	sendManualEntryApprovalNotifications: vi.fn(),
+	sendManualEntryApprovedNotification: vi.fn(),
+	transactionOpen: false,
 	calculateAndPersistSurcharges: vi.fn(),
 	checkComplianceAfterClockOut: vi.fn(),
 	enforceBreaksAfterClockOut: vi.fn(),
@@ -118,6 +124,13 @@ vi.mock("../actions.canonical", () => ({
 vi.mock("./approvals", () => ({
 	createClockOutApprovalRequest: mockState.createClockOutApprovalRequest,
 	createManualEntryApprovalRequest: mockState.createManualEntryApprovalRequest,
+	sendClockOutApprovalNotifications:
+		mockState.sendClockOutApprovalNotifications,
+	sendClockOutApprovedNotification: mockState.sendClockOutApprovedNotification,
+	sendManualEntryApprovalNotifications:
+		mockState.sendManualEntryApprovalNotifications,
+	sendManualEntryApprovedNotification:
+		mockState.sendManualEntryApprovedNotification,
 }));
 
 vi.mock("./auth", () => ({
@@ -358,8 +371,24 @@ describe("clockOut", () => {
 		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
-		mockState.createClockOutApprovalRequest.mockResolvedValue(undefined);
+		mockState.createClockOutApprovalRequest.mockResolvedValue({
+			kind: "default_created",
+			approvalRequestId: "approval-1",
+		});
+		mockState.sendClockOutApprovalNotifications.mockResolvedValue(undefined);
+		mockState.sendClockOutApprovedNotification.mockResolvedValue(undefined);
 		mockState.clockingClockOut.mockImplementation(async (input) => {
+			const activePeriod = {
+				id: "period-1",
+				startTime: new Date("2026-05-04T09:00:00.000Z"),
+			};
+			const durationMinutes = 60;
+			const transaction = {};
+			const periodPatch = await input.beforePeriodClose?.({
+				transaction,
+				activePeriod,
+				durationMinutes,
+			});
 			const entry = await mockState.createTimeEntry({
 				employeeId: input.employeeId,
 				organizationId: input.organizationId,
@@ -371,15 +400,22 @@ describe("clockOut", () => {
 			mockState.updateSet({
 				approvalStatus: input.approvalStatus,
 				pendingChanges: input.pendingChanges,
+				...periodPatch,
+			});
+			const period = { id: "period-1" };
+			const transactionResult = await input.afterPeriodClose?.({
+				transaction,
+				activePeriod,
+				durationMinutes,
+				entry,
+				period,
 			});
 			return {
 				entry,
-				durationMinutes: 60,
-				period: { id: "period-1" },
-				activePeriod: {
-					id: "period-1",
-					startTime: new Date("2026-05-04T09:00:00.000Z"),
-				},
+				durationMinutes,
+				period,
+				activePeriod,
+				transactionResult,
 			};
 		});
 	});
@@ -425,15 +461,34 @@ describe("clockOut", () => {
 				}),
 			}),
 		);
-		expect(mockState.createClockOutApprovalRequest).toHaveBeenCalledWith({
-			workPeriodId: "period-1",
-			employeeId: "employee-1",
-			managerId: "manager-1",
-			organizationId: "org-1",
-			startTime: new Date("2026-05-04T09:00:00.000Z"),
-			endTime: new Date("2026-05-04T10:00:00.000Z"),
-			durationMinutes: 60,
+		expect(mockState.createClockOutApprovalRequest).toHaveBeenCalledWith(
+			{
+				workPeriodId: "period-1",
+				employeeId: "employee-1",
+				managerId: "manager-1",
+				organizationId: "org-1",
+				startTime: new Date("2026-05-04T09:00:00.000Z"),
+				endTime: new Date("2026-05-04T10:00:00.000Z"),
+				durationMinutes: 60,
+			},
+			expect.objectContaining({ notify: false, dbService: expect.anything() }),
+		);
+	});
+
+	it("does not report a pending clock-out when its approval auto-completes", async () => {
+		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
+		mockState.createClockOutApprovalRequest.mockResolvedValue({
+			kind: "auto_completed",
+			approvalRequestId: "approval-1",
+			chainInstanceId: null,
+			reason: "requester_is_approver",
 		});
+
+		const result = await clockOut();
+
+		expect(result.success).toBe(true);
+		expect(result.success && result.data.pendingApproval).toBe(false);
+		expect(mockState.createClockOutApprovalRequest).toHaveBeenCalledOnce();
 	});
 
 	it("rejects approval-required live clock-out when no manager link resolves", async () => {
@@ -547,6 +602,80 @@ describe("clockOut", () => {
 		);
 	});
 
+	it("rolls back the live clock-out source rows when approval creation fails", async () => {
+		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
+		const durableState = {
+			entries: [] as string[],
+			periods: [] as string[],
+			canonicalRecords: [] as string[],
+			approvals: [] as string[],
+		};
+		mockState.createCanonicalWorkRecord.mockImplementation(async () => {
+			durableState.canonicalRecords.push("canonical-1");
+			return { id: "canonical-1" };
+		});
+		mockState.createClockOutApprovalRequest.mockImplementation(async () => {
+			durableState.approvals.push("approval-1");
+			throw new Error("approval creation failed");
+		});
+		mockState.clockingClockOut.mockImplementation(async (input) => {
+			const snapshot = Object.fromEntries(
+				Object.entries(durableState).map(([key, rows]) => [key, rows.length]),
+			) as Record<keyof typeof durableState, number>;
+			try {
+				const activePeriod = {
+					id: "period-1",
+					startTime: new Date("2026-05-04T09:00:00.000Z"),
+				};
+				const durationMinutes = 60;
+				const transaction = {};
+				const periodPatch = await input.beforePeriodClose?.({
+					transaction,
+					activePeriod,
+					durationMinutes,
+				});
+				durableState.entries.push("clock-out-1");
+				durableState.periods.push("period-1");
+				const entry = { id: "clock-out-1", type: "clock_out" };
+				const period = { id: "period-1", ...periodPatch };
+				const transactionResult = await input.afterPeriodClose?.({
+					transaction,
+					activePeriod,
+					durationMinutes,
+					entry,
+					period,
+				});
+				return {
+					entry,
+					period,
+					activePeriod,
+					durationMinutes,
+					transactionResult,
+				};
+			} catch (error) {
+				for (const key of Object.keys(durableState) as Array<
+					keyof typeof durableState
+				>) {
+					durableState[key].length = snapshot[key];
+				}
+				throw error;
+			}
+		});
+
+		const result = await clockOut();
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to clock out. Please try again.",
+		});
+		expect(durableState).toEqual({
+			entries: [],
+			periods: [],
+			canonicalRecords: [],
+			approvals: [],
+		});
+	});
+
 	it("stores browser-derived timezone capture when clocking out with a valid browser timezone", async () => {
 		const result = await clockOut(undefined, undefined, {
 			browserTimezone: "America/New_York",
@@ -646,15 +775,24 @@ describe("createManualTimeEntry", () => {
 		);
 	});
 
-	it("auto-approves approval-required manual entries when no manager is assigned", async () => {
+	it("fails closed for approval-required manual entries when no approver resolves", async () => {
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1", type: "clock_in" })
 			.mockResolvedValueOnce({ id: "clock-out-1", type: "clock_out" });
+		mockState.createCanonicalWorkRecord.mockResolvedValue({
+			id: "canonical-1",
+		});
 		mockState.insertValues.mockReturnValueOnce({
 			returning: mockState.insertReturning,
 		});
 		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
+		mockState.createManualEntryApprovalRequest.mockRejectedValue(
+			new ValidationError({
+				message: "No manager assigned to approve time changes",
+				field: "managerId",
+			}),
+		);
 
 		const result = await createManualTimeEntry({
 			date: "2026-05-04",
@@ -663,17 +801,14 @@ describe("createManualTimeEntry", () => {
 			reason: "Forgot to clock in",
 		});
 
-		expect(result).toMatchObject({
-			success: true,
-			data: { workPeriodId: "period-1", requiresApproval: false },
+		expect(result).toEqual({
+			success: false,
+			error: "No manager assigned to approve time changes",
 		});
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
-				approvalStatus: "approved",
-				pendingChanges: null,
-			}),
+		expect(mockState.createManualEntryApprovalRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ managerId: null }),
+			expect.objectContaining({ notify: false, dbService: expect.anything() }),
 		);
-		expect(mockState.createManualEntryApprovalRequest).not.toHaveBeenCalled();
 	});
 
 	it("fails closed when the manual-entry edit capability check fails before mutating", async () => {
@@ -1040,10 +1175,18 @@ describe("createManualTimeEntry", () => {
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1", type: "clock_in" })
 			.mockResolvedValueOnce({ id: "clock-out-1", type: "clock_out" });
+		mockState.createCanonicalWorkRecord.mockResolvedValue({
+			id: "canonical-1",
+		});
 		mockState.insertValues.mockReturnValue({
 			returning: vi.fn().mockResolvedValue([{ id: "period-1" }]),
 		});
-		mockState.createManualEntryApprovalRequest.mockResolvedValue(undefined);
+		mockState.createManualEntryApprovalRequest.mockResolvedValue({
+			kind: "default_created",
+			approvalRequestId: "approval-1",
+		});
+		mockState.sendManualEntryApprovalNotifications.mockResolvedValue(undefined);
+		mockState.sendManualEntryApprovedNotification.mockResolvedValue(undefined);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
@@ -1073,16 +1216,30 @@ describe("createManualTimeEntry", () => {
 				managerId: "manager-1",
 				organizationId: "org-1",
 			}),
+			expect.objectContaining({ notify: false, dbService: expect.anything() }),
 		);
+		expect(
+			mockState.sendManualEntryApprovalNotifications,
+		).toHaveBeenCalledOnce();
 		expect(mockState.insertValues).toHaveBeenCalledWith(
 			expect.objectContaining({
 				approvalStatus: "pending",
+				canonicalRecordId: "canonical-1",
 			}),
+		);
+		expect(mockState.createCanonicalWorkRecord).toHaveBeenCalledWith(
+			expect.objectContaining({ approvalState: "pending", origin: "manual" }),
+			expect.anything(),
 		);
 	});
 
-	it("auto-approves approval-required manual entries when no manager link resolves", async () => {
+	it("keeps an explicit policy reviewer route pending without a fallback manager", async () => {
 		mockState.findManagerLinks.mockResolvedValue([]);
+		mockState.createManualEntryApprovalRequest.mockResolvedValue({
+			kind: "chain_created",
+			approvalRequestId: "approval-1",
+			chainInstanceId: "chain-1",
+		});
 
 		const result = await createManualTimeEntry({
 			date: "2026-05-03",
@@ -1093,15 +1250,219 @@ describe("createManualTimeEntry", () => {
 
 		expect(result).toMatchObject({
 			success: true,
-			data: { workPeriodId: "period-1", requiresApproval: false },
+			data: { workPeriodId: "period-1", requiresApproval: true },
 		});
+		expect(mockState.createManualEntryApprovalRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ managerId: null }),
+			expect.objectContaining({ notify: false, dbService: expect.anything() }),
+		);
 		expect(mockState.insertValues).toHaveBeenCalledWith(
 			expect.objectContaining({
-				approvalStatus: "approved",
-				pendingChanges: null,
+				approvalStatus: "pending",
+				pendingChanges: expect.objectContaining({ isManualEntry: true }),
 			}),
 		);
-		expect(mockState.createManualEntryApprovalRequest).not.toHaveBeenCalled();
+	});
+
+	it("finalizes auto-completed manual approval in the source transaction and notifies after commit", async () => {
+		mockState.createManualEntryApprovalRequest.mockResolvedValue({
+			kind: "auto_completed",
+			approvalRequestId: "approval-1",
+			chainInstanceId: null,
+			reason: "requester_is_approver",
+		});
+		mockState.transaction.mockImplementation(async (callback) => {
+			mockState.transactionOpen = true;
+			try {
+				return await callback({
+					query: {},
+					insert: vi.fn(() => ({
+						values: (...args: unknown[]) => mockState.insertValues(...args),
+					})),
+				});
+			} finally {
+				mockState.transactionOpen = false;
+			}
+		});
+		mockState.sendManualEntryApprovedNotification.mockImplementation(
+			async () => {
+				expect(mockState.transactionOpen).toBe(false);
+			},
+		);
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-03",
+			clockInTime: "09:00",
+			clockOutTime: "10:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toMatchObject({
+			success: true,
+			data: { requiresApproval: false },
+		});
+		expect(mockState.createManualEntryApprovalRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ workPeriodId: "period-1" }),
+			expect.objectContaining({ notify: false, dbService: expect.anything() }),
+		);
+		expect(
+			mockState.sendManualEntryApprovedNotification,
+		).toHaveBeenCalledOnce();
+		expect(
+			mockState.sendManualEntryApprovalNotifications,
+		).not.toHaveBeenCalled();
+		expect(mockState.calculateAndPersistSurcharges).toHaveBeenCalledWith(
+			"period-1",
+			"org-1",
+		);
+	});
+
+	it("rolls back every manual source row when auto-completion finalization fails", async () => {
+		const durableState = {
+			entries: [] as string[],
+			workPeriods: [] as string[],
+			canonicalRecords: [] as string[],
+			approvals: [] as string[],
+		};
+		mockState.createTimeEntry.mockReset();
+		mockState.createTimeEntry.mockImplementation(async (input) => {
+			const id = input.type === "clock_in" ? "clock-in-1" : "clock-out-1";
+			durableState.entries.push(id);
+			return { id, type: input.type };
+		});
+		mockState.createCanonicalWorkRecord.mockImplementation(async () => {
+			durableState.canonicalRecords.push("canonical-1");
+			return { id: "canonical-1" };
+		});
+		mockState.insertValues.mockImplementation((values) => {
+			durableState.workPeriods.push("period-1");
+			return {
+				returning: vi.fn().mockResolvedValue([{ id: "period-1", ...values }]),
+			};
+		});
+		mockState.createManualEntryApprovalRequest.mockImplementation(async () => {
+			durableState.approvals.push("approval-1");
+			throw new Error("auto-completion finalizer failed");
+		});
+		mockState.transaction.mockImplementation(async (callback) => {
+			const snapshot = {
+				entries: durableState.entries.length,
+				workPeriods: durableState.workPeriods.length,
+				canonicalRecords: durableState.canonicalRecords.length,
+				approvals: durableState.approvals.length,
+			};
+			try {
+				return await callback({
+					query: {},
+					insert: vi.fn(() => ({
+						values: (...args: unknown[]) => mockState.insertValues(...args),
+					})),
+				});
+			} catch (error) {
+				durableState.entries.length = snapshot.entries;
+				durableState.workPeriods.length = snapshot.workPeriods;
+				durableState.canonicalRecords.length = snapshot.canonicalRecords;
+				durableState.approvals.length = snapshot.approvals;
+				throw error;
+			}
+		});
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-03",
+			clockInTime: "09:00",
+			clockOutTime: "10:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to create time entry. Please try again.",
+		});
+		expect(durableState).toEqual({
+			entries: [],
+			workPeriods: [],
+			canonicalRecords: [],
+			approvals: [],
+		});
+		expect(
+			mockState.sendManualEntryApprovedNotification,
+		).not.toHaveBeenCalled();
+		expect(
+			mockState.sendManualEntryApprovalNotifications,
+		).not.toHaveBeenCalled();
+	});
+
+	it("rolls back approval-required manual entries when no manager or policy approver resolves", async () => {
+		mockState.findManagerLinks.mockResolvedValue([]);
+		const durableState = {
+			entries: [] as string[],
+			workPeriods: [] as string[],
+			canonicalRecords: [] as string[],
+			approvals: [] as string[],
+		};
+		mockState.createTimeEntry.mockReset();
+		mockState.createTimeEntry.mockImplementation(async (input) => {
+			const id = input.type === "clock_in" ? "clock-in-1" : "clock-out-1";
+			durableState.entries.push(id);
+			return { id, type: input.type };
+		});
+		mockState.createCanonicalWorkRecord.mockImplementation(async () => {
+			durableState.canonicalRecords.push("canonical-1");
+			return { id: "canonical-1" };
+		});
+		mockState.insertValues.mockImplementation((values) => {
+			durableState.workPeriods.push("period-1");
+			return {
+				returning: vi.fn().mockResolvedValue([{ id: "period-1", ...values }]),
+			};
+		});
+		mockState.createManualEntryApprovalRequest.mockImplementation(async () => {
+			durableState.approvals.push("approval-1");
+			throw new ValidationError({
+				message: "No manager assigned to approve time changes",
+				field: "managerId",
+			});
+		});
+		mockState.transaction.mockImplementation(async (callback) => {
+			const snapshot = {
+				entries: durableState.entries.length,
+				workPeriods: durableState.workPeriods.length,
+				canonicalRecords: durableState.canonicalRecords.length,
+				approvals: durableState.approvals.length,
+			};
+			try {
+				return await callback({
+					query: {},
+					insert: vi.fn(() => ({
+						values: (...args: unknown[]) => mockState.insertValues(...args),
+					})),
+				});
+			} catch (error) {
+				durableState.entries.length = snapshot.entries;
+				durableState.workPeriods.length = snapshot.workPeriods;
+				durableState.canonicalRecords.length = snapshot.canonicalRecords;
+				durableState.approvals.length = snapshot.approvals;
+				throw error;
+			}
+		});
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-03",
+			clockInTime: "09:00",
+			clockOutTime: "10:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "No manager assigned to approve time changes",
+		});
+		expect(durableState).toEqual({
+			entries: [],
+			workPeriods: [],
+			canonicalRecords: [],
+			approvals: [],
+		});
 	});
 });
 

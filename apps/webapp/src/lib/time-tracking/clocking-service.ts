@@ -23,7 +23,9 @@ export class ClockingOrganizationError extends Error {
 }
 
 export class ClockingAccessError extends Error {
-	constructor(readonly code: "active_membership_required" | "employee_required") {
+	constructor(
+		readonly code: "active_membership_required" | "employee_required",
+	) {
 		super(
 			code === "active_membership_required"
 				? "Approved active organization membership required"
@@ -50,7 +52,9 @@ type ClockingInput = {
 	location?: string;
 };
 
-type ClockInInput = ClockingInput & { workLocationType: "office" | "remote" | "home" | "other" };
+type ClockInInput = ClockingInput & {
+	workLocationType: "office" | "remote" | "home" | "other";
+};
 type ClockOutInput = ClockingInput & {
 	workPeriodId?: string;
 	projectId?: string | null;
@@ -58,14 +62,30 @@ type ClockOutInput = ClockingInput & {
 	canonicalRecordId?: string | null;
 	approvalStatus?: "approved" | "pending";
 	pendingChanges?: Record<string, unknown> | null;
+	beforePeriodClose?: (context: {
+		transaction: unknown;
+		activePeriod: ActivePeriod;
+		durationMinutes: number;
+	}) => Promise<Record<string, unknown> | undefined>;
+	afterPeriodClose?: (context: {
+		transaction: unknown;
+		activePeriod: ActivePeriod;
+		durationMinutes: number;
+		entry: Entry;
+		period: { id: string };
+	}) => Promise<unknown>;
 };
 
 type ActivePeriod = { id: string; startTime: Date };
 type Entry = { id: string; [key: string]: unknown };
 
 type ClockingStore = {
+	transaction?: unknown;
 	lockEmployee(employeeId: string): Promise<void>;
-	isOrganizationMember(employeeId: string, organizationId: string): Promise<boolean>;
+	isOrganizationMember(
+		employeeId: string,
+		organizationId: string,
+	): Promise<boolean>;
 	getEntryByActionId(
 		employeeId: string,
 		organizationId: string,
@@ -76,7 +96,10 @@ type ClockingStore = {
 		organizationId: string,
 		workPeriodId?: string,
 	): Promise<ActivePeriod | null>;
-	getLatestHash(employeeId: string, organizationId: string): Promise<string | null>;
+	getLatestHash(
+		employeeId: string,
+		organizationId: string,
+	): Promise<string | null>;
 	insertEntry(entry: Record<string, unknown>): Promise<Entry>;
 	insertActivePeriod(period: Record<string, unknown>): Promise<{ id: string }>;
 	closeActivePeriod(
@@ -87,11 +110,17 @@ type ClockingStore = {
 
 export type ClockingDependencies = {
 	transaction<T>(callback: (store: ClockingStore) => Promise<T>): Promise<T>;
-	findApprovedMembership?: (userId: string, organizationId: string) => Promise<boolean>;
+	findApprovedMembership?: (
+		userId: string,
+		organizationId: string,
+	) => Promise<boolean>;
 	findActiveEmployee?: (
 		userId: string,
 		organizationId: string,
-	) => Promise<Pick<typeof employee.$inferSelect, "id" | "organizationId"> | null>;
+	) => Promise<Pick<
+		typeof employee.$inferSelect,
+		"id" | "organizationId"
+	> | null>;
 };
 
 function entryValues(
@@ -131,7 +160,12 @@ export function createClockingService(deps: ClockingDependencies) {
 	): Promise<T> {
 		return deps.transaction(async (store) => {
 			await store.lockEmployee(input.employeeId);
-			if (!(await store.isOrganizationMember(input.employeeId, input.organizationId))) {
+			if (
+				!(await store.isOrganizationMember(
+					input.employeeId,
+					input.organizationId,
+				))
+			) {
 				throw new ClockingOrganizationError();
 			}
 			return callback(store);
@@ -139,15 +173,25 @@ export function createClockingService(deps: ClockingDependencies) {
 	}
 
 	return {
-		requireActor: async (input: { userId: string; activeOrganizationId: string | null | undefined }) => {
-			if (!input.activeOrganizationId || !deps.findApprovedMembership || !deps.findActiveEmployee) {
+		requireActor: async (input: {
+			userId: string;
+			activeOrganizationId: string | null | undefined;
+		}) => {
+			if (
+				!input.activeOrganizationId ||
+				!deps.findApprovedMembership ||
+				!deps.findActiveEmployee
+			) {
 				throw new ClockingAccessError("active_membership_required");
 			}
 			const organizationId = input.activeOrganizationId;
 			if (!(await deps.findApprovedMembership(input.userId, organizationId))) {
 				throw new ClockingAccessError("active_membership_required");
 			}
-			const employeeRecord = await deps.findActiveEmployee(input.userId, organizationId);
+			const employeeRecord = await deps.findActiveEmployee(
+				input.userId,
+				organizationId,
+			);
 			if (!employeeRecord || employeeRecord.organizationId !== organizationId) {
 				throw new ClockingAccessError("employee_required");
 			}
@@ -161,7 +205,9 @@ export function createClockingService(deps: ClockingDependencies) {
 					input.actionId,
 				);
 				if (existingEntry) return { entry: existingEntry } as never;
-				if (await store.getActivePeriod(input.employeeId, input.organizationId)) {
+				if (
+					await store.getActivePeriod(input.employeeId, input.organizationId)
+				) {
 					throw new ClockingConflictError("Active work period already exists");
 				}
 				const entry = await store.insertEntry(
@@ -194,17 +240,31 @@ export function createClockingService(deps: ClockingDependencies) {
 					input.organizationId,
 					input.workPeriodId,
 				);
-				if (!activePeriod) throw new ClockingConflictError("No active work period found");
+				if (!activePeriod)
+					throw new ClockingConflictError("No active work period found");
 				const timestamp = dateFromInstant(input.action.instant);
+				const durationMinutes = Math.round(
+					(timestamp.getTime() - activePeriod.startTime.getTime()) / 60_000,
+				);
+				if (
+					(input.beforePeriodClose || input.afterPeriodClose) &&
+					!store.transaction
+				) {
+					throw new Error("Clock-out transaction context is unavailable");
+				}
+				const additionalPeriodPatch = input.beforePeriodClose
+					? await input.beforePeriodClose({
+							transaction: store.transaction,
+							activePeriod,
+							durationMinutes,
+						})
+					: undefined;
 				const entry = await store.insertEntry(
 					entryValues(
 						input,
 						"clock_out",
 						await store.getLatestHash(input.employeeId, input.organizationId),
 					),
-				);
-				const durationMinutes = Math.round(
-					(timestamp.getTime() - activePeriod.startTime.getTime()) / 60_000,
 				);
 				const period = await store.closeActivePeriod(activePeriod.id, {
 					clockOutId: entry.id,
@@ -217,9 +277,26 @@ export function createClockingService(deps: ClockingDependencies) {
 					approvalStatus: input.approvalStatus ?? "approved",
 					pendingChanges: input.pendingChanges ?? null,
 					updatedAt: new Date(),
+					...additionalPeriodPatch,
 				});
-				if (!period) throw new ClockingConflictError("Active work period changed");
-				return { entry, period, activePeriod, durationMinutes };
+				if (!period)
+					throw new ClockingConflictError("Active work period changed");
+				const transactionResult = input.afterPeriodClose
+					? await input.afterPeriodClose({
+							transaction: store.transaction,
+							activePeriod,
+							durationMinutes,
+							entry,
+							period,
+						})
+					: undefined;
+				return {
+					entry,
+					period,
+					activePeriod,
+					durationMinutes,
+					transactionResult,
+				};
 			}),
 	};
 }
@@ -251,14 +328,22 @@ export const clockingService = createClockingService({
 	transaction: (callback) =>
 		db.transaction(async (tx) =>
 			callback({
+				transaction: tx,
 				lockEmployee: async (employeeId) => {
-					await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`);
+					await tx.execute(
+						sql`select pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`,
+					);
 				},
 				isOrganizationMember: async (employeeId, organizationId) => {
 					const [member] = await tx
 						.select({ id: employee.id })
 						.from(employee)
-						.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)))
+						.where(
+							and(
+								eq(employee.id, employeeId),
+								eq(employee.organizationId, organizationId),
+							),
+						)
 						.limit(1);
 					return Boolean(member);
 				},

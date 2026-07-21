@@ -6,10 +6,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { DeleteWorkPeriodDialog } from "./delete-work-period-dialog";
 
-const { requestTimeEntryDeletion, toastError } = vi.hoisted(() => ({
-	requestTimeEntryDeletion: vi.fn(),
-	toastError: vi.fn(),
-}));
+const { randomUUID, requestTimeEntryDeletion, toastError, toastSuccess } =
+	vi.hoisted(() => ({
+		randomUUID: vi.fn(),
+		requestTimeEntryDeletion: vi.fn(),
+		toastError: vi.fn(),
+		toastSuccess: vi.fn(),
+	}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -20,7 +23,7 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("sonner", () => ({
 	toast: {
 		error: toastError,
-		success: vi.fn(),
+		success: toastSuccess,
 	},
 }));
 
@@ -41,16 +44,28 @@ const workPeriodEvent: CalendarEvent = {
 		notes: "Front desk shift",
 	},
 };
-const displayContext = { locale: "en-US", timezone: "UTC", timeFormat: "24h" as const };
+const displayContext = {
+	locale: "en-US",
+	timezone: "UTC",
+	timeFormat: "24h" as const,
+};
 
 describe("DeleteWorkPeriodDialog", () => {
 	beforeEach(() => {
 		requestTimeEntryDeletion.mockReset();
 		requestTimeEntryDeletion.mockResolvedValue({
 			success: true,
-			data: { approvalId: "approval-1" },
+			data: { approvalId: "approval-1", status: "pending" },
 		});
 		toastError.mockReset();
+		toastSuccess.mockReset();
+		randomUUID.mockReset();
+		let uuidSequence = 0;
+		randomUUID.mockImplementation(() => {
+			uuidSequence += 1;
+			return `42000000-0000-4000-8000-${uuidSequence.toString().padStart(12, "0")}`;
+		});
+		vi.spyOn(globalThis.crypto, "randomUUID").mockImplementation(randomUUID);
 	});
 
 	it("renders deletion request copy and reason field", () => {
@@ -63,7 +78,9 @@ describe("DeleteWorkPeriodDialog", () => {
 			/>,
 		);
 
-		expect(screen.getByRole("heading", { name: "Request deletion?" })).toBeTruthy();
+		expect(
+			screen.getByRole("heading", { name: "Request deletion?" }),
+		).toBeTruthy();
 		expect(
 			screen.getByText(
 				"This will hide the time entry after manager approval. The audit history and time-entry chain will be preserved.",
@@ -88,17 +105,150 @@ describe("DeleteWorkPeriodDialog", () => {
 			/>,
 		);
 
-		await user.type(screen.getByLabelText("Reason for deletion"), "  Duplicate entry  ");
+		await user.type(
+			screen.getByLabelText("Reason for deletion"),
+			"  Duplicate entry  ",
+		);
 		await user.click(screen.getByRole("button", { name: /Delete entry/i }));
 
 		await waitFor(() => {
 			expect(requestTimeEntryDeletion).toHaveBeenCalledWith({
 				workPeriodId: "work-period-1",
+				submissionId: expect.any(String),
 				reason: "Duplicate entry",
 			});
 		});
 		expect(onDeleteComplete).toHaveBeenCalledOnce();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("reuses the cycle token when retrying a failed deletion", async () => {
+		requestTimeEntryDeletion
+			.mockResolvedValueOnce({ success: false, error: "Try again" })
+			.mockResolvedValueOnce({
+				success: true,
+				data: { approvalId: "approval-1", status: "pending" },
+			});
+		const user = userEvent.setup();
+		render(
+			<DeleteWorkPeriodDialog
+				event={workPeriodEvent}
+				open={true}
+				onOpenChange={vi.fn()}
+				displayContext={displayContext}
+			/>,
+		);
+		await user.type(
+			screen.getByLabelText("Reason for deletion"),
+			"Duplicate entry",
+		);
+		await user.click(screen.getByRole("button", { name: /Delete entry/i }));
+		await waitFor(() =>
+			expect(requestTimeEntryDeletion).toHaveBeenCalledTimes(1),
+		);
+		await user.click(screen.getByRole("button", { name: /Delete entry/i }));
+		await waitFor(() =>
+			expect(requestTimeEntryDeletion).toHaveBeenCalledTimes(2),
+		);
+
+		const submissionIds = requestTimeEntryDeletion.mock.calls.map(
+			([request]) => request.submissionId,
+		);
+		expect(submissionIds[0]).toMatch(/^[0-9a-f-]{36}$/);
+		expect(submissionIds[1]).toBe(submissionIds[0]);
+	});
+
+	it("starts a new cycle token after the controlled dialog is reopened", async () => {
+		requestTimeEntryDeletion
+			.mockResolvedValueOnce({ success: false, error: "Try again" })
+			.mockResolvedValueOnce({
+				success: true,
+				data: { approvalId: "approval-1", status: "pending" },
+			});
+		const user = userEvent.setup();
+		const props = {
+			event: workPeriodEvent,
+			onOpenChange: vi.fn(),
+			displayContext,
+		};
+		const { rerender } = render(
+			<DeleteWorkPeriodDialog {...props} open={true} />,
+		);
+		await user.type(
+			screen.getByLabelText("Reason for deletion"),
+			"First deletion",
+		);
+		await user.click(screen.getByRole("button", { name: /Delete entry/i }));
+		await waitFor(() =>
+			expect(requestTimeEntryDeletion).toHaveBeenCalledTimes(1),
+		);
+
+		rerender(<DeleteWorkPeriodDialog {...props} open={false} />);
+		rerender(<DeleteWorkPeriodDialog {...props} open={true} />);
+		await user.clear(screen.getByLabelText("Reason for deletion"));
+		await user.type(
+			screen.getByLabelText("Reason for deletion"),
+			"Later deletion",
+		);
+		await user.click(screen.getByRole("button", { name: /Delete entry/i }));
+		await waitFor(() =>
+			expect(requestTimeEntryDeletion).toHaveBeenCalledTimes(2),
+		);
+
+		const submissionIds = requestTimeEntryDeletion.mock.calls.map(
+			([request]) => request.submissionId,
+		);
+		expect(submissionIds[1]).not.toBe(submissionIds[0]);
+	});
+
+	it("presents an auto-completed deletion as applied", async () => {
+		requestTimeEntryDeletion.mockResolvedValueOnce({
+			success: true,
+			data: { approvalId: "approval-1", status: "approved" },
+		});
+		const user = userEvent.setup();
+
+		render(
+			<DeleteWorkPeriodDialog
+				event={workPeriodEvent}
+				open={true}
+				onOpenChange={vi.fn()}
+				displayContext={displayContext}
+			/>,
+		);
+		await user.type(
+			screen.getByLabelText("Reason for deletion"),
+			"Duplicate entry",
+		);
+		await user.click(screen.getByRole("button", { name: /Delete entry/i }));
+
+		await waitFor(() => {
+			expect(toastSuccess).toHaveBeenCalledWith("Time entry deletion applied");
+		});
+	});
+
+	it("preserves pending presentation for a human-reviewed deletion", async () => {
+		const user = userEvent.setup();
+
+		render(
+			<DeleteWorkPeriodDialog
+				event={workPeriodEvent}
+				open={true}
+				onOpenChange={vi.fn()}
+				displayContext={displayContext}
+			/>,
+		);
+		await user.type(
+			screen.getByLabelText("Reason for deletion"),
+			"Duplicate entry",
+		);
+		await user.click(screen.getByRole("button", { name: /Delete entry/i }));
+
+		await waitFor(() => {
+			expect(toastSuccess).toHaveBeenCalledWith(
+				"Deletion request submitted for manager approval",
+			);
+		});
 	});
 
 	it("requires a non-empty deletion reason", async () => {

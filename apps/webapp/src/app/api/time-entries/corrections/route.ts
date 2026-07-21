@@ -1,45 +1,60 @@
+import { randomUUID } from "node:crypto";
 import { and, eq, isNull, or } from "drizzle-orm";
-import { Cause, Effect, Either, Option, Runtime } from "effect";
-import { DateTime } from "luxon";
+import { Cause, Effect, Option, Runtime } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { getUserTimezone } from "@/app/[locale]/(app)/time-tracking/actions/auth";
-import { resolveCorrectionApprovalManager } from "@/app/[locale]/(app)/time-tracking/actions/corrections";
-import { createTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
 import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import { db } from "@/db";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
-import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
+import {
+	dispatchCommittedTimeCorrectionSubmission,
+	submitCorrection,
+} from "@/lib/approvals/server/time-correction-submission";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { auth } from "@/lib/auth";
 import { canApproveFor, getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { ConflictError, DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import {
+	AuthorizationError,
+	ConflictError,
+	DatabaseError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import {
+	ClockingAccessError,
+	clockingService,
+} from "@/lib/time-tracking/clocking-service";
+import {
+	dirtyFromDateForTimeCorrection,
+	instantFromTimeCorrectionBoundary,
+	instantToTimeCorrectionDate,
+	parseTimeCorrectionRfc3339,
+	validateTimeCorrectionRange,
+	validateTimeCorrectionTimezoneEvidence,
+} from "@/lib/time-tracking/time-correction-temporal";
+import {
 	isValidIanaTimezone,
 	resolveFallbackTimezoneCapture,
-	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
 
-const RFC3339_WITH_OFFSET = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+const UUID =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+type CorrectionDomainError =
+	| AuthorizationError
+	| ConflictError
+	| NotFoundError
+	| ValidationError;
 
-function parseCorrectionTimestamp(value: unknown) {
-	if (typeof value !== "string" || !RFC3339_WITH_OFFSET.test(value)) {
-		return null;
-	}
-
-	const parsed = DateTime.fromISO(value, { setZone: true });
-	return parsed.isValid ? parsed.toUTC() : null;
-}
-
-type CorrectionDomainError = ConflictError | NotFoundError | ValidationError;
-
-function getCorrectionDomainError(error: unknown): CorrectionDomainError | null {
+function getCorrectionDomainError(
+	error: unknown,
+): CorrectionDomainError | null {
 	if (
+		error instanceof AuthorizationError ||
 		error instanceof ConflictError ||
 		error instanceof NotFoundError ||
 		error instanceof ValidationError
@@ -50,8 +65,11 @@ function getCorrectionDomainError(error: unknown): CorrectionDomainError | null 
 		return null;
 	}
 
-	const failure = Option.getOrNull(Cause.failureOption(error[Runtime.FiberFailureCauseId]));
-	return failure instanceof ConflictError ||
+	const failure = Option.getOrNull(
+		Cause.failureOption(error[Runtime.FiberFailureCauseId]),
+	);
+	return failure instanceof AuthorizationError ||
+		failure instanceof ConflictError ||
 		failure instanceof NotFoundError ||
 		failure instanceof ValidationError
 		? failure
@@ -59,7 +77,7 @@ function getCorrectionDomainError(error: unknown): CorrectionDomainError | null 
 }
 
 function createTransactionalApprovalDbService(
-	client: Parameters<Parameters<typeof db.transaction>[0]>[0],
+	client: ApprovalDbService["db"],
 ): ApprovalDbService {
 	return {
 		db: client,
@@ -107,37 +125,75 @@ export async function POST(request: NextRequest) {
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
-		await clockingService.requireActor({ userId: session.user.id, activeOrganizationId: activeOrgId });
+		await clockingService.requireActor({
+			userId: session.user.id,
+			activeOrganizationId: activeOrgId,
+		});
 
 		const body = await request.json();
 		const { replacesEntryId, timestamp, notes, timezone } = body;
 
 		// Validate required fields
-		if (!replacesEntryId) {
-			return NextResponse.json({ error: "replacesEntryId is required" }, { status: 400 });
-		}
-
-		if (!timestamp) {
-			return NextResponse.json({ error: "timestamp is required" }, { status: 400 });
-		}
-		const correctionDateTime = parseCorrectionTimestamp(timestamp);
-		if (!correctionDateTime) {
+		if (
+			typeof replacesEntryId !== "string" ||
+			replacesEntryId.trim().length === 0
+		) {
 			return NextResponse.json(
-				{ error: "timestamp must be a valid RFC3339 value with an explicit offset" },
+				{ error: "replacesEntryId is required" },
 				{ status: 400 },
 			);
 		}
-		if (timezone !== undefined && !isValidIanaTimezone(timezone)) {
+
+		if (typeof timestamp !== "string" || timestamp.trim().length === 0) {
+			return NextResponse.json(
+				{ error: "timestamp is required" },
+				{ status: 400 },
+			);
+		}
+		let parsedCorrection: ReturnType<typeof parseTimeCorrectionRfc3339>;
+		try {
+			parsedCorrection = parseTimeCorrectionRfc3339(timestamp);
+		} catch {
+			return NextResponse.json(
+				{
+					error:
+						"timestamp must be a valid RFC3339 value with an explicit offset",
+				},
+				{ status: 400 },
+			);
+		}
+		if (
+			timezone !== undefined &&
+			(typeof timezone !== "string" || !isValidIanaTimezone(timezone))
+		) {
 			return NextResponse.json(
 				{ error: "timezone must be a valid IANA timezone" },
 				{ status: 400 },
 			);
 		}
-		if (!notes) {
-			return NextResponse.json({ error: "notes is required for corrections" }, { status: 400 });
+		if (typeof notes !== "string" || notes.trim().length === 0) {
+			return NextResponse.json(
+				{ error: "notes is required for corrections" },
+				{ status: 400 },
+			);
 		}
+		const idempotencyKey = request.headers.get("Idempotency-Key");
+		if (idempotencyKey !== null && !UUID.test(idempotencyKey)) {
+			return NextResponse.json(
+				{ error: "Idempotency-Key must be a valid UUID" },
+				{ status: 400 },
+			);
+		}
+		// Headerless requests remain accepted, but transport retries are only
+		// idempotent when clients provide a stable Idempotency-Key.
+		const submissionId = idempotencyKey
+			? idempotencyKey.toLowerCase()
+			: randomUUID();
 
 		// Get current user's employee record for the active organization ONLY
 		const [currentEmployee] = await db
@@ -173,7 +229,10 @@ export async function POST(request: NextRequest) {
 			.limit(1);
 
 		if (!entryToCorrect) {
-			return NextResponse.json({ error: "Time entry to correct not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Time entry to correct not found" },
+				{ status: 404 },
+			);
 		}
 
 		// Get the employee who owns the entry
@@ -190,7 +249,10 @@ export async function POST(request: NextRequest) {
 			.limit(1);
 
 		if (!entryOwner) {
-			return NextResponse.json({ error: "Entry owner not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Entry owner not found" },
+				{ status: 404 },
+			);
 		}
 
 		const [selectedWorkPeriod] = await db
@@ -201,128 +263,163 @@ export async function POST(request: NextRequest) {
 					eq(workPeriod.employeeId, entryOwner.id),
 					eq(workPeriod.organizationId, activeOrgId),
 					isNull(workPeriod.deletedAt),
-					or(eq(workPeriod.clockInId, replacesEntryId), eq(workPeriod.clockOutId, replacesEntryId)),
+					or(
+						eq(workPeriod.clockInId, replacesEntryId),
+						eq(workPeriod.clockOutId, replacesEntryId),
+					),
 				),
 			)
 			.limit(1);
 
 		if (!selectedWorkPeriod) {
-			return NextResponse.json({ error: "Work period not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Work period not found" },
+				{ status: 404 },
+			);
 		}
 
 		const correctsClockIn = selectedWorkPeriod.clockInId === replacesEntryId;
-		const correctionTimestamp = correctionDateTime.toJSDate();
-		if (
-			correctsClockIn &&
-			selectedWorkPeriod.endTime &&
-			correctionDateTime >= DateTime.fromJSDate(selectedWorkPeriod.endTime, { zone: "utc" })
-		) {
-			return NextResponse.json(
-				{ error: "Clock out time must be after clock in time" },
-				{ status: 400 },
-			);
-		}
-		if (
-			!correctsClockIn &&
-			correctionDateTime <= DateTime.fromJSDate(selectedWorkPeriod.startTime, { zone: "utc" })
-		) {
-			return NextResponse.json(
-				{ error: "Clock out time must be after clock in time" },
-				{ status: 400 },
-			);
-		}
-
-		// Check authorization using CASL
-		// Self-correction: Employee can request correction of their own entries (but needs approval)
-		// Admin/Manager correction: Can directly correct entries of employees they manage
 		const isSelfCorrection = entryToCorrect.employeeId === currentEmployee.id;
-		const canApprove = await canApproveFor(entryToCorrect.employeeId);
+		try {
+			validateTimeCorrectionRange(
+				correctsClockIn
+					? parsedCorrection.instant
+					: instantFromTimeCorrectionBoundary(selectedWorkPeriod.startTime),
+				correctsClockIn
+					? selectedWorkPeriod.endTime
+						? instantFromTimeCorrectionBoundary(selectedWorkPeriod.endTime)
+						: null
+					: parsedCorrection.instant,
+			);
+		} catch {
+			return NextResponse.json(
+				{ error: "Clock out time must be after clock in time" },
+				{ status: 400 },
+			);
+		}
+		const targetTimezone = await getUserTimezone(entryOwner.userId);
+		const selectedTimezone =
+			isSelfCorrection && timezone ? timezone : targetTimezone;
+		const trustedEvidence = { ...parsedCorrection, timezone: selectedTimezone };
+		try {
+			validateTimeCorrectionTimezoneEvidence(trustedEvidence);
+		} catch {
+			return NextResponse.json(
+				{
+					error:
+						"timestamp offset does not match timezone at the event instant",
+				},
+				{ status: 400 },
+			);
+		}
 
+		// Check authorization using CASL after validating the scoped target data.
+		const canApprove = await canApproveFor(entryToCorrect.employeeId);
 		if (!isSelfCorrection && !canApprove) {
 			const error = new ForbiddenError("update", "TimeEntry");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
-
-		const targetTimezone = await getUserTimezone(entryOwner.userId);
-		const timezoneCapture = isSelfCorrection
-			? timezone
-				? resolveTimeEntryTimezoneCapture({
-						timestamp: correctionTimestamp,
-						browserTimezone: timezone,
-						fallbackTimezone: targetTimezone,
-						browserSource: "browser",
-						fallbackSource: "user_setting",
-					})
-				: resolveFallbackTimezoneCapture({
-						timestamp: correctionTimestamp,
-						timezone: targetTimezone,
-						timezoneSource: "user_setting",
-					})
-			: resolveFallbackTimezoneCapture({
-					timestamp: correctionTimestamp,
-					timezone: targetTimezone,
-					timezoneSource: "manager_target_user_setting",
-				});
+		const trustedCorrectionTimestamp = instantToTimeCorrectionDate(
+			trustedEvidence.instant,
+		);
+		const timezoneCapture = {
+			timezone: trustedEvidence.timezone,
+			utcOffsetMinutes: trustedEvidence.utcOffsetMinutes,
+			timezoneSource: isSelfCorrection
+				? timezone
+					? ("browser" as const)
+					: ("user_setting" as const)
+				: ("manager_target_user_setting" as const),
+		};
 
 		// Get request metadata
 		const headersList = await headers();
 		const ipAddress =
-			headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
+			headersList.get("x-forwarded-for") ||
+			headersList.get("x-real-ip") ||
+			"unknown";
 		const deviceInfo = headersList.get("user-agent") || "unknown";
 
 		if (isSelfCorrection && !canApprove) {
-			const managerDecision = await resolveCorrectionApprovalManager({
-				db,
-				requesterEmployeeId: currentEmployee.id,
+			const approvalResult = await submitCorrection({
+				dbService: createTransactionalApprovalDbService(db),
 				organizationId: activeOrgId,
-			});
-			if (!managerDecision.ok) {
-				return NextResponse.json({ error: managerDecision.message }, { status: 400 });
-			}
-
-			const result = await db.transaction(async (tx) => {
-				const correctionEntry = await createTimeEntry(
+				employeeId: currentEmployee.id,
+				userId: session.user.id,
+				submissionId,
+				workPeriodId: selectedWorkPeriod.id,
+				expectedClockInId: selectedWorkPeriod.clockInId,
+				expectedClockOutId: selectedWorkPeriod.clockOutId,
+				expectedStartTime: selectedWorkPeriod.startTime,
+				expectedEndTime: selectedWorkPeriod.endTime,
+				action: "edit",
+				reason: notes,
+				endpoints: [
 					{
-						employeeId: entryOwner.id,
-						organizationId: activeOrgId,
-						type: "correction",
-						timestamp: correctionTimestamp,
-						createdBy: session.user.id,
-						replacesEntryId,
-						notes,
-						isSuperseded: true,
-						...timezoneCapture,
+						endpointType: correctsClockIn ? "clock_in" : "clock_out",
+						originalEntryId: replacesEntryId,
+						timestamp: trustedCorrectionTimestamp,
+						timezoneCapture,
 					},
-					tx,
-				);
-				const approvalResult = await Effect.runPromise(
-					Effect.either(
-						createTimeCorrectionApprovalWorkflow(createTransactionalApprovalDbService(tx), {
-							organizationId: activeOrgId,
-							requesterEmployeeId: currentEmployee.id,
-							teamId: currentEmployee.teamId ?? null,
-							workPeriodId: selectedWorkPeriod.id,
-							defaultApproverId: managerDecision.managerId,
-							reason: notes,
-							overtimeRisk: "warning",
-							correctionEntryIds: correctsClockIn
-								? { clockInCorrectionId: correctionEntry.id }
-								: { clockOutCorrectionId: correctionEntry.id },
-						}),
-					),
-				);
-				if (Either.isLeft(approvalResult)) {
-					throw approvalResult.left;
-				}
-
-				return { correctionEntry, approvalId: approvalResult.right.approvalRequestId };
+				],
 			});
-
+			if (approvalResult.postCommit.authority === "legacy") {
+				try {
+					await dispatchCommittedTimeCorrectionSubmission({
+						organizationId: activeOrgId,
+						employeeId: currentEmployee.id,
+						workPeriodId: selectedWorkPeriod.id,
+						reason: notes,
+						period: selectedWorkPeriod,
+						correctedClockIn: correctsClockIn
+							? trustedCorrectionTimestamp
+							: selectedWorkPeriod.startTime,
+						correctedClockOut: correctsClockIn
+							? (selectedWorkPeriod.endTime ?? undefined)
+							: trustedCorrectionTimestamp,
+						result: approvalResult,
+					});
+				} catch (error) {
+					logger.error(
+						{ error },
+						"Failed to dispatch committed REST correction effects",
+					);
+				}
+			}
+			const correctionEntryId = approvalResult.correctionEntryIds[0];
+			const persistedResponseEntry = correctionEntryId
+				? await db.query.timeEntry.findFirst({
+						where: and(
+							eq(timeEntry.id, correctionEntryId),
+							eq(timeEntry.organizationId, activeOrgId),
+							eq(timeEntry.employeeId, entryOwner.id),
+							eq(timeEntry.type, "correction"),
+							eq(
+								timeEntry.isSuperseded,
+								approvalResult.kind !== "auto_completed",
+							),
+						),
+					})
+				: null;
+			const responseEntry =
+				persistedResponseEntry ??
+				(approvalResult.disposition === "replayed"
+					? approvalResult.correctionEntries?.find(
+							(entry) => entry.id === correctionEntryId,
+						)
+					: null);
+			if (!responseEntry) {
+				throw new NotFoundError({
+					message: "Correction entry not found after submission",
+					entityType: "time_entry",
+					entityId: correctionEntryId,
+				});
+			}
 			return NextResponse.json(
 				{
-					entry: result.correctionEntry,
-					approvalId: result.approvalId,
+					entry: responseEntry,
+					approvalId: approvalResult.approvalRequestId,
 					message: "Correction submitted. Awaiting manager approval.",
 				},
 				{ status: 201 },
@@ -337,7 +434,7 @@ export async function POST(request: NextRequest) {
 					organizationId: currentEmployee.organizationId,
 					replacesEntryId,
 					workPeriodId: selectedWorkPeriod.id,
-					timestamp: correctionTimestamp,
+					timestamp: trustedCorrectionTimestamp,
 					createdBy: session.user.id,
 					notes,
 					ipAddress,
@@ -348,10 +445,27 @@ export async function POST(request: NextRequest) {
 		});
 
 		const correctionEntry = await runtime.runPromise(effect);
-		const originalStart = DateTime.fromJSDate(selectedWorkPeriod.startTime, { zone: "utc" });
-		const correctedStart = correctsClockIn ? correctionDateTime : originalStart;
+		const originalTimezoneCapture =
+			entryToCorrect.timezone &&
+			Number.isInteger(entryToCorrect.utcOffsetMinutes)
+				? {
+						timezone: entryToCorrect.timezone,
+						utcOffsetMinutes: entryToCorrect.utcOffsetMinutes as number,
+					}
+				: resolveFallbackTimezoneCapture({
+						timestamp: entryToCorrect.timestamp,
+						timezone: entryToCorrect.timezone ?? targetTimezone,
+						timezoneSource: "manager_target_user_setting",
+					});
+		const dirtyFromDate = dirtyFromDateForTimeCorrection([
+			{
+				instant: instantFromTimeCorrectionBoundary(entryToCorrect.timestamp),
+				...originalTimezoneCapture,
+			},
+			trustedEvidence,
+		]);
 		await markWorkBalanceDirtyAfterDirectCorrectionBestEffort({
-			dirtyFromDate: DateTime.min(originalStart, correctedStart).toISODate() ?? undefined,
+			dirtyFromDate: dirtyFromDate ?? undefined,
 			employeeId: entryToCorrect.employeeId,
 			organizationId: activeOrgId,
 		});
@@ -371,6 +485,9 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: error.message }, { status: 403 });
 		}
 		const domainError = getCorrectionDomainError(error);
+		if (domainError instanceof AuthorizationError) {
+			return NextResponse.json({ error: domainError.message }, { status: 403 });
+		}
 		if (domainError instanceof ConflictError) {
 			return NextResponse.json(
 				{ error: domainError.message, code: domainError.conflictType },
@@ -395,7 +512,10 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -414,9 +534,15 @@ export async function GET(request: NextRequest) {
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
-		await clockingService.requireActor({ userId: session.user.id, activeOrganizationId: activeOrgId });
+		await clockingService.requireActor({
+			userId: session.user.id,
+			activeOrganizationId: activeOrgId,
+		});
 
 		const searchParams = request.nextUrl.searchParams;
 		const employeeId = searchParams.get("employeeId");
@@ -453,7 +579,12 @@ export async function GET(request: NextRequest) {
 			const [originalEntry] = await db
 				.select()
 				.from(timeEntry)
-				.where(and(eq(timeEntry.id, entryId), eq(timeEntry.organizationId, activeOrgId)))
+				.where(
+					and(
+						eq(timeEntry.id, entryId),
+						eq(timeEntry.organizationId, activeOrgId),
+					),
+				)
 				.limit(1);
 
 			if (!originalEntry) {
@@ -466,7 +597,9 @@ export async function GET(request: NextRequest) {
 				if (!ability || ability.cannot("manage", "TimeEntry")) {
 					const error = new ForbiddenError("read", "TimeEntry");
 					const httpError = toHttpError(error);
-					return NextResponse.json(httpError.body, { status: httpError.status });
+					return NextResponse.json(httpError.body, {
+						status: httpError.status,
+					});
 				}
 			}
 
@@ -489,7 +622,10 @@ export async function GET(request: NextRequest) {
 					.limit(1);
 
 				if (!targetEmployee) {
-					return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+					return NextResponse.json(
+						{ error: "Employee not found" },
+						{ status: 404 },
+					);
 				}
 			}
 
@@ -499,7 +635,9 @@ export async function GET(request: NextRequest) {
 				if (!ability || ability.cannot("manage", "TimeEntry")) {
 					const error = new ForbiddenError("read", "TimeEntry");
 					const httpError = toHttpError(error);
-					return NextResponse.json(httpError.body, { status: httpError.status });
+					return NextResponse.json(httpError.body, {
+						status: httpError.status,
+					});
 				}
 			}
 
@@ -517,6 +655,9 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: error.message }, { status: 403 });
 		}
 		console.error("Error fetching corrections:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }

@@ -62,7 +62,9 @@ describe("clocking service delegation", () => {
 		expect(approvalPolicyIndex).toBeGreaterThan(billingIndex);
 		expect(managerIndex).toBeGreaterThan(approvalPolicyIndex);
 		expect(canonicalIndex).toBeGreaterThan(managerIndex);
-		expect(delegateIndex).toBeGreaterThan(canonicalIndex);
+		expect(canonicalIndex).toBeGreaterThan(delegateIndex);
+		expect(body).toContain("beforePeriodClose:");
+		expect(body).toContain("afterPeriodClose:");
 		expect(body).toContain("createClockOutApprovalRequest(");
 	});
 });

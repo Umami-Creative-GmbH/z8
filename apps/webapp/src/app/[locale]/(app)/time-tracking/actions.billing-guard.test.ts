@@ -10,15 +10,20 @@ const clockingSource = readFileSync(
 	fileURLToPath(new URL("./actions/clocking.ts", import.meta.url)),
 	"utf8",
 );
-const correctionsSource = readFileSync(
-	fileURLToPath(new URL("./actions/corrections.ts", import.meta.url)),
+const correctionSubmissionSource = readFileSync(
+	fileURLToPath(
+		new URL(
+			"../../../../lib/approvals/server/time-correction-submission.ts",
+			import.meta.url,
+		),
+	),
 	"utf8",
 );
 
 function functionBody(name: string, targetSource = source) {
-	const match = new RegExp(`(?:export\\s+)?async function ${name}\\s*\\(`).exec(
-		targetSource,
-	);
+	const match = new RegExp(
+		`(?:export\\s+)?(?:async\\s+)?function ${name}\\s*\\(`,
+	).exec(targetSource);
 	const start = match?.index ?? -1;
 	expect(start, `${name} should exist`).toBeGreaterThanOrEqual(0);
 	const nextExport = targetSource.indexOf("export async function", start + 1);
@@ -167,11 +172,10 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it("guards manual time-entry creation before creating time entries", () => {
-		expectBillingGuardBeforeWrite("createManualTimeEntry", "createTimeEntry({");
+		expectBillingGuardBeforeWrite("createManualTimeEntry", "createTimeEntry(");
 	});
 
 	it.each([
-		["editSameDayTimeEntry", "createTimeEntry({"],
 		["requestTimeCorrection", "requestTimeCorrectionEffect(data)"],
 		["updateWorkPeriodNotes", ".update(timeEntry)"],
 		["splitWorkPeriod", "createTimeEntry({"],
@@ -181,12 +185,29 @@ describe("legacy time-tracking action billing guards", () => {
 		expectBillingGuardBeforeWrite(name, writeMarker);
 	});
 
-	it.each([
-		"createManualTimeEntry",
-		"editSameDayTimeEntry",
-	])("marks work balances dirty after %s changes payable time", (name) => {
+	it("guards the canonical same-day edit before writing time data", () => {
+		expectBillingGuardBeforeWrite(
+			"editSameDayTimeEntry",
+			"canonicalTimeEntryClient.createCorrectionEntry",
+			correctionSubmissionSource,
+		);
+	});
+
+	it("marks work balances dirty after createManualTimeEntry changes payable time", () => {
+		const name = "createManualTimeEntry";
 		const body = functionBody(name);
 		expect(body).toContain("await markWorkBalanceDirtyBestEffort(");
+		expect(body).toContain("dirtyFromDate:");
+	});
+
+	it("marks work balances dirty after the canonical same-day edit", () => {
+		const body = functionBody(
+			"editSameDayTimeEntry",
+			correctionSubmissionSource,
+		);
+		expect(body).toContain(
+			"await markWorkBalanceDirtyAfterSameDayEditBestEffort(",
+		);
 		expect(body).toContain("dirtyFromDate:");
 	});
 
@@ -217,9 +238,9 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it("guards deletion approval requests before creating correction entries", () => {
-		const body = functionBody("requestTimeEntryDeletion", correctionsSource);
+		const body = functionBody("submissionEffect", correctionSubmissionSource);
 		const guardIndex = body.indexOf("requireBillingForMutation");
-		const writeIndex = body.indexOf("createTimeEntry(");
+		const writeIndex = body.indexOf("submitCorrection({");
 
 		expect(guardIndex).toBeGreaterThanOrEqual(0);
 		expect(body).toContain("isBillingMutationAllowed");
@@ -227,7 +248,7 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(body).toContain(
 			'value: billingAccess.reason ?? "subscription_required"',
 		);
-		expect(body).toContain('error: "billing_required"');
+		expect(body).toContain('message: "billing_required"');
 		expect(writeIndex).toBeGreaterThanOrEqual(0);
 		expect(guardIndex).toBeLessThan(writeIndex);
 	});
@@ -238,19 +259,18 @@ describe("legacy time-tracking action billing guards", () => {
 		expectNoManagerApprovalGuardBeforeWrite(name, writeMarker);
 	});
 
-	it("auto-approves approval-required manual entries when no manager resolves", () => {
+	it("keeps manual source rows pending until approval routing resolves", () => {
 		const body = functionBody("createManualTimeEntry");
 
 		expect(body).toContain(
-			"const requiresManagerApproval = requiresApproval && Boolean(managerId)",
+			'const approvalStatus = requiresApproval ? "pending" : "approved"',
 		);
-		expect(body).toContain(
-			'const approvalStatus = requiresManagerApproval ? "pending" : "approved"',
+		expect(body).toContain("const pendingChangesData = requiresApproval");
+		expect(body).toMatch(
+			/const approvalResult = requiresApproval\s+\? await createManualEntryApprovalRequest/,
 		);
-		expect(body).toContain(
-			"const pendingChangesData = requiresManagerApproval",
-		);
-		expect(body).toContain("if (requiresManagerApproval && managerId)");
+		expect(body).toContain('error.field === "managerId"');
+		expect(body).not.toContain("requiresManagerApproval");
 	});
 
 	it.each([
@@ -271,7 +291,7 @@ describe("legacy time-tracking action billing guards", () => {
 
 	it.each([
 		["clockOut", "clockingService.clockOut({"],
-		["createManualTimeEntry", "createTimeEntry({"],
+		["createManualTimeEntry", "createTimeEntry("],
 	])("fails closed when %s policy checks fail before writing", (name, writeMarker) => {
 		expectPolicyCheckFailureBeforeWrite(
 			name,

@@ -3,6 +3,7 @@ import type { ComplianceWarning } from "@/lib/effect/services/work-policy.servic
 
 export interface CorrectionRequest {
 	workPeriodId: string;
+	submissionId: string;
 	newClockInDate: string;
 	newClockInTime: string;
 	newClockOutDate?: string;
@@ -21,6 +22,7 @@ export interface SameDayEditRequest {
 
 export interface TimeEntryDeletionRequest {
 	workPeriodId: string;
+	submissionId: string;
 	reason: string;
 }
 
