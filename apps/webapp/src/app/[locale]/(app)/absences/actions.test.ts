@@ -40,7 +40,6 @@ vi.mock("./plan-preview", () => ({
 
 vi.mock("./request-absence-effect", () => ({
 	requestAbsenceEffect: vi.fn(),
-	requestAbsenceForEmployeeEffect: vi.fn(),
 }));
 
 const actions = await import("./actions");
@@ -48,22 +47,41 @@ const actions = await import("./actions");
 describe("absence action wrappers", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.getCurrentEmployee.mockResolvedValue({ id: "emp-current", organizationId: "org-1" });
+		mockState.getCurrentEmployee.mockResolvedValue({
+			id: "emp-current",
+			organizationId: "org-1",
+		});
 		mockState.getAbsenceEntries.mockResolvedValue([{ id: "absence-1" }]);
 		mockState.getHolidays.mockResolvedValue([{ id: "holiday-1" }]);
-		mockState.getVacationBalance.mockResolvedValue({ year: 2026, remainingDays: 10 });
+		mockState.getVacationBalance.mockResolvedValue({
+			year: 2026,
+			remainingDays: 10,
+		});
 		mockState.findOrganization.mockResolvedValue({ timezone: "UTC" });
 	});
 
+	it("does not expose a caller-identity absence mutation", () => {
+		expect(actions).not.toHaveProperty("requestAbsenceForEmployee");
+		expect(actions).not.toHaveProperty("cancelAbsenceRequestForEmployee");
+	});
+
 	it("does not load absence entries for a client-provided employee id", async () => {
-		const result = await actions.getAbsenceEntries("emp-other", "2026-05-01", "2026-05-31");
+		const result = await actions.getAbsenceEntries(
+			"emp-other",
+			"2026-05-01",
+			"2026-05-31",
+		);
 
 		expect(result).toEqual([]);
 		expect(mockState.getAbsenceEntries).not.toHaveBeenCalled();
 	});
 
 	it("loads absence entries for the current employee", async () => {
-		const result = await actions.getAbsenceEntries("emp-current", "2026-05-01", "2026-05-31");
+		const result = await actions.getAbsenceEntries(
+			"emp-current",
+			"2026-05-01",
+			"2026-05-31",
+		);
 
 		expect(result).toEqual([{ id: "absence-1" }]);
 		expect(mockState.getAbsenceEntries).toHaveBeenCalledWith(
@@ -84,13 +102,19 @@ describe("absence action wrappers", () => {
 		const result = await actions.getVacationBalance("emp-current", 2026);
 
 		expect(result).toEqual({ year: 2026, remainingDays: 10 });
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026);
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith(
+			"emp-current",
+			2026,
+		);
 	});
 
 	it("loads absence calendar data for the current employee and selected year", async () => {
 		const result = await actions.getAbsenceCalendarYearData(2027);
 
-		expect(result).toEqual({ absences: [{ id: "absence-1" }], holidays: [{ id: "holiday-1" }] });
+		expect(result).toEqual({
+			absences: [{ id: "absence-1" }],
+			holidays: [{ id: "holiday-1" }],
+		});
 		expect(mockState.getAbsenceEntries).toHaveBeenCalledWith(
 			"emp-current",
 			"2027-01-01",

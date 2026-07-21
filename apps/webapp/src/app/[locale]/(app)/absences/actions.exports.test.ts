@@ -18,12 +18,35 @@ describe("absences actions module structure", () => {
 		expect(actionsSource).toContain(
 			'import { getAbsencePlanPreview as getAbsencePlanPreviewAction } from "./plan-preview";',
 		);
-		expect(actionsSource).toContain("requestAbsenceEffect as requestAbsenceAction");
-		expect(actionsSource).toContain("export async function getCurrentEmployee(");
-		expect(actionsSource).toContain("export async function cancelAbsenceRequest(");
-		expect(actionsSource).toContain("export async function getAbsencePlanPreview(");
-		expect(actionsSource).toContain("return getAbsencePlanPreviewAction(...args);");
+		expect(actionsSource).toContain(
+			"requestAbsenceEffect as requestAbsenceAction",
+		);
+		expect(actionsSource).toContain(
+			"export async function getCurrentEmployee(",
+		);
+		expect(actionsSource).toContain(
+			"export async function cancelAbsenceRequest(",
+		);
+		expect(actionsSource).toContain(
+			"export async function getAbsencePlanPreview(",
+		);
+		expect(actionsSource).toContain(
+			"return getAbsencePlanPreviewAction(...args);",
+		);
 		expect(actionsSource).toContain("export async function requestAbsence(");
+		expect(actionsSource).not.toContain("requestAbsenceForEmployee");
+		expect(actionsSource).not.toContain("cancelAbsenceRequestForEmployee");
 		expect(actionsSource).not.toMatch(/export\s*\{[^}]+\}\s*from\s*"\.\//);
+	});
+
+	it("keeps expected-employee cancellation behind a server-only boundary", () => {
+		const serviceSource = readFileSync(
+			join(absencesDir, "cancel-absence-service.ts"),
+			"utf8",
+		);
+
+		expect(serviceSource).toContain('import "server-only";');
+		expect(serviceSource).toContain("cancelAbsenceRequestForEmployee");
+		expect(serviceSource).not.toContain('"use server"');
 	});
 });

@@ -6,8 +6,8 @@ import {
 	getAbsenceCategories,
 	getAbsenceEntries,
 	getVacationBalance,
-	requestAbsenceForEmployee,
 } from "@/app/[locale]/(app)/absences/actions";
+import { requestAbsenceForEmployeeEffect } from "@/app/[locale]/(app)/absences/request-absence-effect";
 import {
 	MobileApiError,
 	requireMobileEmployee,
@@ -36,13 +36,17 @@ const mobileAbsenceRequestSchema = z.object({
 
 export async function GET(request: Request) {
 	try {
-		const { session, activeOrganizationId } = await requireMobileSessionContext(request);
+		const { session, activeOrganizationId } =
+			await requireMobileSessionContext(request);
 
 		if (!activeOrganizationId) {
 			throw new MobileApiError(400, "Active organization required");
 		}
 
-		const employeeRecord = await requireMobileEmployee(session.user.id, activeOrganizationId);
+		const employeeRecord = await requireMobileEmployee(
+			session.user.id,
+			activeOrganizationId,
+		);
 		const org = await db.query.organization.findFirst({
 			where: eq(organization.id, activeOrganizationId),
 			columns: { timezone: true },
@@ -66,16 +70,23 @@ export async function GET(request: Request) {
 		});
 	} catch (error) {
 		if (error instanceof MobileApiError) {
-			return NextResponse.json({ error: error.message }, { status: error.status });
+			return NextResponse.json(
+				{ error: error.message },
+				{ status: error.status },
+			);
 		}
 
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }
 
 export async function POST(request: Request) {
 	try {
-		const { session, activeOrganizationId } = await requireMobileSessionContext(request);
+		const { session, activeOrganizationId } =
+			await requireMobileSessionContext(request);
 
 		if (!activeOrganizationId) {
 			throw new MobileApiError(400, "Active organization required");
@@ -91,7 +102,8 @@ export async function POST(request: Request) {
 		const parsedBody = mobileAbsenceRequestSchema.safeParse(requestBody);
 		if (!parsedBody.success) {
 			const firstIssue = parsedBody.error.issues[0];
-			const fieldName = typeof firstIssue?.path[0] === "string" ? firstIssue.path[0] : null;
+			const fieldName =
+				typeof firstIssue?.path[0] === "string" ? firstIssue.path[0] : null;
 			const errorMessage =
 				firstIssue?.message === "Date must be in YYYY-MM-DD format"
 					? `${fieldName ?? "date"} must be in YYYY-MM-DD format`
@@ -102,9 +114,12 @@ export async function POST(request: Request) {
 			return NextResponse.json({ error: errorMessage }, { status: 400 });
 		}
 
-		const employeeRecord = await requireMobileEmployee(session.user.id, activeOrganizationId);
+		const employeeRecord = await requireMobileEmployee(
+			session.user.id,
+			activeOrganizationId,
+		);
 
-		const result = await requestAbsenceForEmployee(
+		const result = await requestAbsenceForEmployeeEffect(
 			parsedBody.data,
 			employeeRecord,
 			session.user.id,
@@ -120,9 +135,15 @@ export async function POST(request: Request) {
 		return NextResponse.json(result);
 	} catch (error) {
 		if (error instanceof MobileApiError) {
-			return NextResponse.json({ error: error.message }, { status: error.status });
+			return NextResponse.json(
+				{ error: error.message },
+				{ status: error.status },
+			);
 		}
 
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }

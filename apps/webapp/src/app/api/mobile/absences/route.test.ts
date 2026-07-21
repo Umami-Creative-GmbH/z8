@@ -14,7 +14,7 @@ const mockState = vi.hoisted(() => ({
 	getAbsenceCategories: vi.fn(),
 	getAbsenceEntries: vi.fn(),
 	getVacationBalance: vi.fn(),
-	requestAbsenceForEmployee: vi.fn(),
+	requestAbsenceForEmployeeEffect: vi.fn(),
 	organizationFindFirst: vi.fn(),
 }));
 
@@ -36,7 +36,10 @@ vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 	getAbsenceCategories: mockState.getAbsenceCategories,
 	getAbsenceEntries: mockState.getAbsenceEntries,
 	getVacationBalance: mockState.getVacationBalance,
-	requestAbsenceForEmployee: mockState.requestAbsenceForEmployee,
+}));
+
+vi.mock("@/app/[locale]/(app)/absences/request-absence-effect", () => ({
+	requestAbsenceForEmployeeEffect: mockState.requestAbsenceForEmployeeEffect,
 }));
 
 const { GET, POST } = await import("./route");
@@ -103,14 +106,27 @@ describe("/api/mobile/absences", () => {
 			carryoverDays: 0,
 		});
 
-		const response = await GET(new Request("https://app.example.com/api/mobile/absences"));
+		const response = await GET(
+			new Request("https://app.example.com/api/mobile/absences"),
+		);
 
 		expect(response.status).toBe(200);
-		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith("user-1", "org-1");
+		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith(
+			"user-1",
+			"org-1",
+		);
 		expect(mockState.getAbsenceCategories).toHaveBeenCalledWith("org-1");
-		expect(mockState.getAbsenceEntries).toHaveBeenCalledWith("emp-1", "2026-01-01", "2026-12-31");
+		expect(mockState.getAbsenceEntries).toHaveBeenCalledWith(
+			"emp-1",
+			"2026-01-01",
+			"2026-12-31",
+		);
 		expect(mockState.organizationFindFirst).toHaveBeenCalled();
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-1", 2026, "UTC");
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith(
+			"emp-1",
+			2026,
+			"UTC",
+		);
 		expect(await response.json()).toEqual({
 			categories: [
 				{
@@ -170,14 +186,20 @@ describe("/api/mobile/absences", () => {
 			carryoverDays: 0,
 		});
 
-		const response = await GET(new Request("https://app.example.com/api/mobile/absences"));
+		const response = await GET(
+			new Request("https://app.example.com/api/mobile/absences"),
+		);
 
 		expect(response.status).toBe(200);
-		expect(mockState.getAbsenceEntries).toHaveBeenCalledWith("emp-1", "2026-01-01", "2026-12-31");
+		expect(mockState.getAbsenceEntries).toHaveBeenCalledWith(
+			"emp-1",
+			"2026-01-01",
+			"2026-12-31",
+		);
 	});
 
 	it("creates a new absence request", async () => {
-		mockState.requestAbsenceForEmployee.mockResolvedValue({
+		mockState.requestAbsenceForEmployeeEffect.mockResolvedValue({
 			success: true,
 			data: { absenceId: "absence-2" },
 		});
@@ -200,8 +222,11 @@ describe("/api/mobile/absences", () => {
 		);
 
 		expect(response.status).toBe(200);
-		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith("user-1", "org-1");
-		expect(mockState.requestAbsenceForEmployee).toHaveBeenCalledWith(
+		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith(
+			"user-1",
+			"org-1",
+		);
+		expect(mockState.requestAbsenceForEmployeeEffect).toHaveBeenCalledWith(
 			{
 				categoryId: "11111111-1111-1111-1111-111111111111",
 				startDate: "2026-04-20",
@@ -240,7 +265,7 @@ describe("/api/mobile/absences", () => {
 		);
 
 		expect(response.status).toBe(400);
-		expect(mockState.requestAbsenceForEmployee).not.toHaveBeenCalled();
+		expect(mockState.requestAbsenceForEmployeeEffect).not.toHaveBeenCalled();
 		expect(await response.json()).toEqual({
 			error: "startDate must be a real calendar date",
 		});

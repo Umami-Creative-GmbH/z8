@@ -11,7 +11,7 @@ const mockState = vi.hoisted(() => ({
 	},
 	requireMobileSessionContext: vi.fn(),
 	requireMobileEmployee: vi.fn(),
-	cancelAbsenceRequestForEmployee: vi.fn(),
+	cancelAbsenceRequestForExpectedEmployee: vi.fn(),
 }));
 
 vi.mock("@/app/api/mobile/shared", () => ({
@@ -20,8 +20,9 @@ vi.mock("@/app/api/mobile/shared", () => ({
 	requireMobileEmployee: mockState.requireMobileEmployee,
 }));
 
-vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
-	cancelAbsenceRequestForEmployee: mockState.cancelAbsenceRequestForEmployee,
+vi.mock("@/app/[locale]/(app)/absences/cancel-absence-service", () => ({
+	cancelAbsenceRequestForExpectedEmployee:
+		mockState.cancelAbsenceRequestForExpectedEmployee,
 }));
 
 const { POST } = await import("./route");
@@ -44,21 +45,29 @@ describe("POST /api/mobile/absences/[absenceId]/cancel", () => {
 	});
 
 	it("returns 400 when the absence is not pending", async () => {
-		mockState.cancelAbsenceRequestForEmployee.mockResolvedValue({
+		mockState.cancelAbsenceRequestForExpectedEmployee.mockResolvedValue({
 			success: false,
 			error: "Only pending absence requests can be cancelled",
 		});
 
 		const response = await POST(
-			new Request("https://app.example.com/api/mobile/absences/absence-1/cancel", {
-				method: "POST",
-			}),
+			new Request(
+				"https://app.example.com/api/mobile/absences/absence-1/cancel",
+				{
+					method: "POST",
+				},
+			),
 			{ params: Promise.resolve({ absenceId: "absence-1" }) },
 		);
 
 		expect(response.status).toBe(400);
-		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith("user-1", "org-1");
-		expect(mockState.cancelAbsenceRequestForEmployee).toHaveBeenCalledWith("absence-1", {
+		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith(
+			"user-1",
+			"org-1",
+		);
+		expect(
+			mockState.cancelAbsenceRequestForExpectedEmployee,
+		).toHaveBeenCalledWith("absence-1", {
 			id: "emp-1",
 			organizationId: "org-1",
 		});
@@ -68,20 +77,25 @@ describe("POST /api/mobile/absences/[absenceId]/cancel", () => {
 	});
 
 	it("returns 400 when the absence belongs to a different organization", async () => {
-		mockState.cancelAbsenceRequestForEmployee.mockResolvedValue({
+		mockState.cancelAbsenceRequestForExpectedEmployee.mockResolvedValue({
 			success: false,
 			error: "Absence not found in the active organization",
 		});
 
 		const response = await POST(
-			new Request("https://app.example.com/api/mobile/absences/absence-2/cancel", {
-				method: "POST",
-			}),
+			new Request(
+				"https://app.example.com/api/mobile/absences/absence-2/cancel",
+				{
+					method: "POST",
+				},
+			),
 			{ params: Promise.resolve({ absenceId: "absence-2" }) },
 		);
 
 		expect(response.status).toBe(400);
-		expect(mockState.cancelAbsenceRequestForEmployee).toHaveBeenCalledWith("absence-2", {
+		expect(
+			mockState.cancelAbsenceRequestForExpectedEmployee,
+		).toHaveBeenCalledWith("absence-2", {
 			id: "emp-1",
 			organizationId: "org-1",
 		});
@@ -91,16 +105,19 @@ describe("POST /api/mobile/absences/[absenceId]/cancel", () => {
 	});
 
 	it("returns 402 when billing is required to cancel an absence", async () => {
-		mockState.cancelAbsenceRequestForEmployee.mockResolvedValue({
+		mockState.cancelAbsenceRequestForExpectedEmployee.mockResolvedValue({
 			success: false,
 			error: "billing_required",
 			reason: "trial_expired",
 		});
 
 		const response = await POST(
-			new Request("https://app.example.com/api/mobile/absences/absence-3/cancel", {
-				method: "POST",
-			}),
+			new Request(
+				"https://app.example.com/api/mobile/absences/absence-3/cancel",
+				{
+					method: "POST",
+				},
+			),
 			{ params: Promise.resolve({ absenceId: "absence-3" }) },
 		);
 
