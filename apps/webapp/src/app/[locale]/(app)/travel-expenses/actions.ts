@@ -119,7 +119,7 @@ export async function createTravelExpenseDraft(
 
 export async function submitTravelExpenseClaim(input: {
 	claimId: string;
-}): Promise<ServerActionResult<{ status: "submitted" }>> {
+}): Promise<ServerActionResult<{ status: "submitted" | "approved" }>> {
 	try {
 		const authContext = await getAuthContext();
 		if (!authContext?.employee) {
@@ -184,7 +184,7 @@ export async function submitTravelExpenseClaim(input: {
 		}
 
 		const submittedAt = new Date();
-		const updatedClaim = await db.transaction(async (tx) => {
+		const submission = await db.transaction(async (tx) => {
 			const [submittedClaim] = await tx
 				.update(travelExpenseClaim)
 				.set({
@@ -212,7 +212,7 @@ export async function submitTravelExpenseClaim(input: {
 				query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
 			} satisfies ApprovalDbService;
 
-			await Effect.runPromise(
+			const approvalResult = await Effect.runPromise(
 				createTravelExpenseApprovalWorkflow(approvalDbService, {
 					claim: {
 						id: claim.id,
@@ -225,10 +225,10 @@ export async function submitTravelExpenseClaim(input: {
 				}),
 			);
 
-			return submittedClaim;
+			return { submittedClaim, approvalResult };
 		});
 
-		if (!updatedClaim) {
+		if (!submission) {
 			return { success: false, error: "Only draft claims can be submitted" };
 		}
 
@@ -247,7 +247,12 @@ export async function submitTravelExpenseClaim(input: {
 		}).catch((error) => logger.error({ error }, "Failed to log travel expense submission"));
 
 		revalidatePath("/travel-expenses");
-		return { success: true, data: { status: "submitted" } };
+		return {
+			success: true,
+			data: {
+				status: submission.approvalResult.kind === "auto_completed" ? "approved" : "submitted",
+			},
+		};
 	} catch (error) {
 		logger.error({ error }, "Failed to submit travel expense claim");
 		return { success: false, error: "Failed to submit travel expense claim" };

@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TRAVEL_EXPENSE_VALIDATION_MESSAGES } from "@/lib/travel-expenses/types";
 
@@ -156,6 +157,19 @@ vi.mock("@/db", () => ({
 	},
 }));
 
+vi.mock("@/lib/approvals/server/travel-expense-approvals", async (importOriginal) => {
+	const actual = await importOriginal<
+		typeof import("@/lib/approvals/server/travel-expense-approvals")
+	>();
+	return {
+		...actual,
+		createTravelExpenseApprovalWorkflow: vi.fn(actual.createTravelExpenseApprovalWorkflow),
+	};
+});
+
+const { createTravelExpenseApprovalWorkflow } = await import(
+	"@/lib/approvals/server/travel-expense-approvals"
+);
 const { submitTravelExpenseClaim } = await import("./actions");
 
 describe("submitTravelExpenseClaim", () => {
@@ -288,6 +302,32 @@ describe("submitTravelExpenseClaim", () => {
 		expect(mockState.committedInserts).toHaveLength(1);
 		expect(mockState.revalidatePath).toHaveBeenCalledWith("/travel-expenses");
 		expect(mockState.logAudit).toHaveBeenCalledTimes(1);
+	});
+
+	it("returns approved status when the approval workflow auto-completes", async () => {
+		mockState.findClaim.mockResolvedValue({
+			id: "claim-auto",
+			employeeId: "emp-1",
+			organizationId: "org-1",
+			status: "draft",
+			type: "receipt",
+			calculatedAmount: "42.00",
+			attachments: [{ id: "att-1" }],
+		});
+		mockState.findEmployee.mockResolvedValueOnce({ teamId: null });
+		mockState.updateReturning.mockResolvedValue([{ id: "claim-auto" }]);
+		vi.mocked(createTravelExpenseApprovalWorkflow).mockReturnValueOnce(
+			Effect.succeed({
+				kind: "auto_completed",
+				chainInstanceId: null,
+				approvalRequestId: "approval-auto",
+				reason: "requester_is_approver",
+			}),
+		);
+
+		const result = await submitTravelExpenseClaim({ claimId: "claim-auto" });
+
+		expect(result).toEqual({ success: true, data: { status: "approved" } });
 	});
 
 	it("fails without committing when no primary manager can be resolved", async () => {
