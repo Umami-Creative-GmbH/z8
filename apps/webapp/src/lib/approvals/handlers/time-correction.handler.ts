@@ -10,7 +10,9 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { approvalRequest, employee, timeEntry, workPeriod } from "@/db/schema";
-import { NotFoundError } from "@/lib/effect/errors";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatCapturedOffsetInstant } from "@/lib/datetime/temporal-format";
+import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
@@ -20,9 +22,16 @@ import type {
 	ApprovalTypeHandler,
 } from "../domain/types";
 import type { ApprovalDbService, CurrentApprover } from "../server/types";
+import {
+	classifyTimeApprovalRequest,
+	type TimeApprovalKind,
+} from "../time-request-kind";
 import { buildSLAInfo, fetchApprovals } from "./base-handler";
 
-function loadCurrentApproverById(dbService: ApprovalDbService, approverId: string) {
+function loadCurrentApproverById(
+	dbService: ApprovalDbService,
+	approverId: string,
+) {
 	return dbService
 		.query("getApprovalActor", async () => {
 			return await dbService.db.query.employee.findFirst({
@@ -51,7 +60,11 @@ interface WorkPeriodWithRelations {
 	startTime: Date;
 	endTime: Date | null;
 	durationMinutes: number | null;
+	pendingChanges: unknown;
 	pendingCorrection?: PendingTimeCorrectionReview;
+	timeApprovalKind?: TimeApprovalKind;
+	timeRequestWarning?: string | null;
+	timeRequestActionable?: boolean;
 	correctionReviewEntries?: CorrectionEntryForReview[];
 	employee: {
 		id: string;
@@ -68,10 +81,14 @@ interface WorkPeriodWithRelations {
 	clockIn: {
 		id: string;
 		timestamp: Date;
+		utcOffsetMinutes?: number;
+		timezone?: string | null;
 	};
 	clockOut: {
 		id: string;
 		timestamp: Date;
+		utcOffsetMinutes?: number;
+		timezone?: string | null;
 	} | null;
 }
 
@@ -118,8 +135,142 @@ function formatTime(date: Date): string {
 	return DateTime.fromJSDate(date).toFormat("HH:mm");
 }
 
+function formatCapturedEndpoint(
+	entry: { timestamp: Date; utcOffsetMinutes?: number },
+	preset: "dateMedium" | "time",
+) {
+	return typeof entry.utcOffsetMinutes === "number"
+		? formatCapturedOffsetInstant(instantFromDate(entry.timestamp), {
+				locale: "en-US",
+				timeFormat: "24h",
+				offsetMinutes: entry.utcOffsetMinutes,
+				preset,
+			})
+		: preset === "time"
+			? formatTime(entry.timestamp)
+			: DateTime.fromJSDate(entry.timestamp).toFormat("LLL dd, yyyy");
+}
+
 function correctionMetadataFromRequest(request: { metadata?: unknown }) {
-	return (request.metadata as TimeCorrectionApprovalMetadata | null)?.timeCorrection;
+	return (request.metadata as TimeCorrectionApprovalMetadata | null)
+		?.timeCorrection;
+}
+
+const UNCLASSIFIED_TIME_APPROVAL_WARNING =
+	"This legacy time approval could not be classified. Reconcile it before making a decision.";
+
+function displayMetadataForKind(
+	period: WorkPeriodWithRelations,
+	kind: TimeApprovalKind,
+) {
+	const date = formatCapturedEndpoint(period.clockIn, "dateMedium");
+	const startTime = formatCapturedEndpoint(period.clockIn, "time");
+	const endTime = period.clockOut
+		? formatCapturedEndpoint(period.clockOut, "time")
+		: "ongoing";
+	const duration = formatDuration(period.durationMinutes);
+	const common = {
+		subtitle: `${date} - ${startTime} to ${endTime}`,
+		summary: `${duration} on ${date}`,
+	};
+
+	switch (kind) {
+		case "manual_time_submission":
+			return {
+				...common,
+				title: "Manual Time Submission",
+				badge: { label: "Manual", color: null },
+				icon: "clock-plus",
+			};
+		case "policy_clock_out":
+			return {
+				...common,
+				title: "Clock-out Approval",
+				badge: { label: "Clock-out", color: null },
+				icon: "clock-check",
+			};
+		case "unclassified":
+			return {
+				...common,
+				summary: UNCLASSIFIED_TIME_APPROVAL_WARNING,
+				title: "Unclassified Time Approval",
+				badge: { label: "Needs reconciliation", color: null },
+				icon: "alert-triangle",
+			};
+		default:
+			return {
+				...common,
+				title: "Time Correction",
+				badge: { label: "Correction", color: null },
+				icon: "clock-edit",
+			};
+	}
+}
+
+export function buildTimeApprovalTimelineMessage(
+	kind: TimeApprovalKind,
+	status: "approved" | "rejected",
+	rejectionReason?: string,
+) {
+	const label =
+		kind === "manual_time_submission"
+			? "Manual time submission"
+			: kind === "policy_clock_out"
+				? "Clock-out"
+				: kind === "time_correction"
+					? "Correction"
+					: "Time approval";
+	return status === "rejected" && rejectionReason
+		? `${label} rejected: ${rejectionReason}`
+		: `${label} ${status}`;
+}
+
+function activeRelationalCorrectionCandidates(
+	period: Pick<WorkPeriodWithRelations, "clockIn" | "clockOut">,
+	correctionEntries: CorrectionEntryForReview[],
+) {
+	const endpointIds = new Set(
+		[period.clockIn.id, period.clockOut?.id].filter((id): id is string =>
+			Boolean(id),
+		),
+	);
+	return correctionEntries.filter(
+		(entry) =>
+			entry.isSuperseded !== true &&
+			Boolean(entry.replacesEntryId && endpointIds.has(entry.replacesEntryId)),
+	);
+}
+
+export function buildTimeApprovalReview(
+	period: WorkPeriodWithRelations,
+	request: { metadata?: unknown; reason?: string | null },
+	correctionEntries: CorrectionEntryForReview[],
+) {
+	const kind = classifyTimeApprovalRequest({
+		metadata: request.metadata,
+		reason: request.reason,
+		pendingChanges: period.pendingChanges,
+		hasRelationalCorrectionEvidence:
+			activeRelationalCorrectionCandidates(period, correctionEntries).length >
+			0,
+	});
+
+	return {
+		kind,
+		isActionable: kind !== "unclassified",
+		warning:
+			kind === "unclassified" ? UNCLASSIFIED_TIME_APPROVAL_WARNING : null,
+		display: displayMetadataForKind(period, kind),
+		...(kind === "time_correction"
+			? {
+					pendingCorrection: buildPendingCorrectionReview(
+						period,
+						request,
+						correctionEntries,
+					),
+				}
+			: {}),
+	};
 }
 
 export function buildPendingCorrectionReview(
@@ -128,13 +279,19 @@ export function buildPendingCorrectionReview(
 	correctionEntries: CorrectionEntryForReview[],
 ): PendingTimeCorrectionReview {
 	const metadata = correctionMetadataFromRequest(request);
-	const correctionById = new Map(correctionEntries.map((entry) => [entry.id, entry]));
-	const legacyCorrectionEntries = correctionEntries.filter((entry) => !entry.isSuperseded);
+	const correctionById = new Map(
+		correctionEntries.map((entry) => [entry.id, entry]),
+	);
+	const legacyCorrectionEntries = correctionEntries.filter(
+		(entry) => !entry.isSuperseded,
+	);
 	const clockInCandidates = legacyCorrectionEntries.filter(
 		(entry) => entry.replacesEntryId === period.clockIn.id,
 	);
 	const clockOutCandidates = period.clockOut
-		? legacyCorrectionEntries.filter((entry) => entry.replacesEntryId === period.clockOut?.id)
+		? legacyCorrectionEntries.filter(
+				(entry) => entry.replacesEntryId === period.clockOut?.id,
+			)
 		: [];
 	const clockInCorrection = metadata?.clockInCorrectionId
 		? correctionById.get(metadata.clockInCorrectionId)
@@ -147,9 +304,13 @@ export function buildPendingCorrectionReview(
 			? clockOutCandidates[0]
 			: undefined;
 	const matchingClockInCorrection =
-		clockInCorrection?.replacesEntryId === period.clockIn.id ? clockInCorrection : null;
+		clockInCorrection?.replacesEntryId === period.clockIn.id
+			? clockInCorrection
+			: null;
 	const matchingClockOutCorrection =
-		clockOutCorrection?.replacesEntryId === period.clockOut?.id ? clockOutCorrection : null;
+		clockOutCorrection?.replacesEntryId === period.clockOut?.id
+			? clockOutCorrection
+			: null;
 	const hasMetadataCorrectionIds = Boolean(
 		metadata?.clockInCorrectionId || metadata?.clockOutCorrectionId,
 	);
@@ -158,7 +319,9 @@ export function buildPendingCorrectionReview(
 		Boolean(metadata?.clockOutCorrectionId && !matchingClockOutCorrection);
 	const isLegacyOrphaned =
 		!hasMetadataCorrectionIds &&
-		(!matchingClockInCorrection || clockInCandidates.length > 1 || clockOutCandidates.length > 1);
+		(!matchingClockInCorrection ||
+			clockInCandidates.length > 1 ||
+			clockOutCandidates.length > 1);
 
 	return {
 		action: metadata?.action ?? "edit",
@@ -180,395 +343,500 @@ export function buildPendingCorrectionReview(
 /**
  * Time Correction Approval Handler
  */
-export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations> = {
-	type: "time_entry",
-	displayName: "Time Correction",
-	icon: IconClockEdit,
-	supportsBulkApprove: true,
+export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations> =
+	{
+		type: "time_entry",
+		displayName: "Time Correction",
+		icon: IconClockEdit,
+		supportsBulkApprove: true,
 
-	getApprovals: (params: ApprovalQueryParams) =>
-		fetchApprovals({
-			entityType: "time_entry",
-			params,
-			fetchEntitiesByIds: (entityIds) =>
-				Effect.gen(function* (_) {
-					const dbService = yield* _(DatabaseService);
+		getApprovals: (params: ApprovalQueryParams) =>
+			fetchApprovals({
+				entityType: "time_entry",
+				params,
+				fetchEntitiesByIds: (entityIds) =>
+					Effect.gen(function* (_) {
+						const dbService = yield* _(DatabaseService);
 
-					const periods = yield* _(
-						dbService.query("batchGetWorkPeriods", async () => {
-							return await dbService.db.query.workPeriod.findMany({
-								where: inArray(workPeriod.id, entityIds),
-								with: {
-									employee: { with: { user: true } },
-									clockIn: true,
-									clockOut: true,
-								},
-							});
-						}),
+						const periods = yield* _(
+							dbService.query("batchGetWorkPeriods", async () => {
+								return await dbService.db.query.workPeriod.findMany({
+									where: and(
+										inArray(workPeriod.id, entityIds),
+										eq(workPeriod.organizationId, params.organizationId),
+									),
+									with: {
+										employee: { with: { user: true } },
+										clockIn: true,
+										clockOut: true,
+									},
+								});
+							}),
+						);
+
+						const typedPeriods = periods as WorkPeriodWithRelations[];
+						const originalEntryIds = typedPeriods.flatMap((period) =>
+							[period.clockIn.id, period.clockOut?.id].filter(
+								(id): id is string => Boolean(id),
+							),
+						);
+						const employeeIds = [
+							...new Set(typedPeriods.map((period) => period.employee.id)),
+						];
+						const organizationIds = [
+							...new Set(
+								typedPeriods.map((period) => period.employee.organizationId),
+							),
+						];
+						const correctionEntries =
+							originalEntryIds.length > 0
+								? yield* _(
+										dbService.query(
+											"batchGetTimeCorrectionReviewEntries",
+											async () => {
+												return await dbService.db.query.timeEntry.findMany({
+													where: and(
+														eq(timeEntry.type, "correction"),
+														inArray(timeEntry.employeeId, employeeIds),
+														inArray(timeEntry.organizationId, organizationIds),
+														inArray(
+															timeEntry.replacesEntryId,
+															originalEntryIds,
+														),
+													),
+												});
+											},
+										),
+									)
+								: [];
+
+						const correctionEntriesByReplacedId = new Map<
+							string,
+							CorrectionEntryForReview[]
+						>();
+						for (const entry of correctionEntries as CorrectionEntryForReview[]) {
+							if (!entry.replacesEntryId) continue;
+							const entries =
+								correctionEntriesByReplacedId.get(entry.replacesEntryId) ?? [];
+							entries.push(entry);
+							correctionEntriesByReplacedId.set(entry.replacesEntryId, entries);
+						}
+
+						const map = new Map<string, WorkPeriodWithRelations>();
+						for (const period of typedPeriods) {
+							period.correctionReviewEntries = [
+								...(correctionEntriesByReplacedId.get(period.clockIn.id) ?? []),
+								...(period.clockOut?.id
+									? (correctionEntriesByReplacedId.get(period.clockOut.id) ??
+										[])
+									: []),
+							];
+							map.set(period.id, period);
+						}
+						return map;
+					}),
+				filterEntity: (entity, params) => {
+					// Apply team filter
+					if (params.teamId && entity.employee.teamId !== params.teamId) {
+						return false;
+					}
+
+					// Apply search filter
+					if (params.search) {
+						const searchLower = params.search.toLowerCase();
+						const nameMatch = entity.employee.user.name
+							.toLowerCase()
+							.includes(searchLower);
+						const emailMatch = entity.employee.user.email
+							.toLowerCase()
+							.includes(searchLower);
+						if (!nameMatch && !emailMatch) return false;
+					}
+
+					return true;
+				},
+				transformToItem: (request, entity) => {
+					const review = buildTimeApprovalReview(
+						entity,
+						request,
+						entity.correctionReviewEntries ?? [],
+					);
+					if (review.pendingCorrection?.isOrphaned) {
+						return null;
+					}
+
+					const priority = TimeCorrectionHandler.calculatePriority(
+						entity,
+						request.createdAt,
+					);
+					const slaDeadline = TimeCorrectionHandler.calculateSLADeadline(
+						entity,
+						request.createdAt,
 					);
 
-					const typedPeriods = periods as WorkPeriodWithRelations[];
-					const originalEntryIds = typedPeriods.flatMap((period) =>
-						[period.clockIn.id, period.clockOut?.id].filter((id): id is string => Boolean(id)),
+					return {
+						id: request.id,
+						approvalType: "time_entry",
+						entityId: request.entityId,
+						typeName: review.display.title,
+						requester: {
+							id: entity.employee.id,
+							userId: entity.employee.userId,
+							name: entity.employee.user.name,
+							email: entity.employee.user.email,
+							image: entity.employee.user.image,
+							teamId: entity.employee.teamId,
+						},
+						approverId: request.approverId,
+						organizationId: request.organizationId,
+						status: request.status,
+						createdAt: request.createdAt,
+						resolvedAt: request.approvedAt,
+						priority,
+						sla: buildSLAInfo(slaDeadline),
+						display: review.display,
+						isActionable: review.isActionable,
+						warning: review.warning,
+					};
+				},
+			}),
+
+		getCount: (approverId, organizationId, visibility) =>
+			TimeCorrectionHandler.getApprovals({
+				approverId,
+				organizationId,
+				status: "pending",
+				limit: 1,
+				...visibility,
+			}).pipe(Effect.map((approvals) => approvals.length)),
+
+		getDetail: (entityId, organizationId, context) =>
+			Effect.gen(function* (_) {
+				const dbService = yield* _(DatabaseService);
+
+				// Fetch work period with full details
+				const period = yield* _(
+					dbService.query("getWorkPeriodDetail", async () => {
+						return await dbService.db.query.workPeriod.findFirst({
+							where: and(
+								eq(workPeriod.id, entityId),
+								...(organizationId
+									? [eq(workPeriod.organizationId, organizationId)]
+									: []),
+							),
+							with: {
+								employee: { with: { user: true } },
+								clockIn: true,
+								clockOut: true,
+							},
+						});
+					}),
+					Effect.flatMap((p) =>
+						p
+							? Effect.succeed(p as WorkPeriodWithRelations)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Work period not found",
+										entityType: "work_period",
+										entityId,
+									}),
+								),
+					),
+				);
+
+				// Validate organization access
+				if (
+					organizationId &&
+					period.employee.organizationId !== organizationId
+				) {
+					return yield* _(
+						Effect.fail(
+							new NotFoundError({
+								message: "Work period not found in this organization",
+								entityType: "work_period",
+								entityId,
+							}),
+						),
 					);
-					const employeeIds = [...new Set(typedPeriods.map((period) => period.employee.id))];
-					const organizationIds = [
-						...new Set(typedPeriods.map((period) => period.employee.organizationId)),
-					];
-					const correctionEntries =
-						originalEntryIds.length > 0
-							? yield* _(
-									dbService.query("batchGetTimeCorrectionReviewEntries", async () => {
+				}
+
+				// Fetch approval request
+				const request = yield* _(
+					dbService.query("getApprovalRequest", async () => {
+						return await dbService.db.query.approvalRequest.findFirst({
+							where: and(
+								...(context?.approvalId
+									? [eq(approvalRequest.id, context.approvalId)]
+									: []),
+								...(organizationId
+									? [eq(approvalRequest.organizationId, organizationId)]
+									: []),
+								eq(approvalRequest.entityType, "time_entry"),
+								eq(approvalRequest.entityId, entityId),
+							),
+							with: {
+								approver: { with: { user: true } },
+							},
+						});
+					}),
+					Effect.flatMap((r) =>
+						r
+							? Effect.succeed(r)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Approval request not found",
+										entityType: "approval_request",
+									}),
+								),
+					),
+				);
+
+				const priority = TimeCorrectionHandler.calculatePriority(
+					period,
+					request.createdAt,
+				);
+				const slaDeadline = TimeCorrectionHandler.calculateSLADeadline(
+					period,
+					request.createdAt,
+				);
+				const initialKind = classifyTimeApprovalRequest({
+					metadata: request.metadata,
+					reason: request.reason,
+					pendingChanges: period.pendingChanges,
+				});
+				const correctionMetadata = correctionMetadataFromRequest(request);
+				const correctionIds = [
+					correctionMetadata?.clockInCorrectionId,
+					correctionMetadata?.clockOutCorrectionId,
+				].filter((id): id is string => Boolean(id));
+				const replacesEntryIds = [
+					period.clockIn.id,
+					period.clockOut?.id,
+				].filter((id): id is string => Boolean(id));
+				const correctionEntries =
+					initialKind === "manual_time_submission" ||
+					initialKind === "policy_clock_out"
+						? []
+						: yield* _(
+								dbService.query(
+									"getPendingCorrectionEntriesForReview",
+									async () => {
+										if (
+											correctionIds.length === 0 &&
+											replacesEntryIds.length === 0
+										) {
+											return [];
+										}
+
 										return await dbService.db.query.timeEntry.findMany({
 											where: and(
 												eq(timeEntry.type, "correction"),
-												inArray(timeEntry.employeeId, employeeIds),
-												inArray(timeEntry.organizationId, organizationIds),
-												inArray(timeEntry.replacesEntryId, originalEntryIds),
+												eq(timeEntry.employeeId, period.employee.id),
+												eq(
+													timeEntry.organizationId,
+													period.employee.organizationId,
+												),
+												correctionIds.length > 0
+													? inArray(timeEntry.id, correctionIds)
+													: and(
+															inArray(
+																timeEntry.replacesEntryId,
+																replacesEntryIds,
+															),
+															eq(timeEntry.isSuperseded, false),
+														),
 											),
 										});
-									}),
-								)
-							: [];
-
-					const correctionEntriesByReplacedId = new Map<string, CorrectionEntryForReview[]>();
-					for (const entry of correctionEntries as CorrectionEntryForReview[]) {
-						if (!entry.replacesEntryId) continue;
-						const entries = correctionEntriesByReplacedId.get(entry.replacesEntryId) ?? [];
-						entries.push(entry);
-						correctionEntriesByReplacedId.set(entry.replacesEntryId, entries);
-					}
-
-					const map = new Map<string, WorkPeriodWithRelations>();
-					for (const period of typedPeriods) {
-						period.correctionReviewEntries = [
-							...(correctionEntriesByReplacedId.get(period.clockIn.id) ?? []),
-							...(period.clockOut?.id
-								? (correctionEntriesByReplacedId.get(period.clockOut.id) ?? [])
-								: []),
-						];
-						map.set(period.id, period);
-					}
-					return map;
-				}),
-			filterEntity: (entity, params) => {
-				// Apply team filter
-				if (params.teamId && entity.employee.teamId !== params.teamId) {
-					return false;
-				}
-
-				// Apply search filter
-				if (params.search) {
-					const searchLower = params.search.toLowerCase();
-					const nameMatch = entity.employee.user.name.toLowerCase().includes(searchLower);
-					const emailMatch = entity.employee.user.email.toLowerCase().includes(searchLower);
-					if (!nameMatch && !emailMatch) return false;
-				}
-
-				return true;
-			},
-			transformToItem: (request, entity) => {
-				const pendingCorrection = buildPendingCorrectionReview(
-					entity,
-					request,
-					entity.correctionReviewEntries ?? [],
-				);
-				if (pendingCorrection.isOrphaned) {
-					return null;
-				}
-
-				const priority = TimeCorrectionHandler.calculatePriority(entity, request.createdAt);
-				const slaDeadline = TimeCorrectionHandler.calculateSLADeadline(entity, request.createdAt);
-
-				return {
-					id: request.id,
-					approvalType: "time_entry",
-					entityId: request.entityId,
-					typeName: "Time Correction",
-					requester: {
-						id: entity.employee.id,
-						userId: entity.employee.userId,
-						name: entity.employee.user.name,
-						email: entity.employee.user.email,
-						image: entity.employee.user.image,
-						teamId: entity.employee.teamId,
-					},
-					approverId: request.approverId,
-					organizationId: request.organizationId,
-					status: request.status,
-					createdAt: request.createdAt,
-					resolvedAt: request.approvedAt,
-					priority,
-					sla: buildSLAInfo(slaDeadline),
-					display: TimeCorrectionHandler.getDisplayMetadata(entity),
-				};
-			},
-		}),
-
-	getCount: (approverId, organizationId, visibility) =>
-		TimeCorrectionHandler.getApprovals({
-			approverId,
-			organizationId,
-			status: "pending",
-			limit: 1,
-			...visibility,
-		}).pipe(Effect.map((approvals) => approvals.length)),
-
-	getDetail: (entityId, organizationId, context) =>
-		Effect.gen(function* (_) {
-			const dbService = yield* _(DatabaseService);
-
-			// Fetch work period with full details
-			const period = yield* _(
-				dbService.query("getWorkPeriodDetail", async () => {
-					return await dbService.db.query.workPeriod.findFirst({
-						where: and(
-							eq(workPeriod.id, entityId),
-							...(organizationId ? [eq(workPeriod.organizationId, organizationId)] : []),
-						),
-						with: {
-							employee: { with: { user: true } },
-							clockIn: true,
-							clockOut: true,
-						},
-					});
-				}),
-				Effect.flatMap((p) =>
-					p
-						? Effect.succeed(p as WorkPeriodWithRelations)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Work period not found",
-									entityType: "work_period",
-									entityId,
-								}),
-							),
-				),
-			);
-
-			// Validate organization access
-			if (organizationId && period.employee.organizationId !== organizationId) {
-				return yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: "Work period not found in this organization",
-							entityType: "work_period",
-							entityId,
-						}),
-					),
-				);
-			}
-
-			// Fetch approval request
-			const request = yield* _(
-				dbService.query("getApprovalRequest", async () => {
-					return await dbService.db.query.approvalRequest.findFirst({
-						where: and(
-							...(context?.approvalId ? [eq(approvalRequest.id, context.approvalId)] : []),
-							...(organizationId ? [eq(approvalRequest.organizationId, organizationId)] : []),
-							eq(approvalRequest.entityType, "time_entry"),
-							eq(approvalRequest.entityId, entityId),
-						),
-						with: {
-							approver: { with: { user: true } },
-						},
-					});
-				}),
-				Effect.flatMap((r) =>
-					r
-						? Effect.succeed(r)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Approval request not found",
-									entityType: "approval_request",
-								}),
-							),
-				),
-			);
-
-			const priority = TimeCorrectionHandler.calculatePriority(period, request.createdAt);
-			const slaDeadline = TimeCorrectionHandler.calculateSLADeadline(period, request.createdAt);
-			const correctionMetadata = correctionMetadataFromRequest(request);
-			const correctionIds = [
-				correctionMetadata?.clockInCorrectionId,
-				correctionMetadata?.clockOutCorrectionId,
-			].filter((id): id is string => Boolean(id));
-			const replacesEntryIds = [period.clockIn.id, period.clockOut?.id].filter((id): id is string =>
-				Boolean(id),
-			);
-			const correctionEntries = yield* _(
-				dbService.query("getPendingCorrectionEntriesForReview", async () => {
-					if (correctionIds.length === 0 && replacesEntryIds.length === 0) {
-						return [];
-					}
-
-					return await dbService.db.query.timeEntry.findMany({
-						where: and(
-							eq(timeEntry.type, "correction"),
-							eq(timeEntry.employeeId, period.employee.id),
-							eq(timeEntry.organizationId, period.employee.organizationId),
-							correctionIds.length > 0
-								? inArray(timeEntry.id, correctionIds)
-								: and(
-										inArray(timeEntry.replacesEntryId, replacesEntryIds),
-										eq(timeEntry.isSuperseded, false),
-									),
-						),
-					});
-				}),
-			);
-			const periodWithCorrection = {
-				...period,
-				pendingCorrection: buildPendingCorrectionReview(
+									},
+								),
+							);
+				const review = buildTimeApprovalReview(
 					period,
 					request,
 					correctionEntries as CorrectionEntryForReview[],
-				),
-			};
+				);
+				const periodWithReview = {
+					...period,
+					timeApprovalKind: review.kind,
+					timeRequestWarning: review.warning,
+					timeRequestActionable: review.isActionable,
+					...(review.pendingCorrection
+						? { pendingCorrection: review.pendingCorrection }
+						: {}),
+				};
 
-			// Build timeline
-			const timeline: ApprovalTimelineEvent[] = [
-				{
-					id: `${request.id}-created`,
-					type: "created",
-					performedBy: {
-						name: period.employee.user.name,
-						image: period.employee.user.image,
+				// Build timeline
+				const timeline: ApprovalTimelineEvent[] = [
+					{
+						id: `${request.id}-created`,
+						type: "created",
+						performedBy: {
+							name: period.employee.user.name,
+							image: period.employee.user.image,
+						},
+						timestamp: request.createdAt,
+						message: `${period.employee.user.name} requested ${review.display.title.toLowerCase()}`,
 					},
-					timestamp: request.createdAt,
-					message: `${period.employee.user.name} requested a time correction`,
-				},
-			];
+				];
 
-			if (request.status === "approved" && request.approvedAt) {
-				timeline.push({
-					id: `${request.id}-approved`,
-					type: "approved",
-					performedBy: request.approver
-						? {
-								name: request.approver.user.name,
-								image: request.approver.user.image,
-							}
-						: null,
-					timestamp: request.approvedAt,
-					message: "Correction approved",
-				});
-			}
+				if (request.status === "approved" && request.approvedAt) {
+					timeline.push({
+						id: `${request.id}-approved`,
+						type: "approved",
+						performedBy: request.approver
+							? {
+									name: request.approver.user.name,
+									image: request.approver.user.image,
+								}
+							: null,
+						timestamp: request.approvedAt,
+						message: buildTimeApprovalTimelineMessage(review.kind, "approved"),
+					});
+				}
 
-			if (request.status === "rejected" && request.approvedAt) {
-				timeline.push({
-					id: `${request.id}-rejected`,
-					type: "rejected",
-					performedBy: request.approver
-						? {
-								name: request.approver.user.name,
-								image: request.approver.user.image,
-							}
-						: null,
-					timestamp: request.approvedAt,
-					message: request.rejectionReason
-						? `Correction rejected: ${request.rejectionReason}`
-						: "Correction rejected",
-				});
-			}
+				if (request.status === "rejected" && request.approvedAt) {
+					timeline.push({
+						id: `${request.id}-rejected`,
+						type: "rejected",
+						performedBy: request.approver
+							? {
+									name: request.approver.user.name,
+									image: request.approver.user.image,
+								}
+							: null,
+						timestamp: request.approvedAt,
+						message: buildTimeApprovalTimelineMessage(
+							review.kind,
+							"rejected",
+							request.rejectionReason ?? undefined,
+						),
+					});
+				}
 
-			return {
-				approval: {
-					id: request.id,
-					approvalType: "time_entry",
-					entityId: period.id,
-					typeName: "Time Correction",
-					requester: {
-						id: period.employee.id,
-						userId: period.employee.userId,
-						name: period.employee.user.name,
-						email: period.employee.user.email,
-						image: period.employee.user.image,
-						teamId: period.employee.teamId,
+				return {
+					approval: {
+						id: request.id,
+						approvalType: "time_entry",
+						entityId: period.id,
+						typeName: review.display.title,
+						requester: {
+							id: period.employee.id,
+							userId: period.employee.userId,
+							name: period.employee.user.name,
+							email: period.employee.user.email,
+							image: period.employee.user.image,
+							teamId: period.employee.teamId,
+						},
+						approverId: request.approverId,
+						organizationId: period.employee.organizationId,
+						status: request.status,
+						createdAt: request.createdAt,
+						resolvedAt: request.approvedAt,
+						priority,
+						sla: buildSLAInfo(slaDeadline),
+						display: review.display,
+						isActionable: review.isActionable,
+						warning: review.warning,
 					},
-					approverId: request.approverId,
-					organizationId: period.employee.organizationId,
-					status: request.status,
-					createdAt: request.createdAt,
-					resolvedAt: request.approvedAt,
-					priority,
-					sla: buildSLAInfo(slaDeadline),
-					display: TimeCorrectionHandler.getDisplayMetadata(period),
-				},
-				entity: periodWithCorrection,
-				timeline,
-			} as ApprovalDetail<WorkPeriodWithRelations>;
-		}),
+					entity: periodWithReview,
+					timeline,
+				} as ApprovalDetail<WorkPeriodWithRelations>;
+			}),
 
-	approve: (entityId, approverId, options) =>
-		Effect.gen(function* (_) {
-			const dbService = yield* _(DatabaseService);
-			const currentEmployee = yield* _(loadCurrentApproverById(dbService, approverId));
-			const { approveTimeCorrectionWithCurrentApproverEffect } = yield* _(
-				Effect.promise(async () => import("@/lib/approvals/server/time-correction-approvals")),
+		approve: (_entityId, approverId, options) =>
+			Effect.gen(function* (_) {
+				const dbService = yield* _(DatabaseService);
+				const currentEmployee = yield* _(
+					loadCurrentApproverById(dbService, approverId),
+				);
+				if (!options?.approvalRequestId) {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "A stable approval request target is required",
+								field: "approvalRequestId",
+							}),
+						),
+					);
+				}
+				const { decideTimeCorrectionWithStableTargetEffect } = yield* _(
+					Effect.promise(
+						async () =>
+							import("@/lib/approvals/server/time-correction-approvals"),
+					),
+				);
+
+				yield* _(
+					decideTimeCorrectionWithStableTargetEffect(
+						dbService,
+						currentEmployee,
+						options.approvalRequestId,
+						"approve",
+						undefined,
+						options,
+					),
+				);
+			}),
+
+		reject: (_entityId, approverId, reason, options) =>
+			Effect.gen(function* (_) {
+				const dbService = yield* _(DatabaseService);
+				const currentEmployee = yield* _(
+					loadCurrentApproverById(dbService, approverId),
+				);
+				if (!options?.approvalRequestId) {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "A stable approval request target is required",
+								field: "approvalRequestId",
+							}),
+						),
+					);
+				}
+				const { decideTimeCorrectionWithStableTargetEffect } = yield* _(
+					Effect.promise(
+						async () =>
+							import("@/lib/approvals/server/time-correction-approvals"),
+					),
+				);
+
+				yield* _(
+					decideTimeCorrectionWithStableTargetEffect(
+						dbService,
+						currentEmployee,
+						options.approvalRequestId,
+						"reject",
+						reason,
+						options,
+					),
+				);
+			}),
+
+		calculatePriority: (_entity, createdAt) => {
+			// Priority based on age of request
+			const now = DateTime.now();
+			const requestAge = now.diff(
+				DateTime.fromJSDate(createdAt),
+				"hours",
+			).hours;
+
+			// Time corrections for payroll periods need faster turnaround
+			if (requestAge > 72) return "urgent";
+			if (requestAge > 48) return "high";
+			if (requestAge > 24) return "normal";
+			return "low";
+		},
+
+		calculateSLADeadline: (entity, createdAt) => {
+			const priority = TimeCorrectionHandler.calculatePriority(
+				entity,
+				createdAt,
 			);
+			return calculateSLADeadline("time_entry", priority, createdAt);
+		},
 
-			yield* _(
-				approveTimeCorrectionWithCurrentApproverEffect(
-					dbService,
-					currentEmployee,
-					entityId,
-					options,
-				),
-			);
-		}),
-
-	reject: (entityId, approverId, reason, options) =>
-		Effect.gen(function* (_) {
-			const dbService = yield* _(DatabaseService);
-			const currentEmployee = yield* _(loadCurrentApproverById(dbService, approverId));
-			const { rejectTimeCorrectionWithCurrentApproverEffect } = yield* _(
-				Effect.promise(async () => import("@/lib/approvals/server/time-correction-approvals")),
-			);
-
-			yield* _(
-				rejectTimeCorrectionWithCurrentApproverEffect(
-					dbService,
-					currentEmployee,
-					entityId,
-					reason,
-					options,
-				),
-			);
-		}),
-
-	calculatePriority: (_entity, createdAt) => {
-		// Priority based on age of request
-		const now = DateTime.now();
-		const requestAge = now.diff(DateTime.fromJSDate(createdAt), "hours").hours;
-
-		// Time corrections for payroll periods need faster turnaround
-		if (requestAge > 72) return "urgent";
-		if (requestAge > 48) return "high";
-		if (requestAge > 24) return "normal";
-		return "low";
-	},
-
-	calculateSLADeadline: (entity, createdAt) => {
-		const priority = TimeCorrectionHandler.calculatePriority(entity, createdAt);
-		return calculateSLADeadline("time_entry", priority, createdAt);
-	},
-
-	getDisplayMetadata: (entity) => {
-		const date = DateTime.fromJSDate(entity.startTime).toFormat("LLL dd, yyyy");
-		const startTime = formatTime(entity.startTime);
-		const endTime = entity.endTime ? formatTime(entity.endTime) : "ongoing";
-		const duration = formatDuration(entity.durationMinutes);
-
-		return {
-			title: "Time Correction",
-			subtitle: `${date} - ${startTime} to ${endTime}`,
-			summary: `${duration} on ${date}`,
-			badge: {
-				label: "Correction",
-				color: null,
-			},
-			icon: "clock-edit",
-		};
-	},
-};
+		getDisplayMetadata: (entity) => {
+			return displayMetadataForKind(entity, "time_correction");
+		},
+	};

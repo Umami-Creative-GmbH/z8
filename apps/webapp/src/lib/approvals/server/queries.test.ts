@@ -30,7 +30,9 @@ describe("buildPendingApprovalResult", () => {
 		// relation API and this test suite intentionally avoids a database dependency.
 		const source = readFileSync("src/lib/approvals/server/queries.ts", "utf8");
 
-		expect(source).toContain("ne(approvalRequest.requestedBy, currentEmployee.id)");
+		expect(source).toContain(
+			"ne(approvalRequest.requestedBy, currentEmployee.id)",
+		);
 	});
 
 	it("returns absences and time corrections in request order", () => {
@@ -208,8 +210,12 @@ describe("buildPendingApprovalResult", () => {
 			],
 		});
 
-		expectTypeOf<BulkDecisionSuccess["approvalType"]>().toEqualTypeOf<ApprovalType>();
-		expectTypeOf<BulkDecisionSuccess["status"]>().toEqualTypeOf<ApprovalStatus>();
+		expectTypeOf<
+			BulkDecisionSuccess["approvalType"]
+		>().toEqualTypeOf<ApprovalType>();
+		expectTypeOf<
+			BulkDecisionSuccess["status"]
+		>().toEqualTypeOf<ApprovalStatus>();
 		expectTypeOf<BulkDecisionFailure["code"]>().toEqualTypeOf<
 			"forbidden" | "stale" | "validation_failed" | "not_found" | "unsupported"
 		>();

@@ -54,7 +54,11 @@ describe("getApprovalInboxListFromSources", () => {
 		const result = await getApprovalInboxListFromSources({
 			sources: [
 				source("absence_entry", [
-					item({ id: "new-low", createdAt: new Date("2026-05-31T09:00:00.000Z"), priority: "low" }),
+					item({
+						id: "new-low",
+						createdAt: new Date("2026-05-31T09:00:00.000Z"),
+						priority: "low",
+					}),
 				]),
 				source("travel_expense_claim", [
 					item({
@@ -74,7 +78,10 @@ describe("getApprovalInboxListFromSources", () => {
 			now: new Date("2026-05-31T09:00:00.000Z"),
 		});
 
-		expect(result.items.map((approval) => approval.id)).toEqual(["old-high", "new-low"]);
+		expect(result.items.map((approval) => approval.id)).toEqual([
+			"old-high",
+			"new-low",
+		]);
 		expect(result.items[0].timing.createdAt).toBe("2026-05-27T09:00:00.000Z");
 		expect(JSON.parse(JSON.stringify(result))).toEqual(result);
 	});
@@ -94,14 +101,25 @@ describe("getApprovalInboxListFromSources", () => {
 		};
 
 		const result = await getApprovalInboxListFromSources({
-			sources: [source("absence_entry", [item({ id: "approval-1" })]), brokenSource],
-			params: { approverId: "manager-1", organizationId: "org-1", status: "pending", limit: 20 },
+			sources: [
+				source("absence_entry", [item({ id: "approval-1" })]),
+				brokenSource,
+			],
+			params: {
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 20,
+			},
 			now: new Date("2026-05-31T09:00:00.000Z"),
 		});
 
 		expect(result.items).toHaveLength(1);
 		expect(result.warnings).toEqual([
-			{ source: "time_entry", message: "Time Correction approvals could not be loaded." },
+			{
+				source: "time_entry",
+				message: "Time Correction approvals could not be loaded.",
+			},
 		]);
 	});
 
@@ -118,7 +136,9 @@ describe("getApprovalInboxListFromSources", () => {
 				getApprovals: vi.fn(() =>
 					Effect.gen(function* (_) {
 						const dbService = yield* _(DatabaseService);
-						return yield* _(dbService.query("getApprovals", async () => [approval]));
+						return yield* _(
+							dbService.query("getApprovals", async () => [approval]),
+						);
 					}),
 				),
 				getCount: vi.fn(() =>
@@ -132,11 +152,18 @@ describe("getApprovalInboxListFromSources", () => {
 
 		const result = await getApprovalInboxListFromSources({
 			sources: [databaseBackedSource],
-			params: { approverId: "manager-1", organizationId: "org-1", status: "pending", limit: 20 },
+			params: {
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 20,
+			},
 			now: new Date("2026-05-31T09:00:00.000Z"),
 		});
 
-		expect(result.items.map((approval) => approval.id)).toEqual(["approval-from-db-service"]);
+		expect(result.items.map((approval) => approval.id)).toEqual([
+			"approval-from-db-service",
+		]);
 		expect(result.counts.absence_entry).toBe(1);
 		expect(result.warnings).toEqual([]);
 	});
@@ -144,15 +171,29 @@ describe("getApprovalInboxListFromSources", () => {
 	it("returns page 2 from a stable cursor without repeating page 1", async () => {
 		const sources = [
 			source("absence_entry", [
-				item({ id: "approval-1", createdAt: new Date("2026-05-27T09:00:00.000Z") }),
-				item({ id: "approval-2", createdAt: new Date("2026-05-28T09:00:00.000Z") }),
-				item({ id: "approval-3", createdAt: new Date("2026-05-29T09:00:00.000Z") }),
+				item({
+					id: "approval-1",
+					createdAt: new Date("2026-05-27T09:00:00.000Z"),
+				}),
+				item({
+					id: "approval-2",
+					createdAt: new Date("2026-05-28T09:00:00.000Z"),
+				}),
+				item({
+					id: "approval-3",
+					createdAt: new Date("2026-05-29T09:00:00.000Z"),
+				}),
 			]),
 		];
 
 		const firstPage = await getApprovalInboxListFromSources({
 			sources,
-			params: { approverId: "manager-1", organizationId: "org-1", status: "pending", limit: 2 },
+			params: {
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 2,
+			},
 			now: new Date("2026-05-31T09:00:00.000Z"),
 		});
 		const secondPage = await getApprovalInboxListFromSources({
@@ -167,20 +208,40 @@ describe("getApprovalInboxListFromSources", () => {
 			now: new Date("2026-05-31T09:00:00.000Z"),
 		});
 
-		expect(firstPage.items.map((approval) => approval.id)).toEqual(["approval-1", "approval-2"]);
-		expect(secondPage.items.map((approval) => approval.id)).toEqual(["approval-3"]);
+		expect(firstPage.items.map((approval) => approval.id)).toEqual([
+			"approval-1",
+			"approval-2",
+		]);
+		expect(secondPage.items.map((approval) => approval.id)).toEqual([
+			"approval-3",
+		]);
 		expect(secondPage.nextCursor).toBeNull();
 	});
 
 	it("clamps non-positive and fractional-under-1 limits to a usable default", async () => {
 		const result = await getApprovalInboxListFromSources({
 			sources: [source("absence_entry", [item({ id: "approval-1" })])],
-			params: { approverId: "manager-1", organizationId: "org-1", status: "pending", limit: 0 },
+			params: {
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 0,
+			},
 			now: new Date("2026-05-31T09:00:00.000Z"),
 		});
 		const fractionalResult = await getApprovalInboxListFromSources({
-			sources: [source("absence_entry", [item({ id: "approval-1" }), item({ id: "approval-2" })])],
-			params: { approverId: "manager-1", organizationId: "org-1", status: "pending", limit: 0.5 },
+			sources: [
+				source("absence_entry", [
+					item({ id: "approval-1" }),
+					item({ id: "approval-2" }),
+				]),
+			],
+			params: {
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 0.5,
+			},
 			now: new Date("2026-05-31T09:00:00.000Z"),
 		});
 
@@ -199,7 +260,9 @@ describe("getApprovalInboxListFromSources", () => {
 		const result = await getApprovalInboxListFromSources({
 			sources: [
 				source("absence_entry", [item({ id: "absence-1" })]),
-				source("time_entry", [item({ id: "time-1", approvalType: "time_entry" })]),
+				source("time_entry", [
+					item({ id: "time-1", approvalType: "time_entry" }),
+				]),
 				source("travel_expense_claim", [
 					item({ id: "expense-1", approvalType: "travel_expense_claim" }),
 				]),
@@ -214,13 +277,19 @@ describe("getApprovalInboxListFromSources", () => {
 			now: new Date("2026-05-31T09:00:00.000Z"),
 		});
 
-		expect(result.items.map((approval) => approval.type)).toEqual(["absence_entry"]);
+		expect(result.items.map((approval) => approval.type)).toEqual([
+			"absence_entry",
+		]);
 		expect(result.counts).toEqual({
 			absence_entry: 1,
 			time_entry: 1,
 			travel_expense_claim: 1,
 		});
-		expect(result.supportedTypes).toEqual(["absence_entry", "time_entry", "travel_expense_claim"]);
+		expect(result.supportedTypes).toEqual([
+			"absence_entry",
+			"time_entry",
+			"travel_expense_claim",
+		]);
 	});
 
 	it("passes approval visibility options to count handlers", async () => {
@@ -242,9 +311,49 @@ describe("getApprovalInboxListFromSources", () => {
 			now: new Date("2026-05-31T09:00:00.000Z"),
 		});
 
-		expect(absenceSource.handler.getCount).toHaveBeenCalledWith("manager-1", "org-1", {
-			eligibleApprovalScopes,
-			includeAllApprovers: true,
+		expect(absenceSource.handler.getCount).toHaveBeenCalledWith(
+			"manager-1",
+			"org-1",
+			{
+				eligibleApprovalScopes,
+				includeAllApprovers: true,
+			},
+		);
+	});
+
+	it("keeps unclassified time approvals visible but disables every decision capability", async () => {
+		const result = await getApprovalInboxListFromSources({
+			sources: [
+				source("time_entry", [
+					item({
+						id: "legacy-time-1",
+						approvalType: "time_entry",
+						isActionable: false,
+						warning: "Reconcile this legacy request before making a decision.",
+						display: {
+							title: "Unclassified Time Approval",
+							subtitle: "Jul 14, 2026",
+							summary:
+								"Reconcile this legacy request before making a decision.",
+						},
+					}),
+				]),
+			],
+			params: { approverId: "manager-1", organizationId: "org-1", limit: 20 },
+		});
+
+		expect(result.items).toHaveLength(1);
+		expect(result.items[0]).toMatchObject({
+			id: "legacy-time-1",
+			summary: {
+				title: "Unclassified Time Approval",
+				detail: "Reconcile this legacy request before making a decision.",
+			},
+			capabilities: {
+				canApprove: false,
+				canReject: false,
+				canBulkApprove: false,
+			},
 		});
 	});
 });

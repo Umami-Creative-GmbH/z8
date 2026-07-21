@@ -36,7 +36,12 @@ export type EligibleManagerResult =
 	| { ok: false; reason: string };
 
 export type PrimaryEligibleManagerResult =
-	| { ok: true; source: "direct" | "team"; managerId: string; managerIds: string[] }
+	| {
+			ok: true;
+			source: "direct" | "team";
+			managerId: string;
+			managerIds: string[];
+	  }
 	| { ok: false; reason: string };
 
 function activeManagerInOrg(
@@ -60,28 +65,42 @@ function activeEmployeeInOrg(
 ) {
 	return employees.find(
 		(employee) =>
-			employee.id === employeeId && employee.organizationId === organizationId && employee.isActive,
+			employee.id === employeeId &&
+			employee.organizationId === organizationId &&
+			employee.isActive,
 	);
 }
 
 function uniqueSorted(values: string[]) {
-	return Array.from(new Set(values)).toSorted((left, right) => left.localeCompare(right));
+	return Array.from(new Set(values)).toSorted((left, right) =>
+		left.localeCompare(right),
+	);
 }
 
 function directManagerIds(input: ResolveEligibleManagersInput) {
-	const links = input.managerLinks.filter((link) => link.employeeId === input.requesterEmployeeId);
-	const primaryIds = links.flatMap((link) => (link.isPrimary ? [link.managerId] : []));
-	const otherIds = links.flatMap((link) => (!link.isPrimary ? [link.managerId] : []));
+	const links = input.managerLinks.filter(
+		(link) => link.employeeId === input.requesterEmployeeId,
+	);
+	const primaryIds = links.flatMap((link) =>
+		link.isPrimary ? [link.managerId] : [],
+	);
+	const otherIds = links.flatMap((link) =>
+		!link.isPrimary ? [link.managerId] : [],
+	);
 
 	return uniqueSorted([...primaryIds, ...otherIds]).filter((managerId) =>
-		Boolean(activeManagerInOrg(input.employees, input.organizationId, managerId)),
+		Boolean(
+			activeManagerInOrg(input.employees, input.organizationId, managerId),
+		),
 	);
 }
 
 function teamManagerIds(input: ResolveEligibleManagersInput) {
 	const requesterTeamIds = new Set(
 		input.teamMemberships.flatMap((membership) =>
-			membership.employeeId === input.requesterEmployeeId ? [membership.teamId] : [],
+			membership.employeeId === input.requesterEmployeeId
+				? [membership.teamId]
+				: [],
 		),
 	);
 
@@ -90,11 +109,39 @@ function teamManagerIds(input: ResolveEligibleManagersInput) {
 			team.organizationId === input.organizationId &&
 			requesterTeamIds.has(team.id) &&
 			team.primaryManagerId &&
-			activeManagerInOrg(input.employees, input.organizationId, team.primaryManagerId)
+			activeManagerInOrg(
+				input.employees,
+				input.organizationId,
+				team.primaryManagerId,
+			)
 				? [team.primaryManagerId]
 				: [],
 		),
 	);
+}
+
+export function resolveDirectEligibleManagers(
+	input: ResolveEligibleManagersInput,
+): EligibleManagerResult {
+	const requester = activeEmployeeInOrg(
+		input.employees,
+		input.organizationId,
+		input.requesterEmployeeId,
+	);
+	if (!requester) {
+		return {
+			ok: false,
+			reason: "Requester is not active in this organization.",
+		};
+	}
+
+	const managerIds = directManagerIds(input);
+	return managerIds.length > 0
+		? { ok: true, source: "direct", managerIds }
+		: {
+				ok: false,
+				reason: "Requester has no active direct manager in this organization.",
+			};
 }
 
 export function resolveEligibleManagers(
@@ -106,7 +153,10 @@ export function resolveEligibleManagers(
 		input.requesterEmployeeId,
 	);
 	if (!requester) {
-		return { ok: false, reason: "Requester is not active in this organization." };
+		return {
+			ok: false,
+			reason: "Requester is not active in this organization.",
+		};
 	}
 
 	const direct = directManagerIds(input);
@@ -121,7 +171,8 @@ export function resolveEligibleManagers(
 
 	return {
 		ok: false,
-		reason: "Requester has no active direct or team manager in this organization.",
+		reason:
+			"Requester has no active direct or team manager in this organization.",
 	};
 }
 
@@ -152,7 +203,9 @@ export function resolvePrimaryEligibleManager(
 	};
 }
 
-export function isEligibleManager(input: ResolveEligibleManagersInput & { managerId: string }) {
+export function isEligibleManager(
+	input: ResolveEligibleManagersInput & { managerId: string },
+) {
 	const result = resolveEligibleManagers(input);
 	return result.ok && result.managerIds.includes(input.managerId);
 }

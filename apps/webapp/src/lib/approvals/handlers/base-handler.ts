@@ -12,7 +12,11 @@ import { approvalRequest } from "@/db/schema";
 import type { AnyAppError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateSLAStatus } from "../domain/sla-calculator";
-import type { ApprovalQueryParams, ApprovalType, UnifiedApprovalItem } from "../domain/types";
+import type {
+	ApprovalQueryParams,
+	ApprovalType,
+	UnifiedApprovalItem,
+} from "../domain/types";
 
 /**
  * Configuration for building approval request queries
@@ -31,7 +35,10 @@ interface ApprovalQueryConfig<TEntity> {
 	/**
 	 * Transform an entity to UnifiedApprovalItem
 	 */
-	transformToItem: (request: ApprovalRequestRow, entity: TEntity) => UnifiedApprovalItem | null;
+	transformToItem: (
+		request: ApprovalRequestRow,
+		entity: TEntity,
+	) => UnifiedApprovalItem | null;
 	/**
 	 * Optional filter to apply after fetching entities
 	 */
@@ -51,6 +58,7 @@ export interface ApprovalRequestRow {
 	createdAt: Date;
 	approvedAt: Date | null;
 	rejectionReason: string | null;
+	reason: string | null;
 	metadata: unknown;
 	requester: {
 		id: string;
@@ -68,7 +76,10 @@ export interface ApprovalRequestRow {
 /**
  * Build base conditions for approval request queries
  */
-export function buildBaseConditions(entityType: ApprovalType, params: ApprovalQueryParams) {
+export function buildBaseConditions(
+	entityType: ApprovalType,
+	params: ApprovalQueryParams,
+) {
 	const conditions = [
 		eq(approvalRequest.entityType, entityType),
 		eq(approvalRequest.organizationId, params.organizationId),
@@ -80,19 +91,24 @@ export function buildBaseConditions(entityType: ApprovalType, params: ApprovalQu
 	}
 
 	if (!params.includeAllApprovers) {
-		const assignedApproverCondition = eq(approvalRequest.approverId, params.approverId);
-		const eligibleApprovalScopeConditions = params.eligibleApprovalScopes?.flatMap((scope) =>
-			scope.eligibleApproverIds.length > 0
-				? [
-						and(
-							eq(approvalRequest.requestedBy, scope.requesterEmployeeId),
-							inArray(approvalRequest.approverId, scope.eligibleApproverIds),
-						),
-					]
-				: [],
+		const assignedApproverCondition = eq(
+			approvalRequest.approverId,
+			params.approverId,
 		);
+		const eligibleApprovalScopeConditions =
+			params.eligibleApprovalScopes?.flatMap((scope) =>
+				scope.eligibleApproverIds.length > 0
+					? [
+							and(
+								eq(approvalRequest.requestedBy, scope.requesterEmployeeId),
+								inArray(approvalRequest.approverId, scope.eligibleApproverIds),
+							),
+						]
+					: [],
+			);
 		const approverCondition =
-			eligibleApprovalScopeConditions && eligibleApprovalScopeConditions.length > 0
+			eligibleApprovalScopeConditions &&
+			eligibleApprovalScopeConditions.length > 0
 				? or(assignedApproverCondition, ...eligibleApprovalScopeConditions)
 				: assignedApproverCondition;
 
@@ -101,7 +117,9 @@ export function buildBaseConditions(entityType: ApprovalType, params: ApprovalQu
 
 	// Add age filter
 	if (params.minAgeDays) {
-		const cutoffDate = DateTime.now().minus({ days: params.minAgeDays }).toJSDate();
+		const cutoffDate = DateTime.now()
+			.minus({ days: params.minAgeDays })
+			.toJSDate();
 		conditions.push(lte(approvalRequest.createdAt, cutoffDate));
 	}
 
@@ -117,7 +135,13 @@ export function fetchApprovals<TEntity>(
 ): Effect.Effect<UnifiedApprovalItem[], AnyAppError, any> {
 	return Effect.gen(function* (_) {
 		const dbService = yield* _(DatabaseService);
-		const { entityType, params, fetchEntitiesByIds, transformToItem, filterEntity } = config;
+		const {
+			entityType,
+			params,
+			fetchEntitiesByIds,
+			transformToItem,
+			filterEntity,
+		} = config;
 
 		// Build filter conditions
 		const conditions = buildBaseConditions(entityType, params);
@@ -179,7 +203,10 @@ export function getApprovalCount(
 	entityType: ApprovalType,
 	approverId: string,
 	organizationId: string,
-	visibility?: Pick<ApprovalQueryParams, "eligibleApprovalScopes" | "includeAllApprovers">,
+	visibility?: Pick<
+		ApprovalQueryParams,
+		"eligibleApprovalScopes" | "includeAllApprovers"
+	>,
 ): Effect.Effect<number, AnyAppError, any> {
 	return Effect.gen(function* (_) {
 		const dbService = yield* _(DatabaseService);

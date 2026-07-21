@@ -67,7 +67,10 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		});
 
 		expect(result.item.id).toBe("approval-1");
-		expect(result.sections.map((section) => section.type)).toEqual(["key_value", "timeline"]);
+		expect(result.sections.map((section) => section.type)).toEqual([
+			"key_value",
+			"timeline",
+		]);
 		expect(JSON.parse(JSON.stringify(result))).toEqual(result);
 	});
 
@@ -85,7 +88,10 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			),
 		} as never;
 
-		const result = await getApprovalInboxDetailFromRequest({ request, handler });
+		const result = await getApprovalInboxDetailFromRequest({
+			request,
+			handler,
+		});
 
 		expect(result.item.id).toBe("approval-1");
 		expect(handler.getDetail).toHaveBeenCalledWith("absence-1", "org-1", {
@@ -103,7 +109,11 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			approvalType: "time_entry",
 			entityId: "period-1",
 			typeName: "Time Correction",
-			display: { title: "Time Correction", subtitle: "May 31", summary: "Pending correction" },
+			display: {
+				title: "Time Correction",
+				subtitle: "May 31",
+				summary: "Pending correction",
+			},
 		});
 		detail.entity = {
 			pendingCorrection: {
@@ -146,12 +156,19 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			approvalType: "time_entry",
 			entityId: "period-1",
 			typeName: "Time Correction",
-			display: { title: "Time Correction", subtitle: "May 31", summary: "Pending correction" },
+			display: {
+				title: "Time Correction",
+				subtitle: "May 31",
+				summary: "Pending correction",
+			},
 		});
 		detail.entity = {
 			pendingCorrection: {
 				action: "edit",
-				clockIn: { original: new Date("2026-05-31T08:00:00.000Z"), requested: null },
+				clockIn: {
+					original: new Date("2026-05-31T08:00:00.000Z"),
+					requested: null,
+				},
 				clockOut: null,
 				isOrphaned: true,
 			},
@@ -170,6 +187,49 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		});
 		expect(result.actions.canApprove).toBe(false);
 		expect(result.actions.canReject).toBe(true);
+	});
+
+	it("warns and disables decisions for an unclassified legacy time approval", async () => {
+		const timeRequest = {
+			...request,
+			entityType: "time_entry",
+			entityId: "period-1",
+		};
+		const warning =
+			"This legacy time approval could not be classified. Reconcile it before making a decision.";
+		const detail = createDetail({
+			approvalType: "time_entry",
+			entityId: "period-1",
+			typeName: "Unclassified Time Approval",
+			isActionable: false,
+			warning,
+			display: {
+				title: "Unclassified Time Approval",
+				subtitle: "May 31",
+				summary: warning,
+			},
+		});
+		detail.entity = {
+			timeApprovalKind: "unclassified",
+			timeRequestWarning: warning,
+		};
+
+		const result = await getApprovalInboxDetailFromRequest({
+			request: timeRequest,
+			handler: createHandler(detail, "time_entry"),
+		});
+
+		expect(result.sections).toContainEqual({
+			type: "callout",
+			title: "Reconciliation required",
+			body: warning,
+			tone: "warning",
+		});
+		expect(result.actions).toMatchObject({
+			canApprove: false,
+			canReject: false,
+			canBulkApprove: false,
+		});
 	});
 
 	it("rejects unsupported entity types before calling the handler", async () => {

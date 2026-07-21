@@ -50,6 +50,7 @@ export interface ApprovalPolicyAuditEvent {
 	actorEmployeeId?: string;
 	previousStatus?: string;
 	newStatus?: string;
+	reason?: string;
 	createdAt: Date;
 }
 
@@ -122,6 +123,7 @@ function normalizePolicyEvent(event: ApprovalPolicyAuditEvent) {
 			...(event.policyId ? { policyId: event.policyId } : {}),
 			...(event.chainId ? { chainId: event.chainId } : {}),
 			...(event.stageId ? { stageId: event.stageId } : {}),
+			...(event.reason ? { reason: event.reason } : {}),
 		}),
 		ipAddress: null,
 		userAgent: null,

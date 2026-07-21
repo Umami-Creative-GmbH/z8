@@ -9,7 +9,10 @@ import {
 	ConflictError,
 	NotFoundError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -21,6 +24,7 @@ import {
 	createApprovalAuditLogger,
 } from "../infrastructure/audit-logger";
 import { progressApprovalChainIfLinked } from "../policies/chain-service";
+import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
 import type {
 	ApprovalAction,
 	ApprovalDbService,
@@ -38,7 +42,7 @@ export function getApprovalStatusUpdate(
 ): ApprovalStatusUpdate {
 	return {
 		status: action === "approve" ? "approved" : "rejected",
-		approvedAt: currentTimestamp(),
+		approvedAt: action === "approve" ? currentTimestamp() : null,
 		rejectionReason: action === "reject" ? rejectionReason : undefined,
 		updatedAt: currentTimestamp(),
 	};
@@ -96,8 +100,6 @@ function loadPendingApprovalRequest(
 							eq(approvalRequest.organizationId, actorOrganizationId),
 							eq(approvalRequest.entityType, entityType),
 							eq(approvalRequest.entityId, entityId),
-							...(options?.allowAnyApprover ? [] : [eq(approvalRequest.approverId, approverId)]),
-							eq(approvalRequest.status, "pending"),
 						)
 					: and(
 							eq(approvalRequest.organizationId, actorOrganizationId),
@@ -109,39 +111,79 @@ function loadPendingApprovalRequest(
 			});
 		})
 		.pipe(
-			Effect.flatMap((request) => {
-				if (!request) {
-					return Effect.fail(
-						new AuthorizationError({
-							message: "Approval request not found, already processed, or you are not the approver",
-							userId: approverId,
-							resource: entityType,
-							action,
-						}),
-					);
-				}
+			Effect.flatMap(
+				(
+					request,
+				): Effect.Effect<PendingApprovalRequest, AnyAppError, never> => {
+					if (!request) {
+						if (options?.approvalRequestId) {
+							return Effect.fail(
+								new NotFoundError({
+									message: "Approval request not found",
+									entityType: "approval_request",
+									entityId: options.approvalRequestId,
+								}),
+							);
+						}
+						return Effect.fail(
+							new AuthorizationError({
+								message:
+									"Approval request not found, already processed, or you are not the approver",
+								userId: approverId,
+								resource: entityType,
+								action,
+							}),
+						);
+					}
 
-				const pendingRequest = request as PendingApprovalRequest;
-				if (options?.allowAnyApprover && pendingRequest.organizationId !== actorOrganizationId) {
-					return Effect.fail(
-						new AuthorizationError({
-							message: "Approval request not found, already processed, or you are not the approver",
-							userId: approverId,
-							resource: entityType,
-							action,
-						}),
-					);
-				}
+					const pendingRequest = request as PendingApprovalRequest;
+					if (pendingRequest.status !== "pending") {
+						return Effect.fail(
+							new ConflictError({
+								message: `Approval request is already ${pendingRequest.status}`,
+								conflictType: "approval_status",
+							}),
+						);
+					}
+					if (
+						!options?.allowAnyApprover &&
+						!options?.allowOrganizationWideApprover &&
+						pendingRequest.approverId !== approverId
+					) {
+						return Effect.fail(
+							new AuthorizationError({
+								message: "You are not authorized to decide this request",
+								userId: approverId,
+								resource: entityType,
+								action,
+							}),
+						);
+					}
+					if (
+						(options?.allowAnyApprover ||
+							options?.allowOrganizationWideApprover) &&
+						pendingRequest.organizationId !== actorOrganizationId
+					) {
+						return Effect.fail(
+							new AuthorizationError({
+								message:
+									"Approval request not found, already processed, or you are not the approver",
+								userId: approverId,
+								resource: entityType,
+								action,
+							}),
+						);
+					}
 
-				return Effect.succeed(pendingRequest);
-			}),
+					return Effect.succeed(pendingRequest);
+				},
+			),
 		);
 }
 
 function updatePendingApprovalRequest(
 	dbService: ApprovalDbService,
-	approvalId: string,
-	organizationId: string,
+	approval: PendingApprovalRequest,
 	statusUpdate: ApprovalStatusUpdate,
 ) {
 	return dbService
@@ -151,14 +193,19 @@ function updatePendingApprovalRequest(
 				.set(statusUpdate)
 				.where(
 					and(
-						eq(approvalRequest.id, approvalId),
-						eq(approvalRequest.organizationId, organizationId),
+						eq(approvalRequest.id, approval.id),
+						eq(approvalRequest.organizationId, approval.organizationId),
 						eq(approvalRequest.status, "pending"),
+						eq(approvalRequest.approverId, approval.approverId),
+						eq(approvalRequest.entityType, approval.entityType),
+						eq(approvalRequest.entityId, approval.entityId),
 					),
 				);
 
 			const updatedRows =
-				updateQuery && typeof updateQuery === "object" && "returning" in updateQuery
+				updateQuery &&
+				typeof updateQuery === "object" &&
+				"returning" in updateQuery
 					? await updateQuery.returning({ id: approvalRequest.id })
 					: await updateQuery;
 
@@ -166,7 +213,9 @@ function updatePendingApprovalRequest(
 		})
 		.pipe(
 			Effect.flatMap((updatedRows) =>
-				Array.isArray(updatedRows) && updatedRows.length === 0
+				!Array.isArray(updatedRows) ||
+				updatedRows.length !== 1 ||
+				updatedRows[0]?.id !== approval.id
 					? Effect.fail(
 							new ConflictError({
 								message: "Approval request is no longer pending",
@@ -178,6 +227,59 @@ function updatePendingApprovalRequest(
 		);
 }
 
+type ApprovalEntityUpdater<T> = (
+	dbService: ApprovalDbService,
+	entityId: string,
+	currentEmployee: CurrentApprover,
+	approval: PendingApprovalRequest,
+) => Effect.Effect<T, AnyAppError, unknown>;
+
+interface ApprovalPostCommitHandlers<T> {
+	updateEntity: ApprovalEntityUpdater<T>;
+	afterCommit: (
+		result: T,
+		dbService: ApprovalDbService,
+		entityId: string,
+		currentEmployee: CurrentApprover,
+	) => Effect.Effect<void, AnyAppError, unknown>;
+}
+
+interface ApprovalExecutionResult<T> {
+	domainResult: T | undefined;
+	didRunDomainUpdate: boolean;
+}
+
+function runAfterCommitBestEffort<T>(
+	handlers: ApprovalPostCommitHandlers<T>,
+	result: T,
+	dbService: ApprovalDbService,
+	entityType: ApprovalEntityType,
+	entityId: string,
+	currentEmployee: CurrentApprover,
+) {
+	return handlers
+		.afterCommit(result, dbService, entityId, currentEmployee)
+		.pipe(
+			Effect.catchAllCause((cause) => {
+				const error =
+					Option.getOrNull(Cause.failureOption(cause)) ??
+					[...Cause.defects(cause)][0] ??
+					Cause.pretty(cause);
+				return Effect.sync(() =>
+					logger.error(
+						{
+							error,
+							entityType,
+							entityId,
+							organizationId: currentEmployee.organizationId,
+						},
+						"Approval after-commit work failed",
+					),
+				);
+			}),
+		);
+}
+
 function executeApprovalWithCurrentEmployee<T>(
 	dbService: ApprovalDbService,
 	currentEmployee: CurrentApprover,
@@ -185,12 +287,7 @@ function executeApprovalWithCurrentEmployee<T>(
 	entityId: string,
 	action: ApprovalAction,
 	rejectionReason?: string,
-	updateEntity?: (
-		dbService: ApprovalDbService,
-		entityId: string,
-		currentEmployee: CurrentApprover,
-		approval: PendingApprovalRequest,
-	) => Effect.Effect<T, AnyAppError, unknown>,
+	updateEntity?: ApprovalEntityUpdater<T>,
 	preflightEntity?: (
 		dbService: ApprovalDbService,
 		entityId: string,
@@ -198,6 +295,7 @@ function executeApprovalWithCurrentEmployee<T>(
 		options?: ApprovalActionOptions,
 	) => Effect.Effect<unknown, AnyAppError, unknown>,
 	options?: ApprovalActionOptions,
+	postCommitHandlers?: ApprovalPostCommitHandlers<T>,
 ) {
 	const statusUpdate = getApprovalStatusUpdate(action, rejectionReason);
 
@@ -219,6 +317,36 @@ function executeApprovalWithCurrentEmployee<T>(
 				options,
 			),
 		);
+		if (
+			options?.allowAnyApprover &&
+			!options.allowOrganizationWideApprover &&
+			approval.approverId !== currentEmployee.id
+		) {
+			const eligible = yield* _(
+				Effect.tryPromise({
+					try: () =>
+						isEligibleManagerForApprovalRequest({
+							db: dbService.db,
+							approvalRequestId: approval.id,
+							managerEmployeeId: currentEmployee.id,
+							organizationId: currentEmployee.organizationId,
+						}),
+					catch: (error) => error as AnyAppError,
+				}),
+			);
+			if (!eligible) {
+				return yield* _(
+					Effect.fail(
+						new AuthorizationError({
+							message: "You are not authorized to decide this request",
+							userId: currentEmployee.id,
+							resource: entityType,
+							action,
+						}),
+					),
+				);
+			}
+		}
 
 		logger.info(
 			{
@@ -230,14 +358,7 @@ function executeApprovalWithCurrentEmployee<T>(
 			"Processing approval action",
 		);
 
-		yield* _(
-			updatePendingApprovalRequest(
-				dbService,
-				approval.id,
-				currentEmployee.organizationId,
-				statusUpdate,
-			),
-		);
+		yield* _(updatePendingApprovalRequest(dbService, approval, statusUpdate));
 
 		const chainResult = yield* _(
 			progressApprovalChainIfLinked(dbService, {
@@ -251,11 +372,18 @@ function executeApprovalWithCurrentEmployee<T>(
 		const shouldRunDomainSideEffect =
 			chainResult.kind === "not_linked" ||
 			chainResult.kind === "chain_completed" ||
+			chainResult.kind === "chain_auto_completed" ||
 			chainResult.kind === "chain_rejected";
+		const selectedUpdateEntity =
+			postCommitHandlers?.updateEntity ?? updateEntity;
 
 		let domainResult: T | undefined;
-		if (updateEntity && shouldRunDomainSideEffect) {
-			domainResult = yield* _(updateEntity(dbService, entityId, currentEmployee, approval));
+		let didRunDomainUpdate = false;
+		if (selectedUpdateEntity && shouldRunDomainSideEffect) {
+			domainResult = yield* _(
+				selectedUpdateEntity(dbService, entityId, currentEmployee, approval),
+			);
+			didRunDomainUpdate = true;
 		}
 
 		yield* _(
@@ -282,7 +410,10 @@ function executeApprovalWithCurrentEmployee<T>(
 			`Successfully ${action === "approve" ? "approved" : "rejected"} ${entityType}`,
 		);
 
-		return domainResult;
+		return {
+			domainResult,
+			didRunDomainUpdate,
+		} satisfies ApprovalExecutionResult<T>;
 	});
 }
 
@@ -293,12 +424,7 @@ export function processApprovalWithCurrentEmployee<T>(
 	entityId: string,
 	action: ApprovalAction,
 	rejectionReason?: string,
-	updateEntity?: (
-		dbService: ApprovalDbService,
-		entityId: string,
-		currentEmployee: CurrentApprover,
-		approval: PendingApprovalRequest,
-	) => Effect.Effect<T, AnyAppError, unknown>,
+	updateEntity?: ApprovalEntityUpdater<T>,
 	preflightEntity?: (
 		dbService: ApprovalDbService,
 		entityId: string,
@@ -306,13 +432,15 @@ export function processApprovalWithCurrentEmployee<T>(
 		options?: ApprovalActionOptions,
 	) => Effect.Effect<unknown, AnyAppError, unknown>,
 	options?: ApprovalActionOptions,
+	postCommitHandlers?: ApprovalPostCommitHandlers<T>,
+	transactionBehavior: "open" | "existing" = "open",
 ) {
 	return Effect.gen(function* (_) {
 		const auditLogger = yield* _(ApprovalAuditLogger);
 		const callerContext = yield* _(Effect.context<never>());
 
-		if (!options?.transactional) {
-			return yield* _(
+		if (!options?.transactional || transactionBehavior === "existing") {
+			const execution = yield* _(
 				executeApprovalWithCurrentEmployee(
 					dbService,
 					currentEmployee,
@@ -323,20 +451,36 @@ export function processApprovalWithCurrentEmployee<T>(
 					updateEntity,
 					preflightEntity,
 					options,
+					postCommitHandlers,
 				).pipe(Effect.provideService(ApprovalAuditLogger, auditLogger)),
 			);
+			if (execution.didRunDomainUpdate && postCommitHandlers) {
+				yield* _(
+					runAfterCommitBestEffort(
+						postCommitHandlers,
+						execution.domainResult as T,
+						dbService,
+						entityType,
+						entityId,
+						currentEmployee,
+					),
+				);
+			}
+			return execution.domainResult;
 		}
 
-		return yield* _(
+		const execution = yield* _(
 			Effect.tryPromise({
 				try: async () => {
-					let result: T | undefined;
+					let result: ApprovalExecutionResult<T> | undefined;
 					await dbService.db.transaction(async (tx) => {
 						const transactionalDbService: ApprovalDbService = {
 							db: tx,
 							query: dbService.query,
 						};
-						const transactionalAuditLogger = createApprovalAuditLogger(transactionalDbService);
+						const transactionalAuditLogger = createApprovalAuditLogger(
+							transactionalDbService,
+						);
 
 						const exit = await Effect.runPromiseExit(
 							// Transactional approvals currently run only self-contained handlers.
@@ -350,10 +494,18 @@ export function processApprovalWithCurrentEmployee<T>(
 								updateEntity,
 								preflightEntity,
 								options,
+								postCommitHandlers,
 							).pipe(
-								Effect.provideService(ApprovalAuditLogger, transactionalAuditLogger),
+								Effect.provideService(
+									ApprovalAuditLogger,
+									transactionalAuditLogger,
+								),
 								Effect.provide(callerContext),
-							) as Effect.Effect<T | undefined, AnyAppError, never>,
+							) as Effect.Effect<
+								ApprovalExecutionResult<T>,
+								AnyAppError,
+								never
+							>,
 						);
 
 						if (Exit.isFailure(exit)) {
@@ -364,11 +516,27 @@ export function processApprovalWithCurrentEmployee<T>(
 
 						result = exit.value;
 					});
+					if (!result) {
+						throw new Error("Approval transaction did not execute");
+					}
 					return result;
 				},
 				catch: (error) => error as AnyAppError,
 			}),
 		);
+		if (execution.didRunDomainUpdate && postCommitHandlers) {
+			yield* _(
+				runAfterCommitBestEffort(
+					postCommitHandlers,
+					execution.domainResult as T,
+					dbService,
+					entityType,
+					entityId,
+					currentEmployee,
+				),
+			);
+		}
+		return execution.domainResult;
 	});
 }
 
@@ -377,12 +545,7 @@ export async function processApproval<T>(
 	entityId: string,
 	action: ApprovalAction,
 	rejectionReason?: string,
-	updateEntity?: (
-		dbService: ApprovalDbService,
-		entityId: string,
-		currentEmployee: CurrentApprover,
-		approval: PendingApprovalRequest,
-	) => Effect.Effect<T, AnyAppError, unknown>,
+	updateEntity?: ApprovalEntityUpdater<T>,
 	preflightEntity?: (
 		dbService: ApprovalDbService,
 		entityId: string,
@@ -390,6 +553,7 @@ export async function processApproval<T>(
 		options?: ApprovalActionOptions,
 	) => Effect.Effect<unknown, AnyAppError, unknown>,
 	options?: ApprovalActionOptions,
+	postCommitHandlers?: ApprovalPostCommitHandlers<T>,
 ): Promise<ServerActionResult<T | undefined>> {
 	const tracer = trace.getTracer("approvals");
 
@@ -430,6 +594,7 @@ export async function processApproval<T>(
 						updateEntity,
 						preflightEntity,
 						options,
+						postCommitHandlers,
 					),
 				);
 
@@ -444,7 +609,10 @@ export async function processApproval<T>(
 							message: String(error),
 						});
 
-						logger.error({ error, entityType, entityId, action }, "Failed to process approval");
+						logger.error(
+							{ error, entityType, entityId, action },
+							"Failed to process approval",
+						);
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
@@ -455,5 +623,7 @@ export async function processApproval<T>(
 		},
 	);
 
-	return runServerActionSafe(effect as Effect.Effect<T | undefined, AnyAppError, never>);
+	return runServerActionSafe(
+		effect as Effect.Effect<T | undefined, AnyAppError, never>,
+	);
 }

@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { approvalRequest } from "@/db/schema";
 
 vi.mock("@/env", () => ({
 	env: {
@@ -32,7 +33,9 @@ const testState = vi.hoisted(() => ({
 	updateSet: vi.fn(),
 	insertValues: vi.fn(),
 	insertReturning: vi.fn(),
-	query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+	query: vi.fn((_name: string, run: () => Promise<unknown>) =>
+		Effect.promise(run),
+	),
 	committedUpdates: [] as unknown[],
 	committedInserts: [] as unknown[],
 	onTravelExpenseApproved: vi.fn(),
@@ -159,7 +162,9 @@ describe("TravelExpenseClaimHandler", () => {
 		testState.onTravelExpenseRejected.mockClear();
 		testState.dbUpdate.mockImplementation(() => createUpdateBuilder());
 		testState.updateSet.mockReturnValue({ where: testState.updateWhere });
-		testState.updateWhere.mockReturnValue({ returning: testState.updateReturning });
+		testState.updateWhere.mockReturnValue({
+			returning: testState.updateReturning,
+		});
 		testState.approvalChainStageFindFirst.mockResolvedValue(null);
 		testState.approvalChainFindFirst.mockResolvedValue(null);
 		testState.insertReturning.mockResolvedValue([{ id: "insert-1" }]);
@@ -192,10 +197,16 @@ describe("TravelExpenseClaimHandler", () => {
 						set: vi.fn((values) => {
 							testState.updateSet(values);
 							return {
-								where: vi.fn(async (...args) => {
+								where: vi.fn((...args) => {
 									testState.updateWhere(...args);
 									pendingUpdates.push({ table, values });
-									return testState.updateReturning();
+									return {
+										returning: vi.fn(() =>
+											table === approvalRequest
+												? Promise.resolve([{ id: "approval-1" }])
+												: testState.updateReturning(),
+										),
+									};
 								}),
 							};
 						}),
@@ -203,12 +214,15 @@ describe("TravelExpenseClaimHandler", () => {
 				}),
 				insert: vi.fn((table) => ({
 					values: vi.fn((values) => {
-						const result = Promise.resolve(testState.insertValues(values)).then(() => {
-							pendingInserts.push({ table, values });
-							return { returning: testState.insertReturning };
-						});
+						const result = Promise.resolve(testState.insertValues(values)).then(
+							() => {
+								pendingInserts.push({ table, values });
+								return { returning: testState.insertReturning };
+							},
+						);
 						return {
 							returning: testState.insertReturning,
+							// biome-ignore lint/suspicious/noThenProperty: Drizzle's insert builder is intentionally awaitable
 							then: result.then.bind(result),
 						};
 					}),
@@ -433,7 +447,11 @@ describe("TravelExpenseClaimHandler", () => {
 
 		const items = await Effect.runPromise(
 			handler
-				.getApprovals({ approverId: "manager-1", organizationId: "org-1", limit: 10 })
+				.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					limit: 10,
+				})
 				.pipe(
 					Effect.provideService(DatabaseService, createDatabaseService()),
 					Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
@@ -795,7 +813,9 @@ describe("TravelExpenseClaimHandler", () => {
 			});
 		testState.updateReturning.mockResolvedValue([{ id: "claim-1" }]);
 		testState.insertValues.mockResolvedValue(undefined);
-		testState.auditLog.mockReturnValueOnce(Effect.fail(new Error("audit failed")));
+		testState.auditLog.mockReturnValueOnce(
+			Effect.fail(new Error("audit failed")),
+		);
 
 		await expect(
 			Effect.runPromise(
@@ -1003,7 +1023,9 @@ describe("TravelExpenseClaimHandler", () => {
 			updatedAt: new Date("2026-04-09T09:30:00.000Z"),
 		});
 		testState.updateReturning.mockResolvedValue([{ id: "claim-1" }]);
-		testState.insertValues.mockRejectedValue(new Error("decision log insert failed"));
+		testState.insertValues.mockRejectedValue(
+			new Error("decision log insert failed"),
+		);
 
 		await expect(
 			Effect.runPromise(
@@ -1074,7 +1096,7 @@ describe("TravelExpenseClaimHandler", () => {
 				handler
 					.approve("claim-1", "ops-1", {
 						approvalRequestId: "approval-1",
-						allowAnyApprover: true,
+						allowOrganizationWideApprover: true,
 					})
 					.pipe(
 						Effect.provideService(DatabaseService, createDatabaseService()),

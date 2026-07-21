@@ -4,7 +4,9 @@ import type { SickDetail } from "@/lib/absences/types";
 import type { DisplayContext } from "@/lib/datetime/temporal-format";
 import type { AnyAppError } from "@/lib/effect/errors";
 
-export type ApprovalDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type ApprovalDatabase =
+	| typeof db
+	| Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export interface ApprovalWithAbsence {
 	id: string;
@@ -63,12 +65,21 @@ export interface ApprovalWithTimeCorrection {
 			timestamp: Date;
 			utcOffsetMinutes: number;
 		} | null;
-		clockInCorrectionEntry: { timestamp: Date; utcOffsetMinutes: number } | null;
-		clockOutCorrectionEntry: { timestamp: Date; utcOffsetMinutes: number } | null;
+		clockInCorrectionEntry: {
+			timestamp: Date;
+			utcOffsetMinutes: number;
+		} | null;
+		clockOutCorrectionEntry: {
+			timestamp: Date;
+			utcOffsetMinutes: number;
+		} | null;
 	};
 }
 
-export type ApprovalEntityType = "absence_entry" | "time_entry" | "travel_expense_claim";
+export type ApprovalEntityType =
+	| "absence_entry"
+	| "time_entry"
+	| "travel_expense_claim";
 export type ApprovalAction = "approve" | "reject";
 
 export interface CurrentApprover {
@@ -100,12 +111,19 @@ export interface PendingApprovalRequest {
 
 export interface ApprovalStatusUpdate {
 	status: "approved" | "rejected";
-	approvedAt?: ReturnType<typeof import("@/lib/datetime/drizzle-adapter").currentTimestamp>;
+	approvedAt?: ReturnType<
+		typeof import("@/lib/datetime/drizzle-adapter").currentTimestamp
+	> | null;
 	rejectionReason?: string;
-	updatedAt: ReturnType<typeof import("@/lib/datetime/drizzle-adapter").currentTimestamp>;
+	updatedAt: ReturnType<
+		typeof import("@/lib/datetime/drizzle-adapter").currentTimestamp
+	>;
 }
 
 export interface ApprovalDbService {
 	db: ApprovalDatabase;
-	query: <T>(name: string, fn: () => Promise<T>) => Effect.Effect<T, AnyAppError, never>;
+	query: <T>(
+		name: string,
+		fn: () => Promise<T>,
+	) => Effect.Effect<T, AnyAppError, never>;
 }

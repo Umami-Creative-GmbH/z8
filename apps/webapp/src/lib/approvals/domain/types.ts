@@ -94,6 +94,12 @@ export interface UnifiedApprovalItem {
 	/** Display metadata for rendering */
 	display: ApprovalDisplayMetadata;
 
+	/** Whether the request can be decided without reconciliation. */
+	isActionable?: boolean;
+
+	/** Explicit warning shown for requests requiring reconciliation. */
+	warning?: string | null;
+
 	/** Advisory metadata for fast triage. Authorization never depends on this client-visible data. */
 	triage?: ApprovalTriageMetadata;
 }
@@ -238,6 +244,7 @@ export interface ApprovalActionOptions {
 	transactional?: boolean;
 	approvalRequestId?: string;
 	allowAnyApprover?: boolean;
+	allowOrganizationWideApprover?: boolean;
 }
 
 /**
@@ -272,7 +279,10 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 	getCount: (
 		approverId: string,
 		organizationId: string,
-		visibility?: Pick<ApprovalQueryParams, "eligibleApprovalScopes" | "includeAllApprovers">,
+		visibility?: Pick<
+			ApprovalQueryParams,
+			"eligibleApprovalScopes" | "includeAllApprovers"
+		>,
 	) => Effect.Effect<number, AnyAppError, any>;
 
 	/**
@@ -360,7 +370,12 @@ export interface BulkDecisionSuccess {
 
 export interface BulkDecisionFailure {
 	id: string;
-	code: "forbidden" | "stale" | "validation_failed" | "not_found" | "unsupported";
+	code:
+		| "forbidden"
+		| "stale"
+		| "validation_failed"
+		| "not_found"
+		| "unsupported";
 	message: string;
 }
 

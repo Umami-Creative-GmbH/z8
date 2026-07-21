@@ -1,12 +1,39 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
-import { buildPendingCorrectionReview } from "./time-correction.handler";
+import { Effect } from "effect";
+import { describe, expect, it, vi } from "vitest";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import type { ApprovalDbService } from "../server/types";
 
-const source = readFileSync("src/lib/approvals/handlers/time-correction.handler.ts", "utf8");
+const decisionMocks = vi.hoisted(() => ({
+	approveCorrection: vi.fn(() => Effect.void),
+	approveOrdinary: vi.fn(() => Effect.void),
+}));
+
+vi.mock("@/lib/approvals/server/time-correction-approvals", () => ({
+	approveTimeCorrectionWithCurrentApproverEffect:
+		decisionMocks.approveCorrection,
+	decideTimeCorrectionWithStableTargetEffect: decisionMocks.approveCorrection,
+}));
+
+vi.mock("@/lib/approvals/server/work-period-approvals", () => ({
+	approveWorkPeriodWithCurrentApproverEffect: decisionMocks.approveOrdinary,
+}));
+
+import {
+	buildPendingCorrectionReview,
+	buildTimeApprovalReview,
+	buildTimeApprovalTimelineMessage,
+	TimeCorrectionHandler,
+} from "./time-correction.handler";
+
+const source = readFileSync(
+	"src/lib/approvals/handlers/time-correction.handler.ts",
+	"utf8",
+);
 
 function handlerSection() {
 	const start = source.indexOf("getDetail: (entityId");
-	const end = source.indexOf("\n\tapprove:", start);
+	const end = source.indexOf("approve: (_entityId", start);
 
 	expect(start).toBeGreaterThanOrEqual(0);
 	expect(end).toBeGreaterThan(start);
@@ -20,7 +47,9 @@ describe("TimeCorrectionHandler detail loading", () => {
 
 		expect(body).toContain("context?.approvalId");
 		expect(body).toContain("eq(approvalRequest.id, context.approvalId)");
-		expect(body).toContain("eq(approvalRequest.organizationId, organizationId)");
+		expect(body).toContain(
+			"eq(approvalRequest.organizationId, organizationId)",
+		);
 		expect(body).toContain('eq(approvalRequest.entityType, "time_entry")');
 		expect(body).toContain("eq(approvalRequest.entityId, entityId)");
 	});
@@ -48,10 +77,22 @@ describe("buildPendingCorrectionReview", () => {
 			userId: "user-1",
 			teamId: null,
 			organizationId: "org-1",
-			user: { id: "user-1", name: "Kai Hentschel", email: "kai@example.com", image: null },
+			user: {
+				id: "user-1",
+				name: "Kai Hentschel",
+				email: "kai@example.com",
+				image: null,
+			},
 		},
-		clockIn: { id: "clock-in-original", timestamp: new Date("2026-05-22T14:00:00.000Z") },
-		clockOut: { id: "clock-out-original", timestamp: new Date("2026-05-22T18:00:00.000Z") },
+		clockIn: {
+			id: "clock-in-original",
+			timestamp: new Date("2026-05-22T14:00:00.000Z"),
+		},
+		clockOut: {
+			id: "clock-out-original",
+			timestamp: new Date("2026-05-22T18:00:00.000Z"),
+		},
+		pendingChanges: null,
 	};
 
 	it("treats legacy requests without resolvable correction entries as orphaned", () => {
@@ -72,7 +113,9 @@ describe("buildPendingCorrectionReview", () => {
 			isSuperseded: false,
 		};
 
-		const review = buildPendingCorrectionReview(period, { metadata: null }, [correction]);
+		const review = buildPendingCorrectionReview(period, { metadata: null }, [
+			correction,
+		]);
 
 		expect(review).toMatchObject({
 			clockIn: { requested: correction.timestamp },
@@ -104,5 +147,430 @@ describe("buildPendingCorrectionReview", () => {
 			clockIn: { requested: activeCorrection.timestamp },
 			isOrphaned: false,
 		});
+	});
+});
+
+describe("shared time-entry approval presentation", () => {
+	const period = {
+		id: "period-1",
+		startTime: new Date("2026-05-22T14:00:00.000Z"),
+		endTime: new Date("2026-05-22T18:00:00.000Z"),
+		durationMinutes: 240,
+		pendingChanges: null,
+		employee: {
+			id: "emp-1",
+			userId: "user-1",
+			teamId: null,
+			organizationId: "org-1",
+			user: {
+				id: "user-1",
+				name: "Kai Hentschel",
+				email: "kai@example.com",
+				image: null,
+			},
+		},
+		clockIn: {
+			id: "clock-in-original",
+			timestamp: new Date("2026-05-22T14:00:00.000Z"),
+		},
+		clockOut: {
+			id: "clock-out-original",
+			timestamp: new Date("2026-05-22T18:00:00.000Z"),
+		},
+	};
+
+	it("keeps manual submissions visible without correction entries", () => {
+		const review = buildTimeApprovalReview(
+			period,
+			{
+				metadata: { timeRequest: { kind: "manual_time_submission" } },
+				reason: "Manual time entry: missed punch",
+			},
+			[],
+		);
+
+		expect(review).toMatchObject({
+			kind: "manual_time_submission",
+			isActionable: true,
+			warning: null,
+			display: {
+				title: "Manual Time Submission",
+				badge: { label: "Manual" },
+				icon: "clock-plus",
+			},
+		});
+		expect(review.pendingCorrection).toBeUndefined();
+	});
+
+	it("keeps policy clock-outs visible without correction entries", () => {
+		const review = buildTimeApprovalReview(
+			period,
+			{
+				metadata: { timeRequest: { kind: "policy_clock_out" } },
+				reason: "Clock-out requires approval (0-day policy)",
+			},
+			[],
+		);
+
+		expect(review).toMatchObject({
+			kind: "policy_clock_out",
+			isActionable: true,
+			display: {
+				title: "Clock-out Approval",
+				badge: { label: "Clock-out" },
+				icon: "clock-check",
+			},
+		});
+		expect(review.pendingCorrection).toBeUndefined();
+	});
+
+	it("renders manual and clock-out endpoints in their independently captured offsets", () => {
+		const review = buildTimeApprovalReview(
+			{
+				...period,
+				clockIn: {
+					...period.clockIn,
+					utcOffsetMinutes: 120,
+					timezone: "Europe/Berlin",
+				},
+				clockOut: {
+					...period.clockOut,
+					utcOffsetMinutes: -300,
+					timezone: "America/New_York",
+				},
+			},
+			{
+				metadata: { timeRequest: { kind: "manual_time_submission" } },
+				reason: null,
+			},
+			[],
+		);
+
+		expect(review.display.subtitle).toBe("May 22, 2026 - 16:00 to 13:00");
+	});
+
+	it("keeps unclassified legacy rows visible with a non-actionable warning", () => {
+		const review = buildTimeApprovalReview(
+			period,
+			{ metadata: null, reason: "Please review" },
+			[],
+		);
+
+		expect(review).toMatchObject({
+			kind: "unclassified",
+			isActionable: false,
+			warning:
+				"This legacy time approval could not be classified. Reconcile it before making a decision.",
+			display: {
+				title: "Unclassified Time Approval",
+				badge: { label: "Needs reconciliation" },
+			},
+		});
+	});
+
+	it("keeps a list row unclassified when only superseded correction history exists", () => {
+		const review = buildTimeApprovalReview(
+			period,
+			{ metadata: null, reason: "Please review" },
+			[
+				{
+					id: "historical-correction",
+					timestamp: new Date("2026-05-22T13:45:00.000Z"),
+					replacesEntryId: "clock-in-original",
+					isSuperseded: true,
+				},
+			],
+		);
+
+		expect(review).toMatchObject({
+			kind: "unclassified",
+			isActionable: false,
+			warning:
+				"This legacy time approval could not be classified. Reconcile it before making a decision.",
+		});
+		expect(review.pendingCorrection).toBeUndefined();
+	});
+
+	it("preserves correction diff and priority presentation", () => {
+		const correction = {
+			id: "clock-in-correction",
+			timestamp: new Date("2026-05-22T14:15:00.000Z"),
+			replacesEntryId: "clock-in-original",
+			isSuperseded: false,
+		};
+		const review = buildTimeApprovalReview(
+			period,
+			{
+				metadata: { timeCorrection: { clockInCorrectionId: correction.id } },
+				reason: null,
+			},
+			[correction],
+		);
+
+		expect(review).toMatchObject({
+			kind: "time_correction",
+			isActionable: true,
+			display: { title: "Time Correction", badge: { label: "Correction" } },
+			pendingCorrection: {
+				clockIn: { requested: correction.timestamp },
+				isOrphaned: false,
+			},
+		});
+	});
+
+	it("dispatches correction decisions by stable inbox target", () => {
+		expect(source).toContain("decideTimeCorrectionWithStableTargetEffect");
+		expect(source).toContain("options.approvalRequestId");
+	});
+
+	it("scopes inbox work-period loading to the requested organization", () => {
+		expect(source).toContain(
+			"eq(workPeriod.organizationId, params.organizationId)",
+		);
+	});
+});
+
+describe("resolved time approval timeline labels", () => {
+	it.each([
+		["time_correction", "approved", undefined, "Correction approved"],
+		[
+			"time_correction",
+			"rejected",
+			"Wrong time",
+			"Correction rejected: Wrong time",
+		],
+		[
+			"manual_time_submission",
+			"approved",
+			undefined,
+			"Manual time submission approved",
+		],
+		[
+			"manual_time_submission",
+			"rejected",
+			"Overlap",
+			"Manual time submission rejected: Overlap",
+		],
+		["policy_clock_out", "approved", undefined, "Clock-out approved"],
+		[
+			"policy_clock_out",
+			"rejected",
+			"Policy exception",
+			"Clock-out rejected: Policy exception",
+		],
+	] as const)("renders %s %s as a distinct detail timeline label", (kind, status, reason, expected) => {
+		expect(buildTimeApprovalTimelineMessage(kind, status, reason)).toBe(
+			expected,
+		);
+	});
+});
+
+function createSupersededHistoryDbService() {
+	const period = {
+		id: "period-1",
+		organizationId: "org-1",
+		employeeId: "emp-1",
+		startTime: new Date("2026-05-22T14:00:00.000Z"),
+		endTime: new Date("2026-05-22T18:00:00.000Z"),
+		durationMinutes: 240,
+		pendingChanges: null,
+		clockInId: "clock-in-original",
+		clockOutId: "clock-out-original",
+		employee: {
+			id: "emp-1",
+			userId: "user-1",
+			teamId: null,
+			organizationId: "org-1",
+			user: {
+				id: "user-1",
+				name: "Kai Hentschel",
+				email: "kai@example.com",
+				image: null,
+			},
+		},
+		clockIn: {
+			id: "clock-in-original",
+			timestamp: new Date("2026-05-22T14:00:00.000Z"),
+		},
+		clockOut: {
+			id: "clock-out-original",
+			timestamp: new Date("2026-05-22T18:00:00.000Z"),
+		},
+	};
+	const request = {
+		id: "approval-1",
+		entityType: "time_entry",
+		entityId: "period-1",
+		organizationId: "org-1",
+		requestedBy: "emp-1",
+		approverId: "manager-1",
+		status: "pending",
+		reason: "Please review",
+		metadata: null,
+		createdAt: new Date("2026-05-22T18:05:00.000Z"),
+		approvedAt: null,
+		rejectionReason: null,
+		requester: period.employee,
+		approver: null,
+	};
+	const supersededCorrection = {
+		id: "historical-correction",
+		type: "correction",
+		employeeId: "emp-1",
+		organizationId: "org-1",
+		timestamp: new Date("2026-05-22T13:45:00.000Z"),
+		replacesEntryId: "clock-in-original",
+		isSuperseded: true,
+	};
+	const queryNames: string[] = [];
+	const approvalFindFirst = vi.fn().mockResolvedValue(request);
+	const dbService = {
+		db: {
+			query: {
+				employee: {
+					findFirst: vi.fn().mockResolvedValue({
+						id: "manager-1",
+						userId: "manager-user-1",
+						organizationId: "org-1",
+						isActive: true,
+						user: {
+							id: "manager-user-1",
+							name: "Morgan Manager",
+							email: "manager@example.com",
+							image: null,
+						},
+					}),
+				},
+				approvalRequest: {
+					findMany: vi.fn().mockResolvedValue([request]),
+					findFirst: approvalFindFirst,
+				},
+				workPeriod: {
+					findMany: vi.fn().mockResolvedValue([period]),
+					findFirst: vi.fn().mockResolvedValue(period),
+				},
+				timeEntry: {
+					findMany: vi.fn().mockResolvedValue([supersededCorrection]),
+					findFirst: vi.fn().mockResolvedValue(supersededCorrection),
+				},
+			},
+		},
+		query: <T>(name: string, fn: () => Promise<T>) => {
+			queryNames.push(name);
+			return Effect.promise(fn);
+		},
+	} as unknown as ApprovalDbService;
+
+	return { approvalFindFirst, dbService, period, queryNames, request };
+}
+
+describe("superseded correction history regression", () => {
+	it("keeps the real inbox list item visible and non-actionable", async () => {
+		const { dbService } = createSupersededHistoryDbService();
+		const items = await Effect.runPromise(
+			TimeCorrectionHandler.getApprovals({
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 20,
+			}).pipe(Effect.provideService(DatabaseService, dbService)),
+		);
+
+		expect(items).toHaveLength(1);
+		expect(items[0]).toMatchObject({
+			typeName: "Unclassified Time Approval",
+			isActionable: false,
+			warning:
+				"This legacy time approval could not be classified. Reconcile it before making a decision.",
+		});
+	});
+
+	it("keeps the real detail visible and non-actionable", async () => {
+		const { dbService } = createSupersededHistoryDbService();
+		const detail = await Effect.runPromise(
+			TimeCorrectionHandler.getDetail("period-1", "org-1", {
+				approvalId: "approval-1",
+			}).pipe(Effect.provideService(DatabaseService, dbService)),
+		);
+
+		expect(detail.approval).toMatchObject({
+			typeName: "Unclassified Time Approval",
+			isActionable: false,
+		});
+		expect(detail.entity).toMatchObject({
+			timeApprovalKind: "unclassified",
+			timeRequestActionable: false,
+		});
+		expect(detail.entity.pendingCorrection).toBeUndefined();
+	});
+
+	it("defers subtype classification to the stable transaction boundary", async () => {
+		decisionMocks.approveCorrection.mockClear();
+		const { dbService } = createSupersededHistoryDbService();
+
+		await Effect.runPromise(
+			TimeCorrectionHandler.approve("period-1", "manager-1", {
+				approvalRequestId: "approval-1",
+			}).pipe(Effect.provideService(DatabaseService, dbService)),
+		);
+		expect(decisionMocks.approveCorrection).toHaveBeenCalledWith(
+			dbService,
+			expect.objectContaining({ id: "manager-1" }),
+			"approval-1",
+			"approve",
+			undefined,
+			{ approvalRequestId: "approval-1" },
+		);
+	});
+
+	it.each([
+		["approve", "approved"],
+		["reject", "rejected"],
+	] as const)("defers a handler-visible %s status to transaction reload before %s", async (action, status) => {
+		decisionMocks.approveCorrection.mockClear();
+		const { approvalFindFirst, dbService, request } =
+			createSupersededHistoryDbService();
+		approvalFindFirst.mockResolvedValueOnce({ ...request, status });
+
+		const decision =
+			action === "approve"
+				? TimeCorrectionHandler.approve("period-1", "manager-1", {
+						approvalRequestId: "approval-1",
+					})
+				: TimeCorrectionHandler.reject("period-1", "manager-1", "No", {
+						approvalRequestId: "approval-1",
+					});
+		await Effect.runPromise(
+			decision.pipe(Effect.provideService(DatabaseService, dbService)),
+		);
+		expect(decisionMocks.approveCorrection).toHaveBeenCalledOnce();
+	});
+
+	it("keeps a later manual-entry chain stage actionable from the period marker", async () => {
+		decisionMocks.approveOrdinary.mockClear();
+		const { approvalFindFirst, dbService, period, request } =
+			createSupersededHistoryDbService();
+		period.pendingChanges = { isManualEntry: true } as never;
+		approvalFindFirst.mockResolvedValueOnce({
+			...request,
+			reason: null,
+			metadata: { approvalChain: { stageOrder: 2 } },
+		});
+
+		await Effect.runPromise(
+			TimeCorrectionHandler.approve("period-1", "manager-1", {
+				approvalRequestId: "approval-1",
+			}).pipe(Effect.provideService(DatabaseService, dbService)),
+		);
+
+		expect(decisionMocks.approveOrdinary).not.toHaveBeenCalled();
+		expect(decisionMocks.approveCorrection).toHaveBeenCalledWith(
+			dbService,
+			expect.objectContaining({ id: "manager-1", organizationId: "org-1" }),
+			"approval-1",
+			"approve",
+			undefined,
+			{ approvalRequestId: "approval-1" },
+		);
 	});
 });

@@ -33,7 +33,8 @@ vi.mock("@/lib/effect/services/database.service", async () => {
 						},
 					},
 				},
-				query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+				query: (_name: string, fn: () => Promise<unknown>) =>
+					Effect.promise(fn),
 			}),
 		),
 	};
@@ -58,7 +59,10 @@ vi.mock("@/lib/logger", () => ({
 	createLogger: () => mockState.logger,
 }));
 
-import { BulkApprovalService, BulkApprovalServiceLive } from "./bulk-approval.service";
+import {
+	BulkApprovalService,
+	BulkApprovalServiceLive,
+} from "./bulk-approval.service";
 
 describe("BulkApprovalService", () => {
 	beforeEach(() => {
@@ -82,7 +86,9 @@ describe("BulkApprovalService", () => {
 		const result = await Effect.runPromise(
 			Effect.gen(function* (_) {
 				const service = yield* _(BulkApprovalService);
-				return yield* _(service.bulkDecide(["approval-1"], "employee-1", "org-1", "approve"));
+				return yield* _(
+					service.bulkDecide(["approval-1"], "employee-1", "org-1", "approve"),
+				);
 			}).pipe(Effect.provide(BulkApprovalServiceLive)),
 		);
 
