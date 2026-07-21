@@ -1,6 +1,11 @@
 import { eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	createEmptyAbility,
+	defineAbilityFor,
+	type PrincipalContext,
+} from "@/lib/authorization/ability";
 
 vi.mock("drizzle-orm", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("drizzle-orm")>();
@@ -89,6 +94,24 @@ function createRequest(): NextRequest {
 	} as NextRequest;
 }
 
+function createManagerAbility() {
+	return defineAbilityFor({
+		userId: "user-1",
+		isPlatformAdmin: false,
+		activeOrganizationId: "org-1",
+		orgMembership: { organizationId: "org-1", role: "member", status: "active" },
+		employee: {
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "manager",
+			teamId: null,
+		},
+		permissions: { orgWide: null, byTeamId: new Map() },
+		managedEmployeeIds: [],
+		customRoles: [],
+	} satisfies PrincipalContext);
+}
+
 describe("GET /api/approvals/inbox/[id]", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -105,6 +128,7 @@ describe("GET /api/approvals/inbox/[id]", () => {
 		mockState.findEmployee.mockResolvedValue({
 			id: "employee-1",
 			organizationId: "org-1",
+			role: "manager",
 		});
 		mockState.findApprovalRequest.mockResolvedValue({
 			id: "approval-1",
@@ -131,6 +155,18 @@ describe("GET /api/approvals/inbox/[id]", () => {
 
 		expect(response.status).toBe(404);
 		expect(eq).toHaveBeenCalledWith("isActive", true);
+		expect(mockState.getApprovalInboxDetail).not.toHaveBeenCalled();
+	});
+
+	it("rejects an active manager when approved membership is absent from the ability", async () => {
+		mockState.getAbility.mockResolvedValue(createEmptyAbility());
+
+		const response = await GET(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(403);
+		expect(mockState.isEligibleManagerForApprovalRequest).not.toHaveBeenCalled();
 		expect(mockState.getApprovalInboxDetail).not.toHaveBeenCalled();
 	});
 
@@ -171,6 +207,11 @@ describe("GET /api/approvals/inbox/[id]", () => {
 			can: vi.fn(() => false),
 			cannot: vi.fn(() => true),
 		});
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "employee",
+		});
 
 		const response = await GET(createRequest(), {
 			params: Promise.resolve({ id: "approval-1" }),
@@ -184,6 +225,11 @@ describe("GET /api/approvals/inbox/[id]", () => {
 		mockState.getAbility.mockResolvedValue({
 			can: vi.fn(() => false),
 			cannot: vi.fn(() => true),
+		});
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "employee",
 		});
 		mockState.findApprovalRequest.mockResolvedValue({
 			id: "approval-1",
@@ -203,11 +249,8 @@ describe("GET /api/approvals/inbox/[id]", () => {
 		expect(mockState.getApprovalInboxDetail).not.toHaveBeenCalled();
 	});
 
-	it("allows an eligible fallback manager with approve permission to read a request assigned to another eligible manager", async () => {
-		mockState.getAbility.mockResolvedValue({
-			can: vi.fn(() => false),
-			cannot: vi.fn((action) => action === "manage"),
-		});
+	it("allows an eligible team-primary manager with no direct reports to read a request", async () => {
+		mockState.getAbility.mockResolvedValue(createManagerAbility());
 		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
 		mockState.findApprovalRequest.mockResolvedValue({
 			id: "approval-1",
@@ -230,10 +273,15 @@ describe("GET /api/approvals/inbox/[id]", () => {
 		});
 	});
 
-	it("returns 403 when an eligible fallback manager lacks approve or manage permission", async () => {
+	it("returns 403 when an ordinary employee is reported as manager-eligible", async () => {
 		mockState.getAbility.mockResolvedValue({
 			can: vi.fn(() => false),
 			cannot: vi.fn(() => true),
+		});
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "employee",
 		});
 		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
 		mockState.findApprovalRequest.mockResolvedValue({

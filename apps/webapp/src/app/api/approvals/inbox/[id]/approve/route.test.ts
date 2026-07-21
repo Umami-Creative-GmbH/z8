@@ -1,7 +1,17 @@
 import { eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AuthorizationError, ConflictError, NotFoundError } from "@/lib/effect/errors";
+import {
+	createEmptyAbility,
+	defineAbilityFor,
+	type PrincipalContext,
+} from "@/lib/authorization/ability";
+import {
+	AuthorizationError,
+	ConflictError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 
 const mockState = vi.hoisted(() => ({
 	headers: vi.fn(),
@@ -43,7 +53,8 @@ vi.mock("@/lib/auth-helpers", () => ({
 }));
 
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
-	isEligibleManagerForApprovalRequest: mockState.isEligibleManagerForApprovalRequest,
+	isEligibleManagerForApprovalRequest:
+		mockState.isEligibleManagerForApprovalRequest,
 }));
 
 vi.mock("@/db", () => ({
@@ -91,6 +102,28 @@ function createRequest(): NextRequest {
 	} as NextRequest;
 }
 
+function createManagerAbility() {
+	return defineAbilityFor({
+		userId: "user-1",
+		isPlatformAdmin: false,
+		activeOrganizationId: "org-1",
+		orgMembership: {
+			organizationId: "org-1",
+			role: "member",
+			status: "active",
+		},
+		employee: {
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "manager",
+			teamId: null,
+		},
+		permissions: { orgWide: null, byTeamId: new Map() },
+		managedEmployeeIds: [],
+		customRoles: [],
+	} satisfies PrincipalContext);
+}
+
 describe("POST /api/approvals/inbox/[id]/approve", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -106,6 +139,7 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		mockState.findEmployee.mockResolvedValue({
 			id: "employee-1",
 			organizationId: "org-1",
+			role: "manager",
 		});
 		mockState.findApprovalRequest.mockResolvedValue({
 			id: "approval-1",
@@ -123,9 +157,7 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 	});
 
 	it("allows an eligible fallback team manager to approve a request assigned to another manager", async () => {
-		mockState.getAbility.mockResolvedValue({
-			cannot: vi.fn((action) => action === "manage"),
-		});
+		mockState.getAbility.mockResolvedValue(createManagerAbility());
 		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
 		mockState.findApprovalRequest.mockResolvedValue({
 			id: "approval-1",
@@ -156,8 +188,27 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 	});
 
+	it("rejects an active manager when approved membership is absent from the ability", async () => {
+		mockState.getAbility.mockResolvedValue(createEmptyAbility());
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(403);
+		expect(
+			mockState.isEligibleManagerForApprovalRequest,
+		).not.toHaveBeenCalled();
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
+	});
+
 	it("returns 403 when an assigned approver lacks approve or manage permission", async () => {
 		mockState.getAbility.mockResolvedValue({ cannot: vi.fn(() => true) });
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "employee",
+		});
 		mockState.findApprovalRequest.mockResolvedValue({
 			id: "approval-1",
 			entityId: "entity-1",
@@ -177,6 +228,11 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 
 	it("returns 403 instead of unsupported type when an assigned approver lacks approval permission", async () => {
 		mockState.getAbility.mockResolvedValue({ cannot: vi.fn(() => true) });
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "employee",
+		});
 		mockState.findApprovalRequest.mockResolvedValue({
 			id: "approval-1",
 			entityId: "entity-1",
@@ -195,8 +251,13 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
-	it("returns 403 when an eligible fallback manager lacks approve or manage permission", async () => {
+	it("returns 403 when an ordinary employee is reported as manager-eligible", async () => {
 		mockState.getAbility.mockResolvedValue({ cannot: vi.fn(() => true) });
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "employee",
+		});
 		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
 		mockState.findApprovalRequest.mockResolvedValue({
 			id: "approval-1",
@@ -216,7 +277,7 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
-	it("returns 403 when a requester manager tries to approve a request assigned to a non-manager policy approver", async () => {
+	it("returns 404 when a requester manager tries to approve a request assigned to a non-manager policy approver", async () => {
 		mockState.getAbility.mockResolvedValue({
 			cannot: vi.fn((action) => action === "manage"),
 		});
@@ -235,7 +296,10 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 			params: Promise.resolve({ id: "approval-1" }),
 		});
 
-		expect(response.status).toBe(403);
+		expect(response.status).toBe(404);
+		await expect(response.json()).resolves.toEqual({
+			error: "Approval not found",
+		});
 		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
@@ -298,7 +362,9 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 
 		expect(response.status).toBe(400);
-		await expect(response.json()).resolves.toEqual({ error: "Unsupported approval type" });
+		await expect(response.json()).resolves.toEqual({
+			error: "Unsupported approval type",
+		});
 		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
@@ -326,7 +392,7 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 	});
 
-	it("returns 403 when a non-manage user approves a request assigned to another employee", async () => {
+	it("returns 404 when a non-manage user approves a request assigned to another employee", async () => {
 		mockState.getAbility.mockResolvedValue({
 			cannot: vi.fn((action) => action === "manage"),
 		});
@@ -343,11 +409,14 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 			params: Promise.resolve({ id: "approval-1" }),
 		});
 
-		expect(response.status).toBe(403);
+		expect(response.status).toBe(404);
+		await expect(response.json()).resolves.toEqual({
+			error: "Approval not found",
+		});
 		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
-	it("returns 403 instead of unsupported type when approval scope does not include the request", async () => {
+	it("returns 404 instead of unsupported type when approval scope does not include the request", async () => {
 		mockState.getAbility.mockResolvedValue({
 			cannot: vi.fn((action) => action === "manage"),
 		});
@@ -366,7 +435,27 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 			params: Promise.resolve({ id: "approval-1" }),
 		});
 
-		expect(response.status).toBe(403);
+		expect(response.status).toBe(404);
+		await expect(response.json()).resolves.toEqual({
+			error: "Approval not found",
+		});
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
+	});
+
+	it("returns the same 404 response when the approval ID is missing", async () => {
+		mockState.getAbility.mockResolvedValue({
+			cannot: vi.fn((action) => action === "manage"),
+		});
+		mockState.findApprovalRequest.mockResolvedValue(null);
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-missing" }),
+		});
+
+		expect(response.status).toBe(404);
+		await expect(response.json()).resolves.toEqual({
+			error: "Approval not found",
+		});
 		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
@@ -448,6 +537,66 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		await expect(response.json()).resolves.toEqual({
 			error: "Absence request not found",
 		});
+	});
+
+	it("returns decision service validation errors as 400 responses", async () => {
+		mockState.approveApprovalInboxItem.mockRejectedValue(
+			new ValidationError({ message: "Invalid approval decision" }),
+		);
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(400);
+		await expect(response.json()).resolves.toEqual({
+			error: "Invalid approval decision",
+		});
+	});
+
+	it.each([
+		{
+			code: "forbidden",
+			error: new AuthorizationError({
+				message: "You are not authorized to decide this request",
+			}),
+			status: 403,
+		},
+		{
+			code: "version_conflict",
+			error: new ConflictError({
+				message: "Approval workflow decision conflicts with the current state",
+				conflictType: "approval_transition",
+			}),
+			status: 409,
+		},
+		{
+			code: "idempotency_mismatch",
+			error: new ConflictError({
+				message: "Approval workflow decision conflicts with the current state",
+				conflictType: "approval_transition",
+			}),
+			status: 409,
+		},
+		{
+			code: "malformed_command",
+			error: new ValidationError({
+				message: "Approval workflow decision is invalid",
+			}),
+			status: 400,
+		},
+	])("returns translated canonical $code errors without a 500", async ({
+		error,
+		status,
+	}) => {
+		mockState.approveApprovalInboxItem.mockRejectedValue(error);
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(status);
+		await expect(response.json()).resolves.toEqual({ error: error.message });
 	});
 
 	it("returns already-resolved approvals as stale conflicts", async () => {

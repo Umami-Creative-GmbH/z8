@@ -14,7 +14,7 @@ import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
 import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { canAccessApprovalInbox, ForbiddenError, toHttpError } from "@/lib/authorization";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -76,8 +76,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 		}
 
 		const canManageApprovals = ability.cannot("manage", "Approval") === false;
-		const canApproveApprovals = ability.cannot("approve", "Approval") === false;
-		if (!canApproveApprovals && !canManageApprovals) {
+		if (!canAccessApprovalInbox(ability, currentEmployee)) {
 			const error = new ForbiddenError("read", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });

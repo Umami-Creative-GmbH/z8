@@ -13,7 +13,7 @@ import { bulkApproveApprovalInboxItems } from "@/lib/approvals/inbox/decision-se
 import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { canAccessApprovalInbox, ForbiddenError, toHttpError } from "@/lib/authorization";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -63,12 +63,6 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 		const canManageApprovals = ability.cannot("manage", "Approval") === false;
-		const canApproveApprovals = ability.cannot("approve", "Approval") === false;
-		if (!canApproveApprovals && !canManageApprovals) {
-			const error = new ForbiddenError("approve", "Approval");
-			const httpError = toHttpError(error);
-			return NextResponse.json(httpError.body, { status: httpError.status });
-		}
 
 		// Get current employee scoped to active organization
 		const currentEmployee = await db.query.employee.findFirst({
@@ -81,6 +75,12 @@ export async function POST(request: NextRequest) {
 
 		if (!currentEmployee) {
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+		}
+
+		if (!canAccessApprovalInbox(ability, currentEmployee)) {
+			const error = new ForbiddenError("approve", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		const eligibleApprovalScopes = canManageApprovals

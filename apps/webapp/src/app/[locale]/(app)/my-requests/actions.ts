@@ -2,8 +2,9 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { cancelAbsenceRequestForEmployee } from "@/app/[locale]/(app)/absences/actions";
+import { cancelAbsenceRequestForExpectedEmployee } from "@/app/[locale]/(app)/absences/cancel-absence-service";
 import { absenceEntry, db } from "@/db";
+import { cancelPendingTimeCorrection } from "@/lib/approvals/server/time-correction-cancellation";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { getSelfServiceRequests } from "@/lib/self-service-requests/get-self-service-requests";
 import type {
@@ -11,7 +12,13 @@ import type {
 	SelfServiceRequestResult,
 } from "@/lib/self-service-requests/types";
 
-export async function getMyRequests(filters?: SelfServiceRequestFilters): Promise<
+const UUID =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const CANCELLATION_ERROR = "Request could not be cancelled.";
+
+export async function getMyRequests(
+	filters?: SelfServiceRequestFilters,
+): Promise<
 	| {
 			success: true;
 			data: SelfServiceRequestResult;
@@ -63,7 +70,7 @@ export async function cancelMyAbsenceRequest(
 		return { success: false, error: "Absence not found" };
 	}
 
-	const result = await cancelAbsenceRequestForEmployee(absenceId, {
+	const result = await cancelAbsenceRequestForExpectedEmployee(absenceId, {
 		id: authContext.employee.id,
 		organizationId: authContext.employee.organizationId,
 	});
@@ -74,4 +81,34 @@ export async function cancelMyAbsenceRequest(
 	}
 
 	return result;
+}
+
+export async function cancelMyTimeCorrectionRequest(
+	workPeriodId: string,
+): Promise<{ success: boolean; error?: string }> {
+	if (!UUID.test(workPeriodId)) {
+		return { success: false, error: CANCELLATION_ERROR };
+	}
+	const authContext = await getAuthContext();
+	const organizationId = authContext?.session.activeOrganizationId;
+	if (
+		!authContext?.employee ||
+		!organizationId ||
+		authContext.employee.organizationId !== organizationId
+	) {
+		return { success: false, error: CANCELLATION_ERROR };
+	}
+	try {
+		await cancelPendingTimeCorrection({
+			organizationId,
+			requesterEmployeeId: authContext.employee.id,
+			requesterUserId: authContext.user.id,
+			workPeriodId,
+		});
+		revalidatePath("/my-requests");
+		revalidatePath("/time-tracking");
+		return { success: true };
+	} catch {
+		return { success: false, error: CANCELLATION_ERROR };
+	}
 }

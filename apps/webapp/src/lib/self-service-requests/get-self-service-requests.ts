@@ -5,9 +5,16 @@ import { db } from "@/db";
 import {
 	absenceEntry,
 	approvalRequest,
+	approvalWorkflow,
+	approvalWorkflowRollout,
 	travelExpenseClaim,
 	travelExpenseDecisionLog,
 } from "@/db/schema";
+import { parseRequesterCancellationMarker } from "@/lib/approvals/domain-adapters/time-correction-cancellation-marker";
+import { normalizeTimeCorrectionWorkflowPayload } from "@/lib/approvals/domain-adapters/time-correction-contract";
+import { classifyTimeApprovalRequest } from "@/lib/approvals/time-request-kind";
+import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
+import { compareInstants, parseInstant } from "@/lib/datetime/temporal-core";
 
 import type {
 	SelfServiceRequestAction,
@@ -40,6 +47,24 @@ interface TimeCorrectionRow {
 	createdAt: Date;
 	approvedAt: Date | null;
 	rejectionReason: string | null;
+	reason: string | null;
+	metadata: unknown;
+}
+
+interface CanonicalTimeCorrectionRow {
+	id: string;
+	organizationId: string;
+	workflowType: string;
+	sourceType: string;
+	sourceId: string;
+	requesterEmployeeId: string | null;
+	status: string;
+	contextSnapshot: unknown;
+	displaySnapshot: unknown;
+	submittedAt: Date;
+	completedAt: Date | null;
+	cancelledAt: Date | null;
+	decisionReason: string | null;
 }
 
 interface AbsenceRow {
@@ -71,7 +96,11 @@ interface TravelExpenseRow {
 	submittedAt: Date | null;
 	decidedAt: Date | null;
 	createdAt: Date;
-	decisionLogs?: Array<{ reason: string | null; comment: string | null; createdAt: Date }>;
+	decisionLogs?: Array<{
+		reason: string | null;
+		comment: string | null;
+		createdAt: Date;
+	}>;
 }
 
 const SOURCE_ERROR_MESSAGES: Record<SelfServiceRequestSourceType, string> = {
@@ -81,6 +110,8 @@ const SOURCE_ERROR_MESSAGES: Record<SelfServiceRequestSourceType, string> = {
 };
 
 const SOURCE_QUERY_LIMIT = 100;
+const UUID =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function getSelfServiceRequests(
 	input: GetSelfServiceRequestsInput,
@@ -108,7 +139,9 @@ async function loadSource(
 	} catch {
 		return {
 			items: [],
-			sourceErrors: [{ sourceType, message: SOURCE_ERROR_MESSAGES[sourceType] }],
+			sourceErrors: [
+				{ sourceType, message: SOURCE_ERROR_MESSAGES[sourceType] },
+			],
 		};
 	}
 }
@@ -116,6 +149,13 @@ async function loadSource(
 async function loadTimeCorrections(
 	input: GetSelfServiceRequestsInput,
 ): Promise<SelfServiceRequestItem[]> {
+	const rollout = await db.query.approvalWorkflowRollout.findFirst({
+		where: and(
+			eq(approvalWorkflowRollout.organizationId, input.organizationId),
+			eq(approvalWorkflowRollout.workflowType, "time_correction"),
+		),
+		columns: { lifecycleMode: true },
+	});
 	const rows = (await db.query.approvalRequest.findMany({
 		where: and(
 			eq(approvalRequest.organizationId, input.organizationId),
@@ -126,24 +166,357 @@ async function loadTimeCorrections(
 		limit: SOURCE_QUERY_LIMIT,
 	})) as TimeCorrectionRow[];
 
-	return rows.map((row) => ({
-		id: `time_correction:${row.id}`,
-		sourceType: "time_correction",
-		sourceId: row.id,
-		organizationId: row.organizationId,
-		employeeId: row.requestedBy,
-		status: row.status,
-		submittedAt: row.createdAt,
-		resolvedAt: row.approvedAt,
-		title: "time_correction",
-		subtitle: "time_entry_correction",
-		decisionReason: row.rejectionReason,
-		availableActions: actionsFor(row.status),
-		sourceHref: "/time-tracking",
-	}));
+	const legacyWorkflowIds = new Set<string>();
+	const legacyItems = rows.flatMap((row) => {
+		if (
+			classifyTimeApprovalRequest({
+				metadata: row.metadata,
+				reason: row.reason,
+			}) !== "time_correction"
+		) {
+			return [];
+		}
+		let metadata: ReturnType<typeof parseLegacyTimeCorrectionMetadata>;
+		try {
+			metadata = parseLegacyTimeCorrectionMetadata(row);
+			if (metadata.workflowId) legacyWorkflowIds.add(metadata.workflowId);
+		} catch {
+			return [];
+		}
+		const status: SelfServiceRequestStatus =
+			metadata.cancellationState === "requester"
+				? "cancelled"
+				: metadata.cancellationState === "invalid"
+					? "rejected"
+					: row.status;
+		const availableActions: SelfServiceRequestAction[] =
+			metadata.cancellationState === "invalid"
+				? ["view"]
+				: actionsFor(status, "time_correction");
+		return [
+			{
+				id: row.id,
+				sourceType: "time_correction" as const,
+				sourceId: row.entityId,
+				organizationId: row.organizationId,
+				employeeId: row.requestedBy,
+				status,
+				submittedAt: row.createdAt,
+				resolvedAt: row.approvedAt,
+				title: "time_correction",
+				subtitle: "time_entry_correction",
+				decisionReason: row.rejectionReason,
+				availableActions,
+				sourceHref: "/time-tracking",
+			},
+		];
+	});
+
+	if (rollout?.lifecycleMode !== "complete") {
+		return legacyItems;
+	}
+
+	const canonicalRows = (await db.query.approvalWorkflow.findMany({
+		where: and(
+			eq(approvalWorkflow.organizationId, input.organizationId),
+			eq(approvalWorkflow.requesterEmployeeId, input.employeeId),
+			eq(approvalWorkflow.workflowType, "time_correction"),
+			eq(approvalWorkflow.sourceType, "time_entry"),
+		),
+		orderBy: [desc(approvalWorkflow.createdAt)],
+		limit: SOURCE_QUERY_LIMIT,
+	})) as CanonicalTimeCorrectionRow[];
+
+	return [
+		...legacyItems,
+		...canonicalRows.flatMap((row) =>
+			legacyWorkflowIds.has(row.id)
+				? []
+				: mapCanonicalTimeCorrection(row, input),
+		),
+	];
 }
 
-async function loadAbsences(input: GetSelfServiceRequestsInput): Promise<SelfServiceRequestItem[]> {
+function parseLegacyTimeCorrectionMetadata(row: TimeCorrectionRow): {
+	workflowId: string | null;
+	cancellationState: "absent" | "requester" | "invalid";
+} {
+	const value = row.metadata;
+	if (!record(value)) throw new Error();
+	const correction = Object.getOwnPropertyDescriptor(value, "timeCorrection");
+	if (!correction?.enumerable || !("value" in correction)) throw new Error();
+	normalizeTimeCorrectionWorkflowPayload({ timeCorrection: correction.value });
+
+	const workflow = Object.getOwnPropertyDescriptor(value, "workflow");
+	let workflowId: string | null = null;
+	if (workflow) {
+		if (
+			!workflow.enumerable ||
+			!("value" in workflow) ||
+			!record(workflow.value)
+		) {
+			throw new Error();
+		}
+		if (
+			Object.keys(workflow.value).length !== 2 ||
+			typeof workflow.value.id !== "string" ||
+			workflow.value.organizationId !== row.organizationId
+		) {
+			throw new Error();
+		}
+		workflowId = workflow.value.id;
+	}
+
+	const marker = Object.getOwnPropertyDescriptor(value, "cancellation");
+	if (!marker) return { workflowId, cancellationState: "absent" };
+	try {
+		if (
+			!marker.enumerable ||
+			!("value" in marker) ||
+			row.status !== "rejected" ||
+			row.rejectionReason !== null ||
+			!(row.approvedAt instanceof Date)
+		) {
+			throw new Error();
+		}
+		const cancellation = parseRequesterCancellationMarker(marker.value);
+		if (
+			cancellation.organizationId !== row.organizationId ||
+			cancellation.requesterEmployeeId !== row.requestedBy ||
+			cancellation.workPeriodId !== row.entityId
+		) {
+			throw new Error();
+		}
+		parseCanonicalTimeCorrectionContext(value);
+		const submission = strictOwnDataRecord(
+			Object.getOwnPropertyDescriptor(value, "submission")?.value,
+			Object.hasOwn(
+				Object.getOwnPropertyDescriptor(value, "submission")?.value ?? {},
+				"submissionId",
+			)
+				? ["key", "submissionId", "resultKind", "originalStatus"]
+				: ["key", "resultKind", "originalStatus"],
+		);
+		if (
+			(cancellation.chainInstanceId === null &&
+				submission.resultKind !== "default_created") ||
+			(cancellation.chainInstanceId !== null &&
+				submission.resultKind !== "chain_created")
+		) {
+			throw new Error();
+		}
+		const approvedAt = instantFromDB(row.approvedAt);
+		if (
+			!approvedAt ||
+			compareInstants(parseInstant(cancellation.cancelledAt), approvedAt) !== 0
+		) {
+			throw new Error();
+		}
+		return { workflowId, cancellationState: "requester" };
+	} catch {
+		return { workflowId, cancellationState: "invalid" };
+	}
+}
+
+function mapCanonicalTimeCorrection(
+	row: CanonicalTimeCorrectionRow,
+	input: GetSelfServiceRequestsInput,
+): SelfServiceRequestItem[] {
+	if (
+		row.organizationId !== input.organizationId ||
+		row.requesterEmployeeId !== input.employeeId ||
+		row.workflowType !== "time_correction" ||
+		row.sourceType !== "time_entry" ||
+		(row.status !== "pending" &&
+			row.status !== "approved" &&
+			row.status !== "rejected" &&
+			row.status !== "cancelled")
+	) {
+		return [];
+	}
+
+	try {
+		const correction = parseCanonicalTimeCorrectionContext(row.contextSnapshot);
+		const display = parseCanonicalTimeCorrectionDisplay(
+			row.displaySnapshot,
+			correction,
+			row.requesterEmployeeId,
+		);
+		const status = row.status as SelfServiceRequestStatus;
+		return [
+			{
+				id: row.id,
+				sourceType: "time_correction",
+				sourceId: row.sourceId,
+				organizationId: row.organizationId,
+				employeeId: row.requesterEmployeeId,
+				status,
+				submittedAt: row.submittedAt,
+				resolvedAt: status === "cancelled" ? row.cancelledAt : row.completedAt,
+				title: display.title,
+				subtitle: display.subtitle,
+				decisionReason: row.decisionReason,
+				availableActions: actionsFor(status, "time_correction"),
+				sourceHref: "/time-tracking",
+			},
+		];
+	} catch {
+		return [];
+	}
+}
+
+function record(value: unknown): value is Record<string, unknown> {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		!Array.isArray(value) &&
+		(Object.getPrototypeOf(value) === Object.prototype ||
+			Object.getPrototypeOf(value) === null)
+	);
+}
+
+function parseCanonicalTimeCorrectionContext(value: unknown) {
+	if (!record(value) || !record(value.submission)) throw new Error();
+	const correction = normalizeTimeCorrectionWorkflowPayload({
+		timeCorrection: value.timeCorrection,
+	}).timeCorrection;
+	const submission = value.submission;
+	const keys = Object.keys(submission);
+	const hasSubmissionId = Object.hasOwn(submission, "submissionId");
+	if (
+		keys.length !== (hasSubmissionId ? 4 : 3) ||
+		!keys.every((key) =>
+			["key", "submissionId", "resultKind", "originalStatus"].includes(key),
+		) ||
+		typeof submission.key !== "string" ||
+		submission.key.length === 0 ||
+		(hasSubmissionId &&
+			(typeof submission.submissionId !== "string" ||
+				!UUID.test(submission.submissionId))) ||
+		(submission.resultKind !== "default_created" &&
+			submission.resultKind !== "chain_created" &&
+			submission.resultKind !== "auto_completed") ||
+		(submission.originalStatus !== "pending" &&
+			submission.originalStatus !== "approved") ||
+		(submission.resultKind === "auto_completed") !==
+			(submission.originalStatus === "approved")
+	) {
+		throw new Error();
+	}
+	return correction;
+}
+
+function parseCanonicalTimeCorrectionDisplay(
+	value: unknown,
+	correction: ReturnType<
+		typeof normalizeTimeCorrectionWorkflowPayload
+	>["timeCorrection"],
+	requesterEmployeeId: string,
+): { title: string; subtitle: string } {
+	const envelope = strictOwnDataRecord(value, ["displayPayload", "searchText"]);
+	const payload = strictOwnDataRecord(envelope.displayPayload, [
+		"requesterEmployeeId",
+		"requesterName",
+		"title",
+		"action",
+		"endpoints",
+	]);
+	const requesterName = safeDisplayString(payload.requesterName, 200, false);
+	const title = safeDisplayString(payload.title, 100, false);
+	safeDisplayString(envelope.searchText, 1000, true);
+	const expectedEndpoints = [
+		...(correction.clockInCorrectionId ? ["Clock in"] : []),
+		...(correction.clockOutCorrectionId ? ["Clock out"] : []),
+	];
+	if (
+		payload.requesterEmployeeId !== requesterEmployeeId ||
+		requesterName.length === 0 ||
+		title !== "Time correction" ||
+		payload.action !== correction.action ||
+		!strictStringArrayEquals(payload.endpoints, expectedEndpoints)
+	) {
+		throw new Error();
+	}
+	return {
+		title,
+		subtitle: `${correction.action} · ${expectedEndpoints.join(", ")}`,
+	};
+}
+
+function strictOwnDataRecord(
+	value: unknown,
+	expectedKeys: readonly string[],
+): Record<string, unknown> {
+	if (!record(value)) throw new Error();
+	const keys = Reflect.ownKeys(value);
+	if (
+		keys.length !== expectedKeys.length ||
+		keys.some((key) => typeof key !== "string" || !expectedKeys.includes(key))
+	) {
+		throw new Error();
+	}
+	const result: Record<string, unknown> = {};
+	for (const key of expectedKeys) {
+		const descriptor = Object.getOwnPropertyDescriptor(value, key);
+		if (!descriptor?.enumerable || !("value" in descriptor)) throw new Error();
+		result[key] = descriptor.value;
+	}
+	return result;
+}
+
+function safeDisplayString(
+	value: unknown,
+	maxLength: number,
+	allowEmpty: boolean,
+): string {
+	if (
+		typeof value !== "string" ||
+		value.length > maxLength ||
+		(!allowEmpty && value.trim().length === 0) ||
+		[...value].some((character) => {
+			const code = character.charCodeAt(0);
+			return code <= 31 || code === 127;
+		})
+	) {
+		throw new Error();
+	}
+	return value;
+}
+
+function strictStringArrayEquals(
+	value: unknown,
+	expected: readonly string[],
+): boolean {
+	if (
+		!Array.isArray(value) ||
+		Object.getPrototypeOf(value) !== Array.prototype ||
+		value.length !== expected.length
+	) {
+		return false;
+	}
+	const ownKeys = Reflect.ownKeys(value);
+	const expectedKeys = [...expected.map((_, index) => String(index)), "length"];
+	if (
+		ownKeys.length !== expectedKeys.length ||
+		ownKeys.some(
+			(key) => typeof key !== "string" || !expectedKeys.includes(key),
+		)
+	) {
+		return false;
+	}
+	return expected.every((item, index) => {
+		const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+		return (
+			descriptor?.enumerable &&
+			"value" in descriptor &&
+			descriptor.value === item
+		);
+	});
+}
+
+async function loadAbsences(
+	input: GetSelfServiceRequestsInput,
+): Promise<SelfServiceRequestItem[]> {
 	const rows = (await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.organizationId, input.organizationId),
@@ -208,7 +581,8 @@ async function loadTravelExpenses(
 				resolvedAt: row.decidedAt,
 				title: "travel_expense",
 				subtitle: travelExpenseSubtitle(row),
-				decisionReason: latestDecisionLog?.reason ?? latestDecisionLog?.comment ?? null,
+				decisionReason:
+					latestDecisionLog?.reason ?? latestDecisionLog?.comment ?? null,
 				availableActions: actionsFor(status),
 				sourceHref: "/travel-expenses",
 			},
@@ -228,12 +602,16 @@ function absenceResolvedAt(row: AbsenceRow): Date | null {
 	return null;
 }
 
-function mapTravelExpenseStatus(status: TravelExpenseRow["status"]): SelfServiceRequestStatus {
+function mapTravelExpenseStatus(
+	status: TravelExpenseRow["status"],
+): SelfServiceRequestStatus {
 	return status === "approved" || status === "rejected" ? status : "pending";
 }
 
 function travelExpenseSubtitle(row: TravelExpenseRow): string {
-	const destination = [row.destinationCity, row.destinationCountry].filter(Boolean).join(", ");
+	const destination = [row.destinationCity, row.destinationCountry]
+		.filter(Boolean)
+		.join(", ");
 	const amount = `${row.calculatedAmount} ${row.calculatedCurrency}`;
 
 	return destination ? `${destination} · ${amount}` : amount;
@@ -247,21 +625,33 @@ function actionsFor(
 		return ["fix", "view"];
 	}
 
-	if (status === "pending" && sourceType === "absence") {
+	if (
+		status === "pending" &&
+		(sourceType === "absence" || sourceType === "time_correction")
+	) {
 		return ["cancel", "view"];
 	}
 
 	return ["view"];
 }
 
-function countItems(items: SelfServiceRequestItem[], now: Date): SelfServiceRequestCounts {
+function countItems(
+	items: SelfServiceRequestItem[],
+	now: Date,
+): SelfServiceRequestCounts {
 	const recentCutoff = DateTime.fromJSDate(now).minus({ days: 30 });
 
 	return {
 		pending: items.filter((item) => item.status === "pending").length,
-		requiredFixes: items.filter((item) => item.status === "rejected").length,
+		requiredFixes: items.filter(
+			(item) =>
+				item.status === "rejected" && item.availableActions.includes("fix"),
+		).length,
 		recentDecisions: items.filter((item) => {
-			if ((item.status !== "approved" && item.status !== "rejected") || item.resolvedAt === null) {
+			if (
+				(item.status !== "approved" && item.status !== "rejected") ||
+				item.resolvedAt === null
+			) {
 				return false;
 			}
 
@@ -278,7 +668,11 @@ function applyFilters(
 	const search = filters?.search?.trim().toLowerCase();
 
 	return items.filter((item) => {
-		if (filters?.status && filters.status !== "all" && item.status !== filters.status) {
+		if (
+			filters?.status &&
+			filters.status !== "all" &&
+			item.status !== filters.status
+		) {
 			return false;
 		}
 
@@ -300,7 +694,10 @@ function applyFilters(
 	});
 }
 
-function compareItems(a: SelfServiceRequestItem, b: SelfServiceRequestItem): number {
+function compareItems(
+	a: SelfServiceRequestItem,
+	b: SelfServiceRequestItem,
+): number {
 	const statusDelta = statusRank(a.status) - statusRank(b.status);
 
 	if (statusDelta !== 0) {
