@@ -21,7 +21,7 @@ export async function requestShiftSwap(
 		const { currentEmployee } = yield* _(requireCurrentEmployee());
 
 		return yield* _(
-			shiftRequestService.requestSwap({
+			shiftRequestService.requestSwap(currentEmployee.organizationId, {
 				shiftId: input.shiftId,
 				requesterId: currentEmployee.id,
 				targetEmployeeId: input.targetEmployeeId,
@@ -44,7 +44,7 @@ export async function requestShiftPickup(
 		const { currentEmployee } = yield* _(requireCurrentEmployee());
 
 		return yield* _(
-			shiftRequestService.requestPickup({
+			shiftRequestService.requestPickup(currentEmployee.organizationId, {
 				shiftId,
 				requesterId: currentEmployee.id,
 				notes,
@@ -60,9 +60,21 @@ export async function approveShiftRequest(
 ): Promise<SchedulingActionResult<ShiftRequest>> {
 	const effect = Effect.gen(function* (_) {
 		const shiftRequestService = yield* _(ShiftRequestService);
-		const { currentEmployee } = yield* _(requireCurrentEmployee());
+		const { currentEmployee } = yield* _(
+			requireManagerEmployee({
+				resource: "shiftRequest",
+				action: "approve",
+				message: "Only managers and admins can approve shift requests",
+			}),
+		);
 
-		return yield* _(shiftRequestService.approveRequest(requestId, currentEmployee.id));
+		return yield* _(
+			shiftRequestService.approveRequest(
+				currentEmployee.organizationId,
+				requestId,
+				currentEmployee.id,
+			),
+		);
 	});
 
 	return runSchedulingAction("approveShiftRequest", effect);
@@ -74,20 +86,43 @@ export async function rejectShiftRequest(
 ): Promise<SchedulingActionResult<ShiftRequest>> {
 	const effect = Effect.gen(function* (_) {
 		const shiftRequestService = yield* _(ShiftRequestService);
-		const { currentEmployee } = yield* _(requireCurrentEmployee());
+		const { currentEmployee } = yield* _(
+			requireManagerEmployee({
+				resource: "shiftRequest",
+				action: "reject",
+				message: "Only managers and admins can reject shift requests",
+			}),
+		);
 
-		return yield* _(shiftRequestService.rejectRequest(requestId, currentEmployee.id, reason));
+		return yield* _(
+			shiftRequestService.rejectRequest(
+				currentEmployee.organizationId,
+				requestId,
+				currentEmployee.id,
+				reason,
+			),
+		);
 	});
 
 	return runSchedulingAction("rejectShiftRequest", effect);
 }
 
-export async function cancelShiftRequest(requestId: string): Promise<SchedulingActionResult<void>> {
+export async function cancelShiftRequest(
+	requestId: string,
+): Promise<SchedulingActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
 		const shiftRequestService = yield* _(ShiftRequestService);
-		const { session } = yield* _(requireCurrentEmployee("getCurrentEmployeeForCancelShiftRequest"));
+		const { currentEmployee } = yield* _(
+			requireCurrentEmployee("getCurrentEmployeeForCancelShiftRequest"),
+		);
 
-		yield* _(shiftRequestService.cancelRequest(requestId, session.user.id));
+		yield* _(
+			shiftRequestService.cancelRequest(
+				currentEmployee.organizationId,
+				requestId,
+				currentEmployee.id,
+			),
+		);
 	});
 
 	return runSchedulingAction("cancelShiftRequest", effect);
@@ -106,7 +141,12 @@ export async function getPendingShiftRequests(): Promise<
 			}),
 		);
 
-		return yield* _(shiftRequestService.getPendingRequests(currentEmployee.id));
+		return yield* _(
+			shiftRequestService.getPendingRequests(
+				currentEmployee.organizationId,
+				currentEmployee.id,
+			),
+		);
 	});
 
 	return runSchedulingAction("getPendingShiftRequests", effect);
