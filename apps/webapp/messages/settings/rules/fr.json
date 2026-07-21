@@ -87,6 +87,13 @@
       "addStage": "Ajouter une étape",
       "approvalType": {
         "absenceRequests": "Demandes d'absence",
+        "absence": "Absence",
+        "complianceException": "Exception de conformité",
+        "manualTimeSubmission": "Saisie manuelle du temps",
+        "policyClockOut": "Pointage de sortie selon la politique",
+        "shiftRequest": "Demande de quart",
+        "timeCorrection": "Correction de temps",
+        "travelExpense": "Frais de déplacement",
         "timeEntryChanges": "Modifications des saisies de temps",
         "travelExpenses": "Frais de déplacement"
       },
@@ -139,6 +146,21 @@
       "toast": {
         "created": "Politique d'approbation créée",
         "saveFailed": "La politique d'approbation n'a pas pu être enregistrée."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Envoyez la demande au responsable par défaut lorsque cette étape ne peut pas déterminer d'approbateur.",
+          "label": "Responsable par défaut"
+        },
+        "fail": {
+          "description": "Rejetez la demande lorsque cette étape ne peut pas déterminer d'approbateur.",
+          "label": "Rejeter la demande"
+        },
+        "label": "Comportement de secours",
+        "organizationAdmin": {
+          "description": "Envoyez la demande à un administrateur de l'organisation lorsque cette étape ne peut pas déterminer d'approbateur.",
+          "label": "Administrateur de l'organisation"
+        }
       },
       "validation": {
         "activePolicyRequiresStage": "Les politiques actives nécessitent au moins une étape d'approbation.",

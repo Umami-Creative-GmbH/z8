@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type {
 	ApprovalPolicyApproverType,
+	ApprovalPolicyFallbackBehavior,
 	ApprovalPolicyFormValues,
 } from "./approval-policy-dialog-utils";
+import { fallbackBehaviorOptions } from "./approval-policy-dialog-utils";
 
 const approverTypeOptions = [
 	{ value: "direct_manager" },
@@ -32,16 +34,70 @@ export function ApprovalPolicyStagesField({
 	onAddStage,
 	t,
 }: ApprovalPolicyStagesFieldProps) {
-	function approverTypeLabel(value: (typeof approverTypeOptions)[number]["value"]) {
+	function approverTypeLabel(
+		value: (typeof approverTypeOptions)[number]["value"],
+	) {
 		switch (value) {
 			case "direct_manager":
-				return t("settings.approvalPolicies.approverType.directManager", "Direct manager");
+				return t(
+					"settings.approvalPolicies.approverType.directManager",
+					"Direct manager",
+				);
 			case "manager_manager":
-				return t("settings.approvalPolicies.approverType.managerManager", "Manager's manager");
+				return t(
+					"settings.approvalPolicies.approverType.managerManager",
+					"Manager's manager",
+				);
 			case "org_admin":
-				return t("settings.approvalPolicies.approverType.organizationAdmin", "Organization admin");
+				return t(
+					"settings.approvalPolicies.approverType.organizationAdmin",
+					"Organization admin",
+				);
 			case "specific_employee":
-				return t("settings.approvalPolicies.approverType.specificEmployee", "Specific employee");
+				return t(
+					"settings.approvalPolicies.approverType.specificEmployee",
+					"Specific employee",
+				);
+		}
+	}
+
+	function fallbackBehaviorLabel(value: ApprovalPolicyFallbackBehavior) {
+		switch (value) {
+			case "fail":
+				return t(
+					"settings.approvalPolicies.fallbackBehavior.fail.label",
+					"Fail request",
+				);
+			case "default_manager":
+				return t(
+					"settings.approvalPolicies.fallbackBehavior.defaultManager.label",
+					"Default manager",
+				);
+			case "organization_admin":
+				return t(
+					"settings.approvalPolicies.fallbackBehavior.organizationAdmin.label",
+					"Organization admin",
+				);
+		}
+	}
+
+	function fallbackBehaviorDescription(value: ApprovalPolicyFallbackBehavior) {
+		switch (value) {
+			case "fail":
+				return t(
+					"settings.approvalPolicies.fallbackBehavior.fail.description",
+					"Reject the request when this stage cannot resolve an approver.",
+				);
+			case "default_manager":
+				return t(
+					"settings.approvalPolicies.fallbackBehavior.defaultManager.description",
+					"Send the request to the default manager when this stage cannot resolve an approver.",
+				);
+			case "organization_admin":
+				return t(
+					"settings.approvalPolicies.fallbackBehavior.organizationAdmin.description",
+					"Send the request to an organization admin when this stage cannot resolve an approver.",
+				);
 		}
 	}
 
@@ -66,7 +122,10 @@ export function ApprovalPolicyStagesField({
 			</div>
 			{stages.length === 0 ? (
 				<div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-					{t("settings.approvalPolicies.noStages", "No approval stages configured yet.")}
+					{t(
+						"settings.approvalPolicies.noStages",
+						"No approval stages configured yet.",
+					)}
 				</div>
 			) : (
 				<div className="space-y-3">
@@ -74,16 +133,27 @@ export function ApprovalPolicyStagesField({
 						<div key={stage.localId} className="rounded-lg border p-4">
 							<div className="mb-3 flex items-center justify-between gap-3">
 								<h4 className="text-sm font-medium">
-									{t("settings.approvalPolicies.stageNumber", "Stage {number}", {
-										number: index + 1,
-									})}
+									{t(
+										"settings.approvalPolicies.stageNumber",
+										"Stage {number}",
+										{
+											number: index + 1,
+										},
+									)}
 								</h4>
 								<Button
 									type="button"
 									variant="ghost"
 									size="icon"
-									onClick={() => onChange(stages.filter((item) => item.localId !== stage.localId))}
-									aria-label={t("settings.approvalPolicies.removeStage", "Remove stage")}
+									onClick={() =>
+										onChange(
+											stages.filter((item) => item.localId !== stage.localId),
+										)
+									}
+									aria-label={t(
+										"settings.approvalPolicies.removeStage",
+										"Remove stage",
+									)}
 								>
 									<IconTrash className="size-4" aria-hidden="true" />
 								</Button>
@@ -115,7 +185,10 @@ export function ApprovalPolicyStagesField({
 									</Label>
 									<select
 										id={`approval-stage-approver-${stage.localId}`}
-										aria-label={t("settings.approvalPolicies.approver", "Approver")}
+										aria-label={t(
+											"settings.approvalPolicies.approver",
+											"Approver",
+										)}
 										name={`approval-stage-approver-${index + 1}`}
 										className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
 										value={stage.approverType}
@@ -125,7 +198,8 @@ export function ApprovalPolicyStagesField({
 													item.localId === stage.localId
 														? {
 																...item,
-																approverType: event.target.value as ApprovalPolicyApproverType,
+																approverType: event.target
+																	.value as ApprovalPolicyApproverType,
 																approverEmployeeId:
 																	event.target.value === "specific_employee"
 																		? item.approverEmployeeId
@@ -143,10 +217,57 @@ export function ApprovalPolicyStagesField({
 										))}
 									</select>
 								</div>
+								<div className="grid gap-2 sm:col-span-2">
+									<Label htmlFor={`approval-stage-fallback-${stage.localId}`}>
+										{t(
+											"settings.approvalPolicies.fallbackBehavior.label",
+											"Fallback behavior",
+										)}
+									</Label>
+									<select
+										id={`approval-stage-fallback-${stage.localId}`}
+										aria-label={t(
+											"settings.approvalPolicies.fallbackBehavior.label",
+											"Fallback behavior",
+										)}
+										aria-describedby={`approval-stage-fallback-description-${stage.localId}`}
+										name={`approval-stage-fallback-${index + 1}`}
+										className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+										value={stage.fallbackBehavior}
+										onChange={(event) =>
+											onChange(
+												stages.map((item) =>
+													item.localId === stage.localId
+														? {
+																...item,
+																fallbackBehavior: event.target
+																	.value as ApprovalPolicyFallbackBehavior,
+															}
+														: item,
+												),
+											)
+										}
+									>
+										{fallbackBehaviorOptions.map((option) => (
+											<option key={option.value} value={option.value}>
+												{fallbackBehaviorLabel(option.value)}
+											</option>
+										))}
+									</select>
+									<p
+										id={`approval-stage-fallback-description-${stage.localId}`}
+										className="text-sm text-muted-foreground"
+									>
+										{fallbackBehaviorDescription(stage.fallbackBehavior)}
+									</p>
+								</div>
 								{stage.approverType === "specific_employee" ? (
 									<div className="grid gap-2 sm:col-span-2">
 										<Label htmlFor={`approval-stage-employee-${stage.localId}`}>
-											{t("settings.approvalPolicies.approverEmployeeId", "Approver Employee ID")}
+											{t(
+												"settings.approvalPolicies.approverEmployeeId",
+												"Approver Employee ID",
+											)}
 										</Label>
 										<Input
 											id={`approval-stage-employee-${stage.localId}`}
@@ -157,7 +278,10 @@ export function ApprovalPolicyStagesField({
 												onChange(
 													stages.map((item) =>
 														item.localId === stage.localId
-															? { ...item, approverEmployeeId: event.target.value }
+															? {
+																	...item,
+																	approverEmployeeId: event.target.value,
+																}
 															: item,
 													),
 												)

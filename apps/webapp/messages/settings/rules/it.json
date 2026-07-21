@@ -87,6 +87,13 @@
       "addStage": "Aggiungi fase",
       "approvalType": {
         "absenceRequests": "Richieste di assenza",
+        "absence": "Assenza",
+        "complianceException": "Eccezione di conformità",
+        "manualTimeSubmission": "Inserimento manuale delle ore",
+        "policyClockOut": "Uscita con timbratura secondo la policy",
+        "shiftRequest": "Richiesta di turno",
+        "timeCorrection": "Correzione orario",
+        "travelExpense": "Spesa di viaggio",
         "timeEntryChanges": "Modifiche alle registrazioni orarie",
         "travelExpenses": "Spese di viaggio"
       },
@@ -139,6 +146,21 @@
       "toast": {
         "created": "Politica di approvazione creata",
         "saveFailed": "Impossibile salvare la politica di approvazione."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Invia la richiesta al responsabile predefinito quando questa fase non riesce a individuare un approvatore.",
+          "label": "Responsabile predefinito"
+        },
+        "fail": {
+          "description": "Rifiuta la richiesta quando questa fase non riesce a individuare un approvatore.",
+          "label": "Rifiuta richiesta"
+        },
+        "label": "Comportamento alternativo",
+        "organizationAdmin": {
+          "description": "Invia la richiesta a un amministratore dell'organizzazione quando questa fase non riesce a individuare un approvatore.",
+          "label": "Amministratore dell'organizzazione"
+        }
       },
       "validation": {
         "activePolicyRequiresStage": "Le politiche attive richiedono almeno una fase di approvazione.",

@@ -87,6 +87,13 @@
       "addStage": "Stufe hinzufügen",
       "approvalType": {
         "absenceRequests": "Abwesenheitsanträge",
+        "absence": "Abwesenheit",
+        "complianceException": "Compliance-Ausnahme",
+        "manualTimeSubmission": "Manuelle Zeiterfassung",
+        "policyClockOut": "Ausstempeln gemäß Richtlinie",
+        "shiftRequest": "Schichtanfrage",
+        "timeCorrection": "Zeitkorrektur",
+        "travelExpense": "Reisekosten",
         "timeEntryChanges": "Änderungen der Zeiterfassung",
         "travelExpenses": "Reisekosten"
       },
@@ -139,6 +146,21 @@
       "toast": {
         "created": "Genehmigungsrichtlinie erstellt",
         "saveFailed": "Genehmigungsrichtlinie konnte nicht gespeichert werden."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Senden Sie die Anfrage an den Standardvorgesetzten, wenn in dieser Stufe kein Genehmiger ermittelt werden kann.",
+          "label": "Standardvorgesetzter"
+        },
+        "fail": {
+          "description": "Lehnen Sie die Anfrage ab, wenn in dieser Stufe kein Genehmiger ermittelt werden kann.",
+          "label": "Anfrage ablehnen"
+        },
+        "label": "Fallback-Verhalten",
+        "organizationAdmin": {
+          "description": "Senden Sie die Anfrage an einen Organisationsadministrator, wenn in dieser Stufe kein Genehmiger ermittelt werden kann.",
+          "label": "Organisationsadministrator"
+        }
       },
       "validation": {
         "activePolicyRequiresStage": "Aktive Richtlinien erfordern mindestens eine Genehmigungsstufe.",

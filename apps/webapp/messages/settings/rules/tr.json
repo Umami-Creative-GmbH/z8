@@ -87,6 +87,13 @@
       "addStage": "Aşama ekle",
       "approvalType": {
         "absenceRequests": "İzin talepleri",
+        "absence": "Devamsızlık",
+        "complianceException": "Uyumluluk istisnası",
+        "manualTimeSubmission": "Manuel süre gönderimi",
+        "policyClockOut": "Politikaya göre çıkış kaydı",
+        "shiftRequest": "Vardiya talebi",
+        "timeCorrection": "Süre düzeltmesi",
+        "travelExpense": "Seyahat gideri",
         "timeEntryChanges": "Zaman çizelgesi değişiklikleri",
         "travelExpenses": "Seyahat masrafları"
       },
@@ -139,6 +146,21 @@
       "toast": {
         "created": "Onay politikası oluşturuldu",
         "saveFailed": "Onay politikası kaydedilemedi."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi varsayılan yöneticiye gönderin.",
+          "label": "Varsayılan yönetici"
+        },
+        "fail": {
+          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi reddedin.",
+          "label": "Talebi reddet"
+        },
+        "label": "Alternatif davranış",
+        "organizationAdmin": {
+          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi bir kuruluş yöneticisine gönderin.",
+          "label": "Kuruluş yöneticisi"
+        }
       },
       "validation": {
         "activePolicyRequiresStage": "Aktif politikalar en az bir onay aşaması gerektirir.",

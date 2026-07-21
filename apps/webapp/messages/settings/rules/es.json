@@ -87,6 +87,13 @@
       "addStage": "Añadir etapa",
       "approvalType": {
         "absenceRequests": "Solicitudes de ausencia",
+        "absence": "Ausencia",
+        "complianceException": "Excepción de cumplimiento",
+        "manualTimeSubmission": "Envío manual de tiempo",
+        "policyClockOut": "Salida de reloj según la política",
+        "shiftRequest": "Solicitud de turno",
+        "timeCorrection": "Corrección de tiempo",
+        "travelExpense": "Gasto de viaje",
         "timeEntryChanges": "Cambios en el registro de tiempo",
         "travelExpenses": "Gastos de viaje"
       },
@@ -139,6 +146,21 @@
       "toast": {
         "created": "Política de aprobación creada",
         "saveFailed": "No se pudo guardar la política de aprobación."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Envíe la solicitud al gerente predeterminado cuando esta etapa no pueda resolver un aprobador.",
+          "label": "Gerente predeterminado"
+        },
+        "fail": {
+          "description": "Rechace la solicitud cuando esta etapa no pueda resolver un aprobador.",
+          "label": "Rechazar solicitud"
+        },
+        "label": "Comportamiento alternativo",
+        "organizationAdmin": {
+          "description": "Envíe la solicitud a un administrador de la organización cuando esta etapa no pueda resolver un aprobador.",
+          "label": "Administrador de la organización"
+        }
       },
       "validation": {
         "activePolicyRequiresStage": "Las políticas activas requieren al menos una etapa de aprobación.",
