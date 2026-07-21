@@ -1,9 +1,21 @@
 import "server-only";
 
 import { faker } from "@faker-js/faker";
-import { and, eq, inArray, isNotNull } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	getTableColumns,
+	inArray,
+	isNotNull,
+	isNull,
+	notInArray,
+} from "drizzle-orm";
+import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
+import { member } from "@/db/auth-schema";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -24,7 +36,9 @@ import {
 	shiftTemplate,
 	subareaEmployee,
 	team,
+	teamMembership,
 	timeEntry,
+	timeRecord,
 	workCategory,
 	workCategorySet,
 	workCategorySetAssignment,
@@ -32,9 +46,69 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { ensureDefaultAbsenceCategoriesForOrganization } from "@/lib/absences/default-absence-categories";
+import { deriveTimeCorrectionSubmissionKey } from "@/lib/approvals/domain-adapters/time-correction-contract";
+import {
+	deleteCancelledTimeCorrectionsInTransaction,
+	executeTimeCorrectionSubmissionInTransaction,
+	finalizeTimeCorrectionTerminalInTransaction,
+	insertTimeCorrectionSourceEntry,
+} from "@/lib/approvals/server/time-correction-approvals";
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import { deriveTimeCorrectionRowId } from "@/lib/approvals/workflow/identity";
+import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
+import {
+	compareInstants,
+	dateFromInstant,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
+import { createLogger } from "@/lib/logger";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
-import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
+import {
+	instantFromTimeCorrectionBoundary,
+	validateTimeCorrectionTimezoneEvidence,
+} from "@/lib/time-tracking/time-correction-temporal";
+import {
+	resolveFallbackTimezoneCapture,
+	type TimeEntryTimezoneCapture,
+} from "@/lib/time-tracking/timezone-capture";
+
+const demoLogger = createLogger("demo-data");
+
+class DemoCorrectionAutoCompletedError extends Error {}
+class DemoCorrectionSourceChangedError extends Error {}
+
+const DEMO_CORRECTION_TIMEZONE_SOURCES = new Set<
+	TimeEntryTimezoneCapture["timezoneSource"]
+>([
+	"browser",
+	"user_setting",
+	"manager_target_user_setting",
+	"historical_inference",
+	"backfill",
+]);
+
+function sameDemoInstant(left: Date | null, right: Date | null): boolean {
+	if (left === null || right === null) return left === right;
+	try {
+		return (
+			compareInstants(
+				instantFromTimeCorrectionBoundary(left),
+				instantFromTimeCorrectionBoundary(right),
+			) === 0
+		);
+	} catch {
+		return false;
+	}
+}
+
+function validDemoTimezoneSource(
+	value: string,
+): value is TimeEntryTimezoneCapture["timezoneSource"] {
+	return DEMO_CORRECTION_TIMEZONE_SOURCES.has(
+		value as TimeEntryTimezoneCapture["timezoneSource"],
+	);
+}
 
 function demoTimeEntryTimezoneCapture(timestamp: Date) {
 	return resolveFallbackTimezoneCapture({
@@ -59,7 +133,8 @@ function generateWorkDescription(): string {
 		() => `Email correspondence with ${faker.person.fullName()}`,
 		() => "Team standup and planning",
 		() => `Reviewing ${faker.commerce.productName()} requirements`,
-		() => `Testing ${faker.commerce.productAdjective().toLowerCase()} functionality`,
+		() =>
+			`Testing ${faker.commerce.productAdjective().toLowerCase()} functionality`,
 		() => "Database optimization work",
 		() => `Client call: ${faker.company.name()}`,
 		() => "Infrastructure monitoring",
@@ -98,7 +173,8 @@ function generateEndOfDayDescription(): string {
 		() => "Preparing tomorrow's priorities",
 		() => `Completed ${faker.hacker.verb()} tasks`,
 		() => "Final code review and commits",
-		() => `Finished ${faker.commerce.productAdjective().toLowerCase()} feature work`,
+		() =>
+			`Finished ${faker.commerce.productAdjective().toLowerCase()} feature work`,
 	];
 	return faker.helpers.arrayElement(eodTasks)();
 }
@@ -201,7 +277,8 @@ function randomTimeBetween(
 	maxMinute = 59,
 ): number {
 	const hour = Math.floor(Math.random() * (maxHour - minHour + 1)) + minHour;
-	const minute = Math.floor(Math.random() * (maxMinute - minMinute + 1)) + minMinute;
+	const minute =
+		Math.floor(Math.random() * (maxMinute - minMinute + 1)) + minMinute;
 	return hour * 60 + minute;
 }
 
@@ -256,8 +333,12 @@ export async function generateDemoTimeEntries(
 	let workPeriodsCreated = 0;
 
 	// Convert date range to Luxon DateTime in UTC
-	const startDT = DateTime.fromJSDate(options.dateRange.start, { zone: "utc" }).startOf("day");
-	const endDT = DateTime.fromJSDate(options.dateRange.end, { zone: "utc" }).endOf("day");
+	const startDT = DateTime.fromJSDate(options.dateRange.start, {
+		zone: "utc",
+	}).startOf("day");
+	const endDT = DateTime.fromJSDate(options.dateRange.end, {
+		zone: "utc",
+	}).endOf("day");
 
 	// Iterate through each day in the date range
 	let currentDT = startDT;
@@ -289,13 +370,21 @@ export async function generateDemoTimeEntries(
 			const morningStartMinutes = randomTimeBetween(7, 9, 30, 30); // 7:30-9:30
 			const morningStartHour = Math.floor(morningStartMinutes / 60);
 			const morningStartMin = morningStartMinutes % 60;
-			const morningClockInDT = setTimeOnDT(currentDT, morningStartHour, morningStartMin);
+			const morningClockInDT = setTimeOnDT(
+				currentDT,
+				morningStartHour,
+				morningStartMin,
+			);
 			const morningClockIn = dateToDB(morningClockInDT)!;
 
 			const lunchStartMinutes = randomTimeBetween(12, 13, 0, 0); // 12:00-13:00
 			const lunchStartHour = Math.floor(lunchStartMinutes / 60);
 			const lunchStartMin = lunchStartMinutes % 60;
-			const morningClockOutDT = setTimeOnDT(currentDT, lunchStartHour, lunchStartMin);
+			const morningClockOutDT = setTimeOnDT(
+				currentDT,
+				lunchStartHour,
+				lunchStartMin,
+			);
 			const morningClockOut = dateToDB(morningClockOutDT)!;
 
 			// Create morning clock in
@@ -372,7 +461,10 @@ export async function generateDemoTimeEntries(
 
 			// Lunch break: 30-60 minutes
 			const lunchDuration = Math.floor(Math.random() * 31) + 30; // 30-60 minutes
-			const afternoonClockInDT = addMinutesToDT(morningClockOutDT, lunchDuration);
+			const afternoonClockInDT = addMinutesToDT(
+				morningClockOutDT,
+				lunchDuration,
+			);
 			const afternoonClockIn = dateToDB(afternoonClockInDT)!;
 
 			// Create afternoon clock in
@@ -411,7 +503,11 @@ export async function generateDemoTimeEntries(
 				const breakStartMinutes = randomTimeBetween(15, 15, 0, 30);
 				const breakStartHour = Math.floor(breakStartMinutes / 60);
 				const breakStartMin = breakStartMinutes % 60;
-				const breakStartDT = setTimeOnDT(currentDT, breakStartHour, breakStartMin);
+				const breakStartDT = setTimeOnDT(
+					currentDT,
+					breakStartHour,
+					breakStartMin,
+				);
 				const breakStart = dateToDB(breakStartDT)!;
 
 				// Clock out for break
@@ -524,7 +620,9 @@ export async function generateDemoTimeEntries(
 				timeEntriesCreated++;
 
 				// Create final afternoon work period
-				const finalDuration = Math.round(finalClockOutDT.diff(breakEndDT, "minutes").minutes);
+				const finalDuration = Math.round(
+					finalClockOutDT.diff(breakEndDT, "minutes").minutes,
+				);
 				await db.insert(workPeriod).values({
 					employeeId: emp.id,
 					organizationId: options.organizationId,
@@ -730,7 +828,8 @@ export async function generateDemoPendingAbsenceApprovals(
 		),
 	});
 
-	const category = categories.find((c) => c.type === "vacation") ?? categories[0];
+	const category =
+		categories.find((c) => c.type === "vacation") ?? categories[0];
 
 	if (!category) {
 		return { pendingAbsenceApprovalsCreated: 0 };
@@ -752,7 +851,8 @@ export async function generateDemoPendingAbsenceApprovals(
 				employeeIdSet.has(assignment.managerId),
 		);
 		const approverId =
-			assignedManager?.managerId ?? employees.find((emp) => emp.id !== requester.id)?.id;
+			assignedManager?.managerId ??
+			employees.find((emp) => emp.id !== requester.id)?.id;
 		const approver = employees.find((emp) => emp.id === approverId);
 
 		if (!approverId || !approver) {
@@ -808,26 +908,16 @@ export async function generateDemoPendingAbsenceApprovals(
 export async function generateDemoPendingTimeCorrectionApprovals(
 	options: DemoDataOptions,
 ): Promise<{ pendingTimeCorrectionApprovalsCreated: number }> {
-	const employees = await db.query.employee.findMany({
-		where: options.employeeIds?.length
-			? and(
-					eq(employee.organizationId, options.organizationId),
-					inArray(employee.id, options.employeeIds),
-				)
-			: eq(employee.organizationId, options.organizationId),
-	});
-
-	if (employees.length < 2) {
-		return { pendingTimeCorrectionApprovalsCreated: 0 };
-	}
-
-	const employeeIds = employees.map((emp) => emp.id);
 	const periods = await db.query.workPeriod.findMany({
 		where: and(
 			eq(workPeriod.organizationId, options.organizationId),
 			eq(workPeriod.isActive, false),
-			inArray(workPeriod.employeeId, employeeIds),
+			isNotNull(workPeriod.canonicalRecordId),
+			...(options.employeeIds?.length
+				? [inArray(workPeriod.employeeId, options.employeeIds)]
+				: []),
 		),
+		orderBy: (period, { asc }) => [asc(period.startTime), asc(period.id)],
 		limit: 20,
 	});
 
@@ -835,20 +925,106 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 		return { pendingTimeCorrectionApprovalsCreated: 0 };
 	}
 
-	const periodIds = periods.map((period) => period.id);
-	const existingApprovals = await db.query.approvalRequest.findMany({
+	const requesterIds = [...new Set(periods.map((period) => period.employeeId))];
+	const managerAssignmentLimit = requesterIds.length * 2;
+	const managerAssignments = await db.query.employeeManagers.findMany({
+		where: inArray(employeeManagers.employeeId, requesterIds),
+		orderBy: (assignment, { asc }) => [
+			asc(assignment.employeeId),
+			asc(assignment.managerId),
+		],
+		limit: managerAssignmentLimit + 1,
+	});
+	if (managerAssignments.length > managerAssignmentLimit) {
+		return { pendingTimeCorrectionApprovalsCreated: 0 };
+	}
+	const managerAssignmentsByRequester = new Map<
+		string,
+		typeof managerAssignments
+	>();
+	for (const assignment of managerAssignments) {
+		const assignments =
+			managerAssignmentsByRequester.get(assignment.employeeId) ?? [];
+		assignments.push(assignment);
+		managerAssignmentsByRequester.set(assignment.employeeId, assignments);
+	}
+	const candidateEmployeeIds = [
+		...new Set([
+			...requesterIds,
+			...managerAssignments.map((assignment) => assignment.managerId),
+		]),
+	];
+	const employees = await db.query.employee.findMany({
 		where: and(
-			eq(approvalRequest.organizationId, options.organizationId),
-			eq(approvalRequest.entityType, "time_entry"),
-			eq(approvalRequest.status, "pending"),
-			inArray(approvalRequest.entityId, periodIds),
+			eq(employee.organizationId, options.organizationId),
+			eq(employee.isActive, true),
+			inArray(employee.id, candidateEmployeeIds),
 		),
 	});
-	const existingApprovalPeriodIds = new Set(existingApprovals.map((approval) => approval.entityId));
-	const employeeIdSet = new Set(employeeIds);
-	const employeesById = new Map(employees.map((emp) => [emp.id, emp]));
-	const managerAssignments = await db.query.employeeManagers.findMany({
-		where: inArray(employeeManagers.employeeId, employeeIds),
+	const needsFallback = requesterIds.some(
+		(requesterId) =>
+			(managerAssignmentsByRequester.get(requesterId)?.length ?? 0) === 0,
+	);
+	const [fallbackEmployee] = needsFallback
+		? await db
+				.select(getTableColumns(employee))
+				.from(employee)
+				.innerJoin(
+					member,
+					and(
+						eq(member.userId, employee.userId),
+						eq(member.organizationId, employee.organizationId),
+					),
+				)
+				.where(
+					and(
+						eq(employee.organizationId, options.organizationId),
+						eq(employee.isActive, true),
+						notInArray(employee.id, requesterIds),
+						eq(member.organizationId, options.organizationId),
+						eq(member.status, "approved"),
+					),
+				)
+				.orderBy(asc(employee.id))
+				.limit(1)
+		: [];
+	const employeeIdSet = new Set(employees.map((candidate) => candidate.id));
+	const employeesById = new Map(
+		employees.map((candidate) => [candidate.id, candidate]),
+	);
+	if (fallbackEmployee) {
+		employeeIdSet.add(fallbackEmployee.id);
+		employeesById.set(fallbackEmployee.id, fallbackEmployee);
+	}
+	const dbService: ApprovalDbService = {
+		db,
+		query: (_name, operation) => Effect.promise(operation),
+	};
+	const runtime = createProductionApprovalWorkflowRuntime({
+		db,
+		adapters: {
+			absence: {
+				clock: systemClock,
+				finalizeAbsenceTerminal: async () => {
+					throw new Error(
+						"Absence finalization is outside demo correction generation",
+					);
+				},
+				deleteCancelledAbsence: async () => {
+					throw new Error(
+						"Absence cancellation is outside demo correction generation",
+					);
+				},
+			},
+			timeCorrection: {
+				clock: systemClock,
+				finalizeTimeCorrectionTerminal:
+					finalizeTimeCorrectionTerminalInTransaction,
+				deleteCancelledCorrections: deleteCancelledTimeCorrectionsInTransaction,
+			},
+		},
+		canManageApproval: async () => false,
+		clock: systemClock,
 	});
 
 	let pendingTimeCorrectionApprovalsCreated = 0;
@@ -858,93 +1034,559 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 			break;
 		}
 
-		if (existingApprovalPeriodIds.has(period.id)) {
+		if (
+			period.organizationId !== options.organizationId ||
+			!employeeIdSet.has(period.employeeId) ||
+			!period.canonicalRecordId
+		) {
 			continue;
 		}
 
 		const requester = employeesById.get(period.employeeId);
-		if (!requester) {
+		if (
+			!requester ||
+			requester.organizationId !== options.organizationId ||
+			requester.isActive !== true
+		) {
 			continue;
 		}
 
-		const assignedManager = managerAssignments.find(
-			(assignment) =>
-				assignment.employeeId === requester.id &&
-				assignment.managerId !== requester.id &&
-				employeeIdSet.has(assignment.managerId),
-		);
-		const approverId =
-			assignedManager?.managerId ?? employees.find((emp) => emp.id !== requester.id)?.id;
-		const approver = employees.find((emp) => emp.id === approverId);
-
-		if (!approverId || !approver) {
+		const requesterManagerAssignments =
+			managerAssignmentsByRequester.get(requester.id) ?? [];
+		if (requesterManagerAssignments.length > 1) {
+			continue;
+		}
+		const assignedManager = requesterManagerAssignments[0];
+		const usesFallback = !assignedManager;
+		const approverId = assignedManager?.managerId ?? fallbackEmployee?.id;
+		if (!approverId || !employeesById.has(approverId)) {
 			continue;
 		}
 
-		const correctionTimestampDT = DateTime.fromJSDate(period.startTime, { zone: "utc" }).plus({
-			minutes: 15,
-		});
-		const correctionTimestamp = dateToDB(correctionTimestampDT)!;
-		const latestEntry = await db.query.timeEntry.findFirst({
+		const [original] = await db.query.timeEntry.findMany({
 			where: and(
+				eq(timeEntry.id, period.clockInId),
 				eq(timeEntry.employeeId, requester.id),
 				eq(timeEntry.organizationId, options.organizationId),
 			),
-			orderBy: (entry, { desc }) => desc(entry.createdAt),
+			limit: 2,
 		});
-		const previousHash = latestEntry?.hash ?? null;
-		const previousEntryId = latestEntry?.id ?? null;
-		const correctionHash = calculateHash({
-			employeeId: requester.id,
-			type: "correction",
-			timestamp: correctionTimestampDT.toISO()!,
-			previousHash,
-		});
-
-		const [correctionEntry] = await db
-			.insert(timeEntry)
-			.values({
-				employeeId: requester.id,
-				organizationId: options.organizationId,
-				type: "correction",
-				timestamp: correctionTimestamp,
-				hash: correctionHash,
-				previousHash,
-				previousEntryId,
-				replacesEntryId: period.clockInId,
-				notes: "Demo data - Pending time correction",
-				createdBy: options.createdBy,
-				...demoTimeEntryTimezoneCapture(correctionTimestamp),
-			})
-			.returning({ id: timeEntry.id });
-
-		if (!correctionEntry) {
+		if (
+			!original ||
+			original.id !== period.clockInId ||
+			original.organizationId !== options.organizationId ||
+			original.employeeId !== requester.id ||
+			original.type !== "clock_in" ||
+			original.isSuperseded ||
+			original.timestamp.getTime() !== period.startTime.getTime() ||
+			!original.timezone ||
+			!original.timezoneSource ||
+			!Number.isInteger(original.utcOffsetMinutes)
+		) {
 			continue;
 		}
-
-		await db.insert(approvalRequest).values({
-			organizationId: options.organizationId,
-			entityType: "time_entry",
-			entityId: period.id,
-			requestedBy: requester.id,
-			approverId,
-			status: "pending",
-			reason: "Demo data - Pending time correction approval",
-			metadata: { timeCorrection: { clockInCorrectionId: correctionEntry.id } },
+		const canonical = await db.query.timeRecord.findFirst({
+			where: and(
+				eq(timeRecord.id, period.canonicalRecordId),
+				eq(timeRecord.organizationId, options.organizationId),
+				eq(timeRecord.employeeId, requester.id),
+				eq(timeRecord.recordKind, "work"),
+			),
 		});
+		if (
+			!canonical ||
+			canonical.id !== period.canonicalRecordId ||
+			canonical.organizationId !== options.organizationId ||
+			canonical.employeeId !== requester.id ||
+			canonical.recordKind !== "work"
+		) {
+			continue;
+		}
+		let submission: {
+			result: Awaited<
+				ReturnType<typeof executeTimeCorrectionSubmissionInTransaction>
+			>;
+			submissionId: string;
+		};
+		try {
+			submission = await runtime.repository.withTransaction(async (context) => {
+				const tx = context.dbService.db as unknown as typeof db;
+				const lockedEmployees = await tx
+					.select()
+					.from(employee)
+					.where(
+						and(
+							eq(employee.organizationId, options.organizationId),
+							inArray(employee.id, [requester.id, approverId]),
+						),
+					)
+					.orderBy(asc(employee.id))
+					.for("update");
+				const currentRequester = lockedEmployees.find(
+					(candidate) => candidate.id === requester.id,
+				);
+				if (
+					!currentRequester ||
+					currentRequester.id !== requester.id ||
+					currentRequester.organizationId !== options.organizationId ||
+					currentRequester.userId !== requester.userId ||
+					currentRequester.teamId !== requester.teamId ||
+					currentRequester.isActive !== true
+				) {
+					throw new DemoCorrectionSourceChangedError();
+				}
+				const currentApprover = lockedEmployees.find(
+					(candidate) => candidate.id === approverId,
+				);
+				if (
+					!currentApprover ||
+					currentApprover.organizationId !== options.organizationId ||
+					currentApprover.isActive !== true
+				) {
+					throw new DemoCorrectionSourceChangedError();
+				}
+				const lockedManagerAssignments = await tx
+					.select()
+					.from(employeeManagers)
+					.where(eq(employeeManagers.employeeId, requester.id))
+					.for("update");
+				if (
+					(assignedManager &&
+						(lockedManagerAssignments.length !== 1 ||
+							lockedManagerAssignments[0]?.managerId !== approverId)) ||
+					(usesFallback && lockedManagerAssignments.length !== 0)
+				) {
+					throw new DemoCorrectionSourceChangedError();
+				}
+				if (usesFallback) {
+					const [lockedFallbackMember] = await tx
+						.select()
+						.from(member)
+						.where(
+							and(
+								eq(member.userId, currentApprover.userId),
+								eq(member.organizationId, options.organizationId),
+								eq(member.status, "approved"),
+							),
+						)
+						.for("update");
+					if (
+						!lockedFallbackMember ||
+						lockedFallbackMember.userId !== currentApprover.userId ||
+						lockedFallbackMember.organizationId !== options.organizationId ||
+						lockedFallbackMember.status !== "approved"
+					) {
+						throw new DemoCorrectionSourceChangedError();
+					}
+				}
+				const lockedTeamMemberships = await tx
+					.select()
+					.from(teamMembership)
+					.where(
+						and(
+							eq(teamMembership.organizationId, options.organizationId),
+							eq(teamMembership.employeeId, requester.id),
+						),
+					)
+					.orderBy(asc(teamMembership.teamId))
+					.for("update");
+				let teamId: string | null = null;
+				const lockedTeamMembership = requester.teamId
+					? lockedTeamMemberships.find(
+							(membership) =>
+								membership.organizationId === options.organizationId &&
+								membership.employeeId === requester.id &&
+								membership.teamId === requester.teamId,
+						)
+					: undefined;
+				if (lockedTeamMembership) {
+					const [currentTeam] = await tx
+						.select()
+						.from(team)
+						.where(
+							and(
+								eq(team.id, lockedTeamMembership.teamId),
+								eq(team.organizationId, options.organizationId),
+							),
+						)
+						.for("update");
+					if (
+						!currentTeam ||
+						currentTeam.id !== lockedTeamMembership.teamId ||
+						currentTeam.organizationId !== options.organizationId
+					) {
+						throw new DemoCorrectionSourceChangedError();
+					}
+					teamId = currentTeam.id;
+				}
+				const [lockedPeriod] = await tx
+					.select()
+					.from(workPeriod)
+					.where(
+						and(
+							eq(workPeriod.id, period.id),
+							eq(workPeriod.organizationId, options.organizationId),
+							eq(workPeriod.employeeId, requester.id),
+						),
+					)
+					.for("update");
+				if (
+					!lockedPeriod ||
+					lockedPeriod.id !== period.id ||
+					lockedPeriod.organizationId !== options.organizationId ||
+					lockedPeriod.employeeId !== requester.id ||
+					lockedPeriod.clockInId !== period.clockInId ||
+					lockedPeriod.clockOutId !== period.clockOutId ||
+					!lockedPeriod.canonicalRecordId ||
+					lockedPeriod.canonicalRecordId !== period.canonicalRecordId ||
+					!sameDemoInstant(lockedPeriod.startTime, period.startTime) ||
+					!sameDemoInstant(lockedPeriod.endTime, period.endTime) ||
+					lockedPeriod.durationMinutes !== period.durationMinutes ||
+					lockedPeriod.isActive ||
+					lockedPeriod.clockOutId === null ||
+					lockedPeriod.endTime === null ||
+					lockedPeriod.approvalStatus !== "approved" ||
+					lockedPeriod.pendingChanges !== null ||
+					lockedPeriod.deletedAt !== null
+				) {
+					throw new DemoCorrectionSourceChangedError();
+				}
+				const [lockedOriginal] = await tx
+					.select()
+					.from(timeEntry)
+					.where(
+						and(
+							eq(timeEntry.id, lockedPeriod.clockInId),
+							eq(timeEntry.organizationId, options.organizationId),
+							eq(timeEntry.employeeId, requester.id),
+						),
+					)
+					.for("update");
+				if (
+					!lockedOriginal ||
+					lockedOriginal.id !== lockedPeriod.clockInId ||
+					lockedOriginal.id !== original.id ||
+					lockedOriginal.organizationId !== options.organizationId ||
+					lockedOriginal.employeeId !== requester.id ||
+					lockedOriginal.type !== "clock_in" ||
+					lockedOriginal.replacesEntryId !== null ||
+					lockedOriginal.isSuperseded ||
+					lockedOriginal.supersededById !== null ||
+					!sameDemoInstant(lockedOriginal.timestamp, lockedPeriod.startTime)
+				) {
+					throw new DemoCorrectionSourceChangedError();
+				}
+				const [lockedCanonical] = await tx
+					.select()
+					.from(timeRecord)
+					.where(
+						and(
+							eq(timeRecord.id, lockedPeriod.canonicalRecordId),
+							eq(timeRecord.organizationId, options.organizationId),
+							eq(timeRecord.employeeId, requester.id),
+							eq(timeRecord.recordKind, "work"),
+						),
+					)
+					.for("update");
+				if (
+					!lockedCanonical ||
+					lockedCanonical.id !== lockedPeriod.canonicalRecordId ||
+					lockedCanonical.organizationId !== options.organizationId ||
+					lockedCanonical.employeeId !== requester.id ||
+					lockedCanonical.recordKind !== "work" ||
+					lockedCanonical.origin !== "clock" ||
+					!sameDemoInstant(lockedCanonical.startAt, lockedPeriod.startTime) ||
+					!sameDemoInstant(lockedCanonical.endAt, lockedPeriod.endTime) ||
+					lockedCanonical.durationMinutes !== lockedPeriod.durationMinutes ||
+					lockedCanonical.approvalState !== lockedPeriod.approvalStatus
+				) {
+					throw new DemoCorrectionSourceChangedError();
+				}
+				if (
+					!lockedOriginal.timezone ||
+					!validDemoTimezoneSource(lockedOriginal.timezoneSource) ||
+					!Number.isInteger(lockedOriginal.utcOffsetMinutes) ||
+					lockedOriginal.utcOffsetMinutes < -840 ||
+					lockedOriginal.utcOffsetMinutes > 840
+				) {
+					throw new DemoCorrectionSourceChangedError();
+				}
+				const originalInstant = instantFromTimeCorrectionBoundary(
+					lockedOriginal.timestamp,
+				);
+				try {
+					validateTimeCorrectionTimezoneEvidence({
+						instant: originalInstant,
+						timezone: lockedOriginal.timezone,
+						utcOffsetMinutes: lockedOriginal.utcOffsetMinutes,
+					});
+				} catch {
+					throw new DemoCorrectionSourceChangedError();
+				}
+				const correctionInstant = originalInstant.add({ minutes: 15 });
+				const correctionTimestamp = dateFromInstant(correctionInstant);
+				const timezoneCapture: TimeEntryTimezoneCapture = {
+					timezone: lockedOriginal.timezone,
+					timezoneSource: lockedOriginal.timezoneSource,
+					utcOffsetMinutes:
+						correctionInstant.toZonedDateTimeISO(lockedOriginal.timezone)
+							.offsetNanoseconds / 60_000_000_000,
+				};
+				const businessSubmissionKey = deriveTimeCorrectionSubmissionKey({
+					organizationId: options.organizationId,
+					workPeriodId: lockedPeriod.id,
+					action: "edit",
+					clockIn: {
+						originalEntryId: lockedOriginal.id,
+						instant: correctionInstant,
+					},
+				});
+				const submissionId = deriveTimeCorrectionRowId({
+					submissionKey: `demo-submission:${businessSubmissionKey}`,
+					endpointType: "clock_in",
+				});
+				const submissionKey = `time-correction-cycle:v1:${submissionId}:${businessSubmissionKey}`;
+				const correctionId = deriveTimeCorrectionRowId({
+					submissionKey,
+					endpointType: "clock_in",
+				});
+				const existing = await tx.query.timeEntry.findFirst({
+					where: and(
+						eq(timeEntry.id, correctionId),
+						eq(timeEntry.organizationId, options.organizationId),
+						eq(timeEntry.employeeId, requester.id),
+					),
+				});
+				const transactionDbService: ApprovalDbService = {
+					db: context.dbService.db as unknown as ApprovalDbService["db"],
+					query: dbService.query,
+				};
+				let insertedCorrection = false;
+				if (existing) {
+					const [lockedPredecessor] = existing.previousEntryId
+						? await tx
+								.select()
+								.from(timeEntry)
+								.where(
+									and(
+										eq(timeEntry.id, existing.previousEntryId),
+										eq(timeEntry.organizationId, options.organizationId),
+										eq(timeEntry.employeeId, requester.id),
+									),
+								)
+								.for("update")
+						: [];
+					const correctionHash = calculateHash({
+						employeeId: requester.id,
+						type: "correction",
+						timestamp: correctionTimestamp.toISOString(),
+						previousHash: existing.previousHash,
+					});
+					if (
+						existing.id !== correctionId ||
+						existing.organizationId !== options.organizationId ||
+						existing.employeeId !== requester.id ||
+						existing.type !== "correction" ||
+						existing.replacesEntryId !== lockedOriginal.id ||
+						existing.timestamp.getTime() !== correctionTimestamp.getTime() ||
+						!existing.previousEntryId ||
+						!lockedPredecessor ||
+						lockedPredecessor.id !== existing.previousEntryId ||
+						lockedPredecessor.hash !== existing.previousHash ||
+						existing.hash !== correctionHash ||
+						!existing.isSuperseded ||
+						existing.supersededById !== null ||
+						existing.utcOffsetMinutes !== timezoneCapture.utcOffsetMinutes ||
+						existing.timezone !== timezoneCapture.timezone ||
+						existing.timezoneSource !== timezoneCapture.timezoneSource ||
+						existing.notes !== "Demo data - Pending time correction" ||
+						existing.location !== null ||
+						existing.ipAddress !== null ||
+						existing.deviceInfo !== null
+					) {
+						throw new Error(
+							"Demo time correction identity conflicts with existing data",
+						);
+					}
+				} else {
+					const [lockedChainTail] = await tx
+						.select()
+						.from(timeEntry)
+						.where(
+							and(
+								eq(timeEntry.organizationId, options.organizationId),
+								eq(timeEntry.employeeId, requester.id),
+							),
+						)
+						.orderBy(desc(timeEntry.createdAt))
+						.limit(1)
+						.for("update");
+					if (!lockedChainTail) {
+						throw new DemoCorrectionSourceChangedError();
+					}
+					const correctionHash = calculateHash({
+						employeeId: requester.id,
+						type: "correction",
+						timestamp: correctionTimestamp.toISOString(),
+						previousHash: lockedChainTail.hash,
+					});
+					const created = await insertTimeCorrectionSourceEntry({
+						dbService: transactionDbService,
+						id: correctionId,
+						employeeId: requester.id,
+						organizationId: options.organizationId,
+						timestamp: correctionTimestamp,
+						hash: correctionHash,
+						previousHash: lockedChainTail.hash,
+						previousEntryId: lockedChainTail.id,
+						replacesEntryId: lockedOriginal.id,
+						notes: "Demo data - Pending time correction",
+						createdBy: options.createdBy,
+						ipAddress: null,
+						deviceInfo: null,
+						timezoneCapture,
+					});
+					if (!created)
+						throw new Error("Demo time correction row was not created");
+					insertedCorrection = true;
+				}
+				const result = await executeTimeCorrectionSubmissionInTransaction({
+					dbService: transactionDbService,
+					context,
+					organizationId: options.organizationId,
+					requesterEmployeeId: requester.id,
+					teamId,
+					workPeriodId: period.id,
+					defaultApproverId: approverId,
+					reason: "Demo data - Pending time correction approval",
+					overtimeRisk: null,
+					submissionKey,
+					submissionId,
+					correction: { action: "edit", clockInCorrectionId: correctionId },
+				});
+				if (result.kind === "auto_completed") {
+					throw new DemoCorrectionAutoCompletedError();
+				}
+				if (result.disposition === "replayed" && insertedCorrection) {
+					const deleted = await tx
+						.delete(timeEntry)
+						.where(
+							and(
+								eq(timeEntry.id, correctionId),
+								eq(timeEntry.organizationId, options.organizationId),
+								eq(timeEntry.employeeId, requester.id),
+								eq(timeEntry.type, "correction"),
+								eq(timeEntry.replacesEntryId, lockedOriginal.id),
+								eq(timeEntry.isSuperseded, true),
+								isNull(timeEntry.supersededById),
+							),
+						)
+						.returning({ id: timeEntry.id });
+					if (deleted.length !== 1 || deleted[0]?.id !== correctionId) {
+						throw new Error("Demo time correction replay cleanup failed");
+					}
+				}
+				return { result, submissionId };
+			});
+		} catch (error) {
+			if (
+				error instanceof DemoCorrectionAutoCompletedError ||
+				error instanceof DemoCorrectionSourceChangedError
+			) {
+				continue;
+			}
+			throw error;
+		}
 
-		await db.insert(notification).values({
-			userId: approver.userId,
-			organizationId: options.organizationId,
-			type: "approval_request_submitted",
-			title: "New time correction request",
-			message: "Demo data - Pending time correction request needs approval.",
-			entityType: "work_period",
-			entityId: period.id,
-			actionUrl: "/approvals/inbox",
-		});
-
+		if (submission.result.disposition === "replayed") continue;
 		pendingTimeCorrectionApprovalsCreated++;
+		if (submission.result.postCommit.authority === "legacy") {
+			try {
+				const notificationIdempotencyKey = `demo-time-correction:${submission.submissionId}:submitted`;
+				const existingNotification = await db.query.notification.findFirst({
+					where: and(
+						eq(notification.organizationId, options.organizationId),
+						eq(notification.type, "approval_request_submitted"),
+						eq(notification.entityType, "work_period"),
+						eq(notification.entityId, period.id),
+						eq(notification.idempotencyKey, notificationIdempotencyKey),
+					),
+				});
+				if (
+					existingNotification?.organizationId === options.organizationId &&
+					existingNotification.type === "approval_request_submitted" &&
+					existingNotification.entityType === "work_period" &&
+					existingNotification.entityId === period.id &&
+					existingNotification.idempotencyKey === notificationIdempotencyKey
+				) {
+					continue;
+				}
+				const durableRequest = await db.query.approvalRequest.findFirst({
+					where: and(
+						eq(approvalRequest.id, submission.result.approvalRequestId),
+						eq(approvalRequest.organizationId, options.organizationId),
+						eq(approvalRequest.entityType, "time_entry"),
+						eq(approvalRequest.entityId, period.id),
+						eq(approvalRequest.status, "pending"),
+					),
+				});
+				if (
+					!durableRequest ||
+					durableRequest.id !== submission.result.approvalRequestId ||
+					durableRequest.organizationId !== options.organizationId ||
+					durableRequest.entityType !== "time_entry" ||
+					durableRequest.entityId !== period.id ||
+					durableRequest.requestedBy !== requester.id ||
+					durableRequest.status !== "pending" ||
+					!durableRequest.approverId ||
+					(submission.result.postCommit.submittedToEmployeeId !== null &&
+						submission.result.postCommit.submittedToEmployeeId !==
+							durableRequest.approverId)
+				) {
+					continue;
+				}
+				const approver = await db.query.employee.findFirst({
+					where: and(
+						eq(employee.id, durableRequest.approverId),
+						eq(employee.organizationId, options.organizationId),
+						eq(employee.isActive, true),
+					),
+				});
+				if (
+					approver?.id === durableRequest.approverId &&
+					approver.organizationId === options.organizationId &&
+					approver.isActive
+				) {
+					await db
+						.insert(notification)
+						.values({
+							userId: approver.userId,
+							organizationId: options.organizationId,
+							type: "approval_request_submitted",
+							title: "New time correction request",
+							message:
+								"Demo data - Pending time correction request needs approval.",
+							entityType: "work_period",
+							entityId: period.id,
+							actionUrl: "/approvals/inbox",
+							metadata: JSON.stringify({
+								approvalRequestId: durableRequest.id,
+							}),
+							idempotencyKey: notificationIdempotencyKey,
+						})
+						.onConflictDoNothing();
+				}
+			} catch (error) {
+				demoLogger.error(
+					{
+						error,
+						organizationId: options.organizationId,
+						workPeriodId: period.id,
+					},
+					"Failed to create demo time correction notification",
+				);
+			}
+		}
 	}
 
 	return { pendingTimeCorrectionApprovalsCreated };
@@ -969,7 +1611,8 @@ function generateRandomAbsence(
 	const startDT = DateTime.utc(year, startMonth, startDay);
 
 	// Random duration
-	const duration = Math.floor(Math.random() * (maxDays - minDays + 1)) + minDays;
+	const duration =
+		Math.floor(Math.random() * (maxDays - minDays + 1)) + minDays;
 	const endDT = startDT.plus({ days: duration - 1 });
 
 	// Convert to ISO date strings for database (date columns expect YYYY-MM-DD)
@@ -987,7 +1630,9 @@ function generateRandomAbsence(
 		status = "approved";
 		approvedBy = approverId;
 		// Approved 1-7 days before start
-		const approvedDT = startDT.minus({ days: Math.floor(Math.random() * 7) + 1 });
+		const approvedDT = startDT.minus({
+			days: Math.floor(Math.random() * 7) + 1,
+		});
 		approvedAt = dateToDB(approvedDT);
 	} else if (statusRand < approvedRate + 0.2) {
 		status = "pending";
@@ -995,7 +1640,9 @@ function generateRandomAbsence(
 		status = "rejected";
 		approvedBy = approverId;
 		// Rejected 1-7 days before start
-		const rejectedDT = startDT.minus({ days: Math.floor(Math.random() * 7) + 1 });
+		const rejectedDT = startDT.minus({
+			days: Math.floor(Math.random() * 7) + 1,
+		});
 		approvedAt = dateToDB(rejectedDT);
 		rejectionReason = "Demo data - Auto-rejected";
 	}
@@ -1065,8 +1712,12 @@ export async function generateDemoTeams(
 	}
 
 	// Determine number of teams to create (default: 3-5, max based on employee count)
-	const maxTeams = Math.min(Math.ceil(employees.length / 2), defaultTeamNames.length);
-	const teamCount = options.teamCount ?? Math.min(Math.floor(Math.random() * 3) + 3, maxTeams);
+	const maxTeams = Math.min(
+		Math.ceil(employees.length / 2),
+		defaultTeamNames.length,
+	);
+	const teamCount =
+		options.teamCount ?? Math.min(Math.floor(Math.random() * 3) + 3, maxTeams);
 
 	if (teamCount <= 0) {
 		return { teamsCreated: 0, employeesAssignedToTeams: 0 };
@@ -1111,7 +1762,11 @@ export async function generateDemoTeams(
 	let employeesAssigned = 0;
 
 	// Ensure each team gets at least one employee
-	for (let i = 0; i < createdTeams.length && i < shuffledEmployees.length; i++) {
+	for (
+		let i = 0;
+		i < createdTeams.length && i < shuffledEmployees.length;
+		i++
+	) {
 		await db
 			.update(employee)
 			.set({ teamId: createdTeams[i].id })
@@ -1212,7 +1867,8 @@ export async function generateDemoProjects(
 	}
 
 	// Determine number of projects to create (default: 5-8)
-	const projectCount = options.projectCount ?? Math.floor(Math.random() * 4) + 5;
+	const projectCount =
+		options.projectCount ?? Math.floor(Math.random() * 4) + 5;
 
 	if (projectCount <= 0) {
 		return { projectsCreated: 0 };
@@ -1239,14 +1895,9 @@ export async function generateDemoProjects(
 	// Create projects
 	let projectsCreated = 0;
 	// Valid statuses from projectStatusEnum: planned, active, paused, completed, archived
-	const statuses: Array<"planned" | "active" | "paused" | "completed" | "archived"> = [
-		"planned",
-		"active",
-		"active",
-		"active",
-		"paused",
-		"completed",
-	];
+	const statuses: Array<
+		"planned" | "active" | "paused" | "completed" | "archived"
+	> = ["planned", "active", "active", "active", "paused", "completed"];
 
 	for (let i = 0; i < projectNames.length; i++) {
 		const name = projectNames[i];
@@ -1303,12 +1954,16 @@ export async function generateDemoManagerAssignments(
 	const otherEmployees = await db.query.employee.findMany({
 		where: and(
 			eq(employee.organizationId, options.organizationId),
-			options.employeeIds?.length ? inArray(employee.id, options.employeeIds) : undefined,
+			options.employeeIds?.length
+				? inArray(employee.id, options.employeeIds)
+				: undefined,
 		),
 	});
 
 	// Filter out the owner and get employees without managers
-	const employeesWithoutOwner = otherEmployees.filter((e) => e.id !== ownerEmployee.id);
+	const employeesWithoutOwner = otherEmployees.filter(
+		(e) => e.id !== ownerEmployee.id,
+	);
 
 	if (employeesWithoutOwner.length === 0) {
 		return { managerAssignmentsCreated: 0 };
@@ -1322,7 +1977,9 @@ export async function generateDemoManagerAssignments(
 		),
 	});
 
-	const employeesWithManagers = new Set(existingAssignments.map((a) => a.employeeId));
+	const employeesWithManagers = new Set(
+		existingAssignments.map((a) => a.employeeId),
+	);
 
 	// Assign ~60-80% of employees without managers to the owner
 	const employeesNeedingManagers = employeesWithoutOwner.filter(
@@ -1390,7 +2047,11 @@ export async function generateDemoLocations(options: DemoDataOptions): Promise<{
 	supervisorAssignmentsCreated: number;
 }> {
 	if (!options.includeLocations) {
-		return { locationsCreated: 0, subareasCreated: 0, supervisorAssignmentsCreated: 0 };
+		return {
+			locationsCreated: 0,
+			subareasCreated: 0,
+			supervisorAssignmentsCreated: 0,
+		};
 	}
 
 	// Get employees for supervisor assignments
@@ -1398,14 +2059,18 @@ export async function generateDemoLocations(options: DemoDataOptions): Promise<{
 		where: eq(employee.organizationId, options.organizationId),
 	});
 
-	const locationCount = options.locationCount ?? Math.floor(Math.random() * 2) + 2; // 2-3 default
-	const subareasPerLocation = options.subareasPerLocation ?? Math.floor(Math.random() * 2) + 3; // 3-4 default
+	const locationCount =
+		options.locationCount ?? Math.floor(Math.random() * 2) + 2; // 2-3 default
+	const subareasPerLocation =
+		options.subareasPerLocation ?? Math.floor(Math.random() * 2) + 3; // 3-4 default
 
 	let locationsCreated = 0;
 	let subareasCreated = 0;
 	let supervisorAssignmentsCreated = 0;
 
-	const shuffledLocationNames = faker.helpers.shuffle([...getDefaultLocationNames()]);
+	const shuffledLocationNames = faker.helpers.shuffle([
+		...getDefaultLocationNames(),
+	]);
 	const shuffledEmployees = faker.helpers.shuffle([...employees]);
 
 	for (let i = 0; i < locationCount; i++) {
@@ -1445,8 +2110,14 @@ export async function generateDemoLocations(options: DemoDataOptions): Promise<{
 		}
 
 		// Create subareas for this location
-		const shuffledSubareaNames = faker.helpers.shuffle([...getDefaultSubareaNames()]);
-		for (let j = 0; j < subareasPerLocation && j < shuffledSubareaNames.length; j++) {
+		const shuffledSubareaNames = faker.helpers.shuffle([
+			...getDefaultSubareaNames(),
+		]);
+		for (
+			let j = 0;
+			j < subareasPerLocation && j < shuffledSubareaNames.length;
+			j++
+		) {
 			const [newSubarea] = await db
 				.insert(locationSubarea)
 				.values({
@@ -1463,7 +2134,9 @@ export async function generateDemoLocations(options: DemoDataOptions): Promise<{
 			// Assign a subarea supervisor (30% chance)
 			if (shuffledEmployees.length > 0 && Math.random() < 0.3) {
 				const supervisor =
-					shuffledEmployees[(i * subareasPerLocation + j) % shuffledEmployees.length];
+					shuffledEmployees[
+						(i * subareasPerLocation + j) % shuffledEmployees.length
+					];
 				await db.insert(subareaEmployee).values({
 					subareaId: newSubarea.id,
 					employeeId: supervisor.id,
@@ -1499,8 +2172,14 @@ function getWorkCategoryTemplates() {
 
 function getWorkCategorySetTemplates() {
 	return [
-		{ name: "Standard Categories", description: "Default work categories for most employees" },
-		{ name: "Field Work Categories", description: "Categories for field workers with travel time" },
+		{
+			name: "Standard Categories",
+			description: "Default work categories for most employees",
+		},
+		{
+			name: "Field Work Categories",
+			description: "Categories for field workers with travel time",
+		},
 		{
 			name: "Manufacturing Categories",
 			description: "Categories for production and manufacturing",
@@ -1511,7 +2190,9 @@ function getWorkCategorySetTemplates() {
 /**
  * Generate demo work category sets and categories
  */
-export async function generateDemoWorkCategories(options: DemoDataOptions): Promise<{
+export async function generateDemoWorkCategories(
+	options: DemoDataOptions,
+): Promise<{
 	setsCreated: number;
 	categoriesCreated: number;
 	assignmentsCreated: number;
@@ -1523,7 +2204,8 @@ export async function generateDemoWorkCategories(options: DemoDataOptions): Prom
 	const workCategoryTemplates = getWorkCategoryTemplates();
 	const workCategorySetTemplates = getWorkCategorySetTemplates();
 	const setCount = options.workCategorySetCount ?? 2;
-	const categoryCount = options.workCategoryCount ?? Math.min(8, workCategoryTemplates.length);
+	const categoryCount =
+		options.workCategoryCount ?? Math.min(8, workCategoryTemplates.length);
 
 	let setsCreated = 0;
 	let categoriesCreated = 0;
@@ -1612,9 +2294,16 @@ export async function generateDemoWorkCategories(options: DemoDataOptions): Prom
 			});
 
 			const shuffledTeams = faker.helpers.shuffle(teams);
-			const teamsToAssign = shuffledTeams.slice(0, Math.min(2, shuffledTeams.length));
+			const teamsToAssign = shuffledTeams.slice(
+				0,
+				Math.min(2, shuffledTeams.length),
+			);
 
-			for (let i = 0; i < teamsToAssign.length && i + 1 < createdSets.length; i++) {
+			for (
+				let i = 0;
+				i < teamsToAssign.length && i + 1 < createdSets.length;
+				i++
+			) {
 				await db.insert(workCategorySetAssignment).values({
 					setId: createdSets[i + 1].id,
 					organizationId: options.organizationId,
@@ -1641,14 +2330,16 @@ function getChangePolicyTemplates() {
 	return [
 		{
 			name: "Standard Policy",
-			description: "Default policy with same-day free edits, 7-day approval window",
+			description:
+				"Default policy with same-day free edits, 7-day approval window",
 			selfServiceDays: 0,
 			approvalDays: 7,
 			noApprovalRequired: false,
 		},
 		{
 			name: "Flexible Policy",
-			description: "Liberal policy allowing edits within 3 days without approval",
+			description:
+				"Liberal policy allowing edits within 3 days without approval",
 			selfServiceDays: 3,
 			approvalDays: 14,
 			noApprovalRequired: false,
@@ -1673,7 +2364,9 @@ function getChangePolicyTemplates() {
 /**
  * Generate demo change policies
  */
-export async function generateDemoChangePolicies(options: DemoDataOptions): Promise<{
+export async function generateDemoChangePolicies(
+	options: DemoDataOptions,
+): Promise<{
 	policiesCreated: number;
 	assignmentsCreated: number;
 }> {
@@ -1732,12 +2425,42 @@ export async function generateDemoChangePolicies(options: DemoDataOptions): Prom
 
 function getShiftTemplateData() {
 	return [
-		{ name: "Morning Shift", startTime: "06:00", endTime: "14:00", color: "#fbbf24" },
-		{ name: "Day Shift", startTime: "09:00", endTime: "17:00", color: "#10b981" },
-		{ name: "Afternoon Shift", startTime: "14:00", endTime: "22:00", color: "#3b82f6" },
-		{ name: "Night Shift", startTime: "22:00", endTime: "06:00", color: "#6366f1" },
-		{ name: "Split Shift", startTime: "10:00", endTime: "18:00", color: "#ec4899" },
-		{ name: "Flex Shift", startTime: "08:00", endTime: "16:00", color: "#14b8a6" },
+		{
+			name: "Morning Shift",
+			startTime: "06:00",
+			endTime: "14:00",
+			color: "#fbbf24",
+		},
+		{
+			name: "Day Shift",
+			startTime: "09:00",
+			endTime: "17:00",
+			color: "#10b981",
+		},
+		{
+			name: "Afternoon Shift",
+			startTime: "14:00",
+			endTime: "22:00",
+			color: "#3b82f6",
+		},
+		{
+			name: "Night Shift",
+			startTime: "22:00",
+			endTime: "06:00",
+			color: "#6366f1",
+		},
+		{
+			name: "Split Shift",
+			startTime: "10:00",
+			endTime: "18:00",
+			color: "#ec4899",
+		},
+		{
+			name: "Flex Shift",
+			startTime: "08:00",
+			endTime: "16:00",
+			color: "#14b8a6",
+		},
 	] as const;
 }
 
@@ -1766,13 +2489,15 @@ export async function generateDemoShiftTemplates(
 	});
 
 	const shiftTemplateData = getShiftTemplateData();
-	const templateCount = options.shiftTemplateCount ?? Math.min(4, shiftTemplateData.length);
+	const templateCount =
+		options.shiftTemplateCount ?? Math.min(4, shiftTemplateData.length);
 	let templatesCreated = 0;
 
 	for (let i = 0; i < templateCount && i < shiftTemplateData.length; i++) {
 		const template = shiftTemplateData[i];
 		// Assign to a random subarea if available
-		const subarea = subareas.length > 0 ? faker.helpers.arrayElement(subareas) : null;
+		const subarea =
+			subareas.length > 0 ? faker.helpers.arrayElement(subareas) : null;
 
 		await db.insert(shiftTemplate).values({
 			organizationId: options.organizationId,
@@ -1865,7 +2590,9 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 		recurrencesCreated++;
 
 		// Generate shift instances for the date range
-		const startDT = DateTime.fromJSDate(options.dateRange.start, { zone: "utc" });
+		const startDT = DateTime.fromJSDate(options.dateRange.start, {
+			zone: "utc",
+		});
 		const endDT = DateTime.fromJSDate(options.dateRange.end, { zone: "utc" });
 		let currentDT = startDT;
 
@@ -1876,7 +2603,8 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 			// Skip weekends
 			if (currentDT.weekday >= 1 && currentDT.weekday <= 5) {
 				// 70% assigned to employee, 30% open shifts
-				const assignToEmployee = Math.random() < 0.7 && shuffledEmployees.length > 0;
+				const assignToEmployee =
+					Math.random() < 0.7 && shuffledEmployees.length > 0;
 				const assignedEmployee = assignToEmployee
 					? shuffledEmployees[employeeIndex % shuffledEmployees.length]
 					: null;
@@ -1909,20 +2637,32 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 				shiftsCreated++;
 
 				// 10% chance to create a shift request for published, assigned shifts
-				if (isPublished && assignedEmployee && Math.random() < 0.1 && employees.length > 1) {
-					const otherEmployees = employees.filter((e) => e.id !== assignedEmployee.id);
+				if (
+					isPublished &&
+					assignedEmployee &&
+					Math.random() < 0.1 &&
+					employees.length > 1
+				) {
+					const otherEmployees = employees.filter(
+						(e) => e.id !== assignedEmployee.id,
+					);
 					const targetEmployee =
-						Math.random() < 0.5 ? faker.helpers.arrayElement(otherEmployees) : null;
+						Math.random() < 0.5
+							? faker.helpers.arrayElement(otherEmployees)
+							: null;
 
-					const requestTypes: Array<"swap" | "assignment" | "pickup"> = targetEmployee
-						? ["swap"]
-						: ["pickup"];
+					const requestTypes: Array<"swap" | "assignment" | "pickup"> =
+						targetEmployee ? ["swap"] : ["pickup"];
 					const requestType = faker.helpers.arrayElement(requestTypes);
 
 					// 60% approved, 25% pending, 15% rejected
 					const statusRand = Math.random();
 					const requestStatus: "pending" | "approved" | "rejected" =
-						statusRand < 0.6 ? "approved" : statusRand < 0.85 ? "pending" : "rejected";
+						statusRand < 0.6
+							? "approved"
+							: statusRand < 0.85
+								? "pending"
+								: "rejected";
 
 					await db.insert(shiftRequest).values({
 						shiftId: newShift.id,
@@ -1944,7 +2684,8 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 						]),
 						approverId: requestStatus !== "pending" ? employees[0]?.id : null,
 						approvedAt: requestStatus !== "pending" ? new Date() : null,
-						rejectionReason: requestStatus === "rejected" ? "Schedule conflict" : null,
+						rejectionReason:
+							requestStatus === "rejected" ? "Schedule conflict" : null,
 						updatedAt: new Date(),
 					});
 
@@ -2019,7 +2760,11 @@ export async function assignWorkCategoriesToPeriods(
 	for (const cat of categories) {
 		// More weight for common categories
 		const weight =
-			cat.name === "Normal Work" || cat.name === "Meeting" ? 5 : cat.name === "Training" ? 3 : 1;
+			cat.name === "Normal Work" || cat.name === "Meeting"
+				? 5
+				: cat.name === "Training"
+					? 3
+					: 1;
 		for (let i = 0; i < weight; i++) {
 			weightedCategories.push(cat.id);
 		}
@@ -2042,7 +2787,9 @@ export async function assignWorkCategoriesToPeriods(
 /**
  * Generate all demo data
  */
-export async function generateDemoData(options: DemoDataOptions): Promise<DemoDataResult> {
+export async function generateDemoData(
+	options: DemoDataOptions,
+): Promise<DemoDataResult> {
 	// Phase 1: Foundation data (teams, projects, locations)
 	const teamResult = await generateDemoTeams(options);
 	const projectResult = await generateDemoProjects(options);
@@ -2064,9 +2811,10 @@ export async function generateDemoData(options: DemoDataOptions): Promise<DemoDa
 	const pendingAbsenceApprovalResult = options.includePendingAbsenceApprovals
 		? await generateDemoPendingAbsenceApprovals(options)
 		: { pendingAbsenceApprovalsCreated: 0 };
-	const pendingTimeCorrectionApprovalResult = options.includePendingTimeCorrectionApprovals
-		? await generateDemoPendingTimeCorrectionApprovals(options)
-		: { pendingTimeCorrectionApprovalsCreated: 0 };
+	const pendingTimeCorrectionApprovalResult =
+		options.includePendingTimeCorrectionApprovals
+			? await generateDemoPendingTimeCorrectionApprovals(options)
+			: { pendingTimeCorrectionApprovalsCreated: 0 };
 
 	// Phase 6: Shift instances (depends on templates + employees)
 	const shiftResult = await generateDemoShifts(options);
@@ -2090,7 +2838,8 @@ export async function generateDemoData(options: DemoDataOptions): Promise<DemoDa
 		workCategorySetsCreated: workCategoryResult.setsCreated,
 		workCategoriesCreated: workCategoryResult.categoriesCreated,
 		workCategoryAssignmentsCreated: workCategoryResult.assignmentsCreated,
-		workCategoriesAssignedToPeriods: categoryAssignmentResult.workCategoriesAssigned,
+		workCategoriesAssignedToPeriods:
+			categoryAssignmentResult.workCategoriesAssigned,
 		// NEW: Change policy results
 		changePoliciesCreated: changePolicyResult.policiesCreated,
 		changePolicyAssignmentsCreated: changePolicyResult.assignmentsCreated,
@@ -2099,7 +2848,8 @@ export async function generateDemoData(options: DemoDataOptions): Promise<DemoDa
 		shiftRecurrencesCreated: shiftResult.recurrencesCreated,
 		shiftsCreated: shiftResult.shiftsCreated,
 		shiftRequestsCreated: shiftResult.requestsCreated,
-		pendingAbsenceApprovalsCreated: pendingAbsenceApprovalResult.pendingAbsenceApprovalsCreated,
+		pendingAbsenceApprovalsCreated:
+			pendingAbsenceApprovalResult.pendingAbsenceApprovalsCreated,
 		pendingTimeCorrectionApprovalsCreated:
 			pendingTimeCorrectionApprovalResult.pendingTimeCorrectionApprovalsCreated,
 	};
@@ -2108,7 +2858,9 @@ export async function generateDemoData(options: DemoDataOptions): Promise<DemoDa
 /**
  * Clear all time-related data for an organization
  */
-export async function clearOrganizationTimeData(organizationId: string): Promise<ClearDataResult> {
+export async function clearOrganizationTimeData(
+	organizationId: string,
+): Promise<ClearDataResult> {
 	// Initialize result with zeros
 	const result: ClearDataResult = {
 		timeEntriesDeleted: 0,
@@ -2154,7 +2906,9 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 			where: inArray(shiftRequest.shiftId, shiftIds),
 		});
 		if (shiftRequestsToDelete.length > 0) {
-			await db.delete(shiftRequest).where(inArray(shiftRequest.shiftId, shiftIds));
+			await db
+				.delete(shiftRequest)
+				.where(inArray(shiftRequest.shiftId, shiftIds));
 			result.shiftRequestsDeleted = shiftRequestsToDelete.length;
 		}
 
@@ -2168,7 +2922,9 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 		where: eq(shiftRecurrence.organizationId, organizationId),
 	});
 	if (shiftRecurrencesToDelete.length > 0) {
-		await db.delete(shiftRecurrence).where(eq(shiftRecurrence.organizationId, organizationId));
+		await db
+			.delete(shiftRecurrence)
+			.where(eq(shiftRecurrence.organizationId, organizationId));
 		result.shiftRecurrencesDeleted = shiftRecurrencesToDelete.length;
 	}
 
@@ -2176,7 +2932,9 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 	const allShiftTemplates = await db.query.shiftTemplate.findMany({
 		where: eq(shiftTemplate.organizationId, organizationId),
 	});
-	const shiftTemplatesToDelete = allShiftTemplates.filter((t) => t.name.startsWith("Demo "));
+	const shiftTemplatesToDelete = allShiftTemplates.filter((t) =>
+		t.name.startsWith("Demo "),
+	);
 	if (shiftTemplatesToDelete.length > 0) {
 		await db.delete(shiftTemplate).where(
 			inArray(
@@ -2194,7 +2952,10 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 	// Remove work category assignments from work periods
 	if (employeeIds.length > 0) {
 		const periodsWithCategories = await db.query.workPeriod.findMany({
-			where: and(inArray(workPeriod.employeeId, employeeIds), isNotNull(workPeriod.workCategoryId)),
+			where: and(
+				inArray(workPeriod.employeeId, employeeIds),
+				isNotNull(workPeriod.workCategoryId),
+			),
 		});
 		if (periodsWithCategories.length > 0) {
 			await db
@@ -2293,7 +3054,9 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 	const allLocations = await db.query.location.findMany({
 		where: eq(location.organizationId, organizationId),
 	});
-	const locationsToDelete = allLocations.filter((l) => l.name.startsWith("Demo - "));
+	const locationsToDelete = allLocations.filter((l) =>
+		l.name.startsWith("Demo - "),
+	);
 	if (locationsToDelete.length > 0) {
 		const locationIdsToDelete = locationsToDelete.map((l) => l.id);
 
@@ -2338,7 +3101,9 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 			where: inArray(workPeriod.employeeId, employeeIds),
 		});
 		if (workPeriodsToDelete.length > 0) {
-			await db.delete(workPeriod).where(inArray(workPeriod.employeeId, employeeIds));
+			await db
+				.delete(workPeriod)
+				.where(inArray(workPeriod.employeeId, employeeIds));
 			result.workPeriodsDeleted = workPeriodsToDelete.length;
 		}
 
@@ -2347,7 +3112,9 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 			where: inArray(timeEntry.employeeId, employeeIds),
 		});
 		if (timeEntriesToDelete.length > 0) {
-			await db.delete(timeEntry).where(inArray(timeEntry.employeeId, employeeIds));
+			await db
+				.delete(timeEntry)
+				.where(inArray(timeEntry.employeeId, employeeIds));
 			result.timeEntriesDeleted = timeEntriesToDelete.length;
 		}
 
@@ -2356,14 +3123,17 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 			where: inArray(absenceEntry.employeeId, employeeIds),
 		});
 		if (absencesToDelete.length > 0) {
-			await db.delete(absenceEntry).where(inArray(absenceEntry.employeeId, employeeIds));
+			await db
+				.delete(absenceEntry)
+				.where(inArray(absenceEntry.employeeId, employeeIds));
 			result.absencesDeleted = absencesToDelete.length;
 		}
 
 		// Delete employee vacation allowances (reset to org defaults)
-		const allowancesToDelete = await db.query.employeeVacationAllowance.findMany({
-			where: inArray(employeeVacationAllowance.employeeId, employeeIds),
-		});
+		const allowancesToDelete =
+			await db.query.employeeVacationAllowance.findMany({
+				where: inArray(employeeVacationAllowance.employeeId, employeeIds),
+			});
 		if (allowancesToDelete.length > 0) {
 			await db
 				.delete(employeeVacationAllowance)
@@ -2387,11 +3157,15 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 		}
 
 		// Delete manager assignments for these employees
-		const managerAssignmentsToDelete = await db.query.employeeManagers.findMany({
-			where: inArray(employeeManagers.employeeId, employeeIds),
-		});
+		const managerAssignmentsToDelete = await db.query.employeeManagers.findMany(
+			{
+				where: inArray(employeeManagers.employeeId, employeeIds),
+			},
+		);
 		if (managerAssignmentsToDelete.length > 0) {
-			await db.delete(employeeManagers).where(inArray(employeeManagers.employeeId, employeeIds));
+			await db
+				.delete(employeeManagers)
+				.where(inArray(employeeManagers.employeeId, employeeIds));
 			result.managerAssignmentsDeleted = managerAssignmentsToDelete.length;
 		}
 	}
@@ -2400,7 +3174,9 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 	const allTeams = await db.query.team.findMany({
 		where: eq(team.organizationId, organizationId),
 	});
-	const teamsToDelete = allTeams.filter((t) => t.description?.startsWith("Demo team - "));
+	const teamsToDelete = allTeams.filter((t) =>
+		t.description?.startsWith("Demo team - "),
+	);
 	if (teamsToDelete.length > 0) {
 		await db.delete(team).where(
 			inArray(
@@ -2415,7 +3191,9 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 	const allProjects = await db.query.project.findMany({
 		where: eq(project.organizationId, organizationId),
 	});
-	const projectsToDelete = allProjects.filter((p) => p.description?.startsWith("Demo project - "));
+	const projectsToDelete = allProjects.filter((p) =>
+		p.description?.startsWith("Demo project - "),
+	);
 	if (projectsToDelete.length > 0) {
 		await db.delete(project).where(
 			inArray(

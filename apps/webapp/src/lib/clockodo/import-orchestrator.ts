@@ -60,11 +60,18 @@ export interface ImportUserMapping {
 }
 
 /** Resolve a DateRangeFilter preset into concrete start/end ISO strings */
-function resolveDateRange(dateRange: DateRangeFilter): { startDate: string; endDate: string } {
+function resolveDateRange(dateRange: DateRangeFilter): {
+	startDate: string;
+	endDate: string;
+} {
 	const now = new Date();
 	const endDate = `${now.toISOString().slice(0, 19)}Z`;
 
-	if (dateRange.preset === "custom" && dateRange.startDate && dateRange.endDate) {
+	if (
+		dateRange.preset === "custom" &&
+		dateRange.startDate &&
+		dateRange.endDate
+	) {
 		return {
 			startDate: `${new Date(dateRange.startDate).toISOString().slice(0, 19)}Z`,
 			endDate: `${new Date(dateRange.endDate).toISOString().slice(0, 19)}Z`,
@@ -100,10 +107,17 @@ function resolveDateRange(dateRange: DateRangeFilter): { startDate: string; endD
 }
 
 /** Resolve a DateRangeFilter to a year range for the absences API */
-function resolveYearRange(dateRange: DateRangeFilter): { startYear: number; endYear: number } {
+function resolveYearRange(dateRange: DateRangeFilter): {
+	startYear: number;
+	endYear: number;
+} {
 	const currentYear = new Date().getFullYear();
 
-	if (dateRange.preset === "custom" && dateRange.startDate && dateRange.endDate) {
+	if (
+		dateRange.preset === "custom" &&
+		dateRange.startDate &&
+		dateRange.endDate
+	) {
 		return {
 			startYear: new Date(dateRange.startDate).getFullYear(),
 			endYear: new Date(dateRange.endDate).getFullYear(),
@@ -189,27 +203,49 @@ export async function orchestrateImport(
 
 		// Phase 3: Services → Work Categories
 		if (selections.services) {
-			result.services = await importServices(client, organizationId, userId, idMappings);
+			result.services = await importServices(
+				client,
+				organizationId,
+				userId,
+				idMappings,
+			);
 		}
 
 		// Phase 4: Target Hours → Work Policies
 		if (selections.targetHours) {
-			result.targetHours = await importTargetHours(client, organizationId, userId, idMappings);
+			result.targetHours = await importTargetHours(
+				client,
+				organizationId,
+				userId,
+				idMappings,
+			);
 		}
 
 		// Phase 5: Holiday Quotas → Vacation Allowances
 		if (selections.holidayQuotas) {
-			result.holidayQuotas = await importHolidayQuotas(client, organizationId, idMappings);
+			result.holidayQuotas = await importHolidayQuotas(
+				client,
+				organizationId,
+				idMappings,
+			);
 		}
 
 		// Phase 6: Non-Business Days → Holidays
 		if (selections.nonBusinessDays) {
-			result.nonBusinessDays = await importNonBusinessDays(client, organizationId, userId);
+			result.nonBusinessDays = await importNonBusinessDays(
+				client,
+				organizationId,
+				userId,
+			);
 		}
 
 		// Phase 7: Surcharges
 		if (selections.surcharges) {
-			result.surcharges = await importSurcharges(client, organizationId, userId);
+			result.surcharges = await importSurcharges(
+				client,
+				organizationId,
+				userId,
+			);
 		}
 
 		// Phase 8: Absences
@@ -224,7 +260,7 @@ export async function orchestrateImport(
 
 		// Phase 9: Time Entries
 		if (selections.entries) {
-			result.entries = await importEntries(
+			result.entries = await importClockodoData(
 				client,
 				organizationId,
 				userId,
@@ -235,17 +271,23 @@ export async function orchestrateImport(
 
 		// Determine overall status
 		const hasErrors = Object.values(result)
-			.filter((v): v is EntityImportResult => typeof v === "object" && "errors" in v)
+			.filter(
+				(v): v is EntityImportResult => typeof v === "object" && "errors" in v,
+			)
 			.some((r) => r.errors.length > 0);
 		const hasImports = Object.values(result)
-			.filter((v): v is EntityImportResult => typeof v === "object" && "imported" in v)
+			.filter(
+				(v): v is EntityImportResult =>
+					typeof v === "object" && "imported" in v,
+			)
 			.some((r) => r.imported > 0);
 
 		result.status = hasErrors ? (hasImports ? "partial" : "failed") : "success";
 	} catch (error) {
 		logger.error({ error }, "Import orchestration failed");
 		result.status = "failed";
-		result.errorMessage = error instanceof Error ? error.message : "Unknown error";
+		result.errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
 	}
 
 	result.durationMs = Date.now() - startTime;
@@ -270,7 +312,10 @@ async function importTeams(
 			try {
 				// Check for duplicate by name
 				const existing = await db.query.team.findFirst({
-					where: and(eq(team.organizationId, organizationId), eq(team.name, ct.name)),
+					where: and(
+						eq(team.organizationId, organizationId),
+						eq(team.name, ct.name),
+					),
 				});
 
 				if (existing) {
@@ -280,7 +325,10 @@ async function importTeams(
 				}
 
 				const mapped = mapTeamToZ8(ct, organizationId);
-				const [inserted] = await db.insert(team).values(mapped).returning({ id: team.id });
+				const [inserted] = await db
+					.insert(team)
+					.values(mapped)
+					.returning({ id: team.id });
 				idMappings.teams.set(ct.id, inserted.id);
 				result.imported++;
 			} catch (error) {
@@ -340,7 +388,11 @@ async function importUsers(
 				}
 
 				// If mapping is "manual" and has an existing employeeId + userId, use that directly
-				if (mapping?.mappingType === "manual" && mapping.employeeId && mapping.userId) {
+				if (
+					mapping?.mappingType === "manual" &&
+					mapping.employeeId &&
+					mapping.userId
+				) {
 					idMappings.users.set(cu.id, {
 						employeeId: mapping.employeeId,
 						userId: mapping.userId,
@@ -350,7 +402,11 @@ async function importUsers(
 				}
 
 				// If mapping is "auto_email" and has an existing employeeId + userId, use that
-				if (mapping?.mappingType === "auto_email" && mapping.employeeId && mapping.userId) {
+				if (
+					mapping?.mappingType === "auto_email" &&
+					mapping.employeeId &&
+					mapping.userId
+				) {
 					idMappings.users.set(cu.id, {
 						employeeId: mapping.employeeId,
 						userId: mapping.userId,
@@ -425,7 +481,10 @@ async function importUsers(
 
 				// Check if employee already exists for this user in this org
 				const existingEmployee = await db.query.employee.findFirst({
-					where: and(eq(employee.userId, authUserId), eq(employee.organizationId, organizationId)),
+					where: and(
+						eq(employee.userId, authUserId),
+						eq(employee.organizationId, organizationId),
+					),
 				});
 
 				if (existingEmployee) {
@@ -442,10 +501,15 @@ async function importUsers(
 
 				// Assign team if available
 				if (cu.teams_id && idMappings.teams.has(cu.teams_id)) {
-					(mapped as Record<string, unknown>).teamId = idMappings.teams.get(cu.teams_id);
+					(mapped as Record<string, unknown>).teamId = idMappings.teams.get(
+						cu.teams_id,
+					);
 				}
 
-				const [inserted] = await db.insert(employee).values(mapped).returning({ id: employee.id });
+				const [inserted] = await db
+					.insert(employee)
+					.values(mapped)
+					.returning({ id: employee.id });
 
 				idMappings.users.set(cu.id, {
 					employeeId: inserted.id,
@@ -622,8 +686,12 @@ async function importTargetHours(
 						assignmentType: "employee",
 						employeeId: employeeMapping.employeeId,
 						priority: 2,
-						effectiveFrom: mapped.dateSince ? new Date(mapped.dateSince) : undefined,
-						effectiveUntil: mapped.dateUntil ? new Date(mapped.dateUntil) : undefined,
+						effectiveFrom: mapped.dateSince
+							? new Date(mapped.dateSince)
+							: undefined,
+						effectiveUntil: mapped.dateUntil
+							? new Date(mapped.dateUntil)
+							: undefined,
 						createdBy: userId,
 					});
 				}
@@ -671,7 +739,10 @@ async function importHolidayQuotas(
 				// Check for duplicate
 				const existing = await db.query.employeeVacationAllowance.findFirst({
 					where: and(
-						eq(employeeVacationAllowance.employeeId, employeeMapping.employeeId),
+						eq(
+							employeeVacationAllowance.employeeId,
+							employeeMapping.employeeId,
+						),
 						eq(employeeVacationAllowance.year, quota.year_since),
 					),
 				});
@@ -681,7 +752,10 @@ async function importHolidayQuotas(
 					continue;
 				}
 
-				const mapped = mapHolidayQuotaToVacationAllowance(quota, employeeMapping.employeeId);
+				const mapped = mapHolidayQuotaToVacationAllowance(
+					quota,
+					employeeMapping.employeeId,
+				);
 				await db.insert(employeeVacationAllowance).values(mapped);
 				result.imported++;
 			} catch (error) {
@@ -756,7 +830,12 @@ async function importNonBusinessDays(
 					continue;
 				}
 
-				const mapped = mapNonBusinessDayToHoliday(nbd, organizationId, categoryId, userId);
+				const mapped = mapNonBusinessDayToHoliday(
+					nbd,
+					organizationId,
+					categoryId,
+					userId,
+				);
 				await db.insert(holiday).values(mapped);
 				result.imported++;
 			} catch (error) {
@@ -858,14 +937,18 @@ async function importAbsences(
 				{ length: endYear - startYear + 1 },
 				(_, index) => startYear + index,
 			);
-			const allAbsences = (await Promise.all(years.map((year) => client.getAbsences(year)))).flat();
+			const allAbsences = (
+				await Promise.all(years.map((year) => client.getAbsences(year)))
+			).flat();
 
 			// Filter by exact date range if custom or preset
 			const resolved = resolveDateRange(dateRange);
 			const rangeStart = resolved.startDate.slice(0, 10); // YYYY-MM-DD
 			const rangeEnd = resolved.endDate.slice(0, 10);
 
-			absences = allAbsences.filter((a) => a.date_until >= rangeStart && a.date_since <= rangeEnd);
+			absences = allAbsences.filter(
+				(a) => a.date_until >= rangeStart && a.date_since <= rangeEnd,
+			);
 		} else {
 			absences = await client.getAbsences();
 		}
@@ -929,7 +1012,11 @@ async function importAbsences(
 					continue;
 				}
 
-				const mapped = mapAbsenceToZ8(absence, employeeMapping.employeeId, categoryId);
+				const mapped = mapAbsenceToZ8(
+					absence,
+					employeeMapping.employeeId,
+					categoryId,
+				);
 				await db.insert(absenceEntry).values(mapped);
 				result.imported++;
 			} catch (error) {
@@ -951,7 +1038,7 @@ async function importAbsences(
 // TIME ENTRY → WORK PERIOD IMPORT
 // ============================================
 
-async function importEntries(
+async function importClockodoData(
 	client: ClockodoClient,
 	organizationId: string,
 	_userId: string,
@@ -987,7 +1074,9 @@ async function importEntries(
 
 				const employeeMapping = idMappings.users.get(entry.users_id);
 				if (!employeeMapping) {
-					result.errors.push(`Entry ${entry.id}: no matching employee for user ${entry.users_id}`);
+					result.errors.push(
+						`Entry ${entry.id}: no matching employee for user ${entry.users_id}`,
+					);
 					continue;
 				}
 

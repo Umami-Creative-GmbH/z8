@@ -37,13 +37,15 @@ const notificationCopy = {
 		titleKey: "common:notifications.content.teamMemberAdded.title",
 		titleDefault: "Added to team",
 		messageKey: "common:notifications.content.teamMemberAdded.message",
-		messageDefault: "You have been added to the {teamName} team by {performedByName}.",
+		messageDefault:
+			"You have been added to the {teamName} team by {performedByName}.",
 	},
 	teamMemberRemoved: {
 		titleKey: "common:notifications.content.teamMemberRemoved.title",
 		titleDefault: "Removed from team",
 		messageKey: "common:notifications.content.teamMemberRemoved.message",
-		messageDefault: "You have been removed from the {teamName} team by {performedByName}.",
+		messageDefault:
+			"You have been removed from the {teamName} team by {performedByName}.",
 	},
 } as const;
 
@@ -68,7 +70,9 @@ function i18nMetadata(
 // Helper to format YYYY-MM-DD date strings
 const formatDateStr = (dateStr: string) => {
 	const dt = DateTime.fromISO(dateStr);
-	return dt.setLocale("en-US").toLocaleString({ month: "short", day: "numeric" });
+	return dt
+		.setLocale("en-US")
+		.toLocaleString({ month: "short", day: "numeric" });
 };
 
 // =============================================================================
@@ -116,7 +120,9 @@ interface ApprovedAbsenceCancelledByEmployeeParams {
 /**
  * Notify employee that their absence request was submitted
  */
-export async function onAbsenceRequestSubmitted(params: AbsenceRequestParams): Promise<void> {
+export async function onAbsenceRequestSubmitted(
+	params: AbsenceRequestParams,
+): Promise<void> {
 	try {
 		const dateRange = `${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)}`;
 		const copy = notificationCopy.absenceRequestSubmitted;
@@ -141,7 +147,10 @@ export async function onAbsenceRequestSubmitted(params: AbsenceRequestParams): P
 			),
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger absence submitted notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger absence submitted notification",
+		);
 	}
 }
 
@@ -163,14 +172,19 @@ export async function onAbsenceRequestPendingApproval(
 			actionUrl: "/approvals/inbox",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger absence pending approval notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger absence pending approval notification",
+		);
 	}
 }
 
 /**
  * Notify employee that their absence request was approved
  */
-export async function onAbsenceRequestApproved(params: AbsenceApprovalParams): Promise<void> {
+export async function onAbsenceRequestApproved(
+	params: AbsenceApprovalParams,
+): Promise<void> {
 	try {
 		await createNotification({
 			userId: params.employeeUserId,
@@ -183,7 +197,10 @@ export async function onAbsenceRequestApproved(params: AbsenceApprovalParams): P
 			actionUrl: "/absences",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger absence approved notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger absence approved notification",
+		);
 	}
 }
 
@@ -210,7 +227,10 @@ export async function onAbsenceRecordedByManager(
 			},
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger manager-recorded absence notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger manager-recorded absence notification",
+		);
 	}
 }
 
@@ -236,16 +256,23 @@ export async function onApprovedAbsenceCancelledByEmployee(
 			},
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger approved absence cancellation notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger approved absence cancellation notification",
+		);
 	}
 }
 
 /**
  * Notify employee that their absence request was rejected
  */
-export async function onAbsenceRequestRejected(params: AbsenceRejectionParams): Promise<void> {
+export async function onAbsenceRequestRejected(
+	params: AbsenceRejectionParams,
+): Promise<void> {
 	try {
-		const reasonText = params.rejectionReason ? ` Reason: ${params.rejectionReason}` : "";
+		const reasonText = params.rejectionReason
+			? ` Reason: ${params.rejectionReason}`
+			: "";
 
 		await createNotification({
 			userId: params.employeeUserId,
@@ -258,7 +285,10 @@ export async function onAbsenceRequestRejected(params: AbsenceRejectionParams): 
 			actionUrl: "/absences",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger absence rejected notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger absence rejected notification",
+		);
 	}
 }
 
@@ -291,7 +321,9 @@ interface TimeCorrectionRejectionParams extends TimeCorrectionApprovalParams {
 /**
  * Notify employee that their time correction was submitted
  */
-export async function onTimeCorrectionSubmitted(params: TimeCorrectionParams): Promise<void> {
+export async function onTimeCorrectionSubmitted(
+	params: TimeCorrectionParams,
+): Promise<void> {
 	try {
 		await createNotification({
 			userId: params.employeeUserId,
@@ -304,7 +336,10 @@ export async function onTimeCorrectionSubmitted(params: TimeCorrectionParams): P
 			actionUrl: "/time-tracking",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger time correction submitted notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger time correction submitted notification",
+		);
 	}
 }
 
@@ -364,7 +399,9 @@ interface ClockOutApprovalResultParams {
 /**
  * Notify employee that their clock-out is pending approval (0-day policy)
  */
-export async function onClockOutPendingApproval(params: ClockOutApprovalParams): Promise<void> {
+export async function onClockOutPendingApproval(
+	params: ClockOutApprovalParams,
+): Promise<void> {
 	try {
 		await createNotification({
 			userId: params.employeeUserId,
@@ -377,7 +414,10 @@ export async function onClockOutPendingApproval(params: ClockOutApprovalParams):
 			actionUrl: "/time-tracking",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger clock-out pending notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger clock-out pending notification",
+		);
 	}
 }
 
@@ -402,14 +442,19 @@ export async function onClockOutPendingApprovalToManager(
 			actionUrl: "/approvals/inbox",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger clock-out approval manager notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger clock-out approval manager notification",
+		);
 	}
 }
 
 /**
  * Notify employee that their clock-out was approved
  */
-export async function onClockOutApproved(params: ClockOutApprovalResultParams): Promise<void> {
+export async function onClockOutApproved(
+	params: ClockOutApprovalResultParams,
+): Promise<void> {
 	try {
 		await createNotification({
 			userId: params.employeeUserId,
@@ -422,29 +467,86 @@ export async function onClockOutApproved(params: ClockOutApprovalResultParams): 
 			actionUrl: "/time-tracking",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger clock-out approved notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger clock-out approved notification",
+		);
 	}
 }
 
 /**
  * Notify employee that their clock-out was rejected
  */
-export async function onClockOutRejected(params: ClockOutApprovalResultParams): Promise<void> {
+export async function onClockOutRejected(
+	params: ClockOutApprovalResultParams,
+): Promise<void> {
 	try {
-		const reasonText = params.rejectionReason ? ` Reason: ${params.rejectionReason}` : "";
+		const reasonText = params.rejectionReason
+			? ` Reason: ${params.rejectionReason}`
+			: "";
 
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "time_correction_rejected",
 			title: "Clock-out rejected",
-			message: `Your clock-out was rejected by ${params.approverName}.${reasonText} The original times have been reverted.`,
+			message: `Your clock-out approval was rejected by ${params.approverName}.${reasonText} The recorded times remain unchanged and are excluded from approved payroll time.`,
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/time-tracking",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger clock-out rejected notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger clock-out rejected notification",
+		);
+	}
+}
+
+export async function onManualEntryApproved(
+	params: ClockOutApprovalResultParams,
+): Promise<void> {
+	try {
+		await createNotification({
+			userId: params.employeeUserId,
+			organizationId: params.organizationId,
+			type: "time_correction_approved",
+			title: "Manual time submission approved",
+			message: `Your manual time submission was approved by ${params.approverName}.`,
+			entityType: "work_period",
+			entityId: params.workPeriodId,
+			actionUrl: "/time-tracking",
+		});
+	} catch (error) {
+		logger.error(
+			{ error, params },
+			"Failed to trigger manual time approval notification",
+		);
+	}
+}
+
+export async function onManualEntryRejected(
+	params: ClockOutApprovalResultParams,
+): Promise<void> {
+	try {
+		const reasonText = params.rejectionReason
+			? ` Reason: ${params.rejectionReason}`
+			: "";
+		await createNotification({
+			userId: params.employeeUserId,
+			organizationId: params.organizationId,
+			type: "time_correction_rejected",
+			title: "Manual time submission rejected",
+			message: `Your manual time submission was rejected by ${params.approverName}.${reasonText}`,
+			entityType: "work_period",
+			entityId: params.workPeriodId,
+			actionUrl: "/time-tracking",
+		});
+	} catch (error) {
+		logger.error(
+			{ error, params },
+			"Failed to trigger manual time rejection notification",
+		);
 	}
 }
 
@@ -475,7 +577,10 @@ export async function onTimeCorrectionApproved(
 			actionUrl: "/time-tracking",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger time correction approved notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger time correction approved notification",
+		);
 	}
 }
 
@@ -486,7 +591,9 @@ export async function onTimeCorrectionRejected(
 	params: TimeCorrectionRejectionParams,
 ): Promise<void> {
 	try {
-		const reasonText = params.rejectionReason ? ` Reason: ${params.rejectionReason}` : "";
+		const reasonText = params.rejectionReason
+			? ` Reason: ${params.rejectionReason}`
+			: "";
 
 		await createNotification({
 			userId: params.employeeUserId,
@@ -499,7 +606,10 @@ export async function onTimeCorrectionRejected(
 			actionUrl: "/time-tracking",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger time correction rejected notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger time correction rejected notification",
+		);
 	}
 }
 
@@ -517,15 +627,21 @@ interface TravelExpenseRejectionParams extends TravelExpenseDecisionParams {
 	rejectionReason?: string;
 }
 
-function formatTravelExpenseSummary(params: TravelExpenseDecisionParams): string {
+function formatTravelExpenseSummary(
+	params: TravelExpenseDecisionParams,
+): string {
 	const amount = `${params.currency} ${params.amount}`;
-	return params.destinationCity ? `${params.destinationCity} (${amount})` : amount;
+	return params.destinationCity
+		? `${params.destinationCity} (${amount})`
+		: amount;
 }
 
 /**
  * Notify requester that their travel expense claim was approved.
  */
-export async function onTravelExpenseApproved(params: TravelExpenseDecisionParams): Promise<void> {
+export async function onTravelExpenseApproved(
+	params: TravelExpenseDecisionParams,
+): Promise<void> {
 	try {
 		await createNotification({
 			userId: params.requesterUserId,
@@ -538,16 +654,23 @@ export async function onTravelExpenseApproved(params: TravelExpenseDecisionParam
 			actionUrl: "/travel-expenses",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger travel expense approved notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger travel expense approved notification",
+		);
 	}
 }
 
 /**
  * Notify requester that their travel expense claim was rejected.
  */
-export async function onTravelExpenseRejected(params: TravelExpenseRejectionParams): Promise<void> {
+export async function onTravelExpenseRejected(
+	params: TravelExpenseRejectionParams,
+): Promise<void> {
 	try {
-		const reasonText = params.rejectionReason ? ` Reason: ${params.rejectionReason}` : "";
+		const reasonText = params.rejectionReason
+			? ` Reason: ${params.rejectionReason}`
+			: "";
 
 		await createNotification({
 			userId: params.requesterUserId,
@@ -560,7 +683,10 @@ export async function onTravelExpenseRejected(params: TravelExpenseRejectionPara
 			actionUrl: "/travel-expenses",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger travel expense rejected notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger travel expense rejected notification",
+		);
 	}
 }
 
@@ -580,7 +706,9 @@ interface TeamMemberParams {
 /**
  * Notify user they were added to a team
  */
-export async function onTeamMemberAdded(params: TeamMemberParams): Promise<void> {
+export async function onTeamMemberAdded(
+	params: TeamMemberParams,
+): Promise<void> {
 	try {
 		const copy = notificationCopy.teamMemberAdded;
 
@@ -607,14 +735,19 @@ export async function onTeamMemberAdded(params: TeamMemberParams): Promise<void>
 			),
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger team member added notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger team member added notification",
+		);
 	}
 }
 
 /**
  * Notify user they were removed from a team
  */
-export async function onTeamMemberRemoved(params: TeamMemberParams): Promise<void> {
+export async function onTeamMemberRemoved(
+	params: TeamMemberParams,
+): Promise<void> {
 	try {
 		const copy = notificationCopy.teamMemberRemoved;
 
@@ -641,7 +774,10 @@ export async function onTeamMemberRemoved(params: TeamMemberParams): Promise<voi
 			),
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger team member removed notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger team member removed notification",
+		);
 	}
 }
 
@@ -676,32 +812,43 @@ export async function onPasswordChanged(params: SecurityParams): Promise<void> {
 			),
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger password changed notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger password changed notification",
+		);
 	}
 }
 
 /**
  * Notify user 2FA was enabled
  */
-export async function onTwoFactorEnabled(params: SecurityParams): Promise<void> {
+export async function onTwoFactorEnabled(
+	params: SecurityParams,
+): Promise<void> {
 	try {
 		await createNotification({
 			userId: params.userId,
 			organizationId: params.organizationId,
 			type: "two_factor_enabled",
 			title: "Two-factor authentication enabled",
-			message: "Two-factor authentication has been enabled on your account for added security.",
+			message:
+				"Two-factor authentication has been enabled on your account for added security.",
 			actionUrl: "/settings/security",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger 2FA enabled notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger 2FA enabled notification",
+		);
 	}
 }
 
 /**
  * Notify user 2FA was disabled
  */
-export async function onTwoFactorDisabled(params: SecurityParams): Promise<void> {
+export async function onTwoFactorDisabled(
+	params: SecurityParams,
+): Promise<void> {
 	try {
 		await createNotification({
 			userId: params.userId,
@@ -713,7 +860,10 @@ export async function onTwoFactorDisabled(params: SecurityParams): Promise<void>
 			actionUrl: "/settings/security",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger 2FA disabled notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger 2FA disabled notification",
+		);
 	}
 }
 
@@ -731,7 +881,9 @@ interface BirthdayReminderParams {
 /**
  * Notify user about an upcoming birthday
  */
-export async function onBirthdayReminder(params: BirthdayReminderParams): Promise<void> {
+export async function onBirthdayReminder(
+	params: BirthdayReminderParams,
+): Promise<void> {
 	try {
 		const formatDate = (date: Date) =>
 			date.toLocaleDateString("en-US", { month: "long", day: "numeric" });
@@ -744,7 +896,10 @@ export async function onBirthdayReminder(params: BirthdayReminderParams): Promis
 			message: `${params.birthdayPersonName}'s birthday is on ${formatDate(params.birthdayDate)}.`,
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger birthday reminder notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger birthday reminder notification",
+		);
 	}
 }
 
@@ -758,7 +913,9 @@ interface VacationBalanceAlertParams {
 /**
  * Notify user about low vacation balance or expiring days
  */
-export async function onVacationBalanceAlert(params: VacationBalanceAlertParams): Promise<void> {
+export async function onVacationBalanceAlert(
+	params: VacationBalanceAlertParams,
+): Promise<void> {
 	try {
 		let message: string;
 
@@ -779,7 +936,10 @@ export async function onVacationBalanceAlert(params: VacationBalanceAlertParams)
 			actionUrl: "/absences",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger vacation balance alert notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger vacation balance alert notification",
+		);
 	}
 }
 
@@ -860,7 +1020,9 @@ interface ShiftPickupApprovedParams {
 /**
  * Notify employee that their schedule was published (batched per employee)
  */
-export async function onSchedulePublished(params: SchedulePublishedParams): Promise<void> {
+export async function onSchedulePublished(
+	params: SchedulePublishedParams,
+): Promise<void> {
 	try {
 		const formatDate = (date: Date) =>
 			date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -874,17 +1036,26 @@ export async function onSchedulePublished(params: SchedulePublishedParams): Prom
 			actionUrl: "/scheduling",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger schedule published notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger schedule published notification",
+		);
 	}
 }
 
 /**
  * Notify employee they were assigned to a shift
  */
-export async function onShiftAssigned(params: ShiftAssignedParams): Promise<void> {
+export async function onShiftAssigned(
+	params: ShiftAssignedParams,
+): Promise<void> {
 	try {
 		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+			date.toLocaleDateString("en-US", {
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+			});
 		const shiftDate = formatDate(params.shiftDate);
 		const copy = notificationCopy.shiftAssigned;
 
@@ -915,7 +1086,10 @@ export async function onShiftAssigned(params: ShiftAssignedParams): Promise<void
 			),
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger shift assigned notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger shift assigned notification",
+		);
 	}
 }
 
@@ -927,7 +1101,11 @@ export async function onShiftSwapRequestedToManager(
 ): Promise<void> {
 	try {
 		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+			date.toLocaleDateString("en-US", {
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+			});
 
 		const targetText = params.targetEmployeeName
 			? ` to swap with ${params.targetEmployeeName}`
@@ -944,7 +1122,10 @@ export async function onShiftSwapRequestedToManager(
 			actionUrl: "/approvals/inbox",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger shift swap request manager notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger shift swap request manager notification",
+		);
 	}
 }
 
@@ -956,7 +1137,11 @@ export async function onShiftSwapRequestedToTarget(
 ): Promise<void> {
 	try {
 		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+			date.toLocaleDateString("en-US", {
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+			});
 
 		await createNotification({
 			userId: params.targetEmployeeUserId,
@@ -969,17 +1154,26 @@ export async function onShiftSwapRequestedToTarget(
 			actionUrl: "/scheduling",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger shift swap request target notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger shift swap request target notification",
+		);
 	}
 }
 
 /**
  * Notify requester their shift swap was approved
  */
-export async function onShiftSwapApproved(params: ShiftSwapApprovalParams): Promise<void> {
+export async function onShiftSwapApproved(
+	params: ShiftSwapApprovalParams,
+): Promise<void> {
 	try {
 		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+			date.toLocaleDateString("en-US", {
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+			});
 
 		await createNotification({
 			userId: params.requesterUserId,
@@ -992,19 +1186,30 @@ export async function onShiftSwapApproved(params: ShiftSwapApprovalParams): Prom
 			actionUrl: "/scheduling",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger shift swap approved notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger shift swap approved notification",
+		);
 	}
 }
 
 /**
  * Notify requester their shift swap was rejected
  */
-export async function onShiftSwapRejected(params: ShiftSwapRejectionParams): Promise<void> {
+export async function onShiftSwapRejected(
+	params: ShiftSwapRejectionParams,
+): Promise<void> {
 	try {
 		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+			date.toLocaleDateString("en-US", {
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+			});
 
-		const reasonText = params.rejectionReason ? ` Reason: ${params.rejectionReason}` : "";
+		const reasonText = params.rejectionReason
+			? ` Reason: ${params.rejectionReason}`
+			: "";
 
 		await createNotification({
 			userId: params.requesterUserId,
@@ -1017,17 +1222,26 @@ export async function onShiftSwapRejected(params: ShiftSwapRejectionParams): Pro
 			actionUrl: "/scheduling",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger shift swap rejected notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger shift swap rejected notification",
+		);
 	}
 }
 
 /**
  * Notify team members about an open shift available for pickup
  */
-export async function onOpenShiftAvailable(params: OpenShiftAvailableParams): Promise<void> {
+export async function onOpenShiftAvailable(
+	params: OpenShiftAvailableParams,
+): Promise<void> {
 	try {
 		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+			date.toLocaleDateString("en-US", {
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+			});
 
 		// Create notifications for all eligible team members
 		await Promise.all(
@@ -1045,17 +1259,26 @@ export async function onOpenShiftAvailable(params: OpenShiftAvailableParams): Pr
 			),
 		);
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger open shift available notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger open shift available notification",
+		);
 	}
 }
 
 /**
  * Notify employee their shift pickup was approved
  */
-export async function onShiftPickupApproved(params: ShiftPickupApprovedParams): Promise<void> {
+export async function onShiftPickupApproved(
+	params: ShiftPickupApprovedParams,
+): Promise<void> {
 	try {
 		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+			date.toLocaleDateString("en-US", {
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+			});
 
 		await createNotification({
 			userId: params.employeeUserId,
@@ -1068,6 +1291,9 @@ export async function onShiftPickupApproved(params: ShiftPickupApprovedParams): 
 			actionUrl: "/scheduling",
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger shift pickup approved notification");
+		logger.error(
+			{ error, params },
+			"Failed to trigger shift pickup approved notification",
+		);
 	}
 }
