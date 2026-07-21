@@ -10,7 +10,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
 import { organization } from "../auth-schema";
 import { approvalStatusEnum } from "./enums";
 // Import tables for FK references

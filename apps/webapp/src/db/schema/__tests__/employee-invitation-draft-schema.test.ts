@@ -1,6 +1,12 @@
 import { readFileSync } from "node:fs";
+import type { SQL } from "drizzle-orm";
+import { getTableConfig, PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import { employeeInvitationDraft } from "../employee-invitation-draft";
+
+function sqlText(value: SQL): string {
+	return new PgDialect().sqlToQuery(value).sql;
+}
 
 describe("employee invitation draft schema", () => {
 	it("defines organization-scoped invitation draft fields", () => {
@@ -10,6 +16,15 @@ describe("employee invitation draft schema", () => {
 		expect(employeeInvitationDraft.role.name).toBe("role");
 		expect(employeeInvitationDraft.contractType.name).toBe("contract_type");
 		expect(employeeInvitationDraft.currentHourlyRate.name).toBe("current_hourly_rate");
+	});
+
+	it("models the deployed updated_at database default", () => {
+		const updatedAt = getTableConfig(employeeInvitationDraft).columns.find(
+			(column) => column.name === "updated_at",
+		);
+
+		expect(updatedAt?.default).toBeDefined();
+		expect(sqlText(updatedAt?.default as SQL)).toBe("now()");
 	});
 
 	it("registers the migration after its predecessor", () => {

@@ -372,13 +372,27 @@
       "when": 1780773132903,
       "tag": "0052_time_entry_timezone_recovery",
       "breakpoints": true
-	},
-	{
-		"idx": 53,
-		"version": "7",
-		"when": 1781096400000,
-		"tag": "0053_telegram_digest_delivery",
-		"breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1781096400000,
+      "tag": "0053_telegram_digest_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1784188443427,
+      "tag": "0054_approval_workflow_expand",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1784532360896,
+      "tag": "0055_approval_workflow_cycle_identity",
+      "breakpoints": true
     }
   ]
 }

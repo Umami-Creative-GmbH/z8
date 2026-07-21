@@ -1,5 +1,6 @@
+import { sql } from "drizzle-orm";
 import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
@@ -36,6 +37,7 @@ export const notification = pgTable(
 
 		// Metadata
 		metadata: text("metadata"), // JSON for additional context
+		idempotencyKey: text("idempotency_key"),
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
@@ -55,6 +57,9 @@ export const notification = pgTable(
 			table.organizationId,
 			table.createdAt,
 		),
+		uniqueIndex("notification_org_idempotencyKey_idx")
+			.on(table.organizationId, table.idempotencyKey)
+			.where(sql`idempotency_key IS NOT NULL`),
 	],
 );
 

@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	index,
 	integer,
 	pgTable,
@@ -8,7 +10,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
 import { organization, user } from "../auth-schema";
 import { approvalRequest } from "./approval";
 import { employee } from "./organization";
@@ -191,6 +193,7 @@ export const telegramDigestDelivery = pgTable(
 		failedAt: timestamp("failed_at"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
+			.defaultNow()
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
@@ -204,6 +207,10 @@ export const telegramDigestDelivery = pgTable(
 			table.logicalDate,
 		),
 		index("telegramDigestDelivery_organizationId_idx").on(table.organizationId),
+		check(
+			"telegram_digest_delivery_status_check",
+			sql`${table.status} IN ('sending', 'sent', 'failed')`,
+		),
 	],
 );
 

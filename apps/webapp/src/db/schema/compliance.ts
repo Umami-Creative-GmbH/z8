@@ -1,8 +1,18 @@
-import { boolean, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import {
+	boolean,
+	foreignKey,
+	index,
+	integer,
+	pgTable,
+	text,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
+import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
+import { approvalWorkflow } from "./approval-workflow";
 import { complianceExceptionStatusEnum, complianceExceptionTypeEnum } from "./enums";
 import { employee } from "./organization";
 import { workPeriod } from "./time-tracking";
@@ -62,6 +72,7 @@ export const complianceException = pgTable(
 		workPeriodId: uuid("work_period_id").references(() => workPeriod.id, {
 			onDelete: "set null",
 		}),
+		approvalWorkflowId: uuid("approval_workflow_id"),
 
 		// Audit fields
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -87,6 +98,14 @@ export const complianceException = pgTable(
 		),
 		// Composite index for manager approvals
 		index("complianceException_org_status_idx").on(table.organizationId, table.status),
+		index("complianceException_org_approvalWorkflowId_idx").on(
+			table.organizationId,
+			table.approvalWorkflowId,
+		),
+		foreignKey({
+			columns: [table.approvalWorkflowId, table.organizationId],
+			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],
+		}),
 	],
 );
 

@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
 	boolean,
 	decimal,
+	foreignKey,
 	index,
 	integer,
 	pgTable,
@@ -10,9 +11,10 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
 
 import { organization, user } from "../auth-schema";
+import { approvalWorkflow } from "./approval-workflow";
 import {
 	travelExpenseClaimStatusEnum,
 	travelExpenseDecisionActionEnum,
@@ -32,6 +34,7 @@ export const travelExpenseClaim = pgTable(
 			.notNull()
 			.references(() => employee.id, { onDelete: "cascade" }),
 		approverId: uuid("approver_id").references(() => employee.id, { onDelete: "set null" }),
+		approvalWorkflowId: uuid("approval_workflow_id"),
 		type: travelExpenseTypeEnum("type").notNull(),
 		status: travelExpenseClaimStatusEnum("status").notNull().default("draft"),
 		tripStart: timestamp("trip_start").notNull(),
@@ -64,6 +67,14 @@ export const travelExpenseClaim = pgTable(
 		index("travelExpenseClaim_type_idx").on(table.type),
 		index("travelExpenseClaim_tripStart_idx").on(table.tripStart),
 		index("travelExpenseClaim_submittedAt_idx").on(table.submittedAt),
+		index("travelExpenseClaim_org_approvalWorkflowId_idx").on(
+			table.organizationId,
+			table.approvalWorkflowId,
+		),
+		foreignKey({
+			columns: [table.approvalWorkflowId, table.organizationId],
+			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],
+		}),
 	],
 );
 

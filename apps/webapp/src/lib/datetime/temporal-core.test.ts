@@ -6,6 +6,7 @@ import {
 	comparePlainDates,
 	dateFromInstant,
 	instantFromDate,
+	isInstant,
 	parseInstant,
 	parsePlainDate,
 	parsePlainTimeMinute,
@@ -123,6 +124,19 @@ describe("temporal core", () => {
 		expect(compareInstants(earlier, later)).toBe(-1);
 		expect(compareInstants(later, earlier)).toBe(1);
 		expect(compareInstants(earlier, earlier)).toBe(0);
+	});
+
+	it("recognizes only objects with Temporal Instant internal slots", () => {
+		const instant = parseInstant("2024-01-15T10:30:00Z");
+		const coercible = {
+			toString: () => "2024-01-15T10:30:00Z",
+		};
+
+		expect(isInstant(instant)).toBe(true);
+		expect(isInstant(coercible)).toBe(false);
+		expect(isInstant(instant.toZonedDateTimeISO("UTC"))).toBe(false);
+		expect(isInstant(Object.create(Temporal.Instant.prototype))).toBe(false);
+		expect(isInstant(new Proxy(instant, {}))).toBe(false);
 	});
 
 	it("compares plain dates", () => {

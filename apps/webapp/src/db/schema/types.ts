@@ -109,6 +109,8 @@ export type WorkPeriodPendingChanges = {
 	reason?: string;
 	// For 0-day policy where clock-out itself triggers approval
 	isNewClockOut?: boolean;
+	// For manual work periods submitted for approval
+	isManualEntry?: boolean;
 };
 
 // ============================================

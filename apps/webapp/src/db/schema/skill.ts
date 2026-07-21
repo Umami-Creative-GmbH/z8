@@ -1,5 +1,5 @@
 import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
 
 import { organization, user } from "../auth-schema";
 import { skillCategoryEnum } from "./enums";

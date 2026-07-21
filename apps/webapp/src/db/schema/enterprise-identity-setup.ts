@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { boolean, index, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
 import type { EnterpriseIdentitySetupState } from "@/lib/enterprise-identity/setup-state";
 
 import { organization, user } from "../auth-schema";

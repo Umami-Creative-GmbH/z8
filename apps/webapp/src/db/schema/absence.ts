@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	date,
 	foreignKey,
 	index,
@@ -10,12 +12,13 @@ import {
 	unique,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
 
 export type LocaleTranslationMap = Record<string, string>;
 
 // Import auth tables for FK references
 import { organization } from "../auth-schema";
+import { approvalWorkflow } from "./approval-workflow";
 import { absenceTypeEnum, approvalStatusEnum, dayPeriodEnum, sickDetailEnum } from "./enums";
 import { employee } from "./organization";
 import { timeRecord } from "./time-record";
@@ -75,11 +78,12 @@ export const absenceEntry = pgTable(
 		notes: text("notes"),
 		sickDetail: sickDetailEnum("sick_detail"),
 		organizationId: text("organization_id").references(() => organization.id, {
-			onDelete: "set null",
+			onDelete: "cascade",
 		}),
 
 		// Legacy-to-canonical linkage used during big-bang cutover.
 		canonicalRecordId: uuid("canonical_record_id"),
+		approvalWorkflowId: uuid("approval_workflow_id"),
 
 		// Approval tracking
 		approvedBy: uuid("approved_by").references(() => employee.id),
@@ -104,6 +108,18 @@ export const absenceEntry = pgTable(
 			columns: [table.canonicalRecordId, table.organizationId],
 			foreignColumns: [timeRecord.id, timeRecord.organizationId],
 		}),
+		foreignKey({
+			columns: [table.approvalWorkflowId, table.organizationId],
+			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],
+		}),
+		check(
+			"absence_entry_approval_workflow_organization_check",
+			sql`${table.approvalWorkflowId} IS NULL OR ${table.organizationId} IS NOT NULL`,
+		),
+		index("absenceEntry_org_approvalWorkflowId_idx").on(
+			table.organizationId,
+			table.approvalWorkflowId,
+		),
 		index("absenceEntry_employeeId_status_idx").on(table.employeeId, table.status),
 	],
 );
