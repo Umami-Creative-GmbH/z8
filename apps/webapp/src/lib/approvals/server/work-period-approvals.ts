@@ -90,6 +90,7 @@ export interface FinalizeOrdinaryWorkPeriodTerminalInput {
 	dbService: ApprovalDbService;
 	organizationId: string;
 	workPeriodId: string;
+	approvalRequestId: string;
 	expectedApprovalWorkflowId: string | null;
 	requesterEmployeeId: string;
 	actorEmployeeId: string;
@@ -110,6 +111,62 @@ function sameDate(left: Date, right: Date): boolean {
 	return left.getTime() === right.getTime();
 }
 
+function exactOwnDataValues(
+	value: unknown,
+	expectedKeys: readonly string[],
+): Record<string, unknown> {
+	if (
+		typeof value !== "object" ||
+		value === null ||
+		Array.isArray(value) ||
+		Object.getPrototypeOf(value) !== Object.prototype
+	) {
+		throw ordinaryWorkPeriodFinalizationConflict();
+	}
+	const descriptors = Object.getOwnPropertyDescriptors(value);
+	const keys = Reflect.ownKeys(descriptors);
+	if (
+		keys.length !== expectedKeys.length ||
+		keys.some((key) => typeof key !== "string" || !expectedKeys.includes(key))
+	) {
+		throw ordinaryWorkPeriodFinalizationConflict();
+	}
+	const result: Record<string, unknown> = {};
+	for (const key of expectedKeys) {
+		const descriptor = descriptors[key];
+		if (!descriptor?.enumerable || !("value" in descriptor)) {
+			throw ordinaryWorkPeriodFinalizationConflict();
+		}
+		result[key] = descriptor.value;
+	}
+	return result;
+}
+
+function validateOrdinaryRequestMetadata(
+	metadata: unknown,
+	input: Pick<
+		FinalizeOrdinaryWorkPeriodTerminalInput,
+		"expectedApprovalWorkflowId" | "kind" | "organizationId"
+	>,
+): void {
+	if (input.expectedApprovalWorkflowId === null) {
+		parseOrdinaryWorkPeriodWorkflowPayload(metadata, input.kind);
+		return;
+	}
+	const root = exactOwnDataValues(metadata, ["timeRequest", "workflow"]);
+	parseOrdinaryWorkPeriodWorkflowPayload(
+		{ timeRequest: root.timeRequest },
+		input.kind,
+	);
+	const workflow = exactOwnDataValues(root.workflow, ["id", "organizationId"]);
+	if (
+		workflow.id !== input.expectedApprovalWorkflowId ||
+		workflow.organizationId !== input.organizationId
+	) {
+		throw ordinaryWorkPeriodFinalizationConflict();
+	}
+}
+
 async function finalizeOrdinaryWorkPeriodTerminal(
 	input: FinalizeOrdinaryWorkPeriodTerminalInput,
 ): Promise<WorkPeriodApprovalResult> {
@@ -125,6 +182,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			approvalWorkflowId: workPeriod.approvalWorkflowId,
 			approvalStatus: workPeriod.approvalStatus,
 			pendingChanges: workPeriod.pendingChanges,
+			isActive: workPeriod.isActive,
 			startTime: workPeriod.startTime,
 			endTime: workPeriod.endTime,
 			durationMinutes: workPeriod.durationMinutes,
@@ -147,6 +205,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		period.organizationId !== input.organizationId ||
 		period.employeeId !== input.requesterEmployeeId ||
 		period.approvalStatus !== "pending" ||
+		period.isActive !== false ||
 		period.deletedAt !== null ||
 		!period.clockInId ||
 		!period.clockOutId ||
@@ -217,17 +276,35 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 
 	const terminalStatus =
 		input.transition.kind === "approve" ? "approved" : "rejected";
-	const request = await input.dbService.db.query.approvalRequest.findFirst({
-		where: and(
-			eq(approvalRequest.organizationId, input.organizationId),
-			eq(approvalRequest.entityType, "time_entry"),
-			eq(approvalRequest.entityId, input.workPeriodId),
-			eq(approvalRequest.requestedBy, input.requesterEmployeeId),
-			eq(approvalRequest.status, terminalStatus),
-		),
-	});
+	const requests = await input.dbService.db
+		.select({
+			id: approvalRequest.id,
+			organizationId: approvalRequest.organizationId,
+			entityType: approvalRequest.entityType,
+			entityId: approvalRequest.entityId,
+			requestedBy: approvalRequest.requestedBy,
+			status: approvalRequest.status,
+			canonicalRecordId: approvalRequest.canonicalRecordId,
+			rejectionReason: approvalRequest.rejectionReason,
+			metadata: approvalRequest.metadata,
+		})
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.id, input.approvalRequestId),
+				eq(approvalRequest.organizationId, input.organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.entityId, input.workPeriodId),
+				eq(approvalRequest.requestedBy, input.requesterEmployeeId),
+				eq(approvalRequest.status, terminalStatus),
+			),
+		)
+		.limit(2);
+	if (requests.length !== 1) throw fail();
+	const request = requests[0];
 	if (
 		!request ||
+		request.id !== input.approvalRequestId ||
 		request.organizationId !== input.organizationId ||
 		request.entityType !== "time_entry" ||
 		request.entityId !== input.workPeriodId ||
@@ -241,7 +318,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		throw fail();
 	}
 	try {
-		parseOrdinaryWorkPeriodWorkflowPayload(request.metadata, input.kind);
+		validateOrdinaryRequestMetadata(request.metadata, input);
 	} catch {
 		throw fail();
 	}
@@ -269,6 +346,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 				eq(workPeriod.endTime, period.endTime),
 				eq(workPeriod.durationMinutes, period.durationMinutes),
 				eq(workPeriod.approvalStatus, "pending"),
+				eq(workPeriod.isActive, false),
 				isNull(workPeriod.deletedAt),
 			),
 		)
@@ -375,6 +453,7 @@ function finalizeCurrentWorkPeriodDecision(
 						dbService,
 						organizationId: approval.organizationId,
 						workPeriodId: entityId,
+						approvalRequestId: approval.id,
 						expectedApprovalWorkflowId: source.approvalWorkflowId,
 						requesterEmployeeId: requestedBy,
 						actorEmployeeId: currentEmployee.id,
