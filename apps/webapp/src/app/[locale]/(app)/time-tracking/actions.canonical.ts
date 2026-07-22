@@ -114,6 +114,7 @@ export const canonicalWorkRecordClient = {
 			workCategoryId?: string | null;
 			workLocationType?: WorkLocationType | null;
 			projectId?: string | null;
+			computationMetadata?: string | null;
 			origin: "clock" | "manual";
 		},
 		client?: CanonicalWorkRecordDbClient,
@@ -141,7 +142,7 @@ export const canonicalWorkRecordClient = {
 				recordKind: "work",
 				workCategoryId: input.workCategoryId ?? null,
 				workLocationType: input.workLocationType ?? null,
-				computationMetadata: null,
+				computationMetadata: input.computationMetadata ?? null,
 			});
 
 			if (input.projectId) {

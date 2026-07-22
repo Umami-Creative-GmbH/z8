@@ -86,10 +86,15 @@ describe("clocking service delegation", () => {
 			"eq(workPeriod.organizationId, targetEmployee.organizationId)",
 		);
 		const categoryGuard = body.indexOf("validateWorkCategoryAssignment(");
-		expect(categoryGuard).toBeGreaterThanOrEqual(0);
-		expect(categoryGuard).toBeLessThan(
-			body.indexOf("runtime.repository.withTransaction("),
+		const replayTransaction = body.indexOf(
+			"runtime.repository.withTransaction(",
 		);
+		const creationTransaction = body.lastIndexOf(
+			"runtime.repository.withTransaction(",
+		);
+		expect(categoryGuard).toBeGreaterThanOrEqual(0);
+		expect(replayTransaction).toBeLessThan(categoryGuard);
+		expect(categoryGuard).toBeLessThan(creationTransaction);
 	});
 
 	it("keeps the monolithic action as an authenticated billing-guarded delegate", () => {
