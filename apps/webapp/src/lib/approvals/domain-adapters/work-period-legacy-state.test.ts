@@ -757,6 +757,7 @@ describe("captureOrdinaryWorkPeriodLegacyPreSubmissionState", () => {
 			{ approvalRequests: [request(), request({ id: workflowId })] },
 		],
 		["a source workflow link", { workPeriods: [period()] }],
+		["an orphaned pending canonical workflow", { workflows: [workflow()] }],
 		[
 			"canonical parity mismatch",
 			{ canonicalRecords: [canonical({ durationMinutes: 1 })] },

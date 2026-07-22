@@ -615,6 +615,7 @@ function decodePreSubmissionCapture(
 		!sameInstant(canonical.endAt, period.endTime) ||
 		canonical.durationMinutes !== period.durationMinutes ||
 		array(envelope.approvalRequests).length !== 0 ||
+		array(envelope.workflows).length !== 0 ||
 		array(envelope.employees).length !== 1 ||
 		classifyTimeApprovalRequest({
 			metadata: { timeRequest: { kind: input.expectedKind } },
@@ -933,6 +934,18 @@ export async function captureOrdinaryWorkPeriodLegacyPreSubmissionState(
 				order by request.id
 				limit 2
 			),
+			workflow_rows as (
+				select workflow.id
+				from capture_input capture
+				join approval_workflow workflow
+					on workflow.organization_id = capture.organization_id
+					and workflow.source_type = 'time_entry'
+					and workflow.source_id = capture.work_period_id
+					and workflow.workflow_type in ('manual_time_submission', 'policy_clock_out')
+					and workflow.status = 'pending'
+				order by workflow.id
+				limit 2
+			),
 			employee_rows as (
 				select employee.id, employee.organization_id as "organizationId"
 				from capture_input capture
@@ -946,6 +959,7 @@ export async function captureOrdinaryWorkPeriodLegacyPreSubmissionState(
 				coalesce((select json_agg(period) from work_period_rows period), '[]'::json) as "workPeriods",
 				coalesce((select json_agg(record) from canonical_rows record), '[]'::json) as "canonicalRecords",
 				coalesce((select json_agg(request) from request_rows request), '[]'::json) as "approvalRequests",
+				coalesce((select json_agg(workflow) from workflow_rows workflow), '[]'::json) as workflows,
 				coalesce((select json_agg(employee) from employee_rows employee), '[]'::json) as employees
 		`);
 	} catch {

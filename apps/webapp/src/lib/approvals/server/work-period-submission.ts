@@ -4,6 +4,7 @@ import { approvalRequest } from "@/db/schema";
 import {
 	instantFromDate,
 	instantToCanonicalString,
+	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
@@ -24,6 +25,7 @@ import type { ApprovalPolicyOvertimeRisk } from "../policies/types";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
 import type {
+	ApprovalWorkflowSnapshot,
 	ApprovalWriteGate,
 	ApprovalWriteGateResult,
 } from "../workflow/ports";
@@ -90,20 +92,33 @@ interface LockedOrdinarySource {
 	canonicalApprovalState: string;
 	pendingLegacyRequests: unknown[];
 	pendingCanonicalWorkflows: unknown[];
+	terminalCanonicalWorkflows: unknown[];
+	terminalLegacyAutoRequests: unknown[];
 }
 
 interface PendingLegacyRequest {
 	id: string;
+	organizationId?: string;
+	entityType?: string;
+	entityId?: string;
 	requestedBy?: string;
 	approverId?: string;
+	status?: string;
 	reason?: string | null;
 	metadata?: unknown;
 	kind?: unknown;
 	chainInstanceId?: string | null;
 }
 
+export class OrdinaryWorkPeriodSubmissionError extends Error {
+	constructor() {
+		super("Ordinary work-period submission failed");
+		this.name = "OrdinaryWorkPeriodSubmissionError";
+	}
+}
+
 function fail(): never {
-	throw new Error("Ordinary work-period submission failed");
+	throw new OrdinaryWorkPeriodSubmissionError();
 }
 
 function rows(result: unknown): unknown[] {
@@ -124,6 +139,37 @@ function object(value: unknown): Record<string, unknown> {
 		return fail();
 	}
 	return value as Record<string, unknown>;
+}
+
+function exactDataObject(
+	value: unknown,
+	expectedKeys: readonly string[],
+): Record<string, unknown> {
+	if (
+		typeof value !== "object" ||
+		value === null ||
+		Array.isArray(value) ||
+		(Object.getPrototypeOf(value) !== Object.prototype &&
+			Object.getPrototypeOf(value) !== null)
+	) {
+		return fail();
+	}
+	const descriptors = Object.getOwnPropertyDescriptors(value);
+	if (
+		Reflect.ownKeys(descriptors).length !== expectedKeys.length ||
+		Reflect.ownKeys(descriptors).some(
+			(key) => typeof key !== "string" || !expectedKeys.includes(key),
+		)
+	) {
+		return fail();
+	}
+	const result: Record<string, unknown> = {};
+	for (const key of expectedKeys) {
+		const descriptor = descriptors[key];
+		if (!descriptor?.enumerable || !("value" in descriptor)) return fail();
+		result[key] = descriptor.value;
+	}
+	return result;
 }
 
 function fixedWriteGate(
@@ -207,8 +253,12 @@ async function loadOrdinarySource(
 			coalesce((
 				select json_agg(json_build_object(
 					'id', request.id,
+					'organizationId', request.organization_id,
+					'entityType', request.entity_type,
+					'entityId', request.entity_id,
 					'requestedBy', request.requested_by,
 					'approverId', request.approver_id,
+					'status', request.status,
 					'reason', request.reason,
 					'metadata', request.metadata,
 					'chainInstanceId', stage.chain_instance_id
@@ -235,7 +285,57 @@ async function loadOrdinarySource(
 					and workflow.source_id = period.id
 					and workflow.workflow_type in ('manual_time_submission', 'policy_clock_out')
 					and workflow.status = 'pending'
-			), '[]'::json) as "pendingCanonicalWorkflows"
+			), '[]'::json) as "pendingCanonicalWorkflows",
+			coalesce((
+				select json_agg(workflow_row.value order by workflow_row.id)
+				from (
+					select workflow.id, json_build_object(
+						'id', workflow.id,
+						'organizationId', workflow.organization_id,
+						'workflowType', workflow.workflow_type,
+						'sourceType', workflow.source_type,
+						'sourceId', workflow.source_id,
+						'requesterEmployeeId', workflow.requester_employee_id,
+						'status', workflow.status,
+						'contextSnapshot', workflow.context_snapshot
+					) as value
+					from approval_workflow workflow
+					where workflow.organization_id = period.organization_id
+						and workflow.source_type = 'time_entry'
+						and workflow.source_id = period.id
+						and workflow.workflow_type in ('manual_time_submission', 'policy_clock_out')
+						and workflow.status = 'approved'
+					order by workflow.id
+					limit 2
+				) workflow_row
+			), '[]'::json) as "terminalCanonicalWorkflows",
+			coalesce((
+				select json_agg(request_row.value order by request_row.id)
+				from (
+					select request.id, json_build_object(
+						'id', request.id,
+						'organizationId', request.organization_id,
+						'entityType', request.entity_type,
+						'entityId', request.entity_id,
+						'requestedBy', request.requested_by,
+						'approverId', request.approver_id,
+						'status', request.status,
+						'approvedAt', request.approved_at,
+						'metadata', request.metadata,
+						'chainInstanceId', stage.chain_instance_id
+					) as value
+					from approval_request request
+					left join approval_chain_stage_instance stage
+						on stage.approval_request_id = request.id
+						and stage.organization_id = request.organization_id
+					where request.organization_id = period.organization_id
+						and request.entity_type = 'time_entry'
+						and request.entity_id = period.id
+						and request.status = 'approved'
+					order by request.id
+					limit 2
+				) request_row
+			), '[]'::json) as "terminalLegacyAutoRequests"
 		from work_period period
 		join employee requester
 			on requester.id = period.employee_id
@@ -263,18 +363,20 @@ async function loadOrdinarySource(
 		!source.clockInId ||
 		!source.clockOutId ||
 		!source.canonicalRecordId ||
-		source.approvalStatus !== "pending" ||
+		(source.approvalStatus !== "pending" &&
+			source.approvalStatus !== "approved") ||
 		source.isActive !== false ||
 		source.deletedAt !== null ||
 		!(source.startTime instanceof Date) ||
 		!(source.endTime instanceof Date) ||
+		source.endTime.getTime() < source.startTime.getTime() ||
 		!Number.isSafeInteger(source.durationMinutes) ||
 		source.durationMinutes < 0 ||
 		source.canonicalId !== source.canonicalRecordId ||
 		source.canonicalOrganizationId !== input.organizationId ||
 		source.canonicalEmployeeId !== input.requesterEmployeeId ||
 		source.canonicalRecordKind !== "work" ||
-		source.canonicalApprovalState !== "pending" ||
+		source.canonicalApprovalState !== source.approvalStatus ||
 		!(source.canonicalStartAt instanceof Date) ||
 		!(source.canonicalEndAt instanceof Date) ||
 		!sameDate(source.canonicalStartAt, source.startTime) ||
@@ -282,12 +384,8 @@ async function loadOrdinarySource(
 		source.canonicalDurationMinutes !== source.durationMinutes ||
 		!Array.isArray(source.pendingLegacyRequests) ||
 		!Array.isArray(source.pendingCanonicalWorkflows) ||
-		classifyTimeApprovalRequest({
-			metadata: { timeRequest: { kind: input.kind } },
-			reason: input.reason,
-			pendingChanges: source.pendingChanges,
-			hasRelationalCorrectionEvidence: false,
-		}) !== input.kind
+		!Array.isArray(source.terminalCanonicalWorkflows) ||
+		!Array.isArray(source.terminalLegacyAutoRequests)
 	) {
 		return fail();
 	}
@@ -303,14 +401,72 @@ function requestKind(
 	) {
 		return request.kind;
 	}
-	return parseOrdinaryWorkPeriodWorkflowPayload(request.metadata).timeRequest
-		.kind;
+	try {
+		return parseOrdinaryWorkPeriodWorkflowPayload(request.metadata).timeRequest
+			.kind;
+	} catch {
+		const metadata = exactDataObject(request.metadata, [
+			"workflow",
+			"stage",
+			"timeRequest",
+		]);
+		return parseOrdinaryWorkPeriodWorkflowPayload({
+			timeRequest: metadata.timeRequest,
+		}).timeRequest.kind;
+	}
+}
+
+function validateCompatibilityMetadata(input: {
+	metadata: unknown;
+	organizationId: string;
+	workflowId: string;
+	kind: OrdinaryWorkPeriodApprovalKind;
+	expectedStage?: { id: string; sequence: number };
+}): { stageId: string; sequence: number } {
+	const metadata = exactDataObject(input.metadata, [
+		"workflow",
+		"stage",
+		"timeRequest",
+	]);
+	const workflow = exactDataObject(metadata.workflow, ["id", "organizationId"]);
+	const stage = exactDataObject(metadata.stage, ["id", "sequence"]);
+	parseOrdinaryWorkPeriodWorkflowPayload(
+		{ timeRequest: metadata.timeRequest },
+		input.kind,
+	);
+	if (
+		workflow.id !== input.workflowId ||
+		workflow.organizationId !== input.organizationId ||
+		typeof stage.id !== "string" ||
+		!Number.isSafeInteger(stage.sequence) ||
+		(stage.sequence as number) < 1 ||
+		(input.expectedStage !== undefined &&
+			(stage.id !== input.expectedStage.id ||
+				stage.sequence !== input.expectedStage.sequence))
+	) {
+		return fail();
+	}
+	return { stageId: stage.id, sequence: stage.sequence as number };
 }
 
 function validatePendingOccupants(
 	input: ExecuteOrdinaryWorkPeriodSubmissionInput,
 	source: LockedOrdinarySource,
+	authority: ApprovalWriteGateResult,
+	expectedWorkflowId: string,
 ): ResolvePolicyAndCreateApprovalResult | null {
+	if (
+		source.approvalStatus !== "pending" ||
+		source.canonicalApprovalState !== "pending" ||
+		classifyTimeApprovalRequest({
+			metadata: { timeRequest: { kind: input.kind } },
+			reason: input.reason,
+			pendingChanges: source.pendingChanges,
+			hasRelationalCorrectionEvidence: false,
+		}) !== input.kind
+	) {
+		return fail();
+	}
 	if (
 		source.pendingLegacyRequests.length > 1 ||
 		source.pendingCanonicalWorkflows.length > 1
@@ -329,7 +485,9 @@ function validatePendingOccupants(
 		if (
 			canonical.workflowType !== input.kind ||
 			canonical.requesterEmployeeId !== input.requesterEmployeeId ||
-			canonical.id !== source.approvalWorkflowId
+			canonical.id !== source.approvalWorkflowId ||
+			((authority.mode === "canonical" || authority.mode === "complete") &&
+				canonical.id !== expectedWorkflowId)
 		) {
 			return fail();
 		}
@@ -347,11 +505,24 @@ function validatePendingOccupants(
 		}
 		if (
 			kind !== input.kind ||
-			(typeof legacy.requestedBy === "string" &&
-				legacy.requestedBy !== input.requesterEmployeeId) ||
+			legacy.organizationId !== input.organizationId ||
+			legacy.entityType !== "time_entry" ||
+			legacy.entityId !== input.workPeriodId ||
+			legacy.status !== "pending" ||
+			legacy.requestedBy !== input.requesterEmployeeId ||
 			typeof legacy.id !== "string"
 		) {
 			return fail();
+		}
+		if (authority.mode === "canonical" || authority.mode === "complete") {
+			if (!canonical) return fail();
+			validateCompatibilityMetadata({
+				metadata: legacy.metadata,
+				organizationId: input.organizationId,
+				workflowId: expectedWorkflowId,
+				kind: input.kind,
+			});
+			return null;
 		}
 		if (canonical && source.approvalWorkflowId !== canonical.id) return fail();
 		return legacy.chainInstanceId
@@ -474,6 +645,241 @@ async function legacyApprover(
 	return request.approverId;
 }
 
+function representativeStage(snapshot: ApprovalWorkflowSnapshot) {
+	const stage =
+		snapshot.stages.find(
+			(candidate) => candidate.sequence === snapshot.currentStageOrder,
+		) ?? snapshot.stages.at(-1);
+	if (!stage) return fail();
+	return stage;
+}
+
+async function resolveCanonicalCompatibilityRequest(input: {
+	submission: ExecuteOrdinaryWorkPeriodSubmissionInput;
+	snapshot: ApprovalWorkflowSnapshot;
+	expectedStatus: "pending" | "approved";
+}): Promise<{ id: string; approverId: string }> {
+	const stage = representativeStage(input.snapshot);
+	const requests =
+		await input.submission.dbService.db.query.approvalRequest.findMany({
+			where: and(
+				eq(approvalRequest.organizationId, input.submission.organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.entityId, input.submission.workPeriodId),
+				eq(approvalRequest.requestedBy, input.submission.requesterEmployeeId),
+				eq(approvalRequest.status, input.expectedStatus),
+				sql`${approvalRequest.metadata} -> 'workflow' ->> 'id' = ${input.snapshot.id}`,
+				sql`${approvalRequest.metadata} -> 'workflow' ->> 'organizationId' = ${input.submission.organizationId}`,
+				sql`${approvalRequest.metadata} -> 'stage' ->> 'id' = ${stage.id}`,
+				sql`${approvalRequest.metadata} -> 'stage' ->> 'sequence' = ${String(stage.sequence)}`,
+				sql`${approvalRequest.metadata} -> 'timeRequest' ->> 'kind' = ${input.submission.kind}`,
+			),
+			columns: {
+				id: true,
+				organizationId: true,
+				entityType: true,
+				entityId: true,
+				requestedBy: true,
+				approverId: true,
+				status: true,
+				metadata: true,
+			},
+			limit: 2,
+		});
+	if (requests.length !== 1) return fail();
+	const request = requests[0];
+	if (
+		!request ||
+		request.organizationId !== input.submission.organizationId ||
+		request.entityType !== "time_entry" ||
+		request.entityId !== input.submission.workPeriodId ||
+		request.requestedBy !== input.submission.requesterEmployeeId ||
+		request.status !== input.expectedStatus ||
+		!request.approverId
+	) {
+		return fail();
+	}
+	validateCompatibilityMetadata({
+		metadata: request.metadata,
+		organizationId: input.submission.organizationId,
+		workflowId: input.snapshot.id,
+		kind: input.submission.kind,
+		expectedStage: { id: stage.id, sequence: stage.sequence },
+	});
+	return { id: request.id, approverId: request.approverId };
+}
+
+function completeModeApprovalId(snapshot: ApprovalWorkflowSnapshot): string {
+	const stage = representativeStage(snapshot);
+	// Complete mode intentionally has no legacy row; start snapshots guarantee
+	// deterministic stage and assignment identities for the public result.
+	if (snapshot.status === "approved") return stage.id;
+	return (
+		stage.assignments.find((assignment) => assignment.status === "pending")
+			?.id ?? fail()
+	);
+}
+
+function hasValidApprovedAt(value: unknown): boolean {
+	if (value instanceof Date) return !Number.isNaN(value.getTime());
+	if (typeof value !== "string") return false;
+	try {
+		parseInstant(value);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function validateLegacyAutoReplay(input: {
+	submission: ExecuteOrdinaryWorkPeriodSubmissionInput;
+	request: unknown;
+}): { approvalRequestId: string; chainInstanceId: string | null } {
+	const request = object(input.request);
+	if (
+		typeof request.id !== "string" ||
+		request.organizationId !== input.submission.organizationId ||
+		request.entityType !== "time_entry" ||
+		request.entityId !== input.submission.workPeriodId ||
+		request.requestedBy !== input.submission.requesterEmployeeId ||
+		request.approverId !== input.submission.requesterEmployeeId ||
+		request.status !== "approved" ||
+		!hasValidApprovedAt(request.approvedAt) ||
+		(request.chainInstanceId !== null &&
+			request.chainInstanceId !== undefined &&
+			typeof request.chainInstanceId !== "string")
+	) {
+		return fail();
+	}
+	const metadata = exactDataObject(request.metadata, [
+		"timeRequest",
+		"autoApproval",
+	]);
+	parseOrdinaryWorkPeriodWorkflowPayload(
+		{ timeRequest: metadata.timeRequest },
+		input.submission.kind,
+	);
+	const autoApproval = exactDataObject(metadata.autoApproval, ["reason"]);
+	if (autoApproval.reason !== "requester_is_approver") return fail();
+	return {
+		approvalRequestId: request.id,
+		chainInstanceId:
+			typeof request.chainInstanceId === "string"
+				? request.chainInstanceId
+				: null,
+	};
+}
+
+async function resolveTerminalReplay(input: {
+	submission: ExecuteOrdinaryWorkPeriodSubmissionInput;
+	source: LockedOrdinarySource;
+	authority: ApprovalWriteGateResult;
+	expectedWorkflowId: string;
+}): Promise<{
+	result: Extract<
+		ResolvePolicyAndCreateApprovalResult,
+		{ kind: "auto_completed" }
+	>;
+	approverEmployeeId: string;
+} | null> {
+	if (input.source.approvalStatus === "pending") return null;
+	const canonicalAuthority =
+		input.authority.mode === "canonical" || input.authority.mode === "complete";
+	if (
+		input.source.approvalStatus !== "approved" ||
+		input.source.canonicalApprovalState !== "approved" ||
+		(canonicalAuthority
+			? input.source.terminalCanonicalWorkflows.length > 1
+			: input.source.terminalLegacyAutoRequests.length > 1)
+	) {
+		return fail();
+	}
+	const canonical = input.source.terminalCanonicalWorkflows[0];
+	if (canonical && canonicalAuthority) {
+		const workflow = object(canonical);
+		if (
+			workflow.id !== input.expectedWorkflowId ||
+			workflow.id !== input.source.approvalWorkflowId ||
+			workflow.organizationId !== input.submission.organizationId ||
+			workflow.workflowType !== input.submission.kind ||
+			workflow.sourceType !== "time_entry" ||
+			workflow.sourceId !== input.submission.workPeriodId ||
+			workflow.requesterEmployeeId !== input.submission.requesterEmployeeId ||
+			workflow.status !== "approved"
+		) {
+			return fail();
+		}
+		parseOrdinaryWorkPeriodWorkflowPayload(
+			workflow.contextSnapshot,
+			input.submission.kind,
+		);
+		const snapshot = await input.submission.context.repository.loadSnapshot({
+			organizationId: input.submission.organizationId,
+			workflowId: input.expectedWorkflowId,
+		});
+		if (
+			snapshot.id !== input.expectedWorkflowId ||
+			snapshot.organizationId !== input.submission.organizationId ||
+			snapshot.workflowType !== input.submission.kind ||
+			snapshot.sourceType !== "time_entry" ||
+			snapshot.sourceId !== input.submission.workPeriodId ||
+			snapshot.requesterEmployeeId !== input.submission.requesterEmployeeId ||
+			snapshot.status !== "approved" ||
+			snapshot.completedAt === null ||
+			snapshot.stages.length === 0 ||
+			snapshot.stages.some(
+				(stage) =>
+					stage.activationMode !== "requester_auto_approve" ||
+					stage.status !== "approved" ||
+					stage.assignments.length !== 0,
+			)
+		) {
+			return fail();
+		}
+		parseOrdinaryWorkPeriodWorkflowPayload(
+			snapshot.contextSnapshot,
+			input.submission.kind,
+		);
+		const approvalRequestId =
+			input.authority.mode === "canonical"
+				? (
+						await resolveCanonicalCompatibilityRequest({
+							submission: input.submission,
+							snapshot,
+							expectedStatus: "approved",
+						})
+					).id
+				: completeModeApprovalId(snapshot);
+		return {
+			result: {
+				kind: "auto_completed",
+				chainInstanceId: snapshot.stages.length > 1 ? snapshot.id : null,
+				approvalRequestId,
+				reason: "requester_is_approver",
+			},
+			approverEmployeeId: input.submission.requesterEmployeeId,
+		};
+	}
+	if (canonicalAuthority) {
+		return fail();
+	}
+	const legacy = input.source.terminalLegacyAutoRequests[0];
+	if (!legacy) return fail();
+	const evidence = validateLegacyAutoReplay({
+		submission: input.submission,
+		request: legacy,
+	});
+	return {
+		result: {
+			kind: "auto_completed",
+			chainInstanceId: evidence.chainInstanceId,
+			approvalRequestId: evidence.approvalRequestId,
+			reason: "requester_is_approver",
+		},
+		approverEmployeeId: input.submission.requesterEmployeeId,
+	};
+}
+
 function descriptor(input: {
 	submission: ExecuteOrdinaryWorkPeriodSubmissionInput;
 	source: LockedOrdinarySource;
@@ -504,7 +910,7 @@ function descriptor(input: {
 	});
 }
 
-export async function executeOrdinaryWorkPeriodSubmissionInTransaction(
+async function executeOrdinaryWorkPeriodSubmission(
 	input: ExecuteOrdinaryWorkPeriodSubmissionInput,
 ): Promise<{
 	result: ResolvePolicyAndCreateApprovalResult;
@@ -527,8 +933,6 @@ export async function executeOrdinaryWorkPeriodSubmissionInTransaction(
 			input.context.compatibilityWriter.withWriteGate(fixedGate),
 	} as ApprovalWorkflowTransactionContext;
 	await lockOrdinarySource(input);
-	const source = await loadOrdinarySource(input);
-	const replay = validatePendingOccupants(input, source);
 	const submissionKey = deriveApprovalWorkflowId({
 		organizationId: input.organizationId,
 		workflowType: input.kind,
@@ -536,6 +940,39 @@ export async function executeOrdinaryWorkPeriodSubmissionInTransaction(
 		sourceId: input.workPeriodId,
 		allocationKey: "ordinary-submission",
 	});
+	const expectedWorkflowId = deriveApprovalWorkflowId({
+		organizationId: input.organizationId,
+		workflowType: input.kind,
+		sourceType: "time_entry",
+		sourceId: input.workPeriodId,
+		allocationKey: submissionKey,
+	});
+	const source = await loadOrdinarySource(input);
+	const terminalReplay = await resolveTerminalReplay({
+		submission: input,
+		source,
+		authority,
+		expectedWorkflowId,
+	});
+	if (terminalReplay) {
+		return {
+			result: terminalReplay.result,
+			postCommit: descriptor({
+				submission: input,
+				source,
+				result: terminalReplay.result,
+				authority,
+				approverEmployeeId: terminalReplay.approverEmployeeId,
+				submissionKey,
+			}),
+		};
+	}
+	const replay = validatePendingOccupants(
+		input,
+		source,
+		authority,
+		expectedWorkflowId,
+	);
 	if (replay) {
 		const approverEmployeeId = await legacyApprover(
 			input,
@@ -732,6 +1169,7 @@ export async function executeOrdinaryWorkPeriodSubmissionInTransaction(
 		verifySourceWorkflow: (workflowId) =>
 			verifySourceWorkflow({ submission: input, workflowId }),
 	});
+	if (started.snapshot.id !== expectedWorkflowId) return fail();
 	if (started.terminal) {
 		if (started.status !== "approved") return fail();
 		await finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction({
@@ -765,23 +1203,33 @@ export async function executeOrdinaryWorkPeriodSubmissionInTransaction(
 	const activeAssignment = started.snapshot.stages
 		.flatMap((stage) => stage.assignments)
 		.find((assignment) => assignment.status === "pending");
+	const canonicalCompatibility =
+		authority.mode === "canonical"
+			? await resolveCanonicalCompatibilityRequest({
+					submission: input,
+					snapshot: started.snapshot,
+					expectedStatus: started.terminal ? "approved" : "pending",
+				})
+			: null;
+	const approvalRequestId =
+		canonicalCompatibility?.id ?? completeModeApprovalId(started.snapshot);
 	const result: ResolvePolicyAndCreateApprovalResult = started.terminal
 		? {
 				kind: "auto_completed",
 				chainInstanceId:
 					started.snapshot.stages.length > 1 ? started.snapshot.id : null,
-				approvalRequestId: started.snapshot.id,
+				approvalRequestId,
 				reason: "requester_is_approver",
 			}
 		: started.snapshot.stages.length > 1
 			? {
 					kind: "chain_created",
 					chainInstanceId: started.snapshot.id,
-					approvalRequestId: activeAssignment?.id ?? started.snapshot.id,
+					approvalRequestId,
 				}
 			: {
 					kind: "default_created",
-					approvalRequestId: activeAssignment?.id ?? started.snapshot.id,
+					approvalRequestId,
 				};
 	return {
 		result,
@@ -793,8 +1241,23 @@ export async function executeOrdinaryWorkPeriodSubmissionInTransaction(
 			approverEmployeeId:
 				result.kind === "auto_completed"
 					? input.requesterEmployeeId
-					: (activeAssignment?.approverEmployeeId ?? null),
+					: (canonicalCompatibility?.approverId ??
+						activeAssignment?.approverEmployeeId ??
+						null),
 			submissionKey,
 		}),
 	};
+}
+
+export async function executeOrdinaryWorkPeriodSubmissionInTransaction(
+	input: ExecuteOrdinaryWorkPeriodSubmissionInput,
+): Promise<{
+	result: ResolvePolicyAndCreateApprovalResult;
+	postCommit: WorkPeriodPostCommitDescriptor | null;
+}> {
+	try {
+		return await executeOrdinaryWorkPeriodSubmission(input);
+	} catch {
+		throw new OrdinaryWorkPeriodSubmissionError();
+	}
 }
