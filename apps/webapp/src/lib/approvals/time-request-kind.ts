@@ -50,11 +50,7 @@ export function classifyTimeApprovalRequest(
 		explicitKind === "policy_clock_out";
 
 	if (asObject(metadata?.timeCorrection)) {
-		return hasOrdinaryExplicitKind ||
-			hasManualMarker ||
-			hasClockOutMarker ||
-			hasManualReason ||
-			hasClockOutReason
+		return hasOrdinaryExplicitKind || (hasManualMarker && hasClockOutMarker)
 			? "unclassified"
 			: "time_correction";
 	}
@@ -79,12 +75,8 @@ export function classifyTimeApprovalRequest(
 	}
 
 	if (hasManualMarker && hasClockOutMarker) return "unclassified";
-	if (hasManualMarker) {
-		return hasClockOutReason ? "unclassified" : "manual_time_submission";
-	}
-	if (hasClockOutMarker) {
-		return hasManualReason ? "unclassified" : "policy_clock_out";
-	}
+	if (hasManualMarker) return "manual_time_submission";
+	if (hasClockOutMarker) return "policy_clock_out";
 	if (hasManualReason) {
 		return "manual_time_submission";
 	}

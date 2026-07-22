@@ -58,6 +58,34 @@ describe("classifyTimeApprovalRequest", () => {
 
 	it.each([
 		{
+			name: "a manual marker",
+			pendingChanges: { isManualEntry: true },
+		},
+		{
+			name: "a clock-out marker",
+			pendingChanges: { isNewClockOut: true },
+		},
+		{
+			name: "a manual reason",
+			reason: "Manual time entry: forgot to clock in",
+		},
+		{
+			name: "the policy clock-out reason",
+			reason: "Clock-out requires approval (0-day policy)",
+		},
+	] as const)("retains correction precedence over legacy-only $name", (legacy) => {
+		expect(
+			classifyTimeApprovalRequest({
+				metadata: { timeCorrection: { action: "edit" } },
+				reason: "reason" in legacy ? legacy.reason : undefined,
+				pendingChanges:
+					"pendingChanges" in legacy ? legacy.pendingChanges : undefined,
+			}),
+		).toBe("time_correction");
+	});
+
+	it.each([
+		{
 			name: "manual metadata with correction metadata",
 			input: {
 				metadata: {
@@ -135,14 +163,24 @@ describe("classifyTimeApprovalRequest", () => {
 		).toBe("manual_time_submission");
 	});
 
-	it("leaves a clock-out marker with a manual legacy reason unclassified", () => {
+	it("prefers a clock-out marker over manual legacy prose", () => {
 		expect(
 			classifyTimeApprovalRequest({
 				metadata: null,
 				reason: "Manual time entry: ambiguous legacy row",
 				pendingChanges: { isNewClockOut: true },
 			}),
-		).toBe("unclassified");
+		).toBe("policy_clock_out");
+	});
+
+	it("prefers a manual marker over policy clock-out prose", () => {
+		expect(
+			classifyTimeApprovalRequest({
+				metadata: null,
+				reason: "Clock-out requires approval (0-day policy)",
+				pendingChanges: { isManualEntry: true },
+			}),
+		).toBe("manual_time_submission");
 	});
 
 	it("classifies the exact legacy policy clock-out reason", () => {
