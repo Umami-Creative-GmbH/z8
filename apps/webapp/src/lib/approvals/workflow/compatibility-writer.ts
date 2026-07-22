@@ -12,6 +12,10 @@ import {
 	normalizeTimeCorrectionWorkflowPayload,
 	type TimeCorrectionWorkflowPayload,
 } from "../domain-adapters/time-correction-contract";
+import {
+	type OrdinaryWorkPeriodWorkflowPayload,
+	parseOrdinaryWorkPeriodWorkflowPayload,
+} from "../domain-adapters/work-period-contract";
 import type {
 	ApprovalCommandResult,
 	ApprovalDbService,
@@ -654,11 +658,28 @@ function timeCorrectionSubmissionEvidence(
 	};
 }
 
+function ordinaryWorkPeriodCompatibilityPayload(
+	snapshot: ApprovalCommandResult["snapshot"],
+): OrdinaryWorkPeriodWorkflowPayload["timeRequest"] | null {
+	if (
+		snapshot.sourceType !== "time_entry" ||
+		(snapshot.workflowType !== "manual_time_submission" &&
+			snapshot.workflowType !== "policy_clock_out")
+	) {
+		return null;
+	}
+	return parseOrdinaryWorkPeriodWorkflowPayload(
+		snapshot.contextSnapshot,
+		snapshot.workflowType,
+	).timeRequest;
+}
+
 function legacyRequestMetadata(
 	snapshot: ApprovalCommandResult["snapshot"],
 	stage: CanonicalStage,
 	assignment: CanonicalAssignment | undefined,
 	correction: TimeCorrectionWorkflowPayload["timeCorrection"] | null,
+	timeRequest: OrdinaryWorkPeriodWorkflowPayload["timeRequest"] | null,
 ): Record<string, unknown> {
 	const submission = timeCorrectionSubmissionEvidence(snapshot);
 	return {
@@ -669,9 +690,10 @@ function legacyRequestMetadata(
 		stage: {
 			id: stage.id,
 			sequence: stage.sequence,
-			...(assignment ? { assignmentId: assignment.id } : {}),
+			...(assignment && !timeRequest ? { assignmentId: assignment.id } : {}),
 		},
 		...(correction ? { timeCorrection: correction } : {}),
+		...(timeRequest ? { timeRequest } : {}),
 		...(submission ? { submission } : {}),
 	};
 }
@@ -869,6 +891,7 @@ export function createLegacyApprovalRowWriter(
 				throw new Error("Legacy row writer canonical scope mismatch");
 			}
 			const correction = timeCorrectionCompatibilityPayload(snapshot);
+			const timeRequest = ordinaryWorkPeriodCompatibilityPayload(snapshot);
 			const mappings = mappingByStage(input.result, input.legacyIds);
 			const orderedStages = [...snapshot.stages].sort(
 				(left, right) => left.sequence - right.sequence,
@@ -995,6 +1018,7 @@ export function createLegacyApprovalRowWriter(
 						stage,
 						metadataAssignment(stage),
 						correction,
+						timeRequest,
 					),
 				]),
 			);
@@ -1939,15 +1963,25 @@ function detachedCanonicalMirrorResult(input: {
 		throw new Error("Canonical compatibility result is invalid");
 	}
 	const correction = timeCorrectionCompatibilityPayload(result.snapshot);
-	if (correction === null) return result;
+	if (correction !== null) {
+		return normalizeStableData({
+			...result,
+			snapshot: {
+				...result.snapshot,
+				contextSnapshot: {
+					...result.snapshot.contextSnapshot,
+					timeCorrection: correction,
+				},
+			},
+		}) as ApprovalCommandResult;
+	}
+	const timeRequest = ordinaryWorkPeriodCompatibilityPayload(result.snapshot);
+	if (timeRequest === null) return result;
 	return normalizeStableData({
 		...result,
 		snapshot: {
 			...result.snapshot,
-			contextSnapshot: {
-				...result.snapshot.contextSnapshot,
-				timeCorrection: correction,
-			},
+			contextSnapshot: { timeRequest },
 		},
 	}) as ApprovalCommandResult;
 }

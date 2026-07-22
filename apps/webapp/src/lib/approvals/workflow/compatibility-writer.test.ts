@@ -1,5 +1,5 @@
 import { PgDialect } from "drizzle-orm/pg-core";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { TimeCorrectionWorkflowPayload } from "../domain-adapters/time-correction-contract";
 import {
@@ -56,6 +56,46 @@ function asTimeCorrectionResult(
 	return result;
 }
 
+function asOrdinaryWorkPeriodResult(
+	result: ApprovalCommandResult,
+	kind: "manual_time_submission" | "policy_clock_out",
+): ApprovalCommandResult {
+	result.snapshot.workflowType = kind;
+	result.snapshot.sourceType = "time_entry";
+	result.snapshot.contextSnapshot = { timeRequest: { kind } };
+	result.snapshot.displaySnapshot = { kind: "hostile_display_projection" };
+	result.projection.workflowType = kind;
+	result.projection.sourceType = "time_entry";
+	result.projection.displayPayload = { kind: "hostile_display_projection" };
+	return result;
+}
+
+function moveResultToCycle(
+	result: ApprovalCommandResult,
+	cycle: number,
+): ApprovalCommandResult {
+	result.snapshot.id = `10000000-0000-4000-8000-${String(cycle).padStart(12, "0")}`;
+	result.projection.workflowId = result.snapshot.id;
+	for (const event of result.events) event.workflowId = result.snapshot.id;
+	for (const outbox of result.outbox) outbox.workflowId = result.snapshot.id;
+	for (const [index, stage] of result.snapshot.stages.entries()) {
+		stage.id = `40000000-0000-4000-8000-${String(cycle * 100 + index).padStart(12, "0")}`;
+		stage.workflowId = result.snapshot.id;
+		for (const [assignmentIndex, assignment] of stage.assignments.entries()) {
+			assignment.id = `41000000-0000-4000-8000-${String(cycle * 100 + assignmentIndex).padStart(12, "0")}`;
+			assignment.workflowId = result.snapshot.id;
+			assignment.stageId = stage.id;
+		}
+	}
+	return result;
+}
+
+function resultStage(result: ApprovalCommandResult, index: number) {
+	const stage = result.snapshot.stages[index];
+	if (!stage) throw new Error("Invalid test fixture");
+	return stage;
+}
+
 function expectedRequestMetadata(
 	result: ApprovalCommandResult,
 	stage: ApprovalCommandResult["snapshot"]["stages"][number],
@@ -77,6 +117,20 @@ function expectedRequestMetadata(
 			...(assignment ? { assignmentId: assignment.id } : {}),
 		},
 	};
+	if (
+		result.snapshot.sourceType === "time_entry" &&
+		(result.snapshot.workflowType === "manual_time_submission" ||
+			result.snapshot.workflowType === "policy_clock_out")
+	) {
+		return {
+			workflow: metadata.workflow,
+			stage: {
+				id: stage.id,
+				sequence: stage.sequence,
+			},
+			timeRequest: { kind: result.snapshot.workflowType },
+		};
+	}
 	if (
 		result.snapshot.workflowType !== "time_correction" ||
 		result.snapshot.sourceType !== "time_entry"
@@ -983,6 +1037,38 @@ describe("approval compatibility writer", () => {
 
 		await expect(writer.mirrorCanonicalToLegacy({ result })).rejects.toThrow(
 			"Legacy time correction compatibility metadata is invalid",
+		);
+		expect(timeline).toEqual([]);
+	});
+
+	it("validates ordinary metadata before stable ID persistence", async () => {
+		const result = asOrdinaryWorkPeriodResult(
+			canonicalLegacyResult("pending"),
+			"manual_time_submission",
+		);
+		result.snapshot.contextSnapshot = {
+			timeRequest: { kind: "policy_clock_out" },
+			privateEvidence: "must-not-leak",
+		} as never;
+		const timeline: string[] = [];
+		const writer = createApprovalCompatibilityWriter({
+			writeGate: writeGate("canonical", () => timeline.push("gate")),
+			repository: {} as TransactionalWorkflowRepository,
+			projectionWriter: {} as ApprovalProjectionWriter,
+			outboxWriter: { write: async () => ({ kind: "duplicate" as const }) },
+			legacyPersistence: {
+				resolveOrCreateStableIds: async () => {
+					timeline.push("resolve");
+					return [];
+				},
+				writeLegacyRows: async () => {
+					timeline.push("write");
+				},
+			},
+		});
+
+		await expect(writer.mirrorCanonicalToLegacy({ result })).rejects.toThrow(
+			"Ordinary work-period workflow payload is invalid",
 		);
 		expect(timeline).toEqual([]);
 	});
@@ -2642,6 +2728,276 @@ describe("transaction-bound legacy approval row writer", () => {
 				},
 			});
 		}
+	});
+
+	it.each([
+		"manual_time_submission",
+		"policy_clock_out",
+	] as const)("writes exact canonical %s metadata for direct creation", async (kind) => {
+		const result = asOrdinaryWorkPeriodResult(
+			canonicalLegacyResult("pending"),
+			kind,
+		);
+		resultStage(result, 0).decisionReason = "policy_clock_out";
+		const harness = rowWriterHarness(result);
+
+		await harness.writer.writeLegacyRows({
+			organizationId: "org-1",
+			result,
+			legacyIds: harness.mappings,
+		});
+
+		const activeStage = resultStage(result, 0);
+		expect(insertedRequestMetadata(harness.calls)).toEqual({
+			workflow: { id: result.snapshot.id, organizationId: "org-1" },
+			stage: { id: activeStage.id, sequence: activeStage.sequence },
+			timeRequest: { kind },
+		});
+	});
+
+	it("preserves ordinary metadata through multistage advancement", async () => {
+		const result = asOrdinaryWorkPeriodResult(
+			stageTwoPendingResult(),
+			"manual_time_submission",
+		);
+		const harness = rowWriterHarness(result, stageOnePersistedState(result));
+
+		await harness.writer.writeLegacyRows({
+			organizationId: "org-1",
+			result,
+			legacyIds: harness.mappings,
+		});
+
+		const activeStage = resultStage(result, 1);
+		expect(insertedRequestMetadata(harness.calls)).toEqual({
+			workflow: { id: result.snapshot.id, organizationId: "org-1" },
+			stage: { id: activeStage.id, sequence: activeStage.sequence },
+			timeRequest: { kind: "manual_time_submission" },
+		});
+	});
+
+	it("uses ordinary context for the request after requester auto-approval", async () => {
+		const result = asOrdinaryWorkPeriodResult(
+			stageTwoPendingResult(),
+			"policy_clock_out",
+		);
+		const autoStage = resultStage(result, 0);
+		autoStage.activationMode = "requester_auto_approve";
+		autoStage.decisionReason = "requester_auto_approved";
+		autoStage.assignments = [];
+		const harness = rowWriterHarness(result);
+
+		await harness.writer.writeLegacyRows({
+			organizationId: "org-1",
+			result,
+			legacyIds: harness.mappings,
+		});
+
+		const activeStage = resultStage(result, 1);
+		expect(insertedRequestMetadata(harness.calls)).toEqual({
+			workflow: { id: result.snapshot.id, organizationId: "org-1" },
+			stage: { id: activeStage.id, sequence: activeStage.sequence },
+			timeRequest: { kind: "policy_clock_out" },
+		});
+	});
+
+	it.each([
+		["approved", "manual_time_submission"],
+		["rejected", "policy_clock_out"],
+	] as const)("preserves ordinary metadata through terminal %s", async (status, kind) => {
+		const result = asOrdinaryWorkPeriodResult(
+			canonicalLegacyResult(status),
+			kind,
+		);
+		const current = exactRequestRow(result, 0);
+		current.status = "pending";
+		current.reason = null;
+		current.rejection_reason = null;
+		current.approved_at = null;
+		current.updated_at = new Date(result.snapshot.submittedAt.toString());
+		const metadataBefore = structuredClone(current.metadata);
+		const harness = rowWriterHarness(result, { requestRows: [current] });
+
+		await harness.writer.writeLegacyRows({
+			organizationId: "org-1",
+			result,
+			legacyIds: harness.mappings,
+		});
+
+		expect(current.metadata).toEqual(metadataBefore);
+		expect(metadataBefore).toEqual(
+			expectedRequestMetadata(result, resultStage(result, 0)),
+		);
+		const update = harness.calls.find((call) =>
+			/^\s*update approval_request/i.test(call.sql),
+		);
+		expect(update?.sql).not.toMatch(/metadata\s*=/i);
+	});
+
+	it("replays exact ordinary metadata without rewriting legacy rows", async () => {
+		const result = asOrdinaryWorkPeriodResult(
+			canonicalLegacyResult("pending"),
+			"manual_time_submission",
+		);
+		const harness = rowWriterHarness(result, {
+			requestRows: [exactRequestRow(result, 0)],
+		});
+
+		await harness.writer.writeLegacyRows({
+			organizationId: "org-1",
+			result,
+			legacyIds: harness.mappings,
+		});
+
+		expect(
+			harness.calls.filter((call) =>
+				/^\s*(?:insert|update|delete)\b/i.test(call.sql),
+			),
+		).toHaveLength(0);
+	});
+
+	it("isolates ordinary kinds across terminal cycles for the same source", async () => {
+		const firstPending = asOrdinaryWorkPeriodResult(
+			moveResultToCycle(canonicalLegacyResult("pending"), 1),
+			"manual_time_submission",
+		);
+		const firstTerminal = asOrdinaryWorkPeriodResult(
+			moveResultToCycle(canonicalLegacyResult("approved"), 1),
+			"manual_time_submission",
+		);
+		const secondPending = asOrdinaryWorkPeriodResult(
+			moveResultToCycle(canonicalLegacyResult("pending"), 2),
+			"policy_clock_out",
+		);
+		const secondTerminal = asOrdinaryWorkPeriodResult(
+			moveResultToCycle(canonicalLegacyResult("approved"), 2),
+			"policy_clock_out",
+		);
+		const store = sharedCompatibilityStore();
+		const writer = createApprovalCompatibilityWriter({
+			writeGate: writeGate("canonical"),
+			repository: {} as TransactionalWorkflowRepository,
+			projectionWriter: {} as ApprovalProjectionWriter,
+			outboxWriter: { write: async () => ({ kind: "duplicate" as const }) },
+			legacyPersistence: store.persistence,
+		});
+
+		await writer.mirrorCanonicalToLegacy({ result: firstPending });
+		await writer.mirrorCanonicalToLegacy({ result: firstTerminal });
+		await writer.mirrorCanonicalToLegacy({ result: secondPending });
+		await writer.mirrorCanonicalToLegacy({ result: secondTerminal });
+
+		const rows = store.rows().requests;
+		const firstId = deterministicLegacyApprovalRequestId(
+			resultStage(firstTerminal, 0).id,
+			0,
+		);
+		const secondId = deterministicLegacyApprovalRequestId(
+			resultStage(secondTerminal, 0).id,
+			0,
+		);
+		expect(rows.get(firstId)?.metadata).toEqual(
+			expectedRequestMetadata(firstTerminal, resultStage(firstTerminal, 0)),
+		);
+		expect(rows.get(secondId)?.metadata).toEqual(
+			expectedRequestMetadata(secondTerminal, resultStage(secondTerminal, 0)),
+		);
+	});
+
+	it.each([
+		["missing", {}],
+		["malformed", { timeRequest: { kind: "time_correction" } }],
+		[
+			"private root data",
+			{
+				timeRequest: { kind: "manual_time_submission" },
+				privateRouting: { policyId: "must-not-leak" },
+			},
+		],
+		["kind mismatch", { timeRequest: { kind: "policy_clock_out" } }],
+	] as const)("rejects %s ordinary context before any legacy read or write", async (_label, contextSnapshot) => {
+		const result = asOrdinaryWorkPeriodResult(
+			canonicalLegacyResult("pending"),
+			"manual_time_submission",
+		);
+		result.snapshot.contextSnapshot = contextSnapshot as never;
+		const harness = rowWriterHarness(result);
+		const stringify = vi.spyOn(JSON, "stringify");
+
+		try {
+			await expect(
+				harness.writer.writeLegacyRows({
+					organizationId: "org-1",
+					result,
+					legacyIds: harness.mappings,
+				}),
+			).rejects.toThrow("Ordinary work-period workflow payload is invalid");
+			expect(harness.calls).toHaveLength(0);
+			expect(stringify).not.toHaveBeenCalled();
+		} finally {
+			stringify.mockRestore();
+		}
+	});
+
+	it("rejects hostile ordinary context without invoking accessors", async () => {
+		const result = asOrdinaryWorkPeriodResult(
+			canonicalLegacyResult("pending"),
+			"manual_time_submission",
+		);
+		let accesses = 0;
+		result.snapshot.contextSnapshot = Object.defineProperty({}, "timeRequest", {
+			enumerable: true,
+			get() {
+				accesses += 1;
+				return { kind: "manual_time_submission" };
+			},
+		}) as never;
+		const harness = rowWriterHarness(result);
+
+		await expect(
+			harness.writer.writeLegacyRows({
+				organizationId: "org-1",
+				result,
+				legacyIds: harness.mappings,
+			}),
+		).rejects.toThrow("Ordinary work-period workflow payload is invalid");
+		expect(accesses).toBe(0);
+		expect(harness.calls).toHaveLength(0);
+	});
+
+	it.each([
+		[
+			"ordinary workflow on another source",
+			"manual_time_submission",
+			"absence_entry",
+		],
+		["another workflow on a time entry", "absence", "time_entry"],
+	] as const)("keeps metadata byte-equivalent for %s", async (_label, workflowType, sourceType) => {
+		const result = canonicalLegacyResult("pending");
+		result.snapshot.workflowType = workflowType;
+		result.snapshot.sourceType = sourceType;
+		result.snapshot.contextSnapshot = { hostile: { kind: "policy_clock_out" } };
+		result.projection.workflowType = workflowType;
+		result.projection.sourceType = sourceType;
+		const harness = rowWriterHarness(result);
+
+		await harness.writer.writeLegacyRows({
+			organizationId: "org-1",
+			result,
+			legacyIds: harness.mappings,
+		});
+
+		const stage = resultStage(result, 0);
+		expect(JSON.stringify(insertedRequestMetadata(harness.calls))).toBe(
+			JSON.stringify({
+				stage: {
+					assignmentId: stage.assignments[0]?.id,
+					id: stage.id,
+					sequence: stage.sequence,
+				},
+				workflow: { id: result.snapshot.id, organizationId: "org-1" },
+			}),
+		);
 	});
 
 	it("keeps non-correction request metadata byte-equivalent and ignores display correction data", async () => {
