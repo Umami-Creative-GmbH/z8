@@ -41,6 +41,7 @@ export interface ExecuteOrdinaryWorkPeriodSubmissionInput {
 	context: ApprovalWorkflowTransactionContext;
 	organizationId: string;
 	workPeriodId: string;
+	submissionId: string;
 	requesterEmployeeId: string;
 	requesterUserId: string;
 	teamId: string | null;
@@ -118,8 +119,17 @@ export class OrdinaryWorkPeriodSubmissionError extends Error {
 	}
 }
 
+const CANONICAL_UUID =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
 function fail(): never {
 	throw new OrdinaryWorkPeriodSubmissionError();
+}
+
+function canonicalSubmissionId(value: unknown): string {
+	return typeof value === "string" && CANONICAL_UUID.test(value)
+		? value
+		: fail();
 }
 
 function rows(result: unknown): unknown[] {
@@ -406,7 +416,9 @@ async function loadOrdinarySource(
 					and case
 						when jsonb_typeof(request.metadata -> 'ordinarySubmission') <> 'object' then true
 						else jsonb_typeof(request.metadata -> 'ordinarySubmission' -> 'key') <> 'string'
-							or (select count(*) from jsonb_object_keys(request.metadata -> 'ordinarySubmission')) <> 1
+							or jsonb_typeof(request.metadata -> 'ordinarySubmission' -> 'submissionId') <> 'string'
+							or request.metadata -> 'ordinarySubmission' ->> 'submissionId' !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+							or (select count(*) from jsonb_object_keys(request.metadata -> 'ordinarySubmission')) <> 2
 					end
 				limit 1
 			) as "hasMalformedLegacyMarker"
@@ -472,7 +484,7 @@ function requestKind(
 	request: PendingLegacyRequest,
 	input: Pick<
 		ExecuteOrdinaryWorkPeriodSubmissionInput,
-		"kind" | "organizationId" | "workPeriodId"
+		"kind" | "organizationId" | "submissionId" | "workPeriodId"
 	>,
 ): OrdinaryWorkPeriodApprovalKind {
 	try {
@@ -486,7 +498,10 @@ function requestKind(
 			"timeRequest",
 			"ordinarySubmission",
 		]);
-		const marker = exactDataObject(metadata.ordinarySubmission, ["key"]);
+		const marker = exactDataObject(metadata.ordinarySubmission, [
+			"key",
+			"submissionId",
+		]);
 		const kind = parseOrdinaryWorkPeriodWorkflowPayload(
 			{ timeRequest: metadata.timeRequest },
 			input.kind,
@@ -496,9 +511,14 @@ function requestKind(
 			workflowType: input.kind,
 			sourceType: "time_entry",
 			sourceId: input.workPeriodId,
-			allocationKey: "ordinary-submission",
+			allocationKey: input.submissionId,
 		});
-		if (marker.key !== expectedKey) return fail();
+		if (
+			canonicalSubmissionId(marker.submissionId) !== input.submissionId ||
+			marker.key !== expectedKey
+		) {
+			return fail();
+		}
 		return kind;
 	} catch {
 		// Canonical compatibility rows use workflow and stage envelopes.
@@ -901,10 +921,15 @@ function validateMarkedAutoRequest(input: {
 	const payload = parseOrdinaryWorkPeriodWorkflowPayload({
 		timeRequest: metadata.timeRequest,
 	});
-	const marker = exactDataObject(metadata.ordinarySubmission, ["key"]);
+	const marker = exactDataObject(metadata.ordinarySubmission, [
+		"key",
+		"submissionId",
+	]);
 	const autoApproval = exactDataObject(metadata.autoApproval, ["reason"]);
 	if (
 		typeof marker.key !== "string" ||
+		canonicalSubmissionId(marker.submissionId) !==
+			input.submission.submissionId ||
 		autoApproval.reason !== "requester_is_approver"
 	) {
 		return fail();
@@ -1100,7 +1125,7 @@ async function resolveTerminalReplay(input: {
 			workflowType: input.submission.kind,
 			sourceType: "time_entry",
 			sourceId: input.submission.workPeriodId,
-			allocationKey: "ordinary-submission",
+			allocationKey: input.submission.submissionId,
 		}),
 	});
 	if (marked) {
@@ -1169,8 +1194,10 @@ async function executeOrdinaryWorkPeriodSubmission(
 	input: ExecuteOrdinaryWorkPeriodSubmissionInput,
 ): Promise<{
 	result: ResolvePolicyAndCreateApprovalResult;
+	disposition: "executed" | "replayed";
 	postCommit: WorkPeriodPostCommitDescriptor | null;
 }> {
+	const submissionId = canonicalSubmissionId(input.submissionId);
 	if (input.context.dbService.db !== input.dbService.db) fail();
 	const payload = parseOrdinaryWorkPeriodWorkflowPayload(
 		{ timeRequest: { kind: input.kind } },
@@ -1193,7 +1220,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 		workflowType: input.kind,
 		sourceType: "time_entry",
 		sourceId: input.workPeriodId,
-		allocationKey: "ordinary-submission",
+		allocationKey: submissionId,
 	});
 	const expectedWorkflowId = deriveApprovalWorkflowId({
 		organizationId: input.organizationId,
@@ -1204,7 +1231,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 	});
 	const legacyMetadata = {
 		timeRequest: payload.timeRequest,
-		ordinarySubmission: { key: submissionKey },
+		ordinarySubmission: { key: submissionKey, submissionId },
 	};
 	const source = await loadOrdinarySource(input, submissionKey);
 	const terminalReplay = await resolveTerminalReplay({
@@ -1216,14 +1243,8 @@ async function executeOrdinaryWorkPeriodSubmission(
 	if (terminalReplay) {
 		return {
 			result: terminalReplay.result,
-			postCommit: descriptor({
-				submission: input,
-				source,
-				result: terminalReplay.result,
-				authority,
-				approverEmployeeId: terminalReplay.approverEmployeeId,
-				submissionKey,
-			}),
+			disposition: "replayed",
+			postCommit: null,
 		};
 	}
 	const replay = validatePendingOccupants(
@@ -1233,20 +1254,10 @@ async function executeOrdinaryWorkPeriodSubmission(
 		expectedWorkflowId,
 	);
 	if (replay) {
-		const approverEmployeeId = await legacyApprover(
-			input,
-			replay.approvalRequestId,
-		);
 		return {
 			result: replay,
-			postCommit: descriptor({
-				submission: input,
-				source,
-				result: replay,
-				authority,
-				approverEmployeeId,
-				submissionKey,
-			}),
+			disposition: "replayed",
+			postCommit: null,
 		};
 	}
 
@@ -1364,6 +1375,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 				: await legacyApprover(input, result.approvalRequestId);
 		return {
 			result,
+			disposition: "executed",
 			postCommit: descriptor({
 				submission: input,
 				source,
@@ -1492,19 +1504,23 @@ async function executeOrdinaryWorkPeriodSubmission(
 				};
 	return {
 		result,
-		postCommit: descriptor({
-			submission: input,
-			source,
-			result,
-			authority,
-			approverEmployeeId:
-				result.kind === "auto_completed"
-					? input.requesterEmployeeId
-					: (canonicalCompatibility?.approverId ??
-						activeAssignment?.approverEmployeeId ??
-						null),
-			submissionKey,
-		}),
+		disposition: started.kind === "existing" ? "replayed" : "executed",
+		postCommit:
+			started.kind === "existing"
+				? null
+				: descriptor({
+						submission: input,
+						source,
+						result,
+						authority,
+						approverEmployeeId:
+							result.kind === "auto_completed"
+								? input.requesterEmployeeId
+								: (canonicalCompatibility?.approverId ??
+									activeAssignment?.approverEmployeeId ??
+									null),
+						submissionKey,
+					}),
 	};
 }
 
@@ -1512,6 +1528,7 @@ export async function executeOrdinaryWorkPeriodSubmissionInTransaction(
 	input: ExecuteOrdinaryWorkPeriodSubmissionInput,
 ): Promise<{
 	result: ResolvePolicyAndCreateApprovalResult;
+	disposition: "executed" | "replayed";
 	postCommit: WorkPeriodPostCommitDescriptor | null;
 }> {
 	try {

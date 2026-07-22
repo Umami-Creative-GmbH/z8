@@ -79,6 +79,14 @@ type ClockOutInput = ClockingInput & {
 
 type ActivePeriod = { id: string; startTime: Date };
 type Entry = { id: string; [key: string]: unknown };
+type CompletedPeriod = {
+	id: string;
+	startTime: Date;
+	endTime: Date;
+	durationMinutes: number;
+	projectId: string | null;
+	workCategoryId: string | null;
+};
 
 type ClockingStore = {
 	transaction?: unknown;
@@ -97,6 +105,12 @@ type ClockingStore = {
 		organizationId: string,
 		workPeriodId?: string,
 	): Promise<ActivePeriod | null>;
+	getCompletedPeriodByClockOutActionId?(
+		employeeId: string,
+		organizationId: string,
+		actionId: string,
+		workPeriodId?: string,
+	): Promise<CompletedPeriod | null>;
 	getLatestHash(
 		employeeId: string,
 		organizationId: string,
@@ -105,6 +119,8 @@ type ClockingStore = {
 	insertActivePeriod(period: Record<string, unknown>): Promise<{ id: string }>;
 	closeActivePeriod(
 		periodId: string,
+		employeeId: string,
+		organizationId: string,
 		patch: Record<string, unknown>,
 	): Promise<{ id: string } | null>;
 };
@@ -243,7 +259,36 @@ export function createClockingService(deps: ClockingDependencies) {
 					input.organizationId,
 					input.actionId,
 				);
-				if (existingEntry) return { entry: existingEntry } as never;
+				if (existingEntry) {
+					if (
+						existingEntry.type !== "clock_out" ||
+						!input.actionId ||
+						!store.getCompletedPeriodByClockOutActionId
+					) {
+						throw new ClockingConflictError("Clock-out action id collision");
+					}
+					const period = await store.getCompletedPeriodByClockOutActionId(
+						input.employeeId,
+						input.organizationId,
+						input.actionId,
+						input.workPeriodId,
+					);
+					if (
+						!period ||
+						period.projectId !== (input.projectId ?? null) ||
+						period.workCategoryId !== (input.workCategoryId ?? null)
+					) {
+						throw new ClockingConflictError("Clock-out action id collision");
+					}
+					return {
+						entry: existingEntry,
+						period,
+						activePeriod: { id: period.id, startTime: period.startTime },
+						durationMinutes: period.durationMinutes,
+						transactionResult: undefined,
+						disposition: "replayed" as const,
+					};
+				}
 				const activePeriod = await store.getActivePeriod(
 					input.employeeId,
 					input.organizationId,
@@ -275,19 +320,24 @@ export function createClockingService(deps: ClockingDependencies) {
 						await store.getLatestHash(input.employeeId, input.organizationId),
 					),
 				);
-				const period = await store.closeActivePeriod(activePeriod.id, {
-					clockOutId: entry.id,
-					endTime: timestamp,
-					durationMinutes,
-					isActive: false,
-					projectId: input.projectId ?? null,
-					workCategoryId: input.workCategoryId ?? null,
-					canonicalRecordId: input.canonicalRecordId ?? null,
-					approvalStatus: input.approvalStatus ?? "approved",
-					pendingChanges: input.pendingChanges ?? null,
-					updatedAt: new Date(),
-					...additionalPeriodPatch,
-				});
+				const period = await store.closeActivePeriod(
+					activePeriod.id,
+					input.employeeId,
+					input.organizationId,
+					{
+						clockOutId: entry.id,
+						endTime: timestamp,
+						durationMinutes,
+						isActive: false,
+						projectId: input.projectId ?? null,
+						workCategoryId: input.workCategoryId ?? null,
+						canonicalRecordId: input.canonicalRecordId ?? null,
+						approvalStatus: input.approvalStatus ?? "approved",
+						pendingChanges: input.pendingChanges ?? null,
+						updatedAt: new Date(),
+						...additionalPeriodPatch,
+					},
+				);
 				if (!period)
 					throw new ClockingConflictError("Active work period changed");
 				const transactionResult = input.afterPeriodClose
@@ -305,6 +355,7 @@ export function createClockingService(deps: ClockingDependencies) {
 					activePeriod,
 					durationMinutes,
 					transactionResult,
+					disposition: "executed" as const,
 				};
 			}),
 	};
@@ -364,6 +415,45 @@ function createDatabaseClockingStore(tx: ClockingTransaction): ClockingStore {
 				.limit(1);
 			return period ?? null;
 		},
+		getCompletedPeriodByClockOutActionId: async (
+			employeeId,
+			organizationId,
+			actionId,
+			workPeriodId,
+		) => {
+			const [period] = await tx
+				.select({
+					id: workPeriod.id,
+					startTime: workPeriod.startTime,
+					endTime: workPeriod.endTime,
+					durationMinutes: workPeriod.durationMinutes,
+					projectId: workPeriod.projectId,
+					workCategoryId: workPeriod.workCategoryId,
+				})
+				.from(workPeriod)
+				.where(
+					and(
+						eq(workPeriod.employeeId, employeeId),
+						eq(workPeriod.organizationId, organizationId),
+						eq(workPeriod.clockOutId, actionId),
+						eq(workPeriod.isActive, false),
+						...(workPeriodId ? [eq(workPeriod.id, workPeriodId)] : []),
+					),
+				)
+				.limit(1);
+			if (
+				!period ||
+				!(period.endTime instanceof Date) ||
+				period.durationMinutes === null
+			) {
+				return null;
+			}
+			return {
+				...period,
+				endTime: period.endTime,
+				durationMinutes: period.durationMinutes,
+			};
+		},
 		getLatestHash: async (employeeId, organizationId) => {
 			const [latest] = await tx
 				.select({ hash: timeEntry.hash })
@@ -394,13 +484,15 @@ function createDatabaseClockingStore(tx: ClockingTransaction): ClockingStore {
 			if (!period) throw new Error("Failed to create work period");
 			return period;
 		},
-		closeActivePeriod: async (periodId, patch) => {
+		closeActivePeriod: async (periodId, employeeId, organizationId, patch) => {
 			const [period] = await tx
 				.update(workPeriod)
 				.set(patch as never)
 				.where(
 					and(
 						eq(workPeriod.id, periodId),
+						eq(workPeriod.employeeId, employeeId),
+						eq(workPeriod.organizationId, organizationId),
 						eq(workPeriod.isActive, true),
 						isNull(workPeriod.endTime),
 					),

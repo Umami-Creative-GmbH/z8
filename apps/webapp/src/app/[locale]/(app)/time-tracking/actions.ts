@@ -94,6 +94,7 @@ import {
 } from "./actions/presence-status";
 import type {
 	BrowserTimezoneContext,
+	ClockOutActionContext,
 	ManualTimeEntryInput,
 	CorrectionRequest as ModularCorrectionRequest,
 	SameDayEditRequest as ModularSameDayEditRequest,
@@ -469,9 +470,9 @@ export type ClockOutResult = typeof timeEntry.$inferSelect & {
  * @param workCategoryId - Optional work category ID to apply a time factor
  */
 export async function clockOut(
-	projectId?: string,
-	workCategoryId?: string,
-	timezoneContext: BrowserTimezoneContext = {},
+	projectId: string | undefined,
+	workCategoryId: string | undefined,
+	timezoneContext: ClockOutActionContext,
 ): Promise<ServerActionResult<ClockOutResult>> {
 	return clockOutAction(projectId, workCategoryId, timezoneContext);
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	ClockingConflictError,
@@ -11,7 +11,15 @@ function createHarness(options?: {
 }) {
 	let active = false;
 	let entries = 0;
-	const actions = new Map<string, { id: string }>();
+	const actions = new Map<string, { id: string; [key: string]: unknown }>();
+	let completedPeriod: {
+		id: string;
+		startTime: Date;
+		endTime: Date;
+		durationMinutes: number;
+		projectId: string | null;
+		workCategoryId: string | null;
+	} | null = null;
 	let previous = Promise.resolve();
 	const service = createClockingService({
 		transaction: async (callback) => {
@@ -31,6 +39,16 @@ function createHarness(options?: {
 						active
 							? { id: "period-1", startTime: new Date("2026-07-10T08:00:00Z") }
 							: null,
+					getCompletedPeriodByClockOutActionId: async (
+						_employeeId,
+						_organizationId,
+						_actionId,
+						workPeriodId,
+					) =>
+						completedPeriod &&
+						(!workPeriodId || completedPeriod.id === workPeriodId)
+							? completedPeriod
+							: null,
 					getLatestHash: async () => null,
 					insertEntry: async (entry) => {
 						const inserted = { id: `entry-${++entries}`, ...entry };
@@ -43,8 +61,21 @@ function createHarness(options?: {
 						active = true;
 						return { id: "period-1" };
 					},
-					closeActivePeriod: async () => {
+					closeActivePeriod: async (
+						_id,
+						_employeeId,
+						_organizationId,
+						patch,
+					) => {
 						active = false;
+						completedPeriod = {
+							id: "period-1",
+							startTime: new Date("2026-07-10T08:00:00Z"),
+							endTime: patch.endTime as Date,
+							durationMinutes: patch.durationMinutes as number,
+							projectId: (patch.projectId as string | null) ?? null,
+							workCategoryId: (patch.workCategoryId as string | null) ?? null,
+						};
 						return { id: "period-1" };
 					},
 				});
@@ -115,6 +146,35 @@ describe("clocking service", () => {
 		expect(hooks).toEqual([transaction, transaction]);
 	});
 
+	it("scopes period closure to the employee and organization", async () => {
+		const closeActivePeriod = vi.fn(async () => ({ id: "period-1" }));
+		const service = createClockingService({
+			transaction: async (callback) =>
+				callback({
+					lockEmployee: async () => undefined,
+					isOrganizationMember: async () => true,
+					getEntryByActionId: async () => null,
+					getActivePeriod: async () => ({
+						id: "period-1",
+						startTime: new Date("2026-07-10T08:00:00Z"),
+					}),
+					getLatestHash: async () => null,
+					insertEntry: async () => ({ id: "entry-1" }),
+					insertActivePeriod: async () => ({ id: "period-1" }),
+					closeActivePeriod,
+				}),
+		});
+
+		await service.clockOut(clockIn);
+
+		expect(closeActivePeriod).toHaveBeenCalledWith(
+			"period-1",
+			"employee-1",
+			"organization-1",
+			expect.objectContaining({ isActive: false }),
+		);
+	});
+
 	it("serializes simultaneous clock-ins so exactly one creates an active period", async () => {
 		const { service, entries } = createHarness();
 		const results = await Promise.allSettled([
@@ -147,6 +207,38 @@ describe("clocking service", () => {
 
 		expect(duplicate.entry).toEqual(first.entry);
 		expect(entries()).toBe(1);
+	});
+
+	it("returns a complete replay result for a repeated clock-out action id", async () => {
+		const { service, entries } = createHarness();
+		await service.clockIn(clockIn);
+		const action = {
+			...clockIn,
+			actionId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+			workPeriodId: "period-1",
+		};
+
+		const first = await service.clockOut(action);
+		const duplicate = await service.clockOut(action);
+
+		expect(first.disposition).toBe("executed");
+		expect(duplicate).toMatchObject({
+			entry: first.entry,
+			period: { id: "period-1" },
+			durationMinutes: 60,
+			disposition: "replayed",
+		});
+		expect(entries()).toBe(2);
+	});
+
+	it("rejects a clock-out action id that belongs to a clock-in entry", async () => {
+		const { service } = createHarness();
+		const actionId = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
+		await service.clockIn({ ...clockIn, actionId });
+
+		await expect(
+			service.clockOut({ ...clockIn, actionId, workPeriodId: "period-1" }),
+		).rejects.toThrow(ClockingConflictError);
 	});
 
 	it("rejects an employee outside the requested organization before writing", async () => {

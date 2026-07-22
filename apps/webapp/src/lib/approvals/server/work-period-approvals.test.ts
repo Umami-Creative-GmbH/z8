@@ -93,13 +93,15 @@ const autoApprovalMetadata = (kind = "manual_time_submission") => ({
 	autoApproval: { reason: "requester_is_approver" },
 });
 
+const submissionId = "10000000-0000-4000-8000-000000000099";
+
 const ordinarySubmissionKey = () =>
 	deriveApprovalWorkflowId({
 		organizationId: "org-1",
 		workflowType: "manual_time_submission",
 		sourceType: "time_entry",
 		sourceId: "period-1",
-		allocationKey: "ordinary-submission",
+		allocationKey: submissionId,
 	});
 
 type ApprovalFixture = Omit<typeof approval, "metadata"> & {
@@ -788,7 +790,7 @@ describe("ordinary work-period approval finalizer", () => {
 				approverId: autoCompleted ? "employee-1" : "manager-1",
 				metadata: {
 					timeRequest: { kind: "manual_time_submission" },
-					ordinarySubmission: { key: ordinarySubmissionKey() },
+					ordinarySubmission: { key: ordinarySubmissionKey(), submissionId },
 					...(autoCompleted
 						? {
 								autoApproval: {

@@ -25,12 +25,20 @@ import {
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
-import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import {
+	TFormControl,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
-import { formatTimeInZone, getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
+import {
+	formatTimeInZone,
+	getTimezoneAbbreviation,
+} from "@/lib/time-tracking/timezone-utils";
 import { useRouter } from "@/navigation";
 
 interface Props {
@@ -76,8 +84,10 @@ export function ManualTimeEntryDialog({
 	const [pendingMismatch, setPendingMismatch] = useState<{
 		value: FormValues;
 		browserTimezone: string;
+		submissionId: string;
 	} | null>(null);
-	const [isTimezoneContinuationPending, setIsTimezoneContinuationPending] = useState(false);
+	const [isTimezoneContinuationPending, setIsTimezoneContinuationPending] =
+		useState(false);
 	const isTimezoneContinuationPendingRef = useRef(false);
 	const wasOpenRef = useRef(false);
 	const router = useRouter();
@@ -102,8 +112,10 @@ export function ManualTimeEntryDialog({
 		value: FormValues,
 		timezone: string,
 		browserTimezone: string | null,
+		submissionId: string,
 	) {
 		const result = await createManualTimeEntry({
+			submissionId,
 			...(targetEmployeeId ? { employeeId: targetEmployeeId } : {}),
 			date: value.date,
 			clockInTime: value.clockInTime,
@@ -149,7 +161,10 @@ export function ManualTimeEntryDialog({
 				);
 			} else {
 				toast.success(
-					t("timeTracking.manualEntry.success.created", "Time entry created successfully"),
+					t(
+						"timeTracking.manualEntry.success.created",
+						"Time entry created successfully",
+					),
 				);
 			}
 			handleOpenChange(false);
@@ -158,7 +173,10 @@ export function ManualTimeEntryDialog({
 		} else {
 			toast.error(
 				result.error ||
-					t("timeTracking.manualEntry.errors.createFailed", "Failed to create time entry"),
+					t(
+						"timeTracking.manualEntry.errors.createFailed",
+						"Failed to create time entry",
+					),
 			);
 		}
 	}
@@ -187,11 +205,16 @@ export function ManualTimeEntryDialog({
 			}
 
 			// Validate date is not in the future
-			const selectedDate = DateTime.fromISO(value.date, { zone: employeeTimezone });
+			const selectedDate = DateTime.fromISO(value.date, {
+				zone: employeeTimezone,
+			});
 			const now = DateTime.now().setZone(employeeTimezone);
 			if (selectedDate.startOf("day") > now.startOf("day")) {
 				toast.error(
-					t("timeTracking.manualEntry.errors.futureDate", "Cannot create entries for future dates"),
+					t(
+						"timeTracking.manualEntry.errors.futureDate",
+						"Cannot create entries for future dates",
+					),
 				);
 				return;
 			}
@@ -200,21 +223,32 @@ export function ManualTimeEntryDialog({
 			const durationMinutes = clockOutMinutes - clockInMinutes;
 			if (durationMinutes > 24 * 60) {
 				toast.error(
-					t("timeTracking.manualEntry.errors.tooLong", "Work period cannot exceed 24 hours"),
+					t(
+						"timeTracking.manualEntry.errors.tooLong",
+						"Work period cannot exceed 24 hours",
+					),
 				);
 				return;
 			}
 
 			const browserTimezone = getBrowserTimezone();
-			if (!targetEmployeeId && browserTimezone && browserTimezone !== employeeTimezone) {
-				setPendingMismatch({ value, browserTimezone });
+			const submissionId = crypto.randomUUID();
+			if (
+				!targetEmployeeId &&
+				browserTimezone &&
+				browserTimezone !== employeeTimezone
+			) {
+				setPendingMismatch({ value, browserTimezone, submissionId });
 				return;
 			}
 
 			await submitManualEntry(
 				value,
 				employeeTimezone,
-				!targetEmployeeId && browserTimezone === employeeTimezone ? browserTimezone : null,
+				!targetEmployeeId && browserTimezone === employeeTimezone
+					? browserTimezone
+					: null,
+				submissionId,
 			);
 		},
 	});
@@ -233,8 +267,13 @@ export function ManualTimeEntryDialog({
 				return;
 			}
 
-			const { value, browserTimezone } = pendingMismatch;
-			await submitManualEntry(value, browserTimezone, browserTimezone);
+			const { value, browserTimezone, submissionId } = pendingMismatch;
+			await submitManualEntry(
+				value,
+				browserTimezone,
+				browserTimezone,
+				submissionId,
+			);
 			setPendingMismatch(null);
 		} catch {
 			toast.error("An error occurred while updating timezone");
@@ -253,8 +292,13 @@ export function ManualTimeEntryDialog({
 		setIsTimezoneContinuationPending(true);
 
 		try {
-			const { value, browserTimezone } = pendingMismatch;
-			await submitManualEntry(value, browserTimezone, browserTimezone);
+			const { value, browserTimezone, submissionId } = pendingMismatch;
+			await submitManualEntry(
+				value,
+				browserTimezone,
+				browserTimezone,
+				submissionId,
+			);
 			setPendingMismatch(null);
 		} catch (error) {
 			isTimezoneContinuationPendingRef.current = false;
@@ -289,7 +333,10 @@ export function ManualTimeEntryDialog({
 				{hideTrigger ? null : (
 					<ActionPanelTrigger asChild>
 						<Button
-							aria-label={t("timeTracking.manualEntry.addButton", "Add Manual Entry")}
+							aria-label={t(
+								"timeTracking.manualEntry.addButton",
+								"Add Manual Entry",
+							)}
 							className="size-8"
 							variant="outline"
 							size="icon"
@@ -345,7 +392,11 @@ export function ManualTimeEntryDialog({
 												value={field.state.value}
 												onChange={field.handleChange}
 												onBlur={field.handleBlur}
-												max={DateTime.now().setZone(employeeTimezone).toISODate() || undefined}
+												max={
+													DateTime.now()
+														.setZone(employeeTimezone)
+														.toISODate() || undefined
+												}
 												required
 											/>
 										</TFormControl>
@@ -381,7 +432,10 @@ export function ManualTimeEntryDialog({
 									{(field) => (
 										<TFormItem>
 											<TFormLabel hasError={fieldHasError(field)}>
-												{t("timeTracking.manualEntry.clockOutLabel", "Clock Out")}
+												{t(
+													"timeTracking.manualEntry.clockOutLabel",
+													"Clock Out",
+												)}
 											</TFormLabel>
 											<TFormControl hasError={fieldHasError(field)}>
 												<TimeInput
@@ -451,13 +505,20 @@ export function ManualTimeEntryDialog({
 
 						<ActionPanelFooter className="gap-2">
 							<ActionPanelClose asChild>
-								<Button type="button" variant="outline" disabled={isTimezoneContinuationPending}>
+								<Button
+									type="button"
+									variant="outline"
+									disabled={isTimezoneContinuationPending}
+								>
 									{t("common.cancel", "Cancel")}
 								</Button>
 							</ActionPanelClose>
 							<form.Subscribe<boolean> selector={(state) => state.isSubmitting}>
 								{(isSubmitting: boolean) => (
-									<Button type="submit" disabled={isSubmitting || isTimezoneContinuationPending}>
+									<Button
+										type="submit"
+										disabled={isSubmitting || isTimezoneContinuationPending}
+									>
 										{isSubmitting ? (
 											<>
 												<IconLoader2 className="size-4 animate-spin" />

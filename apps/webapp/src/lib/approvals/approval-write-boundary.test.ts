@@ -2548,9 +2548,6 @@ db.delete(approvalOutbox);`,
 				approval_chain_stage_instance: ["update"],
 				approval_request: ["delete"],
 			},
-			"src/app/[locale]/(app)/time-tracking/actions/approvals.ts": {
-				approval_request: ["insert"],
-			},
 			"src/lib/absences/sick-vacation-override.ts": {
 				approval_request: ["insert", "update"],
 			},
@@ -2640,6 +2637,14 @@ db.delete(approvalOutbox);`,
 					operation: "delete",
 					semantic: "inactive_correction",
 					table: "time_entry",
+				},
+			],
+			"src/lib/approvals/server/work-period-submission.ts": [
+				{
+					columns: ["approval_workflow_id"],
+					functionName: "bindSourceWorkflow",
+					operation: "update",
+					table: "work_period",
 				},
 			],
 		});

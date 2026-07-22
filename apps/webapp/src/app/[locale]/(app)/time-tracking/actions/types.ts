@@ -1,4 +1,5 @@
 import type { timeEntry } from "@/db/schema";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 
 export interface CorrectionRequest {
@@ -44,6 +45,12 @@ export interface BrowserTimezoneContext {
 	browserTimezone?: string | null;
 }
 
+export interface ClockOutActionContext extends BrowserTimezoneContext {
+	submissionId: string;
+	instant?: Instant;
+	deviceInfo?: "web" | "mobile";
+}
+
 export interface AssignedProject {
 	id: string;
 	name: string;
@@ -55,6 +62,7 @@ export interface AssignedProject {
 }
 
 export interface ManualTimeEntryInput {
+	submissionId: string;
 	employeeId?: string;
 	date: string;
 	clockInTime: string;

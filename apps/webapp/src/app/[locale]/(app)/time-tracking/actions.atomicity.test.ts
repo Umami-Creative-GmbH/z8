@@ -55,6 +55,7 @@ describe("clocking service delegation", () => {
 		const approvalPolicyIndex = body.indexOf("checkClockOutNeedsApproval(");
 		const managerIndex = body.indexOf(
 			"await getPrimaryEligibleManagerIdForRequester({",
+			approvalPolicyIndex,
 		);
 		const canonicalIndex = body.indexOf(
 			"canonicalWorkRecordClient.createForCompletedPeriod(",

@@ -22,6 +22,7 @@ const workflowId = "70000000-0000-4000-8000-000000000001";
 const startAt = new Date("2026-07-20T06:00:00.000Z");
 const endAt = new Date("2026-07-20T14:00:00.000Z");
 const capturedAt = new Date("2026-07-20T15:00:00.000Z");
+const submissionId = "10000000-0000-4000-8000-000000000099";
 
 function submissionKey(kind = "manual_time_submission") {
 	return deriveApprovalWorkflowId({
@@ -29,7 +30,7 @@ function submissionKey(kind = "manual_time_submission") {
 		workflowType: kind as "manual_time_submission" | "policy_clock_out",
 		sourceType: "time_entry",
 		sourceId: workPeriodId,
-		allocationKey: "ordinary-submission",
+		allocationKey: submissionId,
 	});
 }
 
@@ -347,7 +348,9 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 	});
 
 	it("captures the private stable submission marker without display leakage", async () => {
-		const marker = { ordinarySubmission: { key: submissionKey() } };
+		const marker = {
+			ordinarySubmission: { key: submissionKey(), submissionId },
+		};
 		const fake = database(
 			envelope({
 				approvalRequests: [
@@ -392,7 +395,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 						approvedAt,
 						metadata: {
 							timeRequest: { kind: "manual_time_submission" },
-							ordinarySubmission: { key: submissionKey() },
+							ordinarySubmission: { key: submissionKey(), submissionId },
 							autoApproval: { reason: "requester_is_approver" },
 						},
 					}),
@@ -411,7 +414,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 
 		expect(state.approvalRequest?.metadata).toEqual({
 			timeRequest: { kind: "manual_time_submission" },
-			ordinarySubmission: { key: submissionKey() },
+			ordinarySubmission: { key: submissionKey(), submissionId },
 			autoApproval: { reason: "requester_is_approver" },
 		});
 	});

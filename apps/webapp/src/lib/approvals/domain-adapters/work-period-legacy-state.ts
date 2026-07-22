@@ -22,6 +22,9 @@ import {
 	parseOrdinaryWorkPeriodWorkflowPayload,
 } from "./work-period-contract";
 
+const CANONICAL_UUID =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
 type OrdinaryWorkPeriodLegacyStateCaptureErrorCode =
 	| "capture_failed"
 	| "query_failed";
@@ -265,16 +268,24 @@ function normalizeRequestPayload(input: {
 		return fail();
 	}
 	const marker = markerDescriptor
-		? exactDataRecord(markerDescriptor.value, ["key"])
+		? exactDataRecord(markerDescriptor.value, ["key", "submissionId"])
 		: null;
-	const expectedKey = deriveApprovalWorkflowId({
-		organizationId: input.organizationId,
-		workflowType: input.expectedKind,
-		sourceType: "time_entry",
-		sourceId: input.workPeriodId,
-		allocationKey: "ordinary-submission",
-	});
-	if (marker && marker.key !== expectedKey) return fail();
+	if (marker) {
+		if (
+			typeof marker.submissionId !== "string" ||
+			!CANONICAL_UUID.test(marker.submissionId)
+		) {
+			return fail();
+		}
+		const expectedKey = deriveApprovalWorkflowId({
+			organizationId: input.organizationId,
+			workflowType: input.expectedKind,
+			sourceType: "time_entry",
+			sourceId: input.workPeriodId,
+			allocationKey: marker.submissionId,
+		});
+		if (marker.key !== expectedKey) return fail();
+	}
 	if (
 		classifyTimeApprovalRequest({
 			metadata: { timeRequest: raw.timeRequest },

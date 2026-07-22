@@ -84,9 +84,6 @@ export const TEMPORARY_LEGACY_WRITE_EXCEPTIONS = {
 		approval_chain_stage_instance: ["update"],
 		approval_request: ["delete"],
 	},
-	"src/app/[locale]/(app)/time-tracking/actions/approvals.ts": {
-		approval_request: ["insert"],
-	},
 	"src/lib/absences/sick-vacation-override.ts": {
 		approval_request: ["insert", "update"],
 	},
@@ -172,6 +169,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			operation: "delete",
 			semantic: "inactive_correction",
 			table: "time_entry",
+		},
+	],
+	"src/lib/approvals/server/work-period-submission.ts": [
+		{
+			columns: ["approval_workflow_id"],
+			functionName: "bindSourceWorkflow",
+			operation: "update",
+			table: "work_period",
 		},
 	],
 } as const satisfies CanonicalApprovalSourceWriteOwners;

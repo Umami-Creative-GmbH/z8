@@ -58,30 +58,6 @@ function expectBillingGuardBeforeWrite(
 	).toBeLessThan(writeIndex);
 }
 
-function expectNoManagerApprovalGuardBeforeWrite(
-	name: string,
-	writeMarker: string,
-) {
-	const body = functionBody(name, clockingSource);
-	const guardIndex = body.indexOf(
-		'error: "No manager assigned to approve time changes"',
-	);
-	const writeIndex = body.indexOf(writeMarker);
-
-	expect(
-		guardIndex,
-		`${name} should reject unapprovable approval-required changes`,
-	).toBeGreaterThanOrEqual(0);
-	expect(
-		writeIndex,
-		`${name} should include expected write marker`,
-	).toBeGreaterThanOrEqual(0);
-	expect(
-		guardIndex,
-		`${name} should reject missing managers before database writes`,
-	).toBeLessThan(writeIndex);
-}
-
 function expectPolicyCheckFailureBeforeWrite(
 	name: string,
 	writeMarker: string,
@@ -163,7 +139,7 @@ describe("legacy time-tracking action billing guards", () => {
 	it("captures browser timezone context in live clock-out entries", () => {
 		const body = functionBody("clockOut", clockingSource);
 
-		expect(body).toContain("actionContext: ClockActionContext = {}");
+		expect(body).toContain("actionContext: ClockOutActionContext");
 		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
 		expect(body).toContain("browserTimezone: actionContext.browserTimezone");
 		expect(body).toContain('browserSource: "browser"');
@@ -264,10 +240,16 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(guardIndex).toBeLessThan(writeIndex);
 	});
 
-	it.each([
-		["clockOut", "clockingService.clockOut({"],
-	])("rejects approval-required %s without a manager before writing", (name, writeMarker) => {
-		expectNoManagerApprovalGuardBeforeWrite(name, writeMarker);
+	it("lets the shared clock-out boundary resolve policy routing without a default manager", () => {
+		const body = functionBody("clockOut", clockingSource);
+
+		expect(body).not.toContain(
+			'error: "No manager assigned to approve time changes"',
+		);
+		expect(body).toContain(
+			"executeOrdinaryWorkPeriodSubmissionInTransaction({",
+		);
+		expect(body).toContain("defaultApproverId: managerId");
 	});
 
 	it("keeps manual source rows pending until approval routing resolves", () => {
@@ -276,7 +258,7 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(body).toContain(
 			'approvalStatus: requiresApproval ? "pending" : "approved"',
 		);
-		expect(body).toContain("pendingChanges: requiresApproval");
+		expect(body).toContain("pendingChanges: (requiresApproval");
 		expect(body).toContain(
 			"executeOrdinaryWorkPeriodSubmissionInTransaction({",
 		);

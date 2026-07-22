@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
 	createMobileClockInAction,
 	createMobileClockOutAction,
@@ -32,14 +32,24 @@ describe("mobile clock action evidence", () => {
 	});
 
 	it("uses UTC evidence when the device timezone is unavailable", () => {
+		const submissionId = "10000000-0000-4000-8000-000000000099";
+		const randomUUID = vi
+			.spyOn(crypto, "randomUUID")
+			.mockReturnValue(submissionId);
 		expect(
-			createMobileClockOutAction({ now: fixedNow, intlApi: fakeIntl("Not/AZone") }),
+			createMobileClockOutAction({
+				now: fixedNow,
+				intlApi: fakeIntl("Not/AZone"),
+			}),
 		).toEqual({
 			action: "clock_out",
+			submissionId,
 			timestamp: "2026-07-10T12:30:00.123Z",
 			browserTimezone: "UTC",
 			utcOffsetMinutes: 0,
 		});
 		expect(getActionTimeTimezone(fakeIntl("Not/AZone"))).toBeNull();
+		expect(randomUUID).toHaveBeenCalledOnce();
+		randomUUID.mockRestore();
 	});
 });

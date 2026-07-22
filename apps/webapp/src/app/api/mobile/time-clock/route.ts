@@ -31,6 +31,7 @@ const mobileTimeClockSchema = z.discriminatedUnion("action", [
 	}),
 	z.strictObject({
 		action: z.literal("clock_out"),
+		submissionId: z.uuid(),
 		...actionEvidenceFields,
 	}),
 ]);
@@ -117,6 +118,7 @@ export async function POST(request: Request) {
 						browserTimezone: parsedBody.data.browserTimezone,
 						instant: actionInstant,
 						deviceInfo: "mobile",
+						submissionId: parsedBody.data.submissionId,
 					});
 
 		if (!result.success) {

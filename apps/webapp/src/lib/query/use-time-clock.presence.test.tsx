@@ -42,7 +42,9 @@ import { useElapsedTimer, useTimeClock } from "./use-time-clock";
 
 function wrapper(client: QueryClient) {
 	return function TestWrapper({ children }: { children: React.ReactNode }) {
-		return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+		return (
+			<QueryClientProvider client={client}>{children}</QueryClientProvider>
+		);
 	};
 }
 
@@ -62,7 +64,9 @@ describe("useElapsedTimer", () => {
 	it("updates from the current instant once per second in the browser", () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-07-14T10:00:05Z"));
-		const { result } = renderHook(() => useElapsedTimer(new Date("2026-07-14T10:00:00Z")));
+		const { result } = renderHook(() =>
+			useElapsedTimer(new Date("2026-07-14T10:00:00Z")),
+		);
 
 		expect(result.current).toBe(5);
 		act(() => vi.advanceTimersByTime(1000));
@@ -134,9 +138,14 @@ describe("useTimeClock presence invalidation", () => {
 		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
 		await result.current.clockOut({ browserTimezone: "America/New_York" });
 
-		expect(mocks.clockOut).toHaveBeenCalledWith(undefined, undefined, {
-			browserTimezone: "America/New_York",
-		});
+		expect(mocks.clockOut).toHaveBeenCalledWith(
+			undefined,
+			undefined,
+			expect.objectContaining({
+				browserTimezone: "America/New_York",
+				submissionId: expect.any(String),
+			}),
+		);
 
 		await waitFor(() => {
 			expect(invalidateSpy).toHaveBeenCalledWith({
@@ -146,6 +155,38 @@ describe("useTimeClock presence invalidation", () => {
 				queryKey: queryKeys.workPolicies.presence.status("emp-1"),
 			});
 		});
+	});
+
+	it("creates one submission id for an online clock-out and reuses it across transport retries", async () => {
+		const submissionId = "10000000-0000-4000-8000-000000000099";
+		const randomUUID = vi
+			.spyOn(crypto, "randomUUID")
+			.mockReturnValue(submissionId);
+		const client = new QueryClient({
+			defaultOptions: {
+				queries: { retry: false },
+				mutations: { retry: 1, retryDelay: 0 },
+			},
+		});
+		mocks.clockOut
+			.mockRejectedValueOnce(new Error("connection reset"))
+			.mockResolvedValueOnce({ success: true });
+
+		const { result } = renderHook(() => useTimeClock(), {
+			wrapper: wrapper(client),
+		});
+		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+		await result.current.clockOut({ browserTimezone: "America/New_York" });
+
+		expect(randomUUID).toHaveBeenCalledOnce();
+		expect(mocks.clockOut).toHaveBeenCalledTimes(2);
+		for (const call of mocks.clockOut.mock.calls) {
+			expect(call[2]).toEqual({
+				browserTimezone: "America/New_York",
+				submissionId,
+			});
+		}
+		randomUUID.mockRestore();
 	});
 
 	it("preserves explicit null browser timezone for clock in", async () => {
@@ -178,9 +219,14 @@ describe("useTimeClock presence invalidation", () => {
 		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
 		await result.current.clockOut({ browserTimezone: null });
 
-		expect(mocks.clockOut).toHaveBeenCalledWith(undefined, undefined, {
-			browserTimezone: null,
-		});
+		expect(mocks.clockOut).toHaveBeenCalledWith(
+			undefined,
+			undefined,
+			expect.objectContaining({
+				browserTimezone: null,
+				submissionId: expect.any(String),
+			}),
+		);
 		expect(mocks.getBrowserTimezone).not.toHaveBeenCalled();
 	});
 

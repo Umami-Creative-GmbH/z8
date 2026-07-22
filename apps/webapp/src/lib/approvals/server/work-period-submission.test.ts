@@ -163,6 +163,7 @@ import {
 
 const organizationId = "org-1";
 const workPeriodId = "10000000-0000-4000-8000-000000000001";
+const submissionId = "10000000-0000-4000-8000-000000000099";
 const requesterEmployeeId = "20000000-0000-4000-8000-000000000001";
 const requesterUserId = "user-1";
 const approverId = "20000000-0000-4000-8000-000000000002";
@@ -354,6 +355,7 @@ function fixture(
 		context,
 		organizationId,
 		workPeriodId,
+		submissionId,
 		requesterEmployeeId,
 		requesterUserId,
 		teamId: null,
@@ -391,7 +393,7 @@ function expectedWorkflowId(
 		workflowType: kind,
 		sourceType: "time_entry",
 		sourceId: workPeriodId,
-		allocationKey: "ordinary-submission",
+		allocationKey: submissionId,
 	});
 	return deriveApprovalWorkflowId({
 		organizationId,
@@ -412,7 +414,7 @@ function ordinarySubmissionKey(
 		workflowType: kind,
 		sourceType: "time_entry",
 		sourceId: workPeriodId,
-		allocationKey: "ordinary-submission",
+		allocationKey: submissionId,
 	});
 }
 
@@ -439,6 +441,7 @@ function markedAutoRequest(input: {
 				timeRequest: { kind: "manual_time_submission" },
 				ordinarySubmission: {
 					key: input.key ?? ordinarySubmissionKey(),
+					submissionId,
 				},
 				autoApproval: { reason: "requester_is_approver" },
 			} as const),
@@ -536,6 +539,7 @@ describe.each([
 			),
 		).toBe(true);
 		expect(submitted.result.kind).toBe("default_created");
+		expect(submitted.disposition).toBe("executed");
 		expect(submitted.postCommit).toEqual({
 			disposition:
 				mode === "canonical" || mode === "complete" ? "observe" : "dispatch",
@@ -580,7 +584,7 @@ it.each([
 	const resolverInput = JSON.parse(legacyCall?.slice("legacy:".length) ?? "");
 	expect(resolverInput.metadata).toEqual({
 		timeRequest: { kind: "manual_time_submission" },
-		ordinarySubmission: { key: ordinarySubmissionKey() },
+		ordinarySubmission: { key: ordinarySubmissionKey(), submissionId },
 	});
 	expect(JSON.stringify(resolverInput.metadata)).not.toContain(
 		"Needs approval",
@@ -595,7 +599,7 @@ it.each([
 	state.mode = mode;
 	const request = pendingLegacyRequest({
 		timeRequest: { kind: "manual_time_submission" },
-		ordinarySubmission: { key: ordinarySubmissionKey() },
+		ordinarySubmission: { key: ordinarySubmissionKey(), submissionId },
 	});
 	const fake = fixture({ source: { pendingLegacyRequests: [request] } });
 
@@ -611,6 +615,8 @@ it.each([
 		approvalRequestId: request.id,
 	});
 	expect(second.result).toEqual(first.result);
+	expect(first).toMatchObject({ disposition: "replayed", postCommit: null });
+	expect(second).toMatchObject({ disposition: "replayed", postCommit: null });
 	expect(state.calls).toEqual(["routing", "routing"]);
 	expect(fake.calls.some((sql) => sql.includes("update work_period"))).toBe(
 		false,
@@ -1081,7 +1087,10 @@ it("replays an exact terminal canonical auto-completion without finalization or 
 		kind: "auto_completed",
 		approvalRequestId: compatibility.id,
 	});
-	expect(submitted.postCommit).toMatchObject({ event: "approved" });
+	expect(submitted).toMatchObject({
+		disposition: "replayed",
+		postCommit: null,
+	});
 	expect(state.calls.some((call) => call.startsWith("finalize:"))).toBe(false);
 	expect(state.calls).not.toContain("binding");
 	expect(state.calls.some((call) => call.startsWith("start:"))).toBe(false);

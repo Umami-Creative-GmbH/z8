@@ -236,13 +236,24 @@ function validateOrdinaryRequestMetadata(
 		}
 	}
 	if (hasMarker) {
-		const marker = exactOwnDataValues(root.ordinarySubmission, ["key"]);
+		const marker = exactOwnDataValues(root.ordinarySubmission, [
+			"key",
+			"submissionId",
+		]);
+		if (
+			typeof marker.submissionId !== "string" ||
+			!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+				marker.submissionId,
+			)
+		) {
+			throw ordinaryWorkPeriodFinalizationConflict();
+		}
 		const expectedKey = deriveApprovalWorkflowId({
 			organizationId: input.organizationId,
 			workflowType: input.kind,
 			sourceType: "time_entry",
 			sourceId: input.workPeriodId,
-			allocationKey: "ordinary-submission",
+			allocationKey: marker.submissionId,
 		});
 		if (marker.key !== expectedKey) {
 			throw ordinaryWorkPeriodFinalizationConflict();
