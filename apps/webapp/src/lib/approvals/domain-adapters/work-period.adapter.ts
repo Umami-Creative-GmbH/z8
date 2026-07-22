@@ -1,11 +1,5 @@
-import { and, eq } from "drizzle-orm";
-import { timeRecord, workPeriod } from "@/db/schema";
+import { sql } from "drizzle-orm";
 import { compareInstants, instantFromDate } from "@/lib/datetime/temporal-core";
-import type { ApprovalDbService as ServerApprovalDbService } from "../server/types";
-import type {
-	FinalizeOrdinaryWorkPeriodTerminalInput,
-	WorkPeriodApprovalResult,
-} from "../server/work-period-approvals";
 import type {
 	ApprovalSourceIdentity,
 	ApprovalWorkflowSnapshot,
@@ -19,9 +13,11 @@ import type {
 	ApprovalTerminalFinalizationResult,
 } from "./types";
 import {
+	type FinalizeOrdinaryWorkPeriodTerminalInput,
 	type OrdinaryWorkPeriodApprovalKind,
 	type OrdinaryWorkPeriodApprovalSource,
 	parseOrdinaryWorkPeriodWorkflowPayload,
+	type WorkPeriodApprovalResult,
 } from "./work-period-contract";
 
 const CANONICAL_UUID =
@@ -44,6 +40,46 @@ export class OrdinaryWorkPeriodApprovalAdapterError extends Error {
 
 function fail(message?: string): never {
 	throw new OrdinaryWorkPeriodApprovalAdapterError(message);
+}
+
+function resultRows(result: unknown): unknown[] {
+	return typeof result === "object" &&
+		result !== null &&
+		"rows" in result &&
+		Array.isArray(result.rows)
+		? result.rows
+		: [];
+}
+
+interface OrdinaryWorkPeriodEvidenceRow {
+	id: string;
+	organizationId: string;
+	employeeId: string;
+	clockInId: string;
+	clockOutId: string;
+	canonicalRecordId: string;
+	approvalWorkflowId: string;
+	startTime: Date;
+	endTime: Date;
+	durationMinutes: number;
+	isActive: boolean;
+	approvalStatus: "pending" | "approved" | "rejected";
+	deletedAt: Date | null;
+	canonicalId: string;
+	canonicalOrganizationId: string;
+	canonicalEmployeeId: string;
+	canonicalRecordKind: string;
+	canonicalStartAt: Date;
+	canonicalEndAt: Date;
+	canonicalDurationMinutes: number;
+	canonicalApprovalState: string;
+}
+
+function evidenceRow(value: unknown): OrdinaryWorkPeriodEvidenceRow {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		return fail();
+	}
+	return value as OrdinaryWorkPeriodEvidenceRow;
 }
 
 function payloadFromWorkflow(
@@ -205,36 +241,45 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 			);
 			const requesterEmployeeId = input.workflow.requesterEmployeeId ?? fail();
 			const payload = payloadFromWorkflow(input.workflow, kind);
-			const db = (input.dbService as unknown as ServerApprovalDbService).db;
-			const periods = await db
-				.select({
-					id: workPeriod.id,
-					organizationId: workPeriod.organizationId,
-					employeeId: workPeriod.employeeId,
-					clockInId: workPeriod.clockInId,
-					clockOutId: workPeriod.clockOutId,
-					canonicalRecordId: workPeriod.canonicalRecordId,
-					approvalWorkflowId: workPeriod.approvalWorkflowId,
-					startTime: workPeriod.startTime,
-					endTime: workPeriod.endTime,
-					durationMinutes: workPeriod.durationMinutes,
-					isActive: workPeriod.isActive,
-					approvalStatus: workPeriod.approvalStatus,
-					deletedAt: workPeriod.deletedAt,
-				})
-				.from(workPeriod)
-				.where(
-					and(
-						eq(workPeriod.id, input.sourceIdentity.sourceId),
-						eq(workPeriod.organizationId, input.organizationId),
-						eq(workPeriod.employeeId, requesterEmployeeId),
-					),
-				)
-				.for("update");
-			const period = periods[0];
+			const rows = resultRows(
+				await input.dbService.db.execute(sql`
+					select
+						period.id,
+						period.organization_id as "organizationId",
+						period.employee_id as "employeeId",
+						period.clock_in_id as "clockInId",
+						period.clock_out_id as "clockOutId",
+						period.canonical_record_id as "canonicalRecordId",
+						period.approval_workflow_id as "approvalWorkflowId",
+						period.start_time as "startTime",
+						period.end_time as "endTime",
+						period.duration_minutes as "durationMinutes",
+						period.is_active as "isActive",
+						period.approval_status as "approvalStatus",
+						period.deleted_at as "deletedAt",
+						canonical.id as "canonicalId",
+						canonical.organization_id as "canonicalOrganizationId",
+						canonical.employee_id as "canonicalEmployeeId",
+						canonical.record_kind as "canonicalRecordKind",
+						canonical.start_at as "canonicalStartAt",
+						canonical.end_at as "canonicalEndAt",
+						canonical.duration_minutes as "canonicalDurationMinutes",
+						canonical.approval_state as "canonicalApprovalState"
+					from work_period period
+					join time_record canonical
+						on canonical.id = period.canonical_record_id
+						and canonical.organization_id = period.organization_id
+						and canonical.employee_id = period.employee_id
+						and canonical.record_kind = 'work'
+					where period.id = ${input.sourceIdentity.sourceId}::uuid
+						and period.organization_id = ${input.organizationId}
+						and period.employee_id = ${requesterEmployeeId}::uuid
+					for update of period, canonical
+				`),
+			);
+			const period = evidenceRow(rows[0]);
 			if (
-				periods.length !== 1 ||
-				!period ||
+				rows.length !== 1 ||
 				period.id !== input.sourceIdentity.sourceId ||
 				period.organizationId !== input.organizationId ||
 				period.employeeId !== requesterEmployeeId ||
@@ -242,47 +287,29 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 				!period.canonicalRecordId ||
 				!period.clockInId ||
 				!period.clockOutId ||
-				period.isActive ||
+				period.isActive !== false ||
 				period.deletedAt !== null ||
-				!period.endTime ||
-				period.durationMinutes === null
+				!(period.startTime instanceof Date) ||
+				!(period.endTime instanceof Date) ||
+				!Number.isInteger(period.durationMinutes) ||
+				period.durationMinutes < 0 ||
+				!(["pending", "approved", "rejected"] as readonly unknown[]).includes(
+					period.approvalStatus,
+				)
 			) {
 				return fail();
 			}
-			const records = await db
-				.select({
-					id: timeRecord.id,
-					organizationId: timeRecord.organizationId,
-					employeeId: timeRecord.employeeId,
-					recordKind: timeRecord.recordKind,
-					startAt: timeRecord.startAt,
-					endAt: timeRecord.endAt,
-					durationMinutes: timeRecord.durationMinutes,
-					approvalState: timeRecord.approvalState,
-				})
-				.from(timeRecord)
-				.where(
-					and(
-						eq(timeRecord.id, period.canonicalRecordId),
-						eq(timeRecord.organizationId, input.organizationId),
-						eq(timeRecord.employeeId, requesterEmployeeId),
-						eq(timeRecord.recordKind, "work"),
-					),
-				)
-				.for("update");
-			const canonical = records[0];
 			if (
-				records.length !== 1 ||
-				!canonical ||
-				canonical.id !== period.canonicalRecordId ||
-				canonical.organizationId !== input.organizationId ||
-				canonical.employeeId !== requesterEmployeeId ||
-				canonical.recordKind !== "work" ||
-				canonical.approvalState !== period.approvalStatus ||
-				!canonical.endAt ||
-				canonical.durationMinutes !== period.durationMinutes ||
-				!sameDate(canonical.startAt, period.startTime) ||
-				!sameDate(canonical.endAt, period.endTime)
+				period.canonicalId !== period.canonicalRecordId ||
+				period.canonicalOrganizationId !== input.organizationId ||
+				period.canonicalEmployeeId !== requesterEmployeeId ||
+				period.canonicalRecordKind !== "work" ||
+				period.canonicalApprovalState !== period.approvalStatus ||
+				!(period.canonicalStartAt instanceof Date) ||
+				!(period.canonicalEndAt instanceof Date) ||
+				period.canonicalDurationMinutes !== period.durationMinutes ||
+				!sameDate(period.canonicalStartAt, period.startTime) ||
+				!sameDate(period.canonicalEndAt, period.endTime)
 			) {
 				return fail();
 			}
@@ -366,7 +393,7 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 						? { kind: "reject" as const, reason: input.transition.reason }
 						: fail();
 			await dependencies.finalizeTerminal({
-				dbService: input.dbService as unknown as ServerApprovalDbService,
+				dbService: input.dbService,
 				organizationId: input.organizationId,
 				workPeriodId: input.source.id,
 				approvalRequestId,

@@ -82,6 +82,21 @@ function functionSource(name: string): string {
 }
 
 describe("time correction PostgreSQL non-live contracts", () => {
+	it("constructs the Task 13 runtime with an explicit out-of-scope ordinary finalizer", () => {
+		const runtimeStart = integrationSource.indexOf("\n\t\tfunction runtime(");
+		const runtimeSource = integrationSource.slice(
+			runtimeStart,
+			integrationSource.indexOf(
+				"\n\t\tfunction initialWorkflowInput",
+				runtimeStart,
+			),
+		);
+		expect(runtimeSource).toContain("ordinaryWorkPeriod:");
+		expect(runtimeSource).toContain(
+			"ordinary work-period finalization is outside Task 13",
+		);
+	});
+
 	it("migrates the source link with an organization-composite foreign key and per-workflow-type pending identity", () => {
 		expect(migrationSource).toContain(
 			'ALTER TABLE "work_period" ADD COLUMN "approval_workflow_id" uuid',
@@ -722,6 +737,13 @@ describeIntegration(
 							counters.cancellation += 1;
 							counters.externalEffect += 1;
 							return result;
+						},
+					},
+					ordinaryWorkPeriod: {
+						finalizeTerminal: async () => {
+							throw new Error(
+								"ordinary work-period finalization is outside Task 13",
+							);
 						},
 					},
 				},

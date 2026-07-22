@@ -64,6 +64,7 @@ import {
 	type ExpectedTimeCorrectionLegacyCycle,
 } from "../domain-adapters/time-correction-legacy-state";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
+import type { WorkPeriodApprovalResult } from "../domain-adapters/work-period-contract";
 import {
 	ApprovalAuditLogger,
 	createApprovalAuditLogger,
@@ -97,7 +98,6 @@ import {
 	decideWorkPeriodWithCurrentApproverInTransaction,
 	finalizeOrdinaryWorkPeriodTerminalInTransaction,
 	notifyWorkPeriodApprovalAfterCommit,
-	type WorkPeriodApprovalResult,
 } from "./work-period-approvals";
 
 const logger = createLogger("TimeCorrectionApprovals");

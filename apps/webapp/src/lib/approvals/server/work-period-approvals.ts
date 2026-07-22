@@ -7,11 +7,7 @@ import {
 	timeRecordApprovalDecision,
 	workPeriod,
 } from "@/db/schema";
-import {
-	dateFromInstant,
-	type Instant,
-	systemClock,
-} from "@/lib/datetime/temporal-core";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { ConflictError } from "@/lib/effect/errors";
 import {
 	onClockOutApproved,
@@ -21,8 +17,10 @@ import {
 } from "@/lib/notifications/triggers";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
+	type FinalizeOrdinaryWorkPeriodTerminalInput,
 	type OrdinaryWorkPeriodApprovalKind,
 	parseOrdinaryWorkPeriodWorkflowPayload,
+	type WorkPeriodApprovalResult,
 } from "../domain-adapters/work-period-contract";
 import { processApprovalWithCurrentEmployee } from "./shared";
 import type {
@@ -32,20 +30,10 @@ import type {
 } from "./types";
 
 export type OrdinaryTimeApprovalKind = OrdinaryWorkPeriodApprovalKind;
-
-export interface WorkPeriodApprovalResult {
-	kind: OrdinaryTimeApprovalKind;
-	action: "approve" | "reject";
-	reason: string | null;
-	period: {
-		id: string;
-		organizationId: string;
-		employeeId: string;
-		canonicalRecordId: string;
-		startTime: Date;
-		endTime: Date;
-	};
-}
+export type {
+	FinalizeOrdinaryWorkPeriodTerminalInput,
+	WorkPeriodApprovalResult,
+} from "../domain-adapters/work-period-contract";
 
 export function decideWorkPeriodWithCurrentApproverInTransaction(
 	dbService: ApprovalDbService,
@@ -85,23 +73,6 @@ type ApprovalWithRequester = PendingApprovalRequest & { requestedBy: string };
 
 function conflict(message: string) {
 	return new ConflictError({ message, conflictType: "approval_status" });
-}
-
-export interface FinalizeOrdinaryWorkPeriodTerminalInput {
-	dbService: ApprovalDbService;
-	organizationId: string;
-	workPeriodId: string;
-	approvalRequestId: string;
-	expectedApprovalWorkflowId: string | null;
-	requesterEmployeeId: string;
-	actorEmployeeId: string;
-	actorUserId: string;
-	kind: OrdinaryWorkPeriodApprovalKind;
-	transition:
-		| { kind: "approve"; reason: string | null }
-		| { kind: "reject"; reason: string };
-	finalizedAt: Instant;
-	allowUnlinkedLegacySource: boolean;
 }
 
 function ordinaryWorkPeriodFinalizationConflict(): Error {
@@ -193,7 +164,8 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	evidenceExpectation: OrdinaryFinalizationEvidenceExpectation,
 ): Promise<WorkPeriodApprovalResult> {
 	const fail = ordinaryWorkPeriodFinalizationConflict;
-	const periods = await input.dbService.db
+	const db = input.dbService.db as ApprovalDbService["db"];
+	const periods = await db
 		.select({
 			id: workPeriod.id,
 			organizationId: workPeriod.organizationId,
@@ -241,7 +213,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		throw fail();
 	}
 
-	const records = await input.dbService.db
+	const records = await db
 		.select({
 			id: timeRecord.id,
 			organizationId: timeRecord.organizationId,
@@ -280,7 +252,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		throw fail();
 	}
 
-	const actor = await input.dbService.db.query.employee.findFirst({
+	const actor = await db.query.employee.findFirst({
 		where: and(
 			eq(employee.id, input.actorEmployeeId),
 			eq(employee.organizationId, input.organizationId),
@@ -298,7 +270,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 
 	const terminalStatus =
 		input.transition.kind === "approve" ? "approved" : "rejected";
-	const requests = await input.dbService.db
+	const requests = await db
 		.select({
 			id: approvalRequest.id,
 			organizationId: approvalRequest.organizationId,
@@ -362,7 +334,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	}
 
 	const finalizedAt = dateFromInstant(input.finalizedAt);
-	const updatedPeriods = await input.dbService.db
+	const updatedPeriods = await db
 		.update(workPeriod)
 		.set({
 			approvalStatus: terminalStatus,
@@ -393,7 +365,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		throw fail();
 	}
 
-	const updatedRecords = await input.dbService.db
+	const updatedRecords = await db
 		.update(timeRecord)
 		.set({
 			approvalState: terminalStatus,
@@ -417,7 +389,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		throw fail();
 	}
 
-	const decisions = await input.dbService.db
+	const decisions = await db
 		.insert(timeRecordApprovalDecision)
 		.values({
 			organizationId: input.organizationId,

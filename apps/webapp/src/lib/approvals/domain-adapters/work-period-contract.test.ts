@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
 	ORDINARY_WORK_PERIOD_APPROVAL_KINDS,
@@ -5,6 +7,16 @@ import {
 } from "./work-period-contract";
 
 describe("ordinary work-period workflow contract", () => {
+	it("keeps the adapter and runtime independent of server modules", () => {
+		for (const relativePath of [
+			"src/lib/approvals/domain-adapters/work-period.adapter.ts",
+			"src/lib/approvals/workflow/runtime.ts",
+		]) {
+			const source = readFileSync(join(process.cwd(), relativePath), "utf8");
+			expect(source).not.toMatch(/from ["'][^"']*server\//);
+		}
+	});
+
 	it.each(
 		ORDINARY_WORK_PERIOD_APPROVAL_KINDS,
 	)("parses a canonical %s payload with exact enumerable data properties", (kind) => {

@@ -1,5 +1,5 @@
+import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
-import { timeRecord, workPeriod } from "@/db/schema";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ApprovalWorkflowSnapshot } from "../workflow/ports";
 import {
@@ -108,38 +108,24 @@ function createFixture() {
 			approvalState: "pending",
 		},
 	};
-	const whereInputs: unknown[] = [];
 	const db = {
-		select: vi.fn(() => {
-			let table: unknown;
-			const query = {
-				from(input: unknown) {
-					table = input;
-					return query;
+		execute: vi.fn(async () => ({
+			rows: [
+				{
+					...value.period,
+					canonicalId: value.canonical.id,
+					canonicalOrganizationId: value.canonical.organizationId,
+					canonicalEmployeeId: value.canonical.employeeId,
+					canonicalRecordKind: value.canonical.recordKind,
+					canonicalStartAt: value.canonical.startAt,
+					canonicalEndAt: value.canonical.endAt,
+					canonicalDurationMinutes: value.canonical.durationMinutes,
+					canonicalApprovalState: value.canonical.approvalState,
 				},
-				where(input: unknown) {
-					whereInputs.push(input);
-					return query;
-				},
-				for() {
-					if (table === workPeriod) return Promise.resolve([value.period]);
-					if (table === timeRecord) return Promise.resolve([value.canonical]);
-					return Promise.resolve([]);
-				},
-			};
-			return query;
-		}),
+			],
+		})),
 	};
-	return { value, whereInputs, db };
-}
-
-function collectBoundValues(value: unknown): unknown[] {
-	if (!value || typeof value !== "object") return [];
-	const candidate = value as { value?: unknown; queryChunks?: unknown[] };
-	return [
-		...(Object.hasOwn(candidate, "value") ? [candidate.value] : []),
-		...(candidate.queryChunks?.flatMap(collectBoundValues) ?? []),
-	];
+	return { value, db };
 }
 
 function createAdapter(kind: OrdinaryWorkPeriodApprovalKind) {
@@ -238,13 +224,33 @@ describe.each(
 			durationMinutes: 480,
 			payload: { timeRequest: { kind } },
 		});
-		expect(fixture.whereInputs).toHaveLength(2);
-		for (const where of fixture.whereInputs) {
-			expect(collectBoundValues(where)).toContain(organizationId);
-			expect(collectBoundValues(where)).toContain(ids.employee);
-		}
-		expect(collectBoundValues(fixture.whereInputs[0])).toContain(ids.period);
-		expect(collectBoundValues(fixture.whereInputs[1])).toContain(ids.canonical);
+		expect(fixture.db.execute).toHaveBeenCalledOnce();
+		const query = fixture.db.execute.mock.calls[0]?.[0] as SQL;
+		expect(new PgDialect().sqlToQuery(query).params).toEqual(
+			expect.arrayContaining([organizationId, ids.employee, ids.period]),
+		);
+	});
+
+	it("rejects matching forged approval states from raw database evidence", async () => {
+		const { adapter } = createAdapter(kind);
+		const fixture = createFixture();
+		fixture.value.period.approvalStatus = "forged" as never;
+		fixture.value.canonical.approvalState = "forged";
+
+		await expect(
+			adapter.loadSource({
+				dbService: { db: fixture.db } as never,
+				organizationId,
+				workflow: workflow(kind),
+				sourceIdentity: {
+					organizationId,
+					workflowType: kind,
+					sourceType: "time_entry",
+					sourceId: ids.period,
+				},
+				actor: { kind: "system", employeeId: null, userId: null },
+			}),
+		).rejects.toThrow(/invalid/i);
 	});
 
 	it.each([
@@ -271,9 +277,9 @@ describe.each(
 			}),
 		).rejects.toThrow(/invalid/i);
 		if (_label === "source ID") {
-			expect(fixture.db.select).toHaveBeenCalledOnce();
+			expect(fixture.db.execute).toHaveBeenCalledOnce();
 		} else {
-			expect(fixture.db.select).not.toHaveBeenCalled();
+			expect(fixture.db.execute).not.toHaveBeenCalled();
 		}
 	});
 

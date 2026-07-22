@@ -1,3 +1,6 @@
+import type { Instant } from "@/lib/datetime/temporal-core";
+import type { ApprovalDbService } from "../workflow/ports";
+
 export const ORDINARY_WORK_PERIOD_APPROVAL_KINDS = [
 	"manual_time_submission",
 	"policy_clock_out",
@@ -21,6 +24,37 @@ export interface OrdinaryWorkPeriodApprovalSource {
 	endTime: string;
 	durationMinutes: number;
 	payload: Readonly<OrdinaryWorkPeriodWorkflowPayload>;
+}
+
+export interface WorkPeriodApprovalResult {
+	kind: OrdinaryWorkPeriodApprovalKind;
+	action: "approve" | "reject";
+	reason: string | null;
+	period: {
+		id: string;
+		organizationId: string;
+		employeeId: string;
+		canonicalRecordId: string;
+		startTime: Date;
+		endTime: Date;
+	};
+}
+
+export interface FinalizeOrdinaryWorkPeriodTerminalInput {
+	dbService: ApprovalDbService;
+	organizationId: string;
+	workPeriodId: string;
+	approvalRequestId: string;
+	expectedApprovalWorkflowId: string | null;
+	requesterEmployeeId: string;
+	actorEmployeeId: string;
+	actorUserId: string;
+	kind: OrdinaryWorkPeriodApprovalKind;
+	transition:
+		| { kind: "approve"; reason: string | null }
+		| { kind: "reject"; reason: string };
+	finalizedAt: Instant;
+	allowUnlinkedLegacySource: boolean;
 }
 
 function readExactDataProperty(value: unknown, key: string): unknown {
