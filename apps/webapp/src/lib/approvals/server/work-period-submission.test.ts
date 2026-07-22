@@ -437,16 +437,16 @@ function ordinarySubmissionMarker() {
 	return { key: ordinarySubmissionKey(), submissionId };
 }
 
-function distinctMarkerBinding(
-	query: { sql: string; params: unknown[] },
-	field: "key" | "submissionId",
-) {
+function markerIdentityPredicate(query: { sql: string; params: unknown[] }) {
 	const match = query.sql.match(
-		new RegExp(`->> '${field}' is distinct from \\$(\\d+)`),
+		/request\.metadata -> 'ordinarySubmission' ->> 'key' is distinct from \$(\d+)\s+(or|and)\s+request\.metadata -> 'ordinarySubmission' ->> 'submissionId' is distinct from \$(\d+)/i,
 	);
-	return match
-		? { found: true as const, value: query.params[Number(match[1]) - 1] }
-		: { found: false as const, value: undefined };
+	if (!match) return null;
+	return {
+		connector: match[2].toLowerCase() as "or" | "and",
+		key: query.params[Number(match[1]) - 1],
+		submissionId: query.params[Number(match[3]) - 1],
+	};
 }
 
 function markedAutoRequest(input: {
@@ -1320,15 +1320,17 @@ it.each([
 	};
 	const fake = fixture({
 		sourceFromQuery: (query) => {
-			const keyBinding = distinctMarkerBinding(query, "key");
-			const tokenBinding = distinctMarkerBinding(query, "submissionId");
+			const predicate = markerIdentityPredicate(query);
+			const keyMismatch = marker.key !== predicate?.key;
+			const tokenMismatch = marker.submissionId !== predicate?.submissionId;
 			return {
 				...terminalSource,
 				hasMalformedLegacyMarker:
-					keyBinding.found &&
-					tokenBinding.found &&
-					(marker.key !== keyBinding.value ||
-						marker.submissionId !== tokenBinding.value),
+					predicate?.connector === "or"
+						? keyMismatch || tokenMismatch
+						: predicate?.connector === "and"
+							? keyMismatch && tokenMismatch
+							: false,
 			};
 		},
 	});
@@ -1339,13 +1341,11 @@ it.each([
 	const sourceQuery = fake.queries.find(({ sql }) =>
 		sql.includes('as "hasMalformedLegacyMarker"'),
 	);
-	expect(sourceQuery && distinctMarkerBinding(sourceQuery, "key")).toEqual({
-		found: true,
-		value: ordinarySubmissionKey(),
+	expect(sourceQuery && markerIdentityPredicate(sourceQuery)).toEqual({
+		connector: "or",
+		key: ordinarySubmissionKey(),
+		submissionId,
 	});
-	expect(
-		sourceQuery && distinctMarkerBinding(sourceQuery, "submissionId"),
-	).toEqual({ found: true, value: submissionId });
 	expect(sourceQuery?.sql).not.toContain(ordinarySubmissionKey());
 	expect(sourceQuery?.sql).not.toContain(submissionId);
 	expect(state.calls.some((call) => call.startsWith("finalize:"))).toBe(false);
