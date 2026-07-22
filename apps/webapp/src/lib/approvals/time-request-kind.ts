@@ -38,28 +38,57 @@ export function classifyTimeApprovalRequest(
 	input: TimeApprovalClassificationInput,
 ): TimeApprovalKind {
 	const metadata = asObject(input.metadata);
-	if (asObject(metadata?.timeCorrection)) {
-		return "time_correction";
-	}
-
 	const explicitKind = asObject(metadata?.timeRequest)?.kind;
-	if (
-		explicitKind === "manual_time_submission" ||
-		explicitKind === "policy_clock_out"
-	) {
-		return explicitKind;
-	}
-
 	const pendingChanges = pendingChangesObject(input.pendingChanges);
 	const hasManualMarker = pendingChanges?.isManualEntry === true;
 	const hasClockOutMarker = pendingChanges?.isNewClockOut === true;
+	const hasManualReason =
+		input.reason?.startsWith("Manual time entry:") === true;
+	const hasClockOutReason = input.reason === POLICY_CLOCK_OUT_APPROVAL_REASON;
+	const hasOrdinaryExplicitKind =
+		explicitKind === "manual_time_submission" ||
+		explicitKind === "policy_clock_out";
+
+	if (asObject(metadata?.timeCorrection)) {
+		return hasOrdinaryExplicitKind ||
+			hasManualMarker ||
+			hasClockOutMarker ||
+			hasManualReason ||
+			hasClockOutReason
+			? "unclassified"
+			: "time_correction";
+	}
+
+	if (hasOrdinaryExplicitKind) {
+		const hasOppositeMarker =
+			explicitKind === "manual_time_submission"
+				? hasClockOutMarker
+				: hasManualMarker;
+		const hasOppositeReason =
+			explicitKind === "manual_time_submission"
+				? hasClockOutReason
+				: hasManualReason;
+		if (
+			(hasManualMarker && hasClockOutMarker) ||
+			hasOppositeMarker ||
+			hasOppositeReason
+		) {
+			return "unclassified";
+		}
+		return explicitKind;
+	}
+
 	if (hasManualMarker && hasClockOutMarker) return "unclassified";
-	if (hasManualMarker) return "manual_time_submission";
-	if (hasClockOutMarker) return "policy_clock_out";
-	if (input.reason?.startsWith("Manual time entry:") && !hasClockOutMarker) {
+	if (hasManualMarker) {
+		return hasClockOutReason ? "unclassified" : "manual_time_submission";
+	}
+	if (hasClockOutMarker) {
+		return hasManualReason ? "unclassified" : "policy_clock_out";
+	}
+	if (hasManualReason) {
 		return "manual_time_submission";
 	}
-	if (input.reason === POLICY_CLOCK_OUT_APPROVAL_REASON && !hasManualMarker) {
+	if (hasClockOutReason) {
 		return "policy_clock_out";
 	}
 

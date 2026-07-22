@@ -1,3 +1,4 @@
+import type { OrdinaryWorkPeriodApprovalSource } from "./work-period-contract";
 import { createApprovalDomainAdapterRegistry } from "./registry";
 import type { ApprovalDomainAdapter } from "./types";
 
@@ -15,10 +16,10 @@ export class ApprovalDomainNotMigratedError extends Error {
 	}
 }
 
-function notMigratedAdapter(
+function notMigratedAdapter<TSource>(
 	workflowType: string,
 	sourceType: string,
-): ApprovalDomainAdapter<unknown> {
+): ApprovalDomainAdapter<TSource> {
 	const fail = async (): Promise<never> => {
 		throw new ApprovalDomainNotMigratedError(workflowType, sourceType);
 	};
@@ -56,11 +57,14 @@ export function createProductionApprovalDomainAdapterRegistry(input: {
 	return createApprovalDomainAdapterRegistry({
 		absence: input.absence,
 		time_correction: input.timeCorrection,
-		manual_time_submission: notMigratedAdapter(
+		manual_time_submission: notMigratedAdapter<OrdinaryWorkPeriodApprovalSource>(
 			"manual_time_submission",
 			"time_entry",
 		),
-		policy_clock_out: notMigratedAdapter("policy_clock_out", "time_entry"),
+		policy_clock_out: notMigratedAdapter<OrdinaryWorkPeriodApprovalSource>(
+			"policy_clock_out",
+			"time_entry",
+		),
 		travel_expense: notMigratedAdapter(
 			"travel_expense",
 			"travel_expense_claim",

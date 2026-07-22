@@ -11,6 +11,10 @@ import type {
 	ApprovalWorkflowTransactionContext,
 } from "../domain-adapters/types";
 import type {
+	OrdinaryWorkPeriodApprovalSource,
+	OrdinaryWorkPeriodWorkflowPayload,
+} from "../domain-adapters/work-period-contract";
+import type {
 	ApprovalAssignmentActorIdentity,
 	ApprovalAssignmentSnapshot,
 	ApprovalCommandActor,
@@ -225,6 +229,18 @@ interface TestSourceMap {
 }
 type _DefaultSourceMapIsComplete = Assert<
 	Equal<keyof ApprovalWorkflowSourceMap, keyof TestSourceMap>
+>;
+type _OrdinarySourceMapUsesSharedContract = Assert<
+	Equal<
+		ApprovalWorkflowSourceMap["manual_time_submission" | "policy_clock_out"],
+		OrdinaryWorkPeriodApprovalSource
+	>
+>;
+type _OrdinarySourcePayloadIsCanonical = Assert<
+	Equal<
+		OrdinaryWorkPeriodApprovalSource["payload"],
+		Readonly<OrdinaryWorkPeriodWorkflowPayload>
+	>
 >;
 declare const typedRegistry: ApprovalDomainAdapterRegistry<TestSourceMap>;
 declare const absenceAdapter: ApprovalDomainAdapter<{ kind: "absence" }>;

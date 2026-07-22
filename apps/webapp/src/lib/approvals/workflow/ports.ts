@@ -2,6 +2,7 @@ import type { SQL } from "drizzle-orm";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ApprovedCancellationAuthorization } from "../domain-adapters/registry";
 import type { ApprovalTerminalFinalizationResult } from "../domain-adapters/types";
+import type { OrdinaryWorkPeriodApprovalSource } from "../domain-adapters/work-period-contract";
 import type { ApprovalProjectionWriteInput } from "../projection/contracts";
 import type { ApprovalWorkflowCommand } from "./state-machine";
 import type {
@@ -663,8 +664,8 @@ export interface StageActivationResolver {
 export interface ApprovalWorkflowSourceMap {
 	absence: unknown;
 	time_correction: unknown;
-	manual_time_submission: unknown;
-	policy_clock_out: unknown;
+	manual_time_submission: OrdinaryWorkPeriodApprovalSource;
+	policy_clock_out: OrdinaryWorkPeriodApprovalSource;
 	travel_expense: unknown;
 	shift_request: unknown;
 	compliance_exception: unknown;
