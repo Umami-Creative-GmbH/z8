@@ -335,13 +335,25 @@ function hasPrivateApprovalSubmissionEvidence(input: {
 	) {
 		return false;
 	}
-	const root = exactPlainObject(input.metadata, [
-		"timeRequest",
-		"ordinarySubmission",
-	]);
+	const metadataKeys = Reflect.ownKeys(
+		Object.getOwnPropertyDescriptors(input.metadata),
+	);
+	const hasAutoApproval = metadataKeys.includes("autoApproval");
+	const root = exactPlainObject(
+		input.metadata,
+		hasAutoApproval
+			? ["timeRequest", "ordinarySubmission", "autoApproval"]
+			: ["timeRequest", "ordinarySubmission"],
+	);
 	const timeRequest = exactPlainObject(root.timeRequest, ["kind"]);
 	if (timeRequest.kind !== input.expectedKind) {
 		throw new Error("Submission collision");
+	}
+	if (hasAutoApproval) {
+		const autoApproval = exactPlainObject(root.autoApproval, ["reason"]);
+		if (autoApproval.reason !== "requester_is_approver") {
+			throw new Error("Submission collision");
+		}
 	}
 	const markerDescriptor = Object.getOwnPropertyDescriptor(
 		root,
@@ -576,10 +588,8 @@ async function findManualSubmissionEvidence(input: {
 		sourceId: period.id,
 		allocationKey: submissionKey,
 	});
-	let hasApprovalEvidence =
-		period.approvalStatus === "pending" &&
-		period.approvalWorkflowId === expectedWorkflowId;
-	if (period.approvalStatus === "pending" && !hasApprovalEvidence) {
+	let hasApprovalEvidence = period.approvalWorkflowId === expectedWorkflowId;
+	if (!hasApprovalEvidence) {
 		const requests = await input.tx.query.approvalRequest.findMany({
 			where: and(
 				eq(approvalRequest.organizationId, input.organizationId),
@@ -588,7 +598,7 @@ async function findManualSubmissionEvidence(input: {
 			),
 			columns: { metadata: true },
 		});
-		hasApprovalEvidence = requests.some((request) =>
+		const requestEvidence = requests.map((request) =>
 			hasPrivateApprovalSubmissionEvidence({
 				metadata: request.metadata,
 				expectedKey: submissionKey,
@@ -596,6 +606,7 @@ async function findManualSubmissionEvidence(input: {
 				expectedKind: "manual_time_submission",
 			}),
 		);
+		hasApprovalEvidence = requestEvidence.some(Boolean);
 	}
 	if (period.approvalStatus === "pending" && !hasApprovalEvidence) {
 		throw new Error("Submission collision");
@@ -686,7 +697,7 @@ async function findPolicyClockOutSubmissionEvidence(input: {
 			),
 			columns: { metadata: true },
 		});
-		hasApprovalEvidence = requests.some((request) =>
+		const requestEvidence = requests.map((request) =>
 			hasPrivateApprovalSubmissionEvidence({
 				metadata: request.metadata,
 				expectedKey: submissionKey,
@@ -694,6 +705,7 @@ async function findPolicyClockOutSubmissionEvidence(input: {
 				expectedKind: "policy_clock_out",
 			}),
 		);
+		hasApprovalEvidence = requestEvidence.some(Boolean);
 	}
 	if (period.approvalStatus === "pending" && !hasApprovalEvidence) {
 		throw new Error("Submission collision");

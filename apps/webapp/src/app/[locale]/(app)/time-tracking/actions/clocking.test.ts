@@ -270,6 +270,38 @@ function approvalRequestMetadata(
 	};
 }
 
+function requesterAutoApprovalMetadata(
+	kind: "manual_time_submission" | "policy_clock_out",
+	periodId: string,
+	submissionId = defaultSubmissionId,
+) {
+	return {
+		...approvalRequestMetadata(kind, periodId, submissionId),
+		autoApproval: { reason: "requester_is_approver" },
+	};
+}
+
+function approvalWorkflowId(
+	kind: "manual_time_submission" | "policy_clock_out",
+	periodId: string,
+	submissionId = defaultSubmissionId,
+) {
+	const submissionKey = deriveApprovalWorkflowId({
+		organizationId: "org-1",
+		workflowType: kind,
+		sourceType: "time_entry",
+		sourceId: periodId,
+		allocationKey: submissionId,
+	});
+	return deriveApprovalWorkflowId({
+		organizationId: "org-1",
+		workflowType: kind,
+		sourceType: "time_entry",
+		sourceId: periodId,
+		allocationKey: submissionKey,
+	});
+}
+
 function setApprovalRequestEvidence(
 	kind: "manual_time_submission" | "policy_clock_out",
 	periodId: string,
@@ -310,6 +342,7 @@ function manualSubmissionMetadata(
 
 function setManualReplayEvidence(options?: {
 	approvalStatus?: "pending" | "approved";
+	approvalWorkflowId?: string | null;
 	pendingChanges?: unknown;
 	workCategoryId?: string | null;
 	projectId?: string | null;
@@ -325,7 +358,7 @@ function setManualReplayEvidence(options?: {
 		clockInId: "clock-in-1",
 		clockOutId: "clock-out-1",
 		canonicalRecordId: "canonical-1",
-		approvalWorkflowId: null,
+		approvalWorkflowId: options?.approvalWorkflowId ?? null,
 		startTime,
 		endTime,
 		durationMinutes: 60,
@@ -1233,6 +1266,50 @@ describe("clockOut", () => {
 		expect(mockState.executeOrdinarySubmission).not.toHaveBeenCalled();
 	});
 
+	it("rejects malformed policy evidence after a valid request before Task 6", async () => {
+		const submissionId = defaultSubmissionId;
+		mockState.getActiveWorkPeriod.mockResolvedValue(null);
+		mockState.findPolicyPeriods.mockResolvedValue([
+			policyReplayPeriod(submissionId, null),
+		]);
+		setPolicyCanonicalEvidence({ approvalState: "approved" });
+		mockState.findApprovalRequests.mockResolvedValue([
+			{
+				metadata: requesterAutoApprovalMetadata(
+					"policy_clock_out",
+					"period-1",
+					submissionId,
+				),
+			},
+			{
+				metadata: {
+					...requesterAutoApprovalMetadata(
+						"policy_clock_out",
+						"period-1",
+						submissionId,
+					),
+					autoApproval: {
+						reason: "requester_is_approver",
+						extra: true,
+					},
+				},
+			},
+		]);
+		mockState.executeOrdinarySubmission.mockResolvedValue({
+			result: { kind: "auto_completed", approvalRequestId: "approval-1" },
+			disposition: "replayed",
+			postCommit: null,
+		});
+
+		const result = await clockOut(undefined, undefined, { submissionId });
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to clock out. Please try again.",
+		});
+		expect(mockState.executeOrdinarySubmission).not.toHaveBeenCalled();
+	});
+
 	it("rolls back an existing policy source when Task 6 executes instead of replaying", async () => {
 		const durableState = { approvalWrites: [] as string[] };
 		mockState.findPolicyPeriods.mockResolvedValue([
@@ -1284,7 +1361,7 @@ describe("clockOut", () => {
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 
-	it("preserves auto-completed approval outcome from completed legacy evidence", async () => {
+	it("replays an auto-completed policy source with exact requester-auto evidence", async () => {
 		const submissionId = "10000000-0000-4000-8000-000000000099";
 		mockState.getActiveWorkPeriod.mockResolvedValue(null);
 		mockState.findPolicyPeriods.mockResolvedValue([
@@ -1334,19 +1411,11 @@ describe("clockOut", () => {
 		});
 		mockState.findApprovalRequests.mockResolvedValue([
 			{
-				metadata: {
-					timeRequest: { kind: "policy_clock_out" },
-					ordinarySubmission: {
-						key: deriveApprovalWorkflowId({
-							organizationId: "org-1",
-							workflowType: "policy_clock_out",
-							sourceType: "time_entry",
-							sourceId: "period-1",
-							allocationKey: submissionId,
-						}),
-						submissionId,
-					},
-				},
+				metadata: requesterAutoApprovalMetadata(
+					"policy_clock_out",
+					"period-1",
+					submissionId,
+				),
 			},
 		]);
 		mockState.executeOrdinarySubmission.mockResolvedValueOnce({
@@ -1362,6 +1431,63 @@ describe("clockOut", () => {
 			data: { pendingApproval: false },
 		});
 		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledOnce();
+	});
+
+	it.each([
+		"extra",
+		"accessor",
+		"prototype",
+		"wrong reason",
+	] as const)("rejects requester-auto policy evidence with %s before Task 6", async (shape) => {
+		const submissionId = defaultSubmissionId;
+		const reasonGetter = vi.fn(() => "requester_is_approver");
+		let autoApproval: object;
+		switch (shape) {
+			case "extra":
+				autoApproval = { reason: "requester_is_approver", extra: true };
+				break;
+			case "accessor":
+				autoApproval = {};
+				Object.defineProperty(autoApproval, "reason", {
+					enumerable: true,
+					get: reasonGetter,
+				});
+				break;
+			case "prototype":
+				autoApproval = Object.assign(Object.create({}), {
+					reason: "requester_is_approver",
+				});
+				break;
+			case "wrong reason":
+				autoApproval = { reason: "different" };
+				break;
+		}
+		mockState.getActiveWorkPeriod.mockResolvedValue(null);
+		mockState.findPolicyPeriods.mockResolvedValue([
+			policyReplayPeriod(submissionId, null),
+		]);
+		setPolicyCanonicalEvidence({ approvalState: "approved" });
+		mockState.findApprovalRequests.mockResolvedValue([
+			{
+				metadata: {
+					...approvalRequestMetadata(
+						"policy_clock_out",
+						"period-1",
+						submissionId,
+					),
+					autoApproval,
+				},
+			},
+		]);
+
+		const result = await clockOut(undefined, undefined, { submissionId });
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to clock out. Please try again.",
+		});
+		expect(mockState.executeOrdinarySubmission).not.toHaveBeenCalled();
+		expect(reasonGetter).not.toHaveBeenCalled();
 	});
 
 	it("returns the generic failure for ambiguous policy retry evidence", async () => {
@@ -2854,8 +2980,135 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledOnce();
 	});
 
-	it("does not create approval work when an approved manual retry meets a stricter policy", async () => {
+	it("replays an approved manual requester-auto submission without effects", async () => {
+		setManualReplayEvidence({
+			approvalStatus: "approved",
+			pendingChanges: null,
+		});
+		mockState.findApprovalRequests.mockResolvedValue([
+			{
+				metadata: requesterAutoApprovalMetadata(
+					"manual_time_submission",
+					defaultSubmissionId,
+				),
+			},
+		]);
+		mockState.executeOrdinarySubmission.mockResolvedValue({
+			result: { kind: "auto_completed", approvalRequestId: "approval-1" },
+			disposition: "replayed",
+			postCommit: null,
+		});
+
+		const result = await createManualTimeEntry({
+			submissionId: defaultSubmissionId,
+			date: "2026-05-03",
+			clockInTime: "09:00",
+			clockOutTime: "10:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toMatchObject({
+			success: true,
+			data: {
+				workPeriodId: defaultSubmissionId,
+				requiresApproval: false,
+			},
+		});
+		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledOnce();
+		expect(
+			mockState.sendManualEntryApprovalNotifications,
+		).not.toHaveBeenCalled();
+		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
+		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(mockState.revalidatePath).not.toHaveBeenCalled();
+	});
+
+	it("replays an approved manual submission with its exact workflow id", async () => {
+		setManualReplayEvidence({
+			approvalStatus: "approved",
+			pendingChanges: null,
+			approvalWorkflowId: approvalWorkflowId(
+				"manual_time_submission",
+				defaultSubmissionId,
+			),
+		});
+		mockState.findApprovalRequests.mockResolvedValue([]);
+		mockState.executeOrdinarySubmission.mockResolvedValue({
+			result: { kind: "auto_completed", approvalRequestId: "approval-1" },
+			disposition: "replayed",
+			postCommit: null,
+		});
+
+		const result = await createManualTimeEntry({
+			submissionId: defaultSubmissionId,
+			date: "2026-05-03",
+			clockInTime: "09:00",
+			clockOutTime: "10:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toMatchObject({
+			success: true,
+			data: {
+				workPeriodId: defaultSubmissionId,
+				requiresApproval: false,
+			},
+		});
+		expect(mockState.findApprovalRequests).not.toHaveBeenCalled();
+		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledOnce();
+		expect(
+			mockState.sendManualEntryApprovalNotifications,
+		).not.toHaveBeenCalled();
+		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
+		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(mockState.revalidatePath).not.toHaveBeenCalled();
+	});
+
+	it("rejects malformed manual evidence after a valid request before Task 6", async () => {
+		setManualReplayEvidence({
+			approvalStatus: "approved",
+			pendingChanges: null,
+		});
+		const validMetadata = requesterAutoApprovalMetadata(
+			"manual_time_submission",
+			defaultSubmissionId,
+		);
+		mockState.findApprovalRequests.mockResolvedValue([
+			{ metadata: validMetadata },
+			{
+				metadata: {
+					...validMetadata,
+					autoApproval: {
+						reason: "requester_is_approver",
+						extra: true,
+					},
+				},
+			},
+		]);
+		mockState.executeOrdinarySubmission.mockResolvedValue({
+			result: { kind: "auto_completed", approvalRequestId: "approval-1" },
+			disposition: "replayed",
+			postCommit: null,
+		});
+
+		const result = await createManualTimeEntry({
+			submissionId: defaultSubmissionId,
+			date: "2026-05-03",
+			clockInTime: "09:00",
+			clockOutTime: "10:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to create time entry. Please try again.",
+		});
+		expect(mockState.executeOrdinarySubmission).not.toHaveBeenCalled();
+	});
+
+	it("keeps an approved no-approval manual retry outside Task 6", async () => {
 		setManualCanonicalDetail();
+		mockState.findApprovalRequests.mockResolvedValue([]);
 		const submissionId = "10000000-0000-4000-8000-000000000099";
 		const startTime = new Date("2026-05-03T09:00:00.000Z");
 		const endTime = new Date("2026-05-03T10:00:00.000Z");
@@ -2917,6 +3170,12 @@ describe("createManualTimeEntry", () => {
 			data: { workPeriodId: submissionId, requiresApproval: false },
 		});
 		expect(mockState.executeOrdinarySubmission).not.toHaveBeenCalled();
+		expect(
+			mockState.sendManualEntryApprovalNotifications,
+		).not.toHaveBeenCalled();
+		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
+		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 
 	it("revalidates an executed manual entry that does not require approval", async () => {
