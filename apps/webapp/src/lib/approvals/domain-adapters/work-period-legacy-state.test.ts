@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import type { ApprovalDbService } from "../server/types";
 import {
+	type CaptureOrdinaryWorkPeriodLegacyPreSubmissionStateInput,
 	type CaptureOrdinaryWorkPeriodLegacyStateInput,
+	captureOrdinaryWorkPeriodLegacyPreSubmissionState,
 	captureOrdinaryWorkPeriodLegacyState,
 } from "./work-period-legacy-state";
 
@@ -291,6 +293,174 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 		});
 	});
 
+	it("captures exact requester auto-approval evidence when approved is expected", async () => {
+		const approvedAt = new Date("2026-07-20T14:30:00.000Z");
+		const fake = database(
+			envelope({
+				workPeriods: [
+					period({ approvalStatus: "approved", approvalWorkflowId: null }),
+				],
+				canonicalRecords: [canonical({ approvalState: "approved" })],
+				approvalRequests: [
+					request({
+						approverId: employeeId,
+						status: "approved",
+						approvedAt,
+						metadata: {
+							timeRequest: { kind: "manual_time_submission" },
+							autoApproval: { reason: "requester_is_approver" },
+						},
+					}),
+				],
+				requestStageLinks: [],
+				chains: [],
+				chainRows: [],
+				workflows: [],
+				employees: [{ id: employeeId, organizationId }],
+			}),
+		);
+
+		const state = await captureOrdinaryWorkPeriodLegacyState(
+			input(fake.dbService, { expectedRequestStatus: "approved" }),
+		);
+
+		expect(state.approvalRequest).toMatchObject({
+			status: "approved",
+			requestedBy: employeeId,
+			approverId: employeeId,
+			metadata: {
+				timeRequest: { kind: "manual_time_submission" },
+				autoApproval: { reason: "requester_is_approver" },
+			},
+		});
+	});
+
+	it("captures an exact auto-completed custom-policy chain", async () => {
+		const approvedAt = new Date("2026-07-20T14:30:00.000Z");
+		const fake = database(
+			envelope({
+				workPeriods: [
+					period({ approvalStatus: "approved", approvalWorkflowId: null }),
+				],
+				canonicalRecords: [canonical({ approvalState: "approved" })],
+				approvalRequests: [
+					request({
+						approverId: employeeId,
+						status: "approved",
+						approvedAt,
+						metadata: {
+							timeRequest: { kind: "manual_time_submission" },
+							autoApproval: { reason: "requester_is_approver" },
+						},
+					}),
+				],
+				chains: [
+					chain({
+						status: "approved",
+						completedAt: approvedAt,
+					}),
+				],
+				chainRows: [
+					stage({
+						resolvedApproverEmployeeId: employeeId,
+						status: "approved",
+						decidedBy: employeeId,
+						decidedAt: approvedAt,
+					}),
+				],
+				workflows: [],
+				employees: [{ id: employeeId, organizationId }],
+			}),
+		);
+
+		const state = await captureOrdinaryWorkPeriodLegacyState(
+			input(fake.dbService, { expectedRequestStatus: "approved" }),
+		);
+
+		expect(state.chain).toMatchObject({ status: "approved" });
+		expect(state.chainRows).toEqual([
+			expect.objectContaining({
+				status: "approved",
+				decidedBy: employeeId,
+			}),
+		]);
+	});
+
+	it.each([
+		["pending status", { status: "pending", approvedAt: null }],
+		["foreign approver", { approverId }],
+		["missing approved instant", { approvedAt: null }],
+		[
+			"missing auto evidence",
+			{ metadata: { timeRequest: { kind: "manual_time_submission" } } },
+		],
+	] as const)("rejects approved capture with %s", async (_label, overrides) => {
+		await expectCaptureFailure(
+			envelope({
+				workPeriods: [
+					period({ approvalStatus: "approved", approvalWorkflowId: null }),
+				],
+				canonicalRecords: [canonical({ approvalState: "approved" })],
+				approvalRequests: [
+					request({
+						approverId: employeeId,
+						status: "approved",
+						approvedAt: new Date("2026-07-20T14:30:00.000Z"),
+						metadata: {
+							timeRequest: { kind: "manual_time_submission" },
+							autoApproval: { reason: "requester_is_approver" },
+						},
+						...overrides,
+					}),
+				],
+				requestStageLinks: [],
+				chains: [],
+				chainRows: [],
+				workflows: [],
+				employees: [{ id: employeeId, organizationId }],
+			}),
+			{ expectedRequestStatus: "approved" },
+		);
+	});
+
+	it("rejects approved accessor metadata without invoking it", async () => {
+		let reads = 0;
+		const metadata = Object.defineProperty(
+			{ timeRequest: { kind: "manual_time_submission" } },
+			"autoApproval",
+			{
+				enumerable: true,
+				get() {
+					reads += 1;
+					return { reason: "requester_is_approver" };
+				},
+			},
+		);
+		await expectCaptureFailure(
+			envelope({
+				workPeriods: [
+					period({ approvalStatus: "approved", approvalWorkflowId: null }),
+				],
+				canonicalRecords: [canonical({ approvalState: "approved" })],
+				approvalRequests: [
+					request({
+						approverId: employeeId,
+						status: "approved",
+						approvedAt: new Date("2026-07-20T14:30:00.000Z"),
+						metadata,
+					}),
+				],
+				requestStageLinks: [],
+				chains: [],
+				chainRows: [],
+				workflows: [],
+				employees: [{ id: employeeId, organizationId }],
+			}),
+			{ expectedRequestStatus: "approved" },
+		);
+		expect(reads).toBe(0);
+	});
+
 	it.each([
 		[
 			"wrong period organization",
@@ -519,5 +689,118 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 		} catch (error) {
 			expect(String(error)).not.toContain(attackerValue);
 		}
+	});
+});
+
+function preInput(
+	dbService: ApprovalDbService,
+	overrides: Partial<CaptureOrdinaryWorkPeriodLegacyPreSubmissionStateInput> = {},
+): CaptureOrdinaryWorkPeriodLegacyPreSubmissionStateInput {
+	return {
+		dbService,
+		organizationId,
+		workPeriodId,
+		expectedKind: "manual_time_submission",
+		expectedRequesterEmployeeId: employeeId,
+		...overrides,
+	};
+}
+
+function preEnvelope(overrides: JsonRecord = {}) {
+	return envelope({
+		workPeriods: [period({ approvalWorkflowId: null })],
+		approvalRequests: [],
+		requestStageLinks: [],
+		chains: [],
+		chainRows: [],
+		workflows: [],
+		employees: [{ id: employeeId, organizationId }],
+		...overrides,
+	});
+}
+
+describe("captureOrdinaryWorkPeriodLegacyPreSubmissionState", () => {
+	it("captures exact source parity with no request or chain evidence", async () => {
+		const fake = database(preEnvelope());
+
+		const state = await captureOrdinaryWorkPeriodLegacyPreSubmissionState(
+			preInput(fake.dbService),
+		);
+
+		expect(fake.calls).toHaveLength(1);
+		const preCaptureSql = new PgDialect().sqlToQuery(fake.calls[0] as SQL).sql;
+		expect(preCaptureSql).not.toContain("request.requested_by");
+		expect(state).toMatchObject({
+			organizationId,
+			source: {
+				organizationId,
+				workflowType: "manual_time_submission",
+				sourceType: "time_entry",
+				sourceId: workPeriodId,
+			},
+			approvalRequest: null,
+			chain: null,
+			chainRows: [],
+			sourceSnapshot: {
+				timeRequest: { kind: "manual_time_submission" },
+			},
+		});
+		expect(JSON.stringify(state.displaySnapshot)).not.toContain(
+			"private-period",
+		);
+	});
+
+	it.each([
+		["a pending request", { approvalRequests: [request()] }],
+		[
+			"ambiguous requests",
+			{ approvalRequests: [request(), request({ id: workflowId })] },
+		],
+		["a source workflow link", { workPeriods: [period()] }],
+		[
+			"canonical parity mismatch",
+			{ canonicalRecords: [canonical({ durationMinutes: 1 })] },
+		],
+		[
+			"foreign requester",
+			{ workPeriods: [period({ employeeId: approverId })] },
+		],
+		[
+			"opposite pending marker",
+			{
+				workPeriods: [
+					period({
+						approvalWorkflowId: null,
+						pendingChanges: { isNewClockOut: true },
+					}),
+				],
+			},
+		],
+	] as const)("rejects %s", async (_label, overrides) => {
+		const fake = database(preEnvelope(overrides));
+		await expect(
+			captureOrdinaryWorkPeriodLegacyPreSubmissionState(
+				preInput(fake.dbService),
+			),
+		).rejects.toMatchObject({
+			name: "OrdinaryWorkPeriodLegacyStateCaptureError",
+		});
+	});
+
+	it("wraps pre-submission query failures without exposing driver evidence", async () => {
+		const privateDriverMessage = "private-driver-evidence";
+		const dbService = {
+			db: {
+				execute: async () => {
+					throw new Error(privateDriverMessage);
+				},
+			},
+		} as unknown as ApprovalDbService;
+		await expect(
+			captureOrdinaryWorkPeriodLegacyPreSubmissionState(preInput(dbService)),
+		).rejects.toMatchObject({
+			code: "query_failed",
+			message: "Ordinary work-period legacy approval state capture failed",
+		});
 	});
 });

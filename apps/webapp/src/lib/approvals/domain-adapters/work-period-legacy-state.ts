@@ -42,6 +42,16 @@ export interface CaptureOrdinaryWorkPeriodLegacyStateInput {
 	expectedKind: OrdinaryWorkPeriodApprovalKind;
 	expectedRequesterEmployeeId: string;
 	approvalRequestId: string;
+	expectedRequestStatus?: "pending" | "approved";
+}
+
+export interface CaptureOrdinaryWorkPeriodLegacyPreSubmissionStateInput {
+	dbService: ApprovalDbService;
+	organizationId: string;
+	workPeriodId: string;
+	expectedKind: OrdinaryWorkPeriodApprovalKind;
+	expectedRequesterEmployeeId: string;
+	capturedAt?: Instant;
 }
 
 type RequestStatus = "pending" | "approved" | "rejected";
@@ -84,6 +94,36 @@ function record(value: unknown): Record<string, unknown> {
 		return fail();
 	}
 	return value as Record<string, unknown>;
+}
+
+function exactDataRecord(
+	value: unknown,
+	expectedKeys: readonly string[],
+): Record<string, unknown> {
+	if (
+		value === null ||
+		typeof value !== "object" ||
+		Array.isArray(value) ||
+		(Object.getPrototypeOf(value) !== Object.prototype &&
+			Object.getPrototypeOf(value) !== null)
+	) {
+		return fail();
+	}
+	const descriptors = Object.getOwnPropertyDescriptors(value);
+	const keys = Reflect.ownKeys(descriptors);
+	if (
+		keys.length !== expectedKeys.length ||
+		keys.some((key) => typeof key !== "string" || !expectedKeys.includes(key))
+	) {
+		return fail();
+	}
+	const result: Record<string, unknown> = {};
+	for (const key of expectedKeys) {
+		const descriptor = descriptors[key];
+		if (!descriptor?.enumerable || !("value" in descriptor)) return fail();
+		result[key] = descriptor.value;
+	}
+	return result;
 }
 
 function array(value: unknown): unknown[] {
@@ -236,17 +276,33 @@ function decodeRequest(
 	value: unknown,
 	period: WorkPeriodSnapshot,
 	expectedKind: OrdinaryWorkPeriodApprovalKind,
+	expectedStatus: RequestStatus,
 ): LegacyApprovalRequestSnapshot {
 	const raw = record(value);
 	const reason = nullableString(raw.reason);
 	const status = requestStatus(raw.status);
 	const approvedAt = nullableInstant(raw.approvedAt);
 	const rejectionReason = nullableString(raw.rejectionReason);
-	if (status !== "pending" || approvedAt !== null || rejectionReason !== null) {
+	if (
+		status !== expectedStatus ||
+		rejectionReason !== null ||
+		(expectedStatus === "pending"
+			? approvedAt !== null
+			: approvedAt === null || raw.approverId !== raw.requestedBy)
+	) {
 		return fail();
 	}
+	let metadata = raw.metadata;
+	if (expectedStatus === "approved") {
+		const root = exactDataRecord(metadata, ["timeRequest", "autoApproval"]);
+		const autoApproval = exactDataRecord(root.autoApproval, ["reason"]);
+		if (autoApproval.reason !== "requester_is_approver") {
+			return fail();
+		}
+		metadata = { timeRequest: root.timeRequest };
+	}
 	const payload = normalizeRequestPayload({
-		metadata: raw.metadata,
+		metadata,
 		reason,
 		pendingChanges: period.pendingChanges,
 		expectedKind,
@@ -262,17 +318,31 @@ function decodeRequest(
 		reason,
 		rejectionReason,
 		approvedAt,
-		metadata: payload as unknown as JsonObject,
+		metadata: {
+			...payload,
+			...(expectedStatus === "approved"
+				? { autoApproval: { reason: "requester_is_approver" } }
+				: {}),
+		} as unknown as JsonObject,
 		updatedAt: requiredInstant(raw.updatedAt),
 	};
 }
 
-function decodeChain(value: unknown): LegacyApprovalChainSnapshot {
+function decodeChain(
+	value: unknown,
+	expectedStatus: "pending" | "approved",
+): LegacyApprovalChainSnapshot {
 	const raw = record(value);
 	const status = chainStatus(raw.status);
 	const completedAt = nullableInstant(raw.completedAt);
 	const currentStageOrder = integer(raw.currentStageOrder);
-	if (status !== "pending" || completedAt !== null || currentStageOrder < 1) {
+	if (
+		status !== expectedStatus ||
+		(expectedStatus === "pending"
+			? completedAt !== null
+			: completedAt === null) ||
+		currentStageOrder < 1
+	) {
 		return fail();
 	}
 	return {
@@ -339,12 +409,14 @@ function decodeCapture(
 		exactlyOne(array(envelope.approvalRequests)),
 		period,
 		input.expectedKind,
+		input.expectedRequestStatus ?? "pending",
 	);
+	const expectedSourceStatus = input.expectedRequestStatus ?? "pending";
 	if (
 		period.id !== input.workPeriodId ||
 		period.organizationId !== input.organizationId ||
 		period.employeeId !== input.expectedRequesterEmployeeId ||
-		period.approvalStatus !== "pending" ||
+		period.approvalStatus !== expectedSourceStatus ||
 		period.deletedAt !== null ||
 		period.isActive ||
 		period.endTime === null ||
@@ -364,7 +436,7 @@ function decodeCapture(
 		canonical.organizationId !== input.organizationId ||
 		canonical.employeeId !== input.expectedRequesterEmployeeId ||
 		canonical.recordKind !== "work" ||
-		canonical.approvalState !== "pending" ||
+		canonical.approvalState !== expectedSourceStatus ||
 		!sameInstant(canonical.startAt, period.startTime) ||
 		!sameInstant(canonical.endAt, period.endTime) ||
 		canonical.durationMinutes !== period.durationMinutes
@@ -400,7 +472,7 @@ function decodeCapture(
 		if (rawChains.length !== 0 || rawChainRows.length !== 0) return fail();
 	} else {
 		const link = record(requestStageLinks[0]);
-		chain = decodeChain(exactlyOne(rawChains));
+		chain = decodeChain(exactlyOne(rawChains), expectedSourceStatus);
 		chainRows = rawChainRows
 			.map(decodeChainRow)
 			.sort((left, right) => left.stepOrder - right.stepOrder);
@@ -417,7 +489,7 @@ function decodeCapture(
 			!current ||
 			current.id !== string(link.stageId) ||
 			current.approvalRequestId !== input.approvalRequestId ||
-			current.status !== "pending" ||
+			current.status !== expectedSourceStatus ||
 			current.resolvedApproverEmployeeId !== request.approverId ||
 			new Set(chainRows.map((row) => row.id)).size !== chainRows.length ||
 			new Set(chainRows.map((row) => row.stepOrder)).size !==
@@ -427,18 +499,20 @@ function decodeCapture(
 					row.organizationId !== input.organizationId ||
 					row.chainInstanceId !== chain?.id,
 			) ||
-			chainRows
-				.slice(0, currentIndex)
-				.some((row) => row.status !== "approved") ||
-			chainRows
-				.slice(currentIndex + 1)
-				.some(
-					(row) =>
-						row.status !== "cancelled" ||
-						row.approvalRequestId !== null ||
-						row.decidedBy !== null ||
-						row.decidedAt !== null,
-				)
+			(expectedSourceStatus === "approved"
+				? chainRows.some((row) => row.status !== "approved")
+				: chainRows
+						.slice(0, currentIndex)
+						.some((row) => row.status !== "approved") ||
+					chainRows
+						.slice(currentIndex + 1)
+						.some(
+							(row) =>
+								row.status !== "cancelled" ||
+								row.approvalRequestId !== null ||
+								row.decidedBy !== null ||
+								row.decidedAt !== null,
+						))
 		) {
 			return fail();
 		}
@@ -475,7 +549,9 @@ function decodeCapture(
 	}
 
 	const payload = parseOrdinaryWorkPeriodWorkflowPayload(
-		request.metadata,
+		{
+			timeRequest: record(request.metadata).timeRequest,
+		},
 		input.expectedKind,
 	);
 	const displaySnapshot = {
@@ -506,6 +582,86 @@ function decodeCapture(
 		sourceSnapshot: payload,
 		displaySnapshot,
 		capturedAt: requiredInstant(envelope.capturedAt),
+	}) as VerifiedLegacyApprovalState;
+}
+
+function decodePreSubmissionCapture(
+	input: CaptureOrdinaryWorkPeriodLegacyPreSubmissionStateInput,
+	queryResult: unknown,
+): VerifiedLegacyApprovalState {
+	const envelope = record(exactlyOne(array(record(queryResult).rows)));
+	const period = decodePeriod(exactlyOne(array(envelope.workPeriods)));
+	const canonical = decodeCanonical(
+		exactlyOne(array(envelope.canonicalRecords)),
+	);
+	if (
+		period.id !== input.workPeriodId ||
+		period.organizationId !== input.organizationId ||
+		period.employeeId !== input.expectedRequesterEmployeeId ||
+		period.approvalStatus !== "pending" ||
+		period.deletedAt !== null ||
+		period.isActive ||
+		period.endTime === null ||
+		period.durationMinutes === null ||
+		period.durationMinutes < 0 ||
+		period.approvalWorkflowId !== null ||
+		compareInstants(period.endTime, period.startTime) < 0 ||
+		canonical.id !== period.canonicalRecordId ||
+		canonical.organizationId !== input.organizationId ||
+		canonical.employeeId !== input.expectedRequesterEmployeeId ||
+		canonical.recordKind !== "work" ||
+		canonical.approvalState !== "pending" ||
+		!sameInstant(canonical.startAt, period.startTime) ||
+		!sameInstant(canonical.endAt, period.endTime) ||
+		canonical.durationMinutes !== period.durationMinutes ||
+		array(envelope.approvalRequests).length !== 0 ||
+		array(envelope.employees).length !== 1 ||
+		classifyTimeApprovalRequest({
+			metadata: { timeRequest: { kind: input.expectedKind } },
+			pendingChanges: period.pendingChanges,
+			hasRelationalCorrectionEvidence: false,
+		}) !== input.expectedKind
+	) {
+		return fail();
+	}
+	const requester = record(array(envelope.employees)[0]);
+	if (
+		requester.id !== input.expectedRequesterEmployeeId ||
+		requester.organizationId !== input.organizationId
+	) {
+		return fail();
+	}
+	const payload = parseOrdinaryWorkPeriodWorkflowPayload(
+		{ timeRequest: { kind: input.expectedKind } },
+		input.expectedKind,
+	);
+	return normalizeStableData({
+		organizationId: input.organizationId,
+		source: {
+			organizationId: input.organizationId,
+			workflowType: input.expectedKind,
+			sourceType: "time_entry",
+			sourceId: input.workPeriodId,
+		},
+		approvalRequest: null,
+		chain: null,
+		chainRows: [],
+		sourceSnapshot: payload,
+		displaySnapshot: {
+			approvalStatus: period.approvalStatus,
+			labels: {
+				title:
+					input.expectedKind === "manual_time_submission"
+						? "Manual time submission"
+						: "Policy clock-out",
+			},
+			period: {
+				startAt: instantToCanonicalString(period.startTime),
+				endAt: instantToCanonicalString(period.endTime),
+				durationMinutes: period.durationMinutes,
+			},
+		},
+		capturedAt: input.capturedAt ?? requiredInstant(envelope.capturedAt),
 	}) as VerifiedLegacyApprovalState;
 }
 
@@ -701,6 +857,102 @@ export async function captureOrdinaryWorkPeriodLegacyState(
 	}
 	try {
 		return decodeCapture(input, queryResult);
+	} catch {
+		return fail();
+	}
+}
+
+export async function captureOrdinaryWorkPeriodLegacyPreSubmissionState(
+	input: CaptureOrdinaryWorkPeriodLegacyPreSubmissionStateInput,
+): Promise<VerifiedLegacyApprovalState> {
+	try {
+		parseOrdinaryWorkPeriodWorkflowPayload(
+			{ timeRequest: { kind: input.expectedKind } },
+			input.expectedKind,
+		);
+	} catch {
+		return fail();
+	}
+	let queryResult: unknown;
+	try {
+		queryResult = await input.dbService.db.execute(sql`
+			with capture_input as (
+				select
+					${input.organizationId}::text as organization_id,
+					${input.workPeriodId}::uuid as work_period_id,
+					${input.expectedRequesterEmployeeId}::uuid as requester_employee_id
+			),
+			work_period_rows as (
+				select
+					period.id,
+					period.organization_id as "organizationId",
+					period.employee_id as "employeeId",
+					period.start_time as "startTime",
+					period.end_time as "endTime",
+					period.duration_minutes as "durationMinutes",
+					period.is_active as "isActive",
+					period.approval_status as "approvalStatus",
+					period.pending_changes as "pendingChanges",
+					period.deleted_at as "deletedAt",
+					period.canonical_record_id as "canonicalRecordId",
+					period.approval_workflow_id as "approvalWorkflowId"
+				from capture_input capture
+				join work_period period
+					on period.id = capture.work_period_id
+					and period.organization_id = capture.organization_id
+					and period.employee_id = capture.requester_employee_id
+				limit 2
+			),
+			canonical_rows as (
+				select
+					record.id,
+					record.organization_id as "organizationId",
+					record.employee_id as "employeeId",
+					record.record_kind as "recordKind",
+					record.start_at as "startAt",
+					record.end_at as "endAt",
+					record.duration_minutes as "durationMinutes",
+					record.approval_state as "approvalState"
+				from work_period_rows period
+				cross join capture_input capture
+				join time_record record
+					on record.id = period."canonicalRecordId"
+					and record.organization_id = capture.organization_id
+					and record.employee_id = capture.requester_employee_id
+					and record.record_kind = 'work'
+				limit 2
+			),
+			request_rows as (
+				select request.id
+				from capture_input capture
+				join approval_request request
+					on request.organization_id = capture.organization_id
+					and request.entity_type = 'time_entry'
+					and request.entity_id = capture.work_period_id
+					and request.status = 'pending'
+				order by request.id
+				limit 2
+			),
+			employee_rows as (
+				select employee.id, employee.organization_id as "organizationId"
+				from capture_input capture
+				join employee
+					on employee.id = capture.requester_employee_id
+					and employee.organization_id = capture.organization_id
+				limit 2
+			)
+			select
+				transaction_timestamp() as "capturedAt",
+				coalesce((select json_agg(period) from work_period_rows period), '[]'::json) as "workPeriods",
+				coalesce((select json_agg(record) from canonical_rows record), '[]'::json) as "canonicalRecords",
+				coalesce((select json_agg(request) from request_rows request), '[]'::json) as "approvalRequests",
+				coalesce((select json_agg(employee) from employee_rows employee), '[]'::json) as employees
+		`);
+	} catch {
+		return fail("query_failed");
+	}
+	try {
+		return decodePreSubmissionCapture(input, queryResult);
 	} catch {
 		return fail();
 	}
