@@ -486,6 +486,25 @@ function compatibilityRequest(
 	};
 }
 
+function pendingLegacyRequest(
+	metadata: unknown,
+	overrides: Record<string, unknown> = {},
+) {
+	return {
+		id: "40000000-0000-4000-8000-000000000001",
+		organizationId,
+		entityType: "time_entry",
+		entityId: workPeriodId,
+		requestedBy: requesterEmployeeId,
+		approverId,
+		status: "pending",
+		reason: "Needs approval",
+		metadata,
+		chainInstanceId: null,
+		...overrides,
+	};
+}
+
 describe.each([
 	"manual_time_submission",
 	"policy_clock_out",
@@ -566,6 +585,270 @@ it.each([
 	expect(JSON.stringify(resolverInput.metadata)).not.toContain(
 		"Needs approval",
 	);
+});
+
+it.each([
+	"legacy",
+	"shadow",
+	"ready",
+] as const)("replays exact marked pending approval in %s without writes or side effects", async (mode) => {
+	state.mode = mode;
+	const request = pendingLegacyRequest({
+		timeRequest: { kind: "manual_time_submission" },
+		ordinarySubmission: { key: ordinarySubmissionKey() },
+	});
+	const fake = fixture({ source: { pendingLegacyRequests: [request] } });
+
+	const first = await executeOrdinaryWorkPeriodSubmissionInTransaction(
+		fake.input,
+	);
+	const second = await executeOrdinaryWorkPeriodSubmissionInTransaction(
+		fake.input,
+	);
+
+	expect(first.result).toEqual({
+		kind: "default_created",
+		approvalRequestId: request.id,
+	});
+	expect(second.result).toEqual(first.result);
+	expect(state.calls).toEqual(["routing", "routing"]);
+	expect(fake.calls.some((sql) => sql.includes("update work_period"))).toBe(
+		false,
+	);
+	expect(
+		fake.compatibilityWriter.mirrorCanonicalToLegacy,
+	).not.toHaveBeenCalled();
+});
+
+it("preserves exact historical pending metadata replay", async () => {
+	const request = pendingLegacyRequest({
+		timeRequest: { kind: "manual_time_submission" },
+	});
+	const fake = fixture({ source: { pendingLegacyRequests: [request] } });
+
+	const submitted = await executeOrdinaryWorkPeriodSubmissionInTransaction(
+		fake.input,
+	);
+
+	expect(submitted.result).toEqual({
+		kind: "default_created",
+		approvalRequestId: request.id,
+	});
+	expect(state.calls).toEqual(["routing"]);
+});
+
+it.each([
+	[
+		"wrong marker key",
+		{
+			timeRequest: { kind: "manual_time_submission" },
+			ordinarySubmission: { key: "wrong" },
+		},
+	],
+	[
+		"opposite embedded kind",
+		{
+			timeRequest: { kind: "policy_clock_out" },
+			ordinarySubmission: { key: ordinarySubmissionKey() },
+		},
+	],
+	[
+		"extra root key",
+		{
+			timeRequest: { kind: "manual_time_submission" },
+			ordinarySubmission: { key: ordinarySubmissionKey() },
+			extra: true,
+		},
+	],
+	[
+		"extra marker key",
+		{
+			timeRequest: { kind: "manual_time_submission" },
+			ordinarySubmission: { key: ordinarySubmissionKey(), extra: true },
+		},
+	],
+	["array root", [{ timeRequest: { kind: "manual_time_submission" } }]],
+	[
+		"array marker",
+		{
+			timeRequest: { kind: "manual_time_submission" },
+			ordinarySubmission: [ordinarySubmissionKey()],
+		},
+	],
+	[
+		"array time request",
+		{
+			timeRequest: ["manual_time_submission"],
+			ordinarySubmission: { key: ordinarySubmissionKey() },
+		},
+	],
+	[
+		"custom root prototype",
+		Object.assign(Object.create({ inherited: true }), {
+			timeRequest: { kind: "manual_time_submission" },
+			ordinarySubmission: { key: ordinarySubmissionKey() },
+		}),
+	],
+	[
+		"custom marker prototype",
+		{
+			timeRequest: { kind: "manual_time_submission" },
+			ordinarySubmission: Object.assign(Object.create({ inherited: true }), {
+				key: ordinarySubmissionKey(),
+			}),
+		},
+	],
+	[
+		"custom time-request prototype",
+		{
+			timeRequest: Object.assign(Object.create({ inherited: true }), {
+				kind: "manual_time_submission",
+			}),
+			ordinarySubmission: { key: ordinarySubmissionKey() },
+		},
+	],
+	[
+		"root symbol",
+		Object.assign(
+			{
+				timeRequest: { kind: "manual_time_submission" },
+				ordinarySubmission: { key: ordinarySubmissionKey() },
+			},
+			{ [Symbol("extra")]: true },
+		),
+	],
+	[
+		"marker symbol",
+		{
+			timeRequest: { kind: "manual_time_submission" },
+			ordinarySubmission: Object.assign(
+				{ key: ordinarySubmissionKey() },
+				{ [Symbol("extra")]: true },
+			),
+		},
+	],
+	[
+		"time-request symbol",
+		{
+			timeRequest: Object.assign(
+				{ kind: "manual_time_submission" },
+				{ [Symbol("extra")]: true },
+			),
+			ordinarySubmission: { key: ordinarySubmissionKey() },
+		},
+	],
+] as const)("rejects marked pending metadata with %s despite a synthetic kind", async (_label, metadata) => {
+	const request = pendingLegacyRequest(metadata, {
+		kind: "manual_time_submission",
+	});
+	const fake = fixture({ source: { pendingLegacyRequests: [request] } });
+
+	await expect(
+		executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input),
+	).rejects.toThrow("Ordinary work-period submission failed");
+	expect(state.calls).toEqual(["routing"]);
+});
+
+it("rejects marked pending accessors without invoking them", async () => {
+	const rootGetter = vi.fn(() => ({ key: ordinarySubmissionKey() }));
+	const markerGetter = vi.fn(() => ordinarySubmissionKey());
+	const rootAccessor = { timeRequest: { kind: "manual_time_submission" } };
+	Object.defineProperty(rootAccessor, "ordinarySubmission", {
+		enumerable: true,
+		get: rootGetter,
+	});
+	const markerAccessor = {};
+	Object.defineProperty(markerAccessor, "key", {
+		enumerable: true,
+		get: markerGetter,
+	});
+
+	for (const metadata of [
+		rootAccessor,
+		{
+			timeRequest: { kind: "manual_time_submission" },
+			ordinarySubmission: markerAccessor,
+		},
+	]) {
+		const request = pendingLegacyRequest(metadata, {
+			kind: "manual_time_submission",
+		});
+		const fake = fixture({ source: { pendingLegacyRequests: [request] } });
+		await expect(
+			executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input),
+		).rejects.toThrow("Ordinary work-period submission failed");
+	}
+	expect(rootGetter).not.toHaveBeenCalled();
+	expect(markerGetter).not.toHaveBeenCalled();
+});
+
+it("rejects non-enumerable marked pending descriptors", async () => {
+	const root = { timeRequest: { kind: "manual_time_submission" } };
+	Object.defineProperty(root, "ordinarySubmission", {
+		enumerable: false,
+		value: { key: ordinarySubmissionKey() },
+	});
+	const marker = {};
+	Object.defineProperty(marker, "key", {
+		enumerable: false,
+		value: ordinarySubmissionKey(),
+	});
+	const timeRequest = {};
+	Object.defineProperty(timeRequest, "kind", {
+		enumerable: false,
+		value: "manual_time_submission",
+	});
+
+	for (const metadata of [
+		root,
+		{
+			timeRequest: { kind: "manual_time_submission" },
+			ordinarySubmission: marker,
+		},
+		{
+			timeRequest,
+			ordinarySubmission: { key: ordinarySubmissionKey() },
+		},
+	]) {
+		const request = pendingLegacyRequest(metadata, {
+			kind: "manual_time_submission",
+		});
+		const fake = fixture({ source: { pendingLegacyRequests: [request] } });
+		await expect(
+			executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input),
+		).rejects.toThrow("Ordinary work-period submission failed");
+	}
+});
+
+it("does not accept marked metadata as canonical compatibility metadata", async () => {
+	state.mode = "canonical";
+	const workflowId = expectedWorkflowId("manual_time_submission");
+	state.workflowId = workflowId;
+	const request = pendingLegacyRequest({
+		timeRequest: { kind: "manual_time_submission" },
+		ordinarySubmission: { key: ordinarySubmissionKey() },
+	});
+	const fake = fixture({
+		source: {
+			approvalWorkflowId: workflowId,
+			pendingLegacyRequests: [request],
+			pendingCanonicalWorkflows: [
+				{
+					id: workflowId,
+					workflowType: "manual_time_submission",
+					requesterEmployeeId,
+					contextSnapshot: {
+						timeRequest: { kind: "manual_time_submission" },
+					},
+				},
+			],
+		},
+	});
+
+	await expect(
+		executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input),
+	).rejects.toThrow("Ordinary work-period submission failed");
+	expect(state.calls).toEqual(["routing"]);
 });
 
 it("rejects a mismatched transaction context before acquiring rollout authority", async () => {

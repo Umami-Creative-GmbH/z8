@@ -108,7 +108,6 @@ interface PendingLegacyRequest {
 	status?: string;
 	reason?: string | null;
 	metadata?: unknown;
-	kind?: unknown;
 	chainInstanceId?: string | null;
 }
 
@@ -151,8 +150,7 @@ function exactDataObject(
 		typeof value !== "object" ||
 		value === null ||
 		Array.isArray(value) ||
-		(Object.getPrototypeOf(value) !== Object.prototype &&
-			Object.getPrototypeOf(value) !== null)
+		Object.getPrototypeOf(value) !== Object.prototype
 	) {
 		return fail();
 	}
@@ -472,25 +470,51 @@ async function loadOrdinarySource(
 
 function requestKind(
 	request: PendingLegacyRequest,
+	input: Pick<
+		ExecuteOrdinaryWorkPeriodSubmissionInput,
+		"kind" | "organizationId" | "workPeriodId"
+	>,
 ): OrdinaryWorkPeriodApprovalKind {
-	if (
-		request.kind === "manual_time_submission" ||
-		request.kind === "policy_clock_out"
-	) {
-		return request.kind;
+	try {
+		return parseOrdinaryWorkPeriodWorkflowPayload(request.metadata, input.kind)
+			.timeRequest.kind;
+	} catch {
+		// Generated legacy requests carry a private replay marker beside the payload.
 	}
 	try {
-		return parseOrdinaryWorkPeriodWorkflowPayload(request.metadata).timeRequest
-			.kind;
+		const metadata = exactDataObject(request.metadata, [
+			"timeRequest",
+			"ordinarySubmission",
+		]);
+		const marker = exactDataObject(metadata.ordinarySubmission, ["key"]);
+		const kind = parseOrdinaryWorkPeriodWorkflowPayload(
+			{ timeRequest: metadata.timeRequest },
+			input.kind,
+		).timeRequest.kind;
+		const expectedKey = deriveApprovalWorkflowId({
+			organizationId: input.organizationId,
+			workflowType: input.kind,
+			sourceType: "time_entry",
+			sourceId: input.workPeriodId,
+			allocationKey: "ordinary-submission",
+		});
+		if (marker.key !== expectedKey) return fail();
+		return kind;
 	} catch {
+		// Canonical compatibility rows use workflow and stage envelopes.
+	}
+	try {
 		const metadata = exactDataObject(request.metadata, [
 			"workflow",
 			"stage",
 			"timeRequest",
 		]);
-		return parseOrdinaryWorkPeriodWorkflowPayload({
-			timeRequest: metadata.timeRequest,
-		}).timeRequest.kind;
+		return parseOrdinaryWorkPeriodWorkflowPayload(
+			{ timeRequest: metadata.timeRequest },
+			input.kind,
+		).timeRequest.kind;
+	} catch {
+		return fail();
 	}
 }
 
@@ -577,7 +601,7 @@ function validatePendingOccupants(
 	if (legacy) {
 		let kind: OrdinaryWorkPeriodApprovalKind;
 		try {
-			kind = requestKind(legacy);
+			kind = requestKind(legacy, input);
 		} catch {
 			return fail();
 		}
