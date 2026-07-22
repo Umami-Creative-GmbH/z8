@@ -93,7 +93,9 @@ interface LockedOrdinarySource {
 	pendingLegacyRequests: unknown[];
 	pendingCanonicalWorkflows: unknown[];
 	terminalCanonicalWorkflows: unknown[];
-	terminalLegacyAutoRequests: unknown[];
+	terminalLegacyMarkedRequests: unknown[];
+	historicalLegacyAutoRequests: unknown[];
+	hasMalformedLegacyMarker: boolean;
 }
 
 interface PendingLegacyRequest {
@@ -224,6 +226,7 @@ async function lockOrdinarySource(
 
 async function loadOrdinarySource(
 	input: ExecuteOrdinaryWorkPeriodSubmissionInput,
+	submissionKey: string,
 ): Promise<LockedOrdinarySource> {
 	const result = await input.dbService.db.execute(sql`
 		select
@@ -322,6 +325,58 @@ async function loadOrdinarySource(
 						'status', request.status,
 						'approvedAt', request.approved_at,
 						'metadata', request.metadata,
+						'chainInstanceId', stage.chain_instance_id,
+						'stageId', stage.id,
+						'stepOrder', stage.step_order,
+						'stageStatus', stage.status,
+						'stageApprovalRequestId', stage.approval_request_id,
+						'stageDecidedBy', stage.decided_by,
+						'stageDecidedAt', stage.decided_at,
+						'chainOrganizationId', chain.organization_id,
+						'chainEntityType', chain.entity_type,
+						'chainEntityId', chain.entity_id,
+						'chainRequesterEmployeeId', chain.requester_employee_id,
+						'chainStatus', chain.status,
+						'chainCurrentStageOrder', chain.current_stage_order,
+						'chainCompletedAt', chain.completed_at,
+						'chainStageCount', case when chain.id is null then null else (
+							select count(*)::integer
+							from approval_chain_stage_instance cycle_stage
+							where cycle_stage.organization_id = chain.organization_id
+								and cycle_stage.chain_instance_id = chain.id
+						) end
+					) as value
+					from approval_request request
+					left join approval_chain_stage_instance stage
+						on stage.approval_request_id = request.id
+						and stage.organization_id = request.organization_id
+					left join approval_chain_instance chain
+						on chain.id = stage.chain_instance_id
+						and chain.organization_id = stage.organization_id
+					where request.organization_id = period.organization_id
+						and request.entity_type = 'time_entry'
+						and request.entity_id = period.id
+						and request.requested_by = ${input.requesterEmployeeId}::uuid
+						and request.status = 'approved'
+						and request.metadata ? 'ordinarySubmission'
+						and request.metadata -> 'ordinarySubmission' ->> 'key' = ${submissionKey}
+					order by request.id
+					limit 101
+				) request_row
+			), '[]'::json) as "terminalLegacyMarkedRequests",
+			coalesce((
+				select json_agg(request_row.value order by request_row.id)
+				from (
+					select request.id, json_build_object(
+						'id', request.id,
+						'organizationId', request.organization_id,
+						'entityType', request.entity_type,
+						'entityId', request.entity_id,
+						'requestedBy', request.requested_by,
+						'approverId', request.approver_id,
+						'status', request.status,
+						'approvedAt', request.approved_at,
+						'metadata', request.metadata,
 						'chainInstanceId', stage.chain_instance_id
 					) as value
 					from approval_request request
@@ -331,11 +386,32 @@ async function loadOrdinarySource(
 					where request.organization_id = period.organization_id
 						and request.entity_type = 'time_entry'
 						and request.entity_id = period.id
+						and request.requested_by = ${input.requesterEmployeeId}::uuid
+						and request.approver_id = ${input.requesterEmployeeId}::uuid
 						and request.status = 'approved'
+						and not (request.metadata ? 'ordinarySubmission')
+						and request.metadata -> 'timeRequest' ->> 'kind' = ${input.kind}
+						and request.metadata -> 'autoApproval' ->> 'reason' = 'requester_is_approver'
 					order by request.id
 					limit 2
 				) request_row
-			), '[]'::json) as "terminalLegacyAutoRequests"
+			), '[]'::json) as "historicalLegacyAutoRequests",
+			exists (
+				select 1
+				from approval_request request
+				where request.organization_id = period.organization_id
+					and request.entity_type = 'time_entry'
+					and request.entity_id = period.id
+					and request.requested_by = ${input.requesterEmployeeId}::uuid
+					and request.status = 'approved'
+					and request.metadata ? 'ordinarySubmission'
+					and case
+						when jsonb_typeof(request.metadata -> 'ordinarySubmission') <> 'object' then true
+						else jsonb_typeof(request.metadata -> 'ordinarySubmission' -> 'key') <> 'string'
+							or (select count(*) from jsonb_object_keys(request.metadata -> 'ordinarySubmission')) <> 1
+					end
+				limit 1
+			) as "hasMalformedLegacyMarker"
 		from work_period period
 		join employee requester
 			on requester.id = period.employee_id
@@ -385,7 +461,9 @@ async function loadOrdinarySource(
 		!Array.isArray(source.pendingLegacyRequests) ||
 		!Array.isArray(source.pendingCanonicalWorkflows) ||
 		!Array.isArray(source.terminalCanonicalWorkflows) ||
-		!Array.isArray(source.terminalLegacyAutoRequests)
+		!Array.isArray(source.terminalLegacyMarkedRequests) ||
+		!Array.isArray(source.historicalLegacyAutoRequests) ||
+		typeof source.hasMalformedLegacyMarker !== "boolean"
 	) {
 		return fail();
 	}
@@ -770,6 +848,134 @@ function validateLegacyAutoReplay(input: {
 	};
 }
 
+function validateMarkedAutoRequest(input: {
+	submission: ExecuteOrdinaryWorkPeriodSubmissionInput;
+	request: unknown;
+}): {
+	request: Record<string, unknown>;
+	key: string;
+	kind: OrdinaryWorkPeriodApprovalKind;
+} {
+	const request = object(input.request);
+	if (
+		typeof request.id !== "string" ||
+		request.organizationId !== input.submission.organizationId ||
+		request.entityType !== "time_entry" ||
+		request.entityId !== input.submission.workPeriodId ||
+		request.requestedBy !== input.submission.requesterEmployeeId ||
+		request.approverId !== input.submission.requesterEmployeeId ||
+		request.status !== "approved" ||
+		!hasValidApprovedAt(request.approvedAt)
+	) {
+		return fail();
+	}
+	const metadata = exactDataObject(request.metadata, [
+		"timeRequest",
+		"ordinarySubmission",
+		"autoApproval",
+	]);
+	const payload = parseOrdinaryWorkPeriodWorkflowPayload({
+		timeRequest: metadata.timeRequest,
+	});
+	const marker = exactDataObject(metadata.ordinarySubmission, ["key"]);
+	const autoApproval = exactDataObject(metadata.autoApproval, ["reason"]);
+	if (
+		typeof marker.key !== "string" ||
+		autoApproval.reason !== "requester_is_approver"
+	) {
+		return fail();
+	}
+	return { request, key: marker.key, kind: payload.timeRequest.kind };
+}
+
+function resolveMarkedLegacyCycle(input: {
+	submission: ExecuteOrdinaryWorkPeriodSubmissionInput;
+	requests: unknown[];
+	submissionKey: string;
+}): { approvalRequestId: string; chainInstanceId: string | null } | null {
+	if (input.requests.length > 100) return fail();
+	const matching = input.requests.flatMap((request) => {
+		const validated = validateMarkedAutoRequest({
+			submission: input.submission,
+			request,
+		});
+		if (validated.key !== input.submissionKey) return [];
+		if (validated.kind !== input.submission.kind) return fail();
+		return [validated.request];
+	});
+	if (matching.length === 0) return null;
+	const chainIds = new Set(
+		matching.flatMap((request) =>
+			typeof request.chainInstanceId === "string"
+				? [request.chainInstanceId]
+				: [],
+		),
+	);
+	if (chainIds.size === 0) {
+		if (matching.length !== 1 || matching[0]?.chainInstanceId !== null) {
+			return fail();
+		}
+		return {
+			approvalRequestId: matching[0].id as string,
+			chainInstanceId: null,
+		};
+	}
+	if (
+		chainIds.size !== 1 ||
+		matching.some((request) => typeof request.chainInstanceId !== "string")
+	) {
+		return fail();
+	}
+	const chainInstanceId = [...chainIds][0] ?? fail();
+	const stageIds = new Set<string>();
+	const stepOrders = new Set<number>();
+	for (const request of matching) {
+		if (
+			request.chainInstanceId !== chainInstanceId ||
+			request.chainOrganizationId !== input.submission.organizationId ||
+			request.chainEntityType !== "time_entry" ||
+			request.chainEntityId !== input.submission.workPeriodId ||
+			request.chainRequesterEmployeeId !==
+				input.submission.requesterEmployeeId ||
+			request.chainStatus !== "approved" ||
+			!hasValidApprovedAt(request.chainCompletedAt) ||
+			request.stageStatus !== "approved" ||
+			request.stageApprovalRequestId !== request.id ||
+			request.stageDecidedBy !== input.submission.requesterEmployeeId ||
+			!hasValidApprovedAt(request.stageDecidedAt) ||
+			typeof request.stageId !== "string" ||
+			!Number.isSafeInteger(request.stepOrder) ||
+			(request.stepOrder as number) < 1 ||
+			request.chainStageCount !== matching.length
+		) {
+			return fail();
+		}
+		stageIds.add(request.stageId);
+		stepOrders.add(request.stepOrder as number);
+	}
+	if (
+		stageIds.size !== matching.length ||
+		stepOrders.size !== matching.length
+	) {
+		return fail();
+	}
+	const final = matching.toSorted(
+		(left, right) => (right.stepOrder as number) - (left.stepOrder as number),
+	)[0];
+	if (
+		!final ||
+		final.stepOrder !== final.chainCurrentStageOrder ||
+		matching.filter((request) => request.stepOrder === final.stepOrder)
+			.length !== 1
+	) {
+		return fail();
+	}
+	return {
+		approvalRequestId: final.id as string,
+		chainInstanceId,
+	};
+}
+
 async function resolveTerminalReplay(input: {
 	submission: ExecuteOrdinaryWorkPeriodSubmissionInput;
 	source: LockedOrdinarySource;
@@ -788,9 +994,7 @@ async function resolveTerminalReplay(input: {
 	if (
 		input.source.approvalStatus !== "approved" ||
 		input.source.canonicalApprovalState !== "approved" ||
-		(canonicalAuthority
-			? input.source.terminalCanonicalWorkflows.length > 1
-			: input.source.terminalLegacyAutoRequests.length > 1)
+		(canonicalAuthority && input.source.terminalCanonicalWorkflows.length > 1)
 	) {
 		return fail();
 	}
@@ -863,12 +1067,39 @@ async function resolveTerminalReplay(input: {
 	if (canonicalAuthority) {
 		return fail();
 	}
-	const legacy = input.source.terminalLegacyAutoRequests[0];
-	if (!legacy) return fail();
+	if (input.source.hasMalformedLegacyMarker) return fail();
+	const marked = resolveMarkedLegacyCycle({
+		submission: input.submission,
+		requests: input.source.terminalLegacyMarkedRequests,
+		submissionKey: deriveApprovalWorkflowId({
+			organizationId: input.submission.organizationId,
+			workflowType: input.submission.kind,
+			sourceType: "time_entry",
+			sourceId: input.submission.workPeriodId,
+			allocationKey: "ordinary-submission",
+		}),
+	});
+	if (marked) {
+		return {
+			result: {
+				kind: "auto_completed",
+				chainInstanceId: marked.chainInstanceId,
+				approvalRequestId: marked.approvalRequestId,
+				reason: "requester_is_approver",
+			},
+			approverEmployeeId: input.submission.requesterEmployeeId,
+		};
+	}
+	if (input.source.historicalLegacyAutoRequests.length > 1) return fail();
+	const legacy = input.source.historicalLegacyAutoRequests[0];
+	if (!legacy || input.source.historicalLegacyAutoRequests.length !== 1) {
+		return fail();
+	}
 	const evidence = validateLegacyAutoReplay({
 		submission: input.submission,
 		request: legacy,
 	});
+	if (evidence.chainInstanceId !== null) return fail();
 	return {
 		result: {
 			kind: "auto_completed",
@@ -947,7 +1178,11 @@ async function executeOrdinaryWorkPeriodSubmission(
 		sourceId: input.workPeriodId,
 		allocationKey: submissionKey,
 	});
-	const source = await loadOrdinarySource(input);
+	const legacyMetadata = {
+		timeRequest: payload.timeRequest,
+		ordinarySubmission: { key: submissionKey },
+	};
+	const source = await loadOrdinarySource(input, submissionKey);
 	const terminalReplay = await resolveTerminalReplay({
 		submission: input,
 		source,
@@ -1060,7 +1295,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 						defaultApproverId: input.defaultApproverId,
 						transactionBehavior: "existing",
 						reason: input.reason,
-						metadata: payload,
+						metadata: legacyMetadata,
 					}),
 				);
 				if (created.kind === "auto_completed") {

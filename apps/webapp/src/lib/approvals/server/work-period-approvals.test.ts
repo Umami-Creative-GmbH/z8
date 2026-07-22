@@ -4,6 +4,7 @@ import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { ApprovalAuditLogger } from "../infrastructure/audit-logger";
+import { deriveApprovalWorkflowId } from "../workflow/identity";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 
 const notificationMocks = vi.hoisted(() => ({
@@ -91,6 +92,15 @@ const autoApprovalMetadata = (kind = "manual_time_submission") => ({
 	timeRequest: { kind },
 	autoApproval: { reason: "requester_is_approver" },
 });
+
+const ordinarySubmissionKey = () =>
+	deriveApprovalWorkflowId({
+		organizationId: "org-1",
+		workflowType: "manual_time_submission",
+		sourceType: "time_entry",
+		sourceId: "period-1",
+		allocationKey: "ordinary-submission",
+	});
 
 type ApprovalFixture = Omit<typeof approval, "metadata"> & {
 	metadata: unknown;
@@ -766,6 +776,65 @@ describe("ordinary work-period approval finalizer", () => {
 				expectedApprovalWorkflowId: null,
 			}),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
+	});
+
+	it.each([
+		false,
+		true,
+	])("accepts exact stable marker metadata on requester auto=%s", async (autoCompleted) => {
+		const dbService = createFinalizerDbService({
+			period: { approvalWorkflowId: null },
+			request: {
+				approverId: autoCompleted ? "employee-1" : "manager-1",
+				metadata: {
+					timeRequest: { kind: "manual_time_submission" },
+					ordinarySubmission: { key: ordinarySubmissionKey() },
+					...(autoCompleted
+						? {
+								autoApproval: {
+									reason: "requester_is_approver",
+								},
+							}
+						: {}),
+				},
+			},
+		});
+
+		await expect(
+			finalize(dbService, {
+				expectedApprovalWorkflowId: null,
+				evidence: {
+					mode: "legacy",
+					approvalRequestId: "approval-1",
+					requestMode: autoCompleted ? "requester_auto_completed" : "manager",
+					expectedStatus: "approved",
+				},
+			}),
+		).resolves.toMatchObject({ action: "approve" });
+	});
+
+	it.each([
+		["wrong key", { key: "wrong" }],
+		["extra key", { key: ordinarySubmissionKey(), extra: true }],
+		[
+			"custom prototype",
+			Object.assign(Object.create({}), { key: ordinarySubmissionKey() }),
+		],
+	] as const)("rejects ordinary marker with %s", async (_label, marker) => {
+		const dbService = createFinalizerDbService({
+			period: { approvalWorkflowId: null },
+			request: {
+				metadata: {
+					timeRequest: { kind: "manual_time_submission" },
+					ordinarySubmission: marker,
+				},
+			},
+		});
+
+		await expect(
+			finalize(dbService, { expectedApprovalWorkflowId: null }),
+		).rejects.toThrow("Ordinary work-period finalization conflict");
+		expect(dbService.updateSets).toHaveLength(0);
 	});
 
 	it("uses the exact request instead of stale historical metadata", async () => {

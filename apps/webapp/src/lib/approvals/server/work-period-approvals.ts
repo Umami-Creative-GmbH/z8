@@ -26,6 +26,7 @@ import {
 	parseOrdinaryWorkPeriodWorkflowPayload,
 	type WorkPeriodApprovalResult,
 } from "../domain-adapters/work-period-contract";
+import { deriveApprovalWorkflowId } from "../workflow/identity";
 import { processApprovalWithCurrentEmployee } from "./shared";
 import type {
 	ApprovalDbService,
@@ -189,19 +190,29 @@ function validateOrdinaryRequestMetadata(
 	metadata: unknown,
 	input: Pick<
 		FinalizeOrdinaryWorkPeriodTerminalInput,
-		"expectedApprovalWorkflowId" | "kind" | "organizationId"
+		"expectedApprovalWorkflowId" | "kind" | "organizationId" | "workPeriodId"
 	> & { requesterAutoCompleted: boolean },
 ): void {
-	const root = exactOwnDataValues(
-		metadata,
-		input.expectedApprovalWorkflowId === null
-			? input.requesterAutoCompleted
-				? ["timeRequest", "autoApproval"]
-				: ["timeRequest"]
-			: input.requesterAutoCompleted
-				? ["timeRequest", "workflow", "autoApproval"]
-				: ["timeRequest", "workflow"],
-	);
+	const markerDescriptor =
+		typeof metadata === "object" &&
+		metadata !== null &&
+		!Array.isArray(metadata)
+			? Object.getOwnPropertyDescriptor(metadata, "ordinarySubmission")
+			: undefined;
+	if (
+		markerDescriptor &&
+		(!markerDescriptor.enumerable || !("value" in markerDescriptor))
+	) {
+		throw ordinaryWorkPeriodFinalizationConflict();
+	}
+	const hasMarker = markerDescriptor !== undefined;
+	const expectedKeys = [
+		"timeRequest",
+		...(input.expectedApprovalWorkflowId !== null ? ["workflow"] : []),
+		...(hasMarker ? ["ordinarySubmission"] : []),
+		...(input.requesterAutoCompleted ? ["autoApproval"] : []),
+	];
+	const root = exactOwnDataValues(metadata, expectedKeys);
 	parseOrdinaryWorkPeriodWorkflowPayload(
 		{ timeRequest: root.timeRequest },
 		input.kind,
@@ -221,6 +232,19 @@ function validateOrdinaryRequestMetadata(
 	if (input.requesterAutoCompleted) {
 		const autoApproval = exactOwnDataValues(root.autoApproval, ["reason"]);
 		if (autoApproval.reason !== "requester_is_approver") {
+			throw ordinaryWorkPeriodFinalizationConflict();
+		}
+	}
+	if (hasMarker) {
+		const marker = exactOwnDataValues(root.ordinarySubmission, ["key"]);
+		const expectedKey = deriveApprovalWorkflowId({
+			organizationId: input.organizationId,
+			workflowType: input.kind,
+			sourceType: "time_entry",
+			sourceId: input.workPeriodId,
+			allocationKey: "ordinary-submission",
+		});
+		if (marker.key !== expectedKey) {
 			throw ordinaryWorkPeriodFinalizationConflict();
 		}
 	}
@@ -397,6 +421,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 				expectedApprovalWorkflowId: input.expectedApprovalWorkflowId,
 				kind: input.kind,
 				organizationId: input.organizationId,
+				workPeriodId: input.workPeriodId,
 				requesterAutoCompleted,
 			});
 		} catch {

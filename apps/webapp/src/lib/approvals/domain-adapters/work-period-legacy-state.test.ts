@@ -2,6 +2,7 @@ import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import type { ApprovalDbService } from "../server/types";
+import { deriveApprovalWorkflowId } from "../workflow/identity";
 import {
 	type CaptureOrdinaryWorkPeriodLegacyPreSubmissionStateInput,
 	type CaptureOrdinaryWorkPeriodLegacyStateInput,
@@ -21,6 +22,16 @@ const workflowId = "70000000-0000-4000-8000-000000000001";
 const startAt = new Date("2026-07-20T06:00:00.000Z");
 const endAt = new Date("2026-07-20T14:00:00.000Z");
 const capturedAt = new Date("2026-07-20T15:00:00.000Z");
+
+function submissionKey(kind = "manual_time_submission") {
+	return deriveApprovalWorkflowId({
+		organizationId,
+		workflowType: kind as "manual_time_submission" | "policy_clock_out",
+		sourceType: "time_entry",
+		sourceId: workPeriodId,
+		allocationKey: "ordinary-submission",
+	});
+}
 
 type JsonRecord = Record<string, unknown>;
 
@@ -333,6 +344,98 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 				autoApproval: { reason: "requester_is_approver" },
 			},
 		});
+	});
+
+	it("captures the private stable submission marker without display leakage", async () => {
+		const marker = { ordinarySubmission: { key: submissionKey() } };
+		const fake = database(
+			envelope({
+				approvalRequests: [
+					request({
+						metadata: {
+							timeRequest: { kind: "manual_time_submission" },
+							...marker,
+						},
+					}),
+				],
+			}),
+		);
+
+		const state = await captureOrdinaryWorkPeriodLegacyState(
+			input(fake.dbService),
+		);
+
+		expect(state.approvalRequest?.metadata).toEqual({
+			timeRequest: { kind: "manual_time_submission" },
+			...marker,
+		});
+		expect(JSON.stringify(state.displaySnapshot)).not.toContain(
+			"ordinarySubmission",
+		);
+		expect(state.sourceSnapshot).toEqual({
+			timeRequest: { kind: "manual_time_submission" },
+		});
+	});
+
+	it("captures exact approved auto evidence with the stable marker", async () => {
+		const approvedAt = new Date("2026-07-20T14:30:00.000Z");
+		const fake = database(
+			envelope({
+				workPeriods: [
+					period({ approvalStatus: "approved", approvalWorkflowId: null }),
+				],
+				canonicalRecords: [canonical({ approvalState: "approved" })],
+				approvalRequests: [
+					request({
+						approverId: employeeId,
+						status: "approved",
+						approvedAt,
+						metadata: {
+							timeRequest: { kind: "manual_time_submission" },
+							ordinarySubmission: { key: submissionKey() },
+							autoApproval: { reason: "requester_is_approver" },
+						},
+					}),
+				],
+				requestStageLinks: [],
+				chains: [],
+				chainRows: [],
+				workflows: [],
+				employees: [{ id: employeeId, organizationId }],
+			}),
+		);
+
+		const state = await captureOrdinaryWorkPeriodLegacyState(
+			input(fake.dbService, { expectedRequestStatus: "approved" }),
+		);
+
+		expect(state.approvalRequest?.metadata).toEqual({
+			timeRequest: { kind: "manual_time_submission" },
+			ordinarySubmission: { key: submissionKey() },
+			autoApproval: { reason: "requester_is_approver" },
+		});
+	});
+
+	it.each([
+		["wrong key", { key: "wrong" }],
+		["extra key", { key: submissionKey(), extra: true }],
+		[
+			"custom prototype",
+			Object.assign(Object.create({}), { key: submissionKey() }),
+		],
+	] as const)("rejects a marker with %s", async (_label, ordinarySubmission) => {
+		await expectCaptureFailure(
+			envelope({
+				approvalRequests: [
+					request({
+						metadata: {
+							timeRequest: { kind: "manual_time_submission" },
+							ordinarySubmission,
+						},
+					}),
+				],
+			}),
+		);
 	});
 
 	it("captures an exact auto-completed custom-policy chain", async () => {

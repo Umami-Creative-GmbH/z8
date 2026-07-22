@@ -8,6 +8,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import type { ApprovalDbService } from "../server/types";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
+import { deriveApprovalWorkflowId } from "../workflow/identity";
 import type {
 	JsonObject,
 	LegacyApprovalChainRowSnapshot,
@@ -249,10 +250,34 @@ function normalizeRequestPayload(input: {
 	reason: string | null;
 	pendingChanges: unknown;
 	expectedKind: OrdinaryWorkPeriodApprovalKind;
+	organizationId: string;
+	workPeriodId: string;
 }) {
+	const raw = record(input.metadata);
+	const markerDescriptor = Object.getOwnPropertyDescriptor(
+		raw,
+		"ordinarySubmission",
+	);
+	if (
+		markerDescriptor &&
+		(!markerDescriptor.enumerable || !("value" in markerDescriptor))
+	) {
+		return fail();
+	}
+	const marker = markerDescriptor
+		? exactDataRecord(markerDescriptor.value, ["key"])
+		: null;
+	const expectedKey = deriveApprovalWorkflowId({
+		organizationId: input.organizationId,
+		workflowType: input.expectedKind,
+		sourceType: "time_entry",
+		sourceId: input.workPeriodId,
+		allocationKey: "ordinary-submission",
+	});
+	if (marker && marker.key !== expectedKey) return fail();
 	if (
 		classifyTimeApprovalRequest({
-			metadata: input.metadata,
+			metadata: { timeRequest: raw.timeRequest },
 			reason: input.reason,
 			pendingChanges: input.pendingChanges,
 			hasRelationalCorrectionEvidence: false,
@@ -261,12 +286,11 @@ function normalizeRequestPayload(input: {
 		return fail();
 	}
 	try {
-		return parseOrdinaryWorkPeriodWorkflowPayload(
-			input.metadata === null
-				? { timeRequest: { kind: input.expectedKind } }
-				: input.metadata,
+		const payload = parseOrdinaryWorkPeriodWorkflowPayload(
+			{ timeRequest: raw.timeRequest },
 			input.expectedKind,
 		);
+		return { payload, marker };
 	} catch {
 		return fail();
 	}
@@ -275,6 +299,8 @@ function normalizeRequestPayload(input: {
 function decodeRequest(
 	value: unknown,
 	period: WorkPeriodSnapshot,
+	organizationId: string,
+	workPeriodId: string,
 	expectedKind: OrdinaryWorkPeriodApprovalKind,
 	expectedStatus: RequestStatus,
 ): LegacyApprovalRequestSnapshot {
@@ -292,20 +318,46 @@ function decodeRequest(
 	) {
 		return fail();
 	}
-	let metadata = raw.metadata;
+	const rawMetadata =
+		raw.metadata === null
+			? { timeRequest: { kind: expectedKind } }
+			: record(raw.metadata);
+	const markerDescriptor = Object.getOwnPropertyDescriptor(
+		rawMetadata,
+		"ordinarySubmission",
+	);
+	if (
+		markerDescriptor &&
+		(!markerDescriptor.enumerable || !("value" in markerDescriptor))
+	) {
+		return fail();
+	}
+	const hasMarker = markerDescriptor !== undefined;
+	let metadata: unknown;
 	if (expectedStatus === "approved") {
-		const root = exactDataRecord(metadata, ["timeRequest", "autoApproval"]);
+		const root = exactDataRecord(rawMetadata, [
+			"timeRequest",
+			...(hasMarker ? ["ordinarySubmission"] : []),
+			"autoApproval",
+		]);
 		const autoApproval = exactDataRecord(root.autoApproval, ["reason"]);
 		if (autoApproval.reason !== "requester_is_approver") {
 			return fail();
 		}
-		metadata = { timeRequest: root.timeRequest };
+		metadata = root;
+	} else {
+		metadata = exactDataRecord(rawMetadata, [
+			"timeRequest",
+			...(hasMarker ? ["ordinarySubmission"] : []),
+		]);
 	}
-	const payload = normalizeRequestPayload({
+	const normalized = normalizeRequestPayload({
 		metadata,
 		reason,
 		pendingChanges: period.pendingChanges,
 		expectedKind,
+		organizationId,
+		workPeriodId,
 	});
 	return {
 		id: string(raw.id),
@@ -319,7 +371,8 @@ function decodeRequest(
 		rejectionReason,
 		approvedAt,
 		metadata: {
-			...payload,
+			...normalized.payload,
+			...(normalized.marker ? { ordinarySubmission: normalized.marker } : {}),
 			...(expectedStatus === "approved"
 				? { autoApproval: { reason: "requester_is_approver" } }
 				: {}),
@@ -408,6 +461,8 @@ function decodeCapture(
 	const request = decodeRequest(
 		exactlyOne(array(envelope.approvalRequests)),
 		period,
+		input.organizationId,
+		input.workPeriodId,
 		input.expectedKind,
 		input.expectedRequestStatus ?? "pending",
 	);

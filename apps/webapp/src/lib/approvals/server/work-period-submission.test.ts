@@ -214,7 +214,9 @@ function source(overrides: Record<string, unknown> = {}) {
 		pendingLegacyRequests: [],
 		pendingCanonicalWorkflows: [],
 		terminalCanonicalWorkflows: [],
-		terminalLegacyAutoRequests: [],
+		terminalLegacyMarkedRequests: [],
+		historicalLegacyAutoRequests: [],
+		hasMalformedLegacyMarker: false,
 		...overrides,
 	};
 }
@@ -400,6 +402,69 @@ function expectedWorkflowId(
 	});
 }
 
+function ordinarySubmissionKey(
+	kind:
+		| "manual_time_submission"
+		| "policy_clock_out" = "manual_time_submission",
+) {
+	return deriveApprovalWorkflowId({
+		organizationId,
+		workflowType: kind,
+		sourceType: "time_entry",
+		sourceId: workPeriodId,
+		allocationKey: "ordinary-submission",
+	});
+}
+
+function markedAutoRequest(input: {
+	id: string;
+	chainInstanceId: string | null;
+	stepOrder: number | null;
+	key?: string;
+	metadata?: unknown;
+}) {
+	const decidedAt = new Date("2026-07-22T10:00:00Z");
+	return {
+		id: input.id,
+		organizationId,
+		entityType: "time_entry",
+		entityId: workPeriodId,
+		requestedBy: requesterEmployeeId,
+		approverId: requesterEmployeeId,
+		status: "approved",
+		approvedAt: decidedAt,
+		metadata:
+			input.metadata ??
+			({
+				timeRequest: { kind: "manual_time_submission" },
+				ordinarySubmission: {
+					key: input.key ?? ordinarySubmissionKey(),
+				},
+				autoApproval: { reason: "requester_is_approver" },
+			} as const),
+		chainInstanceId: input.chainInstanceId,
+		stageId:
+			input.stepOrder === null
+				? null
+				: `50000000-0000-4000-8000-${String(input.stepOrder).padStart(12, "0")}`,
+		stepOrder: input.stepOrder,
+		stageStatus: input.stepOrder === null ? null : "approved",
+		stageApprovalRequestId: input.stepOrder === null ? null : input.id,
+		stageDecidedBy: input.stepOrder === null ? null : requesterEmployeeId,
+		stageDecidedAt: input.stepOrder === null ? null : decidedAt,
+		chainOrganizationId: input.chainInstanceId ? organizationId : null,
+		chainEntityType: input.chainInstanceId ? "time_entry" : null,
+		chainEntityId: input.chainInstanceId ? workPeriodId : null,
+		chainRequesterEmployeeId: input.chainInstanceId
+			? requesterEmployeeId
+			: null,
+		chainStatus: input.chainInstanceId ? "approved" : null,
+		chainCurrentStageOrder: input.chainInstanceId ? 2 : null,
+		chainCompletedAt: input.chainInstanceId ? decidedAt : null,
+		chainStageCount: input.chainInstanceId ? 2 : null,
+	};
+}
+
 function compatibilityRequest(
 	kind: "manual_time_submission" | "policy_clock_out",
 	overrides: Record<string, unknown> = {},
@@ -479,6 +544,28 @@ describe.each([
 			);
 		}
 	});
+});
+
+it.each([
+	"legacy",
+	"shadow",
+	"ready",
+] as const)("persists the private stable ordinary marker in %s policy metadata", async (mode) => {
+	state.mode = mode;
+	const fake = fixture();
+
+	await executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input);
+
+	const legacyCall = state.calls.find((call) => call.startsWith("legacy:"));
+	expect(legacyCall).toBeDefined();
+	const resolverInput = JSON.parse(legacyCall?.slice("legacy:".length) ?? "");
+	expect(resolverInput.metadata).toEqual({
+		timeRequest: { kind: "manual_time_submission" },
+		ordinarySubmission: { key: ordinarySubmissionKey() },
+	});
+	expect(JSON.stringify(resolverInput.metadata)).not.toContain(
+		"Needs approval",
+	);
 });
 
 it("rejects a mismatched transaction context before acquiring rollout authority", async () => {
@@ -694,7 +781,8 @@ it("replays an exact terminal canonical auto-completion without finalization or 
 				},
 			},
 		],
-		terminalLegacyAutoRequests: [compatibility, otherCompatibility],
+		terminalLegacyMarkedRequests: [compatibility, otherCompatibility],
+		hasMalformedLegacyMarker: true,
 	};
 	const fake = fixture({
 		source: terminalSource,
@@ -736,7 +824,7 @@ it("replays exact approved legacy auto evidence without finalization or mutation
 		approvalStatus: "approved",
 		canonicalApprovalState: "approved",
 		terminalCanonicalWorkflows: [],
-		terminalLegacyAutoRequests: [approvedRequest],
+		historicalLegacyAutoRequests: [approvedRequest],
 	};
 	const fake = fixture({
 		source: terminalSource,
@@ -754,6 +842,168 @@ it("replays exact approved legacy auto evidence without finalization or mutation
 	expect(state.calls.some((call) => call.startsWith("finalize:"))).toBe(false);
 	expect(state.calls.some((call) => call.startsWith("legacy:"))).toBe(false);
 	expect(state.calls).not.toContain("binding");
+});
+
+it.each([
+	"legacy",
+	"shadow",
+	"ready",
+] as const)("replays one marked multistage auto cycle in %s despite unrelated history", async (mode) => {
+	state.mode = mode;
+	const chainInstanceId = "70000000-0000-4000-8000-000000000088";
+	const first = markedAutoRequest({
+		id: "40000000-0000-4000-8000-000000000081",
+		chainInstanceId,
+		stepOrder: 1,
+	});
+	const final = markedAutoRequest({
+		id: "40000000-0000-4000-8000-000000000082",
+		chainInstanceId,
+		stepOrder: 2,
+	});
+	const unrelated = markedAutoRequest({
+		id: "40000000-0000-4000-8000-000000000070",
+		chainInstanceId: null,
+		stepOrder: null,
+		key: ordinarySubmissionKey("policy_clock_out"),
+	});
+	const terminalSource = {
+		approvalStatus: "approved",
+		canonicalApprovalState: "approved",
+		terminalCanonicalWorkflows: [],
+		terminalLegacyMarkedRequests: [unrelated, first, final],
+		historicalLegacyAutoRequests: [
+			{
+				id: "historical-unrelated",
+				metadata: { diagnostics: true },
+			},
+			{
+				id: "historical-unrelated-2",
+				metadata: { diagnostics: true },
+			},
+		],
+	};
+	const fake = fixture({
+		source: terminalSource,
+		replaySource: terminalSource,
+	});
+
+	const submitted = await executeOrdinaryWorkPeriodSubmissionInTransaction(
+		fake.input,
+	);
+
+	expect(submitted.result).toMatchObject({
+		kind: "auto_completed",
+		chainInstanceId,
+		approvalRequestId: final.id,
+	});
+	expect(state.calls.some((call) => call.startsWith("finalize:"))).toBe(false);
+	expect(state.calls).not.toContain("binding");
+	expect(JSON.stringify(submitted.postCommit)).not.toContain(
+		"ordinarySubmission",
+	);
+});
+
+it("rejects duplicate same-key marked chain cycles", async () => {
+	const terminalSource = {
+		approvalStatus: "approved",
+		canonicalApprovalState: "approved",
+		terminalCanonicalWorkflows: [],
+		terminalLegacyMarkedRequests: [
+			markedAutoRequest({
+				id: "40000000-0000-4000-8000-000000000081",
+				chainInstanceId: "70000000-0000-4000-8000-000000000081",
+				stepOrder: 1,
+			}),
+			markedAutoRequest({
+				id: "40000000-0000-4000-8000-000000000082",
+				chainInstanceId: "70000000-0000-4000-8000-000000000082",
+				stepOrder: 1,
+			}),
+		],
+		historicalLegacyAutoRequests: [],
+	};
+	const fake = fixture({
+		source: terminalSource,
+		replaySource: terminalSource,
+	});
+
+	await expect(
+		executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input),
+	).rejects.toThrow("Ordinary work-period submission failed");
+	expect(state.calls.some((call) => call.startsWith("finalize:"))).toBe(false);
+});
+
+it("rejects malformed ordinary submission markers without invoking accessors", async () => {
+	const keyGetter = vi.fn(() => ordinarySubmissionKey());
+	const ordinarySubmission = {};
+	Object.defineProperty(ordinarySubmission, "key", {
+		enumerable: true,
+		get: keyGetter,
+	});
+	const malformed = markedAutoRequest({
+		id: "40000000-0000-4000-8000-000000000081",
+		chainInstanceId: null,
+		stepOrder: null,
+		metadata: {
+			timeRequest: { kind: "manual_time_submission" },
+			ordinarySubmission,
+			autoApproval: { reason: "requester_is_approver" },
+		},
+	});
+	const terminalSource = {
+		approvalStatus: "approved",
+		canonicalApprovalState: "approved",
+		terminalCanonicalWorkflows: [],
+		terminalLegacyMarkedRequests: [malformed],
+		historicalLegacyAutoRequests: [],
+	};
+	const fake = fixture({
+		source: terminalSource,
+		replaySource: terminalSource,
+	});
+
+	await expect(
+		executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input),
+	).rejects.toThrow("Ordinary work-period submission failed");
+	expect(keyGetter).not.toHaveBeenCalled();
+});
+
+it("rejects ambiguous historical unmarked auto rows rather than ordering them", async () => {
+	const terminalSource = {
+		approvalStatus: "approved",
+		canonicalApprovalState: "approved",
+		terminalCanonicalWorkflows: [],
+		terminalLegacyMarkedRequests: [],
+		historicalLegacyAutoRequests: [
+			markedAutoRequest({
+				id: "40000000-0000-4000-8000-000000000081",
+				chainInstanceId: null,
+				stepOrder: null,
+				metadata: {
+					timeRequest: { kind: "manual_time_submission" },
+					autoApproval: { reason: "requester_is_approver" },
+				},
+			}),
+			markedAutoRequest({
+				id: "40000000-0000-4000-8000-000000000082",
+				chainInstanceId: null,
+				stepOrder: null,
+				metadata: {
+					timeRequest: { kind: "manual_time_submission" },
+					autoApproval: { reason: "requester_is_approver" },
+				},
+			}),
+		],
+	};
+	const fake = fixture({
+		source: terminalSource,
+		replaySource: terminalSource,
+	});
+
+	await expect(
+		executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input),
+	).rejects.toThrow("Ordinary work-period submission failed");
 });
 
 it("replays authoritative shadow legacy auto evidence without treating its observation as deterministic canonical evidence", async () => {
@@ -791,7 +1041,7 @@ it("replays authoritative shadow legacy auto evidence without treating its obser
 				},
 			},
 		],
-		terminalLegacyAutoRequests: [approvedRequest],
+		historicalLegacyAutoRequests: [approvedRequest],
 	};
 	const fake = fixture({
 		source: terminalSource,
@@ -827,7 +1077,7 @@ it("does not fall back to legacy terminal evidence under canonical authority", a
 		approvalStatus: "approved",
 		canonicalApprovalState: "approved",
 		terminalCanonicalWorkflows: [],
-		terminalLegacyAutoRequests: [approvedRequest],
+		historicalLegacyAutoRequests: [approvedRequest],
 	};
 	const fake = fixture({
 		source: terminalSource,
