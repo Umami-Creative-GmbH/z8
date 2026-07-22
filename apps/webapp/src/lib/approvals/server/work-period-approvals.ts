@@ -147,23 +147,39 @@ function validateOrdinaryRequestMetadata(
 	input: Pick<
 		FinalizeOrdinaryWorkPeriodTerminalInput,
 		"expectedApprovalWorkflowId" | "kind" | "organizationId"
-	>,
+	> & { requesterAutoCompleted: boolean },
 ): void {
-	if (input.expectedApprovalWorkflowId === null) {
-		parseOrdinaryWorkPeriodWorkflowPayload(metadata, input.kind);
-		return;
-	}
-	const root = exactOwnDataValues(metadata, ["timeRequest", "workflow"]);
+	const root = exactOwnDataValues(
+		metadata,
+		input.expectedApprovalWorkflowId === null
+			? input.requesterAutoCompleted
+				? ["timeRequest", "autoApproval"]
+				: ["timeRequest"]
+			: input.requesterAutoCompleted
+				? ["timeRequest", "workflow", "autoApproval"]
+				: ["timeRequest", "workflow"],
+	);
 	parseOrdinaryWorkPeriodWorkflowPayload(
 		{ timeRequest: root.timeRequest },
 		input.kind,
 	);
-	const workflow = exactOwnDataValues(root.workflow, ["id", "organizationId"]);
-	if (
-		workflow.id !== input.expectedApprovalWorkflowId ||
-		workflow.organizationId !== input.organizationId
-	) {
-		throw ordinaryWorkPeriodFinalizationConflict();
+	if (input.expectedApprovalWorkflowId !== null) {
+		const workflow = exactOwnDataValues(root.workflow, [
+			"id",
+			"organizationId",
+		]);
+		if (
+			workflow.id !== input.expectedApprovalWorkflowId ||
+			workflow.organizationId !== input.organizationId
+		) {
+			throw ordinaryWorkPeriodFinalizationConflict();
+		}
+	}
+	if (input.requesterAutoCompleted) {
+		const autoApproval = exactOwnDataValues(root.autoApproval, ["reason"]);
+		if (autoApproval.reason !== "requester_is_approver") {
+			throw ordinaryWorkPeriodFinalizationConflict();
+		}
 	}
 }
 
@@ -283,7 +299,9 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			entityType: approvalRequest.entityType,
 			entityId: approvalRequest.entityId,
 			requestedBy: approvalRequest.requestedBy,
+			approverId: approvalRequest.approverId,
 			status: approvalRequest.status,
+			approvedAt: approvalRequest.approvedAt,
 			canonicalRecordId: approvalRequest.canonicalRecordId,
 			rejectionReason: approvalRequest.rejectionReason,
 			metadata: approvalRequest.metadata,
@@ -317,8 +335,18 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	) {
 		throw fail();
 	}
+	const requesterAutoCompleted =
+		request.status === "approved" &&
+		request.approverId === request.requestedBy &&
+		request.approvedAt instanceof Date &&
+		!Number.isNaN(request.approvedAt.getTime());
 	try {
-		validateOrdinaryRequestMetadata(request.metadata, input);
+		validateOrdinaryRequestMetadata(request.metadata, {
+			expectedApprovalWorkflowId: input.expectedApprovalWorkflowId,
+			kind: input.kind,
+			organizationId: input.organizationId,
+			requesterAutoCompleted,
+		});
 	} catch {
 		throw fail();
 	}

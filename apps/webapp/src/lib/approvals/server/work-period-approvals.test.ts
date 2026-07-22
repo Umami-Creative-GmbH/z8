@@ -86,11 +86,20 @@ const canonicalRecord = {
 	approvalState: "pending",
 };
 
+const autoApprovalMetadata = (kind = "manual_time_submission") => ({
+	timeRequest: { kind },
+	autoApproval: { reason: "requester_is_approver" },
+});
+
+type ApprovalFixture = Omit<typeof approval, "metadata"> & {
+	metadata: unknown;
+};
+
 function createFinalizerDbService(options?: {
 	period?: Partial<typeof period>;
 	record?: Partial<typeof canonicalRecord>;
-	request?: Partial<typeof approval> | null;
-	requests?: Array<Partial<typeof approval>>;
+	request?: Partial<ApprovalFixture> | null;
+	requests?: Array<Partial<ApprovalFixture>>;
 	actorOwned?: boolean;
 	cardinality?: {
 		periodUpdate?: number;
@@ -252,10 +261,13 @@ function createDecisionDbService(options?: {
 		const terminalUpdate = updateSets.find((value) => "status" in value);
 		return {
 			...approval,
-			metadata: {
-				timeRequest: { kind: options?.kind ?? "manual_time_submission" },
-				workflow: { id: "workflow-1", organizationId: "org-1" },
-			},
+			approverId: options?.autoCompleted ? "employee-1" : "manager-1",
+			metadata: options?.autoCompleted
+				? autoApprovalMetadata(options.kind)
+				: {
+						timeRequest: { kind: options?.kind ?? "manual_time_submission" },
+						workflow: { id: "workflow-1", organizationId: "org-1" },
+					},
 			...(options?.autoCompleted
 				? { status: "approved", approvedAt: new Date() }
 				: (terminalUpdate ?? {})),
@@ -278,9 +290,11 @@ function createDecisionDbService(options?: {
 				}),
 			},
 			workPeriod: {
-				findFirst: vi
-					.fn()
-					.mockResolvedValue({ approvalWorkflowId: period.approvalWorkflowId }),
+				findFirst: vi.fn().mockResolvedValue({
+					approvalWorkflowId: options?.autoCompleted
+						? null
+						: period.approvalWorkflowId,
+				}),
 			},
 		},
 		select: vi.fn(() => ({
@@ -289,7 +303,11 @@ function createDecisionDbService(options?: {
 					const tableName = getTableName(table);
 					const rows =
 						tableName === "work_period"
-							? [period]
+							? [
+									options?.autoCompleted
+										? { ...period, approvalWorkflowId: null }
+										: period,
+								]
 							: tableName === "time_record"
 								? [canonicalRecord]
 								: [terminalApproval()];
@@ -509,6 +527,126 @@ describe("ordinary work-period approval finalizer", () => {
 				allowUnlinkedLegacySource: true,
 			}),
 		).resolves.toMatchObject({ action: "approve" });
+	});
+
+	it("accepts exact unlinked requester auto-approval evidence", async () => {
+		const dbService = createFinalizerDbService({
+			period: { approvalWorkflowId: null },
+			request: {
+				approverId: "employee-1",
+				metadata: autoApprovalMetadata(),
+			},
+		});
+
+		await expect(
+			finalize(dbService, {
+				expectedApprovalWorkflowId: null,
+				allowUnlinkedLegacySource: true,
+			}),
+		).resolves.toMatchObject({ action: "approve" });
+	});
+
+	it("accepts exact linked requester auto-approval compatibility metadata", async () => {
+		const dbService = createFinalizerDbService({
+			request: {
+				approverId: "employee-1",
+				metadata: {
+					timeRequest: { kind: "manual_time_submission" },
+					workflow: { id: "workflow-1", organizationId: "org-1" },
+					autoApproval: { reason: "requester_is_approver" },
+				},
+			},
+		});
+
+		await expect(finalize(dbService)).resolves.toMatchObject({
+			action: "approve",
+		});
+	});
+
+	it("rejects absent autoApproval on an approved requester auto path", async () => {
+		const dbService = createFinalizerDbService({
+			period: { approvalWorkflowId: null },
+			request: {
+				approverId: "employee-1",
+				metadata: { timeRequest: { kind: "manual_time_submission" } },
+			},
+		});
+
+		await expect(
+			finalize(dbService, {
+				expectedApprovalWorkflowId: null,
+				allowUnlinkedLegacySource: true,
+			}),
+		).rejects.toThrow("Ordinary work-period finalization conflict");
+	});
+
+	it.each([
+		["wrong reason", { reason: "different" }],
+		["extra key", { reason: "requester_is_approver", extra: true }],
+		["array", ["requester_is_approver"]],
+		[
+			"custom prototype",
+			Object.assign(Object.create({}), { reason: "requester_is_approver" }),
+		],
+	] as const)("rejects %s autoApproval evidence", async (_name, autoApproval) => {
+		const dbService = createFinalizerDbService({
+			period: { approvalWorkflowId: null },
+			request: {
+				approverId: "employee-1",
+				metadata: {
+					timeRequest: { kind: "manual_time_submission" },
+					autoApproval,
+				},
+			},
+		});
+
+		await expect(
+			finalize(dbService, {
+				expectedApprovalWorkflowId: null,
+				allowUnlinkedLegacySource: true,
+			}),
+		).rejects.toThrow("Ordinary work-period finalization conflict");
+	});
+
+	it("rejects autoApproval accessors without invoking them", async () => {
+		const reasonGetter = vi.fn(() => "requester_is_approver");
+		const autoApproval = {};
+		Object.defineProperty(autoApproval, "reason", {
+			enumerable: true,
+			get: reasonGetter,
+		});
+		const dbService = createFinalizerDbService({
+			period: { approvalWorkflowId: null },
+			request: {
+				approverId: "employee-1",
+				metadata: {
+					timeRequest: { kind: "manual_time_submission" },
+					autoApproval,
+				},
+			},
+		});
+
+		await expect(
+			finalize(dbService, {
+				expectedApprovalWorkflowId: null,
+				allowUnlinkedLegacySource: true,
+			}),
+		).rejects.toThrow("Ordinary work-period finalization conflict");
+		expect(reasonGetter).not.toHaveBeenCalled();
+	});
+
+	it("rejects autoApproval on an ordinary manager approval path", async () => {
+		const dbService = createFinalizerDbService({
+			period: { approvalWorkflowId: null },
+			request: { metadata: autoApprovalMetadata() },
+		});
+
+		await expect(
+			finalize(dbService, {
+				expectedApprovalWorkflowId: null,
+				allowUnlinkedLegacySource: true,
+			}),
+		).rejects.toThrow("Ordinary work-period finalization conflict");
 	});
 
 	it("uses the exact request instead of stale historical metadata", async () => {
