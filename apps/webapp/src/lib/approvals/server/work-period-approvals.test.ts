@@ -249,6 +249,7 @@ function createDecisionDbService(options?: {
 	staleWorkPeriod?: boolean;
 	autoCompleted?: boolean;
 	kind?: "manual_time_submission" | "policy_clock_out";
+	autoApprovalRequest?: Partial<ApprovalFixture>;
 }) {
 	const updateSets: Record<string, unknown>[] = [];
 	const insertedValues: Record<string, unknown>[] = [];
@@ -271,6 +272,7 @@ function createDecisionDbService(options?: {
 			...(options?.autoCompleted
 				? { status: "approved", approvedAt: new Date() }
 				: (terminalUpdate ?? {})),
+			...options?.autoApprovalRequest,
 		};
 	};
 	const db = {
@@ -301,6 +303,7 @@ function createDecisionDbService(options?: {
 			from: vi.fn((table: Parameters<typeof getTableName>[0]) => ({
 				where: vi.fn(() => {
 					const tableName = getTableName(table);
+					const request = terminalApproval();
 					const rows =
 						tableName === "work_period"
 							? [
@@ -310,7 +313,9 @@ function createDecisionDbService(options?: {
 								]
 							: tableName === "time_record"
 								? [canonicalRecord]
-								: [terminalApproval()];
+								: options?.autoCompleted && request.requestedBy !== "employee-1"
+									? []
+									: [request];
 					const result = Promise.resolve(rows);
 					return Object.assign(result, {
 						for: vi.fn().mockResolvedValue(rows),
@@ -529,7 +534,7 @@ describe("ordinary work-period approval finalizer", () => {
 		).resolves.toMatchObject({ action: "approve" });
 	});
 
-	it("accepts exact unlinked requester auto-approval evidence", async () => {
+	it("does not infer unlinked requester auto-approval in the general finalizer", async () => {
 		const dbService = createFinalizerDbService({
 			period: { approvalWorkflowId: null },
 			request: {
@@ -543,10 +548,10 @@ describe("ordinary work-period approval finalizer", () => {
 				expectedApprovalWorkflowId: null,
 				allowUnlinkedLegacySource: true,
 			}),
-		).resolves.toMatchObject({ action: "approve" });
+		).rejects.toThrow("Ordinary work-period finalization conflict");
 	});
 
-	it("accepts exact linked requester auto-approval compatibility metadata", async () => {
+	it("does not infer linked requester auto-approval in the general finalizer", async () => {
 		const dbService = createFinalizerDbService({
 			request: {
 				approverId: "employee-1",
@@ -558,9 +563,9 @@ describe("ordinary work-period approval finalizer", () => {
 			},
 		});
 
-		await expect(finalize(dbService)).resolves.toMatchObject({
-			action: "approve",
-		});
+		await expect(finalize(dbService)).rejects.toThrow(
+			"Ordinary work-period finalization conflict",
+		);
 	});
 
 	it("rejects absent autoApproval on an approved requester auto path", async () => {
@@ -928,6 +933,52 @@ describe("ordinary work-period approval finalizer", () => {
 		);
 		expect(notificationMocks.onClockOutApproved).not.toHaveBeenCalled();
 		expect(notificationMocks.onClockOutRejected).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		[
+			"different approver",
+			{
+				approverId: "manager-1",
+				metadata: { timeRequest: { kind: "manual_time_submission" } },
+			},
+		],
+		["null approvedAt", { approvedAt: null }],
+		["malformed approvedAt", { approvedAt: new Date(Number.NaN) }],
+		[
+			"missing autoApproval",
+			{ metadata: { timeRequest: { kind: "manual_time_submission" } } },
+		],
+		[
+			"wrong autoApproval reason",
+			{
+				metadata: {
+					timeRequest: { kind: "manual_time_submission" },
+					autoApproval: { reason: "different" },
+				},
+			},
+		],
+		["mismatched requester", { requestedBy: "employee-2" }],
+	] as const)("rejects auto-completion with %s", async (_name, autoApprovalRequest) => {
+		const dbService = createDecisionDbService({
+			autoCompleted: true,
+			autoApprovalRequest,
+		});
+
+		await expect(
+			Effect.runPromise(
+				finalizeAutoCompletedWorkPeriodApprovalEffect(dbService, {
+					approvalRequestId: "approval-1",
+					organizationId: "org-1",
+					requesterEmployeeId: "employee-1",
+					requesterUserId: "employee-user-1",
+					requesterName: "Avery Employee",
+					kind: "manual_time_submission",
+				}),
+			),
+		).rejects.toThrow("Ordinary work-period finalization conflict");
+		expect(dbService.updateSets).toHaveLength(0);
+		expect(dbService.insertedValues).toHaveLength(0);
 	});
 
 	it("keeps every source and canonical mutation organization and employee scoped", () => {

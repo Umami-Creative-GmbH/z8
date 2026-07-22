@@ -12,7 +12,7 @@ import {
 	type Instant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { ConflictError, NotFoundError } from "@/lib/effect/errors";
+import { ConflictError } from "@/lib/effect/errors";
 import {
 	onClockOutApproved,
 	onClockOutRejected,
@@ -72,6 +72,7 @@ export function decideWorkPeriodWithCurrentApproverInTransaction(
 				kind,
 				action,
 				reason ?? null,
+				"ordinary",
 			),
 		undefined,
 		{ ...options, transactional: true },
@@ -183,8 +184,13 @@ function validateOrdinaryRequestMetadata(
 	}
 }
 
+type OrdinaryFinalizationEvidenceExpectation =
+	| "ordinary"
+	| "requester_auto_completed";
+
 async function finalizeOrdinaryWorkPeriodTerminal(
 	input: FinalizeOrdinaryWorkPeriodTerminalInput,
+	evidenceExpectation: OrdinaryFinalizationEvidenceExpectation,
 ): Promise<WorkPeriodApprovalResult> {
 	const fail = ordinaryWorkPeriodFinalizationConflict;
 	const periods = await input.dbService.db
@@ -335,11 +341,15 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	) {
 		throw fail();
 	}
-	const requesterAutoCompleted =
+	const persistedRequesterAutoCompleted =
 		request.status === "approved" &&
-		request.approverId === request.requestedBy &&
+		request.requestedBy === input.requesterEmployeeId &&
+		request.approverId === input.requesterEmployeeId &&
 		request.approvedAt instanceof Date &&
 		!Number.isNaN(request.approvedAt.getTime());
+	const requesterAutoCompleted =
+		evidenceExpectation === "requester_auto_completed";
+	if (requesterAutoCompleted !== persistedRequesterAutoCompleted) throw fail();
 	try {
 		validateOrdinaryRequestMetadata(request.metadata, {
 			expectedApprovalWorkflowId: input.expectedApprovalWorkflowId,
@@ -439,7 +449,18 @@ export async function finalizeOrdinaryWorkPeriodTerminalInTransaction(
 	input: FinalizeOrdinaryWorkPeriodTerminalInput,
 ): Promise<WorkPeriodApprovalResult> {
 	try {
-		return await finalizeOrdinaryWorkPeriodTerminal(input);
+		return await finalizeOrdinaryWorkPeriodTerminal(input, "ordinary");
+	} catch {
+		throw ordinaryWorkPeriodFinalizationConflict();
+	}
+}
+
+async function finalizeOrdinaryWorkPeriodWithEvidenceExpectation(
+	input: FinalizeOrdinaryWorkPeriodTerminalInput,
+	evidenceExpectation: OrdinaryFinalizationEvidenceExpectation,
+): Promise<WorkPeriodApprovalResult> {
+	try {
+		return await finalizeOrdinaryWorkPeriodTerminal(input, evidenceExpectation);
 	} catch {
 		throw ordinaryWorkPeriodFinalizationConflict();
 	}
@@ -453,6 +474,7 @@ function finalizeCurrentWorkPeriodDecision(
 	kind: OrdinaryTimeApprovalKind,
 	action: "approve" | "reject",
 	reason: string | null,
+	evidenceExpectation: OrdinaryFinalizationEvidenceExpectation,
 ) {
 	return Effect.gen(function* (_) {
 		const requestedBy = (approval as ApprovalWithRequester).requestedBy;
@@ -477,23 +499,26 @@ function finalizeCurrentWorkPeriodDecision(
 		return yield* _(
 			Effect.tryPromise({
 				try: () =>
-					finalizeOrdinaryWorkPeriodTerminalInTransaction({
-						dbService,
-						organizationId: approval.organizationId,
-						workPeriodId: entityId,
-						approvalRequestId: approval.id,
-						expectedApprovalWorkflowId: source.approvalWorkflowId,
-						requesterEmployeeId: requestedBy,
-						actorEmployeeId: currentEmployee.id,
-						actorUserId: currentEmployee.userId,
-						kind,
-						transition:
-							action === "approve"
-								? { kind: "approve", reason }
-								: { kind: "reject", reason: reason ?? "" },
-						finalizedAt: systemClock.nowInstant(),
-						allowUnlinkedLegacySource: source.approvalWorkflowId === null,
-					}),
+					finalizeOrdinaryWorkPeriodWithEvidenceExpectation(
+						{
+							dbService,
+							organizationId: approval.organizationId,
+							workPeriodId: entityId,
+							approvalRequestId: approval.id,
+							expectedApprovalWorkflowId: source.approvalWorkflowId,
+							requesterEmployeeId: requestedBy,
+							actorEmployeeId: currentEmployee.id,
+							actorUserId: currentEmployee.userId,
+							kind,
+							transition:
+								action === "approve"
+									? { kind: "approve", reason }
+									: { kind: "reject", reason: reason ?? "" },
+							finalizedAt: systemClock.nowInstant(),
+							allowUnlinkedLegacySource: source.approvalWorkflowId === null,
+						},
+						evidenceExpectation,
+					),
 				catch: () => conflict("Ordinary work-period finalization conflict"),
 			}),
 		);
@@ -560,6 +585,7 @@ export function approveWorkPeriodWithCurrentApproverEffect(
 				kind,
 				"approve",
 				null,
+				"ordinary",
 			),
 		undefined,
 		{ ...options, transactional: true },
@@ -600,6 +626,7 @@ export function rejectWorkPeriodWithCurrentApproverEffect(
 				kind,
 				"reject",
 				reason,
+				"ordinary",
 			),
 		undefined,
 		{ ...options, transactional: true },
@@ -647,13 +674,7 @@ export function finalizeAutoCompletedWorkPeriodApprovalEffect(
 		const approval = approvals[0];
 		if (!approval) {
 			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Auto-completed work-period approval not found",
-						entityType: "approval_request",
-						entityId: input.approvalRequestId,
-					}),
-				),
+				Effect.fail(conflict("Ordinary work-period finalization conflict")),
 			);
 		}
 
@@ -676,6 +697,7 @@ export function finalizeAutoCompletedWorkPeriodApprovalEffect(
 				input.kind,
 				"approve",
 				"requester_is_approver",
+				"requester_auto_completed",
 			),
 		);
 	});
