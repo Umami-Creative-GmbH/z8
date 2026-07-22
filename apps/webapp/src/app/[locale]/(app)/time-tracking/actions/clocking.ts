@@ -322,10 +322,11 @@ function privateSubmissionMarker(value: unknown) {
 	};
 }
 
-function hasPrivateApprovalSubmissionMarker(input: {
+function hasPrivateApprovalSubmissionEvidence(input: {
 	metadata: unknown;
 	expectedKey: string;
 	submissionId: string;
+	expectedKind: "manual_time_submission" | "policy_clock_out";
 }): boolean {
 	if (
 		!input.metadata ||
@@ -334,8 +335,16 @@ function hasPrivateApprovalSubmissionMarker(input: {
 	) {
 		return false;
 	}
+	const root = exactPlainObject(input.metadata, [
+		"timeRequest",
+		"ordinarySubmission",
+	]);
+	const timeRequest = exactPlainObject(root.timeRequest, ["kind"]);
+	if (timeRequest.kind !== input.expectedKind) {
+		throw new Error("Submission collision");
+	}
 	const markerDescriptor = Object.getOwnPropertyDescriptor(
-		input.metadata,
+		root,
 		"ordinarySubmission",
 	);
 	if (!markerDescriptor) return false;
@@ -375,6 +384,18 @@ function hasPrivateApprovalSubmissionMarker(input: {
 		throw new Error("Submission collision");
 	}
 	return true;
+}
+
+function requireReplayOnlySubmission<
+	T extends {
+		disposition: "executed" | "replayed";
+		postCommit: WorkPeriodPostCommitDescriptor | null;
+	},
+>(submission: T): T {
+	if (submission.disposition !== "replayed" || submission.postCommit !== null) {
+		throw new Error("Submission collision");
+	}
+	return submission;
 }
 
 async function loadCanonicalEvidence(
@@ -556,8 +577,9 @@ async function findManualSubmissionEvidence(input: {
 		allocationKey: submissionKey,
 	});
 	let hasApprovalEvidence =
-		marker !== null || period.approvalWorkflowId === expectedWorkflowId;
-	if (!hasApprovalEvidence) {
+		period.approvalStatus === "pending" &&
+		period.approvalWorkflowId === expectedWorkflowId;
+	if (period.approvalStatus === "pending" && !hasApprovalEvidence) {
 		const requests = await input.tx.query.approvalRequest.findMany({
 			where: and(
 				eq(approvalRequest.organizationId, input.organizationId),
@@ -567,12 +589,16 @@ async function findManualSubmissionEvidence(input: {
 			columns: { metadata: true },
 		});
 		hasApprovalEvidence = requests.some((request) =>
-			hasPrivateApprovalSubmissionMarker({
+			hasPrivateApprovalSubmissionEvidence({
 				metadata: request.metadata,
 				expectedKey: submissionKey,
 				submissionId: input.submissionId,
+				expectedKind: "manual_time_submission",
 			}),
 		);
+	}
+	if (period.approvalStatus === "pending" && !hasApprovalEvidence) {
+		throw new Error("Submission collision");
 	}
 	return { period, requiresApproval: hasApprovalEvidence, result };
 }
@@ -650,8 +676,7 @@ async function findPolicyClockOutSubmissionEvidence(input: {
 		sourceId: period.id,
 		allocationKey: submissionKey,
 	});
-	let hasApprovalEvidence =
-		marker !== null || period.approvalWorkflowId === expectedWorkflowId;
+	let hasApprovalEvidence = period.approvalWorkflowId === expectedWorkflowId;
 	if (!hasApprovalEvidence) {
 		const requests = await input.tx.query.approvalRequest.findMany({
 			where: and(
@@ -662,12 +687,16 @@ async function findPolicyClockOutSubmissionEvidence(input: {
 			columns: { metadata: true },
 		});
 		hasApprovalEvidence = requests.some((request) =>
-			hasPrivateApprovalSubmissionMarker({
+			hasPrivateApprovalSubmissionEvidence({
 				metadata: request.metadata,
 				expectedKey: submissionKey,
 				submissionId: input.submissionId,
+				expectedKind: "policy_clock_out",
 			}),
 		);
+	}
+	if (period.approvalStatus === "pending" && !hasApprovalEvidence) {
+		throw new Error("Submission collision");
 	}
 	if (
 		period.projectId !== input.projectId ||
@@ -749,21 +778,23 @@ async function findAndReplayManualSubmission(input: {
 	});
 	if (!evidence) return null;
 	const approvalSubmission = evidence.requiresApproval
-		? await executeOrdinaryWorkPeriodSubmissionInTransaction({
-				dbService: approvalDbServiceForTransaction(input.context.dbService),
-				context: input.context,
-				organizationId: input.targetEmployee.organizationId,
-				workPeriodId: evidence.period.id,
-				submissionId: input.submissionId,
-				requesterEmployeeId: input.targetEmployee.id,
-				requesterUserId: input.targetEmployee.userId ?? input.requesterUserId,
-				teamId: input.targetEmployee.teamId,
-				defaultApproverId: null,
-				reason: `Manual time entry: ${input.request.reason}`,
-				overtimeRisk: "none",
-				kind: "manual_time_submission",
-				metadata: {},
-			})
+		? requireReplayOnlySubmission(
+				await executeOrdinaryWorkPeriodSubmissionInTransaction({
+					dbService: approvalDbServiceForTransaction(input.context.dbService),
+					context: input.context,
+					organizationId: input.targetEmployee.organizationId,
+					workPeriodId: evidence.period.id,
+					submissionId: input.submissionId,
+					requesterEmployeeId: input.targetEmployee.id,
+					requesterUserId: input.targetEmployee.userId ?? input.requesterUserId,
+					teamId: input.targetEmployee.teamId,
+					defaultApproverId: null,
+					reason: `Manual time entry: ${input.request.reason}`,
+					overtimeRisk: "none",
+					kind: "manual_time_submission",
+					metadata: {},
+				}),
+			)
 		: null;
 	return { ...evidence, approvalSubmission };
 }
@@ -1025,7 +1056,7 @@ export async function clockOut(
 				requesterEmployeeId: currentEmployee.id,
 				organizationId: currentEmployee.organizationId,
 			});
-			const approvalSubmission =
+			const approvalSubmission = requireReplayOnlySubmission(
 				await executeOrdinaryWorkPeriodSubmissionInTransaction({
 					dbService: approvalDbServiceForTransaction(context.dbService),
 					context,
@@ -1040,7 +1071,8 @@ export async function clockOut(
 					overtimeRisk: "warning",
 					kind: "policy_clock_out",
 					metadata: {},
-				});
+				}),
+			);
 			return { period, approvalSubmission };
 		});
 		if (replay) {
@@ -1250,7 +1282,7 @@ export async function clockOut(
 				throw new Error("Submission collision");
 			}
 			if (!replayEvidence.hasApprovalEvidence) return clockOutResult;
-			const transactionResult =
+			const transactionResult = requireReplayOnlySubmission(
 				await executeOrdinaryWorkPeriodSubmissionInTransaction({
 					dbService: approvalDbServiceForTransaction(context.dbService),
 					context,
@@ -1265,7 +1297,8 @@ export async function clockOut(
 					overtimeRisk: "warning",
 					kind: "policy_clock_out",
 					metadata: {},
-				});
+				}),
+			);
 			return { ...clockOutResult, transactionResult };
 		});
 		const entry = result.entry as Awaited<ReturnType<typeof createTimeEntry>>;
