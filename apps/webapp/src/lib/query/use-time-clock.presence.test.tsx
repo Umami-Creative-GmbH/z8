@@ -50,6 +50,7 @@ function wrapper(client: QueryClient) {
 
 afterEach(() => {
 	vi.useRealTimers();
+	vi.restoreAllMocks();
 });
 
 describe("useElapsedTimer", () => {
@@ -157,11 +158,13 @@ describe("useTimeClock presence invalidation", () => {
 		});
 	});
 
-	it("creates one submission id for an online clock-out and reuses it across transport retries", async () => {
-		const submissionId = "10000000-0000-4000-8000-000000000099";
+	it("scopes submission ids to deliberate clock-outs and reuses each id across transport retries", async () => {
+		const firstSubmissionId = "10000000-0000-4000-8000-000000000099";
+		const secondSubmissionId = "20000000-0000-4000-8000-000000000099";
 		const randomUUID = vi
 			.spyOn(crypto, "randomUUID")
-			.mockReturnValue(submissionId);
+			.mockReturnValueOnce(firstSubmissionId)
+			.mockReturnValueOnce(secondSubmissionId);
 		const client = new QueryClient({
 			defaultOptions: {
 				queries: { retry: false },
@@ -170,6 +173,7 @@ describe("useTimeClock presence invalidation", () => {
 		});
 		mocks.clockOut
 			.mockRejectedValueOnce(new Error("connection reset"))
+			.mockResolvedValueOnce({ success: true })
 			.mockResolvedValueOnce({ success: true });
 
 		const { result } = renderHook(() => useTimeClock(), {
@@ -177,15 +181,23 @@ describe("useTimeClock presence invalidation", () => {
 		});
 		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
 		await result.current.clockOut({ browserTimezone: "America/New_York" });
+		await result.current.clockOut({ browserTimezone: "America/New_York" });
 
-		expect(randomUUID).toHaveBeenCalledOnce();
-		expect(mocks.clockOut).toHaveBeenCalledTimes(2);
-		for (const call of mocks.clockOut.mock.calls) {
-			expect(call[2]).toEqual({
+		expect(randomUUID).toHaveBeenCalledTimes(2);
+		expect(mocks.clockOut.mock.calls.map((call) => call[2])).toEqual([
+			{
 				browserTimezone: "America/New_York",
-				submissionId,
-			});
-		}
+				submissionId: firstSubmissionId,
+			},
+			{
+				browserTimezone: "America/New_York",
+				submissionId: firstSubmissionId,
+			},
+			{
+				browserTimezone: "America/New_York",
+				submissionId: secondSubmissionId,
+			},
+		]);
 		randomUUID.mockRestore();
 	});
 

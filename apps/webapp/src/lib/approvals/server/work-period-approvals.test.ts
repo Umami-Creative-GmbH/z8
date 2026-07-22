@@ -104,6 +104,11 @@ const ordinarySubmissionKey = () =>
 		allocationKey: submissionId,
 	});
 
+const ordinarySubmissionMarker = () => ({
+	key: ordinarySubmissionKey(),
+	submissionId,
+});
+
 type ApprovalFixture = Omit<typeof approval, "metadata"> & {
 	metadata: unknown;
 };
@@ -816,11 +821,11 @@ describe("ordinary work-period approval finalizer", () => {
 	});
 
 	it.each([
-		["wrong key", { key: "wrong" }],
-		["extra key", { key: ordinarySubmissionKey(), extra: true }],
+		["wrong key", { ...ordinarySubmissionMarker(), key: "wrong" }],
+		["extra key", { ...ordinarySubmissionMarker(), extra: true }],
 		[
 			"custom prototype",
-			Object.assign(Object.create({}), { key: ordinarySubmissionKey() }),
+			Object.assign(Object.create({}), ordinarySubmissionMarker()),
 		],
 	] as const)("rejects ordinary marker with %s", async (_label, marker) => {
 		const dbService = createFinalizerDbService({
@@ -836,6 +841,30 @@ describe("ordinary work-period approval finalizer", () => {
 		await expect(
 			finalize(dbService, { expectedApprovalWorkflowId: null }),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
+		expect(dbService.updateSets).toHaveLength(0);
+	});
+
+	it("rejects ordinary marker accessors without invoking them", async () => {
+		const keyGetter = vi.fn(() => ordinarySubmissionKey());
+		const marker = ordinarySubmissionMarker();
+		Object.defineProperty(marker, "key", {
+			enumerable: true,
+			get: keyGetter,
+		});
+		const dbService = createFinalizerDbService({
+			period: { approvalWorkflowId: null },
+			request: {
+				metadata: {
+					timeRequest: { kind: "manual_time_submission" },
+					ordinarySubmission: marker,
+				},
+			},
+		});
+
+		await expect(
+			finalize(dbService, { expectedApprovalWorkflowId: null }),
+		).rejects.toThrow("Ordinary work-period finalization conflict");
+		expect(keyGetter).not.toHaveBeenCalled();
 		expect(dbService.updateSets).toHaveLength(0);
 	});
 

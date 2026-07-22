@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	createMobileClockInAction,
 	createMobileClockOutAction,
@@ -7,6 +7,10 @@ import {
 } from "./clock-action";
 
 const fixedNow = DateTime.fromISO("2026-07-10T12:30:00.123Z", { zone: "utc" });
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
 
 function fakeIntl(timeZone: string) {
 	return {
@@ -50,6 +54,35 @@ describe("mobile clock action evidence", () => {
 		});
 		expect(getActionTimeTimezone(fakeIntl("Not/AZone"))).toBeNull();
 		expect(randomUUID).toHaveBeenCalledOnce();
+		randomUUID.mockRestore();
+	});
+
+	it("scopes submission ids to deliberate actions and preserves one serialized retry id", () => {
+		const firstSubmissionId = "10000000-0000-4000-8000-000000000099";
+		const secondSubmissionId = "20000000-0000-4000-8000-000000000099";
+		const randomUUID = vi
+			.spyOn(crypto, "randomUUID")
+			.mockReturnValueOnce(firstSubmissionId)
+			.mockReturnValueOnce(secondSubmissionId);
+
+		const firstAction = createMobileClockOutAction({
+			now: fixedNow,
+			intlApi: fakeIntl("Europe/Berlin"),
+		});
+		const serializedRetry = JSON.parse(
+			JSON.stringify(firstAction),
+		) as typeof firstAction;
+		const secondAction = createMobileClockOutAction({
+			now: fixedNow,
+			intlApi: fakeIntl("Europe/Berlin"),
+		});
+
+		expect([
+			firstAction.submissionId,
+			serializedRetry.submissionId,
+			secondAction.submissionId,
+		]).toEqual([firstSubmissionId, firstSubmissionId, secondSubmissionId]);
+		expect(randomUUID).toHaveBeenCalledTimes(2);
 		randomUUID.mockRestore();
 	});
 });

@@ -418,6 +418,10 @@ function ordinarySubmissionKey(
 	});
 }
 
+function ordinarySubmissionMarker() {
+	return { key: ordinarySubmissionKey(), submissionId };
+}
+
 function markedAutoRequest(input: {
 	id: string;
 	chainInstanceId: string | null;
@@ -648,21 +652,21 @@ it.each([
 		"wrong marker key",
 		{
 			timeRequest: { kind: "manual_time_submission" },
-			ordinarySubmission: { key: "wrong" },
+			ordinarySubmission: { ...ordinarySubmissionMarker(), key: "wrong" },
 		},
 	],
 	[
 		"opposite embedded kind",
 		{
 			timeRequest: { kind: "policy_clock_out" },
-			ordinarySubmission: { key: ordinarySubmissionKey() },
+			ordinarySubmission: ordinarySubmissionMarker(),
 		},
 	],
 	[
 		"extra root key",
 		{
 			timeRequest: { kind: "manual_time_submission" },
-			ordinarySubmission: { key: ordinarySubmissionKey() },
+			ordinarySubmission: ordinarySubmissionMarker(),
 			extra: true,
 		},
 	],
@@ -670,7 +674,7 @@ it.each([
 		"extra marker key",
 		{
 			timeRequest: { kind: "manual_time_submission" },
-			ordinarySubmission: { key: ordinarySubmissionKey(), extra: true },
+			ordinarySubmission: { ...ordinarySubmissionMarker(), extra: true },
 		},
 	],
 	["array root", [{ timeRequest: { kind: "manual_time_submission" } }]],
@@ -685,23 +689,24 @@ it.each([
 		"array time request",
 		{
 			timeRequest: ["manual_time_submission"],
-			ordinarySubmission: { key: ordinarySubmissionKey() },
+			ordinarySubmission: ordinarySubmissionMarker(),
 		},
 	],
 	[
 		"custom root prototype",
 		Object.assign(Object.create({ inherited: true }), {
 			timeRequest: { kind: "manual_time_submission" },
-			ordinarySubmission: { key: ordinarySubmissionKey() },
+			ordinarySubmission: ordinarySubmissionMarker(),
 		}),
 	],
 	[
 		"custom marker prototype",
 		{
 			timeRequest: { kind: "manual_time_submission" },
-			ordinarySubmission: Object.assign(Object.create({ inherited: true }), {
-				key: ordinarySubmissionKey(),
-			}),
+			ordinarySubmission: Object.assign(
+				Object.create({ inherited: true }),
+				ordinarySubmissionMarker(),
+			),
 		},
 	],
 	[
@@ -710,7 +715,7 @@ it.each([
 			timeRequest: Object.assign(Object.create({ inherited: true }), {
 				kind: "manual_time_submission",
 			}),
-			ordinarySubmission: { key: ordinarySubmissionKey() },
+			ordinarySubmission: ordinarySubmissionMarker(),
 		},
 	],
 	[
@@ -718,7 +723,7 @@ it.each([
 		Object.assign(
 			{
 				timeRequest: { kind: "manual_time_submission" },
-				ordinarySubmission: { key: ordinarySubmissionKey() },
+				ordinarySubmission: ordinarySubmissionMarker(),
 			},
 			{ [Symbol("extra")]: true },
 		),
@@ -727,10 +732,9 @@ it.each([
 		"marker symbol",
 		{
 			timeRequest: { kind: "manual_time_submission" },
-			ordinarySubmission: Object.assign(
-				{ key: ordinarySubmissionKey() },
-				{ [Symbol("extra")]: true },
-			),
+			ordinarySubmission: Object.assign(ordinarySubmissionMarker(), {
+				[Symbol("extra")]: true,
+			}),
 		},
 	],
 	[
@@ -740,7 +744,7 @@ it.each([
 				{ kind: "manual_time_submission" },
 				{ [Symbol("extra")]: true },
 			),
-			ordinarySubmission: { key: ordinarySubmissionKey() },
+			ordinarySubmission: ordinarySubmissionMarker(),
 		},
 	],
 ] as const)("rejects marked pending metadata with %s despite a synthetic kind", async (_label, metadata) => {
@@ -756,14 +760,14 @@ it.each([
 });
 
 it("rejects marked pending accessors without invoking them", async () => {
-	const rootGetter = vi.fn(() => ({ key: ordinarySubmissionKey() }));
+	const rootGetter = vi.fn(() => ordinarySubmissionMarker());
 	const markerGetter = vi.fn(() => ordinarySubmissionKey());
 	const rootAccessor = { timeRequest: { kind: "manual_time_submission" } };
 	Object.defineProperty(rootAccessor, "ordinarySubmission", {
 		enumerable: true,
 		get: rootGetter,
 	});
-	const markerAccessor = {};
+	const markerAccessor = ordinarySubmissionMarker();
 	Object.defineProperty(markerAccessor, "key", {
 		enumerable: true,
 		get: markerGetter,
@@ -792,9 +796,9 @@ it("rejects non-enumerable marked pending descriptors", async () => {
 	const root = { timeRequest: { kind: "manual_time_submission" } };
 	Object.defineProperty(root, "ordinarySubmission", {
 		enumerable: false,
-		value: { key: ordinarySubmissionKey() },
+		value: ordinarySubmissionMarker(),
 	});
-	const marker = {};
+	const marker = ordinarySubmissionMarker();
 	Object.defineProperty(marker, "key", {
 		enumerable: false,
 		value: ordinarySubmissionKey(),
@@ -813,7 +817,7 @@ it("rejects non-enumerable marked pending descriptors", async () => {
 		},
 		{
 			timeRequest,
-			ordinarySubmission: { key: ordinarySubmissionKey() },
+			ordinarySubmission: ordinarySubmissionMarker(),
 		},
 	]) {
 		const request = pendingLegacyRequest(metadata, {
@@ -832,7 +836,7 @@ it("does not accept marked metadata as canonical compatibility metadata", async 
 	state.workflowId = workflowId;
 	const request = pendingLegacyRequest({
 		timeRequest: { kind: "manual_time_submission" },
-		ordinarySubmission: { key: ordinarySubmissionKey() },
+		ordinarySubmission: ordinarySubmissionMarker(),
 	});
 	const fake = fixture({
 		source: {
@@ -1228,7 +1232,7 @@ it("rejects duplicate same-key marked chain cycles", async () => {
 
 it("rejects malformed ordinary submission markers without invoking accessors", async () => {
 	const keyGetter = vi.fn(() => ordinarySubmissionKey());
-	const ordinarySubmission = {};
+	const ordinarySubmission = ordinarySubmissionMarker();
 	Object.defineProperty(ordinarySubmission, "key", {
 		enumerable: true,
 		get: keyGetter,

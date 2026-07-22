@@ -1,5 +1,5 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import type { ApprovalDbService } from "../server/types";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
@@ -32,6 +32,10 @@ function submissionKey(kind = "manual_time_submission") {
 		sourceId: workPeriodId,
 		allocationKey: submissionId,
 	});
+}
+
+function submissionMarker() {
+	return { key: submissionKey(), submissionId };
 }
 
 type JsonRecord = Record<string, unknown>;
@@ -420,12 +424,9 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 	});
 
 	it.each([
-		["wrong key", { key: "wrong" }],
-		["extra key", { key: submissionKey(), extra: true }],
-		[
-			"custom prototype",
-			Object.assign(Object.create({}), { key: submissionKey() }),
-		],
+		["wrong key", { ...submissionMarker(), key: "wrong" }],
+		["extra key", { ...submissionMarker(), extra: true }],
+		["custom prototype", Object.assign(Object.create({}), submissionMarker())],
 	] as const)("rejects a marker with %s", async (_label, ordinarySubmission) => {
 		await expectCaptureFailure(
 			envelope({
@@ -439,6 +440,29 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 				],
 			}),
 		);
+	});
+
+	it("rejects marker accessors without invoking them", async () => {
+		const keyGetter = vi.fn(() => submissionKey());
+		const ordinarySubmission = submissionMarker();
+		Object.defineProperty(ordinarySubmission, "key", {
+			enumerable: true,
+			get: keyGetter,
+		});
+
+		await expectCaptureFailure(
+			envelope({
+				approvalRequests: [
+					request({
+						metadata: {
+							timeRequest: { kind: "manual_time_submission" },
+							ordinarySubmission,
+						},
+					}),
+				],
+			}),
+		);
+		expect(keyGetter).not.toHaveBeenCalled();
 	});
 
 	it("captures an exact auto-completed custom-policy chain", async () => {

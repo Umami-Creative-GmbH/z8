@@ -9,7 +9,7 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ManualTimeEntryDialog } from "./manual-time-entry-dialog";
 
 const { createManualTimeEntry, refresh, updateTimezone } = vi.hoisted(() => ({
@@ -159,6 +159,10 @@ function deferredResult<T>() {
 	return { promise, resolve };
 }
 
+afterEach(() => {
+	vi.restoreAllMocks();
+});
+
 describe("ManualTimeEntryDialog layout", () => {
 	beforeEach(() => {
 		createManualTimeEntry.mockReset();
@@ -300,6 +304,55 @@ describe("ManualTimeEntryDialog layout", () => {
 			});
 		});
 		expect(randomUUID).toHaveBeenCalledOnce();
+		randomUUID.mockRestore();
+	});
+
+	it("scopes submission ids to deliberate manual submissions and preserves one serialized retry id", async () => {
+		const firstSubmissionId = "10000000-0000-4000-8000-000000000099";
+		const secondSubmissionId = "20000000-0000-4000-8000-000000000099";
+		const transportSubmissionIds: string[] = [];
+		const randomUUID = vi
+			.spyOn(crypto, "randomUUID")
+			.mockReturnValueOnce(firstSubmissionId)
+			.mockReturnValueOnce(secondSubmissionId);
+		createManualTimeEntry
+			.mockImplementationOnce(async (request) => {
+				const serializedRetry = JSON.parse(
+					JSON.stringify(request),
+				) as typeof request;
+				transportSubmissionIds.push(
+					request.submissionId,
+					serializedRetry.submissionId,
+				);
+				return { success: false, error: "connection reset" };
+			})
+			.mockImplementationOnce(async (request) => {
+				transportSubmissionIds.push(request.submissionId);
+				return { success: true, data: {} };
+			});
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			targetEmployeeId: "employee-2",
+			defaultDate: "2026-05-12",
+			defaultClockInTime: "10:15",
+			defaultClockOutTime: "15:45",
+		});
+		fireEvent.change(screen.getByLabelText("Reason"), {
+			target: { value: "Calendar adjustment" },
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+		await waitFor(() => expect(createManualTimeEntry).toHaveBeenCalledTimes(1));
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+		await waitFor(() => expect(createManualTimeEntry).toHaveBeenCalledTimes(2));
+
+		expect(transportSubmissionIds).toEqual([
+			firstSubmissionId,
+			firstSubmissionId,
+			secondSubmissionId,
+		]);
+		expect(randomUUID).toHaveBeenCalledTimes(2);
 		randomUUID.mockRestore();
 	});
 
