@@ -226,17 +226,24 @@ function fixture(
 	options: {
 		source?: Record<string, unknown>;
 		replaySource?: Record<string, unknown>;
+		sourceFromQuery?: (query: {
+			sql: string;
+			params: unknown[];
+		}) => Record<string, unknown>;
 		compatibilityRequests?: Record<string, unknown>[];
 		differentDb?: boolean;
 	} = {},
 ) {
 	const calls: string[] = [];
+	const queries: Array<{ sql: string; params: unknown[] }> = [];
 	const dialect = new PgDialect();
 	const row = source(options.source);
 	const db = {
 		execute: vi.fn(async (query: SQL) => {
-			const text = dialect.sqlToQuery(query).sql;
+			const compiled = dialect.sqlToQuery(query);
+			const text = compiled.sql;
 			calls.push(text);
+			queries.push(compiled);
 			if (text.includes("pg_advisory_xact_lock"))
 				return { rows: [{ locked: null }] };
 			if (text.includes("update work_period")) {
@@ -248,7 +255,15 @@ function fixture(
 			if (state.failure === "source")
 				throw new Error("private-source-evidence");
 			if (text.includes('as "terminalCanonicalWorkflows"')) {
-				return { rows: [source(options.replaySource ?? options.source)] };
+				return {
+					rows: [
+						source(
+							options.sourceFromQuery?.(compiled) ??
+								options.replaySource ??
+								options.source,
+						),
+					],
+				};
 			}
 			if (text.includes('select id, organization_id as "organizationId"')) {
 				return { rows: [{ id: workPeriodId, organizationId }] };
@@ -369,7 +384,7 @@ function fixture(
 			diagnostics: "discard",
 		},
 	} satisfies ExecuteOrdinaryWorkPeriodSubmissionInput;
-	return { calls, compatibilityWriter, input };
+	return { calls, queries, compatibilityWriter, input };
 }
 
 beforeEach(() => {
@@ -420,6 +435,18 @@ function ordinarySubmissionKey(
 
 function ordinarySubmissionMarker() {
 	return { key: ordinarySubmissionKey(), submissionId };
+}
+
+function distinctMarkerBinding(
+	query: { sql: string; params: unknown[] },
+	field: "key" | "submissionId",
+) {
+	const match = query.sql.match(
+		new RegExp(`->> '${field}' is distinct from \\$(\\d+)`),
+	);
+	return match
+		? { found: true as const, value: query.params[Number(match[1]) - 1] }
+		: { found: false as const, value: undefined };
 }
 
 function markedAutoRequest(input: {
@@ -1263,6 +1290,65 @@ it("rejects malformed ordinary submission markers without invoking accessors", a
 		executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input),
 	).rejects.toThrow("Ordinary work-period submission failed");
 	expect(keyGetter).not.toHaveBeenCalled();
+});
+
+it.each([
+	["wrong key", { ...ordinarySubmissionMarker(), key: "wrong-submission-key" }],
+	[
+		"wrong submission token",
+		{
+			...ordinarySubmissionMarker(),
+			submissionId: "20000000-0000-4000-8000-000000000099",
+		},
+	],
+] as const)("rejects a well-shaped marked row with %s before historical auto fallback", async (_label, marker) => {
+	const historicalAuto = markedAutoRequest({
+		id: "40000000-0000-4000-8000-000000000081",
+		chainInstanceId: null,
+		stepOrder: null,
+		metadata: {
+			timeRequest: { kind: "manual_time_submission" },
+			autoApproval: { reason: "requester_is_approver" },
+		},
+	});
+	const terminalSource = {
+		approvalStatus: "approved",
+		canonicalApprovalState: "approved",
+		terminalCanonicalWorkflows: [],
+		terminalLegacyMarkedRequests: [],
+		historicalLegacyAutoRequests: [historicalAuto],
+	};
+	const fake = fixture({
+		sourceFromQuery: (query) => {
+			const keyBinding = distinctMarkerBinding(query, "key");
+			const tokenBinding = distinctMarkerBinding(query, "submissionId");
+			return {
+				...terminalSource,
+				hasMalformedLegacyMarker:
+					keyBinding.found &&
+					tokenBinding.found &&
+					(marker.key !== keyBinding.value ||
+						marker.submissionId !== tokenBinding.value),
+			};
+		},
+	});
+
+	await expect(
+		executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input),
+	).rejects.toThrow("Ordinary work-period submission failed");
+	const sourceQuery = fake.queries.find(({ sql }) =>
+		sql.includes('as "hasMalformedLegacyMarker"'),
+	);
+	expect(sourceQuery && distinctMarkerBinding(sourceQuery, "key")).toEqual({
+		found: true,
+		value: ordinarySubmissionKey(),
+	});
+	expect(
+		sourceQuery && distinctMarkerBinding(sourceQuery, "submissionId"),
+	).toEqual({ found: true, value: submissionId });
+	expect(sourceQuery?.sql).not.toContain(ordinarySubmissionKey());
+	expect(sourceQuery?.sql).not.toContain(submissionId);
+	expect(state.calls.some((call) => call.startsWith("finalize:"))).toBe(false);
 });
 
 it("rejects ambiguous historical unmarked auto rows rather than ordering them", async () => {

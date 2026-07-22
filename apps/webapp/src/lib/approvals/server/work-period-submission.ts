@@ -419,6 +419,8 @@ async function loadOrdinarySource(
 							or jsonb_typeof(request.metadata -> 'ordinarySubmission' -> 'submissionId') <> 'string'
 							or request.metadata -> 'ordinarySubmission' ->> 'submissionId' !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
 							or (select count(*) from jsonb_object_keys(request.metadata -> 'ordinarySubmission')) <> 2
+							or request.metadata -> 'ordinarySubmission' ->> 'key' is distinct from ${submissionKey}
+							or request.metadata -> 'ordinarySubmission' ->> 'submissionId' is distinct from ${input.submissionId}
 					end
 				limit 1
 			) as "hasMalformedLegacyMarker"
