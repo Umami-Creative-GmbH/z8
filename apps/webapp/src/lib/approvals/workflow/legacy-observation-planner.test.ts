@@ -1123,6 +1123,60 @@ describe("legacy approval observation planner", () => {
 		expect(serializedDisplay).not.toContain("chain-private-timezone");
 	});
 
+	it("keeps private ordinary work-period evidence out of display projections", async () => {
+		const planner = createLegacyApprovalObservationPlanner({
+			clock: { nowInstant: () => capturedAt },
+		});
+		const after = directState("pending");
+		after.source = {
+			organizationId,
+			workflowType: "manual_time_submission",
+			sourceType: "time_entry",
+			sourceId,
+		};
+		after.approvalRequest = {
+			...required(after.approvalRequest),
+			entityType: "time_entry",
+			metadata: { timeRequest: { kind: "manual_time_submission" } },
+		};
+		after.sourceSnapshot = {
+			timeRequest: { kind: "manual_time_submission" },
+			pendingChanges: "private-period-pending-changes",
+			internalRequestId: "private-ordinary-request-id",
+			diagnostics: "private-ordinary-diagnostics",
+		};
+		after.displaySnapshot = {
+			approvalStatus: "pending",
+			labels: { title: "Manual time submission" },
+			period: {
+				startAt: "2026-07-20T06:00:00Z",
+				endAt: "2026-07-20T14:00:00Z",
+				durationMinutes: 480,
+			},
+		};
+		const before = emptyState();
+		before.source = { ...after.source };
+
+		const input = transition(before, after, null);
+		input.source = { ...after.source };
+		const plan = await planner.plan(input);
+		const serializedDisplay = JSON.stringify({
+			displaySnapshot: plan.snapshot.displaySnapshot,
+			projection: plan.projection,
+		});
+
+		expect(plan.snapshot.contextSnapshot).toEqual(after.sourceSnapshot);
+		expect(plan.snapshot.displaySnapshot).toEqual(after.displaySnapshot);
+		expect(plan.projection.displayPayload).toEqual(after.displaySnapshot);
+		for (const privateValue of [
+			"private-period-pending-changes",
+			"private-ordinary-request-id",
+			"private-ordinary-diagnostics",
+		]) {
+			expect(serializedDisplay).not.toContain(privateValue);
+		}
+	});
+
 	it.each([
 		[
 			"foreign organization",
