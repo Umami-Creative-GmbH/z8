@@ -76,7 +76,7 @@ import {
 	finalizeTimeCorrectionTerminalInTransaction,
 } from "./time-correction-approvals";
 import type { ApprovalDbService, CurrentApprover } from "./types";
-import { finalizeOrdinaryWorkPeriodTerminalInTransaction } from "./work-period-approvals";
+import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "./work-period-approvals";
 
 const logger = createLogger("AbsenceApprovals");
 
@@ -1368,7 +1368,8 @@ function authenticatedAbsenceDecisionEffect(
 						deleteCancelledTimeCorrectionsInTransaction,
 				},
 				ordinaryWorkPeriod: {
-					finalizeTerminal: finalizeOrdinaryWorkPeriodTerminalInTransaction,
+					finalizeTerminal:
+						finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 				},
 			},
 			canManageApproval: createAbsenceApprovalManagementAuthorization({

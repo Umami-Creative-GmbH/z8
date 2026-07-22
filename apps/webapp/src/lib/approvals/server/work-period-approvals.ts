@@ -17,8 +17,12 @@ import {
 } from "@/lib/notifications/triggers";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
+	type FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
 	type FinalizeOrdinaryWorkPeriodTerminalInput,
 	type OrdinaryWorkPeriodApprovalKind,
+	type OrdinaryWorkPeriodFinalizerDatabase,
+	type OrdinaryWorkPeriodFinalizerDbService,
+	type OrdinaryWorkPeriodTerminalEvidence,
 	parseOrdinaryWorkPeriodWorkflowPayload,
 	type WorkPeriodApprovalResult,
 } from "../domain-adapters/work-period-contract";
@@ -60,7 +64,7 @@ export function decideWorkPeriodWithCurrentApproverInTransaction(
 				kind,
 				action,
 				reason ?? null,
-				"ordinary",
+				"manager",
 			),
 		undefined,
 		{ ...options, transactional: true },
@@ -114,6 +118,73 @@ function exactOwnDataValues(
 	return result;
 }
 
+function exactOwnDataValue(value: unknown, key: string): unknown {
+	if (
+		typeof value !== "object" ||
+		value === null ||
+		Array.isArray(value) ||
+		Object.getPrototypeOf(value) !== Object.prototype
+	) {
+		throw ordinaryWorkPeriodFinalizationConflict();
+	}
+	const descriptor = Object.getOwnPropertyDescriptor(value, key);
+	if (!descriptor?.enumerable || !("value" in descriptor)) {
+		throw ordinaryWorkPeriodFinalizationConflict();
+	}
+	return descriptor.value;
+}
+
+function validateTerminalEvidence(
+	input: FinalizeOrdinaryWorkPeriodTerminalInput,
+): OrdinaryWorkPeriodTerminalEvidence {
+	const evidenceValue = exactOwnDataValue(input, "evidence");
+	const mode = exactOwnDataValue(evidenceValue, "mode");
+	if (mode === "canonical") {
+		const evidence = exactOwnDataValues(evidenceValue, [
+			"mode",
+			"workflowId",
+			"payload",
+		]);
+		if (
+			typeof evidence.workflowId !== "string" ||
+			evidence.workflowId !== input.expectedApprovalWorkflowId
+		) {
+			throw ordinaryWorkPeriodFinalizationConflict();
+		}
+		const payload = parseOrdinaryWorkPeriodWorkflowPayload(
+			evidence.payload,
+			input.kind,
+		);
+		return { mode, workflowId: evidence.workflowId, payload };
+	}
+	if (mode === "legacy") {
+		const evidence = exactOwnDataValues(evidenceValue, [
+			"mode",
+			"approvalRequestId",
+			"requestMode",
+			"expectedStatus",
+		]);
+		if (
+			typeof evidence.approvalRequestId !== "string" ||
+			(evidence.requestMode !== "manager" &&
+				evidence.requestMode !== "requester_auto_completed") ||
+			(evidence.expectedStatus !== "approved" &&
+				evidence.expectedStatus !== "rejected") ||
+			(evidence.requestMode === "requester_auto_completed" &&
+				evidence.expectedStatus !== "approved")
+		) {
+			throw ordinaryWorkPeriodFinalizationConflict();
+		}
+		return {
+			mode,
+			approvalRequestId: evidence.approvalRequestId,
+			requestMode: evidence.requestMode,
+			expectedStatus: evidence.expectedStatus,
+		};
+	}
+	throw ordinaryWorkPeriodFinalizationConflict();
+}
+
 function validateOrdinaryRequestMetadata(
 	metadata: unknown,
 	input: Pick<
@@ -155,16 +226,12 @@ function validateOrdinaryRequestMetadata(
 	}
 }
 
-type OrdinaryFinalizationEvidenceExpectation =
-	| "ordinary"
-	| "requester_auto_completed";
-
 async function finalizeOrdinaryWorkPeriodTerminal(
 	input: FinalizeOrdinaryWorkPeriodTerminalInput,
-	evidenceExpectation: OrdinaryFinalizationEvidenceExpectation,
 ): Promise<WorkPeriodApprovalResult> {
 	const fail = ordinaryWorkPeriodFinalizationConflict;
-	const db = input.dbService.db as ApprovalDbService["db"];
+	const evidence = validateTerminalEvidence(input);
+	const db = input.dbService.db;
 	const periods = await db
 		.select({
 			id: workPeriod.id,
@@ -207,8 +274,8 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		!period.endTime ||
 		period.durationMinutes === null ||
 		period.approvalWorkflowId !== input.expectedApprovalWorkflowId ||
-		(input.expectedApprovalWorkflowId === null &&
-			!input.allowUnlinkedLegacySource)
+		(evidence.mode === "canonical" &&
+			period.approvalWorkflowId !== evidence.workflowId)
 	) {
 		throw fail();
 	}
@@ -270,67 +337,71 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 
 	const terminalStatus =
 		input.transition.kind === "approve" ? "approved" : "rejected";
-	const requests = await db
-		.select({
-			id: approvalRequest.id,
-			organizationId: approvalRequest.organizationId,
-			entityType: approvalRequest.entityType,
-			entityId: approvalRequest.entityId,
-			requestedBy: approvalRequest.requestedBy,
-			approverId: approvalRequest.approverId,
-			status: approvalRequest.status,
-			approvedAt: approvalRequest.approvedAt,
-			canonicalRecordId: approvalRequest.canonicalRecordId,
-			rejectionReason: approvalRequest.rejectionReason,
-			metadata: approvalRequest.metadata,
-		})
-		.from(approvalRequest)
-		.where(
-			and(
-				eq(approvalRequest.id, input.approvalRequestId),
-				eq(approvalRequest.organizationId, input.organizationId),
-				eq(approvalRequest.entityType, "time_entry"),
-				eq(approvalRequest.entityId, input.workPeriodId),
-				eq(approvalRequest.requestedBy, input.requesterEmployeeId),
-				eq(approvalRequest.status, terminalStatus),
-			),
-		)
-		.limit(2);
-	if (requests.length !== 1) throw fail();
-	const request = requests[0];
-	if (
-		!request ||
-		request.id !== input.approvalRequestId ||
-		request.organizationId !== input.organizationId ||
-		request.entityType !== "time_entry" ||
-		request.entityId !== input.workPeriodId ||
-		request.requestedBy !== input.requesterEmployeeId ||
-		request.status !== terminalStatus ||
-		(request.canonicalRecordId !== null &&
-			request.canonicalRecordId !== period.canonicalRecordId) ||
-		(input.transition.kind === "reject" &&
-			request.rejectionReason !== input.transition.reason)
-	) {
-		throw fail();
-	}
-	const persistedRequesterAutoCompleted =
-		request.status === "approved" &&
-		request.requestedBy === input.requesterEmployeeId &&
-		request.approverId === input.requesterEmployeeId &&
-		request.approvedAt instanceof Date &&
-		!Number.isNaN(request.approvedAt.getTime());
-	const requesterAutoCompleted =
-		evidenceExpectation === "requester_auto_completed";
-	if (requesterAutoCompleted !== persistedRequesterAutoCompleted) throw fail();
-	try {
-		validateOrdinaryRequestMetadata(request.metadata, {
-			expectedApprovalWorkflowId: input.expectedApprovalWorkflowId,
-			kind: input.kind,
-			organizationId: input.organizationId,
-			requesterAutoCompleted,
-		});
-	} catch {
-		throw fail();
+	if (evidence.mode === "legacy") {
+		if (evidence.expectedStatus !== terminalStatus) throw fail();
+		const requests = await db
+			.select({
+				id: approvalRequest.id,
+				organizationId: approvalRequest.organizationId,
+				entityType: approvalRequest.entityType,
+				entityId: approvalRequest.entityId,
+				requestedBy: approvalRequest.requestedBy,
+				approverId: approvalRequest.approverId,
+				status: approvalRequest.status,
+				approvedAt: approvalRequest.approvedAt,
+				canonicalRecordId: approvalRequest.canonicalRecordId,
+				rejectionReason: approvalRequest.rejectionReason,
+				metadata: approvalRequest.metadata,
+			})
+			.from(approvalRequest)
+			.where(
+				and(
+					eq(approvalRequest.id, evidence.approvalRequestId),
+					eq(approvalRequest.organizationId, input.organizationId),
+					eq(approvalRequest.entityType, "time_entry"),
+					eq(approvalRequest.entityId, input.workPeriodId),
+					eq(approvalRequest.requestedBy, input.requesterEmployeeId),
+					eq(approvalRequest.status, terminalStatus),
+				),
+			)
+			.limit(2);
+		if (requests.length !== 1) throw fail();
+		const request = requests[0];
+		if (
+			!request ||
+			request.id !== evidence.approvalRequestId ||
+			request.organizationId !== input.organizationId ||
+			request.entityType !== "time_entry" ||
+			request.entityId !== input.workPeriodId ||
+			request.requestedBy !== input.requesterEmployeeId ||
+			request.status !== terminalStatus ||
+			(request.canonicalRecordId !== null &&
+				request.canonicalRecordId !== period.canonicalRecordId) ||
+			(input.transition.kind === "reject" &&
+				request.rejectionReason !== input.transition.reason)
+		) {
+			throw fail();
+		}
+		const persistedRequesterAutoCompleted =
+			request.status === "approved" &&
+			request.requestedBy === input.requesterEmployeeId &&
+			request.approverId === input.requesterEmployeeId &&
+			request.approvedAt instanceof Date &&
+			!Number.isNaN(request.approvedAt.getTime());
+		const requesterAutoCompleted =
+			evidence.requestMode === "requester_auto_completed";
+		if (requesterAutoCompleted !== persistedRequesterAutoCompleted)
+			throw fail();
+		try {
+			validateOrdinaryRequestMetadata(request.metadata, {
+				expectedApprovalWorkflowId: input.expectedApprovalWorkflowId,
+				kind: input.kind,
+				organizationId: input.organizationId,
+				requesterAutoCompleted,
+			});
+		} catch {
+			throw fail();
+		}
 	}
 
 	const finalizedAt = dateFromInstant(input.finalizedAt);
@@ -421,21 +492,46 @@ export async function finalizeOrdinaryWorkPeriodTerminalInTransaction(
 	input: FinalizeOrdinaryWorkPeriodTerminalInput,
 ): Promise<WorkPeriodApprovalResult> {
 	try {
-		return await finalizeOrdinaryWorkPeriodTerminal(input, "ordinary");
+		return await finalizeOrdinaryWorkPeriodTerminal(input);
 	} catch {
 		throw ordinaryWorkPeriodFinalizationConflict();
 	}
 }
 
-async function finalizeOrdinaryWorkPeriodWithEvidenceExpectation(
-	input: FinalizeOrdinaryWorkPeriodTerminalInput,
-	evidenceExpectation: OrdinaryFinalizationEvidenceExpectation,
-): Promise<WorkPeriodApprovalResult> {
-	try {
-		return await finalizeOrdinaryWorkPeriodTerminal(input, evidenceExpectation);
-	} catch {
+function isOrdinaryWorkPeriodFinalizerDatabase(
+	value: unknown,
+): value is OrdinaryWorkPeriodFinalizerDatabase {
+	if (typeof value !== "object" || value === null) return false;
+	const candidate = value as Record<string, unknown>;
+	const query = candidate.query;
+	if (typeof query !== "object" || query === null) return false;
+	const employeeQuery = (query as Record<string, unknown>).employee;
+	return (
+		typeof candidate.select === "function" &&
+		typeof candidate.update === "function" &&
+		typeof candidate.insert === "function" &&
+		typeof employeeQuery === "object" &&
+		employeeQuery !== null &&
+		typeof (employeeQuery as Record<string, unknown>).findFirst === "function"
+	);
+}
+
+export function requireOrdinaryWorkPeriodFinalizerDbService(
+	dbService: FinalizeOrdinaryWorkPeriodTerminalAdapterInput["dbService"],
+): OrdinaryWorkPeriodFinalizerDbService {
+	if (!isOrdinaryWorkPeriodFinalizerDatabase(dbService.db)) {
 		throw ordinaryWorkPeriodFinalizationConflict();
 	}
+	return { db: dbService.db };
+}
+
+export async function finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction(
+	input: FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
+): Promise<WorkPeriodApprovalResult> {
+	return finalizeOrdinaryWorkPeriodTerminalInTransaction({
+		...input,
+		dbService: requireOrdinaryWorkPeriodFinalizerDbService(input.dbService),
+	});
 }
 
 function finalizeCurrentWorkPeriodDecision(
@@ -446,7 +542,7 @@ function finalizeCurrentWorkPeriodDecision(
 	kind: OrdinaryTimeApprovalKind,
 	action: "approve" | "reject",
 	reason: string | null,
-	evidenceExpectation: OrdinaryFinalizationEvidenceExpectation,
+	requestMode: "manager" | "requester_auto_completed",
 ) {
 	return Effect.gen(function* (_) {
 		const requestedBy = (approval as ApprovalWithRequester).requestedBy;
@@ -471,26 +567,27 @@ function finalizeCurrentWorkPeriodDecision(
 		return yield* _(
 			Effect.tryPromise({
 				try: () =>
-					finalizeOrdinaryWorkPeriodWithEvidenceExpectation(
-						{
-							dbService,
-							organizationId: approval.organizationId,
-							workPeriodId: entityId,
+					finalizeOrdinaryWorkPeriodTerminalInTransaction({
+						dbService,
+						organizationId: approval.organizationId,
+						workPeriodId: entityId,
+						expectedApprovalWorkflowId: source.approvalWorkflowId,
+						requesterEmployeeId: requestedBy,
+						actorEmployeeId: currentEmployee.id,
+						actorUserId: currentEmployee.userId,
+						kind,
+						evidence: {
+							mode: "legacy",
 							approvalRequestId: approval.id,
-							expectedApprovalWorkflowId: source.approvalWorkflowId,
-							requesterEmployeeId: requestedBy,
-							actorEmployeeId: currentEmployee.id,
-							actorUserId: currentEmployee.userId,
-							kind,
-							transition:
-								action === "approve"
-									? { kind: "approve", reason }
-									: { kind: "reject", reason: reason ?? "" },
-							finalizedAt: systemClock.nowInstant(),
-							allowUnlinkedLegacySource: source.approvalWorkflowId === null,
+							requestMode,
+							expectedStatus: action === "approve" ? "approved" : "rejected",
 						},
-						evidenceExpectation,
-					),
+						transition:
+							action === "approve"
+								? { kind: "approve", reason }
+								: { kind: "reject", reason: reason ?? "" },
+						finalizedAt: systemClock.nowInstant(),
+					}),
 				catch: () => conflict("Ordinary work-period finalization conflict"),
 			}),
 		);
@@ -557,7 +654,7 @@ export function approveWorkPeriodWithCurrentApproverEffect(
 				kind,
 				"approve",
 				null,
-				"ordinary",
+				"manager",
 			),
 		undefined,
 		{ ...options, transactional: true },
@@ -598,7 +695,7 @@ export function rejectWorkPeriodWithCurrentApproverEffect(
 				kind,
 				"reject",
 				reason,
-				"ordinary",
+				"manager",
 			),
 		undefined,
 		{ ...options, transactional: true },

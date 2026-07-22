@@ -8,6 +8,8 @@ import type {
 	ApprovalDomainAdapter,
 	ApprovalTerminalAdapterInput,
 } from "../domain-adapters/types";
+import { createOrdinaryWorkPeriodApprovalAdapter } from "../domain-adapters/work-period.adapter";
+import type { OrdinaryWorkPeriodApprovalSource } from "../domain-adapters/work-period-contract";
 import { getCutoverBehavior } from "./cutover";
 import type {
 	ApprovalCommandActorResolver,
@@ -1179,6 +1181,85 @@ describe("approval transition engine atomic orchestration", () => {
 				transition: { kind: "approve" },
 			}),
 		);
+	});
+
+	it.each([
+		["canonical", "approve"],
+		["canonical", "reject"],
+		["complete", "approve"],
+		["complete", "reject"],
+	] as const)("finalizes an ordinary %s %s before compatibility without legacy request evidence", async (mode, action) => {
+		let fixture: ReturnType<typeof engineFixture>;
+		const finalizeTerminal = vi.fn(async (input) => {
+			expect(fixture.calls).not.toContain("compatibility");
+			expect(input.evidence).toEqual({
+				mode: "canonical",
+				workflowId: engineIds.workflow,
+				payload: { timeRequest: { kind: "manual_time_submission" } },
+			});
+			return {
+				kind: "manual_time_submission" as const,
+				action,
+				reason: action === "reject" ? "policy conflict" : null,
+				period: {
+					id: engineIds.source,
+					organizationId: "org-1",
+					employeeId: ids.fromEmployee,
+					canonicalRecordId: "record-1",
+					startTime: new Date("2026-07-17T08:00:00Z"),
+					endTime: new Date("2026-07-17T16:00:00Z"),
+				},
+			};
+		});
+		const adapter = createOrdinaryWorkPeriodApprovalAdapter(
+			"manual_time_submission",
+			{ finalizeTerminal },
+		);
+		const snapshot = engineSnapshot({
+			workflowType: "manual_time_submission",
+			sourceType: "time_entry",
+			contextSnapshot: {
+				timeRequest: { kind: "manual_time_submission" },
+			},
+		});
+		const source = {
+			id: engineIds.source,
+			organizationId: "org-1",
+			employeeId: ids.fromEmployee,
+			canonicalRecordId: "record-1",
+			approvalWorkflowId: engineIds.workflow,
+			approvalStatus: "pending",
+			startTime: "2026-07-17T08:00:00Z",
+			endTime: "2026-07-17T16:00:00Z",
+			durationMinutes: 480,
+			payload: { timeRequest: { kind: "manual_time_submission" } },
+		} satisfies OrdinaryWorkPeriodApprovalSource;
+		fixture = engineFixture({ mode, adapter, snapshot, source });
+
+		await fixture.engine.execute(
+			engineRequest({
+				command:
+					action === "approve"
+						? {
+								type: "approve",
+								stageId: engineIds.stage,
+								assignmentId: engineIds.assignment,
+							}
+						: {
+								type: "reject",
+								stageId: engineIds.stage,
+								assignmentId: engineIds.assignment,
+								reason: "policy conflict",
+							},
+			}),
+		);
+
+		expect(finalizeTerminal).toHaveBeenCalledOnce();
+		if (mode === "canonical") {
+			expect(fixture.calls).toContain("compatibility");
+		} else {
+			expect(fixture.calls).not.toContain("compatibility");
+		}
 	});
 
 	it("deletes a cancelled source exactly once and does not repeat finalization on receipt replay", async () => {

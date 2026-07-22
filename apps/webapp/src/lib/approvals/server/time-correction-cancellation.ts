@@ -33,7 +33,7 @@ import {
 	finalizeTimeCorrectionTerminalInTransaction,
 	lockTimeCorrectionSubmissionSourceInTransaction,
 } from "./time-correction-approvals";
-import { finalizeOrdinaryWorkPeriodTerminalInTransaction } from "./work-period-approvals";
+import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "./work-period-approvals";
 
 export interface CancelPendingTimeCorrectionInput {
 	organizationId: string;
@@ -64,7 +64,8 @@ export async function cancelPendingTimeCorrection(
 				deleteCancelledCorrections: deleteCancelledTimeCorrectionsInTransaction,
 			},
 			ordinaryWorkPeriod: {
-				finalizeTerminal: finalizeOrdinaryWorkPeriodTerminalInTransaction,
+				finalizeTerminal:
+					finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 			},
 		},
 		canManageApproval: async () => false,

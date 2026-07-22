@@ -432,15 +432,18 @@ describe.each(
 			}),
 			organizationId,
 			workPeriodId: ids.period,
-			approvalRequestId: ids.request,
 			expectedApprovalWorkflowId: ids.workflow,
 			requesterEmployeeId: ids.employee,
 			actorEmployeeId: ids.actor,
 			actorUserId,
 			kind,
+			evidence: {
+				mode: "canonical",
+				workflowId: ids.workflow,
+				payload: { timeRequest: { kind } },
+			},
 			transition: { kind: action, reason },
 			finalizedAt,
-			allowUnlinkedLegacySource: false,
 		});
 		expect(result).toMatchObject({
 			organizationId,
@@ -461,16 +464,16 @@ describe.each(
 	it.each([
 		null,
 		"ambiguous",
-	] as const)("rejects %s terminal compatibility request evidence without calling the finalizer", async (failure) => {
+	] as const)("finalizes with canonical evidence when legacy stage evidence is %s", async (legacyEvidence) => {
 		const { adapter, context, finalizeTerminal } = await loadedContext(kind);
 		const terminalStage = {
 			...required(workflow(kind).stages[0]),
 			status: "approved" as const,
 			decidedAt: finalizedAt,
-			legacyApprovalRequestId: failure === null ? null : ids.request,
+			legacyApprovalRequestId: legacyEvidence === null ? null : ids.request,
 		};
 		const stages =
-			failure === "ambiguous"
+			legacyEvidence === "ambiguous"
 				? [
 						terminalStage,
 						{ ...terminalStage, id: "50000000-0000-4000-8000-000000000002" },
@@ -495,8 +498,16 @@ describe.each(
 				},
 				finalizedAt,
 			}),
-		).rejects.toThrow(/compatibility/i);
-		expect(finalizeTerminal).not.toHaveBeenCalled();
+		).resolves.toMatchObject({ terminalStatus: "approved" });
+		expect(finalizeTerminal).toHaveBeenCalledWith(
+			expect.objectContaining({
+				evidence: {
+					mode: "canonical",
+					workflowId: ids.workflow,
+					payload: { timeRequest: { kind } },
+				},
+			}),
+		);
 	});
 
 	it("projects only sanitized work-period display fields and search text", async () => {

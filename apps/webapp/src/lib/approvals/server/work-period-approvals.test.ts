@@ -17,6 +17,7 @@ vi.mock("@/lib/notifications/triggers", () => notificationMocks);
 
 const {
 	approveWorkPeriodWithCurrentApproverEffect,
+	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 	finalizeOrdinaryWorkPeriodTerminalInTransaction,
 	finalizeAutoCompletedWorkPeriodApprovalEffect,
 	rejectWorkPeriodWithCurrentApproverEffect,
@@ -232,15 +233,19 @@ function finalize(
 		dbService,
 		organizationId: "org-1",
 		workPeriodId: "period-1",
-		approvalRequestId: "approval-1",
 		expectedApprovalWorkflowId: "workflow-1",
 		requesterEmployeeId: "employee-1",
 		actorEmployeeId: "manager-1",
 		actorUserId: "manager-user-1",
 		kind: "manual_time_submission",
+		evidence: {
+			mode: "legacy",
+			approvalRequestId: "approval-1",
+			requestMode: "manager",
+			expectedStatus: "approved",
+		},
 		transition: { kind: "approve", reason: null },
 		finalizedAt: parseInstant("2026-07-15T10:00:00Z"),
-		allowUnlinkedLegacySource: false,
 		...overrides,
 	});
 }
@@ -408,6 +413,109 @@ describe("ordinary work-period approval finalizer", () => {
 		});
 	});
 
+	it.each([
+		["approve", "missing"],
+		["reject", "missing"],
+		["approve", "pending"],
+		["reject", "pending"],
+	] as const)("finalizes canonical %s with a %s approval request row", async (action, legacyRequest) => {
+		const dbService = createFinalizerDbService({
+			request:
+				legacyRequest === "missing"
+					? null
+					: { status: "pending", approvedAt: null },
+		});
+		await expect(
+			finalize(dbService, {
+				evidence: {
+					mode: "canonical",
+					workflowId: "workflow-1",
+					payload: { timeRequest: { kind: "manual_time_submission" } },
+				},
+				transition:
+					action === "approve"
+						? { kind: "approve", reason: null }
+						: { kind: "reject", reason: "policy conflict" },
+			}),
+		).resolves.toMatchObject({ action });
+		expect(dbService.updateSets).toHaveLength(2);
+	});
+
+	it.each([
+		[
+			"workflow",
+			{
+				mode: "canonical",
+				workflowId: "workflow-2",
+				payload: { timeRequest: { kind: "manual_time_submission" } },
+			},
+		],
+		[
+			"payload",
+			{
+				mode: "canonical",
+				workflowId: "workflow-1",
+				payload: { timeRequest: { kind: "policy_clock_out" } },
+			},
+		],
+	] as const)("rejects malformed canonical %s evidence before source mutation", async (_name, evidence) => {
+		const dbService = createFinalizerDbService({ request: null });
+		await expect(finalize(dbService, { evidence } as never)).rejects.toThrow(
+			"Ordinary work-period finalization conflict",
+		);
+		expect(dbService.updateSets).toHaveLength(0);
+		expect(dbService.insertedValues).toHaveLength(0);
+	});
+
+	it("rejects an execute-only workflow client before source mutation", async () => {
+		const execute = vi.fn();
+		await expect(
+			finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction({
+				dbService: { db: { execute } },
+				organizationId: "org-1",
+				workPeriodId: "period-1",
+				expectedApprovalWorkflowId: "workflow-1",
+				requesterEmployeeId: "employee-1",
+				actorEmployeeId: "manager-1",
+				actorUserId: "manager-user-1",
+				kind: "manual_time_submission",
+				evidence: {
+					mode: "canonical",
+					workflowId: "workflow-1",
+					payload: { timeRequest: { kind: "manual_time_submission" } },
+				},
+				transition: { kind: "approve", reason: null },
+				finalizedAt: parseInstant("2026-07-15T10:00:00Z"),
+			}),
+		).rejects.toThrow("Ordinary work-period finalization conflict");
+		expect(execute).not.toHaveBeenCalled();
+	});
+
+	it("accepts a full transaction client through the workflow bridge", async () => {
+		const dbService = createFinalizerDbService({ request: null });
+		await expect(
+			finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction({
+				...({
+					dbService,
+					organizationId: "org-1",
+					workPeriodId: "period-1",
+					expectedApprovalWorkflowId: "workflow-1",
+					requesterEmployeeId: "employee-1",
+					actorEmployeeId: "manager-1",
+					actorUserId: "manager-user-1",
+					kind: "manual_time_submission",
+					evidence: {
+						mode: "canonical",
+						workflowId: "workflow-1",
+						payload: { timeRequest: { kind: "manual_time_submission" } },
+					},
+					transition: { kind: "approve", reason: null },
+					finalizedAt: parseInstant("2026-07-15T10:00:00Z"),
+				} as never),
+			}),
+		).resolves.toMatchObject({ action: "approve" });
+	});
+
 	it("rejects without mutating source or canonical time facts", async () => {
 		const dbService = createFinalizerDbService({
 			request: {
@@ -423,6 +531,12 @@ describe("ordinary work-period approval finalizer", () => {
 
 		await finalize(dbService, {
 			kind: "policy_clock_out",
+			evidence: {
+				mode: "legacy",
+				approvalRequestId: "approval-1",
+				requestMode: "manager",
+				expectedStatus: "rejected",
+			},
 			transition: { kind: "reject", reason: "Outside scheduled hours" },
 		});
 
@@ -478,7 +592,6 @@ describe("ordinary work-period approval finalizer", () => {
 		await expect(
 			finalize(dbService, {
 				expectedApprovalWorkflowId: null,
-				allowUnlinkedLegacySource: true,
 			}),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
 		expect(dbService.updateSets).toHaveLength(0);
@@ -509,7 +622,7 @@ describe("ordinary work-period approval finalizer", () => {
 		expect(dbService.updateSets).toHaveLength(0);
 	});
 
-	it("allows a verified unlinked legacy source only when explicitly enabled", async () => {
+	it("allows an unlinked source only with explicit legacy evidence", async () => {
 		const denied = createFinalizerDbService({
 			period: { approvalWorkflowId: null },
 			request: {
@@ -517,7 +630,14 @@ describe("ordinary work-period approval finalizer", () => {
 			},
 		});
 		await expect(
-			finalize(denied, { expectedApprovalWorkflowId: null }),
+			finalize(denied, {
+				expectedApprovalWorkflowId: null,
+				evidence: {
+					mode: "canonical",
+					workflowId: "workflow-1",
+					payload: { timeRequest: { kind: "manual_time_submission" } },
+				},
+			}),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
 
 		const allowed = createFinalizerDbService({
@@ -529,7 +649,6 @@ describe("ordinary work-period approval finalizer", () => {
 		await expect(
 			finalize(allowed, {
 				expectedApprovalWorkflowId: null,
-				allowUnlinkedLegacySource: true,
 			}),
 		).resolves.toMatchObject({ action: "approve" });
 	});
@@ -546,7 +665,6 @@ describe("ordinary work-period approval finalizer", () => {
 		await expect(
 			finalize(dbService, {
 				expectedApprovalWorkflowId: null,
-				allowUnlinkedLegacySource: true,
 			}),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
 	});
@@ -580,7 +698,6 @@ describe("ordinary work-period approval finalizer", () => {
 		await expect(
 			finalize(dbService, {
 				expectedApprovalWorkflowId: null,
-				allowUnlinkedLegacySource: true,
 			}),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
 	});
@@ -608,7 +725,6 @@ describe("ordinary work-period approval finalizer", () => {
 		await expect(
 			finalize(dbService, {
 				expectedApprovalWorkflowId: null,
-				allowUnlinkedLegacySource: true,
 			}),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
 	});
@@ -634,7 +750,6 @@ describe("ordinary work-period approval finalizer", () => {
 		await expect(
 			finalize(dbService, {
 				expectedApprovalWorkflowId: null,
-				allowUnlinkedLegacySource: true,
 			}),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
 		expect(reasonGetter).not.toHaveBeenCalled();
@@ -649,7 +764,6 @@ describe("ordinary work-period approval finalizer", () => {
 		await expect(
 			finalize(dbService, {
 				expectedApprovalWorkflowId: null,
-				allowUnlinkedLegacySource: true,
 			}),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
 	});
@@ -731,7 +845,6 @@ describe("ordinary work-period approval finalizer", () => {
 		await expect(
 			finalize(dbService, {
 				expectedApprovalWorkflowId: null,
-				allowUnlinkedLegacySource: true,
 			}),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
 	});

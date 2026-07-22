@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { compareInstants, instantFromDate } from "@/lib/datetime/temporal-core";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import type {
 	ApprovalSourceIdentity,
 	ApprovalWorkflowSnapshot,
@@ -13,19 +13,16 @@ import type {
 	ApprovalTerminalFinalizationResult,
 } from "./types";
 import {
-	type FinalizeOrdinaryWorkPeriodTerminalInput,
+	type FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
 	type OrdinaryWorkPeriodApprovalKind,
 	type OrdinaryWorkPeriodApprovalSource,
 	parseOrdinaryWorkPeriodWorkflowPayload,
 	type WorkPeriodApprovalResult,
 } from "./work-period-contract";
 
-const CANONICAL_UUID =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-
 export interface OrdinaryWorkPeriodApprovalAdapterDependencies {
 	finalizeTerminal(
-		input: FinalizeOrdinaryWorkPeriodTerminalInput,
+		input: FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
 	): Promise<WorkPeriodApprovalResult>;
 }
 
@@ -162,30 +159,6 @@ function validateContext(
 
 function sameDate(left: Date, right: Date): boolean {
 	return left.getTime() === right.getTime();
-}
-
-function terminalApprovalRequestId(
-	input: ApprovalTerminalAdapterInput<OrdinaryWorkPeriodApprovalSource>,
-): string {
-	const completedAt = input.workflow.completedAt;
-	if (!completedAt) {
-		return fail("Ordinary work-period compatibility evidence is invalid");
-	}
-	const terminalStages = input.workflow.stages.filter(
-		(stage) =>
-			stage.status === input.transition.to &&
-			stage.decidedAt !== null &&
-			compareInstants(stage.decidedAt, completedAt) === 0,
-	);
-	const legacyApprovalRequestId = terminalStages[0]?.legacyApprovalRequestId;
-	if (
-		terminalStages.length !== 1 ||
-		typeof legacyApprovalRequestId !== "string" ||
-		!CANONICAL_UUID.test(legacyApprovalRequestId)
-	) {
-		return fail("Ordinary work-period compatibility evidence is invalid");
-	}
-	return legacyApprovalRequestId;
 }
 
 function terminalResult(
@@ -385,7 +358,7 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 		async finalizeTerminal(input) {
 			await this.preflightTerminal(input);
 			if (input.actor.kind !== "employee" || !input.actor.userId) return fail();
-			const approvalRequestId = terminalApprovalRequestId(input);
+			const payload = payloadFromWorkflow(input.workflow, kind);
 			const transition =
 				input.transition.kind === "approve"
 					? { kind: "approve" as const, reason: input.transition.reason }
@@ -396,15 +369,18 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 				dbService: input.dbService,
 				organizationId: input.organizationId,
 				workPeriodId: input.source.id,
-				approvalRequestId,
 				expectedApprovalWorkflowId: input.workflow.id,
 				requesterEmployeeId: input.source.employeeId,
 				actorEmployeeId: input.actor.employeeId,
 				actorUserId: input.actor.userId,
 				kind,
+				evidence: {
+					mode: "canonical",
+					workflowId: input.workflow.id,
+					payload,
+				},
 				transition,
 				finalizedAt: input.finalizedAt,
-				allowUnlinkedLegacySource: false,
 			});
 			return terminalResult(kind, input);
 		},

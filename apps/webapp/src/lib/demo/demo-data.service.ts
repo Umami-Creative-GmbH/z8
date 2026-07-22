@@ -54,7 +54,7 @@ import {
 	insertTimeCorrectionSourceEntry,
 } from "@/lib/approvals/server/time-correction-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
-import { finalizeOrdinaryWorkPeriodTerminalInTransaction } from "@/lib/approvals/server/work-period-approvals";
+import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
 import { deriveTimeCorrectionRowId } from "@/lib/approvals/workflow/identity";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
@@ -1024,7 +1024,8 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 				deleteCancelledCorrections: deleteCancelledTimeCorrectionsInTransaction,
 			},
 			ordinaryWorkPeriod: {
-				finalizeTerminal: finalizeOrdinaryWorkPeriodTerminalInTransaction,
+				finalizeTerminal:
+					finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 			},
 		},
 		canManageApproval: async () => false,

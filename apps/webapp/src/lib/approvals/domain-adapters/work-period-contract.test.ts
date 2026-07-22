@@ -1,8 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
+import type { ApprovalDbService } from "../workflow/ports";
 import {
+	type FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
+	type FinalizeOrdinaryWorkPeriodTerminalInput,
 	ORDINARY_WORK_PERIOD_APPROVAL_KINDS,
+	type OrdinaryWorkPeriodFinalizerDatabase,
 	parseOrdinaryWorkPeriodWorkflowPayload,
 } from "./work-period-contract";
 
@@ -15,6 +19,15 @@ describe("ordinary work-period workflow contract", () => {
 			const source = readFileSync(join(process.cwd(), relativePath), "utf8");
 			expect(source).not.toMatch(/from ["'][^"']*server\//);
 		}
+	});
+
+	it("separates the workflow transaction bridge from the full Drizzle finalizer capability", () => {
+		expectTypeOf<
+			FinalizeOrdinaryWorkPeriodTerminalAdapterInput["dbService"]
+		>().toEqualTypeOf<ApprovalDbService>();
+		expectTypeOf<
+			FinalizeOrdinaryWorkPeriodTerminalInput["dbService"]["db"]
+		>().toEqualTypeOf<OrdinaryWorkPeriodFinalizerDatabase>();
 	});
 
 	it.each(

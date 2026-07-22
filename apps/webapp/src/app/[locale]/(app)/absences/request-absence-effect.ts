@@ -44,7 +44,7 @@ import {
 	finalizeTimeCorrectionTerminalInTransaction,
 } from "@/lib/approvals/server/time-correction-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
-import { finalizeOrdinaryWorkPeriodTerminalInTransaction } from "@/lib/approvals/server/work-period-approvals";
+import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import {
 	ApprovalWorkflowStartError,
@@ -153,7 +153,8 @@ function createDefaultAbsenceSubmissionApprovalLifecycle(
 				deleteCancelledCorrections: deleteCancelledTimeCorrectionsInTransaction,
 			},
 			ordinaryWorkPeriod: {
-				finalizeTerminal: finalizeOrdinaryWorkPeriodTerminalInTransaction,
+				finalizeTerminal:
+					finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 			},
 		},
 		canManageApproval: async ({ organizationId, actorEmployeeId }) => {

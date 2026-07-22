@@ -1,3 +1,4 @@
+import type { db } from "@/db";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ApprovalDbService } from "../workflow/ports";
 
@@ -40,21 +41,50 @@ export interface WorkPeriodApprovalResult {
 	};
 }
 
-export interface FinalizeOrdinaryWorkPeriodTerminalInput {
-	dbService: ApprovalDbService;
+export type OrdinaryWorkPeriodFinalizerDatabase =
+	| typeof db
+	| Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+export interface OrdinaryWorkPeriodFinalizerDbService {
+	db: OrdinaryWorkPeriodFinalizerDatabase;
+}
+
+export type OrdinaryWorkPeriodTerminalEvidence =
+	| {
+			mode: "legacy";
+			approvalRequestId: string;
+			requestMode: "manager" | "requester_auto_completed";
+			expectedStatus: "approved" | "rejected";
+	  }
+	| {
+			mode: "canonical";
+			workflowId: string;
+			payload: Readonly<OrdinaryWorkPeriodWorkflowPayload>;
+	  };
+
+interface FinalizeOrdinaryWorkPeriodTerminalFields {
 	organizationId: string;
 	workPeriodId: string;
-	approvalRequestId: string;
 	expectedApprovalWorkflowId: string | null;
 	requesterEmployeeId: string;
 	actorEmployeeId: string;
 	actorUserId: string;
 	kind: OrdinaryWorkPeriodApprovalKind;
+	evidence: OrdinaryWorkPeriodTerminalEvidence;
 	transition:
 		| { kind: "approve"; reason: string | null }
 		| { kind: "reject"; reason: string };
 	finalizedAt: Instant;
-	allowUnlinkedLegacySource: boolean;
+}
+
+export interface FinalizeOrdinaryWorkPeriodTerminalInput
+	extends FinalizeOrdinaryWorkPeriodTerminalFields {
+	dbService: OrdinaryWorkPeriodFinalizerDbService;
+}
+
+export interface FinalizeOrdinaryWorkPeriodTerminalAdapterInput
+	extends FinalizeOrdinaryWorkPeriodTerminalFields {
+	dbService: ApprovalDbService;
 }
 
 function readExactDataProperty(value: unknown, key: string): unknown {
