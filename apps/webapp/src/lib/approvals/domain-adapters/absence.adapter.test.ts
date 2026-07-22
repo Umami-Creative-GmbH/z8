@@ -595,6 +595,14 @@ describe("absence approval adapter", () => {
 				workflowType: "time_correction",
 				sourceType: "time_entry",
 			} as never,
+			manualTimeSubmission: {
+				workflowType: "manual_time_submission",
+				sourceType: "time_entry",
+			} as never,
+			policyClockOut: {
+				workflowType: "policy_clock_out",
+				sourceType: "time_entry",
+			} as never,
 		});
 		const authorization =
 			await registry.authorizeApprovedCancellation(approvedContext);

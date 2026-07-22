@@ -11,6 +11,10 @@ import {
 	type TimeCorrectionApprovalAdapterDependencies,
 } from "../domain-adapters/time-correction.adapter";
 import type { ApprovalTerminalFinalizationResult } from "../domain-adapters/types";
+import {
+	createOrdinaryWorkPeriodApprovalAdapter,
+	type OrdinaryWorkPeriodApprovalAdapterDependencies,
+} from "../domain-adapters/work-period.adapter";
 import { createLegacyApprovalRowWriter } from "./compatibility-writer";
 import { createLegacyApprovalObservationPlanner } from "./legacy-observation-planner";
 import type {
@@ -435,6 +439,7 @@ export function createProductionApprovalWorkflowRuntime(input: {
 	adapters: {
 		absence: AbsenceApprovalAdapterDependencies;
 		timeCorrection: TimeCorrectionApprovalAdapterDependencies;
+		ordinaryWorkPeriod: OrdinaryWorkPeriodApprovalAdapterDependencies;
 	};
 	canManageApproval: Parameters<
 		typeof createApprovalWorkflowRuntime
@@ -450,6 +455,14 @@ export function createProductionApprovalWorkflowRuntime(input: {
 			absence: createAbsenceApprovalAdapter(input.adapters.absence),
 			timeCorrection: createTimeCorrectionApprovalAdapter(
 				input.adapters.timeCorrection,
+			),
+			manualTimeSubmission: createOrdinaryWorkPeriodApprovalAdapter(
+				"manual_time_submission",
+				input.adapters.ordinaryWorkPeriod,
+			),
+			policyClockOut: createOrdinaryWorkPeriodApprovalAdapter(
+				"policy_clock_out",
+				input.adapters.ordinaryWorkPeriod,
 			),
 		}),
 		canManageApproval: input.canManageApproval,

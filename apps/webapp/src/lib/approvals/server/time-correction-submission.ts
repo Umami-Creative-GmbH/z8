@@ -43,6 +43,7 @@ import {
 	type TimeCorrectionPostCommitEffects,
 } from "@/lib/approvals/server/time-correction-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import { finalizeOrdinaryWorkPeriodTerminalInTransaction } from "@/lib/approvals/server/work-period-approvals";
 import { deriveTimeCorrectionRowId } from "@/lib/approvals/workflow/identity";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import {
@@ -567,6 +568,9 @@ function createCorrectionRuntime(dbService: ApprovalDbService) {
 				finalizeTimeCorrectionTerminal:
 					finalizeTimeCorrectionTerminalInTransaction,
 				deleteCancelledCorrections: deleteCancelledTimeCorrectionsInTransaction,
+			},
+			ordinaryWorkPeriod: {
+				finalizeTerminal: finalizeOrdinaryWorkPeriodTerminalInTransaction,
 			},
 		},
 		canManageApproval: async () => false,

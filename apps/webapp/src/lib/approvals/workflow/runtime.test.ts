@@ -163,7 +163,7 @@ describe("approval workflow runtime", () => {
 		expect(createProductionApprovalWorkflowRuntime).toBeTypeOf("function");
 	});
 
-	it("composes both migrated production adapters without server imports", async () => {
+	it("composes all four migrated production adapters without server imports", async () => {
 		let registered: ApprovalDomainAdapterRegistry | undefined;
 		const runtime = createProductionApprovalWorkflowRuntime({
 			db: {
@@ -185,6 +185,14 @@ describe("approval workflow runtime", () => {
 					}),
 					deleteCancelledCorrections: async () => undefined,
 				},
+				ordinaryWorkPeriod: {
+					finalizeTerminal: async () => ({
+						kind: "manual_time_submission",
+						action: "approve",
+						reason: null,
+						period: {} as never,
+					}),
+				},
 			},
 			canManageApproval: async () => false,
 			clock: { nowInstant: () => now },
@@ -201,9 +209,15 @@ describe("approval workflow runtime", () => {
 			workflowType: "time_correction",
 			sourceType: "time_entry",
 		});
-		await expect(
-			registered?.get("manual_time_submission").loadSource({} as never),
-		).rejects.toMatchObject({ name: "ApprovalDomainNotMigratedError" });
+		for (const workflowType of [
+			"manual_time_submission",
+			"policy_clock_out",
+		] as const) {
+			expect(registered?.get(workflowType)).toMatchObject({
+				workflowType,
+				sourceType: "time_entry",
+			});
+		}
 	});
 
 	it("composes one repository runtime with the production transaction-bound dependencies", async () => {

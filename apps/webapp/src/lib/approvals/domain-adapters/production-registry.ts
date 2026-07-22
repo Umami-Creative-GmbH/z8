@@ -1,6 +1,6 @@
-import type { OrdinaryWorkPeriodApprovalSource } from "./work-period-contract";
 import { createApprovalDomainAdapterRegistry } from "./registry";
 import type { ApprovalDomainAdapter } from "./types";
+import type { OrdinaryWorkPeriodApprovalSource } from "./work-period-contract";
 
 export class ApprovalDomainNotMigratedError extends Error {
 	readonly workflowType: string;
@@ -39,6 +39,8 @@ function notMigratedAdapter<TSource>(
 export function createProductionApprovalDomainAdapterRegistry(input: {
 	absence: ApprovalDomainAdapter<unknown>;
 	timeCorrection: ApprovalDomainAdapter<unknown>;
+	manualTimeSubmission: ApprovalDomainAdapter<OrdinaryWorkPeriodApprovalSource>;
+	policyClockOut: ApprovalDomainAdapter<OrdinaryWorkPeriodApprovalSource>;
 }) {
 	if (
 		input.absence.workflowType !== "absence" ||
@@ -54,17 +56,27 @@ export function createProductionApprovalDomainAdapterRegistry(input: {
 			"Adapter registration mismatch for time_correction/time_entry",
 		);
 	}
+	if (
+		input.manualTimeSubmission.workflowType !== "manual_time_submission" ||
+		input.manualTimeSubmission.sourceType !== "time_entry"
+	) {
+		throw new Error(
+			"Adapter registration mismatch for manual_time_submission/time_entry",
+		);
+	}
+	if (
+		input.policyClockOut.workflowType !== "policy_clock_out" ||
+		input.policyClockOut.sourceType !== "time_entry"
+	) {
+		throw new Error(
+			"Adapter registration mismatch for policy_clock_out/time_entry",
+		);
+	}
 	return createApprovalDomainAdapterRegistry({
 		absence: input.absence,
 		time_correction: input.timeCorrection,
-		manual_time_submission: notMigratedAdapter<OrdinaryWorkPeriodApprovalSource>(
-			"manual_time_submission",
-			"time_entry",
-		),
-		policy_clock_out: notMigratedAdapter<OrdinaryWorkPeriodApprovalSource>(
-			"policy_clock_out",
-			"time_entry",
-		),
+		manual_time_submission: input.manualTimeSubmission,
+		policy_clock_out: input.policyClockOut,
 		travel_expense: notMigratedAdapter(
 			"travel_expense",
 			"travel_expense_claim",

@@ -18,6 +18,7 @@ import type {
 	ApprovalDomainAdapter,
 	ApprovalDomainAdapterContext,
 } from "./types";
+import type { OrdinaryWorkPeriodApprovalSource } from "./work-period-contract";
 
 const organizationId = "org-1";
 const workflowId = "10000000-0000-4000-8000-000000000001";
@@ -87,6 +88,14 @@ describe("approval domain adapter registry", () => {
 					sourceType: "absence_entry_copy",
 				},
 				timeCorrection: adapter("time_correction", false),
+				manualTimeSubmission: {
+					...adapter("manual_time_submission", false),
+					sourceType: "time_entry",
+				} as ApprovalDomainAdapter<OrdinaryWorkPeriodApprovalSource>,
+				policyClockOut: {
+					...adapter("policy_clock_out", false),
+					sourceType: "time_entry",
+				} as ApprovalDomainAdapter<OrdinaryWorkPeriodApprovalSource>,
 			}),
 		).toThrow(/registration/i);
 	});
@@ -103,6 +112,14 @@ describe("approval domain adapter registry", () => {
 				...adapter("time_correction", false),
 				sourceType: "time_entry",
 			},
+			manualTimeSubmission: {
+				...adapter("manual_time_submission", false),
+				sourceType: "time_entry",
+			} as ApprovalDomainAdapter<OrdinaryWorkPeriodApprovalSource>,
+			policyClockOut: {
+				...adapter("policy_clock_out", false),
+				sourceType: "time_entry",
+			} as ApprovalDomainAdapter<OrdinaryWorkPeriodApprovalSource>,
 		});
 		const absenceContext = {
 			...context("absence"),

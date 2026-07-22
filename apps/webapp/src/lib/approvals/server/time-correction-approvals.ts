@@ -95,6 +95,7 @@ import type {
 } from "./types";
 import {
 	decideWorkPeriodWithCurrentApproverInTransaction,
+	finalizeOrdinaryWorkPeriodTerminalInTransaction,
 	notifyWorkPeriodApprovalAfterCommit,
 	type WorkPeriodApprovalResult,
 } from "./work-period-approvals";
@@ -4103,6 +4104,9 @@ export function decideTimeCorrectionWithStableTargetEffect(
 							finalizeTimeCorrectionTerminalInTransaction,
 						deleteCancelledCorrections:
 							deleteCancelledTimeCorrectionsInTransaction,
+					},
+					ordinaryWorkPeriod: {
+						finalizeTerminal: finalizeOrdinaryWorkPeriodTerminalInTransaction,
 					},
 				},
 				canManageApproval: async (authorization) => {
