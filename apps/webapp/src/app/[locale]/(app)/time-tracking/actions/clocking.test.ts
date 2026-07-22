@@ -16,6 +16,7 @@ const mockState = vi.hoisted(() => ({
 	sendClockOutApprovalNotifications: vi.fn(),
 	sendClockOutApprovedNotification: vi.fn(),
 	createManualEntryApprovalRequest: vi.fn(),
+	executeOrdinarySubmission: vi.fn(),
 	sendManualEntryApprovalNotifications: vi.fn(),
 	sendManualEntryApprovedNotification: vi.fn(),
 	transactionOpen: false,
@@ -113,6 +114,26 @@ vi.mock("@/lib/time-tracking/clocking-service", () => ({
 		clockIn: (...args: unknown[]) => mockState.clockingClockIn(...args),
 		clockOut: (...args: unknown[]) => mockState.clockingClockOut(...args),
 	},
+}));
+
+vi.mock("@/lib/approvals/server/work-period-approvals", () => ({
+	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction: vi.fn(),
+}));
+
+vi.mock("@/lib/approvals/server/work-period-submission", () => ({
+	executeOrdinaryWorkPeriodSubmissionInTransaction:
+		mockState.executeOrdinarySubmission,
+}));
+
+vi.mock("@/lib/approvals/workflow/runtime", () => ({
+	createProductionApprovalWorkflowRuntime: () => ({
+		repository: {
+			withTransaction: (operation: (context: unknown) => Promise<unknown>) =>
+				mockState.transaction((tx: unknown) =>
+					operation({ dbService: { db: tx } }),
+				),
+		},
+	}),
 }));
 
 vi.mock("../actions.canonical", () => ({
@@ -377,13 +398,24 @@ describe("clockOut", () => {
 		});
 		mockState.sendClockOutApprovalNotifications.mockResolvedValue(undefined);
 		mockState.sendClockOutApprovedNotification.mockResolvedValue(undefined);
+		mockState.executeOrdinarySubmission.mockImplementation(async (input) => {
+			const result = await mockState.createClockOutApprovalRequest(input);
+			return {
+				result,
+				postCommit: {
+					disposition: "dispatch",
+					event: result.kind === "auto_completed" ? "approved" : "pending",
+					approverEmployeeId: input.defaultApproverId,
+				},
+			};
+		});
 		mockState.clockingClockOut.mockImplementation(async (input) => {
 			const activePeriod = {
 				id: "period-1",
 				startTime: new Date("2026-05-04T09:00:00.000Z"),
 			};
 			const durationMinutes = 60;
-			const transaction = {};
+			const transaction = input.transaction;
 			const periodPatch = await input.beforePeriodClose?.({
 				transaction,
 				activePeriod,
@@ -461,17 +493,21 @@ describe("clockOut", () => {
 				}),
 			}),
 		);
-		expect(mockState.createClockOutApprovalRequest).toHaveBeenCalledWith(
-			{
+		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
+			expect.objectContaining({
 				workPeriodId: "period-1",
-				employeeId: "employee-1",
-				managerId: "manager-1",
+				requesterEmployeeId: "employee-1",
+				defaultApproverId: "manager-1",
 				organizationId: "org-1",
-				startTime: new Date("2026-05-04T09:00:00.000Z"),
-				endTime: new Date("2026-05-04T10:00:00.000Z"),
-				durationMinutes: 60,
-			},
-			expect.objectContaining({ notify: false, dbService: expect.anything() }),
+				kind: "policy_clock_out",
+				dbService: expect.anything(),
+				context: expect.anything(),
+			}),
+		);
+		const submission = mockState.executeOrdinarySubmission.mock.calls[0][0];
+		expect(submission.dbService.db).toBe(submission.context.dbService.db);
+		expect(mockState.clockingClockOut.mock.calls[0][0].transaction).toBe(
+			submission.context.dbService.db,
 		);
 	});
 
@@ -489,6 +525,45 @@ describe("clockOut", () => {
 		expect(result.success).toBe(true);
 		expect(result.success && result.data.pendingApproval).toBe(false);
 		expect(mockState.createClockOutApprovalRequest).toHaveBeenCalledOnce();
+	});
+
+	it("keeps committed clock-out success when post-commit notification fails", async () => {
+		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
+		mockState.sendClockOutApprovalNotifications.mockRejectedValueOnce(
+			new Error("notification unavailable"),
+		);
+
+		const result = await clockOut();
+
+		expect(result.success).toBe(true);
+		expect(mockState.logger.error).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				workPeriodId: "period-1",
+			}),
+			"Failed to dispatch clock-out approval notification after commit",
+		);
+	});
+
+	it("does not repeat post-commit effects for an observed clock-out replay", async () => {
+		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
+		mockState.executeOrdinarySubmission.mockResolvedValueOnce({
+			result: { kind: "default_created", approvalRequestId: "approval-1" },
+			postCommit: {
+				disposition: "observe",
+				event: "pending",
+				approverEmployeeId: "manager-1",
+			},
+		});
+
+		const result = await clockOut();
+
+		expect(result.success).toBe(true);
+		expect(mockState.sendClockOutApprovalNotifications).not.toHaveBeenCalled();
+		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
+		expect(mockState.checkComplianceAfterClockOut).not.toHaveBeenCalled();
+		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
+		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 	});
 
 	it("rejects approval-required live clock-out when no manager link resolves", async () => {
@@ -628,7 +703,7 @@ describe("clockOut", () => {
 					startTime: new Date("2026-05-04T09:00:00.000Z"),
 				};
 				const durationMinutes = 60;
-				const transaction = {};
+				const transaction = input.transaction;
 				const periodPatch = await input.beforePeriodClose?.({
 					transaction,
 					activePeriod,
@@ -773,6 +848,17 @@ describe("createManualTimeEntry", () => {
 				})),
 			}),
 		);
+		mockState.executeOrdinarySubmission.mockImplementation(async (input) => {
+			const result = await mockState.createManualEntryApprovalRequest(input);
+			return {
+				result,
+				postCommit: {
+					disposition: "dispatch",
+					event: result.kind === "auto_completed" ? "approved" : "pending",
+					approverEmployeeId: input.defaultApproverId,
+				},
+			};
+		});
 	});
 
 	it("fails closed for approval-required manual entries when no approver resolves", async () => {
@@ -805,9 +891,8 @@ describe("createManualTimeEntry", () => {
 			success: false,
 			error: "No manager assigned to approve time changes",
 		});
-		expect(mockState.createManualEntryApprovalRequest).toHaveBeenCalledWith(
-			expect.objectContaining({ managerId: null }),
-			expect.objectContaining({ notify: false, dbService: expect.anything() }),
+		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
+			expect.objectContaining({ defaultApproverId: null }),
 		);
 	});
 
@@ -1209,14 +1294,14 @@ describe("createManualTimeEntry", () => {
 		});
 
 		expect(result.success).toBe(true);
-		expect(mockState.createManualEntryApprovalRequest).toHaveBeenCalledWith(
+		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
 			expect.objectContaining({
 				workPeriodId: "period-1",
-				employeeId: "employee-1",
-				managerId: "manager-1",
+				requesterEmployeeId: "employee-1",
+				defaultApproverId: "manager-1",
 				organizationId: "org-1",
+				kind: "manual_time_submission",
 			}),
-			expect.objectContaining({ notify: false, dbService: expect.anything() }),
 		);
 		expect(
 			mockState.sendManualEntryApprovalNotifications,
@@ -1252,9 +1337,8 @@ describe("createManualTimeEntry", () => {
 			success: true,
 			data: { workPeriodId: "period-1", requiresApproval: true },
 		});
-		expect(mockState.createManualEntryApprovalRequest).toHaveBeenCalledWith(
-			expect.objectContaining({ managerId: null }),
-			expect.objectContaining({ notify: false, dbService: expect.anything() }),
+		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
+			expect.objectContaining({ defaultApproverId: null }),
 		);
 		expect(mockState.insertValues).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -1301,9 +1385,8 @@ describe("createManualTimeEntry", () => {
 			success: true,
 			data: { requiresApproval: false },
 		});
-		expect(mockState.createManualEntryApprovalRequest).toHaveBeenCalledWith(
+		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
 			expect.objectContaining({ workPeriodId: "period-1" }),
-			expect.objectContaining({ notify: false, dbService: expect.anything() }),
 		);
 		expect(
 			mockState.sendManualEntryApprovedNotification,
@@ -1314,6 +1397,28 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.calculateAndPersistSurcharges).toHaveBeenCalledWith(
 			"period-1",
 			"org-1",
+		);
+	});
+
+	it("keeps committed manual-entry success when notification fails", async () => {
+		mockState.sendManualEntryApprovalNotifications.mockRejectedValueOnce(
+			new Error("notification unavailable"),
+		);
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-03",
+			clockInTime: "09:00",
+			clockOutTime: "10:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result.success).toBe(true);
+		expect(mockState.logger.error).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				workPeriodId: "period-1",
+			}),
+			"Failed to dispatch manual-entry approval notification after commit",
 		);
 	});
 

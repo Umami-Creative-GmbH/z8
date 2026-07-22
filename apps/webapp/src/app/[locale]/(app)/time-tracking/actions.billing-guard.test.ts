@@ -118,14 +118,20 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it("imports the work balance dirty marker", () => {
-		expect(source).toContain("markEmployeeWorkBalanceDirty");
-		expect(source).toContain('from "@/lib/work-balance/service"');
+		expect(clockingSource).toContain("markEmployeeWorkBalanceDirty");
+		expect(clockingSource).toContain('from "@/lib/work-balance/service"');
 	});
 
 	it("wraps work balance dirty marking as best effort", () => {
-		expect(source).toContain("async function markWorkBalanceDirtyBestEffort(");
-		expect(source).toContain("await markWorkBalanceDirtyBestEffort(");
-		expect(source).toContain('"Failed to mark work balance dirty"');
+		expect(clockingSource).toContain(
+			"async function markWorkBalanceDirtyAfterManualTimeEntryBestEffort(",
+		);
+		expect(clockingSource).toContain(
+			"await markWorkBalanceDirtyAfterManualTimeEntryBestEffort(",
+		);
+		expect(clockingSource).toContain(
+			'"Failed to mark work balance dirty after manual time entry"',
+		);
 	});
 
 	it("guards clock-in before creating time entries", () => {
@@ -172,7 +178,10 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it("guards manual time-entry creation before creating time entries", () => {
-		expectBillingGuardBeforeWrite("createManualTimeEntry", "createTimeEntry(");
+		expectBillingGuardBeforeWrite(
+			"createManualTimeEntry",
+			"createManualTimeEntryModular(data)",
+		);
 	});
 
 	it.each([
@@ -195,8 +204,10 @@ describe("legacy time-tracking action billing guards", () => {
 
 	it("marks work balances dirty after createManualTimeEntry changes payable time", () => {
 		const name = "createManualTimeEntry";
-		const body = functionBody(name);
-		expect(body).toContain("await markWorkBalanceDirtyBestEffort(");
+		const body = functionBody(name, clockingSource);
+		expect(body).toContain(
+			"await markWorkBalanceDirtyAfterManualTimeEntryBestEffort(",
+		);
 		expect(body).toContain("dirtyFromDate:");
 	});
 
@@ -260,28 +271,27 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it("keeps manual source rows pending until approval routing resolves", () => {
-		const body = functionBody("createManualTimeEntry");
+		const body = functionBody("createManualTimeEntry", clockingSource);
 
 		expect(body).toContain(
-			'const approvalStatus = requiresApproval ? "pending" : "approved"',
+			'approvalStatus: requiresApproval ? "pending" : "approved"',
 		);
-		expect(body).toContain("const pendingChangesData = requiresApproval");
-		expect(body).toMatch(
-			/const approvalResult = requiresApproval\s+\? await createManualEntryApprovalRequest/,
+		expect(body).toContain("pendingChanges: requiresApproval");
+		expect(body).toContain(
+			"executeOrdinaryWorkPeriodSubmissionInTransaction({",
 		);
 		expect(body).toContain('error.field === "managerId"');
 		expect(body).not.toContain("requiresManagerApproval");
 	});
 
 	it.each([
-		["clockOut", "createClockOutApprovalRequest"],
-		["createManualTimeEntry", "createManualEntryApprovalRequest"],
-	])("creates approval requests from approval-required %s", (name, approvalMarker) => {
-		const body = functionBody(
-			name,
-			name === "clockOut" ? clockingSource : source,
+		"clockOut",
+		"createManualTimeEntry",
+	])("creates approval requests from approval-required %s through the shared boundary", (name) => {
+		const body = functionBody(name, clockingSource);
+		const approvalIndex = body.indexOf(
+			"executeOrdinaryWorkPeriodSubmissionInTransaction({",
 		);
-		const approvalIndex = body.indexOf(approvalMarker);
 
 		expect(
 			approvalIndex,
@@ -293,10 +303,6 @@ describe("legacy time-tracking action billing guards", () => {
 		["clockOut", "clockingService.clockOut({"],
 		["createManualTimeEntry", "createTimeEntry("],
 	])("fails closed when %s policy checks fail before writing", (name, writeMarker) => {
-		expectPolicyCheckFailureBeforeWrite(
-			name,
-			writeMarker,
-			name === "clockOut" ? clockingSource : source,
-		);
+		expectPolicyCheckFailureBeforeWrite(name, writeMarker, clockingSource);
 	});
 });

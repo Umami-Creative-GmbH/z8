@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -70,6 +72,16 @@ const {
 } = await import("./approvals");
 
 describe("time tracking approval requests", () => {
+	it("does not own ordinary approval request persistence", () => {
+		const source = readFileSync(
+			fileURLToPath(new URL("./approvals.ts", import.meta.url)),
+			"utf8",
+		);
+
+		expect(source).not.toContain("createDefaultTimeEntryApprovalRequest");
+		expect(source).not.toContain(".insert(approvalRequest)");
+	});
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.findEmployee.mockResolvedValue({
@@ -257,7 +269,7 @@ describe("time tracking approval requests", () => {
 		expect(mockState.finalizeAutoCompleted).toHaveBeenCalledOnce();
 	});
 
-	it("falls back to manager approval when a matched policy cannot resolve", async () => {
+	it("does not bypass an invalid matched policy with a direct manager write", async () => {
 		mockState.findPolicies.mockResolvedValue([
 			{
 				id: "policy-1",
@@ -285,27 +297,19 @@ describe("time tracking approval requests", () => {
 			},
 		]);
 
-		await createTimeEntryApprovalRequest({
-			workPeriodId: "work-period-1",
-			employeeId: "emp-1",
-			managerId: "manager-1",
-			organizationId: "org-1",
-			reason: "Clock-out requires approval",
-			overtimeRisk: "warning",
-			kind: "policy_clock_out",
-		});
-
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
+		await expect(
+			createTimeEntryApprovalRequest({
+				workPeriodId: "work-period-1",
+				employeeId: "emp-1",
+				managerId: "manager-1",
 				organizationId: "org-1",
-				entityType: "time_entry",
-				entityId: "work-period-1",
-				requestedBy: "emp-1",
-				approverId: "manager-1",
-				status: "pending",
 				reason: "Clock-out requires approval",
+				overtimeRisk: "warning",
+				kind: "policy_clock_out",
 			}),
-		);
+		).rejects.toThrow("Specific approver is not active");
+
+		expect(mockState.insertValues).not.toHaveBeenCalled();
 	});
 
 	it("persists manual request metadata without replacing caller metadata", async () => {

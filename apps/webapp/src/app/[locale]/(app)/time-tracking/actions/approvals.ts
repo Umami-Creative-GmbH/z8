@@ -3,17 +3,17 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
-import { approvalRequest, employee } from "@/db/schema";
+import { employee } from "@/db/schema";
 import type { ResolvePolicyAndCreateApprovalResult } from "@/lib/approvals/policies/chain-service";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
 import type { ApprovalPolicyOvertimeRisk } from "@/lib/approvals/policies/types";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
-import { ValidationError } from "@/lib/effect/errors";
 import type { OrdinaryTimeApprovalKind } from "@/lib/approvals/server/work-period-approvals";
 import {
 	finalizeAutoCompletedWorkPeriodApprovalEffect,
 	notifyWorkPeriodApprovalAfterCommit,
 } from "@/lib/approvals/server/work-period-approvals";
+import { ValidationError } from "@/lib/effect/errors";
 import {
 	onClockOutApproved,
 	onClockOutPendingApproval,
@@ -111,36 +111,6 @@ type ApprovalRequestOptions = {
 	notify?: boolean;
 };
 
-async function createDefaultTimeEntryApprovalRequest(
-	params: {
-		workPeriodId: string;
-		employeeId: string;
-		managerId: string;
-		organizationId: string;
-		reason: string;
-		metadata: Record<string, unknown>;
-	},
-	dbService: ApprovalDbService,
-) {
-	const rows = await dbService.db
-		.insert(approvalRequest)
-		.values({
-			organizationId: params.organizationId,
-			entityType: "time_entry",
-			entityId: params.workPeriodId,
-			requestedBy: params.employeeId,
-			approverId: params.managerId,
-			status: "pending",
-			reason: params.reason,
-			metadata: params.metadata,
-		})
-		.returning({ id: approvalRequest.id });
-	return {
-		kind: "default_created" as const,
-		approvalRequestId: rows[0]?.id ?? params.workPeriodId,
-	};
-}
-
 export async function createTimeEntryApprovalRequest(
 	params: {
 		workPeriodId: string;
@@ -206,14 +176,7 @@ export async function createTimeEntryApprovalRequest(
 				field: "managerId",
 			});
 		}
-		logger.error(
-			{ error, workPeriodId: params.workPeriodId },
-			"Failed to resolve time-entry approval policy; using manager fallback",
-		);
-		result = await createDefaultTimeEntryApprovalRequest(
-			{ ...params, managerId: params.managerId, metadata },
-			requestDbService,
-		);
+		throw error;
 	}
 
 	if (result.kind === "auto_completed") {

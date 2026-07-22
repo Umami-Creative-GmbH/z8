@@ -6,6 +6,10 @@ const source = readFileSync(
 	fileURLToPath(new URL("./actions/clocking.ts", import.meta.url)),
 	"utf8",
 );
+const monolithicSource = readFileSync(
+	fileURLToPath(new URL("./actions.ts", import.meta.url)),
+	"utf8",
+);
 
 function functionBody(name: string) {
 	const match = new RegExp(`export\\s+async function ${name}\\s*\\(`).exec(
@@ -65,6 +69,39 @@ describe("clocking service delegation", () => {
 		expect(canonicalIndex).toBeGreaterThan(delegateIndex);
 		expect(body).toContain("beforePeriodClose:");
 		expect(body).toContain("afterPeriodClose:");
-		expect(body).toContain("createClockOutApprovalRequest(");
+		expect(body).toContain("runtime.repository.withTransaction(");
+		expect(body).toContain("executeOrdinaryWorkPeriodSubmissionInTransaction(");
+		expect(body).not.toContain("createClockOutApprovalRequest(");
+	});
+
+	it("creates manual source and approval state in one workflow transaction", () => {
+		const body = functionBody("createManualTimeEntry");
+
+		expect(body).toContain("runtime.repository.withTransaction(");
+		expect(body).toContain("executeOrdinaryWorkPeriodSubmissionInTransaction(");
+		expect(body).not.toContain("await db.transaction(");
+		expect(body).not.toContain("createManualEntryApprovalRequest(");
+		expect(body).toContain(
+			"eq(workPeriod.organizationId, targetEmployee.organizationId)",
+		);
+		const categoryGuard = body.indexOf("validateWorkCategoryAssignment(");
+		expect(categoryGuard).toBeGreaterThanOrEqual(0);
+		expect(categoryGuard).toBeLessThan(
+			body.indexOf("runtime.repository.withTransaction("),
+		);
+	});
+
+	it("keeps the monolithic action as an authenticated billing-guarded delegate", () => {
+		const start = monolithicSource.indexOf(
+			"export async function createManualTimeEntry(",
+		);
+		const end = monolithicSource.indexOf("export async function", start + 1);
+		const body = monolithicSource.slice(start, end);
+
+		expect(body).toContain("auth.api.getSession(");
+		expect(body).toContain("requireBillingForMutation(");
+		expect(body).toContain("createManualTimeEntryModular(data)");
+		expect(body).not.toContain("createTimeEntry(");
+		expect(body).not.toContain("createManualEntryApprovalRequest(");
 	});
 });

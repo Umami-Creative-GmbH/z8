@@ -50,6 +50,7 @@ type ClockingInput = {
 	source: { ipAddress: string | null; deviceInfo: string | null };
 	notes?: string;
 	location?: string;
+	transaction?: unknown;
 };
 
 type ClockInInput = ClockingInput & {
@@ -110,6 +111,7 @@ type ClockingStore = {
 
 export type ClockingDependencies = {
 	transaction<T>(callback: (store: ClockingStore) => Promise<T>): Promise<T>;
+	storeForTransaction?: (transaction: unknown) => ClockingStore;
 	findApprovedMembership?: (
 		userId: string,
 		organizationId: string,
@@ -158,7 +160,7 @@ export function createClockingService(deps: ClockingDependencies) {
 		input: ClockingInput,
 		callback: (store: ClockingStore) => Promise<T>,
 	): Promise<T> {
-		return deps.transaction(async (store) => {
+		const operation = async (store: ClockingStore) => {
 			await store.lockEmployee(input.employeeId);
 			if (
 				!(await store.isOrganizationMember(
@@ -169,7 +171,14 @@ export function createClockingService(deps: ClockingDependencies) {
 				throw new ClockingOrganizationError();
 			}
 			return callback(store);
-		});
+		};
+		if (input.transaction !== undefined) {
+			if (!deps.storeForTransaction) {
+				throw new Error("Caller-owned clocking transactions are unavailable");
+			}
+			return operation(deps.storeForTransaction(input.transaction));
+		}
+		return deps.transaction(operation);
 	}
 
 	return {
@@ -301,6 +310,107 @@ export function createClockingService(deps: ClockingDependencies) {
 	};
 }
 
+type ClockingTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+function createDatabaseClockingStore(tx: ClockingTransaction): ClockingStore {
+	return {
+		transaction: tx,
+		lockEmployee: async (employeeId) => {
+			await tx.execute(
+				sql`select pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`,
+			);
+		},
+		isOrganizationMember: async (employeeId, organizationId) => {
+			const [member] = await tx
+				.select({ id: employee.id })
+				.from(employee)
+				.where(
+					and(
+						eq(employee.id, employeeId),
+						eq(employee.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			return Boolean(member);
+		},
+		getEntryByActionId: async (employeeId, organizationId, actionId) => {
+			if (!actionId) return null;
+			const [entry] = await tx
+				.select()
+				.from(timeEntry)
+				.where(
+					and(
+						eq(timeEntry.id, actionId),
+						eq(timeEntry.employeeId, employeeId),
+						eq(timeEntry.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			return entry ?? null;
+		},
+		getActivePeriod: async (employeeId, organizationId, workPeriodId) => {
+			const [period] = await tx
+				.select({ id: workPeriod.id, startTime: workPeriod.startTime })
+				.from(workPeriod)
+				.where(
+					and(
+						eq(workPeriod.employeeId, employeeId),
+						eq(workPeriod.organizationId, organizationId),
+						eq(workPeriod.isActive, true),
+						isNull(workPeriod.endTime),
+						...(workPeriodId ? [eq(workPeriod.id, workPeriodId)] : []),
+					),
+				)
+				.limit(1);
+			return period ?? null;
+		},
+		getLatestHash: async (employeeId, organizationId) => {
+			const [latest] = await tx
+				.select({ hash: timeEntry.hash })
+				.from(timeEntry)
+				.where(
+					and(
+						eq(timeEntry.employeeId, employeeId),
+						eq(timeEntry.organizationId, organizationId),
+					),
+				)
+				.orderBy(desc(timeEntry.createdAt))
+				.limit(1);
+			return latest?.hash ?? null;
+		},
+		insertEntry: async (values) => {
+			const [entry] = await tx
+				.insert(timeEntry)
+				.values(values as never)
+				.returning();
+			if (!entry) throw new Error("Failed to create time entry");
+			return entry;
+		},
+		insertActivePeriod: async (values) => {
+			const [period] = await tx
+				.insert(workPeriod)
+				.values(values as never)
+				.returning({ id: workPeriod.id });
+			if (!period) throw new Error("Failed to create work period");
+			return period;
+		},
+		closeActivePeriod: async (periodId, patch) => {
+			const [period] = await tx
+				.update(workPeriod)
+				.set(patch as never)
+				.where(
+					and(
+						eq(workPeriod.id, periodId),
+						eq(workPeriod.isActive, true),
+						isNull(workPeriod.endTime),
+					),
+				)
+				.returning({ id: workPeriod.id });
+			return period ?? null;
+		},
+	};
+}
+
 export const clockingService = createClockingService({
 	async findApprovedMembership(userId, organizationId) {
 		const membership = await db.query.member.findFirst({
@@ -325,103 +435,8 @@ export const clockingService = createClockingService({
 			})) ?? null
 		);
 	},
+	storeForTransaction: (transaction) =>
+		createDatabaseClockingStore(transaction as ClockingTransaction),
 	transaction: (callback) =>
-		db.transaction(async (tx) =>
-			callback({
-				transaction: tx,
-				lockEmployee: async (employeeId) => {
-					await tx.execute(
-						sql`select pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`,
-					);
-				},
-				isOrganizationMember: async (employeeId, organizationId) => {
-					const [member] = await tx
-						.select({ id: employee.id })
-						.from(employee)
-						.where(
-							and(
-								eq(employee.id, employeeId),
-								eq(employee.organizationId, organizationId),
-							),
-						)
-						.limit(1);
-					return Boolean(member);
-				},
-				getEntryByActionId: async (employeeId, organizationId, actionId) => {
-					if (!actionId) return null;
-					const [entry] = await tx
-						.select()
-						.from(timeEntry)
-						.where(
-							and(
-								eq(timeEntry.id, actionId),
-								eq(timeEntry.employeeId, employeeId),
-								eq(timeEntry.organizationId, organizationId),
-							),
-						)
-						.limit(1);
-					return entry ?? null;
-				},
-				getActivePeriod: async (employeeId, organizationId, workPeriodId) => {
-					const [period] = await tx
-						.select({ id: workPeriod.id, startTime: workPeriod.startTime })
-						.from(workPeriod)
-						.where(
-							and(
-								eq(workPeriod.employeeId, employeeId),
-								eq(workPeriod.organizationId, organizationId),
-								eq(workPeriod.isActive, true),
-								isNull(workPeriod.endTime),
-								...(workPeriodId ? [eq(workPeriod.id, workPeriodId)] : []),
-							),
-						)
-						.limit(1);
-					return period ?? null;
-				},
-				getLatestHash: async (employeeId, organizationId) => {
-					const [latest] = await tx
-						.select({ hash: timeEntry.hash })
-						.from(timeEntry)
-						.where(
-							and(
-								eq(timeEntry.employeeId, employeeId),
-								eq(timeEntry.organizationId, organizationId),
-							),
-						)
-						.orderBy(desc(timeEntry.createdAt))
-						.limit(1);
-					return latest?.hash ?? null;
-				},
-				insertEntry: async (values) => {
-					const [entry] = await tx
-						.insert(timeEntry)
-						.values(values as never)
-						.returning();
-					if (!entry) throw new Error("Failed to create time entry");
-					return entry;
-				},
-				insertActivePeriod: async (values) => {
-					const [period] = await tx
-						.insert(workPeriod)
-						.values(values as never)
-						.returning({ id: workPeriod.id });
-					if (!period) throw new Error("Failed to create work period");
-					return period;
-				},
-				closeActivePeriod: async (periodId, patch) => {
-					const [period] = await tx
-						.update(workPeriod)
-						.set(patch as never)
-						.where(
-							and(
-								eq(workPeriod.id, periodId),
-								eq(workPeriod.isActive, true),
-								isNull(workPeriod.endTime),
-							),
-						)
-						.returning({ id: workPeriod.id });
-					return period ?? null;
-				},
-			}),
-		),
+		db.transaction(async (tx) => callback(createDatabaseClockingStore(tx))),
 });

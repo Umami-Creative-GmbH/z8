@@ -4,9 +4,20 @@ import { and, eq, gte, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime, IANAZone } from "luxon";
 import { db } from "@/db";
-import { employee, employeeManagers, workPeriod } from "@/db/schema";
+import {
+	employee,
+	employeeManagers,
+	workCategory,
+	workPeriod,
+} from "@/db/schema";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
+import {
+	executeOrdinaryWorkPeriodSubmissionInTransaction,
+	type WorkPeriodPostCommitDescriptor,
+} from "@/lib/approvals/server/work-period-submission";
+import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import {
 	asAppSubject,
 	defineAbilityFor,
@@ -21,13 +32,14 @@ import {
 	type Instant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import type { ServerActionResult } from "@/lib/effect/result";
 import { ValidationError } from "@/lib/effect/errors";
+import type { ServerActionResult } from "@/lib/effect/result";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	WorkPolicyService,
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
+import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
 import {
 	ClockingConflictError,
 	clockingService,
@@ -47,8 +59,6 @@ import {
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { canonicalWorkRecordClient } from "../actions.canonical";
 import {
-	createClockOutApprovalRequest,
-	createManualEntryApprovalRequest,
 	sendClockOutApprovalNotifications,
 	sendClockOutApprovedNotification,
 	sendManualEntryApprovalNotifications,
@@ -100,6 +110,52 @@ const APPROVAL_POLICY_CHECK_ERROR =
 	"Could not verify time approval policy. Please try again.";
 const MANUAL_ENTRY_TARGET_AUTH_ERROR =
 	"Not authorized to create time entries for this employee";
+
+function createOrdinaryApprovalRuntime() {
+	return createProductionApprovalWorkflowRuntime({
+		db,
+		adapters: {
+			absence: {
+				clock: systemClock,
+				finalizeAbsenceTerminal: async () => {
+					throw new Error("Absence finalization is outside time tracking");
+				},
+				deleteCancelledAbsence: async () => {
+					throw new Error("Absence cancellation is outside time tracking");
+				},
+			},
+			timeCorrection: {
+				clock: systemClock,
+				finalizeTimeCorrectionTerminal: async () => {
+					throw new Error(
+						"Time correction finalization is outside time tracking",
+					);
+				},
+				deleteCancelledCorrections: async () => {
+					throw new Error(
+						"Time correction cancellation is outside time tracking",
+					);
+				},
+			},
+			ordinaryWorkPeriod: {
+				finalizeTerminal:
+					finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
+			},
+		},
+		canManageApproval: async () => false,
+		clock: systemClock,
+	});
+}
+
+function approvalDbServiceForTransaction(dbService: {
+	db: unknown;
+}): ApprovalDbService {
+	return {
+		db: dbService.db as ApprovalDbService["db"],
+		query: <T>(_name: string, operation: () => Promise<T>) =>
+			Effect.promise(operation),
+	};
+}
 
 export type ClockActionContext = BrowserTimezoneContext & {
 	instant?: Instant;
@@ -207,6 +263,26 @@ async function markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
 			"Failed to mark work balance dirty after manual time entry",
 		);
 	}
+}
+
+async function validateWorkCategoryAssignment(
+	employeeId: string,
+	workCategoryId: string,
+	organizationId: string,
+) {
+	const category = await db.query.workCategory.findFirst({
+		where: and(
+			eq(workCategory.id, workCategoryId),
+			eq(workCategory.organizationId, organizationId),
+			eq(workCategory.isActive, true),
+		),
+	});
+	if (!category) {
+		return { isValid: false, error: "Work category not found" };
+	}
+	return (await employeeHasAccessToCategory(employeeId, workCategoryId))
+		? { isValid: true }
+		: { isValid: false, error: "Cannot assign to this work category" };
 }
 
 export async function clockIn(
@@ -407,75 +483,85 @@ export async function clockOut(
 					isNewClockOut: true,
 				}
 			: null;
-		const result = await clockingService.clockOut({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			workPeriodId: activeWorkPeriod.id,
-			createdBy: session.user.id,
-			action: { instant: actionInstant, ...timezoneCapture },
-			source: {
-				ipAddress: null,
-				deviceInfo: actionContext.deviceInfo ?? "web",
-			},
-			projectId,
-			workCategoryId,
-			approvalStatus: needsClockOutApproval ? "pending" : "approved",
-			pendingChanges,
-			beforePeriodClose: async ({ transaction }) => {
-				const canonicalRecord =
-					await canonicalWorkRecordClient.createForCompletedPeriod(
-						{
-							organizationId: currentEmployee.organizationId,
-							employeeId: currentEmployee.id,
-							startAt: activeWorkPeriod.startTime,
-							endAt: now,
-							durationMinutes: sessionDurationMinutes,
-							approvalState: needsClockOutApproval ? "pending" : "approved",
-							createdBy: session.user.id,
-							workCategoryId: workCategoryId ?? null,
-							workLocationType: activeWorkPeriod.workLocationType ?? null,
-							projectId: projectId ?? null,
-							origin: "clock",
-						},
-						transaction as Parameters<Parameters<typeof db.transaction>[0]>[0],
-					);
-				return { canonicalRecordId: canonicalRecord.id };
-			},
-			afterPeriodClose:
-				needsClockOutApproval && managerId
-					? async ({ transaction, durationMinutes }) => {
-							const transactionalDbService = {
-								db: transaction as ApprovalDbService["db"],
-								query: <T>(_name: string, fn: () => Promise<T>) =>
-									Effect.promise(fn),
-							} satisfies ApprovalDbService;
-							return await createClockOutApprovalRequest(
-								{
-									workPeriodId: activeWorkPeriod.id,
-									employeeId: currentEmployee.id,
-									managerId,
+		const runtime = createOrdinaryApprovalRuntime();
+		const result = await runtime.repository.withTransaction(async (context) =>
+			clockingService.clockOut({
+				transaction: context.dbService.db,
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				workPeriodId: activeWorkPeriod.id,
+				createdBy: session.user.id,
+				action: { instant: actionInstant, ...timezoneCapture },
+				source: {
+					ipAddress: null,
+					deviceInfo: actionContext.deviceInfo ?? "web",
+				},
+				projectId,
+				workCategoryId,
+				approvalStatus: needsClockOutApproval ? "pending" : "approved",
+				pendingChanges,
+				beforePeriodClose: async ({ transaction }) => {
+					const canonicalRecord =
+						await canonicalWorkRecordClient.createForCompletedPeriod(
+							{
+								organizationId: currentEmployee.organizationId,
+								employeeId: currentEmployee.id,
+								startAt: activeWorkPeriod.startTime,
+								endAt: now,
+								durationMinutes: sessionDurationMinutes,
+								approvalState: needsClockOutApproval ? "pending" : "approved",
+								createdBy: session.user.id,
+								workCategoryId: workCategoryId ?? null,
+								workLocationType: activeWorkPeriod.workLocationType ?? null,
+								projectId: projectId ?? null,
+								origin: "clock",
+							},
+							transaction as Parameters<
+								Parameters<typeof db.transaction>[0]
+							>[0],
+						);
+					return { canonicalRecordId: canonicalRecord.id };
+				},
+				afterPeriodClose:
+					needsClockOutApproval && managerId
+						? async ({ transaction }) => {
+								if (transaction !== context.dbService.db) {
+									throw new Error("Clock-out transaction context changed");
+								}
+								return executeOrdinaryWorkPeriodSubmissionInTransaction({
+									dbService: approvalDbServiceForTransaction(context.dbService),
+									context,
 									organizationId: currentEmployee.organizationId,
-									startTime: activeWorkPeriod.startTime,
-									endTime: now,
-									durationMinutes,
-								},
-								{ dbService: transactionalDbService, notify: false },
-							);
-						}
-					: undefined,
-		});
+									workPeriodId: activeWorkPeriod.id,
+									requesterEmployeeId: currentEmployee.id,
+									requesterUserId: session.user.id,
+									teamId: currentEmployee.teamId,
+									defaultApproverId: managerId,
+									reason: "Clock-out requires approval (0-day policy)",
+									overtimeRisk: "warning",
+									kind: "policy_clock_out",
+									metadata: {},
+								});
+							}
+						: undefined,
+			}),
+		);
 		const entry = result.entry as Awaited<ReturnType<typeof createTimeEntry>>;
 		const { durationMinutes } = result;
 
-		await calculateAndPersistSurcharges(
-			activeWorkPeriod.id,
-			currentEmployee.organizationId,
-		);
-		const approvalResult = result.transactionResult as
-			| { kind: string }
+		const approvalSubmission = result.transactionResult as
+			| {
+					result: { kind: string };
+					postCommit: WorkPeriodPostCommitDescriptor | null;
+			  }
 			| undefined;
+		const approvalResult = approvalSubmission?.result;
 		const approvalAutoCompleted = approvalResult?.kind === "auto_completed";
-		if (needsClockOutApproval && managerId) {
+		if (
+			needsClockOutApproval &&
+			managerId &&
+			approvalSubmission?.postCommit?.disposition === "dispatch"
+		) {
 			const notificationParams = {
 				workPeriodId: activeWorkPeriod.id,
 				employeeId: currentEmployee.id,
@@ -485,47 +571,73 @@ export async function clockOut(
 				endTime: now,
 				durationMinutes,
 			};
-			if (approvalAutoCompleted) {
-				await sendClockOutApprovedNotification(notificationParams);
-			} else {
-				await sendClockOutApprovalNotifications(notificationParams);
+			try {
+				if (approvalSubmission.postCommit.event === "approved") {
+					await sendClockOutApprovedNotification(notificationParams);
+				} else {
+					await sendClockOutApprovalNotifications(notificationParams);
+				}
+			} catch (error) {
+				logger.error(
+					{
+						error,
+						organizationId: currentEmployee.organizationId,
+						workPeriodId: activeWorkPeriod.id,
+					},
+					"Failed to dispatch clock-out approval notification after commit",
+				);
 			}
 		}
 
-		const complianceWarnings = await checkComplianceAfterClockOut(
-			currentEmployee.id,
-			currentEmployee.organizationId,
-			activeWorkPeriod.id,
-			durationMinutes,
-			timezone,
-		);
+		const shouldRunPostCommitEffects =
+			!needsClockOutApproval ||
+			approvalSubmission?.postCommit?.disposition === "dispatch";
+		if (shouldRunPostCommitEffects) {
+			await calculateAndPersistSurcharges(
+				activeWorkPeriod.id,
+				currentEmployee.organizationId,
+			);
+		}
+		const complianceWarnings = shouldRunPostCommitEffects
+			? await checkComplianceAfterClockOut(
+					currentEmployee.id,
+					currentEmployee.organizationId,
+					activeWorkPeriod.id,
+					durationMinutes,
+					timezone,
+				)
+			: [];
 
-		const breakEnforcementResult = await enforceBreaksAfterClockOut({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			workPeriodId: activeWorkPeriod.id,
-			sessionDurationMinutes: durationMinutes,
-			timezone,
-			createdBy: session.user.id,
-		});
+		const breakEnforcementResult = shouldRunPostCommitEffects
+			? await enforceBreaksAfterClockOut({
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					workPeriodId: activeWorkPeriod.id,
+					sessionDurationMinutes: durationMinutes,
+					timezone,
+					createdBy: session.user.id,
+				})
+			: { wasAdjusted: false as const };
 
-		await markWorkBalanceDirtyAfterClockOutBestEffort(
-			{
-				employeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
-				dirtyFromDate:
-					DateTime.fromJSDate(activeWorkPeriod.startTime, {
-						zone: "utc",
-					}).toISODate() ?? undefined,
-			},
-			{
-				employeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
-				workPeriodId: activeWorkPeriod.id,
-			},
-		);
+		if (shouldRunPostCommitEffects) {
+			await markWorkBalanceDirtyAfterClockOutBestEffort(
+				{
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					dirtyFromDate:
+						DateTime.fromJSDate(activeWorkPeriod.startTime, {
+							zone: "utc",
+						}).toISODate() ?? undefined,
+				},
+				{
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					workPeriodId: activeWorkPeriod.id,
+				},
+			);
+		}
 
-		if (projectId) {
+		if (projectId && shouldRunPostCommitEffects) {
 			void checkProjectBudgetAfterClockOut(
 				projectId,
 				currentEmployee.organizationId,
@@ -972,6 +1084,20 @@ export async function createManualTimeEntry(
 			};
 		}
 	}
+	if (data.workCategoryId) {
+		const categoryValidation = await validateWorkCategoryAssignment(
+			targetEmployee.id,
+			data.workCategoryId,
+			targetEmployee.organizationId,
+		);
+		if (!categoryValidation.isValid) {
+			return {
+				success: false,
+				error:
+					categoryValidation.error || "Cannot assign to this work category",
+			};
+		}
+	}
 
 	let requiresApproval = false;
 	if (isOwnEntry) {
@@ -1009,6 +1135,7 @@ export async function createManualTimeEntry(
 		const existingWorkPeriods = await db.query.workPeriod.findMany({
 			where: and(
 				eq(workPeriod.employeeId, targetEmployee.id),
+				eq(workPeriod.organizationId, targetEmployee.organizationId),
 				gte(workPeriod.startTime, localDate.startOf("day").toUTC().toJSDate()),
 				lte(workPeriod.startTime, localDate.endOf("day").toUTC().toJSDate()),
 			),
@@ -1069,8 +1196,10 @@ export async function createManualTimeEntry(
 			adjustedClockIn,
 			adjustedClockOut,
 		);
-		const { period: createdWorkPeriod, approvalResult } = await db.transaction(
-			async (tx) => {
+		const runtime = createOrdinaryApprovalRuntime();
+		const { period: createdWorkPeriod, approvalSubmission } =
+			await runtime.repository.withTransaction(async (context) => {
+				const tx = context.dbService.db as unknown as typeof db;
 				const clockInEntry = await createTimeEntry(
 					{
 						employeeId: targetEmployee.id,
@@ -1142,70 +1271,90 @@ export async function createManualTimeEntry(
 					})
 					.returning();
 
-				const transactionalDbService = {
-					db: tx,
-					query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
-				} satisfies ApprovalDbService;
-				const approvalResult = requiresApproval
-					? await createManualEntryApprovalRequest(
-							{
-								workPeriodId: period.id,
-								employeeId: targetEmployee.id,
-								managerId,
-								organizationId: targetEmployee.organizationId,
-								startTime: adjustedClockIn,
-								endTime: adjustedClockOut,
-								durationMinutes,
-								reason: data.reason,
-							},
-							{ dbService: transactionalDbService, notify: false },
-						)
+				const approvalSubmission = requiresApproval
+					? await executeOrdinaryWorkPeriodSubmissionInTransaction({
+							dbService: approvalDbServiceForTransaction(context.dbService),
+							context,
+							organizationId: targetEmployee.organizationId,
+							workPeriodId: period.id,
+							requesterEmployeeId: targetEmployee.id,
+							requesterUserId: targetEmployee.userId ?? session.user.id,
+							teamId: targetEmployee.teamId,
+							defaultApproverId: managerId,
+							reason: `Manual time entry: ${data.reason}`,
+							overtimeRisk: "none",
+							kind: "manual_time_submission",
+							metadata: {},
+						})
 					: null;
 
-				return { period, approvalResult };
-			},
-		);
+				return { period, approvalSubmission };
+			});
 
-		if (requiresApproval && managerId) {
+		const approvalResult = approvalSubmission?.result;
+		const postCommit = approvalSubmission?.postCommit;
+		if (
+			requiresApproval &&
+			postCommit?.disposition === "dispatch" &&
+			postCommit.approverEmployeeId
+		) {
 			const notificationParams = {
 				workPeriodId: createdWorkPeriod.id,
 				employeeId: targetEmployee.id,
-				managerId,
+				managerId: postCommit.approverEmployeeId,
 				organizationId: targetEmployee.organizationId,
 				startTime: adjustedClockIn,
 				endTime: adjustedClockOut,
 				durationMinutes,
 				reason: data.reason,
 			};
-			if (approvalResult?.kind === "auto_completed") {
-				await sendManualEntryApprovedNotification(notificationParams);
-			} else {
-				await sendManualEntryApprovalNotifications(notificationParams);
+			try {
+				if (postCommit.event === "approved") {
+					await sendManualEntryApprovedNotification(notificationParams);
+				} else {
+					await sendManualEntryApprovalNotifications(notificationParams);
+				}
+			} catch (error) {
+				logger.error(
+					{
+						error,
+						organizationId: targetEmployee.organizationId,
+						workPeriodId: createdWorkPeriod.id,
+					},
+					"Failed to dispatch manual-entry approval notification after commit",
+				);
 			}
 		}
 
 		const approvalAutoCompleted = approvalResult?.kind === "auto_completed";
-		if (!requiresApproval || approvalAutoCompleted) {
+		const shouldRunPostCommitEffects =
+			!requiresApproval || postCommit?.disposition === "dispatch";
+		if (
+			shouldRunPostCommitEffects &&
+			(!requiresApproval || approvalAutoCompleted)
+		) {
 			await calculateAndPersistSurcharges(
 				createdWorkPeriod.id,
 				targetEmployee.organizationId,
 			);
 		}
 
-		await markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
-			{
-				employeeId: targetEmployee.id,
-				organizationId: targetEmployee.organizationId,
-				dirtyFromDate:
-					DateTime.fromJSDate(adjustedClockIn, { zone: "utc" }).toISODate() ??
-					undefined,
-			},
-			{
-				employeeId: targetEmployee.id,
-				organizationId: targetEmployee.organizationId,
-				workPeriodId: createdWorkPeriod.id,
-			},
-		);
+		if (shouldRunPostCommitEffects) {
+			await markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
+				{
+					employeeId: targetEmployee.id,
+					organizationId: targetEmployee.organizationId,
+					dirtyFromDate:
+						DateTime.fromJSDate(adjustedClockIn, { zone: "utc" }).toISODate() ??
+						undefined,
+				},
+				{
+					employeeId: targetEmployee.id,
+					organizationId: targetEmployee.organizationId,
+					workPeriodId: createdWorkPeriod.id,
+				},
+			);
+		}
 
 		logger.info(
 			{
