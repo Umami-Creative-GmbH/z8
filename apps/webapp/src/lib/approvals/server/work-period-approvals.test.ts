@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { ApprovalAuditLogger } from "../infrastructure/audit-logger";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 
@@ -15,6 +16,7 @@ vi.mock("@/lib/notifications/triggers", () => notificationMocks);
 
 const {
 	approveWorkPeriodWithCurrentApproverEffect,
+	finalizeOrdinaryWorkPeriodTerminalInTransaction,
 	finalizeAutoCompletedWorkPeriodApprovalEffect,
 	rejectWorkPeriodWithCurrentApproverEffect,
 } = await import("./work-period-approvals");
@@ -46,6 +48,9 @@ const approval = {
 	approverId: "manager-1",
 	status: "pending",
 	reason: "Manual time entry: missed punch",
+	canonicalRecordId: null,
+	approvedAt: null,
+	rejectionReason: null,
 	metadata: { timeRequest: { kind: "manual_time_submission" } },
 };
 
@@ -53,16 +58,164 @@ const period = {
 	id: "period-1",
 	organizationId: "org-1",
 	employeeId: "employee-1",
+	clockInId: "clock-in-1",
+	clockOutId: "clock-out-1",
 	canonicalRecordId: "record-1",
+	approvalWorkflowId: "workflow-1",
 	approvalStatus: "pending",
 	pendingChanges: { isManualEntry: true },
 	startTime: new Date("2026-07-14T08:00:00.000Z"),
 	endTime: new Date("2026-07-14T16:00:00.000Z"),
+	durationMinutes: 480,
+	deletedAt: null,
 };
+
+const canonicalRecord = {
+	id: "record-1",
+	organizationId: "org-1",
+	employeeId: "employee-1",
+	recordKind: "work",
+	startAt: period.startTime,
+	endAt: period.endTime,
+	durationMinutes: 480,
+	approvalState: "pending",
+};
+
+function createFinalizerDbService(options?: {
+	period?: Partial<typeof period>;
+	record?: Partial<typeof canonicalRecord>;
+	request?: Partial<typeof approval> | null;
+	actorOwned?: boolean;
+	cardinality?: {
+		periodUpdate?: number;
+		recordUpdate?: number;
+		decisionInsert?: number;
+	};
+}) {
+	const lockOrder: string[] = [];
+	const updateSets: Record<string, unknown>[] = [];
+	const insertedValues: Record<string, unknown>[] = [];
+	const lockedPeriod = { ...period, ...options?.period };
+	const lockedRecord = { ...canonicalRecord, ...options?.record };
+	const lockResults = [[lockedPeriod], [lockedRecord]];
+	const returningRows = (id: string, count: number) =>
+		Array.from({ length: count }, (_, index) => ({
+			id: index === 0 ? id : `${id}-${index}`,
+		}));
+	let updateIndex = 0;
+	const db = {
+		query: {
+			approvalRequest: {
+				findFirst: vi.fn().mockResolvedValue(
+					options?.request === null
+						? null
+						: {
+								...approval,
+								status: "approved",
+								approvedAt: new Date("2026-07-15T10:00:00.000Z"),
+								...options?.request,
+							},
+				),
+			},
+			employee: {
+				findFirst: vi
+					.fn()
+					.mockResolvedValue(
+						options?.actorOwned === false
+							? null
+							: { id: "manager-1", userId: "manager-user-1" },
+					),
+			},
+		},
+		select: vi.fn(() => ({
+			from: vi.fn(() => ({
+				where: vi.fn(() => ({
+					for: vi.fn((mode: string) => {
+						lockOrder.push(mode);
+						return Promise.resolve(lockResults.shift() ?? []);
+					}),
+				})),
+			})),
+		})),
+		update: vi.fn(() => ({
+			set: vi.fn((values: Record<string, unknown>) => {
+				updateSets.push(values);
+				const index = updateIndex++;
+				return {
+					where: vi.fn(() => ({
+						returning: vi
+							.fn()
+							.mockResolvedValue(
+								index === 0
+									? returningRows(
+											"period-1",
+											options?.cardinality?.periodUpdate ?? 1,
+										)
+									: returningRows(
+											"record-1",
+											options?.cardinality?.recordUpdate ?? 1,
+										),
+							),
+					})),
+				};
+			}),
+		})),
+		insert: vi.fn(() => ({
+			values: vi.fn((values: Record<string, unknown>) => {
+				insertedValues.push(values);
+				return {
+					returning: vi
+						.fn()
+						.mockResolvedValue(
+							returningRows(
+								"decision-1",
+								options?.cardinality?.decisionInsert ?? 1,
+							),
+						),
+				};
+			}),
+		})),
+	};
+
+	return {
+		db,
+		lockOrder,
+		updateSets,
+		insertedValues,
+		query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+	} as unknown as ApprovalDbService & {
+		lockOrder: string[];
+		updateSets: Record<string, unknown>[];
+		insertedValues: Record<string, unknown>[];
+	};
+}
+
+function finalize(
+	dbService: ApprovalDbService,
+	overrides?: Partial<
+		Parameters<typeof finalizeOrdinaryWorkPeriodTerminalInTransaction>[0]
+	>,
+) {
+	return finalizeOrdinaryWorkPeriodTerminalInTransaction({
+		dbService,
+		organizationId: "org-1",
+		workPeriodId: "period-1",
+		expectedApprovalWorkflowId: "workflow-1",
+		requesterEmployeeId: "employee-1",
+		actorEmployeeId: "manager-1",
+		actorUserId: "manager-user-1",
+		kind: "manual_time_submission",
+		transition: { kind: "approve", reason: null },
+		finalizedAt: parseInstant("2026-07-15T10:00:00Z"),
+		allowUnlinkedLegacySource: false,
+		...overrides,
+	});
+}
 
 function createDecisionDbService(options?: {
 	staleWorkPeriod?: boolean;
 	autoCompleted?: boolean;
+	kind?: "manual_time_submission" | "policy_clock_out";
 }) {
 	const updateSets: Record<string, unknown>[] = [];
 	const insertedValues: Record<string, unknown>[] = [];
@@ -72,19 +225,57 @@ function createDecisionDbService(options?: {
 		[{ id: "record-1" }],
 	];
 	const selectResults = options?.autoCompleted
-		? [[{ ...approval, status: "approved" }], [period]]
-		: [[period]];
-	const selectWhere = vi
-		.fn()
-		.mockImplementation(() => Promise.resolve(selectResults.shift() ?? []));
+		? [
+				[
+					{
+						...approval,
+						status: "approved",
+						metadata: {
+							timeRequest: { kind: options.kind ?? "manual_time_submission" },
+						},
+					},
+				],
+				[period],
+				[canonicalRecord],
+			]
+		: [[period], [canonicalRecord]];
+	let selectIndex = 0;
+	const selectWhere = vi.fn().mockImplementation(() => {
+		const result = selectResults.shift() ?? [];
+		if (options?.autoCompleted && selectIndex++ === 0) {
+			return Promise.resolve(result);
+		}
+		return { for: vi.fn().mockResolvedValue(result) };
+	});
 	const db = {
 		query: {
-			approvalRequest: { findFirst: vi.fn().mockResolvedValue(approval) },
+			approvalRequest: {
+				findFirst: vi.fn().mockImplementation(() => {
+					const terminalUpdate = updateSets.find((value) => "status" in value);
+					return Promise.resolve({
+						...approval,
+						metadata: {
+							timeRequest: { kind: options?.kind ?? "manual_time_submission" },
+						},
+						...(options?.autoCompleted
+							? { status: "approved", approvedAt: new Date() }
+							: (terminalUpdate ?? {})),
+					});
+				}),
+			},
 			approvalChainStageInstance: {
 				findFirst: vi.fn().mockResolvedValue(null),
 			},
 			employee: {
-				findFirst: vi.fn().mockResolvedValue({ userId: "employee-user-1" }),
+				findFirst: vi.fn().mockResolvedValue({
+					id: options?.autoCompleted ? "employee-1" : "manager-1",
+					userId: options?.autoCompleted ? "employee-user-1" : "manager-user-1",
+				}),
+			},
+			workPeriod: {
+				findFirst: vi
+					.fn()
+					.mockResolvedValue({ approvalWorkflowId: period.approvalWorkflowId }),
 			},
 		},
 		select: vi.fn(() => ({ from: vi.fn(() => ({ where: selectWhere })) })),
@@ -103,7 +294,9 @@ function createDecisionDbService(options?: {
 		insert: vi.fn(() => ({
 			values: vi.fn((values: Record<string, unknown>) => {
 				insertedValues.push(values);
-				return Promise.resolve(undefined);
+				return {
+					returning: vi.fn().mockResolvedValue([{ id: "decision-1" }]),
+				};
 			}),
 		})),
 		transaction: vi.fn(async (fn: (tx: unknown) => Promise<void>) => fn(db)),
@@ -134,6 +327,161 @@ function runDecision(effect: Effect.Effect<unknown, unknown, unknown>) {
 describe("ordinary work-period approval finalizer", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+	});
+
+	it("locks and approves the exact period and canonical record before recording one decision", async () => {
+		const dbService = createFinalizerDbService();
+
+		const result = await finalize(dbService);
+
+		expect(dbService.lockOrder).toEqual(["update", "update"]);
+		expect(dbService.updateSets).toEqual([
+			expect.objectContaining({
+				approvalStatus: "approved",
+				pendingChanges: null,
+			}),
+			expect.objectContaining({
+				approvalState: "approved",
+				updatedBy: "manager-user-1",
+			}),
+		]);
+		expect(dbService.insertedValues).toEqual([
+			expect.objectContaining({
+				organizationId: "org-1",
+				recordId: "record-1",
+				actorEmployeeId: "manager-1",
+				action: "approved",
+			}),
+		]);
+		expect(result).toMatchObject({
+			kind: "manual_time_submission",
+			action: "approve",
+			period: { id: "period-1", canonicalRecordId: "record-1" },
+		});
+	});
+
+	it("rejects without mutating source or canonical time facts", async () => {
+		const dbService = createFinalizerDbService({
+			request: {
+				status: "rejected",
+				approvedAt: null,
+				rejectionReason: "Outside scheduled hours",
+				metadata: { timeRequest: { kind: "policy_clock_out" } },
+			},
+		});
+
+		await finalize(dbService, {
+			kind: "policy_clock_out",
+			transition: { kind: "reject", reason: "Outside scheduled hours" },
+		});
+
+		for (const update of dbService.updateSets) {
+			expect(update).not.toHaveProperty("clockInId");
+			expect(update).not.toHaveProperty("clockOutId");
+			expect(update).not.toHaveProperty("startTime");
+			expect(update).not.toHaveProperty("endTime");
+			expect(update).not.toHaveProperty("startAt");
+			expect(update).not.toHaveProperty("endAt");
+			expect(update).not.toHaveProperty("durationMinutes");
+		}
+		expect(dbService.updateSets).toEqual([
+			expect.objectContaining({
+				approvalStatus: "rejected",
+				pendingChanges: null,
+			}),
+			expect.objectContaining({ approvalState: "rejected" }),
+		]);
+	});
+
+	it.each([
+		["employee", { period: { employeeId: "employee-2" } }],
+		["workflow link", { period: { approvalWorkflowId: "workflow-2" } }],
+		["deleted period", { period: { deletedAt: new Date() } }],
+		["period status", { period: { approvalStatus: "approved" } }],
+		["period endpoint", { period: { clockOutId: null } }],
+		["period end", { period: { endTime: null } }],
+		["period duration", { period: { durationMinutes: null } }],
+		["record kind", { record: { recordKind: "absence" } }],
+		["record employee", { record: { employeeId: "employee-2" } }],
+		["record start", { record: { startAt: new Date("2026-07-14T08:01:00Z") } }],
+		["record end", { record: { endAt: new Date("2026-07-14T16:01:00Z") } }],
+		["record duration", { record: { durationMinutes: 479 } }],
+		["record status", { record: { approvalState: "approved" } }],
+	] as const)("rejects mismatched %s parity", async (_name, options) => {
+		const dbService = createFinalizerDbService(options);
+
+		await expect(finalize(dbService)).rejects.toThrow(
+			"Ordinary work-period finalization conflict",
+		);
+		expect(dbService.updateSets).toHaveLength(0);
+	});
+
+	it("rejects a foreign actor", async () => {
+		const dbService = createFinalizerDbService({ actorOwned: false });
+
+		await expect(finalize(dbService)).rejects.toThrow(
+			"Ordinary work-period finalization conflict",
+		);
+		expect(dbService.updateSets).toHaveLength(0);
+	});
+
+	it("derives immutable kind from exact scoped request metadata", async () => {
+		const dbService = createFinalizerDbService({
+			request: { metadata: { timeRequest: { kind: "policy_clock_out" } } },
+		});
+
+		await expect(finalize(dbService)).rejects.toThrow(
+			"Ordinary work-period finalization conflict",
+		);
+		expect(dbService.updateSets).toHaveLength(0);
+	});
+
+	it("allows a verified unlinked legacy source only when explicitly enabled", async () => {
+		const denied = createFinalizerDbService({
+			period: { approvalWorkflowId: null },
+		});
+		await expect(
+			finalize(denied, { expectedApprovalWorkflowId: null }),
+		).rejects.toThrow("Ordinary work-period finalization conflict");
+
+		const allowed = createFinalizerDbService({
+			period: { approvalWorkflowId: null },
+		});
+		await expect(
+			finalize(allowed, {
+				expectedApprovalWorkflowId: null,
+				allowUnlinkedLegacySource: true,
+			}),
+		).resolves.toMatchObject({ action: "approve" });
+	});
+
+	it("rejects an unlinked legacy source without exact scoped request evidence", async () => {
+		const dbService = createFinalizerDbService({
+			period: { approvalWorkflowId: null },
+			request: null,
+		});
+
+		await expect(
+			finalize(dbService, {
+				expectedApprovalWorkflowId: null,
+				allowUnlinkedLegacySource: true,
+			}),
+		).rejects.toThrow("Ordinary work-period finalization conflict");
+	});
+
+	it.each([
+		["zero period updates", { periodUpdate: 0 }],
+		["two period updates", { periodUpdate: 2 }],
+		["zero record updates", { recordUpdate: 0 }],
+		["two record updates", { recordUpdate: 2 }],
+		["zero decision inserts", { decisionInsert: 0 }],
+		["two decision inserts", { decisionInsert: 2 }],
+	] as const)("fails on %s", async (_name, cardinality) => {
+		const dbService = createFinalizerDbService({ cardinality });
+
+		await expect(finalize(dbService)).rejects.toThrow(
+			"Ordinary work-period finalization conflict",
+		);
 	});
 
 	it("approves the source period and canonical record and records one decision", async () => {
@@ -180,7 +528,7 @@ describe("ordinary work-period approval finalizer", () => {
 	});
 
 	it("rejects the source period and canonical record with the decision reason", async () => {
-		const dbService = createDecisionDbService();
+		const dbService = createDecisionDbService({ kind: "policy_clock_out" });
 
 		await runDecision(
 			rejectWorkPeriodWithCurrentApproverEffect(
@@ -230,7 +578,7 @@ describe("ordinary work-period approval finalizer", () => {
 					{ approvalRequestId: "approval-1" },
 				),
 			),
-		).rejects.toThrow("Work period is no longer pending approval");
+		).rejects.toThrow("Ordinary work-period finalization conflict");
 		expect(dbService.updateSets).toHaveLength(2);
 		expect(dbService.insertedValues).not.toContainEqual(
 			expect.objectContaining({ recordId: "record-1" }),
@@ -277,7 +625,10 @@ describe("ordinary work-period approval finalizer", () => {
 	});
 
 	it("auto-completes a policy clock-out with approved source state and a system decision", async () => {
-		const dbService = createDecisionDbService({ autoCompleted: true });
+		const dbService = createDecisionDbService({
+			autoCompleted: true,
+			kind: "policy_clock_out",
+		});
 
 		const result = await Effect.runPromise(
 			finalizeAutoCompletedWorkPeriodApprovalEffect(dbService, {
@@ -323,9 +674,9 @@ describe("ordinary work-period approval finalizer", () => {
 		);
 		expect(source).toContain("eq(workPeriod.employeeId, requestedBy)");
 		expect(source).toContain(
-			"eq(timeRecord.organizationId, approval.organizationId)",
+			"eq(timeRecord.organizationId, input.organizationId)",
 		);
-		expect(source).toContain("eq(timeRecord.employeeId, requestedBy)");
+		expect(source).toContain("eq(timeRecord.employeeId, record.employeeId)");
 		expect(source).toContain('eq(timeRecord.recordKind, "work")');
 	});
 
