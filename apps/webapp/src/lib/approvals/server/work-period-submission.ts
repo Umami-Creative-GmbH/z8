@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { Effect } from "effect";
+import { Cause, Effect, Exit, Option } from "effect";
 import { approvalRequest } from "@/db/schema";
 import {
 	instantFromDate,
@@ -7,6 +7,7 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { ValidationError } from "@/lib/effect/errors";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
@@ -1314,7 +1315,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 				});
 			},
 			mutate: async () => {
-				created = await Effect.runPromise(
+				const resolved = await Effect.runPromiseExit(
 					resolvePolicyAndCreateApproval(input.dbService, {
 						context: {
 							organizationId: input.organizationId,
@@ -1335,6 +1336,12 @@ async function executeOrdinaryWorkPeriodSubmission(
 						metadata: legacyMetadata,
 					}),
 				);
+				if (Exit.isFailure(resolved)) {
+					const failure = Option.getOrNull(Cause.failureOption(resolved.cause));
+					if (failure) throw failure;
+					return fail();
+				}
+				created = resolved.value;
 				if (created.kind === "auto_completed") {
 					await finalizeOrdinaryWorkPeriodTerminalInTransaction({
 						dbService: input.dbService,
@@ -1535,7 +1542,14 @@ export async function executeOrdinaryWorkPeriodSubmissionInTransaction(
 }> {
 	try {
 		return await executeOrdinaryWorkPeriodSubmission(input);
-	} catch {
+	} catch (error) {
+		if (
+			error instanceof ValidationError &&
+			error.field === "managerId" &&
+			error.message === "No manager assigned to approve time changes"
+		) {
+			throw error;
+		}
 		throw new OrdinaryWorkPeriodSubmissionError();
 	}
 }

@@ -32,6 +32,7 @@ async function getApprovalNotificationParticipants(
 			columns: { userId: true },
 		}),
 	]);
+
 	return {
 		employeeUserId: employeeData?.userId,
 		employeeName: employeeData?.user?.name || "Employee",
@@ -56,6 +57,7 @@ async function sendPendingApprovalNotifications(params: {
 			params.managerId,
 			params.organizationId,
 		);
+
 	if (employeeUserId) {
 		void onClockOutPendingApproval({
 			workPeriodId: params.workPeriodId,
@@ -65,8 +67,11 @@ async function sendPendingApprovalNotifications(params: {
 			startTime: params.startTime,
 			endTime: params.endTime,
 			durationMinutes: params.durationMinutes,
-		}).catch((error) => logger.error({ error }, params.employeeLogMessage));
+		}).catch((error) => {
+			logger.error({ error }, params.employeeLogMessage);
+		});
 	}
+
 	if (managerUserId) {
 		void onClockOutPendingApprovalToManager({
 			workPeriodId: params.workPeriodId,
@@ -77,8 +82,11 @@ async function sendPendingApprovalNotifications(params: {
 			endTime: params.endTime,
 			durationMinutes: params.durationMinutes,
 			managerUserId,
-		}).catch((error) => logger.error({ error }, params.managerLogMessage));
+		}).catch((error) => {
+			logger.error({ error }, params.managerLogMessage);
+		});
 	}
+
 	return { employeeUserId, employeeName };
 }
 
@@ -115,6 +123,7 @@ export async function sendClockOutApprovedNotification(params: {
 			params.organizationId,
 		);
 	if (!employeeUserId) return;
+
 	await onClockOutApproved({
 		workPeriodId: params.workPeriodId,
 		employeeUserId,
@@ -159,6 +168,7 @@ export async function sendManualEntryApprovedNotification(params: {
 			params.organizationId,
 		);
 	if (!employeeUserId) return;
+
 	await onManualEntryApproved({
 		workPeriodId: params.workPeriodId,
 		employeeUserId,

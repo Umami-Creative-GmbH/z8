@@ -1,6 +1,6 @@
+import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
-import { ValidationError } from "@/lib/effect/errors";
 
 const mockState = vi.hoisted(() => ({
 	getCurrentSession: vi.fn(),
@@ -20,6 +20,7 @@ const mockState = vi.hoisted(() => ({
 	sendClockOutApprovedNotification: vi.fn(),
 	createManualEntryApprovalRequest: vi.fn(),
 	executeOrdinarySubmission: vi.fn(),
+	useRealOrdinarySubmission: false,
 	sendManualEntryApprovalNotifications: vi.fn(),
 	sendManualEntryApprovedNotification: vi.fn(),
 	transactionOpen: false,
@@ -128,6 +129,18 @@ vi.mock("@/db/schema", () => ({
 		employeeId: "employeeManagers.employeeId",
 		managerId: "employeeManagers.managerId",
 	},
+	approvalPolicy: {
+		organizationId: "approvalPolicy.organizationId",
+		priority: "approvalPolicy.priority",
+	},
+	employeeGroupMember: {
+		organizationId: "employeeGroupMember.organizationId",
+		employeeId: "employeeGroupMember.employeeId",
+	},
+	employeeGroup: {
+		organizationId: "employeeGroup.organizationId",
+		isActive: "employeeGroup.isActive",
+	},
 	teamMembership: {
 		employeeId: "teamMembership.employeeId",
 		organizationId: "teamMembership.organizationId",
@@ -167,18 +180,48 @@ vi.mock("@/lib/approvals/server/work-period-approvals", () => ({
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction: vi.fn(),
 }));
 
-vi.mock("@/lib/approvals/server/work-period-submission", () => ({
-	executeOrdinaryWorkPeriodSubmissionInTransaction:
-		mockState.executeOrdinarySubmission,
-}));
+vi.mock(
+	"@/lib/approvals/server/work-period-submission",
+	async (importOriginal) => {
+		const actual =
+			await importOriginal<
+				typeof import("@/lib/approvals/server/work-period-submission")
+			>();
+		return {
+			...actual,
+			executeOrdinaryWorkPeriodSubmissionInTransaction: (input: never) =>
+				mockState.useRealOrdinarySubmission
+					? actual.executeOrdinaryWorkPeriodSubmissionInTransaction(input)
+					: mockState.executeOrdinarySubmission(input),
+		};
+	},
+);
 
 vi.mock("@/lib/approvals/workflow/runtime", () => ({
 	createProductionApprovalWorkflowRuntime: () => ({
 		repository: {
 			withTransaction: (operation: (context: unknown) => Promise<unknown>) =>
-				mockState.transaction((tx: unknown) =>
-					operation({ dbService: { db: tx } }),
-				),
+				mockState.transaction((tx: unknown) => {
+					const compatibilityWriter = {
+						withWriteGate: () => compatibilityWriter,
+						mirrorCanonicalToLegacy: vi.fn(),
+					};
+					return operation({
+						dbService: { db: tx },
+						writeGate: {
+							acquire: async () => ({
+								mode: "legacy",
+								behavior: {
+									writeLegacy: true,
+									writeCanonical: false,
+									decideCanonical: false,
+									observation: "none",
+								},
+							}),
+						},
+						compatibilityWriter,
+					});
+				}),
 		},
 	}),
 }));
@@ -251,6 +294,85 @@ const {
 } = await import("./clocking");
 
 const defaultSubmissionId = "10000000-0000-4000-8000-000000000099";
+
+function ordinarySubmissionSource(
+	kind: "manual_time_submission" | "policy_clock_out",
+	periodId = "period-1",
+	date = "2026-05-04",
+) {
+	return {
+		id: periodId,
+		organizationId: "org-1",
+		employeeId: "employee-1",
+		requesterUserId: "user-1",
+		clockInId: "clock-in-1",
+		clockOutId: "clock-out-1",
+		canonicalRecordId: "canonical-1",
+		approvalWorkflowId: null,
+		approvalStatus: "pending",
+		pendingChanges: {
+			ordinarySubmission: { submissionId: defaultSubmissionId, kind },
+		},
+		isActive: false,
+		startTime: new Date(`${date}T09:00:00.000Z`),
+		endTime: new Date(`${date}T10:00:00.000Z`),
+		durationMinutes: 60,
+		deletedAt: null,
+		canonicalId: "canonical-1",
+		canonicalOrganizationId: "org-1",
+		canonicalEmployeeId: "employee-1",
+		canonicalRecordKind: "work",
+		canonicalStartAt: new Date(`${date}T09:00:00.000Z`),
+		canonicalEndAt: new Date(`${date}T10:00:00.000Z`),
+		canonicalDurationMinutes: 60,
+		canonicalApprovalState: "pending",
+		pendingLegacyRequests: [],
+		pendingCanonicalWorkflows: [],
+		terminalCanonicalWorkflows: [],
+		terminalLegacyMarkedRequests: [],
+		historicalLegacyAutoRequests: [],
+		hasMalformedLegacyMarker: false,
+	};
+}
+
+function ordinarySubmissionQueries() {
+	return {
+		approvalPolicy: { findMany: vi.fn().mockResolvedValue([]) },
+		employeeGroupMember: { findMany: vi.fn().mockResolvedValue([]) },
+		employeeGroup: { findMany: vi.fn().mockResolvedValue([]) },
+		employee: {
+			findMany: vi.fn().mockResolvedValue([
+				{
+					id: "employee-1",
+					userId: "user-1",
+					organizationId: "org-1",
+					isActive: true,
+				},
+			]),
+		},
+		employeeManagers: { findMany: mockState.findManagerLinks },
+		teamMembership: { findMany: mockState.findTeamMemberships },
+		team: { findMany: mockState.findTeams },
+	};
+}
+
+function ordinarySubmissionExecute(
+	kind: "manual_time_submission" | "policy_clock_out",
+	periodId?: string,
+	date?: string,
+) {
+	const dialect = new PgDialect();
+	return vi.fn(async (query: SQL) => {
+		const compiled = dialect.sqlToQuery(query);
+		return compiled.sql.includes("pg_advisory_xact_lock")
+			? { rows: [{ locked: null }] }
+			: { rows: [ordinarySubmissionSource(kind, periodId, date)] };
+	});
+}
+
+beforeEach(() => {
+	mockState.useRealOrdinarySubmission = false;
+});
 
 function approvalRequestMetadata(
 	kind: "manual_time_submission" | "policy_clock_out",
@@ -698,7 +820,9 @@ describe("clockOut", () => {
 		mockState.updateReturning.mockResolvedValue([{ id: "period-1" }]);
 		mockState.transaction.mockImplementation(async (callback) =>
 			callback({
+				execute: ordinarySubmissionExecute("policy_clock_out"),
 				query: {
+					...ordinarySubmissionQueries(),
 					workPeriod: {
 						findFirst: mockState.findExistingPeriod,
 						findMany: mockState.findPolicyPeriods,
@@ -1608,12 +1732,7 @@ describe("clockOut", () => {
 	it("rejects approval-required clock-out when no manager is assigned", async () => {
 		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
 		mockState.findManagerLinks.mockResolvedValue([]);
-		mockState.executeOrdinarySubmission.mockRejectedValueOnce(
-			new ValidationError({
-				message: "No manager assigned to approve time changes",
-				field: "managerId",
-			}),
-		);
+		mockState.useRealOrdinarySubmission = true;
 
 		const result = await clockOut();
 
@@ -1621,9 +1740,6 @@ describe("clockOut", () => {
 			success: false,
 			error: "No manager assigned to approve time changes",
 		});
-		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
-			expect.objectContaining({ defaultApproverId: null }),
-		);
 	});
 
 	it("fails closed when the clock-out approval check fails before mutating", async () => {
@@ -1815,12 +1931,7 @@ describe("clockOut", () => {
 	it("does not mark work balance dirty when rejecting approval-required clock-out without a manager", async () => {
 		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
 		mockState.findManagerLinks.mockResolvedValue([]);
-		mockState.executeOrdinarySubmission.mockRejectedValueOnce(
-			new ValidationError({
-				message: "No manager assigned to approve time changes",
-				field: "managerId",
-			}),
-		);
+		mockState.useRealOrdinarySubmission = true;
 
 		const result = await clockOut();
 
@@ -1894,8 +2005,9 @@ describe("createManualTimeEntry", () => {
 		mockState.findTeams.mockResolvedValue([]);
 		mockState.transaction.mockImplementation(async (callback) =>
 			callback({
-				execute: vi.fn().mockResolvedValue({ rows: [{ locked: null }] }),
+				execute: ordinarySubmissionExecute("manual_time_submission"),
 				query: {
+					...ordinarySubmissionQueries(),
 					workPeriod: {
 						findFirst: mockState.findExistingPeriod,
 						findMany: mockState.findPolicyPeriods,
@@ -1927,6 +2039,7 @@ describe("createManualTimeEntry", () => {
 	});
 
 	it("fails closed for approval-required manual entries when no approver resolves", async () => {
+		mockState.useRealOrdinarySubmission = true;
 		mockState.createTimeEntry
 			.mockResolvedValueOnce({ id: "clock-in-1", type: "clock_in" })
 			.mockResolvedValueOnce({ id: "clock-out-1", type: "clock_out" });
@@ -1938,13 +2051,6 @@ describe("createManualTimeEntry", () => {
 		});
 		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
-		mockState.createManualEntryApprovalRequest.mockRejectedValue(
-			new ValidationError({
-				message: "No manager assigned to approve time changes",
-				field: "managerId",
-			}),
-		);
-
 		const result = await createManualTimeEntry({
 			date: "2026-05-04",
 			clockInTime: "08:00",
@@ -1956,9 +2062,6 @@ describe("createManualTimeEntry", () => {
 			success: false,
 			error: "No manager assigned to approve time changes",
 		});
-		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
-			expect.objectContaining({ defaultApproverId: null }),
-		);
 	});
 
 	it("fails closed when the manual-entry edit capability check fails before mutating", async () => {
@@ -3457,6 +3560,7 @@ describe("createManualTimeEntry", () => {
 
 	it("rolls back approval-required manual entries when no manager or policy approver resolves", async () => {
 		mockState.findManagerLinks.mockResolvedValue([]);
+		mockState.useRealOrdinarySubmission = true;
 		const durableState = {
 			entries: [] as string[],
 			workPeriods: [] as string[],
@@ -3479,13 +3583,6 @@ describe("createManualTimeEntry", () => {
 				returning: vi.fn().mockResolvedValue([{ id: "period-1", ...values }]),
 			};
 		});
-		mockState.createManualEntryApprovalRequest.mockImplementation(async () => {
-			durableState.approvals.push("approval-1");
-			throw new ValidationError({
-				message: "No manager assigned to approve time changes",
-				field: "managerId",
-			});
-		});
 		mockState.transaction.mockImplementation(async (callback) => {
 			const snapshot = {
 				entries: durableState.entries.length,
@@ -3495,8 +3592,13 @@ describe("createManualTimeEntry", () => {
 			};
 			try {
 				return await callback({
-					execute: vi.fn().mockResolvedValue({ rows: [{ locked: null }] }),
+					execute: ordinarySubmissionExecute(
+						"manual_time_submission",
+						defaultSubmissionId,
+						"2026-05-03",
+					),
 					query: {
+						...ordinarySubmissionQueries(),
 						workPeriod: {
 							findFirst: mockState.findExistingPeriod,
 							findMany: mockState.findPolicyPeriods,

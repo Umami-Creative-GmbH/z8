@@ -1188,7 +1188,7 @@ describe("resolvePolicyAndCreateApproval", () => {
 		const result = await Effect.runPromise(
 			resolvePolicyAndCreateApproval(dbService, {
 				context: policyResolutionContext,
-				defaultApproverId: "emp-requester",
+				defaultApproverId: null,
 			}),
 		);
 

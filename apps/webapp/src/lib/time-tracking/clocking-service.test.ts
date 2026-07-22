@@ -1,14 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
-import {
-	ClockingConflictError,
-	createClockingService,
-} from "./clocking-service";
+import { ClockingConflictError, createClockingService } from "./clocking-service";
 
-function createHarness(options?: {
-	member?: boolean;
-	failPeriodInsert?: boolean;
-}) {
+function createHarness(options?: { member?: boolean; failPeriodInsert?: boolean }) {
 	let active = false;
 	let entries = 0;
 	const actions = new Map<string, { id: string; [key: string]: unknown }>();
@@ -36,9 +30,7 @@ function createHarness(options?: {
 					getEntryByActionId: async (_employeeId, _organizationId, actionId) =>
 						actionId ? (actions.get(actionId) ?? null) : null,
 					getActivePeriod: async () =>
-						active
-							? { id: "period-1", startTime: new Date("2026-07-10T08:00:00Z") }
-							: null,
+						active ? { id: "period-1", startTime: new Date("2026-07-10T08:00:00Z") } : null,
 					getCompletedPeriodByClockOutActionId: async (
 						_employeeId,
 						_organizationId,
@@ -56,8 +48,7 @@ function createHarness(options?: {
 						return inserted;
 					},
 					insertActivePeriod: async () => {
-						if (options?.failPeriodInsert)
-							throw new Error("period insert failed");
+						if (options?.failPeriodInsert) throw new Error("period insert failed");
 						active = true;
 						return { id: "period-1" };
 					},
@@ -177,30 +168,18 @@ describe("clocking service", () => {
 
 	it("serializes simultaneous clock-ins so exactly one creates an active period", async () => {
 		const { service, entries } = createHarness();
-		const results = await Promise.allSettled([
-			service.clockIn(clockIn),
-			service.clockIn(clockIn),
-		]);
+		const results = await Promise.allSettled([service.clockIn(clockIn), service.clockIn(clockIn)]);
 
-		expect(
-			results.filter((result) => result.status === "fulfilled"),
-		).toHaveLength(1);
-		expect(
-			results.filter((result) => result.status === "rejected"),
-		).toHaveLength(1);
+		expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+		expect(results.filter((result) => result.status === "rejected")).toHaveLength(1);
 		expect(entries()).toBe(1);
 		const rejected = results.find((result) => result.status === "rejected");
-		expect(rejected).toMatchObject({
-			reason: expect.any(ClockingConflictError),
-		});
+		expect(rejected).toMatchObject({ reason: expect.any(ClockingConflictError) });
 	});
 
 	it("returns the original entry for a repeated extension action id without another write", async () => {
 		const { service, entries } = createHarness();
-		const action = {
-			...clockIn,
-			actionId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-		};
+		const action = { ...clockIn, actionId: "f47ac10b-58cc-4372-a567-0e02b2c3d479" };
 
 		const first = await service.clockIn(action);
 		const duplicate = await service.clockIn(action);
@@ -278,9 +257,7 @@ describe("clocking service", () => {
 			},
 		});
 
-		await expect(service.clockIn(clockIn)).rejects.toThrow(
-			"period insert failed",
-		);
+		await expect(service.clockIn(clockIn)).rejects.toThrow("period insert failed");
 		expect(inserted).toEqual([]);
 	});
 });

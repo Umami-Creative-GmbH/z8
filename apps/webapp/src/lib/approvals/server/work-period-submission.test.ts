@@ -2,6 +2,7 @@ import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { ValidationError } from "@/lib/effect/errors";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import type { ResolvePolicyAndCreateApprovalResult } from "../policies/chain-service";
 import type { ApprovalRolloutMode } from "../workflow/ports";
@@ -21,6 +22,8 @@ const state = vi.hoisted(() => ({
 	kind: "manual_time_submission" as
 		| "manual_time_submission"
 		| "policy_clock_out",
+	useRealResolver: false,
+	resolverError: null as unknown,
 }));
 
 vi.mock("../policies/chain-service", async (importOriginal) => {
@@ -28,16 +31,19 @@ vi.mock("../policies/chain-service", async (importOriginal) => {
 		await importOriginal<typeof import("../policies/chain-service")>();
 	return {
 		...actual,
-		resolvePolicyAndCreateApproval: (_db: unknown, input: unknown) =>
-			Effect.tryPromise({
-				try: async () => {
-					state.calls.push(`legacy:${JSON.stringify(input)}`);
-					if (state.failure === "legacy")
-						throw new Error("private-legacy-evidence");
-					return state.result;
-				},
-				catch: (error) => error as Error,
-			}),
+		resolvePolicyAndCreateApproval: (db: never, input: never) =>
+			state.useRealResolver
+				? actual.resolvePolicyAndCreateApproval(db, input)
+				: Effect.tryPromise({
+						try: async () => {
+							state.calls.push(`legacy:${JSON.stringify(input)}`);
+							if (state.resolverError) throw state.resolverError;
+							if (state.failure === "legacy")
+								throw new Error("private-legacy-evidence");
+							return state.result;
+						},
+						catch: (error) => error as Error,
+					}),
 	};
 });
 
@@ -159,6 +165,7 @@ import { deriveApprovalWorkflowId } from "../workflow/identity";
 import {
 	type ExecuteOrdinaryWorkPeriodSubmissionInput,
 	executeOrdinaryWorkPeriodSubmissionInTransaction,
+	OrdinaryWorkPeriodSubmissionError,
 } from "./work-period-submission";
 
 const organizationId = "org-1";
@@ -271,6 +278,22 @@ function fixture(
 			return { rows: [row] };
 		}),
 		query: {
+			approvalPolicy: { findMany: vi.fn().mockResolvedValue([]) },
+			employeeGroupMember: { findMany: vi.fn().mockResolvedValue([]) },
+			employeeGroup: { findMany: vi.fn().mockResolvedValue([]) },
+			employee: {
+				findMany: vi.fn().mockResolvedValue([
+					{
+						id: requesterEmployeeId,
+						organizationId,
+						userId: requesterUserId,
+						isActive: true,
+					},
+				]),
+			},
+			employeeManagers: { findMany: vi.fn().mockResolvedValue([]) },
+			teamMembership: { findMany: vi.fn().mockResolvedValue([]) },
+			team: { findMany: vi.fn().mockResolvedValue([]) },
 			approvalRequest: {
 				findFirst: vi.fn().mockResolvedValue({
 					id: "40000000-0000-4000-8000-000000000001",
@@ -394,10 +417,68 @@ beforeEach(() => {
 	state.startKind = "created";
 	state.workflowId = expectedWorkflowId("manual_time_submission");
 	state.kind = "manual_time_submission";
+	state.useRealResolver = false;
+	state.resolverError = null;
 	state.result = {
 		kind: "default_created",
 		approvalRequestId: "40000000-0000-4000-8000-000000000001",
 	};
+});
+
+it("preserves the exact real resolver no-manager validation error", async () => {
+	state.useRealResolver = true;
+	const fake = fixture();
+	fake.input.defaultApproverId = null;
+
+	const rejected = await executeOrdinaryWorkPeriodSubmissionInTransaction(
+		fake.input,
+	).catch((error: unknown) => error);
+
+	expect(rejected).toBeInstanceOf(ValidationError);
+	expect(rejected).toMatchObject({
+		_tag: "ValidationError",
+		field: "managerId",
+		message: "No manager assigned to approve time changes",
+	});
+});
+
+it.each([
+	{
+		field: "managerId",
+		message: "private policy stage resolution detail",
+	},
+	{
+		field: "approvalPolicyStage.approverType",
+		message: "No manager assigned to approve time changes",
+	},
+])("redacts non-allowlisted resolver validation errors %#", async (error) => {
+	state.resolverError = new ValidationError(error);
+	const fake = fixture();
+
+	const rejected = await executeOrdinaryWorkPeriodSubmissionInTransaction(
+		fake.input,
+	).catch((caught: unknown) => caught);
+
+	expect(rejected).toBeInstanceOf(OrdinaryWorkPeriodSubmissionError);
+	expect(rejected).not.toBeInstanceOf(ValidationError);
+	expect(String(rejected)).not.toContain(error.message);
+});
+
+it("redacts structurally spoofed manager validation errors", async () => {
+	state.resolverError = {
+		_tag: "ValidationError",
+		field: "managerId",
+		message: "No manager assigned to approve time changes",
+		privateDetail: "dependency-owned evidence",
+	};
+	const fake = fixture();
+
+	const rejected = await executeOrdinaryWorkPeriodSubmissionInTransaction(
+		fake.input,
+	).catch((error: unknown) => error);
+
+	expect(rejected).toBeInstanceOf(OrdinaryWorkPeriodSubmissionError);
+	expect(String(rejected)).not.toContain("dependency-owned evidence");
 });
 
 function expectedWorkflowId(

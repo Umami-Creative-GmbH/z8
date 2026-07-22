@@ -1247,9 +1247,7 @@ export async function clockOut(
 								projectId: projectId ?? null,
 								origin: "clock",
 							},
-							transaction as Parameters<
-								Parameters<typeof db.transaction>[0]
-							>[0],
+							transaction as Parameters<Parameters<typeof db.transaction>[0]>[0],
 						);
 					return { canonicalRecordId: canonicalRecord.id };
 				},
