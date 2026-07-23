@@ -64,6 +64,10 @@ function loadCurrentApproverById(
 // Type for work period entity with relations
 interface WorkPeriodWithRelations {
 	id: string;
+	employeeId: string;
+	organizationId: string;
+	clockInId: string;
+	clockOutId: string | null;
 	startTime: Date;
 	endTime: Date | null;
 	durationMinutes: number | null;
@@ -88,12 +92,18 @@ interface WorkPeriodWithRelations {
 	};
 	clockIn: {
 		id: string;
+		employeeId: string;
+		organizationId: string;
+		type: string;
 		timestamp: Date;
 		utcOffsetMinutes?: number;
 		timezone?: string | null;
 	};
 	clockOut: {
 		id: string;
+		employeeId: string;
+		organizationId: string;
+		type: string;
 		timestamp: Date;
 		utcOffsetMinutes?: number;
 		timezone?: string | null;
@@ -128,6 +138,31 @@ type TimeCorrectionApprovalMetadata = {
 		clockOutCorrectionId?: string;
 	};
 };
+
+function hasValidApprovalEndpoints(
+	period: WorkPeriodWithRelations,
+	requestOrganizationId: string,
+) {
+	const matchesEndpoint = (
+		entry: WorkPeriodWithRelations["clockIn"] | null,
+		expectedId: string,
+		expectedType: "clock_in" | "clock_out",
+	) =>
+		entry !== null &&
+		entry.id === expectedId &&
+		entry.organizationId === requestOrganizationId &&
+		entry.employeeId === period.employeeId &&
+		entry.type === expectedType;
+
+	return (
+		period.organizationId === requestOrganizationId &&
+		period.employee.id === period.employeeId &&
+		matchesEndpoint(period.clockIn, period.clockInId, "clock_in") &&
+		(period.clockOutId === null
+			? period.clockOut === null
+			: matchesEndpoint(period.clockOut, period.clockOutId, "clock_out"))
+	);
+}
 
 /**
  * Format duration in minutes to human-readable string.
@@ -462,7 +497,8 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 								(requestsByEntityId.get(period.id) ?? []).some(
 									(request) =>
 										request.organizationId === params.organizationId &&
-										request.requestedBy === period.employee.id,
+										request.requestedBy === period.employee.id &&
+										hasValidApprovalEndpoints(period, request.organizationId),
 								),
 						);
 						const originalEntryIds = typedPeriods.flatMap((period) =>
@@ -730,7 +766,8 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 				);
 				if (
 					request.organizationId !== period.employee.organizationId ||
-					request.requestedBy !== period.employee.id
+					request.requestedBy !== period.employee.id ||
+					!hasValidApprovalEndpoints(period, request.organizationId)
 				) {
 					return yield* _(
 						Effect.fail(

@@ -69,6 +69,10 @@ describe("TimeCorrectionHandler detail loading", () => {
 describe("buildPendingCorrectionReview", () => {
 	const period = {
 		id: "period-1",
+		employeeId: "emp-1",
+		organizationId: "org-1",
+		clockInId: "clock-in-original",
+		clockOutId: "clock-out-original",
 		startTime: new Date("2026-05-22T14:00:00.000Z"),
 		endTime: new Date("2026-05-22T18:00:00.000Z"),
 		durationMinutes: 240,
@@ -86,11 +90,19 @@ describe("buildPendingCorrectionReview", () => {
 		},
 		clockIn: {
 			id: "clock-in-original",
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			type: "clock_in",
 			timestamp: new Date("2026-05-22T14:00:00.000Z"),
+			utcOffsetMinutes: 120,
 		},
 		clockOut: {
 			id: "clock-out-original",
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			type: "clock_out",
 			timestamp: new Date("2026-05-22T18:00:00.000Z"),
+			utcOffsetMinutes: -300,
 		},
 		pendingChanges: null,
 	};
@@ -153,6 +165,10 @@ describe("buildPendingCorrectionReview", () => {
 describe("shared time-entry approval presentation", () => {
 	const period = {
 		id: "period-1",
+		employeeId: "emp-1",
+		organizationId: "org-1",
+		clockInId: "clock-in-original",
+		clockOutId: "clock-out-original",
 		startTime: new Date("2026-05-22T14:00:00.000Z"),
 		endTime: new Date("2026-05-22T18:00:00.000Z"),
 		durationMinutes: 240,
@@ -171,11 +187,19 @@ describe("shared time-entry approval presentation", () => {
 		},
 		clockIn: {
 			id: "clock-in-original",
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			type: "clock_in",
 			timestamp: new Date("2026-05-22T14:00:00.000Z"),
+			utcOffsetMinutes: 120,
 		},
 		clockOut: {
 			id: "clock-out-original",
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			type: "clock_out",
 			timestamp: new Date("2026-05-22T18:00:00.000Z"),
+			utcOffsetMinutes: -300,
 		},
 	};
 
@@ -509,11 +533,19 @@ function createSupersededHistoryDbService() {
 		},
 		clockIn: {
 			id: "clock-in-original",
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			type: "clock_in",
 			timestamp: new Date("2026-05-22T14:00:00.000Z"),
+			utcOffsetMinutes: 120,
 		},
 		clockOut: {
 			id: "clock-out-original",
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			type: "clock_out",
 			timestamp: new Date("2026-05-22T18:00:00.000Z"),
+			utcOffsetMinutes: -300,
 		},
 	};
 	const request = {
@@ -602,6 +634,128 @@ function createSupersededHistoryDbService() {
 }
 
 describe("superseded correction history regression", () => {
+	const invalidEndpointCases = [
+		{
+			name: "a foreign-organization clock-in",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockIn.organizationId = "org-foreign";
+			},
+		},
+		{
+			name: "a wrong-employee clock-in",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockIn.employeeId = "emp-foreign";
+			},
+		},
+		{
+			name: "a mismatched clock-in link",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockIn.id = "clock-in-foreign";
+			},
+		},
+		{
+			name: "a wrong-type clock-in",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockIn.type = "clock_out";
+			},
+		},
+		{
+			name: "a foreign-organization clock-out",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockOut.organizationId = "org-foreign";
+			},
+		},
+		{
+			name: "a wrong-employee clock-out",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockOut.employeeId = "emp-foreign";
+			},
+		},
+		{
+			name: "a mismatched clock-out link",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockOut.id = "clock-out-foreign";
+			},
+		},
+		{
+			name: "a wrong-type clock-out",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockOut.type = "clock_in";
+			},
+		},
+	] as const;
+
+	it.each(
+		invalidEndpointCases,
+	)("omits list rows joined to $name without exposing endpoint or requester data", async ({
+		mutate,
+	}) => {
+		const fixture = createSupersededHistoryDbService();
+		mutate(fixture);
+
+		const items = await Effect.runPromise(
+			TimeCorrectionHandler.getApprovals({
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 20,
+			}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+		);
+
+		const serialized = JSON.stringify(items);
+		expect(items).toEqual([]);
+		expect(serialized).not.toContain("May 22, 2026");
+		expect(serialized).not.toContain("16:00");
+		expect(serialized).not.toContain("13:00");
+		expect(serialized).not.toContain("Kai Hentschel");
+		expect(fixture.timeEntryFindMany).not.toHaveBeenCalled();
+	});
+
+	it.each(
+		invalidEndpointCases,
+	)("rejects detail rows joined to $name without exposing endpoint or requester data", async ({
+		mutate,
+	}) => {
+		const fixture = createSupersededHistoryDbService();
+		mutate(fixture);
+
+		let rejection: unknown;
+		try {
+			await Effect.runPromise(
+				TimeCorrectionHandler.getDetail("period-1", "org-1", {
+					approvalId: "approval-1",
+				}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+			);
+		} catch (error) {
+			rejection = error;
+		}
+
+		const serialized = JSON.stringify(rejection);
+		expect(rejection).toBeDefined();
+		expect(String(rejection)).toContain("Work period not found");
+		expect(serialized).not.toContain("2026-05-22");
+		expect(serialized).not.toContain("120");
+		expect(serialized).not.toContain("-300");
+		expect(serialized).not.toContain("Kai Hentschel");
+		expect(fixture.timeEntryFindMany).not.toHaveBeenCalled();
+	});
+
 	it.each([
 		{
 			name: "an employee from another organization",
