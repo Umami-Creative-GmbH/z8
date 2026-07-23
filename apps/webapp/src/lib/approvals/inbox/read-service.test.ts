@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
+import type { OrdinaryCanonicalApproval } from "@/lib/approvals/inbox/ordinary-canonical-read";
 import { getApprovalInboxListFromSources } from "@/lib/approvals/inbox/read-service";
 import type { ApprovalInboxSource } from "@/lib/approvals/inbox/source-adapters";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -50,6 +51,73 @@ function source(
 }
 
 describe("getApprovalInboxListFromSources", () => {
+	it("merges canonical-only ordinary items into list and count", async () => {
+		const canonicalItem = {
+			item: {
+				id: "assignment-1",
+				type: "time_entry",
+				entityId: "period-1",
+				status: "pending",
+				requester: {
+					id: "employee-1",
+					name: "Avery",
+					email: "avery@example.com",
+					image: null,
+					teamId: null,
+				},
+				summary: {
+					title: "Manual Time Submission",
+					subtitle: "Jul 20",
+					detail: "8h",
+					badge: null,
+				},
+				timing: {
+					createdAt: "2026-05-30T09:00:00.000Z",
+					resolvedAt: null,
+					slaDeadline: null,
+					ageDays: 1,
+				},
+				triage: {
+					priority: "low",
+					riskLevel: "medium",
+					riskReasons: ["needs_review"],
+					fastLaneGroup: null,
+					isPayrollRelevant: false,
+					explanation: "Needs manual review.",
+				},
+				capabilities: {
+					canApprove: true,
+					canReject: true,
+					canBulkApprove: true,
+					requiresRejectReason: true,
+				},
+			},
+		} as OrdinaryCanonicalApproval;
+		const loadCanonicalOrdinaryApprovals = vi.fn(async () => [canonicalItem]);
+
+		const result = await getApprovalInboxListFromSources({
+			sources: [source("time_entry", [])],
+			params: {
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+			},
+			loadCanonicalOrdinaryApprovals,
+		});
+
+		expect(result.items.map(({ id }) => id)).toEqual(["assignment-1"]);
+		expect(result.counts.time_entry).toBe(1);
+		expect(result.total).toBe(1);
+		expect(loadCanonicalOrdinaryApprovals).toHaveBeenCalledWith({
+			approverId: "manager-1",
+			organizationId: "org-1",
+			eligibleApprovalScopes: undefined,
+			includeAllApprovers: undefined,
+			search: undefined,
+			teamId: undefined,
+		});
+	});
+
 	it("returns serializable items sorted by risk and age", async () => {
 		const result = await getApprovalInboxListFromSources({
 			sources: [

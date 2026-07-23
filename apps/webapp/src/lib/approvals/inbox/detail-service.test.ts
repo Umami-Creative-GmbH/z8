@@ -1,6 +1,10 @@
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { getApprovalInboxDetailFromRequest } from "@/lib/approvals/inbox/read-service";
+import type { OrdinaryCanonicalApproval } from "@/lib/approvals/inbox/ordinary-canonical-read";
+import {
+	getApprovalInboxDetail,
+	getApprovalInboxDetailFromRequest,
+} from "@/lib/approvals/inbox/read-service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 
 const request = {
@@ -60,6 +64,37 @@ function createHandler(detail = createDetail(), type = "absence_entry") {
 }
 
 describe("getApprovalInboxDetailFromRequest", () => {
+	it("resolves canonical-only detail by assignment id", async () => {
+		const detail = {
+			item: { id: "assignment-1" },
+			sections: [],
+			actions: {},
+		};
+		const canonical = {
+			item: { id: "assignment-1" },
+			detail,
+		} as unknown as OrdinaryCanonicalApproval;
+		const loadCanonicalOrdinaryApprovals = vi.fn(async () => [canonical]);
+
+		await expect(
+			getApprovalInboxDetail({
+				approvalId: "assignment-1",
+				organizationId: "org-1",
+				approverId: "manager-1",
+				database: {
+					query: { approvalRequest: { findFirst: async () => null } },
+				},
+				loadCanonicalOrdinaryApprovals,
+			}),
+		).resolves.toBe(detail);
+		expect(loadCanonicalOrdinaryApprovals).toHaveBeenCalledWith({
+			approverId: "manager-1",
+			organizationId: "org-1",
+			includeAllApprovers: undefined,
+			eligibleApprovalScopes: undefined,
+		});
+	});
+
 	it("returns serializable generic detail sections", async () => {
 		const result = await getApprovalInboxDetailFromRequest({
 			request,

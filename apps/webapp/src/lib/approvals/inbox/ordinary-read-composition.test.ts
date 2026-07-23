@@ -1,8 +1,15 @@
+import { Effect, Exit } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { createOrdinaryWorkPeriodApprovalAdapter } from "@/lib/approvals/domain-adapters/work-period.adapter";
 import type { OrdinaryWorkPeriodApprovalKind } from "@/lib/approvals/domain-adapters/work-period-contract";
 import { TimeCorrectionHandler } from "@/lib/approvals/handlers/time-correction.handler";
 import {
+	bulkDecideApprovalInboxItemsFromRequests,
+	decideApprovalInboxItemFromRequest,
+} from "@/lib/approvals/inbox/decision-service";
+import { loadOrdinaryCanonicalApprovals } from "@/lib/approvals/inbox/ordinary-canonical-read";
+import {
+	getApprovalInboxDetail,
 	getApprovalInboxDetailFromRequest,
 	getApprovalInboxListFromSources,
 } from "@/lib/approvals/inbox/read-service";
@@ -234,7 +241,6 @@ describe.each([
 	"shadow",
 	"ready",
 	"canonical",
-	"complete",
 ] as const)("ordinary approval read composition in %s mode", (mode) => {
 	it.each([
 		"manual_time_submission",
@@ -332,6 +338,148 @@ describe.each([
 		expect(
 			`${JSON.stringify(projection.displayPayload)} ${projection.searchText}`,
 		).not.toMatch(forbiddenPrivatePattern);
+	});
+});
+
+describe.each([
+	"manual_time_submission",
+	"policy_clock_out",
+] as const)("complete-mode %s production read composition", (kind) => {
+	it("serves projection list, count, detail, individual, and bulk with zero compatibility rows", async () => {
+		dbMocks.approvalRequests.mockReset().mockResolvedValue([]);
+		const { period } = fixture("complete", kind);
+		const assignment = {
+			id: approvalId,
+			organizationId,
+			workflowId,
+			stageId,
+			sequence: 1,
+			approverEmployeeId: approverId,
+			status: "pending",
+			assignedAt: new Date("2026-07-20T14:05:00Z"),
+		};
+		const projected = await canonicalProjection(kind);
+		const workflow = {
+			id: workflowId,
+			organizationId,
+			workflowType: kind,
+			sourceType: "time_entry",
+			sourceId: periodId,
+			requesterEmployeeId: employeeId,
+			status: "pending",
+			currentStageOrder: 2,
+			contextSnapshot: { timeRequest: { kind } },
+			submittedAt: new Date("2026-07-20T14:05:00Z"),
+			requester: period.employee,
+		};
+		const activeStage = {
+			id: stageId,
+			organizationId,
+			workflowId,
+			sequence: 2,
+			label: "Manager review",
+			status: "pending",
+			legacyApprovalRequestId: null,
+			assignments: [assignment],
+		};
+		const productionPeriod = {
+			...period,
+			approvalStatus: "pending",
+			isActive: false,
+			deletedAt: null,
+			canonicalRecordId,
+			approvalWorkflowId: workflowId,
+			clockIn: { ...period.clockIn, isSuperseded: false, supersededById: null },
+			clockOut: period.clockOut
+				? { ...period.clockOut, isSuperseded: false, supersededById: null }
+				: null,
+		};
+		const database = {
+			query: {
+				approvalInboxProjection: {
+					findMany: vi.fn(async () => [
+						{
+							id: "80000000-0000-4000-8000-000000000001",
+							organizationId,
+							workflowId,
+							activeStageId: stageId,
+							sourceType: "time_entry",
+							sourceId: periodId,
+							status: "pending",
+							displayPayload: projected.displayPayload,
+							searchText: projected.searchText,
+							createdAt: new Date("2026-07-20T14:05:00Z"),
+							workflow,
+							activeStage,
+						},
+					]),
+				},
+				workPeriod: { findFirst: vi.fn(async () => productionPeriod) },
+				timeRecord: {
+					findFirst: vi.fn(async () => ({
+						id: canonicalRecordId,
+						organizationId,
+						employeeId,
+						recordKind: "work",
+						startAt: productionPeriod.startTime,
+						endAt: productionPeriod.endTime,
+						durationMinutes: 480,
+						approvalState: "pending",
+					})),
+				},
+				approvalRequest: {
+					findFirst: vi.fn(async () => null),
+					findMany: vi.fn(async () => []),
+				},
+			},
+		};
+		const loadCanonical = () =>
+			loadOrdinaryCanonicalApprovals({
+				database,
+				organizationId,
+				approverId,
+			});
+		const list = await getApprovalInboxListFromSources({
+			sources: [source],
+			params: { approverId, organizationId, status: "pending" },
+			loadCanonicalOrdinaryApprovals: loadCanonical,
+		});
+		const detail = await getApprovalInboxDetail({
+			approvalId,
+			organizationId,
+			approverId,
+			database,
+			loadCanonicalOrdinaryApprovals: loadCanonical,
+		});
+		const [canonical] = await loadCanonical();
+		const handler = {
+			type: "time_entry",
+			displayName: "Time Correction",
+			supportsBulkApprove: true,
+			approve: vi.fn(() => Effect.void),
+			reject: vi.fn(() => Effect.void),
+		} as never;
+		const individual = await decideApprovalInboxItemFromRequest({
+			request: canonical?.decisionTarget as never,
+			actorEmployeeId: approverId,
+			action: "approve",
+			handler,
+			runEffect: async () => Exit.succeed(undefined),
+		});
+		const bulk = await bulkDecideApprovalInboxItemsFromRequests({
+			requests: [canonical?.decisionTarget as never],
+			actorEmployeeId: approverId,
+			action: "approve",
+			resolveHandler: () => handler,
+			runEffect: async () => Exit.succeed(undefined),
+		});
+
+		expect(database.query.approvalRequest.findMany).not.toHaveBeenCalled();
+		expect(list.items.map(({ id }) => id)).toEqual([approvalId]);
+		expect(list.counts.time_entry).toBe(1);
+		expect(detail.item.id).toBe(approvalId);
+		expect(individual.id).toBe(approvalId);
+		expect(bulk).toMatchObject({ succeeded: [{ id: approvalId }], failed: [] });
 	});
 });
 

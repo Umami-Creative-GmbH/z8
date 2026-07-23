@@ -19,6 +19,7 @@ import {
 import { NotFoundError } from "@/lib/effect/errors";
 import { runtime } from "@/lib/effect/runtime";
 import { createLogger } from "@/lib/logger";
+import { loadOrdinaryCanonicalApprovals } from "./ordinary-canonical-read";
 import {
 	getSupportedInboxHandler,
 	isSupportedInboxType,
@@ -420,6 +421,16 @@ export async function loadApprovalInboxDecisionTarget({
 	});
 
 	if (!request) {
+		const canonical = await loadOrdinaryCanonicalApprovals({
+			database,
+			organizationId,
+			approverId: "canonical-decision-discovery",
+			includeAllApprovers: true,
+		});
+		const canonicalTarget = canonical.find(
+			(candidate) => candidate.item.id === approvalId,
+		)?.decisionTarget;
+		if (canonicalTarget) return canonicalTarget;
 		const assignment = await database.query.approvalStageAssignment.findFirst({
 			where: and(
 				eq(approvalStageAssignment.id, approvalId),
@@ -427,12 +438,13 @@ export async function loadApprovalInboxDecisionTarget({
 			),
 			with: { workflow: true, stage: true },
 		});
-		const canonical = toPersistedCanonicalDecisionRequest(
+		if (assignment?.status === "pending") throw approvalNotFound(approvalId);
+		const terminalCanonical = toPersistedCanonicalDecisionRequest(
 			assignment,
 			approvalId,
 			organizationId,
 		);
-		if (canonical) return canonical;
+		if (terminalCanonical) return terminalCanonical;
 		throw approvalNotFound(approvalId);
 	}
 
@@ -464,18 +476,33 @@ export async function loadApprovalInboxDecisionTargets({
 	const missingIds = approvalIds.filter(
 		(approvalId) => !requestsById.has(approvalId),
 	);
+	const canonical = await loadOrdinaryCanonicalApprovals({
+		database,
+		organizationId,
+		approverId: "canonical-decision-discovery",
+		includeAllApprovers: true,
+	});
+	const canonicalById = new Map(
+		canonical
+			.filter((candidate) => missingIds.includes(candidate.item.id))
+			.map((candidate) => [candidate.item.id, candidate.decisionTarget]),
+	);
+	const terminalMissingIds = missingIds.filter(
+		(approvalId) => !canonicalById.has(approvalId),
+	);
 	const assignments =
-		missingIds.length === 0
+		terminalMissingIds.length === 0
 			? []
 			: await database.query.approvalStageAssignment.findMany({
 					where: and(
-						inArray(approvalStageAssignment.id, missingIds),
+						inArray(approvalStageAssignment.id, terminalMissingIds),
 						eq(approvalStageAssignment.organizationId, organizationId),
 					),
 					with: { workflow: true, stage: true },
 				});
 	const assignmentsById = new Map(
 		assignments.flatMap((assignment) => {
+			if (assignment.status === "pending") return [];
 			const decision = toPersistedCanonicalDecisionRequest(
 				assignment,
 				assignment.id,
@@ -488,7 +515,9 @@ export async function loadApprovalInboxDecisionTargets({
 	const ordered = approvalIds
 		.map((approvalId) => {
 			const request = requestsById.get(approvalId);
-			return request ? request : assignmentsById.get(approvalId);
+			return request
+				? request
+				: (canonicalById.get(approvalId) ?? assignmentsById.get(approvalId));
 		})
 		.filter((request): request is NonNullable<typeof request> =>
 			Boolean(request),

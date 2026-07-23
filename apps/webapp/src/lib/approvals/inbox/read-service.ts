@@ -11,6 +11,10 @@ import type {
 } from "@/lib/approvals/domain/types";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ApprovalInboxBadRequestError } from "./current-actor";
+import {
+	loadOrdinaryCanonicalApprovals,
+	type OrdinaryCanonicalApproval,
+} from "./ordinary-canonical-read";
 import { getAgeDays, serializeDate } from "./serialization";
 import {
 	type ApprovalInboxSource,
@@ -37,6 +41,9 @@ interface GetApprovalInboxListFromSourcesInput {
 	sources: ApprovalInboxSource[];
 	params: ApprovalInboxListParams;
 	now?: Date;
+	loadCanonicalOrdinaryApprovals?: (
+		input: Parameters<typeof loadOrdinaryCanonicalApprovals>[0],
+	) => Promise<OrdinaryCanonicalApproval[]>;
 }
 
 interface ApprovalInboxCursor {
@@ -88,6 +95,7 @@ export async function getApprovalInboxListFromSources({
 	sources,
 	params,
 	now,
+	loadCanonicalOrdinaryApprovals: loadCanonical = async () => [],
 }: GetApprovalInboxListFromSourcesInput): Promise<ApprovalInboxListResult> {
 	const requestedTypeSet = params.types ? new Set(params.types) : null;
 	const selectedSources = sources.filter(
@@ -139,6 +147,28 @@ export async function getApprovalInboxListFromSources({
 		counts[source.type] = Exit.isSuccess(countExit) ? countExit.value : 0;
 	}
 
+	const canonicalOrdinary = await loadCanonical({
+		approverId: params.approverId,
+		organizationId: params.organizationId,
+		eligibleApprovalScopes: params.eligibleApprovalScopes,
+		includeAllApprovers: params.includeAllApprovers,
+		search: undefined,
+		teamId: undefined,
+	});
+	counts.time_entry = (counts.time_entry ?? 0) + canonicalOrdinary.length;
+	if (
+		(params.status ?? "pending") === "pending" &&
+		selectedSources.some((source) => source.type === "time_entry")
+	) {
+		items.push(
+			...canonicalOrdinary
+				.filter((approval) =>
+					matchesCanonicalListFilters(approval.item, params),
+				)
+				.map((approval) => approval.item),
+		);
+	}
+
 	const sortedItems = items.sort(compareInboxItems);
 	const cursor = parseCursor(params.cursor);
 	const cursorFilteredItems = cursor
@@ -174,7 +204,41 @@ export function getApprovalInboxList(
 	return getApprovalInboxListFromSources({
 		sources: getSupportedInboxSources(),
 		params,
+		loadCanonicalOrdinaryApprovals: loadOrdinaryCanonicalApprovals,
 	});
+}
+
+function matchesCanonicalListFilters(
+	item: ApprovalInboxItem,
+	params: ApprovalInboxListParams,
+): boolean {
+	if (params.teamId && item.requester.teamId !== params.teamId) return false;
+	if (params.priority && item.triage.priority !== params.priority) return false;
+	if (params.minAgeDays && item.timing.ageDays < params.minAgeDays)
+		return false;
+	if (params.dateRange) {
+		const createdAt = new Date(item.timing.createdAt).getTime();
+		if (
+			createdAt < params.dateRange.from.getTime() ||
+			createdAt > params.dateRange.to.getTime()
+		) {
+			return false;
+		}
+	}
+	const search = params.search?.trim().toLocaleLowerCase("en-US");
+	if (!search) return true;
+	return [
+		item.requester.name,
+		item.requester.email,
+		item.summary.title,
+		item.summary.subtitle,
+		item.summary.detail,
+		item.summary.stage?.name,
+	]
+		.filter(Boolean)
+		.join(" ")
+		.toLocaleLowerCase("en-US")
+		.includes(search);
 }
 
 export async function getApprovalInboxCounts(
@@ -225,11 +289,24 @@ export async function getApprovalInboxDetailFromRequest({
 export async function getApprovalInboxDetail({
 	approvalId,
 	organizationId,
+	approverId,
+	includeAllApprovers,
+	eligibleApprovalScopes,
+	database = db,
+	loadCanonicalOrdinaryApprovals:
+		loadCanonical = loadOrdinaryCanonicalApprovals,
 }: {
 	approvalId: string;
 	organizationId: string;
+	approverId?: string;
+	includeAllApprovers?: boolean;
+	eligibleApprovalScopes?: ApprovalQueryParams["eligibleApprovalScopes"];
+	database?: Pick<typeof db, "query">;
+	loadCanonicalOrdinaryApprovals?: (
+		input: Parameters<typeof loadOrdinaryCanonicalApprovals>[0],
+	) => Promise<OrdinaryCanonicalApproval[]>;
 }): Promise<ApprovalInboxDetailResult> {
-	const request = await db.query.approvalRequest.findFirst({
+	const request = await database.query.approvalRequest.findFirst({
 		where: and(
 			eq(approvalRequest.id, approvalId),
 			eq(approvalRequest.organizationId, organizationId),
@@ -237,6 +314,34 @@ export async function getApprovalInboxDetail({
 	});
 
 	if (!request) {
+		if (!approverId) {
+			throw new ApprovalInboxBadRequestError("Approval not found");
+		}
+		const canonical = await loadCanonical({
+			approverId,
+			organizationId,
+			includeAllApprovers,
+			eligibleApprovalScopes,
+		});
+		const approval = canonical.find(
+			(candidate) => candidate.item.id === approvalId,
+		);
+		if (approval) return approval.detail;
+		throw new ApprovalInboxBadRequestError("Approval not found");
+	}
+	if (
+		approverId &&
+		!includeAllApprovers &&
+		request.approverId !== approverId &&
+		!(
+			eligibleApprovalScopes?.some(
+				(scope) =>
+					scope.requesterEmployeeId === request.requestedBy &&
+					scope.eligibleApproverIds.includes(approverId) &&
+					scope.eligibleApproverIds.includes(request.approverId),
+			) ?? false
+		)
+	) {
 		throw new ApprovalInboxBadRequestError("Approval not found");
 	}
 

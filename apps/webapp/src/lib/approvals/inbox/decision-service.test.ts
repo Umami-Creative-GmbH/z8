@@ -15,6 +15,7 @@ const {
 	workPeriodFindFirstMock,
 	timeEntryFindManyMock,
 	completeHandlerApproveMock,
+	loadOrdinaryCanonicalApprovalsMock,
 } = vi.hoisted(() => ({
 	approvalRequestFindFirstMock: vi.fn(),
 	approvalRequestFindManyMock: vi.fn(),
@@ -23,6 +24,11 @@ const {
 	workPeriodFindFirstMock: vi.fn(),
 	timeEntryFindManyMock: vi.fn(),
 	completeHandlerApproveMock: vi.fn(),
+	loadOrdinaryCanonicalApprovalsMock: vi.fn(),
+}));
+
+vi.mock("@/lib/approvals/inbox/ordinary-canonical-read", () => ({
+	loadOrdinaryCanonicalApprovals: loadOrdinaryCanonicalApprovalsMock,
 }));
 
 vi.mock("@/db", () => ({
@@ -80,6 +86,7 @@ describe("approval inbox decision service", () => {
 		timeEntryFindManyMock.mockReset().mockResolvedValue([]);
 		completeHandlerApproveMock.mockClear();
 		completeHandlerApproveMock.mockReturnValue(Effect.void);
+		loadOrdinaryCanonicalApprovalsMock.mockReset().mockResolvedValue([]);
 	});
 
 	it("fails closed for unexpected statuses even with an ordinary kind", () => {
@@ -93,6 +100,22 @@ describe("approval inbox decision service", () => {
 
 	it("loads an exact active complete-mode assignment as a time-entry decision target", async () => {
 		approvalRequestFindFirstMock.mockResolvedValue(null);
+		loadOrdinaryCanonicalApprovalsMock.mockResolvedValue([
+			{
+				item: { id: "assignment-1" },
+				decisionTarget: {
+					id: "assignment-1",
+					targetType: "canonical_assignment",
+					entityType: "time_entry",
+					entityId: "period-1",
+					organizationId: "org-1",
+					approverId: "manager-1",
+					requesterEmployeeId: "employee-1",
+					status: "pending",
+					workflowKind: "manual_time_submission",
+				},
+			},
+		]);
 		assignmentFindFirstMock.mockResolvedValue({
 			id: "assignment-1",
 			organizationId: "org-1",
@@ -135,6 +158,42 @@ describe("approval inbox decision service", () => {
 			"manager-1",
 			{ approvalRequestId: "assignment-1" },
 		);
+	});
+
+	it("does not fall back to an unvalidated pending assignment", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue(null);
+		assignmentFindFirstMock.mockResolvedValue({
+			id: "assignment-1",
+			organizationId: "org-1",
+			workflowId: "workflow-1",
+			stageId: "stage-1",
+			approverEmployeeId: "manager-1",
+			status: "pending",
+			workflow: {
+				id: "workflow-1",
+				organizationId: "org-1",
+				workflowType: "manual_time_submission",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+				requesterEmployeeId: "employee-1",
+				status: "pending",
+				currentStageOrder: 1,
+			},
+			stage: {
+				id: "stage-1",
+				organizationId: "org-1",
+				workflowId: "workflow-1",
+				sequence: 1,
+				status: "pending",
+			},
+		});
+
+		await expect(
+			loadApprovalInboxDecisionTarget({
+				approvalId: "assignment-1",
+				organizationId: "org-1",
+			}),
+		).rejects.toMatchObject({ _tag: "NotFoundError" });
 	});
 
 	it("loads an exact terminal ordinary assignment so the owner can determine replay", async () => {

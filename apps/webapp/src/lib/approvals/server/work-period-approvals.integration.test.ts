@@ -16,6 +16,7 @@ import * as schema from "@/db/schema";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
+import { loadOrdinaryCanonicalApprovals } from "../inbox/ordinary-canonical-read";
 import type { ApprovalWorkflowLifecycleMode } from "../workflow/ports";
 import type { ApprovalWorkflowDatabase } from "../workflow/repository";
 import {
@@ -44,6 +45,7 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 	it("registers the complete Task 11 mode, rollback, race, isolation, and split matrix", () => {
 		for (const scenario of [
 			"composes submission and terminal decisions in %s mode",
+			"complete submission writes zero approval requests and canonical reader discovers the assignment",
 			"rolls back $stage submission stage in $mode mode without residue",
 			"requester auto-finalization failure rolls the complete submission back in %s mode",
 			"terminal prior history remains immutable while one new conflicting pending submission wins",
@@ -799,6 +801,25 @@ describeIntegration(
 				expect(requests).toHaveLength(1);
 				expect(requests[0]).toMatchObject({ status: "approved" });
 			}
+		});
+
+		it("complete submission writes zero approval requests and canonical reader discovers the assignment", async () => {
+			await seed("manual_time_submission", false, "complete");
+			const submitted = await submit("manual_time_submission");
+			const requests = await pool.query(
+				"select id from approval_request where organization_id = $1",
+				[ids.organization],
+			);
+			const approvals = await loadOrdinaryCanonicalApprovals({
+				database,
+				organizationId: ids.organization,
+				approverId: ids.manager,
+			});
+
+			expect(requests.rows).toEqual([]);
+			expect(approvals.map(({ item }) => item.id)).toEqual([
+				submitted.result.approvalRequestId,
+			]);
 		});
 
 		const submissionRollbackCases = [
