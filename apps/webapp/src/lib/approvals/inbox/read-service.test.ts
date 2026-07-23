@@ -190,8 +190,7 @@ describe("getApprovalInboxListFromSources", () => {
 			organizationId: "org-1",
 			eligibleApprovalScopes: undefined,
 			includeAllApprovers: undefined,
-			search: undefined,
-			teamId: undefined,
+			filters: undefined,
 			limit: 3,
 			cursor: undefined,
 			now: expect.any(Date),
@@ -502,6 +501,125 @@ describe("getApprovalInboxListFromSources", () => {
 		).toMatchObject({
 			riskLevel: "high",
 			priority: "high",
+		});
+	});
+
+	it.each([
+		["team", { teamId: "matching-team" }],
+		["priority", { priority: "high" as const }],
+		["minimum age", { minAgeDays: 3 }],
+		[
+			"date range",
+			{
+				dateRange: {
+					from: new Date("2026-05-20T00:00:00.000Z"),
+					to: new Date("2026-05-21T23:59:59.999Z"),
+				},
+			},
+		],
+		["search", { search: "  Needle  " }],
+	] as const)("applies canonical %s before bounded paging and count", async (_label, requestedFilter) => {
+		const now = new Date("2026-06-01T09:00:00.000Z");
+		const candidates = [
+			canonicalItem("fail-1", "2026-05-30T09:00:00.000Z", "low", "medium"),
+			canonicalItem("fail-2", "2026-05-30T10:00:00.000Z", "low", "medium"),
+			canonicalItem("fail-3", "2026-05-30T11:00:00.000Z", "low", "medium"),
+			canonicalItem("match-1", "2026-05-20T09:00:00.000Z", "high", "high"),
+			canonicalItem("match-2", "2026-05-21T09:00:00.000Z", "high", "high"),
+		];
+		for (const candidate of candidates) {
+			const matches = candidate.item.id.startsWith("match");
+			candidate.item.requester.teamId = matches
+				? "matching-team"
+				: "other-team";
+			candidate.item.requester.name = matches
+				? "Needle Person"
+				: "Other Person";
+			candidate.item.timing.ageDays = matches ? 11 : 1;
+		}
+		const filterRows = (filters: Record<string, unknown> | undefined) =>
+			candidates.filter(({ item: candidate }) => {
+				if (!filters) return true;
+				if (filters.teamId && candidate.requester.teamId !== filters.teamId)
+					return false;
+				if (filters.priority && candidate.triage.priority !== filters.priority)
+					return false;
+				if (
+					typeof filters.minAgeDays === "number" &&
+					candidate.timing.ageDays < filters.minAgeDays
+				)
+					return false;
+				if (
+					filters.dateRange &&
+					(candidate.timing.createdAt <
+						(filters.dateRange as { from: Date }).from.toISOString() ||
+						candidate.timing.createdAt >
+							(filters.dateRange as { to: Date }).to.toISOString())
+				)
+					return false;
+				if (
+					filters.search &&
+					!candidate.requester.name
+						.toLocaleLowerCase("en-US")
+						.includes(filters.search as string)
+				)
+					return false;
+				return true;
+			});
+		const loadCanonicalOrdinaryApprovals = vi.fn(async (input) => {
+			const filters = (
+				input as typeof input & { filters?: Record<string, unknown> }
+			).filters;
+			const afterCursor = filterRows(filters).filter(
+				({ item: candidate }) =>
+					!input.cursor || candidate.id > input.cursor.id,
+			);
+			return afterCursor.slice(0, input.limit);
+		});
+		const countCanonicalOrdinaryApprovals = vi.fn(
+			async (input) =>
+				filterRows(
+					(input as typeof input & { filters?: Record<string, unknown> })
+						.filters,
+				).length,
+		);
+		const returnedIds: string[] = [];
+		const pageStates: Array<{ hasMore: boolean; hasCursor: boolean }> = [];
+		let cursor: string | undefined;
+		do {
+			const page = await getApprovalInboxListFromSources({
+				sources: [source("time_entry", [])],
+				params: {
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					limit: 1,
+					cursor,
+					...requestedFilter,
+				},
+				now,
+				loadCanonicalOrdinaryApprovals,
+				countCanonicalOrdinaryApprovals,
+			});
+			returnedIds.push(...page.items.map(({ id }) => id));
+			expect(page.total).toBe(2);
+			pageStates.push({
+				hasMore: page.hasMore,
+				hasCursor: page.nextCursor !== null,
+			});
+			cursor = page.nextCursor ?? undefined;
+		} while (cursor);
+
+		expect(returnedIds).toEqual(["match-1", "match-2"]);
+		expect(pageStates).toEqual([
+			{ hasMore: true, hasCursor: true },
+			{ hasMore: false, hasCursor: false },
+		]);
+		expect(loadCanonicalOrdinaryApprovals.mock.calls[0]?.[0]).toMatchObject({
+			filters: {
+				...requestedFilter,
+				...(requestedFilter.search ? { search: "needle" } : {}),
+			},
 		});
 	});
 

@@ -15,6 +15,7 @@ import {
 	countOrdinaryCanonicalApprovals,
 	loadOrdinaryCanonicalApprovals,
 	type OrdinaryCanonicalApproval,
+	type OrdinaryCanonicalListFilters,
 } from "./ordinary-canonical-read";
 import { getAgeDays, serializeDate } from "./serialization";
 import {
@@ -158,6 +159,7 @@ export async function getApprovalInboxListFromSources({
 	);
 	const cursor = parseCursor(params.cursor);
 	const limit = getEffectiveLimit(params.limit);
+	const canonicalFilters = normalizeCanonicalFilters(params);
 	const canonicalOrdinary =
 		(params.status ?? "pending") === "pending" && includesTimeEntries
 			? await loadCanonical({
@@ -165,8 +167,7 @@ export async function getApprovalInboxListFromSources({
 					organizationId: params.organizationId,
 					eligibleApprovalScopes: params.eligibleApprovalScopes,
 					includeAllApprovers: params.includeAllApprovers,
-					search: undefined,
-					teamId: undefined,
+					filters: canonicalFilters,
 					limit: limit + 1,
 					cursor: cursor ?? undefined,
 					now: effectiveNow,
@@ -178,8 +179,8 @@ export async function getApprovalInboxListFromSources({
 				organizationId: params.organizationId,
 				eligibleApprovalScopes: params.eligibleApprovalScopes,
 				includeAllApprovers: params.includeAllApprovers,
-				search: undefined,
-				teamId: undefined,
+				filters: canonicalFilters,
+				now: effectiveNow,
 			})
 		: ((
 				canonicalOrdinary as OrdinaryCanonicalApproval[] & {
@@ -188,13 +189,7 @@ export async function getApprovalInboxListFromSources({
 			).totalCount ?? canonicalOrdinary.length);
 	counts.time_entry = (counts.time_entry ?? 0) + canonicalTotal;
 	if ((params.status ?? "pending") === "pending" && includesTimeEntries) {
-		items.push(
-			...canonicalOrdinary
-				.filter((approval) =>
-					matchesCanonicalListFilters(approval.item, params),
-				)
-				.map((approval) => approval.item),
-		);
+		items.push(...canonicalOrdinary.map((approval) => approval.item));
 	}
 
 	const sortedItems = items.sort(compareInboxItems);
@@ -235,37 +230,30 @@ export function getApprovalInboxList(
 	});
 }
 
-function matchesCanonicalListFilters(
-	item: ApprovalInboxItem,
+function normalizeCanonicalFilters(
 	params: ApprovalInboxListParams,
-): boolean {
-	if (params.teamId && item.requester.teamId !== params.teamId) return false;
-	if (params.priority && item.triage.priority !== params.priority) return false;
-	if (params.minAgeDays && item.timing.ageDays < params.minAgeDays)
-		return false;
-	if (params.dateRange) {
-		const createdAt = new Date(item.timing.createdAt).getTime();
-		if (
-			createdAt < params.dateRange.from.getTime() ||
-			createdAt > params.dateRange.to.getTime()
-		) {
-			return false;
-		}
-	}
-	const search = params.search?.trim().toLocaleLowerCase("en-US");
-	if (!search) return true;
-	return [
-		item.requester.name,
-		item.requester.email,
-		item.summary.title,
-		item.summary.subtitle,
-		item.summary.detail,
-		item.summary.stage?.name,
-	]
-		.filter(Boolean)
-		.join(" ")
-		.toLocaleLowerCase("en-US")
-		.includes(search);
+): OrdinaryCanonicalListFilters | undefined {
+	const search = params.search?.trim().toLocaleLowerCase("en-US") || undefined;
+	const normalizedMinAgeDays =
+		typeof params.minAgeDays === "number" &&
+		Number.isFinite(params.minAgeDays) &&
+		params.minAgeDays > 0
+			? Math.floor(params.minAgeDays)
+			: undefined;
+	const minAgeDays =
+		normalizedMinAgeDays && normalizedMinAgeDays > 0
+			? normalizedMinAgeDays
+			: undefined;
+	const filters: OrdinaryCanonicalListFilters = {
+		teamId: params.teamId || undefined,
+		priority: params.priority,
+		minAgeDays,
+		dateRange: params.dateRange,
+		search,
+	};
+	return Object.values(filters).some((value) => value !== undefined)
+		? filters
+		: undefined;
 }
 
 export async function getApprovalInboxCounts(

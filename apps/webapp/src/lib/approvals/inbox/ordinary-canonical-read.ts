@@ -153,6 +153,14 @@ interface SelectOrdinaryCanonicalApprovalsInput {
 	now?: Date;
 }
 
+export interface OrdinaryCanonicalListFilters {
+	teamId?: string;
+	priority?: ApprovalInboxPriority;
+	minAgeDays?: number;
+	dateRange?: { from: Date; to: Date };
+	search?: string;
+}
+
 export type OrdinaryCanonicalApprovalBatch = OrdinaryCanonicalApproval[] & {
 	totalCount: number;
 };
@@ -589,8 +597,12 @@ interface OrdinaryCanonicalReadDatabase {
 }
 
 interface OrdinaryCanonicalLoadInput
-	extends Omit<SelectOrdinaryCanonicalApprovalsInput, "rows"> {
+	extends Omit<
+		SelectOrdinaryCanonicalApprovalsInput,
+		"rows" | "search" | "teamId"
+	> {
 	database?: OrdinaryCanonicalReadDatabase;
+	filters?: OrdinaryCanonicalListFilters;
 	assignmentId?: string;
 	assignmentIds?: string[];
 	limit?: number;
@@ -667,6 +679,40 @@ function priorityRankSql(input: OrdinaryCanonicalLoadInput): SQL {
 		when workflow.submitted_at < ${now} - interval '48 hours' then 1
 		when workflow.submitted_at < ${now} - interval '24 hours' then 2
 		else 3 end`;
+}
+
+function candidateFilterCondition(input: OrdinaryCanonicalLoadInput): SQL {
+	const filters = input.filters;
+	if (!filters) return sql``;
+	const conditions: SQL[] = [];
+	if (filters.teamId) {
+		conditions.push(sql`requester.team_id = ${filters.teamId}::uuid`);
+	}
+	if (filters.priority) {
+		const rank = { urgent: 0, high: 1, normal: 2, low: 3 }[filters.priority];
+		conditions.push(sql`${priorityRankSql(input)} = ${rank}`);
+	}
+	if (filters.minAgeDays) {
+		conditions.push(
+			sql`workflow.submitted_at <= ${input.now ?? new Date()} - ${filters.minAgeDays} * interval '1 day'`,
+		);
+	}
+	if (filters.dateRange) {
+		conditions.push(
+			sql`workflow.submitted_at >= ${filters.dateRange.from}`,
+			sql`workflow.submitted_at <= ${filters.dateRange.to}`,
+		);
+	}
+	if (filters.search) {
+		conditions.push(sql`(
+			strpos(lower(requester_user.name), ${filters.search}) > 0
+			or strpos(lower(requester_user.email), ${filters.search}) > 0
+			or strpos(projection.search_text, ${filters.search}) > 0
+		)`);
+	}
+	return conditions.length > 0
+		? sql`and ${sql.join(conditions, sql` and `)}`
+		: sql``;
 }
 
 function boundedLimit(input: OrdinaryCanonicalLoadInput): number {
@@ -866,6 +912,7 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 				and compatibility.metadata -> 'timeRequest' ->> 'kind' = workflow.workflow_type::text
 			), false)
 			and ${candidateVisibility(input)}
+			${candidateFilterCondition(input)}
 			${targetCondition(input)}
 			${cursorCondition(input)}
 		${countOnly ? sql`` : sql`order by ${riskRankSql(input)}, ${priorityRankSql(input)}, workflow.submitted_at, assignment.id limit ${boundedLimit(input)}`}

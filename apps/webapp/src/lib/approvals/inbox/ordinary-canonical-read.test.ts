@@ -336,6 +336,75 @@ describe("ordinary canonical inbox reads", () => {
 		expect(countSql).not.toContain("jsonb_object_length");
 	});
 
+	it("applies every normalized list filter before cursor and limit in list and count SQL", async () => {
+		const calls: SQL[] = [];
+		const input = {
+			database: {
+				execute: async (statement: SQL) => {
+					calls.push(statement);
+					return { rows: [] };
+				},
+			},
+			organizationId: ids.organization,
+			approverId: ids.approver,
+			now: new Date("2026-07-24T14:05:00Z"),
+			filters: {
+				teamId: "a0000000-0000-4000-8000-000000000001",
+				priority: "high",
+				minAgeDays: 2,
+				dateRange: {
+					from: new Date("2026-07-01T00:00:00Z"),
+					to: new Date("2026-07-23T23:59:59Z"),
+				},
+				search: "avery 100%_safe",
+			},
+			cursor: {
+				riskLevel: "high",
+				priority: "high",
+				createdAt: "2026-07-20T14:05:00.000Z",
+				id: ids.assignment,
+			},
+			limit: 3,
+		};
+
+		await loadOrdinaryCanonicalApprovals(
+			input as unknown as Parameters<typeof loadOrdinaryCanonicalApprovals>[0],
+		);
+		const { cursor: _cursor, limit: _limit, ...countInput } = input;
+		await countOrdinaryCanonicalApprovals(
+			countInput as unknown as Parameters<
+				typeof countOrdinaryCanonicalApprovals
+			>[0],
+		);
+
+		const [list, count] = calls.map((statement) =>
+			new PgDialect().sqlToQuery(statement),
+		);
+		for (const fragment of [
+			"requester.team_id",
+			"strpos(lower(requester_user.name)",
+			"interval '1 day'",
+			"workflow.submitted_at >=",
+			"workflow.submitted_at <=",
+		]) {
+			expect(list?.sql.indexOf(fragment)).toBeGreaterThan(0);
+			expect(list?.sql.indexOf(fragment)).toBeLessThan(
+				list?.sql.indexOf("order by") ?? -1,
+			);
+			expect(count?.sql).toContain(fragment);
+		}
+		expect(list?.sql).toContain("case\n\t\twhen workflow.submitted_at");
+		expect(list?.params).toEqual(
+			expect.arrayContaining([
+				"a0000000-0000-4000-8000-000000000001",
+				"avery 100%_safe",
+				2,
+				new Date("2026-07-01T00:00:00Z"),
+				new Date("2026-07-23T23:59:59Z"),
+			]),
+		);
+	});
+
 	it("seeks and orders bounded rows by the public risk and priority tuple", async () => {
 		const calls: SQL[] = [];
 		await loadOrdinaryCanonicalApprovals({
