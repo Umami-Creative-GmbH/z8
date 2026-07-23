@@ -605,6 +605,30 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		expect(gapQuery?.sql).toContain("deleted_at is null");
 	});
 
+	it("ignores later same-day gaps that were not completed by the source clock-out", async () => {
+		const { execute, queries } = splitDatabase({
+			gaps: [
+				{
+					gapStart: startTime,
+					gapEnd: endTime,
+				},
+				{
+					gapStart: new Date("2026-03-29T09:02:00.000Z"),
+					gapEnd: new Date("2026-03-29T10:00:00.000Z"),
+				},
+			],
+		});
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
+		).resolves.toEqual({ kind: "adjusted", breakMinutes: 60 });
+		const gapQuery = queries.find((query) =>
+			query.sql.includes('as "gapStart"'),
+		);
+		expect(gapQuery?.sql).toContain("start_time <=");
+		expect(gapQuery?.params).toContain(endTime);
+	});
+
 	it("fails closed on a stale original-period CAS cardinality", async () => {
 		const { execute, queries } = splitDatabase({ periodUpdateRows: [] });
 

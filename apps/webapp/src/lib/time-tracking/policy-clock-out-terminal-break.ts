@@ -444,6 +444,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 			and end_time is not null
 			and start_time >= ${dateFromInstant(localDayStart.toInstant())}
 			and start_time < ${dateFromInstant(localDayEnd.toInstant())}
+			and start_time <= ${source.endTime}
 		order by start_time, id
 		for update
 	`);
@@ -460,14 +461,17 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		const gapStart = instantFromDate(period.gapStart);
 		const gapEnd = instantFromDate(period.gapEnd);
 		if (compareInstants(gapEnd, gapStart) < 0) return fail();
+		if (compareInstants(gapStart, sourceEnd) > 0) break;
+		const boundedGapEnd =
+			compareInstants(gapEnd, sourceEnd) > 0 ? sourceEnd : gapEnd;
 		if (previousEnd && compareInstants(gapStart, previousEnd) > 0) {
 			const gapMinutes = Math.floor(
 				gapStart.since(previousEnd).total({ unit: "minutes" }),
 			);
 			if (gapMinutes > 1) alreadyTakenBreakMinutes += gapMinutes;
 		}
-		if (!previousEnd || compareInstants(gapEnd, previousEnd) > 0) {
-			previousEnd = gapEnd;
+		if (!previousEnd || compareInstants(boundedGapEnd, previousEnd) > 0) {
+			previousEnd = boundedGapEnd;
 		}
 	}
 
