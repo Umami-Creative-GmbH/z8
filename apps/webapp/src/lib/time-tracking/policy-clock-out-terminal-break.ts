@@ -278,8 +278,14 @@ export async function enforcePolicyClockOutTerminalBreakInTransaction(
 
 	const policyResult = await db.execute(sql`
 		select
+			assignment.policy_id as "assignmentPolicyId",
 			policy.id,
+			policy.organization_id as "policyOrganizationId",
+			policy.is_active as "policyIsActive",
+			policy.regulation_enabled as "regulationEnabled",
 			policy.name,
+			regulation.id as "regulationId",
+			regulation.policy_id as "regulationPolicyId",
 			regulation.max_uninterrupted_minutes as "maxUninterruptedMinutes",
 			assignment.priority as "assignmentPriority",
 			case assignment.assignment_type
@@ -304,31 +310,34 @@ export async function enforcePolicyClockOutTerminalBreakInTransaction(
 				or (assignment.assignment_type = 'team' and assignment.team_id = employee_row.team_id)
 				or (assignment.assignment_type = 'organization' and assignment.employee_id is null and assignment.team_id is null)
 			)
-		join work_policy policy
-			on policy.id = assignment.policy_id
-			and policy.organization_id = assignment.organization_id
-			and policy.is_active = true
-			and policy.regulation_enabled = true
-		join work_policy_regulation regulation on regulation.policy_id = policy.id
+		left join work_policy policy on policy.id = assignment.policy_id
+		left join work_policy_regulation regulation
+			on regulation.policy_id = assignment.policy_id
 		where employee_row.id = ${input.employeeId}::uuid
 			and employee_row.organization_id = ${input.organizationId}
 		order by assignment.priority desc,
 			case assignment.assignment_type when 'employee' then 2 when 'team' then 1 else 0 end desc,
 			assignment.id desc
 		limit 2
-		for update of employee_row, assignment, policy, regulation
+		for update of employee_row, assignment
 	`);
 	const policyRows = rows(policyResult);
 	if (policyRows.length === 0) return { kind: "not_required" };
 	if (policyRows.length > 2) return fail();
 	const policy = object(policyRows[0]);
 	if (
+		typeof policy.assignmentPolicyId !== "string" ||
 		typeof policy.id !== "string" ||
+		policy.id !== policy.assignmentPolicyId ||
+		policy.policyOrganizationId !== input.organizationId ||
+		policy.policyIsActive !== true ||
+		typeof policy.regulationEnabled !== "boolean" ||
 		typeof policy.name !== "string" ||
 		!Number.isSafeInteger(policy.assignmentPriority) ||
 		!Number.isSafeInteger(policy.assignmentSpecificity) ||
 		(policy.maxUninterruptedMinutes !== null &&
-			!Number.isSafeInteger(policy.maxUninterruptedMinutes)) ||
+			(!Number.isSafeInteger(policy.maxUninterruptedMinutes) ||
+				(policy.maxUninterruptedMinutes as number) <= 0)) ||
 		!Array.isArray(policy.breakRules)
 	) {
 		return fail();
@@ -348,6 +357,15 @@ export async function enforcePolicyClockOutTerminalBreakInTransaction(
 			return fail();
 		}
 	}
+	if (policy.regulationEnabled === false) {
+		return { kind: "not_required" };
+	}
+	if (
+		typeof policy.regulationId !== "string" ||
+		policy.regulationPolicyId !== policy.id
+	) {
+		return fail();
+	}
 	const calculation = calculateBreakDeficit({
 		sessionDurationMinutes: source.durationMinutes,
 		alreadyTakenBreakMinutes: 0,
@@ -359,7 +377,9 @@ export async function enforcePolicyClockOutTerminalBreakInTransaction(
 				const rule = object(value);
 				if (
 					!Number.isSafeInteger(rule.workingMinutesThreshold) ||
-					!Number.isSafeInteger(rule.requiredBreakMinutes)
+					(rule.workingMinutesThreshold as number) < 0 ||
+					!Number.isSafeInteger(rule.requiredBreakMinutes) ||
+					(rule.requiredBreakMinutes as number) <= 0
 				) {
 					return fail();
 				}

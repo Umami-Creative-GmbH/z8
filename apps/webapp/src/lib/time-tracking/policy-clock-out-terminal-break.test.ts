@@ -2,6 +2,7 @@ import type { SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { calculateHash } from "./blockchain";
 import { enforcePolicyClockOutTerminalBreakInTransaction } from "./policy-clock-out-terminal-break";
 
 const organizationId = "org-1";
@@ -83,6 +84,12 @@ function lockedSource(overrides: Record<string, unknown> = {}) {
 function policyRow(overrides: Record<string, unknown> = {}) {
 	return {
 		id: "90000000-0000-4000-8000-000000000001",
+		assignmentPolicyId: "90000000-0000-4000-8000-000000000001",
+		policyOrganizationId: organizationId,
+		policyIsActive: true,
+		regulationEnabled: true,
+		regulationId: "91000000-0000-4000-8000-000000000001",
+		regulationPolicyId: "90000000-0000-4000-8000-000000000001",
 		name: "DST policy",
 		maxUninterruptedMinutes: null,
 		assignmentPriority: 2,
@@ -100,11 +107,23 @@ function policyRow(overrides: Record<string, unknown> = {}) {
 function splitDatabase(options?: {
 	source?: Record<string, unknown>;
 	periodUpdateRows?: unknown[];
+	recordUpdateRows?: unknown[];
 	gaps?: Array<{ gapStart: Date; gapEnd: Date }>;
 	policies?: Record<string, unknown>[];
+	missingAssignedPolicy?: boolean;
+	failWrite?:
+		| "synthetic_clock_out"
+		| "synthetic_clock_in"
+		| "original_period"
+		| "original_canonical"
+		| "second_canonical"
+		| "second_work"
+		| "allocation"
+		| "second_period";
 }) {
 	const dialect = new PgDialect();
 	const queries: Array<{ sql: string; params: unknown[] }> = [];
+	let timeEntryInsertCount = 0;
 	const execute = vi.fn(async (query: SQL) => {
 		const compiled = dialect.sqlToQuery(query);
 		queries.push(compiled);
@@ -115,6 +134,28 @@ function splitDatabase(options?: {
 			return { rows: [lockedSource(options?.source)] };
 		}
 		if (text.includes('as "breakRules"')) {
+			if (options?.missingAssignedPolicy) {
+				return {
+					rows: text.includes("left join work_policy policy")
+						? [
+								{
+									assignmentPolicyId: "90000000-0000-4000-8000-000000000009",
+									assignmentPriority: 2,
+									assignmentSpecificity: 2,
+									id: null,
+									policyOrganizationId: null,
+									policyIsActive: null,
+									regulationEnabled: null,
+									regulationId: null,
+									regulationPolicyId: null,
+									name: null,
+									maxUninterruptedMinutes: null,
+									breakRules: [],
+								},
+							]
+						: [],
+				};
+			}
 			return { rows: options?.policies ?? [policyRow()] };
 		}
 		if (text.includes('as "gapStart"')) return { rows: options?.gaps ?? [] };
@@ -129,12 +170,39 @@ function splitDatabase(options?: {
 			};
 		}
 		if (/^\s*update work_period\b/i.test(text)) {
+			if (options?.failWrite === "original_period") return { rows: [] };
 			return { rows: options?.periodUpdateRows ?? [{ id: snapshot.id }] };
 		}
 		if (/^\s*update time_record\b/i.test(text)) {
-			return { rows: [{ id: snapshot.canonicalRecordId }] };
+			if (options?.failWrite === "original_canonical") return { rows: [] };
+			return {
+				rows: options?.recordUpdateRows ?? [{ id: snapshot.canonicalRecordId }],
+			};
 		}
 		if (/^\s*insert\b/i.test(text)) {
+			if (text.includes("into time_entry")) {
+				timeEntryInsertCount += 1;
+				if (
+					(options?.failWrite === "synthetic_clock_out" &&
+						timeEntryInsertCount === 1) ||
+					(options?.failWrite === "synthetic_clock_in" &&
+						timeEntryInsertCount === 2)
+				) {
+					return { rows: [] };
+				}
+			}
+			if (
+				(options?.failWrite === "second_canonical" &&
+					/^\s*insert into time_record\s/i.test(text)) ||
+				(options?.failWrite === "second_work" &&
+					text.includes("into time_record_work")) ||
+				(options?.failWrite === "allocation" &&
+					text.includes("into time_record_allocation")) ||
+				(options?.failWrite === "second_period" &&
+					text.includes("into work_period"))
+			) {
+				return { rows: [] };
+			}
 			return { rows: [{ id: compiled.params[0] }] };
 		}
 		throw new Error(`unexpected statement: ${text}`);
@@ -164,6 +232,73 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		expect(
 			statements.filter((text) => /^\s*(insert|update)\b/i.test(text)),
 		).toEqual([]);
+	});
+
+	it("fails closed when an effective assignment references a missing policy", async () => {
+		const { execute, queries } = splitDatabase({ missingAssignedPolicy: true });
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
+		).rejects.toThrow("Policy clock-out terminal break enforcement conflict");
+		expect(
+			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
+		).toHaveLength(0);
+	});
+
+	it("treats a valid assigned policy with disabled regulation as not_required", async () => {
+		const { execute, queries } = splitDatabase({
+			policies: [
+				policyRow({
+					regulationEnabled: false,
+					regulationId: null,
+					regulationPolicyId: null,
+					breakRules: [],
+				}),
+			],
+		});
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
+		).resolves.toEqual({ kind: "not_required" });
+		expect(
+			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
+		).toHaveLength(0);
+	});
+
+	it.each([
+		["foreign policy", { policyOrganizationId: "org-2" }],
+		["inactive policy", { policyIsActive: false }],
+		["missing regulation", { regulationId: null, regulationPolicyId: null }],
+		[
+			"foreign regulation",
+			{ regulationPolicyId: "90000000-0000-4000-8000-000000000099" },
+		],
+		["malformed regulation", { maxUninterruptedMinutes: "six hours" }],
+		[
+			"malformed break rule",
+			{
+				breakRules: [
+					{ workingMinutesThreshold: 30, requiredBreakMinutes: "sixty" },
+				],
+			},
+		],
+		[
+			"negative break rule",
+			{
+				breakRules: [{ workingMinutesThreshold: 30, requiredBreakMinutes: -1 }],
+			},
+		],
+	] as const)("fails closed on %s evidence", async (_label, policy) => {
+		const { execute, queries } = splitDatabase({
+			policies: [policyRow(policy)],
+		});
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
+		).rejects.toThrow("Policy clock-out terminal break enforcement conflict");
+		expect(
+			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
+		).toHaveLength(0);
 	});
 
 	it("splits approved canonical and legacy records with exact DST capture and cloned allocations", async () => {
@@ -200,6 +335,20 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		const entryInserts = inserts.filter((query) =>
 			query.sql.includes("time_entry"),
 		);
+		const syntheticClockOutId = entryInserts[0]?.params[0];
+		const syntheticClockInId = entryInserts[1]?.params[0];
+		const expectedClockOutHash = calculateHash({
+			employeeId,
+			type: "clock_out",
+			timestamp: "2026-03-29T00:30:00.000Z",
+			previousHash: "real-clock-out-hash",
+		});
+		const expectedClockInHash = calculateHash({
+			employeeId,
+			type: "clock_in",
+			timestamp: "2026-03-29T01:30:00.000Z",
+			previousHash: expectedClockOutHash,
+		});
 		expect(entryInserts[0]?.params).toEqual(
 			expect.arrayContaining([
 				"clock_out",
@@ -207,9 +356,14 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 				60,
 				"Europe/Berlin",
 				"historical_inference",
+				snapshot.clockOutId,
+				expectedClockOutHash,
 				"real-clock-out-hash",
 			]),
 		);
+		expect(entryInserts[0]?.params[8]).toBe(snapshot.clockOutId);
+		expect(entryInserts[0]?.params[9]).toBe(expectedClockOutHash);
+		expect(entryInserts[0]?.params[10]).toBe("real-clock-out-hash");
 		expect(entryInserts[1]?.params).toEqual(
 			expect.arrayContaining([
 				"clock_in",
@@ -217,8 +371,60 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 				120,
 				"Europe/Berlin",
 				"historical_inference",
+				syntheticClockOutId,
+				expectedClockInHash,
+				expectedClockOutHash,
 			]),
 		);
+		expect(entryInserts[1]?.params[8]).toBe(syntheticClockOutId);
+		expect(entryInserts[1]?.params[9]).toBe(expectedClockInHash);
+		expect(entryInserts[1]?.params[10]).toBe(expectedClockOutHash);
+
+		const secondCanonical = inserts.find((query) =>
+			/^\s*insert into time_record\s/i.test(query.sql),
+		);
+		const secondCanonicalId = secondCanonical?.params[0];
+		expect(secondCanonical?.params).toEqual(
+			expect.arrayContaining([
+				organizationId,
+				employeeId,
+				new Date("2026-03-29T01:30:00.000Z"),
+				endTime,
+				391,
+			]),
+		);
+		expect(secondCanonical?.sql).toContain("'approved', 'clock'");
+		const secondWork = inserts.find((query) =>
+			query.sql.includes("time_record_work"),
+		);
+		expect(secondWork?.params).toEqual([
+			secondCanonicalId,
+			organizationId,
+			snapshot.workCategoryId,
+			snapshot.workLocationType,
+			"original-computation",
+		]);
+		const allocationInserts = inserts.filter((query) =>
+			query.sql.includes("time_record_allocation"),
+		);
+		expect(allocationInserts.map((query) => query.params.slice(1, 7))).toEqual([
+			[
+				organizationId,
+				secondCanonicalId,
+				"project",
+				snapshot.projectId,
+				null,
+				75,
+			],
+			[
+				organizationId,
+				secondCanonicalId,
+				"cost_center",
+				null,
+				"80000000-0000-4000-8000-000000000001",
+				25,
+			],
+		]);
 
 		const secondPeriod = inserts.find((query) =>
 			query.sql.includes("work_period"),
@@ -231,8 +437,59 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 				null,
 			]),
 		);
+		expect(secondPeriod?.params[3]).toBe(syntheticClockInId);
+		expect(secondPeriod?.params[4]).toBe(snapshot.clockOutId);
+		expect(secondPeriod?.params).toEqual(
+			expect.arrayContaining([
+				secondCanonicalId,
+				snapshot.projectId,
+				snapshot.workCategoryId,
+				snapshot.workLocationType,
+			]),
+		);
 		expect(secondPeriod?.sql).toContain("approval_workflow_id");
 		expect(secondPeriod?.sql).toContain("pending_changes");
+		expect(secondPeriod?.params[11]).toBeNull();
+		expect(secondPeriod?.params[14]).toBeNull();
+		expect(secondPeriod?.params[15]).toBeNull();
+		expect(secondPeriod?.params[16]).toBe(secondCanonicalId);
+		expect(secondPeriod?.params[17]).toBeNull();
+		const originalPeriodUpdate = updates.find((query) =>
+			query.sql.includes("work_period"),
+		);
+		expect(originalPeriodUpdate?.params).toEqual(
+			expect.arrayContaining([
+				syntheticClockOutId,
+				new Date("2026-03-29T00:30:00.000Z"),
+				30,
+				endTime,
+				481,
+				snapshot.approvalWorkflowId,
+			]),
+		);
+		const originalCanonicalUpdate = updates.find((query) =>
+			query.sql.includes("time_record"),
+		);
+		expect(originalCanonicalUpdate?.params).toEqual(
+			expect.arrayContaining([
+				new Date("2026-03-29T00:30:00.000Z"),
+				30,
+				snapshot.canonicalRecordId,
+				organizationId,
+				employeeId,
+			]),
+		);
+		expect(originalPeriodUpdate?.params[3]).toBe(
+			secondPeriod?.params.find(
+				(value) =>
+					typeof value === "string" && value.includes('"break_enforcement"'),
+			),
+		);
+		expect(
+			queries.some((query) =>
+				query.sql.includes("time_record_approval_decision"),
+			),
+		).toBe(false);
 	});
 
 	it("falls back from an invalid clock-out zone to the exact employee setting", async () => {
@@ -301,6 +558,83 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 				/^\s*insert into time_record\b/i.test(query.sql),
 			),
 		).toHaveLength(0);
+		const policyQuery = queries.find((query) =>
+			query.sql.includes('as "assignmentPolicyId"'),
+		);
+		expect(policyQuery?.params).toEqual(
+			expect.arrayContaining([endTime, employeeId, organizationId]),
+		);
+	});
+
+	it.each([
+		["deleted", { deletedAt: new Date("2026-03-30T00:00:00Z") }],
+		["active/incomplete", { isActive: true }],
+		["pending changes", { pendingChanges: { private: true } }],
+		["already adjusted", { wasAutoAdjusted: true }],
+		["stored original endpoint", { originalEndTime: endTime }],
+		["stale endpoint", { clockOutTimestamp: new Date("2026-03-29T08:00:00Z") }],
+		[
+			"wrong source link",
+			{ clockOutId: "30000000-0000-4000-8000-000000000099" },
+		],
+		[
+			"wrong canonical link",
+			{ canonicalId: "40000000-0000-4000-8000-000000000099" },
+		],
+		["wrong workflow link", { approvalWorkflowId: null }],
+		["wrong work subtype", { canonicalOrigin: "manual" }],
+		["foreign organization", { organizationId: "org-2" }],
+		[
+			"foreign employee",
+			{ employeeId: "10000000-0000-4000-8000-000000000099" },
+		],
+	] as const)("rejects %s source evidence before split writes", async (_label, source) => {
+		const { execute, queries } = splitDatabase({ source });
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
+		).rejects.toThrow("Policy clock-out terminal break enforcement conflict");
+		expect(
+			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
+		).toHaveLength(0);
+	});
+
+	it.each([
+		["zero", []],
+		[
+			"multiple",
+			[{ id: snapshot.canonicalRecordId }, { id: snapshot.canonicalRecordId }],
+		],
+	] as const)("rejects %s canonical-record CAS rows", async (_label, recordUpdateRows) => {
+		const { execute, queries } = splitDatabase({
+			recordUpdateRows: [...recordUpdateRows],
+		});
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
+		).rejects.toThrow("Policy clock-out terminal break enforcement conflict");
+		expect(
+			queries.filter((query) =>
+				/^\s*insert into time_record\s/i.test(query.sql),
+			),
+		).toHaveLength(0);
+	});
+
+	it.each([
+		"synthetic_clock_out",
+		"synthetic_clock_in",
+		"original_period",
+		"original_canonical",
+		"second_canonical",
+		"second_work",
+		"allocation",
+		"second_period",
+	] as const)("surfaces a %s write failure", async (failWrite) => {
+		const { execute } = splitDatabase({ failWrite });
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
+		).rejects.toThrow("Policy clock-out terminal break enforcement conflict");
 	});
 
 	it("uses the highest historical assignment while allowing a lower-priority fallback", async () => {

@@ -365,16 +365,14 @@ function fixture(
 			loadSnapshot: vi.fn().mockImplementation(async () => ({
 				id: state.workflowId,
 				organizationId,
-				workflowType: "manual_time_submission",
+				workflowType: state.kind,
 				sourceType: "time_entry",
 				sourceId: workPeriodId,
 				requesterEmployeeId,
 				status: "approved",
 				currentStageOrder: 1,
 				version: 1,
-				contextSnapshot: {
-					timeRequest: { kind: "manual_time_submission" },
-				},
+				contextSnapshot: { timeRequest: { kind: state.kind } },
 				completedAt: parseInstant("2026-07-22T10:00:00Z"),
 				stages: [
 					{
@@ -1112,6 +1110,38 @@ it.each([
 	});
 });
 
+it.each([
+	"legacy",
+	"shadow",
+	"ready",
+	"canonical",
+	"complete",
+] as const)("finalizes policy requester auto-completion exactly once in %s", async (mode) => {
+	state.mode = mode;
+	state.result = {
+		kind: "auto_completed",
+		chainInstanceId: null,
+		approvalRequestId: "40000000-0000-4000-8000-000000000001",
+		reason: "requester_is_approver",
+	};
+	state.kind = "policy_clock_out";
+	state.workflowId = expectedWorkflowId("policy_clock_out");
+	const fake = fixture();
+	fake.input.kind = "policy_clock_out";
+
+	await executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input);
+
+	expect(
+		state.calls.filter(
+			(call) => call === "finalize:legacy" || call === "finalize:canonical",
+		),
+	).toEqual([
+		mode === "canonical" || mode === "complete"
+			? "finalize:canonical"
+			: "finalize:legacy",
+	]);
+});
+
 it("uses exact approved legacy capture and finalization evidence for requester auto-approval", async () => {
 	state.mode = "shadow";
 	state.result = {
@@ -1248,15 +1278,19 @@ it("returns the actual canonical compatibility request ID instead of assignment 
 	expect(submitted.result.approvalRequestId).toBe(compatibility.id);
 });
 
-it("replays an exact terminal canonical auto-completion without finalization or binding", async () => {
+it.each([
+	"manual_time_submission",
+	"policy_clock_out",
+] as const)("replays an exact terminal canonical %s auto-completion without finalization or binding", async (kind) => {
 	state.mode = "canonical";
-	const workflowId = expectedWorkflowId("manual_time_submission");
+	state.kind = kind;
+	const workflowId = expectedWorkflowId(kind);
 	state.workflowId = workflowId;
-	const compatibility = compatibilityRequest("manual_time_submission", {
+	const compatibility = compatibilityRequest(kind, {
 		status: "approved",
 		approverId: requesterEmployeeId,
 	});
-	const otherCompatibility = compatibilityRequest("manual_time_submission", {
+	const otherCompatibility = compatibilityRequest(kind, {
 		id: "40000000-0000-4000-8000-000000000098",
 		status: "approved",
 		approverId: requesterEmployeeId,
@@ -1266,7 +1300,7 @@ it("replays an exact terminal canonical auto-completion without finalization or 
 				id: "50000000-0000-4000-8000-000000000098",
 				sequence: 2,
 			},
-			timeRequest: { kind: "manual_time_submission" },
+			timeRequest: { kind },
 		},
 	});
 	const terminalSource = {
@@ -1277,13 +1311,13 @@ it("replays an exact terminal canonical auto-completion without finalization or 
 			{
 				id: workflowId,
 				organizationId,
-				workflowType: "manual_time_submission",
+				workflowType: kind,
 				sourceType: "time_entry",
 				sourceId: workPeriodId,
 				requesterEmployeeId,
 				status: "approved",
 				contextSnapshot: {
-					timeRequest: { kind: "manual_time_submission" },
+					timeRequest: { kind },
 				},
 			},
 		],
@@ -1295,6 +1329,7 @@ it("replays an exact terminal canonical auto-completion without finalization or 
 		replaySource: terminalSource,
 		compatibilityRequests: [compatibility],
 	});
+	fake.input.kind = kind;
 
 	const submitted = await executeOrdinaryWorkPeriodSubmissionInTransaction(
 		fake.input,
@@ -1313,8 +1348,12 @@ it("replays an exact terminal canonical auto-completion without finalization or 
 	expect(state.calls.some((call) => call.startsWith("start:"))).toBe(false);
 });
 
-it("replays exact approved legacy auto evidence without finalization or mutation", async () => {
+it.each([
+	"manual_time_submission",
+	"policy_clock_out",
+] as const)("replays exact approved legacy %s auto evidence without finalization or mutation", async (kind) => {
 	state.mode = "legacy";
+	state.kind = kind;
 	const approvedRequest = {
 		id: "40000000-0000-4000-8000-000000000088",
 		organizationId,
@@ -1325,7 +1364,7 @@ it("replays exact approved legacy auto evidence without finalization or mutation
 		status: "approved",
 		approvedAt: new Date("2026-07-22T10:00:00Z"),
 		metadata: {
-			timeRequest: { kind: "manual_time_submission" },
+			timeRequest: { kind },
 			autoApproval: { reason: "requester_is_approver" },
 		},
 	};
@@ -1339,6 +1378,7 @@ it("replays exact approved legacy auto evidence without finalization or mutation
 		source: terminalSource,
 		replaySource: terminalSource,
 	});
+	fake.input.kind = kind;
 
 	const submitted = await executeOrdinaryWorkPeriodSubmissionInTransaction(
 		fake.input,
