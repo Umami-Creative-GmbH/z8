@@ -4,6 +4,7 @@ import {
 	allDayDateKeyForDate,
 	calendarDateKeyForDate,
 	calendarDateKeyForInstant,
+	calendarWeekDateKeyRange,
 	todayCalendarDateKey,
 } from "./date-keys";
 
@@ -26,5 +27,19 @@ describe("calendar date keys", () => {
 
 		expect(calendarDateKeyForDate(eventDate, "America/New_York")).toBe("2026-05-31");
 		expect(allDayDateKeyForDate(eventDate)).toBe("2026-06-01");
+	});
+
+	it("returns an inclusive Monday-start week across a month boundary", () => {
+		expect(calendarWeekDateKeyRange("2026-09-03", "monday")).toEqual({
+			startDateKey: "2026-08-31",
+			endDateKey: "2026-09-06",
+		});
+	});
+
+	it("returns an inclusive Sunday-start week across a year boundary", () => {
+		expect(calendarWeekDateKeyRange("2027-01-01", "sunday")).toEqual({
+			startDateKey: "2026-12-27",
+			endDateKey: "2027-01-02",
+		});
 	});
 });
