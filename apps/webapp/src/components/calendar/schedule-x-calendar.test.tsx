@@ -393,14 +393,21 @@ describe("ScheduleXCalendarWrapper header", () => {
 		const mobileHeader = screen.getByTestId("calendar-mobile-header");
 		const mobileDateRange = screen.getByTestId("calendar-mobile-date-range");
 		const mobileControls = screen.getByTestId("calendar-mobile-header-controls");
+		const mobileNavigation = screen.getByTestId("calendar-mobile-navigation");
+		const mobileViewTabs = screen.getByTestId("calendar-mobile-view-tabs");
 
 		expect(desktopHeader.classList.contains("hidden")).toBe(true);
 		expect(desktopHeader.classList.contains("lg:flex")).toBe(true);
 		expect(mobileHeader.classList.contains("lg:hidden")).toBe(true);
 		expect(mobileDateRange.classList.contains("whitespace-nowrap")).toBe(true);
 		expect(mobileDateRange.classList.contains("truncate")).toBe(true);
-		expect(mobileControls.classList.contains("overflow-x-auto")).toBe(true);
-		expect(mobileControls.classList.contains("whitespace-nowrap")).toBe(true);
+		expect(mobileControls.classList.contains("overflow-x-auto")).toBe(false);
+		expect(mobileControls.classList.contains("grid")).toBe(true);
+		expect(mobileNavigation.classList.contains("flex")).toBe(true);
+		expect(mobileViewTabs.classList.contains("w-full")).toBe(true);
+		expect(mobileViewTabs.querySelector('[data-slot="tabs-list"]')?.className).toContain(
+			"grid-cols-4",
+		);
 		expect(mobileDateRange.textContent).not.toMatch(/, \d{4}$/);
 	});
 

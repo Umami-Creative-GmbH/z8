@@ -263,7 +263,7 @@ export function YearCalendarView({
 	return (
 		<div className="flex flex-col h-full">
 			{/* Year navigation header */}
-			<div className="flex items-center justify-between gap-4 pb-3 mb-3">
+			<div className="flex flex-wrap items-center justify-between gap-3 pb-3 mb-3">
 				<div className="flex items-center gap-2">
 					<Button
 						variant="outline"
@@ -286,8 +286,12 @@ export function YearCalendarView({
 					</Button>
 				</div>
 				<h2 className="text-lg font-semibold">{year}</h2>
-				<Tabs value={viewMode} onValueChange={(v) => onViewModeChange(v as ViewMode)}>
-					<TabsList>
+				<Tabs
+					value={viewMode}
+					onValueChange={(v) => onViewModeChange(v as ViewMode)}
+					className="w-full sm:w-auto"
+				>
+					<TabsList className="grid w-full grid-cols-4">
 						<TabsTrigger value="day">{t("calendar.view.day", "Day")}</TabsTrigger>
 						<TabsTrigger value="week">{t("calendar.view.week", "Week")}</TabsTrigger>
 						<TabsTrigger value="month">{t("calendar.view.month", "Month")}</TabsTrigger>
