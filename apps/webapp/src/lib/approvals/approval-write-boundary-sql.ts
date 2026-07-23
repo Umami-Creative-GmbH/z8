@@ -105,6 +105,8 @@ const WORK_PERIOD_APPROVAL_COLUMNS = new Set([
 ]);
 const TIME_RECORD_APPROVAL_COLUMNS = new Set([
 	"approval_state",
+	"employee_id",
+	"organization_id",
 	"start_at",
 	"end_at",
 	"duration_minutes",

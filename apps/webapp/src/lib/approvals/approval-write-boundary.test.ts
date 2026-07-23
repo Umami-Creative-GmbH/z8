@@ -150,6 +150,69 @@ db.update(workPeriod).set({ pendingChanges: null, updatedAt: new Date() });`;
 		]);
 	});
 
+	it("detects canonical Drizzle base, work, and allocation writes", () => {
+		const source = `import { db, timeRecord, timeRecordWork, timeRecordAllocation } from "@/db";
+export function directCanonicalWrites() {
+  db.update(timeRecord).set({
+    approvalState: "approved", startAt, endAt, durationMinutes,
+    organizationId, employeeId, updatedAt,
+  });
+  db.insert(timeRecordWork).values({
+    recordId, organizationId, recordKind: "work", workCategoryId,
+    workLocationType, computationMetadata,
+  });
+  db.insert(timeRecordAllocation).values({
+    id, organizationId, recordId, allocationKind, projectId,
+    costCenterId, weightPercent, createdAt,
+  });
+}`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+			expect.objectContaining({
+				columns: [
+					"approval_state",
+					"duration_minutes",
+					"employee_id",
+					"end_at",
+					"organization_id",
+					"start_at",
+				],
+				functionName: "directCanonicalWrites",
+				operation: "update",
+				semantic: "ordinary_finalization",
+				table: "time_record",
+			}),
+			expect.objectContaining({
+				columns: [
+					"computation_metadata",
+					"organization_id",
+					"record_id",
+					"record_kind",
+					"work_category_id",
+					"work_location_type",
+				],
+				operation: "insert",
+				semantic: "policy_clock_out_terminal_break",
+				table: "time_record_work",
+			}),
+			expect.objectContaining({
+				columns: [
+					"allocation_kind",
+					"cost_center_id",
+					"created_at",
+					"id",
+					"organization_id",
+					"project_id",
+					"record_id",
+					"weight_percent",
+				],
+				operation: "insert",
+				semantic: "policy_clock_out_terminal_break",
+				table: "time_record_allocation",
+			}),
+		]);
+	});
+
 	it("extracts the complete ordinary and terminal-split raw SQL graph", () => {
 		expect(
 			findProtectedApprovalSqlMutations(`
@@ -187,7 +250,14 @@ insert into time_record_allocation (id, organization_id, record_id, allocation_k
 				table: "time_record",
 			},
 			{
-				columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
+				columns: [
+					"approval_state",
+					"duration_minutes",
+					"employee_id",
+					"end_at",
+					"organization_id",
+					"start_at",
+				],
 				operation: "insert",
 				semantic: "policy_clock_out_terminal_break",
 				table: "time_record",
@@ -2717,6 +2787,59 @@ db.delete(approvalOutbox);`,
 					semantic: "inactive_correction",
 					table: "time_entry",
 				},
+				{
+					columns: ["duration_minutes", "end_at", "start_at"],
+					functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+				{
+					columns: ["duration_minutes", "end_at", "start_at"],
+					functionName: "syncCanonicalWorkCorrection",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+			],
+			"src/lib/absences/sick-vacation-override.ts": [
+				{
+					columns: [
+						"approval_state",
+						"duration_minutes",
+						"employee_id",
+						"end_at",
+						"organization_id",
+						"start_at",
+					],
+					functionName: "createCanonicalAbsenceInTransaction",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+				{
+					columns: ["duration_minutes", "end_at", "start_at"],
+					functionName: "updateCanonicalAbsenceRangeInTransaction",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+				{
+					columns: ["approval_state"],
+					functionName: "rejectCanonicalAbsenceInTransaction",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+			],
+			"src/lib/approvals/server/absence-approvals.ts": [
+				{
+					columns: ["approval_state"],
+					functionName: "syncCanonicalAbsenceApprovalStateAt",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
 			],
 			"src/lib/approvals/server/time-correction-submission.ts": [
 				{
@@ -2762,6 +2885,13 @@ db.delete(approvalOutbox);`,
 					operation: "update",
 					table: "work_period",
 				},
+				{
+					columns: ["approval_state"],
+					functionName: "finalizeOrdinaryWorkPeriodTerminal",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
 			],
 			"src/lib/time-tracking/policy-clock-out-terminal-break.ts": [
 				{
@@ -2786,7 +2916,14 @@ db.delete(approvalOutbox);`,
 					table: "time_record",
 				},
 				{
-					columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
+					columns: [
+						"approval_state",
+						"duration_minutes",
+						"employee_id",
+						"end_at",
+						"organization_id",
+						"start_at",
+					],
 					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
 					operation: "insert",
 					semantic: "policy_clock_out_terminal_break",
@@ -2842,6 +2979,50 @@ db.delete(approvalOutbox);`,
 			],
 		});
 		expect(boundary.SOURCE_WRITE_EXCEPTIONS).toEqual({
+			"src/app/[locale]/(app)/absences/actions.canonical.ts": [
+				{
+					columns: [],
+					functionName: "create",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+					uncertainty: "dynamic_payload",
+				},
+				{
+					columns: ["duration_minutes", "end_at", "start_at"],
+					functionName: "updateCanonicalAbsenceRangeInTransaction",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+				{
+					columns: ["approval_state"],
+					functionName: "syncCanonicalAbsenceApprovalStateInTransaction",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+			],
+			"src/app/[locale]/(app)/absences/request-absence-effect.ts": [
+				{
+					columns: [],
+					functionName: "createRecords",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+					uncertainty: "dynamic_payload",
+				},
+			],
+			"src/app/[locale]/(app)/team/absences/actions.ts": [
+				{
+					columns: [],
+					functionName: "recordAbsenceForEmployee",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+					uncertainty: "dynamic_payload",
+				},
+			],
 			"src/app/[locale]/(app)/time-tracking/actions.ts": [
 				{
 					columns: ["is_superseded", "superseded_by_id"],
@@ -3039,6 +3220,30 @@ db.delete(approvalOutbox);`,
 					operation: "update",
 					table: "work_period",
 				},
+				{
+					columns: [],
+					functionName: "insertIfPresent",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+					uncertainty: "dynamic_payload",
+				},
+				{
+					columns: [],
+					functionName: "insertIfPresent",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_work",
+					uncertainty: "dynamic_payload",
+				},
+				{
+					columns: [],
+					functionName: "runCanonicalBackfill",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_allocation",
+					uncertainty: "dynamic_payload",
+				},
 			],
 			"src/lib/time-tracking/clocking-service.ts": [
 				{
@@ -3150,6 +3355,55 @@ export function dynamicFinalizer(patch: object) {
 		);
 	});
 
+	it("allows only exact canonical finalizer and terminal-split Drizzle owners", () => {
+		const finalizerPath = "src/lib/approvals/server/work-period-approvals.ts";
+		const splitPath =
+			"src/lib/time-tracking/policy-clock-out-terminal-break.ts";
+		withApprovalWriteTree(
+			{
+				[finalizerPath]: `import { db, timeRecord } from "@/db";
+export function finalizeOrdinaryWorkPeriodTerminal() {
+  return db.update(timeRecord).set({ approvalState: "approved" });
+}
+export function renamedFinalizer() {
+  return db.update(timeRecord).set({ approvalState: "approved" });
+}`,
+				[splitPath]: `import { db, timeRecord, timeRecordWork, timeRecordAllocation } from "@/db";
+export function applyPolicyClockOutTerminalBreakInTransaction(dynamic: object) {
+  db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
+  db.insert(timeRecordWork).values({ recordId, organizationId, recordKind: "work", workCategoryId, workLocationType, computationMetadata });
+  db.insert(timeRecordAllocation).values({ id, organizationId, recordId, allocationKind, projectId, costCenterId, weightPercent, createdAt });
+  db.insert(timeRecordAllocation).values(dynamic);
+}
+export function wrongSplitOwner() {
+  return db.insert(timeRecordWork).values({ recordId, organizationId, recordKind: "work", workCategoryId, workLocationType, computationMetadata });
+}`,
+			},
+			(workspaceRoot) => {
+				expect(
+					scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
+				).toEqual([
+					expect.objectContaining({
+						functionName: "renamedFinalizer",
+						path: finalizerPath,
+						table: "time_record",
+					}),
+					expect.objectContaining({
+						functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+						path: splitPath,
+						table: "time_record_allocation",
+						uncertainty: "dynamic_payload",
+					}),
+					expect.objectContaining({
+						functionName: "wrongSplitOwner",
+						path: splitPath,
+						table: "time_record_work",
+					}),
+				]);
+			},
+		);
+	});
+
 	it("does not let a concrete canonical owner absorb an unresolved source write", () => {
 		withApprovalWriteTree(
 			{
@@ -3237,7 +3491,10 @@ export async function hiddenImport(values: object) {
 
 		expect(
 			analyzeOperations("src/lib/approvals/server/absence-approvals.ts"),
-		).toEqual([{ operation: "insert", table: "approval_request" }]);
+		).toEqual([
+			{ operation: "update", table: "time_record" },
+			{ operation: "insert", table: "approval_request" },
+		]);
 		expect(
 			analyzeOperations("src/app/[locale]/(app)/absences/mutations.ts"),
 		).toEqual([

@@ -158,6 +158,59 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			semantic: "inactive_correction",
 			table: "time_entry",
 		},
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "syncCanonicalWorkCorrection",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+	],
+	"src/lib/absences/sick-vacation-override.ts": [
+		{
+			columns: [
+				"approval_state",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"organization_id",
+				"start_at",
+			],
+			functionName: "createCanonicalAbsenceInTransaction",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "updateCanonicalAbsenceRangeInTransaction",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: ["approval_state"],
+			functionName: "rejectCanonicalAbsenceInTransaction",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+	],
+	"src/lib/approvals/server/absence-approvals.ts": [
+		{
+			columns: ["approval_state"],
+			functionName: "syncCanonicalAbsenceApprovalStateAt",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
 	],
 	"src/lib/approvals/server/time-correction-submission.ts": [
 		{
@@ -203,6 +256,13 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			operation: "update",
 			table: "work_period",
 		},
+		{
+			columns: ["approval_state"],
+			functionName: "finalizeOrdinaryWorkPeriodTerminal",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
 	],
 	"src/lib/time-tracking/policy-clock-out-terminal-break.ts": [
 		{
@@ -227,7 +287,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record",
 		},
 		{
-			columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
+			columns: [
+				"approval_state",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"organization_id",
+				"start_at",
+			],
 			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
 			operation: "insert",
 			semantic: "policy_clock_out_terminal_break",
@@ -284,6 +351,50 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 } as const satisfies CanonicalApprovalSourceWriteOwners;
 
 export const SOURCE_WRITE_EXCEPTIONS = {
+	"src/app/[locale]/(app)/absences/actions.canonical.ts": [
+		{
+			columns: [],
+			functionName: "create",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+			uncertainty: "dynamic_payload",
+		},
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "updateCanonicalAbsenceRangeInTransaction",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: ["approval_state"],
+			functionName: "syncCanonicalAbsenceApprovalStateInTransaction",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+	],
+	"src/app/[locale]/(app)/absences/request-absence-effect.ts": [
+		{
+			columns: [],
+			functionName: "createRecords",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+			uncertainty: "dynamic_payload",
+		},
+	],
+	"src/app/[locale]/(app)/team/absences/actions.ts": [
+		{
+			columns: [],
+			functionName: "recordAbsenceForEmployee",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+			uncertainty: "dynamic_payload",
+		},
+	],
 	"src/app/[locale]/(app)/time-tracking/actions.ts": [
 		{
 			columns: ["is_superseded", "superseded_by_id"],
@@ -466,6 +577,30 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			functionName: "runCanonicalBackfill",
 			operation: "update",
 			table: "work_period",
+		},
+		{
+			columns: [],
+			functionName: "insertIfPresent",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+			uncertainty: "dynamic_payload",
+		},
+		{
+			columns: [],
+			functionName: "insertIfPresent",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
+			uncertainty: "dynamic_payload",
+		},
+		{
+			columns: [],
+			functionName: "runCanonicalBackfill",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
+			uncertainty: "dynamic_payload",
 		},
 	],
 	"src/lib/approvals/server/time-correction-approvals.ts": [

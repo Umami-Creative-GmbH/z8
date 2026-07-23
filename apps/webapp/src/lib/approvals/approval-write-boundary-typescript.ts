@@ -67,6 +67,9 @@ const TABLE_EXPORTS: Readonly<Record<string, ProtectedWriteTable>> = {
 	approvalWorkflowRollout: "approval_workflow_rollout",
 	approvalWorkflowStage: "approval_workflow_stage",
 	timeEntry: "time_entry",
+	timeRecord: "time_record",
+	timeRecordAllocation: "time_record_allocation",
+	timeRecordWork: "time_record_work",
 	workPeriod: "work_period",
 };
 
@@ -78,19 +81,35 @@ const SOURCE_TABLES = new Set<ProtectedWriteTable>([
 	"time_record_allocation",
 ]);
 const SOURCE_COLUMN_NAMES: Readonly<Record<string, string>> = {
+	allocationKind: "allocation_kind",
+	approvalState: "approval_state",
 	approvalStatus: "approval_status",
 	approvalWorkflowId: "approval_workflow_id",
 	canonicalRecordId: "canonical_record_id",
 	clockInId: "clock_in_id",
 	clockOutId: "clock_out_id",
+	computationMetadata: "computation_metadata",
+	costCenterId: "cost_center_id",
+	createdAt: "created_at",
 	durationMinutes: "duration_minutes",
+	employeeId: "employee_id",
+	endAt: "end_at",
 	endTime: "end_time",
+	id: "id",
 	isSuperseded: "is_superseded",
+	organizationId: "organization_id",
 	pendingChanges: "pending_changes",
+	projectId: "project_id",
+	recordId: "record_id",
+	recordKind: "record_kind",
 	replacesEntryId: "replaces_entry_id",
+	startAt: "start_at",
 	startTime: "start_time",
 	supersededById: "superseded_by_id",
 	type: "type",
+	weightPercent: "weight_percent",
+	workCategoryId: "work_category_id",
+	workLocationType: "work_location_type",
 };
 const TIME_ENTRY_LIFECYCLE_COLUMNS = new Set([
 	"is_superseded",
@@ -104,6 +123,7 @@ const SCHEMA_MODULES = new Set([
 	"@/db/schema/approval",
 	"@/db/schema/approval-policy",
 	"@/db/schema/approval-workflow",
+	"@/db/schema/time-record",
 ]);
 const MAX_PROVENANCE_DEPTH = 128;
 const MAX_HELPER_CALLS = 4_096;
@@ -142,6 +162,7 @@ function isSchemaModule(moduleName: string, fileName: string): boolean {
 		"/apps/webapp/src/db/schema/approval",
 		"/apps/webapp/src/db/schema/approval-policy",
 		"/apps/webapp/src/db/schema/approval-workflow",
+		"/apps/webapp/src/db/schema/time-record",
 	].some((suffix) => resolved.endsWith(suffix));
 }
 
@@ -1725,6 +1746,7 @@ export function analyzeApprovalWriteMutations(
 				const column = SOURCE_COLUMN_NAMES[predicate.name.text];
 				if (
 					column &&
+					(column === "type" || TIME_ENTRY_LIFECYCLE_COLUMNS.has(column)) &&
 					resolveExpression(
 						predicate.expression,
 						node.getStart(sourceFile),
@@ -1745,11 +1767,15 @@ export function analyzeApprovalWriteMutations(
 				const column = columnAccess
 					? SOURCE_COLUMN_NAMES[columnAccess.name]
 					: undefined;
+				const protectedColumn =
+					column === "type" ||
+					(column !== undefined && TIME_ENTRY_LIFECYCLE_COLUMNS.has(column));
 				const value = predicate.arguments[1]
 					? unwrap(predicate.arguments[1])
 					: null;
 				if (
 					callName === "eq" &&
+					protectedColumn &&
 					column === "type" &&
 					value &&
 					ts.isStringLiteralLike(value) &&
@@ -1759,15 +1785,24 @@ export function analyzeApprovalWriteMutations(
 				}
 				if (
 					callName === "eq" &&
+					protectedColumn &&
 					column === "is_superseded" &&
 					value?.kind === ts.SyntaxKind.TrueKeyword
 				) {
 					inactive = true;
 				}
-				if (callName === "isNull" && column === "superseded_by_id") {
+				if (
+					protectedColumn &&
+					callName === "isNull" &&
+					column === "superseded_by_id"
+				) {
 					nullSuccessor = true;
 				}
-				if (callName === "eq" && column === "replaces_entry_id") {
+				if (
+					protectedColumn &&
+					callName === "eq" &&
+					column === "replaces_entry_id"
+				) {
 					replacement = true;
 				}
 			}
@@ -1811,37 +1846,53 @@ export function analyzeApprovalWriteMutations(
 							"endTime",
 							"durationMinutes",
 						]
-					: Object.keys(SOURCE_COLUMN_NAMES).filter(
-							(name) =>
-								name === "type" ||
-								TIME_ENTRY_LIFECYCLE_COLUMNS.has(
-									SOURCE_COLUMN_NAMES[name] ?? "",
-								),
-						);
+					: table === "time_entry"
+						? Object.keys(SOURCE_COLUMN_NAMES).filter(
+								(name) =>
+									name === "type" ||
+									TIME_ENTRY_LIFECYCLE_COLUMNS.has(
+										SOURCE_COLUMN_NAMES[name] ?? "",
+									),
+							)
+						: table === "time_record"
+							? [
+									"approvalState",
+									"startAt",
+									"endAt",
+									"durationMinutes",
+									"organizationId",
+									"employeeId",
+								]
+							: table === "time_record_work"
+								? [
+										"recordId",
+										"organizationId",
+										"recordKind",
+										"workCategoryId",
+										"workLocationType",
+										"computationMetadata",
+									]
+								: [
+										"id",
+										"organizationId",
+										"recordId",
+										"allocationKind",
+										"projectId",
+										"costCenterId",
+										"weightPercent",
+										"createdAt",
+									];
 			const unresolvedPayload =
 				payload.unresolved &&
 				protectedPropertyNames.some(
 					(name) => !payload.resolvedAfterUncertainty.has(name),
 				);
+			const protectedColumnSet = new Set(
+				protectedPropertyNames.map((name) => SOURCE_COLUMN_NAMES[name]),
+			);
 			const columns = [
 				...new Set(
-					table === "work_period"
-						? normalizedColumns.filter(
-								(column) =>
-									column === "approval_status" ||
-									column === "pending_changes" ||
-									column === "approval_workflow_id" ||
-									column === "canonical_record_id" ||
-									column === "clock_in_id" ||
-									column === "clock_out_id" ||
-									column === "start_time" ||
-									column === "end_time" ||
-									column === "duration_minutes",
-							)
-						: normalizedColumns.filter(
-								(column) =>
-									column === "type" || TIME_ENTRY_LIFECYCLE_COLUMNS.has(column),
-							),
+					normalizedColumns.filter((column) => protectedColumnSet.has(column)),
 				),
 			].sort(compareAscii);
 			const reportedColumns =
@@ -1853,6 +1904,12 @@ export function analyzeApprovalWriteMutations(
 					? []
 					: columns;
 			if (columns.length === 0 && !unresolvedPayload) continue;
+			if (
+				(table === "time_record_work" || table === "time_record_allocation") &&
+				operation !== "insert"
+			) {
+				continue;
+			}
 			if (table === "time_entry" && operation === "insert") {
 				const typeValue = payload.properties.get("type");
 				const correction =
@@ -1884,7 +1941,16 @@ export function analyzeApprovalWriteMutations(
 				...(reportedColumns.length > 0 ? { columns: reportedColumns } : {}),
 				...(table === "time_entry" && columns.length > 0
 					? { semantic: "correction_lifecycle" as const }
-					: {}),
+					: table === "time_record"
+						? {
+								semantic:
+									operation === "insert"
+										? ("policy_clock_out_terminal_break" as const)
+										: ("ordinary_finalization" as const),
+							}
+						: table === "time_record_work" || table === "time_record_allocation"
+							? { semantic: "policy_clock_out_terminal_break" as const }
+							: {}),
 				...(unresolvedPayload
 					? { uncertainty: "dynamic_payload" as const }
 					: {}),
