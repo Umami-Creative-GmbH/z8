@@ -544,6 +544,9 @@ function createSupersededHistoryDbService() {
 	const queryNames: string[] = [];
 	const approvalFindFirst = vi.fn().mockResolvedValue(request);
 	const approvalChainStageFindMany = vi.fn().mockResolvedValue([]);
+	const approvalChainStageFindFirst = vi.fn().mockResolvedValue(null);
+	const workPeriodFindMany = vi.fn().mockResolvedValue([period]);
+	const timeEntryFindMany = vi.fn().mockResolvedValue([supersededCorrection]);
 	const dbService = {
 		db: {
 			query: {
@@ -567,14 +570,14 @@ function createSupersededHistoryDbService() {
 				},
 				approvalChainStageInstance: {
 					findMany: approvalChainStageFindMany,
-					findFirst: vi.fn().mockResolvedValue(null),
+					findFirst: approvalChainStageFindFirst,
 				},
 				workPeriod: {
-					findMany: vi.fn().mockResolvedValue([period]),
+					findMany: workPeriodFindMany,
 					findFirst: vi.fn().mockResolvedValue(period),
 				},
 				timeEntry: {
-					findMany: vi.fn().mockResolvedValue([supersededCorrection]),
+					findMany: timeEntryFindMany,
 					findFirst: vi.fn().mockResolvedValue(supersededCorrection),
 				},
 			},
@@ -586,16 +589,88 @@ function createSupersededHistoryDbService() {
 	} as unknown as ApprovalDbService;
 
 	return {
+		approvalChainStageFindFirst,
 		approvalChainStageFindMany,
 		approvalFindFirst,
 		dbService,
 		period,
 		queryNames,
 		request,
+		timeEntryFindMany,
+		workPeriodFindMany,
 	};
 }
 
 describe("superseded correction history regression", () => {
+	it.each([
+		{
+			name: "an employee from another organization",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.employee.organizationId = "org-foreign";
+			},
+		},
+		{
+			name: "a request owned by another employee",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.request.requestedBy = "emp-foreign";
+			},
+		},
+	] as const)("omits list rows with $name before correction evidence loading", async ({
+		mutate,
+	}) => {
+		const fixture = createSupersededHistoryDbService();
+		mutate(fixture);
+
+		const items = await Effect.runPromise(
+			TimeCorrectionHandler.getApprovals({
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 20,
+			}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+		);
+
+		expect(items).toEqual([]);
+		expect(fixture.timeEntryFindMany).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		{
+			name: "an employee from another organization",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.employee.organizationId = "org-foreign";
+			},
+		},
+		{
+			name: "a request owned by another employee",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.request.requestedBy = "emp-foreign";
+			},
+		},
+	] as const)("rejects detail rows with $name before correction evidence loading", async ({
+		mutate,
+	}) => {
+		const fixture = createSupersededHistoryDbService();
+		mutate(fixture);
+
+		await expect(
+			Effect.runPromise(
+				TimeCorrectionHandler.getDetail("period-1", "org-1", {
+					approvalId: "approval-1",
+				}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+			),
+		).rejects.toThrow("Work period not found");
+		expect(fixture.timeEntryFindMany).not.toHaveBeenCalled();
+	});
+
 	it("loads a sanitized public stage for an ordinary compatibility row", async () => {
 		const { approvalChainStageFindMany, dbService, period, request } =
 			createSupersededHistoryDbService();
@@ -634,6 +709,43 @@ describe("superseded correction history regression", () => {
 		expect(JSON.stringify(items[0])).not.toContain(
 			"50000000-0000-4000-8000-000000000001",
 		);
+	});
+
+	it("uses the same metadata fallback for malformed list and detail stages", async () => {
+		const fixture = createSupersededHistoryDbService();
+		fixture.period.pendingChanges = { isManualEntry: true } as never;
+		fixture.request.metadata = {
+			timeRequest: { kind: "manual_time_submission" },
+			stage: {
+				id: "50000000-0000-4000-8000-000000000001",
+				sequence: 3,
+			},
+		};
+		fixture.request.reason = null;
+		const malformedStage = {
+			approvalRequestId: "approval-1",
+			labelSnapshot: "",
+			stepOrder: 0,
+		};
+		fixture.approvalChainStageFindMany.mockResolvedValue([malformedStage]);
+		fixture.approvalChainStageFindFirst.mockResolvedValue(malformedStage);
+
+		const list = await Effect.runPromise(
+			TimeCorrectionHandler.getApprovals({
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 20,
+			}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+		);
+		const detail = await Effect.runPromise(
+			TimeCorrectionHandler.getDetail("period-1", "org-1", {
+				approvalId: "approval-1",
+			}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+		);
+
+		expect(list[0]?.display.stage).toEqual({ name: "Approval", order: 3 });
+		expect(detail.approval.display.stage).toEqual(list[0]?.display.stage);
 	});
 
 	it("keeps the real inbox list item visible and non-actionable", async () => {

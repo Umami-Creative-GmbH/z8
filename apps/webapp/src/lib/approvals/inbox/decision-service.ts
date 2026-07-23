@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import { Cause, Effect, Exit, Option } from "effect";
 import { db } from "@/db";
 import {
@@ -644,9 +644,12 @@ async function toPersistedDecisionRequest(
 							eq(timeEntry.employeeId, request.requestedBy),
 							eq(timeEntry.type, "correction"),
 							eq(timeEntry.isSuperseded, false),
-							inArray(timeEntry.replacesEntryId, endpointIds),
+							or(
+								inArray(timeEntry.id, endpointIds),
+								inArray(timeEntry.replacesEntryId, endpointIds),
+							),
 						),
-						columns: { id: true },
+						columns: { id: true, replacesEntryId: true },
 					})
 				: [];
 			workflowKind = classifyTimeApprovalRequest({
@@ -656,6 +659,22 @@ async function toPersistedDecisionRequest(
 				verifiedRelationalCorrectionIds: correctionEvidence.map(
 					(entry) => entry.id,
 				),
+				verifiedRelationalCorrectionIdsByEndpoint: {
+					clockIn: correctionEvidence
+						.filter(
+							(entry) =>
+								entry.id === period.clockInId ||
+								entry.replacesEntryId === period.clockInId,
+						)
+						.map((entry) => entry.id),
+					clockOut: correctionEvidence
+						.filter(
+							(entry) =>
+								entry.id === period.clockOutId ||
+								entry.replacesEntryId === period.clockOutId,
+						)
+						.map((entry) => entry.id),
+				},
 			});
 		}
 	}

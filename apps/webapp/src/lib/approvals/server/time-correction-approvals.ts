@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
@@ -3791,7 +3791,10 @@ export async function executeTimeCorrectionDecisionInTransaction(
 								eq(timeEntry.employeeId, request.requestedBy),
 								eq(timeEntry.type, "correction"),
 								eq(timeEntry.isSuperseded, false),
-								inArray(timeEntry.replacesEntryId, endpointIds),
+								or(
+									inArray(timeEntry.id, endpointIds),
+									inArray(timeEntry.replacesEntryId, endpointIds),
+								),
 							),
 						})
 					: [];
@@ -3802,6 +3805,22 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					verifiedRelationalCorrectionIds: correctionEvidence.map(
 						(entry) => entry.id,
 					),
+					verifiedRelationalCorrectionIdsByEndpoint: {
+						clockIn: correctionEvidence
+							.filter(
+								(entry) =>
+									entry.id === period.clockInId ||
+									entry.replacesEntryId === period.clockInId,
+							)
+							.map((entry) => entry.id),
+						clockOut: correctionEvidence
+							.filter(
+								(entry) =>
+									entry.id === period.clockOutId ||
+									entry.replacesEntryId === period.clockOutId,
+							)
+							.map((entry) => entry.id),
+					},
 				});
 			}
 			if (kind === "unclassified") {

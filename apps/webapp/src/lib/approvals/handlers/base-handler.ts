@@ -31,6 +31,7 @@ interface ApprovalQueryConfig<TEntity, TRequestContext = never> {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	fetchEntitiesByIds: (
 		entityIds: string[],
+		requests: ApprovalRequestRow[],
 	) => Effect.Effect<Map<string, TEntity>, AnyAppError, any>;
 	/**
 	 * Transform an entity to UnifiedApprovalItem
@@ -57,6 +58,7 @@ export interface ApprovalRequestRow {
 	id: string;
 	entityType: ApprovalType;
 	entityId: string;
+	requestedBy: string;
 	approverId: string;
 	organizationId: string;
 	status: "pending" | "approved" | "rejected";
@@ -172,10 +174,9 @@ export function fetchApprovals<TEntity, TRequestContext = never>(
 		}
 
 		// Batch fetch all entities at once (fixes N+1 query problem)
-		const entityIds = requests.map((r) => r.entityId);
-		const entitiesMap = yield* _(fetchEntitiesByIds(entityIds));
-
 		const typedRequests = requests as ApprovalRequestRow[];
+		const entityIds = typedRequests.map((request) => request.entityId);
+		const entitiesMap = yield* _(fetchEntitiesByIds(entityIds, typedRequests));
 		const requestContexts = fetchRequestContexts
 			? yield* _(fetchRequestContexts(typedRequests))
 			: new Map<string, TRequestContext>();

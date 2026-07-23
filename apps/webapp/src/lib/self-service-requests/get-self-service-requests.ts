@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 
 import { db } from "@/db";
@@ -158,53 +158,59 @@ async function loadTimeCorrections(
 		),
 		columns: { lifecycleMode: true },
 	});
-	const rows = (await db.query.approvalRequest.findMany({
-		where: and(
-			eq(approvalRequest.organizationId, input.organizationId),
-			eq(approvalRequest.requestedBy, input.employeeId),
-			eq(approvalRequest.entityType, "time_entry"),
-		),
-		orderBy: [desc(approvalRequest.createdAt)],
-		limit: SOURCE_QUERY_LIMIT,
-	})) as TimeCorrectionRow[];
-	const verifiedCorrectionIdsByPeriod = await loadVerifiedCorrectionIdsByPeriod(
-		input,
-		rows,
-	);
-
 	const legacyWorkflowIds = new Set<string>();
-	const legacyItems = rows.flatMap((row) => {
-		if (
-			classifyTimeApprovalRequest({
-				metadata: row.metadata,
-				reason: row.reason,
-				verifiedRelationalCorrectionIds:
-					verifiedCorrectionIdsByPeriod.get(row.entityId) ?? [],
-			}) !== "time_correction"
-		) {
-			return [];
-		}
-		let metadata: ReturnType<typeof parseLegacyTimeCorrectionMetadata>;
-		try {
-			metadata = parseLegacyTimeCorrectionMetadata(row);
-			if (metadata.workflowId) legacyWorkflowIds.add(metadata.workflowId);
-		} catch {
-			return [];
-		}
-		const status: SelfServiceRequestStatus =
-			metadata.cancellationState === "requester"
-				? "cancelled"
-				: metadata.cancellationState === "invalid"
-					? "rejected"
-					: row.status;
-		const availableActions: SelfServiceRequestAction[] =
-			metadata.cancellationState === "invalid"
-				? ["view"]
-				: actionsFor(status, "time_correction");
-		return [
-			{
+	const legacyItems: SelfServiceRequestItem[] = [];
+	let offset = 0;
+	while (legacyItems.length < SOURCE_QUERY_LIMIT) {
+		const rows = (await db.query.approvalRequest.findMany({
+			where: and(
+				eq(approvalRequest.organizationId, input.organizationId),
+				eq(approvalRequest.requestedBy, input.employeeId),
+				eq(approvalRequest.entityType, "time_entry"),
+			),
+			orderBy: [desc(approvalRequest.createdAt)],
+			limit: SOURCE_QUERY_LIMIT,
+			offset,
+		})) as TimeCorrectionRow[];
+		if (rows.length === 0) break;
+		const verifiedCorrectionEvidenceByPeriod =
+			await loadVerifiedCorrectionEvidenceByPeriod(input, rows);
+
+		for (const row of rows) {
+			const evidence = verifiedCorrectionEvidenceByPeriod.get(row.entityId);
+			if (
+				classifyTimeApprovalRequest({
+					metadata: row.metadata,
+					reason: row.reason,
+					verifiedRelationalCorrectionIds: evidence?.ids ?? [],
+					verifiedRelationalCorrectionIdsByEndpoint: {
+						clockIn: evidence?.clockInIds ?? [],
+						clockOut: evidence?.clockOutIds ?? [],
+					},
+				}) !== "time_correction"
+			) {
+				continue;
+			}
+			let metadata: ReturnType<typeof parseLegacyTimeCorrectionMetadata>;
+			try {
+				metadata = parseLegacyTimeCorrectionMetadata(row);
+				if (metadata.workflowId) legacyWorkflowIds.add(metadata.workflowId);
+			} catch {
+				continue;
+			}
+			const status: SelfServiceRequestStatus =
+				metadata.cancellationState === "requester"
+					? "cancelled"
+					: metadata.cancellationState === "invalid"
+						? "rejected"
+						: row.status;
+			const availableActions: SelfServiceRequestAction[] =
+				metadata.cancellationState === "invalid"
+					? ["view"]
+					: actionsFor(status, "time_correction");
+			legacyItems.push({
 				id: row.id,
-				sourceType: "time_correction" as const,
+				sourceType: "time_correction",
 				sourceId: row.entityId,
 				organizationId: row.organizationId,
 				employeeId: row.requestedBy,
@@ -216,9 +222,13 @@ async function loadTimeCorrections(
 				decisionReason: row.rejectionReason,
 				availableActions,
 				sourceHref: "/time-tracking",
-			},
-		];
-	});
+			});
+			if (legacyItems.length === SOURCE_QUERY_LIMIT) break;
+		}
+
+		offset += rows.length;
+		if (rows.length < SOURCE_QUERY_LIMIT) break;
+	}
 
 	if (rollout?.lifecycleMode !== "complete") {
 		return legacyItems;
@@ -245,10 +255,16 @@ async function loadTimeCorrections(
 	];
 }
 
-async function loadVerifiedCorrectionIdsByPeriod(
+interface VerifiedCorrectionEvidence {
+	ids: string[];
+	clockInIds: string[];
+	clockOutIds: string[];
+}
+
+async function loadVerifiedCorrectionEvidenceByPeriod(
 	input: GetSelfServiceRequestsInput,
 	rows: TimeCorrectionRow[],
-): Promise<Map<string, string[]>> {
+): Promise<Map<string, VerifiedCorrectionEvidence>> {
 	if (rows.length === 0) return new Map();
 	const periods = await db.query.workPeriod.findMany({
 		where: and(
@@ -261,10 +277,21 @@ async function loadVerifiedCorrectionIdsByPeriod(
 		),
 		columns: { id: true, clockInId: true, clockOutId: true },
 	});
-	const endpointToPeriod = new Map<string, string>();
+	const endpointToPeriod = new Map<
+		string,
+		{ periodId: string; endpoint: "clockIn" | "clockOut" }
+	>();
 	for (const period of periods) {
-		endpointToPeriod.set(period.clockInId, period.id);
-		if (period.clockOutId) endpointToPeriod.set(period.clockOutId, period.id);
+		endpointToPeriod.set(period.clockInId, {
+			periodId: period.id,
+			endpoint: "clockIn",
+		});
+		if (period.clockOutId) {
+			endpointToPeriod.set(period.clockOutId, {
+				periodId: period.id,
+				endpoint: "clockOut",
+			});
+		}
 	}
 	const endpointIds = [...endpointToPeriod.keys()];
 	if (endpointIds.length === 0) return new Map();
@@ -274,16 +301,33 @@ async function loadVerifiedCorrectionIdsByPeriod(
 			eq(timeEntry.employeeId, input.employeeId),
 			eq(timeEntry.type, "correction"),
 			eq(timeEntry.isSuperseded, false),
-			inArray(timeEntry.replacesEntryId, endpointIds),
+			or(
+				inArray(timeEntry.id, endpointIds),
+				inArray(timeEntry.replacesEntryId, endpointIds),
+			),
 		),
 		columns: { id: true, replacesEntryId: true },
 	});
-	const result = new Map<string, string[]>();
+	const result = new Map<string, VerifiedCorrectionEvidence>();
 	for (const correction of corrections) {
-		if (!correction.replacesEntryId) continue;
-		const periodId = endpointToPeriod.get(correction.replacesEntryId);
-		if (!periodId) continue;
-		result.set(periodId, [...(result.get(periodId) ?? []), correction.id]);
+		const endpoint =
+			endpointToPeriod.get(correction.id) ??
+			(correction.replacesEntryId
+				? endpointToPeriod.get(correction.replacesEntryId)
+				: undefined);
+		if (!endpoint) continue;
+		const evidence = result.get(endpoint.periodId) ?? {
+			ids: [],
+			clockInIds: [],
+			clockOutIds: [],
+		};
+		evidence.ids.push(correction.id);
+		if (endpoint.endpoint === "clockIn") {
+			evidence.clockInIds.push(correction.id);
+		} else {
+			evidence.clockOutIds.push(correction.id);
+		}
+		result.set(endpoint.periodId, evidence);
 	}
 	return result;
 }

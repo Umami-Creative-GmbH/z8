@@ -30,6 +30,7 @@ import type {
 import type { ApprovalDbService, CurrentApprover } from "../server/types";
 import {
 	classifyTimeApprovalRequest,
+	hasAttemptedOrdinaryTimeApprovalEvidence,
 	type TimeApprovalKind,
 } from "../time-request-kind";
 import { buildSLAInfo, fetchApprovals } from "./base-handler";
@@ -71,6 +72,7 @@ interface WorkPeriodWithRelations {
 	timeApprovalKind?: TimeApprovalKind;
 	timeRequestWarning?: string | null;
 	timeRequestActionable?: boolean;
+	timeRequestHasOrdinaryEvidence?: boolean;
 	correctionReviewEntries?: CorrectionEntryForReview[];
 	employee: {
 		id: string;
@@ -276,10 +278,26 @@ export function buildTimeApprovalReview(
 		verifiedRelationalCorrectionIds: verifiedCorrections.map(
 			(entry) => entry.id,
 		),
+		verifiedRelationalCorrectionIdsByEndpoint: {
+			clockIn: verifiedCorrections
+				.filter((entry) => entry.replacesEntryId === period.clockIn.id)
+				.map((entry) => entry.id),
+			clockOut: verifiedCorrections
+				.filter((entry) => entry.replacesEntryId === period.clockOut?.id)
+				.map((entry) => entry.id),
+		},
 	});
+	const hasOrdinaryEvidence =
+		kind !== "time_correction" &&
+		hasAttemptedOrdinaryTimeApprovalEvidence({
+			metadata: request.metadata,
+			reason: request.reason,
+			pendingChanges: period.pendingChanges,
+		});
 
 	return {
 		kind,
+		hasOrdinaryEvidence,
 		isActionable: kind !== "unclassified",
 		warning:
 			kind === "unclassified" ? UNCLASSIFIED_TIME_APPROVAL_WARNING : null,
@@ -411,7 +429,7 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 			fetchApprovals({
 				entityType: "time_entry",
 				params,
-				fetchEntitiesByIds: (entityIds) =>
+				fetchEntitiesByIds: (entityIds, requests) =>
 					Effect.gen(function* (_) {
 						const dbService = yield* _(DatabaseService);
 
@@ -431,7 +449,22 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 							}),
 						);
 
-						const typedPeriods = periods as WorkPeriodWithRelations[];
+						const requestsByEntityId = new Map<string, typeof requests>();
+						for (const request of requests) {
+							requestsByEntityId.set(request.entityId, [
+								...(requestsByEntityId.get(request.entityId) ?? []),
+								request,
+							]);
+						}
+						const typedPeriods = (periods as WorkPeriodWithRelations[]).filter(
+							(period) =>
+								period.employee.organizationId === params.organizationId &&
+								(requestsByEntityId.get(period.id) ?? []).some(
+									(request) =>
+										request.organizationId === params.organizationId &&
+										request.requestedBy === period.employee.id,
+								),
+						);
 						const originalEntryIds = typedPeriods.flatMap((period) =>
 							[period.clockIn.id, period.clockOut?.id].filter(
 								(id): id is string => Boolean(id),
@@ -523,14 +556,14 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 						const stagesByRequest = new Map(
 							stages.flatMap((stage) =>
 								stage.approvalRequestId
-									? [[stage.approvalRequestId, publicStage({}, stage)] as const]
+									? [[stage.approvalRequestId, stage] as const]
 									: [],
 							),
 						);
 						return new Map(
 							requests.map((request) => [
 								request.id,
-								stagesByRequest.get(request.id) ?? publicStage(request),
+								publicStage(request, stagesByRequest.get(request.id)),
 							]),
 						);
 					}),
@@ -555,6 +588,12 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 					return true;
 				},
 				transformToItem: (request, entity, stage) => {
+					if (
+						entity.employee.organizationId !== request.organizationId ||
+						request.requestedBy !== entity.employee.id
+					) {
+						return null;
+					}
 					const review = buildTimeApprovalReview(
 						entity,
 						{ ...request, publicStage: stage },
@@ -689,6 +728,20 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 								),
 					),
 				);
+				if (
+					request.organizationId !== period.employee.organizationId ||
+					request.requestedBy !== period.employee.id
+				) {
+					return yield* _(
+						Effect.fail(
+							new NotFoundError({
+								message: "Work period not found",
+								entityType: "work_period",
+								entityId,
+							}),
+						),
+					);
+				}
 				const chainStage = yield* _(
 					dbService.query("getTimeApprovalPublicStage", async () => {
 						return await dbService.db.query.approvalChainStageInstance.findFirst(
@@ -776,6 +829,7 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 				const periodWithReview = {
 					...period,
 					timeApprovalKind: review.kind,
+					timeRequestHasOrdinaryEvidence: review.hasOrdinaryEvidence,
 					timeRequestWarning: review.warning,
 					timeRequestActionable: review.isActionable,
 					...(review.pendingCorrection

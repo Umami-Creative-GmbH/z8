@@ -20,6 +20,7 @@ vi.mock("drizzle-orm", () => ({
 	eq: vi.fn((left: unknown, right: unknown) => ({ op: "eq", left, right })),
 	gte: vi.fn((left: unknown, right: unknown) => ({ op: "gte", left, right })),
 	ne: vi.fn((left: unknown, right: unknown) => ({ op: "ne", left, right })),
+	or: vi.fn((...conditions: unknown[]) => ({ type: "or", conditions })),
 	inArray: vi.fn((left: unknown, right: unknown) => ({
 		op: "inArray",
 		left,
@@ -1025,6 +1026,88 @@ describe("getSelfServiceRequests", () => {
 		]);
 	});
 
+	it("continues past newer ordinary approvals to return older corrections", async () => {
+		dbMocks.absenceEntries.mockResolvedValue([]);
+		dbMocks.travelExpenseClaims.mockResolvedValue([]);
+		const ordinaryRows = Array.from({ length: 101 }, (_, index) =>
+			timeCorrection({
+				id: `ordinary-${index}`,
+				entityId: `ordinary-period-${index}`,
+				metadata: { timeRequest: { kind: "manual_time_submission" } },
+			}),
+		);
+		const correctionRows = [
+			timeCorrection({
+				id: "older-correction-1",
+				entityId: "older-period-1",
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId: "10000000-0000-4000-8000-000000000051",
+					},
+				},
+			}),
+			timeCorrection({
+				id: "older-correction-2",
+				entityId: "older-period-2",
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId: "10000000-0000-4000-8000-000000000052",
+					},
+				},
+			}),
+		];
+		const allRows = [...ordinaryRows, ...correctionRows];
+		dbMocks.approvalRequests.mockImplementation(async (input) => {
+			const query = input as { limit?: number; offset?: number };
+			const offset = query.offset ?? 0;
+			return allRows.slice(offset, offset + (query.limit ?? 100));
+		});
+		dbMocks.workPeriods.mockResolvedValue([
+			{
+				id: "older-period-1",
+				clockInId: "older-clock-in-1",
+				clockOutId: null,
+			},
+			{
+				id: "older-period-2",
+				clockInId: "older-clock-in-2",
+				clockOutId: null,
+			},
+		]);
+		dbMocks.timeEntries.mockResolvedValue([
+			{
+				id: "10000000-0000-4000-8000-000000000051",
+				replacesEntryId: "older-clock-in-1",
+			},
+			{
+				id: "10000000-0000-4000-8000-000000000052",
+				replacesEntryId: "older-clock-in-2",
+			},
+		]);
+
+		const result = await getSelfServiceRequests({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+		});
+
+		expect(
+			result.items
+				.filter((item) => item.sourceType === "time_correction")
+				.map((item) => item.id),
+		).toEqual(["older-correction-1", "older-correction-2"]);
+		expect(dbMocks.approvalRequests).toHaveBeenCalledTimes(2);
+		expect(dbMocks.approvalRequests.mock.calls.map(([query]) => query)).toEqual(
+			[
+				expect.objectContaining({ limit: 100, offset: 0 }),
+				expect.objectContaining({ limit: 100, offset: 100 }),
+			],
+		);
+		expect(dbMocks.workPeriods).toHaveBeenCalledTimes(2);
+		expect(dbMocks.timeEntries).toHaveBeenCalledTimes(2);
+	});
+
 	it.each([
 		"legacy",
 		"shadow",
@@ -1135,6 +1218,109 @@ describe("getSelfServiceRequests", () => {
 		expect(
 			result.items.filter((item) => item.sourceType === "time_correction"),
 		).toEqual([expect.objectContaining({ id: "approval-time-1" })]);
+	});
+
+	it("does not expose cancellation for corrections bound to the wrong endpoint", async () => {
+		dbMocks.absenceEntries.mockResolvedValue([]);
+		dbMocks.travelExpenseClaims.mockResolvedValue([]);
+		dbMocks.approvalRequests.mockResolvedValue([
+			timeCorrection(),
+			timeCorrection({
+				id: "swapped-correction",
+				entityId: "period-swapped",
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId: "10000000-0000-4000-8000-000000000061",
+						clockOutCorrectionId: "10000000-0000-4000-8000-000000000062",
+					},
+				},
+			}),
+			timeCorrection({
+				id: "same-endpoint-correction",
+				entityId: "period-same-endpoint",
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId: "10000000-0000-4000-8000-000000000063",
+						clockOutCorrectionId: "10000000-0000-4000-8000-000000000064",
+					},
+				},
+			}),
+			timeCorrection({
+				id: "missing-correction",
+				entityId: "period-missing",
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId: "10000000-0000-4000-8000-000000000065",
+					},
+				},
+			}),
+			timeCorrection({
+				id: "foreign-correction",
+				entityId: "period-foreign-endpoint",
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId: "10000000-0000-4000-8000-000000000066",
+					},
+				},
+			}),
+		]);
+		dbMocks.workPeriods.mockResolvedValue([
+			{ id: "period-1", clockInId: "clock-in-original", clockOutId: null },
+			{
+				id: "period-swapped",
+				clockInId: "swapped-in",
+				clockOutId: "swapped-out",
+			},
+			{
+				id: "period-same-endpoint",
+				clockInId: "same-in",
+				clockOutId: "same-out",
+			},
+			{ id: "period-missing", clockInId: "missing-in", clockOutId: null },
+			{
+				id: "period-foreign-endpoint",
+				clockInId: "foreign-in",
+				clockOutId: null,
+			},
+		]);
+		dbMocks.timeEntries.mockResolvedValue([
+			{
+				id: "10000000-0000-4000-8000-000000000001",
+				replacesEntryId: "clock-in-original",
+			},
+			{
+				id: "10000000-0000-4000-8000-000000000061",
+				replacesEntryId: "swapped-out",
+			},
+			{
+				id: "10000000-0000-4000-8000-000000000062",
+				replacesEntryId: "swapped-in",
+			},
+			{
+				id: "10000000-0000-4000-8000-000000000063",
+				replacesEntryId: "same-in",
+			},
+			{
+				id: "10000000-0000-4000-8000-000000000064",
+				replacesEntryId: "same-in",
+			},
+		]);
+
+		const result = await getSelfServiceRequests({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+		});
+
+		expect(
+			result.items.filter((item) => item.sourceType === "time_correction"),
+		).toEqual([expect.objectContaining({ id: "approval-time-1" })]);
+		expect(JSON.stringify(result)).not.toMatch(
+			/swapped-correction|same-endpoint-correction|missing-correction|foreign-correction/,
+		);
 	});
 
 	it("offers correction cancellation only while the exact correction request is pending", async () => {

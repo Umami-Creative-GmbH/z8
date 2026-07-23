@@ -14,6 +14,10 @@ export interface TimeApprovalClassificationInput {
 	reason?: string | null;
 	pendingChanges?: unknown;
 	verifiedRelationalCorrectionIds?: readonly string[];
+	verifiedRelationalCorrectionIdsByEndpoint?: {
+		clockIn: readonly string[];
+		clockOut: readonly string[];
+	};
 }
 
 type Parsed<T> =
@@ -86,9 +90,11 @@ function timeRequestMarker(metadata: JsonObject | null): Parsed<OrdinaryKind> {
 		: { state: "invalid" };
 }
 
-function timeCorrectionMarker(
-	metadata: JsonObject | null,
-): Parsed<readonly string[]> {
+function timeCorrectionMarker(metadata: JsonObject | null): Parsed<{
+	ids: readonly string[];
+	clockInCorrectionId?: string;
+	clockOutCorrectionId?: string;
+}> {
 	if (!metadata) return { state: "absent" };
 	const property = ownDataProperty(metadata, "timeCorrection");
 	if (property.state !== "valid") return property;
@@ -116,7 +122,18 @@ function timeCorrectionMarker(
 	) {
 		return { state: "invalid" };
 	}
-	return { state: "valid", value: ids as string[] };
+	return {
+		state: "valid",
+		value: {
+			ids: ids as string[],
+			...(typeof marker.clockInCorrectionId === "string"
+				? { clockInCorrectionId: marker.clockInCorrectionId }
+				: {}),
+			...(typeof marker.clockOutCorrectionId === "string"
+				? { clockOutCorrectionId: marker.clockOutCorrectionId }
+				: {}),
+		},
+	};
 }
 
 function pendingChangesObject(value: unknown): Parsed<JsonObject> {
@@ -144,6 +161,35 @@ function booleanMarker(
 		: "invalid";
 }
 
+export function hasAttemptedOrdinaryTimeApprovalEvidence(
+	input: Pick<
+		TimeApprovalClassificationInput,
+		"metadata" | "pendingChanges" | "reason"
+	>,
+): boolean {
+	const metadata = metadataObject(input.metadata);
+	if (metadata.state === "valid") {
+		if (ownDataProperty(metadata.value, "timeRequest").state !== "absent") {
+			return true;
+		}
+	}
+
+	const pending = pendingChangesObject(input.pendingChanges);
+	if (pending.state === "valid") {
+		if (
+			ownDataProperty(pending.value, "isManualEntry").state !== "absent" ||
+			ownDataProperty(pending.value, "isNewClockOut").state !== "absent"
+		) {
+			return true;
+		}
+	}
+
+	return (
+		input.reason?.startsWith("Manual time entry:") === true ||
+		input.reason === POLICY_CLOCK_OUT_APPROVAL_REASON
+	);
+}
+
 export function classifyTimeApprovalRequest(
 	input: TimeApprovalClassificationInput,
 ): TimeApprovalKind {
@@ -159,11 +205,20 @@ export function classifyTimeApprovalRequest(
 		return "unclassified";
 	}
 	if (correction.state === "valid") {
-		if (correction.value.length === 0) return "time_correction";
+		if (correction.value.ids.length === 0) return "time_correction";
 		const verified = new Set(input.verifiedRelationalCorrectionIds ?? []);
-		return correction.value.every((id) => verified.has(id))
-			? "time_correction"
-			: "unclassified";
+		const endpoints = input.verifiedRelationalCorrectionIdsByEndpoint;
+		if (
+			!endpoints ||
+			!correction.value.ids.every((id) => verified.has(id)) ||
+			(correction.value.clockInCorrectionId !== undefined &&
+				!endpoints.clockIn.includes(correction.value.clockInCorrectionId)) ||
+			(correction.value.clockOutCorrectionId !== undefined &&
+				!endpoints.clockOut.includes(correction.value.clockOutCorrectionId))
+		) {
+			return "unclassified";
+		}
+		return "time_correction";
 	}
 
 	const pending = pendingChangesObject(input.pendingChanges);

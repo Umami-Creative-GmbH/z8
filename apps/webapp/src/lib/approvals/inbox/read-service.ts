@@ -373,15 +373,20 @@ function isOrdinaryTimeApprovalDetail(detail: ApprovalDetail): boolean {
 	if (
 		detail.approval.approvalType !== "time_entry" ||
 		typeof detail.entity !== "object" ||
-		detail.entity === null ||
-		!("timeApprovalKind" in detail.entity)
+		detail.entity === null
 	) {
 		return false;
 	}
 
-	const kind = (detail.entity as { timeApprovalKind?: unknown })
-		.timeApprovalKind;
-	return kind === "manual_time_submission" || kind === "policy_clock_out";
+	const entity = detail.entity as {
+		timeApprovalKind?: unknown;
+		timeRequestHasOrdinaryEvidence?: unknown;
+	};
+	return (
+		entity.timeApprovalKind === "manual_time_submission" ||
+		entity.timeApprovalKind === "policy_clock_out" ||
+		entity.timeRequestHasOrdinaryEvidence === true
+	);
 }
 
 function getTimeRequestWarning(entity: unknown): string | null {

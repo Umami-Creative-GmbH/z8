@@ -320,3 +320,67 @@ describe.each([
 		).not.toMatch(forbiddenPrivatePattern);
 	});
 });
+
+describe("invalid ordinary approval detail composition", () => {
+	it.each([
+		{
+			name: "malformed ordinary metadata",
+			metadata: {
+				timeRequest: {
+					kind: "manual_time_submission",
+					diagnostics: sourceDiagnostics,
+				},
+				workflow: { id: workflowId, organizationId },
+			},
+		},
+		{
+			name: "contradictory ordinary and correction metadata",
+			metadata: {
+				timeRequest: { kind: "manual_time_submission" },
+				timeCorrection: { action: "edit" },
+				workflow: { id: workflowId, organizationId },
+			},
+		},
+		{
+			name: "foreign ordinary kind metadata",
+			metadata: {
+				timeRequest: { kind: "absence" },
+				workflow: { id: workflowId, organizationId },
+			},
+		},
+	] as const)("redacts timeline IDs for $name", async ({ metadata }) => {
+		const fixtureValue = fixture("canonical", "manual_time_submission");
+		const request = { ...fixtureValue.request, metadata };
+		dbMocks.approvalRequests.mockReset();
+		dbMocks.chainStages.mockReset();
+		dbMocks.chainStage.mockReset();
+		dbMocks.workPeriods.mockReset();
+		dbMocks.workPeriod.mockReset();
+		dbMocks.timeEntries.mockReset();
+		dbMocks.approvalRequests.mockResolvedValue(request);
+		dbMocks.chainStage.mockResolvedValue(fixtureValue.stage);
+		dbMocks.workPeriod.mockResolvedValue(fixtureValue.period);
+		dbMocks.timeEntries.mockResolvedValue([]);
+
+		const detail = await getApprovalInboxDetailFromRequest({
+			request,
+			handler: TimeCorrectionHandler,
+		});
+		const timeline = detail.sections.find(
+			(section) => section.type === "timeline",
+		);
+
+		expect(detail.item.summary.title).toBe("Unclassified Time Approval");
+		expect(detail.actions).toMatchObject({
+			canApprove: false,
+			canReject: false,
+		});
+		expect(timeline).toMatchObject({
+			type: "timeline",
+			events: [{ id: "timeline-created-1" }],
+		});
+		expect(JSON.stringify(detail.sections)).not.toMatch(
+			forbiddenPrivatePattern,
+		);
+	});
+});

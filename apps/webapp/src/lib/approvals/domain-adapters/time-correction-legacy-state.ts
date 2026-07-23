@@ -797,6 +797,34 @@ function decodeCapture(
 					...correctionEntries.map((entry) => entry.id),
 					...priorVerifiedCorrectionIds,
 				],
+				verifiedRelationalCorrectionIdsByEndpoint: {
+					clockIn: [
+						...correctionEntries
+							.filter(
+								(entry) =>
+									entry.id === source.clockInId ||
+									entry.replacesEntryId === source.clockInId,
+							)
+							.map((entry) => entry.id),
+						...(input.allowCancelledReplayWithoutCorrectionRows === true &&
+						expectedPayload?.timeCorrection.clockInCorrectionId
+							? [expectedPayload.timeCorrection.clockInCorrectionId]
+							: []),
+					],
+					clockOut: [
+						...correctionEntries
+							.filter(
+								(entry) =>
+									entry.id === source.clockOutId ||
+									entry.replacesEntryId === source.clockOutId,
+							)
+							.map((entry) => entry.id),
+						...(input.allowCancelledReplayWithoutCorrectionRows === true &&
+						expectedPayload?.timeCorrection.clockOutCorrectionId
+							? [expectedPayload.timeCorrection.clockOutCorrectionId]
+							: []),
+					],
+				},
 			}) !== "time_correction"
 		) {
 			return fail();

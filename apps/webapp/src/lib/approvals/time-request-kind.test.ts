@@ -73,8 +73,55 @@ describe("classifyTimeApprovalRequest", () => {
 					clockInCorrectionId,
 					clockOutCorrectionId,
 				],
+				verifiedRelationalCorrectionIdsByEndpoint: {
+					clockIn: [clockInCorrectionId],
+					clockOut: [clockOutCorrectionId],
+				},
 			}),
 		).toBe("time_correction");
+	});
+
+	it.each([
+		{
+			name: "swapped endpoints",
+			clockInIds: [clockOutCorrectionId],
+			clockOutIds: [clockInCorrectionId],
+		},
+		{
+			name: "both corrections replacing clock in",
+			clockInIds: [clockInCorrectionId, clockOutCorrectionId],
+			clockOutIds: [],
+		},
+		{
+			name: "missing clock-out correction",
+			clockInIds: [clockInCorrectionId],
+			clockOutIds: [],
+		},
+		{
+			name: "foreign clock-out correction",
+			clockInIds: [clockInCorrectionId],
+			clockOutIds: [foreignCorrectionId],
+		},
+	] as const)("rejects explicit correction IDs with $name", (evidence) => {
+		expect(
+			classifyTimeApprovalRequest({
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId,
+						clockOutCorrectionId,
+					},
+				},
+				verifiedRelationalCorrectionIds: [
+					clockInCorrectionId,
+					clockOutCorrectionId,
+				],
+				verifiedRelationalCorrectionIdsByEndpoint: {
+					clockIn: evidence.clockInIds,
+					clockOut: evidence.clockOutIds,
+				},
+			}),
+		).toBe("unclassified");
 	});
 
 	it.each([
