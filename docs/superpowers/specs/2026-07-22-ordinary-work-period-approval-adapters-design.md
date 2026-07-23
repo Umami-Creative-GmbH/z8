@@ -108,6 +108,8 @@ The legacy source and approval writes remain authoritative inside the repository
 
 The canonical workflow engine owns routing, transitions, compatibility writes, projection, and source binding. The ordinary work-period adapter owns source validation and terminal mutation. Compatibility rows preserve existing readers and callers. Outbox records remain observe-only in this phase.
 
+Canonical mode writes compatibility rows while legacy serving remains enabled. Complete mode writes no legacy compatibility rows. Inbox list, count, detail, individual-decision, and bulk-decision surfaces discover complete-mode ordinary approvals from organization-scoped canonical inbox projections and active assignments. Canonical rows are suppressed when an authoritative compatibility request for the same workflow stage already serves the item, so no rollout mode produces duplicate inbox entries. The public stable target for a canonical-only item is its assignment ID.
+
 No rollout row or organization mode changes as part of this work.
 
 ## Decision Flow
@@ -145,7 +147,13 @@ Terminal replay is handled by workflow command receipts and exact legacy termina
 
 Policy-clock-out break enforcement is part of terminal approval, not a post-submission effect. Intermediate approvals and rejections do not enforce breaks. Requester auto-approval uses the same terminal maintenance path as an explicit terminal decision.
 
-Terminal approval runs break enforcement inside the repository-owned approval transaction after locking and revalidating the organization-scoped work period, canonical work record, effective policy, and employee timezone. If no break is required, approval completes without changing the recorded interval. If a break is required, the transaction:
+Submission resolves the employee's effective break policy at the submitted clock-out instant and persists one strict, versioned private snapshot. The snapshot records either no applicable policy or the complete immutable calculation inputs: assignment and team evidence, policy and regulation identity, maximum uninterrupted minutes, and ordered break-rule thresholds and requirements. Values required for calculation are stored directly; terminal approval does not reconstruct historical meaning from mutable current policy rows.
+
+The exact same snapshot is stored in the work-period pending changes and, according to rollout mode, legacy request metadata and canonical workflow context. Shadow and ready observation must preserve byte-equivalent normalized evidence. Canonical compatibility metadata carries the snapshot; complete mode stores it only in the source and canonical context. The snapshot is excluded from display projections, search text, public errors, notifications, and logs.
+
+Exact submission replay requires the same normalized snapshot. A changed snapshot for the same submission identity is a conflict. Newly created policy-clock-out submissions without valid snapshot evidence fail closed. Historical legacy requests created before this contract may use the explicitly isolated legacy fallback; canonical and complete requests never synthesize policy evidence at decision time.
+
+Terminal approval runs break enforcement inside the repository-owned approval transaction after locking and revalidating the organization-scoped work period, canonical work record, immutable policy snapshot, and employee timezone. If no break is required, approval completes without changing the recorded interval. If a break is required, the transaction:
 
 1. creates the synthetic clock-out and clock-in entries with timezone capture for their exact event instants;
 2. shortens the original work period to the first segment and updates its existing approved canonical work record to exact parity;
@@ -170,6 +178,14 @@ Legacy, shadow, and ready dispatch current best-effort effects after commit. Can
 
 Break enforcement is not dispatched from this descriptor. It is consumed transactionally by terminal policy-clock-out approval before commit. Work-balance dirty marking remains post-commit because it does not mutate the approved source graph.
 
+Terminal approval returns detached internal maintenance facts independently from notification disposition. When a break split occurs, those facts identify the original and generated period IDs, employee, organization, and earliest dirty instant. After commit, every rollout mode:
+
+1. removes stale surcharge calculation state for the original unsplit period;
+2. recalculates surcharge state for both resulting periods with exact organization ownership; and
+3. marks work balance dirty from the original period's event-local date.
+
+Approved no-split periods also mark work balance dirty when pending periods are excluded from approved balance calculations. Rejection removes any surcharge state created while pending when required by existing persistence behavior. Intermediate decisions and exact replay perform no terminal maintenance. Internal maintenance failure is logged with safe identifiers and does not change the committed decision; external notification delivery remains gated by rollout disposition.
+
 ## Error Handling And Security
 
 All user inputs use existing schema validation. Organization, actor, employee, and approver authority come from authenticated server context, never caller-supplied trusted fields. SQL remains parameterized.
@@ -191,6 +207,9 @@ The implementation plan must include:
 - source loading, routing, terminal preflight, projection, and notification selection tests;
 - all five rollout modes for creation, auto-approval, multistage approval, rejection, and replay;
 - transaction-bound policy-clock-out break enforcement covering no-op, atomic split, requester auto-approval, rejection, exact replay, rollback, timezone capture, and two-record canonical parity;
+- immutable break-policy snapshots covering team transfer, assignment deactivation, policy replacement, rule edits, malformed evidence, and conflicting replay;
+- complete-mode canonical inbox list, count, detail, individual, and bulk discovery without compatibility rows or duplicate canonical-mode items;
+- organization-scoped surcharge reconciliation and work-balance dirty marking for terminal split, no-split, rejection, failure, and replay paths;
 - individual, bulk, legacy-handler, bot, inbox, and requester-read regressions;
 - PostgreSQL tests for source locks, duplicate submission, concurrent decisions, affected-row compare-and-swap, rollback, and tenant isolation;
 - write-boundary tests that remove ordinary-time bypasses only after every path uses the shared owner;
@@ -205,5 +224,8 @@ The implementation plan must include:
 - Exact retries are idempotent and conflicting pending workflows fail closed.
 - Work-period and canonical-record state remain organization and employee scoped and mutually consistent.
 - Terminal policy-clock-out break splits produce two approved work periods and two matching canonical work records while retaining workflow ownership only on the original source segment.
+- Delayed approval applies the immutable break policy captured at submission rather than mutable current policy or team state.
+- Complete-mode ordinary approvals remain discoverable and actionable through canonical projections without restoring legacy writes.
+- Terminal source changes reconcile local surcharge and work-balance state in every rollout mode without redispatch on replay.
 - Existing public responses, inbox behavior, notifications, and payroll semantics remain stable; only the established break-enforcement split introduces synthetic event instants and adjusted segment boundaries.
 - No cancellation, rollout activation, or external outbox delivery is introduced.
