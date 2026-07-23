@@ -170,6 +170,11 @@ const requesterUserId = "user-1";
 const approverId = "20000000-0000-4000-8000-000000000002";
 const startTime = new Date("2026-07-22T08:00:00.000Z");
 const endTime = new Date("2026-07-22T16:00:00.000Z");
+const breakPolicySnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-22T16:00:00Z",
+	resolution: "none",
+} as const;
 
 function verifiedState(request: null | { status: string }) {
 	return {
@@ -199,7 +204,16 @@ function source(overrides: Record<string, unknown> = {}) {
 		canonicalRecordId: "30000000-0000-4000-8000-000000000003",
 		approvalWorkflowId: null,
 		approvalStatus: "pending",
-		pendingChanges: null,
+		pendingChanges:
+			state.kind === "policy_clock_out"
+				? {
+						breakPolicySnapshot: {
+							version: 1,
+							evaluatedAt: "2026-07-22T16:00:00Z",
+							resolution: "none",
+						},
+					}
+				: null,
 		isActive: false,
 		startTime,
 		endTime,
@@ -365,6 +379,15 @@ function fixture(
 										rejectionReason: null,
 										metadata: {
 											timeRequest: { kind: state.kind },
+											...(state.kind === "policy_clock_out"
+												? {
+														breakPolicySnapshot: {
+															version: 1,
+															evaluatedAt: "2026-07-22T16:00:00Z",
+															resolution: "none",
+														},
+													}
+												: {}),
 											ordinarySubmission: {
 												key: ordinarySubmissionKey(state.kind),
 												submissionId,
@@ -450,7 +473,10 @@ function fixture(
 				status: "approved",
 				currentStageOrder: 1,
 				version: 1,
-				contextSnapshot: { timeRequest: { kind: state.kind } },
+				contextSnapshot: {
+					timeRequest: { kind: state.kind },
+					...(state.kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+				},
 				completedAt: parseInstant("2026-07-22T10:00:00Z"),
 				stages: [
 					{
@@ -740,6 +766,7 @@ function compatibilityRequest(
 			workflow: { id: expectedWorkflowId(kind), organizationId },
 			stage: { id: state.stageId, sequence: 1 },
 			timeRequest: { kind },
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 		},
 		...overrides,
 	};
@@ -819,7 +846,18 @@ describe.each([
 		}
 		if (mode === "canonical" || mode === "complete") {
 			expect(state.calls).toContain(
-				`context:${JSON.stringify({ timeRequest: { kind } })}`,
+				`context:${JSON.stringify({
+					timeRequest: { kind },
+					...(kind === "policy_clock_out"
+						? {
+								breakPolicySnapshot: {
+									version: 1,
+									evaluatedAt: "2026-07-22T16:00:00Z",
+									resolution: "none",
+								},
+							}
+						: {}),
+				})}`,
 			);
 		}
 	});
@@ -919,6 +957,43 @@ it.each([
 	expect(
 		fake.compatibilityWriter.mirrorCanonicalToLegacy,
 	).not.toHaveBeenCalled();
+});
+
+it("rejects a pending policy clock-out replay with changed normalized break evidence", async () => {
+	state.kind = "policy_clock_out";
+	const request = pendingLegacyRequest({
+		timeRequest: { kind: "policy_clock_out" },
+		breakPolicySnapshot: {
+			version: 1,
+			evaluatedAt: "2026-07-22T16:00:00Z",
+			resolution: "work_policy",
+			teamId: null,
+			assignment: {
+				id: "31000000-0000-4000-8000-000000000001",
+				type: "employee",
+			},
+			policy: {
+				id: "32000000-0000-4000-8000-000000000001",
+				name: "Changed",
+			},
+			regulation: {
+				id: "33000000-0000-4000-8000-000000000001",
+				name: "Changed",
+				maxUninterruptedMinutes: null,
+			},
+			breakRules: [],
+		},
+		ordinarySubmission: { key: ordinarySubmissionKey(), submissionId },
+	});
+	const fake = fixture({ source: { pendingLegacyRequests: [request] } });
+	fake.input.kind = "policy_clock_out";
+
+	await expect(
+		executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input),
+	).rejects.toThrow("Ordinary work-period submission failed");
+	expect(fake.calls.some((query) => query.includes("update work_period"))).toBe(
+		false,
+	);
 });
 
 it("preserves exact historical pending metadata replay", async () => {
@@ -1171,10 +1246,10 @@ it.each([
 		approvalRequestId: "40000000-0000-4000-8000-000000000001",
 		reason: "requester_is_approver",
 	};
-	const fake = fixture();
-	fake.input.kind = kind;
 	state.kind = kind;
 	state.workflowId = expectedWorkflowId(kind);
+	const fake = fixture();
+	fake.input.kind = kind;
 
 	const submitted = await executeOrdinaryWorkPeriodSubmissionInTransaction(
 		fake.input,

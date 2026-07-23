@@ -8,6 +8,7 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
+import { policyClockOutBreakSnapshotFromPendingChanges } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
@@ -539,16 +540,18 @@ function requestKind(
 		ExecuteOrdinaryWorkPeriodSubmissionInput,
 		"kind" | "organizationId" | "submissionId" | "workPeriodId"
 	>,
-): OrdinaryWorkPeriodApprovalKind {
+): Readonly<
+	import("../domain-adapters/work-period-contract").OrdinaryWorkPeriodWorkflowPayload
+> {
 	try {
-		return parseOrdinaryWorkPeriodWorkflowPayload(request.metadata, input.kind)
-			.timeRequest.kind;
+		return parseOrdinaryWorkPeriodWorkflowPayload(request.metadata, input.kind);
 	} catch {
 		// Generated legacy requests carry a private replay marker beside the payload.
 	}
 	try {
 		const metadata = exactDataObject(request.metadata, [
 			"timeRequest",
+			...(input.kind === "policy_clock_out" ? ["breakPolicySnapshot"] : []),
 			"ordinarySubmission",
 		]);
 		const marker = exactDataObject(metadata.ordinarySubmission, [
@@ -556,7 +559,12 @@ function requestKind(
 			"submissionId",
 		]);
 		const kind = parseOrdinaryWorkPeriodWorkflowPayload(
-			{ timeRequest: metadata.timeRequest },
+			{
+				timeRequest: metadata.timeRequest,
+				...(input.kind === "policy_clock_out"
+					? { breakPolicySnapshot: metadata.breakPolicySnapshot }
+					: {}),
+			},
 			input.kind,
 		).timeRequest.kind;
 		const expectedKey = deriveApprovalWorkflowId({
@@ -572,7 +580,15 @@ function requestKind(
 		) {
 			return fail();
 		}
-		return kind;
+		return parseOrdinaryWorkPeriodWorkflowPayload(
+			{
+				timeRequest: metadata.timeRequest,
+				...(input.kind === "policy_clock_out"
+					? { breakPolicySnapshot: metadata.breakPolicySnapshot }
+					: {}),
+			},
+			kind,
+		);
 	} catch {
 		// Canonical compatibility rows use workflow and stage envelopes.
 	}
@@ -581,11 +597,17 @@ function requestKind(
 			"workflow",
 			"stage",
 			"timeRequest",
+			...(input.kind === "policy_clock_out" ? ["breakPolicySnapshot"] : []),
 		]);
 		return parseOrdinaryWorkPeriodWorkflowPayload(
-			{ timeRequest: metadata.timeRequest },
+			{
+				timeRequest: metadata.timeRequest,
+				...(input.kind === "policy_clock_out"
+					? { breakPolicySnapshot: metadata.breakPolicySnapshot }
+					: {}),
+			},
 			input.kind,
-		).timeRequest.kind;
+		);
 	} catch {
 		return fail();
 	}
@@ -602,11 +624,17 @@ function validateCompatibilityMetadata(input: {
 		"workflow",
 		"stage",
 		"timeRequest",
+		...(input.kind === "policy_clock_out" ? ["breakPolicySnapshot"] : []),
 	]);
 	const workflow = exactDataObject(metadata.workflow, ["id", "organizationId"]);
 	const stage = exactDataObject(metadata.stage, ["id", "sequence"]);
 	parseOrdinaryWorkPeriodWorkflowPayload(
-		{ timeRequest: metadata.timeRequest },
+		{
+			timeRequest: metadata.timeRequest,
+			...(input.kind === "policy_clock_out"
+				? { breakPolicySnapshot: metadata.breakPolicySnapshot }
+				: {}),
+		},
 		input.kind,
 	);
 	if (
@@ -629,6 +657,9 @@ function validatePendingOccupants(
 	source: LockedOrdinarySource,
 	authority: ApprovalWriteGateResult,
 	expectedWorkflowId: string,
+	expectedPayload: Readonly<
+		import("../domain-adapters/work-period-contract").OrdinaryWorkPeriodWorkflowPayload
+	>,
 ): ResolvePolicyAndCreateApprovalResult | null {
 	if (
 		source.approvalStatus !== "pending" ||
@@ -665,20 +696,26 @@ function validatePendingOccupants(
 		) {
 			return fail();
 		}
-		parseOrdinaryWorkPeriodWorkflowPayload(
+		const canonicalPayload = parseOrdinaryWorkPeriodWorkflowPayload(
 			canonical.contextSnapshot,
 			input.kind,
 		);
+		if (JSON.stringify(canonicalPayload) !== JSON.stringify(expectedPayload)) {
+			return fail();
+		}
 	}
 	if (legacy) {
-		let kind: OrdinaryWorkPeriodApprovalKind;
+		let legacyPayload: Readonly<
+			import("../domain-adapters/work-period-contract").OrdinaryWorkPeriodWorkflowPayload
+		>;
 		try {
-			kind = requestKind(legacy, input);
+			legacyPayload = requestKind(legacy, input);
 		} catch {
 			return fail();
 		}
 		if (
-			kind !== input.kind ||
+			legacyPayload.timeRequest.kind !== input.kind ||
+			JSON.stringify(legacyPayload) !== JSON.stringify(expectedPayload) ||
 			legacy.organizationId !== input.organizationId ||
 			legacy.entityType !== "time_entry" ||
 			legacy.entityId !== input.workPeriodId ||
@@ -967,11 +1004,17 @@ function validateMarkedAutoRequest(input: {
 	}
 	const metadata = exactDataObject(request.metadata, [
 		"timeRequest",
+		...(input.submission.kind === "policy_clock_out"
+			? ["breakPolicySnapshot"]
+			: []),
 		"ordinarySubmission",
 		"autoApproval",
 	]);
 	const payload = parseOrdinaryWorkPeriodWorkflowPayload({
 		timeRequest: metadata.timeRequest,
+		...(input.submission.kind === "policy_clock_out"
+			? { breakPolicySnapshot: metadata.breakPolicySnapshot }
+			: {}),
 	});
 	const marker = exactDataObject(metadata.ordinarySubmission, [
 		"key",
@@ -1251,10 +1294,6 @@ async function executeOrdinaryWorkPeriodSubmission(
 }> {
 	const submissionId = canonicalSubmissionId(input.submissionId);
 	if (input.context.dbService.db !== input.dbService.db) fail();
-	const payload = parseOrdinaryWorkPeriodWorkflowPayload(
-		{ timeRequest: { kind: input.kind } },
-		input.kind,
-	);
 	const authority = await input.context.writeGate.acquire({
 		organizationId: input.organizationId,
 		workflowType: input.kind,
@@ -1281,11 +1320,25 @@ async function executeOrdinaryWorkPeriodSubmission(
 		sourceId: input.workPeriodId,
 		allocationKey: submissionKey,
 	});
+	const source = await loadOrdinarySource(input, submissionKey);
+	const breakPolicySnapshot =
+		input.kind === "policy_clock_out" && source.approvalStatus === "pending"
+			? policyClockOutBreakSnapshotFromPendingChanges(
+					source.pendingChanges,
+					instantToCanonicalString(instantFromDate(source.endTime)),
+				)
+			: undefined;
+	const payload = parseOrdinaryWorkPeriodWorkflowPayload(
+		{
+			timeRequest: { kind: input.kind },
+			...(breakPolicySnapshot ? { breakPolicySnapshot } : {}),
+		},
+		input.kind,
+	);
 	const legacyMetadata = {
-		timeRequest: payload.timeRequest,
+		...payload,
 		ordinarySubmission: { key: submissionKey, submissionId },
 	};
-	const source = await loadOrdinarySource(input, submissionKey);
 	const terminalReplay = await resolveTerminalReplay({
 		submission: input,
 		source,
@@ -1304,6 +1357,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 		source,
 		authority,
 		expectedWorkflowId,
+		payload,
 	);
 	if (replay) {
 		return {
@@ -1495,7 +1549,8 @@ async function executeOrdinaryWorkPeriodSubmission(
 			overtimeRisk: input.overtimeRisk,
 			employeeGroupIds: [],
 		},
-		contextSnapshot: payload,
+		contextSnapshot:
+			payload as unknown as import("../workflow/ports").JsonObject,
 		displayProjection: {
 			displayPayload: {
 				kind: input.kind,

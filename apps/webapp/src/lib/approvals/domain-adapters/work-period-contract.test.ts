@@ -11,6 +11,11 @@ import {
 } from "./work-period-contract";
 
 describe("ordinary work-period workflow contract", () => {
+	const breakPolicySnapshot = {
+		version: 1,
+		evaluatedAt: "2026-03-29T08:01:00Z",
+		resolution: "none",
+	} as const;
 	it("keeps the adapter and runtime independent of server modules", () => {
 		for (const relativePath of [
 			"src/lib/approvals/domain-adapters/work-period.adapter.ts",
@@ -68,6 +73,31 @@ describe("ordinary work-period workflow contract", () => {
 
 		expect(first.id).not.toBe(second.id);
 		expect(JSON.stringify(first.payload)).toBe(JSON.stringify(second.payload));
+	});
+
+	it("parses and deeply freezes policy clock-out snapshot evidence", () => {
+		const parsed = parseOrdinaryWorkPeriodWorkflowPayload(
+			{
+				timeRequest: { kind: "policy_clock_out" },
+				breakPolicySnapshot,
+			},
+			"policy_clock_out",
+		);
+
+		expect(parsed).toEqual({
+			timeRequest: { kind: "policy_clock_out" },
+			breakPolicySnapshot,
+		});
+		expect(Object.isFrozen(parsed.breakPolicySnapshot)).toBe(true);
+	});
+
+	it("rejects snapshot evidence for manual submissions", () => {
+		expect(() =>
+			parseOrdinaryWorkPeriodWorkflowPayload({
+				timeRequest: { kind: "manual_time_submission" },
+				breakPolicySnapshot,
+			}),
+		).toThrow(Error);
 	});
 
 	it.each([

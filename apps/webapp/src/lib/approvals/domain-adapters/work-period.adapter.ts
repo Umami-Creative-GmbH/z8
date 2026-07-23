@@ -84,13 +84,28 @@ function payloadFromWorkflow(
 	kind: OrdinaryWorkPeriodApprovalKind,
 ) {
 	try {
-		const descriptor = Object.getOwnPropertyDescriptor(
+		const timeRequest = Object.getOwnPropertyDescriptor(
 			workflow.contextSnapshot,
 			"timeRequest",
 		);
-		if (!descriptor?.enumerable || !("value" in descriptor)) fail();
+		const breakPolicySnapshot = Object.getOwnPropertyDescriptor(
+			workflow.contextSnapshot,
+			"breakPolicySnapshot",
+		);
+		if (!timeRequest?.enumerable || !("value" in timeRequest)) fail();
+		if (
+			breakPolicySnapshot &&
+			(!breakPolicySnapshot.enumerable || !("value" in breakPolicySnapshot))
+		) {
+			fail();
+		}
 		return parseOrdinaryWorkPeriodWorkflowPayload(
-			{ timeRequest: descriptor.value },
+			{
+				timeRequest: timeRequest.value,
+				...(breakPolicySnapshot && "value" in breakPolicySnapshot
+					? { breakPolicySnapshot: breakPolicySnapshot.value }
+					: {}),
+			},
 			kind,
 		);
 	} catch {

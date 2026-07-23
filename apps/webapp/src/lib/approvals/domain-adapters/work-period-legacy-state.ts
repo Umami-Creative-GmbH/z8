@@ -6,6 +6,10 @@ import {
 	instantToCanonicalString,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
+import {
+	policyClockOutBreakSnapshotFromPendingChanges,
+	policyClockOutBreakSnapshotsEqual,
+} from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import type { ApprovalDbService } from "../server/types";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
@@ -256,6 +260,7 @@ function normalizeRequestPayload(input: {
 	expectedKind: OrdinaryWorkPeriodApprovalKind;
 	organizationId: string;
 	workPeriodId: string;
+	sourceEndTime: Instant;
 }) {
 	const raw = record(input.metadata);
 	const markerDescriptor = Object.getOwnPropertyDescriptor(
@@ -297,10 +302,44 @@ function normalizeRequestPayload(input: {
 		return fail();
 	}
 	try {
+		const breakPolicySnapshotDescriptor = Object.getOwnPropertyDescriptor(
+			raw,
+			"breakPolicySnapshot",
+		);
+		if (
+			breakPolicySnapshotDescriptor &&
+			(!breakPolicySnapshotDescriptor.enumerable ||
+				!("value" in breakPolicySnapshotDescriptor))
+		) {
+			return fail();
+		}
 		const payload = parseOrdinaryWorkPeriodWorkflowPayload(
-			{ timeRequest: raw.timeRequest },
+			{
+				timeRequest: raw.timeRequest,
+				...(breakPolicySnapshotDescriptor &&
+				"value" in breakPolicySnapshotDescriptor
+					? { breakPolicySnapshot: breakPolicySnapshotDescriptor.value }
+					: {}),
+			},
 			input.expectedKind,
 		);
+		if (input.expectedKind === "policy_clock_out" && marker) {
+			if (!payload.breakPolicySnapshot) return fail();
+			const evaluatedAt = instantToCanonicalString(input.sourceEndTime);
+			const sourceSnapshot = policyClockOutBreakSnapshotFromPendingChanges(
+				input.pendingChanges,
+				evaluatedAt,
+			);
+			if (
+				!policyClockOutBreakSnapshotsEqual(
+					sourceSnapshot,
+					payload.breakPolicySnapshot,
+					evaluatedAt,
+				)
+			) {
+				return fail();
+			}
+		}
 		return { payload, marker };
 	} catch {
 		return fail();
@@ -345,6 +384,21 @@ function decodeRequest(
 		return fail();
 	}
 	const hasMarker = markerDescriptor !== undefined;
+	const breakSnapshotDescriptor = Object.getOwnPropertyDescriptor(
+		rawMetadata,
+		"breakPolicySnapshot",
+	);
+	if (
+		breakSnapshotDescriptor &&
+		(!breakSnapshotDescriptor.enumerable ||
+			!("value" in breakSnapshotDescriptor))
+	) {
+		return fail();
+	}
+	const hasBreakSnapshot = breakSnapshotDescriptor !== undefined;
+	if (expectedKind === "policy_clock_out" && hasMarker && !hasBreakSnapshot) {
+		return fail();
+	}
 	let metadata: unknown;
 	const autoApprovalDescriptor = Object.getOwnPropertyDescriptor(
 		rawMetadata,
@@ -364,6 +418,7 @@ function decodeRequest(
 		}
 		const root = exactDataRecord(rawMetadata, [
 			"timeRequest",
+			...(hasBreakSnapshot ? ["breakPolicySnapshot"] : []),
 			...(hasMarker ? ["ordinarySubmission"] : []),
 			"autoApproval",
 		]);
@@ -375,6 +430,7 @@ function decodeRequest(
 	} else {
 		metadata = exactDataRecord(rawMetadata, [
 			"timeRequest",
+			...(hasBreakSnapshot ? ["breakPolicySnapshot"] : []),
 			...(hasMarker ? ["ordinarySubmission"] : []),
 		]);
 	}
@@ -385,6 +441,7 @@ function decodeRequest(
 		expectedKind,
 		organizationId,
 		workPeriodId,
+		sourceEndTime: period.endTime ?? fail(),
 	});
 	return {
 		id: string(raw.id),
@@ -677,9 +734,17 @@ function decodeCapture(
 		return fail();
 	}
 
+	const requestMetadata = record(request.metadata);
+	const capturedSnapshot = Object.getOwnPropertyDescriptor(
+		requestMetadata,
+		"breakPolicySnapshot",
+	);
 	const payload = parseOrdinaryWorkPeriodWorkflowPayload(
 		{
-			timeRequest: record(request.metadata).timeRequest,
+			timeRequest: requestMetadata.timeRequest,
+			...(capturedSnapshot?.enumerable && "value" in capturedSnapshot
+				? { breakPolicySnapshot: capturedSnapshot.value }
+				: {}),
 		},
 		kind,
 	);
@@ -767,7 +832,17 @@ function decodePreSubmissionCapture(
 		return fail();
 	}
 	const payload = parseOrdinaryWorkPeriodWorkflowPayload(
-		{ timeRequest: { kind: input.expectedKind } },
+		{
+			timeRequest: { kind: input.expectedKind },
+			...(input.expectedKind === "policy_clock_out"
+				? {
+						breakPolicySnapshot: policyClockOutBreakSnapshotFromPendingChanges(
+							period.pendingChanges,
+							instantToCanonicalString(period.endTime),
+						),
+					}
+				: {}),
+		},
 		input.expectedKind,
 	);
 	return normalizeStableData({

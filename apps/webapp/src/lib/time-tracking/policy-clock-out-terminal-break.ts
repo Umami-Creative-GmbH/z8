@@ -9,6 +9,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "./blockchain";
 import { calculateBreakDeficit } from "./break-policy-calculation";
+import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot";
 import {
 	isValidIanaTimezone,
 	resolveFallbackTimezoneCapture,
@@ -39,6 +40,7 @@ export interface EnforcePolicyClockOutTerminalBreakInput {
 	actorUserId: string;
 	period: PolicyClockOutTerminalPeriodSnapshot;
 	adjustedAt: Instant;
+	breakPolicySnapshot: PolicyClockOutBreakSnapshot;
 }
 
 export type PolicyClockOutTerminalBreakResult =
@@ -276,147 +278,21 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 	if (sourceRows.length !== 1) return fail();
 	const source = validateLockedSource(sourceRows[0], input);
 
-	const policyResult = await db.execute(sql`
-		select
-			assignment.policy_id as "assignmentPolicyId",
-			assignment.priority as "assignmentPriority",
-			case assignment.assignment_type
-				when 'employee' then 2 when 'team' then 1 else 0
-			end as "assignmentSpecificity"
-		from employee employee_row
-		join work_policy_assignment assignment
-			on assignment.organization_id = employee_row.organization_id
-			and assignment.is_active = true
-			and (assignment.effective_from is null or assignment.effective_from <= ${input.period.endTime})
-			and (assignment.effective_until is null or assignment.effective_until >= ${input.period.endTime})
-			and (
-				(assignment.assignment_type = 'employee' and assignment.employee_id = employee_row.id)
-				or (assignment.assignment_type = 'team' and assignment.team_id = employee_row.team_id)
-				or (assignment.assignment_type = 'organization' and assignment.employee_id is null and assignment.team_id is null)
-			)
-		where employee_row.id = ${input.employeeId}::uuid
-			and employee_row.organization_id = ${input.organizationId}
-		order by assignment.priority desc,
-			case assignment.assignment_type when 'employee' then 2 when 'team' then 1 else 0 end desc,
-			assignment.id desc
-		limit 2
-		for update of employee_row, assignment
-	`);
-	const assignmentRows = rows(policyResult);
-	if (assignmentRows.length === 0) return { kind: "not_required" };
-	if (assignmentRows.length > 2) return fail();
-	const assignment = object(assignmentRows[0]);
-	if (
-		typeof assignment.assignmentPolicyId !== "string" ||
-		!Number.isSafeInteger(assignment.assignmentPriority) ||
-		!Number.isSafeInteger(assignment.assignmentSpecificity)
-	) {
-		return fail();
-	}
-	if (assignmentRows[1]) {
-		const fallback = object(assignmentRows[1]);
-		if (
-			!Number.isSafeInteger(fallback.assignmentPriority) ||
-			!Number.isSafeInteger(fallback.assignmentSpecificity) ||
-			(fallback.assignmentPriority as number) >
-				(assignment.assignmentPriority as number) ||
-			((fallback.assignmentPriority as number) ===
-				(assignment.assignmentPriority as number) &&
-				(fallback.assignmentSpecificity as number) >=
-					(assignment.assignmentSpecificity as number))
-		) {
-			return fail();
-		}
-	}
-
-	const lockedPolicyResult = await db.execute(sql`
-		select
-			policy.id,
-			policy.organization_id as "policyOrganizationId",
-			policy.is_active as "policyIsActive",
-			policy.regulation_enabled as "regulationEnabled",
-			policy.name
-		from work_policy policy
-		where policy.id = ${assignment.assignmentPolicyId}::uuid
-			and policy.organization_id = ${input.organizationId}
-		limit 2
-		for update of policy
-	`);
-	const lockedPolicyRows = rows(lockedPolicyResult);
-	if (lockedPolicyRows.length !== 1) return fail();
-	const policy = object(lockedPolicyRows[0]);
-	if (
-		policy.id !== assignment.assignmentPolicyId ||
-		policy.policyOrganizationId !== input.organizationId ||
-		policy.policyIsActive !== true ||
-		typeof policy.regulationEnabled !== "boolean" ||
-		typeof policy.name !== "string"
-	) {
-		return fail();
-	}
-	if (policy.regulationEnabled === false) {
+	if (input.breakPolicySnapshot.resolution === "none") {
 		return { kind: "not_required" };
 	}
-
-	const lockedRegulationResult = await db.execute(sql`
-		select
-			regulation.id as "regulationId",
-			regulation.policy_id as "regulationPolicyId",
-			regulation.max_uninterrupted_minutes as "maxUninterruptedMinutes"
-		from work_policy_regulation regulation
-		join work_policy policy
-			on policy.id = regulation.policy_id
-			and policy.organization_id = ${input.organizationId}
-		where regulation.policy_id = ${policy.id}::uuid
-		limit 2
-		for update of regulation
-	`);
-	const regulationRows = rows(lockedRegulationResult);
-	if (regulationRows.length !== 1) return fail();
-	const regulation = object(regulationRows[0]);
-	if (
-		typeof regulation.regulationId !== "string" ||
-		regulation.regulationPolicyId !== policy.id ||
-		(regulation.maxUninterruptedMinutes !== null &&
-			(!Number.isSafeInteger(regulation.maxUninterruptedMinutes) ||
-				(regulation.maxUninterruptedMinutes as number) <= 0))
-	) {
-		return fail();
-	}
-
-	const lockedRuleResult = await db.execute(sql`
-		select
-			rule.working_minutes_threshold as "workingMinutesThreshold",
-			rule.required_break_minutes as "requiredBreakMinutes"
-		from work_policy_break_rule rule
-		where rule.regulation_id = ${regulation.regulationId}::uuid
-		order by rule.working_minutes_threshold, rule.id
-		for update of rule
-	`);
-	const breakRules = rows(lockedRuleResult).map((value) => {
-		const rule = object(value);
-		if (
-			!Number.isSafeInteger(rule.workingMinutesThreshold) ||
-			(rule.workingMinutesThreshold as number) < 0 ||
-			!Number.isSafeInteger(rule.requiredBreakMinutes) ||
-			(rule.requiredBreakMinutes as number) <= 0
-		) {
-			return fail();
-		}
-		return {
-			workingMinutesThreshold: rule.workingMinutesThreshold as number,
-			requiredBreakMinutes: rule.requiredBreakMinutes as number,
-		};
-	});
+	const breakRules = input.breakPolicySnapshot.breakRules.map((rule) => ({
+		workingMinutesThreshold: rule.workingMinutesThreshold,
+		requiredBreakMinutes: rule.requiredBreakMinutes,
+	}));
 	const calculation = calculateBreakDeficit({
 		sessionDurationMinutes: source.durationMinutes,
 		alreadyTakenBreakMinutes: 0,
 		regulation: {
-			id: policy.id,
-			name: policy.name,
-			maxUninterruptedMinutes: regulation.maxUninterruptedMinutes as
-				| number
-				| null,
+			id: input.breakPolicySnapshot.regulation.id,
+			name: input.breakPolicySnapshot.regulation.name,
+			maxUninterruptedMinutes:
+				input.breakPolicySnapshot.regulation.maxUninterruptedMinutes,
 			breakRules,
 		},
 	});

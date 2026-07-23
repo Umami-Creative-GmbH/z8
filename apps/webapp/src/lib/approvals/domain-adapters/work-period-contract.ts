@@ -1,5 +1,9 @@
 import type { db } from "@/db";
 import type { Instant } from "@/lib/datetime/temporal-core";
+import {
+	type PolicyClockOutBreakSnapshot,
+	parsePolicyClockOutBreakSnapshot,
+} from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import type { ApprovalDbService } from "../workflow/ports";
 
 export const ORDINARY_WORK_PERIOD_APPROVAL_KINDS = [
@@ -12,6 +16,7 @@ export type OrdinaryWorkPeriodApprovalKind =
 
 export interface OrdinaryWorkPeriodWorkflowPayload {
 	timeRequest: { kind: OrdinaryWorkPeriodApprovalKind };
+	breakPolicySnapshot?: PolicyClockOutBreakSnapshot;
 }
 
 export interface OrdinaryWorkPeriodApprovalSource {
@@ -110,6 +115,37 @@ function readExactDataProperty(value: unknown, key: string): unknown {
 	return descriptor.value;
 }
 
+function readExactDataProperties(
+	value: unknown,
+	keys: readonly string[],
+): Record<string, unknown> {
+	if (
+		typeof value !== "object" ||
+		value === null ||
+		Array.isArray(value) ||
+		Object.getPrototypeOf(value) !== Object.prototype
+	) {
+		throw new Error("Ordinary work-period workflow payload is invalid");
+	}
+	const descriptors = Object.getOwnPropertyDescriptors(value);
+	const ownKeys = Reflect.ownKeys(descriptors);
+	if (
+		ownKeys.length !== keys.length ||
+		ownKeys.some((key) => typeof key !== "string" || !keys.includes(key))
+	) {
+		throw new Error("Ordinary work-period workflow payload is invalid");
+	}
+	const result: Record<string, unknown> = {};
+	for (const key of keys) {
+		const descriptor = descriptors[key];
+		if (!descriptor?.enumerable || !("value" in descriptor)) {
+			throw new Error("Ordinary work-period workflow payload is invalid");
+		}
+		result[key] = descriptor.value;
+	}
+	return result;
+}
+
 function isOrdinaryWorkPeriodApprovalKind(
 	value: unknown,
 ): value is OrdinaryWorkPeriodApprovalKind {
@@ -121,7 +157,16 @@ export function parseOrdinaryWorkPeriodWorkflowPayload(
 	expectedKind?: OrdinaryWorkPeriodApprovalKind,
 ): Readonly<OrdinaryWorkPeriodWorkflowPayload> {
 	try {
-		const timeRequest = readExactDataProperty(value, "timeRequest");
+		const descriptors =
+			typeof value === "object" && value !== null && !Array.isArray(value)
+				? Object.getOwnPropertyDescriptors(value)
+				: {};
+		const hasSnapshot = Object.hasOwn(descriptors, "breakPolicySnapshot");
+		const root = readExactDataProperties(
+			value,
+			hasSnapshot ? ["timeRequest", "breakPolicySnapshot"] : ["timeRequest"],
+		);
+		const timeRequest = root.timeRequest;
 		const kind = readExactDataProperty(timeRequest, "kind");
 		if (
 			!isOrdinaryWorkPeriodApprovalKind(kind) ||
@@ -129,7 +174,32 @@ export function parseOrdinaryWorkPeriodWorkflowPayload(
 		) {
 			throw new Error("Ordinary work-period workflow payload is invalid");
 		}
-		return Object.freeze({ timeRequest: Object.freeze({ kind }) });
+		const normalizedRequest = Object.freeze({ kind });
+		if (!hasSnapshot) {
+			return Object.freeze({ timeRequest: normalizedRequest });
+		}
+		if (kind !== "policy_clock_out") {
+			throw new Error("Ordinary work-period workflow payload is invalid");
+		}
+		const snapshotInput = root.breakPolicySnapshot;
+		const evaluatedAtDescriptor =
+			typeof snapshotInput === "object" && snapshotInput !== null
+				? Object.getOwnPropertyDescriptor(snapshotInput, "evaluatedAt")
+				: undefined;
+		if (
+			!evaluatedAtDescriptor?.enumerable ||
+			!("value" in evaluatedAtDescriptor) ||
+			typeof evaluatedAtDescriptor.value !== "string"
+		) {
+			throw new Error("Ordinary work-period workflow payload is invalid");
+		}
+		return Object.freeze({
+			timeRequest: normalizedRequest,
+			breakPolicySnapshot: parsePolicyClockOutBreakSnapshot(
+				snapshotInput,
+				evaluatedAtDescriptor.value,
+			),
+		});
 	} catch {
 		throw new Error("Ordinary work-period workflow payload is invalid");
 	}

@@ -1201,8 +1201,15 @@ const canonicalRecord = {
 	origin: "clock",
 };
 
+const breakPolicySnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-14T16:00:00Z",
+	resolution: "none",
+} as const;
+
 const autoApprovalMetadata = (kind = "manual_time_submission") => ({
 	timeRequest: { kind },
+	...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 	autoApproval: { reason: "requester_is_approver" },
 });
 
@@ -1242,7 +1249,17 @@ function createFinalizerDbService(options?: {
 	const lockOrder: string[] = [];
 	const updateSets: Record<string, unknown>[] = [];
 	const insertedValues: Record<string, unknown>[] = [];
-	const lockedPeriod = { ...period, ...options?.period };
+	const policyRequest =
+		(
+			options?.request?.metadata as
+				| { timeRequest?: { kind?: unknown } }
+				| undefined
+		)?.timeRequest?.kind === "policy_clock_out";
+	const lockedPeriod = {
+		...period,
+		...(policyRequest ? { pendingChanges: { breakPolicySnapshot } } : {}),
+		...options?.period,
+	};
 	const lockedRecord = { ...canonicalRecord, ...options?.record };
 	const exactRequest = {
 		...approval,
@@ -1407,6 +1424,9 @@ function createDecisionDbService(options?: {
 				? autoApprovalMetadata(options.kind)
 				: {
 						timeRequest: { kind: options?.kind ?? "manual_time_submission" },
+						...(options?.kind === "policy_clock_out"
+							? { breakPolicySnapshot }
+							: {}),
 						workflow: { id: "workflow-1", organizationId: "org-1" },
 					},
 			...(options?.autoCompleted
@@ -1451,8 +1471,19 @@ function createDecisionDbService(options?: {
 						tableName === "work_period"
 							? [
 									options?.autoCompleted || options?.unlinked
-										? { ...period, approvalWorkflowId: null }
-										: period,
+										? {
+												...period,
+												approvalWorkflowId: null,
+												...(options?.kind === "policy_clock_out"
+													? { pendingChanges: { breakPolicySnapshot } }
+													: {}),
+											}
+										: {
+												...period,
+												...(options?.kind === "policy_clock_out"
+													? { pendingChanges: { breakPolicySnapshot } }
+													: {}),
+											},
 								]
 							: tableName === "time_record"
 								? [canonicalRecord]
@@ -1652,6 +1683,7 @@ describe("ordinary work-period approval finalizer", () => {
 				rejectionReason: "Outside scheduled hours",
 				metadata: {
 					timeRequest: { kind: "policy_clock_out" },
+					breakPolicySnapshot,
 					workflow: { id: "workflow-1", organizationId: "org-1" },
 				},
 			},
@@ -1692,6 +1724,7 @@ describe("ordinary work-period approval finalizer", () => {
 			request: {
 				metadata: {
 					timeRequest: { kind: "policy_clock_out" },
+					breakPolicySnapshot,
 					workflow: { id: "workflow-1", organizationId: "org-1" },
 				},
 			},
@@ -1735,6 +1768,7 @@ describe("ordinary work-period approval finalizer", () => {
 			request: {
 				metadata: {
 					timeRequest: { kind: "policy_clock_out" },
+					breakPolicySnapshot,
 					workflow: { id: "workflow-1", organizationId: "org-1" },
 				},
 			},

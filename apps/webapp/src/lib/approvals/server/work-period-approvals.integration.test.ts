@@ -53,6 +53,7 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"approve versus reject leaves one coherent terminal graph and a generic conflict loser",
 			"duplicate approve replays one coherent terminal graph",
 			"Task8A split has exact period, canonical subtype, allocation, workflow, and synthetic-entry parity",
+			"uses the submitted break snapshot after mutable policy deletion in %s mode",
 			"forced %s CAS zero row rolls the entire decision back",
 			"decision INSERT RETURNING zero rows rolls the complete transaction back",
 			"foreign organization rollback snapshots both tenants and every durable graph",
@@ -443,7 +444,41 @@ describeIntegration(
 					JSON.stringify(
 						kind === "manual_time_submission"
 							? { isManualEntry: true }
-							: { isNewClockOut: true },
+							: {
+									isNewClockOut: true,
+									breakPolicySnapshot: withBreakPolicy
+										? {
+												version: 1,
+												evaluatedAt: "2026-07-22T16:00:00Z",
+												resolution: "work_policy",
+												teamId: null,
+												assignment: {
+													id: ids.policyAssignment,
+													type: "employee",
+												},
+												policy: {
+													id: ids.policy,
+													name: "Task 11 break",
+												},
+												regulation: {
+													id: ids.regulation,
+													name: "Task 11 break",
+													maxUninterruptedMinutes: 360,
+												},
+												breakRules: [
+													{
+														id: ids.breakRule,
+														workingMinutesThreshold: 360,
+														requiredBreakMinutes: 30,
+													},
+												],
+											}
+										: {
+												version: 1,
+												evaluatedAt: "2026-07-22T16:00:00Z",
+												resolution: "none",
+											},
+								},
 					),
 					timestamp,
 				],
@@ -1397,6 +1432,37 @@ describeIntegration(
 					[ids.organization],
 				),
 			).toMatchObject({ rows: [{ count: 1 }] });
+		});
+
+		it.each(
+			modes,
+		)("uses the submitted break snapshot after mutable policy deletion in %s mode", async (mode) => {
+			await seed("policy_clock_out", true, mode);
+			const target = (await submit("policy_clock_out")).result
+				.approvalRequestId;
+			await pool.query(
+				"update work_policy set name = 'Replacement', is_active = false where id = $1 and organization_id = $2",
+				[ids.policy, ids.organization],
+			);
+			await pool.query(
+				"delete from work_policy_assignment where id = $1 and organization_id = $2",
+				[ids.policyAssignment, ids.organization],
+			);
+			await pool.query(
+				"update work_policy_break_rule set required_break_minutes = 5 where id = $1",
+				[ids.breakRule],
+			);
+			await pool.query("delete from work_policy_break_rule where id = $1", [
+				ids.breakRule,
+			]);
+
+			await decide(target, { kind: "approve", reason: null });
+
+			const periods = await pool.query(
+				"select id from work_period where organization_id = $1 and employee_id = $2 order by start_time",
+				[ids.organization, ids.requester],
+			);
+			expect(periods.rows).toHaveLength(2);
 		});
 
 		it.each([

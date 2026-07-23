@@ -53,6 +53,7 @@ import {
 	ClockingConflictError,
 	clockingService,
 } from "@/lib/time-tracking/clocking-service";
+import { resolvePolicyClockOutBreakSnapshotInTransaction } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import {
 	resolveFallbackTimezoneCapture,
 	resolveTimeEntryTimezoneCapture,
@@ -339,11 +340,21 @@ function hasPrivateApprovalSubmissionEvidence(input: {
 		Object.getOwnPropertyDescriptors(input.metadata),
 	);
 	const hasAutoApproval = metadataKeys.includes("autoApproval");
+	const hasBreakPolicySnapshot = metadataKeys.includes("breakPolicySnapshot");
 	const root = exactPlainObject(
 		input.metadata,
 		hasAutoApproval
-			? ["timeRequest", "ordinarySubmission", "autoApproval"]
-			: ["timeRequest", "ordinarySubmission"],
+			? [
+					"timeRequest",
+					...(hasBreakPolicySnapshot ? ["breakPolicySnapshot"] : []),
+					"ordinarySubmission",
+					"autoApproval",
+				]
+			: [
+					"timeRequest",
+					...(hasBreakPolicySnapshot ? ["breakPolicySnapshot"] : []),
+					"ordinarySubmission",
+				],
 	);
 	const timeRequest = exactPlainObject(root.timeRequest, ["kind"]);
 	if (timeRequest.kind !== input.expectedKind) {
@@ -1187,22 +1198,31 @@ export async function clockOut(
 			activeWorkPeriod.startTime,
 			now,
 		);
-		const pendingChanges = needsClockOutApproval
-			? {
-					originalStartTime: activeWorkPeriod.startTime.toISOString(),
-					originalEndTime: now.toISOString(),
-					originalDurationMinutes: sessionDurationMinutes,
-					requestedAt: now.toISOString(),
-					requestedBy: session.user.id,
-					isNewClockOut: true,
-					ordinarySubmission: {
-						submissionId,
-						kind: "policy_clock_out" as const,
-					},
-				}
-			: null;
 		const runtime = createOrdinaryApprovalRuntime();
 		const result = await runtime.repository.withTransaction(async (context) => {
+			const breakPolicySnapshot = needsClockOutApproval
+				? await resolvePolicyClockOutBreakSnapshotInTransaction({
+						dbService: context.dbService as never,
+						organizationId: currentEmployee.organizationId,
+						employeeId: currentEmployee.id,
+						endTime: actionInstant,
+					})
+				: null;
+			const pendingChanges = breakPolicySnapshot
+				? {
+						originalStartTime: activeWorkPeriod.startTime.toISOString(),
+						originalEndTime: now.toISOString(),
+						originalDurationMinutes: sessionDurationMinutes,
+						requestedAt: now.toISOString(),
+						requestedBy: session.user.id,
+						isNewClockOut: true,
+						ordinarySubmission: {
+							submissionId,
+							kind: "policy_clock_out" as const,
+						},
+						breakPolicySnapshot,
+					}
+				: null;
 			const clockOutResult = await clockingService.clockOut({
 				transaction: context.dbService.db,
 				actionId: submissionId,

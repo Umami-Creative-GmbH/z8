@@ -111,6 +111,7 @@ export type WorkPeriodPendingChanges = {
 	isNewClockOut?: boolean;
 	// For manual work periods submitted for approval
 	isManualEntry?: boolean;
+	breakPolicySnapshot?: import("@/lib/time-tracking/policy-clock-out-break-snapshot").PolicyClockOutBreakSnapshot;
 };
 
 // ============================================

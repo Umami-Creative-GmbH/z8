@@ -27,7 +27,43 @@ const snapshot = {
 	workLocationType: "home" as const,
 };
 
-function input(execute: ReturnType<typeof vi.fn>) {
+const breakPolicySnapshot = {
+	version: 1,
+	evaluatedAt: "2026-03-29T08:01:00Z",
+	resolution: "work_policy",
+	teamId: "11000000-0000-4000-8000-000000000001",
+	assignment: {
+		id: "12000000-0000-4000-8000-000000000001",
+		type: "employee",
+	},
+	policy: {
+		id: "90000000-0000-4000-8000-000000000001",
+		name: "DST policy",
+	},
+	regulation: {
+		id: "91000000-0000-4000-8000-000000000001",
+		name: "DST policy",
+		maxUninterruptedMinutes: null,
+	},
+	breakRules: [
+		{
+			id: "92000000-0000-4000-8000-000000000001",
+			workingMinutesThreshold: 30,
+			requiredBreakMinutes: 60,
+		},
+	],
+} as const;
+
+function input(
+	execute: ReturnType<typeof vi.fn>,
+	policySnapshot:
+		| typeof breakPolicySnapshot
+		| {
+				version: 1;
+				evaluatedAt: string;
+				resolution: "none";
+		  } = breakPolicySnapshot,
+) {
 	return {
 		dbService: { db: { execute } } as never,
 		organizationId,
@@ -35,6 +71,7 @@ function input(execute: ReturnType<typeof vi.fn>) {
 		actorUserId,
 		period: snapshot,
 		adjustedAt: parseInstant("2026-03-30T10:00:00Z"),
+		breakPolicySnapshot: policySnapshot,
 	};
 }
 
@@ -242,82 +279,32 @@ function splitDatabase(options?: {
 }
 
 describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
-	it("returns not_required without split writes when no historical regulation applies", async () => {
+	it("returns not_required without split writes when the stored snapshot resolves none", async () => {
 		const { execute, queries } = splitDatabase({ policies: [] });
 
 		await expect(
-			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
+			enforcePolicyClockOutTerminalBreakInTransaction(
+				input(execute, {
+					version: 1,
+					evaluatedAt: "2026-03-29T08:01:00Z",
+					resolution: "none",
+				}),
+			),
 		).resolves.toEqual({ kind: "not_required" });
 		expect(
 			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
 		).toEqual([]);
 	});
 
-	it("fails closed when an effective assignment references a missing policy", async () => {
-		const { execute, queries } = splitDatabase({ missingAssignedPolicy: true });
+	it("does not query mutable team, assignment, policy, regulation, or rule tables", async () => {
+		const { execute, queries } = splitDatabase({ policies: [] });
 
 		await expect(
 			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
-		).rejects.toThrow("Policy clock-out terminal break enforcement conflict");
-		expect(
-			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
-		).toHaveLength(0);
-	});
-
-	it("treats a valid assigned policy with disabled regulation as not_required", async () => {
-		const { execute, queries } = splitDatabase({
-			policies: [
-				policyRow({
-					regulationEnabled: false,
-					regulationId: null,
-					regulationPolicyId: null,
-					breakRules: [],
-				}),
-			],
-		});
-
-		await expect(
-			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
-		).resolves.toEqual({ kind: "not_required" });
-		expect(
-			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
-		).toHaveLength(0);
-	});
-
-	it.each([
-		["foreign policy", { policyOrganizationId: "org-2" }],
-		["inactive policy", { policyIsActive: false }],
-		["missing regulation", { regulationId: null, regulationPolicyId: null }],
-		[
-			"foreign regulation",
-			{ regulationPolicyId: "90000000-0000-4000-8000-000000000099" },
-		],
-		["malformed regulation", { maxUninterruptedMinutes: "six hours" }],
-		[
-			"malformed break rule",
-			{
-				breakRules: [
-					{ workingMinutesThreshold: 30, requiredBreakMinutes: "sixty" },
-				],
-			},
-		],
-		[
-			"negative break rule",
-			{
-				breakRules: [{ workingMinutesThreshold: 30, requiredBreakMinutes: -1 }],
-			},
-		],
-	] as const)("fails closed on %s evidence", async (_label, policy) => {
-		const { execute, queries } = splitDatabase({
-			policies: [policyRow(policy)],
-		});
-
-		await expect(
-			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
-		).rejects.toThrow("Policy clock-out terminal break enforcement conflict");
-		expect(
-			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
-		).toHaveLength(0);
+		).resolves.toEqual({ kind: "adjusted", breakMinutes: 60 });
+		expect(queries.map((query) => query.sql).join("\n")).not.toMatch(
+			/work_policy|team_id|employee_row\.team_id/,
+		);
 	});
 
 	it("splits approved canonical and legacy records with exact DST capture and cloned allocations", async () => {
@@ -511,45 +498,6 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		).toBe(false);
 	});
 
-	it("locks assignment, policy, regulation, and break-rule evidence before split writes", async () => {
-		const { execute, queries } = splitDatabase();
-
-		await enforcePolicyClockOutTerminalBreakInTransaction(input(execute));
-
-		const assignmentLock = queries.findIndex(
-			(query) =>
-				query.sql.includes("work_policy_assignment") &&
-				query.sql.includes("for update of employee_row, assignment"),
-		);
-		const policyLock = queries.findIndex(
-			(query) =>
-				/^\s*select[\s\S]+from work_policy policy/i.test(query.sql) &&
-				query.sql.includes("for update of policy"),
-		);
-		const regulationLock = queries.findIndex(
-			(query) =>
-				query.sql.includes("from work_policy_regulation regulation") &&
-				query.sql.includes("for update of regulation"),
-		);
-		const ruleLock = queries.findIndex(
-			(query) =>
-				query.sql.includes("from work_policy_break_rule rule") &&
-				query.sql.includes("for update of rule"),
-		);
-		const firstSplitWrite = queries.findIndex((query) =>
-			/^\s*(insert|update)\b/i.test(query.sql),
-		);
-		expect([
-			assignmentLock,
-			policyLock,
-			regulationLock,
-			ruleLock,
-		]).not.toContain(-1);
-		expect(
-			Math.max(assignmentLock, policyLock, regulationLock, ruleLock),
-		).toBeLessThan(firstSplitWrite);
-	});
-
 	it("falls back from an invalid clock-out zone to the exact employee setting", async () => {
 		const { execute, queries } = splitDatabase({
 			source: {
@@ -640,11 +588,8 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 				/^\s*insert into time_record\b/i.test(query.sql),
 			),
 		).toHaveLength(0);
-		const policyQuery = queries.find((query) =>
-			query.sql.includes('as "assignmentPolicyId"'),
-		);
-		expect(policyQuery?.params).toEqual(
-			expect.arrayContaining([endTime, employeeId, organizationId]),
+		expect(queries.map((query) => query.sql).join("\n")).not.toContain(
+			"work_policy_assignment",
 		);
 	});
 
@@ -717,23 +662,5 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		await expect(
 			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
 		).rejects.toThrow("Policy clock-out terminal break enforcement conflict");
-	});
-
-	it("uses the highest historical assignment while allowing a lower-priority fallback", async () => {
-		const { execute } = splitDatabase({
-			policies: [
-				policyRow(),
-				policyRow({
-					id: "90000000-0000-4000-8000-000000000002",
-					name: "Organization fallback",
-					assignmentPriority: 0,
-					assignmentSpecificity: 0,
-				}),
-			],
-		});
-
-		await expect(
-			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
-		).resolves.toEqual({ kind: "adjusted", breakMinutes: 60 });
 	});
 });

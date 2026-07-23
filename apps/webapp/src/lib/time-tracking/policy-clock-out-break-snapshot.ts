@@ -1,0 +1,377 @@
+import { sql } from "drizzle-orm";
+import {
+	dateFromInstant,
+	type Instant,
+	instantToCanonicalString,
+	parseInstant,
+} from "@/lib/datetime/temporal-core";
+
+const UUID =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const ERROR = "Policy clock-out break snapshot is invalid";
+
+export interface PolicyClockOutBreakRuleSnapshot {
+	readonly id: string;
+	readonly workingMinutesThreshold: number;
+	readonly requiredBreakMinutes: number;
+}
+
+export type PolicyClockOutBreakSnapshot =
+	| Readonly<{
+			version: 1;
+			evaluatedAt: string;
+			resolution: "none";
+	  }>
+	| Readonly<{
+			version: 1;
+			evaluatedAt: string;
+			resolution: "work_policy";
+			teamId: string | null;
+			assignment: Readonly<{
+				id: string;
+				type: "employee" | "team" | "organization";
+			}>;
+			policy: Readonly<{ id: string; name: string }>;
+			regulation: Readonly<{
+				id: string;
+				name: string;
+				maxUninterruptedMinutes: number | null;
+			}>;
+			breakRules: readonly Readonly<PolicyClockOutBreakRuleSnapshot>[];
+	  }>;
+
+function fail(): never {
+	throw new Error(ERROR);
+}
+
+function exact(
+	value: unknown,
+	keys: readonly string[],
+): Record<string, unknown> {
+	if (
+		typeof value !== "object" ||
+		value === null ||
+		Array.isArray(value) ||
+		Object.getPrototypeOf(value) !== Object.prototype
+	) {
+		return fail();
+	}
+	const descriptors = Object.getOwnPropertyDescriptors(value);
+	const ownKeys = Reflect.ownKeys(descriptors);
+	if (
+		ownKeys.length !== keys.length ||
+		ownKeys.some((key) => typeof key !== "string" || !keys.includes(key))
+	) {
+		return fail();
+	}
+	const result: Record<string, unknown> = {};
+	for (const key of keys) {
+		const descriptor = descriptors[key];
+		if (!descriptor?.enumerable || !("value" in descriptor)) return fail();
+		result[key] = descriptor.value;
+	}
+	return result;
+}
+
+function uuid(value: unknown): string {
+	return typeof value === "string" && UUID.test(value) ? value : fail();
+}
+
+function name(value: unknown): string {
+	return typeof value === "string" && value.length > 0 ? value : fail();
+}
+
+function minutes(value: unknown): number {
+	return Number.isSafeInteger(value) && (value as number) >= 0
+		? (value as number)
+		: fail();
+}
+
+function canonicalInstant(value: unknown): string {
+	if (typeof value !== "string") return fail();
+	try {
+		return instantToCanonicalString(parseInstant(value)) === value
+			? value
+			: fail();
+	} catch {
+		return fail();
+	}
+}
+
+export function parsePolicyClockOutBreakSnapshot(
+	value: unknown,
+	expectedEvaluatedAt: string,
+): PolicyClockOutBreakSnapshot {
+	try {
+		const evaluatedAt = canonicalInstant(expectedEvaluatedAt);
+		const root = exact(
+			value,
+			typeof value === "object" &&
+				value !== null &&
+				(value as { resolution?: unknown }).resolution === "none"
+				? ["version", "evaluatedAt", "resolution"]
+				: [
+						"version",
+						"evaluatedAt",
+						"resolution",
+						"teamId",
+						"assignment",
+						"policy",
+						"regulation",
+						"breakRules",
+					],
+		);
+		if (
+			root.version !== 1 ||
+			canonicalInstant(root.evaluatedAt) !== evaluatedAt
+		) {
+			return fail();
+		}
+		if (root.resolution === "none") {
+			return Object.freeze({ version: 1, evaluatedAt, resolution: "none" });
+		}
+		if (root.resolution !== "work_policy") return fail();
+		const assignment = exact(root.assignment, ["id", "type"]);
+		if (
+			assignment.type !== "employee" &&
+			assignment.type !== "team" &&
+			assignment.type !== "organization"
+		) {
+			return fail();
+		}
+		const policy = exact(root.policy, ["id", "name"]);
+		const regulation = exact(root.regulation, [
+			"id",
+			"name",
+			"maxUninterruptedMinutes",
+		]);
+		if (!Array.isArray(root.breakRules)) return fail();
+		const breakRules = root.breakRules
+			.map((value) => {
+				const rule = exact(value, [
+					"id",
+					"workingMinutesThreshold",
+					"requiredBreakMinutes",
+				]);
+				return Object.freeze({
+					id: uuid(rule.id),
+					workingMinutesThreshold: minutes(rule.workingMinutesThreshold),
+					requiredBreakMinutes: minutes(rule.requiredBreakMinutes),
+				});
+			})
+			.toSorted(
+				(left, right) =>
+					left.workingMinutesThreshold - right.workingMinutesThreshold ||
+					left.id.localeCompare(right.id),
+			);
+		if (
+			new Set(breakRules.map((rule) => rule.id)).size !== breakRules.length ||
+			new Set(breakRules.map((rule) => rule.workingMinutesThreshold)).size !==
+				breakRules.length
+		) {
+			return fail();
+		}
+		return Object.freeze({
+			version: 1,
+			evaluatedAt,
+			resolution: "work_policy",
+			teamId: root.teamId === null ? null : uuid(root.teamId),
+			assignment: Object.freeze({
+				id: uuid(assignment.id),
+				type: assignment.type,
+			}),
+			policy: Object.freeze({ id: uuid(policy.id), name: name(policy.name) }),
+			regulation: Object.freeze({
+				id: uuid(regulation.id),
+				name: name(regulation.name),
+				maxUninterruptedMinutes:
+					regulation.maxUninterruptedMinutes === null
+						? null
+						: minutes(regulation.maxUninterruptedMinutes),
+			}),
+			breakRules: Object.freeze(breakRules),
+		});
+	} catch {
+		throw new Error(ERROR);
+	}
+}
+
+export function policyClockOutBreakSnapshotsEqual(
+	left: unknown,
+	right: unknown,
+	expectedEvaluatedAt: string,
+): boolean {
+	try {
+		return (
+			JSON.stringify(
+				parsePolicyClockOutBreakSnapshot(left, expectedEvaluatedAt),
+			) ===
+			JSON.stringify(
+				parsePolicyClockOutBreakSnapshot(right, expectedEvaluatedAt),
+			)
+		);
+	} catch {
+		return false;
+	}
+}
+
+export function policyClockOutBreakSnapshotFromPendingChanges(
+	value: unknown,
+	expectedEvaluatedAt: string,
+): PolicyClockOutBreakSnapshot {
+	try {
+		if (typeof value !== "object" || value === null || Array.isArray(value)) {
+			return fail();
+		}
+		const descriptor = Object.getOwnPropertyDescriptor(
+			value,
+			"breakPolicySnapshot",
+		);
+		if (!descriptor?.enumerable || !("value" in descriptor)) return fail();
+		return parsePolicyClockOutBreakSnapshot(
+			descriptor.value,
+			expectedEvaluatedAt,
+		);
+	} catch {
+		throw new Error(ERROR);
+	}
+}
+
+export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
+	dbService: {
+		db: { execute(query: ReturnType<typeof sql>): Promise<unknown> };
+	};
+	organizationId: string;
+	employeeId: string;
+	endTime: Instant;
+}): Promise<PolicyClockOutBreakSnapshot> {
+	const evaluatedAt = instantToCanonicalString(input.endTime);
+	try {
+		const result = await input.dbService.db.execute(sql`
+			with employee_evidence as (
+				select employee.id, employee.organization_id as "organizationId",
+					employee.team_id as "teamId"
+				from employee
+				where employee.id = ${input.employeeId}::uuid
+					and employee.organization_id = ${input.organizationId}
+				limit 2
+				for update of employee
+			), assignment_evidence as (
+				select assignment.id, assignment.assignment_type as "assignmentType",
+					assignment.policy_id as "assignmentPolicyId"
+				from employee_evidence employee_row
+				join work_policy_assignment assignment
+					on assignment.organization_id = employee_row."organizationId"
+				where assignment.organization_id = ${input.organizationId}
+					and assignment.is_active = true
+					and (assignment.effective_from is null or assignment.effective_from <= ${dateFromInstant(input.endTime)})
+					and (assignment.effective_until is null or assignment.effective_until >= ${dateFromInstant(input.endTime)})
+					and (
+						(assignment.assignment_type = 'employee' and assignment.employee_id = employee_row.id)
+						or (assignment.assignment_type = 'team' and assignment.team_id = employee_row."teamId")
+						or (assignment.assignment_type = 'organization' and assignment.employee_id is null and assignment.team_id is null)
+					)
+				order by case assignment.assignment_type
+					when 'employee' then 2 when 'team' then 1 else 0 end desc,
+					assignment.priority desc, assignment.id
+				limit 1
+				for update of assignment
+			), policy_evidence as (
+				select policy.id, policy.name, policy.is_active as "policyIsActive",
+					policy.regulation_enabled as "regulationEnabled"
+				from assignment_evidence assignment
+				join work_policy policy on policy.id = assignment."assignmentPolicyId"
+					and policy.organization_id = ${input.organizationId}
+				limit 2
+				for update of policy
+			), regulation_evidence as (
+				select regulation.id,
+					regulation.max_uninterrupted_minutes as "maxUninterruptedMinutes"
+				from policy_evidence policy
+				join work_policy_regulation regulation on regulation.policy_id = policy.id
+				where policy."regulationEnabled" = true
+				limit 2
+				for update of regulation
+			), rule_evidence as (
+				select rule.id,
+					rule.working_minutes_threshold as "workingMinutesThreshold",
+					rule.required_break_minutes as "requiredBreakMinutes"
+				from regulation_evidence regulation
+				join work_policy_break_rule rule on rule.regulation_id = regulation.id
+				order by rule.working_minutes_threshold, rule.id
+				for update of rule
+			)
+			select employee_row."teamId",
+				assignment.id as "assignmentId",
+				assignment."assignmentType",
+				assignment."assignmentPolicyId",
+				policy.id as "policyId", policy.name as "policyName",
+				policy."policyIsActive", policy."regulationEnabled",
+				regulation.id as "regulationId", regulation."maxUninterruptedMinutes",
+				coalesce((select json_agg(rule order by rule."workingMinutesThreshold", rule.id) from rule_evidence rule), '[]'::json) as "breakRules"
+			from employee_evidence employee_row
+			left join assignment_evidence assignment on true
+			left join policy_evidence policy on true
+			left join regulation_evidence regulation on true
+		`);
+		if (
+			typeof result !== "object" ||
+			result === null ||
+			!("rows" in result) ||
+			!Array.isArray(result.rows) ||
+			result.rows.length !== 1
+		) {
+			throw new Error();
+		}
+		const row = result.rows[0] as Record<string, unknown>;
+		if (row.assignmentId === null) {
+			if (
+				row.assignmentType !== null ||
+				row.assignmentPolicyId !== null ||
+				row.policyId !== null ||
+				row.regulationId !== null
+			) {
+				throw new Error();
+			}
+			return parsePolicyClockOutBreakSnapshot(
+				{ version: 1, evaluatedAt, resolution: "none" },
+				evaluatedAt,
+			);
+		}
+		if (
+			row.policyId !== row.assignmentPolicyId ||
+			row.policyIsActive !== true ||
+			typeof row.policyName !== "string" ||
+			typeof row.regulationEnabled !== "boolean"
+		) {
+			throw new Error();
+		}
+		if (row.regulationEnabled === false) {
+			if (row.regulationId !== null) throw new Error();
+			return parsePolicyClockOutBreakSnapshot(
+				{ version: 1, evaluatedAt, resolution: "none" },
+				evaluatedAt,
+			);
+		}
+		if (row.regulationId === null) throw new Error();
+		return parsePolicyClockOutBreakSnapshot(
+			{
+				version: 1,
+				evaluatedAt,
+				resolution: "work_policy",
+				teamId: row.teamId,
+				assignment: { id: row.assignmentId, type: row.assignmentType },
+				policy: { id: row.policyId, name: row.policyName },
+				regulation: {
+					id: row.regulationId,
+					name: row.policyName,
+					maxUninterruptedMinutes: row.maxUninterruptedMinutes,
+				},
+				breakRules: row.breakRules,
+			},
+			evaluatedAt,
+		);
+	} catch {
+		throw new Error("Policy clock-out break snapshot resolution failed");
+	}
+}

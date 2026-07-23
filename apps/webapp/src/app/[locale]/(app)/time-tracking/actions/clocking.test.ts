@@ -54,6 +54,13 @@ const mockState = vi.hoisted(() => ({
 	clockingClockIn: vi.fn(),
 	clockingClockOut: vi.fn(),
 	createCanonicalWorkRecord: vi.fn(),
+	resolveBreakPolicySnapshot: vi.fn(
+		async (input: { endTime: { toString(): string } }) => ({
+			version: 1 as const,
+			evaluatedAt: input.endTime.toString(),
+			resolution: "none" as const,
+		}),
+	),
 	logger: {
 		info: vi.fn(),
 		warn: vi.fn(),
@@ -62,6 +69,17 @@ const mockState = vi.hoisted(() => ({
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: mockState.revalidatePath }));
+
+vi.mock(
+	"@/lib/time-tracking/policy-clock-out-break-snapshot",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/time-tracking/policy-clock-out-break-snapshot")
+		>()),
+		resolvePolicyClockOutBreakSnapshotInTransaction:
+			mockState.resolveBreakPolicySnapshot,
+	}),
+);
 
 vi.mock("@/db", () => ({
 	db: {
@@ -313,6 +331,15 @@ function ordinarySubmissionSource(
 		approvalStatus: "pending",
 		pendingChanges: {
 			ordinarySubmission: { submissionId: defaultSubmissionId, kind },
+			...(kind === "policy_clock_out"
+				? {
+						breakPolicySnapshot: {
+							version: 1,
+							evaluatedAt: `${date}T10:00:00Z`,
+							resolution: "none",
+						},
+					}
+				: {}),
 		},
 		isActive: false,
 		startTime: new Date(`${date}T09:00:00.000Z`),
@@ -397,6 +424,15 @@ function approvalRequestMetadata(
 	});
 	return {
 		timeRequest: { kind },
+		...(kind === "policy_clock_out"
+			? {
+					breakPolicySnapshot: {
+						version: 1,
+						evaluatedAt: "2026-05-04T10:00:00Z",
+						resolution: "none",
+					},
+				}
+			: {}),
 		ordinarySubmission: { key, submissionId },
 	};
 }

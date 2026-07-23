@@ -2776,6 +2776,34 @@ describe("transaction-bound legacy approval row writer", () => {
 		});
 	});
 
+	it("carries policy clock-out break evidence into compatibility metadata", async () => {
+		const result = asOrdinaryWorkPeriodResult(
+			canonicalLegacyResult("pending"),
+			"policy_clock_out",
+		);
+		const breakPolicySnapshot = {
+			version: 1,
+			evaluatedAt: "2026-03-29T08:01:00Z",
+			resolution: "none",
+		} as const;
+		result.snapshot.contextSnapshot = {
+			timeRequest: { kind: "policy_clock_out" },
+			breakPolicySnapshot,
+		};
+		const harness = rowWriterHarness(result);
+
+		await harness.writer.writeLegacyRows({
+			organizationId: "org-1",
+			result,
+			legacyIds: harness.mappings,
+		});
+
+		expect(insertedRequestMetadata(harness.calls)).toMatchObject({
+			timeRequest: { kind: "policy_clock_out" },
+			breakPolicySnapshot,
+		});
+	});
+
 	it("uses ordinary context for the request after requester auto-approval", async () => {
 		const result = asOrdinaryWorkPeriodResult(
 			stageTwoPendingResult(),
