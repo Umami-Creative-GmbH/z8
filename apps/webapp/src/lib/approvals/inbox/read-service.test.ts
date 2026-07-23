@@ -93,7 +93,29 @@ describe("getApprovalInboxListFromSources", () => {
 				},
 			},
 		} as OrdinaryCanonicalApproval;
-		const loadCanonicalOrdinaryApprovals = vi.fn(async () => [canonicalItem]);
+		const canonicalBatch = Object.assign(
+			[canonicalItem, "assignment-2", "assignment-3"].map((value, index) =>
+				typeof value === "string"
+					? ({
+							...canonicalItem,
+							item: {
+								...canonicalItem.item,
+								id: value,
+								timing: {
+									...canonicalItem.item.timing,
+									createdAt: [
+										"2026-05-30T09:00:00.000Z",
+										"2026-05-31T09:00:00.000Z",
+										"2026-06-01T09:00:00.000Z",
+									][index] as string,
+								},
+							},
+						} as OrdinaryCanonicalApproval)
+					: value,
+			),
+			{ totalCount: 3 },
+		);
+		const loadCanonicalOrdinaryApprovals = vi.fn(async () => canonicalBatch);
 
 		const result = await getApprovalInboxListFromSources({
 			sources: [source("time_entry", [])],
@@ -101,13 +123,19 @@ describe("getApprovalInboxListFromSources", () => {
 				approverId: "manager-1",
 				organizationId: "org-1",
 				status: "pending",
+				limit: 2,
 			},
 			loadCanonicalOrdinaryApprovals,
 		});
 
-		expect(result.items.map(({ id }) => id)).toEqual(["assignment-1"]);
-		expect(result.counts.time_entry).toBe(1);
-		expect(result.total).toBe(1);
+		expect(result.items.map(({ id }) => id)).toEqual([
+			"assignment-1",
+			"assignment-2",
+		]);
+		expect(result.hasMore).toBe(true);
+		expect(result.nextCursor).not.toBeNull();
+		expect(result.counts.time_entry).toBe(3);
+		expect(result.total).toBe(3);
 		expect(loadCanonicalOrdinaryApprovals).toHaveBeenCalledWith({
 			approverId: "manager-1",
 			organizationId: "org-1",
@@ -115,7 +143,37 @@ describe("getApprovalInboxListFromSources", () => {
 			includeAllApprovers: undefined,
 			search: undefined,
 			teamId: undefined,
+			limit: 3,
+			cursor: undefined,
 		});
+	});
+
+	it("does not load canonical ordinary items when time entries are excluded", async () => {
+		const loadCanonicalOrdinaryApprovals = vi.fn(async () => []);
+		const countCanonicalOrdinaryApprovals = vi.fn(async () => 2);
+
+		const result = await getApprovalInboxListFromSources({
+			sources: [
+				source("absence_entry", [item({ id: "absence-1" })]),
+				source("time_entry", [
+					item({ id: "legacy-time-1", approvalType: "time_entry" }),
+				]),
+			],
+			params: {
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				types: ["absence_entry"],
+			},
+			loadCanonicalOrdinaryApprovals,
+			countCanonicalOrdinaryApprovals,
+		});
+
+		expect(loadCanonicalOrdinaryApprovals).not.toHaveBeenCalled();
+		expect(countCanonicalOrdinaryApprovals).toHaveBeenCalledTimes(1);
+		expect(result.items.map(({ id }) => id)).toEqual(["absence-1"]);
+		expect(result.counts.time_entry).toBe(3);
+		expect(result.total).toBe(4);
 	});
 
 	it("returns serializable items sorted by risk and age", async () => {

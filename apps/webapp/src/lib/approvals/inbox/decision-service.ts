@@ -426,6 +426,8 @@ export async function loadApprovalInboxDecisionTarget({
 			organizationId,
 			approverId: "canonical-decision-discovery",
 			includeAllApprovers: true,
+			assignmentId: approvalId,
+			limit: 1,
 		});
 		const canonicalTarget = canonical.find(
 			(candidate) => candidate.item.id === approvalId,
@@ -476,12 +478,17 @@ export async function loadApprovalInboxDecisionTargets({
 	const missingIds = approvalIds.filter(
 		(approvalId) => !requestsById.has(approvalId),
 	);
-	const canonical = await loadOrdinaryCanonicalApprovals({
-		database,
-		organizationId,
-		approverId: "canonical-decision-discovery",
-		includeAllApprovers: true,
-	});
+	const canonical =
+		missingIds.length > 0
+			? await loadOrdinaryCanonicalApprovals({
+					database,
+					organizationId,
+					approverId: "canonical-decision-discovery",
+					includeAllApprovers: true,
+					assignmentIds: missingIds,
+					limit: missingIds.length,
+				})
+			: [];
 	const canonicalById = new Map(
 		canonical
 			.filter((candidate) => missingIds.includes(candidate.item.id))

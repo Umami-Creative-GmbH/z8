@@ -158,6 +158,13 @@ describe("approval inbox decision service", () => {
 			"manager-1",
 			{ approvalRequestId: "assignment-1" },
 		);
+		expect(loadOrdinaryCanonicalApprovalsMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				assignmentId: "assignment-1",
+				limit: 1,
+			}),
+		);
 	});
 
 	it("does not fall back to an unvalidated pending assignment", async () => {

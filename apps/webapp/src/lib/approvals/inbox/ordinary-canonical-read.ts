@@ -1,11 +1,5 @@
-import { and, eq } from "drizzle-orm";
+import { type SQL, sql } from "drizzle-orm";
 import { db } from "@/db";
-import {
-	approvalInboxProjection,
-	approvalRequest,
-	timeRecord,
-	workPeriod,
-} from "@/db/schema";
 import { instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
 import { formatCapturedOffsetInstant } from "@/lib/datetime/temporal-format";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
@@ -155,6 +149,10 @@ interface SelectOrdinaryCanonicalApprovalsInput {
 	search?: string;
 	teamId?: string;
 }
+
+export type OrdinaryCanonicalApprovalBatch = OrdinaryCanonicalApproval[] & {
+	totalCount: number;
+};
 
 function exactObject(value: unknown, keys: readonly string[]) {
 	if (
@@ -568,90 +566,450 @@ export function selectOrdinaryCanonicalApprovals(
 }
 
 interface OrdinaryCanonicalReadDatabase {
-	query: {
-		approvalInboxProjection: { findMany(input: unknown): Promise<unknown[]> };
-		workPeriod: { findFirst(input: unknown): Promise<unknown> };
-		timeRecord: { findFirst(input: unknown): Promise<unknown> };
-		approvalRequest: { findFirst(input: unknown): Promise<unknown> };
+	execute(statement: SQL): Promise<unknown>;
+}
+
+interface OrdinaryCanonicalLoadInput
+	extends Omit<SelectOrdinaryCanonicalApprovalsInput, "rows"> {
+	database?: OrdinaryCanonicalReadDatabase;
+	assignmentId?: string;
+	assignmentIds?: string[];
+	limit?: number;
+	cursor?: { createdAt: string; id: string };
+}
+
+function resultRows(result: unknown): Record<string, unknown>[] {
+	return typeof result === "object" &&
+		result !== null &&
+		"rows" in result &&
+		Array.isArray(result.rows)
+		? (result.rows as Record<string, unknown>[])
+		: [];
+}
+
+function candidateVisibility(input: OrdinaryCanonicalLoadInput): SQL {
+	if (input.includeAllApprovers) return sql`true`;
+	const eligible = (input.eligibleApprovalScopes ?? []).flatMap((scope) =>
+		scope.eligibleApproverIds.includes(input.approverId) &&
+		scope.eligibleApproverIds.length > 0
+			? [
+					sql`(workflow.requester_employee_id = ${scope.requesterEmployeeId}::uuid and assignment.approver_employee_id in (${sql.join(
+						scope.eligibleApproverIds.map((id) => sql`${id}::uuid`),
+						sql`, `,
+					)}))`,
+				]
+			: [],
+	);
+	return eligible.length > 0
+		? sql`(assignment.approver_employee_id = ${input.approverId}::uuid or ${sql.join(eligible, sql` or `)})`
+		: sql`assignment.approver_employee_id = ${input.approverId}::uuid`;
+}
+
+function targetCondition(input: OrdinaryCanonicalLoadInput): SQL {
+	if (input.assignmentId) {
+		return sql`and assignment.id = ${input.assignmentId}::uuid`;
+	}
+	if (input.assignmentIds?.length) {
+		return sql`and assignment.id in (${sql.join(
+			input.assignmentIds.map((id) => sql`${id}::uuid`),
+			sql`, `,
+		)})`;
+	}
+	return sql``;
+}
+
+function cursorCondition(input: OrdinaryCanonicalLoadInput): SQL {
+	if (!input.cursor) return sql``;
+	return sql`and (workflow.submitted_at > ${new Date(input.cursor.createdAt)} or (workflow.submitted_at = ${new Date(input.cursor.createdAt)} and assignment.id > ${input.cursor.id}::uuid))`;
+}
+
+function boundedLimit(input: OrdinaryCanonicalLoadInput): number {
+	if (input.assignmentId) return 1;
+	const requested = Math.floor(input.limit ?? 51);
+	return Math.min(Math.max(requested, 1), 101);
+}
+
+function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
+	const selection = countOnly
+		? sql`count(*)::integer as "totalCount"`
+		: sql`
+			projection.id as "projectionId", projection.organization_id as "projectionOrganizationId",
+			projection.workflow_id as "projectionWorkflowId", projection.active_stage_id as "activeStageId",
+			projection.source_type as "sourceType", projection.source_id as "sourceId",
+			projection.status as "projectionStatus", projection.display_payload as "displayPayload",
+			projection.search_text as "searchText", projection.created_at as "projectionCreatedAt",
+			workflow.id as "workflowId", workflow.organization_id as "workflowOrganizationId",
+			workflow.workflow_type as "workflowType", workflow.source_type as "workflowSourceType",
+			workflow.source_id as "workflowSourceId", workflow.requester_employee_id as "requesterEmployeeId",
+			workflow.status as "workflowStatus", workflow.current_stage_order as "currentStageOrder",
+			workflow.context_snapshot as "contextSnapshot", workflow.submitted_at as "submittedAt",
+			stage.id as "stageId", stage.organization_id as "stageOrganizationId",
+			stage.workflow_id as "stageWorkflowId", stage.stage_order as "stageSequence",
+			stage.label as "stageLabel", stage.status as "stageStatus",
+			stage.legacy_approval_request_id as "legacyApprovalRequestId",
+			assignment.id as "assignmentId", assignment.organization_id as "assignmentOrganizationId",
+			assignment.workflow_id as "assignmentWorkflowId", assignment.stage_id as "assignmentStageId",
+			assignment.approver_employee_id as "approverEmployeeId", assignment.status as "assignmentStatus",
+			assignment.assigned_at as "assignedAt", requester.id as "requesterId",
+			requester.organization_id as "requesterOrganizationId", requester.user_id as "requesterUserId",
+			requester.team_id as "requesterTeamId", requester_user.id as "userId",
+			requester_user.name as "userName", requester_user.email as "userEmail",
+			requester_user.image as "userImage", count(*) over()::integer as "totalCount"`;
+	return sql`
+		select ${selection}
+		from approval_inbox_projection projection
+		join approval_workflow workflow
+			on workflow.id = projection.workflow_id and workflow.organization_id = projection.organization_id
+		join approval_workflow_stage stage
+			on stage.id = projection.active_stage_id and stage.workflow_id = workflow.id
+			and stage.organization_id = projection.organization_id
+		join approval_stage_assignment assignment
+			on assignment.stage_id = stage.id and assignment.workflow_id = workflow.id
+			and assignment.organization_id = projection.organization_id
+		join employee requester
+			on requester.id = workflow.requester_employee_id and requester.organization_id = projection.organization_id
+		join "user" requester_user on requester_user.id = requester.user_id
+		join work_period source_period
+			on source_period.id = projection.source_id
+			and source_period.organization_id = projection.organization_id
+			and source_period.employee_id = workflow.requester_employee_id
+		join time_record source_record
+			on source_record.id = source_period.canonical_record_id
+			and source_record.organization_id = source_period.organization_id
+			and source_record.employee_id = source_period.employee_id
+		join time_entry source_clock_in
+			on source_clock_in.id = source_period.clock_in_id
+			and source_clock_in.organization_id = source_period.organization_id
+			and source_clock_in.employee_id = source_period.employee_id
+		join time_entry source_clock_out
+			on source_clock_out.id = source_period.clock_out_id
+			and source_clock_out.organization_id = source_period.organization_id
+			and source_clock_out.employee_id = source_period.employee_id
+		left join approval_request compatibility
+			on compatibility.id = stage.legacy_approval_request_id
+			and compatibility.organization_id = projection.organization_id
+		where projection.organization_id = ${input.organizationId}
+			and projection.source_type = 'time_entry'
+			and workflow.source_type = 'time_entry'
+			and workflow.workflow_type in ('manual_time_submission', 'policy_clock_out')
+			and projection.status = 'pending'
+			and workflow.status = 'pending'
+			and stage.status = 'pending'
+			and assignment.status = 'pending'
+			and workflow.current_stage_order = stage.stage_order
+			and source_period.approval_workflow_id = workflow.id
+			and source_period.approval_status = 'pending'
+			and source_period.is_active = false
+			and source_period.deleted_at is null
+			and source_period.end_time is not null
+			and source_period.duration_minutes is not null
+			and source_record.record_kind = 'work'
+			and source_record.approval_state = 'pending'
+			and source_record.start_at = source_period.start_time
+			and source_record.end_at = source_period.end_time
+			and source_record.duration_minutes = source_period.duration_minutes
+			and source_clock_in.type = 'clock_in'
+			and source_clock_in.timestamp = source_period.start_time
+			and source_clock_in.is_superseded = false
+			and source_clock_in.superseded_by_id is null
+			and source_clock_in.replaces_entry_id is null
+			and source_clock_out.type = 'clock_out'
+			and source_clock_out.timestamp = source_period.end_time
+			and source_clock_out.is_superseded = false
+			and source_clock_out.superseded_by_id is null
+			and source_clock_out.replaces_entry_id is null
+			and case when jsonb_typeof(workflow.context_snapshot) = 'object'
+				then jsonb_object_length(workflow.context_snapshot) else null end = 1
+			and case when jsonb_typeof(workflow.context_snapshot -> 'timeRequest') = 'object'
+				then jsonb_object_length(workflow.context_snapshot -> 'timeRequest') else null end = 1
+			and workflow.context_snapshot -> 'timeRequest' ->> 'kind' = workflow.workflow_type::text
+			and case when jsonb_typeof(projection.display_payload) = 'object'
+				then jsonb_object_length(projection.display_payload) else null end = 7
+			and case when jsonb_typeof(projection.display_payload -> 'stage') = 'object'
+				then jsonb_object_length(projection.display_payload -> 'stage') else null end = 2
+			and projection.display_payload ->> 'kind' = workflow.workflow_type::text
+			and projection.display_payload ->> 'title' = case
+				when workflow.workflow_type = 'manual_time_submission' then 'Manual time submission'
+				else 'Policy clock-out'
+			end
+			and case
+				when projection.display_payload ->> 'startTime' ~ '^\\d{4}-\\d{2}-\\d{2}T.*(Z|[+-]\\d{2}:\\d{2})$'
+				then (projection.display_payload ->> 'startTime')::timestamptz
+				else null
+			end = source_period.start_time at time zone 'UTC'
+			and case
+				when projection.display_payload ->> 'endTime' ~ '^\\d{4}-\\d{2}-\\d{2}T.*(Z|[+-]\\d{2}:\\d{2})$'
+				then (projection.display_payload ->> 'endTime')::timestamptz
+				else null
+			end = source_period.end_time at time zone 'UTC'
+			and case
+				when projection.display_payload ->> 'durationMinutes' ~ '^[0-9]+$'
+				then (projection.display_payload ->> 'durationMinutes')::integer
+				else null
+			end = source_period.duration_minutes
+			and projection.display_payload ->> 'approvalStatus' = 'pending'
+			and projection.display_payload -> 'stage' ->> 'name' = stage.label
+			and projection.display_payload -> 'stage' ->> 'order' = stage.stage_order::text
+			and projection.search_text = lower(
+				(projection.display_payload ->> 'title') || ' ' ||
+				(projection.display_payload ->> 'startTime') || ' ' ||
+				(projection.display_payload ->> 'endTime') || ' ' || stage.label
+			)
+			and not coalesce((
+				compatibility.id is not null
+				and compatibility.entity_type = 'time_entry'
+				and compatibility.entity_id = projection.source_id
+				and compatibility.requested_by = workflow.requester_employee_id
+				and compatibility.approver_id = assignment.approver_employee_id
+				and compatibility.status = 'pending'
+				and case when jsonb_typeof(compatibility.metadata) = 'object'
+					then jsonb_object_length(compatibility.metadata) else null end = 3
+				and case when jsonb_typeof(compatibility.metadata -> 'workflow') = 'object'
+					then jsonb_object_length(compatibility.metadata -> 'workflow') else null end = 2
+				and case when jsonb_typeof(compatibility.metadata -> 'stage') = 'object'
+					then jsonb_object_length(compatibility.metadata -> 'stage') else null end = 2
+				and case when jsonb_typeof(compatibility.metadata -> 'timeRequest') = 'object'
+					then jsonb_object_length(compatibility.metadata -> 'timeRequest') else null end = 1
+				and compatibility.metadata -> 'workflow' ->> 'id' = workflow.id::text
+				and compatibility.metadata -> 'workflow' ->> 'organizationId' = projection.organization_id
+				and compatibility.metadata -> 'stage' ->> 'id' = stage.id::text
+				and compatibility.metadata -> 'stage' ->> 'sequence' = stage.stage_order::text
+				and compatibility.metadata -> 'timeRequest' ->> 'kind' = workflow.workflow_type::text
+			), false)
+			and ${candidateVisibility(input)}
+			${targetCondition(input)}
+			${cursorCondition(input)}
+		${countOnly ? sql`` : sql`order by workflow.submitted_at, assignment.id limit ${boundedLimit(input)}`}
+	`;
+}
+
+function toCandidate(value: Record<string, unknown>) {
+	return {
+		projection: {
+			id: value.projectionId,
+			organizationId: value.projectionOrganizationId,
+			workflowId: value.projectionWorkflowId,
+			activeStageId: value.activeStageId,
+			sourceType: value.sourceType,
+			sourceId: value.sourceId,
+			status: value.projectionStatus,
+			displayPayload: value.displayPayload,
+			searchText: value.searchText,
+			createdAt: value.projectionCreatedAt,
+		},
+		workflow: {
+			id: value.workflowId,
+			organizationId: value.workflowOrganizationId,
+			workflowType: value.workflowType,
+			sourceType: value.workflowSourceType,
+			sourceId: value.workflowSourceId,
+			requesterEmployeeId: value.requesterEmployeeId,
+			status: value.workflowStatus,
+			currentStageOrder: value.currentStageOrder,
+			contextSnapshot: value.contextSnapshot,
+			submittedAt: value.submittedAt,
+		},
+		stage: {
+			id: value.stageId,
+			organizationId: value.stageOrganizationId,
+			workflowId: value.stageWorkflowId,
+			sequence: value.stageSequence,
+			label: value.stageLabel,
+			status: value.stageStatus,
+			legacyApprovalRequestId: value.legacyApprovalRequestId,
+		},
+		assignment: {
+			id: value.assignmentId,
+			organizationId: value.assignmentOrganizationId,
+			workflowId: value.assignmentWorkflowId,
+			stageId: value.assignmentStageId,
+			approverEmployeeId: value.approverEmployeeId,
+			status: value.assignmentStatus,
+			assignedAt: value.assignedAt,
+		},
+		requester: {
+			id: value.requesterId,
+			organizationId: value.requesterOrganizationId,
+			userId: value.requesterUserId,
+			teamId: value.requesterTeamId,
+			user: {
+				id: value.userId,
+				name: value.userName,
+				email: value.userEmail,
+				image: value.userImage,
+			},
+		},
+		totalCount: value.totalCount,
+	} as unknown as Omit<
+		OrdinaryCanonicalReadRow,
+		"period" | "canonicalRecord" | "compatibilityRequest"
+	> & {
+		totalCount: number;
 	};
 }
 
+function evidenceQuery(organizationId: string, sourceIds: string[]) {
+	return sql`
+		select period.id as "periodId", period.organization_id as "periodOrganizationId",
+			period.employee_id as "periodEmployeeId", period.canonical_record_id as "periodCanonicalRecordId",
+			period.approval_workflow_id as "periodApprovalWorkflowId", period.approval_status as "periodApprovalStatus",
+			period.is_active as "periodIsActive", period.deleted_at as "periodDeletedAt",
+			period.start_time as "periodStartTime", period.end_time as "periodEndTime",
+			period.duration_minutes as "periodDurationMinutes", period.pending_changes as "periodPendingChanges",
+			clock_in.id as "clockInId", clock_in.organization_id as "clockInOrganizationId",
+			clock_in.employee_id as "clockInEmployeeId", clock_in.type as "clockInType",
+			clock_in.timestamp as "clockInTimestamp", clock_in.utc_offset_minutes as "clockInUtcOffsetMinutes",
+			clock_in.is_superseded as "clockInIsSuperseded", clock_in.superseded_by_id as "clockInSupersededById",
+			clock_in.replaces_entry_id as "clockInReplacesEntryId", clock_out.id as "clockOutId",
+			clock_out.organization_id as "clockOutOrganizationId", clock_out.employee_id as "clockOutEmployeeId",
+			clock_out.type as "clockOutType", clock_out.timestamp as "clockOutTimestamp",
+			clock_out.utc_offset_minutes as "clockOutUtcOffsetMinutes", clock_out.is_superseded as "clockOutIsSuperseded",
+			clock_out.superseded_by_id as "clockOutSupersededById", clock_out.replaces_entry_id as "clockOutReplacesEntryId",
+			canonical.id as "canonicalId", canonical.organization_id as "canonicalOrganizationId",
+			canonical.employee_id as "canonicalEmployeeId", canonical.record_kind as "canonicalRecordKind",
+			canonical.start_at as "canonicalStartAt", canonical.end_at as "canonicalEndAt",
+			canonical.duration_minutes as "canonicalDurationMinutes", canonical.approval_state as "canonicalApprovalState"
+		from work_period period
+		join time_record canonical on canonical.id = period.canonical_record_id and canonical.organization_id = period.organization_id
+		join time_entry clock_in on clock_in.id = period.clock_in_id and clock_in.organization_id = period.organization_id
+		join time_entry clock_out on clock_out.id = period.clock_out_id and clock_out.organization_id = period.organization_id
+		where period.organization_id = ${organizationId}
+			and period.id in (${sql.join(
+				sourceIds.map((id) => sql`${id}::uuid`),
+				sql`, `,
+			)})
+	`;
+}
+
+function compatibilityQuery(organizationId: string, requestIds: string[]) {
+	return sql`select id, organization_id as "organizationId", entity_type as "entityType",
+		entity_id as "entityId", requested_by as "requestedBy", approver_id as "approverId",
+		status, metadata from approval_request where organization_id = ${organizationId}
+		and id in (${sql.join(
+			requestIds.map((id) => sql`${id}::uuid`),
+			sql`, `,
+		)})`;
+}
+
+function endpoint(
+	value: Record<string, unknown>,
+	prefix: "clockIn" | "clockOut",
+) {
+	const id = value[`${prefix}Id`];
+	if (typeof id !== "string") return null;
+	return {
+		id,
+		organizationId: value[`${prefix}OrganizationId`],
+		employeeId: value[`${prefix}EmployeeId`],
+		type: value[`${prefix}Type`],
+		timestamp: value[`${prefix}Timestamp`],
+		utcOffsetMinutes: value[`${prefix}UtcOffsetMinutes`],
+		isSuperseded: value[`${prefix}IsSuperseded`],
+		supersededById: value[`${prefix}SupersededById`],
+		replacesEntryId: value[`${prefix}ReplacesEntryId`],
+	} as CanonicalEndpoint;
+}
+
+function toEvidence(
+	value: Record<string, unknown>,
+	requester: OrdinaryCanonicalReadRow["requester"],
+) {
+	return {
+		period: {
+			id: value.periodId,
+			organizationId: value.periodOrganizationId,
+			employeeId: value.periodEmployeeId,
+			canonicalRecordId: value.periodCanonicalRecordId,
+			approvalWorkflowId: value.periodApprovalWorkflowId,
+			approvalStatus: value.periodApprovalStatus,
+			isActive: value.periodIsActive,
+			deletedAt: value.periodDeletedAt,
+			startTime: value.periodStartTime,
+			endTime: value.periodEndTime,
+			durationMinutes: value.periodDurationMinutes,
+			pendingChanges: value.periodPendingChanges,
+			employee: requester,
+			clockIn: endpoint(value, "clockIn"),
+			clockOut: endpoint(value, "clockOut"),
+		},
+		canonicalRecord: {
+			id: value.canonicalId,
+			organizationId: value.canonicalOrganizationId,
+			employeeId: value.canonicalEmployeeId,
+			recordKind: value.canonicalRecordKind,
+			startAt: value.canonicalStartAt,
+			endAt: value.canonicalEndAt,
+			durationMinutes: value.canonicalDurationMinutes,
+			approvalState: value.canonicalApprovalState,
+		},
+	} as Pick<OrdinaryCanonicalReadRow, "period" | "canonicalRecord">;
+}
+
 export async function loadOrdinaryCanonicalApprovals(
-	input: Omit<SelectOrdinaryCanonicalApprovalsInput, "rows"> & {
-		database?: OrdinaryCanonicalReadDatabase;
-	},
-): Promise<OrdinaryCanonicalApproval[]> {
+	input: OrdinaryCanonicalLoadInput,
+): Promise<OrdinaryCanonicalApprovalBatch> {
 	const database =
 		input.database ?? (db as unknown as OrdinaryCanonicalReadDatabase);
-	const projections = await database.query.approvalInboxProjection.findMany({
-		where: and(
-			eq(approvalInboxProjection.organizationId, input.organizationId),
-			eq(approvalInboxProjection.status, "pending"),
+	const candidates = resultRows(
+		await database.execute(candidateQuery(input)),
+	).map(toCandidate);
+	if (candidates.length === 0) return Object.assign([], { totalCount: 0 });
+	const sourceIds = [
+		...new Set(candidates.map(({ projection }) => projection.sourceId)),
+	];
+	const evidenceRows = resultRows(
+		await database.execute(evidenceQuery(input.organizationId, sourceIds)),
+	);
+	const evidenceBySource = new Map(
+		evidenceRows.map((value) => [value.periodId, value]),
+	);
+	const compatibilityIds = [
+		...new Set(
+			candidates.flatMap(({ stage }) =>
+				stage.legacyApprovalRequestId ? [stage.legacyApprovalRequestId] : [],
+			),
 		),
-		with: {
-			workflow: { with: { requester: { with: { user: true } } } },
-			activeStage: { with: { assignments: true } },
-		},
+	];
+	const compatibilityRows = compatibilityIds.length
+		? resultRows(
+				await database.execute(
+					compatibilityQuery(input.organizationId, compatibilityIds),
+				),
+			)
+		: [];
+	const compatibilityById = new Map(
+		compatibilityRows.map((value) => [value.id, value]),
+	);
+	const rows = candidates.flatMap((candidate) => {
+		const evidence = evidenceBySource.get(candidate.projection.sourceId);
+		if (!evidence) return [];
+		return [
+			{
+				...candidate,
+				...toEvidence(evidence, candidate.requester),
+				compatibilityRequest: candidate.stage.legacyApprovalRequestId
+					? (compatibilityById.get(candidate.stage.legacyApprovalRequestId) ??
+						null)
+					: null,
+			} as OrdinaryCanonicalReadRow,
+		];
 	});
-	const rows = (
-		await Promise.all(
-			projections.map(async (value) => {
-				const projection = value as OrdinaryCanonicalReadRow["projection"] & {
-					workflow?: OrdinaryCanonicalReadRow["workflow"] & {
-						requester?: OrdinaryCanonicalReadRow["requester"] | null;
-					};
-					activeStage?: OrdinaryCanonicalReadRow["stage"] & {
-						assignments?: OrdinaryCanonicalReadRow["assignment"][];
-					};
-				};
-				const workflow = projection.workflow;
-				const stage = projection.activeStage;
-				const requester = workflow?.requester;
-				if (!workflow || !stage || !requester) return [];
-				const [period, compatibilityRequest] = await Promise.all([
-					database.query.workPeriod.findFirst({
-						where: and(
-							eq(workPeriod.id, projection.sourceId),
-							eq(workPeriod.organizationId, input.organizationId),
-						),
-						with: {
-							employee: { with: { user: true } },
-							clockIn: true,
-							clockOut: true,
-						},
-					}),
-					stage.legacyApprovalRequestId
-						? database.query.approvalRequest.findFirst({
-								where: and(
-									eq(approvalRequest.id, stage.legacyApprovalRequestId),
-									eq(approvalRequest.organizationId, input.organizationId),
-								),
-							})
-						: Promise.resolve(null),
-				]);
-				if (!period) return [];
-				const canonicalId = (period as OrdinaryCanonicalReadRow["period"])
-					.canonicalRecordId;
-				const resolvedCanonicalRecord = canonicalId
-					? await database.query.timeRecord.findFirst({
-							where: and(
-								eq(timeRecord.id, canonicalId),
-								eq(timeRecord.organizationId, input.organizationId),
-							),
-						})
-					: null;
-				return (stage.assignments ?? []).map((assignment) => ({
-					projection,
-					workflow,
-					stage,
-					assignment,
-					requester,
-					period,
-					canonicalRecord: resolvedCanonicalRecord,
-					compatibilityRequest,
-				})) as OrdinaryCanonicalReadRow[];
-			}),
-		)
-	).flat();
-	return selectOrdinaryCanonicalApprovals({ ...input, rows });
+	const approvals = selectOrdinaryCanonicalApprovals({ ...input, rows });
+	const rawTotal = candidates[0]?.totalCount ?? candidates.length;
+	const excluded = candidates.length - approvals.length;
+	return Object.assign(approvals, {
+		totalCount: Math.max(0, rawTotal - excluded),
+	});
+}
+
+export async function countOrdinaryCanonicalApprovals(
+	input: Omit<
+		OrdinaryCanonicalLoadInput,
+		"limit" | "cursor" | "assignmentId" | "assignmentIds"
+	>,
+): Promise<number> {
+	const database =
+		input.database ?? (db as unknown as OrdinaryCanonicalReadDatabase);
+	const rows = resultRows(await database.execute(candidateQuery(input, true)));
+	return typeof rows[0]?.totalCount === "number" ? rows[0].totalCount : 0;
 }

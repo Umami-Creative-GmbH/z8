@@ -12,6 +12,7 @@ import type {
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ApprovalInboxBadRequestError } from "./current-actor";
 import {
+	countOrdinaryCanonicalApprovals,
 	loadOrdinaryCanonicalApprovals,
 	type OrdinaryCanonicalApproval,
 } from "./ordinary-canonical-read";
@@ -44,6 +45,9 @@ interface GetApprovalInboxListFromSourcesInput {
 	loadCanonicalOrdinaryApprovals?: (
 		input: Parameters<typeof loadOrdinaryCanonicalApprovals>[0],
 	) => Promise<OrdinaryCanonicalApproval[]>;
+	countCanonicalOrdinaryApprovals?: (
+		input: Parameters<typeof countOrdinaryCanonicalApprovals>[0],
+	) => Promise<number>;
 }
 
 interface ApprovalInboxCursor {
@@ -96,6 +100,7 @@ export async function getApprovalInboxListFromSources({
 	params,
 	now,
 	loadCanonicalOrdinaryApprovals: loadCanonical = async () => [],
+	countCanonicalOrdinaryApprovals: countCanonical,
 }: GetApprovalInboxListFromSourcesInput): Promise<ApprovalInboxListResult> {
 	const requestedTypeSet = params.types ? new Set(params.types) : null;
 	const selectedSources = sources.filter(
@@ -147,19 +152,42 @@ export async function getApprovalInboxListFromSources({
 		counts[source.type] = Exit.isSuccess(countExit) ? countExit.value : 0;
 	}
 
-	const canonicalOrdinary = await loadCanonical({
-		approverId: params.approverId,
-		organizationId: params.organizationId,
-		eligibleApprovalScopes: params.eligibleApprovalScopes,
-		includeAllApprovers: params.includeAllApprovers,
-		search: undefined,
-		teamId: undefined,
-	});
-	counts.time_entry = (counts.time_entry ?? 0) + canonicalOrdinary.length;
-	if (
-		(params.status ?? "pending") === "pending" &&
-		selectedSources.some((source) => source.type === "time_entry")
-	) {
+	const includesTimeEntries = selectedSources.some(
+		(source) => source.type === "time_entry",
+	);
+	const cursor = parseCursor(params.cursor);
+	const limit = getEffectiveLimit(params.limit);
+	const canonicalOrdinary =
+		(params.status ?? "pending") === "pending" && includesTimeEntries
+			? await loadCanonical({
+					approverId: params.approverId,
+					organizationId: params.organizationId,
+					eligibleApprovalScopes: params.eligibleApprovalScopes,
+					includeAllApprovers: params.includeAllApprovers,
+					search: undefined,
+					teamId: undefined,
+					limit: limit + 1,
+					cursor: cursor
+						? { createdAt: cursor.createdAt, id: cursor.id }
+						: undefined,
+				})
+			: [];
+	const canonicalTotal = countCanonical
+		? await countCanonical({
+				approverId: params.approverId,
+				organizationId: params.organizationId,
+				eligibleApprovalScopes: params.eligibleApprovalScopes,
+				includeAllApprovers: params.includeAllApprovers,
+				search: undefined,
+				teamId: undefined,
+			})
+		: ((
+				canonicalOrdinary as OrdinaryCanonicalApproval[] & {
+					totalCount?: number;
+				}
+			).totalCount ?? canonicalOrdinary.length);
+	counts.time_entry = (counts.time_entry ?? 0) + canonicalTotal;
+	if ((params.status ?? "pending") === "pending" && includesTimeEntries) {
 		items.push(
 			...canonicalOrdinary
 				.filter((approval) =>
@@ -170,11 +198,9 @@ export async function getApprovalInboxListFromSources({
 	}
 
 	const sortedItems = items.sort(compareInboxItems);
-	const cursor = parseCursor(params.cursor);
 	const cursorFilteredItems = cursor
 		? sortedItems.filter((item) => compareInboxItemToCursor(item, cursor) > 0)
 		: sortedItems;
-	const limit = getEffectiveLimit(params.limit);
 	const pagedItems = cursorFilteredItems.slice(0, limit);
 	const hasMore = cursorFilteredItems.length > limit;
 	const lastItem = pagedItems.at(-1);
@@ -205,6 +231,7 @@ export function getApprovalInboxList(
 		sources: getSupportedInboxSources(),
 		params,
 		loadCanonicalOrdinaryApprovals: loadOrdinaryCanonicalApprovals,
+		countCanonicalOrdinaryApprovals: countOrdinaryCanonicalApprovals,
 	});
 }
 
@@ -322,6 +349,8 @@ export async function getApprovalInboxDetail({
 			organizationId,
 			includeAllApprovers,
 			eligibleApprovalScopes,
+			assignmentId: approvalId,
+			limit: 1,
 		});
 		const approval = canonical.find(
 			(candidate) => candidate.item.id === approvalId,

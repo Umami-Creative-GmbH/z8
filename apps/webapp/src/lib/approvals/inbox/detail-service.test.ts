@@ -92,6 +92,8 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			organizationId: "org-1",
 			includeAllApprovers: undefined,
 			eligibleApprovalScopes: undefined,
+			assignmentId: "assignment-1",
+			limit: 1,
 		});
 	});
 

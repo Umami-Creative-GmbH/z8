@@ -1,3 +1,4 @@
+import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { Effect, Exit } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { createOrdinaryWorkPeriodApprovalAdapter } from "@/lib/approvals/domain-adapters/work-period.adapter";
@@ -372,16 +373,6 @@ describe.each([
 			submittedAt: new Date("2026-07-20T14:05:00Z"),
 			requester: period.employee,
 		};
-		const activeStage = {
-			id: stageId,
-			organizationId,
-			workflowId,
-			sequence: 2,
-			label: "Manager review",
-			status: "pending",
-			legacyApprovalRequestId: null,
-			assignments: [assignment],
-		};
 		const productionPeriod = {
 			...period,
 			approvalStatus: "pending",
@@ -395,38 +386,107 @@ describe.each([
 				: null,
 		};
 		const database = {
-			query: {
-				approvalInboxProjection: {
-					findMany: vi.fn(async () => [
+			execute: vi.fn(async (statement: SQL) => {
+				const query = new PgDialect().sqlToQuery(statement).sql;
+				if (query.includes("from approval_inbox_projection")) {
+					return {
+						rows: [
+							{
+								projectionId: "80000000-0000-4000-8000-000000000001",
+								projectionOrganizationId: organizationId,
+								projectionWorkflowId: workflowId,
+								activeStageId: stageId,
+								sourceType: "time_entry",
+								sourceId: periodId,
+								projectionStatus: "pending",
+								displayPayload: projected.displayPayload,
+								searchText: projected.searchText,
+								projectionCreatedAt: workflow.submittedAt,
+								workflowId,
+								workflowOrganizationId: organizationId,
+								workflowType: kind,
+								workflowSourceType: "time_entry",
+								workflowSourceId: periodId,
+								requesterEmployeeId: employeeId,
+								workflowStatus: "pending",
+								currentStageOrder: 2,
+								contextSnapshot: workflow.contextSnapshot,
+								submittedAt: workflow.submittedAt,
+								stageId,
+								stageOrganizationId: organizationId,
+								stageWorkflowId: workflowId,
+								stageSequence: 2,
+								stageLabel: "Manager review",
+								stageStatus: "pending",
+								legacyApprovalRequestId: null,
+								assignmentId: approvalId,
+								assignmentOrganizationId: organizationId,
+								assignmentWorkflowId: workflowId,
+								assignmentStageId: stageId,
+								approverEmployeeId: approverId,
+								assignmentStatus: "pending",
+								assignedAt: assignment.assignedAt,
+								requesterId: employeeId,
+								requesterOrganizationId: organizationId,
+								requesterUserId: period.employee.userId,
+								requesterTeamId: period.employee.teamId,
+								userId: period.employee.user.id,
+								userName: period.employee.user.name,
+								userEmail: period.employee.user.email,
+								userImage: period.employee.user.image,
+								totalCount: 1,
+							},
+						],
+					};
+				}
+				return {
+					rows: [
 						{
-							id: "80000000-0000-4000-8000-000000000001",
-							organizationId,
-							workflowId,
-							activeStageId: stageId,
-							sourceType: "time_entry",
-							sourceId: periodId,
-							status: "pending",
-							displayPayload: projected.displayPayload,
-							searchText: projected.searchText,
-							createdAt: new Date("2026-07-20T14:05:00Z"),
-							workflow,
-							activeStage,
+							periodId,
+							periodOrganizationId: organizationId,
+							periodEmployeeId: employeeId,
+							periodCanonicalRecordId: canonicalRecordId,
+							periodApprovalWorkflowId: workflowId,
+							periodApprovalStatus: "pending",
+							periodIsActive: false,
+							periodDeletedAt: null,
+							periodStartTime: productionPeriod.startTime,
+							periodEndTime: productionPeriod.endTime,
+							periodDurationMinutes: 480,
+							periodPendingChanges: productionPeriod.pendingChanges,
+							clockInId: productionPeriod.clockIn.id,
+							clockInOrganizationId: organizationId,
+							clockInEmployeeId: employeeId,
+							clockInType: productionPeriod.clockIn.type,
+							clockInTimestamp: productionPeriod.clockIn.timestamp,
+							clockInUtcOffsetMinutes:
+								productionPeriod.clockIn.utcOffsetMinutes,
+							clockInIsSuperseded: false,
+							clockInSupersededById: null,
+							clockInReplacesEntryId: null,
+							clockOutId: productionPeriod.clockOut?.id,
+							clockOutOrganizationId: organizationId,
+							clockOutEmployeeId: employeeId,
+							clockOutType: productionPeriod.clockOut?.type,
+							clockOutTimestamp: productionPeriod.clockOut?.timestamp,
+							clockOutUtcOffsetMinutes:
+								productionPeriod.clockOut?.utcOffsetMinutes,
+							clockOutIsSuperseded: false,
+							clockOutSupersededById: null,
+							clockOutReplacesEntryId: null,
+							canonicalId: canonicalRecordId,
+							canonicalOrganizationId: organizationId,
+							canonicalEmployeeId: employeeId,
+							canonicalRecordKind: "work",
+							canonicalStartAt: productionPeriod.startTime,
+							canonicalEndAt: productionPeriod.endTime,
+							canonicalDurationMinutes: 480,
+							canonicalApprovalState: "pending",
 						},
-					]),
-				},
-				workPeriod: { findFirst: vi.fn(async () => productionPeriod) },
-				timeRecord: {
-					findFirst: vi.fn(async () => ({
-						id: canonicalRecordId,
-						organizationId,
-						employeeId,
-						recordKind: "work",
-						startAt: productionPeriod.startTime,
-						endAt: productionPeriod.endTime,
-						durationMinutes: 480,
-						approvalState: "pending",
-					})),
-				},
+					],
+				};
+			}),
+			query: {
 				approvalRequest: {
 					findFirst: vi.fn(async () => null),
 					findMany: vi.fn(async () => []),

@@ -1,3 +1,4 @@
+import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import {
 	loadOrdinaryCanonicalApprovals,
@@ -157,25 +158,101 @@ function select(rows: OrdinaryCanonicalReadRow[], overrides = {}) {
 }
 
 describe("ordinary canonical inbox reads", () => {
-	it("composes production projection relations into one row per active assignment", async () => {
+	it("loads N approvals with two bounded queries and SQL-side tenancy, kind, status, source, and visibility filters", async () => {
 		const fixture = row();
+		const candidate = {
+			...fixture.projection,
+			projectionId: fixture.projection.id,
+			projectionOrganizationId: fixture.projection.organizationId,
+			projectionWorkflowId: fixture.projection.workflowId,
+			projectionStatus: fixture.projection.status,
+			workflowId: fixture.workflow.id,
+			workflowOrganizationId: fixture.workflow.organizationId,
+			workflowType: fixture.workflow.workflowType,
+			workflowSourceType: fixture.workflow.sourceType,
+			workflowSourceId: fixture.workflow.sourceId,
+			requesterEmployeeId: fixture.workflow.requesterEmployeeId,
+			workflowStatus: fixture.workflow.status,
+			currentStageOrder: fixture.workflow.currentStageOrder,
+			contextSnapshot: fixture.workflow.contextSnapshot,
+			submittedAt: fixture.workflow.submittedAt,
+			stageId: fixture.stage.id,
+			stageOrganizationId: fixture.stage.organizationId,
+			stageWorkflowId: fixture.stage.workflowId,
+			stageSequence: fixture.stage.sequence,
+			stageLabel: fixture.stage.label,
+			stageStatus: fixture.stage.status,
+			legacyApprovalRequestId: ids.compatibility,
+			assignmentId: fixture.assignment.id,
+			assignmentOrganizationId: fixture.assignment.organizationId,
+			assignmentWorkflowId: fixture.assignment.workflowId,
+			assignmentStageId: fixture.assignment.stageId,
+			approverEmployeeId: fixture.assignment.approverEmployeeId,
+			assignmentStatus: fixture.assignment.status,
+			assignedAt: fixture.assignment.assignedAt,
+			requesterId: fixture.requester.id,
+			requesterOrganizationId: fixture.requester.organizationId,
+			requesterUserId: fixture.requester.userId,
+			requesterTeamId: fixture.requester.teamId,
+			userId: fixture.requester.user.id,
+			userName: fixture.requester.user.name,
+			userEmail: fixture.requester.user.email,
+			userImage: fixture.requester.user.image,
+			totalCount: 3,
+		};
+		const evidence = {
+			...fixture.period,
+			periodId: fixture.period.id,
+			periodOrganizationId: fixture.period.organizationId,
+			periodEmployeeId: fixture.period.employeeId,
+			periodApprovalStatus: fixture.period.approvalStatus,
+			periodStartTime: fixture.period.startTime,
+			periodEndTime: fixture.period.endTime,
+			periodDurationMinutes: fixture.period.durationMinutes,
+			periodIsActive: fixture.period.isActive,
+			periodDeletedAt: fixture.period.deletedAt,
+			periodPendingChanges: fixture.period.pendingChanges,
+			periodCanonicalRecordId: fixture.period.canonicalRecordId,
+			periodApprovalWorkflowId: fixture.period.approvalWorkflowId,
+			clockInId: fixture.period.clockIn?.id,
+			clockInOrganizationId: fixture.period.clockIn?.organizationId,
+			clockInEmployeeId: fixture.period.clockIn?.employeeId,
+			clockInType: fixture.period.clockIn?.type,
+			clockInTimestamp: fixture.period.clockIn?.timestamp,
+			clockInUtcOffsetMinutes: fixture.period.clockIn?.utcOffsetMinutes,
+			clockInIsSuperseded: fixture.period.clockIn?.isSuperseded,
+			clockInSupersededById: fixture.period.clockIn?.supersededById,
+			clockInReplacesEntryId: fixture.period.clockIn?.replacesEntryId,
+			clockOutId: fixture.period.clockOut?.id,
+			clockOutOrganizationId: fixture.period.clockOut?.organizationId,
+			clockOutEmployeeId: fixture.period.clockOut?.employeeId,
+			clockOutType: fixture.period.clockOut?.type,
+			clockOutTimestamp: fixture.period.clockOut?.timestamp,
+			clockOutUtcOffsetMinutes: fixture.period.clockOut?.utcOffsetMinutes,
+			clockOutIsSuperseded: fixture.period.clockOut?.isSuperseded,
+			clockOutSupersededById: fixture.period.clockOut?.supersededById,
+			clockOutReplacesEntryId: fixture.period.clockOut?.replacesEntryId,
+			canonicalId: fixture.canonicalRecord?.id,
+			canonicalOrganizationId: fixture.canonicalRecord?.organizationId,
+			canonicalEmployeeId: fixture.canonicalRecord?.employeeId,
+			canonicalRecordKind: fixture.canonicalRecord?.recordKind,
+			canonicalStartAt: fixture.canonicalRecord?.startAt,
+			canonicalEndAt: fixture.canonicalRecord?.endAt,
+			canonicalDurationMinutes: fixture.canonicalRecord?.durationMinutes,
+			canonicalApprovalState: fixture.canonicalRecord?.approvalState,
+		};
+		const calls: SQL[] = [];
 		const database = {
-			query: {
-				approvalInboxProjection: {
-					findMany: async () => [
-						{
-							...fixture.projection,
-							workflow: { ...fixture.workflow, requester: fixture.requester },
-							activeStage: {
-								...fixture.stage,
-								assignments: [fixture.assignment],
-							},
-						},
-					],
-				},
-				workPeriod: { findFirst: async () => fixture.period },
-				timeRecord: { findFirst: async () => fixture.canonicalRecord },
-				approvalRequest: { findFirst: async () => null },
+			execute: async (statement: SQL) => {
+				calls.push(statement);
+				return {
+					rows:
+						calls.length === 1
+							? [candidate, candidate, candidate]
+							: calls.length === 2
+								? [evidence]
+								: [],
+				};
 			},
 		};
 
@@ -183,11 +260,63 @@ describe("ordinary canonical inbox reads", () => {
 			database,
 			organizationId: ids.organization,
 			approverId: ids.approver,
+			limit: 20,
 		});
 
-		expect(approvals.map((approval) => approval.item.id)).toEqual([
-			ids.assignment,
-		]);
+		expect(approvals).toHaveLength(3);
+		expect(approvals.totalCount).toBe(3);
+		expect(calls).toHaveLength(3);
+		const [candidateQuery, evidenceQuery, compatibilityQuery] = calls.map(
+			(statement) => new PgDialect().sqlToQuery(statement),
+		);
+		expect(candidateQuery?.sql).toMatch(
+			/approval_inbox_projection[\s\S]+approval_workflow[\s\S]+approval_workflow_stage[\s\S]+approval_stage_assignment[\s\S]+employee[\s\S]+"user"/,
+		);
+		expect(candidateQuery?.sql).toContain("source_type = 'time_entry'");
+		expect(candidateQuery?.sql).toContain(
+			"workflow_type in ('manual_time_submission', 'policy_clock_out')",
+		);
+		for (const table of [
+			"projection",
+			"workflow",
+			"stage",
+			"assignment",
+		] as const) {
+			expect(candidateQuery?.sql).toContain(`${table}.status = 'pending'`);
+		}
+		expect(candidateQuery?.sql).toContain(
+			"compatibility.approver_id = assignment.approver_employee_id",
+		);
+		expect(candidateQuery?.params).toEqual(
+			expect.arrayContaining([ids.organization, ids.approver, 20]),
+		);
+		expect(evidenceQuery?.sql).toContain("and period.id in (");
+		expect(evidenceQuery?.params).toContain(ids.period);
+		expect(compatibilityQuery?.sql).toContain("from approval_request");
+		expect(compatibilityQuery?.sql).toContain("and id in (");
+		expect(compatibilityQuery?.params).toContain(ids.compatibility);
+	});
+
+	it("constrains exact target reads by assignment id with a one-row bound", async () => {
+		const calls: SQL[] = [];
+		const database = {
+			execute: async (statement: SQL) => {
+				calls.push(statement);
+				return { rows: [] };
+			},
+		};
+
+		await loadOrdinaryCanonicalApprovals({
+			database,
+			organizationId: ids.organization,
+			approverId: ids.approver,
+			assignmentId: ids.assignment,
+		});
+
+		expect(calls).toHaveLength(1);
+		const query = new PgDialect().sqlToQuery(calls[0] as SQL);
+		expect(query.sql).toContain("assignment.id =");
+		expect(query.params).toEqual(expect.arrayContaining([ids.assignment, 1]));
 	});
 
 	it("uses the active assignment as the stable public target", () => {
