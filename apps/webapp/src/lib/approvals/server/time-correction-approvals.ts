@@ -4242,6 +4242,8 @@ export function decideTimeCorrectionWithStableTargetEffect(
 					approvalRequestId,
 					workPeriodId: error.workPeriodId,
 					actor: currentEmployee,
+					allowAnyApprover: options?.allowAnyApprover,
+					allowOrganizationWideApprover: options?.allowOrganizationWideApprover,
 					decision:
 						action === "approve"
 							? { kind: "approve", reason: reason ?? null }
